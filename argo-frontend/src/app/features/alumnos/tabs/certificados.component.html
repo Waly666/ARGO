@@ -1,0 +1,134 @@
+<section class="certificados" *ngIf="store.hasAlumno(); else noAlumno">
+  <div class="msg" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="card">
+    <h2>Elegibles para certificar</h2>
+    <p class="hint">Solo se listan programas educativos pagados en su totalidad y aún sin certificado.</p>
+
+    <table class="argo">
+      <thead>
+        <tr>
+          <th>Programa</th>
+          <th class="r">Valor</th>
+          <th class="r">Pagado</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of elegibles()"
+            [class.sel]="idLiquidacion() === e._id"
+            (click)="onSeleccionarElegible(e._id)">
+          <td>
+            {{ e.descripcion || e.programaDescr || '—' }}
+            <span class="badge info" *ngIf="e.tipoCertificadoLabel">{{ e.tipoCertificadoLabel }}</span>
+          </td>
+          <td class="r">{{ fmt(e.valor) }}</td>
+          <td class="r">{{ fmt(e.abonado) }}</td>
+          <td><span class="badge ok">A paz y salvo</span></td>
+          <td class="r"><button class="primary mini" (click)="onSeleccionarElegible(e._id); $event.stopPropagation()">Seleccionar</button></td>
+        </tr>
+        <tr *ngIf="elegibles().length === 0">
+          <td colspan="5" class="empty">No hay programas elegibles para certificar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" *ngIf="idLiquidacion()">
+    <h2>Datos del Certificado</h2>
+    <div class="elegible-info" *ngIf="elegibleSel() as es">
+      <span class="badge info">{{ es.tipoCertificadoLabel || labelTipo(es.tipoCertificado) }}</span>
+      <strong>{{ es.descripcion || es.programaDescr }}</strong>
+      <span class="hint-inline" *ngIf="es.nomCert"> · Certificado: {{ es.nomCert }}</span>
+      <span class="hint-inline" *ngIf="es.horas"> · {{ es.horas }} horas</span>
+    </div>
+
+    <div class="row" *ngIf="elegibleSel()">
+      <div class="col-12">
+        <p class="hint ok-hint" *ngIf="plantillaActiva() as pl">
+          Formato configurado: <strong>{{ labelOrientacion(pl.orientacion) }}</strong>
+          <span *ngIf="pl.nombre"> — {{ pl.nombre }}</span>
+        </p>
+        <p class="hint" *ngIf="!plantillaActiva() && !elegibleSel()?.tieneFormato">
+          No hay formato para «{{ elegibleSel()?.tipoCertificadoLabel }}». Configúrelo en <strong>Config. Certificados</strong>
+          (vertical u horizontal).
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-4">
+        <label>Nº Acta</label>
+        <input type="text" [ngModel]="numActa()" (ngModelChange)="numActa.set($event)" />
+      </div>
+      <div class="col-4">
+        <label>Nº Folio</label>
+        <input type="text" [ngModel]="numFolio()" (ngModelChange)="numFolio.set($event)" />
+      </div>
+      <div class="col-4">
+        <label>Nº RUNT</label>
+        <input type="text" [ngModel]="numRunt()" (ngModelChange)="numRunt.set($event)" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <label>Observaciones</label>
+        <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" />
+      </div>
+    </div>
+    <div class="actions">
+      <button class="ghost" (click)="idLiquidacion.set('')">Cancelar</button>
+      <button class="primary" (click)="emitir()" [disabled]="saving()">
+        {{ saving() ? 'Emitiendo…' : 'Emitir Certificado' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Certificados Emitidos</h2>
+    <div class="loading" *ngIf="loading()">Cargando…</div>
+
+    <table class="argo" *ngIf="!loading()">
+      <thead>
+        <tr>
+          <th>Encabezado</th>
+          <th>Tipo</th>
+          <th>ID</th>
+          <th>Acta</th>
+          <th>Folio</th>
+          <th>RUNT</th>
+          <th>Emisión</th>
+          <th>Vencimiento</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of certificados()">
+          <td>{{ c.encabezado || c.nomCert || c.programaDescr || '—' }}</td>
+          <td>{{ labelTipo(c.tipoCertificado) }}</td>
+          <td class="mono">{{ c.codigoCert || '—' }}</td>
+          <td>{{ c.numActa || '—' }}</td>
+          <td>{{ c.numFolio || '—' }}</td>
+          <td>{{ c.numRunt || '—' }}</td>
+          <td>{{ fecha(c.fechaEmision) }}</td>
+          <td>{{ fecha(c.fechaVencimiento) || '—' }}</td>
+          <td class="r">
+            <button class="ghost mini" (click)="imprimir(c)">Imprimir</button>
+            <button class="danger mini" (click)="anular(c)">Anular</button>
+          </td>
+        </tr>
+        <tr *ngIf="certificados().length === 0">
+          <td colspan="9" class="empty">No hay certificados emitidos.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<ng-template #noAlumno>
+  <div class="card empty-card">
+    <h2>Sin alumno seleccionado</h2>
+    <p>Busca un alumno o crea uno nuevo para gestionar certificados.</p>
+  </div>
+</ng-template>

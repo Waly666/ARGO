@@ -1,0 +1,193 @@
+<section class="config-page card">
+  <header>
+    <h1>Configuración de certificados</h1>
+    <p>
+      Por cada tipo de capacitación elija un solo formato: vertical u horizontal, y suba el PNG de fondo.
+    </p>
+  </header>
+
+  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="grid-form">
+    <h3>Datos del certificado</h3>
+    <div class="row">
+      <div class="col-6">
+        <label>Nombre institución (encabezado)</label>
+        <input type="text" [ngModel]="form().nombreInstitucion" (ngModelChange)="patch('nombreInstitucion', $event)" />
+      </div>
+      <div class="col-6">
+        <label>Ciudad (pie del certificado)</label>
+        <input type="text" [ngModel]="form().ciudad" (ngModelChange)="patch('ciudad', $event)" placeholder="Ej. Villavicencio" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-4">
+        <label>Nombre director</label>
+        <input type="text" [ngModel]="form().nombreDirector" (ngModelChange)="patch('nombreDirector', $event)" />
+      </div>
+      <div class="col-4">
+        <label>Nombre instructor</label>
+        <input type="text" [ngModel]="form().nombreInstructor" (ngModelChange)="patch('nombreInstructor', $event)" />
+      </div>
+      <div class="col-4">
+        <label>Prefijo ID certificado</label>
+        <input type="text" [ngModel]="form().prefijoCertificado" (ngModelChange)="patch('prefijoCertificado', $event)" />
+      </div>
+    </div>
+    <h3>Código QR (global)</h3>
+    <p class="hint">Aplica a todos los certificados emitidos. El QR contiene el ID del certificado para verificación.</p>
+    <div class="row qr-config">
+      <div class="col-12">
+        <label class="check-row">
+          <input
+            type="checkbox"
+            [ngModel]="form().mostrarQr !== false"
+            (ngModelChange)="patch('mostrarQr', $event)"
+          />
+          Incluir código QR en todos los certificados
+        </label>
+      </div>
+    </div>
+    <div class="row" *ngIf="form().mostrarQr !== false">
+      <div class="col-6">
+        <label>Posición del QR</label>
+        <select [ngModel]="form().qrPosicion || 'inferior_izquierda'" (ngModelChange)="patch('qrPosicion', $event)">
+          <option *ngFor="let p of qrPosiciones" [value]="p.id">{{ p.label }}</option>
+        </select>
+      </div>
+      <div class="col-6">
+        <label>Tamaño (px)</label>
+        <input
+          type="number"
+          min="48"
+          max="120"
+          [ngModel]="form().qrTamanoPx ?? 72"
+          (ngModelChange)="patch('qrTamanoPx', $event)"
+        />
+      </div>
+    </div>
+
+    <div class="row firmas-upload">
+      <div class="col-6">
+        <label>Imagen firma director</label>
+        <input type="file" accept="image/*" (change)="onFirmaDirector($event)" />
+        <img *ngIf="form().urlFirmaDirector" class="preview-firma" [src]="urlFirma(form().urlFirmaDirector)" alt="" />
+      </div>
+      <div class="col-6">
+        <label>Imagen firma instructor</label>
+        <input type="file" accept="image/*" (change)="onFirmaInstructor($event)" />
+        <img *ngIf="form().urlFirmaInstructor" class="preview-firma" [src]="urlFirma(form().urlFirmaInstructor)" alt="" />
+      </div>
+    </div>
+
+    <h3>Formato por tipo de capacitación</h3>
+    <p class="hint">Elija vertical u horizontal y cargue una sola plantilla por tipo.</p>
+
+    <div class="tipo-block" *ngFor="let t of tiposPrincipales">
+      <h4>{{ t.label }}</h4>
+      <div class="formato-unico">
+        <div class="orientacion-elegir">
+          <span class="ori-label">Orientación:</span>
+          <label class="ori-opt" *ngFor="let o of orientaciones">
+            <input
+              type="radio"
+              [name]="'ori-' + t.id"
+              [value]="o.id"
+              [ngModel]="slotTipo(t.id).orientacion"
+              (ngModelChange)="onOrientacionTipo(t.id, $event)"
+            />
+            {{ o.label }}
+          </label>
+        </div>
+
+        <ng-container *ngIf="plantillaDoc(slotTipo(t.id).id) as p; else vacioFmt">
+          <div class="thumb" [class.horizontal]="p.orientacion === 'horizontal'">
+            <img *ngIf="p.urlFondo" [src]="urlFondo(p)" [alt]="p.nombre" />
+            <span *ngIf="!p.urlFondo" class="no-img">Sin imagen</span>
+          </div>
+          <div class="slot-actions">
+            <label class="ghost mini btn-file">
+              {{ subiendoTipo(t.id) ? 'Subiendo…' : 'Reemplazar PNG' }}
+              <input
+                type="file"
+                accept="image/png,image/webp,image/jpeg"
+                [disabled]="subiendoTipo(t.id)"
+                (change)="onFormatoFondo(t.id, $event)"
+              />
+            </label>
+            <button type="button" class="danger mini" (click)="quitarFormato(t.id)">Quitar</button>
+          </div>
+        </ng-container>
+        <ng-template #vacioFmt>
+          <div class="thumb empty-slot">
+            <span class="no-img">Sin plantilla {{ labelOrientacion(slotTipo(t.id).orientacion) | lowercase }}</span>
+          </div>
+          <label class="primary mini btn-file">
+            {{ subiendoTipo(t.id) ? 'Subiendo…' : 'Subir PNG' }}
+            <input
+              type="file"
+              accept="image/png,image/webp,image/jpeg"
+              [disabled]="subiendoTipo(t.id)"
+              (change)="onFormatoFondo(t.id, $event)"
+            />
+          </label>
+        </ng-template>
+      </div>
+    </div>
+
+    <div class="tipo-block especial">
+      <h4>Mercancías peligrosas</h4>
+      <p class="hint">Clasificación especial por nombre del programa.</p>
+      <div class="formato-unico">
+        <div class="orientacion-elegir">
+          <span class="ori-label">Orientación:</span>
+          <label class="ori-opt" *ngFor="let o of orientaciones">
+            <input
+              type="radio"
+              name="ori-mp"
+              [value]="o.id"
+              [ngModel]="slotTipo('mercancias_peligrosas').orientacion"
+              (ngModelChange)="onOrientacionTipo('mercancias_peligrosas', $event)"
+            />
+            {{ o.label }}
+          </label>
+        </div>
+        <ng-container *ngIf="plantillaDoc(slotTipo('mercancias_peligrosas').id) as p; else vacioMp">
+          <div class="thumb" [class.horizontal]="p.orientacion === 'horizontal'">
+            <img *ngIf="p.urlFondo" [src]="urlFondo(p)" [alt]="p.nombre" />
+          </div>
+          <div class="slot-actions">
+            <label class="ghost mini btn-file">
+              {{ subiendoTipo('mercancias_peligrosas') ? 'Subiendo…' : 'Reemplazar PNG' }}
+              <input
+                type="file"
+                accept="image/png,image/webp,image/jpeg"
+                [disabled]="subiendoTipo('mercancias_peligrosas')"
+                (change)="onFormatoFondo('mercancias_peligrosas', $event)"
+              />
+            </label>
+            <button type="button" class="danger mini" (click)="quitarFormato('mercancias_peligrosas')">Quitar</button>
+          </div>
+        </ng-container>
+        <ng-template #vacioMp>
+          <div class="thumb empty-slot"><span class="no-img">Sin plantilla</span></div>
+          <label class="primary mini btn-file">
+            {{ subiendoTipo('mercancias_peligrosas') ? 'Subiendo…' : 'Subir PNG' }}
+            <input
+              type="file"
+              accept="image/png,image/webp,image/jpeg"
+              [disabled]="subiendoTipo('mercancias_peligrosas')"
+              (change)="onFormatoFondo('mercancias_peligrosas', $event)"
+            />
+          </label>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <footer class="actions">
+    <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+    </button>
+  </footer>
+</section>

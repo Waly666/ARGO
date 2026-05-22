@@ -1,0 +1,163 @@
+<section class="servicios" *ngIf="store.hasAlumno(); else noAlumno">
+  <div class="msg" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="two-col">
+    <div class="card">
+      <h2>Crear Matrícula</h2>
+      <div class="row">
+        <div class="col-6">
+          <label>Programa</label>
+          <select [ngModel]="idProg()" (ngModelChange)="idProg.set($event)">
+            <option value="">-- Seleccionar --</option>
+            <option *ngFor="let p of programas()" [value]="p.idPrograma ?? p.idProg ?? p._id">
+              {{ p.nombreProg || p.descripcion }} ({{ p.codigoProg || '' }})
+            </option>
+          </select>
+        </div>
+        <div class="col-3">
+          <label>Tarifa</label>
+          <select [ngModel]="tarifa()" (ngModelChange)="setTarifa($event)">
+            <option [ngValue]="1">Tarifa 1</option>
+            <option [ngValue]="2">Tarifa 2</option>
+            <option [ngValue]="3">Tarifa 3</option>
+          </select>
+        </div>
+        <div class="col-3">
+          <label>Valor Matrícula</label>
+          <input type="text" [value]="fmt(valorMatCalculado())" disabled />
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" (click)="crearMatricula()" [disabled]="!idProg()">Crear Matrícula</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Agregar Servicio Adicional</h2>
+      <div class="row">
+        <div class="col-6">
+          <label>Servicio</label>
+          <select [ngModel]="idServ()" (ngModelChange)="idServ.set($event)">
+            <option value="">-- Seleccionar --</option>
+            <option *ngFor="let s of servicios()" [value]="s.idServ || s._id">
+              {{ s.descrServicio || s.descripcion || s.nombre }}
+            </option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label>Descripción</label>
+          <input type="text" [ngModel]="servDescripcion()" (ngModelChange)="servDescripcion.set($event)" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6">
+          <label>Valor</label>
+          <input type="number" min="0" [ngModel]="servValor()" (ngModelChange)="servValor.set(+$event)" />
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" (click)="crearServicioAdicional()" [disabled]="!idServ() || servValor() <= 0">
+          Agregar Servicio
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Liquidación del Alumno</h2>
+    <div class="loading" *ngIf="loading()">Cargando…</div>
+
+    <table class="argo" *ngIf="!loading()">
+      <thead>
+        <tr>
+          <th>Descripción</th>
+          <th>Tipo</th>
+          <th class="r">Valor</th>
+          <th class="r">Abonado</th>
+          <th class="r">Saldo</th>
+          <th>Estado</th>
+          <th class="r">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let it of liquidacion().items">
+          <tr>
+            <td>{{ it.descripcion || '—' }}</td>
+            <td>
+              <span class="badge info" *ngIf="it.idProg">Programa</span>
+              <span class="badge" *ngIf="!it.idProg">Servicio</span>
+            </td>
+            <td class="r">{{ fmt(it.valor) }}</td>
+            <td class="r">{{ fmt(it.abonado) }}</td>
+            <td class="r">{{ fmt(it.saldo) }}</td>
+            <td><span class="badge" [ngClass]="estadoClass(it)">{{ it.estado || '—' }}</span></td>
+            <td class="r actions-cell">
+              <button
+                type="button"
+                class="ghost mini"
+                *ngIf="num(it.abonado) > 0"
+                (click)="toggleRecibosItem(it)">
+                {{ itemRecibosAbierto() === it._id ? 'Ocultar' : 'Recibos' }}
+                ({{ comprobantesPorItem(it._id).length }})
+              </button>
+              <button class="danger mini" (click)="eliminarItem(it)" [disabled]="num(it.abonado) > 0">Eliminar</button>
+            </td>
+          </tr>
+          <tr class="recibos-row" *ngIf="itemRecibosAbierto() === it._id && num(it.abonado) > 0">
+            <td colspan="7">
+              <div class="recibos-panel" *ngIf="comprobantesPorItem(it._id).length > 0; else sinRecibos">
+                <table class="argo nested">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Concepto</th>
+                      <th>Pago</th>
+                      <th class="r">Valor</th>
+                      <th class="r"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let p of comprobantesPorItem(it._id)">
+                      <td>{{ tiempoFmt(p.fecha || p.createdAt) }}</td>
+                      <td>{{ descrComprobante(p) }}</td>
+                      <td>
+                        <span class="badge" [ngClass]="tipoAbonoClass(p)">{{ tipoAbonoLabel(p) }}</span>
+                      </td>
+                      <td class="r">{{ fmt(p.valor) }}</td>
+                      <td class="r actions-cell">
+                        <button type="button" class="primary mini" (click)="imprimirRecibo(idIngreso(p))">Imprimir</button>
+                        <button type="button" class="ghost mini" (click)="verRecibo(idIngreso(p))">Vista</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ng-template #sinRecibos>
+                <p class="hint">Hay abonos registrados pero no se encontraron comprobantes. Revise la pestaña Pagos.</p>
+              </ng-template>
+            </td>
+          </tr>
+        </ng-container>
+        <tr *ngIf="liquidacion().items.length === 0">
+          <td colspan="7" class="empty">No hay items en liquidación.</td>
+        </tr>
+      </tbody>
+      <tfoot *ngIf="liquidacion().items.length > 0">
+        <tr>
+          <th colspan="2">Totales</th>
+          <th class="r">{{ fmt(liquidacion().totales.valor) }}</th>
+          <th class="r">{{ fmt(liquidacion().totales.abonado) }}</th>
+          <th class="r">{{ fmt(liquidacion().totales.saldo) }}</th>
+          <th colspan="2"></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<ng-template #noAlumno>
+  <div class="card empty-card">
+    <h2>Sin alumno seleccionado</h2>
+    <p>Busca un alumno en la barra superior o crea uno nuevo en la pestaña <strong>Datos Principales</strong>.</p>
+  </div>
+</ng-template>

@@ -1,0 +1,123 @@
+<section class="pagos" *ngIf="store.hasAlumno(); else noAlumno">
+  <div class="msg" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="header-row">
+    <div class="card stat">
+      <span class="label">Total Liquidado</span>
+      <span class="value">{{ fmt(totales().valor) }}</span>
+    </div>
+    <div class="card stat">
+      <span class="label">Total Pagado</span>
+      <span class="value">{{ fmt(totales().abonado) }}</span>
+    </div>
+    <div class="card stat">
+      <span class="label">Saldo Pendiente</span>
+      <span class="value" [class.warn]="num(totales().saldo) > 0">{{ fmt(totales().saldo) }}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Registrar Pago</h2>
+    <div class="row">
+      <div class="col-6">
+        <label>Ítem a pagar</label>
+        <select [ngModel]="idLiquidacion()" (ngModelChange)="idLiquidacion.set($event)">
+          <option value="">-- Seleccionar --</option>
+          <option *ngFor="let it of itemsConSaldo()" [value]="it._id">
+            {{ descrItem(it) }}
+          </option>
+        </select>
+      </div>
+      <div class="col-3">
+        <label>Valor</label>
+        <input type="number" min="0" [ngModel]="valor()" (ngModelChange)="valor.set(+$event)" />
+      </div>
+      <div class="col-3">
+        <label>Tipo Pago</label>
+        <select [ngModel]="idTipoPago()" (ngModelChange)="idTipoPago.set($event)">
+          <option value="">-- Seleccionar forma de pago --</option>
+          <option *ngFor="let t of tiposPago()" [value]="tipoPagoValor(t)">
+            {{ tipoPagoLabel(t) }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" *ngIf="!esEfectivo()">
+      <div class="col-6">
+        <label>Banco</label>
+        <select [ngModel]="idBanco()" (ngModelChange)="idBanco.set($event)">
+          <option value="">-- Seleccionar banco --</option>
+          <option *ngFor="let b of bancos()" [value]="bancoValor(b)">
+            {{ bancoLabel(b) }}
+          </option>
+        </select>
+      </div>
+      <div class="col-6">
+        <label>Nº Comprobante / Referencia</label>
+        <input type="text" [ngModel]="numComprobante()" (ngModelChange)="numComprobante.set($event)" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <label>Observaciones</label>
+        <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" (click)="registrar()" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : 'Registrar Pago' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Historial de Pagos</h2>
+    <div class="loading" *ngIf="loading()">Cargando…</div>
+
+    <table class="argo" *ngIf="!loading()">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Concepto</th>
+          <th>Pago</th>
+          <th>Tipo</th>
+          <th>Banco</th>
+          <th>Referencia</th>
+          <th class="r">Valor</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of pagos()">
+          <td>{{ tiempoFmt(p.fecha || p.createdAt) }}</td>
+          <td>{{ conceptoPago(p) }}</td>
+          <td>
+            <span class="badge" [ngClass]="tipoAbonoClass(p)">{{ tipoAbonoLabel(p) }}</span>
+          </td>
+          <td>{{ p.tipoPagoDescr || p.idTipoPago }}</td>
+          <td>{{ p.bancoDescr || p.idBanco || '—' }}</td>
+          <td>{{ p.numComprobante || '—' }}</td>
+          <td class="r">{{ fmt(p.valor) }}</td>
+          <td class="r actions-cell">
+            <button type="button" class="primary mini" (click)="imprimirRecibo(p)">Imprimir</button>
+            <button type="button" class="ghost mini" (click)="verRecibo(p)">Vista</button>
+            <button type="button" class="danger mini" (click)="reversar(p)">Reversar</button>
+          </td>
+        </tr>
+        <tr *ngIf="pagos().length === 0">
+          <td colspan="8" class="empty">No hay pagos registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<ng-template #noAlumno>
+  <div class="card empty-card">
+    <h2>Sin alumno seleccionado</h2>
+    <p>Busca un alumno o crea uno nuevo para registrar pagos.</p>
+  </div>
+</ng-template>

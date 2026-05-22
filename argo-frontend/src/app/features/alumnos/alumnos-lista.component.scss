@@ -1,0 +1,99 @@
+.lista-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+
+  .title h1 { margin: 0; }
+  .title p { color: var(--text-dim); margin: 4px 0 0; font-size: .9rem; max-width: 520px; }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .search-box {
+    flex: 1;
+    min-width: 240px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(6, 16, 41, 0.7);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px 10px;
+
+    .ic { color: var(--accent-2); }
+    input {
+      border: none;
+      background: transparent;
+      padding: 8px 4px;
+      flex: 1;
+      box-shadow: none;
+      &:focus { box-shadow: none; background: transparent; }
+    }
+  }
+
+  .count { color: var(--text-soft); font-size: .85rem; white-space: nowrap; }
+}
+
+.table-wrap { padding: 0; overflow: hidden; }
+
+table.argo {
+  margin: 0;
+  th, td { vertical-align: middle; }
+}
+
+.col-foto { width: 52px; }
+.dim { color: var(--text-dim); font-size: .88rem; }
+.doc { font-weight: 500; color: var(--accent-2); }
+
+.row-click {
+  cursor: pointer;
+  &:hover td { background: rgba(78, 163, 255, 0.08); }
+}
+
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(78, 163, 255, 0.15);
+  display: grid; place-items: center;
+  color: var(--accent-2);
+  font-weight: 600;
+  font-size: .8rem;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.actions { text-align: right; }
+.mini { padding: 4px 10px; font-size: .78rem; }
+
+.loading, .empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--text-dim);
+  font-size: .88rem;
+}
+
+@media (max-width: 720px) {
+  .page-head { flex-direction: column; }
+  table.argo .dim:nth-child(5),
+  table.argo .dim:nth-child(6) { display: none; }
+}

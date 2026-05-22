@@ -1,0 +1,44 @@
+<div class="login-wrapper">
+  <canvas #matrix class="matrix-canvas"></canvas>
+
+  <div class="login-shell">
+    <div class="brand-side">
+      <div class="logo">A</div>
+      <h1>ARGO</h1>
+      <p class="tag">Sistema de Información</p>
+      <p class="desc">Gestión integral de alumnos, programación, facturación y vehículos.</p>
+      <div class="grid-lines"></div>
+    </div>
+
+    <form class="login-form" (ngSubmit)="submit()">
+      <h2>Iniciar Sesión</h2>
+      <p class="hint">Acceso restringido a personal autorizado</p>
+
+      <label>Usuario</label>
+      <input type="text"
+             autocomplete="username"
+             [ngModel]="username()"
+             (ngModelChange)="username.set($event)"
+             name="username"
+             placeholder="usuario o nick"
+             [disabled]="loading()" />
+
+      <label>Contraseña</label>
+      <input type="password"
+             autocomplete="current-password"
+             [ngModel]="password()"
+             (ngModelChange)="password.set($event)"
+             name="password"
+             placeholder="••••••••"
+             [disabled]="loading()" />
+
+      <div class="error" *ngIf="error()">{{ error() }}</div>
+
+      <button type="submit" class="primary" [disabled]="loading()">
+        {{ loading() ? 'Validando...' : 'Entrar' }}
+      </button>
+
+      <p class="foot">v1.0 · ARGO © 2026</p>
+    </form>
+  </div>
+</div>

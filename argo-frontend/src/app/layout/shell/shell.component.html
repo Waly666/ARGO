@@ -1,0 +1,47 @@
+<div class="shell" [class.collapsed]="collapsed()">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">A</div>
+      <div class="name" *ngIf="!collapsed()">
+        <strong>ARGO</strong>
+        <small>Sistema de Información</small>
+      </div>
+    </div>
+
+    <nav class="menu">
+      <a *ngFor="let m of menu"
+         [routerLink]="m.path"
+         routerLinkActive="active"
+         class="menu-item"
+         [title]="m.label">
+        <span class="icon">{{ m.icon }}</span>
+        <span class="label" *ngIf="!collapsed()">{{ m.label }}</span>
+      </a>
+    </nav>
+
+    <button class="collapse" (click)="toggle()" [title]="collapsed() ? 'Expandir' : 'Colapsar'">
+      {{ collapsed() ? '»' : '«' }}
+    </button>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="left">
+        <span class="dim">ARGO</span>
+        <span class="sep">/</span>
+        <span>Panel</span>
+      </div>
+      <div class="right">
+        <span class="user" *ngIf="user() as u">
+          <span class="user-name">{{ userLabel() }}</span>
+          <span class="badge info">{{ u.rol || 'usuario' }}</span>
+        </span>
+        <button class="ghost" (click)="logout()">Salir</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

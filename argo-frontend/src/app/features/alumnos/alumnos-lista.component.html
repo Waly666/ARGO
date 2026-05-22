@@ -1,0 +1,69 @@
+<section class="lista-page">
+  <header class="page-head card">
+    <div class="title">
+      <h1>Alumnos</h1>
+      <p>Listado de alumnos registrados. Busca por cédula o nombre y abre la ficha para gestionar matrículas, pagos y certificados.</p>
+    </div>
+    <button type="button" class="primary" (click)="nuevo()">+ Crear alumno</button>
+  </header>
+
+  <div class="card toolbar">
+    <div class="search-box">
+      <span class="ic">◎</span>
+      <input
+        type="text"
+        placeholder="Buscar por cédula, nombre o apellido..."
+        [ngModel]="query()"
+        (ngModelChange)="onBuscar($event)"
+        autocomplete="off"
+      />
+    </div>
+    <span class="count">{{ pageLabel() }}</span>
+  </div>
+
+  <div class="card table-wrap">
+    <div class="loading" *ngIf="loading()">Cargando alumnos…</div>
+
+    <table class="argo" *ngIf="!loading()">
+      <thead>
+        <tr>
+          <th class="col-foto"></th>
+          <th>Documento</th>
+          <th>Nombre completo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of items()" class="row-click" (click)="abrir(r)">
+          <td class="col-foto">
+            <div class="avatar">
+              <img *ngIf="fotoUrl(r.urlFoto) as f" [src]="f" alt="" />
+              <span *ngIf="!r.urlFoto">{{ ((r.nombre1 || r.nombres || '?').charAt(0)) + ((r.apellido1 || r.apellidos || '').charAt(0)) }}</span>
+            </div>
+          </td>
+          <td><span class="doc">{{ r.numDoc }}</span></td>
+          <td>{{ r.nombreCompleto || (r.nombre1 + ' ' + (r.nombre2 || '') + ' ' + r.apellido1 + ' ' + (r.apellido2 || '')).trim() }}</td>
+          <td class="actions">
+            <button type="button" class="ghost mini" (click)="abrir(r); $event.stopPropagation()">Abrir</button>
+          </td>
+        </tr>
+        <tr *ngIf="items().length === 0">
+          <td colspan="4" class="empty">
+            <ng-container *ngIf="query(); else sinDatos">
+              No hay resultados para «{{ query() }}».
+            </ng-container>
+            <ng-template #sinDatos>
+              No hay alumnos registrados. Usa <strong>Crear alumno</strong> para agregar el primero.
+            </ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer class="pager" *ngIf="total() > 0">
+      <button type="button" class="ghost" (click)="paginaAnterior()" [disabled]="page() === 0">← Anterior</button>
+      <span>Página {{ page() + 1 }} de {{ totalPages() }}</span>
+      <button type="button" class="ghost" (click)="paginaSiguiente()" [disabled]="page() >= totalPages() - 1">Siguiente →</button>
+    </footer>
+  </div>
+</section>

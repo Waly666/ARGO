@@ -1,0 +1,410 @@
+<section class="datos card">
+
+  <header>
+
+    <h2>{{ isEdit() ? 'Editar Alumno' : 'Nuevo Alumno' }}</h2>
+
+    <div class="actions">
+
+      <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+
+        {{ saving() ? 'Guardando…' : (isEdit() ? 'Actualizar' : 'Crear') }}
+
+      </button>
+
+    </div>
+
+  </header>
+
+
+
+  <div class="msg ok" *ngIf="message() && !docDuplicado()">{{ message() }}</div>
+
+  <div class="msg err" *ngIf="message() && docDuplicado()">{{ message() }}</div>
+
+  <div class="dup" *ngIf="docDuplicado() as dup">
+
+    <span>Documento ya registrado: <strong>{{ dup.nombreCompleto }}</strong></span>
+
+    <button type="button" class="primary mini" (click)="irAlDuplicado()">Abrir registro</button>
+
+  </div>
+
+
+
+  <div class="grid">
+
+    <div class="foto-col">
+
+      <label class="field-label">urlFoto</label>
+
+      <div class="foto">
+
+        <img *ngIf="fotoPreview() as p" [src]="p" alt="Foto" />
+
+        <span *ngIf="!fotoPreview()">Sin foto</span>
+
+      </div>
+
+      <label class="upload">
+
+        <input type="file" accept="image/*" (change)="onFoto($event)" hidden />
+
+        <span>Cargar foto</span>
+
+      </label>
+
+      <p class="url-foto" *ngIf="form().urlFoto">{{ form().urlFoto }}</p>
+
+    </div>
+
+
+
+    <div class="form-cols">
+
+      <!-- Orden exacto esquema datosAlumnos -->
+
+      <h3 class="section">Identificación</h3>
+
+
+
+      <div class="row" *ngIf="isEdit()">
+
+        <div class="col-6">
+
+          <label>idAlumno</label>
+
+          <input type="text" [value]="form()._id" readonly class="readonly" />
+
+        </div>
+
+        <div class="col-6">
+
+          <label>fechaReg</label>
+
+          <input type="text" [value]="fechaHoraDisplay(form().fechaReg)" readonly class="readonly" />
+
+        </div>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <div class="col-3">
+
+          <label>tipoDoc *</label>
+
+          <select [ngModel]="form().tipoDoc" (ngModelChange)="patch('tipoDoc', $event)">
+
+            <option *ngFor="let t of tiposDoc()" [value]="catValor(t)">{{ catEtiqueta(t) }}</option>
+
+          </select>
+
+        </div>
+
+        <div class="col-3">
+
+          <label>numDoc *</label>
+
+          <input type="text" [ngModel]="form().numDoc" (ngModelChange)="patch('numDoc', $event)" [readonly]="isEdit()" />
+
+        </div>
+
+        <div class="col-6">
+
+          <argo-municipio-buscar
+
+            label="expedida"
+
+            placeholder="Nombre municipio (tabla divipola)..."
+
+            [textoInicial]="expedidaTexto()"
+
+            (seleccionado)="onExpedidaSel($event)"
+
+          />
+
+        </div>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <div class="col-3">
+
+          <label>apellido1 *</label>
+
+          <input type="text" [ngModel]="form().apellido1" (ngModelChange)="patch('apellido1', $event)" />
+
+        </div>
+
+        <div class="col-3">
+
+          <label>apellido2</label>
+
+          <input type="text" [ngModel]="form().apellido2" (ngModelChange)="patch('apellido2', $event)" />
+
+        </div>
+
+        <div class="col-3">
+
+          <label>nombre1 *</label>
+
+          <input type="text" [ngModel]="form().nombre1" (ngModelChange)="patch('nombre1', $event)" />
+
+        </div>
+
+        <div class="col-3">
+
+          <label>nombre2</label>
+
+          <input type="text" [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" />
+
+        </div>
+
+      </div>
+
+
+
+      <div class="row">
+        <div class="col-3">
+          <label>fechaNac</label>
+          <input type="date" [ngModel]="form().fechaNac" (ngModelChange)="patch('fechaNac', $event)" />
+        </div>
+      </div>
+
+      <h3 class="section">Datos personales</h3>
+
+      <div class="row">
+
+        <div class="col-3">
+
+          <label>genero</label>
+
+          <select [ngModel]="form().genero" (ngModelChange)="patch('genero', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let g of generos()" [value]="catValor(g)">{{ catEtiqueta(g) }}</option>
+
+          </select>
+
+        </div>
+
+        <div class="col-3">
+
+          <label>tipoSangre</label>
+
+          <select [ngModel]="form().tipoSangre" (ngModelChange)="patch('tipoSangre', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let r of tiposSangre()" [value]="catValor(r)">{{ catEtiqueta(r) }}</option>
+
+          </select>
+
+        </div>
+
+        <div class="col-3">
+
+          <label>jornada</label>
+
+          <select [ngModel]="form().jornada" (ngModelChange)="patch('jornada', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let j of jornadas()" [value]="catValor(j)">{{ catEtiqueta(j) }}</option>
+
+          </select>
+
+        </div>
+
+        <div class="col-3">
+
+          <label>estadoCivil</label>
+
+          <select [ngModel]="form().estadoCivil" (ngModelChange)="patch('estadoCivil', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let e of estadosCiviles()" [value]="catValor(e)">{{ catEtiqueta(e) }}</option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="row">
+
+        <div class="col-3">
+
+          <label>estrato</label>
+
+          <select [ngModel]="form().estrato" (ngModelChange)="patch('estrato', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let e of estratos()" [value]="catValor(e)">{{ catEtiqueta(e) }}</option>
+
+          </select>
+
+        </div>
+
+        <div class="col-3">
+
+          <label>regimenSalud</label>
+
+          <select [ngModel]="form().regimenSalud" (ngModelChange)="patch('regimenSalud', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let r of regimenesSalud()" [value]="catValor(r)">{{ catEtiqueta(r) }}</option>
+
+          </select>
+
+        </div>
+
+        <div class="col-3">
+
+          <label>nivelFormacion</label>
+
+          <select [ngModel]="form().nivelFormacion" (ngModelChange)="patch('nivelFormacion', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let n of nivelesFormacion()" [value]="catValor(n)">{{ catEtiqueta(n) }}</option>
+
+          </select>
+
+        </div>
+
+        <div class="col-3">
+
+          <label>ocupacion</label>
+
+          <select [ngModel]="form().ocupacion" (ngModelChange)="patch('ocupacion', $event)">
+
+            <option value="">--</option>
+
+            <option *ngFor="let o of ocupaciones()" [value]="catValor(o)">{{ catEtiqueta(o) }}</option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+
+      <h3 class="section">Contacto y ubicación</h3>
+      <div class="row">
+        <div class="col-4">
+          <label>correo</label>
+          <input type="email" [ngModel]="form().correo" (ngModelChange)="patch('correo', $event)" placeholder="correo@ejemplo.com" />
+        </div>
+        <div class="col-4">
+          <label>celular</label>
+          <input type="tel" [ngModel]="form().celular" (ngModelChange)="patch('celular', $event)" placeholder="3001234567" />
+        </div>
+        <div class="col-4">
+          <label>codMunicipio</label>
+          <input type="text" [value]="form().codMunicipio || '—'" readonly class="readonly" title="Código divipola del municipio de origen seleccionado" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <label>direccion</label>
+          <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch('direccion', $event)" placeholder="Dirección de residencia" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-8">
+          <argo-municipio-buscar
+            label="munOrigen"
+            placeholder="Buscar municipio de origen (divipola)..."
+            [textoInicial]="munOrigenTexto()"
+            (seleccionado)="onMunOrigenSel($event)"
+          />
+        </div>
+      </div>
+
+      <h3 class="section">Origen y diversidad</h3>
+      <div class="row">
+        <div class="col-4">
+          <label>discapacidad</label>
+          <select [ngModel]="form().discapacidad" (ngModelChange)="patch('discapacidad', $event)">
+            <option *ngFor="let d of discapacidades()" [value]="catValor(d)">{{ catEtiqueta(d) }}</option>
+          </select>
+        </div>
+        <div class="col-4">
+          <label>multiCulturalidad</label>
+          <select [ngModel]="form().multiCulturalidad" (ngModelChange)="patch('multiCulturalidad', $event)">
+            <option *ngFor="let mc of multiCulturalidades()" [value]="catValor(mc)">{{ catEtiqueta(mc) }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12">
+          <label>observaciones</label>
+          <textarea
+            class="observaciones-field"
+            rows="6"
+            [ngModel]="form().observaciones"
+            (ngModelChange)="patch('observaciones', $event)"
+          ></textarea>
+        </div>
+      </div>
+
+      <h3 class="section" *ngIf="isEdit()">Auditoría</h3>
+
+      <div class="row audit" *ngIf="isEdit()">
+
+        <div class="col-3">
+
+          <label>fechaAudi</label>
+
+          <input type="text" [value]="fechaHoraDisplay(form().fechaAudi)" readonly class="readonly" />
+
+        </div>
+
+        <div class="col-3">
+
+          <label>userAddReg</label>
+
+          <input type="text" [value]="form().userAddReg || '—'" readonly class="readonly" />
+
+        </div>
+
+        <div class="col-3">
+
+          <label>userChangeRecord</label>
+
+          <input type="text" [value]="form().userChangeRecord || '—'" readonly class="readonly" />
+
+        </div>
+
+        <div class="col-3">
+
+          <label>fechaMod</label>
+
+          <input type="text" [value]="fechaHoraDisplay(form().fechaMod)" readonly class="readonly" />
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+

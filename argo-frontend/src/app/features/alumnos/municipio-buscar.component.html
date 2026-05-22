@@ -1,0 +1,25 @@
+<div class="muni-buscar-host">
+  <label>{{ label }}</label>
+  <div class="input-wrap">
+    <input
+      type="text"
+      [placeholder]="placeholder"
+      [ngModel]="query()"
+      (ngModelChange)="onInput($event)"
+      (focus)="focus()"
+      autocomplete="off"
+    />
+    <span class="hint" *ngIf="loading()">Buscando…</span>
+  </div>
+
+  <ul class="dropdown" *ngIf="open() && resultados().length > 0">
+    <li *ngFor="let m of resultados()" (mousedown)="pick(m)">
+      <strong>{{ m.nombreMunicipio }}</strong>
+      <span>{{ m.nombreDepto }} · {{ m.codMunicipio }}</span>
+    </li>
+  </ul>
+
+  <div class="dropdown empty" *ngIf="open() && !loading() && query().trim().length >= 2 && resultados().length === 0">
+    No hay municipios con ese texto.
+  </div>
+</div>
