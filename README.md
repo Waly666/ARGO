@@ -1,6 +1,6 @@
 # ARGO
 
-Software para CEAS — gestión de alumnos, pagos, recibos y certificados.
+**Software para CEAS** — gestión de alumnos, pagos, recibos y certificados.
 
 ## Estructura
 
