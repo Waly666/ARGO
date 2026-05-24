@@ -1,4 +1,8 @@
 const QRCode = require('qrcode');
+const { clasificarPrograma } = require('./clasificacionCertificado');
+const { numDocToString } = require('../utils/numDoc');
+const { resolverLayout, resolverQr, CAMPOS_IDS } = require('./certificadoLayout');
+const { fsToPrintSizes } = require('../utils/certificadoTipografia');
 
 function esc(s) {
   return String(s ?? '')
@@ -16,6 +20,25 @@ function fmtFecha(d) {
   const mm = String(dt.getMonth() + 1).padStart(2, '0');
   const yyyy = dt.getFullYear();
   return `${dd}/${mm}/${yyyy}`;
+}
+
+function fechaIso(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toISOString();
+}
+
+function payloadQrCertificado(certificado, alumno, encabezado, nombres) {
+  return {
+    _id: String(certificado._id),
+    numDoc: numDocToString(alumno?.numDoc ?? certificado.numDoc),
+    fechaEmision: fechaIso(certificado.fechaEmision || certificado.createdAt),
+    fechaVencimiento: fechaIso(certificado.fechaVencimiento),
+    estado: (certificado.estado || 'vigente').trim(),
+    nombres: nombres || nombreCompleto(alumno),
+    encabezado: encabezado || '',
+  };
 }
 
 function nombreCompleto(a) {
@@ -40,114 +63,134 @@ function urlUpload(rel) {
   return `${uploadsBase()}/${p}`;
 }
 
-const QR_POSICIONES = {
-  inferior_izquierda: { bottom: '2.5%', left: '2.5%' },
-  inferior_derecha: { bottom: '2.5%', right: '2.5%' },
-  superior_derecha: { top: '2%', right: '2.5%' },
-  superior_izquierda: { top: '2%', left: '2.5%' },
-};
 
-function estiloQr(config) {
-  const key = config?.qrPosicion || 'inferior_izquierda';
-  const pos = QR_POSICIONES[key] || QR_POSICIONES.inferior_izquierda;
-  const px = Math.min(120, Math.max(48, parseInt(config?.qrTamanoPx, 10) || 72));
-  const parts = ['position:absolute', 'z-index:4', 'background:#fff', 'padding:3px', 'border-radius:4px'];
-  if (pos.top) parts.push(`top:${pos.top}`);
-  if (pos.bottom) parts.push(`bottom:${pos.bottom}`);
-  if (pos.left) parts.push(`left:${pos.left}`);
-  if (pos.right) parts.push(`right:${pos.right}`);
-  return { css: parts.join(';'), size: px };
+const CAMPOS_MULTILINEA = new Set(['nombre', 'curso']);
+
+function cssFontFamily(ff) {
+  const s = String(ff ?? '').trim();
+  if (!s) return 'Arial, Helvetica, sans-serif';
+  if (s.includes(',') || s.includes(' ')) return `"${s.replace(/"/g, '')}"`;
+  return s;
 }
 
-/** Solo valores; posiciones calibradas para plantilla vertical tipo COTRANSVIAL */
-const LAYOUT = {
-  horizontal: {
-    pageW: '297mm',
-    pageH: '210mm',
-    color: '#4a3a6a',
-    nombre: { top: '28%', fs: '28pt', fw: '700' },
-    doc: { top: '35.5%', left: '62%', w: '34%', align: 'left', fs: '12.5pt' },
-    curso: { top: '42%', fs: '32pt', fw: '700' },
-    ciudad: { top: '54%', fs: '10pt' },
-    horas: { top: '60.8%', left: '61.5%', w: '10%', align: 'left', fs: '15pt' },
-    fecha: { top: '59%', left: '36%', w: '22%', align: 'center', fs: '11.5pt' },
-    vence: { top: '59%', left: '60%', w: '26%', align: 'center', fs: '9.5pt' },
-    acta: { top: '70%', left: '12%', w: '22%', align: 'center', fs: '9pt' },
-    folio: { top: '70%', left: '38%', w: '22%', align: 'center', fs: '9pt' },
-    runt: { top: '70%', left: '64%', w: '22%', align: 'center', fs: '9pt' },
-    obs: { top: '74%', fs: '8.5pt' },
-    certId: { bottom: '10%', left: '4%', fs: '7pt' },
-  },
-  vertical: {
-    pageW: '210mm',
-    pageH: '297mm',
-    color: '#4a3a6a',
-    /* Debajo de "CERTIFICA QUE:" */
-    nombre: { top: '31%', fs: '26pt', fw: '700', ls: '0.03em' },
-    /* Misma línea, después de "identificado con Cédula de Ciudadanía" */
-    doc: { top: '39%', left: '62%', w: '34%', align: 'left', fs: '12.5pt' },
-    /* "PARTICIPÓ EN LA CAPACITACIÓN DE:" */
-    curso: { top: '47%', fs: '32pt', fw: '700' },
-    /* Ciudad (constancia) */
-    ciudad: { top: '57%', fs: '10pt' },
-    /* Hueco "intensidad horaria de ___ horas" */
-    horas: { top: '64.5%', left: '60.5%', w: '12%', align: 'left', fs: '15pt' },
-    /* "Aprobó el día" / "Válido hasta" */
-    fecha: { top: '62%', left: '34%', w: '24%', align: 'center', fs: '11.5pt' },
-    vence: { top: '62%', left: '58%', w: '28%', align: 'center', fs: '9.5pt' },
-    acta: { top: '72%', left: '10%', w: '25%', align: 'center', fs: '9pt' },
-    folio: { top: '72%', left: '38%', w: '25%', align: 'center', fs: '9pt' },
-    runt: { top: '72%', left: '66%', w: '25%', align: 'center', fs: '9pt' },
-    obs: { top: '76%', fs: '8.5pt' },
-    certId: { bottom: '11%', left: '5%', fs: '7pt' },
-  },
-};
+function declFontSize(pos, orientacion) {
+  if (!pos?.fs) return [];
+  const sizes = fsToPrintSizes(pos.fs, orientacion);
+  if (!sizes) return [`font-size:${pos.fs} !important`];
+  return [
+    `font-size:${sizes.mm} !important`,
+    `font-size:${sizes.cqh} !important`,
+  ];
+}
 
-function blockStyle(pos, color) {
+function reglasTipografia(L, orientacion) {
+  const rules = [];
+  for (const id of CAMPOS_IDS) {
+    const pos = L[id];
+    if (!pos || pos.visible === false) continue;
+    const decl = [...declFontSize(pos, orientacion)];
+    if (pos.fw) decl.push(`font-weight:${pos.fw} !important`);
+    if (pos.fontFamily) decl.push(`font-family:${cssFontFamily(pos.fontFamily)} !important`);
+    if (pos.ls) decl.push(`letter-spacing:${pos.ls}`);
+    if (pos.color) decl.push(`color:${pos.color} !important`);
+    const sel = id === 'certId' ? '.cert-id.dato' : `.dato.${id}`;
+    if (decl.length) rules.push(`${sel}{${decl.join(';')}}`);
+  }
+  return rules.join('\n    ');
+}
+
+function blockStyle(pos, colorDefault, orientacion, multiline = false) {
+  if (!pos || pos.visible === false) return '';
+  const color = pos.color || colorDefault;
   const centered = !pos.left && !pos.right && pos.align !== 'left' && pos.align !== 'right';
   const parts = [
     'position:absolute',
     'z-index:2',
     `color:${color}`,
-    `top:${pos.top}`,
   ];
 
   if (pos.bottom) {
     parts.push(`bottom:${pos.bottom}`, 'top:auto');
+  } else if (pos.top) {
+    parts.push(`top:${pos.top}`);
   }
 
   if (centered) {
-    parts.push('left:50%', 'transform:translateX(-50%)', 'width:82%', 'text-align:center');
+    parts.push('left:50%', 'transform:translateX(-50%)', `width:${pos.w || '82%'}`, 'text-align:center');
   } else if (pos.align === 'left') {
-    parts.push(`left:${pos.left}`, 'transform:none', `width:${pos.w || '40%'}`, 'text-align:left');
+    parts.push(`left:${pos.left || '8%'}`, 'transform:none', `width:${pos.w || '40%'}`, 'text-align:left');
   } else if (pos.align === 'right') {
     parts.push(`right:${pos.right || '8%'}`, 'left:auto', 'transform:none', `width:${pos.w || '40%'}`, 'text-align:right');
   } else {
-    parts.push(`left:${pos.left}`, 'transform:none', `width:${pos.w || '40%'}`, `text-align:${pos.align || 'center'}`);
+    parts.push(`left:${pos.left || '34%'}`, 'transform:none', `width:${pos.w || '40%'}`, `text-align:${pos.align || 'center'}`);
   }
 
-  if (pos.fs) parts.push(`font-size:${pos.fs}`);
+  if (pos.fs) {
+    const sizes = fsToPrintSizes(pos.fs, orientacion);
+    if (sizes) {
+      parts.push(`font-size:${sizes.mm}`, `font-size:${sizes.cqh}`);
+    } else {
+      parts.push(`font-size:${pos.fs}`);
+    }
+  }
   if (pos.fw) parts.push(`font-weight:${pos.fw}`);
   if (pos.ls) parts.push(`letter-spacing:${pos.ls}`);
+  if (pos.fontFamily) parts.push(`font-family:${cssFontFamily(pos.fontFamily)}`);
+
+  if (multiline) {
+    parts.push(
+      'white-space:normal',
+      'word-wrap:break-word',
+      'overflow-wrap:break-word',
+      'word-break:break-word',
+      'line-height:1.2',
+      'overflow:visible',
+    );
+  } else {
+    parts.push('white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis');
+  }
 
   return parts.join(';');
 }
 
-function datoHtml(pos, value, className, color) {
+function campoDesdeClase(className) {
+  const m = String(className || '').match(/\bdato\s+(\w+)/);
+  return m ? m[1] : '';
+}
+
+function datoHtml(pos, value, className, colorDefault, orientacion) {
   const v = String(value ?? '').trim();
-  if (!v) return '';
-  return `<div class="${className}" style="${blockStyle(pos, color)}">${esc(v)}</div>`;
+  if (!v || !pos || pos.visible === false) return '';
+  const campo = campoDesdeClase(className);
+  const multiline = CAMPOS_MULTILINEA.has(campo);
+  const st = blockStyle(pos, colorDefault, orientacion, multiline);
+  if (!st) return '';
+  return `<div class="${className}" style="${st}">${esc(v)}</div>`;
+}
+
+function certIdHtml(pos, codigo, colorDefault, orientacion) {
+  const v = String(codigo ?? '').trim();
+  if (!v || !pos || pos.visible === false) return '';
+  const st = blockStyle(pos, colorDefault, orientacion);
+  if (!st) return '';
+  return `<div class="cert-id dato" style="${st}">${esc(v)}</div>`;
 }
 
 async function generarHtmlCertificado(data) {
   const { config, plantilla, certificado, alumno, programa } = data;
   const horizontal = plantilla?.orientacion === 'horizontal';
-  const L = horizontal ? LAYOUT.horizontal : LAYOUT.vertical;
+  const orientacion = horizontal ? 'horizontal' : 'vertical';
+  const tipo =
+    data.tipoCertificado ||
+    certificado?.tipoCertificado ||
+    clasificarPrograma(programa);
+  const L = resolverLayout(config, tipo, orientacion);
+  const oriKey = orientacion;
   const fondo = urlUpload(plantilla?.urlFondo);
   const color = L.color;
 
   const nombre = nombreCompleto(alumno);
-  const numDoc = (alumno?.numDoc || '').trim();
+  const numDoc = numDocToString(alumno?.numDoc);
   const curso = encabezadoCurso(programa, certificado);
   const horas = programa?.horas != null ? Number(programa.horas) : null;
   const horasTxt = horas != null && !isNaN(horas) ? String(horas) : '';
@@ -158,16 +201,28 @@ async function generarHtmlCertificado(data) {
   const numRunt = (certificado.numRunt || '').trim();
   const observaciones = (certificado.observaciones || '').trim();
   const codigo = (certificado.codigoCert || String(certificado._id)).trim();
+  const ciudadTxt = (config?.ciudad || '').trim();
 
-  const qrPayload = JSON.stringify({
-    certificado: codigo,
-    id: String(certificado._id),
-    numDoc,
-    idProg: certificado.idProg,
-    fecha: certificado.fechaEmision,
-  });
+  const valores = {
+    nombre,
+    doc: numDoc,
+    curso,
+    ciudad: ciudadTxt,
+    horas: horasTxt,
+    fecha: fechaEm,
+    vence: fechaVe,
+    acta: numActa,
+    folio: numFolio,
+    runt: numRunt,
+    obs: observaciones,
+    certId: codigo,
+  };
+
+  const qrPayload = JSON.stringify(
+    payloadQrCertificado(certificado, alumno, curso, nombre),
+  );
   const mostrarQr = config?.mostrarQr !== false;
-  const qrEstilo = estiloQr(config);
+  const qrEstilo = resolverQr(config, tipo, orientacion);
   let qrDataUrl = '';
   if (mostrarQr) {
     try {
@@ -183,18 +238,12 @@ async function generarHtmlCertificado(data) {
 
   const fondoImg = fondo ? `<img class="bg-fondo" src="${esc(fondo)}" alt="" />` : '';
 
-  const datosHtml = [
-    datoHtml(L.nombre, nombre, 'dato nombre', color),
-    datoHtml(L.doc, numDoc, 'dato doc', color),
-    datoHtml(L.curso, curso, 'dato curso', color),
-    datoHtml(L.horas, horasTxt, 'dato horas', color),
-    datoHtml(L.fecha, fechaEm, 'dato fecha', color),
-    datoHtml(L.vence, fechaVe, 'dato vence', color),
-    datoHtml(L.acta, numActa, 'dato acta', color),
-    datoHtml(L.folio, numFolio, 'dato folio', color),
-    datoHtml(L.runt, numRunt, 'dato runt', color),
-    datoHtml(L.obs, observaciones, 'dato obs', color),
-  ].join('\n');
+  const datosHtml = CAMPOS_IDS.filter((id) => id !== 'certId')
+    .map((id) => datoHtml(L[id], valores[id], `dato ${id}`, color, oriKey))
+    .join('\n');
+
+  const fontBase = cssFontFamily(L.nombre?.fontFamily);
+  const tipografiaCss = reglasTipografia(L, oriKey);
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -218,6 +267,7 @@ async function generarHtmlCertificado(data) {
       height: ${L.pageH};
       overflow: hidden;
       background: #fff;
+      container-type: size;
     }
     .bg-fondo {
       position: absolute;
@@ -233,32 +283,27 @@ async function generarHtmlCertificado(data) {
       position: absolute;
       inset: 0;
       z-index: 2;
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: ${fontBase};
+      container-type: size;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
+    ${tipografiaCss}
     .dato {
-      font-weight: 600;
       line-height: 1.25;
       text-transform: uppercase;
     }
-    .dato.nombre {
+    .dato.nombre, .dato.curso {
       text-transform: uppercase;
-    }
-    .dato.curso {
-      text-transform: uppercase;
-    }
-    .dato.doc, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs {
-      text-transform: none;
-    }
-    .cert-id {
-      position: absolute;
-      bottom: ${L.certId.bottom};
-      left: ${L.certId.left};
-      z-index: 3;
-      font-size: ${L.certId.fs};
-      font-family: Consolas, monospace;
-      color: ${color};
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
       line-height: 1.2;
+      overflow: visible;
     }
+    .dato.doc, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
+    .cert-id { font-family: Consolas, monospace; line-height: 1.2; }
     .qr-wrap img { display: block; }
     .no-print {
       position: fixed;
@@ -270,6 +315,12 @@ async function generarHtmlCertificado(data) {
     @media print {
       .no-print { display: none !important; }
       .sheet { page-break-after: avoid; }
+      html, body {
+        width: ${L.pageW} !important;
+        height: ${L.pageH} !important;
+        -webkit-text-size-adjust: none !important;
+        text-size-adjust: none !important;
+      }
     }
   </style>
 </head>
@@ -278,7 +329,7 @@ async function generarHtmlCertificado(data) {
     ${fondoImg}
     <div class="content">
       ${datosHtml}
-      ${codigo ? `<div class="cert-id">${esc(codigo)}</div>` : ''}
+      ${certIdHtml(L.certId, codigo, color, oriKey)}
       ${
         qrDataUrl
           ? `<div class="qr-wrap" style="${qrEstilo.css}"><img src="${qrDataUrl}" width="${qrEstilo.size}" height="${qrEstilo.size}" alt="QR verificación"/></div>`
@@ -287,6 +338,9 @@ async function generarHtmlCertificado(data) {
     </div>
   </div>
   <div class="no-print">
+    <p style="font:14px/1.4 sans-serif;color:#333;margin-bottom:8px;text-align:center">
+      En el diálogo de impresión use escala <strong>100%</strong> (sin «Ajustar a página»).
+    </p>
     <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
   </div>
 </body>

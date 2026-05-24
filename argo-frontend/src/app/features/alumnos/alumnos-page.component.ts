@@ -7,7 +7,7 @@ import { DatosPrincipalesComponent } from './tabs/datos-principales.component';
 import { ServiciosComponent } from './tabs/servicios.component';
 import { PagosComponent } from './tabs/pagos.component';
 import { CertificadosComponent } from './tabs/certificados.component';
-import { TabPlaceholderComponent } from './tabs/tab-placeholder.component';
+import { DocumentosComponent } from './tabs/documentos.component';
 import { environment } from '../../../environments/environment';
 
 type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos';
@@ -22,7 +22,7 @@ type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos';
     ServiciosComponent,
     PagosComponent,
     CertificadosComponent,
-    TabPlaceholderComponent,
+    DocumentosComponent,
   ],
   templateUrl: './alumnos-page.component.html',
   styleUrls: ['./alumnos-page.component.scss'],

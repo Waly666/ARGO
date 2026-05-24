@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { LayoutDefaultsApi, LayoutPorTipoCert } from '../constants/certificado-campos-layout';
 import {
   OrientacionCertificado,
   TipoCertificadoId,
@@ -23,6 +24,8 @@ export interface ConfigCertificado {
   prefijoCertificado?: string;
   consecutivoCertificado?: number;
   plantillaPorTipo?: Partial<Record<TipoCertificadoId, PlantillaPorTipoSlot>>;
+  /** Posición y estilo de campos por tipo y orientación */
+  layoutPorTipo?: LayoutPorTipoCert;
   /** Incluir QR en todos los certificados (global) */
   mostrarQr?: boolean;
   qrPosicion?: 'inferior_izquierda' | 'inferior_derecha' | 'superior_derecha' | 'superior_izquierda';
@@ -57,6 +60,19 @@ export class ConfigCertificadoService {
 
   guardar(data: ConfigCertificado): Observable<ConfigCertificado> {
     return this.http.put<ConfigCertificado>(this.base, data);
+  }
+
+  layoutDefaults(): Observable<LayoutDefaultsApi> {
+    return this.http.get<LayoutDefaultsApi>(`${this.base}/layout-defaults`);
+  }
+
+  vistaPrevia(body: {
+    tipo: TipoCertificadoId;
+    orientacion: OrientacionCertificado;
+    layoutPorTipo?: LayoutPorTipoCert;
+    urlFondo?: string;
+  }): Observable<string> {
+    return this.http.post(`${this.base}/vista-previa`, body, { responseType: 'text' });
   }
 
   guardarFirmas(form: FormData): Observable<ConfigCertificado> {

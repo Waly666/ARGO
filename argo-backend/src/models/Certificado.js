@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const CertificadoSchema = new mongoose.Schema(
   {
-    numDoc:        { type: String, required: true, trim: true, index: true },
+    numDoc:        { type: Number, required: true, index: true },
     idLiquidacion: { type: mongoose.Schema.Types.ObjectId, ref: 'Liquidacion', required: true, unique: true },
     idProg:        { type: String, required: true, trim: true },
     numActa:       { type: String, trim: true },

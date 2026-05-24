@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { normalizarRol, puedeGestionarProgramas, esAdmin } = require('../utils/roles');
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -14,13 +15,33 @@ function requireAuth(req, res, next) {
 }
 
 function requireRole(...roles) {
+  const permitidos = roles.map((r) => normalizarRol(r));
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ message: 'No autenticado' });
-    if (roles.length && !roles.includes(req.user.rol)) {
+    const rol = normalizarRol(req.user.rol);
+    if (permitidos.length && !permitidos.includes(rol)) {
       return res.status(403).json({ message: 'Sin permisos' });
     }
     next();
   };
 }
 
-module.exports = { requireAuth, requireRole };
+function requireGestionProgramas(req, res, next) {
+  if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+  if (!puedeGestionarProgramas(req.user.rol)) {
+    return res.status(403).json({
+      message: 'Sin permisos. Se requiere rol administrador, recepción, cajero o usuario.',
+    });
+  }
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+  if (!esAdmin(req.user.rol)) {
+    return res.status(403).json({ message: 'Solo administradores pueden acceder a este recurso' });
+  }
+  next();
+}
+
+module.exports = { requireAuth, requireRole, requireGestionProgramas, requireAdmin };

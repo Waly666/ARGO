@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const LiquidacionSchema = new mongoose.Schema(
   {
-    numDoc:      { type: String, required: true, trim: true, index: true },
+    numDoc:      { type: Number, required: true, index: true },
     idMat:       { type: mongoose.Schema.Types.ObjectId, ref: 'Matricula', default: null },
     idServ:      { type: String, trim: true, default: null },
     idProg:      { type: String, trim: true, default: null },

@@ -1,0 +1,220 @@
+<div class="caja-page">
+  <div class="resumen-toolbar">
+    <div class="head-actions" *ngIf="!cajaAbierta()">
+      <button type="button" class="btn-abrir" (click)="abrirCaja()">Abrir mi caja</button>
+    </div>
+    <div class="head-actions" *ngIf="cajaAbierta()">
+      <span class="sesion-badge">Sesión #{{ sesion()?.idSesion }} · {{ sesion()?.usuario }}</span>
+      <button type="button" class="ghost sm" (click)="refrescar()">Actualizar</button>
+    </div>
+  </div>
+
+  <p class="flash" *ngIf="msg()">{{ msg() }}</p>
+
+  <div class="estado-caja" *ngIf="!cajaAbierta() && !loading()">
+    <span class="estado-icon">🔒</span>
+    <div>
+      <strong>Mi caja cerrada</strong>
+      <p>Abra su caja para registrar cobros y egresos del turno.</p>
+    </div>
+    <button type="button" class="btn-abrir sm" (click)="abrirCaja()">Abrir caja</button>
+  </div>
+
+  <!-- KPIs fila superior -->
+  <div class="kpi-grid">
+    <article class="kpi-card">
+      <span class="kpi-icon ventas">📈</span>
+      <div>
+        <h3>Ventas brutas</h3>
+        <p class="kpi-val">{{ ventasBrutas() | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        <p class="kpi-sub">{{ cantidadRecibos() }} recibo(s)</p>
+      </div>
+    </article>
+    <article class="kpi-card highlight">
+      <span class="kpi-icon esperado">🧮</span>
+      <div>
+        <h3>Efectivo esperado</h3>
+        <p class="kpi-val">{{ efectivoEsperado() | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        <p class="kpi-sub">Base + cobros efectivo − egresos efectivo</p>
+      </div>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-icon gastos">📤</span>
+      <div>
+        <h3>Gastos</h3>
+        <p class="kpi-val">{{ totalGastos() | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        <p class="kpi-sub">Egresos en efectivo del turno</p>
+      </div>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-icon retiros">↩</span>
+      <div>
+        <h3>Retiros</h3>
+        <p class="kpi-val">{{ totalRetiros() | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        <p class="kpi-sub">Tipo egreso «Retiro» (efectivo)</p>
+      </div>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-icon base">🏦</span>
+      <div>
+        <h3>Base inicial</h3>
+        <p class="kpi-val">{{ saldoInicial() | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        <p class="kpi-sub">Al abrir caja</p>
+      </div>
+    </article>
+  </div>
+
+  <!-- Ventas por método de pago -->
+  <section class="panel">
+    <h2 class="panel-title">Ventas por método de pago</h2>
+    <div class="metodos-grid">
+      <article class="metodo-card" *ngFor="let m of metodosPago()" [class]="'tone-' + m.tone">
+        <span class="metodo-icon">{{ m.icon }}</span>
+        <h4>{{ m.label }}</h4>
+        <p class="metodo-val">{{ m.total | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+        <p class="metodo-cant">{{ m.cantidad }} pago(s)</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- Cerrar caja -->
+  <section class="panel cerrar-panel" *ngIf="cajaAbierta()">
+    <h2 class="panel-title">Cerrar caja del día</h2>
+    <p class="cerrar-hint">
+      Al cerrar la caja se guardará el resumen y ya no podrá registrar movimientos en esta sesión.
+      Puede imprimir el cuadre desde el historial.
+    </p>
+    <div class="cerrar-form">
+      <label class="field-contado">
+        <span>Efectivo contado</span>
+        <input
+          type="number"
+          min="0"
+          placeholder="0"
+          [ngModel]="efectivoContado()"
+          (ngModelChange)="efectivoContado.set($event === '' || $event == null ? null : +$event)"
+        />
+        <small
+          >Esperado:
+          {{ efectivoEsperado() | currency: 'COP':'symbol-narrow':'1.0-0' }}</small
+        >
+        <small
+          *ngIf="efectivoContado() != null"
+          [class.diff-ok]="(efectivoContado()! - efectivoEsperado()) >= 0"
+          [class.diff-bad]="(efectivoContado()! - efectivoEsperado()) < 0"
+        >
+          Diferencia:
+          {{ efectivoContado()! - efectivoEsperado() | currency: 'COP':'symbol-narrow':'1.0-0' }}
+        </small>
+      </label>
+      <label class="field-obs">
+        <span>Observaciones</span>
+        <textarea rows="3" [ngModel]="obsCierre()" (ngModelChange)="obsCierre.set($event)"></textarea>
+      </label>
+      <button type="button" class="btn-cerrar" [disabled]="loading()" (click)="cerrarCaja()">
+        🔒 Cerrar caja e imprimir
+      </button>
+    </div>
+  </section>
+
+  <!-- Historial -->
+  <section class="panel">
+    <h2 class="panel-title">Cierres anteriores</h2>
+    <div class="table-wrap">
+      <table class="tabla-cierres">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Cajero</th>
+            <th>Ventas</th>
+            <th>Esperado</th>
+            <th>Contado</th>
+            <th>Diferencia</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of historial()">
+            <td>{{ (s.fechaCierre || s.fechaApertura) | date: 'yyyy-MM-dd' }}</td>
+            <td>{{ s.usuario }}</td>
+            <td class="num">{{ ventasHistorial(s) | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+            <td class="num">{{ esperadoHistorial(s) | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+            <td class="num">
+              {{
+                contadoHistorial(s) != null
+                  ? (contadoHistorial(s)! | currency: 'COP':'symbol-narrow':'1.0-0')
+                  : '—'
+              }}
+            </td>
+            <td
+              class="num"
+              [class.diff-pos]="diferenciaHistorial(s) != null && diferenciaHistorial(s)! > 0"
+              [class.diff-neg]="diferenciaHistorial(s) != null && diferenciaHistorial(s)! < 0"
+            >
+              {{
+                diferenciaHistorial(s) != null
+                  ? (diferenciaHistorial(s)! | currency: 'COP':'symbol-narrow':'1.0-0')
+                  : '—'
+              }}
+            </td>
+            <td>
+              <button type="button" class="ghost sm icon-btn" (click)="verResumenSesion(s)" title="Imprimir">
+                🖨
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!historial().length">
+            <td colspan="7" class="empty">Sin cierres registrados</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- Modal apertura -->
+<div class="modal-backdrop" *ngIf="mostrarApertura()" (click)="mostrarApertura.set(false)">
+  <div class="modal card" (click)="$event.stopPropagation()">
+    <h2>Apertura de caja</h2>
+    <label>
+      Base / saldo inicial en efectivo
+      <input
+        type="number"
+        min="0"
+        [ngModel]="saldoInicialApertura()"
+        (ngModelChange)="saldoInicialApertura.set(+$event || 0)"
+      />
+    </label>
+    <label>
+      Observaciones
+      <textarea rows="2" [ngModel]="obsApertura()" (ngModelChange)="obsApertura.set($event)"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button type="button" class="ghost" (click)="mostrarApertura.set(false)">Cancelar</button>
+      <button type="button" class="primary" [disabled]="loading()" (click)="confirmarApertura()">Abrir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Impresión -->
+<section class="print-only" *ngIf="ultimoCierre() as c">
+  <h1>ARGO — Cuadre de caja #{{ c.sesion.idSesion }}</h1>
+  <p>Cajero: {{ c.sesion.usuario }} · {{ c.sesion.fechaCierre | date: 'full' }}</p>
+  <table>
+    <tr><td>Ventas brutas</td><td>{{ c.resumen.totalIngresos | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td>Base inicial</td><td>{{ c.resumen.saldoInicial | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td>Cobros en efectivo</td><td>{{ c.resumen.totalIngresosEfectivo | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td>Egresos en efectivo</td><td>{{ c.resumen.totalEgresosEfectivo | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td>Gastos (efectivo)</td><td>{{ c.resumen.totalGastos | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td>Retiros (efectivo)</td><td>{{ c.resumen.totalRetiros | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td><strong>Efectivo esperado</strong></td><td>{{ c.resumen.efectivoEsperado | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td>Efectivo contado</td><td>{{ c.resumen.efectivoContado | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+    <tr><td>Diferencia</td><td>{{ c.resumen.diferencia | currency: 'COP':'symbol-narrow':'1.0-0' }}</td></tr>
+  </table>
+  <h3>Por método de pago</h3>
+  <ul>
+    <li *ngFor="let t of c.resumen.ingresosPorTipo">
+      {{ t.descripcion }}: {{ t.total | currency: 'COP':'symbol-narrow':'1.0-0' }} ({{ t.cantidad }})
+    </li>
+  </ul>
+</section>

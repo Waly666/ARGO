@@ -9,6 +9,7 @@
   margin-bottom: 10px;
 }
 .col-4  { grid-column: span 4; }
+.col-6  { grid-column: span 6; }
 .col-12 { grid-column: span 12; }
 
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
@@ -43,6 +44,43 @@ table.argo tbody tr { cursor: pointer; }
 .col-12 { grid-column: span 12; }
 .empty-card p { color: var(--text-dim); }
 
+.edit-card {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(78, 163, 255, 0.04);
+  h3 { margin: 0 0 6px; font-size: 1rem; }
+}
+
+.actions-cell { white-space: nowrap; }
+
 @media (max-width: 900px) {
-  .col-4 { grid-column: span 12; }
+  .col-4, .col-6 { grid-column: span 12; }
+}
+
+.msg.ok {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #bbf7d0;
+}
+
+.msg.err {
+  background: rgba(248, 114, 114, 0.1);
+  border-color: rgba(248, 114, 114, 0.35);
+  color: #ffd6d6;
+}
+
+.warn-docs {
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+  border-radius: 8px;
+
+  ul {
+    margin: 8px 0;
+    padding-left: 18px;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+  }
 }

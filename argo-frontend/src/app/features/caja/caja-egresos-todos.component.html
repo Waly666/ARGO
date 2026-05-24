@@ -1,0 +1,96 @@
+<section class="listado-admin admin-list-page">
+  <header class="page-head card">
+    <div>
+      <h1>Todos los egresos</h1>
+      <p class="hint">Histórico completo de egresos. Solo administradores.</p>
+    </div>
+    <div class="head-actions">
+      <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
+      <span class="total-badge egreso">{{ totalValor() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+    </div>
+  </header>
+
+  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+
+  <div class="card filtros">
+    <label>
+      Buscar
+      <input type="search" placeholder="Nombre, concepto, recibo…" [ngModel]="q()" (ngModelChange)="q.set($event)" (keyup.enter)="cargar()" />
+    </label>
+    <label>
+      Documento
+      <input type="text" placeholder="Nº documento beneficiario" [ngModel]="numDoc()" (ngModelChange)="numDoc.set($event)" (keyup.enter)="cargar()" />
+    </label>
+    <label>
+      Desde
+      <input type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+    </label>
+    <label>
+      Hasta
+      <input type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    </label>
+    <div class="filtro-actions">
+      <button type="button" class="primary sm" (click)="cargar()">Filtrar</button>
+      <button type="button" class="ghost sm" (click)="limpiarFiltros()">Limpiar</button>
+      <div class="view-toggle" role="group">
+        <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
+        <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
+      </div>
+      <span class="count">{{ items().length }} de {{ total() }}</span>
+    </div>
+  </div>
+
+  <div class="card content-wrap">
+    <div class="loading" *ngIf="loading()">Cargando egresos…</div>
+
+    <div class="table-scroll" *ngIf="!loading() && vista() === 'lista'">
+      <table class="argo data-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Recibo</th>
+            <th>Beneficiario</th>
+            <th>Documento</th>
+            <th>Concepto</th>
+            <th>Tipo</th>
+            <th>Forma pago</th>
+            <th class="r">Valor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of items()">
+            <td><span [ngClass]="capFecha(e.fechaEgreso)">{{ e.fechaEgreso | date: 'dd/MM/yyyy HH:mm' }}</span></td>
+            <td><span [ngClass]="capRecibo(e.numRecibo)">{{ e.numRecibo || '—' }}</span></td>
+            <td><span [ngClass]="capBeneficiario(e.pagueA)">{{ e.pagueA || '—' }}</span></td>
+            <td><span [ngClass]="capDoc(e.numeroDocumento)">{{ e.numeroDocumento || '—' }}</span></td>
+            <td><span [ngClass]="capConceptoCaja(e.concepto)">{{ e.concepto }}</span></td>
+            <td><span [ngClass]="capTipoEgreso(e.tipoEgresoDescr)">{{ e.tipoEgresoDescr || '—' }}</span></td>
+            <td><span [ngClass]="capFormaPago(e.formaPago)">{{ e.formaPago || '—' }}</span></td>
+            <td class="num"><span [ngClass]="capValorEgreso()">{{ e.valorEgreso | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></td>
+            <td><button type="button" class="ghost mini" (click)="verRecibo(e)">Ver</button></td>
+          </tr>
+          <tr *ngIf="items().length === 0"><td colspan="9" class="empty">Sin resultados.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
+      <article class="list-card" *ngFor="let e of items()">
+        <div class="card-title">
+          <h3>{{ e.numRecibo || 'Egreso' }}</h3>
+          <p class="card-sub">{{ e.pagueA || '—' }} · {{ e.fechaEgreso | date: 'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+        <div class="card-body">
+          <div class="card-row"><span class="lbl">Concepto</span><span>{{ e.concepto }}</span></div>
+          <div class="card-row"><span class="lbl">Tipo</span><span [ngClass]="capTipoEgreso(e.tipoEgresoDescr)">{{ e.tipoEgresoDescr || '—' }}</span></div>
+          <div class="card-row"><span class="lbl">Valor</span><span [ngClass]="capValorEgreso()">{{ e.valorEgreso | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></div>
+        </div>
+        <div class="card-foot">
+          <button type="button" class="ghost sm" (click)="verRecibo(e)">Ver recibo</button>
+        </div>
+      </article>
+      <p class="cards-empty empty" *ngIf="items().length === 0">Sin resultados.</p>
+    </div>
+  </div>
+</section>

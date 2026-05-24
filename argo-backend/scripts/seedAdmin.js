@@ -3,7 +3,7 @@
  *
  * - Asegura que exista un usuario administrador (admin / admin123).
  * - Si existe el archivo excel/catalogos.xlsx con hoja "usuarios", carga esos usuarios
- *   y asigna como contraseña por defecto el "nickName" (en minúsculas).
+ *   y asigna como contraseña por defecto el username (en minúsculas) si no hay password en Excel.
  *
  * Uso:
  *   pnpm run seed:users
@@ -45,7 +45,6 @@ async function ensureAdmin() {
   const passwordHash = await Usuario.hashPassword('admin123');
   await Usuario.create({
     username: 'admin',
-    nickName: 'admin',
     nombres: 'Administrador',
     apellidos: 'ARGO',
     rol: 'admin',
@@ -73,17 +72,17 @@ async function cargarUsuariosDesdeExcel() {
 
   let creados = 0, actualizados = 0, omitidos = 0;
   for (const r of rows) {
-    const username = String(r.username || r.usuario || r.user || '').trim().toLowerCase();
-    const nickName = String(r.nickName || r.nick || r.alias || username || '').trim();
-    if (!username && !nickName) { omitidos++; continue; }
+    const username = String(r.username || r.usuario || r.user || r.nickName || r.nick || r.alias || '')
+      .trim()
+      .toLowerCase();
+    if (!username) { omitidos++; continue; }
 
-    const userKey = username || nickName.toLowerCase();
-    const passPlano = String(r.password || nickName || userKey).trim();
+    const userKey = username;
+    const passPlano = String(r.password || userKey).trim();
     const passwordHash = await Usuario.hashPassword(passPlano);
 
     const doc = {
       username: userKey,
-      nickName: nickName || userKey,
       nombres:   String(r.nombres   || '').trim(),
       apellidos: String(r.apellidos || '').trim(),
       email:     String(r.email     || '').trim().toLowerCase(),
@@ -96,7 +95,6 @@ async function cargarUsuariosDesdeExcel() {
     if (exist) {
       // Si ya hay password, NO la sobreescribimos (respetamos cambios)
       if (!exist.passwordHash) exist.passwordHash = passwordHash;
-      exist.nickName = doc.nickName;
       exist.nombres = doc.nombres || exist.nombres;
       exist.apellidos = doc.apellidos || exist.apellidos;
       exist.email = doc.email || exist.email;
@@ -110,7 +108,7 @@ async function cargarUsuariosDesdeExcel() {
     }
   }
   console.log(`[seedAdmin] Usuarios — creados: ${creados}, actualizados: ${actualizados}, omitidos: ${omitidos}`);
-  console.log('[seedAdmin] Para usuarios cargados desde Excel: la contraseña por defecto es el nickName (en minúsculas).');
+  console.log('[seedAdmin] Para usuarios cargados desde Excel: la contraseña por defecto es el username si no viene password.');
 }
 
 (async () => {

@@ -1,0 +1,150 @@
+<section class="usuarios-page admin-list-page card">
+  <header class="page-head">
+    <div>
+      <h1>Gestión de usuarios</h1>
+      <p class="hint">Solo administradores. Crear, editar, desactivar o eliminar usuarios del sistema.</p>
+    </div>
+    <button type="button" class="primary" (click)="nuevo()">Nuevo usuario</button>
+  </header>
+
+  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="toolbar row-inline" *ngIf="!mostrarForm()">
+    <div class="view-toggle" role="group" aria-label="Modo de vista">
+      <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
+      <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
+    </div>
+  </div>
+
+  <div class="form-card card" *ngIf="mostrarForm()">
+    <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+    <div class="row row-credenciales">
+      <div class="col-6 field">
+        <div class="field-label-wrap">
+          <label>Usuario (login) *</label>
+        </div>
+        <input type="text" [ngModel]="form().username" (ngModelChange)="patch('username', $event)" />
+      </div>
+      <div class="col-6 field">
+        <div class="field-label-wrap">
+          <label>Contraseña <span *ngIf="!editando()">*</span></label>
+          <span class="field-hint" *ngIf="editando()">Vacío = no cambiar</span>
+          <span class="field-hint field-hint--spacer" *ngIf="!editando()">&nbsp;</span>
+        </div>
+        <input type="password" [ngModel]="form().password" (ngModelChange)="patch('password', $event)" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-4">
+        <label>Nombres</label>
+        <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch('nombres', $event)" />
+      </div>
+      <div class="col-4">
+        <label>Apellidos</label>
+        <input type="text" [ngModel]="form().apellidos" (ngModelChange)="patch('apellidos', $event)" />
+      </div>
+      <div class="col-4">
+        <label>Email</label>
+        <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-4">
+        <label>Rol</label>
+        <select [ngModel]="form().rol" (ngModelChange)="patch('rol', $event)">
+          <option *ngFor="let r of roles()" [value]="r.id">{{ r.label }}</option>
+        </select>
+      </div>
+      <div class="col-4 chk">
+        <label>
+          <input type="checkbox" [ngModel]="form().activo" (ngModelChange)="patch('activo', $event)" />
+          Activo
+        </label>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
+      <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="loading()">Cargando…</div>
+
+  <table class="argo" *ngIf="!loading() && vista() === 'lista'">
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Nombre</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of usuarios()">
+        <td class="mono">{{ u.username }}</td>
+        <td>{{ (u.nombres || '') + ' ' + (u.apellidos || '') }}</td>
+        <td>{{ labelRol(u.rol) }}</td>
+        <td>
+          <span class="badge" [class.ok]="u.activo !== false" [class.warn]="u.activo === false">
+            {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td class="r actions-cell">
+          <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
+          <button
+            type="button"
+            class="ghost mini"
+            *ngIf="u.activo !== false && !esUsuarioActual(u)"
+            (click)="desactivar(u)">
+            Desactivar
+          </button>
+          <button
+            type="button"
+            class="danger mini"
+            *ngIf="!esUsuarioActual(u)"
+            (click)="borrar(u)">
+            Eliminar
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="usuarios().length === 0">
+        <td colspan="5" class="empty">No hay usuarios.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
+    <article class="list-card" *ngFor="let u of usuarios()">
+      <header class="card-title"><h3>{{ nombreCompleto(u) }}</h3></header>
+      <div class="card-body">
+        <div class="entity-badge-wrap">
+          <div class="entity-badge tone-purple">{{ (u.username || '?').slice(0, 2).toUpperCase() }}</div>
+        </div>
+        <div class="card-main">
+          <div class="card-doc mono">{{ u.username }}</div>
+          <div class="card-tags">
+            <span class="cap cap-sm">{{ labelRol(u.rol) }}</span>
+            <span class="badge" [class.ok]="u.activo !== false" [class.warn]="u.activo === false">
+              {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+          <dl class="card-fields" *ngIf="u.email">
+            <div class="span-2"><dt>Email</dt><dd>{{ u.email }}</dd></div>
+          </dl>
+        </div>
+      </div>
+      <footer class="card-foot">
+        <span class="card-hint">Usuario del sistema</span>
+        <div class="card-actions">
+          <button type="button" class="act open" (click)="editar(u)">Editar</button>
+          <button type="button" class="act doc" *ngIf="u.activo !== false && !esUsuarioActual(u)" (click)="desactivar(u)">Desactivar</button>
+          <button type="button" class="act doc" *ngIf="!esUsuarioActual(u)" (click)="borrar(u)">Eliminar</button>
+        </div>
+      </footer>
+    </article>
+    <div class="empty cards-empty" *ngIf="usuarios().length === 0">No hay usuarios.</div>
+  </div>
+</section>

@@ -1,0 +1,90 @@
+.usuarios-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  h1 { margin: 0 0 4px; }
+}
+.hint { margin: 0; color: var(--text-dim); font-size: 0.88rem; }
+.row {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.col-4 { grid-column: span 4; }
+.col-6 { grid-column: span 6; }
+
+.row-credenciales {
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.field-label-wrap {
+  min-height: 2.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.field-label-wrap label {
+  margin-bottom: 0;
+  line-height: 1.25;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-dim);
+  line-height: 1.2;
+}
+
+.field-hint--spacer {
+  visibility: hidden;
+}
+
+.chk {
+  display: flex;
+  align-items: flex-end;
+  label { display: flex; align-items: center; gap: 8px; }
+}
+.actions { display: flex; justify-content: flex-end; gap: 8px; }
+.form-card h2 { margin: 0 0 12px; font-size: 1rem; }
+.msg.ok {
+  padding: 8px 12px;
+  background: rgba(78, 163, 255, 0.1);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.loading { color: var(--text-soft); }
+.mono { font-family: Consolas, monospace; font-size: 0.85rem; }
+.r { text-align: right; }
+.actions-cell { white-space: nowrap; }
+.empty { text-align: center; color: var(--text-soft); padding: 20px; }
+.badge.warn { background: rgba(248, 114, 114, 0.15); color: #ffd6d6; }
+.mini { margin-left: 4px; }
+
+@media (max-width: 768px) {
+  .col-4,
+  .col-6 {
+    grid-column: span 12;
+  }
+  .row-credenciales {
+    align-items: stretch;
+  }
+}

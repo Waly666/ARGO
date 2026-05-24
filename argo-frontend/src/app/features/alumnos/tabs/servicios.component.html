@@ -1,5 +1,14 @@
 <section class="servicios" *ngIf="store.hasAlumno(); else noAlumno">
-  <div class="msg" *ngIf="msg()">{{ msg() }}</div>
+  <div class="msg ok" *ngIf="msg() && !msgEsError()">{{ msg() }}</div>
+  <div class="msg err" *ngIf="msg() && msgEsError()">{{ msg() }}</div>
+
+  <div class="warn-docs card" *ngIf="docsPendientesMat().length">
+    <strong>Aviso: documentos pendientes (puede matricular igual)</strong>
+    <ul>
+      <li *ngFor="let p of docsPendientesMat()">{{ p.nombre }}</li>
+    </ul>
+    <button type="button" class="ghost mini" (click)="irDocumentos()">Ir a Documentos</button>
+  </div>
 
   <div class="two-col">
     <div class="card">
@@ -28,7 +37,9 @@
         </div>
       </div>
       <div class="actions">
-        <button class="primary" (click)="crearMatricula()" [disabled]="!idProg()">Crear Matrícula</button>
+        <button class="primary" (click)="crearMatricula()" [disabled]="!idProg()">
+          Crear Matrícula
+        </button>
       </div>
     </div>
 
@@ -37,9 +48,9 @@
       <div class="row">
         <div class="col-6">
           <label>Servicio</label>
-          <select [ngModel]="idServ()" (ngModelChange)="idServ.set($event)">
+          <select [ngModel]="idServ()" (ngModelChange)="onServicioChange($event)">
             <option value="">-- Seleccionar --</option>
-            <option *ngFor="let s of servicios()" [value]="s.idServ || s._id">
+            <option *ngFor="let s of serviciosAdicionales()" [value]="'' + (s.idServ ?? s._id)">
               {{ s.descrServicio || s.descripcion || s.nombre }}
             </option>
           </select>
@@ -49,18 +60,57 @@
           <input type="text" [ngModel]="servDescripcion()" (ngModelChange)="servDescripcion.set($event)" />
         </div>
       </div>
-      <div class="row">
-        <div class="col-6">
-          <label>Valor</label>
-          <input type="number" min="0" [ngModel]="servValor()" (ngModelChange)="servValor.set(+$event)" />
+      <ng-container *ngIf="idServ()">
+        <div class="row" *ngIf="servicioUsaCantidad(); else valorManual">
+          <div class="col-3">
+            <label>{{ cantidadLabel() }}</label>
+            <input type="number" min="1" step="1" [ngModel]="servCantidad()" (ngModelChange)="onCantidadChange(+$event)" />
+          </div>
+          <div class="col-3">
+            <label>{{ tarifaUnitariaLabel() }}</label>
+            <input type="text" [value]="fmt(servicioSel()?.tarifa1)" disabled />
+          </div>
+          <div class="col-6">
+            <label>Valor total</label>
+            <input type="text" [value]="fmt(servValorTotal())" disabled />
+          </div>
         </div>
-      </div>
+        <ng-template #valorManual>
+          <div class="row">
+            <div class="col-6">
+              <label>Valor</label>
+              <input
+                type="number"
+                min="0"
+                [ngModel]="servValor()"
+                (ngModelChange)="servValor.set(+$event)"
+                placeholder="Ingrese el valor a cobrar" />
+              <p class="hint-inline" *ngIf="num(servicioSel()?.tarifa1) <= 0">
+                Este servicio no tiene tarifa fija; escriba el valor según el caso.
+              </p>
+            </div>
+          </div>
+        </ng-template>
+      </ng-container>
       <div class="actions">
-        <button class="primary" (click)="crearServicioAdicional()" [disabled]="!idServ() || servValor() <= 0">
+        <button class="primary" (click)="crearServicioAdicional()" [disabled]="!idServ() || servValorTotal() <= 0">
           Agregar Servicio
         </button>
       </div>
     </div>
+  </div>
+
+  <div class="saldo-servicios" *ngIf="itemsConSaldo().length">
+    <button
+      type="button"
+      class="serv-saldo-alarm compact"
+      *ngFor="let it of itemsConSaldo()"
+      (click)="irPagosItem(it._id)"
+      [attr.title]="tituloSaldoItem(it.descripcion, fmt(it.saldo))">
+      <span class="serv-saldo-pulse" aria-hidden="true"></span>
+      <span class="serv-saldo-icon">$</span>
+      <span class="serv-saldo-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}</span>
+    </button>
   </div>
 
   <div class="card">
@@ -89,7 +139,10 @@
             </td>
             <td class="r">{{ fmt(it.valor) }}</td>
             <td class="r">{{ fmt(it.abonado) }}</td>
-            <td class="r">{{ fmt(it.saldo) }}</td>
+            <td class="r" [class.saldo-pendiente-cell]="num(it.saldo) > 0">
+              <span class="serv-saldo-inline" *ngIf="num(it.saldo) > 0">{{ fmt(it.saldo) }}</span>
+              <span *ngIf="num(it.saldo) <= 0">{{ fmt(it.saldo) }}</span>
+            </td>
             <td><span class="badge" [ngClass]="estadoClass(it)">{{ it.estado || '—' }}</span></td>
             <td class="r actions-cell">
               <button

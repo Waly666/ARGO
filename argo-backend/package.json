@@ -10,7 +10,10 @@
     "seed": "node scripts/seed.js",
     "seed:users": "node scripts/seedAdmin.js",
     "seed:catalogos": "node scripts/seedCatalogosBase.js",
-    "seed:config": "node scripts/seedConfig.js"
+    "seed:config": "node scripts/seedConfig.js",
+    "migrate:numdoc": "node scripts/migrateNumDocToNumber.js",
+    "sync:consecutivo-cert": "node scripts/syncConsecutivoCertificado.js",
+    "import:administradoras": "node scripts/importAdministradoras.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -22,6 +25,8 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.4",
+    "sharp": "^0.34.5",
+    "tesseract.js": "^7.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -1,0 +1,378 @@
+<div class="layout-editor">
+  <button type="button" class="toggle-head" (click)="abierto() ? abierto.set(false) : abrirEditor()">
+    <span class="toggle-title">
+      <span class="step-badge">2</span>
+      Ubicar textos y código QR
+    </span>
+    <span class="chev">{{ abierto() ? 'Ocultar' : 'Abrir editor' }}</span>
+  </button>
+
+  @if (abierto()) {
+    <div class="editor-intro">
+      <strong>{{ labelTipo(tipo) }}</strong> · formato {{ labelOri(orientacion) }}.
+      Elija un texto o el QR a la derecha, o haga clic sobre el certificado. Al terminar, guarde la configuración abajo en la página.
+    </div>
+
+    <div class="editor-split">
+      <!-- Izquierda: certificado siempre visible -->
+      <section class="panel-preview" aria-label="Vista del certificado">
+        <div class="preview-header">
+          <span class="preview-label">Vista del certificado</span>
+          <button type="button" class="link-btn" (click)="abrirPreview()" [disabled]="!urlFondoPreview || cargandoPreview()">
+            {{ cargandoPreview() ? 'Cargando…' : 'Ver como PDF' }}
+          </button>
+        </div>
+
+        @if (urlFondoPreview) {
+          <div class="cert-stage" [class.horizontal]="orientacion === 'horizontal'">
+            <div class="cert-preview">
+              <img [src]="urlFondoPreview" alt="Plantilla del certificado" />
+              <div class="overlay">
+                @for (c of campos; track c.id) {
+                  <button
+                    type="button"
+                    class="ov-text"
+                    [class.multilinea]="esMultilinea(c.id)"
+                    [class.selected]="campoSel() === c.id"
+                    [class.hidden-field]="!visible(c.id)"
+                    [style]="estiloOverlay(c.id)"
+                    (click)="seleccionar(c.id)">
+                    {{ textoMuestra(c.id) }}
+                  </button>
+                }
+                @if (mostrarQr) {
+                  <button
+                    type="button"
+                    class="ov-qr"
+                    [class.selected]="esQrSel()"
+                    [style]="estiloOverlayQr()"
+                    (click)="seleccionar('qr')">
+                    <span class="qr-mock">QR</span>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+          <p class="preview-tip">
+            <span class="tip-icon">①</span> Clic en un texto o en el cuadro <strong>QR</strong> para ajustarlo.
+          </p>
+        } @else {
+          <div class="no-plantilla">
+            <p>Primero suba la imagen PNG del certificado (paso anterior).</p>
+            <p class="sub">Después podrá mover cada texto a su lugar.</p>
+          </div>
+        }
+      </section>
+
+      <!-- Derecha: opciones del campo elegido -->
+      <section class="panel-opciones" aria-label="Opciones de texto">
+        <div class="opciones-global">
+          <label class="field-label">Color del texto (todo el certificado)</label>
+          <div class="color-pick">
+            <input type="color" [ngModel]="colorGlobal()" (ngModelChange)="patchColorGlobal($event)" title="Color general" />
+            <span class="color-hint">Toque el cuadro para cambiar el color</span>
+          </div>
+        </div>
+
+        <div class="opciones-divider"></div>
+
+        <label class="field-label">¿Qué desea ajustar?</label>
+        <div class="campo-grid">
+          @for (c of campos; track c.id) {
+            <button
+              type="button"
+              class="campo-chip"
+              [class.active]="campoSel() === c.id"
+              [class.off]="!visible(c.id)"
+              (click)="seleccionar(c.id)">
+              {{ c.label }}
+            </button>
+          }
+          @if (mostrarQr) {
+            <button
+              type="button"
+              class="campo-chip qr-chip"
+              [class.active]="esQrSel()"
+              (click)="seleccionar('qr')">
+              Código QR
+            </button>
+          }
+        </div>
+
+        @if (!mostrarQr) {
+          <p class="control-hint">El QR está desactivado arriba en «Código QR (global)». Actívelo para ubicarlo aquí.</p>
+        }
+
+        @if (esQrSel() && mostrarQr) {
+          <div class="campo-editor qr-editor">
+            <h3 class="editing-title">Ajustando: Código QR</h3>
+            <p class="control-hint">Solo para este tipo de certificado ({{ labelTipo(tipo) }}).</p>
+
+            <label class="field-label">Ubicación rápida</label>
+            <div class="esquina-grid">
+              @for (e of qrEsquinas; track e.id) {
+                <button type="button" class="esquina-btn" (click)="aplicarEsquinaQr(e.id)">{{ e.label }}</button>
+              }
+            </div>
+
+            <div class="control-block">
+              <label class="field-label">Tamaño del QR</label>
+              <input
+                type="range"
+                class="slider"
+                min="40"
+                max="140"
+                step="2"
+                [ngModel]="qrSizeActual()"
+                (ngModelChange)="onQrSize($event)" />
+              <span class="value-readout">{{ qrSizeActual() }} píxeles</span>
+            </div>
+
+            <div class="control-block">
+              @if (usaAnclaAbajoQr()) {
+                <label class="field-label">Mover arriba / abajo</label>
+                <div class="nudge-row">
+                  <button type="button" class="nudge" (click)="nudgeQr('up')">▲ Subir</button>
+                  <button type="button" class="nudge" (click)="nudgeQr('down')">▼ Bajar</button>
+                </div>
+                <input
+                  type="range"
+                  class="slider"
+                  min="2"
+                  max="40"
+                  step="0.5"
+                  [ngModel]="qrBottomActual()"
+                  (ngModelChange)="onQrBottom($event)" />
+                <span class="value-readout">{{ qrBottomActual() | number:'1.1-1' }}% desde abajo</span>
+              } @else {
+                <label class="field-label">Mover arriba / abajo</label>
+                <div class="nudge-row">
+                  <button type="button" class="nudge" (click)="nudgeQr('up')">▲ Subir</button>
+                  <button type="button" class="nudge" (click)="nudgeQr('down')">▼ Bajar</button>
+                </div>
+                <input
+                  type="range"
+                  class="slider"
+                  min="1"
+                  max="40"
+                  step="0.5"
+                  [ngModel]="qrTopActual()"
+                  (ngModelChange)="onQrTop($event)" />
+                <span class="value-readout">{{ qrTopActual() | number:'1.1-1' }}% desde arriba</span>
+              }
+            </div>
+
+            <div class="control-block">
+              <label class="field-label">Mover izquierda / derecha</label>
+              <div class="nudge-row">
+                <button type="button" class="nudge" (click)="nudgeQr('left')">◀ Izquierda</button>
+                <button type="button" class="nudge" (click)="nudgeQr('right')">Derecha ▶</button>
+              </div>
+              @if (qrEfectivo().right) {
+                <input
+                  type="range"
+                  class="slider"
+                  min="2"
+                  max="45"
+                  step="0.5"
+                  [ngModel]="qrRightActual()"
+                  (ngModelChange)="onQrRight($event)" />
+                <span class="value-readout">{{ qrRightActual() | number:'1.1-1' }}% desde la derecha</span>
+              } @else {
+                <input
+                  type="range"
+                  class="slider"
+                  min="2"
+                  max="45"
+                  step="0.5"
+                  [ngModel]="qrLeftActual()"
+                  (ngModelChange)="onQrLeft($event)" />
+                <span class="value-readout">{{ qrLeftActual() | number:'1.1-1' }}% desde la izquierda</span>
+              }
+            </div>
+
+            <div class="editor-actions">
+              <button type="button" class="ghost" (click)="restaurarQr()">Usar posición global del QR</button>
+            </div>
+          </div>
+        } @else {
+          @if (textoSel(); as id) {
+          <div class="campo-editor">
+            <h3 class="editing-title">Ajustando: {{ labelCampo(id) }}</h3>
+
+            <label class="switch-row">
+              <input type="checkbox" [ngModel]="visible(id)" (ngModelChange)="patchCampo(id, { visible: $event })" />
+              <span>Mostrar este texto en el certificado</span>
+            </label>
+
+            @if (visible(id)) {
+              <div class="control-block">
+                @if (usaAnclaAbajo(id)) {
+                  <label class="field-label">Mover arriba / abajo (desde el borde inferior)</label>
+                  <p class="control-hint">Este texto está anclado abajo, como el código del certificado.</p>
+                  <div class="nudge-row">
+                    <button type="button" class="nudge" (click)="nudge(id, 'up')" title="Subir">▲ Subir</button>
+                    <button type="button" class="nudge" (click)="nudge(id, 'down')" title="Bajar">▼ Bajar</button>
+                  </div>
+                  <input
+                    type="range"
+                    class="slider"
+                    min="2"
+                    max="45"
+                    step="0.5"
+                    [ngModel]="bottomActual(id)"
+                    (ngModelChange)="onBottom(id, $event)" />
+                  <span class="value-readout">{{ bottomActual(id) | number:'1.1-1' }}% desde abajo</span>
+                } @else {
+                  <label class="field-label">Mover arriba / abajo</label>
+                  <div class="nudge-row">
+                    <button type="button" class="nudge" (click)="nudge(id, 'up')" title="Subir un poco">▲ Subir</button>
+                    <button type="button" class="nudge" (click)="nudge(id, 'down')" title="Bajar un poco">▼ Bajar</button>
+                  </div>
+                  <input
+                    type="range"
+                    class="slider"
+                    min="0"
+                    max="92"
+                    step="0.5"
+                    [ngModel]="topActual(id)"
+                    (ngModelChange)="onTop(id, $event)" />
+                  <span class="value-readout">{{ topActual(id) | number:'1.1-1' }}% desde arriba</span>
+                }
+              </div>
+
+              @if (esMultilinea(id)) {
+                <div class="control-block">
+                  <label class="field-label">Ancho del texto (salto de línea)</label>
+                  <p class="control-hint">Si el nombre o curso es largo, reduzca el ancho para que baje a otra línea.</p>
+                  <input
+                    type="range"
+                    class="slider"
+                    min="40"
+                    max="92"
+                    step="1"
+                    [ngModel]="anchoActual(id)"
+                    (ngModelChange)="onAncho(id, $event)" />
+                  <span class="value-readout">{{ anchoActual(id) | number:'1.0-0' }}% de ancho</span>
+                </div>
+              }
+
+              <div class="control-block">
+                <label class="switch-row compact">
+                  <input type="checkbox" [ngModel]="esCentrado(id)" (ngModelChange)="setCentrado(id, $event)" />
+                  <span>Centrado en la página (recomendado para nombres y títulos)</span>
+                </label>
+                @if (!esCentrado(id)) {
+                  <label class="field-label">Mover izquierda / derecha</label>
+                  <div class="nudge-row">
+                    <button type="button" class="nudge" (click)="nudge(id, 'left')">◀ Izquierda</button>
+                    <button type="button" class="nudge" (click)="nudge(id, 'right')">Derecha ▶</button>
+                  </div>
+                  <input
+                    type="range"
+                    class="slider"
+                    min="2"
+                    max="88"
+                    step="0.5"
+                    [ngModel]="leftActual(id)"
+                    (ngModelChange)="onLeft(id, $event)" />
+                  <span class="value-readout">{{ leftActual(id) | number:'1.1-1' }}% desde la izquierda</span>
+                }
+              </div>
+
+              <div class="control-block">
+                <label class="field-label">Tamaño de la letra (puntos)</label>
+                @if (esMultilinea(id)) {
+                  <p class="control-hint">Puede bajar hasta {{ fuenteMinPt }} pt si el nombre o curso es muy largo.</p>
+                }
+                <div class="nudge-row">
+                  <button type="button" class="nudge" (click)="ajustarTamano(id, -1)">− Más pequeña</button>
+                  <button type="button" class="nudge" (click)="ajustarTamano(id, 1)">+ Más grande</button>
+                </div>
+                <input
+                  type="range"
+                  class="slider"
+                  [min]="fuenteMinPt"
+                  [max]="fuenteMaxPt"
+                  step="0.5"
+                  [ngModel]="tamanoActual(id)"
+                  (ngModelChange)="onTamano(id, $event)" />
+                <div class="tamano-exacto">
+                  <input
+                    type="number"
+                    class="num-pt"
+                    [min]="fuenteMinPt"
+                    [max]="fuenteMaxPt"
+                    step="0.5"
+                    [ngModel]="tamanoActual(id)"
+                    (ngModelChange)="onTamano(id, $event)" />
+                  <span class="value-readout">pt (mín. {{ fuenteMinPt }}, máx. {{ fuenteMaxPt }})</span>
+                </div>
+              </div>
+
+              <div class="control-block row-2">
+                <div>
+                  <label class="field-label">Alineación del texto</label>
+                  <select [ngModel]="campo(id).align || 'center'" (ngModelChange)="patchCampo(id, { align: $event })">
+                    <option value="left">Izquierda</option>
+                    <option value="center">Centro</option>
+                    <option value="right">Derecha</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">Negrilla</label>
+                  <select [ngModel]="campo(id).fw || '600'" (ngModelChange)="patchCampo(id, { fw: $event })">
+                    <option value="400">Normal</option>
+                    <option value="600">Semi-negrita</option>
+                    <option value="700">Negrita</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="control-block">
+                <label class="field-label">Tipo de letra</label>
+                <select [ngModel]="campo(id).fontFamily || fuentes[0]" (ngModelChange)="patchCampo(id, { fontFamily: $event })">
+                  @for (f of fuentes; track f) {
+                    <option [value]="f">{{ f.split(',')[0] }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="control-block">
+                <label class="field-label">Color solo de este texto (opcional)</label>
+                <div class="color-pick">
+                  <input
+                    type="color"
+                    [ngModel]="campo(id).color || colorGlobal()"
+                    (ngModelChange)="patchCampo(id, { color: $event })" />
+                  <button type="button" class="link-btn" (click)="patchCampo(id, { color: undefined })">Usar color general</button>
+                </div>
+              </div>
+
+              <div class="editor-actions">
+                <button type="button" class="ghost" (click)="restaurarCampo(id)">Restaurar este texto</button>
+              </div>
+            }
+          </div>
+          }
+        }
+
+        <div class="panel-footer">
+          <button type="button" class="ghost" (click)="restaurarTodo()">Restaurar todo al original</button>
+        </div>
+      </section>
+    </div>
+  }
+</div>
+
+@if (previewHtml()) {
+  <div class="preview-modal" (click)="cerrarPreview()">
+    <div class="preview-frame" (click)="$event.stopPropagation()">
+      <header>
+        <strong>Vista previa de impresión</strong>
+        <button type="button" class="ghost" (click)="cerrarPreview()">Cerrar</button>
+      </header>
+      <iframe [srcdoc]="previewSafe()!" title="Vista previa certificado"></iframe>
+    </div>
+  </div>
+}

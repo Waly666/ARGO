@@ -1,5 +1,14 @@
 <section class="certificados" *ngIf="store.hasAlumno(); else noAlumno">
-  <div class="msg" *ngIf="msg()">{{ msg() }}</div>
+  <div class="msg ok" *ngIf="msg() && !msgEsError()">{{ msg() }}</div>
+  <div class="msg err" *ngIf="msg() && msgEsError()">{{ msg() }}</div>
+
+  <div class="warn-docs card" *ngIf="docsPendientes().length">
+    <strong>Aviso: documentos pendientes (puede emitir certificado igual)</strong>
+    <ul>
+      <li *ngFor="let p of docsPendientes()">{{ p.nombre }}</li>
+    </ul>
+    <button type="button" class="ghost mini" (click)="irDocumentos()">Ir a Documentos</button>
+  </div>
 
   <div class="card">
     <h2>Elegibles para certificar</h2>
@@ -58,6 +67,13 @@
     </div>
 
     <div class="row">
+      <div class="col-6">
+        <label>Fecha de emisión</label>
+        <input type="date" [ngModel]="fechaEmision()" (ngModelChange)="fechaEmision.set($event)" />
+        <p class="hint">Opcional. Si no indica fecha, se usa la de hoy.</p>
+      </div>
+    </div>
+    <div class="row">
       <div class="col-4">
         <label>Nº Acta</label>
         <input type="text" [ngModel]="numActa()" (ngModelChange)="numActa.set($event)" />
@@ -104,7 +120,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let c of certificados()">
+        <tr *ngFor="let c of certificados()" [class.sel]="editId() === c._id">
           <td>{{ c.encabezado || c.nomCert || c.programaDescr || '—' }}</td>
           <td>{{ labelTipo(c.tipoCertificado) }}</td>
           <td class="mono">{{ c.codigoCert || '—' }}</td>
@@ -113,7 +129,8 @@
           <td>{{ c.numRunt || '—' }}</td>
           <td>{{ fecha(c.fechaEmision) }}</td>
           <td>{{ fecha(c.fechaVencimiento) || '—' }}</td>
-          <td class="r">
+          <td class="r actions-cell">
+            <button class="ghost mini" (click)="abrirEditar(c)">Editar</button>
             <button class="ghost mini" (click)="imprimir(c)">Imprimir</button>
             <button class="danger mini" (click)="anular(c)">Anular</button>
           </td>
@@ -123,6 +140,54 @@
         </tr>
       </tbody>
     </table>
+
+    <div class="card edit-card" *ngIf="editId()">
+      <h3>Editar certificado</h3>
+      <p class="hint">Modifique fechas, encabezado u otros datos. Al imprimir se usarán los valores guardados.</p>
+      <div class="row">
+        <div class="col-12">
+          <label>Encabezado / nombre del curso</label>
+          <input type="text" [ngModel]="editEncabezado()" (ngModelChange)="editEncabezado.set($event)" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6">
+          <label>Fecha de emisión *</label>
+          <input type="date" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" />
+        </div>
+        <div class="col-6">
+          <label>Fecha de vencimiento</label>
+          <input type="date" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" />
+          <p class="hint">Deje vacío si no aplica vencimiento.</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4">
+          <label>Nº Acta</label>
+          <input type="text" [ngModel]="editNumActa()" (ngModelChange)="editNumActa.set($event)" />
+        </div>
+        <div class="col-4">
+          <label>Nº Folio</label>
+          <input type="text" [ngModel]="editNumFolio()" (ngModelChange)="editNumFolio.set($event)" />
+        </div>
+        <div class="col-4">
+          <label>Nº RUNT</label>
+          <input type="text" [ngModel]="editNumRunt()" (ngModelChange)="editNumRunt.set($event)" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <label>Observaciones</label>
+          <input type="text" [ngModel]="editObservaciones()" (ngModelChange)="editObservaciones.set($event)" />
+        </div>
+      </div>
+      <div class="actions">
+        <button class="ghost" (click)="cancelarEditar()">Cancelar</button>
+        <button class="primary" (click)="guardarEdicion()" [disabled]="savingEdit()">
+          {{ savingEdit() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </div>
   </div>
 </section>
 

@@ -58,8 +58,10 @@
     <h2 id="cd-title" class="cd-title">{{ s.title }}</h2>
     <p id="cd-message" class="cd-message">{{ s.message }}</p>
 
-    <div class="cd-actions">
-      <button type="button" class="cd-btn cd-btn-cancel" (click)="svc.cancel()">{{ s.cancelLabel }}</button>
+    <div class="cd-actions" [class.single]="s.hideCancel">
+      @if (!s.hideCancel) {
+        <button type="button" class="cd-btn cd-btn-cancel" (click)="svc.cancel()">{{ s.cancelLabel }}</button>
+      }
       <button type="button" class="cd-btn cd-btn-confirm" (click)="svc.confirm()">{{ s.confirmLabel }}</button>
     </div>
   </div>

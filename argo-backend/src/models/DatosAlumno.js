@@ -1,10 +1,18 @@
 const mongoose = require('mongoose');
+const { parseNumDoc } = require('../utils/numDoc');
+
+function normalizarNumDocEnDoc(doc) {
+  if (!doc || doc.numDoc == null || doc.numDoc === '') return;
+  const n = parseNumDoc(doc.numDoc);
+  if (n != null) doc.numDoc = n;
+}
 
 const DatosAlumnoSchema = new mongoose.Schema(
   {
     fechaReg: { type: Date, default: Date.now },
     tipoDoc: { type: String, trim: true },
-    numDoc: { type: String, required: true, unique: true, trim: true, index: true },
+    /** Número de documento (Number en MongoDB) */
+    numDoc: { type: Number, required: true, unique: true, index: true },
     expedida: { type: String, trim: true },
     apellido1: { type: String, required: true, trim: true },
     apellido2: { type: String, trim: true, default: '' },
@@ -28,6 +36,9 @@ const DatosAlumnoSchema = new mongoose.Schema(
     celular: { type: String, trim: true },
     multiCulturalidad: { type: String, trim: true },
     urlFoto: { type: String, trim: true },
+    urlCedula: { type: String, trim: true },
+    urlLicencia: { type: String, trim: true },
+    docsAlumno: { type: mongoose.Schema.Types.Mixed, default: {} },
     fechaAudi: { type: Date, default: Date.now },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
@@ -36,6 +47,21 @@ const DatosAlumnoSchema = new mongoose.Schema(
   { collection: 'datosAlumnos', timestamps: false, strict: false },
 );
 
-DatosAlumnoSchema.index({ apellido1: 'text', apellido2: 'text', nombre1: 'text', nombre2: 'text', numDoc: 'text' });
+DatosAlumnoSchema.index({ apellido1: 'text', apellido2: 'text', nombre1: 'text', nombre2: 'text' });
+
+DatosAlumnoSchema.pre('validate', function preValidateNumDoc(next) {
+  normalizarNumDocEnDoc(this);
+  if (this.numDoc == null || !Number.isFinite(this.numDoc)) {
+    return next(new Error('Número de documento inválido (use 6 a 11 dígitos)'));
+  }
+  next();
+});
+
+DatosAlumnoSchema.pre('findOneAndUpdate', function preUpdateNumDoc(next) {
+  const upd = this.getUpdate();
+  const payload = upd?.$set || upd;
+  if (payload) normalizarNumDocEnDoc(payload);
+  next();
+});
 
 module.exports = mongoose.model('DatosAlumno', DatosAlumnoSchema);

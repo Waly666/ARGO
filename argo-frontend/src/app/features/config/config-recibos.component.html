@@ -1,110 +1,149 @@
-<section class="config-page card">
-  <header>
-    <h1>Configuración de comprobantes</h1>
-    <p>Datos de la empresa, numeración de comprobantes de ingreso/egreso y facturas.</p>
-  </header>
-
-  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
-
-  <div class="grid-form">
-    <h3>Empresa</h3>
-    <div class="row">
-      <div class="col-6">
-        <label>Nombre empresa</label>
-        <input type="text" [ngModel]="form().nombreEmpresa" (ngModelChange)="patch('nombreEmpresa', $event)" />
-      </div>
-      <div class="col-3">
-        <label>NIT</label>
-        <input type="text" [ngModel]="form().nit" (ngModelChange)="patch('nit', $event)" />
-      </div>
-      <div class="col-3">
-        <label>Teléfono</label>
-        <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch('telefono', $event)" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-6">
-        <label>Dirección</label>
-        <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch('direccion', $event)" />
-      </div>
-      <div class="col-3">
-        <label>Ciudad</label>
-        <input type="text" [ngModel]="form().ciudad" (ngModelChange)="patch('ciudad', $event)" />
-      </div>
-      <div class="col-3">
-        <label>Email</label>
-        <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
-      </div>
-    </div>
-
-    <h3>Facturación</h3>
-    <p class="hint">Prefijo y consecutivo para <strong>facturas</strong> (no aplica a comprobantes de ingreso/egreso).</p>
-    <div class="row">
-      <div class="col-3">
-        <label>Prefijo factura</label>
-        <input type="text" [ngModel]="form().prefijoFactura" (ngModelChange)="patch('prefijoFactura', $event)" placeholder="FV" />
-      </div>
-      <div class="col-3">
-        <label>Consecutivo factura</label>
-        <input type="number" min="0" [ngModel]="form().consecutivoFactura" (ngModelChange)="patch('consecutivoFactura', +$event)" />
-      </div>
-    </div>
-
-    <h3>Comprobantes de ingreso y egreso</h3>
-    <p class="hint">Numeración independiente para comprobantes de pago (ingreso) y de egreso.</p>
-    <div class="row">
-      <div class="col-3">
-        <label>Prefijo comprobante ingreso</label>
-        <input type="text" [ngModel]="form().prefijoComprobanteIngreso" (ngModelChange)="patch('prefijoComprobanteIngreso', $event)" placeholder="CI" />
-      </div>
-      <div class="col-3">
-        <label>Consecutivo ingreso</label>
-        <input type="number" min="0" [ngModel]="form().consecutivoComprobanteIngreso" (ngModelChange)="patch('consecutivoComprobanteIngreso', +$event)" />
-      </div>
-      <div class="col-3">
-        <label>Prefijo comprobante egreso</label>
-        <input type="text" [ngModel]="form().prefijoComprobanteEgreso" (ngModelChange)="patch('prefijoComprobanteEgreso', $event)" placeholder="CE" />
-      </div>
-      <div class="col-3">
-        <label>Consecutivo egreso</label>
-        <input type="number" min="0" [ngModel]="form().consecutivoComprobanteEgreso" (ngModelChange)="patch('consecutivoComprobanteEgreso', +$event)" />
-      </div>
-    </div>
-
-    <h3>Formato del comprobante</h3>
-    <div class="row">
-      <div class="col-3">
-        <label>Ancho impresión (mm)</label>
-        <input type="number" min="58" max="120" [ngModel]="form().anchoReciboMm" (ngModelChange)="patch('anchoReciboMm', +$event)" />
-      </div>
-      <div class="col-3 chk">
-        <label>
-          <input type="checkbox" [ngModel]="form().mostrarQr" (ngModelChange)="patch('mostrarQr', $event)" />
-          Mostrar código QR
-        </label>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-6">
-        <label>Título del comprobante</label>
-        <input type="text" [ngModel]="form().mensajeEncabezado" (ngModelChange)="patch('mensajeEncabezado', $event)" placeholder="COMPROBANTE DE INGRESO" />
-      </div>
-      <div class="col-6">
-        <label>Eslogan</label>
-        <input type="text" [ngModel]="form().slogan1" (ngModelChange)="patch('slogan1', $event)" placeholder="Texto bajo el título" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-12">
-        <label>Mensaje al pie</label>
-        <textarea rows="2" [ngModel]="form().mensajePie" (ngModelChange)="patch('mensajePie', $event)"></textarea>
-      </div>
-    </div>
-  </div>
-
-  <footer class="actions">
-    <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
-      {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
-    </button>
-  </footer>
-</section>
+<section class="config-page card">
+  <header>
+    <h1>Empresa y comprobantes</h1>
+    <p>
+      Aquí van los <strong>datos de la empresa</strong> (nombre, NIT, dirección, teléfono) usados en recibos de caja,
+      colillas de nómina y archivo <strong>PILA</strong>. También la numeración de comprobantes y facturas.
+    </p>
+  </header>
+
+  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="grid-form">
+    <h3>Empresa</h3>
+    <div class="row">
+      <div class="col-6">
+        <label>Nombre empresa</label>
+        <input type="text" [ngModel]="form().nombreEmpresa" (ngModelChange)="patch('nombreEmpresa', $event)" />
+      </div>
+      <div class="col-3">
+        <label>NIT</label>
+        <input type="text" [ngModel]="form().nit" (ngModelChange)="patch('nit', $event)" />
+      </div>
+      <div class="col-3">
+        <label>Teléfono</label>
+        <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch('telefono', $event)" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-6">
+        <label>Dirección</label>
+        <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch('direccion', $event)" />
+      </div>
+      <div class="col-3">
+        <label>Ciudad</label>
+        <input type="text" [ngModel]="form().ciudad" (ngModelChange)="patch('ciudad', $event)" />
+      </div>
+      <div class="col-3">
+        <label>Email</label>
+        <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
+      </div>
+    </div>
+
+    <h3>Facturación</h3>
+    <p class="hint">Prefijo y consecutivo para <strong>facturas</strong> (no aplica a comprobantes de ingreso/egreso).</p>
+    <div class="row">
+      <div class="col-3">
+        <label>Prefijo factura</label>
+        <input type="text" [ngModel]="form().prefijoFactura" (ngModelChange)="patch('prefijoFactura', $event)" placeholder="FV" />
+      </div>
+      <div class="col-3">
+        <label>Consecutivo factura</label>
+        <input type="number" min="0" [ngModel]="form().consecutivoFactura" (ngModelChange)="patch('consecutivoFactura', +$event)" />
+      </div>
+    </div>
+
+    <h3>Comprobantes de ingreso y egreso</h3>
+    <p class="hint">Numeración independiente para comprobantes de pago (ingreso) y de egreso.</p>
+    <div class="row">
+      <div class="col-3">
+        <label>Prefijo comprobante ingreso</label>
+        <input type="text" [ngModel]="form().prefijoComprobanteIngreso" (ngModelChange)="patch('prefijoComprobanteIngreso', $event)" placeholder="CI" />
+      </div>
+      <div class="col-3">
+        <label>Consecutivo ingreso</label>
+        <input type="number" min="0" [ngModel]="form().consecutivoComprobanteIngreso" (ngModelChange)="patch('consecutivoComprobanteIngreso', +$event)" />
+      </div>
+      <div class="col-3">
+        <label>Prefijo comprobante egreso</label>
+        <input type="text" [ngModel]="form().prefijoComprobanteEgreso" (ngModelChange)="patch('prefijoComprobanteEgreso', $event)" placeholder="CE" />
+      </div>
+      <div class="col-3">
+        <label>Consecutivo egreso</label>
+        <input type="number" min="0" [ngModel]="form().consecutivoComprobanteEgreso" (ngModelChange)="patch('consecutivoComprobanteEgreso', +$event)" />
+      </div>
+    </div>
+
+    <h3>Formato del comprobante</h3>
+    <div class="row">
+      <div class="col-3">
+        <label>Ancho impresión (mm)</label>
+        <input type="number" min="58" max="120" [ngModel]="form().anchoReciboMm" (ngModelChange)="patch('anchoReciboMm', +$event)" />
+      </div>
+      <div class="col-3 chk">
+        <label>
+          <input type="checkbox" [ngModel]="form().mostrarQr" (ngModelChange)="patch('mostrarQr', $event)" />
+          Mostrar código QR
+        </label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-6">
+        <label>Título comprobante de ingreso</label>
+        <input type="text" [ngModel]="form().mensajeEncabezado" (ngModelChange)="patch('mensajeEncabezado', $event)" placeholder="COMPROBANTE DE INGRESO" />
+      </div>
+      <div class="col-6">
+        <label>Título comprobante de egreso</label>
+        <input type="text" [ngModel]="form().mensajeEncabezadoEgreso" (ngModelChange)="patch('mensajeEncabezadoEgreso', $event)" placeholder="COMPROBANTE DE EGRESO" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-6">
+        <label>Eslogan</label>
+        <input type="text" [ngModel]="form().slogan1" (ngModelChange)="patch('slogan1', $event)" placeholder="Texto bajo el título" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-6">
+        <label>Mensaje al pie (ingreso)</label>
+        <textarea rows="2" [ngModel]="form().mensajePie" (ngModelChange)="patch('mensajePie', $event)"></textarea>
+      </div>
+      <div class="col-6">
+        <label>Mensaje al pie (egreso)</label>
+        <textarea rows="2" [ngModel]="form().mensajePieEgreso" (ngModelChange)="patch('mensajePieEgreso', $event)"></textarea>
+      </div>
+    </div>
+
+    <h3>Registro de alumnos</h3>
+    <p class="hint">
+      Cuadro de confirmación al crear un alumno nuevo. Variables:
+      &#123;nombre&#125;, &#123;numDoc&#125;, &#123;empresa&#125;, &#123;slogan&#125;, &#123;ciudad&#125;, &#123;telefono&#125;.
+    </p>
+    <div class="row">
+      <div class="col-6">
+        <label>Título del mensaje</label>
+        <input
+          type="text"
+          [ngModel]="form().mensajeCreacionAlumnoTitulo"
+          (ngModelChange)="patch('mensajeCreacionAlumnoTitulo', $event)"
+          placeholder="¡Alumno registrado!" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <label>Mensaje de confirmación</label>
+        <textarea
+          rows="4"
+          [ngModel]="form().mensajeCreacionAlumno"
+          (ngModelChange)="patch('mensajeCreacionAlumno', $event)"
+          placeholder="Se registró correctamente al alumno…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <footer class="actions">
+    <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+    </button>
+  </footer>
+</section>

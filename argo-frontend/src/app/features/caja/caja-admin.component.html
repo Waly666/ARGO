@@ -1,0 +1,71 @@
+<div class="caja-admin-inner">
+  <section class="panel">
+    <h2 class="panel-title">Cajas abiertas ({{ cajasAbiertas().length }})</h2>
+    <table class="tabla-cierres">
+      <thead>
+        <tr>
+          <th>Sesión</th>
+          <th>Cajero</th>
+          <th>Ingresos</th>
+          <th>Egresos</th>
+          <th>Esperado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of cajasAbiertas()">
+          <td>#{{ item.sesion.idSesion }}</td>
+          <td>{{ item.sesion.usuario }}</td>
+          <td class="num">{{ item.resumenParcial.totalIngresos | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+          <td class="num">{{ item.resumenParcial.totalEgresos | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+          <td class="num">{{ item.resumenParcial.saldoTeorico | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+          <td><button type="button" class="ghost sm" (click)="cerrarAjena(item)">Cerrar</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel-title">Cierre general</h2>
+    <div class="filtros-inline">
+      <label>Desde <input type="date" [ngModel]="fechaGenDesde()" (ngModelChange)="fechaGenDesde.set($event)" /></label>
+      <label>Hasta <input type="date" [ngModel]="fechaGenHasta()" (ngModelChange)="fechaGenHasta.set($event)" /></label>
+      <button type="button" class="ghost sm" (click)="cargarPreview()">Vista previa</button>
+      <button type="button" class="btn-cerrar sm" [disabled]="loading()" (click)="registrarGeneral()">
+        Registrar cierre general
+      </button>
+    </div>
+    <div *ngIf="previewGeneral() as g" class="resumen-general">
+      <p><strong>{{ g.cantidadCajas }}</strong> cajas · Consolidado {{ g.saldoTeoricoConsolidado | currency: 'COP':'symbol-narrow':'1.0-0' }}</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel-title">Historial de sesiones</h2>
+    <div class="filtros-inline">
+      <label>Desde <input type="date" [ngModel]="filtroHistDesde()" (ngModelChange)="filtroHistDesde.set($event)" /></label>
+      <label>Hasta <input type="date" [ngModel]="filtroHistHasta()" (ngModelChange)="filtroHistHasta.set($event)" /></label>
+      <button type="button" class="ghost sm" (click)="cargarHistorial()">Buscar</button>
+    </div>
+    <table class="tabla-cierres">
+      <thead>
+        <tr>
+          <th>Sesión</th>
+          <th>Cajero</th>
+          <th>Estado</th>
+          <th>Apertura</th>
+          <th>Cierre</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of historial()">
+          <td>#{{ s.idSesion }}</td>
+          <td>{{ s.usuario }}</td>
+          <td>{{ s.estado }}</td>
+          <td>{{ s.fechaApertura | date: 'dd/MM HH:mm' }}</td>
+          <td>{{ s.fechaCierre ? (s.fechaCierre | date: 'dd/MM HH:mm') : '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>

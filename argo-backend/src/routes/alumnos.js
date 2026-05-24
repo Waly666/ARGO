@@ -15,6 +15,10 @@ const files = upload.alumnos.fields([
 router.get('/', ctrl.listar);
 router.get('/verificar-doc/:numDoc', ctrl.verificarDocumento);
 router.get('/doc/:numDoc', ctrl.porDocumento);
+router.post('/escanear-cedula', upload.memory.single('imagen'), ctrl.escanearCedula);
+router.get('/:id/documentos-requeridos', ctrl.documentosRequeridos);
+router.get('/:id/documentos-validacion', ctrl.validarDocumentos);
+router.put('/:id/documentos/:idDoc', upload.alumnos.single('archivo'), ctrl.subirDocumento);
 router.get('/:id', ctrl.porId);
 router.post('/', files, ctrl.crear);
 router.put('/:id', files, ctrl.actualizar);

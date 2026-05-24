@@ -1,56 +1,51 @@
 const mongoose = require('mongoose');
 const Matricula = require('../models/Matricula');
+const DatosAlumno = require('../models/DatosAlumno');
 const Liquidacion = require('../models/Liquidacion');
-const { models: cat } = require('../models/catalogos');
-
-function num(v) {
-  if (v == null) return 0;
-  if (typeof v === 'number') return v;
-  if (typeof v === 'object' && v.$numberDecimal != null) return Number(v.$numberDecimal) || 0;
-  return Number(v) || 0;
-}
+const { parseNumDoc, numDocFromParams, numDocQuery } = require('../utils/numDoc');
+const {
+  buscarPrograma,
+  listarServiciosMatricula,
+  programaUsaSemestres,
+  num,
+} = require('../services/programaServicio');
+const { estadoLiq } = require('../services/liquidacionMatricula');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
 }
 
-async function buscarPrograma(idPrograma) {
-  const q = String(idPrograma);
-  return cat.programas.findOne({
-    $or: [
-      { idPrograma: q },
-      { idPrograma: Number(q) },
-      { codigoProg: q },
-      mongoose.Types.ObjectId.isValid(q) ? { _id: new mongoose.Types.ObjectId(q) } : null,
-    ].filter(Boolean),
-  }).lean();
-}
-
-async function buscarServicioDePrograma(prog) {
-  if (!prog) return null;
-  const idProg = prog.idPrograma ?? prog.idProg;
-  return cat.servicios.findOne({
-    $or: [{ idProg }, { idProg: Number(idProg) }, { idProg: String(idProg) }],
-  }).lean();
+function valorTarifaServicio(serv, tarifa, prog) {
+  const t = Number(tarifa);
+  if (serv && serv[`tarifa${t}`] != null && serv[`tarifa${t}`] !== '') {
+    return num(serv[`tarifa${t}`]);
+  }
+  return num(prog.valorMatricula);
 }
 
 exports.crear = async (req, res, next) => {
   try {
-    const { numDoc, idPrograma, idProg, tarifa = 1, observaciones } = req.body || {};
+    const { numDoc: numDocRaw, idPrograma, idProg, tarifa = 1, observaciones } = req.body || {};
+    const numDoc = parseNumDoc(numDocRaw);
     const progId = idPrograma || idProg;
-    if (!numDoc || !progId) {
+    if (numDoc == null || !progId) {
       return res.status(400).json({ message: 'numDoc e idPrograma son obligatorios' });
     }
     const prog = await buscarPrograma(progId);
     if (!prog) return res.status(404).json({ message: 'Programa no encontrado' });
 
-    const serv = await buscarServicioDePrograma(prog);
-    let valorMat = 0;
+    const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+
+    const serviciosProg = await listarServiciosMatricula(prog);
+    const usaSem = programaUsaSemestres(prog) && serviciosProg.length > 0;
     const t = Number(tarifa);
-    if (serv && serv[`tarifa${t}`] != null && serv[`tarifa${t}`] !== '') {
-      valorMat = num(serv[`tarifa${t}`]);
+
+    let valorMat = 0;
+    if (usaSem) {
+      valorMat = serviciosProg.reduce((acc, s) => acc + valorTarifaServicio(s, t, prog), 0);
     } else {
-      valorMat = num(prog.valorMatricula);
+      const serv = serviciosProg[0] || null;
+      valorMat = valorTarifaServicio(serv, t, prog);
     }
 
     const idProgramaVal = String(prog.idPrograma ?? prog._id);
@@ -65,24 +60,71 @@ exports.crear = async (req, res, next) => {
       observaciones,
     });
 
-    const alumno = await require('../models/DatosAlumno').findOne({ numDoc }).lean();
-    const liq = await Liquidacion.create({
-      numDoc,
-      idAlumno: alumno?._id ? String(alumno._id) : null,
-      idMatricula: m._id,
-      idMat: m._id,
-      idProg: idProgramaVal,
-      idServ: serv ? String(serv.idServ) : null,
-      descripcion: serv?.descrServicio || serv?.descripcion || prog.nombreProg || prog.descripcion || 'Matrícula programa',
-      valor: toDec(valorMat),
-      abonado: toDec(0),
-      saldo: toDec(valorMat),
-      estado: valorMat <= 0 ? 'pagado' : 'pendiente',
-    });
+    const liquidaciones = [];
+
+    if (usaSem) {
+      for (const serv of serviciosProg) {
+        const v = valorTarifaServicio(serv, t, prog);
+        const liq = await Liquidacion.create({
+          numDoc,
+          idAlumno: alumno?._id ? String(alumno._id) : null,
+          idMatricula: m._id,
+          idMat: m._id,
+          idProg: idProgramaVal,
+          idServ: String(serv.idServ),
+          descripcion: serv.descrServicio || serv.descripcion || prog.nombreProg,
+          valor: toDec(v),
+          abonado: toDec(0),
+          saldo: toDec(v),
+          estado: v <= 0 ? 'pagado' : 'pendiente',
+        });
+        liquidaciones.push(liq);
+      }
+    } else {
+      const serv = serviciosProg[0] || null;
+      const liq = await Liquidacion.create({
+        numDoc,
+        idAlumno: alumno?._id ? String(alumno._id) : null,
+        idMatricula: m._id,
+        idMat: m._id,
+        idProg: idProgramaVal,
+        idServ: serv ? String(serv.idServ) : null,
+        descripcion:
+          serv?.descrServicio || serv?.descripcion || prog.nombreProg || prog.descripcion || 'Matrícula programa',
+        valor: toDec(valorMat),
+        abonado: toDec(0),
+        saldo: toDec(valorMat),
+        estado: valorMat <= 0 ? 'pagado' : 'pendiente',
+      });
+      liquidaciones.push(liq);
+    }
+
+    const estadoAgregado = liquidaciones.length
+      ? estadoLiq(
+          liquidaciones.reduce((a, l) => a + num(l.valor), 0),
+          liquidaciones.reduce((a, l) => a + num(l.abonado), 0),
+        )
+      : 'pendiente';
+    if (estadoAgregado === 'pagado') {
+      await Matricula.findByIdAndUpdate(m._id, { pagada: 'Pagado' });
+    }
 
     res.status(201).json({
       matricula: { ...m.toObject(), valorMat: num(m.valorMat) },
-      liquidacion: { ...liq.toObject(), valor: num(liq.valor), abonado: num(liq.abonado), saldo: num(liq.saldo) },
+      liquidacion: liquidaciones[0]
+        ? {
+            ...liquidaciones[0].toObject(),
+            valor: num(liquidaciones[0].valor),
+            abonado: num(liquidaciones[0].abonado),
+            saldo: num(liquidaciones[0].saldo),
+          }
+        : null,
+      liquidaciones: liquidaciones.map((l) => ({
+        ...l.toObject(),
+        valor: num(l.valor),
+        abonado: num(l.abonado),
+        saldo: num(l.saldo),
+      })),
     });
   } catch (e) {
     next(e);
@@ -98,7 +140,9 @@ function normalizarPagada(v) {
 
 exports.listarPorAlumno = async (req, res, next) => {
   try {
-    const rows = await Matricula.find({ numDoc: req.params.numDoc }).sort({ createdAt: -1 }).lean();
+    const numDoc = numDocFromParams(req.params.numDoc);
+    if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    const rows = await Matricula.find(numDocQuery(numDoc)).sort({ createdAt: -1 }).lean();
     res.json(
       rows.map((r) => ({
         ...r,

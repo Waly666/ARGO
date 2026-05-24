@@ -4,21 +4,13 @@ const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado } = require('../services/configCertificado');
+const { buscarPrograma } = require('../services/programaServicio');
+const { clasificarProgramaAsync, normalizarTipoCertificado } = require('../services/clasificacionCertificado');
 const { generarHtmlCertificado } = require('../services/certificadoRender');
+const { numDocQuery } = require('../utils/numDoc');
 
 async function programaPorId(idProg) {
-  if (!idProg) return null;
-  const id = String(idProg);
-  const n = Number(idProg);
-  return cat.programas
-    .findOne({
-      $or: [
-        { idProg: id },
-        { idPrograma: id },
-        ...(Number.isFinite(n) ? [{ idPrograma: n }, { idProg: n }] : []),
-      ],
-    })
-    .lean();
+  return buscarPrograma(idProg);
 }
 
 async function armarDatos(id) {
@@ -27,7 +19,7 @@ async function armarDatos(id) {
 
   const [config, alumno, liq, plantilla] = await Promise.all([
     obtenerConfigCertificado(),
-    DatosAlumno.findOne({ numDoc: cert.numDoc }).lean(),
+    DatosAlumno.findOne(numDocQuery(cert.numDoc)).lean(),
     Liquidacion.findById(cert.idLiquidacion).lean(),
     cert.idPlantilla ? PlantillaCertificado.findById(cert.idPlantilla).lean() : null,
   ]);
@@ -47,6 +39,10 @@ async function armarDatos(id) {
     urlFondo: '',
   };
 
+  const tipoCertificado =
+    normalizarTipoCertificado(cert.tipoCertificado) ||
+    (await clasificarProgramaAsync(programa, cat.catTipoCapacitacion));
+
   return {
     config,
     plantilla: plantillaFinal,
@@ -54,6 +50,7 @@ async function armarDatos(id) {
     alumno,
     programa,
     tipoDocDescr,
+    tipoCertificado,
   };
 }
 

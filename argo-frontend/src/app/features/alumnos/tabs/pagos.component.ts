@@ -3,12 +3,14 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
 import { CatalogoService } from '../../../core/services/catalogo.service';
 import { IngresoService } from '../../../core/services/ingreso.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
+import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
 
 const TIPOS_PAGO_DEF = [
   { idTipoPago: '1', codigo: 'EF', descripcion: 'Efectivo' },
@@ -28,6 +30,7 @@ const TIPOS_PAGO_DEF = [
 })
 export class PagosComponent {
   store = inject(AlumnoStore);
+  auth = inject(AuthService);
   private router = inject(Router);
   private catSvc = inject(CatalogoService);
   private liqSvc = inject(LiquidacionService);
@@ -36,7 +39,7 @@ export class PagosComponent {
   private confirmSvc = inject(ConfirmDialogService);
 
   tiposPago = signal<Record<string, unknown>[]>(TIPOS_PAGO_DEF);
-  bancos = signal<Record<string, unknown>[]>([]);
+  cuentasBancarias = signal<Record<string, unknown>[]>([]);
 
   liquidacion = signal<LiquidacionResumen>({ items: [], totales: { valor: 0, abonado: 0, saldo: 0 } });
   pagos = signal<any[]>([]);
@@ -44,7 +47,7 @@ export class PagosComponent {
   idLiquidacion = signal<string>('');
   valor = signal<number>(0);
   idTipoPago = signal<string>('');
-  idBanco = signal<string>('');
+  idCuentaBancaria = signal<string>('');
   numComprobante = signal<string>('');
   observaciones = signal<string>('');
 
@@ -52,10 +55,29 @@ export class PagosComponent {
   saving = signal(false);
   msg = signal<string | null>(null);
 
-  itemsConSaldo = computed(() => this.liquidacion().items.filter((i) => this.num(i.saldo) > 0));
+  ingresoPendienteAnular = signal<any | null>(null);
+  mostrarAuthAnular = signal(false);
+  authAdminUser = signal('');
+  authAdminPass = signal('');
+
+  itemsConSaldo = computed(() =>
+    this.liquidacion()
+      .items.filter((i) => this.num(i.saldo) > 0.0001)
+      .sort((a, b) =>
+        String(a.descripcion || '').localeCompare(String(b.descripcion || ''), 'es'),
+      ),
+  );
   totales = computed(() => this.liquidacion().totales);
 
+  etiquetaSaldo = etiquetaSaldoCorta;
+  tituloSaldoItem = tituloSaldoItem;
+
   itemSel = computed(() => this.liquidacion().items.find((i) => i._id === this.idLiquidacion()));
+
+  saldoItemSel = computed(() => {
+    const it = this.itemSel();
+    return it ? this.num(it.saldo) : 0;
+  });
 
   esEfectivo = computed(() => {
     const t = this.tipoPagoSel();
@@ -64,12 +86,17 @@ export class PagosComponent {
     return txt.includes('efect') || txt.includes('ef');
   });
 
+  requiereCuentaEmpresa = computed(() => !!this.idTipoPago() && !this.esEfectivo());
+
   constructor() {
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
       next: (d) => this.tiposPago.set(d?.length ? d : TIPOS_PAGO_DEF),
       error: () => this.tiposPago.set(TIPOS_PAGO_DEF),
     });
-    this.catSvc.list('bancos', { refresh: true }).subscribe((d) => this.bancos.set(d || []));
+    this.catSvc.list('cuentasBancarias', { refresh: true }).subscribe({
+      next: (d) => this.cuentasBancarias.set(d || []),
+      error: () => this.cuentasBancarias.set([]),
+    });
 
     effect(() => {
       const nd = this.store.numDoc();
@@ -91,14 +118,37 @@ export class PagosComponent {
     return d ? String(d) : this.tipoPagoValor(t);
   }
 
-  bancoValor(b: Record<string, unknown>): string {
-    const v = b['idBanco'] ?? b['idbanco'] ?? b['codigo'] ?? b['_id'];
+  cuentaValor(c: Record<string, unknown>): string {
+    const v = c['idCuentaBancaria'] ?? c['idCuenta'] ?? c['_id'];
     return v != null ? String(v) : '';
   }
 
-  bancoLabel(b: Record<string, unknown>): string {
-    const d = b['descripcion'] ?? b['nombre'] ?? b['banco'];
-    return d ? String(d) : this.bancoValor(b);
+  labelCuenta(c: Record<string, unknown>): string {
+    const b = String(c['banco'] || '').trim();
+    const n = c['numCuenta'] ?? '';
+    const t = String(c['tipo'] || '').trim();
+    return [b, t, n].filter(Boolean).join(' — ');
+  }
+
+  onTipoPagoChange(id: string) {
+    this.idTipoPago.set(id);
+    if (!id) {
+      this.idCuentaBancaria.set('');
+      return;
+    }
+    const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
+    const txt = t ? this.tipoPagoLabel(t).toLowerCase() : '';
+    const cuentas = this.cuentasBancarias();
+    if (!cuentas.length) return;
+    let match: Record<string, unknown> | undefined;
+    if (txt.includes('nequi')) {
+      match = cuentas.find((c) => String(c['banco'] || '').toLowerCase().includes('nequi'));
+    } else if (txt.includes('daviplata')) {
+      match = cuentas.find((c) => String(c['banco'] || '').toLowerCase().includes('daviplata'));
+    }
+    if (match) {
+      this.idCuentaBancaria.set(this.cuentaValor(match));
+    }
   }
 
   tipoPagoSel(): Record<string, unknown> | undefined {
@@ -106,15 +156,35 @@ export class PagosComponent {
     return this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
   }
 
-  recargar(numDoc: string) {
+  /** Al elegir ítem de liquidación, el valor del pago = saldo pendiente del ítem */
+  onItemLiquidacionChange(id: string) {
+    this.idLiquidacion.set(id);
+    if (!id) {
+      this.valor.set(0);
+      return;
+    }
+    const it = this.liquidacion().items.find((i) => String(i._id) === String(id));
+    this.valor.set(it ? this.num(it.saldo) : 0);
+  }
+
+  recargar(numDoc: number | string) {
     this.loading.set(true);
     this.liqSvc.listarPorAlumno(numDoc).subscribe({
-      next: (r) => this.liquidacion.set(r),
+      next: (r) => {
+        this.liquidacion.set(r);
+        const id = this.idLiquidacion();
+        if (id) {
+          const it = r.items.find((i) => String(i._id) === String(id));
+          if (it) this.valor.set(this.num(it.saldo));
+        }
+        this.store.touchLiquidacion();
+      },
     });
     this.ingSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {
         this.pagos.set(r || []);
         this.loading.set(false);
+        this.store.touchLiquidacion();
       },
       error: () => this.loading.set(false),
     });
@@ -138,6 +208,10 @@ export class PagosComponent {
       this.msg.set('Selecciona el tipo de pago.');
       return;
     }
+    if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) {
+      this.msg.set('Selecciona la cuenta bancaria de la empresa donde ingresa el pago.');
+      return;
+    }
     const it = this.itemSel();
     if (it && this.valor() > this.num(it.saldo)) {
       this.msg.set('El valor del pago excede el saldo del ítem.');
@@ -151,7 +225,7 @@ export class PagosComponent {
         idLiquidacion: this.idLiquidacion(),
         valor: this.valor(),
         idTipoPago: this.idTipoPago(),
-        idBanco: this.esEfectivo() ? undefined : this.idBanco() || undefined,
+        idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() || undefined : undefined,
         numComprobante: this.numComprobante() || undefined,
         observaciones: this.observaciones() || undefined,
       })
@@ -160,7 +234,7 @@ export class PagosComponent {
           this.saving.set(false);
           this.valor.set(0);
           this.idLiquidacion.set('');
-          this.idBanco.set('');
+          this.idCuentaBancaria.set('');
           this.numComprobante.set('');
           this.observaciones.set('');
           this.recargar(nd);
@@ -223,8 +297,50 @@ export class PagosComponent {
       confirmLabel: 'Sí, reversar',
     });
     if (!ok) return;
-    this.ingSvc.eliminar(p._id).subscribe({
-      next: () => this.recargar(nd),
+    if (!this.auth.isAdmin()) {
+      this.ingresoPendienteAnular.set(p);
+      this.authAdminUser.set('');
+      this.authAdminPass.set('');
+      this.mostrarAuthAnular.set(true);
+      return;
+    }
+    this.ejecutarReversar(p, nd);
+  }
+
+  confirmarReversarConSupervisor() {
+    const p = this.ingresoPendienteAnular();
+    const nd = this.store.numDoc();
+    if (!p || !nd) return;
+    const u = this.authAdminUser().trim();
+    const pw = this.authAdminPass();
+    if (!u || !pw) {
+      this.msg.set('Ingrese usuario y contraseña del administrador para anular el ingreso.');
+      return;
+    }
+    this.ejecutarReversar(p, nd, { autorizadoUsername: u, autorizadoPassword: pw });
+  }
+
+  cancelarReversarSupervisor() {
+    this.mostrarAuthAnular.set(false);
+    this.ingresoPendienteAnular.set(null);
+    this.authAdminUser.set('');
+    this.authAdminPass.set('');
+  }
+
+  private ejecutarReversar(
+    p: any,
+    nd: number | string,
+    auth?: { autorizadoUsername: string; autorizadoPassword: string },
+  ) {
+    this.ingSvc.eliminar(p._id, auth).subscribe({
+      next: () => {
+        this.mostrarAuthAnular.set(false);
+        this.ingresoPendienteAnular.set(null);
+        this.authAdminUser.set('');
+        this.authAdminPass.set('');
+        this.recargar(nd);
+        this.msg.set('Pago reversado.');
+      },
       error: (e) => this.msg.set(e?.error?.message || 'Error reversando pago.'),
     });
   }

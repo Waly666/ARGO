@@ -8,7 +8,6 @@ import { environment } from '../../../environments/environment';
 export interface AuthUser {
   _id: string;
   username: string;
-  nickName?: string;
   nombres?: string;
   apellidos?: string;
   rol?: string;
@@ -18,6 +17,13 @@ export interface AuthUser {
 export interface LoginResponse {
   token: string;
   user: AuthUser;
+}
+
+export interface VerificarAdminResponse {
+  ok: boolean;
+  username: string;
+  nombreAutoriza: string;
+  idUsuario: string;
 }
 
 const TOKEN_KEY = 'argo_token';
@@ -34,6 +40,10 @@ export class AuthService {
   token = computed(() => this._token());
   user = computed(() => this._user());
   isAuth = computed(() => !!this._token());
+  isAdmin = computed(() => {
+    const r = String(this._user()?.rol || '').toLowerCase();
+    return r === 'admin' || r.includes('admin');
+  });
 
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http
@@ -46,6 +56,14 @@ export class AuthService {
           this._user.set(res.user);
         }),
       );
+  }
+
+  /** Valida credenciales de admin sin cerrar la sesión del cajero. */
+  verificarAdmin(username: string, password: string): Observable<VerificarAdminResponse> {
+    return this.http.post<VerificarAdminResponse>(`${environment.apiUrl}/auth/verificar-admin`, {
+      username,
+      password,
+    });
   }
 
   logout(): void {

@@ -1,0 +1,167 @@
+<section class="catalogos-page admin-list-page card">
+  <header class="page-head">
+    <div>
+      <h1>Catálogos del sistema</h1>
+      <p class="hint">
+        Administración de tablas catálogo: consultar, crear, editar, eliminar e importar datos.
+        Programas y servicios se gestionan en sus menús propios.
+      </p>
+    </div>
+    <div class="head-actions">
+      <button type="button" class="ghost" (click)="recargarExcel()" [disabled]="saving()">
+        Recargar desde Excel
+      </button>
+    </div>
+  </header>
+
+  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="layout">
+    <aside class="catalog-sidebar">
+      <h2>Tablas</h2>
+      <button
+        type="button"
+        class="cat-item"
+        *ngFor="let c of catalogos()"
+        [class.active]="seleccionado() === c.nombre"
+        (click)="seleccionar(c.nombre)">
+        {{ c.label }}
+        <span class="cap cap-amber cap-sm" *ngIf="c.grande">grande</span>
+      </button>
+    </aside>
+
+    <main class="catalog-main" *ngIf="seleccionado()">
+      <div class="main-head">
+        <h2>{{ labelActual() }}</h2>
+        <div class="toolbar">
+          <input
+            type="search"
+            placeholder="Buscar (mín. 2 caracteres)…"
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event)"
+            (keyup.enter)="pagina.set(0); cargar()" />
+          <button type="button" class="ghost" (click)="pagina.set(0); cargar()">Buscar</button>
+          <button type="button" class="primary" (click)="nuevo()">Nuevo registro</button>
+          <button type="button" class="ghost" (click)="toggleImport()">Importar JSON</button>
+          <div class="view-toggle" role="group" aria-label="Modo de vista">
+            <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
+            <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="import-card card" *ngIf="mostrarImport()">
+        <h3>Importar JSON — {{ labelActual() }}</h3>
+        <p class="hint">
+          Pegue un arreglo <code>[&#123;...&#125;]</code> o <code>&#123; "rows": [...] &#125;</code>.
+          «Reemplazar» borra la tabla actual antes de importar.
+        </p>
+        <input type="file" accept=".json,application/json" (change)="onFileImport($event)" />
+        <textarea rows="6" [ngModel]="importJson()" (ngModelChange)="importJson.set($event)"></textarea>
+        <div class="actions">
+          <button type="button" class="ghost" (click)="toggleImport()">Cancelar</button>
+          <button type="button" class="ghost" (click)="ejecutarImport('agregar')" [disabled]="saving()">
+            Agregar
+          </button>
+          <button type="button" class="danger" (click)="ejecutarImport('reemplazar')" [disabled]="saving()">
+            Reemplazar todo
+          </button>
+        </div>
+      </div>
+
+      <div class="form-card card" *ngIf="mostrarForm()">
+        <h3>{{ editandoId() ? 'Editar registro' : 'Nuevo registro' }}</h3>
+        <div class="fields-grid">
+          <div class="field" *ngFor="let c of camposForm()">
+            <label>{{ c }}</label>
+            <input
+              [type]="inputTypeCampo(c)"
+              [step]="esCampoMoneda(c) ? 1 : campoEsNumerico(c) ? 1 : undefined"
+              [min]="inputTypeCampo(c) === 'number' ? 0 : undefined"
+              [ngModel]="formDoc()[c]"
+              (ngModelChange)="patchCampo(c, $event)"
+              [readonly]="c === '_id'" />
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
+          <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="pager" *ngIf="listado() as L">
+        <span>{{ L.total }} registros — página {{ pagina() + 1 }} / {{ totalPaginas() }}</span>
+        <button type="button" class="ghost mini" (click)="paginaAnterior()" [disabled]="pagina() === 0">
+          Anterior
+        </button>
+        <button
+          type="button"
+          class="ghost mini"
+          (click)="paginaSiguiente()"
+          [disabled]="(pagina() + 1) * pageSize >= L.total">
+          Siguiente
+        </button>
+      </div>
+
+      <div class="table-wrap" *ngIf="!loading() && vista() === 'lista'">
+        <table class="data-table" *ngIf="listado() as L">
+          <thead>
+            <tr>
+              <th *ngFor="let c of camposTabla()">{{ c }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of L.rows">
+              <td *ngFor="let c of camposTabla()">
+                <span *ngIf="usarCapsula(c)" [ngClass]="capParaCampo(c, valorCelda(row, c))">{{ valorCelda(row, c) }}</span>
+                <ng-container *ngIf="!usarCapsula(c)">{{ valorCelda(row, c) }}</ng-container>
+              </td>
+              <td class="acciones">
+                <button type="button" class="ghost mini" (click)="editar(row)">Editar</button>
+                <button type="button" class="danger mini" (click)="eliminar(row)">Eliminar</button>
+              </td>
+            </tr>
+            <tr *ngIf="!L.rows.length">
+              <td [attr.colspan]="camposTabla().length + 1" class="empty">Sin registros.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="cards-grid" *ngIf="!loading() && vista() === 'cards' && listado() as L">
+        <article class="list-card" *ngFor="let row of L.rows">
+          <header class="card-title"><h3>{{ cardTitulo(row) }}</h3></header>
+          <div class="card-body">
+            <div class="entity-badge-wrap">
+              <div class="entity-badge tone-teal">{{ valorCelda(row, camposTabla()[0]) }}</div>
+            </div>
+            <div class="card-main">
+              <dl class="card-fields">
+                <div *ngFor="let c of camposTabla()">
+                  <dt>{{ c }}</dt>
+                  <dd>
+                    <span *ngIf="usarCapsula(c)" [ngClass]="capParaCampo(c, valorCelda(row, c))">{{ valorCelda(row, c) }}</span>
+                    <ng-container *ngIf="!usarCapsula(c)">{{ valorCelda(row, c) }}</ng-container>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+          <footer class="card-foot">
+            <span class="card-hint">{{ labelActual() }}</span>
+            <div class="card-actions">
+              <button type="button" class="act open" (click)="editar(row)">Editar</button>
+              <button type="button" class="act doc" (click)="eliminar(row)">Eliminar</button>
+            </div>
+          </footer>
+        </article>
+        <div class="empty cards-empty" *ngIf="!L.rows.length">Sin registros.</div>
+      </div>
+
+      <p class="loading" *ngIf="loading()">Cargando…</p>
+    </main>
+  </div>
+</section>

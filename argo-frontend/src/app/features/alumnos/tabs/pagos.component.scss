@@ -1,5 +1,7 @@
 .pagos { display: flex; flex-direction: column; gap: 14px; }
 
+.saldo-servicios { margin-bottom: 2px; }
+
 .header-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -19,6 +21,13 @@
 .col-3  { grid-column: span 3; }
 .col-6  { grid-column: span 6; }
 .col-12 { grid-column: span 12; }
+
+.field-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
 
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .r { text-align: right; }
@@ -42,6 +51,35 @@
 
 .empty-card { text-align: center; padding: 40px 20px; }
 .empty-card p { color: var(--text-dim); }
+
+.auth-anular-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  padding: 1rem;
+}
+
+.auth-anular-modal {
+  min-width: 300px;
+  max-width: 420px;
+  padding: 1rem;
+
+  label {
+    display: block;
+    margin: 10px 0;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+  }
+}
 
 @media (max-width: 900px) {
   .header-row { grid-template-columns: 1fr; }

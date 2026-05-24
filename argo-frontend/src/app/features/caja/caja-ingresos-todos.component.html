@@ -1,0 +1,99 @@
+<section class="listado-admin admin-list-page">
+  <header class="page-head card">
+    <div>
+      <h1>Todos los ingresos</h1>
+      <p class="hint">Histórico completo de ingresos y cobros. Solo administradores.</p>
+    </div>
+    <div class="head-actions">
+      <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
+      <span class="total-badge">{{ totalValor() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+    </div>
+  </header>
+
+  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+
+  <div class="card filtros">
+    <label>
+      Buscar
+      <input type="search" placeholder="Nombre, concepto, servicio, recibo…" [ngModel]="q()" (ngModelChange)="q.set($event)" (keyup.enter)="cargar()" />
+    </label>
+    <label>
+      Documento
+      <input type="text" placeholder="Nº documento" [ngModel]="numDoc()" (ngModelChange)="numDoc.set($event)" (keyup.enter)="cargar()" />
+    </label>
+    <label>
+      Desde
+      <input type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+    </label>
+    <label>
+      Hasta
+      <input type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    </label>
+    <div class="filtro-actions">
+      <button type="button" class="primary sm" (click)="cargar()">Filtrar</button>
+      <button type="button" class="ghost sm" (click)="limpiarFiltros()">Limpiar</button>
+      <div class="view-toggle" role="group">
+        <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
+        <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
+      </div>
+      <span class="count">{{ items().length }} de {{ total() }}</span>
+    </div>
+  </div>
+
+  <div class="card content-wrap">
+    <div class="loading" *ngIf="loading()">Cargando ingresos…</div>
+
+    <div class="table-scroll" *ngIf="!loading() && vista() === 'lista'">
+      <table class="argo data-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Recibo</th>
+            <th>Alumno / Pagador</th>
+            <th>Documento</th>
+            <th>Tipo ingreso</th>
+            <th>Concepto / Servicio</th>
+            <th>Forma pago</th>
+            <th class="r">Valor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let i of items()">
+            <td><span [ngClass]="capFecha(i.fecha || i.createdAt)">{{ (i.fecha || i.createdAt) | date: 'dd/MM/yyyy HH:mm' }}</span></td>
+            <td><span [ngClass]="capRecibo(i.numRecibo)">{{ i.numRecibo || '—' }}</span></td>
+            <td><span [ngClass]="capBeneficiario(pagadorLabel(i))">{{ pagadorLabel(i) }}</span></td>
+            <td><span [ngClass]="capDoc(i.numDoc)">{{ i.numDoc ?? '—' }}</span></td>
+            <td><span [ngClass]="capTipoIngreso(i.tipoIngresoDescr)">{{ i.tipoIngresoDescr || '—' }}</span></td>
+            <td><span [ngClass]="capConceptoCaja(conceptoLabel(i))">{{ conceptoLabel(i) }}</span></td>
+            <td><span [ngClass]="capFormaPago(formaPagoLabel(i))">{{ formaPagoLabel(i) }}</span></td>
+            <td class="num"><span [ngClass]="capValorIngreso()">{{ i.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></td>
+            <td class="actions-cell">
+              <button type="button" class="ghost mini" (click)="verRecibo(i)">Ver</button>
+              <button type="button" class="ghost mini" (click)="imprimirRecibo(i)">Imprimir</button>
+            </td>
+          </tr>
+          <tr *ngIf="items().length === 0"><td colspan="9" class="empty">Sin resultados.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
+      <article class="list-card" *ngFor="let i of items()">
+        <div class="card-title">
+          <h3>{{ i.numRecibo || 'Ingreso' }}</h3>
+          <p class="card-sub">{{ pagadorLabel(i) }} · {{ (i.fecha || i.createdAt) | date: 'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+        <div class="card-body">
+          <div class="card-row"><span class="lbl">Tipo</span><span [ngClass]="capTipoIngreso(i.tipoIngresoDescr)">{{ i.tipoIngresoDescr || '—' }}</span></div>
+          <div class="card-row"><span class="lbl">Concepto</span><span>{{ conceptoLabel(i) }}</span></div>
+          <div class="card-row"><span class="lbl">Valor</span><span [ngClass]="capValorIngreso()">{{ i.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></div>
+        </div>
+        <div class="card-foot">
+          <button type="button" class="ghost sm" (click)="verRecibo(i)">Ver recibo</button>
+        </div>
+      </article>
+      <p class="cards-empty empty" *ngIf="items().length === 0">Sin resultados.</p>
+    </div>
+  </div>
+</section>

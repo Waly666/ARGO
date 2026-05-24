@@ -38,7 +38,6 @@ const Usuario = require('../src/models/Usuario');
     } else {
       await Usuario.create({
         username: 'admin',
-        nickName: 'admin',
         nombres: 'Administrador',
         apellidos: 'ARGO',
         rol: 'admin',

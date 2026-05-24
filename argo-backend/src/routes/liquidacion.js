@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/auth');
 const router = Router();
 router.use(requireAuth);
 
+router.get('/con-saldo', ctrl.listarConSaldo);
 router.get('/alumno/:numDoc', ctrl.listarPorAlumno);
 router.get('/:id', ctrl.obtener);
 router.post('/', ctrl.crear);

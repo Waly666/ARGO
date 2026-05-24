@@ -43,11 +43,90 @@ export function catalogoConEtiquetas(
   });
 }
 
+/** Mapa código → etiqueta visible para listados */
+export function buildCatalogoLabelMap(
+  items: Record<string, unknown>[],
+  fallback: Record<string, unknown>[],
+  codeFields: string[] = [],
+): Map<string, string> {
+  const map = new Map<string, string>();
+  const seen = new Set<string>();
+
+  const registrar = (codigo: string, etiqueta: string) => {
+    if (!codigo || !etiqueta) return;
+    const c = codigo.trim();
+    const e = etiqueta.trim();
+    map.set(c, e);
+    const m = c.match(/^(\d+)/);
+    if (m) map.set(m[1], e);
+  };
+
+  const todos = [...fallback, ...(items || [])];
+  for (const raw of todos) {
+    const item = catalogoConEtiquetas([raw], fallback)[0] ?? raw;
+    const sig = JSON.stringify(item);
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+
+    const etiqueta = catEtiqueta(item);
+    let codigo = '';
+    for (const f of codeFields) {
+      if (item[f] != null && item[f] !== '') {
+        codigo = String(item[f]).trim();
+        break;
+      }
+    }
+    if (!codigo) codigo = normalizarEnum(String(item['descripcion'] ?? ''));
+    const v = catValor(item);
+    if (!codigo && v && !/^[a-f0-9]{24}$/i.test(v) && v.length <= 6) codigo = v;
+
+    registrar(codigo, etiqueta);
+    const desc = String(item['descripcion'] ?? '').trim();
+    if (desc) registrar(desc, etiqueta);
+  }
+  return map;
+}
+
+export function catalogoLabel(map: Map<string, string>, valor?: string | null): string {
+  if (!valor) return '';
+  const v = String(valor).trim();
+  if (map.has(v)) return map.get(v)!;
+  const norm = normalizarEnum(v);
+  if (map.has(norm)) return map.get(norm)!;
+  return v;
+}
+
+/** Nombres y apellidos siempre en mayúsculas */
+export function nombreEnMayusculas(val?: string | null): string {
+  if (!val) return '';
+  return String(val).trim().toUpperCase().replace(/\s+/g, ' ');
+}
+
 /** Normaliza valores legacy tipo "1) SOLTERO" → "1" */
 export function normalizarEnum(val?: string): string {
   if (!val) return '';
   const m = String(val).match(/^(\d+)/);
   return m ? m[1] : String(val).trim();
+}
+
+/** OCR / texto libre → M | F */
+export function normalizarGenero(val?: string): string {
+  const t = String(val || '').toUpperCase().trim();
+  if (t === 'M' || t.startsWith('MASC')) return 'M';
+  if (t === 'F' || t.startsWith('FEM')) return 'F';
+  return t === 'M' || t === 'F' ? t : '';
+}
+
+/** OCR / texto libre → A+, O-, etc. */
+export function normalizarTipoSangre(val?: string): string {
+  const valid = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
+  const t = String(val || '').toUpperCase().replace(/\s/g, '');
+  const m = t.match(/^(AB|A|B|O)(\+|-)$/);
+  if (m) {
+    const k = `${m[1]}${m[2]}`;
+    return valid.has(k) ? k : '';
+  }
+  return valid.has(t) ? t : '';
 }
 
 export function fechaInput(d?: string | Date | null): string {

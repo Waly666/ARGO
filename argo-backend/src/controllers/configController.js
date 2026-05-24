@@ -17,7 +17,11 @@ const CAMPOS = [
   'consecutivoComprobanteEgreso',
   'slogan1',
   'mensajeEncabezado',
+  'mensajeEncabezadoEgreso',
   'mensajePie',
+  'mensajePieEgreso',
+  'mensajeCreacionAlumnoTitulo',
+  'mensajeCreacionAlumno',
   'anchoReciboMm',
   'mostrarQr',
 ];

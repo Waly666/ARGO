@@ -2,21 +2,65 @@
   <header class="page-head card">
     <div class="head-left">
       <button type="button" class="ghost back" (click)="volver()">← Lista</button>
-      <div class="title-block">
-        <h1>{{ tituloPagina() }}</h1>
-        <p *ngIf="!esNuevo() && alumno() as a">{{ a.tipoDoc || 'CC' }} {{ a.numDoc }}</p>
-        <p *ngIf="esNuevo()">Complete los datos principales y guarde para habilitar matrículas y pagos.</p>
-      </div>
-    </div>
 
-    <div class="current" *ngIf="!esNuevo() && alumno() as a">
-      <div class="avatar">
-        <img *ngIf="fotoUrl() as f" [src]="f" alt="" />
-        <span *ngIf="!fotoUrl()">{{ ((a.nombre1 || '?').charAt(0)) + ((a.apellido1 || '').charAt(0)) }}</span>
+      <div class="head-profile" *ngIf="!esNuevo() && alumno() as a">
+        <div class="current">
+          <div class="avatar">
+            <img *ngIf="fotoUrl() as f" [src]="f" alt="" />
+            <span *ngIf="!fotoUrl()">{{ ((a.nombre1 || '?').charAt(0)) + ((a.apellido1 || '').charAt(0)) }}</span>
+          </div>
+          <div class="meta">
+            <strong>{{ nombreCompleto() }}</strong>
+            <span>{{ a.numDoc }}</span>
+          </div>
+        </div>
+
+        <div class="head-alarms" *ngIf="saldosPendientesCount() > 0 || docsPendientesCount() > 0">
+          <button
+            type="button"
+            class="head-alarm saldo-alarm"
+            *ngIf="saldosPendientesCount() > 0"
+            (click)="irPagos()"
+            [attr.title]="saldosPendientesTitulo()"
+            [attr.aria-label]="'Saldo pendiente total: ' + fmtSaldo(saldoTotalPendiente())">
+            <span class="head-alarm-pulse" aria-hidden="true"></span>
+            <span class="head-alarm-icon" aria-hidden="true">$</span>
+            <span class="head-alarm-text">
+              {{ saldosPendientesCount() }} saldo{{ saldosPendientesCount() > 1 ? 's' : '' }} · {{ fmtSaldo(saldoTotalPendiente()) }}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="head-alarm serv-saldo-alarm"
+            *ngFor="let it of saldosPendientes()"
+            (click)="irPagos()"
+            [attr.title]="tituloSaldoItem(it.descripcion, fmtSaldo(it.saldo))"
+            [attr.aria-label]="tituloSaldoItem(it.descripcion, fmtSaldo(it.saldo))">
+            <span class="head-alarm-pulse" aria-hidden="true"></span>
+            <span class="head-alarm-icon" aria-hidden="true">$</span>
+            <span class="head-alarm-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmtSaldo(it.saldo) }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="head-alarm doc-alarm"
+            *ngIf="docsPendientesCount() > 0"
+            (click)="irDocumentos()"
+            [attr.title]="docsPendientesTitulo()"
+            [attr.aria-label]="docsPendientesTitulo()">
+            <span class="head-alarm-pulse" aria-hidden="true"></span>
+            <span class="head-alarm-icon" aria-hidden="true">!</span>
+            <span class="head-alarm-text">
+              {{ docsPendientesCount() }} doc. pendiente{{ docsPendientesCount() > 1 ? 's' : '' }}
+            </span>
+          </button>
+        </div>
       </div>
-      <div class="meta">
-        <strong>{{ nombreCompleto() }}</strong>
-        <span>CC {{ a.numDoc }}</span>
+
+      <div class="title-block" *ngIf="esNuevo()">
+        <h1>Nuevo alumno</h1>
+        <p>Complete los datos principales y guarde para habilitar matrículas y pagos.</p>
       </div>
     </div>
   </header>
@@ -35,10 +79,13 @@
         type="button"
         class="tab"
         [class.active]="tab() === t.key"
+        [class.doc-pendiente]="t.key === 'documentos' && docsPendientesCount() > 0"
+        [class.saldo-pendiente]="(t.key === 'pagos' || t.key === 'servicios') && saldosPendientesCount() > 0"
+        [class.guardar-pendiente]="(esNuevo() || store.datosSinGuardar()) && t.key === 'datos'"
         [class.disabled]="esNuevo() && t.key !== 'datos'"
         [disabled]="esNuevo() && t.key !== 'datos'"
         (click)="setTab(t.key)"
-        [title]="esNuevo() && t.key !== 'datos' ? 'Guarde el alumno primero' : ''">
+        [title]="esNuevo() && t.key !== 'datos' ? 'Guarde el alumno primero con el botón Crear' : (store.datosSinGuardar() && t.key !== 'datos' ? 'Guarde los cambios en Datos Principales' : '')">
         {{ t.label }}
       </button>
     </nav>
@@ -48,7 +95,7 @@
       <argo-servicios                *ngIf="tab() === 'servicios'"></argo-servicios>
       <argo-pagos                    *ngIf="tab() === 'pagos'"></argo-pagos>
       <argo-certificados             *ngIf="tab() === 'certificados'"></argo-certificados>
-      <argo-tab-placeholder          *ngIf="tab() === 'documentos'" [titulo]="'Documentos'"></argo-tab-placeholder>
+      <argo-documentos               *ngIf="tab() === 'documentos'"></argo-documentos>
     </div>
   </ng-container>
 </section>

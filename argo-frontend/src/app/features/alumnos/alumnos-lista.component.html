@@ -2,7 +2,12 @@
   <header class="page-head card">
     <div class="title">
       <h1>Alumnos</h1>
-      <p>Listado de alumnos registrados. Busca por cédula o nombre y abre la ficha para gestionar matrículas, pagos y certificados.</p>
+      <p *ngIf="vista() === 'lista'">
+        Listado completo con datos personales, contacto y ubicación. Desplaza horizontalmente si no ves todas las columnas.
+      </p>
+      <p *ngIf="vista() === 'cards'">
+        Vista en tarjetas con foto tipo documento, alertas y datos principales del alumno.
+      </p>
     </div>
     <button type="button" class="primary" (click)="nuevo()">+ Crear alumno</button>
   </header>
@@ -12,55 +17,235 @@
       <span class="ic">◎</span>
       <input
         type="text"
-        placeholder="Buscar por cédula, nombre o apellido..."
+        placeholder="Buscar por documento, nombre, celular, correo, dirección o municipio..."
         [ngModel]="query()"
         (ngModelChange)="onBuscar($event)"
         autocomplete="off"
       />
     </div>
+    <div class="view-toggle" role="group" aria-label="Modo de vista">
+      <button
+        type="button"
+        class="view-btn"
+        [class.active]="vista() === 'lista'"
+        (click)="setVista('lista')"
+        title="Vista tabla">
+        ☰ Lista
+      </button>
+      <button
+        type="button"
+        class="view-btn"
+        [class.active]="vista() === 'cards'"
+        (click)="setVista('cards')"
+        title="Vista tarjetas">
+        ▦ Cards
+      </button>
+    </div>
     <span class="count">{{ pageLabel() }}</span>
   </div>
 
-  <div class="card table-wrap">
+  <div class="card content-wrap">
     <div class="loading" *ngIf="loading()">Cargando alumnos…</div>
 
-    <table class="argo" *ngIf="!loading()">
-      <thead>
-        <tr>
-          <th class="col-foto"></th>
-          <th>Documento</th>
-          <th>Nombre completo</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let r of items()" class="row-click" (click)="abrir(r)">
-          <td class="col-foto">
-            <div class="avatar">
-              <img *ngIf="fotoUrl(r.urlFoto) as f" [src]="f" alt="" />
-              <span *ngIf="!r.urlFoto">{{ ((r.nombre1 || r.nombres || '?').charAt(0)) + ((r.apellido1 || r.apellidos || '').charAt(0)) }}</span>
-            </div>
-          </td>
-          <td><span class="doc">{{ r.numDoc }}</span></td>
-          <td>{{ r.nombreCompleto || (r.nombre1 + ' ' + (r.nombre2 || '') + ' ' + r.apellido1 + ' ' + (r.apellido2 || '')).trim() }}</td>
-          <td class="actions">
-            <button type="button" class="ghost mini" (click)="abrir(r); $event.stopPropagation()">Abrir</button>
-          </td>
-        </tr>
-        <tr *ngIf="items().length === 0">
-          <td colspan="4" class="empty">
-            <ng-container *ngIf="query(); else sinDatos">
-              No hay resultados para «{{ query() }}».
-            </ng-container>
-            <ng-template #sinDatos>
-              No hay alumnos registrados. Usa <strong>Crear alumno</strong> para agregar el primero.
-            </ng-template>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-scroll" *ngIf="!loading() && vista() === 'lista'">
+      <table class="argo data-table alumnos-grid">
+        <thead>
+          <tr>
+            <th class="col-foto"></th>
+            <th>Documento</th>
+            <th>Nombre</th>
+            <th>Fecha nac.</th>
+            <th class="col-alertas">Alertas</th>
+            <th>Jornada</th>
+            <th>Estado civil</th>
+            <th>Correo</th>
+            <th>Celular</th>
+            <th class="col-direccion">Dirección</th>
+            <th>Mun. origen</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of items()" class="row-click" (click)="abrir(r)">
+            <td class="col-foto">
+              <div class="avatar">
+                <img *ngIf="fotoUrl(r.urlFoto) as f" [src]="f" alt="" />
+                <span *ngIf="!r.urlFoto">{{ iniciales(r) }}</span>
+              </div>
+            </td>
+            <td>
+              <span [ngClass]="capDoc(r.numDoc)">{{ formatNumDoc(r.numDoc) }}</span>
+            </td>
+            <td class="col-nombre">{{ nombreCompleto(r) }}</td>
+            <td>
+              <span *ngIf="r.fechaNac; else vacio" [ngClass]="capFecha(formatFecha(r.fechaNac))">{{ formatFecha(r.fechaNac) }}</span>
+            </td>
+            <td class="col-alertas" (click)="$event.stopPropagation()">
+              <ng-container *ngTemplateOutlet="alarmasTpl; context: { $implicit: r }"></ng-container>
+            </td>
+            <td>
+              <span *ngIf="r.jornada; else vacio" [ngClass]="capJornada(r.jornada)" [title]="labelJornada(r)">
+                {{ labelJornada(r) }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="r.estadoCivil; else vacio" [ngClass]="capEstadoCivil(r.estadoCivil)" [title]="labelEstadoCivil(r)">
+                {{ labelEstadoCivil(r) }}
+              </span>
+            </td>
+            <td class="col-text">
+              <span *ngIf="r.correo; else vacio" class="text-cell" [title]="r.correo">{{ r.correo }}</span>
+            </td>
+            <td>
+              <span *ngIf="r.celular; else vacio" [ngClass]="capCelular(r.celular)">{{ r.celular }}</span>
+            </td>
+            <td class="col-direccion">
+              <span *ngIf="r.direccion; else vacio" class="text-cell direccion-cell" [title]="r.direccion">{{ r.direccion }}</span>
+            </td>
+            <td class="col-mun">
+              <span *ngIf="textoMunicipio(r) !== '—'; else vacio" [ngClass]="capMunicipio(textoMunicipio(r))" [title]="textoMunicipio(r)">
+                {{ textoMunicipio(r) }}
+              </span>
+            </td>
+            <td class="actions">
+              <button type="button" class="ghost mini" (click)="abrir(r); $event.stopPropagation()">Abrir</button>
+            </td>
+          </tr>
+          <tr *ngIf="items().length === 0">
+            <td colspan="12" class="empty">
+              <ng-container *ngTemplateOutlet="emptyTpl"></ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <footer class="pager" *ngIf="total() > 0">
+    <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
+      <article
+        class="alumno-card"
+        *ngFor="let r of items()"
+        (click)="abrir(r)"
+        tabindex="0"
+        (keydown.enter)="abrir(r)">
+        <header class="card-title">
+          <h3>{{ nombreCompleto(r) }}</h3>
+        </header>
+
+        <div class="card-body">
+          <div class="id-photo-wrap">
+            <div class="id-photo" aria-hidden="true">
+              <span class="id-photo-label">FOTO</span>
+              <img *ngIf="fotoUrl(r.urlFoto) as f" [src]="f" alt="" />
+              <span class="id-photo-iniciales" *ngIf="!r.urlFoto">{{ iniciales(r) }}</span>
+            </div>
+          </div>
+
+          <div class="card-main">
+            <div class="card-doc">
+              <span [ngClass]="capDoc(r.numDoc)">{{ formatNumDoc(r.numDoc) }}</span>
+            </div>
+
+            <div class="card-alarms" (click)="$event.stopPropagation()">
+              <ng-container *ngTemplateOutlet="alarmasTpl; context: { $implicit: r }"></ng-container>
+            </div>
+
+            <div class="card-tags">
+              <span *ngIf="r.jornada; else tagVacio" [ngClass]="capJornada(r.jornada)" [title]="labelJornada(r)">
+                {{ labelJornada(r) }}
+              </span>
+              <span *ngIf="textoMunicipio(r) !== '—'; else tagVacio" [ngClass]="capMunicipio(textoMunicipio(r))">
+                {{ textoMunicipio(r) }}
+              </span>
+              <span *ngIf="r.estadoCivil; else tagVacio" [ngClass]="capEstadoCivil(r.estadoCivil)">
+                {{ labelEstadoCivil(r) }}
+              </span>
+              <ng-template #tagVacio></ng-template>
+            </div>
+
+            <dl class="card-fields">
+              <div *ngIf="r.fechaNac">
+                <dt>Nacimiento</dt>
+                <dd [ngClass]="capFecha(formatFecha(r.fechaNac))">{{ formatFecha(r.fechaNac) }}</dd>
+              </div>
+              <div *ngIf="r.correo">
+                <dt>Correo</dt>
+                <dd class="truncate" [title]="r.correo">{{ r.correo }}</dd>
+              </div>
+              <div *ngIf="r.celular">
+                <dt>Celular</dt>
+                <dd [ngClass]="capCelular(r.celular)">{{ r.celular }}</dd>
+              </div>
+              <div *ngIf="r.direccion" class="span-2">
+                <dt>Dirección</dt>
+                <dd class="direccion">{{ r.direccion }}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <footer class="card-foot" (click)="$event.stopPropagation()">
+          <span class="card-hint">Clic en la tarjeta para abrir ficha</span>
+          <div class="card-actions">
+            <button type="button" class="act open" (click)="abrir(r)" title="Abrir ficha">Abrir</button>
+            <button
+              type="button"
+              class="act pay"
+              *ngIf="r.indicadores?.saldosPendientes"
+              (click)="abrirTab(r, 'pagos', $event)"
+              title="Ir a pagos">$</button>
+            <button
+              type="button"
+              class="act doc"
+              *ngIf="r.indicadores?.docsPendientes"
+              (click)="abrirTab(r, 'documentos', $event)"
+              title="Ir a documentos">!</button>
+          </div>
+        </footer>
+      </article>
+
+      <div class="empty cards-empty" *ngIf="items().length === 0">
+        <ng-container *ngTemplateOutlet="emptyTpl"></ng-container>
+      </div>
+    </div>
+
+    <ng-template #vacio><span class="dim">—</span></ng-template>
+
+    <ng-template #alarmasTpl let-r>
+      <div class="row-alarms" *ngIf="tieneAlarmas(r); else sinAlarmas">
+        <button
+          type="button"
+          class="row-alarm saldo-alarm"
+          *ngIf="r.indicadores?.saldosPendientes"
+          (click)="abrirTab(r, 'pagos', $event)"
+          [attr.title]="tituloSaldo(r)">
+          <span class="row-alarm-pulse" aria-hidden="true"></span>
+          <span class="row-alarm-icon">$</span>
+          <span class="row-alarm-label">{{ fmtSaldo(r.indicadores?.saldoTotal || 0) }}</span>
+        </button>
+        <button
+          type="button"
+          class="row-alarm doc-alarm"
+          *ngIf="r.indicadores?.docsPendientes"
+          (click)="abrirTab(r, 'documentos', $event)"
+          [attr.title]="tituloDocs(r)">
+          <span class="row-alarm-pulse" aria-hidden="true"></span>
+          <span class="row-alarm-icon">!</span>
+          <span class="row-alarm-label">Doc.</span>
+        </button>
+      </div>
+      <ng-template #sinAlarmas><span class="dim">—</span></ng-template>
+    </ng-template>
+
+    <ng-template #emptyTpl>
+      <ng-container *ngIf="query(); else sinDatos">
+        No hay resultados para «{{ query() }}».
+      </ng-container>
+      <ng-template #sinDatos>
+        No hay alumnos registrados. Usa <strong>Crear alumno</strong> para agregar el primero.
+      </ng-template>
+    </ng-template>
+
+    <footer class="pager" *ngIf="total() > 0 && !loading()">
       <button type="button" class="ghost" (click)="paginaAnterior()" [disabled]="page() === 0">← Anterior</button>
       <span>Página {{ page() + 1 }} de {{ totalPages() }}</span>
       <button type="button" class="ghost" (click)="paginaSiguiente()" [disabled]="page() >= totalPages() - 1">Siguiente →</button>

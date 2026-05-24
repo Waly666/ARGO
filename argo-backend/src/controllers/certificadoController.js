@@ -3,14 +3,15 @@ const PlantillaCertificado = require('../models/PlantillaCertificado');
 const Liquidacion = require('../models/Liquidacion');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado, siguienteCodigoCertificado } = require('../services/configCertificado');
+const { buscarPrograma } = require('../services/programaServicio');
+const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery } = require('../utils/numDoc');
 const {
-  clasificarPrograma,
+  clasificarProgramaAsync,
   TIPOS,
   TIPOS_LABEL,
   idPlantillaPorTipo,
   orientacionPorTipo,
 } = require('../services/clasificacionCertificado');
-
 function num(v) {
   if (v == null) return 0;
   if (typeof v === 'number') return v;
@@ -23,7 +24,7 @@ async function resolverPlantilla(prog, config, idPlantillaManual) {
     const p = await PlantillaCertificado.findById(idPlantillaManual).lean();
     if (p && p.activa !== false) return p;
   }
-  const tipo = clasificarPrograma(prog);
+  const tipo = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
   const idDef = idPlantillaPorTipo(config, tipo);
   if (idDef) {
     const p = await PlantillaCertificado.findById(idDef).lean();
@@ -49,18 +50,7 @@ exports.tiposCertificado = async (_req, res) => {
 };
 
 async function programaPorId(idProg) {
-  if (!idProg) return null;
-  const id = String(idProg);
-  const n = Number(idProg);
-  return cat.programas
-    .findOne({
-      $or: [
-        { idProg: id },
-        { idPrograma: id },
-        ...(Number.isFinite(n) ? [{ idPrograma: n }, { idProg: n }] : []),
-      ],
-    })
-    .lean();
+  return buscarPrograma(idProg);
 }
 
 async function descrPrograma(idProg) {
@@ -74,9 +64,11 @@ function encabezadoCurso(prog) {
 
 exports.elegibles = async (req, res, next) => {
   try {
-    const { numDoc } = req.params;
-    const liqs = await Liquidacion.find({ numDoc, idProg: { $ne: null } }).lean();
-    const certs = await Certificado.find({ numDoc }).lean();
+    const numDoc = numDocFromParams(req.params.numDoc);
+    if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    const q = numDocQuery(numDoc);
+    const liqs = await Liquidacion.find({ $and: [q, { idProg: { $ne: null } }] }).lean();
+    const certs = await Certificado.find(q).lean();
     const certIds = new Set(certs.map((c) => String(c.idLiquidacion)));
 
     const out = [];
@@ -85,7 +77,7 @@ exports.elegibles = async (req, res, next) => {
       if (saldo > 0.0001) continue;
       if (certIds.has(String(it._id))) continue;
       const prog = await programaPorId(it.idProg);
-      const tipoCert = clasificarPrograma(prog);
+      const tipoCert = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
       const cfg = await obtenerConfigCertificado();
       const plantillaSug = await resolverPlantilla(prog, cfg, null);
       out.push({
@@ -112,7 +104,9 @@ exports.elegibles = async (req, res, next) => {
 
 exports.listarPorAlumno = async (req, res, next) => {
   try {
-    const certs = await Certificado.find({ numDoc: req.params.numDoc }).sort({ fechaEmision: -1 }).lean();
+    const numDoc = numDocFromParams(req.params.numDoc);
+    if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    const certs = await Certificado.find(numDocQuery(numDoc)).sort({ fechaEmision: -1 }).lean();
     const out = [];
     for (const c of certs) {
       const descr = await descrPrograma(c.idProg);
@@ -131,14 +125,15 @@ exports.listarPorAlumno = async (req, res, next) => {
 
 exports.crear = async (req, res, next) => {
   try {
-    const { numDoc, idLiquidacion, idPlantilla, numActa, numFolio, numRunt, observaciones, fechaEmision } =
+    const { numDoc: numDocRaw, idLiquidacion, idPlantilla, numActa, numFolio, numRunt, observaciones, fechaEmision } =
       req.body || {};
-    if (!numDoc || !idLiquidacion) {
+    const numDoc = parseNumDoc(numDocRaw);
+    if (numDoc == null || !idLiquidacion) {
       return res.status(400).json({ message: 'numDoc e idLiquidacion son obligatorios' });
     }
     const liq = await Liquidacion.findById(idLiquidacion);
     if (!liq) return res.status(404).json({ message: 'Item de liquidación no encontrado' });
-    if (liq.numDoc !== numDoc) return res.status(400).json({ message: 'No corresponde al alumno' });
+    if (!numDocEquals(liq.numDoc, numDoc)) return res.status(400).json({ message: 'No corresponde al alumno' });
     if (!liq.idProg) return res.status(400).json({ message: 'El ítem no es de un programa educativo' });
     if (num(liq.saldo) > 0.0001) return res.status(400).json({ message: 'El programa no está totalmente pagado' });
 
@@ -147,7 +142,7 @@ exports.crear = async (req, res, next) => {
 
     const cfg = await obtenerConfigCertificado();
     const prog = await programaPorId(liq.idProg);
-    const tipoCert = clasificarPrograma(prog);
+    const tipoCert = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
     const plantilla = await resolverPlantilla(prog, cfg, idPlantilla);
     if (!plantilla) {
       return res.status(400).json({
@@ -198,6 +193,71 @@ exports.eliminar = async (req, res, next) => {
     const c = await Certificado.findByIdAndDelete(req.params.id);
     if (!c) return res.status(404).json({ message: 'Certificado no encontrado' });
     res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+};
+
+const CAMPOS_EDITABLES = [
+  'numActa',
+  'numFolio',
+  'numRunt',
+  'observaciones',
+  'encabezado',
+  'fechaEmision',
+  'fechaVencimiento',
+];
+
+function pickCertificadoEdit(body) {
+  const dto = {};
+  for (const k of CAMPOS_EDITABLES) {
+    if (body[k] !== undefined) dto[k] = body[k];
+  }
+  if (dto.numActa !== undefined) dto.numActa = String(dto.numActa || '').trim();
+  if (dto.numFolio !== undefined) dto.numFolio = String(dto.numFolio || '').trim();
+  if (dto.numRunt !== undefined) dto.numRunt = String(dto.numRunt || '').trim();
+  if (dto.observaciones !== undefined) dto.observaciones = String(dto.observaciones || '').trim();
+  if (dto.encabezado !== undefined) dto.encabezado = String(dto.encabezado || '').trim();
+  if (dto.fechaEmision !== undefined) {
+    if (!dto.fechaEmision) return { error: 'fechaEmision inválida' };
+    const d = new Date(dto.fechaEmision);
+    if (isNaN(d.getTime())) return { error: 'fechaEmision inválida' };
+    dto.fechaEmision = d;
+  }
+  if (dto.fechaVencimiento !== undefined) {
+    if (dto.fechaVencimiento === null || dto.fechaVencimiento === '') {
+      dto.fechaVencimiento = null;
+    } else {
+      const d = new Date(dto.fechaVencimiento);
+      if (isNaN(d.getTime())) return { error: 'fechaVencimiento inválida' };
+      dto.fechaVencimiento = d;
+    }
+  }
+  return { dto };
+}
+
+exports.actualizar = async (req, res, next) => {
+  try {
+    const cert = await Certificado.findById(req.params.id);
+    if (!cert) return res.status(404).json({ message: 'Certificado no encontrado' });
+
+    const picked = pickCertificadoEdit(req.body || {});
+    if (picked.error) return res.status(400).json({ message: picked.error });
+    if (!Object.keys(picked.dto).length) {
+      return res.status(400).json({ message: 'No hay campos para actualizar' });
+    }
+
+    Object.assign(cert, picked.dto);
+    await cert.save();
+
+    const descr = await descrPrograma(cert.idProg);
+    const prog = await programaPorId(cert.idProg);
+    res.json({
+      ...cert.toObject(),
+      programaDescr: descr,
+      nomCert: prog?.nomCert || null,
+      tipoCertificadoLabel: TIPOS_LABEL[cert.tipoCertificado] || cert.tipoCertificado,
+    });
   } catch (e) {
     next(e);
   }

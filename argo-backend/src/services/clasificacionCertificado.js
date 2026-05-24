@@ -32,6 +32,20 @@ function norm(s) {
     .trim();
 }
 
+function normalizarTipoCertificado(v) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim();
+  if (TIPOS_VALIDOS.includes(s)) return s;
+  const n = norm(s.replace(/_/g, ' '));
+  if (n.includes('competenc')) return TIPOS.COMPETENCIAS;
+  if (n.includes('diplomado')) return TIPOS.DIPLOMADO;
+  if (n.includes('tecnico')) return TIPOS.TECNICO;
+  if (n.includes('licencia') || n.includes('conduccion')) return TIPOS.LICENCIA;
+  if (n.includes('mercanc')) return TIPOS.MERCANCIAS;
+  if (n.includes('curso')) return TIPOS.CURSO;
+  return null;
+}
+
 function slotVacio() {
   return { orientacion: 'vertical', id: null };
 }
@@ -61,17 +75,64 @@ function normalizePlantillaPorTipo(raw) {
   return out;
 }
 
-function clasificarPrograma(prog) {
-  if (!prog) return TIPOS.CURSO;
-  const blob = [prog.nombreProg, prog.nomCert, prog.descripcion, prog.codigoProg].join(' ');
-  if (RE_MP.test(blob)) return TIPOS.MERCANCIAS;
-
-  const t = norm(prog.idTipCap);
+function tipoDesdeTexto(text) {
+  const t = norm(text);
+  if (!t) return null;
   if (t.includes('competenc')) return TIPOS.COMPETENCIAS;
   if (t.includes('diplomado')) return TIPOS.DIPLOMADO;
   if (t.includes('tecnico')) return TIPOS.TECNICO;
   if (t.includes('licencia') || t.includes('conduccion')) return TIPOS.LICENCIA;
+  if (t.includes('mercanc')) return TIPOS.MERCANCIAS;
   if (t.includes('curso')) return TIPOS.CURSO;
+  return null;
+}
+
+async function etiquetaIdTipCap(idTipCap, catTipoCapModel) {
+  if (idTipCap == null || idTipCap === '') return '';
+  const s = String(idTipCap).trim();
+  if (!/^\d+$/.test(s)) return s;
+  if (!catTipoCapModel) return '';
+  const n = Number(s);
+  const row = await catTipoCapModel
+    .findOne({ $or: [{ idTipCap: n }, { idTipCap: s }] })
+    .lean();
+  return row?.tipoCap || row?.descripcion || row?.nombre || '';
+}
+
+function clasificarPrograma(prog) {
+  if (!prog) return TIPOS.CURSO;
+  const explicito = normalizarTipoCertificado(prog.tipoCertificado);
+  if (explicito) return explicito;
+
+  const blob = [prog.nombreProg, prog.nomCert, prog.descripcion, prog.codigoProg].join(' ');
+  if (RE_MP.test(blob)) return TIPOS.MERCANCIAS;
+
+  const rawTip = String(prog.idTipCap ?? '').trim();
+  if (rawTip && !/^\d+$/.test(rawTip)) {
+    const fromRaw = tipoDesdeTexto(rawTip);
+    if (fromRaw) return fromRaw;
+  }
+
+  return TIPOS.CURSO;
+}
+
+async function clasificarProgramaAsync(prog, catTipoCapModel) {
+  if (!prog) return TIPOS.CURSO;
+  const explicito = normalizarTipoCertificado(prog.tipoCertificado);
+  if (explicito) return explicito;
+
+  const blob = [prog.nombreProg, prog.nomCert, prog.descripcion, prog.codigoProg].join(' ');
+  if (RE_MP.test(blob)) return TIPOS.MERCANCIAS;
+
+  const tipLabel = await etiquetaIdTipCap(prog.idTipCap, catTipoCapModel);
+  const fromTip = tipoDesdeTexto(tipLabel);
+  if (fromTip) return fromTip;
+
+  const rawTip = String(prog.idTipCap ?? '').trim();
+  if (rawTip && !/^\d+$/.test(rawTip)) {
+    const fromRaw = tipoDesdeTexto(rawTip);
+    if (fromRaw) return fromRaw;
+  }
 
   return TIPOS.CURSO;
 }
@@ -96,6 +157,8 @@ module.exports = {
   TIPOS_LABEL,
   ORIENTACIONES,
   clasificarPrograma,
+  clasificarProgramaAsync,
+  normalizarTipoCertificado,
   normalizePlantillaPorTipo,
   slotPlantillaPorTipo,
   idPlantillaPorTipo,

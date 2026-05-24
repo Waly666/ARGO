@@ -1,0 +1,19 @@
+<section class="caja-shell">
+  <header class="caja-page-head">
+    <div>
+      <h1>Caja</h1>
+      <p class="sub">Cobros, egresos y cuadre del turno del cajero.</p>
+    </div>
+  </header>
+
+  <nav class="caja-nav">
+    <a routerLink="/app/caja" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      Resumen del día
+    </a>
+    <a routerLink="/app/caja/ingresos" routerLinkActive="active">Cobros / Ingresos</a>
+    <a routerLink="/app/caja/egresos" routerLinkActive="active">Egresos</a>
+    <a *ngIf="isAdmin()" routerLink="/app/caja/admin" routerLinkActive="active">Admin cajas</a>
+  </nav>
+
+  <router-outlet />
+</section>

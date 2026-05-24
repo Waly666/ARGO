@@ -39,6 +39,7 @@ export class ConfirmDialogService {
         cancelLabel: options.cancelLabel ?? defaults.cancel,
         variant,
         icon: options.icon ?? DEFAULT_ICONS[variant],
+        hideCancel: options.hideCancel ?? false,
       });
     });
   }

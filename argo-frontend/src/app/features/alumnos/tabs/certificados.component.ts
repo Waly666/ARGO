@@ -2,9 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { Router } from '@angular/router';
+
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
+import { AlumnoService } from '../../../core/services/alumno.service';
+import type { DocumentoPendienteRes } from '../../../core/services/config-requisitos-documentos.service';
 import { CertificadoService } from '../../../core/services/certificado.service';
 import { labelOrientacion, labelTipoCert } from '../../../core/constants/tipos-certificado';
+import { fechaInput } from '../catalogo.helpers';
 import {
   ConfigCertificadoService,
   PlantillaCertificado,
@@ -20,7 +25,9 @@ import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dia
 })
 export class CertificadosComponent {
   store = inject(AlumnoStore);
+  private router = inject(Router);
   private certSvc = inject(CertificadoService);
+  private alumnoSvc = inject(AlumnoService);
   private cfgCertSvc = inject(ConfigCertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
 
@@ -34,10 +41,23 @@ export class CertificadosComponent {
   numFolio = signal<string>('');
   numRunt = signal<string>('');
   observaciones = signal<string>('');
+  fechaEmision = signal<string>('');
+
+  editId = signal<string>('');
+  editEncabezado = signal<string>('');
+  editNumActa = signal<string>('');
+  editNumFolio = signal<string>('');
+  editNumRunt = signal<string>('');
+  editObservaciones = signal<string>('');
+  editFechaEmision = signal<string>('');
+  editFechaVencimiento = signal<string>('');
 
   loading = signal(false);
   saving = signal(false);
+  savingEdit = signal(false);
   msg = signal<string | null>(null);
+  msgEsError = signal(false);
+  docsPendientes = signal<DocumentoPendienteRes[]>([]);
 
   elegibleSel = computed(() => this.elegibles().find((e) => e._id === this.idLiquidacion()));
 
@@ -57,6 +77,7 @@ export class CertificadosComponent {
 
     effect(() => {
       const nd = this.store.numDoc();
+      const _docTouch = this.store.alumno()?.fechaMod;
       if (nd) this.recargar(nd);
       else {
         this.elegibles.set([]);
@@ -75,8 +96,17 @@ export class CertificadosComponent {
     }
   }
 
-  recargar(numDoc: string) {
+  recargar(numDoc: number | string) {
     this.loading.set(true);
+    const alumnoId = this.store.alumno()?._id;
+    if (alumnoId) {
+      this.alumnoSvc.validarDocumentos(alumnoId).subscribe({
+        next: (v) => this.docsPendientes.set(v.ok ? [] : v.pendientes || []),
+        error: () => this.docsPendientes.set([]),
+      });
+    } else {
+      this.docsPendientes.set([]);
+    }
     this.certSvc.elegibles(numDoc).subscribe({
       next: (r) => this.elegibles.set(r || []),
     });
@@ -92,24 +122,25 @@ export class CertificadosComponent {
   emitir() {
     const nd = this.store.numDoc();
     if (!nd) {
-      this.msg.set('Selecciona un alumno primero.');
+      this.setMsg('Selecciona un alumno primero.', true);
       return;
     }
     if (!this.idLiquidacion()) {
-      this.msg.set('Selecciona un programa elegible.');
+      this.setMsg('Selecciona un programa elegible.', true);
       return;
     }
     const es = this.elegibleSel();
     if (!this.idPlantilla()) {
-      this.msg.set(
+      this.setMsg(
         es?.tipoCertificadoLabel
           ? `No hay formato configurado para «${es.tipoCertificadoLabel}». Configúrelo en Config. Certificados.`
           : 'No hay formato de certificado configurado.',
+        true,
       );
       return;
     }
     this.saving.set(true);
-    this.msg.set(null);
+    this.setMsg(null, false);
     this.certSvc
       .crear({
         numDoc: nd,
@@ -119,6 +150,7 @@ export class CertificadosComponent {
         numFolio: this.numFolio() || undefined,
         numRunt: this.numRunt() || undefined,
         observaciones: this.observaciones() || undefined,
+        fechaEmision: this.fechaEmision() || undefined,
       })
       .subscribe({
         next: () => {
@@ -129,12 +161,69 @@ export class CertificadosComponent {
           this.numFolio.set('');
           this.numRunt.set('');
           this.observaciones.set('');
+          this.fechaEmision.set('');
           this.recargar(nd);
-          this.msg.set('Certificado emitido.');
+          this.setMsg('Certificado emitido.', false);
+        },
+        error: (e) => this.setMsg(e?.error?.message || 'Error emitiendo certificado.', true),
+      });
+  }
+
+  irDocumentos() {
+    this.router.navigate([], { queryParams: { tab: 'documentos' }, queryParamsHandling: 'merge' });
+  }
+
+  private setMsg(text: string | null, isErr: boolean) {
+    this.msg.set(text);
+    this.msgEsError.set(isErr);
+  }
+
+  abrirEditar(c: any) {
+    this.editId.set(c._id);
+    this.editEncabezado.set(c.encabezado || c.nomCert || c.programaDescr || '');
+    this.editNumActa.set(c.numActa || '');
+    this.editNumFolio.set(c.numFolio || '');
+    this.editNumRunt.set(c.numRunt || '');
+    this.editObservaciones.set(c.observaciones || '');
+    this.editFechaEmision.set(fechaInput(c.fechaEmision));
+    this.editFechaVencimiento.set(fechaInput(c.fechaVencimiento));
+    this.msg.set(null);
+  }
+
+  cancelarEditar() {
+    this.editId.set('');
+  }
+
+  guardarEdicion() {
+    const id = this.editId();
+    const nd = this.store.numDoc();
+    if (!id || !nd) return;
+    if (!this.editFechaEmision()) {
+      this.msg.set('La fecha de emisión es obligatoria.');
+      return;
+    }
+    this.savingEdit.set(true);
+    this.msg.set(null);
+    this.certSvc
+      .actualizar(id, {
+        encabezado: this.editEncabezado() || undefined,
+        numActa: this.editNumActa() || undefined,
+        numFolio: this.editNumFolio() || undefined,
+        numRunt: this.editNumRunt() || undefined,
+        observaciones: this.editObservaciones() || undefined,
+        fechaEmision: this.editFechaEmision(),
+        fechaVencimiento: this.editFechaVencimiento() || null,
+      })
+      .subscribe({
+        next: () => {
+          this.savingEdit.set(false);
+          this.editId.set('');
+          this.recargar(nd);
+          this.msg.set('Certificado actualizado.');
         },
         error: (e) => {
-          this.saving.set(false);
-          this.msg.set(e?.error?.message || 'Error emitiendo certificado.');
+          this.savingEdit.set(false);
+          this.msg.set(e?.error?.message || 'Error al guardar cambios.');
         },
       });
   }

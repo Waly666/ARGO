@@ -1,0 +1,27 @@
+@if (open) {
+  <div class="fm-layer" [style.paddingTop.px]="anchorTopPx ?? 168" role="presentation">
+    <div class="fm-backdrop" (click)="close()"></div>
+    <div
+      #panel
+      class="fm-panel"
+      [class.wide]="wide"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="'fm-title'"
+      (click)="$event.stopPropagation()">
+      <header class="fm-header">
+        <div>
+          <h2 id="fm-title">{{ title }}</h2>
+          <p class="fm-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+        </div>
+        <button type="button" class="fm-close" (click)="close()" aria-label="Cerrar">×</button>
+      </header>
+      <div class="fm-body">
+        <ng-content></ng-content>
+      </div>
+      <footer class="fm-footer">
+        <ng-content select="[modal-actions]"></ng-content>
+      </footer>
+    </div>
+  </div>
+}

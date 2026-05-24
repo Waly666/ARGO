@@ -35,7 +35,10 @@
       </div>
     </div>
     <h3>Código QR (global)</h3>
-    <p class="hint">Aplica a todos los certificados emitidos. El QR contiene el ID del certificado para verificación.</p>
+    <p class="hint">
+      Active el QR aquí. La posición y el tamaño se ajustan en el <strong>paso 2</strong> de cada tipo de certificado
+      (botón «Código QR» en el editor).
+    </p>
     <div class="row qr-config">
       <div class="col-12">
         <label class="check-row">
@@ -44,23 +47,23 @@
             [ngModel]="form().mostrarQr !== false"
             (ngModelChange)="patch('mostrarQr', $event)"
           />
-          Incluir código QR en todos los certificados
+          Incluir código QR en los certificados
         </label>
       </div>
     </div>
     <div class="row" *ngIf="form().mostrarQr !== false">
       <div class="col-6">
-        <label>Posición del QR</label>
+        <label>Posición inicial (si no personaliza por tipo)</label>
         <select [ngModel]="form().qrPosicion || 'inferior_izquierda'" (ngModelChange)="patch('qrPosicion', $event)">
           <option *ngFor="let p of qrPosiciones" [value]="p.id">{{ p.label }}</option>
         </select>
       </div>
       <div class="col-6">
-        <label>Tamaño (px)</label>
+        <label>Tamaño inicial (px)</label>
         <input
           type="number"
-          min="48"
-          max="120"
+          min="40"
+          max="140"
           [ngModel]="form().qrTamanoPx ?? 72"
           (ngModelChange)="patch('qrTamanoPx', $event)"
         />
@@ -81,7 +84,12 @@
     </div>
 
     <h3>Formato por tipo de capacitación</h3>
-    <p class="hint">Elija vertical u horizontal y cargue una sola plantilla por tipo.</p>
+    <p class="hint">
+      <span class="step-badge-inline">1</span>
+      Elija vertical u horizontal y suba la imagen del certificado.
+      Luego abra el editor para ubicar cada texto. Configure cada tipo de capacitación y guarde;
+      el tamaño y la fuente se aplican al imprimir solo si coinciden con la orientación del PNG cargado.
+    </p>
 
     <div class="tipo-block" *ngFor="let t of tiposPrincipales">
       <h4>{{ t.label }}</h4>
@@ -133,6 +141,17 @@
           </label>
         </ng-template>
       </div>
+
+      <argo-certificado-layout-editor
+        [tipo]="t.id"
+        [orientacion]="orientacionLayout(t.id)"
+        [urlFondoPreview]="urlFondoAbs(plantillaDoc(slotTipo(t.id).id))"
+        [layoutPorTipo]="form().layoutPorTipo || {}"
+        [mostrarQr]="form().mostrarQr !== false"
+        [qrPosicionGlobal]="form().qrPosicion || 'inferior_izquierda'"
+        [qrTamanoGlobal]="form().qrTamanoPx ?? 72"
+        (layoutChange)="onLayoutChange($event)"
+      />
     </div>
 
     <div class="tipo-block especial">
@@ -182,6 +201,17 @@
           </label>
         </ng-template>
       </div>
+
+      <argo-certificado-layout-editor
+        tipo="mercancias_peligrosas"
+        [orientacion]="orientacionLayout('mercancias_peligrosas')"
+        [urlFondoPreview]="urlFondoAbs(plantillaDoc(slotTipo('mercancias_peligrosas').id))"
+        [layoutPorTipo]="form().layoutPorTipo || {}"
+        [mostrarQr]="form().mostrarQr !== false"
+        [qrPosicionGlobal]="form().qrPosicion || 'inferior_izquierda'"
+        [qrTamanoGlobal]="form().qrTamanoPx ?? 72"
+        (layoutChange)="onLayoutChange($event)"
+      />
     </div>
   </div>
 

@@ -116,12 +116,20 @@
   font-size: 0.95rem;
   line-height: 1.55;
   color: #64748b;
+  white-space: pre-line;
 }
 
 .cd-actions {
   display: flex;
   gap: 12px;
   justify-content: center;
+
+  &.single {
+    .cd-btn-confirm {
+      flex: 1;
+      max-width: 220px;
+    }
+  }
 }
 
 .cd-btn {

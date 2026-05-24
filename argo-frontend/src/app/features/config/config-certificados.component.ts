@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, QueryList, ViewChildren, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -10,6 +10,7 @@ import {
   labelTipoCert,
   labelOrientacion,
 } from '../../core/constants/tipos-certificado';
+import { LayoutPorTipoCert } from '../../core/constants/certificado-campos-layout';
 import {
   ConfigCertificado,
   ConfigCertificadoService,
@@ -17,16 +18,20 @@ import {
   PlantillaPorTipoSlot,
   QR_POSICIONES_CERT,
 } from '../../core/services/config-certificado.service';
+import { CertificadoLayoutEditorComponent } from './certificado-layout-editor.component';
 
 @Component({
   selector: 'argo-config-certificados',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CertificadoLayoutEditorComponent],
   templateUrl: './config-certificados.component.html',
   styleUrls: ['./config-certificados.component.scss'],
 })
 export class ConfigCertificadosComponent implements OnInit {
   private cfgSvc = inject(ConfigCertificadoService);
+
+  @ViewChildren(CertificadoLayoutEditorComponent)
+  private layoutEditors?: QueryList<CertificadoLayoutEditorComponent>;
 
   tiposPrincipales = TIPOS_CERTIFICADO_PRINCIPALES;
   orientaciones = ORIENTACIONES_CERTIFICADO;
@@ -34,7 +39,13 @@ export class ConfigCertificadosComponent implements OnInit {
   labelTipo = labelTipoCert;
   labelOrientacion = labelOrientacion;
 
-  form = signal<ConfigCertificado>({ plantillaPorTipo: {}, mostrarQr: true, qrPosicion: 'inferior_izquierda', qrTamanoPx: 72 });
+  form = signal<ConfigCertificado>({
+    plantillaPorTipo: {},
+    layoutPorTipo: {},
+    mostrarQr: true,
+    qrPosicion: 'inferior_izquierda',
+    qrTamanoPx: 72,
+  });
   plantillas = signal<PlantillaCertificado[]>([]);
   saving = signal(false);
   msg = signal<string | null>(null);
@@ -43,15 +54,38 @@ export class ConfigCertificadosComponent implements OnInit {
   ngOnInit(): void {
     this.cfgSvc.obtener().subscribe({
       next: (c) =>
-        this.form.set({ ...c, plantillaPorTipo: { ...(c.plantillaPorTipo || {}) } }),
+        this.form.set({
+          ...c,
+          plantillaPorTipo: { ...(c.plantillaPorTipo || {}) },
+          layoutPorTipo: { ...(c.layoutPorTipo || {}) },
+        }),
     });
     this.cargarPlantillas();
   }
 
   cargarPlantillas() {
     this.cfgSvc.listarPlantillasTodas().subscribe({
-      next: (r) => this.plantillas.set(r || []),
+      next: (r) => {
+        this.plantillas.set(r || []);
+        this.syncOrientacionConPlantilla();
+      },
     });
+  }
+
+  /** Alinea la orientación del slot con la plantilla PNG real (la que usa la impresión). */
+  private syncOrientacionConPlantilla() {
+    const ppt = { ...(this.form().plantillaPorTipo || {}) };
+    let changed = false;
+    for (const t of [...this.tiposPrincipales, { id: 'mercancias_peligrosas' as TipoCertificadoId }]) {
+      const slot = ppt[t.id];
+      if (!slot?.id) continue;
+      const p = this.plantillaDoc(slot.id);
+      if (p && (p.orientacion === 'vertical' || p.orientacion === 'horizontal') && slot.orientacion !== p.orientacion) {
+        ppt[t.id] = { ...slot, orientacion: p.orientacion };
+        changed = true;
+      }
+    }
+    if (changed) this.patch('plantillaPorTipo', ppt);
   }
 
   patch<K extends keyof ConfigCertificado>(k: K, v: ConfigCertificado[K]) {
@@ -138,12 +172,35 @@ export class ConfigCertificadosComponent implements OnInit {
     });
   }
 
+  /** Orientación del layout = la de la plantilla PNG (la que usa la impresión). */
+  orientacionLayout(tipo: TipoCertificadoId): OrientacionCertificado {
+    const p = this.plantillaDoc(this.slotTipo(tipo).id);
+    if (p?.orientacion === 'horizontal' || p?.orientacion === 'vertical') {
+      return p.orientacion;
+    }
+    return this.slotTipo(tipo).orientacion;
+  }
+
+  private layoutParaGuardar(): ConfigCertificado['layoutPorTipo'] {
+    let layout = { ...(this.form().layoutPorTipo || {}) };
+    for (const ed of this.layoutEditors ?? []) {
+      layout = ed.snapshotLayoutPorTipo(layout);
+    }
+    return layout;
+  }
+
   guardar() {
     this.saving.set(true);
     this.msg.set(null);
-    this.cfgSvc.guardar(this.form()).subscribe({
+    const payload = { ...this.form(), layoutPorTipo: this.layoutParaGuardar() };
+    this.patch('layoutPorTipo', payload.layoutPorTipo);
+    this.cfgSvc.guardar(payload).subscribe({
       next: (c) => {
-        this.form.set({ ...c, plantillaPorTipo: { ...(c.plantillaPorTipo || {}) } });
+        this.form.set({
+          ...c,
+          plantillaPorTipo: { ...(c.plantillaPorTipo || {}) },
+          layoutPorTipo: { ...(c.layoutPorTipo || {}) },
+        });
         this.saving.set(false);
         this.msg.set('Configuración guardada.');
       },
@@ -173,7 +230,11 @@ export class ConfigCertificadosComponent implements OnInit {
   private subirFirmas(fd: FormData) {
     this.cfgSvc.guardarFirmas(fd).subscribe({
       next: (c) => {
-        this.form.set({ ...c, plantillaPorTipo: { ...(c.plantillaPorTipo || {}) } });
+        this.form.set({
+          ...c,
+          plantillaPorTipo: { ...(c.plantillaPorTipo || {}) },
+          layoutPorTipo: { ...(c.layoutPorTipo || {}) },
+        });
         this.msg.set('Firma actualizada.');
       },
       error: (e) => this.msg.set(e?.error?.message || 'Error subiendo firma.'),
@@ -190,5 +251,14 @@ export class ConfigCertificadosComponent implements OnInit {
 
   subiendoTipo(tipo: TipoCertificadoId): boolean {
     return this.subiendo() === tipo;
+  }
+
+  onLayoutChange(layout: LayoutPorTipoCert) {
+    this.patch('layoutPorTipo', layout);
+  }
+
+  urlFondoAbs(p?: PlantillaCertificado): string {
+    if (!p?.urlFondo) return '';
+    return this.urlFondo(p);
   }
 }

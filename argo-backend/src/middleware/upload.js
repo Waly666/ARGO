@@ -22,11 +22,19 @@ function build(subdir) {
   return multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 }
 
+const memory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024 },
+});
+
 module.exports = {
   alumnos: build('alumnos'),
   vehiculos: build('vehiculos'),
   inspecciones: build('inspecciones'),
   certificados: build('certificados'),
+  egresos: build('egresos'),
+  empleados: build('empleados'),
+  memory,
   publicUrl(subdir, filename) {
     return `${subdir}/${filename}`;
   },

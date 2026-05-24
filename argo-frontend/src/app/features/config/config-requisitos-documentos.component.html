@@ -1,0 +1,81 @@
+<section class="config-page card">
+  <header>
+    <h1>Requisitos de documentos</h1>
+    <p>Defina los tipos de documento y qué exige cada tipo de capacitación. En la ficha del alumno se muestran según sus matrículas (activas, finalizadas o certificadas).</p>
+  </header>
+
+  <div class="msg ok" *ngIf="msg() && !err()">{{ msg() }}</div>
+  <div class="msg err" *ngIf="msg() && err()">{{ msg() }}</div>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Tipos de documento</h2>
+      <button type="button" class="ghost mini" (click)="agregarTipo()">+ Agregar tipo</button>
+    </div>
+    <table class="argo compact">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Activo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of tiposDocumento(); let i = index">
+          <td>
+            <input type="text" [ngModel]="t.codigo" (ngModelChange)="patchTipo(i, 'codigo', $event)" placeholder="CEDULA" />
+          </td>
+          <td>
+            <input type="text" [ngModel]="t.nombre" (ngModelChange)="patchTipo(i, 'nombre', $event)" placeholder="Cédula de ciudadanía" />
+          </td>
+          <td>
+            <input type="text" [ngModel]="t.descripcion" (ngModelChange)="patchTipo(i, 'descripcion', $event)" />
+          </td>
+          <td class="c">
+            <input type="checkbox" [ngModel]="t.activo !== false" (ngModelChange)="patchTipo(i, 'activo', $event)" />
+          </td>
+          <td class="r">
+            <button type="button" class="ghost mini danger" (click)="quitarTipo(i)">Quitar</button>
+          </td>
+        </tr>
+        <tr *ngIf="tiposDocumento().length === 0">
+          <td colspan="5" class="empty">Sin tipos definidos.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block">
+    <h2>Requisitos por tipo de capacitación</h2>
+    <p class="hint">Marque los documentos obligatorios para cada tipo. Si el alumno tiene varias matrículas del mismo tipo, el requisito se pide una sola vez.</p>
+
+    <table class="argo" *ngIf="tiposCap().length">
+      <thead>
+        <tr>
+          <th>Tipo de capacitación</th>
+          <th *ngFor="let d of tiposActivos()">{{ d.nombre }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cap of tiposCap()">
+          <td><strong>{{ cap.label }}</strong></td>
+          <td class="c" *ngFor="let d of tiposActivos()">
+            <input
+              type="checkbox"
+              [checked]="tieneDocCap(cap.idTipCap, d.id)"
+              (change)="toggleDocCap(cap.idTipCap, d.id, $any($event.target).checked)" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="hint" *ngIf="!tiposCap().length">Cargue el catálogo «Tipos de capacitación» o recargue catálogos desde Excel.</p>
+  </section>
+
+  <footer class="actions">
+    <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+    </button>
+  </footer>
+</section>

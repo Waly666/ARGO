@@ -1179,6 +1179,18 @@
       {
         "idTipoIngreso": 11,
         "tipo": "DERECHOS FNSV"
+      },
+      {
+        "idTipoIngreso": 12,
+        "tipo": "INGRESO CONTRATO"
+      },
+      {
+        "idTipoIngreso": 13,
+        "tipo": "APROVISIONAMIENTO DE CAJA"
+      },
+      {
+        "idTipoIngreso": 14,
+        "tipo": "OTROS INGRESOS"
       }
     ]
   },

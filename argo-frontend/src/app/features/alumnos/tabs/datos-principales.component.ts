@@ -6,6 +6,8 @@ import { FormsModule } from '@angular/forms';
 
 import { Router } from '@angular/router';
 
+import { firstValueFrom } from 'rxjs';
+
 
 
 import { AlumnoDto, AlumnoService } from '../../../core/services/alumno.service';
@@ -13,6 +15,10 @@ import { AlumnoDto, AlumnoService } from '../../../core/services/alumno.service'
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
 
 import { CatalogoService } from '../../../core/services/catalogo.service';
+
+import { ConfigRecibo, ConfigService } from '../../../core/services/config.service';
+
+import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
 
 import { environment } from '../../../../environments/environment';
 
@@ -51,10 +57,18 @@ import {
   fechaInput,
 
   normalizarEnum,
+  normalizarGenero,
+  normalizarTipoSangre,
+  nombreEnMayusculas,
 
 } from '../catalogo.helpers';
 
+import { formatNumDoc, parseNumDocForApi } from '../../../core/utils/num-doc.helpers';
 
+import {
+  aplicarPlantillaMensaje,
+  nombreCompletoAlumno,
+} from '../../../core/utils/mensaje-plantilla.helpers';
 
 @Component({
 
@@ -78,7 +92,13 @@ export class DatosPrincipalesComponent implements OnInit {
 
   private router = inject(Router);
 
+  private confirm = inject(ConfirmDialogService);
+
+  private configSvc = inject(ConfigService);
+
   store = inject(AlumnoStore);
+
+  private configRecibo = signal<ConfigRecibo | null>(null);
 
 
 
@@ -130,7 +150,31 @@ export class DatosPrincipalesComponent implements OnInit {
 
   docDuplicado = signal<{ _id: string; nombreCompleto?: string } | null>(null);
 
+  /** Escaneo OCR de cédula (solo nuevo alumno o relleno manual) */
+  scanVisible = signal(true);
+  scanPreview = signal<string | null>(null);
+  scanFile = signal<File | null>(null);
+  scanning = signal(false);
+  scanWarnings = signal<string[]>([]);
+  scanApplied = signal(false);
 
+  /** Firma del último estado guardado (o vacío en alumno nuevo) */
+  private lineaBase = signal('');
+
+  saveAlarmFlash = signal(false);
+
+  formSinGuardar = computed(() => {
+    const base = this.lineaBase();
+    const cur = this.firmaEstadoActual();
+    if (!base) return this.tieneDatosDigitados();
+    return cur !== base;
+  });
+
+  saveAlarmVisible = computed(() => this.formSinGuardar() && !this.saving());
+
+  saveAlarmTexto = computed(() =>
+    this.isEdit() ? 'Cambios sin guardar' : 'Guarde con Crear para continuar',
+  );
 
   isEdit = computed(() => !!this.form()._id);
 
@@ -166,6 +210,18 @@ export class DatosPrincipalesComponent implements OnInit {
 
         this.docDuplicado.set(null);
 
+        this.scanVisible.set(false);
+
+        this.scanApplied.set(false);
+
+        this.scanPreview.set(null);
+
+        this.scanFile.set(null);
+
+        this.scanWarnings.set([]);
+
+        this.lineaBase.set(this.firmaEstadoActual(mapped, false));
+
       } else {
 
         this.form.set(this.emptyForm());
@@ -176,8 +232,34 @@ export class DatosPrincipalesComponent implements OnInit {
 
         this.fotoPreview.set(null);
 
+        this.scanVisible.set(true);
+
+        this.scanApplied.set(false);
+
+        this.scanPreview.set(null);
+
+        this.scanFile.set(null);
+
+        this.scanWarnings.set([]);
+
+        this.lineaBase.set('');
+
       }
 
+      this.store.setDatosSinGuardar(false);
+
+    });
+
+    effect(() => {
+      this.store.setDatosSinGuardar(this.formSinGuardar());
+    });
+
+    effect(() => {
+      const tick = this.store.saveAlarmTick();
+      if (!tick) return;
+      this.saveAlarmFlash.set(true);
+      const t = setTimeout(() => this.saveAlarmFlash.set(false), 3200);
+      return () => clearTimeout(t);
     });
 
   }
@@ -187,6 +269,11 @@ export class DatosPrincipalesComponent implements OnInit {
   ngOnInit(): void {
 
     this.cargarCatalogo('catRegimenSalud', this.regimenesSalud, REGIMEN_SALUD_DEF);
+
+    this.configSvc.obtenerRecibo().subscribe({
+      next: (c) => this.configRecibo.set(c),
+      error: () => this.configRecibo.set(null),
+    });
 
   }
 
@@ -251,41 +338,37 @@ export class DatosPrincipalesComponent implements OnInit {
 
 
   patch<K extends keyof AlumnoDto>(k: K, v: AlumnoDto[K]) {
-
-    this.form.update((f) => ({ ...f, [k]: v }));
+    let valor = v;
+    if (k === 'apellido1' || k === 'apellido2' || k === 'nombre1' || k === 'nombre2') {
+      valor = nombreEnMayusculas(String(v ?? '')) as AlumnoDto[K];
+    }
+    this.form.update((f) => ({ ...f, [k]: valor }));
 
     if (k === 'numDoc') this.verificarDoc();
-
   }
 
 
 
   verificarDoc() {
-
-    const nd = this.form().numDoc?.trim();
-
-    if (!nd || nd.length < 4) {
-
+    const nd = parseNumDocForApi(this.form().numDoc);
+    if (nd == null) {
       this.docDuplicado.set(null);
-
       return;
-
     }
-
     this.alumnoSvc.verificarDocumento(nd, this.form()._id).subscribe({
-
       next: (r) => {
-
-        if (r.existe && r._id && r._id !== this.form()._id) {
-
-          this.docDuplicado.set({ _id: r._id, nombreCompleto: r.nombreCompleto });
-
-        } else this.docDuplicado.set(null);
-
+        if (r.existe && r._id && String(r._id) !== String(this.form()._id || '')) {
+          this.docDuplicado.set({ _id: String(r._id), nombreCompleto: r.nombreCompleto });
+          if (!this.isEdit()) {
+            this.message.set(
+              `El documento ${formatNumDoc(nd)} ya está registrado. Abra el alumno existente o use otro número.`,
+            );
+          }
+        } else {
+          this.docDuplicado.set(null);
+        }
       },
-
     });
-
   }
 
 
@@ -316,94 +399,240 @@ export class DatosPrincipalesComponent implements OnInit {
 
   }
 
+  onCedulaScan(ev: Event) {
+    const file = (ev.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.scanFile.set(file);
+    this.scanApplied.set(false);
+    this.scanWarnings.set([]);
+    const r = new FileReader();
+    r.onload = () => this.scanPreview.set(r.result as string);
+    r.readAsDataURL(file);
+  }
 
+  omitirEscaneo() {
+    this.scanVisible.set(false);
+    this.scanPreview.set(null);
+    this.scanFile.set(null);
+    this.scanWarnings.set([]);
+  }
+
+  volverEscaneo() {
+    this.scanVisible.set(true);
+    this.scanApplied.set(false);
+    this.scanWarnings.set([]);
+  }
+
+  escanearCedula() {
+    const file = this.scanFile();
+    if (!file) {
+      this.message.set('Seleccione una imagen de la cédula (frente arriba, respaldo abajo).');
+      return;
+    }
+    this.scanning.set(true);
+    this.message.set(null);
+    this.alumnoSvc.escanearCedula(file).subscribe({
+      next: (res) => {
+        this.scanning.set(false);
+        this.aplicarSugeridoOcr(res.sugerido);
+        this.scanWarnings.set(res.meta?.advertencias || []);
+        this.scanApplied.set(true);
+        this.scanVisible.set(false);
+        this.message.set('Datos sugeridos aplicados. Revise y corrija antes de guardar.');
+      },
+      error: (err) => {
+        this.scanning.set(false);
+        this.message.set(err?.error?.message || 'No se pudo leer la cédula. Intente otra foto o digite manualmente.');
+      },
+    });
+  }
+
+  private aplicarSugeridoOcr(s: Partial<AlumnoDto>) {
+    const genero = normalizarGenero(s.genero);
+    const tipoSangre = normalizarTipoSangre(s.tipoSangre);
+    this.form.update((f) => ({
+      ...f,
+      tipoDoc: s.tipoDoc || f.tipoDoc || '1',
+      numDoc: s.numDoc != null ? formatNumDoc(s.numDoc) : f.numDoc,
+      expedida: s.expedida?.trim() || f.expedida,
+      apellido1: nombreEnMayusculas(s.apellido1 || f.apellido1),
+      apellido2: nombreEnMayusculas(s.apellido2 || f.apellido2),
+      nombre1: nombreEnMayusculas(s.nombre1 || f.nombre1),
+      nombre2: nombreEnMayusculas(s.nombre2 || f.nombre2),
+      fechaNac: s.fechaNac || f.fechaNac,
+      genero: genero || f.genero,
+      tipoSangre: tipoSangre || f.tipoSangre,
+    }));
+    if (s.expedida?.trim()) this.expedidaTexto.set(s.expedida.trim());
+    if (formatNumDoc(s.numDoc)) this.verificarDoc();
+  }
 
   guardar() {
+    if (this.isEdit() && !this.formSinGuardar()) {
+      this.dispararAlertaGuardar('No hay cambios pendientes por guardar.');
+      return;
+    }
 
     const f = { ...this.form() };
-
     if (!f.expedida?.trim() && this.expedidaTexto().trim()) {
-
       f.expedida = this.expedidaTexto().trim();
-
+    }
+    const nd = parseNumDocForApi(f.numDoc);
+    if (nd == null || !f.nombre1 || !f.apellido1) {
+      this.dispararAlertaGuardar('numDoc válido (6–11 dígitos), nombre1 y apellido1 son obligatorios.');
+      return;
     }
 
-    if (!f.numDoc || !f.nombre1 || !f.apellido1) {
-
-      this.message.set('numDoc, nombre1 y apellido1 son obligatorios.');
-
+    if (this.isEdit()) {
+      this.ejecutarGuardado(f);
       return;
-
-    }
-
-    if (this.docDuplicado() && !this.isEdit()) {
-
-      this.message.set('Ya existe un alumno con ese numDoc. Use el enlace para abrirlo.');
-
-      return;
-
     }
 
     this.saving.set(true);
-
     this.message.set(null);
+    this.alumnoSvc.verificarDocumento(nd).subscribe({
+      next: (r) => {
+        if (r.existe && r._id) {
+          this.saving.set(false);
+          this.docDuplicado.set({
+            _id: String(r._id),
+            nombreCompleto: r.nombreCompleto,
+          });
+          this.message.set(
+            `No se puede crear: el documento ${formatNumDoc(nd)} ya pertenece a otro alumno. Use «Abrir registro».`,
+          );
+          return;
+        }
+        this.docDuplicado.set(null);
+        this.ejecutarGuardado(f);
+      },
+      error: () => {
+        this.saving.set(false);
+        this.message.set('No se pudo verificar el documento. Intente de nuevo.');
+      },
+    });
+  }
 
+  private ejecutarGuardado(f: AlumnoDto) {
+    this.saving.set(true);
+    this.message.set(null);
     const files = { foto: this.fotoFile() || undefined };
-
     const payload = this.toPayload(f);
-
-    const obs = this.isEdit()
-
-      ? this.alumnoSvc.actualizar(f._id!, payload, files)
-
-      : this.alumnoSvc.crear(payload, files);
+    const creando = !this.isEdit();
+    const obs = creando
+      ? this.alumnoSvc.crear(payload, files)
+      : this.alumnoSvc.actualizar(f._id!, payload, files);
 
     obs.subscribe({
-
       next: (saved) => {
-
         this.saving.set(false);
-
-        this.message.set('Datos guardados correctamente.');
-
         this.store.setAlumno(saved);
-
-        if (!this.isEdit() && saved._id) {
-
-          this.router.navigate(['/app/alumnos', saved._id], { replaceUrl: true });
-
-        }
-
-      },
-
-      error: (err) => {
-
-        this.saving.set(false);
-
-        const body = err?.error;
-
-        if (err?.status === 409 && body?.existingId) {
-
-          this.docDuplicado.set({
-
-            _id: body.existingId,
-
-            nombreCompleto: body.nombreCompleto,
-
+        if (creando) {
+          void this.confirmarCreacionAlumno(saved).then(() => {
+            if (saved._id) {
+              this.router.navigate(['/app/alumnos', saved._id], { replaceUrl: true });
+            }
           });
-
-          this.message.set(body.message || 'numDoc ya registrado.');
-
           return;
-
         }
-
-        this.message.set(body?.message || 'Error al guardar.');
-
+        this.lineaBase.set(this.firmaEstadoActual(this.mapDesdeBd(saved as AlumnoDto & Record<string, unknown>), false));
+        this.fotoFile.set(null);
+        this.message.set('Datos guardados correctamente.');
       },
-
+      error: (err) => {
+        this.saving.set(false);
+        const body = err?.error;
+        if (err?.status === 409 && body?.existingId) {
+          this.docDuplicado.set({
+            _id: String(body.existingId),
+            nombreCompleto: body.nombreCompleto,
+          });
+          this.message.set(body.message || 'Ese número de documento ya está registrado.');
+          return;
+        }
+        this.message.set(body?.message || 'Error al guardar.');
+      },
     });
+  }
 
+  private dispararAlertaGuardar(texto: string) {
+    this.message.set(texto);
+    this.saveAlarmFlash.set(true);
+    setTimeout(() => this.saveAlarmFlash.set(false), 3200);
+  }
+
+  private firmaEstadoActual(f?: AlumnoDto, fotoNueva = !!this.fotoFile()): string {
+    const src = f ?? this.form();
+    const payload = this.toPayload({
+      ...src,
+      expedida: src.expedida?.trim() || this.expedidaTexto().trim() || '',
+      munOrigen: src.munOrigen || src.codMunicipio || '',
+      codMunicipio: src.codMunicipio || src.munOrigen || '',
+    });
+    return JSON.stringify({ ...payload, fotoNueva });
+  }
+
+  private tieneDatosDigitados(): boolean {
+    const f = this.form();
+    if (parseNumDocForApi(f.numDoc) != null) return true;
+    if (String(f.nombre1 || '').trim()) return true;
+    if (String(f.apellido1 || '').trim()) return true;
+    if (String(f.nombre2 || '').trim()) return true;
+    if (String(f.apellido2 || '').trim()) return true;
+    if (String(f.correo || '').trim()) return true;
+    if (String(f.celular || '').trim()) return true;
+    if (String(f.direccion || '').trim()) return true;
+    if (this.fotoFile()) return true;
+    if (this.scanFile()) return true;
+    return false;
+  }
+
+  private async confirmarCreacionAlumno(saved: AlumnoDto) {
+    let cfg = this.configRecibo();
+    if (!cfg) {
+      try {
+        cfg = await firstValueFrom(this.configSvc.obtenerRecibo());
+        this.configRecibo.set(cfg);
+      } catch {
+        cfg = {};
+      }
+    }
+
+    const nombre = nombreCompletoAlumno(saved);
+    const numDoc = formatNumDoc(saved.numDoc);
+    const empresa = cfg?.nombreEmpresa?.trim() || 'ARGO';
+    const sloganRaw = cfg?.slogan1?.trim() || '';
+    const slogan = sloganRaw ? `\n\n${sloganRaw}` : '';
+    const vars = {
+      nombre,
+      numDoc,
+      empresa,
+      slogan,
+      ciudad: cfg?.ciudad?.trim() || '',
+      telefono: cfg?.telefono?.trim() || '',
+    };
+
+    const tituloDefault = '¡Alumno registrado!';
+    const mensajeDefault =
+      'Se registró correctamente a {nombre} con documento {numDoc}.\n\nBienvenido(a) a {empresa}.{slogan}';
+
+    const title = aplicarPlantillaMensaje(
+      cfg?.mensajeCreacionAlumnoTitulo?.trim() || tituloDefault,
+      vars,
+    );
+    const message = aplicarPlantillaMensaje(
+      cfg?.mensajeCreacionAlumno?.trim() || mensajeDefault,
+      vars,
+    );
+
+    await this.confirm.open({
+      title,
+      message,
+      variant: 'success',
+      icon: 'check',
+      confirmLabel: 'Aceptar',
+      hideCancel: true,
+    });
   }
 
 
@@ -416,17 +645,17 @@ export class DatosPrincipalesComponent implements OnInit {
 
       tipoDoc: f.tipoDoc,
 
-      numDoc: f.numDoc,
+      numDoc: parseNumDocForApi(f.numDoc) ?? f.numDoc,
 
       expedida: f.expedida,
 
-      apellido1: f.apellido1,
+      apellido1: nombreEnMayusculas(f.apellido1),
 
-      apellido2: f.apellido2,
+      apellido2: nombreEnMayusculas(f.apellido2),
 
-      nombre1: f.nombre1,
+      nombre1: nombreEnMayusculas(f.nombre1),
 
-      nombre2: f.nombre2,
+      nombre2: nombreEnMayusculas(f.nombre2),
 
       fechaNac: f.fechaNac,
 
@@ -486,17 +715,17 @@ export class DatosPrincipalesComponent implements OnInit {
 
       tipoDoc: normalizarEnum(String(raw.tipoDoc || '1')),
 
-      numDoc: String(raw.numDoc || ''),
+      numDoc: formatNumDoc(raw.numDoc),
 
       expedida: String(raw.expedida || ''),
 
-      apellido1: String(raw.apellido1 || ''),
+      apellido1: nombreEnMayusculas(String(raw.apellido1 || '')),
 
-      apellido2: String(raw.apellido2 || ''),
+      apellido2: nombreEnMayusculas(String(raw.apellido2 || '')),
 
-      nombre1: String(raw.nombre1 || ''),
+      nombre1: nombreEnMayusculas(String(raw.nombre1 || '')),
 
-      nombre2: String(raw.nombre2 || ''),
+      nombre2: nombreEnMayusculas(String(raw.nombre2 || '')),
 
       fechaNac: fechaInput(raw.fechaNac as string),
 

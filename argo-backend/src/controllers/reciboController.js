@@ -4,6 +4,7 @@ const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigRecibo } = require('../services/configRecibo');
+const { numDocQuery } = require('../utils/numDoc');
 
 function num(v) {
   if (v == null) return 0;
@@ -36,6 +37,8 @@ async function enriquecerIngreso(p) {
   const tipo = await cat.catTipoPago
     .findOne({ $or: [{ idTipoPago: p.idTipoPago }, { codigo: p.idTipoPago }] })
     .lean();
+  const { resolverTipoIngresoIngreso, formaPagoDesdeCatalogo } = require('../services/tipoIngresoResolver');
+  const tipoIng = await resolverTipoIngresoIngreso(p);
   const banco = p.idBanco
     ? await cat.bancos
         .findOne({
@@ -48,11 +51,37 @@ async function enriquecerIngreso(p) {
         })
         .lean()
     : null;
+  let cuentaBancariaDescr = null;
+  if (p.idCuentaBancaria) {
+    const n = Number(p.idCuentaBancaria);
+    const cuenta = await cat.cuentasBancarias
+      .findOne({
+        $or: [
+          { idCuentaBancaria: p.idCuentaBancaria },
+          ...(Number.isFinite(n) ? [{ idCuentaBancaria: n }, { idCuenta: n }] : []),
+          { idCuenta: p.idCuentaBancaria },
+          { numCuenta: p.idCuentaBancaria },
+          ...(Number.isFinite(n) ? [{ numCuenta: n }] : []),
+        ],
+      })
+      .lean();
+    if (cuenta) {
+      cuentaBancariaDescr = [(cuenta.banco || '').trim(), (cuenta.tipo || '').trim(), cuenta.numCuenta ?? '']
+        .filter(Boolean)
+        .join(' — ');
+    }
+  }
   return {
     ...p,
     valor: num(p.valor),
     tipoPagoDescr: tipo?.descripcion || tipo?.nombre || p.idTipoPago,
-    bancoDescr: banco?.descripcion || banco?.nombre || banco?.banco || null,
+    formaPago: p.formaPago || formaPagoDesdeCatalogo(tipo, p.idTipoPago),
+    bancoDescr: p.bancoEmisor || banco?.descripcion || banco?.nombre || banco?.banco || null,
+    cuentaBancariaDescr,
+    numTransferencia: p.numTransferencia || p.numComprobante || null,
+    tipoIngreso: p.tipoIngreso || tipoIng?.tipo || null,
+    tipoIngresoDescr: p.tipoIngreso || tipoIng?.tipo || null,
+    esIngresoCaja: !!(p.ingresoCaja || (!p.idLiquidacion && p.idTipoIngreso)),
   };
 }
 
@@ -60,10 +89,12 @@ async function armarRecibo(id) {
   const ing = await Ingreso.findById(id).lean();
   if (!ing) return null;
 
+  const esCaja = !!(ing.ingresoCaja || (!ing.idLiquidacion && ing.idTipoIngreso));
+
   const [config, alumno, liq, ingreso] = await Promise.all([
     obtenerConfigRecibo(),
-    DatosAlumno.findOne({ numDoc: ing.numDoc }).lean(),
-    Liquidacion.findById(ing.idLiquidacion).lean(),
+    ing.numDoc ? DatosAlumno.findOne(numDocQuery(ing.numDoc)).lean() : null,
+    ing.idLiquidacion ? Liquidacion.findById(ing.idLiquidacion).lean() : null,
     enriquecerIngreso(ing),
   ]);
 
@@ -72,10 +103,11 @@ async function armarRecibo(id) {
   const qrTexto = JSON.stringify({
     recibo: numeroRecibo,
     ingresoId: String(ing._id),
-    numDoc: ing.numDoc,
+    numDoc: ing.numDoc || ing.documentoTercero || null,
     valor: ingreso.valor,
     fecha: ing.fecha || ing.createdAt,
     nit: config.nit || '',
+    tipo: esCaja ? 'caja' : 'alumno',
   });
 
   let qrDataUrl = null;
@@ -87,10 +119,13 @@ async function armarRecibo(id) {
     }
   }
 
-  return {
-    config,
-    ingreso,
-    alumno: alumno
+  const pagador = esCaja
+    ? {
+        numDoc: ing.documentoTercero || '—',
+        nombreCompleto: ing.recibidoDe || ing.concepto || 'Tercero',
+        tipoPersona: ing.tipoPersona || null,
+      }
+    : alumno
       ? {
           numDoc: alumno.numDoc,
           tipoDoc: alumno.tipoDoc,
@@ -98,7 +133,13 @@ async function armarRecibo(id) {
           celular: alumno.celular,
           correo: alumno.correo,
         }
-      : { numDoc: ing.numDoc, nombreCompleto: ing.numDoc },
+      : { numDoc: ing.numDoc, nombreCompleto: String(ing.numDoc || '—') };
+
+  return {
+    config,
+    ingreso,
+    esIngresoCaja: esCaja,
+    alumno: pagador,
     liquidacion: liq
       ? {
           descripcion: liq.descripcion,
@@ -107,7 +148,15 @@ async function armarRecibo(id) {
           saldo: num(liq.saldo),
           estado: liq.estado,
         }
-      : null,
+      : esCaja
+        ? {
+            descripcion: ing.concepto || ingreso.tipoIngresoDescr || 'Ingreso de caja',
+            valor: ingreso.valor,
+            abonado: ingreso.valor,
+            saldo: 0,
+            estado: 'pagado',
+          }
+        : null,
     numeroRecibo,
     qrDataUrl,
     qrTexto,
@@ -168,17 +217,28 @@ exports.html = async (req, res, next) => {
     const filas = [
       ['Comprobante N°', numeroRecibo],
       ['Fecha', fmtFecha(ingreso.fecha || ingreso.createdAt)],
-      ['Documento', alumno.numDoc],
-      ['Alumno', alumno.nombreCompleto],
-      ['Concepto', liquidacion?.descripcion || 'Pago'],
+      ...(data.esIngresoCaja
+        ? [
+            ['Tipo ingreso', ingreso.tipoIngresoDescr || 'Ingreso de caja'],
+            ['Recibido de', alumno.nombreCompleto],
+            ['Documento', alumno.numDoc],
+            ...(alumno.tipoPersona ? [['Persona', alumno.tipoPersona === 'juridica' ? 'Jurídica' : 'Natural']] : []),
+            ['Concepto', liquidacion?.descripcion || ingreso.concepto || '—'],
+          ]
+        : [
+            ['Documento', alumno.numDoc],
+            ['Alumno', alumno.nombreCompleto],
+            ['Concepto', liquidacion?.descripcion || 'Pago'],
+          ]),
       ...(ingreso.tipoAbonoDescr || ingreso.tipoAbono
         ? [['Pago', ingreso.tipoAbonoDescr || (ingreso.tipoAbono === 'total' ? 'Total' : 'Abono')]]
         : []),
       ['Forma pago', ingreso.tipoPagoDescr],
+      ...(ingreso.cuentaBancariaDescr ? [['Cuenta empresa', ingreso.cuentaBancariaDescr]] : []),
       ...(ingreso.bancoDescr ? [['Banco', ingreso.bancoDescr]] : []),
       ...(ingreso.numComprobante ? [['Ref / Comprob.', ingreso.numComprobante]] : []),
       ['Valor pagado', fmtMoney(ingreso.valor)],
-      ...(liquidacion
+      ...(liquidacion && !data.esIngresoCaja
         ? [
             ['Total ítem', fmtMoney(liquidacion.valor)],
             ['Abonado', fmtMoney(liquidacion.abonado)],

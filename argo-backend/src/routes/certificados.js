@@ -20,6 +20,7 @@ router.get('/alumno/:numDoc', ctrl.listarPorAlumno);
 router.get('/:id/html', render.html);
 router.get('/:id/datos', render.datos);
 router.post('/', ctrl.crear);
+router.put('/:id', ctrl.actualizar);
 router.delete('/:id', ctrl.eliminar);
 
 module.exports = router;

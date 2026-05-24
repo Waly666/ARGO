@@ -1,22 +1,57 @@
 <div class="shell" [class.collapsed]="collapsed()">
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo">A</div>
-      <div class="name" *ngIf="!collapsed()">
-        <strong>ARGO</strong>
-        <small>Sistema de Información</small>
-      </div>
+      <img class="logo-img" src="/logoargo.png" alt="ARGO" />
     </div>
 
     <nav class="menu">
-      <a *ngFor="let m of menu"
-         [routerLink]="m.path"
-         routerLinkActive="active"
-         class="menu-item"
-         [title]="m.label">
-        <span class="icon">{{ m.icon }}</span>
-        <span class="label" *ngIf="!collapsed()">{{ m.label }}</span>
-      </a>
+      @for (m of menuItems; track trackMenu(m)) {
+        @if (m.kind === 'link') {
+          <a
+            [routerLink]="m.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="menu-item"
+            [title]="m.label">
+            <span class="icon" [ngClass]="iconClass(m.iconTone)">{{ m.icon }}</span>
+            <span class="label" *ngIf="!collapsed()">{{ m.label }}</span>
+          </a>
+        } @else {
+          <div class="menu-group" [class.menu-group-rrhh]="isRrhhGroup(m.label)" [class.menu-group-caja]="isCajaGroup(m.label)">
+            <button
+              type="button"
+              class="menu-item group-head"
+              [class.active]="(isRrhhGroup(m.label) && rrhhGroupActive()) || (isCajaGroup(m.label) && cajaGroupActive())"
+              (click)="toggleGroup(m.label, m.children, $event)"
+              [title]="m.label">
+              <span class="icon" [ngClass]="iconClass(m.iconTone)">{{ m.icon }}</span>
+              <span class="label" *ngIf="!collapsed()">{{ m.label }}</span>
+              <span class="chev" *ngIf="!collapsed()">{{ isGroupOpen(m.label) ? '▾' : '▸' }}</span>
+            </button>
+            <div
+              class="submenu"
+              [class.submenu-rrhh]="isRrhhGroup(m.label)"
+              [class.submenu-caja]="isCajaGroup(m.label)"
+              *ngIf="isGroupOpen(m.label) && !collapsed()">
+              @for (c of m.children; track c.path) {
+                @if (!c.adminOnly || isAdmin()) {
+                  @if (c.section) {
+                    <div class="submenu-section">{{ c.section }}</div>
+                  }
+                  <a
+                    [routerLink]="c.path"
+                    class="menu-item sub"
+                    [class.active]="subLinkActive(c)"
+                    [title]="c.label">
+                    <span class="icon" [ngClass]="iconClass(c.iconTone)">{{ c.icon }}</span>
+                    <span class="label">{{ c.label }}</span>
+                  </a>
+                }
+              }
+            </div>
+          </div>
+        }
+      }
     </nav>
 
     <button class="collapse" (click)="toggle()" [title]="collapsed() ? 'Expandir' : 'Colapsar'">
@@ -26,22 +61,33 @@
 
   <div class="main">
     <header class="topbar">
-      <div class="left">
-        <span class="dim">ARGO</span>
-        <span class="sep">/</span>
-        <span>Panel</span>
+      <div class="topbar-left">
+        <h1 class="welcome-title">
+          Bienvenido, {{ welcomeName() }}
+          <span class="wave" aria-hidden="true">👋</span>
+        </h1>
+        <p class="welcome-sub">Sistema de Información — <strong>ARGO</strong></p>
+        <div class="status-bar">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">
+            Sesión activa: <strong>{{ userLabel() || 'Usuario' }}</strong>
+            <span class="status-sep">—</span>
+            Rol: <strong>{{ rolLabel() }}</strong>
+          </span>
+        </div>
       </div>
-      <div class="right">
+
+      <div class="topbar-right">
         <span class="user" *ngIf="user() as u">
-          <span class="user-name">{{ userLabel() }}</span>
-          <span class="badge info">{{ u.rol || 'usuario' }}</span>
+          <span [ngClass]="capRol(u.rol)">{{ u.rol || 'usuario' }}</span>
         </span>
-        <button class="ghost" (click)="logout()">Salir</button>
+        <button type="button" class="btn-icon" title="Panel" routerLink="/app/dashboard">⌂</button>
+        <button type="button" class="btn-tool btn-dash-red" (click)="logout()">Salir</button>
       </div>
     </header>
 
     <main class="content">
-      <router-outlet></router-outlet>
+      <router-outlet />
     </main>
   </div>
 </div>

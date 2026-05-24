@@ -1,0 +1,154 @@
+<section class="auditoria-page admin-list-page card">
+  <header class="page-head">
+    <div>
+      <h1>Auditoría del sistema</h1>
+      <p class="hint">
+        Registro de creaciones, modificaciones y eliminaciones con usuario, fecha, ruta y campos
+        modificados. También se guarda copia diaria en archivos del servidor.
+      </p>
+    </div>
+  </header>
+
+  <form class="filtros" (ngSubmit)="page.set(1); cargar()">
+    <label>
+      Desde
+      <input type="date" [(ngModel)]="filtros.desde" name="desde" />
+    </label>
+    <label>
+      Hasta
+      <input type="date" [(ngModel)]="filtros.hasta" name="hasta" />
+    </label>
+    <label>
+      Usuario
+      <input type="text" [(ngModel)]="filtros.usuario" name="usuario" placeholder="usuario" />
+    </label>
+    <label>
+      Acción
+      <select [(ngModel)]="filtros.accion" name="accion">
+        <option value="">Todas</option>
+        <option value="crear">crear</option>
+        <option value="modificar">modificar</option>
+        <option value="eliminar">eliminar</option>
+        <option value="apertura_caja">apertura_caja</option>
+        <option value="cierre_caja">cierre_caja</option>
+      </select>
+    </label>
+    <label>
+      Entidad
+      <input type="text" [(ngModel)]="filtros.entidad" name="entidad" placeholder="ingreso, egreso…" />
+    </label>
+    <button type="submit" class="primary">Buscar</button>
+    <div class="view-toggle" role="group" aria-label="Modo de vista">
+      <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
+      <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
+    </div>
+  </form>
+
+  <p class="meta" *ngIf="!cargando()">{{ total() }} registros — página {{ page() }} / {{ pages() }}</p>
+  <p *ngIf="cargando()">Cargando…</p>
+
+  <div class="tabla-wrap" *ngIf="!cargando() && vista() === 'lista'">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Fecha</th>
+          <th>Acción</th>
+          <th>Entidad</th>
+          <th>Usuario</th>
+          <th>Ruta</th>
+          <th>Resumen</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of items()">
+          <td>{{ r.idAuditoria }}</td>
+          <td>{{ r.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+          <td><span class="badge">{{ r.accion }}</span></td>
+          <td>{{ r.entidad }} {{ r.idEntidad ? '#' + r.idEntidad : '' }}</td>
+          <td>{{ r.usuario }}</td>
+          <td class="ruta">{{ r.rutaBase || r.ruta }}</td>
+          <td>{{ r.resumen }}</td>
+          <td><button type="button" class="ghost sm" (click)="verDetalle(r)">Detalle</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cards-grid" *ngIf="!cargando() && vista() === 'cards'">
+    <article class="list-card" *ngFor="let r of items()">
+      <header class="card-title"><h3>{{ r.accion }} — {{ r.entidad }}</h3></header>
+      <div class="card-body">
+        <div class="entity-badge-wrap">
+          <div class="entity-badge tone-amber">#{{ r.idAuditoria }}</div>
+        </div>
+        <div class="card-main">
+          <dl class="card-fields">
+            <div><dt>Fecha</dt><dd>{{ r.fecha | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+            <div><dt>Usuario</dt><dd>{{ r.usuario }}</dd></div>
+            <div class="span-2"><dt>Resumen</dt><dd>{{ r.resumen }}</dd></div>
+            <div class="span-2"><dt>Ruta</dt><dd class="truncate">{{ r.rutaBase || r.ruta }}</dd></div>
+          </dl>
+        </div>
+      </div>
+      <footer class="card-foot">
+        <span class="card-hint">Auditoría del sistema</span>
+        <div class="card-actions">
+          <button type="button" class="act open" (click)="verDetalle(r)">Detalle</button>
+        </div>
+      </footer>
+    </article>
+    <div class="empty cards-empty" *ngIf="!items().length">Sin registros.</div>
+  </div>
+
+  <div class="paginacion">
+    <button type="button" class="ghost" (click)="paginaAnterior()" [disabled]="page() <= 1">
+      Anterior
+    </button>
+    <button type="button" class="ghost" (click)="paginaSiguiente()" [disabled]="page() >= pages()">
+      Siguiente
+    </button>
+  </div>
+</section>
+
+<div class="modal-backdrop" *ngIf="detalle() as d" (click)="cerrarDetalle()">
+  <div class="modal card" (click)="$event.stopPropagation()">
+    <header>
+      <h2>Auditoría #{{ d.idAuditoria }}</h2>
+      <button type="button" class="ghost" (click)="cerrarDetalle()">Cerrar</button>
+    </header>
+    <p><strong>{{ d.accion }}</strong> — {{ d.fecha | date: 'full' }} — {{ d.usuario }}</p>
+    <p class="ruta-full">{{ d.ruta }}</p>
+    <p>{{ d.resumen }}</p>
+
+    <section *ngIf="d.cambios?.length">
+      <h3>Campos modificados</h3>
+      <table class="tabla sm">
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Antes</th>
+            <th>Después</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of d.cambios">
+            <td>{{ c.campo }}</td>
+            <td><pre>{{ json(c.antes) }}</pre></td>
+            <td><pre>{{ json(c.despues) }}</pre></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <details *ngIf="d.datosAntes">
+      <summary>Datos antes</summary>
+      <pre>{{ json(d.datosAntes) }}</pre>
+    </details>
+    <details *ngIf="d.datosDespues">
+      <summary>Datos después</summary>
+      <pre>{{ json(d.datosDespues) }}</pre>
+    </details>
+  </div>
+</div>

@@ -3,15 +3,26 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { formatNumDoc, parseNumDocForApi } from '../utils/num-doc.helpers';
 
 export interface CertificadoCrearDto {
-  numDoc: string;
+  numDoc: number | string;
   idLiquidacion: string;
   idPlantilla?: string;
   numActa?: string;
   numFolio?: string;
   numRunt?: string;
   fechaEmision?: string;
+  observaciones?: string;
+}
+
+export interface CertificadoActualizarDto {
+  encabezado?: string;
+  numActa?: string;
+  numFolio?: string;
+  numRunt?: string;
+  fechaEmision?: string;
+  fechaVencimiento?: string | null;
   observaciones?: string;
 }
 
@@ -29,16 +40,21 @@ export class CertificadoService {
     return this.http.get<any[]>(`${this.base}/plantillas${q}`);
   }
 
-  elegibles(numDoc: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/elegibles/${encodeURIComponent(numDoc)}`);
+  elegibles(numDoc: number | string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/elegibles/${encodeURIComponent(formatNumDoc(numDoc))}`);
   }
 
-  listarPorAlumno(numDoc: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/alumno/${encodeURIComponent(numDoc)}`);
+  listarPorAlumno(numDoc: number | string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/alumno/${encodeURIComponent(formatNumDoc(numDoc))}`);
   }
 
   crear(dto: CertificadoCrearDto): Observable<any> {
-    return this.http.post(this.base, dto);
+    const numDoc = parseNumDocForApi(dto.numDoc);
+    return this.http.post(this.base, { ...dto, numDoc: numDoc ?? dto.numDoc });
+  }
+
+  actualizar(id: string, dto: CertificadoActualizarDto): Observable<any> {
+    return this.http.put(`${this.base}/${id}`, dto);
   }
 
   eliminar(id: string): Observable<{ ok: boolean }> {
@@ -46,7 +62,8 @@ export class CertificadoService {
   }
 
   abrirHtml(id: string, onError?: (msg: string) => void): void {
-    this.http.get(`${this.base}/${id}/html`, { responseType: 'text' }).subscribe({
+    const url = `${this.base}/${id}/html?v=${Date.now()}`;
+    this.http.get(url, { responseType: 'text' }).subscribe({
       next: (html) => {
         const w = window.open('', '_blank', 'width=900,height=700');
         if (!w) {

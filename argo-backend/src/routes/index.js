@@ -8,6 +8,13 @@ const liquidacion = require('./liquidacion');
 const ingresos = require('./ingresos');
 const certificados = require('./certificados');
 const config = require('./config');
+const usuarios = require('./usuarios');
+const programas = require('./programas');
+const servicios = require('./servicios');
+const egresos = require('./egresos');
+const rrhh = require('./rrhh');
+const caja = require('./caja');
+const auditoria = require('./auditoria');
 
 const router = Router();
 
@@ -19,5 +26,12 @@ router.use('/liquidacion', liquidacion);
 router.use('/ingresos', ingresos);
 router.use('/certificados', certificados);
 router.use('/config', config);
+router.use('/usuarios', usuarios);
+router.use('/programas', programas);
+router.use('/servicios', servicios);
+router.use('/rrhh', rrhh);
+router.use('/egresos', egresos);
+router.use('/caja', caja);
+router.use('/auditoria', auditoria);
 
 module.exports = router;

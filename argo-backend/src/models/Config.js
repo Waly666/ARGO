@@ -17,6 +17,9 @@ const ConfigSchema = new mongoose.Schema(
     consecutivoComprobanteIngreso: { type: Number, default: 0 },
     prefijoComprobanteEgreso: { type: String, trim: true, default: 'CE' },
     consecutivoComprobanteEgreso: { type: Number, default: 0 },
+    /** Certificados emitidos */
+    prefijoCertificado: { type: String, trim: true, default: 'CERT' },
+    consecutivoCertificado: { type: Number, default: 0 },
     slogan1: { type: String, trim: true, default: '' },
     mensajeEncabezado: { type: String, trim: true, default: 'COMPROBANTE DE INGRESO' },
     mensajePie: {

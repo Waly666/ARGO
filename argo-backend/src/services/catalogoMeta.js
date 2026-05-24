@@ -1,0 +1,146 @@
+const { CATALOGOS } = require('../models/catalogos');
+
+/** Catálogos con pantallas dedicadas (no editar aquí). */
+const EXCLUIDOS_ADMIN = new Set(['programas', 'servicios']);
+
+const ETIQUETAS = {
+  catTipoDoc: 'Tipos de documento',
+  catTipoCapacitacion: 'Tipos de capacitación',
+  catTipServicio: 'Tipos de servicio',
+  cuentasBancarias: 'Cuentas bancarias',
+  bancos: 'Bancos',
+  catTipoPago: 'Tipos de pago',
+  tipoIngreso: 'Tipos de ingreso',
+  tipoEgreso: 'Tipos de egreso',
+  catRegimenSalud: 'Régimen de salud',
+  jornada: 'Jornadas',
+  estrato: 'Estratos',
+  nivelFormacion: 'Nivel de formación',
+  ocupacion: 'Ocupaciones',
+  discapacidad: 'Discapacidades',
+  estadoCivil: 'Estado civil',
+  genero: 'Género',
+  tipoSangre: 'Tipo de sangre',
+  multiCulturalidad: 'Multiculturalidad',
+  claseVehiculo: 'Clases de vehículo',
+  marcasVehiculos: 'Marcas de vehículos',
+  lineasVehiculos: 'Líneas de vehículos',
+  coloresVehiculos: 'Colores de vehículos',
+  carrocerias: 'Carrocerías',
+  divipola: 'Divipola (municipios)',
+  aulas: 'Aulas',
+  itemDocumentosVehiculo: 'Documentos vehículo',
+  itemDocumentosInstructores: 'Documentos instructores',
+  itemsEstGral: 'Ítems estado general',
+  adaptaciones: 'Adaptaciones',
+  aspecto1: 'Aspecto 1',
+  aspecto2: 'Aspecto 2',
+};
+
+const ID_FIELDS_HINT = {
+  catTipoDoc: ['idTipoDoc'],
+  catTipoCapacitacion: ['idTipCap'],
+  catTipServicio: ['idTipoServ'],
+  cuentasBancarias: ['idCuenta'],
+  bancos: ['idBanco'],
+  catTipoPago: ['idTipoPago'],
+  tipoIngreso: ['idTipoIngreso'],
+  tipoEgreso: ['idTipoEgreso'],
+  catRegimenSalud: ['idRegimen'],
+  jornada: ['idJornada'],
+  estrato: ['idEstrato'],
+  nivelFormacion: ['idNivel'],
+  ocupacion: ['idOcupacion'],
+  discapacidad: ['idDiscapacidad'],
+  estadoCivil: ['idEstadoCivil'],
+  genero: ['idGenero'],
+  tipoSangre: ['idTipoSangre'],
+  multiCulturalidad: ['idMulti'],
+  claseVehiculo: ['idClase'],
+  marcasVehiculos: ['idMarca'],
+  lineasVehiculos: ['idLinea'],
+  coloresVehiculos: ['idColor'],
+  carrocerias: ['idCarroceria'],
+  divipola: ['codMunicipio'],
+  aulas: ['idAula'],
+  itemDocumentosVehiculo: ['idDocVehi'],
+  itemDocumentosInstructores: ['idDocInst'],
+  itemsEstGral: ['idItemEsGral'],
+};
+
+/** Campos válidos por catálogo (evita columnas basura del Excel en admin). */
+const CAMPOS_ESQUEMA = {
+  itemDocumentosVehiculo: ['idDocVehi', 'documentoVehi', 'descripcionDocVehi'],
+  itemDocumentosInstructores: ['idDocInst', 'documentoInst', 'descripcionDocInst'],
+  itemsEstGral: ['idItemEsGral', 'item', 'claseVehiculo'],
+  tipoEgreso: ['idTipoEgreso', 'tipo', 'requiereEmpleado', 'efectoNomina'],
+};
+
+function camposEsquema(nombre) {
+  return CAMPOS_ESQUEMA[nombre] || null;
+}
+
+function docSegunEsquema(nombre, body) {
+  const campos = camposEsquema(nombre);
+  const doc = {};
+  for (const [k, v] of Object.entries(body || {})) {
+    if (k === '_id' || k === '__v') continue;
+    if (campos && !campos.includes(k)) continue;
+    if (typeof v === 'string') {
+      const t = v.trim();
+      doc[k] = t === '' ? null : t;
+    } else {
+      doc[k] = v;
+    }
+  }
+  return doc;
+}
+
+function resolverCamposListado(nombre, row) {
+  const esquema = camposEsquema(nombre);
+  if (esquema?.length) return ['_id', ...esquema];
+  if (row) {
+    return Object.keys(row).filter((k) => k !== '__v' && !/^col\d+$/i.test(k));
+  }
+  return [];
+}
+
+function nombreValido(nombre) {
+  return !!CATALOGOS[nombre] && !EXCLUIDOS_ADMIN.has(nombre);
+}
+
+function metaCatalogo(nombre) {
+  if (!nombreValido(nombre)) return null;
+  return {
+    nombre,
+    label: ETIQUETAS[nombre] || nombre,
+    idFields: ID_FIELDS_HINT[nombre] || [],
+    grande: nombre === 'divipola',
+  };
+}
+
+function listarMeta() {
+  return Object.keys(CATALOGOS)
+    .filter((k) => nombreValido(k))
+    .map((k) => metaCatalogo(k))
+    .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+}
+
+function inferirCamposId(doc, hints = []) {
+  const keys = Object.keys(doc || {}).filter((k) => k !== '_id' && k !== '__v');
+  const fromHint = hints.filter((h) => doc && doc[h] != null);
+  if (fromHint.length) return fromHint;
+  const idLike = keys.filter((k) => /^id[A-Z_]|^cod[A-Z_]/i.test(k));
+  return idLike.length ? idLike : keys.slice(0, 1);
+}
+
+module.exports = {
+  EXCLUIDOS_ADMIN,
+  nombreValido,
+  metaCatalogo,
+  listarMeta,
+  inferirCamposId,
+  camposEsquema,
+  docSegunEsquema,
+  resolverCamposListado,
+};

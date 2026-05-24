@@ -1,6 +1,20 @@
 <section class="pagos" *ngIf="store.hasAlumno(); else noAlumno">
   <div class="msg" *ngIf="msg()">{{ msg() }}</div>
 
+  <div class="saldo-servicios" *ngIf="itemsConSaldo().length">
+    <button
+      type="button"
+      class="serv-saldo-alarm compact"
+      *ngFor="let it of itemsConSaldo()"
+      (click)="onItemLiquidacionChange(it._id)"
+      [class.sel]="idLiquidacion() === it._id"
+      [attr.title]="tituloSaldoItem(it.descripcion, fmt(it.saldo))">
+      <span class="serv-saldo-pulse" aria-hidden="true"></span>
+      <span class="serv-saldo-icon">$</span>
+      <span class="serv-saldo-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}</span>
+    </button>
+  </div>
+
   <div class="header-row">
     <div class="card stat">
       <span class="label">Total Liquidado</span>
@@ -21,7 +35,7 @@
     <div class="row">
       <div class="col-6">
         <label>Ítem a pagar</label>
-        <select [ngModel]="idLiquidacion()" (ngModelChange)="idLiquidacion.set($event)">
+        <select [ngModel]="idLiquidacion()" (ngModelChange)="onItemLiquidacionChange($event)">
           <option value="">-- Seleccionar --</option>
           <option *ngFor="let it of itemsConSaldo()" [value]="it._id">
             {{ descrItem(it) }}
@@ -30,11 +44,18 @@
       </div>
       <div class="col-3">
         <label>Valor</label>
-        <input type="number" min="0" [ngModel]="valor()" (ngModelChange)="valor.set(+$event)" />
+        <input
+          type="number"
+          min="0"
+          [max]="saldoItemSel() || null"
+          [ngModel]="valor()"
+          (ngModelChange)="valor.set(+$event)"
+        />
+        <span class="field-hint" *ngIf="saldoItemSel() > 0">Saldo del ítem: {{ fmt(saldoItemSel()) }}</span>
       </div>
       <div class="col-3">
         <label>Tipo Pago</label>
-        <select [ngModel]="idTipoPago()" (ngModelChange)="idTipoPago.set($event)">
+        <select [ngModel]="idTipoPago()" (ngModelChange)="onTipoPagoChange($event)">
           <option value="">-- Seleccionar forma de pago --</option>
           <option *ngFor="let t of tiposPago()" [value]="tipoPagoValor(t)">
             {{ tipoPagoLabel(t) }}
@@ -43,15 +64,16 @@
       </div>
     </div>
 
-    <div class="row" *ngIf="!esEfectivo()">
+    <div class="row" *ngIf="requiereCuentaEmpresa()">
       <div class="col-6">
-        <label>Banco</label>
-        <select [ngModel]="idBanco()" (ngModelChange)="idBanco.set($event)">
-          <option value="">-- Seleccionar banco --</option>
-          <option *ngFor="let b of bancos()" [value]="bancoValor(b)">
-            {{ bancoLabel(b) }}
+        <label>Cuenta de la empresa *</label>
+        <select [ngModel]="idCuentaBancaria()" (ngModelChange)="idCuentaBancaria.set($event)">
+          <option value="">-- Seleccionar cuenta --</option>
+          <option *ngFor="let c of cuentasBancarias()" [value]="cuentaValor(c)">
+            {{ labelCuenta(c) }}
           </option>
         </select>
+        <span class="field-hint">Indique a cuál cuenta ingresó el pago (Bancolombia, Nequi, etc.)</span>
       </div>
       <div class="col-6">
         <label>Nº Comprobante / Referencia</label>
@@ -84,7 +106,7 @@
           <th>Concepto</th>
           <th>Pago</th>
           <th>Tipo</th>
-          <th>Banco</th>
+          <th>Cuenta empresa</th>
           <th>Referencia</th>
           <th class="r">Valor</th>
           <th></th>
@@ -98,7 +120,7 @@
             <span class="badge" [ngClass]="tipoAbonoClass(p)">{{ tipoAbonoLabel(p) }}</span>
           </td>
           <td>{{ p.tipoPagoDescr || p.idTipoPago }}</td>
-          <td>{{ p.bancoDescr || p.idBanco || '—' }}</td>
+          <td>{{ p.cuentaBancariaDescr || p.bancoDescr || '—' }}</td>
           <td>{{ p.numComprobante || '—' }}</td>
           <td class="r">{{ fmt(p.valor) }}</td>
           <td class="r actions-cell">
@@ -112,6 +134,27 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="modal-backdrop auth-anular-backdrop" *ngIf="mostrarAuthAnular()" (click)="cancelarReversarSupervisor()">
+    <div class="modal card auth-anular-modal" (click)="$event.stopPropagation()">
+      <h3>Autorización para anular ingreso</h3>
+      <p class="hint" *ngIf="ingresoPendienteAnular() as pi">
+        Comprobante {{ pi.numRecibo || '—' }} — ingrese credenciales de un administrador.
+      </p>
+      <label>
+        Usuario administrador
+        <input type="text" [ngModel]="authAdminUser()" (ngModelChange)="authAdminUser.set($event)" />
+      </label>
+      <label>
+        Contraseña
+        <input type="password" [ngModel]="authAdminPass()" (ngModelChange)="authAdminPass.set($event)" />
+      </label>
+      <div class="actions">
+        <button type="button" class="ghost mini" (click)="cancelarReversarSupervisor()">Cancelar</button>
+        <button type="button" class="danger mini" (click)="confirmarReversarConSupervisor()">Autorizar y reversar</button>
+      </div>
+    </div>
   </div>
 </section>
 

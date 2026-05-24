@@ -9,6 +9,8 @@ export interface ConfirmOptions {
   cancelLabel?: string;
   variant?: ConfirmVariant;
   icon?: ConfirmIcon;
+  /** Solo botón de confirmación (avisos informativos) */
+  hideCancel?: boolean;
 }
 
 export interface ConfirmDialogState extends Required<Pick<ConfirmOptions, 'title' | 'message'>> {
@@ -16,4 +18,5 @@ export interface ConfirmDialogState extends Required<Pick<ConfirmOptions, 'title
   cancelLabel: string;
   variant: ConfirmVariant;
   icon: ConfirmIcon;
+  hideCancel: boolean;
 }

@@ -1,0 +1,312 @@
+<section class="programas-page admin-list-page card">
+  <header class="page-head">
+    <div>
+      <h1>Programas educativos</h1>
+      <p class="hint">
+        Al crear un programa se genera el servicio de matrícula vinculado. Si indica <strong>semestres</strong>, se crean tantos servicios numerados (1 SEM, 2 SEM…) con el valor total repartido entre ellos.
+        El campo <strong>nomCert</strong> es el nombre que aparece en el certificado del alumno.
+        En <strong>Formato de certificado</strong> elige el tipo de plantilla definido en Config. Certificados.
+      </p>
+    </div>
+    <button type="button" class="primary" (click)="nuevo()" [disabled]="tiposCargando()">Nuevo programa</button>
+  </header>
+
+  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+
+  <div class="toolbar">
+    <input
+      type="search"
+      placeholder="Buscar por nombre o código…"
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event)"
+      (keyup.enter)="cargar()" />
+    <button type="button" class="ghost" (click)="cargar()">Buscar</button>
+    <div class="view-toggle" role="group" aria-label="Modo de vista">
+      <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')" title="Vista tabla">☰ Lista</button>
+      <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')" title="Vista tarjetas">▦ Cards</button>
+    </div>
+  </div>
+
+  <div #listAnchor class="modal-anchor" aria-hidden="true"></div>
+
+  <argo-form-modal
+    [open]="modalAbierto()"
+    [anchorTopPx]="modalTop()"
+    [title]="modalTitulo()"
+    [subtitle]="editando() ? 'Datos del programa y servicio de matrícula.' : 'El código se asigna si lo deja vacío. El servicio se crea al guardar.'"
+    [wide]="true"
+    (closed)="cerrarModal()">
+    <div class="modal-form">
+      <section class="form-section">
+        <h3>Programa</h3>
+        <div class="row" *ngIf="editando()">
+          <div class="col-3">
+            <label>ID programa</label>
+            <input type="text" [value]="editando()!.idPrograma" readonly class="readonly" />
+          </div>
+          <div class="col-3" *ngIf="editando()?._id">
+            <label>ID Mongo</label>
+            <input type="text" [value]="editando()!._id" readonly class="readonly" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-3">
+            <label>Código programa</label>
+            <input type="text" [ngModel]="form().codigoProg" (ngModelChange)="patch('codigoProg', $event)" />
+          </div>
+          <div class="col-5">
+            <label>Nombre del programa *</label>
+            <input type="text" [ngModel]="form().nombreProg" (ngModelChange)="patch('nombreProg', $event)" />
+          </div>
+          <div class="col-4">
+            <label>Nombre en certificado (nomCert) *</label>
+            <input type="text" [ngModel]="form().nomCert" (ngModelChange)="patch('nomCert', $event)" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-5">
+            <label>Formato de certificado (tipoCertificado)</label>
+            <select
+              [ngModel]="form().tipoCertificado ?? ''"
+              (ngModelChange)="patch('tipoCertificado', $event === '' || $event == null ? null : $event)">
+              <option [ngValue]="''">Automático</option>
+              <option *ngFor="let t of tiposCert" [ngValue]="t.id">{{ t.label }}</option>
+            </select>
+            <p class="hint-inline">{{ formatoCertHint(form().tipoCertificado) }}</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <label>Tipo capacitación (idTipCap) *</label>
+            <select [ngModel]="form().idTipCap" (ngModelChange)="onTipoCapChange($event)" [disabled]="!tiposCap().length">
+              <option *ngFor="let t of tiposCap()" [ngValue]="t.id">{{ t.label }}</option>
+            </select>
+          </div>
+          <div class="col-2">
+            <label>Semestres</label>
+            <input type="number" min="0" [ngModel]="form().semestres" (ngModelChange)="patch('semestres', $event)" />
+          </div>
+          <div class="col-2">
+            <label>Horas totales</label>
+            <input type="number" min="0" [ngModel]="form().horas" (ngModelChange)="patch('horas', $event)" />
+          </div>
+          <div class="col-2">
+            <label>Horas teoría</label>
+            <input type="number" min="0" [ngModel]="form().horasTeoria" (ngModelChange)="patch('horasTeoria', $event)" />
+          </div>
+          <div class="col-2">
+            <label>Horas práctica</label>
+            <input type="number" min="0" [ngModel]="form().horasPractica" (ngModelChange)="patch('horasPractica', $event)" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-2">
+            <label>Horas taller</label>
+            <input type="number" min="0" [ngModel]="form().horasTaller" (ngModelChange)="patch('horasTaller', $event)" />
+          </div>
+          <div class="col-2">
+            <label>Valor matrícula</label>
+            <input type="number" min="0" [ngModel]="form().valorMatricula" (ngModelChange)="patch('valorMatricula', $event)" />
+          </div>
+          <div class="col-2">
+            <label>Vigencia (días)</label>
+            <input type="number" min="0" [ngModel]="form().diasVencimiento" (ngModelChange)="patch('diasVencimiento', $event)" />
+          </div>
+          <div class="col-2">
+            <label>Estado</label>
+            <select [ngModel]="form().estado" (ngModelChange)="patch('estado', $event)">
+              <option value="ACTIVO">ACTIVO</option>
+              <option value="INACTIVO">INACTIVO</option>
+            </select>
+          </div>
+          <div class="col-4">
+            <label>Requisitos (requistos)</label>
+            <input type="text" [ngModel]="form().requistos" (ngModelChange)="patch('requistos', $event)" />
+          </div>
+        </div>
+        <div class="row row-nota">
+          <div class="col-12">
+            <label>Descripción / notas</label>
+            <textarea class="nota-programa" rows="6" [ngModel]="form().descripcion" (ngModelChange)="patch('descripcion', $event)"></textarea>
+          </div>
+        </div>
+        <div class="audit-grid" *ngIf="auditPrograma() as a">
+          <h4>Auditoría — programa</h4>
+          <div><span>Creado</span><strong>{{ a.fechaAudi }}</strong></div>
+          <div><span>Usuario alta</span><strong>{{ a.userAddReg }}</strong></div>
+          <div><span>Modificado</span><strong>{{ a.fechaMod }}</strong></div>
+          <div><span>Usuario cambio</span><strong>{{ a.userChangeRecord }}</strong></div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>Servicio de matrícula</h3>
+        <p class="form-note" *ngIf="usaSemestresEnForm()">
+          Con {{ form().semestres }} semestre(s), al guardar se generan servicios numerados (ej. «1 SEM TECNICO …»).
+          Tarifa 1 del programa ≈ {{ valorPorSemestrePreview() | number:'1.0-0' }} por semestre (reparto automático).
+          Las tarifas 2 y 3 no se dividen; ajústelas manualmente en cada servicio si aplica.
+        </p>
+        <ul class="sem-serv-list" *ngIf="serviciosVinculados().length > 1">
+          <li *ngFor="let s of serviciosVinculados()">
+            <strong>{{ s.numSemestre ?? '—' }}.</strong> #{{ s.idServ }} — {{ s.descrServicio }}
+            <span class="muted">({{ s.tarifa1 | number:'1.0-0' }})</span>
+          </li>
+        </ul>
+        <p class="form-note" *ngIf="servicioVinculado()?.idServ && !usaSemestresEnForm()">
+          idServ: {{ servicioVinculado()!.idServ }} · idProg: {{ servicioVinculado()!.idProg ?? editando()?.idPrograma }}
+        </p>
+        <div class="row">
+          <div class="col-5">
+            <label>Descripción (descrServicio)</label>
+            <input
+              type="text"
+              [readonly]="usaSemestresEnForm()"
+              [ngModel]="form().descrServicio"
+              (ngModelChange)="patch('descrServicio', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Tipo servicio (tipoServ)</label>
+            <select [ngModel]="form().tipoServ" (ngModelChange)="patch('tipoServ', $event)">
+              <option *ngFor="let t of tiposServ()" [ngValue]="t.code">{{ t.label }} ({{ t.code }})</option>
+            </select>
+          </div>
+          <div class="col-2">
+            <label>Facturar</label>
+            <select [ngModel]="form().facturar" (ngModelChange)="patch('facturar', $event)">
+              <option value="NO">NO</option>
+              <option value="SI">SI</option>
+            </select>
+          </div>
+          <div class="col-2">
+            <label>IVA %</label>
+            <input type="number" min="0" [ngModel]="form().iva" (ngModelChange)="patch('iva', $event)" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-3">
+            <label>Tarifa 1 *</label>
+            <input type="number" min="0" [ngModel]="form().tarifa1" (ngModelChange)="patch('tarifa1', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Tarifa 2</label>
+            <input type="number" min="0" [ngModel]="form().tarifa2" (ngModelChange)="patch('tarifa2', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Tarifa 3</label>
+            <input type="number" min="0" [ngModel]="form().tarifa3" (ngModelChange)="patch('tarifa3', $event)" />
+          </div>
+        </div>
+        <div class="audit-grid" *ngIf="auditServicio() as a">
+          <h4>Auditoría — servicio</h4>
+          <div><span>Creado</span><strong>{{ a.fechaAudi }}</strong></div>
+          <div><span>Usuario alta</span><strong>{{ a.userAddReg }}</strong></div>
+          <div><span>Modificado</span><strong>{{ a.fechaMod }}</strong></div>
+          <div><span>Usuario cambio</span><strong>{{ a.userChangeRecord }}</strong></div>
+        </div>
+      </section>
+
+      <section class="form-section" *ngIf="esLicenciaConduccionForm()">
+        <h3>Hora de clase práctica (servicio adicional)</h3>
+        <p class="form-note">
+          Se crea un servicio aparte de la matrícula (ej. «{{ previewDescrHoraPractica() }}»).
+          No se liquida al matricular; el alumno lo toma por horas cuando corresponda.
+        </p>
+        <p class="form-note" *ngIf="servicioHoraPractica()?.idServ">
+          idServ hora práctica: {{ servicioHoraPractica()!.idServ }}
+        </p>
+        <div class="row">
+          <div class="col-4">
+            <label>Tarifa por hora *</label>
+            <input
+              type="number"
+              min="0"
+              [ngModel]="form().tarifaHoraPractica"
+              (ngModelChange)="patch('tarifaHoraPractica', +$event)" />
+          </div>
+        </div>
+      </section>
+    </div>
+    <div modal-actions>
+      <button type="button" class="ghost" (click)="cerrarModal()">Cancelar</button>
+      <button type="button" class="primary" (click)="guardar()" [disabled]="saving() || !tiposCap().length">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </argo-form-modal>
+
+  <div class="table-wrap" *ngIf="!loading() && vista() === 'lista'">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Programa</th>
+          <th>Certificado</th>
+          <th>Formato cert.</th>
+          <th>Tipo</th>
+          <th>Horas</th>
+          <th class="col-sem">Sem.</th>
+          <th>Matrícula</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of programas()">
+          <td><span [ngClass]="capCodigo(p.codigoProg)">{{ p.codigoProg || p.idPrograma }}</span></td>
+          <td><strong>{{ p.nombreProg }}</strong></td>
+          <td><span class="cap cap-violet cap-sm">{{ p.nomCert || '—' }}</span></td>
+          <td><span class="cap cap-indigo cap-sm">{{ p.tipoCertificado ? labelTipoCert(p.tipoCertificado) : 'Automático' }}</span></td>
+          <td><span [ngClass]="capTipoCap(labelTipo(p.idTipCap))">{{ labelTipo(p.idTipCap) }}</span></td>
+          <td><span [ngClass]="capHoras(p.horas)">{{ p.horas ?? '—' }} h</span></td>
+          <td class="col-sem">
+            <span *ngIf="p.semestres != null && +p.semestres >= 1; else sinSem">{{ p.semestres }}</span>
+            <ng-template #sinSem><span class="dim">—</span></ng-template>
+          </td>
+          <td><span [ngClass]="[capMoneda(p.valorMatricula), 'cap-money']">${{ num(p.valorMatricula) | number }}</span></td>
+          <td><span [ngClass]="capEstado(p.estado)">{{ p.estado || '—' }}</span></td>
+          <td class="acciones">
+            <button type="button" class="ghost mini" (click)="editar(p)">Editar</button>
+            <button type="button" class="danger mini" *ngIf="esAdmin()" (click)="eliminar(p)">Eliminar</button>
+          </td>
+        </tr>
+        <tr *ngIf="!programas().length">
+          <td colspan="10" class="empty">No hay programas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
+    <article class="list-card" *ngFor="let p of programas()">
+      <header class="card-title"><h3>{{ p.nombreProg }}</h3></header>
+      <div class="card-body">
+        <div class="entity-badge-wrap">
+          <div class="entity-badge tone-purple">{{ p.codigoProg || p.idPrograma }}</div>
+        </div>
+        <div class="card-main">
+          <div class="card-tags">
+            <span [ngClass]="capEstado(p.estado)">{{ p.estado || '—' }}</span>
+            <span [ngClass]="capTipoCap(labelTipo(p.idTipCap))">{{ labelTipo(p.idTipCap) }}</span>
+            <span class="cap cap-indigo cap-sm">{{ p.tipoCertificado ? labelTipoCert(p.tipoCertificado) : 'Automático' }}</span>
+          </div>
+          <dl class="card-fields">
+            <div><dt>Certificado</dt><dd>{{ p.nomCert || '—' }}</dd></div>
+            <div><dt>Horas</dt><dd [ngClass]="capHoras(p.horas)">{{ p.horas ?? '—' }} h</dd></div>
+            <div *ngIf="p.semestres != null && +p.semestres >= 1"><dt>Semestres</dt><dd>{{ p.semestres }}</dd></div>
+            <div><dt>Matrícula</dt><dd [ngClass]="[capMoneda(p.valorMatricula), 'cap-money']">${{ num(p.valorMatricula) | number }}</dd></div>
+          </dl>
+        </div>
+      </div>
+      <footer class="card-foot">
+        <span class="card-hint">Programa educativo</span>
+        <div class="card-actions">
+          <button type="button" class="act open" (click)="editar(p)">Editar</button>
+          <button type="button" class="act doc" *ngIf="esAdmin()" (click)="eliminar(p)">Eliminar</button>
+        </div>
+      </footer>
+    </article>
+    <div class="empty cards-empty" *ngIf="!programas().length">No hay programas.</div>
+  </div>
+
+  <p class="loading" *ngIf="loading()">Cargando…</p>
+</section>

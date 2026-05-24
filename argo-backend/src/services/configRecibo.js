@@ -22,8 +22,15 @@ const DEFAULTS = {
   consecutivoComprobanteEgreso: 0,
   slogan1: '',
   mensajeEncabezado: 'COMPROBANTE DE INGRESO',
+  mensajeEncabezadoEgreso: 'COMPROBANTE DE EGRESO',
   mensajePie:
     'Documento soporte de pago. No sustituye factura electrónica. Conserve este comprobante.',
+  mensajePieEgreso:
+    'Constancia de egreso. El beneficiario debe firmar este recibo o adjuntar factura/voucher como soporte del pago.',
+  /** Cuadro de confirmación al registrar un alumno nuevo */
+  mensajeCreacionAlumnoTitulo: '¡Alumno registrado!',
+  mensajeCreacionAlumno:
+    'Se registró correctamente a {nombre} con documento {numDoc}.\n\nBienvenido(a) a {empresa}.{slogan}',
   anchoReciboMm: 80,
   mostrarQr: true,
 };

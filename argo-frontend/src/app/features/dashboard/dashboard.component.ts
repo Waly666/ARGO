@@ -58,6 +58,6 @@ export class DashboardComponent {
   nombre = computed(() => {
     const u = this.auth.user();
     if (!u) return '';
-    return (u.nombres?.split(' ')[0]) || u.nickName || u.username;
+    return (u.nombres?.split(' ')[0]) || u.username;
   });
 }
