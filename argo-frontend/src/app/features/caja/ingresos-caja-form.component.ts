@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
+import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { IngresoService } from '../../core/services/ingreso.service';
 import {
   TipoIngresoCat,
@@ -34,6 +35,7 @@ const TIPOS_PAGO_DEF = [
 export class IngresosCajaFormComponent implements OnInit {
   private catSvc = inject(CatalogoService);
   private cajaSvc = inject(CajaSesionService);
+  private cajaAlert = inject(CajaAperturaAlertService);
   private ingSvc = inject(IngresoService);
   private router = inject(Router);
 
@@ -156,11 +158,8 @@ export class IngresosCajaFormComponent implements OnInit {
     void this.router.navigate(['/app/caja/ingresos']);
   }
 
-  guardar(): void {
-    if (!this.cajaAbierta()) {
-      this.msg.set('Debe abrir su caja antes de registrar ingresos.');
-      return;
-    }
+  async guardar(): Promise<void> {
+    if (!(await this.cajaAlert.ensureAbierta('registrar ingresos'))) return;
     if (!this.idTipoIngreso()) {
       this.msg.set('Seleccione el tipo de ingreso.');
       return;

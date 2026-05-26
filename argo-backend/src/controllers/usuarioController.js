@@ -1,11 +1,16 @@
 const Usuario = require('../models/Usuario');
-const { ROLES_VALIDOS, normalizarRol, esAdmin } = require('../utils/roles');
+const { normalizarRol, esAdmin } = require('../utils/roles');
+const { listarRolesActivos, rolExiste } = require('../services/rolesPermisos');
+
+function esLoginNumerico(login) {
+  const s = String(login ?? '').trim();
+  return !!s && /^\d+$/.test(s);
+}
 
 function limpiar(doc) {
   if (!doc) return null;
   const o = doc.toJSON ? doc.toJSON() : { ...doc };
   delete o.passwordHash;
-  delete o.nickName;
   return o;
 }
 
@@ -34,29 +39,46 @@ exports.obtener = async (req, res, next) => {
 
 exports.crear = async (req, res, next) => {
   try {
-    const { username, password, nombres, apellidos, email, rol, activo } = req.body || {};
+    const { username, password, nombres, apellidos, email, rol, activo, numeroDocumento } =
+      req.body || {};
     const userKey = String(username || '').trim().toLowerCase();
     if (!userKey) return res.status(400).json({ message: 'Usuario (username) es obligatorio' });
+    if (esLoginNumerico(userKey)) {
+      return res.status(400).json({
+        message:
+          'Use un nombre de usuario (ej. jose o walter.aguilar), no el número de documento. El documento va en el campo aparte.',
+      });
+    }
     if (!password || String(password).length < 4) {
       return res.status(400).json({ message: 'Contraseña obligatoria (mínimo 4 caracteres)' });
     }
     const dup = await Usuario.findOne({ username: userKey });
     if (dup) return res.status(409).json({ message: 'Ya existe un usuario con ese login' });
 
+    const rolNorm = normalizarRol(rol);
+    if (!(await rolExiste(rolNorm))) {
+      return res.status(400).json({ message: 'Rol no válido o inactivo' });
+    }
+
     const payload = {
       username: userKey,
       nombres: String(nombres || '').trim(),
       apellidos: String(apellidos || '').trim(),
       email: String(email || '').trim().toLowerCase(),
-      rol: normalizarRol(rol),
+      rol: rolNorm,
       activo: activo !== false,
       passwordHash: await Usuario.hashPassword(password),
     };
+
+    const docStr = String(numeroDocumento ?? '').trim();
+    if (docStr) payload.numeroDocumento = docStr;
 
     const digitsLogin = userKey.replace(/\D/g, '');
     const numeroBody = req.body?.numero != null ? Number(req.body.numero) : NaN;
     if (Number.isFinite(numeroBody)) {
       payload.numero = numeroBody;
+    } else if (docStr.replace(/\D/g, '')) {
+      payload.numero = Number(docStr.replace(/\D/g, ''));
     } else if (digitsLogin) {
       payload.numero = Number(digitsLogin);
     }
@@ -81,18 +103,42 @@ exports.actualizar = async (req, res, next) => {
     const u = await Usuario.findById(req.params.id);
     if (!u) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-    const { username, password, nombres, apellidos, email, rol, activo } = req.body || {};
+    const { username, password, nombres, apellidos, email, rol, activo, numeroDocumento } =
+      req.body || {};
     if (username != null) {
       const userKey = String(username).trim().toLowerCase();
       if (!userKey) return res.status(400).json({ message: 'Usuario inválido' });
+      if (esLoginNumerico(userKey)) {
+        return res.status(400).json({
+          message: 'Use un nombre de usuario legible, no el número de documento.',
+        });
+      }
       const dup = await Usuario.findOne({ username: userKey, _id: { $ne: u._id } });
       if (dup) return res.status(409).json({ message: 'Ese usuario ya existe' });
       u.username = userKey;
     }
+    if (numeroDocumento != null) {
+      const docStr = String(numeroDocumento).trim();
+      u.numeroDocumento = docStr || undefined;
+      const digits = docStr.replace(/\D/g, '');
+      if (digits) {
+        const numero = Number(digits);
+        if (Number.isFinite(numero)) {
+          const dupNum = await Usuario.findOne({ numero, _id: { $ne: u._id } }).lean();
+          if (!dupNum) u.numero = numero;
+        }
+      }
+    }
     if (nombres != null) u.nombres = String(nombres).trim();
     if (apellidos != null) u.apellidos = String(apellidos).trim();
     if (email != null) u.email = String(email).trim().toLowerCase();
-    if (rol != null) u.rol = normalizarRol(rol);
+    if (rol != null) {
+      const rolNorm = normalizarRol(rol);
+      if (!(await rolExiste(rolNorm))) {
+        return res.status(400).json({ message: 'Rol no válido o inactivo' });
+      }
+      u.rol = rolNorm;
+    }
     if (activo != null) u.activo = activo === true || activo === 'true';
     if (password != null && String(password).length > 0) {
       if (String(password).length < 4) {
@@ -155,9 +201,16 @@ exports.borrar = async (req, res, next) => {
   }
 };
 
-exports.roles = async (_req, res) => {
-  res.json(ROLES_VALIDOS.map((id) => ({
-    id,
-    label: id === 'admin' ? 'Administrador' : id.charAt(0).toUpperCase() + id.slice(1),
-  })));
+exports.roles = async (_req, res, next) => {
+  try {
+    const rows = await listarRolesActivos();
+    res.json(
+      rows.map((r) => ({
+        id: r.codigo,
+        label: r.nombre,
+      })),
+    );
+  } catch (e) {
+    next(e);
+  }
 };

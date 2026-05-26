@@ -296,6 +296,18 @@
   strong { color: var(--text); font-weight: 600; }
 }
 
+.head-caja-alarm,
+.head-cert-alarm-wrap,
+.head-jornada-proceso-alarm {
+  margin-top: 10px;
+  max-width: 100%;
+  width: 100%;
+}
+
+.head-jornada-proceso-alarm {
+  display: block;
+}
+
 .status-sep {
   margin: 0 6px;
   color: var(--text-soft);

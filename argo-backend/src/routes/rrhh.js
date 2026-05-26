@@ -5,10 +5,11 @@ const cat = require('../controllers/rrhhCatalogoControllers');
 const contrato = require('../controllers/contratoController');
 const novedad = require('../controllers/novedadNominaController');
 const nomina = require('../controllers/nominaController');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-router.use(requireAuth);
+const rrhh = requirePermiso('rrhh');
+router.use(requireAuth, rrhh);
 
 function crud(ctrl) {
   const r = Router();
@@ -40,6 +41,7 @@ router.get('/nomina/periodos', nomina.listarPeriodos);
 router.post('/nomina/periodos', nomina.crearPeriodo);
 router.get('/nomina/periodos/:id', nomina.obtenerPeriodo);
 router.post('/nomina/periodos/:id/generar-novedades', nomina.generarNovedades);
+router.post('/nomina/periodos/:id/generar-novedades-descuadre', nomina.generarNovedadesDescuadreCaja);
 router.post('/nomina/periodos/:id/liquidar', nomina.liquidar);
 router.post('/nomina/periodos/:id/reabrir', nomina.reabrirPeriodo);
 router.get('/nomina/periodos/:id/liquidacion', nomina.obtenerLiquidacion);

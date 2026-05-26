@@ -126,7 +126,8 @@ export class NominaAdminComponent implements OnInit {
   async liquidar(p: PeriodoNomina) {
     const ok = await this.confirm.open({
       title: 'Liquidar nómina',
-      message: 'Calcular devengos, deducciones y neto a pagar para todos los empleados del período.',
+      message:
+        'Se recalcularán descuadres de caja pendientes del mes y se generarán deducciones por empleado. Luego se calcula devengos, deducciones y neto a pagar.',
       confirmLabel: 'Liquidar',
       variant: 'primary',
     });

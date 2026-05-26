@@ -16,9 +16,12 @@ const {
 } = require('../services/nominaAnticipo');
 const { siguienteNumComprobanteEgreso } = require('../services/configRecibo');
 const { configDesdeTipoDoc, resolverTipoEgresoDoc, esRetiroCajaTipo } = require('../services/tipoEgresoNomina');
-const { exigirSesionAbierta } = require('../services/cajaSesion');
-const { exigirAdminOSupervisor } = require('../services/authVerify');
-const { verificarMovimientoSesionCajero } = require('../services/cajaSesion');
+const {
+  exigirSesionAbierta,
+  requiereAutorizacionAnularMovimiento,
+  verificarMovimientoSesionCajero,
+} = require('../services/cajaSesion');
+const { exigirAdminOSupervisor, verificarAdminCredenciales } = require('../services/authVerify');
 const {
   registrarCreacion,
   registrarModificacion,
@@ -291,12 +294,18 @@ exports.listarTodos = async (req, res, next) => {
   try {
     const q = String(req.query.q || '').trim();
     const docQ = String(req.query.numeroDocumento || req.query.numDoc || req.query.doc || '').trim();
+    const idSesionQ = req.query.idSesion;
     const skip = Math.max(0, Number(req.query.skip) || 0);
     const limit = Math.min(2000, Math.max(1, Number(req.query.limit) || 500));
     const and = [];
 
     const rango = rangoFechaEgresoQuery(req.query.desde, req.query.hasta);
     if (rango) and.push(rango);
+
+    if (idSesionQ != null && idSesionQ !== '') {
+      const sid = Number(idSesionQ);
+      if (Number.isFinite(sid)) and.push({ idSesion: sid });
+    }
 
     if (docQ) {
       const qd = numeroDocumentoQuery(docQ);
@@ -497,6 +506,10 @@ exports.actualizar = async (req, res, next) => {
       Object.assign(eg, supervisor);
     }
     await eg.save();
+    if (eg.idSesion) {
+      const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
+      await sincronizarDescuadreSesion(eg.idSesion).catch(() => null);
+    }
     const out = await enriquecer(eg.toObject());
     const authTxt = supervisor?.autorizadoPor ? ` (autorizó ${supervisor.autorizadoPor})` : '';
     registrarModificacion(req, 'egreso', antes, eg.toObject(), {
@@ -524,9 +537,29 @@ exports.eliminar = async (req, res, next) => {
       );
       if (!auth.ok) return res.status(auth.status).json({ message: auth.message });
       supervisor = auth.supervisor;
+    } else if (await requiereAutorizacionAnularMovimiento(req, eg.idSesion)) {
+      const { autorizadoUsername, autorizadoPassword } = req.body || {};
+      const ver = await verificarAdminCredenciales(autorizadoUsername, autorizadoPassword);
+      if (!ver.ok) {
+        return res.status(ver.status).json({
+          message:
+            ver.message ||
+            'Anular movimientos de otra sesión o sin caja abierta requiere usuario y contraseña de administrador.',
+          code: 'SUPERVISOR_AUTH_REQUIRED',
+        });
+      }
+      supervisor = {
+        autorizadoPor: ver.username,
+        nombreAutoriza: ver.nombreAutoriza,
+        autorizadoEn: new Date(),
+      };
     }
 
     await eg.deleteOne();
+    if (antes.idSesion) {
+      const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
+      await sincronizarDescuadreSesion(antes.idSesion).catch(() => null);
+    }
     if (antes.anticipoNomina) {
       await eliminarNovedadPorEgreso(antes._id);
     }

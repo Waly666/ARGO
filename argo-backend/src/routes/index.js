@@ -15,6 +15,10 @@ const egresos = require('./egresos');
 const rrhh = require('./rrhh');
 const caja = require('./caja');
 const auditoria = require('./auditoria');
+const actividad = require('./actividad');
+const dashboard = require('./dashboard');
+const roles = require('./roles');
+const jornadas = require('./jornadas');
 
 const router = Router();
 
@@ -33,5 +37,9 @@ router.use('/rrhh', rrhh);
 router.use('/egresos', egresos);
 router.use('/caja', caja);
 router.use('/auditoria', auditoria);
+router.use('/actividad', actividad);
+router.use('/dashboard', dashboard);
+router.use('/roles', roles);
+router.use('/jornadas', jornadas);
 
 module.exports = router;

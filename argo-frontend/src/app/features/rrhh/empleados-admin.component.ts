@@ -1,11 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { Empleado, EmpleadoDto, EmpleadoService } from '../../core/services/empleado.service';
+import {
+  Empleado,
+  EmpleadoDto,
+  EmpleadoService,
+  ModoAccesoEmpleado,
+} from '../../core/services/empleado.service';
 import { RrhhCatalogService } from '../../core/services/rrhh-catalog.service';
+import { Usuario, UsuarioService } from '../../core/services/usuario.service';
+import { loginMostrable } from '../../core/utils/usuario-login.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { AuthService } from '../../core/services/auth.service';
 import { inicialesNombre, readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { environment } from '../../../environments/environment';
 
@@ -19,7 +27,9 @@ import { environment } from '../../../environments/environment';
 export class EmpleadosAdminComponent implements OnInit {
   private svc = inject(EmpleadoService);
   private cat = inject(RrhhCatalogService);
+  private usuarioSvc = inject(UsuarioService);
   private confirm = inject(ConfirmDialogService);
+  private auth = inject(AuthService);
 
   uploads = environment.uploadsUrl;
   fotoFile = signal<File | null>(null);
@@ -32,6 +42,37 @@ export class EmpleadosAdminComponent implements OnInit {
   afp = signal<any[]>([]);
   arl = signal<any[]>([]);
   cajas = signal<any[]>([]);
+  usuarios = signal<Usuario[]>([]);
+
+  modoAcceso = signal<ModoAccesoEmpleado>('auto');
+  idUsuarioVincular = signal('');
+
+  cargoSeleccionado = computed(() => {
+    const id = this.form().cargoId;
+    if (!id) return null;
+    return this.cargos().find((c) => Number(c.idCargo) === Number(id)) ?? null;
+  });
+
+  cargoSugiereAcceso = computed(() => {
+    const n = String(this.cargoSeleccionado()?.nombre || '').toLowerCase();
+    return /\bcajer/i.test(n) || /\binstructor/i.test(n);
+  });
+
+  usuariosDisponibles = computed(() => {
+    const ed = this.editando();
+    return this.usuarios().filter((u) => {
+      if (!u.idEmpleado) return true;
+      return ed ? Number(u.idEmpleado) === Number(ed.idEmpleado) : false;
+    });
+  });
+
+  esAdmin = computed(() => this.auth.isAdmin());
+
+  vinculoActual = computed(() => {
+    const e = this.editando();
+    if (!e?.usuarioLogin) return null;
+    return { login: e.usuarioLogin, rol: e.usuarioRol || null };
+  });
 
   loading = signal(false);
   saving = signal(false);
@@ -50,7 +91,19 @@ export class EmpleadosAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarCatalogos();
+    if (this.esAdmin()) this.cargarUsuarios();
     this.cargar();
+  }
+
+  cargarUsuarios() {
+    if (!this.esAdmin()) {
+      this.usuarios.set([]);
+      return;
+    }
+    this.usuarioSvc.listar().subscribe({
+      next: (r) => this.usuarios.set(r || []),
+      error: () => this.usuarios.set([]),
+    });
   }
 
   formVacio(): EmpleadoDto {
@@ -116,6 +169,9 @@ export class EmpleadosAdminComponent implements OnInit {
   nuevo() {
     this.editando.set(null);
     this.form.set(this.formVacio());
+    this.modoAcceso.set('auto');
+    this.idUsuarioVincular.set('');
+    if (this.esAdmin()) this.cargarUsuarios();
     this.fotoFile.set(null);
     this.fotoPreview.set(null);
     this.mostrarForm.set(true);
@@ -124,16 +180,57 @@ export class EmpleadosAdminComponent implements OnInit {
 
   editar(e: Empleado) {
     this.editando.set(e);
+    if (this.esAdmin()) this.cargarUsuarios();
     this.form.set({
       ...e,
       fechaNacimiento: e.fechaNacimiento ? String(e.fechaNacimiento).slice(0, 10) : '',
       fechaIngreso: e.fechaIngreso ? String(e.fechaIngreso).slice(0, 10) : '',
       fechaRetiro: e.fechaRetiro ? String(e.fechaRetiro).slice(0, 10) : '',
     });
+    if (e.idUsuario) {
+      this.modoAcceso.set('vincular');
+      this.idUsuarioVincular.set(String(e.idUsuario));
+    } else {
+      this.modoAcceso.set(this.cargoSugiereAccesoDesde(e) ? 'auto' : 'ninguno');
+      this.idUsuarioVincular.set('');
+    }
     this.fotoFile.set(null);
     this.fotoPreview.set(e.urlFoto ? this.fotoUrl(e.urlFoto) : null);
     this.mostrarForm.set(true);
     this.msg.set(null);
+  }
+
+  private cargoSugiereAccesoDesde(e: Empleado): boolean {
+    const desdeNombre = String(e.cargoNombre || '').toLowerCase();
+    if (desdeNombre) return /\bcajer/i.test(desdeNombre) || /\binstructor/i.test(desdeNombre);
+    const c = this.cargos().find((x) => Number(x.idCargo) === Number(e.cargoId));
+    const n = String(c?.nombre || '').toLowerCase();
+    return /\bcajer/i.test(n) || /\binstructor/i.test(n);
+  }
+
+  onCargoChange(raw: number | null | undefined) {
+    const id = raw == null || Number.isNaN(Number(raw)) ? undefined : Number(raw);
+    this.patch('cargoId', id);
+    if (!this.editando()?.idUsuario && this.modoAcceso() !== 'vincular') {
+      this.modoAcceso.set(this.cargoSugiereAcceso() ? 'auto' : 'ninguno');
+    }
+  }
+
+  usuarioId(u: Usuario): string {
+    return String(u._id ?? '');
+  }
+
+  labelUsuario(u: Usuario): string {
+    const nom = [u.nombres, u.apellidos].filter(Boolean).join(' ').trim();
+    const login = loginMostrable(u);
+    const rol = u.rol ? ` · ${u.rol}` : '';
+    return nom ? `${login} — ${nom}${rol}` : `${login}${rol}`;
+  }
+
+  setModoAcceso(m: ModoAccesoEmpleado) {
+    if (m === 'vincular' && !this.esAdmin()) return;
+    this.modoAcceso.set(m);
+    if (m !== 'vincular') this.idUsuarioVincular.set('');
   }
 
   cancelar() {
@@ -155,20 +252,33 @@ export class EmpleadosAdminComponent implements OnInit {
       this.msg.set('numeroDocumento es obligatorio (enlace con egresos).');
       return;
     }
+    const modo = this.modoAcceso();
+    if (modo === 'vincular' && !this.idUsuarioVincular().trim()) {
+      this.msg.set('Seleccione el usuario existente a vincular.');
+      return;
+    }
     this.saving.set(true);
     const ed = this.editando();
     const files = this.fotoFile() ? { foto: this.fotoFile()! } : undefined;
-    const req = ed ? this.svc.actualizar(ed.idEmpleado, f, files) : this.svc.crear(f, files);
+    const payload: EmpleadoDto = {
+      ...f,
+      modoAcceso: modo,
+      idUsuarioExistente: modo === 'vincular' ? this.idUsuarioVincular().trim() : undefined,
+    };
+    const req = ed ? this.svc.actualizar(ed.idEmpleado, payload, files) : this.svc.crear(payload, files);
     req.subscribe({
       next: (res) => {
         this.saving.set(false);
         this.fotoFile.set(null);
         this.mostrarForm.set(false);
         this.cargar();
+        this.cargarUsuarios();
         let txt = ed ? 'Empleado actualizado.' : 'Empleado creado.';
         const ug = res?.usuarioGenerado;
         if (ug?.username) {
-          if (ug.existente) {
+          if (ug.vinculado) {
+            txt += ` Usuario vinculado — login: ${ug.username} (${ug.rol}).`;
+          } else if (ug.existente) {
             txt += ` Usuario ya existía — login: ${ug.username} (${ug.rol}).`;
           } else {
             txt += ` Usuario creado — login: ${ug.username} (mismo número de documento, ${ug.rol}).`;
@@ -176,6 +286,8 @@ export class EmpleadosAdminComponent implements OnInit {
               txt += ` Contraseña inicial: ${ug.passwordInicial}.`;
             }
           }
+        } else if (modo === 'ninguno') {
+          txt += ' Sin usuario de acceso vinculado.';
         }
         this.msg.set(txt);
       },

@@ -144,6 +144,23 @@ export function fechaHoraDisplay(d?: string | Date | null): string {
 }
 
 /** Enums datosAlumnos — descripción con índice como en el esquema */
+/** tipoAlumno en datosAlumnos */
+export const TIPOS_ALUMNO_DEF = ['Regular', 'Jornadas de Capacitación'] as const;
+export type TipoAlumno = (typeof TIPOS_ALUMNO_DEF)[number];
+export const TIPO_ALUMNO_DEFAULT: TipoAlumno = 'Regular';
+export const TIPO_JORNADAS_CAPACITACION: TipoAlumno = 'Jornadas de Capacitación';
+
+export function normalizarTipoAlumno(val?: string | null): TipoAlumno {
+  const t = String(val ?? '').trim();
+  if (!t) return TIPO_ALUMNO_DEFAULT;
+  const exact = TIPOS_ALUMNO_DEF.find((x) => x.toLowerCase() === t.toLowerCase());
+  if (exact) return exact;
+  if (/jornadas?\s*de\s*capacitaci[oó]n/i.test(t) || t === 'Jornada Capacitacion') {
+    return TIPO_JORNADAS_CAPACITACION;
+  }
+  return TIPO_ALUMNO_DEFAULT;
+}
+
 export const TIPOS_DOC_DEF = [
   { idTipoDoc: '1', descripcion: '1) CEDULA DE CIUDADANÍA' },
   { idTipoDoc: '2', descripcion: '2) TARJETA DE IDENTIDAD' },

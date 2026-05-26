@@ -1,5 +1,6 @@
 const Usuario = require('../models/Usuario');
 const { esAdmin } = require('../utils/roles');
+const { findUsuarioPorLogin } = require('../utils/usuarioLogin');
 
 async function verificarAdminCredenciales(username, password) {
   if (!username || !password) {
@@ -7,25 +8,24 @@ async function verificarAdminCredenciales(username, password) {
       ok: false,
       status: 400,
       message: 'Usuario y contraseña del administrador son requeridos',
+      code: 'AUTH_REQUIRED',
     };
   }
-  const u = await Usuario.findOne({
-    username: String(username).trim().toLowerCase(),
-    activo: { $ne: false },
-  });
+  const u = await findUsuarioPorLogin(username);
   if (!u) {
-    return { ok: false, status: 401, message: 'Credenciales de administrador inválidas' };
+    return { ok: false, status: 401, message: 'Credenciales de administrador inválidas', code: 'AUTH_INVALID' };
   }
   if (!esAdmin(u.rol)) {
     return {
       ok: false,
       status: 403,
       message: 'Solo un usuario con rol administrador puede autorizar esta operación',
+      code: 'AUTH_INVALID',
     };
   }
   const passOk = await u.compararPassword(password);
   if (!passOk) {
-    return { ok: false, status: 401, message: 'Credenciales de administrador inválidas' };
+    return { ok: false, status: 401, message: 'Credenciales de administrador inválidas', code: 'AUTH_INVALID' };
   }
   const nombreAutoriza =
     [u.nombres, u.apellidos].filter(Boolean).join(' ').trim() || u.username;
@@ -66,10 +66,8 @@ async function exigirAdminOSupervisor(req, mensaje) {
     return {
       ok: false,
       status: ver.status,
-      message:
-        mensaje ||
-        ver.message ||
-        'Se requiere autorización de un administrador (usuario y contraseña).',
+      message: ver.message || mensaje || 'Se requiere autorización de un administrador (usuario y contraseña).',
+      code: ver.code || (ver.status === 400 ? 'AUTH_REQUIRED' : 'AUTH_INVALID'),
     };
   }
   return {

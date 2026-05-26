@@ -146,7 +146,7 @@
     <div class="row">
       <div class="col-3">
         <label>Cargo</label>
-        <select [ngModel]="form().cargoId" (ngModelChange)="patch('cargoId', +$event || undefined)">
+        <select [ngModel]="form().cargoId" (ngModelChange)="onCargoChange($event)">
           <option [ngValue]="undefined">—</option>
           <option *ngFor="let c of cargos()" [ngValue]="c.idCargo">{{ c.nombre }}</option>
         </select>
@@ -211,6 +211,63 @@
       </div>
     </div>
 
+    <section class="acceso-panel">
+      <div class="acceso-head">
+        <div>
+          <h3 class="sec acceso-sec">Acceso al sistema</h3>
+          <p class="hint acceso-hint" *ngIf="cargoSugiereAcceso()">
+            Cargo Cajero/Instructor: elija cómo asociar la cuenta de login.
+          </p>
+          <p class="hint acceso-hint" *ngIf="!cargoSugiereAcceso()">
+            Opcional: solo si este empleado debe ingresar al sistema.
+          </p>
+        </div>
+        <p class="acceso-actual" *ngIf="vinculoActual() as v">
+          Vinculado: <strong>{{ v.login }}</strong>
+          <span *ngIf="v.rol" class="acceso-rol">{{ v.rol }}</span>
+        </p>
+      </div>
+
+      <div class="acceso-opciones" role="radiogroup" aria-label="Modo de acceso al sistema">
+        <button
+          type="button"
+          class="acceso-opcion"
+          [class.active]="modoAcceso() === 'auto'"
+          (click)="setModoAcceso('auto')">
+          <span class="acceso-opcion-title">Crear automático</span>
+          <span class="acceso-opcion-desc">Login = documento. Solo aplica a Cajero o Instructor.</span>
+        </button>
+        <button
+          type="button"
+          class="acceso-opcion"
+          *ngIf="esAdmin()"
+          [class.active]="modoAcceso() === 'vincular'"
+          (click)="setModoAcceso('vincular')">
+          <span class="acceso-opcion-title">Vincular existente</span>
+          <span class="acceso-opcion-desc">Enlazar a un usuario ya creado en Configuración.</span>
+        </button>
+        <button
+          type="button"
+          class="acceso-opcion"
+          [class.active]="modoAcceso() === 'ninguno'"
+          (click)="setModoAcceso('ninguno')">
+          <span class="acceso-opcion-title">Sin acceso</span>
+          <span class="acceso-opcion-desc">Solo ficha de empleado, sin cuenta de login.</span>
+        </button>
+      </div>
+
+      <div class="acceso-vincular" *ngIf="modoAcceso() === 'vincular' && esAdmin()">
+        <label>Usuario a vincular *</label>
+        <select [ngModel]="idUsuarioVincular()" (ngModelChange)="idUsuarioVincular.set($event)">
+          <option value="">— Seleccione un usuario —</option>
+          <option *ngFor="let u of usuariosDisponibles()" [value]="usuarioId(u)">{{ labelUsuario(u) }}</option>
+        </select>
+        <p class="hint acceso-vincular-hint" *ngIf="!usuariosDisponibles().length">
+          No hay usuarios disponibles. Créelos en <a routerLink="/app/configuracion/usuarios">Configuración → Usuarios</a>.
+        </p>
+      </div>
+    </section>
+
     <div class="actions">
       <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
       <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
@@ -228,6 +285,7 @@
         <th>Documento</th>
         <th>Nombre</th>
         <th>Cargo</th>
+        <th>Usuario</th>
         <th>Depto.</th>
         <th>Estado</th>
         <th>Egresos</th>
@@ -245,6 +303,7 @@
         <td class="mono">{{ e.tipoDocumento }} {{ e.numeroDocumento }}</td>
         <td>{{ e.nombreCompleto }}</td>
         <td>{{ e.cargoNombre || '—' }}</td>
+        <td class="mono sm">{{ e.usuarioLogin || '—' }}</td>
         <td>{{ e.departamentoNombre || '—' }}</td>
         <td>{{ e.estado }}</td>
         <td class="mono">{{ e.totalEgresos ?? 0 }}</td>
@@ -257,7 +316,7 @@
         </td>
       </tr>
       <tr *ngIf="empleados().length === 0">
-        <td colspan="8" class="empty">Sin empleados.</td>
+        <td colspan="9" class="empty">Sin empleados.</td>
       </tr>
     </tbody>
   </table>

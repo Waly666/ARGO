@@ -194,7 +194,7 @@
         </label>
       </div>
       <div class="detalle-actions">
-        <button type="button" class="primary" [disabled]="saving() || !cajaAbierta()" (click)="registrar()">
+        <button type="button" class="primary" [disabled]="saving()" (click)="registrar()">
           {{ saving() ? 'Guardando…' : 'Registrar cobro' }}
         </button>
       </div>

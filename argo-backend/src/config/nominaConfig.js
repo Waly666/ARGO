@@ -59,7 +59,15 @@ module.exports = {
   retencionUmbralExentoSmmlv: 2,
 
   tiposDevengo: ['HORAS_EXTRA', 'BONIFICACION', 'COMISION', 'PRIMA', 'VACACIONES', 'OTRO_DEVENGO'],
-  tiposDeduccion: ['EMBARGO', 'PRESTAMO', 'LIBRANZA', 'RETENCION_FUENTE', 'FSP', 'OTRO_DEDUCCION'],
+  tiposDeduccion: [
+    'EMBARGO',
+    'PRESTAMO',
+    'LIBRANZA',
+    'RETENCION_FUENTE',
+    'FSP',
+    'DESCUADRE_CAJA',
+    'OTRO_DEDUCCION',
+  ],
 
   /** Conceptos que no hacen base para seguridad social (parafiscales) */
   codigosExcluidosIbc: ['AUX_TRANSPORTE'],

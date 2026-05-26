@@ -1,6 +1,8 @@
 const Certificado = require('../models/Certificado');
 const PlantillaCertificado = require('../models/PlantillaCertificado');
 const Liquidacion = require('../models/Liquidacion');
+const DatosAlumno = require('../models/DatosAlumno');
+const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado, siguienteCodigoCertificado } = require('../services/configCertificado');
 const { buscarPrograma } = require('../services/programaServicio');
@@ -9,9 +11,15 @@ const {
   clasificarProgramaAsync,
   TIPOS,
   TIPOS_LABEL,
-  idPlantillaPorTipo,
-  orientacionPorTipo,
 } = require('../services/clasificacionCertificado');
+const { resolverPlantillaImpresion } = require('../services/plantillaCertificado');
+
+const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
+
+function tipoCertCategoria(tipoFormato, alumno) {
+  if (tipoFormato === TIPOS.JORNADA_CAPACITACION) return TIPO_JORNADAS_CAPACITACION;
+  return normalizarTipoRegularJornada(alumno?.tipoAlumno);
+}
 function num(v) {
   if (v == null) return 0;
   if (typeof v === 'number') return v;
@@ -19,25 +27,14 @@ function num(v) {
   return Number(v) || 0;
 }
 
-async function resolverPlantilla(prog, config, idPlantillaManual) {
+async function resolverPlantilla(prog, config, idPlantillaManual, tipoFormato) {
   if (idPlantillaManual) {
     const p = await PlantillaCertificado.findById(idPlantillaManual).lean();
     if (p && p.activa !== false) return p;
   }
-  const tipo = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
-  const idDef = idPlantillaPorTipo(config, tipo);
-  if (idDef) {
-    const p = await PlantillaCertificado.findById(idDef).lean();
-    if (p && p.activa !== false) return p;
-  }
-  const ori = orientacionPorTipo(config, tipo);
-  return PlantillaCertificado.findOne({
-    tipoCertificado: tipo,
-    orientacion: ori,
-    activa: { $ne: false },
-  })
-    .sort({ updatedAt: -1 })
-    .lean();
+  const tipo =
+    tipoFormato || (await clasificarProgramaAsync(prog, cat.catTipoCapacitacion));
+  return resolverPlantillaImpresion(config, tipo, null);
 }
 
 exports.tiposCertificado = async (_req, res) => {
@@ -77,9 +74,11 @@ exports.elegibles = async (req, res, next) => {
       if (saldo > 0.0001) continue;
       if (certIds.has(String(it._id))) continue;
       const prog = await programaPorId(it.idProg);
-      const tipoCert = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
+      const tipoFormato = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
       const cfg = await obtenerConfigCertificado();
-      const plantillaSug = await resolverPlantilla(prog, cfg, null);
+      const plantillaSug = await resolverPlantilla(prog, cfg, null, tipoFormato);
+      const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+      const tipoCert = tipoCertCategoria(tipoFormato, alumno);
       out.push({
         ...it,
         valor: num(it.valor),
@@ -88,9 +87,10 @@ exports.elegibles = async (req, res, next) => {
         programaDescr: prog?.descripcion || prog?.nombreProg || null,
         nomCert: prog?.nomCert || null,
         horas: prog?.horas != null ? Number(prog.horas) : null,
+        tipoFormatoCert: tipoFormato,
+        tipoFormatoCertLabel: TIPOS_LABEL[tipoFormato],
         tipoCertificado: tipoCert,
-        tipoCertificadoLabel: TIPOS_LABEL[tipoCert],
-        formatoOrientacion: plantillaSug?.orientacion || orientacionPorTipo(cfg, tipoCert),
+        formatoOrientacion: plantillaSug?.orientacion || orientacionPorTipo(cfg, tipoFormato),
         plantillaSugeridaId: plantillaSug?._id ? String(plantillaSug._id) : null,
         plantillaSugeridaNombre: plantillaSug?.nombre || null,
         tieneFormato: !!plantillaSug,
@@ -142,13 +142,16 @@ exports.crear = async (req, res, next) => {
 
     const cfg = await obtenerConfigCertificado();
     const prog = await programaPorId(liq.idProg);
-    const tipoCert = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
-    const plantilla = await resolverPlantilla(prog, cfg, idPlantilla);
+    const tipoFormato = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
+    const plantilla = await resolverPlantilla(prog, cfg, idPlantilla, tipoFormato);
     if (!plantilla) {
       return res.status(400).json({
-        message: `No hay plantilla de certificado para «${TIPOS_LABEL[tipoCert]}». Configúrela en Config. Certificados.`,
+        message: `No hay plantilla de certificado para «${TIPOS_LABEL[tipoFormato]}». Configúrela en Config. Certificados.`,
       });
     }
+
+    const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+    const tipoCert = tipoCertCategoria(tipoFormato, alumno);
 
     const fechaEm = fechaEmision ? new Date(fechaEmision) : new Date();
     let fechaVe = null;
@@ -166,6 +169,7 @@ exports.crear = async (req, res, next) => {
       encabezado,
       idPlantilla: plantilla._id,
       orientacion: plantilla.orientacion || 'vertical',
+      tipoFormatoCert: tipoFormato,
       tipoCertificado: tipoCert,
       numActa,
       numFolio,
@@ -180,8 +184,9 @@ exports.crear = async (req, res, next) => {
       programaDescr: descr,
       nomCert: prog?.nomCert || null,
       encabezado,
+      tipoFormatoCert: tipoFormato,
+      tipoFormatoCertLabel: TIPOS_LABEL[tipoFormato],
       tipoCertificado: tipoCert,
-      tipoCertificadoLabel: TIPOS_LABEL[tipoCert],
     });
   } catch (e) {
     next(e);
@@ -199,6 +204,7 @@ exports.eliminar = async (req, res, next) => {
 };
 
 const CAMPOS_EDITABLES = [
+  'tipoCertificado',
   'numActa',
   'numFolio',
   'numRunt',
@@ -218,6 +224,9 @@ function pickCertificadoEdit(body) {
   if (dto.numRunt !== undefined) dto.numRunt = String(dto.numRunt || '').trim();
   if (dto.observaciones !== undefined) dto.observaciones = String(dto.observaciones || '').trim();
   if (dto.encabezado !== undefined) dto.encabezado = String(dto.encabezado || '').trim();
+  if (dto.tipoCertificado !== undefined) {
+    dto.tipoCertificado = normalizarTipoRegularJornada(dto.tipoCertificado);
+  }
   if (dto.fechaEmision !== undefined) {
     if (!dto.fechaEmision) return { error: 'fechaEmision inválida' };
     const d = new Date(dto.fechaEmision);
@@ -256,7 +265,9 @@ exports.actualizar = async (req, res, next) => {
       ...cert.toObject(),
       programaDescr: descr,
       nomCert: prog?.nomCert || null,
-      tipoCertificadoLabel: TIPOS_LABEL[cert.tipoCertificado] || cert.tipoCertificado,
+      tipoFormatoCert: cert.tipoFormatoCert || null,
+      tipoFormatoCertLabel: TIPOS_LABEL[cert.tipoFormatoCert] || cert.tipoFormatoCert || null,
+      tipoCertificado: cert.tipoCertificado,
     });
   } catch (e) {
     next(e);

@@ -1,10 +1,11 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { IngresoService } from '../../core/services/ingreso.service';
 import { ReciboService, idIngreso } from '../../core/services/recibo.service';
+import { CajaSesionService } from '../../core/services/caja-sesion.service';
 import {
   capConceptoCaja,
   capCuentaBancaria,
@@ -19,18 +20,24 @@ import {
   capRefComprobante,
 } from '../../core/utils/capsule.util';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import { resolverFormaPagoIngreso } from '../../core/utils/caja-forma-pago.util';
+import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'argo-caja-ingresos-todos',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe],
+  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, CajaDescuadresBannerComponent],
   templateUrl: './caja-ingresos-todos.component.html',
   styleUrls: ['./caja-listados-admin.scss'],
 })
 export class CajaIngresosTodosComponent implements OnInit {
   private ingSvc = inject(IngresoService);
   private reciboSvc = inject(ReciboService);
+  private cajaSvc = inject(CajaSesionService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private confirm = inject(ConfirmDialogService);
 
   private readonly vistaKey = 'argo-caja-ingresos-todos-vista';
 
@@ -45,6 +52,13 @@ export class CajaIngresosTodosComponent implements OnInit {
   numDoc = signal('');
   desde = signal('');
   hasta = signal('');
+  idSesion = signal('');
+
+  sesionAbiertaId = signal<number | null>(null);
+  mostrarAuthAnular = signal(false);
+  authAdminUser = signal('');
+  authAdminPass = signal('');
+  ingresoPendienteAnular = signal<any | null>(null);
 
   capFecha = capFecha;
   capRecibo = capRecibo;
@@ -59,7 +73,15 @@ export class CajaIngresosTodosComponent implements OnInit {
   capRefComprobante = capRefComprobante;
 
   ngOnInit(): void {
-    this.cargar();
+    this.cajaSvc.activa().subscribe({
+      next: (r) => this.sesionAbiertaId.set(r.sesion?.idSesion ?? null),
+      error: () => this.sesionAbiertaId.set(null),
+    });
+    this.route.queryParamMap.subscribe((p) => {
+      const sid = p.get('idSesion');
+      if (sid) this.idSesion.set(sid);
+      this.cargar();
+    });
   }
 
   setVista(v: VistaLista): void {
@@ -74,12 +96,14 @@ export class CajaIngresosTodosComponent implements OnInit {
   }
 
   private fetchPaginas(skip: number, acumulado: any[]): void {
+    const sid = this.idSesion().trim();
     this.ingSvc
       .listarTodosAdmin({
         q: this.q().trim() || undefined,
         numDoc: this.numDoc().trim() || undefined,
         desde: this.desde() || undefined,
         hasta: this.hasta() || undefined,
+        idSesion: sid ? Number(sid) : undefined,
         skip,
         limit: 500,
       })
@@ -109,6 +133,8 @@ export class CajaIngresosTodosComponent implements OnInit {
     this.numDoc.set('');
     this.desde.set('');
     this.hasta.set('');
+    this.idSesion.set('');
+    this.router.navigate([], { relativeTo: this.route, queryParams: {} });
     this.cargar();
   }
 
@@ -122,11 +148,23 @@ export class CajaIngresosTodosComponent implements OnInit {
   }
 
   formaPagoLabel(i: any): string {
-    return i.formaPago || i.tipoPagoDescr || '—';
+    return resolverFormaPagoIngreso(i);
   }
 
   refComprobante(i: any): string {
     return String(i.numTransferencia || i.numComprobante || '').trim();
+  }
+
+  irAlCierre(idSesion: number | null | undefined): void {
+    if (!idSesion) return;
+    this.router.navigate(['/app/cierres', idSesion]);
+  }
+
+  filtrarPorSesion(idSesion: number | null | undefined): void {
+    if (!idSesion) return;
+    this.idSesion.set(String(idSesion));
+    this.router.navigate([], { relativeTo: this.route, queryParams: { idSesion } });
+    this.cargar();
   }
 
   verRecibo(ing: { _id?: unknown }): void {
@@ -140,5 +178,73 @@ export class CajaIngresosTodosComponent implements OnInit {
     const id = idIngreso(ing);
     if (!id) return;
     this.reciboSvc.abrirHtml(id, (m) => this.msg.set(m));
+  }
+
+  requiereAuthSupervisor(ing: { idSesion?: number | null }): boolean {
+    const abierta = this.sesionAbiertaId();
+    if (abierta == null) return true;
+    if (ing.idSesion == null) return true;
+    return Number(ing.idSesion) !== Number(abierta);
+  }
+
+  async anularIngreso(ing: { _id?: unknown; numRecibo?: string; idSesion?: number | null }): Promise<void> {
+    const id = idIngreso(ing);
+    if (!id) return;
+    const ok = await this.confirm.open({
+      title: 'Anular ingreso',
+      message: `¿Anular el ingreso ${ing.numRecibo || id}? Si pertenece a un cierre con descuadre, recalcule el cuadre desde el detalle del cierre.`,
+      confirmLabel: 'Anular',
+      variant: 'danger',
+    });
+    if (!ok) return;
+
+    if (this.requiereAuthSupervisor(ing)) {
+      this.ingresoPendienteAnular.set(ing);
+      this.authAdminUser.set('');
+      this.authAdminPass.set('');
+      this.mostrarAuthAnular.set(true);
+      return;
+    }
+    this.ejecutarAnularIngreso(ing);
+  }
+
+  confirmarAnularSupervisor(): void {
+    const ing = this.ingresoPendienteAnular();
+    if (!ing) return;
+    const u = this.authAdminUser().trim();
+    const p = this.authAdminPass();
+    if (!u || !p) {
+      this.msg.set('Ingrese usuario y contraseña de un administrador');
+      return;
+    }
+    this.ejecutarAnularIngreso(ing, { autorizadoUsername: u, autorizadoPassword: p });
+  }
+
+  cancelarAnularSupervisor(): void {
+    this.mostrarAuthAnular.set(false);
+    this.ingresoPendienteAnular.set(null);
+    this.authAdminUser.set('');
+    this.authAdminPass.set('');
+  }
+
+  private ejecutarAnularIngreso(
+    ing: { _id?: unknown; numRecibo?: string },
+    auth?: { autorizadoUsername: string; autorizadoPassword: string },
+  ): void {
+    const id = idIngreso(ing);
+    if (!id) return;
+    this.ingSvc.eliminar(id, auth).subscribe({
+      next: () => {
+        this.cancelarAnularSupervisor();
+        this.msg.set('Ingreso anulado');
+        this.cargar();
+      },
+      error: (e) => {
+        if (e?.error?.code === 'SUPERVISOR_AUTH_REQUIRED') {
+          this.mostrarAuthAnular.set(true);
+        }
+        this.msg.set(e?.error?.message || 'No se pudo anular');
+      },
+    });
   }
 }

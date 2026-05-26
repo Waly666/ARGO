@@ -1,6 +1,6 @@
-/* ============================
-   ARGO — Tema azul oscuro
-   ============================ */
+/* Leaflet (mapa jornadas) */
+@import 'leaflet/dist/leaflet.css';
+@import 'app/features/jornadas/jornadas-calendario.scss';
 
 :root {
   --bg-0: #03081a;
@@ -274,6 +274,88 @@ button.danger.mini {
 .cap-money {
   text-transform: none;
   font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Montos COP: tamaño informativo; solo baja un poco si la tarjeta es muy estrecha */
+@mixin monto-cop-fit($max: 1.9rem, $min: 1.28rem) {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(#{$min}, 3.6cqi, #{$max});
+  line-height: 1.2;
+}
+
+.monto-cop {
+  @include monto-cop-fit(1.9rem, 1.28rem);
+  font-weight: 700;
+}
+
+.monto-cop-lg {
+  @include monto-cop-fit(2.05rem, 1.45rem);
+  font-weight: 700;
+}
+
+.monto-cop-xl {
+  @include monto-cop-fit(2.15rem, 1.55rem);
+  font-weight: 700;
+}
+
+/* Totales en tarjetas / badges (CEA y alto flujo de caja) */
+.kpi-val,
+.kpi-value,
+.total-badge,
+.metodo-val,
+.resumen-row .value,
+.caja-mes-banner .cm-item strong,
+.kpi-card > strong,
+.cierre-stat-card strong {
+  @include monto-cop-fit(1.85rem, 1.22rem);
+  font-weight: 700;
+}
+
+/* Tarjetas que muestran dinero: más espacio, sin desbordar al zoom */
+.kpi-card,
+.kpi-card.static,
+.mega-card,
+.metodo-card,
+.kpi-grid .kpi-card,
+.stat,
+.status-card,
+.cierre-card,
+.cierre-stat-card {
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  container-type: inline-size;
+}
+
+/* Celdas y columnas numéricas en tablas */
+td.num,
+th.num,
+td.r,
+th.r,
+.num {
+  font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+table.data-table td.num,
+table.data-table th.num,
+table.argo td.num,
+table.argo th.num {
+  max-width: 15rem;
 }
 
 .cap-text {

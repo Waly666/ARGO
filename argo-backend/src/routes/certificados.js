@@ -3,24 +3,27 @@ const ctrl = require('../controllers/certificadoController');
 const render = require('../controllers/certificadoRenderController');
 const plantilla = require('../controllers/plantillaCertificadoController');
 const upload = require('../middleware/upload');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
 router.use(requireAuth);
 
-router.get('/tipos', ctrl.tiposCertificado);
-router.get('/plantillas', plantilla.listar);
-router.get('/plantillas/todas', plantilla.listarTodas);
-router.post('/plantillas', upload.certificados.single('fondo'), plantilla.crear);
-router.put('/plantillas/:id', upload.certificados.single('fondo'), plantilla.actualizar);
-router.delete('/plantillas/:id', plantilla.eliminar);
+const emitir = requirePermiso('alumnos.certificados');
+const config = requirePermiso('config.certificados');
 
-router.get('/elegibles/:numDoc', ctrl.elegibles);
-router.get('/alumno/:numDoc', ctrl.listarPorAlumno);
-router.get('/:id/html', render.html);
-router.get('/:id/datos', render.datos);
-router.post('/', ctrl.crear);
-router.put('/:id', ctrl.actualizar);
-router.delete('/:id', ctrl.eliminar);
+router.get('/tipos', emitir, ctrl.tiposCertificado);
+router.get('/plantillas', emitir, plantilla.listar);
+router.get('/plantillas/todas', config, plantilla.listarTodas);
+router.post('/plantillas', config, upload.certificados.single('fondo'), plantilla.crear);
+router.put('/plantillas/:id', config, upload.certificados.single('fondo'), plantilla.actualizar);
+router.delete('/plantillas/:id', config, plantilla.eliminar);
+
+router.get('/elegibles/:numDoc', emitir, ctrl.elegibles);
+router.get('/alumno/:numDoc', emitir, ctrl.listarPorAlumno);
+router.get('/:id/html', emitir, render.html);
+router.get('/:id/datos', emitir, render.datos);
+router.post('/', emitir, ctrl.crear);
+router.put('/:id', emitir, ctrl.actualizar);
+router.delete('/:id', emitir, ctrl.eliminar);
 
 module.exports = router;

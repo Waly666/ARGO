@@ -181,6 +181,8 @@ async function generarHtmlCertificado(data) {
   const horizontal = plantilla?.orientacion === 'horizontal';
   const orientacion = horizontal ? 'horizontal' : 'vertical';
   const tipo =
+    data.tipoFormatoCert ||
+    certificado?.tipoFormatoCert ||
     data.tipoCertificado ||
     certificado?.tipoCertificado ||
     clasificarPrograma(programa);
@@ -192,8 +194,11 @@ async function generarHtmlCertificado(data) {
   const nombre = nombreCompleto(alumno);
   const numDoc = numDocToString(alumno?.numDoc);
   const curso = encabezadoCurso(programa, certificado);
-  const horas = programa?.horas != null ? Number(programa.horas) : null;
-  const horasTxt = horas != null && !isNaN(horas) ? String(horas) : '';
+  const horasCertStr = String(certificado?.horasCert || '').trim();
+  const horasProg = programa?.horas != null ? Number(programa.horas) : null;
+  const horasTxt =
+    horasCertStr ||
+    (horasProg != null && !isNaN(horasProg) ? String(horasProg) : '');
   const fechaEm = fmtFecha(certificado.fechaEmision || certificado.createdAt);
   const fechaVe = fmtFecha(certificado.fechaVencimiento);
   const numActa = (certificado.numActa || '').trim();

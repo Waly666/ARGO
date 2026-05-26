@@ -33,20 +33,18 @@
               [class.submenu-rrhh]="isRrhhGroup(m.label)"
               [class.submenu-caja]="isCajaGroup(m.label)"
               *ngIf="isGroupOpen(m.label) && !collapsed()">
-              @for (c of m.children; track c.path) {
-                @if (!c.adminOnly || isAdmin()) {
-                  @if (c.section) {
-                    <div class="submenu-section">{{ c.section }}</div>
-                  }
-                  <a
-                    [routerLink]="c.path"
-                    class="menu-item sub"
-                    [class.active]="subLinkActive(c)"
-                    [title]="c.label">
-                    <span class="icon" [ngClass]="iconClass(c.iconTone)">{{ c.icon }}</span>
-                    <span class="label">{{ c.label }}</span>
-                  </a>
+              @for (c of visibleChildren(m.children); track c.path) {
+                @if (c.section) {
+                  <div class="submenu-section">{{ c.section }}</div>
                 }
+                <a
+                  [routerLink]="c.path"
+                  class="menu-item sub"
+                  [class.active]="subLinkActive(c)"
+                  [title]="c.label">
+                  <span class="icon" [ngClass]="iconClass(c.iconTone)">{{ c.icon }}</span>
+                  <span class="label">{{ c.label }}</span>
+                </a>
               }
             </div>
           </div>
@@ -75,6 +73,18 @@
             Rol: <strong>{{ rolLabel() }}</strong>
           </span>
         </div>
+        @if (mostrarAlertaCaja() && !cajaEstado.loading() && cajaEstado.abierta() === false) {
+          <argo-caja-cerrada-banner class="head-caja-alarm" [blink]="true" />
+        }
+        @if (mostrarAlertaCertJornada()) {
+          <argo-certificado-jornada-banner class="head-cert-alarm-wrap" />
+        }
+        @if (mostrarAlarmaJornadaProceso()) {
+          <argo-jornada-en-proceso-banner class="head-jornada-proceso-alarm" />
+        }
+        @if (mostrarToastJornadaLive()) {
+          <argo-jornada-live-toast class="head-jornada-live-toast" />
+        }
       </div>
 
       <div class="topbar-right">

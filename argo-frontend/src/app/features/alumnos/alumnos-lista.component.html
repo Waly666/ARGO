@@ -1,15 +1,26 @@
-<section class="lista-page">
+<section class="lista-page" [class.lista-jornadas]="esJornadas()">
   <header class="page-head card">
-    <div class="title">
-      <h1>Alumnos</h1>
-      <p *ngIf="vista() === 'lista'">
-        Listado completo con datos personales, contacto y ubicación. Desplaza horizontalmente si no ves todas las columnas.
-      </p>
-      <p *ngIf="vista() === 'cards'">
-        Vista en tarjetas con foto tipo documento, alertas y datos principales del alumno.
-      </p>
+    <div class="head-row">
+      <button type="button" class="ghost back" *ngIf="esJornadas()" (click)="irHubJornadas()">← Jornadas</button>
+      <div class="title">
+        <h1>{{ esJornadas() ? 'Alumnos — Jornadas de Capacitación' : 'Alumnos' }}</h1>
+        <p *ngIf="esJornadas() && vista() === 'lista'">
+          Solo alumnos con tipo <strong>Jornadas de Capacitación</strong> (matrículas sin cobro en este módulo).
+        </p>
+        <p *ngIf="esJornadas() && vista() === 'cards'">
+          Tarjetas de alumnos de jornadas de capacitación.
+        </p>
+        <p *ngIf="!esJornadas() && vista() === 'lista'">
+          Listado completo con datos personales, contacto y ubicación. Desplaza horizontalmente si no ves todas las columnas.
+        </p>
+        <p *ngIf="!esJornadas() && vista() === 'cards'">
+          Vista en tarjetas con foto tipo documento, alertas y datos principales del alumno.
+        </p>
+      </div>
+      <button type="button" class="primary" (click)="nuevo()">
+        {{ esJornadas() ? '+ Nuevo alumno jornada' : '+ Crear alumno' }}
+      </button>
     </div>
-    <button type="button" class="primary" (click)="nuevo()">+ Crear alumno</button>
   </header>
 
   <div class="card toolbar">

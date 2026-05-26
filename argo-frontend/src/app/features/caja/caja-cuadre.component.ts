@@ -1,38 +1,55 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
+import { ConfigRecibo, ConfigService } from '../../core/services/config.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import {
   CajaSesion,
   CajaSesionService,
+  CajaEgresoItem,
+  CajaIngresoItem,
   CierreCajaResponse,
   ResumenCaja,
+  CajaDescuadre,
 } from '../../core/services/caja-sesion.service';
-
-interface MetodoPagoCard {
-  id: string;
-  label: string;
-  total: number;
-  cantidad: number;
-  tone: string;
-  icon: string;
-}
+import {
+  tieneSoporteEgreso,
+} from '../../core/utils/egreso-soporte.helpers';
+import { ArqueoLinea } from '../../core/constants/caja-arqueo.constants';
+import { crearLineasArqueoVacias, totalArqueo as calcTotalArqueo } from '../../core/utils/caja-arqueo.helpers';
+import { CajaInformePrintService } from '../../core/services/caja-informe-print.service';
+import { CajaEstadoService } from '../../core/services/caja-estado.service';
+import { CajaArqueoPanelComponent } from './caja-arqueo-panel.component';
+import { CajaResumenServiciosComponent } from './caja-resumen-servicios.component';
+import { buildMetodosPagoCards, MetodoPagoCard } from '../../core/utils/metodo-pago.util';
 
 @Component({
   selector: 'argo-caja-cuadre',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, CurrencyPipe, DatePipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    CurrencyPipe,
+    DatePipe,
+    CajaArqueoPanelComponent,
+    CajaResumenServiciosComponent,
+  ],
   templateUrl: './caja-cuadre.component.html',
   styleUrls: ['./caja-cuadre.component.scss'],
 })
 export class CajaCuadreComponent implements OnInit {
   private cajaSvc = inject(CajaSesionService);
   private catSvc = inject(CatalogoService);
+  private configSvc = inject(ConfigService);
+  private informePrint = inject(CajaInformePrintService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private cajaEstado = inject(CajaEstadoService);
 
   isAdmin = signal(false);
   cajaAbierta = signal(false);
@@ -45,10 +62,24 @@ export class CajaCuadreComponent implements OnInit {
 
   saldoInicialApertura = signal(0);
   obsApertura = signal('');
-  efectivoContado = signal<number | null>(null);
+  arqueoLineas = signal<ArqueoLinea[]>(crearLineasArqueoVacias());
+  arqueoTotal = computed(() => calcTotalArqueo(this.arqueoLineas()));
+  efectivoContado = computed(() => this.arqueoTotal());
   obsCierre = signal('');
   mostrarApertura = signal(false);
+  mostrarAuthCierre = signal(false);
+  authAdminUser = signal('');
+  authAdminPass = signal('');
+  authError = signal<string | null>(null);
   ultimoCierre = signal<CierreCajaResponse | null>(null);
+  egresosSesion = signal<CajaEgresoItem[]>([]);
+  egresosInforme = signal<CajaEgresoItem[]>([]);
+  ingresosInforme = signal<CajaIngresoItem[]>([]);
+  descuadreInforme = signal<CajaDescuadre | null>(null);
+  empresaConfig = signal<ConfigRecibo | null>(null);
+
+  egresosSinSoporte = computed(() => this.egresosSesion().filter((e) => !tieneSoporteEgreso(e)));
+  cantSinSoporte = computed(() => this.egresosSinSoporte().length);
 
   ventasBrutas = computed(() => this.resumen()?.ventasBrutas ?? this.resumen()?.totalIngresos ?? 0);
   cantidadRecibos = computed(
@@ -62,9 +93,24 @@ export class CajaCuadreComponent implements OnInit {
   totalGastos = computed(() => this.resumen()?.totalGastos ?? this.resumen()?.totalEgresos ?? 0);
   totalRetiros = computed(() => this.resumen()?.totalRetiros ?? 0);
   saldoInicial = computed(() => this.resumen()?.saldoInicial ?? this.sesion()?.saldoInicial ?? 0);
+  ingresosPorServicio = computed(() => this.resumen()?.ingresosPorServicio ?? []);
+
+  diferenciaCierre = computed(() => {
+    const c = this.efectivoContado();
+    if (c == null || !Number.isFinite(c)) return null;
+    return c - this.efectivoEsperado();
+  });
+
+  hayDescuadreCierre = computed(() => {
+    const d = this.diferenciaCierre();
+    return d != null && Math.abs(d) >= 1;
+  });
+
+  descuadresPendientesHistorial = computed(
+    () => this.historial().filter((s) => s.descuadreEstado === 'pendiente').length,
+  );
 
   metodosPago = computed((): MetodoPagoCard[] => {
-    const rows = this.resumen()?.ingresosPorTipo ?? [];
     const mapCat = new Map(
       this.tiposPagoCat().map((t) => {
         const id = String(t['idTipoPago'] ?? t['codigo'] ?? '');
@@ -72,24 +118,12 @@ export class CajaCuadreComponent implements OnInit {
         return [id, label];
       }),
     );
-    const cards = rows.map((r) => {
-      const label = r.descripcion || mapCat.get(String(r.idTipoPago)) || String(r.idTipoPago);
-      return {
-        id: String(r.idTipoPago),
-        label,
-        total: r.total,
-        cantidad: r.cantidad,
-        ...this.tonoMetodo(label),
-      };
-    });
-    if (!cards.length && this.tiposPagoCat().length) {
-      return this.tiposPagoCat().slice(0, 6).map((t) => {
-        const label = String(t['descripcion'] ?? t['nombre'] ?? 'Pago');
-        const id = String(t['idTipoPago'] ?? t['codigo'] ?? label);
-        return { id, label, total: 0, cantidad: 0, ...this.tonoMetodo(label) };
-      });
-    }
-    return cards;
+    const rows = (this.resumen()?.ingresosPorTipo ?? []).map((r) => ({
+      forma: r.descripcion || mapCat.get(String(r.idTipoPago)) || String(r.idTipoPago),
+      total: r.total,
+      cantidad: r.cantidad,
+    }));
+    return buildMetodosPagoCards(rows);
   });
 
   ngOnInit(): void {
@@ -98,8 +132,17 @@ export class CajaCuadreComponent implements OnInit {
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
       next: (t) => this.tiposPagoCat.set(t || []),
     });
+    this.configSvc.obtenerRecibo().subscribe({
+      next: (c) => this.empresaConfig.set(c),
+      error: () => this.empresaConfig.set(null),
+    });
     this.refrescar();
     this.cargarHistorial();
+    this.route.queryParamMap.subscribe((p) => {
+      if (p.get('abrir') === '1' && !this.cajaAbierta()) {
+        this.abrirCaja();
+      }
+    });
   }
 
   refrescar(): void {
@@ -109,6 +152,14 @@ export class CajaCuadreComponent implements OnInit {
         this.cajaAbierta.set(!!r.abierta);
         this.sesion.set(r.sesion);
         this.resumen.set(r.resumenParcial ?? null);
+        if (r.abierta) {
+          this.cajaSvc.egresosSesionActiva().subscribe({
+            next: (rows) => this.egresosSesion.set(rows || []),
+            error: () => this.egresosSesion.set([]),
+          });
+        } else {
+          this.egresosSesion.set([]);
+        }
         this.loading.set(false);
       },
       error: () => {
@@ -148,6 +199,7 @@ export class CajaCuadreComponent implements OnInit {
         this.mostrarApertura.set(false);
         this.loading.set(false);
         this.msg.set('Caja abierta');
+        void this.cajaEstado.refrescar();
         this.refrescar();
       },
       error: (e) => {
@@ -157,45 +209,181 @@ export class CajaCuadreComponent implements OnInit {
     });
   }
 
+  onArqueoChange(lineas: ArqueoLinea[]): void {
+    this.arqueoLineas.set(lineas);
+  }
+
   cerrarCaja(): void {
     const id = this.sesion()?.idSesion;
     if (!id) return;
-    const contado = this.efectivoContado();
-    if (contado == null || !Number.isFinite(contado)) {
-      this.msg.set('Indique el efectivo contado en caja');
+    const contado = this.arqueoTotal();
+    if (!(contado > 0)) {
+      this.msg.set('Realice el arqueo de efectivo (billetes y monedas) antes de cerrar');
       return;
     }
+    if (this.hayDescuadreCierre() && !this.isAdmin()) {
+      this.authError.set(null);
+      this.mostrarAuthCierre.set(true);
+      return;
+    }
+    this.ejecutarCierre();
+  }
+
+  confirmarCierreConAuth(): void {
+    this.authError.set(null);
+    if (!this.isAdmin()) {
+      const u = this.authAdminUser().trim();
+      const p = this.authAdminPass();
+      if (!u || !p) {
+        this.authError.set('Ingrese usuario y contraseña de un administrador');
+        return;
+      }
+    }
+    this.ejecutarCierre(
+      !this.isAdmin()
+        ? { autorizadoUsername: this.authAdminUser().trim(), autorizadoPassword: this.authAdminPass() }
+        : undefined,
+    );
+  }
+
+  cancelarAuthCierre(): void {
+    this.mostrarAuthCierre.set(false);
+    this.authError.set(null);
+    this.authAdminUser.set('');
+    this.authAdminPass.set('');
+  }
+
+  private ejecutarCierre(auth?: { autorizadoUsername: string; autorizadoPassword: string }): void {
+    const id = this.sesion()?.idSesion;
+    if (!id) return;
+    const contado = this.arqueoTotal();
+    if (!(contado > 0)) return;
+
     this.loading.set(true);
+    this.authError.set(null);
     this.cajaSvc
       .cerrar(id, {
         efectivoContado: contado,
+        arqueo: this.arqueoLineas(),
         observaciones: this.obsCierre() || undefined,
+        ...auth,
       })
       .subscribe({
         next: (r) => {
           this.ultimoCierre.set(r);
-          this.cajaAbierta.set(false);
-          this.sesion.set(null);
-          this.resumen.set(null);
-          this.efectivoContado.set(null);
-          this.obsCierre.set('');
-          this.loading.set(false);
-          this.cargarHistorial();
-          setTimeout(() => window.print(), 400);
+          this.descuadreInforme.set(r.descuadre ?? null);
+          this.cargarMovimientosInforme(r.sesion.idSesion!, () => {
+            this.cajaAbierta.set(false);
+            this.sesion.set(null);
+            this.resumen.set(null);
+            this.arqueoLineas.set(crearLineasArqueoVacias());
+            this.obsCierre.set('');
+            this.mostrarAuthCierre.set(false);
+            this.authAdminUser.set('');
+            this.authAdminPass.set('');
+            this.authError.set(null);
+            this.loading.set(false);
+            if (r.descuadre) {
+              this.msg.set(
+                `Caja cerrada con descuadre de ${r.descuadre.diferencia?.toLocaleString('es-CO')} COP. Tiene el mes para cuadrarlo antes de la nómina.`,
+              );
+            } else {
+              this.msg.set('Caja cerrada correctamente');
+            }
+            this.cargarHistorial();
+            void this.cajaEstado.refrescar();
+            this.informePrint.imprimirIndividual({
+              sesion: r.sesion,
+              resumen: r.resumen,
+              ingresos: this.ingresosInforme(),
+              egresos: this.egresosInforme(),
+              descuadre: r.descuadre,
+              empresa: this.empresaConfig(),
+            });
+          });
         },
         error: (e) => {
           this.loading.set(false);
-          this.msg.set(e?.error?.message || 'No se pudo cerrar la caja');
+          const code = e?.error?.code;
+          const status = e?.status;
+          const errMsg = e?.error?.message || 'No se pudo cerrar la caja';
+
+          if (code === 'AUTH_INVALID' || code === 'AUTH_REQUIRED' || code === 'DESCUADRE_AUTH_REQUIRED') {
+            this.mostrarAuthCierre.set(true);
+            this.authError.set(errMsg);
+            return;
+          }
+
+          if (status === 404) {
+            this.mostrarAuthCierre.set(false);
+            this.authError.set(null);
+            this.refrescar();
+            this.cargarHistorial();
+            this.msg.set('La caja ya fue cerrada. Actualizamos el estado.');
+            return;
+          }
+
+          if (this.mostrarAuthCierre()) {
+            this.authError.set(errMsg);
+          } else {
+            this.msg.set(errMsg);
+          }
         },
       });
+  }
+
+  verCierre(s: CajaSesion): void {
+    if (!s.idSesion) return;
+    const dest = this.isAdmin() ? '/app/cierres' : '/app/caja/cierres';
+    this.router.navigate([dest, s.idSesion]);
   }
 
   verResumenSesion(s: CajaSesion): void {
     if (!s.idSesion) return;
     this.cajaSvc.resumen(s.idSesion).subscribe({
       next: (r) => {
-        this.ultimoCierre.set({ sesion: r.sesion, resumen: r.resumen });
-        setTimeout(() => window.print(), 300);
+        this.ultimoCierre.set({ sesion: r.sesion, resumen: r.resumen, descuadre: r.descuadre });
+        this.descuadreInforme.set(r.descuadre ?? null);
+        this.cargarMovimientosInforme(s.idSesion!, () => {
+          const c = this.ultimoCierre();
+          if (!c) return;
+          this.informePrint.imprimirIndividual({
+            sesion: c.sesion,
+            resumen: c.resumen,
+            ingresos: this.ingresosInforme(),
+            egresos: this.egresosInforme(),
+            descuadre: this.descuadreInforme(),
+            empresa: this.empresaConfig(),
+          });
+        });
+      },
+    });
+  }
+
+  private cargarMovimientosInforme(idSesion: number, done: () => void): void {
+    let pending = 2;
+    const finish = () => {
+      pending -= 1;
+      if (pending <= 0) done();
+    };
+    this.cajaSvc.egresosPorSesion(idSesion).subscribe({
+      next: (rows) => {
+        this.egresosInforme.set(rows || []);
+        finish();
+      },
+      error: () => {
+        this.egresosInforme.set([]);
+        finish();
+      },
+    });
+    this.cajaSvc.ingresosPorSesion(idSesion).subscribe({
+      next: (rows) => {
+        this.ingresosInforme.set(rows || []);
+        finish();
+      },
+      error: () => {
+        this.ingresosInforme.set([]);
+        finish();
       },
     });
   }
@@ -217,10 +405,25 @@ export class CajaCuadreComponent implements OnInit {
   }
 
   diferenciaHistorial(s: CajaSesion): number | null {
+    if (s.descuadreDiferencia != null) return s.descuadreDiferencia;
     if (s.diferencia != null) return s.diferencia;
     const c = this.contadoHistorial(s);
     if (c == null) return null;
     return c - this.esperadoHistorial(s);
+  }
+
+  tieneDescuadrePendiente(s: CajaSesion): boolean {
+    return s.descuadreEstado === 'pendiente';
+  }
+
+  enNominaDescuadre(s: CajaSesion): boolean {
+    return s.descuadreEstado === 'en_nomina';
+  }
+
+  montoDebeHistorial(s: CajaSesion): number {
+    if (s.descuadreMontoDebe != null && s.descuadreMontoDebe > 0) return s.descuadreMontoDebe;
+    const d = this.diferenciaHistorial(s);
+    return d != null && d < -1 ? Math.abs(d) : 0;
   }
 
   private tonoMetodo(label: string): { tone: string; icon: string } {

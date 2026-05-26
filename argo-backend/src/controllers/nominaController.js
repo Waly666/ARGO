@@ -4,6 +4,7 @@ const LiquidacionNomina = require('../models/LiquidacionNomina');
 const Egreso = require('../models/Egreso');
 const Empleado = require('../models/Empleado');
 const { maxNumericId, insertarCatalogo } = require('../services/programaServicio');
+const { generarNovedadesDescuadrePorPeriodo, marcarDescuadresPagadosEnPeriodo } = require('../services/descuadreCaja');
 const { generarNovedadesAutomaticas } = require('../services/nominaNovedades');
 const { liquidarPeriodo } = require('../services/nominaCalculo');
 const { exportarPilaCsv } = require('../services/nominaPilaExport');
@@ -107,6 +108,19 @@ exports.obtenerPeriodo = async (req, res, next) => {
     if (!p) return res.status(404).json({ message: 'Período no encontrado' });
     res.json(await resumenPeriodo(p));
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.generarNovedadesDescuadreCaja = async (req, res, next) => {
+  try {
+    const p = await buscarPeriodo(req.params.id);
+    if (!p) return res.status(404).json({ message: 'Período no encontrado' });
+    const user = req.user?.username || 'sistema';
+    const result = await generarNovedadesDescuadrePorPeriodo(p.idPeriodo, user);
+    res.json({ ok: true, ...result, periodo: await resumenPeriodo(await buscarPeriodo(p.idPeriodo)) });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };
@@ -273,6 +287,8 @@ exports.pagarNomina = async (req, res, next) => {
       { idPeriodo: p.idPeriodo },
       { $set: { estado: 'pagado', updatedAt: now, userChangeRecord: user } },
     );
+
+    await marcarDescuadresPagadosEnPeriodo(p.idPeriodo);
 
     res.json({ ok: true, egresosCreados: creados.length, egresos: creados });
   } catch (e) {

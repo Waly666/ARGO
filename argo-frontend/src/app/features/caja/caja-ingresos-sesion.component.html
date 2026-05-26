@@ -9,7 +9,7 @@
     </div>
     <div class="mov-actions">
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
-      <button type="button" class="primary sm" *ngIf="cajaAbierta()" (click)="nuevoIngresoCaja()">
+      <button type="button" class="primary sm" (click)="nuevoIngresoCaja()">
         Ingreso sin alumno
       </button>
       <span class="total-badge">{{ total() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>

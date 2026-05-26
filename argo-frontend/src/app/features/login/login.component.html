@@ -13,6 +13,9 @@
     <form class="login-form" (ngSubmit)="submit()">
       <h2>Iniciar Sesión</h2>
       <p class="hint">Acceso restringido a personal autorizado</p>
+      <p class="hint login-id-hint">
+        Usuario: documento, nick (ej. jose) o usuario del sistema. Contraseña: últimos 4 dígitos del documento.
+      </p>
 
       <label>Usuario</label>
       <input type="text"
@@ -20,7 +23,7 @@
              [ngModel]="username()"
              (ngModelChange)="username.set($event)"
              name="username"
-             placeholder="usuario"
+             placeholder="documento o nick"
              [disabled]="loading()" />
 
       <label>Contraseña</label>

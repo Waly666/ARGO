@@ -213,6 +213,7 @@ export class EgresoService {
     numeroDocumento?: string;
     desde?: string;
     hasta?: string;
+    idSesion?: number;
     skip?: number;
     limit?: number;
   }): Observable<{ items: Egreso[]; total: number; skip: number; limit: number; totalValor: number }> {
@@ -221,6 +222,7 @@ export class EgresoService {
     if (opts?.numeroDocumento) params = params.set('numeroDocumento', opts.numeroDocumento);
     if (opts?.desde) params = params.set('desde', opts.desde);
     if (opts?.hasta) params = params.set('hasta', opts.hasta);
+    if (opts?.idSesion != null) params = params.set('idSesion', String(opts.idSesion));
     if (opts?.skip != null) params = params.set('skip', String(opts.skip));
     if (opts?.limit != null) params = params.set('limit', String(opts.limit));
     return this.http.get<{ items: Egreso[]; total: number; skip: number; limit: number; totalValor: number }>(

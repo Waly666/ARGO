@@ -64,6 +64,7 @@ export class IngresoService {
     numDoc?: string;
     desde?: string;
     hasta?: string;
+    idSesion?: number;
     skip?: number;
     limit?: number;
   }): Observable<{ items: any[]; total: number; skip: number; limit: number; totalValor: number }> {
@@ -72,6 +73,7 @@ export class IngresoService {
     if (opts?.numDoc) params = params.set('numDoc', opts.numDoc);
     if (opts?.desde) params = params.set('desde', opts.desde);
     if (opts?.hasta) params = params.set('hasta', opts.hasta);
+    if (opts?.idSesion != null) params = params.set('idSesion', String(opts.idSesion));
     if (opts?.skip != null) params = params.set('skip', String(opts.skip));
     if (opts?.limit != null) params = params.set('limit', String(opts.limit));
     return this.http.get<{ items: any[]; total: number; skip: number; limit: number; totalValor: number }>(

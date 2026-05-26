@@ -7,7 +7,7 @@ const {
 } = require('../services/certificadoLayout');
 const { generarHtmlCertificado } = require('../services/certificadoRender');
 const { MUESTRA_PREVIEW } = require('../constants/certificadoLayoutDefaults');
-const { TIPOS_VALIDOS } = require('../services/clasificacionCertificado');
+const { TIPOS_VALIDOS, normalizePlantillaPorTipo } = require('../services/clasificacionCertificado');
 
 const CAMPOS = [
   'nombreInstitucion',
@@ -77,6 +77,9 @@ exports.actualizar = async (req, res, next) => {
       dto.qrTamanoPx = Math.min(140, Math.max(40, parseInt(dto.qrTamanoPx, 10) || 72));
     }
     const existe = await Config.findOne({ clave: CLAVE }).lean();
+    if (dto.plantillaPorTipo != null) {
+      dto.plantillaPorTipo = normalizePlantillaPorTipo(dto.plantillaPorTipo);
+    }
     if (dto.layoutPorTipo != null) {
       const prev = existe?.layoutPorTipo || {};
       const normalizado = normalizeLayoutPorTipo(dto.layoutPorTipo);

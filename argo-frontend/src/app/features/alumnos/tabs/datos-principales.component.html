@@ -123,6 +123,16 @@
           </div>
           <div class="row">
             <div class="col-3">
+              <label>tipoAlumno</label>
+              <select
+                [ngModel]="form().tipoAlumno"
+                (ngModelChange)="patch('tipoAlumno', $event)"
+                [disabled]="esAlumnoJornada()">
+                <option *ngFor="let t of tiposAlumno" [value]="t">{{ t }}</option>
+              </select>
+              <p class="hint" *ngIf="!isEdit() && esAlumnoJornada()">Alta para Jornadas de Capacitación (no Regular).</p>
+            </div>
+            <div class="col-3">
               <label>tipoDoc *</label>
               <select [ngModel]="form().tipoDoc" (ngModelChange)="patch('tipoDoc', $event)">
                 <option *ngFor="let t of tiposDoc()" [value]="catValor(t)">{{ catEtiqueta(t) }}</option>

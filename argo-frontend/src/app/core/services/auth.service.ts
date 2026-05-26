@@ -4,6 +4,14 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { PermisoService } from './permiso.service';
+
+export interface AuthEmpleadoResumen {
+  idEmpleado: number;
+  nombreCompleto: string;
+  numeroDocumento?: string;
+  idUsuario?: string;
+}
 
 export interface AuthUser {
   _id: string;
@@ -11,7 +19,11 @@ export interface AuthUser {
   nombres?: string;
   apellidos?: string;
   rol?: string;
+  rolNombre?: string;
+  permisos?: string[];
   email?: string;
+  idEmpleado?: number;
+  empleado?: AuthEmpleadoResumen;
 }
 
 export interface LoginResponse {
@@ -33,6 +45,7 @@ const USER_KEY = 'argo_user';
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private permisoSvc = inject(PermisoService);
 
   private _token = signal<string | null>(this.read(TOKEN_KEY));
   private _user = signal<AuthUser | null>(this.readJson<AuthUser>(USER_KEY));
@@ -41,9 +54,25 @@ export class AuthService {
   user = computed(() => this._user());
   isAuth = computed(() => !!this._token());
   isAdmin = computed(() => {
+    const p = this._user()?.permisos;
+    if (p?.includes('*')) return true;
     const r = String(this._user()?.rol || '').toLowerCase();
     return r === 'admin' || r.includes('admin');
   });
+
+  tienePermiso(clave: string | string[]): boolean {
+    return this.permisoSvc.tiene(clave);
+  }
+
+  refreshMe(): Observable<AuthUser> {
+    return this.http.get<AuthUser>(`${environment.apiUrl}/auth/me`).pipe(
+      tap((user) => {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        this._user.set(user);
+        this.permisoSvc.setPermisos(user.permisos);
+      }),
+    );
+  }
 
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http
@@ -54,6 +83,7 @@ export class AuthService {
           localStorage.setItem(USER_KEY, JSON.stringify(res.user));
           this._token.set(res.token);
           this._user.set(res.user);
+          this.permisoSvc.setPermisos(res.user.permisos);
         }),
       );
   }
@@ -71,6 +101,7 @@ export class AuthService {
     localStorage.removeItem(USER_KEY);
     this._token.set(null);
     this._user.set(null);
+    this.permisoSvc.setPermisos([]);
     this.router.navigateByUrl('/login');
   }
 

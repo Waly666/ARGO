@@ -173,6 +173,9 @@ async function liquidarPeriodo(idPeriodo, user = 'sistema') {
     throw Object.assign(new Error('El período ya está cerrado o pagado'), { status: 409 });
   }
 
+  const { generarNovedadesDescuadrePorPeriodo } = require('./descuadreCaja');
+  await generarNovedadesDescuadrePorPeriodo(idPeriodo, user);
+
   const novedades = await obtenerNovedadesPeriodo(idPeriodo);
   if (!novedades.length) {
     throw Object.assign(new Error('No hay novedades en el período. Genere novedades automáticas primero.'), {

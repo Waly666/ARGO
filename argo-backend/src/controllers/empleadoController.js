@@ -7,6 +7,7 @@ const Eps = require('../models/Eps');
 const Afp = require('../models/Afp');
 const Arl = require('../models/Arl');
 const CajaCompensacion = require('../models/CajaCompensacion');
+const Usuario = require('../models/Usuario');
 const { maxNumericId, insertarCatalogo } = require('../services/programaServicio');
 const { pickFields, num } = require('../services/rrhhCatalogo');
 const {
@@ -14,7 +15,7 @@ const {
   normalizarEmpleadoLegacy,
   nombreCompletoEmpleado,
 } = require('../utils/empleadoDoc');
-const { asegurarUsuarioParaEmpleado } = require('../services/empleadoUsuario');
+const { procesarUsuarioEmpleado, rolDesdeCargoNombre } = require('../services/empleadoUsuario');
 const upload = require('../middleware/upload');
 
 const EMPLEADO_FIELDS = [
@@ -95,7 +96,7 @@ async function cargoPorId(cargoId) {
 
 async function resolverFk(emp) {
   const e = normalizarEmpleadoLegacy(emp);
-  const [cargo, depto, eps, afp, arl, caja] = await Promise.all([
+  const [cargo, depto, eps, afp, arl, caja, usuario] = await Promise.all([
     e.cargoId ? Cargo.findOne({ idCargo: e.cargoId }).lean() : null,
     e.departamentoId ? DepartamentoEmpresa.findOne({ idDepartamento: e.departamentoId }).lean() : null,
     e.epsId ? Eps.findOne({ idEps: e.epsId }).lean() : null,
@@ -104,6 +105,7 @@ async function resolverFk(emp) {
     e.cajaCompensacionId
       ? CajaCompensacion.findOne({ idCajaCompensacion: e.cajaCompensacionId }).lean()
       : null,
+    e.idUsuario ? Usuario.findById(e.idUsuario).lean() : null,
   ]);
   return {
     ...e,
@@ -116,6 +118,8 @@ async function resolverFk(emp) {
     arlNombre: arl?.nombre || null,
     cajaNombre: caja?.nombre || null,
     idUsuario: e.idUsuario ? String(e.idUsuario) : null,
+    usuarioLogin: usuario?.username || null,
+    usuarioRol: usuario?.rol || null,
   };
 }
 
@@ -172,6 +176,50 @@ exports.obtener = async (req, res, next) => {
   }
 };
 
+function opcionesUsuarioDesdeBody(body) {
+  let modoAcceso = 'auto';
+  if (['auto', 'ninguno', 'vincular'].includes(String(body?.modoAcceso || '').toLowerCase())) {
+    modoAcceso = String(body.modoAcceso).toLowerCase();
+  } else if (body?.crearUsuario === false || body?.crearUsuario === 'false') {
+    modoAcceso = 'ninguno';
+  } else if (body?.idUsuarioExistente || body?.idUsuarioVincular) {
+    modoAcceso = 'vincular';
+  }
+  const idUsuarioExistente = body?.idUsuarioExistente || body?.idUsuarioVincular || null;
+  return { modoAcceso, idUsuarioExistente };
+}
+
+async function aplicarUsuarioEmpleado(emp, body, cargo, user) {
+  const { modoAcceso, idUsuarioExistente } = opcionesUsuarioDesdeBody(body);
+  const cargoNombre = cargo?.nombre;
+  const rolCargo = rolDesdeCargoNombre(cargoNombre);
+
+  if (modoAcceso === 'auto' && !rolCargo) {
+    return null;
+  }
+  if (modoAcceso === 'vincular' && !idUsuarioExistente) {
+    throw Object.assign(new Error('Seleccione el usuario a vincular'), { status: 400 });
+  }
+
+  return procesarUsuarioEmpleado(emp, {
+    cargoNombre,
+    creadoPor: user,
+    modoAcceso,
+    idUsuarioExistente,
+  });
+}
+
+function respuestaUsuarioGenerado(usuarioGenerado) {
+  if (!usuarioGenerado) return null;
+  return {
+    username: usuarioGenerado.username,
+    passwordInicial: usuarioGenerado.passwordInicial || undefined,
+    rol: usuarioGenerado.rol,
+    existente: !!usuarioGenerado.existente,
+    vinculado: !!usuarioGenerado.vinculado,
+  };
+}
+
 exports.crear = async (req, res, next) => {
   try {
     const dto = pickEmpleado(req.body);
@@ -203,12 +251,10 @@ exports.crear = async (req, res, next) => {
     };
     const emp = await insertarCatalogo(Empleado, doc);
     const cargo = await cargoPorId(emp.cargoId);
+    const { modoAcceso } = opcionesUsuarioDesdeBody(req.body);
     let usuarioGenerado = null;
     try {
-      usuarioGenerado = await asegurarUsuarioParaEmpleado(emp, {
-        cargoNombre: cargo?.nombre,
-        creadoPor: user,
-      });
+      usuarioGenerado = await aplicarUsuarioEmpleado(emp, req.body, cargo, user);
       if (usuarioGenerado?.idUsuario) {
         await vincularUsuarioEmpleado(emp.idEmpleado, usuarioGenerado.idUsuario);
         emp.idUsuario = usuarioGenerado.idUsuario;
@@ -216,7 +262,9 @@ exports.crear = async (req, res, next) => {
         await vincularUsuarioEmpleado(emp.idEmpleado, usuarioGenerado.usuario._id);
       }
     } catch (err) {
-      await Empleado.deleteOne({ idEmpleado: emp.idEmpleado });
+      if (modoAcceso !== 'ninguno') {
+        await Empleado.deleteOne({ idEmpleado: emp.idEmpleado });
+      }
       const status = err.status || 500;
       if (err.code === 11000) {
         return res.status(409).json({
@@ -229,14 +277,7 @@ exports.crear = async (req, res, next) => {
     const out = await resolverFk(emp);
     res.status(201).json({
       ...out,
-      usuarioGenerado: usuarioGenerado
-        ? {
-            username: usuarioGenerado.username,
-            passwordInicial: usuarioGenerado.passwordInicial || undefined,
-            rol: usuarioGenerado.rol,
-            existente: !!usuarioGenerado.existente,
-          }
-        : null,
+      usuarioGenerado: respuestaUsuarioGenerado(usuarioGenerado),
     });
   } catch (e) {
     next(e);
@@ -273,10 +314,7 @@ exports.actualizar = async (req, res, next) => {
     const cargo = await cargoPorId(actualizado.cargoId ?? dto.cargoId);
     let usuarioGenerado = null;
     try {
-      usuarioGenerado = await asegurarUsuarioParaEmpleado(actualizado, {
-        cargoNombre: cargo?.nombre,
-        creadoPor: user,
-      });
+      usuarioGenerado = await aplicarUsuarioEmpleado(actualizado, req.body, cargo, user);
       if (usuarioGenerado?.idUsuario) {
         await vincularUsuarioEmpleado(actualizado.idEmpleado, usuarioGenerado.idUsuario);
         actualizado.idUsuario = usuarioGenerado.idUsuario;
@@ -290,14 +328,7 @@ exports.actualizar = async (req, res, next) => {
     const out = await resolverFk(actualizado);
     res.json({
       ...out,
-      usuarioGenerado: usuarioGenerado
-        ? {
-            username: usuarioGenerado.username,
-            passwordInicial: usuarioGenerado.passwordInicial || undefined,
-            rol: usuarioGenerado.rol,
-            existente: !!usuarioGenerado.existente,
-          }
-        : null,
+      usuarioGenerado: respuestaUsuarioGenerado(usuarioGenerado),
     });
   } catch (e) {
     next(e);

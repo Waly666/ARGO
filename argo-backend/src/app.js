@@ -7,6 +7,7 @@ const { createCorsOptions } = require('./config/cors');
 const routes = require('./routes');
 const { notFound, errorHandler } = require('./middleware/error');
 const { auditoriaHttpMiddleware } = require('./middleware/auditoriaHttp');
+const { actividadHttpMiddleware } = require('./middleware/actividadHttp');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'argo-api' }));
 
+app.use('/api', actividadHttpMiddleware);
 app.use('/api', auditoriaHttpMiddleware);
 app.use('/api', routes);
 

@@ -109,8 +109,7 @@
     <h2>Cierre de caja general</h2>
     <p class="hint">Consolida todas las cajas del período (varios cajeros). Regístrelo al final del día.</p>
     <div class="filtros-inline">
-      <label>Desde <input type="date" [ngModel]="fechaGenDesde()" (ngModelChange)="fechaGenDesde.set($event)" /></label>
-      <label>Hasta <input type="date" [ngModel]="fechaGenHasta()" (ngModelChange)="fechaGenHasta.set($event)" /></label>
+      <label>Fecha <input type="date" [ngModel]="fechaGenDesde()" (ngModelChange)="fechaGenDesde.set($event)" /></label>
       <button type="button" class="ghost sm" (click)="cargarPreviewGeneral()">Vista previa</button>
       <button type="button" class="primary sm" [disabled]="cajaLoading()" (click)="confirmarCierreGeneral()">
         Registrar cierre general
@@ -181,9 +180,13 @@
 
   <header class="page-head" *ngIf="modoSoloForm()">
     <div>
-      <h1>{{ editando() ? 'Editar egreso' : 'Nuevo egreso' }} — mi caja</h1>
+      <h1>{{ editando() ? 'Editar egreso' : 'Nuevo egreso' }}{{ returnUrl()?.includes('egresos-todos') ? ' — historial' : ' — mi caja' }}</h1>
     <p class="hint">
-        {{ editando() ? 'Los cambios quedan vinculados a su sesión de caja.' : 'El egreso quedará vinculado a su sesión de caja abierta.' }}
+        {{ editando() && returnUrl()?.includes('egresos-todos')
+          ? 'Como administrador puede modificar egresos de cualquier sesión. Los préstamos/adelantos de nómina no se editan.'
+          : editando()
+            ? 'Los cambios quedan vinculados a su sesión de caja.'
+            : 'El egreso quedará vinculado a su sesión de caja abierta.' }}
       </p>
     </div>
   </header>

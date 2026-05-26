@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { parseNumDoc } = require('../utils/numDoc');
+const { TIPOS_ALUMNO, TIPO_ALUMNO_DEFAULT } = require('../constants/tipoAlumno');
 
 function normalizarNumDocEnDoc(doc) {
   if (!doc || doc.numDoc == null || doc.numDoc === '') return;
@@ -10,6 +11,12 @@ function normalizarNumDocEnDoc(doc) {
 const DatosAlumnoSchema = new mongoose.Schema(
   {
     fechaReg: { type: Date, default: Date.now },
+    tipoAlumno: {
+      type: String,
+      enum: TIPOS_ALUMNO,
+      default: TIPO_ALUMNO_DEFAULT,
+      index: true,
+    },
     tipoDoc: { type: String, trim: true },
     /** Número de documento (Number en MongoDB) */
     numDoc: { type: Number, required: true, unique: true, index: true },

@@ -7,8 +7,8 @@ const { siguienteNumComprobanteIngreso } = require('../services/configRecibo');
 const { esAdmin } = require('../utils/roles');
 const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery } = require('../utils/numDoc');
 const { refrescarPagoMatricula } = require('../services/liquidacionMatricula');
-const { exigirSesionAbierta, verificarMovimientoSesionCajero } = require('../services/cajaSesion');
-const { exigirAdminOSupervisor } = require('../services/authVerify');
+const { exigirSesionAbierta, verificarMovimientoSesionCajero, requiereAutorizacionAnularMovimiento } = require('../services/cajaSesion');
+const { exigirAdminOSupervisor, verificarAdminCredenciales } = require('../services/authVerify');
 const {
   validarTipoIngresoCaja,
   esIngresoContrato,
@@ -156,6 +156,8 @@ async function enriquecer(p) {
     tipoIngresoDescr: p.tipoIngreso || tipoIngDoc?.tipo || null,
     recibiDe,
     recibidoDe: recibiDe,
+    cuadreDescuadre: !!p.cuadreDescuadre,
+    idSesion: p.idSesion ?? null,
     esIngresoCaja: !!(p.ingresoCaja || (!p.idLiquidacion && p.idTipoIngreso)),
   };
 }
@@ -437,12 +439,18 @@ exports.listarTodos = async (req, res, next) => {
   try {
     const q = String(req.query.q || '').trim();
     const docRaw = String(req.query.numDoc || req.query.doc || '').trim();
+    const idSesionQ = req.query.idSesion;
     const skip = Math.max(0, Number(req.query.skip) || 0);
     const limit = Math.min(2000, Math.max(1, Number(req.query.limit) || 500));
     const and = [];
 
     const rango = rangoFechaQuery(req.query.desde, req.query.hasta, 'fecha');
     if (rango) and.push(rango);
+
+    if (idSesionQ != null && idSesionQ !== '') {
+      const sid = Number(idSesionQ);
+      if (Number.isFinite(sid)) and.push({ idSesion: sid });
+    }
 
     const ndDoc = docRaw ? parseNumDoc(docRaw) : null;
     if (ndDoc != null) {
@@ -535,6 +543,22 @@ exports.eliminar = async (req, res, next) => {
       );
       if (!auth.ok) return res.status(auth.status).json({ message: auth.message });
       supervisor = auth.supervisor;
+    } else if (await requiereAutorizacionAnularMovimiento(req, ing.idSesion)) {
+      const { autorizadoUsername, autorizadoPassword } = req.body || {};
+      const ver = await verificarAdminCredenciales(autorizadoUsername, autorizadoPassword);
+      if (!ver.ok) {
+        return res.status(ver.status).json({
+          message:
+            ver.message ||
+            'Anular movimientos de otra sesión o sin caja abierta requiere usuario y contraseña de administrador.',
+          code: 'SUPERVISOR_AUTH_REQUIRED',
+        });
+      }
+      supervisor = {
+        autorizadoPor: ver.username,
+        nombreAutoriza: ver.nombreAutoriza,
+        autorizadoEn: new Date(),
+      };
     }
 
     const v = num(ing.valor);
@@ -550,7 +574,23 @@ exports.eliminar = async (req, res, next) => {
         if (liq.idMat) await refrescarPagoMatricula(liq.idMat);
       }
     }
+    if (ing.cuadreDescuadre && ing.idSesion) {
+      const CajaSesion = require('../models/CajaSesion');
+      const { toDec } = require('../utils/coerceTypes');
+      const ses = await CajaSesion.findOne({ idSesion: Number(ing.idSesion) }).lean();
+      if (ses?.efectivoContado != null) {
+        const nuevoContado = Math.max(0, num(ses.efectivoContado) - v);
+        await CajaSesion.updateOne(
+          { idSesion: Number(ing.idSesion) },
+          { $set: { efectivoContado: toDec(nuevoContado) } },
+        );
+      }
+    }
     await ing.deleteOne();
+    if (ing.idSesion) {
+      const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
+      await sincronizarDescuadreSesion(ing.idSesion).catch(() => null);
+    }
     registrarEliminacion(req, 'ingreso', antesIngreso, {
       resumen: `Reversa ingreso ${antesIngreso.numRecibo || req.params.id}${
         supervisor?.autorizadoPor ? ` (autorizó ${supervisor.autorizadoPor})` : ''

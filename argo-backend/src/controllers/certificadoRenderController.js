@@ -1,12 +1,16 @@
 const Certificado = require('../models/Certificado');
-const PlantillaCertificado = require('../models/PlantillaCertificado');
-const Liquidacion = require('../models/Liquidacion');
-const DatosAlumno = require('../models/DatosAlumno');
+const Liquidacion = require('../models/Liquidacion');const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado } = require('../services/configCertificado');
 const { buscarPrograma } = require('../services/programaServicio');
-const { clasificarProgramaAsync, normalizarTipoCertificado } = require('../services/clasificacionCertificado');
+const {
+  clasificarProgramaAsync,
+  normalizarTipoCertificado,
+  orientacionPorTipo,
+  TIPOS_VALIDOS,
+} = require('../services/clasificacionCertificado');
 const { generarHtmlCertificado } = require('../services/certificadoRender');
+const { resolverPlantillaImpresion } = require('../services/plantillaCertificado');
 const { numDocQuery } = require('../utils/numDoc');
 
 async function programaPorId(idProg) {
@@ -17,11 +21,10 @@ async function armarDatos(id) {
   const cert = await Certificado.findById(id).lean();
   if (!cert) return null;
 
-  const [config, alumno, liq, plantilla] = await Promise.all([
+  const [config, alumno, liq] = await Promise.all([
     obtenerConfigCertificado(),
     DatosAlumno.findOne(numDocQuery(cert.numDoc)).lean(),
     Liquidacion.findById(cert.idLiquidacion).lean(),
-    cert.idPlantilla ? PlantillaCertificado.findById(cert.idPlantilla).lean() : null,
   ]);
 
   const idProg = cert.idProg || liq?.idProg;
@@ -34,14 +37,19 @@ async function armarDatos(id) {
     : null;
   const tipoDocDescr = tipo?.descripcion || tipo?.codigo || alumno?.tipoDoc;
 
+  const legacyFormato =
+    cert.tipoFormatoCert ||
+    (TIPOS_VALIDOS.includes(cert.tipoCertificado) ? cert.tipoCertificado : null);
+  const tipoFormatoCert =
+    normalizarTipoCertificado(legacyFormato) ||
+    (await clasificarProgramaAsync(programa, cat.catTipoCapacitacion));
+
+  const plantilla =
+    (await resolverPlantillaImpresion(config, tipoFormatoCert, cert.idPlantilla)) || null;
   const plantillaFinal = plantilla || {
-    orientacion: cert.orientacion || 'vertical',
+    orientacion: cert.orientacion || orientacionPorTipo(config, tipoFormatoCert),
     urlFondo: '',
   };
-
-  const tipoCertificado =
-    normalizarTipoCertificado(cert.tipoCertificado) ||
-    (await clasificarProgramaAsync(programa, cat.catTipoCapacitacion));
 
   return {
     config,
@@ -50,7 +58,9 @@ async function armarDatos(id) {
     alumno,
     programa,
     tipoDocDescr,
-    tipoCertificado,
+    tipoFormatoCert,
+    /** Compat. render: layout por formato curso/tecnico/… */
+    tipoCertificado: tipoFormatoCert,
   };
 }
 

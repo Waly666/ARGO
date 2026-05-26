@@ -21,21 +21,19 @@ import {
 } from '../../core/services/programa.service';
 
 import { AuthService } from '../../core/services/auth.service';
-
+import { PermisoService } from '../../core/services/permiso.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import {
   ConfigCertificado,
   ConfigCertificadoService,
   PlantillaCertificado,
 } from '../../core/services/config-certificado.service';
-
 import {
   TIPOS_CERTIFICADO,
   TipoCertificadoId,
   labelOrientacion,
   labelTipoCert,
 } from '../../core/constants/tipos-certificado';
-
-import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 import {
   capCodigo,
@@ -83,6 +81,7 @@ export class ProgramasAdminComponent implements OnInit {
   private catSvc = inject(CatalogoService);
 
   private auth = inject(AuthService);
+  private permisoSvc = inject(PermisoService);
 
   private cfgCertSvc = inject(ConfigCertificadoService);
 
@@ -127,6 +126,14 @@ export class ProgramasAdminComponent implements OnInit {
   tiposCargando = signal(true);
 
   esAdmin = signal(false);
+
+  puedeAgregarPrograma(): boolean {
+    return this.permisoSvc.tiene(['programas.agregar', 'programas.gestionar']);
+  }
+
+  puedeGestionarPrograma(): boolean {
+    return this.permisoSvc.tiene('programas.gestionar');
+  }
 
 
 
@@ -522,7 +529,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     }
 
-    if ((f.tarifa1 ?? f.valorMatricula ?? 0) <= 0) {
+    if (!this.esProgramaJornadasCapForm() && (f.tarifa1 ?? f.valorMatricula ?? 0) <= 0) {
 
       this.msg.set('Indique la tarifa 1 / valor de matrícula.');
 
@@ -530,11 +537,17 @@ export class ProgramasAdminComponent implements OnInit {
 
     }
 
+    const esJorn = this.esProgramaJornadasCapForm();
+
     const payload: ProgramaDto = {
 
       ...f,
 
-      valorMatricula: f.tarifa1 ?? f.valorMatricula,
+      valorMatricula: esJorn ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
+
+      tarifa1: esJorn ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
+
+      tipoCertificado: esJorn ? 'jornada_capacitacion' : (f.tipoCertificado ?? this.inferirTipoCert(f.idTipCap, f.nombreProg)),
 
       descrServicio: (f.descrServicio || f.nombreProg).trim(),
 
@@ -600,9 +613,8 @@ export class ProgramasAdminComponent implements OnInit {
 
   async eliminar(p: Programa) {
 
-    if (!this.esAdmin()) {
-
-      this.msg.set('Solo administradores pueden eliminar programas.');
+    if (!this.puedeGestionarPrograma()) {
+      this.msg.set('Solo quien administra programas puede eliminar.');
 
       return;
 
@@ -753,6 +765,10 @@ export class ProgramasAdminComponent implements OnInit {
 
     const label = this.labelTipo(idTipCap).toLowerCase();
 
+    if (/jornadas?\s*de\s*capacitaci[oó]n|cap\s*jornada\s*capacitacion|jornada\s*capacitacion/.test(label)) {
+      return 'jornada_capacitacion';
+    }
+
     if (label.includes('competenc')) return 'competencias';
 
     if (label.includes('diplomado')) return 'diplomado';
@@ -797,18 +813,27 @@ export class ProgramasAdminComponent implements OnInit {
 
 
 
+  esProgramaJornadasCapForm(): boolean {
+    const f = this.form();
+    if (f.tipoCertificado === 'jornada_capacitacion') return true;
+    const label = this.labelTipo(f.idTipCap).toLowerCase();
+    return /jornadas?\s*de\s*capacitaci[oó]n|jornada\s*capacitacion|cap\s*jornada/.test(label);
+  }
+
   onTipoCapChange(id: string | number) {
-
     this.patch('idTipCap', id);
-
+    const cert = this.inferirTipoCert(id, this.form().nombreProg);
     if (!this.editando()) {
-
       this.patch('tipoServ', this.inferirTipoServ(id));
-
-      this.patch('tipoCertificado', this.inferirTipoCert(id, this.form().nombreProg));
-
+      this.patch('tipoCertificado', cert);
     }
-
+    if (cert === 'jornada_capacitacion') {
+      this.patch('valorMatricula', 0);
+      this.patch('tarifa1', 0);
+      this.patch('tarifa2', 0);
+      this.patch('tarifa3', 0);
+      this.patch('semestres', null);
+    }
   }
 
 
@@ -817,6 +842,15 @@ export class ProgramasAdminComponent implements OnInit {
 
     return this.editando() ? `Editar programa #${this.editando()!.idPrograma}` : 'Nuevo programa';
 
+  }
+
+  modalSubtitulo(): string {
+    if (this.esProgramaJornadasCapForm()) {
+      return 'Jornadas de capacitación: no genera servicio de matrícula (sin cobro al alumno).';
+    }
+    return this.editando()
+      ? 'Datos del programa y servicio de matrícula.'
+      : 'El código se asigna si lo deja vacío. El servicio se crea al guardar.';
   }
 
   capCodigo = capCodigo;

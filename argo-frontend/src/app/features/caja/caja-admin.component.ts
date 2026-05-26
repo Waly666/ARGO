@@ -1,106 +1,254 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 
-import {
-  CajaAbiertaItem,
-  CajaCierreGeneral,
-  CajaSesion,
-  CajaSesionService,
-  ResumenCierreGeneral,
-} from '../../core/services/caja-sesion.service';
+import { RouterLink } from '@angular/router';
+
+
+
+import { CajaAbiertaItem, CajaSesionService } from '../../core/services/caja-sesion.service';
+
+
+
+interface CierrePendiente {
+
+  idSesion: number;
+
+  usuario?: string;
+
+  efectivoEsperado: number;
+
+  efectivoContado: number | null;
+
+}
+
+
 
 @Component({
+
   selector: 'argo-caja-admin',
+
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe],
+
+  imports: [CommonModule, FormsModule, RouterLink, CurrencyPipe],
+
   templateUrl: './caja-admin.component.html',
+
   styleUrls: ['./caja-cuadre.component.scss', './caja-layout.component.scss'],
+
 })
+
 export class CajaAdminComponent implements OnInit {
+
   private cajaSvc = inject(CajaSesionService);
 
+
+
   cajasAbiertas = signal<CajaAbiertaItem[]>([]);
-  historial = signal<CajaSesion[]>([]);
-  previewGeneral = signal<ResumenCierreGeneral | null>(null);
-  cierresGenerales = signal<CajaCierreGeneral[]>([]);
-  fechaGenDesde = signal(new Date().toISOString().slice(0, 10));
-  fechaGenHasta = signal(new Date().toISOString().slice(0, 10));
-  obsCierreGeneral = signal('');
-  filtroHistDesde = signal(new Date().toISOString().slice(0, 10));
-  filtroHistHasta = signal(new Date().toISOString().slice(0, 10));
+
+  cierresPendientes = signal<CierrePendiente[]>([]);
+
+  mostrarCierreMultiple = signal(false);
+
   loading = signal(false);
+
   msg = signal<string | null>(null);
 
+
+
+  hayCajasAbiertas = computed(() => this.cajasAbiertas().length > 0);
+
+
+
   ngOnInit(): void {
+
     this.cargarAbiertas();
-    this.cargarHistorial();
-    this.cargarCierresGenerales();
+
   }
+
+
 
   cargarAbiertas(): void {
+
     this.cajaSvc.listarAbiertas().subscribe({
-      next: (r) => this.cajasAbiertas.set(r || []),
+
+      next: (r) => {
+
+        this.cajasAbiertas.set(r || []);
+
+        this.cierresPendientes.set(
+
+          (r || []).map((item) => ({
+
+            idSesion: item.sesion.idSesion,
+
+            usuario: item.sesion.usuario,
+
+            efectivoEsperado: item.resumenParcial.efectivoEsperado ?? item.resumenParcial.saldoTeorico ?? 0,
+
+            efectivoContado: item.resumenParcial.efectivoEsperado ?? null,
+
+          })),
+
+        );
+
+      },
+
     });
+
   }
 
-  cargarHistorial(): void {
-    this.cajaSvc
-      .listar({
-        todas: true,
-        desde: this.filtroHistDesde(),
-        hasta: this.filtroHistHasta(),
-        limit: 50,
-      })
-      .subscribe({
-        next: (r) => this.historial.set(r || []),
-      });
+
+
+  actualizarContado(idSesion: number, valor: string | number): void {
+
+    const n = valor === '' || valor == null ? null : Number(valor);
+
+    this.cierresPendientes.update((rows) =>
+
+      rows.map((r) => (r.idSesion === idSesion ? { ...r, efectivoContado: n } : r)),
+
+    );
+
   }
+
+
+
+  abrirCierreMultiple(): void {
+
+    if (!this.cajasAbiertas().length) {
+
+      this.msg.set('No hay cajas abiertas para cerrar');
+
+      return;
+
+    }
+
+    this.mostrarCierreMultiple.set(true);
+
+  }
+
+
+
+  cerrarTodasLasCajas(): void {
+
+    const pendientes = this.cierresPendientes();
+
+    for (const p of pendientes) {
+
+      if (p.efectivoContado == null || !Number.isFinite(p.efectivoContado)) {
+
+        this.msg.set(`Indique el efectivo contado para ${p.usuario || 'cajero'} (sesión #${p.idSesion})`);
+
+        return;
+
+      }
+
+    }
+
+    if (!confirm(`¿Cerrar ${pendientes.length} caja(s)?`)) return;
+
+
+
+    this.loading.set(true);
+
+    this.msg.set(null);
+
+    this.cajaSvc
+
+      .cerrarMultiples({
+
+        cierres: pendientes.map((p) => ({
+
+          idSesion: p.idSesion,
+
+          efectivoContado: p.efectivoContado!,
+
+          observaciones: 'Cierre simultáneo administrador',
+
+        })),
+
+      })
+
+      .subscribe({
+
+        next: () => {
+
+          this.loading.set(false);
+
+          this.mostrarCierreMultiple.set(false);
+
+          this.msg.set('Cajas cerradas. Puede generar el informe en Cierre general.');
+
+          this.cargarAbiertas();
+
+        },
+
+        error: (e) => {
+
+          this.loading.set(false);
+
+          this.msg.set(e?.error?.message || 'No se pudieron cerrar todas las cajas');
+
+        },
+
+      });
+
+  }
+
+
 
   cerrarAjena(item: CajaAbiertaItem): void {
-    if (!item.sesion?.idSesion) return;
+
+    const id = item.sesion?.idSesion;
+
+    if (!id) return;
+
+    const esperado = item.resumenParcial.efectivoEsperado ?? item.resumenParcial.saldoTeorico ?? 0;
+
+    const raw = prompt(
+
+      `Efectivo contado en caja de ${item.sesion.usuario} (esperado: ${esperado.toLocaleString('es-CO')} COP):`,
+
+      String(Math.round(esperado)),
+
+    );
+
+    if (raw == null) return;
+
+    const contado = Number(raw);
+
+    if (!Number.isFinite(contado)) {
+
+      this.msg.set('Valor de efectivo contado inválido');
+
+      return;
+
+    }
+
     if (!confirm(`¿Cerrar caja de ${item.sesion.usuario}?`)) return;
-    this.cajaSvc.cerrar(item.sesion.idSesion, { observaciones: 'Cierre administrador' }).subscribe({
-      next: () => {
-        this.cargarAbiertas();
-        this.cargarHistorial();
-      },
-    });
-  }
 
-  cargarPreview(): void {
-    this.cajaSvc.previewCierreGeneral(this.fechaGenDesde(), this.fechaGenHasta()).subscribe({
-      next: (r) => this.previewGeneral.set(r),
-    });
-  }
-
-  registrarGeneral(forzar = false): void {
-    this.loading.set(true);
     this.cajaSvc
-      .registrarCierreGeneral({
-        desde: this.fechaGenDesde(),
-        hasta: this.fechaGenHasta(),
-        observaciones: this.obsCierreGeneral() || undefined,
-        forzar,
-      })
+
+      .cerrar(id, { efectivoContado: contado, observaciones: 'Cierre administrador' })
+
       .subscribe({
-        next: (r) => {
-          this.previewGeneral.set(r.resumen);
-          this.loading.set(false);
-          this.cargarCierresGenerales();
+
+        next: () => {
+
+          this.msg.set(`Caja #${id} cerrada`);
+
+          this.cargarAbiertas();
+
         },
-        error: (e) => {
-          this.loading.set(false);
-          if (e?.status === 409 && confirm(`${e.error?.message}\n\n¿Registrar igualmente?`)) {
-            this.registrarGeneral(true);
-          }
-        },
+
+        error: (e) => this.msg.set(e?.error?.message || 'No se pudo cerrar la caja'),
+
       });
+
   }
 
-  cargarCierresGenerales(): void {
-    this.cajaSvc.listarCierresGenerales().subscribe({
-      next: (r) => this.cierresGenerales.set(r || []),
-    });
-  }
 }
+

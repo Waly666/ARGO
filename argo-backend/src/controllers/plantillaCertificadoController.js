@@ -32,7 +32,8 @@ exports.crear = async (req, res, next) => {
     if (!nombre?.trim()) return res.status(400).json({ message: 'El nombre es obligatorio' });
     if (!tipoCertificado || !TIPOS_VALIDOS.includes(tipoCertificado)) {
       return res.status(400).json({
-        message: 'tipoCertificado inválido (curso, tecnico, competencias, diplomado, licencia, mercancias_peligrosas)',
+        message:
+          'tipoCertificado inválido (curso, tecnico, competencias, diplomado, licencia, mercancias_peligrosas, jornada_capacitacion)',
       });
     }
     const ori = orientacion === 'horizontal' ? 'horizontal' : 'vertical';

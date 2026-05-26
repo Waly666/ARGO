@@ -22,19 +22,28 @@
       <div class="col-6 field">
         <div class="field-label-wrap">
           <label>Usuario (login) *</label>
+          <span class="field-hint">Ej. jose, walter.aguilar — no use el documento</span>
         </div>
-        <input type="text" [ngModel]="form().username" (ngModelChange)="patch('username', $event)" />
+        <input type="text" [ngModel]="form().username" (ngModelChange)="patch('username', $event)" autocomplete="username" />
       </div>
       <div class="col-6 field">
         <div class="field-label-wrap">
           <label>Contraseña <span *ngIf="!editando()">*</span></label>
           <span class="field-hint" *ngIf="editando()">Vacío = no cambiar</span>
-          <span class="field-hint field-hint--spacer" *ngIf="!editando()">&nbsp;</span>
         </div>
         <input type="password" [ngModel]="form().password" (ngModelChange)="patch('password', $event)" />
       </div>
     </div>
     <div class="row">
+      <div class="col-4">
+        <label>Documento</label>
+        <input
+          type="text"
+          [ngModel]="form().numeroDocumento"
+          (ngModelChange)="patch('numeroDocumento', $event)"
+          placeholder="CC / TI (también sirve para login)"
+        />
+      </div>
       <div class="col-4">
         <label>Nombres</label>
         <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch('nombres', $event)" />
@@ -76,6 +85,7 @@
     <thead>
       <tr>
         <th>Usuario</th>
+        <th>Documento</th>
         <th>Nombre</th>
         <th>Rol</th>
         <th>Estado</th>
@@ -84,7 +94,8 @@
     </thead>
     <tbody>
       <tr *ngFor="let u of usuarios()">
-        <td class="mono">{{ u.username }}</td>
+        <td class="mono">{{ loginLabel(u) }}</td>
+        <td class="mono sm">{{ docLabel(u) || '—' }}</td>
         <td>{{ (u.nombres || '') + ' ' + (u.apellidos || '') }}</td>
         <td>{{ labelRol(u.rol) }}</td>
         <td>
@@ -111,7 +122,7 @@
         </td>
       </tr>
       <tr *ngIf="usuarios().length === 0">
-        <td colspan="5" class="empty">No hay usuarios.</td>
+        <td colspan="6" class="empty">No hay usuarios.</td>
       </tr>
     </tbody>
   </table>
@@ -121,10 +132,11 @@
       <header class="card-title"><h3>{{ nombreCompleto(u) }}</h3></header>
       <div class="card-body">
         <div class="entity-badge-wrap">
-          <div class="entity-badge tone-purple">{{ (u.username || '?').slice(0, 2).toUpperCase() }}</div>
+          <div class="entity-badge tone-purple">{{ loginLabel(u).slice(0, 2).toUpperCase() }}</div>
         </div>
         <div class="card-main">
-          <div class="card-doc mono">{{ u.username }}</div>
+          <div class="card-doc mono">{{ loginLabel(u) }}</div>
+          <div class="card-sub mono" *ngIf="docLabel(u)">Doc. {{ docLabel(u) }}</div>
           <div class="card-tags">
             <span class="cap cap-sm">{{ labelRol(u.rol) }}</span>
             <span class="badge" [class.ok]="u.activo !== false" [class.warn]="u.activo === false">

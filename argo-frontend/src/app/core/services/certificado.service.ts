@@ -17,6 +17,8 @@ export interface CertificadoCrearDto {
 }
 
 export interface CertificadoActualizarDto {
+  /** Regular | Jornada Capacitacion */
+  tipoCertificado?: string;
   encabezado?: string;
   numActa?: string;
   numFolio?: string;

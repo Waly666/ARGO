@@ -4,7 +4,8 @@ export type TipoCertificadoId =
   | 'competencias'
   | 'diplomado'
   | 'licencia'
-  | 'mercancias_peligrosas';
+  | 'mercancias_peligrosas'
+  | 'jornada_capacitacion';
 
 export type OrientacionCertificado = 'vertical' | 'horizontal';
 
@@ -19,6 +20,7 @@ export const TIPOS_CERTIFICADO: { id: TipoCertificadoId; label: string }[] = [
   { id: 'competencias', label: 'Capacitación por competencias' },
   { id: 'diplomado', label: 'Diplomados' },
   { id: 'licencia', label: 'Certificación licencia' },
+  { id: 'jornada_capacitacion', label: 'Jornada Capacitacion' },
   { id: 'mercancias_peligrosas', label: 'Mercancías peligrosas' },
 ];
 

@@ -1,9 +1,21 @@
 const mongoose = require('mongoose');
+const { TIPOS_REGULAR_JORNADA, TIPO_REGULAR_JORNADA_DEFAULT } = require('../constants/tipoRegularJornada');
 
 const CertificadoSchema = new mongoose.Schema(
   {
     numDoc:        { type: Number, required: true, index: true },
-    idLiquidacion: { type: mongoose.Schema.Types.ObjectId, ref: 'Liquidacion', required: true, unique: true },
+    idLiquidacion: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Liquidacion',
+      default: null,
+      sparse: true,
+      unique: true,
+    },
+    idContrato: { type: mongoose.Schema.Types.ObjectId, ref: 'Contratacion', default: null, index: true },
+    /** Jornada donde se completó y emitió el certificado (capacitación). */
+    idJornada: { type: mongoose.Schema.Types.ObjectId, ref: 'JornadaCap', default: null, index: true },
+    generadoAutoJornada: { type: Boolean, default: false },
+    horasCert: { type: String, trim: true, default: '' },
     idProg:        { type: String, required: true, trim: true },
     numActa:       { type: String, trim: true },
     numFolio:      { type: String, trim: true },
@@ -15,7 +27,15 @@ const CertificadoSchema = new mongoose.Schema(
     codigoCert:    { type: String, trim: true, index: true },
     idPlantilla:   { type: mongoose.Schema.Types.ObjectId, ref: 'PlantillaCertificado', default: null },
     orientacion:   { type: String, enum: ['vertical', 'horizontal'], default: 'vertical' },
-    tipoCertificado: { type: String, trim: true, default: '' },
+    /** Formato/plantilla: curso, tecnico, competencias, … */
+    tipoFormatoCert: { type: String, trim: true, default: '', index: true },
+    /** Categoría: Regular | Jornadas de Capacitación */
+    tipoCertificado: {
+      type: String,
+      enum: TIPOS_REGULAR_JORNADA,
+      default: TIPO_REGULAR_JORNADA_DEFAULT,
+      index: true,
+    },
     /** Nombre del curso / capacitación impreso en el certificado */
     encabezado: { type: String, trim: true, default: '' },
     idUsuario:     { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null },

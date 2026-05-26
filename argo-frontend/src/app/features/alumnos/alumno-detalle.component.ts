@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { AlumnoService } from '../../core/services/alumno.service';
 import { AlumnoStore } from '../../core/services/alumno-store.service';
@@ -13,6 +14,7 @@ import { CertificadosComponent } from './tabs/certificados.component';
 import { DocumentosComponent } from './tabs/documentos.component';
 import { environment } from '../../../environments/environment';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../core/utils/saldo-alerta.helpers';
+import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
 
 type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos';
 
@@ -40,15 +42,24 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   tab = signal<TabKey>('datos');
   loading = signal(false);
   esNuevo = signal(false);
+  modo = signal<ModoAlumnos>('general');
   uploads = environment.uploadsUrl;
+
+  rutas = computed(() => rutasAlumnos(this.modo()));
+  esJornadas = computed(() => this.modo() === 'jornadas');
 
   alumno = computed(() => this.store.alumno());
   nombreCompleto = computed(() => this.store.nombreCompleto());
   tituloPagina = computed(() => {
-    if (this.esNuevo()) return 'Nuevo alumno';
+    if (this.esNuevo()) {
+      return this.esJornadas() ? 'Nuevo alumno (Jornadas de Capacitación)' : 'Nuevo alumno';
+    }
     const n = this.nombreCompleto();
     return n || 'Ficha del alumno';
   });
+  etiquetaVolver = computed(() =>
+    this.esJornadas() ? '← Lista alumnos jornada' : '← Lista',
+  );
 
   tabs: { key: TabKey; label: string }[] = [
     { key: 'datos',        label: 'Datos Principales' },
@@ -112,6 +123,10 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    const modo: ModoAlumnos =
+      this.route.snapshot.data['modoAlumnos'] === 'jornadas' ? 'jornadas' : 'general';
+    this.modo.set(modo);
+
     this.route.queryParamMap.subscribe((q) => {
       const t = q.get('tab') as TabKey | null;
       if (t && this.tabs.some((x) => x.key === t) && (!this.esNuevo() || t === 'datos')) {
@@ -186,21 +201,28 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   }
 
   cargarAlumno(id: string) {
+    const idNorm = String(id || '').trim();
+    if (!idNorm) {
+      this.errorMsg.set('Identificador de alumno inválido.');
+      return;
+    }
     this.loading.set(true);
     this.errorMsg.set(null);
     this.docsPendientes.set([]);
     this.saldosPendientes.set([]);
-    this.alumnoSvc.porId(id).subscribe({
-      next: (a) => {
-        this.store.setAlumno(a);
-        this.loading.set(false);
-        this.tab.set('datos');
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.errorMsg.set(err?.error?.message || 'No se pudo cargar el alumno.');
-      },
-    });
+    this.alumnoSvc
+      .porId(idNorm)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (a) => {
+          this.store.setAlumno(a);
+          this.tab.set('datos');
+        },
+        error: (err) => {
+          this.store.clear();
+          this.errorMsg.set(err?.error?.message || 'No se pudo cargar el alumno.');
+        },
+      });
   }
 
   setTab(t: TabKey) {
@@ -229,7 +251,11 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   }
 
   volver() {
-    this.router.navigate(['/app/alumnos']);
+    void this.router.navigate([this.rutas().lista]);
+  }
+
+  irHubJornadas() {
+    void this.router.navigate([this.rutas().hubJornadas]);
   }
 
   fotoUrl(): string | null {

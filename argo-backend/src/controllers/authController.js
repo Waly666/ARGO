@@ -1,7 +1,35 @@
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 const { normalizarRol } = require('../utils/roles');
+const { findUsuarioPorLogin, passwordSugeridoParaUsuario } = require('../utils/usuarioLogin');
+
+async function validarPasswordUsuario(u, password) {
+  if (await u.compararPassword(password)) return true;
+
+  const digits = String(u.numeroDocumento ?? u.numero ?? '').replace(/\D/g, '');
+  const ult4 = digits.length >= 4 ? digits.slice(-4) : '';
+  const nick = String(u.nickName ?? '').trim();
+  const user = String(u.username ?? '').trim();
+
+  if (ult4 && password === nick && nick !== ult4) {
+    if (await u.compararPassword(ult4)) return true;
+  }
+  if (ult4 && password === ult4 && nick && nick !== ult4) {
+    if (await u.compararPassword(nick)) return true;
+  }
+  if (password === user && user !== ult4 && ult4) {
+    if (await u.compararPassword(ult4)) return true;
+  }
+
+  const sugerida = passwordSugeridoParaUsuario(u);
+  if (sugerida && sugerida !== password) {
+    if (await u.compararPassword(sugerida)) return true;
+  }
+
+  return false;
+}
 const { verificarAdminCredenciales } = require('../services/authVerify');
+const { enriquecerUsuarioDoc, enriquecerUsuarioPorId } = require('../services/authUsuario');
 
 function sign(u) {
   const rol = normalizarRol(u.rol);
@@ -14,22 +42,23 @@ function sign(u) {
 
 exports.login = async (req, res, next) => {
   try {
-    const { username, password } = req.body || {};
+    const username = String(req.body?.username ?? '').trim();
+    const password = String(req.body?.password ?? '');
     if (!username || !password) {
       return res.status(400).json({ message: 'Usuario y contraseña son requeridos' });
     }
-    const u = await Usuario.findOne({
-      username: String(username).trim().toLowerCase(),
-      activo: { $ne: false },
-    });
+    const u = await findUsuarioPorLogin(username);
     if (!u) return res.status(401).json({ message: 'Credenciales inválidas' });
 
-    const ok = await u.compararPassword(password);
-    if (!ok) return res.status(401).json({ message: 'Credenciales inválidas' });
+    const ok = await validarPasswordUsuario(u, password);
+    if (!ok) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
 
     u.rol = normalizarRol(u.rol);
     const token = sign(u);
-    return res.json({ token, user: u.toJSON() });
+    const userJson = await enriquecerUsuarioDoc(u);
+    return res.json({ token, user: userJson });
   } catch (e) {
     next(e);
   }
@@ -38,9 +67,9 @@ exports.login = async (req, res, next) => {
 exports.me = async (req, res, next) => {
   try {
     if (!req.user) return res.status(401).json({ message: 'No autenticado' });
-    const u = await Usuario.findById(req.user.sub);
-    if (!u) return res.status(404).json({ message: 'Usuario no encontrado' });
-    return res.json(u.toJSON());
+    const json = await enriquecerUsuarioPorId(req.user.sub);
+    if (!json) return res.status(404).json({ message: 'Usuario no encontrado' });
+    return res.json(json);
   } catch (e) {
     next(e);
   }

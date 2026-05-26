@@ -10,6 +10,8 @@ import type { DocumentosRequeridosRes, ValidacionDocumentosRes } from './config-
 export interface AlumnoDto {
   _id?: string;
   fechaReg?: string | Date;
+  /** Regular | Jornada Capacitacion */
+  tipoAlumno?: string;
   tipoDoc?: string;
   /** En BD/API es número; en formulario de edición suele mostrarse como string */
   numDoc: number | string;
@@ -138,12 +140,20 @@ export class AlumnoService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/alumnos`;
 
-  listar(opts: { q?: string; limit?: number; skip?: number } = {}): Observable<AlumnoListResponse> {
+  listar(opts: { q?: string; limit?: number; skip?: number; tipoAlumno?: string } = {}): Observable<AlumnoListResponse> {
     let params = new HttpParams();
     if (opts.q != null) params = params.set('q', opts.q);
     if (opts.limit != null) params = params.set('limit', opts.limit);
     if (opts.skip != null) params = params.set('skip', opts.skip);
+    if (opts.tipoAlumno != null && opts.tipoAlumno !== '') {
+      params = params.set('tipoAlumno', opts.tipoAlumno);
+    }
     return this.http.get<AlumnoListResponse>(this.base, { params });
+  }
+
+  /** Atajo para autocompletados (nombre o cédula). */
+  buscar(q: string, limit = 12): Observable<AlumnoListItem[]> {
+    return this.listar({ q, limit }).pipe(map((r) => r.items || []));
   }
 
   porDocumento(numDoc: number | string): Observable<AlumnoDto> {

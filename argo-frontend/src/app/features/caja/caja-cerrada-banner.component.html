@@ -1,0 +1,8 @@
+<div class="estado-caja" [class.alarm-blink]="blink">
+  <span class="estado-icon" aria-hidden="true">🔒</span>
+  <div class="estado-body">
+    <strong>Mi caja cerrada</strong>
+    <p>Abra su caja para registrar cobros y egresos del turno.</p>
+  </div>
+  <button type="button" class="btn-abrir sm" (click)="irAbrirCaja()">Abrir caja</button>
+</div>

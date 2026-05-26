@@ -6,6 +6,7 @@ const TIPOS = {
   DIPLOMADO: 'diplomado',
   LICENCIA: 'licencia',
   MERCANCIAS: 'mercancias_peligrosas',
+  JORNADA_CAPACITACION: 'jornada_capacitacion',
 };
 
 const TIPOS_VALIDOS = Object.values(TIPOS);
@@ -17,12 +18,22 @@ const TIPOS_LABEL = {
   [TIPOS.DIPLOMADO]: 'Diplomados',
   [TIPOS.LICENCIA]: 'Certificación licencia',
   [TIPOS.MERCANCIAS]: 'Mercancías peligrosas',
+  [TIPOS.JORNADA_CAPACITACION]: 'Jornada Capacitacion',
 };
 
 const ORIENTACIONES = ['vertical', 'horizontal'];
 
 const RE_MP =
   /mercanc[ií]as\s*peligrosas|peligrosas\s*clase|transporte\s*de\s*mercanc/i;
+
+const RE_JORNADA_CAP =
+  /jornadas?\s*de\s*capacitaci[oó]n|cap\s*jornada\s*capacitacion|jornada\s*capacitacion/i;
+
+function esCapJornadaCapacitacion(text) {
+  const t = norm(text);
+  if (!t) return false;
+  return RE_JORNADA_CAP.test(t) || (t.includes('jornada') && t.includes('capacitacion'));
+}
 
 function norm(s) {
   return String(s ?? '')
@@ -37,6 +48,7 @@ function normalizarTipoCertificado(v) {
   const s = String(v).trim();
   if (TIPOS_VALIDOS.includes(s)) return s;
   const n = norm(s.replace(/_/g, ' '));
+  if (esCapJornadaCapacitacion(n)) return TIPOS.JORNADA_CAPACITACION;
   if (n.includes('competenc')) return TIPOS.COMPETENCIAS;
   if (n.includes('diplomado')) return TIPOS.DIPLOMADO;
   if (n.includes('tecnico')) return TIPOS.TECNICO;
@@ -78,6 +90,7 @@ function normalizePlantillaPorTipo(raw) {
 function tipoDesdeTexto(text) {
   const t = norm(text);
   if (!t) return null;
+  if (esCapJornadaCapacitacion(t)) return TIPOS.JORNADA_CAPACITACION;
   if (t.includes('competenc')) return TIPOS.COMPETENCIAS;
   if (t.includes('diplomado')) return TIPOS.DIPLOMADO;
   if (t.includes('tecnico')) return TIPOS.TECNICO;
@@ -109,6 +122,7 @@ function clasificarPrograma(prog) {
 
   const rawTip = String(prog.idTipCap ?? '').trim();
   if (rawTip && !/^\d+$/.test(rawTip)) {
+    if (esCapJornadaCapacitacion(rawTip)) return TIPOS.JORNADA_CAPACITACION;
     const fromRaw = tipoDesdeTexto(rawTip);
     if (fromRaw) return fromRaw;
   }
@@ -125,6 +139,7 @@ async function clasificarProgramaAsync(prog, catTipoCapModel) {
   if (RE_MP.test(blob)) return TIPOS.MERCANCIAS;
 
   const tipLabel = await etiquetaIdTipCap(prog.idTipCap, catTipoCapModel);
+  if (esCapJornadaCapacitacion(tipLabel)) return TIPOS.JORNADA_CAPACITACION;
   const fromTip = tipoDesdeTexto(tipLabel);
   if (fromTip) return fromTip;
 
@@ -156,6 +171,7 @@ module.exports = {
   TIPOS_VALIDOS,
   TIPOS_LABEL,
   ORIENTACIONES,
+  esCapJornadaCapacitacion,
   clasificarPrograma,
   clasificarProgramaAsync,
   normalizarTipoCertificado,

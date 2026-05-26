@@ -4,7 +4,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 
 
@@ -36,6 +36,8 @@ import { NominaService, PeriodoNomina } from '../../core/services/nomina.service
 
 import { ReciboService } from '../../core/services/recibo.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
+import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import {
   tieneSoporteEgreso,
   tituloSoporteEgreso,
@@ -59,7 +61,7 @@ import {
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterLink],
 
   templateUrl: './egresos-admin.component.html',
 
@@ -87,6 +89,8 @@ export class EgresosAdminComponent implements OnInit {
 
   private confirm = inject(ConfirmDialogService);
   private cajaSvc = inject(CajaSesionService);
+  private cajaAlert = inject(CajaAperturaAlertService);
+  private cajaEstado = inject(CajaEstadoService);
 
 
 
@@ -129,6 +133,7 @@ export class EgresosAdminComponent implements OnInit {
   mostrarForm = signal(false);
   /** Ruta /caja/egresos/nuevo — solo formulario, vuelve a lista de sesión */
   modoSoloForm = signal(false);
+  returnUrl = signal<string | null>(null);
 
   archivoSoporte = signal<File | null>(null);
 
@@ -156,7 +161,6 @@ export class EgresosAdminComponent implements OnInit {
   previewGeneral = signal<ResumenCierreGeneral | null>(null);
   cierresGenerales = signal<CajaCierreGeneral[]>([]);
   fechaGenDesde = signal(new Date().toISOString().slice(0, 10));
-  fechaGenHasta = signal(new Date().toISOString().slice(0, 10));
   obsCierreGeneral = signal('');
   filtroHistDesde = signal(new Date().toISOString().slice(0, 10));
   filtroHistHasta = signal(new Date().toISOString().slice(0, 10));
@@ -271,6 +275,8 @@ export class EgresosAdminComponent implements OnInit {
 
       this.filtroNumeroDocumento.set(nd ? String(nd) : null);
 
+      this.returnUrl.set(qp.get('returnUrl'));
+
       this.cargar();
 
     });
@@ -289,7 +295,7 @@ export class EgresosAdminComponent implements OnInit {
         next: (e) => this.editar(e),
         error: (err) => {
           this.msg.set(err?.error?.message || 'No se pudo cargar el egreso');
-          void this.router.navigate(['/app/caja/egresos']);
+          this.volverTrasSoloForm();
         },
       });
     }
@@ -350,7 +356,7 @@ export class EgresosAdminComponent implements OnInit {
 
   cargarPreviewGeneral(): void {
     if (!this.isAdmin()) return;
-    this.cajaSvc.previewCierreGeneral(this.fechaGenDesde(), this.fechaGenHasta()).subscribe({
+    this.cajaSvc.previewCierreGeneral(this.fechaGenDesde()).subscribe({
       next: (r) => this.previewGeneral.set(r),
       error: (e) => this.msg.set(e?.error?.message || 'Error al calcular cierre'),
     });
@@ -361,8 +367,7 @@ export class EgresosAdminComponent implements OnInit {
     this.cajaLoading.set(true);
     this.cajaSvc
       .registrarCierreGeneral({
-        desde: this.fechaGenDesde(),
-        hasta: this.fechaGenHasta(),
+        fechaDia: this.fechaGenDesde(),
         observaciones: this.obsCierreGeneral() || undefined,
         forzar,
       })
@@ -419,6 +424,7 @@ export class EgresosAdminComponent implements OnInit {
         this.mostrarApertura.set(false);
         this.cajaLoading.set(false);
         this.msg.set('Caja abierta correctamente');
+        void this.cajaEstado.refrescar();
         this.cargarEstadoCaja();
       },
       error: (e) => {
@@ -667,9 +673,18 @@ export class EgresosAdminComponent implements OnInit {
     this.limpiarAutorizacionRetiro();
 
     if (this.modoSoloForm()) {
-      void this.router.navigate(['/app/caja/egresos']);
+      this.volverTrasSoloForm();
     }
 
+  }
+
+  private volverTrasSoloForm(): void {
+    const url = this.returnUrl();
+    if (url) {
+      void this.router.navigateByUrl(url);
+      return;
+    }
+    void this.router.navigate(['/app/caja/egresos']);
   }
 
 
@@ -812,7 +827,7 @@ export class EgresosAdminComponent implements OnInit {
 
 
 
-  guardar() {
+  async guardar(): Promise<void> {
 
     const f = this.form();
 
@@ -898,12 +913,8 @@ export class EgresosAdminComponent implements OnInit {
 
     }
 
-    if (!ed && !this.cajaAbierta()) {
-
-      this.msg.set('Debe abrir su caja antes de registrar egresos (Resumen del día → Abrir caja).');
-
-      return;
-
+    if (!ed) {
+      if (!(await this.cajaAlert.ensureAbierta('registrar egresos'))) return;
     }
 
     if (this.requiereAutorizacionSupervisor()) {
@@ -969,7 +980,7 @@ export class EgresosAdminComponent implements OnInit {
         this.mostrarForm.set(false);
 
         if (this.modoSoloForm()) {
-          void this.router.navigate(['/app/caja/egresos']);
+          this.volverTrasSoloForm();
           return;
         }
 

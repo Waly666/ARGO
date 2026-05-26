@@ -13,6 +13,7 @@ const {
   serviciosTienenLiquidaciones,
 } = require('../services/programaServicio');
 const { normalizarTipoCertificado } = require('../services/clasificacionCertificado');
+const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
 
 function usuario(req) {
   return req.user || {};
@@ -77,8 +78,14 @@ exports.crear = async (req, res, next) => {
     if (dup) return res.status(409).json({ message: `Ya existe el código ${codigoProg}` });
 
     const idPrograma = await maxNumericId(cat.programas, 'idPrograma');
-    const valorMatricula = num(body.tarifa1 ?? body.valorMatricula);
-    if (valorMatricula <= 0) {
+    const borradorTip = {
+      idTipCap: body.idTipCap,
+      tipoCertificado: normalizarTipoCertificado(body.tipoCertificado),
+      nombreProg,
+    };
+    const esJornada = await esProgramaJornadasCap(borradorTip);
+    const valorMatricula = esJornada ? 0 : num(body.tarifa1 ?? body.valorMatricula);
+    if (!esJornada && valorMatricula <= 0) {
       return res.status(400).json({ message: 'La tarifa 1 / valor de matrícula debe ser mayor a 0' });
     }
 
@@ -112,6 +119,17 @@ exports.crear = async (req, res, next) => {
     };
 
     const prog = await insertarCatalogo(cat.programas, progDoc);
+
+    if (esJornada) {
+      return res.status(201).json({
+        programa: prog,
+        servicio: null,
+        servicios: [],
+        message:
+          'Programa de jornadas de capacitación creado. No genera servicio de matrícula (capacitación sin cobro al alumno).',
+      });
+    }
+
     let servicios;
     try {
       servicios = await sincronizarServicioPrograma(prog, bodyServicio(body), usuario(req));
@@ -159,10 +177,24 @@ exports.actualizar = async (req, res, next) => {
       if (dup) return res.status(409).json({ message: 'Código de programa ya en uso' });
     }
 
-    const valorMatricula =
+    const valorMatriculaRaw =
       body.tarifa1 != null || body.valorMatricula != null
         ? num(body.tarifa1 ?? body.valorMatricula)
         : num(prog.valorMatricula);
+
+    const mergedTip = {
+      idTipCap: body.idTipCap ?? prog.idTipCap,
+      tipoCertificado:
+        body.tipoCertificado !== undefined
+          ? normalizarTipoCertificado(body.tipoCertificado)
+          : prog.tipoCertificado,
+      nombreProg,
+    };
+    const esJornada = await esProgramaJornadasCap(mergedTip);
+    const valorMatricula = esJornada ? 0 : valorMatriculaRaw;
+    if (!esJornada && valorMatricula <= 0) {
+      return res.status(400).json({ message: 'La tarifa 1 / valor de matrícula debe ser mayor a 0' });
+    }
 
     const user = usuario(req).username || 'sistema';
     const patch = {
@@ -204,6 +236,16 @@ exports.actualizar = async (req, res, next) => {
 
     await cat.programas.updateOne({ idPrograma: prog.idPrograma }, { $set: patch });
     const actualizado = await cat.programas.findOne({ idPrograma: prog.idPrograma }).lean();
+
+    if (esJornada) {
+      return res.json({
+        programa: actualizado,
+        servicio: null,
+        servicios: [],
+        message: 'Programa de jornadas guardado (sin servicio de matrícula).',
+      });
+    }
+
     const sync = await sincronizarServicioPrograma(actualizado, bodyServicio(body), usuario(req));
     const servicios = Array.isArray(sync) ? sync : sync ? [sync] : [];
     const matricula = servicios.filter((s) => s?.rolServicio !== 'hora_practica');

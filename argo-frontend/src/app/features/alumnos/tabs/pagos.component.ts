@@ -9,6 +9,7 @@ import { ReciboService, idIngreso } from '../../../core/services/recibo.service'
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
 import { CatalogoService } from '../../../core/services/catalogo.service';
 import { IngresoService } from '../../../core/services/ingreso.service';
+import { CajaAperturaAlertService } from '../../../core/services/caja-apertura-alert.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
 
@@ -37,6 +38,7 @@ export class PagosComponent {
   private ingSvc = inject(IngresoService);
   private reciboSvc = inject(ReciboService);
   private confirmSvc = inject(ConfirmDialogService);
+  private cajaAlert = inject(CajaAperturaAlertService);
 
   tiposPago = signal<Record<string, unknown>[]>(TIPOS_PAGO_DEF);
   cuentasBancarias = signal<Record<string, unknown>[]>([]);
@@ -190,12 +192,13 @@ export class PagosComponent {
     });
   }
 
-  registrar() {
+  async registrar(): Promise<void> {
     const nd = this.store.numDoc();
     if (!nd) {
       this.msg.set('Selecciona un alumno primero.');
       return;
     }
+    if (!(await this.cajaAlert.ensureAbierta('registrar cobros del alumno'))) return;
     if (!this.idLiquidacion()) {
       this.msg.set('Selecciona un ítem de liquidación.');
       return;
@@ -285,9 +288,10 @@ export class PagosComponent {
     if (ok) this.imprimirRecibo(ing);
   }
 
-  async reversar(p: any) {
+  async reversar(p: any): Promise<void> {
     const nd = this.store.numDoc();
     if (!nd) return;
+    if (!(await this.cajaAlert.ensureAbierta('reversar pagos del alumno'))) return;
     const ref = p.numRecibo ? ` «${p.numRecibo}»` : '';
     const ok = await this.confirmSvc.open({
       title: '¿Reversar este pago?',

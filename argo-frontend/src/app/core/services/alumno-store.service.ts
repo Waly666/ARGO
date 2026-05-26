@@ -26,8 +26,19 @@ export class AlumnoStore {
       this._alumno.set(null);
       return;
     }
-    const copy = { ...a };
+    const copy = { ...a } as AlumnoDto & Record<string, unknown>;
+    if (copy._id != null) copy._id = String(copy._id);
     if (copy.numDoc != null) copy.numDoc = formatNumDoc(copy.numDoc);
+    if (!String(copy.nombre1 || '').trim() && copy['nombres']) {
+      const p = String(copy['nombres']).trim().split(/\s+/).filter(Boolean);
+      copy.nombre1 = p[0] || '';
+      copy.nombre2 = copy.nombre2 || p.slice(1).join(' ');
+    }
+    if (!String(copy.apellido1 || '').trim() && copy['apellidos']) {
+      const p = String(copy['apellidos']).trim().split(/\s+/).filter(Boolean);
+      copy.apellido1 = p[0] || '';
+      copy.apellido2 = copy.apellido2 || p.slice(1).join(' ');
+    }
     this._alumno.set(copy);
   }
 

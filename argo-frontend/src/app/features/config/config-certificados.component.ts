@@ -149,12 +149,26 @@ export class ConfigCertificadosComponent implements OnInit {
         (ev.target as HTMLInputElement).value = '';
         this.cargarPlantillas();
         this.patchSlot(tipo, { id: p._id, orientacion: slot.orientacion });
-        this.msg.set('Formato cargado. Guarde la configuración.');
+        this.persistirSlotPlantilla(tipo);
       },
       error: (e) => {
         this.subiendo.set(null);
         this.msg.set(e?.error?.message || 'Error subiendo formato.');
       },
+    });
+  }
+
+  private persistirSlotPlantilla(tipo: TipoCertificadoId) {
+    const ppt = { ...(this.form().plantillaPorTipo || {}) };
+    this.cfgSvc.guardar({ plantillaPorTipo: ppt }).subscribe({
+      next: (c) => {
+        this.form.update((f) => ({
+          ...f,
+          plantillaPorTipo: { ...(c.plantillaPorTipo || {}) },
+        }));
+        this.msg.set(`Formato «${this.labelTipo(tipo)}» guardado. Ajuste el paso 2 si hace falta y pulse Guardar.`);
+      },
+      error: (e) => this.msg.set(e?.error?.message || 'Formato subido pero no se pudo guardar en la configuración.'),
     });
   }
 

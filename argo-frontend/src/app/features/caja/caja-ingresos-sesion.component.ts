@@ -19,6 +19,7 @@ import {
   CajaSesionService,
 
 } from '../../core/services/caja-sesion.service';
+import { resolverFormaPagoIngreso } from '../../core/utils/caja-forma-pago.util';
 
 import { IngresoService } from '../../core/services/ingreso.service';
 
@@ -37,6 +38,7 @@ import {
 } from '../../core/utils/capsule.util';
 
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 
 
 
@@ -65,6 +67,7 @@ export class CajaIngresosSesionComponent implements OnInit {
   private auth = inject(AuthService);
 
   private confirmSvc = inject(ConfirmDialogService);
+  private cajaAlert = inject(CajaAperturaAlertService);
 
   private router = inject(Router);
 
@@ -111,7 +114,7 @@ export class CajaIngresosSesionComponent implements OnInit {
   total = () => this.items().reduce((a, i) => a + (i.valor || 0), 0);
 
   formaPagoLabel(i: CajaIngresoItem): string {
-    return i.formaPago || i.tipoPagoDescr || '—';
+    return resolverFormaPagoIngreso(i);
   }
 
   refComprobante(i: CajaIngresoItem): string {
@@ -144,7 +147,8 @@ export class CajaIngresosSesionComponent implements OnInit {
     return i.tipoIngresoDescr || i.tipoIngreso || '—';
   }
 
-  nuevoIngresoCaja(): void {
+  async nuevoIngresoCaja(): Promise<void> {
+    if (!(await this.cajaAlert.ensureAbierta('registrar ingresos de caja'))) return;
     this.router.navigate(['/app/caja/ingresos/nuevo']);
   }
 
@@ -220,7 +224,8 @@ export class CajaIngresosSesionComponent implements OnInit {
 
 
 
-  cobrarAlumno(a: AlumnoListItem): void {
+  async cobrarAlumno(a: AlumnoListItem): Promise<void> {
+    if (!(await this.cajaAlert.ensureAbierta('registrar cobros'))) return;
     this.router.navigate(['/app/cobros-pendientes'], { queryParams: { q: String(a.numDoc ?? '') } });
   }
 
@@ -236,13 +241,7 @@ export class CajaIngresosSesionComponent implements OnInit {
 
   async reversar(i: CajaIngresoItem): Promise<void> {
 
-    if (!this.cajaAbierta()) {
-
-      this.msg.set('Debe tener la caja abierta para reversar cobros de esta sesión.');
-
-      return;
-
-    }
+    if (!(await this.cajaAlert.ensureAbierta('reversar cobros'))) return;
 
     const ref = i.numRecibo ? ` «${i.numRecibo}»` : '';
 

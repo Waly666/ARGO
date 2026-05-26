@@ -6,6 +6,11 @@ import { AuthService } from '../../core/services/auth.service';
 import { Usuario, UsuarioDto, UsuarioService } from '../../core/services/usuario.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import {
+  documentoUsuario,
+  esLoginNumerico,
+  loginMostrable,
+} from '../../core/utils/usuario-login.helpers';
 
 @Component({
   selector: 'argo-usuarios-admin',
@@ -36,6 +41,7 @@ export class UsuariosAdminComponent implements OnInit {
     email: '',
     rol: 'usuario',
     activo: true,
+    numeroDocumento: '',
   });
 
   ngOnInit(): void {
@@ -63,8 +69,11 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   nombreCompleto(u: Usuario): string {
-    return `${u.nombres || ''} ${u.apellidos || ''}`.trim() || u.username;
+    return `${u.nombres || ''} ${u.apellidos || ''}`.trim() || loginMostrable(u);
   }
+
+  loginLabel = loginMostrable;
+  docLabel = documentoUsuario;
 
   nuevo() {
     this.editando.set(null);
@@ -76,6 +85,7 @@ export class UsuariosAdminComponent implements OnInit {
       email: '',
       rol: 'usuario',
       activo: true,
+      numeroDocumento: '',
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
@@ -83,14 +93,16 @@ export class UsuariosAdminComponent implements OnInit {
 
   editar(u: Usuario) {
     this.editando.set(u);
+    const login = esLoginNumerico(u.username) ? '' : u.username;
     this.form.set({
-      username: u.username,
+      username: login,
       password: '',
       nombres: u.nombres || '',
       apellidos: u.apellidos || '',
       email: u.email || '',
       rol: u.rol || 'usuario',
       activo: u.activo !== false,
+      numeroDocumento: documentoUsuario(u),
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
@@ -109,7 +121,11 @@ export class UsuariosAdminComponent implements OnInit {
     const f = this.form();
     const ed = this.editando();
     if (!f.username?.trim()) {
-      this.msg.set('El usuario (login) es obligatorio.');
+      this.msg.set('El nombre de usuario (login) es obligatorio.');
+      return;
+    }
+    if (esLoginNumerico(f.username)) {
+      this.msg.set('Use un nombre de usuario (ej. jose o walter.aguilar), no el documento.');
       return;
     }
     if (!ed && (!f.password || f.password.length < 4)) {
@@ -143,7 +159,7 @@ export class UsuariosAdminComponent implements OnInit {
   async desactivar(u: Usuario) {
     const ok = await this.confirm.open({
       title: '¿Desactivar usuario?',
-      message: `El usuario «${u.username}» no podrá iniciar sesión.`,
+      message: `El usuario «${loginMostrable(u)}» no podrá iniciar sesión.`,
       variant: 'danger',
       confirmLabel: 'Desactivar',
     });
@@ -157,7 +173,7 @@ export class UsuariosAdminComponent implements OnInit {
   async borrar(u: Usuario) {
     const ok = await this.confirm.open({
       title: '¿Eliminar usuario?',
-      message: `Se borrará permanentemente «${u.username}». Esta acción no se puede deshacer.`,
+      message: `Se borrará permanentemente «${loginMostrable(u)}». Esta acción no se puede deshacer.`,
       variant: 'danger',
       icon: 'delete',
       confirmLabel: 'Sí, eliminar',

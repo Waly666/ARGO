@@ -4,27 +4,28 @@ const certCtrl = require('../controllers/configCertificadoController');
 const reqDocCtrl = require('../controllers/configRequisitosDocumentosController');
 const nominaCfgCtrl = require('../controllers/configNominaController');
 const upload = require('../middleware/upload');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-router.use(requireAuth, requireRole('admin'));
+router.use(requireAuth);
 
-router.get('/requisitos-documentos', reqDocCtrl.obtener);
-router.put('/requisitos-documentos', reqDocCtrl.actualizar);
+router.get('/requisitos-documentos', requirePermiso('config.requisitos'), reqDocCtrl.obtener);
+router.put('/requisitos-documentos', requirePermiso('config.requisitos'), reqDocCtrl.actualizar);
 
-router.get('/recibo', ctrl.obtenerRecibo);
-router.put('/recibo', ctrl.actualizarRecibo);
+router.get('/recibo', requirePermiso('config.recibos'), ctrl.obtenerRecibo);
+router.put('/recibo', requirePermiso('config.recibos'), ctrl.actualizarRecibo);
 
-router.get('/nomina', nominaCfgCtrl.obtener);
-router.put('/nomina', nominaCfgCtrl.actualizar);
-router.post('/nomina/restaurar', nominaCfgCtrl.restaurar);
+router.get('/nomina', requirePermiso('config.nomina'), nominaCfgCtrl.obtener);
+router.put('/nomina', requirePermiso('config.nomina'), nominaCfgCtrl.actualizar);
+router.post('/nomina/restaurar', requirePermiso('config.nomina'), nominaCfgCtrl.restaurar);
 
-router.get('/certificado', certCtrl.obtener);
-router.get('/certificado/layout-defaults', certCtrl.layoutDefaults);
-router.post('/certificado/vista-previa', certCtrl.vistaPrevia);
-router.put('/certificado', certCtrl.actualizar);
+router.get('/certificado', requirePermiso('config.certificados'), certCtrl.obtener);
+router.get('/certificado/layout-defaults', requirePermiso('config.certificados'), certCtrl.layoutDefaults);
+router.post('/certificado/vista-previa', requirePermiso('config.certificados'), certCtrl.vistaPrevia);
+router.put('/certificado', requirePermiso('config.certificados'), certCtrl.actualizar);
 router.put(
   '/certificado/firmas',
+  requirePermiso('config.certificados'),
   upload.certificados.fields([
     { name: 'firmaDirector', maxCount: 1 },
     { name: 'firmaInstructor', maxCount: 1 },

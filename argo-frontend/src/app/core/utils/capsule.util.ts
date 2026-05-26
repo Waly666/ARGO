@@ -123,8 +123,7 @@ export function capFormaPago(label?: string | null): string {
   const t = String(label ?? '').toLowerCase();
   if (!t || t === '—') return 'cap cap-slate cap-sm cap-text';
   if (t.includes('efect')) return 'cap cap-emerald cap-text';
-  if (t.includes('nequi')) return 'cap cap-pink cap-text';
-  if (t.includes('davi')) return 'cap cap-red cap-text';
+  if (t.includes('nequi') || t.includes('davi')) return 'cap cap-pink cap-text';
   if (t.includes('transf')) return 'cap cap-blue cap-text';
   if (t.includes('tarj') || t.includes('créd') || t.includes('cred')) return 'cap cap-purple cap-text';
   if (t.includes('cheq')) return 'cap cap-amber cap-text';

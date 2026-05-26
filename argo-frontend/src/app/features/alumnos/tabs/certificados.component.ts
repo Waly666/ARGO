@@ -9,7 +9,13 @@ import { AlumnoService } from '../../../core/services/alumno.service';
 import type { DocumentoPendienteRes } from '../../../core/services/config-requisitos-documentos.service';
 import { CertificadoService } from '../../../core/services/certificado.service';
 import { labelOrientacion, labelTipoCert } from '../../../core/constants/tipos-certificado';
-import { fechaInput } from '../catalogo.helpers';
+import {
+  TIPOS_ALUMNO_DEF,
+  TIPO_ALUMNO_DEFAULT,
+  TIPO_JORNADAS_CAPACITACION,
+  fechaInput,
+  normalizarTipoAlumno,
+} from '../catalogo.helpers';
 import {
   ConfigCertificadoService,
   PlantillaCertificado,
@@ -43,7 +49,10 @@ export class CertificadosComponent {
   observaciones = signal<string>('');
   fechaEmision = signal<string>('');
 
+  readonly tiposCertificadoCat = TIPOS_ALUMNO_DEF;
+
   editId = signal<string>('');
+  editTipoCertificado = signal<string>(TIPO_ALUMNO_DEFAULT);
   editEncabezado = signal<string>('');
   editNumActa = signal<string>('');
   editNumFolio = signal<string>('');
@@ -69,6 +78,13 @@ export class CertificadosComponent {
 
   labelTipo = labelTipoCert;
   labelOrientacion = labelOrientacion;
+
+  /** Al emitir: Jornada si el programa es Cap Jornada Capacitacion; si no, tipo del alumno */
+  tipoCertNuevo = computed(() => {
+    const es = this.elegibleSel();
+    if (es?.tipoFormatoCert === 'jornada_capacitacion') return TIPO_JORNADAS_CAPACITACION;
+    return normalizarTipoAlumno(this.store.alumno()?.tipoAlumno);
+  });
 
   constructor() {
     this.cfgCertSvc.listarPlantillasTodas().subscribe({
@@ -132,8 +148,8 @@ export class CertificadosComponent {
     const es = this.elegibleSel();
     if (!this.idPlantilla()) {
       this.setMsg(
-        es?.tipoCertificadoLabel
-          ? `No hay formato configurado para «${es.tipoCertificadoLabel}». Configúrelo en Config. Certificados.`
+        es?.tipoFormatoCertLabel
+          ? `No hay formato configurado para «${es.tipoFormatoCertLabel}». Configúrelo en Config. Certificados.`
           : 'No hay formato de certificado configurado.',
         true,
       );
@@ -180,6 +196,7 @@ export class CertificadosComponent {
 
   abrirEditar(c: any) {
     this.editId.set(c._id);
+    this.editTipoCertificado.set(normalizarTipoAlumno(c.tipoCertificado));
     this.editEncabezado.set(c.encabezado || c.nomCert || c.programaDescr || '');
     this.editNumActa.set(c.numActa || '');
     this.editNumFolio.set(c.numFolio || '');
@@ -206,6 +223,7 @@ export class CertificadosComponent {
     this.msg.set(null);
     this.certSvc
       .actualizar(id, {
+        tipoCertificado: normalizarTipoAlumno(this.editTipoCertificado()),
         encabezado: this.editEncabezado() || undefined,
         numActa: this.editNumActa() || undefined,
         numFolio: this.editNumFolio() || undefined,

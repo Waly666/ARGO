@@ -265,7 +265,20 @@
   }
 }
 
-.tab-body { min-height: 200px; }
+.tab-body {
+  min-height: 200px;
+  position: relative;
+
+  &.is-loading {
+    min-height: 120px;
+  }
+}
+
+.tab-loading {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-soft);
+}
 
 .loading {
   text-align: center;

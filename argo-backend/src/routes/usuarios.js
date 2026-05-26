@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/usuarioController');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-router.use(requireAuth, requireRole('admin'));
+router.use(requireAuth, requirePermiso('config.usuarios'));
 
 router.get('/roles', ctrl.roles);
 router.get('/', ctrl.listar);

@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
+import { CajaEstadoService } from '../../core/services/caja-estado.service';
+import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { IngresoService } from '../../core/services/ingreso.service';
 import {
@@ -42,6 +44,8 @@ export class CajaCobrosPendientesComponent implements OnInit {
   private ingSvc = inject(IngresoService);
   private catSvc = inject(CatalogoService);
   private cajaSvc = inject(CajaSesionService);
+  private cajaEstado = inject(CajaEstadoService);
+  private cajaAlert = inject(CajaAperturaAlertService);
   private reciboSvc = inject(ReciboService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmDialogService);
@@ -92,10 +96,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
       error: () => this.cuentasBancarias.set([]),
     });
 
-    this.cajaSvc.activa().subscribe({
-      next: (r) => this.cajaAbierta.set(!!r.abierta),
-      error: () => this.cajaAbierta.set(false),
-    });
+    void this.cajaEstado.refrescar().then((ok) => this.cajaAbierta.set(ok));
 
     const q = this.route.snapshot.queryParamMap.get('q') || this.route.snapshot.queryParamMap.get('doc');
     if (q) this.busqueda.set(q);
@@ -212,13 +213,10 @@ export class CajaCobrosPendientesComponent implements OnInit {
     if (match) this.idCuentaBancaria.set(this.cuentaValor(match));
   }
 
-  registrar(): void {
+  async registrar(): Promise<void> {
     const it = this.seleccionado();
     if (!it) return;
-    if (!this.cajaAbierta()) {
-      this.msg.set('Abra su caja en Resumen del día antes de registrar cobros.');
-      return;
-    }
+    if (!(await this.cajaAlert.ensureAbierta('registrar cobros'))) return;
     if (!this.valor() || this.valor() <= 0) {
       this.msg.set('Valor del pago inválido.');
       return;

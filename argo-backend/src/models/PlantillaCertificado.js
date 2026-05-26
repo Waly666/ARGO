@@ -6,7 +6,15 @@ const PlantillaCertificadoSchema = new mongoose.Schema(
     /** curso | tecnico | competencias | diplomado | licencia | mercancias_peligrosas */
     tipoCertificado: {
       type: String,
-      enum: ['curso', 'tecnico', 'competencias', 'diplomado', 'licencia', 'mercancias_peligrosas'],
+      enum: [
+        'curso',
+        'tecnico',
+        'competencias',
+        'diplomado',
+        'licencia',
+        'mercancias_peligrosas',
+        'jornada_capacitacion',
+      ],
       default: 'curso',
       index: true,
     },

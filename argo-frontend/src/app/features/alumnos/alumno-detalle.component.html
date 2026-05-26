@@ -1,7 +1,8 @@
 <section class="detalle-page">
   <header class="page-head card">
     <div class="head-left">
-      <button type="button" class="ghost back" (click)="volver()">← Lista</button>
+      <button type="button" class="ghost back" (click)="volver()">{{ etiquetaVolver() }}</button>
+      <button type="button" class="ghost back" *ngIf="esJornadas()" (click)="irHubJornadas()">← Jornadas</button>
 
       <div class="head-profile" *ngIf="!esNuevo() && alumno() as a">
         <div class="current">
@@ -59,20 +60,21 @@
       </div>
 
       <div class="title-block" *ngIf="esNuevo()">
-        <h1>Nuevo alumno</h1>
-        <p>Complete los datos principales y guarde para habilitar matrículas y pagos.</p>
+        <h1>{{ tituloPagina() }}</h1>
+        <p *ngIf="!esJornadas()">Complete los datos principales y guarde para habilitar matrículas y pagos.</p>
+        <p *ngIf="esJornadas()">Alta de alumno para jornadas de capacitación. Al guardar volverá a la lista de alumnos jornada.</p>
       </div>
     </div>
   </header>
 
-  <div class="loading card" *ngIf="loading()">Cargando alumno…</div>
+  <div class="loading card" *ngIf="loading() && !esNuevo() && !store.hasAlumno()">Cargando alumno…</div>
 
-  <div class="card err" *ngIf="errorMsg() && !loading()">
+  <div class="card err" *ngIf="errorMsg()">
     {{ errorMsg() }}
     <button type="button" class="ghost" (click)="volver()">Volver a lista</button>
   </div>
 
-  <ng-container *ngIf="!loading() && !errorMsg()">
+  <ng-container *ngIf="!errorMsg() && (esNuevo() || store.hasAlumno())">
     <nav class="tabs">
       <button
         *ngFor="let t of tabs"
@@ -90,8 +92,12 @@
       </button>
     </nav>
 
-    <div class="tab-body">
-      <argo-datos-principales       *ngIf="tab() === 'datos'"></argo-datos-principales>
+    <div class="tab-body" [class.is-loading]="loading()">
+      <div class="tab-loading" *ngIf="loading() && tab() === 'datos'">Actualizando datos…</div>
+      <argo-datos-principales
+        *ngIf="tab() === 'datos'"
+        [alumno]="store.alumno()"
+        [modo]="modo()"></argo-datos-principales>
       <argo-servicios                *ngIf="tab() === 'servicios'"></argo-servicios>
       <argo-pagos                    *ngIf="tab() === 'pagos'"></argo-pagos>
       <argo-certificados             *ngIf="tab() === 'certificados'"></argo-certificados>

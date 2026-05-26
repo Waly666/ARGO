@@ -7,11 +7,15 @@ import { environment } from '../../../environments/environment';
 export interface Usuario {
   _id: string;
   username: string;
+  nickName?: string;
   nombres?: string;
   apellidos?: string;
   email?: string;
   rol?: string;
   activo?: boolean;
+  idEmpleado?: number | null;
+  numero?: number | null;
+  numeroDocumento?: string;
 }
 
 export interface UsuarioDto {
@@ -22,6 +26,8 @@ export interface UsuarioDto {
   email?: string;
   rol?: string;
   activo?: boolean;
+  numeroDocumento?: string;
+  numero?: number;
 }
 
 @Injectable({ providedIn: 'root' })

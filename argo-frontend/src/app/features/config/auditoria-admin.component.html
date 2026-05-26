@@ -1,115 +1,306 @@
 <section class="auditoria-page admin-list-page card">
   <header class="page-head">
     <div>
-      <h1>Auditoría del sistema</h1>
+      <h1>
+        Monitoreo y auditoría
+        @if (
+          autoRefresh() &&
+          (tab() === 'enLinea' || (tab() === 'historial' && historialPage() === 1))
+        ) {
+          <span class="live-badge" aria-live="polite">
+            <span class="live-dot"></span>
+            En vivo
+          </span>
+        }
+      </h1>
       <p class="hint">
-        Registro de creaciones, modificaciones y eliminaciones con usuario, fecha, ruta y campos
-        modificados. También se guarda copia diaria en archivos del servidor.
+        Usuarios con sesión validada en la aplicación, qué están haciendo ahora y el historial de
+        peticiones (más reciente primero). Los cambios en datos se registran aparte en la pestaña de
+        auditoría.
       </p>
+      @if (ultimaActualizacion(); as ts) {
+        <p class="ultima-sync">
+          Última actualización: {{ ts | date: 'HH:mm:ss' }}
+          @if (actualizando()) {
+            <span class="sync-spin"> · actualizando…</span>
+          }
+        </p>
+      }
     </div>
   </header>
 
-  <form class="filtros" (ngSubmit)="page.set(1); cargar()">
-    <label>
-      Desde
-      <input type="date" [(ngModel)]="filtros.desde" name="desde" />
-    </label>
-    <label>
-      Hasta
-      <input type="date" [(ngModel)]="filtros.hasta" name="hasta" />
-    </label>
-    <label>
-      Usuario
-      <input type="text" [(ngModel)]="filtros.usuario" name="usuario" placeholder="usuario" />
-    </label>
-    <label>
-      Acción
-      <select [(ngModel)]="filtros.accion" name="accion">
-        <option value="">Todas</option>
-        <option value="crear">crear</option>
-        <option value="modificar">modificar</option>
-        <option value="eliminar">eliminar</option>
-        <option value="apertura_caja">apertura_caja</option>
-        <option value="cierre_caja">cierre_caja</option>
-      </select>
-    </label>
-    <label>
-      Entidad
-      <input type="text" [(ngModel)]="filtros.entidad" name="entidad" placeholder="ingreso, egreso…" />
-    </label>
-    <button type="submit" class="primary">Buscar</button>
-    <div class="view-toggle" role="group" aria-label="Modo de vista">
-      <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
-      <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
-    </div>
-  </form>
+  <nav class="tabs" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      [class.active]="tab() === 'enLinea'"
+      (click)="setTab('enLinea')"
+    >
+      En línea ahora
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [class.active]="tab() === 'historial'"
+      (click)="setTab('historial')"
+    >
+      Historial de peticiones
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [class.active]="tab() === 'cambios'"
+      (click)="setTab('cambios')"
+    >
+      Cambios en datos
+    </button>
+  </nav>
 
-  <p class="meta" *ngIf="!cargando()">{{ total() }} registros — página {{ page() }} / {{ pages() }}</p>
-  <p *ngIf="cargando()">Cargando…</p>
-
-  <div class="tabla-wrap" *ngIf="!cargando() && vista() === 'lista'">
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Id</th>
-          <th>Fecha</th>
-          <th>Acción</th>
-          <th>Entidad</th>
-          <th>Usuario</th>
-          <th>Ruta</th>
-          <th>Resumen</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let r of items()">
-          <td>{{ r.idAuditoria }}</td>
-          <td>{{ r.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-          <td><span class="badge">{{ r.accion }}</span></td>
-          <td>{{ r.entidad }} {{ r.idEntidad ? '#' + r.idEntidad : '' }}</td>
-          <td>{{ r.usuario }}</td>
-          <td class="ruta">{{ r.rutaBase || r.ruta }}</td>
-          <td>{{ r.resumen }}</td>
-          <td><button type="button" class="ghost sm" (click)="verDetalle(r)">Detalle</button></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="cards-grid" *ngIf="!cargando() && vista() === 'cards'">
-    <article class="list-card" *ngFor="let r of items()">
-      <header class="card-title"><h3>{{ r.accion }} — {{ r.entidad }}</h3></header>
-      <div class="card-body">
-        <div class="entity-badge-wrap">
-          <div class="entity-badge tone-amber">#{{ r.idAuditoria }}</div>
-        </div>
-        <div class="card-main">
-          <dl class="card-fields">
-            <div><dt>Fecha</dt><dd>{{ r.fecha | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
-            <div><dt>Usuario</dt><dd>{{ r.usuario }}</dd></div>
-            <div class="span-2"><dt>Resumen</dt><dd>{{ r.resumen }}</dd></div>
-            <div class="span-2"><dt>Ruta</dt><dd class="truncate">{{ r.rutaBase || r.ruta }}</dd></div>
-          </dl>
-        </div>
+  @if (tab() === 'enLinea') {
+    <div class="panel-en-linea">
+      <div class="toolbar">
+        <label>
+          Ventana (minutos)
+          <select
+            [ngModel]="ventanaMinutos()"
+            (ngModelChange)="ventanaMinutos.set($event); cargarActivos()"
+            name="ventana"
+          >
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="15">15</option>
+            <option [ngValue]="30">30</option>
+          </select>
+        </label>
+        <button type="button" class="ghost" (click)="cargarActivos()">Actualizar</button>
+        <label class="check-auto">
+          <input type="checkbox" [checked]="autoRefresh()" (change)="toggleAutoRefresh()" />
+          Tiempo real (cada 3 s)
+        </label>
       </div>
-      <footer class="card-foot">
-        <span class="card-hint">Auditoría del sistema</span>
-        <div class="card-actions">
-          <button type="button" class="act open" (click)="verDetalle(r)">Detalle</button>
-        </div>
-      </footer>
-    </article>
-    <div class="empty cards-empty" *ngIf="!items().length">Sin registros.</div>
-  </div>
 
-  <div class="paginacion">
-    <button type="button" class="ghost" (click)="paginaAnterior()" [disabled]="page() <= 1">
-      Anterior
-    </button>
-    <button type="button" class="ghost" (click)="paginaSiguiente()" [disabled]="page() >= pages()">
-      Siguiente
-    </button>
-  </div>
+      @if (cargandoActivos() && !activos().length) {
+        <p>Cargando usuarios activos…</p>
+      } @else if (!activos().length) {
+        <p class="empty">No hay usuarios con actividad en los últimos {{ ventanaMinutos() }} minutos.</p>
+      } @else {
+        <p class="meta">{{ activos().length }} usuario(s) con sesión validada reciente</p>
+        <div class="activos-grid">
+          @for (u of activos(); track u.idUsuario) {
+            <article class="activo-card">
+              <header>
+                <h3>{{ u.nombreUsuario || u.usuario }}</h3>
+                <span class="badge en-linea">En línea</span>
+              </header>
+              <dl>
+                <div><dt>Usuario</dt><dd>{{ u.usuario }}</dd></div>
+                <div><dt>Rol</dt><dd>{{ u.rol || '—' }}</dd></div>
+                <div class="span-2"><dt>Haciendo ahora</dt><dd class="actividad-ahora">{{ u.ultimaActividad }}</dd></div>
+                <div><dt>Última petición</dt><dd>{{ u.ultimoMetodo }} {{ u.ultimaRuta }}</dd></div>
+                <div>
+                  <dt>Hace</dt>
+                  <dd>{{ u.ultimaFecha | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+                </div>
+                <div><dt>Peticiones (ventana)</dt><dd>{{ u.peticionesRecientes }}</dd></div>
+                <div>
+                  <dt>HTTP</dt>
+                  <dd><span [class]="codigoClase(u.ultimoCodigo)">{{ u.ultimoCodigo }}</span></dd>
+                </div>
+              </dl>
+            </article>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (tab() === 'historial') {
+    <form class="filtros" (ngSubmit)="buscarHistorial()">
+      <label>
+        Desde
+        <input type="date" [(ngModel)]="filtrosHistorial.desde" name="hDesde" />
+      </label>
+      <label>
+        Hasta
+        <input type="date" [(ngModel)]="filtrosHistorial.hasta" name="hHasta" />
+      </label>
+      <label>
+        Usuario
+        <input
+          type="text"
+          [(ngModel)]="filtrosHistorial.usuario"
+          name="hUsuario"
+          placeholder="nick de login"
+        />
+      </label>
+      <button type="submit" class="primary">Buscar</button>
+    </form>
+
+    <div class="toolbar historial-toolbar">
+      <label class="check-auto">
+        <input type="checkbox" [checked]="autoRefresh()" (change)="toggleAutoRefresh()" />
+        Tiempo real en página 1 (cada 3 s)
+      </label>
+      <button type="button" class="ghost" (click)="cargarHistorial()">Actualizar</button>
+    </div>
+
+    <p class="meta" *ngIf="!cargandoHistorial() || historialItems().length">
+      {{ historialTotal() }} peticiones — página {{ historialPage() }} / {{ historialPages() }}
+      <span class="orden-hint">(más reciente → más antiguo)</span>
+    </p>
+    <p *ngIf="cargandoHistorial() && !historialItems().length">Cargando historial…</p>
+
+    <div class="historial-feed" *ngIf="historialItems().length || !cargandoHistorial()">
+      <article class="activo-card historial-card" *ngFor="let r of historialItems()">
+        <header>
+          <h3>{{ r.nombreUsuario || r.usuario || '—' }}</h3>
+          <span class="badge metodo">{{ r.metodo }}</span>
+        </header>
+        <p class="actividad-ahora">{{ r.actividad }}</p>
+        <dl>
+          <div class="span-2">
+            <dt>Fecha</dt>
+            <dd>{{ r.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+          </div>
+          <div class="span-2">
+            <dt>Ruta</dt>
+            <dd class="ruta-dd">{{ r.rutaBase || r.ruta }}</dd>
+          </div>
+          <div>
+            <dt>HTTP</dt>
+            <dd><span [class]="codigoClase(r.codigoHttp)">{{ r.codigoHttp }}</span></dd>
+          </div>
+          <div>
+            <dt>Duración</dt>
+            <dd>{{ r.duracionMs }} ms</dd>
+          </div>
+        </dl>
+      </article>
+      <div class="empty" *ngIf="!historialItems().length && !cargandoHistorial()">
+        Sin peticiones registradas.
+      </div>
+    </div>
+
+    <div class="paginacion">
+      <button type="button" class="ghost" (click)="historialAnterior()" [disabled]="historialPage() <= 1">
+        Anterior
+      </button>
+      <button
+        type="button"
+        class="ghost"
+        (click)="historialSiguiente()"
+        [disabled]="historialPage() >= historialPages()"
+      >
+        Siguiente
+      </button>
+    </div>
+  }
+
+  @if (tab() === 'cambios') {
+    <form class="filtros" (ngSubmit)="page.set(1); cargar()">
+      <label>
+        Desde
+        <input type="date" [(ngModel)]="filtros.desde" name="desde" />
+      </label>
+      <label>
+        Hasta
+        <input type="date" [(ngModel)]="filtros.hasta" name="hasta" />
+      </label>
+      <label>
+        Usuario
+        <input type="text" [(ngModel)]="filtros.usuario" name="usuario" placeholder="usuario" />
+      </label>
+      <label>
+        Acción
+        <select [(ngModel)]="filtros.accion" name="accion">
+          <option value="">Todas</option>
+          <option value="crear">crear</option>
+          <option value="modificar">modificar</option>
+          <option value="eliminar">eliminar</option>
+          <option value="apertura_caja">apertura_caja</option>
+          <option value="cierre_caja">cierre_caja</option>
+        </select>
+      </label>
+      <label>
+        Entidad
+        <input type="text" [(ngModel)]="filtros.entidad" name="entidad" placeholder="ingreso, egreso…" />
+      </label>
+      <button type="submit" class="primary">Buscar</button>
+      <div class="view-toggle" role="group" aria-label="Modo de vista">
+        <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">
+          ☰ Lista
+        </button>
+        <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">
+          ▦ Cards
+        </button>
+      </div>
+    </form>
+
+    <p class="meta" *ngIf="!cargando()">{{ total() }} registros — página {{ page() }} / {{ pages() }}</p>
+    <p *ngIf="cargando()">Cargando…</p>
+
+    <div class="tabla-wrap" *ngIf="!cargando() && vista() === 'lista'">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Fecha</th>
+            <th>Acción</th>
+            <th>Entidad</th>
+            <th>Usuario</th>
+            <th>Ruta</th>
+            <th>Resumen</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of items()">
+            <td>{{ r.idAuditoria }}</td>
+            <td>{{ r.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+            <td><span class="badge">{{ r.accion }}</span></td>
+            <td>{{ r.entidad }} {{ r.idEntidad ? '#' + r.idEntidad : '' }}</td>
+            <td>{{ r.usuario }}</td>
+            <td class="ruta">{{ r.rutaBase || r.ruta }}</td>
+            <td>{{ r.resumen }}</td>
+            <td><button type="button" class="ghost sm" (click)="verDetalle(r)">Detalle</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cards-grid" *ngIf="!cargando() && vista() === 'cards'">
+      <article class="list-card" *ngFor="let r of items()">
+        <header class="card-title"><h3>{{ r.accion }} — {{ r.entidad }}</h3></header>
+        <div class="card-body">
+          <div class="entity-badge-wrap">
+            <div class="entity-badge tone-amber">#{{ r.idAuditoria }}</div>
+          </div>
+          <div class="card-main">
+            <dl class="card-fields">
+              <div><dt>Fecha</dt><dd>{{ r.fecha | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+              <div><dt>Usuario</dt><dd>{{ r.usuario }}</dd></div>
+              <div class="span-2"><dt>Resumen</dt><dd>{{ r.resumen }}</dd></div>
+              <div class="span-2"><dt>Ruta</dt><dd class="truncate">{{ r.rutaBase || r.ruta }}</dd></div>
+            </dl>
+          </div>
+        </div>
+        <footer class="card-foot">
+          <span class="card-hint">Auditoría del sistema</span>
+          <div class="card-actions">
+            <button type="button" class="act open" (click)="verDetalle(r)">Detalle</button>
+          </div>
+        </footer>
+      </article>
+      <div class="empty cards-empty" *ngIf="!items().length">Sin registros.</div>
+    </div>
+
+    <div class="paginacion">
+      <button type="button" class="ghost" (click)="paginaAnterior()" [disabled]="page() <= 1">Anterior</button>
+      <button type="button" class="ghost" (click)="paginaSiguiente()" [disabled]="page() >= pages()">
+        Siguiente
+      </button>
+    </div>
+  }
 </section>
 
 <div class="modal-backdrop" *ngIf="detalle() as d" (click)="cerrarDetalle()">

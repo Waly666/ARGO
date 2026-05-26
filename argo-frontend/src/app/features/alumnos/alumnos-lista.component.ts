@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, forkJoin, switchMap } from 'rxjs';
 
 import { AlumnoListItem, AlumnoService } from '../../core/services/alumno.service';
@@ -11,7 +11,9 @@ import {
   JORNADAS_DEF,
   buildCatalogoLabelMap,
   catalogoLabel,
+  TIPO_JORNADAS_CAPACITACION,
 } from './catalogo.helpers';
+import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
 import {
   capCelular,
   capDoc,
@@ -25,7 +27,8 @@ import { formatNumDoc } from '../../core/utils/num-doc.helpers';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 
 type VistaAlumnos = VistaLista;
-const VISTA_STORAGE_KEY = 'argo-alumnos-vista';
+const VISTA_STORAGE_KEY_GENERAL = 'argo-alumnos-vista';
+const VISTA_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-vista';
 
 @Component({
   selector: 'argo-alumnos-lista',
@@ -38,6 +41,12 @@ export class AlumnosListaComponent implements OnInit {
   private alumnoSvc = inject(AlumnoService);
   private catSvc = inject(CatalogoService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  /** general = menú Alumnos; jornadas = solo tipo Jornadas de Capacitación */
+  modo = signal<ModoAlumnos>('general');
+  rutas = computed(() => rutasAlumnos(this.modo()));
+  esJornadas = computed(() => this.modo() === 'jornadas');
 
   uploads = environment.uploadsUrl;
 
@@ -48,7 +57,7 @@ export class AlumnosListaComponent implements OnInit {
   query = signal('');
   page = signal(0);
   pageSize = 25;
-  vista = signal<VistaAlumnos>(readVistaLista(VISTA_STORAGE_KEY));
+  vista = signal<VistaAlumnos>('lista');
 
   loading = signal(false);
   items = signal<AlumnoListItem[]>([]);
@@ -66,6 +75,12 @@ export class AlumnosListaComponent implements OnInit {
   private load$ = new Subject<{ q: string; page: number }>();
 
   ngOnInit(): void {
+    const modo: ModoAlumnos =
+      this.route.snapshot.data['modoAlumnos'] === 'jornadas' ? 'jornadas' : 'general';
+    this.modo.set(modo);
+    const vistaKey = modo === 'jornadas' ? VISTA_STORAGE_KEY_JORNADA : VISTA_STORAGE_KEY_GENERAL;
+    this.vista.set(readVistaLista(vistaKey));
+
     forkJoin({
       jornada: this.catSvc.list<Record<string, unknown>>('jornada'),
       estadoCivil: this.catSvc.list<Record<string, unknown>>('estadoCivil'),
@@ -91,7 +106,15 @@ export class AlumnosListaComponent implements OnInit {
         debounceTime(280),
         switchMap(({ q, page }) => {
           this.loading.set(true);
-          return this.alumnoSvc.listar({ q, limit: this.pageSize, skip: page * this.pageSize });
+          const opts: { q: string; limit: number; skip: number; tipoAlumno?: string } = {
+            q,
+            limit: this.pageSize,
+            skip: page * this.pageSize,
+          };
+          if (this.modo() === 'jornadas') {
+            opts.tipoAlumno = TIPO_JORNADAS_CAPACITACION;
+          }
+          return this.alumnoSvc.listar(opts);
         }),
       )
       .subscribe({
@@ -122,7 +145,9 @@ export class AlumnosListaComponent implements OnInit {
 
   setVista(v: VistaAlumnos) {
     this.vista.set(v);
-    saveVistaLista(VISTA_STORAGE_KEY, v);
+    const vistaKey =
+      this.modo() === 'jornadas' ? VISTA_STORAGE_KEY_JORNADA : VISTA_STORAGE_KEY_GENERAL;
+    saveVistaLista(vistaKey, v);
   }
 
   iniciales(r: AlumnoListItem): string {
@@ -144,20 +169,24 @@ export class AlumnosListaComponent implements OnInit {
   }
 
   nuevo() {
-    this.router.navigate(['/app/alumnos/nuevo']);
+    void this.router.navigate([this.rutas().nuevo]);
   }
 
   abrir(item: AlumnoListItem) {
     const id = item?._id ? String(item._id) : '';
     if (!id) return;
-    this.router.navigate(['/app/alumnos', id]);
+    void this.router.navigate([this.rutas().ficha(id)]);
   }
 
   abrirTab(item: AlumnoListItem, tab: 'documentos' | 'pagos', ev: Event) {
     ev.stopPropagation();
     const id = item?._id ? String(item._id) : '';
     if (!id) return;
-    this.router.navigate(['/app/alumnos', id], { queryParams: { tab } });
+    void this.router.navigate([this.rutas().ficha(id)], { queryParams: { tab } });
+  }
+
+  irHubJornadas() {
+    void this.router.navigate([this.rutas().hubJornadas]);
   }
 
   tieneAlarmas(r: AlumnoListItem): boolean {

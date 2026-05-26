@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/catalogoController');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-const admin = requireRole('admin');
+const admin = requirePermiso('config.catalogos');
 
 router.use(requireAuth);
 

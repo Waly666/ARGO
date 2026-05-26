@@ -10,11 +10,35 @@ const HOST = process.env.HOST || '0.0.0.0';
 (async () => {
   try {
     await connectDB();
+    const { initRolesSistema } = require('./services/rolesPermisos');
+    await initRolesSistema();
     const { initConfigNomina } = require('./services/configNomina');
     await initConfigNomina();
     const { repararUsuariosNumeroNulo } = require('./services/empleadoUsuario');
     repararUsuariosNumeroNulo().catch((err) =>
       console.warn('[ARGO] reparar usuarios numero:', err.message),
+    );
+    const { migrarTipoAlumnoRegular } = require('./services/migrarTipoAlumno');
+    migrarTipoAlumnoRegular().catch((err) =>
+      console.warn('[ARGO] migrar tipoAlumno:', err.message),
+    );
+    const { migrarTipoCertificadoRegular } = require('./services/migrarTipoCertificado');
+    migrarTipoCertificadoRegular().catch((err) =>
+      console.warn('[ARGO] migrar tipoCertificado:', err.message),
+    );
+    const { migrarEstadosJornadaCap, migrarFechaClaseCap, migrarUrlforoClaseCap } = require('./services/estadoJornadaCap');
+    migrarEstadosJornadaCap().catch((err) =>
+      console.warn('[ARGO] migrar estados jornada:', err.message),
+    );
+    migrarFechaClaseCap().catch((err) =>
+      console.warn('[ARGO] migrar fechaClase:', err.message),
+    );
+    migrarUrlforoClaseCap().catch((err) =>
+      console.warn('[ARGO] migrar urlforo:', err.message),
+    );
+    const { migrarIdJornadaCertificados } = require('./services/migrarIdJornadaCertificados');
+    migrarIdJornadaCertificados().catch((err) =>
+      console.warn('[ARGO] migrar idJornada certificados:', err.message),
     );
     const { sincronizarDefaultsTipoEgreso } = require('./services/tipoEgresoNomina');
     sincronizarDefaultsTipoEgreso()

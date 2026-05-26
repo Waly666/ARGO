@@ -1,4 +1,5 @@
 const Usuario = require('../models/Usuario');
+const Empleado = require('../models/Empleado');
 const { normalizarRol } = require('../utils/roles');
 const { normalizarEmpleadoLegacy } = require('../utils/empleadoDoc');
 
@@ -40,7 +41,7 @@ function emailUsuario(emp) {
   return (e.correoCorporativo || e.correoPersonal || '').trim().toLowerCase();
 }
 
-/** Login = número de documento (solo dígitos, minúsculas). */
+/** Login = número de documento (solo dígitos). @deprecated Preferir usernameDesdeEmpleado */
 function usernameDesdeDocumento(emp) {
   const e = normalizarEmpleadoLegacy(emp);
   const doc = String(e.numeroDocumento || '').trim();
@@ -48,6 +49,46 @@ function usernameDesdeDocumento(emp) {
   if (digits) return digits.toLowerCase();
   const slug = slugAscii(doc);
   return slug || null;
+}
+
+function primerNombreSlug(emp) {
+  const e = normalizarEmpleadoLegacy(emp);
+  const raw = e.primerNombre || String(e.nombres || '').split(/\s+/)[0] || '';
+  return slugAscii(raw) || null;
+}
+
+function primerApellidoSlug(emp) {
+  const e = normalizarEmpleadoLegacy(emp);
+  const raw = e.primerApellido || String(e.apellidos || '').split(/\s+/)[0] || '';
+  return slugAscii(raw) || null;
+}
+
+/** Alias corto opcional (ej. jose, walter). */
+function nickNameDesdeEmpleado(emp) {
+  const prim = primerNombreSlug(emp);
+  if (prim && prim.length >= 2) return prim;
+  return null;
+}
+
+/** Usuario legible: nombre.apellido (único). El documento queda en numero/numeroDocumento. */
+async function usernameDesdeEmpleado(emp, exceptUserId = null) {
+  const e = normalizarEmpleadoLegacy(emp);
+  const prim = primerNombreSlug(e);
+  const apell = primerApellidoSlug(e);
+  let base = prim && apell ? `${prim}.${apell}` : prim || apell;
+  if (!base || base.length < 2) {
+    const digits = String(e.numeroDocumento || '').replace(/\D/g, '');
+    base = digits ? `u${digits.slice(-8)}` : `emp${e.idEmpleado || '0'}`;
+  }
+  const notSelf = exceptUserId ? { _id: { $ne: exceptUserId } } : {};
+  let candidate = String(base).toLowerCase();
+  for (let n = 0; n < 60; n += 1) {
+    const dup = await Usuario.findOne({ username: candidate, ...notSelf }).lean();
+    if (!dup) return candidate;
+    candidate = `${base}${n + 1}`.toLowerCase();
+  }
+  const digits = String(e.numeroDocumento || '').replace(/\D/g, '');
+  return `u${digits || e.idEmpleado || Date.now()}`.toLowerCase();
 }
 
 /**
@@ -64,7 +105,7 @@ function numeroDesdeDocumento(emp) {
 
 async function assertUsuarioDocumentoLibre(emp, exceptUserId) {
   const e = normalizarEmpleadoLegacy(emp);
-  const username = usernameDesdeDocumento(e);
+  const username = await usernameDesdeEmpleado(e, exceptUserId);
   const numero = numeroDesdeDocumento(e);
   if (!username || numero == null) {
     throw Object.assign(
@@ -113,6 +154,77 @@ async function cargarUsuarioPorId(id) {
  * Crea usuario de sistema para empleado con cargo Cajero o Instructor.
  * Usuario de login = numeroDocumento; campo `numero` = documento numérico (legacy).
  */
+async function desvincularUsuarioDeEmpleado(idEmpleado) {
+  const emp = await Empleado.findOne({ idEmpleado }).lean();
+  if (!emp?.idUsuario) return;
+  await Usuario.updateOne({ _id: emp.idUsuario }, { $unset: { idEmpleado: '' } });
+  await Empleado.updateOne(
+    { idEmpleado },
+    { $unset: { idUsuario: '' }, $set: { updatedAt: new Date() } },
+  );
+}
+
+/**
+ * Vincula un usuario ya existente al empleado (sin crear cuenta nueva).
+ */
+async function vincularUsuarioExistente(emp, usuarioId, { cargoNombre } = {}) {
+  if (!usuarioId) {
+    throw Object.assign(new Error('Debe seleccionar un usuario para vincular'), { status: 400 });
+  }
+  const e = normalizarEmpleadoLegacy(emp);
+  const usuario = await Usuario.findById(usuarioId);
+  if (!usuario) {
+    throw Object.assign(new Error('Usuario no encontrado'), { status: 404 });
+  }
+  if (usuario.idEmpleado && Number(usuario.idEmpleado) !== Number(e.idEmpleado)) {
+    throw Object.assign(
+      new Error(`El usuario ${usuario.username} ya está vinculado al empleado #${usuario.idEmpleado}`),
+      { status: 409 },
+    );
+  }
+  const otroEmp = await Empleado.findOne({
+    idUsuario: usuario._id,
+    idEmpleado: { $ne: e.idEmpleado },
+  }).lean();
+  if (otroEmp) {
+    throw Object.assign(
+      new Error(`Ese usuario ya está vinculado al empleado #${otroEmp.idEmpleado}`),
+      { status: 409 },
+    );
+  }
+  const rolEsperado = rolDesdeCargoNombre(cargoNombre);
+  await sincronizarDatosUsuario(usuario, e, rolEsperado || normalizarRol(usuario.rol));
+  return {
+    existente: true,
+    vinculado: true,
+    usuario: limpiarUsuario(usuario),
+    username: usuario.username,
+    rol: normalizarRol(usuario.rol),
+    idUsuario: usuario._id,
+  };
+}
+
+/**
+ * modoAcceso: 'auto' | 'ninguno' | 'vincular'
+ * - auto: crea o sincroniza usuario según cargo (Cajero/Instructor)
+ * - ninguno: empleado sin cuenta de login
+ * - vincular: enlaza idUsuarioExistente
+ */
+async function procesarUsuarioEmpleado(
+  emp,
+  { cargoNombre, creadoPor, modoAcceso = 'auto', idUsuarioExistente } = {},
+) {
+  const modo = String(modoAcceso || 'auto').toLowerCase();
+  if (modo === 'ninguno') {
+    await desvincularUsuarioDeEmpleado(emp.idEmpleado);
+    return null;
+  }
+  if (modo === 'vincular') {
+    return vincularUsuarioExistente(emp, idUsuarioExistente, { cargoNombre });
+  }
+  return asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor });
+}
+
 async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {}) {
   const e = normalizarEmpleadoLegacy(emp);
   const rol = rolDesdeCargoNombre(cargoNombre);
@@ -187,7 +299,6 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado) {
   const u = usuarioDoc;
   const e = normalizarEmpleadoLegacy(emp);
   const email = emailUsuario(e);
-  const username = usernameDesdeDocumento(e);
   const numero = numeroDesdeDocumento(e);
 
   u.nombres = nombresUsuario(e);
@@ -197,16 +308,22 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado) {
   u.idEmpleado = e.idEmpleado;
   u.numeroDocumento = String(e.numeroDocumento || '').trim();
 
-  if (username && numero != null) {
-    const dupLogin = await Usuario.findOne({ username, _id: { $ne: u._id } }).lean();
-    const dupNum = await Usuario.findOne({ numero, _id: { $ne: u._id } }).lean();
-    if (!dupLogin && !dupNum) {
-      u.username = username;
-      u.numero = numero;
-    }
-  } else if (numero != null && u.numero == null) {
+  const loginActual = String(u.username || '').trim();
+  const loginEsDocumento = /^\d+$/.test(loginActual);
+
+  if (numero != null) {
     const dupNum = await Usuario.findOne({ numero, _id: { $ne: u._id } }).lean();
     if (!dupNum) u.numero = numero;
+  }
+
+  if (loginEsDocumento || !loginActual) {
+    try {
+      const friendly = await usernameDesdeEmpleado(e, u._id);
+      const dupLogin = await Usuario.findOne({ username: friendly, _id: { $ne: u._id } }).lean();
+      if (!dupLogin) u.username = friendly;
+    } catch {
+      /* conservar login actual */
+    }
   }
 
   if (String(e.estado || '').toLowerCase() === 'retirado') u.activo = false;
@@ -239,7 +356,12 @@ async function repararUsuariosNumeroNulo() {
 module.exports = {
   rolDesdeCargoNombre,
   usernameDesdeDocumento,
+  usernameDesdeEmpleado,
+  nickNameDesdeEmpleado,
   numeroDesdeDocumento,
   asegurarUsuarioParaEmpleado,
+  procesarUsuarioEmpleado,
+  vincularUsuarioExistente,
+  desvincularUsuarioDeEmpleado,
   repararUsuariosNumeroNulo,
 };

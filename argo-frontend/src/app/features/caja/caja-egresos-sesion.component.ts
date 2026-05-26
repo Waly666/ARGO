@@ -20,6 +20,7 @@ import {
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 
 @Component({
   selector: 'argo-caja-egresos-sesion',
@@ -33,6 +34,7 @@ export class CajaEgresosSesionComponent implements OnInit {
   private egresoSvc = inject(EgresoService);
   private auth = inject(AuthService);
   private confirm = inject(ConfirmDialogService);
+  private cajaAlert = inject(CajaAperturaAlertService);
   private router = inject(Router);
 
   items = signal<CajaEgresoItem[]>([]);
@@ -98,7 +100,8 @@ export class CajaEgresosSesionComponent implements OnInit {
     return Number(e.idSesion) === Number(this.sesionId());
   }
 
-  nuevoEgreso(): void {
+  async nuevoEgreso(): Promise<void> {
+    if (!(await this.cajaAlert.ensureAbierta('registrar egresos'))) return;
     this.router.navigate(['/app/caja/egresos/nuevo']);
   }
 

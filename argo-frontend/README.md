@@ -1,6 +1,17 @@
-# ArgoFrontend
+# ARGO — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.26.
+SPA Angular 19 del sistema ARGO (CEAs). Documentación general del producto, arquitectura y permisos: **[../ARGO-CONTEXTO.md](../ARGO-CONTEXTO.md)** y **[../README.md](../README.md)**.
+
+Generado con [Angular CLI](https://github.com/angular/angular-cli) 19.2.26.
+
+## Inicio rápido (recomendado en el monorepo)
+
+```bash
+pnpm install
+pnpm start    # serve-lan en puerto 4200; API en :3000
+```
+
+`pnpm start:local` usa solo `ng serve` en localhost.
 
 ## Development server
 

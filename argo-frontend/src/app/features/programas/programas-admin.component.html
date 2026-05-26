@@ -3,12 +3,13 @@
     <div>
       <h1>Programas educativos</h1>
       <p class="hint">
-        Al crear un programa se genera el servicio de matrícula vinculado. Si indica <strong>semestres</strong>, se crean tantos servicios numerados (1 SEM, 2 SEM…) con el valor total repartido entre ellos.
+        Los programas con tipo <strong>Jornadas de Capacitación</strong> no generan servicio de matrícula (sin cobro al alumno).
+        El resto crea servicio vinculado al guardar; con <strong>semestres</strong> se crean servicios numerados (1 SEM, 2 SEM…).
         El campo <strong>nomCert</strong> es el nombre que aparece en el certificado del alumno.
         En <strong>Formato de certificado</strong> elige el tipo de plantilla definido en Config. Certificados.
       </p>
     </div>
-    <button type="button" class="primary" (click)="nuevo()" [disabled]="tiposCargando()">Nuevo programa</button>
+    <button type="button" class="primary" (click)="nuevo()" [disabled]="tiposCargando() || !puedeAgregarPrograma()">Nuevo programa</button>
   </header>
 
   <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
@@ -33,7 +34,7 @@
     [open]="modalAbierto()"
     [anchorTopPx]="modalTop()"
     [title]="modalTitulo()"
-    [subtitle]="editando() ? 'Datos del programa y servicio de matrícula.' : 'El código se asigna si lo deja vacío. El servicio se crea al guardar.'"
+    [subtitle]="modalSubtitulo()"
     [wide]="true"
     (closed)="cerrarModal()">
     <div class="modal-form">
@@ -104,9 +105,13 @@
             <label>Horas taller</label>
             <input type="number" min="0" [ngModel]="form().horasTaller" (ngModelChange)="patch('horasTaller', $event)" />
           </div>
-          <div class="col-2">
+          <div class="col-2" *ngIf="!esProgramaJornadasCapForm()">
             <label>Valor matrícula</label>
             <input type="number" min="0" [ngModel]="form().valorMatricula" (ngModelChange)="patch('valorMatricula', $event)" />
+          </div>
+          <div class="col-2" *ngIf="esProgramaJornadasCapForm()">
+            <label>Matrícula</label>
+            <input type="text" value="No aplica (sin cobro)" readonly class="readonly" />
           </div>
           <div class="col-2">
             <label>Vigencia (días)</label>
@@ -139,7 +144,7 @@
         </div>
       </section>
 
-      <section class="form-section">
+      <section class="form-section" *ngIf="!esProgramaJornadasCapForm()">
         <h3>Servicio de matrícula</h3>
         <p class="form-note" *ngIf="usaSemestresEnForm()">
           Con {{ form().semestres }} semestre(s), al guardar se generan servicios numerados (ej. «1 SEM TECNICO …»).
@@ -205,6 +210,14 @@
         </div>
       </section>
 
+      <section class="form-section jornada-cap-note" *ngIf="esProgramaJornadasCapForm()">
+        <h3>Jornadas de capacitación</h3>
+        <p class="form-note">
+          Este tipo de programa <strong>no crea servicio</strong> en caja ni matrícula cobrada al alumno.
+          Se usa en el módulo <strong>Jornadas de Capacitación</strong> (contratación, clases en campo, certificados).
+        </p>
+      </section>
+
       <section class="form-section" *ngIf="esLicenciaConduccionForm()">
         <h3>Hora de clase práctica (servicio adicional)</h3>
         <p class="form-note">
@@ -265,8 +278,8 @@
           <td><span [ngClass]="[capMoneda(p.valorMatricula), 'cap-money']">${{ num(p.valorMatricula) | number }}</span></td>
           <td><span [ngClass]="capEstado(p.estado)">{{ p.estado || '—' }}</span></td>
           <td class="acciones">
-            <button type="button" class="ghost mini" (click)="editar(p)">Editar</button>
-            <button type="button" class="danger mini" *ngIf="esAdmin()" (click)="eliminar(p)">Eliminar</button>
+            <button type="button" class="ghost mini" *ngIf="puedeGestionarPrograma()" (click)="editar(p)">Editar</button>
+            <button type="button" class="danger mini" *ngIf="puedeGestionarPrograma()" (click)="eliminar(p)">Eliminar</button>
           </td>
         </tr>
         <tr *ngIf="!programas().length">
@@ -300,8 +313,8 @@
       <footer class="card-foot">
         <span class="card-hint">Programa educativo</span>
         <div class="card-actions">
-          <button type="button" class="act open" (click)="editar(p)">Editar</button>
-          <button type="button" class="act doc" *ngIf="esAdmin()" (click)="eliminar(p)">Eliminar</button>
+          <button type="button" class="act open" *ngIf="puedeGestionarPrograma()" (click)="editar(p)">Editar</button>
+          <button type="button" class="act doc" *ngIf="puedeGestionarPrograma()" (click)="eliminar(p)">Eliminar</button>
         </div>
       </footer>
     </article>

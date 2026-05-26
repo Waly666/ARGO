@@ -44,7 +44,16 @@ export interface Empleado {
   cajaNombre?: string;
   totalEgresos?: number;
   idUsuario?: string | null;
+  usuarioLogin?: string | null;
+  usuarioRol?: string | null;
   usuarioGenerado?: UsuarioGeneradoEmpleado | null;
+}
+
+export type ModoAccesoEmpleado = 'auto' | 'ninguno' | 'vincular';
+
+export interface EmpleadoFormExtras {
+  modoAcceso?: ModoAccesoEmpleado;
+  idUsuarioExistente?: string;
 }
 
 export interface UsuarioGeneradoEmpleado {
@@ -52,9 +61,10 @@ export interface UsuarioGeneradoEmpleado {
   passwordInicial?: string;
   rol: string;
   existente?: boolean;
+  vinculado?: boolean;
 }
 
-export type EmpleadoDto = Partial<Empleado>;
+export type EmpleadoDto = Partial<Empleado> & EmpleadoFormExtras;
 
 export interface EmpleadoArchivosUpload {
   foto?: File;
@@ -72,6 +82,8 @@ const EMPLEADO_SKIP_FORM = new Set([
   'cajaNombre',
   'totalEgresos',
   'idUsuario',
+  'usuarioLogin',
+  'usuarioRol',
   'usuarioGenerado',
 ]);
 

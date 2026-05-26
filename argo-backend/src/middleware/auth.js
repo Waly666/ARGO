@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { normalizarRol, puedeGestionarProgramas, esAdmin } = require('../utils/roles');
+const { permisosParaRol, tieneAlguno } = require('../services/rolesPermisos');
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -11,6 +12,16 @@ function requireAuth(req, res, next) {
     next();
   } catch (e) {
     return res.status(401).json({ message: 'Token inválido o expirado' });
+  }
+}
+
+async function loadPermisos(req, res, next) {
+  if (!req.user) return next();
+  try {
+    req.permisos = await permisosParaRol(req.user.rol);
+    next();
+  } catch (e) {
+    next(e);
   }
 }
 
@@ -26,11 +37,25 @@ function requireRole(...roles) {
   };
 }
 
+function requirePermiso(...claves) {
+  return async (req, res, next) => {
+    if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+    try {
+      const permisos = req.permisos || (await permisosParaRol(req.user.rol));
+      req.permisos = permisos;
+      if (tieneAlguno(permisos, claves)) return next();
+      return res.status(403).json({ message: 'Sin permisos para esta acción' });
+    } catch (e) {
+      next(e);
+    }
+  };
+}
+
 function requireGestionProgramas(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'No autenticado' });
   if (!puedeGestionarProgramas(req.user.rol)) {
     return res.status(403).json({
-      message: 'Sin permisos. Se requiere rol administrador, recepción, cajero o usuario.',
+      message: 'Sin permisos para gestionar programas.',
     });
   }
   next();
@@ -44,4 +69,11 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-module.exports = { requireAuth, requireRole, requireGestionProgramas, requireAdmin };
+module.exports = {
+  requireAuth,
+  loadPermisos,
+  requireRole,
+  requirePermiso,
+  requireGestionProgramas,
+  requireAdmin,
+};

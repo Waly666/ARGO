@@ -1,10 +1,19 @@
 import { CommonModule } from '@angular/common';
 
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { firstValueFrom } from 'rxjs';
 
@@ -44,9 +53,15 @@ import {
 
   REGIMEN_SALUD_DEF,
 
+  TIPOS_ALUMNO_DEF,
+
+  TIPO_JORNADAS_CAPACITACION,
+
   TIPOS_DOC_DEF,
 
   TIPO_SANGRE_DEF,
+
+  normalizarTipoAlumno,
 
   catEtiqueta,
   catalogoConEtiquetas,
@@ -69,6 +84,7 @@ import {
   aplicarPlantillaMensaje,
   nombreCompletoAlumno,
 } from '../../../core/utils/mensaje-plantilla.helpers';
+import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
 
 @Component({
 
@@ -86,11 +102,20 @@ import {
 
 export class DatosPrincipalesComponent implements OnInit {
 
+  /** Alumno cargado por la ficha (input desde alumno-detalle). */
+  alumno = input<AlumnoDto | null>(null);
+
+  /** general | jornadas — define lista y rutas de vuelta */
+  modo = input<ModoAlumnos>('general');
+
+  private rutasAlumno = computed(() => rutasAlumnos(this.modo()));
+
   private alumnoSvc = inject(AlumnoService);
 
   private catSvc = inject(CatalogoService);
 
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   private confirm = inject(ConfirmDialogService);
 
@@ -113,6 +138,8 @@ export class DatosPrincipalesComponent implements OnInit {
   fotoPreview = signal<string | null>(null);
 
 
+
+  readonly tiposAlumno = TIPOS_ALUMNO_DEF;
 
   tiposDoc = signal<Record<string, unknown>[]>(TIPOS_DOC_DEF);
 
@@ -178,7 +205,17 @@ export class DatosPrincipalesComponent implements OnInit {
 
   isEdit = computed(() => !!this.form()._id);
 
+  /** Alta desde Jornadas Cap. (query esJornadaCap / tipoAlumno). */
+  private origenJornadaCap = signal(
+    DatosPrincipalesComponent.esJornadaDesdeQuery(inject(ActivatedRoute).snapshot.queryParamMap),
+  );
 
+  esAlumnoJornada = computed(
+    () =>
+      this.modo() === 'jornadas' ||
+      this.origenJornadaCap() ||
+      normalizarTipoAlumno(this.form().tipoAlumno) === TIPO_JORNADAS_CAPACITACION,
+  );
 
   catValor = catValor;
 
@@ -188,66 +225,18 @@ export class DatosPrincipalesComponent implements OnInit {
 
 
 
+  private static esJornadaDesdeQuery(q: { get: (k: string) => string | null }): boolean {
+    const flag = q.get('esJornadaCap');
+    if (flag === 'true' || flag === '1') return true;
+    return normalizarTipoAlumno(q.get('tipoAlumno')) === TIPO_JORNADAS_CAPACITACION;
+  }
+
   constructor() {
+    afterNextRender(() => this.sincronizarDesdeAlumno());
 
     effect(() => {
-
-      const a = this.store.alumno();
-
-      if (a) {
-
-        const mapped = this.mapDesdeBd(a as AlumnoDto & Record<string, unknown>);
-
-        this.form.set(mapped);
-
-        this.expedidaTexto.set(mapped.expedida || '');
-
-        this.resolverTextoMunOrigen(mapped.codMunicipio || mapped.munOrigen);
-
-        this.fotoPreview.set(a.urlFoto ? this.toUrl(a.urlFoto) : null);
-
-        this.fotoFile.set(null);
-
-        this.docDuplicado.set(null);
-
-        this.scanVisible.set(false);
-
-        this.scanApplied.set(false);
-
-        this.scanPreview.set(null);
-
-        this.scanFile.set(null);
-
-        this.scanWarnings.set([]);
-
-        this.lineaBase.set(this.firmaEstadoActual(mapped, false));
-
-      } else {
-
-        this.form.set(this.emptyForm());
-
-        this.expedidaTexto.set('');
-
-        this.munOrigenTexto.set('');
-
-        this.fotoPreview.set(null);
-
-        this.scanVisible.set(true);
-
-        this.scanApplied.set(false);
-
-        this.scanPreview.set(null);
-
-        this.scanFile.set(null);
-
-        this.scanWarnings.set([]);
-
-        this.lineaBase.set('');
-
-      }
-
-      this.store.setDatosSinGuardar(false);
-
+      const a = this.alumno() ?? this.store.alumno();
+      this.sincronizarDesdeAlumno(a);
     });
 
     effect(() => {
@@ -267,6 +256,16 @@ export class DatosPrincipalesComponent implements OnInit {
 
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((q) => {
+      const esJ = DatosPrincipalesComponent.esJornadaDesdeQuery(q);
+      this.origenJornadaCap.set(esJ);
+      if (esJ && !this.isEdit()) {
+        this.form.update((f) => ({ ...f, tipoAlumno: TIPO_JORNADAS_CAPACITACION }));
+        this.lineaBase.set(
+          this.firmaEstadoActual({ ...this.form(), tipoAlumno: TIPO_JORNADAS_CAPACITACION }),
+        );
+      }
+    });
 
     this.cargarCatalogo('catRegimenSalud', this.regimenesSalud, REGIMEN_SALUD_DEF);
 
@@ -377,7 +376,7 @@ export class DatosPrincipalesComponent implements OnInit {
 
     const d = this.docDuplicado();
 
-    if (d?._id) this.router.navigate(['/app/alumnos', d._id]);
+    if (d?._id) void this.router.navigate([this.rutasAlumno().ficha(d._id)]);
 
   }
 
@@ -530,7 +529,9 @@ export class DatosPrincipalesComponent implements OnInit {
         if (creando) {
           void this.confirmarCreacionAlumno(saved).then(() => {
             if (saved._id) {
-              this.router.navigate(['/app/alumnos', saved._id], { replaceUrl: true });
+              void this.router.navigate([this.rutasAlumno().ficha(String(saved._id))], {
+                replaceUrl: true,
+              });
             }
           });
           return;
@@ -639,9 +640,19 @@ export class DatosPrincipalesComponent implements OnInit {
 
   /** Solo campos del esquema datosAlumnos (sin auditoría de solo lectura) */
 
-  private toPayload(f: AlumnoDto): AlumnoDto {
+  private toPayload(f: AlumnoDto): AlumnoDto & { esJornadaCap?: string } {
+
+    const esJornada = this.esAlumnoJornada();
 
     return {
+
+      ...(esJornada && !this.isEdit() ? { esJornadaCap: 'true' } : {}),
+
+      tipoAlumno: this.isEdit()
+        ? normalizarTipoAlumno(f.tipoAlumno)
+        : esJornada
+          ? TIPO_JORNADAS_CAPACITACION
+          : normalizarTipoAlumno(undefined),
 
       tipoDoc: f.tipoDoc,
 
@@ -705,13 +716,81 @@ export class DatosPrincipalesComponent implements OnInit {
 
 
 
+  private sincronizarDesdeAlumno(src?: AlumnoDto | null): void {
+    const a = src !== undefined ? src : this.alumno() ?? this.store.alumno();
+    if (a?._id || (a?.numDoc != null && String(a.numDoc).trim() !== '')) {
+      this.aplicarAlumnoEnForm(a as AlumnoDto & Record<string, unknown>);
+    } else if (!a) {
+      this.form.set(this.emptyForm());
+      this.expedidaTexto.set('');
+      this.munOrigenTexto.set('');
+      this.fotoPreview.set(null);
+      this.scanVisible.set(true);
+      this.scanApplied.set(false);
+      this.scanPreview.set(null);
+      this.scanFile.set(null);
+      this.scanWarnings.set([]);
+      this.lineaBase.set('');
+    }
+    this.store.setDatosSinGuardar(false);
+  }
+
+  private aplicarAlumnoEnForm(raw: AlumnoDto & Record<string, unknown>): void {
+    const mapped = this.mapDesdeBd(raw);
+    this.form.set(mapped);
+    this.expedidaTexto.set(mapped.expedida || '');
+    this.resolverTextoMunOrigen(mapped.codMunicipio || mapped.munOrigen);
+    this.fotoPreview.set(mapped.urlFoto ? this.toUrl(mapped.urlFoto) : null);
+    this.fotoFile.set(null);
+    this.docDuplicado.set(null);
+    this.scanVisible.set(false);
+    this.scanApplied.set(false);
+    this.scanPreview.set(null);
+    this.scanFile.set(null);
+    this.scanWarnings.set([]);
+    this.lineaBase.set(this.firmaEstadoActual(mapped, false));
+  }
+
+  /** Campos legacy nombres/apellidos (un solo string) → nombre1/nombre2, apellido1/apellido2 */
+  private partirNombreLegacy(s: string): { p1: string; p2: string } {
+    const partes = String(s || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!partes.length) return { p1: '', p2: '' };
+    return { p1: partes[0], p2: partes.slice(1).join(' ') };
+  }
+
   private mapDesdeBd(raw: AlumnoDto & Record<string, unknown>): AlumnoDto {
+    let nombre1 = String(raw.nombre1 || '');
+    let nombre2 = String(raw.nombre2 || '');
+    if (!nombre1.trim() && raw['nombres']) {
+      const n = this.partirNombreLegacy(String(raw['nombres']));
+      nombre1 = n.p1;
+      nombre2 = n.p2 || nombre2;
+    }
+    let apellido1 = String(raw.apellido1 || '');
+    let apellido2 = String(raw.apellido2 || '');
+    if (!apellido1.trim() && raw['apellidos']) {
+      const ap = this.partirNombreLegacy(String(raw['apellidos']));
+      apellido1 = ap.p1;
+      apellido2 = ap.p2 || apellido2;
+    }
 
     return {
 
-      _id: raw._id,
+      _id:
+        raw._id != null
+          ? String(raw._id)
+          : raw['id'] != null
+            ? String(raw['id'])
+            : raw['idAlumno'] != null
+              ? String(raw['idAlumno'])
+              : undefined,
 
       fechaReg: raw.fechaReg as string,
+
+      tipoAlumno: normalizarTipoAlumno(String(raw.tipoAlumno || '')),
 
       tipoDoc: normalizarEnum(String(raw.tipoDoc || '1')),
 
@@ -719,13 +798,13 @@ export class DatosPrincipalesComponent implements OnInit {
 
       expedida: String(raw.expedida || ''),
 
-      apellido1: nombreEnMayusculas(String(raw.apellido1 || '')),
+      apellido1: nombreEnMayusculas(apellido1),
 
-      apellido2: nombreEnMayusculas(String(raw.apellido2 || '')),
+      apellido2: nombreEnMayusculas(apellido2),
 
-      nombre1: nombreEnMayusculas(String(raw.nombre1 || '')),
+      nombre1: nombreEnMayusculas(nombre1),
 
-      nombre2: nombreEnMayusculas(String(raw.nombre2 || '')),
+      nombre2: nombreEnMayusculas(nombre2),
 
       fechaNac: fechaInput(raw.fechaNac as string),
 
@@ -772,8 +851,13 @@ export class DatosPrincipalesComponent implements OnInit {
 
 
   private emptyForm(): AlumnoDto {
+    const esJornada =
+      this.modo() === 'jornadas' ||
+      DatosPrincipalesComponent.esJornadaDesdeQuery(this.route.snapshot.queryParamMap);
 
     return {
+
+      tipoAlumno: esJornada ? TIPO_JORNADAS_CAPACITACION : normalizarTipoAlumno(undefined),
 
       tipoDoc: '1',
 

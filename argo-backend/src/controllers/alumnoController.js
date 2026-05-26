@@ -10,6 +10,11 @@ const { calcularDocumentosRequeridos, patchDocsAlumno, validarDocumentosParaProg
 const { enriquecerIndicadoresLista } = require('../services/alumnoIndicadores');
 const mongoose = require('mongoose');
 const { parseNumDoc, numDocFromParams, numDocQueryNativo } = require('../utils/numDoc');
+const {
+  TIPO_ALUMNO_DEFAULT,
+  TIPO_JORNADAS_CAPACITACION,
+  normalizarTipoAlumno,
+} = require('../constants/tipoAlumno');
 
 const GENEROS_VALIDOS = new Set(['M', 'F']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
@@ -207,9 +212,13 @@ async function enriquecerMunicipios(items) {
 exports.listar = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
+    const tipoQ = (req.query.tipoAlumno || '').toString().trim();
     const limit = Math.min(parseInt(req.query.limit, 10) || 25, 100);
     const skip = Math.max(parseInt(req.query.skip, 10) || 0, 0);
-    let filter = {};
+    const condiciones = [];
+    if (tipoQ) {
+      condiciones.push({ tipoAlumno: normalizarTipoAlumno(tipoQ) });
+    }
     if (q) {
       const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(safe, 'i');
@@ -234,8 +243,9 @@ exports.listar = async (req, res, next) => {
           },
         });
       }
-      filter = { $or: or };
+      condiciones.push({ $or: or });
     }
+    const filter = condiciones.length === 0 ? {} : condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
     const [docs, total] = await Promise.all([
       DatosAlumno.find(filter).sort({ apellido1: 1, nombre1: 1 }).skip(skip).limit(limit).lean(),
       DatosAlumno.countDocuments(filter),
@@ -275,7 +285,7 @@ exports.escanearCedula = async (req, res, next) => {
 
 exports.porId = async (req, res, next) => {
   try {
-    const a = await DatosAlumno.findById(req.params.id);
+    const a = await DatosAlumno.findById(req.params.id).lean();
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json(a);
   } catch (e) {
@@ -381,7 +391,7 @@ exports.verificarDocumento = async (req, res, next) => {
 };
 
 const CAMPOS_ALUMNO = [
-  'tipoDoc', 'numDoc', 'expedida', 'apellido1', 'apellido2', 'nombre1', 'nombre2',
+  'tipoAlumno', 'tipoDoc', 'numDoc', 'expedida', 'apellido1', 'apellido2', 'nombre1', 'nombre2',
   'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
   'regimenSalud', 'nivelFormacion', 'ocupacion', 'discapacidad', 'munOrigen', 'codMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
@@ -442,6 +452,9 @@ function pickAlumno(body) {
     const nd = parseNumDoc(dto.numDoc);
     if (nd != null) dto.numDoc = nd;
   }
+  if (body.tipoAlumno !== undefined || dto.tipoAlumno !== undefined) {
+    dto.tipoAlumno = normalizarTipoAlumno(dto.tipoAlumno);
+  }
   return dto;
 }
 
@@ -465,6 +478,17 @@ exports.crear = async (req, res, next) => {
     dto.fechaMod = now;
     dto.userAddReg = dto.userAddReg || req.user?.username || req.user?.sub || 'sistema';
     if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
+    const esJornadaCap =
+      body.esJornadaCap === true ||
+      body.esJornadaCap === 'true' ||
+      body.esJornadaCap === '1' ||
+      body.esJornadaCap === 1;
+    dto.tipoAlumno =
+      body.tipoAlumno !== undefined && body.tipoAlumno !== ''
+        ? normalizarTipoAlumno(body.tipoAlumno)
+        : esJornadaCap
+          ? TIPO_JORNADAS_CAPACITACION
+          : TIPO_ALUMNO_DEFAULT;
 
     let a;
     try {

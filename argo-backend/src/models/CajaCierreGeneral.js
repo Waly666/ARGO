@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 const CajaCierreGeneralSchema = new mongoose.Schema(
   {
     idCierreGeneral: { type: Number, required: true, unique: true, index: true },
+    /** YYYY-MM-DD — día calendario del cierre */
+    fechaDia: { type: String, trim: true, index: true },
+    /** Obsoleto — antes mediodía/noche; ya no se usa */
+    turno: { type: String, trim: true },
     periodoDesde: { type: Date, required: true, index: true },
     periodoHasta: { type: Date, required: true, index: true },
     fechaRegistro: { type: Date, default: Date.now, index: true },
@@ -17,5 +21,7 @@ const CajaCierreGeneralSchema = new mongoose.Schema(
   },
   { collection: 'cajaCierresGenerales', strict: false },
 );
+
+CajaCierreGeneralSchema.index({ fechaDia: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('CajaCierreGeneral', CajaCierreGeneralSchema);

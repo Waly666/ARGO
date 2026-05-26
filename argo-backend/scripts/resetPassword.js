@@ -5,6 +5,7 @@
 require('dotenv').config();
 const { connectDB } = require('../src/config/db');
 const Usuario = require('../src/models/Usuario');
+const { findUsuarioPorLogin } = require('../src/utils/usuarioLogin');
 
 const login = (process.argv[2] || '').trim();
 const nueva = process.argv[3] || login || 'waly666';
@@ -16,7 +17,7 @@ const nueva = process.argv[3] || login || 'waly666';
   }
   try {
     await connectDB();
-    const u = await Usuario.findOne({ username: login.toLowerCase() });
+    const u = await findUsuarioPorLogin(login);
     if (!u) {
       console.error(`No se encontró usuario: ${login}`);
       process.exit(1);

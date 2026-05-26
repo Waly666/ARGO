@@ -85,9 +85,10 @@ function formaPagoDesdeCatalogo(tipoDoc, idTipoPago) {
   const txt = `${tipoDoc?.descripcion || ''} ${tipoDoc?.codigo || ''} ${idTipoPago || ''}`.toLowerCase();
   if (txt.includes('efect') || txt === 'ef' || String(idTipoPago) === '1') return 'Efectivo';
   if (txt.includes('cheq')) return 'Cheque';
+  if (txt.includes('nequi') || txt.includes('davi')) return 'Nequi / Daviplata';
   if (txt.includes('débit') || txt.includes('debit') || txt.includes(' td')) return 'Tarjeta debito';
   if (txt.includes('créd') || txt.includes('credi') || txt.includes(' tc')) return 'Tarjeta de Credito';
-  if (txt.includes('transf') || txt.includes('nequi') || txt.includes('davi')) return 'Transferencia';
+  if (txt.includes('transf') || txt.includes('consign') || txt.includes('pse')) return 'Transferencia';
   return tipoDoc?.descripcion ? String(tipoDoc.descripcion).trim() : 'Efectivo';
 }
 

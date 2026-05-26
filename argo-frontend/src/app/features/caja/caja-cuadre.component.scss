@@ -94,15 +94,19 @@
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 14px;
 }
 
 .kpi-card {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: flex-start;
-  padding: 14px 16px;
+  padding: 20px 18px;
+  min-height: 112px;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(10, 26, 58, 0.9), rgba(6, 16, 41, 0.85));
@@ -117,9 +121,14 @@
   }
   .kpi-val {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: clamp(1.15rem, 3.6cqi, 1.45rem);
     font-weight: 700;
     color: var(--text);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
   .kpi-sub {
     margin: 4px 0 0;
@@ -152,12 +161,16 @@
 
 .metodos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr));
+  gap: 14px;
 }
 
 .metodo-card {
-  padding: 14px;
+  padding: 18px 14px;
+  min-height: 112px;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
   border-radius: var(--radius);
   border: 1px solid var(--line);
   text-align: center;
@@ -174,9 +187,14 @@
     display: block;
   }
   .metodo-val {
-    margin: 0;
+    margin: 0 auto;
     font-weight: 700;
-    font-size: 1rem;
+    font-size: clamp(1.05rem, 3.6cqi, 1.3rem);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
   .metodo-cant {
     margin: 4px 0 0;
@@ -212,6 +230,89 @@
 
 .cerrar-panel {
   border-color: rgba(249, 115, 22, 0.35);
+}
+
+.alert-descuadre {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(251, 189, 35, 0.45);
+  background: rgba(251, 189, 35, 0.1);
+
+  .alert-icon {
+    font-size: 1.4rem;
+  }
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #fbbf24;
+  }
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+}
+
+.badge-alerta {
+  margin-left: 8px;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(251, 113, 133, 0.2);
+  color: #fb7185;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.fila-descuadre {
+  background: rgba(251, 189, 35, 0.05);
+}
+
+.tag-pendiente {
+  font-size: 0.78rem;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.tag-nomina {
+  font-size: 0.78rem;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.auth-modal {
+  max-width: 400px;
+
+  .modal-hint {
+    margin: 0 0 12px;
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    &.small {
+      font-size: 0.8rem;
+    }
+  }
+  label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  input {
+    width: 100%;
+    margin-top: 4px;
+  }
+  .danger {
+    background: linear-gradient(180deg, #e11d48, #be123c);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: var(--btn-radius);
+    font-weight: 600;
+    cursor: pointer;
+  }
 }
 
 .cerrar-hint {
@@ -356,12 +457,73 @@
 
 @media print {
   .caja-page,
-  .modal-backdrop {
+  .caja-admin-inner,
+  .modal-backdrop,
+  .no-print {
     display: none !important;
   }
   .print-only {
     display: block !important;
     color: #000;
-    padding: 1rem;
+    padding: 0;
   }
 }
+
+.panel-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.input-contado {
+  width: 110px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #334);
+  background: var(--surface, #0f1729);
+  color: inherit;
+}
+
+.resumen-general-detalle {
+  margin-top: 14px;
+  h3 {
+    margin: 14px 0 8px;
+    font-size: 0.95rem;
+  }
+}
+
+.kpi-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  article {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px;
+    span {
+      display: block;
+      font-size: 0.75rem;
+      opacity: 0.75;
+    }
+    strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.95rem;
+    }
+    &.warn strong {
+      color: #ffb020;
+    }
+  }
+}
+
+.tabla-cierres.compact th,
+.tabla-cierres.compact td {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+@import './caja-egreso-soporte-alerts.scss';

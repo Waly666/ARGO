@@ -64,6 +64,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
+  padding: 4px 2px;
 
   .label {
     color: var(--text-soft);
@@ -73,9 +77,14 @@
   }
 
   .value {
-    font-size: 1.15rem;
+    font-size: clamp(1.1rem, 3.6cqi, 1.4rem);
     font-weight: 700;
     color: var(--accent-2);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 
     &.warn {
       color: var(--warn);

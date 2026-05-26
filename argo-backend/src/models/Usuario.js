@@ -9,7 +9,8 @@ const UsuarioSchema = new mongoose.Schema(
     email:    { type: String, trim: true, lowercase: true },
     rol:      { type: String, trim: true, default: 'usuario' },
     activo:   { type: Boolean, default: true },
-    passwordHash: { type: String, required: true },
+    /** Alias adicionales para iniciar sesión (ej. waly666, walter). */
+    loginAliases: { type: [String], default: [] },
     /** Legacy: mismo valor que documento del empleado (índice único en BD) */
     numero: { type: Number, index: true },
     numeroDocumento: { type: String, trim: true },
@@ -30,7 +31,7 @@ UsuarioSchema.set('toJSON', {
   virtuals: false,
   transform: (_doc, ret) => {
     delete ret.passwordHash;
-    delete ret.nickName;
+    if (ret.nickName != null) ret.nickName = String(ret.nickName).trim().toLowerCase();
     return ret;
   },
 });
