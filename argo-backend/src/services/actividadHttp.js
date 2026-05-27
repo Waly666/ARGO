@@ -1,14 +1,21 @@
 const jwt = require('jsonwebtoken');
 const ActividadHttp = require('../models/ActividadHttp');
 const { rutaBase } = require('./auditoria');
+const { obtenerMetricasSistema } = require('./systemMonitor');
 
 const ACTIVOS_MINUTOS = 10;
 const sesionesActivas = new Map();
+let nextIdActividad = null;
 
-async function siguienteId() {
+async function initContadorActividad() {
   const last = await ActividadHttp.findOne({}).sort({ idActividad: -1 }).select('idActividad').lean();
   const n = Number(last?.idActividad);
-  return Number.isFinite(n) ? n + 1 : 1;
+  nextIdActividad = Number.isFinite(n) ? n + 1 : 1;
+}
+
+function allocIdActividad() {
+  if (nextIdActividad == null) nextIdActividad = 1;
+  return nextIdActividad++;
 }
 
 function usuarioDeToken(payload) {
@@ -18,6 +25,68 @@ function usuarioDeToken(payload) {
     usuario: payload.username || payload.sub || null,
     rol: payload.rol ? String(payload.rol) : null,
   };
+}
+
+function normalizarRutaPantalla(rutaFrontend) {
+  const raw = String(rutaFrontend || '').trim();
+  if (!raw) return null;
+  return raw.split('?')[0].slice(0, 500);
+}
+
+function describirPantalla(rutaFrontend) {
+  const u = normalizarRutaPantalla(rutaFrontend);
+  if (!u) return null;
+  const path = u.replace(/^\/app\/?/i, '/');
+
+  const map = [
+    { re: /^\/configuracion\/monitor/i, t: 'Monitor de recursos' },
+    { re: /^\/configuracion\/auditoria/i, t: 'Auditoría' },
+    { re: /^\/configuracion\/usuarios/i, t: 'Usuarios (configuración)' },
+    { re: /^\/configuracion\/roles/i, t: 'Roles y permisos' },
+    { re: /^\/configuracion\/recibos/i, t: 'Config. recibos' },
+    { re: /^\/configuracion\/nomina/i, t: 'Config. nómina' },
+    { re: /^\/configuracion\/certificados/i, t: 'Config. certificados' },
+    { re: /^\/configuracion\/catalogos/i, t: 'Catálogos (config)' },
+    { re: /^\/configuracion\/requisitos-documentos-alumnos/i, t: 'Requisitos alumnos' },
+    { re: /^\/configuracion\/requisitos-documentos(?!-)/i, t: 'Requisitos alumnos' },
+    { re: /^\/configuracion/i, t: 'Configuración' },
+    { re: /^\/dashboard/i, t: 'Dashboard' },
+    { re: /^\/jornadas\/en-proceso/i, t: 'Jornadas en proceso' },
+    { re: /^\/jornadas\/clases-hoy/i, t: 'Clases de hoy' },
+    { re: /^\/jornadas\/certificados/i, t: 'Certificados de jornada' },
+    { re: /^\/jornadas\/instructor/i, t: 'Panel instructor' },
+    { re: /^\/jornadas\/alumnos/i, t: 'Alumnos (jornadas)' },
+    { re: /^\/jornadas/i, t: 'Jornadas de capacitación' },
+    { re: /^\/contratos/i, t: 'Contratos' },
+    { re: /^\/alumnos\/nuevo/i, t: 'Nuevo alumno' },
+    { re: /^\/alumnos\/.+/i, t: 'Ficha de alumno' },
+    { re: /^\/alumnos/i, t: 'Listado de alumnos' },
+    { re: /^\/programas/i, t: 'Programas educativos' },
+    { re: /^\/servicios/i, t: 'Servicios' },
+    { re: /^\/cobros-pendientes/i, t: 'Cobros pendientes' },
+    { re: /^\/caja\/ingresos-todos/i, t: 'Ingresos (admin caja)' },
+    { re: /^\/caja\/egresos-todos/i, t: 'Egresos (admin caja)' },
+    { re: /^\/caja\/descuadres/i, t: 'Descuadres de caja' },
+    { re: /^\/caja\/ingresos/i, t: 'Ingresos de caja' },
+    { re: /^\/caja\/egresos/i, t: 'Egresos de caja' },
+    { re: /^\/caja/i, t: 'Caja / cuadre' },
+    { re: /^\/cierres/i, t: 'Cierres de caja' },
+    { re: /^\/cierre-general/i, t: 'Cierre general' },
+    { re: /^\/rrhh\/empleados/i, t: 'RRHH · empleados' },
+    { re: /^\/rrhh\/contratos/i, t: 'RRHH · contratos' },
+    { re: /^\/rrhh\/nomina/i, t: 'RRHH · nómina' },
+    { re: /^\/rrhh\/novedades/i, t: 'RRHH · novedades' },
+    { re: /^\/rrhh\/catalogos/i, t: 'RRHH · catálogos' },
+    { re: /^\/rrhh/i, t: 'Recursos humanos' },
+    { re: /^\/facturacion/i, t: 'Facturación' },
+    { re: /^\/instructores/i, t: 'Instructores' },
+    { re: /^\/vehiculos/i, t: 'Vehículos' },
+  ];
+
+  for (const { re, t } of map) {
+    if (re.test(path)) return t;
+  }
+  return `En ${path}`;
 }
 
 function describirActividad(metodo, rb, status) {
@@ -50,6 +119,7 @@ function describirActividad(metodo, rb, status) {
     { re: /\/certificados/i, t: 'Certificados' },
     { re: /\/rrhh/i, t: 'Recursos humanos' },
     { re: /\/config/i, t: 'Configuración del sistema' },
+    { re: /\/jornadas/i, t: 'Jornadas de capacitación' },
   ];
 
   for (const { re, t } of map) {
@@ -92,21 +162,32 @@ function extraerUsuarioReq(req) {
 
 function actualizarSesionActiva(usr, doc) {
   if (!usr?.idUsuario) return;
+  const prev = sesionesActivas.get(usr.idUsuario) || {};
   sesionesActivas.set(usr.idUsuario, {
     idUsuario: usr.idUsuario,
     usuario: doc.usuario,
     nombreUsuario: doc.nombreUsuario,
     rol: doc.rol,
     ultimaActividad: doc.actividad,
-    ultimaRuta: doc.rutaBase || doc.ruta,
+    ultimaRuta: doc.rutaPantalla || doc.rutaBase || doc.ruta,
+    rutaPantalla: doc.rutaPantalla || null,
     ultimoMetodo: doc.metodo,
     ultimoCodigo: doc.codigoHttp,
     ultimaFecha: doc.fecha,
-    peticionesEnVentana: (sesionesActivas.get(usr.idUsuario)?.peticionesEnVentana || 0) + 1,
+    peticionesEnVentana: (prev.peticionesEnVentana || 0) + 1,
+    bytesEntradaVentana: (prev.bytesEntradaVentana || 0) + (doc.bytesEntrada || 0),
+    bytesSalidaVentana: (prev.bytesSalidaVentana || 0) + (doc.bytesSalida || 0),
   });
 }
 
-async function registrarPeticion({ req, statusCode, duracionMs, nombreUsuario }) {
+async function registrarPeticion({
+  req,
+  statusCode,
+  duracionMs,
+  nombreUsuario,
+  bytesEntrada = 0,
+  bytesSalida = 0,
+}) {
   const ruta = req.originalUrl || req.url || '';
   const rb = rutaBase(ruta);
   let usr = extraerUsuarioReq(req);
@@ -117,19 +198,23 @@ async function registrarPeticion({ req, statusCode, duracionMs, nombreUsuario })
   }
   if (!usr?.idUsuario && !usr?.usuario) return null;
   const metodo = req.method || 'GET';
-  const actividad = describirActividad(metodo, rb, statusCode);
+  const rutaPantalla = normalizarRutaPantalla(req.headers['x-argo-pantalla']);
+  const actividadPantalla = rutaPantalla ? describirPantalla(rutaPantalla) : null;
+  const actividad = actividadPantalla || describirActividad(metodo, rb, statusCode);
 
-  const idActividad = await siguienteId();
   const doc = {
-    idActividad,
+    idActividad: allocIdActividad(),
     fecha: new Date(),
     ...usr,
     nombreUsuario: nombreUsuario || null,
     metodo,
     ruta,
     rutaBase: rb,
+    rutaPantalla,
     codigoHttp: statusCode,
     duracionMs,
+    bytesEntrada,
+    bytesSalida,
     actividad,
     ip: req.ip || req.headers?.['x-forwarded-for'] || null,
   };
@@ -158,11 +243,14 @@ async function listarActivos(minutos = ACTIVOS_MINUTOS) {
         nombreUsuario: { $first: '$nombreUsuario' },
         rol: { $first: '$rol' },
         ultimaActividad: { $first: '$actividad' },
-        ultimaRuta: { $first: '$rutaBase' },
+        ultimaRuta: { $first: { $ifNull: ['$rutaPantalla', '$rutaBase'] } },
+        rutaPantalla: { $first: '$rutaPantalla' },
         ultimoMetodo: { $first: '$metodo' },
         ultimoCodigo: { $first: '$codigoHttp' },
         ultimaFecha: { $first: '$fecha' },
         peticionesRecientes: { $sum: 1 },
+        bytesEntrada: { $sum: { $ifNull: ['$bytesEntrada', 0] } },
+        bytesSalida: { $sum: { $ifNull: ['$bytesSalida', 0] } },
       },
     },
     { $sort: { ultimaFecha: -1 } },
@@ -181,23 +269,73 @@ async function listarActivos(minutos = ACTIVOS_MINUTOS) {
       rol: row.rol,
       ultimaActividad: row.ultimaActividad,
       ultimaRuta: row.ultimaRuta,
+      rutaPantalla: row.rutaPantalla || null,
       ultimoMetodo: row.ultimoMetodo,
       ultimoCodigo: row.ultimoCodigo,
       ultimaFecha: row.ultimaFecha,
       peticionesRecientes: row.peticionesRecientes,
+      bytesEntrada: row.bytesEntrada,
+      bytesSalida: row.bytesSalida,
+      bytesTotal: row.bytesEntrada + row.bytesSalida,
       enLinea: true,
     });
   }
   for (const s of mem) {
     const prev = porId.get(s.idUsuario);
+    const merged = {
+      ...s,
+      bytesEntrada: Math.max(s.bytesEntradaVentana || 0, prev?.bytesEntrada || 0),
+      bytesSalida: Math.max(s.bytesSalidaVentana || 0, prev?.bytesSalida || 0),
+      peticionesRecientes: Math.max(s.peticionesEnVentana || 0, prev?.peticionesRecientes || 0),
+      enLinea: true,
+    };
+    merged.bytesTotal = merged.bytesEntrada + merged.bytesSalida;
     if (!prev || new Date(s.ultimaFecha) >= new Date(prev.ultimaFecha)) {
-      porId.set(s.idUsuario, { ...s, enLinea: true });
+      porId.set(s.idUsuario, { ...prev, ...merged });
     }
   }
 
   return [...porId.values()].sort(
     (a, b) => new Date(b.ultimaFecha).getTime() - new Date(a.ultimaFecha).getTime(),
   );
+}
+
+async function resumenTraficoVentana(minutos = ACTIVOS_MINUTOS) {
+  const desde = new Date(Date.now() - minutos * 60 * 1000);
+  const agg = await ActividadHttp.aggregate([
+    { $match: { fecha: { $gte: desde } } },
+    {
+      $group: {
+        _id: null,
+        peticiones: { $sum: 1 },
+        bytesEntrada: { $sum: { $ifNull: ['$bytesEntrada', 0] } },
+        bytesSalida: { $sum: { $ifNull: ['$bytesSalida', 0] } },
+      },
+    },
+  ]);
+  const row = agg[0] || { peticiones: 0, bytesEntrada: 0, bytesSalida: 0 };
+  return {
+    peticiones: row.peticiones,
+    bytesEntrada: row.bytesEntrada,
+    bytesSalida: row.bytesSalida,
+    bytesTotal: row.bytesEntrada + row.bytesSalida,
+  };
+}
+
+async function obtenerMonitor(minutos = ACTIVOS_MINUTOS) {
+  const [sistema, usuarios, trafico] = await Promise.all([
+    Promise.resolve(obtenerMetricasSistema()),
+    listarActivos(minutos),
+    resumenTraficoVentana(minutos),
+  ]);
+  return {
+    timestamp: new Date().toISOString(),
+    minutosVentana: minutos,
+    sistema,
+    trafico,
+    usuariosConectados: usuarios.length,
+    usuarios,
+  };
 }
 
 async function listarHistorial(filtros = {}) {
@@ -224,9 +362,12 @@ async function listarHistorial(filtros = {}) {
 }
 
 module.exports = {
+  initContadorActividad,
   registrarPeticion,
   listarActivos,
   listarHistorial,
+  obtenerMonitor,
   describirActividad,
+  describirPantalla,
   ACTIVOS_MINUTOS,
 };

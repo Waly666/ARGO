@@ -70,11 +70,47 @@ const ID_FIELDS_HINT = {
 
 /** Campos válidos por catálogo (evita columnas basura del Excel en admin). */
 const CAMPOS_ESQUEMA = {
-  itemDocumentosVehiculo: ['idDocVehi', 'documentoVehi', 'descripcionDocVehi'],
-  itemDocumentosInstructores: ['idDocInst', 'documentoInst', 'descripcionDocInst'],
-  itemsEstGral: ['idItemEsGral', 'item', 'claseVehiculo'],
-  tipoEgreso: ['idTipoEgreso', 'tipo', 'requiereEmpleado', 'efectoNomina'],
+  itemDocumentosVehiculo: ['idDocVehi', 'documentoVehi', 'descripcionDocVehi', 'controlaVencimiento'],
+  itemDocumentosInstructores: ['idDocInst', 'documentoInst', 'descripcionDocInst', 'controlaVencimiento'],
+  itemsEstGral: ['idItemEsGral', 'item', 'idClases'],
+  adaptaciones: ['idAdaptacion', 'nombre', 'idClases'],
+  aspecto1: ['idAspecto1', 'aspecto1', 'idClases'],
+  aspecto2: ['idAspecto2', 'aspecto2', 'idClases'],
+  tipoEgreso: ['idTipoEgreso', 'tipo', 'requiereEmpleado', 'efectoNomina', 'requiereVehiculo'],
 };
+
+/** Catálogos del checklist preoperacional (asignación por clase en cada ítem). */
+const CATALOGOS_INSPECCION = new Set(['itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones']);
+
+/** Catálogos maestros de tipos de documento (vehículo / instructor). */
+const CATALOGOS_DOCUMENTOS = new Set(['itemDocumentosVehiculo', 'itemDocumentosInstructores']);
+
+function normBoolCatalogo(v) {
+  if (v === true || v === 1 || v === '1' || v === 'true' || v === 'si' || v === 'Sí') return true;
+  if (v === false || v === 0 || v === '0' || v === 'false' || v === 'no' || v === 'No') return false;
+  return null;
+}
+
+function normalizeIdClases(v) {
+  if (v == null || v === '') return [];
+  if (Array.isArray(v)) {
+    return [...new Set(v.map((c) => String(c).trim()).filter(Boolean))];
+  }
+  if (typeof v === 'string') {
+    const t = v.trim();
+    if (!t) return [];
+    if (t.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(t);
+        if (Array.isArray(parsed)) return normalizeIdClases(parsed);
+      } catch {
+        /* ignore */
+      }
+    }
+    return [t];
+  }
+  return [String(v).trim()].filter(Boolean);
+}
 
 function camposEsquema(nombre) {
   return CAMPOS_ESQUEMA[nombre] || null;
@@ -86,6 +122,14 @@ function docSegunEsquema(nombre, body) {
   for (const [k, v] of Object.entries(body || {})) {
     if (k === '_id' || k === '__v') continue;
     if (campos && !campos.includes(k)) continue;
+    if (k === 'idClases') {
+      doc[k] = normalizeIdClases(v);
+      continue;
+    }
+    if (k === 'controlaVencimiento') {
+      doc[k] = normBoolCatalogo(v) ?? true;
+      continue;
+    }
     if (typeof v === 'string') {
       const t = v.trim();
       doc[k] = t === '' ? null : t;
@@ -116,6 +160,8 @@ function metaCatalogo(nombre) {
     label: ETIQUETAS[nombre] || nombre,
     idFields: ID_FIELDS_HINT[nombre] || [],
     grande: nombre === 'divipola',
+    esInspeccionChecklist: CATALOGOS_INSPECCION.has(nombre),
+    esCatalogoDocumento: CATALOGOS_DOCUMENTOS.has(nombre),
   };
 }
 
@@ -136,6 +182,9 @@ function inferirCamposId(doc, hints = []) {
 
 module.exports = {
   EXCLUIDOS_ADMIN,
+  normalizeIdClases,
+  CATALOGOS_INSPECCION,
+  CATALOGOS_DOCUMENTOS,
   nombreValido,
   metaCatalogo,
   listarMeta,

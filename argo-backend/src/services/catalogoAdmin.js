@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { models } = require('../models/catalogos');
-const { metaCatalogo, inferirCamposId, nombreValido, docSegunEsquema, resolverCamposListado, camposEsquema } = require('./catalogoMeta');
+const { metaCatalogo, inferirCamposId, nombreValido, docSegunEsquema, resolverCamposListado, camposEsquema, CATALOGOS_INSPECCION, CATALOGOS_DOCUMENTOS } = require('./catalogoMeta');
+const { syncControlaVencimientoDesdeCatalogo: syncVehiDesdeCatalogo } = require('./configRequisitosDocumentosVehiculos');
+const { syncControlaVencimientoDesdeCatalogo: syncEmpDesdeCatalogo } = require('./configRequisitosDocumentosEmpleados');
 const { coerceDocument, num: numCoerce } = require('../utils/coerceTypes');
 
 function num(v) {
@@ -15,6 +17,16 @@ function limpiarBody(body) {
 
 function limpiarBodyCatalogo(nombre, body) {
   return coerceDocument(docSegunEsquema(nombre, body));
+}
+
+async function sincronizarVencimientoConfig(nombre, doc) {
+  if (nombre === 'itemDocumentosVehiculo') {
+    await syncVehiDesdeCatalogo(doc.idDocVehi, doc.controlaVencimiento !== false);
+    return;
+  }
+  if (nombre === 'itemDocumentosInstructores') {
+    await syncEmpDesdeCatalogo(doc.idDocInst, doc.controlaVencimiento !== false);
+  }
 }
 
 async function maxIdEnCampo(model, field) {
@@ -84,7 +96,11 @@ async function crear(nombre, body) {
     doc[idField] = next;
   }
   const res = await models[nombre].collection.insertOne(doc);
-  return { ...doc, _id: res.insertedId };
+  const saved = { ...doc, _id: res.insertedId };
+  if (CATALOGOS_DOCUMENTOS.has(nombre)) {
+    await sincronizarVencimientoConfig(nombre, saved);
+  }
+  return saved;
 }
 
 async function actualizar(nombre, mongoId, body) {
@@ -102,8 +118,16 @@ async function actualizar(nombre, mongoId, body) {
     err.status = 404;
     throw err;
   }
-  await models[nombre].updateOne({ _id: oid }, { $set: doc });
-  return models[nombre].findOne({ _id: oid }).lean();
+  const update = { $set: doc };
+  if (CATALOGOS_INSPECCION.has(nombre)) {
+    update.$unset = { claseVehiculo: '' };
+  }
+  await models[nombre].updateOne({ _id: oid }, update);
+  const saved = await models[nombre].findOne({ _id: oid }).lean();
+  if (CATALOGOS_DOCUMENTOS.has(nombre)) {
+    await sincronizarVencimientoConfig(nombre, saved);
+  }
+  return saved;
 }
 
 async function eliminar(nombre, mongoId) {

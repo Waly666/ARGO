@@ -113,6 +113,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'jornadas/clases-hoy',
+        canActivate: [permisoGuard],
+        data: { permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
+        loadComponent: () =>
+          import('./features/jornadas/clases-hoy-lista.component').then(
+            (m) => m.ClasesHoyListaComponent,
+          ),
+      },
+      {
         path: 'jornadas',
         pathMatch: 'full',
         canActivate: [permisoGuard],
@@ -145,9 +154,9 @@ export const routes: Routes = [
       {
         path: 'instructores',
         canActivate: [permisoGuard],
-        data: { title: 'Instructores', permiso: 'instructores' },
+        data: { title: 'Instructores', permiso: ['instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar'] },
         loadComponent: () =>
-          import('./features/placeholder/placeholder.component').then((m) => m.PlaceholderComponent),
+          import('./features/instructores/instructores-lista.component').then((m) => m.InstructoresListaComponent),
       },
       {
         path: 'cobros-pendientes',
@@ -293,10 +302,25 @@ export const routes: Routes = [
       },
       {
         path: 'vehiculos',
+        pathMatch: 'full',
         canActivate: [permisoGuard],
         data: { title: 'Vehículos', permiso: 'vehiculos' },
         loadComponent: () =>
-          import('./features/placeholder/placeholder.component').then((m) => m.PlaceholderComponent),
+          import('./features/vehiculos/vehiculos-lista.component').then((m) => m.VehiculosListaComponent),
+      },
+      {
+        path: 'vehiculos/nuevo',
+        canActivate: [permisoGuard],
+        data: { title: 'Nuevo vehículo', permiso: 'vehiculos' },
+        loadComponent: () =>
+          import('./features/vehiculos/vehiculo-detalle.component').then((m) => m.VehiculoDetalleComponent),
+      },
+      {
+        path: 'vehiculos/:id',
+        canActivate: [permisoGuard],
+        data: { title: 'Vehículo', permiso: 'vehiculos' },
+        loadComponent: () =>
+          import('./features/vehiculos/vehiculo-detalle.component').then((m) => m.VehiculoDetalleComponent),
       },
       {
         path: 'configuracion',
@@ -353,11 +377,43 @@ export const routes: Routes = [
       },
       {
         path: 'configuracion/requisitos-documentos',
+        redirectTo: 'configuracion/requisitos-documentos-alumnos',
+        pathMatch: 'full',
+      },
+      {
+        path: 'configuracion/requisitos-documentos-alumnos',
         canActivate: [permisoGuard],
         data: { permiso: 'config.requisitos' },
         loadComponent: () =>
           import('./features/config/config-requisitos-documentos.component').then(
             (m) => m.ConfigRequisitosDocumentosComponent,
+          ),
+      },
+      {
+        path: 'configuracion/requisitos-documentos-vehiculos',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.requisitos' },
+        loadComponent: () =>
+          import('./features/config/config-requisitos-documentos-vehiculos.component').then(
+            (m) => m.ConfigRequisitosDocumentosVehiculosComponent,
+          ),
+      },
+      {
+        path: 'configuracion/requisitos-documentos-empleados',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.requisitos' },
+        loadComponent: () =>
+          import('./features/config/config-requisitos-documentos-empleados.component').then(
+            (m) => m.ConfigRequisitosDocumentosEmpleadosComponent,
+          ),
+      },
+      {
+        path: 'configuracion/formato-inspeccion-vehiculos',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.requisitos' },
+        loadComponent: () =>
+          import('./features/config/config-formato-inspeccion-vehiculos.component').then(
+            (m) => m.ConfigFormatoInspeccionVehiculosComponent,
           ),
       },
       {
@@ -367,6 +423,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/config/auditoria-admin.component').then(
             (m) => m.AuditoriaAdminComponent,
+          ),
+      },
+      {
+        path: 'configuracion/monitor',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.auditoria' },
+        loadComponent: () =>
+          import('./features/config/monitor-recursos-admin.component').then(
+            (m) => m.MonitorRecursosAdminComponent,
           ),
       },
       { path: 'config/recibos', redirectTo: 'configuracion/recibos', pathMatch: 'full' },

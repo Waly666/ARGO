@@ -2,6 +2,9 @@ const { Router } = require('express');
 const ctrl = require('../controllers/configController');
 const certCtrl = require('../controllers/configCertificadoController');
 const reqDocCtrl = require('../controllers/configRequisitosDocumentosController');
+const reqDocVehiCtrl = require('../controllers/configRequisitosDocumentosVehiculosController');
+const reqDocEmpCtrl = require('../controllers/configRequisitosDocumentosEmpleadosController');
+const fmtInspVehiCtrl = require('../controllers/configFormatoInspeccionVehiculosController');
 const nominaCfgCtrl = require('../controllers/configNominaController');
 const upload = require('../middleware/upload');
 const { requireAuth, requirePermiso } = require('../middleware/auth');
@@ -11,6 +14,15 @@ router.use(requireAuth);
 
 router.get('/requisitos-documentos', requirePermiso('config.requisitos'), reqDocCtrl.obtener);
 router.put('/requisitos-documentos', requirePermiso('config.requisitos'), reqDocCtrl.actualizar);
+
+router.get('/requisitos-documentos-vehiculos', requirePermiso('config.requisitos'), reqDocVehiCtrl.obtener);
+router.put('/requisitos-documentos-vehiculos', requirePermiso('config.requisitos'), reqDocVehiCtrl.actualizar);
+
+router.get('/requisitos-documentos-empleados', requirePermiso('config.requisitos'), reqDocEmpCtrl.obtener);
+router.put('/requisitos-documentos-empleados', requirePermiso('config.requisitos'), reqDocEmpCtrl.actualizar);
+
+router.get('/formato-inspeccion-vehiculos', requirePermiso('config.requisitos'), fmtInspVehiCtrl.obtener);
+router.put('/formato-inspeccion-vehiculos', requirePermiso('config.requisitos'), fmtInspVehiCtrl.actualizar);
 
 router.get('/recibo', requirePermiso('config.recibos'), ctrl.obtenerRecibo);
 router.put('/recibo', requirePermiso('config.recibos'), ctrl.actualizarRecibo);

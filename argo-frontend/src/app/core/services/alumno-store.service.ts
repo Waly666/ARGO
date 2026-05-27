@@ -16,9 +16,9 @@ export class AlumnoStore {
   nombreCompleto = computed(() => {
     const a = this._alumno();
     if (!a) return null;
-    const n = [a.nombre1, a.nombre2].filter(Boolean).join(' ').trim();
     const ap = [a.apellido1, a.apellido2].filter(Boolean).join(' ').trim();
-    return `${n} ${ap}`.trim() || null;
+    const n = [a.nombre1, a.nombre2].filter(Boolean).join(' ').trim();
+    return [ap, n].filter(Boolean).join(' ').trim() || null;
   });
 
   setAlumno(a: AlumnoDto | null) {

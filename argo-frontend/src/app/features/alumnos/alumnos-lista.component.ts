@@ -14,6 +14,7 @@ import {
   TIPO_JORNADAS_CAPACITACION,
 } from './catalogo.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
+import { nombreCompletoAlumno } from '../../core/utils/mensaje-plantilla.helpers';
 import {
   capCelular,
   capDoc,
@@ -27,8 +28,55 @@ import { formatNumDoc } from '../../core/utils/num-doc.helpers';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 
 type VistaAlumnos = VistaLista;
+type SortColAlumnos =
+  | 'numDoc'
+  | 'nombre'
+  | 'fechaNac'
+  | 'jornada'
+  | 'estadoCivil'
+  | 'correo'
+  | 'celular'
+  | 'direccion'
+  | 'munOrigen';
+type SortDir = 'asc' | 'desc';
+
 const VISTA_STORAGE_KEY_GENERAL = 'argo-alumnos-vista';
 const VISTA_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-vista';
+const SORT_STORAGE_KEY_GENERAL = 'argo-alumnos-sort';
+const SORT_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-sort';
+
+const SORT_COLUMNS: ReadonlyArray<{ key: SortColAlumnos; label: string }> = [
+  { key: 'numDoc', label: 'Documento' },
+  { key: 'nombre', label: 'Nombre' },
+  { key: 'fechaNac', label: 'Fecha nac.' },
+  { key: 'jornada', label: 'Jornada' },
+  { key: 'estadoCivil', label: 'Estado civil' },
+  { key: 'correo', label: 'Correo' },
+  { key: 'celular', label: 'Celular' },
+  { key: 'direccion', label: 'Dirección' },
+  { key: 'munOrigen', label: 'Mun. origen' },
+];
+
+function readSortPrefs(storageKey: string): { col: SortColAlumnos; dir: SortDir } {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return { col: 'nombre', dir: 'asc' };
+    const parsed = JSON.parse(raw) as { col?: string; dir?: string };
+    const col = SORT_COLUMNS.some((c) => c.key === parsed.col) ? (parsed.col as SortColAlumnos) : 'nombre';
+    const dir: SortDir = parsed.dir === 'desc' ? 'desc' : 'asc';
+    return { col, dir };
+  } catch {
+    return { col: 'nombre', dir: 'asc' };
+  }
+}
+
+function saveSortPrefs(storageKey: string, col: SortColAlumnos, dir: SortDir): void {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify({ col, dir }));
+  } catch {
+    /* ignore */
+  }
+}
 
 @Component({
   selector: 'argo-alumnos-lista',
@@ -58,6 +106,8 @@ export class AlumnosListaComponent implements OnInit {
   page = signal(0);
   pageSize = 25;
   vista = signal<VistaAlumnos>('lista');
+  sortCol = signal<SortColAlumnos>('nombre');
+  sortDir = signal<SortDir>('asc');
 
   loading = signal(false);
   items = signal<AlumnoListItem[]>([]);
@@ -72,14 +122,18 @@ export class AlumnosListaComponent implements OnInit {
     return `${from}–${to} de ${t}`;
   });
 
-  private load$ = new Subject<{ q: string; page: number }>();
+  private load$ = new Subject<{ q: string; page: number; sort: SortColAlumnos; dir: SortDir }>();
 
   ngOnInit(): void {
     const modo: ModoAlumnos =
       this.route.snapshot.data['modoAlumnos'] === 'jornadas' ? 'jornadas' : 'general';
     this.modo.set(modo);
     const vistaKey = modo === 'jornadas' ? VISTA_STORAGE_KEY_JORNADA : VISTA_STORAGE_KEY_GENERAL;
+    const sortKey = modo === 'jornadas' ? SORT_STORAGE_KEY_JORNADA : SORT_STORAGE_KEY_GENERAL;
     this.vista.set(readVistaLista(vistaKey));
+    const sortPrefs = readSortPrefs(sortKey);
+    this.sortCol.set(sortPrefs.col);
+    this.sortDir.set(sortPrefs.dir);
 
     forkJoin({
       jornada: this.catSvc.list<Record<string, unknown>>('jornada'),
@@ -104,12 +158,21 @@ export class AlumnosListaComponent implements OnInit {
     this.load$
       .pipe(
         debounceTime(280),
-        switchMap(({ q, page }) => {
+        switchMap(({ q, page, sort, dir }) => {
           this.loading.set(true);
-          const opts: { q: string; limit: number; skip: number; tipoAlumno?: string } = {
+          const opts: {
+            q: string;
+            limit: number;
+            skip: number;
+            tipoAlumno?: string;
+            sort: SortColAlumnos;
+            dir: SortDir;
+          } = {
             q,
             limit: this.pageSize,
             skip: page * this.pageSize,
+            sort,
+            dir,
           };
           if (this.modo() === 'jornadas') {
             opts.tipoAlumno = TIPO_JORNADAS_CAPACITACION;
@@ -134,7 +197,36 @@ export class AlumnosListaComponent implements OnInit {
   }
 
   cargar() {
-    this.load$.next({ q: this.query().trim(), page: this.page() });
+    this.load$.next({
+      q: this.query().trim(),
+      page: this.page(),
+      sort: this.sortCol(),
+      dir: this.sortDir(),
+    });
+  }
+
+  toggleSort(col: SortColAlumnos) {
+    if (this.sortCol() === col) {
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('asc');
+    }
+    const sortKey =
+      this.modo() === 'jornadas' ? SORT_STORAGE_KEY_JORNADA : SORT_STORAGE_KEY_GENERAL;
+    saveSortPrefs(sortKey, this.sortCol(), this.sortDir());
+    this.page.set(0);
+    this.cargar();
+  }
+
+  sortIcon(col: SortColAlumnos): string {
+    if (this.sortCol() !== col) return '↕';
+    return this.sortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  sortAria(col: SortColAlumnos): string | null {
+    if (this.sortCol() !== col) return null;
+    return this.sortDir() === 'asc' ? 'ascending' : 'descending';
   }
 
   onBuscar(v: string) {
@@ -228,8 +320,7 @@ export class AlumnosListaComponent implements OnInit {
   capFecha = capFecha;
 
   nombreCompleto(r: AlumnoListItem): string {
-    if (r.nombreCompleto) return r.nombreCompleto;
-    return `${r.nombre1 || ''} ${r.nombre2 || ''} ${r.apellido1 || ''} ${r.apellido2 || ''}`.replace(/\s+/g, ' ').trim();
+    return nombreCompletoAlumno(r);
   }
 
   formatFecha(v?: string | Date | null): string {

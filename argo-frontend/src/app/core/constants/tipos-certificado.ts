@@ -36,3 +36,19 @@ export function labelTipoCert(id?: string): string {
 export function labelOrientacion(id?: string): string {
   return ORIENTACIONES_CERTIFICADO.find((o) => o.id === id)?.label || id || '—';
 }
+
+/** Clase CSS del banner de alerta según tipo de formato del programa. */
+export function certAlertToneClass(tipo?: string | null): string {
+  const t = String(tipo || '')
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, '_');
+  if (t === 'jornada_capacitacion') return 'cert-tone-jornada';
+  if (t === 'tecnico') return 'cert-tone-tecnico';
+  if (t === 'competencias') return 'cert-tone-competencias';
+  if (t === 'diplomado') return 'cert-tone-diplomado';
+  if (t === 'licencia') return 'cert-tone-licencia';
+  if (t === 'mercancias_peligrosas') return 'cert-tone-mercancias';
+  if (t === 'curso') return 'cert-tone-curso';
+  return 'cert-tone-default';
+}

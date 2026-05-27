@@ -193,6 +193,37 @@ exports.crear = async (req, res, next) => {
   }
 };
 
+function nombreCompletoAlumno(al) {
+  if (!al) return '';
+  const ap = [al.apellido1, al.apellido2].filter(Boolean).join(' ').trim();
+  const n = [al.nombre1, al.nombre2].filter(Boolean).join(' ').trim();
+  return [ap, n].filter(Boolean).join(' ').trim();
+}
+
+/** Certificados emitidos desde una fecha (alertas en tiempo real). */
+exports.recientes = async (req, res, next) => {
+  try {
+    const q = {};
+    if (req.query.desde) {
+      const d = new Date(String(req.query.desde));
+      if (!Number.isNaN(d.getTime())) q.fechaEmision = { $gte: d };
+    }
+    const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(120).lean();
+    const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+    const alumnos = numDocs.length ? await DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [];
+    const alByDoc = new Map(alumnos.map((a) => [a.numDoc, a]));
+    res.json(
+      rows.map((c) => ({
+        ...c,
+        nombreCompleto: nombreCompletoAlumno(alByDoc.get(c.numDoc)),
+        tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
+      })),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.eliminar = async (req, res, next) => {
   try {
     const c = await Certificado.findByIdAndDelete(req.params.id);

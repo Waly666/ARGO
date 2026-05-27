@@ -1,0 +1,354 @@
+<section class="detalle-page">
+  <header class="page-head card">
+    <div class="head-row">
+      <button type="button" class="ghost back" (click)="volver()">← Lista vehículos</button>
+      <div class="title">
+        <h1>{{ tituloPagina() }}</h1>
+        <p *ngIf="!esNuevo()">{{ form().nombreMarca }} {{ form().nombreLinea }} · {{ form().claseVehiculo || 'Sin clase' }}</p>
+      </div>
+      <div class="head-actions" *ngIf="!esNuevo()">
+        <button type="button" class="danger ghost" (click)="eliminar()">Eliminar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+  <div class="msg err" *ngIf="err()">{{ err() }}</div>
+
+  <nav class="tabs card" *ngIf="!loading()">
+    <button
+      type="button"
+      *ngFor="let t of tabs"
+      [class.active]="tab() === t.key"
+      [disabled]="(t.key === 'documentos' || t.key === 'inspeccion') && !puedeDocumentos()"
+      (click)="setTab(t.key)">
+      {{ t.label }}
+      <span class="hint" *ngIf="(t.key === 'documentos' || t.key === 'inspeccion') && !puedeDocumentos()"> (guarde primero)</span>
+    </button>
+  </nav>
+
+  <div class="loading card" *ngIf="loading()">Cargando…</div>
+
+  <div class="card form-panel" *ngIf="!loading() && tab() === 'datos'">
+    <div class="ident-layout">
+      <div class="form-grid">
+        <div class="row" *ngIf="!esNuevo() && vehiculoId()">
+          <div class="col-w-full">
+            <label>idVehiculo</label>
+            <span class="mongo-id" [ngClass]="capId(vehiculoId())" [title]="vehiculoId()">{{ vehiculoId() }}</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-3">
+            <label>Placa *</label>
+            <input type="text" [ngModel]="form().placa" (ngModelChange)="patch('placa', $event)" style="text-transform: uppercase" />
+          </div>
+          <div class="col-3">
+            <label>Estado</label>
+            <select [ngModel]="form().estado" (ngModelChange)="patch('estado', $event)">
+              <option *ngFor="let e of meta()?.estados || []" [value]="e">{{ e }}</option>
+            </select>
+          </div>
+          <div class="col-3">
+            <label>Tipo servicio</label>
+            <select [ngModel]="form().tipoServicio" (ngModelChange)="patch('tipoServicio', $event)">
+              <option value="">— Seleccione —</option>
+              <option *ngFor="let t of meta()?.tiposServicio || []" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+          <div class="col-3">
+            <label>Modalidad</label>
+            <select [ngModel]="form().modalidad" (ngModelChange)="patch('modalidad', $event)">
+              <option value="">— Seleccione —</option>
+              <option *ngFor="let m of meta()?.modalidades || []" [value]="m">{{ m }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-4">
+            <argo-catalogo-enum-buscar
+              label="Marca"
+              placeholder="Escriba marca (ej. CHEVROLET, TOYOTA)…"
+              [textoInicial]="form().nombreMarca || ''"
+              [minLength]="1"
+              [buscarRemoto]="buscarMarcasRemoto"
+              (seleccionado)="onMarcaPick($event)"
+              (limpiado)="onMarcaLimpiar()"
+            />
+          </div>
+          <div class="col-4">
+            <argo-catalogo-enum-buscar
+              label="Línea"
+              placeholder="Escriba línea (ej. SPARK, COROLLA)…"
+              [textoInicial]="form().nombreLinea || ''"
+              [minLength]="1"
+              [disabled]="!form().codigoMarca"
+              [buscarRemoto]="buscarLineasRemoto"
+              (seleccionado)="onLineaPick($event)"
+              (limpiado)="onLineaLimpiar()"
+            />
+          </div>
+          <div class="col-2">
+            <label>Modelo</label>
+            <input type="text" [ngModel]="form().modelo" (ngModelChange)="patch('modelo', $event)" />
+          </div>
+          <div class="col-2">
+            <label>Cilindraje (cc)</label>
+            <input type="text" [ngModel]="form().cilindraje" (ngModelChange)="patch('cilindraje', $event)" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-4">
+            <argo-catalogo-enum-buscar
+              label="Clase vehículo"
+              placeholder="Escriba clase (ej. AUTOMOVIL, CAMIONETA)…"
+              [textoInicial]="form().claseVehiculo || ''"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesClase()"
+              (seleccionado)="onClasePick($event)"
+              (limpiado)="onClaseLimpiar()"
+            />
+          </div>
+          <div class="col-4">
+            <argo-catalogo-enum-buscar
+              label="Carrocería"
+              placeholder="Escriba carrocería…"
+              [textoInicial]="form().carroceria || ''"
+              [remoto]="false"
+              [minLength]="1"
+              [disabled]="!carroceriasDisponibles().length"
+              [opcionesLocales]="opcionesCarroceria()"
+              (seleccionado)="onCarroceriaPick($event)"
+              (limpiado)="onCarroceriaLimpiar()"
+            />
+          </div>
+          <div class="col-4">
+            <argo-catalogo-enum-buscar
+              label="Color"
+              placeholder="Escriba color (ej. AZUL, ROJO)…"
+              [textoInicial]="form().color || ''"
+              [minLength]="2"
+              [buscarRemoto]="buscarColoresRemoto"
+              (seleccionado)="onColorPick($event)"
+              (limpiado)="onColorLimpiar()"
+            />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-3">
+            <label>Combustible</label>
+            <select [ngModel]="form().combustible" (ngModelChange)="patch('combustible', $event)">
+              <option value="">— Seleccione —</option>
+              <option *ngFor="let c of meta()?.combustibles || []" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="col-3">
+            <label>N.º motor</label>
+            <input type="text" [ngModel]="form().numeroMotor" (ngModelChange)="patch('numeroMotor', $event)" />
+          </div>
+          <div class="col-3">
+            <label>N.º chasis</label>
+            <input type="text" [ngModel]="form().numeroChasis" (ngModelChange)="patch('numeroChasis', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Serie</label>
+            <input type="text" [ngModel]="form().serie" (ngModelChange)="patch('serie', $event)" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-3">
+            <label>Tonelaje</label>
+            <input type="text" [ngModel]="form().tonelaje" (ngModelChange)="patch('tonelaje', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Pasajeros</label>
+            <input type="text" [ngModel]="form().pasajeros" (ngModelChange)="patch('pasajeros', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Licencia tránsito</label>
+            <input type="text" [ngModel]="form().numeroLicencia" (ngModelChange)="patch('numeroLicencia', $event)" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-w-full">
+            <label>Observaciones</label>
+            <textarea rows="3" [ngModel]="form().observaciones" (ngModelChange)="patch('observaciones', $event)"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="foto-col">
+        <label>Foto del vehículo</label>
+        <div class="foto-box">
+          <img *ngIf="fotoPreview() as p" [src]="p" alt="Vehículo" />
+          <span *ngIf="!fotoPreview()">Sin foto</span>
+        </div>
+        <label class="upload-btn">
+          <input type="file" accept="image/*" (change)="onFoto($event)" hidden />
+          Cargar foto
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="primary" [disabled]="saving()" (click)="guardar()">
+        {{ saving() ? 'Guardando…' : (esNuevo() ? 'Crear vehículo' : 'Guardar cambios') }}
+      </button>
+    </div>
+  </div>
+
+  <div class="card docs-panel" *ngIf="!loading() && tab() === 'documentos' && puedeDocumentos()">
+    <section class="req-section">
+      <header class="req-head">
+        <div>
+          <h2>Requisitos según clase</h2>
+          <p>Documentos obligatorios configurados para la clase del vehículo. Pulse «Registrar» para cargar el escaneo.</p>
+        </div>
+        <button type="button" class="ghost mini" (click)="cargarRequisitos()" [disabled]="loadingReq()">
+          {{ loadingReq() ? 'Actualizando…' : 'Actualizar' }}
+        </button>
+      </header>
+
+      <div class="loading-req" *ngIf="loadingReq()">Cargando requisitos…</div>
+
+      <div class="empty-state card inner" *ngIf="!loadingReq() && sinClaseDoc()">
+        <p>Asigne una <strong>clase de vehículo</strong> en la pestaña Datos para ver los documentos requeridos.</p>
+      </div>
+
+      <div class="empty-state card inner" *ngIf="!loadingReq() && !sinClaseDoc() && docsRequeridos().length === 0">
+        <p>No hay requisitos configurados para «{{ claseDoc()?.label }}». Revise <strong>Configuración → Requisitos vehículos</strong>.</p>
+      </div>
+
+      <div class="cap-resumen card inner" *ngIf="!loadingReq() && claseDoc() as c">
+        <h3>Clase detectada</h3>
+        <p><strong>{{ c.label }}</strong></p>
+      </div>
+
+      <div class="doc-grid-req" *ngIf="!loadingReq() && docsRequeridos().length">
+        <article
+          class="doc-card-req"
+          *ngFor="let doc of docsRequeridos(); let i = index"
+          [ngClass]="[cardToneReq(i), doc.vencido ? 'doc-vencido' : '', doc.vencePronto ? 'doc-pronto' : '']">
+          <header class="doc-card-head">
+            <span class="doc-icon">{{ iconLabelReq(doc.codigo) }}</span>
+            <div>
+              <h3>{{ doc.nombre }}</h3>
+              <p *ngIf="doc.descripcion">{{ doc.descripcion }}</p>
+            </div>
+            <span class="badge slate" *ngIf="!doc.controlaVencimiento">Sin vencimiento</span>
+            <span class="badge slate" *ngIf="!doc.controlaVencimiento">Sin vencimiento</span>
+            <span class="badge ok" *ngIf="doc.subido && !doc.vencido && !doc.vencePronto && !doc.faltaFechaVence">Registrado</span>
+            <span class="badge warn" *ngIf="!doc.subido">Pendiente</span>
+            <span class="badge err" *ngIf="doc.vencido">Vencido</span>
+            <span class="badge warn" *ngIf="doc.subido && doc.faltaFechaVence && !doc.vencido && doc.controlaVencimiento">Falta vencimiento</span>
+            <span class="badge warn" *ngIf="doc.subido && doc.vencePronto && !doc.vencido && !doc.faltaFechaVence">Por vencer</span>
+          </header>
+          <div class="doc-meta" *ngIf="doc.subido">
+            <span *ngIf="doc.numero">Nº {{ doc.numero }}</span>
+            <span *ngIf="doc.fechaExp">Exp. {{ doc.fechaExp | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="doc.fechaVence">Vence {{ doc.fechaVence | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="doc.controlaVencimiento">Aviso {{ doc.diasAvisoVencimiento || diasAvisoGlobal() }} días antes</span>
+          </div>
+          <div class="doc-meta" *ngIf="!doc.subido && doc.controlaVencimiento">
+            <span>Requiere expedición y vencimiento al registrar</span>
+          </div>
+          <div class="doc-meta" *ngIf="!doc.subido && !doc.controlaVencimiento">
+            <span>No requiere fecha de vencimiento</span>
+          </div>
+          <div class="doc-actions-req">
+            <button type="button" class="primary mini" (click)="registrarRequisito(doc)">
+              {{ doc.subido ? 'Editar registro' : 'Registrar' }}
+            </button>
+            <button type="button" class="ghost mini" (click)="abrirDocRequerido(doc)" [disabled]="!doc.urlArchivo">
+              Ver archivo
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div class="docs-layout">
+      <div class="docs-list">
+        <div class="docs-head">
+          <h2>Registros cargados</h2>
+          <button type="button" class="ghost" (click)="abrirDocNuevo()">+ Agregar</button>
+        </div>
+        <table *ngIf="documentos().length; else sinDocs">
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Número</th>
+              <th>Expedición</th>
+              <th>Vence</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of documentos()" [class.selected]="docEdit()?._id === d._id" [ngClass]="docEstadoClass(d)">
+              <td>{{ d.documento }}</td>
+              <td>{{ d.numero || '—' }}</td>
+              <td>{{ d.fechaExp ? (d.fechaExp | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ d.fechaVence ? (d.fechaVence | date:'dd/MM/yyyy') : '—' }}</td>
+              <td class="actions">
+                <button type="button" class="ghost sm" (click)="editarDoc(d)">Editar</button>
+                <button type="button" class="ghost sm danger" (click)="eliminarDoc(d)">×</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #sinDocs>
+          <p class="empty-docs">Sin documentos registrados.</p>
+        </ng-template>
+      </div>
+
+      <div class="doc-form card inner">
+        <h3>{{ docEdit() ? 'Editar documento' : 'Nuevo documento' }}</h3>
+        <argo-catalogo-enum-buscar
+          label="Tipo de documento"
+          placeholder="Escriba tipo (ej. SOAT, licencia tránsito)…"
+          [textoInicial]="docForm().documento || ''"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesTipoDocumento()"
+          (seleccionado)="onTipoDocPick($event)"
+        />
+        <label>Descripción</label>
+        <input type="text" [ngModel]="docForm().documento" (ngModelChange)="patchDoc('documento', $event)" />
+        <label>Número</label>
+        <input type="text" [ngModel]="docForm().numero" (ngModelChange)="patchDoc('numero', $event)" />
+        <div class="row" *ngIf="docControlaVencimiento()">
+          <div class="col-6">
+            <label>Expedición *</label>
+            <input type="date" [ngModel]="docForm().fechaExp" (ngModelChange)="patchDoc('fechaExp', $event)" />
+          </div>
+          <div class="col-6">
+            <label>Vencimiento *</label>
+            <input type="date" [ngModel]="docForm().fechaVence" (ngModelChange)="patchDoc('fechaVence', $event)" />
+          </div>
+        </div>
+        <p class="hint" *ngIf="!docControlaVencimiento()">
+          Este tipo de documento no controla vencimiento. Solo registre número y archivo si aplica.
+        </p>
+        <p class="hint" *ngIf="docControlaVencimiento()">
+          La alerta aparece {{ docReqActivo()?.diasAvisoVencimiento || diasAvisoGlobal() }} días antes del vencimiento.
+        </p>
+        <label>Archivo escaneado</label>
+        <input type="file" accept="image/*,.pdf" (change)="onDocArchivo($event)" />
+        <a *ngIf="docForm().urlArchivo as u" [href]="fotoUrl(u)" target="_blank" rel="noopener">Ver archivo actual</a>
+        <button type="button" class="primary" [disabled]="docSaving()" (click)="guardarDocumento()">
+          {{ docSaving() ? 'Guardando…' : 'Guardar documento' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card docs-panel" *ngIf="!loading() && tab() === 'inspeccion' && puedeDocumentos() && vehiculoId() as vid">
+    <argo-vehiculo-inspeccion-panel [vehiculoId]="vid" />
+  </div>
+</section>

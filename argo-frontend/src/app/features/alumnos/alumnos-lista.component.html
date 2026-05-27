@@ -5,13 +5,13 @@
       <div class="title">
         <h1>{{ esJornadas() ? 'Alumnos — Jornadas de Capacitación' : 'Alumnos' }}</h1>
         <p *ngIf="esJornadas() && vista() === 'lista'">
-          Solo alumnos con tipo <strong>Jornadas de Capacitación</strong> (matrículas sin cobro en este módulo).
+          Solo alumnos con tipo <strong>Jornadas de Capacitación</strong>. Pulse un encabezado de columna para ordenar.
         </p>
         <p *ngIf="esJornadas() && vista() === 'cards'">
           Tarjetas de alumnos de jornadas de capacitación.
         </p>
         <p *ngIf="!esJornadas() && vista() === 'lista'">
-          Listado completo con datos personales, contacto y ubicación. Desplaza horizontalmente si no ves todas las columnas.
+          Listado completo con datos personales, contacto y ubicación. Pulse un encabezado de columna para ordenar; vuelva a pulsar para invertir el orden.
         </p>
         <p *ngIf="!esJornadas() && vista() === 'cards'">
           Vista en tarjetas con foto tipo documento, alertas y datos principales del alumno.
@@ -63,16 +63,97 @@
         <thead>
           <tr>
             <th class="col-foto"></th>
-            <th>Documento</th>
-            <th>Nombre</th>
-            <th>Fecha nac.</th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'numDoc'"
+                [attr.aria-sort]="sortAria('numDoc')"
+                (click)="toggleSort('numDoc')">
+                Documento <span class="sort-icon">{{ sortIcon('numDoc') }}</span>
+              </button>
+            </th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'nombre'"
+                [attr.aria-sort]="sortAria('nombre')"
+                (click)="toggleSort('nombre')">
+                Nombre <span class="sort-icon">{{ sortIcon('nombre') }}</span>
+              </button>
+            </th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'fechaNac'"
+                [attr.aria-sort]="sortAria('fechaNac')"
+                (click)="toggleSort('fechaNac')">
+                Fecha nac. <span class="sort-icon">{{ sortIcon('fechaNac') }}</span>
+              </button>
+            </th>
             <th class="col-alertas">Alertas</th>
-            <th>Jornada</th>
-            <th>Estado civil</th>
-            <th>Correo</th>
-            <th>Celular</th>
-            <th class="col-direccion">Dirección</th>
-            <th>Mun. origen</th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'jornada'"
+                [attr.aria-sort]="sortAria('jornada')"
+                (click)="toggleSort('jornada')">
+                Jornada <span class="sort-icon">{{ sortIcon('jornada') }}</span>
+              </button>
+            </th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'estadoCivil'"
+                [attr.aria-sort]="sortAria('estadoCivil')"
+                (click)="toggleSort('estadoCivil')">
+                Estado civil <span class="sort-icon">{{ sortIcon('estadoCivil') }}</span>
+              </button>
+            </th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'correo'"
+                [attr.aria-sort]="sortAria('correo')"
+                (click)="toggleSort('correo')">
+                Correo <span class="sort-icon">{{ sortIcon('correo') }}</span>
+              </button>
+            </th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'celular'"
+                [attr.aria-sort]="sortAria('celular')"
+                (click)="toggleSort('celular')">
+                Celular <span class="sort-icon">{{ sortIcon('celular') }}</span>
+              </button>
+            </th>
+            <th class="col-direccion">
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'direccion'"
+                [attr.aria-sort]="sortAria('direccion')"
+                (click)="toggleSort('direccion')">
+                Dirección <span class="sort-icon">{{ sortIcon('direccion') }}</span>
+              </button>
+            </th>
+            <th class="col-mun">
+              <button
+                type="button"
+                class="th-sort"
+                [class.active]="sortCol() === 'munOrigen'"
+                [attr.aria-sort]="sortAria('munOrigen')"
+                (click)="toggleSort('munOrigen')">
+                Mun. origen <span class="sort-icon">{{ sortIcon('munOrigen') }}</span>
+              </button>
+            </th>
             <th></th>
           </tr>
         </thead>

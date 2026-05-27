@@ -31,6 +31,12 @@ export function ymdLocal(iso?: string | Date | null): string {
   return `${y}-${m}-${day}`;
 }
 
+/** ¿La fecha cae en el día calendario actual del equipo? */
+export function esFechaHoy(iso?: string | Date | null, hoy = ymdLocal(new Date())): boolean {
+  const key = ymdLocal(iso);
+  return !!key && key === hoy;
+}
+
 /** Día civil YYYY-MM-DD sin desfase UTC (fechas de contrato/jornada). */
 export function ymdCalendario(iso?: string | Date | null): string {
   if (!iso) return '';
@@ -62,23 +68,36 @@ export function finMes(anio: number, mes: number): Date {
   return new Date(anio, mes + 1, 0, 23, 59, 59, 999);
 }
 
-/** Cuadrícula mensual empezando en lunes (estilo agenda). */
+/** Cuadrícula mensual empezando en lunes (incluye días visibles del mes anterior/siguiente). */
 export function celdasMes(anio: number, mes: number): CeldaMes[] {
   const lastDay = new Date(anio, mes + 1, 0).getDate();
   const pad = (new Date(anio, mes, 1).getDay() + 6) % 7;
   const cells: CeldaMes[] = [];
 
-  for (let i = 0; i < pad; i++) {
-    cells.push({ fecha: null, key: '', otroMes: true });
+  const prevLast = new Date(anio, mes, 0).getDate();
+  for (let i = pad - 1; i >= 0; i--) {
+    const fecha = new Date(anio, mes - 1, prevLast - i);
+    cells.push({ fecha, key: ymdLocal(fecha), otroMes: true });
   }
   for (let d = 1; d <= lastDay; d++) {
     const fecha = new Date(anio, mes, d);
     cells.push({ fecha, key: ymdLocal(fecha), otroMes: false });
   }
+  let next = 1;
   while (cells.length % 7 !== 0) {
-    cells.push({ fecha: null, key: '', otroMes: true });
+    const fecha = new Date(anio, mes + 1, next++);
+    cells.push({ fecha, key: ymdLocal(fecha), otroMes: true });
   }
   return cells;
+}
+
+/** Rango YYYY-MM-DD que cubre toda la cuadrícula visible del mes. */
+export function rangoVisibleMes(anio: number, mes: number): { desde: string; hasta: string } {
+  const cells = celdasMes(anio, mes).filter((c) => c.fecha);
+  if (!cells.length) {
+    return { desde: ymdLocal(inicioMes(anio, mes)), hasta: ymdLocal(finMes(anio, mes)) };
+  }
+  return { desde: ymdLocal(cells[0].fecha!), hasta: ymdLocal(cells[cells.length - 1].fecha!) };
 }
 
 export function agruparPorFecha<T>(items: T[], fn: (item: T) => string | undefined): Map<string, T[]> {
@@ -166,6 +185,20 @@ export function fmtRangoSemana(inicio: Date): string {
 
 export function fmtDiaSemanaCorto(fecha: Date): string {
   return fecha.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+/** Posición vertical (%) de la hora actual en la rejilla semanal, o null si fuera del rango. */
+export function ahoraLineaTopPct(now = new Date()): number | null {
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const start = HORA_INICIO * 60;
+  const end = HORA_FIN * 60;
+  if (mins < start || mins >= end) return null;
+  return ((mins - start) / (HORAS_TOTAL * 60)) * 100;
+}
+
+export function esFinDeSemana(fecha: Date): boolean {
+  const d = fecha.getDay();
+  return d === 0 || d === 6;
 }
 
 export const DIAS_SEMANA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];

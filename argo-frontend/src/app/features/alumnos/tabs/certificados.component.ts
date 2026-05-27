@@ -8,6 +8,7 @@ import { AlumnoStore } from '../../../core/services/alumno-store.service';
 import { AlumnoService } from '../../../core/services/alumno.service';
 import type { DocumentoPendienteRes } from '../../../core/services/config-requisitos-documentos.service';
 import { CertificadoService } from '../../../core/services/certificado.service';
+import { CertificadoJornadaAlertService } from '../../../core/services/certificado-jornada-alert.service';
 import { labelOrientacion, labelTipoCert } from '../../../core/constants/tipos-certificado';
 import {
   TIPOS_ALUMNO_DEF,
@@ -36,6 +37,7 @@ export class CertificadosComponent {
   private alumnoSvc = inject(AlumnoService);
   private cfgCertSvc = inject(ConfigCertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
+  private certAlertSvc = inject(CertificadoJornadaAlertService);
 
   elegibles = signal<any[]>([]);
   certificados = signal<any[]>([]);
@@ -169,7 +171,7 @@ export class CertificadosComponent {
         fechaEmision: this.fechaEmision() || undefined,
       })
       .subscribe({
-        next: () => {
+        next: (cert) => {
           this.saving.set(false);
           this.idLiquidacion.set('');
           this.idPlantilla.set('');
@@ -179,6 +181,7 @@ export class CertificadosComponent {
           this.observaciones.set('');
           this.fechaEmision.set('');
           this.recargar(nd);
+          this.certAlertSvc.notificarDesdeRespuesta(cert, this.store.nombreCompleto() || cert?.nombreCompleto);
           this.setMsg('Certificado emitido.', false);
         },
         error: (e) => this.setMsg(e?.error?.message || 'Error emitiendo certificado.', true),

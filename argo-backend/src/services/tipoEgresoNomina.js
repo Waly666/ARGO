@@ -7,6 +7,8 @@ const DEFAULTS_POR_ID = {
   2: { requiereEmpleado: true, efectoNomina: 'pago_sueldo' },
   3: { requiereEmpleado: true, efectoNomina: 'abono_adelanto' },
   10: { requiereEmpleado: true, efectoNomina: 'prestamo' },
+  14: { requiereVehiculo: true },
+  15: { requiereVehiculo: true },
 };
 
 function normBool(v) {
@@ -25,7 +27,8 @@ function inferirDesdeNombre(tipoNombre) {
     return { efectoNomina: 'pago_sueldo', requiereEmpleado: true };
   }
   if (/HORA/.test(t) && /DICTAD/.test(t)) return { requiereEmpleado: true, efectoNomina: '' };
-  return { requiereEmpleado: false, efectoNomina: '' };
+  if (/VEHICULO|COMBUSTIBLE/.test(t)) return { requiereVehiculo: true, requiereEmpleado: false, efectoNomina: '' };
+  return { requiereEmpleado: false, efectoNomina: '', requiereVehiculo: false };
 }
 
 function normTipoNombre(tipoNombre) {
@@ -50,24 +53,29 @@ function configDesdeTipoDoc(tipoDoc) {
   if (!tipoDoc) {
     return {
       requiereEmpleado: false,
+      requiereVehiculo: false,
       efectoNomina: '',
       generaDeduccionNomina: false,
       anticipoNomina: null,
     };
   }
   let requiereEmpleado = normBool(tipoDoc.requiereEmpleado);
+  let requiereVehiculo = normBool(tipoDoc.requiereVehiculo);
   let efectoNomina = String(tipoDoc.efectoNomina || '').trim().toLowerCase();
   if (!EFECTOS_NOMINA.includes(efectoNomina)) efectoNomina = '';
 
-  if (requiereEmpleado == null && !efectoNomina) {
+  if (requiereEmpleado == null && !efectoNomina && requiereVehiculo == null) {
     const inf = inferirDesdeNombre(tipoDoc.tipo);
     if (requiereEmpleado == null) requiereEmpleado = inf.requiereEmpleado;
     if (!efectoNomina) efectoNomina = inf.efectoNomina || '';
+    if (requiereVehiculo == null) requiereVehiculo = !!inf.requiereVehiculo;
   }
   if (requiereEmpleado == null) requiereEmpleado = !!efectoNomina;
+  if (requiereVehiculo == null) requiereVehiculo = false;
   if (efectoNomina === 'pago_sueldo') {
     return {
       requiereEmpleado: true,
+      requiereVehiculo,
       efectoNomina: 'pago_sueldo',
       generaDeduccionNomina: false,
       anticipoNomina: null,
@@ -77,6 +85,7 @@ function configDesdeTipoDoc(tipoDoc) {
     efectoNomina === 'prestamo' || efectoNomina === 'abono_adelanto' ? efectoNomina : null;
   return {
     requiereEmpleado,
+    requiereVehiculo,
     efectoNomina,
     generaDeduccionNomina: !!anticipoNomina,
     anticipoNomina,
@@ -112,6 +121,9 @@ async function sincronizarDefaultsTipoEgreso() {
     if (row.requiereEmpleado == null && defs.requiereEmpleado != null) {
       patch.requiereEmpleado = defs.requiereEmpleado;
     }
+    if (row.requiereVehiculo == null && defs.requiereVehiculo != null) {
+      patch.requiereVehiculo = defs.requiereVehiculo;
+    }
     if (!row.efectoNomina && defs.efectoNomina) patch.efectoNomina = defs.efectoNomina;
     if (Object.keys(patch).length) {
       await col.updateOne({ _id: row._id }, { $set: patch });
@@ -119,12 +131,17 @@ async function sincronizarDefaultsTipoEgreso() {
     }
   }
   const sinEfecto = await col
-    .find({ efectoNomina: { $in: [null, ''] }, requiereEmpleado: { $in: [null, undefined] } })
+    .find({
+      efectoNomina: { $in: [null, ''] },
+      requiereEmpleado: { $in: [null, undefined] },
+      requiereVehiculo: { $in: [null, undefined] },
+    })
     .lean();
   for (const row of sinEfecto) {
     const inf = inferirDesdeNombre(row.tipo);
     const patch = {};
     if (row.requiereEmpleado == null && inf.requiereEmpleado) patch.requiereEmpleado = true;
+    if (row.requiereVehiculo == null && inf.requiereVehiculo) patch.requiereVehiculo = true;
     if (!row.efectoNomina && inf.efectoNomina) patch.efectoNomina = inf.efectoNomina;
     if (Object.keys(patch).length) {
       await col.updateOne({ _id: row._id }, { $set: patch });

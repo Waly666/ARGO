@@ -76,11 +76,26 @@
         @if (mostrarAlertaCaja() && !cajaEstado.loading() && cajaEstado.abierta() === false) {
           <argo-caja-cerrada-banner class="head-caja-alarm" [blink]="true" />
         }
-        @if (mostrarAlertaCertJornada()) {
+        @if (mostrarAlertaCertificado()) {
           <argo-certificado-jornada-banner class="head-cert-alarm-wrap" />
         }
         @if (mostrarAlarmaJornadaProceso()) {
           <argo-jornada-en-proceso-banner class="head-jornada-proceso-alarm" />
+        }
+        @if (mostrarAlertaDocsVehiculos()) {
+          <argo-vehiculo-docs-vencimiento-banner class="head-vehiculo-docs-alarm" />
+        }
+        @if (mostrarAlertaDocsFaltantesVehiculos()) {
+          <argo-vehiculo-docs-faltantes-banner class="head-vehiculo-docs-alarm" />
+        }
+        @if (mostrarAlertaInspeccionVehiculos()) {
+          <argo-vehiculo-inspeccion-banner class="head-vehiculo-docs-alarm" />
+        }
+        @if (mostrarAlertaDocsEmpleados()) {
+          <argo-empleado-docs-vencimiento-banner class="head-empleado-docs-alarm" />
+        }
+        @if (mostrarAlertaDocsFaltantesEmpleados()) {
+          <argo-empleado-docs-faltantes-banner class="head-empleado-docs-alarm" />
         }
         @if (mostrarToastJornadaLive()) {
           <argo-jornada-live-toast class="head-jornada-live-toast" />

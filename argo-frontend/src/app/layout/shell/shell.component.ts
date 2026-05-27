@@ -8,14 +8,29 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
+import { CertificadoService } from '../../core/services/certificado.service';
 import { JornadaCapService } from '../../core/services/jornada-cap.service';
 import { JornadaEnProcesoAlertService } from '../../core/services/jornada-en-proceso-alert.service';
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import { PermisoService } from '../../core/services/permiso.service';
+import { AlarmaService } from '../../core/services/alarma.service';
+import { VehiculoDocsAlertService } from '../../core/services/vehiculo-docs-alert.service';
+import { VehiculoDocsFaltantesAlertService } from '../../core/services/vehiculo-docs-faltantes-alert.service';
+import { VehiculoInspeccionAlertService } from '../../core/services/vehiculo-inspeccion-alert.service';
+import { VehiculoService } from '../../core/services/vehiculo.service';
+import { InspeccionVehiculoService } from '../../core/services/inspeccion-vehiculo.service';
+import { EmpleadoDocsAlertService } from '../../core/services/empleado-docs-alert.service';
+import { EmpleadoDocsFaltantesAlertService } from '../../core/services/empleado-docs-faltantes-alert.service';
+import { EmpleadoService } from '../../core/services/empleado.service';
 import { CajaCerradaBannerComponent } from '../../features/caja/caja-cerrada-banner.component';
 import { CertificadoJornadaBannerComponent } from '../../features/jornadas/certificado-jornada-banner.component';
 import { JornadaEnProcesoBannerComponent } from '../../features/jornadas/jornada-en-proceso-banner.component';
 import { JornadaLiveToastComponent } from '../../features/jornadas/jornada-live-toast.component';
+import { VehiculoDocsVencimientoBannerComponent } from '../../features/vehiculos/vehiculo-docs-vencimiento-banner.component';
+import { VehiculoDocsFaltantesBannerComponent } from '../../features/vehiculos/vehiculo-docs-faltantes-banner.component';
+import { VehiculoInspeccionBannerComponent } from '../../features/vehiculos/vehiculo-inspeccion-banner.component';
+import { EmpleadoDocsVencimientoBannerComponent } from '../../features/rrhh/empleado-docs-vencimiento-banner.component';
+import { EmpleadoDocsFaltantesBannerComponent } from '../../features/rrhh/empleado-docs-faltantes-banner.component';
 
 interface MenuLink {
   kind: 'link';
@@ -49,18 +64,28 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
 export class ShellComponent {
   private auth = inject(AuthService);
   private permisos = inject(PermisoService);
+  private alarmas = inject(AlarmaService);
   private router = inject(Router);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
+  private certSvc = inject(CertificadoService);
   private jornadaSvc = inject(JornadaCapService);
   private liveSync = inject(JornadaLiveSyncService);
   private jornadaProcesoAlert = inject(JornadaEnProcesoAlertService);
+  private vehiculoDocsAlert = inject(VehiculoDocsAlertService);
+  private vehiculoDocsFaltantesAlert = inject(VehiculoDocsFaltantesAlertService);
+  private vehiculoInspeccionAlert = inject(VehiculoInspeccionAlertService);
+  private empleadoSvc = inject(EmpleadoService);
+  private empleadoDocsAlert = inject(EmpleadoDocsAlertService);
+  private empleadoDocsFaltantesAlert = inject(EmpleadoDocsFaltantesAlertService);
+  private vehiculoSvc = inject(VehiculoService);
+  private inspeccionSvc = inject(InspeccionVehiculoService);
   readonly cajaEstado = inject(CajaEstadoService);
 
   collapsed = signal(false);
@@ -107,16 +132,28 @@ export class ShellComponent {
   });
 
   /** Usuarios con permiso de caja del turno deben abrir caja personal. */
-  mostrarAlertaCaja = computed(() => this.permisos.tiene('caja.turno'));
+  mostrarAlertaCaja = computed(() => this.alarmas.tiene('alarmas.caja.cerrada'));
 
-  /** Administrador de jornadas: aviso parpadeante de certificados auto-generados. */
-  mostrarAlertaCertJornada = computed(() => this.permisos.tiene('jornadas.gestionar'));
+  /** Usuarios que emiten o gestionan certificados: aviso parpadeante al generarse uno nuevo. */
+  mostrarAlertaCertificado = computed(() => this.alarmas.tiene('alarmas.jornadas.certificado_nuevo'));
 
   /** Toast efímero (3 s) cuando se crean clases/jornadas. */
-  mostrarToastJornadaLive = computed(() => this.permisos.tiene('jornadas.gestionar'));
+  mostrarToastJornadaLive = computed(() => this.alarmas.tiene('alarmas.jornadas.live_toast'));
 
   /** Alarma persistente de jornada(s) EN PROCESO hoy. */
-  mostrarAlarmaJornadaProceso = computed(() => this.permisos.tiene('jornadas.gestionar'));
+  mostrarAlarmaJornadaProceso = computed(() => this.alarmas.tiene('alarmas.jornadas.en_proceso'));
+
+  /** Alerta roja de vencimiento de papeles de vehículos. */
+  mostrarAlertaDocsVehiculos = computed(() => this.alarmas.tiene('alarmas.vehiculos.docs_vencidos'));
+
+  /** Alerta de documentos requeridos sin registrar en vehículos. */
+  mostrarAlertaDocsFaltantesVehiculos = computed(() => this.alarmas.tiene('alarmas.vehiculos.docs_faltantes'));
+
+  mostrarAlertaInspeccionVehiculos = computed(() => this.alarmas.tiene('alarmas.vehiculos.inspeccion_pendiente'));
+
+  mostrarAlertaDocsEmpleados = computed(() => this.alarmas.tiene('alarmas.empleados.docs_vencidos'));
+
+  mostrarAlertaDocsFaltantesEmpleados = computed(() => this.alarmas.tiene('alarmas.empleados.docs_faltantes'));
 
   private readonly menuAll: MenuEntry[] = [
     { kind: 'link', label: 'Dashboard', icon: '◆', path: '/app/dashboard', iconTone: 'violet', permiso: 'dashboard' },
@@ -166,6 +203,14 @@ export class ShellComponent {
           icon: '⛺',
           iconTone: 'emerald',
           permiso: ['jornadas.ver', 'jornadas.gestionar'],
+        },
+        {
+          kind: 'link',
+          label: 'Clases de hoy',
+          path: '/app/jornadas/clases-hoy',
+          icon: '◷',
+          iconTone: 'cyan',
+          permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
         },
         {
           kind: 'link',
@@ -330,7 +375,7 @@ export class ShellComponent {
         },
         {
           kind: 'link',
-          label: 'Roles y permisos',
+          label: 'Roles, permisos y alarmas',
           path: '/app/configuracion/roles',
           icon: '◈',
           iconTone: 'violet',
@@ -370,11 +415,43 @@ export class ShellComponent {
         },
         {
           kind: 'link',
-          label: 'Requisitos documentos',
-          path: '/app/configuracion/requisitos-documentos',
+          label: 'Requisitos alumnos',
+          path: '/app/configuracion/requisitos-documentos-alumnos',
           icon: '▥',
           iconTone: 'teal',
           permiso: 'config.requisitos',
+        },
+        {
+          kind: 'link',
+          label: 'Requisitos vehículos',
+          path: '/app/configuracion/requisitos-documentos-vehiculos',
+          icon: '▥',
+          iconTone: 'pink',
+          permiso: 'config.requisitos',
+        },
+        {
+          kind: 'link',
+          label: 'Requisitos empleados',
+          path: '/app/configuracion/requisitos-documentos-empleados',
+          icon: '▥',
+          iconTone: 'amber',
+          permiso: 'config.requisitos',
+        },
+        {
+          kind: 'link',
+          label: 'Formato inspección',
+          path: '/app/configuracion/formato-inspeccion-vehiculos',
+          icon: '▥',
+          iconTone: 'lime',
+          permiso: 'config.requisitos',
+        },
+        {
+          kind: 'link',
+          label: 'Monitor de recursos',
+          path: '/app/configuracion/monitor',
+          icon: '◫',
+          iconTone: 'cyan',
+          permiso: 'config.auditoria',
         },
         {
           kind: 'link',
@@ -426,8 +503,10 @@ export class ShellComponent {
     this.auth.refreshMe().subscribe({ error: () => undefined });
     this.syncMenuGroupsFromUrl(this.router.url);
     void this.refrescarCajaSiAplica();
-    this.iniciarPollCertificadosJornada();
+    this.iniciarPollCertificados();
     this.iniciarPollJornadasLive();
+    this.iniciarPollAlertasVehiculos();
+    this.iniciarPollAlertasEmpleados();
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -445,12 +524,75 @@ export class ShellComponent {
     }
   }
 
-  /** Detecta certificados auto-generados recientes para alerta en header (admin jornadas). */
-  private iniciarPollCertificadosJornada(): void {
+  /** Alertas globales de documentos de vehículos. */
+  private iniciarPollAlertasVehiculos(): void {
+    const poll = () => {
+      if (this.mostrarAlertaDocsVehiculos()) {
+        this.vehiculoSvc.alertasDocumentos().subscribe({
+          next: (data) => this.vehiculoDocsAlert.actualizar(data),
+          error: () => undefined,
+        });
+      } else {
+        this.vehiculoDocsAlert.actualizar(null);
+      }
+
+      if (this.mostrarAlertaDocsFaltantesVehiculos()) {
+        this.vehiculoSvc.alertasDocumentosFaltantes().subscribe({
+          next: (data) => this.vehiculoDocsFaltantesAlert.actualizar(data),
+          error: () => undefined,
+        });
+      } else {
+        this.vehiculoDocsFaltantesAlert.actualizar(null);
+      }
+
+      if (this.mostrarAlertaInspeccionVehiculos()) {
+        this.inspeccionSvc.alertasPendientes().subscribe({
+          next: (data) => this.vehiculoInspeccionAlert.actualizar(data),
+          error: () => undefined,
+        });
+      } else {
+        this.vehiculoInspeccionAlert.actualizar(null);
+      }
+    };
+    poll();
+    interval(60_000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => poll());
+  }
+
+  /** Alertas globales de documentos de empleados. */
+  private iniciarPollAlertasEmpleados(): void {
+    const poll = () => {
+      if (this.mostrarAlertaDocsEmpleados()) {
+        this.empleadoSvc.alertasDocumentos().subscribe({
+          next: (data) => this.empleadoDocsAlert.actualizar(data),
+          error: () => undefined,
+        });
+      } else {
+        this.empleadoDocsAlert.actualizar(null);
+      }
+
+      if (this.mostrarAlertaDocsFaltantesEmpleados()) {
+        this.empleadoSvc.alertasDocumentosFaltantes().subscribe({
+          next: (data) => this.empleadoDocsFaltantesAlert.actualizar(data),
+          error: () => undefined,
+        });
+      } else {
+        this.empleadoDocsFaltantesAlert.actualizar(null);
+      }
+    };
+    poll();
+    interval(60_000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => poll());
+  }
+
+  /** Detecta certificados emitidos recientemente (jornada, curso de pago y demás). */
+  private iniciarPollCertificados(): void {
     const poll = (minutosAtras: number, alertarNuevos: boolean) => {
-      if (!this.mostrarAlertaCertJornada()) return;
+      if (!this.mostrarAlertaCertificado()) return;
       const desde = new Date(Date.now() - minutosAtras * 60 * 1000).toISOString();
-      this.jornadaSvc.listarCertificadosJornada({ desde }).subscribe({
+      this.certSvc.listarRecientes(desde).subscribe({
         next: (rows) => {
           for (const c of rows || []) {
             if (alertarNuevos) {
@@ -543,7 +685,12 @@ export class ShellComponent {
       u.includes('/configuracion/roles') ||
       u.includes('/configuracion/catalogos') ||
       u.includes('/configuracion/certificados') ||
+      u.includes('/configuracion/requisitos-documentos-vehiculos') ||
+      u.includes('/configuracion/requisitos-documentos-empleados') ||
+      u.includes('/configuracion/requisitos-documentos-alumnos') ||
+      u.includes('/configuracion/formato-inspeccion-vehiculos') ||
       u.includes('/configuracion/requisitos-documentos') ||
+      u.includes('/configuracion/monitor') ||
       u.includes('/configuracion/auditoria')
     ) {
       patch['Configuración'] = true;

@@ -392,6 +392,44 @@
 
 
 
+    <div class="row" *ngIf="obligaVehiculo()">
+
+      <div class="col-4">
+
+        <label>Placa vehículo *</label>
+
+        <input
+          type="text"
+          [ngModel]="form().placa"
+          (ngModelChange)="onPlacaChange($event)"
+          (blur)="onPlacaBlur()"
+          placeholder="Ej. ABC123"
+          style="text-transform: uppercase"
+          autocomplete="off"
+          [class.input-invalid]="!!placaVehiculoError()"
+          [class.input-valid]="!!placaVehiculoInfo()"
+        />
+
+        <p class="hint" *ngIf="placaVerificando()">Verificando placa…</p>
+
+        <p class="hint err" *ngIf="placaVehiculoError()">{{ placaVehiculoError() }}</p>
+
+        <p class="hint ok" *ngIf="placaVehiculoInfo() as v">
+
+          {{ v.nombreMarca || '' }} {{ v.nombreLinea || '' }}
+
+          <span *ngIf="v.claseVehiculo"> · {{ v.claseVehiculo }}</span>
+
+        </p>
+
+        <p class="hint">Solo se aceptan placas registradas en <strong>Vehículos</strong>.</p>
+
+      </div>
+
+    </div>
+
+
+
     <div class="row beneficiario-row">
 
       <div class="col-12">

@@ -9,6 +9,8 @@ export interface CatalogoMetaItem {
   label: string;
   idFields: string[];
   grande?: boolean;
+  esInspeccionChecklist?: boolean;
+  esCatalogoDocumento?: boolean;
 }
 
 export interface CatalogoListadoAdmin {

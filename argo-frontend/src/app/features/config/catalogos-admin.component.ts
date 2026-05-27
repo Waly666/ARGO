@@ -18,6 +18,12 @@ import {
 } from '../../core/utils/numeric-fields.util';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import { ClaseVehiculo, VehiculoService } from '../../core/services/vehiculo.service';
+
+interface ClaseRow {
+  idClase: string;
+  label: string;
+}
 
 @Component({
   selector: 'argo-catalogos-admin',
@@ -30,6 +36,7 @@ export class CatalogosAdminComponent implements OnInit {
   private svc = inject(CatalogoAdminService);
   private catCache = inject(CatalogoService);
   private confirm = inject(ConfirmDialogService);
+  private vehSvc = inject(VehiculoService);
 
   catalogos = signal<CatalogoMetaItem[]>([]);
   seleccionado = signal<string | null>(null);
@@ -44,12 +51,27 @@ export class CatalogosAdminComponent implements OnInit {
   mostrarForm = signal(false);
   editandoId = signal<string | null>(null);
   formDoc = signal<Record<string, string>>({});
+  clasesVehiculo = signal<ClaseRow[]>([]);
+  formIdClases = signal<string[]>([]);
+  formControlaVencimiento = signal(true);
 
   importJson = signal('');
   mostrarImport = signal(false);
   vista = signal<VistaLista>(readVistaLista('argo-catalogos-vista'));
 
   ngOnInit(): void {
+    this.vehSvc.listarClases().subscribe({
+      next: (rows) => {
+        const caps = (rows || [])
+          .map((r: ClaseVehiculo) => ({
+            idClase: String(r.idClase ?? '').trim(),
+            label: String(r.descripcion || r.idClase || '').trim(),
+          }))
+          .filter((c) => c.idClase);
+        this.clasesVehiculo.set(caps);
+      },
+    });
+
     this.svc.meta().subscribe({
       next: (r) => {
         const list = r.catalogos || [];
@@ -111,11 +133,146 @@ export class CatalogosAdminComponent implements OnInit {
   camposTabla(): string[] {
     const L = this.listado();
     if (!L?.campos?.length) return [];
-    return L.campos.filter((c) => c !== '_id').slice(0, 8);
+    let campos = L.campos.filter((c) => c !== '_id');
+    if (this.esCatalogoInspeccion()) {
+      campos = campos.filter((c) => c !== 'claseVehiculo' && c !== 'idClases');
+    }
+    if (this.esCatalogoDocumento()) {
+      campos = campos.filter((c) => c !== 'controlaVencimiento');
+    }
+    return campos.slice(0, 8);
+  }
+
+  columnasInspeccion(): string[] {
+    return ['idClases', ...this.camposTabla()];
+  }
+
+  columnasDocumento(): string[] {
+    return ['controlaVencimiento', ...this.camposTabla()];
+  }
+
+  columnasListado(): string[] {
+    if (this.esCatalogoInspeccion()) return this.columnasInspeccion();
+    if (this.esCatalogoDocumento()) return this.columnasDocumento();
+    return this.camposTabla();
   }
 
   valorCelda(row: Record<string, unknown>, campo: string): string {
+    if (campo === 'idClases') return this.formatIdClases(row[campo]);
+    if (campo === 'controlaVencimiento') return this.formatControlaVencimiento(row[campo]);
     return formatNumericCell(campo, row[campo]);
+  }
+
+  formatControlaVencimiento(v: unknown): string {
+    if (v === false || v === 0 || v === '0' || v === 'false' || v === 'no') return 'No vence';
+    return 'Con vencimiento';
+  }
+
+  esCatalogoInspeccion(): boolean {
+    const n = this.seleccionado();
+    if (!n) return false;
+    const meta = this.catalogos().find((c) => c.nombre === n);
+    if (meta?.esInspeccionChecklist != null) return meta.esInspeccionChecklist;
+    return ['itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones'].includes(n);
+  }
+
+  esCatalogoDocumento(): boolean {
+    const n = this.seleccionado();
+    if (!n) return false;
+    const meta = this.catalogos().find((c) => c.nombre === n);
+    if (meta?.esCatalogoDocumento != null) return meta.esCatalogoDocumento;
+    return n === 'itemDocumentosVehiculo' || n === 'itemDocumentosInstructores';
+  }
+
+  private parseIdClasesValor(v: unknown): string[] {
+    if (v == null || v === '') return [];
+    if (Array.isArray(v)) return [...new Set(v.map((c) => String(c).trim()).filter(Boolean))];
+    if (typeof v === 'string') {
+      const t = v.trim();
+      if (!t) return [];
+      if (t.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(t);
+          if (Array.isArray(parsed)) return this.parseIdClasesValor(parsed);
+        } catch {
+          /* ignore */
+        }
+      }
+      return [t];
+    }
+    return [String(v).trim()].filter(Boolean);
+  }
+
+  formatIdClases(v: unknown): string {
+    const ids = this.parseIdClasesValor(v);
+    if (!ids.length) return 'Todas las clases';
+    const map = new Map(this.clasesVehiculo().map((c) => [c.idClase, c.label]));
+    return ids.map((id) => map.get(id) || id).join(', ');
+  }
+
+  claseMarcada(idClase: string): boolean {
+    return this.formIdClases().includes(idClase);
+  }
+
+  toggleClaseItem(idClase: string, checked: boolean) {
+    this.formIdClases.update((list) => {
+      const set = new Set(list);
+      if (checked) set.add(idClase);
+      else set.delete(idClase);
+      return [...set];
+    });
+  }
+
+  limpiarClasesItem() {
+    this.formIdClases.set([]);
+  }
+
+  private syncFormIdClases(row?: Record<string, unknown>) {
+    if (!this.esCatalogoInspeccion()) {
+      this.formIdClases.set([]);
+      return;
+    }
+    if (!row) {
+      this.formIdClases.set([]);
+      return;
+    }
+    const ids = this.parseIdClasesValor(row['idClases']);
+    this.formIdClases.set(ids);
+  }
+
+  private syncFormControlaVencimiento(row?: Record<string, unknown>) {
+    if (!this.esCatalogoDocumento()) {
+      this.formControlaVencimiento.set(true);
+      return;
+    }
+    if (!row) {
+      this.formControlaVencimiento.set(true);
+      return;
+    }
+    const v = row['controlaVencimiento'];
+    this.formControlaVencimiento.set(
+      !(v === false || v === 0 || v === '0' || v === 'false' || v === 'no'),
+    );
+  }
+
+  campoEsTextoLargo(campo: string): boolean {
+    return ['item', 'aspecto1', 'aspecto2', 'nombre'].includes(campo);
+  }
+
+  labelCampo(campo: string): string {
+    const map: Record<string, string> = {
+      idItemEsGral: 'ID ítem',
+      item: 'Descripción del ítem',
+      idAspecto1: 'ID',
+      aspecto1: 'Texto del ítem',
+      idAspecto2: 'ID',
+      aspecto2: 'Texto del ítem',
+      idAdaptacion: 'ID',
+      nombre: 'Descripción',
+      idClases: 'Clases de vehículo',
+      controlaVencimiento: 'Vencimiento',
+    };
+    return map[campo] || campo;
   }
 
   inputTypeCampo(campo: string): string {
@@ -136,25 +293,30 @@ export class CatalogosAdminComponent implements OnInit {
 
   nuevo() {
     const L = this.listado();
-    const campos = L?.campos?.filter((c) => c !== '_id' && c !== '__v') || [];
+    const campos = L?.campos?.filter((c) => c !== '_id' && c !== '__v' && c !== 'claseVehiculo' && c !== 'idClases' && c !== 'controlaVencimiento') || [];
     const doc: Record<string, string> = {};
     for (const c of campos) doc[c] = '';
     this.editandoId.set(null);
     this.formDoc.set(doc);
+    this.syncFormIdClases();
+    this.syncFormControlaVencimiento();
     this.mostrarForm.set(true);
     this.msg.set(null);
   }
 
   editar(row: Record<string, unknown>) {
     const id = this.idMongo(row);
-    const campos = this.listado()?.campos?.filter((c) => c !== '_id' && c !== '__v') || [];
+    const campos = this.listado()?.campos?.filter((c) => c !== '_id' && c !== '__v' && c !== 'claseVehiculo' && c !== 'idClases' && c !== 'controlaVencimiento') || [];
     const doc: Record<string, string> = {};
     for (const c of campos) {
+      if (c === 'idClases' || c === 'controlaVencimiento') continue;
       const v = row[c];
       doc[c] = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
     }
     this.editandoId.set(id);
     this.formDoc.set(doc);
+    this.syncFormIdClases(row);
+    this.syncFormControlaVencimiento(row);
     this.mostrarForm.set(true);
   }
 
@@ -170,7 +332,7 @@ export class CatalogosAdminComponent implements OnInit {
   private parseDoc(): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(this.formDoc())) {
-      if (k === '_id' || k === '__v') continue;
+      if (k === '_id' || k === '__v' || k === 'idClases' || k === 'controlaVencimiento') continue;
       const t = v.trim();
       if (t === '') {
         out[k] = null;
@@ -191,6 +353,12 @@ export class CatalogosAdminComponent implements OnInit {
       } else {
         out[k] = t;
       }
+    }
+    if (this.esCatalogoInspeccion()) {
+      out['idClases'] = [...this.formIdClases()];
+    }
+    if (this.esCatalogoDocumento()) {
+      out['controlaVencimiento'] = this.formControlaVencimiento();
     }
     return out;
   }
@@ -327,19 +495,22 @@ export class CatalogosAdminComponent implements OnInit {
     const L = this.listado();
     const keys = new Set(Object.keys(this.formDoc()));
     if (L?.campos?.length) {
-      return L.campos.filter((c) => c !== '__v' && keys.has(c));
+      return L.campos.filter(
+        (c) => c !== '__v' && c !== 'idClases' && c !== 'controlaVencimiento' && c !== 'claseVehiculo' && keys.has(c),
+      );
     }
-    return [...keys].filter((k) => k !== '_id');
+    return [...keys].filter((k) => k !== '_id' && k !== 'idClases' && k !== 'controlaVencimiento' && k !== 'claseVehiculo');
+  }
+
+  usarCapsula(campo: string): boolean {
+    if (campo === 'idClases' || campo === 'controlaVencimiento') return false;
+    return /estado|tipo|id/i.test(campo);
   }
 
   totalPaginas(): number {
     const L = this.listado();
     if (!L) return 0;
     return Math.max(1, Math.ceil(L.total / this.pageSize));
-  }
-
-  usarCapsula(campo: string): boolean {
-    return /estado|tipo|id/i.test(campo);
   }
 
   capParaCampo(campo: string, valor: string): string {

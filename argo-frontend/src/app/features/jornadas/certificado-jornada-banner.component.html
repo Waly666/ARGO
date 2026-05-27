@@ -4,12 +4,14 @@
       <button
         type="button"
         class="head-alarm cert-alarm"
+        [ngClass]="certAlertToneClass(a.tipoFormatoCert)"
         (click)="imprimirCertificado(a)"
         [attr.title]="'Imprimir certificado ' + (a.codigoCert || a.id) + ' — ' + (a.nombreCompleto || '')">
         <span class="head-alarm-pulse" aria-hidden="true"></span>
         <span class="head-alarm-icon" aria-hidden="true">▣</span>
         <span class="head-alarm-text">
-          Certificado generado · {{ a.codigoCert || '—' }}
+          <span class="cert-tipo-chip">{{ etiquetaTipoAlerta(a) }}</span>
+          · {{ a.codigoCert || '—' }}
           @if (a.nombreCompleto) {
             · {{ a.nombreCompleto }}
           }

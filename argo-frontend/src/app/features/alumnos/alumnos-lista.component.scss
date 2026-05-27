@@ -74,6 +74,39 @@ table.alumnos-grid {
   margin: 0;
   min-width: 1520px;
   th, td { vertical-align: middle; white-space: nowrap; }
+
+  th .th-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--accent-2);
+    }
+
+    &.active {
+      color: var(--accent-2);
+    }
+
+    .sort-icon {
+      font-size: 0.72rem;
+      opacity: 0.55;
+      line-height: 1;
+    }
+
+    &.active .sort-icon {
+      opacity: 1;
+    }
+  }
 }
 
 .col-foto {

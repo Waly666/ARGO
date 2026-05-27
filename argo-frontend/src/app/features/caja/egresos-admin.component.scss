@@ -131,6 +131,16 @@
   margin-bottom: 8px;
   h2, h3 { margin: 12px 0 8px; }
   .hint { color: var(--text-dim); font-size: 0.88rem; }
+  .hint.err { color: #fca5a5; }
+  .hint.ok { color: #86efac; }
+
+  input.input-invalid {
+    border-color: rgba(248, 113, 113, 0.75);
+  }
+
+  input.input-valid {
+    border-color: rgba(74, 222, 128, 0.75);
+  }
 }
 
 .filtros-inline {

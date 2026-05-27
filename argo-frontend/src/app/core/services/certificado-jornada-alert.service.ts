@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import type { TipoCertificadoId } from '../constants/tipos-certificado';
 
 export interface CertificadoJornadaAlerta {
   id: string;
@@ -7,6 +8,8 @@ export interface CertificadoJornadaAlerta {
   encabezado?: string;
   numDoc?: number | string;
   fechaEmision?: string;
+  tipoFormatoCert?: TipoCertificadoId | string;
+  tipoFormatoCertLabel?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -27,7 +30,17 @@ export class CertificadoJornadaAlertService {
       encabezado: String(cert['encabezado'] || ''),
       numDoc: cert['numDoc'] as number | string | undefined,
       fechaEmision: cert['fechaEmision'] ? String(cert['fechaEmision']) : undefined,
+      tipoFormatoCert: cert['tipoFormatoCert'] ? String(cert['tipoFormatoCert']) : undefined,
+      tipoFormatoCertLabel: cert['tipoFormatoCertLabel'] ? String(cert['tipoFormatoCertLabel']) : undefined,
     });
+  }
+
+  notificarVariosDesdeRespuesta(
+    items: Array<{ certificado?: Record<string, unknown> | null; nombreAlumno?: string }> | null | undefined,
+  ) {
+    for (const item of items || []) {
+      this.notificarDesdeRespuesta(item?.certificado, item?.nombreAlumno);
+    }
   }
 
   notificar(alerta: CertificadoJornadaAlerta) {

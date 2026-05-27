@@ -1,8 +1,10 @@
 const RolApp = require('../models/RolApp');
 const Usuario = require('../models/Usuario');
 const { GRUPOS } = require('../constants/permisosCatalogo');
+const { GRUPOS: ALARMAS_GRUPOS } = require('../constants/alarmasCatalogo');
 const {
   sanitizarPermisos,
+  sanitizarAlarmas,
   codigoRolValido,
   limpiarCache,
   initRolesSistema,
@@ -15,7 +17,7 @@ function limpiar(doc) {
 }
 
 exports.catalogo = (_req, res) => {
-  res.json({ grupos: GRUPOS });
+  res.json({ grupos: GRUPOS, alarmasGrupos: ALARMAS_GRUPOS });
 };
 
 exports.listar = async (_req, res, next) => {
@@ -39,7 +41,7 @@ exports.obtener = async (req, res, next) => {
 
 exports.crear = async (req, res, next) => {
   try {
-    const { codigo, nombre, descripcion, permisos, activo } = req.body || {};
+    const { codigo, nombre, descripcion, permisos, alarmas, activo } = req.body || {};
     const c = String(codigo || '').trim().toLowerCase();
     if (!codigoRolValido(c)) {
       return res.status(400).json({
@@ -57,6 +59,7 @@ exports.crear = async (req, res, next) => {
       nombre: String(nombre).trim(),
       descripcion: String(descripcion || '').trim(),
       permisos: sanitizarPermisos(permisos),
+      alarmas: sanitizarAlarmas(alarmas),
       esSistema: false,
       activo: activo !== false,
     });
@@ -72,10 +75,11 @@ exports.actualizar = async (req, res, next) => {
     const doc = await RolApp.findOne({ codigo: normalizarRol(req.params.codigo) });
     if (!doc) return res.status(404).json({ message: 'Rol no encontrado' });
 
-    const { nombre, descripcion, permisos, activo } = req.body || {};
+    const { nombre, descripcion, permisos, alarmas, activo } = req.body || {};
     if (nombre != null) doc.nombre = String(nombre).trim();
     if (descripcion != null) doc.descripcion = String(descripcion).trim();
     if (permisos != null) doc.permisos = sanitizarPermisos(permisos);
+    if (alarmas != null) doc.alarmas = sanitizarAlarmas(alarmas);
     if (activo != null) doc.activo = activo === true || activo === 'true';
 
     await doc.save();
@@ -111,7 +115,7 @@ exports.eliminar = async (req, res, next) => {
 
 exports.reiniciarSistema = async (_req, res, next) => {
   try {
-    await initRolesSistema();
+    await initRolesSistema({ force: true });
     res.json({ ok: true, message: 'Roles del sistema restaurados' });
   } catch (e) {
     next(e);

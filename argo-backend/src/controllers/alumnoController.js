@@ -136,7 +136,28 @@ async function aplicarArchivos(dto, files, alumnoPrev) {
 function nombreCompleto(a) {
   const n = [a.nombre1, a.nombre2].filter(Boolean).join(' ').trim();
   const ap = [a.apellido1, a.apellido2].filter(Boolean).join(' ').trim();
-  return { nombres: n, apellidos: ap, nombreCompleto: `${n} ${ap}`.trim() };
+  return { nombres: n, apellidos: ap, nombreCompleto: [ap, n].filter(Boolean).join(' ').trim() };
+}
+
+const SORT_ALUMNOS_KEYS = {
+  numDoc: ['numDoc'],
+  nombre: ['apellido1', 'apellido2', 'nombre1', 'nombre2'],
+  fechaNac: ['fechaNac'],
+  jornada: ['jornada'],
+  estadoCivil: ['estadoCivil'],
+  correo: ['correo'],
+  celular: ['celular'],
+  direccion: ['direccion'],
+  munOrigen: ['codMunicipio', 'munOrigen'],
+};
+
+function resolveSortAlumnos(sortRaw, dirRaw) {
+  const sortKey = String(sortRaw || '').trim();
+  const dir = String(dirRaw || '').toLowerCase() === 'desc' ? -1 : 1;
+  const fields = SORT_ALUMNOS_KEYS[sortKey] || SORT_ALUMNOS_KEYS.nombre;
+  const out = {};
+  for (const f of fields) out[f] = dir;
+  return out;
 }
 
 function mapListaItem(doc) {
@@ -246,8 +267,9 @@ exports.listar = async (req, res, next) => {
       condiciones.push({ $or: or });
     }
     const filter = condiciones.length === 0 ? {} : condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
+    const sort = resolveSortAlumnos(req.query.sort, req.query.dir);
     const [docs, total] = await Promise.all([
-      DatosAlumno.find(filter).sort({ apellido1: 1, nombre1: 1 }).skip(skip).limit(limit).lean(),
+      DatosAlumno.find(filter).sort(sort).skip(skip).limit(limit).lean(),
       DatosAlumno.countDocuments(filter),
     ]);
     let items = await enriquecerMunicipios(docs.map(mapListaItem));

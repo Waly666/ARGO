@@ -5,6 +5,7 @@ import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { PermisoService } from './permiso.service';
+import { AlarmaService } from './alarma.service';
 
 export interface AuthEmpleadoResumen {
   idEmpleado: number;
@@ -21,6 +22,7 @@ export interface AuthUser {
   rol?: string;
   rolNombre?: string;
   permisos?: string[];
+  alarmas?: string[];
   email?: string;
   idEmpleado?: number;
   empleado?: AuthEmpleadoResumen;
@@ -46,6 +48,7 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private permisoSvc = inject(PermisoService);
+  private alarmaSvc = inject(AlarmaService);
 
   private _token = signal<string | null>(this.read(TOKEN_KEY));
   private _user = signal<AuthUser | null>(this.readJson<AuthUser>(USER_KEY));
@@ -70,6 +73,7 @@ export class AuthService {
         localStorage.setItem(USER_KEY, JSON.stringify(user));
         this._user.set(user);
         this.permisoSvc.setPermisos(user.permisos);
+        this.alarmaSvc.setAlarmas(user.alarmas);
       }),
     );
   }
@@ -84,6 +88,7 @@ export class AuthService {
           this._token.set(res.token);
           this._user.set(res.user);
           this.permisoSvc.setPermisos(res.user.permisos);
+          this.alarmaSvc.setAlarmas(res.user.alarmas);
         }),
       );
   }
@@ -102,6 +107,7 @@ export class AuthService {
     this._token.set(null);
     this._user.set(null);
     this.permisoSvc.setPermisos([]);
+    this.alarmaSvc.setAlarmas([]);
     this.router.navigateByUrl('/login');
   }
 

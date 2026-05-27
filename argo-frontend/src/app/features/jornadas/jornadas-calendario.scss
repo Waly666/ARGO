@@ -57,7 +57,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.65rem;
 
     .cal-title {
       margin: 0;
@@ -68,6 +68,101 @@
       text-transform: capitalize;
       color: var(--text);
     }
+  }
+
+  .cal-resumen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.65rem;
+    margin-bottom: 0.55rem;
+    font-size: 0.82rem;
+    color: var(--text-soft);
+
+    .cal-resumen-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.12rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+    }
+  }
+
+  .cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.85rem;
+    margin-bottom: 0.65rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius);
+    background: rgba(8, 18, 42, 0.55);
+    border: 1px solid rgba(120, 170, 255, 0.12);
+
+    .cal-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    .cal-legend-muted {
+      opacity: 0.85;
+    }
+  }
+
+  .cal-legend-dot {
+    display: inline-block;
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+
+    &.cap-amber {
+      background: #fbbf24;
+      box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5);
+    }
+
+    &.cap-emerald {
+      background: #34d399;
+      box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.5);
+    }
+
+    &.cap-slate {
+      background: #94a3b8;
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.45);
+    }
+
+    &.cal-clase-programada {
+      background: #6366f1;
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.55);
+    }
+
+    &.cal-clase-proceso {
+      background: #22c55e;
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.55);
+    }
+
+    &.cal-clase-finalizada {
+      background: #64748b;
+      box-shadow: 0 0 0 1px rgba(100, 116, 139, 0.5);
+    }
+
+    &.sin-hora {
+      background: transparent;
+      border: 1px dashed rgba(120, 170, 255, 0.45);
+    }
+  }
+
+  .cal-loading,
+  .cal-empty {
+    margin: 0.75rem 0 0.25rem;
+    text-align: center;
+    color: var(--text-soft);
+    font-size: 0.88rem;
   }
 
   .cal-mes-head {
@@ -84,13 +179,17 @@
       letter-spacing: 0.04em;
       color: var(--text-dim);
       padding: 0.35rem 0.2rem;
+
+      &.fin-semana {
+        color: rgba(248, 113, 113, 0.85);
+      }
     }
   }
 
   .cal-mes-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    grid-auto-rows: minmax(5.5rem, auto);
+    grid-auto-rows: minmax(6.75rem, auto);
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
@@ -100,18 +199,24 @@
 
   .cal-mes-dia {
     background: rgba(8, 18, 42, 0.95);
-    padding: 0.3rem 0.35rem;
-    min-height: 5.5rem;
+    padding: 0.35rem 0.4rem;
+    min-height: 6.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.3rem;
+    transition: background 0.15s ease;
 
     &.otro-mes {
-      background: rgba(6, 12, 28, 0.7);
+      background: rgba(6, 12, 28, 0.72);
 
       .cal-mes-num {
         color: var(--text-soft);
+        opacity: 0.75;
       }
+    }
+
+    &.fin-semana:not(.otro-mes) {
+      background: rgba(10, 16, 36, 0.98);
     }
 
     &.hoy {
@@ -122,10 +227,30 @@
         background: var(--btn-indigo);
       }
     }
+
+    &.tiene-eventos:not(.otro-mes) {
+      background: rgba(9, 22, 52, 0.98);
+    }
+
+    &.expandido {
+      z-index: 2;
+      box-shadow: inset 0 0 0 1px rgba(78, 163, 255, 0.35);
+
+      .cal-mes-eventos {
+        max-height: none;
+        overflow: auto;
+      }
+    }
+  }
+
+  .cal-mes-dia-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
   }
 
   .cal-mes-num {
-    align-self: flex-end;
     font-size: 0.78rem;
     font-weight: 600;
     line-height: 1;
@@ -134,26 +259,39 @@
     color: var(--text-dim);
   }
 
+  .cal-mes-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0.12rem 0.35rem;
+    border-radius: 999px;
+    background: rgba(78, 163, 255, 0.18);
+    color: var(--accent-2);
+    border: 1px solid rgba(78, 163, 255, 0.35);
+  }
+
   .cal-mes-eventos {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.22rem;
     min-height: 0;
+    flex: 1;
+    max-height: 4.75rem;
     overflow: hidden;
   }
 
   .cal-evento {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.05rem;
     width: 100%;
     text-align: left;
-    padding: 0.2rem 0.35rem;
-    border-radius: 4px;
+    padding: 0.22rem 0.38rem;
+    border-radius: 5px;
     border: 1px solid transparent;
-    font-size: 0.68rem;
-    line-height: 1.25;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.66rem;
+    line-height: 1.2;
     cursor: pointer;
     color: #e8f2ff;
 
@@ -162,7 +300,8 @@
       border-color: rgba(251, 191, 36, 0.45);
     }
 
-    &.cap-emerald {
+    &.cap-emerald,
+    &.estado-jornada-live {
       background: rgba(52, 211, 153, 0.22);
       border-color: rgba(52, 211, 153, 0.45);
     }
@@ -177,11 +316,37 @@
       background: rgba(120, 170, 255, 0.12);
       border-color: rgba(120, 170, 255, 0.35);
       border-style: dashed;
+      flex-direction: row;
+      align-items: center;
       white-space: normal;
+    }
+
+    &.cal-evento-mas {
+      background: rgba(78, 163, 255, 0.1);
+      border-color: rgba(78, 163, 255, 0.35);
+      color: var(--accent-2);
+      font-weight: 600;
+      text-align: center;
+      align-items: center;
     }
 
     &.sel {
       box-shadow: 0 0 0 2px rgba(78, 163, 255, 0.75);
+    }
+
+    .cal-evento-tit {
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .cal-evento-est {
+      font-size: 0.58rem;
+      opacity: 0.88;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
   }
 
@@ -211,13 +376,14 @@
 
   .cal-horas-scroll {
     overflow-x: auto;
+    border-radius: var(--radius);
   }
 
   .cal-horas-grid {
     display: grid;
-    grid-template-columns: 3.25rem repeat(7, minmax(7rem, 1fr));
-    grid-template-rows: auto repeat(15, 2.35rem);
-    min-width: 52rem;
+    grid-template-columns: 3.25rem repeat(7, minmax(7.5rem, 1fr));
+    grid-template-rows: auto repeat(15, 2.5rem);
+    min-width: 54rem;
     position: relative;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -235,7 +401,7 @@
 
   .cal-horas-dayhead {
     grid-row: 1;
-    padding: 0.4rem 0.35rem;
+    padding: 0.45rem 0.35rem;
     text-align: center;
     font-size: 0.72rem;
     font-weight: 600;
@@ -244,10 +410,32 @@
     border-right: 1px solid var(--line);
     background: rgba(6, 16, 41, 0.95);
     text-transform: capitalize;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+
+    &.fin-semana {
+      background: rgba(12, 14, 32, 0.95);
+    }
 
     &.hoy {
       color: var(--accent-2);
-      box-shadow: inset 0 -2px 0 var(--btn-indigo);
+      box-shadow: inset 0 -3px 0 var(--btn-indigo);
+      background: rgba(78, 163, 255, 0.08);
+    }
+
+    .cal-day-name {
+      line-height: 1.2;
+    }
+
+    .cal-day-count {
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.08rem 0.35rem;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.25);
+      color: #c7d2fe;
     }
   }
 
@@ -267,8 +455,12 @@
     border-right: 1px solid rgba(120, 170, 255, 0.08);
     border-bottom: 1px solid rgba(120, 170, 255, 0.08);
 
+    &.fin-semana {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
     &.hoy {
-      background: rgba(78, 163, 255, 0.04);
+      background: rgba(78, 163, 255, 0.05);
     }
   }
 
@@ -279,7 +471,7 @@
     grid-template-columns: repeat(7, minmax(0, 1fr));
     position: relative;
     pointer-events: none;
-    min-height: calc(15 * 2.35rem);
+    min-height: calc(15 * 2.5rem);
     z-index: 2;
   }
 
@@ -292,6 +484,32 @@
     &:not(:last-child) {
       border-right-color: rgba(120, 170, 255, 0.08);
     }
+
+    &.hoy {
+      background: rgba(78, 163, 255, 0.03);
+    }
+  }
+
+  .cal-now-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.75);
+    z-index: 3;
+    pointer-events: none;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: -3px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
   }
 
   .cal-clase-block {
@@ -301,39 +519,102 @@
     pointer-events: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
-    padding: 0.25rem 0.35rem;
-    border-radius: 5px;
-    border: 1px solid rgba(99, 102, 241, 0.55);
-    background: linear-gradient(180deg, rgba(79, 70, 229, 0.55), rgba(55, 48, 163, 0.65));
+    gap: 0.08rem;
+    padding: 0.28rem 0.38rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
     color: #fff;
     text-align: left;
     overflow: hidden;
     cursor: pointer;
-    font-size: 0.68rem;
-    line-height: 1.2;
-    min-height: 1.6rem;
+    font-size: 0.67rem;
+    line-height: 1.15;
+    min-height: 1.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+
+    &.cal-clase-programada {
+      border-color: rgba(129, 140, 248, 0.75);
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.72), rgba(67, 56, 202, 0.82));
+    }
+
+    &.cal-clase-proceso {
+      border-color: rgba(74, 222, 128, 0.75);
+      background: linear-gradient(180deg, rgba(34, 197, 94, 0.72), rgba(21, 128, 61, 0.82));
+    }
+
+    &.cal-clase-finalizada {
+      border-color: rgba(148, 163, 184, 0.65);
+      background: linear-gradient(180deg, rgba(100, 116, 139, 0.72), rgba(71, 85, 105, 0.82));
+      opacity: 0.92;
+    }
 
     &.sel {
-      box-shadow: 0 0 0 2px rgba(78, 163, 255, 0.85);
+      box-shadow: 0 0 0 2px rgba(78, 163, 255, 0.85), 0 4px 12px rgba(0, 0, 0, 0.28);
+      z-index: 2;
     }
 
     .cal-clase-hora {
       font-weight: 700;
-      font-size: 0.65rem;
-      opacity: 0.95;
+      font-size: 0.64rem;
+      opacity: 0.96;
     }
 
     .cal-clase-tit {
-      font-weight: 500;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cal-clase-inst {
+      font-size: 0.6rem;
+      opacity: 0.88;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .cal-clase-est {
-      font-size: 0.62rem;
-      opacity: 0.85;
+      font-size: 0.58rem;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+  }
+
+  .cal-resumen-chip.cal-clase-programada {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.45);
+    color: #c7d2fe;
+  }
+
+  .cal-resumen-chip.cal-clase-proceso {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #bbf7d0;
+  }
+
+  .cal-resumen-chip.cal-clase-finalizada {
+    background: rgba(100, 116, 139, 0.2);
+    border-color: rgba(100, 116, 139, 0.45);
+    color: #cbd5e1;
+  }
+}
+
+@media (max-width: 900px) {
+  .jornadas-page {
+    .cal-mes-grid {
+      grid-auto-rows: minmax(5.5rem, auto);
+    }
+
+    .cal-mes-dia {
+      min-height: 5.5rem;
+      padding: 0.28rem;
+    }
+
+    .cal-horas-grid {
+      min-width: 48rem;
+      grid-template-columns: 2.75rem repeat(7, minmax(6.5rem, 1fr));
     }
   }
 }

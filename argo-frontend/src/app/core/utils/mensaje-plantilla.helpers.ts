@@ -18,8 +18,7 @@ export function nombreCompletoAlumno(a: {
   apellido1?: string;
   apellido2?: string;
 }): string {
-  if (a.nombreCompleto?.trim()) return a.nombreCompleto.trim();
-  const n = [a.nombre1, a.nombre2].filter(Boolean).join(' ').trim();
   const ap = [a.apellido1, a.apellido2].filter(Boolean).join(' ').trim();
-  return [n, ap].filter(Boolean).join(' ').trim() || '—';
+  const n = [a.nombre1, a.nombre2].filter(Boolean).join(' ').trim();
+  return [ap, n].filter(Boolean).join(' ').trim() || '—';
 }

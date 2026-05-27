@@ -3,13 +3,14 @@ import { Component, OnInit, inject, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CajaDescuadre, CajaSesionService } from '../../core/services/caja-sesion.service';
+import { AlarmaService } from '../../core/services/alarma.service';
 
 @Component({
   selector: 'argo-caja-descuadres-banner',
   standalone: true,
   imports: [CommonModule, RouterLink, CurrencyPipe],
   template: `
-    <section class="descuadres-banner card" *ngIf="pendientes().length">
+    <section class="descuadres-banner card" *ngIf="pendientes().length && alarmas.tiene('alarmas.caja.descuadres')">
       <div class="banner-head">
         <strong>⚠ {{ pendientes().length }} descuadre(s) pendiente(s) de cuadrar</strong>
         <a routerLink="/app/caja/descuadres" class="link-admin">Ver reporte mensual</a>
@@ -71,6 +72,7 @@ import { CajaDescuadre, CajaSesionService } from '../../core/services/caja-sesio
 })
 export class CajaDescuadresBannerComponent implements OnInit {
   private cajaSvc = inject(CajaSesionService);
+  readonly alarmas = inject(AlarmaService);
 
   pendientes = signal<CajaDescuadre[]>([]);
   loaded = output<number>();

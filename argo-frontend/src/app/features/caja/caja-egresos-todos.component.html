@@ -78,6 +78,7 @@
             <th>Documento</th>
             <th>Concepto</th>
             <th>Tipo</th>
+            <th>Placa</th>
             <th>Forma pago</th>
             <th class="r">Valor</th>
             <th class="col-alertas">Alertas</th>
@@ -99,6 +100,10 @@
             <td><span [ngClass]="capDoc(e.numeroDocumento)">{{ e.numeroDocumento || '—' }}</span></td>
             <td><span [ngClass]="capConceptoCaja(e.concepto)">{{ e.concepto }}</span></td>
             <td><span [ngClass]="capTipoEgreso(e.tipoEgresoDescr)">{{ e.tipoEgresoDescr || '—' }}</span></td>
+            <td>
+              <span *ngIf="e.placa; else sinPlaca" [ngClass]="capPlaca(e.placa)">{{ e.placa }}</span>
+              <ng-template #sinPlaca><span class="dim">—</span></ng-template>
+            </td>
             <td><span [ngClass]="capFormaPago(e.formaPago)">{{ e.formaPago || '—' }}</span></td>
             <td class="num"><span [ngClass]="capValorEgreso()">{{ e.valorEgreso | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></td>
             <td class="col-alertas">
@@ -121,7 +126,7 @@
               <button type="button" class="danger mini" (click)="anularEgreso(e)">Anular</button>
             </td>
           </tr>
-          <tr *ngIf="items().length === 0"><td colspan="11" class="empty">Sin resultados.</td></tr>
+          <tr *ngIf="items().length === 0"><td colspan="12" class="empty">Sin resultados.</td></tr>
         </tbody>
       </table>
     </div>
@@ -149,6 +154,7 @@
         <div class="card-body">
           <div class="card-row"><span class="lbl">Concepto</span><span>{{ e.concepto }}</span></div>
           <div class="card-row"><span class="lbl">Tipo</span><span [ngClass]="capTipoEgreso(e.tipoEgresoDescr)">{{ e.tipoEgresoDescr || '—' }}</span></div>
+          <div class="card-row" *ngIf="e.placa"><span class="lbl">Placa</span><span [ngClass]="capPlaca(e.placa)">{{ e.placa }}</span></div>
           <div class="card-row"><span class="lbl">Valor</span><span [ngClass]="capValorEgreso()">{{ e.valorEgreso | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></div>
         </div>
         <div class="card-foot">

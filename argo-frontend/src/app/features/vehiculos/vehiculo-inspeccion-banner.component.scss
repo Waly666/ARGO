@@ -1,0 +1,10 @@
+@import './vehiculo-docs-faltantes-banner.component.scss';
+
+.head-alarm.alarm-vehiculo-inspeccion {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: linear-gradient(90deg, rgba(120, 53, 15, 0.45), rgba(30, 20, 5, 0.35));
+}
+
+.head-alarm.alarm-vehiculo-inspeccion .head-alarm-pulse {
+  background: rgba(251, 191, 36, 0.35);
+}

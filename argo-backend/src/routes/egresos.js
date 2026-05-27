@@ -13,6 +13,8 @@ const turno = requirePermiso('caja.turno');
 const admin = requirePermiso('caja.admin');
 
 router.get('/admin/todos', admin, ctrl.listarTodos);
+router.get('/vehiculos-opciones', turno, ctrl.opcionesVehiculos);
+router.get('/verificar-placa/:placa', turno, ctrl.verificarPlacaVehiculo);
 router.get('/formas-pago', turno, ctrl.formasPago);
 router.get('/', turno, ctrl.listar);
 router.get('/:id/recibo', turno, reciboEgreso.datos);

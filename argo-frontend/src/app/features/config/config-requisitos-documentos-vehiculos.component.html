@@ -1,0 +1,121 @@
+<section class="config-page card">
+  <header>
+    <h1>Requisitos de documentos — Vehículos</h1>
+    <p>Defina tipos de documento, vencimientos y qué exige cada clase de vehículo. Las alertas de la lista usan estos parámetros.</p>
+  </header>
+
+  <div class="msg ok" *ngIf="msg() && !err()">{{ msg() }}</div>
+  <div class="msg err" *ngIf="msg() && err()">{{ msg() }}</div>
+
+  <section class="block aviso-block">
+    <h2>Alertas de vencimiento</h2>
+    <p class="hint">Días antes del vencimiento en que aparece la alerta «Vence» en la lista de vehículos (por defecto para todos los tipos).</p>
+    <label class="dias-global">
+      Días de aviso (global)
+      <input
+        type="number"
+        min="1"
+        max="365"
+        [ngModel]="diasAvisoVencimiento()"
+        (ngModelChange)="diasAvisoVencimiento.set(+$event || 30)"
+      />
+    </label>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Tipos de documento</h2>
+      <button type="button" class="ghost mini" (click)="agregarTipo()">+ Agregar tipo</button>
+    </div>
+    <table class="argo compact">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Controla venc.</th>
+          <th>Días aviso</th>
+          <th>Activo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of tiposDocumento(); let i = index">
+          <td>
+            <input type="text" [ngModel]="t.codigo" (ngModelChange)="patchTipo(i, 'codigo', $event)" placeholder="SOAT" />
+          </td>
+          <td>
+            <input type="text" [ngModel]="t.nombre" (ngModelChange)="patchTipo(i, 'nombre', $event)" placeholder="SOAT" />
+          </td>
+          <td>
+            <input type="text" [ngModel]="t.descripcion" (ngModelChange)="patchTipo(i, 'descripcion', $event)" />
+          </td>
+          <td class="c">
+            <input
+              type="checkbox"
+              [ngModel]="t.controlaVencimiento !== false"
+              (ngModelChange)="patchTipo(i, 'controlaVencimiento', $event)"
+            />
+          </td>
+          <td>
+            <input
+              type="number"
+              min="1"
+              max="365"
+              class="dias-tipo"
+              [disabled]="t.controlaVencimiento === false"
+              [ngModel]="t.diasAvisoVencimiento ?? ''"
+              (ngModelChange)="patchTipoDiasAviso(i, $event)"
+              placeholder="Global"
+            />
+          </td>
+          <td class="c">
+            <input type="checkbox" [ngModel]="t.activo !== false" (ngModelChange)="patchTipo(i, 'activo', $event)" />
+          </td>
+          <td class="r">
+            <button type="button" class="ghost mini danger" (click)="quitarTipo(i)">Quitar</button>
+          </td>
+        </tr>
+        <tr *ngIf="tiposDocumento().length === 0">
+          <td colspan="7" class="empty">Sin tipos definidos.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="hint">
+      «Controla venc.»: exige expedición y vencimiento al registrar el documento y genera alertas.
+      «Días aviso» vacío usa el valor global.
+    </p>
+  </section>
+
+  <section class="block">
+    <h2>Requisitos por clase de vehículo</h2>
+    <p class="hint">Marque los documentos obligatorios para cada clase. Si el vehículo no tiene clase asignada, no se aplican requisitos.</p>
+
+    <table class="argo" *ngIf="clases().length">
+      <thead>
+        <tr>
+          <th>Clase de vehículo</th>
+          <th *ngFor="let d of tiposActivos()">{{ d.nombre }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of clases()">
+          <td><strong>{{ c.label }}</strong></td>
+          <td class="c" *ngFor="let d of tiposActivos()">
+            <input
+              type="checkbox"
+              [checked]="tieneDocClase(c.idClase, d.id)"
+              (change)="toggleDocClase(c.idClase, d.id, $any($event.target).checked)" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="hint" *ngIf="!clases().length">Cargue el catálogo «Clases de vehículo» o recargue catálogos desde Excel.</p>
+  </section>
+
+  <footer class="actions">
+    <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+    </button>
+  </footer>
+</section>

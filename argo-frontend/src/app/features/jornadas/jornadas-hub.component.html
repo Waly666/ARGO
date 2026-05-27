@@ -178,10 +178,12 @@
         <section class="form-block">
           <h3 class="form-block-title">Certificado</h3>
           <div class="row row-fields">
-            <div class="field col-w-cert">
+            <div class="field col-w-full field-certificado-encabezado">
               <label>Encabezado certificado</label>
               <input type="text" [ngModel]="formContrato().nombreCertificacion" (ngModelChange)="patchContrato('nombreCertificacion', $event)" />
             </div>
+          </div>
+          <div class="row row-fields">
             <div class="field col-w-sm">
               <label>Horas cert.</label>
               <input type="text" [ngModel]="formContrato().numeroHorascert" (ngModelChange)="patchContrato('numeroHorascert', $event)" />
@@ -198,17 +200,14 @@
         <section class="form-block form-block-inline" *ngIf="formContrato()._id">
           <label class="estado-label">Estado del contrato</label>
           @if (contratoFormEjecutado()) {
-            <span [ngClass]="capEstadoContrato(formContrato().estado)">{{ formContrato().estado || 'Ejecutado' }}</span>
+            <span [ngClass]="estadoContratoLiveClass(formContrato().estado)">{{ labelEstadoContrato(formContrato().estado) }}</span>
             @if (formContrato().fechaFinalizacion) {
               <span class="hint">Finalizado el {{ fmtFecha(formContrato().fechaFinalizacion) }}</span>
             }
           } @else {
-            <select
-              class="estado-select estado-form"
-              [ngModel]="formContrato().estado || 'En Ejecución'"
-              (ngModelChange)="patchContrato('estado', $event)">
-              <option *ngFor="let e of ESTADOS_CONTRATO" [value]="e">{{ e }}</option>
-            </select>
+            <span [ngClass]="estadoContratoLiveClass(formContrato().estado)">
+              {{ labelEstadoContrato(formContrato().estado) }}
+            </span>
             <span class="hint">Use «Finalizar contrato» para cerrarlo y quitar alertas.</span>
           }
         </section>
@@ -264,18 +263,13 @@
             (click)="abrirContratoEnJornadas(c, $event)"
             class="click contrato-row"
             [class.sel]="contratoSel() === c._id"
-            [class.ejecutado]="c.estado === 'Ejecutado'"
+            [ngClass]="rowContratoClass(c.estado)"
             [title]="'Abrir jornadas del contrato ' + (c.codContrato || '')">
             <td><span [ngClass]="capCodContrato(c.codContrato)">{{ c.codContrato || '—' }}</span></td>
             <td><span [ngClass]="capCliente(c.nombreComercial || c.razoSocial)">{{ c.nombreComercial || c.razoSocial }}</span></td>
             <td><span [ngClass]="capMunicipioJor(c.ciudad)">{{ c.ciudad || '—' }}</span></td>
-            <td (click)="$event.stopPropagation()">
-              <select
-                class="estado-select"
-                [ngModel]="c.estado || 'En Ejecución'"
-                (ngModelChange)="cambiarEstadoContrato(c, $event)">
-                <option *ngFor="let e of ESTADOS_CONTRATO" [value]="e">{{ e }}</option>
-              </select>
+            <td>
+              <span [ngClass]="estadoContratoLiveClass(c.estado)">{{ labelEstadoContrato(c.estado) }}</span>
             </td>
             <td>
               <span [ngClass]="capMetaNum(c.numerojornadas)">{{ c.numerojornadas }}</span>
@@ -469,37 +463,87 @@
             <button type="button" class="ghost mini" (click)="mesSiguiente()" aria-label="Mes siguiente">›</button>
             <button type="button" class="ghost mini" (click)="irMesHoy()">Hoy</button>
           </div>
-          <div class="cal-mes-head">
-            @for (d of diasSemanaLabels; track d) {
-              <div class="cal-mes-head-cell">{{ d }}</div>
+
+          <div class="cal-resumen" *ngIf="!loadingCalJornadas()">
+            <span><strong>{{ jornadasMesResumen().total }}</strong> jornada{{ jornadasMesResumen().total === 1 ? '' : 's' }} en el mes</span>
+            @if (jornadasMesResumen().proceso > 0) {
+              <span class="cal-resumen-chip cap-emerald">{{ jornadasMesResumen().proceso }} EN PROCESO</span>
+            }
+            @if (jornadasMesResumen().inactivo > 0) {
+              <span class="cal-resumen-chip cap-amber">{{ jornadasMesResumen().inactivo }} INACTIVO</span>
+            }
+            @if (jornadasMesResumen().finalizado > 0) {
+              <span class="cal-resumen-chip cap-slate">{{ jornadasMesResumen().finalizado }} FINALIZADO</span>
             }
           </div>
-          <div class="cal-mes-grid">
-            @for (cel of calCeldas(); track $index) {
-              <div
-                class="cal-mes-dia"
-                [class.otro-mes]="cel.otroMes"
-                [class.hoy]="cel.key === hoyKey()"
-                [class.tiene-eventos]="jornadasEnDia(cel.key).length > 0">
-                @if (cel.fecha) {
-                  <span class="cal-mes-num">{{ cel.fecha.getDate() }}</span>
-                  <div class="cal-mes-eventos">
-                    @for (j of jornadasEnDia(cel.key); track j._id) {
-                      <button
-                        type="button"
-                        class="cal-evento"
-                        [ngClass]="capEstadoJornadaColor(j.estado)"
-                        [class.estado-blink]="j.estado === 'EN PROCESO'"
-                        [title]="labelJornada(j) + ' — ' + j.estado"
-                        (click)="abrirJornadaCalendario(j)">
-                        {{ chipJornadaCal(j) }}
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-            }
+
+          <div class="cal-legend">
+            <span class="cal-legend-item"><i class="cal-legend-dot cap-amber"></i> INACTIVO</span>
+            <span class="cal-legend-item"><i class="cal-legend-dot cap-emerald"></i> EN PROCESO</span>
+            <span class="cal-legend-item"><i class="cal-legend-dot cap-slate"></i> FINALIZADO</span>
           </div>
+
+          @if (loadingCalJornadas()) {
+            <p class="cal-loading">Cargando calendario…</p>
+          } @else {
+            <div class="cal-mes-head">
+              @for (d of diasSemanaLabels; track d) {
+                <div class="cal-mes-head-cell" [class.fin-semana]="$index >= 5">{{ d }}</div>
+              }
+            </div>
+            <div class="cal-mes-grid">
+              @for (cel of calCeldas(); track cel.key || $index) {
+                <div
+                  class="cal-mes-dia"
+                  [class.otro-mes]="cel.otroMes"
+                  [class.hoy]="cel.key === hoyKey()"
+                  [class.fin-semana]="cel.fecha && esFinDeSemana(cel.fecha)"
+                  [class.expandido]="calDiaExpandido() === cel.key"
+                  [class.tiene-eventos]="jornadasEnDia(cel.key).length > 0">
+                  @if (cel.fecha) {
+                    <div class="cal-mes-dia-top">
+                      <span class="cal-mes-num">{{ cel.fecha.getDate() }}</span>
+                      @if (jornadasEnDia(cel.key).length > 0) {
+                        <span class="cal-mes-badge">{{ jornadasEnDia(cel.key).length }}</span>
+                      }
+                    </div>
+                    <div class="cal-mes-eventos">
+                      @for (j of jornadasEnDiaVisibles(cel.key); track j._id) {
+                        <button
+                          type="button"
+                          class="cal-evento"
+                          [ngClass]="estadoJornadaCalClass(j.estado)"
+                          [title]="labelJornada(j) + ' — ' + j.estado"
+                          (click)="abrirJornadaCalendario(j)">
+                          <span class="cal-evento-tit">{{ chipJornadaCal(j) }}</span>
+                          <span class="cal-evento-est">{{ j.estado }}</span>
+                        </button>
+                      }
+                      @if (jornadasEnDiaOcultas(cel.key) > 0) {
+                        <button
+                          type="button"
+                          class="cal-evento cal-evento-mas"
+                          (click)="toggleDiaCalExpandido(cel.key, $event)">
+                          +{{ jornadasEnDiaOcultas(cel.key) }} más
+                        </button>
+                      }
+                      @if (calDiaExpandido() === cel.key && jornadasEnDia(cel.key).length > calMaxEventosDia) {
+                        <button
+                          type="button"
+                          class="cal-evento cal-evento-mas"
+                          (click)="toggleDiaCalExpandido(cel.key, $event)">
+                          Ver menos
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            @if (jornadasMesResumen().total === 0) {
+              <p class="cal-empty">No hay jornadas programadas en este mes{{ contratoSel() ? ' para el contrato seleccionado' : '' }}.</p>
+            }
+          }
         </div>
       } @else {
       <table id="jornadas-listado" class="argo">
@@ -518,7 +562,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let j of jornadas()" [class.sel]="jornadaEnEdicion(j._id)">
+          <tr *ngFor="let j of jornadas()" [class.sel]="jornadaEnEdicion(j._id)" [ngClass]="rowJornadaClass(j.estado)">
             <td><span [ngClass]="capFechaJor(j.fechaProgramacion)">{{ fmtFecha(j.fechaProgramacion) }}</span></td>
             <td><span [ngClass]="capMunicipioJor(j.municipio)">{{ j.municipio || '—' }}</span></td>
             <td class="direccion-cell" [title]="j.direccion || ''">
@@ -533,11 +577,7 @@
             </td>
             <td><span [ngClass]="capDeteGeorefe(j.deteGeorefe)">{{ etiquetaDeteGeorefe(j.deteGeorefe) }}</span></td>
             <td>
-              <span
-                [ngClass]="capEstadoJornada(j.estado)"
-                [class.estado-blink]="j.estado === 'EN PROCESO'">
-                {{ j.estado }}
-              </span>
+              <span [ngClass]="estadoJornadaLiveClass(j.estado)">{{ j.estado }}</span>
             </td>
             <td class="actions-cell">
               <button type="button" class="mini ghost" (click)="editarJornada(j, $event)">Editar</button>
@@ -592,7 +632,7 @@
       <div class="clases-toolbar">
         <button type="button" class="primary" (click)="abrirModalCrearClase()">+ Crear clase</button>
         <button type="button" class="ghost mini" (click)="irInstructor()">Vista instructor</button>
-        <div class="filtro-field" *ngIf="vistaClases() === 'lista'">
+        <div class="filtro-field" *ngIf="vistaClases() === 'lista' || vistaClases() === 'calendario'">
           <label>Filtrar estado</label>
           <select [ngModel]="filtroAdminEstado()" (ngModelChange)="onFiltroAdminEstadoChange($event)">
             <option value="">Todos</option>
@@ -621,13 +661,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of clases()" [class.sel]="claseSel() === c._id" (click)="seleccionarClase(c)">
+          <tr *ngFor="let c of clases()" [class.sel]="claseSel() === c._id" [ngClass]="rowClaseClass(c.estado)" (click)="seleccionarClase(c)">
             <td><span [ngClass]="capCodContrato(labelContratoCortoClase(c))">{{ labelContratoCortoClase(c) }}</span></td>
             <td><span [ngClass]="capFechaJor(c.fechaJornada)">{{ fmtFecha(c.fechaJornada) }}</span></td>
             <td><span [ngClass]="capPrograma(c.idPrograma)">{{ nombrePrograma(c.idPrograma) }}</span></td>
             <td><span [ngClass]="capUbicacionClase(c.ubicacion)">{{ c.ubicacion }}</span></td>
             <td><span [ngClass]="capInstructor(labelInstructorClase(c))">{{ labelInstructorClase(c) }}</span></td>
-            <td><span [ngClass]="capEstadoClase(c.estado)">{{ c.estado }}</span></td>
+            <td><span [ngClass]="estadoClaseLiveClass(c.estado)">{{ c.estado }}</span></td>
             <td><span [ngClass]="capHoraJor(c.horaInicio)">{{ fmtHora(c.horaInicio) }}</span></td>
             <td><span [ngClass]="capHoraJor(c.horaFin)">{{ fmtHora(c.horaFin) }}</span></td>
             <td class="actions-cell">
@@ -656,6 +696,26 @@
             <button type="button" class="ghost mini" (click)="irSemanaHoy()">Esta semana</button>
           </div>
 
+          <div class="cal-resumen">
+            <span><strong>{{ clasesSemanaResumen().total }}</strong> clase{{ clasesSemanaResumen().total === 1 ? '' : 's' }} esta semana</span>
+            @if (clasesSemanaResumen().programada > 0) {
+              <span class="cal-resumen-chip cal-clase-programada"> {{ clasesSemanaResumen().programada }} PROGRAMADA</span>
+            }
+            @if (clasesSemanaResumen().proceso > 0) {
+              <span class="cal-resumen-chip cal-clase-proceso"> {{ clasesSemanaResumen().proceso }} EN PROCESO</span>
+            }
+            @if (clasesSemanaResumen().finalizado > 0) {
+              <span class="cal-resumen-chip cal-clase-finalizada"> {{ clasesSemanaResumen().finalizado }} FINALIZADO</span>
+            }
+          </div>
+
+          <div class="cal-legend cal-legend-clases">
+            <span class="cal-legend-item"><i class="cal-legend-dot cal-clase-programada"></i> PROGRAMADA</span>
+            <span class="cal-legend-item"><i class="cal-legend-dot cal-clase-proceso"></i> EN PROCESO</span>
+            <span class="cal-legend-item"><i class="cal-legend-dot cal-clase-finalizada"></i> FINALIZADO</span>
+            <span class="cal-legend-item cal-legend-muted"><i class="cal-legend-dot sin-hora"></i> Sin horario</span>
+          </div>
+
           @if (clasesSinHorarioSemana().length > 0) {
             <div class="cal-sin-horario">
               <span class="cal-sin-horario-label">Sin horario definido</span>
@@ -664,9 +724,10 @@
                   type="button"
                   class="cal-evento cal-evento-clase sin-hora"
                   [class.sel]="claseSel() === c._id"
+                  [ngClass]="estadoClaseCalBlockClass(c.estado)"
                   [title]="chipClaseCal(c) + ' — ' + (c.estado || '')"
                   (click)="seleccionarClaseCalendario(c)">
-                  {{ fmtFecha(c.fechaJornada) }} · {{ chipClaseCal(c) }}
+                  {{ fmtFecha(c.fechaJornada) }} · {{ chipClaseCalCorto(c) }}
                 </button>
               }
             </div>
@@ -676,31 +737,45 @@
             <div class="cal-horas-grid">
               <div class="cal-horas-corner"></div>
               @for (d of diasSemanaClases(); track d.key) {
-                <div class="cal-horas-dayhead" [class.hoy]="d.key === hoyKey()">
-                  {{ fmtDiaCal(d.fecha) }}
+                <div
+                  class="cal-horas-dayhead"
+                  [class.hoy]="d.key === hoyKey()"
+                  [class.fin-semana]="esFinDeSemana(d.fecha)">
+                  <span class="cal-day-name">{{ fmtDiaCal(d.fecha) }}</span>
+                  @if (conteoClasesDia(d.key) > 0) {
+                    <span class="cal-day-count">{{ conteoClasesDia(d.key) }}</span>
+                  }
                 </div>
               }
               @for (h of horasCal; track h) {
                 <div class="cal-horas-time">{{ h }}:00</div>
                 @for (d of diasSemanaClases(); track d.key) {
-                  <div class="cal-horas-slot" [class.hoy]="d.key === hoyKey()"></div>
+                  <div
+                    class="cal-horas-slot"
+                    [class.hoy]="d.key === hoyKey()"
+                    [class.fin-semana]="esFinDeSemana(d.fecha)"></div>
                 }
               }
               <div class="cal-horas-events-layer">
                 @for (d of diasSemanaClases(); track 'col-' + d.key) {
-                  <div class="cal-horas-events-col">
+                  <div class="cal-horas-events-col" [class.hoy]="d.key === hoyKey()">
+                    @if (d.key === hoyKey() && semanaIncluyeHoy() && ahoraCalTopPct() != null) {
+                      <div class="cal-now-line" [style.top.%]="ahoraCalTopPct()!" aria-hidden="true"></div>
+                    }
                     @for (c of clasesEnDia(d.key); track c._id) {
                       @if (layoutClase(c); as lay) {
                         <button
                           type="button"
                           class="cal-clase-block"
                           [class.sel]="claseSel() === c._id"
+                          [ngClass]="estadoClaseCalBlockClass(c.estado)"
                           [style.top.%]="lay.topPct"
                           [style.height.%]="lay.heightPct"
                           [title]="chipClaseCal(c) + ' — ' + fmtHora(c.horaInicio) + (c.horaFin ? ' – ' + fmtHora(c.horaFin) : '')"
                           (click)="seleccionarClaseCalendario(c)">
-                          <span class="cal-clase-hora">{{ fmtHora(c.horaInicio) }}</span>
-                          <span class="cal-clase-tit">{{ chipClaseCal(c) }}</span>
+                          <span class="cal-clase-hora">{{ fmtHora(c.horaInicio) }}@if (c.horaFin) { – {{ fmtHora(c.horaFin) }} }</span>
+                          <span class="cal-clase-tit">{{ chipClaseCalCorto(c) }}</span>
+                          <span class="cal-clase-inst">{{ labelInstructorClase(c) }}</span>
                           <span class="cal-clase-est">{{ c.estado }}</span>
                         </button>
                       }
@@ -710,6 +785,10 @@
               </div>
             </div>
           </div>
+
+          @if (clasesSemanaResumen().total === 0) {
+            <p class="cal-empty">No hay clases en esta semana{{ filtroAdminEstado() ? ' con el filtro aplicado' : '' }}.</p>
+          }
         </div>
       }
 
@@ -720,7 +799,7 @@
         </p>
         <ul class="clase-panel-info">
           <li><strong>Programa:</strong> <span [ngClass]="capPrograma(nombrePrograma(cl.idPrograma))">{{ nombrePrograma(cl.idPrograma) }}</span></li>
-          <li><strong>Estado:</strong> <span [ngClass]="capEstadoClase(cl.estado)">{{ cl.estado }}</span></li>
+          <li><strong>Estado:</strong> <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ cl.estado }}</span></li>
           <li><strong>Ubicación:</strong> {{ cl.ubicacion || '—' }}</li>
           <li><strong>Instructor:</strong> <span [ngClass]="capInstructor(labelInstructorClase(cl))">{{ labelInstructorClase(cl) }}</span></li>
         </ul>
@@ -738,12 +817,12 @@
     [open]="modalCrearClase()"
     [title]="modalModoClase() === 'editar' ? 'Editar clase' : 'Crear clase'"
     [subtitle]="subtituloModalClase()"
-    [wide]="true"
+    [xwide]="true"
     (closed)="cerrarModalCrearClase()">
     <section class="clase-modal-form">
       <div class="clase-estado-bar" *ngIf="modalModoClase() === 'editar' && claseActiva() as cl">
         <span class="estado-label">Estado</span>
-        <span [ngClass]="capEstadoClase(cl.estado)">{{ cl.estado }}</span>
+        <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ cl.estado }}</span>
         @if (claseModalEnProceso() && cl.horaInicio) {
           <span class="clase-cronometro" aria-live="polite">{{ cronometroDisplay() }}</span>
         }
@@ -757,6 +836,23 @@
         }
       </div>
 
+      @if (modalMsg(); as modalTexto) {
+        <div
+          class="jor-banner modal-inline-banner"
+          [class.jor-banner--ok]="modalMsgTipo() === 'ok'"
+          [class.jor-banner--error]="modalMsgTipo() === 'error'"
+          [class.jor-banner--warn]="modalMsgTipo() === 'warn'"
+          [class.jor-banner--info]="modalMsgTipo() === 'info'"
+          role="status">
+          <span class="jor-banner-icon" aria-hidden="true">{{ iconoJorMsg(modalMsgTipo()) }}</span>
+          <div class="jor-banner-body">
+            <strong class="jor-banner-title">{{ modalMsgTitulo() }}</strong>
+            <span>{{ modalTexto }}</span>
+          </div>
+          <button type="button" class="jor-banner-close" (click)="limpiarMsgModal()" aria-label="Cerrar">×</button>
+        </div>
+      }
+
       @if (modalModoClase() === 'editar' && !jornadaClaseModalOperable() && claseActiva()?.estado !== 'FINALIZADO' && !claseActiva()?.horaInicio) {
         <p class="hint hint-warn">
           La jornada aún no está <strong>EN PROCESO</strong>. Podrá iniciar la clase el día programado de la jornada.
@@ -764,8 +860,10 @@
       }
 
       <h3 class="clase-modal-section">Datos de la clase</h3>
-      <div class="row">
-        <div class="col-8">
+      <div
+        class="clase-modal-datos-grid"
+        [class.sin-matriculados]="modalModoClase() !== 'editar' && totalAlumnosMatriculadosModal() === 0">
+        <div class="cm-field cm-jornada">
           <label>Jornada</label>
           <select
             [ngModel]="modalCrearJornadaId()"
@@ -776,36 +874,24 @@
               {{ labelJornadaCorta(j) }} — {{ j.estado }}
             </option>
           </select>
-          <p class="hint" *ngIf="modalModoClase() === 'nuevo' && jornadasParaCrear().length === 0">
-            No hay jornadas en la ventana de creación. Solo se pueden crear clases el día anterior o el mismo día de la jornada.
+          <p class="hint hint-compact" *ngIf="modalModoClase() === 'nuevo' && jornadasParaCrear().length === 0">
+            No hay jornadas en la ventana de creación.
           </p>
         </div>
-        <div class="col-4">
-          <label>Fecha clase</label>
+        <div class="cm-field cm-fecha">
+          <label>Fecha</label>
           <p class="fecha-clase-readonly" [ngClass]="capFechaJor(modalFechaClase())">
-            {{ modalFechaClase() ? fmtFecha(modalFechaClase()) : '— Seleccione jornada —' }}
+            {{ modalFechaClase() ? fmtFecha(modalFechaClase()) : '—' }}
           </p>
-          <p class="hint">Se asigna automáticamente al elegir la jornada.</p>
         </div>
-      </div>
-      <div class="row">
-        <div class="col-4">
-          <label>Programa</label>
-          <select [ngModel]="nuevaClaseProg()" (ngModelChange)="nuevaClaseProg.set($event)">
-            <option value="">— Seleccione —</option>
-            <option *ngFor="let p of programasJornada()" [value]="p.idPrograma || p._id">
-              {{ p.nombreProg || p.codigoProg }}
-            </option>
-          </select>
-        </div>
-        <div class="col-3">
+        <div class="cm-field cm-ubicacion">
           <label>Ubicación</label>
           <select [ngModel]="nuevaClaseUbic()" (ngModelChange)="nuevaClaseUbic.set($event)">
             <option *ngFor="let u of ubicaciones" [value]="u">{{ u }}</option>
           </select>
         </div>
-        @if (puedeAsignarInstructor()) {
-          <div class="col-5">
+        <div class="cm-field cm-instructor">
+          @if (puedeAsignarInstructor()) {
             <label>Instructor</label>
             <select [ngModel]="modalClaseInstructorId()" (ngModelChange)="onModalClaseInstructorChange($event)">
               <option value="">— Automático (usuario actual) —</option>
@@ -813,101 +899,50 @@
                 {{ i.nombreCompleto }}
               </option>
             </select>
-          </div>
-        } @else {
-          <div class="col-5">
-            <label>Instructor (su usuario)</label>
-            <p class="hint instructor-readonly">
+          } @else {
+            <label>Instructor</label>
+            <p class="instructor-readonly compact">
               <span [ngClass]="capInstructor(instructorSesionNombre())">{{ instructorSesionNombre() }}</span>
             </p>
+          }
+        </div>
+        @if (modalModoClase() === 'editar' || totalAlumnosMatriculadosModal() > 0) {
+          <div class="cm-field cm-matriculados">
+            <label>Matriculados</label>
+            <span class="clase-matricula-contador block" aria-live="polite">
+              <strong class="contador-num">{{ totalAlumnosMatriculadosModal() }}</strong>
+              @if (modalModoClase() === 'editar' && inscritosConAsistencia() > 0) {
+                <span class="contador-sub">{{ inscritosConAsistencia() }} asist.</span>
+              }
+              @if (modalModoClase() === 'editar' && inscritosCertificadosContrato() > 0) {
+                <span class="contador-sub">{{ inscritosCertificadosContrato() }} cert.</span>
+              }
+              @if (modalModoClase() === 'editar' && inscritosSinAsistencia() > 0) {
+                <span class="contador-sub">{{ inscritosSinAsistencia() }} sin asist.</span>
+              }
+            </span>
           </div>
         }
       </div>
 
-      @if (modalModoClase() === 'editar' && puedeAsignarInstructor()) {
-        <h3 class="clase-modal-section">Horario de la clase</h3>
-        <p class="hint">
-          Corrija inicio y fin ante eventualidades. Elija de la lista o escriba <strong>HH:mm</strong> y pulse
-          <strong>Guardar clase</strong>.
-        </p>
-        <div class="row clase-horario-admin">
-          <div class="col-4">
-            <label for="clase-hora-inicio">Hora inicio</label>
-            <input
-              id="clase-hora-inicio"
-              type="text"
-              inputmode="numeric"
-              placeholder="HH:mm"
-              maxlength="5"
-              [ngModel]="modalHoraInicio()"
-              (ngModelChange)="modalHoraInicio.set($event)"
-              list="clase-horas-list"
-              autocomplete="off" />
-          </div>
-          <div class="col-4">
-            <label for="clase-hora-fin">Hora fin</label>
-            <input
-              id="clase-hora-fin"
-              type="text"
-              inputmode="numeric"
-              placeholder="HH:mm"
-              maxlength="5"
-              [ngModel]="modalHoraFin()"
-              (ngModelChange)="modalHoraFin.set($event)"
-              list="clase-horas-list"
-              autocomplete="off" />
-          </div>
-          <div class="col-4">
-            <label>Duración</label>
-            <p class="hint duracion-readonly">{{ lapsoClaseEtiqueta() || '—' }}</p>
-          </div>
-        </div>
-        <datalist id="clase-horas-list">
-          @for (h of opcionesHoras; track h) {
-            <option [value]="h"></option>
+      <div class="cm-field cm-programa cm-programa-destacado">
+        <label>Programa</label>
+        <select
+          class="select-programa-destacado"
+          [ngModel]="nuevaClaseProg()"
+          (ngModelChange)="nuevaClaseProg.set($event)">
+          <option value="">— Seleccione —</option>
+          @if (!programaModalEnLista() && nuevaClaseProg()) {
+            <option [value]="nuevaClaseProg()">{{ etiquetaProgramaModal() }}</option>
           }
-        </datalist>
-      }
-
-      @if (modalModoClase() === 'editar' && claseSel()) {
-        <h3 class="clase-modal-section">Evidencia fotográfica</h3>
-        <div class="evidencia-foto-panel">
-          @if (claseActiva()?.urlforo) {
-            <img
-              [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
-              alt="Evidencia de clase"
-              class="evidencia-preview" />
-          } @else {
-            <p class="hint">Sin foto de evidencia cargada.</p>
-          }
-          <label class="evidencia-upload">
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              (change)="onFotoEvidenciaSelected($event)"
-              [disabled]="subiendoFotoEvidencia()" />
-            <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto evidencia' }}</span>
-          </label>
-        </div>
-      }
-
-      @if (modalModoClase() === 'editar' && claseActiva()?.estado === 'FINALIZADO' && inscritosSinAsistencia() > 0) {
-        <p class="hint hint-warn">
-          Hay <strong>{{ inscritosSinAsistencia() }}</strong> inscrito(s) sin asistencia registrada.
-          El certificado automático cuenta <strong>asistencias</strong>, no solo inscripción o finalizar la clase.
-        </p>
-        <button type="button" class="mini primary" (click)="sincronizarAsistenciasClaseModal()">
-          Registrar asistencia de todos los inscritos ({{ inscritosSinAsistencia() }})
-        </button>
-      }
-
-      @if (modalModoClase() === 'editar' && puedeEliminarClase() && inscritosConAsistencia() > 0) {
-        <p class="hint hint-warn">
-          Hay <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
-          Para eliminar la clase, borre primero la asistencia de cada alumno con <strong>✕ Borrar asistencia</strong>.
-        </p>
-      }
+          <option *ngFor="let p of programasJornada()" [value]="programaOptionValue(p)">
+            {{ p.nombreProg || p.codigoProg }}
+          </option>
+        </select>
+        @if (programasJornada().length === 0) {
+          <p class="hint hint-compact hint-warn">No se cargaron programas. Verifique permisos o recargue la página.</p>
+        }
+      </div>
 
       <h3 class="clase-modal-section">Alumnos</h3>
       <p class="hint">
@@ -955,8 +990,8 @@
                       type="button"
                       class="mini primary"
                       (click)="agregarAlumnoMatricula(r)"
-                      [disabled]="alumnoYaEnLista(r)">
-                      {{ alumnoYaEnLista(r) ? 'Agregado' : 'Agregar' }}
+                      [disabled]="alumnoYaEnLista(r) || guardandoInscripcion()">
+                      {{ alumnoYaEnLista(r) ? 'Agregado' : guardandoInscripcion() ? '…' : 'Agregar' }}
                     </button>
                   </li>
                 }
@@ -1025,14 +1060,14 @@
                   }
                 </td>
                 <td class="actions-cell">
-                  @if (!a.tieneAsistencia && (claseActiva()?.estado !== 'FINALIZADO' || puedeEliminarClase())) {
+                  @if (puedeQuitarInscritoDeClase()) {
                     <button
                       type="button"
-                      class="mini ghost"
+                      class="mini danger"
                       [disabled]="guardandoAsistencia() === a.numDoc"
-                      (click)="quitarInscritoDeClase(a.numDoc, a.nombreCompleto)"
+                      (click)="quitarInscritoDeClase(a.numDoc, a.nombreCompleto, { tieneAsistencia: a.tieneAsistencia })"
                       title="Quitar al alumno de esta clase (no se desmatricula del programa)">
-                      ✕ Quitar
+                      {{ guardandoAsistencia() === a.numDoc ? '…' : '✕ Quitar' }}
                     </button>
                   }
                 </td>
@@ -1072,6 +1107,96 @@
           </tbody>
         </table>
       }
+
+      @if (modalModoClase() === 'editar' && claseActiva()?.estado === 'FINALIZADO' && inscritosSinAsistencia() > 0) {
+        <p class="hint hint-warn">
+          Hay <strong>{{ inscritosSinAsistencia() }}</strong> inscrito(s) pendiente(s) de asistencia.
+          El certificado automático cuenta <strong>asistencias</strong>, no solo inscripción o finalizar la clase.
+          Los alumnos <strong>ya certificados</strong> en el contrato no requieren asistencia en esta clase.
+        </p>
+        <button type="button" class="mini primary" (click)="sincronizarAsistenciasClaseModal()">
+          Registrar asistencia de todos los inscritos ({{ inscritosSinAsistencia() }})
+        </button>
+      }
+
+      @if (modalModoClase() === 'editar' && puedeEliminarClase() && inscritosConAsistencia() > 0) {
+        <p class="hint hint-warn">
+          Hay <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
+          Para eliminar la clase, borre primero la asistencia de cada alumno con <strong>✕ Borrar asistencia</strong>.
+        </p>
+      }
+
+      @if (modalModoClase() === 'editar' && (puedeAsignarInstructor() || claseSel())) {
+        <div class="clase-modal-extra-grid">
+          @if (puedeAsignarInstructor()) {
+            <div class="cm-panel cm-horario">
+              <h3 class="clase-modal-section">Horario</h3>
+              <div class="clase-horario-admin cm-horario-fields">
+                <div class="cm-field">
+                  <label for="clase-hora-inicio">Inicio</label>
+                  <input
+                    id="clase-hora-inicio"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="HH:mm"
+                    maxlength="5"
+                    [ngModel]="modalHoraInicio()"
+                    (ngModelChange)="modalHoraInicio.set($event)"
+                    list="clase-horas-list"
+                    autocomplete="off" />
+                </div>
+                <div class="cm-field">
+                  <label for="clase-hora-fin">Fin</label>
+                  <input
+                    id="clase-hora-fin"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="HH:mm"
+                    maxlength="5"
+                    [ngModel]="modalHoraFin()"
+                    (ngModelChange)="modalHoraFin.set($event)"
+                    list="clase-horas-list"
+                    autocomplete="off" />
+                </div>
+                <div class="cm-field">
+                  <label>Duración</label>
+                  <p class="hint duracion-readonly">{{ lapsoClaseEtiqueta() || '—' }}</p>
+                </div>
+              </div>
+              <datalist id="clase-horas-list">
+                @for (h of opcionesHoras; track h) {
+                  <option [value]="h"></option>
+                }
+              </datalist>
+            </div>
+          }
+          @if (claseSel()) {
+            <div class="cm-panel cm-evidencia">
+              <h3 class="clase-modal-section">Evidencia fotográfica</h3>
+              <div class="evidencia-foto-panel compact">
+                @if (claseActiva()?.urlforo) {
+                  <img
+                    [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
+                    alt="Evidencia de clase"
+                    class="evidencia-preview" />
+                } @else {
+                  <p class="hint hint-compact">Sin foto cargada.</p>
+                }
+                <label class="evidencia-upload">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    (change)="onFotoEvidenciaSelected($event)"
+                    [disabled]="subiendoFotoEvidencia()" />
+                  <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto' }}</span>
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
     </section>
 
     <div modal-actions>
@@ -1120,8 +1245,18 @@
   @if (tab() === 'certificados') {
     <div class="panel">
       <div class="panel-head-row">
-        <h2>Certificados del contrato</h2>
-        <a routerLink="/app/jornadas/certificados" class="mini ghost link-btn">Ver listado completo →</a>
+        <div class="panel-head-title">
+          <h2>Certificados del contrato</h2>
+          <p class="hint">
+            Todos los certificados emitidos para este contrato. Los generados <strong>hoy</strong> se resaltan en verde parpadeante.
+          </p>
+        </div>
+        <div class="panel-head-actions">
+          @if (certsHoyCount() > 0) {
+            <span class="jor-live-badge">{{ certsHoyCount() }} emitido(s) hoy</span>
+          }
+          <a routerLink="/app/jornadas/certificados" class="mini ghost link-btn">Ver listado completo →</a>
+        </div>
       </div>
       <table class="argo">
         <thead>
@@ -1129,20 +1264,40 @@
             <th>Código</th>
             <th>Alumno</th>
             <th>Doc</th>
-            <th>Encabezado</th>
+            <th class="col-cert-encabezado">Encabezado</th>
             <th>Horas</th>
             <th>Emisión</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of certsGenerados()">
+          <tr *ngFor="let c of certsGenerados()" [ngClass]="rowCertificadoHoyClass(c.fechaEmision)">
             <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert }}</span></td>
             <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto }}</span></td>
             <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
-            <td><span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado }}</span></td>
+            <td class="col-cert-encabezado">
+              @if (esFechaHoy(c.fechaEmision)) {
+                <span
+                  class="serv-saldo-inline encabezado-hoy-blink cert-encabezado-hoy"
+                  [attr.title]="'Certificado emitido hoy · ' + fmtFecha(c.fechaEmision)">
+                  {{ c.encabezado || '—' }}
+                </span>
+              } @else {
+                <span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span>
+              }
+            </td>
             <td><span [ngClass]="capHorasCert(c.horasCert)">{{ c.horasCert }}</span></td>
-            <td><span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span></td>
+            <td>
+              @if (esFechaHoy(c.fechaEmision)) {
+                <span
+                  class="serv-saldo-inline encabezado-hoy-blink"
+                  [attr.title]="'Emitido hoy'">
+                  {{ fmtFecha(c.fechaEmision) }}
+                </span>
+              } @else {
+                <span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span>
+              }
+            </td>
             <td><button type="button" class="mini ghost" (click)="imprimirCert(c)">Imprimir</button></td>
           </tr>
           <tr *ngIf="certsGenerados().length === 0">

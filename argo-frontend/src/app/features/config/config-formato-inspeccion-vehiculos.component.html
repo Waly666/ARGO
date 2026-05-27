@@ -1,0 +1,92 @@
+<section class="config-page card">
+  <header>
+    <h1>Formato inspección preoperacional — Vehículos</h1>
+    <p>
+      Asigne qué ítems del checklist aplican a cada <strong>clase de vehículo</strong>.
+      Los textos de ítems se editan en Catálogos; aquí solo define el formato por clase (como documentos o roles).
+    </p>
+  </header>
+
+  <div class="msg ok" *ngIf="msg() && !err()">{{ msg() }}</div>
+  <div class="msg err" *ngIf="msg() && err()">{{ msg() }}</div>
+
+  <section class="block consecutivo-block">
+    <h2>Consecutivo de inspección</h2>
+    <p class="hint">
+      Prefijo y numeración automática al guardar cada inspección (formato <strong>PREFIJO-000001</strong>).
+    </p>
+    <div class="consecutivo-fields">
+      <div class="field">
+        <label>Prefijo</label>
+        <input type="text" maxlength="12" [ngModel]="prefijoConsecutivo()" (ngModelChange)="prefijoConsecutivo.set($event)" />
+      </div>
+      <div class="field">
+        <label>Último consecutivo usado</label>
+        <input type="number" min="0" [ngModel]="consecutivoInspeccion()" (ngModelChange)="consecutivoInspeccion.set(+$event || 0)" />
+      </div>
+      <div class="field preview">
+        <label>Próximo al guardar</label>
+        <span class="next-num">{{ proximoConsecutivoPreview() }}</span>
+      </div>
+    </div>
+  </section>
+
+  <nav class="sec-tabs">
+    <button
+      type="button"
+      *ngFor="let s of secciones"
+      [class.active]="seccion() === s.key"
+      (click)="setSeccion(s.key)">
+      {{ s.label }}
+    </button>
+  </nav>
+
+  <section class="block">
+    <p class="hint">
+      Marque los ítems que debe diligenciar la inspección diaria para cada clase.
+      Catálogo maestro: Admin → Catálogos (<em>Ítems estado general</em>, <em>Aspecto 1/2</em>, <em>Adaptaciones</em>).
+    </p>
+
+    <div class="table-scroll" *ngIf="clases().length && itemsSeccion().length">
+      <table class="argo formato-matrix">
+        <thead>
+          <tr>
+            <th class="sticky-col">Clase de vehículo</th>
+            <th class="c mini">Todos</th>
+            <th *ngFor="let item of itemsSeccion()" [title]="item.label">{{ item.label }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of clases()">
+            <th class="sticky-col">{{ c.label }}</th>
+            <td class="c">
+              <input
+                type="checkbox"
+                [checked]="todosMarcadosClase(c.idClase)"
+                (change)="marcarTodosClase(c.idClase, $any($event.target).checked)"
+              />
+            </td>
+            <td class="c" *ngFor="let item of itemsSeccion()">
+              <input
+                type="checkbox"
+                [checked]="tieneItemClase(c.idClase, item.id)"
+                (change)="toggleItemClase(c.idClase, item.id, $any($event.target).checked)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="hint" *ngIf="!clases().length">Cargue el catálogo «Clases de vehículo».</p>
+    <p class="hint" *ngIf="clases().length && !itemsSeccion().length">
+      No hay ítems en esta sección. Agréguelos en Admin → Catálogos.
+    </p>
+  </section>
+
+  <footer class="actions">
+    <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Guardar formato' }}
+    </button>
+  </footer>
+</section>

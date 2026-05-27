@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const upload = require('../middleware/upload');
 const empleado = require('../controllers/empleadoController');
+const empleadoDoc = require('../controllers/empleadoDocumentoController');
 const cat = require('../controllers/rrhhCatalogoControllers');
 const contrato = require('../controllers/contratoController');
 const novedad = require('../controllers/novedadNominaController');
@@ -9,7 +10,16 @@ const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
 const rrhh = requirePermiso('rrhh');
-router.use(requireAuth, rrhh);
+
+router.use(requireAuth);
+router.get('/alertas-documentos-empleados', empleadoDoc.alertasDocumentos);
+router.get('/alertas-documentos-empleados-faltantes', empleadoDoc.alertasDocumentosFaltantes);
+router.get(
+  '/instructores',
+  requirePermiso('instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar'),
+  empleado.listarInstructores,
+);
+router.use(rrhh);
 
 function crud(ctrl) {
   const r = Router();
@@ -22,7 +32,13 @@ function crud(ctrl) {
 }
 
 const empleadoFoto = upload.empleados.fields([{ name: 'foto', maxCount: 1 }]);
+const empleadoDocUpload = upload.empleados.single('archivo');
 router.get('/empleados', empleado.listar);
+router.get('/empleados/:id/documentos-requeridos', empleadoDoc.documentosRequeridos);
+router.get('/empleados/:id/documentos', empleadoDoc.listarDocumentos);
+router.post('/empleados/:id/documentos', empleadoDocUpload, empleadoDoc.crearDocumento);
+router.put('/empleados/:id/documentos/:docId', empleadoDocUpload, empleadoDoc.actualizarDocumento);
+router.delete('/empleados/:id/documentos/:docId', empleadoDoc.eliminarDocumento);
 router.get('/empleados/:id', empleado.obtener);
 router.post('/empleados', empleadoFoto, empleado.crear);
 router.put('/empleados/:id', empleadoFoto, empleado.actualizar);

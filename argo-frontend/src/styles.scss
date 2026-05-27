@@ -271,6 +271,27 @@ button.danger.mini {
 .cap-amber   { background: rgba(245, 158, 11, 0.22); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4); }
 .cap-slate   { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.3); }
 
+/* Placas vehículo (fondo sólido, esquinas rectas) */
+.cap-placa {
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  padding: 5px 14px;
+}
+.cap-placa-blanca {
+  background: #ffffff;
+  color: #111111;
+  border-color: #1f2937;
+}
+.cap-placa-amarilla {
+  background: #facc15;
+  color: #111111;
+  border-color: #a16207;
+}
+
 .cap-money {
   text-transform: none;
   font-variant-numeric: tabular-nums;

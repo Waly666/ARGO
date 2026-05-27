@@ -146,6 +146,19 @@
     font-family: Consolas, monospace;
   }
 
+  .rol-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .rol-stat {
+    font-size: 0.62rem;
+    line-height: 1.2;
+    padding: 1px 6px;
+  }
+
   /* —— Panel editor —— */
   .roles-main {
     min-width: 0;

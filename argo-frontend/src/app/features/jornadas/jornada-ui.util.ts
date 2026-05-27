@@ -1,5 +1,7 @@
 /** Cápsulas, etiquetas y mensajes del módulo Jornadas de Capacitación. */
 
+import { esFechaHoy } from './jornada-calendario.util';
+
 export type JorMsgTipo = 'ok' | 'error' | 'info' | 'warn';
 
 export function tituloJorMsg(tipo: JorMsgTipo): string {
@@ -82,6 +84,18 @@ export function capMunicipioJor(v?: string | null): string {
   return v?.trim() ? 'cap cap-teal cap-sm cap-text' : 'cap cap-slate cap-sm';
 }
 
+/** Municipio y dirección de jornada en una sola línea. */
+export function ubicacionJornadaLabel(municipio?: string | null, direccion?: string | null): string {
+  const m = String(municipio || '').trim();
+  const d = String(direccion || '').trim();
+  if (m && d) return `${m} — ${d}`;
+  return m || d || '';
+}
+
+export function capUbicacionJornada(municipio?: string | null, direccion?: string | null): string {
+  return ubicacionJornadaLabel(municipio, direccion) ? 'cap cap-teal cap-sm cap-text' : 'cap cap-slate cap-sm';
+}
+
 export function capFechaJor(_v?: string | null): string {
   return 'cap cap-slate cap-sm cap-mono';
 }
@@ -128,12 +142,99 @@ export function capPrograma(_v?: string | null): string {
   return 'cap cap-blue cap-sm cap-text';
 }
 
-export function capInstructor(v?: string | null): string {
-  return v?.trim() ? 'cap cap-orange cap-sm cap-text' : 'cap cap-slate cap-sm';
+const CAP_INSTRUCTOR_PALETTE = [
+  'cap-orange',
+  'cap-blue',
+  'cap-purple',
+  'cap-teal',
+  'cap-pink',
+  'cap-indigo',
+  'cap-violet',
+  'cap-amber',
+  'cap-cyan',
+  'cap-emerald',
+  'cap-red',
+] as const;
+
+function hashCapsuleKey(key: string): number {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) {
+    h = (Math.imul(31, h) + key.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+/** Cápsula con color estable por instructor (derivado de id empleado o nombre). */
+export function capInstructor(nombre?: string | null, idEmpleado?: number | string | null): string {
+  const id = idEmpleado != null && String(idEmpleado).trim() !== '' ? String(idEmpleado) : '';
+  const nom = String(nombre ?? '').trim().toLowerCase();
+  const key = id ? `emp:${id}` : nom;
+  if (!key) return 'cap cap-slate cap-sm';
+  const tone = CAP_INSTRUCTOR_PALETTE[hashCapsuleKey(key) % CAP_INSTRUCTOR_PALETTE.length];
+  return `cap ${tone} cap-sm cap-text`;
 }
 
 export function capContratoLabel(_v?: string | null): string {
   return 'cap cap-indigo cap-sm cap-text';
+}
+
+export function esContratoEnEjecucion(estado?: string | null): boolean {
+  return String(estado ?? '').trim() !== 'Ejecutado';
+}
+
+export function esJornadaEnProceso(estado?: string | null): boolean {
+  return String(estado ?? '').trim().toUpperCase() === 'EN PROCESO';
+}
+
+export function labelEstadoContrato(estado?: string | null): string {
+  return esContratoEnEjecucion(estado) ? 'En Ejecución' : 'Ejecutado';
+}
+
+export function estadoContratoLiveClass(estado?: string | null): string {
+  return esContratoEnEjecucion(estado) ? 'estado-contrato-live' : 'cap cap-slate cap-sm cap-text';
+}
+
+export function rowContratoClass(estado?: string | null): string {
+  return esContratoEnEjecucion(estado) ? 'row-contrato-ejecucion' : 'ejecutado';
+}
+
+export function estadoJornadaLiveClass(estado?: string | null): string {
+  return esJornadaEnProceso(estado) ? 'estado-jornada-live' : capEstadoJornada(estado);
+}
+
+/** Calendario mensual: chip compacto por color de estado. */
+export function estadoJornadaCalClass(estado?: string | null): string {
+  return esJornadaEnProceso(estado) ? 'estado-jornada-live' : capEstadoJornadaColor(estado);
+}
+
+export function rowJornadaClass(estado?: string | null): string {
+  return esJornadaEnProceso(estado) ? 'row-jornada-proceso' : '';
+}
+
+export function estadoClaseLiveClass(estado?: string | null): string {
+  const e = String(estado ?? '').trim().toUpperCase();
+  if (e === 'EN PROCESO') return 'estado-clase-live estado-clase-proceso';
+  if (e === 'PROGRAMADA') return 'estado-clase-live estado-clase-programada';
+  return capEstadoClase(estado);
+}
+
+/** Bloque semanal del calendario de clases (fondo por estado). */
+export function estadoClaseCalBlockClass(estado?: string | null): string {
+  const e = String(estado ?? '').trim().toUpperCase();
+  if (e === 'EN PROCESO') return 'cal-clase-proceso';
+  if (e === 'FINALIZADO') return 'cal-clase-finalizada';
+  return 'cal-clase-programada';
+}
+
+export function rowClaseClass(estado?: string | null): string {
+  const e = String(estado ?? '').trim().toUpperCase();
+  if (e === 'EN PROCESO') return 'row-clase-proceso';
+  if (e === 'PROGRAMADA') return 'row-clase-programada';
+  return '';
+}
+
+export function rowCertificadoHoyClass(fechaEmision?: string | Date | null): string {
+  return esFechaHoy(fechaEmision) ? 'row-certificado-hoy' : '';
 }
 
 /** Opciones HH:mm cada `intervaloMin` minutos (00:00 … 23:45). */

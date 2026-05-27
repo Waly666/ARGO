@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Egreso = require('../models/Egreso');
 const Empleado = require('../models/Empleado');
+const Vehiculo = require('../models/Vehiculo');
 const { FORMAS_PAGO } = require('../models/Egreso');
 const { models: cat } = require('../models/catalogos');
 const upload = require('../middleware/upload');
@@ -16,6 +17,7 @@ const {
 } = require('../services/nominaAnticipo');
 const { siguienteNumComprobanteEgreso } = require('../services/configRecibo');
 const { configDesdeTipoDoc, resolverTipoEgresoDoc, esRetiroCajaTipo } = require('../services/tipoEgresoNomina');
+const { normalizarPlaca } = require('../constants/vehiculo');
 const {
   exigirSesionAbierta,
   requiereAutorizacionAnularMovimiento,
@@ -92,9 +94,30 @@ async function validarBeneficiarioEgreso(dto) {
       };
     }
     if (!dto.pagueA) dto.pagueA = nombreCompletoEmpleado(emp);
-    return { ok: true, empleado: emp, cfg, tipoDoc };
   }
 
+  if (cfg.requiereVehiculo) {
+    const placa = normalizarPlaca(dto.placa);
+    if (!placa) {
+      return {
+        ok: false,
+        status: 400,
+        message: 'La placa del vehículo es obligatoria para este tipo de egreso.',
+      };
+    }
+    const veh = await Vehiculo.findOne({ placa }).lean();
+    if (!veh) {
+      return {
+        ok: false,
+        status: 400,
+        message: 'No hay vehículo registrado con esa placa. Regístrelo en Vehículos.',
+      };
+    }
+    dto.placa = placa;
+    return { ok: true, empleado: emp, cfg, tipoDoc, vehiculo: veh };
+  }
+
+  dto.placa = null;
   return { ok: true, empleado: emp, cfg, tipoDoc };
 }
 
@@ -115,6 +138,7 @@ function pickBody(body) {
     'bancoDestino',
     'idPeriodo',
     'idEmpleado',
+    'placa',
   ]) {
     if (body[k] !== undefined && body[k] !== '') dto[k] = body[k];
   }
@@ -122,6 +146,7 @@ function pickBody(body) {
   if (dto.idEmpleado != null && dto.idEmpleado !== '') dto.idEmpleado = Number(dto.idEmpleado);
   if (dto.numeroDocumento != null) dto.numeroDocumento = String(dto.numeroDocumento).trim();
   if (dto.pagueA) dto.pagueA = String(dto.pagueA).trim();
+  if (dto.placa != null && dto.placa !== '') dto.placa = normalizarPlaca(dto.placa);
   if (dto.concepto) dto.concepto = String(dto.concepto).trim();
   if (dto.tipoEgreso != null) dto.tipoEgreso = String(dto.tipoEgreso);
   if (dto.formaPago && !FORMAS_PAGO.includes(dto.formaPago)) {
@@ -192,6 +217,7 @@ async function enriquecer(raw) {
   const banco = await resolverBancoDestino(e.bancoDestino);
   const emp = e.numeroDocumento ? await resolverEmpleadoPorDocumento(e.numeroDocumento) : null;
   const empN = emp ? normalizarEmpleadoLegacy(emp) : null;
+  const veh = e.placa ? await Vehiculo.findOne({ placa: normalizarPlaca(e.placa) }).lean() : null;
   const anticipo =
     e.anticipoNomina || tipoCfg.anticipoNomina || null;
   return {
@@ -211,7 +237,12 @@ async function enriquecer(raw) {
     tipoEgreso: e.tipoEgreso || null,
     tipoEgresoDescr: tipo?.tipo || null,
     tipoRequiereEmpleado: tipoCfg.requiereEmpleado,
+    tipoRequiereVehiculo: tipoCfg.requiereVehiculo,
     tipoEfectoNomina: tipoCfg.efectoNomina || null,
+    placa: e.placa || null,
+    vehiculoMarca: veh?.nombreMarca || null,
+    vehiculoLinea: veh?.nombreLinea || null,
+    vehiculoClase: veh?.claseVehiculo || null,
     formaPago: e.formaPago || null,
     numTransferencia: e.numTransferencia || null,
     fechaTransferencia: e.fechaTransferencia || null,
@@ -236,6 +267,67 @@ async function enriquecer(raw) {
 
 exports.formasPago = (_req, res) => {
   res.json(FORMAS_PAGO);
+};
+
+/** Opciones de vehículos para egresos (caja) — búsqueda por placa, marca, línea, etc. */
+exports.opcionesVehiculos = async (req, res, next) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 40));
+    const filter = {};
+    if (q.length >= 1) {
+      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [
+        { placa: re },
+        { nombreMarca: re },
+        { nombreLinea: re },
+        { claseVehiculo: re },
+        { modelo: re },
+      ];
+    }
+    const rows = await Vehiculo.find(filter)
+      .select('placa nombreMarca nombreLinea claseVehiculo modelo tipoServicio')
+      .sort({ placa: 1 })
+      .limit(limit)
+      .lean();
+    res.json(
+      rows.map((v) => ({
+        placa: v.placa,
+        nombreMarca: v.nombreMarca || '',
+        nombreLinea: v.nombreLinea || '',
+        claseVehiculo: v.claseVehiculo || '',
+        modelo: v.modelo || '',
+        tipoServicio: v.tipoServicio || '',
+      })),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Verifica placa exacta contra vehículos registrados (egresos / caja). */
+exports.verificarPlacaVehiculo = async (req, res, next) => {
+  try {
+    const placa = normalizarPlaca(req.params.placa);
+    if (!placa) return res.status(400).json({ message: 'Placa inválida' });
+    const v = await Vehiculo.findOne({ placa })
+      .select('placa nombreMarca nombreLinea claseVehiculo modelo tipoServicio')
+      .lean();
+    if (!v) return res.json({ existe: false, vehiculo: null });
+    res.json({
+      existe: true,
+      vehiculo: {
+        placa: v.placa,
+        nombreMarca: v.nombreMarca || '',
+        nombreLinea: v.nombreLinea || '',
+        claseVehiculo: v.claseVehiculo || '',
+        modelo: v.modelo || '',
+        tipoServicio: v.tipoServicio || '',
+      },
+    });
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.listar = async (req, res, next) => {
@@ -478,6 +570,7 @@ exports.actualizar = async (req, res, next) => {
       tipoEgreso: eg.tipoEgreso,
       numeroDocumento: eg.numeroDocumento,
       pagueA: eg.pagueA,
+      placa: dto.placa !== undefined ? dto.placa : eg.placa,
       ...dto,
     };
     const vinc = await validarBeneficiarioEgreso(merged);
@@ -490,6 +583,7 @@ exports.actualizar = async (req, res, next) => {
       dto.numeroDocumento = merged.numeroDocumento || null;
       dto.idEmpleado = null;
     }
+    dto.placa = merged.placa ?? null;
     if (eg.anticipoNomina || eg.idNovedadGenerada) {
       return res.status(409).json({
         message: 'No se puede modificar un egreso de préstamo/adelanto vinculado a nómina',

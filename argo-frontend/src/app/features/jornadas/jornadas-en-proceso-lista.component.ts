@@ -9,10 +9,10 @@ import { JornadaEnProcesoAlertService } from '../../core/services/jornada-en-pro
 import { fmtFechaCalendario } from './jornada-calendario.util';
 import {
   capCodContrato,
-  capEstadoJornada,
   capMetaNum,
   capMunicipioJor,
   capFechaJor,
+  estadoJornadaLiveClass,
 } from './jornada-ui.util';
 
 @Component({
@@ -60,7 +60,7 @@ export class JornadasEnProcesoListaComponent implements OnInit, OnDestroy {
   capMunicipioJor = capMunicipioJor;
   capMetaNum = capMetaNum;
   capFechaJor = capFechaJor;
-  capEstadoJornada = capEstadoJornada;
+  estadoJornadaLiveClass = estadoJornadaLiveClass;
   fmtFecha = fmtFechaCalendario;
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;

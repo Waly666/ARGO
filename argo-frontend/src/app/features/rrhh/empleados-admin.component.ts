@@ -16,11 +16,14 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 import { AuthService } from '../../core/services/auth.service';
 import { inicialesNombre, readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { environment } from '../../../environments/environment';
+import { EmpleadoDocumentosPanelComponent } from './empleado-documentos-panel.component';
+
+type FormSeccion = 'datos' | 'documentos';
 
 @Component({
   selector: 'argo-empleados-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, EmpleadoDocumentosPanelComponent],
   templateUrl: './empleados-admin.component.html',
   styleUrls: ['./empleados-admin.component.scss', './rrhh-catalog-admin.component.scss', './rrhh-shared.scss'],
 })
@@ -81,6 +84,7 @@ export class EmpleadosAdminComponent implements OnInit {
   vista = signal<VistaLista>(readVistaLista('argo-empleados-vista'));
   editando = signal<Empleado | null>(null);
   mostrarForm = signal(false);
+  formSeccion = signal<FormSeccion>('datos');
 
   readonly tiposDocumento = ['CC', 'CE', 'TI', 'PAS'];
   readonly sexos = ['Masculino', 'Femenino', 'Otro'];
@@ -168,6 +172,7 @@ export class EmpleadosAdminComponent implements OnInit {
 
   nuevo() {
     this.editando.set(null);
+    this.formSeccion.set('datos');
     this.form.set(this.formVacio());
     this.modoAcceso.set('auto');
     this.idUsuarioVincular.set('');
@@ -180,6 +185,7 @@ export class EmpleadosAdminComponent implements OnInit {
 
   editar(e: Empleado) {
     this.editando.set(e);
+    this.formSeccion.set('datos');
     if (this.esAdmin()) this.cargarUsuarios();
     this.form.set({
       ...e,
@@ -236,7 +242,15 @@ export class EmpleadosAdminComponent implements OnInit {
   cancelar() {
     this.mostrarForm.set(false);
     this.editando.set(null);
+    this.formSeccion.set('datos');
   }
+
+  setFormSeccion(sec: FormSeccion): void {
+    if (sec === 'documentos' && !this.editando()?.idEmpleado) return;
+    this.formSeccion.set(sec);
+  }
+
+  puedeDocumentos = computed(() => !!this.editando()?.idEmpleado);
 
   patch<K extends keyof EmpleadoDto>(k: K, v: EmpleadoDto[K]) {
     this.form.update((f) => ({ ...f, [k]: v }));

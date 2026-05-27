@@ -1,5 +1,5 @@
 const Usuario = require('../models/Usuario');
-const { listarActivos, listarHistorial, ACTIVOS_MINUTOS } = require('../services/actividadHttp');
+const { listarActivos, listarHistorial, obtenerMonitor, ACTIVOS_MINUTOS } = require('../services/actividadHttp');
 
 async function enriquecerNombres(activos) {
   const ids = activos.map((a) => a.idUsuario).filter(Boolean);
@@ -56,6 +56,17 @@ exports.historial = async (req, res, next) => {
       ...i,
       nombreUsuario: map.get(String(i.idUsuario)) || i.nombreUsuario || i.usuario,
     }));
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.monitor = async (req, res, next) => {
+  try {
+    const minutos = Math.min(Math.max(Number(req.query.minutos) || ACTIVOS_MINUTOS, 1), 60);
+    const data = await obtenerMonitor(minutos);
+    data.usuarios = await enriquecerNombres(data.usuarios);
     res.json(data);
   } catch (e) {
     next(e);

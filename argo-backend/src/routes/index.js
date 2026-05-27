@@ -19,6 +19,7 @@ const actividad = require('./actividad');
 const dashboard = require('./dashboard');
 const roles = require('./roles');
 const jornadas = require('./jornadas');
+const vehiculos = require('./vehiculos');
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use('/actividad', actividad);
 router.use('/dashboard', dashboard);
 router.use('/roles', roles);
 router.use('/jornadas', jornadas);
+router.use('/vehiculos', vehiculos);
 
 module.exports = router;

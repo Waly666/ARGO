@@ -51,6 +51,10 @@ import {
   ymdLocal,
   ymdCalendario,
   fmtFechaCalendario,
+  esFechaHoy,
+  ahoraLineaTopPct,
+  esFinDeSemana,
+  rangoVisibleMes,
 } from './jornada-calendario.util';
 import {
   JorMsgTipo,
@@ -79,6 +83,16 @@ import {
   listaOpcionesHora,
   tituloJorMsg,
   validarHoraInput,
+  estadoContratoLiveClass,
+  labelEstadoContrato,
+  rowContratoClass,
+  estadoJornadaLiveClass,
+  estadoJornadaCalClass,
+  rowJornadaClass,
+  estadoClaseLiveClass,
+  estadoClaseCalBlockClass,
+  rowClaseClass,
+  rowCertificadoHoyClass,
 } from './jornada-ui.util';
 
 type Tab = 'contratos' | 'jornadas' | 'clases' | 'certificados';
@@ -119,9 +133,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   calAnio = signal(new Date().getFullYear());
   semanaInicio = signal(inicioSemana(new Date()));
   jornadasCalendario = signal<JornadaCapDto[]>([]);
+  loadingCalJornadas = signal(false);
+  calDiaExpandido = signal<string | null>(null);
+  readonly calMaxEventosDia = 3;
   msg = signal<string | null>(null);
   msgTipo = signal<JorMsgTipo>('info');
   msgTitulo = signal('');
+  modalMsg = signal<string | null>(null);
+  modalMsgTipo = signal<JorMsgTipo>('info');
+  modalMsgTitulo = signal('');
   msgEsError = signal(false);
   jornadaEditError = signal<string | null>(null);
   direccionAlertaActiva = signal(false);
@@ -149,6 +169,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   progresoPreviewLoading = signal(false);
 
   certsGenerados = signal<any[]>([]);
+  certsHoyCount = computed(
+    () => this.certsGenerados().filter((c) => esFechaHoy(c?.fechaEmision)).length,
+  );
 
   etiquetaProgresoCert = etiquetaProgresoCert;
   etiquetaDeteGeorefe = etiquetaDeteGeorefe;
@@ -174,6 +197,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   capPrograma = capPrograma;
   capGenerado = capGenerado;
   capInstructor = capInstructor;
+  estadoContratoLiveClass = estadoContratoLiveClass;
+  labelEstadoContrato = labelEstadoContrato;
+  rowContratoClass = rowContratoClass;
+  estadoJornadaLiveClass = estadoJornadaLiveClass;
+  estadoJornadaCalClass = estadoJornadaCalClass;
+  rowJornadaClass = rowJornadaClass;
+  estadoClaseLiveClass = estadoClaseLiveClass;
+  estadoClaseCalBlockClass = estadoClaseCalBlockClass;
+  esFinDeSemana = esFinDeSemana;
+  rowClaseClass = rowClaseClass;
+  rowCertificadoHoyClass = rowCertificadoHoyClass;
+  esFechaHoy = esFechaHoy;
   private progresoDebounce: ReturnType<typeof setTimeout> | null = null;
 
   contratoActivo = computed(() => this.contratos().find((c) => c._id === this.contratoSel()));
@@ -181,7 +216,19 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   /** Solo administrador (jornadas.gestionar) puede eliminar clases. */
   puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
   inscritosConAsistencia = computed(() => this.inscritos().filter((i) => i.tieneAsistencia).length);
-  inscritosSinAsistencia = computed(() => this.inscritos().filter((i) => !i.tieneAsistencia).length);
+  /** Inscritos que aún requieren asistencia (excluye certificados vigentes en el contrato). */
+  inscritosPendientesAsistencia = computed(() =>
+    this.inscritos().filter((i) => !i.tieneAsistencia && !i.yaCertificadoContrato),
+  );
+  inscritosSinAsistencia = computed(() => this.inscritosPendientesAsistencia().length);
+  inscritosCertificadosContrato = computed(() =>
+    this.inscritos().filter((i) => i.yaCertificadoContrato).length,
+  );
+  totalAlumnosMatriculadosModal = computed(() =>
+    this.modalModoClase() === 'editar'
+      ? this.inscritos().length
+      : this.alumnosMatricular().length,
+  );
   instructorSesionNombre = computed(
     () => this.auth.user()?.empleado?.nombreCompleto || this.auth.user()?.username || '—',
   );
@@ -196,16 +243,62 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   diasSemanaClases = computed((): DiaSemana[] => diasSemana(this.semanaInicio()));
   horasCal = horasSlots();
   diasSemanaLabels = DIAS_SEMANA_CORTO;
-  clasesPorDiaSemana = computed(() =>
-    agruparPorFecha(this.clases(), (c) => ymdLocal(c.fechaJornada)),
+  clasesSemanaFiltradas = computed(() => {
+    const est = this.filtroAdminEstado();
+    const keys = new Set(this.diasSemanaClases().map((d) => d.key));
+    return this.clases().filter((c) => {
+      if (!keys.has(ymdLocal(c.fechaJornada))) return false;
+      if (!est) return true;
+      return String(c.estado || '').toUpperCase() === est.toUpperCase();
+    });
+  });
+  clasesPorDiaSemanaFiltradas = computed(() =>
+    agruparPorFecha(this.clasesSemanaFiltradas(), (c) => ymdLocal(c.fechaJornada)),
   );
   clasesSinHorarioSemana = computed(() => {
     const keys = new Set(this.diasSemanaClases().map((d) => d.key));
-    return this.clases().filter((c) => {
+    return this.clasesSemanaFiltradas().filter((c) => {
       if (!keys.has(ymdLocal(c.fechaJornada))) return false;
       return layoutHorarioClase(c.horaInicio, c.horaFin).sinHorario;
     });
   });
+  clasesSemanaResumen = computed(() => {
+    const items = this.clasesSemanaFiltradas();
+    let programada = 0;
+    let proceso = 0;
+    let finalizado = 0;
+    for (const c of items) {
+      const e = String(c.estado || '').toUpperCase();
+      if (e === 'EN PROCESO') proceso++;
+      else if (e === 'FINALIZADO') finalizado++;
+      else programada++;
+    }
+    return { total: items.length, programada, proceso, finalizado };
+  });
+  jornadasMesActual = computed(() => {
+    const keysMes = new Set(
+      this.calCeldas().filter((c) => !c.otroMes && c.key).map((c) => c.key),
+    );
+    return this.jornadasCalendario().filter((j) => keysMes.has(ymdCalendario(j.fechaProgramacion)));
+  });
+  jornadasMesResumen = computed(() => {
+    const items = this.jornadasMesActual();
+    let inactivo = 0;
+    let proceso = 0;
+    let finalizado = 0;
+    for (const j of items) {
+      const e = String(j.estado || '').toUpperCase();
+      if (e === 'EN PROCESO') proceso++;
+      else if (e === 'FINALIZADO') finalizado++;
+      else inactivo++;
+    }
+    return { total: items.length, inactivo, proceso, finalizado };
+  });
+  ahoraCalTopPct = computed(() => {
+    this.diasSemanaClases();
+    return ahoraLineaTopPct(new Date());
+  });
+  semanaIncluyeHoy = computed(() => this.diasSemanaClases().some((d) => d.key === this.hoyKey()));
 
   /** Jornadas EN PROCESO = fecha programada = hoy (según el equipo). */
   jornadasOperablesHoy = computed(() =>
@@ -273,12 +366,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }>
   >([]);
   guardandoAsistencia = signal<number | null>(null);
+  guardandoInscripcion = signal(false);
   cronometroDisplay = signal('00:00:00');
   private cronometroTimer: ReturnType<typeof setInterval> | null = null;
   private alumnoBusqueda$ = new Subject<string>();
   private livePollTimer: ReturnType<typeof setInterval> | null = null;
   private ultimoLiveTick = 0;
   private jornadaPendienteQp = signal<string | null>(null);
+  private clasePendienteQp = signal<string | null>(null);
   private tabPendienteQp = signal<Tab | null>(null);
 
   constructor() {
@@ -340,6 +435,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const nuevoQp = qp.get('nuevo');
     const tabQp = qp.get('tab');
     const jornadaQp = qp.get('jornada');
+    const claseQp = qp.get('clase');
+
+    if (claseQp) this.clasePendienteQp.set(claseQp);
+    else this.clasePendienteQp.set(null);
 
     if (nuevoQp) {
       this.formContrato.set(this.emptyContrato());
@@ -486,11 +585,6 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
-  capEstadoContrato(estado?: string): string {
-    if (estado === 'Ejecutado') return 'cap cap-slate cap-sm cap-text';
-    return 'cap cap-emerald cap-sm cap-text';
-  }
-
   setTab(t: Tab) {
     this.tab.set(t);
     if (t === 'jornadas' || t === 'clases' || t === 'certificados') {
@@ -541,9 +635,61 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   cargarProgramasJornada() {
     this.jornadaSvc.programasJornadaCap().subscribe({
-      next: (p) => this.programasJornada.set(p || []),
+      next: (p) => {
+        this.programasJornada.set(p || []);
+        if (this.modalCrearClase()) {
+          const idRaw = this.nuevaClaseProg() || this.claseActiva()?.idPrograma;
+          if (idRaw) this.sincronizarProgramaModal(String(idRaw));
+        }
+      },
       error: () => this.programasJornada.set([]),
     });
+  }
+
+  /** Mismo criterio que el backend al guardar idPrograma en la clase. */
+  programaOptionValue(p: { idPrograma?: unknown; _id?: unknown; idProg?: unknown }): string {
+    if (p?.idPrograma != null && String(p.idPrograma).trim() !== '') {
+      return String(p.idPrograma);
+    }
+    if (p?._id != null) return String(p._id);
+    if (p?.idProg != null && String(p.idProg).trim() !== '') return String(p.idProg);
+    return '';
+  }
+
+  buscarProgramaEnLista(idProg?: string | null) {
+    const id = String(idProg ?? '').trim();
+    if (!id) return undefined;
+    return this.programasJornada().find((p) => {
+      const claves = [p.idPrograma, p._id, p.idProg, p.codigoProg]
+        .filter((v) => v != null && String(v).trim() !== '')
+        .map((v) => String(v));
+      return claves.includes(id);
+    });
+  }
+
+  sincronizarProgramaModal(idProgRaw?: string | null) {
+    const id = String(idProgRaw ?? '').trim();
+    if (!id) {
+      this.nuevaClaseProg.set('');
+      return;
+    }
+    const hit = this.buscarProgramaEnLista(id);
+    this.nuevaClaseProg.set(hit ? this.programaOptionValue(hit) : id);
+  }
+
+  programaModalEnLista(): boolean {
+    const v = this.nuevaClaseProg();
+    if (!v) return true;
+    return !!this.buscarProgramaEnLista(v);
+  }
+
+  etiquetaProgramaModal(): string {
+    const v = this.nuevaClaseProg();
+    if (!v) return '';
+    const p = this.buscarProgramaEnLista(v);
+    if (p) return String(p.nombreProg || p.codigoProg || v);
+    const cl = this.claseActiva();
+    return String(cl?.programaNombre || v);
   }
 
   cargarInstructores() {
@@ -586,6 +732,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.modalFechaClase.set('');
     this.modalCrearJornadaId.set(this.jornadaSel() || '');
     if (!this.jornadasParaCrear().length) this.cargarJornadasParaCrear();
+    this.cargarProgramasJornada();
     this.sincronizarFechaClaseDesdeJornada(this.modalCrearJornadaId());
     this.modalCrearClase.set(true);
   }
@@ -607,6 +754,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.alumnosMatricular.set([]);
     this.inscritos.set([]);
     if (!this.jornadasParaCrear().length) this.cargarJornadasParaCrear();
+    this.sincronizarProgramaModal(String(c.idPrograma || ''));
+    this.cargarProgramasJornada();
     this.cargarInscritos(c._id);
     this.modalCrearClase.set(true);
     this.iniciarCronometroSiAplica();
@@ -756,6 +905,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.claseModalEnProceso();
   }
 
+  /** Instructor: mientras la clase no esté finalizada. Administrador: siempre. */
+  puedeQuitarInscritoDeClase(): boolean {
+    if (this.puedeEliminarClase()) return true;
+    return this.claseActiva()?.estado !== 'FINALIZADO';
+  }
+
   iniciarClaseModal() {
     const id = this.claseSel();
     if (!id || !this.claseModalIniciable()) return;
@@ -791,7 +946,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         }
         if (r?.certificadosGenerados > 0) {
           msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
-          this.certAlertSvc.descartarTodas();
+          this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
@@ -803,21 +958,31 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   sincronizarAsistenciasClaseModal() {
     const id = this.claseSel();
     if (!id) return;
+    if (this.inscritosSinAsistencia() === 0) {
+      this.mostrarMsgModal(
+        'Todos los inscritos ya tienen asistencia o certificado vigente en el contrato.',
+        'info',
+        'Asistencia al día',
+      );
+      return;
+    }
     this.jornadaSvc.sincronizarAsistenciasInscritos(id).subscribe({
       next: (r) => {
         this.cargarInscritos(id);
         this.recargarCerts();
         if (r.certificadosNuevos > 0) {
-          this.certAlertSvc.descartarTodas();
+          this.certAlertSvc.notificarVariosDesdeRespuesta(r.certificadosEmitidos);
         }
-        this.mostrarMsg(
-          r.message || 'Asistencias sincronizadas.',
-          r.certificadosNuevos > 0 ? 'ok' : 'info',
-          'Asistencia',
-        );
+        const msg = r.message || 'Asistencias sincronizadas.';
+        const tipo = r.certificadosNuevos > 0 ? 'ok' : 'info';
+        this.mostrarMsgModal(msg, tipo, 'Asistencia');
+        this.mostrarMsg(msg, tipo, 'Asistencia');
       },
-      error: (e) =>
-        this.mostrarMsg(e?.error?.message || 'No se pudo registrar la asistencia.', 'error', 'Error'),
+      error: (e) => {
+        const err = e?.error?.message || 'No se pudo registrar la asistencia.';
+        this.mostrarMsgModal(err, 'error', 'Error');
+        this.mostrarMsg(err, 'error', 'Error');
+      },
     });
   }
 
@@ -860,12 +1025,22 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
-  async quitarInscritoDeClase(numDoc: number, nombre?: string) {
+  async quitarInscritoDeClase(
+    numDoc: number,
+    nombre?: string,
+    opts?: { tieneAsistencia?: boolean },
+  ) {
     const id = this.claseSel();
     if (!id) return;
+    const extraAsist =
+      opts?.tieneAsistencia
+        ? ' También se eliminará su asistencia en esta clase.'
+        : '';
     const ok = await this.confirmSvc.open({
       title: 'Quitar de la clase',
-      message: `¿Quitar a ${nombre || 'el alumno'} (doc ${numDoc}) de esta clase? La matrícula al programa se conserva.`,
+      message:
+        `¿Quitar a ${nombre || 'el alumno'} (doc ${numDoc}) de esta clase?` +
+        ` La matrícula al programa se conserva.${extraAsist}`,
       confirmLabel: 'Quitar',
       variant: 'danger',
     });
@@ -875,6 +1050,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       next: () => {
         this.guardandoAsistencia.set(null);
         this.cargarInscritos(id);
+        this.cargarAsistencias(id);
         this.mostrarMsg('Alumno retirado de la clase.', 'ok', 'Inscripción eliminada');
       },
       error: (e) => {
@@ -1001,6 +1177,25 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.detenerCronometro();
     this.modalCrearClase.set(false);
     this.alumnoBusquedaOpen.set(false);
+    this.limpiarMsgModal();
+  }
+
+  limpiarMsgModal() {
+    this.modalMsg.set(null);
+    this.modalMsgTitulo.set('');
+  }
+
+  mostrarMsgModal(texto: string, tipo: JorMsgTipo = 'info', titulo?: string) {
+    this.modalMsg.set(texto);
+    this.modalMsgTipo.set(tipo);
+    this.modalMsgTitulo.set(titulo ?? tituloJorMsg(tipo));
+  }
+
+  private mensajeInscripcionOk(r: { inscripcionDuplicada?: boolean; yaExistia?: boolean; matricula?: { yaExistia?: boolean } }, nombre: string): string {
+    if (r?.inscripcionDuplicada) return `${nombre} ya estaba inscrito en esta clase.`;
+    const yaMatriculado = r?.yaExistia || r?.matricula?.yaExistia;
+    if (yaMatriculado) return `${nombre} inscrito en la clase (ya estaba matriculado al programa).`;
+    return `${nombre} matriculado e inscrito en la clase.`;
   }
 
   onAlumnoBusquedaInput(value: string) {
@@ -1023,6 +1218,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   alumnoYaEnLista(a: AlumnoListItem): boolean {
     const doc = formatNumDoc(a.numDoc);
+    if (this.modalModoClase() === 'editar') {
+      return this.inscritos().some((x) => formatNumDoc(x.numDoc) === doc);
+    }
     return this.alumnosMatricular().some((x) => formatNumDoc(x.numDoc) === doc);
   }
 
@@ -1060,22 +1258,28 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         return;
       }
       const idC = this.claseSel();
+      this.guardandoInscripcion.set(true);
       this.jornadaSvc
         .matricularAlumno({ numDoc: a.numDoc, idPrograma: idP, idClase: idC })
         .subscribe({
           next: (r: any) => {
+            this.guardandoInscripcion.set(false);
             this.cargarInscritos(idC);
-            const msg = r?.inscripcionDuplicada
-              ? 'El alumno ya estaba inscrito en esta clase.'
-              : `Alumno ${this.nombreAlumnoItem(a)} inscrito en la clase.`;
-            this.mostrarMsg(msg, r?.inscripcionDuplicada ? 'info' : 'ok', 'Inscrito');
+            const nombre = this.nombreAlumnoItem(a);
+            const msg = this.mensajeInscripcionOk(r, nombre);
+            const tipo = r?.inscripcionDuplicada ? 'info' : 'ok';
+            this.mostrarMsgModal(msg, tipo, 'Alumno inscrito');
+            this.mostrarMsg(msg, tipo, 'Alumno inscrito');
           },
           error: (e) => {
+            this.guardandoInscripcion.set(false);
             if (e?.status === 409 && e?.error?.codigo === 'ya_certificado_contrato') {
               void this.certBloqueoSvc.mostrarDesdeError(e.error, this.nombreAlumnoItem(a));
               return;
             }
-            this.mostrarMsg(e?.error?.message || 'No se pudo inscribir al alumno.', 'error', 'Error');
+            const err = e?.error?.message || 'No se pudo inscribir al alumno.';
+            this.mostrarMsgModal(err, 'error', 'Error');
+            this.mostrarMsg(err, 'error', 'Error');
           },
         });
       this.alumnoBusqueda.set('');
@@ -1089,6 +1293,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     this.alumnosMatricular.update((list) => [...list, a]);
+    this.mostrarMsgModal(
+      `${this.nombreAlumnoItem(a)} agregado. Se matriculará al guardar la clase.`,
+      'ok',
+      'Alumno agregado',
+    );
     this.alumnoBusqueda.set('');
     this.alumnoBusquedaResults.set([]);
     this.alumnoBusquedaOpen.set(false);
@@ -1326,7 +1535,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           this.jornadaPendienteQp.set(null);
           const j = (r || []).find((x) => x._id === pend);
           if (this.tab() === 'clases') {
-            if (j) this.abrirJornadaEnClases(j);
+            if (this.clasePendienteQp()) {
+              this.recargarClases();
+            } else if (j) {
+              this.abrirJornadaEnClases(j);
+            }
           } else if (this.tab() === 'jornadas' && j) {
             this.vistaJornadas.set('lista');
             this.editarJornada(j);
@@ -1339,17 +1552,21 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   recargarJornadasCalendario() {
-    const desde = ymdLocal(inicioMes(this.calAnio(), this.calMes()));
-    const hasta = ymdLocal(finMes(this.calAnio(), this.calMes()));
+    const { desde, hasta } = rangoVisibleMes(this.calAnio(), this.calMes());
     const id = this.contratoSel();
     const params: { desde: string; hasta: string; idContrato?: string } = { desde, hasta };
     if (id) params.idContrato = id;
+    this.loadingCalJornadas.set(true);
     this.jornadaSvc.listarJornadas(params).subscribe({
       next: (r) => {
         this.jornadasCalendario.set(r || []);
         this.liveSync.marcarJornadasConocidas((r || []).map((j) => j._id));
+        this.loadingCalJornadas.set(false);
       },
-      error: () => this.jornadasCalendario.set([]),
+      error: () => {
+        this.jornadasCalendario.set([]);
+        this.loadingCalJornadas.set(false);
+      },
     });
   }
 
@@ -1362,6 +1579,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     this.calMes.set(m);
     this.calAnio.set(a);
+    this.calDiaExpandido.set(null);
     this.recargarJornadasCalendario();
   }
 
@@ -1374,6 +1592,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     this.calMes.set(m);
     this.calAnio.set(a);
+    this.calDiaExpandido.set(null);
     this.recargarJornadasCalendario();
   }
 
@@ -1381,6 +1600,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const hoy = new Date();
     this.calMes.set(hoy.getMonth());
     this.calAnio.set(hoy.getFullYear());
+    this.calDiaExpandido.set(null);
     this.recargarJornadasCalendario();
   }
 
@@ -1405,8 +1625,29 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.jornadasPorDia().get(key) ?? [];
   }
 
+  jornadasEnDiaVisibles(key: string): JornadaCapDto[] {
+    const all = this.jornadasEnDia(key);
+    if (this.calDiaExpandido() === key) return all;
+    return all.slice(0, this.calMaxEventosDia);
+  }
+
+  jornadasEnDiaOcultas(key: string): number {
+    const all = this.jornadasEnDia(key);
+    if (this.calDiaExpandido() === key) return 0;
+    return Math.max(0, all.length - this.calMaxEventosDia);
+  }
+
+  toggleDiaCalExpandido(key: string, ev?: Event) {
+    ev?.stopPropagation();
+    this.calDiaExpandido.update((k) => (k === key ? null : key));
+  }
+
+  conteoClasesDia(key: string): number {
+    return (this.clasesPorDiaSemanaFiltradas().get(key) ?? []).length;
+  }
+
   clasesEnDia(key: string): any[] {
-    return (this.clasesPorDiaSemana().get(key) ?? []).filter(
+    return (this.clasesPorDiaSemanaFiltradas().get(key) ?? []).filter(
       (c) => !layoutHorarioClase(c.horaInicio, c.horaFin).sinHorario,
     );
   }
@@ -1429,6 +1670,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   chipClaseCal(c: any): string {
+    const prog = this.nombrePrograma(c.idPrograma);
+    const inst = this.labelInstructorClase(c);
+    const base = c.ubicacion ? `${prog} · ${c.ubicacion}` : prog;
+    return inst && inst !== '—' ? `${base} · ${inst}` : base;
+  }
+
+  chipClaseCalCorto(c: any): string {
     const prog = this.nombrePrograma(c.idPrograma);
     return c.ubicacion ? `${prog} · ${c.ubicacion}` : prog;
   }
@@ -1472,7 +1720,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.claseSel.set('');
     this.claseActiva.set(null);
     this.recargarVistaJornadas();
-    if (this.tab() === 'clases') this.recargarClases();
+    if (this.tab() === 'clases') {
+      this.cargarProgramasJornada();
+      this.cargarInstructores();
+      this.recargarClases();
+    }
     this.consultarProgresoPreview(this.numDocAsis());
     if (this.tab() === 'certificados') this.recargarCerts();
   }
@@ -1520,6 +1772,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.clases.set(this.filtrarClasesAdmin(r || []));
         this.liveSync.marcarClasesConocidas((r || []).map((c) => c._id));
         this.liveSync.sincronizarEstadosClases(r || []);
+        const clasePend = this.clasePendienteQp();
+        if (clasePend) {
+          const cEdit = (r || []).find((x: any) => x._id === clasePend);
+          if (cEdit) {
+            this.abrirModalEditarClase(cEdit);
+          }
+          this.clasePendienteQp.set(null);
+          return;
+        }
         const act = this.claseSel();
         if (act) {
           const c = (r || []).find((x: any) => x._id === act);
@@ -1658,7 +1919,6 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   seleccionarClaseCalendario(c: any) {
-    this.vistaClases.set('lista');
     this.seleccionarClase(c);
     queueMicrotask(() => {
       document.getElementById('clase-panel-ops')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1669,8 +1929,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (j.idContrato && j.idContrato !== this.contratoSel()) {
       this.onContratoSelChange(j.idContrato);
     }
-    this.vistaJornadas.set('lista');
     this.editarJornada(j);
+    queueMicrotask(() => {
+      document.getElementById('jornada-edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   labelContrato(c: ContratacionDto): string {
@@ -1974,10 +2236,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   nombrePrograma(idProg: string): string {
-    const p = this.programasJornada().find(
-      (x) => String(x.idPrograma || x._id) === String(idProg),
-    );
-    return p?.nombreProg || p?.codigoProg || idProg;
+    const p = this.buscarProgramaEnLista(idProg);
+    if (p) return String(p.nombreProg || p.codigoProg || idProg);
+    return String(idProg);
   }
 
   iniciarEdicionClase(c: any) {
@@ -2109,7 +2370,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.claseActiva.set(c);
         this.recargarClases();
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
-        this.mostrarMsg('La clase quedó cerrada. Ya no admite nuevas asistencias.', 'ok', 'Clase finalizada');
+        if (r?.certificadosGenerados > 0) {
+          this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+        }
+        let msg = 'La clase quedó cerrada. Ya no admite nuevas asistencias.';
+        if (r?.certificadosGenerados > 0) {
+          msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
+        }
+        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
     });
   }

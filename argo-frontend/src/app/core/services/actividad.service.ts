@@ -11,11 +11,53 @@ export interface UsuarioActivo {
   rol?: string;
   ultimaActividad?: string;
   ultimaRuta?: string;
+  rutaPantalla?: string | null;
   ultimoMetodo?: string;
   ultimoCodigo?: number;
   ultimaFecha?: string;
   peticionesRecientes?: number;
+  bytesEntrada?: number;
+  bytesSalida?: number;
+  bytesTotal?: number;
   enLinea?: boolean;
+}
+
+export interface MetricasSistema {
+  uptimeSegundos: number;
+  uptimeServidorSegundos: number;
+  cpuProcesoPct: number;
+  cpuSistemaLoad1: number;
+  nucleos: number;
+  memoriaProceso: {
+    rssMb: number;
+    heapUsedMb: number;
+    heapTotalMb: number;
+    externalMb: number;
+  };
+  memoriaSistema: {
+    totalMb: number;
+    libreMb: number;
+    usadaMb: number;
+    usoPct: number;
+  };
+  plataforma?: string;
+  node?: string;
+}
+
+export interface TraficoVentana {
+  peticiones: number;
+  bytesEntrada: number;
+  bytesSalida: number;
+  bytesTotal: number;
+}
+
+export interface MonitorRecursosResponse {
+  timestamp: string;
+  minutosVentana: number;
+  sistema: MetricasSistema;
+  trafico: TraficoVentana;
+  usuariosConectados: number;
+  usuarios: UsuarioActivo[];
 }
 
 export interface ActivosResponse {
@@ -76,5 +118,10 @@ export class ActividadService {
     if (f.page) params = params.set('page', String(f.page));
     if (f.limit) params = params.set('limit', String(f.limit));
     return this.http.get<HistorialActividadResponse>(`${this.base}/historial`, { params });
+  }
+
+  monitor(minutos = 10): Observable<MonitorRecursosResponse> {
+    const params = new HttpParams().set('minutos', String(minutos));
+    return this.http.get<MonitorRecursosResponse>(`${this.base}/monitor`, { params });
   }
 }

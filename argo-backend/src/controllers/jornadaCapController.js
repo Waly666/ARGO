@@ -28,6 +28,7 @@ const {
   MOTIVOS_CERT,
   progresoCertificacion,
   validarAlumnoSinCertificadoContrato,
+  crearContextoCertificadoContrato,
 } = require('../services/certificadoJornadaAuto');
 const { buscarPrograma } = require('../services/programaServicio');
 const { crearMatriculaDesdeBody } = require('./matriculaController');
@@ -51,7 +52,7 @@ const {
   resolverInstructorParaClase,
   listarInstructoresConUsuario,
   enriquecerClases,
-  empleadoPorUsuarioId,
+  aplicarFiltroClasesQueryPorRol,
 } = require('../services/instructorJornada');
 const { tieneAlguno, permisosParaRol } = require('../services/rolesPermisos');
 
@@ -524,18 +525,8 @@ exports.listarClases = async (req, res, next) => {
       if (!Number.isNaN(d.getTime())) q.createdAt = { $gte: d };
     }
 
-    const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
-    const puedeGestionar = tieneAlguno(permisos, ['jornadas.gestionar']);
-    if (!puedeGestionar) {
-      const emp = await empleadoPorUsuarioId(req.user?.sub);
-      const condiciones = [];
-      if (emp?.idEmpleado != null) condiciones.push({ idEmpleadoInstructor: emp.idEmpleado });
-      if (req.user?.sub) condiciones.push({ idUsuarioInstructor: String(req.user.sub) });
-      if (!condiciones.length) {
-        return res.json([]);
-      }
-      q.$or = condiciones;
-    }
+    const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
+    if (vacio) return res.json([]);
 
     const rows = await ClaseJornadaCap.find(q).sort({ createdAt: -1 }).lean();
     const out = [];
@@ -550,6 +541,77 @@ exports.listarClases = async (req, res, next) => {
       });
     }
     res.json(await enriquecerClases(out));
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Clases del día calendario (por defecto hoy): PROGRAMADA, EN PROCESO y FINALIZADO. Admin/ver: todas; instructor: solo las suyas. */
+exports.clasesDelDia = async (req, res, next) => {
+  try {
+    const base = req.query.fecha ? parseFechaCalendario(req.query.fecha) : parseFechaCalendario(new Date());
+    if (!base) return res.status(400).json({ message: 'Fecha inválida' });
+    const start = inicioDia(base);
+    const end = new Date(start.getTime());
+    end.setHours(23, 59, 59, 999);
+
+    const q = {
+      fechaClase: { $gte: start, $lte: end },
+      estado: { $in: ['PROGRAMADA', 'EN PROCESO', 'FINALIZADO'] },
+    };
+
+    const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
+    const esAdminJornadas = tieneAlguno(permisos, ['jornadas.gestionar']);
+    const esInstructorOperar =
+      !esAdminJornadas && tieneAlguno(permisos, ['jornadas.operar']);
+    if (esInstructorOperar) {
+      const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
+      if (vacio) return res.json([]);
+    }
+
+    const rows = await ClaseJornadaCap.find(q).sort({ horaInicio: 1, createdAt: 1 }).lean();
+    const raw = [];
+    for (const c of rows) {
+      const j = await sincronizarEstadoJornada(c.idJornada);
+      if (!j) continue;
+      const contrato = j.idContrato
+        ? await Contratacion.findById(j.idContrato)
+            .select('codContrato estado nombreComercial razoSocial')
+            .lean()
+        : null;
+      if (!contratoEstaEnEjecucion(contrato?.estado)) continue;
+      const cliente = String(contrato?.nombreComercial || contrato?.razoSocial || '').trim();
+      raw.push({
+        ...c,
+        fechaJornada: j.fechaProgramacion,
+        jornadaEstado: j.estado,
+        idContrato: j.idContrato,
+        municipioJornada: j.municipio,
+        direccionJornada: j.direccion,
+        indiceEnDia: j.indiceEnDia,
+        codContrato: contrato?.codContrato || '',
+        contratoLabel: contrato?.codContrato
+          ? `${contrato.codContrato} — ${cliente || 'Contrato'}`
+          : cliente || '',
+      });
+    }
+
+    const enriched = await enriquecerClases(raw);
+    enriched.sort((a, b) => {
+      const prio = (est) => {
+        if (est === 'EN PROCESO') return 0;
+        if (est === 'PROGRAMADA') return 1;
+        if (est === 'FINALIZADO') return 2;
+        return 3;
+      };
+      const pa = prio(a.estado);
+      const pb = prio(b.estado);
+      if (pa !== pb) return pa - pb;
+      const ha = a.horaInicio ? new Date(a.horaInicio).getTime() : 0;
+      const hb = b.horaInicio ? new Date(b.horaInicio).getTime() : 0;
+      return ha - hb;
+    });
+    res.json(enriched);
   } catch (e) {
     next(e);
   }
@@ -796,6 +858,7 @@ exports.finalizarClase = async (req, res, next) => {
       idContrato: jornada?.idContrato,
       asistenciasRegistradas: syncAsis.registradas,
       certificadosGenerados: syncAsis.certificadosNuevos,
+      certificadosEmitidos: syncAsis.certificadosEmitidos || [],
       mensajeAsistencias:
         syncAsis.registradas > 0
           ? `Se registró asistencia de ${syncAsis.registradas} alumno(s) al finalizar la clase.`
@@ -821,7 +884,9 @@ exports.sincronizarAsistenciasInscritos = async (req, res, next) => {
       message:
         syncAsis.registradas > 0
           ? `Asistencia registrada para ${syncAsis.registradas} alumno(s). Certificados nuevos: ${syncAsis.certificadosNuevos}.`
-          : 'No había inscritos pendientes de asistencia.',
+          : syncAsis.omitidosCertificados > 0
+            ? 'Todos los inscritos pendientes ya tienen certificado vigente en el contrato o asistencia registrada.'
+            : 'No había inscritos pendientes de asistencia.',
     });
   } catch (e) {
     next(e);
@@ -870,7 +935,14 @@ exports.registrarAsistencia = async (req, res, next) => {
     const clase = await ClaseJornadaCap.findById(req.params.id).lean();
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    const payload = await registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw);
+    const jornada = await sincronizarEstadoJornada(clase.idJornada);
+    const ctxCert = jornada?.idContrato
+      ? await crearContextoCertificadoContrato(jornada.idContrato)
+      : null;
+    const payload = await registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, {
+      jornada,
+      ctxCert,
+    });
 
     if (payload.duplicada) {
       return res.status(409).json({
@@ -945,18 +1017,15 @@ exports.quitarInscripcionClase = async (req, res, next) => {
     const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
     const esAdminJornadas = tieneAlguno(permisos, ['jornadas.gestionar']);
     if (clase.estado === 'FINALIZADO' && !esAdminJornadas) {
-      return res.status(400).json({ message: 'La clase ya está finalizada.' });
-    }
-
-    const yaAsistio = await AsisClasJorCap.findOne({
-      idclaseJornada: clase._id,
-      numDocAlumno: numDoc,
-    }).lean();
-    if (yaAsistio) {
       return res.status(400).json({
-        message: 'El alumno ya tiene asistencia. Borre primero la asistencia.',
+        message: 'La clase ya está finalizada. Solo un administrador puede quitar alumnos.',
       });
     }
+
+    const asistenciaEliminada = await AsisClasJorCap.findOneAndDelete({
+      idclaseJornada: clase._id,
+      numDocAlumno: numDoc,
+    });
 
     const eliminado = await InscripcionClase.findOneAndDelete({
       idClase: clase._id,
@@ -966,7 +1035,7 @@ exports.quitarInscripcionClase = async (req, res, next) => {
       return res.status(404).json({ message: 'El alumno no estaba inscrito en esta clase.' });
     }
 
-    res.json({ ok: true, numDoc });
+    res.json({ ok: true, numDoc, asistenciaEliminada: !!asistenciaEliminada });
   } catch (e) {
     next(e);
   }
@@ -1055,21 +1124,57 @@ exports.certificadosGenerados = async (req, res, next) => {
     }
     const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(500).lean();
     const qText = String(req.query.q || '').trim().toLowerCase();
+
+    const jornadaIds = [...new Set(rows.map((c) => String(c.idJornada || '')).filter(Boolean))];
+    const contratoIds = new Set(rows.map((c) => String(c.idContrato || '')).filter(Boolean));
+
+    const jornadas = jornadaIds.length
+      ? await JornadaCap.find({ _id: { $in: jornadaIds } }).select('municipio direccion idContrato').lean()
+      : [];
+    for (const j of jornadas) {
+      if (j.idContrato) contratoIds.add(String(j.idContrato));
+    }
+
+    const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+
+    const [contratos, alumnosRows] = await Promise.all([
+      contratoIds.size
+        ? Contratacion.find({ _id: { $in: [...contratoIds] } }).select('codContrato').lean()
+        : [],
+      numDocs.length ? DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [],
+    ]);
+
+    const jornById = new Map(jornadas.map((j) => [String(j._id), j]));
+    const contrById = new Map(contratos.map((c) => [String(c._id), c]));
+    const alByDoc = new Map(alumnosRows.map((a) => [a.numDoc, a]));
+
     const out = [];
     for (const c of rows) {
-      const al = await DatosAlumno.findOne(numDocQuery(c.numDoc)).lean();
+      const al = alByDoc.get(c.numDoc);
       const nombreCompleto = al
         ? [al.nombre1, al.nombre2, al.apellido1, al.apellido2].filter(Boolean).join(' ')
         : '';
+      const jornada = c.idJornada ? jornById.get(String(c.idJornada)) : null;
+      const idContrato = c.idContrato || jornada?.idContrato;
+      const codContrato = (contrById.get(String(idContrato || ''))?.codContrato || '').trim();
+      const municipio = (jornada?.municipio || '').trim();
+      const direccion = (jornada?.direccion || '').trim();
+      const ubicacionJornada =
+        municipio && direccion ? `${municipio} — ${direccion}` : municipio || direccion || '';
+
       if (qText) {
         const hay =
           nombreCompleto.toLowerCase().includes(qText) ||
           String(c.encabezado || '').toLowerCase().includes(qText) ||
           String(c.codigoCert || '').toLowerCase().includes(qText) ||
-          String(c.numDoc ?? '').includes(qText);
+          String(c.numDoc ?? '').includes(qText) ||
+          codContrato.toLowerCase().includes(qText) ||
+          municipio.toLowerCase().includes(qText) ||
+          direccion.toLowerCase().includes(qText) ||
+          ubicacionJornada.toLowerCase().includes(qText);
         if (!hay) continue;
       }
-      out.push({ ...c, nombreCompleto });
+      out.push({ ...c, nombreCompleto, municipio, direccion, ubicacionJornada, codContrato });
     }
     res.json(out);
   } catch (e) {

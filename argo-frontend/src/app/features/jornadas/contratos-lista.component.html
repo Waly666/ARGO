@@ -7,6 +7,9 @@
         sus jornadas/clases, o <strong>Eliminar</strong> si aún no tiene jornadas con clases registradas.
       </p>
     </div>
+    @if (enEjecucionCount() > 0) {
+      <span class="jor-live-badge">{{ enEjecucionCount() }} en ejecución</span>
+    }
     <button type="button" class="primary" *ngIf="puedeGestionar()" (click)="nuevoContrato()">
       + Nuevo contrato
     </button>
@@ -61,24 +64,15 @@
         <tr
           *ngFor="let c of contratosFiltrados()"
           class="contrato-row"
-          [class.ejecutado]="c.estado === 'Ejecutado'"
+          [ngClass]="rowContratoClass(c.estado)"
           (click)="editarContrato(c)"
           [title]="'Editar contrato ' + (c.codContrato || '')">
           <td><span [ngClass]="capCodContrato(c.codContrato)">{{ c.codContrato || '—' }}</span></td>
           <td><span [ngClass]="capCliente(labelCliente(c))">{{ labelCliente(c) }}</span></td>
           <td><span [ngClass]="capMunicipioJor(c.ciudad)">{{ labelCiudad(c) }}</span></td>
           <td>{{ c.supervisor || '—' }}</td>
-          <td (click)="$event.stopPropagation()">
-            @if (puedeGestionar()) {
-              <select
-                class="estado-select"
-                [ngModel]="c.estado || 'En Ejecución'"
-                (ngModelChange)="cambiarEstado(c, $event)">
-                <option *ngFor="let e of ESTADOS_CONTRATO" [value]="e">{{ e }}</option>
-              </select>
-            } @else {
-              <span [ngClass]="capEstado(c.estado)">{{ c.estado || 'En Ejecución' }}</span>
-            }
+          <td>
+            <span [ngClass]="estadoContratoLiveClass(c.estado)">{{ labelEstadoContrato(c.estado) }}</span>
           </td>
           <td>
             <span [ngClass]="capMetaNum(c.numerojornadas)">{{ c.numerojornadas || 0 }}</span>

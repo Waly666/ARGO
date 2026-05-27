@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AlumnoService } from '../../core/services/alumno.service';
+import { AlarmaService } from '../../core/services/alarma.service';
 import { AlumnoStore } from '../../core/services/alumno-store.service';
 import { LiquidacionItem, LiquidacionService } from '../../core/services/liquidacion.service';
 import type { DocumentoPendienteRes } from '../../core/services/config-requisitos-documentos.service';
@@ -37,6 +38,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private alumnoSvc = inject(AlumnoService);
   private liqSvc = inject(LiquidacionService);
+  readonly alarmas = inject(AlarmaService);
   store = inject(AlumnoStore);
 
   tab = signal<TabKey>('datos');

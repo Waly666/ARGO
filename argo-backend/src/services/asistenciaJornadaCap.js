@@ -2,6 +2,7 @@ const AsisClasJorCap = require('../models/AsisClasJorCap');
 const InscripcionClase = require('../models/InscripcionClase');
 const DatosAlumno = require('../models/DatosAlumno');
 const Matricula = require('../models/Matricula');
+const Certificado = require('../models/Certificado');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { asegurarTipoAlumnoJornada, auditoriaUsuario } = require('./jornadaCapacitacion');
 const { sincronizarEstadoJornada, mensajeSiJornadaNoOperable } = require('./estadoJornadaCap');
@@ -9,17 +10,36 @@ const {
   intentarCertificadoJornadaAuto,
   progresoCertificacion,
   validarAlumnoSinCertificadoContrato,
+  crearContextoCertificadoContrato,
 } = require('./certificadoJornadaAuto');
 const { tieneAlguno, permisosParaRol } = require('./rolesPermisos');
 
 const QUERY_MATRICULA_ACTIVA = { estado: { $regex: /^activo?a?$/i } };
+
+function progresoDesdeResultadoCert(resultadoCert, idContrato, numDoc, ctxCert) {
+  if (resultadoCert?.sesiones != null) {
+    return {
+      sesiones: resultadoCert.sesiones,
+      numSesCert: resultadoCert.numSesCert,
+      cumplio: resultadoCert.cumplio,
+      faltan: resultadoCert.faltan,
+      certificado: resultadoCert.certificado || null,
+    };
+  }
+  return progresoCertificacion(numDoc, idContrato, ctxCert);
+}
 
 /**
  * Registra asistencia de un alumno en una clase y evalúa certificado automático.
  * @returns {Promise<object>} payload con sesiones, certificadoGenerado, motivoCertificado, etc.
  */
 async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}) {
-  const { omitirValidacionJornada = false } = opts;
+  const {
+    omitirValidacionJornada = false,
+    jornada: jornadaPrecargada = null,
+    ctxCert = null,
+    skipAsistenciaExistente = false,
+  } = opts;
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null) {
     const err = new Error('numDoc inválido');
@@ -43,7 +63,7 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
     throw err;
   }
 
-  const jornada = await sincronizarEstadoJornada(clase.idJornada);
+  const jornada = jornadaPrecargada || (await sincronizarEstadoJornada(clase.idJornada));
   if (!omitirValidacionJornada) {
     const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
     const esAdminJornadas = tieneAlguno(permisos, ['jornadas.gestionar']);
@@ -63,10 +83,12 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
   if (idContrato) {
     const bloqueo = await validarAlumnoSinCertificadoContrato(numDoc, idContrato);
     if (bloqueo) {
-      const yaAsis = await AsisClasJorCap.findOne({
-        idclaseJornada: clase._id,
-        numDocAlumno: numDoc,
-      }).lean();
+      const yaAsis = skipAsistenciaExistente
+        ? null
+        : await AsisClasJorCap.findOne({
+            idclaseJornada: clase._id,
+            numDocAlumno: numDoc,
+          }).lean();
       if (!yaAsis) {
         const err = new Error(bloqueo.message);
         err.status = 409;
@@ -79,21 +101,41 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
 
   let asis = null;
   let duplicada = false;
-  try {
-    asis = await AsisClasJorCap.create({
-      idclaseJornada: clase._id,
-      numDocAlumno: numDoc,
-      userAddReg: auditor,
-    });
-  } catch (e) {
-    if (e.code === 11000) {
-      duplicada = true;
-      asis = await AsisClasJorCap.findOne({
+  if (skipAsistenciaExistente) {
+    try {
+      asis = await AsisClasJorCap.create({
         idclaseJornada: clase._id,
         numDocAlumno: numDoc,
-      }).lean();
-    } else {
-      throw e;
+        userAddReg: auditor,
+      });
+    } catch (e) {
+      if (e.code === 11000) {
+        duplicada = true;
+        asis = await AsisClasJorCap.findOne({
+          idclaseJornada: clase._id,
+          numDocAlumno: numDoc,
+        }).lean();
+      } else {
+        throw e;
+      }
+    }
+  } else {
+    try {
+      asis = await AsisClasJorCap.create({
+        idclaseJornada: clase._id,
+        numDocAlumno: numDoc,
+        userAddReg: auditor,
+      });
+    } catch (e) {
+      if (e.code === 11000) {
+        duplicada = true;
+        asis = await AsisClasJorCap.findOne({
+          idclaseJornada: clase._id,
+          numDocAlumno: numDoc,
+        }).lean();
+      } else {
+        throw e;
+      }
     }
   }
 
@@ -109,13 +151,19 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
 
   let resultadoCert = { creado: false, motivo: null };
   if (idContrato) {
-    resultadoCert = await intentarCertificadoJornadaAuto(numDoc, progId, idContrato, clase.idJornada);
+    resultadoCert = await intentarCertificadoJornadaAuto(
+      numDoc,
+      progId,
+      idContrato,
+      clase.idJornada,
+      ctxCert,
+    );
   } else {
     resultadoCert = { creado: false, motivo: 'sin_contrato_jornada' };
   }
 
   const progreso = idContrato
-    ? await progresoCertificacion(numDoc, idContrato)
+    ? await progresoDesdeResultadoCert(resultadoCert, idContrato, numDoc, ctxCert)
     : { sesiones: 0, numSesCert: 1, cumplio: false };
 
   return {
@@ -140,19 +188,81 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
 async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {}) {
   const clase = claseDoc?.toObject ? claseDoc.toObject() : { ...claseDoc };
   const inscripciones = await InscripcionClase.find({ idClase: clase._id }).lean();
+  const asistenciasExistentes = await AsisClasJorCap.find({ idclaseJornada: clase._id })
+    .select('numDocAlumno')
+    .lean();
+  const yaAsistio = new Set(asistenciasExistentes.map((a) => Number(a.numDocAlumno)));
+
+  const pendientes = inscripciones.filter((ins) => !yaAsistio.has(Number(ins.numDoc)));
   const resultados = [];
   let certificadosNuevos = 0;
+  const certificadosEmitidos = [];
 
-  for (const ins of inscripciones) {
-    const ya = await AsisClasJorCap.findOne({
-      idclaseJornada: clase._id,
-      numDocAlumno: Number(ins.numDoc),
-    }).lean();
-    if (ya) continue;
+  if (!pendientes.length) {
+    return {
+      ok: true,
+      registradas: 0,
+      omitidas: inscripciones.length,
+      omitidosCertificados: 0,
+      certificadosNuevos: 0,
+      certificadosEmitidos: [],
+      resultados: [],
+    };
+  }
 
+  const jornada = await sincronizarEstadoJornada(clase.idJornada);
+  let aProcesar = pendientes;
+  let omitidosCertificados = 0;
+  if (jornada?.idContrato) {
+    const docsPend = pendientes.map((i) => Number(i.numDoc)).filter((n) => Number.isFinite(n));
+    const certs = docsPend.length
+      ? await Certificado.find({
+          numDoc: { $in: docsPend },
+          idContrato: jornada.idContrato,
+          estado: { $ne: 'anulado' },
+        })
+          .select('numDoc')
+          .lean()
+      : [];
+    const certificados = new Set(certs.map((c) => Number(c.numDoc)));
+    aProcesar = pendientes.filter((ins) => !certificados.has(Number(ins.numDoc)));
+    omitidosCertificados = pendientes.length - aProcesar.length;
+  }
+
+  if (!aProcesar.length) {
+    return {
+      ok: true,
+      registradas: 0,
+      omitidas: inscripciones.length - pendientes.length + omitidosCertificados,
+      omitidosCertificados,
+      certificadosNuevos: 0,
+      certificadosEmitidos: [],
+      resultados: [],
+    };
+  }
+
+  const ctxCert = jornada?.idContrato
+    ? await crearContextoCertificadoContrato(jornada.idContrato)
+    : null;
+
+  for (const ins of aProcesar) {
     try {
-      const r = await registrarAsistenciaAlumnoEnClase(req, clase, ins.numDoc, opts);
-      if (r.certificadoGenerado) certificadosNuevos += 1;
+      const r = await registrarAsistenciaAlumnoEnClase(req, clase, ins.numDoc, {
+        ...opts,
+        jornada,
+        ctxCert,
+        skipAsistenciaExistente: true,
+      });
+      if (r.certificadoGenerado) {
+        certificadosNuevos += 1;
+        if (r.certificado) {
+          certificadosEmitidos.push({
+            certificado: r.certificado,
+            nombreAlumno: r.nombreAlumno,
+            numDoc: r.numDoc,
+          });
+        }
+      }
       resultados.push(r);
     } catch (e) {
       resultados.push({
@@ -165,8 +275,10 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
   return {
     ok: true,
     registradas: resultados.filter((r) => !r.error && !r.duplicada).length,
-    omitidas: inscripciones.length - resultados.length,
+    omitidas: inscripciones.length - pendientes.length + omitidosCertificados,
+    omitidosCertificados,
     certificadosNuevos,
+    certificadosEmitidos,
     resultados,
   };
 }

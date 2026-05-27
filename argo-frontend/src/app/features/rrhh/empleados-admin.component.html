@@ -35,6 +35,12 @@
   <div class="form-card card" *ngIf="mostrarForm()">
     <h2>{{ editando() ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
 
+    <nav class="form-tabs" *ngIf="editando()?.idEmpleado">
+      <button type="button" [class.active]="formSeccion() === 'datos'" (click)="setFormSeccion('datos')">Datos</button>
+      <button type="button" [class.active]="formSeccion() === 'documentos'" (click)="setFormSeccion('documentos')">Documentos</button>
+    </nav>
+
+    <ng-container *ngIf="formSeccion() === 'datos'">
     <h3 class="sec">Identificación</h3>
     <div class="ident-layout">
       <div class="ident-fields">
@@ -274,6 +280,13 @@
         {{ saving() ? 'Guardando…' : 'Guardar' }}
       </button>
     </div>
+    </ng-container>
+
+    <argo-empleado-documentos-panel
+      *ngIf="formSeccion() === 'documentos' && editando()?.idEmpleado as idEmp"
+      [idEmpleado]="idEmp"
+      [cargoId]="form().cargoId"
+    />
   </div>
 
   <div class="loading" *ngIf="loading()">Cargando…</div>

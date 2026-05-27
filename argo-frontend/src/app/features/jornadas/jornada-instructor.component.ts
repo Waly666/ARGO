@@ -17,8 +17,6 @@ import {
   capAlumnoNombre,
   capContratoLabel,
   capDocAsis,
-  capEstadoClase,
-  capEstadoJornada,
   capFechaJor,
   capHoraJor,
   capMunicipioJor,
@@ -26,9 +24,14 @@ import {
   capSesCert,
   capUbicacionClase,
   capInstructor,
+  estadoClaseLiveClass,
+  estadoJornadaLiveClass,
   iconoJorMsg,
+  rowClaseClass,
+  rowJornadaClass,
   tituloJorMsg,
 } from './jornada-ui.util';
+import { ymdLocal } from './jornada-calendario.util';
 
 @Component({
   selector: 'argo-jornada-instructor',
@@ -48,7 +51,7 @@ export class JornadaInstructorComponent implements OnInit {
   msg = signal<string | null>(null);
   msgTipo = signal<JorMsgTipo>('info');
   msgTitulo = signal('');
-  fecha = signal(new Date().toISOString().slice(0, 10));
+  fecha = signal(ymdLocal(new Date()));
 
   jornadasHoy = signal<any[]>([]);
   jornadaSel = signal<string>('');
@@ -71,8 +74,10 @@ export class JornadaInstructorComponent implements OnInit {
 
   etiquetaProgresoCert = etiquetaProgresoCert;
   iconoJorMsg = iconoJorMsg;
-  capEstadoJornada = capEstadoJornada;
-  capEstadoClase = capEstadoClase;
+  estadoJornadaLiveClass = estadoJornadaLiveClass;
+  rowJornadaClass = rowJornadaClass;
+  estadoClaseLiveClass = estadoClaseLiveClass;
+  rowClaseClass = rowClaseClass;
   capUbicacionClase = capUbicacionClase;
   capContratoLabel = capContratoLabel;
   capMunicipioJor = capMunicipioJor;
@@ -97,12 +102,13 @@ export class JornadaInstructorComponent implements OnInit {
     const q = this.route.snapshot.queryParamMap;
     const f = q.get('fecha');
     const j = q.get('jornada');
-    if (f) this.fecha.set(f);
+    const claseId = q.get('clase');
+    this.fecha.set(f || ymdLocal(new Date()));
     this.cargarProgramas();
     this.cargarJornadasDia();
     if (j) {
       this.jornadaSel.set(j);
-      this.recargarClases();
+      this.recargarClases(claseId || undefined);
     }
   }
 
@@ -146,8 +152,7 @@ export class JornadaInstructorComponent implements OnInit {
   }
 
   irHoy() {
-    const hoy = new Date().toISOString().slice(0, 10);
-    this.onFechaChange(hoy);
+    this.onFechaChange(ymdLocal(new Date()));
     this.mostrarMsg('Mostrando jornadas programadas para hoy.', 'info', 'Fecha actualizada');
   }
 
@@ -165,7 +170,7 @@ export class JornadaInstructorComponent implements OnInit {
     this.mostrarMsg('Jornada lista para crear clases y tomar asistencia.', 'ok', 'Jornada seleccionada');
   }
 
-  recargarClases() {
+  recargarClases(seleccionarId?: string) {
     const id = this.jornadaSel();
     if (!id) {
       this.clases.set([]);
@@ -174,13 +179,17 @@ export class JornadaInstructorComponent implements OnInit {
     this.jornadaSvc.listarClases({ idJornada: id }).subscribe({
       next: (r) => {
         this.clases.set(r || []);
-        const act = this.claseSel();
+        const act = seleccionarId || this.claseSel();
         if (act) {
           const c = (r || []).find((x: any) => x._id === act);
-          this.claseActiva.set(c || null);
-          if (c) this.cargarAsistencias(c._id);
+          if (c) {
+            this.claseSel.set(c._id);
+            this.claseActiva.set(c);
+            this.cargarAsistencias(c._id);
+          }
         }
       },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudieron cargar las clases.', 'error', 'Error'),
     });
   }
 
@@ -264,6 +273,7 @@ export class JornadaInstructorComponent implements OnInit {
   cargarAsistencias(idClase: string) {
     this.jornadaSvc.listarAsistencias(idClase).subscribe({
       next: (r) => this.asistencias.set(r || []),
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudieron cargar las asistencias.', 'error', 'Error'),
     });
   }
 
@@ -273,10 +283,11 @@ export class JornadaInstructorComponent implements OnInit {
     this.jornadaSvc.iniciarClase(id).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
-        this.recargarClases();
+        this.recargarClases(id);
         this.liveSync.notificarClaseIniciada(c as unknown as Record<string, unknown>);
         this.mostrarMsg('Reloj de clase iniciado. Ya puede registrar asistencias.', 'ok', 'Clase en curso');
       },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo iniciar la clase.', 'error', 'Error'),
     });
   }
 
@@ -287,10 +298,21 @@ export class JornadaInstructorComponent implements OnInit {
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
-        this.recargarClases();
+        this.recargarClases(id);
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
-        this.mostrarMsg('Clase cerrada correctamente.', 'ok', 'Clase finalizada');
+        if (r?.certificadosGenerados > 0) {
+          this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+        }
+        let msg = 'Clase cerrada correctamente.';
+        if (r?.asistenciasRegistradas > 0) {
+          msg += ` Asistencia a ${r.asistenciasRegistradas} alumno(s).`;
+        }
+        if (r?.certificadosGenerados > 0) {
+          msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
+        }
+        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo finalizar la clase.', 'error', 'Error'),
     });
   }
 

@@ -41,6 +41,10 @@
   &.wide {
     width: min(960px, 100%);
   }
+
+  &.xwide {
+    width: min(1280px, calc(100vw - 24px));
+  }
 }
 
 .fm-header {

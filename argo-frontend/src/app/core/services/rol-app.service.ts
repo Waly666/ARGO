@@ -15,12 +15,24 @@ export interface PermisoGrupo {
   permisos: PermisoItem[];
 }
 
+export interface AlarmaItem {
+  key: string;
+  label: string;
+}
+
+export interface AlarmaGrupo {
+  id: string;
+  label: string;
+  alarmas: AlarmaItem[];
+}
+
 export interface RolApp {
   _id?: string;
   codigo: string;
   nombre: string;
   descripcion?: string;
   permisos: string[];
+  alarmas?: string[];
   esSistema?: boolean;
   activo?: boolean;
 }
@@ -30,6 +42,7 @@ export interface RolAppDto {
   nombre: string;
   descripcion?: string;
   permisos: string[];
+  alarmas?: string[];
   activo?: boolean;
 }
 
@@ -38,8 +51,10 @@ export class RolAppService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/roles`;
 
-  catalogo(): Observable<{ grupos: PermisoGrupo[] }> {
-    return this.http.get<{ grupos: PermisoGrupo[] }>(`${this.base}/catalogo`);
+  catalogo(): Observable<{ grupos: PermisoGrupo[]; alarmasGrupos: AlarmaGrupo[] }> {
+    return this.http.get<{ grupos: PermisoGrupo[]; alarmasGrupos: AlarmaGrupo[] }>(
+      `${this.base}/catalogo`,
+    );
   }
 
   listar(): Observable<RolApp[]> {

@@ -18,11 +18,17 @@
     <input
       id="filtro-cert"
       type="search"
-      placeholder="Filtrar por nombre del alumno, encabezado, código o documento…"
+      placeholder="Filtrar por nombre, contrato, ubicación jornada, encabezado, código cert. o documento…"
       [ngModel]="filtro()"
       (ngModelChange)="filtro.set($event)"
       autocomplete="off" />
     <p class="hint">{{ filtrados().length }} de {{ certificados().length }} certificado(s)</p>
+    @if (certsHoyCount() > 0) {
+      <p class="hint certs-hoy-hint">
+        <span class="jor-live-badge">{{ certsHoyCount() }} emitido(s) hoy</span>
+        — resaltados en verde parpadeante aunque se listen todos.
+      </p>
+    }
   </div>
 
   <div class="panel">
@@ -35,6 +41,8 @@
             <th>Código</th>
             <th>Alumno</th>
             <th>Doc</th>
+            <th>Contrato</th>
+            <th>Ubicación jornada</th>
             <th>Encabezado</th>
             <th>Horas</th>
             <th>Emisión</th>
@@ -43,13 +51,37 @@
         </thead>
         <tbody>
           @for (c of filtrados(); track c._id) {
-            <tr>
+            <tr [ngClass]="rowCertificadoHoyClass(c.fechaEmision)">
               <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert || '—' }}</span></td>
               <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto || '—' }}</span></td>
               <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
-              <td><span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span></td>
+              <td><span [ngClass]="capCodContrato(c.codContrato)">{{ c.codContrato || '—' }}</span></td>
+              <td>
+                <span [ngClass]="capUbicacionJornada(c.municipio, c.direccion)">
+                  {{ c.ubicacionJornada || ubicacionJornadaLabel(c.municipio, c.direccion) || '—' }}
+                </span>
+              </td>
+              <td>
+                @if (esFechaHoy(c.fechaEmision)) {
+                  <span
+                    class="serv-saldo-inline encabezado-hoy-blink"
+                    [attr.title]="'Certificado emitido hoy · ' + fmtFecha(c.fechaEmision)">
+                    {{ c.encabezado || '—' }}
+                  </span>
+                } @else {
+                  <span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span>
+                }
+              </td>
               <td><span [ngClass]="capHorasCert(c.horasCert)">{{ c.horasCert || '—' }}</span></td>
-              <td><span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span></td>
+              <td>
+                @if (esFechaHoy(c.fechaEmision)) {
+                  <span class="serv-saldo-inline encabezado-hoy-blink" [attr.title]="'Emitido hoy'">
+                    {{ fmtFecha(c.fechaEmision) }}
+                  </span>
+                } @else {
+                  <span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span>
+                }
+              </td>
               <td class="actions-cell">
                 <button type="button" class="mini ghost" (click)="imprimir(c)">Imprimir</button>
                 <button type="button" class="mini primary" (click)="abrirEditar(c._id)">Editar</button>
@@ -59,7 +91,7 @@
           }
           @if (filtrados().length === 0) {
             <tr>
-              <td colspan="7" class="empty">No hay certificados que coincidan con el filtro.</td>
+              <td colspan="9" class="empty">No hay certificados que coincidan con el filtro.</td>
             </tr>
           }
         </tbody>

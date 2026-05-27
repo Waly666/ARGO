@@ -157,6 +157,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
   }
 
   abrir(it: LiquidacionConSaldoItem): void {
+    void this.cajaEstado.refrescar().then((ok) => this.cajaAbierta.set(ok));
     this.seleccionado.set(it);
     this.valor.set(this.num(it.saldo));
     this.idTipoPago.set('');

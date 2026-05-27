@@ -140,7 +140,16 @@ export class AlumnoService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/alumnos`;
 
-  listar(opts: { q?: string; limit?: number; skip?: number; tipoAlumno?: string } = {}): Observable<AlumnoListResponse> {
+  listar(
+    opts: {
+      q?: string;
+      limit?: number;
+      skip?: number;
+      tipoAlumno?: string;
+      sort?: string;
+      dir?: 'asc' | 'desc';
+    } = {},
+  ): Observable<AlumnoListResponse> {
     let params = new HttpParams();
     if (opts.q != null) params = params.set('q', opts.q);
     if (opts.limit != null) params = params.set('limit', opts.limit);
@@ -148,6 +157,8 @@ export class AlumnoService {
     if (opts.tipoAlumno != null && opts.tipoAlumno !== '') {
       params = params.set('tipoAlumno', opts.tipoAlumno);
     }
+    if (opts.sort) params = params.set('sort', opts.sort);
+    if (opts.dir) params = params.set('dir', opts.dir);
     return this.http.get<AlumnoListResponse>(this.base, { params });
   }
 

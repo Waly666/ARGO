@@ -7,6 +7,7 @@ import { Egreso, EgresoService } from '../../core/services/egreso.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
 import {
   capBeneficiario,
+  capPlaca,
   capConceptoCaja,
   capDoc,
   capFecha,
@@ -62,6 +63,7 @@ export class CajaEgresosTodosComponent implements OnInit {
   capRecibo = capRecibo;
   capDoc = capDoc;
   capBeneficiario = capBeneficiario;
+  capPlaca = capPlaca;
   capConceptoCaja = capConceptoCaja;
   capTipoEgreso = capTipoEgreso;
   capFormaPago = capFormaPago;

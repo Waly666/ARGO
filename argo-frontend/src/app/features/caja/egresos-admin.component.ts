@@ -33,7 +33,6 @@ import {
 import { Empleado, EmpleadoService } from '../../core/services/empleado.service';
 
 import { NominaService, PeriodoNomina } from '../../core/services/nomina.service';
-
 import { ReciboService } from '../../core/services/recibo.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
@@ -195,7 +194,7 @@ export class EgresosAdminComponent implements OnInit {
 
   obligaEmpleado = computed(() => this.cfgTipoSel().requiereEmpleado);
 
-
+  obligaVehiculo = computed(() => this.cfgTipoSel().requiereVehiculo);
 
   esAnticipoNomina = computed(() => this.cfgTipoSel().generaDeduccion);
 
@@ -232,6 +231,12 @@ export class EgresosAdminComponent implements OnInit {
 
 
   form = signal<EgresoDto>(this.formVacio());
+
+  placaVehiculoInfo = signal<{ placa: string; nombreMarca?: string; nombreLinea?: string; claseVehiculo?: string } | null>(null);
+
+  placaVehiculoError = signal<string | null>(null);
+
+  placaVerificando = signal(false);
 
 
 
@@ -498,6 +503,8 @@ export class EgresosAdminComponent implements OnInit {
 
       idPeriodo: '',
 
+      placa: '',
+
     };
 
   }
@@ -588,6 +595,10 @@ export class EgresosAdminComponent implements OnInit {
 
     this.limpiarAutorizacionRetiro();
 
+    this.placaVehiculoInfo.set(null);
+
+    this.placaVehiculoError.set(null);
+
     this.mostrarForm.set(true);
 
     this.msg.set(null);
@@ -648,7 +659,26 @@ export class EgresosAdminComponent implements OnInit {
 
       idPeriodo: e.idPeriodo ?? '',
 
+      placa: e.placa || '',
+
     });
+
+    this.placaVehiculoInfo.set(
+      e.placa
+        ? {
+            placa: e.placa,
+            nombreMarca: e.vehiculoMarca || undefined,
+            nombreLinea: e.vehiculoLinea || undefined,
+            claseVehiculo: e.vehiculoClase || undefined,
+          }
+        : null,
+    );
+
+    this.placaVehiculoError.set(null);
+
+    if (e.placa) {
+      void this.verificarPlacaIngresada(e.placa, false);
+    }
 
     this.archivoSoporte.set(null);
 
@@ -730,6 +760,114 @@ export class EgresosAdminComponent implements OnInit {
       this.beneficiarioEmpleado.set(true);
 
     }
+
+    if (!cfg.requiereVehiculo) {
+
+      this.patch('placa', '');
+
+      this.placaVehiculoInfo.set(null);
+
+      this.placaVehiculoError.set(null);
+
+    }
+
+  }
+
+
+
+  onPlacaChange(raw: string): void {
+
+    const placa = String(raw || '').trim().toUpperCase();
+
+    this.patch('placa', placa);
+
+    this.placaVehiculoInfo.set(null);
+
+    this.placaVehiculoError.set(null);
+
+    if (!placa) return;
+
+    if (placa.length < 5) {
+
+      this.placaVehiculoError.set('Escriba la placa completa del vehículo.');
+
+      return;
+
+    }
+
+    void this.verificarPlacaIngresada(placa, true);
+
+  }
+
+
+
+  onPlacaBlur(): void {
+
+    const placa = String(this.form().placa || '').trim().toUpperCase();
+
+    if (!placa || placa.length < 5) return;
+
+    if (this.placaVehiculoInfo()?.placa === placa) return;
+
+    void this.verificarPlacaIngresada(placa, true);
+
+  }
+
+
+
+  private verificarPlacaIngresada(placa: string, mostrarCargando: boolean): void {
+
+    const normalizada = String(placa || '').trim().toUpperCase();
+
+    if (!normalizada) return;
+
+    if (mostrarCargando) this.placaVerificando.set(true);
+
+    this.svc.verificarPlacaVehiculo(normalizada).subscribe({
+
+      next: (r) => {
+
+        this.placaVerificando.set(false);
+
+        if (r.existe && r.vehiculo) {
+
+          this.patch('placa', r.vehiculo.placa);
+
+          this.placaVehiculoInfo.set({
+
+            placa: r.vehiculo.placa,
+
+            nombreMarca: r.vehiculo.nombreMarca,
+
+            nombreLinea: r.vehiculo.nombreLinea,
+
+            claseVehiculo: r.vehiculo.claseVehiculo,
+
+          });
+
+          this.placaVehiculoError.set(null);
+
+          return;
+
+        }
+
+        this.placaVehiculoInfo.set(null);
+
+        this.placaVehiculoError.set('No hay vehículo registrado con esa placa.');
+
+      },
+
+      error: () => {
+
+        this.placaVerificando.set(false);
+
+        this.placaVehiculoInfo.set(null);
+
+        this.placaVehiculoError.set('No se pudo verificar la placa.');
+
+      },
+
+    });
 
   }
 
@@ -890,6 +1028,34 @@ export class EgresosAdminComponent implements OnInit {
       if (!f.idPeriodo) {
 
         this.msg.set('Seleccione el período de nómina donde se descontará.');
+
+        return;
+
+      }
+
+    }
+
+    if (this.obligaVehiculo()) {
+
+      if (!f.placa?.trim()) {
+
+        this.msg.set('Indique la placa del vehículo para este tipo de egreso.');
+
+        return;
+
+      }
+
+      if (this.placaVehiculoError()) {
+
+        this.msg.set(this.placaVehiculoError() || 'Placa de vehículo no válida.');
+
+        return;
+
+      }
+
+      if (!this.placaVehiculoInfo()) {
+
+        this.msg.set('Verifique la placa: debe existir en el módulo Vehículos.');
 
         return;
 
@@ -1238,6 +1404,8 @@ export class EgresosAdminComponent implements OnInit {
 
     if (cfg.generaDeduccion) return `${base} (nómina −)`;
 
+    if (cfg.requiereVehiculo) return `${base} (vehículo)`;
+
     if (cfg.efectoNomina === 'pago_sueldo') return `${base} (empleado)`;
 
     return base;
@@ -1251,7 +1419,7 @@ export class EgresosAdminComponent implements OnInit {
     const t = this.tipoSeleccionado();
 
     if (!t) {
-      return 'Elija el tipo según el gasto. Configúrelos en Configuración → Catálogos → Tipos de egreso (requiereEmpleado / efectoNomina).';
+      return 'Elija el tipo según el gasto. Configúrelos en Configuración → Catálogos → Tipos de egreso (requiereEmpleado / requiereVehiculo / efectoNomina).';
     }
 
     if (this.esRetiroCaja()) {
@@ -1275,6 +1443,12 @@ export class EgresosAdminComponent implements OnInit {
     if (cfg.requiereEmpleado) {
 
       return 'Debe seleccionar un empleado de RRHH.';
+
+    }
+
+    if (cfg.requiereVehiculo) {
+
+      return 'Debe indicar la placa de un vehículo registrado en el módulo Vehículos.';
 
     }
 

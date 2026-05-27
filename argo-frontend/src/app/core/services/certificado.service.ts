@@ -50,6 +50,13 @@ export class CertificadoService {
     return this.http.get<any[]>(`${this.base}/alumno/${encodeURIComponent(formatNumDoc(numDoc))}`);
   }
 
+  /** Todos los certificados emitidos desde una fecha (alertas globales). */
+  listarRecientes(desde: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/recientes`, {
+      params: { desde },
+    });
+  }
+
   crear(dto: CertificadoCrearDto): Observable<any> {
     const numDoc = parseNumDocForApi(dto.numDoc);
     return this.http.post(this.base, { ...dto, numDoc: numDoc ?? dto.numDoc });

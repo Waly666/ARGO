@@ -1,0 +1,23 @@
+@if (visible()) {
+  <div class="head-vehiculo-docs-row">
+    <button
+      type="button"
+      class="head-alarm alarm-vehiculo-docs-faltantes"
+      (click)="irVehiculos($event)"
+      [title]="detalle() || 'Hay vehículos con documentos requeridos sin registrar'">
+      <span class="head-alarm-pulse" aria-hidden="true"></span>
+      <span class="head-alarm-icon" aria-hidden="true">📄</span>
+      <span class="head-alarm-body">
+        <span class="head-alarm-title"><strong>Papeles incompletos</strong> · {{ titulo() }}</span>
+        <span class="head-alarm-detail">{{ detalle() }}</span>
+      </span>
+      <span
+        class="head-alarm-close"
+        role="button"
+        tabindex="0"
+        (click)="cerrar($event)"
+        (keydown.enter)="cerrar($event)"
+        aria-label="Cerrar aviso">×</span>
+    </button>
+  </div>
+}

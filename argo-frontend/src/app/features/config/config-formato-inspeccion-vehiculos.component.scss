@@ -1,0 +1,110 @@
+@import './config-requisitos-documentos-vehiculos.component.scss';
+
+.consecutivo-block {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
+
+  h2 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+  }
+}
+
+.consecutivo-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+
+  .field {
+    flex: 0 1 180px;
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    input {
+      width: 100%;
+    }
+  }
+
+  .preview .next-num {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.12);
+    font-family: ui-monospace, monospace;
+    font-weight: 600;
+  }
+}
+
+.sec-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+
+  button {
+    border: 1px solid var(--line-soft);
+    background: transparent;
+    color: var(--text-soft);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+
+    &.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.45);
+      color: var(--text);
+    }
+  }
+}
+
+.table-scroll {
+  overflow: auto;
+  max-width: 100%;
+  margin-top: 10px;
+}
+
+.formato-matrix {
+  min-width: 640px;
+
+  th.sticky-col,
+  td.sticky-col,
+  th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--card-bg, #0f172a);
+    min-width: 140px;
+    text-align: left;
+  }
+
+  th.mini,
+  td.c.mini {
+    min-width: 48px;
+  }
+
+  th:not(.sticky-col):not(:first-child),
+  td.c {
+    min-width: 72px;
+    max-width: 120px;
+    font-size: 0.72rem;
+    vertical-align: middle;
+  }
+
+  thead th:not(.sticky-col) {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    max-height: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 8px 4px;
+  }
+}

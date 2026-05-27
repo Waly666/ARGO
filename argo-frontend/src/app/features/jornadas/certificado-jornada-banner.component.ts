@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, input } from '@angular/core';
 
-import { CertificadoJornadaBloqueoService } from '../../core/services/certificado-jornada-bloqueo.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { CertificadoService } from '../../core/services/certificado.service';
+import { certAlertToneClass, labelTipoCert } from '../../core/constants/tipos-certificado';
 import {
   CertificadoJornadaAlertService,
   CertificadoJornadaAlerta,
@@ -16,14 +18,29 @@ import {
 })
 export class CertificadoJornadaBannerComponent {
   private alertSvc = inject(CertificadoJornadaAlertService);
-  private certBloqueoSvc = inject(CertificadoJornadaBloqueoService);
+  private certSvc = inject(CertificadoService);
+  private confirmSvc = inject(ConfirmDialogService);
 
   alertas = this.alertSvc.alertas;
   compact = input(false);
+  certAlertToneClass = certAlertToneClass;
+  labelTipoCert = labelTipoCert;
+
+  etiquetaTipoAlerta(a: CertificadoJornadaAlerta): string {
+    return a.tipoFormatoCertLabel || labelTipoCert(a.tipoFormatoCert);
+  }
 
   imprimirCertificado(a: CertificadoJornadaAlerta) {
     this.alertSvc.descartar(a.id);
-    this.certBloqueoSvc.imprimirCertificadoDirecto(a.id);
+    this.certSvc.abrirHtml(a.id, (msg) => {
+      void this.confirmSvc.open({
+        title: 'Impresión',
+        message: msg,
+        variant: 'warn',
+        hideCancel: true,
+        confirmLabel: 'Entendido',
+      });
+    });
   }
 
   cerrar(ev: Event, id: string) {

@@ -1,3 +1,5 @@
+@use './jornada-live-estado.scss';
+
 .jornadas-proceso-page {
   display: flex;
   flex-direction: column;
@@ -24,15 +26,8 @@
     }
   }
 
-  .live-badge {
-    flex-shrink: 0;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(52, 211, 153, 0.45);
-    color: #a7f3d0;
+  .jor-live-badge {
+    align-self: center;
   }
 
   .banner {
@@ -110,12 +105,6 @@
     color: var(--text-soft);
   }
 
-  .row-proceso {
-    &:hover {
-      background: rgba(16, 185, 129, 0.06);
-    }
-  }
-
   .direccion-cell {
     max-width: 14rem;
     overflow: hidden;
@@ -162,18 +151,4 @@
       }
     }
   }
-}
-
-@keyframes estado-blink-emerald {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
-  }
-}
-
-.estado-blink {
-  animation: estado-blink-emerald 1.2s ease-in-out infinite;
 }

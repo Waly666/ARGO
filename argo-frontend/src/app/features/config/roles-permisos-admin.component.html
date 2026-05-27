@@ -2,12 +2,12 @@
   <header class="page-head">
     <div>
       <div class="title-row">
-        <h1>Roles y permisos</h1>
+        <h1>Roles, permisos y alarmas</h1>
         <span class="cap cap-violet cap-sm">Seguridad</span>
       </div>
       <p class="hint">
-        Configure qué módulos puede ver y usar cada rol. Los usuarios heredan los permisos del rol asignado.
-        Los cambios aplican al iniciar sesión de nuevo (o al refrescar la sesión).
+        Configure qué módulos puede ver y qué alarmas recibe cada rol. Los usuarios heredan permisos y alarmas del rol asignado.
+        Si edita el rol de otro usuario, ese usuario debe cerrar sesión y volver a entrar para ver el menú actualizado.
       </p>
     </div>
     <div class="head-actions">
@@ -34,6 +34,14 @@
         <span class="rol-meta">
           <span class="rol-nombre">{{ r.nombre }}</span>
           <span class="rol-codigo">{{ r.codigo }}</span>
+          <span class="rol-stats">
+            <span class="rol-stat cap cap-blue cap-sm" [title]="'Permisos: ' + detallePermisosRol(r)">
+              {{ detallePermisosRol(r) }} perm.
+            </span>
+            <span class="rol-stat cap cap-rose cap-sm" [title]="'Alarmas: ' + detalleAlarmasRol(r)">
+              {{ detalleAlarmasRol(r) }} alrm.
+            </span>
+          </span>
         </span>
         <span class="cap cap-sm" [ngClass]="r.esSistema ? 'cap-slate' : 'cap-teal'">
           {{ r.esSistema ? 'Sistema' : 'Custom' }}
@@ -52,10 +60,12 @@
                 {{ rol.activo !== false ? 'Activo' : 'Inactivo' }}
               </span>
               <span class="cap cap-blue cap-sm">{{ totalPermisosActivos() }} permisos</span>
+              <span class="cap cap-rose cap-sm">{{ totalAlarmasActivas() }} alarmas</span>
             </div>
             <div class="editor-caps" *ngIf="mostrarNuevo()">
               <span class="cap cap-teal cap-sm">Nuevo</span>
               <span class="cap cap-blue cap-sm">{{ totalPermisosActivos() }} permisos</span>
+              <span class="cap cap-rose cap-sm">{{ totalAlarmasActivas() }} alarmas</span>
             </div>
           </div>
         </header>
@@ -143,9 +153,46 @@
           </div>
         </section>
 
+        <section
+          class="editor-section permisos-section alarmas-section"
+          *ngIf="!(seleccionado()?.codigo === 'admin' && seleccionado()?.esSistema)">
+          <div class="section-label">
+            <span class="cap cap-rose cap-sm">Alarmas y avisos</span>
+            <span class="section-sub">
+              Banners del encabezado, toasts y avisos en fichas. No controla el acceso a módulos, solo qué alertas ve el rol.
+            </span>
+          </div>
+
+          <div class="perm-grid">
+            <article class="perm-grupo" *ngFor="let g of alarmasGrupos()" [attr.data-tone]="g.id">
+              <header class="perm-grupo-head">
+                <label class="perm-grupo-toggle">
+                  <input
+                    type="checkbox"
+                    [checked]="grupoAlarmasCompleto(g)"
+                    (change)="toggleGrupoAlarmas(g)" />
+                  <span class="cap cap-sm" [ngClass]="capGrupoAlarmas(g.id)">{{ g.label }}</span>
+                </label>
+                <span class="perm-count cap cap-slate cap-sm">
+                  {{ alarmasGrupoActivas(g) }}/{{ g.alarmas.length }}
+                </span>
+              </header>
+              <div class="perm-list">
+                <label class="perm-item" *ngFor="let a of g.alarmas" [class.on]="tieneAlarma(a.key)">
+                  <input
+                    type="checkbox"
+                    [checked]="tieneAlarma(a.key)"
+                    (change)="toggleAlarma(a.key)" />
+                  <span class="perm-label">{{ a.label }}</span>
+                </label>
+              </div>
+            </article>
+          </div>
+        </section>
+
         <p class="admin-note" *ngIf="seleccionado()?.codigo === 'admin'">
           <span class="cap cap-purple cap-sm">Admin</span>
-          El rol Administrador tiene acceso total al sistema.
+          El rol Administrador tiene acceso total al sistema y recibe todas las alarmas.
         </p>
 
         <footer class="actions">
@@ -158,7 +205,7 @@
           </button>
           <span class="spacer"></span>
           <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
-            {{ saving() ? 'Guardando…' : 'Guardar permisos' }}
+            {{ saving() ? 'Guardando…' : 'Guardar rol' }}
           </button>
         </footer>
       </div>

@@ -1,0 +1,29 @@
+@import './config-requisitos-documentos.component.scss';
+
+.config-page header h1 {
+  margin-bottom: 6px;
+}
+
+.aviso-block {
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: rgba(6, 16, 41, 0.35);
+}
+
+.dias-global {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+
+  input {
+    width: 120px;
+  }
+}
+
+.dias-tipo {
+  width: 72px;
+  min-width: 0;
+}

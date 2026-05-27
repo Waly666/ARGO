@@ -1,8 +1,10 @@
 const QRCode = require('qrcode');
 const Egreso = require('../models/Egreso');
 const Empleado = require('../models/Empleado');
+const Vehiculo = require('../models/Vehiculo');
 const { obtenerConfigRecibo, siguienteNumComprobanteEgreso } = require('../services/configRecibo');
 const { numeroDocumentoQuery, nombreCompletoEmpleado } = require('../utils/empleadoDoc');
+const { normalizarPlaca } = require('../constants/vehiculo');
 const { models: cat } = require('../models/catalogos');
 const {
   esc,
@@ -71,6 +73,7 @@ async function enriquecerEgreso(raw) {
     const q = numeroDocumentoQuery(e.numeroDocumento);
     emp = q ? await Empleado.findOne(q).lean() : null;
   }
+  const veh = e.placa ? await Vehiculo.findOne({ placa: normalizarPlaca(e.placa) }).lean() : null;
   return {
     idEgreso: String(e._id),
     numRecibo: e.numRecibo || null,
@@ -82,6 +85,10 @@ async function enriquecerEgreso(raw) {
     empleadoCargo: emp?.cargoNombre || null,
     concepto: e.concepto,
     tipoEgresoDescr: tipo?.tipo || null,
+    placa: e.placa || null,
+    vehiculoMarca: veh?.nombreMarca || null,
+    vehiculoLinea: veh?.nombreLinea || null,
+    vehiculoClase: veh?.claseVehiculo || null,
     formaPago: e.formaPago || null,
     numTransferencia: e.numTransferencia || null,
     fechaTransferencia: e.fechaTransferencia || null,
@@ -180,6 +187,10 @@ exports.html = async (req, res, next) => {
       ...(egreso.numeroDocumento ? [['Documento', egreso.numeroDocumento]] : []),
       ...(egreso.empleadoCargo ? [['Cargo', egreso.empleadoCargo]] : []),
       ...(egreso.tipoEgresoDescr ? [['Tipo egreso', egreso.tipoEgresoDescr]] : []),
+      ...(egreso.placa ? [['Placa vehículo', egreso.placa]] : []),
+      ...(egreso.vehiculoMarca || egreso.vehiculoLinea
+        ? [['Vehículo', `${egreso.vehiculoMarca || ''} ${egreso.vehiculoLinea || ''}`.trim()]]
+        : []),
       ['Concepto', egreso.concepto],
       ...(egreso.formaPago ? [['Forma pago', egreso.formaPago]] : []),
       ...(egreso.cuentaOrigenDescr ? [['Cuenta origen', egreso.cuentaOrigenDescr]] : []),

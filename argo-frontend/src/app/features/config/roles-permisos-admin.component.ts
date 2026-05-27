@@ -3,11 +3,13 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
+  AlarmaGrupo,
   PermisoGrupo,
   RolApp,
   RolAppDto,
   RolAppService,
 } from '../../core/services/rol-app.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 @Component({
@@ -19,10 +21,12 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 })
 export class RolesPermisosAdminComponent implements OnInit {
   private svc = inject(RolAppService);
+  private auth = inject(AuthService);
   private confirm = inject(ConfirmDialogService);
 
   roles = signal<RolApp[]>([]);
   grupos = signal<PermisoGrupo[]>([]);
+  alarmasGrupos = signal<AlarmaGrupo[]>([]);
   seleccionado = signal<RolApp | null>(null);
   loading = signal(false);
   saving = signal(false);
@@ -34,6 +38,7 @@ export class RolesPermisosAdminComponent implements OnInit {
     nombre: '',
     descripcion: '',
     permisos: [],
+    alarmas: [],
     activo: true,
   });
 
@@ -45,6 +50,20 @@ export class RolesPermisosAdminComponent implements OnInit {
     return String(p.length);
   });
 
+  totalAlarmasActivas = computed(() => {
+    const a = this.form().alarmas || [];
+    if (a.includes('*')) return 'Todas';
+    return String(a.length);
+  });
+
+  totalTiposPermisos = computed(() =>
+    this.grupos().reduce((n, g) => n + (g.permisos?.length || 0), 0),
+  );
+
+  totalTiposAlarmas = computed(() =>
+    this.alarmasGrupos().reduce((n, g) => n + (g.alarmas?.length || 0), 0),
+  );
+
   ngOnInit(): void {
     this.cargar();
   }
@@ -52,8 +71,14 @@ export class RolesPermisosAdminComponent implements OnInit {
   cargar(): void {
     this.loading.set(true);
     this.svc.catalogo().subscribe({
-      next: (c) => this.grupos.set(c.grupos || []),
-      error: () => this.grupos.set([]),
+      next: (c) => {
+        this.grupos.set(c.grupos || []);
+        this.alarmasGrupos.set(c.alarmasGrupos || []);
+      },
+      error: () => {
+        this.grupos.set([]);
+        this.alarmasGrupos.set([]);
+      },
     });
     this.svc.listar().subscribe({
       next: (r) => {
@@ -80,6 +105,7 @@ export class RolesPermisosAdminComponent implements OnInit {
       nombre: rol.nombre,
       descripcion: rol.descripcion || '',
       permisos: rol.permisos?.includes('*') ? ['*'] : [...(rol.permisos || [])],
+      alarmas: rol.alarmas?.includes('*') ? ['*'] : [...(rol.alarmas || [])],
       activo: rol.activo !== false,
     });
   }
@@ -92,6 +118,7 @@ export class RolesPermisosAdminComponent implements OnInit {
       nombre: '',
       descripcion: '',
       permisos: ['dashboard'],
+      alarmas: ['alarmas.vehiculos.docs_vencidos'],
       activo: true,
     });
   }
@@ -145,6 +172,65 @@ export class RolesPermisosAdminComponent implements OnInit {
     return grupo.permisos.every((p) => this.tienePermiso(p.key));
   }
 
+  tieneAlarma(key: string): boolean {
+    const a = this.form().alarmas || [];
+    if (a.includes('*')) return true;
+    return a.includes(key);
+  }
+
+  toggleAlarma(key: string): void {
+    const rol = this.seleccionado();
+    if (rol?.esSistema && rol.codigo === 'admin') return;
+
+    this.form.update((f) => {
+      let alarmas = [...(f.alarmas || [])];
+      if (alarmas.includes('*')) alarmas = [];
+      if (alarmas.includes(key)) {
+        alarmas = alarmas.filter((x) => x !== key);
+      } else {
+        alarmas.push(key);
+      }
+      return { ...f, alarmas };
+    });
+  }
+
+  toggleGrupoAlarmas(grupo: AlarmaGrupo): void {
+    const rol = this.seleccionado();
+    if (rol?.esSistema && rol.codigo === 'admin') return;
+
+    const keys = grupo.alarmas.map((a) => a.key);
+    const todos = keys.every((k) => this.tieneAlarma(k));
+    this.form.update((f) => {
+      let alarmas = [...(f.alarmas || [])].filter((x) => x !== '*');
+      if (todos) {
+        alarmas = alarmas.filter((x) => !keys.includes(x));
+      } else {
+        for (const k of keys) {
+          if (!alarmas.includes(k)) alarmas.push(k);
+        }
+      }
+      return { ...f, alarmas };
+    });
+  }
+
+  grupoAlarmasCompleto(grupo: AlarmaGrupo): boolean {
+    return grupo.alarmas.every((a) => this.tieneAlarma(a.key));
+  }
+
+  alarmasGrupoActivas(grupo: AlarmaGrupo): number {
+    return grupo.alarmas.filter((a) => this.tieneAlarma(a.key)).length;
+  }
+
+  capGrupoAlarmas(id: string): string {
+    const map: Record<string, string> = {
+      caja: 'cap-amber',
+      jornadas: 'cap-orange',
+      vehiculos: 'cap-pink',
+      alumnos: 'cap-cyan',
+    };
+    return map[id] || 'cap-indigo';
+  }
+
   capRol(rol: RolApp): string {
     const c = String(rol.codigo || '').toLowerCase();
     if (c === 'admin') return 'cap-purple';
@@ -182,6 +268,22 @@ export class RolesPermisosAdminComponent implements OnInit {
     return grupo.permisos.filter((p) => this.tienePermiso(p.key)).length;
   }
 
+  detallePermisosRol(rol: RolApp): string {
+    const total = this.totalTiposPermisos();
+    const p = rol.permisos || [];
+    if (p.includes('*')) return total ? `Todos/${total}` : 'Todos';
+    if (!total) return String(p.length);
+    return `${p.length}/${total}`;
+  }
+
+  detalleAlarmasRol(rol: RolApp): string {
+    const total = this.totalTiposAlarmas();
+    const a = rol.alarmas || [];
+    if (a.includes('*')) return total ? `Todas/${total}` : 'Todas';
+    if (!total) return String(a.length);
+    return `${a.length}/${total}`;
+  }
+
   async guardar(): Promise<void> {
     const f = this.form();
     if (!String(f.nombre || '').trim()) {
@@ -198,6 +300,7 @@ export class RolesPermisosAdminComponent implements OnInit {
           nombre: f.nombre,
           descripcion: f.descripcion,
           permisos: f.permisos,
+          alarmas: f.alarmas,
           activo: f.activo,
         })
       : this.svc.crear({
@@ -205,13 +308,42 @@ export class RolesPermisosAdminComponent implements OnInit {
           nombre: f.nombre,
           descripcion: f.descripcion,
           permisos: f.permisos,
+          alarmas: f.alarmas,
           activo: f.activo,
         });
 
     obs.subscribe({
       next: (doc) => {
         this.saving.set(false);
-        this.msg.set(sel ? 'Rol actualizado' : 'Rol creado');
+        const codigoGuardado = doc.codigo;
+        const rolUsuario = String(this.auth.user()?.rol || '').toLowerCase();
+        const aplicaSesion = rolUsuario === String(codigoGuardado || '').toLowerCase();
+
+        if (aplicaSesion) {
+          this.auth.refreshMe().subscribe({
+            next: () => {
+              this.msg.set(
+                sel
+                  ? 'Rol actualizado. Su sesión ya refleja los nuevos permisos.'
+                  : 'Rol creado. Su sesión ya refleja los nuevos permisos.',
+              );
+            },
+            error: () => {
+              this.msg.set(
+                sel
+                  ? 'Rol actualizado. Cierre sesión y vuelva a entrar para ver los cambios en el menú.'
+                  : 'Rol creado.',
+              );
+            },
+          });
+        } else {
+          this.msg.set(
+            sel
+              ? 'Rol actualizado. Los usuarios con ese rol deben cerrar sesión y volver a entrar (o refrescar sesión).'
+              : 'Rol creado.',
+          );
+        }
+
         this.mostrarNuevo.set(false);
         this.cargar();
         this.seleccionar(doc);
@@ -246,7 +378,7 @@ export class RolesPermisosAdminComponent implements OnInit {
   async reiniciar(): Promise<void> {
     const ok = await this.confirm.open({
       title: 'Restaurar roles del sistema',
-      message: 'Restaura permisos por defecto de Administrador, Cajero, Instructor, etc.',
+      message: 'Restaura permisos y alarmas por defecto de Administrador, Cajero, Instructor, etc.',
       confirmLabel: 'Restaurar',
       variant: 'warn',
     });

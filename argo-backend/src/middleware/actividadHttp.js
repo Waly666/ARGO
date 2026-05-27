@@ -2,6 +2,7 @@ const { registrarPeticion } = require('../services/actividadHttp');
 
 const RUTAS_EXCLUIDAS = [
   /^\/api\/health/i,
+  /^\/api\/actividad\/monitor/i,
   /^\/api\/actividad/i,
   /^\/uploads/i,
 ];
@@ -21,10 +22,16 @@ function actividadHttpMiddleware(req, res, next) {
 
   res.on('finish', () => {
     setImmediate(() => {
+      const bytesEntrada = parseInt(String(req.headers['content-length'] || ''), 10) || 0;
+      let bytesSalida = 0;
+      const cl = res.getHeader('content-length');
+      if (cl != null) bytesSalida = parseInt(String(cl), 10) || 0;
       registrarPeticion({
         req,
         statusCode: res.statusCode,
         duracionMs: Date.now() - inicio,
+        bytesEntrada,
+        bytesSalida,
       }).catch(() => {});
     });
   });

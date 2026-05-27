@@ -14,13 +14,18 @@ import {
 } from '../alumnos/catalogo.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
+import { esFechaHoy } from './jornada-calendario.util';
 import {
   capAlumnoNombre,
   capCertCodigo,
   capCliente,
+  capCodContrato,
   capDocAsis,
   capFechaJor,
   capHorasCert,
+  capUbicacionJornada,
+  rowCertificadoHoyClass,
+  ubicacionJornadaLabel,
 } from './jornada-ui.util';
 
 export interface CertificadoJornadaItem {
@@ -37,6 +42,10 @@ export interface CertificadoJornadaItem {
   numFolio?: string;
   numRunt?: string;
   tipoCertificado?: string;
+  municipio?: string;
+  direccion?: string;
+  ubicacionJornada?: string;
+  codContrato?: string;
 }
 
 @Component({
@@ -76,10 +85,18 @@ export class CertificadosJornadaListaComponent implements OnInit {
   readonly capAlumnoNombre = capAlumnoNombre;
   readonly capDocAsis = capDocAsis;
   readonly capCliente = capCliente;
+  readonly capCodContrato = capCodContrato;
+  readonly capUbicacionJornada = capUbicacionJornada;
+  readonly ubicacionJornadaLabel = ubicacionJornadaLabel;
   readonly capHorasCert = capHorasCert;
   readonly capFechaJor = capFechaJor;
+  readonly rowCertificadoHoyClass = rowCertificadoHoyClass;
+  readonly esFechaHoy = esFechaHoy;
 
   certificadoEdit = computed(() => this.certificados().find((c) => c._id === this.editId()) || null);
+  certsHoyCount = computed(
+    () => this.certificados().filter((c) => esFechaHoy(c.fechaEmision)).length,
+  );
 
   filtrados = computed(() => {
     const q = this.filtro().trim().toLowerCase();
@@ -90,7 +107,18 @@ export class CertificadosJornadaListaComponent implements OnInit {
       const enc = String(c.encabezado || '').toLowerCase();
       const cod = String(c.codigoCert || '').toLowerCase();
       const doc = String(c.numDoc ?? '').toLowerCase();
-      return nombre.includes(q) || enc.includes(q) || cod.includes(q) || doc.includes(q);
+      const contrato = String(c.codContrato || '').toLowerCase();
+      const ubicacion = String(
+        c.ubicacionJornada || ubicacionJornadaLabel(c.municipio, c.direccion),
+      ).toLowerCase();
+      return (
+        nombre.includes(q) ||
+        enc.includes(q) ||
+        cod.includes(q) ||
+        doc.includes(q) ||
+        contrato.includes(q) ||
+        ubicacion.includes(q)
+      );
     });
   });
 

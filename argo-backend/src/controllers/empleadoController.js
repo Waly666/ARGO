@@ -94,6 +94,11 @@ async function cargoPorId(cargoId) {
   return Cargo.findOne({ idCargo: cargoId }).lean();
 }
 
+async function idsCargosInstructor() {
+  const cargos = await Cargo.find({ nombre: /\binstructor/i }).select('idCargo').lean();
+  return cargos.map((c) => c.idCargo).filter((id) => id != null);
+}
+
 async function resolverFk(emp) {
   const e = normalizarEmpleadoLegacy(emp);
   const [cargo, depto, eps, afp, arl, caja, usuario] = await Promise.all([
@@ -130,6 +135,35 @@ async function vincularUsuarioEmpleado(idEmpleado, idUsuario) {
     { $set: { idUsuario, updatedAt: new Date() } },
   );
 }
+
+exports.listarInstructores = async (req, res, next) => {
+  try {
+    const q = (req.query.q || '').toString().trim();
+    const soloActivos = req.query.activos !== 'false';
+    const cargoIds = await idsCargosInstructor();
+    if (!cargoIds.length) return res.json([]);
+
+    const filter = { cargoId: { $in: cargoIds } };
+    if (soloActivos) filter.estado = { $in: [/^activo$/i, 'activo', 'ACTIVO', null] };
+    if (q.length >= 2) {
+      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [
+        { primerNombre: re },
+        { segundoNombre: re },
+        { primerApellido: re },
+        { segundoApellido: re },
+        { numeroDocumento: re },
+        { nombre1: re },
+        { apellido1: re },
+      ];
+    }
+    const rows = await Empleado.find(filter).sort({ primerApellido: 1, primerNombre: 1 }).lean();
+    const out = await Promise.all(rows.map((r) => resolverFk(r)));
+    res.json(out);
+  } catch (e) {
+    next(e);
+  }
+};
 
 exports.listar = async (req, res, next) => {
   try {

@@ -1,0 +1,36 @@
+<div class="enum-buscar-host" [class.disabled]="disabled">
+  <label *ngIf="label">{{ label }}</label>
+  <div class="input-wrap">
+    <input
+      type="text"
+      [placeholder]="placeholder"
+      [ngModel]="query()"
+      (ngModelChange)="onInput($event)"
+      (focus)="focus()"
+      [disabled]="disabled"
+      autocomplete="off"
+    />
+    <span class="hint" *ngIf="loading()">Buscando…</span>
+  </div>
+
+  <ul class="dropdown" *ngIf="open() && resultados().length > 0">
+    <li *ngFor="let o of resultados()" (mousedown)="pick(o)">
+      <strong>{{ o.label }}</strong>
+      <span *ngIf="o.hint">{{ o.hint }}</span>
+    </li>
+  </ul>
+
+  <div
+    class="dropdown empty"
+    *ngIf="open() && !loading() && query().trim().length >= minLength && resultados().length === 0"
+  >
+    No hay coincidencias.
+  </div>
+
+  <div
+    class="dropdown empty"
+    *ngIf="open() && query().trim().length > 0 && query().trim().length < minLength"
+  >
+    Escriba al menos {{ minLength }} caracteres…
+  </div>
+</div>

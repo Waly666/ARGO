@@ -1,0 +1,151 @@
+<section class="monitor-page admin-list-page card">
+  <header class="page-head">
+    <div>
+      <h1>
+        Monitor de recursos
+        @if (autoRefresh()) {
+          <span class="live-badge" aria-live="polite">
+            <span class="live-dot"></span>
+            En vivo
+          </span>
+        }
+      </h1>
+      <p class="hint">
+        Consumo del servidor API (memoria y CPU del proceso Node), tráfico HTTP agregado y usuarios
+        con sesión activa reciente, incluyendo cuánta red consume cada uno.
+      </p>
+      @if (ultimaActualizacion(); as ts) {
+        <p class="ultima-sync">
+          Última actualización: {{ ts | date: 'HH:mm:ss' }}
+          @if (actualizando()) {
+            <span class="sync-spin"> · actualizando…</span>
+          }
+        </p>
+      }
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <label>
+      Ventana de red (min)
+      <select
+        [ngModel]="ventanaMinutos()"
+        (ngModelChange)="ventanaMinutos.set($event); onVentanaChange()"
+        name="ventana">
+        <option [ngValue]="5">5</option>
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="15">15</option>
+        <option [ngValue]="30">30</option>
+      </select>
+    </label>
+    <button type="button" class="ghost" (click)="cargar()">Actualizar</button>
+    <label class="check-auto">
+      <input type="checkbox" [checked]="autoRefresh()" (change)="toggleAutoRefresh()" />
+      Tiempo real (cada 4 s)
+    </label>
+  </div>
+
+  @if (error(); as err) {
+    <div class="banner error" role="alert">{{ err }}</div>
+  }
+
+  @if (loading() && !data()) {
+    <p>Cargando monitor…</p>
+  } @else if (data()) {
+    <div class="metric-grid">
+      <article class="metric-card">
+        <h2>CPU proceso (API)</h2>
+        <p class="metric-value">{{ sistema()?.cpuProcesoPct ?? 0 }}%</p>
+        <p class="metric-sub">Load sistema (1 min): {{ sistema()?.cpuSistemaLoad1 ?? 0 }}</p>
+        <div class="bar-track">
+          <span class="bar-fill cpu" [style.width.%]="pctBar(sistema()?.cpuProcesoPct)"></span>
+        </div>
+      </article>
+
+      <article class="metric-card">
+        <h2>Memoria proceso</h2>
+        <p class="metric-value">{{ sistema()?.memoriaProceso?.rssMb ?? 0 }} MB</p>
+        <p class="metric-sub">
+          Heap {{ sistema()?.memoriaProceso?.heapUsedMb ?? 0 }} /
+          {{ sistema()?.memoriaProceso?.heapTotalMb ?? 0 }} MB
+        </p>
+      </article>
+
+      <article class="metric-card">
+        <h2>Memoria servidor</h2>
+        <p class="metric-value">{{ sistema()?.memoriaSistema?.usoPct ?? 0 }}%</p>
+        <p class="metric-sub">
+          {{ sistema()?.memoriaSistema?.usadaMb ?? 0 }} / {{ sistema()?.memoriaSistema?.totalMb ?? 0 }} MB
+        </p>
+        <div class="bar-track">
+          <span class="bar-fill mem" [style.width.%]="pctBar(sistema()?.memoriaSistema?.usoPct)"></span>
+        </div>
+      </article>
+
+      <article class="metric-card">
+        <h2>Red API (ventana)</h2>
+        <p class="metric-value">{{ formatBytes(trafico()?.bytesTotal) }}</p>
+        <p class="metric-sub">
+          ↓ {{ formatBytes(trafico()?.bytesEntrada) }} · ↑ {{ formatBytes(trafico()?.bytesSalida) }}
+          · {{ trafico()?.peticiones ?? 0 }} pet.
+        </p>
+      </article>
+
+      <article class="metric-card">
+        <h2>Usuarios conectados</h2>
+        <p class="metric-value">{{ data()?.usuariosConectados ?? 0 }}</p>
+        <p class="metric-sub">Actividad en los últimos {{ data()?.minutosVentana ?? ventanaMinutos() }} min</p>
+      </article>
+
+      <article class="metric-card">
+        <h2>Uptime API</h2>
+        <p class="metric-value">{{ formatUptime(sistema()?.uptimeSegundos) }}</p>
+        <p class="metric-sub">{{ sistema()?.node }} · {{ sistema()?.nucleos }} núcleos</p>
+      </article>
+    </div>
+
+    <section class="usuarios-section">
+      <h2>Usuarios en línea y consumo de red</h2>
+      @if (!usuarios().length) {
+        <p class="empty">No hay usuarios con actividad en la ventana seleccionada.</p>
+      } @else {
+        <table class="argo data-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Pantalla actual</th>
+              <th>Peticiones</th>
+              <th>Red ↓</th>
+              <th>Red ↑</th>
+              <th>Total red</th>
+              <th>Última actividad</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of usuarios(); track trackUsuario(u)) {
+              <tr>
+                <td>
+                  <strong>{{ u.nombreUsuario || u.usuario }}</strong>
+                  <span class="sub">{{ u.usuario }}</span>
+                </td>
+                <td>{{ u.rol || '—' }}</td>
+                <td class="actividad-cell">
+                  <strong>{{ u.ultimaActividad }}</strong>
+                  @if (u.rutaPantalla) {
+                    <span class="sub">{{ u.rutaPantalla }}</span>
+                  }
+                </td>
+                <td>{{ u.peticionesRecientes ?? 0 }}</td>
+                <td>{{ formatBytes(u.bytesEntrada) }}</td>
+                <td>{{ formatBytes(u.bytesSalida) }}</td>
+                <td><strong>{{ formatBytes(u.bytesTotal) }}</strong></td>
+                <td>{{ u.ultimaFecha | date: 'dd/MM HH:mm:ss' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+</section>

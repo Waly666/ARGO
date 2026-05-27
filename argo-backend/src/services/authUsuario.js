@@ -1,12 +1,13 @@
 const Usuario = require('../models/Usuario');
 const { normalizarRol } = require('../utils/roles');
-const { permisosParaRol, nombreRol } = require('./rolesPermisos');
+const { permisosParaRol, alarmasParaRol, nombreRol } = require('./rolesPermisos');
 const { empleadoPorUsuarioId, nombreEmpleado } = require('./instructorJornada');
 
 async function enriquecerUsuarioDoc(u) {
   const json = u.toJSON ? u.toJSON() : { ...u };
   json.rol = normalizarRol(json.rol);
   json.permisos = await permisosParaRol(json.rol);
+  json.alarmas = await alarmasParaRol(json.rol);
   json.rolNombre = await nombreRol(json.rol);
 
   const emp = await empleadoPorUsuarioId(json._id);

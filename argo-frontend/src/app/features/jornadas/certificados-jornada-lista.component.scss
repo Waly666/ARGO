@@ -1,3 +1,5 @@
+@use './jornada-live-estado.scss';
+
 .cert-jor-page {
   display: flex;
   flex-direction: column;
@@ -60,4 +62,18 @@
     border-color: rgba(239, 68, 68, 0.35);
     color: #fecaca;
   }
+}
+
+.certs-hoy-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.encabezado-hoy-blink {
+  white-space: normal;
+  line-height: 1.35;
+  max-width: 320px;
+  text-align: left;
 }

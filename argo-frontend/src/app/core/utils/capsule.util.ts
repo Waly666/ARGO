@@ -7,6 +7,68 @@ export function capEstado(estado?: string | null): string {
   return 'cap cap-slate';
 }
 
+export function capEstadoVehiculo(estado?: string | null): string {
+  if (/ocupado/i.test(String(estado ?? ''))) return 'cap cap-orange';
+  return 'cap cap-emerald';
+}
+
+export function capPlaca(_placa?: string | null, tipoServicio?: string | null): string {
+  const base = 'cap cap-placa';
+  if (String(tipoServicio ?? '').toUpperCase() === 'PARTICULAR') {
+    return `${base} cap-placa-amarilla`;
+  }
+  return `${base} cap-placa-blanca`;
+}
+
+export function capTipoServicioVehi(v?: string | null): string {
+  const t = String(v ?? '').toUpperCase();
+  if (t === 'PUBLICO') return 'cap cap-blue';
+  if (t === 'PARTICULAR') return 'cap cap-emerald';
+  if (t === 'OFICIAL') return 'cap cap-indigo';
+  if (t === 'DIPLOMATICO') return 'cap cap-purple';
+  return 'cap cap-slate';
+}
+
+export function capMarcaVehi(v?: string | null): string {
+  if (!String(v ?? '').trim()) return 'cap cap-slate cap-sm cap-text';
+  return 'cap cap-indigo cap-sm cap-text';
+}
+
+export function capLineaVehi(v?: string | null): string {
+  if (!String(v ?? '').trim()) return 'cap cap-slate cap-sm cap-text';
+  return 'cap cap-teal cap-sm cap-text';
+}
+
+export function capModeloVehi(v?: string | null): string {
+  if (!String(v ?? '').trim()) return 'cap cap-slate cap-sm cap-text';
+  return 'cap cap-amber cap-sm cap-mono';
+}
+
+export function capClaseVehi(v?: string | null): string {
+  const t = String(v ?? '').toUpperCase();
+  if (!t) return 'cap cap-slate cap-sm cap-text';
+  if (/MOTOCICL|MOTOCARRO|MOTOTRIC|CUATRIM|BICICLETA/.test(t)) return 'cap cap-pink cap-sm cap-text';
+  if (/CAMION|TRACTO|REMOLQUE|SEMIREMOLQUE|BUS|BUSETA|MICROBUS/.test(t)) return 'cap cap-orange cap-sm cap-text';
+  if (/AUTOMOVIL|CAMPERO|CAMIONETA/.test(t)) return 'cap cap-blue cap-sm cap-text';
+  if (/MAQ\.|INDUSTRIAL|AGRICOLA/.test(t)) return 'cap cap-violet cap-sm cap-text';
+  return 'cap cap-cyan cap-sm cap-text';
+}
+
+export function capColorVehi(v?: string | null): string {
+  const t = String(v ?? '').toLowerCase();
+  if (!t) return 'cap cap-slate cap-sm cap-text';
+  if (/azul|blue/.test(t)) return 'cap cap-blue cap-sm cap-text';
+  if (/rojo|burgund|vino|coral/.test(t)) return 'cap cap-red cap-sm cap-text';
+  if (/verde|green/.test(t)) return 'cap cap-emerald cap-sm cap-text';
+  if (/amar|gold|dorad|beige|crema/.test(t)) return 'cap cap-amber cap-sm cap-text';
+  if (/negro|black|gris|plata|plate|silver|plomo|blanc|white|perla/.test(t)) return 'cap cap-slate cap-sm cap-text';
+  if (/naran|orange/.test(t)) return 'cap cap-orange cap-sm cap-text';
+  if (/violet|morad|purp|lila/.test(t)) return 'cap cap-violet cap-sm cap-text';
+  if (/ros|pink|fucs/.test(t)) return 'cap cap-pink cap-sm cap-text';
+  if (/caf|marron|bronc|marr/.test(t)) return 'cap cap-orange cap-sm cap-text';
+  return 'cap cap-cyan cap-sm cap-text';
+}
+
 export function capTipoServ(tipo?: string | number | null): string {
   const t = String(tipo ?? '').toUpperCase();
   const map: Record<string, string> = {

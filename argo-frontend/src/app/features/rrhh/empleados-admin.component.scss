@@ -120,6 +120,33 @@ input, select { width: 100%; }
 
 .th-foto { width: 52px; }
 
+.form-card {
+  margin-bottom: 16px;
+}
+
+.form-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+
+  button {
+    border: 1px solid var(--line-soft);
+    background: transparent;
+    color: var(--text-soft);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+
+    &.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.45);
+      color: var(--text);
+    }
+  }
+}
+
 .acceso-panel {
   margin: 18px 0 4px;
   padding: 14px 16px;

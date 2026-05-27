@@ -69,19 +69,63 @@
         </div>
       </div>
 
-      <div class="form-card card" *ngIf="mostrarForm()">
+      <div class="form-card card" *ngIf="mostrarForm()" [class.inspeccion-catalog]="esCatalogoInspeccion() || esCatalogoDocumento()">
         <h3>{{ editandoId() ? 'Editar registro' : 'Nuevo registro' }}</h3>
         <div class="fields-grid">
-          <div class="field" *ngFor="let c of camposForm()">
-            <label>{{ c }}</label>
-            <input
-              [type]="inputTypeCampo(c)"
-              [step]="esCampoMoneda(c) ? 1 : campoEsNumerico(c) ? 1 : undefined"
-              [min]="inputTypeCampo(c) === 'number' ? 0 : undefined"
+          <div class="field" *ngFor="let c of camposForm()" [class.field-wide]="esCatalogoInspeccion() && campoEsTextoLargo(c)">
+            <label>{{ esCatalogoInspeccion() || esCatalogoDocumento() ? labelCampo(c) : c }}</label>
+            <textarea
+              *ngIf="esCatalogoInspeccion() && campoEsTextoLargo(c); else inputCampo"
+              rows="4"
               [ngModel]="formDoc()[c]"
-              (ngModelChange)="patchCampo(c, $event)"
-              [readonly]="c === '_id'" />
+              (ngModelChange)="patchCampo(c, $event)"></textarea>
+            <ng-template #inputCampo>
+              <input
+                [type]="inputTypeCampo(c)"
+                [step]="esCampoMoneda(c) ? 1 : campoEsNumerico(c) ? 1 : undefined"
+                [min]="inputTypeCampo(c) === 'number' ? 0 : undefined"
+                [ngModel]="formDoc()[c]"
+                (ngModelChange)="patchCampo(c, $event)"
+                [readonly]="c === '_id'" />
+            </ng-template>
           </div>
+        </div>
+
+        <div class="clases-block" *ngIf="esCatalogoDocumento()">
+          <h4>Vencimiento del documento</h4>
+          <label class="clase-item">
+            <input type="checkbox" [ngModel]="formControlaVencimiento()" (ngModelChange)="formControlaVencimiento.set($event)" />
+            Controla vencimiento (exige fechas de expedición y vencimiento al registrar)
+          </label>
+          <p class="hint">
+            Desmarque para documentos permanentes (ej. cédula, tarjeta de propiedad).
+            También configurable en Configuración → Requisitos vehículos / empleados.
+          </p>
+        </div>
+
+        <div class="clases-block" *ngIf="esCatalogoInspeccion()">
+          <h4>Clases de vehículo</h4>
+          <p class="hint">
+            Sin marcar ninguna = aplica a <strong>todas</strong> las clases.
+            La inspección también respeta el formato por clase en Configuración → Formato inspección.
+          </p>
+          <div class="clases-grid" *ngIf="clasesVehiculo().length">
+            <label class="clase-item" *ngFor="let c of clasesVehiculo()">
+              <input
+                type="checkbox"
+                [checked]="claseMarcada(c.idClase)"
+                (change)="toggleClaseItem(c.idClase, $any($event.target).checked)" />
+              {{ c.label }}
+            </label>
+          </div>
+          <p class="hint" *ngIf="!clasesVehiculo().length">Cargue el catálogo «Clases de vehículo».</p>
+          <button
+            type="button"
+            class="ghost mini"
+            *ngIf="formIdClases().length"
+            (click)="limpiarClasesItem()">
+            Quitar restricción (todas las clases)
+          </button>
         </div>
         <div class="actions">
           <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
@@ -105,17 +149,19 @@
         </button>
       </div>
 
-      <div class="table-wrap" *ngIf="!loading() && vista() === 'lista'">
+      <div class="table-wrap" *ngIf="!loading() && vista() === 'lista'" [class.inspeccion-catalog]="esCatalogoInspeccion() || esCatalogoDocumento()">
         <table class="data-table" *ngIf="listado() as L">
           <thead>
             <tr>
-              <th *ngFor="let c of camposTabla()">{{ c }}</th>
+              <th *ngFor="let c of columnasListado()">
+                {{ esCatalogoInspeccion() || esCatalogoDocumento() ? labelCampo(c) : c }}
+              </th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let row of L.rows">
-              <td *ngFor="let c of camposTabla()">
+              <td *ngFor="let c of columnasListado()" [class.col-texto]="campoEsTextoLargo(c)">
                 <span *ngIf="usarCapsula(c)" [ngClass]="capParaCampo(c, valorCelda(row, c))">{{ valorCelda(row, c) }}</span>
                 <ng-container *ngIf="!usarCapsula(c)">{{ valorCelda(row, c) }}</ng-container>
               </td>
@@ -125,13 +171,13 @@
               </td>
             </tr>
             <tr *ngIf="!L.rows.length">
-              <td [attr.colspan]="camposTabla().length + 1" class="empty">Sin registros.</td>
+              <td [attr.colspan]="columnasListado().length + 1" class="empty">Sin registros.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="cards-grid" *ngIf="!loading() && vista() === 'cards' && listado() as L">
+      <div class="cards-grid" *ngIf="!loading() && vista() === 'cards' && listado() as L" [class.inspeccion-catalog]="esCatalogoInspeccion() || esCatalogoDocumento()">
         <article class="list-card" *ngFor="let row of L.rows">
           <header class="card-title"><h3>{{ cardTitulo(row) }}</h3></header>
           <div class="card-body">
@@ -140,8 +186,16 @@
             </div>
             <div class="card-main">
               <dl class="card-fields">
+                <div *ngIf="esCatalogoInspeccion()">
+                  <dt>{{ labelCampo('idClases') }}</dt>
+                  <dd>{{ formatIdClases(row['idClases']) }}</dd>
+                </div>
+                <div *ngIf="esCatalogoDocumento()">
+                  <dt>{{ labelCampo('controlaVencimiento') }}</dt>
+                  <dd>{{ formatControlaVencimiento(row['controlaVencimiento']) }}</dd>
+                </div>
                 <div *ngFor="let c of camposTabla()">
-                  <dt>{{ c }}</dt>
+                  <dt>{{ esCatalogoInspeccion() || esCatalogoDocumento() ? labelCampo(c) : c }}</dt>
                   <dd>
                     <span *ngIf="usarCapsula(c)" [ngClass]="capParaCampo(c, valorCelda(row, c))">{{ valorCelda(row, c) }}</span>
                     <ng-container *ngIf="!usarCapsula(c)">{{ valorCelda(row, c) }}</ng-container>

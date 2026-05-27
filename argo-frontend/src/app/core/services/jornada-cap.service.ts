@@ -93,6 +93,10 @@ export interface ClaseJornadaDto {
   jornadaEstado?: string;
   idContrato?: string;
   municipioJornada?: string;
+  direccionJornada?: string;
+  indiceEnDia?: number;
+  codContrato?: string;
+  contratoLabel?: string;
   /** Ruta relativa bajo uploads/ (evidenciascap/{codContrato}/fotos/...). */
   urlforo?: string;
 }
@@ -224,6 +228,12 @@ export class JornadaCapService {
     return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases`, { params: p });
   }
 
+  listarClasesDelDia(fecha?: string): Observable<ClaseJornadaDto[]> {
+    let p = new HttpParams();
+    if (fecha) p = p.set('fecha', fecha);
+    return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases/del-dia`, { params: p });
+  }
+
   crearClase(dto: {
     idJornada: string;
     idPrograma: string;
@@ -263,6 +273,11 @@ export class JornadaCapService {
       ok: boolean;
       registradas: number;
       certificadosNuevos: number;
+      certificadosEmitidos?: Array<{
+        certificado: Record<string, unknown>;
+        nombreAlumno?: string;
+        numDoc?: number;
+      }>;
       message?: string;
     }>(`${this.base}/clases/${idClase}/sincronizar-asistencias`, {});
   }

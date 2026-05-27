@@ -193,6 +193,88 @@
 
 .loading { color: var(--text-dim); padding: 20px; }
 
+.clases-block {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+
+  h4 {
+    margin: 0 0 6px;
+    font-size: 0.92rem;
+  }
+}
+
+.form-card.inspeccion-catalog,
+.table-wrap.inspeccion-catalog,
+.cards-grid.inspeccion-catalog {
+  .fields-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+
+    label {
+      font-size: 0.78rem;
+      margin-bottom: 6px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      font-size: 0.95rem;
+      padding: 10px 12px;
+    }
+
+    textarea {
+      min-height: 110px;
+      line-height: 1.45;
+      resize: vertical;
+    }
+
+    .field-wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .data-table {
+    font-size: 0.92rem;
+
+    th, td {
+      max-width: none;
+      padding: 10px 14px;
+    }
+
+    .col-texto {
+      min-width: 280px;
+      max-width: 520px;
+      white-space: normal;
+      line-height: 1.4;
+    }
+
+    td:first-child {
+      min-width: 180px;
+      white-space: normal;
+    }
+  }
+
+  .list-card .card-fields dd {
+    white-space: normal;
+    line-height: 1.4;
+  }
+}
+
+.clases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.clase-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 900px) {
   .layout { flex-direction: column; }
   .catalog-sidebar {

@@ -6,6 +6,7 @@ const RolAppSchema = new mongoose.Schema(
     nombre: { type: String, required: true, trim: true },
     descripcion: { type: String, trim: true, default: '' },
     permisos: { type: [String], default: [] },
+    alarmas: { type: [String], default: [] },
     esSistema: { type: Boolean, default: false },
     activo: { type: Boolean, default: true },
   },

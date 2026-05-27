@@ -22,6 +22,8 @@ export class FormModalComponent implements OnChanges {
   @Input({ required: true }) open = false;
   @Input({ required: true }) title = '';
   @Input() wide = false;
+  /** Modal ancho completo (~1280px) para formularios densos. */
+  @Input() xwide = false;
   @Input() subtitle = '';
   /** Distancia desde arriba del viewport (px). Si no se pasa, se usa el valor por defecto del CSS. */
   @Input() anchorTopPx: number | null = null;

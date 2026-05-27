@@ -60,15 +60,43 @@ async function asegurarLiquidacionJornada(numDoc, idProg, mat) {
 }
 
 /** Cuenta asistencias (clases distintas) del alumno en todas las jornadas del contrato. */
-async function contarAsistenciasContrato(numDoc, idContrato) {
-  const jornadaIds = await JornadaCap.find({ idContrato }).distinct('_id');
-  if (!jornadaIds.length) return 0;
-  const claseIds = await ClaseJornadaCap.find({ idJornada: { $in: jornadaIds } }).distinct('_id');
-  if (!claseIds.length) return 0;
+async function contarAsistenciasContrato(numDoc, idContrato, claseIdsPrecargados = null) {
+  let claseIds = claseIdsPrecargados;
+  if (!claseIds) {
+    const jornadaIds = await JornadaCap.find({ idContrato }).distinct('_id');
+    if (!jornadaIds.length) return 0;
+    claseIds = await ClaseJornadaCap.find({ idJornada: { $in: jornadaIds } }).distinct('_id');
+  }
+  if (!claseIds?.length) return 0;
   return AsisClasJorCap.countDocuments({
     numDocAlumno: numDoc,
     idclaseJornada: { $in: claseIds },
   });
+}
+
+/** Precarga contrato, clases del contrato, config y plantilla (lote de asistencias). */
+async function crearContextoCertificadoContrato(idContratoRaw) {
+  if (!idContratoRaw) return null;
+  const idContrato =
+    idContratoRaw instanceof mongoose.Types.ObjectId
+      ? idContratoRaw
+      : new mongoose.Types.ObjectId(String(idContratoRaw));
+  const contrato = await Contratacion.findById(idContrato).lean();
+  if (!contrato) return null;
+  const jornadaIds = await JornadaCap.find({ idContrato }).distinct('_id');
+  const claseIds = jornadaIds.length
+    ? await ClaseJornadaCap.find({ idJornada: { $in: jornadaIds } }).distinct('_id')
+    : [];
+  const cfg = await obtenerConfigCertificado();
+  const plantilla = await resolverPlantillaImpresion(cfg, tipoFormatoJornada);
+  return {
+    idContrato,
+    contrato,
+    numSesCert: Math.max(1, parseInt(contrato.numSesCert, 10) || 1),
+    claseIds,
+    cfg,
+    plantilla,
+  };
 }
 
 async function obtenerNumSesCert(idContrato) {
@@ -107,7 +135,7 @@ async function validarAlumnoSinCertificadoContrato(numDocRaw, idContratoRaw) {
 /**
  * Progreso del alumno frente a numSesCert del contrato.
  */
-async function progresoCertificacion(numDocRaw, idContratoRaw) {
+async function progresoCertificacion(numDocRaw, idContratoRaw, ctx = null) {
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null || !idContratoRaw) {
     return { sesiones: 0, numSesCert: 1, cumplio: false, certificado: null };
@@ -116,8 +144,8 @@ async function progresoCertificacion(numDocRaw, idContratoRaw) {
     idContratoRaw instanceof mongoose.Types.ObjectId
       ? idContratoRaw
       : new mongoose.Types.ObjectId(String(idContratoRaw));
-  const numSesCert = await obtenerNumSesCert(idContrato);
-  const sesiones = await contarAsistenciasContrato(numDoc, idContrato);
+  const numSesCert = ctx?.numSesCert ?? (await obtenerNumSesCert(idContrato));
+  const sesiones = await contarAsistenciasContrato(numDoc, idContrato, ctx?.claseIds);
   const certificado = await certificadoExistenteContrato(numDoc, idContrato);
   return {
     sesiones,
@@ -131,7 +159,7 @@ async function progresoCertificacion(numDocRaw, idContratoRaw) {
 /**
  * Si asistencias >= contrato.numSesCert, emite certificado automático (sin intervención del usuario).
  */
-async function intentarCertificadoJornadaAuto(numDocRaw, idProg, idContratoRaw, idJornadaRaw) {
+async function intentarCertificadoJornadaAuto(numDocRaw, idProg, idContratoRaw, idJornadaRaw, ctx = null) {
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null) return { creado: false, motivo: 'numDoc_invalido' };
 
@@ -140,11 +168,11 @@ async function intentarCertificadoJornadaAuto(numDocRaw, idProg, idContratoRaw, 
       ? idContratoRaw
       : new mongoose.Types.ObjectId(String(idContratoRaw));
 
-  const contrato = await Contratacion.findById(idContrato).lean();
+  const contrato = ctx?.contrato || (await Contratacion.findById(idContrato).lean());
   if (!contrato) return { creado: false, motivo: 'contrato_no_encontrado' };
 
-  const numSesCert = Math.max(1, parseInt(contrato.numSesCert, 10) || 1);
-  const sesiones = await contarAsistenciasContrato(numDoc, idContrato);
+  const numSesCert = ctx?.numSesCert ?? Math.max(1, parseInt(contrato.numSesCert, 10) || 1);
+  const sesiones = await contarAsistenciasContrato(numDoc, idContrato, ctx?.claseIds);
 
   const progreso = {
     sesiones,
@@ -195,8 +223,11 @@ async function intentarCertificadoJornadaAuto(numDocRaw, idProg, idContratoRaw, 
     return { creado: false, motivo: 'ya_certificado', certificado: dupLiq, ...progreso };
   }
 
-  const cfg = await obtenerConfigCertificado();
-  const plantilla = await resolverPlantillaImpresion(cfg, tipoFormatoJornada);
+  const cfg = ctx?.cfg || (await obtenerConfigCertificado());
+  const plantilla =
+    ctx?.plantilla !== undefined
+      ? ctx.plantilla
+      : await resolverPlantillaImpresion(cfg, tipoFormatoJornada);
   if (!plantilla) {
     console.warn('[ARGO] Auto-cert jornada: configure plantilla «Jornada Capacitación» en Config. Certificados');
     return {
@@ -262,5 +293,6 @@ module.exports = {
   validarAlumnoSinCertificadoContrato,
   progresoCertificacion,
   intentarCertificadoJornadaAuto,
+  crearContextoCertificadoContrato,
   MOTIVOS_CERT,
 };

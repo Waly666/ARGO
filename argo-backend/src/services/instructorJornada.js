@@ -114,6 +114,29 @@ async function listarInstructoresConUsuario() {
   return out.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto, 'es'));
 }
 
+/** Admin/gestor: sin filtro. Instructor: solo clases asignadas a su empleado o usuario. */
+async function filtroClasesQueryPorRol(req) {
+  const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
+  if (tieneAlguno(permisos, ['jornadas.gestionar'])) {
+    return { aplicar: false };
+  }
+  const emp = await empleadoPorUsuarioId(req.user?.sub);
+  const condiciones = [];
+  if (emp?.idEmpleado != null) condiciones.push({ idEmpleadoInstructor: emp.idEmpleado });
+  const userId = req.user?.sub ? String(req.user.sub) : '';
+  if (userId) condiciones.push({ idUsuarioInstructor: userId });
+  if (!condiciones.length) return { aplicar: true, vacio: true };
+  return { aplicar: true, $or: condiciones };
+}
+
+async function aplicarFiltroClasesQueryPorRol(q, req) {
+  const filtro = await filtroClasesQueryPorRol(req);
+  if (!filtro.aplicar) return { q, vacio: false };
+  if (filtro.vacio) return { q, vacio: true };
+  q.$or = filtro.$or;
+  return { q, vacio: false };
+}
+
 async function enriquecerClases(rows) {
   const ids = [...new Set(rows.map((r) => r.idEmpleadoInstructor).filter((x) => x != null))];
   const empleados = ids.length
@@ -150,6 +173,7 @@ module.exports = {
   empleadoPorUsuarioId,
   resolverInstructorParaClase,
   listarInstructoresConUsuario,
+  aplicarFiltroClasesQueryPorRol,
   enriquecerClases,
   esEmpleadoInstructor,
 };

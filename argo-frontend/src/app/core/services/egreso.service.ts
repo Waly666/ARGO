@@ -21,6 +21,8 @@ export interface TipoEgresoCat {
 
   requiereEmpleado?: boolean | string | number;
 
+  requiereVehiculo?: boolean | string | number;
+
   efectoNomina?: '' | 'prestamo' | 'abono_adelanto' | 'pago_sueldo' | string;
 
   esRetiroCaja?: boolean | string | number;
@@ -103,7 +105,17 @@ export interface Egreso {
 
   tipoRequiereEmpleado?: boolean;
 
+  tipoRequiereVehiculo?: boolean;
+
   tipoEfectoNomina?: string | null;
+
+  placa?: string | null;
+
+  vehiculoMarca?: string | null;
+
+  vehiculoLinea?: string | null;
+
+  vehiculoClase?: string | null;
 
   formaPago?: FormaPagoEgreso | string | null;
 
@@ -179,10 +191,21 @@ export interface EgresoDto {
 
   idPeriodo?: number | '';
 
+  placa?: string;
+
 }
 
 export type { AutorizacionSupervisorDto } from './supervisor-auth.types';
 export type AutorizacionRetiroDto = import('./supervisor-auth.types').AutorizacionSupervisorDto;
+
+export interface VehiculoOpcionEgreso {
+  placa: string;
+  nombreMarca?: string;
+  nombreLinea?: string;
+  claseVehiculo?: string;
+  modelo?: string;
+  tipoServicio?: string;
+}
 
 
 
@@ -237,6 +260,18 @@ export class EgresoService {
 
     return this.http.get<string[]>(`${this.base}/formas-pago`);
 
+  }
+
+  opcionesVehiculos(q = '', limit = 40): Observable<VehiculoOpcionEgreso[]> {
+    let params = new HttpParams().set('limit', String(limit));
+    if (q) params = params.set('q', q);
+    return this.http.get<VehiculoOpcionEgreso[]>(`${this.base}/vehiculos-opciones`, { params });
+  }
+
+  verificarPlacaVehiculo(placa: string): Observable<{ existe: boolean; vehiculo: VehiculoOpcionEgreso | null }> {
+    return this.http.get<{ existe: boolean; vehiculo: VehiculoOpcionEgreso | null }>(
+      `${this.base}/verificar-placa/${encodeURIComponent(placa)}`,
+    );
   }
 
 
@@ -324,19 +359,39 @@ export function configTipoEgreso(t?: TipoEgresoCat | null) {
 
   if (!t) {
 
-    return { requiereEmpleado: false, efectoNomina: '', generaDeduccion: false };
+    return { requiereEmpleado: false, requiereVehiculo: false, efectoNomina: '', generaDeduccion: false };
 
   }
 
   const efecto = String(t.efectoNomina || '').toLowerCase();
 
-  const req = flagActivo(t.requiereEmpleado);
+  const reqEmp = flagActivo(t.requiereEmpleado);
+
+  let reqVehi = flagActivo(t.requiereVehiculo);
 
   const generaDeduccion = efecto === 'prestamo' || efecto === 'abono_adelanto';
 
+  if (!reqVehi) {
+
+    const name = String(t.tipo || '')
+
+      .normalize('NFD')
+
+      .replace(/\p{M}/gu, '')
+
+      .trim()
+
+      .toUpperCase();
+
+    if (/VEHICULO|COMBUSTIBLE/.test(name)) reqVehi = true;
+
+  }
+
   return {
 
-    requiereEmpleado: req || generaDeduccion,
+    requiereEmpleado: reqEmp || generaDeduccion,
+
+    requiereVehiculo: reqVehi,
 
     efectoNomina: efecto,
 

@@ -9,6 +9,7 @@ const router = Router();
 router.use(requireAuth);
 
 const emitir = requirePermiso('alumnos.certificados');
+const verCertAlertas = requirePermiso('alumnos.certificados', 'jornadas.ver', 'jornadas.gestionar');
 const config = requirePermiso('config.certificados');
 
 router.get('/tipos', emitir, ctrl.tiposCertificado);
@@ -18,6 +19,7 @@ router.post('/plantillas', config, upload.certificados.single('fondo'), plantill
 router.put('/plantillas/:id', config, upload.certificados.single('fondo'), plantilla.actualizar);
 router.delete('/plantillas/:id', config, plantilla.eliminar);
 
+router.get('/recientes', verCertAlertas, ctrl.recientes);
 router.get('/elegibles/:numDoc', emitir, ctrl.elegibles);
 router.get('/alumno/:numDoc', emitir, ctrl.listarPorAlumno);
 router.get('/:id/html', emitir, render.html);

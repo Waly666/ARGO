@@ -14,6 +14,10 @@ import {
   capSesCert,
   capGenerado,
   etiquetaGenerado,
+  estadoContratoLiveClass,
+  labelEstadoContrato,
+  rowContratoClass,
+  esContratoEnEjecucion,
 } from './jornada-ui.util';
 
 const ESTADOS: ReadonlyArray<'En Ejecución' | 'Ejecutado'> = ['En Ejecución', 'Ejecutado'];
@@ -64,6 +68,9 @@ export class ContratosListaComponent implements OnInit {
 
   total = computed(() => this.contratos().length);
   totalFiltrado = computed(() => this.contratosFiltrados().length);
+  enEjecucionCount = computed(
+    () => this.contratos().filter((c) => esContratoEnEjecucion(c.estado)).length,
+  );
 
   capCliente = capCliente;
   capCodContrato = capCodContrato;
@@ -72,6 +79,9 @@ export class ContratosListaComponent implements OnInit {
   capSesCert = capSesCert;
   capGenerado = capGenerado;
   etiquetaGenerado = etiquetaGenerado;
+  estadoContratoLiveClass = estadoContratoLiveClass;
+  labelEstadoContrato = labelEstadoContrato;
+  rowContratoClass = rowContratoClass;
 
   ngOnInit(): void {
     this.cargar();
@@ -91,9 +101,8 @@ export class ContratosListaComponent implements OnInit {
     });
   }
 
-  capEstado(estado?: string): string {
-    if (estado === 'Ejecutado') return 'cap cap-slate cap-sm cap-text';
-    return 'cap cap-emerald cap-sm cap-text';
+  esEnEjecucion(c: ContratacionDto): boolean {
+    return esContratoEnEjecucion(c.estado);
   }
 
   labelCliente(c: ContratacionDto): string {
@@ -112,24 +121,6 @@ export class ContratosListaComponent implements OnInit {
   editarContrato(c: ContratacionDto) {
     if (!c._id) return;
     void this.router.navigate(['/app/jornadas'], { queryParams: { contrato: c._id } });
-  }
-
-  cambiarEstado(c: ContratacionDto, nuevoEstado: string) {
-    if (!c._id || c.estado === nuevoEstado) return;
-    if (!this.puedeGestionar()) {
-      this.mostrarMsg('No tiene permiso para cambiar el estado.', true);
-      return;
-    }
-    this.jornadaSvc.actualizarContrato(c._id, { ...c, estado: nuevoEstado }).subscribe({
-      next: (act) => {
-        this.contratos.update((arr) =>
-          arr.map((x) => (x._id === act._id ? act : x)),
-        );
-        this.mostrarMsg(`Contrato marcado como «${act.estado}».`);
-      },
-      error: (e) =>
-        this.mostrarMsg(e?.error?.message || 'No se pudo cambiar el estado.', true),
-    });
   }
 
   async eliminar(c: ContratacionDto) {
