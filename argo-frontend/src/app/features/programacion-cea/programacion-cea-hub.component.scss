@@ -1,0 +1,161 @@
+@use '../jornadas/jornadas-ui.scss';
+
+.cea-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cea-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line-soft, rgba(120, 170, 255, 0.1));
+}
+
+.cea-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cea-arrow {
+  opacity: 0.5;
+  color: var(--text-soft);
+}
+
+.badge-warn {
+  display: inline-flex;
+  min-width: 1.25rem;
+  justify-content: center;
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.85);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.cea-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cea-pasos {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.cea-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.cea-acciones-rapidas {
+  padding: 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 0.65rem;
+
+  h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+}
+
+.cea-acciones-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cea-card {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.cea-stat {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+}
+
+.cea-prog-alertas {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(249, 115, 22, 0.45);
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.field-block {
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.temas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.tema-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.4rem 0;
+  }
+}
+
+.tema-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.card-inner {
+  padding: 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+
+.festivos-list {
+  columns: 2;
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  padding: 0;
+}

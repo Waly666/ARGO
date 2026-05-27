@@ -83,7 +83,7 @@
   <ng-container *ngIf="!errorMsg() && (esNuevo() || store.hasAlumno())">
     <nav class="tabs">
       <button
-        *ngFor="let t of tabs"
+        *ngFor="let t of tabs()"
         type="button"
         class="tab"
         [class.active]="tab() === t.key"
@@ -108,6 +108,7 @@
       <argo-pagos                    *ngIf="tab() === 'pagos'"></argo-pagos>
       <argo-certificados             *ngIf="tab() === 'certificados'"></argo-certificados>
       <argo-documentos               *ngIf="tab() === 'documentos'"></argo-documentos>
+      <argo-alumno-programacion-cea  *ngIf="tab() === 'programacion'"></argo-alumno-programacion-cea>
     </div>
   </ng-container>
 </section>

@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { PermisoService } from '../../core/services/permiso.service';
 import { VehiculoInspeccionAlertService } from '../../core/services/vehiculo-inspeccion-alert.service';
 
 @Component({
@@ -14,7 +13,6 @@ import { VehiculoInspeccionAlertService } from '../../core/services/vehiculo-ins
 })
 export class VehiculoInspeccionBannerComponent {
   private alertSvc = inject(VehiculoInspeccionAlertService);
-  private permisos = inject(PermisoService);
   private router = inject(Router);
 
   visible = this.alertSvc.visible;
@@ -38,20 +36,15 @@ export class VehiculoInspeccionBannerComponent {
     return `Fecha ${r.fecha} · ${muestra}${extra}`;
   });
 
-  irVehiculos(ev?: Event) {
-    ev?.stopPropagation();
+  irVehiculos() {
     const primera = this.resumen()?.alertas?.[0];
-    if (primera?.vehiculoId && this.permisos.tiene('vehiculos')) {
+    if (primera?.vehiculoId) {
       void this.router.navigate(['/app/vehiculos', primera.vehiculoId], {
         queryParams: { tab: 'inspeccion' },
       });
       return;
     }
-    if (this.permisos.tiene('vehiculos')) {
-      void this.router.navigate(['/app/vehiculos']);
-      return;
-    }
-    void this.router.navigate(['/app/dashboard']);
+    void this.router.navigate(['/app/vehiculos']);
   }
 
   cerrar(ev: Event) {

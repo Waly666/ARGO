@@ -1,6 +1,13 @@
 :host {
   display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.head-alarm-wrap {
+  position: relative;
+  width: 100%;
 }
 
 .head-vehiculo-docs-row {
@@ -41,11 +48,12 @@
 
 .head-alarm {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   min-height: 3.35rem;
-  padding: 8px 12px;
+  padding: 8px 2rem 8px 12px;
   border-radius: var(--btn-radius);
   font-size: 0.78rem;
   font-weight: 700;
@@ -53,7 +61,6 @@
   cursor: pointer;
   border: 1px solid transparent;
   flex-shrink: 0;
-  max-width: min(100%, 36rem);
   box-sizing: border-box;
 
   &:hover {
@@ -112,14 +119,26 @@
 }
 
 .head-alarm-close {
-  margin-left: 4px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  margin: 0;
   padding: 0 4px;
   font-size: 1.1rem;
   line-height: 1;
   opacity: 0.85;
   flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  box-shadow: none;
+  cursor: pointer;
 
   &:hover {
     opacity: 1;
+    filter: none;
   }
 }
+
+@import '../../shared/styles/head-alarm-uniform';

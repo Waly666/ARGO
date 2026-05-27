@@ -1,0 +1,17 @@
+@if (visible()) {
+  <div class="head-alarm-wrap">
+    <button
+      type="button"
+      class="head-alarm alarm-cea-pendiente"
+      (click)="irPendientes()"
+      title="Hay alumnos o servicios CEA con horas sin programar">
+      <span class="head-alarm-pulse" aria-hidden="true"></span>
+      <span class="head-alarm-icon" aria-hidden="true">📅</span>
+      <span class="head-alarm-body">
+        <span class="head-alarm-title">Programación CEA pendiente</span>
+        <span class="head-alarm-detail">{{ detalle() }}</span>
+      </span>
+    </button>
+    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">×</button>
+  </div>
+}

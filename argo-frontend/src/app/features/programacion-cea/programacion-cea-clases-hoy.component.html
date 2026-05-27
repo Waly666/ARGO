@@ -1,0 +1,109 @@
+<section class="clases-hoy-page card">
+  <header class="page-head">
+    <div class="title">
+      <h1>Clases CEA de hoy</h1>
+      @if (esInstructorSolo()) {
+        <p class="hint">
+          Sus clases asignadas del día <strong>{{ hoyLabel() }}</strong>
+          (<strong>PROGRAMADA</strong>, <strong>EN PROCESO</strong> y <strong>FINALIZADO</strong>).
+        </p>
+      } @else {
+        <p class="hint">
+          Todas las clases CEA del día <strong>{{ hoyLabel() }}</strong>
+          (<strong>PROGRAMADA</strong>, <strong>EN PROCESO</strong> y <strong>FINALIZADO</strong>).
+        </p>
+      }
+    </div>
+    <div class="head-badges">
+      @if (enProcesoCount() > 0) {
+        <span class="live-badge estado-clase-live estado-clase-proceso">{{ enProcesoCount() }} en proceso</span>
+      }
+      @if (programadasCount() > 0) {
+        <span class="live-badge estado-clase-live estado-clase-programada">{{ programadasCount() }} programada(s)</span>
+      }
+      @if (finalizadasCount() > 0) {
+        <span class="live-badge cap cap-slate cap-sm cap-text">{{ finalizadasCount() }} finalizada(s)</span>
+      }
+    </div>
+  </header>
+
+  @if (msg(); as t) {
+    <div class="banner error" role="alert">
+      <span>{{ t }}</span>
+      <button type="button" class="close" (click)="cerrarMsg()" aria-label="Cerrar">×</button>
+    </div>
+  }
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="ic">◎</span>
+      <input
+        type="text"
+        placeholder="Buscar programa, instructor, aula, vehículo…"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+        autocomplete="off" />
+    </div>
+    <button type="button" class="ghost mini" (click)="cargar()">Actualizar</button>
+    <span class="count">{{ filtradas().length }} de {{ total() }} clase(s)</span>
+  </div>
+
+  <div class="content-wrap">
+    <p class="loading" *ngIf="loading()">Cargando clases de hoy…</p>
+
+    <table class="argo data-table" *ngIf="!loading()">
+      <thead>
+        <tr>
+          <th>Hora</th>
+          <th>Tipo</th>
+          <th>Programa</th>
+          <th>Tema / ubicación</th>
+          <th>Instructor</th>
+          <th>Inscritos</th>
+          <th>Estado</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of filtradas()" [ngClass]="rowClaseClass(c.estado)">
+          <td class="hora-cell">{{ c.horaDesde }}@if (c.horaHasta) { – {{ c.horaHasta }} }</td>
+          <td><span class="cap cap-sm" [class]="'tipo-' + c.tipoClase">{{ labelTipoClase(c.tipoClase) }}</span></td>
+          <td>{{ c.programaLabel || c.idProg || '—' }}</td>
+          <td>{{ c.temaNombre || ubicacionClase(c) }}</td>
+          <td>{{ c.instructorNombre || '—' }}</td>
+          <td>{{ c.inscritos ?? 0 }}/{{ c.cupoMaximo ?? '—' }}</td>
+          <td>
+            <span [ngClass]="estadoClaseLiveClass(c.estado)">{{ c.estado || '—' }}</span>
+          </td>
+          <td class="col-actions">
+            <div class="actions-cell">
+              @if (puedeOperar()) {
+                @if (c.estado === 'PROGRAMADA') {
+                  <button type="button" class="mini btn-operar" (click)="iniciarYOperar(c)">Iniciar</button>
+                } @else if (c.estado !== 'CANCELADA') {
+                  <button type="button" class="mini btn-editar" (click)="irHubClase(c)">Operar</button>
+                }
+              }
+              @if (puedeGestionar()) {
+                <button type="button" class="mini btn-gestionar" (click)="irHubClase(c)">Gestionar</button>
+              }
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filtradas().length === 0">
+          <td colspan="8" class="empty">
+            @if (total() === 0) {
+              @if (esInstructorSolo()) {
+                <p>No tiene clases CEA asignadas para hoy.</p>
+              } @else {
+                <p>No hay clases CEA programadas, en proceso ni finalizadas para hoy.</p>
+              }
+            } @else {
+              <p>No hay resultados para la búsqueda.</p>
+            }
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

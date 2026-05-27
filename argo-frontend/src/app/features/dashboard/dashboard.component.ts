@@ -16,12 +16,14 @@ import {
 } from './dashboard-chart.helpers';
 
 interface KpiCard {
+  id: string;
   icon: string;
   label: string;
   value: string | number;
   sub?: string;
   tone: string;
   link?: string;
+  spark?: number[];
 }
 
 interface NavChip {
@@ -73,16 +75,21 @@ export class DashboardComponent implements OnInit {
   colores = computed(() => this.stats()?.colores ?? []);
 
   kpiCards = computed((): KpiCard[] => {
-    const k = this.stats()?.kpis;
+    const s = this.stats();
+    const k = s?.kpis;
     const filtro = this.filtroActivo();
-    if (!k) return [];
+    if (!k || !s) return [];
     const ingLabel = filtro ? 'Ingresos (período)' : 'Ingresos del mes';
     const egrLabel = filtro ? 'Egresos (período)' : 'Egresos del mes';
     const ingSub = filtro ? undefined : `Histórico ${this.fmt(k.ingresosTotal)}`;
     const egrSub = filtro ? undefined : k.egresosTotal != null ? `Histórico ${this.fmt(k.egresosTotal)}` : undefined;
+    const ingresosSpark = s.ingresosPorMes.map((m) => m.total ?? 0);
+    const recibosSpark = s.ingresosPorMes.map((m) => m.cantidad ?? 0);
+    const certSpark = s.certificadosPorMes.map((m) => m.cantidad ?? 0);
     return [
-      { icon: '👥', label: 'Alumnos registrados', value: k.alumnos, tone: 'teal', link: '/app/alumnos' },
+      { id: 'alumnos', icon: '👥', label: 'Alumnos registrados', value: k.alumnos, tone: 'teal', link: '/app/alumnos' },
       {
+        id: 'matriculas',
         icon: '📋',
         label: 'Matrículas',
         value: k.matriculas,
@@ -90,9 +97,10 @@ export class DashboardComponent implements OnInit {
         tone: 'blue',
         link: '/app/alumnos',
       },
-      { icon: '🎓', label: 'Programas', value: k.programas, tone: 'purple', link: '/app/programas' },
-      { icon: '⚙', label: 'Servicios catálogo', value: k.servicios, tone: 'cyan', link: '/app/servicios' },
+      { id: 'programas', icon: '🎓', label: 'Programas', value: k.programas, tone: 'purple', link: '/app/programas' },
+      { id: 'servicios', icon: '⚙', label: 'Servicios catálogo', value: k.servicios, tone: 'cyan', link: '/app/servicios' },
       {
+        id: 'liquidaciones',
         icon: '📑',
         label: 'Liquidaciones',
         value: k.liquidaciones ?? 0,
@@ -101,22 +109,27 @@ export class DashboardComponent implements OnInit {
         link: '/app/cobros-pendientes',
       },
       {
+        id: 'recibos',
         icon: '💵',
         label: 'Recibos de caja',
         value: k.recibosTotal ?? 0,
         sub: k.ticketPromedio ? `Ticket prom. ${this.fmt(k.ticketPromedio)}` : undefined,
         tone: 'emerald',
         link: '/app/caja/ingresos-todos',
+        spark: recibosSpark.length > 1 ? recibosSpark : undefined,
       },
       {
+        id: 'ingresos',
         icon: '💰',
         label: ingLabel,
         value: k.ingresosMes,
         sub: ingSub,
         tone: 'emerald',
         link: '/app/caja/ingresos-todos',
+        spark: ingresosSpark.length > 1 ? ingresosSpark : undefined,
       },
       {
+        id: 'egresos',
         icon: '📤',
         label: egrLabel,
         value: k.egresosMes,
@@ -125,13 +138,16 @@ export class DashboardComponent implements OnInit {
         link: '/app/caja/egresos-todos',
       },
       {
+        id: 'certificados',
         icon: '📜',
         label: 'Certificados',
         value: k.certificados,
         sub: `+${k.certificadosMes} este mes`,
         tone: 'pink',
+        spark: certSpark.length > 1 ? certSpark : undefined,
       },
       {
+        id: 'cartera',
         icon: '⏳',
         label: 'Cartera por cobrar',
         value: k.carteraPendiente ?? 0,
@@ -140,6 +156,7 @@ export class DashboardComponent implements OnInit {
         link: '/app/cobros-pendientes',
       },
       {
+        id: 'cajas',
         icon: '🏦',
         label: 'Cajas cerradas',
         value: k.cajasCerradas,
@@ -148,6 +165,7 @@ export class DashboardComponent implements OnInit {
         link: '/app/cierres',
       },
       {
+        id: 'descuadres',
         icon: '⚠',
         label: 'Descuadres pendientes',
         value: k.descuadresPendientes,
@@ -158,8 +176,29 @@ export class DashboardComponent implements OnInit {
     ];
   });
 
+  private readonly kpiHeroIds = new Set(['ingresos', 'egresos', 'cartera', 'alumnos', 'matriculas', 'recibos']);
+
+  kpiHeroCards = computed(() => this.kpiCards().filter((k) => this.kpiHeroIds.has(k.id)));
+
+  kpiSecondaryCards = computed(() => this.kpiCards().filter((k) => !this.kpiHeroIds.has(k.id)));
+
   isMoneyKpi(label: string): boolean {
     return /ingreso|egreso|cartera|factur|prom|ticket/i.test(label);
+  }
+
+  sparklinePath(values: number[] | undefined, width = 120, height = 32): string {
+    if (!values?.length) return '';
+    const max = Math.max(...values, 1);
+    const min = Math.min(...values, 0);
+    const range = max - min || 1;
+    const step = width / Math.max(values.length - 1, 1);
+    return values
+      .map((v, i) => {
+        const x = i * step;
+        const y = height - ((v - min) / range) * (height - 6) - 3;
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
   }
 
   navChips = computed((): NavChip[] => [

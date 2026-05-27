@@ -37,6 +37,15 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'programacion_cea',
+    label: 'Programación CEA',
+    permisos: [
+      { key: 'programacion_cea.ver', label: 'Consultar programación, rastreo y calendario CEA' },
+      { key: 'programacion_cea.gestionar', label: 'Configurar, temas y programar clases CEA' },
+      { key: 'programacion_cea.operar', label: 'Operar clases CEA (inscribir, iniciar/finalizar)' },
+    ],
+  },
+  {
     id: 'caja',
     label: 'Caja',
     permisos: [

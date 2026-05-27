@@ -73,29 +73,48 @@
             Rol: <strong>{{ rolLabel() }}</strong>
           </span>
         </div>
-        @if (mostrarAlertaCaja() && !cajaEstado.loading() && cajaEstado.abierta() === false) {
-          <argo-caja-cerrada-banner class="head-caja-alarm" [blink]="true" />
-        }
-        @if (mostrarAlertaCertificado()) {
-          <argo-certificado-jornada-banner class="head-cert-alarm-wrap" />
-        }
-        @if (mostrarAlarmaJornadaProceso()) {
-          <argo-jornada-en-proceso-banner class="head-jornada-proceso-alarm" />
-        }
-        @if (mostrarAlertaDocsVehiculos()) {
-          <argo-vehiculo-docs-vencimiento-banner class="head-vehiculo-docs-alarm" />
-        }
-        @if (mostrarAlertaDocsFaltantesVehiculos()) {
-          <argo-vehiculo-docs-faltantes-banner class="head-vehiculo-docs-alarm" />
-        }
-        @if (mostrarAlertaInspeccionVehiculos()) {
-          <argo-vehiculo-inspeccion-banner class="head-vehiculo-docs-alarm" />
-        }
-        @if (mostrarAlertaDocsEmpleados()) {
-          <argo-empleado-docs-vencimiento-banner class="head-empleado-docs-alarm" />
-        }
-        @if (mostrarAlertaDocsFaltantesEmpleados()) {
-          <argo-empleado-docs-faltantes-banner class="head-empleado-docs-alarm" />
+        @if (mostrarAlarmasCabecera()) {
+        <div class="head-alarms-stack">
+          @if (mostrarAlertaCaja() && !cajaEstado.loading() && cajaEstado.abierta() === false) {
+            <argo-caja-cerrada-banner class="head-caja-alarm" [blink]="true" />
+          }
+          @if (mostrarBannerCertificado()) {
+            <argo-certificado-jornada-banner class="head-cert-alarm-wrap" />
+          }
+          @if (mostrarBannerJornadaProceso()) {
+            <argo-jornada-en-proceso-banner class="head-jornada-proceso-alarm" />
+          }
+          @if (mostrarFilaPapelesVehiculos()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Papeles de vehículos">
+              @if (mostrarBannerDocsVehiculosVencidos()) {
+                <argo-vehiculo-docs-vencimiento-banner />
+              }
+              @if (mostrarBannerDocsVehiculosFaltantes()) {
+                <argo-vehiculo-docs-faltantes-banner />
+              }
+            </div>
+          }
+          @if (mostrarBannerInspeccionVehiculos()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Inspección de vehículos">
+              <argo-vehiculo-inspeccion-banner />
+            </div>
+          }
+          @if (mostrarFilaEmpleados()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Documentos de empleados">
+              @if (mostrarBannerDocsEmpleadosVencidos()) {
+                <argo-empleado-docs-vencimiento-banner />
+              }
+              @if (mostrarBannerDocsEmpleadosFaltantes()) {
+                <argo-empleado-docs-faltantes-banner />
+              }
+            </div>
+          }
+          @if (mostrarBannerProgramacionCea()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Alerta programación CEA">
+              <argo-programacion-cea-pendiente-banner />
+            </div>
+          }
+        </div>
         }
         @if (mostrarToastJornadaLive()) {
           <argo-jornada-live-toast class="head-jornada-live-toast" />

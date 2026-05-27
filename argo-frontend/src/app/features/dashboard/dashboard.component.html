@@ -45,48 +45,102 @@
   <p class="loading-msg" *ngIf="loading()">Cargando indicadores…</p>
 
   <ng-container *ngIf="stats() && !loading()">
-    <div class="kpi-row">
-      <ng-container *ngFor="let k of kpiCards()">
-        <a *ngIf="k.link" class="kpi-card" [class]="'tone-' + k.tone" [routerLink]="k.link">
-          <span class="kpi-icon">{{ k.icon }}</span>
-          <div class="kpi-body">
-            <span class="kpi-label">{{ k.label }}</span>
-            <strong
-              class="kpi-value"
-              [class.kpi-value-count]="!isMoneyKpi(k.label)"
-              [attr.title]="
+    <section class="dash-hero">
+      <div class="kpi-hero-grid">
+        <ng-container *ngFor="let k of kpiHeroCards()">
+          <a *ngIf="k.link" class="kpi-card" [class]="'tone-' + k.tone" [routerLink]="k.link">
+            <span class="kpi-icon">{{ k.icon }}</span>
+            <div class="kpi-body">
+              <span class="kpi-label">{{ k.label }}</span>
+              <strong
+                class="kpi-value"
+                [class.kpi-value-count]="!isMoneyKpi(k.label)"
+                [attr.title]="
+                  isMoneyKpi(k.label) && typeof k.value === 'number'
+                    ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
+                    : k.value
+                ">{{
                 isMoneyKpi(k.label) && typeof k.value === 'number'
                   ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
                   : k.value
-              ">{{
-              isMoneyKpi(k.label) && typeof k.value === 'number'
-                ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
-                : k.value
-            }}</strong>
-            <span class="kpi-sub" *ngIf="k.sub" [attr.title]="k.sub">{{ k.sub }}</span>
-          </div>
-        </a>
-        <div *ngIf="!k.link" class="kpi-card static" [class]="'tone-' + k.tone">
-          <span class="kpi-icon">{{ k.icon }}</span>
-          <div class="kpi-body">
-            <span class="kpi-label">{{ k.label }}</span>
-            <strong
-              class="kpi-value"
-              [class.kpi-value-count]="!isMoneyKpi(k.label)"
-              [attr.title]="
+              }}</strong>
+              <span class="kpi-sub" *ngIf="k.sub" [attr.title]="k.sub">{{ k.sub }}</span>
+              <svg *ngIf="k.spark?.length" class="kpi-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+                <path [attr.d]="sparklinePath(k.spark)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </div>
+          </a>
+          <div *ngIf="!k.link" class="kpi-card static" [class]="'tone-' + k.tone">
+            <span class="kpi-icon">{{ k.icon }}</span>
+            <div class="kpi-body">
+              <span class="kpi-label">{{ k.label }}</span>
+              <strong
+                class="kpi-value"
+                [class.kpi-value-count]="!isMoneyKpi(k.label)"
+                [attr.title]="
+                  isMoneyKpi(k.label) && typeof k.value === 'number'
+                    ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
+                    : k.value
+                ">{{
                 isMoneyKpi(k.label) && typeof k.value === 'number'
                   ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
                   : k.value
-              ">{{
-              isMoneyKpi(k.label) && typeof k.value === 'number'
-                ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
-                : k.value
-            }}</strong>
-            <span class="kpi-sub" *ngIf="k.sub">{{ k.sub }}</span>
+              }}</strong>
+              <span class="kpi-sub" *ngIf="k.sub">{{ k.sub }}</span>
+              <svg *ngIf="k.spark?.length" class="kpi-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+                <path [attr.d]="sparklinePath(k.spark)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </div>
           </div>
-        </div>
-      </ng-container>
-    </div>
+        </ng-container>
+      </div>
+    </section>
+
+    <section class="kpi-secondary-block" *ngIf="kpiSecondaryCards().length">
+      <h2 class="dash-section-title">Más indicadores</h2>
+      <div class="kpi-row">
+        <ng-container *ngFor="let k of kpiSecondaryCards()">
+          <a *ngIf="k.link" class="kpi-card" [class]="'tone-' + k.tone" [routerLink]="k.link">
+            <span class="kpi-icon">{{ k.icon }}</span>
+            <div class="kpi-body">
+              <span class="kpi-label">{{ k.label }}</span>
+              <strong
+                class="kpi-value"
+                [class.kpi-value-count]="!isMoneyKpi(k.label)"
+                [attr.title]="
+                  isMoneyKpi(k.label) && typeof k.value === 'number'
+                    ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
+                    : k.value
+                ">{{
+                isMoneyKpi(k.label) && typeof k.value === 'number'
+                  ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
+                  : k.value
+              }}</strong>
+              <span class="kpi-sub" *ngIf="k.sub" [attr.title]="k.sub">{{ k.sub }}</span>
+            </div>
+          </a>
+          <div *ngIf="!k.link" class="kpi-card static" [class]="'tone-' + k.tone">
+            <span class="kpi-icon">{{ k.icon }}</span>
+            <div class="kpi-body">
+              <span class="kpi-label">{{ k.label }}</span>
+              <strong
+                class="kpi-value"
+                [class.kpi-value-count]="!isMoneyKpi(k.label)"
+                [attr.title]="
+                  isMoneyKpi(k.label) && typeof k.value === 'number'
+                    ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
+                    : k.value
+                ">{{
+                isMoneyKpi(k.label) && typeof k.value === 'number'
+                  ? (k.value | currency: 'COP':'symbol-narrow':'1.0-0')
+                  : k.value
+              }}</strong>
+              <span class="kpi-sub" *ngIf="k.sub">{{ k.sub }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
 
     <nav class="chip-nav">
       <a *ngFor="let c of navChips()" class="chip" [class]="'chip-' + c.tone" [routerLink]="c.path">{{

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 
 import {
   Empleado,
@@ -33,6 +33,7 @@ export class EmpleadosAdminComponent implements OnInit {
   private usuarioSvc = inject(UsuarioService);
   private confirm = inject(ConfirmDialogService);
   private auth = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   uploads = environment.uploadsUrl;
   fotoFile = signal<File | null>(null);
@@ -96,6 +97,7 @@ export class EmpleadosAdminComponent implements OnInit {
   ngOnInit(): void {
     this.cargarCatalogos();
     if (this.esAdmin()) this.cargarUsuarios();
+    this.route.queryParamMap.subscribe(() => this.aplicarQueryEmpleado());
     this.cargar();
   }
 
@@ -138,6 +140,7 @@ export class EmpleadosAdminComponent implements OnInit {
       next: (r) => {
         this.empleados.set(r || []);
         this.loading.set(false);
+        this.aplicarQueryEmpleado();
       },
       error: (e) => {
         this.loading.set(false);
@@ -183,9 +186,9 @@ export class EmpleadosAdminComponent implements OnInit {
     this.msg.set(null);
   }
 
-  editar(e: Empleado) {
+  editar(e: Empleado, seccion: FormSeccion = 'datos') {
     this.editando.set(e);
-    this.formSeccion.set('datos');
+    this.formSeccion.set(seccion);
     if (this.esAdmin()) this.cargarUsuarios();
     this.form.set({
       ...e,
@@ -204,6 +207,15 @@ export class EmpleadosAdminComponent implements OnInit {
     this.fotoPreview.set(e.urlFoto ? this.fotoUrl(e.urlFoto) : null);
     this.mostrarForm.set(true);
     this.msg.set(null);
+  }
+
+  private aplicarQueryEmpleado(): void {
+    const idRaw = this.route.snapshot.queryParamMap.get('empleado');
+    if (!idRaw) return;
+    const emp = this.empleados().find((e) => String(e.idEmpleado) === idRaw);
+    if (!emp) return;
+    const seccion = this.route.snapshot.queryParamMap.get('seccion') === 'documentos' ? 'documentos' : 'datos';
+    this.editar(emp, seccion);
   }
 
   private cargoSugiereAccesoDesde(e: Empleado): boolean {

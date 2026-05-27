@@ -160,18 +160,26 @@ export class VehiculoDetalleComponent implements OnInit {
     this.svc.listarClases().subscribe((rows) => this.clases.set(rows));
     this.svc.listarTiposDocumento().subscribe((rows) => this.tiposDocumento.set(rows));
 
+    this.route.queryParamMap.subscribe((q) => {
+      this.aplicarTabDesdeQuery(q.get('tab'));
+    });
+
     const id = this.route.snapshot.paramMap.get('id');
-    const tabParam = this.route.snapshot.queryParamMap.get('tab');
-    if (tabParam === 'documentos') {
-      this.tab.set('documentos');
-    } else if (tabParam === 'inspeccion') {
-      this.tab.set('inspeccion');
-    }
+    this.aplicarTabDesdeQuery(this.route.snapshot.queryParamMap.get('tab'));
 
     if (id && id !== 'nuevo') {
       this.esNuevo.set(false);
       this.vehiculoId.set(id);
       this.cargar(id);
+    }
+  }
+
+  private aplicarTabDesdeQuery(tabParam: string | null): void {
+    if (tabParam === 'documentos') {
+      this.tab.set('documentos');
+      if (this.vehiculoId()) this.cargarRequisitos();
+    } else if (tabParam === 'inspeccion') {
+      this.tab.set('inspeccion');
     }
   }
 

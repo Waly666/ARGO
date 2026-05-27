@@ -19,6 +19,16 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'programacion_cea',
+    label: 'Programación CEA',
+    alarmas: [
+      {
+        key: 'alarmas.programacion_cea.pendiente',
+        label: 'Alumnos/servicios CEA con horas sin programar (banner superior)',
+      },
+    ],
+  },
+  {
     id: 'vehiculos',
     label: 'Vehículos',
     alarmas: [
@@ -62,6 +72,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
   ],
   instructor: [
     'alarmas.jornadas.certificado_nuevo',
+    'alarmas.programacion_cea.pendiente',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -76,6 +87,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.vehiculos.inspeccion_pendiente',
     'alarmas.empleados.docs_vencidos',
     'alarmas.empleados.docs_faltantes',
+    'alarmas.programacion_cea.pendiente',
   ],
   usuario: [
     'alarmas.vehiculos.docs_vencidos',

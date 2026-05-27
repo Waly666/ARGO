@@ -29,6 +29,7 @@ const ETIQUETAS = {
   carrocerias: 'Carrocerías',
   divipola: 'Divipola (municipios)',
   aulas: 'Aulas',
+  talleres: 'Talleres / patios / parqueaderos',
   itemDocumentosVehiculo: 'Documentos vehículo',
   itemDocumentosInstructores: 'Documentos instructores',
   itemsEstGral: 'Ítems estado general',
@@ -63,6 +64,7 @@ const ID_FIELDS_HINT = {
   carrocerias: ['idCarroceria'],
   divipola: ['codMunicipio'],
   aulas: ['idAula'],
+  talleres: ['idTaller'],
   itemDocumentosVehiculo: ['idDocVehi'],
   itemDocumentosInstructores: ['idDocInst'],
   itemsEstGral: ['idItemEsGral'],
@@ -70,6 +72,7 @@ const ID_FIELDS_HINT = {
 
 /** Campos válidos por catálogo (evita columnas basura del Excel en admin). */
 const CAMPOS_ESQUEMA = {
+  talleres: ['idTaller', 'nombre', 'ubicacion', 'activo'],
   itemDocumentosVehiculo: ['idDocVehi', 'documentoVehi', 'descripcionDocVehi', 'controlaVencimiento'],
   itemDocumentosInstructores: ['idDocInst', 'documentoInst', 'descripcionDocInst', 'controlaVencimiento'],
   itemsEstGral: ['idItemEsGral', 'item', 'idClases'],

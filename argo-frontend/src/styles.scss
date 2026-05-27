@@ -10,6 +10,12 @@
   --line: rgba(120, 170, 255, 0.18);
   --line-soft: rgba(120, 170, 255, 0.10);
 
+  --surface: rgba(12, 22, 48, 0.72);
+  --surface-elevated: rgba(16, 28, 58, 0.92);
+  --surface-muted: rgba(8, 16, 36, 0.78);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.16);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.24);
+
   --text: #e6eeff;
   --text-dim: #9fb3e0;
   --text-soft: #7f95c4;
@@ -22,9 +28,9 @@
   --warn: #fbbd23;
   --err: #f87272;
 
-  --radius: 10px;
-  --radius-lg: 16px;
-  --btn-radius: 6px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --btn-radius: 8px;
 
   /* Colores botones estilo dashboard */
   --btn-emerald: #10b981;
@@ -201,13 +207,12 @@ button.danger.mini {
 .btn-dash-amber   { background: linear-gradient(180deg, var(--btn-amber), var(--btn-amber-d)); }
 
 .card {
-  background: linear-gradient(180deg, rgba(10, 26, 58, 0.85), rgba(6, 16, 41, 0.85));
-  border: 1px solid var(--line);
+  background: var(--surface-elevated);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
   padding: 1.1rem 1.2rem;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
-              0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Botones principales de página (Nuevo, Crear…) */
@@ -565,6 +570,176 @@ table.argo .empty {
     border-color: rgba(34, 197, 94, 0.45);
     box-shadow: none;
   }
+}
+
+/* Alarmas del topbar — ancho completo, separación mínima entre tarjetas */
+.topbar-left .head-alarms-stack {
+  --head-alarm-height: 3.35rem;
+  gap: 4px;
+  overflow: visible;
+}
+
+.topbar-left .head-alarms-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  justify-items: stretch;
+  width: 100%;
+}
+
+.topbar-left .head-jornada-proceso-row {
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+.topbar-left .head-cert-alerts {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
+.topbar-left .head-alarms-stack .head-alarm,
+.topbar-left .head-alarms-stack .head-alarm-wrap .head-alarm {
+  height: var(--head-alarm-height) !important;
+  min-height: var(--head-alarm-height) !important;
+  max-height: var(--head-alarm-height) !important;
+  overflow: visible !important;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.topbar-left .head-alarms-stack .head-alarm-wrap {
+  height: var(--head-alarm-height) !important;
+  min-height: var(--head-alarm-height) !important;
+  max-height: var(--head-alarm-height) !important;
+  overflow: visible;
+}
+
+.topbar-left .head-alarms-stack .head-alarm-body {
+  min-height: 0 !important;
+  height: auto;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+  gap: 1px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.topbar-left .head-alarms-stack .head-alarm-icon,
+.topbar-left .head-alarms-stack .head-alarm-close {
+  position: relative;
+  z-index: 1;
+}
+
+.topbar-left .head-alarms-stack .head-alarm-pulse {
+  z-index: 0;
+  pointer-events: none;
+}
+
+.topbar-left .head-alarms-stack .head-alarm-title,
+.topbar-left .head-alarms-stack .head-alarm-detail,
+.topbar-left .head-alarms-stack .head-alarm-text,
+.topbar-left .head-alarms-stack .head-alarm-direccion {
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.topbar-left .head-alarms-stack .head-caja-alarm {
+  margin-top: 0;
+  max-width: 100%;
+}
+
+.topbar-left .head-alarms-stack .head-caja-alarm .estado-caja {
+  height: var(--head-alarm-height) !important;
+  min-height: var(--head-alarm-height) !important;
+  max-height: var(--head-alarm-height) !important;
+  overflow: visible;
+  padding: 6px 10px;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.topbar-left .head-alarms-stack .head-caja-alarm .estado-body {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.topbar-left .head-alarms-stack .head-caja-alarm .estado-body strong {
+  display: block;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-left .head-alarms-stack .head-caja-alarm .estado-body p {
+  display: none;
+}
+
+.topbar-left .head-alarms-stack .head-caja-alarm .btn-abrir.sm {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+.topbar-left .head-alarms-stack .head-alarm-close {
+  top: 50% !important;
+  transform: translateY(-50%);
+}
+
+.topbar-left .head-alarms-grid > *:empty,
+.topbar-left .head-alarms-stack > *:empty {
+  display: none !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.topbar-left .head-alarms-grid > *,
+.topbar-left .head-alarms-stack > .head-caja-alarm {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.topbar-left .head-alarms-stack > .head-cert-alarm-wrap,
+.topbar-left .head-alarms-stack > .head-jornada-proceso-alarm {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.topbar-left .head-jornada-proceso-row > *,
+.topbar-left .head-cert-alerts > * {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.topbar-left .head-jornada-proceso-row > * {
+  width: auto;
+}
+
+.topbar-left .head-alarm-wrap,
+.topbar-left .head-alarm {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .head-saldos,
@@ -974,3 +1149,5 @@ table.argo .empty {
     .card-actions { justify-content: flex-end; }
   }
 }
+
+@import 'app/theme/argo-neuro-theme.scss';

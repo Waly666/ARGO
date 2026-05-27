@@ -22,6 +22,8 @@ import { InspeccionVehiculoService } from '../../core/services/inspeccion-vehicu
 import { EmpleadoDocsAlertService } from '../../core/services/empleado-docs-alert.service';
 import { EmpleadoDocsFaltantesAlertService } from '../../core/services/empleado-docs-faltantes-alert.service';
 import { EmpleadoService } from '../../core/services/empleado.service';
+import { ProgramacionCeaPendienteAlertService } from '../../core/services/programacion-cea-pendiente-alert.service';
+import { ProgramacionCeaService } from '../../core/services/programacion-cea.service';
 import { CajaCerradaBannerComponent } from '../../features/caja/caja-cerrada-banner.component';
 import { CertificadoJornadaBannerComponent } from '../../features/jornadas/certificado-jornada-banner.component';
 import { JornadaEnProcesoBannerComponent } from '../../features/jornadas/jornada-en-proceso-banner.component';
@@ -31,6 +33,7 @@ import { VehiculoDocsFaltantesBannerComponent } from '../../features/vehiculos/v
 import { VehiculoInspeccionBannerComponent } from '../../features/vehiculos/vehiculo-inspeccion-banner.component';
 import { EmpleadoDocsVencimientoBannerComponent } from '../../features/rrhh/empleado-docs-vencimiento-banner.component';
 import { EmpleadoDocsFaltantesBannerComponent } from '../../features/rrhh/empleado-docs-faltantes-banner.component';
+import { ProgramacionCeaPendienteBannerComponent } from '../../features/programacion-cea/programacion-cea-pendiente-banner.component';
 
 interface MenuLink {
   kind: 'link';
@@ -64,7 +67,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -84,6 +87,8 @@ export class ShellComponent {
   private empleadoSvc = inject(EmpleadoService);
   private empleadoDocsAlert = inject(EmpleadoDocsAlertService);
   private empleadoDocsFaltantesAlert = inject(EmpleadoDocsFaltantesAlertService);
+  private programacionCeaAlert = inject(ProgramacionCeaPendienteAlertService);
+  private programacionCeaSvc = inject(ProgramacionCeaService);
   private vehiculoSvc = inject(VehiculoService);
   private inspeccionSvc = inject(InspeccionVehiculoService);
   readonly cajaEstado = inject(CajaEstadoService);
@@ -154,6 +159,59 @@ export class ShellComponent {
   mostrarAlertaDocsEmpleados = computed(() => this.alarmas.tiene('alarmas.empleados.docs_vencidos'));
 
   mostrarAlertaDocsFaltantesEmpleados = computed(() => this.alarmas.tiene('alarmas.empleados.docs_faltantes'));
+
+  mostrarAlertaProgramacionCea = computed(() => this.alarmas.tiene('alarmas.programacion_cea.pendiente'));
+
+  mostrarBannerCertificado = computed(
+    () => this.mostrarAlertaCertificado() && this.certAlertSvc.alertas().length > 0,
+  );
+
+  mostrarBannerJornadaProceso = computed(
+    () => this.mostrarAlarmaJornadaProceso() && this.jornadaProcesoAlert.visible(),
+  );
+
+  mostrarBannerDocsVehiculosVencidos = computed(
+    () => this.mostrarAlertaDocsVehiculos() && this.vehiculoDocsAlert.visible(),
+  );
+
+  mostrarBannerDocsVehiculosFaltantes = computed(
+    () => this.mostrarAlertaDocsFaltantesVehiculos() && this.vehiculoDocsFaltantesAlert.visible(),
+  );
+
+  mostrarBannerInspeccionVehiculos = computed(
+    () => this.mostrarAlertaInspeccionVehiculos() && this.vehiculoInspeccionAlert.visible(),
+  );
+
+  mostrarBannerDocsEmpleadosVencidos = computed(
+    () => this.mostrarAlertaDocsEmpleados() && this.empleadoDocsAlert.visible(),
+  );
+
+  mostrarBannerDocsEmpleadosFaltantes = computed(
+    () => this.mostrarAlertaDocsFaltantesEmpleados() && this.empleadoDocsFaltantesAlert.visible(),
+  );
+
+  mostrarBannerProgramacionCea = computed(
+    () => this.mostrarAlertaProgramacionCea() && this.programacionCeaAlert.visible(),
+  );
+
+  mostrarFilaPapelesVehiculos = computed(
+    () => this.mostrarBannerDocsVehiculosVencidos() || this.mostrarBannerDocsVehiculosFaltantes(),
+  );
+
+  mostrarFilaEmpleados = computed(
+    () => this.mostrarBannerDocsEmpleadosVencidos() || this.mostrarBannerDocsEmpleadosFaltantes(),
+  );
+
+  mostrarAlarmasCabecera = computed(
+    () =>
+      (this.mostrarAlertaCaja() && !this.cajaEstado.loading() && this.cajaEstado.abierta() === false) ||
+      this.mostrarBannerCertificado() ||
+      this.mostrarBannerJornadaProceso() ||
+      this.mostrarFilaPapelesVehiculos() ||
+      this.mostrarBannerInspeccionVehiculos() ||
+      this.mostrarFilaEmpleados() ||
+      this.mostrarBannerProgramacionCea(),
+  );
 
   private readonly menuAll: MenuEntry[] = [
     { kind: 'link', label: 'Dashboard', icon: '◆', path: '/app/dashboard', iconTone: 'violet', permiso: 'dashboard' },
@@ -240,6 +298,39 @@ export class ShellComponent {
     },
     { kind: 'link', label: 'Facturación', icon: '$', path: '/app/facturacion', iconTone: 'emerald', permiso: 'facturacion' },
     { kind: 'link', label: 'Instructores', icon: '◈', path: '/app/instructores', iconTone: 'orange', permiso: 'instructores' },
+    {
+      kind: 'group',
+      label: 'Programación CEA',
+      icon: '📅',
+      iconTone: 'blue',
+      permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+      children: [
+        {
+          kind: 'link',
+          label: 'Hub programación',
+          path: '/app/programacion-cea',
+          icon: '▦',
+          iconTone: 'indigo',
+          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+        },
+        {
+          kind: 'link',
+          label: 'Clases de hoy',
+          path: '/app/programacion-cea/clases-hoy',
+          icon: '◷',
+          iconTone: 'cyan',
+          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+        },
+        {
+          kind: 'link',
+          label: 'Pendientes',
+          path: '/app/programacion-cea',
+          icon: '⚠',
+          iconTone: 'amber',
+          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+        },
+      ],
+    },
     {
       kind: 'group',
       label: 'Flujo de Caja',
@@ -507,6 +598,7 @@ export class ShellComponent {
     this.iniciarPollJornadasLive();
     this.iniciarPollAlertasVehiculos();
     this.iniciarPollAlertasEmpleados();
+    this.iniciarPollAlertasProgramacionCea();
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -579,6 +671,24 @@ export class ShellComponent {
         });
       } else {
         this.empleadoDocsFaltantesAlert.actualizar(null);
+      }
+    };
+    poll();
+    interval(60_000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => poll());
+  }
+
+  /** Alumnos/servicios CEA con horas sin programar. */
+  private iniciarPollAlertasProgramacionCea(): void {
+    const poll = () => {
+      if (this.mostrarAlertaProgramacionCea()) {
+        this.programacionCeaSvc.alertasPendientes().subscribe({
+          next: (data) => this.programacionCeaAlert.actualizar(data),
+          error: () => undefined,
+        });
+      } else {
+        this.programacionCeaAlert.actualizar(null);
       }
     };
     poll();

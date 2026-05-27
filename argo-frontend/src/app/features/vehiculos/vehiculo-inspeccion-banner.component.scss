@@ -1,10 +1,23 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.head-alarm-wrap {
+  position: relative;
+  width: 100%;
+}
+
 @import './vehiculo-docs-faltantes-banner.component.scss';
 
 .head-alarm.alarm-vehiculo-inspeccion {
   border-color: rgba(251, 191, 36, 0.55);
-  background: linear-gradient(90deg, rgba(120, 53, 15, 0.45), rgba(30, 20, 5, 0.35));
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.42), rgba(120, 53, 15, 0.62));
+  color: #fef3c7;
 }
 
 .head-alarm.alarm-vehiculo-inspeccion .head-alarm-pulse {
-  background: rgba(251, 191, 36, 0.35);
+  border-color: rgba(251, 191, 36, 0.55);
 }

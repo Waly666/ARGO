@@ -159,6 +159,24 @@ export const routes: Routes = [
           import('./features/instructores/instructores-lista.component').then((m) => m.InstructoresListaComponent),
       },
       {
+        path: 'programacion-cea',
+        canActivate: [permisoGuard],
+        data: { permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
+        loadComponent: () =>
+          import('./features/programacion-cea/programacion-cea-hub.component').then(
+            (m) => m.ProgramacionCeaHubComponent,
+          ),
+      },
+      {
+        path: 'programacion-cea/clases-hoy',
+        canActivate: [permisoGuard],
+        data: { permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
+        loadComponent: () =>
+          import('./features/programacion-cea/programacion-cea-clases-hoy.component').then(
+            (m) => m.ProgramacionCeaClasesHoyComponent,
+          ),
+      },
+      {
         path: 'cobros-pendientes',
         canActivate: [permisoGuard],
         data: { permiso: ['caja.cobros', 'caja.turno'] },

@@ -488,6 +488,8 @@ module.exports = {
   etiquetaSemestre,
   generarCodigoProg,
   buscarPrograma,
+  idProgDePrograma,
+  filtroIdProg,
   programaUsaSemestres,
   repartirValor,
   descrServicioSemestre,

@@ -4,12 +4,11 @@
 }
 
 .head-jornada-proceso-row {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
   gap: 8px;
   width: 100%;
+  max-width: 100%;
 }
 
 @keyframes head-alarm-blink-proceso {
@@ -85,9 +84,10 @@
 
 .head-alarm {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   min-height: 3.35rem;
   padding: 8px 12px;
   border-radius: var(--btn-radius);
@@ -96,8 +96,8 @@
   letter-spacing: 0.02em;
   cursor: pointer;
   border: 1px solid transparent;
-  flex-shrink: 0;
-  max-width: min(100%, 28rem);
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
 
   &:hover {
@@ -208,4 +208,12 @@
   &:hover {
     opacity: 1;
   }
+}
+
+@import '../../shared/styles/head-alarm-uniform';
+
+:host {
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }

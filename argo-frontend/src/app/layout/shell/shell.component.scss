@@ -296,14 +296,36 @@
   strong { color: var(--text); font-weight: 600; }
 }
 
+.head-alarms-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
 .head-caja-alarm,
 .head-cert-alarm-wrap,
-.head-jornada-proceso-alarm,
-.head-vehiculo-docs-alarm,
-.head-empleado-docs-alarm {
-  margin-top: 10px;
-  max-width: 100%;
+.head-jornada-proceso-alarm {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.head-alarms-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 100%;
+  align-items: stretch;
+  justify-items: stretch;
+}
+
+.head-alarms-grid-wide {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .head-jornada-proceso-alarm {

@@ -1,9 +1,9 @@
 @if (visible()) {
-  <div class="head-empleado-docs-row">
+  <div class="head-alarm-wrap">
     <button
       type="button"
       class="head-alarm alarm-empleado-docs-faltantes"
-      (click)="irEmpleados($event)"
+      (click)="irEmpleados()"
       [title]="detalle() || 'Hay empleados con documentos requeridos sin registrar'">
       <span class="head-alarm-pulse" aria-hidden="true"></span>
       <span class="head-alarm-icon" aria-hidden="true">📄</span>
@@ -11,13 +11,7 @@
         <span class="head-alarm-title"><strong>Docs empleados incompletos</strong> · {{ titulo() }}</span>
         <span class="head-alarm-detail">{{ detalle() }}</span>
       </span>
-      <span
-        class="head-alarm-close"
-        role="button"
-        tabindex="0"
-        (click)="cerrar($event)"
-        (keydown.enter)="cerrar($event)"
-        aria-label="Cerrar aviso">×</span>
     </button>
+    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">×</button>
   </div>
 }

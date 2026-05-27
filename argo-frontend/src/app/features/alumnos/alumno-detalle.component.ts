@@ -13,11 +13,13 @@ import { ServiciosComponent } from './tabs/servicios.component';
 import { PagosComponent } from './tabs/pagos.component';
 import { CertificadosComponent } from './tabs/certificados.component';
 import { DocumentosComponent } from './tabs/documentos.component';
+import { AlumnoProgramacionCeaComponent } from './tabs/programacion-cea.component';
+import { PermisoService } from '../../core/services/permiso.service';
 import { environment } from '../../../environments/environment';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../core/utils/saldo-alerta.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
 
-type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos';
+type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos' | 'programacion';
 
 @Component({
   selector: 'argo-alumno-detalle',
@@ -29,6 +31,7 @@ type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos';
     PagosComponent,
     CertificadosComponent,
     DocumentosComponent,
+    AlumnoProgramacionCeaComponent,
   ],
   templateUrl: './alumno-detalle.component.html',
   styleUrls: ['./alumno-detalle.component.scss'],
@@ -38,6 +41,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private alumnoSvc = inject(AlumnoService);
   private liqSvc = inject(LiquidacionService);
+  private permisos = inject(PermisoService);
   readonly alarmas = inject(AlarmaService);
   store = inject(AlumnoStore);
 
@@ -63,13 +67,21 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     this.esJornadas() ? '← Lista alumnos jornada' : '← Lista',
   );
 
-  tabs: { key: TabKey; label: string }[] = [
+  tabsBase: { key: TabKey; label: string }[] = [
     { key: 'datos',        label: 'Datos Principales' },
     { key: 'servicios',    label: 'Servicios' },
     { key: 'pagos',        label: 'Pagos' },
     { key: 'certificados', label: 'Certificados' },
     { key: 'documentos',   label: 'Documentos' },
+    { key: 'programacion', label: 'Programación CEA' },
   ];
+
+  tabs = computed(() => {
+    if (!this.permisos.tiene(['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'])) {
+      return this.tabsBase.filter((t) => t.key !== 'programacion');
+    }
+    return this.tabsBase;
+  });
 
   docsPendientes = signal<DocumentoPendienteRes[]>([]);
 
@@ -131,7 +143,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
 
     this.route.queryParamMap.subscribe((q) => {
       const t = q.get('tab') as TabKey | null;
-      if (t && this.tabs.some((x) => x.key === t) && (!this.esNuevo() || t === 'datos')) {
+      if (t && this.tabs().some((x) => x.key === t) && (!this.esNuevo() || t === 'datos')) {
         this.tab.set(t);
       }
     });

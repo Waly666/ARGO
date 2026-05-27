@@ -1,1 +1,13 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.head-alarm-wrap {
+  position: relative;
+  width: 100%;
+}
+
 @import './empleado-docs-vencimiento-banner.component.scss';

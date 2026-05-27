@@ -3,12 +3,12 @@
 }
 
 .head-cert-alerts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  width: 100%;
   max-width: 100%;
+  margin-top: 0;
 }
 
 @keyframes head-alarm-blink-cert-tone {
@@ -42,7 +42,7 @@
 
 .head-alarm {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
@@ -195,4 +195,12 @@
   --cert-glow-soft: rgba(100, 116, 139, 0.2);
   --cert-chip-bg: rgba(100, 116, 139, 0.28);
   --cert-chip-border: rgba(203, 213, 225, 0.45);
+}
+
+@import '../../shared/styles/head-alarm-uniform';
+
+:host {
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }

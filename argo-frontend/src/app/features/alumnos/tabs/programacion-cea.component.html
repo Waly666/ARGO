@@ -1,0 +1,68 @@
+<section class="programacion-cea-tab">
+  <header class="tab-head">
+    <div>
+      <h3>Programación CEA</h3>
+      <p class="hint">
+        Horas de teoría, taller y práctica de la matrícula y de servicios adicionales
+        <strong>HORA CLASE PRÁCTICA</strong>.
+      </p>
+    </div>
+    <div class="head-actions">
+      <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
+      <button type="button" class="ghost sm" (click)="irProgramacion()">Ir a programación</button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="hint">Cargando rastreo…</p>
+  } @else if (error()) {
+    <div class="banner error" role="alert">{{ error() }}</div>
+  } @else if (!filas().length) {
+    <p class="hint ok-text">Este alumno no tiene horas CEA registradas para rastrear.</p>
+  } @else {
+    @if (pendientesCount() > 0) {
+      <div class="resumen-warn">
+        <strong>{{ totalPendientes() }}</strong> hora(s) pendiente(s) en
+        <strong>{{ pendientesCount() }}</strong> registro(s).
+        <button type="button" class="linkish" (click)="irPendientes()">Ver pendientes globales</button>
+      </div>
+    } @else {
+      <p class="hint ok-text">Todas las horas CEA están programadas o completadas.</p>
+    }
+
+    <div class="table-wrap content-wrap">
+      <table class="argo data-table">
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>Origen</th>
+            <th>Tipo</th>
+            <th>Req.</th>
+            <th>Prog.</th>
+            <th>Ejec.</th>
+            <th>Pend.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track f.idLiq + f.tipoHoras + f.origenHoras) {
+            <tr>
+              <td>{{ f.servicioLabel }}</td>
+              <td>{{ labelOrigen(f.origenHoras) }}</td>
+              <td>{{ labelTipo(f.tipoHoras) }}</td>
+              <td>{{ f.requeridas }}</td>
+              <td>{{ f.programadas }}</td>
+              <td>{{ f.ejecutadas }}</td>
+              <td [class.warn-text]="f.pendientes > 0"><strong>{{ f.pendientes }}</strong></td>
+              <td>
+                @if (f.completo) {
+                  <span class="ok-badge">Completo</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

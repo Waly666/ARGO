@@ -3,7 +3,6 @@ import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { EmpleadoDocsAlertService } from '../../core/services/empleado-docs-alert.service';
-import { PermisoService } from '../../core/services/permiso.service';
 
 @Component({
   selector: 'argo-empleado-docs-vencimiento-banner',
@@ -14,7 +13,6 @@ import { PermisoService } from '../../core/services/permiso.service';
 })
 export class EmpleadoDocsVencimientoBannerComponent {
   private alertSvc = inject(EmpleadoDocsAlertService);
-  private permisos = inject(PermisoService);
   private router = inject(Router);
 
   visible = this.alertSvc.visible;
@@ -50,13 +48,13 @@ export class EmpleadoDocsVencimientoBannerComponent {
     return `${emp} afectado(s)${muestra ? `: ${muestra}${extra}` : ''}`;
   });
 
-  irEmpleados(ev?: Event) {
-    ev?.stopPropagation();
-    if (this.permisos.tiene('rrhh')) {
-      void this.router.navigate(['/app/rrhh/empleados']);
-      return;
+  irEmpleados() {
+    const primera = this.resumen()?.alertas?.[0];
+    const queryParams: Record<string, string> = { seccion: 'documentos' };
+    if (primera?.idEmpleado != null) {
+      queryParams['empleado'] = String(primera.idEmpleado);
     }
-    void this.router.navigate(['/app/dashboard']);
+    void this.router.navigate(['/app/rrhh/empleados'], { queryParams });
   }
 
   cerrar(ev: Event) {

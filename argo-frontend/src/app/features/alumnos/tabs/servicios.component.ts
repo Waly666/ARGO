@@ -216,6 +216,7 @@ export class ServiciosComponent {
     const alumnoId = this.store.alumno()?._id;
     if (!nd) { this.setMsg('Selecciona o crea un alumno primero.', true); return; }
     if (!this.idProg()) { this.setMsg('Selecciona un programa.', true); return; }
+    const prog = this.programaSel();
     this.setMsg(null, false);
     this.matSvc.crear({ numDoc: nd, idPrograma: this.idProg(), tarifa: this.tarifa() }).subscribe({
       next: () => {
@@ -223,7 +224,10 @@ export class ServiciosComponent {
         this.tarifa.set(1);
         this.docsPendientesMat.set([]);
         this.recargar(nd);
-        this.setMsg('Matrícula creada. Se generaron los ítems de liquidación del programa.', false);
+        const avisoCea = this.esProgramaCea(prog)
+          ? ' Debe programar las horas CEA (teoría, taller y práctica) en Programación CEA.'
+          : '';
+        this.setMsg(`Matrícula creada. Se generaron los ítems de liquidación del programa.${avisoCea}`, false);
       },
       error: (e) => this.setMsg(e?.error?.message || 'Error creando matrícula.', true),
     });
@@ -280,6 +284,7 @@ export class ServiciosComponent {
       );
       return;
     }
+    const servicio = this.servicioSel();
     this.msg.set(null);
     this.liqSvc
       .crear({
@@ -298,7 +303,10 @@ export class ServiciosComponent {
           this.servCantidad.set(1);
           this.cargarServicios();
           this.recargar(nd);
-          this.msg.set('Servicio adicional agregado.');
+          const avisoPractica = this.esHoraPractica(servicio)
+            ? ' Programe estas horas prácticas en Programación CEA.'
+            : '';
+          this.msg.set(`Servicio adicional agregado.${avisoPractica}`);
         },
         error: (e) => this.msg.set(e?.error?.message || 'Error agregando servicio.'),
       });
@@ -407,6 +415,15 @@ export class ServiciosComponent {
     if (!s) return false;
     if (s.rolServicio === 'hora_practica') return true;
     return /\bhoras?\b.*\bpractic/i.test(String(s.descrServicio || s.descripcion || ''));
+  }
+
+  private esProgramaCea(p: {
+    horasTeoria?: unknown;
+    horasPractica?: unknown;
+    horasTaller?: unknown;
+  } | null | undefined): boolean {
+    if (!p) return false;
+    return this.num(p.horasTeoria) + this.num(p.horasPractica) + this.num(p.horasTaller) > 0;
   }
 
   private setMsg(text: string | null, isErr: boolean) {

@@ -20,6 +20,7 @@ const dashboard = require('./dashboard');
 const roles = require('./roles');
 const jornadas = require('./jornadas');
 const vehiculos = require('./vehiculos');
+const programacionCea = require('./programacionCea');
 
 const router = Router();
 
@@ -43,5 +44,6 @@ router.use('/dashboard', dashboard);
 router.use('/roles', roles);
 router.use('/jornadas', jornadas);
 router.use('/vehiculos', vehiculos);
+router.use('/programacion-cea', programacionCea);
 
 module.exports = router;

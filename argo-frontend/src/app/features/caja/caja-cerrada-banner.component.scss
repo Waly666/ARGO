@@ -75,3 +75,43 @@
     font-size: 0.82rem;
   }
 }
+
+@import '../../shared/styles/head-alarm-uniform';
+
+:host(.head-caja-alarm) {
+  margin-top: 0;
+  max-width: 100%;
+}
+
+:host(.head-caja-alarm) .estado-caja {
+  height: 3.35rem;
+  min-height: 3.35rem;
+  max-height: 3.35rem;
+  overflow: visible;
+  padding: 6px 10px;
+  box-sizing: border-box;
+}
+
+:host(.head-caja-alarm) .estado-body {
+  overflow: hidden;
+  min-width: 0;
+}
+
+:host(.head-caja-alarm) .estado-body strong {
+  display: block;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:host(.head-caja-alarm) .estado-body p {
+  display: none;
+}
+
+:host(.head-caja-alarm) .btn-abrir.sm {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}

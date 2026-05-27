@@ -170,6 +170,27 @@ export function layoutHorarioClase(
   };
 }
 
+/** Posición en rejilla semanal a partir de horas HH:mm (programación CEA). */
+export function layoutHorarioHHmm(horaDesde?: string | null, horaHasta?: string | null): LayoutHorario {
+  const parse = (h?: string | null) => {
+    const m = String(h ?? '').trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    return Number(m[1]) * 60 + Number(m[2]);
+  };
+  const iniMin = parse(horaDesde);
+  if (iniMin == null) return { topPct: 0, heightPct: 0, sinHorario: true };
+  const finMin = parse(horaHasta) ?? iniMin + 60;
+  const start = HORA_INICIO * 60;
+  const end = HORA_FIN * 60;
+  const top = Math.max(0, iniMin - start);
+  const bottom = Math.min(end - start, Math.max(iniMin + 30, finMin) - start);
+  return {
+    topPct: (top / (HORAS_TOTAL * 60)) * 100,
+    heightPct: Math.max(((bottom - top) / (HORAS_TOTAL * 60)) * 100, 4),
+    sinHorario: false,
+  };
+}
+
 export function fmtMesAnio(anio: number, mes: number): string {
   return new Date(anio, mes, 1).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
 }
