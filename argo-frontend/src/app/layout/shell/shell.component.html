@@ -5,7 +5,7 @@
     </div>
 
     <nav class="menu">
-      @for (m of menuItems; track trackMenu(m)) {
+      @for (m of menuItems(); track trackMenu(m)) {
         @if (m.kind === 'link') {
           <a
             [routerLink]="m.path"
@@ -33,12 +33,13 @@
               [class.submenu-rrhh]="isRrhhGroup(m.label)"
               [class.submenu-caja]="isCajaGroup(m.label)"
               *ngIf="isGroupOpen(m.label) && !collapsed()">
-              @for (c of visibleChildren(m.children); track c.path) {
+              @for (c of visibleChildren(m.children); track trackMenuChild(c)) {
                 @if (c.section) {
                   <div class="submenu-section">{{ c.section }}</div>
                 }
                 <a
                   [routerLink]="c.path"
+                  [queryParams]="c.queryParams || null"
                   class="menu-item sub"
                   [class.active]="subLinkActive(c)"
                   [title]="c.label">
@@ -75,11 +76,21 @@
         </div>
         @if (mostrarAlarmasCabecera()) {
         <div class="head-alarms-stack">
-          @if (mostrarAlertaCaja() && !cajaEstado.loading() && cajaEstado.abierta() === false) {
+          @if (mostrarBannerCajaCerrada()) {
             <argo-caja-cerrada-banner class="head-caja-alarm" [blink]="true" />
           }
           @if (mostrarBannerCertificado()) {
             <argo-certificado-jornada-banner class="head-cert-alarm-wrap" />
+          }
+          @if (mostrarFilaCertificadosVencimiento()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Certificados por vencer y vencidos">
+              @if (mostrarBannerCertificadoVencimiento()) {
+                <argo-certificado-vencimiento-banner />
+              }
+              @if (mostrarBannerCertificadoVencido()) {
+                <argo-certificado-vencido-banner />
+              }
+            </div>
           }
           @if (mostrarBannerJornadaProceso()) {
             <argo-jornada-en-proceso-banner class="head-jornada-proceso-alarm" />
@@ -114,6 +125,21 @@
               <argo-programacion-cea-pendiente-banner />
             </div>
           }
+          @if (mostrarBannerClasesCeaCreado()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Clases licencia por programar">
+              <argo-programacion-cea-clase-creado-banner />
+            </div>
+          }
+          @if (mostrarBannerClaseProximaCea()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Alerta clase CEA próxima">
+              <argo-programacion-cea-clase-proxima-banner />
+            </div>
+          }
+          @if (mostrarBannerInstructorPortal()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Alertas portal instructor">
+              <argo-instructor-portal-banner />
+            </div>
+          }
         </div>
         }
         @if (mostrarToastJornadaLive()) {
@@ -122,6 +148,26 @@
       </div>
 
       <div class="topbar-right">
+        @if (mostrarFiltroSede()) {
+          <div class="sede-select-wrap">
+            <label class="sede-label" for="sede-activa">Filtrar sede</label>
+            <select
+              id="sede-activa"
+              class="sede-select"
+              [ngModel]="sedeSvc.idSede()"
+              (ngModelChange)="onSedeChange($event)">
+              @for (s of sedes(); track s.idSede) {
+                <option [value]="s.idSede">{{ s.nombre }}{{ s.codigo ? ' (' + s.codigo + ')' : '' }}</option>
+              }
+            </select>
+          </div>
+        }
+        @if (mostrarSedeFija()) {
+          <div class="sede-readonly" title="Sede de trabajo">
+            <span class="sede-label">Sede</span>
+            <span class="sede-value">{{ labelSedeHeader() }}</span>
+          </div>
+        }
         <span class="user" *ngIf="user() as u">
           <span [ngClass]="capRol(u.rol)">{{ u.rol || 'usuario' }}</span>
         </span>
@@ -134,4 +180,6 @@
       <router-outlet />
     </main>
   </div>
+
+  <argo-asistente-flotante />
 </div>

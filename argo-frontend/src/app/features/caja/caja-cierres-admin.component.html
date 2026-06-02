@@ -9,6 +9,9 @@
         Histórico de cierres por cajero. Entre a cada sesión para egresos, anular ingresos o registrar
         <strong>Reposición caja</strong>.
       </p>
+      <p class="hint sede-doc" *ngIf="sedeSvc.labelActiva() !== 'Sin sede'">
+        Sede: <strong>{{ sedeSvc.labelActiva() }}</strong>
+      </p>
     </div>
     <div class="head-actions">
       <button type="button" class="ghost sm" (click)="cargar()" [disabled]="loading()">Actualizar</button>

@@ -45,6 +45,8 @@ const DatosAlumnoSchema = new mongoose.Schema(
     urlFoto: { type: String, trim: true },
     urlCedula: { type: String, trim: true },
     urlLicencia: { type: String, trim: true },
+    /** Horas por sesión de práctica CEA al auto-generar clases (1–4). null = automático según config global. */
+    duracionSesionPracticaCea: { type: Number, default: null, min: 1, max: 8 },
     docsAlumno: { type: mongoose.Schema.Types.Mixed, default: {} },
     fechaAudi: { type: Date, default: Date.now },
     userAddReg: { type: String, trim: true },

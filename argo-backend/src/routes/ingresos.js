@@ -1,10 +1,10 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/ingresoController');
 const recibo = require('../controllers/reciboController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const pagos = requirePermiso('alumnos.pagos', 'caja.turno', 'caja.cobros');
 const admin = requirePermiso('caja.admin');

@@ -116,6 +116,8 @@ export interface ResumenDescuadresMensual {
 export interface CajaSesion {
   _id?: string;
   idSesion: number;
+  idSede?: string | null;
+  sedeNombre?: string | null;
   estado: 'abierta' | 'cerrada';
   fechaReapertura?: string | null;
   fechaCierreAnterior?: string | null;
@@ -189,6 +191,8 @@ export interface EstadoCierreGeneralDia {
 
 export interface ResumenCierreGeneral {
   fechaDia?: string;
+  idSede?: string | null;
+  sedeNombre?: string | null;
   periodoDesde: string;
   periodoHasta: string;
   cantidadCajas: number;
@@ -221,6 +225,8 @@ export interface ResumenCierreGeneral {
 export interface CajaCierreGeneral {
   idCierreGeneral: number;
   fechaDia?: string;
+  idSede?: string | null;
+  sedeNombre?: string | null;
   periodoDesde: string;
   periodoHasta: string;
   fechaRegistro: string;

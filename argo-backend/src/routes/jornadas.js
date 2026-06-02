@@ -39,6 +39,7 @@ router.delete('/jornadas/:id', gest, ctrl.eliminarJornada);
 
 router.get('/clases', ver, ctrl.listarClases);
 router.get('/clases/del-dia', ver, ctrl.clasesDelDia);
+router.get('/clases/:id', ver, ctrl.obtenerClase);
 router.post('/clases', operar, ctrl.crearClase);
 router.patch('/clases/:id', operar, ctrl.actualizarClase);
 router.delete('/clases/:id', gest, ctrl.eliminarClase);

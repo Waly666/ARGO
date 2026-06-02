@@ -1,6 +1,8 @@
 # ARGO — Contexto del sistema para IA y desarrolladores
 
-Documento de referencia para que cualquier asistente (o persona nueva) entienda **qué es ARGO**, **cómo está armado** y **dónde tocar el código**. Actualizado según el estado del repositorio en `c:\proyectos-js\ARGO` (mayo 2026).
+Documento de referencia para que cualquier asistente (o persona nueva) entienda **qué es ARGO**, **cómo está armado** y **dónde tocar el código**. Actualizado **mayo 2026**.
+
+Documentos relacionados: [ARGO-FACTO.md](./ARGO-FACTO.md) (resumen producto) · [ARGO-ESPECIFICACIONES.md](./ARGO-ESPECIFICACIONES.md) (requisitos funcionales).
 
 ---
 
@@ -14,10 +16,15 @@ Documento de referencia para que cualquier asistente (o persona nueva) entienda 
 | **Académico** | Programas, servicios del catálogo (cursos, técnicos, trámites, CEA, etc.) |
 | **Cobros / liquidaciones** | Cargos por servicio, abonos, saldo pendiente (cartera) |
 | **Caja** | Apertura por usuario, ingresos, egresos, arqueo, cierre de turno, descuadres |
-| **Certificados** | Emisión con plantilla configurable |
+| **Certificados** | Emisión por tipo de formato, plantillas, QR, alertas vencimiento/vencidos |
+| **Programación CEA** | Clases teoría/taller/práctica, calendario, rastreo alumno, clases pendientes |
 | **Jornadas de Capacitación** | Contratación con empresas, programación de jornadas/carpas, clases, asistencia, certificado automático por sesiones |
+| **Vehículos** | Flota, documentos, inspección preoperacional, alertas |
+| **Instructores** | Hub, portal del instructor, clases asignadas |
+| **Sedes** | Multi-sede, filtro por usuario, permisos `sedes.*` |
 | **RRHH / nómina** | Empleados, contratos laborales, períodos, novedades, liquidación nómina |
-| **Configuración** | Usuarios, roles, catálogos, recibos, certificados, auditoría |
+| **Configuración** | Usuarios, roles, permisos y alarmas, catálogos, recibos, certificados, auditoría |
+| **Facturación** | ⏳ Placeholder — sin integración DIAN aún |
 
 Moneda y formato: **COP**, locale `es-CO`, montos sin decimales en UI (`maximumFractionDigits: 0`).
 
@@ -93,6 +100,8 @@ flowchart TB
 ```
 ARGO/
 ├── README.md
+├── ARGO-FACTO.md             # Resumen ejecutivo del producto
+├── ARGO-ESPECIFICACIONES.md  # Requisitos funcionales
 ├── ARGO-CONTEXTO.md          ← este archivo
 ├── argo-backend/
 │   ├── src/
@@ -106,13 +115,14 @@ ARGO/
 │   │   ├── constants/        # permisosCatalogo, jornadaCapacitacion, tipoAlumno
 │   │   └── utils/
 │   │   # Servicios destacados: cajaSesion, dashboardStats, programacionJornadas,
-│   │   # georefMunicipio, jornadaCapacitacion, rolesPermisos
+│   │   # programacionCeaAuto, georefMunicipio, jornadaCapacitacion, rolesPermisos,
+│   │   # clasificacionCertificado, certificadoJornadaAuto
 │   └── scripts/              # seed, migraciones, imports
 └── argo-frontend/
     └── src/app/
         ├── app.routes.ts     # rutas + permisoGuard
         ├── core/             # services, guards, utils, constants
-        ├── features/         # pantallas por módulo (alumnos, jornadas, caja, …)
+        ├── features/         # pantallas por módulo (alumnos, jornadas, caja, programacion-cea, vehiculos, …)
         │   ├── alumnos/      # lista, detalle, tabs, alumnos-rutas.helpers.ts
         │   └── jornadas/     # hub contratación, instructor, mapa
         ├── layout/shell/     # menú lateral, topbar, banner caja
@@ -164,14 +174,21 @@ Los permisos se editan en **Configuración → Roles y permisos** (`/app/configu
 
 ### Catálogo de permisos (claves)
 
-- `dashboard`
-- `alumnos.ver`, `alumnos.gestionar`, `alumnos.pagos`, `alumnos.certificados`
-- `programas.ver`, `programas.gestionar`
-- `servicios.ver`, `servicios.gestionar`
-- `instructores`, `facturacion`, `vehiculos`, `rrhh`
-- `caja.turno`, `caja.cobros`, `caja.admin`
-- `config.usuarios`, `config.roles`, `config.catalogos`, `config.recibos`, `config.nomina`, `config.certificados`, `config.requisitos`, `config.auditoria`
-- `jornadas.ver`, `jornadas.gestionar`, `jornadas.operar`
+Fuente: `argo-backend/src/constants/permisosCatalogo.js`
+
+| Grupo | Claves |
+|-------|--------|
+| General | `dashboard` |
+| Alumnos | `alumnos.ver`, `alumnos.gestionar`, `alumnos.pagos`, `alumnos.certificados` |
+| Académico | `programas.ver`, `programas.agregar`, `programas.gestionar`, `servicios.ver`, `servicios.gestionar`, `instructores`, `instructores.mi_portal`, `instructores.inspeccion` |
+| Jornadas Cap. | `jornadas.ver`, `jornadas.gestionar`, `jornadas.operar` |
+| Programación CEA | `programacion_cea.ver`, `programacion_cea.gestionar`, `programacion_cea.operar` |
+| Caja | `caja.turno`, `caja.cobros`, `caja.admin` |
+| Otros | `facturacion`, `vehiculos`, `rrhh` |
+| Sedes | `sedes.ver`, `sedes.ver_todas`, `sedes.gestionar`, `config.sedes` |
+| Config | `config.usuarios`, `config.roles`, `config.catalogos`, `config.recibos`, `config.georef`, `config.nomina`, `config.certificados`, `config.requisitos`, `config.auditoria`, `config.monitor` |
+
+**Alarmas** (por rol, no son permisos de ruta): catálogo en `alarmasCatalogo.js` — caja, certificados, jornadas, CEA, instructores, vehículos, empleados, alumnos.
 
 El menú lateral (`shell.component.ts`) y las rutas (`app.routes.ts`) filtran ítems con `permiso` / `permisoGuard`.
 
@@ -226,6 +243,10 @@ Prefijo: **`/api`**
 | `/auth` | login, me, cambio contraseña |
 | `/alumnos` | CRUD alumnos, búsqueda (`?tipoAlumno=` filtra lista) |
 | `/jornadas` | Contratación, jornadas, clases, asistencias, certificados jornada, georef |
+| `/programacion-cea` | Config CEA, clases, rastreo, temas, generar pendientes |
+| `/vehiculos` | Flota, documentos, inspección, alertas |
+| `/sedes` | Catálogo de sedes |
+| `/instructor-portal` | Mis clases y alertas del instructor |
 | `/matriculas` | Matrículas por alumno |
 | `/liquidacion` | Liquidaciones, abonos |
 | `/ingresos` | Ingresos, anulación, recibos |
@@ -257,16 +278,23 @@ Health: `GET /api/health`
 | `/app/jornadas` | Hub: contratación → jornadas → clases → certificados (`jornadas-hub`) |
 | `/app/jornadas/instructor` | Operación en carpa: clases del día, asistencia |
 | `/app/programas`, `/app/servicios` | Administración académica |
+| `/app/programacion-cea` | Hub CEA: config, pendientes, rastreo, calendario |
+| `/app/programacion-cea/clases-grupales` | Teoría y taller (calendario) |
+| `/app/programacion-cea/clases-practica` | Práctica en vehículo |
+| `/app/programacion-cea/clases-hoy` | Clases CEA del día |
+| `/app/certificados` | Listado global certificados emitidos |
+| `/app/vehiculos` | Lista y ficha vehículo |
+| `/app/instructores` | Hub instructores; `/app/instructores/:idEmpleado` detalle |
 | `/app/cobros-pendientes` | Liquidaciones con saldo |
 | `/app/caja` | Layout caja → cuadre, ingresos, egresos del turno |
 | `/app/cierres`, `/app/cierres/:idSesion` | Historial y detalle de cierre |
 | `/app/cierre-general` | Cierre administrativo multi-caja |
 | `/app/caja/ingresos-todos`, `egresos-todos`, `descuadres` | Admin caja |
 | `/app/rrhh/*` | Hub, empleados, contratos, catálogos RRHH, nómina, novedades |
-| `/app/configuracion/*` | Usuarios, roles, catálogos, recibos, certificados, auditoría |
+| `/app/configuracion/*` | Usuarios, sedes, roles/alarmas, catálogos, recibos, certificados, requisitos docs, georef, nómina, auditoría, monitor |
 | `/recibo/:ingresoId`, `/recibo-egreso/:egresoId` | Impresión comprobantes |
 
-**Placeholders** (pantalla “en construcción”): `facturacion`, `instructores`, `vehiculos`.
+**Placeholder:** solo `/app/facturacion` (módulo pendiente).
 
 ---
 
@@ -352,8 +380,24 @@ Archivos: `dashboard.component.*`, `dashboardStats.js`, `dashboard.service.ts`.
 
 ### 9.5 Certificados
 
-- Editor de layout (`certificado-layout-editor`), campos posicionables.
-- Generación PDF / vista recibo con QR.
+**Académicos (alumno Regular)**
+
+- Elegibles: `GET /api/certificados/elegibles/:numDoc` — liquidaciones con `idProg`, saldo 0, sin certificado previo.
+- Emisión: `POST /api/certificados` con plantilla según `tipoFormatoCert`.
+- Clasificación de formato: `clasificacionCertificado.js` — prioridad **`prog.tipoCertificado`** → regex nombre (MP) → `idTipCap` → default `curso`.
+- Tipos: `curso`, `tecnico`, `competencias`, `diplomado`, `licencia`, `mercancias_peligrosas`, `jornada_capacitacion`.
+- Config plantillas: `config/certificado`, `plantillaPorTipo` por tipo.
+- Alertas globales: `GET /certificados/alertas-por-vencer`, `alertas-vencidos` (días en config certificados).
+
+**Jornadas**
+
+- Auto-emisión: `certificadoJornadaAuto.js` al cumplir `numSesCert` asistencias.
+- Listado aparte: `/app/jornadas/certificados`.
+
+**UI**
+
+- Editor layout (`certificado-layout-editor`), impresión HTML/PDF con QR.
+- Ficha alumno → pestaña Certificados; listado global `/app/certificados`.
 
 ### 9.6 RRHH y nómina
 
@@ -409,6 +453,33 @@ contratacion → jornadasCap → clasesJornadaCap → asisClasJorCap
 
 **Backend:** `jornadaCapController.js`, `programacionJornadas.js`, `routes/jornadas.js`, constantes `jornadaCapacitacion.js`.
 
+### 9.9 Programación CEA
+
+- Rutas API: `/api/programacion-cea/*` (`programacionCeaController.js`, `programacionCeaAuto.js`).
+- Clases grupales y práctica; estados CREADO → PROGRAMADA → FINALIZADO.
+- Rastreo por `numDoc`; generación masiva clases pendientes.
+- Permisos: `programacion_cea.*`.
+- Frontend: `features/programacion-cea/*`, hub con pestañas (config, pendientes, rastreo, calendario).
+
+### 9.10 Vehículos
+
+- CRUD vehículos, documentos adjuntos, requisitos configurables.
+- Inspección preoperacional (instructor): permiso `instructores.inspeccion`.
+- Alertas: docs vencidos/faltantes, inspección pendiente del día.
+- Backend: `vehiculoController.js`, `routes/vehiculos.js`.
+
+### 9.11 Sedes
+
+- Modelo y API: `/api/sedes`.
+- Usuario con array `sedes`; filtro en shell si `sedes.ver_todas` y múltiples sedes.
+- `idSede` en liquidaciones, matrículas, jornadas según flujo.
+
+### 9.12 Alarmas (UI)
+
+- Configurables por rol junto a permisos (`rolesPermisos.js`, `alarmasCatalogo.js`).
+- Banners en `shell.component`: caja, certificados, jornadas, CEA, vehículos, empleados.
+- Servicios frontend: `AlarmaService`, `certificado-vencimiento-alert.service`, `certificado-vencido-alert.service`, etc.
+
 ---
 
 ## 10. Convenciones de código
@@ -447,6 +518,12 @@ pnpm run seed:users
 pnpm run seed:catalogos
 pnpm run seed:config
 pnpm run migrate:numdoc
+pnpm run migrate:tipo-alumno
+pnpm run migrate:tipo-certificado
+pnpm run cea:depurar-clases          # listar
+pnpm run cea:depurar-clases:confirmar
+pnpm run jornadas:migrar-sede:dry
+pnpm run jornadas:migrar-sede
 ```
 
 ---
@@ -484,6 +561,10 @@ pnpm run migrate:numdoc
 | Alumnos (lista/ficha) | `alumnos-lista.*`, `alumno-detalle.*`, `tabs/datos-principales.*`, `alumno-store.service.ts` |
 | Rutas alumnos modo | `alumnos-rutas.helpers.ts` |
 | Jornadas Cap. | `jornadaCapController.js`, `programacionJornadas.js`, `georefMunicipio.js`, `jornadas-hub.*` |
+| Programación CEA | `programacionCeaController.js`, `programacionCeaAuto.js`, `features/programacion-cea/*` |
+| Vehículos | `vehiculoController.js`, `features/vehiculos/*` |
+| Certificados / tipos | `certificadoController.js`, `clasificacionCertificado.js` |
+| Alarmas | `alarmasCatalogo.js`, `shell.component.ts` |
 | Modelo contratación | `models/Contratacion.js` (`codContrato`, `jornadasPorDia`, `numSesCert`) |
 
 ---
@@ -510,4 +591,4 @@ pnpm run migrate:numdoc
 
 ---
 
-*Fin del documento. Revisar historial de git para cambios puntuales; módulos activos recientes: `features/jornadas`, `features/alumnos`, `features/dashboard`, `features/caja`.*
+*Fin del documento. Módulos activos recientes: jornadas, programación CEA, vehículos, certificados, caja, sedes, alarmas. Requisitos funcionales: [ARGO-ESPECIFICACIONES.md](./ARGO-ESPECIFICACIONES.md).*

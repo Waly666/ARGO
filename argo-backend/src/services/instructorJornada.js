@@ -137,6 +137,30 @@ async function aplicarFiltroClasesQueryPorRol(q, req) {
   return { q, vacio: false };
 }
 
+/** Clases asignadas al instructor (empleado + usuario + nombre legacy en jornadas). */
+function filtroInstructorQuery(emp, userId) {
+  const or = [];
+  if (emp?.idEmpleado != null) {
+    const idNum = Number(emp.idEmpleado);
+    or.push({ idEmpleadoInstructor: idNum });
+    or.push({ idEmpleadoInstructor: String(idNum) });
+  }
+  const uid = userId ? String(userId).trim() : '';
+  if (uid) or.push({ idUsuarioInstructor: uid });
+  if (emp?.idUsuario) {
+    const uEmp = String(emp.idUsuario).trim();
+    if (uEmp && !or.some((c) => c.idUsuarioInstructor === uEmp)) {
+      or.push({ idUsuarioInstructor: uEmp });
+    }
+  }
+  const nom = nombreEmpleado(emp);
+  if (nom) {
+    const esc = nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    or.push({ idinstructor: new RegExp(`^${esc}$`, 'i') });
+  }
+  return or.length ? { $or: or } : { _id: null };
+}
+
 async function enriquecerClases(rows) {
   const ids = [...new Set(rows.map((r) => r.idEmpleadoInstructor).filter((x) => x != null))];
   const empleados = ids.length
@@ -174,6 +198,7 @@ module.exports = {
   resolverInstructorParaClase,
   listarInstructoresConUsuario,
   aplicarFiltroClasesQueryPorRol,
+  filtroInstructorQuery,
   enriquecerClases,
   esEmpleadoInstructor,
 };

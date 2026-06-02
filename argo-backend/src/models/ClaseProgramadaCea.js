@@ -13,9 +13,13 @@ const ClaseProgramadaCeaSchema = new mongoose.Schema(
     horaHasta: { type: String, trim: true, default: '' },
     /** Duración en horas (práctica vehículo: 1–4) */
     duracionHoras: { type: Number, default: null },
+    /** Horas a descontar del saldo del alumno (si no se indica, se calcula del horario) */
+    horasDescuento: { type: Number, default: null },
     idAula: { type: String, trim: true, default: '' },
     idTaller: { type: String, trim: true, default: '' },
     idVehiculo: { type: String, trim: true, default: '' },
+    /** Sede donde se imparte la clase */
+    idSede: { type: String, trim: true, index: true, default: '' },
     idEmpleadoInstructor: { type: Number, index: true, default: null },
     idUsuarioInstructor: { type: String, trim: true, default: '' },
     cupoMaximo: { type: Number, default: null },

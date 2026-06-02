@@ -19,6 +19,11 @@ router.get(
   requirePermiso('instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar'),
   empleado.listarInstructores,
 );
+router.get(
+  '/instructores/:id',
+  requirePermiso('instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar'),
+  empleado.obtenerInstructor,
+);
 router.use(rrhh);
 
 function crud(ctrl) {

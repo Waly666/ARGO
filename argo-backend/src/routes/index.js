@@ -21,6 +21,7 @@ const roles = require('./roles');
 const jornadas = require('./jornadas');
 const vehiculos = require('./vehiculos');
 const programacionCea = require('./programacionCea');
+const facturacion = require('./facturacion');
 
 const router = Router();
 
@@ -43,7 +44,11 @@ router.use('/actividad', actividad);
 router.use('/dashboard', dashboard);
 router.use('/roles', roles);
 router.use('/jornadas', jornadas);
+router.use('/sedes', require('./sedes'));
 router.use('/vehiculos', vehiculos);
 router.use('/programacion-cea', programacionCea);
+router.use('/instructor-portal', require('./instructorPortal'));
+router.use('/facturacion', facturacion);
+router.use('/clientes', require('./clientes'));
 
 module.exports = router;

@@ -6,9 +6,17 @@ import { environment } from '../../../environments/environment';
 
 export interface InspeccionItemCheck {
   id: string;
+  idItem?: number;
+  idCaracteristica?: number;
   nombre: string;
   si: boolean | null;
   observacion?: string;
+}
+
+export interface InspeccionChecklistGrupo {
+  idItem: number;
+  titulo: string;
+  lineas: InspeccionItemCheck[];
 }
 
 export interface InspeccionVehiculoDto {
@@ -17,21 +25,26 @@ export interface InspeccionVehiculoDto {
   fecha: string;
   hora?: string;
   combustible?: string;
+  entrega?: string;
+  recibe?: string;
   quienEntrega?: string;
   quienRecibe?: string;
+  inspector?: string;
+  documentoInspector?: string;
   idEmpleadoInstructor?: number | null;
   nombreInstructor?: string;
   idClase?: string;
   claseVehiculo?: string;
   documentosVehiculo: InspeccionItemCheck[];
   documentosInstructor: InspeccionItemCheck[];
-  estadoGeneral: InspeccionItemCheck[];
-  adaptaciones: InspeccionItemCheck[];
-  aspecto1: InspeccionItemCheck[];
-  aspecto2: InspeccionItemCheck[];
+  grupos: InspeccionChecklistGrupo[];
   aptoLaborar?: boolean | null;
   observacionesGenerales?: string;
   consecutivo?: string;
+  urlfotoLatDer?: string;
+  urlfotoLatIzq?: string;
+  urlfotoFrontal?: string;
+  urlfotoPost?: string;
   guardada?: boolean;
   esPrimeraRevision?: boolean;
   fechaRevisionAnterior?: string | null;

@@ -78,6 +78,24 @@
 .empty { text-align: center; color: var(--text-soft); padding: 20px; }
 .badge.warn { background: rgba(248, 114, 114, 0.15); color: #ffd6d6; }
 .mini { margin-left: 4px; }
+.sedes-asignacion .field-hint {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+.sedes-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.sede-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+}
+.sedes-cell { font-size: 0.85rem; max-width: 12rem; }
+.sede-tag { opacity: 0.9; }
 
 @media (max-width: 768px) {
   .col-4,

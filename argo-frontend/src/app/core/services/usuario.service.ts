@@ -16,6 +16,7 @@ export interface Usuario {
   idEmpleado?: number | null;
   numero?: number | null;
   numeroDocumento?: string;
+  sedesPermitidas?: string[];
 }
 
 export interface UsuarioDto {
@@ -28,6 +29,7 @@ export interface UsuarioDto {
   activo?: boolean;
   numeroDocumento?: string;
   numero?: number;
+  sedesPermitidas?: string[];
 }
 
 @Injectable({ providedIn: 'root' })

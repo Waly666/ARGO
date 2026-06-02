@@ -17,7 +17,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CajaInformePrintService {
   private configSvc = inject(ConfigService);
-  private empresaCache: ConfigRecibo | null = null;
+  private empresaCache = new Map<string, ConfigRecibo>();
 
   imprimirIndividual(opts: {
     sesion: CajaSesion;
@@ -27,6 +27,7 @@ export class CajaInformePrintService {
     descuadre?: CajaDescuadre | null;
     empresa?: ConfigRecibo | null;
   }): void {
+    const idSede = opts.sesion.idSede || undefined;
     const run = (empresa: ConfigRecibo | null) => {
       const html = buildInformeIndividualHtml({ ...opts, empresa });
       this.abrirVentana(html, `Cuadre de caja #${opts.sesion.idSesion}`);
@@ -35,10 +36,11 @@ export class CajaInformePrintService {
       run(opts.empresa);
       return;
     }
-    this.obtenerEmpresa(run);
+    this.obtenerEmpresa(idSede, run);
   }
 
   imprimirGeneral(general: ResumenCierreGeneral, empresa?: ConfigRecibo | null): void {
+    const idSede = general.idSede || undefined;
     const run = (emp: ConfigRecibo | null) => {
       const html = buildInformeGeneralHtml({ general, empresa: emp });
       this.abrirVentana(html, 'Informe general de cierre de cajas');
@@ -47,17 +49,19 @@ export class CajaInformePrintService {
       run(empresa);
       return;
     }
-    this.obtenerEmpresa(run);
+    this.obtenerEmpresa(idSede, run);
   }
 
-  private obtenerEmpresa(cb: (empresa: ConfigRecibo | null) => void): void {
-    if (this.empresaCache) {
-      cb(this.empresaCache);
+  private obtenerEmpresa(idSede: string | undefined, cb: (empresa: ConfigRecibo | null) => void): void {
+    const key = idSede || '__activa__';
+    const cached = this.empresaCache.get(key);
+    if (cached) {
+      cb(cached);
       return;
     }
-    this.configSvc.obtenerRecibo().subscribe({
+    this.configSvc.obtenerReciboEncabezado(idSede).subscribe({
       next: (c) => {
-        this.empresaCache = c;
+        this.empresaCache.set(key, c);
         cb(c);
       },
       error: () => cb(null),

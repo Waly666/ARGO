@@ -1,70 +1,55 @@
 # ARGO — Frontend
 
-SPA Angular 19 del sistema ARGO (CEAs). Documentación general del producto, arquitectura y permisos: **[../ARGO-CONTEXTO.md](../ARGO-CONTEXTO.md)** y **[../README.md](../README.md)**.
+SPA **Angular 19** del sistema ARGO (CEAs). Documentación del producto:
 
-Generado con [Angular CLI](https://github.com/angular/angular-cli) 19.2.26.
+| Documento | Contenido |
+|-----------|-----------|
+| [../README.md](../README.md) | Instalación y visión general |
+| [../ARGO-FACTO.md](../ARGO-FACTO.md) | Fact sheet del producto |
+| [../ARGO-ESPECIFICACIONES.md](../ARGO-ESPECIFICACIONES.md) | Especificaciones funcionales |
+| [../ARGO-CONTEXTO.md](../ARGO-CONTEXTO.md) | Arquitectura, rutas, permisos, convenciones |
 
-## Inicio rápido (recomendado en el monorepo)
+Generado con [Angular CLI](https://github.com/angular/angular-cli) 19.2.x.
+
+## Inicio rápido
 
 ```bash
 pnpm install
-pnpm start    # serve-lan en puerto 4200; API en :3000
+pnpm start          # LAN :4200 — API esperada en :3000 del mismo host
+pnpm start:local    # solo localhost (ng serve)
 ```
 
-`pnpm start:local` usa solo `ng serve` en localhost.
+Requiere el backend en ejecución (`cd ../argo-backend && pnpm run dev`).
 
-## Development server
+## Estructura relevante
 
-To start a local development server, run:
+```
+src/app/
+├── app.routes.ts       # Rutas + permisoGuard
+├── core/               # services, guards, utils, constants
+├── features/           # Pantallas por módulo
+├── layout/shell/       # Menú, topbar, banners de alarmas
+└── shared/             # Componentes reutilizables
+```
+
+## Build
 
 ```bash
-ng serve
+pnpm run build
+# Salida: dist/argo-frontend
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Convenciones
 
-## Code scaffolding
+- Componentes **standalone**; lazy loading en rutas.
+- Permisos: `permisoGuard` + claves alineadas con `permisosCatalogo.js` del backend.
+- Estilos globales: `src/styles.scss` (tema oscuro, `.cap-*`, tablas `.argo`).
+- API base: `environment.ts` → `http://<hostname>:3000/api`.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Tests
 
 ```bash
-ng generate component component-name
+pnpm test    # Karma (si está configurado)
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Para detalle de módulos UI y reglas de negocio, ver [ARGO-ESPECIFICACIONES.md](../ARGO-ESPECIFICACIONES.md).

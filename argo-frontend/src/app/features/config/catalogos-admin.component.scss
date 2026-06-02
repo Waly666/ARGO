@@ -153,6 +153,64 @@
   color: var(--text-soft);
 }
 
+.catalog-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: rgba(6, 16, 41, 0.35);
+
+  &.catalog-pager-foot {
+    margin-top: 12px;
+    margin-bottom: 0;
+  }
+}
+
+.pager-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pager-count {
+  font-size: 0.88rem;
+  color: var(--text);
+
+  strong {
+    color: var(--accent-2);
+    font-weight: 600;
+  }
+}
+
+.pager-meta {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.pager-nav {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pager-btn {
+  min-width: 108px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -232,6 +290,10 @@
     .field-wide {
       grid-column: 1 / -1;
     }
+
+    .field-select {
+      grid-column: 1 / -1;
+    }
   }
 
   .data-table {
@@ -263,16 +325,275 @@
 
 .clases-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 8px 12px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
   margin-bottom: 8px;
 }
 
 .clase-item {
   display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  padding: 8px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(6, 16, 41, 0.25);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  input {
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    border-color: rgba(78, 163, 255, 0.35);
+    background: rgba(78, 163, 255, 0.06);
+  }
+}
+
+.licencias-grid {
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+}
+
+.tipo-vehiculo-panel {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(78, 163, 255, 0.06) 0%, rgba(6, 16, 41, 0.2) 100%);
+
+  &.legacy {
+    opacity: 0.92;
+  }
+}
+
+.tipo-vehiculo-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  h4 {
+    margin: 0 0 4px;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.82rem;
+  }
+}
+
+.tipo-vehiculo-badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  background: rgba(78, 163, 255, 0.14);
+  border: 1px solid rgba(78, 163, 255, 0.28);
+
+  &.badge-all {
+    color: #8fd4a8;
+    background: rgba(72, 180, 120, 0.12);
+    border-color: rgba(72, 180, 120, 0.28);
+  }
+}
+
+.tipo-vehiculo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.tipo-vehiculo-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  border-radius: 8px;
+}
+
+.tipo-vehiculo-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tipo-vehiculo-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 2px;
+  margin-bottom: 10px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(78, 163, 255, 0.25);
+    border-radius: 4px;
+  }
+}
+
+.tipo-chip {
+  display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(6, 16, 41, 0.35);
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: rgba(78, 163, 255, 0.45);
+    background: rgba(78, 163, 255, 0.08);
+  }
+
+  &.selected {
+    border-color: rgba(78, 163, 255, 0.65);
+    background: rgba(78, 163, 255, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(78, 163, 255, 0.2);
+
+    .chip-mark {
+      background: var(--accent-2);
+      border-color: var(--accent-2);
+
+      &::after {
+        opacity: 1;
+      }
+    }
+
+    .chip-text {
+      color: var(--accent-2);
+      font-weight: 600;
+    }
+  }
+}
+
+.chip-mark {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid #061029;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    opacity: 0;
+  }
+}
+
+.chip-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+.tipo-vehiculo-empty {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.tipo-vehiculo-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line-soft);
+}
+
+.resumen-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+  margin-right: 4px;
+}
+
+.resumen-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  background: rgba(78, 163, 255, 0.12);
+  border: 1px solid rgba(78, 163, 255, 0.22);
+  color: var(--accent-2);
+}
+
+.form-card.inspeccion-catalog,
+.form-card:has(argo-catalogo-enum-buscar.dropdown-open) {
+  overflow: visible;
+  position: relative;
+  z-index: 5000;
+}
+
+.field-select:has(argo-catalogo-enum-buscar.dropdown-open) {
+  overflow: visible;
+  position: relative;
+  z-index: 5001;
+}
+
+.catalog-combo-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  argo-catalogo-enum-buscar {
+    width: 100%;
+  }
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  line-height: 1.35;
+
+  &.warn-hint {
+    color: #e8b86d;
+  }
+}
+
+button.linkish {
+  align-self: flex-start;
+  padding-left: 0;
 }
 
 @media (max-width: 900px) {

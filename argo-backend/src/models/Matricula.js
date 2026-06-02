@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const MatriculaSchema = new mongoose.Schema(
   {
     numDoc:    { type: Number, required: true, index: true },
+    /** Sede donde se matricula el alumno */
+    idSede:    { type: String, trim: true, index: true },
     idProg:    { type: String, required: true, trim: true },
     fechaMat:  { type: Date, default: Date.now },
     valorMat:  { type: mongoose.Schema.Types.Decimal128, default: 0 },

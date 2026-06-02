@@ -1,0 +1,182 @@
+<section class="config-page card">
+  <header>
+    <h1>Facturación electrónica (Factus)</h1>
+    <p>
+      Credenciales y parámetros para emitir facturas DIAN vía
+      <a href="https://developers.factus.com.co" target="_blank" rel="noopener">Factus API</a>.
+      Mientras no tenga resolución DIAN, deje el proveedor en <strong>Desarrollo</strong>.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <p class="hint">Cargando…</p>
+  } @else {
+    <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+
+    <div class="grid-form argo-form-shell">
+      <h3>Proveedor y ambiente</h3>
+      <div class="row">
+        <div class="col-4">
+          <label>Proveedor</label>
+          <select [ngModel]="form().proveedor" (ngModelChange)="patch('proveedor', $event)">
+            @for (p of catalogos().proveedores; track p.id) {
+              <option [value]="p.id">{{ p.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-4">
+          <label>Ambiente</label>
+          <select [ngModel]="form().ambiente" (ngModelChange)="patch('ambiente', $event)">
+            @for (a of catalogos().ambientes; track a.id) {
+              <option [value]="a.id">{{ a.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-4 chk">
+          <label>
+            <input type="checkbox" [ngModel]="form().activo" (ngModelChange)="patch('activo', $event)" />
+            Integración activa (enviar a Factus)
+          </label>
+          <p class="hint field-hint">Desmarcado = solo modo desarrollo local aunque el proveedor sea Factus.</p>
+        </div>
+      </div>
+
+      @if (esFactus()) {
+        <h3>Credenciales Factus</h3>
+        <div class="row">
+          <div class="col-6">
+            <label>URL base (opcional)</label>
+            <input
+              type="text"
+              [ngModel]="form().baseUrl"
+              (ngModelChange)="patch('baseUrl', $event)"
+              placeholder="https://api-sandbox.factus.com.co" />
+          </div>
+          <div class="col-3">
+            <label>Client ID</label>
+            <input type="text" [ngModel]="form().clientId" (ngModelChange)="patch('clientId', $event)" autocomplete="off" />
+          </div>
+          <div class="col-3">
+            <label>Client Secret</label>
+            <input
+              type="password"
+              [ngModel]="form().clientSecret"
+              (ngModelChange)="patch('clientSecret', $event)"
+              [placeholder]="form().secretConfigurado ? ('Actual: ' + (form().clientSecretEnmascarado || '••••')) : 'Secret'"
+              autocomplete="new-password" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <label>Usuario / correo</label>
+            <input type="text" [ngModel]="form().username" (ngModelChange)="patch('username', $event)" autocomplete="off" />
+          </div>
+          <div class="col-4">
+            <label>Contraseña</label>
+            <input
+              type="password"
+              [ngModel]="form().password"
+              (ngModelChange)="patch('password', $event)"
+              [placeholder]="form().passwordConfigurado ? ('Actual: ' + (form().passwordEnmascarado || '••••')) : 'Contraseña'"
+              autocomplete="new-password" />
+          </div>
+          <div class="col-4">
+            <label>ID rango numeración Factus</label>
+            <input
+              type="number"
+              min="0"
+              [ngModel]="form().numberingRangeId"
+              (ngModelChange)="patch('numberingRangeId', $event ? +$event : null)" />
+            <p class="hint field-hint">Obtener de GET /v2/numbering-ranges cuando tenga resolución DIAN.</p>
+          </div>
+        </div>
+      }
+
+      <h3>Datos fiscales del emisor (tu CEA)</h3>
+      <div class="row">
+        <div class="col-3">
+          <label>NIT</label>
+          <input type="text" [ngModel]="form().emisorNit" (ngModelChange)="patch('emisorNit', $event)" />
+        </div>
+        <div class="col-2">
+          <label>DV</label>
+          <input type="text" maxlength="1" [ngModel]="form().emisorDv" (ngModelChange)="patch('emisorDv', $event)" />
+        </div>
+        <div class="col-7">
+          <label>Razón social</label>
+          <input type="text" [ngModel]="form().emisorRazonSocial" (ngModelChange)="patch('emisorRazonSocial', $event)" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4">
+          <label>Responsabilidad fiscal</label>
+          <input type="text" [ngModel]="form().emisorResponsabilidadFiscal" (ngModelChange)="patch('emisorResponsabilidadFiscal', $event)" placeholder="R-99-PN" />
+        </div>
+        <div class="col-4">
+          <label>Régimen</label>
+          <input type="text" [ngModel]="form().emisorRegimen" (ngModelChange)="patch('emisorRegimen', $event)" placeholder="No responsable de IVA" />
+        </div>
+        <div class="col-4">
+          <label>Actividad económica (CIIU)</label>
+          <input type="text" [ngModel]="form().emisorActividadEconomica" (ngModelChange)="patch('emisorActividadEconomica', $event)" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4">
+          <label>Cód. municipio</label>
+          <input type="text" [ngModel]="form().emisorMunicipioCodigo" (ngModelChange)="patch('emisorMunicipioCodigo', $event)" />
+        </div>
+        <div class="col-4">
+          <label>% IVA por defecto</label>
+          <input type="number" min="0" max="100" [ngModel]="form().ivaPorDefecto" (ngModelChange)="patch('ivaPorDefecto', +$event)" />
+        </div>
+        <div class="col-4">
+          <label>Prefijo numeración (desarrollo)</label>
+          <input type="text" [ngModel]="form().prefijoDesarrollo" (ngModelChange)="patch('prefijoDesarrollo', $event)" placeholder="DEV" />
+        </div>
+      </div>
+
+      <h3>Reglas de negocio</h3>
+      <div class="row">
+        <div class="col-4">
+          <label>Modo de emisión</label>
+          <select [ngModel]="form().modoEmision" (ngModelChange)="patch('modoEmision', $event)">
+            @for (m of catalogos().modosEmision; track m.id) {
+              <option [value]="m.id">{{ m.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-4 chk">
+          <label>
+            <input type="checkbox" [ngModel]="form().valorIncluyeIva" (ngModelChange)="patch('valorIncluyeIva', $event)" />
+            Valor liquidación incluye IVA
+          </label>
+        </div>
+        <div class="col-4 chk">
+          <label>
+            <input type="checkbox" [ngModel]="form().sendEmail" (ngModelChange)="patch('sendEmail', $event)" />
+            Factus envía correo al cliente
+          </label>
+        </div>
+      </div>
+
+      <h3>Probar conexión</h3>
+      <div class="row">
+        <div class="col-4 actions-inline">
+          <button type="button" class="ghost" (click)="probar()" [disabled]="probando()">
+            {{ probando() ? 'Probando…' : 'Probar conexión' }}
+          </button>
+        </div>
+      </div>
+      @if (pruebaMsg()) {
+        <p class="msg" [class.ok]="pruebaOk()" [class.err]="!pruebaOk()">{{ pruebaMsg() }}</p>
+      }
+
+      <footer class="actions">
+        <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+        </button>
+      </footer>
+    </div>
+  }
+</section>

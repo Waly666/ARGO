@@ -1,0 +1,27 @@
+@import './config-recibos.component.scss';
+
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+}
+
+.field-hint {
+  margin-top: 4px;
+}
+
+.actions-inline button {
+  width: 100%;
+}
+
+.prueba {
+  margin-top: 8px;
+  font-size: 0.88rem;
+}
+
+.actions {
+  margin-top: 8px;
+}

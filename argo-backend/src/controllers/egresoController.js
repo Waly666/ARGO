@@ -394,6 +394,8 @@ exports.listarTodos = async (req, res, next) => {
     const rango = rangoFechaEgresoQuery(req.query.desde, req.query.hasta);
     if (rango) and.push(rango);
 
+    if (req.idSede) and.push({ idSede: req.idSede });
+
     if (idSesionQ != null && idSesionQ !== '') {
       const sid = Number(idSesionQ);
       if (Number.isFinite(sid)) and.push({ idSesion: sid });
@@ -462,17 +464,18 @@ exports.crear = async (req, res, next) => {
       return res.status(400).json({ message: 'Este tipo de egreso requiere empleado en RRHH' });
     }
 
-    const sesion = await exigirSesionAbierta(req.user?.sub);
+    const sesion = await exigirSesionAbierta(req.user?.sub, req.idSede);
 
     let urlSoporte = null;
     if (req.file?.filename) urlSoporte = upload.publicUrl('egresos', req.file.filename);
 
     const user = req.user?.username || 'sistema';
     const now = new Date();
-    const numRecibo = await siguienteNumComprobanteEgreso();
+    const numRecibo = await siguienteNumComprobanteEgreso(req.idSede);
     const doc = {
       ...dto,
       numRecibo,
+      idSede: req.idSede,
       valorEgreso: toDec(v),
       urlSoporte,
       fechaEgreso: dto.fechaEgreso || now,

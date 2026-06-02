@@ -45,6 +45,10 @@
   &.xwide {
     width: min(1280px, calc(100vw - 24px));
   }
+
+  &.tall {
+    max-height: calc(100vh - 48px);
+  }
 }
 
 .fm-header {
@@ -91,6 +95,16 @@
   min-height: 0;
   overflow-y: auto;
   padding: 14px 20px;
+
+  &:has(argo-catalogo-enum-buscar.dropdown-open),
+  &:has(argo-municipio-buscar.dropdown-open) {
+    overflow: visible;
+  }
+}
+
+.fm-panel:has(argo-catalogo-enum-buscar.dropdown-open),
+.fm-panel:has(argo-municipio-buscar.dropdown-open) {
+  overflow: visible;
 }
 
 .fm-footer {

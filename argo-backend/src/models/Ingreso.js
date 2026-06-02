@@ -21,6 +21,8 @@ const IngresoSchema = new mongoose.Schema(
     tipoAbono: { type: String, enum: ['total', 'abono'], trim: true },
     idUsuario: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null },
     idSesion: { type: Number, index: true },
+    /** Sede donde se registró el ingreso */
+    idSede: { type: String, trim: true, index: true },
 
     /** FK lógica → catálogo tipoIngreso */
     idTipoIngreso: { type: String, trim: true, index: true },

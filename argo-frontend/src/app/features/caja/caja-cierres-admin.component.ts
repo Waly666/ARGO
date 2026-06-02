@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { CajaSesion, CajaSesionService, ResumenCaja } from '../../core/services/caja-sesion.service';
+import { SedeService } from '../../core/services/sede.service';
 import {
   capFecha,
   capRol,
@@ -22,6 +23,7 @@ const VISTA_KEY = 'argo-cierres-vista';
 })
 export class CajaCierresAdminComponent implements OnInit {
   private cajaSvc = inject(CajaSesionService);
+  readonly sedeSvc = inject(SedeService);
 
   mes = signal(new Date().toISOString().slice(0, 7));
   filtroCajero = signal('');

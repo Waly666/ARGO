@@ -121,6 +121,7 @@
         <button type="button" [class.active]="bloqueConfig() === 'vehiculo'" (click)="bloqueConfig.set('vehiculo')">Vehículo (práctica)</button>
         <button type="button" [class.active]="bloqueConfig() === 'aula'" (click)="bloqueConfig.set('aula')">Aula (teoría)</button>
         <button type="button" [class.active]="bloqueConfig() === 'taller'" (click)="bloqueConfig.set('taller')">Taller / patio</button>
+        <button type="button" [class.active]="bloqueConfig() === 'planificacion'" (click)="bloqueConfig.set('planificacion'); cargarRecursosPlan()">Planificación clases</button>
       </div>
 
       @if (bloqueConfig() === 'vehiculo'; as _) {
@@ -138,6 +139,11 @@
               <label><input type="checkbox" [checked]="duracionActiva(h)" (change)="toggleDuracion(h)" /> {{ h }} h</label>
             }
           </fieldset>
+          <div class="field">
+            <label>Duración por sesión (referencia, h)</label>
+            <input type="number" min="1" max="8" step="0.5" [ngModel]="b.duracionSesionHoras ?? 2" (ngModelChange)="patchConfigBloque('duracionSesionHoras', $event)" />
+            <span class="hint">Usada al liquidar prácticas individuales por alumno.</span>
+          </div>
           <div class="field">
             <label>Buffer post-clase (minutos)</label>
             <input type="number" min="0" [ngModel]="b.bufferMinutos" (ngModelChange)="patchConfigBloque('bufferMinutos', $event)" />
@@ -166,6 +172,10 @@
             <label>Cupo grupal por defecto</label>
             <input type="number" min="1" [ngModel]="b.cupoMaximoDefault" (ngModelChange)="patchConfigBloque('cupoMaximoDefault', $event)" />
           </div>
+          <div class="field">
+            <label>Duración por sesión teórica (h)</label>
+            <input type="number" min="1" max="8" step="0.5" [ngModel]="b.duracionSesionHoras ?? 2" (ngModelChange)="patchConfigBloque('duracionSesionHoras', $event)" />
+          </div>
           @for (sub of subHorarios; track sub) {
             <fieldset class="field-block">
               <legend>{{ sub | titlecase }}</legend>
@@ -189,12 +199,181 @@
             <label>Cupo grupal por defecto</label>
             <input type="number" min="1" [ngModel]="b.cupoMaximoDefault" (ngModelChange)="patchConfigBloque('cupoMaximoDefault', $event)" />
           </div>
+          <div class="field">
+            <label>Duración por sesión de taller (h)</label>
+            <input type="number" min="1" max="8" step="0.5" [ngModel]="b.duracionSesionHoras ?? 2" (ngModelChange)="patchConfigBloque('duracionSesionHoras', $event)" />
+          </div>
           @for (sub of subHorarios; track sub) {
             <fieldset class="field-block">
               <legend>{{ sub | titlecase }}</legend>
               <label>Desde <input type="time" [ngModel]="horarioSub(b, sub).horaDesde" (ngModelChange)="patchConfigSub('taller', sub, 'horaDesde', $event)" /></label>
               <label>Hasta <input type="time" [ngModel]="horarioSub(b, sub).horaHasta" (ngModelChange)="patchConfigSub('taller', sub, 'horaHasta', $event)" /></label>
             </fieldset>
+          }
+        </div>
+      }
+
+      @if (bloqueConfig() === 'planificacion') {
+        <div class="planificacion-panel">
+          <p class="hint">
+            Genere clases <strong>teóricas y de taller vacías</strong> distribuidas en un periodo, según horas del programa y temas.
+            Al liquidar, los alumnos se inscriben en estas clases si hay cupo. La práctica sigue siendo individual por alumno.
+          </p>
+
+          <div class="config-grid plan-form-grid">
+            <div class="field">
+              <label>Programa (licencia)</label>
+              <select [ngModel]="planForm().idProg" (ngModelChange)="onPlanProgChange($event)">
+                @for (p of programas(); track p.idProg) {
+                  <option [value]="p.idProg">{{ p.nombre }} (T {{ p.horasTeoria }} · Ta {{ p.horasTaller }} h)</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label>Programas completos en el periodo</label>
+              <input type="number" min="1" max="99" [ngModel]="planForm().programasPorPeriodo" (ngModelChange)="onPlanProgramasPorPeriodoChange($event)" />
+              <span class="hint">Ej.: 1 = un ciclo teórico+taller del programa; 2 = el doble de clases.</span>
+            </div>
+            <div class="field">
+              <label>Primera clase desde (días después de hoy)</label>
+              <input type="number" min="0" [ngModel]="cfg.planificacion?.diasInicioDesdeGeneracion ?? 5" (ngModelChange)="patchPlanificacionConfig('diasInicioDesdeGeneracion', $event)" />
+            </div>
+            <div class="field">
+              <label>Periodo — desde</label>
+              <input type="date" [ngModel]="planForm().fechaDesde" (ngModelChange)="patchPlanForm('fechaDesde', $event)" />
+            </div>
+            <div class="field">
+              <label>Periodo — hasta</label>
+              <input type="date" [ngModel]="planForm().fechaHasta" (ngModelChange)="patchPlanForm('fechaHasta', $event)" />
+            </div>
+            <div class="field">
+              <label>Aula teórica (opcional)</label>
+              <select [ngModel]="planForm().idAula" (ngModelChange)="patchPlanForm('idAula', $event)">
+                <option value="">Automático — todas las aulas por disponibilidad</option>
+                @for (a of recursosPlan()?.aulas || []; track a.id) {
+                  <option [value]="a.id">{{ a.nombre }}</option>
+                }
+              </select>
+              <span class="hint">Sin selección, rota entre aulas libres en cada franja (luego puede cambiarse en la clase).</span>
+            </div>
+            <div class="field">
+              <label>Taller / patio</label>
+              <select [ngModel]="planForm().idTaller" (ngModelChange)="patchPlanForm('idTaller', $event)">
+                <option value="">— Seleccione —</option>
+                @for (t of recursosPlan()?.talleres || []; track t.id) {
+                  <option [value]="t.id">{{ t.nombre }}</option>
+                }
+              </select>
+            </div>
+            <fieldset class="field-block">
+              <legend>Incluir</legend>
+              <label><input type="checkbox" [ngModel]="planForm().incluirTeoria" (ngModelChange)="patchPlanForm('incluirTeoria', $event)" /> Teoría</label>
+              <label><input type="checkbox" [ngModel]="planForm().incluirTaller" (ngModelChange)="patchPlanForm('incluirTaller', $event)" /> Taller</label>
+            </fieldset>
+          </div>
+
+          <div class="actions plan-actions">
+            <button type="button" class="ghost" [disabled]="planPreviewLoading() || !puedeGestionar()" (click)="previewPlanificacion()">
+              {{ planPreviewLoading() ? 'Calculando…' : 'Vista previa' }}
+            </button>
+            <button type="button" class="primary" [disabled]="planGenerando() || !puedeGestionar()" (click)="generarPlanificacion()">
+              {{ planGenerando() ? 'Generando…' : 'Generar clases del periodo' }}
+            </button>
+          </div>
+
+          @if (planPreview(); as prev) {
+            <div #planResultado class="plan-preview" [class.plan-preview-ok]="planListadoGenerado()">
+              @if (planListadoGenerado() && !prev.preview) {
+                <h3>Clases generadas — {{ prev.programaLabel }}</h3>
+                <p class="hint ok-text">
+                  <strong>{{ prev.clasesGeneradas ?? planClasesLista(prev).length }}</strong> clase(s) creadas en estado PROGRAMADA (vacías, listas para inscribir alumnos).
+                </p>
+              } @else {
+                <h3>Vista previa — {{ prev.programaLabel }}</h3>
+                <p class="hint">
+                  Del {{ prev.fechaDesde }} al {{ prev.fechaHasta }}
+                  · inicio efectivo {{ prev.fechaInicioEfectiva }}
+                  · {{ prev.resumen.programasPorPeriodo }} ciclo(s) del programa
+                </p>
+              }
+              <div class="plan-resumen-chips">
+                <span class="cap cap-blue cap-sm">{{ prev.resumen.teoria }} teoría</span>
+                <span class="cap cap-amber cap-sm">{{ prev.resumen.taller }} taller</span>
+                <span class="cap cap-emerald cap-sm">{{ prev.resumen.total }} total</span>
+                @if (prev.resumen.sinCupos > 0) {
+                  <span class="cap cap-warn cap-sm">{{ prev.resumen.sinCupos }} sin cupo en periodo</span>
+                }
+                @if (prev.resumen.aulasUsadas != null && prev.resumen.aulasDisponibles != null) {
+                  <span class="cap cap-indigo cap-sm">{{ prev.resumen.aulasUsadas }}/{{ prev.resumen.aulasDisponibles }} aula(s)</span>
+                }
+              </div>
+              @if (planListadoGenerado() && !prev.preview) {
+                <div class="plan-post-actions">
+                  <a routerLink="/app/programacion-cea/clases-grupales" [queryParams]="{ fecha: prev.fechaInicioEfectiva }" class="ghost sm link-btn">
+                    Ver en clases grupales
+                  </a>
+                  <a routerLink="/app/programacion-cea/clases-hoy" [queryParams]="{ fecha: prev.fechaInicioEfectiva }" class="ghost sm link-btn">
+                    Ver en clases del día
+                  </a>
+                </div>
+              }
+              @if (prev.advertencias?.length) {
+                <ul class="plan-warn-list">
+                  @for (w of prev.advertencias; track w) {
+                    <li>{{ w }}</li>
+                  }
+                </ul>
+              }
+              @if (planClasesLista(prev).length) {
+                <div class="plan-list-scroll">
+                  <table class="argo data-table compact">
+                    <thead>
+                      <tr>
+                        @if (planListadoGenerado() && !prev.preview) {
+                          <th>#</th>
+                        }
+                        <th>Tipo</th>
+                        <th>Tema</th>
+                        <th>Fecha</th>
+                        <th>Horario</th>
+                        <th>Aula / Taller</th>
+                        <th>h</th>
+                        <th>Ciclo</th>
+                        @if (planListadoGenerado() && !prev.preview) {
+                          <th>Estado</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (m of planClasesLista(prev); track m._id || $index) {
+                        <tr>
+                          @if (planListadoGenerado() && !prev.preview) {
+                            <td>{{ $index + 1 }}</td>
+                          }
+                          <td>{{ labelTipoClasePlan(m.tipoClase) }}</td>
+                          <td>{{ m.temaNombre || '—' }}</td>
+                          <td>{{ m.fechaClase }}</td>
+                          <td>{{ m.horaDesde }} – {{ m.horaHasta }}</td>
+                          <td>
+                            @if (m.tipoClase === 'teoria') {
+                              {{ nombreRecursoPlan(m.idAula, 'aula') }}
+                            } @else {
+                              {{ nombreRecursoPlan(m.idTaller, 'taller') }}
+                            }
+                          </td>
+                          <td>{{ m.horas }}</td>
+                          <td>{{ m.ciclo }}</td>
+                          @if (planListadoGenerado() && !prev.preview) {
+                            <td>{{ m.estado || 'PROGRAMADA' }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <p class="hint">{{ planClasesLista(prev).length }} clase(s) en el listado.</p>
+              }
+            </div>
           }
         </div>
       }
@@ -219,7 +398,7 @@
 
   @if (tab() === 'temas') {
     <div class="cea-panel">
-      <div class="row filter-compact">
+      <div class="row filter-compact prog-temas-head">
         <div class="field">
           <label>Programa CEA</label>
           <select [ngModel]="progTemasSel()" (ngModelChange)="onProgTemasChange($event)">
@@ -228,12 +407,82 @@
             }
           </select>
         </div>
+        @if (progSelInfo(); as prog) {
+          <div class="prog-info-chips" aria-label="Horas configuradas en el programa">
+            <span class="prog-info-chip teoria">
+              <span class="prog-info-label">Clase teórica</span>
+              <strong>{{ fmtHoras(prog.horasTeoria || 0) }} h</strong>
+            </span>
+            <span class="prog-info-chip taller">
+              <span class="prog-info-label">Clase taller</span>
+              <strong>{{ fmtHoras(prog.horasTaller || 0) }} h</strong>
+            </span>
+          </div>
+        }
       </div>
 
       @if (progSelInfo(); as prog) {
-        <p class="hint">
-          Horas del programa: teoría {{ prog.horasTeoria || 0 }} · taller {{ prog.horasTaller || 0 }} · práctica {{ prog.horasPractica || 0 }}
-        </p>
+        <div class="horas-resumen card-inner">
+          <div class="horas-resumen-title">
+            <h3>Control de horas del programa</h3>
+            <p class="prog-info-inline">
+              <span>{{ prog.codigoProg || prog.idProg }} — {{ prog.nombre }}</span>
+              <span class="sep">·</span>
+              <span>Teoría: <strong>{{ fmtHoras(prog.horasTeoria || 0) }} h</strong></span>
+              <span class="sep">·</span>
+              <span>Taller: <strong>{{ fmtHoras(prog.horasTaller || 0) }} h</strong></span>
+            </p>
+          </div>
+          <p class="hint">Las horas de los temas no pueden superar las horas definidas en el programa académico.</p>
+          <div class="horas-resumen-grid">
+            @if (resumenHorasTeoria(); as rt) {
+              <article class="horas-resumen-item" [class.warn]="rt.excede" [class.ok]="rt.completo">
+                <div class="horas-resumen-head">
+                  <strong>Teoría</strong>
+                  @if (rt.limite > 0) {
+                    <span>{{ fmtHoras(rt.proyectado) }} / {{ fmtHoras(rt.limite) }} h</span>
+                  } @else {
+                    <span>Sin horas en programa</span>
+                  }
+                </div>
+                @if (rt.limite > 0) {
+                  <div class="horas-bar" aria-hidden="true"><span [style.width.%]="rt.pct"></span></div>
+                  <p class="horas-resumen-detail">
+                    Registradas: {{ fmtHoras(rt.usado) }} h
+                    @if (rt.borrador > 0) { · este tema: {{ fmtHoras(rt.borrador) }} h }
+                    · restante: {{ fmtHoras(rt.restante) }} h
+                  </p>
+                  @if (rt.excede) {
+                    <p class="warn-text">Supera el tope permitido para teoría.</p>
+                  }
+                }
+              </article>
+            }
+            @if (resumenHorasTaller(); as rl) {
+              <article class="horas-resumen-item" [class.warn]="rl.excede" [class.ok]="rl.completo">
+                <div class="horas-resumen-head">
+                  <strong>Taller</strong>
+                  @if (rl.limite > 0) {
+                    <span>{{ fmtHoras(rl.proyectado) }} / {{ fmtHoras(rl.limite) }} h</span>
+                  } @else {
+                    <span>Sin horas en programa</span>
+                  }
+                </div>
+                @if (rl.limite > 0) {
+                  <div class="horas-bar" aria-hidden="true"><span [style.width.%]="rl.pct"></span></div>
+                  <p class="horas-resumen-detail">
+                    Registradas: {{ fmtHoras(rl.usado) }} h
+                    @if (rl.borrador > 0) { · este tema: {{ fmtHoras(rl.borrador) }} h }
+                    · restante: {{ fmtHoras(rl.restante) }} h
+                  </p>
+                  @if (rl.excede) {
+                    <p class="warn-text">Supera el tope permitido para taller.</p>
+                  }
+                }
+              </article>
+            }
+          </div>
+        </div>
       }
 
       <div class="tema-form card-inner">
@@ -255,12 +504,22 @@
             <input type="number" min="1" [ngModel]="formTema().orden" (ngModelChange)="patchTema('orden', $event)" />
           </div>
           <div class="field narrow">
-            <label>Horas (opc.)</label>
-            <input type="number" min="0" step="0.5" [ngModel]="formTema().horasTema" (ngModelChange)="patchTema('horasTema', $event)" />
+            <label>Horas @if (formTema().tipo === 'taller' ? resumenHorasTaller().limite > 0 : resumenHorasTeoria().limite > 0) { * }</label>
+            <input
+              type="number"
+              min="0"
+              [attr.max]="maxHorasFormulario()"
+              step="0.5"
+              [ngModel]="formTema().horasTema"
+              (ngModelChange)="patchTema('horasTema', $event)"
+              placeholder="Ej. 2" />
           </div>
         </div>
+        @if (excedeHorasFormulario()) {
+          <p class="warn-text">Las horas de este tema superan el tope del programa. Ajuste el valor antes de guardar.</p>
+        }
         <div class="actions">
-          <button type="button" class="primary" [disabled]="saving()" (click)="guardarTema()">{{ editTemaId() ? 'Actualizar' : 'Agregar tema' }}</button>
+          <button type="button" class="primary" [disabled]="saving() || !puedeGestionar() || !progTemasSel() || excedeHorasFormulario()" (click)="guardarTema()">{{ editTemaId() ? 'Actualizar' : 'Agregar tema' }}</button>
           @if (editTemaId()) {
             <button type="button" class="ghost" (click)="cancelarEdicionTema()">Cancelar</button>
           }
@@ -312,10 +571,11 @@
   }
 
   @if (tab() === 'clases') {
-    <argo-programacion-cea-clases
-      [programas]="programas()"
-      [claseSelId]="claseQueryId"
-      [fechaInicial]="fechaQuery" />
+    <div class="cea-panel cea-link-clases">
+      <p class="hint">La programación de clases (lista, formulario, inscripción y rastreo de horas) está en el menú lateral.</p>
+      <a routerLink="/app/programacion-cea/clases-grupales" class="primary sm link-btn">Teoría y taller</a>
+      <a routerLink="/app/programacion-cea/clases-practica" class="ghost sm link-btn">Práctica en vehículo</a>
+    </div>
   }
 
   @if (tab() === 'pendientes') {
@@ -323,8 +583,21 @@
       <p class="hint">
         Incluye horas de la <strong>matrícula del programa</strong> y las vendidas como
         <strong>HORA CLASE PRÁCTICA</strong> (servicio adicional con cantidad).
+        Use «Generar clases pendientes» para crear o completar clases según la configuración CEA
+        (duraciones, temas y partición de práctica).
       </p>
-      <button type="button" class="ghost sm" (click)="cargarRastreo(true)">Actualizar</button>
+      <div class="actions pendientes-actions">
+        @if (puedeGestionar()) {
+          <button
+            type="button"
+            class="primary sm"
+            [disabled]="generandoPendientes() || !rastreo().length"
+            (click)="generarClasesPendientes()">
+            {{ generandoPendientes() ? 'Generando…' : 'Generar clases pendientes' }}
+          </button>
+        }
+        <button type="button" class="ghost sm" (click)="cargarRastreo(true)">Actualizar</button>
+      </div>
 
       @if (!rastreo().length) {
         <p class="cea-empty ok-text">No hay registros pendientes de programación.</p>
@@ -338,6 +611,7 @@
                 <th>Origen</th>
                 <th>Tipo</th>
                 <th>Req.</th>
+                <th>Insc.</th>
                 <th>Prog.</th>
                 <th>Ejec.</th>
                 <th>Pend.</th>
@@ -345,13 +619,14 @@
               </tr>
             </thead>
             <tbody>
-              @for (f of rastreo(); track f.numDoc + f.idLiq + f.tipoHoras + f.origenHoras) {
+              @for (f of rastreo(); track trackRastreo(f)) {
                 <tr>
                   <td>{{ f.alumnoNombre || f.numDoc }}</td>
                   <td>{{ f.servicioLabel }}</td>
                   <td>{{ labelOrigen(f.origenHoras) }}</td>
                   <td>{{ labelTipo(f.tipoHoras) }}</td>
                   <td>{{ f.requeridas }}</td>
+                  <td>{{ f.inscritas ?? 0 }}</td>
                   <td>{{ f.programadas }}</td>
                   <td>{{ f.ejecutadas }}</td>
                   <td [class.warn-text]="f.pendientes > 0"><strong>{{ f.pendientes }}</strong></td>

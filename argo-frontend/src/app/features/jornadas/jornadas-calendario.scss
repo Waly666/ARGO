@@ -1,5 +1,15 @@
 /* Calendario jornadas / clases — estilos globales (evita budget del componente hub) */
 
+@keyframes cal-tipo-live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.65), 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.25), 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
 .argo-cal,
 .jornadas-page,
 .cea-clases {
@@ -144,6 +154,12 @@
       box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.55);
     }
 
+    &.cal-clase-creado {
+      background: #fbbf24;
+      box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.55);
+      opacity: 0.92;
+    }
+
     &.cal-clase-proceso {
       background: #22c55e;
       box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.55);
@@ -152,6 +168,21 @@
     &.cal-clase-finalizada {
       background: #64748b;
       box-shadow: 0 0 0 1px rgba(100, 116, 139, 0.5);
+    }
+
+    &.cal-tipo-teoria {
+      background: #6366f1;
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.55);
+    }
+
+    &.cal-tipo-taller {
+      background: #f59e0b;
+      box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55);
+    }
+
+    &.cal-tipo-practica {
+      background: #06b6d4;
+      box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.55);
     }
 
     &.sin-hora {
@@ -341,6 +372,84 @@
       font-weight: 600;
       text-align: center;
       align-items: center;
+    }
+
+    &.cal-clase-programada {
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.82), rgba(67, 56, 202, 0.72));
+      border-color: rgba(129, 140, 248, 0.75);
+      border-left-color: #a5b4fc;
+      color: #eef2ff;
+    }
+
+    &.cal-clase-creado {
+      background: linear-gradient(180deg, rgba(251, 191, 36, 0.88), rgba(217, 119, 6, 0.78));
+      border-color: rgba(252, 211, 77, 0.85);
+      border-left-color: #fde68a;
+      color: #451a03;
+      border-style: dashed;
+    }
+
+    &.cal-clase-proceso {
+      background: linear-gradient(180deg, rgba(34, 197, 94, 0.82), rgba(21, 128, 61, 0.72));
+      border-color: rgba(74, 222, 128, 0.75);
+      border-left-color: #86efac;
+      color: #ecfdf5;
+    }
+
+    &.cal-clase-finalizada {
+      background: linear-gradient(180deg, rgba(100, 116, 139, 0.8), rgba(71, 85, 105, 0.72));
+      border-color: rgba(148, 163, 184, 0.65);
+      border-left-color: #cbd5e1;
+      color: #f8fafc;
+    }
+
+    &.cal-tipo-teoria {
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.9), rgba(67, 56, 202, 0.8));
+      border-color: rgba(129, 140, 248, 0.8);
+      border-left-color: #c7d2fe;
+      color: #eef2ff;
+    }
+
+    &.cal-tipo-taller {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.92), rgba(217, 119, 6, 0.82));
+      border-color: rgba(251, 191, 36, 0.85);
+      border-left-color: #fde68a;
+      color: #fffbeb;
+    }
+
+    &.cal-tipo-practica {
+      background: linear-gradient(180deg, rgba(6, 182, 212, 0.92), rgba(8, 145, 178, 0.82));
+      border-color: rgba(34, 211, 238, 0.85);
+      border-left-color: #a5f3fc;
+      color: #ecfeff;
+    }
+
+    &.cal-est-en-proceso {
+      animation: cal-tipo-live-pulse 1.2s ease-in-out infinite;
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    &.cal-est-finalizada {
+      opacity: 0.72;
+      filter: saturate(0.75);
+    }
+
+    &.cal-est-cancelada {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+
+    &.cal-tipo-teoria,
+    &.cal-tipo-taller,
+    &.cal-tipo-practica,
+    &.cal-clase-programada,
+    &.cal-clase-proceso,
+    &.cal-clase-finalizada {
+      .cal-evento-tit,
+      .cal-evento-sub,
+      .cal-evento-est {
+        color: inherit;
+      }
     }
 
     &.sel {
@@ -565,6 +674,36 @@
       border-left-color: #94a3b8;
       background: rgba(100, 116, 139, 0.28);
       opacity: 0.94;
+    }
+
+    &.cal-tipo-teoria {
+      border-color: rgba(129, 140, 248, 0.55);
+      border-left-color: #a5b4fc;
+      background: rgba(99, 102, 241, 0.55);
+      color: #eef2ff;
+    }
+
+    &.cal-tipo-taller {
+      border-color: rgba(251, 191, 36, 0.55);
+      border-left-color: #fcd34d;
+      background: rgba(245, 158, 11, 0.58);
+      color: #fffbeb;
+    }
+
+    &.cal-tipo-practica {
+      border-color: rgba(34, 211, 238, 0.55);
+      border-left-color: #67e8f9;
+      background: rgba(6, 182, 212, 0.58);
+      color: #ecfeff;
+    }
+
+    &.cal-est-en-proceso {
+      animation: cal-tipo-live-pulse 1.2s ease-in-out infinite;
+    }
+
+    &.cal-est-finalizada {
+      opacity: 0.68;
+      filter: saturate(0.75);
     }
 
     &.sel {

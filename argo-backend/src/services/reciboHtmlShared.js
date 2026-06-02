@@ -25,15 +25,39 @@ function lineaHtml(ancho = 32) {
   return `<div class="line">${'─'.repeat(ancho)}</div>`;
 }
 
+function nombreSedeVisible(config) {
+  return String(config?.nombreSede || '').trim();
+}
+
+/** Inserta fila «Sede» en tabla de recibo (después de comprobante/fecha si existen). */
+function filasConSede(filas, config) {
+  const nombre = nombreSedeVisible(config);
+  if (!nombre) return filas;
+  const row = ['Sede', nombre];
+  const idx = filas.findIndex(([k]) => k === 'Fecha');
+  if (idx >= 0) return [...filas.slice(0, idx + 1), row, ...filas.slice(idx + 1)];
+  return [row, ...filas];
+}
+
 function bloqueEmpresaHtml(config) {
-  const v = (x) => esc((x || '').toString().trim() || '—');
-  return `
-  <div class="center empresa">${v(config.nombreEmpresa)}</div>
-  <div class="center dato">NIT: ${v(config.nit)}</div>
-  <div class="center dato">Tel: ${v(config.telefono)}</div>
-  <div class="center dato">Dir: ${v(config.direccion)}</div>
-  <div class="center dato">Ciudad: ${v(config.ciudad)}</div>
-  <div class="center dato">Email: ${v(config.email)}</div>`;
+  const v = (x) => esc((x || '').toString().trim());
+  const ciudadLine = [config.ciudad, config.departamento].filter((x) => String(x || '').trim()).join(', ');
+  const lineas = [];
+  if (v(config.nombreEmpresa)) {
+    lineas.push(`<div class="center empresa">${v(config.nombreEmpresa)}</div>`);
+  }
+  if (v(config.nombreSede)) {
+    lineas.push(`<div class="center sede-nombre">${v(config.nombreSede)}</div>`);
+  }
+  if (v(config.nit)) lineas.push(`<div class="center dato">NIT: ${v(config.nit)}</div>`);
+  if (v(config.telefono)) lineas.push(`<div class="center dato">Tel: ${v(config.telefono)}</div>`);
+  if (v(config.direccion)) lineas.push(`<div class="center dato">Dir: ${v(config.direccion)}</div>`);
+  if (ciudadLine) lineas.push(`<div class="center dato">${esc(ciudadLine)}</div>`);
+  if (v(config.email)) lineas.push(`<div class="center dato">${v(config.email)}</div>`);
+  if (!lineas.length) {
+    lineas.push(`<div class="center empresa">${v('ARGO')}</div>`);
+  }
+  return lineas.join('\n');
 }
 
 function estilosRecibo(mm, w) {
@@ -53,6 +77,7 @@ function estilosRecibo(mm, w) {
     }
     .center { text-align: center; }
     .empresa { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
+    .sede-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
     .dato { font-size: 10px; line-height: 1.3; }
     .titulo { font-weight: bold; margin: 6px 0 2px; letter-spacing: 0.5px; font-size: 11px; }
     .slogan { font-size: 10px; margin-bottom: 4px; font-style: italic; }
@@ -82,6 +107,8 @@ module.exports = {
   fmtMoney,
   fmtFecha,
   lineaHtml,
+  nombreSedeVisible,
+  filasConSede,
   bloqueEmpresaHtml,
   estilosRecibo,
 };

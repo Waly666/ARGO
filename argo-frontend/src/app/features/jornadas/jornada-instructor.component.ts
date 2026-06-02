@@ -31,12 +31,16 @@ import {
   rowJornadaClass,
   tituloJorMsg,
 } from './jornada-ui.util';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { ymdLocal } from './jornada-calendario.util';
 
 @Component({
   selector: 'argo-jornada-instructor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent],
   templateUrl: './jornada-instructor.component.html',
   styleUrls: ['./jornada-instructor.component.scss'],
 })
@@ -98,6 +102,28 @@ export class JornadaInstructorComponent implements OnInit {
 
   ubicaciones = ['Carpa', 'Domo', 'Empresa', 'Colegio', 'Auditorio', 'Coliseo', 'Estadio', 'Otro'];
 
+  opcionesProgramasInstructor = computed<EnumBuscarOption[]>(() =>
+    this.programasJornada().map((p) => ({
+      value: String(p.idPrograma || p._id || ''),
+      label: String(p.nombreProg || p.codigoProg || ''),
+    })),
+  );
+
+  textoProgramaInstructor = computed(() => {
+    const id = this.nuevaClaseProg();
+    if (!id) return '';
+    const p = this.programasJornada().find(
+      (x) => String(x.idPrograma || x._id) === String(id),
+    );
+    return p ? String(p.nombreProg || p.codigoProg || id) : id;
+  });
+
+  opcionesUbicacionInstructor = computed<EnumBuscarOption[]>(() =>
+    this.ubicaciones.map((u) => ({ value: u, label: u })),
+  );
+
+  textoUbicacionInstructor = computed(() => this.nuevaClaseUbic() || 'Carpa');
+
   ngOnInit() {
     const q = this.route.snapshot.queryParamMap;
     const f = q.get('fecha');
@@ -110,6 +136,22 @@ export class JornadaInstructorComponent implements OnInit {
       this.jornadaSel.set(j);
       this.recargarClases(claseId || undefined);
     }
+  }
+
+  onProgramaInstructorPick(opt: EnumBuscarOption): void {
+    this.nuevaClaseProg.set(String(opt.value));
+  }
+
+  onProgramaInstructorLimpiar(): void {
+    this.nuevaClaseProg.set('');
+  }
+
+  onUbicacionInstructorPick(opt: EnumBuscarOption): void {
+    this.nuevaClaseUbic.set(String(opt.value));
+  }
+
+  onUbicacionInstructorLimpiar(): void {
+    this.nuevaClaseUbic.set('Carpa');
   }
 
   mostrarMsg(texto: string, tipo: JorMsgTipo = 'info', titulo?: string) {

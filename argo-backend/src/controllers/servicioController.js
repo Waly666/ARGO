@@ -7,6 +7,7 @@ const {
   insertarCatalogo,
   servicioPermiteCantidad,
 } = require('../services/programaServicio');
+const { filtrarServicios } = require('../services/sedeOferta');
 
 exports.listar = async (req, res, next) => {
   try {
@@ -27,7 +28,10 @@ exports.listar = async (req, res, next) => {
     }
     const filter = clauses.length ? (clauses.length === 1 ? clauses[0] : { $and: clauses }) : {};
 
-    const rows = await cat.servicios.find(filter).sort({ idServ: 1 }).lean();
+    let rows = await cat.servicios.find(filter).sort({ idServ: 1 }).lean();
+    if (req.idSede && req.query.catalogo !== '1') {
+      rows = await filtrarServicios(rows, req.idSede);
+    }
     const out = [];
     for (const s of rows) {
       let programa = null;
@@ -90,6 +94,10 @@ exports.actualizar = async (req, res, next) => {
     if (body.tarifa3 != null) patch.tarifa3 = num(body.tarifa3);
     if (body.facturar != null) patch.facturar = body.facturar;
     if (body.iva != null) patch.iva = num(body.iva);
+    if (body.condicionIva != null) {
+      const c = String(body.condicionIva).trim().toLowerCase();
+      patch.condicionIva = ['gravado', 'exento', 'excluido'].includes(c) ? c : 'gravado';
+    }
 
     if (serv.idProg != null && patch.tarifa1 != null) {
       const prog = await buscarPrograma(serv.idProg);
@@ -160,6 +168,9 @@ exports.crear = async (req, res, next) => {
       descrServicio,
       facturar: body.facturar ?? 'NO',
       iva: num(body.iva),
+      condicionIva: ['gravado', 'exento', 'excluido'].includes(String(body.condicionIva || '').toLowerCase())
+        ? String(body.condicionIva).toLowerCase()
+        : 'gravado',
       tarifa1: valorVariable ? 0 : tarifa1,
       tarifa2: valorVariable ? null : num(body.tarifa2) || tarifa1 * 2,
       tarifa3: valorVariable ? null : num(body.tarifa3) || tarifa1 * 3,

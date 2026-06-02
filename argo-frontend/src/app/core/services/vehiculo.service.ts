@@ -123,6 +123,14 @@ export interface ClaseVehiculo {
   descripcion?: string;
   carrocerias?: string;
   carroceriasLista?: string[];
+  A1?: boolean;
+  A2?: boolean;
+  B1?: boolean;
+  B2?: boolean;
+  B3?: boolean;
+  C1?: boolean;
+  C2?: boolean;
+  C3?: boolean;
 }
 
 export interface TipoDocumentoVehiculo {

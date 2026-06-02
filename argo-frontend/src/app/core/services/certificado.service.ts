@@ -28,6 +28,70 @@ export interface CertificadoActualizarDto {
   observaciones?: string;
 }
 
+export interface CertificadoListItem {
+  _id: string;
+  codigoCert?: string;
+  numDoc?: number;
+  alumnoId?: string | null;
+  nombreCompleto?: string;
+  encabezado?: string;
+  tipoFormatoCert?: string;
+  tipoFormatoCertLabel?: string;
+  tipoCertificado?: string;
+  fechaEmision?: string;
+  fechaVencimiento?: string | null;
+  estado?: string;
+  numActa?: string;
+  numFolio?: string;
+  numRunt?: string;
+  observaciones?: string;
+  horasCert?: string;
+  generadoAutoJornada?: boolean;
+  codContrato?: string | null;
+  ubicacionJornada?: string | null;
+  programaDescr?: string | null;
+  nomCert?: string | null;
+}
+
+export interface CertificadoListadoRes {
+  total: number;
+  emitidosHoy: number;
+  items: CertificadoListItem[];
+}
+
+export interface CertificadoVencimientoAlertaItem {
+  _id: string;
+  codigoCert?: string | null;
+  numDoc?: number;
+  alumnoId?: string | null;
+  nombreCompleto: string;
+  celular?: string | null;
+  encabezado?: string | null;
+  tipoFormatoCert?: string | null;
+  tipoFormatoCertLabel?: string | null;
+  fechaEmision?: string;
+  fechaVencimiento?: string;
+  diasRestantes: number;
+  diasVencidos?: number;
+  nivelUrgencia: 'vencido' | 'hoy' | 'critico' | 'urgente' | 'proximo' | 'aviso';
+}
+
+export interface CertificadosVencimientoAlertasRes {
+  total: number;
+  diasVentana: number;
+  venceHoy: number;
+  venceManana: number;
+  critico: number;
+  urgente: number;
+  items: CertificadoVencimientoAlertaItem[];
+}
+
+export interface CertificadosVencidosAlertasRes {
+  total: number;
+  diasVentana: number;
+  items: CertificadoVencimientoAlertaItem[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class CertificadoService {
   private http = inject(HttpClient);
@@ -57,13 +121,49 @@ export class CertificadoService {
     });
   }
 
+  /** Listado global con filtros (tipo capacitación, fechas, búsqueda). */
+  listarGlobal(params?: {
+    q?: string;
+    tipoFormatoCert?: string;
+    desde?: string;
+    hasta?: string;
+    limit?: number;
+    /** Evita respuesta 304 en caché del navegador tras editar. */
+    cacheBust?: number;
+  }): Observable<CertificadoListadoRes> {
+    const p = new URLSearchParams();
+    if (params?.q?.trim()) p.set('q', params.q.trim());
+    if (params?.tipoFormatoCert) p.set('tipoFormatoCert', params.tipoFormatoCert);
+    if (params?.desde) p.set('desde', params.desde);
+    if (params?.hasta) p.set('hasta', params.hasta);
+    if (params?.limit != null) p.set('limit', String(params.limit));
+    p.set('_', String(params?.cacheBust ?? Date.now()));
+    const qs = p.toString() ? `?${p}` : '';
+    return this.http.get<CertificadoListadoRes>(`${this.base}/listado${qs}`);
+  }
+
+  alertasPorVencer(dias?: number): Observable<CertificadosVencimientoAlertasRes> {
+    const q = dias != null ? `?dias=${encodeURIComponent(String(dias))}` : '';
+    return this.http.get<CertificadosVencimientoAlertasRes>(`${this.base}/alertas-por-vencer${q}`);
+  }
+
+  alertasVencidos(dias?: number): Observable<CertificadosVencidosAlertasRes> {
+    const q = dias != null ? `?dias=${encodeURIComponent(String(dias))}` : '';
+    return this.http.get<CertificadosVencidosAlertasRes>(`${this.base}/alertas-vencidos${q}`);
+  }
+
+  /** @deprecated Use alertasPorVencer */
+  alertasVencimiento(dias?: number): Observable<CertificadosVencimientoAlertasRes> {
+    return this.alertasPorVencer(dias);
+  }
+
   crear(dto: CertificadoCrearDto): Observable<any> {
     const numDoc = parseNumDocForApi(dto.numDoc);
     return this.http.post(this.base, { ...dto, numDoc: numDoc ?? dto.numDoc });
   }
 
   actualizar(id: string, dto: CertificadoActualizarDto): Observable<any> {
-    return this.http.put(`${this.base}/${id}`, dto);
+    return this.http.put(`${this.base}/${encodeURIComponent(id)}`, dto);
   }
 
   eliminar(id: string): Observable<{ ok: boolean }> {

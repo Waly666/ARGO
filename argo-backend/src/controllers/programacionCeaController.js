@@ -85,9 +85,99 @@ exports.rastreoGlobal = async (req, res, next) => {
   }
 };
 
+exports.clasesAlumno = async (req, res, next) => {
+  try {
+    res.json(await clasesSvc.listarClasesAlumno(req.params.numDoc, req.query));
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.rastreoAlumno = async (req, res, next) => {
   try {
     res.json(await svc.rastreoAlumno(req.params.numDoc));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.preferenciasAlumno = async (req, res, next) => {
+  try {
+    const result = await svc.guardarPreferenciasAlumno(req.params.numDoc, req.body, req.user);
+    if (result.error) return res.status(result.status).json({ message: result.error });
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.generarClasesPendientesGlobales = async (_req, res, next) => {
+  try {
+    const { generarClasesPendientesGlobales } = require('../services/programacionCeaAuto');
+    const r = await generarClasesPendientesGlobales();
+    res.json(r);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.completarClasesFaltantesAlumno = async (req, res, next) => {
+  try {
+    const {
+      completarClasesGrupalesAlumno,
+      contarClasesGrupalesFaltantesAlumno,
+    } = require('../services/programacionCeaAuto');
+    const numDoc = req.params.numDoc;
+    const faltantesAntes = await contarClasesGrupalesFaltantesAlumno(numDoc);
+    const r = await completarClasesGrupalesAlumno(numDoc);
+    const faltantesDespues = await contarClasesGrupalesFaltantesAlumno(numDoc);
+
+    if (r.skipped) {
+      return res.status(400).json({
+        message:
+          r.motivo === 'sin_matricula_generada'
+            ? 'Este alumno no tiene matrícula CEA con clases generadas.'
+            : r.motivo === 'sin_programa_cea'
+              ? 'No se encontró un programa CEA válido para completar clases.'
+              : 'No se pudieron generar clases faltantes.',
+        ...r,
+        faltantesAntes,
+        faltantesDespues,
+      });
+    }
+
+    const generadas = r.clases || 0;
+    res.json({
+      ...r,
+      faltantesAntes,
+      faltantesDespues,
+      message:
+        generadas > 0
+          ? `Se generaron o inscribieron ${generadas} clase(s) faltante(s) (teoría/taller).`
+          : 'No había clases teóricas ni de taller pendientes por generar.',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.previewPlanificacion = async (req, res, next) => {
+  try {
+    const planSvc = require('../services/programacionCeaPlanificacion');
+    const r = await planSvc.previewPlanificacion(req.body, req);
+    if (r.error) return res.status(r.status || 400).json({ message: r.error });
+    res.json(r);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.generarPlanificacion = async (req, res, next) => {
+  try {
+    const planSvc = require('../services/programacionCeaPlanificacion');
+    const r = await planSvc.generarClasesPlanificadas(req.body, req);
+    if (r.error) return res.status(r.status || 400).json({ message: r.error });
+    res.json(r);
   } catch (e) {
     next(e);
   }
@@ -101,9 +191,28 @@ exports.alertasPendientes = async (_req, res, next) => {
   }
 };
 
-exports.recursos = async (_req, res, next) => {
+exports.alertasClasesCreado = async (_req, res, next) => {
   try {
-    res.json(await clasesSvc.recursosProgramacion());
+    res.json(await svc.alertasClasesCreado());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.alertasClasesProximas = async (req, res, next) => {
+  try {
+    const minutos = req.query.minutos != null ? Number(req.query.minutos) : 15;
+    res.json(await clasesSvc.alertasClasesProximas(req, minutos));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.recursos = async (req, res, next) => {
+  try {
+    const idProg = req.query.idProg || req.query.idPrograma || '';
+    const categoriaLicencia = req.query.categoriaLicencia || req.query.categoria || '';
+    res.json(await clasesSvc.recursosProgramacion({ idProg, categoriaLicencia, idSede: req.idSede }));
   } catch (e) {
     next(e);
   }
@@ -163,6 +272,16 @@ exports.cancelarClase = async (req, res, next) => {
   }
 };
 
+exports.eliminarClase = async (req, res, next) => {
+  try {
+    const result = await clasesSvc.eliminarClase(req.params.id, req);
+    if (result?.error) return res.status(result.status).json({ message: result.error });
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.verificarConflictos = async (req, res, next) => {
   try {
     const excludeId = req.query.excludeId || null;
@@ -176,7 +295,14 @@ exports.verificarConflictos = async (req, res, next) => {
 exports.iniciarClase = async (req, res, next) => {
   try {
     const result = await clasesSvc.iniciarClase(req.params.id, req);
-    if (result?.error) return res.status(result.status).json({ message: result.error });
+    if (result?.error) {
+      return res.status(result.status).json({
+        message: result.error,
+        codigo: result.codigo,
+        placa: result.placa,
+        vehiculoId: result.vehiculoId,
+      });
+    }
     res.json(result.doc);
   } catch (e) {
     next(e);
@@ -216,6 +342,20 @@ exports.quitarInscripcion = async (req, res, next) => {
     const result = await clasesSvc.quitarInscripcion(req.params.id, req.params.numDoc, req);
     if (result?.error) return res.status(result.status).json({ message: result.error });
     res.json(result);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.alumnosElegiblesPrograma = async (req, res, next) => {
+  try {
+    const idProg = String(req.query.idProg || '').trim();
+    const tipoHoras = String(req.query.tipoHoras || req.query.tipoClase || '').trim();
+    if (!idProg || !tipoHoras) {
+      return res.status(400).json({ message: 'idProg y tipoHoras son obligatorios' });
+    }
+    const rows = await clasesSvc.alumnosElegiblesPrograma(idProg, tipoHoras, req.query.q || '');
+    res.json(rows);
   } catch (e) {
     next(e);
   }

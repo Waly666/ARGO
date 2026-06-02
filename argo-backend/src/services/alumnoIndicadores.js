@@ -2,6 +2,7 @@ const Matricula = require('../models/Matricula');
 const Liquidacion = require('../models/Liquidacion');
 const { parseNumDoc } = require('../utils/numDoc');
 const { validarDocumentosPendientesAlumno } = require('./alumnoDocumentos');
+const { indicadoresClasesCeaCreadoPorAlumnos } = require('./programacionCeaAuto');
 
 function numSaldo(v) {
   if (v == null) return 0;
@@ -72,8 +73,9 @@ async function enriquecerIndicadoresLista(items) {
   if (!numDocs.length) return items;
 
   const filtro = filtroNumDocsIn(numDocs);
-  const [liquidaciones] = await Promise.all([
+  const [liquidaciones, ceaPorDoc] = await Promise.all([
     filtro ? Liquidacion.find(filtro).lean() : [],
+    indicadoresClasesCeaCreadoPorAlumnos(numDocs),
   ]);
 
   const liqsByNum = groupByNumDoc(liquidaciones);
@@ -92,6 +94,7 @@ async function enriquecerIndicadoresLista(items) {
       };
       const val = await validarDocumentosPendientesAlumno(alumnoDoc);
       const docsPendientes = (val.pendientes || []).length;
+      const cea = ceaPorDoc.get(key) || { clasesCeaCreado: 0, programasCeaCreado: [] };
 
       return {
         ...item,
@@ -100,6 +103,8 @@ async function enriquecerIndicadoresLista(items) {
           saldosPendientes,
           saldoTotal,
           itemsSaldo,
+          clasesCeaCreado: cea.clasesCeaCreado,
+          programasCeaCreado: cea.programasCeaCreado,
         },
       };
     }),

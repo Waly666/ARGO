@@ -1,17 +1,18 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/vehiculoController');
 const inspCtrl = require('../controllers/inspeccionVehiculoController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 router.get('/alertas-documentos', ctrl.alertasDocumentos);
 router.get('/alertas-documentos-faltantes', ctrl.alertasDocumentosFaltantes);
 router.get('/alertas-inspeccion-pendiente', inspCtrl.alertasInspeccionPendiente);
 
 const permiso = requirePermiso('vehiculos');
+const permisoInspeccion = requirePermiso('vehiculos', 'instructores.inspeccion');
 
 router.get('/meta', permiso, ctrl.meta);
 router.get('/marcas', permiso, ctrl.listarMarcas);
@@ -23,9 +24,9 @@ router.get('/verificar-placa/:placa', permiso, ctrl.verificarPlaca);
 
 router.get('/', permiso, ctrl.listar);
 router.get('/:id/inspeccion', permiso, inspCtrl.listar);
-router.get('/:id/inspeccion/hoy', permiso, inspCtrl.obtenerDelDia);
-router.put('/:id/inspeccion', permiso, inspCtrl.guardar);
-router.get('/:id/inspeccion/imprimir', permiso, inspCtrl.imprimir);
+router.get('/:id/inspeccion/hoy', permisoInspeccion, inspCtrl.obtenerDelDia);
+router.put('/:id/inspeccion', permisoInspeccion, inspCtrl.guardar);
+router.get('/:id/inspeccion/imprimir', permisoInspeccion, inspCtrl.imprimir);
 
 router.get('/:id/documentos-requeridos', permiso, ctrl.documentosRequeridos);
 router.get('/:id/documentos-validacion', permiso, ctrl.documentosValidacion);

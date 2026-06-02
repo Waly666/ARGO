@@ -49,10 +49,11 @@
         <th>Contacto</th>
         <th>Depto.</th>
         <th>Estado</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let e of instructores()">
+      <tr *ngFor="let e of instructores()" class="row-click" (click)="irDetalle(e)">
         <td class="td-foto">
           <div class="list-foto" aria-hidden="true">
             <img *ngIf="fotoUrl(e.urlFoto) as f" [src]="f" alt="" />
@@ -71,15 +72,18 @@
         <td>{{ contacto(e) }}</td>
         <td>{{ e.departamentoNombre || '—' }}</td>
         <td>{{ e.estado || 'activo' }}</td>
+        <td class="acciones-cell">
+          <button type="button" class="primary mini" (click)="irDetalle(e, $event)">Ver ficha</button>
+        </td>
       </tr>
       <tr *ngIf="instructores().length === 0">
-        <td colspan="8" class="empty">No hay instructores registrados con ese criterio.</td>
+        <td colspan="9" class="empty">No hay instructores registrados con ese criterio.</td>
       </tr>
     </tbody>
   </table>
 
   <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
-    <article class="list-card" *ngFor="let e of instructores()">
+    <article class="list-card card-click" *ngFor="let e of instructores()" (click)="irDetalle(e)">
       <header class="card-title"><h3>{{ e.nombreCompleto }}</h3></header>
       <div class="card-body">
         <div class="id-photo-wrap">
@@ -95,6 +99,7 @@
           <div class="card-meta"><span>Acceso</span> {{ labelAcceso(e) }}</div>
           <div class="card-meta"><span>Contacto</span> {{ contacto(e) }}</div>
           <div class="card-meta"><span>Estado</span> {{ e.estado || 'activo' }}</div>
+          <button type="button" class="primary mini card-ver-btn" (click)="irDetalle(e, $event)">Ver ficha</button>
         </div>
       </div>
     </article>

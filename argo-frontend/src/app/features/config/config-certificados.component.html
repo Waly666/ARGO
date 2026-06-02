@@ -8,7 +8,7 @@
 
   <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
 
-  <div class="grid-form">
+  <div class="grid-form argo-form-shell">
     <h3>Datos del certificado</h3>
     <div class="row">
       <div class="col-6">
@@ -34,6 +34,37 @@
         <input type="text" [ngModel]="form().prefijoCertificado" (ngModelChange)="patch('prefijoCertificado', $event)" />
       </div>
     </div>
+
+    <h3>Alertas de vencimiento (banner superior)</h3>
+    <p class="hint">
+      Configure cuándo aparecen las dos alarmas independientes del header. Los usuarios deben tener activada
+      la alarma correspondiente en su rol (<em>Certificados por vencer</em> / <em>Certificados vencidos</em>).
+    </p>
+    <div class="row alertas-cert-config">
+      <div class="col-6">
+        <label>Días antes — certificados por vencer</label>
+        <input
+          type="number"
+          min="1"
+          max="60"
+          [ngModel]="form().diasAvisoCertificadoPorVencer ?? 15"
+          (ngModelChange)="patchNumeroAlerta('diasAvisoCertificadoPorVencer', $event, 60)"
+        />
+        <span class="hint">Desde N días antes hasta el día del vencimiento (incluye «vence hoy»).</span>
+      </div>
+      <div class="col-6">
+        <label>Días después — certificados vencidos</label>
+        <input
+          type="number"
+          min="1"
+          max="30"
+          [ngModel]="form().diasAvisoCertificadoVencido ?? 3"
+          (ngModelChange)="patchNumeroAlerta('diasAvisoCertificadoVencido', $event, 30)"
+        />
+        <span class="hint">Cuántos días tras vencido sigue la alarma (día 1, 2… N después).</span>
+      </div>
+    </div>
+
     <h3>Código QR (global)</h3>
     <p class="hint">
       Active el QR aquí. La posición y el tamaño se ajustan en el <strong>paso 2</strong> de cada tipo de certificado

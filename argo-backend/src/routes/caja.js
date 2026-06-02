@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/cajaSesionController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const turno = requirePermiso('caja.turno');
 const admin = requirePermiso('caja.admin');

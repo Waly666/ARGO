@@ -1,0 +1,192 @@
+<section class="cli-page card">
+  <header class="cli-header">
+    <div>
+      <h1>Clientes de facturación</h1>
+      <p>Empresas o terceros a quienes se les puede emitir factura electrónica en nombre del alumno.</p>
+    </div>
+    <button type="button" class="primary" (click)="nuevo()">Nuevo cliente</button>
+  </header>
+
+  @if (msg() && !modalAbierto()) {
+    <p class="msg" [class.err]="msgError()">{{ msg() }}</p>
+  }
+
+  <div class="toolbar">
+    <input
+      type="search"
+      placeholder="Buscar por nombre o identificación…"
+      [ngModel]="filtro()"
+      (ngModelChange)="filtro.set($event)"
+      (keyup.enter)="recargar()" />
+    <button type="button" class="ghost" (click)="recargar()">Buscar</button>
+  </div>
+
+  @if (loading()) {
+    <p class="hint center">Cargando…</p>
+  } @else if (!clientes().length) {
+    <p class="hint center">No hay clientes registrados.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Identificación</th>
+            <th>Nombre / Razón social</th>
+            <th>Tipo</th>
+            <th>Gran contrib.</th>
+            <th>Agente ReteIVA</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of clientes(); track c._id) {
+            <tr>
+              <td>{{ c.identificacion }}{{ c.dv ? '-' + c.dv : '' }}</td>
+              <td>{{ c.nombre || c.razonSocial || c.nombres }}</td>
+              <td>{{ c.legalOrganizationCode === '1' ? 'Jurídica' : 'Natural' }}</td>
+              <td>{{ c.granContribuyente ? 'Sí' : '—' }}</td>
+              <td>{{ c.agenteRetenedorIva ? c.porcentajeReteIva + '%' : '—' }}</td>
+              <td class="r">
+                <button type="button" class="ghost mini" (click)="editar(c)">Editar</button>
+                <button type="button" class="danger mini" (click)="eliminar(c)">Desactivar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (modalAbierto()) {
+    <div class="modal-backdrop" (click)="cerrar()">
+      <div class="modal card cli-modal" (click)="$event.stopPropagation()">
+        <header class="cli-modal-head">
+          <h3>{{ editId() ? 'Editar' : 'Nuevo' }} cliente</h3>
+          <button type="button" class="close" (click)="cerrar()">×</button>
+        </header>
+
+        @if (msg()) {
+          <p class="msg" [class.err]="msgError()">{{ msg() }}</p>
+        }
+
+        <div class="row">
+          <div class="col-4">
+            <label>Tipo identificación</label>
+            <select [ngModel]="form().identificationDocumentCode" (ngModelChange)="onTipoIdentificacion($event)">
+              @for (t of catalogos()?.tiposIdentificacion || []; track t.code) {
+                <option [value]="t.code">{{ t.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-4">
+            <label>Identificación *</label>
+            <input type="text" [ngModel]="form().identificacion" (ngModelChange)="patch({ identificacion: $event })" />
+          </div>
+          <div class="col-4">
+            <label>DV</label>
+            <input
+              type="text"
+              maxlength="1"
+              [disabled]="!esNit()"
+              [ngModel]="form().dv"
+              (ngModelChange)="patch({ dv: $event })" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-6">
+            <label>Organización legal</label>
+            <select [ngModel]="form().legalOrganizationCode" (ngModelChange)="patch({ legalOrganizationCode: $event })">
+              @for (o of catalogos()?.organizacionesLegales || []; track o.code) {
+                <option [value]="o.code">{{ o.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6">
+            <label>Responsabilidad fiscal</label>
+            <select [ngModel]="form().responsabilidadFiscal" (ngModelChange)="patch({ responsabilidadFiscal: $event })">
+              @for (r of catalogos()?.responsabilidadesFiscales || []; track r.code) {
+                <option [value]="r.code">{{ r.code }} — {{ r.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-6">
+            <label>Tributo del adquirente</label>
+            <select [ngModel]="form().tributeCode" (ngModelChange)="patch({ tributeCode: $event })">
+              @for (t of catalogos()?.tributos || []; track t.code) {
+                <option [value]="t.code">{{ t.code }} — {{ t.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          @if (esJuridica()) {
+            <div class="col-8">
+              <label>Razón social *</label>
+              <input type="text" [ngModel]="form().razonSocial" (ngModelChange)="patch({ razonSocial: $event })" />
+            </div>
+            <div class="col-4">
+              <label>Nombre comercial</label>
+              <input type="text" [ngModel]="form().nombreComercial" (ngModelChange)="patch({ nombreComercial: $event })" />
+            </div>
+          } @else {
+            <div class="col-12">
+              <label>Nombres y apellidos *</label>
+              <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch({ nombres: $event })" />
+            </div>
+          }
+        </div>
+
+        <div class="row">
+          <div class="col-6">
+            <label>Correo</label>
+            <input type="email" [ngModel]="form().correo" (ngModelChange)="patch({ correo: $event })" />
+          </div>
+          <div class="col-3">
+            <label>Teléfono</label>
+            <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch({ telefono: $event })" />
+          </div>
+          <div class="col-3">
+            <label>Cód. municipio</label>
+            <input type="text" [ngModel]="form().municipioCodigo" (ngModelChange)="patch({ municipioCodigo: $event })" placeholder="11001" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <label>Dirección</label>
+            <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch({ direccion: $event })" />
+          </div>
+        </div>
+
+        <div class="row check-row">
+          <label class="chk">
+            <input type="checkbox" [ngModel]="form().granContribuyente" (ngModelChange)="onGranContribuyente($event)" />
+            Gran contribuyente
+          </label>
+          <label class="chk">
+            <input type="checkbox" [ngModel]="form().agenteRetenedorIva" (ngModelChange)="onAgenteRetenedor($event)" />
+            Agente retenedor de IVA
+          </label>
+          @if (form().agenteRetenedorIva) {
+            <div class="rete-pct">
+              <label>% ReteIVA</label>
+              <input type="number" min="0" max="100" [ngModel]="form().porcentajeReteIva" (ngModelChange)="patch({ porcentajeReteIva: +$event })" />
+            </div>
+          }
+        </div>
+
+        <footer class="cli-actions">
+          <button type="button" class="ghost" (click)="cerrar()">Cancelar</button>
+          <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</section>

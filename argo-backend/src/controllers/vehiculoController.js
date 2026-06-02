@@ -185,15 +185,14 @@ exports.alertasDocumentosFaltantes = async (_req, res, next) => {
 exports.listarMarcas = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
-    if (q.length < 1) return res.json([]);
-    const texto = filtroTextoIncremental(q, ['nombreMarca']);
-    const codigo = new RegExp(`^${escRegex(q)}`, 'i');
-    const filter = texto ? { $or: [...texto.$or, { codigoMarca: codigo }] } : { codigoMarca: codigo };
-    const rows = await marcaModel
-      .find(filter)
-      .sort({ nombreMarca: 1 })
-      .limit(Number(req.query.limit) || 35)
-      .lean();
+    const limit = Number(req.query.limit) || (q.length >= 1 ? 35 : 500);
+    let filter = {};
+    if (q.length >= 1) {
+      const texto = filtroTextoIncremental(q, ['nombreMarca']);
+      const codigo = new RegExp(`^${escRegex(q)}`, 'i');
+      filter = texto ? { $or: [...texto.$or, { codigoMarca: codigo }] } : { codigoMarca: codigo };
+    }
+    const rows = await marcaModel.find(filter).sort({ nombreMarca: 1 }).limit(limit).lean();
     res.json(rows);
   } catch (e) {
     next(e);
@@ -212,13 +211,11 @@ exports.listarLineas = async (req, res, next) => {
       const texto = filtroTextoIncremental(q, ['nombreLinea']);
       const codigo = new RegExp(`^${escRegex(q)}`, 'i');
       filter.$or = texto ? [...texto.$or, { codigoLinea: codigo }] : [{ codigoLinea: codigo }];
-    } else {
-      return res.json([]);
     }
     const rows = await lineaModel
       .find(filter)
       .sort({ nombreLinea: 1 })
-      .limit(Number(req.query.limit) || 40)
+      .limit(Number(req.query.limit) || (q.length >= 1 ? 40 : 200))
       .lean();
     res.json(rows);
   } catch (e) {
@@ -289,6 +286,7 @@ exports.listar = async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 25));
     const skip = (page - 1) * limit;
     const filter = {};
+    if (req.idSede) filter.idSede = req.idSede;
 
     if (q.length >= 2) {
       const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
@@ -353,6 +351,7 @@ exports.crear = async (req, res, next) => {
     const now = new Date();
     const doc = await Vehiculo.create({
       ...dto,
+      idSede: req.idSede || dto.idSede || '',
       estado: dto.estado || 'Libre',
       fechaAudi: now,
       userAddReg: user,

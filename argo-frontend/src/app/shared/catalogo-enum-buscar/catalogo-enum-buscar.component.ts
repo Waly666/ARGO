@@ -23,6 +23,9 @@ export interface EnumBuscarOption {
   imports: [CommonModule, FormsModule],
   templateUrl: './catalogo-enum-buscar.component.html',
   styleUrls: ['./catalogo-enum-buscar.component.scss'],
+  host: {
+    '[class.dropdown-open]': 'open()',
+  },
 })
 export class CatalogoEnumBuscarComponent implements OnChanges {
   @Input() label = '';
@@ -32,6 +35,8 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   @Input() minLength = 2;
   /** Si true, usa `buscarRemoto`; si false, filtra `opcionesLocales`. */
   @Input() remoto = true;
+  /** Combobox: al abrir muestra la lista completa; al escribir filtra (sin exigir mínimo de caracteres). */
+  @Input() modoCombo = false;
   @Input() opcionesLocales: EnumBuscarOption[] = [];
   @Input() buscarRemoto?: (q: string) => Observable<EnumBuscarOption[]>;
 
@@ -42,6 +47,8 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   open = signal(false);
   loading = signal(false);
   resultados = signal<EnumBuscarOption[]>([]);
+  /** true mientras el usuario edita el texto para filtrar (no al abrir la lista). */
+  private filtrandoActivo = signal(false);
 
   private q$ = new Subject<string>();
 
@@ -76,45 +83,83 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
       const next = this.textoInicial || '';
       if (next !== this.query()) this.query.set(next);
     }
-    if (changes['opcionesLocales'] && this.open() && !this.remoto) {
-      this.q$.next(this.query());
+    if (changes['opcionesLocales']) {
+      const q = this.filtrandoActivo() ? this.query().trim() : '';
+      if (this.open() || (this.modoCombo && (this.opcionesLocales?.length ?? 0) > 0 && !this.query().trim())) {
+        this.refrescarOpciones(q);
+      }
     }
   }
 
   onInput(v: string): void {
     if (this.disabled) return;
+    this.filtrandoActivo.set(true);
     this.query.set(v);
     this.open.set(true);
     const q = (v || '').trim();
     if (!q) {
-      this.resultados.set([]);
+      this.filtrandoActivo.set(false);
       this.limpiado.emit();
+      if (this.modoCombo) this.refrescarOpciones('');
+      else this.resultados.set([]);
       return;
     }
-    if (q.length >= this.minLength) this.q$.next(q);
+    if (this.modoCombo || q.length >= this.minLength) this.refrescarOpciones(q);
     else this.resultados.set([]);
   }
 
   focus(): void {
     if (this.disabled) return;
     this.open.set(true);
+    if (this.modoCombo) {
+      this.filtrandoActivo.set(false);
+      this.refrescarOpciones('');
+      return;
+    }
     const q = this.query().trim();
     if (q.length >= this.minLength) this.q$.next(q);
+  }
+
+  toggleOpen(): void {
+    if (this.disabled) return;
+    if (this.open()) {
+      this.open.set(false);
+      this.filtrandoActivo.set(false);
+      return;
+    }
+    this.open.set(true);
+    if (this.modoCombo) {
+      this.filtrandoActivo.set(false);
+      this.refrescarOpciones('');
+    } else {
+      this.refrescarOpciones(this.query().trim());
+    }
   }
 
   pick(opt: EnumBuscarOption): void {
     this.query.set(opt.label);
     this.open.set(false);
+    this.filtrandoActivo.set(false);
     this.resultados.set([]);
     this.seleccionado.emit(opt);
   }
 
+  private refrescarOpciones(q: string): void {
+    const filtro =
+      this.modoCombo && !this.filtrandoActivo() ? '' : q;
+    if (this.remoto) {
+      this.q$.next(filtro);
+      return;
+    }
+    this.loading.set(false);
+    this.resultados.set(this.filtrarLocal(filtro));
+  }
+
   private filtrarLocal(q: string): EnumBuscarOption[] {
+    const pool = this.opcionesLocales || [];
     const nq = this.normalizar(q.trim());
-    if (!nq) return [];
-    return (this.opcionesLocales || [])
-      .filter((o) => this.coincideBusqueda(nq, o.label, o.hint))
-      .slice(0, 40);
+    if (!nq) return pool.slice(0, 80);
+    return pool.filter((o) => this.coincideBusqueda(nq, o.label, o.hint)).slice(0, 40);
   }
 
   private normalizar(s: string): string {

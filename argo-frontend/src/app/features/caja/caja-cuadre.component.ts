@@ -132,7 +132,7 @@ export class CajaCuadreComponent implements OnInit {
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
       next: (t) => this.tiposPagoCat.set(t || []),
     });
-    this.configSvc.obtenerRecibo().subscribe({
+    this.configSvc.obtenerReciboEncabezado().subscribe({
       next: (c) => this.empresaConfig.set(c),
       error: () => this.empresaConfig.set(null),
     });
@@ -298,7 +298,6 @@ export class CajaCuadreComponent implements OnInit {
               ingresos: this.ingresosInforme(),
               egresos: this.egresosInforme(),
               descuadre: r.descuadre,
-              empresa: this.empresaConfig(),
             });
           });
         },
@@ -353,7 +352,6 @@ export class CajaCuadreComponent implements OnInit {
             ingresos: this.ingresosInforme(),
             egresos: this.egresosInforme(),
             descuadre: this.descuadreInforme(),
-            empresa: this.empresaConfig(),
           });
         });
       },

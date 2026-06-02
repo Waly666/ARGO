@@ -31,6 +31,11 @@
     flex-wrap: wrap;
     gap: 8px;
     justify-content: flex-end;
+    align-items: center;
+
+    .btn-nueva-clase {
+      white-space: nowrap;
+    }
   }
 
   .live-badge {
@@ -153,6 +158,42 @@
       background: linear-gradient(180deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.9));
       border: 1px solid rgba(251, 191, 36, 0.55);
       color: #fffbeb;
+    }
+  }
+}
+
+.clase-crear-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .hint-warn {
+    color: #fcd34d;
+  }
+
+  .crear-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .crear-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(6, 16, 41, 0.65);
+      color: inherit;
     }
   }
 }

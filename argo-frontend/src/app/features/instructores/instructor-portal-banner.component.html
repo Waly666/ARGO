@@ -1,0 +1,26 @@
+@if (visible()) {
+  <div class="head-alarm-root inst-shell-banner-root">
+    <button type="button" class="head-alarm-close" (click)="cerrarBanner($event)" aria-label="Cerrar aviso">
+      Cerrar <span aria-hidden="true">×</span>
+    </button>
+    <div class="inst-shell-banner" role="alert" (click)="irPortal()">
+      <div class="inst-shell-body">
+        @if (proxima()) {
+          <strong>Clase en {{ alertSvc.minutosVentana() }} min o menos</strong>
+          @if (proximas()[0]; as c) {
+            <span>{{ c.horaDesde }} · {{ c.tipoClase }} · {{ c.programaLabel || c.temaNombre }}</span>
+          }
+        } @else if (inspeccion()) {
+          <strong>Inspección preoperacional pendiente</strong>
+          <span>{{ inspeccionInfo()?.mensaje }}</span>
+        } @else if (asignadas()) {
+          <strong>Nueva clase asignada</strong>
+          <span>{{ asignadasNuevas().length }} por revisar en su portal</span>
+        }
+      </div>
+      <div class="inst-shell-actions">
+        <button type="button" class="inst-shell-btn" (click)="irPortal($event)">Mi portal</button>
+      </div>
+    </div>
+  </div>
+}

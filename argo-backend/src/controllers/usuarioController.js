@@ -1,6 +1,8 @@
 const Usuario = require('../models/Usuario');
+const Sede = require('../models/Sede');
 const { normalizarRol, esAdmin } = require('../utils/roles');
 const { listarRolesActivos, rolExiste } = require('../services/rolesPermisos');
+const { normalizarIdSede, asegurarSedePrincipal } = require('../services/sedeContext');
 
 function esLoginNumerico(login) {
   const s = String(login ?? '').trim();
@@ -12,6 +14,27 @@ function limpiar(doc) {
   const o = doc.toJSON ? doc.toJSON() : { ...doc };
   delete o.passwordHash;
   return o;
+}
+
+async function resolverSedesPermitidas(raw, rol) {
+  if (raw === undefined) return undefined;
+  let ids = Array.isArray(raw) ? raw.map((s) => normalizarIdSede(s)).filter(Boolean) : [];
+  ids = [...new Set(ids)];
+
+  if (esAdmin(rol) && !ids.length) return [];
+
+  if (!ids.length) {
+    const principal = await asegurarSedePrincipal();
+    return principal ? [principal.idSede] : [];
+  }
+
+  const found = await Sede.find({ idSede: { $in: ids }, activa: true }).select('idSede').lean();
+  if (found.length !== ids.length) {
+    const err = new Error('Una o más sedes no existen o están inactivas');
+    err.status = 400;
+    throw err;
+  }
+  return ids;
 }
 
 exports.listar = async (_req, res, next) => {
@@ -39,8 +62,17 @@ exports.obtener = async (req, res, next) => {
 
 exports.crear = async (req, res, next) => {
   try {
-    const { username, password, nombres, apellidos, email, rol, activo, numeroDocumento } =
-      req.body || {};
+    const {
+      username,
+      password,
+      nombres,
+      apellidos,
+      email,
+      rol,
+      activo,
+      numeroDocumento,
+      sedesPermitidas,
+    } = req.body || {};
     const userKey = String(username || '').trim().toLowerCase();
     if (!userKey) return res.status(400).json({ message: 'Usuario (username) es obligatorio' });
     if (esLoginNumerico(userKey)) {
@@ -60,6 +92,8 @@ exports.crear = async (req, res, next) => {
       return res.status(400).json({ message: 'Rol no válido o inactivo' });
     }
 
+    const sedes = await resolverSedesPermitidas(sedesPermitidas, rolNorm);
+
     const payload = {
       username: userKey,
       nombres: String(nombres || '').trim(),
@@ -68,6 +102,7 @@ exports.crear = async (req, res, next) => {
       rol: rolNorm,
       activo: activo !== false,
       passwordHash: await Usuario.hashPassword(password),
+      sedesPermitidas: sedes,
     };
 
     const docStr = String(numeroDocumento ?? '').trim();
@@ -103,8 +138,17 @@ exports.actualizar = async (req, res, next) => {
     const u = await Usuario.findById(req.params.id);
     if (!u) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-    const { username, password, nombres, apellidos, email, rol, activo, numeroDocumento } =
-      req.body || {};
+    const {
+      username,
+      password,
+      nombres,
+      apellidos,
+      email,
+      rol,
+      activo,
+      numeroDocumento,
+      sedesPermitidas,
+    } = req.body || {};
     if (username != null) {
       const userKey = String(username).trim().toLowerCase();
       if (!userKey) return res.status(400).json({ message: 'Usuario inválido' });
@@ -139,6 +183,8 @@ exports.actualizar = async (req, res, next) => {
       }
       u.rol = rolNorm;
     }
+    const sedes = await resolverSedesPermitidas(sedesPermitidas, u.rol);
+    if (sedes !== undefined) u.sedesPermitidas = sedes;
     if (activo != null) u.activo = activo === true || activo === 'true';
     if (password != null && String(password).length > 0) {
       if (String(password).length < 4) {

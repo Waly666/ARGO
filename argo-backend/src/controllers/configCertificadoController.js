@@ -1,5 +1,12 @@
 const Config = require('../models/Config');
-const { CLAVE, DEFAULTS, obtenerConfigCertificado } = require('../services/configCertificado');
+const {
+  CLAVE,
+  DEFAULTS,
+  DEFAULT_DIAS_AVISO_POR_VENCER,
+  DEFAULT_DIAS_AVISO_VENCIDO,
+  normalizeDiasAvisoCert,
+  obtenerConfigCertificado,
+} = require('../services/configCertificado');
 const {
   layoutDefaultsApi,
   normalizeLayoutPorTipo,
@@ -23,6 +30,8 @@ const CAMPOS = [
   'mostrarQr',
   'qrPosicion',
   'qrTamanoPx',
+  'diasAvisoCertificadoPorVencer',
+  'diasAvisoCertificadoVencido',
 ];
 
 exports.obtener = async (_req, res, next) => {
@@ -75,6 +84,20 @@ exports.actualizar = async (req, res, next) => {
     }
     if (dto.qrTamanoPx != null) {
       dto.qrTamanoPx = Math.min(140, Math.max(40, parseInt(dto.qrTamanoPx, 10) || 72));
+    }
+    if (dto.diasAvisoCertificadoPorVencer != null) {
+      dto.diasAvisoCertificadoPorVencer = normalizeDiasAvisoCert(
+        dto.diasAvisoCertificadoPorVencer,
+        DEFAULT_DIAS_AVISO_POR_VENCER,
+        60,
+      );
+    }
+    if (dto.diasAvisoCertificadoVencido != null) {
+      dto.diasAvisoCertificadoVencido = normalizeDiasAvisoCert(
+        dto.diasAvisoCertificadoVencido,
+        DEFAULT_DIAS_AVISO_VENCIDO,
+        30,
+      );
     }
     const existe = await Config.findOne({ clave: CLAVE }).lean();
     if (dto.plantillaPorTipo != null) {

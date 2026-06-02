@@ -14,6 +14,7 @@ import { Usuario, UsuarioService } from '../../core/services/usuario.service';
 import { loginMostrable } from '../../core/utils/usuario-login.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SedeDto, SedeService } from '../../core/services/sede.service';
 import { inicialesNombre, readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { environment } from '../../../environments/environment';
 import { EmpleadoDocumentosPanelComponent } from './empleado-documentos-panel.component';
@@ -33,6 +34,7 @@ export class EmpleadosAdminComponent implements OnInit {
   private usuarioSvc = inject(UsuarioService);
   private confirm = inject(ConfirmDialogService);
   private auth = inject(AuthService);
+  private sedeSvc = inject(SedeService);
   private route = inject(ActivatedRoute);
 
   uploads = environment.uploadsUrl;
@@ -46,6 +48,7 @@ export class EmpleadosAdminComponent implements OnInit {
   afp = signal<any[]>([]);
   arl = signal<any[]>([]);
   cajas = signal<any[]>([]);
+  sedes = signal<SedeDto[]>([]);
   usuarios = signal<Usuario[]>([]);
 
   modoAcceso = signal<ModoAccesoEmpleado>('auto');
@@ -96,6 +99,7 @@ export class EmpleadosAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarCatalogos();
+    this.cargarSedes();
     if (this.esAdmin()) this.cargarUsuarios();
     this.route.queryParamMap.subscribe(() => this.aplicarQueryEmpleado());
     this.cargar();
@@ -113,6 +117,7 @@ export class EmpleadosAdminComponent implements OnInit {
   }
 
   formVacio(): EmpleadoDto {
+    const principal = this.sedes().find((s) => s.esPrincipal) || this.sedes()[0];
     return {
       tipoDocumento: 'CC',
       numeroDocumento: '',
@@ -121,7 +126,20 @@ export class EmpleadosAdminComponent implements OnInit {
       primerApellido: '',
       segundoApellido: '',
       estado: 'activo',
+      idSede: principal?.idSede,
     };
+  }
+
+  cargarSedes() {
+    this.sedeSvc.listar().subscribe({
+      next: (r) => this.sedes.set((r || []).filter((s) => s.activa !== false)),
+      error: () => {
+        this.sedeSvc.listarMias().subscribe({
+          next: (r) => this.sedes.set(r || []),
+          error: () => this.sedes.set([]),
+        });
+      },
+    });
   }
 
   cargarCatalogos() {
@@ -276,6 +294,10 @@ export class EmpleadosAdminComponent implements OnInit {
     }
     if (!f.numeroDocumento?.trim()) {
       this.msg.set('numeroDocumento es obligatorio (enlace con egresos).');
+      return;
+    }
+    if (!f.idSede?.trim()) {
+      this.msg.set('Seleccione la sede del empleado.');
       return;
     }
     const modo = this.modoAcceso();

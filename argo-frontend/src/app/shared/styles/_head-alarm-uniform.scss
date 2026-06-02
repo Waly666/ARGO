@@ -16,17 +16,26 @@ $head-alarm-h: 3.35rem;
   overflow: hidden;
 }
 
+.head-alarm-root {
+  position: relative;
+  width: 100%;
+}
+
 .head-alarm-wrap {
+  position: relative;
   height: $head-alarm-h;
   max-height: $head-alarm-h;
   overflow: visible;
 }
 
 .head-alarm {
+  position: relative;
   height: $head-alarm-h;
   min-height: $head-alarm-h;
   max-height: $head-alarm-h;
   overflow: visible;
+  padding-right: 5.5rem;
+  box-sizing: border-box;
 }
 
 .head-alarm-body {
@@ -54,6 +63,39 @@ $head-alarm-h: 3.35rem;
 }
 
 .head-alarm-close {
-  top: 50%;
-  transform: translateY(-50%);
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  align-self: auto;
+  transform: none;
+  opacity: 1;
+  box-sizing: border-box;
+
+  span[aria-hidden='true'] {
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+
+  &:hover {
+    background: rgba(15, 23, 42, 0.72);
+    filter: none;
+    opacity: 1;
+  }
 }

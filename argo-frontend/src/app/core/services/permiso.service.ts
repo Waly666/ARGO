@@ -22,10 +22,14 @@ export class PermisoService {
     return keys.some((k) => this.tieneUno(permisos, k));
   }
 
+  /** Solo coincidencia exacta (o *): lo marcado en Roles = lo que aplica. */
   private tieneUno(permisos: string[], clave: string): boolean {
-    if (permisos.includes(clave)) return true;
-    const base = clave.split('.')[0];
-    return permisos.includes(base);
+    return permisos.includes(clave);
+  }
+
+  /** Firma estable para detectar cambios tras guardar un rol. */
+  firma(): string {
+    return [...this._permisos()].sort().join('|');
   }
 
   private readPermisos(): string[] {

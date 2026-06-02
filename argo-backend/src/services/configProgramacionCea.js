@@ -16,22 +16,34 @@ function bloqueHorarioBase() {
   };
 }
 
+function defaultsPlanificacion() {
+  return {
+    diasInicioDesdeGeneracion: 5,
+    /** idProg → cuántos ciclos completos del programa generar por periodo */
+    programasPorPeriodo: {},
+  };
+}
+
 function defaults() {
   return {
     clave: CLAVE,
     vehiculo: {
       ...bloqueHorarioBase(),
       duracionesPermitidas: [1, 2, 3, 4],
+      duracionSesionHoras: 2,
       bufferMinutos: 30,
     },
     aula: {
       ...bloqueHorarioBase(),
-      cupoMaximoDefault: 25,
+      cupoMaximoDefault: 10,
+      duracionSesionHoras: 2,
     },
     taller: {
       ...bloqueHorarioBase(),
-      cupoMaximoDefault: 20,
+      cupoMaximoDefault: 10,
+      duracionSesionHoras: 2,
     },
+    planificacion: defaultsPlanificacion(),
   };
 }
 
@@ -51,6 +63,22 @@ function mergeBloque(actual, patch) {
   if (patch?.cupoMaximoDefault != null) {
     next.cupoMaximoDefault = Math.max(1, Number(patch.cupoMaximoDefault) || 1);
   }
+  if (patch?.duracionSesionHoras != null) {
+    next.duracionSesionHoras = Math.max(1, Math.min(8, Number(patch.duracionSesionHoras) || 2));
+  }
+  return next;
+}
+
+function mergePlanificacion(actual, patch) {
+  const base = defaultsPlanificacion();
+  const prev = { ...base, ...(actual || {}) };
+  const next = { ...prev, ...(patch || {}) };
+  if (patch?.diasInicioDesdeGeneracion != null) {
+    next.diasInicioDesdeGeneracion = Math.max(0, Number(patch.diasInicioDesdeGeneracion) || 0);
+  }
+  if (patch?.programasPorPeriodo && typeof patch.programasPorPeriodo === 'object') {
+    next.programasPorPeriodo = { ...prev.programasPorPeriodo, ...patch.programasPorPeriodo };
+  }
   return next;
 }
 
@@ -64,6 +92,7 @@ async function obtenerConfig() {
     vehiculo: mergeBloque(d.vehiculo, doc.vehiculo),
     aula: mergeBloque(d.aula, doc.aula),
     taller: mergeBloque(d.taller, doc.taller),
+    planificacion: mergePlanificacion(d.planificacion, doc.planificacion),
     actualizado: doc.updatedAt || doc.createdAt || null,
   };
 }
@@ -75,10 +104,19 @@ async function guardarConfig(body, usuario) {
     vehiculo: mergeBloque(actual.vehiculo, body?.vehiculo),
     aula: mergeBloque(actual.aula, body?.aula),
     taller: mergeBloque(actual.taller, body?.taller),
+    planificacion: mergePlanificacion(actual.planificacion, body?.planificacion),
     userChangeRecord: usuario?.username || 'sistema',
   };
   await Config.updateOne({ clave: CLAVE }, { $set: dto }, { upsert: true });
   return obtenerConfig();
 }
 
-module.exports = { CLAVE, defaults, obtenerConfig, guardarConfig, bloqueHorarioBase };
+module.exports = {
+  CLAVE,
+  defaults,
+  defaultsPlanificacion,
+  obtenerConfig,
+  guardarConfig,
+  bloqueHorarioBase,
+  mergePlanificacion,
+};

@@ -29,6 +29,8 @@ const EmpleadoSchema = new mongoose.Schema(
     cajaCompensacionId: { type: Number, index: true },
     cargoId: { type: Number, index: true },
     departamentoId: { type: Number, index: true },
+    /** Sede operativa del empleado; se hereda al usuario de login automático. */
+    idSede: { type: String, trim: true, index: true },
     /** Usuario de login generado (cajero / instructor) */
     idUsuario: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', index: true },
     urlFoto: { type: String, trim: true },

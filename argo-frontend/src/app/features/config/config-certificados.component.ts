@@ -45,6 +45,8 @@ export class ConfigCertificadosComponent implements OnInit {
     mostrarQr: true,
     qrPosicion: 'inferior_izquierda',
     qrTamanoPx: 72,
+    diasAvisoCertificadoPorVencer: 15,
+    diasAvisoCertificadoVencido: 3,
   });
   plantillas = signal<PlantillaCertificado[]>([]);
   saving = signal(false);
@@ -86,6 +88,11 @@ export class ConfigCertificadosComponent implements OnInit {
       }
     }
     if (changed) this.patch('plantillaPorTipo', ppt);
+  }
+
+  patchNumeroAlerta(campo: 'diasAvisoCertificadoPorVencer' | 'diasAvisoCertificadoVencido', val: unknown, max: number) {
+    const n = Math.max(1, Math.min(max, Number(val) || 1));
+    this.patch(campo, n);
   }
 
   patch<K extends keyof ConfigCertificado>(k: K, v: ConfigCertificado[K]) {

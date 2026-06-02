@@ -8,6 +8,7 @@ const Afp = require('../models/Afp');
 const Arl = require('../models/Arl');
 const CajaCompensacion = require('../models/CajaCompensacion');
 const Usuario = require('../models/Usuario');
+const Sede = require('../models/Sede');
 const { maxNumericId, insertarCatalogo } = require('../services/programaServicio');
 const { pickFields, num } = require('../services/rrhhCatalogo');
 const {
@@ -16,6 +17,7 @@ const {
   nombreCompletoEmpleado,
 } = require('../utils/empleadoDoc');
 const { procesarUsuarioEmpleado, rolDesdeCargoNombre } = require('../services/empleadoUsuario');
+const { normalizarIdSede, asegurarSedePrincipal } = require('../services/sedeContext');
 const upload = require('../middleware/upload');
 
 const EMPLEADO_FIELDS = [
@@ -45,6 +47,7 @@ const EMPLEADO_FIELDS = [
   'cajaCompensacionId',
   'cargoId',
   'departamentoId',
+  'idSede',
   'estado',
 ];
 
@@ -81,6 +84,21 @@ function pickEmpleado(body) {
   return dto;
 }
 
+async function normalizarIdSedeEmpleado(dto) {
+  if (dto.idSede === undefined) return;
+  const id = normalizarIdSede(dto.idSede);
+  if (!id) {
+    dto.idSede = null;
+    return;
+  }
+  await asegurarSedePrincipal();
+  const sede = await Sede.findOne({ idSede: id, activa: true }).lean();
+  if (!sede) {
+    throw Object.assign(new Error('La sede seleccionada no existe o está inactiva'), { status: 400 });
+  }
+  dto.idSede = id;
+}
+
 async function buscarEmpleado(id) {
   const q = String(id);
   const n = Number(q);
@@ -101,7 +119,7 @@ async function idsCargosInstructor() {
 
 async function resolverFk(emp) {
   const e = normalizarEmpleadoLegacy(emp);
-  const [cargo, depto, eps, afp, arl, caja, usuario] = await Promise.all([
+  const [cargo, depto, eps, afp, arl, caja, usuario, sede] = await Promise.all([
     e.cargoId ? Cargo.findOne({ idCargo: e.cargoId }).lean() : null,
     e.departamentoId ? DepartamentoEmpresa.findOne({ idDepartamento: e.departamentoId }).lean() : null,
     e.epsId ? Eps.findOne({ idEps: e.epsId }).lean() : null,
@@ -111,6 +129,7 @@ async function resolverFk(emp) {
       ? CajaCompensacion.findOne({ idCajaCompensacion: e.cajaCompensacionId }).lean()
       : null,
     e.idUsuario ? Usuario.findById(e.idUsuario).lean() : null,
+    e.idSede ? Sede.findOne({ idSede: e.idSede }).lean() : null,
   ]);
   return {
     ...e,
@@ -122,6 +141,7 @@ async function resolverFk(emp) {
     afpNombre: afp?.nombre || null,
     arlNombre: arl?.nombre || null,
     cajaNombre: caja?.nombre || null,
+    sedeNombre: sede?.nombre || null,
     idUsuario: e.idUsuario ? String(e.idUsuario) : null,
     usuarioLogin: usuario?.username || null,
     usuarioRol: usuario?.rol || null,
@@ -160,6 +180,21 @@ exports.listarInstructores = async (req, res, next) => {
     const rows = await Empleado.find(filter).sort({ primerApellido: 1, primerNombre: 1 }).lean();
     const out = await Promise.all(rows.map((r) => resolverFk(r)));
     res.json(out);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerInstructor = async (req, res, next) => {
+  try {
+    const emp = await buscarEmpleado(req.params.id);
+    if (!emp) return res.status(404).json({ message: 'Instructor no encontrado' });
+    const cargoIds = await idsCargosInstructor();
+    const esInstructor = cargoIds.some((id) => Number(id) === Number(emp.cargoId));
+    if (!emp.cargoId || !esInstructor) {
+      return res.status(404).json({ message: 'El empleado no tiene cargo de instructor' });
+    }
+    res.json(await resolverFk(emp));
   } catch (e) {
     next(e);
   }
@@ -258,6 +293,7 @@ exports.crear = async (req, res, next) => {
   try {
     const dto = pickEmpleado(req.body);
     aplicarFoto(dto, req.files);
+    await normalizarIdSedeEmpleado(dto);
     if (!dto.primerNombre || !dto.primerApellido) {
       return res.status(400).json({ message: 'primerNombre y primerApellido son obligatorios' });
     }
@@ -324,6 +360,7 @@ exports.actualizar = async (req, res, next) => {
     if (!emp) return res.status(404).json({ message: 'Empleado no encontrado' });
     const dto = pickEmpleado(req.body);
     aplicarFoto(dto, req.files);
+    await normalizarIdSedeEmpleado(dto);
     const prev = normalizarEmpleadoLegacy(emp);
     if (dto.numeroDocumento) {
       const dup = await Empleado.findOne({

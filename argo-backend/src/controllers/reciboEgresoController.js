@@ -11,6 +11,7 @@ const {
   fmtMoney,
   fmtFecha,
   lineaHtml,
+  filasConSede,
   bloqueEmpresaHtml,
   estilosRecibo,
 } = require('../services/reciboHtmlShared');
@@ -107,7 +108,7 @@ async function enriquecerEgreso(raw) {
 
 async function ensureNumRecibo(egresoDoc) {
   if (egresoDoc.numRecibo) return egresoDoc.numRecibo;
-  const num = await siguienteNumComprobanteEgreso();
+  const num = await siguienteNumComprobanteEgreso(egresoDoc.idSede);
   await Egreso.updateOne({ _id: egresoDoc._id }, { $set: { numRecibo: num } });
   return num;
 }
@@ -116,7 +117,7 @@ async function armarReciboEgreso(id) {
   const eg = await Egreso.findById(id).lean();
   if (!eg) return null;
 
-  const config = await obtenerConfigRecibo();
+  const config = await obtenerConfigRecibo(eg.idSede);
   const egreso = await enriquecerEgreso(eg);
   const numeroRecibo = await ensureNumRecibo(eg);
   egreso.numRecibo = numeroRecibo;
@@ -180,7 +181,8 @@ exports.html = async (req, res, next) => {
     const titulo = esc(config.mensajeEncabezadoEgreso || 'COMPROBANTE DE EGRESO');
     const slogan = (config.slogan1 || '').toString().trim();
 
-    const filas = [
+    const filas = filasConSede(
+      [
       ['Comprobante N°', numeroRecibo],
       ['Fecha pago', fmtFecha(egreso.fechaEgreso)],
       ['Pagado a', egreso.pagueA || '—'],
@@ -214,7 +216,9 @@ exports.html = async (req, res, next) => {
         : []),
       ...(egreso.autorizadoEn ? [['Fecha autorización', fmtFecha(egreso.autorizadoEn)]] : []),
       ...(egreso.userAddReg ? [['Registró', egreso.userAddReg]] : []),
-    ];
+      ],
+      config,
+    );
 
     const bodyRows = filas
       .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`)

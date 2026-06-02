@@ -5,6 +5,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, forkJoin, switchMap } from 'rxjs';
 
 import { AlumnoListItem, AlumnoService } from '../../core/services/alumno.service';
+import { JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
+import { PermisoService } from '../../core/services/permiso.service';
+import { AlarmaService } from '../../core/services/alarma.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import {
   ESTADOS_CIVIL_DEF,
@@ -26,6 +29,11 @@ import {
 import { environment } from '../../../environments/environment';
 import { formatNumDoc } from '../../core/utils/num-doc.helpers';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import { ymdLocal } from '../jornadas/jornada-calendario.util';
 
 type VistaAlumnos = VistaLista;
 type SortColAlumnos =
@@ -44,6 +52,12 @@ const VISTA_STORAGE_KEY_GENERAL = 'argo-alumnos-vista';
 const VISTA_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-vista';
 const SORT_STORAGE_KEY_GENERAL = 'argo-alumnos-sort';
 const SORT_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-sort';
+
+const CERT_JORNADA_OPTS: EnumBuscarOption[] = [
+  { value: '', label: 'Todos' },
+  { value: 'con', label: 'Con certificado' },
+  { value: 'sin', label: 'Sin certificado' },
+];
 
 const SORT_COLUMNS: ReadonlyArray<{ key: SortColAlumnos; label: string }> = [
   { key: 'numDoc', label: 'Documento' },
@@ -81,15 +95,18 @@ function saveSortPrefs(storageKey: string, col: SortColAlumnos, dir: SortDir): v
 @Component({
   selector: 'argo-alumnos-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent],
   templateUrl: './alumnos-lista.component.html',
   styleUrls: ['./alumnos-lista.component.scss'],
 })
 export class AlumnosListaComponent implements OnInit {
   private alumnoSvc = inject(AlumnoService);
+  private jornadaCapSvc = inject(JornadaCapService);
   private catSvc = inject(CatalogoService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private permisos = inject(PermisoService);
+  readonly alarmas = inject(AlarmaService);
 
   /** general = menú Alumnos; jornadas = solo tipo Jornadas de Capacitación */
   modo = signal<ModoAlumnos>('general');
@@ -113,6 +130,38 @@ export class AlumnosListaComponent implements OnInit {
   items = signal<AlumnoListItem[]>([]);
   total = signal(0);
 
+  /** Filtros solo en modo jornadas de capacitación */
+  fechaJornadaCap = signal('');
+  idJornadaCap = signal('');
+  certJornadaFiltro = signal<'' | 'con' | 'sin'>('');
+  jornadasCap = signal<JornadaCapDto[]>([]);
+  cargandoJornadasCap = signal(false);
+  jornadaFiltroMsg = signal('');
+
+  readonly opcionesCertJornada = CERT_JORNADA_OPTS;
+
+  opcionesJornadasCap = computed<EnumBuscarOption[]>(() =>
+    this.jornadasCap().map((j) => ({
+      value: j._id,
+      label: this.labelJornadaCap(j),
+      hint: j.contratoLabel || j.codContrato || undefined,
+    })),
+  );
+
+  textoJornadaCapSel = computed(() => {
+    const id = this.idJornadaCap();
+    if (!id) return '';
+    const j = this.jornadasCap().find((x) => x._id === id);
+    return j ? this.labelJornadaCap(j) : '';
+  });
+
+  textoCertJornadaSel = computed(() => {
+    const v = this.certJornadaFiltro();
+    return CERT_JORNADA_OPTS.find((o) => o.value === v)?.label || '';
+  });
+
+  filtroJornadaActivo = computed(() => !!(this.fechaJornadaCap().trim() || this.idJornadaCap().trim()));
+
   totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
   pageLabel = computed(() => {
     const t = this.total();
@@ -122,7 +171,15 @@ export class AlumnosListaComponent implements OnInit {
     return `${from}–${to} de ${t}`;
   });
 
-  private load$ = new Subject<{ q: string; page: number; sort: SortColAlumnos; dir: SortDir }>();
+  private load$ = new Subject<{
+    q: string;
+    page: number;
+    sort: SortColAlumnos;
+    dir: SortDir;
+    fechaJornada: string;
+    idJornada: string;
+    certJornada: '' | 'con' | 'sin';
+  }>();
 
   ngOnInit(): void {
     const modo: ModoAlumnos =
@@ -158,7 +215,7 @@ export class AlumnosListaComponent implements OnInit {
     this.load$
       .pipe(
         debounceTime(280),
-        switchMap(({ q, page, sort, dir }) => {
+        switchMap(({ q, page, sort, dir, fechaJornada, idJornada, certJornada }) => {
           this.loading.set(true);
           const opts: {
             q: string;
@@ -167,6 +224,9 @@ export class AlumnosListaComponent implements OnInit {
             tipoAlumno?: string;
             sort: SortColAlumnos;
             dir: SortDir;
+            idJornada?: string;
+            fechaJornada?: string;
+            certJornada?: '' | 'con' | 'sin';
           } = {
             q,
             limit: this.pageSize,
@@ -176,6 +236,9 @@ export class AlumnosListaComponent implements OnInit {
           };
           if (this.modo() === 'jornadas') {
             opts.tipoAlumno = TIPO_JORNADAS_CAPACITACION;
+            if (idJornada) opts.idJornada = idJornada;
+            else if (fechaJornada) opts.fechaJornada = fechaJornada;
+            if (certJornada) opts.certJornada = certJornada;
           }
           return this.alumnoSvc.listar(opts);
         }),
@@ -185,15 +248,132 @@ export class AlumnosListaComponent implements OnInit {
           this.loading.set(false);
           this.items.set(res.items || []);
           this.total.set(res.total ?? 0);
+          this.jornadaFiltroMsg.set(res.jornadaFiltro?.mensaje || '');
         },
         error: () => {
           this.loading.set(false);
           this.items.set([]);
           this.total.set(0);
+          this.jornadaFiltroMsg.set('');
         },
       });
 
+    if (modo === 'jornadas') {
+      this.cargarJornadasCapOpciones();
+    }
+
     this.cargar();
+  }
+
+  private cargarJornadasCapOpciones() {
+    const fecha = this.fechaJornadaCap().trim();
+    let desde: string;
+    let hasta: string;
+    if (fecha) {
+      desde = fecha;
+      hasta = fecha;
+    } else {
+      const hoy = new Date();
+      const ini = new Date(hoy);
+      ini.setDate(ini.getDate() - 90);
+      desde = ymdLocal(ini);
+      hasta = ymdLocal(hoy);
+    }
+    this.cargandoJornadasCap.set(true);
+    this.jornadaCapSvc.listarJornadas({ desde, hasta }).subscribe({
+      next: (rows) => {
+        this.cargandoJornadasCap.set(false);
+        this.jornadasCap.set(rows || []);
+        const id = this.idJornadaCap();
+        if (id && !(rows || []).some((j) => j._id === id)) {
+          this.idJornadaCap.set('');
+        }
+      },
+      error: () => {
+        this.cargandoJornadasCap.set(false);
+        this.jornadasCap.set([]);
+      },
+    });
+  }
+
+  onFechaJornadaCap(fecha: string) {
+    this.fechaJornadaCap.set(fecha || '');
+    this.idJornadaCap.set('');
+    this.page.set(0);
+    this.cargarJornadasCapOpciones();
+    this.cargar();
+  }
+
+  onJornadaCapPick(opt: EnumBuscarOption) {
+    const id = String(opt?.value || '').trim();
+    if (!id) return;
+    this.idJornadaCap.set(id);
+    const j = this.jornadasCap().find((x) => x._id === id);
+    if (j?.fechaProgramacion) {
+      this.fechaJornadaCap.set(ymdLocal(j.fechaProgramacion));
+    }
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onJornadaCapLimpiar() {
+    this.idJornadaCap.set('');
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onCertJornadaPick(opt: EnumBuscarOption) {
+    const v = String(opt?.value ?? '') as '' | 'con' | 'sin';
+    this.certJornadaFiltro.set(v === 'con' || v === 'sin' ? v : '');
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onCertJornadaLimpiar() {
+    this.certJornadaFiltro.set('');
+    this.page.set(0);
+    this.cargar();
+  }
+
+  limpiarFiltrosJornada() {
+    this.fechaJornadaCap.set('');
+    this.idJornadaCap.set('');
+    this.certJornadaFiltro.set('');
+    this.page.set(0);
+    this.cargarJornadasCapOpciones();
+    this.cargar();
+  }
+
+  labelJornadaCap(j: JornadaCapDto): string {
+    const f = this.formatFecha(j.fechaProgramacion);
+    const idx = j.indiceEnDia && j.indiceEnDia > 1 ? ` #${j.indiceEnDia}` : '';
+    const m = j.municipio ? ` · ${j.municipio}` : '';
+    const cod = (j.codContrato || j.contratoLabel || '').trim();
+    return `${cod ? cod + ' · ' : ''}${f}${idx}${m}`;
+  }
+
+  tituloCertJornada(r: AlumnoListItem): string {
+    const c = r.certificadoJornada;
+    if (!c?.generado) return 'Sin certificado generado para la jornada filtrada';
+    const parts = ['Certificado generado'];
+    if (c.codigoCert) parts.push(c.codigoCert);
+    if (c.fechaEmision) parts.push(this.formatFecha(c.fechaEmision));
+    return parts.join(' · ');
+  }
+
+  etiquetaCertJornada(r: AlumnoListItem): string {
+    const c = r.certificadoJornada;
+    if (!this.filtroJornadaActivo()) return '—';
+    if (!c) return '—';
+    if (!c.generado) return 'Sin cert.';
+    return c.codigoCert || 'Generado';
+  }
+
+  claseCertJornada(r: AlumnoListItem): string {
+    if (!this.filtroJornadaActivo()) return 'dim';
+    const c = r.certificadoJornada;
+    if (!c?.generado) return 'cap cap-slate cap-sm cap-text';
+    return 'cap cap-emerald cap-sm cap-text';
   }
 
   cargar() {
@@ -202,6 +382,9 @@ export class AlumnosListaComponent implements OnInit {
       page: this.page(),
       sort: this.sortCol(),
       dir: this.sortDir(),
+      fechaJornada: this.fechaJornadaCap().trim(),
+      idJornada: this.idJornadaCap().trim(),
+      certJornada: this.certJornadaFiltro(),
     });
   }
 
@@ -270,7 +453,7 @@ export class AlumnosListaComponent implements OnInit {
     void this.router.navigate([this.rutas().ficha(id)]);
   }
 
-  abrirTab(item: AlumnoListItem, tab: 'documentos' | 'pagos', ev: Event) {
+  abrirTab(item: AlumnoListItem, tab: 'documentos' | 'pagos' | 'programacion', ev: Event) {
     ev.stopPropagation();
     const id = item?._id ? String(item._id) : '';
     if (!id) return;
@@ -283,7 +466,43 @@ export class AlumnosListaComponent implements OnInit {
 
   tieneAlarmas(r: AlumnoListItem): boolean {
     const i = r.indicadores;
-    return !!(i && (i.docsPendientes > 0 || i.saldosPendientes > 0));
+    return !!(
+      i &&
+      (i.docsPendientes > 0 || i.saldosPendientes > 0 || this.tieneClasesCeaCreado(r))
+    );
+  }
+
+  puedeVerAlertaCea = computed(() =>
+    this.permisos.tiene(['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar']),
+  );
+
+  tieneClasesCeaCreado(r: AlumnoListItem): boolean {
+    if (!this.puedeVerAlertaCea()) return false;
+    if (!this.alarmas.tiene('alarmas.alumnos.clases_cea_creado')) return false;
+    return (r.indicadores?.clasesCeaCreado ?? 0) > 0;
+  }
+
+  tituloClasesCea(r: AlumnoListItem): string {
+    const progs = r.indicadores?.programasCeaCreado || [];
+    const nombre = this.nombreCompleto(r);
+    if (!progs.length) {
+      const n = r.indicadores?.clasesCeaCreado ?? 0;
+      return n
+        ? `Pendiente programar clase licencia — ${nombre} (${n} clase${n > 1 ? 's' : ''})`
+        : '';
+    }
+    const detalle = progs
+      .map((p) => {
+        const suf = p.cantidad > 1 ? ` (${p.cantidad} clases)` : '';
+        return `${p.programaLabel}${suf}`;
+      })
+      .join(', ');
+    return `Pendiente programar clase licencia ${detalle} — ${nombre}`;
+  }
+
+  etiquetaClasesCea(r: AlumnoListItem): string {
+    const n = r.indicadores?.clasesCeaCreado ?? 0;
+    return n > 1 ? `${n} CEA` : 'CEA';
   }
 
   tituloDocs(r: AlumnoListItem): string {

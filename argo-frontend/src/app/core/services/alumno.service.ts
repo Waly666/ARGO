@@ -46,6 +46,8 @@ export interface AlumnoDto {
   userAddReg?: string;
   userChangeRecord?: string;
   fechaMod?: string;
+  /** Horas por sesión de práctica CEA al auto-generar (1–4). null = automático. */
+  duracionSesionPracticaCea?: number | null;
 }
 
 export interface AlumnoListItem {
@@ -87,6 +89,15 @@ export interface AlumnoListItem {
     saldosPendientes: number;
     saldoTotal: number;
     itemsSaldo?: { id: string; descripcion: string; saldo: number }[];
+    clasesCeaCreado?: number;
+    programasCeaCreado?: { programaLabel: string; cantidad: number }[];
+  };
+  /** Presente cuando la lista se filtra por jornada de capacitación. */
+  certificadoJornada?: {
+    generado: boolean;
+    codigoCert?: string;
+    fechaEmision?: string;
+    idJornada?: string;
   };
 }
 
@@ -95,6 +106,11 @@ export interface AlumnoListResponse {
   total: number;
   skip: number;
   limit: number;
+  jornadaFiltro?: {
+    activo?: boolean;
+    jornadaIds?: string[];
+    mensaje?: string;
+  };
 }
 
 export interface DocDuplicadoRes {
@@ -148,6 +164,9 @@ export class AlumnoService {
       tipoAlumno?: string;
       sort?: string;
       dir?: 'asc' | 'desc';
+      idJornada?: string;
+      fechaJornada?: string;
+      certJornada?: '' | 'con' | 'sin';
     } = {},
   ): Observable<AlumnoListResponse> {
     let params = new HttpParams();
@@ -159,6 +178,9 @@ export class AlumnoService {
     }
     if (opts.sort) params = params.set('sort', opts.sort);
     if (opts.dir) params = params.set('dir', opts.dir);
+    if (opts.idJornada) params = params.set('idJornada', opts.idJornada);
+    if (opts.fechaJornada) params = params.set('fechaJornada', opts.fechaJornada);
+    if (opts.certJornada) params = params.set('certJornada', opts.certJornada);
     return this.http.get<AlumnoListResponse>(this.base, { params });
   }
 

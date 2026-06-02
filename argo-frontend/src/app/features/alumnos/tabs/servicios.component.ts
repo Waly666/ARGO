@@ -13,12 +13,16 @@ import { MatriculaService } from '../../../core/services/matricula.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ServicioCatalogoService } from '../../../core/services/servicio-catalogo.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
 
 @Component({
   selector: 'argo-servicios',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent],
   templateUrl: './servicios.component.html',
   styleUrls: ['./servicios.component.scss'],
 })
@@ -143,6 +147,49 @@ export class ServiciosComponent {
     return this.servValor();
   });
 
+  opcionesProgramas = computed<EnumBuscarOption[]>(() =>
+    [...this.programas()]
+      .sort((a, b) => {
+        const ca = String(a.codigoProg || (a.idPrograma ?? a.idProg ?? '')).trim();
+        const cb = String(b.codigoProg || (b.idPrograma ?? b.idProg ?? '')).trim();
+        return ca.localeCompare(cb, 'es', { sensitivity: 'base', numeric: true });
+      })
+      .map((p) => {
+        const id = String(p.idPrograma ?? p.idProg ?? p._id);
+        const nombre = String(p.nombreProg || p.descripcion || '').trim();
+        const cod = String(p.codigoProg || '').trim();
+        return {
+          value: id,
+          label: cod ? `${nombre} (${cod})` : nombre || id,
+        };
+      }),
+  );
+
+  textoPrograma = computed(() => {
+    const id = this.idProg();
+    return this.opcionesProgramas().find((o) => String(o.value) === id)?.label || '';
+  });
+
+  opcionesTarifas: EnumBuscarOption[] = [
+    { value: 1, label: 'Tarifa 1' },
+    { value: 2, label: 'Tarifa 2' },
+    { value: 3, label: 'Tarifa 3' },
+  ];
+
+  textoTarifa = computed(() => `Tarifa ${this.tarifa()}`);
+
+  opcionesServiciosAdicionales = computed<EnumBuscarOption[]>(() =>
+    this.serviciosAdicionales().map((s) => ({
+      value: String(s.idServ ?? s._id),
+      label: String(s.descrServicio || s.descripcion || s.nombre || '').trim(),
+    })),
+  );
+
+  textoServicioAdicional = computed(() => {
+    const id = this.idServ();
+    return this.opcionesServiciosAdicionales().find((o) => String(o.value) === id)?.label || '';
+  });
+
   constructor() {
     this.catSvc.list('programas').subscribe((d) => this.programas.set(d || []));
     this.cargarServicios();
@@ -209,6 +256,34 @@ export class ServiciosComponent {
   setTarifa(v: number | string) {
     const n = Number(v);
     if (n === 1 || n === 2 || n === 3) this.tarifa.set(n);
+  }
+
+  onProgramaPick(opt: EnumBuscarOption): void {
+    this.idProg.set(String(opt.value));
+  }
+
+  onProgramaLimpiar(): void {
+    this.idProg.set('');
+    this.docsPendientesMat.set([]);
+  }
+
+  onTarifaPick(opt: EnumBuscarOption): void {
+    this.setTarifa(opt.value);
+  }
+
+  onTarifaLimpiar(): void {
+    this.tarifa.set(1);
+  }
+
+  onServicioAdicionalPick(opt: EnumBuscarOption): void {
+    this.onServicioChange(String(opt.value));
+  }
+
+  onServicioAdicionalLimpiar(): void {
+    this.idServ.set('');
+    this.servDescripcion.set('');
+    this.servValor.set(0);
+    this.servCantidad.set(1);
   }
 
   crearMatricula() {

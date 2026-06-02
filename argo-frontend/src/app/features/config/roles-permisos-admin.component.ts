@@ -291,58 +291,54 @@ export class RolesPermisosAdminComponent implements OnInit {
       return;
     }
 
+    const permisos = this.prepararPermisosAntesGuardar(f.permisos || []);
+    const payload = {
+      nombre: f.nombre,
+      descripcion: f.descripcion,
+      permisos,
+      alarmas: f.alarmas,
+      activo: f.activo,
+    };
+
     this.saving.set(true);
     this.msg.set(null);
 
     const sel = this.seleccionado();
     const obs = sel
-      ? this.svc.actualizar(sel.codigo, {
-          nombre: f.nombre,
-          descripcion: f.descripcion,
-          permisos: f.permisos,
-          alarmas: f.alarmas,
-          activo: f.activo,
-        })
-      : this.svc.crear({
-          codigo: f.codigo,
-          nombre: f.nombre,
-          descripcion: f.descripcion,
-          permisos: f.permisos,
-          alarmas: f.alarmas,
-          activo: f.activo,
-        });
+      ? this.svc.actualizar(sel.codigo, payload)
+      : this.svc.crear({ ...payload, codigo: f.codigo });
 
     obs.subscribe({
       next: (doc) => {
         this.saving.set(false);
-        const codigoGuardado = doc.codigo;
-        const rolUsuario = String(this.auth.user()?.rol || '').toLowerCase();
-        const aplicaSesion = rolUsuario === String(codigoGuardado || '').toLowerCase();
-
-        if (aplicaSesion) {
-          this.auth.refreshMe().subscribe({
-            next: () => {
-              this.msg.set(
-                sel
-                  ? 'Rol actualizado. Su sesión ya refleja los nuevos permisos.'
-                  : 'Rol creado. Su sesión ya refleja los nuevos permisos.',
-              );
-            },
-            error: () => {
-              this.msg.set(
-                sel
-                  ? 'Rol actualizado. Cierre sesión y vuelva a entrar para ver los cambios en el menú.'
-                  : 'Rol creado.',
-              );
-            },
-          });
-        } else {
-          this.msg.set(
-            sel
-              ? 'Rol actualizado. Los usuarios con ese rol deben cerrar sesión y volver a entrar (o refrescar sesión).'
-              : 'Rol creado.',
-          );
+        const enviados = permisos.length;
+        const guardados = doc.permisos?.length ?? 0;
+        const metaMsg = this.mensajeMeta(doc.meta);
+        let msg = `Rol «${doc.codigo}» guardado en servidor (${guardados} permiso(s)).`;
+        if (enviados !== guardados) {
+          msg += ` Enviados: ${enviados}, aplicados: ${guardados}.`;
         }
+        if (metaMsg) msg += ` ${metaMsg}`;
+
+        const rolUsuario = String(this.auth.user()?.rol || '').toLowerCase();
+        const esMiRol = rolUsuario === String(doc.codigo || '').toLowerCase();
+        this.auth.refreshMe().subscribe({
+          next: () => {
+            if (esMiRol) {
+              msg += ' Su menú ya se actualizó.';
+            } else {
+              msg +=
+                ' Los usuarios con ese rol verán el menú actualizado en unos segundos (máx. 8 s) o al recargar la página.';
+            }
+            this.msg.set(msg);
+          },
+          error: () => {
+            msg += esMiRol
+              ? ' Recargue la página para ver su menú actualizado.'
+              : ' Los usuarios con ese rol deben recargar la página o esperar unos segundos.';
+            this.msg.set(msg);
+          },
+        });
 
         this.mostrarNuevo.set(false);
         this.cargar();
@@ -353,6 +349,28 @@ export class RolesPermisosAdminComponent implements OnInit {
         this.msg.set(e?.error?.message || 'Error guardando rol');
       },
     });
+  }
+
+  /** Evita login bloqueado: todo rol con permisos debe incluir dashboard. */
+  private prepararPermisosAntesGuardar(permisos: string[]): string[] {
+    if (permisos.includes('*')) return ['*'];
+    const p = [...permisos];
+    if (p.length > 0 && !p.includes('dashboard')) p.push('dashboard');
+    return p;
+  }
+
+  private mensajeMeta(meta?: { permisosRemovidos?: string[]; permisosAgregados?: string[] }): string | null {
+    if (!meta) return null;
+    const partes: string[] = [];
+    if (meta.permisosAgregados?.length) {
+      partes.push(
+        `Se agregó «${meta.permisosAgregados.join('», «')}» (mínimo para iniciar sesión).`,
+      );
+    }
+    if (meta.permisosRemovidos?.length) {
+      partes.push(`Ignorados por no estar en catálogo: ${meta.permisosRemovidos.join(', ')}.`);
+    }
+    return partes.length ? partes.join(' ') : null;
   }
 
   async eliminar(rol: RolApp): Promise<void> {

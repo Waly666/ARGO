@@ -6,6 +6,7 @@ const { models: cat } = require('../models/catalogos');
 const { siguienteNumComprobanteIngreso } = require('../services/configRecibo');
 const { esAdmin } = require('../utils/roles');
 const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery } = require('../utils/numDoc');
+const { buscarNumDocsAlumno } = require('../utils/busquedaAlumnoNombre');
 const { refrescarPagoMatricula } = require('../services/liquidacionMatricula');
 const { exigirSesionAbierta, verificarMovimientoSesionCajero, requiereAutorizacionAnularMovimiento } = require('../services/cajaSesion');
 const { exigirAdminOSupervisor, verificarAdminCredenciales } = require('../services/authVerify');
@@ -227,9 +228,9 @@ exports.crearAlumno = async (req, res, next) => {
     liq.estado = estadoLiq(num(liq.valor), nuevoAbonado);
     await liq.save();
 
-    const numRecibo = await siguienteNumComprobanteIngreso();
+    const numRecibo = await siguienteNumComprobanteIngreso(req.idSede);
     const tipoAbono = calcularTipoAbono(v, saldoActual);
-    const sesion = await exigirSesionAbierta(req.user?.sub);
+    const sesion = await exigirSesionAbierta(req.user?.sub, req.idSede);
     const username = req.user?.username || req.user?.sub || null;
 
     let ing;
@@ -257,6 +258,7 @@ exports.crearAlumno = async (req, res, next) => {
         observaciones,
         fecha: fecha ? new Date(fecha) : new Date(),
         idSesion: sesion.idSesion,
+        idSede: req.idSede,
         idUsuario: req.user?.sub ? String(req.user.sub) : null,
         userAddReg: username,
       });
@@ -269,6 +271,16 @@ exports.crearAlumno = async (req, res, next) => {
     }
 
     if (liq.idMat) await refrescarPagoMatricula(liq.idMat);
+
+    try {
+      const { onPrimerAbonoIngreso } = require('../services/programacionCeaAuto');
+      const r = await onPrimerAbonoIngreso({ numDoc, liq, req });
+      if (r && !r.skipped && r.clases) {
+        console.info(`[programacionCeaAuto] ${r.clases} clase(s) CREADO para numDoc ${numDoc}`);
+      }
+    } catch (errAuto) {
+      console.error('[programacionCeaAuto] primer abono:', errAuto?.stack || errAuto?.message || errAuto);
+    }
 
     const enriquecido = await enriquecer(ing.toObject());
     registrarCreacion(req, 'ingreso', ing, {
@@ -337,8 +349,8 @@ exports.crearCaja = async (req, res, next) => {
     }
 
     const tipoIng = camposTipoIngreso(valTipo.tipo);
-    const numRecibo = await siguienteNumComprobanteIngreso();
-    const sesion = await exigirSesionAbierta(req.user?.sub);
+    const numRecibo = await siguienteNumComprobanteIngreso(req.idSede);
+    const sesion = await exigirSesionAbierta(req.user?.sub, req.idSede);
     const username = req.user?.username || req.user?.sub || null;
 
     const ing = await Ingreso.create({
@@ -365,6 +377,7 @@ exports.crearCaja = async (req, res, next) => {
       observaciones,
       fecha: fecha ? new Date(fecha) : new Date(),
       idSesion: sesion.idSesion,
+      idSede: req.idSede,
       idUsuario: req.user?.sub ? String(req.user.sub) : null,
       userAddReg: username,
     });
@@ -447,6 +460,8 @@ exports.listarTodos = async (req, res, next) => {
     const rango = rangoFechaQuery(req.query.desde, req.query.hasta, 'fecha');
     if (rango) and.push(rango);
 
+    if (req.idSede) and.push({ idSede: req.idSede });
+
     if (idSesionQ != null && idSesionQ !== '') {
       const sid = Number(idSesionQ);
       if (Number.isFinite(sid)) and.push({ idSesion: sid });
@@ -460,20 +475,9 @@ exports.listarTodos = async (req, res, next) => {
       if (ndQ != null && /^\d+$/.test(q.replace(/\D/g, ''))) {
         and.push(numDocQuery(ndQ));
       } else if (q.length >= 2) {
+        const numDocs = await buscarNumDocsAlumno(DatosAlumno, q);
         const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const re = new RegExp(esc, 'i');
-        const alumnos = await DatosAlumno.find({
-          $or: [
-            { nombre1: re },
-            { nombre2: re },
-            { apellido1: re },
-            { apellido2: re },
-          ],
-        })
-          .select('numDoc')
-          .limit(300)
-          .lean();
-        const numDocs = alumnos.map((a) => a.numDoc).filter((n) => n != null);
         const liqs = await Liquidacion.find({ descripcion: re }).select('_id').limit(300).lean();
         const liqIds = liqs.map((l) => l._id);
         const or = [

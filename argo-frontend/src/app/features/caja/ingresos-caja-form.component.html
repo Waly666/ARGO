@@ -19,7 +19,7 @@
   <p class="msg warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar ingresos.</p>
   <p class="msg" *ngIf="msg()">{{ msg() }}</p>
 
-  <form class="form-panel panel" (ngSubmit)="$event.preventDefault(); guardar()">
+  <form class="form-panel panel argo-form-shell" (ngSubmit)="$event.preventDefault(); guardar()">
     <div class="row">
       <label class="col-6">
         Tipo de ingreso *

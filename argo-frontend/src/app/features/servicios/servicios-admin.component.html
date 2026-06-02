@@ -58,7 +58,7 @@
     "
     [wide]="true"
     (closed)="cerrarModal()">
-    <div class="modal-form">
+    <div class="modal-form argo-form-shell">
       <p class="form-note nuevo-note" *ngIf="!esEdicion()">
         Use un tipo distinto de CUR / DIP / TEC (ej. SEG, TRM, RUNT). Quedará disponible al cobrar servicios al alumno.
       </p>
@@ -85,26 +85,30 @@
             (ngModelChange)="patchForm({ descrServicio: $event })" />
         </div>
         <div class="col-3">
-          <label>Tipo servicio (tipoServ) *</label>
-          <select [ngModel]="form().tipoServ" (ngModelChange)="patchForm({ tipoServ: $event })">
-            <ng-container *ngIf="!esEdicion()">
-              <option *ngFor="let t of tiposServOtros()" [ngValue]="t.code">
-                {{ t.label }} ({{ t.code }})
-              </option>
-            </ng-container>
-            <ng-container *ngIf="esEdicion()">
-              <option *ngFor="let t of tiposServ()" [ngValue]="t.code">
-                {{ t.label }} ({{ t.code }})
-              </option>
-            </ng-container>
-          </select>
+          <argo-catalogo-enum-buscar
+            label="Tipo servicio (tipoServ) *"
+            placeholder="Seleccione o escriba tipo…"
+            [textoInicial]="textoTipoServ()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesTipoServForm()"
+            (seleccionado)="onTipoServPick($event)"
+            (limpiado)="onTipoServLimpiar()"
+          />
         </div>
         <div class="col-3">
-          <label>Facturar</label>
-          <select [ngModel]="form().facturar" (ngModelChange)="patchForm({ facturar: $event })">
-            <option value="NO">NO</option>
-            <option value="SI">SI</option>
-          </select>
+          <argo-catalogo-enum-buscar
+            label="Facturar"
+            placeholder="Seleccione…"
+            [textoInicial]="textoFacturar()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesFacturar"
+            (seleccionado)="onFacturarPick($event)"
+            (limpiado)="onFacturarLimpiar()"
+          />
         </div>
       </div>
       <div class="row">
@@ -124,6 +128,17 @@
         <div class="col-3">
           <label>IVA %</label>
           <input type="number" min="0" [ngModel]="form().iva" (ngModelChange)="patchForm({ iva: $event })" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6">
+          <label>Condición de IVA (facturación electrónica)</label>
+          <select [ngModel]="form().condicionIva" (ngModelChange)="patchForm({ condicionIva: $event })">
+            <option *ngFor="let o of opcionesCondicionIva" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <p class="hint-inline">
+            <strong>Gravado</strong>: desglosa el IVA del valor. <strong>Exento/Excluido</strong>: no cobra IVA.
+          </p>
         </div>
       </div>
       <div class="audit-grid" *ngIf="audit() as a">

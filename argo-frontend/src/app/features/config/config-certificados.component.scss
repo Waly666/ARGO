@@ -42,6 +42,15 @@
   letter-spacing: 1px;
   color: var(--accent-2);
 }
+
+.alertas-cert-config {
+  margin-bottom: 0.5rem;
+
+  .hint {
+    margin: 4px 0 0;
+    display: block;
+  }
+}
 .row {
   display: grid;
   grid-template-columns: repeat(12, 1fr);

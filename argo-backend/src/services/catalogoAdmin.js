@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { models } = require('../models/catalogos');
 const { metaCatalogo, inferirCamposId, nombreValido, docSegunEsquema, resolverCamposListado, camposEsquema, CATALOGOS_INSPECCION, CATALOGOS_DOCUMENTOS } = require('./catalogoMeta');
-const { syncControlaVencimientoDesdeCatalogo: syncVehiDesdeCatalogo } = require('./configRequisitosDocumentosVehiculos');
+const { syncControlaVencimientoDesdeCatalogo: syncVehiDesdeCatalogo, invalidarCacheClases } = require('./configRequisitosDocumentosVehiculos');
 const { syncControlaVencimientoDesdeCatalogo: syncEmpDesdeCatalogo } = require('./configRequisitosDocumentosEmpleados');
 const { coerceDocument, num: numCoerce } = require('../utils/coerceTypes');
 
@@ -100,6 +100,7 @@ async function crear(nombre, body) {
   if (CATALOGOS_DOCUMENTOS.has(nombre)) {
     await sincronizarVencimientoConfig(nombre, saved);
   }
+  if (nombre === 'claseVehiculo') invalidarCacheClases();
   return saved;
 }
 
@@ -127,6 +128,7 @@ async function actualizar(nombre, mongoId, body) {
   if (CATALOGOS_DOCUMENTOS.has(nombre)) {
     await sincronizarVencimientoConfig(nombre, saved);
   }
+  if (nombre === 'claseVehiculo') invalidarCacheClases();
   return saved;
 }
 
@@ -163,6 +165,7 @@ async function importar(nombre, rows, modo = 'reemplazar') {
     await col.insertMany(limpias);
   }
   const total = await models[nombre].countDocuments({});
+  if (nombre === 'claseVehiculo') invalidarCacheClases();
   return { insertados: limpias.length, total, modo };
 }
 

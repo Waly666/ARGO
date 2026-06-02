@@ -4,6 +4,12 @@
   gap: 12px;
 }
 
+.clase-hint {
+  margin: 0;
+  font-size: .85rem;
+  color: var(--text-dim);
+}
+
 .insp-head {
   display: flex;
   flex-wrap: wrap;
@@ -15,10 +21,37 @@
   p { margin: 0 0 8px; color: var(--text-dim); font-size: .88rem; }
 }
 
+.insp-head .clase-hint strong {
+  color: var(--text);
+}
+
 .head-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.save-actions {
+  align-items: flex-end;
+}
+
+.save-actions-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.btn-save {
+  min-width: 160px;
+
+  &.needs-save {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.55), 0 0 18px rgba(251, 191, 36, 0.35);
+  }
+
+  &.alarm-flash {
+    animation: argo-alarm-blink 0.55s ease-in-out 3;
+  }
 }
 
 .badge {

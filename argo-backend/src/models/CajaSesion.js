@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const CajaSesionSchema = new mongoose.Schema(
   {
     idSesion: { type: Number, required: true, unique: true, index: true },
+    /** Sede donde opera esta caja */
+    idSede: { type: String, trim: true, index: true },
     estado: { type: String, enum: ['abierta', 'cerrada'], default: 'abierta', index: true },
     usuario: { type: String, trim: true, index: true },
     idUsuario: { type: String, trim: true, index: true },

@@ -20,6 +20,10 @@ router.put('/plantillas/:id', config, upload.certificados.single('fondo'), plant
 router.delete('/plantillas/:id', config, plantilla.eliminar);
 
 router.get('/recientes', verCertAlertas, ctrl.recientes);
+router.get('/listado', emitir, ctrl.listarGlobal);
+router.get('/alertas-vencimiento', verCertAlertas, ctrl.alertasPorVencer);
+router.get('/alertas-por-vencer', verCertAlertas, ctrl.alertasPorVencer);
+router.get('/alertas-vencidos', verCertAlertas, ctrl.alertasVencidos);
 router.get('/elegibles/:numDoc', emitir, ctrl.elegibles);
 router.get('/alumno/:numDoc', emitir, ctrl.listarPorAlumno);
 router.get('/:id/html', emitir, render.html);

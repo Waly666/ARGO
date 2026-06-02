@@ -107,7 +107,7 @@
   [wide]="true"
   (closed)="cerrarEditar()">
   @if (certificadoEdit(); as c) {
-    <section class="cert-edit-form">
+    <section class="cert-edit-form argo-form-shell">
       <div class="row">
         <div class="col-6">
           <label>Alumno</label>
@@ -128,12 +128,17 @@
           <input type="text" [ngModel]="editEncabezado()" (ngModelChange)="editEncabezado.set($event)" />
         </div>
         <div class="col-4">
-          <label>tipoCertificado</label>
-          <select [ngModel]="editTipoCertificado()" (ngModelChange)="editTipoCertificado.set($event)">
-            @for (t of tiposCertificadoCat; track t) {
-              <option [value]="t">{{ t }}</option>
-            }
-          </select>
+          <argo-catalogo-enum-buscar
+            label="tipoCertificado"
+            placeholder="Seleccione o escriba tipo…"
+            [textoInicial]="textoTipoCertificadoEdit()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesTipoCertificado()"
+            (seleccionado)="onTipoCertPick($event)"
+            (limpiado)="onTipoCertLimpiar()"
+          />
         </div>
       </div>
       <div class="row">

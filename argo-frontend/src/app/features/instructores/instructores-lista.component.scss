@@ -197,6 +197,32 @@
   color: #fcd34d;
 }
 
+tr.row-click {
+  cursor: pointer;
+
+  &:hover td {
+    background: rgba(249, 115, 22, 0.08);
+  }
+}
+
+.acciones-cell {
+  white-space: nowrap;
+}
+
+.card-click {
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: rgba(249, 115, 22, 0.45);
+    transform: translateY(-1px);
+  }
+}
+
+.card-ver-btn {
+  margin-top: 0.5rem;
+}
+
 .msg.error {
   color: #fca5a5;
 }

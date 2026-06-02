@@ -1,11 +1,12 @@
 @if (open) {
-  <div class="fm-layer" [style.paddingTop.px]="anchorTopPx ?? 168" role="presentation">
+  <div class="fm-layer" [style.paddingTop.px]="layerTopPx()" role="presentation">
     <div class="fm-backdrop" (click)="close()"></div>
     <div
       #panel
       class="fm-panel"
       [class.wide]="wide && !xwide"
       [class.xwide]="xwide"
+      [class.tall]="tall"
       role="dialog"
       aria-modal="true"
       [attr.aria-labelledby]="'fm-title'"
@@ -17,7 +18,7 @@
         </div>
         <button type="button" class="fm-close" (click)="close()" aria-label="Cerrar">×</button>
       </header>
-      <div class="fm-body">
+      <div class="fm-body argo-form-shell">
         <ng-content></ng-content>
       </div>
       <footer class="fm-footer">

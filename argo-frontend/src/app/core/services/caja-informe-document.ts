@@ -39,6 +39,9 @@ const DOC_CSS = `
     margin: 0 0 4px; font-size: 17pt; font-weight: 700; color: #1e3a5f;
     font-family: Georgia, 'Times New Roman', serif;
   }
+  .doc-empresa .doc-sede {
+    margin: 0 0 6px; font-size: 12pt; font-weight: 600; color: #2d4a6f;
+  }
   .doc-empresa p { margin: 0; font-size: 9pt; color: #333; }
   .doc-titulo-block {
     text-align: center; margin: 14px 0 16px;
@@ -181,13 +184,31 @@ function egresosPorForma(res: ResumenCaja): ResumenTipoMovimiento[] {
   }));
 }
 
-function encabezadoEmpresa(empresa: ConfigRecibo | null | undefined): string {
-  const nombre = esc(empresa?.nombreEmpresa || 'ARGO');
+function sedeDocumentoLabel(empresa: ConfigRecibo | null | undefined, idSede?: string | null): string {
+  const nombre = String(empresa?.nombreSede || '').trim();
+  if (nombre) return nombre;
+  const sid = String(idSede || '').trim();
+  return sid || '';
+}
+
+function filaMetaSede(empresa: ConfigRecibo | null | undefined, idSede?: string | null): string {
+  const label = sedeDocumentoLabel(empresa, idSede);
+  if (!label) return '';
+  return `<tr><td>Sede</td><td colspan="3"><strong>${esc(label)}</strong></td></tr>`;
+}
+
+function encabezadoEmpresa(empresa: ConfigRecibo | null | undefined, idSede?: string | null): string {
+  const institucion = esc(empresa?.nombreEmpresa || 'ARGO');
+  const sede = esc(sedeDocumentoLabel(empresa, idSede));
+  const ciudadLine = [empresa?.ciudad, empresa?.departamento]
+    .filter((x) => String(x || '').trim())
+    .map((x) => esc(String(x)))
+    .join(', ');
   const lineas = [
     empresa?.nit ? `NIT: ${esc(empresa.nit)}` : '',
     empresa?.telefono ? `Tel: ${esc(empresa.telefono)}` : '',
     empresa?.direccion ? `Dir: ${esc(empresa.direccion)}` : '',
-    empresa?.ciudad ? `Ciudad: ${esc(empresa.ciudad)}` : '',
+    ciudadLine ? ciudadLine : '',
     empresa?.email ? `Email: ${esc(empresa.email)}` : '',
   ]
     .filter(Boolean)
@@ -197,7 +218,8 @@ function encabezadoEmpresa(empresa: ConfigRecibo | null | undefined): string {
     <header class="doc-header">
       <div class="doc-logo">ARGO</div>
       <div class="doc-empresa">
-        <h1>${nombre}</h1>
+        <h1>${institucion}</h1>
+        ${sede ? `<h2 class="doc-sede">${sede}</h2>` : ''}
         ${lineas}
       </div>
     </header>`;
@@ -388,7 +410,12 @@ function pieDocumento(empresa: ConfigRecibo | null | undefined): string {
     <footer class="doc-footer"><p>${msg}</p></footer>`;
 }
 
-function wrapDocumento(titulo: string, cuerpo: string, empresa?: ConfigRecibo | null): string {
+function wrapDocumento(
+  titulo: string,
+  cuerpo: string,
+  empresa?: ConfigRecibo | null,
+  idSede?: string | null,
+): string {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -404,7 +431,7 @@ function wrapDocumento(titulo: string, cuerpo: string, empresa?: ConfigRecibo | 
     <span>${esc(titulo)}</span>
   </div>
   <div class="doc">
-    ${encabezadoEmpresa(empresa)}
+    ${encabezadoEmpresa(empresa, idSede)}
     ${cuerpo}
     ${pieDocumento(empresa)}
   </div>
@@ -602,6 +629,7 @@ export function buildInformeIndividualHtml(opts: {
       <p>Sesión #${sesion.idSesion} · ${fmtFecha(fechaCierre, true)}</p>
     </div>
     <table class="doc-meta">
+      ${filaMetaSede(empresa, sesion.idSede)}
       <tr><td>Cajero</td><td colspan="3"><strong>${esc(nombreCajero)}</strong></td></tr>
       <tr><td>Sesión</td><td>#${sesion.idSesion}</td><td>Apertura</td><td>${fmtFecha(sesion.fechaApertura, true)}</td></tr>
       <tr><td>Impreso</td><td>${fmtFecha(new Date().toISOString(), true)}</td><td>Cierre</td><td>${fmtFecha(fechaCierre, true)}</td></tr>
@@ -636,7 +664,7 @@ export function buildInformeIndividualHtml(opts: {
       <tfoot><tr><td colspan="5"><strong>Total egresos</strong></td><td class="num"><strong>${money(r.totalEgresos)}</strong></td></tr></tfoot>
     </table>`;
 
-  return wrapDocumento(`Cuadre de caja #${sesion.idSesion}`, cuerpo, empresa);
+  return wrapDocumento(`Cuadre de caja #${sesion.idSesion}`, cuerpo, empresa, sesion.idSede);
 }
 
 function agruparServiciosDesdeIngresos(ingresos: CajaIngresoItem[]): ResumenServicioIngreso[] {
@@ -757,8 +785,9 @@ export function buildInformeGeneralHtml(opts: {
   const cuerpo = `
     <div class="doc-titulo-block">
       <h2>Informe general de cierre de cajas</h2>
-      <p>${g.fechaDia ? `Día ${g.fechaDia} · ` : ''}${g.cantidadCajas} caja(s) consolidada(s)</p>
+      <p>${g.fechaDia ? `Día ${g.fechaDia} · ` : ''}${g.cantidadCajas} caja(s) consolidada(s)${sedeDocumentoLabel(empresa, g.idSede) ? ` · Sede ${esc(sedeDocumentoLabel(empresa, g.idSede))}` : ''}</p>
     </div>
+    ${filaMetaSede(empresa, g.idSede) ? `<table class="doc-meta">${filaMetaSede(empresa, g.idSede)}</table>` : ''}
     <div class="sec">Resumen consolidado</div>
     <table class="tbl"><thead><tr><th>Concepto</th><th class="num">Valor (COP)</th></tr></thead><tbody>${filas}</tbody></table>
     ${htmlSaldo}
@@ -781,5 +810,5 @@ export function buildInformeGeneralHtml(opts: {
       <tfoot><tr><td colspan="6"><strong>Total egresos</strong></td><td class="num"><strong>${money(g.totalEgresos)}</strong></td></tr></tfoot>
     </table>`;
 
-  return wrapDocumento('Informe general de cierre de cajas', cuerpo, empresa);
+  return wrapDocumento('Informe general de cierre de cajas', cuerpo, empresa, g.idSede);
 }

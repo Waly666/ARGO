@@ -30,6 +30,10 @@ export interface ConfigCertificado {
   mostrarQr?: boolean;
   qrPosicion?: 'inferior_izquierda' | 'inferior_derecha' | 'superior_derecha' | 'superior_izquierda';
   qrTamanoPx?: number;
+  /** Días antes del vencimiento — alarma «por vencer» en el banner superior. */
+  diasAvisoCertificadoPorVencer?: number;
+  /** Días después del vencimiento — alarma «vencidos» en el banner superior. */
+  diasAvisoCertificadoVencido?: number;
 }
 
 export const QR_POSICIONES_CERT = [

@@ -1,11 +1,11 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/catalogoController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
 const admin = requirePermiso('config.catalogos');
 
-router.use(requireAuth);
+router.use(requireAuth, loadSedeActiva);
 
 router.get('/meta', admin, ctrl.meta);
 router.post('/recargar-excel', admin, ctrl.recargarExcel);

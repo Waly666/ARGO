@@ -4,11 +4,13 @@ const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 const { models: cat } = require('../models/catalogos');
-const { obtenerConfigCertificado, siguienteCodigoCertificado } = require('../services/configCertificado');
+const { obtenerConfigCertificado, siguienteCodigoCertificado, normalizeDiasAvisoCert, DEFAULT_DIAS_AVISO_POR_VENCER, DEFAULT_DIAS_AVISO_VENCIDO } = require('../services/configCertificado');
 const { buscarPrograma } = require('../services/programaServicio');
 const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery } = require('../utils/numDoc');
+const { coincideBusquedaAlumno, coincideBusquedaTexto } = require('../utils/busquedaAlumnoNombre');
 const {
   clasificarProgramaAsync,
+  orientacionPorTipo,
   TIPOS,
   TIPOS_LABEL,
 } = require('../services/clasificacionCertificado');
@@ -19,6 +21,25 @@ const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada'
 function tipoCertCategoria(tipoFormato, alumno) {
   if (tipoFormato === TIPOS.JORNADA_CAPACITACION) return TIPO_JORNADAS_CAPACITACION;
   return normalizarTipoRegularJornada(alumno?.tipoAlumno);
+}
+
+/** Certificados emitidos por jornadas de capacitación (gestión aparte). */
+function esCertificadoJornadaCapacitacion(cert) {
+  if (!cert) return false;
+  if (cert.generadoAutoJornada) return true;
+  if (cert.idJornada) return true;
+  if (cert.tipoCertificado === TIPO_JORNADAS_CAPACITACION) return true;
+  if (cert.tipoFormatoCert === TIPOS.JORNADA_CAPACITACION) return true;
+  return false;
+}
+
+function filtrosExcluirJornadaCapacitacion() {
+  return {
+    tipoCertificado: { $ne: TIPO_JORNADAS_CAPACITACION },
+    generadoAutoJornada: { $ne: true },
+    tipoFormatoCert: { $ne: TIPOS.JORNADA_CAPACITACION },
+    $or: [{ idJornada: null }, { idJornada: { $exists: false } }],
+  };
 }
 function num(v) {
   if (v == null) return 0;
@@ -200,6 +221,317 @@ function nombreCompletoAlumno(al) {
   return [ap, n].filter(Boolean).join(' ').trim();
 }
 
+function inicioDia(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function finDia(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+/** Interpreta YYYY-MM-DD en hora local (evita desfase UTC al guardar). */
+function parseFechaLocal(val) {
+  if (val == null || val === '') return null;
+  const s = String(val).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0, 0);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function noCache(res) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
+}
+
+function diasHastaVencimiento(fechaVencimiento, ref = new Date()) {
+  if (!fechaVencimiento) return null;
+  const fin = finDia(fechaVencimiento);
+  const hoy = inicioDia(ref);
+  const diffMs = fin.getTime() - hoy.getTime();
+  return Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+}
+
+function nivelUrgenciaPorVencer(diasRestantes) {
+  if (diasRestantes == null) return 'aviso';
+  if (diasRestantes <= 0) return 'hoy';
+  if (diasRestantes <= 3) return 'critico';
+  if (diasRestantes <= 7) return 'urgente';
+  if (diasRestantes <= 10) return 'proximo';
+  return 'aviso';
+}
+
+function mapAlertaPorVencerItem(c, al) {
+  const diasRestantes = diasHastaVencimiento(c.fechaVencimiento);
+  return {
+    _id: String(c._id),
+    codigoCert: c.codigoCert || null,
+    numDoc: c.numDoc,
+    alumnoId: al?._id ? String(al._id) : null,
+    nombreCompleto: nombreCompletoAlumno(al) || `Doc ${c.numDoc}`,
+    celular: al?.celular || null,
+    encabezado: c.encabezado || null,
+    tipoFormatoCert: c.tipoFormatoCert || null,
+    tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
+    fechaEmision: c.fechaEmision,
+    fechaVencimiento: c.fechaVencimiento,
+    diasRestantes,
+    nivelUrgencia: nivelUrgenciaPorVencer(diasRestantes),
+  };
+}
+
+function mapAlertaVencidoItem(c, al) {
+  const diasRestantes = diasHastaVencimiento(c.fechaVencimiento);
+  const diasVencidos = diasRestantes != null && diasRestantes < 0 ? Math.abs(diasRestantes) : 0;
+  return {
+    _id: String(c._id),
+    codigoCert: c.codigoCert || null,
+    numDoc: c.numDoc,
+    alumnoId: al?._id ? String(al._id) : null,
+    nombreCompleto: nombreCompletoAlumno(al) || `Doc ${c.numDoc}`,
+    celular: al?.celular || null,
+    encabezado: c.encabezado || null,
+    tipoFormatoCert: c.tipoFormatoCert || null,
+    tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
+    fechaEmision: c.fechaEmision,
+    fechaVencimiento: c.fechaVencimiento,
+    diasRestantes,
+    diasVencidos,
+    nivelUrgencia: 'vencido',
+  };
+}
+
+async function alumnosPorCertificados(rows) {
+  const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+  if (!numDocs.length) return new Map();
+  const alumnos = await DatosAlumno.find({ numDoc: { $in: numDocs } })
+    .select('_id numDoc nombre1 nombre2 apellido1 apellido2 celular')
+    .lean();
+  return new Map(alumnos.map((a) => [a.numDoc, a]));
+}
+
+async function diasVentanaPorVencer(req) {
+  const cfg = await obtenerConfigCertificado();
+  if (req.query.dias != null && String(req.query.dias).trim() !== '') {
+    return normalizeDiasAvisoCert(req.query.dias, DEFAULT_DIAS_AVISO_POR_VENCER, 60);
+  }
+  return normalizeDiasAvisoCert(cfg.diasAvisoCertificadoPorVencer, DEFAULT_DIAS_AVISO_POR_VENCER, 60);
+}
+
+async function diasVentanaVencidos(req) {
+  const cfg = await obtenerConfigCertificado();
+  if (req.query.dias != null && String(req.query.dias).trim() !== '') {
+    return normalizeDiasAvisoCert(req.query.dias, DEFAULT_DIAS_AVISO_VENCIDO, 30);
+  }
+  return normalizeDiasAvisoCert(cfg.diasAvisoCertificadoVencido, DEFAULT_DIAS_AVISO_VENCIDO, 30);
+}
+
+/** Certificados por vencer: ventana configurable; termina el día del vencimiento. */
+exports.alertasPorVencer = async (req, res, next) => {
+  try {
+    const diasVentana = await diasVentanaPorVencer(req);
+    const hoy = inicioDia();
+    const limite = finDia(new Date(hoy.getTime() + diasVentana * 24 * 60 * 60 * 1000));
+
+    const rows = await Certificado.find({
+      ...filtrosExcluirJornadaCapacitacion(),
+      fechaVencimiento: { $ne: null, $gte: hoy, $lte: limite },
+      estado: { $ne: 'anulado' },
+    })
+      .sort({ fechaVencimiento: 1 })
+      .limit(200)
+      .lean();
+
+    const alByDoc = await alumnosPorCertificados(rows);
+    const items = [];
+    let venceHoy = 0;
+    let venceManana = 0;
+    let critico = 0;
+    let urgente = 0;
+
+    for (const c of rows) {
+      const al = alByDoc.get(c.numDoc);
+      const item = mapAlertaPorVencerItem(c, al);
+      const { diasRestantes } = item;
+      if (diasRestantes == null || diasRestantes < 0 || diasRestantes > diasVentana) continue;
+
+      if (diasRestantes <= 0) venceHoy += 1;
+      else if (diasRestantes === 1) venceManana += 1;
+      if (diasRestantes <= 3) critico += 1;
+      if (diasRestantes <= 7) urgente += 1;
+
+      items.push(item);
+    }
+
+    res.json({
+      total: items.length,
+      diasVentana,
+      venceHoy,
+      venceManana,
+      critico,
+      urgente,
+      items,
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Certificados ya vencidos: alerta configurable días después del vencimiento. */
+exports.alertasVencidos = async (req, res, next) => {
+  try {
+    const diasVentana = await diasVentanaVencidos(req);
+    const hoy = inicioDia();
+    const desdeVencido = inicioDia(new Date(hoy.getTime() - diasVentana * 24 * 60 * 60 * 1000));
+
+    const rows = await Certificado.find({
+      ...filtrosExcluirJornadaCapacitacion(),
+      fechaVencimiento: { $ne: null, $gte: desdeVencido, $lt: hoy },
+      estado: { $ne: 'anulado' },
+    })
+      .sort({ fechaVencimiento: -1 })
+      .limit(200)
+      .lean();
+
+    const alByDoc = await alumnosPorCertificados(rows);
+    const items = [];
+
+    for (const c of rows) {
+      const al = alByDoc.get(c.numDoc);
+      const item = mapAlertaVencidoItem(c, al);
+      const { diasVencidos } = item;
+      if (!diasVencidos || diasVencidos < 1 || diasVencidos > diasVentana) continue;
+      items.push(item);
+    }
+
+    res.json({
+      total: items.length,
+      diasVentana,
+      items,
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** @deprecated Use alertasPorVencer */
+exports.alertasVencimiento = exports.alertasPorVencer;
+
+/** Listado global de certificados emitidos (filtros por tipo, fechas y búsqueda). */
+exports.listarGlobal = async (req, res, next) => {
+  try {
+    const q = { ...filtrosExcluirJornadaCapacitacion() };
+    const tipoFmt = String(req.query.tipoFormatoCert || req.query.tipo || '').trim();
+    if (tipoFmt) q.tipoFormatoCert = tipoFmt;
+
+    if (req.query.desde || req.query.hasta) {
+      q.fechaEmision = {};
+      if (req.query.desde) {
+        const d = inicioDia(new Date(String(req.query.desde)));
+        if (!Number.isNaN(d.getTime())) q.fechaEmision.$gte = d;
+      }
+      if (req.query.hasta) {
+        const d = finDia(new Date(String(req.query.hasta)));
+        if (!Number.isNaN(d.getTime())) q.fechaEmision.$lte = d;
+      }
+      if (!Object.keys(q.fechaEmision).length) delete q.fechaEmision;
+    }
+
+    const limit = Math.min(Math.max(Number(req.query.limit) || 500, 1), 1000);
+    const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(limit).lean();
+    const qRaw = String(req.query.q || '').trim();
+
+    const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+    const jornadaIds = [...new Set(rows.map((c) => String(c.idJornada || '')).filter(Boolean))];
+    const contratoIds = new Set(rows.map((c) => String(c.idContrato || '')).filter(Boolean));
+    const idProgs = [...new Set(rows.map((c) => String(c.idProg || '')).filter(Boolean))];
+
+    const JornadaCap = require('../models/JornadaCap');
+    const Contratacion = require('../models/Contratacion');
+
+    const [alumnosRows, jornadas, programas] = await Promise.all([
+      numDocs.length ? DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [],
+      jornadaIds.length
+        ? JornadaCap.find({ _id: { $in: jornadaIds } }).select('municipio direccion idContrato').lean()
+        : [],
+      idProgs.length ? cat.programas.find({ idProg: { $in: idProgs } }).lean() : [],
+    ]);
+
+    for (const j of jornadas) {
+      if (j.idContrato) contratoIds.add(String(j.idContrato));
+    }
+
+    const contratos = contratoIds.size
+      ? await Contratacion.find({ _id: { $in: [...contratoIds] } }).select('codContrato').lean()
+      : [];
+
+    const alByDoc = new Map(alumnosRows.map((a) => [a.numDoc, a]));
+    const jornById = new Map(jornadas.map((j) => [String(j._id), j]));
+    const contrById = new Map(contratos.map((c) => [String(c._id), c]));
+    const progById = new Map(programas.map((p) => [String(p.idProg), p]));
+
+    const hoyIni = inicioDia();
+    const hoyFin = finDia();
+    const items = [];
+
+    for (const c of rows) {
+      const al = alByDoc.get(c.numDoc);
+      const nombreCompleto = nombreCompletoAlumno(al);
+      const jornada = c.idJornada ? jornById.get(String(c.idJornada)) : null;
+      const idContrato = c.idContrato || jornada?.idContrato;
+      const codContrato = (contrById.get(String(idContrato || ''))?.codContrato || '').trim();
+      const municipio = (jornada?.municipio || '').trim();
+      const direccion = (jornada?.direccion || '').trim();
+      const ubicacionJornada =
+        municipio && direccion ? `${municipio} — ${direccion}` : municipio || direccion || '';
+      const prog = c.idProg ? progById.get(String(c.idProg)) : null;
+
+      if (qRaw) {
+        const hay =
+          (al && coincideBusquedaAlumno(al, qRaw)) ||
+          coincideBusquedaTexto(nombreCompleto, qRaw) ||
+          coincideBusquedaTexto(String(c.encabezado || ''), qRaw) ||
+          coincideBusquedaTexto(String(c.codigoCert || ''), qRaw) ||
+          coincideBusquedaTexto(TIPOS_LABEL[c.tipoFormatoCert] || '', qRaw) ||
+          String(c.numDoc ?? '').includes(qRaw.replace(/\D/g, '')) ||
+          coincideBusquedaTexto(codContrato, qRaw) ||
+          coincideBusquedaTexto(ubicacionJornada, qRaw);
+        if (!hay) continue;
+      }
+
+      items.push({
+        ...c,
+        alumnoId: al?._id ? String(al._id) : null,
+        nombreCompleto,
+        programaDescr: prog?.descripcion || prog?.nombreProg || null,
+        nomCert: prog?.nomCert || null,
+        tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
+        codContrato: codContrato || null,
+        municipio: municipio || null,
+        direccion: direccion || null,
+        ubicacionJornada: ubicacionJornada || null,
+      });
+    }
+
+    const emitidosHoy = items.filter((c) => {
+      const fe = c.fechaEmision ? new Date(c.fechaEmision) : null;
+      return fe && fe >= hoyIni && fe <= hoyFin;
+    }).length;
+
+    noCache(res);
+    res.json({ total: items.length, emitidosHoy, items });
+  } catch (e) {
+    next(e);
+  }
+};
+
 /** Certificados emitidos desde una fecha (alertas en tiempo real). */
 exports.recientes = async (req, res, next) => {
   try {
@@ -226,8 +558,14 @@ exports.recientes = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
-    const c = await Certificado.findByIdAndDelete(req.params.id);
+    const c = await Certificado.findById(req.params.id);
     if (!c) return res.status(404).json({ message: 'Certificado no encontrado' });
+    if (esCertificadoJornadaCapacitacion(c)) {
+      return res.status(403).json({
+        message: 'Los certificados de jornadas de capacitación se gestionan en el módulo Jornadas.',
+      });
+    }
+    await Certificado.findByIdAndDelete(req.params.id);
     res.json({ ok: true });
   } catch (e) {
     next(e);
@@ -260,16 +598,16 @@ function pickCertificadoEdit(body) {
   }
   if (dto.fechaEmision !== undefined) {
     if (!dto.fechaEmision) return { error: 'fechaEmision inválida' };
-    const d = new Date(dto.fechaEmision);
-    if (isNaN(d.getTime())) return { error: 'fechaEmision inválida' };
+    const d = parseFechaLocal(dto.fechaEmision);
+    if (!d) return { error: 'fechaEmision inválida' };
     dto.fechaEmision = d;
   }
   if (dto.fechaVencimiento !== undefined) {
     if (dto.fechaVencimiento === null || dto.fechaVencimiento === '') {
       dto.fechaVencimiento = null;
     } else {
-      const d = new Date(dto.fechaVencimiento);
-      if (isNaN(d.getTime())) return { error: 'fechaVencimiento inválida' };
+      const d = parseFechaLocal(dto.fechaVencimiento);
+      if (!d) return { error: 'fechaVencimiento inválida' };
       dto.fechaVencimiento = d;
     }
   }
@@ -278,8 +616,13 @@ function pickCertificadoEdit(body) {
 
 exports.actualizar = async (req, res, next) => {
   try {
-    const cert = await Certificado.findById(req.params.id);
-    if (!cert) return res.status(404).json({ message: 'Certificado no encontrado' });
+    const existente = await Certificado.findById(req.params.id).lean();
+    if (!existente) return res.status(404).json({ message: 'Certificado no encontrado' });
+    if (esCertificadoJornadaCapacitacion(existente)) {
+      return res.status(403).json({
+        message: 'Los certificados de jornadas de capacitación se gestionan en el módulo Jornadas.',
+      });
+    }
 
     const picked = pickCertificadoEdit(req.body || {});
     if (picked.error) return res.status(400).json({ message: picked.error });
@@ -287,11 +630,22 @@ exports.actualizar = async (req, res, next) => {
       return res.status(400).json({ message: 'No hay campos para actualizar' });
     }
 
-    Object.assign(cert, picked.dto);
-    await cert.save();
+    if (picked.dto.tipoCertificado === TIPO_JORNADAS_CAPACITACION) {
+      return res.status(400).json({
+        message: 'No puede cambiar un certificado regular a jornada de capacitación desde este listado.',
+      });
+    }
+
+    const cert = await Certificado.findByIdAndUpdate(
+      req.params.id,
+      { $set: picked.dto },
+      { new: true, runValidators: true },
+    );
+    if (!cert) return res.status(404).json({ message: 'Certificado no encontrado' });
 
     const descr = await descrPrograma(cert.idProg);
     const prog = await programaPorId(cert.idProg);
+    noCache(res);
     res.json({
       ...cert.toObject(),
       programaDescr: descr,

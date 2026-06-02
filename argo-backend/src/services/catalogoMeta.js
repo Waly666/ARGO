@@ -1,7 +1,16 @@
 const { CATALOGOS } = require('../models/catalogos');
+const { CATEGORIAS_LICENCIA_VEHICULO } = require('../constants/categoriasLicenciaVehiculo');
+const { normClaseVehiculoInspeccion } = require('../constants/inspeccionPreop');
 
 /** Catálogos con pantallas dedicadas (no editar aquí). */
-const EXCLUIDOS_ADMIN = new Set(['programas', 'servicios']);
+const EXCLUIDOS_ADMIN = new Set([
+  'programas',
+  'servicios',
+  'itemsEstGral',
+  'aspecto1',
+  'aspecto2',
+  'adaptaciones',
+]);
 
 const ETIQUETAS = {
   catTipoDoc: 'Tipos de documento',
@@ -36,6 +45,8 @@ const ETIQUETAS = {
   adaptaciones: 'Adaptaciones',
   aspecto1: 'Aspecto 1',
   aspecto2: 'Aspecto 2',
+  itemsInspeccion: 'Ítems inspección preoperacional',
+  caractInspeccion: 'Características inspección',
 };
 
 const ID_FIELDS_HINT = {
@@ -68,22 +79,35 @@ const ID_FIELDS_HINT = {
   itemDocumentosVehiculo: ['idDocVehi'],
   itemDocumentosInstructores: ['idDocInst'],
   itemsEstGral: ['idItemEsGral'],
+  itemsInspeccion: ['idItem'],
+  caractInspeccion: ['idCaracteristica'],
 };
 
 /** Campos válidos por catálogo (evita columnas basura del Excel en admin). */
 const CAMPOS_ESQUEMA = {
   talleres: ['idTaller', 'nombre', 'ubicacion', 'activo'],
+  claseVehiculo: [
+    'idClase',
+    'descripcion',
+    'carrocerias',
+    ...CATEGORIAS_LICENCIA_VEHICULO,
+  ],
   itemDocumentosVehiculo: ['idDocVehi', 'documentoVehi', 'descripcionDocVehi', 'controlaVencimiento'],
   itemDocumentosInstructores: ['idDocInst', 'documentoInst', 'descripcionDocInst', 'controlaVencimiento'],
   itemsEstGral: ['idItemEsGral', 'item', 'idClases'],
   adaptaciones: ['idAdaptacion', 'nombre', 'idClases'],
   aspecto1: ['idAspecto1', 'aspecto1', 'idClases'],
   aspecto2: ['idAspecto2', 'aspecto2', 'idClases'],
+  itemsInspeccion: ['idItem', 'item', 'tiposVehiculo'],
+  caractInspeccion: ['idCaracteristica', 'idItem', 'caracteristica'],
   tipoEgreso: ['idTipoEgreso', 'tipo', 'requiereEmpleado', 'efectoNomina', 'requiereVehiculo'],
 };
 
-/** Catálogos del checklist preoperacional (asignación por clase en cada ítem). */
-const CATALOGOS_INSPECCION = new Set(['itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones']);
+/** Catálogos legacy del checklist (solo migración; no admin). */
+const CATALOGOS_INSPECCION_LEGACY = new Set(['itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones']);
+
+/** Catálogos del checklist preoperacional (modelo inspTecPreop). */
+const CATALOGOS_INSPECCION = new Set(['itemsInspeccion', 'caractInspeccion']);
 
 /** Catálogos maestros de tipos de documento (vehículo / instructor). */
 const CATALOGOS_DOCUMENTOS = new Set(['itemDocumentosVehiculo', 'itemDocumentosInstructores']);
@@ -115,6 +139,11 @@ function normalizeIdClases(v) {
   return [String(v).trim()].filter(Boolean);
 }
 
+function normalizeTiposVehiculo(v) {
+  const raw = normalizeIdClases(v);
+  return [...new Set(raw.map((t) => normClaseVehiculoInspeccion(t)).filter(Boolean))];
+}
+
 function camposEsquema(nombre) {
   return CAMPOS_ESQUEMA[nombre] || null;
 }
@@ -125,12 +154,16 @@ function docSegunEsquema(nombre, body) {
   for (const [k, v] of Object.entries(body || {})) {
     if (k === '_id' || k === '__v') continue;
     if (campos && !campos.includes(k)) continue;
-    if (k === 'idClases') {
-      doc[k] = normalizeIdClases(v);
+    if (k === 'idClases' || k === 'tiposVehiculo') {
+      doc[k] = k === 'tiposVehiculo' ? normalizeTiposVehiculo(v) : normalizeIdClases(v);
       continue;
     }
     if (k === 'controlaVencimiento') {
       doc[k] = normBoolCatalogo(v) ?? true;
+      continue;
+    }
+    if (CATEGORIAS_LICENCIA_VEHICULO.includes(k)) {
+      doc[k] = normBoolCatalogo(v) ?? false;
       continue;
     }
     if (typeof v === 'string') {
@@ -186,7 +219,9 @@ function inferirCamposId(doc, hints = []) {
 module.exports = {
   EXCLUIDOS_ADMIN,
   normalizeIdClases,
+  normalizeTiposVehiculo,
   CATALOGOS_INSPECCION,
+  CATALOGOS_INSPECCION_LEGACY,
   CATALOGOS_DOCUMENTOS,
   nombreValido,
   metaCatalogo,

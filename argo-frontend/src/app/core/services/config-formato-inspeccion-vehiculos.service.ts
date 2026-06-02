@@ -4,32 +4,8 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-export interface ItemCatalogoInspeccion {
-  id: string;
-  label: string;
-}
-
-export interface CatalogosInspeccionVehiculo {
-  itemsEstGral: ItemCatalogoInspeccion[];
-  aspecto1: ItemCatalogoInspeccion[];
-  aspecto2: ItemCatalogoInspeccion[];
-  adaptaciones: ItemCatalogoInspeccion[];
-}
-
-export interface FormatoInspeccionPorClase {
-  idClase: string;
-  idItemsEstGral: string[];
-  idAspecto1: string[];
-  idAspecto2: string[];
-  idAdaptaciones: string[];
-}
-
-export type SeccionFormatoInspeccion = 'idItemsEstGral' | 'idAspecto1' | 'idAspecto2' | 'idAdaptaciones';
-
 export interface ConfigFormatoInspeccionVehiculos {
   clave?: string;
-  catalogos: CatalogosInspeccionVehiculo;
-  requisitosPorClase: FormatoInspeccionPorClase[];
   prefijoConsecutivoInspeccion?: string;
   consecutivoInspeccion?: number;
   proximoConsecutivoInspeccion?: string;
@@ -45,10 +21,7 @@ export class ConfigFormatoInspeccionVehiculosService {
   }
 
   guardar(
-    data: Pick<
-      ConfigFormatoInspeccionVehiculos,
-      'requisitosPorClase' | 'prefijoConsecutivoInspeccion' | 'consecutivoInspeccion'
-    >,
+    data: Pick<ConfigFormatoInspeccionVehiculos, 'prefijoConsecutivoInspeccion' | 'consecutivoInspeccion'>,
   ): Observable<ConfigFormatoInspeccionVehiculos> {
     return this.http.put<ConfigFormatoInspeccionVehiculos>(this.base, data);
   }

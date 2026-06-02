@@ -28,7 +28,17 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./features/app-inicio/app-inicio.component').then((m) => m.AppInicioComponent),
+      },
+      {
+        path: 'sin-acceso',
+        loadComponent: () =>
+          import('./features/sin-acceso/sin-acceso.component').then((m) => m.SinAccesoComponent),
+      },
       {
         path: 'dashboard',
         canActivate: [permisoGuard],
@@ -57,6 +67,13 @@ export const routes: Routes = [
         data: { permiso: ['alumnos.ver', 'alumnos.gestionar'] },
         loadComponent: () =>
           import('./features/alumnos/alumno-detalle.component').then((m) => m.AlumnoDetalleComponent),
+      },
+      {
+        path: 'certificados',
+        canActivate: [permisoGuard],
+        data: { permiso: 'alumnos.certificados' },
+        loadComponent: () =>
+          import('./features/certificados/certificados-lista.component').then((m) => m.CertificadosListaComponent),
       },
       {
         path: 'programas',
@@ -149,15 +166,57 @@ export const routes: Routes = [
         canActivate: [permisoGuard],
         data: { title: 'Facturación', permiso: 'facturacion' },
         loadComponent: () =>
-          import('./features/placeholder/placeholder.component').then((m) => m.PlaceholderComponent),
+          import('./features/facturacion/facturacion-hub.component').then((m) => m.FacturacionHubComponent),
       },
       {
         path: 'instructores',
         canActivate: [permisoGuard],
-        data: { title: 'Instructores', permiso: ['instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar'] },
+        data: {
+          title: 'Instructores',
+          permiso: ['instructores.mi_portal', 'instructores', 'rrhh', 'jornadas.gestionar'],
+        },
         loadComponent: () =>
-          import('./features/instructores/instructores-lista.component').then((m) => m.InstructoresListaComponent),
+          import('./features/instructores/instructores-hub.component').then((m) => m.InstructoresHubComponent),
       },
+      {
+        path: 'instructores/:idEmpleado',
+        canActivate: [permisoGuard],
+        data: {
+          title: 'Instructor',
+          permiso: ['instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar'],
+        },
+        loadComponent: () =>
+          import('./features/instructores/instructor-detalle.component').then((m) => m.InstructorDetalleComponent),
+      },
+      {
+        path: 'programacion-cea/clases-grupales',
+        canActivate: [permisoGuard],
+        data: {
+          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+          modoClases: 'grupal',
+          pageTitle: 'Teoría y taller CEA',
+          pageHint: 'Vista calendario: clic en «+» en un día para programar cupos. Inscriba alumnos desde su ficha.',
+        },
+        loadComponent: () =>
+          import('./features/programacion-cea/programacion-cea-clases-page.component').then(
+            (m) => m.ProgramacionCeaClasesPageComponent,
+          ),
+      },
+      {
+        path: 'programacion-cea/clases-practica',
+        canActivate: [permisoGuard],
+        data: {
+          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+          modoClases: 'practica',
+          pageTitle: 'Práctica en vehículo CEA',
+          pageHint: 'Vista calendario: clic en «+» en un día para programar práctica. Busque al alumno como en jornadas.',
+        },
+        loadComponent: () =>
+          import('./features/programacion-cea/programacion-cea-clases-page.component').then(
+            (m) => m.ProgramacionCeaClasesPageComponent,
+          ),
+      },
+      { path: 'programacion-cea/clases', redirectTo: 'programacion-cea/clases-grupales', pathMatch: 'full' },
       {
         path: 'programacion-cea',
         canActivate: [permisoGuard],
@@ -353,6 +412,13 @@ export const routes: Routes = [
           import('./features/config/usuarios-admin.component').then((m) => m.UsuariosAdminComponent),
       },
       {
+        path: 'configuracion/sedes',
+        canActivate: [permisoGuard],
+        data: { permiso: ['sedes.gestionar', 'config.sedes'] },
+        loadComponent: () =>
+          import('./features/config/sedes-admin.component').then((m) => m.SedesAdminComponent),
+      },
+      {
         path: 'configuracion/roles',
         canActivate: [permisoGuard],
         data: { permiso: 'config.roles' },
@@ -367,6 +433,27 @@ export const routes: Routes = [
         data: { permiso: 'config.recibos' },
         loadComponent: () =>
           import('./features/config/config-recibos.component').then((m) => m.ConfigRecibosComponent),
+      },
+      {
+        path: 'configuracion/georef',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.georef' },
+        loadComponent: () =>
+          import('./features/config/config-georef.component').then((m) => m.ConfigGeorefComponent),
+      },
+      {
+        path: 'configuracion/facturacion',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.facturacion' },
+        loadComponent: () =>
+          import('./features/config/config-facturacion.component').then((m) => m.ConfigFacturacionComponent),
+      },
+      {
+        path: 'configuracion/clientes',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.facturacion' },
+        loadComponent: () =>
+          import('./features/config/config-clientes.component').then((m) => m.ConfigClientesComponent),
       },
       {
         path: 'configuracion/nomina',

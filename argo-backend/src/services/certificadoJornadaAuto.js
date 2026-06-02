@@ -11,6 +11,8 @@ const { obtenerConfigCertificado, siguienteCodigoCertificado } = require('./conf
 const { TIPOS, TIPOS_LABEL } = require('./clasificacionCertificado');
 const { resolverPlantillaImpresion } = require('./plantillaCertificado');
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
+const { resolverIdSedeMatriculaJornada } = require('./jornadaCapacitacion');
+const { normalizarIdSede } = require('./sedeContext');
 const { buscarPrograma } = require('./programaServicio');
 
 const tipoFormatoJornada = TIPOS.JORNADA_CAPACITACION;
@@ -44,8 +46,11 @@ async function asegurarLiquidacionJornada(numDoc, idProg, mat) {
   const prog = await buscarPrograma(idProg);
   const desc =
     prog?.nombreProg || prog?.descripcion || prog?.nomCert || 'Jornadas de Capacitación';
+  let idSede = normalizarIdSede(mat?.idSede);
+  if (!idSede) idSede = await resolverIdSedeMatriculaJornada();
   const creada = await Liquidacion.create({
     numDoc,
+    idSede,
     idMat: mat._id,
     idMatricula: mat._id,
     idProg: String(idProg),

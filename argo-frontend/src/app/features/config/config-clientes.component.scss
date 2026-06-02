@@ -1,0 +1,151 @@
+.cli-page {
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.cli-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0 0 0.35rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-dim);
+    max-width: 48rem;
+  }
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+
+  input {
+    flex: 1;
+    min-width: 12rem;
+  }
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+.r {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.center {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.cli-modal {
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.cli-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+
+  h3 {
+    margin: 0;
+  }
+
+  .close {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    color: inherit;
+  }
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.col-3 { flex: 1 1 22%; min-width: 8rem; }
+.col-4 { flex: 1 1 30%; min-width: 9rem; }
+.col-6 { flex: 1 1 47%; min-width: 12rem; }
+.col-8 { flex: 1 1 64%; min-width: 14rem; }
+.col-12 { flex: 1 1 100%; }
+
+.row label {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 0.2rem;
+}
+
+.row input,
+.row select {
+  width: 100%;
+}
+
+.row input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.check-row {
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.chk {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.rete-pct {
+  display: flex;
+  flex-direction: column;
+
+  input {
+    width: 6rem;
+  }
+}
+
+.cli-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.msg.err {
+  color: #fca5a5;
+}
+
+.mini {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
+}

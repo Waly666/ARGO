@@ -15,6 +15,8 @@ function normalizarPlacaEnDoc(doc) {
 const VehiculoSchema = new mongoose.Schema(
   {
     placa: { type: String, required: true, unique: true, index: true, trim: true },
+    /** Sede base del vehículo */
+    idSede: { type: String, trim: true, index: true, default: '' },
     codigoMarca: { type: String, trim: true, index: true },
     nombreMarca: { type: String, trim: true },
     codigoLinea: { type: mongoose.Schema.Types.Mixed },

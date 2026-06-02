@@ -10,6 +10,7 @@ export interface ServicioCatalogo extends ServicioPrograma {
   programaNombre?: string | null;
   programaCodigo?: string | null;
   permiteCantidad?: boolean;
+  condicionIva?: string;
 }
 
 export interface ServicioDto {
@@ -21,6 +22,7 @@ export interface ServicioDto {
   tarifa3?: number;
   facturar?: string | boolean;
   iva?: number;
+  condicionIva?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,11 +34,13 @@ export class ServicioCatalogoService {
     q?: string;
     soloPrograma?: boolean;
     sinPrograma?: boolean;
+    catalogo?: boolean;
   }): Observable<ServicioCatalogo[]> {
     let params = new HttpParams();
     if (opts?.q) params = params.set('q', opts.q);
     if (opts?.soloPrograma) params = params.set('soloPrograma', 'true');
     if (opts?.sinPrograma) params = params.set('sinPrograma', 'true');
+    if (opts?.catalogo) params = params.set('catalogo', '1');
     return this.http.get<ServicioCatalogo[]>(this.base, { params });
   }
 

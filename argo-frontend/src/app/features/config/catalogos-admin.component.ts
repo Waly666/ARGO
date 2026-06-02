@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -17,18 +17,37 @@ import {
   isNumericField,
 } from '../../core/utils/numeric-fields.util';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { ClaseVehiculo, VehiculoService } from '../../core/services/vehiculo.service';
+import {
+  CATEGORIAS_LICENCIA_VEHICULO,
+  labelCategoriasLicencia,
+} from '../../core/constants/categorias-licencia-vehiculo';
+import {
+  SECCIONES_CARACT_INSPECCION,
+  labelSeccionCaractInspeccion,
+} from '../../core/constants/inspeccion-preop-catalogo';
 
 interface ClaseRow {
   idClase: string;
   label: string;
 }
 
+interface ItemInspeccionOpcion {
+  idItem: string;
+  item: string;
+  tipos: string;
+  label: string;
+}
+
 @Component({
   selector: 'argo-catalogos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent],
   templateUrl: './catalogos-admin.component.html',
   styleUrls: ['./catalogos-admin.component.scss'],
 })
@@ -46,18 +65,91 @@ export class CatalogosAdminComponent implements OnInit {
   msg = signal<string | null>(null);
   busqueda = signal('');
   pagina = signal(0);
-  readonly pageSize = 50;
+  readonly pageSize = 20;
 
   mostrarForm = signal(false);
   editandoId = signal<string | null>(null);
   formDoc = signal<Record<string, string>>({});
   clasesVehiculo = signal<ClaseRow[]>([]);
   formIdClases = signal<string[]>([]);
+  formTiposVehiculo = signal<string[]>([]);
+  filtroTiposVehiculo = signal('');
+  itemsInspeccionOpciones = signal<ItemInspeccionOpcion[]>([]);
+  cargandoItemsInspeccion = signal(false);
   formControlaVencimiento = signal(true);
+  formLicenciaCats = signal<Record<string, boolean>>({});
 
   importJson = signal('');
   mostrarImport = signal(false);
   vista = signal<VistaLista>(readVistaLista('argo-catalogos-vista'));
+
+  clasesVehiculoFiltradas = computed(() => {
+    const q = this.filtroTiposVehiculo().trim().toLowerCase();
+    const rows = this.clasesVehiculo();
+    if (!q) return rows;
+    return rows.filter(
+      (c) =>
+        c.label.toLowerCase().includes(q) ||
+        c.idClase.toLowerCase().includes(q) ||
+        this.normTipoVehiculo(c.label).toLowerCase().includes(q),
+    );
+  });
+
+  resumenTiposVehiculoInspeccion = computed(() => {
+    const n = this.formTiposVehiculo().length;
+    if (!n) {
+      return { todos: true, count: 0, labels: [] as string[] };
+    }
+    const map = new Map(
+      this.clasesVehiculo().map((c) => [this.normTipoVehiculo(c.label), c.label]),
+    );
+    const labels = this.formTiposVehiculo().map((t) => map.get(t) || t);
+    return { todos: false, count: n, labels };
+  });
+
+  resumenClasesLegacyInspeccion = computed(() => {
+    const n = this.formIdClases().length;
+    if (!n) {
+      return { todos: true, count: 0, labels: [] as string[] };
+    }
+    const map = new Map(this.clasesVehiculo().map((c) => [c.idClase, c.label]));
+    const labels = this.formIdClases().map((id) => map.get(id) || id);
+    return { todos: false, count: n, labels };
+  });
+
+  opcionesItemInspeccionForm = computed<EnumBuscarOption[]>(() =>
+    this.itemsInspeccionOpciones().map((r) => ({
+      value: r.idItem,
+      label: r.label,
+      hint: r.tipos,
+    })),
+  );
+
+  textoItemInspeccionForm = computed(() => {
+    const id = String(this.formDoc()['idItem'] ?? '').trim();
+    if (!id) return '';
+    const hit = this.itemsInspeccionOpciones().find((r) => r.idItem === id);
+    return hit?.label || `#${id}`;
+  });
+
+  opcionesCaractSeccionForm = computed<EnumBuscarOption[]>(() =>
+    SECCIONES_CARACT_INSPECCION.map((s) => ({
+      value: s.value,
+      label: s.label,
+    })),
+  );
+
+  textoCaractSeccionForm = computed(() => {
+    const v = String(this.formDoc()['caracteristica'] ?? '').trim();
+    if (!v) return '';
+    return labelSeccionCaractInspeccion(v);
+  });
+
+  itemInspeccionFormSeleccionado = computed(() => {
+    const id = String(this.formDoc()['idItem'] ?? '').trim();
+    if (!id) return null;
+    return this.itemsInspeccionOpciones().find((r) => r.idItem === id) || null;
+  });
 
   ngOnInit(): void {
     this.vehSvc.listarClases().subscribe({
@@ -89,7 +181,55 @@ export class CatalogosAdminComponent implements OnInit {
     this.pagina.set(0);
     this.mostrarForm.set(false);
     this.mostrarImport.set(false);
+    if (nombre === 'caractInspeccion') {
+      this.cargarItemsInspeccionOpciones();
+    }
     this.cargar();
+  }
+
+  cargarItemsInspeccionOpciones() {
+    this.cargandoItemsInspeccion.set(true);
+    this.svc.listar('itemsInspeccion', { limit: 500 }).subscribe({
+      next: (res) => {
+        const rows = (res.rows || [])
+          .map((r) => {
+            const idItem = String(r['idItem'] ?? '').trim();
+            const item = String(r['item'] ?? '').trim();
+            if (!idItem) return null;
+            const tipos = this.formatTiposVehiculo(r['tiposVehiculo'] ?? r['claseVehiculo']);
+            return {
+              idItem,
+              item,
+              tipos,
+              label: `#${idItem} · ${item}`,
+            } satisfies ItemInspeccionOpcion;
+          })
+          .filter((r): r is ItemInspeccionOpcion => !!r)
+          .sort((a, b) => Number(a.idItem) - Number(b.idItem));
+        this.itemsInspeccionOpciones.set(rows);
+        this.cargandoItemsInspeccion.set(false);
+      },
+      error: () => {
+        this.cargandoItemsInspeccion.set(false);
+        this.itemsInspeccionOpciones.set([]);
+      },
+    });
+  }
+
+  etiquetaItemInspeccion(idItem: unknown): string {
+    const id = String(idItem ?? '').trim();
+    if (!id) return '—';
+    const hit = this.itemsInspeccionOpciones().find((r) => r.idItem === id);
+    if (hit) return hit.label;
+    return `#${id}`;
+  }
+
+  tiposVehiculoPorItemId(idItem: unknown): string {
+    const id = String(idItem ?? '').trim();
+    if (!id) return '—';
+    const hit = this.itemsInspeccionOpciones().find((r) => r.idItem === id);
+    if (!hit) return '—';
+    return hit.tipos || 'Todos los tipos';
   }
 
   cargar() {
@@ -135,15 +275,35 @@ export class CatalogosAdminComponent implements OnInit {
     if (!L?.campos?.length) return [];
     let campos = L.campos.filter((c) => c !== '_id');
     if (this.esCatalogoInspeccion()) {
-      campos = campos.filter((c) => c !== 'claseVehiculo' && c !== 'idClases');
+      if (this.esCatalogoItemsInspeccion()) {
+        campos = campos.filter((c) => c !== 'idClases' && c !== 'tiposVehiculo' && c !== 'claseVehiculo');
+      } else if (this.esCatalogoCaractInspeccion()) {
+        campos = campos.filter((c) => c !== 'idClases' && c !== 'claseVehiculo' && c !== 'tiposVehiculo');
+      } else {
+        campos = campos.filter((c) => c !== 'claseVehiculo' && c !== 'tiposVehiculo' && c !== 'idClases');
+      }
     }
     if (this.esCatalogoDocumento()) {
       campos = campos.filter((c) => c !== 'controlaVencimiento');
+    }
+    if (this.esCatalogoClaseVehiculo()) {
+      campos = campos.filter((c) => !CATEGORIAS_LICENCIA_VEHICULO.includes(c as typeof CATEGORIAS_LICENCIA_VEHICULO[number]));
     }
     return campos.slice(0, 8);
   }
 
   columnasInspeccion(): string[] {
+    if (this.esCatalogoItemsInspeccion()) return ['tiposVehiculo', ...this.camposTabla()];
+    if (this.esCatalogoCaractInspeccion()) {
+      const cols = this.camposTabla();
+      const idx = cols.indexOf('idItem');
+      if (idx >= 0) {
+        const out = [...cols];
+        out.splice(idx + 1, 0, 'tiposVehiculoItem');
+        return out;
+      }
+      return ['tiposVehiculoItem', ...cols];
+    }
     return ['idClases', ...this.camposTabla()];
   }
 
@@ -154,12 +314,28 @@ export class CatalogosAdminComponent implements OnInit {
   columnasListado(): string[] {
     if (this.esCatalogoInspeccion()) return this.columnasInspeccion();
     if (this.esCatalogoDocumento()) return this.columnasDocumento();
+    if (this.esCatalogoClaseVehiculo()) return [...this.camposTabla(), 'licenciasCap'];
     return this.camposTabla();
   }
 
   valorCelda(row: Record<string, unknown>, campo: string): string {
     if (campo === 'idClases') return this.formatIdClases(row[campo]);
+    if (campo === 'idItem' && this.esCatalogoCaractInspeccion()) {
+      return this.etiquetaItemInspeccion(row[campo]);
+    }
+    if (campo === 'caracteristica' && this.esCatalogoCaractInspeccion()) {
+      return String(row[campo] ?? '').trim() || '—';
+    }
+    if (campo === 'tiposVehiculoItem' && this.esCatalogoCaractInspeccion()) {
+      return this.tiposVehiculoPorItemId(row['idItem']);
+    }
+    if (campo === 'claseVehiculo') {
+      const v = String(row[campo] ?? '').trim();
+      return v || 'Todos los tipos';
+    }
+    if (campo === 'tiposVehiculo') return this.formatTiposVehiculo(row[campo] ?? row['claseVehiculo']);
     if (campo === 'controlaVencimiento') return this.formatControlaVencimiento(row[campo]);
+    if (campo === 'licenciasCap') return labelCategoriasLicencia(row);
     return formatNumericCell(campo, row[campo]);
   }
 
@@ -173,7 +349,19 @@ export class CatalogosAdminComponent implements OnInit {
     if (!n) return false;
     const meta = this.catalogos().find((c) => c.nombre === n);
     if (meta?.esInspeccionChecklist != null) return meta.esInspeccionChecklist;
-    return ['itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones'].includes(n);
+    return ['itemsInspeccion', 'caractInspeccion', 'itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones'].includes(n);
+  }
+
+  esCatalogoItemsInspeccion(): boolean {
+    return this.seleccionado() === 'itemsInspeccion';
+  }
+
+  esCatalogoCaractInspeccion(): boolean {
+    return this.seleccionado() === 'caractInspeccion';
+  }
+
+  esCatalogoInspeccionLegacy(): boolean {
+    return ['itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones'].includes(this.seleccionado() || '');
   }
 
   esCatalogoDocumento(): boolean {
@@ -183,6 +371,12 @@ export class CatalogosAdminComponent implements OnInit {
     if (meta?.esCatalogoDocumento != null) return meta.esCatalogoDocumento;
     return n === 'itemDocumentosVehiculo' || n === 'itemDocumentosInstructores';
   }
+
+  esCatalogoClaseVehiculo(): boolean {
+    return this.seleccionado() === 'claseVehiculo';
+  }
+
+  categoriasLicenciaLista = CATEGORIAS_LICENCIA_VEHICULO;
 
   private parseIdClasesValor(v: unknown): string[] {
     if (v == null || v === '') return [];
@@ -210,6 +404,117 @@ export class CatalogosAdminComponent implements OnInit {
     return ids.map((id) => map.get(id) || id).join(', ');
   }
 
+  private normTipoVehiculo(label: string): string {
+    return String(label || '')
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, ' ');
+  }
+
+  formatTiposVehiculo(v: unknown): string {
+    const tipos = this.parseTiposVehiculoValor(v);
+    if (!tipos.length) return 'Todos los tipos';
+    const map = new Map(
+      this.clasesVehiculo().map((c) => [this.normTipoVehiculo(c.label), c.label]),
+    );
+    return tipos.map((t) => map.get(t) || t).join(', ');
+  }
+
+  private parseTiposVehiculoValor(v: unknown): string[] {
+    if (v == null || v === '') return [];
+    if (Array.isArray(v)) {
+      return [...new Set(v.map((t) => this.normTipoVehiculo(String(t))).filter(Boolean))];
+    }
+    const t = String(v).trim();
+    if (!t) return [];
+    return [this.normTipoVehiculo(t)];
+  }
+
+  tipoVehiculoMarcado(label: string): boolean {
+    const key = this.normTipoVehiculo(label);
+    return this.formTiposVehiculo().includes(key);
+  }
+
+  toggleTipoVehiculo(label: string, checked: boolean) {
+    const key = this.normTipoVehiculo(label);
+    this.formTiposVehiculo.update((list) => {
+      const set = new Set(list);
+      if (checked) set.add(key);
+      else set.delete(key);
+      return [...set];
+    });
+  }
+
+  limpiarTiposVehiculo() {
+    this.formTiposVehiculo.set([]);
+  }
+
+  marcarTiposVehiculoFiltrados() {
+    const keys = this.clasesVehiculoFiltradas().map((c) => this.normTipoVehiculo(c.label));
+    this.formTiposVehiculo.update((list) => [...new Set([...list, ...keys])]);
+  }
+
+  marcarClasesLegacyFiltradas() {
+    const ids = this.clasesVehiculoFiltradas().map((c) => c.idClase);
+    this.formIdClases.update((list) => [...new Set([...list, ...ids])]);
+  }
+
+  toggleTipoVehiculoChip(label: string) {
+    const key = this.normTipoVehiculo(label);
+    this.formTiposVehiculo.update((list) => {
+      const set = new Set(list);
+      if (set.has(key)) set.delete(key);
+      else set.add(key);
+      return [...set];
+    });
+  }
+
+  toggleClaseLegacyChip(idClase: string) {
+    this.formIdClases.update((list) => {
+      const set = new Set(list);
+      if (set.has(idClase)) set.delete(idClase);
+      else set.add(idClase);
+      return [...set];
+    });
+  }
+
+  private resetFiltroTiposVehiculo() {
+    this.filtroTiposVehiculo.set('');
+  }
+
+  onItemInspeccionPick(opt: EnumBuscarOption): void {
+    this.patchCampo('idItem', String(opt.value));
+  }
+
+  onItemInspeccionLimpiar(): void {
+    this.patchCampo('idItem', '');
+  }
+
+  onCaractSeccionPick(opt: EnumBuscarOption): void {
+    this.patchCampo('caracteristica', String(opt.value));
+  }
+
+  onCaractSeccionLimpiar(): void {
+    this.patchCampo('caracteristica', '');
+  }
+
+  esCampoSelectCaract(campo: string): boolean {
+    return this.esCatalogoCaractInspeccion() && campo === 'idItem';
+  }
+
+  private syncFormTiposVehiculo(row?: Record<string, unknown>) {
+    if (!this.esCatalogoItemsInspeccion()) {
+      this.formTiposVehiculo.set([]);
+      return;
+    }
+    if (!row) {
+      this.formTiposVehiculo.set([]);
+      return;
+    }
+    const tipos = this.parseTiposVehiculoValor(row['tiposVehiculo'] ?? row['claseVehiculo']);
+    this.formTiposVehiculo.set(tipos);
+  }
+
   claseMarcada(idClase: string): boolean {
     return this.formIdClases().includes(idClase);
   }
@@ -228,7 +533,7 @@ export class CatalogosAdminComponent implements OnInit {
   }
 
   private syncFormIdClases(row?: Record<string, unknown>) {
-    if (!this.esCatalogoInspeccion()) {
+    if (!this.esCatalogoInspeccionLegacy()) {
       this.formIdClases.set([]);
       return;
     }
@@ -256,13 +561,19 @@ export class CatalogosAdminComponent implements OnInit {
   }
 
   campoEsTextoLargo(campo: string): boolean {
-    return ['item', 'aspecto1', 'aspecto2', 'nombre'].includes(campo);
+    return ['item', 'aspecto1', 'aspecto2', 'nombre', 'caracteristica'].includes(campo);
   }
 
   labelCampo(campo: string): string {
     const map: Record<string, string> = {
+      idItem: 'Ítem de inspección',
+      idCaracteristica: 'ID característica',
       idItemEsGral: 'ID ítem',
       item: 'Descripción del ítem',
+      caracteristica: 'Característica a revisar',
+      tiposVehiculo: 'Tipos de vehículo',
+      tiposVehiculoItem: 'Tipos de vehículo',
+      claseVehiculo: 'Tipo de vehículo',
       idAspecto1: 'ID',
       aspecto1: 'Texto del ítem',
       idAspecto2: 'ID',
@@ -271,6 +582,7 @@ export class CatalogosAdminComponent implements OnInit {
       nombre: 'Descripción',
       idClases: 'Clases de vehículo',
       controlaVencimiento: 'Vencimiento',
+      licenciasCap: 'Licencias capacitación',
     };
     return map[campo] || campo;
   }
@@ -291,33 +603,71 @@ export class CatalogosAdminComponent implements OnInit {
     return String(row['_id'] ?? '');
   }
 
+  private camposFormBase(): string[] {
+    const skip = new Set(['_id', '__v', 'idClases', 'controlaVencimiento', 'tiposVehiculo', 'claseVehiculo']);
+    return this.listado()?.campos?.filter((c) => !skip.has(c)) || [];
+  }
+
   nuevo() {
-    const L = this.listado();
-    const campos = L?.campos?.filter((c) => c !== '_id' && c !== '__v' && c !== 'claseVehiculo' && c !== 'idClases' && c !== 'controlaVencimiento') || [];
+    const campos = this.camposFormBase();
     const doc: Record<string, string> = {};
     for (const c of campos) doc[c] = '';
     this.editandoId.set(null);
     this.formDoc.set(doc);
     this.syncFormIdClases();
+    this.syncFormTiposVehiculo();
     this.syncFormControlaVencimiento();
+    this.syncFormLicenciaCats();
+    this.resetFiltroTiposVehiculo();
+    if (this.esCatalogoCaractInspeccion()) {
+      this.cargarItemsInspeccionOpciones();
+    }
     this.mostrarForm.set(true);
     this.msg.set(null);
   }
 
   editar(row: Record<string, unknown>) {
     const id = this.idMongo(row);
-    const campos = this.listado()?.campos?.filter((c) => c !== '_id' && c !== '__v' && c !== 'claseVehiculo' && c !== 'idClases' && c !== 'controlaVencimiento') || [];
+    const campos = this.camposFormBase();
     const doc: Record<string, string> = {};
     for (const c of campos) {
       if (c === 'idClases' || c === 'controlaVencimiento') continue;
+      if (CATEGORIAS_LICENCIA_VEHICULO.includes(c as typeof CATEGORIAS_LICENCIA_VEHICULO[number])) continue;
       const v = row[c];
+      if (this.esCatalogoCaractInspeccion() && c === 'idItem' && v != null && v !== '') {
+        doc[c] = String(v);
+        continue;
+      }
       doc[c] = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
     }
     this.editandoId.set(id);
     this.formDoc.set(doc);
     this.syncFormIdClases(row);
+    this.syncFormTiposVehiculo(row);
     this.syncFormControlaVencimiento(row);
+    this.syncFormLicenciaCats(row);
+    this.resetFiltroTiposVehiculo();
+    if (this.esCatalogoCaractInspeccion()) {
+      this.cargarItemsInspeccionOpciones();
+    }
     this.mostrarForm.set(true);
+  }
+
+  syncFormLicenciaCats(row?: Record<string, unknown>) {
+    const out: Record<string, boolean> = {};
+    for (const c of CATEGORIAS_LICENCIA_VEHICULO) {
+      const v = row?.[c];
+      out[c] = v === true || v === 1 || v === '1' || v === 'true';
+    }
+    this.formLicenciaCats.set(out);
+  }
+
+  toggleLicenciaCat(cat: string, checked: boolean) {
+    this.formLicenciaCats.update((m) => ({ ...m, [cat]: checked }));
+  }
+
+  licenciaCatMarcada(cat: string): boolean {
+    return !!this.formLicenciaCats()[cat];
   }
 
   patchCampo(campo: string, valor: string) {
@@ -327,12 +677,13 @@ export class CatalogosAdminComponent implements OnInit {
   cancelar() {
     this.mostrarForm.set(false);
     this.editandoId.set(null);
+    this.resetFiltroTiposVehiculo();
   }
 
   private parseDoc(): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(this.formDoc())) {
-      if (k === '_id' || k === '__v' || k === 'idClases' || k === 'controlaVencimiento') continue;
+      if (k === '_id' || k === '__v' || k === 'idClases' || k === 'controlaVencimiento' || k === 'tiposVehiculo' || k === 'claseVehiculo') continue;
       const t = v.trim();
       if (t === '') {
         out[k] = null;
@@ -354,11 +705,19 @@ export class CatalogosAdminComponent implements OnInit {
         out[k] = t;
       }
     }
-    if (this.esCatalogoInspeccion()) {
+    if (this.esCatalogoInspeccionLegacy()) {
       out['idClases'] = [...this.formIdClases()];
+    }
+    if (this.esCatalogoItemsInspeccion()) {
+      out['tiposVehiculo'] = [...this.formTiposVehiculo()];
     }
     if (this.esCatalogoDocumento()) {
       out['controlaVencimiento'] = this.formControlaVencimiento();
+    }
+    if (this.esCatalogoClaseVehiculo()) {
+      for (const c of CATEGORIAS_LICENCIA_VEHICULO) {
+        out[c] = !!this.formLicenciaCats()[c];
+      }
     }
     return out;
   }
@@ -494,16 +853,22 @@ export class CatalogosAdminComponent implements OnInit {
   camposForm(): string[] {
     const L = this.listado();
     const keys = new Set(Object.keys(this.formDoc()));
+    const omit = new Set([
+      '__v',
+      'idClases',
+      'controlaVencimiento',
+      'claseVehiculo',
+      ...CATEGORIAS_LICENCIA_VEHICULO,
+    ]);
     if (L?.campos?.length) {
-      return L.campos.filter(
-        (c) => c !== '__v' && c !== 'idClases' && c !== 'controlaVencimiento' && c !== 'claseVehiculo' && keys.has(c),
-      );
+      return L.campos.filter((c) => !omit.has(c) && keys.has(c));
     }
-    return [...keys].filter((k) => k !== '_id' && k !== 'idClases' && k !== 'controlaVencimiento' && k !== 'claseVehiculo');
+    return [...keys].filter((k) => k !== '_id' && !omit.has(k));
   }
 
   usarCapsula(campo: string): boolean {
-    if (campo === 'idClases' || campo === 'controlaVencimiento') return false;
+    if (campo === 'idClases' || campo === 'controlaVencimiento' || campo === 'licenciasCap') return false;
+    if (this.esCatalogoCaractInspeccion() && (campo === 'idItem' || campo === 'caracteristica' || campo === 'tiposVehiculoItem')) return false;
     return /estado|tipo|id/i.test(campo);
   }
 
@@ -511,6 +876,25 @@ export class CatalogosAdminComponent implements OnInit {
     const L = this.listado();
     if (!L) return 0;
     return Math.max(1, Math.ceil(L.total / this.pageSize));
+  }
+
+  rangoRegistros(): { desde: number; hasta: number; total: number } {
+    const L = this.listado();
+    const total = L?.total ?? 0;
+    if (!total) return { desde: 0, hasta: 0, total: 0 };
+    const desde = this.pagina() * this.pageSize + 1;
+    const hasta = Math.min((this.pagina() + 1) * this.pageSize, total);
+    return { desde, hasta, total };
+  }
+
+  puedePaginaAnterior(): boolean {
+    return this.pagina() > 0;
+  }
+
+  puedePaginaSiguiente(): boolean {
+    const L = this.listado();
+    if (!L) return false;
+    return (this.pagina() + 1) * this.pageSize < L.total;
   }
 
   capParaCampo(campo: string, valor: string): string {

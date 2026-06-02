@@ -4,14 +4,18 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { destinoTrasRevocar } from '../utils/auth-routes.util';
 import { PermisoService } from './permiso.service';
 import { AlarmaService } from './alarma.service';
+import { SedeService } from './sede.service';
 
 export interface AuthEmpleadoResumen {
   idEmpleado: number;
   nombreCompleto: string;
   numeroDocumento?: string;
   idUsuario?: string;
+  /** Cargo RRHH corresponde a instructor (requerido para portal API). */
+  esInstructor?: boolean;
 }
 
 export interface AuthUser {
@@ -23,9 +27,15 @@ export interface AuthUser {
   rolNombre?: string;
   permisos?: string[];
   alarmas?: string[];
+  /** ISO timestamp del rol en BD; cambia al guardar permisos. */
+  permisosRev?: string | null;
   email?: string;
   idEmpleado?: number;
   empleado?: AuthEmpleadoResumen;
+  /** true si puede llamar /api/instructor-portal (permisos + cargo instructor). */
+  puedeUsarPortalInstructor?: boolean;
+  sedes?: { idSede: string; nombre: string; codigo?: string; esPrincipal?: boolean }[];
+  sedesPermitidas?: string[];
 }
 
 export interface LoginResponse {
@@ -49,9 +59,26 @@ export class AuthService {
   private router = inject(Router);
   private permisoSvc = inject(PermisoService);
   private alarmaSvc = inject(AlarmaService);
+  private sedeSvc = inject(SedeService);
 
   private _token = signal<string | null>(this.read(TOKEN_KEY));
   private _user = signal<AuthUser | null>(this.readJson<AuthUser>(USER_KEY));
+
+  constructor() {
+    const cached = this._user();
+    if (cached?.sedes?.length) {
+      this.sedeSvc.initDesdeUsuario(cached.sedes, { filtrarComoAdmin: this.usuarioFiltraPorSede(cached) });
+    }
+  }
+
+  /** Admin u operador con permiso de ver todas las sedes puede filtrar por sede. */
+  private usuarioFiltraPorSede(user?: AuthUser | null): boolean {
+    if (!user) return false;
+    if (user.permisos?.includes('*')) return true;
+    const r = String(user.rol || '').toLowerCase();
+    if (r === 'admin' || r.includes('admin')) return true;
+    return user.permisos?.includes('sedes.ver_todas') === true;
+  }
 
   token = computed(() => this._token());
   user = computed(() => this._user());
@@ -63,32 +90,49 @@ export class AuthService {
     return r === 'admin' || r.includes('admin');
   });
 
+  puedeUsarPortalInstructor = computed(() => this._user()?.puedeUsarPortalInstructor === true);
+
   tienePermiso(clave: string | string[]): boolean {
     return this.permisoSvc.tiene(clave);
   }
 
   refreshMe(): Observable<AuthUser> {
     return this.http.get<AuthUser>(`${environment.apiUrl}/auth/me`).pipe(
-      tap((user) => {
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        this._user.set(user);
-        this.permisoSvc.setPermisos(user.permisos);
-        this.alarmaSvc.setAlarmas(user.alarmas);
-      }),
+      tap((user) => this.aplicarUsuarioSesion(user, { corregirRuta: true })),
     );
   }
 
+  /** Aplica usuario/permisos en memoria; devuelve true si los permisos cambiaron. */
+  aplicarUsuarioSesion(user: AuthUser, opts?: { corregirRuta?: boolean }): boolean {
+    const firmaAntes = this.permisoSvc.firma();
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    this._user.set(user);
+    this.permisoSvc.setPermisos(user.permisos);
+    this.alarmaSvc.setAlarmas(user.alarmas);
+    this.sedeSvc.initDesdeUsuario(user.sedes, { filtrarComoAdmin: this.usuarioFiltraPorSede(user) });
+    const cambio = this.permisoSvc.firma() !== firmaAntes;
+    if (opts?.corregirRuta !== false && cambio) {
+      this.corregirRutaTrasPermisos(user.permisos);
+    }
+    return cambio;
+  }
+
+  /** Si revocaron permiso estando en una pantalla, redirige sin bloquear. */
+  corregirRutaTrasPermisos(permisos?: string[] | null): void {
+    const ctx = { puedeUsarPortalInstructor: this.puedeUsarPortalInstructor() };
+    const destino = destinoTrasRevocar(this.router.url, permisos ?? this.permisoSvc.permisos(), ctx);
+    if (destino) {
+      void this.router.navigateByUrl(destino, { replaceUrl: true });
+    }
+  }
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http
       .post<LoginResponse>(`${environment.apiUrl}/auth/login`, { username, password })
       .pipe(
         tap((res) => {
           localStorage.setItem(TOKEN_KEY, res.token);
-          localStorage.setItem(USER_KEY, JSON.stringify(res.user));
           this._token.set(res.token);
-          this._user.set(res.user);
-          this.permisoSvc.setPermisos(res.user.permisos);
-          this.alarmaSvc.setAlarmas(res.user.alarmas);
+          this.aplicarUsuarioSesion(res.user, { corregirRuta: false });
         }),
       );
   }
@@ -108,6 +152,7 @@ export class AuthService {
     this._user.set(null);
     this.permisoSvc.setPermisos([]);
     this.alarmaSvc.setAlarmas([]);
+    this.sedeSvc.seleccionar(null);
     this.router.navigateByUrl('/login');
   }
 

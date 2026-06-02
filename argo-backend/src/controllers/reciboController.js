@@ -5,6 +5,11 @@ const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigRecibo } = require('../services/configRecibo');
 const { numDocQuery } = require('../utils/numDoc');
+const {
+  bloqueEmpresaHtml,
+  filasConSede,
+  lineaHtml: lineaHtmlShared,
+} = require('../services/reciboHtmlShared');
 
 function num(v) {
   if (v == null) return 0;
@@ -91,10 +96,12 @@ async function armarRecibo(id) {
 
   const esCaja = !!(ing.ingresoCaja || (!ing.idLiquidacion && ing.idTipoIngreso));
 
-  const [config, alumno, liq, ingreso] = await Promise.all([
-    obtenerConfigRecibo(),
+  const liq = ing.idLiquidacion ? await Liquidacion.findById(ing.idLiquidacion).lean() : null;
+  const idSedeDoc = ing.idSede || liq?.idSede || null;
+
+  const [config, alumno, ingreso] = await Promise.all([
+    obtenerConfigRecibo(idSedeDoc),
     ing.numDoc ? DatosAlumno.findOne(numDocQuery(ing.numDoc)).lean() : null,
-    ing.idLiquidacion ? Liquidacion.findById(ing.idLiquidacion).lean() : null,
     enriquecerIngreso(ing),
   ]);
 
@@ -182,19 +189,7 @@ function esc(s) {
 }
 
 function lineaHtml(ancho = 32) {
-  return `<div class="line">${'─'.repeat(ancho)}</div>`;
-}
-
-/** Encabezado empresa: nombre, NIT, teléfono, dirección, ciudad, email */
-function bloqueEmpresaHtml(config) {
-  const v = (x) => esc((x || '').toString().trim() || '—');
-  return `
-  <div class="center empresa">${v(config.nombreEmpresa)}</div>
-  <div class="center dato">NIT: ${v(config.nit)}</div>
-  <div class="center dato">Tel: ${v(config.telefono)}</div>
-  <div class="center dato">Dir: ${v(config.direccion)}</div>
-  <div class="center dato">Ciudad: ${v(config.ciudad)}</div>
-  <div class="center dato">Email: ${v(config.email)}</div>`;
+  return lineaHtmlShared(ancho);
 }
 
 function bloqueTituloHtml(config) {
@@ -214,7 +209,8 @@ exports.html = async (req, res, next) => {
     const mm = config.anchoReciboMm || 80;
     const w = Math.round(mm * 3.78);
 
-    const filas = [
+    const filas = filasConSede(
+      [
       ['Comprobante N°', numeroRecibo],
       ['Fecha', fmtFecha(ingreso.fecha || ingreso.createdAt)],
       ...(data.esIngresoCaja
@@ -246,7 +242,9 @@ exports.html = async (req, res, next) => {
           ]
         : []),
       ...(ingreso.observaciones ? [['Obs.', ingreso.observaciones]] : []),
-    ];
+      ],
+      config,
+    );
 
     const bodyRows = filas
       .map(
@@ -276,6 +274,7 @@ exports.html = async (req, res, next) => {
     }
     .center { text-align: center; }
     .empresa { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
+    .sede-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
     .dato { font-size: 10px; line-height: 1.3; }
     .titulo { font-weight: bold; margin: 6px 0 2px; letter-spacing: 0.5px; font-size: 11px; }
     .slogan { font-size: 10px; margin-bottom: 4px; font-style: italic; }

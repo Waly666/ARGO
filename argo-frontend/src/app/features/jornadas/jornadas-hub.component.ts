@@ -24,6 +24,11 @@ import { AlumnoListItem } from '../../core/services/alumno.service';
 import { formatNumDoc } from '../../core/utils/num-doc.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
+import { Hora12InputComponent } from '../../shared/hora-12-input/hora-12-input.component';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { environment } from '../../../environments/environment';
 import { JornadaCapDto } from '../../core/services/jornada-cap.service';
 import { JornadaMapaPickerComponent } from './jornada-mapa-picker.component';
@@ -90,6 +95,7 @@ import {
   estadoJornadaCalClass,
   rowJornadaClass,
   estadoClaseLiveClass,
+  claseJornadaSePuedeEliminar,
   estadoClaseCalBlockClass,
   rowClaseClass,
   rowCertificadoHoyClass,
@@ -108,6 +114,8 @@ type VistaAgenda = 'lista' | 'calendario';
     MunicipioBuscarComponent,
     JornadaMapaPickerComponent,
     FormModalComponent,
+    CatalogoEnumBuscarComponent,
+    Hora12InputComponent,
   ],
   templateUrl: './jornadas-hub.component.html',
   styleUrls: ['./jornadas-hub.component.scss'],
@@ -204,6 +212,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   estadoJornadaCalClass = estadoJornadaCalClass;
   rowJornadaClass = rowJornadaClass;
   estadoClaseLiveClass = estadoClaseLiveClass;
+  claseJornadaSePuedeEliminar = claseJornadaSePuedeEliminar;
   estadoClaseCalBlockClass = estadoClaseCalBlockClass;
   esFinDeSemana = esFinDeSemana;
   rowClaseClass = rowClaseClass;
@@ -213,8 +222,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   contratoActivo = computed(() => this.contratos().find((c) => c._id === this.contratoSel()));
   puedeAsignarInstructor = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
-  /** Solo administrador (jornadas.gestionar) puede eliminar clases. */
+  /** Solo administrador (jornadas.gestionar) puede eliminar clases no finalizadas. */
   puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
+  puedeEliminarClaseActiva = computed(
+    () => this.puedeEliminarClase() && claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
+  );
   inscritosConAsistencia = computed(() => this.inscritos().filter((i) => i.tieneAsistencia).length);
   /** Inscritos que aún requieren asistencia (excluye certificados vigentes en el contrato). */
   inscritosPendientesAsistencia = computed(() =>
@@ -326,6 +338,105 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   jornadaEditFecha = signal('');
   jornadaEditMapaAbierto = signal(false);
   supNuevoNombreJornada = signal('');
+
+  opcionesSupervisores = computed<EnumBuscarOption[]>(() =>
+    this.supervisores().map((s) => ({ value: s._id, label: s.nombre })),
+  );
+
+  opcionesContratosToolbar = computed<EnumBuscarOption[]>(() =>
+    this.contratos().map((c) => ({
+      value: c._id || '',
+      label: this.labelContrato(c),
+    })),
+  );
+
+  textoContratoSel = computed(() => {
+    const id = this.contratoSel();
+    if (!id) return '';
+    const c = this.contratos().find((x) => x._id === id);
+    return c ? this.labelContrato(c) : '';
+  });
+
+  opcionesJornadasHoyToolbar = computed<EnumBuscarOption[]>(() =>
+    this.jornadasOperablesHoy().map((j) => ({
+      value: j._id || '',
+      label: `${this.labelJornada(j)} — ${j.estado}`,
+    })),
+  );
+
+  textoJornadaSel = computed(() => {
+    const id = this.jornadaSel();
+    if (!id) return '';
+    const j = this.jornadasOperablesHoy().find((x) => x._id === id);
+    return j ? `${this.labelJornada(j)} — ${j.estado}` : '';
+  });
+
+  textoSupervisorContrato = computed(() => {
+    const id = this.formContrato().idSupervisor || '';
+    if (!id) return '';
+    return this.supervisores().find((s) => s._id === id)?.nombre || this.formContrato().supervisor || '';
+  });
+
+  textoSupervisorJornadaEdit = computed(() => {
+    const id = this.jornadaEditIdSupervisor();
+    if (!id) return '';
+    return this.supervisores().find((s) => s._id === id)?.nombre || this.jornadaEditSupervisor() || '';
+  });
+
+  opcionesJornadasCrear = computed<EnumBuscarOption[]>(() =>
+    this.jornadasParaCrear().map((j) => ({
+      value: j._id,
+      label: `${this.labelJornadaCorta(j)} — ${j.estado}`,
+    })),
+  );
+
+  textoJornadaModal = computed(() => {
+    const id = this.modalCrearJornadaId();
+    if (!id) return '';
+    const j =
+      this.jornadasParaCrear().find((x) => x._id === id) ||
+      this.jornadas().find((x) => x._id === id);
+    return j ? `${this.labelJornadaCorta(j)} — ${j.estado}` : '';
+  });
+
+  opcionesUbicacionClase = computed<EnumBuscarOption[]>(() =>
+    this.ubicaciones.map((u) => ({ value: u, label: u })),
+  );
+
+  textoUbicacionClase = computed(() => this.nuevaClaseUbic() || 'Carpa');
+
+  opcionesInstructoresModal = computed<EnumBuscarOption[]>(() => [
+    { value: '', label: '— Automático (usuario actual) —' },
+    ...this.instructores().map((i) => ({
+      value: i.idEmpleado,
+      label: i.nombreCompleto,
+    })),
+  ]);
+
+  textoInstructorModal = computed(() => {
+    const id = this.modalClaseInstructorId();
+    if (!id) return '— Automático (usuario actual) —';
+    const i = this.instructores().find((x) => Number(x.idEmpleado) === Number(id));
+    return i?.nombreCompleto || '';
+  });
+
+  opcionesProgramasModal = computed<EnumBuscarOption[]>(() => {
+    const base = this.programasJornada().map((p) => ({
+      value: this.programaOptionValue(p),
+      label: String(p.nombreProg || p.codigoProg || ''),
+    }));
+    const v = this.nuevaClaseProg();
+    if (v && !this.buscarProgramaEnLista(v)) {
+      return [{ value: v, label: this.etiquetaProgramaModal() }, ...base];
+    }
+    return base;
+  });
+
+  textoProgramaModalCombo = computed(() => {
+    const v = this.nuevaClaseProg();
+    if (!v) return '';
+    return this.etiquetaProgramaModal();
+  });
 
   georefLoading = signal(false);
   private georefDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -771,6 +882,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   jornadaClaseModalOperable(): boolean {
     const cl = this.claseActiva();
     if (!cl) return false;
+    if (!esFechaHoy(cl.fechaClase || cl.fechaJornada)) return false;
     if (cl.jornadaEstado === 'EN PROCESO') return true;
     const jId = String(this.modalCrearJornadaId() || cl.idJornada || '');
     const j =
@@ -787,6 +899,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   tituloBotonIniciarClase(): string {
+    const cl = this.claseActiva();
+    if (cl && !esFechaHoy(cl.fechaClase || cl.fechaJornada)) {
+      return 'Solo puede iniciar la clase el día programado (hoy).';
+    }
     if (!this.jornadaClaseModalOperable()) {
       return 'Solo puede iniciar la clase el día de la jornada (EN PROCESO).';
     }
@@ -949,6 +1065,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
+        this.mostrarMsgModal(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
         this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo finalizar la clase.', 'error', 'Error'),
@@ -1365,10 +1482,58 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.patchContrato('supervisor', sup?.nombre || '');
   }
 
+  onSupervisorContratoPick(opt: EnumBuscarOption): void {
+    this.onSupervisorChange(String(opt.value));
+  }
+
+  onSupervisorContratoLimpiar(): void {
+    this.onSupervisorChange('');
+  }
+
   onJornadaSupervisorChange(id: string) {
     this.jornadaEditIdSupervisor.set(id || '');
     const sup = this.supervisores().find((s) => s._id === id);
     this.jornadaEditSupervisor.set(sup?.nombre || '');
+  }
+
+  onSupervisorJornadaPick(opt: EnumBuscarOption): void {
+    this.onJornadaSupervisorChange(String(opt.value));
+  }
+
+  onSupervisorJornadaLimpiar(): void {
+    this.onJornadaSupervisorChange('');
+  }
+
+  onJornadaModalPick(opt: EnumBuscarOption): void {
+    this.onModalCrearJornadaChange(String(opt.value));
+  }
+
+  onJornadaModalLimpiar(): void {
+    this.onModalCrearJornadaChange('');
+  }
+
+  onUbicacionClasePick(opt: EnumBuscarOption): void {
+    this.nuevaClaseUbic.set(String(opt.value));
+  }
+
+  onUbicacionClaseLimpiar(): void {
+    this.nuevaClaseUbic.set('Carpa');
+  }
+
+  onInstructorModalPick(opt: EnumBuscarOption): void {
+    this.onModalClaseInstructorChange(String(opt.value));
+  }
+
+  onInstructorModalLimpiar(): void {
+    this.onModalClaseInstructorChange('');
+  }
+
+  onProgramaModalPick(opt: EnumBuscarOption): void {
+    this.nuevaClaseProg.set(String(opt.value));
+  }
+
+  onProgramaModalLimpiar(): void {
+    this.nuevaClaseProg.set('');
   }
 
   onMuniContrato(m: MunicipioDivipola) {
@@ -1729,11 +1894,27 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (this.tab() === 'certificados') this.recargarCerts();
   }
 
+  onContratoToolbarPick(opt: EnumBuscarOption): void {
+    this.onContratoSelChange(String(opt.value));
+  }
+
+  onContratoToolbarLimpiar(): void {
+    this.onContratoSelChange('');
+  }
+
   onJornadaSelChange(id: string) {
     this.jornadaSel.set(id);
     this.claseSel.set('');
     this.claseActiva.set(null);
     this.recargarClases();
+  }
+
+  onJornadaToolbarPick(opt: EnumBuscarOption): void {
+    this.onJornadaSelChange(String(opt.value));
+  }
+
+  onJornadaToolbarLimpiar(): void {
+    this.onJornadaSelChange('');
   }
 
   patchContrato(k: keyof ContratacionDto, v: unknown) {
@@ -2277,16 +2458,23 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       });
   }
 
-  async eliminarClase(c: { _id: string }) {
+  async eliminarClase(c: { _id: string; estado?: string }) {
     if (!this.puedeEliminarClase()) {
       this.mostrarMsg('Solo un administrador puede eliminar clases.', 'warn', 'Sin permiso');
+      return;
+    }
+    if (!claseJornadaSePuedeEliminar(c.estado)) {
+      this.mostrarMsg(
+        'No se puede eliminar una clase finalizada. Conserva historial, asistencias y certificados.',
+        'warn',
+        'Clase finalizada',
+      );
       return;
     }
     const ok = await this.confirmSvc.open({
       title: 'Eliminar clase',
       message:
-        '¿Eliminar esta clase? Solo está permitido si no queda ninguna asistencia registrada. ' +
-        'Debe borrar antes la asistencia de cada alumno desde Editar clase.',
+        '¿Eliminar esta clase? También se borrarán las inscripciones y asistencias registradas (si las hay).',
       variant: 'danger',
       confirmLabel: 'Eliminar',
     });

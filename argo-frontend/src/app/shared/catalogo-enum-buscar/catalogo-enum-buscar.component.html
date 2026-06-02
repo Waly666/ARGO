@@ -1,6 +1,6 @@
 <div class="enum-buscar-host" [class.disabled]="disabled">
   <label *ngIf="label">{{ label }}</label>
-  <div class="input-wrap">
+  <div class="input-wrap" [class.combo]="modoCombo">
     <input
       type="text"
       [placeholder]="placeholder"
@@ -10,6 +10,17 @@
       [disabled]="disabled"
       autocomplete="off"
     />
+    <button
+      *ngIf="modoCombo"
+      type="button"
+      class="combo-toggle"
+      tabindex="-1"
+      [disabled]="disabled"
+      [attr.aria-expanded]="open()"
+      (mousedown)="$event.preventDefault()"
+      (click)="toggleOpen()">
+      ▾
+    </button>
     <span class="hint" *ngIf="loading()">Buscando…</span>
   </div>
 
@@ -22,14 +33,14 @@
 
   <div
     class="dropdown empty"
-    *ngIf="open() && !loading() && query().trim().length >= minLength && resultados().length === 0"
+    *ngIf="open() && !loading() && resultados().length === 0 && (modoCombo || query().trim().length >= minLength)"
   >
-    No hay coincidencias.
+    {{ query().trim() ? 'No hay coincidencias.' : 'No hay opciones disponibles.' }}
   </div>
 
   <div
     class="dropdown empty"
-    *ngIf="open() && query().trim().length > 0 && query().trim().length < minLength"
+    *ngIf="open() && !modoCombo && query().trim().length > 0 && query().trim().length < minLength"
   >
     Escriba al menos {{ minLength }} caracteres…
   </div>

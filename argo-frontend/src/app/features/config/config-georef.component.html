@@ -1,0 +1,100 @@
+<section class="config-page card">
+  <header>
+    <h1>Geocodificación</h1>
+    <p>
+      Proveedor usado al ubicar jornadas y sedes en el mapa (coordenadas → municipio Divipola).
+      La <strong>API key</strong> se guarda en el servidor y no se expone en el código de la aplicación.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <p class="hint">Cargando…</p>
+  } @else {
+    <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+
+    <div class="grid-form argo-form-shell">
+      <h3>Proveedor</h3>
+      <div class="row">
+        <div class="col-6">
+          <label>Servicio de geocodificación</label>
+          <select [ngModel]="form().proveedor" (ngModelChange)="patch('proveedor', $event)">
+            @for (p of proveedores(); track p.id) {
+              <option [value]="p.id">{{ p.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (esHere()) {
+        <h3>HERE</h3>
+        <p class="hint">
+          Cree credenciales en
+          <a href="https://developer.here.com/" target="_blank" rel="noopener">developer.here.com</a>
+          (Geocoding &amp; Search API y Raster Tile API). La clave solo se usa en el backend;
+          el mapa la solicita al servidor al cargar (no queda en el código fuente).
+        </p>
+        <div class="row">
+          <div class="col-4">
+            <label>App ID (opcional)</label>
+            <input
+              type="text"
+              [ngModel]="form().hereAppId"
+              (ngModelChange)="patch('hereAppId', $event)"
+              autocomplete="off"
+            />
+          </div>
+          <div class="col-8">
+            <label>API key</label>
+            <input
+              type="password"
+              [ngModel]="form().hereApiKey"
+              (ngModelChange)="patch('hereApiKey', $event)"
+              [placeholder]="form().apiKeyConfigurada ? ('Actual: ' + (form().apiKeyEnmascarada || '••••')) : 'Pegue su API key de HERE'"
+              autocomplete="new-password"
+            />
+            <p class="hint field-hint">
+              @if (form().apiKeyConfigurada) {
+                Ya hay una clave guardada. Deje el campo vacío para conservarla o escriba una nueva para reemplazarla.
+              } @else {
+                Obligatoria si el proveedor es HERE.
+              }
+            </p>
+          </div>
+        </div>
+      } @else {
+        <p class="hint">
+          Nominatim (OpenStreetMap) no requiere API key. En Colombia los nombres de calle pueden ser imprecisos;
+          para mayor exactitud use HERE (mapa y geocodificación).
+        </p>
+      }
+
+      <h3>Probar</h3>
+      <p class="hint">Consulta de prueba con coordenadas (reverse geocoding + cruce Divipola).</p>
+      <div class="row">
+        <div class="col-3">
+          <label>Latitud</label>
+          <input type="text" [ngModel]="pruebaLat()" (ngModelChange)="pruebaLat.set($event)" />
+        </div>
+        <div class="col-3">
+          <label>Longitud</label>
+          <input type="text" [ngModel]="pruebaLng()" (ngModelChange)="pruebaLng.set($event)" />
+        </div>
+        <div class="col-3 actions-inline">
+          <label>&nbsp;</label>
+          <button type="button" class="ghost" (click)="probar()" [disabled]="probando()">
+            {{ probando() ? 'Probando…' : 'Probar coordenadas' }}
+          </button>
+        </div>
+      </div>
+      @if (pruebaMsg()) {
+        <p class="msg ok prueba">{{ pruebaMsg() }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  }
+</section>

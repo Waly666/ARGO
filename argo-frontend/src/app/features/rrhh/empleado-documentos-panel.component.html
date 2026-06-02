@@ -98,7 +98,7 @@
       </ng-template>
     </div>
 
-    <div class="doc-form card inner">
+    <div class="doc-form card inner argo-form-shell">
       <h4>{{ docEdit() ? 'Editar documento' : 'Nuevo documento' }}</h4>
       <label>Tipo de documento</label>
       <select [ngModel]="docForm().idDocumento" (ngModelChange)="onTipoDocChange($event)">

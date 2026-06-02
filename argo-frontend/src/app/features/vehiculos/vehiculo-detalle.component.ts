@@ -17,6 +17,7 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import { capId } from '../../core/utils/capsule.util';
 import type { DocumentoRequeridoVehiculo, TipoDocumentoRequisitoVehi } from '../../core/services/config-requisitos-documentos-vehiculos.service';
 import { environment } from '../../../environments/environment';
@@ -27,7 +28,7 @@ type TabKey = 'datos' | 'documentos' | 'inspeccion';
 @Component({
   selector: 'argo-vehiculo-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, VehiculoInspeccionPanelComponent],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, FormModalComponent, VehiculoInspeccionPanelComponent],
   templateUrl: './vehiculo-detalle.component.html',
   styleUrls: ['./vehiculo-detalle.component.scss'],
 })
@@ -59,6 +60,7 @@ export class VehiculoDetalleComponent implements OnInit {
   docForm = signal<Partial<DocVehiculoDto>>({});
   docArchivo = signal<File | null>(null);
   docSaving = signal(false);
+  docModalOpen = signal(false);
 
   docsRequeridos = signal<DocumentoRequeridoVehiculo[]>([]);
   claseDoc = signal<{ idClase: string; label: string } | null>(null);
@@ -407,6 +409,7 @@ export class VehiculoDetalleComponent implements OnInit {
       documento: doc.nombre,
     });
     this.docArchivo.set(null);
+    this.docModalOpen.set(true);
   }
 
   iconLabelReq(codigo: string): string {
@@ -440,11 +443,20 @@ export class VehiculoDetalleComponent implements OnInit {
     this.docEdit.set(null);
     this.docForm.set({});
     this.docArchivo.set(null);
+    this.docModalOpen.set(true);
   }
 
   editarDoc(doc: DocVehiculoDto): void {
     this.docEdit.set(doc);
     this.docForm.set({ ...doc });
+    this.docArchivo.set(null);
+    this.docModalOpen.set(true);
+  }
+
+  cerrarDocModal(): void {
+    this.docModalOpen.set(false);
+    this.docEdit.set(null);
+    this.docForm.set({});
     this.docArchivo.set(null);
   }
 
@@ -487,7 +499,7 @@ export class VehiculoDetalleComponent implements OnInit {
         } else {
           this.documentos.update((list) => [...list, doc]);
         }
-        this.abrirDocNuevo();
+        this.cerrarDocModal();
         this.cargarRequisitos();
         this.msg.set('Documento guardado');
       },
@@ -512,7 +524,7 @@ export class VehiculoDetalleComponent implements OnInit {
     this.svc.eliminarDocumento(id, doc._id).subscribe({
       next: () => {
         this.documentos.update((list) => list.filter((d) => d._id !== doc._id));
-        if (this.docEdit()?._id === doc._id) this.abrirDocNuevo();
+        if (this.docEdit()?._id === doc._id) this.cerrarDocModal();
         this.cargarRequisitos();
       },
       error: (e) => this.err.set(e?.error?.message || 'No se pudo eliminar'),

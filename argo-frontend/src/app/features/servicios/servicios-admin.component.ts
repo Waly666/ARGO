@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CatalogoService } from '../../core/services/catalogo.service';
@@ -19,6 +19,10 @@ import {
 import { coerceNumberInput } from '../../core/utils/numeric-fields.util';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 
 interface AuditInfo {
   fechaAudi?: string;
@@ -32,7 +36,7 @@ type FiltroVista = 'todos' | 'sinPrograma' | 'conPrograma';
 @Component({
   selector: 'argo-servicios-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent],
+  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
   templateUrl: './servicios-admin.component.html',
   styleUrls: ['./servicios-admin.component.scss'],
 })
@@ -58,6 +62,27 @@ export class ServiciosAdminComponent implements OnInit {
 
   form = signal<ServicioDto>(this.formVacio());
 
+  opcionesTipoServForm = computed<EnumBuscarOption[]>(() => {
+    const list = this.esEdicion() ? this.tiposServ() : this.tiposServOtros();
+    return list.map((t) => ({
+      value: t.code,
+      label: `${t.label} (${t.code})`,
+    }));
+  });
+
+  textoTipoServ = computed(() => {
+    const code = this.form().tipoServ;
+    const t = this.tiposServ().find((x) => x.code === code);
+    return t ? `${t.label} (${t.code})` : String(code || '');
+  });
+
+  opcionesFacturar: EnumBuscarOption[] = [
+    { value: 'NO', label: 'NO' },
+    { value: 'SI', label: 'SI' },
+  ];
+
+  textoFacturar = computed(() => this.facturarStr(this.form().facturar));
+
   modalTop = signal(168);
 
   @ViewChild('listAnchor') listAnchor?: ElementRef<HTMLElement>;
@@ -77,8 +102,15 @@ export class ServiciosAdminComponent implements OnInit {
       tarifa3: 0,
       facturar: 'NO',
       iva: 0,
+      condicionIva: 'gravado',
     };
   }
+
+  opcionesCondicionIva = [
+    { value: 'gravado', label: 'Gravado (cobra IVA)' },
+    { value: 'exento', label: 'Exento (tarifa 0%)' },
+    { value: 'excluido', label: 'Excluido (sin IVA)' },
+  ];
 
   private posicionarModal() {
     setTimeout(() => {
@@ -204,6 +236,11 @@ export class ServiciosAdminComponent implements OnInit {
           tarifa3: this.num(serv.tarifa3),
           facturar: this.facturarStr(serv.facturar),
           iva: this.num(serv.iva),
+          condicionIva: ['gravado', 'exento', 'excluido'].includes(String(serv.condicionIva || '').toLowerCase())
+            ? String(serv.condicionIva).toLowerCase()
+            : this.num(serv.iva) > 0
+              ? 'gravado'
+              : 'excluido',
         });
         this.modalAbierto.set(true);
         this.posicionarModal();
@@ -222,6 +259,22 @@ export class ServiciosAdminComponent implements OnInit {
       }
     }
     this.form.update((f) => ({ ...f, ...next }));
+  }
+
+  onTipoServPick(opt: EnumBuscarOption): void {
+    this.patchForm({ tipoServ: String(opt.value) });
+  }
+
+  onTipoServLimpiar(): void {
+    this.patchForm({ tipoServ: '' });
+  }
+
+  onFacturarPick(opt: EnumBuscarOption): void {
+    this.patchForm({ facturar: String(opt.value) });
+  }
+
+  onFacturarLimpiar(): void {
+    this.patchForm({ facturar: 'NO' });
   }
 
   cerrarModal() {

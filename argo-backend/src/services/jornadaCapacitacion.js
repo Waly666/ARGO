@@ -5,6 +5,7 @@ const DatosAlumno = require('../models/DatosAlumno');
 const { numDocQuery } = require('../utils/numDoc');
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
 const { normalizarTipoAlumno, TIPO_ALUMNO_DEFAULT } = require('../constants/tipoAlumno');
+const { asegurarSedePrincipal, ID_SEDE_PRINCIPAL } = require('./sedeContext');
 
 const RE_PROG_JORNADA = /jornadas?\s*de\s*capacitaci[oó]n/i;
 
@@ -48,11 +49,18 @@ async function asegurarTipoAlumnoJornada(numDoc) {
   return { ...al, tipoAlumno: TIPO_JORNADAS_CAPACITACION };
 }
 
+/** Matrículas/liquidaciones de jornada van siempre a la sede principal (operación móvil, sin sede física). */
+async function resolverIdSedeMatriculaJornada() {
+  const principal = await asegurarSedePrincipal();
+  return principal?.idSede || ID_SEDE_PRINCIPAL;
+}
+
 module.exports = {
   esProgramaJornadasCap,
   etiquetaTipCap,
   auditoriaUsuario,
   asegurarTipoAlumnoJornada,
+  resolverIdSedeMatriculaJornada,
   TIPO_JORNADAS_CAPACITACION,
   TIPO_ALUMNO_DEFAULT,
 };

@@ -34,6 +34,11 @@ import { environment } from '../../../../environments/environment';
 import { MunicipioBuscarComponent } from '../municipio-buscar.component';
 
 import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+
+import {
 
   DISCAPACIDADES_DEF,
 
@@ -92,7 +97,7 @@ import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, MunicipioBuscarComponent],
+  imports: [CommonModule, FormsModule, MunicipioBuscarComponent, CatalogoEnumBuscarComponent],
 
   templateUrl: './datos-principales.component.html',
 
@@ -162,6 +167,22 @@ export class DatosPrincipalesComponent implements OnInit {
   discapacidades = signal<Record<string, unknown>[]>(DISCAPACIDADES_DEF);
 
   multiCulturalidades = signal<Record<string, unknown>[]>(MULTICULTURALIDAD_DEF);
+
+  opcionesTipoAlumno = computed<EnumBuscarOption[]>(() =>
+    this.tiposAlumno.map((t) => ({ value: t, label: t })),
+  );
+  opcionesGeneros = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.generos()));
+  opcionesTiposSangre = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.tiposSangre()));
+  opcionesJornadas = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.jornadas()));
+  opcionesEstadosCivil = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.estadosCiviles()));
+  opcionesEstratos = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.estratos()));
+  opcionesRegimenSalud = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.regimenesSalud()));
+  opcionesNivelFormacion = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.nivelesFormacion()));
+  opcionesOcupaciones = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.ocupaciones()));
+  opcionesDiscapacidades = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.discapacidades()));
+  opcionesMultiCulturalidad = computed<EnumBuscarOption[]>(() =>
+    this.mapOpcionesCatalogo(this.multiCulturalidades()),
+  );
 
 
 
@@ -308,12 +329,59 @@ export class DatosPrincipalesComponent implements OnInit {
 
   }
 
+  onExpedidaLimpiar(): void {
+    this.expedidaTexto.set('');
+    this.patch('expedida', '');
+  }
+
+  onExpedidaTexto(v: string): void {
+    this.expedidaTexto.set(v);
+    this.patch('expedida', v);
+  }
+
 
 
   onMunOrigenSel(m: { codMunicipio: string; label: string }) {
     this.munOrigenTexto.set(m.label);
     const cod = m.codMunicipio;
     this.form.update((f) => ({ ...f, munOrigen: cod, codMunicipio: cod }));
+  }
+
+  onMunOrigenLimpiar(): void {
+    this.munOrigenTexto.set('');
+    this.form.update((f) => ({ ...f, munOrigen: '', codMunicipio: '' }));
+  }
+
+  mapOpcionesCatalogo(items: Record<string, unknown>[]): EnumBuscarOption[] {
+    return items.map((item) => ({ value: catValor(item), label: catEtiqueta(item) }));
+  }
+
+  etiquetaCatalogo(items: Record<string, unknown>[], valor?: string | null): string {
+    const v = String(valor ?? '').trim();
+    if (!v) return '';
+    const norm = normalizarEnum(v);
+    const hit = items.find((i) => {
+      const cv = catValor(i);
+      return cv === v || cv === norm || catEtiqueta(i).toUpperCase() === v.toUpperCase();
+    });
+    return hit ? catEtiqueta(hit) : v;
+  }
+
+  onCatalogoPick<K extends keyof AlumnoDto>(campo: K, opt: EnumBuscarOption): void {
+    this.patch(campo, String(opt.value) as AlumnoDto[K]);
+  }
+
+  onCatalogoLimpiar<K extends keyof AlumnoDto>(campo: K, valorVacio: AlumnoDto[K] = '' as AlumnoDto[K]): void {
+    this.patch(campo, valorVacio);
+  }
+
+  onTipoAlumnoPick(opt: EnumBuscarOption): void {
+    this.patch('tipoAlumno', String(opt.value));
+  }
+
+  onTipoAlumnoLimpiar(): void {
+    if (this.esAlumnoJornada()) return;
+    this.patch('tipoAlumno', normalizarTipoAlumno(undefined));
   }
 
 

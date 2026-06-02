@@ -12,8 +12,13 @@ import {
   PLATFORM_ID,
   SimpleChanges,
   ViewChild,
+  inject,
+  signal,
 } from '@angular/core';
 import * as L from 'leaflet';
+
+import { ConfigService, GeorefMapaConfig } from '../../core/services/config.service';
+import { crearCapaMapa, etiquetaProveedorMapa } from '../../core/utils/mapa-tiles.util';
 import { CoordsGeorefEvent, DeteGeorefe } from './jornada-georefe.util';
 
 const DEFAULT_CENTER: L.LatLngExpression = [4.6097, -74.0817];
@@ -31,6 +36,9 @@ const DETAIL_ZOOM = 16;
           {{ geoLoading ? 'Obteniendo GPS…' : 'Usar mi ubicación' }}
         </button>
         <span class="hint">Clic en el mapa o arrastre el marcador para fijar coordenadas.</span>
+        @if (proveedorMapa()) {
+          <span class="map-badge">Mapa: {{ proveedorMapa() }}</span>
+        }
       </div>
       <div #mapHost class="map-host"></div>
     </div>
@@ -51,6 +59,13 @@ const DETAIL_ZOOM = 16;
         font-size: 0.85rem;
         color: var(--text-dim, #9fb3e0);
       }
+      .map-badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--line, rgba(120, 170, 255, 0.25));
+        color: var(--text-soft, #b8c9e8);
+      }
       .map-host {
         height: 280px;
         width: 100%;
@@ -67,6 +82,8 @@ const DETAIL_ZOOM = 16;
   ],
 })
 export class JornadaMapaPickerComponent implements AfterViewInit, OnChanges, OnDestroy {
+  private configSvc = inject(ConfigService);
+
   @ViewChild('mapHost', { static: true }) mapHost!: ElementRef<HTMLDivElement>;
 
   @Input() lat: number | null = null;
@@ -75,9 +92,11 @@ export class JornadaMapaPickerComponent implements AfterViewInit, OnChanges, OnD
   @Output() coordsChange = new EventEmitter<CoordsGeorefEvent>();
 
   geoLoading = false;
+  proveedorMapa = signal<string>('');
 
   private map?: L.Map;
   private marker?: L.Marker;
+  private tileLayer?: L.TileLayer;
   private ready = false;
   private readonly markerIcon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -93,9 +112,10 @@ export class JornadaMapaPickerComponent implements AfterViewInit, OnChanges, OnD
 
   ngAfterViewInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.initMap();
-    this.ready = true;
-    this.syncFromInputs(true);
+    this.configSvc.obtenerGeorefMapa().subscribe({
+      next: (cfg) => this.initMap(cfg),
+      error: () => this.initMap({ proveedor: 'nominatim' }),
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -107,6 +127,7 @@ export class JornadaMapaPickerComponent implements AfterViewInit, OnChanges, OnD
     this.map?.remove();
     this.map = undefined;
     this.marker = undefined;
+    this.tileLayer = undefined;
   }
 
   usarMiUbicacion(): void {
@@ -124,21 +145,22 @@ export class JornadaMapaPickerComponent implements AfterViewInit, OnChanges, OnD
     );
   }
 
-  private initMap(): void {
+  private initMap(cfg: GeorefMapaConfig): void {
+    this.proveedorMapa.set(etiquetaProveedorMapa(cfg));
     this.map = L.map(this.mapHost.nativeElement, {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap',
-      maxZoom: 19,
-    }).addTo(this.map);
+    this.tileLayer = crearCapaMapa(cfg);
+    this.tileLayer.addTo(this.map);
 
     this.map.on('click', (e: L.LeafletMouseEvent) => {
       this.emitCoords(e.latlng.lat, e.latlng.lng, 'MAPA');
     });
 
+    this.ready = true;
+    this.syncFromInputs(true);
     setTimeout(() => this.map?.invalidateSize(), 150);
   }
 

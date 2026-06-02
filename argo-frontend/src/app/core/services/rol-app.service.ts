@@ -26,6 +26,13 @@ export interface AlarmaGrupo {
   alarmas: AlarmaItem[];
 }
 
+export interface RolAppMeta {
+  permisosRemovidos?: string[];
+  permisosAgregados?: string[];
+  permisosEfectivos?: string[];
+  permisosRev?: string | null;
+}
+
 export interface RolApp {
   _id?: string;
   codigo: string;
@@ -35,6 +42,8 @@ export interface RolApp {
   alarmas?: string[];
   esSistema?: boolean;
   activo?: boolean;
+  meta?: RolAppMeta;
+  updatedAt?: string;
 }
 
 export interface RolAppDto {

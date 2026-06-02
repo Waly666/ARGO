@@ -44,24 +44,32 @@
     <button type="button" class="ghost" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
   </nav>
 
-  <div class="row filter filter-compact" *ngIf="tab() === 'jornadas' || tab() === 'clases' || tab() === 'certificados'">
+  <div class="row filter filter-compact">
     <div class="col-w-filter">
-      <label>Contratación</label>
-      <select [ngModel]="contratoSel()" (ngModelChange)="onContratoSelChange($event)">
-        <option value="">— Seleccione —</option>
-        <option *ngFor="let c of contratos()" [value]="c._id">
-          {{ labelContrato(c) }}
-        </option>
-      </select>
+      <argo-catalogo-enum-buscar
+        label="Contratación"
+        placeholder="Seleccione o escriba contrato…"
+        [textoInicial]="textoContratoSel()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="opcionesContratosToolbar()"
+        (seleccionado)="onContratoToolbarPick($event)"
+        (limpiado)="onContratoToolbarLimpiar()"
+      />
     </div>
     <div class="col-w-filter" *ngIf="tab() === 'clases'">
-      <label>Jornada de hoy (EN PROCESO)</label>
-      <select [ngModel]="jornadaSel()" (ngModelChange)="onJornadaSelChange($event)">
-        <option value="">— Seleccione —</option>
-        <option *ngFor="let j of jornadasOperablesHoy()" [value]="j._id">
-          {{ labelJornada(j) }} — {{ j.estado }}
-        </option>
-      </select>
+      <argo-catalogo-enum-buscar
+        label="Jornada de hoy (EN PROCESO)"
+        placeholder="Seleccione jornada…"
+        [textoInicial]="textoJornadaSel()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="opcionesJornadasHoyToolbar()"
+        (seleccionado)="onJornadaToolbarPick($event)"
+        (limpiado)="onJornadaToolbarLimpiar()"
+      />
       <p class="hint" *ngIf="contratoSel() && jornadasOperablesHoy().length === 0">
         <span class="cap cap-amber cap-sm cap-text">Sin jornada hoy</span>
         No hay jornada EN PROCESO para este contrato (debe coincidir con la fecha del equipo).
@@ -73,7 +81,7 @@
     <div class="panel contrato-panel">
       <h2>Contratación con empresas</h2>
 
-      <div class="contrato-form">
+      <div class="contrato-form argo-form-shell">
         <section class="form-block">
           <h3 class="form-block-title">Contrato</h3>
           <div class="row row-fields">
@@ -117,7 +125,8 @@
             <div class="field col-w-lg field-muni">
               <argo-municipio-buscar
                 label="Ciudad"
-                placeholder="Buscar ciudad…"
+                placeholder="Seleccione o escriba ciudad…"
+                [modoCombo]="true"
                 [textoInicial]="ciudadContratoTexto()"
                 (seleccionado)="onMuniContrato($event)" />
             </div>
@@ -136,11 +145,17 @@
           <h3 class="form-block-title">Programación</h3>
           <div class="row row-fields">
             <div class="field col-w-sup">
-              <label>Supervisor</label>
-              <select [ngModel]="formContrato().idSupervisor || ''" (ngModelChange)="onSupervisorChange($event)">
-                <option value="">— Seleccione —</option>
-                <option *ngFor="let s of supervisores()" [value]="s._id">{{ s.nombre }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="Supervisor"
+                placeholder="Seleccione o escriba supervisor…"
+                [textoInicial]="textoSupervisorContrato()"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesSupervisores()"
+                (seleccionado)="onSupervisorContratoPick($event)"
+                (limpiado)="onSupervisorContratoLimpiar()"
+              />
             </div>
             <div class="field col-w-md sup-nuevo">
               <label>Nuevo supervisor</label>
@@ -333,7 +348,7 @@
         }
       </p>
 
-      <div id="jornada-edit-panel" class="edit-panel" *ngIf="jornadaEdit() as je">
+      <div id="jornada-edit-panel" class="edit-panel argo-form-shell" *ngIf="jornadaEdit() as je">
         <h3>Editar jornada — {{ labelJornada(je) }}</h3>
         <p
           class="msg error panel-msg alerta-direccion"
@@ -353,11 +368,17 @@
             <input type="text" [ngModel]="je.numeObjeJornada ?? '—'" readonly class="readonly" />
           </div>
           <div class="field field-supervisor">
-            <label>Supervisor</label>
-            <select [ngModel]="jornadaEditIdSupervisor()" (ngModelChange)="onJornadaSupervisorChange($event)">
-              <option value="">— Seleccione —</option>
-              <option *ngFor="let s of supervisores()" [value]="s._id">{{ s.nombre }}</option>
-            </select>
+            <argo-catalogo-enum-buscar
+              label="Supervisor"
+              placeholder="Seleccione o escriba supervisor…"
+              [textoInicial]="textoSupervisorJornadaEdit()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesSupervisores()"
+              (seleccionado)="onSupervisorJornadaPick($event)"
+              (limpiado)="onSupervisorJornadaLimpiar()"
+            />
           </div>
           <div class="field field-sup-nuevo">
             <label>Nuevo supervisor</label>
@@ -429,7 +450,8 @@
           <div class="field field-muni">
             <argo-municipio-buscar
               label="Municipio (Divipola)"
-              placeholder="Buscar municipio (divipola)..."
+              placeholder="Seleccione o escriba municipio…"
+              [modoCombo]="true"
               [textoInicial]="jornadaEditMunicipioTexto()"
               (seleccionado)="onMunicipioJornada($event)" />
           </div>
@@ -673,7 +695,7 @@
             <td class="actions-cell">
               <button type="button" class="mini" (click)="seleccionarClase(c); $event.stopPropagation()">Operar</button>
               <button type="button" class="mini ghost" (click)="abrirModalEditarClase(c); $event.stopPropagation()">Editar</button>
-              @if (puedeEliminarClase()) {
+              @if (puedeEliminarClase() && claseJornadaSePuedeEliminar(c.estado)) {
                 <button type="button" class="mini danger" (click)="eliminarClase(c); $event.stopPropagation()">Borrar</button>
               }
             </td>
@@ -805,7 +827,7 @@
         </ul>
         <div class="actions">
           <button type="button" class="primary" (click)="abrirModalEditarClase(cl)">Editar clase</button>
-          @if (puedeEliminarClase()) {
+          @if (puedeEliminarClaseActiva()) {
             <button type="button" class="danger" (click)="eliminarClase(cl)">Borrar clase</button>
           }
         </div>
@@ -819,7 +841,7 @@
     [subtitle]="subtituloModalClase()"
     [xwide]="true"
     (closed)="cerrarModalCrearClase()">
-    <section class="clase-modal-form">
+    <section class="clase-modal-form argo-form-shell">
       <div class="clase-estado-bar" *ngIf="modalModoClase() === 'editar' && claseActiva() as cl">
         <span class="estado-label">Estado</span>
         <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ cl.estado }}</span>
@@ -853,10 +875,16 @@
         </div>
       }
 
-      @if (modalModoClase() === 'editar' && !jornadaClaseModalOperable() && claseActiva()?.estado !== 'FINALIZADO' && !claseActiva()?.horaInicio) {
-        <p class="hint hint-warn">
-          La jornada aún no está <strong>EN PROCESO</strong>. Podrá iniciar la clase el día programado de la jornada.
-        </p>
+      @if (modalModoClase() === 'editar' && claseActiva(); as cl) {
+        @if (!esFechaHoy(cl.fechaClase || cl.fechaJornada) && cl.estado !== 'FINALIZADO' && !cl.horaInicio) {
+          <p class="hint hint-warn">
+            Esta clase es de otro día. Solo puede <strong>iniciarla el día programado</strong> (hoy).
+          </p>
+        } @else if (!jornadaClaseModalOperable() && cl.estado !== 'FINALIZADO' && !cl.horaInicio) {
+          <p class="hint hint-warn">
+            La jornada aún no está <strong>EN PROCESO</strong>. Podrá iniciar la clase el día programado de la jornada.
+          </p>
+        }
       }
 
       <h3 class="clase-modal-section">Datos de la clase</h3>
@@ -864,16 +892,18 @@
         class="clase-modal-datos-grid"
         [class.sin-matriculados]="modalModoClase() !== 'editar' && totalAlumnosMatriculadosModal() === 0">
         <div class="cm-field cm-jornada">
-          <label>Jornada</label>
-          <select
-            [ngModel]="modalCrearJornadaId()"
-            (ngModelChange)="onModalCrearJornadaChange($event)"
-            [disabled]="modalModoClase() === 'editar'">
-            <option value="">— Seleccione la jornada —</option>
-            <option *ngFor="let j of jornadasParaCrear()" [value]="j._id">
-              {{ labelJornadaCorta(j) }} — {{ j.estado }}
-            </option>
-          </select>
+          <argo-catalogo-enum-buscar
+            label="Jornada"
+            placeholder="Seleccione jornada…"
+            [textoInicial]="textoJornadaModal()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [disabled]="modalModoClase() === 'editar'"
+            [opcionesLocales]="opcionesJornadasCrear()"
+            (seleccionado)="onJornadaModalPick($event)"
+            (limpiado)="onJornadaModalLimpiar()"
+          />
           <p class="hint hint-compact" *ngIf="modalModoClase() === 'nuevo' && jornadasParaCrear().length === 0">
             No hay jornadas en la ventana de creación.
           </p>
@@ -885,20 +915,31 @@
           </p>
         </div>
         <div class="cm-field cm-ubicacion">
-          <label>Ubicación</label>
-          <select [ngModel]="nuevaClaseUbic()" (ngModelChange)="nuevaClaseUbic.set($event)">
-            <option *ngFor="let u of ubicaciones" [value]="u">{{ u }}</option>
-          </select>
+          <argo-catalogo-enum-buscar
+            label="Ubicación"
+            placeholder="Seleccione ubicación…"
+            [textoInicial]="textoUbicacionClase()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesUbicacionClase()"
+            (seleccionado)="onUbicacionClasePick($event)"
+            (limpiado)="onUbicacionClaseLimpiar()"
+          />
         </div>
         <div class="cm-field cm-instructor">
           @if (puedeAsignarInstructor()) {
-            <label>Instructor</label>
-            <select [ngModel]="modalClaseInstructorId()" (ngModelChange)="onModalClaseInstructorChange($event)">
-              <option value="">— Automático (usuario actual) —</option>
-              <option *ngFor="let i of instructores()" [value]="i.idEmpleado">
-                {{ i.nombreCompleto }}
-              </option>
-            </select>
+            <argo-catalogo-enum-buscar
+              label="Instructor"
+              placeholder="Seleccione instructor…"
+              [textoInicial]="textoInstructorModal()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesInstructoresModal()"
+              (seleccionado)="onInstructorModalPick($event)"
+              (limpiado)="onInstructorModalLimpiar()"
+            />
           } @else {
             <label>Instructor</label>
             <p class="instructor-readonly compact">
@@ -926,19 +967,17 @@
       </div>
 
       <div class="cm-field cm-programa cm-programa-destacado">
-        <label>Programa</label>
-        <select
-          class="select-programa-destacado"
-          [ngModel]="nuevaClaseProg()"
-          (ngModelChange)="nuevaClaseProg.set($event)">
-          <option value="">— Seleccione —</option>
-          @if (!programaModalEnLista() && nuevaClaseProg()) {
-            <option [value]="nuevaClaseProg()">{{ etiquetaProgramaModal() }}</option>
-          }
-          <option *ngFor="let p of programasJornada()" [value]="programaOptionValue(p)">
-            {{ p.nombreProg || p.codigoProg }}
-          </option>
-        </select>
+        <argo-catalogo-enum-buscar
+          label="Programa"
+          placeholder="Seleccione o escriba programa…"
+          [textoInicial]="textoProgramaModalCombo()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesProgramasModal()"
+          (seleccionado)="onProgramaModalPick($event)"
+          (limpiado)="onProgramaModalLimpiar()"
+        />
         @if (programasJornada().length === 0) {
           <p class="hint hint-compact hint-warn">No se cargaron programas. Verifique permisos o recargue la página.</p>
         }
@@ -1108,6 +1147,13 @@
         </table>
       }
 
+      @if (modalModoClase() === 'editar' && claseActiva()?.estado === 'FINALIZADO' && inscritosConAsistencia() > 0) {
+        <p class="hint">
+          Sesión finalizada con <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
+          Las clases finalizadas no se pueden eliminar.
+        </p>
+      }
+
       @if (modalModoClase() === 'editar' && claseActiva()?.estado === 'FINALIZADO' && inscritosSinAsistencia() > 0) {
         <p class="hint hint-warn">
           Hay <strong>{{ inscritosSinAsistencia() }}</strong> inscrito(s) pendiente(s) de asistencia.
@@ -1119,55 +1165,38 @@
         </button>
       }
 
-      @if (modalModoClase() === 'editar' && puedeEliminarClase() && inscritosConAsistencia() > 0) {
+      @if (modalModoClase() === 'editar' && puedeEliminarClaseActiva() && inscritosConAsistencia() > 0) {
         <p class="hint hint-warn">
           Hay <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
-          Para eliminar la clase, borre primero la asistencia de cada alumno con <strong>✕ Borrar asistencia</strong>.
+          Si elimina la clase, también se borrarán esas asistencias e inscripciones.
         </p>
       }
 
       @if (modalModoClase() === 'editar' && (puedeAsignarInstructor() || claseSel())) {
         <div class="clase-modal-extra-grid">
           @if (puedeAsignarInstructor()) {
-            <div class="cm-panel cm-horario">
+            <div class="cm-panel cm-horario argo-form-section variant-horario">
               <h3 class="clase-modal-section">Horario</h3>
-              <div class="clase-horario-admin cm-horario-fields">
-                <div class="cm-field">
-                  <label for="clase-hora-inicio">Inicio</label>
-                  <input
-                    id="clase-hora-inicio"
-                    type="text"
-                    inputmode="numeric"
-                    placeholder="HH:mm"
-                    maxlength="5"
-                    [ngModel]="modalHoraInicio()"
-                    (ngModelChange)="modalHoraInicio.set($event)"
-                    list="clase-horas-list"
-                    autocomplete="off" />
+              <div class="clase-horario-admin horario-manual">
+                <div class="cm-field horario-manual-col">
+                  <label>Inicio</label>
+                  <argo-hora-12-input
+                    [minuteStep]="15"
+                    [value]="modalHoraInicio() || '08:00'"
+                    (valueChange)="modalHoraInicio.set($event)" />
                 </div>
-                <div class="cm-field">
-                  <label for="clase-hora-fin">Fin</label>
-                  <input
-                    id="clase-hora-fin"
-                    type="text"
-                    inputmode="numeric"
-                    placeholder="HH:mm"
-                    maxlength="5"
-                    [ngModel]="modalHoraFin()"
-                    (ngModelChange)="modalHoraFin.set($event)"
-                    list="clase-horas-list"
-                    autocomplete="off" />
+                <div class="cm-field horario-manual-col">
+                  <label>Fin</label>
+                  <argo-hora-12-input
+                    [minuteStep]="15"
+                    [value]="modalHoraFin() || '10:00'"
+                    (valueChange)="modalHoraFin.set($event)" />
                 </div>
-                <div class="cm-field">
+                <div class="cm-field horario-manual-col">
                   <label>Duración</label>
-                  <p class="hint duracion-readonly">{{ lapsoClaseEtiqueta() || '—' }}</p>
+                  <p class="horario-readonly-val">{{ lapsoClaseEtiqueta() || '—' }}</p>
                 </div>
               </div>
-              <datalist id="clase-horas-list">
-                @for (h of opcionesHoras; track h) {
-                  <option [value]="h"></option>
-                }
-              </datalist>
             </div>
           }
           @if (claseSel()) {

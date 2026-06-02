@@ -45,6 +45,7 @@ export function capEstadoJornada(estado?: string | null): string {
 
 export function capEstadoClase(estado?: string | null): string {
   const e = String(estado ?? '').toUpperCase();
+  if (e === 'CREADO') return 'cap cap-amber cap-sm cap-text';
   if (e === 'EN PROCESO') return 'cap cap-emerald cap-sm cap-text';
   if (e === 'FINALIZADO') return 'cap cap-slate cap-sm cap-text';
   return 'cap cap-indigo cap-sm cap-text';
@@ -214,6 +215,7 @@ export function rowJornadaClass(estado?: string | null): string {
 export function estadoClaseLiveClass(estado?: string | null): string {
   const e = String(estado ?? '').trim().toUpperCase();
   if (e === 'EN PROCESO') return 'estado-clase-live estado-clase-proceso';
+  if (e === 'CREADO') return 'estado-clase-live estado-clase-creado';
   if (e === 'PROGRAMADA') return 'estado-clase-live estado-clase-programada';
   return capEstadoClase(estado);
 }
@@ -223,12 +225,45 @@ export function estadoClaseCalBlockClass(estado?: string | null): string {
   const e = String(estado ?? '').trim().toUpperCase();
   if (e === 'EN PROCESO') return 'cal-clase-proceso';
   if (e === 'FINALIZADO') return 'cal-clase-finalizada';
+  if (e === 'CREADO') return 'cal-clase-creado';
   return 'cal-clase-programada';
+}
+
+/** Color de bloque en calendario según tipo de hora/clase. */
+export function tipoClaseCalBlockClass(tipo?: string | null): string {
+  const t = String(tipo ?? '').trim().toLowerCase();
+  if (t === 'taller') return 'cal-tipo-taller';
+  if (t === 'practica') return 'cal-tipo-practica';
+  return 'cal-tipo-teoria';
+}
+
+/** Acento visual por estado (sin cambiar el color base del tipo). */
+export function estadoClaseCalAccentClass(estado?: string | null): string {
+  const e = String(estado ?? '').trim().toUpperCase();
+  if (e === 'EN PROCESO') return 'cal-est-en-proceso';
+  if (e === 'FINALIZADO') return 'cal-est-finalizada';
+  if (e === 'CANCELADA') return 'cal-est-cancelada';
+  if (e === 'CREADO') return 'cal-est-creado';
+  return '';
+}
+
+export function claseJornadaEstadoNorm(estado?: string | null): string {
+  return String(estado ?? '').trim().toUpperCase();
+}
+
+export function claseJornadaEsFinalizada(estado?: string | null): boolean {
+  return claseJornadaEstadoNorm(estado) === 'FINALIZADO';
+}
+
+/** Las clases finalizadas no se eliminan (historial y certificados). */
+export function claseJornadaSePuedeEliminar(estado?: string | null): boolean {
+  return !claseJornadaEsFinalizada(estado);
 }
 
 export function rowClaseClass(estado?: string | null): string {
   const e = String(estado ?? '').trim().toUpperCase();
   if (e === 'EN PROCESO') return 'row-clase-proceso';
+  if (e === 'CREADO') return 'row-clase-creado';
   if (e === 'PROGRAMADA') return 'row-clase-programada';
   return '';
 }
@@ -260,4 +295,16 @@ export function isoAHoraInput(iso?: string | Date | null): string {
 export function validarHoraInput(val?: string | null): boolean {
   if (!val || !String(val).trim()) return true;
   return /^([01]?\d|2[0-3]):[0-5]\d$/.test(String(val).trim());
+}
+
+/** HH:mm → texto colombiano (ej. 17:10 → "5:10 p. m."). */
+export function formatoHoraLegibleCo(hhmm?: string | null): string {
+  const m = String(hhmm ?? '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return '';
+  let h = Number(m[1]);
+  const min = m[2];
+  const suf = h >= 12 ? 'p. m.' : 'a. m.';
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return min === '00' ? `${h} ${suf}` : `${h}:${min} ${suf}`;
 }

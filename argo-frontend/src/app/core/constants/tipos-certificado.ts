@@ -52,3 +52,28 @@ export function certAlertToneClass(tipo?: string | null): string {
   if (t === 'curso') return 'cert-tone-curso';
   return 'cert-tone-default';
 }
+
+/** Cápsula de color según tipo de capacitación (curso, técnico, diplomado, …). */
+export function capTipoFormatoCert(tipo?: string | null): string {
+  const t = String(tipo ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, '_');
+  if (!t) return 'cap cap-slate cap-sm cap-text';
+  const map: Record<string, string> = {
+    curso: 'cap cap-blue cap-sm cap-text',
+    tecnico: 'cap cap-orange cap-sm cap-text',
+    competencias: 'cap cap-amber cap-sm cap-text',
+    diplomado: 'cap cap-purple cap-sm cap-text',
+    licencia: 'cap cap-teal cap-sm cap-text',
+    mercancias_peligrosas: 'cap cap-red cap-sm cap-text',
+    jornada_capacitacion: 'cap cap-emerald cap-sm cap-text',
+  };
+  return map[t] || 'cap cap-indigo cap-sm cap-text';
+}
+
+/** Encabezado del certificado con color según tipo de capacitación. */
+export function capEncabezadoCert(tipo?: string | null, texto?: string | null): string {
+  if (!String(texto ?? '').trim()) return 'cap cap-slate cap-sm';
+  return capTipoFormatoCert(tipo);
+}

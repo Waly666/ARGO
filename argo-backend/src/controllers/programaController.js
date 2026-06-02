@@ -14,6 +14,7 @@ const {
 } = require('../services/programaServicio');
 const { normalizarTipoCertificado } = require('../services/clasificacionCertificado');
 const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
+const { filtrarProgramas } = require('../services/sedeOferta');
 
 function usuario(req) {
   return req.user || {};
@@ -43,7 +44,10 @@ exports.listar = async (req, res, next) => {
       const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       filter.$or = [{ nombreProg: re }, { codigoProg: re }, { nomCert: re }, { descripcion: re }];
     }
-    const rows = await cat.programas.find(filter).sort({ idPrograma: 1, nombreProg: 1 }).lean();
+    let rows = await cat.programas.find(filter).sort({ idPrograma: 1, nombreProg: 1 }).lean();
+    if (req.idSede && req.query.catalogo !== '1') {
+      rows = await filtrarProgramas(rows, req.idSede);
+    }
     res.json(rows);
   } catch (e) {
     next(e);

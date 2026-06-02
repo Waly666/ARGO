@@ -1,5 +1,7 @@
 const Config = require('../models/Config');
 const { CLAVE, DEFAULTS, obtenerConfigRecibo } = require('../services/configRecibo');
+const { normalizarIdSede, sedesPermitidasUsuario } = require('../services/sedeContext');
+const { esAdmin } = require('../utils/roles');
 
 const CAMPOS = [
   'nombreEmpresa',
@@ -25,6 +27,26 @@ const CAMPOS = [
   'anchoReciboMm',
   'mostrarQr',
 ];
+
+exports.obtenerReciboEncabezado = async (req, res, next) => {
+  try {
+    const solicitada = normalizarIdSede(req.query.idSede);
+    let idSede = solicitada || req.sedeActiva?.idSede;
+    if (!idSede) {
+      return res.status(428).json({ message: 'SEDE_REQUERIDA', code: 'SEDE_REQUERIDA' });
+    }
+    if (solicitada && solicitada !== req.sedeActiva?.idSede && !esAdmin(req.user?.rol)) {
+      const permitidas = await sedesPermitidasUsuario(req.user.sub, req.user.rol);
+      const ok = permitidas.some((s) => s.idSede === solicitada);
+      if (!ok) {
+        return res.status(403).json({ message: 'Sin acceso a la sede solicitada' });
+      }
+    }
+    res.json(await obtenerConfigRecibo(idSede));
+  } catch (e) {
+    next(e);
+  }
+};
 
 exports.obtenerRecibo = async (_req, res, next) => {
   try {

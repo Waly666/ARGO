@@ -15,21 +15,30 @@
       <h2>Crear Matrícula</h2>
       <div class="row">
         <div class="col-6">
-          <label>Programa</label>
-          <select [ngModel]="idProg()" (ngModelChange)="idProg.set($event)">
-            <option value="">-- Seleccionar --</option>
-            <option *ngFor="let p of programas()" [value]="p.idPrograma ?? p.idProg ?? p._id">
-              {{ p.nombreProg || p.descripcion }} ({{ p.codigoProg || '' }})
-            </option>
-          </select>
+          <argo-catalogo-enum-buscar
+            label="Programa"
+            placeholder="Seleccione o escriba programa…"
+            [textoInicial]="textoPrograma()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesProgramas()"
+            (seleccionado)="onProgramaPick($event)"
+            (limpiado)="onProgramaLimpiar()"
+          />
         </div>
         <div class="col-3">
-          <label>Tarifa</label>
-          <select [ngModel]="tarifa()" (ngModelChange)="setTarifa($event)">
-            <option [ngValue]="1">Tarifa 1</option>
-            <option [ngValue]="2">Tarifa 2</option>
-            <option [ngValue]="3">Tarifa 3</option>
-          </select>
+          <argo-catalogo-enum-buscar
+            label="Tarifa"
+            placeholder="Seleccione tarifa…"
+            [textoInicial]="textoTarifa()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesTarifas"
+            (seleccionado)="onTarifaPick($event)"
+            (limpiado)="onTarifaLimpiar()"
+          />
         </div>
         <div class="col-3">
           <label>Valor Matrícula</label>
@@ -47,13 +56,17 @@
       <h2>Agregar Servicio Adicional</h2>
       <div class="row">
         <div class="col-6">
-          <label>Servicio</label>
-          <select [ngModel]="idServ()" (ngModelChange)="onServicioChange($event)">
-            <option value="">-- Seleccionar --</option>
-            <option *ngFor="let s of serviciosAdicionales()" [value]="'' + (s.idServ ?? s._id)">
-              {{ s.descrServicio || s.descripcion || s.nombre }}
-            </option>
-          </select>
+          <argo-catalogo-enum-buscar
+            label="Servicio"
+            placeholder="Seleccione o escriba servicio…"
+            [textoInicial]="textoServicioAdicional()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesServiciosAdicionales()"
+            (seleccionado)="onServicioAdicionalPick($event)"
+            (limpiado)="onServicioAdicionalLimpiar()"
+          />
         </div>
         <div class="col-6">
           <label>Descripción</label>

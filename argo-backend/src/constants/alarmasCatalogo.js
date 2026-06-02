@@ -19,12 +19,34 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'instructores',
+    label: 'Portal instructor',
+    alarmas: [
+      {
+        key: 'alarmas.instructores.clase_asignada',
+        label: 'Nueva clase asignada al instructor (portal / banner)',
+      },
+      {
+        key: 'alarmas.instructores.clase_proxima',
+        label: 'Clase del instructor en los próximos 20 min (portal / banner)',
+      },
+      {
+        key: 'alarmas.instructores.inspeccion_requerida',
+        label: 'Inspección preoperacional pendiente antes de la primera práctica del día',
+      },
+    ],
+  },
+  {
     id: 'programacion_cea',
     label: 'Programación CEA',
     alarmas: [
       {
         key: 'alarmas.programacion_cea.pendiente',
         label: 'Alumnos/servicios CEA con horas sin programar (banner superior)',
+      },
+      {
+        key: 'alarmas.programacion_cea.clase_proxima',
+        label: 'Clase CEA programada en los próximos 15 min (banner superior)',
       },
     ],
   },
@@ -46,11 +68,29 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'certificados',
+    label: 'Certificados',
+    alarmas: [
+      {
+        key: 'alarmas.certificados.vencimiento',
+        label: 'Certificados por vencer (15 días antes, banner superior)',
+      },
+      {
+        key: 'alarmas.certificados.vencidos',
+        label: 'Certificados vencidos (3 días después, banner superior)',
+      },
+    ],
+  },
+  {
     id: 'alumnos',
     label: 'Alumnos',
     alarmas: [
       { key: 'alarmas.alumnos.saldos', label: 'Saldos pendientes en ficha de alumno' },
       { key: 'alarmas.alumnos.documentos', label: 'Documentos pendientes en ficha de alumno' },
+      {
+        key: 'alarmas.alumnos.clases_cea_creado',
+        label: 'Clases CEA por programar (estado CREADO) en lista, ficha y banner superior',
+      },
     ],
   },
 ];
@@ -62,8 +102,11 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.caja.sin_abrir',
     'alarmas.caja.descuadres',
     'alarmas.jornadas.certificado_nuevo',
+    'alarmas.certificados.vencimiento',
+    'alarmas.certificados.vencidos',
     'alarmas.alumnos.saldos',
     'alarmas.alumnos.documentos',
+    'alarmas.alumnos.clases_cea_creado',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -72,7 +115,14 @@ const ALARMAS_POR_ROL_SISTEMA = {
   ],
   instructor: [
     'alarmas.jornadas.certificado_nuevo',
+    'alarmas.certificados.vencimiento',
+    'alarmas.certificados.vencidos',
     'alarmas.programacion_cea.pendiente',
+    'alarmas.programacion_cea.clase_proxima',
+    'alarmas.instructores.clase_asignada',
+    'alarmas.instructores.clase_proxima',
+    'alarmas.instructores.inspeccion_requerida',
+    'alarmas.alumnos.clases_cea_creado',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -82,12 +132,16 @@ const ALARMAS_POR_ROL_SISTEMA = {
   recepcion: [
     'alarmas.alumnos.saldos',
     'alarmas.alumnos.documentos',
+    'alarmas.alumnos.clases_cea_creado',
+    'alarmas.certificados.vencimiento',
+    'alarmas.certificados.vencidos',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
     'alarmas.empleados.docs_vencidos',
     'alarmas.empleados.docs_faltantes',
     'alarmas.programacion_cea.pendiente',
+    'alarmas.programacion_cea.clase_proxima',
   ],
   usuario: [
     'alarmas.vehiculos.docs_vencidos',

@@ -1,18 +1,19 @@
 const Vehiculo = require('../models/Vehiculo');
 const Empleado = require('../models/Empleado');
-const InspeccionVehiculo = require('../models/InspeccionVehiculo');
+const InspTecPreop = require('../models/InspTecPreop');
+const DetInspeccion = require('../models/DetInspeccion');
 const { empleadoPorUsuarioId, nombreEmpleado } = require('./instructorJornada');
-const {
-  cargarIndiceClases,
-  resolverIdClaseVehiculo,
-} = require('./configRequisitosDocumentosVehiculos');
 const { calcularDocumentosRequeridos: calcularDocsVehiculo } = require('./vehiculoDocumentos');
 const { calcularDocumentosRequeridosInspeccion } = require('./empleadoDocumentos');
 const { fechaHoyStr, horaActualStr, normSi } = require('../utils/inspeccionClaseVehiculo');
 const { normalizarRol } = require('../utils/roles');
-const { itemsInspeccionPorClase, previewConsecutivoInspeccion, reservarConsecutivoInspeccion } = require('./configFormatoInspeccionVehiculos');
-
-const PRIMERA_REVISION = 'Primera revisión';
+const { previewConsecutivoInspeccion, reservarConsecutivoInspeccion } = require('./configFormatoInspeccionVehiculos');
+const {
+  plantillaChecklistPorVehiculo,
+  detalleDesdeBody,
+  mergeChecklistPreop,
+} = require('./catalogoInspeccionPreop');
+const { PRIMERA_REVISION } = require('../constants/inspeccionPreop');
 
 function observacionEstadoDocumento(doc) {
   if (!doc.subido) return 'Sin registrar';
@@ -49,29 +50,19 @@ async function armarChecklistDocumentosInstructor(empleado) {
   return mapDocumentosCumplimiento(res.documentos);
 }
 
-function mapCatalogChecklist(rows, idField, labelField) {
-  return (rows || []).map((r) => ({
-    id: String(r[idField]),
-    nombre: String(r[labelField] || '').trim(),
-    si: null,
-    observacion: '',
-  }));
-}
-
-function mergeChecklist(plantilla, guardado, labelField = 'nombre') {
+function mergeChecklist(plantilla, guardado) {
   const byId = new Map((guardado || []).map((r) => [String(r.id), r]));
   return (plantilla || []).map((p) => {
     const prev = byId.get(String(p.id));
     return {
       id: String(p.id),
-      nombre: String(p.nombre || p.item || p.aspecto || prev?.[labelField] || '').trim(),
+      nombre: String(p.nombre || prev?.nombre || '').trim(),
       si: prev?.si != null ? normSi(prev.si) : null,
       observacion: String(prev?.observacion || '').trim(),
     };
   });
 }
 
-/** Restaura snapshot guardado de documentos; agrega tipos nuevos de la plantilla vigente. */
 function mergeDocumentosChecklist(plantilla, guardado) {
   if (!guardado?.length) return plantilla || [];
   const plantillaById = new Map((plantilla || []).map((p) => [String(p.id), p]));
@@ -115,16 +106,38 @@ async function nombreEmpleadoPorId(idEmpleado) {
   return nombreEmpleado(emp).trim();
 }
 
+async function nombreEmpleadoPorDocumento(documento) {
+  const doc = String(documento ?? '').trim();
+  if (!doc || doc === PRIMERA_REVISION) return '';
+  const emp = await Empleado.findOne({ numeroDocumento: doc }).lean();
+  return nombreEmpleado(emp).trim();
+}
+
 function nombreEmpleadoLogueado(empleado) {
   return nombreEmpleado(empleado).trim();
 }
 
-async function nombreEntregaDesdeInspeccion(anterior) {
-  if (!anterior) return PRIMERA_REVISION;
-  const nom = await nombreEmpleadoPorId(anterior.idEmpleadoInstructor);
-  if (nom) return nom;
-  const legacy = String(anterior.nombreInstructor || anterior.quienRecibe || '').trim();
-  return legacy || PRIMERA_REVISION;
+function documentoEmpleado(empleado) {
+  return String(empleado?.numeroDocumento ?? '').trim();
+}
+
+async function entregaDesdeInspeccionAnterior(anterior) {
+  if (!anterior) return { entrega: PRIMERA_REVISION, quienEntrega: PRIMERA_REVISION };
+  const doc = String(anterior.recibe || '').trim();
+  if (!doc) {
+    const nom =
+      (await nombreEmpleadoPorId(anterior.idEmpleadoRecibe)) ||
+      String(anterior.nombreRecibe || anterior.quienRecibe || '').trim();
+    return {
+      entrega: nom || PRIMERA_REVISION,
+      quienEntrega: nom || PRIMERA_REVISION,
+    };
+  }
+  const nom =
+    (await nombreEmpleadoPorDocumento(doc)) ||
+    String(anterior.nombreRecibe || anterior.quienRecibe || '').trim() ||
+    doc;
+  return { entrega: doc, quienEntrega: nom };
 }
 
 function avisoRolInstructor(user) {
@@ -135,91 +148,66 @@ function avisoRolInstructor(user) {
 }
 
 async function resolverCustodiaInspeccion(placa, fecha, empleado) {
-  const anterior = await InspeccionVehiculo.findOne({ placa, fecha: { $lt: fecha } })
+  const anterior = await InspTecPreop.findOne({ placa, fecha: { $lt: fecha } })
     .sort({ fecha: -1, hora: -1 })
     .lean();
 
+  const recibe = documentoEmpleado(empleado);
   const quienRecibe = nombreEmpleadoLogueado(empleado);
-
-  if (!anterior) {
-    return {
-      quienEntrega: PRIMERA_REVISION,
-      quienRecibe,
-      esPrimeraRevision: true,
-      fechaRevisionAnterior: null,
-    };
-  }
-
-  const quienEntrega = await nombreEntregaDesdeInspeccion(anterior);
+  const { entrega, quienEntrega } = await entregaDesdeInspeccionAnterior(anterior);
 
   return {
+    entrega,
+    recibe,
     quienEntrega,
     quienRecibe,
     esPrimeraRevision: quienEntrega === PRIMERA_REVISION,
-    fechaRevisionAnterior: anterior.fecha || null,
+    fechaRevisionAnterior: anterior?.fecha || null,
+    idEmpleadoRecibe: empleado?.idEmpleado ?? null,
   };
 }
 
 async function armarPlantillaInspeccion(vehiculo, empleado) {
-  const [indiceClases, itemsFormato, documentosVehiculo, documentosInstructor, consecutivo] =
-    await Promise.all([
-      cargarIndiceClases(),
-      itemsInspeccionPorClase(vehiculo),
-      armarChecklistDocumentosVehiculo(vehiculo),
-      armarChecklistDocumentosInstructor(empleado),
-      previewConsecutivoInspeccion(),
-    ]);
-
-  const idClase = itemsFormato.idClase || resolverIdClaseVehiculo(vehiculo, indiceClases);
+  const [checklist, documentosVehiculo, documentosInstructor, consecutivo] = await Promise.all([
+    plantillaChecklistPorVehiculo(vehiculo),
+    armarChecklistDocumentosVehiculo(vehiculo),
+    armarChecklistDocumentosInstructor(empleado),
+    previewConsecutivoInspeccion(),
+  ]);
 
   return {
     placa: String(vehiculo.placa || '').trim(),
     fecha: fechaHoyStr(),
     hora: horaActualStr(),
     combustible: String(vehiculo.combustible || '').trim(),
-    idClase,
-    claseVehiculo: String(vehiculo.claseVehiculo || '').trim(),
+    idClase: checklist.idClase,
+    claseVehiculo: checklist.claseVehiculo || String(vehiculo.claseVehiculo || '').trim(),
     idEmpleadoInstructor: empleado?.idEmpleado ?? null,
     nombreInstructor: nombreEmpleado(empleado),
+    entrega: '',
+    recibe: '',
     quienEntrega: '',
     quienRecibe: '',
+    inspector: '',
+    documentoInspector: '',
     documentosVehiculo,
     documentosInstructor,
-    estadoGeneral: mapCatalogChecklist(itemsFormato.estadoGeneral, 'idItemEsGral', 'item'),
-    adaptaciones: mapCatalogChecklist(itemsFormato.adaptaciones, 'idAdaptacion', 'nombre'),
-    aspecto1: mapCatalogChecklist(itemsFormato.aspecto1, 'idAspecto1', 'aspecto1'),
-    aspecto2: mapCatalogChecklist(itemsFormato.aspecto2, 'idAspecto2', 'aspecto2'),
+    grupos: checklist.grupos,
     aptoLaborar: null,
     observacionesGenerales: '',
+    urlfotoLatDer: '',
+    urlfotoLatIzq: '',
+    urlfotoFrontal: '',
+    urlfotoPost: '',
     consecutivo,
+    lineasPlantilla: checklist.lineas,
   };
 }
 
-async function obtenerInspeccionDelDia(vehiculo, empleado, fecha, user) {
-  const f = fecha || fechaHoyStr();
-  const plantilla = await armarPlantillaInspeccion(vehiculo, empleado);
-  const placa = plantilla.placa;
-  const avisoRol = user ? avisoRolInstructor(user) : null;
-  const guardada = await InspeccionVehiculo.findOne({ placa, fecha: f }).lean();
-  if (!guardada) {
-    const custodia = await resolverCustodiaInspeccion(placa, f, empleado);
-    return {
-      ...plantilla,
-      fecha: f,
-      guardada: false,
-      _id: null,
-      quienEntrega: custodia.quienEntrega,
-      quienRecibe: custodia.quienRecibe,
-      nombreInstructor: custodia.quienRecibe || plantilla.nombreInstructor,
-      esPrimeraRevision: custodia.esPrimeraRevision,
-      fechaRevisionAnterior: custodia.fechaRevisionAnterior,
-      avisoRolInstructor: avisoRol,
-    };
-  }
-
-  const custodia = await resolverCustodiaInspeccion(placa, f, empleado);
+function mapCabeceraDto(guardada, plantilla, custodia, avisoRol) {
   const quienRecibe =
-    (await nombreEmpleadoPorId(guardada.idEmpleadoInstructor)) || nombreEmpleadoLogueado(empleado);
+    String(guardada.nombreRecibe || guardada.quienRecibe || custodia.quienRecibe || '').trim() ||
+    custodia.quienRecibe;
 
   return {
     _id: String(guardada._id),
@@ -227,18 +215,20 @@ async function obtenerInspeccionDelDia(vehiculo, empleado, fecha, user) {
     fecha: guardada.fecha,
     hora: guardada.hora || plantilla.hora,
     combustible: guardada.combustible ?? plantilla.combustible,
-    quienEntrega: custodia.quienEntrega,
+    entrega: guardada.entrega ?? custodia.entrega,
+    recibe: guardada.recibe ?? custodia.recibe,
+    quienEntrega: guardada.quienEntrega ?? custodia.quienEntrega,
     quienRecibe,
-    idEmpleadoInstructor: guardada.idEmpleadoInstructor ?? plantilla.idEmpleadoInstructor,
+    inspector: String(guardada.inspector || '').trim(),
+    documentoInspector: String(guardada.documentoInspector || '').trim(),
+    idEmpleadoInstructor: guardada.idEmpleadoRecibe ?? plantilla.idEmpleadoInstructor,
     nombreInstructor: quienRecibe || plantilla.nombreInstructor,
     idClase: plantilla.idClase,
     claseVehiculo: plantilla.claseVehiculo,
-    documentosVehiculo: mergeDocumentosChecklist(plantilla.documentosVehiculo, guardada.documentosVehiculo),
-    documentosInstructor: mergeDocumentosChecklist(plantilla.documentosInstructor, guardada.documentosInstructor),
-    estadoGeneral: mergeChecklist(plantilla.estadoGeneral, guardada.estadoGeneral),
-    adaptaciones: mergeChecklist(plantilla.adaptaciones, guardada.adaptaciones),
-    aspecto1: mergeChecklist(plantilla.aspecto1, guardada.aspecto1),
-    aspecto2: mergeChecklist(plantilla.aspecto2, guardada.aspecto2),
+    urlfotoLatDer: String(guardada.urlfotoLatDer || '').trim(),
+    urlfotoLatIzq: String(guardada.urlfotoLatIzq || '').trim(),
+    urlfotoFrontal: String(guardada.urlfotoFrontal || '').trim(),
+    urlfotoPost: String(guardada.urlfotoPost || '').trim(),
     aptoLaborar: normSi(guardada.aptoLaborar),
     observacionesGenerales: String(guardada.observacionesGenerales || '').trim(),
     consecutivo: guardada.consecutivo || plantilla.consecutivo,
@@ -251,10 +241,47 @@ async function obtenerInspeccionDelDia(vehiculo, empleado, fecha, user) {
   };
 }
 
+async function obtenerInspeccionDelDia(vehiculo, empleado, fecha, user) {
+  const f = fecha || fechaHoyStr();
+  const plantilla = await armarPlantillaInspeccion(vehiculo, empleado);
+  const placa = plantilla.placa;
+  const avisoRol = user ? avisoRolInstructor(user) : null;
+  const custodia = await resolverCustodiaInspeccion(placa, f, empleado);
+  const guardada = await InspTecPreop.findOne({ placa, fecha: f }).lean();
+
+  if (!guardada) {
+    const { lineasPlantilla, ...restPlantilla } = plantilla;
+    return {
+      ...restPlantilla,
+      fecha: f,
+      guardada: false,
+      _id: null,
+      entrega: custodia.entrega,
+      recibe: custodia.recibe,
+      quienEntrega: custodia.quienEntrega,
+      quienRecibe: custodia.quienRecibe,
+      nombreInstructor: custodia.quienRecibe || plantilla.nombreInstructor,
+      esPrimeraRevision: custodia.esPrimeraRevision,
+      fechaRevisionAnterior: custodia.fechaRevisionAnterior,
+      avisoRolInstructor: avisoRol,
+    };
+  }
+
+  const detalle = await DetInspeccion.find({ idInspeccion: guardada._id }).lean();
+  const grupos = mergeChecklistPreop(plantilla.lineasPlantilla, detalle, normSi);
+
+  return {
+    ...mapCabeceraDto(guardada, plantilla, custodia, avisoRol),
+    documentosVehiculo: mergeDocumentosChecklist(plantilla.documentosVehiculo, guardada.documentosVehiculo),
+    documentosInstructor: mergeDocumentosChecklist(plantilla.documentosInstructor, guardada.documentosInstructor),
+    grupos,
+  };
+}
+
 function normalizeItems(items) {
   return (items || []).map((r) => ({
     id: String(r.id),
-    nombre: String(r.nombre || r.item || r.aspecto || '').trim(),
+    nombre: String(r.nombre || '').trim(),
     si: normSi(r.si),
     observacion: String(r.observacion || '').trim(),
   }));
@@ -264,18 +291,20 @@ async function guardarInspeccion(vehiculo, empleado, body, userLogin, user) {
   const fecha = String(body?.fecha || fechaHoyStr()).trim();
   const plantilla = await armarPlantillaInspeccion(vehiculo, empleado);
   const placa = String(vehiculo.placa || '').trim();
-  const existing = await InspeccionVehiculo.findOne({ placa, fecha }).lean();
+  const existing = await InspTecPreop.findOne({ placa, fecha }).lean();
   const custodia = await resolverCustodiaInspeccion(placa, fecha, empleado);
+
+  const entrega = existing
+    ? String(existing.entrega || existing.quienEntrega || custodia.entrega).trim()
+    : custodia.entrega;
   const quienEntrega = existing
     ? String(existing.quienEntrega || custodia.quienEntrega).trim()
     : custodia.quienEntrega;
+  const recibe = existing ? String(existing.recibe || custodia.recibe).trim() : custodia.recibe;
   const quienRecibe = existing
-    ? String(existing.quienRecibe || nombreEmpleadoLogueado(empleado)).trim()
-    : nombreEmpleadoLogueado(empleado);
-  const nombreInstructor = existing
-    ? String(existing.nombreInstructor || quienRecibe).trim()
-    : quienRecibe;
-  const idEmpleadoInstructor = existing?.idEmpleadoInstructor ?? empleado.idEmpleado;
+    ? String(existing.nombreRecibe || existing.quienRecibe || custodia.quienRecibe).trim()
+    : custodia.quienRecibe;
+  const idEmpleadoRecibe = existing?.idEmpleadoRecibe ?? empleado.idEmpleado;
   const consecutivo = existing
     ? String(existing.consecutivo || '').trim() || (await reservarConsecutivoInspeccion())
     : await reservarConsecutivoInspeccion();
@@ -285,29 +314,49 @@ async function guardarInspeccion(vehiculo, empleado, body, userLogin, user) {
     fecha,
     hora: String(body?.hora || horaActualStr()).trim(),
     combustible: String(body?.combustible ?? plantilla.combustible ?? '').trim(),
+    entrega,
+    recibe,
     quienEntrega,
     quienRecibe,
-    idEmpleadoInstructor,
-    nombreInstructor,
+    nombreRecibe: quienRecibe,
+    idEmpleadoRecibe,
+    inspector: String(body?.inspector ?? existing?.inspector ?? '').trim(),
+    documentoInspector: String(body?.documentoInspector ?? existing?.documentoInspector ?? '').trim(),
     documentosVehiculo: normalizeItems(plantilla.documentosVehiculo),
     documentosInstructor: normalizeItems(plantilla.documentosInstructor),
-    estadoGeneral: normalizeItems(body?.estadoGeneral ?? plantilla.estadoGeneral),
-    adaptaciones: normalizeItems(body?.adaptaciones ?? plantilla.adaptaciones),
-    aspecto1: normalizeItems(body?.aspecto1 ?? plantilla.aspecto1),
-    aspecto2: normalizeItems(body?.aspecto2 ?? plantilla.aspecto2),
     aptoLaborar: normSi(body?.aptoLaborar),
     observacionesGenerales: String(body?.observacionesGenerales || '').trim(),
+    urlfotoLatDer: String(body?.urlfotoLatDer ?? existing?.urlfotoLatDer ?? '').trim(),
+    urlfotoLatIzq: String(body?.urlfotoLatIzq ?? existing?.urlfotoLatIzq ?? '').trim(),
+    urlfotoFrontal: String(body?.urlfotoFrontal ?? existing?.urlfotoFrontal ?? '').trim(),
+    urlfotoPost: String(body?.urlfotoPost ?? existing?.urlfotoPost ?? '').trim(),
     consecutivo,
     userChangeRecord: userLogin,
     fechaMod: new Date(),
   };
 
+  let idInspeccion;
   if (existing) {
-    await InspeccionVehiculo.findOneAndUpdate({ _id: existing._id }, { $set: dto }, { new: true }).lean();
+    await InspTecPreop.findOneAndUpdate({ _id: existing._id }, { $set: dto }, { new: true }).lean();
+    idInspeccion = existing._id;
   } else {
     dto.fechaAudi = new Date();
     dto.userAddReg = userLogin;
-    await InspeccionVehiculo.create(dto);
+    const created = await InspTecPreop.create(dto);
+    idInspeccion = created._id;
+  }
+
+  const filasDet = detalleDesdeBody(body, plantilla.lineasPlantilla).map((r) => ({
+    idInspeccion,
+    idItem: r.idItem,
+    idCaracteristica: r.idCaracteristica,
+    aprobado: normSi(r.aprobado),
+    observacion: r.observacion,
+  }));
+
+  await DetInspeccion.deleteMany({ idInspeccion });
+  if (filasDet.length) {
+    await DetInspeccion.insertMany(filasDet);
   }
 
   return obtenerInspeccionDelDia(vehiculo, empleado, fecha, user);
@@ -327,13 +376,13 @@ async function listarInspecciones(vehiculo, { limit = 50, skip = 0 } = {}) {
   const placa = String(vehiculo.placa || '').trim();
   const q = { placa };
   const [rows, total] = await Promise.all([
-    InspeccionVehiculo.find(q)
+    InspTecPreop.find(q)
       .sort({ fecha: -1, hora: -1 })
       .skip(skip)
       .limit(limit)
-      .select('_id placa fecha hora nombreInstructor aptoLaborar consecutivo fechaMod fechaAudi')
+      .select('_id placa fecha hora nombreRecibe quienRecibe aptoLaborar consecutivo fechaMod fechaAudi')
       .lean(),
-    InspeccionVehiculo.countDocuments(q),
+    InspTecPreop.countDocuments(q),
   ]);
 
   return {
@@ -344,7 +393,7 @@ async function listarInspecciones(vehiculo, { limit = 50, skip = 0 } = {}) {
       placa: r.placa,
       fecha: r.fecha,
       hora: r.hora || '',
-      nombreInstructor: r.nombreInstructor || '',
+      nombreInstructor: r.nombreRecibe || r.quienRecibe || '',
       aptoLaborar: normSi(r.aptoLaborar),
       consecutivo: r.consecutivo || '',
       fechaMod: r.fechaMod || r.fechaAudi || null,

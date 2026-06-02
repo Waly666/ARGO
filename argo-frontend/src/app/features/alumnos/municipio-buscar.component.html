@@ -1,8 +1,7 @@
 <div class="muni-buscar-host">
   <label>{{ label }}</label>
-  <div class="input-wrap">
+  <div class="input-wrap" [class.combo]="modoCombo">
     <input
-      #inputEl
       type="text"
       [placeholder]="placeholder"
       [ngModel]="query()"
@@ -10,14 +9,20 @@
       (focus)="focus()"
       autocomplete="off"
     />
+    <button
+      *ngIf="modoCombo"
+      type="button"
+      class="combo-toggle"
+      tabindex="-1"
+      [attr.aria-expanded]="open()"
+      (mousedown)="$event.preventDefault()"
+      (click)="toggleOpen()">
+      ▾
+    </button>
     <span class="hint" *ngIf="loading()">Buscando…</span>
   </div>
 
-  <ul
-    class="dropdown muni-dropdown-panel"
-    *ngIf="open() && resultados().length > 0"
-    [ngStyle]="dropdownStyle() || undefined"
-  >
+  <ul class="dropdown" *ngIf="open() && resultados().length > 0">
     <li *ngFor="let m of resultados()" (mousedown)="pick(m)">
       <strong>{{ m.nombreMunicipio }}</strong>
       <span>{{ m.nombreDepto }} · {{ m.codMunicipio }}</span>
@@ -25,10 +30,20 @@
   </ul>
 
   <div
-    class="dropdown empty muni-dropdown-panel"
-    *ngIf="open() && !loading() && query().trim().length >= 2 && resultados().length === 0"
-    [ngStyle]="dropdownStyle() || undefined"
+    class="dropdown empty"
+    *ngIf="open() && !loading() && query().trim().length >= minBusqueda() && resultados().length === 0"
   >
     No hay municipios con ese texto.
+  </div>
+
+  <div
+    class="dropdown empty"
+    *ngIf="open() && query().trim().length > 0 && query().trim().length < minBusqueda()"
+  >
+    Escriba al menos {{ minBusqueda() }} caracteres…
+  </div>
+
+  <div class="dropdown empty" *ngIf="open() && modoCombo && !query().trim() && !loading()">
+    Escriba municipio o departamento para buscar.
   </div>
 </div>

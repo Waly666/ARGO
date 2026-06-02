@@ -1,27 +1,43 @@
+const InspTecPreop = require('../models/InspTecPreop');
 const Vehiculo = require('../models/Vehiculo');
-const InspeccionVehiculo = require('../models/InspeccionVehiculo');
 const { fechaHoyStr } = require('./inspeccionVehiculo');
+const { placasConPracticaProgramadaEnFecha } = require('./vehiculoInspeccionOperacion');
 
 const MAX_DETALLE = 24;
 
+/** Solo vehículos con práctica CEA programada hoy y sin inspección del día. */
 async function calcularAlertasInspeccionPendiente(fecha) {
   const f = fecha || fechaHoyStr();
-  const [vehiculos, inspecciones] = await Promise.all([
-    Vehiculo.find({}).select('_id placa nombreMarca nombreLinea claseVehiculo').lean(),
-    InspeccionVehiculo.find({ fecha: f }).select('placa').lean(),
-  ]);
+  const { placas } = await placasConPracticaProgramadaEnFecha(f);
 
+  if (!placas.length) {
+    return {
+      fecha: f,
+      totalPendientes: 0,
+      vehiculosAfectados: 0,
+      alertas: [],
+    };
+  }
+
+  const inspecciones = await InspTecPreop.find({ fecha: f, placa: { $in: placas } })
+    .select('placa')
+    .lean();
   const conInspeccion = new Set(inspecciones.map((i) => String(i.placa || '').trim()).filter(Boolean));
-  const alertas = [];
 
-  for (const v of vehiculos) {
-    const placa = String(v.placa || '').trim();
-    if (!placa || conInspeccion.has(placa)) continue;
+  const vehiculos = await Vehiculo.find({ placa: { $in: placas } })
+    .select('_id placa nombreMarca nombreLinea claseVehiculo')
+    .lean();
+  const mapVeh = new Map(vehiculos.map((v) => [String(v.placa || '').trim(), v]));
+
+  const alertas = [];
+  for (const placa of placas) {
+    if (conInspeccion.has(placa)) continue;
+    const v = mapVeh.get(placa);
     alertas.push({
       placa,
-      vehiculoId: String(v._id),
-      claseVehiculo: String(v.claseVehiculo || '').trim(),
-      marcaLinea: [v.nombreMarca, v.nombreLinea].filter(Boolean).join(' ').trim(),
+      vehiculoId: v?._id ? String(v._id) : '',
+      claseVehiculo: String(v?.claseVehiculo || '').trim(),
+      marcaLinea: [v?.nombreMarca, v?.nombreLinea].filter(Boolean).join(' ').trim(),
     });
   }
 

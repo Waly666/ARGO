@@ -143,15 +143,8 @@ label {
 }
 
 .docs-layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 16px;
   padding: 16px;
   border-top: 1px solid var(--line-soft);
-
-  @media (max-width: 960px) {
-    grid-template-columns: 1fr;
-  }
 }
 
 .req-section {
@@ -280,14 +273,27 @@ label {
 
 .empty-docs { color: var(--text-dim); padding: 16px 0; }
 
-.doc-form.inner {
-  padding: 14px;
+.doc-modal-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(6, 16, 41, 0.45);
+  gap: 10px;
 
-  h3 { margin: 0 0 4px; font-size: .95rem; }
+  label {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-soft);
+  }
+
+  a {
+    font-size: 0.84rem;
+  }
 }
 
 .danger.ghost { color: #fca5a5; border-color: rgba(239, 68, 68, 0.35); }

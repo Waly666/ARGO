@@ -42,6 +42,8 @@ const ROLES_SISTEMA = {
       'jornadas.operar',
       'programacion_cea.ver',
       'programacion_cea.operar',
+      'instructores.mi_portal',
+      'instructores.inspeccion',
     ],
     alarmas: alarmasDefaultRol('instructor'),
     esSistema: true,
@@ -73,7 +75,7 @@ const ROLES_SISTEMA = {
 
 /** Caché en memoria { codigo → { permisos, alarmas, nombre, ts } } */
 const cache = new Map();
-const CACHE_MS = 30_000;
+const CACHE_MS = 5_000;
 
 function limpiarCache(codigo) {
   if (codigo) cache.delete(normalizarRol(codigo));
@@ -83,9 +85,7 @@ function limpiarCache(codigo) {
 function tienePermiso(permisos, clave) {
   if (!permisos?.length) return false;
   if (permisos.includes('*') || esAdminPorPermisos(permisos)) return true;
-  if (permisos.includes(clave)) return true;
-  const base = String(clave).split('.')[0];
-  return permisos.includes(base);
+  return permisos.includes(clave);
 }
 
 function tieneAlarma(alarmas, clave) {
@@ -112,7 +112,9 @@ function tieneAlgunaAlarma(alarmas, claves) {
 
 async function initRolesSistema(opts = {}) {
   const force = opts.force === true;
+  const codigoForzado = opts.codigo ? normalizarRol(opts.codigo) : null;
   for (const [codigo, def] of Object.entries(ROLES_SISTEMA)) {
+    if (codigoForzado && codigo !== codigoForzado) continue;
     const permisos = def.permisos.includes('*') ? ['*'] : clavesValidas(def.permisos);
     const alarmas = def.alarmas?.includes('*') ? ['*'] : clavesAlarmasValidas(def.alarmas || []);
     const payload = {
@@ -152,12 +154,19 @@ async function datosRol(rolRaw) {
   let permisos;
   let alarmas;
 
-  if (doc?.permisos?.length) {
+  if (doc && Array.isArray(doc.permisos)) {
     permisos = doc.permisos.includes('*') ? ['*'] : [...doc.permisos];
   } else if (codigo === 'admin' || esAdmin(codigo)) {
     permisos = ['*'];
+  } else if (ROLES_SISTEMA[codigo]?.permisos?.length) {
+    permisos = [...ROLES_SISTEMA[codigo].permisos];
   } else {
-    permisos = ROLES_SISTEMA[codigo]?.permisos || [];
+    permisos = [];
+  }
+
+  /** Red de seguridad: rol con permisos pero sin dashboard bloqueaba el login. */
+  if (permisos.length > 0 && !permisos.includes('*') && !permisos.includes('dashboard')) {
+    permisos = [...permisos, 'dashboard'];
   }
 
   if (Array.isArray(doc?.alarmas)) {
@@ -174,6 +183,7 @@ async function datosRol(rolRaw) {
     permisos,
     alarmas,
     nombre: doc?.nombre || ROLES_SISTEMA[codigo]?.nombre,
+    permisosRev: doc?.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
     ts: Date.now(),
   };
   cache.set(codigo, data);
@@ -212,10 +222,35 @@ async function puedeGestionarServiciosPorPermisos(rolRaw) {
   return tieneAlguno(p, ['servicios.gestionar', 'servicios.ver', '*']);
 }
 
+function sanitizarPermisosDetallado(list) {
+  if (!Array.isArray(list)) return { permisos: [], removidos: [] };
+  if (list.includes('*')) return { permisos: ['*'], removidos: [] };
+  const valid = new Set(todasLasClaves());
+  const permisos = [];
+  const removidos = [];
+  for (const raw of list) {
+    const k = String(raw || '').trim();
+    if (!k || k === '*') continue;
+    if (valid.has(k)) permisos.push(k);
+    else removidos.push(k);
+  }
+  return { permisos, removidos };
+}
+
 function sanitizarPermisos(list) {
-  if (!Array.isArray(list)) return [];
-  if (list.includes('*')) return ['*'];
-  return clavesValidas(list);
+  return sanitizarPermisosDetallado(list).permisos;
+}
+
+/** Normaliza permisos al guardar: whitelist + dashboard mínimo si hay otros permisos. */
+function prepararPermisosGuardado(list) {
+  const { permisos: base, removidos } = sanitizarPermisosDetallado(list);
+  const agregados = [];
+  let permisos = base;
+  if (!permisos.includes('*') && !permisos.includes('dashboard') && permisos.length > 0) {
+    permisos = [...permisos, 'dashboard'];
+    agregados.push('dashboard');
+  }
+  return { permisos, removidos, agregados };
 }
 
 function sanitizarAlarmas(list) {
@@ -233,6 +268,7 @@ module.exports = {
   ROLES_SISTEMA,
   initRolesSistema,
   listarRolesActivos,
+  datosRol,
   permisosParaRol,
   alarmasParaRol,
   nombreRol,
@@ -243,6 +279,8 @@ module.exports = {
   tieneAlgunaAlarma,
   limpiarCache,
   sanitizarPermisos,
+  sanitizarPermisosDetallado,
+  prepararPermisosGuardado,
   sanitizarAlarmas,
   codigoRolValido,
   puedeGestionarProgramasPorPermisos,

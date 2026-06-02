@@ -23,7 +23,7 @@
     </div>
   </header>
 
-  <div class="card toolbar">
+  <div class="card toolbar" [class.toolbar-jornadas]="esJornadas()">
     <div class="search-box">
       <span class="ic">◎</span>
       <input
@@ -53,6 +53,57 @@
       </button>
     </div>
     <span class="count">{{ pageLabel() }}</span>
+
+    <div class="jornada-filters" *ngIf="esJornadas()">
+      <div class="field-fecha">
+        <label for="filtro-fecha-jornada">Fecha jornada</label>
+        <input
+          id="filtro-fecha-jornada"
+          type="date"
+          [ngModel]="fechaJornadaCap()"
+          (ngModelChange)="onFechaJornadaCap($event)"
+        />
+      </div>
+      <div class="field-jornada">
+        <argo-catalogo-enum-buscar
+          label="Jornada de capacitación"
+          placeholder="Seleccione jornada…"
+          [textoInicial]="textoJornadaCapSel()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [disabled]="cargandoJornadasCap()"
+          [opcionesLocales]="opcionesJornadasCap()"
+          (seleccionado)="onJornadaCapPick($event)"
+          (limpiado)="onJornadaCapLimpiar()"
+        />
+      </div>
+      <div class="field-cert">
+        <argo-catalogo-enum-buscar
+          label="Certificado jornada"
+          placeholder="Todos"
+          [textoInicial]="textoCertJornadaSel()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [disabled]="!filtroJornadaActivo()"
+          [opcionesLocales]="opcionesCertJornada"
+          (seleccionado)="onCertJornadaPick($event)"
+          (limpiado)="onCertJornadaLimpiar()"
+        />
+      </div>
+      <button
+        type="button"
+        class="ghost mini btn-limpiar-jornada"
+        *ngIf="filtroJornadaActivo() || certJornadaFiltro()"
+        (click)="limpiarFiltrosJornada()">
+        Limpiar filtros
+      </button>
+    </div>
+    <p class="jornada-filter-hint" *ngIf="esJornadas() && jornadaFiltroMsg()">{{ jornadaFiltroMsg() }}</p>
+    <p class="jornada-filter-hint dim" *ngIf="esJornadas() && !filtroJornadaActivo()">
+      Use fecha o jornada para listar participantes y ver si ya tienen certificado generado.
+    </p>
   </div>
 
   <div class="card content-wrap">
@@ -94,6 +145,7 @@
               </button>
             </th>
             <th class="col-alertas">Alertas</th>
+            <th *ngIf="esJornadas()" class="col-cert-jornada">Cert. jornada</th>
             <th>
               <button
                 type="button"
@@ -175,6 +227,11 @@
             <td class="col-alertas" (click)="$event.stopPropagation()">
               <ng-container *ngTemplateOutlet="alarmasTpl; context: { $implicit: r }"></ng-container>
             </td>
+            <td *ngIf="esJornadas()" class="col-cert-jornada">
+              <span [ngClass]="claseCertJornada(r)" [title]="tituloCertJornada(r)">
+                {{ etiquetaCertJornada(r) }}
+              </span>
+            </td>
             <td>
               <span *ngIf="r.jornada; else vacio" [ngClass]="capJornada(r.jornada)" [title]="labelJornada(r)">
                 {{ labelJornada(r) }}
@@ -204,7 +261,7 @@
             </td>
           </tr>
           <tr *ngIf="items().length === 0">
-            <td colspan="12" class="empty">
+            <td [attr.colspan]="esJornadas() ? 13 : 12" class="empty">
               <ng-container *ngTemplateOutlet="emptyTpl"></ng-container>
             </td>
           </tr>
@@ -239,6 +296,13 @@
 
             <div class="card-alarms" (click)="$event.stopPropagation()">
               <ng-container *ngTemplateOutlet="alarmasTpl; context: { $implicit: r }"></ng-container>
+            </div>
+
+            <div class="card-cert-jornada" *ngIf="esJornadas()">
+              <span class="cert-label">Cert. jornada</span>
+              <span [ngClass]="claseCertJornada(r)" [title]="tituloCertJornada(r)">
+                {{ etiquetaCertJornada(r) }}
+              </span>
             </div>
 
             <div class="card-tags">
@@ -281,6 +345,12 @@
             <button type="button" class="act open" (click)="abrir(r)" title="Abrir ficha">Abrir</button>
             <button
               type="button"
+              class="act cea"
+              *ngIf="tieneClasesCeaCreado(r)"
+              (click)="abrirTab(r, 'programacion', $event)"
+              [attr.title]="tituloClasesCea(r)">⏱</button>
+            <button
+              type="button"
               class="act pay"
               *ngIf="r.indicadores?.saldosPendientes"
               (click)="abrirTab(r, 'pagos', $event)"
@@ -306,6 +376,16 @@
       <div class="row-alarms" *ngIf="tieneAlarmas(r); else sinAlarmas">
         <button
           type="button"
+          class="row-alarm cea-alarm"
+          *ngIf="tieneClasesCeaCreado(r)"
+          (click)="abrirTab(r, 'programacion', $event)"
+          [attr.title]="tituloClasesCea(r)">
+          <span class="row-alarm-pulse" aria-hidden="true"></span>
+          <span class="row-alarm-icon">⏱</span>
+          <span class="row-alarm-label">{{ etiquetaClasesCea(r) }}</span>
+        </button>
+        <button
+          type="button"
           class="row-alarm saldo-alarm"
           *ngIf="r.indicadores?.saldosPendientes"
           (click)="abrirTab(r, 'pagos', $event)"
@@ -329,11 +409,21 @@
     </ng-template>
 
     <ng-template #emptyTpl>
-      <ng-container *ngIf="query(); else sinDatos">
-        No hay resultados para «{{ query() }}».
+      <ng-container *ngIf="jornadaFiltroMsg(); else emptyBusqueda">
+        {{ jornadaFiltroMsg() }}
       </ng-container>
-      <ng-template #sinDatos>
-        No hay alumnos registrados. Usa <strong>Crear alumno</strong> para agregar el primero.
+      <ng-template #emptyBusqueda>
+        <ng-container *ngIf="query(); else sinDatos">
+          No hay resultados para «{{ query() }}».
+        </ng-container>
+        <ng-template #sinDatos>
+          <ng-container *ngIf="esJornadas() && filtroJornadaActivo(); else sinDatosGeneral">
+            No hay alumnos para la jornada o fecha seleccionada.
+          </ng-container>
+          <ng-template #sinDatosGeneral>
+            No hay alumnos registrados. Usa <strong>Crear alumno</strong> para agregar el primero.
+          </ng-template>
+        </ng-template>
       </ng-template>
     </ng-template>
 

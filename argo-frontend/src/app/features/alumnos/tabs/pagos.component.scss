@@ -1,4 +1,19 @@
-.pagos { display: flex; flex-direction: column; gap: 14px; }
+.pagos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: visible;
+}
+
+.pagos > .card {
+  position: relative;
+  z-index: 0;
+  overflow: visible;
+
+  &:has(argo-catalogo-enum-buscar.dropdown-open) {
+    z-index: 5000;
+  }
+}
 
 .saldo-servicios { margin-bottom: 2px; }
 
@@ -17,10 +32,17 @@
   grid-template-columns: repeat(12, 1fr);
   gap: 12px;
   margin-bottom: 10px;
+  overflow: visible;
 }
-.col-3  { grid-column: span 3; }
-.col-6  { grid-column: span 6; }
-.col-12 { grid-column: span 12; }
+.col-3  { grid-column: span 3; position: relative; z-index: 0; }
+.col-6  { grid-column: span 6; position: relative; z-index: 0; }
+.col-12 { grid-column: span 12; position: relative; z-index: 0; }
+
+.row .col-3:has(argo-catalogo-enum-buscar.dropdown-open),
+.row .col-6:has(argo-catalogo-enum-buscar.dropdown-open),
+.row .col-12:has(argo-catalogo-enum-buscar.dropdown-open) {
+  z-index: 5000;
+}
 
 .field-hint {
   display: block;

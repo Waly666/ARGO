@@ -1,5 +1,5 @@
 <section class="insp-panel">
-  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+  <div class="msg ok" *ngIf="msg() && !saveAlarmFlash()">{{ msg() }}</div>
   <div class="msg err" *ngIf="err()">{{ err() }}</div>
 
   <ng-container *ngIf="modo() === 'listado'">
@@ -56,16 +56,36 @@
   <ng-container *ngIf="modo() === 'formulario'">
     <header class="insp-head">
       <div>
-        <button type="button" class="ghost back" (click)="volverListado()">← Volver al listado</button>
+        <button type="button" class="ghost back" *ngIf="!modoInline" (click)="volverListado()">← Volver al listado</button>
         <h2>Inspección preoperacional</h2>
         <p *ngIf="fechaFormulario() as f">Fecha <strong>{{ f }}</strong> · un registro por placa y día calendario.</p>
+        <p class="clase-hint" *ngIf="inspeccion()?.claseVehiculo as cv">Clase del vehículo: <strong>{{ cv }}</strong></p>
       </div>
-      <div class="head-actions" *ngIf="inspeccion() as ins">
+      <div class="head-actions save-actions" *ngIf="inspeccion() as ins">
         <button type="button" class="ghost" (click)="cargarFormulario(ins.fecha)" [disabled]="loading()">Actualizar</button>
         <button type="button" class="ghost" (click)="imprimir(ins.fecha)">Imprimir informe</button>
-        <button type="button" class="primary" (click)="guardar()" [disabled]="saving() || loading()">
-          {{ saving() ? 'Guardando…' : (ins.guardada ? 'Guardar cambios' : 'Guardar inspección') }}
-        </button>
+        <div class="save-actions-main">
+          <div
+            class="btn-alarm"
+            *ngIf="saveAlarmVisible() || saveAlarmFlash()"
+            [class.flash]="saveAlarmFlash()"
+            role="status"
+            [attr.aria-live]="saveAlarmFlash() ? 'assertive' : 'polite'">
+            <span class="btn-alarm-pulse" aria-hidden="true"></span>
+            <span class="btn-alarm-icon" aria-hidden="true">!</span>
+            <span class="btn-alarm-text">{{ saveAlarmTexto() }}</span>
+          </div>
+          <button
+            type="button"
+            class="primary btn-save"
+            [class.needs-save]="saveAlarmVisible()"
+            [class.alarm-flash]="saveAlarmFlash()"
+            (click)="guardar()"
+            [disabled]="saving() || loading()"
+            [attr.title]="saveAlarmVisible() ? saveAlarmTexto() : ''">
+            {{ saving() ? 'Guardando…' : (ins.guardada ? 'Guardar cambios' : 'Guardar inspección') }}
+          </button>
+        </div>
       </div>
     </header>
 
@@ -118,7 +138,17 @@
           <div class="col-4">
             <label>Quien recibe (instructor)</label>
             <input type="text" [ngModel]="ins.quienRecibe" readonly class="readonly" />
-            <span class="field-hint">Nombre del empleado instructor vinculado al usuario</span>
+            <span class="field-hint">Usuario logueado vinculado a empleado · Doc. {{ ins.recibe || '—' }}</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <label>Inspector</label>
+            <input type="text" [ngModel]="ins.inspector" (ngModelChange)="patchCampo('inspector', $event)" placeholder="Nombre (opcional)" />
+          </div>
+          <div class="col-4">
+            <label>Documento inspector</label>
+            <input type="text" [ngModel]="ins.documentoInspector" (ngModelChange)="patchCampo('documentoInspector', $event)" placeholder="Opcional" />
           </div>
           <div class="col-4">
             <label>¿Apto para laborar?</label>
@@ -127,6 +157,24 @@
               <option [ngValue]="true">Sí</option>
               <option [ngValue]="false">No</option>
             </select>
+          </div>
+        </div>
+        <div class="row foto-row">
+          <div class="col-3">
+            <label>Foto lateral derecha (URL)</label>
+            <input type="text" [ngModel]="ins.urlfotoLatDer" (ngModelChange)="patchCampo('urlfotoLatDer', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Foto lateral izquierda (URL)</label>
+            <input type="text" [ngModel]="ins.urlfotoLatIzq" (ngModelChange)="patchCampo('urlfotoLatIzq', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Foto frontal (URL)</label>
+            <input type="text" [ngModel]="ins.urlfotoFrontal" (ngModelChange)="patchCampo('urlfotoFrontal', $event)" />
+          </div>
+          <div class="col-3">
+            <label>Foto posterior (URL)</label>
+            <input type="text" [ngModel]="ins.urlfotoPost" (ngModelChange)="patchCampo('urlfotoPost', $event)" />
           </div>
         </div>
         <div class="row">
@@ -171,61 +219,25 @@
         </table>
       </section>
 
-      <section class="insp-block card inner">
-        <h3>Estado general del vehículo</h3>
-        <table class="insp-table">
-          <thead><tr><th>Ítem</th><th>Sí</th><th>No</th><th>Observaciones</th></tr></thead>
-          <tbody>
-            <tr *ngFor="let item of ins.estadoGeneral; let i = index">
-              <td>{{ item.nombre }}</td>
-              <td class="c"><input type="radio" [name]="'eg'+i" [checked]="item.si === true" (change)="setSi('estadoGeneral', i, true)" /></td>
-              <td class="c"><input type="radio" [name]="'eg'+i" [checked]="item.si === false" (change)="setSi('estadoGeneral', i, false)" /></td>
-              <td><input type="text" [ngModel]="item.observacion" (ngModelChange)="setObs('estadoGeneral', i, $event)" /></td>
-            </tr>
-          </tbody>
-        </table>
+      <section class="insp-block card inner checklist-empty" *ngIf="!totalLineasChecklist(ins)">
+        <h3>Checklist preoperacional</h3>
+        <p class="empty-docs">
+          No hay ítems configurados para la clase
+          <strong>{{ ins.claseVehiculo || '—' }}</strong>.
+          Administre «Ítems inspección» y «Características inspección» en Configuración → Catálogos.
+        </p>
       </section>
 
-      <section class="insp-block card inner">
-        <h3>Adaptaciones y estado técnico</h3>
+      <section class="insp-block card inner" *ngFor="let grupo of ins.grupos; let gi = index">
+        <h3>{{ grupo.titulo }}</h3>
         <table class="insp-table">
           <thead><tr><th>Ítem</th><th>Sí</th><th>No</th><th>Observaciones</th></tr></thead>
           <tbody>
-            <tr *ngFor="let item of ins.adaptaciones; let i = index">
+            <tr *ngFor="let item of grupo.lineas; let li = index">
               <td>{{ item.nombre }}</td>
-              <td class="c"><input type="radio" [name]="'ad'+i" [checked]="item.si === true" (change)="setSi('adaptaciones', i, true)" /></td>
-              <td class="c"><input type="radio" [name]="'ad'+i" [checked]="item.si === false" (change)="setSi('adaptaciones', i, false)" /></td>
-              <td><input type="text" [ngModel]="item.observacion" (ngModelChange)="setObs('adaptaciones', i, $event)" /></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="insp-block card inner">
-        <h3>Emergencias, primeros auxilios y otros</h3>
-        <table class="insp-table">
-          <thead><tr><th>Ítem</th><th>Sí</th><th>No</th><th>Observaciones</th></tr></thead>
-          <tbody>
-            <tr *ngFor="let item of ins.aspecto1; let i = index">
-              <td>{{ item.nombre }}</td>
-              <td class="c"><input type="radio" [name]="'a1'+i" [checked]="item.si === true" (change)="setSi('aspecto1', i, true)" /></td>
-              <td class="c"><input type="radio" [name]="'a1'+i" [checked]="item.si === false" (change)="setSi('aspecto1', i, false)" /></td>
-              <td><input type="text" [ngModel]="item.observacion" (ngModelChange)="setObs('aspecto1', i, $event)" /></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="insp-block card inner">
-        <h3>Seguridad activa y pasiva</h3>
-        <table class="insp-table">
-          <thead><tr><th>Ítem</th><th>Sí</th><th>No</th><th>Observaciones</th></tr></thead>
-          <tbody>
-            <tr *ngFor="let item of ins.aspecto2; let i = index">
-              <td>{{ item.nombre }}</td>
-              <td class="c"><input type="radio" [name]="'a2'+i" [checked]="item.si === true" (change)="setSi('aspecto2', i, true)" /></td>
-              <td class="c"><input type="radio" [name]="'a2'+i" [checked]="item.si === false" (change)="setSi('aspecto2', i, false)" /></td>
-              <td><input type="text" [ngModel]="item.observacion" (ngModelChange)="setObs('aspecto2', i, $event)" /></td>
+              <td class="c"><input type="radio" [name]="'ck'+gi+'_'+li" [checked]="item.si === true" (change)="setSi(gi, li, true)" /></td>
+              <td class="c"><input type="radio" [name]="'ck'+gi+'_'+li" [checked]="item.si === false" (change)="setSi(gi, li, false)" /></td>
+              <td><input type="text" [ngModel]="item.observacion" (ngModelChange)="setObs(gi, li, $event)" /></td>
             </tr>
           </tbody>
         </table>

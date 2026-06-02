@@ -10,8 +10,9 @@ const {
   num,
 } = require('../services/programaServicio');
 const { estadoLiq } = require('../services/liquidacionMatricula');
-const { esProgramaJornadasCap, TIPO_JORNADAS_CAPACITACION } = require('../services/jornadaCapacitacion');
+const { esProgramaJornadasCap, TIPO_JORNADAS_CAPACITACION, resolverIdSedeMatriculaJornada } = require('../services/jornadaCapacitacion');
 const { normalizarTipoRegularJornada, TIPO_REGULAR_JORNADA_DEFAULT } = require('../constants/tipoRegularJornada');
+const { normalizarIdSede } = require('../services/sedeContext');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
@@ -25,7 +26,7 @@ function valorTarifaServicio(serv, tarifa, prog) {
   return num(prog.valorMatricula);
 }
 
-async function crearMatriculaDesdeBody(body) {
+async function crearMatriculaDesdeBody(body, idSedeCtx) {
   const { numDoc: numDocRaw, idPrograma, idProg, tarifa = 1, observaciones } = body || {};
   const numDoc = parseNumDoc(numDocRaw);
   const progId = idPrograma || idProg;
@@ -41,8 +42,19 @@ async function crearMatriculaDesdeBody(body) {
     throw err;
   }
 
-  const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
   const esJornada = await esProgramaJornadasCap(prog);
+  let idSede = normalizarIdSede(idSedeCtx || body?.idSede);
+  if (!idSede && !esJornada) {
+    const err = new Error('Debe seleccionar la sede para matricular');
+    err.status = 428;
+    err.code = 'SEDE_REQUERIDA';
+    throw err;
+  }
+  if (esJornada) {
+    idSede = await resolverIdSedeMatriculaJornada();
+  }
+
+  const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
 
   const serviciosProg = await listarServiciosMatricula(prog);
   const usaSem = programaUsaSemestres(prog) && serviciosProg.length > 0;
@@ -68,6 +80,7 @@ async function crearMatriculaDesdeBody(body) {
   const idProgramaVal = String(prog.idPrograma ?? prog._id);
   const m = await Matricula.create({
     numDoc,
+    idSede,
     idPrograma: idProgramaVal,
     idProg: idProgramaVal,
     valorMat: toDec(valorMat),
@@ -84,6 +97,7 @@ async function crearMatriculaDesdeBody(body) {
       const v = valorTarifaServicio(serv, t, prog);
       const liq = await Liquidacion.create({
         numDoc,
+        idSede,
         idAlumno: alumno?._id ? String(alumno._id) : null,
         idMatricula: m._id,
         idMat: m._id,
@@ -101,6 +115,7 @@ async function crearMatriculaDesdeBody(body) {
     const serv = serviciosProg[0] || null;
     const liq = await Liquidacion.create({
       numDoc,
+      idSede,
       idAlumno: alumno?._id ? String(alumno._id) : null,
       idMatricula: m._id,
       idMat: m._id,
@@ -149,7 +164,7 @@ exports.crearMatriculaDesdeBody = crearMatriculaDesdeBody;
 
 exports.crear = async (req, res, next) => {
   try {
-    const result = await crearMatriculaDesdeBody(req.body);
+    const result = await crearMatriculaDesdeBody(req.body, req.idSede);
     res.status(201).json(result);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
@@ -168,7 +183,8 @@ exports.listarPorAlumno = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
-    const rows = await Matricula.find(numDocQuery(numDoc)).sort({ createdAt: -1 }).lean();
+    const filter = numDocQuery(numDoc);
+    const rows = await Matricula.find(filter).sort({ createdAt: -1 }).lean();
     res.json(
       rows.map((r) => ({
         ...r,

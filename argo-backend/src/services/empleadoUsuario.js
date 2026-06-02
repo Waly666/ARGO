@@ -1,7 +1,8 @@
 const Usuario = require('../models/Usuario');
 const Empleado = require('../models/Empleado');
-const { normalizarRol } = require('../utils/roles');
+const { esAdmin, normalizarRol } = require('../utils/roles');
 const { normalizarEmpleadoLegacy } = require('../utils/empleadoDoc');
+const { normalizarIdSede, asegurarSedePrincipal } = require('../services/sedeContext');
 
 /** Cargo (nombre) → rol de login */
 const CARGO_ROL = [
@@ -145,6 +146,18 @@ function limpiarUsuario(doc) {
   return o;
 }
 
+/** Sedes del usuario según la sede del empleado (fallback: sede principal). */
+async function sedesPermitidasDesdeEmpleado(emp) {
+  const e = normalizarEmpleadoLegacy(emp);
+  const id = normalizarIdSede(e.idSede);
+  if (id) {
+    const s = await Sede.findOne({ idSede: id, activa: true }).select('idSede').lean();
+    if (s) return [id];
+  }
+  const principal = await asegurarSedePrincipal();
+  return principal?.idSede ? [principal.idSede] : [];
+}
+
 async function cargarUsuarioPorId(id) {
   if (!id) return null;
   return Usuario.findById(id);
@@ -269,6 +282,7 @@ async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {})
 
   const { username, numero } = await assertUsuarioDocumentoLibre(e);
   const passwordInicial = passwordInicialDesdeEmpleado(e);
+  const sedesPermitidas = await sedesPermitidasDesdeEmpleado(e);
 
   const doc = await Usuario.create({
     username,
@@ -282,6 +296,7 @@ async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {})
     idEmpleado: e.idEmpleado,
     numeroDocumento: String(e.numeroDocumento || '').trim(),
     creadoDesdeEmpleado: true,
+    sedesPermitidas,
     userAddReg: creadoPor || 'sistema',
   });
 
@@ -327,6 +342,11 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado) {
   }
 
   if (String(e.estado || '').toLowerCase() === 'retirado') u.activo = false;
+
+  if (!esAdmin(normalizarRol(u.rol))) {
+    u.sedesPermitidas = await sedesPermitidasDesdeEmpleado(e);
+  }
+
   await u.save();
 }
 

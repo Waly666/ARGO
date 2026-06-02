@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/liquidacionController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const pagos = requirePermiso('alumnos.pagos', 'caja.cobros', 'caja.turno');
 

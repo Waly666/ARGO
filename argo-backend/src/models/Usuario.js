@@ -15,6 +15,8 @@ const UsuarioSchema = new mongoose.Schema(
     numero: { type: Number, index: true },
     numeroDocumento: { type: String, trim: true },
     idEmpleado: { type: Number, index: true },
+    /** Sedes donde puede operar (idSede). Admin ve todas aunque no esté listado. */
+    sedesPermitidas: { type: [String], default: [] },
   },
   { collection: 'usuarios', timestamps: true, strict: false },
 );

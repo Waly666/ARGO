@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 
-import { Component, ElementRef, HostListener, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 
@@ -45,7 +45,71 @@ import {
 import { coerceProgramaNumeric } from '../../core/utils/programa-numeric.util';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 
+type SortColPrograma =
+  | 'codigo'
+  | 'programa'
+  | 'certificado'
+  | 'formatoCert'
+  | 'tipo'
+  | 'horas'
+  | 'semestres'
+  | 'matricula'
+  | 'estado';
+type SortDir = 'asc' | 'desc';
+
+const SORT_STORAGE_KEY = 'argo-programas-sort';
+
+const SORT_COLUMNS: ReadonlyArray<{ key: SortColPrograma; label: string }> = [
+  { key: 'codigo', label: 'Código' },
+  { key: 'programa', label: 'Programa' },
+  { key: 'certificado', label: 'Certificado' },
+  { key: 'formatoCert', label: 'Formato cert.' },
+  { key: 'tipo', label: 'Tipo' },
+  { key: 'horas', label: 'Horas' },
+  { key: 'semestres', label: 'Sem.' },
+  { key: 'matricula', label: 'Matrícula' },
+  { key: 'estado', label: 'Estado' },
+];
+
+function readSortPrefs(): { col: SortColPrograma; dir: SortDir } {
+  try {
+    const raw = localStorage.getItem(SORT_STORAGE_KEY);
+    if (!raw) return { col: 'programa', dir: 'asc' };
+    const parsed = JSON.parse(raw) as { col?: string; dir?: string };
+    const col = SORT_COLUMNS.some((c) => c.key === parsed.col) ? (parsed.col as SortColPrograma) : 'programa';
+    const dir: SortDir = parsed.dir === 'desc' ? 'desc' : 'asc';
+    return { col, dir };
+  } catch {
+    return { col: 'programa', dir: 'asc' };
+  }
+}
+
+function saveSortPrefs(col: SortColPrograma, dir: SortDir): void {
+  try {
+    localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify({ col, dir }));
+  } catch {
+    /* ignore */
+  }
+}
+
+function cmpStr(a: string, b: string): number {
+  return a.localeCompare(b, 'es', { sensitivity: 'base', numeric: true });
+}
+
+function cmpNum(a: number | null | undefined, b: number | null | undefined): number {
+  const na = a == null || Number.isNaN(Number(a)) ? null : Number(a);
+  const nb = b == null || Number.isNaN(Number(b)) ? null : Number(b);
+  if (na == null && nb == null) return 0;
+  if (na == null) return 1;
+  if (nb == null) return -1;
+  return na - nb;
+}
+
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 interface AuditInfo {
 
   fechaAudi?: string;
@@ -66,7 +130,7 @@ interface AuditInfo {
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, FormModalComponent],
+  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
 
   templateUrl: './programas-admin.component.html',
 
@@ -90,6 +154,57 @@ export class ProgramasAdminComponent implements OnInit {
 
 
   programas = signal<Programa[]>([]);
+
+  sortColumns = SORT_COLUMNS;
+  sortCol = signal<SortColPrograma>('programa');
+  sortDir = signal<SortDir>('asc');
+
+  programasOrdenados = computed(() => {
+    const rows = [...this.programas()];
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const mul = dir === 'asc' ? 1 : -1;
+
+    rows.sort((a, b) => {
+      let c = 0;
+      switch (col) {
+        case 'codigo':
+          c = cmpStr(String(a.codigoProg || a.idPrograma || ''), String(b.codigoProg || b.idPrograma || ''));
+          break;
+        case 'programa':
+          c = cmpStr(a.nombreProg || '', b.nombreProg || '');
+          break;
+        case 'certificado':
+          c = cmpStr(a.nomCert || '', b.nomCert || '');
+          break;
+        case 'formatoCert': {
+          const fa = a.tipoCertificado ? labelTipoCert(a.tipoCertificado) : 'Automático';
+          const fb = b.tipoCertificado ? labelTipoCert(b.tipoCertificado) : 'Automático';
+          c = cmpStr(fa, fb);
+          break;
+        }
+        case 'tipo':
+          c = cmpStr(this.labelTipo(a.idTipCap), this.labelTipo(b.idTipCap));
+          break;
+        case 'horas':
+          c = cmpNum(a.horas, b.horas);
+          break;
+        case 'semestres':
+          c = cmpNum(a.semestres, b.semestres);
+          break;
+        case 'matricula':
+          c = cmpNum(a.valorMatricula, b.valorMatricula);
+          break;
+        case 'estado':
+          c = cmpStr(a.estado || '', b.estado || '');
+          break;
+      }
+      if (c !== 0) return c * mul;
+      return cmpStr(a.nombreProg || '', b.nombreProg || '') * mul;
+    });
+
+    return rows;
+  });
 
   tiposCap = signal<{ id: string | number; label: string }[]>([]);
 
@@ -139,28 +254,55 @@ export class ProgramasAdminComponent implements OnInit {
 
   form = signal<ProgramaDto>(this.formVacio());
 
-  modalTop = signal(168);
+  opcionesTipoCertificado = computed<EnumBuscarOption[]>(() => [
+    { value: '', label: 'Automático' },
+    ...TIPOS_CERTIFICADO.map((t) => ({ value: t.id, label: t.label })),
+  ]);
 
-  @ViewChild('listAnchor') listAnchor?: ElementRef<HTMLElement>;
+  textoTipoCertificado = computed(() => {
+    const v = this.form().tipoCertificado;
+    if (v == null || v === '') return 'Automático';
+    return labelTipoCert(v);
+  });
 
-  @HostListener('window:resize')
-  onResize() {
-    if (this.modalAbierto()) this.posicionarModal();
-  }
+  opcionesTipoCap = computed<EnumBuscarOption[]>(() =>
+    this.tiposCap().map((t) => ({ value: t.id, label: t.label })),
+  );
 
-  private posicionarModal() {
-    setTimeout(() => {
-      const el = this.listAnchor?.nativeElement;
-      if (el) {
-        const top = el.getBoundingClientRect().top;
-        this.modalTop.set(Math.max(8, Math.round(top)));
-      }
-    }, 0);
-  }
+  textoTipoCap = computed(() => this.labelTipo(this.form().idTipCap));
 
+  opcionesEstado: EnumBuscarOption[] = [
+    { value: 'ACTIVO', label: 'ACTIVO' },
+    { value: 'INACTIVO', label: 'INACTIVO' },
+  ];
 
+  textoEstado = computed(() => this.form().estado || 'ACTIVO');
+
+  opcionesTipoServ = computed<EnumBuscarOption[]>(() =>
+    this.tiposServ().map((t) => ({
+      value: t.code,
+      label: `${t.label} (${t.code})`,
+    })),
+  );
+
+  textoTipoServ = computed(() => {
+    const code = this.form().tipoServ;
+    const t = this.tiposServ().find((x) => x.code === code);
+    return t ? `${t.label} (${t.code})` : String(code || '');
+  });
+
+  opcionesFacturar: EnumBuscarOption[] = [
+    { value: 'NO', label: 'NO' },
+    { value: 'SI', label: 'SI' },
+  ];
+
+  textoFacturar = computed(() => this.form().facturar || 'NO');
 
   ngOnInit(): void {
+
+    const sortPrefs = readSortPrefs();
+    this.sortCol.set(sortPrefs.col);
+    this.sortDir.set(sortPrefs.dir);
 
     const r = String(this.auth.user()?.rol || '').toLowerCase();
 
@@ -353,6 +495,26 @@ export class ProgramasAdminComponent implements OnInit {
     saveVistaLista('argo-programas-vista', v);
   }
 
+  toggleSort(col: SortColPrograma) {
+    if (this.sortCol() === col) {
+      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('asc');
+    }
+    saveSortPrefs(this.sortCol(), this.sortDir());
+  }
+
+  sortIcon(col: SortColPrograma): string {
+    if (this.sortCol() !== col) return '↕';
+    return this.sortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  sortAria(col: SortColPrograma): 'ascending' | 'descending' | 'none' {
+    if (this.sortCol() !== col) return 'none';
+    return this.sortDir() === 'asc' ? 'ascending' : 'descending';
+  }
+
 
 
   patch<K extends keyof ProgramaDto>(k: K, v: ProgramaDto[K]) {
@@ -403,8 +565,6 @@ export class ProgramasAdminComponent implements OnInit {
     this.form.set({ ...this.formVacio(), idTipCap: t, tipoServ: this.inferirTipoServ(t), tipoCertificado: this.inferirTipoCert(t) });
 
     this.modalAbierto.set(true);
-
-    this.posicionarModal();
 
     this.msg.set(null);
 
@@ -486,8 +646,6 @@ export class ProgramasAdminComponent implements OnInit {
         });
 
         this.modalAbierto.set(true);
-
-        this.posicionarModal();
 
       },
 
@@ -834,6 +992,47 @@ export class ProgramasAdminComponent implements OnInit {
       this.patch('tarifa3', 0);
       this.patch('semestres', null);
     }
+  }
+
+  onTipoCertPick(opt: EnumBuscarOption): void {
+    const v = String(opt.value);
+    this.patch('tipoCertificado', v === '' ? null : (v as TipoCertificadoId));
+  }
+
+  onTipoCertLimpiar(): void {
+    this.patch('tipoCertificado', null);
+  }
+
+  onTipoCapPick(opt: EnumBuscarOption): void {
+    this.onTipoCapChange(opt.value);
+  }
+
+  onTipoCapLimpiar(): void {
+    this.patch('idTipCap', '');
+  }
+
+  onEstadoPick(opt: EnumBuscarOption): void {
+    this.patch('estado', String(opt.value));
+  }
+
+  onEstadoLimpiar(): void {
+    this.patch('estado', 'ACTIVO');
+  }
+
+  onTipoServPick(opt: EnumBuscarOption): void {
+    this.patch('tipoServ', String(opt.value));
+  }
+
+  onTipoServLimpiar(): void {
+    this.patch('tipoServ', '');
+  }
+
+  onFacturarPick(opt: EnumBuscarOption): void {
+    this.patch('facturar', String(opt.value));
+  }
+
+  onFacturarLimpiar(): void {
+    this.patch('facturar', 'NO');
   }
 
 

@@ -30,17 +30,25 @@
     </div>
   </div>
 
+  <div class="fe-toolbar" *ngIf="permisoSvc.tiene('facturacion') || permisoSvc.tiene('alumnos.pagos')">
+    <button type="button" class="ghost" (click)="abrirFactura()">Emitir factura electrónica</button>
+  </div>
+
   <div class="card">
     <h2>Registrar Pago</h2>
     <div class="row">
       <div class="col-6">
-        <label>Ítem a pagar</label>
-        <select [ngModel]="idLiquidacion()" (ngModelChange)="onItemLiquidacionChange($event)">
-          <option value="">-- Seleccionar --</option>
-          <option *ngFor="let it of itemsConSaldo()" [value]="it._id">
-            {{ descrItem(it) }}
-          </option>
-        </select>
+        <argo-catalogo-enum-buscar
+          label="Ítem a pagar"
+          placeholder="Seleccione o escriba ítem…"
+          [textoInicial]="textoItemLiquidacion()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesItemsLiquidacion()"
+          (seleccionado)="onItemLiquidacionPick($event)"
+          (limpiado)="onItemLiquidacionLimpiar()"
+        />
       </div>
       <div class="col-3">
         <label>Valor</label>
@@ -54,25 +62,33 @@
         <span class="field-hint" *ngIf="saldoItemSel() > 0">Saldo del ítem: {{ fmt(saldoItemSel()) }}</span>
       </div>
       <div class="col-3">
-        <label>Tipo Pago</label>
-        <select [ngModel]="idTipoPago()" (ngModelChange)="onTipoPagoChange($event)">
-          <option value="">-- Seleccionar forma de pago --</option>
-          <option *ngFor="let t of tiposPago()" [value]="tipoPagoValor(t)">
-            {{ tipoPagoLabel(t) }}
-          </option>
-        </select>
+        <argo-catalogo-enum-buscar
+          label="Tipo Pago"
+          placeholder="Seleccione o escriba forma de pago…"
+          [textoInicial]="textoTipoPago()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesTiposPago()"
+          (seleccionado)="onTipoPagoPick($event)"
+          (limpiado)="onTipoPagoLimpiar()"
+        />
       </div>
     </div>
 
     <div class="row" *ngIf="requiereCuentaEmpresa()">
       <div class="col-6">
-        <label>Cuenta de la empresa *</label>
-        <select [ngModel]="idCuentaBancaria()" (ngModelChange)="idCuentaBancaria.set($event)">
-          <option value="">-- Seleccionar cuenta --</option>
-          <option *ngFor="let c of cuentasBancarias()" [value]="cuentaValor(c)">
-            {{ labelCuenta(c) }}
-          </option>
-        </select>
+        <argo-catalogo-enum-buscar
+          label="Cuenta de la empresa *"
+          placeholder="Seleccione o escriba cuenta…"
+          [textoInicial]="textoCuentaBancaria()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesCuentasBancarias()"
+          (seleccionado)="onCuentaBancariaPick($event)"
+          (limpiado)="onCuentaBancariaLimpiar()"
+        />
         <span class="field-hint">Indique a cuál cuenta ingresó el pago (Bancolombia, Nequi, etc.)</span>
       </div>
       <div class="col-6">
@@ -135,6 +151,14 @@
       </tbody>
     </table>
   </div>
+
+  <argo-factura-emitir-modal
+    *ngIf="mostrarFactura()"
+    [numDoc]="store.numDoc()!"
+    [alumnoNombre]="alumnoNombre()"
+    (cerrar)="cerrarFactura()"
+    (emitida)="onFacturaEmitida()"
+  />
 
   <div class="modal-backdrop auth-anular-backdrop" *ngIf="mostrarAuthAnular()" (click)="cancelarReversarSupervisor()">
     <div class="modal card auth-anular-modal" (click)="$event.stopPropagation()">

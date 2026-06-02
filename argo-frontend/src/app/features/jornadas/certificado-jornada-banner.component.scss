@@ -45,7 +45,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  width: 100%;
+  padding: 8px 5.5rem 8px 12px;
   border-radius: var(--btn-radius);
   font-size: 0.78rem;
   font-weight: 700;
@@ -93,21 +94,6 @@
   background: var(--cert-chip-bg, rgba(255, 255, 255, 0.12));
   border: 1px solid var(--cert-chip-border, rgba(255, 255, 255, 0.22));
 }
-
-.head-alarm-close {
-  margin-left: 4px;
-  padding: 0 4px;
-  font-size: 1.1rem;
-  line-height: 1;
-  opacity: 0.85;
-  flex-shrink: 0;
-
-  &:hover {
-    opacity: 1;
-  }
-}
-
-/* —— Tonos por tipo de programa —— */
 
 .cert-tone-curso {
   --cert-bg: linear-gradient(180deg, rgba(59, 130, 246, 0.22), rgba(6, 16, 41, 0.65));
@@ -198,6 +184,12 @@
 }
 
 @import '../../shared/styles/head-alarm-uniform';
+
+.head-alarm-root .head-alarm {
+  height: auto;
+  min-height: 2.6rem;
+  max-height: none;
+}
 
 :host {
   height: auto;

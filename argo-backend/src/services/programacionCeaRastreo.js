@@ -11,6 +11,7 @@ const {
   idProgDePrograma,
   filtroIdProg,
 } = require('./programaServicio');
+const { obtenerConfig } = require('./configProgramacionCea');
 
 function num(v) {
   if (v == null || v === '') return 0;
@@ -29,6 +30,9 @@ function labelPrograma(prog) {
 }
 
 function horasClase(clase) {
+  if (clase?.horasDescuento != null && Number(clase.horasDescuento) > 0) {
+    return Number(clase.horasDescuento);
+  }
   if (clase?.duracionSegundos > 0) return clase.duracionSegundos / 3600;
   if (clase?.duracionHoras > 0) return Number(clase.duracionHoras);
   const desde = String(clase?.horaDesde || '');
@@ -81,7 +85,7 @@ async function buscarProgramaCea(idProg) {
 
 async function contarHorasInscripciones(numDoc, filtrosExtra = {}) {
   const inscripciones = await InscripcionClaseCea.find({ numDoc, ...filtrosExtra }).lean();
-  if (!inscripciones.length) return { programadas: 0, ejecutadas: 0 };
+  if (!inscripciones.length) return { programadas: 0, ejecutadas: 0, inscritas: 0 };
 
   const ids = [...new Set(inscripciones.map((i) => String(i.idClase)))];
   const clases = await ClaseProgramadaCea.find({ _id: { $in: ids } }).lean();
@@ -89,17 +93,22 @@ async function contarHorasInscripciones(numDoc, filtrosExtra = {}) {
 
   let programadas = 0;
   let ejecutadas = 0;
+  let inscritas = 0;
   for (const ins of inscripciones) {
     const clase = mapClase.get(String(ins.idClase));
     if (!clase) continue;
+    /** Siempre horas programadas de la clase, nunca la duración real */
     const h = ins.horasAsignadas > 0 ? Number(ins.horasAsignadas) : horasClase(clase);
     if (clase.estado === 'FINALIZADO' && ins.estado === 'ASISTIO') {
       ejecutadas += h;
-    } else if (clase.estado === 'PROGRAMADA' || clase.estado === 'EN PROCESO') {
+    } else if (clase.estado === 'EN PROCESO') {
       programadas += h;
+    } else if (clase.estado === 'PROGRAMADA') {
+      inscritas += h;
     }
+    /** CREADO sin horario: no descuenta saldo hasta asignar fecha/hora e iniciar */
   }
-  return { programadas, ejecutadas };
+  return { programadas, ejecutadas, inscritas };
 }
 
 function filaRastreo({
@@ -116,8 +125,9 @@ function filaRastreo({
   requeridas,
   programadas,
   ejecutadas,
+  inscritas,
 }) {
-  const cubiertas = programadas + ejecutadas;
+  const cubiertas = programadas + ejecutadas + inscritas;
   const pendientes = Math.max(0, requeridas - cubiertas);
   return {
     numDoc,
@@ -133,6 +143,7 @@ function filaRastreo({
     requeridas,
     programadas,
     ejecutadas,
+    inscritas,
     pendientes,
     completo: pendientes <= 0,
   };
@@ -155,7 +166,7 @@ async function filasMatriculaAlumno(mat, prog, alumno) {
 
   for (const t of tipos) {
     if (t.horas <= 0) continue;
-    const { programadas, ejecutadas } = await contarHorasInscripciones(mat.numDoc, {
+    const { programadas, ejecutadas, inscritas } = await contarHorasInscripciones(mat.numDoc, {
       idProg,
       origenHoras: 'matricula',
       tipoHoras: t.tipo,
@@ -175,6 +186,7 @@ async function filasMatriculaAlumno(mat, prog, alumno) {
         requeridas: t.horas,
         programadas,
         ejecutadas,
+        inscritas,
       }),
     );
   }
@@ -197,7 +209,7 @@ async function filasHorasPracticaExtra(numDoc, alumno) {
 
     const idProg = String(serv.idProg ?? liq.idProg ?? '');
     const prog = idProg ? await buscarProgramaCea(idProg) : null;
-    const { programadas, ejecutadas } = await contarHorasInscripciones(numDoc, {
+    const { programadas, ejecutadas, inscritas } = await contarHorasInscripciones(numDoc, {
       origenHoras: 'hora_practica_extra',
       tipoHoras: 'practica',
       idLiq: liq._id,
@@ -216,6 +228,7 @@ async function filasHorasPracticaExtra(numDoc, alumno) {
         requeridas: cant,
         programadas,
         ejecutadas,
+        inscritas,
       }),
     );
   }
@@ -224,9 +237,26 @@ async function filasHorasPracticaExtra(numDoc, alumno) {
 
 async function rastreoAlumno(numDoc) {
   const n = Number(numDoc);
-  if (!Number.isFinite(n)) return { numDoc: null, filas: [], alertasPrograma: [] };
+  if (!Number.isFinite(n)) {
+    return {
+      numDoc: null,
+      filas: [],
+      alertasPrograma: [],
+      duracionSesionPracticaCea: null,
+      duracionesPermitidas: [1, 2, 3, 4],
+      duracionSesionPracticaDefault: 2,
+      clasesCeaGeneradas: false,
+      clasesGrupalesFaltantes: { total: 0, teoria: 0, taller: 0 },
+    };
+  }
 
   const alumno = await DatosAlumno.findOne({ numDoc: n }).lean();
+  const config = await obtenerConfig();
+  const permitidas = (config?.vehiculo?.duracionesPermitidas || [1, 2, 3, 4])
+    .map((x) => Number(x))
+    .filter((x) => x >= 1 && x <= 8);
+  const clasesCeaGeneradas = (await InscripcionClaseCea.countDocuments({ numDoc: n })) > 0;
+
   const mats = await Matricula.find({ numDoc: n, estado: { $ne: 'anulada' } }).lean();
   const filas = [];
 
@@ -238,7 +268,32 @@ async function rastreoAlumno(numDoc) {
   filas.push(...(await filasHorasPracticaExtra(n, alumno)));
 
   const alertasPrograma = await alertasTemasPrograma(filas.map((f) => f.idProg));
-  return { numDoc: n, alumnoNombre: nombreAlumno(alumno), filas, alertasPrograma };
+  const prefAlumno =
+    alumno?.duracionSesionPracticaCea != null && alumno.duracionSesionPracticaCea !== ''
+      ? Number(alumno.duracionSesionPracticaCea)
+      : null;
+
+  let clasesGrupalesFaltantes = { total: 0, teoria: 0, taller: 0 };
+  if (clasesCeaGeneradas) {
+    try {
+      const { contarClasesGrupalesFaltantesAlumno } = require('./programacionCeaAuto');
+      clasesGrupalesFaltantes = await contarClasesGrupalesFaltantesAlumno(n);
+    } catch {
+      /* no bloquear rastreo */
+    }
+  }
+
+  return {
+    numDoc: n,
+    alumnoNombre: nombreAlumno(alumno),
+    filas,
+    alertasPrograma,
+    duracionSesionPracticaCea: Number.isFinite(prefAlumno) && prefAlumno >= 1 ? prefAlumno : null,
+    duracionesPermitidas: permitidas.length ? permitidas : [1, 2, 3, 4],
+    duracionSesionPracticaDefault: 2,
+    clasesCeaGeneradas,
+    clasesGrupalesFaltantes,
+  };
 }
 
 async function alertasTemasPrograma(idProgs) {
@@ -331,6 +386,54 @@ async function alertasPendientes() {
   };
 }
 
+async function guardarPreferenciasAlumno(numDoc, body, usuario) {
+  const n = Number(numDoc);
+  if (!Number.isFinite(n)) return { error: 'Documento inválido', status: 400 };
+
+  const alumno = await DatosAlumno.findOne({ numDoc: n });
+  if (!alumno) return { error: 'Alumno no encontrado', status: 404 };
+
+  const config = await obtenerConfig();
+  const permitidas = (config?.vehiculo?.duracionesPermitidas || [1, 2, 3, 4])
+    .map((x) => Number(x))
+    .filter((x) => x >= 1 && x <= 8);
+
+  if (body?.duracionSesionPracticaCea !== undefined) {
+    const raw = body.duracionSesionPracticaCea;
+    if (raw === null || raw === '' || raw === 'auto' || raw === 0 || raw === '0') {
+      alumno.duracionSesionPracticaCea = null;
+    } else {
+      const val = Number(raw);
+      if (!Number.isFinite(val) || val < 1) {
+        return { error: 'Duración de sesión inválida', status: 400 };
+      }
+      if (permitidas.length && !permitidas.includes(val)) {
+        return {
+          error: `Duración no permitida. Opciones: ${permitidas.join(', ')} h`,
+          status: 400,
+        };
+      }
+      alumno.duracionSesionPracticaCea = val;
+    }
+    alumno.userChangeRecord = usuario?.username || 'sistema';
+    alumno.fechaMod = new Date();
+    await alumno.save();
+  }
+
+  const pref =
+    alumno.duracionSesionPracticaCea != null && alumno.duracionSesionPracticaCea !== ''
+      ? Number(alumno.duracionSesionPracticaCea)
+      : null;
+
+  return {
+    numDoc: n,
+    duracionSesionPracticaCea: Number.isFinite(pref) && pref >= 1 ? pref : null,
+    duracionesPermitidas: permitidas.length ? permitidas : [1, 2, 3, 4],
+    duracionSesionPracticaDefault: 2,
+    clasesCeaGeneradas: (await InscripcionClaseCea.countDocuments({ numDoc: n })) > 0,
+  };
+}
+
 module.exports = {
   listarProgramasCea,
   buscarProgramaCea,
@@ -338,6 +441,7 @@ module.exports = {
   rastreoGlobal,
   alertasPendientes,
   alertasTemasPrograma,
+  guardarPreferenciasAlumno,
   labelPrograma,
   horasClase,
 };

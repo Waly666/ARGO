@@ -14,6 +14,7 @@ import {
 } from '../../core/services/caja-sesion.service';
 import { CajaInformePrintService } from '../../core/services/caja-informe-print.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { SedeService } from '../../core/services/sede.service';
 import { CajaResumenServiciosComponent } from './caja-resumen-servicios.component';
 
 type FichaAdmin = 'abiertas' | 'consolidado';
@@ -37,6 +38,7 @@ export class CajaCierreGeneralComponent implements OnInit {
   private configSvc = inject(ConfigService);
   private informePrint = inject(CajaInformePrintService);
   private confirm = inject(ConfirmDialogService);
+  readonly sedeSvc = inject(SedeService);
 
   ficha = signal<FichaAdmin>('abiertas');
 
@@ -64,7 +66,7 @@ export class CajaCierreGeneralComponent implements OnInit {
   puedeRegistrar = computed(() => this.puedeInforme() && !this.cierreYaRegistrado());
 
   ngOnInit(): void {
-    this.configSvc.obtenerRecibo().subscribe({
+    this.configSvc.obtenerReciboEncabezado().subscribe({
       next: (c) => this.empresaConfig.set(c),
       error: () => this.empresaConfig.set(null),
     });
@@ -248,7 +250,7 @@ export class CajaCierreGeneralComponent implements OnInit {
       tieneCajasAbiertas: false,
       cajasAbiertas: [],
     };
-    this.informePrint.imprimirGeneral(soloCerradas, this.empresaConfig());
+    this.informePrint.imprimirGeneral(soloCerradas);
   }
 
   async registrarCierre(forzar = false): Promise<void> {
@@ -327,12 +329,12 @@ export class CajaCierreGeneralComponent implements OnInit {
 
   reimprimirHistorial(c: CajaCierreGeneral): void {
     if (c.resumen) {
-      this.informePrint.imprimirGeneral(c.resumen, this.empresaConfig());
+      this.informePrint.imprimirGeneral({ ...c.resumen, idSede: c.resumen.idSede ?? c.idSede });
       return;
     }
     const dia = c.fechaDia || String(c.periodoDesde).slice(0, 10);
     this.cajaSvc.previewCierreGeneral(dia).subscribe({
-      next: (r) => this.informePrint.imprimirGeneral(r, this.empresaConfig()),
+      next: (r) => this.informePrint.imprimirGeneral(r),
     });
   }
 

@@ -15,11 +15,17 @@ import { CertificadosComponent } from './tabs/certificados.component';
 import { DocumentosComponent } from './tabs/documentos.component';
 import { AlumnoProgramacionCeaComponent } from './tabs/programacion-cea.component';
 import { PermisoService } from '../../core/services/permiso.service';
+import { ProgramacionCeaService } from '../../core/services/programacion-cea.service';
 import { environment } from '../../../environments/environment';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../core/utils/saldo-alerta.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
 
 type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos' | 'programacion';
+
+interface AlertaClaseCeaCreada {
+  programaLabel: string;
+  cantidad: number;
+}
 
 @Component({
   selector: 'argo-alumno-detalle',
@@ -42,6 +48,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   private alumnoSvc = inject(AlumnoService);
   private liqSvc = inject(LiquidacionService);
   private permisos = inject(PermisoService);
+  private ceaSvc = inject(ProgramacionCeaService);
   readonly alarmas = inject(AlarmaService);
   store = inject(AlumnoStore);
 
@@ -109,6 +116,22 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
       .join(' · ');
   });
 
+  clasesCeaCreadoAlertas = signal<AlertaClaseCeaCreada[]>([]);
+
+  clasesCeaCreadoCount = computed(() =>
+    this.clasesCeaCreadoAlertas().reduce((acc, a) => acc + a.cantidad, 0),
+  );
+
+  puedeVerAlertaCea = computed(() =>
+    this.permisos.tiene(['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar']),
+  );
+
+  tituloClaseCeaCreada(prog: AlertaClaseCeaCreada): string {
+    const nombre = this.nombreCompleto() || 'Alumno';
+    const suf = prog.cantidad > 1 ? ` (${prog.cantidad} clases)` : '';
+    return `Pendiente programar clase licencia ${prog.programaLabel}${suf} — ${nombre}`;
+  }
+
   etiquetaSaldo = etiquetaSaldoCorta;
   tituloSaldoItem = tituloSaldoItem;
 
@@ -133,6 +156,17 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
         return;
       }
       this.revisarSaldosPendientes(nd);
+    });
+
+    effect(() => {
+      const nd = this.store.numDoc();
+      const _liqTouch = this.store.liqTick();
+      if (this.esNuevo() || nd == null || !this.puedeVerAlertaCea()) {
+        this.clasesCeaCreadoAlertas.set([]);
+        return;
+      }
+      void _liqTouch;
+      this.revisarClasesCeaCreado(nd);
     });
   }
 
@@ -182,6 +216,32 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     this.setTab('pagos');
   }
 
+  irProgramacion() {
+    this.setTab('programacion');
+  }
+
+  revisarClasesCeaCreado(numDoc: number | string) {
+    if (!this.alarmas.tiene('alarmas.alumnos.clases_cea_creado')) {
+      this.clasesCeaCreadoAlertas.set([]);
+      return;
+    }
+    this.ceaSvc.clasesAlumno(numDoc).subscribe({
+      next: (rows) => {
+        const map = new Map<string, number>();
+        for (const c of rows || []) {
+          if (c.estado !== 'CREADO') continue;
+          const label = c.programaLabel || c.idProg || 'Licencia';
+          map.set(label, (map.get(label) || 0) + 1);
+        }
+        const alertas = [...map.entries()]
+          .map(([programaLabel, cantidad]) => ({ programaLabel, cantidad }))
+          .sort((a, b) => a.programaLabel.localeCompare(b.programaLabel, 'es'));
+        this.clasesCeaCreadoAlertas.set(alertas);
+      },
+      error: () => this.clasesCeaCreadoAlertas.set([]),
+    });
+  }
+
   revisarSaldosPendientes(numDoc: number | string) {
     this.liqSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {
@@ -224,6 +284,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     this.errorMsg.set(null);
     this.docsPendientes.set([]);
     this.saldosPendientes.set([]);
+    this.clasesCeaCreadoAlertas.set([]);
     this.alumnoSvc
       .porId(idNorm)
       .pipe(finalize(() => this.loading.set(false)))

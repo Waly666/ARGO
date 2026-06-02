@@ -1,0 +1,26 @@
+@if (visible()) {
+  <div class="head-alarm-root">
+    <button
+      type="button"
+      class="head-alarm-close"
+      (click)="cerrar($event)"
+      aria-label="Cerrar aviso de certificados por vencer">
+      Cerrar <span aria-hidden="true">×</span>
+    </button>
+    <div class="head-alarm-wrap">
+      <button
+        type="button"
+        class="head-alarm"
+        [ngClass]="toneClass()"
+        (click)="irCertificados()"
+        [title]="'Certificados por vencer — aviso desde ' + (alertSvc.data()?.diasVentana ?? 15) + ' días antes hasta el vencimiento'">
+        <span class="head-alarm-pulse" aria-hidden="true"></span>
+        <span class="head-alarm-icon" aria-hidden="true">⚠</span>
+        <span class="head-alarm-body">
+          <span class="head-alarm-title">{{ titulo() }}</span>
+          <span class="head-alarm-detail">{{ detalle() }}</span>
+        </span>
+      </button>
+    </div>
+  </div>
+}

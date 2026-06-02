@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
+import { rutaInicioApp } from '../../core/utils/auth-routes.util';
 
 @Component({
   selector: 'argo-login',
@@ -46,9 +47,13 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
     this.error.set(null);
     this.loading.set(true);
     this.auth.login(this.username().trim(), this.password()).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading.set(false);
-        this.router.navigateByUrl('/app/dashboard');
+        this.router.navigateByUrl(
+          rutaInicioApp(res.user?.permisos, {
+            puedeUsarPortalInstructor: res.user?.puedeUsarPortalInstructor === true,
+          }),
+        );
       },
       error: (err) => {
         this.loading.set(false);

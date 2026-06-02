@@ -1,4 +1,9 @@
-.servicios { display: flex; flex-direction: column; gap: 14px; }
+.servicios {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: visible;
+}
 
 .saldo-servicios { margin-bottom: 2px; }
 
@@ -28,6 +33,23 @@ table.nested { font-size: .88rem; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
+  position: relative;
+  z-index: 1;
+
+  &:has(argo-catalogo-enum-buscar.dropdown-open) {
+    z-index: 5000;
+  }
+
+  .card {
+    overflow: visible;
+    position: relative;
+  }
+}
+
+.servicios > .card {
+  position: relative;
+  z-index: 0;
+  overflow: visible;
 }
 
 .row {
@@ -35,9 +57,15 @@ table.nested { font-size: .88rem; }
   grid-template-columns: repeat(12, 1fr);
   gap: 12px;
   margin-bottom: 10px;
+  overflow: visible;
 }
-.col-3  { grid-column: span 3; }
-.col-6  { grid-column: span 6; }
+.col-3  { grid-column: span 3; position: relative; z-index: 0; }
+.col-6  { grid-column: span 6; position: relative; z-index: 0; }
+
+.row .col-3:has(argo-catalogo-enum-buscar.dropdown-open),
+.row .col-6:has(argo-catalogo-enum-buscar.dropdown-open) {
+  z-index: 5000;
+}
 
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 

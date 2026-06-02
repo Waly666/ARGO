@@ -1,5 +1,5 @@
 const DocVehiculo = require('../models/DocVehiculo');
-const InspeccionVehiculo = require('../models/InspeccionVehiculo');
+const InspTecPreop = require('../models/InspTecPreop');
 const {
   obtenerConfigRequisitosDocumentosVehiculos,
   cargarIndiceClases,
@@ -20,7 +20,7 @@ async function enriquecerIndicadoresLista(items) {
     DocVehiculo.find({ placa: { $in: placas } }).lean(),
     obtenerConfigRequisitosDocumentosVehiculos(),
     cargarIndiceClases(),
-    InspeccionVehiculo.find({ fecha: hoy, placa: { $in: placas } }).select('placa').lean(),
+    InspTecPreop.find({ fecha: hoy, placa: { $in: placas } }).select('placa').lean(),
   ]);
 
   const placasConInspeccion = new Set(

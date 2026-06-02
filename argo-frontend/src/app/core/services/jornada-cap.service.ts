@@ -202,7 +202,7 @@ export class JornadaCapService {
     return this.http.patch<JornadaCapDto>(`${this.base}/jornadas/${id}`, dto);
   }
 
-  /** Municipio/departamento según lat/lng (OpenStreetMap + Divipola). */
+  /** Municipio/departamento según lat/lng (proveedor configurable + Divipola). */
   resolverMunicipioGeoref(lat: number, lng: number): Observable<{
     municipio: string;
     depto: string;
@@ -226,6 +226,10 @@ export class JornadaCapService {
     if (opts?.idContrato) p = p.set('idContrato', opts.idContrato);
     if (opts?.creadoDesde) p = p.set('creadoDesde', opts.creadoDesde);
     return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases`, { params: p });
+  }
+
+  obtenerClase(id: string): Observable<ClaseJornadaDto> {
+    return this.http.get<ClaseJornadaDto>(`${this.base}/clases/${id}`);
   }
 
   listarClasesDelDia(fecha?: string): Observable<ClaseJornadaDto[]> {

@@ -1,29 +1,43 @@
 # ARGO
 
-**Software para CEAs** (Centros de Enseñanza Automovilística) — gestión de alumnos, matrículas, liquidaciones, caja, recibos, certificados y recursos humanos.
+**Software para CEAs** (Centros de Enseñanza Automovilística) — gestión integral de alumnos, matrículas, caja, certificados, programación académica, jornadas, vehículos y recursos humanos.
+
+**Estado:** producto en uso operativo con desarrollo activo. Módulo de **facturación electrónica** aún pendiente.
 
 ## Documentación
 
 | Archivo | Para qué sirve |
 |---------|----------------|
-| **[ARGO-CONTEXTO.md](./ARGO-CONTEXTO.md)** | Contexto completo del sistema: arquitectura, módulos, permisos, modelos, API, rutas y convenciones. **Recomendado para IAs y nuevos desarrolladores.** |
-| `argo-frontend/README.md` | Notas del proyecto Angular (CLI) |
+| **[ARGO-FACTO.md](./ARGO-FACTO.md)** | Resumen ejecutivo: módulos, madurez, stack, pendientes |
+| **[ARGO-ESPECIFICACIONES.md](./ARGO-ESPECIFICACIONES.md)** | Requisitos funcionales, reglas de negocio y alarmas |
+| **[ARGO-CONTEXTO.md](./ARGO-CONTEXTO.md)** | Arquitectura, API, rutas, modelos y convenciones (**desarrolladores / IA**) |
+| `argo-frontend/README.md` | Notas del proyecto Angular |
 
 ## Módulos principales
 
-- **Alumnos** — ficha, documentos, matrículas, pagos y certificados
-- **Programas y servicios** — catálogo académico del CEA
-- **Cobros** — liquidaciones y cartera por cobrar
-- **Caja** — apertura por cajero, ingresos, egresos, arqueo, cierres y descuadres
-- **Dashboard** — indicadores ejecutivos y resumen financiero
-- **RRHH / nómina** — empleados, contratos, períodos y novedades
-- **Configuración** — usuarios, roles y permisos (RBAC), catálogos, recibos, auditoría
+| Módulo | Descripción breve |
+|--------|-------------------|
+| **Alumnos** | Ficha, documentos, matrículas, pagos, certificados |
+| **Programas y servicios** | Catálogo académico, tarifas, formato de certificado |
+| **Caja** | Turno, ingresos, egresos, arqueo, cierres, descuadres, cierre general |
+| **Certificados** | Emisión por tipo (curso, licencia, MP, jornadas…), plantillas, alertas |
+| **Programación CEA** | Teoría/taller/práctica, calendario, rastreo alumno |
+| **Jornadas Cap.** | Contratos empresa, carpas, asistencia, certificado automático |
+| **Vehículos** | Flota, documentos, inspección preoperacional |
+| **Instructores** | Hub y portal del instructor |
+| **Dashboard** | KPIs y resumen financiero |
+| **RRHH / nómina** | Empleados, contratos, períodos, novedades |
+| **Configuración** | Usuarios, roles, permisos, alarmas, catálogos, auditoría |
+| **Sedes** | Multi-sede con filtro por usuario |
+| **Facturación** | ⏳ Pendiente (placeholder) |
 
 ## Estructura del repositorio
 
 ```
 ARGO/
-├── ARGO-CONTEXTO.md      # Guía de contexto (IA / onboarding)
+├── ARGO-FACTO.md
+├── ARGO-ESPECIFICACIONES.md
+├── ARGO-CONTEXTO.md
 ├── argo-backend/         # API Node.js + Express + MongoDB
 └── argo-frontend/        # SPA Angular 19
 ```
@@ -34,7 +48,7 @@ ARGO/
 |------|------------|
 | Backend | Node.js 20+, Express 4, Mongoose 8 |
 | Base de datos | MongoDB |
-| Autenticación | JWT |
+| Autenticación | JWT + RBAC (`RolApp`) |
 | Frontend | Angular 19 (standalone), pnpm |
 | Moneda / locale | COP, `es-CO` |
 
@@ -50,7 +64,7 @@ ARGO/
 # Backend (terminal 1)
 cd argo-backend
 pnpm install
-cp .env.example .env   # editar MONGO_URI, JWT_SECRET, etc.
+# Crear argo-backend/.env (MONGO_URI, JWT_SECRET, PORT, …)
 pnpm run dev
 
 # Frontend (terminal 2)
@@ -62,21 +76,21 @@ pnpm start
 - API: `http://localhost:3000` — health: `GET /api/health`
 - App: `http://localhost:4200`
 
-Al iniciar, el backend muestra enlaces **Local** y **Red (LAN)** con la IP de la PC servidor.
+Al iniciar, el backend muestra enlaces **Local** y **Red (LAN)** con la IP del servidor.
 
 ### Abrir desde otro equipo en la misma red
 
 1. Inicie backend y frontend en la PC servidor.
-2. En la consola del backend copie la URL tipo `http://192.168.x.x:3000`.
-3. En el otro equipo abra: `http://192.168.x.x:4200` (misma IP, puerto 4200).
+2. Copie la URL LAN del backend (ej. `http://192.168.x.x:3000`).
+3. En el otro equipo abra `http://192.168.x.x:4200`.
 
-El frontend usa automáticamente el hostname del navegador para llamar al API (`argo-frontend/src/environments/environment.ts`).
+El frontend resuelve `apiUrl` con el hostname del navegador (`argo-frontend/src/environments/environment.ts`).
 
-**Windows:** si no carga, permita Node.js en el firewall (puertos **3000** y **4200**).
+**Windows:** permita Node.js en firewall (puertos **3000** y **4200**).
 
 ## Variables de entorno (backend)
 
-Copie `argo-backend/.env.example` a `argo-backend/.env`:
+Cree `argo-backend/.env` con al menos:
 
 | Variable | Descripción |
 |----------|-------------|
@@ -92,16 +106,21 @@ Copie `argo-backend/.env.example` a `argo-backend/.env`:
 
 ```bash
 cd argo-backend
-pnpm run dev              # desarrollo con nodemon
-pnpm run seed             # datos base
+pnpm run dev                    # desarrollo con nodemon
+pnpm run seed                   # datos base
 pnpm run seed:users
 pnpm run seed:catalogos
 pnpm run seed:config
+pnpm run migrate:numdoc
+pnpm run migrate:tipo-alumno
+pnpm run migrate:tipo-certificado
+pnpm run cea:depurar-clases     # listar clases CEA depurables
+pnpm run jornadas:migrar-sede:dry
 ```
 
 ## Roles por defecto
 
-Al arrancar el API se inicializan roles en BD (`admin`, `cajero`, `instructor`, `recepcion`, `usuario`). Los permisos se administran en **Configuración → Roles y permisos**. Detalle en [ARGO-CONTEXTO.md](./ARGO-CONTEXTO.md#5-autenticación-y-permisos-rbac).
+Al arrancar el API se inicializan roles (`admin`, `cajero`, `instructor`, `recepcion`, `usuario`). Permisos y **alarmas** se administran en **Configuración → Roles, permisos y alarmas**. Detalle en [ARGO-CONTEXTO.md](./ARGO-CONTEXTO.md#5-autenticación-y-permisos-rbac).
 
 ## Build producción (frontend)
 
@@ -114,4 +133,4 @@ Salida en `argo-frontend/dist/argo-frontend`.
 
 ## Licencia / uso
 
-Proyecto privado de gestión operativa para CEAs. Consulte `ARGO-CONTEXTO.md` antes de cambios arquitectónicos o de permisos.
+Proyecto privado de gestión operativa para CEAs. Consulte [ARGO-ESPECIFICACIONES.md](./ARGO-ESPECIFICACIONES.md) y [ARGO-CONTEXTO.md](./ARGO-CONTEXTO.md) antes de cambios arquitectónicos o de permisos.

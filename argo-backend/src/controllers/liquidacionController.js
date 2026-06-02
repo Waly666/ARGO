@@ -3,6 +3,7 @@ const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { parseNumDoc, numDocFromParams, numDocQuery } = require('../utils/numDoc');
+const { buscarNumDocsAlumno } = require('../utils/busquedaAlumnoNombre');
 const {
   servicioPermiteCantidad,
   descripcionConCantidad,
@@ -73,26 +74,16 @@ exports.listarConSaldo = async (req, res, next) => {
     const limit = Math.min(2000, Math.max(1, Number(req.query.limit) || 500));
 
     let filtro = filtroSaldoPendiente();
+    if (req.idSede) {
+      filtro = { ...filtro, idSede: String(req.idSede).trim() };
+    }
 
     if (q) {
       const nd = parseNumDoc(q);
       if (nd != null) {
         filtro = filtroSaldoPendiente({ numDoc: nd });
       } else {
-        const esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(esc, 'i');
-        const alumnos = await DatosAlumno.find({
-          $or: [
-            { nombre1: regex },
-            { nombre2: regex },
-            { apellido1: regex },
-            { apellido2: regex },
-          ],
-        })
-          .select('numDoc')
-          .limit(300)
-          .lean();
-        const numDocs = alumnos.map((a) => a.numDoc).filter((n) => n != null);
+        const numDocs = await buscarNumDocsAlumno(DatosAlumno, q);
         if (!numDocs.length) {
           return res.json({
             items: [],
@@ -181,7 +172,8 @@ exports.listarPorAlumno = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
-    const docs = await Liquidacion.find(numDocQuery(numDoc)).sort({ createdAt: -1 });
+    const filter = numDocQuery(numDoc);
+    const docs = await Liquidacion.find(filter).sort({ createdAt: -1 });
     const items = docs.map(plano);
     const totales = items.reduce(
       (acc, it) => {

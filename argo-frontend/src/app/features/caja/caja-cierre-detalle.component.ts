@@ -150,13 +150,16 @@ export class CajaCierreDetalleComponent implements OnInit {
     return buildMetodosPagoCards(rows);
   });
 
+  sedeLabel = computed(() => {
+    const nombre = String(this.empresaConfig()?.nombreSede || '').trim();
+    if (nombre) return nombre;
+    const sid = String(this.sesion()?.idSede || '').trim();
+    return sid || '';
+  });
+
   ngOnInit(): void {
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
       next: (t) => this.tiposPagoCat.set(t || []),
-    });
-    this.configSvc.obtenerRecibo().subscribe({
-      next: (c) => this.empresaConfig.set(c),
-      error: () => this.empresaConfig.set(null),
     });
     this.route.paramMap.subscribe((p) => {
       const id = Number(p.get('idSesion'));
@@ -175,6 +178,7 @@ export class CajaCierreDetalleComponent implements OnInit {
         this.resumen.set(r.resumen);
         this.descuadre.set(r.descuadre ?? null);
         this.valorCuadre.set(r.descuadre?.montoDebe ?? 0);
+        this.cargarEncabezado(r.sesion?.idSede);
         this.loading.set(false);
       },
       error: (e) => {
@@ -273,7 +277,13 @@ export class CajaCierreDetalleComponent implements OnInit {
       ingresos: this.ingresos(),
       egresos: this.egresos(),
       descuadre: this.descuadre(),
-      empresa: this.empresaConfig(),
+    });
+  }
+
+  private cargarEncabezado(idSede?: string | null): void {
+    this.configSvc.obtenerReciboEncabezado(idSede || undefined).subscribe({
+      next: (c) => this.empresaConfig.set(c),
+      error: () => this.empresaConfig.set(null),
     });
   }
 

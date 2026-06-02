@@ -6,8 +6,9 @@
         <span class="cap cap-violet cap-sm">Seguridad</span>
       </div>
       <p class="hint">
-        Configure qué módulos puede ver y qué alarmas recibe cada rol. Los usuarios heredan permisos y alarmas del rol asignado.
-        Si edita el rol de otro usuario, ese usuario debe cerrar sesión y volver a entrar para ver el menú actualizado.
+        Configure qué módulos puede ver y qué alarmas recibe cada rol. Al guardar, los cambios se aplican
+        de inmediato en el servidor; el menú de cada usuario se actualiza solo en ~30 segundos.
+        Todo rol con permisos incluye «Panel principal (dashboard)» para poder iniciar sesión.
       </p>
     </div>
     <div class="head-actions">
@@ -70,7 +71,7 @@
           </div>
         </header>
 
-        <section class="editor-section">
+        <section class="editor-section argo-form-shell">
           <div class="section-label">
             <span class="cap cap-slate cap-sm">Datos del rol</span>
           </div>
@@ -115,7 +116,7 @@
         </section>
 
         <section
-          class="editor-section permisos-section"
+          class="editor-section permisos-section argo-form-shell"
           *ngIf="!(seleccionado()?.codigo === 'admin' && seleccionado()?.esSistema)">
           <div class="section-label">
             <span class="cap cap-amber cap-sm">Permisos de acceso</span>
@@ -154,7 +155,7 @@
         </section>
 
         <section
-          class="editor-section permisos-section alarmas-section"
+          class="editor-section permisos-section alarmas-section argo-form-shell"
           *ngIf="!(seleccionado()?.codigo === 'admin' && seleccionado()?.esSistema)">
           <div class="section-label">
             <span class="cap cap-rose cap-sm">Alarmas y avisos</span>

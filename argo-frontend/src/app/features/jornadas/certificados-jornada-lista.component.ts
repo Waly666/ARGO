@@ -14,7 +14,12 @@ import {
 } from '../alumnos/catalogo.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { esFechaHoy } from './jornada-calendario.util';
+import { coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
 import {
   capAlumnoNombre,
   capCertCodigo,
@@ -51,7 +56,7 @@ export interface CertificadoJornadaItem {
 @Component({
   selector: 'argo-certificados-jornada-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent],
+  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
   templateUrl: './certificados-jornada-lista.component.html',
   styleUrls: ['./certificados-jornada-lista.component.scss'],
 })
@@ -81,6 +86,12 @@ export class CertificadosJornadaListaComponent implements OnInit {
   editFechaVencimiento = signal('');
 
   readonly tiposCertificadoCat = TIPOS_ALUMNO_DEF;
+
+  opcionesTipoCertificado = computed<EnumBuscarOption[]>(() =>
+    this.tiposCertificadoCat.map((t) => ({ value: t, label: t })),
+  );
+
+  textoTipoCertificadoEdit = computed(() => this.editTipoCertificado() || '');
   readonly capCertCodigo = capCertCodigo;
   readonly capAlumnoNombre = capAlumnoNombre;
   readonly capDocAsis = capDocAsis;
@@ -99,25 +110,22 @@ export class CertificadosJornadaListaComponent implements OnInit {
   );
 
   filtrados = computed(() => {
-    const q = this.filtro().trim().toLowerCase();
+    const q = this.filtro().trim();
     const list = this.certificados();
     if (!q) return list;
     return list.filter((c) => {
-      const nombre = String(c.nombreCompleto || '').toLowerCase();
-      const enc = String(c.encabezado || '').toLowerCase();
-      const cod = String(c.codigoCert || '').toLowerCase();
-      const doc = String(c.numDoc ?? '').toLowerCase();
-      const contrato = String(c.codContrato || '').toLowerCase();
-      const ubicacion = String(
-        c.ubicacionJornada || ubicacionJornadaLabel(c.municipio, c.direccion),
-      ).toLowerCase();
+      const enc = String(c.encabezado || '');
+      const cod = String(c.codigoCert || '');
+      const doc = String(c.numDoc ?? '');
+      const contrato = String(c.codContrato || '');
+      const ubicacion = String(c.ubicacionJornada || ubicacionJornadaLabel(c.municipio, c.direccion));
       return (
-        nombre.includes(q) ||
-        enc.includes(q) ||
-        cod.includes(q) ||
-        doc.includes(q) ||
-        contrato.includes(q) ||
-        ubicacion.includes(q)
+        coincideBusquedaTexto(c.nombreCompleto, q) ||
+        coincideBusquedaTexto(enc, q) ||
+        coincideBusquedaTexto(cod, q) ||
+        doc.includes(q.replace(/\D/g, '')) ||
+        coincideBusquedaTexto(contrato, q) ||
+        coincideBusquedaTexto(ubicacion, q)
       );
     });
   });
@@ -142,6 +150,14 @@ export class CertificadosJornadaListaComponent implements OnInit {
         this.msg.set(e?.error?.message || 'No se pudo cargar los certificados.');
       },
     });
+  }
+
+  onTipoCertPick(opt: EnumBuscarOption): void {
+    this.editTipoCertificado.set(normalizarTipoAlumno(String(opt.value)) as TipoAlumno);
+  }
+
+  onTipoCertLimpiar(): void {
+    this.editTipoCertificado.set(TIPO_JORNADAS_CAPACITACION);
   }
 
   abrirEditar(id: string) {

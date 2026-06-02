@@ -4,6 +4,15 @@ const { normalizeLayoutPorTipo } = require('./certificadoLayout');
 
 const CLAVE = 'certificado';
 
+const DEFAULT_DIAS_AVISO_POR_VENCER = 15;
+const DEFAULT_DIAS_AVISO_VENCIDO = 3;
+
+function normalizeDiasAvisoCert(val, fallback, max = 365) {
+  const n = parseInt(String(val ?? ''), 10);
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.min(n, max);
+}
+
 const DEFAULTS = {
   clave: CLAVE,
   nombreInstitucion: 'ARGO — Centro de Formación en Conducción',
@@ -14,6 +23,10 @@ const DEFAULTS = {
   urlFirmaInstructor: '',
   prefijoCertificado: 'CERT',
   consecutivoCertificado: 0,
+  /** Días antes del vencimiento para la alarma «por vencer» (banner superior). */
+  diasAvisoCertificadoPorVencer: DEFAULT_DIAS_AVISO_POR_VENCER,
+  /** Días después del vencimiento para la alarma «vencidos» (banner superior). */
+  diasAvisoCertificadoVencido: DEFAULT_DIAS_AVISO_VENCIDO,
   /** QR global en todos los certificados emitidos */
   mostrarQr: true,
   qrPosicion: 'inferior_izquierda',
@@ -33,6 +46,16 @@ async function obtenerConfigCertificado() {
   if (merged.mostrarQr == null) merged.mostrarQr = true;
   if (!merged.qrPosicion) merged.qrPosicion = 'inferior_izquierda';
   merged.qrTamanoPx = Math.min(140, Math.max(40, parseInt(merged.qrTamanoPx, 10) || 72));
+  merged.diasAvisoCertificadoPorVencer = normalizeDiasAvisoCert(
+    merged.diasAvisoCertificadoPorVencer,
+    DEFAULT_DIAS_AVISO_POR_VENCER,
+    60,
+  );
+  merged.diasAvisoCertificadoVencido = normalizeDiasAvisoCert(
+    merged.diasAvisoCertificadoVencido,
+    DEFAULT_DIAS_AVISO_VENCIDO,
+    30,
+  );
   return merged;
 }
 
@@ -51,4 +74,12 @@ async function siguienteCodigoCertificado() {
   return `${pref}-${String(n).padStart(6, '0')}`;
 }
 
-module.exports = { CLAVE, DEFAULTS, obtenerConfigCertificado, siguienteCodigoCertificado };
+module.exports = {
+  CLAVE,
+  DEFAULTS,
+  DEFAULT_DIAS_AVISO_POR_VENCER,
+  DEFAULT_DIAS_AVISO_VENCIDO,
+  normalizeDiasAvisoCert,
+  obtenerConfigCertificado,
+  siguienteCodigoCertificado,
+};

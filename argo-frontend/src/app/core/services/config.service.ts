@@ -47,9 +47,11 @@ export interface ConfigRecibo {
   _id?: string;
   clave?: string;
   nombreEmpresa?: string;
+  nombreSede?: string;
   nit?: string;
   direccion?: string;
   ciudad?: string;
+  departamento?: string;
   telefono?: string;
   email?: string;
   urlLogo?: string;
@@ -70,12 +72,77 @@ export interface ConfigRecibo {
   mostrarQr?: boolean;
 }
 
+export interface GeorefProveedorOpcion {
+  id: string;
+  label: string;
+}
+
+export interface ConfigGeoref {
+  proveedor?: string;
+  hereAppId?: string;
+  apiKeyConfigurada?: boolean;
+  apiKeyEnmascarada?: string;
+  _actualizadoEn?: string | null;
+}
+
+export interface GeorefMapaConfig {
+  proveedor?: string;
+  hereApiKey?: string;
+}
+
+export interface GeorefPruebaResultado {
+  config: ConfigGeoref;
+  resultado: {
+    municipio: string;
+    depto: string;
+    codMunicipio: string | null;
+    fuente: string;
+    proveedor?: string;
+    etiquetaMapa?: string | null;
+  };
+}
+
+export interface ConfigFacturacion {
+  proveedor?: string;
+  ambiente?: string;
+  baseUrl?: string;
+  clientId?: string;
+  clientSecretEnmascarado?: string;
+  secretConfigurado?: boolean;
+  username?: string;
+  passwordEnmascarado?: string;
+  passwordConfigurado?: boolean;
+  numberingRangeId?: number | null;
+  modoEmision?: string;
+  valorIncluyeIva?: boolean;
+  sendEmail?: boolean;
+  activo?: boolean;
+  emisorNit?: string;
+  emisorDv?: string;
+  emisorRazonSocial?: string;
+  emisorResponsabilidadFiscal?: string;
+  emisorRegimen?: string;
+  emisorActividadEconomica?: string;
+  emisorMunicipioCodigo?: string;
+  ivaPorDefecto?: number;
+  prefijoDesarrollo?: string;
+  credencialesCompletas?: boolean;
+  listoParaFactus?: boolean;
+  _actualizadoEn?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
   private http = inject(HttpClient);
 
   obtenerRecibo(): Observable<ConfigRecibo> {
     return this.http.get<ConfigRecibo>(`${environment.apiUrl}/config/recibo`);
+  }
+
+  /** Encabezado operativo (institución + datos de la sede) para documentos de caja. */
+  obtenerReciboEncabezado(idSede?: string | null): Observable<ConfigRecibo> {
+    const params = idSede ? { idSede } : undefined;
+    return this.http.get<ConfigRecibo>(`${environment.apiUrl}/config/recibo/encabezado`, { params });
   }
 
   guardarRecibo(data: ConfigRecibo): Observable<ConfigRecibo> {
@@ -92,5 +159,43 @@ export class ConfigService {
 
   restaurarNominaDefaults(): Observable<ConfigNomina> {
     return this.http.post<ConfigNomina>(`${environment.apiUrl}/config/nomina/restaurar`, {});
+  }
+
+  listarProveedoresGeoref(): Observable<GeorefProveedorOpcion[]> {
+    return this.http.get<GeorefProveedorOpcion[]>(`${environment.apiUrl}/config/georef/proveedores`);
+  }
+
+  obtenerGeoref(): Observable<ConfigGeoref> {
+    return this.http.get<ConfigGeoref>(`${environment.apiUrl}/config/georef`);
+  }
+
+  /** Proveedor y credenciales para capas del mapa (usuarios autenticados). */
+  obtenerGeorefMapa(): Observable<GeorefMapaConfig> {
+    return this.http.get<GeorefMapaConfig>(`${environment.apiUrl}/config/georef/mapa`);
+  }
+
+  guardarGeoref(data: Partial<ConfigGeoref> & { hereApiKey?: string }): Observable<ConfigGeoref> {
+    return this.http.put<ConfigGeoref>(`${environment.apiUrl}/config/georef`, data);
+  }
+
+  probarGeoref(lat: number, lng: number): Observable<GeorefPruebaResultado> {
+    return this.http.post<GeorefPruebaResultado>(`${environment.apiUrl}/config/georef/probar`, { lat, lng });
+  }
+
+  obtenerFacturacion(): Observable<ConfigFacturacion> {
+    return this.http.get<ConfigFacturacion>(`${environment.apiUrl}/config/facturacion`);
+  }
+
+  guardarFacturacion(
+    data: Partial<ConfigFacturacion> & { clientSecret?: string; password?: string },
+  ): Observable<ConfigFacturacion> {
+    return this.http.put<ConfigFacturacion>(`${environment.apiUrl}/config/facturacion`, data);
+  }
+
+  probarFacturacion(): Observable<{ ok: boolean; message: string; modo?: string }> {
+    return this.http.post<{ ok: boolean; message: string; modo?: string }>(
+      `${environment.apiUrl}/config/facturacion/probar`,
+      {},
+    );
   }
 }

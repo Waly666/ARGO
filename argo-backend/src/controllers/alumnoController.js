@@ -8,8 +8,16 @@ const { procesarCedulaImagen } = require('../services/cedulaOcr');
 const { obtenerConfigRequisitosDocumentos } = require('../services/configRequisitosDocumentos');
 const { calcularDocumentosRequeridos, patchDocsAlumno, validarDocumentosParaPrograma, validarDocumentosPendientesAlumno, mensajeDocumentosPendientes } = require('../services/alumnoDocumentos');
 const { enriquecerIndicadoresLista } = require('../services/alumnoIndicadores');
+const {
+  resolverJornadasFiltro,
+  numDocsParticipantesJornadas,
+  numDocsConCertificadoJornada,
+  filtroAlumnosPorNumDocs,
+  enriquecerCertificadoJornada,
+} = require('../services/alumnosJornadaCapLista');
 const mongoose = require('mongoose');
 const { parseNumDoc, numDocFromParams, numDocQueryNativo } = require('../utils/numDoc');
+const { filtroBusquedaAlumno } = require('../utils/busquedaAlumnoNombre');
 const {
   TIPO_ALUMNO_DEFAULT,
   TIPO_JORNADAS_CAPACITACION,
@@ -234,6 +242,9 @@ exports.listar = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
     const tipoQ = (req.query.tipoAlumno || '').toString().trim();
+    const idJornada = (req.query.idJornada || '').toString().trim();
+    const fechaJornada = (req.query.fechaJornada || '').toString().trim();
+    const certJornada = (req.query.certJornada || '').toString().trim().toLowerCase();
     const limit = Math.min(parseInt(req.query.limit, 10) || 25, 100);
     const skip = Math.max(parseInt(req.query.skip, 10) || 0, 0);
     const condiciones = [];
@@ -241,31 +252,47 @@ exports.listar = async (req, res, next) => {
       condiciones.push({ tipoAlumno: normalizarTipoAlumno(tipoQ) });
     }
     if (q) {
-      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(safe, 'i');
-      const or = [
-        { nombre1: re },
-        { nombre2: re },
-        { apellido1: re },
-        { apellido2: re },
-        { correo: re },
-        { celular: re },
-        { direccion: re },
-        { munOrigen: re },
-        { codMunicipio: re },
-      ];
-      const nd = parseNumDoc(q);
-      if (nd != null) or.unshift({ numDoc: nd });
-      const digits = q.replace(/\D/g, '');
-      if (digits.length >= 3) {
-        or.push({
-          $expr: {
-            $regexMatch: { input: { $toString: '$numDoc' }, regex: digits },
+      condiciones.push(filtroBusquedaAlumno(q));
+    }
+
+    let jornadaIds = [];
+    const filtroJornadaActivo = !!(idJornada || fechaJornada);
+    if (filtroJornadaActivo) {
+      jornadaIds = await resolverJornadasFiltro({ idJornada, fechaJornada });
+      if (!jornadaIds.length) {
+        return res.json({
+          items: [],
+          total: 0,
+          skip,
+          limit,
+          jornadaFiltro: { activo: true, jornadaIds: [], mensaje: 'No hay jornadas para el filtro indicado.' },
+        });
+      }
+      let numDocs = await numDocsParticipantesJornadas(jornadaIds);
+      if (certJornada === 'con' || certJornada === 'sin') {
+        const conCert = new Set(await numDocsConCertificadoJornada(jornadaIds));
+        numDocs =
+          certJornada === 'con'
+            ? numDocs.filter((nd) => conCert.has(nd))
+            : numDocs.filter((nd) => !conCert.has(nd));
+      }
+      if (!numDocs.length) {
+        return res.json({
+          items: [],
+          total: 0,
+          skip,
+          limit,
+          jornadaFiltro: {
+            activo: true,
+            jornadaIds: jornadaIds.map(String),
+            mensaje: 'No hay alumnos inscritos o con asistencia para el filtro indicado.',
           },
         });
       }
-      condiciones.push({ $or: or });
+      const filtroNum = filtroAlumnosPorNumDocs(numDocs);
+      if (filtroNum) condiciones.push(filtroNum);
     }
+
     const filter = condiciones.length === 0 ? {} : condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
     const sort = resolveSortAlumnos(req.query.sort, req.query.dir);
     const [docs, total] = await Promise.all([
@@ -275,7 +302,14 @@ exports.listar = async (req, res, next) => {
     let items = await enriquecerMunicipios(docs.map(mapListaItem));
     items = await enriquecerCatalogos(items);
     items = await enriquecerIndicadoresLista(items);
-    res.json({ items, total, skip, limit });
+    if (filtroJornadaActivo && jornadaIds.length) {
+      items = await enriquecerCertificadoJornada(items, jornadaIds);
+    }
+    const payload = { items, total, skip, limit };
+    if (filtroJornadaActivo) {
+      payload.jornadaFiltro = { activo: true, jornadaIds: jornadaIds.map(String) };
+    }
+    res.json(payload);
   } catch (e) {
     next(e);
   }
@@ -307,7 +341,7 @@ exports.escanearCedula = async (req, res, next) => {
 
 exports.porId = async (req, res, next) => {
   try {
-    const a = await DatosAlumno.findById(req.params.id).lean();
+    const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json(a);
   } catch (e) {
@@ -317,7 +351,7 @@ exports.porId = async (req, res, next) => {
 
 exports.documentosRequeridos = async (req, res, next) => {
   try {
-    const a = await DatosAlumno.findById(req.params.id).lean();
+    const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json(await calcularDocumentosRequeridos(a));
   } catch (e) {
@@ -327,7 +361,7 @@ exports.documentosRequeridos = async (req, res, next) => {
 
 exports.validarDocumentos = async (req, res, next) => {
   try {
-    const a = await DatosAlumno.findById(req.params.id).lean();
+    const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
     const idPrograma = req.query.idPrograma;
     if (idPrograma) {
@@ -354,7 +388,7 @@ exports.subirDocumento = async (req, res, next) => {
     const meta = config.tiposDocumento.find((t) => t.id === idDoc && t.activo !== false);
     if (!meta) return res.status(400).json({ message: 'Tipo de documento no configurado' });
 
-    const prev = await DatosAlumno.findById(req.params.id).lean();
+    const prev = await buscarAlumnoPorIdParam(req.params.id);
     if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
 
     const url = upload.publicUrl('alumnos', file.filename);
@@ -372,7 +406,7 @@ exports.subirDocumento = async (req, res, next) => {
       });
     }
 
-    const a = await DatosAlumno.findByIdAndUpdate(req.params.id, dto, { new: true }).lean();
+    const a = await DatosAlumno.findByIdAndUpdate(prev._id, dto, { new: true }).lean();
     const resumen = await calcularDocumentosRequeridos(a);
     res.json({ alumno: a, ...resumen });
   } catch (e) {
@@ -384,7 +418,7 @@ exports.porDocumento = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
-    const a = await DatosAlumno.findOne(numDocQuery(numDoc));
+    const a = await buscarAlumnoPorIdParam(String(numDoc));
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json(a);
   } catch (e) {
@@ -417,6 +451,7 @@ const CAMPOS_ALUMNO = [
   'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
   'regimenSalud', 'nivelFormacion', 'ocupacion', 'discapacidad', 'munOrigen', 'codMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
+  'duracionSesionPracticaCea',
 ];
 
 function nombreMayusculas(v) {
@@ -428,6 +463,23 @@ function nombreMayusculas(v) {
 
 function coleccionAlumnos() {
   return mongoose.connection.collection('datosAlumnos');
+}
+
+/** Acepta _id Mongo o numDoc en la URL (ej. /alumnos/1007122432). */
+async function buscarAlumnoPorIdParam(idParam) {
+  const raw = String(idParam || '').trim();
+  if (!raw) return null;
+
+  if (mongoose.isValidObjectId(raw)) {
+    const porId = await DatosAlumno.findById(raw).lean();
+    if (porId) return porId;
+  }
+
+  const numDoc = parseNumDoc(raw);
+  if (numDoc == null) return null;
+  const filter = numDocQueryNativo(numDoc);
+  if (!filter) return null;
+  return coleccionAlumnos().findOne(filter);
 }
 
 function filtroNumDocExcluyendo(numDoc, excludeId) {
@@ -530,7 +582,7 @@ exports.crear = async (req, res, next) => {
 
 exports.actualizar = async (req, res, next) => {
   try {
-    const prev = await DatosAlumno.findById(req.params.id).lean();
+    const prev = await buscarAlumnoPorIdParam(req.params.id);
     if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
     const dto = pickAlumno(req.body);
     if (dto.numDoc != null) {
@@ -538,7 +590,7 @@ exports.actualizar = async (req, res, next) => {
       if (dto.numDoc == null) {
         return res.status(400).json({ message: 'Número de documento inválido (use 6 a 11 dígitos)' });
       }
-      const dup = await alumnoConMismoNumDoc(dto.numDoc, req.params.id);
+      const dup = await alumnoConMismoNumDoc(dto.numDoc, prev._id);
       if (dup) return respuestaDuplicado(res, dup);
     }
     await aplicarArchivos(dto, req.files, prev);
@@ -546,7 +598,7 @@ exports.actualizar = async (req, res, next) => {
     dto.userChangeRecord = dto.userChangeRecord || req.user?.username || req.user?.sub || 'sistema';
     if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
 
-    const a = await DatosAlumno.findByIdAndUpdate(req.params.id, dto, { new: true });
+    const a = await DatosAlumno.findByIdAndUpdate(prev._id, dto, { new: true });
     res.json(a);
   } catch (e) {
     next(e);
@@ -555,7 +607,9 @@ exports.actualizar = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
-    const r = await DatosAlumno.findByIdAndDelete(req.params.id);
+    const prev = await buscarAlumnoPorIdParam(req.params.id);
+    if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
+    const r = await DatosAlumno.findByIdAndDelete(prev._id);
     if (!r) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json({ ok: true });
   } catch (e) {

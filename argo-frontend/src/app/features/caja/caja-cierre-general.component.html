@@ -7,6 +7,9 @@
         Un solo cierre general por día. Consolida todas las cajas que los cajeros ya cerraron y que aún no entraron en
         ningún cierre general (incluye días anteriores pendientes).
       </p>
+      <p class="hint sede-doc" *ngIf="sedeSvc.labelActiva() !== 'Sin sede'">
+        Sede operativa: <strong>{{ sedeSvc.labelActiva() }}</strong>
+      </p>
     </div>
     <a routerLink="/app/caja" class="ghost link-volver">← Volver al resumen del cajero</a>
   </header>

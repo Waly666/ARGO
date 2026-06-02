@@ -47,7 +47,9 @@ exports.listar = async (req, res, next) => {
       return res.json(data);
     }
 
-    const data = await models[nombre].find({}).lean();
+    const data = await models[nombre].find(
+      req.idSede && (nombre === 'aulas' || nombre === 'talleres') ? { idSede: req.idSede } : {},
+    ).lean();
     res.json(data);
   } catch (e) {
     next(e);
@@ -168,7 +170,7 @@ exports.buscarMunicipios = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
     const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
-    if (!q || q.length < 2) return res.json([]);
+    if (!q || q.length < 1) return res.json([]);
     const re = regexSinTildes(q);
     const data = await models.divipola
       .find({ $or: [{ nombreMunicipio: re }, { nombreDepto: re }, { codMunicipio: re }] })

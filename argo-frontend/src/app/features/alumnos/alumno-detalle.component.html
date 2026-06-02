@@ -20,7 +20,8 @@
           class="head-alarms"
           *ngIf="
             (alarmas.tiene('alarmas.alumnos.saldos') && saldosPendientesCount() > 0) ||
-            (alarmas.tiene('alarmas.alumnos.documentos') && docsPendientesCount() > 0)
+            (alarmas.tiene('alarmas.alumnos.documentos') && docsPendientesCount() > 0) ||
+            (alarmas.tiene('alarmas.alumnos.clases_cea_creado') && clasesCeaCreadoCount() > 0 && puedeVerAlertaCea())
           ">
           <button
             type="button"
@@ -61,6 +62,19 @@
             <span class="head-alarm-text">
               {{ docsPendientesCount() }} doc. pendiente{{ docsPendientesCount() > 1 ? 's' : '' }}
             </span>
+          </button>
+
+          <button
+            type="button"
+            class="head-alarm cea-alarm"
+            *ngFor="let prog of clasesCeaCreadoAlertas()"
+            [hidden]="!alarmas.tiene('alarmas.alumnos.clases_cea_creado') || !puedeVerAlertaCea()"
+            (click)="irProgramacion()"
+            [attr.title]="tituloClaseCeaCreada(prog)"
+            [attr.aria-label]="tituloClaseCeaCreada(prog)">
+            <span class="head-alarm-pulse" aria-hidden="true"></span>
+            <span class="head-alarm-icon" aria-hidden="true">⏱</span>
+            <span class="head-alarm-text">{{ tituloClaseCeaCreada(prog) }}</span>
           </button>
         </div>
       </div>

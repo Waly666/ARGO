@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Empleado, EmpleadoService } from '../../core/services/empleado.service';
 import { PermisoService } from '../../core/services/permiso.service';
@@ -18,6 +18,7 @@ import { environment } from '../../../environments/environment';
 export class InstructoresListaComponent implements OnInit {
   private svc = inject(EmpleadoService);
   private permisoSvc = inject(PermisoService);
+  private router = inject(Router);
 
   uploads = environment.uploadsUrl;
 
@@ -81,5 +82,10 @@ export class InstructoresListaComponent implements OnInit {
   labelAcceso(e: Empleado): string {
     if (!this.tieneUsuario(e)) return 'Sin acceso';
     return e.usuarioLogin || 'Vinculado';
+  }
+
+  irDetalle(e: Empleado, ev?: Event): void {
+    ev?.stopPropagation();
+    void this.router.navigate(['/app/instructores', e.idEmpleado]);
   }
 }

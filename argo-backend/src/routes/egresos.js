@@ -2,12 +2,12 @@ const { Router } = require('express');
 const ctrl = require('../controllers/egresoController');
 const reciboEgreso = require('../controllers/reciboEgresoController');
 const upload = require('../middleware/upload');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
 const soporte = upload.egresos.single('soporte');
 
-router.use(requireAuth);
+router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const turno = requirePermiso('caja.turno');
 const admin = requirePermiso('caja.admin');

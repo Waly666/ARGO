@@ -1,5 +1,7 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/configController');
+const georefCtrl = require('../controllers/configGeorefController');
+const facturacionCtrl = require('../controllers/configFacturacionController');
 const certCtrl = require('../controllers/configCertificadoController');
 const reqDocCtrl = require('../controllers/configRequisitosDocumentosController');
 const reqDocVehiCtrl = require('../controllers/configRequisitosDocumentosVehiculosController');
@@ -7,7 +9,7 @@ const reqDocEmpCtrl = require('../controllers/configRequisitosDocumentosEmpleado
 const fmtInspVehiCtrl = require('../controllers/configFormatoInspeccionVehiculosController');
 const nominaCfgCtrl = require('../controllers/configNominaController');
 const upload = require('../middleware/upload');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
 
 const router = Router();
 router.use(requireAuth);
@@ -24,6 +26,18 @@ router.put('/requisitos-documentos-empleados', requirePermiso('config.requisitos
 router.get('/formato-inspeccion-vehiculos', requirePermiso('config.requisitos'), fmtInspVehiCtrl.obtener);
 router.put('/formato-inspeccion-vehiculos', requirePermiso('config.requisitos'), fmtInspVehiCtrl.actualizar);
 
+router.get('/georef/mapa', requireAuth, georefCtrl.obtenerMapa);
+router.get('/georef/proveedores', requirePermiso('config.georef'), georefCtrl.catalogoProveedores);
+router.get('/georef', requirePermiso('config.georef'), georefCtrl.obtener);
+router.put('/georef', requirePermiso('config.georef'), georefCtrl.actualizar);
+router.post('/georef/probar', requirePermiso('config.georef'), georefCtrl.probar);
+
+router.get('/facturacion', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.obtener);
+router.put('/facturacion', requirePermiso('config.facturacion'), facturacionCtrl.actualizar);
+router.post('/facturacion/probar', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.probar);
+router.get('/facturacion/rangos', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.rangos);
+
+router.get('/recibo/encabezado', requireAuth, loadSedeActiva, ctrl.obtenerReciboEncabezado);
 router.get('/recibo', requirePermiso('config.recibos'), ctrl.obtenerRecibo);
 router.put('/recibo', requirePermiso('config.recibos'), ctrl.actualizarRecibo);
 

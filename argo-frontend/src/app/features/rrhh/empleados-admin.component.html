@@ -32,7 +32,7 @@
 
   <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
 
-  <div class="form-card card" *ngIf="mostrarForm()">
+  <div class="form-card card argo-form-shell" *ngIf="mostrarForm()">
     <h2>{{ editando() ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
 
     <nav class="form-tabs" *ngIf="editando()?.idEmpleado">
@@ -165,6 +165,14 @@
         </select>
       </div>
       <div class="col-3">
+        <label>Sede *</label>
+        <select [ngModel]="form().idSede" (ngModelChange)="patch('idSede', $event || undefined)">
+          <option [ngValue]="undefined">—</option>
+          <option *ngFor="let s of sedes()" [ngValue]="s.idSede">{{ s.nombre }}</option>
+        </select>
+        <p class="hint-inline">Se copia al usuario al crear cuenta automática (Cajero/Instructor).</p>
+      </div>
+      <div class="col-3">
         <label>Tipo contrato</label>
         <select [ngModel]="form().tipoContrato" (ngModelChange)="patch('tipoContrato', $event)">
           <option value="">—</option>
@@ -222,7 +230,7 @@
         <div>
           <h3 class="sec acceso-sec">Acceso al sistema</h3>
           <p class="hint acceso-hint" *ngIf="cargoSugiereAcceso()">
-            Cargo Cajero/Instructor: elija cómo asociar la cuenta de login.
+            Cargo Cajero/Instructor: elija cómo asociar la cuenta de login. La sede del empleado se hereda al usuario automático.
           </p>
           <p class="hint acceso-hint" *ngIf="!cargoSugiereAcceso()">
             Opcional: solo si este empleado debe ingresar al sistema.
@@ -298,6 +306,7 @@
         <th>Documento</th>
         <th>Nombre</th>
         <th>Cargo</th>
+        <th>Sede</th>
         <th>Usuario</th>
         <th>Depto.</th>
         <th>Estado</th>
@@ -316,6 +325,7 @@
         <td class="mono">{{ e.tipoDocumento }} {{ e.numeroDocumento }}</td>
         <td>{{ e.nombreCompleto }}</td>
         <td>{{ e.cargoNombre || '—' }}</td>
+        <td>{{ e.sedeNombre || e.idSede || '—' }}</td>
         <td class="mono sm">{{ e.usuarioLogin || '—' }}</td>
         <td>{{ e.departamentoNombre || '—' }}</td>
         <td>{{ e.estado }}</td>
@@ -329,7 +339,7 @@
         </td>
       </tr>
       <tr *ngIf="empleados().length === 0">
-        <td colspan="9" class="empty">Sin empleados.</td>
+        <td colspan="10" class="empty">Sin empleados.</td>
       </tr>
     </tbody>
   </table>

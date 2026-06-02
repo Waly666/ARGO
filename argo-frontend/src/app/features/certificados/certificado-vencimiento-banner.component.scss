@@ -1,0 +1,189 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@keyframes cert-vence-blink-hoy {
+  0%,
+  100% {
+    opacity: 1;
+    border-color: rgba(254, 202, 202, 1);
+    box-shadow: 0 0 24px rgba(239, 68, 68, 0.75), 0 0 40px rgba(220, 38, 38, 0.45);
+  }
+  50% {
+    opacity: 0.82;
+    border-color: rgba(248, 113, 113, 0.5);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+  }
+}
+
+@keyframes cert-vence-blink-critico {
+  0%,
+  100% {
+    opacity: 1;
+    border-color: rgba(251, 113, 133, 0.98);
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.55);
+  }
+  50% {
+    opacity: 0.84;
+    border-color: rgba(251, 113, 133, 0.45);
+  }
+}
+
+@keyframes cert-vence-blink-urgente {
+  0%,
+  100% {
+    opacity: 1;
+    border-color: rgba(217, 70, 239, 0.95);
+    box-shadow: 0 0 16px rgba(192, 38, 211, 0.45);
+  }
+  50% {
+    opacity: 0.88;
+  }
+}
+
+@keyframes cert-vence-blink-proximo {
+  0%,
+  100% {
+    opacity: 1;
+    border-color: rgba(129, 140, 248, 0.92);
+    box-shadow: 0 0 14px rgba(99, 102, 241, 0.38);
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes head-alarm-pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+
+.head-alarm {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 3.35rem;
+  padding: 8px 5.5rem 8px 12px;
+  border-radius: var(--btn-radius);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+
+  &.chip-alarm {
+    min-height: 2.6rem;
+    padding: 6px 12px;
+    font-size: 0.74rem;
+  }
+}
+
+.cert-vence-hoy {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.72), rgba(127, 29, 29, 0.82));
+  color: #fff1f2;
+  animation: cert-vence-blink-hoy 0.75s ease-in-out infinite;
+}
+
+.cert-vence-critico {
+  background: linear-gradient(180deg, rgba(244, 63, 94, 0.68), rgba(159, 18, 57, 0.78));
+  color: #ffe4e6;
+  animation: cert-vence-blink-critico 0.95s ease-in-out infinite;
+}
+
+.cert-vence-urgente {
+  background: linear-gradient(180deg, rgba(192, 38, 211, 0.62), rgba(112, 26, 117, 0.74));
+  color: #fae8ff;
+  animation: cert-vence-blink-urgente 1.1s ease-in-out infinite;
+}
+
+.cert-vence-proximo {
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.58), rgba(67, 56, 202, 0.72));
+  color: #e0e7ff;
+  animation: cert-vence-blink-proximo 1.25s ease-in-out infinite;
+}
+
+.cert-vence-aviso {
+  background: linear-gradient(180deg, rgba(20, 184, 166, 0.5), rgba(15, 118, 110, 0.65));
+  color: #ccfbf1;
+}
+
+.head-alarm-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  opacity: 0.45;
+  animation: head-alarm-pulse-ring 1.2s ease-out infinite;
+  pointer-events: none;
+}
+
+.head-alarm-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.head-alarm-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 2.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.head-alarm-title {
+  text-align: left;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.head-alarm-detail {
+  text-align: left;
+  line-height: 1.25;
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.94;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.head-alarm-text {
+  text-align: left;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+@import '../../shared/styles/head-alarm-uniform';
+
+.head-alarm-detail {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  overflow: hidden;
+  word-break: break-word;
+}

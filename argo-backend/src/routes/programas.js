@@ -1,10 +1,11 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/programaController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(loadSedeActiva);
 
 const ver = requirePermiso('programas.ver', 'programas.gestionar', 'programas.agregar');
 const agregar = requirePermiso('programas.agregar', 'programas.gestionar');

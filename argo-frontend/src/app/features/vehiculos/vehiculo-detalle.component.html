@@ -29,7 +29,7 @@
 
   <div class="loading card" *ngIf="loading()">Cargando…</div>
 
-  <div class="card form-panel" *ngIf="!loading() && tab() === 'datos'">
+  <div class="card form-panel argo-form-shell" *ngIf="!loading() && tab() === 'datos'">
     <div class="ident-layout">
       <div class="form-grid">
         <div class="row" *ngIf="!esNuevo() && vehiculoId()">
@@ -69,8 +69,9 @@
           <div class="col-4">
             <argo-catalogo-enum-buscar
               label="Marca"
-              placeholder="Escriba marca (ej. CHEVROLET, TOYOTA)…"
+              placeholder="Seleccione o escriba marca…"
               [textoInicial]="form().nombreMarca || ''"
+              [modoCombo]="true"
               [minLength]="1"
               [buscarRemoto]="buscarMarcasRemoto"
               (seleccionado)="onMarcaPick($event)"
@@ -80,8 +81,9 @@
           <div class="col-4">
             <argo-catalogo-enum-buscar
               label="Línea"
-              placeholder="Escriba línea (ej. SPARK, COROLLA)…"
+              placeholder="Seleccione o escriba línea…"
               [textoInicial]="form().nombreLinea || ''"
+              [modoCombo]="true"
               [minLength]="1"
               [disabled]="!form().codigoMarca"
               [buscarRemoto]="buscarLineasRemoto"
@@ -103,8 +105,9 @@
           <div class="col-4">
             <argo-catalogo-enum-buscar
               label="Clase vehículo"
-              placeholder="Escriba clase (ej. AUTOMOVIL, CAMIONETA)…"
+              placeholder="Seleccione o escriba clase…"
               [textoInicial]="form().claseVehiculo || ''"
+              [modoCombo]="true"
               [remoto]="false"
               [minLength]="1"
               [opcionesLocales]="opcionesClase()"
@@ -115,8 +118,9 @@
           <div class="col-4">
             <argo-catalogo-enum-buscar
               label="Carrocería"
-              placeholder="Escriba carrocería…"
+              placeholder="Seleccione o escriba carrocería…"
               [textoInicial]="form().carroceria || ''"
+              [modoCombo]="true"
               [remoto]="false"
               [minLength]="1"
               [disabled]="!carroceriasDisponibles().length"
@@ -306,9 +310,14 @@
           <p class="empty-docs">Sin documentos registrados.</p>
         </ng-template>
       </div>
+    </div>
 
-      <div class="doc-form card inner">
-        <h3>{{ docEdit() ? 'Editar documento' : 'Nuevo documento' }}</h3>
+    <argo-form-modal
+      [open]="docModalOpen()"
+      [title]="docEdit() ? 'Editar documento' : 'Nuevo documento'"
+      [wide]="true"
+      (closed)="cerrarDocModal()">
+      <div class="doc-modal-form argo-form-shell">
         <argo-catalogo-enum-buscar
           label="Tipo de documento"
           placeholder="Escriba tipo (ej. SOAT, licencia tránsito)…"
@@ -341,11 +350,14 @@
         <label>Archivo escaneado</label>
         <input type="file" accept="image/*,.pdf" (change)="onDocArchivo($event)" />
         <a *ngIf="docForm().urlArchivo as u" [href]="fotoUrl(u)" target="_blank" rel="noopener">Ver archivo actual</a>
+      </div>
+      <div modal-actions>
+        <button type="button" class="ghost" (click)="cerrarDocModal()">Cancelar</button>
         <button type="button" class="primary" [disabled]="docSaving()" (click)="guardarDocumento()">
           {{ docSaving() ? 'Guardando…' : 'Guardar documento' }}
         </button>
       </div>
-    </div>
+    </argo-form-modal>
   </div>
 
   <div class="card docs-panel" *ngIf="!loading() && tab() === 'inspeccion' && puedeDocumentos() && vehiculoId() as vid">

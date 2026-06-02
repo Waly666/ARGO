@@ -35,6 +35,8 @@ const EgresoSchema = new mongoose.Schema(
     autorizadoEn: { type: Date },
     /** Sesión de caja en la que se registró el egreso */
     idSesion: { type: Number, index: true },
+    /** Sede donde se registró el egreso */
+    idSede: { type: String, trim: true, index: true },
     /** Placa del vehículo (egresos tipo combustible, mantenimiento, etc.) */
     placa: { type: String, trim: true, index: true },
   },

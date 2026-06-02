@@ -11,6 +11,7 @@ const Certificado = require('../models/Certificado');
 const DatosAlumno = require('../models/DatosAlumno');
 const Matricula = require('../models/Matricula');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
+const { filtroBusquedaAlumno, coincideBusquedaAlumno, coincideBusquedaTexto } = require('../utils/busquedaAlumnoNombre');
 const { parseFechaCalendario, fechaCalendarioParaGuardar, fechaCalendarioIso } = require('../utils/fechaCalendario');
 const { calcNumeObjeJornada, generarJornadasContrato } = require('../services/programacionJornadas');
 const { cumplimientoParaJornada } = require('../services/cumplimientoJornadaCap');
@@ -62,6 +63,20 @@ async function dtoClaseConJornada(claseDoc) {
   if (!plain.fechaClase && j?.fechaProgramacion) {
     plain.fechaClase = inicioDia(j.fechaProgramacion);
   }
+  let codContrato = '';
+  let contratoLabel = '';
+  if (j?.idContrato) {
+    const contrato = await Contratacion.findById(j.idContrato)
+      .select('codContrato nombreComercial razoSocial')
+      .lean();
+    if (contrato) {
+      codContrato = String(contrato.codContrato || '').trim();
+      const cliente = String(contrato.nombreComercial || contrato.razoSocial || '').trim();
+      contratoLabel = codContrato
+        ? `${codContrato} — ${cliente || 'Contrato'}`
+        : cliente || '';
+    }
+  }
   const [enriched] = await enriquecerClases([
     {
       ...plain,
@@ -69,6 +84,9 @@ async function dtoClaseConJornada(claseDoc) {
       jornadaEstado: j?.estado,
       idContrato: j?.idContrato,
       municipioJornada: j?.municipio,
+      indiceEnDia: j?.indiceEnDia,
+      codContrato,
+      contratoLabel,
     },
   ]);
   return enriched;
@@ -546,6 +564,19 @@ exports.listarClases = async (req, res, next) => {
   }
 };
 
+exports.obtenerClase = async (req, res, next) => {
+  try {
+    const q = { _id: req.params.id };
+    const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
+    if (vacio) return res.status(404).json({ message: 'Clase no encontrada' });
+    const clase = await ClaseJornadaCap.findOne(q).lean();
+    if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
+    res.json(await dtoClaseConJornada(clase));
+  } catch (e) {
+    next(e);
+  }
+};
+
 /** Clases del día calendario (por defecto hoy): PROGRAMADA, EN PROCESO y FINALIZADO. Admin/ver: todas; instructor: solo las suyas. */
 exports.clasesDelDia = async (req, res, next) => {
   try {
@@ -774,13 +805,14 @@ exports.eliminarClase = async (req, res, next) => {
     const clase = await ClaseJornadaCap.findById(req.params.id);
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    const nAsis = await AsisClasJorCap.countDocuments({ idclaseJornada: clase._id });
-    if (nAsis > 0) {
-      return res.status(400).json({
-        message: `No se puede eliminar la clase: hay ${nAsis} asistencia(s). Borre primero la asistencia de cada alumno.`,
+    if (String(clase.estado || '').toUpperCase() === 'FINALIZADO') {
+      return res.status(409).json({
+        message:
+          'No se puede eliminar una clase finalizada. Conserva historial, asistencias y certificados emitidos.',
       });
     }
 
+    const asistencias = await AsisClasJorCap.deleteMany({ idclaseJornada: clase._id });
     const inscritos = await InscripcionClase.deleteMany({ idClase: clase._id });
     if (clase.urlforo) {
       const fotoPath = upload.resolvePath(clase.urlforo);
@@ -796,6 +828,7 @@ exports.eliminarClase = async (req, res, next) => {
     res.json({
       ok: true,
       message: 'Clase eliminada',
+      asistenciasEliminadas: asistencias.deletedCount || 0,
       inscripcionesEliminadas: inscritos.deletedCount || 0,
     });
   } catch (e) {
@@ -1123,7 +1156,7 @@ exports.certificadosGenerados = async (req, res, next) => {
       if (!Number.isNaN(d.getTime())) q.fechaEmision = { $gte: d };
     }
     const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(500).lean();
-    const qText = String(req.query.q || '').trim().toLowerCase();
+    const qRaw = String(req.query.q || '').trim();
 
     const jornadaIds = [...new Set(rows.map((c) => String(c.idJornada || '')).filter(Boolean))];
     const contratoIds = new Set(rows.map((c) => String(c.idContrato || '')).filter(Boolean));
@@ -1162,16 +1195,17 @@ exports.certificadosGenerados = async (req, res, next) => {
       const ubicacionJornada =
         municipio && direccion ? `${municipio} — ${direccion}` : municipio || direccion || '';
 
-      if (qText) {
+      if (qRaw) {
         const hay =
-          nombreCompleto.toLowerCase().includes(qText) ||
-          String(c.encabezado || '').toLowerCase().includes(qText) ||
-          String(c.codigoCert || '').toLowerCase().includes(qText) ||
-          String(c.numDoc ?? '').includes(qText) ||
-          codContrato.toLowerCase().includes(qText) ||
-          municipio.toLowerCase().includes(qText) ||
-          direccion.toLowerCase().includes(qText) ||
-          ubicacionJornada.toLowerCase().includes(qText);
+          (al && coincideBusquedaAlumno(al, qRaw)) ||
+          coincideBusquedaTexto(nombreCompleto, qRaw) ||
+          coincideBusquedaTexto(String(c.encabezado || ''), qRaw) ||
+          coincideBusquedaTexto(String(c.codigoCert || ''), qRaw) ||
+          String(c.numDoc ?? '').includes(qRaw.replace(/\D/g, '')) ||
+          coincideBusquedaTexto(codContrato, qRaw) ||
+          coincideBusquedaTexto(municipio, qRaw) ||
+          coincideBusquedaTexto(direccion, qRaw) ||
+          coincideBusquedaTexto(ubicacionJornada, qRaw);
         if (!hay) continue;
       }
       out.push({ ...c, nombreCompleto, municipio, direccion, ubicacionJornada, codContrato });
@@ -1218,25 +1252,7 @@ exports.buscarAlumnos = async (req, res, next) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 12, 30);
     const filter = {};
     if (q) {
-      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(safe, 'i');
-      const or = [
-        { nombre1: re },
-        { nombre2: re },
-        { apellido1: re },
-        { apellido2: re },
-      ];
-      const nd = parseNumDoc(q);
-      if (nd != null) or.unshift({ numDoc: nd });
-      const digits = q.replace(/\D/g, '');
-      if (digits.length >= 3) {
-        or.push({
-          $expr: {
-            $regexMatch: { input: { $toString: '$numDoc' }, regex: digits },
-          },
-        });
-      }
-      filter.$or = or;
+      Object.assign(filter, filtroBusquedaAlumno(q));
     }
     const docs = await DatosAlumno.find(filter)
       .sort({ apellido1: 1, nombre1: 1 })

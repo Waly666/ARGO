@@ -1,29 +1,31 @@
 @if (alertas().length > 0) {
   <div class="head-cert-alerts" [class.compact]="compact()">
     @for (a of alertas(); track a.id) {
-      <button
-        type="button"
-        class="head-alarm cert-alarm"
-        [ngClass]="certAlertToneClass(a.tipoFormatoCert)"
-        (click)="imprimirCertificado(a)"
-        [attr.title]="'Imprimir certificado ' + (a.codigoCert || a.id) + ' — ' + (a.nombreCompleto || '')">
-        <span class="head-alarm-pulse" aria-hidden="true"></span>
-        <span class="head-alarm-icon" aria-hidden="true">▣</span>
-        <span class="head-alarm-text">
-          <span class="cert-tipo-chip">{{ etiquetaTipoAlerta(a) }}</span>
-          · {{ a.codigoCert || '—' }}
-          @if (a.nombreCompleto) {
-            · {{ a.nombreCompleto }}
-          }
-        </span>
-        <span
+      <div class="head-alarm-root">
+        <button
+          type="button"
           class="head-alarm-close"
-          role="button"
-          tabindex="0"
           (click)="cerrar($event, a.id)"
-          (keydown.enter)="cerrar($event, a.id)"
-          aria-label="Cerrar aviso">×</span>
-      </button>
+          aria-label="Cerrar aviso">
+          Cerrar <span aria-hidden="true">×</span>
+        </button>
+        <button
+          type="button"
+          class="head-alarm cert-alarm"
+          [ngClass]="certAlertToneClass(a.tipoFormatoCert)"
+          (click)="imprimirCertificado(a)"
+          [attr.title]="'Imprimir certificado ' + (a.codigoCert || a.id) + ' — ' + (a.nombreCompleto || '')">
+          <span class="head-alarm-pulse" aria-hidden="true"></span>
+          <span class="head-alarm-icon" aria-hidden="true">▣</span>
+          <span class="head-alarm-text">
+            <span class="cert-tipo-chip">{{ etiquetaTipoAlerta(a) }}</span>
+            · {{ a.codigoCert || '—' }}
+            @if (a.nombreCompleto) {
+              · {{ a.nombreCompleto }}
+            }
+          </span>
+        </button>
+      </div>
     }
   </div>
 }

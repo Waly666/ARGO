@@ -7,6 +7,7 @@
         El resto crea servicio vinculado al guardar; con <strong>semestres</strong> se crean servicios numerados (1 SEM, 2 SEM…).
         El campo <strong>nomCert</strong> es el nombre que aparece en el certificado del alumno.
         En <strong>Formato de certificado</strong> elige el tipo de plantilla definido en Config. Certificados.
+        En vista lista, pulse un encabezado de columna para ordenar.
       </p>
     </div>
     <button type="button" class="primary" (click)="nuevo()" [disabled]="tiposCargando() || !puedeAgregarPrograma()">Nuevo programa</button>
@@ -28,16 +29,14 @@
     </div>
   </div>
 
-  <div #listAnchor class="modal-anchor" aria-hidden="true"></div>
-
   <argo-form-modal
     [open]="modalAbierto()"
-    [anchorTopPx]="modalTop()"
     [title]="modalTitulo()"
     [subtitle]="modalSubtitulo()"
-    [wide]="true"
+    [xwide]="true"
+    [tall]="true"
     (closed)="cerrarModal()">
-    <div class="modal-form">
+    <div class="modal-form argo-form-shell">
       <section class="form-section">
         <h3>Programa</h3>
         <div class="row" *ngIf="editando()">
@@ -66,22 +65,34 @@
         </div>
         <div class="row">
           <div class="col-5">
-            <label>Formato de certificado (tipoCertificado)</label>
-            <select
-              [ngModel]="form().tipoCertificado ?? ''"
-              (ngModelChange)="patch('tipoCertificado', $event === '' || $event == null ? null : $event)">
-              <option [ngValue]="''">Automático</option>
-              <option *ngFor="let t of tiposCert" [ngValue]="t.id">{{ t.label }}</option>
-            </select>
+            <argo-catalogo-enum-buscar
+              label="Formato de certificado (tipoCertificado)"
+              placeholder="Seleccione o escriba formato…"
+              [textoInicial]="textoTipoCertificado()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesTipoCertificado()"
+              (seleccionado)="onTipoCertPick($event)"
+              (limpiado)="onTipoCertLimpiar()"
+            />
             <p class="hint-inline">{{ formatoCertHint(form().tipoCertificado) }}</p>
           </div>
         </div>
         <div class="row">
           <div class="col-4">
-            <label>Tipo capacitación (idTipCap) *</label>
-            <select [ngModel]="form().idTipCap" (ngModelChange)="onTipoCapChange($event)" [disabled]="!tiposCap().length">
-              <option *ngFor="let t of tiposCap()" [ngValue]="t.id">{{ t.label }}</option>
-            </select>
+            <argo-catalogo-enum-buscar
+              label="Tipo capacitación (idTipCap) *"
+              placeholder="Seleccione o escriba tipo…"
+              [textoInicial]="textoTipoCap()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [disabled]="!tiposCap().length"
+              [opcionesLocales]="opcionesTipoCap()"
+              (seleccionado)="onTipoCapPick($event)"
+              (limpiado)="onTipoCapLimpiar()"
+            />
           </div>
           <div class="col-2">
             <label>Semestres</label>
@@ -118,11 +129,17 @@
             <input type="number" min="0" [ngModel]="form().diasVencimiento" (ngModelChange)="patch('diasVencimiento', $event)" />
           </div>
           <div class="col-2">
-            <label>Estado</label>
-            <select [ngModel]="form().estado" (ngModelChange)="patch('estado', $event)">
-              <option value="ACTIVO">ACTIVO</option>
-              <option value="INACTIVO">INACTIVO</option>
-            </select>
+            <argo-catalogo-enum-buscar
+              label="Estado"
+              placeholder="Seleccione estado…"
+              [textoInicial]="textoEstado()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesEstado"
+              (seleccionado)="onEstadoPick($event)"
+              (limpiado)="onEstadoLimpiar()"
+            />
           </div>
           <div class="col-4">
             <label>Requisitos (requistos)</label>
@@ -170,17 +187,30 @@
               (ngModelChange)="patch('descrServicio', $event)" />
           </div>
           <div class="col-3">
-            <label>Tipo servicio (tipoServ)</label>
-            <select [ngModel]="form().tipoServ" (ngModelChange)="patch('tipoServ', $event)">
-              <option *ngFor="let t of tiposServ()" [ngValue]="t.code">{{ t.label }} ({{ t.code }})</option>
-            </select>
+            <argo-catalogo-enum-buscar
+              label="Tipo servicio (tipoServ)"
+              placeholder="Seleccione o escriba tipo…"
+              [textoInicial]="textoTipoServ()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesTipoServ()"
+              (seleccionado)="onTipoServPick($event)"
+              (limpiado)="onTipoServLimpiar()"
+            />
           </div>
           <div class="col-2">
-            <label>Facturar</label>
-            <select [ngModel]="form().facturar" (ngModelChange)="patch('facturar', $event)">
-              <option value="NO">NO</option>
-              <option value="SI">SI</option>
-            </select>
+            <argo-catalogo-enum-buscar
+              label="Facturar"
+              placeholder="Seleccione…"
+              [textoInicial]="textoFacturar()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesFacturar"
+              (seleccionado)="onFacturarPick($event)"
+              (limpiado)="onFacturarLimpiar()"
+            />
           </div>
           <div class="col-2">
             <label>IVA %</label>
@@ -251,20 +281,21 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>Código</th>
-          <th>Programa</th>
-          <th>Certificado</th>
-          <th>Formato cert.</th>
-          <th>Tipo</th>
-          <th>Horas</th>
-          <th class="col-sem">Sem.</th>
-          <th>Matrícula</th>
-          <th>Estado</th>
+          <th *ngFor="let c of sortColumns">
+            <button
+              type="button"
+              class="th-sort"
+              [class.active]="sortCol() === c.key"
+              [attr.aria-sort]="sortAria(c.key)"
+              (click)="toggleSort(c.key)">
+              {{ c.label }} <span class="sort-icon">{{ sortIcon(c.key) }}</span>
+            </button>
+          </th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let p of programas()">
+        <tr *ngFor="let p of programasOrdenados()">
           <td><span [ngClass]="capCodigo(p.codigoProg)">{{ p.codigoProg || p.idPrograma }}</span></td>
           <td><strong>{{ p.nombreProg }}</strong></td>
           <td><span class="cap cap-violet cap-sm">{{ p.nomCert || '—' }}</span></td>
@@ -282,7 +313,7 @@
             <button type="button" class="danger mini" *ngIf="puedeGestionarPrograma()" (click)="eliminar(p)">Eliminar</button>
           </td>
         </tr>
-        <tr *ngIf="!programas().length">
+        <tr *ngIf="!programasOrdenados().length">
           <td colspan="10" class="empty">No hay programas.</td>
         </tr>
       </tbody>
@@ -290,7 +321,7 @@
   </div>
 
   <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
-    <article class="list-card" *ngFor="let p of programas()">
+    <article class="list-card" *ngFor="let p of programasOrdenados()">
       <header class="card-title"><h3>{{ p.nombreProg }}</h3></header>
       <div class="card-body">
         <div class="entity-badge-wrap">
@@ -318,7 +349,7 @@
         </div>
       </footer>
     </article>
-    <div class="empty cards-empty" *ngIf="!programas().length">No hay programas.</div>
+    <div class="empty cards-empty" *ngIf="!programasOrdenados().length">No hay programas.</div>
   </div>
 
   <p class="loading" *ngIf="loading()">Cargando…</p>

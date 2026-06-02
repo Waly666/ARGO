@@ -22,7 +22,7 @@ async function resolverSesionConsulta(req) {
   const ctx = userCtx(req);
   const param = req.params.idSesion;
   if (param === 'activa') {
-    const sesion = await caja.obtenerSesionActiva(ctx.idUsuario);
+    const sesion = await caja.obtenerSesionActiva(ctx.idUsuario, req.idSede);
     if (!sesion) {
       const err = new Error('No tiene caja abierta');
       err.status = 404;
@@ -48,7 +48,7 @@ async function resolverSesionConsulta(req) {
 exports.activa = async (req, res, next) => {
   try {
     const { idUsuario } = userCtx(req);
-    const sesion = await caja.obtenerSesionActiva(idUsuario);
+    const sesion = await caja.obtenerSesionActiva(idUsuario, req.idSede);
     if (!sesion) return res.json({ abierta: false, sesion: null });
     const resumen = await caja.calcularResumenSesion(sesion);
     res.json({ abierta: true, sesion, resumenParcial: resumen });
@@ -71,6 +71,7 @@ exports.listar = async (req, res, next) => {
       porCierre: req.query.porCierre === '1',
       idUsuario: soloMias ? ctx.idUsuario : req.query.idUsuario,
       soloMias,
+      idSede: req.idSede,
     });
     res.json(rows);
   } catch (e) {
@@ -83,7 +84,7 @@ exports.listarAbiertas = async (req, res, next) => {
     if (!esAdmin(req.user?.rol)) {
       return res.status(403).json({ message: 'Solo administradores' });
     }
-    const sesiones = await caja.listarSesionesAbiertas();
+    const sesiones = await caja.listarSesionesAbiertas(req.idSede);
     const conResumen = await Promise.all(
       sesiones.map(async (s) => ({
         sesion: s,
@@ -135,6 +136,7 @@ exports.abrir = async (req, res, next) => {
     const sesion = await caja.abrirSesion({
       saldoInicial: Number(saldoInicial) || 0,
       observaciones,
+      idSede: req.idSede,
       ...ctx,
     });
     await registrarAuditoria({
@@ -310,8 +312,8 @@ exports.previewCierreGeneral = async (req, res, next) => {
       return res.status(403).json({ message: 'Solo administradores' });
     }
     const fechaDia = req.query.fechaDia || new Date().toISOString().slice(0, 10);
-    const resumen = await caja.calcularCierreGeneral(fechaDia, { soloCerradas: true });
-    const estado = await caja.estadoCierresGeneralesDia(fechaDia);
+    const resumen = await caja.calcularCierreGeneral(fechaDia, { soloCerradas: true, idSede: req.idSede });
+    const estado = await caja.estadoCierresGeneralesDia(fechaDia, req.idSede);
     res.json({ ...resumen, estadoDia: estado });
   } catch (e) {
     next(e);
@@ -324,7 +326,7 @@ exports.estadoCierreGeneralDia = async (req, res, next) => {
       return res.status(403).json({ message: 'Solo administradores' });
     }
     const fecha = req.query.fecha || new Date().toISOString().slice(0, 10);
-    res.json(await caja.estadoCierresGeneralesDia(fecha));
+    res.json(await caja.estadoCierresGeneralesDia(fecha, req.idSede));
   } catch (e) {
     next(e);
   }
@@ -341,6 +343,7 @@ exports.registrarCierreGeneral = async (req, res, next) => {
 
     const { cierre, resumen } = await caja.registrarCierreGeneral({
       fechaDia: diaUse,
+      idSede: req.idSede,
       observaciones,
       usuarioAdmin: ctx.usuario,
       idUsuarioAdmin: ctx.idUsuario,
@@ -378,7 +381,7 @@ exports.listarCierresGenerales = async (req, res, next) => {
     }
     const limit = Math.min(Number(req.query.limit) || 20, 50);
     const fecha = req.query.fecha || null;
-    res.json(await caja.listarCierresGenerales(limit, fecha));
+    res.json(await caja.listarCierresGenerales(limit, fecha, req.idSede));
   } catch (e) {
     next(e);
   }

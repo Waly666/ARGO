@@ -4,7 +4,9 @@
       <a [routerLink]="backLink()" class="back">{{ backLabel() }}</a>
       <h1>Cierre de caja #{{ sesion()?.idSesion }}</h1>
       <p class="sub">
-        {{ sesion()?.usuario }} · {{ sesion()?.fechaCierre | date: 'fullDate' }}
+        {{ sesion()?.usuario }}
+        <ng-container *ngIf="sedeLabel()"> · Sede {{ sedeLabel() }}</ng-container>
+        · {{ sesion()?.fechaCierre | date: 'fullDate' }}
       </p>
     </div>
     <div class="head-actions">

@@ -127,6 +127,13 @@ export class CertificadosComponent {
     }
     this.certSvc.elegibles(numDoc).subscribe({
       next: (r) => this.elegibles.set(r || []),
+      error: (e) => {
+        this.elegibles.set([]);
+        this.setMsg(
+          e?.error?.message || 'No se pudo cargar los programas elegibles. Revise la conexión o contacte soporte.',
+          true,
+        );
+      },
     });
     this.certSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {

@@ -34,11 +34,13 @@ export interface Empleado {
   cajaCompensacionId?: number;
   cargoId?: number;
   departamentoId?: number;
+  idSede?: string | null;
   urlFoto?: string;
   estado?: string;
   nombreCompleto?: string;
   cargoNombre?: string;
   departamentoNombre?: string;
+  sedeNombre?: string | null;
   epsNombre?: string;
   afpNombre?: string;
   arlNombre?: string;
@@ -129,6 +131,7 @@ const EMPLEADO_SKIP_FORM = new Set([
   'nombreCompleto',
   'cargoNombre',
   'departamentoNombre',
+  'sedeNombre',
   'epsNombre',
   'afpNombre',
   'arlNombre',
@@ -168,6 +171,10 @@ export class EmpleadoService {
     if (opts?.q) params = params.set('q', opts.q);
     if (opts?.activos === false) params = params.set('activos', 'false');
     return this.http.get<Empleado[]>(`${this.rrhhBase}/instructores`, { params });
+  }
+
+  obtenerInstructor(id: number | string): Observable<Empleado> {
+    return this.http.get<Empleado>(`${this.rrhhBase}/instructores/${id}`);
   }
 
   obtener(id: number | string): Observable<Empleado> {

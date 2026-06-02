@@ -224,7 +224,7 @@ async function registrarIngresoCuadreDescuadre({
 
   const tipoPago = tipoDoc || (await resolverTipoPagoEfectivo());
   const idTipoPagoUse = String(tipoPago.idTipoPago ?? tipoPago.codigo ?? '1');
-  const numRecibo = await siguienteNumComprobanteIngreso();
+  const numRecibo = await siguienteNumComprobanteIngreso(sesion.idSede);
   const now = new Date();
   const tipoLabel = tipoIngDoc.tipo || tipoIngDoc.descripcion || 'REPOSICION CAJA';
   const concepto = `Reposición caja — sesión #${sid}`;
@@ -245,6 +245,7 @@ async function registrarIngresoCuadreDescuadre({
     observaciones: observaciones || `Reposición de efectivo para descuadre sesión #${sid}`,
     fecha: now,
     idSesion: sid,
+    idSede: sesion.idSede || null,
     idUsuario: idUsuario ? String(idUsuario) : null,
     userAddReg: user || 'sistema',
   });

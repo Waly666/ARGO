@@ -16,7 +16,7 @@
     </div>
   </div>
 
-  <div class="form-card card" *ngIf="mostrarForm()">
+  <div class="form-card card argo-form-shell" *ngIf="mostrarForm()">
     <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
     <div class="row row-credenciales">
       <div class="col-6 field">
@@ -71,6 +71,27 @@
         </label>
       </div>
     </div>
+    <div class="row sedes-asignacion" *ngIf="sedesCatalogo().length">
+      <div class="col-4">
+        <label>Sede de trabajo</label>
+        <p class="field-hint" *ngIf="esRolAdmin(form().rol)">
+          Los administradores ven todas las sedes y filtran desde el encabezado. No requiere asignación.
+        </p>
+        <p class="field-hint" *ngIf="!esRolAdmin(form().rol)">
+          Un usuario opera en una sola sede asignada.
+        </p>
+        <select
+          *ngIf="!esRolAdmin(form().rol)"
+          [ngModel]="sedeFormId()"
+          (ngModelChange)="onSedeFormChange($event)"
+        >
+          <option value="">— Seleccione sede —</option>
+          <option *ngFor="let s of sedesCatalogo()" [value]="s.idSede">
+            {{ s.nombre }}{{ s.codigo ? ' (' + s.codigo + ')' : '' }}
+          </option>
+        </select>
+      </div>
+    </div>
     <div class="actions">
       <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
       <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
@@ -88,6 +109,7 @@
         <th>Documento</th>
         <th>Nombre</th>
         <th>Rol</th>
+        <th>Sede</th>
         <th>Estado</th>
         <th></th>
       </tr>
@@ -98,6 +120,7 @@
         <td class="mono sm">{{ docLabel(u) || '—' }}</td>
         <td>{{ (u.nombres || '') + ' ' + (u.apellidos || '') }}</td>
         <td>{{ labelRol(u.rol) }}</td>
+        <td class="sedes-cell">{{ labelSedes(u) }}</td>
         <td>
           <span class="badge" [class.ok]="u.activo !== false" [class.warn]="u.activo === false">
             {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
@@ -122,7 +145,7 @@
         </td>
       </tr>
       <tr *ngIf="usuarios().length === 0">
-        <td colspan="6" class="empty">No hay usuarios.</td>
+        <td colspan="7" class="empty">No hay usuarios.</td>
       </tr>
     </tbody>
   </table>
@@ -139,6 +162,7 @@
           <div class="card-sub mono" *ngIf="docLabel(u)">Doc. {{ docLabel(u) }}</div>
           <div class="card-tags">
             <span class="cap cap-sm">{{ labelRol(u.rol) }}</span>
+            <span class="cap cap-sm sede-tag">{{ labelSedes(u) }}</span>
             <span class="badge" [class.ok]="u.activo !== false" [class.warn]="u.activo === false">
               {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
             </span>

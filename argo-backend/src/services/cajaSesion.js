@@ -10,6 +10,12 @@ const { maxNumericId } = require('./programaServicio');
 const { esAdmin } = require('../utils/roles');
 const { esRetiroCajaTipo } = require('./tipoEgresoNomina');
 const { formaPagoDesdeCatalogo } = require('./tipoIngresoResolver');
+const { normalizarIdSede } = require('./sedeContext');
+
+function filtroIdSede(idSede) {
+  const sid = normalizarIdSede(idSede);
+  return sid ? { idSede: sid } : {};
+}
 
 function planoSesion(doc) {
   if (!doc) return null;
@@ -119,26 +125,33 @@ function esEgresoEfectivo(eg) {
   return fp === 'efectivo' || fp.includes('efect');
 }
 
-async function sesionAbiertaUsuario(idUsuario) {
+async function sesionAbiertaUsuario(idUsuario, idSede) {
   if (!idUsuario) return null;
-  return CajaSesion.findOne({ estado: 'abierta', idUsuario: String(idUsuario) })
-    .sort({ fechaApertura: -1 })
-    .lean();
+  const filter = { estado: 'abierta', idUsuario: String(idUsuario), ...filtroIdSede(idSede) };
+  return CajaSesion.findOne(filter).sort({ fechaApertura: -1 }).lean();
 }
 
-async function listarSesionesAbiertas() {
-  const rows = await CajaSesion.find({ estado: 'abierta' }).sort({ fechaApertura: -1 }).lean();
+async function listarSesionesAbiertas(idSede) {
+  const filter = { estado: 'abierta', ...filtroIdSede(idSede) };
+  const rows = await CajaSesion.find(filter).sort({ fechaApertura: -1 }).lean();
   return rows.map(planoSesion);
 }
 
-async function abrirSesion({ saldoInicial, observaciones, usuario, idUsuario, user, rol }) {
+async function abrirSesion({ saldoInicial, observaciones, usuario, idUsuario, user, rol, idSede }) {
   if (!idUsuario) {
     const err = new Error('Usuario no identificado para abrir caja');
     err.status = 400;
     throw err;
   }
+  const sid = normalizarIdSede(idSede);
+  if (!sid) {
+    const err = new Error('Debe seleccionar la sede para abrir caja');
+    err.status = 428;
+    err.code = 'SEDE_REQUERIDA';
+    throw err;
+  }
 
-  const abiertaPropia = await sesionAbiertaUsuario(idUsuario);
+  const abiertaPropia = await sesionAbiertaUsuario(idUsuario, sid);
   if (abiertaPropia) {
     const err = new Error(
       `Ya tiene su caja abierta (sesión #${abiertaPropia.idSesion}). Ciérrela antes de abrir otra.`,
@@ -151,6 +164,7 @@ async function abrirSesion({ saldoInicial, observaciones, usuario, idUsuario, us
   const now = new Date();
   const doc = {
     idSesion,
+    idSede: sid,
     estado: 'abierta',
     usuario: usuario || user || 'sistema',
     idUsuario: String(idUsuario),
@@ -546,14 +560,14 @@ async function reabrirSesion(idSesion, { user, rol, observaciones }) {
   return planoSesion(sesion);
 }
 
-async function obtenerSesionActiva(idUsuario) {
-  const s = await sesionAbiertaUsuario(idUsuario);
+async function obtenerSesionActiva(idUsuario, idSede) {
+  const s = await sesionAbiertaUsuario(idUsuario, idSede);
   return planoSesion(s);
 }
 
 async function listarSesiones(opts = {}) {
   const limit = Math.min(Number(opts.limit) || 50, 200);
-  const filter = {};
+  const filter = { ...filtroIdSede(opts.idSede) };
 
   if (opts.estado) filter.estado = String(opts.estado);
   if (opts.usuario) filter.usuario = new RegExp(String(opts.usuario).trim(), 'i');
@@ -576,10 +590,10 @@ async function listarSesiones(opts = {}) {
   return rows.map(planoSesion);
 }
 
-async function exigirSesionAbierta(idUsuario) {
-  const s = await sesionAbiertaUsuario(idUsuario);
+async function exigirSesionAbierta(idUsuario, idSede) {
+  const s = await sesionAbiertaUsuario(idUsuario, idSede);
   if (!s) {
-    const err = new Error('Debe abrir su caja antes de registrar movimientos');
+    const err = new Error('Debe abrir su caja en esta sede antes de registrar movimientos');
     err.status = 428;
     err.code = 'CAJA_CERRADA';
     throw err;
@@ -671,8 +685,9 @@ function sesionCierraEnTurno(fechaCierre, turno) {
 }
 
 /** Sesiones ya incluidas en cualquier cierre general registrado. */
-async function idsSesionesEnCierresGenerales() {
-  const rows = await CajaCierreGeneral.find({}, { idsSesiones: 1 }).lean();
+async function idsSesionesEnCierresGenerales(idSede) {
+  const filter = idSede ? { idSede: normalizarIdSede(idSede) } : {};
+  const rows = await CajaCierreGeneral.find(filter, { idsSesiones: 1 }).lean();
   const ids = new Set();
   for (const r of rows) {
     for (const id of r.idsSesiones || []) ids.add(Number(id));
@@ -687,22 +702,22 @@ function diaCalendarioSesion(fecha) {
   return d.toISOString().slice(0, 10);
 }
 
-async function listarCajasAbiertasResumen() {
-  const rows = await CajaSesion.find({ estado: 'abierta' }).select('idSesion usuario').lean();
-  return rows.map((s) => ({ idSesion: s.idSesion, usuario: s.usuario }));
+async function listarCajasAbiertasResumen(idSede) {
+  const filter = { estado: 'abierta', ...filtroIdSede(idSede) };
+  const rows = await CajaSesion.find(filter).select('idSesion usuario idSede').lean();
+  return rows.map((s) => ({ idSesion: s.idSesion, usuario: s.usuario, idSede: s.idSede || null }));
 }
 
 /** Cajas cerradas por cajeros que aún no entraron en ningún cierre general (cualquier fecha). */
-async function sesionesPendientesCierreGeneral(excluirIds = []) {
+async function sesionesPendientesCierreGeneral(excluirIds = [], idSede) {
   const ex = new Set((excluirIds || []).map(Number));
-  const rows = await CajaSesion.find({ estado: 'cerrada', fechaCierre: { $ne: null } })
-    .sort({ fechaCierre: 1 })
-    .lean();
+  const filter = { estado: 'cerrada', fechaCierre: { $ne: null }, ...filtroIdSede(idSede) };
+  const rows = await CajaSesion.find(filter).sort({ fechaCierre: 1 }).lean();
   return rows.filter((s) => !ex.has(Number(s.idSesion)));
 }
 
 async function sesionesEnPeriodo(desde, hasta, opts = {}) {
-  const { soloCerradas = false, turno = null, fechaDia = null, excluirIds = [] } = opts;
+  const { soloCerradas = false, turno = null, fechaDia = null, excluirIds = [], idSede = null } = opts;
   const dia = fechaDia ? normalizarFechaDia(fechaDia) : null;
   const t = turno ? normalizarTurno(turno) : null;
 
@@ -719,6 +734,7 @@ async function sesionesEnPeriodo(desde, hasta, opts = {}) {
   const filter = {
     fechaApertura: { $lte: d1 },
     $or: [{ fechaCierre: { $gte: d0 } }, { estado: 'abierta' }],
+    ...filtroIdSede(idSede),
   };
   if (soloCerradas) {
     delete filter.$or;
@@ -739,16 +755,24 @@ async function sesionesEnPeriodo(desde, hasta, opts = {}) {
 
 async function calcularCierreGeneral(fechaDiaInput, opts = {}) {
   const fechaDia = normalizarFechaDia(fechaDiaInput);
-  const excluirIds = opts.excluirIds ?? (await idsSesionesEnCierresGenerales());
+  const idSede = normalizarIdSede(opts.idSede);
+  if (!idSede) {
+    const err = new Error('Debe indicar la sede para el cierre general');
+    err.status = 428;
+    err.code = 'SEDE_REQUERIDA';
+    throw err;
+  }
+  const excluirIds = opts.excluirIds ?? (await idsSesionesEnCierresGenerales(idSede));
 
   const sesionesRaw = opts.soloCerradas
-    ? await sesionesPendientesCierreGeneral(excluirIds)
+    ? await sesionesPendientesCierreGeneral(excluirIds, idSede)
     : await sesionesEnPeriodo(fechaDia, fechaDia, {
         soloCerradas: true,
         excluirIds,
+        idSede,
       });
 
-  const cajasAbiertasGlobales = await listarCajasAbiertasResumen();
+  const cajasAbiertasGlobales = await listarCajasAbiertasResumen(idSede);
   let sesionesDiasAnteriores = 0;
   for (const s of sesionesRaw) {
     const dc = diaCalendarioSesion(s.fechaCierre);
@@ -900,6 +924,7 @@ async function calcularCierreGeneral(fechaDiaInput, opts = {}) {
 
   return {
     fechaDia,
+    idSede,
     periodoDesde,
     periodoHasta,
     cantidadCajas: detalleSesiones.length,
@@ -964,11 +989,18 @@ async function cerrarSesionesMultiples(cierres, ctx) {
   return resultados;
 }
 
-async function estadoCierresGeneralesDia(fechaDiaInput) {
+async function estadoCierresGeneralesDia(fechaDiaInput, idSede) {
   const fechaDia = normalizarFechaDia(fechaDiaInput);
-  const cierre = await CajaCierreGeneral.findOne({ fechaDia }).lean();
+  const sid = normalizarIdSede(idSede);
+  if (!sid) {
+    const err = new Error('Debe indicar la sede');
+    err.status = 428;
+    throw err;
+  }
+  const cierre = await CajaCierreGeneral.findOne({ fechaDia, idSede: sid }).lean();
   return {
     fechaDia,
+    idSede: sid,
     cierre,
     registrado: !!cierre,
     puedeRegistrar: !cierre,
@@ -977,17 +1009,25 @@ async function estadoCierresGeneralesDia(fechaDiaInput) {
 
 async function registrarCierreGeneral({
   fechaDia,
+  idSede,
   observaciones,
   usuarioAdmin,
   idUsuarioAdmin,
   forzar,
 }) {
   const dia = normalizarFechaDia(fechaDia);
+  const sid = normalizarIdSede(idSede);
+  if (!sid) {
+    const err = new Error('Debe indicar la sede para el cierre general');
+    err.status = 428;
+    err.code = 'SEDE_REQUERIDA';
+    throw err;
+  }
 
-  const existente = await CajaCierreGeneral.findOne({ fechaDia: dia }).lean();
+  const existente = await CajaCierreGeneral.findOne({ fechaDia: dia, idSede: sid }).lean();
   if (existente) {
     const err = new Error(
-      `Ya existe el cierre general del ${dia} (registro #${existente.idCierreGeneral}). Solo se permite uno por día.`,
+      `Ya existe el cierre general del ${dia} en esta sede (registro #${existente.idCierreGeneral}). Solo se permite uno por sede y día.`,
     );
     err.status = 409;
     err.code = 'CIERRE_GENERAL_YA_EXISTE';
@@ -995,7 +1035,7 @@ async function registrarCierreGeneral({
     throw err;
   }
 
-  const preview = await calcularCierreGeneral(dia, { soloCerradas: true });
+  const preview = await calcularCierreGeneral(dia, { soloCerradas: true, idSede: sid });
 
   if (!preview.cantidadCajas) {
     const err = new Error(
@@ -1018,6 +1058,7 @@ async function registrarCierreGeneral({
   const idCierreGeneral = await maxNumericId(CajaCierreGeneral, 'idCierreGeneral');
   const doc = await CajaCierreGeneral.create({
     idCierreGeneral,
+    idSede: sid,
     fechaDia: dia,
     periodoDesde: preview.periodoDesde,
     periodoHasta: preview.periodoHasta,
@@ -1126,8 +1167,9 @@ async function resumenVistaSesion(sesion, { descuadre = null } = {}) {
   };
 }
 
-async function listarCierresGenerales(limit = 20, fechaDia = null) {
-  const filter = fechaDia ? { fechaDia: normalizarFechaDia(fechaDia) } : {};
+async function listarCierresGenerales(limit = 20, fechaDia = null, idSede = null) {
+  const filter = { ...filtroIdSede(idSede) };
+  if (fechaDia) filter.fechaDia = normalizarFechaDia(fechaDia);
   const rows = await CajaCierreGeneral.find(filter)
     .sort({ fechaDia: -1, fechaRegistro: -1 })
     .limit(Math.min(limit, 100))

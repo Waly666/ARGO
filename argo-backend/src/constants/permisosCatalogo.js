@@ -25,6 +25,8 @@ const GRUPOS = [
       { key: 'servicios.ver', label: 'Consultar servicios' },
       { key: 'servicios.gestionar', label: 'Administrar servicios' },
       { key: 'instructores', label: 'Módulo instructores (legacy)' },
+      { key: 'instructores.mi_portal', label: 'Portal del instructor (mi perfil y mis clases)' },
+      { key: 'instructores.inspeccion', label: 'Inspección preoperacional de vehículos (instructor)' },
     ],
   },
   {
@@ -64,6 +66,16 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'sedes',
+    label: 'Sedes',
+    permisos: [
+      { key: 'sedes.ver', label: 'Consultar sedes' },
+      { key: 'sedes.ver_todas', label: 'Ver y operar en todas las sedes' },
+      { key: 'sedes.gestionar', label: 'Administrar catálogo de sedes' },
+      { key: 'config.sedes', label: 'Configuración de sedes (alias gestionar)' },
+    ],
+  },
+  {
     id: 'config',
     label: 'Configuración',
     permisos: [
@@ -71,6 +83,8 @@ const GRUPOS = [
       { key: 'config.roles', label: 'Roles y permisos' },
       { key: 'config.catalogos', label: 'Catálogos del sistema' },
       { key: 'config.recibos', label: 'Empresa y comprobantes' },
+      { key: 'config.georef', label: 'Geocodificación (mapas)' },
+      { key: 'config.facturacion', label: 'Facturación electrónica (Factus)' },
       { key: 'config.nomina', label: 'Parámetros de nómina' },
       { key: 'config.certificados', label: 'Diseño de certificados' },
       { key: 'config.requisitos', label: 'Requisitos de documentos (alumnos y vehículos)' },

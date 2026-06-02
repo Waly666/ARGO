@@ -12,6 +12,12 @@ import { IngresoService } from '../../../core/services/ingreso.service';
 import { CajaAperturaAlertService } from '../../../core/services/caja-apertura-alert.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
+import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import { PermisoService } from '../../../core/services/permiso.service';
+import { FacturaEmitirModalComponent } from '../../facturacion/factura-emitir-modal.component';
 
 const TIPOS_PAGO_DEF = [
   { idTipoPago: '1', codigo: 'EF', descripcion: 'Efectivo' },
@@ -25,13 +31,14 @@ const TIPOS_PAGO_DEF = [
 @Component({
   selector: 'argo-pagos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, FacturaEmitirModalComponent],
   templateUrl: './pagos.component.html',
   styleUrls: ['./pagos.component.scss'],
 })
 export class PagosComponent {
   store = inject(AlumnoStore);
   auth = inject(AuthService);
+  permisoSvc = inject(PermisoService);
   private router = inject(Router);
   private catSvc = inject(CatalogoService);
   private liqSvc = inject(LiquidacionService);
@@ -56,6 +63,8 @@ export class PagosComponent {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+
+  mostrarFactura = signal(false);
 
   ingresoPendienteAnular = signal<any | null>(null);
   mostrarAuthAnular = signal(false);
@@ -89,6 +98,45 @@ export class PagosComponent {
   });
 
   requiereCuentaEmpresa = computed(() => !!this.idTipoPago() && !this.esEfectivo());
+
+  opcionesItemsLiquidacion = computed<EnumBuscarOption[]>(() =>
+    this.itemsConSaldo().map((it) => ({
+      value: it._id,
+      label: this.descrItem(it),
+    })),
+  );
+
+  textoItemLiquidacion = computed(() => {
+    const id = this.idLiquidacion();
+    const it = this.liquidacion().items.find((i) => String(i._id) === String(id));
+    return it ? this.descrItem(it) : '';
+  });
+
+  opcionesTiposPago = computed<EnumBuscarOption[]>(() =>
+    this.tiposPago().map((t) => ({
+      value: this.tipoPagoValor(t),
+      label: this.tipoPagoLabel(t),
+    })),
+  );
+
+  textoTipoPago = computed(() => {
+    const id = this.idTipoPago();
+    const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
+    return t ? this.tipoPagoLabel(t) : '';
+  });
+
+  opcionesCuentasBancarias = computed<EnumBuscarOption[]>(() =>
+    this.cuentasBancarias().map((c) => ({
+      value: this.cuentaValor(c),
+      label: this.labelCuenta(c),
+    })),
+  );
+
+  textoCuentaBancaria = computed(() => {
+    const id = this.idCuentaBancaria();
+    const c = this.cuentasBancarias().find((x) => this.cuentaValor(x) === id);
+    return c ? this.labelCuenta(c) : '';
+  });
 
   constructor() {
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
@@ -158,7 +206,6 @@ export class PagosComponent {
     return this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
   }
 
-  /** Al elegir ítem de liquidación, el valor del pago = saldo pendiente del ítem */
   onItemLiquidacionChange(id: string) {
     this.idLiquidacion.set(id);
     if (!id) {
@@ -167,6 +214,53 @@ export class PagosComponent {
     }
     const it = this.liquidacion().items.find((i) => String(i._id) === String(id));
     this.valor.set(it ? this.num(it.saldo) : 0);
+  }
+
+  onItemLiquidacionPick(opt: EnumBuscarOption): void {
+    this.onItemLiquidacionChange(String(opt.value));
+  }
+
+  onItemLiquidacionLimpiar(): void {
+    this.onItemLiquidacionChange('');
+  }
+
+  onTipoPagoPick(opt: EnumBuscarOption): void {
+    this.onTipoPagoChange(String(opt.value));
+  }
+
+  onTipoPagoLimpiar(): void {
+    this.onTipoPagoChange('');
+  }
+
+  onCuentaBancariaPick(opt: EnumBuscarOption): void {
+    this.idCuentaBancaria.set(String(opt.value));
+  }
+
+  onCuentaBancariaLimpiar(): void {
+    this.idCuentaBancaria.set('');
+  }
+
+  alumnoNombre(): string {
+    const a: any = this.store.alumno?.();
+    if (!a) return '';
+    return [a.nombre1, a.nombre2, a.apellido1, a.apellido2].filter(Boolean).join(' ').trim();
+  }
+
+  abrirFactura(): void {
+    if (!this.store.numDoc()) {
+      this.msg.set('Seleccione un alumno primero.');
+      return;
+    }
+    this.mostrarFactura.set(true);
+  }
+
+  cerrarFactura(): void {
+    this.mostrarFactura.set(false);
+  }
+
+  onFacturaEmitida(): void {
+    const nd = this.store.numDoc();
+    if (nd) this.recargar(nd);
   }
 
   recargar(numDoc: number | string) {

@@ -27,15 +27,22 @@ export interface BloqueHorarioCea {
   domingo?: { horaDesde?: string; horaHasta?: string };
   festivo?: { horaDesde?: string; horaHasta?: string };
   duracionesPermitidas?: number[];
+  duracionSesionHoras?: number;
   bufferMinutos?: number;
   cupoMaximoDefault?: number;
   [key: string]: unknown;
+}
+
+export interface PlanificacionCeaConfig {
+  diasInicioDesdeGeneracion?: number;
+  programasPorPeriodo?: Record<string, number>;
 }
 
 export interface ConfigProgramacionCea {
   vehiculo: BloqueHorarioCea;
   aula: BloqueHorarioCea;
   taller: BloqueHorarioCea;
+  planificacion?: PlanificacionCeaConfig;
   actualizado?: string | null;
 }
 
@@ -63,6 +70,7 @@ export interface FilaRastreoCea {
   requeridas: number;
   programadas: number;
   ejecutadas: number;
+  inscritas: number;
   pendientes: number;
   completo: boolean;
 }
@@ -81,14 +89,89 @@ export interface RastreoGlobalCea {
   alertasPrograma: AlertaProgramaCea[];
 }
 
+export interface ClasesGrupalesFaltantesCea {
+  total: number;
+  teoria: number;
+  taller: number;
+}
+
+export interface RastreoAlumnoCea {
+  numDoc: number;
+  alumnoNombre: string;
+  filas: FilaRastreoCea[];
+  alertasPrograma: AlertaProgramaCea[];
+  duracionSesionPracticaCea?: number | null;
+  duracionesPermitidas?: number[];
+  duracionSesionPracticaDefault?: number;
+  clasesCeaGeneradas?: boolean;
+  clasesGrupalesFaltantes?: ClasesGrupalesFaltantesCea;
+}
+
+export interface CompletarClasesFaltantesCeaResult {
+  skipped?: boolean;
+  motivo?: string;
+  clases?: number;
+  resultados?: Array<{ idMat: string; idProg: string; clases: number }>;
+  faltantesAntes?: ClasesGrupalesFaltantesCea;
+  faltantesDespues?: ClasesGrupalesFaltantesCea;
+  message?: string;
+}
+
+export interface GenerarClasesPendientesCeaResult {
+  alumnos: number;
+  clasesGeneradas: number;
+  omitidos: number;
+  pendientesAntes: number;
+  reporte: Array<{
+    numDoc: number;
+    alumnoNombre: string;
+    clases: number;
+    origen: 'matricula' | 'hora_practica_extra';
+  }>;
+  message: string;
+}
+
+export interface PreferenciasAlumnoCea {
+  numDoc: number;
+  duracionSesionPracticaCea: number | null;
+  duracionesPermitidas: number[];
+  duracionSesionPracticaDefault: number;
+  clasesCeaGeneradas: boolean;
+}
+
 export interface AlertasPendientesCea {
   total: number;
   alertasPrograma: AlertaProgramaCea[];
   items: FilaRastreoCea[];
 }
 
+export interface AlertaClaseCeaCreadoItem {
+  numDoc: number;
+  alumnoId?: string | null;
+  alumnoNombre: string;
+  clasesCeaCreado: number;
+  programasCeaCreado: { programaLabel: string; cantidad: number }[];
+}
+
+export interface AlertasClasesCreadoCea {
+  total: number;
+  totalClases: number;
+  items: AlertaClaseCeaCreadoItem[];
+}
+
+export interface ClaseProximaCeaDto extends ClaseProgramadaCeaDto {
+  minutosRestantes?: number;
+  minutosHastaInicio?: number;
+}
+
+export interface AlertasClasesProximasCea {
+  minutosVentana: number;
+  total: number;
+  clases: ClaseProximaCeaDto[];
+}
+
 export type TipoClaseCea = 'teoria' | 'taller' | 'practica';
-export type EstadoClaseCea = 'PROGRAMADA' | 'EN PROCESO' | 'FINALIZADO' | 'CANCELADA';
+export type EstadoClaseCea = 'CREADO' | 'PROGRAMADA' | 'EN PROCESO' | 'FINALIZADO' | 'CANCELADA';
 
 export interface ClaseProgramadaCeaDto {
   _id: string;
@@ -115,6 +198,7 @@ export interface ClaseProgramadaCeaDto {
   horaFin?: string | null;
   duracionSegundos?: number | null;
   programaLabel?: string;
+  horasDescuento?: number | null;
   observaciones?: string;
 }
 
@@ -132,8 +216,67 @@ export interface InscripcionClaseCeaDto {
 export interface RecursosProgramacionCea {
   aulas: { id: string; nombre: string }[];
   talleres: { id: string; nombre: string }[];
-  vehiculos: { id: string; placa: string; label: string; estado?: string }[];
+  vehiculos: { id: string; placa: string; label: string; estado?: string; idClase?: string | number; claseVehiculo?: string }[];
   instructores: { idEmpleado: number; nombreCompleto: string }[];
+  categoriaLicencia?: string | null;
+  vehiculosTotal?: number;
+  vehiculosFiltrados?: number;
+}
+
+export interface PlanificacionCeaBody {
+  idProg: string;
+  fechaDesde: string;
+  fechaHasta: string;
+  programasPorPeriodo?: number;
+  diasInicioDesdeGeneracion?: number;
+  idAula?: string;
+  idTaller?: string;
+  incluirTeoria?: boolean;
+  incluirTaller?: boolean;
+}
+
+export interface ClasePlanificadaFila {
+  _id?: string;
+  tipoClase: string;
+  temaNombre?: string;
+  fechaClase: string;
+  horaDesde: string;
+  horaHasta: string;
+  horas: number;
+  ciclo: number;
+  idAula?: string;
+  idTaller?: string;
+  estado?: string;
+  cupoMaximo?: number;
+}
+
+export interface PlanificacionCeaPreview {
+  preview: boolean;
+  idProg: string;
+  programaLabel: string;
+  fechaDesde: string;
+  fechaHasta: string;
+  fechaInicioEfectiva: string;
+  diasInicio?: number;
+  resumen: {
+    teoria: number;
+    taller: number;
+    total: number;
+    sinCupos: number;
+    programasPorPeriodo: number;
+    aulasUsadas?: number;
+    aulasDisponibles?: number;
+    diasTeoriaDisponibles: number;
+    diasTallerDisponibles: number;
+  };
+  advertencias: string[];
+  /** Listado completo (vista previa y tras generar). */
+  clases?: ClasePlanificadaFila[];
+  /** @deprecated use clases */
+  muestra?: ClasePlanificadaFila[];
+  sinCupos?: ClasePlanificadaFila[];
+  message?: string;
+  clasesGeneradas?: number;
 }
 
 export interface ConflictoProgramacionCea {
@@ -150,6 +293,12 @@ export interface AlumnoElegibleCea {
   servicioLabel: string;
 }
 
+export interface InscripcionCrearClaseCea {
+  numDoc: number | string;
+  origenHoras?: OrigenHorasCea;
+  horasAsignadas?: number;
+}
+
 export interface CrearClaseCeaBody {
   idProg: string;
   tipoClase: TipoClaseCea;
@@ -157,6 +306,11 @@ export interface CrearClaseCeaBody {
   horaDesde: string;
   horaHasta?: string;
   duracionHoras?: number;
+  horasDescuento?: number;
+  numDoc?: number | string;
+  origenHoras?: OrigenHorasCea;
+  horasAsignadas?: number;
+  inscripciones?: InscripcionCrearClaseCea[];
   idTema?: string;
   idAula?: string;
   idTaller?: string;
@@ -164,6 +318,27 @@ export interface CrearClaseCeaBody {
   idEmpleadoInstructor?: number;
   cupoMaximo?: number;
   observaciones?: string;
+}
+
+export interface ProgramarClaseCeaCtx {
+  numDoc?: number | string;
+  idProg?: string;
+  tipoClase?: TipoClaseCea;
+  origenHoras?: OrigenHorasCea;
+  alumnoNombre?: string;
+}
+
+/** Inscribir alumno en clase grupal ya programada (teoría / taller). */
+export interface InscribirClaseCeaCtx {
+  numDoc: number | string;
+  idProg?: string;
+  tipoClase?: TipoClaseCea;
+  origenHoras?: OrigenHorasCea;
+  alumnoNombre?: string;
+}
+
+export interface CrearClaseCeaResult extends ClaseProgramadaCeaDto {
+  advertenciasInscripcion?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -189,7 +364,10 @@ export class ProgramacionCeaService {
   }
 
   listarTemas(idProg: string): Observable<TemaProgramaCeaDto[]> {
-    return this.http.get<TemaProgramaCeaDto[]>(`${this.base}/temas/${encodeURIComponent(idProg)}`);
+    return this.http.get<TemaProgramaCeaDto[]>(
+      `${this.base}/temas/${encodeURIComponent(idProg)}`,
+      { params: { _: String(Date.now()) } },
+    );
   }
 
   crearTema(idProg: string, body: Partial<TemaProgramaCeaDto>): Observable<TemaProgramaCeaDto> {
@@ -209,26 +387,75 @@ export class ProgramacionCeaService {
     return this.http.get<RastreoGlobalCea>(`${this.base}/rastreo${q}`);
   }
 
-  rastreoAlumno(numDoc: number | string): Observable<{
-    numDoc: number;
-    alumnoNombre: string;
-    filas: FilaRastreoCea[];
-    alertasPrograma: AlertaProgramaCea[];
-  }> {
-    return this.http.get<{
-      numDoc: number;
-      alumnoNombre: string;
-      filas: FilaRastreoCea[];
-      alertasPrograma: AlertaProgramaCea[];
-    }>(`${this.base}/rastreo/${encodeURIComponent(String(numDoc))}`);
+  rastreoAlumno(numDoc: number | string): Observable<RastreoAlumnoCea> {
+    return this.http.get<RastreoAlumnoCea>(
+      `${this.base}/rastreo/${encodeURIComponent(String(numDoc))}`,
+    );
+  }
+
+  guardarPreferenciasAlumno(
+    numDoc: number | string,
+    body: { duracionSesionPracticaCea: number | null },
+  ): Observable<PreferenciasAlumnoCea> {
+    return this.http.patch<PreferenciasAlumnoCea>(
+      `${this.base}/rastreo/${encodeURIComponent(String(numDoc))}/preferencias`,
+      body,
+    );
+  }
+
+  completarClasesFaltantes(numDoc: number | string): Observable<CompletarClasesFaltantesCeaResult> {
+    return this.http.post<CompletarClasesFaltantesCeaResult>(
+      `${this.base}/rastreo/${encodeURIComponent(String(numDoc))}/completar-faltantes`,
+      {},
+    );
+  }
+
+  generarClasesPendientesGlobales(): Observable<GenerarClasesPendientesCeaResult> {
+    return this.http.post<GenerarClasesPendientesCeaResult>(`${this.base}/rastreo/generar-pendientes`, {});
+  }
+
+  previewPlanificacion(body: PlanificacionCeaBody): Observable<PlanificacionCeaPreview> {
+    return this.http.post<PlanificacionCeaPreview>(`${this.base}/planificacion/preview`, body);
+  }
+
+  generarPlanificacion(body: PlanificacionCeaBody): Observable<PlanificacionCeaPreview> {
+    return this.http.post<PlanificacionCeaPreview>(`${this.base}/planificacion/generar`, body);
+  }
+
+  clasesAlumno(
+    numDoc: number | string,
+    params?: { desde?: string; hasta?: string; todas?: boolean },
+  ): Observable<ClaseProgramadaCeaDto[]> {
+    const q = new URLSearchParams();
+    if (params?.desde) q.set('desde', params.desde);
+    if (params?.hasta) q.set('hasta', params.hasta);
+    if (params?.todas) q.set('todas', '1');
+    const qs = q.toString();
+    return this.http.get<ClaseProgramadaCeaDto[]>(
+      `${this.base}/rastreo/${encodeURIComponent(String(numDoc))}/clases${qs ? `?${qs}` : ''}`,
+    );
   }
 
   alertasPendientes(): Observable<AlertasPendientesCea> {
     return this.http.get<AlertasPendientesCea>(`${this.base}/alertas-pendientes`);
   }
 
-  recursos(): Observable<RecursosProgramacionCea> {
-    return this.http.get<RecursosProgramacionCea>(`${this.base}/recursos`);
+  alertasClasesCreado(): Observable<AlertasClasesCreadoCea> {
+    return this.http.get<AlertasClasesCreadoCea>(`${this.base}/alertas-clases-creado`);
+  }
+
+  alertasClasesProximas(minutos = 15): Observable<AlertasClasesProximasCea> {
+    return this.http.get<AlertasClasesProximasCea>(
+      `${this.base}/alertas-clases-proximas?minutos=${encodeURIComponent(String(minutos))}`,
+    );
+  }
+
+  recursos(opts?: { idProg?: string; categoriaLicencia?: string }): Observable<RecursosProgramacionCea> {
+    const p = new URLSearchParams();
+    if (opts?.idProg) p.set('idProg', opts.idProg);
+    if (opts?.categoriaLicencia) p.set('categoriaLicencia', opts.categoriaLicencia);
+    const q = p.toString() ? `?${p}` : '';
+    return this.http.get<RecursosProgramacionCea>(`${this.base}/recursos${q}`);
   }
 
   listarClases(params: {
@@ -259,12 +486,22 @@ export class ProgramacionCeaService {
     return this.http.get<ClaseProgramadaCeaDto>(`${this.base}/clases/${encodeURIComponent(id)}`);
   }
 
-  crearClase(body: CrearClaseCeaBody): Observable<ClaseProgramadaCeaDto> {
-    return this.http.post<ClaseProgramadaCeaDto>(`${this.base}/clases`, body);
+  crearClase(body: CrearClaseCeaBody): Observable<CrearClaseCeaResult> {
+    return this.http.post<CrearClaseCeaResult>(`${this.base}/clases`, body);
   }
 
   cancelarClase(id: string): Observable<ClaseProgramadaCeaDto> {
     return this.http.delete<ClaseProgramadaCeaDto>(`${this.base}/clases/${encodeURIComponent(id)}`);
+  }
+
+  eliminarClase(id: string): Observable<{ ok: boolean; id: string }> {
+    return this.http.delete<{ ok: boolean; id: string }>(
+      `${this.base}/clases/${encodeURIComponent(id)}/permanente`,
+    );
+  }
+
+  actualizarClase(id: string, body: CrearClaseCeaBody): Observable<ClaseProgramadaCeaDto> {
+    return this.http.put<ClaseProgramadaCeaDto>(`${this.base}/clases/${encodeURIComponent(id)}`, body);
   }
 
   verificarConflictos(body: CrearClaseCeaBody, excludeId?: string): Observable<{ ok: boolean; conflictos: ConflictoProgramacionCea[]; message?: string }> {
@@ -292,7 +529,16 @@ export class ProgramacionCeaService {
     return this.http.get<AlumnoElegibleCea[]>(`${this.base}/clases/${encodeURIComponent(idClase)}/alumnos-elegibles${qs}`);
   }
 
-  inscribirAlumno(idClase: string, body: { numDoc: number | string; origenHoras?: OrigenHorasCea }): Observable<{ inscripcion: InscripcionClaseCeaDto; clase: ClaseProgramadaCeaDto }> {
+  alumnosElegiblesPrograma(idProg: string, tipoHoras: TipoHorasCea | TipoClaseCea, q = ''): Observable<AlumnoElegibleCea[]> {
+    const p = new URLSearchParams({ idProg, tipoHoras });
+    if (q.trim()) p.set('q', q.trim());
+    return this.http.get<AlumnoElegibleCea[]>(`${this.base}/elegibles-programa?${p}`);
+  }
+
+  inscribirAlumno(
+    idClase: string,
+    body: { numDoc: number | string; origenHoras?: OrigenHorasCea; horasAsignadas?: number },
+  ): Observable<{ inscripcion: InscripcionClaseCeaDto; clase: ClaseProgramadaCeaDto }> {
     return this.http.post<{ inscripcion: InscripcionClaseCeaDto; clase: ClaseProgramadaCeaDto }>(
       `${this.base}/clases/${encodeURIComponent(idClase)}/inscribir`,
       body,
@@ -320,6 +566,11 @@ export function labelTipoClaseCea(t: TipoClaseCea): string {
   if (t === 'teoria') return 'Teoría';
   if (t === 'taller') return 'Taller';
   return 'Práctica';
+}
+
+/** Clave única para @for sobre filas de rastreo (varias matrículas del mismo alumno). */
+export function trackFilaRastreoCea(f: FilaRastreoCea): string {
+  return `${f.numDoc}|${f.idMat}|${f.idLiq}|${f.tipoHoras}|${f.origenHoras}|${f.idProg}`;
 }
 
 export function fmtDuracionSegundos(seg?: number | null): string {

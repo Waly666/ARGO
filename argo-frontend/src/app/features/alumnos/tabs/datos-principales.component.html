@@ -100,7 +100,7 @@
     </div>
   </div>
 
-  <div class="form-cols">
+  <div class="form-cols argo-form-shell">
       <div class="form-section tone-blue">
         <div class="section-head">
           <span class="section-icon ic-blue">◉</span>
@@ -123,13 +123,18 @@
           </div>
           <div class="row">
             <div class="col-3">
-              <label>tipoAlumno</label>
-              <select
-                [ngModel]="form().tipoAlumno"
-                (ngModelChange)="patch('tipoAlumno', $event)"
-                [disabled]="esAlumnoJornada()">
-                <option *ngFor="let t of tiposAlumno" [value]="t">{{ t }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="tipoAlumno"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="form().tipoAlumno || ''"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [disabled]="esAlumnoJornada()"
+                [opcionesLocales]="opcionesTipoAlumno()"
+                (seleccionado)="onTipoAlumnoPick($event)"
+                (limpiado)="onTipoAlumnoLimpiar()"
+              />
               <p class="hint" *ngIf="!isEdit() && esAlumnoJornada()">Alta para Jornadas de Capacitación (no Regular).</p>
             </div>
             <div class="col-3">
@@ -150,9 +155,12 @@
             <div class="col-6">
               <argo-municipio-buscar
                 label="expedida"
-                placeholder="Nombre municipio (tabla divipola)..."
+                placeholder="Seleccione o escriba municipio…"
+                [modoCombo]="true"
                 [textoInicial]="expedidaTexto()"
                 (seleccionado)="onExpedidaSel($event)"
+                (limpiado)="onExpedidaLimpiar()"
+                (textoChange)="onExpedidaTexto($event)"
               />
             </div>
           </div>
@@ -207,62 +215,110 @@
         <div class="section-body">
           <div class="row">
             <div class="col-3">
-              <label>genero</label>
-              <select [ngModel]="form().genero" (ngModelChange)="patch('genero', $event)">
-                <option value="">--</option>
-                <option *ngFor="let g of generos()" [value]="catValor(g)">{{ catEtiqueta(g) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="genero"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(generos(), form().genero)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesGeneros()"
+                (seleccionado)="onCatalogoPick('genero', $event)"
+                (limpiado)="onCatalogoLimpiar('genero')"
+              />
             </div>
             <div class="col-3">
-              <label>tipoSangre</label>
-              <select [ngModel]="form().tipoSangre" (ngModelChange)="patch('tipoSangre', $event)">
-                <option value="">--</option>
-                <option *ngFor="let r of tiposSangre()" [value]="catValor(r)">{{ catEtiqueta(r) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="tipoSangre"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(tiposSangre(), form().tipoSangre)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesTiposSangre()"
+                (seleccionado)="onCatalogoPick('tipoSangre', $event)"
+                (limpiado)="onCatalogoLimpiar('tipoSangre')"
+              />
             </div>
             <div class="col-3">
-              <label>jornada</label>
-              <select [ngModel]="form().jornada" (ngModelChange)="patch('jornada', $event)">
-                <option value="">--</option>
-                <option *ngFor="let j of jornadas()" [value]="catValor(j)">{{ catEtiqueta(j) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="jornada"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(jornadas(), form().jornada)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesJornadas()"
+                (seleccionado)="onCatalogoPick('jornada', $event)"
+                (limpiado)="onCatalogoLimpiar('jornada')"
+              />
             </div>
             <div class="col-3">
-              <label>estadoCivil</label>
-              <select [ngModel]="form().estadoCivil" (ngModelChange)="patch('estadoCivil', $event)">
-                <option value="">--</option>
-                <option *ngFor="let e of estadosCiviles()" [value]="catValor(e)">{{ catEtiqueta(e) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="estadoCivil"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(estadosCiviles(), form().estadoCivil)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesEstadosCivil()"
+                (seleccionado)="onCatalogoPick('estadoCivil', $event)"
+                (limpiado)="onCatalogoLimpiar('estadoCivil')"
+              />
             </div>
           </div>
           <div class="row">
             <div class="col-3">
-              <label>estrato</label>
-              <select [ngModel]="form().estrato" (ngModelChange)="patch('estrato', $event)">
-                <option value="">--</option>
-                <option *ngFor="let e of estratos()" [value]="catValor(e)">{{ catEtiqueta(e) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="estrato"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(estratos(), form().estrato)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesEstratos()"
+                (seleccionado)="onCatalogoPick('estrato', $event)"
+                (limpiado)="onCatalogoLimpiar('estrato')"
+              />
             </div>
             <div class="col-3">
-              <label>regimenSalud</label>
-              <select [ngModel]="form().regimenSalud" (ngModelChange)="patch('regimenSalud', $event)">
-                <option value="">--</option>
-                <option *ngFor="let r of regimenesSalud()" [value]="catValor(r)">{{ catEtiqueta(r) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="regimenSalud"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(regimenesSalud(), form().regimenSalud)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesRegimenSalud()"
+                (seleccionado)="onCatalogoPick('regimenSalud', $event)"
+                (limpiado)="onCatalogoLimpiar('regimenSalud')"
+              />
             </div>
             <div class="col-3">
-              <label>nivelFormacion</label>
-              <select [ngModel]="form().nivelFormacion" (ngModelChange)="patch('nivelFormacion', $event)">
-                <option value="">--</option>
-                <option *ngFor="let n of nivelesFormacion()" [value]="catValor(n)">{{ catEtiqueta(n) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="nivelFormacion"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(nivelesFormacion(), form().nivelFormacion)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesNivelFormacion()"
+                (seleccionado)="onCatalogoPick('nivelFormacion', $event)"
+                (limpiado)="onCatalogoLimpiar('nivelFormacion')"
+              />
             </div>
             <div class="col-3">
-              <label>ocupacion</label>
-              <select [ngModel]="form().ocupacion" (ngModelChange)="patch('ocupacion', $event)">
-                <option value="">--</option>
-                <option *ngFor="let o of ocupaciones()" [value]="catValor(o)">{{ catEtiqueta(o) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="ocupacion"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(ocupaciones(), form().ocupacion)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesOcupaciones()"
+                (seleccionado)="onCatalogoPick('ocupacion', $event)"
+                (limpiado)="onCatalogoLimpiar('ocupacion')"
+              />
             </div>
           </div>
         </div>
@@ -301,9 +357,11 @@
             <div class="col-8">
               <argo-municipio-buscar
                 label="munOrigen"
-                placeholder="Buscar municipio de origen (divipola)..."
+                placeholder="Seleccione o escriba municipio…"
+                [modoCombo]="true"
                 [textoInicial]="munOrigenTexto()"
                 (seleccionado)="onMunOrigenSel($event)"
+                (limpiado)="onMunOrigenLimpiar()"
               />
             </div>
           </div>
@@ -321,16 +379,30 @@
         <div class="section-body">
           <div class="row">
             <div class="col-4">
-              <label>discapacidad</label>
-              <select [ngModel]="form().discapacidad" (ngModelChange)="patch('discapacidad', $event)">
-                <option *ngFor="let d of discapacidades()" [value]="catValor(d)">{{ catEtiqueta(d) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="discapacidad"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(discapacidades(), form().discapacidad)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesDiscapacidades()"
+                (seleccionado)="onCatalogoPick('discapacidad', $event)"
+                (limpiado)="onCatalogoLimpiar('discapacidad', '9')"
+              />
             </div>
             <div class="col-4">
-              <label>multiCulturalidad</label>
-              <select [ngModel]="form().multiCulturalidad" (ngModelChange)="patch('multiCulturalidad', $event)">
-                <option *ngFor="let mc of multiCulturalidades()" [value]="catValor(mc)">{{ catEtiqueta(mc) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="multiCulturalidad"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(multiCulturalidades(), form().multiCulturalidad)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesMultiCulturalidad()"
+                (seleccionado)="onCatalogoPick('multiCulturalidad', $event)"
+                (limpiado)="onCatalogoLimpiar('multiCulturalidad', 'NO_APLICA')"
+              />
             </div>
           </div>
           <div class="row">

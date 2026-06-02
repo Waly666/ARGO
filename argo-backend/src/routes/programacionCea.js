@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/programacionCeaController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const ver = requirePermiso('programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar');
 const gest = requirePermiso('programacion_cea.gestionar');
@@ -20,16 +20,26 @@ router.put('/temas/item/:id', gest, ctrl.actualizarTema);
 router.delete('/temas/item/:id', gest, ctrl.eliminarTema);
 
 router.get('/rastreo', ver, ctrl.rastreoGlobal);
+router.post('/rastreo/generar-pendientes', gest, ctrl.generarClasesPendientesGlobales);
+router.get('/rastreo/:numDoc/clases', ver, ctrl.clasesAlumno);
 router.get('/rastreo/:numDoc', ver, ctrl.rastreoAlumno);
+router.patch('/rastreo/:numDoc/preferencias', gest, ctrl.preferenciasAlumno);
+router.post('/rastreo/:numDoc/completar-faltantes', gest, ctrl.completarClasesFaltantesAlumno);
+router.post('/planificacion/preview', gest, ctrl.previewPlanificacion);
+router.post('/planificacion/generar', gest, ctrl.generarPlanificacion);
 router.get('/alertas-pendientes', ver, ctrl.alertasPendientes);
+router.get('/alertas-clases-creado', ver, ctrl.alertasClasesCreado);
+router.get('/alertas-clases-proximas', ver, ctrl.alertasClasesProximas);
 
+router.get('/elegibles-programa', ver, ctrl.alumnosElegiblesPrograma);
 router.get('/recursos', ver, ctrl.recursos);
 router.get('/clases', ver, ctrl.listarClases);
-router.post('/clases/verificar-conflictos', gest, ctrl.verificarConflictos);
+router.post('/clases/verificar-conflictos', operar, ctrl.verificarConflictos);
 router.post('/clases', gest, ctrl.crearClase);
 router.get('/clases/:id', ver, ctrl.obtenerClase);
-router.put('/clases/:id', gest, ctrl.actualizarClase);
+router.put('/clases/:id', operar, ctrl.actualizarClase);
 router.delete('/clases/:id', gest, ctrl.cancelarClase);
+router.delete('/clases/:id/permanente', gest, ctrl.eliminarClase);
 router.post('/clases/:id/iniciar', operar, ctrl.iniciarClase);
 router.post('/clases/:id/finalizar', operar, ctrl.finalizarClase);
 router.get('/clases/:id/inscripciones', ver, ctrl.listarInscripciones);

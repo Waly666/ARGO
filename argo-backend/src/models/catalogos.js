@@ -44,6 +44,8 @@ const CATALOGOS = {
   adaptaciones: 'adaptaciones',
   aspecto1: 'aspecto1',
   aspecto2: 'aspecto2',
+  itemsInspeccion: 'itemsInspeccion',
+  caractInspeccion: 'caractInspeccion',
 };
 
 const models = {};

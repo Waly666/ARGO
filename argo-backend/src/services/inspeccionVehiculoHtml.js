@@ -1,4 +1,4 @@
-const Config = require('../models/Config');
+const { obtenerConfigRecibo } = require('./configRecibo');
 const QRCode = require('qrcode');
 const { normSi } = require('../utils/inspeccionClaseVehiculo');
 
@@ -110,13 +110,13 @@ function bloqueDocumentos(titulo, items) {
   </section>`;
 }
 
-async function obtenerEmpresa() {
-  const cfg = await Config.findOne({ clave: 'recibo' }).lean();
-  return cfg || {};
+async function obtenerEmpresa(idSede) {
+  return obtenerConfigRecibo(idSede || null);
 }
 
 async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
-  const empresa = await obtenerEmpresa();
+  const idSede = vehiculo?.idSede || inspeccion?.idSede || null;
+  const empresa = await obtenerEmpresa(idSede);
   const aptoVal = normSi(inspeccion.aptoLaborar);
   const apto = aptoVal === true ? 'Sí' : aptoVal === false ? 'No' : 'Sin marcar';
 
@@ -128,7 +128,9 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
     ? `<img class="logo" src="${esc(logoUrl)}" alt="Logo" />`
     : '';
   const nitLine = empresa.nit ? `NIT ${esc(empresa.nit)}` : '';
-  const ciudadLine = [empresa.ciudad, empresa.telefono].filter(Boolean).map((v) => esc(v)).join(' · ');
+  const contactoLine = [empresa.telefono, empresa.direccion].filter(Boolean).map((v) => esc(v)).join(' · ');
+  const ciudadLine = [empresa.ciudad, empresa.departamento].filter(Boolean).map((v) => esc(v)).join(', ');
+  const sedeLine = empresa.nombreSede ? esc(empresa.nombreSede) : '';
 
   const metaCampo = (label, valor, extraClass = '') => {
     const cls = extraClass ? ` meta-v ${extraClass}` : ' meta-v';
@@ -201,6 +203,12 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
       display: block;
       font-size: 14px;
       line-height: 1.25;
+      margin-bottom: 2px;
+    }
+    .brand-text .sede {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
       margin-bottom: 2px;
     }
     .brand-text .nit {
@@ -331,7 +339,9 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
         ${logoHtml}
         <div class="brand-text">
           <strong>${esc(empresa.nombreEmpresa || 'ARGO — Centro de Formación')}</strong>
+          ${sedeLine ? `<span class="sede">${sedeLine}</span>` : ''}
           ${nitLine ? `<span class="nit">${nitLine}</span>` : ''}
+          ${contactoLine ? `<span class="extra">${contactoLine}</span>` : ''}
           ${ciudadLine ? `<span class="extra">${ciudadLine}</span>` : ''}
         </div>
       </div>
@@ -356,16 +366,17 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
       ${metaCampo('Marca / línea', marcaLinea)}
       ${metaCampo('Quien entrega', inspeccion.quienEntrega, esPrimera ? 'primera' : '')}
       ${metaCampo('Quien recibe (instructor)', quienRecibe)}
+      ${metaCampo('Inspector', inspeccion.inspector || '—')}
+      ${metaCampo('Documento inspector', inspeccion.documentoInspector || '—')}
       ${metaCampo('Apto para laborar', apto)}
     </div>
   </header>
 
   ${docsVehi}
   ${docsInst}
-  ${bloqueSeccion('Estado general del vehículo', inspeccion.estadoGeneral, true)}
-  ${bloqueSeccion('Adaptaciones y estado técnico del vehículo', inspeccion.adaptaciones, true)}
-  ${bloqueSeccion('Emergencias, primeros auxilios y otros aspectos', inspeccion.aspecto1, true)}
-  ${bloqueSeccion('Seguridad activa y pasiva', inspeccion.aspecto2, true)}
+  ${(inspeccion.grupos || [])
+    .map((g) => bloqueSeccion(g.titulo, g.lineas, true))
+    .join('')}
 
   <p class="legal">
     LA RESPONSABILIDAD DE QUE ESTA OBSERVACIÓN Y QUE LOS ANTERIORES ITEMS SE CUMPLAN,
@@ -384,6 +395,12 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
     <div class="firma">
       <div class="linea"></div>
       <div>Nombre y firma del inspector</div>
+      <div>${esc(inspeccion.inspector || '—')}</div>
+      <div class="doc-firma">${esc(inspeccion.documentoInspector || '')}</div>
+    </div>
+    <div class="firma">
+      <div class="linea"></div>
+      <div>Nombre y firma de quien recibe el vehículo</div>
       <div>${esc(quienRecibe)}</div>
     </div>
     <div class="firma">

@@ -3,6 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../../core/services/auth.service';
+import { SedeDto, SedeService } from '../../core/services/sede.service';
 import { Usuario, UsuarioDto, UsuarioService } from '../../core/services/usuario.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
@@ -21,10 +22,12 @@ import {
 })
 export class UsuariosAdminComponent implements OnInit {
   private svc = inject(UsuarioService);
+  private sedeSvc = inject(SedeService);
   private auth = inject(AuthService);
   private confirm = inject(ConfirmDialogService);
 
   usuarios = signal<Usuario[]>([]);
+  sedesCatalogo = signal<SedeDto[]>([]);
   roles = signal<{ id: string; label: string }[]>([]);
   loading = signal(false);
   saving = signal(false);
@@ -42,11 +45,16 @@ export class UsuariosAdminComponent implements OnInit {
     rol: 'usuario',
     activo: true,
     numeroDocumento: '',
+    sedesPermitidas: [],
   });
 
   ngOnInit(): void {
     this.cargar();
     this.svc.roles().subscribe({ next: (r) => this.roles.set(r || []) });
+    this.sedeSvc.listar().subscribe({
+      next: (s) => this.sedesCatalogo.set((s || []).filter((x) => x.activa !== false)),
+      error: () => undefined,
+    });
   }
 
   cargar() {
@@ -76,6 +84,7 @@ export class UsuariosAdminComponent implements OnInit {
   docLabel = documentoUsuario;
 
   nuevo() {
+    const principal = this.sedesCatalogo().find((s) => s.esPrincipal) || this.sedesCatalogo()[0];
     this.editando.set(null);
     this.form.set({
       username: '',
@@ -86,6 +95,7 @@ export class UsuariosAdminComponent implements OnInit {
       rol: 'usuario',
       activo: true,
       numeroDocumento: '',
+      sedesPermitidas: principal ? [principal.idSede] : [],
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
@@ -103,6 +113,7 @@ export class UsuariosAdminComponent implements OnInit {
       rol: u.rol || 'usuario',
       activo: u.activo !== false,
       numeroDocumento: documentoUsuario(u),
+      sedesPermitidas: u.sedesPermitidas?.length ? [u.sedesPermitidas[0]] : [],
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
@@ -115,6 +126,32 @@ export class UsuariosAdminComponent implements OnInit {
 
   patch<K extends keyof UsuarioDto>(k: K, v: UsuarioDto[K]) {
     this.form.update((f) => ({ ...f, [k]: v }));
+  }
+
+  esRolAdmin(rol?: string): boolean {
+    const r = String(rol || '').toLowerCase();
+    return r === 'admin' || r.includes('admin');
+  }
+
+  /** Primera sede del formulario (asignación única en UI). */
+  sedeFormId(): string {
+    return (this.form().sedesPermitidas || [])[0] || '';
+  }
+
+  onSedeFormChange(idSede: string): void {
+    if (this.esRolAdmin(this.form().rol)) return;
+    const id = String(idSede || '').trim();
+    this.patch('sedesPermitidas', id ? [id] : []);
+  }
+
+  labelSedes(u: Usuario): string {
+    const ids = u.sedesPermitidas || [];
+    if (!ids.length) {
+      return this.esRolAdmin(u.rol) ? 'Todas (admin)' : 'Principal';
+    }
+    const id = ids[0];
+    const s = this.sedesCatalogo().find((x) => x.idSede === id);
+    return s ? s.nombre : id;
   }
 
   guardar() {
@@ -132,11 +169,17 @@ export class UsuariosAdminComponent implements OnInit {
       this.msg.set('La contraseña es obligatoria al crear (mín. 4 caracteres).');
       return;
     }
+    if (!this.esRolAdmin(f.rol) && !(f.sedesPermitidas || []).length) {
+      this.msg.set('Seleccione la sede del usuario.');
+      return;
+    }
     this.saving.set(true);
     this.msg.set(null);
+    const payload: UsuarioDto = { ...f };
+    if (this.esRolAdmin(f.rol)) payload.sedesPermitidas = [];
     const req = ed
-      ? this.svc.actualizar(ed._id, f)
-      : this.svc.crear(f);
+      ? this.svc.actualizar(ed._id, payload)
+      : this.svc.crear(payload);
     req.subscribe({
       next: () => {
         this.saving.set(false);

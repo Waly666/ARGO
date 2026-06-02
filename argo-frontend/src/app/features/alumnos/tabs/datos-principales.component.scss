@@ -342,12 +342,24 @@
   overflow: visible;
 }
 
-.col-2  { grid-column: span 2; }
-.col-3  { grid-column: span 3; }
-.col-4  { grid-column: span 4; }
-.col-6  { grid-column: span 6; }
-.col-8  { grid-column: span 8; }
-.col-12 { grid-column: span 12; }
+.col-2  { grid-column: span 2; position: relative; z-index: 0; }
+.col-3  { grid-column: span 3; position: relative; z-index: 0; }
+.col-4  { grid-column: span 4; position: relative; z-index: 0; }
+.col-6  { grid-column: span 6; position: relative; z-index: 0; }
+.col-8  { grid-column: span 8; position: relative; z-index: 0; }
+.col-12 { grid-column: span 12; position: relative; z-index: 0; }
+
+.form-cols .col-2:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-cols .col-3:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-cols .col-4:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-cols .col-6:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-cols .col-8:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-cols .col-12:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-cols .col-3:has(argo-municipio-buscar.dropdown-open),
+.form-cols .col-6:has(argo-municipio-buscar.dropdown-open),
+.form-cols .col-8:has(argo-municipio-buscar.dropdown-open) {
+  z-index: 5000;
+}
 
 .form-cols label {
   display: block;
