@@ -136,7 +136,6 @@
             height="900"
             loading="lazy"
           />
-          <figcaption>Infografía → <code>public/imagenes/ciclo-operativo.jpg</code></figcaption>
         </figure>
       </div>
     </section>
@@ -148,8 +147,8 @@
           <p class="kicker kicker--dark">Plataforma completa</p>
           <h2>Cada módulo, explicado en detalle</h2>
           <p class="panel__sub panel__sub--wide">
-            A continuación encontrarás la descripción funcional de las áreas principales de ARGO.
-            Cada bloque incluye espacio para tu captura de pantalla o video demostrativo.
+            A continuación encontrarás la descripción funcional de las áreas principales de ARGO,
+            con capturas y videos demostrativos del sistema.
           </p>
         </header>
 
@@ -171,7 +170,6 @@
             <div class="feature-block__media">
               <figure class="media-slot media-slot--module">
                 <img [src]="mediaUrl(m.imagen)" [alt]="m.imagenAlt" loading="lazy" />
-                <figcaption>Imagen → <code>public/{{ m.imagen }}</code></figcaption>
               </figure>
               @if (m.video) {
                 <div class="media-slot media-slot--video media-slot--module-video">
@@ -182,7 +180,6 @@
                     preload="metadata"
                     [poster]="mediaUrl(m.imagen)"
                   ></video>
-                  <p class="media-slot__hint">Video → <code>public/{{ m.video }}</code></p>
                 </div>
               }
             </div>
@@ -198,8 +195,8 @@
           <p class="kicker">Emisión académica</p>
           <h2>Tipos de certificado soportados</h2>
           <p class="panel__sub">
-            Cada programa define su <code>tipoCertificado</code>. ARGO elige la plantilla correcta,
-            valida elegibilidad (pagos + documentos) e incrementa el consecutivo por sede.
+            Cada programa define su tipo de certificado. ARGO elige la plantilla correcta,
+            valida elegibilidad (pagos y documentos) e incrementa el consecutivo por sede.
           </p>
         </header>
         <div class="cert-grid">
@@ -211,8 +208,7 @@
           }
         </div>
         <figure class="media-slot media-slot--wide">
-          <img src="imagenes/certificados-plantillas.jpg" alt="Plantillas de certificados ARGO" />
-          <figcaption>Plantillas → <code>public/imagenes/certificados-plantillas.jpg</code></figcaption>
+          <img [src]="mediaUrl('imagenes/certificados-plantillas.jpg')" alt="Plantillas de certificados ARGO" loading="lazy" />
         </figure>
       </div>
     </section>
@@ -224,8 +220,7 @@
           <p class="kicker kicker--dark">Capturas del sistema</p>
           <h2>Galería de pantallas ARGO</h2>
           <p class="panel__sub panel__sub--wide">
-            Sustituye cada imagen por capturas reales de tu instalación. Recomendado: PNG o JPG
-            1920×1080, interfaz limpia con datos de demostración.
+            Capturas reales del sistema en operación: dashboard, caja, alumnos, programación y más.
           </p>
         </header>
         <div class="galeria__grid">
@@ -237,7 +232,6 @@
               <figcaption>
                 <strong>{{ g.titulo }}</strong>
                 <span>{{ g.desc }}</span>
-                <code>public/{{ g.imagen }}</code>
               </figcaption>
             </figure>
           }
@@ -252,8 +246,7 @@
           <p class="kicker">Demos en video</p>
           <h2>Biblioteca de videos promocionales</h2>
           <p class="panel__sub panel__sub--wide">
-            Graba o monta tus demostraciones y colócalas en <code>public/videos/</code>. Cada
-            tarjeta acepta un MP4 y poster en <code>public/imagenes/</code>.
+            Demostraciones en video de los módulos principales: presentación, operación diaria y flujos clave del CEA.
           </p>
         </header>
         <div class="videos__grid videos__grid--large">
@@ -272,7 +265,6 @@
                 <h3>{{ v.titulo }}</h3>
                 <p class="video-card__desc">{{ v.desc }}</p>
                 <p class="video-card__detalle">{{ v.detalle }}</p>
-                <p class="video-card__path"><code>public/{{ v.src }}</code></p>
               </div>
             </article>
           }
@@ -309,8 +301,7 @@
             </ul>
           </div>
           <figure class="media-slot">
-            <img src="imagenes/tecnologia-servidor.jpg" alt="Despliegue ARGO" />
-            <figcaption>Imagen infra → <code>public/imagenes/tecnologia-servidor.jpg</code></figcaption>
+            <img [src]="mediaUrl('imagenes/tecnologia-servidor.jpg')" alt="Despliegue ARGO" loading="lazy" />
           </figure>
         </div>
       </div>

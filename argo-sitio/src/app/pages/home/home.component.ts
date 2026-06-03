@@ -29,7 +29,6 @@ interface ModuloDetalle {
   imagen: string;
   imagenAlt: string;
   video?: string;
-  mediaHint: string;
 }
 
 interface CertificadoTipo {
@@ -72,7 +71,7 @@ export class HomeComponent {
    * Sube este número cuando reemplaces archivos en public/imagenes o public/videos
    * (fuerza al navegador a pedir la versión nueva). No hace falta tocar cada archivo.
    */
-  private readonly publicMediaVersion = 3;
+  private readonly publicMediaVersion = 4;
 
   /** URL absoluta desde public/ — todas las imágenes y videos pasan por aquí. */
   mediaUrl(path: string | undefined | null): string {
@@ -174,7 +173,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-alumnos.jpg',
       imagenAlt: 'Captura del módulo de alumnos ARGO',
       video: 'videos/modulo-alumnos.mp4',
-      mediaHint: 'imagenes/modulo-alumnos.jpg · videos/modulo-alumnos.mp4',
     },
     {
       id: 'sedes',
@@ -197,7 +195,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-sedes.jpg',
       imagenAlt: 'Configuración de sedes y selector de sede activa en ARGO',
       video: 'videos/modulo-sedes.mp4',
-      mediaHint: 'imagenes/modulo-sedes.jpg · videos/modulo-sedes.mp4',
     },
     {
       id: 'alarmas',
@@ -223,7 +220,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-alarmas.jpg',
       imagenAlt: 'Franjas de alarmas parpadeantes en el encabezado de ARGO',
       video: 'videos/modulo-alarmas.mp4',
-      mediaHint: 'imagenes/modulo-alarmas.jpg · videos/modulo-alarmas.mp4',
     },
     {
       id: 'caja',
@@ -244,7 +240,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-caja.jpg',
       imagenAlt: 'Captura del módulo de caja ARGO',
       video: 'videos/modulo-caja.mp4',
-      mediaHint: 'imagenes/modulo-caja.jpg · videos/modulo-caja.mp4',
     },
     {
       id: 'certificados',
@@ -264,7 +259,6 @@ export class HomeComponent {
       accent: 'emerald',
       imagen: 'imagenes/modulo-certificados.jpg',
       imagenAlt: 'Captura de certificados ARGO',
-      mediaHint: 'imagenes/modulo-certificados.jpg',
     },
     {
       id: 'cea',
@@ -285,7 +279,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-cea.jpg',
       imagenAlt: 'Captura de programación CEA ARGO',
       video: 'videos/modulo-cea.mp4',
-      mediaHint: 'imagenes/modulo-cea.jpg · videos/modulo-cea.mp4',
     },
     {
       id: 'jornadas',
@@ -306,7 +299,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-jornadas.jpg',
       imagenAlt: 'Captura de jornadas ARGO',
       video: 'videos/modulo-jornadas.mp4',
-      mediaHint: 'imagenes/modulo-jornadas.jpg · videos/modulo-jornadas.mp4',
     },
     {
       id: 'vehiculos',
@@ -327,7 +319,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-vehiculos.jpg',
       imagenAlt: 'Captura de vehículos ARGO',
       video: 'videos/modulo-vehiculos.mp4',
-      mediaHint: 'imagenes/modulo-vehiculos.jpg · videos/modulo-vehiculos.mp4',
     },
     {
       id: 'instructores',
@@ -348,7 +339,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-instructores.jpg',
       imagenAlt: 'Captura del portal instructor ARGO',
       video: 'videos/modulo-instructores.mp4',
-      mediaHint: 'imagenes/modulo-instructores.jpg · videos/modulo-instructores.mp4',
     },
     {
       id: 'facturacion',
@@ -369,7 +359,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-facturacion.jpg',
       imagenAlt: 'Captura de facturación ARGO',
       video: 'videos/modulo-facturacion.mp4',
-      mediaHint: 'imagenes/modulo-facturacion.jpg · videos/modulo-facturacion.mp4',
     },
     {
       id: 'mia',
@@ -391,7 +380,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-mia.jpg',
       imagenAlt: 'Panel del asistente Mia en ARGO',
       video: 'videos/modulo-mia.mp4',
-      mediaHint: 'imagenes/modulo-mia.jpg · videos/modulo-mia.mp4',
     },
     {
       id: 'rrhh',
@@ -412,7 +400,6 @@ export class HomeComponent {
       accent: 'cyan',
       imagen: 'imagenes/modulo-rrhh.jpg',
       imagenAlt: 'Captura de RRHH y nómina ARGO',
-      mediaHint: 'imagenes/modulo-rrhh.jpg',
     },
     {
       id: 'configuracion',
@@ -435,7 +422,6 @@ export class HomeComponent {
       imagen: 'imagenes/modulo-config.jpg',
       imagenAlt: 'Captura de configuración ARGO',
       video: 'videos/modulo-config.mp4',
-      mediaHint: 'imagenes/modulo-config.jpg · videos/modulo-config.mp4',
     },
   ];
 
