@@ -5,9 +5,10 @@ WORKDIR /app
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
   && rm -rf /var/lib/apt/lists/* \
-  && npm install -g pnpm@11.2.2
+  && corepack enable \
+  && corepack prepare pnpm@11.2.2 --activate
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prod --network-concurrency 2
 
 COPY src ./src
