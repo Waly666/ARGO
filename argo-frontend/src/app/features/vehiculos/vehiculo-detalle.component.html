@@ -361,6 +361,6 @@
   </div>
 
   <div class="card docs-panel" *ngIf="!loading() && tab() === 'inspeccion' && puedeDocumentos() && vehiculoId() as vid">
-    <argo-vehiculo-inspeccion-panel [vehiculoId]="vid" />
+    <argo-vehiculo-inspeccion-panel [vehiculoId]="vid" [abrirFormularioHoy]="abrirInspeccionHoy()" />
   </div>
 </section>

@@ -84,6 +84,12 @@ function filtroBusquedaAlumno(q) {
   return { $or: or };
 }
 
+function coincideBusquedaDocumento(numDoc, q) {
+  const digits = String(q || '').replace(/\D/g, '');
+  if (digits.length < 3) return false;
+  return String(numDoc ?? '').includes(digits);
+}
+
 /** Coincidencia en memoria (listas filtradas en JS). */
 function coincideBusquedaAlumno(doc, q) {
   const trimmed = String(q || '').trim();
@@ -151,6 +157,7 @@ module.exports = {
   coincideBusquedaAlumno,
   coincideBusquedaNombre,
   coincideBusquedaTexto,
+  coincideBusquedaDocumento,
   buscarNumDocsAlumno,
   normalizarTextoBusqueda,
 };

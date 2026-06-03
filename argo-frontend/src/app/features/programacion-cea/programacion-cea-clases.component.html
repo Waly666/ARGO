@@ -1175,27 +1175,59 @@
 </ng-template>
 
 @if (inspeccionBloqueoOpen() && vehiculoInspeccionId(); as vid) {
-  <argo-form-modal
-    [open]="true"
-    [title]="'Inspección preoperacional — ' + (inspeccionBloqueoPlaca() || '')"
-    [subtitle]="inspeccionBloqueoMsg() || 'Complete la inspección de hoy antes de iniciar la práctica.'"
-    [wide]="true"
-    [tall]="true"
-    (closed)="cerrarInspeccionBloqueo()">
-    @if (puedeInspeccion()) {
-      <argo-vehiculo-inspeccion-panel
-        [vehiculoId]="vid"
-        [abrirFormularioHoy]="true"
-        [modoInline]="true"
-        (inspeccionGuardada)="onInspeccionGuardadaBloqueo($event)" />
-    } @else {
-      <p class="hint">
-        No tiene permiso para registrar inspecciones. Solicite el permiso
-        <strong>instructores.inspeccion</strong> a administración.
+  @if (editorHost) {
+    <argo-form-modal
+      [open]="true"
+      title="Inspección preoperacional requerida"
+      [subtitle]="inspeccionBloqueoMsg() || 'Debe completar la revisión de hoy antes de iniciar la clase práctica.'"
+      (closed)="cerrarInspeccionBloqueo()">
+      <p class="hint inspeccion-aviso-portal">
+        Falta la <strong>inspección preoperacional de hoy</strong>
+        @if (inspeccionBloqueoPlaca(); as placa) {
+          del vehículo <strong>{{ placa }}</strong>.
+        } @else {
+          del vehículo asignado a la clase.
+        }
+        Complete la revisión en la ficha del vehículo (pantalla completa) y luego vuelva a iniciar la clase.
       </p>
-    }
-    <div modal-actions>
-      <button type="button" class="ghost" (click)="cerrarInspeccionBloqueo()">Cerrar</button>
-    </div>
-  </argo-form-modal>
+      @if (!puedeInspeccion()) {
+        <p class="hint hint-warn">
+          No tiene permiso para registrar inspecciones. Solicite el permiso
+          <strong>instructores.inspeccion</strong> a administración.
+        </p>
+      }
+      <div modal-actions>
+        <button type="button" class="ghost" (click)="cerrarInspeccionBloqueo()">Cerrar</button>
+        @if (puedeInspeccion()) {
+          <button type="button" class="primary" (click)="irFichaVehiculoInspeccion(vid)">
+            Ir a ficha del vehículo
+          </button>
+        }
+      </div>
+    </argo-form-modal>
+  } @else {
+    <argo-form-modal
+      [open]="true"
+      [title]="'Inspección preoperacional — ' + (inspeccionBloqueoPlaca() || '')"
+      [subtitle]="inspeccionBloqueoMsg() || 'Complete la inspección de hoy antes de iniciar la práctica.'"
+      [wide]="true"
+      [tall]="true"
+      (closed)="cerrarInspeccionBloqueo()">
+      @if (puedeInspeccion()) {
+        <argo-vehiculo-inspeccion-panel
+          [vehiculoId]="vid"
+          [abrirFormularioHoy]="true"
+          [modoInline]="true"
+          (inspeccionGuardada)="onInspeccionGuardadaBloqueo($event)" />
+      } @else {
+        <p class="hint">
+          No tiene permiso para registrar inspecciones. Solicite el permiso
+          <strong>instructores.inspeccion</strong> a administración.
+        </p>
+      }
+      <div modal-actions>
+        <button type="button" class="ghost" (click)="cerrarInspeccionBloqueo()">Cerrar</button>
+      </div>
+    </argo-form-modal>
+  }
 }

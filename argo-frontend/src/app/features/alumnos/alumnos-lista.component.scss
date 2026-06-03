@@ -411,8 +411,30 @@ table.alumnos-grid {
   img { width: 100%; height: 100%; object-fit: cover; }
 }
 
-.actions { text-align: right; position: sticky; right: 0; z-index: 2; background: inherit; }
+.actions { text-align: right; position: sticky; right: 0; z-index: 2; background: inherit; display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap; }
 .mini { padding: 4px 10px; font-size: .78rem; }
+
+.list-msg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 0.65rem;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+  font-size: 0.88rem;
+}
+
+.list-msg-error {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.card-actions .act.danger {
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
 
 .loading, .empty {
   padding: 28px 16px;

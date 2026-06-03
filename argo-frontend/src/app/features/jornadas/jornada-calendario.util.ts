@@ -33,7 +33,7 @@ export function ymdLocal(iso?: string | Date | null): string {
 
 /** ¿La fecha cae en el día calendario actual del equipo? */
 export function esFechaHoy(iso?: string | Date | null, hoy = ymdLocal(new Date())): boolean {
-  const key = ymdLocal(iso);
+  const key = ymdCalendario(iso);
   return !!key && key === hoy;
 }
 
@@ -41,13 +41,16 @@ export function esFechaHoy(iso?: string | Date | null, hoy = ymdLocal(new Date()
 export function ymdCalendario(iso?: string | Date | null): string {
   if (!iso) return '';
   if (typeof iso === 'string') {
-    const m = /^(\d{4}-\d{2}-\d{2})/.exec(iso.trim());
-    if (m) return m[1];
+    const t = iso.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
   }
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   if (Number.isNaN(d.getTime())) return '';
   const h = d.getUTCHours();
-  if ((h === 0 || h === 12) && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
+  const min = d.getUTCMinutes();
+  const sec = d.getUTCSeconds();
+  const ms = d.getUTCMilliseconds();
+  if ((h === 0 || h === 12) && min === 0 && sec === 0 && ms === 0) {
     return d.toISOString().slice(0, 10);
   }
   return ymdLocal(d);

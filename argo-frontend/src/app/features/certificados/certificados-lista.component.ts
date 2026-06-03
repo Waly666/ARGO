@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, debounceTime, switchMap } from 'rxjs';
 
 import {
   CertificadoListItem,
   CertificadoService,
 } from '../../core/services/certificado.service';
 import { TIPOS_CERTIFICADO, capEncabezadoCert, capTipoFormatoCert, labelTipoCert } from '../../core/constants/tipos-certificado';
-import { coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
+import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import {
@@ -22,7 +23,7 @@ import {
   TipoAlumno,
   normalizarTipoAlumno,
 } from '../alumnos/catalogo.helpers';
-import { esFechaHoy, ymdLocal } from '../jornadas/jornada-calendario.util';
+import { esFechaHoy, ymdCalendario, ymdLocal } from '../jornadas/jornada-calendario.util';
 import {
   capAlumnoNombre,
   capCertCodigo,
@@ -41,11 +42,37 @@ import {
   templateUrl: './certificados-lista.component.html',
   styleUrls: ['./certificados-lista.component.scss'],
 })
-export class CertificadosListaComponent implements OnInit {
+export class CertificadosListaComponent implements OnInit, OnDestroy {
   private certSvc = inject(CertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private readonly recargar$ = new Subject<void>();
+  private recargarSub = this.recargar$
+    .pipe(
+      debounceTime(280),
+      switchMap(() =>
+        this.certSvc.listarGlobal({
+          q: this.filtro().trim() || undefined,
+          tipoFormatoCert: this.tipoFormato() || undefined,
+          desde: this.fechaDesde() || undefined,
+          hasta: this.fechaHasta() || undefined,
+          cacheBust: Date.now(),
+        }),
+      ),
+    )
+    .subscribe({
+      next: (res) => {
+        this.certificados.set(res.items || []);
+        this.recalcEmitidosHoy();
+        this.loading.set(false);
+      },
+      error: (e) => {
+        this.loading.set(false);
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'No se pudieron cargar los certificados.');
+      },
+    });
 
   loading = signal(false);
   guardando = signal(false);
@@ -96,21 +123,29 @@ export class CertificadosListaComponent implements OnInit {
   filtrados = computed(() => {
     const q = this.filtro().trim();
     const est = this.estadoFiltro();
+    const tipo = this.tipoFormato();
+    const desde = this.fechaDesde();
+    const hasta = this.fechaHasta();
     return this.certificados().filter((c) => {
+      if (tipo && c.tipoFormatoCert !== tipo) return false;
+      if (desde || hasta) {
+        const em = ymdCalendario(c.fechaEmision);
+        if (desde && em && em < desde) return false;
+        if (hasta && em && em > hasta) return false;
+      }
       if (est && this.estadoVigencia(c) !== est) return false;
       if (!q) return true;
       const enc = String(c.encabezado || '');
       const cod = String(c.codigoCert || '');
-      const doc = String(c.numDoc ?? '');
-      const tipo = String(c.tipoFormatoCertLabel || c.tipoFormatoCert || '');
+      const tipoLabel = String(c.tipoFormatoCertLabel || c.tipoFormatoCert || '');
       const contrato = String(c.codContrato || '');
       const ubicacion = String(c.ubicacionJornada || '');
       return (
         coincideBusquedaTexto(c.nombreCompleto, q) ||
         coincideBusquedaTexto(enc, q) ||
         coincideBusquedaTexto(cod, q) ||
-        coincideBusquedaTexto(tipo, q) ||
-        doc.includes(q.replace(/\D/g, '')) ||
+        coincideBusquedaTexto(tipoLabel, q) ||
+        coincideBusquedaDocumento(c.numDoc, q) ||
         coincideBusquedaTexto(contrato, q) ||
         coincideBusquedaTexto(ubicacion, q)
       );
@@ -131,10 +166,39 @@ export class CertificadosListaComponent implements OnInit {
     this.cargar();
   }
 
+  ngOnDestroy() {
+    this.recargarSub.unsubscribe();
+  }
+
+  onFiltroChange(val: string) {
+    this.filtro.set(val);
+    this.solicitarRecargaServidor();
+  }
+
+  onTipoFormatoChange(val: string) {
+    this.tipoFormato.set(val);
+    this.solicitarRecargaServidor();
+  }
+
+  onFechaDesdeChange(val: string) {
+    this.fechaDesde.set(val);
+    this.solicitarRecargaServidor();
+  }
+
+  onFechaHastaChange(val: string) {
+    this.fechaHasta.set(val);
+    this.solicitarRecargaServidor();
+  }
+
+  private solicitarRecargaServidor() {
+    this.recargar$.next();
+  }
+
   cargar(silencioso = false) {
     if (!silencioso) this.loading.set(true);
     this.certSvc
       .listarGlobal({
+        q: this.filtro().trim() || undefined,
         tipoFormatoCert: this.tipoFormato() || undefined,
         desde: this.fechaDesde() || undefined,
         hasta: this.fechaHasta() || undefined,
@@ -143,7 +207,7 @@ export class CertificadosListaComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.certificados.set(res.items || []);
-          this.emitidosHoy.set(res.emitidosHoy ?? 0);
+          this.recalcEmitidosHoy();
           this.loading.set(false);
           const id = this.route.snapshot.queryParamMap.get('editar');
           if (id && !silencioso) this.abrirEditar(id);
@@ -157,7 +221,7 @@ export class CertificadosListaComponent implements OnInit {
   }
 
   aplicarFiltrosServidor() {
-    this.cargar();
+    this.cargar(true);
   }
 
   limpiarFiltros() {
@@ -170,7 +234,7 @@ export class CertificadosListaComponent implements OnInit {
   }
 
   filtrarSoloHoy() {
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = ymdLocal(new Date());
     this.fechaDesde.set(hoy);
     this.fechaHasta.set(hoy);
     this.cargar();
@@ -394,9 +458,6 @@ export class CertificadosListaComponent implements OnInit {
   }
 
   private recalcEmitidosHoy() {
-    const hoy = ymdLocal(new Date());
-    this.emitidosHoy.set(
-      this.certificados().filter((c) => this.fechaInputLocal(c.fechaEmision) === hoy).length,
-    );
+    this.emitidosHoy.set(this.certificados().filter((c) => esFechaHoy(c.fechaEmision)).length);
   }
 }

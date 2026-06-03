@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, forkJoin, switchMap } from 'rxjs';
 
 import { AlumnoListItem, AlumnoService } from '../../core/services/alumno.service';
+import { AuthService } from '../../core/services/auth.service';
 import { JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { AlarmaService } from '../../core/services/alarma.service';
@@ -33,6 +34,7 @@ import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ymdLocal } from '../jornadas/jornada-calendario.util';
 
 type VistaAlumnos = VistaLista;
@@ -106,6 +108,8 @@ export class AlumnosListaComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private permisos = inject(PermisoService);
+  private auth = inject(AuthService);
+  private confirmSvc = inject(ConfirmDialogService);
   readonly alarmas = inject(AlarmaService);
 
   /** general = menú Alumnos; jornadas = solo tipo Jornadas de Capacitación */
@@ -129,6 +133,13 @@ export class AlumnosListaComponent implements OnInit {
   loading = signal(false);
   items = signal<AlumnoListItem[]>([]);
   total = signal(0);
+  msg = signal<string | null>(null);
+  msgEsError = signal(false);
+  eliminandoId = signal<string | null>(null);
+
+  esAdmin = computed(() => this.auth.isAdmin());
+  /** Borrar alumno: solo administradores en listado general (/app/alumnos). */
+  puedeEliminar = computed(() => this.esAdmin() && !this.esJornadas());
 
   /** Filtros solo en modo jornadas de capacitación */
   fechaJornadaCap = signal('');
@@ -451,6 +462,49 @@ export class AlumnosListaComponent implements OnInit {
     const id = item?._id ? String(item._id) : '';
     if (!id) return;
     void this.router.navigate([this.rutas().ficha(id)]);
+  }
+
+  async eliminar(item: AlumnoListItem, ev?: Event) {
+    ev?.stopPropagation();
+    if (!this.puedeEliminar()) {
+      this.mostrarMsg('Solo un administrador puede eliminar alumnos.', true);
+      return;
+    }
+    const id = item?._id ? String(item._id) : '';
+    if (!id) return;
+    const nombre = this.nombreCompleto(item);
+    const doc = this.formatNumDoc(item.numDoc);
+    const ok = await this.confirmSvc.open({
+      title: 'Eliminar alumno',
+      message: `¿Eliminar permanentemente a ${nombre} (${doc})? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    this.eliminandoId.set(id);
+    this.alumnoSvc.eliminar(id).subscribe({
+      next: () => {
+        this.eliminandoId.set(null);
+        this.mostrarMsg('Alumno eliminado.');
+        this.cargar();
+      },
+      error: (e) => {
+        this.eliminandoId.set(null);
+        this.mostrarMsg(e?.error?.message || 'No se pudo eliminar el alumno.', true);
+      },
+    });
+  }
+
+  mostrarMsg(texto: string, error = false) {
+    this.msg.set(texto);
+    this.msgEsError.set(error);
+    setTimeout(() => {
+      if (this.msg() === texto) this.msg.set(null);
+    }, 6000);
+  }
+
+  cerrarMsg() {
+    this.msg.set(null);
   }
 
   abrirTab(item: AlumnoListItem, tab: 'documentos' | 'pagos' | 'programacion', ev: Event) {

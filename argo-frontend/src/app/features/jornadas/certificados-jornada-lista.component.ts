@@ -19,7 +19,7 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { esFechaHoy } from './jornada-calendario.util';
-import { coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
+import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
 import {
   capAlumnoNombre,
   capCertCodigo,
@@ -116,14 +116,13 @@ export class CertificadosJornadaListaComponent implements OnInit {
     return list.filter((c) => {
       const enc = String(c.encabezado || '');
       const cod = String(c.codigoCert || '');
-      const doc = String(c.numDoc ?? '');
       const contrato = String(c.codContrato || '');
       const ubicacion = String(c.ubicacionJornada || ubicacionJornadaLabel(c.municipio, c.direccion));
       return (
         coincideBusquedaTexto(c.nombreCompleto, q) ||
         coincideBusquedaTexto(enc, q) ||
         coincideBusquedaTexto(cod, q) ||
-        doc.includes(q.replace(/\D/g, '')) ||
+        coincideBusquedaDocumento(c.numDoc, q) ||
         coincideBusquedaTexto(contrato, q) ||
         coincideBusquedaTexto(ubicacion, q)
       );

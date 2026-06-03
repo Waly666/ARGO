@@ -31,12 +31,12 @@
           type="search"
           placeholder="Nombre, encabezado, código, documento, contrato…"
           [ngModel]="filtro()"
-          (ngModelChange)="filtro.set($event)"
+          (ngModelChange)="onFiltroChange($event)"
           autocomplete="off" />
       </div>
       <div class="filtro-field">
         <label for="tipo-cert">Tipo de capacitación</label>
-        <select id="tipo-cert" [ngModel]="tipoFormato()" (ngModelChange)="tipoFormato.set($event)">
+        <select id="tipo-cert" [ngModel]="tipoFormato()" (ngModelChange)="onTipoFormatoChange($event)">
           <option value="">Todos</option>
           @for (t of tiposFormato; track t.id) {
             <option [value]="t.id">{{ t.label }}</option>
@@ -53,11 +53,11 @@
       </div>
       <div class="filtro-field">
         <label for="desde-cert">Desde</label>
-        <input id="desde-cert" type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)" />
+        <input id="desde-cert" type="date" [ngModel]="fechaDesde()" (ngModelChange)="onFechaDesdeChange($event)" />
       </div>
       <div class="filtro-field">
         <label for="hasta-cert">Hasta</label>
-        <input id="hasta-cert" type="date" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)" />
+        <input id="hasta-cert" type="date" [ngModel]="fechaHasta()" (ngModelChange)="onFechaHastaChange($event)" />
       </div>
     </div>
     <div class="filtros-actions">

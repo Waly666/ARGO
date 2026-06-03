@@ -31,6 +31,15 @@ export function coincideBusquedaTexto(texto: string | null | undefined, q: strin
   return normTexto.includes(normQ);
 }
 
+export function coincideBusquedaDocumento(
+  numDoc: string | number | null | undefined,
+  q: string,
+): boolean {
+  const digits = String(q || '').replace(/\D/g, '');
+  if (digits.length < 3) return false;
+  return String(numDoc ?? '').includes(digits);
+}
+
 export function coincideBusquedaAlumnoPartes(
   partes: Array<string | number | null | undefined>,
   q: string,

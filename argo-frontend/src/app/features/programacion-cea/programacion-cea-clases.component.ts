@@ -15,6 +15,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 
@@ -97,6 +98,7 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
   private confirm = inject(ConfirmDialogService);
   private vehiculoSvc = inject(VehiculoService);
   private alumnoSvc = inject(AlumnoService);
+  private router = inject(Router);
   private alumnoBusqueda$ = new Subject<string>();
   private buscarSub: Subscription | null = null;
 
@@ -476,13 +478,13 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
       });
     this.cargarRecursos();
     this.cargarConfigCea();
+    this.timer = setInterval(() => {
+      if (this.claseSel()?.estado === 'EN PROCESO') this.tick.update((n) => n + 1);
+    }, 1000);
     if (this.editorHost) return;
     this.cargarClases();
     this.tryApplyProgramarCtx();
     this.tryApplyInscribirCtx();
-    this.timer = setInterval(() => {
-      if (this.claseSel()?.estado === 'EN PROCESO') this.tick.update((n) => n + 1);
-    }, 1000);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -1691,6 +1693,13 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
     this.inspeccionBloqueoOpen.set(false);
     this.vehiculoInspeccionId.set(null);
     this.pendienteIniciarTrasInspeccion.set(false);
+  }
+
+  irFichaVehiculoInspeccion(vehiculoId: string): void {
+    this.cerrarInspeccionBloqueo();
+    void this.router.navigate(['/app/vehiculos', vehiculoId], {
+      queryParams: { tab: 'inspeccion', inspeccionHoy: '1' },
+    });
   }
 
   finalizarClase() {

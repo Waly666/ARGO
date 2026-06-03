@@ -11,7 +11,7 @@ const Certificado = require('../models/Certificado');
 const DatosAlumno = require('../models/DatosAlumno');
 const Matricula = require('../models/Matricula');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
-const { filtroBusquedaAlumno, coincideBusquedaAlumno, coincideBusquedaTexto } = require('../utils/busquedaAlumnoNombre');
+const { filtroBusquedaAlumno, coincideBusquedaAlumno, coincideBusquedaTexto, coincideBusquedaDocumento } = require('../utils/busquedaAlumnoNombre');
 const { parseFechaCalendario, fechaCalendarioParaGuardar, fechaCalendarioIso } = require('../utils/fechaCalendario');
 const { calcNumeObjeJornada, generarJornadasContrato } = require('../services/programacionJornadas');
 const { cumplimientoParaJornada } = require('../services/cumplimientoJornadaCap');
@@ -1201,7 +1201,7 @@ exports.certificadosGenerados = async (req, res, next) => {
           coincideBusquedaTexto(nombreCompleto, qRaw) ||
           coincideBusquedaTexto(String(c.encabezado || ''), qRaw) ||
           coincideBusquedaTexto(String(c.codigoCert || ''), qRaw) ||
-          String(c.numDoc ?? '').includes(qRaw.replace(/\D/g, '')) ||
+          coincideBusquedaDocumento(c.numDoc, qRaw) ||
           coincideBusquedaTexto(codContrato, qRaw) ||
           coincideBusquedaTexto(municipio, qRaw) ||
           coincideBusquedaTexto(direccion, qRaw) ||

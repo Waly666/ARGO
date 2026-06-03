@@ -46,6 +46,7 @@ export class VehiculoDetalleComponent implements OnInit {
   err = signal<string | null>(null);
   esNuevo = signal(true);
   vehiculoId = signal<string | null>(null);
+  abrirInspeccionHoy = signal(false);
 
   meta = signal<VehiculoMeta | null>(null);
   clases = signal<ClaseVehiculo[]>([]);
@@ -164,10 +165,12 @@ export class VehiculoDetalleComponent implements OnInit {
 
     this.route.queryParamMap.subscribe((q) => {
       this.aplicarTabDesdeQuery(q.get('tab'));
+      this.abrirInspeccionHoy.set(q.get('inspeccionHoy') === '1');
     });
 
     const id = this.route.snapshot.paramMap.get('id');
     this.aplicarTabDesdeQuery(this.route.snapshot.queryParamMap.get('tab'));
+    this.abrirInspeccionHoy.set(this.route.snapshot.queryParamMap.get('inspeccionHoy') === '1');
 
     if (id && id !== 'nuevo') {
       this.esNuevo.set(false);

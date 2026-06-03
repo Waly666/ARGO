@@ -27,3 +27,8 @@ Thumbs.db
 
 # Cursor / assets temporales de chat (opcional)
 assets/
+.cursor/
+
+# Sitio marketing: videos pesados (subir manualmente al VPS o usar CDN)
+argo-sitio/public/videos/*.mp4
+argo-sitio/public/imagenes/*.mp4

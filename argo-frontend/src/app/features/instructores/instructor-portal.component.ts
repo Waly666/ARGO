@@ -15,23 +15,15 @@ import { InstructorPortalAlertService } from '../../core/services/instructor-por
 import { PermisoService } from '../../core/services/permiso.service';
 import type { Empleado } from '../../core/services/empleado.service';
 import { VehiculoService } from '../../core/services/vehiculo.service';
-import type { InspeccionVehiculoDto } from '../../core/services/inspeccion-vehiculo.service';
 import { inicialesNombre } from '../../core/utils/vista-lista.helpers';
 import { environment } from '../../../environments/environment';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
-import { VehiculoInspeccionPanelComponent } from '../vehiculos/vehiculo-inspeccion-panel.component';
 import { InstructorPortalMisClasesComponent } from './instructor-portal-mis-clases.component';
 
 @Component({
   selector: 'argo-instructor-portal',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    FormModalComponent,
-    VehiculoInspeccionPanelComponent,
-    InstructorPortalMisClasesComponent,
-  ],
+  imports: [CommonModule, FormsModule, FormModalComponent, InstructorPortalMisClasesComponent],
   templateUrl: './instructor-portal.component.html',
   styleUrls: ['./instructor-portal.component.scss'],
 })
@@ -55,10 +47,6 @@ export class InstructorPortalComponent implements OnInit {
   savingPerfil = signal(false);
   formPerfil: ActualizarPerfilInstructorBody = {};
 
-  panelInspeccion = signal(false);
-  vehiculoInspeccionIdResuelto = signal<string | null>(null);
-  abrirInspeccionFormularioHoy = signal(false);
-
   usuarioLogin = computed(() => this.perfil()?.usuarioLogin || this.auth.user()?.username || '—');
 
   labelOrigen = labelOrigenClaseInstructor;
@@ -73,13 +61,6 @@ export class InstructorPortalComponent implements OnInit {
   inspeccionInfo = this.alertSvc.inspeccion;
 
   puedeInspeccion = computed(() => this.permisos.tiene('instructores.inspeccion'));
-
-  vehiculoInspeccionId = computed(() => {
-    const resuelto = this.vehiculoInspeccionIdResuelto();
-    if (resuelto) return resuelto;
-    const v = this.inspeccionInfo()?.vehiculo;
-    return v?._id ? String(v._id) : null;
-  });
 
   ngOnInit(): void {
     if (!this.auth.puedeUsarPortalInstructor()) {
@@ -181,12 +162,10 @@ export class InstructorPortalComponent implements OnInit {
   abrirInspeccion() {
     const v = this.inspeccionInfo()?.vehiculo;
     if (!v) return;
-    this.abrirInspeccionFormularioHoy.set(true);
     this.alertSvc.ocultarInspeccionTemporal();
 
     if (v._id) {
-      this.vehiculoInspeccionIdResuelto.set(String(v._id));
-      this.panelInspeccion.set(true);
+      this.irFichaVehiculoInspeccion(String(v._id));
       return;
     }
 
@@ -196,8 +175,7 @@ export class InstructorPortalComponent implements OnInit {
     this.vehiculoSvc.verificarPlaca(placa).subscribe({
       next: (r) => {
         if (r.existe && r.vehiculo?._id) {
-          this.vehiculoInspeccionIdResuelto.set(r.vehiculo._id);
-          this.panelInspeccion.set(true);
+          this.irFichaVehiculoInspeccion(r.vehiculo._id);
         } else {
           this.msg.set(`No se encontró el vehículo ${placa} en el sistema.`);
         }
@@ -206,20 +184,10 @@ export class InstructorPortalComponent implements OnInit {
     });
   }
 
-  onInspeccionGuardada(_dto: InspeccionVehiculoDto) {
-    this.panelInspeccion.set(false);
-    this.vehiculoInspeccionIdResuelto.set(null);
-    this.abrirInspeccionFormularioHoy.set(false);
-    this.msg.set('Inspección guardada.');
-    setTimeout(() => this.msg.set(null), 3500);
-    this.cargarAlertas();
-  }
-
-  cerrarInspeccionPanel() {
-    this.panelInspeccion.set(false);
-    this.vehiculoInspeccionIdResuelto.set(null);
-    this.abrirInspeccionFormularioHoy.set(false);
-    this.cargarAlertas();
+  private irFichaVehiculoInspeccion(vehiculoId: string): void {
+    void this.router.navigate(['/app/vehiculos', vehiculoId], {
+      queryParams: { tab: 'inspeccion', inspeccionHoy: '1' },
+    });
   }
 
   cerrarBannerProxima() {

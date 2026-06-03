@@ -23,6 +23,13 @@
     </div>
   </header>
 
+  @if (msg(); as t) {
+    <div class="list-msg card" [class.list-msg-error]="msgEsError()" role="status">
+      <span>{{ t }}</span>
+      <button type="button" class="ghost sm" (click)="cerrarMsg()">Cerrar</button>
+    </div>
+  }
+
   <div class="card toolbar" [class.toolbar-jornadas]="esJornadas()">
     <div class="search-box">
       <span class="ic">◎</span>
@@ -258,6 +265,15 @@
             </td>
             <td class="actions">
               <button type="button" class="ghost mini" (click)="abrir(r); $event.stopPropagation()">Abrir</button>
+              @if (puedeEliminar()) {
+                <button
+                  type="button"
+                  class="danger mini"
+                  [disabled]="eliminandoId() === r._id"
+                  (click)="eliminar(r, $event)">
+                  {{ eliminandoId() === r._id ? '…' : 'Eliminar' }}
+                </button>
+              }
             </td>
           </tr>
           <tr *ngIf="items().length === 0">
@@ -343,6 +359,16 @@
           <span class="card-hint">Clic en la tarjeta para abrir ficha</span>
           <div class="card-actions">
             <button type="button" class="act open" (click)="abrir(r)" title="Abrir ficha">Abrir</button>
+            @if (puedeEliminar()) {
+              <button
+                type="button"
+                class="act danger"
+                [disabled]="eliminandoId() === r._id"
+                (click)="eliminar(r, $event)"
+                title="Eliminar alumno">
+                {{ eliminandoId() === r._id ? '…' : 'Eliminar' }}
+              </button>
+            }
             <button
               type="button"
               class="act cea"

@@ -17,6 +17,7 @@ const {
 } = require('../services/alumnosJornadaCapLista');
 const mongoose = require('mongoose');
 const { parseNumDoc, numDocFromParams, numDocQueryNativo } = require('../utils/numDoc');
+const { esAdmin } = require('../utils/roles');
 const { filtroBusquedaAlumno } = require('../utils/busquedaAlumnoNombre');
 const {
   TIPO_ALUMNO_DEFAULT,
@@ -534,7 +535,8 @@ function pickAlumno(body) {
 
 exports.crear = async (req, res, next) => {
   try {
-    const dto = pickAlumno(req.body);
+    const body = req.body;
+    const dto = pickAlumno(body);
     if (dto.numDoc == null || !dto.nombre1 || !dto.apellido1) {
       return res.status(400).json({ message: 'Documento, primer nombre y primer apellido son obligatorios' });
     }
@@ -607,6 +609,9 @@ exports.actualizar = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
+    if (!esAdmin(req.user?.rol)) {
+      return res.status(403).json({ message: 'Solo un administrador puede eliminar alumnos' });
+    }
     const prev = await buscarAlumnoPorIdParam(req.params.id);
     if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
     const r = await DatosAlumno.findByIdAndDelete(prev._id);

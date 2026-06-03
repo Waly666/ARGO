@@ -7,7 +7,7 @@ const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado, siguienteCodigoCertificado, normalizeDiasAvisoCert, DEFAULT_DIAS_AVISO_POR_VENCER, DEFAULT_DIAS_AVISO_VENCIDO } = require('../services/configCertificado');
 const { buscarPrograma } = require('../services/programaServicio');
 const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery } = require('../utils/numDoc');
-const { coincideBusquedaAlumno, coincideBusquedaTexto } = require('../utils/busquedaAlumnoNombre');
+const { coincideBusquedaAlumno, coincideBusquedaTexto, coincideBusquedaDocumento } = require('../utils/busquedaAlumnoNombre');
 const {
   clasificarProgramaAsync,
   orientacionPorTipo,
@@ -17,6 +17,7 @@ const {
 const { resolverPlantillaImpresion } = require('../services/plantillaCertificado');
 
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
+const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
 
 function tipoCertCategoria(tipoFormato, alumno) {
   if (tipoFormato === TIPOS.JORNADA_CAPACITACION) return TIPO_JORNADAS_CAPACITACION;
@@ -28,18 +29,22 @@ function esCertificadoJornadaCapacitacion(cert) {
   if (!cert) return false;
   if (cert.generadoAutoJornada) return true;
   if (cert.idJornada) return true;
-  if (cert.tipoCertificado === TIPO_JORNADAS_CAPACITACION) return true;
   if (cert.tipoFormatoCert === TIPOS.JORNADA_CAPACITACION) return true;
   return false;
 }
 
 function filtrosExcluirJornadaCapacitacion() {
   return {
-    tipoCertificado: { $ne: TIPO_JORNADAS_CAPACITACION },
     generadoAutoJornada: { $ne: true },
     tipoFormatoCert: { $ne: TIPOS.JORNADA_CAPACITACION },
     $or: [{ idJornada: null }, { idJornada: { $exists: false } }],
   };
+}
+
+/** Programas cuyo certificado lo emite el cierre automático de jornada — no manual en ficha alumno. */
+async function esProgramaCertificadoJornadaAuto(prog, tipoFormato) {
+  if (tipoFormato === TIPOS.JORNADA_CAPACITACION) return true;
+  return esProgramaJornadasCap(prog);
 }
 function num(v) {
   if (v == null) return 0;
@@ -96,6 +101,7 @@ exports.elegibles = async (req, res, next) => {
       if (certIds.has(String(it._id))) continue;
       const prog = await programaPorId(it.idProg);
       const tipoFormato = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
+      if (await esProgramaCertificadoJornadaAuto(prog, tipoFormato)) continue;
       const cfg = await obtenerConfigCertificado();
       const plantillaSug = await resolverPlantilla(prog, cfg, null, tipoFormato);
       const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
@@ -164,6 +170,12 @@ exports.crear = async (req, res, next) => {
     const cfg = await obtenerConfigCertificado();
     const prog = await programaPorId(liq.idProg);
     const tipoFormato = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
+    if (await esProgramaCertificadoJornadaAuto(prog, tipoFormato)) {
+      return res.status(403).json({
+        message:
+          'Los certificados de jornadas de capacitación se generan automáticamente al cumplir las sesiones de la jornada.',
+      });
+    }
     const plantilla = await resolverPlantilla(prog, cfg, idPlantilla, tipoFormato);
     if (!plantilla) {
       return res.status(400).json({
@@ -174,7 +186,7 @@ exports.crear = async (req, res, next) => {
     const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
     const tipoCert = tipoCertCategoria(tipoFormato, alumno);
 
-    const fechaEm = fechaEmision ? new Date(fechaEmision) : new Date();
+    const fechaEm = fechaEmision ? parseFechaLocal(fechaEmision) || new Date(fechaEmision) : new Date();
     let fechaVe = null;
     const dias = Number(prog?.diasVencimiento || prog?.vigenciaDias || 0);
     if (dias > 0) fechaVe = new Date(fechaEm.getTime() + dias * 24 * 60 * 60 * 1000);
@@ -219,6 +231,36 @@ function nombreCompletoAlumno(al) {
   const ap = [al.apellido1, al.apellido2].filter(Boolean).join(' ').trim();
   const n = [al.nombre1, al.nombre2].filter(Boolean).join(' ').trim();
   return [ap, n].filter(Boolean).join(' ').trim();
+}
+
+function ymdLocalDate(d = new Date()) {
+  const x = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(x.getTime())) return '';
+  const y = x.getFullYear();
+  const m = String(x.getMonth() + 1).padStart(2, '0');
+  const day = String(x.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Día civil YYYY-MM-DD sin desfase UTC (fechas guardadas a medianoche UTC). */
+function ymdCalendario(val) {
+  if (val == null || val === '') return '';
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return '';
+  const h = d.getUTCHours();
+  const min = d.getUTCMinutes();
+  const sec = d.getUTCSeconds();
+  const ms = d.getUTCMilliseconds();
+  if ((h === 0 || h === 12) && min === 0 && sec === 0 && ms === 0) {
+    return d.toISOString().slice(0, 10);
+  }
+  return ymdLocalDate(d);
+}
+
+function esFechaEmisionHoy(fechaEmision) {
+  return ymdCalendario(fechaEmision) === ymdLocalDate(new Date());
 }
 
 function inicioDia(d = new Date()) {
@@ -434,12 +476,18 @@ exports.listarGlobal = async (req, res, next) => {
     if (req.query.desde || req.query.hasta) {
       q.fechaEmision = {};
       if (req.query.desde) {
-        const d = inicioDia(new Date(String(req.query.desde)));
-        if (!Number.isNaN(d.getTime())) q.fechaEmision.$gte = d;
+        const d = parseFechaLocal(String(req.query.desde));
+        if (d) {
+          d.setHours(0, 0, 0, 0);
+          q.fechaEmision.$gte = d;
+        }
       }
       if (req.query.hasta) {
-        const d = finDia(new Date(String(req.query.hasta)));
-        if (!Number.isNaN(d.getTime())) q.fechaEmision.$lte = d;
+        const d = parseFechaLocal(String(req.query.hasta));
+        if (d) {
+          d.setHours(23, 59, 59, 999);
+          q.fechaEmision.$lte = d;
+        }
       }
       if (!Object.keys(q.fechaEmision).length) delete q.fechaEmision;
     }
@@ -477,8 +525,6 @@ exports.listarGlobal = async (req, res, next) => {
     const contrById = new Map(contratos.map((c) => [String(c._id), c]));
     const progById = new Map(programas.map((p) => [String(p.idProg), p]));
 
-    const hoyIni = inicioDia();
-    const hoyFin = finDia();
     const items = [];
 
     for (const c of rows) {
@@ -500,7 +546,7 @@ exports.listarGlobal = async (req, res, next) => {
           coincideBusquedaTexto(String(c.encabezado || ''), qRaw) ||
           coincideBusquedaTexto(String(c.codigoCert || ''), qRaw) ||
           coincideBusquedaTexto(TIPOS_LABEL[c.tipoFormatoCert] || '', qRaw) ||
-          String(c.numDoc ?? '').includes(qRaw.replace(/\D/g, '')) ||
+          coincideBusquedaDocumento(c.numDoc, qRaw) ||
           coincideBusquedaTexto(codContrato, qRaw) ||
           coincideBusquedaTexto(ubicacionJornada, qRaw);
         if (!hay) continue;
@@ -520,10 +566,7 @@ exports.listarGlobal = async (req, res, next) => {
       });
     }
 
-    const emitidosHoy = items.filter((c) => {
-      const fe = c.fechaEmision ? new Date(c.fechaEmision) : null;
-      return fe && fe >= hoyIni && fe <= hoyFin;
-    }).length;
+    const emitidosHoy = items.filter((c) => esFechaEmisionHoy(c.fechaEmision)).length;
 
     noCache(res);
     res.json({ total: items.length, emitidosHoy, items });

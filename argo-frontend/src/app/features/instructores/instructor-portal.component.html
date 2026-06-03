@@ -20,8 +20,8 @@
         <strong>Inspección preoperacional requerida</strong>
         <p>{{ inspeccionInfo()?.mensaje }}</p>
       </div>
-      @if (puedeInspeccion() && (vehiculoInspeccionId() || inspeccionInfo()?.vehiculo?.placa)) {
-        <button type="button" class="inst-btn inst-btn-light" (click)="abrirInspeccion()">Hacer inspección</button>
+      @if (puedeInspeccion() && (inspeccionInfo()?.vehiculo?._id || inspeccionInfo()?.vehiculo?.placa)) {
+        <button type="button" class="inst-btn inst-btn-light" (click)="abrirInspeccion()">Ir a ficha del vehículo</button>
       } @else {
         <span class="hint sm">Solicite permiso de inspección a administración.</span>
       }
@@ -85,19 +85,6 @@
     <argo-instructor-portal-mis-clases />
   }
 
-  @if (panelInspeccion() && vehiculoInspeccionId(); as vid) {
-    <section class="inst-inspeccion-panel">
-      <header class="inst-panel-head">
-        <h3>Inspección preoperacional — {{ inspeccionInfo()?.vehiculo?.placa }}</h3>
-        <button type="button" class="ghost sm" (click)="cerrarInspeccionPanel()">Cerrar</button>
-      </header>
-      <argo-vehiculo-inspeccion-panel
-        [vehiculoId]="vid"
-        [abrirFormularioHoy]="abrirInspeccionFormularioHoy()"
-        [modoInline]="abrirInspeccionFormularioHoy()"
-        (inspeccionGuardada)="onInspeccionGuardada($event)" />
-    </section>
-  }
 </section>
 
 @if (modalEditar()) {
