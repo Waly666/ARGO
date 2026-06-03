@@ -1,9 +1,7 @@
-import { UpperCasePipe } from '@angular/common';
+﻿import { UpperCasePipe } from '@angular/common';
 import { Component } from '@angular/core';
+import { resolveAppLoginUrl } from '../../core/utils/app-login-url.util';
 import { MatrixLoginBgComponent } from '../../shared/matrix-login-bg/matrix-login-bg.component';
-
-/** URL de la app operativa (login). Ajustar en producción. */
-const APP_LOGIN = 'http://localhost:4200/login';
 
 type Accent = 'blue' | 'cyan' | 'emerald' | 'amber' | 'violet' | 'teal';
 
@@ -60,7 +58,7 @@ interface VideoPromo {
   styleUrl: './home.component.scss',
 })
 export class HomeComponent {
-  readonly loginUrl = APP_LOGIN;
+  readonly loginUrl = resolveAppLoginUrl();
   readonly anio = new Date().getFullYear();
   readonly whatsappUrl = 'https://wa.me/573162835974';
   readonly email = 'walteraaguilar@hotmail.com';
