@@ -8,7 +8,7 @@ RUN apt-get update \
   && corepack enable \
   && corepack prepare pnpm@11.2.2 --activate
 
-COPY package.json pnpm-lock.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prod --network-concurrency 2
 
 COPY src ./src

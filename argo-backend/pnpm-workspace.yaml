@@ -1,7 +1,3 @@
 allowBuilds:
-  '0': bcrypt
-  '1': bufferutil
-  '2': mongodb-memory-server
   sharp: true
   tesseract.js: true
-verifyDepsBeforeRun: false
