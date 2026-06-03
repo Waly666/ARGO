@@ -12,6 +12,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prod --network-concurrency 2
 
 COPY src ./src
+COPY scripts ./scripts
 
 ENV NODE_ENV=production
 EXPOSE 3000
