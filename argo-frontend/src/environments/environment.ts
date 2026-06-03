@@ -12,12 +12,12 @@ function isPrivateIpv4(host: string): boolean {
 
 function serverBase(): string {
   if (typeof window !== 'undefined' && window.location?.hostname) {
-    const { hostname } = window.location;
+    const { hostname, origin } = window.location;
     if (isPrivateIpv4(hostname)) {
       return `http://${hostname}:3000`;
     }
-    // VPS por IP pública o dominio: API en puerto 5002 (Docker)
-    return `http://${hostname}:5002`;
+    // VPS: mismo origen (8083) — nginx del contenedor frontend proxy /api → backend
+    return origin;
   }
   return 'http://localhost:3000';
 }

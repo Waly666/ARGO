@@ -14,13 +14,13 @@ function isPrivateIpv4(host: string): boolean {
 
 function serverBase(): string {
   if (typeof window !== 'undefined' && window.location?.hostname) {
-    const { hostname } = window.location;
+    const { hostname, origin } = window.location;
     if (isPrivateIpv4(hostname)) {
       return `http://${hostname}:3000`;
     }
-    return `http://${hostname}:${API_PORT}`;
+    return origin;
   }
-  return `http://${VPS_IP}:${API_PORT}`;
+  return `http://${VPS_IP}:8083`;
 }
 
 const base = serverBase();

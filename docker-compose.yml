@@ -35,6 +35,8 @@ services:
     restart: unless-stopped
     ports:
       - "8083:80"
+    depends_on:
+      - argo-backend
     networks:
       - argo-net
 
