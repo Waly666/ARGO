@@ -1,69 +1,75 @@
 #!/bin/bash
 # Restaura backup Mongo en el contenedor argo-mongo.
-# Uso (desde /opt/argo): bash deploy/restore-mongo.sh backup/backup-argo.zip
+# Uso:
+#   bash deploy/restore-mongo.sh backup/backup-argo.zip
+#   bash deploy/restore-mongo.sh backup/mongo-dump/argo   (carpeta sin zip, recomendado)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ZIP="${1:-$ROOT/backup/backup-argo.zip}"
+SOURCE="${1:-$ROOT/backup/mongo-dump/argo}"
 TMP="/tmp/argo-mongo-restore"
 
-if [ ! -f "$ZIP" ]; then
-  echo "No se encontró: $ZIP"
+cd "$ROOT"
+
+if [ ! -e "$SOURCE" ]; then
+  echo "No se encontró: $SOURCE"
+  echo "Sube por WinSCP la carpeta backup-argo/argo → /opt/argo/backup/mongo-dump/argo"
   exit 1
 fi
-
-cd "$ROOT"
 
 echo "==> Levantando Mongo..."
 docker compose up -d argo-mongo
 sleep 4
 
-echo "==> Descomprimiendo backup..."
-rm -rf "$TMP"
-mkdir -p "$TMP"
+DUMP_DIR=""
 
-# ZIP creado en Windows (Compress-Archive) usa \\ — Python lo extrae bien.
-if command -v python3 >/dev/null 2>&1; then
-  python3 - "$ZIP" "$TMP" <<'PY'
+if [ -d "$SOURCE" ] && [ -f "$SOURCE/usuarios.bson" ]; then
+  DUMP_DIR="$(cd "$SOURCE" && pwd)"
+elif [ -d "$SOURCE" ]; then
+  DUMP_DIR="$(find "$(cd "$SOURCE" && pwd)" -type f -name 'usuarios.bson' 2>/dev/null | head -1 | xargs dirname)"
+elif [ -f "$SOURCE" ] && [[ "$SOURCE" == *.zip ]]; then
+  echo "==> Descomprimiendo zip..."
+  rm -rf "$TMP"
+  mkdir -p "$TMP"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$SOURCE" "$TMP" <<'PY'
 import sys, zipfile
 zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])
-print("Extraído con python3")
 PY
+  else
+    unzip -qo "$SOURCE" -d "$TMP"
+  fi
+  USERS_BSON="$(find "$TMP" -type f -name 'usuarios.bson' 2>/dev/null | head -1 || true)"
+  if [ -z "$USERS_BSON" ]; then
+    echo "ERROR: el zip no contiene usuarios.bson"
+    find "$TMP" -type f | head -20
+    exit 1
+  fi
+  DUMP_DIR="$(dirname "$USERS_BSON")"
 else
-  unzip -qo "$ZIP" -d "$TMP" || true
+  echo "ERROR: origen no válido: $SOURCE"
+  exit 1
 fi
 
-# Buscar carpeta del dump (contiene usuarios.bson o metadata.json)
-DUMP_DIR=""
-if USERS_BSON="$(find "$TMP" -type f -name 'usuarios.bson' 2>/dev/null | head -1)"; then
-  DUMP_DIR="$(dirname "$USERS_BSON")"
-elif META="$(find "$TMP" -type f -name 'metadata.json' -path '*/usuarios.metadata.json' 2>/dev/null | head -1)"; then
-  DUMP_DIR="$(dirname "$META")"
-elif [ -d "$TMP/backup-argo/argo" ]; then
-  DUMP_DIR="$TMP/backup-argo/argo"
-elif [ -d "$TMP/argo" ]; then
-  DUMP_DIR="$TMP/argo"
-else
-  echo "ERROR: no se encontró usuarios.bson en el zip."
-  echo "Contenido extraído:"
-  find "$TMP" -maxdepth 4 -type f | head -30
+if [ -z "$DUMP_DIR" ] || [ ! -d "$DUMP_DIR" ]; then
+  echo "ERROR: no se encontró carpeta del dump"
+  exit 1
+fi
+
+if [ ! -f "$DUMP_DIR/usuarios.bson" ]; then
+  echo "ERROR: falta usuarios.bson en $DUMP_DIR"
+  ls -la "$DUMP_DIR" | head -15
   exit 1
 fi
 
 BSON_COUNT="$(find "$DUMP_DIR" -maxdepth 1 -name '*.bson' 2>/dev/null | wc -l | tr -d ' ')"
-echo "==> Dump encontrado: $DUMP_DIR ($BSON_COUNT colecciones .bson)"
+echo "==> Dump OK: $DUMP_DIR ($BSON_COUNT colecciones)"
 
-if [ "${BSON_COUNT:-0}" -eq 0 ]; then
-  echo "ERROR: la carpeta del dump no tiene archivos .bson"
-  exit 1
-fi
-
-echo "==> Copiando dump al contenedor..."
-docker exec argo-mongo rm -rf /tmp/restore
-docker cp "$DUMP_DIR/." argo-mongo:/tmp/restore/
-
-echo "==> mongorestore (--drop)..."
-docker exec argo-mongo mongorestore --drop --db argo /tmp/restore
+echo "==> mongorestore (montando carpeta, sin docker cp)..."
+docker run --rm \
+  --network container:argo-mongo \
+  -v "$DUMP_DIR:/dump:ro" \
+  mongo:6 mongorestore --drop --db argo /dump
 
 USERS="$(docker exec argo-mongo mongosh argo --quiet --eval 'db.usuarios.countDocuments()')"
 ALUMNOS="$(docker exec argo-mongo mongosh argo --quiet --eval 'db.datosAlumnos.countDocuments()')"
@@ -75,8 +81,9 @@ echo "    Usuarios:    $USERS"
 echo "    Alumnos:     $ALUMNOS"
 
 if [ "${USERS:-0}" -eq 0 ]; then
-  echo "ERROR: usuarios=0 — el backup no restauró datos. Revisa el zip o vuelve a exportar desde el PC."
+  echo "ERROR: usuarios=0 — revisa el backup."
   exit 1
 fi
 
 rm -rf "$TMP"
+echo "==> Reinicia backend: docker compose restart argo-backend"
