@@ -26,6 +26,7 @@ const config: ExpoConfig = {
     package: 'co.argo.cajero',
   },
   plugins: [
+    'expo-font',
     'expo-secure-store',
     [
       'expo-build-properties',
@@ -41,7 +42,7 @@ const config: ExpoConfig = {
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:3000/api',
     eas: {
-      projectId: 'argo-cajero-mobile-v1',
+      projectId: 'cff70a8f-b9ea-4d75-ac50-c9b7cd8a99c6',
     },
   },
 };

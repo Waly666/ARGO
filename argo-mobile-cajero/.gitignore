@@ -1,5 +1,8 @@
 node_modules/
 .expo/
+.expo-check-bundle/
+android/
+ios/
 dist/
 *.jks
 *.p8

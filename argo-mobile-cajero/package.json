@@ -5,9 +5,11 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "doctor": "npx expo-doctor",
-    "build:apk": "pnpm dlx eas-cli@18.13.0 build --platform android --profile preview"
+    "build:apk": "pnpm dlx eas-cli@18.13.0 build --platform android --profile preview --non-interactive",
+    "build:apk:prod": "pnpm dlx eas-cli@18.13.0 build --platform android --profile production --non-interactive",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -17,6 +19,7 @@
     "expo-av": "~16.0.8",
     "expo-build-properties": "^1.0.10",
     "expo-constants": "^18.0.13",
+    "expo-font": "~14.0.12",
     "expo-haptics": "~15.0.8",
     "expo-linear-gradient": "~15.0.8",
     "expo-print": "~15.0.8",
