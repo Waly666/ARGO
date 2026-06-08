@@ -12,6 +12,12 @@ docker compose build argo-frontend
 echo "==> Sitio marketing..."
 docker compose build argo-sitio
 
+echo "==> Deteniendo stack anterior y quitando contenedores huérfanos..."
+docker compose down --remove-orphans 2>/dev/null || true
+for c in argo-mongo argo-backend argo-frontend argo-sitio; do
+  docker rm -f "$c" 2>/dev/null || true
+done
+
 echo "==> Levantando servicios..."
 docker compose up -d
 
