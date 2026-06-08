@@ -7,19 +7,20 @@
     </span>
   </nav>
 
-  <header class="page-head">
-    <div>
+  <header class="caja-head page-head">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / <a routerLink="/app/caja/ingresos">Ingresos</a> / Sin alumno</p>
       <h1>Ingreso de caja (sin alumno)</h1>
-      <p class="hint">
-        Contratos con terceros, aprovisionamiento de caja u otros ingresos que no van a liquidación de alumno.
-      </p>
+      <p class="hint">Contratos, aprovisiones u otros ingresos que no provienen de un alumno.</p>
     </div>
+    <span class="caja-chip caja-chip--emerald" *ngIf="cajaAbierta()">Caja #{{ sesionId() }} abierta</span>
   </header>
 
-  <p class="msg warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar ingresos.</p>
-  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg caja-msg--warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar ingresos.</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <form class="form-panel panel argo-form-shell" (ngSubmit)="$event.preventDefault(); guardar()">
+    <h3 class="sec">1. Tipo y fecha</h3>
     <div class="row">
       <label class="col-6">
         Tipo de ingreso *

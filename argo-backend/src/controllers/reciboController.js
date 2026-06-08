@@ -5,32 +5,15 @@ const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigRecibo } = require('../services/configRecibo');
 const { numDocQuery } = require('../utils/numDoc');
-const {
-  bloqueEmpresaHtml,
-  filasConSede,
-  lineaHtml: lineaHtmlShared,
-} = require('../services/reciboHtmlShared');
+const { generarHtmlIngreso } = require('../services/comprobanteHtml');
+const { numDocToString } = require('../utils/numDoc');
+const { esIngresoCaja } = require('../utils/ingresoClasificacion');
 
 function num(v) {
   if (v == null) return 0;
   if (typeof v === 'number') return v;
   if (typeof v === 'object' && v.$numberDecimal != null) return Number(v.$numberDecimal) || 0;
   return Number(v) || 0;
-}
-
-function fmtMoney(n) {
-  return Number(n || 0).toLocaleString('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    maximumFractionDigits: 0,
-  });
-}
-
-function fmtFecha(d) {
-  if (!d) return '';
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return '';
-  return dt.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function nombreAlumno(a) {
@@ -86,7 +69,7 @@ async function enriquecerIngreso(p) {
     numTransferencia: p.numTransferencia || p.numComprobante || null,
     tipoIngreso: p.tipoIngreso || tipoIng?.tipo || null,
     tipoIngresoDescr: p.tipoIngreso || tipoIng?.tipo || null,
-    esIngresoCaja: !!(p.ingresoCaja || (!p.idLiquidacion && p.idTipoIngreso)),
+    esIngresoCaja: esIngresoCaja(p),
   };
 }
 
@@ -94,10 +77,25 @@ async function armarRecibo(id) {
   const ing = await Ingreso.findById(id).lean();
   if (!ing) return null;
 
-  const esCaja = !!(ing.ingresoCaja || (!ing.idLiquidacion && ing.idTipoIngreso));
+  const esCaja = esIngresoCaja(ing);
 
   const liq = ing.idLiquidacion ? await Liquidacion.findById(ing.idLiquidacion).lean() : null;
   const idSedeDoc = ing.idSede || liq?.idSede || null;
+
+  let detalleItems = null;
+  if (Array.isArray(ing.detalle) && ing.detalle.length) {
+    const ids = ing.detalle.map((d) => d.idLiquidacion).filter(Boolean);
+    const liqs = ids.length ? await Liquidacion.find({ _id: { $in: ids } }).lean() : [];
+    const liqMap = Object.fromEntries(liqs.map((l) => [String(l._id), l]));
+    detalleItems = ing.detalle.map((d) => {
+      const l = liqMap[String(d.idLiquidacion)];
+      return {
+        descripcion: d.descripcion || l?.descripcion || 'Ítem',
+        valor: num(d.valor),
+        saldo: l ? num(l.saldo) : null,
+      };
+    });
+  }
 
   const [config, alumno, ingreso] = await Promise.all([
     obtenerConfigRecibo(idSedeDoc),
@@ -134,13 +132,16 @@ async function armarRecibo(id) {
       }
     : alumno
       ? {
-          numDoc: alumno.numDoc,
+          numDoc: numDocToString(alumno.numDoc ?? ing.numDoc),
           tipoDoc: alumno.tipoDoc,
           nombreCompleto: nombreAlumno(alumno),
           celular: alumno.celular,
           correo: alumno.correo,
         }
-      : { numDoc: ing.numDoc, nombreCompleto: String(ing.numDoc || '—') };
+      : {
+          numDoc: numDocToString(ing.numDoc) || '—',
+          nombreCompleto: ing.recibidoDe || ing.recibiDe || String(ing.numDoc || '—'),
+        };
 
   return {
     config,
@@ -164,6 +165,7 @@ async function armarRecibo(id) {
             estado: 'pagado',
           }
         : null,
+    detalle: detalleItems,
     numeroRecibo,
     qrDataUrl,
     qrTexto,
@@ -180,136 +182,12 @@ exports.datos = async (req, res, next) => {
   }
 };
 
-function esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function lineaHtml(ancho = 32) {
-  return lineaHtmlShared(ancho);
-}
-
-function bloqueTituloHtml(config) {
-  const titulo = esc((config.mensajeEncabezado || 'COMPROBANTE DE INGRESO').trim());
-  const slogan = (config.slogan1 || '').toString().trim();
-  return `
-  <div class="center titulo">${titulo}</div>
-  ${slogan ? `<div class="center slogan">${esc(slogan)}</div>` : ''}`;
-}
-
 exports.html = async (req, res, next) => {
   try {
     const data = await armarRecibo(req.params.id);
     if (!data) return res.status(404).send('Ingreso no encontrado');
 
-    const { config, ingreso, alumno, liquidacion, numeroRecibo, qrDataUrl } = data;
-    const mm = config.anchoReciboMm || 80;
-    const w = Math.round(mm * 3.78);
-
-    const filas = filasConSede(
-      [
-      ['Comprobante N°', numeroRecibo],
-      ['Fecha', fmtFecha(ingreso.fecha || ingreso.createdAt)],
-      ...(data.esIngresoCaja
-        ? [
-            ['Tipo ingreso', ingreso.tipoIngresoDescr || 'Ingreso de caja'],
-            ['Recibido de', alumno.nombreCompleto],
-            ['Documento', alumno.numDoc],
-            ...(alumno.tipoPersona ? [['Persona', alumno.tipoPersona === 'juridica' ? 'Jurídica' : 'Natural']] : []),
-            ['Concepto', liquidacion?.descripcion || ingreso.concepto || '—'],
-          ]
-        : [
-            ['Documento', alumno.numDoc],
-            ['Alumno', alumno.nombreCompleto],
-            ['Concepto', liquidacion?.descripcion || 'Pago'],
-          ]),
-      ...(ingreso.tipoAbonoDescr || ingreso.tipoAbono
-        ? [['Pago', ingreso.tipoAbonoDescr || (ingreso.tipoAbono === 'total' ? 'Total' : 'Abono')]]
-        : []),
-      ['Forma pago', ingreso.tipoPagoDescr],
-      ...(ingreso.cuentaBancariaDescr ? [['Cuenta empresa', ingreso.cuentaBancariaDescr]] : []),
-      ...(ingreso.bancoDescr ? [['Banco', ingreso.bancoDescr]] : []),
-      ...(ingreso.numComprobante ? [['Ref / Comprob.', ingreso.numComprobante]] : []),
-      ['Valor pagado', fmtMoney(ingreso.valor)],
-      ...(liquidacion && !data.esIngresoCaja
-        ? [
-            ['Total ítem', fmtMoney(liquidacion.valor)],
-            ['Abonado', fmtMoney(liquidacion.abonado)],
-            ['Saldo', fmtMoney(liquidacion.saldo)],
-          ]
-        : []),
-      ...(ingreso.observaciones ? [['Obs.', ingreso.observaciones]] : []),
-      ],
-      config,
-    );
-
-    const bodyRows = filas
-      .map(
-        ([k, v]) =>
-          `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`,
-      )
-      .join('');
-
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8"/>
-  <title>Recibo ${esc(numeroRecibo)}</title>
-  <style>
-    @page { size: ${mm}mm auto; margin: 4mm; }
-    * { box-sizing: border-box; }
-    body {
-      font-family: "Courier New", Consolas, monospace;
-      font-size: 11px;
-      line-height: 1.35;
-      margin: 0;
-      padding: 8px;
-      width: ${w}px;
-      max-width: ${w}px;
-      color: #000;
-      background: #fff;
-    }
-    .center { text-align: center; }
-    .empresa { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
-    .sede-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
-    .dato { font-size: 10px; line-height: 1.3; }
-    .titulo { font-weight: bold; margin: 6px 0 2px; letter-spacing: 0.5px; font-size: 11px; }
-    .slogan { font-size: 10px; margin-bottom: 4px; font-style: italic; }
-    .line { text-align: center; color: #333; margin: 4px 0; overflow: hidden; white-space: nowrap; }
-    table { width: 100%; border-collapse: collapse; }
-    td { vertical-align: top; padding: 2px 0; }
-    td.k { width: 42%; font-weight: bold; }
-    td.v { width: 58%; text-align: right; word-break: break-word; }
-    .total { font-size: 13px; font-weight: bold; margin-top: 6px; text-align: center; }
-    .pie { font-size: 9px; text-align: center; margin-top: 8px; color: #333; }
-    .qr { text-align: center; margin: 8px 0; }
-    .qr img { width: 100px; height: 100px; }
-    .no-print { margin-top: 12px; text-align: center; }
-    @media print {
-      .no-print { display: none !important; }
-      body { width: ${w}px; }
-    }
-  </style>
-</head>
-<body>
-  ${bloqueEmpresaHtml(config)}
-  ${lineaHtml(32)}
-  ${bloqueTituloHtml(config)}
-  ${lineaHtml(32)}
-  <table>${bodyRows}</table>
-  ${lineaHtml(32)}
-  <div class="total">RECIBIDO: ${esc(fmtMoney(ingreso.valor))}</div>
-  ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
-  <div class="pie">${esc(config.mensajePie)}</div>
-  <div class="no-print">
-    <button onclick="window.print()">Imprimir / Guardar PDF</button>
-  </div>
-  <script>/* auto-print opcional: window.onload = () => setTimeout(() => window.print(), 300); */</script>
-</body>
-</html>`;
+    const html = generarHtmlIngreso(data);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);

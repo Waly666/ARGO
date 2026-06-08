@@ -6,10 +6,18 @@ import { environment } from '../../../environments/environment';
 import { formatNumDoc, parseNumDocForApi } from '../utils/num-doc.helpers';
 import { AutorizacionSupervisorDto } from './supervisor-auth.types';
 
-export interface IngresoCrearDto {
-  numDoc: number | string;
+export interface IngresoItemPagoDto {
   idLiquidacion: string;
   valor: number;
+}
+
+export interface IngresoCrearDto {
+  numDoc: number | string;
+  /** Pago de un solo ítem (compatibilidad). */
+  idLiquidacion?: string;
+  valor?: number;
+  /** Pago de varios ítems en un mismo comprobante. */
+  items?: IngresoItemPagoDto[];
   idTipoPago: string;
   idBanco?: string;
   idCuentaBancaria?: string;

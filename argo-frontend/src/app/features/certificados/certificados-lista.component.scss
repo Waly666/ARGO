@@ -1,35 +1,11 @@
 @use '../jornadas/jornada-live-estado.scss';
 
-.cert-page {
+.title-row {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.page-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
-
-  .head-main {
-    flex: 1;
-    min-width: 0;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-
-  .title-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
 }
 
 .alert-hoy {
@@ -82,12 +58,6 @@
   }
 }
 
-.filtros {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .filtros-grid {
   display: grid;
   grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr));
@@ -115,16 +85,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-
-  .count {
-    margin-left: auto;
-    font-size: 0.82rem;
-    color: var(--text-soft);
-  }
-}
-
-.content-wrap {
-  overflow: auto;
 }
 
 .loading {
@@ -142,14 +102,6 @@
   &:hover {
     text-decoration: underline;
   }
-}
-
-.actions-cell {
-  white-space: nowrap;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
 }
 
 .encabezado-hoy-blink {
@@ -211,52 +163,6 @@
 .fecha-vence-vencida {
   color: #fecaca;
   font-weight: 700;
-}
-
-.cert-edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  overflow: visible;
-
-  .row {
-    overflow: visible;
-  }
-
-  .col-4,
-  .col-6,
-  .col-8,
-  .col-12 {
-    position: relative;
-    z-index: 0;
-  }
-
-  .col-4:has(argo-catalogo-enum-buscar.dropdown-open),
-  .col-6:has(argo-catalogo-enum-buscar.dropdown-open),
-  .col-8:has(argo-catalogo-enum-buscar.dropdown-open) {
-    z-index: 5001;
-  }
-
-  .readonly {
-    margin: 0.35rem 0 0;
-    font-size: 0.92rem;
-    color: var(--text);
-  }
-}
-
-.msg {
-  margin: 0;
-  padding: 10px 14px;
-  border-radius: var(--btn-radius);
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  color: #bbf7d0;
-
-  &.error {
-    background: rgba(239, 68, 68, 0.12);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #fecaca;
-  }
 }
 
 @media (max-width: 900px) {

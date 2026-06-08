@@ -5,9 +5,21 @@ const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = requir
 const router = Router();
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
-const ver = requirePermiso('programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar');
+const ver = requirePermiso(
+  'programacion_cea.ver',
+  'programacion_cea.gestionar',
+  'programacion_cea.operar',
+  'caja.turno',
+  'caja.admin',
+);
 const gest = requirePermiso('programacion_cea.gestionar');
 const operar = requirePermiso('programacion_cea.operar', 'programacion_cea.gestionar');
+const cerrarRetroactivo = requirePermiso(
+  'caja.turno',
+  'caja.admin',
+  'programacion_cea.gestionar',
+  'programacion_cea.operar',
+);
 
 router.get('/programas', ver, ctrl.programas);
 router.get('/config', ver, ctrl.obtenerConfig);
@@ -42,6 +54,7 @@ router.delete('/clases/:id', gest, ctrl.cancelarClase);
 router.delete('/clases/:id/permanente', gest, ctrl.eliminarClase);
 router.post('/clases/:id/iniciar', operar, ctrl.iniciarClase);
 router.post('/clases/:id/finalizar', operar, ctrl.finalizarClase);
+router.post('/clases/:id/finalizar-retroactivo', cerrarRetroactivo, ctrl.finalizarClaseRetroactiva);
 router.get('/clases/:id/inscripciones', ver, ctrl.listarInscripciones);
 router.get('/clases/:id/alumnos-elegibles', ver, ctrl.alumnosElegibles);
 router.post('/clases/:id/inscribir', operar, ctrl.inscribirAlumno);

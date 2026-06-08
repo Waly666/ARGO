@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -23,6 +24,9 @@ import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { tipFormulario } from '../../core/utils/asistente-formulario.util';
+import type { AsistenteTip } from '../../core/constants/asistente.types';
 
 interface AuditInfo {
   fechaAudi?: string;
@@ -36,13 +40,25 @@ type FiltroVista = 'todos' | 'sinPrograma' | 'conPrograma';
 @Component({
   selector: 'argo-servicios-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
   templateUrl: './servicios-admin.component.html',
   styleUrls: ['./servicios-admin.component.scss'],
 })
 export class ServiciosAdminComponent implements OnInit {
   private svc = inject(ServicioCatalogoService);
   private catSvc = inject(CatalogoService);
+  private asistente = inject(AsistenteContextoService);
+
+  constructor() {
+    effect(() => {
+      if (this.modalAbierto()) {
+        this.asistente.setTipsPrepend(this.tipsMiaFormulario());
+        this.posicionarModal();
+      } else {
+        this.asistente.clearTipsPrepend();
+      }
+    });
+  }
   private auth = inject(AuthService);
   private confirm = inject(ConfirmDialogService);
 
@@ -51,6 +67,7 @@ export class ServiciosAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
   busqueda = signal('');
   filtro = signal<FiltroVista>('todos');
   vista = signal<VistaLista>(readVistaLista('argo-servicios-vista'));
@@ -83,9 +100,10 @@ export class ServiciosAdminComponent implements OnInit {
 
   textoFacturar = computed(() => this.facturarStr(this.form().facturar));
 
-  modalTop = signal(168);
+  modalTop = signal(80);
 
-  @ViewChild('listAnchor') listAnchor?: ElementRef<HTMLElement>;
+  @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
+  @ViewChild('titleAnchor') titleAnchor?: ElementRef<HTMLElement>;
 
   @HostListener('window:resize')
   onResize() {
@@ -113,13 +131,24 @@ export class ServiciosAdminComponent implements OnInit {
   ];
 
   private posicionarModal() {
-    setTimeout(() => {
-      const el = this.listAnchor?.nativeElement;
-      if (el) {
-        const top = el.getBoundingClientRect().top;
-        this.modalTop.set(Math.max(8, Math.round(top)));
-      }
-    }, 0);
+    const head = this.pageHead?.nativeElement;
+    if (head) {
+      const scrollTop = head.getBoundingClientRect().top + window.scrollY - 12;
+      window.scrollTo({ top: Math.max(0, scrollTop), behavior: 'auto' });
+    }
+
+    const measure = () => {
+      const title = this.titleAnchor?.nativeElement ?? this.pageHead?.nativeElement;
+      if (!title) return;
+      const bottom = title.getBoundingClientRect().bottom;
+      this.modalTop.set(Math.max(8, Math.round(bottom + 6)));
+    };
+
+    requestAnimationFrame(() => {
+      measure();
+      requestAnimationFrame(measure);
+    });
+    setTimeout(measure, 80);
   }
 
   ngOnInit(): void {
@@ -159,7 +188,7 @@ export class ServiciosAdminComponent implements OnInit {
         },
         error: (e) => {
           this.loading.set(false);
-          this.msg.set(e?.error?.message || 'Error cargando servicios');
+          this.inform(e?.error?.message || 'Error cargando servicios', true);
         },
       });
   }
@@ -208,7 +237,7 @@ export class ServiciosAdminComponent implements OnInit {
     this.form.set({ ...this.formVacio(), tipoServ: this.tipoServInicialOtros() });
     this.modalAbierto.set(true);
     this.posicionarModal();
-    this.msg.set(null);
+    this.inform(null);
   }
 
   editar(s: ServicioCatalogo) {
@@ -244,9 +273,9 @@ export class ServiciosAdminComponent implements OnInit {
         });
         this.modalAbierto.set(true);
         this.posicionarModal();
-        this.msg.set(null);
+        this.inform(null);
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo cargar el servicio'),
+      error: (e) => this.inform(e?.error?.message || 'No se pudo cargar el servicio', true),
     });
   }
 
@@ -287,6 +316,28 @@ export class ServiciosAdminComponent implements OnInit {
     return s ? `Editar servicio #${s.idServ}` : 'Nuevo servicio (sin programa)';
   }
 
+  private tipsMiaFormulario(): AsistenteTip[] {
+    const tips: AsistenteTip[] = [
+      tipFormulario(
+        'Este formulario',
+        this.esEdicion()
+          ? this.programaLabel()
+          : 'Servicio independiente: no se vincula a un programa educativo.',
+        'srv-form-ctx',
+      ),
+    ];
+    if (!this.esEdicion()) {
+      tips.push(
+        tipFormulario(
+          'Tipo de servicio',
+          'Use un tipo distinto de CUR / DIP / TEC (ej. SEG, TRM, RUNT). Quedará disponible al cobrar servicios al alumno.',
+          'srv-form-tipo',
+        ),
+      );
+    }
+    return tips;
+  }
+
   esEdicion(): boolean {
     return !!this.editando()?.idServ;
   }
@@ -294,11 +345,11 @@ export class ServiciosAdminComponent implements OnInit {
   guardar() {
     const f = this.form();
     if (!f.descrServicio?.trim()) {
-      this.msg.set('La descripción del servicio es obligatoria.');
+      this.inform('La descripción del servicio es obligatoria.');
       return;
     }
     if ((f.tarifa1 ?? 0) < 0) {
-      this.msg.set('La tarifa 1 no puede ser negativa.');
+      this.inform('La tarifa 1 no puede ser negativa.');
       return;
     }
 
@@ -319,7 +370,7 @@ export class ServiciosAdminComponent implements OnInit {
         this.editando.set(null);
         this.catSvc.invalidate('servicios');
         this.catSvc.invalidate('programas');
-        this.msg.set(
+        this.inform(
           (r as { message?: string }).message ||
             (this.esEdicion() ? 'Servicio actualizado.' : 'Servicio creado correctamente.'),
         );
@@ -327,14 +378,14 @@ export class ServiciosAdminComponent implements OnInit {
       },
       error: (e) => {
         this.saving.set(false);
-        this.msg.set(e?.error?.message || 'Error al guardar');
+        this.inform(e?.error?.message || 'Error al guardar', true);
       },
     });
   }
 
   async eliminar(s: ServicioCatalogo) {
     if (this.esServicioPrograma(s)) {
-      this.msg.set('Los servicios de matrícula de programas se eliminan desde Programas.');
+      this.inform('Los servicios de matrícula de programas se eliminan desde Programas.');
       return;
     }
     const ok = await this.confirm.open({
@@ -347,10 +398,10 @@ export class ServiciosAdminComponent implements OnInit {
     this.svc.eliminar(s.idServ).subscribe({
       next: (r) => {
         this.catSvc.invalidate('servicios');
-        this.msg.set(r.message || 'Servicio eliminado.');
+        this.inform(r.message || 'Servicio eliminado.');
         this.cargar();
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error al eliminar'),
+      error: (e) => this.inform(e?.error?.message || 'Error al eliminar', true),
     });
   }
 
@@ -370,6 +421,26 @@ export class ServiciosAdminComponent implements OnInit {
     const d = v instanceof Date ? v : new Date(String(v));
     if (Number.isNaN(d.getTime())) return String(v);
     return d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
   }
 
   capId = capId;

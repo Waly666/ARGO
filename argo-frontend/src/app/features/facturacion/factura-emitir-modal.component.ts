@@ -20,6 +20,7 @@ import {
   PreviewFactura,
 } from '../../core/services/facturacion.service';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
 
 @Component({
   selector: 'argo-factura-emitir-modal',
@@ -31,12 +32,14 @@ import { AsistenteContextoService } from '../../core/services/asistente-contexto
 export class FacturaEmitirModalComponent implements OnInit, OnDestroy {
   @Input({ required: true }) numDoc!: number | string;
   @Input() alumnoNombre = '';
+  @Input() alumnoId = '';
   @Output() cerrar = new EventEmitter<void>();
   @Output() emitida = new EventEmitter<void>();
 
   private feSvc = inject(FacturacionService);
   private cliSvc = inject(ClienteService);
   private asistente = inject(AsistenteContextoService);
+  private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
 
   loading = signal(true);
   emitiendo = signal(false);
@@ -172,6 +175,11 @@ export class FacturaEmitirModalComponent implements OnInit, OnDestroy {
       next: (doc) => {
         this.emitiendo.set(false);
         this.facturaEmitida.set(doc);
+        this.comprobanteAlertSvc.notificarDesdeFactura(doc as unknown as Record<string, unknown>, {
+          numDoc: this.numDoc,
+          nombreCompleto: this.alumnoNombre || doc.adquirente?.nombre || '',
+          alumnoId: this.alumnoId || undefined,
+        });
         this.emitida.emit();
         this.msgError.set(false);
         this.msg.set(

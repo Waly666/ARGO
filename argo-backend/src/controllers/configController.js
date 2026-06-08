@@ -1,5 +1,6 @@
 const Config = require('../models/Config');
 const { CLAVE, DEFAULTS, obtenerConfigRecibo } = require('../services/configRecibo');
+const { FORMATOS_VALIDOS, normalizarFormatoComprobante } = require('../services/comprobanteFormato');
 const { normalizarIdSede, sedesPermitidasUsuario } = require('../services/sedeContext');
 const { esAdmin } = require('../utils/roles');
 
@@ -26,6 +27,8 @@ const CAMPOS = [
   'mensajeCreacionAlumno',
   'anchoReciboMm',
   'mostrarQr',
+  'formatoComprobanteIngreso',
+  'formatoComprobanteEgreso',
 ];
 
 exports.obtenerReciboEncabezado = async (req, res, next) => {
@@ -72,6 +75,15 @@ exports.actualizarRecibo = async (req, res, next) => {
     }
     if (dto.anchoReciboMm != null) {
       dto.anchoReciboMm = Math.min(120, Math.max(58, parseInt(dto.anchoReciboMm, 10) || 80));
+    }
+    for (const k of ['formatoComprobanteIngreso', 'formatoComprobanteEgreso']) {
+      if (dto[k] !== undefined) {
+        const norm = normalizarFormatoComprobante(dto[k]);
+        if (!FORMATOS_VALIDOS.includes(norm)) {
+          return res.status(400).json({ message: `Formato inválido: ${k}` });
+        }
+        dto[k] = norm;
+      }
     }
     const existe = await Config.findOne({ clave: CLAVE });
     if (existe) {

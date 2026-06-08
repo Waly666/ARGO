@@ -2,12 +2,26 @@ const mongoose = require('mongoose');
 
 const FORMAS_PAGO = ['Efectivo', 'Transferencia', 'Cheque', 'Tarjeta debito', 'Tarjeta de Credito'];
 
+/** Detalle de un comprobante que paga varios ítems de liquidación a la vez. */
+const DetalleIngresoSchema = new mongoose.Schema(
+  {
+    idLiquidacion: { type: mongoose.Schema.Types.ObjectId, ref: 'Liquidacion', required: true },
+    descripcion: { type: String, trim: true, default: '' },
+    valor: { type: mongoose.Schema.Types.Decimal128, required: true },
+    tipoAbono: { type: String, enum: ['total', 'abono'], trim: true },
+  },
+  { _id: false },
+);
+
 const IngresoSchema = new mongoose.Schema(
   {
     /** Documento del alumno (cobro liquidación) o null en ingreso caja tercero */
     numDoc: { type: Number, default: null, index: true },
+    /** Ítem único (compat). En comprobante multi-ítem va null y el detalle está en `detalle`. */
     idLiquidacion: { type: mongoose.Schema.Types.ObjectId, ref: 'Liquidacion', default: null },
-    /** Alias esquema: valorIngreso */
+    /** Desglose cuando un mismo comprobante paga varios servicios. */
+    detalle: { type: [DetalleIngresoSchema], default: undefined },
+    /** Alias esquema: valorIngreso. En multi-ítem es la suma del detalle. */
     valor: { type: mongoose.Schema.Types.Decimal128, required: true },
     numRecibo: { type: String, trim: true, index: true },
     /** Catálogo catTipoPago (legacy) */

@@ -12,9 +12,36 @@ const {
   sincronizarServicioPrograma,
   serviciosTienenLiquidaciones,
 } = require('../services/programaServicio');
-const { normalizarTipoCertificado } = require('../services/clasificacionCertificado');
+const { normalizarTipoCertificado, esCapJornadaCapacitacion } = require('../services/clasificacionCertificado');
 const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
 const { filtrarProgramas } = require('../services/sedeOferta');
+const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('../services/tipoCapacitacionMatch');
+
+function idTipCapJornadaDesdeIndice(indice) {
+  for (const r of indice.rows) {
+    const label = String(r.tipoCap || r.descripcion || r.nombre || '').trim();
+    if (esCapJornadaCapacitacion(label)) {
+      const idRaw = r.idTipCap ?? r.id;
+      const idStr = String(idRaw ?? '').trim();
+      if (!idStr) continue;
+      return idStr.match(/^(\d+)/) ? idStr.match(/^(\d+)/)[1] : idStr;
+    }
+  }
+  return null;
+}
+
+async function idTipCapCanonico(raw, fallback, opts = {}) {
+  const src = raw !== undefined && raw !== '' && raw != null ? raw : fallback;
+  if (src === undefined || src === '' || src == null) return src;
+  const indice = await cargarIndiceTipCap();
+  const rawStr = String(src).trim();
+  if (opts.forzarJornada || esCapJornadaCapacitacion(rawStr)) {
+    const jid = idTipCapJornadaDesdeIndice(indice);
+    if (jid) return jid;
+  }
+  const canon = resolverIdTipCapCanonico(src, indice);
+  return canon || src;
+}
 
 function usuario(req) {
   return req.user || {};
@@ -77,13 +104,18 @@ exports.crear = async (req, res, next) => {
     }
 
     let codigoProg = (body.codigoProg || '').trim();
-    if (!codigoProg) codigoProg = await generarCodigoProg(body.idTipCap);
+    const idTipCap = await idTipCapCanonico(body.idTipCap, undefined, {
+      forzarJornada:
+        esCapJornadaCapacitacion(String(body.idTipCap ?? '')) ||
+        normalizarTipoCertificado(body.tipoCertificado) === 'jornada_capacitacion',
+    });
+    if (!codigoProg) codigoProg = await generarCodigoProg(idTipCap);
     const dup = await cat.programas.findOne({ codigoProg }).lean();
     if (dup) return res.status(409).json({ message: `Ya existe el código ${codigoProg}` });
 
     const idPrograma = await maxNumericId(cat.programas, 'idPrograma');
     const borradorTip = {
-      idTipCap: body.idTipCap,
+      idTipCap,
       tipoCertificado: normalizarTipoCertificado(body.tipoCertificado),
       nombreProg,
     };
@@ -101,7 +133,7 @@ exports.crear = async (req, res, next) => {
       codigoProg,
       nombreProg,
       nomCert: (body.nomCert || nombreProg).trim(),
-      idTipCap: body.idTipCap,
+      idTipCap,
       semestres: body.semestres != null && body.semestres !== '' ? Number(body.semestres) : null,
       horas: body.horas != null && body.horas !== '' ? Number(body.horas) : null,
       horasTeoria:
@@ -186,8 +218,15 @@ exports.actualizar = async (req, res, next) => {
         ? num(body.tarifa1 ?? body.valorMatricula)
         : num(prog.valorMatricula);
 
+    const tipoCertInput =
+      body.tipoCertificado !== undefined
+        ? normalizarTipoCertificado(body.tipoCertificado)
+        : prog.tipoCertificado;
+    const idTipCap = await idTipCapCanonico(body.idTipCap, prog.idTipCap, {
+      forzarJornada: tipoCertInput === 'jornada_capacitacion',
+    });
     const mergedTip = {
-      idTipCap: body.idTipCap ?? prog.idTipCap,
+      idTipCap,
       tipoCertificado:
         body.tipoCertificado !== undefined
           ? normalizarTipoCertificado(body.tipoCertificado)
@@ -205,7 +244,7 @@ exports.actualizar = async (req, res, next) => {
       codigoProg: body.codigoProg ?? prog.codigoProg,
       nombreProg,
       nomCert: (body.nomCert ?? prog.nomCert ?? nombreProg).trim(),
-      idTipCap: body.idTipCap ?? prog.idTipCap,
+      idTipCap,
       semestres:
         body.semestres !== undefined && body.semestres !== ''
           ? Number(body.semestres)

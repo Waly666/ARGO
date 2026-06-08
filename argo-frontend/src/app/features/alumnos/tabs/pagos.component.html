@@ -1,20 +1,6 @@
 <section class="pagos" *ngIf="store.hasAlumno(); else noAlumno">
   <div class="msg" *ngIf="msg()">{{ msg() }}</div>
 
-  <div class="saldo-servicios" *ngIf="itemsConSaldo().length">
-    <button
-      type="button"
-      class="serv-saldo-alarm compact"
-      *ngFor="let it of itemsConSaldo()"
-      (click)="onItemLiquidacionChange(it._id)"
-      [class.sel]="idLiquidacion() === it._id"
-      [attr.title]="tituloSaldoItem(it.descripcion, fmt(it.saldo))">
-      <span class="serv-saldo-pulse" aria-hidden="true"></span>
-      <span class="serv-saldo-icon">$</span>
-      <span class="serv-saldo-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}</span>
-    </button>
-  </div>
-
   <div class="header-row">
     <div class="card stat">
       <span class="label">Total Liquidado</span>
@@ -34,14 +20,52 @@
     <button type="button" class="ghost" (click)="abrirFactura()">Emitir factura electrónica</button>
   </div>
 
-  <div class="card">
-    <h2>Registrar Pago</h2>
-    <div class="row">
-      <div class="col-6">
+  <div class="card card-registrar-pago">
+    <header class="registro-header">
+      <div>
+        <h2>Registrar pago</h2>
+        <p class="registro-sub">
+          Elija uno o varios servicios, indique el valor de cada uno y registre un solo comprobante.
+        </p>
+      </div>
+      <div class="registro-header-actions" *ngIf="itemsConSaldo().length">
+        <button type="button" class="ghost mini" (click)="agregarTodosPendientes()" [disabled]="!opcionesItemsLiquidacion().length">
+          Agregar todos
+        </button>
+        <button type="button" class="ghost mini" (click)="limpiarItemsPago()" [disabled]="!itemsPago().length">
+          Vaciar lista
+        </button>
+      </div>
+    </header>
+
+    <div class="registro-layout">
+      <!-- Paso 1: Servicios -->
+      <section class="registro-bloque registro-servicios">
+        <h3 class="bloque-titulo">
+          <span class="paso-num">1</span>
+          Servicios a pagar
+        </h3>
+
+        <div class="saldo-servicios saldo-servicios-inline" *ngIf="itemsConSaldo().length">
+          <span class="saldo-servicios-label">Acceso rápido:</span>
+          <button
+            type="button"
+            class="serv-saldo-alarm compact"
+            *ngFor="let it of itemsConSaldo()"
+            (click)="agregarItem(it._id)"
+            [class.sel]="itemSeleccionado(it._id)"
+            [disabled]="itemSeleccionado(it._id)"
+            [attr.title]="tituloSaldoItem(it.descripcion, fmt(it.saldo))">
+            <span class="serv-saldo-pulse" aria-hidden="true"></span>
+            <span class="serv-saldo-icon">$</span>
+            <span class="serv-saldo-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}</span>
+          </button>
+        </div>
+
         <argo-catalogo-enum-buscar
-          label="Ítem a pagar"
-          placeholder="Seleccione o escriba ítem…"
-          [textoInicial]="textoItemLiquidacion()"
+          label="Buscar y agregar servicio"
+          placeholder="Escriba o seleccione un servicio con saldo…"
+          [textoInicial]="''"
           [modoCombo]="true"
           [remoto]="false"
           [minLength]="1"
@@ -49,22 +73,77 @@
           (seleccionado)="onItemLiquidacionPick($event)"
           (limpiado)="onItemLiquidacionLimpiar()"
         />
-      </div>
-      <div class="col-3">
-        <label>Valor</label>
-        <input
-          type="number"
-          min="0"
-          [max]="saldoItemSel() || null"
-          [ngModel]="valor()"
-          (ngModelChange)="valor.set(+$event)"
-        />
-        <span class="field-hint" *ngIf="saldoItemSel() > 0">Saldo del ítem: {{ fmt(saldoItemSel()) }}</span>
-      </div>
-      <div class="col-3">
+
+        <div class="items-pago-vacio" *ngIf="!itemsPago().length">
+          <p class="vacio-titulo">Aún no hay servicios en este pago</p>
+          <p class="vacio-hint">
+            Toque un servicio con saldo arriba o búsquelo en el campo. Puede combinar varios en un mismo comprobante.
+          </p>
+        </div>
+
+        <ul class="items-pago-lista" *ngIf="itemsPago().length">
+          <li class="item-pago-fila" *ngFor="let it of itemsPago(); trackBy: trackItemPago">
+            <div class="item-pago-info">
+              <span class="item-pago-nombre">{{ it.descripcion }}</span>
+              <span class="item-pago-saldo">Saldo: {{ fmt(it.saldo) }}</span>
+            </div>
+            <div class="item-pago-valor">
+              <label [attr.for]="'valor-' + it.idLiquidacion">Valor a pagar</label>
+              <div class="item-pago-valor-row">
+                <input
+                  class="item-pago-valor-input"
+                  [id]="'valor-' + it.idLiquidacion"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  placeholder="0"
+                  [ngModel]="valorItemInput(it)"
+                  (ngModelChange)="setValorItem(it.idLiquidacion, $event)"
+                  (blur)="blurValorItem(it.idLiquidacion)"
+                />
+                <button
+                  type="button"
+                  class="ghost mini"
+                  (click)="pagarSaldoCompleto(it.idLiquidacion)"
+                  title="Usar saldo completo">
+                  Total
+                </button>
+              </div>
+              <span class="item-pago-parcial" *ngIf="it.valor > 0 && it.valor < it.saldo - 0.0001">Abono parcial</span>
+              <span class="item-pago-parcial ok" *ngIf="it.valor >= it.saldo - 0.0001">Pago total del ítem</span>
+            </div>
+            <button
+              type="button"
+              class="ghost mini item-pago-quitar"
+              (click)="quitarItem(it.idLiquidacion)"
+              title="Quitar del comprobante">
+              ✕
+            </button>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Paso 2 y 3: Pago + resumen -->
+      <aside class="registro-bloque registro-pago-aside">
+        <h3 class="bloque-titulo">
+          <span class="paso-num">2</span>
+          Forma de pago
+        </h3>
+
+        <div class="tipos-pago-rapidos">
+          <button
+            type="button"
+            class="chip-pago"
+            *ngFor="let t of tiposPago()"
+            [class.activo]="tipoPagoActivo(tipoPagoValor(t))"
+            (click)="seleccionarTipoPagoRapido(tipoPagoValor(t))">
+            {{ tipoPagoLabel(t) }}
+          </button>
+        </div>
+
         <argo-catalogo-enum-buscar
-          label="Tipo Pago"
-          placeholder="Seleccione o escriba forma de pago…"
+          label="O busque otra forma de pago"
+          placeholder="Seleccione forma de pago…"
           [textoInicial]="textoTipoPago()"
           [modoCombo]="true"
           [remoto]="false"
@@ -73,41 +152,56 @@
           (seleccionado)="onTipoPagoPick($event)"
           (limpiado)="onTipoPagoLimpiar()"
         />
-      </div>
-    </div>
 
-    <div class="row" *ngIf="requiereCuentaEmpresa()">
-      <div class="col-6">
-        <argo-catalogo-enum-buscar
-          label="Cuenta de la empresa *"
-          placeholder="Seleccione o escriba cuenta…"
-          [textoInicial]="textoCuentaBancaria()"
-          [modoCombo]="true"
-          [remoto]="false"
-          [minLength]="1"
-          [opcionesLocales]="opcionesCuentasBancarias()"
-          (seleccionado)="onCuentaBancariaPick($event)"
-          (limpiado)="onCuentaBancariaLimpiar()"
-        />
-        <span class="field-hint">Indique a cuál cuenta ingresó el pago (Bancolombia, Nequi, etc.)</span>
-      </div>
-      <div class="col-6">
-        <label>Nº Comprobante / Referencia</label>
-        <input type="text" [ngModel]="numComprobante()" (ngModelChange)="numComprobante.set($event)" />
-      </div>
-    </div>
+        <div class="registro-banco" *ngIf="requiereCuentaEmpresa()">
+          <h3 class="bloque-titulo sub">
+            <span class="paso-num">3</span>
+            Datos del pago
+          </h3>
+          <argo-catalogo-enum-buscar
+            label="Cuenta de la empresa *"
+            placeholder="Cuenta donde ingresó el dinero…"
+            [textoInicial]="textoCuentaBancaria()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesCuentasBancarias()"
+            (seleccionado)="onCuentaBancariaPick($event)"
+            (limpiado)="onCuentaBancariaLimpiar()"
+          />
+          <label class="campo-simple">
+            Nº comprobante / referencia
+            <input type="text" [ngModel]="numComprobante()" (ngModelChange)="numComprobante.set($event)" placeholder="Opcional" />
+          </label>
+        </div>
 
-    <div class="row">
-      <div class="col-12">
-        <label>Observaciones</label>
-        <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" />
-      </div>
-    </div>
+        <label class="campo-simple">
+          Observaciones
+          <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" placeholder="Opcional" />
+        </label>
 
-    <div class="actions">
-      <button class="primary" (click)="registrar()" [disabled]="saving()">
-        {{ saving() ? 'Guardando…' : 'Registrar Pago' }}
-      </button>
+        <div class="registro-resumen">
+          <div class="resumen-linea">
+            <span>Servicios</span>
+            <strong>{{ itemsPago().length }}</strong>
+          </div>
+          <div class="resumen-linea resumen-total">
+            <span>Total a cobrar</span>
+            <strong>{{ fmt(totalPago()) }}</strong>
+          </div>
+          <button
+            type="button"
+            class="primary btn-registrar"
+            (click)="registrar()"
+            [disabled]="saving() || !puedeRegistrar()">
+            {{ saving() ? 'Registrando…' : 'Registrar pago' }}
+          </button>
+          <p class="resumen-ayuda" *ngIf="itemsPago().length && !idTipoPago()">Seleccione la forma de pago.</p>
+          <p class="resumen-ayuda" *ngIf="requiereCuentaEmpresa() && !idCuentaBancaria()">
+            Indique la cuenta de la empresa.
+          </p>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -129,7 +223,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let p of pagos()">
+        <tr
+          *ngFor="let p of pagos()"
+          [id]="esIngresoDestacado(p) ? 'ingreso-row-' + (p._id || p.id) : null"
+          [class.row-ingreso-destacado]="esIngresoDestacado(p)">
           <td>{{ tiempoFmt(p.fecha || p.createdAt) }}</td>
           <td>{{ conceptoPago(p) }}</td>
           <td>
@@ -156,6 +253,7 @@
     *ngIf="mostrarFactura()"
     [numDoc]="store.numDoc()!"
     [alumnoNombre]="alumnoNombre()"
+    [alumnoId]="store.alumno()?._id || ''"
     (cerrar)="cerrarFactura()"
     (emitida)="onFacturaEmitida()"
   />

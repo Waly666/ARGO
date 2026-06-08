@@ -62,6 +62,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
   loading = signal(false);
   cajaAbierta = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   seleccionado = signal<LiquidacionConSaldoItem | null>(null);
   pagosItem = signal<any[]>([]);
@@ -110,7 +111,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.msg.set(null);
+    this.inform(null);
     this.fetchPaginas(0, []);
   }
 
@@ -142,7 +143,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
-        this.msg.set(e?.error?.message || 'Error cargando servicios con saldo.');
+        this.inform(e?.error?.message || 'Error cargando servicios con saldo.');
       },
     });
   }
@@ -219,24 +220,24 @@ export class CajaCobrosPendientesComponent implements OnInit {
     if (!it) return;
     if (!(await this.cajaAlert.ensureAbierta('registrar cobros'))) return;
     if (!this.valor() || this.valor() <= 0) {
-      this.msg.set('Valor del pago inválido.');
+      this.inform('Valor del pago inválido.');
       return;
     }
     if (!this.idTipoPago()) {
-      this.msg.set('Seleccione la forma de pago.');
+      this.inform('Seleccione la forma de pago.');
       return;
     }
     if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) {
-      this.msg.set('Seleccione la cuenta bancaria de la empresa.');
+      this.inform('Seleccione la cuenta bancaria de la empresa.');
       return;
     }
     if (this.valor() > this.num(it.saldo)) {
-      this.msg.set('El valor excede el saldo pendiente.');
+      this.inform('El valor excede el saldo pendiente.');
       return;
     }
 
     this.saving.set(true);
-    this.msg.set(null);
+    this.inform(null);
     this.ingSvc
       .crear({
         numDoc: it.alumnoDoc ?? it.numDoc,
@@ -250,7 +251,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
       .subscribe({
         next: (ing) => {
           this.saving.set(false);
-          this.msg.set(`Pago registrado (${ing.numRecibo || ''}).`);
+          this.inform(`Pago registrado (${ing.numRecibo || ''}).`);
           this.cargar();
           if (it._id) this.cargarPagos(it._id);
           const id = ing?._id;
@@ -258,7 +259,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
         },
         error: (e) => {
           this.saving.set(false);
-          this.msg.set(e?.error?.message || 'Error al registrar pago.');
+          this.inform(e?.error?.message || 'Error al registrar pago.');
         },
       });
   }
@@ -292,7 +293,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
     const u = this.authAdminUser().trim();
     const pw = this.authAdminPass();
     if (!u || !pw) {
-      this.msg.set('Ingrese usuario y contraseña del administrador.');
+      this.inform('Ingrese usuario y contraseña del administrador.');
       return;
     }
     this.ejecutarReversar(p, it._id, { autorizadoUsername: u, autorizadoPassword: pw });
@@ -316,21 +317,21 @@ export class CajaCobrosPendientesComponent implements OnInit {
         this.ingresoPendienteAnular.set(null);
         this.authAdminUser.set('');
         this.authAdminPass.set('');
-        this.msg.set('Pago reversado.');
+        this.inform('Pago reversado.');
         this.cargar();
         this.cargarPagos(idLiquidacion);
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error reversando pago.'),
+      error: (e) => this.inform(e?.error?.message || 'Error reversando pago.'),
     });
   }
 
   imprimirRecibo(ing: { _id?: unknown; id?: unknown }): void {
     const id = idIngreso(ing);
     if (!id) {
-      this.msg.set('No se puede imprimir: comprobante sin ID.');
+      this.inform('No se puede imprimir: comprobante sin ID.');
       return;
     }
-    this.reciboSvc.abrirHtml(id, (m) => this.msg.set(m));
+    this.reciboSvc.abrirHtml(id, (m) => this.inform(m));
   }
 
   verRecibo(ing: { _id?: unknown; id?: unknown }): void {
@@ -338,7 +339,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
     if (!id) return;
     const url = this.router.serializeUrl(this.router.createUrlTree(['/recibo', id]));
     const w = window.open(url, '_blank', 'width=420,height=720');
-    if (!w) this.msg.set('Permita ventanas emergentes para ver el comprobante.');
+    if (!w) this.inform('Permita ventanas emergentes para ver el comprobante.');
   }
 
   private async preguntarImprimirRecibo(ing: { _id?: unknown; id?: unknown; numRecibo?: string }): Promise<void> {
@@ -401,4 +402,25 @@ export class CajaCobrosPendientesComponent implements OnInit {
     if (it.estado === 'pendiente') return 'Pendiente';
     return it.estado || 'Pendiente';
   }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }

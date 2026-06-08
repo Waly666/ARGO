@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
 
@@ -34,6 +34,7 @@ import {
   horasSlots,
   inicioSemana,
   layoutHorarioHHmm,
+  layoutsCalendarioDiaHHmm,
   rangoVisibleMes,
   ymdCalendario,
   ymdLocal,
@@ -62,6 +63,9 @@ import {
 } from '../../../core/utils/cea-cal-clase.util';
 import { calcularHoraHastaHHmm, horasSesionClase } from '../../../core/utils/cea-horario.util';
 import { horaInicioEfectiva } from '../../../core/utils/hora-12.util';
+import { AsistenteContextoService } from '../../../core/services/asistente-contexto.service';
+import { tipFormulario } from '../../../core/utils/asistente-formulario.util';
+import type { AsistenteTip } from '../../../core/constants/asistente.types';
 
 const CAL_MAX_EVENTOS_DIA = 4;
 
@@ -105,6 +109,17 @@ export class AlumnoProgramacionCeaComponent implements OnInit {
   private store = inject(AlumnoStore);
   private permisos = inject(PermisoService);
   private confirm = inject(ConfirmDialogService);
+  private asistente = inject(AsistenteContextoService);
+
+  constructor() {
+    effect(() => {
+      if (this.modalAbierto()) {
+        this.asistente.setTipsPrepend(this.tipsMiaFormulario());
+      } else {
+        this.asistente.clearTipsPrepend();
+      }
+    });
+  }
 
   loading = signal(false);
   error = signal<string | null>(null);
@@ -385,6 +400,21 @@ export class AlumnoProgramacionCeaComponent implements OnInit {
     if (!c) return 'Clase CEA';
     return `${labelTipoClaseCea(c.tipoClase)} — ${c.programaLabel || c.idProg}`;
   });
+
+  private tipsMiaFormulario(): AsistenteTip[] {
+    const c = this.claseSel();
+    const tips: AsistenteTip[] = [];
+    if (c?.estado) {
+      tips.push(tipFormulario('Estado de la clase', String(c.estado), 'al-cea-estado'));
+    }
+    if (this.modalEditando()) {
+      tips.push(
+        tipFormulario('Fecha y horario', 'Ajuste la programación de la clase.', 'al-cea-s1'),
+        tipFormulario('Recursos e instructor', 'Ubicación, vehículo y persona a cargo.', 'al-cea-s2'),
+      );
+    }
+    return tips;
+  }
 
   labelTipo = labelTipoHorasCea;
   labelOrigen = labelOrigenHorasCea;
@@ -728,6 +758,12 @@ export class AlumnoProgramacionCeaComponent implements OnInit {
 
   layoutClaseCea(c: ClaseProgramadaCeaDto) {
     return layoutHorarioHHmm(c.horaDesde, c.horaHasta);
+  }
+
+  layoutsCalendarioDia(clases: ClaseProgramadaCeaDto[]) {
+    return layoutsCalendarioDiaHHmm(
+      clases.map((c) => ({ id: c._id!, horaDesde: c.horaDesde, horaHasta: c.horaHasta })),
+    );
   }
 
   fmtDiaCal(fecha: Date): string {

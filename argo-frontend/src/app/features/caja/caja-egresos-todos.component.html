@@ -1,10 +1,12 @@
 <section class="listado-admin admin-list-page">
-  <header class="page-head card">
-    <div>
+  <header class="caja-head page-head card">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Todos los egresos</p>
       <h1>Todos los egresos</h1>
       <p class="hint">Histórico completo de egresos. Solo administradores.</p>
     </div>
-    <div class="head-actions">
+    <div class="caja-badges head-actions">
+      <span class="caja-chip caja-chip--amber">Administración</span>
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
       <span class="total-badge egreso">{{ totalValor() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
     </div>
@@ -12,7 +14,7 @@
 
   <argo-caja-descuadres-banner />
 
-  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <p class="filtro-sesion-activo" *ngIf="idSesion()">
     Filtrando sesión #{{ idSesion() }}

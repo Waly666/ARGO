@@ -70,6 +70,8 @@ export interface ConfigRecibo {
   mensajeCreacionAlumno?: string;
   anchoReciboMm?: number;
   mostrarQr?: boolean;
+  formatoComprobanteIngreso?: 'validadora' | 'media_carta';
+  formatoComprobanteEgreso?: 'validadora' | 'media_carta';
 }
 
 export interface GeorefProveedorOpcion {

@@ -3,7 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
 import { ASISTENTE_CATALOGO, contextoAsistente } from '../constants/asistente.catalogo';
-import type { AsistenteContexto } from '../constants/asistente.types';
+import type { AsistenteContexto, AsistenteTip } from '../constants/asistente.types';
 
 const LS_ACTIVO = 'argo.asistente.activo';
 const LS_SONIDO = 'argo.asistente.sonido';
@@ -14,6 +14,8 @@ export class AsistenteContextoService {
 
   /** Override desde modales (emitir factura, nota crédito, etc.). */
   private overrideId = signal<string | null>(null);
+  /** Tips de formulario activo — se muestran primero en Mia (contexto del modal). */
+  private tipsPrepend = signal<AsistenteTip[]>([]);
 
   activo = signal(this.readBool(LS_ACTIVO, true));
   sonido = signal(this.readBool(LS_SONIDO, true));
@@ -24,7 +26,11 @@ export class AsistenteContextoService {
 
   contexto = computed<AsistenteContexto | null>(() => {
     const id = this.overrideId() || this.contextoId();
-    return contextoAsistente(id);
+    const base = contextoAsistente(id);
+    if (!base) return null;
+    const prep = this.tipsPrepend();
+    if (!prep.length) return base;
+    return { ...base, tips: [...prep, ...base.tips] };
   });
 
   visible = computed(() => this.activo() && !!this.contexto());
@@ -58,10 +64,25 @@ export class AsistenteContextoService {
 
   setOverride(id: string | null): void {
     this.overrideId.set(id);
+    this.tipsPrepend.set([]);
     if (id && this.activo() && this.sonido()) {
       this.reproducirSonido('aparece');
     }
     this.indiceTip.set(0);
+  }
+
+  /** Antepone tips al contexto actual (p. ej. ayuda de un formulario modal abierto). */
+  setTipsPrepend(tips: AsistenteTip[]): void {
+    this.tipsPrepend.set(tips);
+    this.indiceTip.set(0);
+    if (tips.length && this.activo()) {
+      this.expandido.set(true);
+      if (this.sonido()) this.reproducirSonido('aparece');
+    }
+  }
+
+  clearTipsPrepend(): void {
+    this.tipsPrepend.set([]);
   }
 
   toggleActivo(): void {
@@ -188,7 +209,9 @@ export class AsistenteContextoService {
     if (path.includes('/caja/ingresos-todos')) return 'caja.ingresos-todos';
     if (path.includes('/caja/egresos-todos')) return 'caja.egresos-todos';
     if (path.includes('/caja/descuadres')) return 'caja.descuadres';
+    if (path.includes('/caja/ingresos/nuevo')) return 'caja.ingreso-form';
     if (path.includes('/caja/ingresos')) return 'caja.ingresos';
+    if (path.includes('/caja/egresos/nuevo') || path.includes('/caja/egresos/editar')) return 'caja.egreso-form';
     if (path.includes('/caja/egresos')) return 'caja.egresos';
     if (path.includes('/caja')) return 'caja.cuadre';
 

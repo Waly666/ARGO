@@ -167,23 +167,30 @@ async function mapaServiciosPorId() {
 
 async function agruparIngresosPorTipo(match) {
   const ingresos = await Ingreso.find(match)
-    .select('valor tipoIngreso idTipoIngreso idLiquidacion')
+    .select('valor tipoIngreso idTipoIngreso idLiquidacion detalle ingresoCaja')
     .lean();
 
   const mapTipos = await mapaTiposIngreso();
   const serviciosPorId = await mapaServiciosPorId();
 
-  const liqIds = [
-    ...new Set(
-      ingresos
-        .filter((i) => !String(i.tipoIngreso || '').trim() && !String(i.idTipoIngreso || '').trim() && i.idLiquidacion)
-        .map((i) => i.idLiquidacion),
-    ),
-  ];
+  // Liquidaciones a resolver: ingresos de un ítem sin tipo, y TODOS los ítems de detalle.
+  const liqIds = new Set();
+  for (const i of ingresos) {
+    if (
+      !String(i.tipoIngreso || '').trim() &&
+      !String(i.idTipoIngreso || '').trim() &&
+      i.idLiquidacion
+    ) {
+      liqIds.add(String(i.idLiquidacion));
+    }
+    if (Array.isArray(i.detalle)) {
+      for (const d of i.detalle) if (d.idLiquidacion) liqIds.add(String(d.idLiquidacion));
+    }
+  }
 
   const liqIdServ = new Map();
-  if (liqIds.length) {
-    const liqs = await Liquidacion.find({ _id: { $in: liqIds } })
+  if (liqIds.size) {
+    const liqs = await Liquidacion.find({ _id: { $in: [...liqIds] } })
       .select('idServ')
       .lean();
     for (const l of liqs) {
@@ -192,13 +199,28 @@ async function agruparIngresosPorTipo(match) {
   }
 
   const grupos = new Map();
-  for (const ing of ingresos) {
-    const tipo = etiquetaTipoIngresoDoc(ing, mapTipos, liqIdServ, serviciosPorId);
-    const v = num(ing.valor);
+  const acumular = (tipo, valor) => {
     const prev = grupos.get(tipo) || { tipo, cantidad: 0, total: 0 };
     prev.cantidad += 1;
-    prev.total += v;
+    prev.total += valor;
     grupos.set(tipo, prev);
+  };
+
+  for (const ing of ingresos) {
+    // Comprobante multi-servicio: discrimina cada servicio del detalle por su propio tipo.
+    if (!ing.ingresoCaja && Array.isArray(ing.detalle) && ing.detalle.length) {
+      for (const d of ing.detalle) {
+        const tipo = etiquetaTipoIngresoDoc(
+          { tipoIngreso: '', idTipoIngreso: '', idLiquidacion: d.idLiquidacion },
+          mapTipos,
+          liqIdServ,
+          serviciosPorId,
+        );
+        acumular(tipo, num(d.valor));
+      }
+      continue;
+    }
+    acumular(etiquetaTipoIngresoDoc(ing, mapTipos, liqIdServ, serviciosPorId), num(ing.valor));
   }
 
   return [...grupos.values()].sort((a, b) => b.total - a.total);

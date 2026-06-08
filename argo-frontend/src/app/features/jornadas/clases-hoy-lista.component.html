@@ -1,6 +1,7 @@
-<section class="clases-hoy-page card">
-  <header class="page-head">
-    <div class="title">
+<section class="clases-hoy-page card admin-list-page">
+  <header class="jor-head page-head">
+    <div class="jor-head-main title">
+      <p class="breadcrumb"><a routerLink="/app/jornadas">Jornadas</a> / Clases de hoy</p>
       <h1>Clases de hoy</h1>
       @if (esInstructorSolo()) {
         <p class="hint">
@@ -15,7 +16,8 @@
         </p>
       }
     </div>
-    <div class="head-badges">
+    <div class="jor-badges head-badges">
+      <span class="jor-chip jor-chip--sky">{{ total() }} clase{{ total() === 1 ? '' : 's' }}</span>
       @if (puedeOperar()) {
         <button
           type="button"
@@ -129,7 +131,6 @@
   <argo-form-modal
     [open]="true"
     title="Nueva clase"
-    subtitle="Jornada de capacitación — día {{ hoyLabel() }}"
     [wide]="true"
     (closed)="cerrarModalCrearClase()">
     <section class="clase-crear-form">

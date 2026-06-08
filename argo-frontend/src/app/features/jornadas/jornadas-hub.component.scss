@@ -1,4 +1,5 @@
 @use './jornadas-ui.scss';
+@use './jornadas-shared' as *;
 
 .panel-head-row {
   display: flex;

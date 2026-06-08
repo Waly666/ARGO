@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -32,9 +32,42 @@ export class UsuariosAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
+  filtro = signal('');
   editando = signal<Usuario | null>(null);
   mostrarForm = signal(false);
   vista = signal<VistaLista>(readVistaLista('argo-usuarios-vista'));
+
+  resumen = computed(() => {
+    const list = this.usuarios();
+    return {
+      total: list.length,
+      activos: list.filter((u) => u.activo !== false).length,
+      inactivos: list.filter((u) => u.activo === false).length,
+    };
+  });
+
+  usuariosFiltrados = computed(() => {
+    const q = this.filtro().trim().toLowerCase();
+    const list = this.usuarios();
+    if (!q) return list;
+    return list.filter((u) => {
+      const nombre = this.nombreCompleto(u).toLowerCase();
+      const login = loginMostrable(u).toLowerCase();
+      const doc = documentoUsuario(u).toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      const rol = this.labelRol(u.rol).toLowerCase();
+      const sede = this.labelSedes(u).toLowerCase();
+      return (
+        nombre.includes(q) ||
+        login.includes(q) ||
+        doc.includes(q) ||
+        email.includes(q) ||
+        rol.includes(q) ||
+        sede.includes(q)
+      );
+    });
+  });
 
   form = signal<UsuarioDto>({
     username: '',
@@ -66,6 +99,7 @@ export class UsuariosAdminComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error cargando usuarios');
       },
     });
@@ -99,6 +133,7 @@ export class UsuariosAdminComponent implements OnInit {
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
+    this.msgError.set(false);
   }
 
   editar(u: Usuario) {
@@ -117,6 +152,7 @@ export class UsuariosAdminComponent implements OnInit {
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
+    this.msgError.set(false);
   }
 
   cancelar() {
@@ -158,23 +194,28 @@ export class UsuariosAdminComponent implements OnInit {
     const f = this.form();
     const ed = this.editando();
     if (!f.username?.trim()) {
+      this.msgError.set(true);
       this.msg.set('El nombre de usuario (login) es obligatorio.');
       return;
     }
     if (esLoginNumerico(f.username)) {
+      this.msgError.set(true);
       this.msg.set('Use un nombre de usuario (ej. jose o walter.aguilar), no el documento.');
       return;
     }
     if (!ed && (!f.password || f.password.length < 4)) {
+      this.msgError.set(true);
       this.msg.set('La contraseña es obligatoria al crear (mín. 4 caracteres).');
       return;
     }
     if (!this.esRolAdmin(f.rol) && !(f.sedesPermitidas || []).length) {
+      this.msgError.set(true);
       this.msg.set('Seleccione la sede del usuario.');
       return;
     }
     this.saving.set(true);
     this.msg.set(null);
+    this.msgError.set(false);
     const payload: UsuarioDto = { ...f };
     if (this.esRolAdmin(f.rol)) payload.sedesPermitidas = [];
     const req = ed
@@ -185,10 +226,12 @@ export class UsuariosAdminComponent implements OnInit {
         this.saving.set(false);
         this.mostrarForm.set(false);
         this.cargar();
+        this.msgError.set(false);
         this.msg.set(ed ? 'Usuario actualizado.' : 'Usuario creado.');
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error al guardar.');
       },
     });
@@ -209,7 +252,10 @@ export class UsuariosAdminComponent implements OnInit {
     if (!ok) return;
     this.svc.desactivar(u._id).subscribe({
       next: () => this.cargar(),
-      error: (e) => this.msg.set(e?.error?.message || 'Error.'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Error.');
+      },
     });
   }
 
@@ -226,13 +272,33 @@ export class UsuariosAdminComponent implements OnInit {
       next: (r) => {
         if (this.editando()?._id === u._id) this.cancelar();
         this.cargar();
+        this.msgError.set(false);
         this.msg.set(r.message || 'Usuario eliminado.');
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo eliminar.'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'No se pudo eliminar.');
+      },
     });
   }
 
   labelRol(id?: string): string {
     return this.roles().find((r) => r.id === id)?.label || id || '—';
+  }
+
+  rolBadgeClass(rol?: string): string {
+    const r = String(rol || '').toLowerCase();
+    if (r === 'admin' || r.includes('admin')) return 'usr-rol-badge--admin';
+    if (r.includes('instructor') || r.includes('caja') || r.includes('rrhh')) return 'usr-rol-badge--staff';
+    if (r === 'usuario' || r.includes('usuario')) return 'usr-rol-badge--user';
+    return 'usr-rol-badge--other';
+  }
+
+  iniciales(u: Usuario): string {
+    const nombre = this.nombreCompleto(u);
+    const parts = nombre.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    const login = loginMostrable(u);
+    return login.slice(0, 2).toUpperCase() || '??';
   }
 }

@@ -1,41 +1,9 @@
 @use './jornada-live-estado.scss';
+@use './jornadas-shared' as *;
 
 .clases-hoy-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  .page-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--line-soft);
-
-    .title h1 {
-      margin: 0 0 4px;
-    }
-
-    .hint {
-      margin: 0;
-      color: var(--text-dim);
-      font-size: 0.88rem;
-      line-height: 1.45;
-      max-width: 52rem;
-    }
-  }
-
-  .head-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
-    align-items: center;
-
-    .btn-nueva-clase {
-      white-space: nowrap;
-    }
+  .head-badges .btn-nueva-clase {
+    white-space: nowrap;
   }
 
   .live-badge {

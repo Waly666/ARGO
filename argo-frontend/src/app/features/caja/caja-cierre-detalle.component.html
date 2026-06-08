@@ -1,9 +1,13 @@
 <div class="caja-page" *ngIf="!loading(); else cargando">
-  <header class="page-head no-print">
-    <div>
-      <a [routerLink]="backLink()" class="back">{{ backLabel() }}</a>
+  <header class="caja-head page-head no-print card">
+    <div class="caja-head-main">
+      <p class="breadcrumb">
+        <a routerLink="/app/caja">Caja</a> /
+        <a [routerLink]="backLink()">{{ backLabel() }}</a> /
+        Sesión #{{ sesion()?.idSesion }}
+      </p>
       <h1>Cierre de caja #{{ sesion()?.idSesion }}</h1>
-      <p class="sub">
+      <p class="hint">
         {{ sesion()?.usuario }}
         <ng-container *ngIf="sedeLabel()"> · Sede {{ sedeLabel() }}</ng-container>
         · {{ sesion()?.fechaCierre | date: 'fullDate' }}
@@ -19,7 +23,7 @@
     </div>
   </header>
 
-  <p class="flash" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <div class="alerta admin-hint no-print" *ngIf="isAdmin()">
     <strong>Gestión del descuadre</strong>

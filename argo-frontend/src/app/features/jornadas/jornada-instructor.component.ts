@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
@@ -40,7 +40,7 @@ import { ymdLocal } from './jornada-calendario.util';
 @Component({
   selector: 'argo-jornada-instructor',
   standalone: true,
-  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CatalogoEnumBuscarComponent],
   templateUrl: './jornada-instructor.component.html',
   styleUrls: ['./jornada-instructor.component.scss'],
 })

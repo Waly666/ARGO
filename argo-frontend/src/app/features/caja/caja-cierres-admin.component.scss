@@ -1,9 +1,7 @@
 @use './caja-listados-admin' as *;
+@use './caja-shared' as *;
 
 .cierres-page {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
   max-width: none;
 }
 

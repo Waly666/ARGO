@@ -44,6 +44,12 @@ export const ASISTENTE_OPERACION: Record<string, AsistenteContexto> = {
     saludo: 'Centro de jornadas de capacitación (cursos grupales).',
     tips: [
       {
+        id: 'jor-h-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Gestione contratos con empresas, programe carpas por fecha, opere clases del día y emita certificados automáticos.',
+      },
+      {
         id: 'jor-h-1',
         titulo: 'Jornada vs clase CEA',
         cuerpo:
@@ -169,6 +175,12 @@ export const ASISTENTE_OPERACION: Record<string, AsistenteContexto> = {
     saludo: 'Contratos empresariales para jornadas.',
     tips: [
       {
+        id: 'jor-co-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Listado completo de contrataciones. Use Editar para abrir el contrato en el módulo Jornadas y trabajar sus jornadas/clases, o Eliminar si aún no tiene jornadas con clases registradas.',
+      },
+      {
         id: 'jor-co-1',
         titulo: 'Convenio',
         cuerpo:
@@ -225,6 +237,12 @@ export const ASISTENTE_OPERACION: Record<string, AsistenteContexto> = {
     saludo: 'Calendario — teoría y taller (clases grupales CEA).',
     tips: [
       {
+        id: 'cea-g-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Programe cupos de teoría y taller al mes, inscriba alumnos en estado PROGRAMADA y consulte el descuento de horas.',
+      },
+      {
         id: 'cea-g-1',
         titulo: 'Crear clase (+ en día)',
         cuerpo:
@@ -261,6 +279,12 @@ export const ASISTENTE_OPERACION: Record<string, AsistenteContexto> = {
     modulo: 'programacion_cea',
     saludo: 'Calendario — práctica en vehículo.',
     tips: [
+      {
+        id: 'cea-p-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Programe clases individuales en vehículo. Busque al alumno como en jornadas, créelas o edítelas desde la lista.',
+      },
       {
         id: 'cea-p-1',
         titulo: 'Recursos obligatorios',

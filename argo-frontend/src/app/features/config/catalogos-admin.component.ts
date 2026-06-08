@@ -63,7 +63,20 @@ export class CatalogosAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
+  filtroSidebar = signal('');
   busqueda = signal('');
+
+  catalogosFiltrados = computed(() => {
+    const q = this.filtroSidebar().trim().toLowerCase();
+    const list = this.catalogos();
+    if (!q) return list;
+    return list.filter(
+      (c) =>
+        String(c.label || '').toLowerCase().includes(q) ||
+        String(c.nombre || '').toLowerCase().includes(q),
+    );
+  });
   pagina = signal(0);
   readonly pageSize = 20;
 
@@ -172,7 +185,10 @@ export class CatalogosAdminComponent implements OnInit {
           this.seleccionar(list[0].nombre);
         }
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error cargando catálogos'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Error cargando catálogos');
+      },
     });
   }
 
@@ -181,6 +197,8 @@ export class CatalogosAdminComponent implements OnInit {
     this.pagina.set(0);
     this.mostrarForm.set(false);
     this.mostrarImport.set(false);
+    this.msg.set(null);
+    this.msgError.set(false);
     if (nombre === 'caractInspeccion') {
       this.cargarItemsInspeccionOpciones();
     }
@@ -249,6 +267,7 @@ export class CatalogosAdminComponent implements OnInit {
         },
         error: (e) => {
           this.loading.set(false);
+          this.msgError.set(true);
           this.msg.set(e?.error?.message || 'Error cargando datos');
         },
       });
@@ -293,7 +312,16 @@ export class CatalogosAdminComponent implements OnInit {
   }
 
   columnasInspeccion(): string[] {
-    if (this.esCatalogoItemsInspeccion()) return ['tiposVehiculo', ...this.camposTabla()];
+    if (this.esCatalogoItemsInspeccion()) {
+      const cols = this.camposTabla();
+      const idx = cols.indexOf('item');
+      if (idx >= 0) {
+        const out = [...cols];
+        out.splice(idx + 1, 0, 'tiposVehiculo');
+        return out;
+      }
+      return [...cols, 'tiposVehiculo'];
+    }
     if (this.esCatalogoCaractInspeccion()) {
       const cols = this.camposTabla();
       const idx = cols.indexOf('idItem');
@@ -315,6 +343,11 @@ export class CatalogosAdminComponent implements OnInit {
     if (this.esCatalogoInspeccion()) return this.columnasInspeccion();
     if (this.esCatalogoDocumento()) return this.columnasDocumento();
     if (this.esCatalogoClaseVehiculo()) return [...this.camposTabla(), 'licenciasCap'];
+    return this.camposTabla();
+  }
+
+  columnasCards(): string[] {
+    if (this.esCatalogoItemsInspeccion()) return this.columnasListado();
     return this.camposTabla();
   }
 
@@ -624,6 +657,7 @@ export class CatalogosAdminComponent implements OnInit {
     }
     this.mostrarForm.set(true);
     this.msg.set(null);
+    this.msgError.set(false);
   }
 
   editar(row: Record<string, unknown>) {
@@ -728,17 +762,21 @@ export class CatalogosAdminComponent implements OnInit {
     const doc = this.parseDoc();
     const id = this.editandoId();
     this.saving.set(true);
+    this.msg.set(null);
+    this.msgError.set(false);
     const req = id ? this.svc.actualizar(nombre, id, doc) : this.svc.crear(nombre, doc);
     req.subscribe({
       next: () => {
         this.saving.set(false);
         this.mostrarForm.set(false);
         this.catCache.invalidate(nombre);
+        this.msgError.set(false);
         this.msg.set(id ? 'Registro actualizado.' : 'Registro creado.');
         this.cargar();
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error al guardar');
       },
     });
@@ -758,10 +796,14 @@ export class CatalogosAdminComponent implements OnInit {
     this.svc.eliminar(nombre, id).subscribe({
       next: () => {
         this.catCache.invalidate(nombre);
+        this.msgError.set(false);
         this.msg.set('Registro eliminado.');
         this.cargar();
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error al eliminar'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Error al eliminar');
+      },
     });
   }
 
@@ -791,6 +833,7 @@ export class CatalogosAdminComponent implements OnInit {
       rows = Array.isArray(parsed) ? parsed : parsed?.rows;
       if (!Array.isArray(rows)) throw new Error('Formato inválido');
     } catch {
+      this.msgError.set(true);
       this.msg.set('JSON inválido. Use un arreglo de objetos o { "rows": [...] }.');
       return;
     }
@@ -800,11 +843,13 @@ export class CatalogosAdminComponent implements OnInit {
         this.saving.set(false);
         this.mostrarImport.set(false);
         this.catCache.invalidate(nombre);
+        this.msgError.set(false);
         this.msg.set(r.message || `Importados ${r.insertados} registros.`);
         this.cargar();
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error al importar');
       },
     });
@@ -826,11 +871,13 @@ export class CatalogosAdminComponent implements OnInit {
       next: (r) => {
         this.saving.set(false);
         this.catCache.invalidate();
+        this.msgError.set(false);
         this.msg.set(r.message || 'Recarga desde Excel completada.');
         this.cargar();
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error al recargar Excel');
       },
     });

@@ -7,6 +7,12 @@ export const ASISTENTE_CAJA: Record<string, AsistenteContexto> = {
     saludo: 'Resumen del día — turno de caja del usuario.',
     tips: [
       {
+        id: 'caj-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Su turno: cuadre, cobros e ingresos, y egresos. El administrador usa el cierre general aparte.',
+      },
+      {
         id: 'caj-1',
         titulo: 'Estado: caja abierta / cerrada',
         cuerpo:
@@ -47,6 +53,42 @@ export const ASISTENTE_CAJA: Record<string, AsistenteContexto> = {
         titulo: 'Informe / impresión',
         cuerpo:
           'Puede generar resumen del turno para archivo físico según botones disponibles en pantalla.',
+      },
+    ],
+  },
+  'caja.ingreso-form': {
+    id: 'caja.ingreso-form',
+    modulo: 'caja',
+    saludo: 'Formulario — ingreso de caja sin alumno.',
+    tips: [
+      {
+        id: 'caj-if-ctx',
+        titulo: 'Contexto de este formulario',
+        cuerpo:
+          'Contratos con terceros, aprovisionamiento de caja u otros ingresos que no van a liquidación de alumno.',
+      },
+      {
+        id: 'caj-if-1',
+        titulo: 'Caja abierta',
+        cuerpo: 'Debe tener su turno abierto en Resumen del día para registrar el ingreso.',
+      },
+      {
+        id: 'caj-if-2',
+        titulo: 'Tipo de ingreso',
+        cuerpo: 'Seleccione el concepto según catálogo. El valor suma al saldo de efectivo del turno.',
+      },
+    ],
+  },
+  'caja.egreso-form': {
+    id: 'caja.egreso-form',
+    modulo: 'caja',
+    saludo: 'Formulario — egreso de caja.',
+    tips: [
+      {
+        id: 'caj-ef-ctx',
+        titulo: 'Contexto de este formulario',
+        cuerpo:
+          'Registra salida de efectivo de su turno: proveedor, devolución, gasto menor, etc. Adjunte soporte si la política del CEA lo exige.',
       },
     ],
   },
@@ -123,6 +165,12 @@ export const ASISTENTE_CAJA: Record<string, AsistenteContexto> = {
     modulo: 'caja',
     saludo: 'Cola de cobros enviados a caja desde recepción.',
     tips: [
+      {
+        id: 'caj-cob-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Todos los servicios con saldo pendiente en el sistema (histórico completo). Abra un ítem para ver pagos y registrar el cobro.',
+      },
       {
         id: 'caj-cob-1',
         titulo: 'Origen del ítem',

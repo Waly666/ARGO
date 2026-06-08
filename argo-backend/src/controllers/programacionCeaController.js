@@ -319,6 +319,16 @@ exports.finalizarClase = async (req, res, next) => {
   }
 };
 
+exports.finalizarClaseRetroactiva = async (req, res, next) => {
+  try {
+    const result = await clasesSvc.finalizarClaseRetroactiva(req.params.id, req);
+    if (result?.error) return res.status(result.status).json({ message: result.error });
+    res.json(result.doc);
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.listarInscripciones = async (req, res, next) => {
   try {
     res.json(await clasesSvc.listarInscripciones(req.params.id));

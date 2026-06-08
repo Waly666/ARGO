@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 import { LayoutDefaultsApi, LayoutPorTipoCert } from '../constants/certificado-campos-layout';
@@ -34,6 +35,17 @@ export interface ConfigCertificado {
   diasAvisoCertificadoPorVencer?: number;
   /** Días después del vencimiento — alarma «vencidos» en el banner superior. */
   diasAvisoCertificadoVencido?: number;
+  /** Emitir certificado automáticamente cuando la liquidación queda en saldo 0 (interruptor maestro). */
+  autoCertificadoAlPagar?: boolean;
+  /** Qué formatos se certifican automáticamente al pagar. */
+  autoCertificadoPorTipo?: Partial<Record<TipoCertificadoId, boolean>>;
+  /** Tipos de capacitación (idTipCap o etiqueta) excluidos de la certificación automática. */
+  autoCertificadoTiposCapExcluidos?: string[];
+}
+
+export interface TipoCapacitacionOpcion {
+  idTipCap: string;
+  label: string;
 }
 
 export const QR_POSICIONES_CERT = [
@@ -60,6 +72,25 @@ export class ConfigCertificadoService {
 
   obtener(): Observable<ConfigCertificado> {
     return this.http.get<ConfigCertificado>(this.base);
+  }
+
+  listarTiposCapacitacion(): Observable<TipoCapacitacionOpcion[]> {
+    return this.http
+      .get<Record<string, unknown>[]>(`${environment.apiUrl}/catalogos/catTipoCapacitacion`)
+      .pipe(
+        map((rows) =>
+          (rows || [])
+            .map((r) => {
+              const idTipCap = String(r['idTipCap'] ?? r['_id'] ?? '').trim();
+              const label = String(
+                r['tipoCap'] ?? r['descripcion'] ?? r['nombre'] ?? idTipCap,
+              ).trim();
+              return { idTipCap, label };
+            })
+            .filter((t) => !!t.idTipCap)
+            .sort((a, b) => a.label.localeCompare(b.label)),
+        ),
+      );
   }
 
   guardar(data: ConfigCertificado): Observable<ConfigCertificado> {

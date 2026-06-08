@@ -86,6 +86,7 @@ export class CajaIngresosSesionComponent implements OnInit {
   resultados = signal<AlumnoListItem[]>([]);
 
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
 
 
@@ -293,7 +294,7 @@ export class CajaIngresosSesionComponent implements OnInit {
 
     if (!u || !pw) {
 
-      this.msg.set('Ingrese usuario y contraseña del administrador para anular el ingreso.');
+      this.inform('Ingrese usuario y contraseña del administrador para anular el ingreso.');
 
       return;
 
@@ -339,19 +340,37 @@ export class CajaIngresosSesionComponent implements OnInit {
 
         this.authAdminPass.set('');
 
-        this.msg.set('Cobro reversado.');
+        this.inform('Cobro reversado.');
 
         this.cargar();
 
       },
 
-      error: (e) => this.msg.set(e?.error?.message || 'Error reversando cobro.'),
+      error: (e) => this.inform(e?.error?.message || 'Error reversando cobro.'),
 
     });
 
   }
 
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }
-
-
-

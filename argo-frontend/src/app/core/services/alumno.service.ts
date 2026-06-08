@@ -50,6 +50,21 @@ export interface AlumnoDto {
   duracionSesionPracticaCea?: number | null;
 }
 
+export interface MovimientoAlarmaHoy {
+  id: string;
+  numRecibo?: string | null;
+  valor: number;
+  fecha?: string | null;
+}
+
+export interface FacturaAlarmaHoy {
+  id: string;
+  numeroFactura?: string | null;
+  valor: number;
+  estado?: string | null;
+  fecha?: string | null;
+}
+
 export interface AlumnoListItem {
   _id: string;
   /** En BD/API es número; en formulario de edición suele mostrarse como string */
@@ -91,6 +106,9 @@ export interface AlumnoListItem {
     itemsSaldo?: { id: string; descripcion: string; saldo: number }[];
     clasesCeaCreado?: number;
     programasCeaCreado?: { programaLabel: string; cantidad: number }[];
+    comprobanteIngresoHoy?: MovimientoAlarmaHoy | null;
+    comprobanteEgresoHoy?: MovimientoAlarmaHoy | null;
+    facturaHoy?: FacturaAlarmaHoy | null;
   };
   /** Presente cuando la lista se filtra por jornada de capacitación. */
   certificadoJornada?: {
@@ -196,6 +214,47 @@ export class AlumnoService {
 
   porId(id: string): Observable<AlumnoDto> {
     return this.http.get<AlumnoDto>(`${this.base}/${id}`);
+  }
+
+  comprobantesRecientes(desde: string): Observable<
+    Array<{
+      tipo: 'ingreso' | 'egreso' | 'factura';
+      id: string;
+      numRecibo?: string | null;
+      numeroFactura?: string | null;
+      valor: number;
+      numDoc?: number | string;
+      nombreCompleto?: string;
+      alumnoId?: string | null;
+      fecha?: string;
+    }>
+  > {
+    const params = new HttpParams().set('desde', desde);
+    return this.http.get<
+      Array<{
+        tipo: 'ingreso' | 'egreso' | 'factura';
+        id: string;
+        numRecibo?: string | null;
+        numeroFactura?: string | null;
+        valor: number;
+        numDoc?: number | string;
+        nombreCompleto?: string;
+        alumnoId?: string | null;
+        fecha?: string;
+      }>
+    >(`${this.base}/alertas-comprobantes-recientes`, { params });
+  }
+
+  indicadoresMovimientosHoy(id: string): Observable<{
+    comprobanteIngresoHoy: MovimientoAlarmaHoy | null;
+    comprobanteEgresoHoy: MovimientoAlarmaHoy | null;
+    facturaHoy: FacturaAlarmaHoy | null;
+  }> {
+    return this.http.get<{
+      comprobanteIngresoHoy: MovimientoAlarmaHoy | null;
+      comprobanteEgresoHoy: MovimientoAlarmaHoy | null;
+      facturaHoy: FacturaAlarmaHoy | null;
+    }>(`${this.base}/${encodeURIComponent(id)}/indicadores-hoy`);
   }
 
   verificarDocumento(numDoc: number | string, excludeId?: string): Observable<DocDuplicadoRes> {

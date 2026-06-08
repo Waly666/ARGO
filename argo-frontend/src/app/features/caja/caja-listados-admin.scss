@@ -1,63 +1,10 @@
-.listado-admin {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.page-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
-
-  h1 {
-    margin: 0 0 6px;
-    font-size: 1.25rem;
-  }
-}
-
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.total-badge {
-  font-weight: 700;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: clamp(1rem, 2.5vw, 1.2rem);
-  max-width: min(100%, 22rem);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  background: rgba(54, 211, 153, 0.12);
-  color: var(--ok);
-  border: 1px solid rgba(54, 211, 153, 0.3);
-
-  &.egreso {
-    background: rgba(248, 113, 113, 0.12);
-    color: var(--danger);
-    border-color: rgba(248, 113, 113, 0.35);
-  }
-}
+@use './caja-shared' as *;
 
 .filtros {
   display: grid;
   grid-template-columns: repeat(4, minmax(120px, 1fr)) auto auto;
   gap: 10px;
   align-items: end;
-  padding: 14px;
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 0.82rem;
-  }
 
   .filtro-actions {
     display: flex;
@@ -94,18 +41,6 @@
   font-weight: 600;
 }
 
-.msg,
-.loading,
-.empty {
-  padding: 12px;
-  color: var(--text-dim);
-}
-
-.msg {
-  background: rgba(78, 163, 255, 0.08);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
 
 .card-body {
   padding: 12px 14px;
@@ -135,12 +70,6 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.actions-cell {
-  display: flex;
-  gap: 4px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
 
 .filtro-sesion-activo {
   margin: 0;

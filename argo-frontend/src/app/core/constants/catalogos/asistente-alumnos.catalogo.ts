@@ -7,6 +7,12 @@ export const ASISTENTE_ALUMNOS: Record<string, AsistenteContexto> = {
     saludo: 'Listado general de alumnos del CEA.',
     tips: [
       {
+        id: 'al-list-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Listado completo con datos personales, contacto y ubicación. Pulse un encabezado de columna para ordenar; vuelva a pulsar para invertir el orden.',
+      },
+      {
         id: 'al-list-1',
         titulo: 'Barra de búsqueda',
         cuerpo:
@@ -55,6 +61,12 @@ export const ASISTENTE_ALUMNOS: Record<string, AsistenteContexto> = {
     modulo: 'alumnos',
     saludo: 'Alumnos filtrados para jornadas de capacitación.',
     tips: [
+      {
+        id: 'al-jor-l-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Solo alumnos con tipo Jornadas de Capacitación. Pulse un encabezado de columna para ordenar.',
+      },
       {
         id: 'al-jor-l-1',
         titulo: 'Modo jornadas',

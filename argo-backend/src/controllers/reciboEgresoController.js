@@ -6,15 +6,7 @@ const { obtenerConfigRecibo, siguienteNumComprobanteEgreso } = require('../servi
 const { numeroDocumentoQuery, nombreCompletoEmpleado } = require('../utils/empleadoDoc');
 const { normalizarPlaca } = require('../constants/vehiculo');
 const { models: cat } = require('../models/catalogos');
-const {
-  esc,
-  fmtMoney,
-  fmtFecha,
-  lineaHtml,
-  filasConSede,
-  bloqueEmpresaHtml,
-  estilosRecibo,
-} = require('../services/reciboHtmlShared');
+const { generarHtmlEgreso } = require('../services/comprobanteHtml');
 
 function num(v) {
   if (v == null) return 0;
@@ -175,91 +167,7 @@ exports.html = async (req, res, next) => {
     const data = await armarReciboEgreso(req.params.id);
     if (!data) return res.status(404).send('Egreso no encontrado');
 
-    const { config, egreso, numeroRecibo, qrDataUrl } = data;
-    const mm = config.anchoReciboMm || 80;
-    const w = Math.round(mm * 3.78);
-    const titulo = esc(config.mensajeEncabezadoEgreso || 'COMPROBANTE DE EGRESO');
-    const slogan = (config.slogan1 || '').toString().trim();
-
-    const filas = filasConSede(
-      [
-      ['Comprobante N°', numeroRecibo],
-      ['Fecha pago', fmtFecha(egreso.fechaEgreso)],
-      ['Pagado a', egreso.pagueA || '—'],
-      ...(egreso.numeroDocumento ? [['Documento', egreso.numeroDocumento]] : []),
-      ...(egreso.empleadoCargo ? [['Cargo', egreso.empleadoCargo]] : []),
-      ...(egreso.tipoEgresoDescr ? [['Tipo egreso', egreso.tipoEgresoDescr]] : []),
-      ...(egreso.placa ? [['Placa vehículo', egreso.placa]] : []),
-      ...(egreso.vehiculoMarca || egreso.vehiculoLinea
-        ? [['Vehículo', `${egreso.vehiculoMarca || ''} ${egreso.vehiculoLinea || ''}`.trim()]]
-        : []),
-      ['Concepto', egreso.concepto],
-      ...(egreso.formaPago ? [['Forma pago', egreso.formaPago]] : []),
-      ...(egreso.cuentaOrigenDescr ? [['Cuenta origen', egreso.cuentaOrigenDescr]] : []),
-      ...(egreso.numTransferencia ? [['Ref / Voucher', egreso.numTransferencia]] : []),
-      ...(egreso.fechaTransferencia ? [['Fecha transfer.', egreso.fechaTransferencia]] : []),
-      ...(egreso.cuentaDestino ? [['Cuenta destino', egreso.cuentaDestino]] : []),
-      ...(egreso.bancoDestinoDescr ? [['Banco destino', egreso.bancoDestinoDescr]] : []),
-      ...(egreso.urlSoporte ? [['Soporte digital', 'Adjunto en sistema']] : []),
-      ...(egreso.anticipoNomina
-        ? [['Nómina', `Deducción (${egreso.anticipoNomina}) período ${egreso.idPeriodo || '—'}`]]
-        : []),
-      ...(egreso.nombreAutoriza || egreso.autorizadoPor
-        ? [
-            [
-              'Autorizó',
-              egreso.nombreAutoriza
-                ? `${egreso.nombreAutoriza} (${egreso.autorizadoPor})`
-                : egreso.autorizadoPor,
-            ],
-          ]
-        : []),
-      ...(egreso.autorizadoEn ? [['Fecha autorización', fmtFecha(egreso.autorizadoEn)]] : []),
-      ...(egreso.userAddReg ? [['Registró', egreso.userAddReg]] : []),
-      ],
-      config,
-    );
-
-    const bodyRows = filas
-      .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`)
-      .join('');
-
-    const beneficiario = esc(egreso.pagueA || 'Beneficiario');
-    const docBenef = esc(egreso.numeroDocumento || '________________');
-
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8"/>
-  <title>Egreso ${esc(numeroRecibo)}</title>
-  <style>${estilosRecibo(mm, w)}</style>
-</head>
-<body>
-  ${bloqueEmpresaHtml(config)}
-  ${lineaHtml(32)}
-  <div class="center titulo">${titulo}</div>
-  ${slogan ? `<div class="center slogan">${esc(slogan)}</div>` : ''}
-  ${lineaHtml(32)}
-  <table>${bodyRows}</table>
-  ${lineaHtml(32)}
-  <div class="total">VALOR PAGADO: ${esc(fmtMoney(egreso.valorEgreso))}</div>
-  <div class="nota-legal">
-    Prueba de pago: factura, voucher bancario o firma del beneficiario en este recibo.
-  </div>
-  <div class="firma">
-    <div class="linea-firma"></div>
-    <p><strong>Recibí conforme el valor indicado</strong></p>
-    <p>${beneficiario}</p>
-    <p>CC / NIT: ${docBenef}</p>
-    <p>Fecha: _________________________</p>
-  </div>
-  ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
-  <div class="pie">${esc(config.mensajePieEgreso)}</div>
-  <div class="no-print">
-    <button onclick="window.print()">Imprimir / Guardar PDF</button>
-  </div>
-</body>
-</html>`;
+    const html = generarHtmlEgreso(data);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);

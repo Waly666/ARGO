@@ -181,14 +181,18 @@
                     @if (d.key === hoyKey() && semanaIncluyeHoy() && ahoraCalTopPct() != null) {
                       <div class="cal-now-line" [style.top.%]="ahoraCalTopPct()!" aria-hidden="true"></div>
                     }
-                    @for (c of clasesEnDia(d.key); track c._id + c.origen) {
-                      @if (layoutClase(c); as lay) {
+                    @let diaClases = clasesEnDia(d.key);
+                    @let layoutsDia = layoutsCalendarioDia(diaClases);
+                    @for (c of diaClases; track c._id + c.origen) {
+                      @if (layoutsDia.get(c._id); as lay) {
                         <button
                           type="button"
                           class="cal-clase-block"
                           [ngClass]="[tipoCalBlock(c), estadoClaseCalAccentClass(c.estado)]"
                           [style.top.%]="lay.topPct"
                           [style.height.%]="lay.heightPct"
+                          [style.left.%]="lay.leftPct"
+                          [style.width.%]="lay.widthPct"
                           [title]="chipClaseCal(c)"
                           (click)="onClaseClick(c)">
                           <span class="cal-clase-hora">{{ c.horaDesde }}@if (c.horaHasta) { – {{ c.horaHasta }} }</span>

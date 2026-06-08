@@ -40,7 +40,8 @@ export class ReciboIngresoComponent implements OnInit {
   }
 
   imprimir() {
-    window.print();
+    const id = this.route.snapshot.paramMap.get('ingresoId');
+    if (id) this.reciboSvc.abrirHtml(id, (m) => this.error.set(m));
   }
 
   abrirHtml() {

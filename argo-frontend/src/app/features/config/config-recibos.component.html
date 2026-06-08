@@ -1,149 +1,269 @@
-<section class="config-page card">
-  <header>
-    <h1>Empresa y comprobantes</h1>
-    <p>
-      Aquí van los <strong>datos de la empresa</strong> (nombre, NIT, dirección, teléfono) usados en recibos de caja,
-      colillas de nómina y archivo <strong>PILA</strong>. También la numeración de comprobantes y facturas.
-    </p>
+<section class="rec-page card">
+  <header class="rec-head">
+    <div class="rec-head-main">
+      <h1>Empresa y comprobantes</h1>
+      <p>
+        Datos de la empresa en recibos de caja, colillas de nómina y archivo <strong>PILA</strong>.
+        Numeración y formato de comprobantes de ingreso/egreso (global para todas las sedes).
+      </p>
+    </div>
+    @if (!loading()) {
+      <div class="rec-head-badges">
+        <span class="rec-chip rec-chip--ing">
+          Ingreso · {{ formatoLabel(form().formatoComprobanteIngreso) }}
+        </span>
+        <span class="rec-chip rec-chip--egr">
+          Egreso · {{ formatoLabel(form().formatoComprobanteEgreso) }}
+        </span>
+        <span class="rec-chip" [class.rec-chip--on]="form().mostrarQr" [class.rec-chip--off]="!form().mostrarQr">
+          QR {{ form().mostrarQr ? 'ON' : 'OFF' }}
+        </span>
+      </div>
+    }
   </header>
 
-  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+  @if (loading()) {
+    <p class="rec-hint">Cargando configuración…</p>
+  } @else {
+    @if (msg(); as texto) {
+      <div class="rec-msg" [class.rec-msg--err]="msgError()" role="status">{{ texto }}</div>
+    }
 
-  <div class="grid-form argo-form-shell">
-    <h3>Empresa</h3>
-    <div class="row">
-      <div class="col-6">
-        <label>Nombre empresa</label>
-        <input type="text" [ngModel]="form().nombreEmpresa" (ngModelChange)="patch('nombreEmpresa', $event)" />
-      </div>
-      <div class="col-3">
-        <label>NIT</label>
-        <input type="text" [ngModel]="form().nit" (ngModelChange)="patch('nit', $event)" />
-      </div>
-      <div class="col-3">
-        <label>Teléfono</label>
-        <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch('telefono', $event)" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-6">
-        <label>Dirección</label>
-        <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch('direccion', $event)" />
-      </div>
-      <div class="col-3">
-        <label>Ciudad</label>
-        <input type="text" [ngModel]="form().ciudad" (ngModelChange)="patch('ciudad', $event)" />
-      </div>
-      <div class="col-3">
-        <label>Email</label>
-        <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
-      </div>
-    </div>
+    <div class="rec-form argo-form-shell">
+      <!-- 1. Empresa -->
+      <section class="rec-section rec-section--sky">
+        <header class="rec-section-head">
+          <span class="rec-section-badge">1</span>
+          <div>
+            <h2 class="rec-section-title">Datos de la empresa</h2>
+            <p class="rec-section-desc">Encabezado institucional en documentos impresos y electrónicos.</p>
+          </div>
+        </header>
+        <div class="rec-section-body rec-stack">
+          <div class="rec-grid rec-grid--empresa">
+            <label class="rec-field rec-field--grow">
+              <span class="rec-label">Nombre empresa</span>
+              <input type="text" [ngModel]="form().nombreEmpresa" (ngModelChange)="patch('nombreEmpresa', $event)" />
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">NIT</span>
+              <input type="text" [ngModel]="form().nit" (ngModelChange)="patch('nit', $event)" />
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">Teléfono</span>
+              <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch('telefono', $event)" />
+            </label>
+          </div>
+          <div class="rec-grid rec-grid--empresa2">
+            <label class="rec-field rec-field--grow">
+              <span class="rec-label">Dirección</span>
+              <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch('direccion', $event)" />
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">Ciudad</span>
+              <input type="text" [ngModel]="form().ciudad" (ngModelChange)="patch('ciudad', $event)" />
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">Email</span>
+              <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
+            </label>
+          </div>
+        </div>
+      </section>
 
-    <h3>Facturación</h3>
-    <p class="hint">Prefijo y consecutivo para <strong>facturas</strong> (no aplica a comprobantes de ingreso/egreso).</p>
-    <div class="row">
-      <div class="col-3">
-        <label>Prefijo factura</label>
-        <input type="text" [ngModel]="form().prefijoFactura" (ngModelChange)="patch('prefijoFactura', $event)" placeholder="FV" />
-      </div>
-      <div class="col-3">
-        <label>Consecutivo factura</label>
-        <input type="number" min="0" [ngModel]="form().consecutivoFactura" (ngModelChange)="patch('consecutivoFactura', +$event)" />
-      </div>
-    </div>
+      <!-- 2. Facturación -->
+      <section class="rec-section rec-section--violet">
+        <header class="rec-section-head">
+          <span class="rec-section-badge">2</span>
+          <div>
+            <h2 class="rec-section-title">Numeración de facturas</h2>
+            <p class="rec-section-desc">Prefijo y consecutivo para facturas (no aplica a comprobantes de caja).</p>
+          </div>
+        </header>
+        <div class="rec-section-body">
+          <div class="rec-grid rec-grid--num">
+            <label class="rec-field">
+              <span class="rec-label">Prefijo factura</span>
+              <input type="text" [ngModel]="form().prefijoFactura" (ngModelChange)="patch('prefijoFactura', $event)" placeholder="FV" />
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">Consecutivo factura</span>
+              <input type="number" min="0" [ngModel]="form().consecutivoFactura" (ngModelChange)="patch('consecutivoFactura', +$event)" />
+            </label>
+            <div class="rec-preview">
+              <span class="rec-preview-label">Próximo</span>
+              <span class="rec-preview-value">{{ previewNum(form().prefijoFactura, form().consecutivoFactura) }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <h3>Comprobantes de ingreso y egreso</h3>
-    <p class="hint">Numeración independiente para comprobantes de pago (ingreso) y de egreso.</p>
-    <div class="row">
-      <div class="col-3">
-        <label>Prefijo comprobante ingreso</label>
-        <input type="text" [ngModel]="form().prefijoComprobanteIngreso" (ngModelChange)="patch('prefijoComprobanteIngreso', $event)" placeholder="CI" />
-      </div>
-      <div class="col-3">
-        <label>Consecutivo ingreso</label>
-        <input type="number" min="0" [ngModel]="form().consecutivoComprobanteIngreso" (ngModelChange)="patch('consecutivoComprobanteIngreso', +$event)" />
-      </div>
-      <div class="col-3">
-        <label>Prefijo comprobante egreso</label>
-        <input type="text" [ngModel]="form().prefijoComprobanteEgreso" (ngModelChange)="patch('prefijoComprobanteEgreso', $event)" placeholder="CE" />
-      </div>
-      <div class="col-3">
-        <label>Consecutivo egreso</label>
-        <input type="number" min="0" [ngModel]="form().consecutivoComprobanteEgreso" (ngModelChange)="patch('consecutivoComprobanteEgreso', +$event)" />
-      </div>
-    </div>
+      <!-- 3. Comprobantes -->
+      <section class="rec-section rec-section--amber">
+        <header class="rec-section-head">
+          <span class="rec-section-badge">3</span>
+          <div>
+            <h2 class="rec-section-title">Comprobantes de ingreso y egreso</h2>
+            <p class="rec-section-desc">
+              Configuración global. Al imprimir solo se muestra el nombre y dirección de la sede del movimiento.
+            </p>
+          </div>
+        </header>
+        <div class="rec-section-body rec-stack">
+          <div class="rec-num-pair">
+            <div class="rec-num-block">
+              <span class="rec-num-kicker rec-num-kicker--ing">Ingreso</span>
+              <div class="rec-grid rec-grid--pair">
+                <label class="rec-field">
+                  <span class="rec-label">Prefijo</span>
+                  <input type="text" [ngModel]="form().prefijoComprobanteIngreso" (ngModelChange)="patch('prefijoComprobanteIngreso', $event)" placeholder="CI" />
+                </label>
+                <label class="rec-field">
+                  <span class="rec-label">Consecutivo</span>
+                  <input type="number" min="0" [ngModel]="form().consecutivoComprobanteIngreso" (ngModelChange)="patch('consecutivoComprobanteIngreso', +$event)" />
+                </label>
+              </div>
+              <span class="rec-preview-mini">{{ previewNum(form().prefijoComprobanteIngreso, form().consecutivoComprobanteIngreso) }}</span>
+            </div>
+            <div class="rec-num-block">
+              <span class="rec-num-kicker rec-num-kicker--egr">Egreso</span>
+              <div class="rec-grid rec-grid--pair">
+                <label class="rec-field">
+                  <span class="rec-label">Prefijo</span>
+                  <input type="text" [ngModel]="form().prefijoComprobanteEgreso" (ngModelChange)="patch('prefijoComprobanteEgreso', $event)" placeholder="CE" />
+                </label>
+                <label class="rec-field">
+                  <span class="rec-label">Consecutivo</span>
+                  <input type="number" min="0" [ngModel]="form().consecutivoComprobanteEgreso" (ngModelChange)="patch('consecutivoComprobanteEgreso', +$event)" />
+                </label>
+              </div>
+              <span class="rec-preview-mini">{{ previewNum(form().prefijoComprobanteEgreso, form().consecutivoComprobanteEgreso) }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    <h3>Formato del comprobante</h3>
-    <div class="row">
-      <div class="col-3">
-        <label>Ancho impresión (mm)</label>
-        <input type="number" min="58" max="120" [ngModel]="form().anchoReciboMm" (ngModelChange)="patch('anchoReciboMm', +$event)" />
-      </div>
-      <div class="col-3 chk">
-        <label>
-          <input type="checkbox" [ngModel]="form().mostrarQr" (ngModelChange)="patch('mostrarQr', $event)" />
-          Mostrar código QR
-        </label>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-6">
-        <label>Título comprobante de ingreso</label>
-        <input type="text" [ngModel]="form().mensajeEncabezado" (ngModelChange)="patch('mensajeEncabezado', $event)" placeholder="COMPROBANTE DE INGRESO" />
-      </div>
-      <div class="col-6">
-        <label>Título comprobante de egreso</label>
-        <input type="text" [ngModel]="form().mensajeEncabezadoEgreso" (ngModelChange)="patch('mensajeEncabezadoEgreso', $event)" placeholder="COMPROBANTE DE EGRESO" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-6">
-        <label>Eslogan</label>
-        <input type="text" [ngModel]="form().slogan1" (ngModelChange)="patch('slogan1', $event)" placeholder="Texto bajo el título" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-6">
-        <label>Mensaje al pie (ingreso)</label>
-        <textarea rows="2" [ngModel]="form().mensajePie" (ngModelChange)="patch('mensajePie', $event)"></textarea>
-      </div>
-      <div class="col-6">
-        <label>Mensaje al pie (egreso)</label>
-        <textarea rows="2" [ngModel]="form().mensajePieEgreso" (ngModelChange)="patch('mensajePieEgreso', $event)"></textarea>
-      </div>
-    </div>
+      <!-- 4. Formato -->
+      <section class="rec-section rec-section--teal">
+        <header class="rec-section-head">
+          <span class="rec-section-badge">4</span>
+          <div>
+            <h2 class="rec-section-title">Formato e impresión</h2>
+            <p class="rec-section-desc">
+              Formato predeterminado al imprimir (sin elegir en el momento). Ingreso y egreso pueden diferir.
+            </p>
+          </div>
+        </header>
+        <div class="rec-section-body rec-stack">
+          <div class="rec-grid rec-grid--format">
+            <label class="rec-field">
+              <span class="rec-label">Formato comprobante de ingreso</span>
+              <select
+                [ngModel]="form().formatoComprobanteIngreso || 'validadora'"
+                (ngModelChange)="patch('formatoComprobanteIngreso', $event)">
+                @for (o of formatosComprobante; track o.id) {
+                  <option [value]="o.id">{{ o.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">Formato comprobante de egreso</span>
+              <select
+                [ngModel]="form().formatoComprobanteEgreso || 'validadora'"
+                (ngModelChange)="patch('formatoComprobanteEgreso', $event)">
+                @for (o of formatosComprobante; track o.id) {
+                  <option [value]="o.id">{{ o.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="rec-toggle">
+              <input type="checkbox" [ngModel]="form().mostrarQr" (ngModelChange)="patch('mostrarQr', $event)" />
+              <span class="rec-toggle-box">
+                <span class="rec-toggle-title">Mostrar código QR</span>
+                <span class="rec-toggle-desc">Incluye QR en el comprobante impreso.</span>
+              </span>
+            </label>
+          </div>
 
-    <h3>Registro de alumnos</h3>
-    <p class="hint">
-      Cuadro de confirmación al crear un alumno nuevo. Variables:
-      &#123;nombre&#125;, &#123;numDoc&#125;, &#123;empresa&#125;, &#123;slogan&#125;, &#123;ciudad&#125;, &#123;telefono&#125;.
-    </p>
-    <div class="row">
-      <div class="col-6">
-        <label>Título del mensaje</label>
-        <input
-          type="text"
-          [ngModel]="form().mensajeCreacionAlumnoTitulo"
-          (ngModelChange)="patch('mensajeCreacionAlumnoTitulo', $event)"
-          placeholder="¡Alumno registrado!" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-12">
-        <label>Mensaje de confirmación</label>
-        <textarea
-          rows="4"
-          [ngModel]="form().mensajeCreacionAlumno"
-          (ngModelChange)="patch('mensajeCreacionAlumno', $event)"
-          placeholder="Se registró correctamente al alumno…"></textarea>
-      </div>
-    </div>
-  </div>
+          @if (usaValidadora('ingreso') || usaValidadora('egreso')) {
+            <label class="rec-field rec-field--ancho">
+              <span class="rec-label">Ancho validadora (mm)</span>
+              <input type="number" min="58" max="120" [ngModel]="form().anchoReciboMm" (ngModelChange)="patch('anchoReciboMm', +$event)" />
+              <span class="rec-field-hint">Solo aplica cuando el comprobante usa formato validadora térmica.</span>
+            </label>
+          }
 
-  <footer class="actions">
-    <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
-      {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
-    </button>
-  </footer>
+          <div class="rec-grid rec-grid--2">
+            <label class="rec-field">
+              <span class="rec-label">Título comprobante de ingreso</span>
+              <input type="text" [ngModel]="form().mensajeEncabezado" (ngModelChange)="patch('mensajeEncabezado', $event)" placeholder="COMPROBANTE DE INGRESO" />
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">Título comprobante de egreso</span>
+              <input type="text" [ngModel]="form().mensajeEncabezadoEgreso" (ngModelChange)="patch('mensajeEncabezadoEgreso', $event)" placeholder="COMPROBANTE DE EGRESO" />
+            </label>
+          </div>
+
+          <label class="rec-field">
+            <span class="rec-label">Eslogan</span>
+            <input type="text" [ngModel]="form().slogan1" (ngModelChange)="patch('slogan1', $event)" placeholder="Texto bajo el título" />
+          </label>
+
+          <div class="rec-grid rec-grid--2">
+            <label class="rec-field">
+              <span class="rec-label">Mensaje al pie (ingreso)</span>
+              <textarea rows="2" [ngModel]="form().mensajePie" (ngModelChange)="patch('mensajePie', $event)"></textarea>
+            </label>
+            <label class="rec-field">
+              <span class="rec-label">Mensaje al pie (egreso)</span>
+              <textarea rows="2" [ngModel]="form().mensajePieEgreso" (ngModelChange)="patch('mensajePieEgreso', $event)"></textarea>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. Alumnos -->
+      <section class="rec-section rec-section--rose">
+        <header class="rec-section-head">
+          <span class="rec-section-badge">5</span>
+          <div>
+            <h2 class="rec-section-title">Registro de alumnos</h2>
+            <p class="rec-section-desc">
+              Cuadro de confirmación al crear un alumno. Variables:
+              <code class="rec-var">&#123;nombre&#125;</code>
+              <code class="rec-var">&#123;numDoc&#125;</code>
+              <code class="rec-var">&#123;empresa&#125;</code>
+              <code class="rec-var">&#123;slogan&#125;</code>
+              <code class="rec-var">&#123;ciudad&#125;</code>
+              <code class="rec-var">&#123;telefono&#125;</code>
+            </p>
+          </div>
+        </header>
+        <div class="rec-section-body rec-stack">
+          <label class="rec-field">
+            <span class="rec-label">Título del mensaje</span>
+            <input
+              type="text"
+              [ngModel]="form().mensajeCreacionAlumnoTitulo"
+              (ngModelChange)="patch('mensajeCreacionAlumnoTitulo', $event)"
+              placeholder="¡Alumno registrado!" />
+          </label>
+          <label class="rec-field">
+            <span class="rec-label">Mensaje de confirmación</span>
+            <textarea
+              rows="4"
+              [ngModel]="form().mensajeCreacionAlumno"
+              (ngModelChange)="patch('mensajeCreacionAlumno', $event)"
+              placeholder="Se registró correctamente al alumno…"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <footer class="rec-actions">
+        <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+        </button>
+      </footer>
+    </div>
+  }
 </section>

@@ -1,19 +1,23 @@
-<section class="jornadas-page argo-cal card">
-  <header class="jor-page-header">
-    <div class="jor-page-title">
+<section class="jornadas-page argo-cal card admin-list-page">
+  <header class="jor-head jor-page-header">
+    <div class="jor-head-main jor-page-title">
+      <p class="breadcrumb"><a routerLink="/app">Inicio</a> / Jornadas</p>
       <h1>Jornadas de Capacitación</h1>
       <p class="hint-block">
-        Gestione contratos con empresas, programe carpas por fecha, opere clases del día y emita certificados automáticos.
+        Contratación con empresas, programación de carpas, clases en campo y certificados automáticos.
       </p>
     </div>
-    <div class="jor-flow-chips" aria-label="Flujo operativo">
-      <span class="cap cap-indigo cap-sm cap-text">Contratación</span>
+    <div class="jor-badges jor-flow-chips" aria-label="Flujo operativo">
+      @if (jornadasEnProcesoAhora().length > 0) {
+        <span class="jor-chip jor-chip--emerald">{{ jornadasEnProcesoAhora().length }} en proceso</span>
+      }
+      <span class="jor-chip jor-chip--indigo">Contratación</span>
       <span class="jor-flow-arrow">→</span>
-      <span class="cap cap-blue cap-sm cap-text">Jornadas</span>
+      <span class="jor-chip jor-chip--sky">Jornadas</span>
       <span class="jor-flow-arrow">→</span>
-      <span class="cap cap-orange cap-sm cap-text">Clases</span>
+      <span class="jor-chip jor-chip--orange">Clases</span>
       <span class="jor-flow-arrow">→</span>
-      <span class="cap cap-emerald cap-sm cap-text">Asistencia</span>
+      <span class="jor-chip jor-chip--emerald">Asistencia</span>
     </div>
   </header>
 
@@ -254,12 +258,13 @@
         </button>
       </div>
 
-      <h3 class="contrato-lista-titulo">Listado de contrataciones</h3>
+      <h3 class="sec contrato-lista-titulo">Listado de contrataciones</h3>
       <p class="hint">
         Haga clic en una fila para abrir las <strong>jornadas</strong> del contrato. Use
         <strong>Finalizar contrato</strong> en el formulario cuando ya no se opere (quita alertas del header).
         Use «Editar» para cargar los datos en el formulario.
       </p>
+      <div class="table-wrap">
       <table class="argo contrato-tabla">
         <thead>
           <tr>
@@ -309,6 +314,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   }
 
@@ -568,6 +574,7 @@
           }
         </div>
       } @else {
+      <div class="table-wrap">
       <table id="jornadas-listado" class="argo">
         <thead>
           <tr>
@@ -622,6 +629,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
       }
     </div>
   }
@@ -668,7 +676,8 @@
         </p>
       </div>
 
-      <table class="argo" *ngIf="vistaClases() === 'lista'">
+      <div class="table-wrap" *ngIf="vistaClases() === 'lista'">
+      <table class="argo">
         <thead>
           <tr>
             <th>Contrato</th>
@@ -708,6 +717,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
 
       @if (vistaClases() === 'calendario') {
         <div class="cal-panel cal-horas-panel">
@@ -784,15 +794,19 @@
                     @if (d.key === hoyKey() && semanaIncluyeHoy() && ahoraCalTopPct() != null) {
                       <div class="cal-now-line" [style.top.%]="ahoraCalTopPct()!" aria-hidden="true"></div>
                     }
-                    @for (c of clasesEnDia(d.key); track c._id) {
-                      @if (layoutClase(c); as lay) {
+                    @let diaClases = clasesEnDia(d.key);
+                    @let layoutsDia = layoutsCalendarioDia(diaClases);
+                    @for (c of diaClases; track c._id) {
+                      @if (layoutsDia.get(c._id); as lay) {
                         <button
                           type="button"
                           class="cal-clase-block"
                           [class.sel]="claseSel() === c._id"
-                          [ngClass]="estadoClaseCalBlockClass(c.estado)"
+                          [ngClass]="[estadoClaseCalBlockClass(c.estado), estadoClaseCalAccentClass(c.estado)]"
                           [style.top.%]="lay.topPct"
                           [style.height.%]="lay.heightPct"
+                          [style.left.%]="lay.leftPct"
+                          [style.width.%]="lay.widthPct"
                           [title]="chipClaseCal(c) + ' — ' + fmtHora(c.horaInicio) + (c.horaFin ? ' – ' + fmtHora(c.horaFin) : '')"
                           (click)="seleccionarClaseCalendario(c)">
                           <span class="cal-clase-hora">{{ fmtHora(c.horaInicio) }}@if (c.horaFin) { – {{ fmtHora(c.horaFin) }} }</span>
@@ -838,7 +852,6 @@
   <argo-form-modal
     [open]="modalCrearClase()"
     [title]="modalModoClase() === 'editar' ? 'Editar clase' : 'Crear clase'"
-    [subtitle]="subtituloModalClase()"
     [xwide]="true"
     (closed)="cerrarModalCrearClase()">
     <section class="clase-modal-form argo-form-shell">
@@ -1287,6 +1300,7 @@
           <a routerLink="/app/jornadas/certificados" class="mini ghost link-btn">Ver listado completo →</a>
         </div>
       </div>
+      <div class="table-wrap">
       <table class="argo">
         <thead>
           <tr>
@@ -1337,6 +1351,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   }
 </section>

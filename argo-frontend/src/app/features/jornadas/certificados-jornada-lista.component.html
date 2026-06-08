@@ -1,16 +1,22 @@
-<div class="cert-jor-page">
-  <header class="page-head panel">
-    <div>
+<div class="cert-jor-page admin-list-page">
+  <header class="jor-head page-head panel">
+    <div class="jor-head-main">
+      <p class="breadcrumb"><a routerLink="/app/jornadas">Jornadas</a> / Certificados</p>
       <h1>Certificados generados</h1>
       <p class="hint">
         Certificados automáticos emitidos al completar las sesiones del contrato en Jornadas de Capacitación.
       </p>
     </div>
-    <button type="button" class="ghost" (click)="cargar()" [disabled]="loading()">↻ Actualizar</button>
+    <div class="jor-badges head-actions">
+      @if (certsHoyCount() > 0) {
+        <span class="jor-chip jor-chip--emerald">{{ certsHoyCount() }} hoy</span>
+      }
+      <button type="button" class="ghost" (click)="cargar()" [disabled]="loading()">↻ Actualizar</button>
+    </div>
   </header>
 
   @if (msg()) {
-    <p class="msg" [class.error]="msgError()">{{ msg() }}</p>
+    <p class="jor-banner" [class.jor-banner--error]="msgError()">{{ msg() }}</p>
   }
 
   <div class="panel filtros">
@@ -103,7 +109,6 @@
 <argo-form-modal
   [open]="modalEditar()"
   title="Editar certificado"
-  [subtitle]="certificadoEdit()?.codigoCert || ''"
   [wide]="true"
   (closed)="cerrarEditar()">
   @if (certificadoEdit(); as c) {

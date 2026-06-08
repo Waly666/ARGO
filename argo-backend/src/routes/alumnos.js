@@ -16,10 +16,12 @@ const files = upload.alumnos.fields([
 ]);
 
 router.get('/', ver, ctrl.listar);
+router.get('/alertas-comprobantes-recientes', ver, ctrl.comprobantesRecientes);
 router.get('/verificar-doc/:numDoc', ver, ctrl.verificarDocumento);
 router.get('/doc/:numDoc', ver, ctrl.porDocumento);
 router.post('/escanear-cedula', gestionar, upload.memory.single('imagen'), ctrl.escanearCedula);
 router.get('/:id/documentos-requeridos', ver, ctrl.documentosRequeridos);
+router.get('/:id/indicadores-hoy', ver, ctrl.indicadoresHoy);
 router.get('/:id/documentos-validacion', ver, ctrl.validarDocumentos);
 router.put('/:id/documentos/:idDoc', gestionar, upload.alumnos.single('archivo'), ctrl.subirDocumento);
 router.get('/:id', ver, ctrl.porId);

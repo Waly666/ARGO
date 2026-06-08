@@ -82,6 +82,9 @@
           @if (mostrarBannerCertificado()) {
             <argo-certificado-jornada-banner class="head-cert-alarm-wrap" />
           }
+          @if (mostrarBannerComprobantesHoy()) {
+            <argo-comprobante-hoy-banner class="head-comp-alarm-wrap" />
+          }
           @if (mostrarFilaCertificadosVencimiento()) {
             <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Certificados por vencer y vencidos">
               @if (mostrarBannerCertificadoVencimiento()) {

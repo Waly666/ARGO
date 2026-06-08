@@ -1,13 +1,15 @@
 <section class="mov-page">
-  <header class="mov-head">
-    <div>
-      <h2>Cobros / Ingresos de mi caja</h2>
+  <header class="caja-head mov-head">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Cobros e ingresos</p>
+      <h1>Cobros / Ingresos de mi caja</h1>
       <p class="hint" *ngIf="cajaAbierta() && sesionId()">
         Sesión #{{ sesionId() }} — solo los cobros registrados en este turno.
       </p>
       <p class="hint warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar cobros.</p>
     </div>
-    <div class="mov-actions">
+    <div class="caja-badges mov-actions">
+      <span class="caja-chip caja-chip--emerald" *ngIf="cajaAbierta()">Sesión activa</span>
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
       <button type="button" class="primary sm" (click)="nuevoIngresoCaja()">
         Ingreso sin alumno
@@ -16,7 +18,7 @@
     </div>
   </header>
 
-  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <div class="buscar-alumno panel" *ngIf="cajaAbierta()">
     <h3>Registrar cobro de alumno</h3>

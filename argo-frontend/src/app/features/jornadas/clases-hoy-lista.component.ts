@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { ClaseJornadaDto, JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
 import { PermisoService } from '../../core/services/permiso.service';
@@ -24,7 +24,7 @@ import {
 @Component({
   selector: 'argo-clases-hoy-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
   templateUrl: './clases-hoy-lista.component.html',
   styleUrls: ['./clases-hoy-lista.component.scss'],
 })

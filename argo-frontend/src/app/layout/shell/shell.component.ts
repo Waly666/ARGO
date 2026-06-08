@@ -48,7 +48,10 @@ import { ProgramacionCeaPendienteBannerComponent } from '../../features/programa
 import { ProgramacionCeaClaseCreadoBannerComponent } from '../../features/programacion-cea/programacion-cea-clase-creado-banner.component';
 import { ProgramacionCeaClaseProximaBannerComponent } from '../../features/programacion-cea/programacion-cea-clase-proxima-banner.component';
 import { InstructorPortalBannerComponent } from '../../features/instructores/instructor-portal-banner.component';
+import { ComprobanteHoyBannerComponent } from '../../features/alumnos/comprobante-hoy-banner.component';
 import { AsistenteFlotanteComponent } from '../../shared/asistente-flotante/asistente-flotante.component';
+import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
+import { AlumnoService } from '../../core/services/alumno.service';
 
 interface MenuLink {
   kind: 'link';
@@ -86,7 +89,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, AsistenteFlotanteComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, AsistenteFlotanteComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -97,6 +100,8 @@ export class ShellComponent {
   private alarmas = inject(AlarmaService);
   private router = inject(Router);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
+  private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
+  private alumnoSvc = inject(AlumnoService);
   private certVencimientoAlert = inject(CertificadoVencimientoAlertService);
   private certVencidoAlert = inject(CertificadoVencidoAlertService);
   private certSvc = inject(CertificadoService);
@@ -199,6 +204,12 @@ export class ShellComponent {
 
   mostrarAlertaCertificadoVencido = computed(() => this.alarmas.tiene('alarmas.certificados.vencidos'));
 
+  mostrarAlertaComprobanteIngreso = computed(() => this.alarmas.tiene('alarmas.alumnos.comprobante_ingreso'));
+
+  mostrarAlertaComprobanteEgreso = computed(() => this.alarmas.tiene('alarmas.alumnos.comprobante_egreso'));
+
+  mostrarAlertaComprobanteFactura = computed(() => this.alarmas.tiene('alarmas.alumnos.factura'));
+
   /** Toast efímero (3 s) cuando se crean clases/jornadas. */
   mostrarToastJornadaLive = computed(() => this.alarmas.tiene('alarmas.jornadas.live_toast'));
 
@@ -240,6 +251,21 @@ export class ShellComponent {
   mostrarBannerCertificado = computed(
     () => this.mostrarAlertaCertificado() && this.certAlertSvc.alertas().length > 0,
   );
+
+  mostrarBannerComprobantesHoy = computed(() => {
+    if (
+      !this.mostrarAlertaComprobanteIngreso() &&
+      !this.mostrarAlertaComprobanteEgreso() &&
+      !this.mostrarAlertaComprobanteFactura()
+    ) {
+      return false;
+    }
+    return this.comprobanteAlertSvc.alertas().some((a) => {
+      if (a.tipo === 'ingreso') return this.mostrarAlertaComprobanteIngreso();
+      if (a.tipo === 'egreso') return this.mostrarAlertaComprobanteEgreso();
+      return this.mostrarAlertaComprobanteFactura();
+    });
+  });
 
   mostrarBannerCertificadoVencimiento = computed(
     () => this.mostrarAlertaCertificadoVencimiento() && this.certVencimientoAlert.visible(),
@@ -316,6 +342,7 @@ export class ShellComponent {
     () =>
       this.mostrarBannerCajaCerrada() ||
       this.mostrarBannerCertificado() ||
+      this.mostrarBannerComprobantesHoy() ||
       this.mostrarBannerCertificadoVencimiento() ||
       this.mostrarBannerCertificadoVencido() ||
       this.mostrarBannerJornadaProceso() ||
@@ -515,6 +542,14 @@ export class ShellComponent {
           icon: '◉',
           iconTone: 'cyan',
           permiso: ['caja.cobros', 'caja.turno'],
+        },
+        {
+          kind: 'link',
+          label: 'Clases CEA pendientes',
+          path: '/app/programacion-cea/clases-hoy',
+          icon: '◷',
+          iconTone: 'cyan',
+          permiso: ['caja.turno', 'caja.admin'],
         },
         {
           kind: 'link',
@@ -831,6 +866,7 @@ export class ShellComponent {
     this.syncMenuGroupsFromUrl(this.router.url);
     void this.refrescarCajaSiAplica();
     this.iniciarPollCertificados();
+    this.iniciarPollComprobantesHoy();
     this.iniciarPollCertificadosPorVencer();
     this.iniciarPollCertificadosVencidos();
     this.iniciarPollJornadasLive();
@@ -1025,6 +1061,52 @@ export class ShellComponent {
     if (typeof window !== 'undefined') {
       window.addEventListener('focus', () => sync());
     }
+  }
+
+  /** Comprobantes y facturas recientes del día (alertas globales en cabecera). */
+  private iniciarPollComprobantesHoy(): void {
+    const poll = (minutosAtras: number, alertarNuevos: boolean) => {
+      const puedePoll =
+        this.mostrarAlertaComprobanteIngreso() ||
+        this.mostrarAlertaComprobanteEgreso() ||
+        this.mostrarAlertaComprobanteFactura();
+      if (!puedePoll) return;
+      const desde = new Date(Date.now() - minutosAtras * 60 * 1000).toISOString();
+      this.alumnoSvc.comprobantesRecientes(desde).subscribe({
+        next: (rows) => {
+          for (const row of rows || []) {
+            const tipo = String(row.tipo || '');
+            if (tipo === 'ingreso' && !this.mostrarAlertaComprobanteIngreso()) continue;
+            if (tipo === 'egreso' && !this.mostrarAlertaComprobanteEgreso()) continue;
+            if (tipo === 'factura' && !this.mostrarAlertaComprobanteFactura()) continue;
+            const key = `${tipo}:${row.id}`;
+            if (alertarNuevos) {
+              this.comprobanteAlertSvc.notificarDesdeRespuesta(row as Record<string, unknown>);
+            } else {
+              this.comprobanteAlertSvc.marcarConocidos([key]);
+            }
+          }
+        },
+      });
+    };
+
+    const inicioHoy = new Date();
+    inicioHoy.setHours(0, 0, 0, 0);
+    const desdeHoy = inicioHoy.toISOString();
+    this.alumnoSvc.comprobantesRecientes(desdeHoy).subscribe({
+      next: (rows) => {
+        for (const row of rows || []) {
+          const tipo = String(row.tipo || '');
+          if (tipo === 'ingreso' && !this.mostrarAlertaComprobanteIngreso()) continue;
+          if (tipo === 'egreso' && !this.mostrarAlertaComprobanteEgreso()) continue;
+          if (tipo === 'factura' && !this.mostrarAlertaComprobanteFactura()) continue;
+          this.comprobanteAlertSvc.notificarDesdeRespuesta(row as Record<string, unknown>);
+        }
+      },
+    });
+    interval(12_000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => poll(2, true));
   }
 
   /** Detecta certificados emitidos recientemente (jornada, curso de pago y demás). */

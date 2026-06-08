@@ -308,11 +308,14 @@
                           @if (d.key === hoyKey() && semanaIncluyeHoy() && ahoraCalTopPct() != null) {
                             <div class="cal-now-line" [style.top.%]="ahoraCalTopPct()!" aria-hidden="true"></div>
                           }
-                          @for (c of clasesEnDia(d.key); track c._id) {
-                            @if (layoutClaseCea(c); as lay) {
+                          @let diaClases = clasesEnDia(d.key);
+                          @let layoutsDia = layoutsCalendarioDia(diaClases);
+                          @for (c of diaClases; track c._id) {
+                            @if (layoutsDia.get(c._id!); as lay) {
                               <button type="button" class="cal-clase-block"
                                 [ngClass]="[tipoClaseCalBlockClass(c.tipoClase), estadoClaseCalAccentClass(c.estado)]"
                                 [style.top.%]="lay.topPct" [style.height.%]="lay.heightPct"
+                                [style.left.%]="lay.leftPct" [style.width.%]="lay.widthPct"
                                 [title]="chipClaseCal(c)" (click)="onClaseCalClick(c)">
                                 <span class="cal-clase-hora">
                                   {{ c.horaDesde }}@if (c.horaHasta) { – {{ c.horaHasta }} }
@@ -378,7 +381,6 @@
     [title]="modalTitulo()"
     [xwide]="true"
     [tall]="true"
-    [subtitle]="claseSel()?.estado || ''"
     (closed)="cerrarModal()">
     @if (claseSel(); as c) {
       @if (loadingDetalle()) {
@@ -405,7 +407,6 @@
               <span class="section-badge">1</span>
               <div>
                 <h3 class="section-title">Fecha y horario</h3>
-                <p class="section-sub">Ajuste la programación de la clase</p>
               </div>
             </header>
             <div class="section-body">
@@ -480,15 +481,19 @@
               <span class="section-badge">2</span>
               <div>
                 <h3 class="section-title">Recursos e instructor</h3>
-                <p class="section-sub">Ubicación, vehículo y persona a cargo</p>
               </div>
             </header>
-            <div class="section-body section-body-grid">
+            <div class="section-body recursos-body">
+            @if (c.tipoClase === 'practica' && recursosCategoriaLicencia(); as catLic) {
+              <p class="recursos-licencia-banner">
+                Solo vehículos aptos para licencia <strong>{{ catLic }}</strong>
+              </p>
+            }
+            <div
+              class="recursos-grid"
+              [class.recursos-grid--triple]="c.tipoClase === 'teoria' || c.tipoClase === 'taller'">
             @if (c.tipoClase === 'practica') {
-              <div class="field">
-                @if (recursosCategoriaLicencia(); as catLic) {
-                  <p class="hint vehiculo-filtro-hint">Solo vehículos aptos para licencia <strong>{{ catLic }}</strong></p>
-                }
+              <div class="field recursos-field-vehiculo">
                 @if (!opcionesVehiculos().length) {
                   <p class="hint hint-warn vehiculo-sin-opciones">
                     @if ((recursos()?.vehiculosTotal ?? 0) > 0 && (recursos()?.vehiculosFiltrados ?? 0) === 0) {
@@ -571,7 +576,7 @@
                 />
               </div>
             }
-            <div class="field field-instructor">
+            <div class="field recursos-field-instructor">
               <argo-catalogo-enum-buscar
                 label="Instructor"
                 placeholder="Seleccione o escriba instructor…"
@@ -584,9 +589,15 @@
                 (limpiado)="onInstructorLimpiar()"
               />
             </div>
-            <div class="field span-2">
-              <label>Observaciones</label>
-              <input type="text" [ngModel]="formClase().observaciones" (ngModelChange)="patchForm({ observaciones: $event })" />
+            </div>
+            <div class="field recursos-observaciones">
+              <label for="obs-clase-alumno">Observaciones</label>
+              <input
+                id="obs-clase-alumno"
+                type="text"
+                placeholder="Notas sobre la clase, instructor o recursos…"
+                [ngModel]="formClase().observaciones"
+                (ngModelChange)="patchForm({ observaciones: $event })" />
             </div>
             </div>
           </section>

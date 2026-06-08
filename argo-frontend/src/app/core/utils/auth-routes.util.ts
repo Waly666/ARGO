@@ -21,7 +21,7 @@ export const PERMISOS_INSTRUCTORES_DIRECTORIO = [
 const RUTAS_INICIO: { path: string; permiso: string | string[] }[] = [
   { path: '/app/dashboard', permiso: 'dashboard' },
   { path: '/app/jornadas/instructor', permiso: ['jornadas.operar', 'jornadas.gestionar'] },
-  { path: '/app/programacion-cea/clases-hoy', permiso: ['programacion_cea.ver', 'programacion_cea.operar', 'programacion_cea.gestionar'] },
+  { path: '/app/programacion-cea/clases-hoy', permiso: ['programacion_cea.ver', 'programacion_cea.operar', 'programacion_cea.gestionar', 'caja.turno', 'caja.admin'] },
   { path: '/app/instructores', permiso: ['instructores.mi_portal', ...PERMISOS_INSTRUCTORES_DIRECTORIO] },
   { path: '/app/jornadas/clases-hoy', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
   { path: '/app/programacion-cea/clases-grupales', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
@@ -56,7 +56,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/instructores', permiso: ['instructores.mi_portal', ...PERMISOS_INSTRUCTORES_DIRECTORIO] },
   { prefix: '/app/programacion-cea/clases-grupales', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
   { prefix: '/app/programacion-cea/clases-practica', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
-  { prefix: '/app/programacion-cea/clases-hoy', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
+  { prefix: '/app/programacion-cea/clases-hoy', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar', 'caja.turno', 'caja.admin'] },
   { prefix: '/app/programacion-cea', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
   { prefix: '/app/cobros-pendientes', permiso: ['caja.cobros', 'caja.turno'] },
   { prefix: '/app/caja/ingresos-todos', permiso: 'caja.admin' },

@@ -1,7 +1,8 @@
+@use './caja-shared' as *;
+
 .egresos-page {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  max-width: none;
+  width: 100%;
 }
 
 .caja-nav-link {

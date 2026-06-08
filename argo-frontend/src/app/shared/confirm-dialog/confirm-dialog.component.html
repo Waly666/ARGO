@@ -58,6 +58,20 @@
     <h2 id="cd-title" class="cd-title">{{ s.title }}</h2>
     <p id="cd-message" class="cd-message">{{ s.message }}</p>
 
+    @if (s.input; as inp) {
+      <label class="cd-input-wrap">
+        @if (inp.label) {
+          <span class="cd-input-label">{{ inp.label }}</span>
+        }
+        <input
+          class="cd-input"
+          [type]="inp.type"
+          [value]="inp.value"
+          (input)="svc.setInputValue($any($event.target).value)"
+          (keydown.enter)="svc.confirm()" />
+      </label>
+    }
+
     <div class="cd-actions" [class.single]="s.hideCancel">
       @if (!s.hideCancel) {
         <button type="button" class="cd-btn cd-btn-cancel" (click)="svc.cancel()">{{ s.cancelLabel }}</button>

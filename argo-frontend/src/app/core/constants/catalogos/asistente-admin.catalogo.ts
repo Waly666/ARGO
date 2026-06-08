@@ -7,6 +7,12 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
     saludo: 'Administración de programas académicos.',
     tips: [
       {
+        id: 'prog-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Los programas con tipo Jornadas de Capacitación no generan servicio de matrícula (sin cobro al alumno). El resto crea servicio vinculado al guardar; con semestres se crean servicios numerados (1 SEM, 2 SEM…). El campo nomCert es el nombre que aparece en el certificado del alumno. En Formato de certificado elige el tipo de plantilla definido en Config. Certificados. En vista lista, pulse un encabezado de columna para ordenar.',
+      },
+      {
         id: 'prog-1',
         titulo: 'Programa vs servicio',
         cuerpo:
@@ -43,6 +49,12 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
     modulo: 'servicios',
     saludo: 'Catálogo maestro de servicios del CEA.',
     tips: [
+      {
+        id: 'srv-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Los servicios de matrícula (CUR, DIP, TEC) se crean al registrar un programa. Aquí puede agregar otros servicios (trámites, seguros, RUNT, etc.) sin programa vinculado.',
+      },
       {
         id: 'srv-1',
         titulo: 'Código idServ',
@@ -192,6 +204,12 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
     saludo: 'Gestión de empleados.',
     tips: [
       {
+        id: 'rrhh-e-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo:
+          'Complete identificación, cargo, EPS, AFP, ARL y caja (obligatorio para PILA) y fechas de ingreso/retiro. El documento enlaza con egresos en caja.',
+      },
+      {
         id: 'rrhh-e-1',
         titulo: 'Documento y nombre',
         cuerpo:
@@ -228,6 +246,11 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
     modulo: 'rrhh',
     saludo: 'Contratos laborales.',
     tips: [
+      {
+        id: 'rrhh-c-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo: 'Salario, auxilio de transporte y fechas de vigencia. Usados al generar novedades de nómina.',
+      },
       {
         id: 'rrhh-c-1',
         titulo: 'Tipo contrato',
@@ -297,6 +320,11 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
     modulo: 'config',
     saludo: 'Usuarios y acceso al sistema.',
     tips: [
+      {
+        id: 'cfg-u-ctx',
+        titulo: 'Contexto de esta pantalla',
+        cuerpo: 'Solo administradores. Crear, editar, desactivar o eliminar usuarios del sistema.',
+      },
       {
         id: 'cfg-u-1',
         titulo: 'Login',

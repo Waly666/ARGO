@@ -37,6 +37,7 @@ import { ReciboService } from '../../core/services/recibo.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
+import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
 import {
   tieneSoporteEgreso,
   tituloSoporteEgreso,
@@ -90,6 +91,7 @@ export class EgresosAdminComponent implements OnInit {
   private cajaSvc = inject(CajaSesionService);
   private cajaAlert = inject(CajaAperturaAlertService);
   private cajaEstado = inject(CajaEstadoService);
+  private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
 
 
 
@@ -116,6 +118,7 @@ export class EgresosAdminComponent implements OnInit {
   saving = signal(false);
 
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   busqueda = signal('');
 
@@ -299,7 +302,7 @@ export class EgresosAdminComponent implements OnInit {
       this.svc.obtener(editId).subscribe({
         next: (e) => this.editar(e),
         error: (err) => {
-          this.msg.set(err?.error?.message || 'No se pudo cargar el egreso');
+          this.inform(err?.error?.message || 'No se pudo cargar el egreso');
           this.volverTrasSoloForm();
         },
       });
@@ -340,21 +343,27 @@ export class EgresosAdminComponent implements OnInit {
       });
   }
 
-  cerrarCajaAjena(item: CajaAbiertaItem): void {
+  async cerrarCajaAjena(item: CajaAbiertaItem): Promise<void> {
     if (!this.isAdmin() || !item.sesion?.idSesion) return;
-    if (!confirm(`¿Cerrar la caja de ${item.sesion.usuario} (sesión #${item.sesion.idSesion})?`)) return;
+    const ok = await this.confirm.open({
+      title: 'Cerrar caja',
+      message: `¿Cerrar la caja de ${item.sesion.usuario} (sesión #${item.sesion.idSesion})?`,
+      confirmLabel: 'Cerrar caja',
+      variant: 'warn',
+    });
+    if (!ok) return;
     this.cajaLoading.set(true);
     this.cajaSvc.cerrar(item.sesion.idSesion, { observaciones: 'Cierre por administrador' }).subscribe({
       next: () => {
         this.cajaLoading.set(false);
-        this.msg.set(`Caja #${item.sesion.idSesion} cerrada`);
+        this.inform(`Caja #${item.sesion.idSesion} cerrada`);
         this.cargarCajasAbiertasAdmin();
         this.cargarHistorialCajas();
         this.cargarEstadoCaja();
       },
       error: (e) => {
         this.cajaLoading.set(false);
-        this.msg.set(e?.error?.message || 'No se pudo cerrar');
+        this.inform(e?.error?.message || 'No se pudo cerrar');
       },
     });
   }
@@ -363,7 +372,7 @@ export class EgresosAdminComponent implements OnInit {
     if (!this.isAdmin()) return;
     this.cajaSvc.previewCierreGeneral(this.fechaGenDesde()).subscribe({
       next: (r) => this.previewGeneral.set(r),
-      error: (e) => this.msg.set(e?.error?.message || 'Error al calcular cierre'),
+      error: (e) => this.inform(e?.error?.message || 'Error al calcular cierre'),
     });
   }
 
@@ -380,17 +389,23 @@ export class EgresosAdminComponent implements OnInit {
         next: (r) => {
           this.previewGeneral.set(r.resumen);
           this.cajaLoading.set(false);
-          this.msg.set(`Cierre general #${r.cierre.idCierreGeneral} registrado`);
+          this.inform(`Cierre general #${r.cierre.idCierreGeneral} registrado`);
           this.cargarCierresGenerales();
         },
-        error: (e) => {
+        error: async (e) => {
           this.cajaLoading.set(false);
           const abiertas = e?.error?.cajasAbiertas?.length;
-          if (e?.status === 409 && abiertas && confirm(`${e.error.message}\n\n¿Registrar igualmente?`)) {
-            this.confirmarCierreGeneral(true);
+          if (e?.status === 409 && abiertas) {
+            const ok = await this.confirm.open({
+              title: 'Cajas aún abiertas',
+              message: `${e.error.message}\n\n¿Registrar el cierre general igualmente?`,
+              confirmLabel: 'Registrar igualmente',
+              variant: 'warn',
+            });
+            if (ok) this.confirmarCierreGeneral(true);
             return;
           }
-          this.msg.set(e?.error?.message || 'No se pudo registrar el cierre general');
+          this.inform(e?.error?.message || 'No se pudo registrar el cierre general');
         },
       });
   }
@@ -428,13 +443,13 @@ export class EgresosAdminComponent implements OnInit {
       next: () => {
         this.mostrarApertura.set(false);
         this.cajaLoading.set(false);
-        this.msg.set('Caja abierta correctamente');
+        this.inform('Caja abierta correctamente');
         void this.cajaEstado.refrescar();
         this.cargarEstadoCaja();
       },
       error: (e) => {
         this.cajaLoading.set(false);
-        this.msg.set(e?.error?.message || 'No se pudo abrir la caja');
+        this.inform(e?.error?.message || 'No se pudo abrir la caja');
       },
     });
   }
@@ -460,7 +475,7 @@ export class EgresosAdminComponent implements OnInit {
       },
       error: (e) => {
         this.cajaLoading.set(false);
-        this.msg.set(e?.error?.message || 'No se pudo cerrar la caja');
+        this.inform(e?.error?.message || 'No se pudo cerrar la caja');
       },
     });
   }
@@ -543,7 +558,7 @@ export class EgresosAdminComponent implements OnInit {
 
           this.loading.set(false);
 
-          this.msg.set(e?.error?.message || 'Error cargando egresos');
+          this.inform(e?.error?.message || 'Error cargando egresos');
 
         },
 
@@ -601,7 +616,7 @@ export class EgresosAdminComponent implements OnInit {
 
     this.mostrarForm.set(true);
 
-    this.msg.set(null);
+    this.inform(null);
 
   }
 
@@ -611,7 +626,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!this.puedeGestionarEgreso(e)) {
 
-      this.msg.set('Solo puede editar egresos de su sesión de caja actual.');
+      this.inform('Solo puede editar egresos de su sesión de caja actual.');
 
       return;
 
@@ -686,7 +701,7 @@ export class EgresosAdminComponent implements OnInit {
 
     this.mostrarForm.set(true);
 
-    this.msg.set(null);
+    this.inform(null);
 
   }
 
@@ -935,7 +950,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!file.type.startsWith('image/')) {
 
-      this.msg.set('Seleccione una imagen (JPG, PNG, etc.).');
+      this.inform('Seleccione una imagen (JPG, PNG, etc.).');
 
       input.value = '';
 
@@ -973,7 +988,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!f.concepto?.trim()) {
 
-      this.msg.set('El concepto es obligatorio.');
+      this.inform('El concepto es obligatorio.');
 
       return;
 
@@ -981,7 +996,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!(Number(f.valorEgreso) > 0)) {
 
-      this.msg.set('Indique un valor mayor a cero.');
+      this.inform('Indique un valor mayor a cero.');
 
       return;
 
@@ -989,7 +1004,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!f.pagueA?.trim()) {
 
-      this.msg.set('Indique el beneficiario (a quién se pagó).');
+      this.inform('Indique el beneficiario (a quién se pagó).');
 
       return;
 
@@ -997,7 +1012,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!f.numeroDocumento?.trim()) {
 
-      this.msg.set('Indique el número de identificación del beneficiario (CC, NIT, etc.).');
+      this.inform('Indique el número de identificación del beneficiario (CC, NIT, etc.).');
 
       return;
 
@@ -1005,7 +1020,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!f.tipoEgreso) {
 
-      this.msg.set('Seleccione el tipo de egreso.');
+      this.inform('Seleccione el tipo de egreso.');
 
       return;
 
@@ -1015,7 +1030,7 @@ export class EgresosAdminComponent implements OnInit {
 
       if (!this.empleados().some((e) => e.numeroDocumento === f.numeroDocumento?.trim())) {
 
-        this.msg.set('Seleccione el empleado de RRHH para este egreso.');
+        this.inform('Seleccione el empleado de RRHH para este egreso.');
 
         return;
 
@@ -1027,7 +1042,7 @@ export class EgresosAdminComponent implements OnInit {
 
       if (!f.idPeriodo) {
 
-        this.msg.set('Seleccione el período de nómina donde se descontará.');
+        this.inform('Seleccione el período de nómina donde se descontará.');
 
         return;
 
@@ -1039,7 +1054,7 @@ export class EgresosAdminComponent implements OnInit {
 
       if (!f.placa?.trim()) {
 
-        this.msg.set('Indique la placa del vehículo para este tipo de egreso.');
+        this.inform('Indique la placa del vehículo para este tipo de egreso.');
 
         return;
 
@@ -1047,7 +1062,7 @@ export class EgresosAdminComponent implements OnInit {
 
       if (this.placaVehiculoError()) {
 
-        this.msg.set(this.placaVehiculoError() || 'Placa de vehículo no válida.');
+        this.inform(this.placaVehiculoError() || 'Placa de vehículo no válida.');
 
         return;
 
@@ -1055,7 +1070,7 @@ export class EgresosAdminComponent implements OnInit {
 
       if (!this.placaVehiculoInfo()) {
 
-        this.msg.set('Verifique la placa: debe existir en el módulo Vehículos.');
+        this.inform('Verifique la placa: debe existir en el módulo Vehículos.');
 
         return;
 
@@ -1065,7 +1080,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (ed && (ed.anticipoNomina || ed.idNovedadGenerada)) {
 
-      this.msg.set('Los egresos de préstamo/adelanto no se editan; elimine y vuelva a crear si fue un error.');
+      this.inform('Los egresos de préstamo/adelanto no se editan; elimine y vuelva a crear si fue un error.');
 
       return;
 
@@ -1073,7 +1088,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (ed && !this.puedeGestionarEgreso(ed)) {
 
-      this.msg.set('Solo puede editar egresos de su sesión de caja actual.');
+      this.inform('Solo puede editar egresos de su sesión de caja actual.');
 
       return;
 
@@ -1091,7 +1106,7 @@ export class EgresosAdminComponent implements OnInit {
 
       if (!u || !p) {
 
-        this.msg.set('Ingrese usuario y contraseña de un administrador en el panel de autorización.');
+        this.inform('Ingrese usuario y contraseña de un administrador en el panel de autorización.');
 
         return;
 
@@ -1125,7 +1140,7 @@ export class EgresosAdminComponent implements OnInit {
 
     this.saving.set(true);
 
-    this.msg.set(null);
+    this.inform(null);
 
     const soporte = this.archivoSoporte();
 
@@ -1170,12 +1185,11 @@ export class EgresosAdminComponent implements OnInit {
           txt += ' Atención: quedó sin soporte adjunto.';
         }
 
-        this.msg.set(txt);
+        this.inform(txt);
 
         if (!ed && eg.idEgreso) {
-
+          this.comprobanteAlertSvc.notificarDesdeEgreso(eg as unknown as Record<string, unknown>);
           void this.preguntarImprimirRecibo(eg.idEgreso, eg.numRecibo);
-
         }
 
       },
@@ -1184,7 +1198,7 @@ export class EgresosAdminComponent implements OnInit {
 
         this.saving.set(false);
 
-        this.msg.set(e?.error?.message || 'Error al guardar');
+        this.inform(e?.error?.message || 'Error al guardar');
 
       },
 
@@ -1198,7 +1212,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!this.puedeGestionarEgreso(e)) {
 
-      this.msg.set('Solo puede anular egresos de su sesión de caja actual.');
+      this.inform('Solo puede anular egresos de su sesión de caja actual.');
 
       return;
 
@@ -1248,7 +1262,7 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!u || !p) {
 
-      this.msg.set('Ingrese usuario y contraseña del administrador para anular.');
+      this.inform('Ingrese usuario y contraseña del administrador para anular.');
 
       return;
 
@@ -1292,11 +1306,11 @@ export class EgresosAdminComponent implements OnInit {
 
         this.cargar();
 
-        this.msg.set('Egreso anulado.');
+        this.inform('Egreso anulado.');
 
       },
 
-      error: (err) => this.msg.set(err?.error?.message || 'No se pudo anular'),
+      error: (err) => this.inform(err?.error?.message || 'No se pudo anular'),
 
     });
 
@@ -1352,24 +1366,22 @@ export class EgresosAdminComponent implements OnInit {
     ev?.stopPropagation();
     if (this.puedeGestionarEgreso(e)) {
       this.editar(e);
-      this.msg.set('Adjunte el soporte (imagen) en el formulario y guarde.');
+      this.inform('Adjunte el soporte (imagen) en el formulario y guarde.');
       return;
     }
-    this.msg.set(
+    this.inform(
       `Egreso ${e.numRecibo || e.concepto || ''} sin soporte. Solicite a un administrador que adjunte el comprobante.`,
     );
   }
 
   imprimirRecibo(e: Egreso) {
 
-    this.reciboSvc.abrirHtmlEgreso(e.idEgreso, (m) => this.msg.set(m));
+    this.reciboSvc.abrirHtmlEgreso(e.idEgreso, (m) => this.inform(m));
 
   }
 
   abrirReciboPantalla(e: Egreso) {
-
-    void this.router.navigate(['/recibo-egreso', e.idEgreso]);
-
+    this.reciboSvc.abrirHtmlEgreso(e.idEgreso, (m) => this.inform(m));
   }
 
   private async preguntarImprimirRecibo(idEgreso: string, numRecibo?: string | null) {
@@ -1390,7 +1402,7 @@ export class EgresosAdminComponent implements OnInit {
 
     });
 
-    if (ok) this.reciboSvc.abrirHtmlEgreso(idEgreso, (m) => this.msg.set(m));
+    if (ok) this.reciboSvc.abrirHtmlEgreso(idEgreso, (m) => this.inform(m));
 
   }
 
@@ -1506,6 +1518,25 @@ export class EgresosAdminComponent implements OnInit {
 
   }
 
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }
-
-

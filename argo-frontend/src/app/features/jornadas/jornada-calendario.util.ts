@@ -17,6 +17,17 @@ export interface LayoutHorario {
   sinHorario: boolean;
 }
 
+/** Posición horizontal cuando varias clases comparten el mismo horario. */
+export interface LayoutHorarioColumnas extends LayoutHorario {
+  leftPct: number;
+  widthPct: number;
+}
+
+const LAYOUT_COL_DEFAULT: Pick<LayoutHorarioColumnas, 'leftPct' | 'widthPct'> = {
+  leftPct: 2,
+  widthPct: 96,
+};
+
 const HORA_INICIO = 6;
 const HORA_FIN = 21;
 const HORAS_TOTAL = HORA_FIN - HORA_INICIO;
@@ -35,6 +46,12 @@ export function ymdLocal(iso?: string | Date | null): string {
 export function esFechaHoy(iso?: string | Date | null, hoy = ymdLocal(new Date())): boolean {
   const key = ymdCalendario(iso);
   return !!key && key === hoy;
+}
+
+/** ¿La fecha es hoy o anterior (no futura)? */
+export function esFechaNoFutura(iso?: string | Date | null, hoy = ymdLocal(new Date())): boolean {
+  const key = ymdCalendario(iso);
+  return !!key && key <= hoy;
 }
 
 /** Día civil YYYY-MM-DD sin desfase UTC (fechas de contrato/jornada). */
@@ -175,11 +192,7 @@ export function layoutHorarioClase(
 
 /** Posición en rejilla semanal a partir de horas HH:mm (programación CEA). */
 export function layoutHorarioHHmm(horaDesde?: string | null, horaHasta?: string | null): LayoutHorario {
-  const parse = (h?: string | null) => {
-    const m = String(h ?? '').trim().match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return null;
-    return Number(m[1]) * 60 + Number(m[2]);
-  };
+  const parse = (h?: string | null) => parseMinutosHHmm(h);
   const iniMin = parse(horaDesde);
   if (iniMin == null) return { topPct: 0, heightPct: 0, sinHorario: true };
   const finMin = parse(horaHasta) ?? iniMin + 60;
@@ -192,6 +205,135 @@ export function layoutHorarioHHmm(horaDesde?: string | null, horaHasta?: string 
     heightPct: Math.max(((bottom - top) / (HORAS_TOTAL * 60)) * 100, 4),
     sinHorario: false,
   };
+}
+
+export function parseMinutosHHmm(hora?: string | null): number | null {
+  const m = String(hora ?? '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+  return h * 60 + min;
+}
+
+function rangoMinutosHHmm(horaDesde?: string | null, horaHasta?: string | null): { start: number; end: number } | null {
+  const start = parseMinutosHHmm(horaDesde);
+  if (start == null) return null;
+  const end = parseMinutosHHmm(horaHasta) ?? start + 60;
+  if (end <= start) return null;
+  return { start, end };
+}
+
+function rangoMinutosIso(horaInicio?: string | null, horaFin?: string | null): { start: number; end: number } | null {
+  const start = minutosDesdeMedianoche(horaInicio);
+  if (start == null) return null;
+  const end = minutosDesdeMedianoche(horaFin) ?? start + 60;
+  if (end <= start) return null;
+  return { start, end };
+}
+
+/** Reparte eventos solapados en columnas (estilo Google Calendar). */
+export function calcularColumnasSolapamiento(
+  events: { id: string; startMin: number; endMin: number }[],
+): Map<string, { column: number; totalColumns: number }> {
+  const result = new Map<string, { column: number; totalColumns: number }>();
+  if (!events.length) return result;
+
+  const sorted = [...events].sort(
+    (a, b) => a.startMin - b.startMin || b.endMin - b.startMin - (a.endMin - a.startMin),
+  );
+
+  const columnEnds: number[] = [];
+  const colById = new Map<string, number>();
+
+  for (const ev of sorted) {
+    let col = columnEnds.findIndex((end) => end <= ev.startMin);
+    if (col === -1) {
+      col = columnEnds.length;
+      columnEnds.push(ev.endMin);
+    } else {
+      columnEnds[col] = ev.endMin;
+    }
+    colById.set(ev.id, col);
+  }
+
+  for (const ev of sorted) {
+    const overlapping = sorted.filter((o) => o.startMin < ev.endMin && o.endMin > ev.startMin);
+    const totalColumns = Math.max(...overlapping.map((o) => colById.get(o.id)!)) + 1;
+    result.set(ev.id, { column: colById.get(ev.id)!, totalColumns });
+  }
+
+  return result;
+}
+
+function combinarLayoutConColumnas(
+  base: LayoutHorario,
+  column: number,
+  totalColumns: number,
+): LayoutHorarioColumnas {
+  if (base.sinHorario) {
+    return { ...base, ...LAYOUT_COL_DEFAULT };
+  }
+  if (totalColumns <= 1) {
+    return { ...base, ...LAYOUT_COL_DEFAULT };
+  }
+  const gap = 0.6;
+  const colWidth = 100 / totalColumns;
+  return {
+    ...base,
+    leftPct: column * colWidth + gap,
+    widthPct: Math.max(colWidth - gap * 2, 8),
+  };
+}
+
+/** Layouts de un día con columnas para clases HH:mm (programación CEA). */
+export function layoutsCalendarioDiaHHmm(
+  items: { id: string; horaDesde?: string | null; horaHasta?: string | null }[],
+): Map<string, LayoutHorarioColumnas> {
+  const events: { id: string; startMin: number; endMin: number }[] = [];
+  const bases = new Map<string, LayoutHorario>();
+
+  for (const item of items) {
+    const base = layoutHorarioHHmm(item.horaDesde, item.horaHasta);
+    if (base.sinHorario) continue;
+    const range = rangoMinutosHHmm(item.horaDesde, item.horaHasta);
+    if (!range) continue;
+    bases.set(item.id, base);
+    events.push({ id: item.id, startMin: range.start, endMin: range.end });
+  }
+
+  const columns = calcularColumnasSolapamiento(events);
+  const out = new Map<string, LayoutHorarioColumnas>();
+  for (const [id, base] of bases) {
+    const col = columns.get(id) ?? { column: 0, totalColumns: 1 };
+    out.set(id, combinarLayoutConColumnas(base, col.column, col.totalColumns));
+  }
+  return out;
+}
+
+/** Layouts de un día con columnas para clases con hora ISO (jornadas carpa). */
+export function layoutsCalendarioDiaClase(
+  items: { id: string; horaInicio?: string | null; horaFin?: string | null }[],
+): Map<string, LayoutHorarioColumnas> {
+  const events: { id: string; startMin: number; endMin: number }[] = [];
+  const bases = new Map<string, LayoutHorario>();
+
+  for (const item of items) {
+    const base = layoutHorarioClase(item.horaInicio, item.horaFin);
+    if (base.sinHorario) continue;
+    const range = rangoMinutosIso(item.horaInicio, item.horaFin);
+    if (!range) continue;
+    bases.set(item.id, base);
+    events.push({ id: item.id, startMin: range.start, endMin: range.end });
+  }
+
+  const columns = calcularColumnasSolapamiento(events);
+  const out = new Map<string, LayoutHorarioColumnas>();
+  for (const [id, base] of bases) {
+    const col = columns.get(id) ?? { column: 0, totalColumns: 1 };
+    out.set(id, combinarLayoutConColumnas(base, col.column, col.totalColumns));
+  }
+  return out;
 }
 
 export function fmtMesAnio(anio: number, mes: number): string {

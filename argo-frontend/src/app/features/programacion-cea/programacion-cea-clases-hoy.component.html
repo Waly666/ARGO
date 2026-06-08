@@ -1,6 +1,7 @@
-<section class="clases-hoy-page argo-cal card">
-  <header class="page-head">
-    <div class="title">
+<section class="clases-hoy-page cea-page argo-cal card admin-list-page">
+  <header class="cea-head page-head">
+    <div class="cea-head-main title">
+      <p class="breadcrumb"><a routerLink="/app/programacion-cea">Programación CEA</a> / Clases del día</p>
       <h1>Clases CEA del día</h1>
       @if (esInstructorSolo()) {
         <p class="hint">
@@ -16,7 +17,8 @@
         </p>
       }
     </div>
-    <div class="head-badges">
+    <div class="cea-badges head-badges">
+      <span class="cea-chip cea-chip--sky">{{ total() }} clase{{ total() === 1 ? '' : 's' }}</span>
       @if (enProcesoCount() > 0) {
         <span class="live-badge estado-clase-live estado-clase-proceso">{{ enProcesoCount() }} en proceso</span>
       }
@@ -24,16 +26,17 @@
         <span class="live-badge estado-clase-live estado-clase-programada">{{ programadasCount() }} programada(s)</span>
       }
       @if (finalizadasCount() > 0) {
-        <span class="live-badge cap cap-slate cap-sm cap-text">{{ finalizadasCount() }} finalizada(s)</span>
+        <span class="cea-chip cea-chip--violet">{{ finalizadasCount() }} finalizada(s)</span>
       }
+      <a routerLink="/app/programacion-cea/clases-grupales" class="ghost sm link-btn">Calendario</a>
     </div>
   </header>
 
   @if (msg(); as t) {
-    <div class="banner error" role="alert">
+    <p class="cea-msg cea-msg--err cea-msg-dismiss" role="alert">
       <span>{{ t }}</span>
-      <button type="button" class="close" (click)="cerrarMsg()" aria-label="Cerrar">×</button>
-    </div>
+      <button type="button" class="ghost sm" (click)="cerrarMsg()" aria-label="Cerrar">×</button>
+    </p>
   }
 
   <div class="toolbar">
@@ -185,14 +188,18 @@
                     @if (d.key === hoyKey() && semanaIncluyeHoy() && ahoraCalTopPct() != null) {
                       <div class="cal-now-line" [style.top.%]="ahoraCalTopPct()!" aria-hidden="true"></div>
                     }
-                    @for (c of clasesEnDia(d.key); track c._id) {
-                      @if (layoutClaseCea(c); as lay) {
+                    @let diaClases = clasesEnDia(d.key);
+                    @let layoutsDia = layoutsCalendarioDia(diaClases);
+                    @for (c of diaClases; track c._id) {
+                      @if (layoutsDia.get(c._id!); as lay) {
                         <button
                           type="button"
                           class="cal-clase-block"
                           [ngClass]="[tipoClaseCalBlockClass(c.tipoClase), estadoClaseCalAccentClass(c.estado)]"
                           [style.top.%]="lay.topPct"
                           [style.height.%]="lay.heightPct"
+                          [style.left.%]="lay.leftPct"
+                          [style.width.%]="lay.widthPct"
                           [title]="chipClaseCal(c)"
                           (click)="onClaseClick(c)">
                           <span class="cal-clase-hora">
@@ -253,8 +260,17 @@
             </td>
             <td class="col-actions" (click)="$event.stopPropagation()">
               <div class="actions-cell">
-                @if (puedeGestionar() || puedeOperar()) {
+                @if (puedeAbrirClase()) {
                   <button type="button" class="mini btn-gestionar" (click)="onClaseClick(c); $event.stopPropagation()">Abrir</button>
+                }
+                @if (puedeCerrarRetroactivo() && clasePuedeCerrarRetroactivo(c)) {
+                  <button
+                    type="button"
+                    class="mini"
+                    [disabled]="finalizandoId() === c._id"
+                    (click)="cerrarClaseRetroactiva(c, $event)">
+                    Cerrar
+                  </button>
                 }
               </div>
             </td>
@@ -278,7 +294,7 @@
   }
 </section>
 
-@if (puedeGestionar() || puedeOperar()) {
+@if (puedeGestionar() || puedeOperar() || puedeCerrarRetroactivo()) {
   <argo-programacion-cea-clases
     #claseEditor
     [editorHost]="true"

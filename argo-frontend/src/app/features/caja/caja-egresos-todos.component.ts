@@ -23,6 +23,7 @@ import {
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { ReciboService } from '../../core/services/recibo.service';
 
 @Component({
   selector: 'argo-caja-egresos-todos',
@@ -37,6 +38,7 @@ export class CajaEgresosTodosComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private confirm = inject(ConfirmDialogService);
+  private reciboSvc = inject(ReciboService);
 
   private readonly vistaKey = 'argo-caja-egresos-todos-vista';
 
@@ -46,6 +48,7 @@ export class CajaEgresosTodosComponent implements OnInit {
   totalValor = signal(0);
   loading = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   q = signal('');
   numDoc = signal('');
@@ -93,7 +96,7 @@ export class CajaEgresosTodosComponent implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.msg.set(null);
+    this.inform(null);
     this.fetchPaginas(0, []);
   }
 
@@ -125,7 +128,7 @@ export class CajaEgresosTodosComponent implements OnInit {
         },
         error: (e) => {
           this.loading.set(false);
-          this.msg.set(e?.error?.message || 'Error cargando egresos.');
+          this.inform(e?.error?.message || 'Error cargando egresos.');
         },
       });
   }
@@ -155,8 +158,7 @@ export class CajaEgresosTodosComponent implements OnInit {
   verRecibo(e: Egreso): void {
     const id = e.idEgreso;
     if (!id) return;
-    const url = this.router.serializeUrl(this.router.createUrlTree(['/recibo-egreso', id]));
-    window.open(url, '_blank', 'width=420,height=720');
+    this.reciboSvc.abrirHtmlEgreso(id, (m) => this.inform(m));
   }
 
   puedeEditarEgreso(e: Egreso): boolean {
@@ -168,7 +170,7 @@ export class CajaEgresosTodosComponent implements OnInit {
     const id = e.idEgreso;
     if (!id) return;
     if (!this.puedeEditarEgreso(e)) {
-      this.msg.set('Los egresos de préstamo/adelanto no se editan; anule y vuelva a crear si fue un error.');
+      this.inform('Los egresos de préstamo/adelanto no se editan; anule y vuelva a crear si fue un error.');
       return;
     }
     void this.router.navigate(['/app/caja/egresos/editar', id], {
@@ -180,10 +182,10 @@ export class CajaEgresosTodosComponent implements OnInit {
     ev?.stopPropagation();
     if (this.puedeEditarEgreso(e)) {
       this.editarEgreso(e);
-      this.msg.set('Adjunte el soporte (imagen) en el formulario y guarde.');
+      this.inform('Adjunte el soporte (imagen) en el formulario y guarde.');
       return;
     }
-    this.msg.set(
+    this.inform(
       `Egreso ${e.numRecibo || e.concepto || ''} sin soporte. Este movimiento no admite edición desde aquí.`,
     );
   }
@@ -222,7 +224,7 @@ export class CajaEgresosTodosComponent implements OnInit {
     const u = this.authAdminUser().trim();
     const p = this.authAdminPass();
     if (!u || !p) {
-      this.msg.set('Ingrese usuario y contraseña de un administrador');
+      this.inform('Ingrese usuario y contraseña de un administrador');
       return;
     }
     this.ejecutarAnularEgreso(e, { autorizadoUsername: u, autorizadoPassword: p });
@@ -244,15 +246,36 @@ export class CajaEgresosTodosComponent implements OnInit {
     this.egresoSvc.eliminar(id, auth).subscribe({
       next: () => {
         this.cancelarAnularSupervisor();
-        this.msg.set('Egreso anulado');
+        this.inform('Egreso anulado');
         this.cargar();
       },
       error: (err) => {
         if (err?.error?.code === 'SUPERVISOR_AUTH_REQUIRED') {
           this.mostrarAuthAnular.set(true);
         }
-        this.msg.set(err?.error?.message || 'No se pudo anular');
+        this.inform(err?.error?.message || 'No se pudo anular');
       },
     });
   }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }

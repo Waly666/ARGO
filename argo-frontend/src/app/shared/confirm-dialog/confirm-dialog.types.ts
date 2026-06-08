@@ -13,10 +13,23 @@ export interface ConfirmOptions {
   hideCancel?: boolean;
 }
 
+export interface ConfirmPromptOptions extends ConfirmOptions {
+  inputLabel?: string;
+  inputType?: 'text' | 'number';
+  defaultValue?: string;
+}
+
+export interface ConfirmDialogInput {
+  label: string;
+  type: 'text' | 'number';
+  value: string;
+}
+
 export interface ConfirmDialogState extends Required<Pick<ConfirmOptions, 'title' | 'message'>> {
   confirmLabel: string;
   cancelLabel: string;
   variant: ConfirmVariant;
   icon: ConfirmIcon;
   hideCancel: boolean;
+  input?: ConfirmDialogInput;
 }

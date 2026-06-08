@@ -1,0 +1,151 @@
+:host {
+  display: block;
+}
+
+.head-comp-alerts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 100%;
+}
+
+@keyframes head-alarm-blink-comp {
+  0%,
+  100% {
+    opacity: 1;
+    border-color: var(--comp-border-strong);
+    box-shadow: 0 0 16px var(--comp-glow);
+  }
+  50% {
+    opacity: 0.72;
+    border-color: var(--comp-border-soft);
+    box-shadow: 0 0 6px var(--comp-glow-soft);
+  }
+}
+
+@keyframes head-alarm-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.head-alarm {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 5.5rem 8px 12px;
+  border-radius: var(--btn-radius);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+  background: var(--comp-bg);
+  color: var(--comp-text);
+  animation: head-alarm-blink-comp 1s ease-in-out infinite;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+.head-alarm-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  opacity: 0.45;
+  animation: head-alarm-pulse 1.4s ease-out infinite;
+  pointer-events: none;
+}
+
+.head-alarm-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  background: var(--comp-icon-bg);
+  color: var(--comp-icon-text);
+}
+
+.head-alarm-text {
+  text-align: left;
+  line-height: 1.25;
+}
+
+.comp-tipo-chip {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--comp-chip-bg);
+  border: 1px solid var(--comp-chip-border);
+}
+
+.comp-tone-ingreso {
+  --comp-bg: linear-gradient(180deg, rgba(37, 99, 235, 0.28), rgba(6, 16, 41, 0.65));
+  --comp-text: #dbeafe;
+  --comp-border-strong: rgba(96, 165, 250, 0.95);
+  --comp-border-soft: rgba(96, 165, 250, 0.4);
+  --comp-glow: rgba(59, 130, 246, 0.55);
+  --comp-glow-soft: rgba(59, 130, 246, 0.2);
+  --comp-chip-bg: rgba(37, 99, 235, 0.28);
+  --comp-chip-border: rgba(147, 197, 253, 0.45);
+  --comp-icon-bg: #2563eb;
+  --comp-icon-text: #eff6ff;
+}
+
+.comp-tone-egreso {
+  --comp-bg: linear-gradient(180deg, rgba(239, 68, 68, 0.28), rgba(6, 16, 41, 0.65));
+  --comp-text: #fee2e2;
+  --comp-border-strong: rgba(252, 165, 165, 0.95);
+  --comp-border-soft: rgba(252, 165, 165, 0.4);
+  --comp-glow: rgba(239, 68, 68, 0.55);
+  --comp-glow-soft: rgba(239, 68, 68, 0.2);
+  --comp-chip-bg: rgba(239, 68, 68, 0.28);
+  --comp-chip-border: rgba(254, 202, 202, 0.45);
+  --comp-icon-bg: #dc2626;
+  --comp-icon-text: #fff;
+}
+
+.comp-tone-factura {
+  --comp-bg: linear-gradient(180deg, rgba(168, 85, 247, 0.28), rgba(6, 16, 41, 0.65));
+  --comp-text: #f3e8ff;
+  --comp-border-strong: rgba(216, 180, 254, 0.95);
+  --comp-border-soft: rgba(216, 180, 254, 0.4);
+  --comp-glow: rgba(168, 85, 247, 0.55);
+  --comp-glow-soft: rgba(168, 85, 247, 0.2);
+  --comp-chip-bg: rgba(168, 85, 247, 0.28);
+  --comp-chip-border: rgba(233, 213, 255, 0.45);
+  --comp-icon-bg: #9333ea;
+  --comp-icon-text: #faf5ff;
+}
+
+@import '../../shared/styles/head-alarm-uniform';
+
+.head-alarm-root .head-alarm {
+  height: auto;
+  min-height: 2.6rem;
+  max-height: none;
+}

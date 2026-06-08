@@ -1,26 +1,34 @@
-<section class="cea-page card">
-  <header class="cea-header">
-    <div>
+<section class="cea-page card admin-list-page">
+  <header class="cea-head cea-header">
+    <div class="cea-head-main">
+      <p class="breadcrumb"><a routerLink="/app">Inicio</a> / Programación CEA</p>
       <h1>Programación CEA — Licencia de conducción</h1>
       <p class="hint-block">
         Configure horarios, defina temas por programa y rastree las horas de cada alumno (matrícula y horas prácticas adicionales).
       </p>
     </div>
-    <div class="cea-flow" aria-label="Flujo">
-      <span class="cap cap-indigo cap-sm">Configuración</span>
+    <div class="cea-badges cea-flow" aria-label="Flujo">
+      @if (totalPendientes() > 0) {
+        <span class="cea-chip cea-chip--amber">{{ totalPendientes() }} pendiente{{ totalPendientes() === 1 ? '' : 's' }}</span>
+      }
+      <span class="cea-chip cea-chip--indigo">Configuración</span>
       <span class="cea-arrow">→</span>
-      <span class="cap cap-blue cap-sm">Temas</span>
+      <span class="cea-chip cea-chip--sky">Temas</span>
       <span class="cea-arrow">→</span>
-      <span class="cap cap-amber cap-sm">Programar</span>
+      <span class="cea-chip cea-chip--amber">Programar</span>
       <span class="cea-arrow">→</span>
-      <span class="cap cap-emerald cap-sm">Operar clase</span>
+      <span class="cea-chip cea-chip--emerald">Operar clase</span>
     </div>
   </header>
 
   @if (msg(); as texto) {
-    <div class="cea-banner" [class.ok]="msgTipo() === 'ok'" [class.error]="msgTipo() === 'error'" role="alert">
+    <p
+      class="cea-msg"
+      [class.cea-msg--ok]="msgTipo() === 'ok'"
+      [class.cea-msg--err]="msgTipo() === 'error'"
+      role="alert">
       {{ texto }}
-    </div>
+    </p>
   }
 
   @if (totalPendientes() > 0) {
@@ -51,6 +59,7 @@
 
   @if (tab() === 'inicio') {
     <div class="cea-panel">
+      <h3 class="sec">1. Guía rápida</h3>
       <h2>¿Por dónde empiezo?</h2>
       <ol class="cea-pasos">
         <li>

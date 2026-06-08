@@ -55,8 +55,10 @@ import {
   horasSlots,
   inicioSemana,
   layoutHorarioHHmm,
+  layoutsCalendarioDiaHHmm,
   rangoVisibleMes,
   esFechaHoy,
+  esFechaNoFutura,
   ymdCalendario,
   ymdLocal,
   DIAS_SEMANA_CORTO,
@@ -77,6 +79,9 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 import { VehiculoInspeccionPanelComponent } from '../vehiculos/vehiculo-inspeccion-panel.component';
 import { VehiculoService } from '../../core/services/vehiculo.service';
 import { InspeccionVehiculoDto } from '../../core/services/inspeccion-vehiculo.service';
+import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { tipFormulario } from '../../core/utils/asistente-formulario.util';
+import type { AsistenteTip } from '../../core/constants/asistente.types';
 
 type VistaAgenda = 'lista' | 'calendario';
 type VistaPage = 'calendario' | 'lista';
@@ -99,6 +104,7 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
   private vehiculoSvc = inject(VehiculoService);
   private alumnoSvc = inject(AlumnoService);
   private router = inject(Router);
+  private asistente = inject(AsistenteContextoService);
   private alumnoBusqueda$ = new Subject<string>();
   private buscarSub: Subscription | null = null;
 
@@ -198,6 +204,9 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
 
   puedeGestionar = computed(() => this.permisos.tiene('programacion_cea.gestionar'));
   puedeOperar = computed(() => this.permisos.tiene(['programacion_cea.operar', 'programacion_cea.gestionar']));
+  puedeCerrarRetroactivo = computed(() =>
+    this.permisos.tiene(['caja.turno', 'caja.admin', 'programacion_cea.gestionar', 'programacion_cea.operar']),
+  );
   puedeInspeccion = computed(() => this.permisos.tiene('instructores.inspeccion'));
   edicionSoloOperar = computed(() => this.esModoEdicion() && this.puedeOperar() && !this.puedeGestionar());
   isPage = computed(() => this.variant === 'page' && !this.editorHost);
@@ -221,6 +230,42 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
     if (this.esModoPractica()) return 'Clase individual: 1 instructor y 1 alumno en vehículo.';
     return 'Teoría o taller: programe cupos al mes sin alumnos; inscríbalos después desde la ficha del alumno.';
   });
+
+  private tipsMiaFormClase(): AsistenteTip[] {
+    const tips: AsistenteTip[] = [
+      tipFormulario('Este formulario', this.subtituloFormModal(), 'cea-form-ctx'),
+    ];
+    if (!this.edicionSoloOperar()) {
+      tips.push(
+        tipFormulario('Programa y tipo', 'Defina el programa y la modalidad de la clase.', 'cea-form-s1'),
+      );
+      if (this.form().tipoClase === 'teoria' || this.form().tipoClase === 'taller') {
+        tips.push(
+          tipFormulario(
+            'Clases grupales',
+            'Programe la clase con cupo. Inscriba alumnos después (estado PROGRAMADA, sin iniciar).',
+            'cea-form-grupo',
+          ),
+        );
+      }
+    }
+    tips.push(
+      tipFormulario('Fecha y horario', 'Elija la fecha y la hora de inicio de la clase.', 'cea-form-s2'),
+      tipFormulario(
+        'Descuento de horas',
+        'Las horas se reservan al iniciar la clase y se confirman al finalizar según el horario programado.',
+        'cea-form-horas',
+      ),
+      tipFormulario('Recursos e instructor', 'Ubicación, vehículo y persona a cargo.', 'cea-form-s3'),
+    );
+    if (this.form().tipoClase === 'practica' && !this.esModoEdicion()) {
+      tips.push(tipFormulario('Alumno', 'Clase individual — seleccione el alumno.', 'cea-form-s4'));
+    }
+    if (this.esModoEdicion()) {
+      tips.push(tipFormulario('Inscripciones', 'Agregue o quite alumnos de esta clase.', 'cea-form-s5'));
+    }
+    return tips;
+  }
 
   tituloPeriodoLista = computed(() => {
     if (!this.isPage()) return this.fecha();
@@ -438,6 +483,35 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
         if (c) this.seleccionarClase(c);
       }
     });
+    effect(() => {
+      if (this.formModalOpen()) {
+        this.asistente.setTipsPrepend(this.tipsMiaFormClase());
+        return;
+      }
+      if (this.detalleOperarOpen() && this.claseSel()) {
+        const c = this.claseSel()!;
+        this.asistente.setTipsPrepend([
+          tipFormulario(
+            'Clase seleccionada',
+            `${c.fechaClase} · ${c.horaDesde}–${c.horaHasta}`,
+            'cea-det-ctx',
+          ),
+        ]);
+        return;
+      }
+      if (this.inspeccionBloqueoOpen()) {
+        this.asistente.setTipsPrepend([
+          tipFormulario(
+            'Inspección requerida',
+            this.inspeccionBloqueoMsg() ||
+              'Debe completar la revisión de hoy antes de iniciar la clase práctica.',
+            'cea-insp-ctx',
+          ),
+        ]);
+        return;
+      }
+      this.asistente.clearTipsPrepend();
+    });
   }
 
   ngOnInit(): void {
@@ -634,7 +708,7 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
   /** Host embebido (portal instructor, clases-hoy): panel operativo con edición manual. */
   abrirClaseDesdeHost(claseOrId: ClaseProgramadaCeaDto | string): void {
     const abrir = (c: ClaseProgramadaCeaDto) => {
-      if (this.puedeOperar() || this.puedeGestionar()) {
+      if (this.puedeOperar() || this.puedeGestionar() || this.puedeCerrarRetroactivo()) {
         this.formModalOpen.set(false);
         this.seleccionarClase(c);
         this.detalleOperarOpen.set(true);
@@ -927,6 +1001,12 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
 
   layoutClaseCea(c: ClaseProgramadaCeaDto) {
     return layoutHorarioHHmm(c.horaDesde, c.horaHasta);
+  }
+
+  layoutsCalendarioDia(clases: ClaseProgramadaCeaDto[]) {
+    return layoutsCalendarioDiaHHmm(
+      clases.map((c) => ({ id: c._id!, horaDesde: c.horaDesde, horaHasta: c.horaHasta })),
+    );
   }
 
   fmtDiaCal(fecha: Date): string {
@@ -1589,6 +1669,50 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
       return 'La clase ya está iniciada o no está programada.';
     }
     return 'Iniciar clase y registrar hora de inicio';
+  }
+
+  clasePuedeCerrarRetroactivo(c: ClaseProgramadaCeaDto): boolean {
+    if (!c?.fechaClase) return false;
+    const e = String(c.estado || '').toUpperCase();
+    if (e === 'FINALIZADO' || e === 'CANCELADA') return false;
+    if (!esFechaNoFutura(c.fechaClase)) return false;
+    if (!String(c.horaDesde || '').trim()) return false;
+    if (!String(c.horaHasta || '').trim() && !(Number(c.duracionHoras) > 0)) return false;
+    if (e === 'EN PROCESO' && this.claseEsHoy(c)) return false;
+    return true;
+  }
+
+  tituloCerrarRetroactivo(c: ClaseProgramadaCeaDto): string {
+    const desde = c.horaDesde || '—';
+    const hasta = c.horaHasta || (Number(c.duracionHoras) > 0 ? '(según duración)' : '—');
+    return `Registrar inicio ${desde} y fin ${hasta} del día programado; inscritos quedarán como ASISTIÓ.`;
+  }
+
+  async cerrarClaseRetroactiva() {
+    const c = this.claseSel();
+    if (!c?._id || !this.puedeCerrarRetroactivo() || !this.clasePuedeCerrarRetroactivo(c)) return;
+    const ok = await this.confirm.open({
+      title: 'Cerrar clase con horario programado',
+      message: this.tituloCerrarRetroactivo(c),
+      confirmLabel: 'Cerrar clase',
+      variant: 'primary',
+    });
+    if (!ok) return;
+    this.svc.finalizarClaseRetroactiva(c._id).subscribe({
+      next: (doc) => {
+        this.claseSel.set(doc);
+        if (this.editorHost) {
+          this.detalleOperarOpen.set(false);
+          this.msg.set(null);
+          this.claseGuardada.emit(doc);
+        } else {
+          this.cargarClases();
+          this.cargarInscripciones(doc._id);
+          this.flash('Clase cerrada con horario programado — horas registradas', 'ok');
+        }
+      },
+      error: (e) => this.flash(e?.error?.message || 'No se pudo cerrar la clase', 'error'),
+    });
   }
 
   iniciarClase() {

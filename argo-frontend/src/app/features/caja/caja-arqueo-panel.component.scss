@@ -1,3 +1,5 @@
+@use './caja-shared' as *;
+
 .arqueo-panel {
   border: 1px solid rgba(78, 163, 255, 0.25);
   border-radius: 10px;

@@ -15,6 +15,7 @@ const {
 const { generarHtmlCertificado } = require('../services/certificadoRender');
 const { MUESTRA_PREVIEW } = require('../constants/certificadoLayoutDefaults');
 const { TIPOS_VALIDOS, normalizePlantillaPorTipo } = require('../services/clasificacionCertificado');
+const { normalizeAutoCertPorTipo, normalizeTiposCapExcluidos } = require('../services/configCertificado');
 
 const CAMPOS = [
   'nombreInstitucion',
@@ -32,6 +33,9 @@ const CAMPOS = [
   'qrTamanoPx',
   'diasAvisoCertificadoPorVencer',
   'diasAvisoCertificadoVencido',
+  'autoCertificadoAlPagar',
+  'autoCertificadoPorTipo',
+  'autoCertificadoTiposCapExcluidos',
 ];
 
 exports.obtener = async (_req, res, next) => {
@@ -81,6 +85,18 @@ exports.actualizar = async (req, res, next) => {
     }
     if (dto.mostrarQr != null) {
       dto.mostrarQr = dto.mostrarQr === true || dto.mostrarQr === 'true';
+    }
+    if (dto.autoCertificadoAlPagar != null) {
+      dto.autoCertificadoAlPagar =
+        dto.autoCertificadoAlPagar === true || dto.autoCertificadoAlPagar === 'true';
+    }
+    if (dto.autoCertificadoPorTipo != null) {
+      dto.autoCertificadoPorTipo = normalizeAutoCertPorTipo(dto.autoCertificadoPorTipo);
+    }
+    if (dto.autoCertificadoTiposCapExcluidos != null) {
+      dto.autoCertificadoTiposCapExcluidos = normalizeTiposCapExcluidos(
+        dto.autoCertificadoTiposCapExcluidos,
+      );
     }
     if (dto.qrTamanoPx != null) {
       dto.qrTamanoPx = Math.min(140, Math.max(40, parseInt(dto.qrTamanoPx, 10) || 72));

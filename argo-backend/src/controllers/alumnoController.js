@@ -7,7 +7,8 @@ const upload = require('../middleware/upload');
 const { procesarCedulaImagen } = require('../services/cedulaOcr');
 const { obtenerConfigRequisitosDocumentos } = require('../services/configRequisitosDocumentos');
 const { calcularDocumentosRequeridos, patchDocsAlumno, validarDocumentosParaPrograma, validarDocumentosPendientesAlumno, mensajeDocumentosPendientes } = require('../services/alumnoDocumentos');
-const { enriquecerIndicadoresLista } = require('../services/alumnoIndicadores');
+const { enriquecerIndicadoresLista, movimientosHoyPorAlumnos } = require('../services/alumnoIndicadores');
+const { listarComprobantesRecientes } = require('../services/comprobantesAlertas');
 const {
   resolverJornadasFiltro,
   numDocsParticipantesJornadas,
@@ -17,6 +18,11 @@ const {
 } = require('../services/alumnosJornadaCapLista');
 const mongoose = require('mongoose');
 const { parseNumDoc, numDocFromParams, numDocQueryNativo } = require('../utils/numDoc');
+
+function claveNumDocIndicador(numDoc) {
+  const n = parseNumDoc(numDoc);
+  return n != null ? n : numDoc;
+}
 const { esAdmin } = require('../utils/roles');
 const { filtroBusquedaAlumno } = require('../utils/busquedaAlumnoNombre');
 const {
@@ -345,6 +351,49 @@ exports.porId = async (req, res, next) => {
     const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json(a);
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Comprobantes / facturas recientes (alertas globales en cabecera). */
+exports.comprobantesRecientes = async (req, res, next) => {
+  try {
+    let desde = null;
+    if (req.query.desde) {
+      const d = new Date(String(req.query.desde));
+      if (!Number.isNaN(d.getTime())) desde = d;
+    }
+    const rows = await listarComprobantesRecientes(desde);
+    res.json(rows);
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Comprobantes y factura emitidos hoy (alarmas en ficha y lista). */
+exports.indicadoresHoy = async (req, res, next) => {
+  try {
+    const a = await buscarAlumnoPorIdParam(req.params.id);
+    if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
+    if (a.numDoc == null) {
+      return res.json({
+        comprobanteIngresoHoy: null,
+        comprobanteEgresoHoy: null,
+        facturaHoy: null,
+      });
+    }
+    const map = await movimientosHoyPorAlumnos([a.numDoc]);
+    const mov = map.get(claveNumDocIndicador(a.numDoc)) || {
+      ingreso: null,
+      egreso: null,
+      factura: null,
+    };
+    res.json({
+      comprobanteIngresoHoy: mov.ingreso,
+      comprobanteEgresoHoy: mov.egreso,
+      facturaHoy: mov.factura,
+    });
   } catch (e) {
     next(e);
   }

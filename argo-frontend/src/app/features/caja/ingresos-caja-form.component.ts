@@ -59,6 +59,7 @@ export class IngresosCajaFormComponent implements OnInit {
 
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   tipoSel = computed(() =>
     this.tiposIngreso().find((t) => String(t.idTipoIngreso) === String(this.idTipoIngreso())) ?? null,
@@ -161,47 +162,47 @@ export class IngresosCajaFormComponent implements OnInit {
   async guardar(): Promise<void> {
     if (!(await this.cajaAlert.ensureAbierta('registrar ingresos'))) return;
     if (!this.idTipoIngreso()) {
-      this.msg.set('Seleccione el tipo de ingreso.');
+      this.inform('Seleccione el tipo de ingreso.');
       return;
     }
     if (!this.concepto().trim()) {
-      this.msg.set('El concepto es obligatorio.');
+      this.inform('El concepto es obligatorio.');
       return;
     }
     if (!(this.valor() > 0)) {
-      this.msg.set('Indique un valor válido.');
+      this.inform('Indique un valor válido.');
       return;
     }
     if (!this.idTipoPago()) {
-      this.msg.set('Seleccione la forma de pago.');
+      this.inform('Seleccione la forma de pago.');
       return;
     }
     if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) {
-      this.msg.set('Indique la cuenta bancaria de la empresa.');
+      this.inform('Indique la cuenta bancaria de la empresa.');
       return;
     }
     if (this.esContrato()) {
       if (!this.recibidoDe().trim()) {
-        this.msg.set('Indique el nombre del contratante.');
+        this.inform('Indique el nombre del contratante.');
         return;
       }
       if (!this.documentoTercero().trim()) {
-        this.msg.set('Indique NIT o documento del contratante.');
+        this.inform('Indique NIT o documento del contratante.');
         return;
       }
       if (!this.tipoPersona()) {
-        this.msg.set('Indique si es persona natural o jurídica.');
+        this.inform('Indique si es persona natural o jurídica.');
         return;
       }
     } else if (this.esAprovision() || this.esOtros()) {
       if (!this.recibidoDe().trim()) {
-        this.msg.set('Indique quién entrega el dinero.');
+        this.inform('Indique quién entrega el dinero.');
         return;
       }
     }
 
     this.saving.set(true);
-    this.msg.set(null);
+    this.inform(null);
     this.ingSvc
       .crearCaja({
         idTipoIngreso: this.idTipoIngreso(),
@@ -220,13 +221,34 @@ export class IngresosCajaFormComponent implements OnInit {
         next: (res) => {
           this.saving.set(false);
           const ref = res?.numRecibo ? ` Comprobante ${res.numRecibo}.` : '';
-          this.msg.set(`Ingreso registrado.${ref}`);
+          this.inform(`Ingreso registrado.${ref}`);
           setTimeout(() => void this.router.navigate(['/app/caja/ingresos']), 600);
         },
         error: (e) => {
           this.saving.set(false);
-          this.msg.set(e?.error?.message || 'No se pudo registrar el ingreso.');
+          this.inform(e?.error?.message || 'No se pudo registrar el ingreso.');
         },
       });
   }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }

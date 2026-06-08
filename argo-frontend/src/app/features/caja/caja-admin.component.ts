@@ -9,6 +9,7 @@ import { RouterLink } from '@angular/router';
 
 
 import { CajaAbiertaItem, CajaSesionService } from '../../core/services/caja-sesion.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 
 
@@ -43,8 +44,7 @@ interface CierrePendiente {
 export class CajaAdminComponent implements OnInit {
 
   private cajaSvc = inject(CajaSesionService);
-
-
+  private confirm = inject(ConfirmDialogService);
 
   cajasAbiertas = signal<CajaAbiertaItem[]>([]);
 
@@ -55,6 +55,7 @@ export class CajaAdminComponent implements OnInit {
   loading = signal(false);
 
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
 
 
@@ -120,7 +121,7 @@ export class CajaAdminComponent implements OnInit {
 
     if (!this.cajasAbiertas().length) {
 
-      this.msg.set('No hay cajas abiertas para cerrar');
+      this.inform('No hay cajas abiertas para cerrar');
 
       return;
 
@@ -132,7 +133,7 @@ export class CajaAdminComponent implements OnInit {
 
 
 
-  cerrarTodasLasCajas(): void {
+  async cerrarTodasLasCajas(): Promise<void> {
 
     const pendientes = this.cierresPendientes();
 
@@ -140,7 +141,7 @@ export class CajaAdminComponent implements OnInit {
 
       if (p.efectivoContado == null || !Number.isFinite(p.efectivoContado)) {
 
-        this.msg.set(`Indique el efectivo contado para ${p.usuario || 'cajero'} (sesión #${p.idSesion})`);
+        this.inform(`Indique el efectivo contado para ${p.usuario || 'cajero'} (sesión #${p.idSesion})`);
 
         return;
 
@@ -148,13 +149,19 @@ export class CajaAdminComponent implements OnInit {
 
     }
 
-    if (!confirm(`¿Cerrar ${pendientes.length} caja(s)?`)) return;
+    const ok = await this.confirm.open({
+      title: 'Cerrar cajas',
+      message: `¿Cerrar ${pendientes.length} caja(s)?`,
+      confirmLabel: 'Cerrar cajas',
+      variant: 'warn',
+    });
+    if (!ok) return;
 
 
 
     this.loading.set(true);
 
-    this.msg.set(null);
+    this.inform(null);
 
     this.cajaSvc
 
@@ -180,7 +187,7 @@ export class CajaAdminComponent implements OnInit {
 
           this.mostrarCierreMultiple.set(false);
 
-          this.msg.set('Cajas cerradas. Puede generar el informe en Cierre general.');
+          this.inform('Cajas cerradas. Puede generar el informe en Cierre general.');
 
           this.cargarAbiertas();
 
@@ -190,7 +197,7 @@ export class CajaAdminComponent implements OnInit {
 
           this.loading.set(false);
 
-          this.msg.set(e?.error?.message || 'No se pudieron cerrar todas las cajas');
+          this.inform(e?.error?.message || 'No se pudieron cerrar todas las cajas');
 
         },
 
@@ -200,7 +207,7 @@ export class CajaAdminComponent implements OnInit {
 
 
 
-  cerrarAjena(item: CajaAbiertaItem): void {
+  async cerrarAjena(item: CajaAbiertaItem): Promise<void> {
 
     const id = item.sesion?.idSesion;
 
@@ -208,13 +215,15 @@ export class CajaAdminComponent implements OnInit {
 
     const esperado = item.resumenParcial.efectivoEsperado ?? item.resumenParcial.saldoTeorico ?? 0;
 
-    const raw = prompt(
-
-      `Efectivo contado en caja de ${item.sesion.usuario} (esperado: ${esperado.toLocaleString('es-CO')} COP):`,
-
-      String(Math.round(esperado)),
-
-    );
+    const raw = await this.confirm.openPrompt({
+      title: 'Efectivo contado',
+      message: `Cierre de caja de ${item.sesion.usuario}. Esperado: ${esperado.toLocaleString('es-CO')} COP.`,
+      inputLabel: 'Efectivo contado (COP)',
+      inputType: 'number',
+      defaultValue: String(Math.round(esperado)),
+      confirmLabel: 'Continuar',
+      variant: 'primary',
+    });
 
     if (raw == null) return;
 
@@ -222,13 +231,19 @@ export class CajaAdminComponent implements OnInit {
 
     if (!Number.isFinite(contado)) {
 
-      this.msg.set('Valor de efectivo contado inválido');
+      this.inform('Valor de efectivo contado inválido');
 
       return;
 
     }
 
-    if (!confirm(`¿Cerrar caja de ${item.sesion.usuario}?`)) return;
+    const ok = await this.confirm.open({
+      title: 'Cerrar caja',
+      message: `¿Cerrar caja de ${item.sesion.usuario}?`,
+      confirmLabel: 'Cerrar caja',
+      variant: 'warn',
+    });
+    if (!ok) return;
 
     this.cajaSvc
 
@@ -238,17 +253,37 @@ export class CajaAdminComponent implements OnInit {
 
         next: () => {
 
-          this.msg.set(`Caja #${id} cerrada`);
+          this.inform(`Caja #${id} cerrada`);
 
           this.cargarAbiertas();
 
         },
 
-        error: (e) => this.msg.set(e?.error?.message || 'No se pudo cerrar la caja'),
+        error: (e) => this.inform(e?.error?.message || 'No se pudo cerrar la caja'),
 
       });
 
   }
 
-}
 
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
+}

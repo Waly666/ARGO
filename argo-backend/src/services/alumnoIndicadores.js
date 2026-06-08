@@ -1,8 +1,23 @@
-const Matricula = require('../models/Matricula');
 const Liquidacion = require('../models/Liquidacion');
+const Ingreso = require('../models/Ingreso');
+const Egreso = require('../models/Egreso');
+const FacturaElectronica = require('../models/FacturaElectronica');
 const { parseNumDoc } = require('../utils/numDoc');
+const { numeroDocumentoQuery } = require('../utils/empleadoDoc');
 const { validarDocumentosPendientesAlumno } = require('./alumnoDocumentos');
 const { indicadoresClasesCeaCreadoPorAlumnos } = require('./programacionCeaAuto');
+
+function inicioDia(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function finDia(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
 
 function numSaldo(v) {
   if (v == null) return 0;
@@ -66,6 +81,119 @@ function indicadorSaldos(liquidaciones) {
   return { saldosPendientes, saldoTotal, itemsSaldo };
 }
 
+function numValor(v) {
+  if (v == null) return 0;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'object' && v.$numberDecimal != null) return Number(v.$numberDecimal) || 0;
+  return Number(v) || 0;
+}
+
+function mapIngresoHoy(ing) {
+  return {
+    id: String(ing._id),
+    numRecibo: ing.numRecibo || null,
+    valor: numValor(ing.valor),
+    fecha: ing.fecha || ing.createdAt || null,
+  };
+}
+
+function mapEgresoHoy(eg) {
+  return {
+    id: String(eg._id),
+    numRecibo: eg.numRecibo || null,
+    valor: numValor(eg.valorEgreso),
+    fecha: eg.fechaEgreso || eg.fechaAudi || null,
+  };
+}
+
+function mapFacturaHoy(f) {
+  return {
+    id: String(f._id),
+    numeroFactura: f.numeroFactura || null,
+    valor: numValor(f.valorTotal),
+    estado: f.estado || null,
+    fecha: f.emitidaAt || f.createdAt || null,
+  };
+}
+
+/** Comprobantes / facturas emitidos hoy por alumno (para alarmas en lista). */
+async function movimientosHoyPorAlumnos(numDocs) {
+  const map = new Map();
+  for (const nd of numDocs || []) {
+    const k = claveNumDoc(nd);
+    if (k != null) map.set(k, { ingreso: null, egreso: null, factura: null });
+  }
+  if (!map.size) return map;
+
+  const hoy = inicioDia();
+  const fin = finDia();
+  const filtroNum = filtroNumDocsIn(numDocs);
+  if (!filtroNum) return map;
+
+  const orEgreso = [];
+  for (const nd of numDocs) {
+    const q = numeroDocumentoQuery(nd);
+    if (q) orEgreso.push(q);
+  }
+
+  const [ingresos, facturas, egresos] = await Promise.all([
+    Ingreso.find({
+      ...filtroNum,
+      ingresoCaja: { $ne: true },
+      $or: [
+        { createdAt: { $gte: hoy, $lte: fin } },
+        { fecha: { $gte: hoy, $lte: fin } },
+      ],
+    })
+      .select('_id numDoc numRecibo valor fecha createdAt')
+      .sort({ createdAt: -1 })
+      .lean(),
+    FacturaElectronica.find({
+      ...filtroNum,
+      estado: { $nin: ['borrador', 'anulada'] },
+      $or: [
+        { createdAt: { $gte: hoy, $lte: fin } },
+        { emitidaAt: { $gte: hoy, $lte: fin } },
+      ],
+    })
+      .select('_id numDoc numeroFactura valorTotal estado createdAt emitidaAt')
+      .sort({ createdAt: -1 })
+      .lean(),
+    orEgreso.length
+      ? Egreso.find({
+          $or: orEgreso,
+          fechaEgreso: { $gte: hoy, $lte: fin },
+        })
+          .select('_id numeroDocumento numDoc numRecibo valorEgreso fechaEgreso fechaAudi')
+          .sort({ fechaEgreso: -1 })
+          .lean()
+      : [],
+  ]);
+
+  for (const ing of ingresos) {
+    const k = claveNumDoc(ing.numDoc);
+    if (k == null || !map.has(k)) continue;
+    const slot = map.get(k);
+    if (!slot.ingreso) slot.ingreso = mapIngresoHoy(ing);
+  }
+
+  for (const eg of egresos) {
+    const k = claveNumDoc(eg.numeroDocumento || eg.numDoc);
+    if (k == null || !map.has(k)) continue;
+    const slot = map.get(k);
+    if (!slot.egreso) slot.egreso = mapEgresoHoy(eg);
+  }
+
+  for (const f of facturas) {
+    const k = claveNumDoc(f.numDoc);
+    if (k == null || !map.has(k)) continue;
+    const slot = map.get(k);
+    if (!slot.factura) slot.factura = mapFacturaHoy(f);
+  }
+
+  return map;
+}
+
 async function enriquecerIndicadoresLista(items) {
   if (!items?.length) return items;
 
@@ -73,9 +201,10 @@ async function enriquecerIndicadoresLista(items) {
   if (!numDocs.length) return items;
 
   const filtro = filtroNumDocsIn(numDocs);
-  const [liquidaciones, ceaPorDoc] = await Promise.all([
+  const [liquidaciones, ceaPorDoc, movHoyPorDoc] = await Promise.all([
     filtro ? Liquidacion.find(filtro).lean() : [],
     indicadoresClasesCeaCreadoPorAlumnos(numDocs),
+    movimientosHoyPorAlumnos(numDocs),
   ]);
 
   const liqsByNum = groupByNumDoc(liquidaciones);
@@ -95,6 +224,7 @@ async function enriquecerIndicadoresLista(items) {
       const val = await validarDocumentosPendientesAlumno(alumnoDoc);
       const docsPendientes = (val.pendientes || []).length;
       const cea = ceaPorDoc.get(key) || { clasesCeaCreado: 0, programasCeaCreado: [] };
+      const mov = movHoyPorDoc.get(key) || { ingreso: null, egreso: null, factura: null };
 
       return {
         ...item,
@@ -105,10 +235,13 @@ async function enriquecerIndicadoresLista(items) {
           itemsSaldo,
           clasesCeaCreado: cea.clasesCeaCreado,
           programasCeaCreado: cea.programasCeaCreado,
+          comprobanteIngresoHoy: mov.ingreso,
+          comprobanteEgresoHoy: mov.egreso,
+          facturaHoy: mov.factura,
         },
       };
     }),
   );
 }
 
-module.exports = { enriquecerIndicadoresLista };
+module.exports = { enriquecerIndicadoresLista, movimientosHoyPorAlumnos };

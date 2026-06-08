@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { ContratacionDto, JornadaCapService } from '../../core/services/jornada-cap.service';
 import { PermisoService } from '../../core/services/permiso.service';
@@ -25,7 +25,7 @@ const ESTADOS: ReadonlyArray<'En Ejecución' | 'Ejecutado'> = ['En Ejecución', 
 @Component({
   selector: 'argo-contratos-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './contratos-lista.component.html',
   styleUrls: ['./contratos-lista.component.scss'],
 })

@@ -211,18 +211,38 @@ export class FacturacionService {
   }
 
   private abrirHtml(url: string, onError?: (msg: string) => void): void {
+    const w = window.open('', '_blank', 'width=900,height=900');
+    if (!w) {
+      onError?.('El navegador bloqueó la ventana. Permita ventanas emergentes para este sitio.');
+      return;
+    }
+    try {
+      w.document.open();
+      w.document.write('<p style="font-family:sans-serif;padding:1rem">Cargando documento…</p>');
+      w.document.close();
+    } catch {
+      /* ventana en blanco */
+    }
+
     this.http.get(url, { responseType: 'text' }).subscribe({
       next: (html) => {
-        const w = window.open('', '_blank', 'width=900,height=900');
-        if (!w) {
-          onError?.('El navegador bloqueó la ventana. Permita ventanas emergentes para este sitio.');
-          return;
+        try {
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        } catch {
+          w.close();
+          onError?.('No se pudo mostrar el documento en la ventana.');
         }
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
       },
-      error: (e) => onError?.(e?.error?.message || 'No se pudo generar el documento'),
+      error: (e) => {
+        try {
+          w.close();
+        } catch {
+          /* ignore */
+        }
+        onError?.(e?.error?.message || 'No se pudo generar el documento');
+      },
     });
   }
 }

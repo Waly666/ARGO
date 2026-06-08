@@ -1,6 +1,7 @@
-<section class="admin-caja-page">
-  <header class="page-head">
-    <div>
+<section class="admin-caja-page caja-page">
+  <header class="caja-head page-head card">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Cierre general</p>
       <p class="eyebrow">Administración · No es el cuadre del cajero</p>
       <h1>Cierre general de caja</h1>
       <p class="lead">
@@ -11,7 +12,10 @@
         Sede operativa: <strong>{{ sedeSvc.labelActiva() }}</strong>
       </p>
     </div>
-    <a routerLink="/app/caja" class="ghost link-volver">← Volver al resumen del cajero</a>
+    <div class="caja-badges head-actions">
+      <span class="caja-chip caja-chip--amber">Administración</span>
+      <a routerLink="/app/caja" class="ghost link-volver link-btn">← Resumen cajero</a>
+    </div>
   </header>
 
   <nav class="fichas-nav" role="tablist">
@@ -37,7 +41,7 @@
   </nav>
 
   <div class="ficha-panel" *ngIf="ficha() === 'abiertas'" role="tabpanel">
-    <div class="msg ok" *ngIf="msgAbiertas()">{{ msgAbiertas() }}</div>
+    <p class="caja-msg" *ngIf="msgAbiertas()">{{ msgAbiertas() }}</p>
 
     <section class="card">
       <div class="card-head-row">

@@ -1,5 +1,7 @@
 <section class="emp-docs-panel">
-  <div class="msg err" *ngIf="err()">{{ err() }}</div>
+  @if (err(); as texto) {
+    <div class="rrhh-msg rrhh-msg--err" role="alert">{{ texto }}</div>
+  }
 
   <section class="req-section">
     <header class="req-head">

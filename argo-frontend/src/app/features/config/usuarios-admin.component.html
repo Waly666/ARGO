@@ -1,186 +1,266 @@
-<section class="usuarios-page admin-list-page card">
-  <header class="page-head">
-    <div>
+<section class="usr-page card">
+  <header class="usr-head">
+    <div class="usr-head-main">
       <h1>Gestión de usuarios</h1>
-      <p class="hint">Solo administradores. Crear, editar, desactivar o eliminar usuarios del sistema.</p>
+      <p>Cuentas de acceso al sistema: login, rol, sede asignada y estado activo/inactivo.</p>
     </div>
-    <button type="button" class="primary" (click)="nuevo()">Nuevo usuario</button>
+    <div class="usr-head-actions">
+      @if (!loading() && !mostrarForm()) {
+        <span class="usr-count">{{ resumen().total }} usuario{{ resumen().total === 1 ? '' : 's' }}</span>
+        @if (resumen().activos) {
+          <span class="usr-chip usr-chip--on">{{ resumen().activos }} activo{{ resumen().activos === 1 ? '' : 's' }}</span>
+        }
+      }
+      @if (!mostrarForm()) {
+        <button type="button" class="primary usr-btn-new" (click)="nuevo()">+ Nuevo usuario</button>
+      }
+    </div>
   </header>
 
-  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+  @if (msg(); as texto) {
+    <div class="usr-banner" [class.usr-banner--err]="msgError()" role="status">{{ texto }}</div>
+  }
 
-  <div class="toolbar row-inline" *ngIf="!mostrarForm()">
-    <div class="view-toggle" role="group" aria-label="Modo de vista">
-      <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
-      <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
-    </div>
-  </div>
-
-  <div class="form-card card argo-form-shell" *ngIf="mostrarForm()">
-    <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
-    <div class="row row-credenciales">
-      <div class="col-6 field">
-        <div class="field-label-wrap">
-          <label>Usuario (login) *</label>
-          <span class="field-hint">Ej. jose, walter.aguilar — no use el documento</span>
+  @if (mostrarForm()) {
+    <div class="usr-form-panel card argo-form-shell">
+      <header class="usr-form-head">
+        <div>
+          <span class="usr-form-kicker">{{ editando() ? 'Edición' : 'Alta' }}</span>
+          <h2>{{ editando() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+          <p class="usr-form-sub">Use un login alfabético (ej. jose, walter.aguilar), no el número de documento.</p>
         </div>
-        <input type="text" [ngModel]="form().username" (ngModelChange)="patch('username', $event)" autocomplete="username" />
-      </div>
-      <div class="col-6 field">
-        <div class="field-label-wrap">
-          <label>Contraseña <span *ngIf="!editando()">*</span></label>
-          <span class="field-hint" *ngIf="editando()">Vacío = no cambiar</span>
-        </div>
-        <input type="password" [ngModel]="form().password" (ngModelChange)="patch('password', $event)" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-4">
-        <label>Documento</label>
-        <input
-          type="text"
-          [ngModel]="form().numeroDocumento"
-          (ngModelChange)="patch('numeroDocumento', $event)"
-          placeholder="CC / TI (también sirve para login)"
-        />
-      </div>
-      <div class="col-4">
-        <label>Nombres</label>
-        <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch('nombres', $event)" />
-      </div>
-      <div class="col-4">
-        <label>Apellidos</label>
-        <input type="text" [ngModel]="form().apellidos" (ngModelChange)="patch('apellidos', $event)" />
-      </div>
-      <div class="col-4">
-        <label>Email</label>
-        <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-4">
-        <label>Rol</label>
-        <select [ngModel]="form().rol" (ngModelChange)="patch('rol', $event)">
-          <option *ngFor="let r of roles()" [value]="r.id">{{ r.label }}</option>
-        </select>
-      </div>
-      <div class="col-4 chk">
-        <label>
-          <input type="checkbox" [ngModel]="form().activo" (ngModelChange)="patch('activo', $event)" />
-          Activo
-        </label>
-      </div>
-    </div>
-    <div class="row sedes-asignacion" *ngIf="sedesCatalogo().length">
-      <div class="col-4">
-        <label>Sede de trabajo</label>
-        <p class="field-hint" *ngIf="esRolAdmin(form().rol)">
-          Los administradores ven todas las sedes y filtran desde el encabezado. No requiere asignación.
-        </p>
-        <p class="field-hint" *ngIf="!esRolAdmin(form().rol)">
-          Un usuario opera en una sola sede asignada.
-        </p>
-        <select
-          *ngIf="!esRolAdmin(form().rol)"
-          [ngModel]="sedeFormId()"
-          (ngModelChange)="onSedeFormChange($event)"
-        >
-          <option value="">— Seleccione sede —</option>
-          <option *ngFor="let s of sedesCatalogo()" [value]="s.idSede">
-            {{ s.nombre }}{{ s.codigo ? ' (' + s.codigo + ')' : '' }}
-          </option>
-        </select>
-      </div>
-    </div>
-    <div class="actions">
-      <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
-      <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
-        {{ saving() ? 'Guardando…' : 'Guardar' }}
-      </button>
-    </div>
-  </div>
+        <button type="button" class="ghost usr-form-close" (click)="cancelar()" aria-label="Cerrar">×</button>
+      </header>
 
-  <div class="loading" *ngIf="loading()">Cargando…</div>
-
-  <table class="argo" *ngIf="!loading() && vista() === 'lista'">
-    <thead>
-      <tr>
-        <th>Usuario</th>
-        <th>Documento</th>
-        <th>Nombre</th>
-        <th>Rol</th>
-        <th>Sede</th>
-        <th>Estado</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let u of usuarios()">
-        <td class="mono">{{ loginLabel(u) }}</td>
-        <td class="mono sm">{{ docLabel(u) || '—' }}</td>
-        <td>{{ (u.nombres || '') + ' ' + (u.apellidos || '') }}</td>
-        <td>{{ labelRol(u.rol) }}</td>
-        <td class="sedes-cell">{{ labelSedes(u) }}</td>
-        <td>
-          <span class="badge" [class.ok]="u.activo !== false" [class.warn]="u.activo === false">
-            {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
-          </span>
-        </td>
-        <td class="r actions-cell">
-          <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
-          <button
-            type="button"
-            class="ghost mini"
-            *ngIf="u.activo !== false && !esUsuarioActual(u)"
-            (click)="desactivar(u)">
-            Desactivar
-          </button>
-          <button
-            type="button"
-            class="danger mini"
-            *ngIf="!esUsuarioActual(u)"
-            (click)="borrar(u)">
-            Eliminar
-          </button>
-        </td>
-      </tr>
-      <tr *ngIf="usuarios().length === 0">
-        <td colspan="7" class="empty">No hay usuarios.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
-    <article class="list-card" *ngFor="let u of usuarios()">
-      <header class="card-title"><h3>{{ nombreCompleto(u) }}</h3></header>
-      <div class="card-body">
-        <div class="entity-badge-wrap">
-          <div class="entity-badge tone-purple">{{ loginLabel(u).slice(0, 2).toUpperCase() }}</div>
-        </div>
-        <div class="card-main">
-          <div class="card-doc mono">{{ loginLabel(u) }}</div>
-          <div class="card-sub mono" *ngIf="docLabel(u)">Doc. {{ docLabel(u) }}</div>
-          <div class="card-tags">
-            <span class="cap cap-sm">{{ labelRol(u.rol) }}</span>
-            <span class="cap cap-sm sede-tag">{{ labelSedes(u) }}</span>
-            <span class="badge" [class.ok]="u.activo !== false" [class.warn]="u.activo === false">
-              {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
-            </span>
+      <div class="usr-form-sections">
+        <section class="usr-section usr-section--sky">
+          <header class="usr-section-head">
+            <span class="usr-section-badge">1</span>
+            <div>
+              <h3 class="usr-section-title">Credenciales</h3>
+              <p class="usr-section-desc">Usuario y contraseña para iniciar sesión.</p>
+            </div>
+          </header>
+          <div class="usr-section-body">
+            <div class="usr-grid usr-grid--2">
+              <label class="usr-field">
+                <span class="usr-label">Usuario (login) *</span>
+                <input type="text" [ngModel]="form().username" (ngModelChange)="patch('username', $event)" autocomplete="username" placeholder="jose, walter.aguilar…" />
+                <span class="usr-field-hint">No use el documento como login.</span>
+              </label>
+              <label class="usr-field">
+                <span class="usr-label">Contraseña @if (!editando()) { * }</span>
+                <input type="password" [ngModel]="form().password" (ngModelChange)="patch('password', $event)" autocomplete="new-password" />
+                @if (editando()) {
+                  <span class="usr-field-hint">Vacío = no cambiar la contraseña actual.</span>
+                } @else {
+                  <span class="usr-field-hint">Mínimo 4 caracteres.</span>
+                }
+              </label>
+            </div>
           </div>
-          <dl class="card-fields" *ngIf="u.email">
-            <div class="span-2"><dt>Email</dt><dd>{{ u.email }}</dd></div>
-          </dl>
-        </div>
+        </section>
+
+        <section class="usr-section usr-section--violet">
+          <header class="usr-section-head">
+            <span class="usr-section-badge">2</span>
+            <div>
+              <h3 class="usr-section-title">Identidad</h3>
+              <p class="usr-section-desc">Datos personales del titular de la cuenta.</p>
+            </div>
+          </header>
+          <div class="usr-section-body">
+            <div class="usr-grid usr-grid--ident">
+              <label class="usr-field">
+                <span class="usr-label">Documento</span>
+                <input type="text" [ngModel]="form().numeroDocumento" (ngModelChange)="patch('numeroDocumento', $event)" placeholder="CC / TI (también sirve para login)" />
+              </label>
+              <label class="usr-field">
+                <span class="usr-label">Nombres</span>
+                <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch('nombres', $event)" />
+              </label>
+              <label class="usr-field">
+                <span class="usr-label">Apellidos</span>
+                <input type="text" [ngModel]="form().apellidos" (ngModelChange)="patch('apellidos', $event)" />
+              </label>
+              <label class="usr-field">
+                <span class="usr-label">Email</span>
+                <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="usr-section usr-section--amber">
+          <header class="usr-section-head">
+            <span class="usr-section-badge">3</span>
+            <div>
+              <h3 class="usr-section-title">Acceso y sede</h3>
+              <p class="usr-section-desc">Rol del sistema y sede de trabajo asignada.</p>
+            </div>
+          </header>
+          <div class="usr-section-body usr-stack">
+            <div class="usr-grid usr-grid--acceso">
+              <label class="usr-field">
+                <span class="usr-label">Rol</span>
+                <select [ngModel]="form().rol" (ngModelChange)="patch('rol', $event)">
+                  @for (r of roles(); track r.id) {
+                    <option [value]="r.id">{{ r.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="usr-toggle">
+                <input type="checkbox" [ngModel]="form().activo" (ngModelChange)="patch('activo', $event)" />
+                <span class="usr-toggle-box">
+                  <span class="usr-toggle-title">Usuario activo</span>
+                  <span class="usr-toggle-desc">Si está desactivado no puede iniciar sesión.</span>
+                </span>
+              </label>
+            </div>
+
+            @if (sedesCatalogo().length) {
+              <div class="usr-sede-block">
+                @if (esRolAdmin(form().rol)) {
+                  <p class="usr-sede-hint">
+                    Los administradores ven <strong>todas las sedes</strong> y filtran desde el encabezado. No requiere asignación.
+                  </p>
+                } @else {
+                  <label class="usr-field">
+                    <span class="usr-label">Sede de trabajo *</span>
+                    <select [ngModel]="sedeFormId()" (ngModelChange)="onSedeFormChange($event)">
+                      <option value="">— Seleccione sede —</option>
+                      @for (s of sedesCatalogo(); track s.idSede) {
+                        <option [value]="s.idSede">
+                          {{ s.nombre }}{{ s.codigo ? ' (' + s.codigo + ')' : '' }}
+                        </option>
+                      }
+                    </select>
+                    <span class="usr-field-hint">Un usuario opera en una sola sede asignada.</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        </section>
       </div>
-      <footer class="card-foot">
-        <span class="card-hint">Usuario del sistema</span>
-        <div class="card-actions">
-          <button type="button" class="act open" (click)="editar(u)">Editar</button>
-          <button type="button" class="act doc" *ngIf="u.activo !== false && !esUsuarioActual(u)" (click)="desactivar(u)">Desactivar</button>
-          <button type="button" class="act doc" *ngIf="!esUsuarioActual(u)" (click)="borrar(u)">Eliminar</button>
-        </div>
+
+      <footer class="usr-form-foot">
+        <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
+        <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar usuario' }}
+        </button>
       </footer>
-    </article>
-    <div class="empty cards-empty" *ngIf="usuarios().length === 0">No hay usuarios.</div>
-  </div>
+    </div>
+  }
+
+  @if (!mostrarForm()) {
+    <div class="usr-toolbar">
+      <span class="usr-search-icon" aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        class="usr-search"
+        placeholder="Buscar por usuario, documento, nombre, email o rol…"
+        [ngModel]="filtro()"
+        (ngModelChange)="filtro.set($event)" />
+      <div class="usr-view-toggle" role="group" aria-label="Modo de vista">
+        <button type="button" class="usr-view-btn" [class.usr-view-btn--active]="vista() === 'lista'" (click)="setVista('lista')">☰ Lista</button>
+        <button type="button" class="usr-view-btn" [class.usr-view-btn--active]="vista() === 'cards'" (click)="setVista('cards')">▦ Cards</button>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <p class="usr-empty">Cargando usuarios…</p>
+    } @else if (!usuariosFiltrados().length) {
+      <div class="usr-empty usr-empty--card">
+        <span class="usr-empty-icon" aria-hidden="true">◎</span>
+        @if (filtro()) {
+          <p>No hay usuarios que coincidan con «{{ filtro() }}».</p>
+        } @else {
+          <p>No hay usuarios registrados.</p>
+          <button type="button" class="ghost" (click)="nuevo()">Crear el primero</button>
+        }
+      </div>
+    } @else if (vista() === 'lista') {
+      <div class="usr-table-wrap">
+        <table class="usr-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Documento</th>
+              <th>Nombre</th>
+              <th>Rol</th>
+              <th>Sede</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of usuariosFiltrados(); track u._id) {
+              <tr>
+                <td class="usr-login">{{ loginLabel(u) }}</td>
+                <td class="usr-doc">{{ docLabel(u) || '—' }}</td>
+                <td class="usr-name">{{ (u.nombres || '') + ' ' + (u.apellidos || '') }}</td>
+                <td>
+                  <span class="usr-rol-badge" [ngClass]="rolBadgeClass(u.rol)">{{ labelRol(u.rol) }}</span>
+                </td>
+                <td class="usr-sede">{{ labelSedes(u) }}</td>
+                <td>
+                  <span class="usr-estado" [class.usr-estado--on]="u.activo !== false" [class.usr-estado--off]="u.activo === false">
+                    {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="usr-row-actions">
+                  <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
+                  @if (u.activo !== false && !esUsuarioActual(u)) {
+                    <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
+                  }
+                  @if (!esUsuarioActual(u)) {
+                    <button type="button" class="danger mini" (click)="borrar(u)">Eliminar</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="usr-cards">
+        @for (u of usuariosFiltrados(); track u._id) {
+          <article class="usr-card">
+            <header class="usr-card-head">
+              <span class="usr-avatar" [ngClass]="rolBadgeClass(u.rol)">{{ iniciales(u) }}</span>
+              <div class="usr-card-titles">
+                <h3>{{ nombreCompleto(u) }}</h3>
+                <span class="usr-card-login">{{ loginLabel(u) }}</span>
+              </div>
+              <span class="usr-estado" [class.usr-estado--on]="u.activo !== false" [class.usr-estado--off]="u.activo === false">
+                {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
+              </span>
+            </header>
+            <div class="usr-card-body">
+              @if (docLabel(u)) {
+                <span class="usr-card-meta">Doc. {{ docLabel(u) }}</span>
+              }
+              <div class="usr-card-tags">
+                <span class="usr-rol-badge" [ngClass]="rolBadgeClass(u.rol)">{{ labelRol(u.rol) }}</span>
+                <span class="usr-sede-tag">{{ labelSedes(u) }}</span>
+              </div>
+              @if (u.email) {
+                <span class="usr-card-email">{{ u.email }}</span>
+              }
+            </div>
+            <footer class="usr-card-foot">
+              <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
+              @if (u.activo !== false && !esUsuarioActual(u)) {
+                <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
+              }
+              @if (!esUsuarioActual(u)) {
+                <button type="button" class="danger mini" (click)="borrar(u)">Eliminar</button>
+              }
+            </footer>
+          </article>
+        }
+      </div>
+    }
+  }
 </section>

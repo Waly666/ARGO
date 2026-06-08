@@ -6,8 +6,8 @@
   padding: 0.55rem 5.5rem 0.55rem 0.85rem;
   margin-bottom: 0.5rem;
   border-radius: 10px;
-  border: 1px solid rgba(232, 121, 249, 0.45);
-  background: linear-gradient(90deg, rgba(232, 121, 249, 0.18), rgba(251, 113, 133, 0.12));
+  border: 1px solid rgba(45, 212, 191, 0.55);
+  background: linear-gradient(90deg, rgba(20, 184, 166, 0.22), rgba(59, 130, 246, 0.14));
   cursor: pointer;
   animation: inst-shell-pulse 2.2s ease-in-out infinite;
 }
@@ -19,7 +19,7 @@
   font-size: 0.86rem;
 
   strong {
-    color: #fce7f3;
+    color: #ccfbf1;
   }
 
   span {
@@ -35,7 +35,7 @@
 
 .inst-shell-btn {
   border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(162, 28, 175, 0.55);
+  background: linear-gradient(135deg, #0f766e, #2563eb);
   color: #fff;
   border-radius: 8px;
   padding: 0.3rem 0.65rem;
@@ -44,8 +44,8 @@
 }
 
 @keyframes inst-shell-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 113, 133, 0.2); }
-  50% { box-shadow: 0 0 0 5px rgba(251, 113, 133, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.28); }
+  50% { box-shadow: 0 0 0 5px rgba(45, 212, 191, 0); }
 }
 
 @import '../../shared/styles/head-alarm-uniform';

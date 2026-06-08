@@ -1,0 +1,36 @@
+@if (alertas().length > 0) {
+  <div class="head-comp-alerts">
+    @for (a of alertas(); track a.key) {
+      <div class="head-alarm-root">
+        <button
+          type="button"
+          class="head-alarm-close"
+          (click)="cerrar($event, a.key)"
+          aria-label="Cerrar aviso">
+          Cerrar <span aria-hidden="true">×</span>
+        </button>
+        <button
+          type="button"
+          class="head-alarm comp-alarm"
+          [ngClass]="toneClass(a.tipo)"
+          (click)="abrir(a, $event)"
+          [attr.title]="titulo(a)"
+          [attr.aria-label]="titulo(a)">
+          <span class="head-alarm-pulse" aria-hidden="true"></span>
+          <span class="head-alarm-icon" aria-hidden="true">
+            @if (a.tipo === 'ingreso') { ↓ }
+            @else if (a.tipo === 'egreso') { ↑ }
+            @else { FE }
+          </span>
+          <span class="head-alarm-text">
+            <span class="comp-tipo-chip">{{ etiquetaTipo(a.tipo) }}</span>
+            · {{ etiquetaRef(a) }}
+            @if (a.nombreCompleto) {
+              · {{ a.nombreCompleto }}
+            }
+          </span>
+        </button>
+      </div>
+    }
+  </div>
+}

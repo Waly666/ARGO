@@ -1,37 +1,36 @@
-<section class="catalog-page admin-list-page card" *ngIf="config() as cfg">
-  <header class="page-head">
-    <div>
+@if (config(); as cfg) {
+<section class="catalog-page rrhh-page admin-list-page card">
+  <header class="rrhh-head page-head">
+    <div class="rrhh-head-main">
+      <p class="breadcrumb"><a routerLink="/app/rrhh/inicio">RRHH</a> / Catálogos</p>
       <h1>Catálogos RRHH</h1>
       <p class="hint">Organización y seguridad social. Luego asigne estos datos en cada empleado.</p>
     </div>
-    <a routerLink="/app/rrhh/empleados" class="ghost link-btn">→ Empleados</a>
+    <div class="rrhh-badges head-actions">
+      <span class="rrhh-chip rrhh-chip--rose">{{ cfg.titulo }}</span>
+      <a routerLink="/app/rrhh/empleados" class="ghost link-btn mini">→ Empleados</a>
+    </div>
   </header>
 
   <nav class="catalog-tabs" aria-label="Tipo de catálogo">
     <div class="tab-grp">Organización</div>
-    <a
-      *ngFor="let t of tabsOrganizacion()"
-      class="tab"
-      [class.active]="tabActivo() === t.id"
-      [routerLink]="['/app/rrhh/catalogos', t.id]"
-      >{{ t.label }}</a
-    >
+    @for (t of tabsOrganizacion(); track t.id) {
+      <a class="tab" [class.active]="tabActivo() === t.id" [routerLink]="['/app/rrhh/catalogos', t.id]">{{ t.label }}</a>
+    }
     <div class="tab-grp">Seguridad social</div>
-    <a
-      *ngFor="let t of tabsSeguridad()"
-      class="tab"
-      [class.active]="tabActivo() === t.id"
-      [routerLink]="['/app/rrhh/catalogos', t.id]"
-      >{{ t.label }}</a
-    >
+    @for (t of tabsSeguridad(); track t.id) {
+      <a class="tab" [class.active]="tabActivo() === t.id" [routerLink]="['/app/rrhh/catalogos', t.id]">{{ t.label }}</a>
+    }
   </nav>
 
-  <div class="page-head" style="margin-top: 0">
-    <div>
-      <h2 style="margin: 0 0 4px; font-size: 1.15rem">{{ cfg.titulo }}</h2>
-      <p class="hint" *ngIf="cfg.hint">{{ cfg.hint }}</p>
+  <div class="rrhh-head page-head" style="margin-top: 0">
+    <div class="rrhh-head-main">
+      <h2>{{ cfg.titulo }}</h2>
+      @if (cfg.hint) {
+        <p class="hint">{{ cfg.hint }}</p>
+      }
     </div>
-    <button type="button" class="primary" (click)="nuevo()">Nuevo {{ cfg.titulo | lowercase }}</button>
+    <button type="button" class="primary" (click)="nuevo()">+ Nuevo</button>
   </div>
 
   <div class="toolbar">
@@ -49,7 +48,9 @@
     </div>
   </div>
 
-  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+  @if (msg(); as texto) {
+    <div class="rrhh-msg" [class.rrhh-msg--err]="msgError()" role="status">{{ texto }}</div>
+  }
 
   <div class="form-card card argo-form-shell" *ngIf="mostrarForm()">
     <h2>{{ editando() ? 'Editar' : 'Nuevo' }}</h2>
@@ -135,3 +136,4 @@
     <div class="empty cards-empty" *ngIf="rows().length === 0">Sin registros.</div>
   </div>
 </section>
+}

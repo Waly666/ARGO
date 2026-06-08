@@ -35,6 +35,7 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
 import { ymdLocal } from '../jornadas/jornada-calendario.util';
 
 type VistaAlumnos = VistaLista;
@@ -110,6 +111,7 @@ export class AlumnosListaComponent implements OnInit {
   private permisos = inject(PermisoService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmDialogService);
+  private comprobanteImpresion = inject(ComprobanteHoyImpresionService);
   readonly alarmas = inject(AlarmaService);
 
   /** general = menú Alumnos; jornadas = solo tipo Jornadas de Capacitación */
@@ -522,8 +524,88 @@ export class AlumnosListaComponent implements OnInit {
     const i = r.indicadores;
     return !!(
       i &&
-      (i.docsPendientes > 0 || i.saldosPendientes > 0 || this.tieneClasesCeaCreado(r))
+      (i.docsPendientes > 0 ||
+        i.saldosPendientes > 0 ||
+        this.tieneClasesCeaCreado(r) ||
+        this.tieneComprobanteIngresoHoy(r) ||
+        this.tieneComprobanteEgresoHoy(r) ||
+        this.tieneFacturaHoy(r))
     );
+  }
+
+  tieneComprobanteIngresoHoy(r: AlumnoListItem): boolean {
+    if (!this.alarmas.tiene('alarmas.alumnos.comprobante_ingreso')) return false;
+    return !!r.indicadores?.comprobanteIngresoHoy?.id;
+  }
+
+  tieneComprobanteEgresoHoy(r: AlumnoListItem): boolean {
+    if (!this.alarmas.tiene('alarmas.alumnos.comprobante_egreso')) return false;
+    return !!r.indicadores?.comprobanteEgresoHoy?.id;
+  }
+
+  tieneFacturaHoy(r: AlumnoListItem): boolean {
+    if (!this.alarmas.tiene('alarmas.alumnos.factura')) return false;
+    return !!r.indicadores?.facturaHoy?.id;
+  }
+
+  tituloComprobanteIngreso(r: AlumnoListItem): string {
+    const m = r.indicadores?.comprobanteIngresoHoy;
+    if (!m) return '';
+    const ref = m.numRecibo ? ` ${m.numRecibo}` : '';
+    return `Comprobante de ingreso hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+  }
+
+  etiquetaComprobanteIngreso(r: AlumnoListItem): string {
+    const m = r.indicadores?.comprobanteIngresoHoy;
+    return m?.numRecibo || 'Ingreso';
+  }
+
+  tituloComprobanteEgreso(r: AlumnoListItem): string {
+    const m = r.indicadores?.comprobanteEgresoHoy;
+    if (!m) return '';
+    const ref = m.numRecibo ? ` ${m.numRecibo}` : '';
+    return `Comprobante de egreso hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+  }
+
+  etiquetaComprobanteEgreso(r: AlumnoListItem): string {
+    const m = r.indicadores?.comprobanteEgresoHoy;
+    return m?.numRecibo || 'Egreso';
+  }
+
+  tituloFacturaHoy(r: AlumnoListItem): string {
+    const m = r.indicadores?.facturaHoy;
+    if (!m) return '';
+    const ref = m.numeroFactura ? ` ${m.numeroFactura}` : '';
+    return `Factura electrónica hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+  }
+
+  etiquetaFacturaHoy(r: AlumnoListItem): string {
+    const m = r.indicadores?.facturaHoy;
+    return m?.numeroFactura || 'Factura';
+  }
+
+  abrirComprobanteIngreso(r: AlumnoListItem, ev: Event) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const id = r.indicadores?.comprobanteIngresoHoy?.id;
+    if (!id) return;
+    this.comprobanteImpresion.abrirIngreso(id);
+  }
+
+  abrirComprobanteEgreso(r: AlumnoListItem, ev: Event) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const id = r.indicadores?.comprobanteEgresoHoy?.id;
+    if (!id) return;
+    this.comprobanteImpresion.abrirEgreso(id);
+  }
+
+  abrirFacturaHoy(r: AlumnoListItem, ev: Event) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const id = r.indicadores?.facturaHoy?.id;
+    if (!id) return;
+    this.comprobanteImpresion.abrirFactura(id);
   }
 
   puedeVerAlertaCea = computed(() =>

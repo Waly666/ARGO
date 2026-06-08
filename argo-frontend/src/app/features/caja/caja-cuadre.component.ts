@@ -59,6 +59,7 @@ export class CajaCuadreComponent implements OnInit {
   tiposPagoCat = signal<Record<string, unknown>[]>([]);
   loading = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   saldoInicialApertura = signal(0);
   obsApertura = signal('');
@@ -198,13 +199,13 @@ export class CajaCuadreComponent implements OnInit {
       next: () => {
         this.mostrarApertura.set(false);
         this.loading.set(false);
-        this.msg.set('Caja abierta');
+        this.inform('Caja abierta');
         void this.cajaEstado.refrescar();
         this.refrescar();
       },
       error: (e) => {
         this.loading.set(false);
-        this.msg.set(e?.error?.message || 'No se pudo abrir la caja');
+        this.inform(e?.error?.message || 'No se pudo abrir la caja');
       },
     });
   }
@@ -218,7 +219,7 @@ export class CajaCuadreComponent implements OnInit {
     if (!id) return;
     const contado = this.arqueoTotal();
     if (!(contado > 0)) {
-      this.msg.set('Realice el arqueo de efectivo (billetes y monedas) antes de cerrar');
+      this.inform('Realice el arqueo de efectivo (billetes y monedas) antes de cerrar');
       return;
     }
     if (this.hayDescuadreCierre() && !this.isAdmin()) {
@@ -284,11 +285,11 @@ export class CajaCuadreComponent implements OnInit {
             this.authError.set(null);
             this.loading.set(false);
             if (r.descuadre) {
-              this.msg.set(
+              this.inform(
                 `Caja cerrada con descuadre de ${r.descuadre.diferencia?.toLocaleString('es-CO')} COP. Tiene el mes para cuadrarlo antes de la nómina.`,
               );
             } else {
-              this.msg.set('Caja cerrada correctamente');
+              this.inform('Caja cerrada correctamente');
             }
             this.cargarHistorial();
             void this.cajaEstado.refrescar();
@@ -318,14 +319,14 @@ export class CajaCuadreComponent implements OnInit {
             this.authError.set(null);
             this.refrescar();
             this.cargarHistorial();
-            this.msg.set('La caja ya fue cerrada. Actualizamos el estado.');
+            this.inform('La caja ya fue cerrada. Actualizamos el estado.');
             return;
           }
 
           if (this.mostrarAuthCierre()) {
             this.authError.set(errMsg);
           } else {
-            this.msg.set(errMsg);
+            this.inform(errMsg);
           }
         },
       });
@@ -432,5 +433,23 @@ export class CajaCuadreComponent implements OnInit {
     if (t.includes('transf')) return { tone: 'blue', icon: '🏦' };
     if (t.includes('tarj')) return { tone: 'purple', icon: '💳' };
     return { tone: 'cyan', icon: '◎' };
+  }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('realice');
+    }
+    this.msgError.set(err);
   }
 }

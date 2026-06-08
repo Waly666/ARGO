@@ -55,8 +55,9 @@ export class FormModalComponent implements OnChanges {
   }
 
   layerTopPx(): number {
+    if (this.anchorTopPx != null) return this.anchorTopPx;
     if (this.tall) return 36;
-    return this.anchorTopPx ?? 168;
+    return 168;
   }
 
   /** Recalcula altura máxima del panel según espacio disponible bajo el ancla. */

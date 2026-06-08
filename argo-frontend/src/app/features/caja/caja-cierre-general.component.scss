@@ -1,3 +1,10 @@
+@use './caja-shared' as *;
+
+.admin-caja-page {
+  max-width: none;
+  width: 100%;
+}
+
 .card-head-row {
   display: flex;
   justify-content: space-between;

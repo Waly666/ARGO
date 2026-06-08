@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { PermisoService } from '../../core/services/permiso.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import {
   ClaseProgramadaCeaDto,
   ProgramaCeaDto,
@@ -18,6 +19,7 @@ import {
   diasSemana,
   esFinDeSemana,
   esFechaHoy,
+  esFechaNoFutura,
   finSemana,
   fmtDiaSemanaCorto,
   fmtFechaCalendario,
@@ -26,6 +28,7 @@ import {
   horasSlots,
   inicioSemana,
   layoutHorarioHHmm,
+  layoutsCalendarioDiaHHmm,
   rangoVisibleMes,
   ymdCalendario,
   ymdLocal,
@@ -51,7 +54,7 @@ const CAL_MAX_EVENTOS_DIA = 4;
 @Component({
   selector: 'argo-programacion-cea-clases-hoy',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProgramacionCeaClasesComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ProgramacionCeaClasesComponent],
   templateUrl: './programacion-cea-clases-hoy.component.html',
   styleUrls: ['./programacion-cea-clases-hoy.component.scss'],
 })
@@ -60,6 +63,7 @@ export class ProgramacionCeaClasesHoyComponent implements OnInit, OnDestroy {
 
   private svc = inject(ProgramacionCeaService);
   private permisos = inject(PermisoService);
+  private confirm = inject(ConfirmDialogService);
   private router = inject(Router);
 
   vista = signal<VistaHoy>('calendario');
@@ -114,6 +118,12 @@ export class ProgramacionCeaClasesHoyComponent implements OnInit, OnDestroy {
   );
   puedeOperar = computed(
     () => this.permisos.tiene(['programacion_cea.operar', 'programacion_cea.gestionar']),
+  );
+  puedeCerrarRetroactivo = computed(() =>
+    this.permisos.tiene(['caja.turno', 'caja.admin', 'programacion_cea.gestionar', 'programacion_cea.operar']),
+  );
+  puedeAbrirClase = computed(
+    () => this.puedeGestionar() || this.puedeOperar() || this.puedeCerrarRetroactivo(),
   );
 
   filtradas = computed(() => this.filtrarClases(this.clases()));
@@ -354,15 +364,24 @@ export class ProgramacionCeaClasesHoyComponent implements OnInit, OnDestroy {
     return layoutHorarioHHmm(c.horaDesde, c.horaHasta);
   }
 
+  layoutsCalendarioDia(clases: ClaseProgramadaCeaDto[]) {
+    return layoutsCalendarioDiaHHmm(
+      clases.map((c) => ({ id: c._id!, horaDesde: c.horaDesde, horaHasta: c.horaHasta })),
+    );
+  }
+
   /** Clic en calendario: abre editor o panel operativo según permisos. */
   onClaseClick(c: ClaseProgramadaCeaDto, ev?: Event): void {
     ev?.stopPropagation();
-    if (this.puedeGestionar() || this.puedeOperar()) {
+    if (this.puedeAbrirClase()) {
       this.claseEditor?.abrirClaseDesdeHost(c);
     }
   }
 
-  onClaseEditada(_c: ClaseProgramadaCeaDto): void {
+  onClaseEditada(c: ClaseProgramadaCeaDto): void {
+    if (c.estado === 'FINALIZADO') {
+      this.msg.set('Clase cerrada con horario programado — horas registradas');
+    }
     this.cargarTodo(true);
   }
 
@@ -408,6 +427,44 @@ export class ProgramacionCeaClasesHoyComponent implements OnInit, OnDestroy {
       error: (e) => {
         this.finalizandoId.set(null);
         this.msg.set(e?.error?.message || 'No se pudo finalizar la clase.');
+      },
+    });
+  }
+
+  clasePuedeCerrarRetroactivo(c: ClaseProgramadaCeaDto): boolean {
+    if (!c?.fechaClase) return false;
+    const e = String(c.estado || '').toUpperCase();
+    if (e === 'FINALIZADO' || e === 'CANCELADA') return false;
+    if (!esFechaNoFutura(c.fechaClase)) return false;
+    if (!String(c.horaDesde || '').trim()) return false;
+    if (!String(c.horaHasta || '').trim() && !(Number(c.duracionHoras) > 0)) return false;
+    if (e === 'EN PROCESO' && esFechaHoy(c.fechaClase)) return false;
+    return true;
+  }
+
+  async cerrarClaseRetroactiva(c: ClaseProgramadaCeaDto, ev?: Event): Promise<void> {
+    ev?.stopPropagation();
+    if (!c._id || !this.puedeCerrarRetroactivo() || !this.clasePuedeCerrarRetroactivo(c)) return;
+    const hasta = c.horaHasta || (Number(c.duracionHoras) > 0 ? '(según duración)' : '—');
+    const ok = await this.confirm.open({
+      title: 'Cerrar clase con horario programado',
+      message: `Registrar inicio ${c.horaDesde} y fin ${hasta} del día programado. Los inscritos quedarán como ASISTIÓ.`,
+      confirmLabel: 'Cerrar clase',
+      variant: 'primary',
+    });
+    if (!ok) return;
+    this.finalizandoId.set(c._id);
+    this.svc.finalizarClaseRetroactiva(c._id).subscribe({
+      next: (doc) => {
+        this.finalizandoId.set(null);
+        this.msg.set(null);
+        this.clases.update((rows) => rows.map((x) => (x._id === doc._id ? doc : x)));
+        this.clasesSemana.update((rows) => rows.map((x) => (x._id === doc._id ? doc : x)));
+        this.clasesMes.update((rows) => rows.map((x) => (x._id === doc._id ? doc : x)));
+      },
+      error: (e) => {
+        this.finalizandoId.set(null);
+        this.msg.set(e?.error?.message || 'No se pudo cerrar la clase.');
       },
     });
   }

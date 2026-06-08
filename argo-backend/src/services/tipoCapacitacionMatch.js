@@ -62,7 +62,7 @@ function resolverIdTipCapCanonico(idTipCap, indice) {
     const label = String(r.tipoCap || r.descripcion || r.nombre || '').trim();
     if (!label) continue;
     const nl = indice.normalizarTextoCap(label);
-    if (norm === nl || norm.includes(nl) || nl.includes(norm)) {
+    if (norm === nl) {
       const idRaw = r.idTipCap ?? r.id;
       const idStr = String(idRaw).trim();
       return idStr.match(/^(\d+)/) ? idStr.match(/^(\d+)/)[1] : idStr;

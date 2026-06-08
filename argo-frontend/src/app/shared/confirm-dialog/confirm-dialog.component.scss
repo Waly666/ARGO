@@ -6,14 +6,14 @@
   --cd-dot: rgba(239, 68, 68, 0.35);
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 10100;
   pointer-events: none;
-  display: contents;
 }
 
 .cd-backdrop {
   position: fixed;
   inset: 0;
+  z-index: 1;
   background: rgba(3, 8, 26, 0.72);
   backdrop-filter: blur(4px);
   pointer-events: auto;
@@ -23,6 +23,7 @@
   position: fixed;
   left: 50%;
   top: 50%;
+  z-index: 2;
   transform: translate(-50%, -50%);
   width: min(420px, calc(100vw - 32px));
   background: #ffffff;
@@ -129,6 +130,37 @@
       flex: 1;
       max-width: 220px;
     }
+  }
+}
+
+.cd-input-wrap {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 18px;
+  text-align: left;
+}
+
+.cd-input-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.cd-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #f8fafc;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cd-accent);
+    box-shadow: 0 0 0 3px var(--cd-accent-glow);
+    background: #fff;
   }
 }
 

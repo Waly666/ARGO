@@ -46,6 +46,7 @@ export class ConfigNominaComponent implements OnInit {
   saving = signal(false);
   loading = signal(true);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   ngOnInit(): void {
     this.cargar();
@@ -61,6 +62,7 @@ export class ConfigNominaComponent implements OnInit {
       },
       error: () => {
         this.loading.set(false);
+        this.msgError.set(true);
         this.msg.set('No se pudo cargar la configuración de nómina');
       },
     });
@@ -161,6 +163,19 @@ export class ConfigNominaComponent implements OnInit {
     };
   }
 
+  formatCop(n?: number): string {
+    if (n == null || Number.isNaN(n)) return '—';
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(n);
+  }
+
+  fuenteLabel(): string {
+    return this.meta().fuente === 'base_datos' ? 'base de datos' : 'valores por defecto';
+  }
+
   patch(k: keyof FormNomina, v: unknown) {
     this.form.update((f) => ({ ...f, [k]: v }));
   }
@@ -236,15 +251,18 @@ export class ConfigNominaComponent implements OnInit {
   guardar() {
     this.saving.set(true);
     this.msg.set(null);
+    this.msgError.set(false);
     this.cfgSvc.guardarNomina(this.toApi(this.form())).subscribe({
       next: (c) => {
         this.form.set(this.toForm(c));
         this.meta.set({ fuente: 'base_datos', actualizado: new Date().toISOString() });
         this.saving.set(false);
+        this.msgError.set(false);
         this.msg.set('Parámetros de nómina guardados. Regeneré y liquide períodos abiertos si aplica.');
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error al guardar');
       },
     });
@@ -260,14 +278,18 @@ export class ConfigNominaComponent implements OnInit {
     });
     if (!ok) return;
     this.saving.set(true);
+    this.msg.set(null);
+    this.msgError.set(false);
     this.cfgSvc.restaurarNominaDefaults().subscribe({
       next: (c) => {
         this.form.set(this.toForm(c));
         this.saving.set(false);
+        this.msgError.set(false);
         this.msg.set('Valores por defecto restaurados.');
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error');
       },
     });

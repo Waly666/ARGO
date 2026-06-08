@@ -110,6 +110,21 @@ function tieneAlgunaAlarma(alarmas, claves) {
   return list.some((k) => tieneAlarma(alarmas, k));
 }
 
+/** Incorpora alarmas nuevas del catálogo a roles del sistema ya guardados en BD. */
+async function fusionarAlarmasSistema(codigo, defAlarmas) {
+  if (!defAlarmas?.length || defAlarmas.includes('*')) return;
+  const doc = await RolApp.findOne({ codigo, esSistema: true }).lean();
+  if (!doc?.codigo) return;
+  const actuales = doc.alarmas?.includes('*') ? ['*'] : [...(doc.alarmas || [])];
+  if (actuales.includes('*')) return;
+
+  const esperadas = clavesAlarmasValidas(defAlarmas);
+  const faltantes = esperadas.filter((k) => !actuales.includes(k));
+  if (!faltantes.length) return;
+
+  await RolApp.updateOne({ codigo }, { $set: { alarmas: [...actuales, ...faltantes] } });
+}
+
 async function initRolesSistema(opts = {}) {
   const force = opts.force === true;
   const codigoForzado = opts.codigo ? normalizarRol(opts.codigo) : null;
@@ -137,6 +152,7 @@ async function initRolesSistema(opts = {}) {
       { $setOnInsert: payload },
       { upsert: true },
     );
+    await fusionarAlarmasSistema(codigo, def.alarmas || []);
   }
   limpiarCache();
 }

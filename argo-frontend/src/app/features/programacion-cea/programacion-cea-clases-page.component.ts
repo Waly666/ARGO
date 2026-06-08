@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import {
   InscribirClaseCeaCtx,
@@ -14,7 +14,7 @@ import { ProgramacionCeaClasesComponent, type ModoClasesCea } from './programaci
 @Component({
   selector: 'argo-programacion-cea-clases-page',
   standalone: true,
-  imports: [CommonModule, ProgramacionCeaClasesComponent],
+  imports: [CommonModule, RouterLink, ProgramacionCeaClasesComponent],
   templateUrl: './programacion-cea-clases-page.component.html',
   styleUrls: ['./programacion-cea-clases-page.component.scss'],
 })

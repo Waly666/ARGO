@@ -179,4 +179,5 @@ module.exports = {
   slotPlantillaPorTipo,
   idPlantillaPorTipo,
   orientacionPorTipo,
+  etiquetaIdTipCap,
 };

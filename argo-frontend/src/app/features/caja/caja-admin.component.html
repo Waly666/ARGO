@@ -9,7 +9,7 @@
     </div>
   </header>
 
-  <p class="flash" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <section class="panel">
     <div class="panel-head-row">

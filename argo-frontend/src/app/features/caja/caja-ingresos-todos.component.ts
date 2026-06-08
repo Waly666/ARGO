@@ -47,6 +47,7 @@ export class CajaIngresosTodosComponent implements OnInit {
   totalValor = signal(0);
   loading = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   q = signal('');
   numDoc = signal('');
@@ -91,7 +92,7 @@ export class CajaIngresosTodosComponent implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.msg.set(null);
+    this.inform(null);
     this.fetchPaginas(0, []);
   }
 
@@ -123,7 +124,7 @@ export class CajaIngresosTodosComponent implements OnInit {
         },
         error: (e) => {
           this.loading.set(false);
-          this.msg.set(e?.error?.message || 'Error cargando ingresos.');
+          this.inform(e?.error?.message || 'Error cargando ingresos.');
         },
       });
   }
@@ -177,7 +178,7 @@ export class CajaIngresosTodosComponent implements OnInit {
   imprimirRecibo(ing: { _id?: unknown }): void {
     const id = idIngreso(ing);
     if (!id) return;
-    this.reciboSvc.abrirHtml(id, (m) => this.msg.set(m));
+    this.reciboSvc.abrirHtml(id, (m) => this.inform(m));
   }
 
   requiereAuthSupervisor(ing: { idSesion?: number | null }): boolean {
@@ -214,7 +215,7 @@ export class CajaIngresosTodosComponent implements OnInit {
     const u = this.authAdminUser().trim();
     const p = this.authAdminPass();
     if (!u || !p) {
-      this.msg.set('Ingrese usuario y contraseña de un administrador');
+      this.inform('Ingrese usuario y contraseña de un administrador');
       return;
     }
     this.ejecutarAnularIngreso(ing, { autorizadoUsername: u, autorizadoPassword: p });
@@ -236,15 +237,36 @@ export class CajaIngresosTodosComponent implements OnInit {
     this.ingSvc.eliminar(id, auth).subscribe({
       next: () => {
         this.cancelarAnularSupervisor();
-        this.msg.set('Ingreso anulado');
+        this.inform('Ingreso anulado');
         this.cargar();
       },
       error: (e) => {
         if (e?.error?.code === 'SUPERVISOR_AUTH_REQUIRED') {
           this.mostrarAuthAnular.set(true);
         }
-        this.msg.set(e?.error?.message || 'No se pudo anular');
+        this.inform(e?.error?.message || 'No se pudo anular');
       },
     });
   }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }

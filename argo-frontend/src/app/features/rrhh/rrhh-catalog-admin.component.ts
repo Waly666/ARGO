@@ -34,6 +34,7 @@ export class RrhhCatalogAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
   busqueda = signal('');
   vista = signal<VistaLista>(readVistaLista('argo-rrhh-catalog-vista'));
   editando = signal<Record<string, unknown> | null>(null);
@@ -76,7 +77,7 @@ export class RrhhCatalogAdminComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
-        this.msg.set(e?.error?.message || 'Error al cargar');
+        this.inform(e?.error?.message || 'Error al cargar', true);
       },
     });
   }
@@ -102,7 +103,7 @@ export class RrhhCatalogAdminComponent implements OnInit {
     this.form.set(f);
     this.editando.set(null);
     this.mostrarForm.set(true);
-    this.msg.set(null);
+    this.inform(null);
   }
 
   editar(row: Record<string, unknown>) {
@@ -114,7 +115,7 @@ export class RrhhCatalogAdminComponent implements OnInit {
     this.form.set(f);
     this.editando.set(row);
     this.mostrarForm.set(true);
-    this.msg.set(null);
+    this.inform(null);
   }
 
   patch(key: string, value: unknown) {
@@ -126,7 +127,7 @@ export class RrhhCatalogAdminComponent implements OnInit {
     const f = this.form();
     for (const field of cfg.fields) {
       if (field.required && !String(f[field.key] ?? '').trim()) {
-        this.msg.set(`${field.label} es obligatorio.`);
+        this.inform(`${field.label} es obligatorio.`, true);
         return;
       }
     }
@@ -141,11 +142,11 @@ export class RrhhCatalogAdminComponent implements OnInit {
         this.saving.set(false);
         this.mostrarForm.set(false);
         this.cargar();
-        this.msg.set(ed ? 'Actualizado.' : 'Creado.');
+        this.inform(ed ? 'Actualizado.' : 'Creado.');
       },
       error: (e) => {
         this.saving.set(false);
-        this.msg.set(e?.error?.message || 'Error al guardar');
+        this.inform(e?.error?.message || 'Error al guardar', true);
       },
     });
   }
@@ -163,15 +164,20 @@ export class RrhhCatalogAdminComponent implements OnInit {
     this.svc.eliminar(cfg.apiPath, row[cfg.idKey] as number).subscribe({
       next: () => {
         this.cargar();
-        this.msg.set('Eliminado.');
+        this.inform('Eliminado.');
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo eliminar'),
+      error: (e) => this.inform(e?.error?.message || 'No se pudo eliminar', true),
     });
   }
 
   cancelar() {
     this.mostrarForm.set(false);
     this.editando.set(null);
+  }
+
+  private inform(text: string | null, isErr = false): void {
+    this.msg.set(text);
+    this.msgError.set(isErr);
   }
 
   cell(row: Record<string, unknown>, key: string): string {

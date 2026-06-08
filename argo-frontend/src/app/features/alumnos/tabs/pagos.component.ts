@@ -2,10 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
+import { CertificadoService } from '../../../core/services/certificado.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
 import { CatalogoService } from '../../../core/services/catalogo.service';
 import { IngresoService } from '../../../core/services/ingreso.service';
@@ -18,6 +19,16 @@ import {
 } from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { PermisoService } from '../../../core/services/permiso.service';
 import { FacturaEmitirModalComponent } from '../../facturacion/factura-emitir-modal.component';
+import { ComprobanteHoyAlertService } from '../../../core/services/comprobante-hoy-alert.service';
+
+interface ItemPagoSel {
+  idLiquidacion: string;
+  descripcion: string;
+  saldo: number;
+  valor: number;
+  /** Texto en edición; evita que el input pierda el foco al digitar. */
+  valorText?: string;
+}
 
 const TIPOS_PAGO_DEF = [
   { idTipoPago: '1', codigo: 'EF', descripcion: 'Efectivo' },
@@ -40,10 +51,13 @@ export class PagosComponent {
   auth = inject(AuthService);
   permisoSvc = inject(PermisoService);
   private router = inject(Router);
+  private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
+  private route = inject(ActivatedRoute);
   private catSvc = inject(CatalogoService);
   private liqSvc = inject(LiquidacionService);
   private ingSvc = inject(IngresoService);
   private reciboSvc = inject(ReciboService);
+  private certSvc = inject(CertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
   private cajaAlert = inject(CajaAperturaAlertService);
 
@@ -53,8 +67,7 @@ export class PagosComponent {
   liquidacion = signal<LiquidacionResumen>({ items: [], totales: { valor: 0, abonado: 0, saldo: 0 } });
   pagos = signal<any[]>([]);
 
-  idLiquidacion = signal<string>('');
-  valor = signal<number>(0);
+  itemsPago = signal<ItemPagoSel[]>([]);
   idTipoPago = signal<string>('');
   idCuentaBancaria = signal<string>('');
   numComprobante = signal<string>('');
@@ -65,6 +78,7 @@ export class PagosComponent {
   msg = signal<string | null>(null);
 
   mostrarFactura = signal(false);
+  ingresoDestacado = signal<string | null>(null);
 
   ingresoPendienteAnular = signal<any | null>(null);
   mostrarAuthAnular = signal(false);
@@ -83,12 +97,9 @@ export class PagosComponent {
   etiquetaSaldo = etiquetaSaldoCorta;
   tituloSaldoItem = tituloSaldoItem;
 
-  itemSel = computed(() => this.liquidacion().items.find((i) => i._id === this.idLiquidacion()));
+  totalPago = computed(() => this.itemsPago().reduce((a, i) => a + (Number(i.valor) || 0), 0));
 
-  saldoItemSel = computed(() => {
-    const it = this.itemSel();
-    return it ? this.num(it.saldo) : 0;
-  });
+  itemSeleccionado = (id: string) => this.itemsPago().some((x) => x.idLiquidacion === String(id));
 
   esEfectivo = computed(() => {
     const t = this.tipoPagoSel();
@@ -100,17 +111,13 @@ export class PagosComponent {
   requiereCuentaEmpresa = computed(() => !!this.idTipoPago() && !this.esEfectivo());
 
   opcionesItemsLiquidacion = computed<EnumBuscarOption[]>(() =>
-    this.itemsConSaldo().map((it) => ({
-      value: it._id,
-      label: this.descrItem(it),
-    })),
+    this.itemsConSaldo()
+      .filter((it) => !this.itemSeleccionado(String(it._id)))
+      .map((it) => ({
+        value: it._id,
+        label: this.descrItem(it),
+      })),
   );
-
-  textoItemLiquidacion = computed(() => {
-    const id = this.idLiquidacion();
-    const it = this.liquidacion().items.find((i) => String(i._id) === String(id));
-    return it ? this.descrItem(it) : '';
-  });
 
   opcionesTiposPago = computed<EnumBuscarOption[]>(() =>
     this.tiposPago().map((t) => ({
@@ -156,6 +163,25 @@ export class PagosComponent {
         this.pagos.set([]);
       }
     });
+
+    this.route.queryParamMap.subscribe((q) => {
+      const ing = q.get('ingreso')?.trim() || '';
+      this.ingresoDestacado.set(ing || null);
+    });
+  }
+
+  esIngresoDestacado(p: { _id?: unknown; id?: unknown }): boolean {
+    const id = idIngreso(p);
+    return !!id && id === this.ingresoDestacado();
+  }
+
+  private scrollIngresoDestacado() {
+    const id = this.ingresoDestacado();
+    if (!id) return;
+    setTimeout(() => {
+      const el = document.getElementById(`ingreso-row-${id}`);
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 120);
   }
 
   tipoPagoValor(t: Record<string, unknown>): string {
@@ -206,22 +232,99 @@ export class PagosComponent {
     return this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
   }
 
-  onItemLiquidacionChange(id: string) {
-    this.idLiquidacion.set(id);
-    if (!id) {
-      this.valor.set(0);
-      return;
-    }
+  agregarItem(id: string) {
+    if (!id) return;
     const it = this.liquidacion().items.find((i) => String(i._id) === String(id));
-    this.valor.set(it ? this.num(it.saldo) : 0);
+    if (!it) return;
+    const idLiq = String(it._id);
+    if (this.itemSeleccionado(idLiq)) return;
+    const saldo = this.num(it.saldo);
+    if (saldo <= 0.0001) return;
+    this.itemsPago.update((arr) => [
+      ...arr,
+      { idLiquidacion: idLiq, descripcion: it.descripcion || '(sin descripción)', saldo, valor: saldo },
+    ]);
+  }
+
+  trackItemPago(_index: number, it: ItemPagoSel): string {
+    return it.idLiquidacion;
+  }
+
+  valorItemInput(it: ItemPagoSel): string {
+    if (it.valorText != null) return it.valorText;
+    if (!(it.valor > 0)) return '';
+    return String(Math.round(it.valor));
+  }
+
+  quitarItem(idLiq: string) {
+    this.itemsPago.update((arr) => arr.filter((x) => x.idLiquidacion !== idLiq));
+  }
+
+  setValorItem(idLiq: string, val: unknown) {
+    const raw = String(val ?? '').replace(/[^\d]/g, '');
+    const n = raw === '' ? 0 : Number(raw);
+    this.itemsPago.update((arr) =>
+      arr.map((x) => {
+        if (x.idLiquidacion !== idLiq) return x;
+        const valor = raw === '' ? 0 : Math.max(0, Math.min(n, x.saldo));
+        return { ...x, valor, valorText: raw };
+      }),
+    );
+  }
+
+  blurValorItem(idLiq: string) {
+    this.itemsPago.update((arr) =>
+      arr.map((x) => {
+        if (x.idLiquidacion !== idLiq) return x;
+        const { valorText, ...rest } = x;
+        return rest;
+      }),
+    );
+  }
+
+  pagarSaldoCompleto(idLiq: string) {
+    this.itemsPago.update((arr) =>
+      arr.map((x) =>
+        x.idLiquidacion === idLiq ? { ...x, valor: x.saldo, valorText: undefined } : x,
+      ),
+    );
+  }
+
+  agregarTodosPendientes() {
+    for (const it of this.itemsConSaldo()) {
+      if (!this.itemSeleccionado(String(it._id))) {
+        this.agregarItem(String(it._id));
+      }
+    }
+  }
+
+  limpiarItemsPago() {
+    this.itemsPago.set([]);
+  }
+
+  seleccionarTipoPagoRapido(id: string) {
+    this.onTipoPagoChange(id);
+  }
+
+  tipoPagoActivo(id: string): boolean {
+    return this.idTipoPago() === id;
+  }
+
+  puedeRegistrar(): boolean {
+    return (
+      this.itemsPago().length > 0 &&
+      !!this.idTipoPago() &&
+      this.totalPago() > 0 &&
+      (!this.requiereCuentaEmpresa() || !!this.idCuentaBancaria())
+    );
   }
 
   onItemLiquidacionPick(opt: EnumBuscarOption): void {
-    this.onItemLiquidacionChange(String(opt.value));
+    this.agregarItem(String(opt.value));
   }
 
   onItemLiquidacionLimpiar(): void {
-    this.onItemLiquidacionChange('');
+    /* combo de tipo "agregar": no mantiene selección */
   }
 
   onTipoPagoPick(opt: EnumBuscarOption): void {
@@ -268,11 +371,18 @@ export class PagosComponent {
     this.liqSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {
         this.liquidacion.set(r);
-        const id = this.idLiquidacion();
-        if (id) {
-          const it = r.items.find((i) => String(i._id) === String(id));
-          if (it) this.valor.set(this.num(it.saldo));
-        }
+        // Sincroniza saldos/limpia ítems ya pagados de la selección pendiente.
+        this.itemsPago.update((arr) =>
+          arr
+            .map((sel) => {
+              const it = r.items.find((i) => String(i._id) === String(sel.idLiquidacion));
+              if (!it) return null;
+              const saldo = this.num(it.saldo);
+              if (saldo <= 0.0001) return null;
+              return { ...sel, saldo, valor: Math.min(sel.valor, saldo) };
+            })
+            .filter((x): x is ItemPagoSel => x !== null),
+        );
         this.store.touchLiquidacion();
       },
     });
@@ -281,8 +391,13 @@ export class PagosComponent {
         this.pagos.set(r || []);
         this.loading.set(false);
         this.store.touchLiquidacion();
+        this.scrollIngresoDestacado();
       },
-      error: () => this.loading.set(false),
+      error: (e) => {
+        this.pagos.set([]);
+        this.loading.set(false);
+        this.msg.set(e?.error?.message || 'No se pudo cargar el historial de pagos.');
+      },
     });
   }
 
@@ -293,13 +408,20 @@ export class PagosComponent {
       return;
     }
     if (!(await this.cajaAlert.ensureAbierta('registrar cobros del alumno'))) return;
-    if (!this.idLiquidacion()) {
-      this.msg.set('Selecciona un ítem de liquidación.');
+    const items = this.itemsPago();
+    if (!items.length) {
+      this.msg.set('Agregue al menos un ítem a pagar.');
       return;
     }
-    if (!this.valor() || this.valor() <= 0) {
-      this.msg.set('Valor del pago inválido.');
-      return;
+    for (const it of items) {
+      if (!(it.valor > 0)) {
+        this.msg.set(`Valor inválido en «${it.descripcion}».`);
+        return;
+      }
+      if (it.valor > it.saldo + 0.0001) {
+        this.msg.set(`El valor de «${it.descripcion}» excede su saldo.`);
+        return;
+      }
     }
     if (!this.idTipoPago()) {
       this.msg.set('Selecciona el tipo de pago.');
@@ -309,18 +431,12 @@ export class PagosComponent {
       this.msg.set('Selecciona la cuenta bancaria de la empresa donde ingresa el pago.');
       return;
     }
-    const it = this.itemSel();
-    if (it && this.valor() > this.num(it.saldo)) {
-      this.msg.set('El valor del pago excede el saldo del ítem.');
-      return;
-    }
     this.saving.set(true);
     this.msg.set(null);
     this.ingSvc
       .crear({
         numDoc: nd,
-        idLiquidacion: this.idLiquidacion(),
-        valor: this.valor(),
+        items: items.map((i) => ({ idLiquidacion: i.idLiquidacion, valor: i.valor })),
         idTipoPago: this.idTipoPago(),
         idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() || undefined : undefined,
         numComprobante: this.numComprobante() || undefined,
@@ -329,20 +445,34 @@ export class PagosComponent {
       .subscribe({
         next: (ing) => {
           this.saving.set(false);
-          this.valor.set(0);
-          this.idLiquidacion.set('');
+          this.itemsPago.set([]);
           this.idCuentaBancaria.set('');
           this.numComprobante.set('');
           this.observaciones.set('');
           this.recargar(nd);
-          const id = ing?._id;
+          const id = ing?._id || ing?.id;
+          const certs: { _id?: string; codigoCert?: string }[] =
+            ing?.certificadosAuto?.length
+              ? ing.certificadosAuto
+              : ing?.certificadoAuto
+                ? [ing.certificadoAuto]
+                : [];
           this.msg.set(
             id
-              ? `Pago registrado (${ing.numRecibo || ''}). Puede imprimir el recibo.`
+              ? certs.length
+                ? `Pago registrado (${ing.numRecibo || ''}). Se ${
+                    certs.length > 1 ? 'generaron' : 'generó'
+                  } ${certs.length} certificado(s) automáticamente.`
+                : `Pago registrado (${ing.numRecibo || ''}). Puede imprimir el recibo.`
               : 'Pago registrado correctamente.',
           );
           if (id) {
-            void this.preguntarImprimirRecibo(ing);
+            this.comprobanteAlertSvc.notificarDesdeIngreso({ ...ing, _id: id }, {
+              numDoc: nd,
+              nombreCompleto: this.store.nombreCompleto(),
+              alumnoId: this.store.alumno()?._id ? String(this.store.alumno()!._id) : undefined,
+            });
+            void this.flujoPostPago(ing, certs);
           }
         },
         error: (e) => {
@@ -369,6 +499,16 @@ export class PagosComponent {
     if (!w) this.msg.set('Permita ventanas emergentes para ver el comprobante.');
   }
 
+  private async flujoPostPago(
+    ing: { _id?: unknown; id?: unknown; numRecibo?: string },
+    certs: { _id?: string; codigoCert?: string }[] = [],
+  ) {
+    await this.preguntarImprimirRecibo(ing);
+    for (const cert of certs) {
+      if (cert?._id) await this.preguntarImprimirCertificado(cert);
+    }
+  }
+
   private async preguntarImprimirRecibo(ing: { _id?: unknown; id?: unknown; numRecibo?: string }) {
     const num = ing.numRecibo ? ` (${ing.numRecibo})` : '';
     const ok = await this.confirmSvc.open({
@@ -380,6 +520,20 @@ export class PagosComponent {
       cancelLabel: 'Ahora no',
     });
     if (ok) this.imprimirRecibo(ing);
+  }
+
+  private async preguntarImprimirCertificado(cert: { _id?: string; codigoCert?: string }) {
+    if (!cert?._id) return;
+    const cod = cert.codigoCert ? ` ${cert.codigoCert}` : '';
+    const ok = await this.confirmSvc.open({
+      title: 'Certificado generado',
+      message: `Se generó automáticamente el certificado${cod} de este programa. ¿Desea abrirlo para imprimirlo ahora?`,
+      variant: 'primary',
+      icon: 'print',
+      confirmLabel: 'Sí, abrir certificado',
+      cancelLabel: 'Ahora no',
+    });
+    if (ok) this.certSvc.abrirHtml(cert._id, (m) => this.msg.set(m));
   }
 
   async reversar(p: any): Promise<void> {
@@ -465,7 +619,15 @@ export class PagosComponent {
     return `${d} · saldo ${this.fmt(it.saldo)}`;
   }
 
-  conceptoPago(p: { idLiquidacion?: string; liquidacionDescr?: string }): string {
+  conceptoPago(p: {
+    idLiquidacion?: string;
+    liquidacionDescr?: string;
+    detalle?: { descripcion?: string }[];
+  }): string {
+    if (p.detalle?.length) {
+      const descrs = p.detalle.map((d) => d.descripcion).filter(Boolean);
+      if (descrs.length) return descrs.join(', ');
+    }
     if (p.liquidacionDescr) return p.liquidacionDescr;
     const it = this.liquidacion().items.find((i) => String(i._id) === String(p.idLiquidacion));
     return it?.descripcion || '—';

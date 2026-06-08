@@ -151,6 +151,37 @@ function calcularHoraHasta(horaDesde, duracionHoras) {
   return minutosAHora(start + Math.round(Number(duracionHoras) * 60));
 }
 
+function esFechaClaseNoFutura(fechaClase) {
+  const fc = parseFechaCalendario(fechaClase);
+  const hoy = hoyCalendario();
+  if (!fc || !hoy) return false;
+  return fc.getTime() <= hoy.getTime();
+}
+
+function fechaHoraProgramada(fechaClase, horaStr) {
+  const fd = parseFechaCalendario(fechaClase);
+  const mins = parseHoraMinutos(horaStr);
+  if (!fd || mins == null) return null;
+  const d = new Date(fd);
+  d.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+  return d;
+}
+
+function horarioProgramadoCompleto(clase) {
+  if (!clase?.fechaClase) return null;
+  const horaDesde = clase.horaDesde;
+  let horaHasta = clase.horaHasta;
+  if (!parseHoraMinutos(horaDesde)) return null;
+  if (!parseHoraMinutos(horaHasta)) {
+    horaHasta = calcularHoraHasta(horaDesde, clase.duracionHoras);
+  }
+  if (!parseHoraMinutos(horaHasta)) return null;
+  const horaInicio = fechaHoraProgramada(clase.fechaClase, horaDesde);
+  const horaFin = fechaHoraProgramada(clase.fechaClase, horaHasta);
+  if (!horaInicio || !horaFin || horaFin <= horaInicio) return null;
+  return { horaInicio, horaFin, horaHasta };
+}
+
 function horasEntreHoras(horaDesde, horaHasta) {
   const desde = parseHoraMinutos(horaDesde);
   const hasta = parseHoraMinutos(horaHasta);
@@ -835,6 +866,44 @@ async function finalizarClase(id, req) {
   return { doc: await dtoClase(clase) };
 }
 
+/**
+ * Cierra una clase no finalizada usando el horario programado (fechaClase + horaDesde/horaHasta).
+ * Para admin/cajeros cuando el instructor no inició o finalizó la clase.
+ */
+async function finalizarClaseRetroactiva(id, req) {
+  const clase = await ClaseProgramadaCea.findById(id);
+  if (!clase) return { error: 'Clase no encontrada', status: 404 };
+  if (clase.estado === 'FINALIZADO') return { doc: await dtoClase(clase) };
+  if (clase.estado === 'CANCELADA') return { error: 'La clase está cancelada', status: 409 };
+
+  if (!esFechaClaseNoFutura(clase.fechaClase)) {
+    return { error: 'Solo puede cerrar clases de hoy o de fechas anteriores (no futuras).', status: 409 };
+  }
+
+  const horario = horarioProgramadoCompleto(clase);
+  if (!horario) {
+    return {
+      error: 'La clase debe tener fecha y horario programados (desde y hasta, o duración) para cerrarla.',
+      status: 409,
+    };
+  }
+
+  clase.horaInicio = horario.horaInicio;
+  clase.horaFin = horario.horaFin;
+  if (!clase.horaHasta) clase.horaHasta = horario.horaHasta;
+  clase.duracionSegundos = Math.max(0, Math.round((clase.horaFin - clase.horaInicio) / 1000));
+  clase.estado = 'FINALIZADO';
+  clase.userChangeRecord = req.user?.username || 'sistema';
+  await clase.save();
+
+  await InscripcionClaseCea.updateMany(
+    { idClase: clase._id, estado: { $in: ['INSCRITO', 'EN_CLASE'] } },
+    { $set: { estado: 'ASISTIO' } },
+  );
+
+  return { doc: await dtoClase(clase) };
+}
+
 function tipoHorasDesdeClase(tipoClase) {
   if (tipoClase === 'teoria') return 'teoria';
   if (tipoClase === 'taller') return 'taller';
@@ -1166,6 +1235,7 @@ module.exports = {
   verificarConflictos,
   iniciarClase,
   finalizarClase,
+  finalizarClaseRetroactiva,
   listarInscripciones,
   inscribirAlumno,
   inscribirAlumnoInterno,

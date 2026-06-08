@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, QueryList, ViewChildren, inject, signal } from '@angular/core';
+import { Component, OnInit, QueryList, ViewChildren, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -17,8 +17,10 @@ import {
   PlantillaCertificado,
   PlantillaPorTipoSlot,
   QR_POSICIONES_CERT,
+  TipoCapacitacionOpcion,
 } from '../../core/services/config-certificado.service';
 import { CertificadoLayoutEditorComponent } from './certificado-layout-editor.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'argo-config-certificados',
@@ -29,6 +31,7 @@ import { CertificadoLayoutEditorComponent } from './certificado-layout-editor.co
 })
 export class ConfigCertificadosComponent implements OnInit {
   private cfgSvc = inject(ConfigCertificadoService);
+  private confirm = inject(ConfirmDialogService);
 
   @ViewChildren(CertificadoLayoutEditorComponent)
   private layoutEditors?: QueryList<CertificadoLayoutEditorComponent>;
@@ -49,20 +52,67 @@ export class ConfigCertificadosComponent implements OnInit {
     diasAvisoCertificadoVencido: 3,
   });
   plantillas = signal<PlantillaCertificado[]>([]);
+  tiposCapacitacion = signal<TipoCapacitacionOpcion[]>([]);
   saving = signal(false);
+  loading = signal(true);
   msg = signal<string | null>(null);
+  msgError = signal(false);
   subiendo = signal<TipoCertificadoId | null>(null);
+
+  plantillasAsignadas = computed(() => {
+    const ppt = this.form().plantillaPorTipo || {};
+    return Object.values(ppt).filter((s) => s?.id).length;
+  });
+
+  /** Formatos que se pueden certificar automáticamente al pagar (jornada se certifica por asistencia). */
+  tiposAutoCert = [
+    ...TIPOS_CERTIFICADO_PRINCIPALES.filter((t) => t.id !== 'jornada_capacitacion'),
+    { id: 'mercancias_peligrosas' as TipoCertificadoId, label: 'Mercancías peligrosas' },
+  ];
 
   ngOnInit(): void {
     this.cfgSvc.obtener().subscribe({
-      next: (c) =>
+      next: (c) => {
         this.form.set({
           ...c,
           plantillaPorTipo: { ...(c.plantillaPorTipo || {}) },
           layoutPorTipo: { ...(c.layoutPorTipo || {}) },
-        }),
+          autoCertificadoPorTipo: { ...(c.autoCertificadoPorTipo || {}) },
+          autoCertificadoTiposCapExcluidos: [...(c.autoCertificadoTiposCapExcluidos || [])],
+        });
+        this.loading.set(false);
+      },
+      error: (e) => {
+        this.loading.set(false);
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Error cargando configuración.');
+      },
     });
     this.cargarPlantillas();
+    this.cfgSvc.listarTiposCapacitacion().subscribe({
+      next: (r) => this.tiposCapacitacion.set(r || []),
+    });
+  }
+
+  autoActivo(tipo: TipoCertificadoId): boolean {
+    return this.form().autoCertificadoPorTipo?.[tipo] === true;
+  }
+
+  toggleAuto(tipo: TipoCertificadoId, activo: boolean) {
+    const map = { ...(this.form().autoCertificadoPorTipo || {}) };
+    map[tipo] = activo;
+    this.patch('autoCertificadoPorTipo', map);
+  }
+
+  tipoCapExcluido(idTipCap: string): boolean {
+    return (this.form().autoCertificadoTiposCapExcluidos || []).includes(idTipCap);
+  }
+
+  toggleTipoCapExcluido(idTipCap: string, excluir: boolean) {
+    const set = new Set(this.form().autoCertificadoTiposCapExcluidos || []);
+    if (excluir) set.add(idTipCap);
+    else set.delete(idTipCap);
+    this.patch('autoCertificadoTiposCapExcluidos', [...set]);
   }
 
   cargarPlantillas() {
@@ -136,6 +186,7 @@ export class ConfigCertificadosComponent implements OnInit {
     const slot = this.slotTipo(tipo);
     this.subiendo.set(tipo);
     this.msg.set(null);
+    this.msgError.set(false);
 
     const existente = this.plantillaDoc(slot.id);
     const nombre = `${this.labelTipo(tipo)} (${this.labelOrientacion(slot.orientacion)})`;
@@ -160,6 +211,7 @@ export class ConfigCertificadosComponent implements OnInit {
       },
       error: (e) => {
         this.subiendo.set(null);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error subiendo formato.');
       },
     });
@@ -173,23 +225,37 @@ export class ConfigCertificadosComponent implements OnInit {
           ...f,
           plantillaPorTipo: { ...(c.plantillaPorTipo || {}) },
         }));
+        this.msgError.set(false);
         this.msg.set(`Formato «${this.labelTipo(tipo)}» guardado. Ajuste el paso 2 si hace falta y pulse Guardar.`);
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Formato subido pero no se pudo guardar en la configuración.'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Formato subido pero no se pudo guardar en la configuración.');
+      },
     });
   }
 
-  quitarFormato(tipo: TipoCertificadoId) {
+  async quitarFormato(tipo: TipoCertificadoId) {
     const slot = this.slotTipo(tipo);
     if (!slot.id) return;
-    if (!confirm(`¿Quitar el formato de «${this.labelTipo(tipo)}»?`)) return;
+    const ok = await this.confirm.open({
+      title: 'Quitar formato',
+      message: `¿Quitar el formato de «${this.labelTipo(tipo)}»?`,
+      confirmLabel: 'Quitar',
+      variant: 'danger',
+    });
+    if (!ok) return;
     this.cfgSvc.eliminarPlantilla(slot.id).subscribe({
       next: () => {
         this.patchSlot(tipo, { id: null });
         this.cargarPlantillas();
+        this.msgError.set(false);
         this.msg.set('Formato quitado. Guarde la configuración.');
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error.'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Error.');
+      },
     });
   }
 
@@ -213,6 +279,7 @@ export class ConfigCertificadosComponent implements OnInit {
   guardar() {
     this.saving.set(true);
     this.msg.set(null);
+    this.msgError.set(false);
     const payload = { ...this.form(), layoutPorTipo: this.layoutParaGuardar() };
     this.patch('layoutPorTipo', payload.layoutPorTipo);
     this.cfgSvc.guardar(payload).subscribe({
@@ -223,10 +290,12 @@ export class ConfigCertificadosComponent implements OnInit {
           layoutPorTipo: { ...(c.layoutPorTipo || {}) },
         });
         this.saving.set(false);
+        this.msgError.set(false);
         this.msg.set('Configuración guardada.');
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error al guardar.');
       },
     });
@@ -256,9 +325,13 @@ export class ConfigCertificadosComponent implements OnInit {
           plantillaPorTipo: { ...(c.plantillaPorTipo || {}) },
           layoutPorTipo: { ...(c.layoutPorTipo || {}) },
         });
+        this.msgError.set(false);
         this.msg.set('Firma actualizada.');
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error subiendo firma.'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Error subiendo firma.');
+      },
     });
   }
 

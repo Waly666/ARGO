@@ -32,8 +32,9 @@ export class ConfigRequisitosDocumentosVehiculosComponent implements OnInit {
   diasAvisoVencimiento = signal(30);
 
   saving = signal(false);
+  loading = signal(true);
   msg = signal<string | null>(null);
-  err = signal(false);
+  msgError = signal(false);
 
   tiposActivos = computed(() => this.tiposDocumento().filter((t) => t.activo !== false));
 
@@ -50,8 +51,14 @@ export class ConfigRequisitosDocumentosVehiculosComponent implements OnInit {
     });
 
     this.cfgSvc.obtener().subscribe({
-      next: (c) => this.applyConfig(c),
-      error: () => this.setMsg('No se pudo cargar la configuración', true),
+      next: (c) => {
+        this.applyConfig(c);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.setMsg('No se pudo cargar la configuración', true);
+      },
     });
   }
 
@@ -175,6 +182,6 @@ export class ConfigRequisitosDocumentosVehiculosComponent implements OnInit {
 
   private setMsg(text: string | null, isErr: boolean) {
     this.msg.set(text);
-    this.err.set(isErr);
+    this.msgError.set(isErr);
   }
 }

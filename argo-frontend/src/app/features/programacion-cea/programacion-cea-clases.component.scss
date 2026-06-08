@@ -1,4 +1,15 @@
 @use '../jornadas/jornadas-ui.scss';
+@use './programacion-cea-shared' as *;
+
+.editor-host-banner {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9100;
+  width: min(640px, calc(100vw - 24px));
+  pointer-events: auto;
+}
 
 .cea-clases {
   display: flex;

@@ -1,16 +1,22 @@
-<section class="cea-clases-page card">
-  <header class="page-head">
-    <div>
-      <h1>{{ pageTitle() }}</h1>
-      <p class="hint">
-        @if (pageHint()) {
-          {{ pageHint() }}
-        } @else if (modoClases() === 'practica') {
-          Programe clases individuales en vehículo. Busque al alumno como en jornadas, créelas o edítelas desde la lista.
-        } @else {
-          Programe cupos de teoría y taller al mes, inscriba alumnos en estado PROGRAMADA y consulte el descuento de horas.
-        }
+<section class="cea-clases-page cea-page card admin-list-page">
+  <header class="cea-head page-head">
+    <div class="cea-head-main">
+      <p class="breadcrumb">
+        <a routerLink="/app/programacion-cea">Programación CEA</a> / {{ pageTitle() }}
       </p>
+      <h1>{{ pageTitle() }}</h1>
+      @if (pageHint()) {
+        <p class="hint">{{ pageHint() }}</p>
+      }
+    </div>
+    <div class="cea-badges head-actions">
+      <a routerLink="/app/programacion-cea/clases-hoy" class="ghost sm link-btn">Clases de hoy</a>
+      @if (modoClases() === 'grupal') {
+        <a routerLink="/app/programacion-cea/clases-practica" class="ghost sm link-btn">Práctica</a>
+      } @else {
+        <a routerLink="/app/programacion-cea/clases-grupales" class="ghost sm link-btn">Teoría y taller</a>
+      }
+      <a routerLink="/app/programacion-cea" class="ghost sm link-btn">Configuración</a>
     </div>
   </header>
 

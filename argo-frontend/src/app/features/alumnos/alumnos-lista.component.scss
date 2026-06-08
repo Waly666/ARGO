@@ -175,7 +175,7 @@
 
 table.alumnos-grid {
   margin: 0;
-  min-width: 1520px;
+  min-width: 1080px;
   th, td { vertical-align: middle; white-space: nowrap; }
 
   .col-cert-jornada {
@@ -215,6 +215,29 @@ table.alumnos-grid {
       opacity: 1;
     }
   }
+
+  th.col-actions,
+  td.col-actions {
+    width: 1%;
+    min-width: 152px;
+    max-width: 152px;
+    white-space: nowrap;
+    position: sticky;
+    right: 0;
+    z-index: 3;
+    background: rgba(6, 16, 41, 0.96);
+    box-shadow: -6px 0 10px rgba(0, 0, 0, 0.28);
+  }
+
+  thead th.col-actions {
+    z-index: 4;
+    background: rgba(8, 18, 44, 0.98);
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
+  }
+
+  tbody tr:hover td.col-actions {
+    background: rgba(78, 163, 255, 0.14);
+  }
 }
 
 .col-foto {
@@ -222,12 +245,20 @@ table.alumnos-grid {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: inherit;
+  background: rgba(6, 16, 41, 0.96);
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
 }
 
-.col-alertas {
-  min-width: 140px;
-  white-space: nowrap;
+table.alumnos-grid tbody tr:hover td.col-foto {
+  background: rgba(78, 163, 255, 0.14);
+}
+
+table.alumnos-grid .col-alertas {
+  width: 420px;
+  min-width: 380px;
+  max-width: 520px;
+  white-space: normal !important;
+  vertical-align: middle;
 }
 
 .row-alarms {
@@ -235,7 +266,8 @@ table.alumnos-grid {
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  max-width: 100%;
 }
 
 @keyframes row-alarm-blink-warn {
@@ -360,15 +392,87 @@ table.alumnos-grid {
     font-size: 0.72rem;
   }
 }
+
+@keyframes row-alarm-blink-ingreso {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.85), 0 0 24px rgba(37, 99, 235, 0.45);
+  }
+  50% {
+    opacity: 0.82;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.35);
+  }
+}
+
+@keyframes row-alarm-blink-egreso {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.9), 0 0 24px rgba(220, 38, 38, 0.5);
+  }
+  50% {
+    opacity: 0.82;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.35);
+  }
+}
+
+@keyframes row-alarm-blink-factura {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.85), 0 0 24px rgba(147, 51, 234, 0.45);
+  }
+  50% {
+    opacity: 0.82;
+    box-shadow: 0 0 6px rgba(168, 85, 247, 0.35);
+  }
+}
+
+.row-alarm.ingreso-alarm {
+  color: #dbeafe;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.45), rgba(29, 78, 216, 0.28));
+  border-color: rgba(96, 165, 250, 0.95);
+  animation: row-alarm-blink-ingreso 1s ease-in-out infinite;
+
+  .row-alarm-icon {
+    background: #2563eb;
+    color: #eff6ff;
+    font-size: 0.8rem;
+    font-weight: 900;
+  }
+}
+
+.row-alarm.egreso-alarm {
+  color: #fee2e2;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.42), rgba(185, 28, 28, 0.3));
+  border-color: rgba(252, 165, 165, 0.95);
+  animation: row-alarm-blink-egreso 1s ease-in-out infinite;
+
+  .row-alarm-icon {
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 900;
+  }
+}
+
+.row-alarm.factura-alarm {
+  color: #f3e8ff;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.42), rgba(126, 34, 206, 0.28));
+  border-color: rgba(216, 180, 254, 0.95);
+  animation: row-alarm-blink-factura 1s ease-in-out infinite;
+
+  .row-alarm-icon {
+    background: #9333ea;
+    color: #faf5ff;
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+}
 .col-nombre { min-width: 180px; white-space: normal !important; }
 .col-text { min-width: 160px; max-width: 220px; white-space: normal !important; }
-.col-direccion {
-  min-width: 320px;
-  max-width: 480px;
-  white-space: normal !important;
-}
-.col-mun { min-width: 180px; max-width: 240px; white-space: normal !important; }
-
 .dim { color: var(--text-dim); font-size: .85rem; }
 
 .text-cell {
@@ -379,17 +483,6 @@ table.alumnos-grid {
   white-space: nowrap;
   font-size: .88rem;
   color: var(--text-soft);
-}
-
-.text-cell.direccion-cell {
-  display: block;
-  max-width: 460px;
-  min-width: 280px;
-  white-space: normal;
-  line-height: 1.4;
-  overflow: visible;
-  text-overflow: unset;
-  word-break: break-word;
 }
 
 .row-click {
@@ -411,7 +504,18 @@ table.alumnos-grid {
   img { width: 100%; height: 100%; object-fit: cover; }
 }
 
-.actions { text-align: right; position: sticky; right: 0; z-index: 2; background: inherit; display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap; }
+.actions-cell {
+  text-align: right;
+}
+
+.actions-inner {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 .mini { padding: 4px 10px; font-size: .78rem; }
 
 .list-msg {

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
 import { PermisoService } from '../../core/services/permiso.service';
@@ -18,7 +18,7 @@ import {
 @Component({
   selector: 'argo-jornadas-en-proceso-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './jornadas-en-proceso-lista.component.html',
   styleUrls: ['./jornadas-en-proceso-lista.component.scss'],
 })

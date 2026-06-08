@@ -21,7 +21,10 @@
           *ngIf="
             (alarmas.tiene('alarmas.alumnos.saldos') && saldosPendientesCount() > 0) ||
             (alarmas.tiene('alarmas.alumnos.documentos') && docsPendientesCount() > 0) ||
-            (alarmas.tiene('alarmas.alumnos.clases_cea_creado') && clasesCeaCreadoCount() > 0 && puedeVerAlertaCea())
+            (alarmas.tiene('alarmas.alumnos.clases_cea_creado') && clasesCeaCreadoCount() > 0 && puedeVerAlertaCea()) ||
+            tieneComprobanteIngresoHoy() ||
+            tieneComprobanteEgresoHoy() ||
+            tieneFacturaHoy()
           ">
           <button
             type="button"
@@ -75,6 +78,42 @@
             <span class="head-alarm-pulse" aria-hidden="true"></span>
             <span class="head-alarm-icon" aria-hidden="true">⏱</span>
             <span class="head-alarm-text">{{ tituloClaseCeaCreada(prog) }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="head-alarm ingreso-alarm"
+            *ngIf="tieneComprobanteIngresoHoy()"
+            (click)="irComprobanteIngresoHoy($event)"
+            [attr.title]="tituloComprobanteIngresoHoy()"
+            [attr.aria-label]="tituloComprobanteIngresoHoy()">
+            <span class="head-alarm-pulse" aria-hidden="true"></span>
+            <span class="head-alarm-icon" aria-hidden="true">↓</span>
+            <span class="head-alarm-text">{{ etiquetaComprobanteIngresoHoy() }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="head-alarm egreso-alarm"
+            *ngIf="tieneComprobanteEgresoHoy()"
+            (click)="irComprobanteEgresoHoy($event)"
+            [attr.title]="tituloComprobanteEgresoHoy()"
+            [attr.aria-label]="tituloComprobanteEgresoHoy()">
+            <span class="head-alarm-pulse" aria-hidden="true"></span>
+            <span class="head-alarm-icon" aria-hidden="true">↑</span>
+            <span class="head-alarm-text">{{ etiquetaComprobanteEgresoHoy() }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="head-alarm factura-alarm"
+            *ngIf="tieneFacturaHoy()"
+            (click)="irFacturaHoy($event)"
+            [attr.title]="tituloFacturaHoy()"
+            [attr.aria-label]="tituloFacturaHoy()">
+            <span class="head-alarm-pulse" aria-hidden="true"></span>
+            <span class="head-alarm-icon" aria-hidden="true">FE</span>
+            <span class="head-alarm-text">{{ etiquetaFacturaHoy() }}</span>
           </button>
         </div>
       </div>

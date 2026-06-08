@@ -14,7 +14,9 @@
       <header class="fm-header">
         <div>
           <h2 id="fm-title">{{ title }}</h2>
-          <p class="fm-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+          @if (subtitle) {
+            <p class="fm-subtitle">{{ subtitle }}</p>
+          }
         </div>
         <button type="button" class="fm-close" (click)="close()" aria-label="Cerrar">×</button>
       </header>

@@ -1,4 +1,5 @@
 @use './jornada-live-estado.scss';
+@use './jornadas-shared' as *;
 
 .jornadas-proceso-page {
   display: flex;

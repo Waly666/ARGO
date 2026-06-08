@@ -33,6 +33,7 @@ export class NominaAdminComponent implements OnInit {
   config = signal<NominaConfig | null>(null);
   loading = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
   sel = signal<PeriodoNomina | null>(null);
   liquidacion = signal<LiquidacionNomina | null>(null);
   detalleExpandido = signal<DetalleEmpleadoNomina | null>(null);
@@ -59,7 +60,7 @@ export class NominaAdminComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
-        this.msg.set(e?.error?.message || 'Error');
+        this.inform(e?.error?.message || 'Error', true);
       },
     });
   }
@@ -80,14 +81,14 @@ export class NominaAdminComponent implements OnInit {
     const futuro = this.esFuturo({ ano, mes } as PeriodoNomina);
     this.svc.crearPeriodo(ano, mes).subscribe({
       next: () => {
-        this.msg.set(
+        this.inform(
           futuro
             ? 'Período creado (mes futuro — planificado). Causación y liquidación cuando llegue ese mes.'
             : 'Período creado.',
         );
         this.cargar();
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo crear'),
+      error: (e) => this.inform(e?.error?.message || 'No se pudo crear', true),
     });
   }
 
@@ -115,11 +116,11 @@ export class NominaAdminComponent implements OnInit {
     if (!ok) return;
     this.svc.generarNovedades(p.idPeriodo).subscribe({
       next: (r) => {
-        this.msg.set(`Novedades generadas: ${r.novedadesGeneradas}.`);
+        this.inform(`Novedades generadas: ${r.novedadesGeneradas}.`);
         this.cargar();
         if (r.periodo) this.seleccionar(r.periodo);
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error'),
+      error: (e) => this.inform(e?.error?.message || 'Error', true),
     });
   }
 
@@ -135,13 +136,13 @@ export class NominaAdminComponent implements OnInit {
     this.svc.liquidar(p.idPeriodo).subscribe({
       next: (l) => {
         this.liquidacion.set(l);
-        this.msg.set(
+        this.inform(
           `Liquidación: ${l.cantidadEmpleados} empleados · Neto $${l.totalNeto.toLocaleString('es-CO')} · Patronal $${(l.totalPatronal || 0).toLocaleString('es-CO')} · Costo empresa $${(l.totalCostoEmpresa || 0).toLocaleString('es-CO')}`,
         );
         this.cargar();
         this.svc.obtenerPeriodo(p.idPeriodo).subscribe({ next: (per) => this.sel.set(per) });
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error al liquidar'),
+      error: (e) => this.inform(e?.error?.message || 'Error al liquidar', true),
     });
   }
 
@@ -154,10 +155,10 @@ export class NominaAdminComponent implements OnInit {
     if (!ok) return;
     this.svc.cerrar(p.idPeriodo).subscribe({
       next: () => {
-        this.msg.set('Período cerrado.');
+        this.inform('Período cerrado.');
         this.cargar();
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error'),
+      error: (e) => this.inform(e?.error?.message || 'Error', true),
     });
   }
 
@@ -172,10 +173,10 @@ export class NominaAdminComponent implements OnInit {
     if (!ok) return;
     this.svc.pagar(p.idPeriodo).subscribe({
       next: (r) => {
-        this.msg.set(`Se registraron ${r.egresosCreados} egresos en caja.`);
+        this.inform(`Se registraron ${r.egresosCreados} egresos en caja.`);
         this.cargar();
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error al pagar'),
+      error: (e) => this.inform(e?.error?.message || 'Error al pagar', true),
     });
   }
 
@@ -233,11 +234,11 @@ export class NominaAdminComponent implements OnInit {
     this.svc.reabrir(p.idPeriodo).subscribe({
       next: (r) => {
         this.liquidacion.set(null);
-        this.msg.set(`Período reabierto (${r.estado}).`);
+        this.inform(`Período reabierto (${r.estado}).`);
         this.cargar();
         if (r.periodo) this.seleccionar(r.periodo);
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo reabrir'),
+      error: (e) => this.inform(e?.error?.message || 'No se pudo reabrir', true),
     });
   }
 
@@ -287,9 +288,9 @@ export class NominaAdminComponent implements OnInit {
         a.download = `PILA_${p.nombre || p.idPeriodo}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-        this.msg.set('Resumen PILA (CSV) descargado.');
+        this.inform('Resumen PILA (CSV) descargado.');
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo exportar PILA'),
+      error: (e) => this.inform(e?.error?.message || 'No se pudo exportar PILA', true),
     });
   }
 
@@ -302,15 +303,20 @@ export class NominaAdminComponent implements OnInit {
         a.download = `PILA_${p.nombre || p.idPeriodo}.txt`;
         a.click();
         URL.revokeObjectURL(url);
-        this.msg.set(
+        this.inform(
           'Planilla integrada (.txt) descargada. Valídela en el operador PILA antes de pagar.',
         );
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo exportar planilla PILA'),
+      error: (e) => this.inform(e?.error?.message || 'No se pudo exportar planilla PILA', true),
     });
   }
 
   abrirRecibo(p: PeriodoNomina, d: DetalleEmpleadoNomina) {
-    this.svc.abrirReciboHtml(p.idPeriodo, d.empleadoId, (m) => this.msg.set(m));
+    this.svc.abrirReciboHtml(p.idPeriodo, d.empleadoId, (m) => this.inform(m, true));
+  }
+
+  private inform(text: string | null, isErr = false): void {
+    this.msg.set(text);
+    this.msgError.set(isErr);
   }
 }

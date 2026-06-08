@@ -9,6 +9,7 @@ import {
   OnInit,
   Output,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -37,6 +38,8 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import { Hora12InputComponent } from '../../shared/hora-12-input/hora-12-input.component';
 import { environment } from '../../../environments/environment';
+import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { esFechaHoy, fmtFechaCalendario } from './jornada-calendario.util';
 import {
   JorMsgTipo,
@@ -78,6 +81,20 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private confirmSvc = inject(ConfirmDialogService);
+  private asistente = inject(AsistenteContextoService);
+
+  constructor() {
+    effect(() => {
+      if (this.modalOpen()) {
+        const sub = this.subtituloModalClase();
+        if (sub) {
+          this.asistente.setTipsPrepend([tipFormulario('Esta clase', sub, 'jor-ed-clase-ctx')]);
+        }
+      } else {
+        this.asistente.clearTipsPrepend();
+      }
+    });
+  }
 
   @Input() editorHost = false;
   @Output() claseGuardada = new EventEmitter<ClaseJornadaDto>();

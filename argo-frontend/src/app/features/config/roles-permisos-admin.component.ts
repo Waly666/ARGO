@@ -31,7 +31,21 @@ export class RolesPermisosAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
+  filtroRoles = signal('');
   mostrarNuevo = signal(false);
+
+  rolesFiltrados = computed(() => {
+    const q = this.filtroRoles().trim().toLowerCase();
+    const list = this.roles();
+    if (!q) return list;
+    return list.filter((r) => {
+      const nombre = String(r.nombre || '').toLowerCase();
+      const codigo = String(r.codigo || '').toLowerCase();
+      const desc = String(r.descripcion || '').toLowerCase();
+      return nombre.includes(q) || codigo.includes(q) || desc.includes(q);
+    });
+  });
 
   form = signal<RolAppDto>({
     codigo: '',
@@ -92,6 +106,7 @@ export class RolesPermisosAdminComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error cargando roles');
       },
     });
@@ -113,6 +128,8 @@ export class RolesPermisosAdminComponent implements OnInit {
   nuevo(): void {
     this.seleccionado.set(null);
     this.mostrarNuevo.set(true);
+    this.msg.set(null);
+    this.msgError.set(false);
     this.form.set({
       codigo: '',
       nombre: '',
@@ -268,6 +285,11 @@ export class RolesPermisosAdminComponent implements OnInit {
     return grupo.permisos.filter((p) => this.tienePermiso(p.key)).length;
   }
 
+  progresoGrupo(activos: number, total: number): number {
+    if (!total) return 0;
+    return Math.round((activos / total) * 100);
+  }
+
   detallePermisosRol(rol: RolApp): string {
     const total = this.totalTiposPermisos();
     const p = rol.permisos || [];
@@ -287,6 +309,7 @@ export class RolesPermisosAdminComponent implements OnInit {
   async guardar(): Promise<void> {
     const f = this.form();
     if (!String(f.nombre || '').trim()) {
+      this.msgError.set(true);
       this.msg.set('El nombre del rol es obligatorio');
       return;
     }
@@ -302,6 +325,7 @@ export class RolesPermisosAdminComponent implements OnInit {
 
     this.saving.set(true);
     this.msg.set(null);
+    this.msgError.set(false);
 
     const sel = this.seleccionado();
     const obs = sel
@@ -330,12 +354,14 @@ export class RolesPermisosAdminComponent implements OnInit {
               msg +=
                 ' Los usuarios con ese rol verán el menú actualizado en unos segundos (máx. 8 s) o al recargar la página.';
             }
+            this.msgError.set(false);
             this.msg.set(msg);
           },
           error: () => {
             msg += esMiRol
               ? ' Recargue la página para ver su menú actualizado.'
               : ' Los usuarios con ese rol deben recargar la página o esperar unos segundos.';
+            this.msgError.set(false);
             this.msg.set(msg);
           },
         });
@@ -346,6 +372,7 @@ export class RolesPermisosAdminComponent implements OnInit {
       },
       error: (e) => {
         this.saving.set(false);
+        this.msgError.set(true);
         this.msg.set(e?.error?.message || 'Error guardando rol');
       },
     });
@@ -385,11 +412,15 @@ export class RolesPermisosAdminComponent implements OnInit {
 
     this.svc.eliminar(rol.codigo).subscribe({
       next: (r) => {
+        this.msgError.set(false);
         this.msg.set(r.message);
         this.seleccionado.set(null);
         this.cargar();
       },
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo eliminar'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'No se pudo eliminar');
+      },
     });
   }
 
@@ -404,10 +435,14 @@ export class RolesPermisosAdminComponent implements OnInit {
 
     this.svc.reiniciarSistema().subscribe({
       next: (r) => {
+        this.msgError.set(false);
         this.msg.set(r.message);
         this.cargar();
       },
-      error: (e) => this.msg.set(e?.error?.message || 'Error al restaurar'),
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'Error al restaurar');
+      },
     });
   }
 }

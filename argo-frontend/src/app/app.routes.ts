@@ -229,7 +229,15 @@ export const routes: Routes = [
       {
         path: 'programacion-cea/clases-hoy',
         canActivate: [permisoGuard],
-        data: { permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
+        data: {
+          permiso: [
+            'programacion_cea.ver',
+            'programacion_cea.gestionar',
+            'programacion_cea.operar',
+            'caja.turno',
+            'caja.admin',
+          ],
+        },
         loadComponent: () =>
           import('./features/programacion-cea/programacion-cea-clases-hoy.component').then(
             (m) => m.ProgramacionCeaClasesHoyComponent,

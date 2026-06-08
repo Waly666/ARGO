@@ -1,20 +1,19 @@
 <section class="cobros-page admin-list-page" [class.detalle-abierto]="!!seleccionado()">
-  <header class="page-head card">
-    <div>
+  <header class="caja-head page-head card">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Cobros pendientes</p>
       <h1>Cobros pendientes</h1>
-      <p class="hint">
-        Todos los servicios con saldo pendiente en el sistema (histórico completo, sin límite de caja ni del día).
-        Abra un ítem para ver pagos y registrar el cobro.
-      </p>
+      <p class="hint">Servicios con saldo por cobrar. Registre pagos desde el detalle de cada alumno.</p>
       <p class="hint warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar cobros.</p>
     </div>
-    <div class="head-actions">
+    <div class="caja-badges head-actions">
+      <span class="caja-chip caja-chip--sky">{{ items().length }} servicio{{ items().length === 1 ? '' : 's' }}</span>
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
       <span class="total-badge">{{ totales().saldo | currency: 'COP':'symbol-narrow':'1.0-0' }} pendiente</span>
     </div>
   </header>
 
-  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <div class="card toolbar">
     <input

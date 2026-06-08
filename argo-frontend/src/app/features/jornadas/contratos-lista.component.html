@@ -1,25 +1,30 @@
-<section class="contratos-page card">
-  <header class="page-head">
-    <div class="title">
+<section class="contratos-page card admin-list-page">
+  <header class="jor-head page-head">
+    <div class="jor-head-main title">
+      <p class="breadcrumb"><a routerLink="/app/jornadas">Jornadas</a> / Contratos</p>
       <h1>Contratos de capacitación</h1>
-      <p class="hint">
-        Listado completo de contrataciones. Use <strong>Editar</strong> para abrir el contrato en el módulo Jornadas y trabajar
-        sus jornadas/clases, o <strong>Eliminar</strong> si aún no tiene jornadas con clases registradas.
-      </p>
+      <p class="hint">Listado de contrataciones con empresas. Abra el hub para gestionar jornadas y clases.</p>
     </div>
-    @if (enEjecucionCount() > 0) {
-      <span class="jor-live-badge">{{ enEjecucionCount() }} en ejecución</span>
-    }
-    <button type="button" class="primary" *ngIf="puedeGestionar()" (click)="nuevoContrato()">
-      + Nuevo contrato
-    </button>
+    <div class="jor-badges head-actions">
+      @if (enEjecucionCount() > 0) {
+        <span class="jor-chip jor-chip--emerald">{{ enEjecucionCount() }} en ejecución</span>
+      }
+      <a routerLink="/app/jornadas" class="ghost sm link-btn">Hub jornadas</a>
+      <button type="button" class="primary" *ngIf="puedeGestionar()" (click)="nuevoContrato()">
+        + Nuevo contrato
+      </button>
+    </div>
   </header>
 
   @if (msg(); as t) {
-    <div class="banner" [class.error]="msgEsError()" [class.ok]="!msgEsError()" role="status">
+    <p
+      class="jor-banner"
+      [class.jor-banner--error]="msgEsError()"
+      [class.jor-banner--ok]="!msgEsError()"
+      role="status">
       <span>{{ t }}</span>
-      <button type="button" class="close" (click)="cerrarMsg()" aria-label="Cerrar">×</button>
-    </div>
+      <button type="button" class="jor-banner-close" (click)="cerrarMsg()" aria-label="Cerrar">×</button>
+    </p>
   }
 
   <div class="toolbar">

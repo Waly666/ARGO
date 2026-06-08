@@ -84,6 +84,7 @@ export class EmpleadosAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
   busqueda = signal('');
   vista = signal<VistaLista>(readVistaLista('argo-empleados-vista'));
   editando = signal<Empleado | null>(null);
@@ -162,7 +163,7 @@ export class EmpleadosAdminComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
-        this.msg.set(e?.error?.message || 'Error cargando empleados');
+        this.inform(e?.error?.message || 'Error cargando empleados', true);
       },
     });
   }
@@ -201,7 +202,7 @@ export class EmpleadosAdminComponent implements OnInit {
     this.fotoFile.set(null);
     this.fotoPreview.set(null);
     this.mostrarForm.set(true);
-    this.msg.set(null);
+    this.inform(null);
   }
 
   editar(e: Empleado, seccion: FormSeccion = 'datos') {
@@ -224,7 +225,7 @@ export class EmpleadosAdminComponent implements OnInit {
     this.fotoFile.set(null);
     this.fotoPreview.set(e.urlFoto ? this.fotoUrl(e.urlFoto) : null);
     this.mostrarForm.set(true);
-    this.msg.set(null);
+    this.inform(null);
   }
 
   private aplicarQueryEmpleado(): void {
@@ -289,20 +290,20 @@ export class EmpleadosAdminComponent implements OnInit {
   guardar() {
     const f = this.form();
     if (!f.primerNombre?.trim() || !f.primerApellido?.trim()) {
-      this.msg.set('Primer nombre y primer apellido son obligatorios.');
+      this.inform('Primer nombre y primer apellido son obligatorios.', true);
       return;
     }
     if (!f.numeroDocumento?.trim()) {
-      this.msg.set('numeroDocumento es obligatorio (enlace con egresos).');
+      this.inform('numeroDocumento es obligatorio (enlace con egresos).', true);
       return;
     }
     if (!f.idSede?.trim()) {
-      this.msg.set('Seleccione la sede del empleado.');
+      this.inform('Seleccione la sede del empleado.', true);
       return;
     }
     const modo = this.modoAcceso();
     if (modo === 'vincular' && !this.idUsuarioVincular().trim()) {
-      this.msg.set('Seleccione el usuario existente a vincular.');
+      this.inform('Seleccione el usuario existente a vincular.', true);
       return;
     }
     this.saving.set(true);
@@ -337,11 +338,11 @@ export class EmpleadosAdminComponent implements OnInit {
         } else if (modo === 'ninguno') {
           txt += ' Sin usuario de acceso vinculado.';
         }
-        this.msg.set(txt);
+        this.inform(txt);
       },
       error: (e) => {
         this.saving.set(false);
-        this.msg.set(e?.error?.message || 'Error al guardar');
+        this.inform(e?.error?.message || 'Error al guardar', true);
       },
     });
   }
@@ -357,9 +358,14 @@ export class EmpleadosAdminComponent implements OnInit {
     this.svc.eliminar(e.idEmpleado).subscribe({
       next: () => {
         this.cargar();
-        this.msg.set('Empleado eliminado.');
+        this.inform('Empleado eliminado.');
       },
-      error: (err) => this.msg.set(err?.error?.message || 'No se pudo eliminar'),
+      error: (err) => this.inform(err?.error?.message || 'No se pudo eliminar', true),
     });
+  }
+
+  private inform(text: string | null, isErr = false): void {
+    this.msg.set(text);
+    this.msgError.set(isErr);
   }
 }

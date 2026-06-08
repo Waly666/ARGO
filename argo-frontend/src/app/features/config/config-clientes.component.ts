@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Cliente, ClienteCatalogos, ClienteService } from '../../core/services/cliente.service';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'argo-config-clientes',
@@ -15,6 +16,7 @@ import { AsistenteContextoService } from '../../core/services/asistente-contexto
 export class ConfigClientesComponent implements OnInit {
   private svc = inject(ClienteService);
   private asistente = inject(AsistenteContextoService);
+  private confirm = inject(ConfirmDialogService);
 
   loading = signal(true);
   saving = signal(false);
@@ -124,9 +126,15 @@ export class ConfigClientesComponent implements OnInit {
     });
   }
 
-  eliminar(c: Cliente): void {
+  async eliminar(c: Cliente): Promise<void> {
     if (!c._id) return;
-    if (!confirm(`¿Desactivar el cliente "${c.nombre || c.identificacion}"?`)) return;
+    const ok = await this.confirm.open({
+      title: 'Desactivar cliente',
+      message: `¿Desactivar el cliente «${c.nombre || c.identificacion}»?`,
+      confirmLabel: 'Desactivar',
+      variant: 'danger',
+    });
+    if (!ok) return;
     this.svc.eliminar(c._id).subscribe({ next: () => this.recargar() });
   }
 

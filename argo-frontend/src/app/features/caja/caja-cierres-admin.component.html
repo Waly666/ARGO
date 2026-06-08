@@ -1,10 +1,8 @@
 <section class="cierres-page listado-admin admin-list-page">
-  <header class="page-head card">
-    <div>
-      <div class="title-row">
-        <h1>Cierres de caja</h1>
-        <span class="cap cap-amber cap-sm">Administración</span>
-      </div>
+  <header class="caja-head page-head card">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Cierres de caja</p>
+      <h1>Cierres de caja</h1>
       <p class="hint">
         Histórico de cierres por cajero. Entre a cada sesión para egresos, anular ingresos o registrar
         <strong>Reposición caja</strong>.
@@ -13,13 +11,14 @@
         Sede: <strong>{{ sedeSvc.labelActiva() }}</strong>
       </p>
     </div>
-    <div class="head-actions">
+    <div class="caja-badges head-actions">
+      <span class="caja-chip caja-chip--amber">Administración</span>
       <button type="button" class="ghost sm" (click)="cargar()" [disabled]="loading()">Actualizar</button>
-      <span class="cap cap-blue cap-sm" *ngIf="cierres().length">{{ cierresVisibles().length }} cierres</span>
+      <span class="caja-chip caja-chip--sky" *ngIf="cierres().length">{{ cierresVisibles().length }} cierres</span>
     </div>
   </header>
 
-  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <div class="kpi-row" *ngIf="cierres().length">
     <div class="kpi-card">

@@ -1,5 +1,5 @@
-<section class="config-page card">
-  <header>
+<section class="georef-page card">
+  <header class="georef-head">
     <h1>Geocodificación</h1>
     <p>
       Proveedor usado al ubicar jornadas y sedes en el mapa (coordenadas → municipio Divipola).
@@ -10,91 +10,114 @@
   @if (loading()) {
     <p class="hint">Cargando…</p>
   } @else {
-    <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+    @if (msg(); as texto) {
+      <div class="msg ok" role="status">{{ texto }}</div>
+    }
 
-    <div class="grid-form argo-form-shell">
-      <h3>Proveedor</h3>
-      <div class="row">
-        <div class="col-6">
-          <label>Servicio de geocodificación</label>
-          <select [ngModel]="form().proveedor" (ngModelChange)="patch('proveedor', $event)">
-            @for (p of proveedores(); track p.id) {
-              <option [value]="p.id">{{ p.label }}</option>
-            }
-          </select>
+    <div class="georef-form argo-form-shell">
+      <section class="georef-section">
+        <header class="georef-section-head">
+          <span class="georef-section-badge">1</span>
+          <div>
+            <h2 class="georef-section-title">Proveedor</h2>
+            <p class="georef-section-desc">Servicio de reverse geocoding para jornadas y sedes.</p>
+          </div>
+        </header>
+        <div class="georef-section-body">
+          <label class="georef-field georef-field--wide">
+            <span class="georef-label">Servicio de geocodificación</span>
+            <select [ngModel]="form().proveedor" (ngModelChange)="patch('proveedor', $event)">
+              @for (p of proveedores(); track p.id) {
+                <option [value]="p.id">{{ p.label }}</option>
+              }
+            </select>
+          </label>
         </div>
-      </div>
+      </section>
 
       @if (esHere()) {
-        <h3>HERE</h3>
-        <p class="hint">
-          Cree credenciales en
-          <a href="https://developer.here.com/" target="_blank" rel="noopener">developer.here.com</a>
-          (Geocoding &amp; Search API y Raster Tile API). La clave solo se usa en el backend;
-          el mapa la solicita al servidor al cargar (no queda en el código fuente).
-        </p>
-        <div class="row">
-          <div class="col-4">
-            <label>App ID (opcional)</label>
-            <input
-              type="text"
-              [ngModel]="form().hereAppId"
-              (ngModelChange)="patch('hereAppId', $event)"
-              autocomplete="off"
-            />
+        <section class="georef-section georef-section--here">
+          <header class="georef-section-head">
+            <span class="georef-section-badge">2</span>
+            <div>
+              <h2 class="georef-section-title">Credenciales HERE</h2>
+              <p class="georef-section-desc">
+                Cree credenciales en
+                <a href="https://developer.here.com/" target="_blank" rel="noopener">developer.here.com</a>
+                (Geocoding &amp; Search API y Raster Tile API). La clave solo se usa en el backend.
+              </p>
+            </div>
+          </header>
+          <div class="georef-section-body georef-cred-grid">
+            <label class="georef-field">
+              <span class="georef-label">App ID <span class="georef-optional">(opcional)</span></span>
+              <input
+                type="text"
+                [ngModel]="form().hereAppId"
+                (ngModelChange)="patch('hereAppId', $event)"
+                autocomplete="off"
+                placeholder="Identificador de la app HERE" />
+            </label>
+            <label class="georef-field georef-field--key">
+              <span class="georef-label">API key</span>
+              <input
+                type="password"
+                [ngModel]="form().hereApiKey"
+                (ngModelChange)="patch('hereApiKey', $event)"
+                [placeholder]="form().apiKeyConfigurada ? ('Actual: ' + (form().apiKeyEnmascarada || '••••')) : 'Pegue su API key de HERE'"
+                autocomplete="new-password" />
+              <span class="georef-field-hint">
+                @if (form().apiKeyConfigurada) {
+                  Ya hay una clave guardada. Deje el campo vacío para conservarla o escriba una nueva para reemplazarla.
+                } @else {
+                  Obligatoria si el proveedor es HERE.
+                }
+              </span>
+            </label>
           </div>
-          <div class="col-8">
-            <label>API key</label>
-            <input
-              type="password"
-              [ngModel]="form().hereApiKey"
-              (ngModelChange)="patch('hereApiKey', $event)"
-              [placeholder]="form().apiKeyConfigurada ? ('Actual: ' + (form().apiKeyEnmascarada || '••••')) : 'Pegue su API key de HERE'"
-              autocomplete="new-password"
-            />
-            <p class="hint field-hint">
-              @if (form().apiKeyConfigurada) {
-                Ya hay una clave guardada. Deje el campo vacío para conservarla o escriba una nueva para reemplazarla.
-              } @else {
-                Obligatoria si el proveedor es HERE.
-              }
-            </p>
-          </div>
-        </div>
+        </section>
       } @else {
-        <p class="hint">
-          Nominatim (OpenStreetMap) no requiere API key. En Colombia los nombres de calle pueden ser imprecisos;
-          para mayor exactitud use HERE (mapa y geocodificación).
-        </p>
+        <div class="georef-note" role="note">
+          <strong>Nominatim (OpenStreetMap)</strong> no requiere API key. En Colombia los nombres de calle pueden ser
+          imprecisos; para mayor exactitud use HERE (mapa y geocodificación).
+        </div>
       }
 
-      <h3>Probar</h3>
-      <p class="hint">Consulta de prueba con coordenadas (reverse geocoding + cruce Divipola).</p>
-      <div class="row">
-        <div class="col-3">
-          <label>Latitud</label>
-          <input type="text" [ngModel]="pruebaLat()" (ngModelChange)="pruebaLat.set($event)" />
+      <section class="georef-section georef-section--test">
+        <header class="georef-section-head">
+          <span class="georef-section-badge">{{ esHere() ? '3' : '2' }}</span>
+          <div>
+            <h2 class="georef-section-title">Probar coordenadas</h2>
+            <p class="georef-section-desc">Consulta de prueba con reverse geocoding y cruce Divipola.</p>
+          </div>
+        </header>
+        <div class="georef-section-body">
+          <div class="georef-test-row">
+            <label class="georef-field">
+              <span class="georef-label">Latitud</span>
+              <input type="text" inputmode="decimal" [ngModel]="pruebaLat()" (ngModelChange)="pruebaLat.set($event)" />
+            </label>
+            <label class="georef-field">
+              <span class="georef-label">Longitud</span>
+              <input type="text" inputmode="decimal" [ngModel]="pruebaLng()" (ngModelChange)="pruebaLng.set($event)" />
+            </label>
+            <div class="georef-test-action">
+              <button type="button" class="ghost" (click)="probar()" [disabled]="probando()">
+                {{ probando() ? 'Probando…' : 'Probar coordenadas' }}
+              </button>
+            </div>
+          </div>
+          @if (pruebaMsg(); as prueba) {
+            <p class="georef-prueba-result" role="status">{{ prueba }}</p>
+          }
         </div>
-        <div class="col-3">
-          <label>Longitud</label>
-          <input type="text" [ngModel]="pruebaLng()" (ngModelChange)="pruebaLng.set($event)" />
-        </div>
-        <div class="col-3 actions-inline">
-          <label>&nbsp;</label>
-          <button type="button" class="ghost" (click)="probar()" [disabled]="probando()">
-            {{ probando() ? 'Probando…' : 'Probar coordenadas' }}
-          </button>
-        </div>
-      </div>
-      @if (pruebaMsg()) {
-        <p class="msg ok prueba">{{ pruebaMsg() }}</p>
-      }
+      </section>
 
-      <div class="actions">
+      <footer class="georef-actions">
         <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
-          {{ saving() ? 'Guardando…' : 'Guardar' }}
+          {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
         </button>
-      </div>
+      </footer>
     </div>
   }
 </section>

@@ -1,16 +1,21 @@
-<section class="catalog-page admin-list-page card">
-  <header class="page-head">
-    <div>
+<section class="catalog-page rrhh-page admin-list-page card">
+  <header class="rrhh-head page-head">
+    <div class="rrhh-head-main">
       <p class="breadcrumb"><a routerLink="/app/rrhh/inicio">RRHH</a> / Contratos</p>
       <h1>Contratos</h1>
-      <p class="hint">Salario, auxilio de transporte y fechas de vigencia. Usados al generar novedades de nómina.</p>
+      <p class="hint">Vincule empleados con salario, tipo y vigencia contractual.</p>
     </div>
-    <div class="head-actions">
+    <div class="rrhh-badges head-actions">
+      @if (!loading()) {
+        <span class="rrhh-chip rrhh-chip--sky">{{ rows().length }} contrato{{ rows().length === 1 ? '' : 's' }}</span>
+      }
       <a routerLink="/app/rrhh/empleados" class="ghost link-btn">Empleados</a>
       <button type="button" class="primary" (click)="nuevo()">Nuevo contrato</button>
     </div>
   </header>
-  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+  @if (msg(); as texto) {
+    <div class="rrhh-msg" [class.rrhh-msg--err]="msgError()" role="status">{{ texto }}</div>
+  }
   <div class="toolbar row-inline">
     <div class="view-toggle" role="group" aria-label="Modo de vista">
       <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')" title="Vista tabla">☰ Lista</button>

@@ -91,6 +91,18 @@ const GRUPOS = [
         key: 'alarmas.alumnos.clases_cea_creado',
         label: 'Clases CEA por programar (estado CREADO) en lista, ficha y banner superior',
       },
+      {
+        key: 'alarmas.alumnos.comprobante_ingreso',
+        label: 'Comprobante de ingreso hoy (lista, ficha y banner superior)',
+      },
+      {
+        key: 'alarmas.alumnos.comprobante_egreso',
+        label: 'Comprobante de egreso hoy (lista, ficha y banner superior)',
+      },
+      {
+        key: 'alarmas.alumnos.factura',
+        label: 'Factura electrónica emitida hoy (lista, ficha y banner superior)',
+      },
     ],
   },
 ];
@@ -107,6 +119,9 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.saldos',
     'alarmas.alumnos.documentos',
     'alarmas.alumnos.clases_cea_creado',
+    'alarmas.alumnos.comprobante_ingreso',
+    'alarmas.alumnos.comprobante_egreso',
+    'alarmas.alumnos.factura',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -133,6 +148,9 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.saldos',
     'alarmas.alumnos.documentos',
     'alarmas.alumnos.clases_cea_creado',
+    'alarmas.alumnos.comprobante_ingreso',
+    'alarmas.alumnos.comprobante_egreso',
+    'alarmas.alumnos.factura',
     'alarmas.certificados.vencimiento',
     'alarmas.certificados.vencidos',
     'alarmas.vehiculos.docs_vencidos',

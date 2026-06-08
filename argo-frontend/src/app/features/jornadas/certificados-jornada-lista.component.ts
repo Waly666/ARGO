@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
 import { JornadaCapService } from '../../core/services/jornada-cap.service';
@@ -56,7 +56,7 @@ export interface CertificadoJornadaItem {
 @Component({
   selector: 'argo-certificados-jornada-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
   templateUrl: './certificados-jornada-lista.component.html',
   styleUrls: ['./certificados-jornada-lista.component.scss'],
 })

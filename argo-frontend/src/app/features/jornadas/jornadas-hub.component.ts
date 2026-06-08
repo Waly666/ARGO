@@ -30,6 +30,8 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { environment } from '../../../environments/environment';
+import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { JornadaCapDto } from '../../core/services/jornada-cap.service';
 import { JornadaMapaPickerComponent } from './jornada-mapa-picker.component';
 import {
@@ -53,6 +55,7 @@ import {
   inicioMes,
   inicioSemana,
   layoutHorarioClase,
+  layoutsCalendarioDiaClase,
   ymdLocal,
   ymdCalendario,
   fmtFechaCalendario,
@@ -97,6 +100,7 @@ import {
   estadoClaseLiveClass,
   claseJornadaSePuedeEliminar,
   estadoClaseCalBlockClass,
+  estadoClaseCalAccentClass,
   rowClaseClass,
   rowCertificadoHoyClass,
 } from './jornada-ui.util';
@@ -133,6 +137,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private deeplink = inject(JornadaHubDeepLinkService);
   private destroyRef = inject(DestroyRef);
   private confirmSvc = inject(ConfirmDialogService);
+  private asistente = inject(AsistenteContextoService);
 
   tab = signal<Tab>('contratos');
   vistaJornadas = signal<VistaAgenda>('lista');
@@ -214,6 +219,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   estadoClaseLiveClass = estadoClaseLiveClass;
   claseJornadaSePuedeEliminar = claseJornadaSePuedeEliminar;
   estadoClaseCalBlockClass = estadoClaseCalBlockClass;
+  estadoClaseCalAccentClass = estadoClaseCalAccentClass;
   esFinDeSemana = esFinDeSemana;
   rowClaseClass = rowClaseClass;
   rowCertificadoHoyClass = rowCertificadoHoyClass;
@@ -495,6 +501,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       const t = this.tab();
       if (t === 'jornadas') this.recargarVistaJornadas();
       else if (t === 'clases') this.recargarClases();
+    });
+    effect(() => {
+      if (this.modalCrearClase()) {
+        this.asistente.setTipsPrepend([
+          tipFormulario('Esta clase', this.subtituloModalClase(), 'jor-clase-ctx'),
+        ]);
+      } else {
+        this.asistente.clearTipsPrepend();
+      }
     });
   }
 
@@ -1819,6 +1834,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   layoutClase(c: { horaInicio?: string; horaFin?: string }) {
     return layoutHorarioClase(c.horaInicio, c.horaFin);
+  }
+
+  layoutsCalendarioDia(clases: { _id?: string; horaInicio?: string; horaFin?: string }[]) {
+    return layoutsCalendarioDiaClase(
+      clases.filter((c) => c._id).map((c) => ({ id: c._id!, horaInicio: c.horaInicio, horaFin: c.horaFin })),
+    );
   }
 
   codContratoDe(idContrato?: string): string {

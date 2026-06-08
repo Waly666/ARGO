@@ -59,6 +59,39 @@ export interface CertificadoListadoRes {
   items: CertificadoListItem[];
 }
 
+/** Respuesta de GET /certificados/:id/datos (render + edición). */
+export interface CertificadoDatosRes {
+  certificado: Record<string, unknown> & {
+    _id: string;
+    codigoCert?: string;
+    numDoc?: number;
+    encabezado?: string;
+    tipoCertificado?: string;
+    tipoFormatoCert?: string;
+    fechaEmision?: string;
+    fechaVencimiento?: string | null;
+    estado?: string;
+    numActa?: string;
+    numFolio?: string;
+    numRunt?: string;
+    observaciones?: string;
+  };
+  alumno?: {
+    _id?: string;
+    nombreCompleto?: string;
+    nombre1?: string;
+    nombre2?: string;
+    apellido1?: string;
+    apellido2?: string;
+  } | null;
+  programa?: {
+    descripcion?: string;
+    nombreProg?: string;
+    nomCert?: string;
+  } | null;
+  tipoFormatoCert?: string;
+}
+
 export interface CertificadoVencimientoAlertaItem {
   _id: string;
   codigoCert?: string | null;
@@ -160,6 +193,11 @@ export class CertificadoService {
   crear(dto: CertificadoCrearDto): Observable<any> {
     const numDoc = parseNumDocForApi(dto.numDoc);
     return this.http.post(this.base, { ...dto, numDoc: numDoc ?? dto.numDoc });
+  }
+
+  /** Datos completos del certificado (alumno, programa, plantilla). */
+  obtenerDatos(id: string): Observable<CertificadoDatosRes> {
+    return this.http.get<CertificadoDatosRes>(`${this.base}/${encodeURIComponent(id)}/datos`);
   }
 
   actualizar(id: string, dto: CertificadoActualizarDto): Observable<any> {

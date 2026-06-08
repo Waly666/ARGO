@@ -4,18 +4,6 @@
       <button type="button" class="ghost back" *ngIf="esJornadas()" (click)="irHubJornadas()">← Jornadas</button>
       <div class="title">
         <h1>{{ esJornadas() ? 'Alumnos — Jornadas de Capacitación' : 'Alumnos' }}</h1>
-        <p *ngIf="esJornadas() && vista() === 'lista'">
-          Solo alumnos con tipo <strong>Jornadas de Capacitación</strong>. Pulse un encabezado de columna para ordenar.
-        </p>
-        <p *ngIf="esJornadas() && vista() === 'cards'">
-          Tarjetas de alumnos de jornadas de capacitación.
-        </p>
-        <p *ngIf="!esJornadas() && vista() === 'lista'">
-          Listado completo con datos personales, contacto y ubicación. Pulse un encabezado de columna para ordenar; vuelva a pulsar para invertir el orden.
-        </p>
-        <p *ngIf="!esJornadas() && vista() === 'cards'">
-          Vista en tarjetas con foto tipo documento, alertas y datos principales del alumno.
-        </p>
       </div>
       <button type="button" class="primary" (click)="nuevo()">
         {{ esJornadas() ? '+ Nuevo alumno jornada' : '+ Crear alumno' }}
@@ -167,16 +155,6 @@
               <button
                 type="button"
                 class="th-sort"
-                [class.active]="sortCol() === 'estadoCivil'"
-                [attr.aria-sort]="sortAria('estadoCivil')"
-                (click)="toggleSort('estadoCivil')">
-                Estado civil <span class="sort-icon">{{ sortIcon('estadoCivil') }}</span>
-              </button>
-            </th>
-            <th>
-              <button
-                type="button"
-                class="th-sort"
                 [class.active]="sortCol() === 'correo'"
                 [attr.aria-sort]="sortAria('correo')"
                 (click)="toggleSort('correo')">
@@ -193,27 +171,7 @@
                 Celular <span class="sort-icon">{{ sortIcon('celular') }}</span>
               </button>
             </th>
-            <th class="col-direccion">
-              <button
-                type="button"
-                class="th-sort"
-                [class.active]="sortCol() === 'direccion'"
-                [attr.aria-sort]="sortAria('direccion')"
-                (click)="toggleSort('direccion')">
-                Dirección <span class="sort-icon">{{ sortIcon('direccion') }}</span>
-              </button>
-            </th>
-            <th class="col-mun">
-              <button
-                type="button"
-                class="th-sort"
-                [class.active]="sortCol() === 'munOrigen'"
-                [attr.aria-sort]="sortAria('munOrigen')"
-                (click)="toggleSort('munOrigen')">
-                Mun. origen <span class="sort-icon">{{ sortIcon('munOrigen') }}</span>
-              </button>
-            </th>
-            <th></th>
+            <th class="col-actions">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -244,40 +202,29 @@
                 {{ labelJornada(r) }}
               </span>
             </td>
-            <td>
-              <span *ngIf="r.estadoCivil; else vacio" [ngClass]="capEstadoCivil(r.estadoCivil)" [title]="labelEstadoCivil(r)">
-                {{ labelEstadoCivil(r) }}
-              </span>
-            </td>
             <td class="col-text">
               <span *ngIf="r.correo; else vacio" class="text-cell" [title]="r.correo">{{ r.correo }}</span>
             </td>
             <td>
               <span *ngIf="r.celular; else vacio" [ngClass]="capCelular(r.celular)">{{ r.celular }}</span>
             </td>
-            <td class="col-direccion">
-              <span *ngIf="r.direccion; else vacio" class="text-cell direccion-cell" [title]="r.direccion">{{ r.direccion }}</span>
-            </td>
-            <td class="col-mun">
-              <span *ngIf="textoMunicipio(r) !== '—'; else vacio" [ngClass]="capMunicipio(textoMunicipio(r))" [title]="textoMunicipio(r)">
-                {{ textoMunicipio(r) }}
-              </span>
-            </td>
-            <td class="actions">
-              <button type="button" class="ghost mini" (click)="abrir(r); $event.stopPropagation()">Abrir</button>
-              @if (puedeEliminar()) {
-                <button
-                  type="button"
-                  class="danger mini"
-                  [disabled]="eliminandoId() === r._id"
-                  (click)="eliminar(r, $event)">
-                  {{ eliminandoId() === r._id ? '…' : 'Eliminar' }}
-                </button>
-              }
+            <td class="col-actions actions-cell" (click)="$event.stopPropagation()">
+              <div class="actions-inner">
+                <button type="button" class="ghost mini" (click)="abrir(r); $event.stopPropagation()">Abrir</button>
+                @if (puedeEliminar()) {
+                  <button
+                    type="button"
+                    class="danger mini"
+                    [disabled]="eliminandoId() === r._id"
+                    (click)="eliminar(r, $event)">
+                    {{ eliminandoId() === r._id ? '…' : 'Eliminar' }}
+                  </button>
+                }
+              </div>
             </td>
           </tr>
           <tr *ngIf="items().length === 0">
-            <td [attr.colspan]="esJornadas() ? 13 : 12" class="empty">
+            <td [attr.colspan]="esJornadas() ? 10 : 9" class="empty">
               <ng-container *ngTemplateOutlet="emptyTpl"></ng-container>
             </td>
           </tr>
@@ -429,6 +376,36 @@
           <span class="row-alarm-pulse" aria-hidden="true"></span>
           <span class="row-alarm-icon">!</span>
           <span class="row-alarm-label">Doc.</span>
+        </button>
+        <button
+          type="button"
+          class="row-alarm ingreso-alarm"
+          *ngIf="tieneComprobanteIngresoHoy(r)"
+          (click)="abrirComprobanteIngreso(r, $event)"
+          [attr.title]="tituloComprobanteIngreso(r)">
+          <span class="row-alarm-pulse" aria-hidden="true"></span>
+          <span class="row-alarm-icon">↓</span>
+          <span class="row-alarm-label">{{ etiquetaComprobanteIngreso(r) }}</span>
+        </button>
+        <button
+          type="button"
+          class="row-alarm egreso-alarm"
+          *ngIf="tieneComprobanteEgresoHoy(r)"
+          (click)="abrirComprobanteEgreso(r, $event)"
+          [attr.title]="tituloComprobanteEgreso(r)">
+          <span class="row-alarm-pulse" aria-hidden="true"></span>
+          <span class="row-alarm-icon">↑</span>
+          <span class="row-alarm-label">{{ etiquetaComprobanteEgreso(r) }}</span>
+        </button>
+        <button
+          type="button"
+          class="row-alarm factura-alarm"
+          *ngIf="tieneFacturaHoy(r)"
+          (click)="abrirFacturaHoy(r, $event)"
+          [attr.title]="tituloFacturaHoy(r)">
+          <span class="row-alarm-pulse" aria-hidden="true"></span>
+          <span class="row-alarm-icon">FE</span>
+          <span class="row-alarm-label">{{ etiquetaFacturaHoy(r) }}</span>
         </button>
       </div>
       <ng-template #sinAlarmas><span class="dim">—</span></ng-template>

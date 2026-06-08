@@ -9,7 +9,7 @@
     </div>
   </div>
 
-  <p class="flash" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <div class="warn-docs card no-print" *ngIf="cajaAbierta() && cantSinSoporte() > 0">
     <strong>Aviso: egresos sin soporte adjunto ({{ cantSinSoporte() }})</strong>

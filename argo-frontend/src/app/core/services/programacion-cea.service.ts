@@ -520,6 +520,13 @@ export class ProgramacionCeaService {
     return this.http.post<ClaseProgramadaCeaDto>(`${this.base}/clases/${encodeURIComponent(id)}/finalizar`, {});
   }
 
+  finalizarClaseRetroactiva(id: string): Observable<ClaseProgramadaCeaDto> {
+    return this.http.post<ClaseProgramadaCeaDto>(
+      `${this.base}/clases/${encodeURIComponent(id)}/finalizar-retroactivo`,
+      {},
+    );
+  }
+
   listarInscripciones(idClase: string): Observable<InscripcionClaseCeaDto[]> {
     return this.http.get<InscripcionClaseCeaDto[]>(`${this.base}/clases/${encodeURIComponent(idClase)}/inscripciones`);
   }

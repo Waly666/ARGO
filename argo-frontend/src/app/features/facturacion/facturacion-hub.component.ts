@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import {
   FacturaElectronicaItem,
@@ -20,6 +20,7 @@ import { NotaCreditoModalComponent } from './nota-credito-modal.component';
 })
 export class FacturacionHubComponent implements OnInit {
   private feSvc = inject(FacturacionService);
+  private route = inject(ActivatedRoute);
   permisoSvc = inject(PermisoService);
 
   loading = signal(true);
@@ -28,6 +29,7 @@ export class FacturacionHubComponent implements OnInit {
   resumen = signal<FacturacionResumen | null>(null);
   emitidas = signal<FacturaElectronicaItem[]>([]);
   facturaNota = signal<FacturaElectronicaItem | null>(null);
+  private facturaVerPendiente = signal<string | null>(null);
 
   abrirNota(f: FacturaElectronicaItem): void {
     this.facturaNota.set(f);
@@ -55,6 +57,11 @@ export class FacturacionHubComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((q) => {
+      const ver = q.get('ver')?.trim() || '';
+      this.facturaVerPendiente.set(ver || null);
+      this.intentarAbrirFacturaPendiente();
+    });
     this.recargar();
   }
 
@@ -73,6 +80,7 @@ export class FacturacionHubComponent implements OnInit {
       next: (r) => {
         this.emitidas.set(r.items || []);
         this.loading.set(false);
+        this.intentarAbrirFacturaPendiente();
       },
       error: () => {
         this.emitidas.set([]);
@@ -98,6 +106,26 @@ export class FacturacionHubComponent implements OnInit {
     if (e === 'rechazada') return 'cap cap-red cap-sm';
     if (e === 'pendiente_envio') return 'cap cap-blue cap-sm';
     return 'cap cap-gray cap-sm';
+  }
+
+  private intentarAbrirFacturaPendiente(): void {
+    const id = this.facturaVerPendiente();
+    if (!id) return;
+    const f = this.emitidas().find((x) => String(x._id) === id);
+    if (f) {
+      this.facturaVerPendiente.set(null);
+      this.verDocumento(f);
+      return;
+    }
+    if (this.loading()) return;
+    this.feSvc.obtener(id).subscribe({
+      next: (doc) => {
+        if (this.facturaVerPendiente() !== id) return;
+        this.facturaVerPendiente.set(null);
+        this.verDocumento(doc);
+      },
+      error: () => this.msg.set('No se encontró la factura solicitada.'),
+    });
   }
 
   labelEstado(item: FacturaElectronicaItem): string {

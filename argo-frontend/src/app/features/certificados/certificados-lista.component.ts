@@ -1,13 +1,25 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, switchMap } from 'rxjs';
 
 import {
+  CertificadoDatosRes,
   CertificadoListItem,
   CertificadoService,
 } from '../../core/services/certificado.service';
+import { nombreCompletoAlumno } from '../../core/utils/mensaje-plantilla.helpers';
 import { TIPOS_CERTIFICADO, capEncabezadoCert, capTipoFormatoCert, labelTipoCert } from '../../core/constants/tipos-certificado';
 import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
@@ -38,11 +50,11 @@ import {
 @Component({
   selector: 'argo-certificados-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
   templateUrl: './certificados-lista.component.html',
-  styleUrls: ['./certificados-lista.component.scss'],
+  styleUrls: ['./certificados-lista.component.scss', './certificados-shared.scss'],
 })
-export class CertificadosListaComponent implements OnInit, OnDestroy {
+export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewInit {
   private certSvc = inject(CertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
   private route = inject(ActivatedRoute);
@@ -66,6 +78,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
         this.certificados.set(res.items || []);
         this.recalcEmitidosHoy();
         this.loading.set(false);
+        this.reabrirEditarSiEnLista();
       },
       error: (e) => {
         this.loading.set(false);
@@ -85,8 +98,13 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
   emitidosHoy = signal(0);
   msg = signal<string | null>(null);
   msgError = signal(false);
+  editMsg = signal<string | null>(null);
+  editMsgError = signal(false);
 
   modalEditar = signal(false);
+  modalTop = signal(80);
+  cargandoEditar = signal(false);
+  editando = signal<CertificadoListItem | null>(null);
   editId = signal('');
   editEncabezado = signal('');
   editTipoCertificado = signal<TipoAlumno>(TIPO_ALUMNO_DEFAULT);
@@ -116,9 +134,17 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
   );
   textoTipoCertificadoEdit = computed(() => this.editTipoCertificado() || '');
 
-  certificadoEdit = computed(
-    () => this.certificados().find((c) => c._id === this.editId()) || null,
-  );
+  @ViewChild('titleAnchor') titleAnchor?: ElementRef<HTMLElement>;
+  @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
+
+  private querySub = this.route.queryParamMap.subscribe((map) => {
+    const id = map.get('editar')?.trim() || '';
+    if (id) {
+      if (!this.modalEditar() || this.editId() !== id) this.abrirEditar(id);
+    } else if (this.modalEditar()) {
+      this.cerrarEditar(false);
+    }
+  });
 
   filtrados = computed(() => {
     const q = this.filtro().trim();
@@ -166,8 +192,36 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
     this.cargar();
   }
 
+  ngAfterViewInit() {
+    if (this.modalEditar()) this.posicionarModal();
+  }
+
   ngOnDestroy() {
     this.recargarSub.unsubscribe();
+    this.querySub.unsubscribe();
+  }
+
+  inform(text: string, esError = false) {
+    this.msg.set(text);
+    this.msgError.set(esError);
+  }
+
+  informEdit(text: string, esError = false) {
+    this.editMsg.set(text);
+    this.editMsgError.set(esError);
+  }
+
+  modalTitulo(): string {
+    const c = this.editando();
+    return c?.codigoCert ? `Editar certificado ${c.codigoCert}` : 'Editar certificado';
+  }
+
+  modalSubtitulo(): string {
+    const c = this.editando();
+    if (!c) return 'Cargando datos del certificado…';
+    const tipo = c.tipoFormatoCertLabel || labelTipoCert(c.tipoFormatoCert);
+    const alumno = c.nombreCompleto || 'alumno';
+    return `${alumno} · ${tipo || 'tipo no definido'}`;
   }
 
   onFiltroChange(val: string) {
@@ -209,8 +263,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
           this.certificados.set(res.items || []);
           this.recalcEmitidosHoy();
           this.loading.set(false);
-          const id = this.route.snapshot.queryParamMap.get('editar');
-          if (id && !silencioso) this.abrirEditar(id);
+          this.reabrirEditarSiEnLista();
         },
         error: (e) => {
           this.loading.set(false);
@@ -254,9 +307,40 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
   }
 
   abrirEditar(id: string) {
-    const c = this.certificados().find((x) => x._id === id);
-    if (!c) return;
+    const idNorm = String(id).trim();
+    if (!idNorm) return;
+    if (this.cargandoEditar()) return;
+    if (this.modalEditar() && this.editId() === idNorm) return;
+
+    const enLista = this.certificados().find((x) => x._id === idNorm);
+    if (enLista) {
+      this.abrirEditarConItem(enLista);
+      return;
+    }
+
+    this.editId.set(idNorm);
+    this.editando.set(null);
+    this.modalEditar.set(true);
+    this.cargandoEditar.set(true);
+    this.posicionarModal();
+    this.certSvc.obtenerDatos(idNorm).subscribe({
+      next: (data) => {
+        this.cargandoEditar.set(false);
+        this.abrirEditarConItem(this.mapDatosAItem(data));
+      },
+      error: (e) => {
+        this.cargandoEditar.set(false);
+        this.cerrarEditar();
+        this.inform(e?.error?.message || 'No se encontró el certificado.', true);
+      },
+    });
+  }
+
+  private abrirEditarConItem(c: CertificadoListItem) {
+    this.editMsg.set(null);
+    this.editMsgError.set(false);
     this.editId.set(c._id);
+    this.editando.set(c);
     this.editEncabezado.set(c.encabezado || '');
     this.editTipoCertificado.set(normalizarTipoAlumno(c.tipoCertificado));
     this.editNumActa.set(c.numActa || '');
@@ -266,37 +350,43 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
     this.editFechaEmision.set(this.fechaInputLocal(c.fechaEmision));
     this.editFechaVencimiento.set(this.fechaInputLocal(c.fechaVencimiento || undefined));
     this.modalEditar.set(true);
+    this.posicionarModal();
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { editar: id },
+      queryParams: { editar: c._id },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
   }
 
-  cerrarEditar() {
+  cerrarEditar(actualizarUrl = true) {
     this.modalEditar.set(false);
     this.editId.set('');
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { editar: null },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
+    this.editando.set(null);
+    this.editMsg.set(null);
+    this.editMsgError.set(false);
+    if (actualizarUrl) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { editar: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
   }
 
   guardarEditar() {
     const id = this.editId();
     if (!id) return;
     if (!this.editFechaEmision()) {
-      this.msgError.set(true);
-      this.msg.set('La fecha de emisión es obligatoria.');
+      this.informEdit('La fecha de emisión es obligatoria.', true);
       return;
     }
     this.guardando.set(true);
-    this.msg.set(null);
+    this.editMsg.set(null);
     const idStr = String(id);
     const prev = this.certificados().find((x) => String(x._id) === idStr);
+    const estabaEnLista = !!prev;
     this.certSvc
       .actualizar(idStr, {
         encabezado: this.editEncabezado().trim(),
@@ -311,27 +401,22 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (c) => {
           this.guardando.set(false);
-          this.certificados.update((list) =>
-            list.map((x) =>
-              String(x._id) === idStr ? this.fusionarCertActualizado(x, c, prev) : x,
-            ),
-          );
-          this.recalcEmitidosHoy();
-          this.msgError.set(false);
-          this.msg.set('Certificado actualizado.');
-          void this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: { editar: null },
-            queryParamsHandling: 'merge',
-            replaceUrl: true,
-          });
-          this.modalEditar.set(false);
-          this.editId.set('');
+          if (estabaEnLista) {
+            this.certificados.update((list) =>
+              list.map((x) =>
+                String(x._id) === idStr ? this.fusionarCertActualizado(x, c, prev) : x,
+              ),
+            );
+            this.recalcEmitidosHoy();
+          } else {
+            this.cargar(true);
+          }
+          this.inform('Certificado actualizado.');
+          this.cerrarEditar();
         },
         error: (e) => {
           this.guardando.set(false);
-          this.msgError.set(true);
-          this.msg.set(e?.error?.message || 'No se pudo guardar.');
+          this.informEdit(e?.error?.message || 'No se pudo guardar.', true);
         },
       });
   }
@@ -359,10 +444,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
   }
 
   imprimir(c: CertificadoListItem) {
-    this.certSvc.abrirHtml(c._id, (m) => {
-      this.msgError.set(true);
-      this.msg.set(m);
-    });
+    this.certSvc.abrirHtml(c._id, (m) => this.inform(m, true));
   }
 
   fmtFecha(f?: string | null) {
@@ -459,5 +541,50 @@ export class CertificadosListaComponent implements OnInit, OnDestroy {
 
   private recalcEmitidosHoy() {
     this.emitidosHoy.set(this.certificados().filter((c) => esFechaHoy(c.fechaEmision)).length);
+  }
+
+  private posicionarModal() {
+    requestAnimationFrame(() => {
+      const title = this.titleAnchor?.nativeElement ?? this.pageHead?.nativeElement;
+      if (!title) return;
+      const rect = title.getBoundingClientRect();
+      const bottom = rect.bottom + window.scrollY;
+      this.modalTop.set(Math.max(8, Math.round(bottom + 6)));
+    });
+  }
+
+  /** Si el modal está abierto por URL y el ítem ya cargó en lista, enriquece datos de fila. */
+  private reabrirEditarSiEnLista() {
+    const id = this.editId();
+    if (!id || !this.modalEditar()) return;
+    const enLista = this.certificados().find((x) => x._id === id);
+    if (enLista) this.editando.set(enLista);
+  }
+
+  private mapDatosAItem(data: CertificadoDatosRes): CertificadoListItem {
+    const c = data.certificado;
+    const al = data.alumno;
+    const prog = data.programa;
+    const tipoFmt = data.tipoFormatoCert || c.tipoFormatoCert;
+    return {
+      _id: String(c._id),
+      codigoCert: c.codigoCert,
+      numDoc: c.numDoc,
+      alumnoId: al?._id ? String(al._id) : null,
+      nombreCompleto: nombreCompletoAlumno(al || {}),
+      encabezado: c.encabezado,
+      tipoFormatoCert: tipoFmt,
+      tipoFormatoCertLabel: labelTipoCert(tipoFmt),
+      tipoCertificado: c.tipoCertificado,
+      fechaEmision: c.fechaEmision,
+      fechaVencimiento: c.fechaVencimiento,
+      estado: c.estado,
+      numActa: c.numActa,
+      numFolio: c.numFolio,
+      numRunt: c.numRunt,
+      observaciones: c.observaciones,
+      programaDescr: prog?.descripcion || prog?.nombreProg || null,
+      nomCert: prog?.nomCert || null,
+    };
   }
 }

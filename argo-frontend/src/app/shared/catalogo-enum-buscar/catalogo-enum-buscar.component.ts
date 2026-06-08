@@ -80,8 +80,8 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['textoInicial']) {
-      const next = this.textoInicial || '';
-      if (next !== this.query()) this.query.set(next);
+      this.query.set(this.textoInicial || '');
+      this.filtrandoActivo.set(false);
     }
     if (changes['opcionesLocales']) {
       const q = this.filtrandoActivo() ? this.query().trim() : '';

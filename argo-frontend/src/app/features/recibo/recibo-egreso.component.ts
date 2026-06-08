@@ -31,6 +31,9 @@ export class ReciboEgresoComponent implements OnInit {
       next: (d) => {
         this.data.set(d);
         this.loading.set(false);
+        if ((d.config.formatoComprobanteEgreso || 'validadora') === 'media_carta') {
+          this.reciboSvc.abrirHtmlEgreso(id, (m) => this.error.set(m));
+        }
       },
       error: (e) => {
         this.loading.set(false);
@@ -40,7 +43,8 @@ export class ReciboEgresoComponent implements OnInit {
   }
 
   imprimir() {
-    window.print();
+    const id = this.route.snapshot.paramMap.get('egresoId');
+    if (id) this.reciboSvc.abrirHtmlEgreso(id, (m) => this.error.set(m));
   }
 
   abrirHtml() {

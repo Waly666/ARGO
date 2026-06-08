@@ -1,8 +1,19 @@
 import { CommonModule } from '@angular/common';
 
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 
 
@@ -11,6 +22,8 @@ import { CatalogoService } from '../../core/services/catalogo.service';
 import {
 
   Programa,
+
+  ProgramaDetalle,
 
   ProgramaDto,
 
@@ -44,6 +57,8 @@ import {
 } from '../../core/utils/capsule.util';
 import { coerceProgramaNumeric } from '../../core/utils/programa-numeric.util';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 
 type SortColPrograma =
   | 'codigo'
@@ -130,7 +145,7 @@ interface AuditInfo {
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
 
   templateUrl: './programas-admin.component.html',
 
@@ -150,8 +165,28 @@ export class ProgramasAdminComponent implements OnInit {
   private cfgCertSvc = inject(ConfigCertificadoService);
 
   private confirm = inject(ConfirmDialogService);
+  private asistente = inject(AsistenteContextoService);
 
+  modalTop = signal(80);
 
+  @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
+  @ViewChild('titleAnchor') titleAnchor?: ElementRef<HTMLElement>;
+
+  @HostListener('window:resize')
+  onResize() {
+    if (this.modalAbierto()) this.posicionarModal();
+  }
+
+  constructor() {
+    effect(() => {
+      if (this.modalAbierto()) {
+        this.asistente.setTipsPrepend([tipFormulario('Este formulario', this.modalSubtitulo(), 'prog-form-ctx')]);
+        this.posicionarModal();
+      } else {
+        this.asistente.clearTipsPrepend();
+      }
+    });
+  }
 
   programas = signal<Programa[]>([]);
 
@@ -184,7 +219,7 @@ export class ProgramasAdminComponent implements OnInit {
           break;
         }
         case 'tipo':
-          c = cmpStr(this.labelTipo(a.idTipCap), this.labelTipo(b.idTipCap));
+          c = cmpStr(this.labelTipoPrograma(a), this.labelTipoPrograma(b));
           break;
         case 'horas':
           c = cmpNum(a.horas, b.horas);
@@ -221,6 +256,7 @@ export class ProgramasAdminComponent implements OnInit {
   saving = signal(false);
 
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   busqueda = signal('');
 
@@ -269,7 +305,12 @@ export class ProgramasAdminComponent implements OnInit {
     this.tiposCap().map((t) => ({ value: t.id, label: t.label })),
   );
 
-  textoTipoCap = computed(() => this.labelTipo(this.form().idTipCap));
+  textoTipoCap = computed(() => {
+    if (this.esProgramaJornadasCapForm()) {
+      return this.etiquetaTipCapJornada();
+    }
+    return this.etiquetaTipCapForm(this.form().idTipCap);
+  });
 
   opcionesEstado: EnumBuscarOption[] = [
     { value: 'ACTIVO', label: 'ACTIVO' },
@@ -286,9 +327,10 @@ export class ProgramasAdminComponent implements OnInit {
   );
 
   textoTipoServ = computed(() => {
-    const code = this.form().tipoServ;
+    const code = String(this.form().tipoServ ?? '').trim();
+    if (!code) return '';
     const t = this.tiposServ().find((x) => x.code === code);
-    return t ? `${t.label} (${t.code})` : String(code || '');
+    return t ? `${t.label} (${t.code})` : code;
   });
 
   opcionesFacturar: EnumBuscarOption[] = [
@@ -324,27 +366,20 @@ export class ProgramasAdminComponent implements OnInit {
 
         this.tiposCargando.set(false);
 
-        const list: { id: string | number; label: string }[] = (rows || []).map(
-
-          (t: { idTipCap?: string | number; tipoCap?: string }) => {
-
-            const raw = t.idTipCap ?? t.tipoCap ?? '';
-
-            const id: string | number =
-
-              typeof raw === 'number' || typeof raw === 'string' ? raw : String(raw);
-
-            return { id, label: String(t.tipoCap ?? t.idTipCap ?? '') };
-
-          },
-
-        );
+        const list: { id: string | number; label: string }[] = (rows || [])
+          .map((t: { idTipCap?: string | number; id?: string | number; tipoCap?: string; descripcion?: string }) => {
+            const idRaw = t.idTipCap ?? t.id;
+            const label = String(t.tipoCap ?? t.descripcion ?? idRaw ?? '').trim();
+            if (idRaw == null || idRaw === '') return null;
+            return { id: idRaw, label: label || String(idRaw) };
+          })
+          .filter((x): x is { id: string | number; label: string } => !!x);
 
         this.tiposCap.set(list);
 
         if (!list.length) {
 
-          this.msg.set('No hay tipos de capacitación en el catálogo. Ejecute el seed de catálogos.');
+          this.inform('No hay tipos de capacitación en el catálogo. Ejecute el seed de catálogos.');
 
         }
 
@@ -354,7 +389,7 @@ export class ProgramasAdminComponent implements OnInit {
 
         this.tiposCargando.set(false);
 
-        this.msg.set('No se pudieron cargar los tipos de capacitación.');
+        this.inform('No se pudieron cargar los tipos de capacitación.', true);
 
       },
 
@@ -482,7 +517,7 @@ export class ProgramasAdminComponent implements OnInit {
 
         this.loading.set(false);
 
-        this.msg.set(e?.error?.message || 'Error cargando programas');
+        this.inform(e?.error?.message || 'Error cargando programas', true);
 
       },
 
@@ -536,7 +571,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     if (this.tiposCargando()) {
 
-      this.msg.set('Espere a que carguen los tipos de capacitación.');
+      this.inform('Espere a que carguen los tipos de capacitación.');
 
       return;
 
@@ -544,7 +579,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     if (!this.tiposCap().length) {
 
-      this.msg.set('Faltan tipos de capacitación. Contacte al administrador del sistema.');
+      this.inform('Faltan tipos de capacitación. Contacte al administrador del sistema.');
 
       return;
 
@@ -565,94 +600,102 @@ export class ProgramasAdminComponent implements OnInit {
     this.form.set({ ...this.formVacio(), idTipCap: t, tipoServ: this.inferirTipoServ(t), tipoCertificado: this.inferirTipoCert(t) });
 
     this.modalAbierto.set(true);
-
-    this.msg.set(null);
+    this.posicionarModal();
+    this.inform(null);
 
   }
 
 
 
   editar(p: Programa) {
-
-    this.editando.set(p);
-
+    this.modalAbierto.set(false);
     this.progSvc.obtener(p.idPrograma).subscribe({
-
       next: (det) => {
-
         const prog = det.programa;
-
         const lista = det.servicios?.length ? det.servicios : det.servicio ? [det.servicio] : [];
         const horaP = lista.find((x) => this.esHoraPractica(x)) ?? null;
         const matricula = lista.filter((x) => !this.esHoraPractica(x));
         const s = matricula[0] ?? null;
 
+        this.editando.set(prog);
         this.servicioVinculado.set(s);
         this.serviciosVinculados.set(matricula);
         this.servicioHoraPractica.set(horaP);
-
         this.auditPrograma.set(this.auditDe(prog as unknown as Record<string, unknown>));
-
         this.auditServicio.set(this.auditDe(s as unknown as Record<string, unknown>));
-
-        this.form.set({
-
-          codigoProg: prog.codigoProg,
-
-          nombreProg: prog.nombreProg,
-
-          nomCert: prog.nomCert || '',
-
-          idTipCap: prog.idTipCap ?? '',
-
-          semestres: prog.semestres ?? null,
-
-          horas: prog.horas ?? null,
-
-          horasTeoria: prog.horasTeoria ?? null,
-
-          horasPractica: prog.horasPractica ?? null,
-
-          horasTaller: prog.horasTaller ?? null,
-
-          valorMatricula: this.num(prog.valorMatricula),
-
-          tarifa1: this.num(s?.tarifa1 ?? prog.valorMatricula),
-
-          tarifa2: this.num(s?.tarifa2),
-
-          tarifa3: this.num(s?.tarifa3),
-
-          diasVencimiento: prog.diasVencimiento ?? 365,
-
-          tipoCertificado: prog.tipoCertificado ?? null,
-
-          estado: prog.estado || 'ACTIVO',
-
-          descripcion: prog.descripcion || '',
-
-          requistos: prog.requistos || '',
-
-          descrServicio: s?.descrServicio || prog.nombreProg || '',
-
-          tipoServ: s?.tipoServ ?? this.inferirTipoServ(prog.idTipCap),
-
-          facturar: this.facturarStr(s?.facturar),
-
-          iva: this.num(s?.iva),
-
-          tarifaHoraPractica: this.num(horaP?.tarifa1),
-
-        });
-
+        this.form.set(this.formDesdeDetalle(prog, s, horaP));
         this.modalAbierto.set(true);
-
+        this.posicionarModal();
       },
-
-      error: (e) => this.msg.set(e?.error?.message || 'No se pudo cargar el programa'),
-
+      error: (e) => this.inform(e?.error?.message || 'No se pudo cargar el programa', true),
     });
+  }
 
+  /** Programa de jornadas según documento BD (tipoCertificado o idTipCap textual). */
+  private esProgramaJornadasCapProg(prog: Programa): boolean {
+    const tc = String(prog.tipoCertificado || '')
+      .toLowerCase()
+      .replace(/-/g, '_');
+    if (tc === 'jornada_capacitacion') return true;
+    return this.esTipCapJornadaLabel(String(prog.idTipCap ?? ''));
+  }
+
+  /**
+   * idTipCap para el formulario: si el programa es jornada pero BD tiene idTipCap legacy
+   * (p. ej. Técnico Laboral), usa el id del catálogo «Jornadas de Capacitación».
+   */
+  private idTipCapParaFormulario(prog: Programa): string | number | '' {
+    if (this.esProgramaJornadasCapProg(prog)) {
+      const jid = this.findTipCapJornadaId();
+      if (jid != null && jid !== '') return jid;
+    }
+    return prog.idTipCap ?? '';
+  }
+
+  private formDesdeDetalle(
+    prog: Programa,
+    s: ServicioPrograma | null,
+    horaP: ServicioPrograma | null,
+  ): ProgramaDto {
+    const idTipCap = this.idTipCapParaFormulario(prog);
+    return {
+      codigoProg: prog.codigoProg,
+      nombreProg: prog.nombreProg ?? '',
+      nomCert: prog.nomCert ?? '',
+      idTipCap,
+      semestres: prog.semestres ?? null,
+      horas: prog.horas ?? null,
+      horasTeoria: prog.horasTeoria ?? null,
+      horasPractica: prog.horasPractica ?? null,
+      horasTaller: prog.horasTaller ?? null,
+      valorMatricula: this.num(prog.valorMatricula),
+      tarifa1: this.num(s?.tarifa1 ?? prog.valorMatricula),
+      tarifa2: this.num(s?.tarifa2),
+      tarifa3: this.num(s?.tarifa3),
+      diasVencimiento: prog.diasVencimiento ?? 365,
+      tipoCertificado: prog.tipoCertificado ?? null,
+      estado: prog.estado || 'ACTIVO',
+      descripcion: prog.descripcion ?? '',
+      requistos: prog.requistos ?? '',
+      descrServicio: s?.descrServicio ?? prog.nombreProg ?? '',
+      tipoServ:
+        s?.tipoServ != null && String(s.tipoServ).trim() !== ''
+          ? s.tipoServ
+          : this.inferirTipoServ(idTipCap),
+      facturar: this.facturarStr(s?.facturar),
+      iva: this.num(s?.iva),
+      tarifaHoraPractica: this.num(horaP?.tarifa1),
+    };
+  }
+
+  /** Etiqueta del tipo cap. para el formulario (fiel al id guardado en BD). */
+  private etiquetaTipCapForm(id: string | number | '' | null | undefined): string {
+    if (id == null || id === '') return '';
+    const t = this.tiposCap().find((x) => this.idsTipCapCoinciden(x.id, id));
+    if (t) return t.label;
+    const s = String(id).trim();
+    if (s && !/^\d+$/.test(s)) return s;
+    return s;
   }
 
 
@@ -673,7 +716,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     if (!f.nombreProg?.trim()) {
 
-      this.msg.set('El nombre del programa es obligatorio.');
+      this.inform('El nombre del programa es obligatorio.');
 
       return;
 
@@ -681,7 +724,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     if (f.idTipCap === '' || f.idTipCap == null) {
 
-      this.msg.set('Seleccione el tipo de capacitación.');
+      this.inform('Seleccione el tipo de capacitación.');
 
       return;
 
@@ -689,7 +732,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     if (!this.esProgramaJornadasCapForm() && (f.tarifa1 ?? f.valorMatricula ?? 0) <= 0) {
 
-      this.msg.set('Indique la tarifa 1 / valor de matrícula.');
+      this.inform('Indique la tarifa 1 / valor de matrícula.');
 
       return;
 
@@ -697,15 +740,23 @@ export class ProgramasAdminComponent implements OnInit {
 
     const esJorn = this.esProgramaJornadasCapForm();
 
+    let idTipCap = this.resolverIdTipCap(f.idTipCap);
+    if (esJorn) {
+      const jid = this.findTipCapJornadaId();
+      if (jid != null && jid !== '') idTipCap = jid;
+    }
+
     const payload: ProgramaDto = {
 
       ...f,
+
+      idTipCap,
 
       valorMatricula: esJorn ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
 
       tarifa1: esJorn ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
 
-      tipoCertificado: esJorn ? 'jornada_capacitacion' : (f.tipoCertificado ?? this.inferirTipoCert(f.idTipCap, f.nombreProg)),
+      tipoCertificado: esJorn ? 'jornada_capacitacion' : (f.tipoCertificado ?? this.inferirTipoCert(idTipCap, f.nombreProg)),
 
       descrServicio: (f.descrServicio || f.nombreProg).trim(),
 
@@ -715,7 +766,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     this.saving.set(true);
 
-    this.msg.set(null);
+    this.inform(null);
 
     const eraEdicion = !!this.editando();
 
@@ -741,13 +792,20 @@ export class ProgramasAdminComponent implements OnInit {
 
         this.catSvc.invalidate('servicios');
 
-        const extra = r as {
+        const extra = r as ProgramaDetalle & {
           message?: string;
-          servicio?: { idServ?: number | string };
-          servicios?: { idServ?: number | string }[];
         };
 
-        this.msg.set(extra.message || (eraEdicion ? 'Programa actualizado.' : 'Programa creado.'));
+        if (extra.programa?.idPrograma != null) {
+          const id = extra.programa.idPrograma;
+          this.programas.update((list) =>
+            list.map((p) =>
+              String(p.idPrograma) === String(id) ? { ...p, ...extra.programa } : p,
+            ),
+          );
+        }
+
+        this.inform(extra.message || (eraEdicion ? 'Programa actualizado.' : 'Programa creado.'));
 
         this.cargar();
 
@@ -759,7 +817,7 @@ export class ProgramasAdminComponent implements OnInit {
 
         const m = e?.error?.message || 'Error al guardar';
 
-        this.msg.set(e?.status === 403 ? `${m} — Verifique su rol de usuario.` : m);
+        this.inform(e?.status === 403 ? `${m} — Verifique su rol de usuario.` : m, true);
 
       },
 
@@ -772,7 +830,7 @@ export class ProgramasAdminComponent implements OnInit {
   async eliminar(p: Programa) {
 
     if (!this.puedeGestionarPrograma()) {
-      this.msg.set('Solo quien administra programas puede eliminar.');
+      this.inform('Solo quien administra programas puede eliminar.');
 
       return;
 
@@ -800,13 +858,13 @@ export class ProgramasAdminComponent implements OnInit {
 
         this.catSvc.invalidate('servicios');
 
-        this.msg.set(r.message || 'Programa eliminado.');
+        this.inform(r.message || 'Programa eliminado.');
 
         this.cargar();
 
       },
 
-      error: (e) => this.msg.set(e?.error?.message || 'Error al eliminar'),
+      error: (e) => this.inform(e?.error?.message || 'Error al eliminar', true),
 
     });
 
@@ -850,12 +908,119 @@ export class ProgramasAdminComponent implements OnInit {
 
 
 
+  labelTipoPrograma(p: Programa): string {
+    if (this.esProgramaJornadasCapList(p)) {
+      return this.etiquetaTipCapJornada();
+    }
+    return this.labelTipo(p.idTipCap);
+  }
+
   labelTipo(id: string | number | undefined): string {
+    if (id == null || id === '') return '—';
+    if (this.esTipCapJornadaLabel(String(id))) {
+      return this.etiquetaTipCapJornada();
+    }
+    const canon = this.resolverIdTipCap(id);
+    if (this.esTipCapJornadaLabel(String(canon))) {
+      return this.etiquetaTipCapJornada();
+    }
+    const t = this.tiposCap().find((x) => this.idsTipCapCoinciden(x.id, canon));
+    if (t) {
+      if (this.esTipCapJornadaLabel(t.label)) return this.etiquetaTipCapJornada();
+      return t.label;
+    }
+    const norm = this.normTipoCap(String(id));
+    const porEtiqueta = this.tiposCap().find((x) => this.normTipoCap(x.label) === norm);
+    if (porEtiqueta) {
+      if (this.esTipCapJornadaLabel(porEtiqueta.label)) return this.etiquetaTipCapJornada();
+      return porEtiqueta.label;
+    }
+    return String(id);
+  }
 
-    const t = this.tiposCap().find((x) => String(x.id) === String(id));
+  esProgramaJornadasCapList(p: Programa): boolean {
+    const tc = String(p.tipoCertificado || '')
+      .toLowerCase()
+      .replace(/-/g, '_');
+    if (tc === 'jornada_capacitacion') return true;
+    return (
+      this.esTipCapJornadaLabel(String(p.idTipCap ?? '')) ||
+      this.esTipCapJornadaLabel(this.labelTipo(p.idTipCap))
+    );
+  }
 
-    return t?.label || String(id ?? '—');
+  private etiquetaTipCapJornada(): string {
+    return this.findTipCapJornadaRow()?.label ?? 'Jornadas de Capacitación';
+  }
 
+  private findTipCapJornadaRow(): { id: string | number; label: string } | undefined {
+    return this.tiposCap().find((t) => this.esTipCapJornadaLabel(t.label));
+  }
+
+  private findTipCapJornadaId(): string | number | null {
+    const row = this.findTipCapJornadaRow();
+    return row?.id ?? null;
+  }
+
+  private esTipCapJornadaLabel(text: string): boolean {
+    const t = this.normTipoCap(text);
+    if (!t) return false;
+    return (
+      /jornadas? de capacitacion/.test(t) ||
+      /jornada capacitacion/.test(t) ||
+      /cap jornada/.test(t) ||
+      (t.includes('jornada') && t.includes('capacitacion'))
+    );
+  }
+
+  private normTipoCap(s: string): string {
+    return s
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  private idsTipCapCoinciden(a: string | number, b: string | number): boolean {
+    if (String(a) === String(b)) return true;
+    const na = String(a).match(/^(\d+)/)?.[1];
+    const nb = String(b).match(/^(\d+)/)?.[1];
+    return !!(na && nb && na === nb);
+  }
+
+  private resolverIdTipCap(raw: string | number | '' | null | undefined): string | number {
+    if (raw == null || raw === '') return '';
+    const sid = String(raw).trim();
+    if (this.esTipCapJornadaLabel(sid)) {
+      const jid = this.findTipCapJornadaId();
+      if (jid != null && jid !== '') return jid;
+    }
+    const porId = this.tiposCap().find((x) => this.idsTipCapCoinciden(x.id, sid));
+    if (porId) {
+      if (this.esTipCapJornadaLabel(porId.label)) {
+        const jid = this.findTipCapJornadaId();
+        if (jid != null && jid !== '') return jid;
+      }
+      return porId.id;
+    }
+    const norm = this.normTipoCap(sid);
+    const porLabel = this.tiposCap().find(
+      (x) => this.normTipoCap(x.label) === norm || this.normTipoCap(String(x.id)) === norm,
+    );
+    if (porLabel) {
+      if (this.esTipCapJornadaLabel(porLabel.label)) {
+        const jid = this.findTipCapJornadaId();
+        if (jid != null && jid !== '') return jid;
+      }
+      return porLabel.id;
+    }
+    const pref = sid.match(/^(\d+)/);
+    if (pref) {
+      const porNum = this.tiposCap().find((x) => String(x.id) === pref[1]);
+      if (porNum) return porNum.id;
+    }
+    return raw;
   }
 
 
@@ -979,12 +1144,11 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   onTipoCapChange(id: string | number) {
-    this.patch('idTipCap', id);
-    const cert = this.inferirTipoCert(id, this.form().nombreProg);
-    if (!this.editando()) {
-      this.patch('tipoServ', this.inferirTipoServ(id));
-      this.patch('tipoCertificado', cert);
-    }
+    const canon = this.resolverIdTipCap(id);
+    this.patch('idTipCap', canon);
+    const cert = this.inferirTipoCert(canon, this.form().nombreProg);
+    this.patch('tipoServ', this.inferirTipoServ(canon));
+    this.patch('tipoCertificado', cert);
     if (cert === 'jornada_capacitacion') {
       this.patch('valorMatricula', 0);
       this.patch('tarifa1', 0);
@@ -1004,6 +1168,13 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   onTipoCapPick(opt: EnumBuscarOption): void {
+    if (this.esTipCapJornadaLabel(String(opt.label || ''))) {
+      const jid = this.findTipCapJornadaId();
+      if (jid != null && jid !== '') {
+        this.onTipoCapChange(jid);
+        return;
+      }
+    }
     this.onTipoCapChange(opt.value);
   }
 
@@ -1050,6 +1221,49 @@ export class ProgramasAdminComponent implements OnInit {
     return this.editando()
       ? 'Datos del programa y servicio de matrícula.'
       : 'El código se asigna si lo deja vacío. El servicio se crea al guardar.';
+  }
+
+  private posicionarModal() {
+    const head = this.pageHead?.nativeElement;
+    if (head) {
+      const scrollTop = head.getBoundingClientRect().top + window.scrollY - 12;
+      window.scrollTo({ top: Math.max(0, scrollTop), behavior: 'auto' });
+    }
+
+    const measure = () => {
+      const title = this.titleAnchor?.nativeElement ?? this.pageHead?.nativeElement;
+      if (!title) return;
+      const bottom = title.getBoundingClientRect().bottom;
+      this.modalTop.set(Math.max(8, Math.round(bottom + 6)));
+    };
+
+    requestAnimationFrame(() => {
+      measure();
+      requestAnimationFrame(measure);
+    });
+    setTimeout(measure, 80);
+  }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('espere') ||
+        t.includes('faltan') ||
+        t.includes('contacte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
   }
 
   capCodigo = capCodigo;

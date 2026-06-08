@@ -1,12 +1,13 @@
-<section class="instructor-page card">
-  <header class="jor-page-header">
-    <div class="jor-page-title">
+<section class="instructor-page card admin-list-page">
+  <header class="jor-head jor-page-header">
+    <div class="jor-head-main jor-page-title">
+      <p class="breadcrumb"><a routerLink="/app/jornadas">Jornadas</a> / Instructor</p>
       <h1>Clase en carpa — Instructor</h1>
       <p class="hint-block">
         Operación en campo: elija la jornada del día, cree la clase y registre asistencias para el certificado automático.
       </p>
     </div>
-    <span class="cap cap-orange cap-sm cap-text">Vista operador</span>
+    <span class="jor-chip jor-chip--orange">Vista operador</span>
   </header>
 
   @if (msg(); as texto) {

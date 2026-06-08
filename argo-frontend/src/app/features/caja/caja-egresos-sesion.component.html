@@ -1,20 +1,22 @@
 <section class="mov-page">
-  <header class="mov-head">
-    <div>
-      <h2>Egresos de mi caja</h2>
+  <header class="caja-head mov-head">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Egresos</p>
+      <h1>Egresos de mi caja</h1>
       <p class="hint" *ngIf="cajaAbierta() && sesionId()">
         Sesión #{{ sesionId() }} — solo egresos de este turno.
       </p>
       <p class="hint warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar egresos.</p>
     </div>
-    <div class="mov-actions">
+    <div class="caja-badges mov-actions">
+      <span class="caja-chip caja-chip--amber" *ngIf="cantSinSoporte() > 0">{{ cantSinSoporte() }} sin soporte</span>
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
       <button type="button" class="primary sm" (click)="nuevoEgreso()">Nuevo egreso</button>
-      <span class="total-badge">{{ total() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+      <span class="total-badge egreso">{{ total() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
     </div>
   </header>
 
-  <p class="msg" *ngIf="msg()">{{ msg() }}</p>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
   <div class="warn-docs card" *ngIf="cantSinSoporte() > 0">
     <strong>Aviso: egresos sin soporte adjunto ({{ cantSinSoporte() }})</strong>

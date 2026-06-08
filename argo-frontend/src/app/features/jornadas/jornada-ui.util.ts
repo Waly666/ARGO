@@ -243,7 +243,7 @@ export function estadoClaseCalAccentClass(estado?: string | null): string {
   if (e === 'EN PROCESO') return 'cal-est-en-proceso';
   if (e === 'FINALIZADO') return 'cal-est-finalizada';
   if (e === 'CANCELADA') return 'cal-est-cancelada';
-  if (e === 'CREADO') return 'cal-est-creado';
+  if (e === 'CREADO' || e === 'PROGRAMADA') return 'cal-est-pendiente';
   return '';
 }
 

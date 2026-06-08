@@ -3,7 +3,11 @@ import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
-import { AlumnoService } from '../../core/services/alumno.service';
+import {
+  AlumnoService,
+  FacturaAlarmaHoy,
+  MovimientoAlarmaHoy,
+} from '../../core/services/alumno.service';
 import { AlarmaService } from '../../core/services/alarma.service';
 import { AlumnoStore } from '../../core/services/alumno-store.service';
 import { LiquidacionItem, LiquidacionService } from '../../core/services/liquidacion.service';
@@ -19,6 +23,7 @@ import { ProgramacionCeaService } from '../../core/services/programacion-cea.ser
 import { environment } from '../../../environments/environment';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../core/utils/saldo-alerta.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
+import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
 
 type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos' | 'programacion';
 
@@ -50,6 +55,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   private permisos = inject(PermisoService);
   private ceaSvc = inject(ProgramacionCeaService);
   readonly alarmas = inject(AlarmaService);
+  private comprobanteImpresion = inject(ComprobanteHoyImpresionService);
   store = inject(AlumnoStore);
 
   tab = signal<TabKey>('datos');
@@ -118,6 +124,10 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
 
   clasesCeaCreadoAlertas = signal<AlertaClaseCeaCreada[]>([]);
 
+  comprobanteIngresoHoy = signal<MovimientoAlarmaHoy | null>(null);
+  comprobanteEgresoHoy = signal<MovimientoAlarmaHoy | null>(null);
+  facturaHoy = signal<FacturaAlarmaHoy | null>(null);
+
   clasesCeaCreadoCount = computed(() =>
     this.clasesCeaCreadoAlertas().reduce((acc, a) => acc + a.cantidad, 0),
   );
@@ -167,6 +177,19 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
       }
       void _liqTouch;
       this.revisarClasesCeaCreado(nd);
+    });
+
+    effect(() => {
+      const id = this.store.alumno()?._id;
+      const _liqTouch = this.store.liqTick();
+      if (this.esNuevo() || !id) {
+        this.comprobanteIngresoHoy.set(null);
+        this.comprobanteEgresoHoy.set(null);
+        this.facturaHoy.set(null);
+        return;
+      }
+      void _liqTouch;
+      this.revisarMovimientosHoy(id);
     });
   }
 
@@ -218,6 +241,90 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
 
   irProgramacion() {
     this.setTab('programacion');
+  }
+
+  tieneComprobanteIngresoHoy(): boolean {
+    return this.alarmas.tiene('alarmas.alumnos.comprobante_ingreso') && !!this.comprobanteIngresoHoy()?.id;
+  }
+
+  tieneComprobanteEgresoHoy(): boolean {
+    return this.alarmas.tiene('alarmas.alumnos.comprobante_egreso') && !!this.comprobanteEgresoHoy()?.id;
+  }
+
+  tieneFacturaHoy(): boolean {
+    return this.alarmas.tiene('alarmas.alumnos.factura') && !!this.facturaHoy()?.id;
+  }
+
+  tituloComprobanteIngresoHoy(): string {
+    const m = this.comprobanteIngresoHoy();
+    if (!m) return '';
+    const ref = m.numRecibo ? ` ${m.numRecibo}` : '';
+    return `Comprobante de ingreso hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+  }
+
+  etiquetaComprobanteIngresoHoy(): string {
+    return this.comprobanteIngresoHoy()?.numRecibo || 'Ingreso';
+  }
+
+  tituloComprobanteEgresoHoy(): string {
+    const m = this.comprobanteEgresoHoy();
+    if (!m) return '';
+    const ref = m.numRecibo ? ` ${m.numRecibo}` : '';
+    return `Comprobante de egreso hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+  }
+
+  etiquetaComprobanteEgresoHoy(): string {
+    return this.comprobanteEgresoHoy()?.numRecibo || 'Egreso';
+  }
+
+  tituloFacturaHoy(): string {
+    const m = this.facturaHoy();
+    if (!m) return '';
+    const ref = m.numeroFactura ? ` ${m.numeroFactura}` : '';
+    return `Factura electrónica hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+  }
+
+  etiquetaFacturaHoy(): string {
+    return this.facturaHoy()?.numeroFactura || 'Factura';
+  }
+
+  irComprobanteIngresoHoy(ev?: Event) {
+    ev?.preventDefault();
+    ev?.stopPropagation();
+    const id = this.comprobanteIngresoHoy()?.id;
+    if (!id) return;
+    this.comprobanteImpresion.abrirIngreso(id);
+  }
+
+  irComprobanteEgresoHoy(ev?: Event) {
+    ev?.preventDefault();
+    ev?.stopPropagation();
+    const id = this.comprobanteEgresoHoy()?.id;
+    if (!id) return;
+    this.comprobanteImpresion.abrirEgreso(id);
+  }
+
+  irFacturaHoy(ev?: Event) {
+    ev?.preventDefault();
+    ev?.stopPropagation();
+    const id = this.facturaHoy()?.id;
+    if (!id) return;
+    this.comprobanteImpresion.abrirFactura(id);
+  }
+
+  revisarMovimientosHoy(alumnoId: string) {
+    this.alumnoSvc.indicadoresMovimientosHoy(alumnoId).subscribe({
+      next: (r) => {
+        this.comprobanteIngresoHoy.set(r.comprobanteIngresoHoy || null);
+        this.comprobanteEgresoHoy.set(r.comprobanteEgresoHoy || null);
+        this.facturaHoy.set(r.facturaHoy || null);
+      },
+      error: () => {
+        this.comprobanteIngresoHoy.set(null);
+        this.comprobanteEgresoHoy.set(null);
+        this.facturaHoy.set(null);
+      },
+    });
   }
 
   revisarClasesCeaCreado(numDoc: number | string) {
@@ -285,6 +392,9 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     this.docsPendientes.set([]);
     this.saldosPendientes.set([]);
     this.clasesCeaCreadoAlertas.set([]);
+    this.comprobanteIngresoHoy.set(null);
+    this.comprobanteEgresoHoy.set(null);
+    this.facturaHoy.set(null);
     this.alumnoSvc
       .porId(idNorm)
       .pipe(finalize(() => this.loading.set(false)))

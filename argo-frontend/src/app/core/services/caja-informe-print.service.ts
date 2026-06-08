@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ConfigRecibo, ConfigService } from './config.service';
 import {
   buildInformeGeneralHtml,
@@ -17,6 +18,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CajaInformePrintService {
   private configSvc = inject(ConfigService);
+  private confirm = inject(ConfirmDialogService);
   private empresaCache = new Map<string, ConfigRecibo>();
 
   imprimirIndividual(opts: {
@@ -71,7 +73,13 @@ export class CajaInformePrintService {
   private abrirVentana(html: string, titulo: string): void {
     const ventana = window.open('', '_blank', 'width=920,height=720,scrollbars=yes');
     if (!ventana) {
-      alert('Permita ventanas emergentes para ver el informe de caja.');
+      void this.confirm.open({
+        title: 'Ventana bloqueada',
+        message: 'Permita ventanas emergentes en el navegador para ver el informe de caja.',
+        confirmLabel: 'Entendido',
+        variant: 'warn',
+        hideCancel: true,
+      });
       return;
     }
     ventana.document.open();

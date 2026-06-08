@@ -23,6 +23,7 @@ import { IngresoService } from '../../core/services/ingreso.service';
 import { CajaResumenServiciosComponent } from './caja-resumen-servicios.component';
 import { resolverFormaPagoIngreso } from '../../core/utils/caja-forma-pago.util';
 import { buildMetodosPagoCards, MetodoPagoCard } from '../../core/utils/metodo-pago.util';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'argo-caja-cierre-detalle',
@@ -40,6 +41,7 @@ export class CajaCierreDetalleComponent implements OnInit {
   private informePrint = inject(CajaInformePrintService);
   private ingresoSvc = inject(IngresoService);
   private auth = inject(AuthService);
+  private confirm = inject(ConfirmDialogService);
 
   idSesion = signal<number | null>(null);
   sesion = signal<CajaSesion | null>(null);
@@ -51,6 +53,7 @@ export class CajaCierreDetalleComponent implements OnInit {
   loading = signal(true);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   valorCuadre = signal(0);
   obsCuadre = signal('');
@@ -171,7 +174,7 @@ export class CajaCierreDetalleComponent implements OnInit {
 
   cargar(id: number): void {
     this.loading.set(true);
-    this.msg.set(null);
+    this.inform(null);
     this.cajaSvc.resumen(id).subscribe({
       next: (r) => {
         this.sesion.set(r.sesion);
@@ -183,48 +186,60 @@ export class CajaCierreDetalleComponent implements OnInit {
       },
       error: (e) => {
         this.loading.set(false);
-        this.msg.set(e?.error?.message || 'No se pudo cargar el cierre');
+        this.inform(e?.error?.message || 'No se pudo cargar el cierre');
       },
     });
     this.cajaSvc.ingresosPorSesion(id).subscribe({ next: (r) => this.ingresos.set(r || []) });
     this.cajaSvc.egresosPorSesion(id).subscribe({ next: (r) => this.egresos.set(r || []) });
   }
 
-  anularIngreso(i: CajaIngresoItem): void {
+  async anularIngreso(i: CajaIngresoItem): Promise<void> {
     const id = i._id;
     if (!id) return;
     const ref = i.numRecibo ? ` ${i.numRecibo}` : '';
-    if (!confirm(`¿Anular el ingreso${ref}? Se actualizará el cuadre automáticamente.`)) return;
+    const ok = await this.confirm.open({
+      title: 'Anular ingreso',
+      message: `¿Anular el ingreso${ref}? Se actualizará el cuadre automáticamente.`,
+      confirmLabel: 'Anular',
+      variant: 'danger',
+    });
+    if (!ok) return;
     this.saving.set(true);
     this.ingresoSvc.eliminar(String(id)).subscribe({
       next: () => {
         this.saving.set(false);
-        this.msg.set('Ingreso anulado');
+        this.inform('Ingreso anulado');
         const sid = this.idSesion();
         if (sid) this.cargar(sid);
       },
       error: (e) => {
         this.saving.set(false);
-        this.msg.set(e?.error?.message || 'No se pudo anular');
+        this.inform(e?.error?.message || 'No se pudo anular');
       },
     });
   }
 
-  reabrirCaja(): void {
+  async reabrirCaja(): Promise<void> {
     const id = this.idSesion();
-    if (!id || !confirm('¿Reabrir esta caja cerrada para corregir movimientos? El cajero podrá seguir operando hasta un nuevo cierre.')) {
-      return;
-    }
+    if (!id) return;
+    const ok = await this.confirm.open({
+      title: 'Reabrir caja',
+      message:
+        '¿Reabrir esta caja cerrada para corregir movimientos? El cajero podrá seguir operando hasta un nuevo cierre.',
+      confirmLabel: 'Reabrir',
+      variant: 'warn',
+    });
+    if (!ok) return;
     this.saving.set(true);
     this.cajaSvc.reabrirSesion(id, 'Reapertura administrativa').subscribe({
       next: (r) => {
         this.saving.set(false);
-        this.msg.set(r.message || 'Caja reabierta');
+        this.inform(r.message || 'Caja reabierta');
         this.cargar(id);
       },
       error: (e) => {
         this.saving.set(false);
-        this.msg.set(e?.error?.message || 'No se pudo reabrir la caja');
+        this.inform(e?.error?.message || 'No se pudo reabrir la caja');
       },
     });
   }
@@ -240,11 +255,11 @@ export class CajaCierreDetalleComponent implements OnInit {
     const id = this.idSesion();
     const v = Math.round(this.valorCuadre());
     if (!id || !(v > 0)) {
-      this.msg.set('Indique el valor en efectivo a ingresar');
+      this.inform('Indique el valor en efectivo a ingresar');
       return;
     }
     if (v > this.montoDebe()) {
-      this.msg.set(`No puede superar el faltante (${this.montoDebe().toLocaleString('es-CO')} COP)`);
+      this.inform(`No puede superar el faltante (${this.montoDebe().toLocaleString('es-CO')} COP)`);
       return;
     }
     this.saving.set(true);
@@ -253,7 +268,7 @@ export class CajaCierreDetalleComponent implements OnInit {
       .subscribe({
         next: (r) => {
           this.saving.set(false);
-          this.msg.set(
+          this.inform(
             r.resuelto
               ? 'Reposición registrada — el descuadre quedó resuelto.'
               : 'Reposición registrada — revise el faltante actualizado.',
@@ -262,7 +277,7 @@ export class CajaCierreDetalleComponent implements OnInit {
         },
         error: (e) => {
           this.saving.set(false);
-          this.msg.set(e?.error?.message || 'No se pudo registrar el ingreso');
+          this.inform(e?.error?.message || 'No se pudo registrar el ingreso');
         },
       });
   }
@@ -293,10 +308,10 @@ export class CajaCierreDetalleComponent implements OnInit {
       void this.router.navigate(['/app/caja/egresos/editar', e.idEgreso], {
         queryParams: { returnUrl: this.router.url },
       });
-      this.msg.set('Adjunte el soporte (imagen) en el formulario y guarde.');
+      this.inform('Adjunte el soporte (imagen) en el formulario y guarde.');
       return;
     }
-    this.msg.set(
+    this.inform(
       `Egreso ${e.numRecibo || e.concepto || ''} sin soporte. Solicite a un administrador que adjunte el comprobante.`,
     );
   }
@@ -322,4 +337,25 @@ export class CajaCierreDetalleComponent implements OnInit {
     if (t.includes('tarj')) return { tone: 'purple', icon: '💳' };
     return { tone: 'cyan', icon: '◎' };
   }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }

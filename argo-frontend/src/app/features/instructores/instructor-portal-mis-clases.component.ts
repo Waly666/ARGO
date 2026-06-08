@@ -28,6 +28,7 @@ import {
   horasSlots,
   inicioSemana,
   layoutHorarioHHmm,
+  layoutsCalendarioDiaHHmm,
   rangoVisibleMes,
   ymdCalendario,
   ymdLocal,
@@ -345,6 +346,12 @@ export class InstructorPortalMisClasesComponent implements OnInit, OnDestroy {
 
   layoutClase(c: ClaseInstructorPortalDto) {
     return layoutHorarioHHmm(c.horaDesde, c.horaHasta);
+  }
+
+  layoutsCalendarioDia(clases: ClaseInstructorPortalDto[]) {
+    return layoutsCalendarioDiaHHmm(
+      clases.map((c) => ({ id: c._id, horaDesde: c.horaDesde, horaHasta: c.horaHasta })),
+    );
   }
 
   /** Abre editor CEA o jornada carpa en modal embebido. */

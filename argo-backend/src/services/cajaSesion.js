@@ -311,9 +311,15 @@ function totalArqueo(arqueo) {
 
 async function agruparIngresosPorServicio(ingresos, porTipoPago) {
   const Liquidacion = require('../models/Liquidacion');
-  const liqIds = [...new Set(ingresos.map((i) => String(i.idLiquidacion)).filter(Boolean))];
-  const liqs = liqIds.length
-    ? await Liquidacion.find({ _id: { $in: liqIds } }).select('descripcion').lean()
+  const liqIds = new Set();
+  for (const i of ingresos) {
+    if (i.idLiquidacion) liqIds.add(String(i.idLiquidacion));
+    if (Array.isArray(i.detalle)) {
+      for (const d of i.detalle) if (d.idLiquidacion) liqIds.add(String(d.idLiquidacion));
+    }
+  }
+  const liqs = liqIds.size
+    ? await Liquidacion.find({ _id: { $in: [...liqIds] } }).select('descripcion').lean()
     : [];
   const descrMap = Object.fromEntries(liqs.map((l) => [String(l._id), l.descripcion || '']));
 
@@ -323,7 +329,36 @@ async function agruparIngresosPorServicio(ingresos, porTipoPago) {
   );
 
   const map = new Map();
+  const acumular = (servicio, valor, esEfectivo) => {
+    const key = String(servicio).trim() || 'Ingreso';
+    const prev = map.get(key) || {
+      servicio: key,
+      descripcion: key,
+      cantidad: 0,
+      total: 0,
+      efectivo: 0,
+      otros: 0,
+    };
+    prev.cantidad += 1;
+    prev.total += valor;
+    if (esEfectivo) prev.efectivo += valor;
+    else prev.otros += valor;
+    map.set(key, prev);
+  };
+
   for (const ing of ingresos) {
+    const efectivo = esIngresoEfectivo(ing, porTipoPago);
+    // Comprobante multi-servicio: discrimina cada servicio del detalle.
+    if (!ing.esIngresoCaja && Array.isArray(ing.detalle) && ing.detalle.length) {
+      for (const d of ing.detalle) {
+        const servicio =
+          d.descripcion ||
+          descrMap[String(d.idLiquidacion)] ||
+          'Cobro matrícula / servicio';
+        acumular(servicio, num(d.valor), efectivo);
+      }
+      continue;
+    }
     let servicio = 'Ingreso';
     if (ing.esIngresoCaja) {
       const tid = String(ing.tipoIngreso ?? '');
@@ -336,21 +371,7 @@ async function agruparIngresosPorServicio(ingresos, porTipoPago) {
         ing.liquidacionDescr ||
         'Cobro matrícula / servicio';
     }
-    const key = String(servicio).trim() || 'Ingreso';
-    const prev = map.get(key) || {
-      servicio: key,
-      descripcion: key,
-      cantidad: 0,
-      total: 0,
-      efectivo: 0,
-      otros: 0,
-    };
-    const v = num(ing.valor);
-    prev.cantidad += 1;
-    prev.total += v;
-    if (esIngresoEfectivo(ing, porTipoPago)) prev.efectivo += v;
-    else prev.otros += v;
-    map.set(key, prev);
+    acumular(servicio, num(ing.valor), efectivo);
   }
   return [...map.values()].sort((a, b) => b.total - a.total);
 }

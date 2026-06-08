@@ -44,6 +44,7 @@ export class NovedadesAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
   vista = signal<VistaLista>(readVistaLista('argo-novedades-vista'));
   mostrarForm = signal(false);
   editando = signal<any | null>(null);
@@ -134,7 +135,7 @@ export class NovedadesAdminComponent implements OnInit {
 
   editar(r: any) {
     if (r.autoGenerada) {
-      this.msg.set('Las novedades automáticas se regeneran desde Nómina → Generar novedades.');
+      this.inform('Las novedades automáticas se regeneran desde Nómina → Generar novedades.');
       return;
     }
     this.editando.set(r);
@@ -159,11 +160,11 @@ export class NovedadesAdminComponent implements OnInit {
   guardar() {
     const f = this.form();
     if (!f['empleadoId']) {
-      this.msg.set('Empleado es obligatorio.');
+      this.inform('Empleado es obligatorio.', true);
       return;
     }
     if (!f['codigoPila'] && !f['tipoNovedad']) {
-      this.msg.set('Indique tipo de novedad o código PILA.');
+      this.inform('Indique tipo de novedad o código PILA.', true);
       return;
     }
     this.saving.set(true);
@@ -183,7 +184,7 @@ export class NovedadesAdminComponent implements OnInit {
         this.saving.set(false);
         this.mostrarForm.set(false);
         this.cargar();
-        this.msg.set(
+        this.inform(
           f['codigoPila']
             ? 'Novedad PILA guardada. Regeneré novedades automáticas y liquide de nuevo.'
             : 'Novedad guardada.',
@@ -191,14 +192,14 @@ export class NovedadesAdminComponent implements OnInit {
       },
       error: (e) => {
         this.saving.set(false);
-        this.msg.set(e?.error?.message || 'Error');
+        this.inform(e?.error?.message || 'Error', true);
       },
     });
   }
 
   async eliminar(r: any) {
     if (r.autoGenerada) {
-      this.msg.set('Regeneré desde Nómina.');
+      this.inform('Regeneré desde Nómina.');
       return;
     }
     const ok = await this.confirm.open({
@@ -210,8 +211,13 @@ export class NovedadesAdminComponent implements OnInit {
     if (!ok) return;
     this.cat.eliminar('novedades-nomina', r.idNovedad).subscribe({
       next: () => this.cargar(),
-      error: (e) => this.msg.set(e?.error?.message || 'Error'),
+      error: (e) => this.inform(e?.error?.message || 'Error', true),
     });
+  }
+
+  private inform(text: string | null, isErr = false): void {
+    this.msg.set(text);
+    this.msgError.set(isErr);
   }
 
   labelPila(codigo: string): string {

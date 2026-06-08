@@ -19,6 +19,7 @@ export class CajaDescuadresAdminComponent implements OnInit {
   detalle = signal<CajaDescuadre[]>([]);
   loading = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   ngOnInit(): void {
     this.cargar();
@@ -26,7 +27,7 @@ export class CajaDescuadresAdminComponent implements OnInit {
 
   cargar(): void {
     this.loading.set(true);
-    this.msg.set(null);
+    this.inform(null);
     const mes = this.mes();
     const desde = `${mes}-01`;
     const [y, m] = mes.split('-').map(Number);
@@ -47,8 +48,29 @@ export class CajaDescuadresAdminComponent implements OnInit {
         },
         error: (e) => {
           this.loading.set(false);
-          this.msg.set(e?.error?.message || 'No se pudo cargar');
+          this.inform(e?.error?.message || 'No se pudo cargar');
         },
       });
   }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }

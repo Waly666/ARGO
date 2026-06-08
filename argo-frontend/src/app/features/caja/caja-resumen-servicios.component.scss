@@ -1,3 +1,5 @@
+@use './caja-shared' as *;
+
 .resumen-servicios-panel {
   padding: 1rem 1.1rem;
   border-radius: var(--radius, 10px);

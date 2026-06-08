@@ -178,10 +178,11 @@
     </ul>
   </section>
 
-  <header class="page-head" *ngIf="modoSoloForm()">
-    <div>
+  <header class="caja-head page-head" *ngIf="modoSoloForm()">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / <a routerLink="/app/caja/egresos">Egresos</a> / Formulario</p>
       <h1>{{ editando() ? 'Editar egreso' : 'Nuevo egreso' }}{{ returnUrl()?.includes('egresos-todos') ? ' — historial' : ' — mi caja' }}</h1>
-    <p class="hint">
+      <p class="hint">
         {{ editando() && returnUrl()?.includes('egresos-todos')
           ? 'Como administrador puede modificar egresos de cualquier sesión. Los préstamos/adelantos de nómina no se editan.'
           : editando()
@@ -191,40 +192,25 @@
     </div>
   </header>
 
-  <header class="page-head" *ngIf="!modoSoloForm()">
-
-    <div>
-
+  <header class="caja-head page-head" *ngIf="!modoSoloForm()">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Egresos</p>
       <h1>Egresos — Flujo de caja</h1>
-
       <p class="hint">
-
         El <strong>tipo de egreso</strong> define si exige empleado, si es préstamo/adelanto (deducción en nómina) o gasto a tercero.
-
         Bonos: solo en <a routerLink="/app/rrhh/novedades">RRHH → Novedades</a> (devengo), no por caja.
-
         Tipos: <a routerLink="/app/configuracion/catalogos">Configuración → Catálogos → Tipos de egreso</a>.
-
       </p>
-
-      <p class="filtro-emp" *ngIf="filtroNumeroDocumento()">
-
+      <p class="filtro-emp hint" *ngIf="filtroNumeroDocumento()">
         Filtrando documento: <strong>{{ filtroEmpleadoLabel() }}</strong>
-
         <button type="button" class="ghost sm" (click)="limpiarFiltro()">Quitar filtro</button>
-
       </p>
-
     </div>
-
-    <div class="head-actions">
-
+    <div class="caja-badges head-actions">
+      <span class="caja-chip caja-chip--emerald" *ngIf="cajaAbierta()">Caja #{{ sesionCaja()?.idSesion }} abierta</span>
       <a routerLink="/app/rrhh/empleados" class="ghost link-btn">RRHH Empleados</a>
-
       <button type="button" class="primary" (click)="nuevo()">Nuevo egreso</button>
-
     </div>
-
   </header>
 
 
@@ -318,7 +304,7 @@
 
 
 
-  <div class="msg ok" *ngIf="msg()">{{ msg() }}</div>
+  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
 
 
 

@@ -117,6 +117,16 @@ export class VehiculoDetalleComponent implements OnInit {
 
   puedeDocumentos = computed(() => !this.esNuevo() && !!this.vehiculoId());
 
+  docsResumen = computed(() => {
+    const docs = this.docsRequeridos();
+    return {
+      total: docs.length,
+      ok: docs.filter((d) => d.subido && !d.vencido).length,
+      pendientes: docs.filter((d) => !d.subido).length,
+      vencidos: docs.filter((d) => d.vencido).length,
+    };
+  });
+
   buscarMarcasRemoto = (q: string): Observable<EnumBuscarOption[]> =>
     this.svc.listarMarcas(q).pipe(
       map((rows) =>
@@ -539,6 +549,15 @@ export class VehiculoDetalleComponent implements OnInit {
     if (doc.faltaFechaVence) return 'doc-pronto';
     if (doc.vencePronto) return 'doc-pronto';
     return '';
+  }
+
+  estadoChipClass(estado?: string): string {
+    const e = String(estado || '').toLowerCase();
+    if (e.includes('libre') || e.includes('activ') || e.includes('dispon')) return 'veh-chip--ok';
+    if (e.includes('ocup') || e.includes('uso') || e.includes('ruta')) return 'veh-chip--busy';
+    if (e.includes('manten') || e.includes('taller') || e.includes('repar')) return 'veh-chip--warn';
+    if (e.includes('baja') || e.includes('inactiv') || e.includes('retir')) return 'veh-chip--off';
+    return 'veh-chip--neutral';
   }
 
   capId = capId;

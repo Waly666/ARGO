@@ -73,49 +73,74 @@ export class ReciboService {
     return this.http.get<ReciboEgresoData>(`${environment.apiUrl}/egresos/${idEgreso}/recibo`);
   }
 
-  abrirHtmlEgreso(idEgreso: string, onError?: (msg: string) => void): void {
+  abrirHtmlEgreso(idEgreso: string, onError?: (msg: string) => void): boolean {
     if (!idEgreso) {
       onError?.('Comprobante sin identificador.');
-      return;
+      return false;
     }
-    this.http
-      .get(`${environment.apiUrl}/egresos/${idEgreso}/recibo/html`, { responseType: 'text' })
-      .subscribe({
-        next: (html) => {
-          const w = window.open('', '_blank', 'width=420,height=820');
-          if (!w) {
-            onError?.('El navegador bloqueó la ventana emergente. Permita ventanas emergentes para este sitio.');
-            return;
-          }
-          w.document.open();
-          w.document.write(html);
-          w.document.close();
-        },
-        error: (e) => onError?.(e?.error?.message || 'No se pudo generar el comprobante de egreso.'),
-      });
+    return this.abrirHtmlEnVentana(
+      `${environment.apiUrl}/egresos/${idEgreso}/recibo/html?v=${Date.now()}`,
+      'width=420,height=820',
+      onError,
+      'No se pudo generar el comprobante de egreso.',
+    );
   }
 
-  /** Abre HTML del recibo en nueva ventana (para imprimir / reimprimir) */
-  abrirHtml(idIngreso: string, onError?: (msg: string) => void): void {
+  /** Abre HTML del recibo en nueva ventana (para imprimir / reimprimir). Devuelve false si el popup fue bloqueado. */
+  abrirHtml(idIngreso: string, onError?: (msg: string) => void): boolean {
     if (!idIngreso) {
       onError?.('Comprobante sin identificador.');
-      return;
+      return false;
     }
-    this.http
-      .get(`${environment.apiUrl}/ingresos/${idIngreso}/recibo/html`, { responseType: 'text' })
-      .subscribe({
-        next: (html) => {
-          const w = window.open('', '_blank', 'width=420,height=720');
-          if (!w) {
-            onError?.('El navegador bloqueó la ventana emergente. Permita ventanas emergentes para este sitio.');
-            return;
-          }
+    return this.abrirHtmlEnVentana(
+      `${environment.apiUrl}/ingresos/${idIngreso}/recibo/html?v=${Date.now()}`,
+      'width=420,height=720',
+      onError,
+      'No se pudo generar el comprobante.',
+    );
+  }
+
+  /** Abre la ventana en el mismo gesto del clic; luego carga el HTML (evita bloqueo de popups). */
+  private abrirHtmlEnVentana(
+    url: string,
+    features: string,
+    onError: ((msg: string) => void) | undefined,
+    mensajeError: string,
+  ): boolean {
+    const w = window.open('', '_blank', features);
+    if (!w) {
+      onError?.('El navegador bloqueó la ventana emergente. Permita ventanas emergentes para este sitio.');
+      return false;
+    }
+    try {
+      w.document.open();
+      w.document.write('<p style="font-family:sans-serif;padding:1rem">Cargando comprobante…</p>');
+      w.document.close();
+    } catch {
+      /* ventana en blanco */
+    }
+
+    this.http.get(url, { responseType: 'text' }).subscribe({
+      next: (html) => {
+        try {
           w.document.open();
           w.document.write(html);
           w.document.close();
-        },
-        error: (e) => onError?.(e?.error?.message || 'No se pudo generar el comprobante.'),
-      });
+        } catch {
+          w.close();
+          onError?.('No se pudo mostrar el comprobante en la ventana.');
+        }
+      },
+      error: (e) => {
+        try {
+          w.close();
+        } catch {
+          /* ignore */
+        }
+        onError?.(e?.error?.message || mensajeError);
+      },
+    });
+    return true;
   }
 }
 

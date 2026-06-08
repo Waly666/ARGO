@@ -21,6 +21,7 @@ import {
 } from '../../core/utils/egreso-soporte.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
+import { ReciboService } from '../../core/services/recibo.service';
 
 @Component({
   selector: 'argo-caja-egresos-sesion',
@@ -36,12 +37,14 @@ export class CajaEgresosSesionComponent implements OnInit {
   private confirm = inject(ConfirmDialogService);
   private cajaAlert = inject(CajaAperturaAlertService);
   private router = inject(Router);
+  private reciboSvc = inject(ReciboService);
 
   items = signal<CajaEgresoItem[]>([]);
   sesionId = signal<number | null>(null);
   cajaAbierta = signal(false);
   loading = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
 
   egresoPendienteAnular = signal<CajaEgresoItem | null>(null);
   mostrarAuthAnular = signal(false);
@@ -107,29 +110,29 @@ export class CajaEgresosSesionComponent implements OnInit {
 
   editarEgreso(e: CajaEgresoItem): void {
     if (!this.puedeGestionar(e)) {
-      this.msg.set('Solo puede editar egresos de su sesión de caja actual.');
+      this.inform('Solo puede editar egresos de su sesión de caja actual.');
       return;
     }
     this.router.navigate(['/app/caja/egresos/editar', e.idEgreso]);
   }
 
   verRecibo(id: string): void {
-    window.open(`/recibo-egreso/${id}`, '_blank');
+    this.reciboSvc.abrirHtmlEgreso(id, (m) => this.inform(m));
   }
 
   onAlarmaSoporte(e: CajaEgresoItem, ev?: Event): void {
     ev?.stopPropagation();
     if (this.puedeGestionar(e)) {
       this.editarEgreso(e);
-      this.msg.set('Adjunte el soporte (imagen) en el formulario y guarde.');
+      this.inform('Adjunte el soporte (imagen) en el formulario y guarde.');
       return;
     }
-    this.msg.set('Solicite a un administrador que adjunte el comprobante.');
+    this.inform('Solicite a un administrador que adjunte el comprobante.');
   }
 
   async anularEgreso(e: CajaEgresoItem): Promise<void> {
     if (!this.puedeGestionar(e)) {
-      this.msg.set('Solo puede anular egresos de su sesión de caja actual.');
+      this.inform('Solo puede anular egresos de su sesión de caja actual.');
       return;
     }
     const ok = await this.confirm.open({
@@ -155,7 +158,7 @@ export class CajaEgresosSesionComponent implements OnInit {
     const u = this.authAdminUser().trim();
     const p = this.authAdminPass();
     if (!u || !p) {
-      this.msg.set('Ingrese usuario y contraseña del administrador para anular.');
+      this.inform('Ingrese usuario y contraseña del administrador para anular.');
       return;
     }
     this.ejecutarAnular(e, { autorizadoUsername: u, autorizadoPassword: p });
@@ -178,10 +181,31 @@ export class CajaEgresosSesionComponent implements OnInit {
         this.egresoPendienteAnular.set(null);
         this.authAdminUser.set('');
         this.authAdminPass.set('');
-        this.msg.set('Egreso anulado.');
+        this.inform('Egreso anulado.');
         this.cargar();
       },
-      error: (err) => this.msg.set(err?.error?.message || 'No se pudo anular'),
+      error: (err) => this.inform(err?.error?.message || 'No se pudo anular'),
     });
   }
+
+  private inform(text: string | null, isErr?: boolean): void {
+    this.msg.set(text);
+    let err = !!isErr;
+    if (!err && text) {
+      const t = text.toLowerCase();
+      err =
+        t.includes('error') ||
+        t.includes('no se') ||
+        t.includes('inválid') ||
+        t.includes('obligator') ||
+        t.includes('indique') ||
+        t.includes('seleccione') ||
+        t.includes('ingrese') ||
+        t.includes('solo puede') ||
+        t.includes('adjunte') ||
+        t.includes('verifique');
+    }
+    this.msgError.set(err);
+  }
+
 }

@@ -25,6 +25,7 @@ export class ContratosAdminComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   msg = signal<string | null>(null);
+  msgError = signal(false);
   vista = signal<VistaLista>(readVistaLista('argo-contratos-vista'));
   mostrarForm = signal(false);
   editando = signal<any | null>(null);
@@ -89,7 +90,7 @@ export class ContratosAdminComponent implements OnInit {
   guardar() {
     const f = this.form();
     if (!f['empleadoId']) {
-      this.msg.set('Seleccione empleado.');
+      this.inform('Seleccione empleado.', true);
       return;
     }
     this.saving.set(true);
@@ -105,7 +106,7 @@ export class ContratosAdminComponent implements OnInit {
       },
       error: (e) => {
         this.saving.set(false);
-        this.msg.set(e?.error?.message || 'Error');
+        this.inform(e?.error?.message || 'Error', true);
       },
     });
   }
@@ -119,5 +120,10 @@ export class ContratosAdminComponent implements OnInit {
     });
     if (!ok) return;
     this.cat.eliminar('contratos', r.idContrato).subscribe({ next: () => this.cargar() });
+  }
+
+  private inform(text: string | null, isErr = false): void {
+    this.msg.set(text);
+    this.msgError.set(isErr);
   }
 }

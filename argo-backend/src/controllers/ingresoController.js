@@ -5,7 +5,7 @@ const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { siguienteNumComprobanteIngreso } = require('../services/configRecibo');
 const { esAdmin } = require('../utils/roles');
-const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery } = require('../utils/numDoc');
+const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery, numDocQueryNativo } = require('../utils/numDoc');
 const { buscarNumDocsAlumno } = require('../utils/busquedaAlumnoNombre');
 const { refrescarPagoMatricula } = require('../services/liquidacionMatricula');
 const { exigirSesionAbierta, verificarMovimientoSesionCajero, requiereAutorizacionAnularMovimiento } = require('../services/cajaSesion');
@@ -21,6 +21,7 @@ const {
   formaPagoDesdeCatalogo,
 } = require('../services/tipoIngresoResolver');
 const { registrarCreacion, registrarEliminacion } = require('../services/auditoria');
+const { esIngresoCaja } = require('../utils/ingresoClasificacion');
 
 function num(v) {
   if (v == null) return 0;
@@ -42,6 +43,55 @@ function estadoLiq(valor, abonado) {
 function calcularTipoAbono(valorPago, saldoAntes) {
   return valorPago >= saldoAntes - 0.0001 ? 'total' : 'abono';
 }
+
+function idsLiquidacionIngreso(row) {
+  const ids = new Set();
+  if (row?.idLiquidacion) ids.add(String(row.idLiquidacion));
+  if (Array.isArray(row?.detalle)) {
+    for (const d of row.detalle) {
+      if (d?.idLiquidacion) ids.add(String(d.idLiquidacion));
+    }
+  }
+  return [...ids].filter((id) => mongoose.Types.ObjectId.isValid(id));
+}
+
+function idsLiquidacionFilas(rows) {
+  const ids = new Set();
+  for (const r of rows || []) {
+    for (const id of idsLiquidacionIngreso(r)) ids.add(id);
+  }
+  return [...ids];
+}
+
+function conceptoIngresoAlumno(row, enriquecido, descrMap) {
+  if (enriquecido.esIngresoCaja) return enriquecido.concepto || null;
+  if (Array.isArray(enriquecido.detalle) && enriquecido.detalle.length) {
+    const descrs = enriquecido.detalle.map((d) => d.descripcion).filter(Boolean);
+    if (descrs.length) return descrs.join(', ');
+  }
+  return descrMap[String(row.idLiquidacion)] || enriquecido.concepto || null;
+}
+
+async function filtroIngresosAlumno(numDoc) {
+  const clauses = [];
+  const porDoc = numDocQueryNativo(numDoc);
+  if (porDoc?.$or) clauses.push(...porDoc.$or);
+  else if (porDoc) clauses.push(porDoc);
+
+  const liqIds = await Liquidacion.find(numDocQuery(numDoc) || { numDoc: -1 })
+    .select('_id')
+    .lean()
+    .then((rows) => rows.map((l) => l._id).filter(Boolean));
+
+  if (liqIds.length) {
+    clauses.push({ idLiquidacion: { $in: liqIds } });
+    clauses.push({ 'detalle.idLiquidacion': { $in: liqIds } });
+  }
+
+  if (!clauses.length) return { numDoc: -1 };
+  return clauses.length === 1 ? clauses[0] : { $or: clauses };
+}
+
 
 function tipoAbonoDescr(tipo) {
   if (tipo === 'total') return 'Total';
@@ -141,9 +191,20 @@ async function enriquecer(p) {
   const formaPago = p.formaPago || formaPagoDesdeCatalogo(tipo, p.idTipoPago);
   const recibiDe = p.recibiDe || p.recibidoDe || null;
 
+  const detalle = Array.isArray(p.detalle)
+    ? p.detalle.map((d) => ({
+        idLiquidacion: d.idLiquidacion ? String(d.idLiquidacion) : null,
+        descripcion: d.descripcion || '',
+        valor: num(d.valor),
+        tipoAbono: d.tipoAbono || null,
+        tipoAbonoDescr: tipoAbonoDescr(d.tipoAbono),
+      }))
+    : undefined;
+
   return {
     ...p,
     valor: num(p.valor),
+    detalle,
     tipoPagoDescr: tipo?.descripcion || tipo?.nombre || p.idTipoPago,
     formaPago,
     bancoDescr: p.bancoEmisor || banco?.descripcion || banco?.nombre || banco?.banco || null,
@@ -159,17 +220,21 @@ async function enriquecer(p) {
     recibidoDe: recibiDe,
     cuadreDescuadre: !!p.cuadreDescuadre,
     idSesion: p.idSesion ?? null,
-    esIngresoCaja: !!(p.ingresoCaja || (!p.idLiquidacion && p.idTipoIngreso)),
+    esIngresoCaja: esIngresoCaja(p),
   };
 }
 
 exports.crear = async (req, res, next) => {
   try {
     const body = req.body || {};
-    if (body.idLiquidacion) return exports.crearAlumno(req, res, next);
+    const items = Array.isArray(body.items) ? body.items : [];
+    const esCobroAlumno =
+      !!body.idLiquidacion ||
+      (items.length > 0 && items.some((it) => it?.idLiquidacion));
+    if (esCobroAlumno) return exports.crearAlumno(req, res, next);
     if (body.idTipoIngreso) return exports.crearCaja(req, res, next);
     return res.status(400).json({
-      message: 'Indique idLiquidacion (cobro de alumno) o idTipoIngreso (ingreso de caja)',
+      message: 'Indique idLiquidacion o items (cobro de alumno) o idTipoIngreso (ingreso de caja)',
     });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
@@ -180,20 +245,32 @@ exports.crear = async (req, res, next) => {
 exports.crearAlumno = async (req, res, next) => {
   try {
     const body = req.body || {};
-    const {
-      numDoc: numDocRaw,
-      idLiquidacion,
-      valor,
-      idTipoPago,
-      observaciones,
-      fecha,
-    } = body;
+    const { numDoc: numDocRaw, idTipoPago, observaciones, fecha } = body;
     const numDoc = parseNumDoc(numDocRaw);
-    if (numDoc == null || !idLiquidacion || valor == null || !idTipoPago) {
-      return res.status(400).json({ message: 'numDoc, idLiquidacion, valor e idTipoPago son obligatorios' });
+    if (numDoc == null || !idTipoPago) {
+      return res.status(400).json({ message: 'numDoc e idTipoPago son obligatorios' });
     }
-    const v = Number(valor);
-    if (!(v > 0)) return res.status(400).json({ message: 'Valor inválido' });
+
+    // Soporta pago de varios ítems (`items:[{idLiquidacion,valor}]`) o el clásico de un solo ítem.
+    const itemsRaw =
+      Array.isArray(body.items) && body.items.length
+        ? body.items
+        : [{ idLiquidacion: body.idLiquidacion, valor: body.valor }];
+
+    const pedidos = [];
+    const vistos = new Set();
+    for (const it of itemsRaw) {
+      const idLiq = it?.idLiquidacion ? String(it.idLiquidacion) : '';
+      const vit = Number(it?.valor);
+      if (!idLiq || !(vit > 0)) {
+        return res.status(400).json({ message: 'Cada ítem requiere idLiquidacion y un valor mayor a 0' });
+      }
+      if (vistos.has(idLiq)) {
+        return res.status(400).json({ message: 'Hay ítems repetidos en el pago' });
+      }
+      vistos.add(idLiq);
+      pedidos.push({ idLiquidacion: idLiq, valor: vit });
+    }
 
     const tipoDoc = await cat.catTipoPago
       .findOne({ $or: [{ idTipoPago }, { codigo: idTipoPago }] })
@@ -205,43 +282,68 @@ exports.crearAlumno = async (req, res, next) => {
       });
     }
 
-    const liq = await Liquidacion.findById(idLiquidacion);
-    if (!liq) return res.status(404).json({ message: 'Item de liquidación no encontrado' });
-    if (!numDocEquals(liq.numDoc, numDoc)) {
-      return res.status(400).json({ message: 'Liquidación no corresponde al alumno' });
+    // Cargar y validar todas las liquidaciones antes de tocar nada.
+    const liqDocs = [];
+    for (const p of pedidos) {
+      const liq = await Liquidacion.findById(p.idLiquidacion);
+      if (!liq) return res.status(404).json({ message: 'Item de liquidación no encontrado' });
+      if (!numDocEquals(liq.numDoc, numDoc)) {
+        return res.status(400).json({ message: 'Liquidación no corresponde al alumno' });
+      }
+      const saldoActual = num(liq.saldo);
+      if (p.valor > saldoActual + 0.0001) {
+        return res.status(400).json({
+          message: `El pago de «${liq.descripcion || 'ítem'}» excede el saldo (${saldoActual})`,
+        });
+      }
+      liqDocs.push({ liq, valor: p.valor, saldoActual });
     }
 
-    const saldoActual = num(liq.saldo);
-    if (v > saldoActual + 0.0001) {
-      return res.status(400).json({ message: `El pago excede el saldo (${saldoActual})` });
-    }
-
-    const tipoIngDoc = await resolverTipoIngresoDesdeLiquidacion(idLiquidacion);
-    const tipoIng = camposTipoIngreso(tipoIngDoc);
+    const esMulti = liqDocs.length > 1;
+    const total = liqDocs.reduce((a, x) => a + x.valor, 0);
     const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
     const recibiDe = body.recibiDe || body.recibidoDe || nombreAlumno(alumno) || String(numDoc);
 
-    const nuevoAbonado = num(liq.abonado) + v;
-    const nuevoSaldo = num(liq.valor) - nuevoAbonado;
-    liq.abonado = toDec(nuevoAbonado);
-    liq.saldo = toDec(nuevoSaldo);
-    liq.estado = estadoLiq(num(liq.valor), nuevoAbonado);
-    await liq.save();
+    const tipoIngDoc = await resolverTipoIngresoDesdeLiquidacion(liqDocs[0].liq._id);
+    const tipoIng = camposTipoIngreso(tipoIngDoc);
+
+    // Aplicar el abono a cada liquidación (con rollback si falla la creación).
+    const aplicadas = [];
+    const detalle = [];
+    for (const x of liqDocs) {
+      const { liq, valor: vit, saldoActual } = x;
+      const nuevoAbonado = num(liq.abonado) + vit;
+      liq.abonado = toDec(nuevoAbonado);
+      liq.saldo = toDec(num(liq.valor) - nuevoAbonado);
+      liq.estado = estadoLiq(num(liq.valor), nuevoAbonado);
+      await liq.save();
+      aplicadas.push({ liq, valor: vit });
+      detalle.push({
+        idLiquidacion: liq._id,
+        descripcion: liq.descripcion || '',
+        valor: toDec(vit),
+        tipoAbono: calcularTipoAbono(vit, saldoActual),
+      });
+    }
 
     const numRecibo = await siguienteNumComprobanteIngreso(req.idSede);
-    const tipoAbono = calcularTipoAbono(v, saldoActual);
     const sesion = await exigirSesionAbierta(req.user?.sub, req.idSede);
     const username = req.user?.username || req.user?.sub || null;
+    const tipoAbonoGeneral = detalle.every((d) => d.tipoAbono === 'total') ? 'total' : 'abono';
+    const concepto = esMulti
+      ? `Varios servicios (${detalle.length})`
+      : liqDocs[0].liq.descripcion || null;
 
     let ing;
     try {
       ing = await Ingreso.create({
         numDoc,
-        idLiquidacion,
+        idLiquidacion: esMulti ? null : liqDocs[0].liq._id,
+        detalle: esMulti ? detalle : undefined,
         numRecibo,
-        valor: toDec(v),
-        tipoAbono,
-        concepto: liq.descripcion || null,
+        valor: toDec(total),
+        tipoAbono: tipoAbonoGeneral,
+        concepto,
         ...tipoIng,
         ingresoCaja: false,
         recibiDe,
@@ -263,30 +365,62 @@ exports.crearAlumno = async (req, res, next) => {
         userAddReg: username,
       });
     } catch (errIngreso) {
-      liq.abonado = toDec(num(liq.abonado) - v);
-      liq.saldo = toDec(num(liq.valor) - num(liq.abonado));
-      liq.estado = estadoLiq(num(liq.valor), num(liq.abonado));
-      await liq.save();
+      for (const a of aplicadas) {
+        const { liq } = a;
+        const ab = Math.max(0, num(liq.abonado) - a.valor);
+        liq.abonado = toDec(ab);
+        liq.saldo = toDec(num(liq.valor) - ab);
+        liq.estado = estadoLiq(num(liq.valor), ab);
+        await liq.save();
+      }
       throw errIngreso;
     }
 
-    if (liq.idMat) await refrescarPagoMatricula(liq.idMat);
+    for (const a of aplicadas) {
+      if (a.liq.idMat) await refrescarPagoMatricula(a.liq.idMat);
+    }
 
-    try {
-      const { onPrimerAbonoIngreso } = require('../services/programacionCeaAuto');
-      const r = await onPrimerAbonoIngreso({ numDoc, liq, req });
-      if (r && !r.skipped && r.clases) {
-        console.info(`[programacionCeaAuto] ${r.clases} clase(s) CREADO para numDoc ${numDoc}`);
+    for (const a of aplicadas) {
+      try {
+        const { onPrimerAbonoIngreso } = require('../services/programacionCeaAuto');
+        const r = await onPrimerAbonoIngreso({ numDoc, liq: a.liq, req });
+        if (r && !r.skipped && r.clases) {
+          console.info(`[programacionCeaAuto] ${r.clases} clase(s) CREADO para numDoc ${numDoc}`);
+        }
+      } catch (errAuto) {
+        console.error('[programacionCeaAuto] primer abono:', errAuto?.stack || errAuto?.message || errAuto);
       }
-    } catch (errAuto) {
-      console.error('[programacionCeaAuto] primer abono:', errAuto?.stack || errAuto?.message || errAuto);
+    }
+
+    // Certificado automático por cada ítem que quedó en saldo 0 (se evalúa por ítem, no por saldo general).
+    const certificadosAuto = [];
+    for (const a of aplicadas) {
+      const saldoItem = num(a.liq.saldo);
+      if (saldoItem > 0.0001) continue;
+      try {
+        const { intentarCertificadoPagoAuto } = require('../services/certificadoPagoAuto');
+        const rc = await intentarCertificadoPagoAuto({ numDoc, liq: a.liq, saldo: saldoItem });
+        if (rc?.creado) {
+          certificadosAuto.push(rc.certificado);
+          console.info(`[certificadoPagoAuto] Certificado ${rc.certificado?.codigoCert} emitido para numDoc ${numDoc}`);
+        }
+      } catch (errCert) {
+        console.error('[certificadoPagoAuto]', errCert?.stack || errCert?.message || errCert);
+      }
     }
 
     const enriquecido = await enriquecer(ing.toObject());
     registrarCreacion(req, 'ingreso', ing, {
-      resumen: `Ingreso ${tipoIng.tipoIngreso || 'alumno'} recibo #${numRecibo} por ${v}`,
+      resumen: `Ingreso ${tipoIng.tipoIngreso || 'alumno'} recibo #${numRecibo} por ${total}${
+        esMulti ? ` (${detalle.length} servicios)` : ''
+      }`,
     });
-    res.status(201).json({ ...enriquecido, numRecibo });
+    res.status(201).json({
+      ...enriquecido,
+      numRecibo,
+      certificadoAuto: certificadosAuto[0] || null,
+      certificadosAuto,
+    });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
     next(e);
@@ -397,7 +531,8 @@ exports.listarPorAlumno = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
-    const rows = await Ingreso.find(numDocQuery(numDoc)).sort({ fecha: -1, createdAt: -1 }).lean();
+    const filtro = await filtroIngresosAlumno(numDoc);
+    const rows = await Ingreso.find(filtro).sort({ fecha: -1, createdAt: -1 }).lean();
     res.json(await listarIngresosEnriquecidos(rows));
   } catch (e) {
     next(e);
@@ -405,7 +540,7 @@ exports.listarPorAlumno = async (req, res, next) => {
 };
 
 async function listarIngresosEnriquecidos(rows) {
-  const liqIds = [...new Set(rows.map((r) => String(r.idLiquidacion)).filter(Boolean))];
+  const liqIds = idsLiquidacionFilas(rows);
   const liqs = liqIds.length
     ? await Liquidacion.find({ _id: { $in: liqIds } }).select('descripcion').lean()
     : [];
@@ -421,12 +556,13 @@ async function listarIngresosEnriquecidos(rows) {
     const esCaja = e.esIngresoCaja;
     const alumno = alumnoMap[String(r.numDoc)];
     const alumnoNombre = nombreAlumno(alumno) || null;
+    const concepto = conceptoIngresoAlumno(r, e, descrMap);
     out.push({
       ...e,
       alumnoNombre,
-      liquidacionDescr: esCaja ? e.concepto : descrMap[String(r.idLiquidacion)] || e.concepto || null,
+      liquidacionDescr: concepto,
       pagadorDescr: esCaja ? e.recibiDe || e.recibidoDe : alumnoNombre || e.recibiDe || null,
-      conceptoLabel: esCaja ? e.concepto : descrMap[String(r.idLiquidacion)] || e.concepto || null,
+      conceptoLabel: concepto,
     });
   }
   return out;
@@ -566,17 +702,22 @@ exports.eliminar = async (req, res, next) => {
     }
 
     const v = num(ing.valor);
-    if (ing.idLiquidacion) {
-      const liq = await Liquidacion.findById(ing.idLiquidacion);
-      if (liq) {
-        const nuevoAbonado = Math.max(0, num(liq.abonado) - v);
-        const nuevoSaldo = num(liq.valor) - nuevoAbonado;
-        liq.abonado = toDec(nuevoAbonado);
-        liq.saldo = toDec(nuevoSaldo);
-        liq.estado = estadoLiq(num(liq.valor), nuevoAbonado);
-        await liq.save();
-        if (liq.idMat) await refrescarPagoMatricula(liq.idMat);
-      }
+    // Anula el comprobante completo: revierte cada ítem (detalle multi-ítem o el ítem único).
+    const reversos = ing.detalle?.length
+      ? ing.detalle.map((d) => ({ idLiquidacion: d.idLiquidacion, valor: num(d.valor) }))
+      : ing.idLiquidacion
+        ? [{ idLiquidacion: ing.idLiquidacion, valor: v }]
+        : [];
+    for (const r of reversos) {
+      const liq = await Liquidacion.findById(r.idLiquidacion);
+      if (!liq) continue;
+      const nuevoAbonado = Math.max(0, num(liq.abonado) - r.valor);
+      const nuevoSaldo = num(liq.valor) - nuevoAbonado;
+      liq.abonado = toDec(nuevoAbonado);
+      liq.saldo = toDec(nuevoSaldo);
+      liq.estado = estadoLiq(num(liq.valor), nuevoAbonado);
+      await liq.save();
+      if (liq.idMat) await refrescarPagoMatricula(liq.idMat);
     }
     if (ing.cuadreDescuadre && ing.idSesion) {
       const CajaSesion = require('../models/CajaSesion');

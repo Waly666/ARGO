@@ -1,14 +1,18 @@
 @if (editorHost) {
   @if (msg(); as texto) {
-    <div class="cea-banner editor-host-banner" [class.ok]="msgTipo() === 'ok'" [class.error]="msgTipo() === 'error'" [class.warn]="msgTipo() === 'warn'" role="alert">
+    <p
+      class="cea-msg editor-host-banner"
+      [class.cea-msg--ok]="msgTipo() === 'ok'"
+      [class.cea-msg--err]="msgTipo() === 'error'"
+      [class.cea-msg--warn]="msgTipo() === 'warn'"
+      role="alert">
       {{ texto }}
-    </div>
+    </p>
   }
   @if (formModalOpen() && (puedeGestionar() || (puedeOperar() && esModoEdicion()))) {
     <argo-form-modal
       [open]="true"
       [title]="tituloFormModal()"
-      [subtitle]="subtituloFormModal()"
       [wide]="true"
       [tall]="true"
       (closed)="cerrarFormModal()">
@@ -27,7 +31,6 @@
     <argo-form-modal
       [open]="true"
       [title]="labelTipoClase(c.tipoClase) + ' — ' + (c.programaLabel || c.idProg)"
-      [subtitle]="(c.fechaClase | date:'dd/MM/yyyy') + ' · ' + c.horaDesde + '–' + c.horaHasta"
       [wide]="true"
       [tall]="true"
       (closed)="cerrarDetalleOperar()">
@@ -45,9 +48,14 @@
 } @else {
 <div class="cea-clases argo-cal" [class.cea-page-layout]="isPage()">
   @if (msg(); as texto) {
-    <div class="cea-banner" [class.ok]="msgTipo() === 'ok'" [class.error]="msgTipo() === 'error'" [class.warn]="msgTipo() === 'warn'" role="alert">
+    <p
+      class="cea-msg"
+      [class.cea-msg--ok]="msgTipo() === 'ok'"
+      [class.cea-msg--err]="msgTipo() === 'error'"
+      [class.cea-msg--warn]="msgTipo() === 'warn'"
+      role="alert">
       {{ texto }}
-    </div>
+    </p>
   }
 
   @if (modoInscribir() && inscribirCtx; as ctx) {
@@ -136,6 +144,7 @@
               } @else {
                 <span class="cal-legend-item"><i class="cal-legend-dot cal-tipo-teoria"></i> Teoría</span>
                 <span class="cal-legend-item"><i class="cal-legend-dot cal-tipo-taller"></i> Taller</span>
+                <span class="cal-legend-item cal-legend-muted"><i class="cal-legend-dot cal-est-pendiente-legend"></i> Requiere atención (creada / programada)</span>
               }
               <span class="cal-legend-item hint">Borde pulsante = EN PROCESO · atenuado = FINALIZADO</span>
               <span class="cal-legend-item hint">Clic en clase para ver detalle · «+» para programar</span>
@@ -299,7 +308,6 @@
       <argo-form-modal
         [open]="formModalOpen()"
         [title]="tituloFormModal()"
-        [subtitle]="subtituloFormModal()"
         [wide]="true"
         (closed)="cerrarFormModal()">
         <div class="clase-form-modal">
@@ -406,6 +414,7 @@
             <span class="cal-legend-item"><i class="cal-legend-dot cal-clase-programada"></i> PROGRAMADA</span>
             <span class="cal-legend-item"><i class="cal-legend-dot cal-clase-proceso"></i> EN PROCESO</span>
             <span class="cal-legend-item"><i class="cal-legend-dot cal-clase-finalizada"></i> FINALIZADO</span>
+            <span class="cal-legend-item cal-legend-muted"><i class="cal-legend-dot cal-est-pendiente-legend"></i> Parpadea si requiere atención</span>
           </div>
 
           @if (loadingSemana()) {
@@ -458,8 +467,10 @@
                     @if (d.key === hoyKey() && semanaIncluyeHoy() && ahoraCalTopPct() != null) {
                       <div class="cal-now-line" [style.top.%]="ahoraCalTopPct()!" aria-hidden="true"></div>
                     }
-                    @for (c of clasesEnDia(d.key); track c._id) {
-                      @if (layoutClaseCea(c); as lay) {
+                    @let diaClases = clasesEnDia(d.key);
+                    @let layoutsDia = layoutsCalendarioDia(diaClases);
+                    @for (c of diaClases; track c._id) {
+                      @if (layoutsDia.get(c._id!); as lay) {
                         <button
                           type="button"
                           class="cal-clase-block"
@@ -467,6 +478,8 @@
                           [ngClass]="[tipoClaseCalBlockClass(c.tipoClase), estadoClaseCalAccentClass(c.estado)]"
                           [style.top.%]="lay.topPct"
                           [style.height.%]="lay.heightPct"
+                          [style.left.%]="lay.leftPct"
+                          [style.width.%]="lay.widthPct"
                           [title]="chipClaseCal(c) + ' — ' + c.horaDesde + (c.horaHasta ? ' – ' + c.horaHasta : '')"
                           (click)="seleccionarClaseCalendario(c)">
                           <span class="cal-clase-hora">
@@ -497,7 +510,6 @@
     <argo-form-modal
       [open]="formModalOpen()"
       [title]="tituloFormModal()"
-      [subtitle]="subtituloFormModal()"
       [wide]="true"
       (closed)="cerrarFormModal()">
       <div class="clase-form-modal">
@@ -551,7 +563,6 @@
               <span class="section-badge">1</span>
               <div>
                 <h3 class="section-title">Programa y tipo</h3>
-                <p class="section-sub">Defina el programa y la modalidad de la clase</p>
               </div>
             </header>
             <div class="section-body">
@@ -595,11 +606,6 @@
                   </select>
                 }
               </div>
-              @if (form().tipoClase === 'teoria' || form().tipoClase === 'taller') {
-                <p class="hint grupo-hint">
-                  Programe la clase con cupo. Inscriba alumnos después (estado PROGRAMADA, sin iniciar).
-                </p>
-              }
             </div>
           </section>
           }
@@ -609,7 +615,6 @@
               <span class="section-badge">2</span>
               <div>
                 <h3 class="section-title">Fecha y horario</h3>
-                <p class="section-sub">Elija la fecha y la hora de inicio de la clase</p>
               </div>
             </header>
             <div class="section-body">
@@ -709,9 +714,6 @@
                   {{ horasDescuentoAuto() > 0 ? (horasDescuentoAuto() + ' h a descontar') : '—' }}
                 </div>
               </div>
-              <p class="hint horario-descuento-hint">
-                Las horas se reservan al <strong>iniciar</strong> la clase y se confirman al finalizar según el horario programado.
-              </p>
             </div>
           </section>
 
@@ -720,7 +722,6 @@
               <span class="section-badge">3</span>
               <div>
                 <h3 class="section-title">Recursos e instructor</h3>
-                <p class="section-sub">Ubicación, vehículo y persona a cargo</p>
               </div>
             </header>
             <div class="section-body section-body-grid">
@@ -796,7 +797,6 @@
                 <span class="section-badge">4</span>
                 <div>
                   <h3 class="section-title">Alumno</h3>
-                  <p class="section-sub">Clase individual — seleccione el alumno</p>
                 </div>
               </header>
               <div class="section-body">
@@ -834,7 +834,6 @@
                 <span class="section-badge">4</span>
                 <div>
                   <h3 class="section-title">Inscripciones</h3>
-                  <p class="section-sub">Agregue o quite alumnos de esta clase</p>
                 </div>
               </header>
               <div class="section-body">
@@ -1073,6 +1072,22 @@
         </div>
       }
 
+      @if (puedeCerrarRetroactivo() && clasePuedeCerrarRetroactivo(c)) {
+        <p class="hint hint-warn">
+          Esta clase no se inició ni finalizó. Puede <strong>cerrarla con el horario programado</strong>
+          ({{ c.horaDesde }}{{ c.horaHasta ? ' – ' + c.horaHasta : '' }}) y registrar asistencia de los inscritos.
+        </p>
+        <div class="actions">
+          <button
+            type="button"
+            class="primary"
+            (click)="cerrarClaseRetroactiva()"
+            [title]="tituloCerrarRetroactivo(c)">
+            Cerrar con horario programado
+          </button>
+        </div>
+      }
+
       @if ((c.estado === 'PROGRAMADA' || c.estado === 'CREADO') && puedeOperar()) {
         <div class="inscripcion-block">
           <h4>Inscribir alumnos (sin iniciar la clase)</h4>
@@ -1179,7 +1194,6 @@
     <argo-form-modal
       [open]="true"
       title="Inspección preoperacional requerida"
-      [subtitle]="inspeccionBloqueoMsg() || 'Debe completar la revisión de hoy antes de iniciar la clase práctica.'"
       (closed)="cerrarInspeccionBloqueo()">
       <p class="hint inspeccion-aviso-portal">
         Falta la <strong>inspección preoperacional de hoy</strong>
@@ -1209,7 +1223,6 @@
     <argo-form-modal
       [open]="true"
       [title]="'Inspección preoperacional — ' + (inspeccionBloqueoPlaca() || '')"
-      [subtitle]="inspeccionBloqueoMsg() || 'Complete la inspección de hoy antes de iniciar la práctica.'"
       [wide]="true"
       [tall]="true"
       (closed)="cerrarInspeccionBloqueo()">
