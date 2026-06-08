@@ -469,7 +469,7 @@ export class PagosComponent {
           if (id) {
             this.comprobanteAlertSvc.notificarDesdeIngreso({ ...ing, _id: id }, {
               numDoc: nd,
-              nombreCompleto: this.store.nombreCompleto(),
+              nombreCompleto: this.store.nombreCompleto() ?? undefined,
               alumnoId: this.store.alumno()?._id ? String(this.store.alumno()!._id) : undefined,
             });
             void this.flujoPostPago(ing, certs);
