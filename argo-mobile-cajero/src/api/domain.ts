@@ -1,0 +1,223 @@
+export interface ResumenCaja {
+  idSesion: number;
+  usuario?: string;
+  nombreCajero?: string;
+  estado?: string;
+  fechaApertura: string;
+  fechaCierre?: string;
+  saldoInicial: number;
+  totalIngresos: number;
+  totalIngresosEfectivo?: number;
+  totalEgresos: number;
+  saldoTeorico: number;
+  efectivoEsperado?: number;
+  cantidadIngresos: number;
+  cantidadEgresos: number;
+}
+
+export interface CajaSesion {
+  idSesion: number;
+  idSede?: string | null;
+  sedeNombre?: string | null;
+  estado: 'abierta' | 'cerrada';
+  usuario?: string;
+  nombreCaja?: string;
+  fechaApertura: string;
+  fechaCierre?: string;
+  saldoInicial: number;
+  efectivoContado?: number | null;
+  diferencia?: number | null;
+  resumen?: ResumenCaja;
+}
+
+export interface CajaActivaFull {
+  abierta: boolean;
+  sesion: CajaSesion | null;
+  resumenParcial?: ResumenCaja;
+}
+
+export interface CierreCajaResponse {
+  sesion: CajaSesion;
+  resumen: ResumenCaja;
+  descuadre?: Record<string, unknown> | null;
+}
+
+export interface AlumnoListItem {
+  _id: string;
+  numDoc: number | string;
+  tipoDoc?: string;
+  nombre1?: string;
+  nombre2?: string;
+  apellido1?: string;
+  apellido2?: string;
+  nombreCompleto?: string;
+  celular?: string;
+  indicadores?: {
+    saldosPendientes?: number;
+    saldoTotal?: number;
+  };
+}
+
+export interface AlumnosListResponse {
+  items: AlumnoListItem[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+export interface LiquidacionItem {
+  _id: string;
+  numDoc: number | string;
+  descripcion?: string;
+  valor: number;
+  abonado: number;
+  saldo: number;
+  estado?: string;
+  idServ?: string | null;
+  idProg?: string | null;
+}
+
+export interface LiquidacionResumen {
+  items: LiquidacionItem[];
+  totales: { valor: number; abonado: number; saldo: number };
+}
+
+export interface LiquidacionConSaldoItem extends LiquidacionItem {
+  alumnoNombre?: string;
+  alumnoDoc?: number | string;
+}
+
+export interface LiquidacionConSaldoResumen {
+  items: LiquidacionConSaldoItem[];
+  total: number;
+  totales: { valor: number; abonado: number; saldo: number };
+}
+
+export interface IngresoItemPago {
+  idLiquidacion: string;
+  valor: number;
+}
+
+export interface IngresoCrearDto {
+  numDoc: number | string;
+  idLiquidacion?: string;
+  valor?: number;
+  items?: IngresoItemPago[];
+  idTipoPago: string;
+  idCuentaBancaria?: string;
+  numComprobante?: string;
+  observaciones?: string;
+}
+
+export interface IngresoRow {
+  _id: string;
+  numRecibo?: string | null;
+  valor: number;
+  fecha?: string;
+  tipoPagoDescr?: string;
+  formaPago?: string;
+  detalle?: { descripcion?: string; valor?: number }[];
+}
+
+export interface CatalogoItem {
+  _id?: string;
+  idTipoPago?: string;
+  codigo?: string;
+  descripcion?: string;
+  idCuentaBancaria?: string;
+  nombre?: string;
+  banco?: string;
+}
+
+export interface ProgramaItem {
+  _id?: string;
+  idPrograma: number | string;
+  idProg?: number | string;
+  codigoProg?: string;
+  nombreProg: string;
+  descripcion?: string;
+  nomCert?: string;
+  valorMatricula?: number;
+  idTipCap?: string | number;
+  tipoCertificado?: string;
+  tipoCap?: string;
+  semestres?: number;
+  idServ?: string | number;
+  horasTeoria?: number;
+  horasPractica?: number;
+  horasTaller?: number;
+  tarifa1?: number;
+  tarifa2?: number;
+  tarifa3?: number;
+  estado?: string;
+}
+
+export interface ServicioItem {
+  _id?: string;
+  idServ?: number | string;
+  idProg?: string | number | null;
+  descrServicio?: string;
+  descripcion?: string;
+  tarifa1?: number;
+  tarifa2?: number;
+  tarifa3?: number;
+  programaNombre?: string | null;
+  tipoServ?: string | number;
+  rolServicio?: string;
+  usaCantidad?: boolean;
+  permiteCantidad?: boolean;
+  valorVariable?: boolean;
+}
+
+export interface FacturacionResumen {
+  emitidas: number;
+  validadas: number;
+  rechazadas: number;
+  listoParaFactus?: boolean;
+}
+
+export interface FacturaElectronicaItem {
+  _id: string;
+  numeroFactura?: string;
+  estado?: string;
+  valorTotal?: number;
+  numDoc?: number;
+  emitidaAt?: string;
+  adquirente?: { nombre?: string };
+}
+
+export interface FacturasListResponse {
+  items: FacturaElectronicaItem[];
+  total: number;
+}
+
+export interface CertificadoItem {
+  _id: string;
+  codigoCert?: string;
+  numDoc?: number | string;
+  alumnoId?: string | null;
+  nombreCompleto?: string;
+  encabezado?: string;
+  tipoFormatoCert?: string;
+  tipoFormatoCertLabel?: string;
+  programaDescr?: string | null;
+  nomCert?: string | null;
+  fechaEmision?: string;
+  fechaVencimiento?: string | null;
+  estado?: string;
+  numActa?: string;
+  numFolio?: string;
+}
+
+export interface CertificadoListadoRes {
+  total: number;
+  emitidosHoy: number;
+  items: CertificadoItem[];
+}
+
+export interface LiquidacionElegibleFe {
+  _id: string;
+  descripcion?: string;
+  abonado: number;
+  saldo: number;
+}

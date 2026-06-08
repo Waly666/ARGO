@@ -52,15 +52,21 @@ function encabezadoCurso(prog, certificado) {
   return (prog?.nomCert || prog?.descripcion || prog?.nombreProg || '').trim();
 }
 
-function uploadsBase() {
-  const base = (process.env.PUBLIC_URL || 'http://localhost:3000').replace(/\/$/, '');
-  return `${base}/uploads`;
+function resolvePublicOrigin(publicOrigin) {
+  const env = (process.env.PUBLIC_URL || '').trim();
+  if (env) return env.replace(/\/$/, '');
+  if (publicOrigin) return String(publicOrigin).replace(/\/$/, '');
+  return 'http://localhost:3000';
 }
 
-function urlUpload(rel) {
+function uploadsBase(publicOrigin) {
+  return `${resolvePublicOrigin(publicOrigin)}/uploads`;
+}
+
+function urlUpload(rel, publicOrigin) {
   if (!rel) return '';
   const p = String(rel).replace(/^\//, '');
-  return `${uploadsBase()}/${p}`;
+  return `${uploadsBase(publicOrigin)}/${p}`;
 }
 
 
@@ -176,7 +182,8 @@ function certIdHtml(pos, codigo, colorDefault, orientacion) {
   return `<div class="cert-id dato" style="${st}">${esc(v)}</div>`;
 }
 
-async function generarHtmlCertificado(data) {
+async function generarHtmlCertificado(data, options = {}) {
+  const publicOrigin = options.publicOrigin;
   const { config, plantilla, certificado, alumno, programa } = data;
   const horizontal = plantilla?.orientacion === 'horizontal';
   const orientacion = horizontal ? 'horizontal' : 'vertical';
@@ -188,7 +195,7 @@ async function generarHtmlCertificado(data) {
     clasificarPrograma(programa);
   const L = resolverLayout(config, tipo, orientacion);
   const oriKey = orientacion;
-  const fondo = urlUpload(plantilla?.urlFondo);
+  const fondo = urlUpload(plantilla?.urlFondo, publicOrigin);
   const color = L.color;
 
   const nombre = nombreCompleto(alumno);

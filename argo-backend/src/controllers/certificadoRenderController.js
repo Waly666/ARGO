@@ -10,6 +10,7 @@ const {
   TIPOS_VALIDOS,
 } = require('../services/clasificacionCertificado');
 const { generarHtmlCertificado } = require('../services/certificadoRender');
+const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { resolverPlantillaImpresion } = require('../services/plantillaCertificado');
 const { numDocQuery } = require('../utils/numDoc');
 
@@ -68,7 +69,9 @@ exports.html = async (req, res, next) => {
   try {
     const data = await armarDatos(req.params.id);
     if (!data) return res.status(404).send('Certificado no encontrado');
-    const html = await generarHtmlCertificado(data);
+    const html = await generarHtmlCertificado(data, {
+      publicOrigin: publicOriginFromReq(req),
+    });
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (e) {

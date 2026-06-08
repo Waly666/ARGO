@@ -13,6 +13,7 @@ const {
   mergeLayoutPorTipoDeep,
 } = require('../services/certificadoLayout');
 const { generarHtmlCertificado } = require('../services/certificadoRender');
+const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { MUESTRA_PREVIEW } = require('../constants/certificadoLayoutDefaults');
 const { TIPOS_VALIDOS, normalizePlantillaPorTipo } = require('../services/clasificacionCertificado');
 const { normalizeAutoCertPorTipo, normalizeTiposCapExcluidos } = require('../services/configCertificado');
@@ -61,12 +62,15 @@ exports.vistaPrevia = async (req, res, next) => {
       config.layoutPorTipo = mergeLayoutPorTipoDeep(config.layoutPorTipo, normalizado);
     }
 
-    const html = await generarHtmlCertificado({
-      config,
-      plantilla: { orientacion: ori, urlFondo: urlFondo || '' },
-      tipoCertificado: tipoOk,
-      ...MUESTRA_PREVIEW,
-    });
+    const html = await generarHtmlCertificado(
+      {
+        config,
+        plantilla: { orientacion: ori, urlFondo: urlFondo || '' },
+        tipoCertificado: tipoOk,
+        ...MUESTRA_PREVIEW,
+      },
+      { publicOrigin: publicOriginFromReq(req) },
+    );
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (e) {
