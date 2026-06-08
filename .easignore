@@ -8,7 +8,7 @@ backup-argo/
 data/
 deploy/
 .cursor/
-assets/
+/assets/
 *.zip
 *.md
 docker-compose.yml
