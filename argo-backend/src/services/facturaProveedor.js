@@ -8,6 +8,10 @@ const {
 const { credencialesEfectivas, credencialesCompletas } = require('./configFacturacion');
 const { generarUuidDev } = require('./facturaQrDian');
 
+function erroresValidacionFactus(details) {
+  return details?.data?.errors || details?.errors || null;
+}
+
 /**
  * Cliente Factus — integración real pendiente de credenciales/resolución DIAN.
  * Por ahora expone la interfaz y devuelve errores claros si se intenta usar sin config.
@@ -75,6 +79,61 @@ async function validarFacturaFactus(payload) {
   return data;
 }
 
+function extraerListaRangosFactus(raw) {
+  if (Array.isArray(raw?.data?.data)) return raw.data.data;
+  if (Array.isArray(raw?.data)) return raw.data;
+  if (Array.isArray(raw)) return raw;
+  return [];
+}
+
+function normalizarRangosFactus(raw, opts = {}) {
+  const soloFacturas = opts.soloFacturas === true;
+  const lista = extraerListaRangosFactus(raw);
+  return lista
+    .map((r) => {
+      const id = r.id ?? r.numbering_range_id ?? r.numberingRangeId;
+      const prefix = String(r.prefix || r.prefijo || '').trim();
+      const resolucion = String(r.resolution_number || r.resolutionNumber || r.resolucion || '').trim();
+      const desde = r.from ?? r.desde ?? null;
+      const hasta = r.to ?? r.hasta ?? null;
+      const activo = r.is_active ?? r.isActive ?? r.activo;
+      const documento = String(r.document_type?.name || r.documentType || r.document || '').trim();
+      const esFactura =
+        /factura/i.test(documento) &&
+        !/nota|ajuste|soporte|nómina|nomina|débito|debito/i.test(documento);
+      const partes = [];
+      if (documento) partes.push(documento);
+      if (prefix) partes.push(prefix);
+      if (resolucion) partes.push(`Res. ${resolucion}`);
+      if (desde != null && hasta != null) partes.push(`${desde}–${hasta}`);
+      return {
+        id: id != null ? Number(id) : null,
+        prefix,
+        resolutionNumber: resolucion,
+        from: desde,
+        to: hasta,
+        current: r.current ?? null,
+        isActive: activo !== false && r.is_expired !== true,
+        esFacturaVenta: esFactura,
+        documentType: documento || null,
+        label: partes.length ? partes.join(' · ') : `Rango #${id}`,
+        raw: r,
+      };
+    })
+    .filter((r) => r.id != null && r.isActive)
+    .filter((r) => (soloFacturas ? r.esFacturaVenta : true));
+}
+
+function rangoFacturaPreferido(rangos = []) {
+  const lista = Array.isArray(rangos) ? rangos : [];
+  return (
+    lista.find((r) => r.esFacturaVenta) ||
+    lista.find((r) => /factura/i.test(r.documentType || '')) ||
+    lista[0] ||
+    null
+  );
+}
+
 async function listarRangosFactus() {
   const cfg = await credencialesEfectivas();
   const tokenData = await obtenerTokenFactus();
@@ -89,9 +148,107 @@ async function listarRangosFactus() {
   if (!res.ok) {
     const err = new Error(data?.message || 'No se pudieron listar rangos Factus');
     err.status = res.status >= 400 && res.status < 600 ? res.status : 502;
+    err.details = data;
     throw err;
   }
-  return data;
+  const todos = normalizarRangosFactus(data, { soloFacturas: false });
+  const facturas = normalizarRangosFactus(data, { soloFacturas: true });
+  const sugerido = rangoFacturaPreferido(facturas.length ? facturas : todos);
+  return {
+    ok: true,
+    rangos: facturas.length ? facturas : todos,
+    rangosTodos: todos,
+    sugeridoId: sugerido?.id ?? null,
+    sugeridoLabel: sugerido?.label ?? null,
+    raw: data,
+  };
+}
+
+/** Payload mínimo para probar emisión en sandbox (sin alumno/liquidación). */
+function payloadPruebaSandbox(cfg) {
+  const rangeId = cfg.numberingRangeId != null ? Number(cfg.numberingRangeId) : null;
+  if (!rangeId) {
+    const err = new Error('Seleccione un rango de numeración Factus antes de emitir la prueba.');
+    err.status = 428;
+    err.code = 'FACTUS_SIN_RANGO';
+    throw err;
+  }
+  const ts = Date.now();
+  return {
+    reference_code: `ARGO-SB-TEST-${ts}`,
+    document: '01',
+    numbering_range_id: rangeId,
+    operation_type: '10',
+    send_email: cfg.sendEmail === true,
+    observation: 'Prueba sandbox ARGO — documento de integración',
+    payment_details: [
+      {
+        payment_form: '1',
+        payment_method_code: '10',
+        reference_code: `pago-test-${ts}`,
+        amount: '11900.00',
+      },
+    ],
+    cash_rounding_amount: '0.00',
+    customer: {
+      identification_document_code: '13',
+      identification: '1234567890',
+      names: 'Cliente Prueba ARGO',
+      address: 'Calle prueba 1',
+      email: 'prueba@argo.local',
+      phone: '3000000000',
+      legal_organization_code: '2',
+      tribute_code: 'ZZ',
+      municipality_code: '11001',
+    },
+    items: [
+      {
+        code_reference: 'ARGO-TEST-SERV',
+        name: 'Servicio prueba facturación ARGO',
+        quantity: '1.00',
+        discount_rate: '0.00',
+        price: '10000.00',
+        unit_measure_code: '94',
+        standard_code: '999',
+        taxes: [{ code: '01', rate: '19.00' }],
+      },
+    ],
+  };
+}
+
+async function emitirPruebaSandbox(opts = {}) {
+  const cfg = await credencialesEfectivas();
+  if (cfg.proveedor !== PROVEEDOR_FACTUS) {
+    const err = new Error('Configure el proveedor Factus y active la integración para probar en sandbox.');
+    err.status = 428;
+    throw err;
+  }
+  if (!credencialesCompletas(cfg)) {
+    const err = new Error('Credenciales Factus incompletas.');
+    err.status = 428;
+    err.code = 'FACTUS_SIN_CREDENCIALES';
+    throw err;
+  }
+  const rangeOverride =
+    opts.numberingRangeId != null && opts.numberingRangeId !== ''
+      ? Number(opts.numberingRangeId) || null
+      : null;
+  const cfgEmision = rangeOverride ? { ...cfg, numberingRangeId: rangeOverride } : cfg;
+  const payload = payloadPruebaSandbox(cfgEmision);
+  const resp = await validarFacturaFactus(payload);
+  const data = resp?.data || {};
+  return {
+    ok: true,
+    message: resp?.message || 'Factura de prueba enviada a Factus.',
+    referenceCode: payload.reference_code,
+    numeroFactura: data.number || '',
+    cufe: data.cufe || '',
+    isValidated: !!data.is_validated,
+    urlPdf: data.links?.public_url || data.links?.pdf || '',
+    urlQr: data.links?.qr || '',
+    errors: data.errors || null,
+    respuesta: resp,
+  };
 }
 
 /** Emisión en modo desarrollo: no llama DIAN; simula respuesta mínima. */
@@ -157,7 +314,7 @@ async function emitirFactura({ payload, montos, config }) {
         modoDesarrollo: false,
         estado: ESTADO_RECHAZADA,
         respuestaProveedor: e.details || null,
-        erroresValidacion: e.details?.errors || { message: e.message },
+        erroresValidacion: erroresValidacionFactus(e.details) || { message: e.message },
         error: e.message,
       };
     }
@@ -256,7 +413,7 @@ async function emitirNotaCredito({ payload, montos, config }) {
         modoDesarrollo: false,
         estado: ESTADO_RECHAZADA,
         respuestaProveedor: e.details || null,
-        erroresValidacion: e.details?.errors || { message: e.message },
+        erroresValidacion: erroresValidacionFactus(e.details) || { message: e.message },
         error: e.message,
       };
     }
@@ -292,6 +449,11 @@ module.exports = {
   emitirNotaCreditoStub,
   probarConexionFactus,
   listarRangosFactus,
+  normalizarRangosFactus,
+  extraerListaRangosFactus,
+  rangoFacturaPreferido,
+  emitirPruebaSandbox,
+  payloadPruebaSandbox,
   validarFacturaFactus,
   validarNotaCreditoFactus,
 };

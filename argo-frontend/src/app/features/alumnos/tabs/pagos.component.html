@@ -20,6 +20,91 @@
     <button type="button" class="ghost" (click)="abrirFactura()">Emitir factura electrónica</button>
   </div>
 
+  <div class="card card-facturas">
+    <header class="facturas-header">
+      <div>
+        <h2>Facturas emitidas</h2>
+        <p class="facturas-sub">
+          Documentos electrónicos de este alumno, incluidas las facturadas a una empresa o tercero.
+        </p>
+      </div>
+    </header>
+
+    <div class="msg msg-facturas" *ngIf="msgFacturas()">{{ msgFacturas() }}</div>
+
+    <div class="loading" *ngIf="loadingFacturas()">Cargando facturas…</div>
+
+    <table class="argo" *ngIf="!loadingFacturas() && !msgFacturas()">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Número</th>
+          <th>Facturado a</th>
+          <th>Ítems</th>
+          <th>Estado</th>
+          <th class="r">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let f of facturasEmitidas()">
+          <tr>
+            <td>{{ tiempoFmt(f.emitidaAt || f.createdAt) }}</td>
+            <td>
+              <button type="button" class="link-btn" (click)="toggleDetalleFactura(f._id)">
+                {{ f.numeroFactura || f.referenceCode || '—' }}
+              </button>
+            </td>
+            <td>
+              <span class="badge info" *ngIf="esFacturaAEmpresa(f)">Empresa</span>
+              <span class="badge" *ngIf="!esFacturaAEmpresa(f)">Alumno</span>
+              <span class="factura-adq-nombre">{{ labelAdquirente(f) }}</span>
+            </td>
+            <td class="factura-items-resumen">
+              {{ resumenItemsFactura(f) }}
+              <span class="factura-participante" *ngIf="participanteFactura(f) as part">{{ part }}</span>
+            </td>
+            <td><span [ngClass]="claseEstadoFactura(f)">{{ labelEstadoFactura(f) }}</span></td>
+            <td class="r">{{ fmt(f.valorTotal) }}</td>
+            <td class="r actions-cell">
+              <button type="button" class="primary mini" (click)="verFacturaEmitida(f)">Ver</button>
+              <button type="button" class="ghost mini" (click)="imprimirFacturaEmitida(f)">Imprimir</button>
+            </td>
+          </tr>
+          <tr class="factura-detalle-row" *ngIf="facturaDetalleAbierto() === f._id">
+            <td colspan="7">
+              <div class="factura-detalle-panel">
+                <div class="factura-detalle-meta" *ngIf="f.cufe">
+                  <span class="meta-label">CUFE</span>
+                  <span class="meta-val mono">{{ f.cufe }}</span>
+                </div>
+                <table class="argo nested" *ngIf="f.items?.length">
+                  <thead>
+                    <tr>
+                      <th>Servicio</th>
+                      <th>IVA</th>
+                      <th class="r">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let it of f.items">
+                      <td>{{ it.descripcion || '—' }}</td>
+                      <td>{{ it.condicionIva || '—' }}</td>
+                      <td class="r">{{ fmt(it.total ?? it.valorLiquidacion) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+        <tr *ngIf="facturasEmitidas().length === 0">
+          <td colspan="7" class="empty">No hay facturas emitidas para este alumno.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <div class="card card-registrar-pago">
     <header class="registro-header">
       <div>

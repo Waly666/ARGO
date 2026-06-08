@@ -19,6 +19,10 @@ import {
 } from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { PermisoService } from '../../../core/services/permiso.service';
 import { FacturaEmitirModalComponent } from '../../facturacion/factura-emitir-modal.component';
+import {
+  FacturaElectronicaItem,
+  FacturacionService,
+} from '../../../core/services/facturacion.service';
 import { ComprobanteHoyAlertService } from '../../../core/services/comprobante-hoy-alert.service';
 
 interface ItemPagoSel {
@@ -60,6 +64,7 @@ export class PagosComponent {
   private certSvc = inject(CertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
   private cajaAlert = inject(CajaAperturaAlertService);
+  private feSvc = inject(FacturacionService);
 
   tiposPago = signal<Record<string, unknown>[]>(TIPOS_PAGO_DEF);
   cuentasBancarias = signal<Record<string, unknown>[]>([]);
@@ -78,6 +83,10 @@ export class PagosComponent {
   msg = signal<string | null>(null);
 
   mostrarFactura = signal(false);
+  facturasEmitidas = signal<FacturaElectronicaItem[]>([]);
+  loadingFacturas = signal(false);
+  msgFacturas = signal<string | null>(null);
+  facturaDetalleAbierto = signal<string | null>(null);
   ingresoDestacado = signal<string | null>(null);
 
   ingresoPendienteAnular = signal<any | null>(null);
@@ -366,7 +375,90 @@ export class PagosComponent {
     if (nd) this.recargar(nd);
   }
 
+  toggleDetalleFactura(id: string): void {
+    this.facturaDetalleAbierto.update((cur) => (cur === id ? null : id));
+  }
+
+  labelAdquirente(f: FacturaElectronicaItem): string {
+    const tipo = String(f.adquirente?.tipo || 'alumno');
+    const nombre = String(f.adquirente?.nombre || '').trim();
+    if (tipo === 'cliente') return nombre || 'Empresa / tercero';
+    return nombre || 'Alumno';
+  }
+
+  esFacturaAEmpresa(f: FacturaElectronicaItem): boolean {
+    return String(f.adquirente?.tipo || '') === 'cliente';
+  }
+
+  resumenItemsFactura(f: FacturaElectronicaItem): string {
+    const items = (f.items || []).map((it) => String(it.descripcion || '').trim()).filter(Boolean);
+    if (!items.length) return '—';
+    if (this.esFacturaAEmpresa(f) && items.length > 1) {
+      return `${items.length} capacitaciones (1 ítem en factura)`;
+    }
+    if (items.length <= 2) return items.join(' · ');
+    return `${items.slice(0, 2).join(' · ')} (+${items.length - 2})`;
+  }
+
+  participanteFactura(f: FacturaElectronicaItem): string | null {
+    if (!this.esFacturaAEmpresa(f)) return null;
+    const nombre = String(f.adquirente?.participanteNombre || '').trim();
+    const doc = f.adquirente?.participanteNumDoc;
+    if (nombre && doc) return `${nombre} (CC ${doc})`;
+    if (nombre) return nombre;
+    return null;
+  }
+
+  labelEstadoFactura(f: FacturaElectronicaItem): string {
+    const e = String(f.estado || '');
+    if (e === 'anulada') return 'Anulada';
+    if (f.modoDesarrollo) return 'Desarrollo';
+    if (e === 'validada') return 'Validada DIAN';
+    if (e === 'rechazada') return 'Rechazada';
+    if (e === 'pendiente_envio') return 'Pendiente DIAN';
+    return e || '—';
+  }
+
+  claseEstadoFactura(f: FacturaElectronicaItem): string {
+    const e = String(f.estado || '').toLowerCase();
+    if (e === 'anulada' || e === 'rechazada') return 'badge err';
+    if (f.modoDesarrollo) return 'badge warn';
+    if (e === 'validada') return 'badge ok';
+    if (e === 'pendiente_envio') return 'badge info';
+    return 'badge';
+  }
+
+  verFacturaEmitida(f: FacturaElectronicaItem): void {
+    this.feSvc.verFactura(f, (m) => this.msg.set(m));
+  }
+
+  imprimirFacturaEmitida(f: FacturaElectronicaItem): void {
+    this.feSvc.abrirHtmlFactura(f._id, (m) => this.msg.set(m));
+  }
+
+  private cargarFacturas(numDoc: number | string): void {
+    this.loadingFacturas.set(true);
+    this.msgFacturas.set(null);
+    this.feSvc.listarPorAlumno(numDoc).subscribe({
+      next: (rows) => {
+        this.facturasEmitidas.set(rows || []);
+        this.loadingFacturas.set(false);
+      },
+      error: (e) => {
+        this.facturasEmitidas.set([]);
+        this.loadingFacturas.set(false);
+        const status = e?.status ?? e?.error?.status;
+        this.msgFacturas.set(
+          status === 403
+            ? 'Sin permiso para consultar facturas de este alumno.'
+            : e?.error?.message || 'No se pudieron cargar las facturas emitidas.',
+        );
+      },
+    });
+  }
+
   recargar(numDoc: number | string) {
+    this.cargarFacturas(numDoc);
     this.loading.set(true);
     this.liqSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {

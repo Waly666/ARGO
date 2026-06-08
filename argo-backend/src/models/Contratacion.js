@@ -39,6 +39,11 @@ const ContratacionSchema = new mongoose.Schema(
     fechaInicJornadas: { type: Date, default: null },
     numSesCert: { type: Number, default: 1 },
     jornadasGeneradas: { type: Boolean, default: false },
+    /** Cliente en catálogo clientesFacturacion (obligatorio para facturar; el tipo fiscal vive en el cliente). */
+    idClienteFacturacion: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null },
+    valorContrato: { type: mongoose.Schema.Types.Decimal128, default: 0 },
+    idFacturaElectronica: { type: mongoose.Schema.Types.ObjectId, ref: 'FacturaElectronica', default: null },
+    facturadoAt: { type: Date, default: null },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
   },

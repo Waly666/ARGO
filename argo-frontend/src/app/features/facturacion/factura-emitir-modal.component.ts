@@ -125,6 +125,37 @@ export class FacturaEmitirModalComponent implements OnInit, OnDestroy {
     return 'Gravado';
   }
 
+  private mensajeErrorHttp(e: { error?: { message?: string; details?: unknown } }): string {
+    const base = e?.error?.message || 'Error al emitir la factura';
+    const errs = this.erroresFactusDesdeRespuesta(e?.error?.details);
+    if (!errs) return base;
+    const partes: string[] = [];
+    for (const [campo, val] of Object.entries(errs)) {
+      const texto = Array.isArray(val) ? val.join('; ') : String(val);
+      if (texto) partes.push(campo === 'cliente' ? texto : `${campo}: ${texto}`);
+    }
+    return partes.length ? `${base} — ${partes.join(' · ')}` : base;
+  }
+
+  private erroresFactusDesdeRespuesta(
+    details: unknown,
+  ): Record<string, string[] | string> | null {
+    if (!details || typeof details !== 'object') return null;
+    const det = details as Record<string, unknown>;
+    if (det['errors'] && typeof det['errors'] === 'object') {
+      return det['errors'] as Record<string, string[] | string>;
+    }
+    const data = det['data'] as Record<string, unknown> | undefined;
+    if (data?.['errors'] && typeof data['errors'] === 'object') {
+      return data['errors'] as Record<string, string[] | string>;
+    }
+    const keys = Object.keys(det);
+    if (keys.some((k) => k.includes('.') || k === 'cliente')) {
+      return det as Record<string, string[] | string>;
+    }
+    return null;
+  }
+
   private payload() {
     return {
       numDoc: Number(this.numDoc),
@@ -191,7 +222,7 @@ export class FacturaEmitirModalComponent implements OnInit, OnDestroy {
       error: (e) => {
         this.emitiendo.set(false);
         this.msgError.set(true);
-        this.msg.set(e?.error?.message || 'Error al emitir la factura');
+        this.msg.set(this.mensajeErrorHttp(e));
       },
     });
   }

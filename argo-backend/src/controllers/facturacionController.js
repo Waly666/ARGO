@@ -1,4 +1,5 @@
 const facturaSvc = require('../services/facturaElectronica');
+const facturaContratoSvc = require('../services/facturaContratoCap');
 const notaSvc = require('../services/notaCredito');
 const { generarHtmlFactura, generarHtmlNotaCredito } = require('../services/facturaElectronicaHtml');
 const { listarRangosFactus, probarConexionFactus } = require('../services/facturaProveedor');
@@ -33,6 +34,45 @@ exports.elegiblesAlumno = async (req, res, next) => {
     const numDoc = parseNumDoc(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'Documento de alumno inválido' });
     res.json(await facturaSvc.listarElegiblesPorAlumno(numDoc));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.estadoFacturaContrato = async (req, res, next) => {
+  try {
+    res.json(await facturaContratoSvc.estadoFacturaContrato(req.params.idContrato));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.previewFacturaContrato = async (req, res, next) => {
+  try {
+    res.json(await facturaContratoSvc.previewFacturaContrato(req.params.idContrato));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.emitirFacturaContrato = async (req, res, next) => {
+  try {
+    const doc = await facturaContratoSvc.emitirFacturaContrato(req.params.idContrato, {
+      idSede: req.idSede,
+      idUsuario: req.user?.sub || null,
+      userAddReg: req.user?.username || req.user?.nombre || null,
+    });
+    res.status(201).json(doc);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.facturasAlumno = async (req, res, next) => {
+  try {
+    const numDoc = parseNumDoc(req.params.numDoc);
+    if (numDoc == null) return res.status(400).json({ message: 'Documento de alumno inválido' });
+    res.json(await facturaSvc.listarFacturasPorAlumno(numDoc));
   } catch (e) {
     next(e);
   }

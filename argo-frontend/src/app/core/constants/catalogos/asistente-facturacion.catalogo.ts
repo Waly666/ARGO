@@ -185,10 +185,16 @@ export const ASISTENTE_FACTURACION: Record<string, AsistenteContexto> = {
           'Marque si el cliente está inscrito como gran contribuyente (responsabilidad O-13 en el RUT). No implica que usted retenga; solo identifica al adquirente.',
       },
       {
+        id: 'cli-autorretenedor',
+        titulo: 'Autorretenedor',
+        cuerpo:
+          'Marque si el cliente está inscrito como autorretenedor (O-15). Retiene ReteFuente sobre el pago; ARGO mostrará el valor informativo en la factura del contrato.',
+      },
+      {
         id: 'cli-agente-rete',
         titulo: 'Agente retenedor de IVA',
         cuerpo:
-          'Marque si el cliente es agente retenedor de IVA (O-23). En la factura ARGO mostrará ReteIVA informativa: el cliente retiene a usted, no al revés. Usted no es autorretenedor.',
+          'Marque si el cliente es agente retenedor de IVA (O-23). En la factura ARGO mostrará ReteIVA informativa: el cliente retiene a usted, no al revés.',
       },
       {
         id: 'cli-pct-rete',

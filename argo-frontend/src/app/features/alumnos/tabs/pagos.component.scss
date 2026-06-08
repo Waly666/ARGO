@@ -411,6 +411,93 @@
   }
 }
 
+.fe-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-facturas {
+  padding: 1.1rem 1.25rem 1.25rem;
+}
+
+.facturas-header {
+  margin-bottom: 0.85rem;
+
+  h2 {
+    margin: 0 0 0.3rem;
+    font-size: 1.15rem;
+  }
+}
+
+.facturas-sub {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-soft);
+  max-width: 44rem;
+  line-height: 1.45;
+}
+
+.factura-adq-nombre {
+  display: inline-block;
+  margin-left: 0.45rem;
+  font-size: 0.88rem;
+}
+
+.factura-items-resumen {
+  max-width: 16rem;
+  font-size: 0.88rem;
+  color: var(--text-soft);
+}
+
+.factura-participante {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--text, #334155);
+}
+
+.factura-detalle-row td {
+  background: rgba(78, 163, 255, 0.04);
+  border-top: none;
+}
+
+.factura-detalle-panel {
+  padding: 0.35rem 0.25rem 0.5rem;
+}
+
+.factura-detalle-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.82rem;
+}
+
+.meta-label {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.meta-val.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent, #2563eb);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 @media (max-width: 960px) {
   .registro-layout {
     grid-template-columns: 1fr;

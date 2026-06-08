@@ -452,16 +452,23 @@ export const routes: Routes = [
       {
         path: 'configuracion/facturacion',
         canActivate: [permisoGuard],
-        data: { permiso: 'config.facturacion' },
+        data: { permiso: ['config.facturacion', 'facturacion'] },
         loadComponent: () =>
           import('./features/config/config-facturacion.component').then((m) => m.ConfigFacturacionComponent),
       },
       {
         path: 'configuracion/clientes',
         canActivate: [permisoGuard],
-        data: { permiso: 'config.facturacion' },
+        data: { permiso: ['config.facturacion', 'facturacion'] },
         loadComponent: () =>
           import('./features/config/config-clientes.component').then((m) => m.ConfigClientesComponent),
+      },
+      {
+        path: 'configuracion/contratos-cap-fiscal',
+        canActivate: [permisoGuard],
+        data: { permiso: ['config.facturacion', 'facturacion'] },
+        loadComponent: () =>
+          import('./features/config/config-contratos-cap.component').then((m) => m.ConfigContratosCapComponent),
       },
       {
         path: 'configuracion/nomina',
@@ -478,6 +485,13 @@ export const routes: Routes = [
           import('./features/config/config-certificados.component').then(
             (m) => m.ConfigCertificadosComponent,
           ),
+      },
+      {
+        path: 'configuracion/alertas',
+        canActivate: [permisoGuard],
+        data: { permiso: ['config.alertas', 'config.roles'] },
+        loadComponent: () =>
+          import('./features/config/config-alertas.component').then((m) => m.ConfigAlertasComponent),
       },
       {
         path: 'configuracion/catalogos',

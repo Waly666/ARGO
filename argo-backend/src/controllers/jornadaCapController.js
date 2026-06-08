@@ -144,6 +144,8 @@ function pickContrato(body) {
     'incluiFest',
     'fechaInicJornadas',
     'numSesCert',
+    'idClienteFacturacion',
+    'valorContrato',
   ];
   const dto = {};
   for (const k of fields) {
@@ -157,6 +159,10 @@ function pickContrato(body) {
   }
   if (dto.numeroAlumnos != null) dto.numeroAlumnos = Math.max(0, parseInt(dto.numeroAlumnos, 10) || 0);
   if (dto.numSesCert != null) dto.numSesCert = Math.max(1, parseInt(dto.numSesCert, 10) || 1);
+  if (dto.valorContrato != null) dto.valorContrato = Math.max(0, Number(dto.valorContrato) || 0);
+  if (dto.idClienteFacturacion === '' || dto.idClienteFacturacion == null) {
+    dto.idClienteFacturacion = null;
+  }
   if (dto.fechaInicJornadas != null && dto.fechaInicJornadas !== '') {
     dto.fechaInicJornadas = fechaCalendarioParaGuardar(dto.fechaInicJornadas);
   }

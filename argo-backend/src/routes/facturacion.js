@@ -7,11 +7,21 @@ router.use(requireAuth);
 router.use(loadSedeActiva);
 
 const ver = requirePermiso('facturacion', 'alumnos.pagos');
+const verFacturasAlumno = requirePermiso(
+  'facturacion',
+  'alumnos.pagos',
+  'alumnos.gestionar',
+  'alumnos.ver',
+);
 const emitir = requirePermiso('facturacion', 'alumnos.pagos');
 
 router.get('/catalogos', ver, ctrl.catalogos);
 router.get('/resumen', ver, ctrl.resumen);
 router.get('/elegibles/:numDoc', ver, ctrl.elegiblesAlumno);
+router.get('/alumno/:numDoc', verFacturasAlumno, ctrl.facturasAlumno);
+router.get('/contrato/:idContrato/estado', ver, ctrl.estadoFacturaContrato);
+router.get('/contrato/:idContrato/preview', ver, ctrl.previewFacturaContrato);
+router.post('/contrato/:idContrato/emitir', emitir, ctrl.emitirFacturaContrato);
 router.get('/rangos-factus', ver, ctrl.rangosFactus);
 router.get('/notas-credito/:notaId/html', ver, ctrl.htmlNotaCredito);
 router.get('/notas-credito', ver, ctrl.listarNotas);

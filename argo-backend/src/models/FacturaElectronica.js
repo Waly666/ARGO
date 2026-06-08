@@ -46,9 +46,12 @@ const AdquirenteSchema = new mongoose.Schema(
     correo: { type: String, trim: true, default: '' },
     telefono: { type: String, trim: true, default: '' },
     municipioCodigo: { type: String, trim: true, default: '' },
+    tipoContratoCap: { type: String, trim: true, default: '' },
     granContribuyente: { type: Boolean, default: false },
+    autoretenedor: { type: Boolean, default: false },
     agenteRetenedorIva: { type: Boolean, default: false },
     porcentajeReteIva: { type: Number, default: 0 },
+    porcentajeReteFuente: { type: Number, default: 0 },
   },
   { _id: false },
 );
@@ -57,6 +60,11 @@ const FacturaElectronicaSchema = new mongoose.Schema(
   {
     /** Alumno origen de las liquidaciones (aunque se facture a un cliente). */
     numDoc: { type: Number, index: true },
+    /** Contrato de capacitación (factura manual, 1 por contrato). */
+    idContrato: { type: mongoose.Schema.Types.ObjectId, ref: 'Contratacion', default: null, index: true },
+    origenFactura: { type: String, trim: true, default: 'liquidacion' },
+    tipoContratoCap: { type: String, trim: true, default: '' },
+    retencionesContrato: { type: mongoose.Schema.Types.Mixed, default: null },
     idSede: { type: String, trim: true, index: true },
 
     /** Código único para el proveedor (Factus reference_code). */

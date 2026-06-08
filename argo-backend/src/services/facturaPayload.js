@@ -79,6 +79,33 @@ function taxesItem(condicionIva, porcentajeIva) {
   return [{ code: '01', rate: (Number(porcentajeIva) || 0).toFixed(2) }];
 }
 
+/** Redondeo a 2 decimales (misma precisión que Factus en líneas e IVA). */
+function round2(v) {
+  return Math.round(Number(v) * 100) / 100;
+}
+
+/** IVA de una línea según taxes[] de Factus (base ya en pesos con 2 decimales). */
+function ivaLineaFactus(base, taxes = []) {
+  const t = taxes[0];
+  if (!t || t.is_excluded) return 0;
+  const rate = Number(t.rate) || 0;
+  if (rate <= 0) return 0;
+  return round2((base * rate) / 100);
+}
+
+/** Total de línea: base × cantidad + IVA (criterio Factus /v2/bills/validate). */
+function totalLineaFactus(item) {
+  const qty = Number(item?.quantity) || 1;
+  const base = round2((Number(item?.price) || 0) * qty);
+  const iva = ivaLineaFactus(base, item?.taxes);
+  return round2(base + iva);
+}
+
+/** Suma de totales por línea — debe coincidir con payment_details.amount. */
+function totalFactusDesdeItems(items = []) {
+  return round2(items.reduce((s, it) => s + totalLineaFactus(it), 0));
+}
+
 function customerDesdeAlumno(al) {
   const docCode = codigoTipoDoc(al?.tipoDoc);
   const esJuridica = docCode === '31';
@@ -95,6 +122,79 @@ function customerDesdeAlumno(al) {
   if (al?.celular) customer.phone = String(al.celular).trim();
   if (al?.codMunicipio) customer.municipality_code = String(al.codMunicipio).trim();
   return customer;
+}
+
+const ETIQUETA_TIPO_DOC = {
+  '13': 'CC',
+  '31': 'NIT',
+  '22': 'CE',
+  '12': 'TI',
+  '41': 'PP',
+};
+
+function etiquetaTipoDoc(tipoDoc) {
+  return ETIQUETA_TIPO_DOC[codigoTipoDoc(tipoDoc)] || 'DOC';
+}
+
+function truncarTexto(texto, max) {
+  const t = String(texto || '').trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 3)}...`;
+}
+
+/** Línea única Factus al facturar capacitación de un alumno a empresa/tercero. */
+function nombreItemCapacitacionTercero(alumno, servicios = []) {
+  const nombre = nombreAlumno(alumno);
+  const doc = String(alumno?.numDoc || '').trim();
+  const tipo = etiquetaTipoDoc(alumno?.tipoDoc);
+  const lista = servicios.filter(Boolean).join('; ');
+  return truncarTexto(`Capacitacion ${tipo} ${doc} ${nombre} - ${lista}`, 250);
+}
+
+function observacionCapacitacionTercero(alumno, servicios = [], valorTotal = 0) {
+  const nombre = nombreAlumno(alumno);
+  const doc = String(alumno?.numDoc || '').trim();
+  const tipo = etiquetaTipoDoc(alumno?.tipoDoc);
+  const lista = servicios.filter(Boolean).join('; ');
+  const valor = roundMoney(num(valorTotal)).toLocaleString('es-CO');
+  return truncarTexto(
+    `Participante: ${nombre} (${tipo} ${doc}). Servicios: ${lista}. Valor total capacitacion: $${valor}.`,
+    500,
+  );
+}
+
+function claveIvaLinea(condicion, porcentajeIva) {
+  return `${condicion}|${Number(porcentajeIva) || 0}`;
+}
+
+function validarIvaUniforme(lineas = []) {
+  if (!lineas.length) return null;
+  const ref = claveIvaLinea(lineas[0].condicion, lineas[0].porcentajeIva);
+  const mixto = lineas.some((l) => claveIvaLinea(l.condicion, l.porcentajeIva) !== ref);
+  if (mixto) {
+    const err = new Error(
+      'Para facturar a empresa en un solo ítem, todos los servicios deben tener la misma condición de IVA. Seleccione servicios compatibles o facture al alumno.',
+    );
+    err.status = 400;
+    err.code = 'FE_IVA_MIXTO';
+    throw err;
+  }
+  return lineas[0];
+}
+
+function itemFactusConsolidadoTercero(alumno, lineas, baseTotal) {
+  const ref = validarIvaUniforme(lineas);
+  const servicios = lineas.map((l) => l.descripcion);
+  return {
+    code_reference: `CAP-${alumno?.numDoc || 'X'}`,
+    name: nombreItemCapacitacionTercero(alumno, servicios),
+    quantity: '1.00',
+    discount_rate: '0.00',
+    price: roundMoney(baseTotal).toFixed(2),
+    unit_measure_code: '94',
+    standard_code: '999',
+    taxes: taxesItem(ref.condicion, ref.porcentajeIva),
+  };
 }
 
 function customerDesdeCliente(cli) {
@@ -124,10 +224,18 @@ function customerDesdeCliente(cli) {
  * @param {Object} p.configFacturacion
  * @param {Number} p.totalAbonado - suma de abonos ya recibidos (para payment_details)
  */
-function armarPayloadFactus({ itemsCtx = [], adquirente = {}, configFacturacion = {}, numDoc, totalAbonado = 0, dueDate = null }) {
+function armarPayloadFactus({
+  itemsCtx = [],
+  adquirente = {},
+  configFacturacion = {},
+  numDoc,
+  totalAbonado = 0,
+  dueDate = null,
+  customerFactus = null,
+}) {
   const cfg = configFacturacion || {};
-  const items = [];
   const detalle = [];
+  const lineasInternas = [];
   let base = 0;
   let valorIva = 0;
   let total = 0;
@@ -138,23 +246,21 @@ function armarPayloadFactus({ itemsCtx = [], adquirente = {}, configFacturacion 
     const condicion = condicionIvaServicio(serv);
     const pct = num(serv.iva);
     const m = desglosarItem(liq.valor, condicion, pct);
+    const descripcion = String(liq.descripcion || serv.descrServicio || 'Servicio CEA').trim();
 
-    items.push({
-      code_reference: String(serv.idServ || liq.idServ || liq._id || 'SERV'),
-      name: String(liq.descripcion || serv.descrServicio || 'Servicio CEA').trim(),
-      quantity: '1.00',
-      discount_rate: '0.00',
-      price: m.base.toFixed(2),
-      unit_measure_code: '94',
-      standard_code: '999',
-      taxes: taxesItem(condicion, m.porcentajeIva),
+    lineasInternas.push({
+      condicion,
+      porcentajeIva: m.porcentajeIva,
+      descripcion,
+      codeReference: String(serv.idServ || liq.idServ || liq._id || 'SERV'),
+      m,
     });
 
     detalle.push({
       idLiquidacion: liq._id,
       idServ: liq.idServ || serv.idServ || null,
       idProg: liq.idProg || null,
-      descripcion: liq.descripcion || serv.descrServicio || '',
+      descripcion,
       condicionIva: condicion,
       porcentajeIva: m.porcentajeIva,
       valorLiquidacion: m.total,
@@ -169,19 +275,35 @@ function armarPayloadFactus({ itemsCtx = [], adquirente = {}, configFacturacion 
   }
 
   const esCliente = adquirente.tipo === ADQUIRENTE_CLIENTE && adquirente.cliente;
-  const customer = esCliente
-    ? customerDesdeCliente(adquirente.cliente)
-    : customerDesdeAlumno(adquirente.alumno);
+  const items = esCliente
+    ? [itemFactusConsolidadoTercero(adquirente.alumno, lineasInternas, base)]
+    : lineasInternas.map((l) => ({
+        code_reference: l.codeReference,
+        name: l.descripcion,
+        quantity: '1.00',
+        discount_rate: '0.00',
+        price: l.m.base.toFixed(2),
+        unit_measure_code: '94',
+        standard_code: '999',
+        taxes: taxesItem(l.condicion, l.porcentajeIva),
+      }));
+  const customer =
+    customerFactus ||
+    (esCliente ? customerDesdeCliente(adquirente.cliente) : customerDesdeAlumno(adquirente.alumno));
+
+  // Total que Factus calcula desde ítems (base + IVA por línea con 2 decimales).
+  const totalFactus = totalFactusDesdeItems(items);
+  const valorIvaFactus = round2(totalFactus - base);
 
   // Forma de pago: crédito si queda saldo, contado si ya está todo pagado.
   const abonado = roundMoney(num(totalAbonado));
-  const esCredito = abonado < total - 0.0001;
+  const esCredito = abonado < totalFactus - 0.0001;
   const formaPago = esCredito ? FORMA_PAGO_CREDITO : FORMA_PAGO_CONTADO;
 
   const pago = {
     payment_form: formaPago,
     payment_method_code: esCredito ? '47' : '10',
-    amount: total.toFixed(2),
+    amount: totalFactus.toFixed(2),
   };
   if (esCredito && dueDate) pago.due_date = dueDate;
 
@@ -196,6 +318,13 @@ function armarPayloadFactus({ itemsCtx = [], adquirente = {}, configFacturacion 
     items,
   };
   if (cfg.numberingRangeId) payload.numbering_range_id = cfg.numberingRangeId;
+  if (esCliente && adquirente.alumno) {
+    payload.observation = observacionCapacitacionTercero(
+      adquirente.alumno,
+      lineasInternas.map((l) => l.descripcion),
+      total,
+    );
+  }
 
   // ReteIVA informativa cuando el cliente es agente retenedor.
   let reteIva = { aplica: false, porcentaje: 0, valor: 0 };
@@ -213,8 +342,12 @@ function armarPayloadFactus({ itemsCtx = [], adquirente = {}, configFacturacion 
   return {
     payload,
     detalle,
-    totales: { base, valorIva, total, formaPago, esCredito },
+    totales: { base, valorIva: valorIvaFactus, total: totalFactus, formaPago, esCredito },
     reteIva,
+    lineaFactus:
+      esCliente && items[0]
+        ? { consolidada: true, nombre: items[0].name, servicios: lineasInternas.length }
+        : { consolidada: false, nombre: null, servicios: items.length },
   };
 }
 
@@ -222,7 +355,13 @@ module.exports = {
   codigoTipoDoc,
   condicionIvaServicio,
   desglosarItem,
+  taxesItem,
   referenceCodeFactura,
   armarPayloadFactus,
   nombreAlumno,
+  nombreItemCapacitacionTercero,
+  customerDesdeAlumno,
+  customerDesdeCliente,
+  totalFactusDesdeItems,
+  totalLineaFactus,
 };

@@ -118,8 +118,91 @@
                 rows="6"
                 [ngModel]="formContrato().objetoContrato"
                 (ngModelChange)="patchContrato('objetoContrato', $event)"
-                placeholder="Describa el objeto contractual: alcance, programa, obligaciones, etc."></textarea>
+                placeholder="Describa el objeto contractual: alcance, programa, obligaciones, etc. (será el detalle de la factura)."></textarea>
             </div>
+          </div>
+        </section>
+
+        <section class="form-block form-block-factura" *ngIf="puedeFacturarContrato()">
+          <h3 class="form-block-title">Facturación del contrato</h3>
+          <p class="hint-block">
+            Una factura por contrato, en cualquier momento. El tipo de contratante y perfil fiscal vienen del
+            <a routerLink="/app/configuracion/clientes" target="_blank">cliente de facturación</a>
+            (reglas en
+            <a routerLink="/app/configuracion/contratos-cap-fiscal" target="_blank">Contratos capacitación (fiscal)</a>).
+          </p>
+          <div class="row row-fields">
+            <div class="field col-w-lg field-cliente-fe">
+              <label>Cliente facturación *</label>
+              <div class="inline cliente-fe-row">
+                <select
+                  [ngModel]="formContrato().idClienteFacturacion || ''"
+                  (ngModelChange)="onClienteFacturacionChange($event)">
+                  <option value="">— Seleccione cliente —</option>
+                  <option *ngFor="let c of clientesFe()" [value]="c._id">
+                    {{ c.nombre || c.razonSocial || c.nombres }} ({{ c.identificacion }})
+                  </option>
+                </select>
+                <button type="button" class="ghost mini" (click)="abrirCrearClienteFe()">+ Crear</button>
+                <button type="button" class="ghost mini" (click)="recargarClientesFe()">↻</button>
+              </div>
+              <div class="cliente-fe-fiscal" *ngIf="clienteFeSeleccionado() as cli">
+                <span class="fiscal-tag fiscal-tag--tipo" [class.on]="!!cli.tipoContratoCap" [class.off]="!cli.tipoContratoCap">
+                  {{ cli.tipoContratoCapLabel || labelTipoContratoCap(cli.tipoContratoCap) || 'Sin tipo — edite en Clientes' }}
+                </span>
+                <span class="fiscal-tag" [class.on]="cli.granContribuyente" [class.off]="!cli.granContribuyente">
+                  Gran contribuyente
+                </span>
+                <span class="fiscal-tag" [class.on]="cli.autoretenedor" [class.off]="!cli.autoretenedor">
+                  Autorretenedor{{ cli.autoretenedor && cli.porcentajeReteFuente ? ' ' + cli.porcentajeReteFuente + '%' : '' }}
+                </span>
+                <span class="fiscal-tag" [class.on]="cli.agenteRetenedorIva" [class.off]="!cli.agenteRetenedorIva">
+                  ReteIVA{{ cli.agenteRetenedorIva && cli.porcentajeReteIva ? ' ' + cli.porcentajeReteIva + '%' : '' }}
+                </span>
+                <button type="button" class="ghost mini linkish" (click)="abrirCrearClienteFe()">Editar en Clientes</button>
+              </div>
+            </div>
+            <div class="field col-w-sm">
+              <label>Valor contrato *</label>
+              <input
+                type="number"
+                min="0"
+                [ngModel]="formContrato().valorContrato"
+                (ngModelChange)="patchContrato('valorContrato', +$event); previewFacturaContrato.set(null)" />
+            </div>
+          </div>
+          <div class="factura-contrato-actions" *ngIf="formContrato()._id">
+            <ng-container *ngIf="!contratoYaFacturado(); else yaFacturado">
+              <button type="button" class="ghost" (click)="calcularPreviewFacturaContrato()">Calcular factura</button>
+              <button
+                type="button"
+                class="primary"
+                (click)="emitirFacturaContrato()"
+                [disabled]="emitiendoFactura() || !previewFacturaContrato()">
+                {{ emitiendoFactura() ? 'Emitiendo…' : 'Emitir factura' }}
+              </button>
+            </ng-container>
+            <ng-template #yaFacturado>
+              <span class="badge ok">
+                Facturado: {{ estadoFacturaContrato()?.factura?.numeroFactura || '—' }}
+              </span>
+            </ng-template>
+          </div>
+          <div class="preview-factura-contrato" *ngIf="previewFacturaContrato() as p">
+            <p><strong>Línea:</strong> {{ p.detalle?.descripcion }}</p>
+            <p><strong>Cliente:</strong> {{ p.adquirente?.nombre }}</p>
+            <p><strong>Perfil:</strong> {{ p.regla?.label }} · IVA {{ p.regla?.condicionIva }}</p>
+            <p *ngIf="p.adquirente?.granContribuyente || p.adquirente?.autoretenedor || p.adquirente?.agenteRetenedorIva">
+              <strong>Cliente:</strong>
+              <span *ngIf="p.adquirente?.granContribuyente"> Gran contribuyente</span>
+              <span *ngIf="p.adquirente?.autoretenedor"> · Autorretenedor</span>
+              <span *ngIf="p.adquirente?.agenteRetenedorIva"> · Agente ReteIVA {{ p.adquirente?.porcentajeReteIva }}%</span>
+            </p>
+            <p>
+              <strong>Total:</strong> {{ fmtMoney(p.totales?.total) }}
+              <span *ngIf="p.retenciones?.reteIva?.aplica"> · ReteIVA {{ fmtMoney(p.retenciones.reteIva.valor) }}</span>
+              <span *ngIf="p.retenciones?.reteFuente?.aplica"> · ReteFuente {{ fmtMoney(p.retenciones.reteFuente.valor) }}</span>
+            </p>
           </div>
         </section>
 

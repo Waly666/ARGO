@@ -43,7 +43,8 @@
           <tr>
             <th>Identificación</th>
             <th>Nombre / Razón social</th>
-            <th>Tipo</th>
+            <th>Municipio</th>
+            <th>Contratante</th>
             <th>Fiscal</th>
             <th></th>
           </tr>
@@ -53,20 +54,31 @@
             <tr>
               <td class="cli-id">{{ c.identificacion }}{{ c.dv ? '-' + c.dv : '' }}</td>
               <td class="cli-name">{{ c.nombre || c.razonSocial || c.nombres }}</td>
+              <td class="cli-mun">
+                {{ c.municipioNombre || '—' }}
+                @if (c.municipioCodigo) {
+                  <span class="cli-mun-code">{{ c.municipioCodigo }}</span>
+                }
+              </td>
               <td>
-                <span class="cli-badge" [class.cli-badge--jur]="c.legalOrganizationCode === '1'" [class.cli-badge--nat]="c.legalOrganizationCode !== '1'">
-                  {{ c.legalOrganizationCode === '1' ? 'Jurídica' : 'Natural' }}
-                </span>
+                @if (c.tipoContratoCapLabel || c.tipoContratoCap) {
+                  <span class="cli-badge cli-badge--tipo">{{ c.tipoContratoCapLabel || labelTipoContratoCap(c.tipoContratoCap) }}</span>
+                } @else {
+                  <span class="cli-badge cli-badge--warn">Sin tipo</span>
+                }
               </td>
               <td>
                 <div class="cli-fiscal-tags">
                   @if (c.granContribuyente) {
                     <span class="cli-tag cli-tag--gold">Gran contrib.</span>
                   }
+                  @if (c.autoretenedor) {
+                    <span class="cli-tag cli-tag--rose">Autorretenedor</span>
+                  }
                   @if (c.agenteRetenedorIva) {
                     <span class="cli-tag cli-tag--violet">ReteIVA {{ c.porcentajeReteIva }}%</span>
                   }
-                  @if (!c.granContribuyente && !c.agenteRetenedorIva) {
+                  @if (!c.granContribuyente && !c.autoretenedor && !c.agenteRetenedorIva) {
                     <span class="cli-tag cli-tag--muted">—</span>
                   }
                 </div>
@@ -138,6 +150,19 @@
               <h3>Clasificación fiscal</h3>
             </header>
             <div class="cli-section-body cli-stack">
+              <label class="cli-field">
+                <span class="cli-label">Tipo de contratante *</span>
+                <select [ngModel]="form().tipoContratoCap" (ngModelChange)="onTipoContratoCap($event)">
+                  <option value="">— Seleccione —</option>
+                  @for (t of catalogos()?.tiposContratoCap || []; track t.id) {
+                    <option [value]="t.id">{{ t.label }}</option>
+                  }
+                </select>
+                <span class="cli-field-hint">
+                  Define el perfil de IVA, descuentos y retenciones al facturar contratos de capacitación.
+                  Configúrelo en <em>Contratos capacitación (fiscal)</em>.
+                </span>
+              </label>
               <div class="cli-grid cli-grid--2">
                 <label class="cli-field">
                   <span class="cli-label">Organización legal</span>
@@ -208,9 +233,29 @@
                   <span class="cli-label">Teléfono</span>
                   <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch({ telefono: $event })" />
                 </label>
-                <label class="cli-field cli-field--mun">
-                  <span class="cli-label">Cód. municipio</span>
-                  <input type="text" [ngModel]="form().municipioCodigo" (ngModelChange)="patch({ municipioCodigo: $event })" placeholder="11001" />
+              </div>
+              <div class="cli-municipio-row">
+                <div class="cli-field cli-field--municipio">
+                  <argo-municipio-buscar
+                    label="Municipio *"
+                    placeholder="Escriba municipio o departamento…"
+                    [modoCombo]="true"
+                    [textoInicial]="municipioTexto()"
+                    (seleccionado)="onMunicipio($event)"
+                    (limpiado)="onMunicipioLimpiado()"
+                    (textoChange)="onMunicipioTexto($event)" />
+                  <p class="cli-municipio-hint">
+                    Seleccione de la tabla Divipola; ARGO asigna el código (ej. Popayán → 19001).
+                  </p>
+                </div>
+                <label class="cli-field cli-field--mun-code">
+                  <span class="cli-label">Cód. Divipola</span>
+                  <input
+                    type="text"
+                    class="mono"
+                    readonly
+                    [ngModel]="form().municipioCodigo || ''"
+                    placeholder="—" />
                 </label>
               </div>
               <label class="cli-field">
@@ -235,12 +280,25 @@
                   </span>
                 </label>
                 <label class="cli-toggle">
+                  <input type="checkbox" [ngModel]="form().autoretenedor" (ngModelChange)="onAutoretenedor($event)" />
+                  <span class="cli-toggle-box">
+                    <span class="cli-toggle-title">Autorretenedor</span>
+                    <span class="cli-toggle-desc">Aplica responsabilidad O-15. Retiene ReteFuente sobre el pago.</span>
+                  </span>
+                </label>
+                <label class="cli-toggle">
                   <input type="checkbox" [ngModel]="form().agenteRetenedorIva" (ngModelChange)="onAgenteRetenedor($event)" />
                   <span class="cli-toggle-box">
                     <span class="cli-toggle-title">Agente retenedor IVA</span>
-                    <span class="cli-toggle-desc">Retención en la fuente sobre IVA facturado.</span>
+                    <span class="cli-toggle-desc">ReteIVA informativa: el cliente retiene sobre el IVA facturado.</span>
                   </span>
                 </label>
+                @if (form().autoretenedor) {
+                  <label class="cli-field cli-field--rete">
+                    <span class="cli-label">% ReteFuente</span>
+                    <input type="number" min="0" max="100" [ngModel]="form().porcentajeReteFuente" (ngModelChange)="patch({ porcentajeReteFuente: +$event })" />
+                  </label>
+                }
                 @if (form().agenteRetenedorIva) {
                   <label class="cli-field cli-field--rete">
                     <span class="cli-label">% ReteIVA</span>

@@ -110,6 +110,17 @@ function tieneAlgunaAlarma(alarmas, claves) {
   return list.some((k) => tieneAlarma(alarmas, k));
 }
 
+/** Incorpora permisos nuevos del catálogo al rol admin si quedó con lista explícita (sin *). */
+async function fusionarPermisosAdminCatalogo() {
+  const doc = await RolApp.findOne({ codigo: 'admin', esSistema: true }).lean();
+  if (!doc?.permisos?.length || doc.permisos.includes('*')) return;
+  const esperadas = todasLasClaves();
+  const actuales = [...doc.permisos];
+  const faltantes = esperadas.filter((k) => !actuales.includes(k));
+  if (!faltantes.length) return;
+  await RolApp.updateOne({ codigo: 'admin' }, { $set: { permisos: [...actuales, ...faltantes] } });
+}
+
 /** Incorpora alarmas nuevas del catálogo a roles del sistema ya guardados en BD. */
 async function fusionarAlarmasSistema(codigo, defAlarmas) {
   if (!defAlarmas?.length || defAlarmas.includes('*')) return;
@@ -154,6 +165,7 @@ async function initRolesSistema(opts = {}) {
     );
     await fusionarAlarmasSistema(codigo, def.alarmas || []);
   }
+  await fusionarPermisosAdminCatalogo();
   limpiarCache();
 }
 

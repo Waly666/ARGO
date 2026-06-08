@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import {
   AlarmaGrupo,
@@ -15,7 +16,7 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 @Component({
   selector: 'argo-roles-permisos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './roles-permisos-admin.component.html',
   styleUrls: ['./roles-permisos-admin.component.scss'],
 })
@@ -195,13 +196,18 @@ export class RolesPermisosAdminComponent implements OnInit {
     return a.includes(key);
   }
 
-  toggleAlarma(key: string): void {
-    const rol = this.seleccionado();
-    if (rol?.esSistema && rol.codigo === 'admin') return;
+  private todasLasClavesAlarmas(): string[] {
+    return this.alarmasGrupos().flatMap((g) => g.alarmas.map((a) => a.key));
+  }
 
+  private expandirAlarmasSiWildcard(alarmas: string[]): string[] {
+    if (!alarmas.includes('*')) return [...alarmas];
+    return this.todasLasClavesAlarmas();
+  }
+
+  toggleAlarma(key: string): void {
     this.form.update((f) => {
-      let alarmas = [...(f.alarmas || [])];
-      if (alarmas.includes('*')) alarmas = [];
+      let alarmas = this.expandirAlarmasSiWildcard([...(f.alarmas || [])]);
       if (alarmas.includes(key)) {
         alarmas = alarmas.filter((x) => x !== key);
       } else {
@@ -212,13 +218,10 @@ export class RolesPermisosAdminComponent implements OnInit {
   }
 
   toggleGrupoAlarmas(grupo: AlarmaGrupo): void {
-    const rol = this.seleccionado();
-    if (rol?.esSistema && rol.codigo === 'admin') return;
-
     const keys = grupo.alarmas.map((a) => a.key);
     const todos = keys.every((k) => this.tieneAlarma(k));
     this.form.update((f) => {
-      let alarmas = [...(f.alarmas || [])].filter((x) => x !== '*');
+      let alarmas = this.expandirAlarmasSiWildcard([...(f.alarmas || [])]);
       if (todos) {
         alarmas = alarmas.filter((x) => !keys.includes(x));
       } else {
@@ -308,18 +311,23 @@ export class RolesPermisosAdminComponent implements OnInit {
 
   async guardar(): Promise<void> {
     const f = this.form();
+    const sel = this.seleccionado();
     if (!String(f.nombre || '').trim()) {
       this.msgError.set(true);
       this.msg.set('El nombre del rol es obligatorio');
       return;
     }
 
-    const permisos = this.prepararPermisosAntesGuardar(f.permisos || []);
+    const esAdminSistema = sel?.esSistema && sel?.codigo === 'admin';
+    const permisos = esAdminSistema
+      ? ['*']
+      : this.prepararPermisosAntesGuardar(f.permisos || []);
+    const alarmas = [...(f.alarmas || [])];
     const payload = {
       nombre: f.nombre,
       descripcion: f.descripcion,
       permisos,
-      alarmas: f.alarmas,
+      alarmas: alarmas.includes('*') ? ['*'] : alarmas,
       activo: f.activo,
     };
 
@@ -327,7 +335,6 @@ export class RolesPermisosAdminComponent implements OnInit {
     this.msg.set(null);
     this.msgError.set(false);
 
-    const sel = this.seleccionado();
     const obs = sel
       ? this.svc.actualizar(sel.codigo, payload)
       : this.svc.crear({ ...payload, codigo: f.codigo });

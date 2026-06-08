@@ -23,7 +23,7 @@
             @else { FE }
           </span>
           <span class="head-alarm-text">
-            <span class="comp-tipo-chip">{{ etiquetaTipo(a.tipo) }}</span>
+            <span class="comp-tipo-chip">{{ etiquetaTipo(a.tipo, a) }}</span>
             · {{ etiquetaRef(a) }}
             @if (a.nombreCompleto) {
               · {{ a.nombreCompleto }}

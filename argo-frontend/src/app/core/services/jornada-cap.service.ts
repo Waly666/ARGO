@@ -43,6 +43,11 @@ export interface ContratacionDto {
   fechaInicJornadas?: string;
   numSesCert?: number;
   jornadasGeneradas?: boolean;
+  /** juridica_empresa | juridica_oficial | juridica_ong | persona_natural */
+  idClienteFacturacion?: string | null;
+  valorContrato?: number;
+  idFacturaElectronica?: string | null;
+  facturadoAt?: string;
 }
 
 export interface JornadaCapDto {

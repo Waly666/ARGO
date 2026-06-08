@@ -2,7 +2,8 @@ const {
   obtenerConfigFacturacion,
   actualizarConfigFacturacion,
 } = require('../services/configFacturacion');
-const { probarConexionFactus, listarRangosFactus } = require('../services/facturaProveedor');
+const { probarConexionFactus, listarRangosFactus, emitirPruebaSandbox } = require('../services/facturaProveedor');
+const { catalogos: catalogosFacturacion } = require('./facturacionController');
 
 exports.obtener = async (_req, res, next) => {
   try {
@@ -35,3 +36,22 @@ exports.rangos = async (_req, res, next) => {
     next(e);
   }
 };
+
+exports.probarEmision = async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const result = await emitirPruebaSandbox({
+      numberingRangeId: body.numberingRangeId ?? body.numbering_range_id,
+    });
+    if (body.numberingRangeId != null || body.numbering_range_id != null) {
+      await actualizarConfigFacturacion({
+        numberingRangeId: body.numberingRangeId ?? body.numbering_range_id,
+      });
+    }
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogos = catalogosFacturacion;

@@ -113,6 +113,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.caja.cerrada',
     'alarmas.caja.sin_abrir',
     'alarmas.caja.descuadres',
+    'alarmas.jornadas.en_proceso',
     'alarmas.jornadas.certificado_nuevo',
     'alarmas.certificados.vencimiento',
     'alarmas.certificados.vencidos',
@@ -145,6 +146,8 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.empleados.docs_faltantes',
   ],
   recepcion: [
+    'alarmas.jornadas.en_proceso',
+    'alarmas.jornadas.certificado_nuevo',
     'alarmas.alumnos.saldos',
     'alarmas.alumnos.documentos',
     'alarmas.alumnos.clases_cea_creado',

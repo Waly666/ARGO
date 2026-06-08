@@ -38,9 +38,10 @@ export class ComprobanteHoyBannerComponent {
     return 'comp-tone-factura';
   }
 
-  etiquetaTipo(tipo: ComprobanteHoyTipo): string {
+  etiquetaTipo(tipo: ComprobanteHoyTipo, a?: ComprobanteHoyAlerta): string {
     if (tipo === 'ingreso') return 'Comprobante ingreso';
     if (tipo === 'egreso') return 'Comprobante egreso';
+    if (a?.idContrato || a?.origenFactura === 'contrato_cap') return 'Factura contrato';
     return 'Factura electrónica';
   }
 
@@ -53,7 +54,7 @@ export class ComprobanteHoyBannerComponent {
     const ref = this.etiquetaRef(a);
     const nom = a.nombreCompleto ? ` · ${a.nombreCompleto}` : '';
     const val = this.fmt(a.valor);
-    return `${this.etiquetaTipo(a.tipo)} ${ref}${nom} · ${val}`;
+    return `${this.etiquetaTipo(a.tipo, a)} ${ref}${nom} · ${val}`;
   }
 
   fmt(v: number): string {

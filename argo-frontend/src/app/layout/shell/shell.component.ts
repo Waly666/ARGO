@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -19,6 +19,7 @@ import { JornadaEnProcesoAlertService } from '../../core/services/jornada-en-pro
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { AlarmaService } from '../../core/services/alarma.service';
+import { AlertasRuntimeService } from '../../core/services/alertas-runtime.service';
 import { VehiculoDocsAlertService } from '../../core/services/vehiculo-docs-alert.service';
 import { VehiculoDocsFaltantesAlertService } from '../../core/services/vehiculo-docs-faltantes-alert.service';
 import { VehiculoInspeccionAlertService } from '../../core/services/vehiculo-inspeccion-alert.service';
@@ -50,7 +51,10 @@ import { ProgramacionCeaClaseProximaBannerComponent } from '../../features/progr
 import { InstructorPortalBannerComponent } from '../../features/instructores/instructor-portal-banner.component';
 import { ComprobanteHoyBannerComponent } from '../../features/alumnos/comprobante-hoy-banner.component';
 import { AsistenteFlotanteComponent } from '../../shared/asistente-flotante/asistente-flotante.component';
-import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
+import {
+  ComprobanteHoyAlertService,
+  ComprobanteHoyTipo,
+} from '../../core/services/comprobante-hoy-alert.service';
 import { AlumnoService } from '../../core/services/alumno.service';
 
 interface MenuLink {
@@ -94,6 +98,8 @@ type MenuEntry = MenuLink | MenuGroup;
   styleUrls: ['./shell.component.scss'],
 })
 export class ShellComponent {
+  private destroyRef = inject(DestroyRef);
+  private pollsAlertasIniciados = false;
   private auth = inject(AuthService);
   readonly sedeSvc = inject(SedeService);
   private permisos = inject(PermisoService);
@@ -101,6 +107,7 @@ export class ShellComponent {
   private router = inject(Router);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
   private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
+  private alertasRuntime = inject(AlertasRuntimeService);
   private alumnoSvc = inject(AlumnoService);
   private certVencimientoAlert = inject(CertificadoVencimientoAlertService);
   private certVencidoAlert = inject(CertificadoVencidoAlertService);
@@ -195,57 +202,69 @@ export class ShellComponent {
   });
 
   /** Usuarios con permiso de caja del turno deben abrir caja personal. */
-  mostrarAlertaCaja = computed(() => this.alarmas.tiene('alarmas.caja.cerrada'));
+  mostrarAlertaCaja = computed(() => this.alarmaHabilitada('alarmas.caja.cerrada'));
 
   /** Usuarios que emiten o gestionan certificados: aviso parpadeante al generarse uno nuevo. */
-  mostrarAlertaCertificado = computed(() => this.alarmas.tiene('alarmas.jornadas.certificado_nuevo'));
+  mostrarAlertaCertificado = computed(() => this.alarmaHabilitada('alarmas.jornadas.certificado_nuevo'));
 
-  mostrarAlertaCertificadoVencimiento = computed(() => this.alarmas.tiene('alarmas.certificados.vencimiento'));
+  mostrarAlertaCertificadoVencimiento = computed(() =>
+    this.alarmaHabilitada('alarmas.certificados.vencimiento'),
+  );
 
-  mostrarAlertaCertificadoVencido = computed(() => this.alarmas.tiene('alarmas.certificados.vencidos'));
+  mostrarAlertaCertificadoVencido = computed(() => this.alarmaHabilitada('alarmas.certificados.vencidos'));
 
-  mostrarAlertaComprobanteIngreso = computed(() => this.alarmas.tiene('alarmas.alumnos.comprobante_ingreso'));
+  mostrarAlertaComprobanteIngreso = computed(() =>
+    this.alarmaHabilitada('alarmas.alumnos.comprobante_ingreso'),
+  );
 
-  mostrarAlertaComprobanteEgreso = computed(() => this.alarmas.tiene('alarmas.alumnos.comprobante_egreso'));
+  mostrarAlertaComprobanteEgreso = computed(() =>
+    this.alarmaHabilitada('alarmas.alumnos.comprobante_egreso'),
+  );
 
-  mostrarAlertaComprobanteFactura = computed(() => this.alarmas.tiene('alarmas.alumnos.factura'));
+  mostrarAlertaComprobanteFactura = computed(() => this.alarmaHabilitada('alarmas.alumnos.factura'));
 
   /** Toast efímero (3 s) cuando se crean clases/jornadas. */
-  mostrarToastJornadaLive = computed(() => this.alarmas.tiene('alarmas.jornadas.live_toast'));
+  mostrarToastJornadaLive = computed(() => this.alarmaHabilitada('alarmas.jornadas.live_toast'));
 
   /** Alarma persistente de jornada(s) EN PROCESO hoy. */
-  mostrarAlarmaJornadaProceso = computed(() => this.alarmas.tiene('alarmas.jornadas.en_proceso'));
+  mostrarAlarmaJornadaProceso = computed(() => this.alarmaHabilitada('alarmas.jornadas.en_proceso'));
 
   /** Alerta roja de vencimiento de papeles de vehículos. */
-  mostrarAlertaDocsVehiculos = computed(() => this.alarmas.tiene('alarmas.vehiculos.docs_vencidos'));
+  mostrarAlertaDocsVehiculos = computed(() => this.alarmaHabilitada('alarmas.vehiculos.docs_vencidos'));
 
   /** Alerta de documentos requeridos sin registrar en vehículos. */
-  mostrarAlertaDocsFaltantesVehiculos = computed(() => this.alarmas.tiene('alarmas.vehiculos.docs_faltantes'));
+  mostrarAlertaDocsFaltantesVehiculos = computed(() =>
+    this.alarmaHabilitada('alarmas.vehiculos.docs_faltantes'),
+  );
 
-  mostrarAlertaInspeccionVehiculos = computed(() => this.alarmas.tiene('alarmas.vehiculos.inspeccion_pendiente'));
+  mostrarAlertaInspeccionVehiculos = computed(() =>
+    this.alarmaHabilitada('alarmas.vehiculos.inspeccion_pendiente'),
+  );
 
-  mostrarAlertaDocsEmpleados = computed(() => this.alarmas.tiene('alarmas.empleados.docs_vencidos'));
+  mostrarAlertaDocsEmpleados = computed(() => this.alarmaHabilitada('alarmas.empleados.docs_vencidos'));
 
-  mostrarAlertaDocsFaltantesEmpleados = computed(() => this.alarmas.tiene('alarmas.empleados.docs_faltantes'));
+  mostrarAlertaDocsFaltantesEmpleados = computed(() =>
+    this.alarmaHabilitada('alarmas.empleados.docs_faltantes'),
+  );
 
-  mostrarAlertaProgramacionCea = computed(() => this.alarmas.tiene('alarmas.programacion_cea.pendiente'));
+  mostrarAlertaProgramacionCea = computed(() =>
+    this.alarmaHabilitada('alarmas.programacion_cea.pendiente'),
+  );
 
   puedeVerProgramacionCea = computed(() =>
     this.permisos.tiene(['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar']),
   );
 
   mostrarAlertaClasesCeaCreado = computed(
-    () => this.alarmas.tiene('alarmas.alumnos.clases_cea_creado') && this.puedeVerProgramacionCea(),
+    () => this.puedeVerProgramacionCea() && this.alarmaHabilitada('alarmas.alumnos.clases_cea_creado'),
   );
 
-  mostrarAlertaClaseProximaCea = computed(() => this.alarmas.tiene('alarmas.programacion_cea.clase_proxima'));
+  mostrarAlertaClaseProximaCea = computed(() =>
+    this.alarmaHabilitada('alarmas.programacion_cea.clase_proxima'),
+  );
 
   mostrarAlertaInstructorPortal = computed(() =>
-    this.alarmas.tiene([
-      'alarmas.instructores.clase_proxima',
-      'alarmas.instructores.clase_asignada',
-      'alarmas.instructores.inspeccion_requerida',
-    ]),
+    this.CLAVES_INSTRUCTOR_PORTAL.some((k) => this.alarmaHabilitada(k)),
   );
 
   mostrarBannerCertificado = computed(
@@ -653,6 +672,7 @@ export class ShellComponent {
         'config.facturacion',
         'config.nomina',
         'config.certificados',
+        'config.alertas',
         'config.requisitos',
         'config.auditoria',
         'sedes.gestionar',
@@ -705,7 +725,7 @@ export class ShellComponent {
           path: '/app/configuracion/facturacion',
           icon: '$',
           iconTone: 'emerald',
-          permiso: 'config.facturacion',
+          permiso: ['config.facturacion', 'facturacion'],
         },
         {
           kind: 'link',
@@ -713,7 +733,15 @@ export class ShellComponent {
           path: '/app/configuracion/clientes',
           icon: '$',
           iconTone: 'emerald',
-          permiso: 'config.facturacion',
+          permiso: ['config.facturacion', 'facturacion'],
+        },
+        {
+          kind: 'link',
+          label: 'Contratos capacitación (fiscal)',
+          path: '/app/configuracion/contratos-cap-fiscal',
+          icon: '$',
+          iconTone: 'emerald',
+          permiso: ['config.facturacion', 'facturacion'],
         },
         {
           kind: 'link',
@@ -738,6 +766,14 @@ export class ShellComponent {
           icon: '▣',
           iconTone: 'violet',
           permiso: 'config.certificados',
+        },
+        {
+          kind: 'link',
+          label: 'Alertas y notificaciones',
+          path: '/app/configuracion/alertas',
+          icon: '◉',
+          iconTone: 'amber',
+          permiso: ['config.alertas', 'config.roles'],
         },
         {
           kind: 'link',
@@ -854,17 +890,63 @@ export class ShellComponent {
     });
   }
 
+  private readonly CLAVES_INSTRUCTOR_PORTAL = [
+    'alarmas.instructores.clase_proxima',
+    'alarmas.instructores.clase_asignada',
+    'alarmas.instructores.inspeccion_requerida',
+  ] as const;
+
   constructor() {
+    effect(() => {
+      if (!this.alertasRuntime.cargado()) return;
+      this.alertasRuntime.reglasMap();
+      this.sincronizarAlertasConConfig();
+    });
+
     this.auth.refreshMe().subscribe({
-      next: () => {
-        this.syncSedeDesdeUsuario();
-        this.pollAlertasClaseProximaCea();
-        this.pollAlertasProgramacionCea();
-      },
+      next: () => this.syncSedeDesdeUsuario(),
       error: () => undefined,
     });
     this.syncMenuGroupsFromUrl(this.router.url);
     void this.refrescarCajaSiAplica();
+    this.alertasRuntime.cargar().subscribe({
+      next: () => this.sincronizarAlertasConConfig(),
+      error: () => this.sincronizarAlertasConConfig(),
+    });
+    this.iniciarAlertasPollsOnce();
+    this.programacionCeaProximaAlert.refresh
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.pollAlertasClaseProximaCea());
+    this.vehiculoInspeccionAlert.refresh
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.pollAlertasInspeccionVehiculos());
+    this.instructorPortalAlert.refresh
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.pollInstructorPortal());
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.syncMenuGroupsFromUrl(this.router.url);
+        void this.refrescarCajaSiAplica();
+      });
+  }
+
+  private refrescarCajaSiAplica(): void {
+    if (this.mostrarAlertaCaja()) {
+      void this.cajaEstado.refrescar();
+    }
+  }
+
+  private iniciarAlertasPollsOnce(): void {
+    if (this.pollsAlertasIniciados) return;
+    this.pollsAlertasIniciados = true;
+    this.iniciarAlertasPolls();
+  }
+
+  private iniciarAlertasPolls(): void {
     this.iniciarPollCertificados();
     this.iniciarPollComprobantesHoy();
     this.iniciarPollCertificadosPorVencer();
@@ -877,29 +959,73 @@ export class ShellComponent {
     this.iniciarPollAlertasClaseProximaCea();
     this.iniciarPollInstructorPortal();
     this.iniciarPollPermisosSesion();
-    this.programacionCeaProximaAlert.refresh
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.pollAlertasClaseProximaCea());
-    this.vehiculoInspeccionAlert.refresh
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.pollAlertasInspeccionVehiculos());
-    this.instructorPortalAlert.refresh
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.pollInstructorPortal());
-    this.router.events
-      .pipe(
-        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-        takeUntilDestroyed(),
-      )
-      .subscribe(() => {
-        this.syncMenuGroupsFromUrl(this.router.url);
-        void this.refrescarCajaSiAplica();
-      });
   }
 
-  private refrescarCajaSiAplica(): void {
-    if (this.mostrarAlertaCaja()) {
-      void this.cajaEstado.refrescar();
+  private pollIntervalMs(...keys: string[]): number {
+    let ms = 60_000;
+    for (const k of keys) {
+      if (this.alarmaHabilitada(k)) {
+        ms = Math.min(ms, this.alertasRuntime.intervaloPollMs(k));
+      }
+    }
+    return ms;
+  }
+
+  /** Rol + configuración global (Configuración → Alertas). */
+  private alarmaHabilitada(key: string): boolean {
+    void this.alertasRuntime.reglasMap();
+    return this.alarmas.tiene(key) && this.alertasRuntime.activa(key);
+  }
+
+  /** Limpia datos en memoria cuando la config global desactiva un tipo de alerta. */
+  private sincronizarAlertasConConfig(): void {
+    if (!this.alarmaHabilitada('alarmas.programacion_cea.pendiente')) {
+      this.programacionCeaAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.alumnos.clases_cea_creado')) {
+      this.programacionCeaClaseCreadoAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.programacion_cea.clase_proxima')) {
+      this.programacionCeaProximaAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.jornadas.en_proceso')) {
+      this.jornadaProcesoAlert.actualizarDesdeListado([]);
+    }
+    if (!this.alarmaHabilitada('alarmas.jornadas.certificado_nuevo')) {
+      this.certAlertSvc.descartarTodas();
+    }
+    if (
+      !this.alarmaHabilitada('alarmas.alumnos.comprobante_ingreso') &&
+      !this.alarmaHabilitada('alarmas.alumnos.comprobante_egreso') &&
+      !this.alarmaHabilitada('alarmas.alumnos.factura')
+    ) {
+      for (const a of this.comprobanteAlertSvc.alertas()) {
+        this.comprobanteAlertSvc.descartar(a.key);
+      }
+    }
+    if (!this.alarmaHabilitada('alarmas.certificados.vencimiento')) {
+      this.certVencimientoAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.certificados.vencidos')) {
+      this.certVencidoAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.vehiculos.docs_vencidos')) {
+      this.vehiculoDocsAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.vehiculos.docs_faltantes')) {
+      this.vehiculoDocsFaltantesAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.vehiculos.inspeccion_pendiente')) {
+      this.vehiculoInspeccionAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.empleados.docs_vencidos')) {
+      this.empleadoDocsAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.empleados.docs_faltantes')) {
+      this.empleadoDocsFaltantesAlert.actualizar(null);
+    }
+    if (!this.CLAVES_INSTRUCTOR_PORTAL.some((k) => this.alarmaHabilitada(k))) {
+      this.instructorPortalAlert.actualizar(null);
     }
   }
 
@@ -927,8 +1053,14 @@ export class ShellComponent {
       this.pollAlertasInspeccionVehiculos();
     };
     poll();
-    interval(60_000)
-      .pipe(takeUntilDestroyed())
+    interval(
+      this.pollIntervalMs(
+        'alarmas.vehiculos.docs_vencidos',
+        'alarmas.vehiculos.docs_faltantes',
+        'alarmas.vehiculos.inspeccion_pendiente',
+      ),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => poll());
   }
 
@@ -966,8 +1098,8 @@ export class ShellComponent {
       }
     };
     poll();
-    interval(60_000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.empleados.docs_vencidos', 'alarmas.empleados.docs_faltantes'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => poll());
   }
 
@@ -985,8 +1117,8 @@ export class ShellComponent {
 
   private iniciarPollAlertasProgramacionCea(): void {
     this.pollAlertasProgramacionCea();
-    interval(60_000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.programacion_cea.pendiente'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollAlertasProgramacionCea());
   }
 
@@ -1004,15 +1136,17 @@ export class ShellComponent {
 
   private iniciarPollAlertasClasesCeaCreado(): void {
     this.pollAlertasClasesCeaCreado();
-    interval(60_000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.alumnos.clases_cea_creado'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollAlertasClasesCeaCreado());
   }
 
   /** Clases CEA que inician en los próximos 15 minutos. */
   pollAlertasClaseProximaCea(): void {
     if (this.mostrarAlertaClaseProximaCea()) {
-      this.programacionCeaSvc.alertasClasesProximas(15).subscribe({
+      const min =
+        this.alertasRuntime.antelacionMinutos('alarmas.programacion_cea.clase_proxima') || 15;
+      this.programacionCeaSvc.alertasClasesProximas(min).subscribe({
         next: (data) => this.programacionCeaProximaAlert.actualizar(data),
         error: () => undefined,
       });
@@ -1023,8 +1157,8 @@ export class ShellComponent {
 
   private iniciarPollAlertasClaseProximaCea(): void {
     this.pollAlertasClaseProximaCea();
-    interval(15_000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.programacion_cea.clase_proxima'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollAlertasClaseProximaCea());
   }
 
@@ -1038,7 +1172,9 @@ export class ShellComponent {
       this.instructorPortalAlert.actualizar(null);
       return;
     }
-    this.instructorPortalSvc.misAlertas({ minutos: 20, diasAsignacion: 3 }).subscribe({
+    const min =
+      this.alertasRuntime.antelacionMinutos('alarmas.instructores.clase_proxima') || 20;
+    this.instructorPortalSvc.misAlertas({ minutos: min, diasAsignacion: 3 }).subscribe({
       next: (data) => this.instructorPortalAlert.actualizar(data),
       error: () => this.instructorPortalAlert.actualizar(null),
     });
@@ -1046,8 +1182,14 @@ export class ShellComponent {
 
   private iniciarPollInstructorPortal(): void {
     this.pollInstructorPortal();
-    interval(20_000)
-      .pipe(takeUntilDestroyed())
+    interval(
+      this.pollIntervalMs(
+        'alarmas.instructores.clase_asignada',
+        'alarmas.instructores.clase_proxima',
+        'alarmas.instructores.inspeccion_requerida',
+      ),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollInstructorPortal());
   }
 
@@ -1057,28 +1199,36 @@ export class ShellComponent {
       if (!this.auth.isAuth()) return;
       this.auth.refreshMe().subscribe({ error: () => undefined });
     };
-    interval(8_000).pipe(takeUntilDestroyed()).subscribe(() => sync());
+    interval(8_000).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => sync());
     if (typeof window !== 'undefined') {
       window.addEventListener('focus', () => sync());
     }
   }
 
-  /** Comprobantes y facturas recientes del día (alertas globales en cabecera). */
+  private puedeComprobanteTipo(tipo: string): boolean {
+    const t = tipo as ComprobanteHoyTipo;
+    if (t !== 'ingreso' && t !== 'egreso' && t !== 'factura') return false;
+    const clave = AlertasRuntimeService.claveComprobante(t);
+    if (!this.alertasRuntime.activa(clave)) return false;
+    if (t === 'ingreso') return this.mostrarAlertaComprobanteIngreso();
+    if (t === 'egreso') return this.mostrarAlertaComprobanteEgreso();
+    return this.mostrarAlertaComprobanteFactura();
+  }
+
+  /** Comprobantes y facturas recientes (alertas globales en cabecera). */
   private iniciarPollComprobantesHoy(): void {
     const poll = (minutosAtras: number, alertarNuevos: boolean) => {
       const puedePoll =
-        this.mostrarAlertaComprobanteIngreso() ||
-        this.mostrarAlertaComprobanteEgreso() ||
-        this.mostrarAlertaComprobanteFactura();
+        this.puedeComprobanteTipo('ingreso') ||
+        this.puedeComprobanteTipo('egreso') ||
+        this.puedeComprobanteTipo('factura');
       if (!puedePoll) return;
       const desde = new Date(Date.now() - minutosAtras * 60 * 1000).toISOString();
       this.alumnoSvc.comprobantesRecientes(desde).subscribe({
         next: (rows) => {
           for (const row of rows || []) {
             const tipo = String(row.tipo || '');
-            if (tipo === 'ingreso' && !this.mostrarAlertaComprobanteIngreso()) continue;
-            if (tipo === 'egreso' && !this.mostrarAlertaComprobanteEgreso()) continue;
-            if (tipo === 'factura' && !this.mostrarAlertaComprobanteFactura()) continue;
+            if (!this.puedeComprobanteTipo(tipo)) continue;
             const key = `${tipo}:${row.id}`;
             if (alertarNuevos) {
               this.comprobanteAlertSvc.notificarDesdeRespuesta(row as Record<string, unknown>);
@@ -1096,17 +1246,28 @@ export class ShellComponent {
     this.alumnoSvc.comprobantesRecientes(desdeHoy).subscribe({
       next: (rows) => {
         for (const row of rows || []) {
-          const tipo = String(row.tipo || '');
-          if (tipo === 'ingreso' && !this.mostrarAlertaComprobanteIngreso()) continue;
-          if (tipo === 'egreso' && !this.mostrarAlertaComprobanteEgreso()) continue;
-          if (tipo === 'factura' && !this.mostrarAlertaComprobanteFactura()) continue;
-          this.comprobanteAlertSvc.notificarDesdeRespuesta(row as Record<string, unknown>);
+          const tipo = String(row.tipo || '') as ComprobanteHoyTipo;
+          if (!this.puedeComprobanteTipo(tipo)) continue;
+          const clave = AlertasRuntimeService.claveComprobante(tipo);
+          const key = `${tipo}:${row.id}`;
+          if (this.alertasRuntime.ventanaInicio(clave) === 'desde_inicio_dia') {
+            this.comprobanteAlertSvc.notificarDesdeRespuesta(row as Record<string, unknown>);
+          } else {
+            this.comprobanteAlertSvc.marcarConocidos([key]);
+          }
         }
       },
     });
-    interval(12_000)
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => poll(2, true));
+
+    const pollMs = this.pollIntervalMs(
+      'alarmas.alumnos.comprobante_ingreso',
+      'alarmas.alumnos.comprobante_egreso',
+      'alarmas.alumnos.factura',
+    );
+    const minutosVentana = Math.max(2, Math.ceil(pollMs / 60_000) * 2);
+    interval(pollMs)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => poll(minutosVentana, true));
   }
 
   /** Detecta certificados emitidos recientemente (jornada, curso de pago y demás). */
@@ -1127,8 +1288,8 @@ export class ShellComponent {
       });
     };
     poll(60, false);
-    interval(45000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.jornadas.certificado_nuevo'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => poll(3, true));
   }
 
@@ -1138,7 +1299,8 @@ export class ShellComponent {
       this.certVencimientoAlert.actualizar(null);
       return;
     }
-    this.certSvc.alertasPorVencer().subscribe({
+    const dias = this.alertasRuntime.diasAntelacion('alarmas.certificados.vencimiento');
+    this.certSvc.alertasPorVencer(dias).subscribe({
       next: (data) => this.certVencimientoAlert.actualizar(data),
       error: () => this.certVencimientoAlert.actualizar(null),
     });
@@ -1146,8 +1308,8 @@ export class ShellComponent {
 
   private iniciarPollCertificadosPorVencer(): void {
     this.pollCertificadosPorVencer();
-    interval(60_000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.certificados.vencimiento'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollCertificadosPorVencer());
   }
 
@@ -1157,7 +1319,8 @@ export class ShellComponent {
       this.certVencidoAlert.actualizar(null);
       return;
     }
-    this.certSvc.alertasVencidos().subscribe({
+    const dias = this.alertasRuntime.diasGracia('alarmas.certificados.vencidos');
+    this.certSvc.alertasVencidos(dias).subscribe({
       next: (data) => this.certVencidoAlert.actualizar(data),
       error: () => this.certVencidoAlert.actualizar(null),
     });
@@ -1165,8 +1328,8 @@ export class ShellComponent {
 
   private iniciarPollCertificadosVencidos(): void {
     this.pollCertificadosVencidos();
-    interval(60_000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.certificados.vencidos'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollCertificadosVencidos());
   }
 
@@ -1186,6 +1349,8 @@ export class ShellComponent {
             this.jornadaProcesoAlert.actualizarDesdeListado(
               (enProceso || []) as unknown as Array<Record<string, unknown>>,
             );
+          } else {
+            this.jornadaProcesoAlert.actualizarDesdeListado([]);
           }
           if (inicial) {
             this.liveSync.marcarClasesConocidas(clases.map((c) => c._id));
@@ -1202,8 +1367,8 @@ export class ShellComponent {
     };
 
     poll(true);
-    interval(12_000)
-      .pipe(takeUntilDestroyed())
+    interval(this.pollIntervalMs('alarmas.jornadas.live_toast', 'alarmas.jornadas.en_proceso'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         if (
           this.liveSync.pollEstaListo() &&

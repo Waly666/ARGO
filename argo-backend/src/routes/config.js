@@ -8,6 +8,8 @@ const reqDocVehiCtrl = require('../controllers/configRequisitosDocumentosVehicul
 const reqDocEmpCtrl = require('../controllers/configRequisitosDocumentosEmpleadosController');
 const fmtInspVehiCtrl = require('../controllers/configFormatoInspeccionVehiculosController');
 const nominaCfgCtrl = require('../controllers/configNominaController');
+const contratoCapCfgCtrl = require('../controllers/configContratoCapController');
+const alertasCfgCtrl = require('../controllers/configAlertasController');
 const upload = require('../middleware/upload');
 const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
 
@@ -32,10 +34,36 @@ router.get('/georef', requirePermiso('config.georef'), georefCtrl.obtener);
 router.put('/georef', requirePermiso('config.georef'), georefCtrl.actualizar);
 router.post('/georef/probar', requirePermiso('config.georef'), georefCtrl.probar);
 
+router.get('/alertas/catalogos', requireAuth, alertasCfgCtrl.catalogos);
+router.get('/alertas', requireAuth, alertasCfgCtrl.obtener);
+router.put('/alertas', requirePermiso('config.alertas', 'config.roles'), alertasCfgCtrl.actualizar);
+
+router.get(
+  '/contratos-cap-fiscal/catalogos',
+  requirePermiso('config.facturacion', 'facturacion'),
+  contratoCapCfgCtrl.catalogos,
+);
+router.get(
+  '/contratos-cap-fiscal',
+  requirePermiso('config.facturacion', 'facturacion'),
+  contratoCapCfgCtrl.obtener,
+);
+router.put(
+  '/contratos-cap-fiscal',
+  requirePermiso('config.facturacion', 'facturacion'),
+  contratoCapCfgCtrl.actualizar,
+);
+
+router.get('/facturacion/catalogos', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.catalogos);
 router.get('/facturacion', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.obtener);
-router.put('/facturacion', requirePermiso('config.facturacion'), facturacionCtrl.actualizar);
+router.put('/facturacion', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.actualizar);
 router.post('/facturacion/probar', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.probar);
 router.get('/facturacion/rangos', requirePermiso('config.facturacion', 'facturacion'), facturacionCtrl.rangos);
+router.post(
+  '/facturacion/probar-emision',
+  requirePermiso('config.facturacion', 'facturacion'),
+  facturacionCtrl.probarEmision,
+);
 
 router.get('/recibo/encabezado', requireAuth, loadSedeActiva, ctrl.obtenerReciboEncabezado);
 router.get('/recibo', requirePermiso('config.recibos'), ctrl.obtenerRecibo);

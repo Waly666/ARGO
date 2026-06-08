@@ -40,6 +40,19 @@
   flex-shrink: 0;
 }
 
+.cli-mun {
+  font-size: 0.84rem;
+  color: var(--text-soft);
+}
+
+.cli-mun-code {
+  display: block;
+  margin-top: 0.12rem;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
 .cli-count {
   padding: 0.28rem 0.65rem;
   border-radius: 999px;
@@ -224,10 +237,40 @@
     border: 1px solid rgba(167, 139, 250, 0.28);
   }
 
+  &--rose {
+    color: #fecdd3;
+    background: rgba(244, 63, 94, 0.12);
+    border: 1px solid rgba(244, 63, 94, 0.28);
+  }
+
   &--muted {
     color: var(--text-soft);
     opacity: 0.6;
   }
+
+  &--tipo {
+    max-width: 11rem;
+    color: #bae6fd;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    white-space: normal;
+    line-height: 1.25;
+    text-align: left;
+  }
+
+  &--warn {
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.28);
+  }
+}
+
+.cli-field-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  line-height: 1.4;
 }
 
 .cli-row-actions {
@@ -265,6 +308,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+
+  &:has(argo-municipio-buscar.dropdown-open) {
+    overflow: visible;
+  }
   border-radius: 16px;
   border: 1px solid rgba(120, 170, 255, 0.2);
   background: linear-gradient(165deg, rgba(12, 24, 58, 0.98), rgba(6, 14, 34, 0.99));
@@ -332,6 +379,10 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+
+  &:has(argo-municipio-buscar.dropdown-open) {
+    overflow: visible;
+  }
 }
 
 .cli-section {
@@ -340,6 +391,12 @@
   border-radius: 10px;
   background: rgba(6, 16, 41, 0.35);
   overflow: hidden;
+
+  &:has(argo-municipio-buscar.dropdown-open) {
+    overflow: visible;
+    position: relative;
+    z-index: 40;
+  }
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
@@ -379,6 +436,10 @@
 
 .cli-section-body {
   padding: 0.65rem 0.75rem 0.75rem;
+
+  &:has(argo-municipio-buscar.dropdown-open) {
+    overflow: visible;
+  }
 }
 
 .cli-stack {
@@ -404,8 +465,49 @@
   }
 
   &--contact {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) 5.5rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
   }
+}
+
+.cli-municipio-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem;
+  gap: 0.55rem 0.75rem;
+  align-items: start;
+  position: relative;
+
+  &:has(argo-municipio-buscar.dropdown-open) {
+    overflow: visible;
+    z-index: 50;
+  }
+}
+
+.cli-field--municipio {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+
+  &:has(argo-municipio-buscar.dropdown-open) {
+    z-index: 60;
+  }
+
+  argo-municipio-buscar {
+    display: block;
+    width: 100%;
+  }
+}
+
+.cli-municipio-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.76rem;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+.cli-field--mun-code input.mono {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.84rem;
+  text-align: center;
 }
 
 .cli-field {
@@ -540,7 +642,8 @@
   .cli-grid--2,
   .cli-grid--id,
   .cli-grid--razon,
-  .cli-grid--contact {
+  .cli-grid--contact,
+  .cli-municipio-row {
     grid-template-columns: 1fr;
   }
 

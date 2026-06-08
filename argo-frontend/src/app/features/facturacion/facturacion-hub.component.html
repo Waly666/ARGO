@@ -7,7 +7,7 @@
         <strong>pestaña Pagos</strong> del alumno. En desarrollo se usa <strong>modo stub</strong> (sin envío DIAN).
       </p>
     </div>
-    @if (permisoSvc.tiene('config.facturacion')) {
+    @if (permisoSvc.tiene(['config.facturacion', 'facturacion'])) {
       <a class="btn ghost" routerLink="/app/configuracion/facturacion">Configuración Factus</a>
     }
   </header>

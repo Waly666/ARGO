@@ -184,6 +184,18 @@ export class ConfigService {
     return this.http.post<GeorefPruebaResultado>(`${environment.apiUrl}/config/georef/probar`, { lat, lng });
   }
 
+  catalogosFacturacion(): Observable<{
+    proveedores: { id: string; label: string }[];
+    ambientes: { id: string; label: string }[];
+    modosEmision: { id: string; label: string }[];
+  }> {
+    return this.http.get<{
+      proveedores: { id: string; label: string }[];
+      ambientes: { id: string; label: string }[];
+      modosEmision: { id: string; label: string }[];
+    }>(`${environment.apiUrl}/config/facturacion/catalogos`);
+  }
+
   obtenerFacturacion(): Observable<ConfigFacturacion> {
     return this.http.get<ConfigFacturacion>(`${environment.apiUrl}/config/facturacion`);
   }
@@ -194,10 +206,56 @@ export class ConfigService {
     return this.http.put<ConfigFacturacion>(`${environment.apiUrl}/config/facturacion`, data);
   }
 
-  probarFacturacion(): Observable<{ ok: boolean; message: string; modo?: string }> {
-    return this.http.post<{ ok: boolean; message: string; modo?: string }>(
+  probarFacturacion(): Observable<{ ok: boolean; message: string; modo?: string; expiresIn?: number }> {
+    return this.http.post<{ ok: boolean; message: string; modo?: string; expiresIn?: number }>(
       `${environment.apiUrl}/config/facturacion/probar`,
       {},
     );
   }
+
+  listarRangosFacturacion(): Observable<{
+    ok: boolean;
+    rangos: FactusRangoNumeracion[];
+    sugeridoId?: number | null;
+    sugeridoLabel?: string | null;
+  }> {
+    return this.http.get<{
+      ok: boolean;
+      rangos: FactusRangoNumeracion[];
+      sugeridoId?: number | null;
+      sugeridoLabel?: string | null;
+    }>(`${environment.apiUrl}/config/facturacion/rangos`);
+  }
+
+  probarEmisionFacturacion(numberingRangeId?: number | null): Observable<FactusPruebaEmisionResultado> {
+    return this.http.post<FactusPruebaEmisionResultado>(
+      `${environment.apiUrl}/config/facturacion/probar-emision`,
+      numberingRangeId != null ? { numberingRangeId } : {},
+    );
+  }
+}
+
+export interface FactusRangoNumeracion {
+  id: number;
+  prefix: string;
+  resolutionNumber: string;
+  from: number | null;
+  to: number | null;
+  current?: number | null;
+  isActive: boolean;
+  esFacturaVenta?: boolean;
+  documentType: string | null;
+  label: string;
+}
+
+export interface FactusPruebaEmisionResultado {
+  ok: boolean;
+  message: string;
+  referenceCode?: string;
+  numeroFactura?: string;
+  cufe?: string;
+  isValidated?: boolean;
+  urlPdf?: string;
+  urlQr?: string;
+  errors?: Record<string, string> | null;
 }

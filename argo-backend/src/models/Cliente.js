@@ -28,11 +28,21 @@ const ClienteSchema = new mongoose.Schema(
     municipioCodigo: { type: String, trim: true, default: '' },
     municipioNombre: { type: String, trim: true, default: '' },
 
+    /**
+     * Clasificación fiscal capacitación: juridica_empresa | juridica_oficial | juridica_ong | persona_natural.
+     * Define el perfil IVA/retenciones (Config → Contratos capacitación fiscal) al facturar contratos.
+     */
+    tipoContratoCap: { type: String, trim: true, default: '' },
+
     /** Banderas tributarias. */
     granContribuyente: { type: Boolean, default: false },
+    /** Autorretenedor (O-15): retiene ReteFuente sobre el pago al proveedor. */
+    autoretenedor: { type: Boolean, default: false },
     /** El cliente actúa como agente retenedor de IVA (ReteIVA informativa en factura). */
     agenteRetenedorIva: { type: Boolean, default: false },
     porcentajeReteIva: { type: Number, default: 0 },
+    /** % ReteFuente que aplica el cliente autorretenedor (informativo en factura). */
+    porcentajeReteFuente: { type: Number, default: 0 },
 
     activo: { type: Boolean, default: true, index: true },
     userAddReg: { type: String, trim: true },

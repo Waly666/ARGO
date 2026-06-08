@@ -5,6 +5,12 @@ const {
   TRIBUTOS,
   RESPONSABILIDADES_FISCALES,
 } = require('../constants/catalogosDian');
+const {
+  TIPOS_CONTRATO_CAP,
+  TIPO_CONTRATO_CAP_LABELS,
+  TIPO_CONTRATO_LEGAL_ORG,
+  esTipoContratoCapValido,
+} = require('../constants/tipoContratoCap');
 
 function mapCliente(c) {
   if (!c) return null;
@@ -25,9 +31,13 @@ function mapCliente(c) {
     telefono: o.telefono || '',
     municipioCodigo: o.municipioCodigo || '',
     municipioNombre: o.municipioNombre || '',
+    tipoContratoCap: o.tipoContratoCap || '',
+    tipoContratoCapLabel: TIPO_CONTRATO_CAP_LABELS[o.tipoContratoCap] || '',
     granContribuyente: !!o.granContribuyente,
+    autoretenedor: !!o.autoretenedor,
     agenteRetenedorIva: !!o.agenteRetenedorIva,
     porcentajeReteIva: Number(o.porcentajeReteIva) || 0,
+    porcentajeReteFuente: Number(o.porcentajeReteFuente) || 0,
     activo: o.activo !== false,
     nombre: o.razonSocial || o.nombres || '',
   };
@@ -53,9 +63,23 @@ function aplicarBody(doc, body) {
   for (const k of campos) {
     if (body[k] != null) doc[k] = String(body[k]).trim();
   }
+  if (body.tipoContratoCap != null) {
+    const tipo = String(body.tipoContratoCap || '').trim();
+    if (tipo && !esTipoContratoCapValido(tipo)) {
+      const err = new Error('Tipo de contratante no válido');
+      err.status = 400;
+      throw err;
+    }
+    doc.tipoContratoCap = tipo;
+    if (tipo && TIPO_CONTRATO_LEGAL_ORG[tipo]) {
+      doc.legalOrganizationCode = TIPO_CONTRATO_LEGAL_ORG[tipo];
+    }
+  }
   if (body.granContribuyente != null) doc.granContribuyente = body.granContribuyente === true || body.granContribuyente === 'true';
+  if (body.autoretenedor != null) doc.autoretenedor = body.autoretenedor === true || body.autoretenedor === 'true';
   if (body.agenteRetenedorIva != null) doc.agenteRetenedorIva = body.agenteRetenedorIva === true || body.agenteRetenedorIva === 'true';
   if (body.porcentajeReteIva != null) doc.porcentajeReteIva = Number(body.porcentajeReteIva) || 0;
+  if (body.porcentajeReteFuente != null) doc.porcentajeReteFuente = Number(body.porcentajeReteFuente) || 0;
   if (body.activo != null) doc.activo = body.activo !== false && body.activo !== 'false';
 }
 
@@ -65,6 +89,10 @@ exports.catalogos = (_req, res) => {
     organizacionesLegales: ORGANIZACIONES_LEGALES,
     tributos: TRIBUTOS,
     responsabilidadesFiscales: RESPONSABILIDADES_FISCALES,
+    tiposContratoCap: TIPOS_CONTRATO_CAP.map((id) => ({
+      id,
+      label: TIPO_CONTRATO_CAP_LABELS[id] || id,
+    })),
   });
 };
 
@@ -100,6 +128,12 @@ exports.crear = async (req, res, next) => {
     const razon = String(body.razonSocial || body.nombres || '').trim();
     if (!identificacion || !razon) {
       return res.status(400).json({ message: 'Identificación y razón social / nombre son obligatorios' });
+    }
+    const tipoCap = String(body.tipoContratoCap || '').trim();
+    if (!esTipoContratoCapValido(tipoCap)) {
+      return res.status(400).json({
+        message: 'Seleccione el tipo de contratante (empresa, entidad oficial, ONG o persona natural)',
+      });
     }
     const existe = await Cliente.findOne({ identificacion }).lean();
     if (existe) return res.status(409).json({ message: 'Ya existe un cliente con esa identificación' });

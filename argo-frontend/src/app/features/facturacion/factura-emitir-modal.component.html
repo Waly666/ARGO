@@ -60,12 +60,24 @@
             }
           </select>
           <p class="hint">¿No está? Créelo en Configuración → Clientes de facturación.</p>
+          <p class="hint fe-hint-consolidado">
+            Los servicios marcados se envían en <strong>un solo ítem</strong> a Factus/DIAN, con cédula, nombre del alumno y el detalle de cada capacitación.
+          </p>
         }
       </section>
 
       @if (preview(); as p) {
         <section class="fe-section fe-totales">
           <h4>3. Resumen</h4>
+          @if (p.lineaFactus; as lf) {
+            @if (lf.consolidada && lf.nombre) {
+              <div class="fe-linea-consolidada">
+                <span class="fe-linea-lbl">Ítem en la factura (1 línea)</span>
+                <p>{{ lf.nombre }}</p>
+                <span class="hint">{{ lf.servicios }} servicio(s) incluido(s)</span>
+              </div>
+            }
+          }
           <div class="fe-tot-row"><span>Base</span><span>{{ fmt(p.totales.base) }}</span></div>
           <div class="fe-tot-row"><span>IVA</span><span>{{ fmt(p.totales.valorIva) }}</span></div>
           @if (p.reteIva.aplica) {

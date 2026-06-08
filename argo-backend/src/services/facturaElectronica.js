@@ -7,6 +7,7 @@ const { models: cat } = require('../models/catalogos');
 const { numDocQuery } = require('../utils/numDoc');
 const { obtenerConfigFacturacionInterno } = require('./configFacturacion');
 const { armarPayloadFactus, nombreAlumno, condicionIvaServicio } = require('./facturaPayload');
+const { buildCustomerFactus, validarCustomerFactus } = require('./facturaCustomer');
 const { emitirFactura } = require('./facturaProveedor');
 const {
   ESTADO_VALIDADA,
@@ -105,6 +106,20 @@ function planoFactura(doc) {
   };
 }
 
+/** Facturas ya emitidas para un alumno (incluye facturación a tercero/empresa). */
+async function listarFacturasPorAlumno(numDoc) {
+  const filtro = numDocQuery(numDoc);
+  if (!filtro) {
+    const err = new Error('Documento de alumno inválido');
+    err.status = 400;
+    throw err;
+  }
+  const docs = await FacturaElectronica.find(filtro)
+    .sort({ emitidaAt: -1, createdAt: -1 })
+    .lean();
+  return docs.map(planoFactura);
+}
+
 async function listarFacturas({ idSede = null, skip = 0, limit = 200, q = '' } = {}) {
   const filtro = {};
   if (idSede) filtro.idSede = String(idSede).trim();
@@ -144,6 +159,12 @@ async function resumenFacturacion({ idSede = null } = {}) {
 }
 
 async function resolverAdquirente({ tipo, idCliente, numDoc }) {
+  const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+  if (!alumno) {
+    const err = new Error('Alumno no encontrado');
+    err.status = 404;
+    throw err;
+  }
   if (tipo === ADQUIRENTE_CLIENTE) {
     if (!idCliente) {
       const err = new Error('Debe seleccionar el cliente al facturar a un tercero');
@@ -156,13 +177,7 @@ async function resolverAdquirente({ tipo, idCliente, numDoc }) {
       err.status = 404;
       throw err;
     }
-    return { tipo: ADQUIRENTE_CLIENTE, cliente: cli };
-  }
-  const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
-  if (!alumno) {
-    const err = new Error('Alumno no encontrado');
-    err.status = 404;
-    throw err;
+    return { tipo: ADQUIRENTE_CLIENTE, cliente: cli, alumno };
   }
   return { tipo: ADQUIRENTE_ALUMNO, alumno };
 }
@@ -170,7 +185,7 @@ async function resolverAdquirente({ tipo, idCliente, numDoc }) {
 function snapshotAdquirente(adq) {
   if (adq.tipo === ADQUIRENTE_CLIENTE) {
     const c = adq.cliente;
-    return {
+    const snap = {
       tipo: ADQUIRENTE_CLIENTE,
       idCliente: c._id,
       identificationDocumentCode: c.identificationDocumentCode || '31',
@@ -187,9 +202,16 @@ function snapshotAdquirente(adq) {
       telefono: c.telefono || '',
       municipioCodigo: c.municipioCodigo || '',
       granContribuyente: !!c.granContribuyente,
+      autoretenedor: !!c.autoretenedor,
       agenteRetenedorIva: !!c.agenteRetenedorIva,
       porcentajeReteIva: Number(c.porcentajeReteIva) || 0,
+      porcentajeReteFuente: Number(c.porcentajeReteFuente) || 0,
     };
+    if (adq.alumno) {
+      snap.participanteNombre = nombreAlumno(adq.alumno);
+      snap.participanteNumDoc = adq.alumno.numDoc != null ? Number(adq.alumno.numDoc) : null;
+    }
+    return snap;
   }
   const a = adq.alumno;
   return {
@@ -260,7 +282,16 @@ async function previewFactura({ numDoc, idLiquidaciones, tipoAdquirente = ADQUIR
   const cfg = await obtenerConfigFacturacionInterno();
   const { itemsCtx, totalAbonado } = await cargarItems(numDoc, idLiquidaciones);
   const adquirente = await resolverAdquirente({ tipo: tipoAdquirente, idCliente, numDoc });
-  const armado = armarPayloadFactus({ itemsCtx, adquirente, configFacturacion: cfg, numDoc, totalAbonado });
+  const customerFactus = await buildCustomerFactus(adquirente);
+  validarCustomerFactus(customerFactus, adquirente);
+  const armado = armarPayloadFactus({
+    itemsCtx,
+    adquirente,
+    configFacturacion: cfg,
+    numDoc,
+    totalAbonado,
+    customerFactus,
+  });
   return { ...armado, adquirente: snapshotAdquirente(adquirente) };
 }
 
@@ -277,12 +308,16 @@ async function emitirFacturaMulti({
   const { itemsCtx, totalAbonado } = await cargarItems(numDoc, idLiquidaciones);
   const adquirente = await resolverAdquirente({ tipo: tipoAdquirente, idCliente, numDoc });
 
+  const customerFactus = await buildCustomerFactus(adquirente);
+  validarCustomerFactus(customerFactus, adquirente);
+
   const { payload, detalle, totales, reteIva } = armarPayloadFactus({
     itemsCtx,
     adquirente,
     configFacturacion: cfg,
     numDoc,
     totalAbonado,
+    customerFactus,
   });
 
   const resultado = await emitirFactura({ payload, montos: { valorTotal: totales.total }, config: cfg });
@@ -290,7 +325,7 @@ async function emitirFacturaMulti({
     const err = new Error(resultado.error || 'Factus rechazó la emisión');
     err.status = 422;
     err.code = 'FACTUS_RECHAZADA';
-    err.details = resultado.erroresValidacion;
+    err.details = resultado.erroresValidacion || resultado.respuestaProveedor;
     throw err;
   }
 
@@ -353,6 +388,7 @@ async function obtenerFactura(id) {
 
 module.exports = {
   listarElegiblesPorAlumno,
+  listarFacturasPorAlumno,
   listarFacturas,
   resumenFacturacion,
   previewFactura,

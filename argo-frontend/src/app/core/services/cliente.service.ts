@@ -20,9 +20,14 @@ export interface Cliente {
   telefono?: string;
   municipioCodigo?: string;
   municipioNombre?: string;
+  /** juridica_empresa | juridica_oficial | juridica_ong | persona_natural */
+  tipoContratoCap?: string;
+  tipoContratoCapLabel?: string;
   granContribuyente?: boolean;
+  autoretenedor?: boolean;
   agenteRetenedorIva?: boolean;
   porcentajeReteIva?: number;
+  porcentajeReteFuente?: number;
   activo?: boolean;
   nombre?: string;
 }
@@ -32,6 +37,7 @@ export interface ClienteCatalogos {
   organizacionesLegales: { code: string; label: string }[];
   tributos: { code: string; label: string }[];
   responsabilidadesFiscales: { code: string; label: string }[];
+  tiposContratoCap: { id: string; label: string }[];
 }
 
 @Injectable({ providedIn: 'root' })

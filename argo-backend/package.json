@@ -11,6 +11,7 @@
     "seed:users": "node scripts/seedAdmin.js",
     "seed:catalogos": "node scripts/seedCatalogosBase.js",
     "seed:config": "node scripts/seedConfig.js",
+    "seed:factus-sandbox": "node scripts/seedFactusSandbox.js",
     "migrate:numdoc": "node scripts/migrateNumDocToNumber.js",
     "migrate:tipo-alumno": "node scripts/migrateTipoAlumno.js",
     "migrate:tipo-certificado": "node scripts/migrateTipoCertificado.js",

@@ -31,6 +31,9 @@ import {
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
+import { Cliente, ClienteService } from '../../core/services/cliente.service';
+import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
+import { FacturacionService, PreviewFacturaContrato } from '../../core/services/facturacion.service';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { JornadaCapDto } from '../../core/services/jornada-cap.service';
 import { JornadaMapaPickerComponent } from './jornada-mapa-picker.component';
@@ -138,6 +141,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private destroyRef = inject(DestroyRef);
   private confirmSvc = inject(ConfirmDialogService);
   private asistente = inject(AsistenteContextoService);
+  private clienteSvc = inject(ClienteService);
+  private feSvc = inject(FacturacionService);
+  private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
 
   tab = signal<Tab>('contratos');
   vistaJornadas = signal<VistaAgenda>('lista');
@@ -162,6 +168,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   contratos = signal<ContratacionDto[]>([]);
   contratoSel = signal<string>('');
+  clientesFe = signal<Cliente[]>([]);
+  tiposContrato = signal<{ id: string; label: string }[]>([]);
+  estadoFacturaContrato = signal<{ facturado: boolean; factura: { _id: string; numeroFactura: string } | null } | null>(
+    null,
+  );
+  previewFacturaContrato = signal<PreviewFacturaContrato | null>(null);
+  emitiendoFactura = signal(false);
   formContrato = signal<ContratacionDto>(this.emptyContrato());
   fechaFinalizacionContrato = signal(ymdLocal(new Date()));
 
@@ -516,6 +529,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.cargarSupervisores();
     this.cargarInstructores();
+    this.cargarDatosFacturacionContrato();
     let contratosListos = false;
     this.jornadaSvc.listarContratos().subscribe({
       next: (rows) => {
@@ -614,6 +628,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       estado: 'En Ejecución',
       codContrato: '',
       objetoContrato: '',
+      idClienteFacturacion: null,
+      valorContrato: 0,
       numerojornadas: 1,
       jornadasPorDia: 1,
       numeroAlumnos: 0,
@@ -1587,6 +1603,167 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
+  cargarDatosFacturacionContrato(): void {
+    this.clienteSvc.listar().subscribe({
+      next: (rows) => this.clientesFe.set(rows || []),
+      error: () => this.clientesFe.set([]),
+    });
+    this.clienteSvc.catalogos().subscribe({
+      next: (c) => this.tiposContrato.set(c.tiposContratoCap || []),
+      error: () => this.tiposContrato.set([]),
+    });
+  }
+
+  labelTipoContratoCap(id?: string | null): string {
+    const t = this.tiposContrato().find((x) => x.id === id);
+    return t?.label || id || '—';
+  }
+
+  clienteFeLabel(id?: string | null): string {
+    if (!id) return '';
+    const c = this.clientesFe().find((x) => x._id === id);
+    return c ? `${c.nombre || c.razonSocial || ''} (${c.identificacion})` : '';
+  }
+
+  clienteFeSeleccionado(): Cliente | null {
+    const id = this.formContrato().idClienteFacturacion;
+    if (!id) return null;
+    return this.clientesFe().find((x) => x._id === id) || null;
+  }
+
+  onClienteFacturacionChange(id: string): void {
+    this.patchContrato('idClienteFacturacion', id || null);
+    const c = this.clientesFe().find((x) => x._id === id);
+    if (c && !this.formContrato().razoSocial?.trim()) {
+      this.patchContrato('razoSocial', c.razonSocial || c.nombres || '');
+    }
+    if (c && !this.formContrato().numeroIdentificacion?.trim()) {
+      this.patchContrato('numeroIdentificacion', c.identificacion || '');
+    }
+    this.previewFacturaContrato.set(null);
+  }
+
+  abrirCrearClienteFe(): void {
+    window.open('/app/configuracion/clientes', '_blank', 'noopener');
+  }
+
+  recargarClientesFe(): void {
+    this.clienteSvc.listar().subscribe({
+      next: (rows) => {
+        this.clientesFe.set(rows || []);
+        this.mostrarMsg('Lista de clientes actualizada.', 'ok', 'Clientes');
+      },
+      error: () => this.mostrarMsg('No se pudieron recargar los clientes.', 'error', 'Clientes'),
+    });
+  }
+
+  cargarEstadoFacturaContrato(id?: string): void {
+    if (!id) {
+      this.estadoFacturaContrato.set(null);
+      return;
+    }
+    this.feSvc.estadoFacturaContrato(id).subscribe({
+      next: (r) => this.estadoFacturaContrato.set(r),
+      error: () => this.estadoFacturaContrato.set(null),
+    });
+  }
+
+  puedeFacturarContrato(): boolean {
+    return (
+      this.permisoSvc.tiene('facturacion') || this.permisoSvc.tiene('alumnos.pagos')
+    );
+  }
+
+  contratoYaFacturado(): boolean {
+    return !!this.estadoFacturaContrato()?.facturado;
+  }
+
+  private guardarDatosFacturacionContrato(id: string) {
+    const f = this.formContrato();
+    return this.jornadaSvc.actualizarContrato(id, {
+      idClienteFacturacion: f.idClienteFacturacion || null,
+      valorContrato: f.valorContrato ?? 0,
+    });
+  }
+
+  calcularPreviewFacturaContrato(): void {
+    const id = this.formContrato()._id;
+    if (!id) {
+      this.mostrarMsg('Guarde el contrato antes de calcular la factura.', 'warn', 'Facturación');
+      return;
+    }
+    if (!this.formContrato().idClienteFacturacion) {
+      this.mostrarMsg('Seleccione el cliente de facturación.', 'warn', 'Facturación');
+      return;
+    }
+    const valor = Number(this.formContrato().valorContrato) || 0;
+    if (!(valor > 0)) {
+      this.mostrarMsg('Indique el valor del contrato (mayor a cero).', 'warn', 'Facturación');
+      return;
+    }
+    this.guardarDatosFacturacionContrato(id).subscribe({
+      next: () => {
+        this.feSvc.previewFacturaContrato(id).subscribe({
+          next: (p) => {
+            this.previewFacturaContrato.set(p);
+            this.mostrarMsg('Resumen de factura calculado.', 'ok', 'Facturación');
+          },
+          error: (e) =>
+            this.mostrarMsg(e?.error?.message || 'No se pudo calcular la factura', 'error', 'Facturación'),
+        });
+      },
+      error: (e) =>
+        this.mostrarMsg(e?.error?.message || 'No se pudo guardar valor/cliente del contrato', 'error', 'Facturación'),
+    });
+  }
+
+  emitirFacturaContrato(): void {
+    const id = this.formContrato()._id;
+    if (!id) return;
+    if (!this.previewFacturaContrato()) {
+      this.mostrarMsg('Calcule la factura primero (botón «Calcular factura»).', 'warn', 'Facturación');
+      return;
+    }
+    this.emitiendoFactura.set(true);
+    this.guardarDatosFacturacionContrato(id).subscribe({
+      next: () => {
+        this.feSvc.emitirFacturaContrato(id).subscribe({
+          next: (doc) => {
+            this.emitiendoFactura.set(false);
+            this.cargarEstadoFacturaContrato(id);
+            this.previewFacturaContrato.set(null);
+            this.mostrarMsg(
+              `Factura ${doc.numeroFactura || ''} emitida para el contrato.`,
+              'ok',
+              'Factura electrónica',
+            );
+            if (doc.urlPdf) window.open(doc.urlPdf, '_blank', 'noopener');
+            this.comprobanteAlertSvc.notificarDesdeFactura(doc as unknown as Record<string, unknown>, {
+              nombreCompleto:
+                (doc as { adquirente?: { nombre?: string } }).adquirente?.nombre || 'Contrato capacitación',
+            });
+          },
+          error: (e) => {
+            this.emitiendoFactura.set(false);
+            this.mostrarMsg(e?.error?.message || 'Error al emitir factura', 'error', 'Facturación');
+          },
+        });
+      },
+      error: (e) => {
+        this.emitiendoFactura.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo guardar valor/cliente del contrato', 'error', 'Facturación');
+      },
+    });
+  }
+
+  fmtMoney(n?: number | null): string {
+    return Number(n || 0).toLocaleString('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    });
+  }
+
   guardarContrato() {
     const f = this.formContrato();
     if (!f.razoSocial?.trim() && !f.nombreComercial?.trim()) {
@@ -1627,6 +1804,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         ? `${c.ciudad} — ${c.departamento}`
         : c.ciudad || '';
     this.ciudadContratoTexto.set(label);
+    this.previewFacturaContrato.set(null);
+    this.cargarEstadoFacturaContrato(c._id);
     if (c.codMunicipio) {
       this.catSvc.municipioPorCodigo(c.codMunicipio).subscribe({
         next: (m) => this.ciudadContratoTexto.set(m.label || label),

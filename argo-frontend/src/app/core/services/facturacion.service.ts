@@ -57,7 +57,13 @@ export interface FacturaElectronicaItem {
   reteIvaAplica?: boolean;
   reteIvaPorcentaje?: number;
   reteIvaValor?: number;
-  adquirente?: { tipo?: string; nombre?: string; identificacion?: string };
+  adquirente?: {
+    tipo?: string;
+    nombre?: string;
+    identificacion?: string;
+    participanteNombre?: string;
+    participanteNumDoc?: number;
+  };
   items?: FacturaItem[];
   urlPdf?: string;
   urlQr?: string;
@@ -112,11 +118,34 @@ export interface PreviewNotaCredito {
   totales: { base: number; valorIva: number; total: number };
 }
 
+export interface PreviewFacturaContrato {
+  contrato: { _id?: string; codContrato?: string; tipoContrato?: string; objetoContrato?: string };
+  regla: { label?: string; condicionIva?: string; descuentoPorcentaje?: number };
+  totales: { base: number; valorIva: number; total: number };
+  retenciones: {
+    reteIva: { aplica: boolean; porcentaje: number; valor: number };
+    reteFuente: { aplica: boolean; porcentaje: number; valor: number };
+    reteIca: { aplica: boolean; porcentaje: number; valor: number };
+  };
+  adquirente: {
+    nombre: string;
+    identificacion?: string;
+    granContribuyente?: boolean;
+    autoretenedor?: boolean;
+    agenteRetenedorIva?: boolean;
+    porcentajeReteIva?: number;
+    porcentajeReteFuente?: number;
+    tipoContratoCap?: string;
+  };
+  detalle: { descripcion?: string };
+}
+
 export interface PreviewFactura {
   totales: { base: number; valorIva: number; total: number; formaPago: string; esCredito: boolean };
   detalle: FacturaItem[];
   reteIva: { aplica: boolean; porcentaje: number; valor: number };
   adquirente: { tipo: string; nombre: string };
+  lineaFactus?: { consolidada: boolean; nombre: string | null; servicios: number };
 }
 
 export interface EmisionPayload {
@@ -146,6 +175,29 @@ export class FacturacionService {
 
   elegiblesAlumno(numDoc: number | string): Observable<LiquidacionElegibleFe[]> {
     return this.http.get<LiquidacionElegibleFe[]>(`${this.base}/elegibles/${numDoc}`);
+  }
+
+  /** Facturas emitidas para un alumno (incluye facturación a empresa/tercero). */
+  listarPorAlumno(numDoc: number | string): Observable<FacturaElectronicaItem[]> {
+    return this.http.get<FacturaElectronicaItem[]>(`${this.base}/alumno/${numDoc}`);
+  }
+
+  estadoFacturaContrato(idContrato: string): Observable<{
+    facturado: boolean;
+    factura: { _id: string; numeroFactura: string; estado: string; valorTotal: number } | null;
+  }> {
+    return this.http.get<{
+      facturado: boolean;
+      factura: { _id: string; numeroFactura: string; estado: string; valorTotal: number } | null;
+    }>(`${this.base}/contrato/${idContrato}/estado`);
+  }
+
+  previewFacturaContrato(idContrato: string): Observable<PreviewFacturaContrato> {
+    return this.http.get<PreviewFacturaContrato>(`${this.base}/contrato/${idContrato}/preview`);
+  }
+
+  emitirFacturaContrato(idContrato: string): Observable<FacturaElectronicaItem> {
+    return this.http.post<FacturaElectronicaItem>(`${this.base}/contrato/${idContrato}/emitir`, {});
   }
 
   listar(q = '', skip = 0, limit = 200): Observable<FacturacionLista<FacturaElectronicaItem>> {

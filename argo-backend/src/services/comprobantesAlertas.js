@@ -81,7 +81,7 @@ async function listarComprobantesRecientes(desde) {
       estado: { $nin: ['borrador', 'anulada'] },
       $or: [{ createdAt: rango }, { emitidaAt: rango }],
     })
-      .select('_id numDoc numeroFactura valorTotal estado createdAt emitidaAt')
+      .select('_id numDoc numeroFactura valorTotal estado createdAt emitidaAt idContrato origenFactura adquirente')
       .sort({ createdAt: -1 })
       .limit(80)
       .lean(),
@@ -159,14 +159,22 @@ async function listarComprobantesRecientes(desde) {
   for (const f of facturas) {
     const k = claveNumDoc(f.numDoc);
     const al = k != null ? alByDoc.get(k) : null;
+    const adq = f.adquirente || {};
+    const esContrato = !!f.idContrato || f.origenFactura === 'contrato_cap';
+    const nomAdq = String(adq.nombre || adq.razonSocial || adq.nombres || '').trim();
     out.push({
       tipo: 'factura',
       id: String(f._id),
       numeroFactura: f.numeroFactura || null,
       valor: numValor(f.valorTotal),
       numDoc: f.numDoc,
-      nombreCompleto: nombreCompleto(al) || (f.numDoc != null ? `Doc ${f.numDoc}` : ''),
+      nombreCompleto:
+        nomAdq ||
+        nombreCompleto(al) ||
+        (esContrato ? 'Factura contrato capacitación' : f.numDoc != null ? `Doc ${f.numDoc}` : ''),
       alumnoId: al?._id ? String(al._id) : null,
+      idContrato: f.idContrato ? String(f.idContrato) : null,
+      origenFactura: f.origenFactura || '',
       fecha: fechaMovimiento(f, ['emitidaAt', 'createdAt']),
     });
   }
