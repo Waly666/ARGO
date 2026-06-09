@@ -10,6 +10,7 @@ const {
 } = require('./programaServicio');
 const { mapaCategorias, idsCategoriasConfig, resolverCategoriasCurso } = require('./aulaVirtualCategorias');
 const { obtenerConfigPortalPublica } = require('./aulaVirtualPortal');
+const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 
 function resolverIndexPaquete(cfg) {
   if (!cfg?.rutaPaquete) return cfg?.indexHtml || 'index.html';
@@ -25,7 +26,7 @@ function resolverIndexPaquete(cfg) {
   return indexRel;
 }
 
-const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+async function configPorPrograma(idPrograma) {
   return CapacitacionVirtualConfig.findOne({ idPrograma: String(idPrograma) }).lean();
 }
 
