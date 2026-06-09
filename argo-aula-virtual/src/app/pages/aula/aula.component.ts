@@ -196,12 +196,7 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   abrir(curso: CursoVirtual) {
     if (!curso.playerUrl) return;
-    const raw = curso.playerUrl;
-    const full = raw.startsWith('http')
-      ? raw
-      : raw.startsWith('/uploads/')
-        ? `${environment.uploadsUrl}${raw.slice('/uploads'.length)}`
-        : `${environment.uploadsUrl}/${raw.replace(/^\/+/, '')}`;
+    const full = this.resolverPlayerUrl(curso.playerUrl);
     this.safePlayerUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(full));
     this.playerTitulo.set(curso.nombreProg);
     this.cursoActivo.set(curso);
@@ -257,6 +252,15 @@ export class AulaComponent implements OnInit, OnDestroy {
   logout() {
     this.auth.logout();
     void this.router.navigate(['/login']);
+  }
+
+  private resolverPlayerUrl(raw: string): string {
+    const uploadsBase = environment.uploadsUrl.replace(/\/+$/, '');
+    const pathMatch = raw.match(/\/uploads\/(.+)$/i);
+    if (pathMatch) return `${uploadsBase}/${pathMatch[1]}`;
+    if (raw.startsWith('/uploads/')) return `${uploadsBase}${raw.slice('/uploads'.length)}`;
+    if (raw.startsWith('http')) return raw;
+    return `${uploadsBase}/${raw.replace(/^\/+/, '')}`;
   }
 
   private enviarInitAlIframe() {

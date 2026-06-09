@@ -28,8 +28,7 @@ function resolverIndexPaquete(cfg) {
 function publicUploadUrl(relative) {
   const rel = String(relative || '').trim().replace(/^\/+/, '');
   if (!rel) return null;
-  const base = String(process.env.PUBLIC_URL || '').trim().replace(/\/+$/, '');
-  if (base) return `${base}/uploads/${rel}`;
+  /** Ruta relativa: el portal (8085) o ERP reescriben con su propio origin y evitan CORS en el iframe. */
   return `/uploads/${rel}`;
 }
 
@@ -40,6 +39,14 @@ async function configPorPrograma(idPrograma) {
 async function servicioMatriculaPrograma(prog) {
   const lista = await listarServiciosMatricula(prog);
   return lista[0] || null;
+}
+
+function paqueteInstalado(cfg) {
+  if (!cfg?.rutaPaquete) return false;
+  const abs = resolvePath(cfg.rutaPaquete);
+  if (!abs) return false;
+  const indexRel = detectarIndexHtml(abs, cfg.indexHtml || 'index.html');
+  return paqueteListo(abs, indexRel);
 }
 
 function mapCursoPublico(prog, serv, cfg, opts = {}) {
@@ -62,7 +69,7 @@ function mapCursoPublico(prog, serv, cfg, opts = {}) {
     esCapacitacionVirtual: tarifaVirtual > 0,
     publicadoPortal: publicado,
     modoCertificado: cfg?.modoCertificado || 'al_pagar',
-    tienePaquete: !!(cfg?.rutaPaquete),
+    tienePaquete: paqueteInstalado(cfg),
     rutaPaquete: cfg?.rutaPaquete || null,
     playerUrl: cfg?.rutaPaquete
       ? publicUploadUrl(`${cfg.rutaPaquete}/${resolverIndexPaquete(cfg)}`)

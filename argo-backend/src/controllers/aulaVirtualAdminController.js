@@ -28,7 +28,7 @@ const {
 const { publicUrl, publicUrlPath, resolvePath } = require('../middleware/upload');
 const { listarUsuariosPortalAdmin } = require('../services/aulaVirtualUsuarios');
 const { inyectarBridgeEnPaquete } = require('../services/aulaVirtualBridge');
-const { detectarIndexHtml, paqueteListo } = require('../services/aulaVirtualPaquete');
+const { detectarIndexHtml, paqueteListo, listarEntradasPaquete } = require('../services/aulaVirtualPaquete');
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
 const { matricularVirtual } = require('../services/aulaVirtualMatricula');
 
@@ -70,14 +70,16 @@ exports.subirPaqueteZip = async (req, res, next) => {
     zip.extractAllTo(abs, true);
     fs.unlinkSync(req.file.path);
 
-    let config = await asignarPaquete(req.params.id, rel, req.user);
-    const indexRel = detectarIndexHtml(abs, config.indexHtml || 'index.html');
+    const indexRel = detectarIndexHtml(abs, 'index.html');
     if (!paqueteListo(abs, indexRel)) {
+      const visto = listarEntradasPaquete(abs).join(', ') || '(vacío)';
       return res.status(400).json({
         message:
-          'No se encontró index.html en el ZIP. Debe estar en la raíz o dentro de una sola carpeta.',
+          `No se encontró index.html en el ZIP. Debe estar en la raíz o dentro de una sola carpeta. Contenido: ${visto}`,
       });
     }
+
+    let config = await asignarPaquete(req.params.id, rel, req.user);
     if (indexRel !== (config.indexHtml || 'index.html')) {
       await CapacitacionVirtualConfig.updateOne(
         { idPrograma: String(req.params.id) },

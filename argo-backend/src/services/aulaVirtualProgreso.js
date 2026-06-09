@@ -95,22 +95,22 @@ function mapProgresoPublico(progreso, estadoExtra = {}) {
 }
 
 async function verificarAccesoCurso(numDoc, idPrograma) {
-  const curso = await obtenerCursoVirtual(idPrograma, { requierePublicado: true });
+  const mat = await buscarMatriculaVirtual(numDoc, idPrograma);
+  if (!mat && !relaxarMatricula()) {
+    const err = new Error('Debe matricularse en este curso para acceder al contenido');
+    err.status = 403;
+    throw err;
+  }
+
+  const curso = await obtenerCursoVirtual(idPrograma, { requierePublicado: false });
   if (!curso) {
-    const err = new Error('Curso no encontrado o no publicado');
+    const err = new Error('Curso no encontrado');
     err.status = 404;
     throw err;
   }
   if (!curso.tienePaquete) {
     const err = new Error('El curso aún no tiene contenido cargado');
     err.status = 400;
-    throw err;
-  }
-
-  const mat = await buscarMatriculaVirtual(numDoc, idPrograma);
-  if (!mat && !relaxarMatricula()) {
-    const err = new Error('Debe matricularse en este curso para acceder al contenido');
-    err.status = 403;
     throw err;
   }
 

@@ -12,9 +12,12 @@ docker compose build argo-frontend
 echo "==> Sitio marketing..."
 docker compose build argo-sitio
 
+echo "==> Portal aula virtual..."
+docker compose build argo-aula-virtual
+
 echo "==> Deteniendo stack anterior y quitando contenedores huérfanos..."
 docker compose down --remove-orphans 2>/dev/null || true
-for c in argo-mongo argo-backend argo-frontend argo-sitio; do
+for c in argo-mongo argo-backend argo-frontend argo-sitio argo-aula-virtual; do
   docker rm -f "$c" 2>/dev/null || true
 done
 

@@ -285,6 +285,7 @@
       }, SYNC_MS);
     } else if (wait > 300) {
       clearInterval(boot);
+      console.warn('[ARGO] Sin token del portal — el progreso no se guardará en el aula hasta iniciar sesión.');
     }
   }, 400);
 

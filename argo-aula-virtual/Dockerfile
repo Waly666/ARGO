@@ -10,7 +10,7 @@ RUN apt-get update \
 
 ENV NODE_OPTIONS=--max-old-space-size=3072
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --network-concurrency 2
 
 COPY . .
