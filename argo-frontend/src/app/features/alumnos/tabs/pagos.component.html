@@ -135,15 +135,21 @@
           <span class="saldo-servicios-label">Acceso rápido:</span>
           <button
             type="button"
-            class="serv-saldo-alarm compact"
+            class="compact"
+            [class.serv-saldo-alarm]="!esVirtual(it)"
+            [class.virtual-saldo-alarm]="esVirtual(it)"
             *ngFor="let it of itemsConSaldo()"
             (click)="agregarItem(it._id)"
             [class.sel]="itemSeleccionado(it._id)"
             [disabled]="itemSeleccionado(it._id)"
             [attr.title]="tituloSaldoItem(it.descripcion, fmt(it.saldo))">
-            <span class="serv-saldo-pulse" aria-hidden="true"></span>
-            <span class="serv-saldo-icon">$</span>
-            <span class="serv-saldo-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}</span>
+            <span [class.serv-saldo-pulse]="!esVirtual(it)" [class.virtual-saldo-pulse]="esVirtual(it)" aria-hidden="true"></span>
+            <span [class.serv-saldo-icon]="!esVirtual(it)" [class.virtual-saldo-icon]="esVirtual(it)">
+              {{ esVirtual(it) ? 'V' : '$' }}
+            </span>
+            <span [class.serv-saldo-text]="!esVirtual(it)" [class.virtual-saldo-text]="esVirtual(it)">
+              <ng-container *ngIf="esVirtual(it)">Virtual · </ng-container>{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}
+            </span>
           </button>
         </div>
 

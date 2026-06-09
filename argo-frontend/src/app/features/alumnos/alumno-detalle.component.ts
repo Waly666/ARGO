@@ -22,6 +22,7 @@ import { PermisoService } from '../../core/services/permiso.service';
 import { ProgramacionCeaService } from '../../core/services/programacion-cea.service';
 import { environment } from '../../../environments/environment';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../core/utils/saldo-alerta.helpers';
+import { esLiquidacionVirtual, normalizarTipoAlumno, TIPO_VIRTUAL } from './catalogo.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
 import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
 
@@ -144,6 +145,10 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
 
   etiquetaSaldo = etiquetaSaldoCorta;
   tituloSaldoItem = tituloSaldoItem;
+  esVirtual = esLiquidacionVirtual;
+  esAlumnoVirtual = computed(
+    () => normalizarTipoAlumno(this.alumno()?.tipoAlumno) === TIPO_VIRTUAL,
+  );
 
   constructor() {
     effect(() => {

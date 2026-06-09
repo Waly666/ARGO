@@ -41,6 +41,7 @@ exports.listar = async (req, res, next) => {
         tarifa1: num(s.tarifa1),
         tarifa2: num(s.tarifa2),
         tarifa3: num(s.tarifa3),
+        tarifaVirtual: num(s.tarifaVirtual),
         programaNombre: programa?.nombreProg || null,
         programaCodigo: programa?.codigoProg || null,
         permiteCantidad: servicioPermiteCantidad(s),
@@ -92,6 +93,7 @@ exports.actualizar = async (req, res, next) => {
     if (body.tarifa1 != null) patch.tarifa1 = num(body.tarifa1);
     if (body.tarifa2 != null) patch.tarifa2 = num(body.tarifa2);
     if (body.tarifa3 != null) patch.tarifa3 = num(body.tarifa3);
+    if (body.tarifaVirtual != null) patch.tarifaVirtual = num(body.tarifaVirtual);
     if (body.facturar != null) patch.facturar = body.facturar;
     if (body.iva != null) patch.iva = num(body.iva);
     if (body.condicionIva != null) {
@@ -174,6 +176,7 @@ exports.crear = async (req, res, next) => {
       tarifa1: valorVariable ? 0 : tarifa1,
       tarifa2: valorVariable ? null : num(body.tarifa2) || tarifa1 * 2,
       tarifa3: valorVariable ? null : num(body.tarifa3) || tarifa1 * 3,
+      tarifaVirtual: valorVariable ? null : num(body.tarifaVirtual) || 0,
       valorVariable: valorVariable || undefined,
       usaCantidad: !valorVariable && body.usaCantidad === true,
       excluirMatricula: !idProg ? true : undefined,

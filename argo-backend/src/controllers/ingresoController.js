@@ -399,10 +399,14 @@ exports.crearAlumno = async (req, res, next) => {
       if (saldoItem > 0.0001) continue;
       try {
         const { intentarCertificadoPagoAuto } = require('../services/certificadoPagoAuto');
-        const rc = await intentarCertificadoPagoAuto({ numDoc, liq: a.liq, saldo: saldoItem });
+        let rc = await intentarCertificadoPagoAuto({ numDoc, liq: a.liq, saldo: saldoItem });
+        if (!rc?.creado && rc?.motivo === 'virtual_certificado_al_aprobar') {
+          const { intentarCertificadoVirtualAprobar } = require('../services/certificadoVirtualAuto');
+          rc = await intentarCertificadoVirtualAprobar({ numDoc, idPrograma: a.liq.idProg });
+        }
         if (rc?.creado) {
           certificadosAuto.push(rc.certificado);
-          console.info(`[certificadoPagoAuto] Certificado ${rc.certificado?.codigoCert} emitido para numDoc ${numDoc}`);
+          console.info(`[certificadoAuto] Certificado ${rc.certificado?.codigoCert} emitido para numDoc ${numDoc}`);
         }
       } catch (errCert) {
         console.error('[certificadoPagoAuto]', errCert?.stack || errCert?.message || errCert);

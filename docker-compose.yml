@@ -54,6 +54,19 @@ services:
     networks:
       - argo-net
 
+  argo-aula-virtual:
+    build:
+      context: ./argo-aula-virtual
+      dockerfile: Dockerfile
+    container_name: argo-aula-virtual
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+    depends_on:
+      - argo-backend
+    networks:
+      - argo-net
+
 volumes:
   argo_mongo_data:
 

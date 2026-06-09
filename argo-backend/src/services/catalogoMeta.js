@@ -47,6 +47,7 @@ const ETIQUETAS = {
   aspecto2: 'Aspecto 2',
   itemsInspeccion: 'Ítems inspección preoperacional',
   caractInspeccion: 'Características inspección',
+  categoriasVirtual: 'Categorías cursos virtuales',
 };
 
 const ID_FIELDS_HINT = {
@@ -81,6 +82,7 @@ const ID_FIELDS_HINT = {
   itemsEstGral: ['idItemEsGral'],
   itemsInspeccion: ['idItem'],
   caractInspeccion: ['idCaracteristica'],
+  categoriasVirtual: ['idCategoria'],
 };
 
 /** Campos válidos por catálogo (evita columnas basura del Excel en admin). */
@@ -101,6 +103,7 @@ const CAMPOS_ESQUEMA = {
   itemsInspeccion: ['idItem', 'item', 'tiposVehiculo'],
   caractInspeccion: ['idCaracteristica', 'idItem', 'caracteristica'],
   tipoEgreso: ['idTipoEgreso', 'tipo', 'requiereEmpleado', 'efectoNomina', 'requiereVehiculo'],
+  categoriasVirtual: ['idCategoria', 'nombre', 'orden', 'activo'],
 };
 
 /** Catálogos legacy del checklist (solo migración; no admin). */

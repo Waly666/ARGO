@@ -3,7 +3,8 @@ const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
-const { buscarPrograma } = require('./programaServicio');
+const { buscarPrograma, esCapacitacionVirtualServicio } = require('./programaServicio');
+const { configPorPrograma, servicioMatriculaPrograma } = require('./aulaVirtualCatalogo');
 const { obtenerConfigCertificado, siguienteCodigoCertificado } = require('./configCertificado');
 const {
   clasificarProgramaAsync,
@@ -64,6 +65,14 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
 
   const prog = await buscarPrograma(liq.idProg);
   if (!prog) return { creado: false, motivo: 'programa_no_encontrado' };
+
+  const serv = await servicioMatriculaPrograma(prog);
+  if (esCapacitacionVirtualServicio(serv)) {
+    const cfgVirtual = await configPorPrograma(liq.idProg);
+    if (cfgVirtual?.modoCertificado === 'al_aprobar') {
+      return { creado: false, motivo: 'virtual_certificado_al_aprobar' };
+    }
+  }
 
   const tipoFormato = await clasificarProgramaAsync(prog, cat.catTipoCapacitacion);
 

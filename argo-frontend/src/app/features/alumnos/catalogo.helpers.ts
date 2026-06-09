@@ -145,10 +145,11 @@ export function fechaHoraDisplay(d?: string | Date | null): string {
 
 /** Enums datosAlumnos — descripción con índice como en el esquema */
 /** tipoAlumno en datosAlumnos */
-export const TIPOS_ALUMNO_DEF = ['Regular', 'Jornadas de Capacitación'] as const;
+export const TIPOS_ALUMNO_DEF = ['Regular', 'Jornadas de Capacitación', 'Virtual'] as const;
 export type TipoAlumno = (typeof TIPOS_ALUMNO_DEF)[number];
 export const TIPO_ALUMNO_DEFAULT: TipoAlumno = 'Regular';
 export const TIPO_JORNADAS_CAPACITACION: TipoAlumno = 'Jornadas de Capacitación';
+export const TIPO_VIRTUAL: TipoAlumno = 'Virtual';
 
 export function normalizarTipoAlumno(val?: string | null): TipoAlumno {
   const t = String(val ?? '').trim();
@@ -158,7 +159,15 @@ export function normalizarTipoAlumno(val?: string | null): TipoAlumno {
   if (/jornadas?\s*de\s*capacitaci[oó]n/i.test(t) || t === 'Jornada Capacitacion') {
     return TIPO_JORNADAS_CAPACITACION;
   }
+  if (/^virtual$/i.test(t) || /aula\s*virtual/i.test(t)) return TIPO_VIRTUAL;
   return TIPO_ALUMNO_DEFAULT;
+}
+
+export function esLiquidacionVirtual(it?: {
+  esVirtual?: boolean;
+  tarifaMatricula?: number | null;
+}): boolean {
+  return !!it?.esVirtual || Number(it?.tarifaMatricula) === 4;
 }
 
 export const TIPOS_DOC_DEF = [

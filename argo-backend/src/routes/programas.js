@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/programaController');
 const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
+const { programasVirtual } = require('../middleware/upload');
 
 const router = Router();
 
@@ -14,6 +15,12 @@ const gestionar = requirePermiso('programas.gestionar');
 router.get('/', ver, ctrl.listar);
 router.get('/:id', ver, ctrl.obtener);
 router.post('/', agregar, ctrl.crear);
+router.post(
+  '/:id/portada-virtual',
+  gestionar,
+  programasVirtual.single('portada'),
+  ctrl.subirPortadaVirtual,
+);
 router.put('/:id', gestionar, ctrl.actualizar);
 router.delete('/:id', gestionar, ctrl.eliminar);
 

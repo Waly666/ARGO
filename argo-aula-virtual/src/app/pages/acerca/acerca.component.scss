@@ -1,0 +1,92 @@
+.hero-lite {
+  background: linear-gradient(135deg, #1e3a8a, #0e7490);
+  padding: 2rem 0;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0.35rem 0 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+  }
+}
+
+.kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--av-accent);
+  font-weight: 700;
+}
+
+.page {
+  padding-bottom: 3rem;
+}
+
+.acerca-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.rich {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  margin: 0 0 1.25rem;
+}
+
+.contact {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+
+  dt {
+    color: var(--av-dim);
+    font-size: 0.82rem;
+  }
+
+  dd {
+    margin: 0.1rem 0 0;
+  }
+}
+
+.logo-wrap img {
+  max-width: 220px;
+  max-height: 140px;
+  object-fit: contain;
+}
+
+.valores-title {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+}
+
+.valores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.valor {
+  padding: 1.1rem;
+
+  h3 {
+    margin: 0 0 0.45rem;
+    font-size: 1rem;
+    color: var(--av-accent);
+  }
+
+  p {
+    margin: 0;
+    color: var(--av-dim);
+    line-height: 1.55;
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .acerca-grid {
+    grid-template-columns: 1fr;
+  }
+}

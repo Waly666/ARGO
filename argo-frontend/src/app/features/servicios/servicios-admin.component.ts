@@ -118,6 +118,7 @@ export class ServiciosAdminComponent implements OnInit {
       tarifa1: 0,
       tarifa2: 0,
       tarifa3: 0,
+      tarifaVirtual: 0,
       facturar: 'NO',
       iva: 0,
       condicionIva: 'gravado',
@@ -263,6 +264,7 @@ export class ServiciosAdminComponent implements OnInit {
           tarifa1: this.num(serv.tarifa1),
           tarifa2: this.num(serv.tarifa2),
           tarifa3: this.num(serv.tarifa3),
+          tarifaVirtual: this.num(serv.tarifaVirtual),
           facturar: this.facturarStr(serv.facturar),
           iva: this.num(serv.iva),
           condicionIva: ['gravado', 'exento', 'excluido'].includes(String(serv.condicionIva || '').toLowerCase())
@@ -280,7 +282,7 @@ export class ServiciosAdminComponent implements OnInit {
   }
 
   patchForm(partial: Partial<ServicioDto>) {
-    const numericKeys = new Set(['tarifa1', 'tarifa2', 'tarifa3', 'iva']);
+    const numericKeys = new Set(['tarifa1', 'tarifa2', 'tarifa3', 'tarifaVirtual', 'iva']);
     const next: Partial<ServicioDto> = { ...partial };
     for (const key of numericKeys) {
       if (key in partial && partial[key as keyof ServicioDto] != null) {

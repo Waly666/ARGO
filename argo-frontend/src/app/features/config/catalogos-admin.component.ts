@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import {
   CatalogoAdminService,
@@ -56,6 +57,7 @@ export class CatalogosAdminComponent implements OnInit {
   private catCache = inject(CatalogoService);
   private confirm = inject(ConfirmDialogService);
   private vehSvc = inject(VehiculoService);
+  private route = inject(ActivatedRoute);
 
   catalogos = signal<CatalogoMetaItem[]>([]);
   seleccionado = signal<string | null>(null);
@@ -181,7 +183,11 @@ export class CatalogosAdminComponent implements OnInit {
       next: (r) => {
         const list = r.catalogos || [];
         this.catalogos.set(list);
-        if (list.length) {
+        const pref = String(this.route.snapshot.queryParamMap.get('cat') || '').trim();
+        const hit = pref ? list.find((c) => c.nombre === pref) : null;
+        if (hit) {
+          this.seleccionar(hit.nombre);
+        } else if (list.length) {
           this.seleccionar(list[0].nombre);
         }
       },

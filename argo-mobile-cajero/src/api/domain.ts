@@ -149,6 +149,7 @@ export interface ProgramaItem {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  tarifaVirtual?: number;
   estado?: string;
 }
 
@@ -161,6 +162,7 @@ export interface ServicioItem {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  tarifaVirtual?: number;
   programaNombre?: string | null;
   tipoServ?: string | number;
   rolServicio?: string;

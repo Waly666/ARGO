@@ -23,6 +23,13 @@ export interface Programa {
   diasVencimiento?: number;
   /** Tipo de plantilla de certificado (Config. Certificados). Vacío = automático */
   tipoCertificado?: string | null;
+  /** Texto para ficha del curso en portal virtual (HTML/markdown simple). */
+  descripcionVirtual?: string | null;
+  /** Ruta relativa bajo /uploads (programas-virtual/…). */
+  urlPortadaVirtual?: string | null;
+  /** Precio virtual del servicio de matrícula (solo informativo en listado). */
+  tarifaVirtual?: number;
+  esCapacitacionVirtual?: boolean;
   fechaAudi?: string | Date;
   userAddReg?: string;
   userChangeRecord?: string;
@@ -40,6 +47,8 @@ export interface ServicioPrograma {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  /** Precio educación virtual (matrícula con tarifa 4). */
+  tarifaVirtual?: number;
   rolServicio?: string;
   usaCantidad?: boolean;
   unidadMedida?: string;
@@ -69,6 +78,9 @@ export interface ProgramaDto {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  tarifaVirtual?: number;
+  descripcionVirtual?: string | null;
+  urlPortadaVirtual?: string | null;
   descrServicio?: string;
   tipoServ?: string | number;
   facturar?: string;
@@ -109,6 +121,18 @@ export class ProgramaService {
     dto: ProgramaDto,
   ): Observable<ProgramaDetalle & { message?: string }> {
     return this.http.put<ProgramaDetalle & { message?: string }>(`${this.base}/${id}`, dto);
+  }
+
+  subirPortadaVirtual(
+    id: string | number,
+    file: File,
+  ): Observable<{ urlPortadaVirtual: string; message?: string }> {
+    const fd = new FormData();
+    fd.append('portada', file);
+    return this.http.post<{ urlPortadaVirtual: string; message?: string }>(
+      `${this.base}/${id}/portada-virtual`,
+      fd,
+    );
   }
 
   eliminar(id: string | number): Observable<{ ok: boolean; message?: string }> {

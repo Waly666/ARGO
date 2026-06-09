@@ -13,6 +13,7 @@ import { IngresoService } from '../../../core/services/ingreso.service';
 import { CajaAperturaAlertService } from '../../../core/services/caja-apertura-alert.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
+import { esLiquidacionVirtual } from '../catalogo.helpers';
 import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
@@ -104,6 +105,7 @@ export class PagosComponent {
   totales = computed(() => this.liquidacion().totales);
 
   etiquetaSaldo = etiquetaSaldoCorta;
+  esVirtual = esLiquidacionVirtual;
   tituloSaldoItem = tituloSaldoItem;
 
   totalPago = computed(() => this.itemsPago().reduce((a, i) => a + (Number(i.valor) || 0), 0));

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { models } = require('../models/catalogos');
+const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
 const { metaCatalogo, inferirCamposId, nombreValido, docSegunEsquema, resolverCamposListado, camposEsquema, CATALOGOS_INSPECCION, CATALOGOS_DOCUMENTOS } = require('./catalogoMeta');
 const { syncControlaVencimientoDesdeCatalogo: syncVehiDesdeCatalogo, invalidarCacheClases } = require('./configRequisitosDocumentosVehiculos');
 const { syncControlaVencimientoDesdeCatalogo: syncEmpDesdeCatalogo } = require('./configRequisitosDocumentosEmpleados');
@@ -65,9 +66,10 @@ async function listar(nombre, opts = {}) {
   }
 
   const model = models[nombre];
+  const sort = nombre === 'categoriasVirtual' ? { orden: 1, nombre: 1 } : {};
   const [total, rows] = await Promise.all([
     model.countDocuments(filter),
-    model.find(filter).skip(skip).limit(limit).lean(),
+    model.find(filter).sort(sort).skip(skip).limit(limit).lean(),
   ]);
 
   let campos = resolverCamposListado(nombre, rows[0]);
@@ -86,9 +88,29 @@ async function listar(nombre, opts = {}) {
   return { meta, total, skip, limit, campos, idFields, rows };
 }
 
+async function validarCategoriaVirtual(doc, excludeId = null) {
+  const nombre = String(doc?.nombre || '').trim();
+  if (!nombre) {
+    const err = new Error('El nombre de la categoría es obligatorio');
+    err.status = 400;
+    throw err;
+  }
+  const dupQ = { nombre: new RegExp(`^${nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') };
+  if (excludeId != null) dupQ.idCategoria = { $ne: Number(excludeId) };
+  const dup = await models.categoriasVirtual.findOne(dupQ).lean();
+  if (dup) {
+    const err = new Error('Ya existe una categoría con ese nombre');
+    err.status = 409;
+    throw err;
+  }
+  if (doc.activo === undefined || doc.activo === null || doc.activo === '') doc.activo = true;
+  if (doc.orden == null || doc.orden === '') doc.orden = 0;
+}
+
 async function crear(nombre, body) {
   if (!nombreValido(nombre)) return null;
   const doc = limpiarBodyCatalogo(nombre, body);
+  if (nombre === 'categoriasVirtual') await validarCategoriaVirtual(doc);
   const meta = metaCatalogo(nombre);
   const idField = meta.idFields[0];
   if (idField && (doc[idField] == null || doc[idField] === '')) {
@@ -119,6 +141,9 @@ async function actualizar(nombre, mongoId, body) {
     err.status = 404;
     throw err;
   }
+  if (nombre === 'categoriasVirtual') {
+    await validarCategoriaVirtual({ ...existing, ...doc }, existing.idCategoria);
+  }
   const update = { $set: doc };
   if (CATALOGOS_INSPECCION.has(nombre)) {
     update.$unset = { claseVehiculo: '' };
@@ -140,6 +165,25 @@ async function eliminar(nombre, mongoId) {
     throw err;
   }
   const oid = new mongoose.Types.ObjectId(mongoId);
+  if (nombre === 'categoriasVirtual') {
+    const existing = await models[nombre].findOne({ _id: oid }).lean();
+    if (!existing) {
+      const err = new Error('Registro no encontrado');
+      err.status = 404;
+      throw err;
+    }
+    const idCat = Number(existing.idCategoria);
+    const enUso = await CapacitacionVirtualConfig.countDocuments({
+      $or: [{ idCategorias: idCat }, { idCategoria: idCat }],
+    });
+    if (enUso > 0) {
+      const err = new Error(
+        `No se puede eliminar: ${enUso} curso(s) usan esta categoría. Desactívela o reasigne los cursos.`,
+      );
+      err.status = 409;
+      throw err;
+    }
+  }
   const r = await models[nombre].deleteOne({ _id: oid });
   if (r.deletedCount === 0) {
     const err = new Error('Registro no encontrado');

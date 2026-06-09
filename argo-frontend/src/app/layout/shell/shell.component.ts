@@ -402,6 +402,14 @@ export class ShellComponent {
     },
     {
       kind: 'link',
+      label: 'Aula virtual',
+      icon: '▣',
+      path: '/app/aula-virtual',
+      iconTone: 'indigo',
+      permiso: 'programas.gestionar',
+    },
+    {
+      kind: 'link',
       label: 'Servicios',
       icon: '◇',
       path: '/app/servicios',

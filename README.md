@@ -30,6 +30,7 @@
 | **Configuración** | Usuarios, roles, permisos, alarmas, catálogos, auditoría |
 | **Sedes** | Multi-sede con filtro por usuario |
 | **Facturación** | ⏳ Pendiente (placeholder) |
+| **Aula virtual** | Portal alumnos (catálogo, registro, player cursos HTML) — `argo-aula-virtual` :4202 |
 
 ## Estructura del repositorio
 
@@ -39,7 +40,8 @@ ARGO/
 ├── ARGO-ESPECIFICACIONES.md
 ├── ARGO-CONTEXTO.md
 ├── argo-backend/         # API Node.js + Express + MongoDB
-└── argo-frontend/        # SPA Angular 19
+├── argo-frontend/        # SPA Angular 19 (staff)
+└── argo-aula-virtual/    # Portal alumnos — Angular 19, puerto 4202
 ```
 
 ## Stack
@@ -67,14 +69,20 @@ pnpm install
 # Crear argo-backend/.env (MONGO_URI, JWT_SECRET, PORT, …)
 pnpm run dev
 
-# Frontend (terminal 2)
+# Frontend staff (terminal 2)
 cd argo-frontend
+pnpm install
+pnpm start
+
+# Portal aula virtual (opcional, terminal 3)
+cd argo-aula-virtual
 pnpm install
 pnpm start
 ```
 
 - API: `http://localhost:3000` — health: `GET /api/health`
-- App: `http://localhost:4200`
+- App staff: `http://localhost:4200`
+- Portal alumnos: `http://localhost:4202`
 
 Al iniciar, el backend muestra enlaces **Local** y **Red (LAN)** con la IP del servidor.
 

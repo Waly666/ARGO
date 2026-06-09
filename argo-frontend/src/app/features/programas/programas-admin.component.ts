@@ -57,6 +57,7 @@ import {
 } from '../../core/utils/capsule.util';
 import { coerceProgramaNumeric } from '../../core/utils/programa-numeric.util';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 
@@ -289,6 +290,18 @@ export class ProgramasAdminComponent implements OnInit {
 
 
   form = signal<ProgramaDto>(this.formVacio());
+  portadaFile = signal<File | null>(null);
+  portadaPreviewLocal = signal<string | null>(null);
+
+  esFormularioVirtual = computed(() => this.num(this.form().tarifaVirtual) > 0);
+
+  portadaPreviewUrl = computed(() => {
+    const local = this.portadaPreviewLocal();
+    if (local) return local;
+    const rel = String(this.form().urlPortadaVirtual || '').trim();
+    if (!rel) return null;
+    return `${environment.uploadsUrl}/${rel.replace(/^\/+/, '')}`;
+  });
 
   opcionesTipoCertificado = computed<EnumBuscarOption[]>(() => [
     { value: '', label: 'Automático' },
@@ -451,6 +464,12 @@ export class ProgramasAdminComponent implements OnInit {
 
       tarifa3: 0,
 
+      tarifaVirtual: 0,
+
+      descripcionVirtual: '',
+
+      urlPortadaVirtual: '',
+
       diasVencimiento: 365,
 
       tipoCertificado: null,
@@ -599,6 +618,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     this.form.set({ ...this.formVacio(), idTipCap: t, tipoServ: this.inferirTipoServ(t), tipoCertificado: this.inferirTipoCert(t) });
 
+    this.resetPortadaLocal();
     this.modalAbierto.set(true);
     this.posicionarModal();
     this.inform(null);
@@ -624,6 +644,7 @@ export class ProgramasAdminComponent implements OnInit {
         this.auditPrograma.set(this.auditDe(prog as unknown as Record<string, unknown>));
         this.auditServicio.set(this.auditDe(s as unknown as Record<string, unknown>));
         this.form.set(this.formDesdeDetalle(prog, s, horaP));
+        this.resetPortadaLocal();
         this.modalAbierto.set(true);
         this.posicionarModal();
       },
@@ -672,6 +693,9 @@ export class ProgramasAdminComponent implements OnInit {
       tarifa1: this.num(s?.tarifa1 ?? prog.valorMatricula),
       tarifa2: this.num(s?.tarifa2),
       tarifa3: this.num(s?.tarifa3),
+      tarifaVirtual: this.num(s?.tarifaVirtual),
+      descripcionVirtual: prog.descripcionVirtual ?? '',
+      urlPortadaVirtual: prog.urlPortadaVirtual ?? '',
       diasVencimiento: prog.diasVencimiento ?? 365,
       tipoCertificado: prog.tipoCertificado ?? null,
       estado: prog.estado || 'ACTIVO',
@@ -705,7 +729,36 @@ export class ProgramasAdminComponent implements OnInit {
     this.modalAbierto.set(false);
 
     this.editando.set(null);
+    this.resetPortadaLocal();
 
+  }
+
+  private resetPortadaLocal() {
+    const prev = this.portadaPreviewLocal();
+    if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+    this.portadaFile.set(null);
+    this.portadaPreviewLocal.set(null);
+  }
+
+  onPortadaVirtualChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      this.inform('Seleccione una imagen (JPG, PNG o WebP).', true);
+      input.value = '';
+      return;
+    }
+    const prev = this.portadaPreviewLocal();
+    if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+    this.portadaFile.set(file);
+    this.portadaPreviewLocal.set(URL.createObjectURL(file));
+    input.value = '';
+  }
+
+  quitarPortadaVirtual() {
+    this.resetPortadaLocal();
+    this.patch('urlPortadaVirtual', '');
   }
 
 
@@ -782,32 +835,49 @@ export class ProgramasAdminComponent implements OnInit {
 
       next: (r) => {
 
-        this.saving.set(false);
-
-        this.modalAbierto.set(false);
-
-        this.editando.set(null);
-
-        this.catSvc.invalidate('programas');
-
-        this.catSvc.invalidate('servicios');
-
         const extra = r as ProgramaDetalle & {
           message?: string;
         };
+        const idProg = extra.programa?.idPrograma ?? idEdicion;
+        const portada = this.portadaFile();
+        const finalizar = (msg?: string) => {
+          this.saving.set(false);
+          this.modalAbierto.set(false);
+          this.editando.set(null);
+          this.resetPortadaLocal();
+          this.catSvc.invalidate('programas');
+          this.catSvc.invalidate('servicios');
+          if (extra.programa?.idPrograma != null) {
+            const id = extra.programa.idPrograma;
+            this.programas.update((list) =>
+              list.map((p) =>
+                String(p.idPrograma) === String(id) ? { ...p, ...extra.programa } : p,
+              ),
+            );
+          }
+          this.inform(msg || extra.message || (eraEdicion ? 'Programa actualizado.' : 'Programa creado.'));
+          this.cargar();
+        };
 
-        if (extra.programa?.idPrograma != null) {
-          const id = extra.programa.idPrograma;
-          this.programas.update((list) =>
-            list.map((p) =>
-              String(p.idPrograma) === String(id) ? { ...p, ...extra.programa } : p,
-            ),
-          );
+        if (portada && idProg != null) {
+          this.progSvc.subirPortadaVirtual(idProg, portada).subscribe({
+            next: (up) => {
+              finalizar(up.message || extra.message);
+            },
+            error: (e) => {
+              this.saving.set(false);
+              this.inform(
+                e?.error?.message ||
+                  'Programa guardado, pero no se pudo subir la portada. Edite el programa e intente de nuevo.',
+                true,
+              );
+              this.cargar();
+            },
+          });
+          return;
         }
 
-        this.inform(extra.message || (eraEdicion ? 'Programa actualizado.' : 'Programa creado.'));
-
-        this.cargar();
+        finalizar();
 
       },
 
@@ -1154,6 +1224,7 @@ export class ProgramasAdminComponent implements OnInit {
       this.patch('tarifa1', 0);
       this.patch('tarifa2', 0);
       this.patch('tarifa3', 0);
+      this.patch('tarifaVirtual', 0);
       this.patch('semestres', null);
     }
   }

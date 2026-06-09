@@ -116,18 +116,30 @@
   <div class="saldo-servicios" *ngIf="itemsConSaldo().length">
     <button
       type="button"
-      class="serv-saldo-alarm compact"
+      class="compact"
+      [class.serv-saldo-alarm]="!esVirtual(it)"
+      [class.virtual-saldo-alarm]="esVirtual(it)"
       *ngFor="let it of itemsConSaldo()"
       (click)="irPagosItem(it._id)"
       [attr.title]="tituloSaldoItem(it.descripcion, fmt(it.saldo))">
-      <span class="serv-saldo-pulse" aria-hidden="true"></span>
-      <span class="serv-saldo-icon">$</span>
-      <span class="serv-saldo-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}</span>
+      <span [class.serv-saldo-pulse]="!esVirtual(it)" [class.virtual-saldo-pulse]="esVirtual(it)" aria-hidden="true"></span>
+      <span [class.serv-saldo-icon]="!esVirtual(it)" [class.virtual-saldo-icon]="esVirtual(it)">
+        {{ esVirtual(it) ? 'V' : '$' }}
+      </span>
+      <span [class.serv-saldo-text]="!esVirtual(it)" [class.virtual-saldo-text]="esVirtual(it)">
+        <ng-container *ngIf="esVirtual(it)">Virtual · </ng-container>{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}
+      </span>
     </button>
   </div>
 
-  <div class="card">
+  <div class="card liq-card">
     <h2>Liquidación del Alumno</h2>
+
+    <div class="virtual-liq-banner" *ngIf="tieneVirtualConSaldo()">
+      <span class="virtual-liq-banner-pulse" aria-hidden="true"></span>
+      <strong>Matrícula aula virtual con pago pendiente</strong>
+      <p>El alumno puede cursar en línea. El certificado se habilita al saldar el saldo en caja.</p>
+    </div>
     <div class="loading" *ngIf="loading()">Cargando…</div>
 
     <table class="argo" *ngIf="!loading()">
@@ -144,19 +156,28 @@
       </thead>
       <tbody>
         <ng-container *ngFor="let it of liquidacion().items">
-          <tr>
-            <td>{{ it.descripcion || '—' }}</td>
+          <tr [class.liq-row-virtual]="esVirtual(it)">
+            <td>
+              {{ it.descripcion || '—' }}
+              <span class="badge virtual mini-badge" *ngIf="esVirtual(it)">Aula virtual</span>
+            </td>
             <td>
               <span class="badge info" *ngIf="it.idProg">Programa</span>
               <span class="badge" *ngIf="!it.idProg">Servicio</span>
+              <span class="badge virtual" *ngIf="esVirtual(it)">Virtual</span>
             </td>
             <td class="r">{{ fmt(it.valor) }}</td>
             <td class="r">{{ fmt(it.abonado) }}</td>
             <td class="r" [class.saldo-pendiente-cell]="num(it.saldo) > 0">
-              <span class="serv-saldo-inline" *ngIf="num(it.saldo) > 0">{{ fmt(it.saldo) }}</span>
+              <span class="virtual-saldo-inline" *ngIf="esVirtual(it) && num(it.saldo) > 0">{{ fmt(it.saldo) }}</span>
+              <span class="serv-saldo-inline" *ngIf="!esVirtual(it) && num(it.saldo) > 0">{{ fmt(it.saldo) }}</span>
               <span *ngIf="num(it.saldo) <= 0">{{ fmt(it.saldo) }}</span>
             </td>
-            <td><span class="badge" [ngClass]="estadoClass(it)">{{ it.estado || '—' }}</span></td>
+            <td>
+              <span class="badge" [class.virtual-estado]="esVirtual(it)" [ngClass]="estadoClass(it)">
+                {{ estadoVirtualLabel(it) }}
+              </span>
+            </td>
             <td class="r actions-cell">
               <button
                 type="button"

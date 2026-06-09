@@ -116,3 +116,55 @@ table.nested { font-size: .88rem; }
     font-size: 0.88rem;
   }
 }
+
+.virtual-liq-banner {
+  position: relative;
+  margin: 0 0 12px;
+  padding: 12px 14px 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(129, 140, 248, 0.55);
+  background: rgba(99, 102, 241, 0.12);
+  overflow: hidden;
+
+  strong {
+    display: block;
+    color: #c7d2fe;
+    margin-bottom: 4px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--text-dim);
+  }
+}
+
+.virtual-liq-banner-pulse {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 0% 50%, rgba(129, 140, 248, 0.22), transparent 55%);
+  animation: argo-virtual-saldo-blink 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.liq-row-virtual td {
+  background: rgba(99, 102, 241, 0.07);
+  border-top: 1px solid rgba(129, 140, 248, 0.22);
+  border-bottom: 1px solid rgba(129, 140, 248, 0.22);
+}
+
+.mini-badge {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.badge.virtual {
+  background: rgba(99, 102, 241, 0.22);
+  border: 1px solid rgba(129, 140, 248, 0.55);
+  color: #c7d2fe;
+}
+
+.badge.virtual-estado.err,
+.badge.virtual-estado.warn {
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.35);
+}

@@ -1,0 +1,439 @@
+<!-- Barra institucional -->
+
+<div class="inst-bar anim-bar-in">
+
+  <div class="container inst-bar-inner">
+
+    <span class="inst-name">{{ nombreCea() | uppercase }}</span>
+
+    <span class="inst-tag">Instituto técnico y seguridad vial en Colombia</span>
+
+  </div>
+
+</div>
+
+
+
+<!-- Hero -->
+
+<section class="hero">
+
+  <div class="container hero-inner">
+
+    <div class="hero-copy">
+
+      <p class="eyebrow hero-in hero-in--1">{{ nombreCea() }}</p>
+
+      <h1 #heroH1 class="hero-title hero-title--typing"></h1>
+
+      <p class="lead hero-in hero-in--3">{{ heroSubtitulo() }}</p>
+
+      <div class="hero-actions hero-in hero-in--4">
+
+        <a routerLink="/tienda" class="btn btn-primary">Ver tienda virtual</a>
+
+        <a routerLink="/cursos" class="btn btn-outline">Explorar cursos</a>
+
+        @if (telefono(); as tel) {
+
+          <a [href]="telHref()" class="btn btn-ghost">Llamar {{ tel }}</a>
+
+        }
+
+      </div>
+
+    </div>
+
+    <figure class="hero-visual hero-in hero-in--5">
+
+      <img src="/images/hero-estudiante.png" alt="Estudiante en formación técnica virtual" />
+
+    </figure>
+
+  </div>
+
+</section>
+
+
+
+<!-- Tarjetas de contacto (fuera del hero) -->
+
+<section class="info-cards-band">
+
+  <div class="container">
+
+    <div class="info-cards">
+
+      <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="0">
+
+        <span class="info-icon icon-pop" aria-hidden="true">🎓</span>
+
+        <div>
+
+          <h3 avAnimateTitle [titleDelay]="120">Capacitación</h3>
+
+          <p>Certificamos con calidad</p>
+
+        </div>
+
+      </article>
+
+      <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="90">
+
+        <span class="info-icon icon-pop" aria-hidden="true">📞</span>
+
+        <div>
+
+          <h3 avAnimateTitle [titleDelay]="120">Línea de atención</h3>
+
+          @if (telefono(); as tel) {
+
+            <p><a [href]="telHref()">{{ tel }}</a></p>
+
+          } @else {
+
+            <p class="muted">—</p>
+
+          }
+
+        </div>
+
+      </article>
+
+      <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="180">
+
+        <span class="info-icon icon-pop" aria-hidden="true">📍</span>
+
+        <div>
+
+          <h3 avAnimateTitle [titleDelay]="120">Dirección</h3>
+
+          <p>{{ direccion() }}</p>
+
+        </div>
+
+      </article>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Qué ofrecemos -->
+
+<section class="section section--light">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <h2 avAnimateTitle>¿Qué ofrecemos?</h2>
+
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">Soluciones integrales en seguridad vial para personas, empresas e instituciones.</p>
+
+    </header>
+
+    <div class="ofertas-grid">
+
+      @for (o of ofertas; track o.title; let i = $index) {
+
+        <article class="oferta-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 80">
+
+          <span class="oferta-icon icon-pop" aria-hidden="true">{{ o.icon }}</span>
+
+          <h3 avAnimateTitle [titleDelay]="100">{{ o.title }}</h3>
+
+          <p>{{ o.text }}</p>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Cita + CTA -->
+
+<section class="quote-band">
+
+  <div class="container quote-inner">
+
+    <blockquote class="reveal-left" avRevealOnScroll>
+
+      “Porque la seguridad vial comienza con la educación: entrenamientos hechos para usted.”
+
+    </blockquote>
+
+    @if (telefono(); as tel) {
+
+      <div class="quote-cta reveal-right" avRevealOnScroll [revealDelay]="120">
+
+        <p class="quote-label">O llámanos</p>
+
+        <a class="quote-phone pulse-phone" [href]="telHref()">{{ tel }}</a>
+
+      </div>
+
+    }
+
+  </div>
+
+</section>
+
+
+
+<!-- Servicios empresa -->
+
+<section class="section section--light section--white" id="servicios-empresa">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <h2 avAnimateTitle>Todo lo que necesita tu empresa en seguridad vial</h2>
+
+    </header>
+
+    <div class="servicios-grid">
+
+      @for (s of servicios; track s.title; let i = $index) {
+
+        <article class="servicio-chip chip-lift reveal" avRevealOnScroll [revealDelay]="(i % 6) * 50">
+
+          <span class="icon-pop" aria-hidden="true">{{ s.icon }}</span>
+
+          <span>{{ s.title }}</span>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Somos tu mejor opción -->
+
+<section class="section section--alt">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <h2 avAnimateTitle>¡Somos tu mejor opción!</h2>
+
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
+
+        {{ nombreCea() }} lleva la seguridad vial en el alma.
+
+      </p>
+
+    </header>
+
+    <div class="valores-grid">
+
+      @for (v of valores; track v.title; let i = $index) {
+
+        <article class="valor-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
+
+          <h3 avAnimateTitle [titleDelay]="80">{{ v.title }}</h3>
+
+          <p>{{ v.text }}</p>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Cursos virtuales (dinámico ARGO) -->
+
+<section class="section section--light section--white" id="cursos-virtuales">
+
+  <div class="container">
+
+    <header class="section-head">
+
+      <div>
+
+        <p class="kicker reveal" avRevealOnScroll>Capacitación online</p>
+
+        <h2 avAnimateTitle [titleDelay]="60">Cursos virtuales disponibles</h2>
+
+      </div>
+
+      <a routerLink="/cursos" class="link-more link-more--anim reveal" avRevealOnScroll [revealDelay]="120">Ver catálogo completo →</a>
+
+    </header>
+
+    <div class="cursos-grid">
+
+      @for (c of cursos(); track c.idPrograma; let i = $index) {
+
+        <div class="reveal-scale" avRevealOnScroll [revealDelay]="(i % 4) * 90">
+
+          <av-curso-card [curso]="c" modo="cursos" [logoUrl]="config()?.urlLogoAbsoluta ?? null" />
+
+        </div>
+
+      } @empty {
+
+        <div class="empty-cursos card reveal-scale" avRevealOnScroll>
+
+          <h3 avAnimateTitle>Próximamente nuevos cursos en línea</h3>
+
+          <p class="muted">
+
+            Publique programas con tarifa virtual en ARGO y actívelos en Aula virtual.
+
+          </p>
+
+          <a routerLink="/acerca" class="btn btn-outline">Conocer la institución</a>
+
+        </div>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Carreras técnicas (referencia Finstruvial) -->
+
+<section class="section">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <p class="kicker reveal" avRevealOnScroll>Titulación</p>
+
+      <h2 avAnimateTitle [titleDelay]="50">Carreras técnicas en seguridad vial</h2>
+
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="120">Técnico laboral por competencias — información de referencia.</p>
+
+    </header>
+
+    <div class="carreras-grid">
+
+      @for (c of carreras; track c.cno; let i = $index) {
+
+        <article class="carrera-card card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 110">
+
+          <p class="carrera-kicker">Técnico laboral por competencias</p>
+
+          <h3 avAnimateTitle [titleDelay]="90">{{ c.titulo }}</h3>
+
+          <dl class="carrera-meta">
+
+            <div><dt>Código CNO</dt><dd>{{ c.cno }}</dd></div>
+
+            <div><dt>Duración</dt><dd>{{ c.horas }} horas</dd></div>
+
+            <div><dt>Semestres</dt><dd>{{ c.semestres }}</dd></div>
+
+            <div><dt>Jornadas</dt><dd>{{ c.jornadas }}</dd></div>
+
+            <div><dt>Nivel requerido</dt><dd>9°</dd></div>
+
+            <div><dt>Edad mínima</dt><dd>15 años</dd></div>
+
+          </dl>
+
+          <a routerLink="/acerca" class="btn btn-ghost btn-sm">Más información</a>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Capacitación / Campañas -->
+
+<section class="section section--light section--white">
+
+  <div class="container">
+
+    <div class="pilares-tabs reveal" avRevealOnScroll>
+
+      <button
+
+        type="button"
+
+        [class.active]="tabPilar() === 'capacitacion'"
+
+        (click)="tabPilar.set('capacitacion')"
+
+      >
+
+        Capacitación
+
+      </button>
+
+      <button
+
+        type="button"
+
+        [class.active]="tabPilar() === 'campanas'"
+
+        (click)="tabPilar.set('campanas')"
+
+      >
+
+        Campañas
+
+      </button>
+
+    </div>
+
+    <ul class="pilares-list pilares-list--anim">
+
+      @for (linea of pilares[tabPilar()]; track linea; let i = $index) {
+
+        <li class="pilar-item" [style.animation-delay]="i * 60 + 'ms'">{{ linea }}</li>
+
+      }
+
+    </ul>
+
+    <div class="pilares-cta reveal" avRevealOnScroll [revealDelay]="150">
+
+      <a routerLink="/registro" class="btn btn-primary">Registrarse en el portal</a>
+
+      <a routerLink="/aula" class="btn btn-outline">Acceder al aula virtual</a>
+
+    </div>
+
+  </div>
+
+</section>
+
+

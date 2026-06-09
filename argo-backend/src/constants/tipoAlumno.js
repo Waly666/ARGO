@@ -2,6 +2,7 @@ const {
   TIPOS_REGULAR_JORNADA,
   TIPO_REGULAR_JORNADA_DEFAULT,
   TIPO_JORNADAS_CAPACITACION,
+  TIPO_VIRTUAL,
   normalizarTipoRegularJornada,
 } = require('./tipoRegularJornada');
 
@@ -14,5 +15,6 @@ module.exports = {
   TIPOS_ALUMNO,
   TIPO_ALUMNO_DEFAULT,
   TIPO_JORNADAS_CAPACITACION,
+  TIPO_VIRTUAL,
   normalizarTipoAlumno,
 };

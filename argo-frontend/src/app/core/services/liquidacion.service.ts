@@ -21,6 +21,9 @@ export interface LiquidacionItem {
   fechaCreacion?: string;
   fecha?: string;
   createdAt?: string;
+  /** Matrícula vinculada — tarifa 4 = aula virtual */
+  tarifaMatricula?: number | null;
+  esVirtual?: boolean;
 }
 
 export interface LiquidacionResumen {

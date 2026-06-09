@@ -18,6 +18,7 @@ import {
   EnumBuscarOption,
 } from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
+import { esLiquidacionVirtual } from '../catalogo.helpers';
 
 @Component({
   selector: 'argo-servicios',
@@ -65,6 +66,10 @@ export class ServiciosComponent {
       .sort((a, b) =>
         String(a.descripcion || '').localeCompare(String(b.descripcion || ''), 'es'),
       ),
+  );
+
+  tieneVirtualConSaldo = computed(() =>
+    this.itemsConSaldo().some((it) => this.esVirtual(it)),
   );
 
   etiquetaSaldo = etiquetaSaldoCorta;
@@ -427,6 +432,15 @@ export class ServiciosComponent {
     if (s <= 0) return 'ok';
     if (this.num(it.abonado) > 0) return 'warn';
     return 'err';
+  }
+
+  esVirtual = esLiquidacionVirtual;
+
+  estadoVirtualLabel(it: LiquidacionItem): string {
+    const base = String(it.estado || 'pendiente').toUpperCase();
+    if (!this.esVirtual(it)) return base;
+    if (this.num(it.saldo) > 0) return `${base} · AULA VIRTUAL`;
+    return base;
   }
 
   toggleRecibosItem(it: LiquidacionItem) {

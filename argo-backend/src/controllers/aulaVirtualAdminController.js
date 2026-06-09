@@ -1,0 +1,300 @@
+const fs = require('fs');
+const path = require('path');
+const AdmZip = require('adm-zip');
+const {
+  listarCursosVirtualesAdmin,
+  obtenerCursoVirtual,
+} = require('../services/aulaVirtualCatalogo');
+const {
+  guardarConfigAula,
+  obtenerConfigPortalAdmin,
+} = require('../services/aulaVirtualPortal');
+const {
+  obtenerConfig,
+  guardarConfig,
+  asignarPaquete,
+  agregarMaterialArchivo,
+  eliminarMaterial,
+  asegurarDirPaquete,
+  asegurarProgramaVirtual,
+  actualizarFichaPrograma,
+} = require('../services/aulaVirtualConfig');
+const {
+  listarCategorias,
+  crearCategoria,
+  actualizarCategoria,
+  eliminarCategoria,
+} = require('../services/aulaVirtualCategorias');
+const { publicUrl, publicUrlPath, resolvePath } = require('../middleware/upload');
+const { listarUsuariosPortalAdmin } = require('../services/aulaVirtualUsuarios');
+const { inyectarBridgeEnPaquete } = require('../services/aulaVirtualBridge');
+const { detectarIndexHtml, paqueteListo } = require('../services/aulaVirtualPaquete');
+const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
+const { matricularVirtual } = require('../services/aulaVirtualMatricula');
+
+exports.listarCursosAdmin = async (_req, res, next) => {
+  try {
+    res.json(await listarCursosVirtualesAdmin());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerCursoAdmin = async (req, res, next) => {
+  try {
+    const curso = await obtenerCursoVirtual(req.params.id, { requierePublicado: false });
+    if (!curso) return res.status(404).json({ message: 'Programa virtual no encontrado' });
+    const config = await obtenerConfig(req.params.id);
+    res.json({ curso, config });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.guardarConfigCurso = async (req, res, next) => {
+  try {
+    const config = await guardarConfig(req.params.id, req.body || {}, req.user);
+    res.json({ config, message: 'Configuración del curso virtual guardada' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirPaqueteZip = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Suba un archivo ZIP con el curso' });
+    const { rel, abs } = asegurarDirPaquete(req.params.id);
+
+    const zip = new AdmZip(req.file.path);
+    zip.extractAllTo(abs, true);
+    fs.unlinkSync(req.file.path);
+
+    let config = await asignarPaquete(req.params.id, rel, req.user);
+    const indexRel = detectarIndexHtml(abs, config.indexHtml || 'index.html');
+    if (!paqueteListo(abs, indexRel)) {
+      return res.status(400).json({
+        message:
+          'No se encontró index.html en el ZIP. Debe estar en la raíz o dentro de una sola carpeta.',
+      });
+    }
+    if (indexRel !== (config.indexHtml || 'index.html')) {
+      await CapacitacionVirtualConfig.updateOne(
+        { idPrograma: String(req.params.id) },
+        { $set: { indexHtml: indexRel, userChangeRecord: req.user?.username || 'sistema' } },
+      );
+      config = await obtenerConfig(req.params.id);
+    }
+    const bridge = inyectarBridgeEnPaquete(abs, indexRel);
+    res.json({
+      config,
+      message:
+        bridge.inyectados > 0
+          ? `Paquete extraído e integrado con ARGO en ${bridge.inyectados} página(s) HTML`
+          : 'Paquete del curso extraído correctamente (ARGO ya estaba integrado)',
+      playerPath: publicUrlPath(rel, indexRel),
+      bridgeInyectado: bridge.inyectados,
+      bridgePaginas: bridge.total,
+    });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirMaterial = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Seleccione un archivo' });
+    const titulo = String(req.body?.titulo || req.file.originalname || 'Material').trim();
+    const tipo = ['pdf', 'link', 'video', 'otro'].includes(req.body?.tipo) ? req.body.tipo : 'pdf';
+    const url = publicUrl('aula-virtual-materiales', req.file.filename);
+    const config = await agregarMaterialArchivo(
+      req.params.id,
+      { titulo, tipo, url, orden: Number(req.body?.orden || 0) },
+      req.user,
+    );
+    res.json({ config, message: 'Material agregado' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.eliminarMaterial = async (req, res, next) => {
+  try {
+    const config = await eliminarMaterial(req.params.id, req.params.materialId);
+    res.json({ config, message: 'Material eliminado' });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerConfigPortal = async (_req, res, next) => {
+  try {
+    res.json(await obtenerConfigPortalAdmin());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.guardarConfigPortal = async (req, res, next) => {
+  try {
+    await guardarConfigAula(req.body || {}, req.user);
+    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Configuración del portal guardada' });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.subirLogoPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const urlLogo = publicUrl('aula-virtual-logo', req.file.filename);
+    await guardarConfigAula({ urlLogo }, req.user);
+    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Logo del portal actualizado' });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarLogoPortal = async (_req, res, next) => {
+  try {
+    await guardarConfigAula({ urlLogo: '' }, _req.user);
+    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Logo del portal eliminado; se usará el de Recibos si existe' });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.listarCategoriasAdmin = async (_req, res, next) => {
+  try {
+    res.json(await listarCategorias());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.crearCategoria = async (req, res, next) => {
+  try {
+    const row = await crearCategoria(req.body || {}, req.user);
+    res.status(201).json({ categoria: row, message: 'Categoría creada' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.actualizarCategoria = async (req, res, next) => {
+  try {
+    const row = await actualizarCategoria(req.params.id, req.body || {}, req.user);
+    res.json({ categoria: row, message: 'Categoría actualizada' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.eliminarCategoria = async (req, res, next) => {
+  try {
+    await eliminarCategoria(req.params.id);
+    res.json({ ok: true, message: 'Categoría eliminada' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirPortadaCurso = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Seleccione una imagen de portada' });
+    await asegurarProgramaVirtual(req.params.id);
+    const urlPortadaVirtual = publicUrl('programas-virtual', req.file.filename);
+    await actualizarFichaPrograma(
+      req.params.id,
+      { urlPortadaVirtual },
+      req.user,
+    );
+    res.json({ urlPortadaVirtual, message: 'Portada del curso actualizada' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.quitarPortadaCurso = async (req, res, next) => {
+  try {
+    await asegurarProgramaVirtual(req.params.id);
+    await actualizarFichaPrograma(req.params.id, { urlPortadaVirtual: '' }, req.user);
+    res.json({ message: 'Portada eliminada' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.reintegrarBridge = async (req, res, next) => {
+  try {
+    const config = await obtenerConfig(req.params.id);
+    if (!config?.rutaPaquete) {
+      return res.status(400).json({ message: 'El curso no tiene paquete cargado' });
+    }
+    const abs = resolvePath(config.rutaPaquete);
+    if (!abs || !fs.existsSync(abs)) {
+      return res.status(404).json({ message: 'Carpeta del paquete no encontrada en el servidor' });
+    }
+    const indexRel = detectarIndexHtml(abs, config.indexHtml || 'index.html');
+    if (!paqueteListo(abs, indexRel)) {
+      return res.status(400).json({ message: 'No se encontró index.html en el paquete del curso' });
+    }
+    if (indexRel !== (config.indexHtml || 'index.html')) {
+      await CapacitacionVirtualConfig.updateOne(
+        { idPrograma: String(req.params.id) },
+        { $set: { indexHtml: indexRel, userChangeRecord: req.user?.username || 'sistema' } },
+      );
+      config = await obtenerConfig(req.params.id);
+    }
+    const bridge = inyectarBridgeEnPaquete(abs, indexRel);
+    res.json({
+      message:
+        bridge.inyectados > 0
+          ? `ARGO integrado en ${bridge.inyectados} página(s). Entrada: ${indexRel}`
+          : `ARGO ya integrado. Entrada del curso: ${indexRel}`,
+      indexHtml: indexRel,
+      bridgeInyectado: bridge.inyectados,
+      bridgePaginas: bridge.total,
+    });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.matricularAlumnoCurso = async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const numDoc = body.numDoc ?? req.params.numDoc;
+    const out = await matricularVirtual({
+      numDoc,
+      idPrograma: req.params.id,
+      observaciones: body.observaciones,
+      crearUsuarioPortal: body.crearUsuarioPortal === true || body.crearUsuarioPortal === 'true',
+      email: body.email,
+    });
+    res.status(out.yaMatriculado ? 200 : 201).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.listarUsuariosPortal = async (req, res, next) => {
+  try {
+    const q = String(req.query?.q || '').trim();
+    const limit = Number(req.query?.limit) || 200;
+    res.json(await listarUsuariosPortalAdmin({ q, limit }));
+  } catch (e) {
+    next(e);
+  }
+};

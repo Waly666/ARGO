@@ -1,6 +1,7 @@
 const { getLanIpv4 } = require('../utils/networkHosts');
 
-const DEV_PORTS = new Set(['4200', '4201', '']);
+/** 3000: iframe del curso (/uploads) reporta progreso al API en el mismo backend. */
+const DEV_PORTS = new Set(['3000', '4200', '4201', '4202', '']);
 
 function isPrivateIpv4(host) {
   if (host === 'localhost' || host === '127.0.0.1') return true;
@@ -21,12 +22,18 @@ function buildAllowedOrigins() {
 
   const allowed = new Set(fromEnv);
 
+  allowed.add('http://localhost:3000');
+  allowed.add('http://127.0.0.1:3000');
   allowed.add('http://localhost:4200');
   allowed.add('http://127.0.0.1:4200');
+  allowed.add('http://localhost:4202');
+  allowed.add('http://127.0.0.1:4202');
 
   for (const { address } of getLanIpv4()) {
+    allowed.add(`http://${address}:3000`);
     allowed.add(`http://${address}:4200`);
     allowed.add(`http://${address}:4201`);
+    allowed.add(`http://${address}:4202`);
   }
 
   return allowed;
@@ -74,7 +81,7 @@ function logCorsOnStartup() {
   for (const o of allowed) console.log(`  - ${o}`);
   if (allowAll) console.log('  + CORS_ALLOW_ALL activo (cualquier origen)');
   else if (process.env.NODE_ENV !== 'production') {
-    console.log('  + En desarrollo: cualquier IP privada en puerto 4200/4201');
+    console.log('  + En desarrollo: cualquier IP privada en puerto 3000/4200/4201/4202');
   }
 }
 

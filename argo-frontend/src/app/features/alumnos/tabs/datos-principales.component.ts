@@ -145,6 +145,7 @@ export class DatosPrincipalesComponent implements OnInit {
 
 
   readonly tiposAlumno = TIPOS_ALUMNO_DEF;
+  readonly normalizarTipoAlumno = normalizarTipoAlumno;
 
   tiposDoc = signal<Record<string, unknown>[]>(TIPOS_DOC_DEF);
 

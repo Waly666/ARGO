@@ -31,6 +31,12 @@
   p { color: var(--text-dim); margin: 4px 0 0; font-size: 0.88rem; }
 }
 
+.meta .tipo-alumno-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+}
+
 .head-profile {
   display: flex;
   align-items: center;

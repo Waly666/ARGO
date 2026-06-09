@@ -1,5 +1,6 @@
 const { models: cat } = require('../models/catalogos');
 const Liquidacion = require('../models/Liquidacion');
+const { TARIFA_VIRTUAL } = require('../constants/tarifa');
 const { actualizarSaldosLiquidacionesPorServicio } = require('./liquidacionMatricula');
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('./tipoCapacitacionMatch');
 
@@ -8,6 +9,18 @@ function num(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'object' && v.$numberDecimal != null) return Number(v.$numberDecimal) || 0;
   return Number(v) || 0;
+}
+
+/** Valor a liquidar según tarifa (1–3 presencial; 4 = tarifaVirtual del servicio). */
+function valorTarifaServicio(serv, tarifa, prog) {
+  const t = Number(tarifa);
+  if (t === TARIFA_VIRTUAL) {
+    return num(serv?.tarifaVirtual);
+  }
+  if (serv && serv[`tarifa${t}`] != null && serv[`tarifa${t}`] !== '') {
+    return num(serv[`tarifa${t}`]);
+  }
+  return num(prog?.valorMatricula);
 }
 
 async function maxNumericId(collection, field) {
@@ -242,6 +255,7 @@ function docServicioDesdePrograma(prog, servicioBody, usuario, extras = {}) {
   const valor = num(servicioBody?.tarifa1 ?? servicioBody?.valorMatricula ?? prog.valorMatricula);
   const t2 = num(servicioBody?.tarifa2);
   const t3 = num(servicioBody?.tarifa3);
+  const tVirtual = num(servicioBody?.tarifaVirtual);
   const now = new Date();
   const user = usuario?.username || 'sistema';
   const idProg = idProgDePrograma(prog);
@@ -268,6 +282,11 @@ function docServicioDesdePrograma(prog, servicioBody, usuario, extras = {}) {
   else if (!programaUsaSemestres(prog) && valor > 0) doc.tarifa2 = valor * 2;
   if (t3 > 0) doc.tarifa3 = t3;
   else if (!programaUsaSemestres(prog) && valor > 0) doc.tarifa3 = valor * 3;
+  if (servicioBody?.tarifaVirtual != null && servicioBody?.tarifaVirtual !== '') {
+    doc.tarifaVirtual = tVirtual;
+  } else if (tVirtual > 0) {
+    doc.tarifaVirtual = tVirtual;
+  }
   return { ...doc, ...extras };
 }
 
@@ -480,6 +499,38 @@ async function serviciosTienenLiquidaciones(prog) {
   return false;
 }
 
+/** Curso virtual en portal: tarifa virtual del servicio de matrícula > 0. */
+function esCapacitacionVirtualServicio(serv) {
+  return num(serv?.tarifaVirtual) > 0;
+}
+
+async function adjuntarVirtualidadProgramas(rows) {
+  if (!rows?.length) return rows || [];
+  const ids = [...new Set(rows.map((r) => String(r.idPrograma)))];
+  const servs = await cat.servicios
+    .find({
+      idProg: { $in: ids },
+      excluirMatricula: { $ne: true },
+      rolServicio: { $ne: 'hora_practica' },
+    })
+    .lean();
+  const tv = new Map();
+  for (const s of servs) {
+    const k = String(s.idProg);
+    const v = num(s.tarifaVirtual);
+    const prev = tv.get(k) ?? 0;
+    if (v > prev) tv.set(k, v);
+  }
+  return rows.map((r) => {
+    const tarifaVirtual = tv.get(String(r.idPrograma)) ?? 0;
+    return {
+      ...r,
+      tarifaVirtual,
+      esCapacitacionVirtual: tarifaVirtual > 0,
+    };
+  });
+}
+
 module.exports = {
   num,
   maxNumericId,
@@ -499,6 +550,7 @@ module.exports = {
   esServicioMatriculaPrograma,
   servicioVinculadoPrograma,
   tarifaFijaServicio,
+  valorTarifaServicio,
   servicioPermiteCantidad,
   descripcionConCantidad,
   sufijoCantidadLiquidacion,
@@ -511,4 +563,6 @@ module.exports = {
   sincronizarServicioPrograma,
   sincronizarServicioHoraPractica,
   serviciosTienenLiquidaciones,
+  esCapacitacionVirtualServicio,
+  adjuntarVirtualidadProgramas,
 };

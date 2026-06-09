@@ -68,6 +68,10 @@
               <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
             </label>
           </div>
+          <p class="rec-hint rec-hint--inline">
+            Dirección y ciudad de este formulario se usan en todos los comprobantes. Si deja un campo vacío,
+            se tomará el dato de la sede correspondiente (Configuración → Sedes).
+          </p>
         </div>
       </section>
 

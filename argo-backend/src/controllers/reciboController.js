@@ -195,3 +195,5 @@ exports.html = async (req, res, next) => {
     next(e);
   }
 };
+
+exports.armarRecibo = armarRecibo;

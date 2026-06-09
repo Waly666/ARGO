@@ -11,11 +11,14 @@ const {
   programaUsaSemestres,
   sincronizarServicioPrograma,
   serviciosTienenLiquidaciones,
+  esCapacitacionVirtualServicio,
+  adjuntarVirtualidadProgramas,
 } = require('../services/programaServicio');
 const { normalizarTipoCertificado, esCapJornadaCapacitacion } = require('../services/clasificacionCertificado');
 const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
 const { filtrarProgramas } = require('../services/sedeOferta');
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('../services/tipoCapacitacionMatch');
+const { publicUrl } = require('../middleware/upload');
 
 function idTipCapJornadaDesdeIndice(indice) {
   for (const r of indice.rows) {
@@ -56,6 +59,7 @@ function bodyServicio(body) {
     tarifa1: body.tarifa1,
     tarifa2: body.tarifa2,
     tarifa3: body.tarifa3,
+    tarifaVirtual: body.tarifaVirtual,
     valorMatricula: body.valorMatricula,
     tarifaHoraPractica: body.tarifaHoraPractica,
   };
@@ -75,6 +79,7 @@ exports.listar = async (req, res, next) => {
     if (req.idSede && req.query.catalogo !== '1') {
       rows = await filtrarProgramas(rows, req.idSede);
     }
+    rows = await adjuntarVirtualidadProgramas(rows);
     res.json(rows);
   } catch (e) {
     next(e);
@@ -88,7 +93,16 @@ exports.obtener = async (req, res, next) => {
     const servicios = await listarServiciosDePrograma(prog);
     const matricula = await listarServiciosMatricula(prog);
     const servicio = matricula[0] || null;
-    res.json({ programa: prog, servicio, servicios });
+    const tarifaVirtual = servicio ? num(servicio.tarifaVirtual) : 0;
+    res.json({
+      programa: {
+        ...prog,
+        tarifaVirtual,
+        esCapacitacionVirtual: tarifaVirtual > 0,
+      },
+      servicio,
+      servicios,
+    });
   } catch (e) {
     next(e);
   }
@@ -148,6 +162,8 @@ exports.crear = async (req, res, next) => {
       requistos: (body.requistos || '').trim() || null,
       diasVencimiento: body.diasVencimiento != null ? Number(body.diasVencimiento) : 365,
       tipoCertificado: normalizarTipoCertificado(body.tipoCertificado),
+      descripcionVirtual: (body.descripcionVirtual || '').trim() || null,
+      urlPortadaVirtual: (body.urlPortadaVirtual || '').trim() || null,
       fechaAudi: now,
       userAddReg: user,
       fechaMod: now,
@@ -273,6 +289,14 @@ exports.actualizar = async (req, res, next) => {
         body.tipoCertificado !== undefined
           ? normalizarTipoCertificado(body.tipoCertificado)
           : prog.tipoCertificado ?? null,
+      descripcionVirtual:
+        body.descripcionVirtual !== undefined
+          ? String(body.descripcionVirtual || '').trim() || null
+          : prog.descripcionVirtual ?? null,
+      urlPortadaVirtual:
+        body.urlPortadaVirtual !== undefined
+          ? String(body.urlPortadaVirtual || '').trim() || null
+          : prog.urlPortadaVirtual ?? null,
       fechaMod: new Date(),
       userChangeRecord: user,
     };
@@ -308,6 +332,38 @@ exports.actualizar = async (req, res, next) => {
       servicios,
       message,
     });
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Imagen de portada para ficha del curso en portal virtual. */
+exports.subirPortadaVirtual = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Seleccione una imagen de portada' });
+    const prog = await buscarPrograma(req.params.id);
+    if (!prog) return res.status(404).json({ message: 'Programa no encontrado' });
+
+    const serv = await buscarServicioDePrograma(prog);
+    if (!esCapacitacionVirtualServicio(serv)) {
+      return res.status(400).json({
+        message: 'Asigne tarifa virtual mayor a 0 para habilitar la portada del curso',
+      });
+    }
+
+    const urlPortadaVirtual = publicUrl('programas-virtual', req.file.filename);
+    await cat.programas.updateOne(
+      { idPrograma: prog.idPrograma },
+      {
+        $set: {
+          urlPortadaVirtual,
+          fechaMod: new Date(),
+          userChangeRecord: req.user?.username || 'sistema',
+        },
+      },
+    );
+
+    res.json({ urlPortadaVirtual, message: 'Portada del curso actualizada' });
   } catch (e) {
     next(e);
   }

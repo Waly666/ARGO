@@ -8,6 +8,7 @@ const {
   listarServiciosMatricula,
   programaUsaSemestres,
   num,
+  valorTarifaServicio,
 } = require('../services/programaServicio');
 const { estadoLiq } = require('../services/liquidacionMatricula');
 const { esProgramaJornadasCap, TIPO_JORNADAS_CAPACITACION, resolverIdSedeMatriculaJornada } = require('../services/jornadaCapacitacion');
@@ -16,14 +17,6 @@ const { normalizarIdSede } = require('../services/sedeContext');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
-}
-
-function valorTarifaServicio(serv, tarifa, prog) {
-  const t = Number(tarifa);
-  if (serv && serv[`tarifa${t}`] != null && serv[`tarifa${t}`] !== '') {
-    return num(serv[`tarifa${t}`]);
-  }
-  return num(prog.valorMatricula);
 }
 
 async function crearMatriculaDesdeBody(body, idSedeCtx) {

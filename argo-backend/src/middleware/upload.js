@@ -14,7 +14,12 @@ function formatTsInicio(d) {
   return `${x.getFullYear()}${pad(x.getMonth() + 1)}${pad(x.getDate())}_${pad(x.getHours())}${pad(x.getMinutes())}${pad(x.getSeconds())}`;
 }
 
-function build(subdir) {
+const ZIP_MAX_MB = Math.min(
+  500,
+  Math.max(10, Number(process.env.AULA_VIRTUAL_ZIP_MAX_MB) || 200),
+);
+
+function build(subdir, maxMb = 10) {
   const dest = path.join(BASE, subdir);
   ensureDir(dest);
   const storage = multer.diskStorage({
@@ -25,7 +30,34 @@ function build(subdir) {
       cb(null, name);
     },
   });
-  return multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+  return multer({ storage, limits: { fileSize: maxMb * 1024 * 1024 } });
+}
+
+/** Paquetes ZIP de cursos virtuales (HTML, imágenes, audio). */
+function buildZip(subdir) {
+  const dest = path.join(BASE, subdir);
+  ensureDir(dest);
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dest),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^\w.\-]+/g, '_');
+      const name = `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}`;
+      cb(null, name);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: ZIP_MAX_MB * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const okZip =
+        ext === '.zip' ||
+        file.mimetype === 'application/zip' ||
+        file.mimetype === 'application/x-zip-compressed';
+      if (!okZip) return cb(new Error('Solo se permiten archivos ZIP'));
+      cb(null, true);
+    },
+  });
 }
 
 /** Evidencia fotográfica: uploads/evidenciascap/{codContrato}/fotos/{idClase}_{YYYYMMDDHHmmss}.ext */
@@ -59,6 +91,28 @@ function buildEvidenciaCap() {
   });
 }
 
+function buildImagen(subdir, maxMb = 5) {
+  const dest = path.join(BASE, subdir);
+  ensureDir(dest);
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dest),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^\w.\-]+/g, '_');
+      cb(null, `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}`);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: maxMb * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (!file.mimetype || !/^image\//i.test(file.mimetype)) {
+        return cb(new Error('Solo se permiten imágenes (PNG, JPG, WEBP, etc.)'));
+      }
+      cb(null, true);
+    },
+  });
+}
+
 const memory = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 12 * 1024 * 1024 },
@@ -71,6 +125,11 @@ module.exports = {
   certificados: build('certificados'),
   egresos: build('egresos'),
   empleados: build('empleados'),
+  programasVirtual: build('programas-virtual'),
+  aulaVirtualMateriales: build('aula-virtual-materiales'),
+  aulaVirtualZip: buildZip('aula-virtual-zip'),
+  zipMaxMb: ZIP_MAX_MB,
+  aulaVirtualLogo: buildImagen('aula-virtual-logo', 3),
   evidenciasCap: buildEvidenciaCap(),
   memory,
   baseDir: BASE,

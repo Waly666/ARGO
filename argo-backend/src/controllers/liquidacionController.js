@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Liquidacion = require('../models/Liquidacion');
+const Matricula = require('../models/Matricula');
 const DatosAlumno = require('../models/DatosAlumno');
+const { esTarifaVirtual } = require('../constants/tarifa');
 const { models: cat } = require('../models/catalogos');
 const { parseNumDoc, numDocFromParams, numDocQuery } = require('../utils/numDoc');
 const { buscarNumDocsAlumno } = require('../utils/busquedaAlumnoNombre');
@@ -26,7 +28,7 @@ async function buscarServicioCatalogo(idServ) {
   return cat.servicios.findOne({ $or: or }).lean();
 }
 
-function plano(doc) {
+function plano(doc, extra = {}) {
   const o = doc.toObject ? doc.toObject() : doc;
   const valor = num(o.valor);
   const abonado = num(o.abonado);
@@ -41,7 +43,30 @@ function plano(doc) {
     valorUnitario: o.valorUnitario != null ? num(o.valorUnitario) : undefined,
     fecha,
     fechaCreacion: fecha,
+    ...extra,
   };
+}
+
+async function enriquecerItemsLiquidacion(docs) {
+  const idMats = [
+    ...new Set(
+      docs
+        .map((d) => d.idMat)
+        .filter(Boolean)
+        .map((id) => String(id)),
+    ),
+  ];
+  const tarifaPorMat = new Map();
+  if (idMats.length) {
+    const mats = await Matricula.find({ _id: { $in: idMats } }).select('tarifa').lean();
+    for (const m of mats) tarifaPorMat.set(String(m._id), Number(m.tarifa));
+  }
+  return docs.map((doc) => {
+    const raw = doc.toObject ? doc.toObject() : doc;
+    const tarifaMatricula = raw.idMat ? tarifaPorMat.get(String(raw.idMat)) ?? null : null;
+    const esVirtual = esTarifaVirtual(tarifaMatricula);
+    return plano(doc, { tarifaMatricula, esVirtual });
+  });
 }
 
 function nombreAlumno(a) {
@@ -174,7 +199,7 @@ exports.listarPorAlumno = async (req, res, next) => {
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
     const filter = numDocQuery(numDoc);
     const docs = await Liquidacion.find(filter).sort({ createdAt: -1 });
-    const items = docs.map(plano);
+    const items = await enriquecerItemsLiquidacion(docs);
     const totales = items.reduce(
       (acc, it) => {
         acc.valor += it.valor;

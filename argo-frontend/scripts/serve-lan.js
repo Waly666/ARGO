@@ -18,6 +18,8 @@ function lanIp() {
 
 const ip = lanIp();
 const port = process.env.PORT || '4200';
+/** 0.0.0.0 permite localhost y acceso LAN; --host con IP fija rompe localhost en Windows. */
+const bindHost = process.env.ARGO_SERVE_HOST || '0.0.0.0';
 
 console.log('');
 console.log('[ARGO Frontend]');
@@ -29,7 +31,7 @@ console.log('');
 const ng = process.platform === 'win32' ? 'ng.cmd' : 'ng';
 const child = spawn(
   ng,
-  ['serve', '--host', ip, '--port', port, '--disable-host-check'],
+  ['serve', '--host', bindHost, '--port', port, '--disable-host-check'],
   { stdio: 'inherit', shell: true, cwd: require('path').join(__dirname, '..') },
 );
 

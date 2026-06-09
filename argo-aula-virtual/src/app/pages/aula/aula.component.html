@@ -1,0 +1,334 @@
+@if (!auth.isLoggedIn()) {
+  <section class="aula-gate">
+    <div class="aula-gate-card">
+      <h1>Mi aula virtual</h1>
+      <p>Debes iniciar sesión para acceder a tus cursos.</p>
+      <div class="aula-gate-actions">
+        <a routerLink="/login" class="dash-btn dash-btn-primary">Acceder</a>
+        <a routerLink="/registro" class="dash-btn dash-btn-outline">Registrarse</a>
+      </div>
+    </div>
+  </section>
+} @else {
+  <div class="aula-dashboard" [class.sidebar-collapsed]="sidebarCollapsed()">
+    <aside class="dash-sidebar">
+      <div class="dash-sidebar-brand">
+        @if (portalConfig()?.urlLogoAbsoluta; as logo) {
+          <img [src]="logo" [alt]="portalConfig()?.nombreCea || 'CEA'" class="dash-logo" />
+        } @else {
+          <span class="dash-logo-fallback">{{ (portalConfig()?.nombreCea || 'A')[0] }}</span>
+        }
+        @if (!sidebarCollapsed()) {
+          <span class="dash-brand-name">{{ portalConfig()?.nombreCea || 'Aula virtual' }}</span>
+        }
+      </div>
+
+      @if (!sidebarCollapsed()) {
+        <p class="dash-user-email">{{ auth.user()?.email }}</p>
+      }
+
+      <nav class="dash-nav">
+        <button type="button" class="dash-nav-item" [class.active]="panel() === 'tablero'" (click)="irPanel('tablero')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Tablero</span> }
+        </button>
+        <button type="button" class="dash-nav-item" [class.active]="panel() === 'cursos'" (click)="irPanel('cursos')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22.5V6.5zM6.5 6H18v12H6.5a.5.5 0 0 0-.5.5v1A1.5 1.5 0 0 1 6.5 21H20V3H6.5A2.5 2.5 0 0 0 4 5.5V6h2.5z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Tus cursos</span> }
+        </button>
+        <button type="button" class="dash-nav-item" [class.active]="panel() === 'certificados'" (click)="irPanel('certificados')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8 7.2 17l.9-5.4L4.2 7.7l5.4-.8L12 2z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Certificados</span> }
+        </button>
+        <button type="button" class="dash-nav-item" [class.active]="panel() === 'perfil'" (click)="irPanel('perfil')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Perfil</span> }
+        </button>
+        <button type="button" class="dash-nav-item dash-nav-logout" (click)="logout()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l1.41-1.41L8.83 13H20v-2H8.83l2.58-2.59L10 7l-5 5 5 5zm9 4H4V3h15v2H6v14h13v2z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Cerrar sesión</span> }
+        </button>
+      </nav>
+
+      <a routerLink="/" class="dash-back">← Volver al sitio</a>
+
+      <button type="button" class="dash-sidebar-toggle" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir menú' : 'Contraer menú'">
+        {{ sidebarCollapsed() ? '›' : '‹' }}
+      </button>
+    </aside>
+
+    <main class="dash-main">
+      @if (safePlayerUrl(); as url) {
+        <section class="dash-player">
+          <header class="dash-player-head">
+            <div>
+              <h2>{{ playerTitulo() }}</h2>
+              @if (cursoActivo()?.progreso; as p) {
+                <p class="dash-player-meta">
+                  Avance {{ p.pctCompletitud | number: '1.0-0' }}%
+                  @if (p.promedioClases != null) { · Promedio {{ p.promedioClases | number: '1.0-0' }}% }
+                </p>
+              }
+            </div>
+            <button type="button" class="dash-btn dash-btn-outline" (click)="cerrarPlayer()">Cerrar curso</button>
+          </header>
+          @if (avisoPlayer()) {
+            <p class="dash-player-aviso">{{ avisoPlayer() }}</p>
+          }
+          <iframe #playerFrame [src]="url" title="Curso virtual" class="dash-player-frame" (load)="onIframeLoad()"></iframe>
+        </section>
+      } @else {
+        @switch (panel()) {
+          @case ('tablero') {
+            <header class="dash-page-head">
+              <h1>Tablero</h1>
+              <p class="dash-welcome">Bienvenido de nuevo, <strong>{{ saludo() }}</strong></p>
+            </header>
+
+            @if (reciboError()) {
+              <p class="dash-error">{{ reciboError() }}</p>
+            }
+
+            <div class="dash-stats">
+              <article class="dash-stat-card">
+                <div class="dash-stat-icon dash-stat-icon-blue">
+                  <svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22.5V6.5z"/></svg>
+                </div>
+                <div>
+                  <strong>{{ totalInscritos() }}</strong>
+                  <span>Cursos inscritos</span>
+                </div>
+              </article>
+              <article class="dash-stat-card">
+                <div class="dash-stat-icon dash-stat-icon-indigo">
+                  <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg>
+                </div>
+                <div>
+                  <strong>{{ totalEnProgreso() }}</strong>
+                  <span>Cursos en progreso</span>
+                </div>
+              </article>
+              <article class="dash-stat-card">
+                <div class="dash-stat-icon dash-stat-icon-green">
+                  <svg viewBox="0 0 24 24"><path d="M12 2L4 7v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V7l-8-5z"/></svg>
+                </div>
+                <div>
+                  <strong>{{ totalCompletados() }}</strong>
+                  <span>Cursos completados</span>
+                </div>
+              </article>
+              <button type="button" class="dash-stat-card dash-stat-card-click" (click)="irPanel('certificados')">
+                <div class="dash-stat-icon dash-stat-icon-amber">
+                  <svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8 7.2 17l.9-5.4L4.2 7.7l5.4-.8L12 2z"/></svg>
+                </div>
+                <div>
+                  <strong>{{ totalCertificados() }}</strong>
+                  <span>Certificados</span>
+                </div>
+              </button>
+            </div>
+
+            <section class="dash-section">
+              <header class="dash-section-head">
+                <h2>Continuar estudiando</h2>
+                @if (cursos().length > cursosContinuar().length) {
+                  <button type="button" class="dash-link" (click)="irPanel('cursos')">Ver todo ›</button>
+                }
+              </header>
+
+              @if (cursosContinuar().length) {
+                <div class="dash-course-list">
+                  @for (c of cursosContinuar(); track c.idPrograma) {
+                    <article class="dash-course-row">
+                      <div class="dash-course-thumb">
+                        @if (portada(c); as img) {
+                          <img [src]="img" [alt]="c.nombreProg" />
+                        } @else {
+                          <span class="dash-course-thumb-fallback">{{ c.nombreProg.charAt(0) }}</span>
+                        }
+                      </div>
+                      <div class="dash-course-info">
+                        <div class="dash-tags">
+                          @for (tag of etiquetas(c); track tag) {
+                            <span class="dash-tag">{{ tag }}</span>
+                          }
+                        </div>
+                        <h3>{{ c.nombreProg }}</h3>
+                        <p class="dash-course-date">Iniciado el {{ fechaInicio(c) }}</p>
+                        @if (c.progreso?.certificadoEmitido) {
+                          <span class="dash-badge-ok">Certificado emitido</span>
+                        } @else if (c.pago && !c.pago.pagado) {
+                          <span class="dash-badge-warn">Pago pendiente</span>
+                        }
+                        @if (reciboDeCurso(c); as recibo) {
+                          <button type="button" class="dash-link dash-link-inline" (click)="imprimirRecibo(recibo.idIngreso)">
+                            Recibo {{ recibo.numRecibo || 'de pago' }}
+                          </button>
+                        }
+                      </div>
+                      <div class="dash-course-progress">
+                        <span class="dash-pct">{{ pct(c) | number: '1.0-0' }}% completado</span>
+                        <div class="dash-progress-track">
+                          <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
+                        </div>
+                        @if (c.tienePaquete) {
+                          <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
+                            {{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}
+                          </button>
+                        }
+                      </div>
+                    </article>
+                  }
+                </div>
+              } @else {
+                <div class="dash-empty">
+                  <p>No tiene cursos activos. Explore el catálogo para matricularse.</p>
+                  <a routerLink="/cursos" class="dash-btn dash-btn-primary">Ver cursos</a>
+                </div>
+              }
+            </section>
+          }
+
+          @case ('cursos') {
+            <header class="dash-page-head">
+              <h1>Tus cursos</h1>
+              <p class="dash-welcome">Todos sus cursos matriculados</p>
+            </header>
+
+            <div class="dash-course-list dash-course-list-full">
+              @for (c of cursos(); track c.idPrograma) {
+                <article class="dash-course-row">
+                  <div class="dash-course-thumb">
+                    @if (portada(c); as img) {
+                      <img [src]="img" [alt]="c.nombreProg" />
+                    } @else {
+                      <span class="dash-course-thumb-fallback">{{ c.nombreProg.charAt(0) }}</span>
+                    }
+                  </div>
+                  <div class="dash-course-info">
+                    <div class="dash-tags">
+                      @for (tag of etiquetas(c); track tag) {
+                        <span class="dash-tag">{{ tag }}</span>
+                      }
+                    </div>
+                    <h3>{{ c.nombreProg }}</h3>
+                    <p class="dash-course-date">Iniciado el {{ fechaInicio(c) }}</p>
+                    <p class="dash-course-detail">
+                      Avance <strong>{{ pct(c) | number: '1.0-0' }}%</strong>
+                      @if (c.progreso?.promedioClases != null) {
+                        · Evaluaciones {{ c.progreso?.promedioClases | number: '1.0-0' }}%
+                      }
+                      @if (c.progreso?.clasesAprobadas != null && c.progreso?.totalClases) {
+                        · {{ c.progreso?.clasesAprobadas }}/{{ c.progreso?.totalClases }} lecciones
+                      }
+                    </p>
+                    @if (c.progreso?.certificadoEmitido && certificadoDeCurso(c.idPrograma); as cert) {
+                      <div class="dash-inline-actions">
+                        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="verCertificado(cert)">Ver certificado</button>
+                        @if (idReciboCurso(c); as idRecibo) {
+                          <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirRecibo(idRecibo)">Imprimir recibo</button>
+                        }
+                      </div>
+                    }
+                    @if (!c.progreso?.certificadoEmitido && reciboDeCurso(c); as reciboCurso) {
+                      <div class="dash-inline-actions">
+                        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirRecibo(reciboCurso.idIngreso)">
+                          Imprimir recibo@if (reciboCurso.numRecibo) { ({{ reciboCurso.numRecibo }})}
+                        </button>
+                      </div>
+                    }
+                  </div>
+                  <div class="dash-course-progress">
+                    <span class="dash-pct">{{ pct(c) | number: '1.0-0' }}%</span>
+                    <div class="dash-progress-track">
+                      <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
+                    </div>
+                    @if (c.tienePaquete) {
+                      <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">Entrar</button>
+                    } @else {
+                      <span class="dash-muted">Contenido en preparación</span>
+                    }
+                  </div>
+                </article>
+              } @empty {
+                <div class="dash-empty">
+                  <p>No hay cursos matriculados.</p>
+                  <a routerLink="/tienda" class="dash-btn dash-btn-primary">Ir a la tienda</a>
+                </div>
+              }
+            </div>
+          }
+
+          @case ('certificados') {
+            <header class="dash-page-head">
+              <h1>Certificados</h1>
+              <p class="dash-welcome">Certificados emitidos en su ficha ARGO</p>
+            </header>
+
+            @if (certificadoError()) {
+              <p class="dash-error">{{ certificadoError() }}</p>
+            }
+            @if (reciboError()) {
+              <p class="dash-error">{{ reciboError() }}</p>
+            }
+
+            @if (certificadosLoading()) {
+              <p class="dash-muted">Cargando certificados…</p>
+            } @else if (certificados().length) {
+              <div class="dash-cert-grid">
+                @for (cert of certificados(); track cert._id) {
+                  <article class="dash-cert-card" [class.dash-cert-virtual]="cert.esCursoVirtual">
+                    <div class="dash-cert-icon">🎓</div>
+                    <h3>{{ tituloCert(cert) }}</h3>
+                    <p>Código <strong>{{ cert.codigoCert || '—' }}</strong></p>
+                    <p class="dash-muted">Emitido {{ fechaCert(cert.fechaEmision) }}</p>
+                    @if (cert.recibo?.numRecibo) {
+                      <p class="dash-muted">Recibo <strong>{{ cert.recibo?.numRecibo }}</strong></p>
+                    }
+                    <div class="dash-inline-actions">
+                      <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="verCertificado(cert)">Ver certificado</button>
+                      <button type="button" class="dash-btn dash-btn-primary dash-btn-sm" (click)="imprimirCertificado(cert)">Imprimir certificado</button>
+                      @if (cert.recibo?.idIngreso) {
+                        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" (click)="imprimirReciboCert(cert)">Imprimir recibo</button>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            } @else {
+              <div class="dash-empty">
+                <p>Aún no tiene certificados. Complete el curso y el pago para obtenerlo.</p>
+              </div>
+            }
+          }
+
+          @case ('perfil') {
+            <header class="dash-page-head">
+              <h1>Perfil</h1>
+              <p class="dash-welcome">Datos de su cuenta en el portal</p>
+            </header>
+
+            <article class="dash-profile-card">
+              <div class="dash-profile-avatar">{{ saludo().charAt(0).toUpperCase() }}</div>
+              <dl>
+                <div>
+                  <dt>Nombre</dt>
+                  <dd>{{ auth.user()?.nombreCompleto || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Correo</dt>
+                  <dd>{{ auth.user()?.email }}</dd>
+                </div>
+                <div>
+                  <dt>Documento</dt>
+                  <dd>{{ auth.user()?.numDoc }}</dd>
+                </div>
+              </dl>
+              <button type="button" class="dash-btn dash-btn-outline" (click)="logout()">Cerrar sesión</button>
+            </article>
+          }
+        }
+      }
+    </main>
+  </div>
+}

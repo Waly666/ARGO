@@ -22,6 +22,7 @@ const jornadas = require('./jornadas');
 const vehiculos = require('./vehiculos');
 const programacionCea = require('./programacionCea');
 const facturacion = require('./facturacion');
+const aulaVirtual = require('./aulaVirtual');
 
 const router = Router();
 
@@ -49,6 +50,7 @@ router.use('/vehiculos', vehiculos);
 router.use('/programacion-cea', programacionCea);
 router.use('/instructor-portal', require('./instructorPortal'));
 router.use('/facturacion', facturacion);
+router.use('/aula-virtual', aulaVirtual);
 router.use('/clientes', require('./clientes'));
 
 module.exports = router;

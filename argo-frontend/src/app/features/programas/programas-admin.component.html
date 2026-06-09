@@ -234,6 +234,11 @@
             <label>Tarifa 3</label>
             <input type="number" min="0" [ngModel]="form().tarifa3" (ngModelChange)="patch('tarifa3', $event)" />
           </div>
+          <div class="col-3">
+            <label>Tarifa virtual</label>
+            <input type="number" min="0" [ngModel]="form().tarifaVirtual" (ngModelChange)="patch('tarifaVirtual', $event)" />
+            <p class="hint-inline">Si es &gt; 0, el curso se publica como educación virtual en el portal.</p>
+          </div>
         </div>
         <div class="audit-grid" *ngIf="auditServicio() as a">
           <h4>Auditoría — servicio</h4>
@@ -242,6 +247,42 @@
           <div><span>Modificado</span><strong>{{ a.fechaMod }}</strong></div>
           <div><span>Usuario cambio</span><strong>{{ a.userChangeRecord }}</strong></div>
         </div>
+      </section>
+
+      <section class="form-section form-section--virtual" *ngIf="!esProgramaJornadasCapForm()">
+        <h3 class="sec sec--virtual">Ficha portal — educación virtual</h3>
+        <p class="form-note" *ngIf="!esFormularioVirtual()">
+          Asigne <strong>tarifa virtual</strong> mayor a 0 para habilitar este curso en la tienda y el aula virtual.
+        </p>
+        <ng-container *ngIf="esFormularioVirtual()">
+          <div class="row">
+            <div class="col-12">
+              <label>Descripción para el portal</label>
+              <textarea
+                rows="10"
+                [ngModel]="form().descripcionVirtual"
+                (ngModelChange)="patch('descripcionVirtual', $event)"
+                placeholder="Texto visible en la ficha del curso: modalidad, duración, qué incluye el aula virtual…"></textarea>
+              <p class="hint-inline">Se muestra en la pestaña «Descripción general» del curso (como en finstruvial.edu.co).</p>
+            </div>
+          </div>
+          <div class="row prog-portada-row">
+            <div class="col-6">
+              <label>Imagen de portada</label>
+              <input type="file" accept="image/*" (change)="onPortadaVirtualChange($event)" />
+              <p class="hint-inline">Banner superior de la ficha del curso. Recomendado 1200×630 px o similar.</p>
+              <div class="prog-portada-actions" *ngIf="portadaPreviewUrl()">
+                <button type="button" class="ghost mini" (click)="quitarPortadaVirtual()">Quitar portada</button>
+              </div>
+            </div>
+            <div class="col-6" *ngIf="portadaPreviewUrl() as src">
+              <p class="hint-inline">Vista previa</p>
+              <figure class="prog-portada-preview">
+                <img [src]="src" alt="Vista previa portada del curso" />
+              </figure>
+            </div>
+          </div>
+        </ng-container>
       </section>
 
       <section class="form-section form-section--2 jornada-cap-note" *ngIf="esProgramaJornadasCapForm()">
@@ -302,7 +343,10 @@
       <tbody>
         <tr *ngFor="let p of programasOrdenados()">
           <td><span [ngClass]="capCodigo(p.codigoProg)">{{ p.codigoProg || p.idPrograma }}</span></td>
-          <td><strong>{{ p.nombreProg }}</strong></td>
+          <td>
+            <strong>{{ p.nombreProg }}</strong>
+            <span class="cap cap-cyan cap-sm" *ngIf="p.esCapacitacionVirtual" style="margin-left: 6px;">Virtual</span>
+          </td>
           <td><span class="cap cap-violet cap-sm">{{ p.nomCert || '—' }}</span></td>
           <td><span class="cap cap-indigo cap-sm">{{ p.tipoCertificado ? labelTipoCert(p.tipoCertificado) : 'Automático' }}</span></td>
           <td><span [ngClass]="capTipoCap(labelTipoPrograma(p))">{{ labelTipoPrograma(p) }}</span></td>
@@ -327,7 +371,10 @@
 
   <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
     <article class="list-card" *ngFor="let p of programasOrdenados()">
-      <header class="card-title"><h3>{{ p.nombreProg }}</h3></header>
+      <header class="card-title">
+        <h3>{{ p.nombreProg }}</h3>
+        <span class="cap cap-cyan cap-sm" *ngIf="p.esCapacitacionVirtual">Virtual</span>
+      </header>
       <div class="card-body">
         <div class="entity-badge-wrap">
           <div class="entity-badge tone-purple">{{ p.codigoProg || p.idPrograma }}</div>

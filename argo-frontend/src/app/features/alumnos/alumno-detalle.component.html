@@ -13,6 +13,7 @@
           <div class="meta">
             <strong>{{ nombreCompleto() }}</strong>
             <span>{{ a.numDoc }}</span>
+            <span class="badge virtual tipo-alumno-badge" *ngIf="esAlumnoVirtual()">Virtual</span>
           </div>
         </div>
 
@@ -42,15 +43,21 @@
 
           <button
             type="button"
-            class="head-alarm serv-saldo-alarm"
+            class="head-alarm"
+            [class.serv-saldo-alarm]="!esVirtual(it)"
+            [class.virtual-saldo-alarm]="esVirtual(it)"
             *ngFor="let it of saldosPendientes()"
             [hidden]="!alarmas.tiene('alarmas.alumnos.saldos')"
             (click)="irPagos()"
             [attr.title]="tituloSaldoItem(it.descripcion, fmtSaldo(it.saldo))"
             [attr.aria-label]="tituloSaldoItem(it.descripcion, fmtSaldo(it.saldo))">
-            <span class="head-alarm-pulse" aria-hidden="true"></span>
-            <span class="head-alarm-icon" aria-hidden="true">$</span>
-            <span class="head-alarm-text">{{ etiquetaSaldo(it.descripcion) }} · {{ fmtSaldo(it.saldo) }}</span>
+            <span [class.head-alarm-pulse]="!esVirtual(it)" [class.virtual-saldo-pulse]="esVirtual(it)" aria-hidden="true"></span>
+            <span [class.head-alarm-icon]="!esVirtual(it)" [class.virtual-saldo-icon]="esVirtual(it)" aria-hidden="true">
+              {{ esVirtual(it) ? 'V' : '$' }}
+            </span>
+            <span [class.head-alarm-text]="!esVirtual(it)" [class.virtual-saldo-text]="esVirtual(it)">
+              <ng-container *ngIf="esVirtual(it)">Virtual · </ng-container>{{ etiquetaSaldo(it.descripcion) }} · {{ fmtSaldo(it.saldo) }}
+            </span>
           </button>
 
           <button

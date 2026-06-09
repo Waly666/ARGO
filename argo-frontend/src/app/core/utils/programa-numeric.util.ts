@@ -10,6 +10,7 @@ const NUMERIC_KEYS: (keyof ProgramaDto)[] = [
   'tarifa1',
   'tarifa2',
   'tarifa3',
+  'tarifaVirtual',
   'tarifaHoraPractica',
   'diasVencimiento',
   'iva',

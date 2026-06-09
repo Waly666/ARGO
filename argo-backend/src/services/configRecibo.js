@@ -65,15 +65,21 @@ function normalizar(doc, claveOverride) {
 }
 
 /** Datos operativos de la sede en comprobantes (no duplica config en Mongo). */
+function pickEncabezado(globalVal, sedeVal) {
+  const g = String(globalVal ?? '').trim();
+  if (g) return g;
+  return String(sedeVal ?? '').trim();
+}
+
 function aplicarEncabezadoSede(config, sede) {
   if (!sede) return { ...config };
   return {
     ...config,
     nombreSede: String(sede.nombre || config.nombreSede || '').trim(),
-    telefono: String(sede.telefono || config.telefono || '').trim(),
-    direccion: String(sede.direccion || config.direccion || '').trim(),
-    ciudad: String(sede.ciudad || config.ciudad || '').trim(),
-    departamento: String(sede.departamento || config.departamento || '').trim(),
+    telefono: pickEncabezado(config.telefono, sede.telefono),
+    direccion: pickEncabezado(config.direccion, sede.direccion),
+    ciudad: pickEncabezado(config.ciudad, sede.ciudad),
+    departamento: pickEncabezado(config.departamento, sede.departamento),
     idSede: sede.idSede || config.idSede || null,
   };
 }
@@ -93,7 +99,9 @@ async function cargarGlobalRecibo() {
 
 /**
  * Config de recibos: siempre global (clave `recibo`).
- * Si se pasa idSede, solo se superpone nombre/dirección/teléfono de esa sede al imprimir.
+ * Si se pasa idSede, se añade el nombre de la sede al imprimir.
+ * Dirección, ciudad, teléfono y departamento: primero la config global;
+ * solo si están vacíos allí se toman de la sede.
  */
 async function obtenerConfigRecibo(idSede = null) {
   const global = await asegurarGlobalRecibo();

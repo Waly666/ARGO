@@ -1,0 +1,107 @@
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a class="brand" routerLink="/">
+      @if (config()?.urlLogoAbsoluta; as logo) {
+        <img [src]="logo" [alt]="config()?.nombreCea || 'CEA'" class="brand-logo" />
+      }
+      <span>{{ config()?.nombreCea || 'CEA' }}</span>
+    </a>
+    <nav class="nav">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/tienda" routerLinkActive="active">Tienda</a>
+      <a routerLink="/cursos" routerLinkActive="active">Cursos</a>
+      <a routerLink="/aula" routerLinkActive="active">Aula virtual</a>
+      <a routerLink="/acerca" routerLinkActive="active">Acerca de</a>
+    </nav>
+    <div class="actions">
+      @if (auth.isLoggedIn()) {
+        <span class="user-chip">{{ auth.user()?.nombreCompleto || auth.user()?.email }}</span>
+        <button type="button" class="btn btn-ghost" (click)="logout()">Salir</button>
+      } @else {
+        <a routerLink="/login" class="btn btn-ghost">Acceder</a>
+        <a routerLink="/registro" class="btn btn-primary">Registrarse</a>
+      }
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-col">
+      <h3 class="footer-title">Acerca de {{ nombreCea() }}</h3>
+      <p class="footer-founded">Est. 1997</p>
+      <p class="footer-about">{{ footerAbout() }}</p>
+    </div>
+
+    <div class="footer-col">
+      <h3 class="footer-title">Enlaces rápidos</h3>
+      <nav class="footer-links">
+        <a routerLink="/">Inicio</a>
+        <a routerLink="/acerca">Acerca de</a>
+        <a routerLink="/" fragment="servicios-empresa">Servicios</a>
+        <a routerLink="/acerca">Página institucional</a>
+        <a routerLink="/acerca" fragment="contacto">Contáctanos</a>
+      </nav>
+    </div>
+
+    <div class="footer-col">
+      <h3 class="footer-title">Servicios</h3>
+      <ul class="footer-list">
+        @for (s of footerServicios; track s) {
+          <li>{{ s }}</li>
+        }
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h3 class="footer-title">Contáctanos</h3>
+      @if (config()?.telefono; as tel) {
+        <div class="footer-contact">
+          <strong>Teléfono</strong>
+          <a [href]="telHref()">{{ telDisplay() }}</a>
+        </div>
+      }
+      @if (config()?.email; as mail) {
+        <div class="footer-contact">
+          <strong>Email</strong>
+          <a class="footer-email" [href]="'mailto:' + mail">{{ mail }}</a>
+        </div>
+      }
+      @if (direccionCompleta(); as dir) {
+        <div class="footer-contact">
+          <strong>Dirección</strong>
+          <span>{{ dir }}</span>
+        </div>
+      }
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      <p class="footer-copy">
+        Copyright © 2026 All Rights Reserved INSTITUTO TECNICO FINSTRUVIAL Designed by WALTER AGUILAR
+      </p>
+    </div>
+  </div>
+</footer>
+
+@if (whatsappHref(); as waUrl) {
+  <a
+    class="wa-float"
+    [href]="waUrl"
+    target="_blank"
+    rel="noopener noreferrer"
+    [attr.aria-label]="'WhatsApp ' + whatsappTelefono()"
+    [title]="'WhatsApp ' + whatsappTelefono()"
+  >
+    <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M16.003 2.667c-7.364 0-13.336 5.972-13.336 13.336 0 2.352.612 4.656 1.776 6.688L2.667 29.333l6.776-1.744a13.28 13.28 0 0 0 6.56 1.712h.005c7.364 0 13.336-5.972 13.336-13.336S23.367 2.667 16.003 2.667zm0 24.003h-.004a11.04 11.04 0 0 1-5.632-1.536l-.403-.24-4.016 1.035 1.072-3.915-.264-.4a11.04 11.04 0 0 1-1.696-5.88c0-6.104 4.968-11.072 11.072-11.072 2.96 0 5.744 1.152 7.832 3.248a11.02 11.02 0 0 1 3.24 7.832c0 6.104-4.968 11.072-11.072 11.072zm6.064-8.272c-.333-.168-1.968-.968-2.272-1.08-.304-.112-.528-.168-.752.168-.224.336-.864 1.08-1.056 1.304-.192.224-.384.248-.712.08-.328-.168-1.384-.512-2.632-1.632-.976-.872-1.632-1.952-1.824-2.28-.192-.328-.02-.504.144-.664.148-.148.328-.384.496-.576.168-.192.224-.328.336-.552.112-.224.056-.416-.028-.584-.08-.168-.752-1.808-1.032-2.472-.272-.632-.544-.544-.752-.552-.192-.008-.416-.008-.64-.008s-.584.08-.888.416c-.304.336-1.168 1.144-1.168 2.784 0 1.64 1.192 3.224 1.36 3.448.168.224 2.344 3.576 5.68 4.016.792.112 1.488.048 2.048-.104.624-.176 1.968-.808 2.248-1.584.28-.776.28-1.44.192-1.584-.08-.144-.304-.224-.632-.392z"
+      />
+    </svg>
+  </a>
+}

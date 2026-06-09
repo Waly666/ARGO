@@ -20,6 +20,7 @@ export interface ServicioDto {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  tarifaVirtual?: number;
   facturar?: string | boolean;
   iva?: number;
   condicionIva?: string;

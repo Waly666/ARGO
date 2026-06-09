@@ -132,6 +132,9 @@
                 (limpiado)="onTipoAlumnoLimpiar()"
               />
               <p class="hint" *ngIf="!isEdit() && esAlumnoJornada()">Alta para Jornadas de Capacitación (no Regular).</p>
+              <p class="hint virtual-hint" *ngIf="normalizarTipoAlumno(form().tipoAlumno) === 'Virtual'">
+                Alumno del <strong>aula virtual</strong> (portal en línea).
+              </p>
             </div>
             <div class="col-3">
               <label>Tipo documento *</label>
