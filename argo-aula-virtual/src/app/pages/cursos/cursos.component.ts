@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
 import { CategoriaVirtual, CursoVirtual } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
+import { resolveUploadUrl } from '../../core/upload-url.util';
 
 @Component({
   selector: 'av-cursos',
@@ -28,7 +29,7 @@ export class CursosComponent implements OnInit {
     const m = this.route.snapshot.data['modo'];
     this.modo.set(m === 'tienda' ? 'tienda' : 'cursos');
     this.api.config().subscribe({
-      next: (cfg) => this.logoUrl.set(cfg.urlLogoAbsoluta || null),
+      next: (cfg) => this.logoUrl.set(resolveUploadUrl(cfg.urlLogoAbsoluta || cfg.urlLogo)),
     });
     this.api.categorias().subscribe({ next: (rows) => this.categorias.set(rows) });
     this.cargar();

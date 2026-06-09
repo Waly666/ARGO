@@ -1,7 +1,7 @@
 <header class="topbar">
   <div class="container topbar-inner">
     <a class="brand" routerLink="/">
-      @if (config()?.urlLogoAbsoluta; as logo) {
+      @if (logoUrl(); as logo) {
         <img [src]="logo" [alt]="config()?.nombreCea || 'CEA'" class="brand-logo" />
       }
       <span>{{ config()?.nombreCea || 'CEA' }}</span>

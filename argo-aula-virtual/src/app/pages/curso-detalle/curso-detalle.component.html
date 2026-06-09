@@ -10,8 +10,8 @@
       <div class="container detail-layout">
         <div class="detail-main">
           <figure class="detail-banner">
-            @if (c.urlPortadaAbsoluta) {
-              <img [src]="c.urlPortadaAbsoluta" [alt]="c.nombreProg" />
+            @if (portadaUrl(c); as img) {
+              <img [src]="img" [alt]="c.nombreProg" />
             } @else {
               <div class="detail-banner-ph"></div>
             }

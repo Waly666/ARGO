@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
 import { CertificadoPortal, CursoVirtual, PortalConfig, ReciboPortal } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
+import { resolveUploadUrl } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
 
 export type PanelAula = 'tablero' | 'cursos' | 'certificados' | 'perfil';
@@ -103,7 +104,12 @@ export class AulaComponent implements OnInit, OnDestroy {
   }
 
   portada(c: CursoVirtual): string | null {
-    return c.urlPortadaAbsoluta || null;
+    return resolveUploadUrl(c.urlPortadaAbsoluta || c.urlPortadaVirtual);
+  }
+
+  portalLogo(): string | null {
+    const cfg = this.portalConfig();
+    return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
   }
 
   etiquetas(c: CursoVirtual): string[] {

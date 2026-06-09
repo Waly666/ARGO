@@ -1,5 +1,6 @@
 const Config = require('../models/Config');
 const { obtenerConfigRecibo } = require('./configRecibo');
+const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 
 const CLAVE_AULA = 'aula_virtual';
 
@@ -24,10 +25,7 @@ const DEFAULTS_AULA = {
 };
 
 function logoAbsoluto(urlLogo) {
-  const logoRel = String(urlLogo || '').trim().replace(/^\/+/, '');
-  const base = String(process.env.PUBLIC_URL || '').trim().replace(/\/+$/, '');
-  if (!logoRel) return null;
-  return base ? `${base}/uploads/${logoRel}` : `/uploads/${logoRel}`;
+  return publicUploadUrl(urlLogo);
 }
 
 function pickLogo(aula, recibo) {

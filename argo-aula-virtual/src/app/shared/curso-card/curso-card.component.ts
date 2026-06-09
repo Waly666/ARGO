@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { resolveUploadUrl } from '../../core/upload-url.util';
 import { CursoVirtual } from '../../core/models';
 
 @Component({
@@ -45,5 +46,9 @@ export class CursoCardComponent {
   inicialAutor(nombre?: string | null) {
     const n = String(nombre || 'E').trim();
     return (n.charAt(0) || 'E').toUpperCase();
+  }
+
+  portadaUrl(c: CursoVirtual) {
+    return resolveUploadUrl(c.urlPortadaAbsoluta || c.urlPortadaVirtual);
   }
 }

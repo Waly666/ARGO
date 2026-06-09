@@ -9,6 +9,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
 
 import { CursoVirtual, EstadoInscripcionVirtual } from '../../core/models';
+import { resolveUploadUrl } from '../../core/upload-url.util';
 
 import { PortalAuthService } from '../../core/portal-auth.service';
 
@@ -62,7 +63,7 @@ export class CursoDetalleComponent implements OnInit {
 
     this.api.config().subscribe({
 
-      next: (cfg) => this.logoUrl.set(cfg.urlLogoAbsoluta || null),
+      next: (cfg) => this.logoUrl.set(resolveUploadUrl(cfg.urlLogoAbsoluta || cfg.urlLogo)),
 
     });
 
@@ -176,6 +177,10 @@ export class CursoDetalleComponent implements OnInit {
 
     return (n.charAt(0) || 'E').toUpperCase();
 
+  }
+
+  portadaUrl(c: CursoVirtual) {
+    return resolveUploadUrl(c.urlPortadaAbsoluta || c.urlPortadaVirtual);
   }
 
 }

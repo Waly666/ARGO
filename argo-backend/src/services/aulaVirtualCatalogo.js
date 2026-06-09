@@ -25,14 +25,7 @@ function resolverIndexPaquete(cfg) {
   return indexRel;
 }
 
-function publicUploadUrl(relative) {
-  const rel = String(relative || '').trim().replace(/^\/+/, '');
-  if (!rel) return null;
-  /** Ruta relativa: el portal (8085) o ERP reescriben con su propio origin y evitan CORS en el iframe. */
-  return `/uploads/${rel}`;
-}
-
-async function configPorPrograma(idPrograma) {
+const { publicUploadUrl } = require('../utils/uploadPublicUrl');
   return CapacitacionVirtualConfig.findOne({ idPrograma: String(idPrograma) }).lean();
 }
 

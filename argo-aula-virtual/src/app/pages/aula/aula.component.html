@@ -13,7 +13,7 @@
   <div class="aula-dashboard" [class.sidebar-collapsed]="sidebarCollapsed()">
     <aside class="dash-sidebar">
       <div class="dash-sidebar-brand">
-        @if (portalConfig()?.urlLogoAbsoluta; as logo) {
+        @if (portalLogo(); as logo) {
           <img [src]="logo" [alt]="portalConfig()?.nombreCea || 'CEA'" class="dash-logo" />
         } @else {
           <span class="dash-logo-fallback">{{ (portalConfig()?.nombreCea || 'A')[0] }}</span>

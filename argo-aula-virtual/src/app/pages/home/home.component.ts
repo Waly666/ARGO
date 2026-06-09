@@ -17,6 +17,7 @@ import { AnimateTitleDirective } from '../../core/animate-title.directive';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
+import { resolveUploadUrl } from '../../core/upload-url.util';
 import {
   CARRERAS_TECNICAS,
   HERO_DEFAULT,
@@ -60,6 +61,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   heroTitulo = computed(() => this.config()?.heroTitulo || HERO_DEFAULT.titulo);
   heroSubtitulo = computed(() => this.config()?.heroSubtitulo || HERO_DEFAULT.subtitulo);
+  logoUrl = computed(() => {
+    const cfg = this.config();
+    return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
+  });
 
   ngOnInit() {
     this.api.config().subscribe({

@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import { PortalConfig } from '../../core/models';
+import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ACERCA_DEFAULT, VALORES } from '../home/home-content';
 
 @Component({
@@ -28,5 +29,10 @@ export class AcercaComponent implements OnInit {
 
   nombreCea() {
     return this.config()?.nombreCea || 'Fundación Finstruvial';
+  }
+
+  logoUrl() {
+    const cfg = this.config();
+    return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
   }
 }

@@ -2,8 +2,8 @@
 <article class="catalog-card">
   <a [routerLink]="['/cursos', c.idPrograma]" class="catalog-card__cover-link">
     <div class="catalog-card__cover">
-      @if (c.urlPortadaAbsoluta) {
-        <img [src]="c.urlPortadaAbsoluta" [alt]="c.nombreProg" />
+      @if (portadaUrl(c); as img) {
+        <img [src]="img" [alt]="c.nombreProg" />
       } @else {
         <div class="catalog-card__cover-ph"></div>
       }

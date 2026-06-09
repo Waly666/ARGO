@@ -3,6 +3,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
+import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalBrandingService } from '../../core/portal-branding.service';
 import { PortalConfig } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
@@ -24,6 +25,8 @@ export class ShellComponent implements OnInit {
   auth = inject(PortalAuthService);
 
   config = signal<PortalConfig | null>(null);
+
+  logoUrl = computed(() => resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo));
 
   readonly footerServicios = [
     'Capacitación',
