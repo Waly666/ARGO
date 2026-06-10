@@ -10,6 +10,8 @@ export interface PortalConfig {
   heroTitulo: string;
   heroSubtitulo: string;
   acercaDeHtml?: string;
+  registroAbierto?: boolean;
+  turnstileSiteKey?: string;
 }
 
 export type NivelVirtual = 'PRINCIPIANTE' | 'INTERMEDIO' | 'AVANZADO';

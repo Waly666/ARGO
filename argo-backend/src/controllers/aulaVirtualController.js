@@ -22,11 +22,17 @@ const {
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
+const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled } = require('../config/security');
 const path = require('path');
 
 exports.configPublica = async (_req, res, next) => {
   try {
-    res.json(await obtenerConfigPortalPublica());
+    const cfg = await obtenerConfigPortalPublica();
+    res.json({
+      ...cfg,
+      registroAbierto: portalRegistroAbierto(),
+      turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
+    });
   } catch (e) {
     next(e);
   }
@@ -73,7 +79,10 @@ exports.buscarAlumnoRegistro = async (req, res, next) => {
 
 exports.registro = async (req, res, next) => {
   try {
-    const { email, password, ...alumno } = req.body || {};
+    if (!portalRegistroAbierto()) {
+      return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
+    }
+    const { email, password, turnstileToken: _t, ...alumno } = req.body || {};
     const out = await registrarPortal({ email, password, alumno });
     res.status(201).json(out);
   } catch (e) {

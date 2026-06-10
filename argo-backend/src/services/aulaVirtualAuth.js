@@ -40,6 +40,17 @@ function nombreCompletoAlumno(da) {
   return [da.apellido1, da.apellido2, da.nombre1, da.nombre2].filter(Boolean).join(' ').trim();
 }
 
+function maskEmail(email) {
+  const mail = String(email || '').trim().toLowerCase();
+  if (!mail || !mail.includes('@')) return null;
+  const [user, domain] = mail.split('@');
+  if (!domain) return null;
+  if (user.length <= 1) return `*@${domain}`;
+  if (user.length === 2) return `${user[0]}*@${domain}`;
+  return `${user[0]}***${user.slice(-1)}@${domain}`;
+}
+
+/** Datos mínimos expuestos al registrar (sin PII de contacto). */
 function mapAlumnoPublico(da) {
   if (!da) return null;
   return {
@@ -50,12 +61,10 @@ function mapAlumnoPublico(da) {
     apellido2: da.apellido2 || '',
     nombre1: da.nombre1 || '',
     nombre2: da.nombre2 || '',
-    celular: da.celular || '',
-    direccion: da.direccion || '',
     genero: da.genero || '',
-    correo: da.correo || '',
     fechaNac: da.fechaNac ? new Date(da.fechaNac).toISOString().slice(0, 10) : '',
     nombreCompleto: nombreCompletoAlumno(da),
+    tieneCorreoEnArgo: !!String(da.correo || '').trim(),
   };
 }
 
@@ -75,7 +84,7 @@ async function buscarAlumnoRegistro(numDocRaw) {
     numDoc,
     existeEnArgo: !!da,
     tieneCuentaPortal: !!portal,
-    emailPortal: portal?.email || null,
+    emailPortal: maskEmail(portal?.email),
     alumno: mapAlumnoPublico(da),
   };
 }

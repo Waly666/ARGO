@@ -76,7 +76,15 @@
     <p class="err">{{ error() }}</p>
   }
 
-  <button type="button" class="btn btn-primary" [disabled]="loading()" (click)="enviar()">
+  @if (!registroAbierto()) {
+    <p class="err">El registro en línea está cerrado. Contacte al CEA para crear su cuenta.</p>
+  }
+
+  @if (turnstileSiteKey()) {
+    <av-turnstile [siteKey]="turnstileSiteKey()" (tokenChange)="turnstileToken.set($event)" />
+  }
+
+  <button type="button" class="btn btn-primary" [disabled]="loading() || !registroAbierto()" (click)="enviar()">
     {{ loading() ? 'Registrando…' : 'Crear cuenta' }}
   </button>
 

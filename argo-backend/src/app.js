@@ -4,13 +4,17 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const { createCorsOptions } = require('./config/cors');
+const { trustProxyHops } = require('./config/security');
 const routes = require('./routes');
 const { notFound, errorHandler } = require('./middleware/error');
 const { auditoriaHttpMiddleware } = require('./middleware/auditoriaHttp');
 const { actividadHttpMiddleware } = require('./middleware/actividadHttp');
+const { createHelmetMiddleware } = require('./middleware/security');
 
 const app = express();
 
+app.set('trust proxy', trustProxyHops());
+app.use(createHelmetMiddleware());
 app.use(cors(createCorsOptions()));
 
 app.use(express.json({ limit: '10mb' }));

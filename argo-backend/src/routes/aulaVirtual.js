@@ -9,6 +9,8 @@ const {
   aulaVirtualLogo,
   programasVirtual,
 } = require('../middleware/upload');
+const { portalAuthLimiter, buscarAlumnoLimiter } = require('../middleware/security');
+const { requireTurnstile } = require('../middleware/turnstile');
 
 const router = Router();
 
@@ -17,9 +19,14 @@ router.get('/config', ctrl.configPublica);
 router.get('/categorias', ctrl.listarCategorias);
 router.get('/cursos', ctrl.listarCursos);
 router.get('/cursos/:id', ctrl.obtenerCurso);
-router.get('/auth/buscar-alumno', ctrl.buscarAlumnoRegistro);
-router.post('/auth/registro', ctrl.registro);
-router.post('/auth/login', ctrl.login);
+router.get(
+  '/auth/buscar-alumno',
+  buscarAlumnoLimiter,
+  requireTurnstile(),
+  ctrl.buscarAlumnoRegistro,
+);
+router.post('/auth/registro', portalAuthLimiter, requireTurnstile(), ctrl.registro);
+router.post('/auth/login', portalAuthLimiter, requireTurnstile(), ctrl.login);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
 router.get('/argo-bridge.js', ctrl.bridgeScript);
 

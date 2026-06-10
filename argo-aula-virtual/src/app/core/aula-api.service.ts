@@ -41,22 +41,31 @@ export class AulaApiService {
     return this.http.get<CursoVirtual>(`${this.base}/cursos/${id}`);
   }
 
-  login(email: string, password: string): Observable<PortalAuthRes> {
-    return this.http.post<PortalAuthRes>(`${this.base}/auth/login`, { email, password });
+  login(email: string, password: string, turnstileToken?: string): Observable<PortalAuthRes> {
+    return this.http.post<PortalAuthRes>(`${this.base}/auth/login`, {
+      email,
+      password,
+      turnstileToken: turnstileToken || undefined,
+    });
   }
 
-  buscarAlumno(numDoc: string | number) {
+  buscarAlumno(numDoc: string | number, turnstileToken?: string) {
+    const q = new URLSearchParams({ numDoc: String(numDoc) });
+    if (turnstileToken) q.set('turnstileToken', turnstileToken);
     return this.http.get<{
       numDoc: number;
       existeEnArgo: boolean;
       tieneCuentaPortal: boolean;
       emailPortal: string | null;
-      alumno: Record<string, string | number> | null;
-    }>(`${this.base}/auth/buscar-alumno?numDoc=${encodeURIComponent(String(numDoc))}`);
+      alumno: Record<string, string | number | boolean> | null;
+    }>(`${this.base}/auth/buscar-alumno?${q.toString()}`);
   }
 
-  registro(body: Record<string, unknown>): Observable<PortalAuthRes> {
-    return this.http.post<PortalAuthRes>(`${this.base}/auth/registro`, body);
+  registro(body: Record<string, unknown>, turnstileToken?: string): Observable<PortalAuthRes> {
+    return this.http.post<PortalAuthRes>(`${this.base}/auth/registro`, {
+      ...body,
+      turnstileToken: turnstileToken || undefined,
+    });
   }
 
   perfil(): Observable<{ usuario: { email: string; numDoc: number } }> {
