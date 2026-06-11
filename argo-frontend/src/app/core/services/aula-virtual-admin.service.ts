@@ -11,6 +11,7 @@ export interface VirtualConfig {
   idPrograma: string;
   publicadoPortal: boolean;
   modoCertificado: 'al_pagar' | 'al_aprobar';
+  requierePagoParaCursar?: boolean;
   pctMinCompletitud: number;
   pctMinEvaluaciones: number;
   intentosMaxEval: number;

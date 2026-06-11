@@ -7,8 +7,8 @@ const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { TARIFA_VIRTUAL } = require('../constants/tarifa');
 const { crearMatriculaDesdeBody } = require('../controllers/matriculaController');
 const { asegurarSedePrincipal } = require('./sedeContext');
-const { asegurarProgramaVirtual } = require('./aulaVirtualConfig');
-const { obtenerCursoVirtual } = require('./aulaVirtualCatalogo');
+const { asegurarProgramaVirtual, puedeCursarVirtual, requierePagoParaCursar } = require('./aulaVirtualConfig');
+const { obtenerCursoVirtual, configPorPrograma } = require('./aulaVirtualCatalogo');
 const Matricula = require('../models/Matricula');
 const {
   buscarPrograma,
@@ -220,6 +220,8 @@ async function matricularVirtual({ numDoc: numDocRaw, idPrograma, observaciones,
   }
 
   const pago = await estadoPagoVirtual(numDoc, idPrograma);
+  const cfg = (await configPorPrograma(idPrograma)) || {};
+  const exigePago = requierePagoParaCursar(cfg);
 
   return {
     yaMatriculado: false,
@@ -228,8 +230,14 @@ async function matricularVirtual({ numDoc: numDocRaw, idPrograma, observaciones,
     liquidaciones: result.liquidaciones,
     pago,
     usuarioPortal,
-    curso: { idPrograma: curso.idPrograma, nombreProg: curso.nombreProg },
-    message: 'Matrícula virtual creada. El alumno puede cursar; el certificado requiere pago.',
+    curso: {
+      idPrograma: curso.idPrograma,
+      nombreProg: curso.nombreProg,
+      requierePagoParaCursar: exigePago,
+    },
+    message: exigePago
+      ? 'Matrícula creada. Complete el pago para acceder al contenido del curso.'
+      : 'Matrícula virtual creada. El alumno puede cursar; el certificado requiere pago.',
   };
 }
 
@@ -243,6 +251,14 @@ async function estadoInscripcionVirtual(numDoc, idPrograma) {
 
   const matricula = await buscarMatriculaVirtual(numDoc, idPrograma);
   const pago = matricula ? await estadoPagoVirtual(numDoc, idPrograma) : null;
+  const cfg = (await configPorPrograma(idPrograma)) || {};
+  const exigePago = requierePagoParaCursar(cfg);
+  const puedeCursar = puedeCursarVirtual({
+    cfg,
+    tienePaquete: !!curso.tienePaquete,
+    matriculado: !!matricula,
+    pago,
+  });
 
   return {
     matriculado: !!matricula,
@@ -254,7 +270,8 @@ async function estadoInscripcionVirtual(numDoc, idPrograma) {
         }
       : null,
     pago,
-    puedeCursar: !!matricula && !!curso.tienePaquete,
+    puedeCursar,
+    accesoBloqueadoPago: !!(matricula && exigePago && pago && !pago.pagado),
     puedeCertificarse: !!(matricula && pago?.pagado),
     certificadoPendientePago: !!(matricula && pago && !pago.pagado),
     curso: {
@@ -262,6 +279,7 @@ async function estadoInscripcionVirtual(numDoc, idPrograma) {
       nombreProg: curso.nombreProg,
       tarifaVirtual: curso.tarifaVirtual,
       modoCertificado: curso.modoCertificado,
+      requierePagoParaCursar: exigePago,
       tienePaquete: curso.tienePaquete,
     },
   };

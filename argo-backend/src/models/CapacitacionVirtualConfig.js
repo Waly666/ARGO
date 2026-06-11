@@ -29,6 +29,8 @@ const CapacitacionVirtualConfigSchema = new mongoose.Schema(
       enum: ['al_pagar', 'al_aprobar'],
       default: 'al_pagar',
     },
+    /** Si true, el alumno debe pagar (saldo en cero) antes de abrir el contenido del curso. */
+    requierePagoParaCursar: { type: Boolean, default: false },
     pctMinCompletitud: { type: Number, default: 80, min: 0, max: 100 },
     pctMinEvaluaciones: { type: Number, default: 60, min: 0, max: 100 },
     intentosMaxEval: { type: Number, default: 3, min: 1 },

@@ -172,9 +172,13 @@
                           <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
                         </div>
                         @if (c.tienePaquete) {
-                          <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
-                            {{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}
-                          </button>
+                          @if (puedeCursar(c)) {
+                            <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">
+                              {{ pct(c) > 0 ? 'Continuar curso' : 'Iniciar curso' }}
+                            </button>
+                          } @else {
+                            <p class="dash-course-blocked">Pago pendiente. Acérquese al CEA para habilitar el acceso.</p>
+                          }
                         }
                       </div>
                     </article>
@@ -244,7 +248,11 @@
                       <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
                     </div>
                     @if (c.tienePaquete) {
-                      <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">Entrar</button>
+                      @if (puedeCursar(c)) {
+                        <button type="button" class="dash-btn dash-btn-primary dash-btn-block" (click)="abrir(c)">Entrar</button>
+                      } @else {
+                        <span class="dash-muted">Pago pendiente — acérquese al CEA</span>
+                      }
                     } @else {
                       <span class="dash-muted">Contenido en preparación</span>
                     }

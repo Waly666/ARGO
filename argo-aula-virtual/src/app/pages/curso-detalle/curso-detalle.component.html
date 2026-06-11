@@ -70,6 +70,13 @@
                   }
                   @if (ins.pago?.pagado) {
                     <p class="detail-buy-hint detail-buy-hint--ok">Pago registrado. Certificado según reglas del curso.</p>
+                  } @else if (ins.accesoBloqueadoPago || ins.curso.requierePagoParaCursar || c.requierePagoParaCursar) {
+                    <p class="detail-buy-hint detail-buy-hint--warn">
+                      Matriculado. Debe completar el pago en el CEA para acceder al contenido del curso.
+                    </p>
+                    <button type="button" class="detail-buy-btn detail-buy-btn--ghost" disabled>
+                      Pagar en línea — próximamente
+                    </button>
                   } @else {
                     <p class="detail-buy-hint">
                       Matriculado. Puede cursar sin pagar; el certificado se habilita al completar el pago.
@@ -85,11 +92,17 @@
                     [disabled]="matriculando()"
                     (click)="matricular()"
                   >
-                    {{ matriculando() ? 'Matriculando…' : 'Matricularme gratis' }}
+                    {{ matriculando() ? 'Matriculando…' : 'Matricularme' }}
                   </button>
-                  <p class="detail-buy-hint">
-                    Inscripción sin pago. Estudie ahora; el certificado requiere liquidar el valor del curso.
-                  </p>
+                  @if (c.requierePagoParaCursar) {
+                    <p class="detail-buy-hint">
+                      Tras matricularse deberá pagar en el CEA para acceder al contenido. El certificado según reglas del curso.
+                    </p>
+                  } @else {
+                    <p class="detail-buy-hint">
+                      Inscripción sin pago inicial. Puede estudiar ahora; el certificado requiere liquidar el valor del curso.
+                    </p>
+                  }
                 }
               } @else {
                 <button type="button" class="detail-buy-btn" [disabled]="matriculando()" (click)="matricular()">
@@ -99,7 +112,11 @@
             } @else {
               <a routerLink="/registro" class="detail-buy-btn">Registrarse e inscribirse</a>
               <a routerLink="/login" class="detail-buy-btn detail-buy-btn--ghost">Ya tengo cuenta</a>
-              <p class="detail-buy-hint">Cree su cuenta, matricúlese y comience el curso. El certificado exige pago.</p>
+              @if (c.requierePagoParaCursar) {
+                <p class="detail-buy-hint">Cree su cuenta y matricúlese. El pago en el CEA habilita el acceso al curso.</p>
+              } @else {
+                <p class="detail-buy-hint">Cree su cuenta, matricúlese y comience el curso. El certificado puede exigir pago.</p>
+              }
             }
           </div>
         </aside>

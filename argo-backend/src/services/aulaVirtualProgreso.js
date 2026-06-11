@@ -12,6 +12,7 @@ const {
   servicioMatriculaPrograma,
 } = require('./aulaVirtualCatalogo');
 const { intentarCertificadoVirtualAprobar } = require('./certificadoVirtualAuto');
+const { puedeCursarVirtual, requierePagoParaCursar } = require('./aulaVirtualConfig');
 const { estadoPagoVirtual, buscarMatriculaVirtual } = require('./aulaVirtualMatricula');
 
 const QUERY_MATRICULA_ACTIVA = { estado: { $regex: /^activo?a?$/i } };
@@ -112,6 +113,17 @@ async function verificarAccesoCurso(numDoc, idPrograma) {
     const err = new Error('El curso aún no tiene contenido cargado');
     err.status = 400;
     throw err;
+  }
+
+  const cfg = (await configPorPrograma(idPrograma)) || {};
+  if (requierePagoParaCursar(cfg)) {
+    const pago = await estadoPagoVirtual(numDoc, idPrograma);
+    if (!pago.pagado) {
+      const err = new Error('Debe completar el pago para acceder al contenido del curso');
+      err.status = 403;
+      err.code = 'PAGO_REQUERIDO_CURSO';
+      throw err;
+    }
   }
 
   return { curso, matricula: mat };
@@ -343,6 +355,13 @@ async function listarMisCursos(numDoc) {
     const docProg = await obtenerProgresoDoc(numDoc, idProg);
     const estado = await evaluarAprobacion(numDoc, idProg);
     const pago = estado.pago;
+    const cfg = (await configPorPrograma(idProg)) || {};
+    const puedeCursar = puedeCursarVirtual({
+      cfg,
+      tienePaquete: !!curso.tienePaquete,
+      matriculado: true,
+      pago,
+    });
     out.push({
       ...curso,
       matricula: {
@@ -351,6 +370,8 @@ async function listarMisCursos(numDoc) {
         tarifa: m.tarifa,
       },
       pago,
+      puedeCursar,
+      accesoBloqueadoPago: requierePagoParaCursar(cfg) && !pago.pagado,
       progreso: mapProgresoPublico(docProg, estado),
       reglas: {
         modoCertificado: estado.modoCertificado,

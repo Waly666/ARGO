@@ -279,6 +279,8 @@ export class AulaVirtualAdminComponent implements OnInit {
 
       modoCertificado: 'al_pagar' as const,
 
+      requierePagoParaCursar: false,
+
       pctMinCompletitud: 80,
 
       pctMinEvaluaciones: 60,

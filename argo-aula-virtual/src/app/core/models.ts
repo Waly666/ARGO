@@ -72,7 +72,10 @@ export interface CursoVirtual {
   autor?: string | null;
   publicadoPortal?: boolean;
   modoCertificado?: string;
+  requierePagoParaCursar?: boolean;
   tienePaquete?: boolean;
+  puedeCursar?: boolean;
+  accesoBloqueadoPago?: boolean;
   playerUrl?: string | null;
   materiales?: MaterialVirtual[];
   sesionesMeet?: SesionMeet[];
@@ -108,6 +111,7 @@ export interface EstadoInscripcionVirtual {
   matricula: { fechaMat?: string; pagada?: string; tarifa?: number } | null;
   pago: EstadoPagoVirtual | null;
   puedeCursar: boolean;
+  accesoBloqueadoPago?: boolean;
   puedeCertificarse: boolean;
   certificadoPendientePago: boolean;
   curso: {
@@ -115,6 +119,7 @@ export interface EstadoInscripcionVirtual {
     nombreProg: string;
     tarifaVirtual: number;
     modoCertificado?: string;
+    requierePagoParaCursar?: boolean;
     tienePaquete?: boolean;
   };
 }

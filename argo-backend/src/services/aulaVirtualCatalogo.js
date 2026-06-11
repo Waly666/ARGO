@@ -63,6 +63,7 @@ function mapCursoPublico(prog, serv, cfg, opts = {}) {
     esCapacitacionVirtual: tarifaVirtual > 0,
     publicadoPortal: publicado,
     modoCertificado: cfg?.modoCertificado || 'al_pagar',
+    requierePagoParaCursar: cfg?.requierePagoParaCursar === true,
     tienePaquete: paqueteInstalado(cfg),
     rutaPaquete: cfg?.rutaPaquete || null,
     playerUrl: cfg?.rutaPaquete
@@ -163,6 +164,7 @@ async function listarCursosVirtualesAdmin() {
             idPrograma: String(prog.idPrograma),
             publicadoPortal: false,
             modoCertificado: 'al_pagar',
+            requierePagoParaCursar: false,
             pctMinCompletitud: 80,
             pctMinEvaluaciones: 60,
             intentosMaxEval: 3,

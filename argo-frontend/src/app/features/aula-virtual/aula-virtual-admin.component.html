@@ -159,6 +159,16 @@
                   </select>
                 </div>
                 <div class="av-field">
+                  <label>Acceso al curso</label>
+                  <select [(ngModel)]="cfg.requierePagoParaCursar">
+                    <option [ngValue]="false">Cursar sin pagar</option>
+                    <option [ngValue]="true">Requiere pago para cursar</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="av-grid2">
+                <div class="av-field">
                   <label>Archivo de entrada (ZIP)</label>
                   <input type="text" [(ngModel)]="cfg.indexHtml" placeholder="index.html" />
                 </div>
@@ -184,8 +194,8 @@
               <div class="av-block">
                 <h3>Matricular alumno (tarifa virtual)</h3>
                 <p class="av-muted">
-                  Crea matrícula y liquidación en ARGO. El alumno puede cursar sin pagar; el certificado exige saldo en cero.
-                  Opcional: genera usuario y contraseña del portal.
+                  Crea matrícula y liquidación en ARGO. El acceso al contenido depende de «Acceso al curso» arriba;
+                  el certificado sigue las reglas de «Certificado». Opcional: genera usuario y contraseña del portal.
                 </p>
                 <div class="av-grid3">
                   <div class="av-field">

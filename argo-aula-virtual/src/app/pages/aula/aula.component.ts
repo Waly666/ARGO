@@ -200,7 +200,18 @@ export class AulaComponent implements OnInit, OnDestroy {
     return cert.encabezado || cert.nomCert || cert.programaDescr || 'Certificado';
   }
 
+  puedeCursar(c: CursoVirtual): boolean {
+    if (c.puedeCursar === false) return false;
+    if (c.accesoBloqueadoPago) return false;
+    if (c.requierePagoParaCursar && c.pago && !c.pago.pagado) return false;
+    return !!c.tienePaquete;
+  }
+
   abrir(curso: CursoVirtual) {
+    if (!this.puedeCursar(curso)) {
+      this.avisoPlayer.set('Complete el pago en el CEA para acceder a este curso.');
+      return;
+    }
     if (!curso.playerUrl) return;
     const full = this.resolverPlayerUrl(curso.playerUrl);
     this.safePlayerUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(full));
