@@ -43,6 +43,22 @@ export interface LoginResponse {
   user: AuthUser;
 }
 
+export type StaffLoginStep = 'complete' | 'mfa_verify' | 'mfa_setup';
+
+export interface StaffLoginResponse {
+  step: StaffLoginStep;
+  token?: string;
+  user?: AuthUser;
+  mfaToken?: string;
+  setupToken?: string;
+  username?: string;
+  qrDataUrl?: string;
+  manualSecret?: string;
+  issuer?: string;
+  recoveryCodes?: string[];
+  recoveryRemaining?: number;
+}
+
 export interface VerificarAdminResponse {
   ok: boolean;
   username: string;
@@ -125,20 +141,37 @@ export class AuthService {
       void this.router.navigateByUrl(destino, { replaceUrl: true });
     }
   }
-  login(username: string, password: string, turnstileToken?: string): Observable<LoginResponse> {
-    return this.http
-      .post<LoginResponse>(`${environment.apiUrl}/auth/login`, {
-        username,
-        password,
-        turnstileToken: turnstileToken || undefined,
-      })
-      .pipe(
-        tap((res) => {
-          localStorage.setItem(TOKEN_KEY, res.token);
-          this._token.set(res.token);
-          this.aplicarUsuarioSesion(res.user, { corregirRuta: false });
-        }),
-      );
+  login(username: string, password: string, turnstileToken?: string): Observable<StaffLoginResponse> {
+    return this.http.post<StaffLoginResponse>(`${environment.apiUrl}/auth/login`, {
+      username,
+      password,
+      turnstileToken: turnstileToken || undefined,
+    });
+  }
+
+  mfaVerify(mfaToken: string, code: string): Observable<StaffLoginResponse> {
+    return this.http.post<StaffLoginResponse>(`${environment.apiUrl}/auth/mfa/verify`, { mfaToken, code });
+  }
+
+  mfaRecovery(mfaToken: string, recoveryCode: string): Observable<StaffLoginResponse> {
+    return this.http.post<StaffLoginResponse>(`${environment.apiUrl}/auth/mfa/recovery`, {
+      mfaToken,
+      recoveryCode,
+    });
+  }
+
+  mfaSetupConfirm(setupToken: string, code: string): Observable<StaffLoginResponse> {
+    return this.http.post<StaffLoginResponse>(`${environment.apiUrl}/auth/mfa/setup/confirm`, {
+      setupToken,
+      code,
+    });
+  }
+
+  finalizeLogin(res: StaffLoginResponse): void {
+    if (!res.token || !res.user) return;
+    localStorage.setItem(TOKEN_KEY, res.token);
+    this._token.set(res.token);
+    this.aplicarUsuarioSesion(res.user, { corregirRuta: false });
   }
 
   /** Valida credenciales de admin sin cerrar la sesión del cajero. */

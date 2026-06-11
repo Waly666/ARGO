@@ -97,6 +97,52 @@
     font-size: .75rem;
     text-align: right;
   }
+
+  .qr {
+    display: block;
+    margin: 12px auto;
+    border-radius: 8px;
+    background: #fff;
+    padding: 8px;
+  }
+
+  .secret-hint code {
+    font-size: 12px;
+    word-break: break-all;
+    color: var(--accent);
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    margin: 8px 0 0;
+    text-decoration: underline;
+  }
+
+  .recovery-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+
+    code {
+      display: block;
+      padding: 6px 8px;
+      background: rgba(78, 163, 255, 0.1);
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: center;
+    }
+  }
+
+  .hint.warn { color: #ffb74d; }
 }
 
 @media (max-width: 720px) {

@@ -5,9 +5,11 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService, StaffLoginResponse } from '../../core/services/auth.service';
 import { rutaInicioApp } from '../../core/utils/auth-routes.util';
 import { environment } from '../../../environments/environment';
+
+type LoginUiStep = 'credentials' | 'mfa_verify' | 'mfa_setup' | 'mfa_recovery' | 'recovery_codes';
 
 @Component({
   selector: 'argo-login',
@@ -25,8 +27,18 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
 
   turnstile = viewChild(TurnstileComponent);
 
+  uiStep = signal<LoginUiStep>('credentials');
   username = signal('');
   password = signal('');
+  mfaCode = signal('');
+  recoveryCode = signal('');
+  mfaToken = signal('');
+  setupToken = signal('');
+  qrDataUrl = signal('');
+  manualSecret = signal('');
+  recoveryCodes = signal<string[]>([]);
+  displayName = signal('');
+
   turnstileSiteKey = signal('');
   turnstileToken = signal('');
   loading = signal(false);
@@ -37,10 +49,12 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   private drops: number[] = [];
 
   constructor() {
-    this.http.get<{ turnstileSiteKey?: string }>(`${environment.apiUrl}/auth/config`).subscribe({
-      next: (c) => this.turnstileSiteKey.set(c.turnstileSiteKey || ''),
-      error: () => {},
-    });
+    this.http
+      .get<{ turnstileSiteKey?: string }>(`${environment.apiUrl}/auth/config`)
+      .subscribe({
+        next: (c) => this.turnstileSiteKey.set(c.turnstileSiteKey || ''),
+        error: () => {},
+      });
   }
 
   ngAfterViewInit(): void {
@@ -54,7 +68,7 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
     if (this.rafId != null) cancelAnimationFrame(this.rafId);
   }
 
-  submit() {
+  submitCredentials() {
     if (!this.username() || !this.password()) {
       this.error.set('Ingresa usuario y contraseña');
       return;
@@ -67,21 +81,131 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
     this.error.set(null);
     this.loading.set(true);
     this.auth.login(this.username().trim(), this.password(), token || undefined).subscribe({
-      next: (res) => {
-        this.loading.set(false);
-        this.router.navigateByUrl(
-          rutaInicioApp(res.user?.permisos, {
-            puedeUsarPortalInstructor: res.user?.puedeUsarPortalInstructor === true,
-          }),
-        );
-      },
+      next: (res) => this.handleLoginStep(res),
       error: (err) => {
         this.loading.set(false);
         this.turnstile()?.reset();
-        const msg = err?.error?.message || 'Credenciales inválidas';
-        this.error.set(msg);
+        this.error.set(err?.error?.message || 'Credenciales inválidas');
       },
     });
+  }
+
+  submitMfaVerify() {
+    const code = this.mfaCode().trim();
+    if (!/^\d{6}$/.test(code)) {
+      this.error.set('Ingrese el código de 6 dígitos');
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.auth.mfaVerify(this.mfaToken(), code).subscribe({
+      next: (res) => this.handleLoginStep(res),
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'Código incorrecto');
+      },
+    });
+  }
+
+  submitMfaSetup() {
+    const code = this.mfaCode().trim();
+    if (!/^\d{6}$/.test(code)) {
+      this.error.set('Ingrese el código de 6 dígitos de su app');
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.auth.mfaSetupConfirm(this.setupToken(), code).subscribe({
+      next: (res) => this.handleLoginStep(res),
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'No se pudo activar 2FA');
+      },
+    });
+  }
+
+  submitRecovery() {
+    const code = this.recoveryCode().trim();
+    if (!code) {
+      this.error.set('Ingrese un código de recuperación');
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    this.auth.mfaRecovery(this.mfaToken(), code).subscribe({
+      next: (res) => this.handleLoginStep(res),
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'Código de recuperación inválido');
+      },
+    });
+  }
+
+  showRecovery() {
+    this.uiStep.set('mfa_recovery');
+    this.error.set(null);
+    this.mfaCode.set('');
+  }
+
+  backToMfaVerify() {
+    this.uiStep.set('mfa_verify');
+    this.error.set(null);
+    this.recoveryCode.set('');
+  }
+
+  continueAfterRecoveryCodes() {
+    const u = this.auth.user();
+    if (!u) return;
+    this.router.navigateByUrl(
+      rutaInicioApp(u.permisos, {
+        puedeUsarPortalInstructor: u.puedeUsarPortalInstructor === true,
+      }),
+    );
+  }
+
+  private handleLoginStep(res: StaffLoginResponse) {
+    this.loading.set(false);
+
+    if (res.step === 'complete' && res.token && res.user) {
+      this.auth.finalizeLogin(res);
+      if (res.recoveryCodes?.length) {
+        this.recoveryCodes.set(res.recoveryCodes);
+        this.uiStep.set('recovery_codes');
+        return;
+      }
+      this.enterApp(res);
+      return;
+    }
+
+    if (res.step === 'mfa_verify' && res.mfaToken) {
+      this.mfaToken.set(res.mfaToken);
+      this.displayName.set(res.username || '');
+      this.uiStep.set('mfa_verify');
+      this.mfaCode.set('');
+      return;
+    }
+
+    if (res.step === 'mfa_setup' && res.setupToken) {
+      this.setupToken.set(res.setupToken);
+      this.displayName.set(res.username || '');
+      this.qrDataUrl.set(res.qrDataUrl || '');
+      this.manualSecret.set(res.manualSecret || '');
+      this.uiStep.set('mfa_setup');
+      this.mfaCode.set('');
+      return;
+    }
+
+    this.error.set('Respuesta de autenticación no reconocida');
+  }
+
+  private enterApp(res: StaffLoginResponse) {
+    if (!res.token || !res.user) return;
+    this.auth.finalizeLogin(res);
+    this.router.navigateByUrl(
+      rutaInicioApp(res.user.permisos, {
+        puedeUsarPortalInstructor: res.user.puedeUsarPortalInstructor === true,
+      }),
+    );
   }
 
   private resizeCanvas() {

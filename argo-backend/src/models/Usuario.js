@@ -17,6 +17,13 @@ const UsuarioSchema = new mongoose.Schema(
     idEmpleado: { type: Number, index: true },
     /** Sedes donde puede operar (idSede). Admin ve todas aunque no esté listado. */
     sedesPermitidas: { type: [String], default: [] },
+    /** 2FA TOTP (ERP web) — secreto cifrado AES-256-GCM */
+    totpEnabled: { type: Boolean, default: false },
+    totpSecretEnc: { type: String, default: null },
+    totpPendingEnc: { type: String, default: null },
+    totpPendingAt: { type: Date, default: null },
+    totpEnrolledAt: { type: Date, default: null },
+    mfaRecoveryHashes: { type: [String], default: [] },
   },
   { collection: 'usuarios', timestamps: true, strict: false },
 );

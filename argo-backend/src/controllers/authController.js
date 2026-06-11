@@ -31,7 +31,8 @@ async function validarPasswordUsuario(u, password) {
 const { verificarAdminCredenciales } = require('../services/authVerify');
 const { enriquecerUsuarioDoc, enriquecerUsuarioPorId } = require('../services/authUsuario');
 const { logAuthIntento } = require('../services/authSecurityLog');
-const { turnstileEnabled, turnstileSiteKey } = require('../config/security');
+const { turnstileEnabled, turnstileSiteKey, mfaStaffRequired, mfaStaffWebOnly } = require('../config/security');
+const { resolvePostPasswordLogin, signAccessToken } = require('../services/staffMfa');
 
 function sign(u) {
   const rol = normalizarRol(u.rol);
@@ -45,6 +46,7 @@ function sign(u) {
 exports.configPublica = (_req, res) => {
   res.json({
     turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
+    mfaRequired: mfaStaffRequired() && mfaStaffWebOnly(),
   });
 };
 
@@ -67,11 +69,17 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    logAuthIntento({ req, canal: 'staff', identificador: username, ok: true });
-    u.rol = normalizarRol(u.rol);
-    const token = sign(u);
-    const userJson = await enriquecerUsuarioDoc(u);
-    return res.json({ token, user: userJson });
+    logAuthIntento({ req, canal: 'staff', identificador: username, ok: true, motivo: 'password_ok' });
+
+    const mfa = await resolvePostPasswordLogin(req, u);
+    if (mfa.step === 'complete') {
+      u.rol = normalizarRol(u.rol);
+      const token = signAccessToken(u);
+      const userJson = await enriquecerUsuarioDoc(u);
+      return res.json({ step: 'complete', token, user: userJson });
+    }
+
+    return res.json(mfa);
   } catch (e) {
     next(e);
   }

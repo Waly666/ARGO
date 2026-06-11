@@ -29,6 +29,20 @@ function trustProxyHops() {
   return envInt('TRUST_PROXY', 1);
 }
 
+/** 2FA TOTP obligatorio para ERP web (app.finstruvial.edu.co). */
+function mfaStaffRequired() {
+  return envFlag('MFA_STAFF_REQUIRED', true);
+}
+
+/** Solo exige MFA en navegador; app móvil (X-ARGO-Cliente) queda exenta. */
+function mfaStaffWebOnly() {
+  return envFlag('MFA_STAFF_WEB_ONLY', true);
+}
+
+function mfaTotpIssuer() {
+  return String(process.env.MFA_TOTP_ISSUER || 'ARGO Finstruvial').trim() || 'ARGO Finstruvial';
+}
+
 module.exports = {
   envFlag,
   envInt,
@@ -36,6 +50,9 @@ module.exports = {
   turnstileSiteKey,
   portalRegistroAbierto,
   trustProxyHops,
+  mfaStaffRequired,
+  mfaStaffWebOnly,
+  mfaTotpIssuer,
   loginRateLimit: {
     windowMs: envInt('RATE_LIMIT_LOGIN_WINDOW_MS', 15 * 60 * 1000),
     max: envInt('RATE_LIMIT_LOGIN_MAX', 10),
