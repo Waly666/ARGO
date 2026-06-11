@@ -392,6 +392,9 @@ async function listarMisCursos(numDoc) {
         pctMinEvaluaciones: estado.pctMinEvaluaciones,
         intentosMaxEval: estado.intentosMaxEval,
         intentosRestantes: estado.intentosRestantes,
+        cumpleCompletitud: estado.cumpleCompletitud,
+        cumpleNota: estado.cumpleNota,
+        puedeReintentar: estado.puedeReintentar,
         certificadoPendientePago: estado.certificadoPendientePago,
       },
     });
@@ -414,6 +417,9 @@ async function listarMisCursos(numDoc) {
           pctMinEvaluaciones: estado.pctMinEvaluaciones,
           intentosMaxEval: estado.intentosMaxEval,
           intentosRestantes: estado.intentosRestantes,
+          cumpleCompletitud: estado.cumpleCompletitud,
+          cumpleNota: estado.cumpleNota,
+          puedeReintentar: estado.puedeReintentar,
         },
       });
     }

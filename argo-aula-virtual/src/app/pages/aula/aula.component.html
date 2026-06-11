@@ -313,45 +313,225 @@
               <div>
                 <p class="dash-kicker">Historial académico</p>
                 <h1>Mis puntajes</h1>
-                <p class="dash-welcome">Notas de lecciones y evaluaciones finales por programa</p>
+                <p class="dash-welcome">Avance, notas por lección y evaluación final de cada programa matriculado</p>
               </div>
             </header>
 
-            @if (cursosConPuntajes().length) {
+            @if (cursos().length) {
+              @if (resumenPuntajesGlobal(); as rg) {
+                <section class="dash-scores-overview" aria-label="Resumen general">
+                  <article class="dash-scores-kpi">
+                    <strong>{{ rg.cursos }}</strong>
+                    <span>Cursos matriculados</span>
+                  </article>
+                  <article class="dash-scores-kpi">
+                    <strong>{{ rg.promedioAvance | number: '1.0-0' }}%</strong>
+                    <span>Promedio de avance</span>
+                  </article>
+                  <article class="dash-scores-kpi">
+                    <strong>{{ rg.leccionesAprobadas }}/{{ rg.leccionesTotal }}</strong>
+                    <span>Lecciones aprobadas</span>
+                  </article>
+                  <article class="dash-scores-kpi">
+                    <strong>{{ rg.leccionesConNota }}</strong>
+                    <span>Lecciones con puntaje</span>
+                  </article>
+                  <article class="dash-scores-kpi">
+                    <strong>{{ rg.intentosEval }}</strong>
+                    <span>Intentos evaluación final</span>
+                  </article>
+                </section>
+              }
+
               <div class="dash-scores-grid">
-                @for (c of cursosConPuntajes(); track c.idPrograma) {
+                @for (c of cursosParaPuntajes(); track c.idPrograma) {
                   <article class="dash-score-card">
                     <header class="dash-score-card__head">
                       <div>
                         <h3>{{ c.nombreProg }}</h3>
-                        <p class="dash-muted">
-                          Avance {{ pct(c) | number: '1.0-0' }}%
-                          @if (mejorNota(c); as mn) { · Mejor nota <strong>{{ mn | number: '1.0-0' }}%</strong> }
-                          · Mínimo exigido {{ notaMinima(c) | number: '1.0-0' }}%
-                        </p>
+                        <p class="dash-muted">Matriculado el {{ fechaInicio(c) }}</p>
                       </div>
-                      @if (c.progreso?.aprobado) {
-                        <span class="dash-badge-ok">Aprobado</span>
-                      }
+                      <div class="dash-score-card__badges">
+                        <span class="dash-score-status">{{ estadoCursoPuntajes(c) }}</span>
+                        @if (c.progreso?.aprobado) {
+                          <span class="dash-badge-ok">Aprobado</span>
+                        }
+                        @if (c.progreso?.certificadoEmitido) {
+                          <span class="dash-badge-ok">Certificado</span>
+                        }
+                      </div>
                     </header>
 
-                    @if (clasesConNota(c).length) {
-                      <section class="dash-score-block">
-                        <h4>Puntajes por lección</h4>
-                        <div class="dash-lesson-scores">
-                          @for (cl of clasesConNota(c); track cl.numero) {
-                            <div class="dash-lesson-score" [class]="'dash-lesson-score--' + claseNotaTone(cl.pct)">
-                              <span>Lección {{ cl.numero }}</span>
-                              <strong>{{ cl.pct | number: '1.0-0' }}%</strong>
-                            </div>
-                          }
+                    <section class="dash-score-summary">
+                      <div class="dash-score-summary__progress">
+                        <div class="dash-score-summary__progress-head">
+                          <span>Avance general del curso</span>
+                          <strong>{{ pct(c) | number: '1.0-0' }}%</strong>
                         </div>
-                      </section>
-                    }
+                        <div class="dash-progress-track dash-progress-track--lg">
+                          <div class="dash-progress-fill" [style.width.%]="pct(c)"></div>
+                        </div>
+                        <p class="dash-muted dash-score-summary__hint">
+                          Mínimo exigido para aprobar: {{ pctMinCompletitud(c) | number: '1.0-0' }}% de avance
+                          @if (cumpleCompletitud(c)) {
+                            · <span class="dash-text-ok">Cumple avance</span>
+                          } @else {
+                            · <span class="dash-text-warn">Falta avance</span>
+                          }
+                        </p>
+                      </div>
+
+                      <div class="dash-score-metrics">
+                        <div class="dash-score-metric">
+                          <span>Lecciones aprobadas</span>
+                          <strong>{{ c.progreso?.clasesAprobadas ?? 0 }}/{{ c.progreso?.totalClases ?? clasesDetalle(c).length }}</strong>
+                        </div>
+                        <div class="dash-score-metric">
+                          <span>Con puntaje registrado</span>
+                          <strong>{{ leccionesConNotaCount(c) }}</strong>
+                        </div>
+                        <div class="dash-score-metric">
+                          <span>Promedio lecciones</span>
+                          <strong>
+                            @if (promedioLecciones(c); as prom) {
+                              {{ prom | number: '1.0-0' }}%
+                            } @else {
+                              —
+                            }
+                          </strong>
+                        </div>
+                        <div class="dash-score-metric">
+                          <span>Suma puntajes lecciones</span>
+                          <strong>{{ sumaPuntajesLecciones(c) | number: '1.0-0' }} pts</strong>
+                        </div>
+                        <div class="dash-score-metric">
+                          <span>Mejor nota evaluación</span>
+                          <strong>
+                            @if (mejorNota(c); as mn) {
+                              {{ mn | number: '1.0-0' }}%
+                            } @else {
+                              —
+                            }
+                          </strong>
+                        </div>
+                        <div class="dash-score-metric">
+                          <span>Última nota evaluación</span>
+                          <strong>
+                            @if (ultimaNotaEval(c); as un) {
+                              {{ un | number: '1.0-0' }}%
+                            } @else {
+                              —
+                            }
+                          </strong>
+                        </div>
+                        <div class="dash-score-metric">
+                          <span>Intentos evaluación</span>
+                          <strong>{{ c.progreso?.intentosEval ?? intentosDe(c).length }}/{{ intentosMaxEval(c) }}</strong>
+                        </div>
+                        <div class="dash-score-metric">
+                          <span>Nota mínima exigida</span>
+                          <strong>{{ notaMinima(c) | number: '1.0-0' }}%</strong>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="dash-score-block">
+                      <h4>Requisitos para aprobar</h4>
+                      <ul class="dash-score-checklist">
+                        <li [class.dash-score-checklist__ok]="cumpleCompletitud(c)">
+                          Avance ≥ {{ pctMinCompletitud(c) | number: '1.0-0' }}%
+                          @if (cumpleCompletitud(c)) { ✓ } @else { · actual {{ pct(c) | number: '1.0-0' }}% }
+                        </li>
+                        <li [class.dash-score-checklist__ok]="cumpleNotaEval(c)">
+                          Evaluación final ≥ {{ notaMinima(c) | number: '1.0-0' }}%
+                          @if (cumpleNotaEval(c)) {
+                            ✓
+                          } @else if (mejorNota(c) != null) {
+                            · mejor {{ mejorNota(c)! | number: '1.0-0' }}%
+                          } @else {
+                            · sin intentos
+                          }
+                        </li>
+                        <li>
+                          Intentos restantes evaluación:
+                          <strong>{{ intentosRestantes(c) }}</strong>
+                          @if (c.reglas?.puedeReintentar) {
+                            · puede reintentar
+                          }
+                        </li>
+                      </ul>
+                    </section>
+
+                    <section class="dash-score-block">
+                      <h4>Detalle por lección</h4>
+                      <div class="dash-table-wrap">
+                        <table class="dash-table dash-table--lessons">
+                          <thead>
+                            <tr>
+                              <th>Lección</th>
+                              <th>Puntaje</th>
+                              <th>Avance</th>
+                              <th>Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (cl of clasesDetalle(c); track cl.numero) {
+                              <tr [class.dash-table-row-muted]="cl.pct <= 0">
+                                <td>Lección {{ cl.numero }}</td>
+                                <td>
+                                  @if (cl.pct > 0) {
+                                    <span class="dash-score-pill dash-score-pill--sm" [class]="'dash-score-pill--' + claseNotaTone(cl.pct)">
+                                      {{ cl.pct | number: '1.0-0' }}%
+                                    </span>
+                                  } @else {
+                                    <span class="dash-muted">—</span>
+                                  }
+                                </td>
+                                <td>
+                                  <div class="dash-lesson-bar">
+                                    <div class="dash-lesson-bar__fill" [style.width.%]="cl.pct" [class]="'dash-lesson-bar__fill--' + claseNotaTone(cl.pct)"></div>
+                                  </div>
+                                </td>
+                                <td>
+                                  @if (cl.aprobada) {
+                                    <span class="dash-badge-ok">Aprobada</span>
+                                  } @else if (cl.pct > 0) {
+                                    <span class="dash-badge-warn">En proceso</span>
+                                  } @else {
+                                    <span class="dash-muted">Sin intentar</span>
+                                  }
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                          <tfoot>
+                            <tr class="dash-table-total">
+                              <td><strong>Total / resumen</strong></td>
+                              <td>
+                                <strong>
+                                  @if (promedioLecciones(c); as prom) {
+                                    Prom. {{ prom | number: '1.0-0' }}%
+                                  } @else {
+                                    —
+                                  }
+                                </strong>
+                              </td>
+                              <td colspan="2">
+                                <strong>
+                                  {{ c.progreso?.clasesAprobadas ?? 0 }} aprobadas ·
+                                  {{ leccionesConNotaCount(c) }} con nota ·
+                                  suma {{ sumaPuntajesLecciones(c) | number: '1.0-0' }} pts
+                                </strong>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </section>
 
                     @if (intentosDe(c).length) {
                       <section class="dash-score-block">
-                        <h4>Evaluación final — intentos</h4>
+                        <h4>Evaluación final — historial de intentos</h4>
                         <div class="dash-table-wrap">
                           <table class="dash-table">
                             <thead>
@@ -384,11 +564,27 @@
                                 </tr>
                               }
                             </tbody>
+                            <tfoot>
+                              <tr class="dash-table-total">
+                                <td colspan="5">
+                                  <strong>
+                                    Mejor nota: {{ (mejorNota(c) ?? 0) | number: '1.0-0' }}% ·
+                                    Última: {{ (ultimaNotaEval(c) ?? 0) | number: '1.0-0' }}% ·
+                                    Intentos usados: {{ c.progreso?.intentosEval ?? intentosDe(c).length }}/{{ intentosMaxEval(c) }}
+                                  </strong>
+                                </td>
+                              </tr>
+                            </tfoot>
                           </table>
                         </div>
                       </section>
-                    } @else if (!clasesConNota(c).length) {
-                      <p class="dash-muted">Aún no hay puntajes registrados en este programa.</p>
+                    } @else {
+                      <p class="dash-muted dash-score-empty-eval">
+                        Aún no ha presentado la evaluación final.
+                        @if (intentosRestantes(c) > 0) {
+                          Tiene {{ intentosRestantes(c) }} intento(s) disponible(s).
+                        }
+                      </p>
                     }
 
                     @if (c.tienePaquete && puedeCursar(c)) {
@@ -399,8 +595,8 @@
               </div>
             } @else {
               <div class="dash-empty">
-                <p>Aún no hay puntajes. Complete lecciones o presente la evaluación final en sus cursos.</p>
-                <button type="button" class="dash-btn dash-btn-primary" (click)="irPanel('cursos')">Ir a mis cursos</button>
+                <p>Aún no hay cursos matriculados. Matricúlese para ver su avance y puntajes.</p>
+                <a routerLink="/tienda" class="dash-btn dash-btn-primary">Ir a la tienda</a>
               </div>
             }
           }

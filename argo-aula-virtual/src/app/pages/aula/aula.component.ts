@@ -67,6 +67,39 @@ export class AulaComponent implements OnInit, OnDestroy {
       .sort((a, b) => (this.mejorNota(b) ?? -1) - (this.mejorNota(a) ?? -1)),
   );
 
+  cursosParaPuntajes = computed(() =>
+    [...this.cursos()].sort((a, b) => this.pct(b) - this.pct(a) || String(a.nombreProg).localeCompare(String(b.nombreProg), 'es')),
+  );
+
+  resumenPuntajesGlobal = computed(() => {
+    const cs = this.cursos();
+    let leccionesAprobadas = 0;
+    let leccionesTotal = 0;
+    let leccionesConNota = 0;
+    let intentosEval = 0;
+    let sumaAvance = 0;
+    let cursosConActividad = 0;
+
+    for (const c of cs) {
+      sumaAvance += this.pct(c);
+      if (this.pct(c) > 0 || this.tieneHistorialPuntajes(c)) cursosConActividad++;
+      leccionesAprobadas += c.progreso?.clasesAprobadas ?? 0;
+      leccionesTotal += c.progreso?.totalClases ?? this.clasesDetalle(c).length;
+      leccionesConNota += this.leccionesConNotaCount(c);
+      intentosEval += c.progreso?.intentosEval ?? this.intentosDe(c).length;
+    }
+
+    return {
+      cursos: cs.length,
+      cursosConActividad,
+      promedioAvance: cs.length ? Math.round(sumaAvance / cs.length) : 0,
+      leccionesAprobadas,
+      leccionesTotal,
+      leccionesConNota,
+      intentosEval,
+    };
+  });
+
   private onMessage = (ev: MessageEvent) => this.handleIframeMessage(ev);
   private onVisibility = () => {
     if (document.visibilityState === 'visible' && this.auth.isLoggedIn()) {
@@ -158,7 +191,68 @@ export class AulaComponent implements OnInit, OnDestroy {
   }
 
   clasesConNota(c: CursoVirtual): ClaseProgresoVirtual[] {
-    return (c.progreso?.clases || []).filter((cl) => cl.pct > 0);
+    return this.clasesDetalle(c).filter((cl) => cl.pct > 0);
+  }
+
+  clasesDetalle(c: CursoVirtual): ClaseProgresoVirtual[] {
+    const total = Math.max(c.progreso?.totalClases ?? 0, ...(c.progreso?.clases || []).map((cl) => cl.numero), 7);
+    const map = new Map((c.progreso?.clases || []).map((cl) => [cl.numero, cl]));
+    const out: ClaseProgresoVirtual[] = [];
+    for (let i = 1; i <= total; i++) {
+      out.push(map.get(i) ?? { numero: i, pct: 0, aprobada: false });
+    }
+    return out;
+  }
+
+  leccionesConNotaCount(c: CursoVirtual): number {
+    return this.clasesConNota(c).length;
+  }
+
+  promedioLecciones(c: CursoVirtual): number | null {
+    const p = c.progreso?.promedioClases;
+    return p != null ? p : null;
+  }
+
+  pctMinCompletitud(c: CursoVirtual): number {
+    return c.reglas?.pctMinCompletitud ?? c.pctMinCompletitud ?? 80;
+  }
+
+  intentosMaxEval(c: CursoVirtual): number {
+    return c.reglas?.intentosMaxEval ?? c.intentosMaxEval ?? 3;
+  }
+
+  intentosRestantes(c: CursoVirtual): number {
+    return c.reglas?.intentosRestantes ?? Math.max(0, this.intentosMaxEval(c) - (c.progreso?.intentosEval ?? 0));
+  }
+
+  cumpleCompletitud(c: CursoVirtual): boolean {
+    if (c.reglas?.cumpleCompletitud != null) return c.reglas.cumpleCompletitud;
+    return this.pct(c) >= this.pctMinCompletitud(c);
+  }
+
+  cumpleNotaEval(c: CursoVirtual): boolean {
+    if (c.reglas?.cumpleNota != null) return c.reglas.cumpleNota;
+    const mn = this.mejorNota(c);
+    return mn != null && mn >= this.notaMinima(c);
+  }
+
+  ultimaNotaEval(c: CursoVirtual): number | null {
+    const p = c.progreso;
+    if (p?.ultimaNotaEval != null && p.ultimaNotaEval > 0) return p.ultimaNotaEval;
+    const intentos = this.intentosDe(c);
+    if (!intentos.length) return null;
+    return intentos[intentos.length - 1].nota;
+  }
+
+  sumaPuntajesLecciones(c: CursoVirtual): number {
+    return this.clasesDetalle(c).reduce((acc, cl) => acc + cl.pct, 0);
+  }
+
+  estadoCursoPuntajes(c: CursoVirtual): string {
+    if (c.progreso?.certificadoEmitido) return 'Certificado emitido';
+    if (c.progreso?.aprobado) return 'Aprobado';
+    if (this.pct(c) > 0 || this.tieneHistorialPuntajes(c)) return 'En progreso';
+    return 'Sin iniciar';
   }
 
   tieneHistorialPuntajes(c: CursoVirtual): boolean {
