@@ -44,6 +44,10 @@ function normalizarLanding(input) {
   const valoresSrc = src.valores && typeof src.valores === 'object' ? src.valores : {};
   const cursosSrc = src.cursos && typeof src.cursos === 'object' ? src.cursos : {};
   const carrerasSrc = src.carreras && typeof src.carreras === 'object' ? src.carreras : {};
+  const heroSrc = src.hero && typeof src.hero === 'object' ? src.hero : {};
+  const navSrc = src.nav && typeof src.nav === 'object' ? src.nav : {};
+  const footerSrc = src.footer && typeof src.footer === 'object' ? src.footer : {};
+  const catalogoSrc = src.catalogo && typeof src.catalogo === 'object' ? src.catalogo : {};
   const pilaresSrc = src.pilares && typeof src.pilares === 'object' ? src.pilares : {};
   const faqSrc = src.faq && typeof src.faq === 'object' ? src.faq : {};
 
@@ -86,11 +90,57 @@ function normalizarLanding(input) {
     ? src.footerServicios.map((l) => str(l)).filter(Boolean)
     : [];
 
+  const infoCardsRaw = Array.isArray(src.infoCards) ? src.infoCards : [];
+  const infoCards = infoCardsRaw.length
+    ? infoCardsRaw.map((item, i) => {
+        const fb = d.infoCards[i] || d.infoCards[0] || {};
+        const fuente = ['texto', 'telefono', 'direccion'].includes(item?.fuente) ? item.fuente : fb.fuente;
+        return {
+          icon: str(item?.icon, fb.icon),
+          title: str(item?.title, fb.title),
+          text: str(item?.text, fb.text),
+          fuente,
+        };
+      })
+    : d.infoCards.map((x) => ({ ...x }));
+
   return {
     instBarTag: str(src.instBarTag, d.instBarTag),
     quoteText: str(src.quoteText, d.quoteText),
+    quoteLabel: str(src.quoteLabel, d.quoteLabel),
     metaDescription: str(src.metaDescription),
     metaKeywords: str(src.metaKeywords),
+    hero: {
+      ctaPrincipal: str(heroSrc.ctaPrincipal, d.hero.ctaPrincipal),
+      ctaSecundario: str(heroSrc.ctaSecundario, d.hero.ctaSecundario),
+      mostrarBotonLlamar: heroSrc.mostrarBotonLlamar !== false && heroSrc.mostrarBotonLlamar !== 'false',
+      imagenAlt: str(heroSrc.imagenAlt, d.hero.imagenAlt),
+    },
+    infoCards,
+    nav: {
+      home: str(navSrc.home, d.nav.home),
+      tienda: str(navSrc.tienda, d.nav.tienda),
+      cursos: str(navSrc.cursos, d.nav.cursos),
+      aula: str(navSrc.aula, d.nav.aula),
+      acerca: str(navSrc.acerca, d.nav.acerca),
+      acceder: str(navSrc.acceder, d.nav.acceder),
+      registrarse: str(navSrc.registrarse, d.nav.registrarse),
+      salir: str(navSrc.salir, d.nav.salir),
+    },
+    footer: {
+      founded: str(footerSrc.founded, d.footer.founded),
+      copyright: str(footerSrc.copyright, d.footer.copyright),
+      tituloEnlaces: str(footerSrc.tituloEnlaces, d.footer.tituloEnlaces),
+      tituloServicios: str(footerSrc.tituloServicios, d.footer.tituloServicios),
+      tituloContacto: str(footerSrc.tituloContacto, d.footer.tituloContacto),
+    },
+    catalogo: {
+      tituloCursos: str(catalogoSrc.tituloCursos, d.catalogo.tituloCursos),
+      tituloTienda: str(catalogoSrc.tituloTienda, d.catalogo.tituloTienda),
+      leadCursos: str(catalogoSrc.leadCursos, d.catalogo.leadCursos),
+      leadTienda: str(catalogoSrc.leadTienda, d.catalogo.leadTienda),
+      placeholderBuscar: str(catalogoSrc.placeholderBuscar, d.catalogo.placeholderBuscar),
+    },
     ofertas: {
       titulo: str(ofertasSrc.titulo, d.ofertas.titulo),
       lead: str(ofertasSrc.lead, d.ofertas.lead),
@@ -138,6 +188,8 @@ function normalizarLanding(input) {
       items: carrerasItems.length ? carrerasItems : d.carreras.items.map((x) => ({ ...x })),
     },
     pilares: {
+      tabCapacitacion: str(pilaresSrc.tabCapacitacion, d.pilares.tabCapacitacion),
+      tabCampanas: str(pilaresSrc.tabCampanas, d.pilares.tabCampanas),
       capacitacion: cap.length ? cap : [...d.pilares.capacitacion],
       campanas: camp.length ? camp : [...d.pilares.campanas],
     },

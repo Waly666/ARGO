@@ -9,6 +9,9 @@
   <div class="ple-nav">
     @for (b of [
       { id: 'general', label: 'General y SEO' },
+      { id: 'hero', label: 'Hero y botones' },
+      { id: 'info', label: 'Tarjetas contacto' },
+      { id: 'nav', label: 'Menú superior' },
       { id: 'ofertas', label: 'Qué ofrecemos' },
       { id: 'beneficios', label: 'Beneficios' },
       { id: 'servicios', label: 'Servicios empresa' },
@@ -19,7 +22,8 @@
       { id: 'pasos', label: 'Pasos' },
       { id: 'faq', label: 'FAQ' },
       { id: 'pilares', label: 'Pilares' },
-      { id: 'footer', label: 'Pie de página' }
+      { id: 'footer', label: 'Pie de página' },
+      { id: 'catalogo', label: 'Catálogo / tienda' }
     ]; track b.id) {
       <button type="button" class="ple-nav-btn" [class.active]="bloque() === b.id" (click)="toggleBloque(b.id)">
         {{ b.label }}
@@ -38,6 +42,10 @@
         <label>Frase destacada (banda azul)</label>
         <textarea rows="2" [(ngModel)]="landing.quoteText"></textarea>
       </div>
+      <div class="av-field">
+        <label>Etiqueta «O llámanos»</label>
+        <input type="text" [(ngModel)]="landing.quoteLabel" />
+      </div>
       <h3>SEO (opcional)</h3>
       <div class="av-field">
         <label>Meta descripción</label>
@@ -46,6 +54,63 @@
       <div class="av-field">
         <label>Palabras clave</label>
         <textarea rows="2" [(ngModel)]="landing.metaKeywords" placeholder="cursos virtuales, programas de capacitación…"></textarea>
+      </div>
+    </div>
+  }
+
+  @if (bloque() === 'hero') {
+    <div class="ple-block">
+      <div class="av-grid2">
+        <div class="av-field"><label>Botón principal</label><input [(ngModel)]="landing.hero.ctaPrincipal" /></div>
+        <div class="av-field"><label>Botón secundario</label><input [(ngModel)]="landing.hero.ctaSecundario" /></div>
+      </div>
+      <label class="av-check">
+        <input type="checkbox" [(ngModel)]="landing.hero.mostrarBotonLlamar" />
+        Mostrar botón «Llamar» si hay teléfono
+      </label>
+      <div class="av-field">
+        <label>Texto alternativo imagen hero</label>
+        <input [(ngModel)]="landing.hero.imagenAlt" />
+      </div>
+    </div>
+  }
+
+  @if (bloque() === 'info') {
+    <div class="ple-block">
+      @for (card of landing.infoCards; track $index; let i = $index) {
+        <div class="ple-card">
+          <div class="ple-card-head"><strong>Tarjeta {{ i + 1 }}</strong></div>
+          <div class="av-grid3">
+            <div class="av-field"><label>Icono</label><input [(ngModel)]="card.icon" /></div>
+            <div class="av-field"><label>Título</label><input [(ngModel)]="card.title" /></div>
+            <div class="av-field">
+              <label>Contenido</label>
+              <select [(ngModel)]="card.fuente">
+                <option value="texto">Texto fijo</option>
+                <option value="telefono">Teléfono de la empresa</option>
+                <option value="direccion">Dirección de la empresa</option>
+              </select>
+            </div>
+          </div>
+          @if (card.fuente === 'texto') {
+            <div class="av-field"><label>Texto</label><input [(ngModel)]="card.text" /></div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (bloque() === 'nav') {
+    <div class="ple-block">
+      <div class="av-grid3">
+        <div class="av-field"><label>Home</label><input [(ngModel)]="landing.nav.home" /></div>
+        <div class="av-field"><label>Tienda</label><input [(ngModel)]="landing.nav.tienda" /></div>
+        <div class="av-field"><label>Cursos</label><input [(ngModel)]="landing.nav.cursos" /></div>
+        <div class="av-field"><label>Aula virtual</label><input [(ngModel)]="landing.nav.aula" /></div>
+        <div class="av-field"><label>Acerca de</label><input [(ngModel)]="landing.nav.acerca" /></div>
+        <div class="av-field"><label>Acceder</label><input [(ngModel)]="landing.nav.acceder" /></div>
+        <div class="av-field"><label>Registrarse</label><input [(ngModel)]="landing.nav.registrarse" /></div>
+        <div class="av-field"><label>Salir</label><input [(ngModel)]="landing.nav.salir" /></div>
       </div>
     </div>
   }
@@ -218,6 +283,10 @@
 
   @if (bloque() === 'pilares') {
     <div class="ple-block">
+      <div class="av-grid2">
+        <div class="av-field"><label>Pestaña capacitación</label><input [(ngModel)]="landing.pilares.tabCapacitacion" /></div>
+        <div class="av-field"><label>Pestaña campañas</label><input [(ngModel)]="landing.pilares.tabCampanas" /></div>
+      </div>
       <h3>Capacitación</h3>
       @for (linea of landing.pilares.capacitacion; track $index; let i = $index) {
         <div class="ple-card ple-card--inline">
@@ -239,6 +308,16 @@
 
   @if (bloque() === 'footer') {
     <div class="ple-block">
+      <div class="av-grid2">
+        <div class="av-field"><label>Año fundación</label><input [(ngModel)]="landing.footer.founded" /></div>
+        <div class="av-field"><label>Título enlaces</label><input [(ngModel)]="landing.footer.tituloEnlaces" /></div>
+        <div class="av-field"><label>Título servicios</label><input [(ngModel)]="landing.footer.tituloServicios" /></div>
+        <div class="av-field"><label>Título contacto</label><input [(ngModel)]="landing.footer.tituloContacto" /></div>
+      </div>
+      <div class="av-field">
+        <label>Copyright (pie inferior)</label>
+        <textarea rows="2" [(ngModel)]="landing.footer.copyright"></textarea>
+      </div>
       <h3>Lista «Servicios» en el pie</h3>
       @for (s of landing.footerServicios; track $index; let i = $index) {
         <div class="ple-card ple-card--inline">
@@ -247,6 +326,16 @@
         </div>
       }
       <button type="button" class="av-btn av-btn--ghost" (click)="addFooterServicio()">+ Añadir ítem</button>
+    </div>
+  }
+
+  @if (bloque() === 'catalogo') {
+    <div class="ple-block">
+      <div class="av-field"><label>Título página cursos</label><input [(ngModel)]="landing.catalogo.tituloCursos" /></div>
+      <div class="av-field"><label>Intro página cursos</label><textarea rows="2" [(ngModel)]="landing.catalogo.leadCursos"></textarea></div>
+      <div class="av-field"><label>Título tienda</label><input [(ngModel)]="landing.catalogo.tituloTienda" /></div>
+      <div class="av-field"><label>Intro tienda</label><textarea rows="2" [(ngModel)]="landing.catalogo.leadTienda"></textarea></div>
+      <div class="av-field"><label>Placeholder buscador</label><input [(ngModel)]="landing.catalogo.placeholderBuscar" /></div>
     </div>
   }
 </div>

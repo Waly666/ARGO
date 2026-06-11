@@ -3,8 +3,45 @@ const LANDING_DEFAULTS = {
   instBarTag: 'Cursos y programas de capacitación virtual en Colombia',
   quoteText:
     'Cursos y programas virtuales que transforman la seguridad vial: estudie hoy, certifique mañana.',
+  quoteLabel: 'O llámanos',
   metaDescription: '',
   metaKeywords: '',
+  hero: {
+    ctaPrincipal: 'Ver cursos y programas',
+    ctaSecundario: 'Crear cuenta gratis',
+    mostrarBotonLlamar: true,
+    imagenAlt: 'Estudiante en cursos y programas del aula virtual',
+  },
+  infoCards: [
+    { icon: '🎓', title: 'Capacitación', text: 'Certificamos con calidad', fuente: 'texto' },
+    { icon: '📞', title: 'Línea de atención', text: '', fuente: 'telefono' },
+    { icon: '📍', title: 'Dirección', text: '', fuente: 'direccion' },
+  ],
+  nav: {
+    home: 'Home',
+    tienda: 'Tienda',
+    cursos: 'Cursos',
+    aula: 'Aula virtual',
+    acerca: 'Acerca de',
+    acceder: 'Acceder',
+    registrarse: 'Registrarse',
+    salir: 'Salir',
+  },
+  footer: {
+    founded: 'Est. 1997',
+    copyright:
+      'Copyright © 2026 All Rights Reserved INSTITUTO TECNICO FINSTRUVIAL Designed by WALTER AGUILAR',
+    tituloEnlaces: 'Enlaces rápidos',
+    tituloServicios: 'Servicios',
+    tituloContacto: 'Contáctanos',
+  },
+  catalogo: {
+    tituloCursos: 'Catálogo de cursos y programas virtuales',
+    tituloTienda: 'Tienda de cursos y programas',
+    leadCursos: 'Explore cursos y programas de capacitación virtual en el aula virtual.',
+    leadTienda: 'Inscríbase a cursos y programas de capacitación en línea.',
+    placeholderBuscar: 'Buscar curso o programa…',
+  },
   ofertas: {
     titulo: '¿Qué ofrecemos en el aula virtual?',
     lead: 'Cursos virtuales y programas de capacitación en seguridad vial para personas, empresas e instituciones.',
@@ -224,6 +261,8 @@ const LANDING_DEFAULTS = {
     ],
   },
   pilares: {
+    tabCapacitacion: 'Capacitación',
+    tabCampanas: 'Campañas',
     capacitacion: [
       'Capacitamos para crear una cultura vial responsable y segura.',
       'Desarrollamos estudios técnicos y planes estratégicos de tránsito que respaldan decisiones seguras y sostenibles en la gestión vial.',

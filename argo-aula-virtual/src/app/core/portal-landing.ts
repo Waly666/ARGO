@@ -10,11 +10,50 @@ import {
   VALORES,
 } from '../pages/home/home-content';
 
+export interface LandingInfoCard {
+  icon: string;
+  title: string;
+  text: string;
+  fuente: 'texto' | 'telefono' | 'direccion';
+}
+
 export interface PortalLandingConfig {
   instBarTag: string;
   quoteText: string;
+  quoteLabel: string;
   metaDescription: string;
   metaKeywords: string;
+  hero: {
+    ctaPrincipal: string;
+    ctaSecundario: string;
+    mostrarBotonLlamar: boolean;
+    imagenAlt: string;
+  };
+  infoCards: LandingInfoCard[];
+  nav: {
+    home: string;
+    tienda: string;
+    cursos: string;
+    aula: string;
+    acerca: string;
+    acceder: string;
+    registrarse: string;
+    salir: string;
+  };
+  footer: {
+    founded: string;
+    copyright: string;
+    tituloEnlaces: string;
+    tituloServicios: string;
+    tituloContacto: string;
+  };
+  catalogo: {
+    tituloCursos: string;
+    tituloTienda: string;
+    leadCursos: string;
+    leadTienda: string;
+    placeholderBuscar: string;
+  };
   ofertas: { titulo: string; lead: string; items: { icon: string; title: string; text?: string }[] };
   beneficios: {
     kicker: string;
@@ -50,7 +89,12 @@ export interface PortalLandingConfig {
     lead: string;
     items: { titulo: string; cno: string; horas: number; semestres: number; jornadas: string }[];
   };
-  pilares: { capacitacion: string[]; campanas: string[] };
+  pilares: {
+    tabCapacitacion: string;
+    tabCampanas: string;
+    capacitacion: string[];
+    campanas: string[];
+  };
   footerServicios: string[];
 }
 
@@ -58,8 +102,45 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   instBarTag: 'Cursos y programas de capacitación virtual en Colombia',
   quoteText:
     'Cursos y programas virtuales que transforman la seguridad vial: estudie hoy, certifique mañana.',
+  quoteLabel: 'O llámanos',
   metaDescription: '',
   metaKeywords: '',
+  hero: {
+    ctaPrincipal: 'Ver cursos y programas',
+    ctaSecundario: 'Crear cuenta gratis',
+    mostrarBotonLlamar: true,
+    imagenAlt: 'Estudiante en cursos y programas del aula virtual',
+  },
+  infoCards: [
+    { icon: '🎓', title: 'Capacitación', text: 'Certificamos con calidad', fuente: 'texto' },
+    { icon: '📞', title: 'Línea de atención', text: '', fuente: 'telefono' },
+    { icon: '📍', title: 'Dirección', text: '', fuente: 'direccion' },
+  ],
+  nav: {
+    home: 'Home',
+    tienda: 'Tienda',
+    cursos: 'Cursos',
+    aula: 'Aula virtual',
+    acerca: 'Acerca de',
+    acceder: 'Acceder',
+    registrarse: 'Registrarse',
+    salir: 'Salir',
+  },
+  footer: {
+    founded: 'Est. 1997',
+    copyright:
+      'Copyright © 2026 All Rights Reserved INSTITUTO TECNICO FINSTRUVIAL Designed by WALTER AGUILAR',
+    tituloEnlaces: 'Enlaces rápidos',
+    tituloServicios: 'Servicios',
+    tituloContacto: 'Contáctanos',
+  },
+  catalogo: {
+    tituloCursos: 'Catálogo de cursos y programas virtuales',
+    tituloTienda: 'Tienda de cursos y programas',
+    leadCursos: 'Explore cursos y programas de capacitación virtual en el aula virtual.',
+    leadTienda: 'Inscríbase a cursos y programas de capacitación en línea.',
+    placeholderBuscar: 'Buscar curso o programa…',
+  },
   ofertas: {
     titulo: '¿Qué ofrecemos en el aula virtual?',
     lead: 'Cursos virtuales y programas de capacitación en seguridad vial para personas, empresas e instituciones.',
@@ -104,7 +185,12 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     lead: 'Técnico laboral por competencias — información de referencia.',
     items: [...CARRERAS_TECNICAS],
   },
-  pilares: { capacitacion: [...PILARES.capacitacion], campanas: [...PILARES.campanas] },
+  pilares: {
+    tabCapacitacion: 'Capacitación',
+    tabCampanas: 'Campañas',
+    capacitacion: [...PILARES.capacitacion],
+    campanas: [...PILARES.campanas],
+  },
   footerServicios: [
     'Capacitación',
     'PESV',
@@ -152,6 +238,12 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       ...raw.faq,
       items: raw.faq?.items?.length ? raw.faq.items : d.faq.items,
     },
+    hero: { ...d.hero, ...raw.hero },
+    infoCards: raw.infoCards?.length ? raw.infoCards : d.infoCards,
+    nav: { ...d.nav, ...raw.nav },
+    footer: { ...d.footer, ...raw.footer },
+    catalogo: { ...d.catalogo, ...raw.catalogo },
+    quoteLabel: raw.quoteLabel ?? d.quoteLabel,
     cursos: { ...d.cursos, ...raw.cursos },
     carreras: {
       ...d.carreras,
@@ -159,6 +251,8 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       items: raw.carreras?.items?.length ? raw.carreras.items : d.carreras.items,
     },
     pilares: {
+      tabCapacitacion: raw.pilares?.tabCapacitacion ?? d.pilares.tabCapacitacion,
+      tabCampanas: raw.pilares?.tabCampanas ?? d.pilares.tabCampanas,
       capacitacion: raw.pilares?.capacitacion?.length ? raw.pilares.capacitacion : d.pilares.capacitacion,
       campanas: raw.pilares?.campanas?.length ? raw.pilares.campanas : d.pilares.campanas,
     },

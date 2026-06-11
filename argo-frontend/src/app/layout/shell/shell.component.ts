@@ -410,6 +410,14 @@ export class ShellComponent {
     },
     {
       kind: 'link',
+      label: 'Editor sitio portal',
+      icon: '✎',
+      path: '/app/aula-virtual/sitio',
+      iconTone: 'indigo',
+      permiso: 'programas.gestionar',
+    },
+    {
+      kind: 'link',
       label: 'Servicios',
       icon: '◇',
       path: '/app/servicios',

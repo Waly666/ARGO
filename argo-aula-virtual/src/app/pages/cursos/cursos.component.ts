@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
-import { CategoriaVirtual, CursoVirtual } from '../../core/models';
+import { CategoriaVirtual, CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
+import { mergePortalLanding } from '../../core/portal-landing';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 
 @Component({
@@ -19,17 +20,23 @@ export class CursosComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   modo = signal<'tienda' | 'cursos'>('cursos');
+  config = signal<PortalConfig | null>(null);
   cursos = signal<CursoVirtual[]>([]);
   categorias = signal<CategoriaVirtual[]>([]);
-  logoUrl = signal<string | null>(null);
   q = signal('');
   catSel = signal<number | null>(null);
+
+  landing = computed(() => mergePortalLanding(this.config()?.landing));
+
+  logoUrl = computed(() =>
+    resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo),
+  );
 
   ngOnInit() {
     const m = this.route.snapshot.data['modo'];
     this.modo.set(m === 'tienda' ? 'tienda' : 'cursos');
     this.api.config().subscribe({
-      next: (cfg) => this.logoUrl.set(resolveUploadUrl(cfg.urlLogoAbsoluta || cfg.urlLogo)),
+      next: (cfg) => this.config.set(cfg),
     });
     this.api.categorias().subscribe({ next: (rows) => this.categorias.set(rows) });
     this.cargar();

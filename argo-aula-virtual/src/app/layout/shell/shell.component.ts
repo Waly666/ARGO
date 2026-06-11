@@ -32,7 +32,9 @@ export class ShellComponent implements OnInit {
 
   logoUrl = computed(() => resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo));
 
-  footerServicios = computed(() => mergePortalLanding(this.config()?.landing).footerServicios);
+  landing = computed(() => mergePortalLanding(this.config()?.landing));
+
+  footerServicios = computed(() => this.landing().footerServicios);
 
   nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
 

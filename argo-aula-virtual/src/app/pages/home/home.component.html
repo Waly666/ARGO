@@ -30,11 +30,11 @@
 
       <div class="hero-actions hero-in hero-in--4">
 
-        <a routerLink="/cursos" class="btn btn-primary">Ver cursos y programas</a>
+        <a routerLink="/cursos" class="btn btn-primary">{{ landing().hero.ctaPrincipal }}</a>
 
-        <a routerLink="/registro" class="btn btn-outline">Crear cuenta gratis</a>
+        <a routerLink="/registro" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
 
-        @if (telefono(); as tel) {
+        @if (landing().hero.mostrarBotonLlamar && telefono(); as tel) {
 
           <a [href]="telHref()" class="btn btn-ghost">Llamar {{ tel }}</a>
 
@@ -46,7 +46,7 @@
 
     <figure class="hero-visual hero-in hero-in--5">
 
-      <img src="/images/hero-estudiante.png" alt="Estudiante en cursos y programas del aula virtual" />
+      <img src="/images/hero-estudiante.png" [alt]="landing().hero.imagenAlt" />
 
     </figure>
 
@@ -64,55 +64,35 @@
 
     <div class="info-cards">
 
-      <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="0">
+      @for (card of landing().infoCards; track card.title; let i = $index) {
 
-        <span class="info-icon icon-pop" aria-hidden="true">🎓</span>
+        <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
 
-        <div>
+          <span class="info-icon icon-pop" aria-hidden="true">{{ card.icon }}</span>
 
-          <h3 avAnimateTitle [titleDelay]="120">Capacitación</h3>
+          <div>
 
-          <p>Certificamos con calidad</p>
+            <h3 avAnimateTitle [titleDelay]="120">{{ card.title }}</h3>
 
-        </div>
+            @if (card.fuente === 'telefono' && telefono(); as tel) {
 
-      </article>
+              <p><a [href]="telHref()">{{ tel }}</a></p>
 
-      <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="90">
+            } @else if (card.fuente === 'direccion') {
 
-        <span class="info-icon icon-pop" aria-hidden="true">📞</span>
+              <p>{{ direccion() }}</p>
 
-        <div>
+            } @else {
 
-          <h3 avAnimateTitle [titleDelay]="120">Línea de atención</h3>
+              <p>{{ card.text }}</p>
 
-          @if (telefono(); as tel) {
+            }
 
-            <p><a [href]="telHref()">{{ tel }}</a></p>
+          </div>
 
-          } @else {
+        </article>
 
-            <p class="muted">—</p>
-
-          }
-
-        </div>
-
-      </article>
-
-      <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="180">
-
-        <span class="info-icon icon-pop" aria-hidden="true">📍</span>
-
-        <div>
-
-          <h3 avAnimateTitle [titleDelay]="120">Dirección</h3>
-
-          <p>{{ direccion() }}</p>
-
-        </div>
-
-      </article>
+      }
 
     </div>
 
@@ -216,7 +196,7 @@
 
       <div class="quote-cta reveal-right" avRevealOnScroll [revealDelay]="120">
 
-        <p class="quote-label">O llámanos</p>
+        <p class="quote-label">{{ landing().quoteLabel }}</p>
 
         <a class="quote-phone pulse-phone" [href]="telHref()">{{ tel }}</a>
 
@@ -590,7 +570,7 @@
 
       >
 
-        Capacitación
+        {{ landing().pilares.tabCapacitacion }}
 
       </button>
 
@@ -604,7 +584,7 @@
 
       >
 
-        Campañas
+        {{ landing().pilares.tabCampanas }}
 
       </button>
 
