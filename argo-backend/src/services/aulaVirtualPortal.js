@@ -66,6 +66,8 @@ async function guardarConfigAula(body, usuario) {
     ciudad: String(body.ciudad ?? '').trim(),
     telefono: String(body.telefono ?? '').trim(),
     email: String(body.email ?? '').trim(),
+    emailContacto: String(body.emailContacto ?? '').trim().toLowerCase(),
+    telefonoWhatsapp: String(body.telefonoWhatsapp ?? '').trim(),
     urlLogo: body.urlLogo !== undefined ? String(body.urlLogo ?? '').trim() : undefined,
     userChangeRecord: usuario?.username || 'sistema',
   };
@@ -113,6 +115,7 @@ async function obtenerConfigPortalPublica() {
     heroSubtitulo: aula.heroSubtitulo,
     acercaDeHtml: aula.acercaDeHtml || '',
     landing: mergeLanding(aula.landing),
+    formularioContactoActivo: !!String(aula.emailContacto || '').trim().includes('@'),
   };
 }
 

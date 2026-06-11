@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AulaApiService } from '../../core/aula-api.service';
+import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
+import { PortalCatalogService } from '../../core/portal-catalog.service';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 
@@ -15,13 +17,29 @@ import { PortalSeoService } from '../../core/portal-seo.service';
   templateUrl: './registro.component.html',
   styleUrl: './registro.component.scss',
 })
-export class RegistroComponent {
+export class RegistroComponent implements OnInit {
   private api = inject(AulaApiService);
+  private catalogs = inject(PortalCatalogService);
   private auth = inject(PortalAuthService);
   private router = inject(Router);
   private seo = inject(PortalSeoService);
 
   turnstile = viewChild(TurnstileComponent);
+
+  readonly catEtiqueta = catEtiqueta;
+  readonly catValor = catValor;
+  readonly etiquetaGenero = etiquetaGenero;
+
+  tiposDoc = signal<Record<string, unknown>[]>([]);
+  generos = signal<Record<string, unknown>[]>([]);
+  departamentos = signal<{ codDepto: string; nombreDepto: string }[]>([]);
+  municipiosExp = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
+  municipiosOrigen = signal<{ codMunicipio: string; nombreMunicipio: string; label: string }[]>([]);
+
+  deptoExp = '';
+  codMunicipioExp = '';
+  deptoOrigen = '';
+  codMunicipioOrigen = '';
 
   form = {
     email: '',
@@ -37,6 +55,8 @@ export class RegistroComponent {
     direccion: '',
     genero: '',
     fechaNac: '',
+    codMunicipio: '',
+    munOrigen: '',
   };
 
   error = signal('');
@@ -55,7 +75,20 @@ export class RegistroComponent {
   turnstileSiteKey = signal('');
   turnstileToken = signal('');
 
-  constructor() {
+  ngOnInit() {
+    this.catalogs.tiposDoc().subscribe({
+      next: (rows) => this.tiposDoc.set(rows?.length ? rows : TIPOS_DOC_FALLBACK),
+      error: () => this.tiposDoc.set(TIPOS_DOC_FALLBACK),
+    });
+    this.catalogs.generos().subscribe({
+      next: (rows) => this.generos.set(rows?.length ? rows : GENEROS_FALLBACK),
+      error: () => this.generos.set(GENEROS_FALLBACK),
+    });
+    this.catalogs.departamentos().subscribe({
+      next: (rows) => this.departamentos.set(rows || []),
+      error: () => this.departamentos.set([]),
+    });
+
     this.api.config().subscribe({
       next: (c) => {
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
@@ -64,6 +97,89 @@ export class RegistroComponent {
         this.seo.applyRegistro(c);
       },
       error: () => this.seo.applyRegistro(null),
+    });
+  }
+
+  onDeptoExpChange() {
+    this.codMunicipioExp = '';
+    this.form.expedida = '';
+    this.cargarMunicipiosExp();
+  }
+
+  onMunicipioExpChange() {
+    const m = this.municipiosExp().find((x) => x.codMunicipio === this.codMunicipioExp);
+    this.form.expedida = m?.nombreMunicipio || '';
+  }
+
+  onDeptoOrigenChange() {
+    this.codMunicipioOrigen = '';
+    this.form.codMunicipio = '';
+    this.form.munOrigen = '';
+    this.cargarMunicipiosOrigen();
+  }
+
+  onMunicipioOrigenChange() {
+    this.form.codMunicipio = this.codMunicipioOrigen;
+    this.form.munOrigen = this.codMunicipioOrigen;
+  }
+
+  private cargarMunicipiosExp() {
+    if (!this.deptoExp) {
+      this.municipiosExp.set([]);
+      return;
+    }
+    this.catalogs.municipios(this.deptoExp).subscribe({
+      next: (rows) => this.municipiosExp.set(rows || []),
+      error: () => this.municipiosExp.set([]),
+    });
+  }
+
+  private cargarMunicipiosOrigen() {
+    if (!this.deptoOrigen) {
+      this.municipiosOrigen.set([]);
+      return;
+    }
+    this.catalogs.municipios(this.deptoOrigen).subscribe({
+      next: (rows) => this.municipiosOrigen.set(rows || []),
+      error: () => this.municipiosOrigen.set([]),
+    });
+  }
+
+  private aplicarMunicipioOrigenDesdeCodigo(cod: string) {
+    const c = String(cod || '').trim();
+    if (!c) return;
+    this.catalogs.municipioPorCodigo(c).subscribe({
+      next: (m) => {
+        this.deptoOrigen = m.codDepto;
+        this.catalogs.municipios(m.codDepto).subscribe({
+          next: (rows) => {
+            this.municipiosOrigen.set(rows || []);
+            this.codMunicipioOrigen = m.codMunicipio;
+            this.form.codMunicipio = m.codMunicipio;
+            this.form.munOrigen = m.codMunicipio;
+          },
+        });
+      },
+    });
+  }
+
+  private aplicarExpedidaDesdeTexto(texto: string) {
+    const t = String(texto || '').trim();
+    if (!t) return;
+    this.catalogs.buscarMunicipios(t, 10).subscribe({
+      next: (rows) => {
+        const exact =
+          rows.find((r) => r.nombreMunicipio.toLowerCase() === t.toLowerCase()) || rows[0];
+        if (!exact) return;
+        this.deptoExp = exact.codDepto;
+        this.catalogs.municipios(exact.codDepto).subscribe({
+          next: (list) => {
+            this.municipiosExp.set(list || []);
+            this.codMunicipioExp = exact.codMunicipio;
+            this.form.expedida = exact.nombreMunicipio;
+          },
+        });
+      },
     });
   }
 
@@ -102,8 +218,12 @@ export class RegistroComponent {
           this.form.apellido2 = String(a['apellido2'] || '');
           this.form.nombre1 = String(a['nombre1'] || '');
           this.form.nombre2 = String(a['nombre2'] || '');
-          this.form.genero = String(a['genero'] || '');
+          this.form.genero = String(a['genero'] || '').toUpperCase();
           this.form.fechaNac = String(a['fechaNac'] || '');
+          this.form.codMunicipio = String(a['codMunicipio'] || a['munOrigen'] || '');
+          this.form.munOrigen = String(a['munOrigen'] || a['codMunicipio'] || '');
+          this.aplicarMunicipioOrigenDesdeCodigo(this.form.codMunicipio);
+          this.aplicarExpedidaDesdeTexto(this.form.expedida);
           this.info.set(
             a['tieneCorreoEnArgo']
               ? 'Ya está inscrito en ARGO. Defina correo y contraseña para el portal (no mostramos el correo guardado por seguridad).'

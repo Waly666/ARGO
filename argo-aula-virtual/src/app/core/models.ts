@@ -16,6 +16,7 @@ export interface PortalConfig {
   registroAbierto?: boolean;
   emailVerificacionRegistro?: boolean;
   turnstileSiteKey?: string;
+  formularioContactoActivo?: boolean;
 }
 
 export type NivelVirtual = 'PRINCIPIANTE' | 'INTERMEDIO' | 'AVANZADO';

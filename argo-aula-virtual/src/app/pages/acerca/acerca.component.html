@@ -64,15 +64,6 @@
               </div>
             </li>
           }
-          @if (config()?.nit) {
-            <li>
-              <span class="acerca-contact-icon" aria-hidden="true">🏢</span>
-              <div>
-                <strong>NIT</strong>
-                <span>{{ config()?.nit }}</span>
-              </div>
-            </li>
-          }
         </ul>
         <a routerLink="/fundacion" class="acerca-link">Conocer la fundación →</a>
       </aside>
@@ -93,6 +84,10 @@
           </article>
         }
       </div>
+    </section>
+
+    <section class="acerca-contacto-form" id="contacto-formulario">
+      <av-contacto-form origen="acerca" />
     </section>
   </section>
 </div>

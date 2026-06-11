@@ -128,6 +128,23 @@ export class AulaApiService {
     return this.http.get<CertificadoConsultaRes>(`${this.base}/certificados/consulta?${q.toString()}`);
   }
 
+  enviarContacto(
+    body: {
+      nombre: string;
+      email: string;
+      telefono?: string;
+      asunto?: string;
+      mensaje: string;
+      origen?: string;
+    },
+    turnstileToken?: string,
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/contacto`, {
+      ...body,
+      turnstileToken: turnstileToken || undefined,
+    });
+  }
+
   misCertificados(): Observable<CertificadoPortal[]> {
     return this.http.get<CertificadoPortal[]>(`${this.base}/mis-certificados`, {
       headers: this.auth.authHeader(),

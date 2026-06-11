@@ -29,6 +29,7 @@ export class AulaVirtualSitioComponent implements OnInit {
     ciudad: '',
     telefono: '',
     email: '',
+    emailContacto: '',
     heroTitulo: '',
     heroSubtitulo: '',
     acercaDeHtml: '',

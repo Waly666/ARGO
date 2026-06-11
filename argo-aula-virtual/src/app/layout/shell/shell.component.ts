@@ -11,8 +11,34 @@ import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { ACERCA_DEFAULT } from '../../pages/home/home-content';
 
+import { FUNDACION_SITIO_URL } from '../../pages/fundacion/fundacion-content';
+
 const FOOTER_ABOUT_DEFAULT =
   'promueve la seguridad vial mediante capacitación, estudios técnicos, campañas preventivas y asesoría a empresas, fomentando una movilidad segura y responsable.';
+
+const FOOTER_SERVICIO_HREF: Record<string, string> = {
+  capacitación: '/cursos',
+  pesv: 'https://finstruvial.com.co/planes-estrategicos-de-seguridad-vial/',
+  'campañas de seguridad vial': '/fundacion',
+  'carreras técnicas': '/#carreras-tecnicas',
+  'estudios de tránsito': 'https://finstruvial.com.co/nuestros-servicios/mapas/',
+  'planes de movilidad sostenible y segura':
+    'https://finstruvial.com.co/planes-de-movilidad-sostenible-y-segura/',
+};
+
+export interface FooterEnlace {
+  label: string;
+  route: string;
+  fragment?: string;
+}
+
+export interface FooterServicioEnlace {
+  label: string;
+  href?: string;
+  route?: string;
+  fragment?: string;
+  external: boolean;
+}
 
 @Component({
   selector: 'av-shell',
@@ -35,6 +61,39 @@ export class ShellComponent implements OnInit {
   landing = computed(() => mergePortalLanding(this.config()?.landing));
 
   footerServicios = computed(() => this.landing().footerServicios);
+
+  footerEnlaces = computed((): FooterEnlace[] => {
+    const nav = this.landing().nav;
+    return [
+      { label: nav.home, route: '/' },
+      { label: nav.cursos, route: '/cursos' },
+      { label: nav.tienda, route: '/tienda' },
+      { label: nav.aula, route: '/aula' },
+      { label: nav.fundacion, route: '/fundacion' },
+      { label: nav.consultaCertificados, route: '/consulta-certificados' },
+      { label: nav.acerca, route: '/acerca' },
+      { label: 'Servicios', route: '/', fragment: 'servicios-empresa' },
+      { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
+      { label: 'Preguntas frecuentes', route: '/', fragment: 'preguntas-frecuentes' },
+      { label: 'Contáctanos', route: '/acerca', fragment: 'contacto' },
+    ];
+  });
+
+  footerServiciosLinks = computed((): FooterServicioEnlace[] =>
+    this.footerServicios().map((label) => {
+      const href = FOOTER_SERVICIO_HREF[label.trim().toLowerCase()] || '/#servicios-empresa';
+      if (href.startsWith('http')) {
+        return { label, href, external: true };
+      }
+      if (href.includes('#')) {
+        const [route, fragment] = href.split('#');
+        return { label, route: route || '/', fragment, external: false };
+      }
+      return { label, route: href, external: false };
+    }),
+  );
+
+  sitioInstitucionalUrl = FUNDACION_SITIO_URL;
 
   nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
 

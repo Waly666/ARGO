@@ -33,7 +33,7 @@ function mailFrom() {
   );
 }
 
-async function sendMail({ to, subject, text, html }) {
+async function sendMail({ to, subject, text, html, replyTo }) {
   const tx = getTransporter();
   if (!tx) {
     const err = new Error('Servicio de correo no configurado');
@@ -44,6 +44,7 @@ async function sendMail({ to, subject, text, html }) {
   await tx.sendMail({
     from: mailFrom(),
     to,
+    replyTo: replyTo || undefined,
     subject,
     text,
     html,

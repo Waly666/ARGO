@@ -338,6 +338,12 @@
   }
 }
 
+.acerca-contacto-form {
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+  padding-top: clamp(1.5rem, 3vw, 2rem);
+  border-top: 1px solid var(--a-border);
+}
+
 @media (max-width: 900px) {
   .acerca-hero__inner {
     grid-template-columns: 1fr;

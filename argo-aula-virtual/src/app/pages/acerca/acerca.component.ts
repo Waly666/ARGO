@@ -6,12 +6,13 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
 import { ACERCA_DEFAULT, VALORES } from '../home/home-content';
 
 @Component({
   selector: 'av-acerca',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ContactoFormComponent],
   templateUrl: './acerca.component.html',
   styleUrl: './acerca.component.scss',
 })

@@ -443,6 +443,17 @@
           <input type="email" [(ngModel)]="portalForm.email" />
         </div>
       </div>
+      <div class="av-field">
+        <label>Correo destino — formulario de contacto</label>
+        <input
+          type="email"
+          [(ngModel)]="portalForm.emailContacto"
+          placeholder="contacto@finstruvial.edu.co"
+        />
+        <span class="av-muted av-field-hint">
+          Los mensajes del formulario en Fundación y Acerca de se envían a esta dirección. Deje vacío para ocultar el formulario.
+        </span>
+      </div>
 
       @if (portalForm.vistaPreviaEmpresa; as prev) {
         <div class="av-preview">

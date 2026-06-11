@@ -32,6 +32,17 @@
       <label>Texto página Acerca de</label>
       <textarea rows="6" [(ngModel)]="portalForm.acercaDeHtml"></textarea>
     </div>
+    <div class="av-field">
+      <label>Correo destino — formulario de contacto</label>
+      <input
+        type="email"
+        [(ngModel)]="portalForm.emailContacto"
+        placeholder="contacto@finstruvial.edu.co"
+      />
+      <span class="av-muted av-field-hint">
+        Aparece el formulario en Fundación (Hablemos) y Acerca de cuando este correo está configurado.
+      </span>
+    </div>
   </section>
 
   @if (portalForm.landing; as landing) {

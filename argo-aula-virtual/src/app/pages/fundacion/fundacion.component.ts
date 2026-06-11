@@ -5,6 +5,7 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
 import {
   FUNDACION_COMPROMISO,
   FUNDACION_CONTACTO,
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'av-fundacion',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ContactoFormComponent],
   templateUrl: './fundacion.component.html',
   styleUrl: './fundacion.component.scss',
 })

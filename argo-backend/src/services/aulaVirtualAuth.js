@@ -63,6 +63,8 @@ function mapAlumnoPublico(da) {
     nombre2: da.nombre2 || '',
     genero: da.genero || '',
     fechaNac: da.fechaNac ? new Date(da.fechaNac).toISOString().slice(0, 10) : '',
+    codMunicipio: da.codMunicipio || da.munOrigen || '',
+    munOrigen: da.munOrigen || da.codMunicipio || '',
     nombreCompleto: nombreCompletoAlumno(da),
     tieneCorreoEnArgo: !!String(da.correo || '').trim(),
   };

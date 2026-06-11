@@ -89,61 +89,123 @@
   <router-outlet />
 </main>
 
-<footer class="footer">
-  <div class="container footer-grid">
-    <div class="footer-col">
-      <h3 class="footer-title">Acerca de {{ nombreCea() }}</h3>
-      <p class="footer-founded">{{ landing().footer.founded }}</p>
-      <p class="footer-about">{{ footerAbout() }}</p>
+<footer class="site-footer">
+  <div class="site-footer__glow" aria-hidden="true"></div>
+  <div class="container site-footer__main">
+    <div class="site-footer__brand">
+      <a class="site-footer__logo-link" routerLink="/">
+        @if (logoUrl(); as logo) {
+          <img [src]="logo" [alt]="nombreCea()" class="site-footer__logo" />
+        }
+        <span class="site-footer__brand-line">
+          <span class="site-footer__brand-name">{{ brandMarca() }}</span>
+          <span class="site-footer__badge">{{ landing().footer.founded }}</span>
+        </span>
+      </a>
+      <p class="site-footer__about">{{ footerAbout() }}</p>
+      <div class="site-footer__cta">
+        <a routerLink="/cursos" class="site-footer__btn site-footer__btn--primary">Ver cursos</a>
+        <a routerLink="/aula" class="site-footer__btn site-footer__btn--ghost">Aula virtual</a>
+      </div>
+      <a
+        class="site-footer__ext"
+        [href]="sitioInstitucionalUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Sitio institucional ↗
+      </a>
     </div>
 
-    <div class="footer-col">
-      <h3 class="footer-title">{{ landing().footer.tituloEnlaces }}</h3>
-      <nav class="footer-links">
-        <a routerLink="/">Inicio</a>
-        <a routerLink="/fundacion">{{ landing().nav.fundacion }}</a>
-        <a routerLink="/consulta-certificados">{{ landing().nav.consultaCertificados }}</a>
-        <a routerLink="/acerca">Acerca de</a>
-        <a routerLink="/" fragment="servicios-empresa">Servicios</a>
-        <a routerLink="/acerca">Página institucional</a>
-        <a routerLink="/acerca" fragment="contacto">Contáctanos</a>
-      </nav>
-    </div>
+    <nav class="site-footer__col" aria-label="Enlaces del portal">
+      <h3 class="site-footer__title">{{ landing().footer.tituloEnlaces }}</h3>
+      <ul class="site-footer__links">
+        @for (link of footerEnlaces(); track link.label) {
+          <li>
+            @if (link.fragment) {
+              <a [routerLink]="link.route" [fragment]="link.fragment">{{ link.label }}</a>
+            } @else {
+              <a [routerLink]="link.route">{{ link.label }}</a>
+            }
+          </li>
+        }
+      </ul>
+    </nav>
 
-    <div class="footer-col">
-      <h3 class="footer-title">{{ landing().footer.tituloServicios }}</h3>
-      <ul class="footer-list">
-        @for (s of footerServicios(); track s) {
-          <li>{{ s }}</li>
+    <nav class="site-footer__col" aria-label="Servicios">
+      <h3 class="site-footer__title">{{ landing().footer.tituloServicios }}</h3>
+      <ul class="site-footer__links">
+        @for (s of footerServiciosLinks(); track s.label) {
+          <li>
+            @if (s.external) {
+              <a [href]="s.href" target="_blank" rel="noopener noreferrer">{{ s.label }} ↗</a>
+            } @else if (s.fragment) {
+              <a [routerLink]="s.route" [fragment]="s.fragment">{{ s.label }}</a>
+            } @else {
+              <a [routerLink]="s.route">{{ s.label }}</a>
+            }
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="site-footer__col site-footer__contact">
+      <h3 class="site-footer__title">{{ landing().footer.tituloContacto }}</h3>
+      <ul class="site-footer__contact-list">
+        @if (config()?.telefono; as tel) {
+          <li>
+            <span class="site-footer__contact-icon" aria-hidden="true">📞</span>
+            <div>
+              <strong>Teléfono</strong>
+              @if (telHref(); as href) {
+                <a [href]="href">{{ telDisplay() }}</a>
+              } @else {
+                <span>{{ tel }}</span>
+              }
+            </div>
+          </li>
+        }
+        @if (config()?.email; as mail) {
+          <li>
+            <span class="site-footer__contact-icon" aria-hidden="true">✉️</span>
+            <div>
+              <strong>Correo</strong>
+              <a [href]="'mailto:' + mail">{{ mail }}</a>
+            </div>
+          </li>
+        }
+        @if (direccionCompleta(); as dir) {
+          <li>
+            <span class="site-footer__contact-icon" aria-hidden="true">📍</span>
+            <div>
+              <strong>Dirección</strong>
+              <span>{{ dir }}</span>
+            </div>
+          </li>
+        }
+        @if (whatsappHref(); as wa) {
+          <li>
+            <span class="site-footer__contact-icon" aria-hidden="true">💬</span>
+            <div>
+              <strong>WhatsApp</strong>
+              <a [href]="wa" target="_blank" rel="noopener noreferrer">Escríbanos</a>
+            </div>
+          </li>
         }
       </ul>
     </div>
-
-    <div class="footer-col">
-      <h3 class="footer-title">{{ landing().footer.tituloContacto }}</h3>
-      @if (config()?.telefono; as tel) {
-        <div class="footer-contact">
-          <strong>Teléfono</strong>
-          <a [href]="telHref()">{{ telDisplay() }}</a>
-        </div>
-      }
-      @if (config()?.email; as mail) {
-        <div class="footer-contact">
-          <strong>Email</strong>
-          <a class="footer-email" [href]="'mailto:' + mail">{{ mail }}</a>
-        </div>
-      }
-      @if (direccionCompleta(); as dir) {
-        <div class="footer-contact">
-          <strong>Dirección</strong>
-          <span>{{ dir }}</span>
-        </div>
-      }
-    </div>
   </div>
-  <div class="footer-bottom">
-    <div class="container">
-      <p class="footer-copy">{{ landing().footer.copyright }}</p>
+
+  <div class="site-footer__bottom">
+    <div class="container site-footer__bottom-inner">
+      <p class="site-footer__copy">{{ landing().footer.copyright }}</p>
+      <nav class="site-footer__legal" aria-label="Acceso y consultas">
+        <a routerLink="/login">{{ landing().nav.acceder }}</a>
+        <span aria-hidden="true">·</span>
+        <a routerLink="/registro">{{ landing().nav.registrarse }}</a>
+        <span aria-hidden="true">·</span>
+        <a routerLink="/consulta-certificados">{{ landing().nav.consultaCertificados }}</a>
+      </nav>
     </div>
   </div>
 </footer>

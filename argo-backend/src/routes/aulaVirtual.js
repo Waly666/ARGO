@@ -16,6 +16,12 @@ const router = Router();
 
 /** Público — portal estudiante */
 router.get('/config', ctrl.configPublica);
+router.get('/catalogos/tipos-doc', ctrl.catalogosTiposDoc);
+router.get('/catalogos/generos', ctrl.catalogosGeneros);
+router.get('/catalogos/departamentos', ctrl.catalogosDepartamentos);
+router.get('/catalogos/municipios-buscar', ctrl.catalogosBuscarMunicipios);
+router.get('/catalogos/municipio/:codMunicipio', ctrl.catalogosMunicipio);
+router.get('/catalogos/municipios/:codDepto', ctrl.catalogosMunicipios);
 router.get('/categorias', ctrl.listarCategorias);
 router.get('/cursos', ctrl.listarCursos);
 router.get('/cursos/:id', ctrl.obtenerCurso);
@@ -36,6 +42,7 @@ router.post('/auth/registro/solicitar', portalAuthLimiter, requireTurnstile(), c
 router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirmar);
 router.post('/auth/registro/reenviar-codigo', portalAuthLimiter, ctrl.registroReenviarCodigo);
 router.post('/auth/login', portalAuthLimiter, requireTurnstile(), ctrl.login);
+router.post('/contacto', buscarAlumnoLimiter, requireTurnstile(), ctrl.enviarContacto);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
 router.get('/argo-bridge.js', ctrl.bridgeScript);
 

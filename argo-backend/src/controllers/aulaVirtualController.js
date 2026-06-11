@@ -27,10 +27,13 @@ const {
   htmlCertificadoPortal,
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
+const { enviarContactoPortal } = require('../services/aulaVirtualContacto');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled, portalEmailVerifyEnabled } = require('../config/security');
 const { logAuthIntento } = require('../services/authSecurityLog');
 const path = require('path');
+const { models } = require('../models/catalogos');
+const catalogoController = require('./catalogoController');
 
 exports.configPublica = async (_req, res, next) => {
   try {
@@ -284,6 +287,39 @@ exports.reciboHtml = async (req, res, next) => {
     res.send(html);
   } catch (e) {
     if (e.status) return res.status(e.status).send(e.message);
+    next(e);
+  }
+};
+
+exports.catalogosTiposDoc = async (_req, res, next) => {
+  try {
+    const data = await models.catTipoDoc.find().sort({ idTipoDoc: 1 }).lean();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogosGeneros = async (_req, res, next) => {
+  try {
+    const data = await models.genero.find().sort({ idGenero: 1 }).lean();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogosDepartamentos = catalogoController.departamentos;
+exports.catalogosMunicipios = catalogoController.municipios;
+exports.catalogosBuscarMunicipios = catalogoController.buscarMunicipios;
+exports.catalogosMunicipio = catalogoController.municipioPorCodigo;
+
+exports.enviarContacto = async (req, res, next) => {
+  try {
+    const result = await enviarContactoPortal(req.body);
+    res.json(result);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

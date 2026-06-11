@@ -160,16 +160,11 @@
             <dt>Email</dt>
             <dd><a [href]="'mailto:' + email()">{{ email() }}</a></dd>
           </div>
-          @if (config()?.nit; as nit) {
-            <div class="fund-contacto__item">
-              <dt>NIT</dt>
-              <dd>{{ nit }}</dd>
-            </div>
-          }
         </dl>
         @if (whatsappHref(); as wa) {
           <a class="btn btn-primary" [href]="wa" target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
         }
+        <av-contacto-form origen="fundacion" />
       </div>
     </div>
   </section>
