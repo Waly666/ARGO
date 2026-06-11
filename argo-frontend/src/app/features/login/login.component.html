@@ -37,6 +37,10 @@
 
       <div class="error" *ngIf="error()">{{ error() }}</div>
 
+      @if (turnstileSiteKey()) {
+        <argo-turnstile [siteKey]="turnstileSiteKey()" (tokenChange)="turnstileToken.set($event)" />
+      }
+
       <button type="submit" class="primary" [disabled]="loading()">
         {{ loading() ? 'Validando...' : 'Entrar' }}
       </button>

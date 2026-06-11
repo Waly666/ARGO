@@ -23,6 +23,7 @@ const {
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled } = require('../config/security');
+const { logAuthIntento } = require('../services/authSecurityLog');
 const path = require('path');
 
 exports.configPublica = async (_req, res, next) => {
@@ -95,9 +96,19 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
     const out = await loginPortal({ email, password });
+    logAuthIntento({ req, canal: 'portal', identificador: email, ok: true });
     res.json(out);
   } catch (e) {
-    if (e.status) return res.status(e.status).json({ message: e.message });
+    if (e.status) {
+      logAuthIntento({
+        req,
+        canal: 'portal',
+        identificador: req.body?.email,
+        ok: false,
+        motivo: e.message,
+      });
+      return res.status(e.status).json({ message: e.message });
+    }
     next(e);
   }
 };

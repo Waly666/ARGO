@@ -19,10 +19,18 @@ async function verifyTurnstileToken(token, remoteip) {
   return data?.success === true;
 }
 
+/** Clientes nativos (móvil) sin widget Turnstile — solo rate limit. */
+function isClienteNativo(req) {
+  const c = String(req.get('X-ARGO-Cliente') || '').toLowerCase();
+  return c === 'cajero' || c === 'mobile';
+}
+
 /** Exige token Turnstile en body (turnstileToken) o header X-Turnstile-Token. */
-function requireTurnstile() {
+function requireTurnstile(opts = {}) {
+  const { allowNativeClients = false } = opts;
   return async (req, res, next) => {
     if (!turnstileEnabled()) return next();
+    if (allowNativeClients && isClienteNativo(req)) return next();
 
     const token =
       req.body?.turnstileToken ||
@@ -42,4 +50,4 @@ function requireTurnstile() {
   };
 }
 
-module.exports = { requireTurnstile, verifyTurnstileToken };
+module.exports = { requireTurnstile, verifyTurnstileToken, isClienteNativo };

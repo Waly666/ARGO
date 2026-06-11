@@ -30,6 +30,8 @@ async function validarPasswordUsuario(u, password) {
 }
 const { verificarAdminCredenciales } = require('../services/authVerify');
 const { enriquecerUsuarioDoc, enriquecerUsuarioPorId } = require('../services/authUsuario');
+const { logAuthIntento } = require('../services/authSecurityLog');
+const { turnstileEnabled, turnstileSiteKey } = require('../config/security');
 
 function sign(u) {
   const rol = normalizarRol(u.rol);
@@ -40,6 +42,12 @@ function sign(u) {
   );
 }
 
+exports.configPublica = (_req, res) => {
+  res.json({
+    turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
+  });
+};
+
 exports.login = async (req, res, next) => {
   try {
     const username = String(req.body?.username ?? '').trim();
@@ -48,13 +56,18 @@ exports.login = async (req, res, next) => {
       return res.status(400).json({ message: 'Usuario y contraseña son requeridos' });
     }
     const u = await findUsuarioPorLogin(username);
-    if (!u) return res.status(401).json({ message: 'Credenciales inválidas' });
-
-    const ok = await validarPasswordUsuario(u, password);
-    if (!ok) {
+    if (!u) {
+      logAuthIntento({ req, canal: 'staff', identificador: username, ok: false, motivo: 'usuario_no_encontrado' });
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
+    const ok = await validarPasswordUsuario(u, password);
+    if (!ok) {
+      logAuthIntento({ req, canal: 'staff', identificador: username, ok: false, motivo: 'password_invalida' });
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    logAuthIntento({ req, canal: 'staff', identificador: username, ok: true });
     u.rol = normalizarRol(u.rol);
     const token = sign(u);
     const userJson = await enriquecerUsuarioDoc(u);

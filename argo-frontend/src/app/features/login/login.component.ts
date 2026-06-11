@@ -1,32 +1,47 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 
+import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AuthService } from '../../core/services/auth.service';
 import { rutaInicioApp } from '../../core/utils/auth-routes.util';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'argo-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TurnstileComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent implements AfterViewInit, OnDestroy {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private http = inject(HttpClient);
 
   @ViewChild('matrix', { static: true }) matrixRef!: ElementRef<HTMLCanvasElement>;
 
+  turnstile = viewChild(TurnstileComponent);
+
   username = signal('');
   password = signal('');
+  turnstileSiteKey = signal('');
+  turnstileToken = signal('');
   loading = signal(false);
   error = signal<string | null>(null);
 
   private rafId: number | null = null;
   private resizeHandler = () => this.resizeCanvas();
   private drops: number[] = [];
+
+  constructor() {
+    this.http.get<{ turnstileSiteKey?: string }>(`${environment.apiUrl}/auth/config`).subscribe({
+      next: (c) => this.turnstileSiteKey.set(c.turnstileSiteKey || ''),
+      error: () => {},
+    });
+  }
 
   ngAfterViewInit(): void {
     this.resizeCanvas();
@@ -44,9 +59,14 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
       this.error.set('Ingresa usuario y contraseña');
       return;
     }
+    const token = this.turnstileToken() || this.turnstile()?.getToken() || '';
+    if (this.turnstileSiteKey() && !token) {
+      this.error.set('Complete la verificación anti-bot.');
+      return;
+    }
     this.error.set(null);
     this.loading.set(true);
-    this.auth.login(this.username().trim(), this.password()).subscribe({
+    this.auth.login(this.username().trim(), this.password(), token || undefined).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.router.navigateByUrl(
@@ -57,6 +77,7 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.loading.set(false);
+        this.turnstile()?.reset();
         const msg = err?.error?.message || 'Credenciales inválidas';
         this.error.set(msg);
       },

@@ -125,9 +125,13 @@ export class AuthService {
       void this.router.navigateByUrl(destino, { replaceUrl: true });
     }
   }
-  login(username: string, password: string): Observable<LoginResponse> {
+  login(username: string, password: string, turnstileToken?: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${environment.apiUrl}/auth/login`, { username, password })
+      .post<LoginResponse>(`${environment.apiUrl}/auth/login`, {
+        username,
+        password,
+        turnstileToken: turnstileToken || undefined,
+      })
       .pipe(
         tap((res) => {
           localStorage.setItem(TOKEN_KEY, res.token);

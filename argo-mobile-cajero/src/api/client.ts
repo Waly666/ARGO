@@ -128,7 +128,10 @@ export async function login(username: string, password: string): Promise<LoginRe
     method: 'POST',
     auth: false,
     timeoutMs: 12_000,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-ARGO-Cliente': 'cajero',
+    },
     body: JSON.stringify({ username, password }),
   });
 }

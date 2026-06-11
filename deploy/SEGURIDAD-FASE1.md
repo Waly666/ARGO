@@ -60,9 +60,6 @@ PORTAL_REGISTRO_ABIERTO=0
 docker compose up -d --force-recreate argo-backend
 ```
 
-## Fase 2 (pendiente)
+## Fase 2
 
-- Turnstile en login ERP (`app.finstruvial.edu.co`)
-- WAF / Cloudflare delante del VPS
-- Auditoría de intentos fallidos
-- 2FA admin
+Ver [SEGURIDAD-FASE2.md](./SEGURIDAD-FASE2.md): Turnstile ERP, firewall, auditoría login, Cloudflare proxy.
