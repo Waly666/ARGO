@@ -18,12 +18,17 @@ import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { PortalSeoService } from '../../core/portal-seo.service';
 import {
+  BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
+  FAQ_CURSOS,
   HERO_DEFAULT,
   OFERTAS,
+  PASOS_PROGRAMAS,
   PILARES,
   SERVICIOS_EMPRESA,
+  TESTIMONIOS,
   VALORES,
 } from './home-content';
 
@@ -38,14 +43,20 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('heroH1') heroH1?: ElementRef<HTMLElement>;
 
   private api = inject(AulaApiService);
+  private seo = inject(PortalSeoService);
   private typeTimer?: ReturnType<typeof setInterval>;
   private typeRun = 0;
 
   config = signal<PortalConfig | null>(null);
   cursos = signal<CursoVirtual[]>([]);
   tabPilar = signal<'capacitacion' | 'campanas'>('capacitacion');
+  faqAbierta = signal<number | null>(null);
 
   readonly ofertas = OFERTAS;
+  readonly beneficios = BENEFICIOS_CURSOS;
+  readonly pasos = PASOS_PROGRAMAS;
+  readonly testimonios = TESTIMONIOS;
+  readonly faq = FAQ_CURSOS;
   readonly servicios = SERVICIOS_EMPRESA;
   readonly valores = VALORES;
   readonly carreras = CARRERAS_TECNICAS;
@@ -70,13 +81,23 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.api.config().subscribe({
       next: (c) => {
         this.config.set(c);
+        this.seo.applyHome(c, this.cursos());
         const titulo = (c.heroTitulo || HERO_DEFAULT.titulo).trim();
         if (titulo !== HERO_DEFAULT.titulo.trim()) {
           this.startTypewriter(titulo);
         }
       },
     });
-    this.api.cursos().subscribe({ next: (rows) => this.cursos.set(rows) });
+    this.api.cursos().subscribe({
+      next: (rows) => {
+        this.cursos.set(rows);
+        this.seo.applyHome(this.config(), rows);
+      },
+    });
+  }
+
+  toggleFaq(index: number) {
+    this.faqAbierta.update((actual) => (actual === index ? null : index));
   }
 
   ngAfterViewInit() {

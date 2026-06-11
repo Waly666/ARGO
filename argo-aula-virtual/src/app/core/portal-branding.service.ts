@@ -5,11 +5,6 @@ import { PortalConfig } from './models';
 @Injectable({ providedIn: 'root' })
 export class PortalBrandingService {
   apply(config: Pick<PortalConfig, 'nombreCea' | 'urlLogoAbsoluta'>) {
-    const name = config.nombreCea?.trim();
-    if (name) {
-      document.title = name;
-    }
-
     const logo = config.urlLogoAbsoluta?.trim();
     this.setLinkRel('icon', logo || '/favicon.ico', logo ? this.guessIconType(logo) : 'image/x-icon');
     if (logo) {

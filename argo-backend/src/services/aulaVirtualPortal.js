@@ -15,9 +15,9 @@ const DEFAULTS_AULA = {
   email: '',
   /** Ruta relativa bajo uploads/; vacío = usar logo de Config → Recibos. */
   urlLogo: '',
-  heroTitulo: 'Educar para salvar vidas: cada aprendizaje cuenta en el camino.',
+  heroTitulo: 'Cursos y programas virtuales para formar conductores y equipos más seguros.',
   heroSubtitulo:
-    'Porque la seguridad vial comienza con la educación: entrenamientos hechos para usted.',
+    'Matricúlese en el aula virtual, avance a su ritmo y certifique su capacitación en seguridad vial con programas diseñados para usted.',
   acercaDeHtml:
     'La FUNDACIÓN FINSTRUVIAL lleva la seguridad vial en el alma.\n\nSomos tu mejor opción en formación, consultoría y campañas de seguridad vial para empresas, instituciones educativas y el sector público.\n\nMás de 28 años de experiencia práctica respaldan nuestro compromiso: educar para salvar vidas.',
   telefonoWhatsapp: '',

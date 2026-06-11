@@ -6,7 +6,7 @@
 
     <span class="inst-name">{{ nombreCea() | uppercase }}</span>
 
-    <span class="inst-tag">Instituto técnico y seguridad vial en Colombia</span>
+    <span class="inst-tag">Cursos y programas de capacitación virtual en Colombia</span>
 
   </div>
 
@@ -30,9 +30,9 @@
 
       <div class="hero-actions hero-in hero-in--4">
 
-        <a routerLink="/tienda" class="btn btn-primary">Ver tienda virtual</a>
+        <a routerLink="/cursos" class="btn btn-primary">Ver cursos y programas</a>
 
-        <a routerLink="/cursos" class="btn btn-outline">Explorar cursos</a>
+        <a routerLink="/registro" class="btn btn-outline">Crear cuenta gratis</a>
 
         @if (telefono(); as tel) {
 
@@ -46,7 +46,7 @@
 
     <figure class="hero-visual hero-in hero-in--5">
 
-      <img src="/images/hero-estudiante.png" alt="Estudiante en formación técnica virtual" />
+      <img src="/images/hero-estudiante.png" alt="Estudiante en cursos y programas del aula virtual" />
 
     </figure>
 
@@ -130,9 +130,11 @@
 
     <header class="section-head center">
 
-      <h2 avAnimateTitle>¿Qué ofrecemos?</h2>
+      <h2 avAnimateTitle>¿Qué ofrecemos en el aula virtual?</h2>
 
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">Soluciones integrales en seguridad vial para personas, empresas e instituciones.</p>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
+        Cursos virtuales y programas de capacitación en seguridad vial para personas, empresas e instituciones.
+      </p>
 
     </header>
 
@@ -160,6 +162,48 @@
 
 
 
+<!-- Beneficios (resultados) -->
+
+<section class="section section--alt" id="beneficios-cursos">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <p class="kicker reveal" avRevealOnScroll>Resultados</p>
+
+      <h2 avAnimateTitle [titleDelay]="50">Lo que logra con nuestros cursos y programas</h2>
+
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
+        Formación práctica, certificación y flexibilidad para avanzar sin frenar su día a día.
+      </p>
+
+    </header>
+
+    <div class="ofertas-grid">
+
+      @for (b of beneficios; track b.title; let i = $index) {
+
+        <article class="oferta-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 80">
+
+          <span class="oferta-icon icon-pop" aria-hidden="true">{{ b.icon }}</span>
+
+          <h3 avAnimateTitle [titleDelay]="100">{{ b.title }}</h3>
+
+          <p>{{ b.text }}</p>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
 <!-- Cita + CTA -->
 
 <section class="quote-band">
@@ -168,7 +212,7 @@
 
     <blockquote class="reveal-left" avRevealOnScroll>
 
-      “Porque la seguridad vial comienza con la educación: entrenamientos hechos para usted.”
+      “Cursos y programas virtuales que transforman la seguridad vial: estudie hoy, certifique mañana.”
 
     </blockquote>
 
@@ -211,6 +255,48 @@
           <span class="icon-pop" aria-hidden="true">{{ s.icon }}</span>
 
           <span>{{ s.title }}</span>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Testimonios -->
+
+<section class="section section--light section--white" id="testimonios">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <p class="kicker reveal" avRevealOnScroll>Confianza</p>
+
+      <h2 avAnimateTitle [titleDelay]="50">Quienes ya cursan nuestros programas</h2>
+
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
+        Experiencias reales de estudiantes y empresas que eligieron la capacitación virtual.
+      </p>
+
+    </header>
+
+    <div class="valores-grid">
+
+      @for (t of testimonios; track t.nombre; let i = $index) {
+
+        <article class="valor-card testimonio-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
+
+          <p class="testimonio-texto">“{{ t.texto }}”</p>
+
+          <h3 avAnimateTitle [titleDelay]="80">{{ t.nombre }}</h3>
+
+          <p class="testimonio-rol">{{ t.rol }}</p>
 
         </article>
 
@@ -274,9 +360,9 @@
 
       <div>
 
-        <p class="kicker reveal" avRevealOnScroll>Capacitación online</p>
+        <p class="kicker reveal" avRevealOnScroll>Catálogo en línea</p>
 
-        <h2 avAnimateTitle [titleDelay]="60">Cursos virtuales disponibles</h2>
+        <h2 avAnimateTitle [titleDelay]="60">Cursos y programas virtuales disponibles</h2>
 
       </div>
 
@@ -298,11 +384,11 @@
 
         <div class="empty-cursos card reveal-scale" avRevealOnScroll>
 
-          <h3 avAnimateTitle>Próximamente nuevos cursos en línea</h3>
+          <h3 avAnimateTitle>Próximamente nuevos cursos y programas</h3>
 
           <p class="muted">
 
-            Publique programas con tarifa virtual en ARGO y actívelos en Aula virtual.
+            Estamos publicando más programas de capacitación virtual. Vuelva pronto o contáctenos.
 
           </p>
 
@@ -367,6 +453,128 @@
         </article>
 
       }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Cómo acceder a cursos y programas -->
+
+<section class="section section--light" id="como-funciona">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <p class="kicker reveal" avRevealOnScroll>Empiece hoy</p>
+
+      <h2 avAnimateTitle [titleDelay]="50">Cómo acceder a cursos y programas</h2>
+
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
+        Tres pasos para matricularse en el aula virtual y comenzar su capacitación.
+      </p>
+
+    </header>
+
+    <div class="pasos-grid">
+
+      @for (p of pasos; track p.paso; let i = $index) {
+
+        <article class="paso-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
+
+          <span class="paso-num" aria-hidden="true">{{ p.paso }}</span>
+
+          <h3 avAnimateTitle [titleDelay]="80">{{ p.title }}</h3>
+
+          <p>{{ p.text }}</p>
+
+        </article>
+
+      }
+
+    </div>
+
+    <div class="pasos-cta reveal" avRevealOnScroll [revealDelay]="150">
+
+      <a routerLink="/cursos" class="btn btn-primary">Explorar cursos y programas</a>
+
+      <a routerLink="/registro" class="btn btn-outline">Registrarse ahora</a>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Preguntas frecuentes -->
+
+<section class="section section--white" id="preguntas-frecuentes">
+
+  <div class="container">
+
+    <header class="section-head center">
+
+      <p class="kicker reveal" avRevealOnScroll>Ayuda</p>
+
+      <h2 avAnimateTitle [titleDelay]="50">Preguntas frecuentes sobre cursos y programas</h2>
+
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
+        Resolvemos las dudas más comunes antes de matricularse en el aula virtual.
+      </p>
+
+    </header>
+
+    <div class="faq-list">
+
+      @for (item of faq; track item.pregunta; let i = $index) {
+
+        <article class="faq-item reveal" avRevealOnScroll [revealDelay]="i * 60">
+
+          <button type="button" class="faq-pregunta" [class.faq-pregunta--open]="faqAbierta() === i" (click)="toggleFaq(i)">
+
+            <span>{{ item.pregunta }}</span>
+
+            <span class="faq-icon" aria-hidden="true">{{ faqAbierta() === i ? '−' : '+' }}</span>
+
+          </button>
+
+          @if (faqAbierta() === i) {
+
+            <div class="faq-respuesta">
+
+              <p>{{ item.respuesta }}</p>
+
+            </div>
+
+          }
+
+        </article>
+
+      }
+
+    </div>
+
+    <div class="faq-contacto reveal" avRevealOnScroll [revealDelay]="120">
+
+      <p>¿Aún tiene dudas sobre un curso o programa?</p>
+
+      <div class="faq-contacto-actions">
+
+        <a routerLink="/acerca" class="btn btn-outline">Conocer la institución</a>
+
+        @if (telefono(); as tel) {
+
+          <a [href]="telHref()" class="btn btn-primary">Llamar {{ tel }}</a>
+
+        }
+
+      </div>
 
     </div>
 

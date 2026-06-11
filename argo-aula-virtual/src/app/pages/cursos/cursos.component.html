@@ -2,9 +2,9 @@
   <div class="catalog-page__head">
     <div class="container">
       <header class="page-head">
-        <h1>{{ modo() === 'tienda' ? 'Tienda' : 'Catálogo de cursos' }}</h1>
+        <h1>{{ modo() === 'tienda' ? 'Tienda de cursos y programas' : 'Catálogo de cursos y programas virtuales' }}</h1>
         <p class="page-lead">
-          {{ modo() === 'tienda' ? 'Inscríbete y paga en línea.' : 'Conoce nuestra oferta de capacitación virtual.' }}
+          {{ modo() === 'tienda' ? 'Inscríbase a cursos y programas de capacitación en línea.' : 'Explore cursos y programas de capacitación virtual en el aula virtual.' }}
         </p>
       </header>
 
@@ -12,7 +12,7 @@
         <div class="search">
           <input
             type="search"
-            placeholder="Buscar curso…"
+            placeholder="Buscar curso o programa…"
             [value]="q()"
             (input)="q.set($any($event.target).value)"
             (keyup.enter)="cargar()" />

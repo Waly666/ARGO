@@ -3,18 +3,105 @@
 export const OFERTAS = [
   {
     icon: '💻',
-    title: 'Capacitación online en seguridad vial',
-    text: 'Cursos virtuales certificados, disponibles cuando y donde los necesite.',
+    title: 'Cursos virtuales certificados',
+    text: 'Programas en línea con certificación: estudie a su ritmo y valide sus competencias en seguridad vial.',
   },
   {
     icon: '🎓',
-    title: 'Carreras técnicas en seguridad vial',
-    text: 'Formación técnica laboral por competencias con titulación y acompañamiento.',
+    title: 'Programas de formación técnica',
+    text: 'Carreras y programas por competencias con titulación, acompañamiento y rutas claras de avance.',
   },
   {
     icon: '📊',
-    title: 'Estudios y diagnósticos técnicos',
-    text: 'Análisis, planes y asesoría para decisiones seguras en gestión vial.',
+    title: 'Capacitación para empresas e instituciones',
+    text: 'Cursos y programas a la medida para equipos, flotas y organismos que exigen resultados medibles.',
+  },
+];
+
+/** Beneficios orientados a resultados (transformación del alumno). */
+export const BENEFICIOS_CURSOS = [
+  {
+    icon: '✅',
+    title: 'Certificación al completar',
+    text: 'Al terminar el programa y cumplir los requisitos, obtiene respaldo formal de su capacitación.',
+  },
+  {
+    icon: '📱',
+    title: 'Estudie desde cualquier lugar',
+    text: 'Acceda a cursos y programas virtuales cuando lo necesite, sin desplazamientos ni horarios rígidos.',
+  },
+  {
+    icon: '📈',
+    title: 'Avance a su ritmo',
+    text: 'Retome donde lo dejó, consulte el progreso y continúe el programa sin perder continuidad.',
+  },
+];
+
+/** Pasos para acceder a cursos y programas (comparación simple). */
+export const PASOS_PROGRAMAS = [
+  {
+    paso: '1',
+    title: 'Elija su curso o programa',
+    text: 'Explore el catálogo de cursos virtuales y programas de capacitación publicados en el portal.',
+  },
+  {
+    paso: '2',
+    title: 'Regístrese y matricúlese',
+    text: 'Cree su cuenta, inscríbase al programa y reciba acceso al aula virtual de inmediato.',
+  },
+  {
+    paso: '3',
+    title: 'Estudie y certifíquese',
+    text: 'Complete el contenido, cumpla evaluaciones y obtenga su certificado según las reglas del programa.',
+  },
+];
+
+export const TESTIMONIOS = [
+  {
+    nombre: 'María Fernanda R.',
+    rol: 'Conductora profesional',
+    texto:
+      'Los cursos virtuales me permitieron actualizar normativa sin dejar de trabajar. El programa fue claro y el certificado llegó al terminar.',
+  },
+  {
+    nombre: 'Carlos Andrés M.',
+    rol: 'Empresa de transporte',
+    texto:
+      'Matriculamos a nuestro equipo en varios programas. La plataforma es sencilla y el seguimiento del avance nos dio tranquilidad.',
+  },
+  {
+    nombre: 'Laura Patricia G.',
+    rol: 'Estudiante técnica',
+    texto:
+      'Encontré programas de capacitación alineados con mi carrera. Pude estudiar en las noches y retomar el curso cuando tenía tiempo.',
+  },
+];
+
+export const FAQ_CURSOS = [
+  {
+    pregunta: '¿Qué diferencia hay entre un curso y un programa en el aula virtual?',
+    respuesta:
+      'Un curso virtual suele ser una capacitación corta y focalizada. Un programa puede incluir más horas, evaluaciones y requisitos de certificación. En el catálogo verá ambos publicados como cursos y programas disponibles.',
+  },
+  {
+    pregunta: '¿Necesito pagar antes de empezar a estudiar?',
+    respuesta:
+      'Depende del curso o programa. Algunos permiten cursar sin pagar y exigen el pago para el certificado; otros requieren pago previo para acceder al contenido. La ficha de cada programa indica las condiciones.',
+  },
+  {
+    pregunta: '¿Cómo obtengo el certificado?',
+    respuesta:
+      'Cada programa define si el certificado se entrega al pagar, al aprobar evaluaciones o al completar el contenido. Revise la descripción del curso antes de matricularse.',
+  },
+  {
+    pregunta: '¿Puedo estudiar desde el celular?',
+    respuesta:
+      'Sí. El aula virtual está optimizada para computador, tableta y móvil. Solo necesita conexión a internet y su usuario del portal.',
+  },
+  {
+    pregunta: '¿Cómo me inscribo a un programa?',
+    respuesta:
+      'Regístrese en el portal, elija el curso o programa en el catálogo, pulse «Matricularme» y acceda al aula virtual con su usuario.',
   },
 ];
 
@@ -112,9 +199,9 @@ export const PILARES = {
 
 export const HERO_DEFAULT = {
   eyebrow: 'Fundación Finstruvial',
-  titulo: 'Educar para salvar vidas: cada aprendizaje cuenta en el camino.',
+  titulo: 'Cursos y programas virtuales para formar conductores y equipos más seguros.',
   subtitulo:
-    'Porque la seguridad vial comienza con la educación: entrenamientos hechos para usted.',
+    'Matricúlese en el aula virtual, avance a su ritmo y certifique su capacitación en seguridad vial con programas diseñados para usted.',
 };
 
 export const ACERCA_DEFAULT = `La FUNDACIÓN FINSTRUVIAL lleva la seguridad vial en el alma.
