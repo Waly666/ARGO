@@ -599,6 +599,12 @@ textarea {
   font-size: 0.82rem;
 }
 
+.av-subtitle {
+  margin: 1.25rem 0 0.65rem;
+  font-size: 1rem;
+  color: #334155;
+}
+
 @media (max-width: 900px) {
   .av-layout {
     grid-template-columns: 1fr;
