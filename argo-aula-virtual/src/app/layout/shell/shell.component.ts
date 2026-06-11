@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
@@ -23,9 +24,11 @@ const FOOTER_ABOUT_DEFAULT =
 export class ShellComponent implements OnInit {
   private api = inject(AulaApiService);
   private branding = inject(PortalBrandingService);
+  private router = inject(Router);
   auth = inject(PortalAuthService);
 
   config = signal<PortalConfig | null>(null);
+  menuAbierto = signal(false);
 
   logoUrl = computed(() => resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo));
 
@@ -56,7 +59,17 @@ export class ShellComponent implements OnInit {
     return `${this.nombreCea()} ${FOOTER_ABOUT_DEFAULT}`;
   });
 
+  toggleMenu() {
+    this.menuAbierto.update((v) => !v);
+  }
+
+  cerrarMenu() {
+    this.menuAbierto.set(false);
+  }
+
   ngOnInit() {
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => this.cerrarMenu());
+
     this.api.config().subscribe({
       next: (c) => {
         this.config.set(c);
