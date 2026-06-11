@@ -13,6 +13,7 @@ export interface LandingItemBasico {
 export interface LandingServicioItem {
   icon: string;
   title: string;
+  url?: string;
 }
 
 export interface LandingTestimonio {
@@ -66,6 +67,8 @@ export interface PortalLandingConfig {
     cursos: string;
     aula: string;
     acerca: string;
+    fundacion: string;
+    consultaCertificados: string;
     acceder: string;
     registrarse: string;
     salir: string;
@@ -113,8 +116,10 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
   quoteText:
     'Cursos y programas virtuales que transforman la seguridad vial: estudie hoy, certifique mañana.',
   quoteLabel: 'O llámanos',
-  metaDescription: '',
-  metaKeywords: '',
+  metaDescription:
+    'Cursos y programas de capacitación virtual en seguridad vial para Colombia, el departamento del Meta y Villavicencio. Matricúlese en el aula virtual de Fundación Finstruvial: formación técnica, certificación y programas en línea.',
+  metaKeywords:
+    'cursos virtuales Colombia, programas de capacitación en línea Colombia, aula virtual seguridad vial, cursos seguridad vial Colombia, capacitación tránsito Villavicencio, cursos tránsito Meta, programas certificados Villavicencio, formación técnica Meta Colombia, PESV Villavicencio, PESV Meta, Fundación Finstruvial, instituto técnico Villavicencio, cursos en línea Villavicencio, capacitación conductores Meta, seguridad vial Villavicencio, consultoría seguridad vial Colombia, carreras técnicas tránsito Villavicencio, matrícula cursos virtuales Meta',
   hero: {
     ctaPrincipal: 'Ver cursos y programas',
     ctaSecundario: 'Crear cuenta gratis',
@@ -132,6 +137,8 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     cursos: 'Cursos',
     aula: 'Aula virtual',
     acerca: 'Acerca de',
+    fundacion: 'Fundación',
+    consultaCertificados: 'Certificados',
     acceder: 'Acceder',
     registrarse: 'Registrarse',
     salir: 'Salir',
@@ -197,18 +204,61 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [
-      { icon: '🛣️', title: 'Planes de manejo de tránsito' },
-      { icon: '📋', title: 'Planes estratégicos de seguridad vial' },
-      { icon: '🏙️', title: 'Planes locales de seguridad vial' },
-      { icon: '🚲', title: 'Planes de movilidad sostenible y segura' },
-      { icon: '👷', title: 'Competencias laborales' },
-      { icon: '🚗', title: 'Sensibilización a conductores' },
-      { icon: '📖', title: 'Actualización normativa' },
-      { icon: '🎯', title: 'Actividades experienciales' },
-      { icon: '📚', title: 'Publicaciones' },
-      { icon: '📈', title: 'Análisis de accidentalidad vial — PERIDATA' },
-      { icon: '🧰', title: 'Herramientas educativas' },
-      { icon: '🔬', title: 'PERIDATA' },
+      {
+        icon: '🛣️',
+        title: 'Planes de manejo de tránsito',
+        url: 'https://finstruvial.com.co/planes-de-manejo-de-transito/',
+      },
+      {
+        icon: '📋',
+        title: 'Planes estratégicos de seguridad vial',
+        url: 'https://finstruvial.com.co/planes-estrategicos-de-seguridad-vial/',
+      },
+      {
+        icon: '🏙️',
+        title: 'Planes locales de seguridad vial',
+        url: 'https://finstruvial.com.co/plan-local-de-seguridad-vial/',
+      },
+      {
+        icon: '🚲',
+        title: 'Planes de movilidad sostenible y segura',
+        url: 'https://finstruvial.com.co/planes-de-movilidad-sostenible-y-segura/',
+      },
+      {
+        icon: '👷',
+        title: 'Competencias laborales',
+        url: 'https://finstruvial.com.co/competencias-laborales/',
+      },
+      {
+        icon: '🚗',
+        title: 'Sensibilización a conductores',
+        url: 'https://finstruvial.com.co/sensibilizacion-a-conductores/',
+      },
+      {
+        icon: '📖',
+        title: 'Actualización normativa',
+        url: 'https://finstruvial.com.co/actualizacion-normativa/',
+      },
+      {
+        icon: '🎯',
+        title: 'Actividades experienciales',
+        url: 'https://finstruvial.com.co/actividades-experienciales/',
+      },
+      {
+        icon: '📈',
+        title: 'Análisis de accidentalidad vial — PERIDATA',
+        url: 'https://finstruvial.com.co/nuestros-servicios/mapas/',
+      },
+      {
+        icon: '📚',
+        title: 'Publicaciones',
+        url: 'https://finstruvial.com.co/publicaciones/',
+      },
+      {
+        icon: '🧰',
+        title: 'Herramientas educativas',
+        url: 'https://finstruvial.com.co/herramientas-educativas-y-tecnologicas/',
+      },
     ],
   },
   valores: {
@@ -392,6 +442,18 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
   ],
 };
 
+function mergeServiciosItems(
+  rawItems: LandingServicioItem[] | undefined,
+  defaults: LandingServicioItem[],
+): LandingServicioItem[] {
+  const items = rawItems?.length ? rawItems : defaults;
+  const urlByTitle = new Map(defaults.map((item) => [item.title.trim().toLowerCase(), item.url || '']));
+  return items.map((item) => ({
+    ...item,
+    url: (item.url || urlByTitle.get(item.title.trim().toLowerCase()) || '').trim(),
+  }));
+}
+
 export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): PortalLandingConfig {
   const d = PORTAL_LANDING_DEFAULTS;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalLandingConfig;
@@ -407,7 +469,7 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     servicios: {
       ...d.servicios,
       ...raw.servicios,
-      items: raw.servicios?.items?.length ? raw.servicios.items : d.servicios.items,
+      items: mergeServiciosItems(raw.servicios?.items, d.servicios.items),
     },
     valores: {
       ...d.valores,
@@ -435,6 +497,8 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     footer: { ...d.footer, ...raw.footer },
     catalogo: { ...d.catalogo, ...raw.catalogo },
     quoteLabel: raw.quoteLabel ?? d.quoteLabel,
+    metaDescription: raw.metaDescription?.trim() || d.metaDescription,
+    metaKeywords: raw.metaKeywords?.trim() || d.metaKeywords,
     cursos: { ...d.cursos, ...raw.cursos },
     carreras: {
       ...d.carreras,

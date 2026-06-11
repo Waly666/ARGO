@@ -1,9 +1,15 @@
 :root {
+  --av-font-sans:
+    'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto',
+    'Helvetica Neue', Arial, sans-serif;
+  --av-font-display: var(--av-font-sans);
   --av-bg: #0b1224;
   --av-surface: #121c33;
   --av-surface-2: #1a2744;
   --av-text: #eef3ff;
   --av-dim: #9fb0d0;
+  --av-ink: #0f172a;
+  --av-ink-muted: #475569;
   --av-primary: #3b82f6;
   --av-primary-dark: #1d4ed8;
   --av-accent: #22d3ee;
@@ -23,9 +29,52 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--av-font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--av-bg);
   color: var(--av-text);
+}
+
+app-root,
+av-shell {
+  font-family: var(--av-font-sans);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--av-font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-weight: 700;
+}
+
+h2 {
+  font-weight: 800;
+}
+
+h3,
+h4 {
+  font-weight: 700;
+}
+
+p,
+li,
+label,
+td,
+th {
+  font-family: var(--av-font-sans);
 }
 
 a {

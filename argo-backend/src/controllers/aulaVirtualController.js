@@ -23,6 +23,7 @@ const {
 } = require('../services/aulaVirtualMatricula');
 const {
   listarMisCertificados,
+  consultarCertificadosPublico,
   htmlCertificadoPortal,
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
@@ -237,6 +238,15 @@ exports.matricularCurso = async (req, res, next) => {
       idPrograma: req.params.id,
     });
     res.status(out.yaMatriculado ? 200 : 201).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.consultarCertificados = async (req, res, next) => {
+  try {
+    res.json(await consultarCertificadosPublico(req.query.numDoc));
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);

@@ -25,6 +25,12 @@ router.get(
   requireTurnstile(),
   ctrl.buscarAlumnoRegistro,
 );
+router.get(
+  '/certificados/consulta',
+  buscarAlumnoLimiter,
+  requireTurnstile(),
+  ctrl.consultarCertificados,
+);
 router.post('/auth/registro', portalAuthLimiter, requireTurnstile(), ctrl.registro);
 router.post('/auth/registro/solicitar', portalAuthLimiter, requireTurnstile(), ctrl.registroSolicitar);
 router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirmar);

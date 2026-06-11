@@ -34,6 +34,18 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/acerca/acerca.component').then((m) => m.AcercaComponent),
       },
       {
+        path: 'fundacion',
+        loadComponent: () =>
+          import('./pages/fundacion/fundacion.component').then((m) => m.FundacionComponent),
+      },
+      {
+        path: 'consulta-certificados',
+        loadComponent: () =>
+          import('./pages/consulta-certificados/consulta-certificados.component').then(
+            (m) => m.ConsultaCertificadosComponent,
+          ),
+      },
+      {
         path: 'login',
         loadComponent: () => import('./pages/login/login.component').then((m) => m.LoginComponent),
       },

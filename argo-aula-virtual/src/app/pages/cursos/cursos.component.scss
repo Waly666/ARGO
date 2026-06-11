@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  font-family: var(--av-font-sans);
+  color: var(--av-ink);
+}
+
 .catalog-page {
   min-height: 100%;
 }

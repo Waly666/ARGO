@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AulaApiService } from '../../core/aula-api.service';
 import { PortalAuthService } from '../../core/portal-auth.service';
+import { PortalSeoService } from '../../core/portal-seo.service';
 
 @Component({
   selector: 'av-login',
@@ -18,6 +19,7 @@ export class LoginComponent {
   private api = inject(AulaApiService);
   private auth = inject(PortalAuthService);
   private router = inject(Router);
+  private seo = inject(PortalSeoService);
 
   turnstile = viewChild(TurnstileComponent);
 
@@ -30,8 +32,11 @@ export class LoginComponent {
 
   constructor() {
     this.api.config().subscribe({
-      next: (c) => this.turnstileSiteKey.set(c.turnstileSiteKey || ''),
-      error: () => {},
+      next: (c) => {
+        this.turnstileSiteKey.set(c.turnstileSiteKey || '');
+        this.seo.applyLogin(c);
+      },
+      error: () => this.seo.applyLogin(null),
     });
   }
 

@@ -38,6 +38,14 @@ export class ShellComponent implements OnInit {
 
   nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
 
+  /** Texto junto al logo en el header (marca corta). */
+  brandMarca = computed(() => {
+    const name = this.config()?.nombreCea?.trim() || '';
+    if (/finstruvial/i.test(name)) return 'FINSTRUVIAL';
+    const corto = name.replace(/^fundaci[oó]n\s+/i, '').trim();
+    return corto ? corto.toUpperCase() : 'FINSTRUVIAL';
+  });
+
   whatsappTelefono = computed(() => this.config()?.telefono?.trim() || '');
 
   whatsappHref = computed(() => {

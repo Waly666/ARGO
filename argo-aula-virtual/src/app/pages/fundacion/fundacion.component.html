@@ -1,0 +1,176 @@
+<div class="fund-page">
+  <section class="fund-hero">
+    <div class="container fund-hero__inner">
+      <div class="fund-hero__copy">
+        <p class="fund-kicker">🛣️ Seguridad vial con calidez humana</p>
+        <h1>Fundación Finstruvial</h1>
+        <p class="fund-hero__lead">
+          Llevamos la educación vial al campo y al aula virtual. En Villavicencio, el Meta y Colombia trabajamos para
+          que más personas circulen con seguridad.
+        </p>
+        <div class="fund-hero__actions">
+          <a [href]="sitioUrl" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+            Sitio institucional ↗
+          </a>
+          <a routerLink="/cursos" class="btn btn-outline fund-btn-outline">Ver cursos virtuales</a>
+        </div>
+      </div>
+      <figure class="fund-hero__visual">
+        <img
+          src="/images/fundacion-equipo.png"
+          alt="Equipo de la Fundación Finstruvial en campo"
+          loading="eager"
+        />
+        <figcaption class="fund-hero__caption">Nuestro equipo en acción — Meta, Colombia</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="fund-section fund-section--about" id="quienes-somos">
+    <div class="container">
+      <header class="fund-about__head">
+        <p class="fund-kicker fund-kicker--dark">Conócenos</p>
+        <h2>¿Quiénes somos?</h2>
+        <p class="fund-about__lead">{{ quienesLead }}</p>
+      </header>
+
+      <div class="fund-about__layout">
+        <aside class="fund-about__aside">
+          @if (logoUrl(); as logo) {
+            <div class="fund-about__logo-wrap">
+              <img class="fund-logo" [src]="logo" alt="Fundación Finstruvial" />
+            </div>
+          }
+          <ul class="fund-about__stats">
+            @for (d of quienesDestacados; track d.label) {
+              <li class="fund-about__stat">
+                <span class="fund-about__stat-icon" aria-hidden="true">{{ d.icon }}</span>
+                <div>
+                  <strong>{{ d.label }}</strong>
+                  <span>{{ d.text }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+          <a [href]="sitioUrl" target="_blank" rel="noopener noreferrer" class="fund-about__link">
+            Más en finstruvial.com.co ↗
+          </a>
+        </aside>
+
+        <div class="fund-about__bloques">
+          @for (b of quienesBloques; track b.titulo) {
+            <article class="fund-about__bloque">
+              <span class="fund-about__bloque-icon" aria-hidden="true">{{ b.icon }}</span>
+              <div>
+                <h3>{{ b.titulo }}</h3>
+                <p>{{ b.texto }}</p>
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fund-section fund-section--soft">
+    <div class="container">
+      <div class="fund-mv">
+        <article class="fund-card">
+          <span class="fund-card__label">Lo que hacemos hoy</span>
+          <h2>Misión</h2>
+          <p>{{ mision }}</p>
+        </article>
+        <article class="fund-card">
+          <span class="fund-card__label">Hacia dónde vamos</span>
+          <h2>Visión</h2>
+          <p>{{ vision }}</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="fund-section fund-section--warm">
+    <div class="container fund-commit">
+      <p class="fund-kicker fund-kicker--dark">💛 En la vía, la vida primero</p>
+      <h2>Nuestro compromiso</h2>
+      <p class="fund-commit__text">{{ compromiso }}</p>
+    </div>
+  </section>
+
+  <section class="fund-section fund-section--soft">
+    <div class="container">
+      <header class="fund-section__head fund-section__head--center">
+        <p class="fund-kicker fund-kicker--dark">Lo que ofrecemos</p>
+        <h2>Líneas de trabajo</h2>
+        <p class="fund-section__lead">Capacitación, consultoría y herramientas para empresas, entidades y comunidad.</p>
+      </header>
+      <div class="fund-servicios">
+        @for (s of servicios; track s.title) {
+          <article class="fund-servicio">
+            <span class="fund-servicio__icon" aria-hidden="true">{{ s.icon }}</span>
+            <h3>{{ s.title }}</h3>
+            <p>{{ s.text }}</p>
+          </article>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="fund-section fund-section--cta">
+    <div class="container fund-cta">
+      <div class="fund-cta__copy">
+        <p class="fund-kicker">🎓 Aprende con nosotros</p>
+        <h2>¡Empieza tu capacitación!</h2>
+        <p>
+          Cursos virtuales, programas técnicos y certificación en seguridad vial — estudia a tu ritmo desde donde estés.
+        </p>
+      </div>
+      <div class="fund-cta__actions">
+        <a routerLink="/registro" class="btn btn-primary">Crear cuenta</a>
+        <a routerLink="/" fragment="servicios-empresa" class="btn btn-outline fund-btn-outline">Servicios para empresas</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="fund-section fund-section--white" id="contacto-fundacion">
+    <div class="container">
+      <header class="fund-section__head fund-section__head--center">
+        <p class="fund-kicker fund-kicker--dark">📍 Escríbenos</p>
+        <h2>Hablemos</h2>
+        <p class="fund-section__lead">Estamos en Villavicencio, Meta. ¡Con gusto te atendemos!</p>
+      </header>
+      <div class="fund-contacto">
+        <dl class="fund-contacto__grid">
+          <div class="fund-contacto__item">
+            <dt>Dirección</dt>
+            <dd>{{ direccion() }}</dd>
+            <dd class="fund-muted">{{ contacto.sedeNota }}</dd>
+          </div>
+          <div class="fund-contacto__item">
+            <dt>Teléfono</dt>
+            <dd>
+              @if (telHref(); as tel) {
+                <a [href]="tel">{{ telefono() }}</a>
+              } @else {
+                {{ telefono() }}
+              }
+            </dd>
+          </div>
+          <div class="fund-contacto__item">
+            <dt>Email</dt>
+            <dd><a [href]="'mailto:' + email()">{{ email() }}</a></dd>
+          </div>
+          @if (config()?.nit; as nit) {
+            <div class="fund-contacto__item">
+              <dt>NIT</dt>
+              <dd>{{ nit }}</dd>
+            </div>
+          }
+        </dl>
+        @if (whatsappHref(); as wa) {
+          <a class="btn btn-primary" [href]="wa" target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+        }
+      </div>
+    </div>
+  </section>
+</div>

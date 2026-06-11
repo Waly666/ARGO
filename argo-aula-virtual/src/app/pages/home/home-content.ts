@@ -106,18 +106,61 @@ export const FAQ_CURSOS = [
 ];
 
 export const SERVICIOS_EMPRESA = [
-  { icon: '🛣️', title: 'Planes de manejo de tránsito' },
-  { icon: '📋', title: 'Planes estratégicos de seguridad vial' },
-  { icon: '🏙️', title: 'Planes locales de seguridad vial' },
-  { icon: '🚲', title: 'Planes de movilidad sostenible y segura' },
-  { icon: '👷', title: 'Competencias laborales' },
-  { icon: '🚗', title: 'Sensibilización a conductores' },
-  { icon: '📖', title: 'Actualización normativa' },
-  { icon: '🎯', title: 'Actividades experienciales' },
-  { icon: '📚', title: 'Publicaciones' },
-  { icon: '📈', title: 'Análisis de accidentalidad vial — PERIDATA' },
-  { icon: '🧰', title: 'Herramientas educativas' },
-  { icon: '🔬', title: 'PERIDATA' },
+  {
+    icon: '🛣️',
+    title: 'Planes de manejo de tránsito',
+    url: 'https://finstruvial.com.co/planes-de-manejo-de-transito/',
+  },
+  {
+    icon: '📋',
+    title: 'Planes estratégicos de seguridad vial',
+    url: 'https://finstruvial.com.co/planes-estrategicos-de-seguridad-vial/',
+  },
+  {
+    icon: '🏙️',
+    title: 'Planes locales de seguridad vial',
+    url: 'https://finstruvial.com.co/plan-local-de-seguridad-vial/',
+  },
+  {
+    icon: '🚲',
+    title: 'Planes de movilidad sostenible y segura',
+    url: 'https://finstruvial.com.co/planes-de-movilidad-sostenible-y-segura/',
+  },
+  {
+    icon: '👷',
+    title: 'Competencias laborales',
+    url: 'https://finstruvial.com.co/competencias-laborales/',
+  },
+  {
+    icon: '🚗',
+    title: 'Sensibilización a conductores',
+    url: 'https://finstruvial.com.co/sensibilizacion-a-conductores/',
+  },
+  {
+    icon: '📖',
+    title: 'Actualización normativa',
+    url: 'https://finstruvial.com.co/actualizacion-normativa/',
+  },
+  {
+    icon: '🎯',
+    title: 'Actividades experienciales',
+    url: 'https://finstruvial.com.co/actividades-experienciales/',
+  },
+  {
+    icon: '📈',
+    title: 'Análisis de accidentalidad vial — PERIDATA',
+    url: 'https://finstruvial.com.co/nuestros-servicios/mapas/',
+  },
+  {
+    icon: '📚',
+    title: 'Publicaciones',
+    url: 'https://finstruvial.com.co/publicaciones/',
+  },
+  {
+    icon: '🧰',
+    title: 'Herramientas educativas',
+    url: 'https://finstruvial.com.co/herramientas-educativas-y-tecnologicas/',
+  },
 ];
 
 export const VALORES = [

@@ -8,10 +8,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 
-import { CursoVirtual, EstadoInscripcionVirtual } from '../../core/models';
-import { resolveUploadUrl } from '../../core/upload-url.util';
-
+import { CursoVirtual, EstadoInscripcionVirtual, PortalConfig } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
+import { PortalSeoService } from '../../core/portal-seo.service';
+import { resolveUploadUrl } from '../../core/upload-url.util';
 
 
 
@@ -38,6 +38,8 @@ export class CursoDetalleComponent implements OnInit {
   private router = inject(Router);
 
   auth = inject(PortalAuthService);
+  private seo = inject(PortalSeoService);
+  private portalConfig = signal<PortalConfig | null>(null);
 
 
 
@@ -62,19 +64,18 @@ export class CursoDetalleComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id') || '';
 
     this.api.config().subscribe({
-
-      next: (cfg) => this.logoUrl.set(resolveUploadUrl(cfg.urlLogoAbsoluta || cfg.urlLogo)),
-
+      next: (cfg) => {
+        this.portalConfig.set(cfg);
+        this.logoUrl.set(resolveUploadUrl(cfg.urlLogoAbsoluta || cfg.urlLogo));
+      },
     });
 
     this.api.curso(id).subscribe({
 
       next: (c) => {
-
         this.curso.set(c);
-
+        this.seo.applyCursoDetalle(this.portalConfig(), c);
         if (this.auth.isLoggedIn()) this.cargarInscripcion(id);
-
       },
 
       error: (e) => this.error.set(e?.error?.message || 'Curso no disponible'),

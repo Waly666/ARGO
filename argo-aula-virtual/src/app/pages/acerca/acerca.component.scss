@@ -1,3 +1,9 @@
+:host {
+  display: block;
+  font-family: var(--av-font-sans);
+  color: var(--av-ink);
+}
+
 .hero-lite {
   background: linear-gradient(135deg, #1e3a8a, #0e7490);
   padding: 2rem 0;

@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import {
   CategoriaVirtual,
   CursoVirtual,
+  CertificadoConsultaRes,
   CertificadoPortal,
   EstadoInscripcionVirtual,
   MatriculaVirtualRes,
@@ -119,6 +120,12 @@ export class AulaApiService {
       {},
       { headers: this.auth.authHeader() },
     );
+  }
+
+  consultarCertificados(numDoc: string | number, turnstileToken?: string): Observable<CertificadoConsultaRes> {
+    const q = new URLSearchParams({ numDoc: String(numDoc) });
+    if (turnstileToken) q.set('turnstileToken', turnstileToken);
+    return this.http.get<CertificadoConsultaRes>(`${this.base}/certificados/consulta?${q.toString()}`);
   }
 
   misCertificados(): Observable<CertificadoPortal[]> {

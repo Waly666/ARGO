@@ -1,3 +1,4 @@
+import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaults';
 import {
   BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
@@ -36,6 +37,8 @@ export interface PortalLandingConfig {
     cursos: string;
     aula: string;
     acerca: string;
+    fundacion: string;
+    consultaCertificados: string;
     acceder: string;
     registrarse: string;
     salir: string;
@@ -61,7 +64,7 @@ export interface PortalLandingConfig {
     lead: string;
     items: { icon: string; title: string; text?: string }[];
   };
-  servicios: { titulo: string; items: { icon: string; title: string }[] };
+  servicios: { titulo: string; items: { icon: string; title: string; url?: string }[] };
   valores: { titulo: string; lead: string; items: { title: string; text: string }[] };
   testimonios: {
     kicker: string;
@@ -103,8 +106,8 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   quoteText:
     'Cursos y programas virtuales que transforman la seguridad vial: estudie hoy, certifique mañana.',
   quoteLabel: 'O llámanos',
-  metaDescription: '',
-  metaKeywords: '',
+  metaDescription: PORTAL_SEO_DESCRIPTION,
+  metaKeywords: PORTAL_SEO_KEYWORDS,
   hero: {
     ctaPrincipal: 'Ver cursos y programas',
     ctaSecundario: 'Crear cuenta gratis',
@@ -122,6 +125,8 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     cursos: 'Cursos',
     aula: 'Aula virtual',
     acerca: 'Acerca de',
+    fundacion: 'Fundación',
+    consultaCertificados: 'Certificados',
     acceder: 'Acceder',
     registrarse: 'Registrarse',
     salir: 'Salir',
@@ -201,6 +206,18 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   ],
 };
 
+function mergeServiciosItems(
+  rawItems: { icon: string; title: string; url?: string }[] | undefined,
+  defaults: { icon: string; title: string; url?: string }[],
+) {
+  const items = rawItems?.length ? rawItems : defaults;
+  const urlByTitle = new Map(defaults.map((item) => [item.title.trim().toLowerCase(), item.url || '']));
+  return items.map((item) => ({
+    ...item,
+    url: (item.url || urlByTitle.get(item.title.trim().toLowerCase()) || '').trim(),
+  }));
+}
+
 export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): PortalLandingConfig {
   const d = PORTAL_LANDING_FALLBACK;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalLandingConfig;
@@ -216,7 +233,7 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     servicios: {
       ...d.servicios,
       ...raw.servicios,
-      items: raw.servicios?.items?.length ? raw.servicios.items : d.servicios.items,
+      items: mergeServiciosItems(raw.servicios?.items, d.servicios.items),
     },
     valores: {
       ...d.valores,
@@ -244,6 +261,8 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     footer: { ...d.footer, ...raw.footer },
     catalogo: { ...d.catalogo, ...raw.catalogo },
     quoteLabel: raw.quoteLabel ?? d.quoteLabel,
+    metaDescription: raw.metaDescription?.trim() || d.metaDescription,
+    metaKeywords: raw.metaKeywords?.trim() || d.metaKeywords,
     cursos: { ...d.cursos, ...raw.cursos },
     carreras: {
       ...d.carreras,

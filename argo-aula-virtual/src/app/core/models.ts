@@ -178,6 +178,23 @@ export interface RegistroVerificacionRes {
   message: string;
 }
 
+export interface CertificadoConsultaItem {
+  idCertificado: string;
+  nombreApellidos: string;
+  cedula: number;
+  encabezado: string;
+  horas: string;
+  fechaCert: string | null;
+  fechaVence: string | null;
+}
+
+export interface CertificadoConsultaRes {
+  cedula: number;
+  nombreApellidos: string;
+  total: number;
+  items: CertificadoConsultaItem[];
+}
+
 export interface CertificadoPortal {
   _id: string;
   idProg: string | number;

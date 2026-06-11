@@ -45,7 +45,7 @@ export class PortalLandingEditorComponent {
   }
 
   addServicio() {
-    this.landing.servicios.items.push({ icon: '📋', title: '' });
+    this.landing.servicios.items.push({ icon: '📋', title: '', url: '' });
   }
 
   removeServicio(i: number) {

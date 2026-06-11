@@ -6,6 +6,7 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { CategoriaVirtual, CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
 import { mergePortalLanding } from '../../core/portal-landing';
+import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 
 @Component({
@@ -18,6 +19,7 @@ import { resolveUploadUrl } from '../../core/upload-url.util';
 export class CursosComponent implements OnInit {
   private api = inject(AulaApiService);
   private route = inject(ActivatedRoute);
+  private seo = inject(PortalSeoService);
 
   modo = signal<'tienda' | 'cursos'>('cursos');
   config = signal<PortalConfig | null>(null);
@@ -36,7 +38,11 @@ export class CursosComponent implements OnInit {
     const m = this.route.snapshot.data['modo'];
     this.modo.set(m === 'tienda' ? 'tienda' : 'cursos');
     this.api.config().subscribe({
-      next: (cfg) => this.config.set(cfg),
+      next: (cfg) => {
+        this.config.set(cfg);
+        this.seo.applyCursos(cfg, this.modo());
+      },
+      error: () => this.seo.applyCursos(null, this.modo()),
     });
     this.api.categorias().subscribe({ next: (rows) => this.categorias.set(rows) });
     this.cargar();

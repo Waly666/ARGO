@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
+import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ACERCA_DEFAULT, VALORES } from '../home/home-content';
@@ -16,11 +17,18 @@ import { ACERCA_DEFAULT, VALORES } from '../home/home-content';
 })
 export class AcercaComponent implements OnInit {
   private api = inject(AulaApiService);
+  private seo = inject(PortalSeoService);
   config = signal<PortalConfig | null>(null);
   readonly valores = VALORES;
 
   ngOnInit() {
-    this.api.config().subscribe({ next: (c) => this.config.set(c) });
+    this.api.config().subscribe({
+      next: (c) => {
+        this.config.set(c);
+        this.seo.applyAcerca(c);
+      },
+      error: () => this.seo.applyAcerca(null),
+    });
   }
 
   acercaTexto() {

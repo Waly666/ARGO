@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AulaApiService } from '../../core/aula-api.service';
 import { PortalAuthService } from '../../core/portal-auth.service';
+import { PortalSeoService } from '../../core/portal-seo.service';
 
 @Component({
   selector: 'av-registro',
@@ -18,6 +19,7 @@ export class RegistroComponent {
   private api = inject(AulaApiService);
   private auth = inject(PortalAuthService);
   private router = inject(Router);
+  private seo = inject(PortalSeoService);
 
   turnstile = viewChild(TurnstileComponent);
 
@@ -59,8 +61,9 @@ export class RegistroComponent {
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
         this.registroAbierto.set(c.registroAbierto !== false);
         this.emailVerificacion.set(!!c.emailVerificacionRegistro);
+        this.seo.applyRegistro(c);
       },
-      error: () => {},
+      error: () => this.seo.applyRegistro(null),
     });
   }
 

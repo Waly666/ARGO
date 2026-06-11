@@ -46,14 +46,15 @@
         <label>Etiqueta «O llámanos»</label>
         <input type="text" [(ngModel)]="landing.quoteLabel" />
       </div>
-      <h3>SEO (opcional)</h3>
+      <h3>SEO (Colombia, Meta, Villavicencio)</h3>
+      <p class="av-muted">Incluya ubicación y servicios para mejorar búsquedas locales. Si deja vacío, se usan los textos por defecto del portal.</p>
       <div class="av-field">
         <label>Meta descripción</label>
-        <textarea rows="2" [(ngModel)]="landing.metaDescription" placeholder="Vacío = generada automáticamente"></textarea>
+        <textarea rows="3" [(ngModel)]="landing.metaDescription" placeholder="Cursos virtuales en seguridad vial para Villavicencio, Meta y Colombia…"></textarea>
       </div>
       <div class="av-field">
         <label>Palabras clave</label>
-        <textarea rows="2" [(ngModel)]="landing.metaKeywords" placeholder="cursos virtuales, programas de capacitación…"></textarea>
+        <textarea rows="4" [(ngModel)]="landing.metaKeywords" placeholder="cursos virtuales Colombia, capacitación Villavicencio, seguridad vial Meta…"></textarea>
       </div>
     </div>
   }
@@ -107,6 +108,8 @@
         <div class="av-field"><label>Tienda</label><input [(ngModel)]="landing.nav.tienda" /></div>
         <div class="av-field"><label>Cursos</label><input [(ngModel)]="landing.nav.cursos" /></div>
         <div class="av-field"><label>Aula virtual</label><input [(ngModel)]="landing.nav.aula" /></div>
+        <div class="av-field"><label>Fundación</label><input [(ngModel)]="landing.nav.fundacion" /></div>
+        <div class="av-field"><label>Consultar certificados</label><input [(ngModel)]="landing.nav.consultaCertificados" /></div>
         <div class="av-field"><label>Acerca de</label><input [(ngModel)]="landing.nav.acerca" /></div>
         <div class="av-field"><label>Acceder</label><input [(ngModel)]="landing.nav.acceder" /></div>
         <div class="av-field"><label>Registrarse</label><input [(ngModel)]="landing.nav.registrarse" /></div>
@@ -161,10 +164,19 @@
     <div class="ple-block">
       <div class="av-field"><label>Título sección</label><input [(ngModel)]="landing.servicios.titulo" /></div>
       @for (item of landing.servicios.items; track $index; let i = $index) {
-        <div class="ple-card ple-card--inline">
-          <input class="ple-icon-input" [(ngModel)]="item.icon" placeholder="📋" />
-          <input class="ple-grow" [(ngModel)]="item.title" placeholder="Nombre del servicio" />
-          <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeServicio(i)">×</button>
+        <div class="ple-card">
+          <div class="ple-card-head">
+            <strong>Servicio {{ i + 1 }}</strong>
+            <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeServicio(i)">Quitar</button>
+          </div>
+          <div class="av-grid2">
+            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" placeholder="📋" /></div>
+            <div class="av-field"><label>Nombre</label><input [(ngModel)]="item.title" placeholder="Nombre del servicio" /></div>
+          </div>
+          <div class="av-field">
+            <label>Enlace (opcional)</label>
+            <input [(ngModel)]="item.url" placeholder="https://finstruvial.com.co/..." />
+          </div>
         </div>
       }
       <button type="button" class="av-btn av-btn--ghost" (click)="addServicio()">+ Añadir servicio</button>

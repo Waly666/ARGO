@@ -1,10 +1,16 @@
 const Certificado = require('../models/Certificado');
+const DatosAlumno = require('../models/DatosAlumno');
 const { numDocQuery, parseNumDoc } = require('../utils/numDoc');
 const { buscarPrograma } = require('./programaServicio');
 const { configPorPrograma } = require('./aulaVirtualCatalogo');
 const { generarHtmlCertificado } = require('./certificadoRender');
 const { armarDatosCertificado } = require('./certificadoRenderData');
 const { reciboResumenPorLiquidacion } = require('./aulaVirtualRecibos');
+
+function nombreCompletoAlumno(da) {
+  if (!da) return '';
+  return [da.apellido1, da.apellido2, da.nombre1, da.nombre2].filter(Boolean).join(' ').trim();
+}
 
 async function descrPrograma(idProg) {
   const p = await buscarPrograma(idProg);
@@ -74,6 +80,45 @@ async function verificarCertificadoAlumno(numDoc, certId) {
   return cert;
 }
 
+/** Consulta pública de certificados vigentes por número de documento (portal). */
+async function consultarCertificadosPublico(numDocRaw) {
+  const nd = parseNumDoc(numDocRaw);
+  if (nd == null) {
+    const err = new Error('Ingrese un número de cédula válido.');
+    err.status = 400;
+    throw err;
+  }
+
+  const [alumno, certs] = await Promise.all([
+    DatosAlumno.findOne(numDocQuery(nd)).lean(),
+    Certificado.find({
+      ...numDocQuery(nd),
+      estado: { $ne: 'anulado' },
+    })
+      .sort({ fechaEmision: -1, createdAt: -1 })
+      .lean(),
+  ]);
+
+  const nombreApellidos = nombreCompletoAlumno(alumno);
+
+  const items = certs.map((c) => ({
+    idCertificado: String(c.codigoCert || c._id || '').trim(),
+    nombreApellidos,
+    cedula: c.numDoc,
+    encabezado: String(c.encabezado || '').trim(),
+    horas: String(c.horasCert || '').trim(),
+    fechaCert: c.fechaEmision || c.createdAt || null,
+    fechaVence: c.fechaVencimiento || null,
+  }));
+
+  return {
+    cedula: nd,
+    nombreApellidos,
+    total: items.length,
+    items,
+  };
+}
+
 async function htmlCertificadoPortal(numDoc, certId, publicOrigin) {
   await verificarCertificadoAlumno(numDoc, certId);
   const data = await armarDatosCertificado(certId);
@@ -87,6 +132,7 @@ async function htmlCertificadoPortal(numDoc, certId, publicOrigin) {
 
 module.exports = {
   listarMisCertificados,
+  consultarCertificadosPublico,
   verificarCertificadoAlumno,
   htmlCertificadoPortal,
 };

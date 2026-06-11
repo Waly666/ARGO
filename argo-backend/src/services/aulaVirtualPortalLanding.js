@@ -108,8 +108,8 @@ function normalizarLanding(input) {
     instBarTag: str(src.instBarTag, d.instBarTag),
     quoteText: str(src.quoteText, d.quoteText),
     quoteLabel: str(src.quoteLabel, d.quoteLabel),
-    metaDescription: str(src.metaDescription),
-    metaKeywords: str(src.metaKeywords),
+    metaDescription: str(src.metaDescription, d.metaDescription),
+    metaKeywords: str(src.metaKeywords, d.metaKeywords),
     hero: {
       ctaPrincipal: str(heroSrc.ctaPrincipal, d.hero.ctaPrincipal),
       ctaSecundario: str(heroSrc.ctaSecundario, d.hero.ctaSecundario),
@@ -123,6 +123,8 @@ function normalizarLanding(input) {
       cursos: str(navSrc.cursos, d.nav.cursos),
       aula: str(navSrc.aula, d.nav.aula),
       acerca: str(navSrc.acerca, d.nav.acerca),
+      fundacion: str(navSrc.fundacion, d.nav.fundacion),
+      consultaCertificados: str(navSrc.consultaCertificados, d.nav.consultaCertificados),
       acceder: str(navSrc.acceder, d.nav.acceder),
       registrarse: str(navSrc.registrarse, d.nav.registrarse),
       salir: str(navSrc.salir, d.nav.salir),
@@ -149,7 +151,7 @@ function normalizarLanding(input) {
     beneficios: normalizarSeccionKicker(src.beneficios, d.beneficios, ['icon', 'title', 'text']),
     servicios: {
       titulo: str(serviciosSrc.titulo, d.servicios.titulo),
-      items: normalizarItemsIcono(serviciosSrc.items, d.servicios.items, ['icon', 'title']),
+      items: normalizarItemsIcono(serviciosSrc.items, d.servicios.items, ['icon', 'title', 'url']),
     },
     valores: {
       titulo: str(valoresSrc.titulo, d.valores.titulo),

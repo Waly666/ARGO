@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
 import { CertificadoPortal, CursoVirtual, PortalConfig, ReciboPortal } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
+import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
 
@@ -23,6 +24,7 @@ export class AulaComponent implements OnInit, OnDestroy {
   private api = inject(AulaApiService);
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
+  private seo = inject(PortalSeoService);
 
   cursos = signal<CursoVirtual[]>([]);
   certificados = signal<CertificadoPortal[]>([]);
@@ -65,8 +67,14 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.api.config().subscribe({
-      next: (c) => this.portalConfig.set(c),
-      error: () => this.portalConfig.set(null),
+      next: (c) => {
+        this.portalConfig.set(c);
+        this.seo.applyAula(c);
+      },
+      error: () => {
+        this.portalConfig.set(null);
+        this.seo.applyAula(null);
+      },
     });
     if (!this.auth.isLoggedIn()) return;
     this.cargarCursos();

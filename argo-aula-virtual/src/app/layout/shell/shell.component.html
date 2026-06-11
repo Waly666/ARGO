@@ -4,7 +4,7 @@
       @if (logoUrl(); as logo) {
         <img [src]="logo" [alt]="config()?.nombreCea || 'CEA'" class="brand-logo" />
       }
-      <span class="brand-name">{{ config()?.nombreCea || 'CEA' }}</span>
+      <span class="brand-name">{{ brandMarca() }}</span>
     </a>
 
     <button
@@ -31,11 +31,16 @@
         <a routerLink="/tienda" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.tienda }}</a>
         <a routerLink="/cursos" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.cursos }}</a>
         <a routerLink="/aula" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.aula }}</a>
+        <a routerLink="/fundacion" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.fundacion }}</a>
+        <a routerLink="/consulta-certificados" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.consultaCertificados }}</a>
         <a routerLink="/acerca" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.acerca }}</a>
       </nav>
       <div class="actions">
         @if (auth.isLoggedIn()) {
-          <span class="user-chip">{{ auth.user()?.nombreCompleto || auth.user()?.email }}</span>
+          <span
+            class="user-chip"
+            [title]="auth.user()?.nombreCompleto || auth.user()?.email || ''"
+          >{{ auth.user()?.nombreCompleto || auth.user()?.email }}</span>
           <button type="button" class="btn btn-ghost" (click)="logout(); cerrarMenu()">{{ landing().nav.salir }}</button>
         } @else {
           <a routerLink="/login" class="btn btn-ghost" (click)="cerrarMenu()">{{ landing().nav.acceder }}</a>
@@ -56,11 +61,16 @@
         <a routerLink="/tienda" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.tienda }}</a>
         <a routerLink="/cursos" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.cursos }}</a>
         <a routerLink="/aula" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.aula }}</a>
+        <a routerLink="/fundacion" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.fundacion }}</a>
+        <a routerLink="/consulta-certificados" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.consultaCertificados }}</a>
         <a routerLink="/acerca" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.acerca }}</a>
       </nav>
       <div class="actions">
         @if (auth.isLoggedIn()) {
-          <span class="user-chip">{{ auth.user()?.nombreCompleto || auth.user()?.email }}</span>
+          <span
+            class="user-chip"
+            [title]="auth.user()?.nombreCompleto || auth.user()?.email || ''"
+          >{{ auth.user()?.nombreCompleto || auth.user()?.email }}</span>
           <button type="button" class="btn btn-ghost" (click)="logout(); cerrarMenu()">{{ landing().nav.salir }}</button>
         } @else {
           <a routerLink="/login" class="btn btn-ghost" (click)="cerrarMenu()">{{ landing().nav.acceder }}</a>
@@ -91,6 +101,8 @@
       <h3 class="footer-title">{{ landing().footer.tituloEnlaces }}</h3>
       <nav class="footer-links">
         <a routerLink="/">Inicio</a>
+        <a routerLink="/fundacion">{{ landing().nav.fundacion }}</a>
+        <a routerLink="/consulta-certificados">{{ landing().nav.consultaCertificados }}</a>
         <a routerLink="/acerca">Acerca de</a>
         <a routerLink="/" fragment="servicios-empresa">Servicios</a>
         <a routerLink="/acerca">Página institucional</a>
