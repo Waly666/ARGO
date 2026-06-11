@@ -31,8 +31,21 @@ export class AcercaComponent implements OnInit {
     });
   }
 
+  private readonly valorIcons = ['⭐', '🛣️', '🤝', '🎯', '💚', '🚗'];
+
   acercaTexto() {
     return this.config()?.acercaDeHtml?.trim() || ACERCA_DEFAULT;
+  }
+
+  acercaParrafos(): string[] {
+    return this.acercaTexto()
+      .split(/\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+  }
+
+  iconoValor(index: number): string {
+    return this.valorIcons[index % this.valorIcons.length];
   }
 
   nombreCea() {
