@@ -72,6 +72,17 @@ function metricasDesdeClases(clases, totalSlots = 7) {
   };
 }
 
+function mapIntentosPublicos(intentos) {
+  if (!Array.isArray(intentos)) return [];
+  return intentos.map((it, idx) => ({
+    numero: idx + 1,
+    nota: clampPct(it.nota),
+    pctCompletitud: clampPct(it.pctCompletitud),
+    aprobado: !!it.aprobado,
+    fecha: it.fecha ? new Date(it.fecha).toISOString() : null,
+  }));
+}
+
 function mapProgresoPublico(progreso, estadoExtra = {}) {
   const clasesEstado = Array.isArray(estadoExtra.clases) ? estadoExtra.clases : [];
   const clasesDoc = Array.isArray(progreso?.clases) ? progreso.clases : [];
@@ -90,6 +101,7 @@ function mapProgresoPublico(progreso, estadoExtra = {}) {
     mejorNotaEval: progreso?.mejorNotaEval != null ? clampPct(progreso.mejorNotaEval) : null,
     ultimaNotaEval: progreso?.ultimaNotaEval,
     intentosEval: progreso?.intentosEval || 0,
+    intentos: mapIntentosPublicos(progreso?.intentos),
     aprobado: !!(estadoExtra.aprobado ?? progreso?.aprobado),
     certificadoEmitido: !!(estadoExtra.certificadoEmitido ?? progreso?.certificadoEmitido),
   };
@@ -215,6 +227,7 @@ function mapProgresoRespuesta(progreso, estado, certResult = null) {
       mejorNotaEval: estado.mejorNotaEval,
       ultimaNotaEval: estado.ultimaNotaEval,
       intentosEval: estado.intentosEval,
+      intentos: mapIntentosPublicos(progreso?.intentos),
       aprobado: estado.aprobado,
       certificadoEmitido: estado.certificadoEmitido || !!certResult?.creado,
     },

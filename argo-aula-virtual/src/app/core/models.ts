@@ -33,6 +33,14 @@ export interface ClaseProgresoVirtual {
   aprobada: boolean;
 }
 
+export interface IntentoEvalVirtual {
+  numero?: number;
+  nota: number;
+  pctCompletitud?: number;
+  aprobado: boolean;
+  fecha?: string | null;
+}
+
 export interface ProgresoVirtual {
   pctCompletitud: number;
   promedioClases?: number | null;
@@ -42,6 +50,7 @@ export interface ProgresoVirtual {
   mejorNotaEval: number | null;
   ultimaNotaEval?: number | null;
   intentosEval: number;
+  intentos?: IntentoEvalVirtual[];
   aprobado: boolean;
   certificadoEmitido: boolean;
 }

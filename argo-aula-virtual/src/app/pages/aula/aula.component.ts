@@ -4,13 +4,20 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
-import { CertificadoPortal, CursoVirtual, PortalConfig, ReciboPortal } from '../../core/models';
+import {
+  CertificadoPortal,
+  ClaseProgresoVirtual,
+  CursoVirtual,
+  IntentoEvalVirtual,
+  PortalConfig,
+  ReciboPortal,
+} from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
 
-export type PanelAula = 'tablero' | 'cursos' | 'certificados' | 'perfil';
+export type PanelAula = 'tablero' | 'cursos' | 'puntajes' | 'certificados' | 'perfil';
 
 @Component({
   selector: 'av-aula',
@@ -52,6 +59,12 @@ export class AulaComponent implements OnInit, OnDestroy {
       .filter((c) => this.enProgreso(c) || (this.pct(c) === 0 && c.tienePaquete))
       .sort((a, b) => this.pct(b) - this.pct(a))
       .slice(0, 4),
+  );
+
+  cursosConPuntajes = computed(() =>
+    [...this.cursos()]
+      .filter((c) => this.tieneHistorialPuntajes(c))
+      .sort((a, b) => (this.mejorNota(b) ?? -1) - (this.mejorNota(a) ?? -1)),
   );
 
   private onMessage = (ev: MessageEvent) => this.handleIframeMessage(ev);
@@ -137,8 +150,59 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   saludo(): string {
     const u = this.auth.user();
-    const nombre = u?.nombreCompleto?.split(' ')[0] || u?.email?.split('@')[0] || 'estudiante';
-    return nombre;
+    return u?.nombreCompleto?.trim() || u?.email?.split('@')[0] || 'estudiante';
+  }
+
+  intentosDe(c: CursoVirtual): IntentoEvalVirtual[] {
+    return c.progreso?.intentos || [];
+  }
+
+  clasesConNota(c: CursoVirtual): ClaseProgresoVirtual[] {
+    return (c.progreso?.clases || []).filter((cl) => cl.pct > 0);
+  }
+
+  tieneHistorialPuntajes(c: CursoVirtual): boolean {
+    return (
+      this.intentosDe(c).length > 0 ||
+      this.clasesConNota(c).length > 0 ||
+      c.progreso?.mejorNotaEval != null ||
+      (c.progreso?.ultimaNotaEval != null && c.progreso.ultimaNotaEval > 0)
+    );
+  }
+
+  mejorNota(c: CursoVirtual): number | null {
+    const p = c.progreso;
+    if (p?.mejorNotaEval != null) return p.mejorNotaEval;
+    const intentos = this.intentosDe(c);
+    if (!intentos.length) return null;
+    return Math.max(...intentos.map((i) => i.nota));
+  }
+
+  notaMinima(c: CursoVirtual): number {
+    return c.reglas?.pctMinEvaluaciones ?? 60;
+  }
+
+  notaClaseAprobada(): number {
+    return 70;
+  }
+
+  fechaIntento(f?: string | null): string {
+    if (!f) return '—';
+    const d = new Date(f);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  claseNotaTone(pct: number): 'ok' | 'mid' | 'low' {
+    if (pct >= this.notaClaseAprobada()) return 'ok';
+    if (pct >= 50) return 'mid';
+    return 'low';
+  }
+
+  notaTone(nota: number, min = 60): 'ok' | 'mid' | 'low' {
+    if (nota >= min) return 'ok';
+    if (nota >= min - 15) return 'mid';
+    return 'low';
   }
 
   cargarCursos() {
