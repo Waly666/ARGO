@@ -155,6 +155,7 @@ function nombreCompleto(a) {
 }
 
 const SORT_ALUMNOS_KEYS = {
+  fechaReg: ['fechaReg'],
   numDoc: ['numDoc'],
   nombre: ['apellido1', 'apellido2', 'nombre1', 'nombre2'],
   fechaNac: ['fechaNac'],
@@ -168,8 +169,9 @@ const SORT_ALUMNOS_KEYS = {
 
 function resolveSortAlumnos(sortRaw, dirRaw) {
   const sortKey = String(sortRaw || '').trim();
+  if (!sortKey) return { fechaReg: -1 };
   const dir = String(dirRaw || '').toLowerCase() === 'desc' ? -1 : 1;
-  const fields = SORT_ALUMNOS_KEYS[sortKey] || SORT_ALUMNOS_KEYS.nombre;
+  const fields = SORT_ALUMNOS_KEYS[sortKey] || SORT_ALUMNOS_KEYS.fechaReg;
   const out = {};
   for (const f of fields) out[f] = dir;
   return out;

@@ -40,6 +40,7 @@ import { ymdLocal } from '../jornadas/jornada-calendario.util';
 
 type VistaAlumnos = VistaLista;
 type SortColAlumnos =
+  | 'fechaReg'
   | 'numDoc'
   | 'nombre'
   | 'fechaNac'
@@ -53,8 +54,8 @@ type SortDir = 'asc' | 'desc';
 
 const VISTA_STORAGE_KEY_GENERAL = 'argo-alumnos-vista';
 const VISTA_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-vista';
-const SORT_STORAGE_KEY_GENERAL = 'argo-alumnos-sort';
-const SORT_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-sort';
+const SORT_STORAGE_KEY_GENERAL = 'argo-alumnos-sort-v2';
+const SORT_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-sort-v2';
 
 const CERT_JORNADA_OPTS: EnumBuscarOption[] = [
   { value: '', label: 'Todos' },
@@ -75,15 +76,19 @@ const SORT_COLUMNS: ReadonlyArray<{ key: SortColAlumnos; label: string }> = [
 ];
 
 function readSortPrefs(storageKey: string): { col: SortColAlumnos; dir: SortDir } {
+  const defecto = { col: 'fechaReg' as SortColAlumnos, dir: 'desc' as SortDir };
   try {
     const raw = localStorage.getItem(storageKey);
-    if (!raw) return { col: 'nombre', dir: 'asc' };
+    if (!raw) return defecto;
     const parsed = JSON.parse(raw) as { col?: string; dir?: string };
-    const col = SORT_COLUMNS.some((c) => c.key === parsed.col) ? (parsed.col as SortColAlumnos) : 'nombre';
+    if (parsed.col === 'fechaReg') {
+      return { col: 'fechaReg', dir: parsed.dir === 'asc' ? 'asc' : 'desc' };
+    }
+    const col = SORT_COLUMNS.some((c) => c.key === parsed.col) ? (parsed.col as SortColAlumnos) : defecto.col;
     const dir: SortDir = parsed.dir === 'desc' ? 'desc' : 'asc';
     return { col, dir };
   } catch {
-    return { col: 'nombre', dir: 'asc' };
+    return defecto;
   }
 }
 
@@ -129,8 +134,8 @@ export class AlumnosListaComponent implements OnInit {
   page = signal(0);
   pageSize = 25;
   vista = signal<VistaAlumnos>('lista');
-  sortCol = signal<SortColAlumnos>('nombre');
-  sortDir = signal<SortDir>('asc');
+  sortCol = signal<SortColAlumnos>('fechaReg');
+  sortDir = signal<SortDir>('desc');
 
   loading = signal(false);
   items = signal<AlumnoListItem[]>([]);
