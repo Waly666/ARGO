@@ -6,6 +6,11 @@ const { listarCategorias } = require('../services/aulaVirtualCategorias');
 const { obtenerConfigPortalPublica } = require('../services/aulaVirtualPortal');
 const { registrarPortal, loginPortal, buscarAlumnoRegistro } = require('../services/aulaVirtualAuth');
 const {
+  solicitarRegistroPortal,
+  confirmarRegistroPortal,
+  reenviarCodigoRegistro,
+} = require('../services/portalRegistroVerificacion');
+const {
   listarMisCursos,
   reportarProgreso,
   evaluarAprobacion,
@@ -22,7 +27,7 @@ const {
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
-const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled } = require('../config/security');
+const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled, portalEmailVerifyEnabled } = require('../config/security');
 const { logAuthIntento } = require('../services/authSecurityLog');
 const path = require('path');
 
@@ -32,6 +37,7 @@ exports.configPublica = async (_req, res, next) => {
     res.json({
       ...cfg,
       registroAbierto: portalRegistroAbierto(),
+      emailVerificacionRegistro: portalEmailVerifyEnabled(),
       turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
     });
   } catch (e) {
@@ -86,6 +92,60 @@ exports.registro = async (req, res, next) => {
     const { email, password, turnstileToken: _t, ...alumno } = req.body || {};
     const out = await registrarPortal({ email, password, alumno });
     res.status(201).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.registroSolicitar = async (req, res, next) => {
+  try {
+    if (!portalRegistroAbierto()) {
+      return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
+    }
+    if (!portalEmailVerifyEnabled()) {
+      return res.status(400).json({
+        message: 'La verificación por correo no está activa. Use el registro directo.',
+      });
+    }
+    const cfg = await obtenerConfigPortalPublica();
+    const { email, password, turnstileToken: _t, ...alumno } = req.body || {};
+    const out = await solicitarRegistroPortal({
+      email,
+      password,
+      alumno,
+      nombreCea: cfg.nombreCea,
+    });
+    res.status(202).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.registroConfirmar = async (req, res, next) => {
+  try {
+    if (!portalRegistroAbierto()) {
+      return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
+    }
+    const { pendingId, codigo } = req.body || {};
+    const out = await confirmarRegistroPortal({ pendingId, codigo });
+    res.status(201).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.registroReenviarCodigo = async (req, res, next) => {
+  try {
+    if (!portalRegistroAbierto()) {
+      return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
+    }
+    const cfg = await obtenerConfigPortalPublica();
+    const { pendingId } = req.body || {};
+    const out = await reenviarCodigoRegistro({ pendingId, nombreCea: cfg.nombreCea });
+    res.json(out);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);

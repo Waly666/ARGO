@@ -12,6 +12,7 @@ import {
   PortalAuthRes,
   PortalConfig,
   ProgresoVirtualResp,
+  RegistroVerificacionRes,
 } from './models';
 import { PortalAuthService } from './portal-auth.service';
 
@@ -65,6 +66,26 @@ export class AulaApiService {
     return this.http.post<PortalAuthRes>(`${this.base}/auth/registro`, {
       ...body,
       turnstileToken: turnstileToken || undefined,
+    });
+  }
+
+  registroSolicitar(
+    body: Record<string, unknown>,
+    turnstileToken?: string,
+  ): Observable<RegistroVerificacionRes> {
+    return this.http.post<RegistroVerificacionRes>(`${this.base}/auth/registro/solicitar`, {
+      ...body,
+      turnstileToken: turnstileToken || undefined,
+    });
+  }
+
+  registroConfirmar(pendingId: string, codigo: string): Observable<PortalAuthRes> {
+    return this.http.post<PortalAuthRes>(`${this.base}/auth/registro/confirmar`, { pendingId, codigo });
+  }
+
+  registroReenviarCodigo(pendingId: string): Observable<RegistroVerificacionRes> {
+    return this.http.post<RegistroVerificacionRes>(`${this.base}/auth/registro/reenviar-codigo`, {
+      pendingId,
     });
   }
 

@@ -89,7 +89,26 @@ async function buscarAlumnoRegistro(numDocRaw) {
   };
 }
 
-async function registrarPortal({ email, password, alumno }) {
+function buildAlumnoPayload(alumno, numDoc) {
+  return {
+    numDoc,
+    tipoDoc: alumno?.tipoDoc || '1',
+    expedida: alumno?.expedida || '',
+    apellido1: String(alumno?.apellido1 || '').trim(),
+    apellido2: String(alumno?.apellido2 || '').trim(),
+    nombre1: String(alumno?.nombre1 || '').trim(),
+    nombre2: String(alumno?.nombre2 || '').trim(),
+    fechaNac: alumno?.fechaNac || '',
+    genero: alumno?.genero || '',
+    celular: alumno?.celular || '',
+    direccion: alumno?.direccion || '',
+    munOrigen: alumno?.munOrigen || '',
+    codMunicipio: alumno?.codMunicipio || '',
+  };
+}
+
+/** Valida email, contraseña y documento antes de crear cuenta o enviar código. */
+async function validarDatosRegistroPortal({ email, password, alumno }) {
   const mail = String(email || '').trim().toLowerCase();
   const pass = String(password || '');
   if (!mail || !pass || pass.length < 6) {
@@ -121,15 +140,40 @@ async function registrarPortal({ email, password, alumno }) {
     throw err;
   }
 
-  let da = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
-  let alumnoExistente = false;
-
+  const da = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
   if (!da) {
-    if (!String(alumno?.apellido1 || '').trim() || !String(alumno?.nombre1 || '').trim()) {
+    const payload = buildAlumnoPayload(alumno, numDoc);
+    if (!payload.apellido1 || !payload.nombre1) {
       const err = new Error('Apellido y nombre son obligatorios para alumnos nuevos');
       err.status = 400;
       throw err;
     }
+    return { mail, pass, numDoc, alumnoPayload: payload, alumnoExistente: false };
+  }
+
+  return {
+    mail,
+    pass,
+    numDoc,
+    alumnoPayload: buildAlumnoPayload(alumno, numDoc),
+    alumnoExistente: true,
+  };
+}
+
+/** Crea ficha alumno (si aplica) y cuenta portal. passwordHash ya hasheado. */
+async function crearCuentaPortal({ email, passwordHash, alumno }) {
+  const mail = String(email || '').trim().toLowerCase();
+  const numDoc = parseNumDoc(alumno?.numDoc);
+  if (numDoc == null) {
+    const err = new Error('Número de documento inválido');
+    err.status = 400;
+    throw err;
+  }
+
+  let da = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+  let alumnoExistente = !!da;
+
+  if (!da) {
     da = await DatosAlumno.create({
       tipoAlumno: TIPO_VIRTUAL,
       tipoDoc: alumno.tipoDoc || '1',
@@ -149,8 +193,8 @@ async function registrarPortal({ email, password, alumno }) {
       userAddReg: 'portal',
     });
     da = da.toObject();
+    alumnoExistente = false;
   } else {
-    alumnoExistente = true;
     const patch = {};
     if (!da.correo) patch.correo = mail;
     if (!da.celular && alumno.celular) patch.celular = String(alumno.celular).trim();
@@ -161,7 +205,6 @@ async function registrarPortal({ email, password, alumno }) {
     }
   }
 
-  const passwordHash = await bcrypt.hash(pass, 10);
   const portal = await UsuarioPortal.create({
     email: mail,
     passwordHash,
@@ -181,6 +224,16 @@ async function registrarPortal({ email, password, alumno }) {
       ? 'Cuenta del portal creada con los datos ya registrados en ARGO'
       : 'Cuenta y ficha de alumno creadas',
   };
+}
+
+async function registrarPortal({ email, password, alumno }) {
+  const datos = await validarDatosRegistroPortal({ email, password, alumno });
+  const passwordHash = await bcrypt.hash(datos.pass, 10);
+  return crearCuentaPortal({
+    email: datos.mail,
+    passwordHash,
+    alumno: datos.alumnoPayload,
+  });
 }
 
 async function loginPortal({ email, password }) {
@@ -227,7 +280,10 @@ module.exports = {
   PORTAL_TIPO,
   signPortalToken,
   verifyPortalToken,
+  maskEmail,
   buscarAlumnoRegistro,
+  validarDatosRegistroPortal,
+  crearCuentaPortal,
   registrarPortal,
   loginPortal,
 };

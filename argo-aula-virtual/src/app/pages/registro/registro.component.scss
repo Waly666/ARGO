@@ -56,6 +56,37 @@
   color: #fca5a5;
 }
 
+.verify-row {
+  margin: 1rem 0;
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--av-dim);
+    margin-bottom: 0.25rem;
+  }
+
+  input {
+    width: 100%;
+    max-width: 220px;
+    border-radius: 10px;
+    border: 1px solid var(--av-border);
+    background: var(--av-surface-2);
+    color: var(--av-text);
+    padding: 0.65rem 0.85rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.25em;
+    text-align: center;
+  }
+}
+
+.verify-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;

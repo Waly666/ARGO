@@ -70,13 +70,139 @@ async function validarFacturaFactus(payload) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data?.message || 'Factus rechazó la factura');
+    let msg = data?.message || 'Factus rechazó la factura';
+    if (res.status === 409 && /pendiente/i.test(String(msg))) {
+      msg = `${msg} Elimine las facturas no validadas en Factus (o use «Limpiar pendientes» en esta pantalla) e intente de nuevo.`;
+    }
+    const err = new Error(msg);
     err.status = res.status >= 400 && res.status < 600 ? res.status : 502;
-    err.code = 'FACTUS_EMISION_ERROR';
+    err.code = res.status === 409 ? 'FACTUS_PENDIENTE_DIAN' : 'FACTUS_EMISION_ERROR';
     err.details = data;
     throw err;
   }
   return data;
+}
+
+/** DELETE /v2/bills/destroy/reference/:reference_code — solo facturas no validadas. */
+async function eliminarFacturaFactusPorReferencia(referenceCode, tokenIn = null, cfgIn = null) {
+  const cfg = cfgIn || (await credencialesEfectivas());
+  const token = tokenIn || (await obtenerTokenFactus()).access_token;
+  if (!token) {
+    const err = new Error('Factus no devolvió access_token');
+    err.status = 502;
+    throw err;
+  }
+  const ref = encodeURIComponent(String(referenceCode || '').trim());
+  if (!ref) {
+    const err = new Error('Código de referencia vacío');
+    err.status = 400;
+    throw err;
+  }
+  const res = await fetch(`${cfg.baseUrl}/v2/bills/destroy/reference/${ref}`, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data?.message || 'No se pudo eliminar la factura en Factus');
+    err.status = res.status >= 400 && res.status < 600 ? res.status : 502;
+    err.details = data;
+    throw err;
+  }
+  return data;
+}
+
+function extraerListaFacturasFactus(raw) {
+  if (Array.isArray(raw?.data?.data)) return raw.data.data;
+  if (Array.isArray(raw?.data)) return raw.data;
+  return [];
+}
+
+/** Lista facturas Factus (filter[status]=0 → pendientes de validar DIAN). */
+async function listarFacturasFactus({ status = '0', page = 1, perPage = 50 } = {}) {
+  const cfg = await credencialesEfectivas();
+  const token = (await obtenerTokenFactus()).access_token;
+  const q = new URLSearchParams({
+    'filter[status]': String(status),
+    'filter[per_page]': String(perPage),
+    page: String(page),
+  });
+  const res = await fetch(`${cfg.baseUrl}/v2/bills?${q.toString()}`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data?.message || 'No se pudo listar facturas en Factus');
+    err.status = res.status >= 400 && res.status < 600 ? res.status : 502;
+    err.details = data;
+    throw err;
+  }
+  return {
+    items: extraerListaFacturasFactus(data),
+    meta: data?.data?.meta || data?.meta || null,
+    raw: data,
+  };
+}
+
+/**
+ * Elimina facturas no validadas en Factus que bloquean nuevos envíos (HTTP 409).
+ * En sandbox puede borrar todas las pendientes; en producción solo referencias ARGO-*.
+ */
+async function limpiarFacturasPendientesFactus(opts = {}) {
+  const cfg = await credencialesEfectivas();
+  if (cfg.proveedor !== PROVEEDOR_FACTUS) {
+    return { eliminadas: 0, omitidas: 0, message: 'Proveedor no es Factus' };
+  }
+  const prefijos = opts.prefijos || ['ARGO-SB-TEST', 'ARGO-FE-'];
+  const todasPendientes = opts.todasPendientes === true || cfg.ambiente === 'sandbox';
+  const token = (await obtenerTokenFactus()).access_token;
+  let eliminadas = 0;
+  let omitidas = 0;
+  const referencias = [];
+
+  for (let page = 1; page <= 10; page += 1) {
+    const { items, meta } = await listarFacturasFactus({ status: '0', page, perPage: 50 });
+    if (!items.length) break;
+
+    for (const bill of items) {
+      const ref = String(bill.reference_code || bill.referenceCode || '').trim();
+      if (!ref) {
+        omitidas += 1;
+        continue;
+      }
+      if (!todasPendientes && !prefijos.some((p) => ref.startsWith(p))) {
+        omitidas += 1;
+        continue;
+      }
+      try {
+        await eliminarFacturaFactusPorReferencia(ref, token, cfg);
+        eliminadas += 1;
+        referencias.push(ref);
+      } catch {
+        omitidas += 1;
+      }
+    }
+
+    const lastPage = meta?.last_page ?? meta?.lastPage;
+    if (lastPage != null && page >= Number(lastPage)) break;
+    if (items.length < 50) break;
+  }
+
+  return {
+    eliminadas,
+    omitidas,
+    referencias,
+    message:
+      eliminadas > 0
+        ? `Se eliminaron ${eliminadas} factura(s) pendiente(s) en Factus.`
+        : 'No había facturas pendientes de ARGO para eliminar en Factus.',
+  };
 }
 
 function extraerListaRangosFactus(raw) {
@@ -216,7 +342,7 @@ function payloadPruebaSandbox(cfg) {
   };
 }
 
-async function emitirPruebaSandbox(opts = {}) {
+async function emitirPruebaSandboxCore(opts = {}) {
   const cfg = await credencialesEfectivas();
   if (cfg.proveedor !== PROVEEDOR_FACTUS) {
     const err = new Error('Configure el proveedor Factus y active la integración para probar en sandbox.');
@@ -249,6 +375,22 @@ async function emitirPruebaSandbox(opts = {}) {
     errors: data.errors || null,
     respuesta: resp,
   };
+}
+
+async function emitirPruebaSandbox(opts = {}) {
+  await limpiarFacturasPendientesFactus().catch(() => {});
+
+  try {
+    return await emitirPruebaSandboxCore(opts);
+  } catch (e) {
+    if (e.status === 409 || e.code === 'FACTUS_PENDIENTE_DIAN') {
+      const limpio = await limpiarFacturasPendientesFactus({ todasPendientes: true });
+      if (limpio.eliminadas > 0) {
+        return await emitirPruebaSandboxCore(opts);
+      }
+    }
+    throw e;
+  }
 }
 
 /** Emisión en modo desarrollo: no llama DIAN; simula respuesta mínima. */
@@ -456,4 +598,7 @@ module.exports = {
   payloadPruebaSandbox,
   validarFacturaFactus,
   validarNotaCreditoFactus,
+  limpiarFacturasPendientesFactus,
+  eliminarFacturaFactusPorReferencia,
+  listarFacturasFactus,
 };

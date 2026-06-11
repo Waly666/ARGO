@@ -233,6 +233,22 @@ export class ConfigService {
       numberingRangeId != null ? { numberingRangeId } : {},
     );
   }
+
+  limpiarPendientesFacturacion(todasPendientes = true): Observable<{
+    eliminadas: number;
+    omitidas: number;
+    referencias: string[];
+    message: string;
+  }> {
+    return this.http.post<{
+      eliminadas: number;
+      omitidas: number;
+      referencias: string[];
+      message: string;
+    }>(`${environment.apiUrl}/config/facturacion/limpiar-pendientes-factus`, {
+      todasPendientes,
+    });
+  }
 }
 
 export interface FactusRangoNumeracion {

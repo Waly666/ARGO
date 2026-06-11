@@ -26,6 +26,9 @@ router.get(
   ctrl.buscarAlumnoRegistro,
 );
 router.post('/auth/registro', portalAuthLimiter, requireTurnstile(), ctrl.registro);
+router.post('/auth/registro/solicitar', portalAuthLimiter, requireTurnstile(), ctrl.registroSolicitar);
+router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirmar);
+router.post('/auth/registro/reenviar-codigo', portalAuthLimiter, ctrl.registroReenviarCodigo);
 router.post('/auth/login', portalAuthLimiter, requireTurnstile(), ctrl.login);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
 router.get('/argo-bridge.js', ctrl.bridgeScript);

@@ -1,5 +1,7 @@
 /** Configuración de seguridad (Fase 1 producción). */
 
+const { smtpConfigured } = require('../services/mail');
+
 function envFlag(name, defaultTrue = true) {
   const v = process.env[name];
   if (v == null || v === '') return defaultTrue;
@@ -23,6 +25,15 @@ function turnstileSiteKey() {
 
 function portalRegistroAbierto() {
   return envFlag('PORTAL_REGISTRO_ABIERTO', true);
+}
+
+/** Verificación de correo al registrarse en aula virtual (solo portal). */
+function portalEmailVerifyEnabled() {
+  const v = process.env.PORTAL_EMAIL_VERIFY;
+  if (v === '0' || v === 'false' || v === 'no') return false;
+  if (!smtpConfigured()) return false;
+  if (v === '1' || v === 'true' || v === 'yes') return true;
+  return true;
 }
 
 function trustProxyHops() {
@@ -49,6 +60,7 @@ module.exports = {
   turnstileEnabled,
   turnstileSiteKey,
   portalRegistroAbierto,
+  portalEmailVerifyEnabled,
   trustProxyHops,
   mfaStaffRequired,
   mfaStaffWebOnly,

@@ -64,6 +64,11 @@ router.post(
   requirePermiso('config.facturacion', 'facturacion'),
   facturacionCtrl.probarEmision,
 );
+router.post(
+  '/facturacion/limpiar-pendientes-factus',
+  requirePermiso('config.facturacion', 'facturacion'),
+  facturacionCtrl.limpiarPendientesFactus,
+);
 
 router.get('/recibo/encabezado', requireAuth, loadSedeActiva, ctrl.obtenerReciboEncabezado);
 router.get('/recibo', requirePermiso('config.recibos'), ctrl.obtenerRecibo);

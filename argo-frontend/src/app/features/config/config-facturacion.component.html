@@ -145,7 +145,14 @@
               <button type="button" class="ghost" (click)="cargarRangos()" [disabled]="cargandoRangos()">
                 {{ cargandoRangos() ? 'Cargando rangos…' : 'Cargar rangos desde Factus' }}
               </button>
+              <button type="button" class="ghost" (click)="limpiarPendientesFactus()" [disabled]="limpiandoPendientes()">
+                {{ limpiandoPendientes() ? 'Limpiando…' : 'Limpiar pendientes en Factus' }}
+              </button>
             </div>
+            <p class="fac-field-hint">
+              Si aparece «factura pendiente por enviar a la DIAN» (error 409), hay documentos de prueba sin validar en Factus.
+              Use «Limpiar pendientes» y vuelva a emitir.
+            </p>
 
             @if (rangosMsg(); as rm) {
               <p class="fac-rangos-msg" role="status">{{ rm }}</p>

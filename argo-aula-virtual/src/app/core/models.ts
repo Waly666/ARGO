@@ -11,6 +11,7 @@ export interface PortalConfig {
   heroSubtitulo: string;
   acercaDeHtml?: string;
   registroAbierto?: boolean;
+  emailVerificacionRegistro?: boolean;
   turnstileSiteKey?: string;
 }
 
@@ -159,6 +160,14 @@ export interface PortalAuthRes {
   token: string;
   usuario: PortalAuthUser;
   alumno: { numDoc: number; nombreCompleto: string };
+}
+
+export interface RegistroVerificacionRes {
+  step: 'verify_email';
+  pendingId: string;
+  email: string | null;
+  expiresInMinutes: number;
+  message: string;
 }
 
 export interface CertificadoPortal {

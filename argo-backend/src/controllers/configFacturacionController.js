@@ -2,7 +2,7 @@ const {
   obtenerConfigFacturacion,
   actualizarConfigFacturacion,
 } = require('../services/configFacturacion');
-const { probarConexionFactus, listarRangosFactus, emitirPruebaSandbox } = require('../services/facturaProveedor');
+const { probarConexionFactus, listarRangosFactus, emitirPruebaSandbox, limpiarFacturasPendientesFactus } = require('../services/facturaProveedor');
 const { catalogos: catalogosFacturacion } = require('./facturacionController');
 
 exports.obtener = async (_req, res, next) => {
@@ -50,6 +50,17 @@ exports.probarEmision = async (req, res, next) => {
     }
     res.json(result);
   } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code, details: e.details });
+    next(e);
+  }
+};
+
+exports.limpiarPendientesFactus = async (req, res, next) => {
+  try {
+    const todas = req.body?.todas === true || req.body?.todasPendientes === true;
+    res.json(await limpiarFacturasPendientesFactus({ todasPendientes: todas }));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, details: e.details });
     next(e);
   }
 };

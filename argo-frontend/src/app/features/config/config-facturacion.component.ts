@@ -25,6 +25,7 @@ export class ConfigFacturacionComponent implements OnInit {
   probando = signal(false);
   cargandoRangos = signal(false);
   probandoEmision = signal(false);
+  limpiandoPendientes = signal(false);
   msg = signal<string | null>(null);
   pruebaMsg = signal<string | null>(null);
   pruebaOk = signal(true);
@@ -235,11 +236,31 @@ export class ConfigFacturacionComponent implements OnInit {
       },
       error: (e) => {
         this.probandoEmision.set(false);
+        const msg = e?.error?.message || 'Error al emitir factura de prueba';
         this.emisionPrueba.set({
           ok: false,
-          message: e?.error?.message || 'Error al emitir factura de prueba',
+          message:
+            e?.status === 409 || e?.error?.code === 'FACTUS_PENDIENTE_DIAN'
+              ? `${msg} Use «Limpiar pendientes en Factus» y vuelva a intentar.`
+              : msg,
           errors: e?.error?.details?.errors || e?.error?.errors || null,
         });
+      },
+    });
+  }
+
+  limpiarPendientesFactus(): void {
+    this.limpiandoPendientes.set(true);
+    this.rangosMsg.set(null);
+    this.cfgSvc.limpiarPendientesFacturacion(true).subscribe({
+      next: (r) => {
+        this.limpiandoPendientes.set(false);
+        this.rangosMsg.set(r.message);
+        this.emisionPrueba.set(null);
+      },
+      error: (e) => {
+        this.limpiandoPendientes.set(false);
+        this.rangosMsg.set(e?.error?.message || 'No se pudieron limpiar las facturas pendientes');
       },
     });
   }
