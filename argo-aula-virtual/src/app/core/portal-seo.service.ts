@@ -16,8 +16,11 @@ export class PortalSeoService {
   applyHome(config: PortalConfig | null, cursos: CursoVirtual[] = []) {
     const nombre = config?.nombreCea?.trim() || 'Aula virtual';
     const pageTitle = `${nombre} — Cursos y programas en aula virtual`;
-    const description = this.buildDescription(config, cursos);
-    const keywords = this.buildKeywords(cursos);
+    const landing = config?.landing;
+    const description =
+      landing?.metaDescription?.trim() || this.buildDescription(config, cursos);
+    const keywords =
+      landing?.metaKeywords?.trim() || this.buildKeywords(cursos);
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const url = origin ? `${origin}/` : '';
     const image = config?.urlLogoAbsoluta?.trim() || (origin ? `${origin}/images/hero-estudiante.png` : '');

@@ -1,3 +1,5 @@
+import type { PortalLandingConfig } from './portal-landing';
+
 export interface PortalConfig {
   nombreCea: string;
   nit?: string;
@@ -10,6 +12,7 @@ export interface PortalConfig {
   heroTitulo: string;
   heroSubtitulo: string;
   acercaDeHtml?: string;
+  landing?: PortalLandingConfig;
   registroAbierto?: boolean;
   emailVerificacionRegistro?: boolean;
   turnstileSiteKey?: string;

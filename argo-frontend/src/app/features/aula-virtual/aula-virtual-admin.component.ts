@@ -31,8 +31,8 @@ import {
 } from '../../core/services/aula-virtual-admin.service';
 
 import { environment } from '../../../environments/environment';
-
-
+import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
+import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 
 type TabAula = 'cursos' | 'usuarios' | 'empresa' | 'portal';
 
@@ -44,7 +44,7 @@ type TabAula = 'cursos' | 'usuarios' | 'empresa' | 'portal';
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PortalLandingEditorComponent],
 
   templateUrl: './aula-virtual-admin.component.html',
 
@@ -114,6 +114,8 @@ export class AulaVirtualAdminComponent implements OnInit {
 
     emailContacto: '',
 
+    landing: mergePortalLanding(PORTAL_LANDING_DEFAULTS),
+
   };
 
 
@@ -163,9 +165,10 @@ export class AulaVirtualAdminComponent implements OnInit {
     this.cargarCategorias();
 
     this.svc.obtenerPortal().subscribe({
-
-      next: (p) => Object.assign(this.portalForm, p),
-
+      next: (p) => {
+        Object.assign(this.portalForm, p);
+        this.portalForm.landing = mergePortalLanding(p.landing);
+      },
     });
 
     this.cargarUsuarios();
@@ -626,6 +629,7 @@ export class AulaVirtualAdminComponent implements OnInit {
       next: (res) => {
 
         Object.assign(this.portalForm, res.config);
+        this.portalForm.landing = mergePortalLanding(res.config.landing);
 
         this.saving.set(false);
 
@@ -660,6 +664,7 @@ export class AulaVirtualAdminComponent implements OnInit {
       next: (res) => {
 
         Object.assign(this.portalForm, res.config);
+        this.portalForm.landing = mergePortalLanding(res.config.landing);
 
         this.saving.set(false);
 

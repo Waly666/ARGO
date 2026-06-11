@@ -51,7 +51,7 @@
     <div class="footer-col">
       <h3 class="footer-title">Servicios</h3>
       <ul class="footer-list">
-        @for (s of footerServicios; track s) {
+        @for (s of footerServicios(); track s) {
           <li>{{ s }}</li>
         }
       </ul>

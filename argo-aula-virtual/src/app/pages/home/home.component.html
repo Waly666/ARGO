@@ -6,7 +6,7 @@
 
     <span class="inst-name">{{ nombreCea() | uppercase }}</span>
 
-    <span class="inst-tag">Cursos y programas de capacitación virtual en Colombia</span>
+    <span class="inst-tag">{{ landing().instBarTag }}</span>
 
   </div>
 
@@ -130,17 +130,15 @@
 
     <header class="section-head center">
 
-      <h2 avAnimateTitle>¿Qué ofrecemos en el aula virtual?</h2>
+      <h2 avAnimateTitle>{{ landing().ofertas.titulo }}</h2>
 
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
-        Cursos virtuales y programas de capacitación en seguridad vial para personas, empresas e instituciones.
-      </p>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().ofertas.lead }}</p>
 
     </header>
 
     <div class="ofertas-grid">
 
-      @for (o of ofertas; track o.title; let i = $index) {
+      @for (o of landing().ofertas.items; track o.title; let i = $index) {
 
         <article class="oferta-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 80">
 
@@ -170,19 +168,17 @@
 
     <header class="section-head center">
 
-      <p class="kicker reveal" avRevealOnScroll>Resultados</p>
+      <p class="kicker reveal" avRevealOnScroll>{{ landing().beneficios.kicker }}</p>
 
-      <h2 avAnimateTitle [titleDelay]="50">Lo que logra con nuestros cursos y programas</h2>
+      <h2 avAnimateTitle [titleDelay]="50">{{ landing().beneficios.titulo }}</h2>
 
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
-        Formación práctica, certificación y flexibilidad para avanzar sin frenar su día a día.
-      </p>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().beneficios.lead }}</p>
 
     </header>
 
     <div class="ofertas-grid">
 
-      @for (b of beneficios; track b.title; let i = $index) {
+      @for (b of landing().beneficios.items; track b.title; let i = $index) {
 
         <article class="oferta-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 80">
 
@@ -212,7 +208,7 @@
 
     <blockquote class="reveal-left" avRevealOnScroll>
 
-      “Cursos y programas virtuales que transforman la seguridad vial: estudie hoy, certifique mañana.”
+      “{{ landing().quoteText }}”
 
     </blockquote>
 
@@ -242,13 +238,13 @@
 
     <header class="section-head center">
 
-      <h2 avAnimateTitle>Todo lo que necesita tu empresa en seguridad vial</h2>
+      <h2 avAnimateTitle>{{ landing().servicios.titulo }}</h2>
 
     </header>
 
     <div class="servicios-grid">
 
-      @for (s of servicios; track s.title; let i = $index) {
+      @for (s of landing().servicios.items; track s.title; let i = $index) {
 
         <article class="servicio-chip chip-lift reveal" avRevealOnScroll [revealDelay]="(i % 6) * 50">
 
@@ -276,19 +272,17 @@
 
     <header class="section-head center">
 
-      <p class="kicker reveal" avRevealOnScroll>Confianza</p>
+      <p class="kicker reveal" avRevealOnScroll>{{ landing().testimonios.kicker }}</p>
 
-      <h2 avAnimateTitle [titleDelay]="50">Quienes ya cursan nuestros programas</h2>
+      <h2 avAnimateTitle [titleDelay]="50">{{ landing().testimonios.titulo }}</h2>
 
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
-        Experiencias reales de estudiantes y empresas que eligieron la capacitación virtual.
-      </p>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().testimonios.lead }}</p>
 
     </header>
 
     <div class="valores-grid">
 
-      @for (t of testimonios; track t.nombre; let i = $index) {
+      @for (t of landing().testimonios.items; track t.nombre; let i = $index) {
 
         <article class="valor-card testimonio-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
 
@@ -318,19 +312,21 @@
 
     <header class="section-head center">
 
-      <h2 avAnimateTitle>¡Somos tu mejor opción!</h2>
+      <h2 avAnimateTitle>{{ landing().valores.titulo }}</h2>
 
       <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
-
-        {{ nombreCea() }} lleva la seguridad vial en el alma.
-
+        @if (landing().valores.lead) {
+          {{ landing().valores.lead }}
+        } @else {
+          {{ nombreCea() }} lleva la seguridad vial en el alma.
+        }
       </p>
 
     </header>
 
     <div class="valores-grid">
 
-      @for (v of valores; track v.title; let i = $index) {
+      @for (v of landing().valores.items; track v.title; let i = $index) {
 
         <article class="valor-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
 
@@ -360,9 +356,9 @@
 
       <div>
 
-        <p class="kicker reveal" avRevealOnScroll>Catálogo en línea</p>
+        <p class="kicker reveal" avRevealOnScroll>{{ landing().cursos.kicker }}</p>
 
-        <h2 avAnimateTitle [titleDelay]="60">Cursos y programas virtuales disponibles</h2>
+        <h2 avAnimateTitle [titleDelay]="60">{{ landing().cursos.titulo }}</h2>
 
       </div>
 
@@ -384,13 +380,9 @@
 
         <div class="empty-cursos card reveal-scale" avRevealOnScroll>
 
-          <h3 avAnimateTitle>Próximamente nuevos cursos y programas</h3>
+          <h3 avAnimateTitle>{{ landing().cursos.emptyTitulo }}</h3>
 
-          <p class="muted">
-
-            Estamos publicando más programas de capacitación virtual. Vuelva pronto o contáctenos.
-
-          </p>
+          <p class="muted">{{ landing().cursos.emptyTexto }}</p>
 
           <a routerLink="/acerca" class="btn btn-outline">Conocer la institución</a>
 
@@ -414,17 +406,17 @@
 
     <header class="section-head center">
 
-      <p class="kicker reveal" avRevealOnScroll>Titulación</p>
+      <p class="kicker reveal" avRevealOnScroll>{{ landing().carreras.kicker }}</p>
 
-      <h2 avAnimateTitle [titleDelay]="50">Carreras técnicas en seguridad vial</h2>
+      <h2 avAnimateTitle [titleDelay]="50">{{ landing().carreras.titulo }}</h2>
 
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="120">Técnico laboral por competencias — información de referencia.</p>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="120">{{ landing().carreras.lead }}</p>
 
     </header>
 
     <div class="carreras-grid">
 
-      @for (c of carreras; track c.cno; let i = $index) {
+      @for (c of landing().carreras.items; track c.cno; let i = $index) {
 
         <article class="carrera-card card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 110">
 
@@ -470,19 +462,17 @@
 
     <header class="section-head center">
 
-      <p class="kicker reveal" avRevealOnScroll>Empiece hoy</p>
+      <p class="kicker reveal" avRevealOnScroll>{{ landing().pasos.kicker }}</p>
 
-      <h2 avAnimateTitle [titleDelay]="50">Cómo acceder a cursos y programas</h2>
+      <h2 avAnimateTitle [titleDelay]="50">{{ landing().pasos.titulo }}</h2>
 
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
-        Tres pasos para matricularse en el aula virtual y comenzar su capacitación.
-      </p>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().pasos.lead }}</p>
 
     </header>
 
     <div class="pasos-grid">
 
-      @for (p of pasos; track p.paso; let i = $index) {
+      @for (p of landing().pasos.items; track p.paso; let i = $index) {
 
         <article class="paso-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
 
@@ -520,19 +510,17 @@
 
     <header class="section-head center">
 
-      <p class="kicker reveal" avRevealOnScroll>Ayuda</p>
+      <p class="kicker reveal" avRevealOnScroll>{{ landing().faq.kicker }}</p>
 
-      <h2 avAnimateTitle [titleDelay]="50">Preguntas frecuentes sobre cursos y programas</h2>
+      <h2 avAnimateTitle [titleDelay]="50">{{ landing().faq.titulo }}</h2>
 
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">
-        Resolvemos las dudas más comunes antes de matricularse en el aula virtual.
-      </p>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().faq.lead }}</p>
 
     </header>
 
     <div class="faq-list">
 
-      @for (item of faq; track item.pregunta; let i = $index) {
+      @for (item of landing().faq.items; track item.pregunta; let i = $index) {
 
         <article class="faq-item reveal" avRevealOnScroll [revealDelay]="i * 60">
 
@@ -562,7 +550,7 @@
 
     <div class="faq-contacto reveal" avRevealOnScroll [revealDelay]="120">
 
-      <p>¿Aún tiene dudas sobre un curso o programa?</p>
+      <p>{{ landing().faq.contactoTexto }}</p>
 
       <div class="faq-contacto-actions">
 
@@ -624,7 +612,7 @@
 
     <ul class="pilares-list pilares-list--anim">
 
-      @for (linea of pilares[tabPilar()]; track linea; let i = $index) {
+      @for (linea of landing().pilares[tabPilar()]; track linea; let i = $index) {
 
         <li class="pilar-item" [style.animation-delay]="i * 60 + 'ms'">{{ linea }}</li>
 

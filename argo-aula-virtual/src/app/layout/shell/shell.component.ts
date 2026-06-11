@@ -7,6 +7,7 @@ import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalBrandingService } from '../../core/portal-branding.service';
 import { PortalConfig } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
+import { mergePortalLanding } from '../../core/portal-landing';
 import { ACERCA_DEFAULT } from '../../pages/home/home-content';
 
 const FOOTER_ABOUT_DEFAULT =
@@ -28,14 +29,7 @@ export class ShellComponent implements OnInit {
 
   logoUrl = computed(() => resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo));
 
-  readonly footerServicios = [
-    'Capacitación',
-    'PESV',
-    'Campañas de seguridad vial',
-    'Carreras técnicas',
-    'Estudios de tránsito',
-    'Planes de movilidad sostenible y segura',
-  ];
+  footerServicios = computed(() => mergePortalLanding(this.config()?.landing).footerServicios);
 
   nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
 

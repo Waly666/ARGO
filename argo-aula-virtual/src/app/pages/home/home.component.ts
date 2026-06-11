@@ -18,19 +18,9 @@ import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
-import {
-  BENEFICIOS_CURSOS,
-  CARRERAS_TECNICAS,
-  FAQ_CURSOS,
-  HERO_DEFAULT,
-  OFERTAS,
-  PASOS_PROGRAMAS,
-  PILARES,
-  SERVICIOS_EMPRESA,
-  TESTIMONIOS,
-  VALORES,
-} from './home-content';
+import { HERO_DEFAULT } from './home-content';
 
 @Component({
   selector: 'av-home',
@@ -52,16 +42,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   tabPilar = signal<'capacitacion' | 'campanas'>('capacitacion');
   faqAbierta = signal<number | null>(null);
 
-  readonly ofertas = OFERTAS;
-  readonly beneficios = BENEFICIOS_CURSOS;
-  readonly pasos = PASOS_PROGRAMAS;
-  readonly testimonios = TESTIMONIOS;
-  readonly faq = FAQ_CURSOS;
-  readonly servicios = SERVICIOS_EMPRESA;
-  readonly valores = VALORES;
-  readonly carreras = CARRERAS_TECNICAS;
-  readonly pilares = PILARES;
-  readonly heroDefault = HERO_DEFAULT;
+  landing = computed(() => mergePortalLanding(this.config()?.landing));
 
   nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
   telefono = computed(() => this.config()?.telefono?.trim() || '');

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { PortalLandingConfig } from '../constants/portal-landing-defaults';
 
 export type NivelVirtual = 'PRINCIPIANTE' | 'INTERMEDIO' | 'AVANZADO';
 export const NIVELES_VIRTUAL: NivelVirtual[] = ['PRINCIPIANTE', 'INTERMEDIO', 'AVANZADO'];
@@ -75,6 +76,7 @@ export interface PortalAulaConfig {
   heroTitulo: string;
   heroSubtitulo: string;
   acercaDeHtml?: string;
+  landing?: PortalLandingConfig;
   telefonoWhatsapp?: string;
   emailContacto?: string;
   urlLogo?: string;

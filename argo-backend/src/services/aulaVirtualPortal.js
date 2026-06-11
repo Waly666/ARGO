@@ -1,6 +1,7 @@
 const Config = require('../models/Config');
 const { obtenerConfigRecibo } = require('./configRecibo');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+const { mergeLanding, normalizarLanding } = require('./aulaVirtualPortalLanding');
 
 const CLAVE_AULA = 'aula_virtual';
 
@@ -71,6 +72,9 @@ async function guardarConfigAula(body, usuario) {
   delete dto._id;
   delete dto.nombreCea;
   if (dto.urlLogo === undefined) delete dto.urlLogo;
+  if (body.landing !== undefined) {
+    dto.landing = normalizarLanding(body.landing);
+  }
   await Config.updateOne({ clave: CLAVE_AULA }, { $set: dto }, { upsert: true });
   return obtenerConfigAula();
 }
@@ -82,6 +86,7 @@ async function obtenerConfigPortalAdmin() {
   const logo = pickLogo(aula, recibo);
   return {
     ...aula,
+    landing: mergeLanding(aula.landing),
     nombreEmpresa: aula.nombreEmpresa || recibo.nombreEmpresa || '',
     nit: aula.nit || recibo.nit || '',
     direccion: aula.direccion || recibo.direccion || '',
@@ -107,6 +112,7 @@ async function obtenerConfigPortalPublica() {
     heroTitulo: aula.heroTitulo,
     heroSubtitulo: aula.heroSubtitulo,
     acercaDeHtml: aula.acercaDeHtml || '',
+    landing: mergeLanding(aula.landing),
   };
 }
 
@@ -118,4 +124,5 @@ module.exports = {
   pickLogo,
   logoAbsoluto,
   DEFAULTS_AULA,
+  mergeLanding,
 };

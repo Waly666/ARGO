@@ -463,8 +463,9 @@
   @if (tab() === 'portal') {
     <section class="av-panel av-panel--portal">
       <h2>Textos del portal público</h2>
-      <p class="av-muted">Título del hero, subtítulo y página Acerca de (:4202).</p>
+      <p class="av-muted">Hero, página Acerca de y todas las secciones del landing (inicio del portal).</p>
 
+      <h3 class="av-subtitle">Hero y Acerca de</h3>
       <div class="av-field">
         <label>Título hero</label>
         <input type="text" [(ngModel)]="portalForm.heroTitulo" />
@@ -477,8 +478,14 @@
         <label>Acerca de (texto)</label>
         <textarea rows="6" [(ngModel)]="portalForm.acercaDeHtml"></textarea>
       </div>
+
+      @if (portalForm.landing; as landing) {
+        <h3 class="av-subtitle">Secciones del landing</h3>
+        <argo-portal-landing-editor [landing]="landing" />
+      }
+
       <button type="button" class="av-btn av-btn--primary" [disabled]="saving()" (click)="guardarPortal()">
-        Guardar textos
+        Guardar textos del portal
       </button>
     </section>
   }
