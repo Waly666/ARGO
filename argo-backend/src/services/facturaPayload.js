@@ -5,6 +5,13 @@ const {
   FORMA_PAGO_CONTADO,
 } = require('../constants/facturacionElectronica');
 
+/** Factus exige due_date (YYYY-MM-DD) cuando payment_form es crédito. */
+function fechaVencimientoCredito(diasPlazo = 30) {
+  const d = new Date();
+  d.setDate(d.getDate() + diasPlazo);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Mapeo tipo documento ARGO → código DIAN/Factus (identification_document_code). */
 const MAP_TIPO_DOC = {
   '1': '13',
@@ -305,7 +312,9 @@ function armarPayloadFactus({
     payment_method_code: esCredito ? '47' : '10',
     amount: totalFactus.toFixed(2),
   };
-  if (esCredito && dueDate) pago.due_date = dueDate;
+  if (esCredito) {
+    pago.due_date = dueDate || fechaVencimientoCredito(30);
+  }
 
   const payload = {
     reference_code: referenceCodeFactura(numDoc),
