@@ -44,6 +44,8 @@ const CapacitacionVirtualConfigSchema = new mongoose.Schema(
     /** Ruta relativa bajo /uploads (aula-virtual-cursos/…) */
     rutaPaquete: { type: String, trim: true, default: null },
     indexHtml: { type: String, trim: true, default: 'index.html' },
+    /** Prefijo localStorage del paquete (STORAGE_PREFIX en curso-app.js) */
+    storagePrefix: { type: String, trim: true, default: null },
     materiales: { type: [MaterialVirtualSchema], default: [] },
     sesionesMeet: { type: [SesionMeetSchema], default: [] },
     userChangeRecord: { type: String, trim: true },

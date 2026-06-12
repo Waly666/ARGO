@@ -69,6 +69,7 @@ function mapCursoPublico(prog, serv, cfg, opts = {}) {
     playerUrl: cfg?.rutaPaquete
       ? publicUploadUrl(`${cfg.rutaPaquete}/${resolverIndexPaquete(cfg)}`)
       : null,
+    storagePrefix: cfg?.storagePrefix || null,
     idCategorias: cats.idCategorias,
     categoriaNombres: cats.categoriaNombres,
     categoriaNombre: cats.categoriaNombre,

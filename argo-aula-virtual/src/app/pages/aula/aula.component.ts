@@ -486,6 +486,7 @@ export class AulaComponent implements OnInit, OnDestroy {
       apiUrl: `${environment.apiUrl}/aula-virtual`,
       token,
       idPrograma: String(curso.idPrograma),
+      storagePrefix: curso.storagePrefix || undefined,
     };
     frame.contentWindow.postMessage(payload, '*');
     frame.contentWindow.postMessage({ type: 'ARGO_SYNC_REQUEST' }, '*');

@@ -125,6 +125,7 @@ export interface CursoVirtual {
   puedeCursar?: boolean;
   accesoBloqueadoPago?: boolean;
   playerUrl?: string | null;
+  storagePrefix?: string | null;
   materiales?: MaterialVirtual[];
   sesionesMeet?: SesionMeet[];
   pctMinCompletitud?: number;

@@ -27,10 +27,20 @@ const {
 } = require('../services/aulaVirtualCategorias');
 const { publicUrl, publicUrlPath, resolvePath } = require('../middleware/upload');
 const { listarUsuariosPortalAdmin } = require('../services/aulaVirtualUsuarios');
-const { inyectarBridgeEnPaquete } = require('../services/aulaVirtualBridge');
+const { inyectarBridgeEnPaquete, detectarStoragePrefix } = require('../services/aulaVirtualBridge');
 const { detectarIndexHtml, paqueteListo, listarEntradasPaquete } = require('../services/aulaVirtualPaquete');
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
 const { matricularVirtual } = require('../services/aulaVirtualMatricula');
+
+async function persistirStoragePrefix(idPrograma, abs, indexRel, user) {
+  const storagePrefix = detectarStoragePrefix(abs, indexRel);
+  if (!storagePrefix) return null;
+  await CapacitacionVirtualConfig.updateOne(
+    { idPrograma: String(idPrograma) },
+    { $set: { storagePrefix, userChangeRecord: user?.username || 'sistema' } },
+  );
+  return storagePrefix;
+}
 
 exports.listarCursosAdmin = async (_req, res, next) => {
   try {
@@ -88,6 +98,8 @@ exports.subirPaqueteZip = async (req, res, next) => {
       config = await obtenerConfig(req.params.id);
     }
     const bridge = inyectarBridgeEnPaquete(abs, indexRel);
+    await persistirStoragePrefix(req.params.id, abs, indexRel, req.user);
+    config = await obtenerConfig(req.params.id);
     res.json({
       config,
       message:
@@ -97,6 +109,7 @@ exports.subirPaqueteZip = async (req, res, next) => {
       playerPath: publicUrlPath(rel, indexRel),
       bridgeInyectado: bridge.inyectados,
       bridgePaginas: bridge.total,
+      storagePrefix: bridge.storagePrefix || config.storagePrefix || null,
     });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
@@ -258,6 +271,7 @@ exports.reintegrarBridge = async (req, res, next) => {
       config = await obtenerConfig(req.params.id);
     }
     const bridge = inyectarBridgeEnPaquete(abs, indexRel);
+    const storagePrefix = await persistirStoragePrefix(req.params.id, abs, indexRel, req.user);
     res.json({
       message:
         bridge.inyectados > 0
@@ -266,6 +280,7 @@ exports.reintegrarBridge = async (req, res, next) => {
       indexHtml: indexRel,
       bridgeInyectado: bridge.inyectados,
       bridgePaginas: bridge.total,
+      storagePrefix: storagePrefix || bridge.storagePrefix || config.storagePrefix || null,
     });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

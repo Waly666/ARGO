@@ -6,7 +6,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const { resolvePath } = require('../src/middleware/upload');
 const { detectarIndexHtml, paqueteListo } = require('../src/services/aulaVirtualPaquete');
-const { inyectarBridgeEnPaquete } = require('../src/services/aulaVirtualBridge');
+const { inyectarBridgeEnPaquete, detectarStoragePrefix } = require('../src/services/aulaVirtualBridge');
 const CapacitacionVirtualConfig = require('../src/models/CapacitacionVirtualConfig');
 
 const id = process.argv[2] || null;
@@ -34,6 +34,14 @@ async function main() {
       console.log(`[${cfg.idPrograma}] indexHtml OK: ${indexRel}`);
     }
     const bridge = inyectarBridgeEnPaquete(abs, indexRel);
+    const storagePrefix = detectarStoragePrefix(abs, indexRel);
+    if (storagePrefix && storagePrefix !== cfg.storagePrefix) {
+      await CapacitacionVirtualConfig.updateOne(
+        { idPrograma: cfg.idPrograma },
+        { $set: { storagePrefix } },
+      );
+      console.log(`[${cfg.idPrograma}] storagePrefix: ${storagePrefix}`);
+    }
     console.log(`[${cfg.idPrograma}] bridge: ${bridge.inyectados}/${bridge.total} HTML`);
   }
 
