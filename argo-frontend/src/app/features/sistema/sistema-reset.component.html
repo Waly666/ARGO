@@ -1,0 +1,115 @@
+<section class="sys-page card">
+  <header class="sys-head">
+    <div>
+      <h1>Puesta en cero (nueva empresa)</h1>
+      <p>
+        Deja el sistema listo para empezar con otra empresa: borra todos los datos de operación,
+        pone los consecutivos de recibos y certificados en 0 y conserva los catálogos. Antes de
+        borrar se crea automáticamente una copia de seguridad completa.
+      </p>
+    </div>
+  </header>
+
+  @if (msg(); as texto) {
+    <div class="sys-msg" [class.sys-msg--err]="msgError()" role="status">{{ texto }}</div>
+  }
+
+  @if (resultado(); as r) {
+    <section class="sys-section sys-section--emerald">
+      <header class="sys-section-head">
+        <h2>✔ Puesta en cero completada</h2>
+      </header>
+      <div class="sys-section-body">
+        <div class="sys-resumen">
+          <div class="sys-resumen-item">
+            <div class="num">{{ r.coleccionesLimpiadas }}</div>
+            <div class="lbl">Tablas en cero</div>
+          </div>
+          <div class="sys-resumen-item">
+            <div class="num">{{ r.coleccionesConservadas }}</div>
+            <div class="lbl">Catálogos conservados</div>
+          </div>
+          <div class="sys-resumen-item">
+            <div class="num">{{ r.usuariosEliminados }}</div>
+            <div class="lbl">Usuarios eliminados</div>
+          </div>
+        </div>
+        <p class="sys-hint">
+          Copia de seguridad previa: <strong>{{ r.respaldoPrevio }}</strong> (en Sistema → Copias de
+          seguridad). Próximos pasos: configure la nueva empresa en Configuración → Empresa y
+          comprobantes, revise la sede en Configuración → Sedes y cree los usuarios del personal.
+        </p>
+      </div>
+    </section>
+  } @else {
+    <section class="sys-section sys-section--emerald">
+      <header class="sys-section-head">
+        <h2>Qué se conserva</h2>
+      </header>
+      <div class="sys-section-body">
+        <ul class="sys-hint" style="margin: 0; padding-left: 1.1rem; line-height: 1.7">
+          <li>Catálogos: programas, servicios y tarifas, tipos de documento y de pago, bancos, municipios (DIVIPOLA), EPS / AFP / ARL, cargos, temarios CEA y demás listas.</li>
+          <li>Su usuario administrador (el que ejecuta esta operación).</li>
+          <li>Una sede «Principal» lista para renombrar.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="sys-section sys-section--danger">
+      <header class="sys-section-head">
+        <h2>Qué se borra definitivamente</h2>
+      </header>
+      <div class="sys-section-body">
+        <div class="sys-danger-box">
+          <ul>
+            <li>Alumnos, matrículas, liquidaciones, pagos, recibos y egresos.</li>
+            <li>Certificados emitidos y sus plantillas de diseño.</li>
+            <li>Caja (sesiones, cierres), facturación electrónica, contratos y jornadas.</li>
+            <li>Empleados, contratos laborales y nómina.</li>
+            <li>Vehículos, inspecciones y programación CEA.</li>
+            <li>Los demás usuarios del personal y los usuarios del portal de alumnos.</li>
+            <li>Archivos subidos: fotos, documentos, firmas, materiales del aula virtual.</li>
+            <li>La configuración vuelve a valores de fábrica y <strong>todos los consecutivos quedan en 0</strong> (recibos CI/CE, facturas, certificados, inspecciones).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="sys-section sys-section--amber">
+      <header class="sys-section-head">
+        <h2>Confirmación (ISO/IEC 27001)</h2>
+        <p>
+          Operación protegida: copia de seguridad previa obligatoria, contraseña de administrador,
+          código MFA y frase de confirmación. Todo queda registrado en la auditoría.
+        </p>
+      </header>
+      <div class="sys-section-body">
+        <label class="sys-switch">
+          <input type="checkbox" [(ngModel)]="entendido" />
+          Entiendo que esta acción borra todos los datos de la empresa actual y no se puede deshacer
+          (solo restaurando la copia de seguridad).
+        </label>
+        <div class="sys-row">
+          <div class="sys-field">
+            <label for="zpass">Su contraseña de administrador</label>
+            <input id="zpass" type="password" [(ngModel)]="password" autocomplete="current-password" />
+          </div>
+          <div class="sys-field">
+            <label for="zmfa">Código MFA (si lo tiene activo)</label>
+            <input id="zmfa" type="text" [(ngModel)]="codigoMfa" maxlength="6" inputmode="numeric"
+                   placeholder="000000" />
+          </div>
+          <div class="sys-field" style="min-width: 16rem">
+            <label for="zconf">Escriba {{ frase() }} para confirmar</label>
+            <input id="zconf" type="text" [(ngModel)]="confirmacion" [placeholder]="frase()" />
+          </div>
+        </div>
+        <div class="sys-row">
+          <button type="button" class="primary" (click)="ejecutar()" [disabled]="!puedeEjecutar()">
+            {{ ejecutando() ? 'Ejecutando… esto puede tardar un par de minutos' : 'Poner el sistema en cero' }}
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+</section>

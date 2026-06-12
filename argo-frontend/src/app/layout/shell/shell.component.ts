@@ -841,6 +841,39 @@ export class ShellComponent {
         },
       ],
     },
+    {
+      kind: 'group',
+      label: 'Sistema',
+      icon: '🛡',
+      iconTone: 'rose',
+      adminOnly: true,
+      children: [
+        {
+          kind: 'link',
+          label: 'Copias de seguridad',
+          path: '/app/sistema/respaldos',
+          icon: '⛁',
+          iconTone: 'emerald',
+          adminOnly: true,
+        },
+        {
+          kind: 'link',
+          label: 'Migración de datos',
+          path: '/app/sistema/migracion',
+          icon: '⇄',
+          iconTone: 'cyan',
+          adminOnly: true,
+        },
+        {
+          kind: 'link',
+          label: 'Puesta en cero',
+          path: '/app/sistema/puesta-en-cero',
+          icon: '↺',
+          iconTone: 'rose',
+          adminOnly: true,
+        },
+      ],
+    },
   ];
 
   /** Menú reactivo: se recalcula cuando cambian permisos o usuario en sesión. */

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { permisoGuard } from './core/guards/permiso.guard';
 
@@ -577,6 +578,34 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/config/monitor-recursos-admin.component').then(
             (m) => m.MonitorRecursosAdminComponent,
+          ),
+      },
+      { path: 'sistema', pathMatch: 'full', redirectTo: 'sistema/respaldos' },
+      {
+        path: 'sistema/respaldos',
+        canActivate: [adminGuard],
+        data: { title: 'Copias de seguridad' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-respaldos.component').then(
+            (m) => m.SistemaRespaldosComponent,
+          ),
+      },
+      {
+        path: 'sistema/migracion',
+        canActivate: [adminGuard],
+        data: { title: 'Migración de datos' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-migracion.component').then(
+            (m) => m.SistemaMigracionComponent,
+          ),
+      },
+      {
+        path: 'sistema/puesta-en-cero',
+        canActivate: [adminGuard],
+        data: { title: 'Puesta en cero' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-reset.component').then(
+            (m) => m.SistemaResetComponent,
           ),
       },
       { path: 'config/recibos', redirectTo: 'configuracion/recibos', pathMatch: 'full' },

@@ -44,6 +44,8 @@ const HOST = process.env.HOST || '0.0.0.0';
     initContadorActividad().catch((err) =>
       console.warn('[ARGO] init contador actividad:', err.message),
     );
+    const { initRespaldosAuto } = require('./services/respaldoScheduler');
+    initRespaldosAuto();
     const { sincronizarDefaultsTipoEgreso } = require('./services/tipoEgresoNomina');
     sincronizarDefaultsTipoEgreso()
       .then((n) => {

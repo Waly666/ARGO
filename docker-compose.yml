@@ -24,6 +24,7 @@ services:
       - ./deploy/.env
     volumes:
       - ./data/uploads:/app/uploads
+      - ./data/backups:/app/backups
     depends_on:
       - argo-mongo
     networks:

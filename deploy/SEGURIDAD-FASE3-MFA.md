@@ -2,11 +2,11 @@
 
 ## Alcance
 
-| Sistema | 2FA |
-|---------|-----|
+| Sistema                                | 2FA                                |
+| -------------------------------------- | ---------------------------------- |
 | **app.finstruvial.edu.co** (ERP staff) | **Obligatorio** todos los usuarios |
-| **finstruvial.edu.co** (aula alumnos) | No |
-| **App móvil cajero** | Exenta (`X-ARGO-Cliente: cajero`) |
+| **finstruvial.edu.co** (aula alumnos)  | No                                 |
+| **App móvil cajero**                   | Exenta (`X-ARGO-Cliente: cajero`)  |
 
 ## Variables `/opt/argo/deploy/.env`
 
@@ -64,8 +64,11 @@ Reset manual Mongo (emergencia):
 ```js
 db.usuarios.updateOne(
   { username: "USUARIO" },
-  { $set: { totpEnabled: false }, $unset: { totpSecretEnc: "", totpPendingEnc: "", mfaRecoveryHashes: "" } }
-)
+  {
+    $set: { totpEnabled: false },
+    $unset: { totpSecretEnc: "", totpPendingEnc: "", mfaRecoveryHashes: "" },
+  },
+);
 ```
 
 El usuario volverá a configurar 2FA en el próximo login web.

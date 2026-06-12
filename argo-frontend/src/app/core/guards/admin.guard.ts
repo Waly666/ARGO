@@ -3,21 +3,17 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from '../services/auth.service';
 
-function esAdmin(rol?: string): boolean {
-  const v = String(rol || '').toLowerCase();
-  return v === 'admin' || v.includes('admin');
-}
-
+/** Acceso exclusivo para administradores (módulo Sistema). */
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
+
   if (!auth.isAuth()) {
-    router.navigateByUrl('/login');
+    router.navigateByUrl('/login', { replaceUrl: true });
     return false;
   }
-  if (!esAdmin(auth.user()?.rol)) {
-    router.navigateByUrl('/app/dashboard');
-    return false;
-  }
-  return true;
+  if (auth.isAdmin()) return true;
+
+  router.navigateByUrl('/app/sin-acceso', { replaceUrl: true });
+  return false;
 };

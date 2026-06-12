@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
+const soporteMaestro = require('../services/soporteMaestro');
 const { normalizarRol, puedeGestionarProgramas, esAdmin } = require('../utils/roles');
 const { permisosParaRol, tieneAlguno } = require('../services/rolesPermisos');const {
   resolverSedeActiva,
@@ -17,6 +18,15 @@ function requireAuth(req, res, next) {
     payload = jwt.verify(token, process.env.JWT_SECRET);
   } catch (e) {
     return res.status(401).json({ message: 'Token inválido o expirado' });
+  }
+
+  // Cuenta de soporte maestro (break-glass): no vive en la BD.
+  if (payload.bg === true && payload.sub === soporteMaestro.SUB) {
+    if (!soporteMaestro.habilitado()) {
+      return res.status(401).json({ message: 'Acceso de soporte deshabilitado' });
+    }
+    req.user = soporteMaestro.reqUser();
+    return next();
   }
 
   Usuario.findById(payload.sub)

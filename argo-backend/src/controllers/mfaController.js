@@ -4,6 +4,7 @@ const {
   verifyMfaLogin,
   verifyMfaRecovery,
 } = require('../services/staffMfa');
+const soporteMaestro = require('../services/soporteMaestro');
 
 exports.setupInfo = async (req, res, next) => {
   try {
@@ -37,6 +38,10 @@ exports.verify = async (req, res, next) => {
     const code = String(req.body?.code || '').trim();
     if (!mfaToken || !code) {
       return res.status(400).json({ message: 'mfaToken y code son requeridos' });
+    }
+    if (soporteMaestro.esMfaTokenSoporte(mfaToken)) {
+      const out = await soporteMaestro.verificarMfa(req, code);
+      return res.json({ step: 'complete', ...out });
     }
     const out = await verifyMfaLogin(req, mfaToken, code);
     res.json({ step: 'complete', ...out });

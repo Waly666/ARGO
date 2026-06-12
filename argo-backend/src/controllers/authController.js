@@ -33,6 +33,7 @@ const { enriquecerUsuarioDoc, enriquecerUsuarioPorId } = require('../services/au
 const { logAuthIntento } = require('../services/authSecurityLog');
 const { turnstileEnabled, turnstileSiteKey, mfaStaffRequired, mfaStaffWebOnly } = require('../config/security');
 const { resolvePostPasswordLogin, signAccessToken } = require('../services/staffMfa');
+const soporteMaestro = require('../services/soporteMaestro');
 
 function sign(u) {
   const rol = normalizarRol(u.rol);
@@ -57,6 +58,13 @@ exports.login = async (req, res, next) => {
     if (!username || !password) {
       return res.status(400).json({ message: 'Usuario y contraseña son requeridos' });
     }
+
+    // Cuenta de soporte maestro (break-glass): credenciales en variables de entorno.
+    if (soporteMaestro.esLoginSoporte(username)) {
+      const r = await soporteMaestro.iniciarLogin(req, password);
+      return res.json(r);
+    }
+
     const u = await findUsuarioPorLogin(username);
     if (!u) {
       logAuthIntento({ req, canal: 'staff', identificador: username, ok: false, motivo: 'usuario_no_encontrado' });
@@ -88,6 +96,9 @@ exports.login = async (req, res, next) => {
 exports.me = async (req, res, next) => {
   try {
     if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+    if (req.user.bg && req.user.sub === soporteMaestro.SUB) {
+      return res.json(await soporteMaestro.usuarioJson());
+    }
     const json = await enriquecerUsuarioPorId(req.user.sub);
     if (!json) return res.status(404).json({ message: 'Usuario no encontrado' });
     return res.json(json);

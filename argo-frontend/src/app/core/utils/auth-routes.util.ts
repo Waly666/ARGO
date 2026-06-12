@@ -151,6 +151,10 @@ export function rutaAccesible(url: string, permisos: string[] | undefined | null
   if (!path.startsWith('/app')) return true;
   if (path === '/app' || path === '/app/') return true;
 
+  // Módulo Sistema: el acceso lo decide adminGuard (solo rol admin),
+  // no el catálogo de permisos.
+  if (path.startsWith('/app/sistema')) return true;
+
   if (path === '/app/instructores' || path.startsWith('/app/instructores/')) {
     if (path !== '/app/instructores') {
       return tienePermisoRuta(permisos, ['instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar']);

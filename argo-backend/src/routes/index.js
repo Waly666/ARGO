@@ -52,5 +52,6 @@ router.use('/instructor-portal', require('./instructorPortal'));
 router.use('/facturacion', facturacion);
 router.use('/aula-virtual', aulaVirtual);
 router.use('/clientes', require('./clientes'));
+router.use('/sistema', require('./sistema'));
 
 module.exports = router;
