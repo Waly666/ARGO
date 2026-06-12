@@ -27,11 +27,11 @@ const DEFAULT_HOME_ORDER = [
   'beneficios',
   'quoteBand',
   'serviciosEmpresa',
-  'testimonios',
-  'valores',
-  'cursosVirtuales',
   'carreras',
+  'cursosVirtuales',
+  'valores',
   'pasos',
+  'testimonios',
   'faq',
   'pilares',
 ];
@@ -68,9 +68,39 @@ export function ordenSeccionesHome(config: PortalConfig | null): string[] {
     for (const id of DEFAULT_HOME_ORDER) {
       if (!out.includes(id)) out.push(id);
     }
-    return out;
+    return aplicarMigracionesOrdenHome(out);
   }
-  return [...DEFAULT_HOME_ORDER];
+  return aplicarMigracionesOrdenHome([...DEFAULT_HOME_ORDER]);
+}
+
+function aplicarMigracionesOrdenHome(orden: string[]): string[] {
+  return posicionarTestimoniosAntesFaq(aplicarSwapValoresCarreras(orden));
+}
+
+/** Intercambia valores ↔ carreras si aún está el orden anterior guardado en BD. */
+function aplicarSwapValoresCarreras(orden: string[]): string[] {
+  const iv = orden.indexOf('valores');
+  const ic = orden.indexOf('carreras');
+  if (iv === -1 || ic === -1 || iv >= ic) return orden;
+  const out = [...orden];
+  out[iv] = 'carreras';
+  out[ic] = 'valores';
+  return out;
+}
+
+/** Coloca testimonios justo antes de FAQ si aún está en la posición antigua del home. */
+function posicionarTestimoniosAntesFaq(orden: string[]): string[] {
+  const it = orden.indexOf('testimonios');
+  const ifaq = orden.indexOf('faq');
+  const ipasos = orden.indexOf('pasos');
+  if (it === -1 || ifaq === -1) return orden;
+  if (it === ifaq - 1) return orden;
+  if (ipasos !== -1 && it > ipasos && it < ifaq) return orden;
+  const out = orden.filter((id) => id !== 'testimonios');
+  const idxFaq = out.indexOf('faq');
+  if (idxFaq === -1) return orden;
+  out.splice(idxFaq, 0, 'testimonios');
+  return out;
 }
 
 export function clavePaginaPorRuta(path: string): PortalPaginaKey | null {

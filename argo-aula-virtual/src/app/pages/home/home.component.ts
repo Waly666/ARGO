@@ -103,18 +103,31 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n || 0);
   }
 
-  carrerasResumen = computed(() => {
+  /** Posiciona cada carrera alrededor del núcleo central (layout orbital). */
+  carrerasOrbita = computed(() => {
     const items = this.landing().carreras.items;
-    if (!items.length) {
-      return { total: 0, horasMin: 0, horasMax: 0 };
-    }
-    const horas = items.map((i) => i.horas);
-    return {
-      total: items.length,
-      horasMin: Math.min(...horas),
-      horasMax: Math.max(...horas),
-    };
+    const n = items.length || 1;
+    // Radios en % del contenedor (elipse, más ancha que alta).
+    const rx = 39;
+    const ry = 38;
+    return items.map((c, i) => {
+      const ang = ((-90 + (360 / n) * i) * Math.PI) / 180;
+      return {
+        ...c,
+        nombreCorto: this.carreraNombreCorto(c.titulo),
+        x: Math.round((50 + rx * Math.cos(ang)) * 100) / 100,
+        y: Math.round((50 + ry * Math.sin(ang)) * 100) / 100,
+      };
+    });
   });
+
+  private carreraNombreCorto(titulo: string) {
+    const corto = (titulo || '')
+      .replace(/^t[eé]cnico\s+laboral\s+por\s+competencias\s*[—–-]?\s*(en\s+)?/i, '')
+      .trim();
+    if (!corto) return titulo;
+    return corto.charAt(0).toUpperCase() + corto.slice(1);
+  }
 
   telHref() {
     const digits = this.telefono().replace(/\D/g, '');

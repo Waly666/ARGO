@@ -255,13 +255,37 @@
 
       @for (t of landing().testimonios.items; track t.nombre; let i = $index) {
 
-        <article class="valor-card testimonio-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
+        <article class="dark-card testimonio-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
 
-          <p class="testimonio-texto">“{{ t.texto }}”</p>
+          <span class="dark-card__plus" aria-hidden="true">+</span>
 
-          <h3 avAnimateTitle [titleDelay]="80">{{ t.nombre }}</h3>
+          <span class="dark-card__icono" aria-hidden="true">
+            @switch (i % 3) {
+              @case (0) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 20c1.2-3.4 3.9-5 7-5s5.8 1.6 7 5" />
+                </svg>
+              }
+              @case (1) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+                </svg>
+              }
+              @case (2) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z" />
+                </svg>
+              }
+            }
+          </span>
 
-          <p class="testimonio-rol">{{ t.rol }}</p>
+          <h3 class="dark-card__titulo" avAnimateTitle [titleDelay]="80">{{ t.nombre }}</h3>
+
+          <p class="dark-card__meta testimonio-texto">“{{ t.texto }}”</p>
+
+          <p class="dark-card__meta testimonio-rol">{{ t.rol }}</p>
 
         </article>
 
@@ -274,7 +298,7 @@
 </section>
     }
     @case ('valores') {
-<section class="section section--alt">
+<section class="section section--alt" id="somos-mejor-opcion">
 
   <div class="container">
 
@@ -296,11 +320,52 @@
 
       @for (v of landing().valores.items; track v.title; let i = $index) {
 
-        <article class="valor-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
+        <article class="dark-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
 
-          <h3 avAnimateTitle [titleDelay]="80">{{ v.title }}</h3>
+          <span class="dark-card__plus" aria-hidden="true">+</span>
 
-          <p>{{ v.text }}</p>
+          <span class="dark-card__icono" aria-hidden="true">
+            @switch (i % 6) {
+              @case (0) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3l7 3v5c0 4.4-2.9 7.9-7 10-4.1-2.1-7-5.6-7-10V6l7-3z" />
+                </svg>
+              }
+              @case (1) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+                </svg>
+              }
+              @case (2) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              }
+              @case (3) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 3v18h18" />
+                  <path d="M7 16l4-4 4 4 5-6" />
+                </svg>
+              }
+              @case (4) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              }
+              @case (5) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 12l2 2 4-4" />
+                  <circle cx="12" cy="12" r="9" />
+                </svg>
+              }
+            }
+          </span>
+
+          <h3 class="dark-card__titulo" avAnimateTitle [titleDelay]="80">{{ v.title }}</h3>
+
+          <p class="dark-card__meta">{{ v.text }}</p>
 
         </article>
 
@@ -362,69 +427,78 @@
 </section>
     }
     @case ('carreras') {
-<section class="section section--alt section-carreras" id="carreras-tecnicas">
-  <div class="container">
-    <header class="section-head center">
+<section class="section section-carreras" id="carreras-tecnicas">
+  <div class="carreras-bg" aria-hidden="true"></div>
+  <div class="container carreras-container">
+    <header class="section-head center carreras-head">
       <p class="kicker reveal" avRevealOnScroll>{{ landing().carreras.kicker }}</p>
       <h2 avAnimateTitle [titleDelay]="50">{{ landing().carreras.titulo }}</h2>
       <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().carreras.lead }}</p>
     </header>
 
-    @if (carrerasResumen(); as cr) {
-      <div class="carreras-overview reveal" avRevealOnScroll [revealDelay]="120">
-        <div class="carreras-overview__item">
-          <strong>{{ cr.total }}</strong>
-          <span>Programas técnicos</span>
-        </div>
-        <div class="carreras-overview__item">
-          <strong>{{ fmt(cr.horasMin) }}–{{ fmt(cr.horasMax) }}</strong>
-          <span>Horas lectivas</span>
-        </div>
-        <div class="carreras-overview__item">
-          <strong>Presencial</strong>
-          <span>Modalidad de titulación</span>
-        </div>
-      </div>
-    }
+    <div class="carreras-orbita">
+      <svg class="carreras-orbita__lineas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        @for (c of carrerasOrbita(); track c.cno) {
+          <line x1="50" y1="50" [attr.x2]="c.x" [attr.y2]="c.y" vector-effect="non-scaling-stroke" />
+        }
+      </svg>
 
-    <div class="carreras-grid">
-      @for (c of landing().carreras.items; track c.cno; let i = $index) {
-        <article class="carrera-programa card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 80">
-          <div class="carrera-programa__head">
-            <span class="carrera-programa__index">{{ i + 1 | number: '2.0-0' }}</span>
-            <span class="carrera-programa__cno">CNO {{ c.cno }}</span>
-          </div>
-          <h3 class="carrera-programa__titulo" avAnimateTitle [titleDelay]="80">{{ c.titulo }}</h3>
-          <ul class="carrera-programa__specs">
-            <li>
-              <span class="carrera-programa__label">Duración</span>
-              <span class="carrera-programa__value">{{ fmt(c.horas) }} horas</span>
-            </li>
-            <li>
-              <span class="carrera-programa__label">Semestres</span>
-              <span class="carrera-programa__value">{{ c.semestres }}</span>
-            </li>
-            <li>
-              <span class="carrera-programa__label">Jornadas</span>
-              <span class="carrera-programa__value">{{ c.jornadas }}</span>
-            </li>
-            <li>
-              <span class="carrera-programa__label">Nivel requerido</span>
-              <span class="carrera-programa__value">9° bachillerato</span>
-            </li>
-            <li>
-              <span class="carrera-programa__label">Edad mínima</span>
-              <span class="carrera-programa__value">15 años</span>
-            </li>
-          </ul>
-          <a routerLink="/acerca" class="carrera-programa__link">Más información →</a>
-        </article>
+      <div class="carreras-orbita__centro" aria-hidden="true">
+        <span class="carreras-orbita__halo"></span>
+        <span class="carreras-orbita__nucleo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l7 3v5c0 4.4-2.9 7.9-7 10-4.1-2.1-7-5.6-7-10V6l7-3z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+        </span>
+      </div>
+
+      @for (c of carrerasOrbita(); track c.cno; let i = $index) {
+        <div class="carrera-nodo-pos" [style.left.%]="c.x" [style.top.%]="c.y">
+          <a routerLink="/acerca" class="carrera-nodo dark-card reveal-scale" avRevealOnScroll [revealDelay]="140 + i * 90">
+            <span class="dark-card__plus" aria-hidden="true">+</span>
+            <span class="dark-card__icono" aria-hidden="true">
+              @switch (i % 5) {
+                @case (0) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3l7 3v5c0 4.4-2.9 7.9-7 10-4.1-2.1-7-5.6-7-10V6l7-3z" />
+                  </svg>
+                }
+                @case (1) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="6" />
+                    <path d="M21 21l-5-5" />
+                  </svg>
+                }
+                @case (2) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3c3.5 4 6 7.2 6 10.2A6 6 0 0 1 6 13.2C6 10.2 8.5 7 12 3z" />
+                  </svg>
+                }
+                @case (3) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 4h4l5 15H5L10 4z" />
+                    <path d="M8.4 9h7.2M7 13.5h10" />
+                  </svg>
+                }
+                @case (4) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M5 20c1.2-3.4 3.9-5 7-5s5.8 1.6 7 5" />
+                  </svg>
+                }
+              }
+            </span>
+            <h3 class="dark-card__titulo">{{ c.nombreCorto }}</h3>
+            <p class="dark-card__meta">CNO {{ c.cno }} · {{ fmt(c.horas) }} horas</p>
+            <p class="dark-card__meta">{{ c.semestres }} semestres · {{ c.jornadas }}</p>
+          </a>
+        </div>
       }
     </div>
 
-    <div class="carreras-foot reveal" avRevealOnScroll [revealDelay]="160">
-      <p>¿Necesita orientación sobre admisión o titulación técnica?</p>
-      <a routerLink="/acerca" class="btn btn-primary">Contactar la institución</a>
+    <div class="carreras-cta reveal" avRevealOnScroll [revealDelay]="160">
+      <a routerLink="/acerca" class="carreras-cta__btn">Solicita más información <span aria-hidden="true">→</span></a>
     </div>
   </div>
 </section>
@@ -475,11 +549,12 @@
 </section>
     }
     @case ('faq') {
-<section class="section section--white" id="preguntas-frecuentes">
+<section class="section section-faq" id="preguntas-frecuentes">
+  <div class="faq-bg" aria-hidden="true"></div>
 
-  <div class="container">
+  <div class="container section-faq__inner">
 
-    <header class="section-head center">
+    <header class="section-head center section-faq__head">
 
       <p class="kicker reveal" avRevealOnScroll>{{ landing().faq.kicker }}</p>
 
@@ -493,11 +568,11 @@
 
       @for (item of landing().faq.items; track item.pregunta; let i = $index) {
 
-        <article class="faq-item reveal" avRevealOnScroll [revealDelay]="i * 60">
+        <article class="dark-card faq-item reveal" avRevealOnScroll [revealDelay]="i * 60">
 
           <button type="button" class="faq-pregunta" [class.faq-pregunta--open]="faqAbierta() === i" (click)="toggleFaq(i)">
 
-            <span>{{ item.pregunta }}</span>
+            <span class="faq-pregunta__texto">{{ item.pregunta }}</span>
 
             <span class="faq-icon" aria-hidden="true">{{ faqAbierta() === i ? '−' : '+' }}</span>
 
@@ -525,11 +600,11 @@
 
       <div class="faq-contacto-actions">
 
-        <a routerLink="/acerca" class="btn btn-outline">Conocer la institución</a>
+        <a routerLink="/acerca" class="btn btn-faq-outline">Conocer la institución</a>
 
         @if (telefono(); as tel) {
 
-          <a [href]="telHref()" class="btn btn-primary">Llamar {{ tel }}</a>
+          <a [href]="telHref()" class="btn btn-faq-primary">Llamar {{ tel }}</a>
 
         }
 

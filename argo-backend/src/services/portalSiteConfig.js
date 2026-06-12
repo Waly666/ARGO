@@ -76,6 +76,26 @@ function normalizarHome(raw) {
   for (const k of HOME_SECCIONES_ORDEN) {
     if (!orden.includes(k)) orden.push(k);
   }
+  // Migración: intercambiar valores ↔ carreras si persiste el orden anterior en BD
+  const iv = orden.indexOf('valores');
+  const ic = orden.indexOf('carreras');
+  if (iv !== -1 && ic !== -1 && iv < ic) {
+    orden[iv] = 'carreras';
+    orden[ic] = 'valores';
+  }
+  // Migración: testimonios justo antes de FAQ
+  const it = orden.indexOf('testimonios');
+  const ifaq = orden.indexOf('faq');
+  const ipasos = orden.indexOf('pasos');
+  if (it !== -1 && ifaq !== -1 && it !== ifaq - 1 && !(ipasos !== -1 && it > ipasos && it < ifaq)) {
+    const sinTestimonios = orden.filter((id) => id !== 'testimonios');
+    const idxFaq = sinTestimonios.indexOf('faq');
+    if (idxFaq !== -1) {
+      sinTestimonios.splice(idxFaq, 0, 'testimonios');
+      orden.length = 0;
+      orden.push(...sinTestimonios);
+    }
+  }
   return { orden, secciones };
 }
 
