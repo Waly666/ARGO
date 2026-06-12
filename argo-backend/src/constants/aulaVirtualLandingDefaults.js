@@ -1,3 +1,5 @@
+const { FUNDACION_LANDING_DEFAULTS } = require('./aulaVirtualFundacionDefaults');
+
 /** Contenido editable del landing del portal aula virtual (valores por defecto). */
 const LANDING_DEFAULTS = {
   instBarTag: 'Cursos y programas de capacitación virtual en Colombia',
@@ -328,6 +330,7 @@ const LANDING_DEFAULTS = {
     'Estudios de tránsito',
     'Planes de movilidad sostenible y segura',
   ],
+  fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)),
 };
 
-module.exports = { LANDING_DEFAULTS };
+module.exports = { LANDING_DEFAULTS, FUNDACION_LANDING_DEFAULTS };

@@ -2,21 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
+import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
-import {
-  FUNDACION_COMPROMISO,
-  FUNDACION_CONTACTO,
-  FUNDACION_MISION,
-  FUNDACION_QUIENES_BLOQUES,
-  FUNDACION_QUIENES_DESTACADOS,
-  FUNDACION_QUIENES_LEAD,
-  FUNDACION_SERVICIOS_DESTACADOS,
-  FUNDACION_SITIO_URL,
-  FUNDACION_VISION,
-} from './fundacion-content';
+import { FUNDACION_CONTACTO } from './fundacion-content';
 
 @Component({
   selector: 'av-fundacion',
@@ -31,15 +22,19 @@ export class FundacionComponent implements OnInit {
 
   config = signal<PortalConfig | null>(null);
 
-  readonly quienesLead = FUNDACION_QUIENES_LEAD;
-  readonly quienesDestacados = FUNDACION_QUIENES_DESTACADOS;
-  readonly quienesBloques = FUNDACION_QUIENES_BLOQUES;
-  readonly mision = FUNDACION_MISION;
-  readonly vision = FUNDACION_VISION;
-  readonly compromiso = FUNDACION_COMPROMISO;
-  readonly servicios = FUNDACION_SERVICIOS_DESTACADOS;
-  readonly sitioUrl = FUNDACION_SITIO_URL;
-  readonly contacto = FUNDACION_CONTACTO;
+  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  fund = computed(() => this.landing().fundacion);
+
+  nombreCea = computed(() => this.config()?.nombreCea?.trim() || 'Mi institución');
+
+  heroTitulo = computed(() => this.fund().hero.titulo?.trim() || this.nombreCea());
+
+  heroImagen = computed(() => {
+    const url = this.fund().hero.imagenUrl?.trim();
+    if (!url) return '/images/fundacion-equipo.png';
+    if (url.startsWith('http') || url.startsWith('//')) return url;
+    return url.startsWith('/') ? url : `/${url}`;
+  });
 
   telefono = computed(() => this.config()?.telefono?.trim() || FUNDACION_CONTACTO.telefono);
   email = computed(() => this.config()?.email?.trim() || FUNDACION_CONTACTO.email);

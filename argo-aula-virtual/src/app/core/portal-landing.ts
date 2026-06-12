@@ -1,4 +1,5 @@
 import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaults';
+import { FUNDACION_LANDING_DEFAULTS } from '../pages/fundacion/fundacion-content';
 import {
   BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
@@ -10,6 +11,58 @@ import {
   TESTIMONIOS,
   VALORES,
 } from '../pages/home/home-content';
+
+export interface FundacionDestacado {
+  icon: string;
+  label: string;
+  text: string;
+}
+
+export interface FundacionBloque {
+  icon: string;
+  titulo: string;
+  texto: string;
+}
+
+export interface PortalFundacionLanding {
+  hero: {
+    kicker: string;
+    titulo: string;
+    lead: string;
+    imagenUrl: string;
+    imagenAlt: string;
+    imagenCaption: string;
+    btnSitioUrl: string;
+    btnSitioLabel: string;
+    btnCursosLabel: string;
+  };
+  quienes: {
+    kicker: string;
+    titulo: string;
+    lead: string;
+    destacados: FundacionDestacado[];
+    bloques: FundacionBloque[];
+    enlaceUrl: string;
+    enlaceLabel: string;
+  };
+  mision: string;
+  vision: string;
+  compromiso: { kicker: string; titulo: string; texto: string };
+  lineas: {
+    kicker: string;
+    titulo: string;
+    lead: string;
+    items: { icon: string; title: string; text: string }[];
+  };
+  cta: {
+    kicker: string;
+    titulo: string;
+    texto: string;
+    btnRegistro: string;
+    btnServicios: string;
+  };
+  contacto: { kicker: string; titulo: string; lead: string; sedeNota: string };
+}
 
 export interface LandingInfoCard {
   icon: string;
@@ -99,6 +152,7 @@ export interface PortalLandingConfig {
     campanas: string[];
   };
   footerServicios: string[];
+  fundacion: PortalFundacionLanding;
 }
 
 export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
@@ -204,7 +258,32 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     'Estudios de tránsito',
     'Planes de movilidad sostenible y segura',
   ],
+  fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)) as PortalFundacionLanding,
 };
+
+function mergeFundacionLanding(raw?: Partial<PortalFundacionLanding> | null): PortalFundacionLanding {
+  const d = PORTAL_LANDING_FALLBACK.fundacion;
+  if (!raw) return JSON.parse(JSON.stringify(d)) as PortalFundacionLanding;
+  return {
+    hero: { ...d.hero, ...raw.hero },
+    quienes: {
+      ...d.quienes,
+      ...raw.quienes,
+      destacados: raw.quienes?.destacados?.length ? raw.quienes.destacados : d.quienes.destacados,
+      bloques: raw.quienes?.bloques?.length ? raw.quienes.bloques : d.quienes.bloques,
+    },
+    mision: raw.mision?.trim() ? raw.mision : d.mision,
+    vision: raw.vision?.trim() ? raw.vision : d.vision,
+    compromiso: { ...d.compromiso, ...raw.compromiso },
+    lineas: {
+      ...d.lineas,
+      ...raw.lineas,
+      items: raw.lineas?.items?.length ? raw.lineas.items : d.lineas.items,
+    },
+    cta: { ...d.cta, ...raw.cta },
+    contacto: { ...d.contacto, ...raw.contacto },
+  };
+}
 
 function mergeServiciosItems(
   rawItems: { icon: string; title: string; url?: string }[] | undefined,
@@ -276,5 +355,6 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       campanas: raw.pilares?.campanas?.length ? raw.pilares.campanas : d.pilares.campanas,
     },
     footerServicios: raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
+    fundacion: mergeFundacionLanding(raw.fundacion),
   };
 }

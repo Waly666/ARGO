@@ -1,5 +1,6 @@
-<!-- Barra institucional -->
-
+@for (secId of ordenSecciones(); track secId) {
+  @switch (secId) {
+    @case ('instBar') {
 <div class="inst-bar anim-bar-in">
 
   <div class="container inst-bar-inner">
@@ -11,11 +12,8 @@
   </div>
 
 </div>
-
-
-
-<!-- Hero -->
-
+    }
+    @case ('hero') {
 <section class="hero">
 
   <div class="container hero-inner">
@@ -46,18 +44,15 @@
 
     <figure class="hero-visual hero-in hero-in--5">
 
-      <img src="/images/hero-estudiante.png" [alt]="landing().hero.imagenAlt" />
+      <img [src]="heroImg()" [alt]="landing().hero.imagenAlt" />
 
     </figure>
 
   </div>
 
 </section>
-
-
-
-<!-- Tarjetas de contacto (fuera del hero) -->
-
+    }
+    @case ('infoCards') {
 <section class="info-cards-band">
 
   <div class="container">
@@ -99,11 +94,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Qué ofrecemos -->
-
+    }
+    @case ('ofertas') {
 <section class="section section--light">
 
   <div class="container">
@@ -137,11 +129,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Beneficios (resultados) -->
-
+    }
+    @case ('beneficios') {
 <section class="section section--alt" id="beneficios-cursos">
 
   <div class="container">
@@ -177,11 +166,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Cita + CTA -->
-
+    }
+    @case ('quoteBand') {
 <section class="quote-band">
 
   <div class="container quote-inner">
@@ -207,11 +193,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Servicios empresa -->
-
+    }
+    @case ('serviciosEmpresa') {
 <section class="section section--light section--white" id="servicios-empresa">
 
   <div class="container">
@@ -252,11 +235,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Testimonios -->
-
+    }
+    @case ('testimonios') {
 <section class="section section--light section--white" id="testimonios">
 
   <div class="container">
@@ -292,11 +272,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Somos tu mejor opción -->
-
+    }
+    @case ('valores') {
 <section class="section section--alt">
 
   <div class="container">
@@ -334,11 +311,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Cursos virtuales (dinámico ARGO) -->
-
+    }
+    @case ('cursosVirtuales') {
 <section class="section section--light section--white" id="cursos-virtuales">
 
   <div class="container">
@@ -386,10 +360,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Carreras técnicas -->
+    }
+    @case ('carreras') {
 <section class="section section--alt section-carreras" id="carreras-tecnicas">
   <div class="container">
     <header class="section-head center">
@@ -456,11 +428,8 @@
     </div>
   </div>
 </section>
-
-
-
-<!-- Cómo acceder a cursos y programas -->
-
+    }
+    @case ('pasos') {
 <section class="section section--light" id="como-funciona">
 
   <div class="container">
@@ -504,11 +473,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Preguntas frecuentes -->
-
+    }
+    @case ('faq') {
 <section class="section section--white" id="preguntas-frecuentes">
 
   <div class="container">
@@ -574,11 +540,8 @@
   </div>
 
 </section>
-
-
-
-<!-- Capacitación / Campañas -->
-
+    }
+    @case ('pilares') {
 <section class="section section--light section--white">
 
   <div class="container">
@@ -636,5 +599,7 @@
   </div>
 
 </section>
-
+    }
+  }
+}
 

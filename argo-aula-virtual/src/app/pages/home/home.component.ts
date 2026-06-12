@@ -19,7 +19,9 @@ import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { mergePortalLanding } from '../../core/portal-landing';
+import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { PortalSeoService } from '../../core/portal-seo.service';
+import { PortalThemeService } from '../../core/portal-theme.service';
 import { HERO_DEFAULT } from './home-content';
 
 @Component({
@@ -34,6 +36,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private api = inject(AulaApiService);
   private seo = inject(PortalSeoService);
+  private theme = inject(PortalThemeService);
   private typeTimer?: ReturnType<typeof setInterval>;
   private typeRun = 0;
 
@@ -57,6 +60,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const cfg = this.config();
     return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
   });
+
+  ordenSecciones = computed(() => {
+    const cfg = this.config();
+    return ordenSeccionesHome(cfg).filter((id) => seccionHomeVisible(cfg, id));
+  });
+
+  heroImg = computed(() => this.theme.heroImageUrl(this.config()) || '/images/hero-estudiante.png');
 
   ngOnInit() {
     this.api.config().subscribe({

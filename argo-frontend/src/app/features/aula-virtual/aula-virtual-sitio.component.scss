@@ -6,7 +6,11 @@
 }
 
 .av-page--sitio {
-  max-width: 1100px;
+  max-width: 1560px;
+
+  &.av-page--builder {
+    max-width: none;
+  }
 }
 
 .av-head {
@@ -145,8 +149,41 @@ textarea {
 .av-save-bar {
   position: sticky;
   bottom: 0;
-  padding: 1rem 0 0.5rem;
-  background: linear-gradient(180deg, transparent, var(--bg-1) 35%);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(6, 16, 41, 0.98));
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
+
+  &--builder {
+    margin-top: 0;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.86rem;
+    color: var(--text-dim);
+
+    strong {
+      color: #fde68a;
+      font-size: 0.92rem;
+    }
+  }
+}
+
+.av-btn--publish {
+  min-width: 14rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.95rem;
 }
 
 .av-toast {

@@ -2,6 +2,13 @@ const Config = require('../models/Config');
 const { obtenerConfigRecibo } = require('./configRecibo');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 const { mergeLanding, normalizarLanding } = require('./aulaVirtualPortalLanding');
+const {
+  mergePortalSite,
+  sincronizarNavLanding,
+  copyrightPublico,
+  HOME_SECCIONES_ORDEN,
+} = require('./portalSiteConfig');
+const { HOME_SECCIONES_LABELS } = require('../constants/portalSiteDefaults');
 
 const CLAVE_AULA = 'aula_virtual';
 
@@ -91,18 +98,35 @@ async function guardarConfigAula(body, usuario) {
   if (body.landing !== undefined) {
     dto.landing = normalizarLanding(body.landing);
   }
+  if (body.site !== undefined) {
+    const navBase = dto.landing?.nav || mergeLanding((await obtenerConfigAula()).landing).nav;
+    const footerBase = dto.landing?.footer || mergeLanding((await obtenerConfigAula()).landing).footer;
+    dto.site = mergePortalSite(body.site, { nav: navBase, footer: footerBase });
+    dto.landing = sincronizarNavLanding(dto.landing || mergeLanding((await obtenerConfigAula()).landing), dto.site);
+  }
   await Config.updateOne({ clave: CLAVE_AULA }, { $set: dto }, { upsert: true });
   return obtenerConfigAula();
 }
 
 /** Config editable en admin (rellena con Recibos si el portal aún no tiene datos). */
+function armarSitePublico(aula, landing) {
+  const site = mergePortalSite(aula.site, { nav: landing.nav, footer: landing.footer });
+  return {
+    ...site,
+    homeSeccionesLabels: HOME_SECCIONES_LABELS,
+    homeSeccionesOrden: HOME_SECCIONES_ORDEN,
+  };
+}
+
 async function obtenerConfigPortalAdmin() {
   const [aula, recibo] = await Promise.all([obtenerConfigAula(), obtenerConfigRecibo()]);
   const empresa = pickEmpresa(aula, recibo);
   const logo = pickLogo(aula, recibo);
+  const landing = mergeLanding(aula.landing);
   return {
     ...aula,
-    landing: mergeLanding(aula.landing),
+    landing,
+    site: armarSitePublico(aula, landing),
     nombreEmpresa: aula.nombreEmpresa || recibo.nombreEmpresa || '',
     nit: aula.nit || recibo.nit || '',
     direccion: aula.direccion || recibo.direccion || '',
@@ -121,6 +145,9 @@ async function obtenerConfigPortalPublica() {
   const [recibo, aula] = await Promise.all([obtenerConfigRecibo(), obtenerConfigAula()]);
   const empresa = pickEmpresa(aula, recibo);
   const logo = pickLogo(aula, recibo);
+  const landing = mergeLanding(aula.landing);
+  const site = armarSitePublico(aula, landing);
+  const landingNav = sincronizarNavLanding(landing, site);
   return {
     ...empresa,
     urlLogo: logo.urlLogo,
@@ -128,7 +155,14 @@ async function obtenerConfigPortalPublica() {
     heroTitulo: aula.heroTitulo,
     heroSubtitulo: aula.heroSubtitulo,
     acercaDeHtml: aula.acercaDeHtml || '',
-    landing: mergeLanding(aula.landing),
+    landing: {
+      ...landingNav,
+      footer: {
+        ...landingNav.footer,
+        copyright: copyrightPublico(site, landingNav, empresa.nombreCea),
+      },
+    },
+    site,
     formularioContactoActivo: !!resolverEmailFormularioContacto(aula, recibo),
   };
 }

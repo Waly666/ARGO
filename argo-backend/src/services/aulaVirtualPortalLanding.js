@@ -50,6 +50,8 @@ function normalizarLanding(input) {
   const catalogoSrc = src.catalogo && typeof src.catalogo === 'object' ? src.catalogo : {};
   const pilaresSrc = src.pilares && typeof src.pilares === 'object' ? src.pilares : {};
   const faqSrc = src.faq && typeof src.faq === 'object' ? src.faq : {};
+  const fundSrc = src.fundacion && typeof src.fundacion === 'object' ? src.fundacion : {};
+  const fundD = d.fundacion || {};
 
   const carrerasRaw = Array.isArray(carrerasSrc.items) ? carrerasSrc.items : [];
   const carrerasItems = carrerasRaw.length
@@ -196,6 +198,73 @@ function normalizarLanding(input) {
       campanas: camp.length ? camp : [...d.pilares.campanas],
     },
     footerServicios: footer.length ? footer : [...d.footerServicios],
+    fundacion: normalizarFundacion(fundSrc, fundD),
+  };
+}
+
+function normalizarFundacion(src, d) {
+  const heroSrc = src.hero && typeof src.hero === 'object' ? src.hero : {};
+  const quienesSrc = src.quienes && typeof src.quienes === 'object' ? src.quienes : {};
+  const compromisoSrc = src.compromiso && typeof src.compromiso === 'object' ? src.compromiso : {};
+  const lineasSrc = src.lineas && typeof src.lineas === 'object' ? src.lineas : {};
+  const ctaSrc = src.cta && typeof src.cta === 'object' ? src.cta : {};
+  const contactoSrc = src.contacto && typeof src.contacto === 'object' ? src.contacto : {};
+
+  return {
+    hero: {
+      kicker: str(heroSrc.kicker, d.hero?.kicker),
+      titulo: str(heroSrc.titulo, d.hero?.titulo),
+      lead: str(heroSrc.lead, d.hero?.lead),
+      imagenUrl: str(heroSrc.imagenUrl, d.hero?.imagenUrl),
+      imagenAlt: str(heroSrc.imagenAlt, d.hero?.imagenAlt),
+      imagenCaption: str(heroSrc.imagenCaption, d.hero?.imagenCaption),
+      btnSitioUrl: str(heroSrc.btnSitioUrl, d.hero?.btnSitioUrl),
+      btnSitioLabel: str(heroSrc.btnSitioLabel, d.hero?.btnSitioLabel),
+      btnCursosLabel: str(heroSrc.btnCursosLabel, d.hero?.btnCursosLabel),
+    },
+    quienes: {
+      kicker: str(quienesSrc.kicker, d.quienes?.kicker),
+      titulo: str(quienesSrc.titulo, d.quienes?.titulo),
+      lead: str(quienesSrc.lead, d.quienes?.lead),
+      destacados: normalizarItemsIcono(quienesSrc.destacados, d.quienes?.destacados || [], [
+        'icon',
+        'label',
+        'text',
+      ]),
+      bloques: normalizarItemsIcono(quienesSrc.bloques, d.quienes?.bloques || [], [
+        'icon',
+        'titulo',
+        'texto',
+      ]),
+      enlaceUrl: str(quienesSrc.enlaceUrl, d.quienes?.enlaceUrl),
+      enlaceLabel: str(quienesSrc.enlaceLabel, d.quienes?.enlaceLabel),
+    },
+    mision: str(src.mision, d.mision),
+    vision: str(src.vision, d.vision),
+    compromiso: {
+      kicker: str(compromisoSrc.kicker, d.compromiso?.kicker),
+      titulo: str(compromisoSrc.titulo, d.compromiso?.titulo),
+      texto: str(compromisoSrc.texto, d.compromiso?.texto),
+    },
+    lineas: {
+      kicker: str(lineasSrc.kicker, d.lineas?.kicker),
+      titulo: str(lineasSrc.titulo, d.lineas?.titulo),
+      lead: str(lineasSrc.lead, d.lineas?.lead),
+      items: normalizarItemsIcono(lineasSrc.items, d.lineas?.items || [], ['icon', 'title', 'text']),
+    },
+    cta: {
+      kicker: str(ctaSrc.kicker, d.cta?.kicker),
+      titulo: str(ctaSrc.titulo, d.cta?.titulo),
+      texto: str(ctaSrc.texto, d.cta?.texto),
+      btnRegistro: str(ctaSrc.btnRegistro, d.cta?.btnRegistro),
+      btnServicios: str(ctaSrc.btnServicios, d.cta?.btnServicios),
+    },
+    contacto: {
+      kicker: str(contactoSrc.kicker, d.contacto?.kicker),
+      titulo: str(contactoSrc.titulo, d.contacto?.titulo),
+      lead: str(contactoSrc.lead, d.contacto?.lead),
+      sedeNota: str(contactoSrc.sedeNota, d.contacto?.sedeNota),
+    },
   };
 }
 

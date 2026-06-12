@@ -1,29 +1,29 @@
 <div class="ple">
   <div class="ple-toolbar">
     <p class="av-muted">
-      Edite las secciones del landing público (inicio del portal). Los cursos del catálogo siguen administrándose en la pestaña Cursos.
+      Toque una sección para editarla. Los cursos del catálogo se administran en <strong>Aula virtual → Cursos</strong>.
     </p>
-    <button type="button" class="av-btn av-btn--ghost" (click)="restaurarDefaults()">Restaurar textos por defecto</button>
+    <button type="button" class="av-btn av-btn--ghost" (click)="restaurarDefaults()">Volver a textos originales</button>
   </div>
 
   <div class="ple-nav">
     @for (b of [
-      { id: 'general', label: 'General y SEO' },
-      { id: 'hero', label: 'Hero y botones' },
-      { id: 'info', label: 'Tarjetas contacto' },
-      { id: 'nav', label: 'Menú superior' },
+      { id: 'general', label: 'Textos generales' },
+      { id: 'hero', label: 'Botones del banner' },
+      { id: 'info', label: 'Tarjetas de contacto' },
+      { id: 'nav', label: 'Nombres del menú' },
       { id: 'ofertas', label: 'Qué ofrecemos' },
       { id: 'beneficios', label: 'Beneficios' },
-      { id: 'servicios', label: 'Servicios empresa' },
-      { id: 'valores', label: 'Valores' },
+      { id: 'servicios', label: 'Servicios' },
+      { id: 'valores', label: 'Por qué elegirnos' },
       { id: 'testimonios', label: 'Testimonios' },
-      { id: 'cursos', label: 'Catálogo' },
-      { id: 'carreras', label: 'Carreras' },
-      { id: 'pasos', label: 'Pasos' },
-      { id: 'faq', label: 'FAQ' },
-      { id: 'pilares', label: 'Pilares' },
+      { id: 'cursos', label: 'Sección cursos' },
+      { id: 'carreras', label: 'Carreras técnicas' },
+      { id: 'pasos', label: 'Cómo matricularse' },
+      { id: 'faq', label: 'Preguntas frecuentes' },
+      { id: 'pilares', label: 'Capacitación' },
       { id: 'footer', label: 'Pie de página' },
-      { id: 'catalogo', label: 'Catálogo / tienda' }
+      { id: 'catalogo', label: 'Página de cursos/tienda' }
     ]; track b.id) {
       <button type="button" class="ple-nav-btn" [class.active]="bloque() === b.id" (click)="toggleBloque(b.id)">
         {{ b.label }}

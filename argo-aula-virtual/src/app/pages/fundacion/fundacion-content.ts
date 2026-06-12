@@ -72,3 +72,55 @@ export const FUNDACION_SERVICIOS_DESTACADOS = [
     text: 'Educación vial en campo, actividades experienciales y cultura de prevención.',
   },
 ];
+
+/** Contenido editable vía ERP (landing.fundacion). */
+export const FUNDACION_LANDING_DEFAULTS = {
+  hero: {
+    kicker: '🛣️ Seguridad vial con calidez humana',
+    titulo: '',
+    lead:
+      'Llevamos la educación vial al campo y al aula virtual. En Villavicencio, el Meta y Colombia trabajamos para que más personas circulen con seguridad.',
+    imagenUrl: '/images/fundacion-equipo.png',
+    imagenAlt: 'Equipo institucional en campo',
+    imagenCaption: 'Nuestro equipo en acción',
+    btnSitioUrl: FUNDACION_SITIO_URL,
+    btnSitioLabel: 'Sitio institucional ↗',
+    btnCursosLabel: 'Ver cursos virtuales',
+  },
+  quienes: {
+    kicker: 'Conócenos',
+    titulo: '¿Quiénes somos?',
+    lead: FUNDACION_QUIENES_LEAD,
+    destacados: [...FUNDACION_QUIENES_DESTACADOS],
+    bloques: FUNDACION_QUIENES_BLOQUES.map((b) => ({ ...b })),
+    enlaceUrl: FUNDACION_SITIO_URL,
+    enlaceLabel: 'Más en nuestro sitio web ↗',
+  },
+  mision: FUNDACION_MISION,
+  vision: FUNDACION_VISION,
+  compromiso: {
+    kicker: '💛 En la vía, la vida primero',
+    titulo: 'Nuestro compromiso',
+    texto: FUNDACION_COMPROMISO,
+  },
+  lineas: {
+    kicker: 'Lo que ofrecemos',
+    titulo: 'Líneas de trabajo',
+    lead: 'Capacitación, consultoría y herramientas para empresas, entidades y comunidad.',
+    items: [...FUNDACION_SERVICIOS_DESTACADOS],
+  },
+  cta: {
+    kicker: '🎓 Aprende con nosotros',
+    titulo: '¡Empieza tu capacitación!',
+    texto:
+      'Cursos virtuales, programas técnicos y certificación en seguridad vial — estudia a tu ritmo desde donde estés.',
+    btnRegistro: 'Crear cuenta',
+    btnServicios: 'Servicios para empresas',
+  },
+  contacto: {
+    kicker: '📍 Escríbenos',
+    titulo: 'Hablemos',
+    lead: 'Con gusto te atendemos.',
+    sedeNota: FUNDACION_CONTACTO.sedeNota,
+  },
+};

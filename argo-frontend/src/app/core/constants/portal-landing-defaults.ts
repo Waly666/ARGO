@@ -1,4 +1,11 @@
 /** Espejo de argo-backend/src/constants/aulaVirtualLandingDefaults.js */
+import {
+  FUNDACION_LANDING_DEFAULTS,
+  mergeFundacionLanding,
+  PortalFundacionLanding,
+} from './fundacion-landing-defaults';
+
+export type { PortalFundacionLanding };
 export interface LandingItemIcon {
   icon: string;
   title: string;
@@ -109,6 +116,7 @@ export interface PortalLandingConfig {
     campanas: string[];
   };
   footerServicios: string[];
+  fundacion: PortalFundacionLanding;
 }
 
 export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
@@ -440,6 +448,7 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     'Estudios de tránsito',
     'Planes de movilidad sostenible y segura',
   ],
+  fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)) as PortalFundacionLanding,
 };
 
 function mergeServiciosItems(
@@ -512,5 +521,6 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       campanas: raw.pilares?.campanas?.length ? raw.pilares.campanas : d.pilares.campanas,
     },
     footerServicios: raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
+    fundacion: mergeFundacionLanding(raw.fundacion),
   };
 }

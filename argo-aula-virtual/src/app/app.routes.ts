@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 
+import { portalPageGuard } from './core/portal-page.guard';
+
 export const routes: Routes = [
   {
     path: '',
@@ -12,11 +14,13 @@ export const routes: Routes = [
       },
       {
         path: 'tienda',
+        canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/cursos/cursos.component').then((m) => m.CursosComponent),
         data: { modo: 'tienda' },
       },
       {
         path: 'cursos',
+        canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/cursos/cursos.component').then((m) => m.CursosComponent),
         data: { modo: 'cursos' },
       },
@@ -31,15 +35,18 @@ export const routes: Routes = [
       },
       {
         path: 'acerca',
+        canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/acerca/acerca.component').then((m) => m.AcercaComponent),
       },
       {
         path: 'fundacion',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/fundacion/fundacion.component').then((m) => m.FundacionComponent),
       },
       {
         path: 'consulta-certificados',
+        canActivate: [portalPageGuard],
         loadComponent: () =>
           import('./pages/consulta-certificados/consulta-certificados.component').then(
             (m) => m.ConsultaCertificadosComponent,

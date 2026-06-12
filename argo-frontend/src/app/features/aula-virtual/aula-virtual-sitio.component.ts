@@ -5,13 +5,14 @@ import { RouterLink } from '@angular/router';
 
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
-import { PortalLandingEditorComponent } from './portal-landing-editor.component';
+import { mergePortalSiteDefaults } from '../../core/constants/portal-site-defaults';
+import { PortalSiteBuilderComponent } from './portal-site-builder.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'argo-aula-virtual-sitio',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PortalLandingEditorComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PortalSiteBuilderComponent],
   templateUrl: './aula-virtual-sitio.component.html',
   styleUrl: './aula-virtual-sitio.component.scss',
 })
@@ -34,6 +35,7 @@ export class AulaVirtualSitioComponent implements OnInit {
     heroSubtitulo: '',
     acercaDeHtml: '',
     landing: mergePortalLanding(PORTAL_LANDING_DEFAULTS),
+    site: mergePortalSiteDefaults(),
   };
 
   saving = signal(false);
@@ -45,6 +47,7 @@ export class AulaVirtualSitioComponent implements OnInit {
       next: (p) => {
         Object.assign(this.portalForm, p);
         this.portalForm.landing = mergePortalLanding(p.landing);
+        this.portalForm.site = mergePortalSiteDefaults(p.site);
       },
       error: () => this.toast('No se pudo cargar la configuración del sitio', true),
     });
@@ -56,8 +59,9 @@ export class AulaVirtualSitioComponent implements OnInit {
       next: (res) => {
         Object.assign(this.portalForm, res.config);
         this.portalForm.landing = mergePortalLanding(res.config.landing);
+        this.portalForm.site = mergePortalSiteDefaults(res.config.site);
         this.saving.set(false);
-        this.toast(res.message || 'Sitio guardado');
+        this.toast(res.message || 'Sitio publicado');
       },
       error: (e) => {
         this.saving.set(false);

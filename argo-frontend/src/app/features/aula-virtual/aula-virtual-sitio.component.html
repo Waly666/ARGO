@@ -1,15 +1,17 @@
-<section class="av-page av-page--sitio">
+<section class="av-page av-page--sitio av-page--builder">
   <header class="av-head">
     <div class="av-head-main">
       <p class="av-kicker">Aula virtual</p>
-      <h1>Editor del sitio web público</h1>
+      <h1>Editor de su sitio web</h1>
       <p>
-        Configure aquí <strong>todos los textos</strong> del portal (inicio, menú, pie de página, secciones, FAQ, SEO).
-        Los cursos del catálogo se administran en <a routerLink="/app/aula-virtual">Aula virtual → Cursos</a>.
+        Cambie textos, colores y páginas <strong>sin saber programar</strong>.
+        Use la <strong>Guía rápida</strong> a la izquierda y mire la vista previa a la derecha.
+        Cuando termine, pulse <strong>Publicar cambios</strong> al final.
+        Los cursos se administran en <a routerLink="/app/aula-virtual">Aula virtual → Cursos</a>.
       </p>
     </div>
     <div class="av-head-actions">
-      <a class="av-btn av-btn--ghost" [href]="portalUrl" target="_blank" rel="noopener">Vista previa del portal ↗</a>
+      <a class="av-btn av-btn--ghost" [href]="portalUrl" target="_blank" rel="noopener">Vista previa ↗</a>
       <a class="av-btn av-btn--ghost" routerLink="/app/aula-virtual">← Cursos y usuarios</a>
     </div>
   </header>
@@ -18,43 +20,15 @@
     <p class="av-toast" [class.av-toast--err]="err()">{{ m }}</p>
   }
 
-  <section class="av-panel">
-    <h2>Hero y página Acerca de</h2>
-    <div class="av-field">
-      <label>Título principal (hero)</label>
-      <input type="text" [(ngModel)]="portalForm.heroTitulo" />
-    </div>
-    <div class="av-field">
-      <label>Subtítulo hero</label>
-      <textarea rows="2" [(ngModel)]="portalForm.heroSubtitulo"></textarea>
-    </div>
-    <div class="av-field">
-      <label>Texto página Acerca de</label>
-      <textarea rows="6" [(ngModel)]="portalForm.acercaDeHtml"></textarea>
-    </div>
-    <div class="av-field">
-      <label>Correo destino — formulario de contacto</label>
-      <input
-        type="email"
-        [(ngModel)]="portalForm.emailContacto"
-        placeholder="contacto@finstruvial.edu.co"
-      />
-      <span class="av-muted av-field-hint">
-        Formulario en Fundación y Acerca de. Si está vacío, se usa el correo del portal o el configurado en Recibos.
-      </span>
-    </div>
-  </section>
+  <argo-portal-site-builder [portalForm]="portalForm" [portalUrl]="portalUrl" />
 
-  @if (portalForm.landing; as landing) {
-    <section class="av-panel">
-      <h2>Contenido del landing y navegación</h2>
-      <argo-portal-landing-editor [landing]="landing" />
-    </section>
-  }
-
-  <div class="av-save-bar">
-    <button type="button" class="av-btn av-btn--primary" [disabled]="saving()" (click)="guardar()">
-      {{ saving() ? 'Guardando…' : 'Guardar todo el sitio' }}
+  <div class="av-save-bar av-save-bar--builder">
+    <div class="av-save-bar__text">
+      <strong>¿Listo?</strong>
+      <span>Los visitantes solo verán sus cambios después de publicar.</span>
+    </div>
+    <button type="button" class="av-btn av-btn--primary av-btn--publish" [disabled]="saving()" (click)="guardar()">
+      {{ saving() ? 'Publicando…' : '✓ Publicar cambios en el sitio' }}
     </button>
   </div>
 </section>

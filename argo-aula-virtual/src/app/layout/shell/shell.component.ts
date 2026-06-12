@@ -6,6 +6,8 @@ import { filter } from 'rxjs';
 import { AulaApiService } from '../../core/aula-api.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalBrandingService } from '../../core/portal-branding.service';
+import { etiquetaPagina, paginaActiva, type PortalPaginaKey } from '../../core/portal-site';
+import { PortalThemeService } from '../../core/portal-theme.service';
 import { PortalConfig } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
@@ -50,6 +52,7 @@ export interface FooterServicioEnlace {
 export class ShellComponent implements OnInit {
   private api = inject(AulaApiService);
   private branding = inject(PortalBrandingService);
+  private theme = inject(PortalThemeService);
   private router = inject(Router);
   auth = inject(PortalAuthService);
 
@@ -62,16 +65,32 @@ export class ShellComponent implements OnInit {
 
   footerServicios = computed(() => this.landing().footerServicios);
 
-  footerEnlaces = computed((): FooterEnlace[] => {
+  navItems = computed(() => {
+    const cfg = this.config();
     const nav = this.landing().nav;
+    const items: { key: PortalPaginaKey; route: string; label: string }[] = [
+      { key: 'home', route: '/', label: etiquetaPagina(cfg, 'home', nav.home) },
+      { key: 'tienda', route: '/tienda', label: etiquetaPagina(cfg, 'tienda', nav.tienda) },
+      { key: 'cursos', route: '/cursos', label: etiquetaPagina(cfg, 'cursos', nav.cursos) },
+      { key: 'aula', route: '/aula', label: etiquetaPagina(cfg, 'aula', nav.aula) },
+      { key: 'fundacion', route: '/fundacion', label: etiquetaPagina(cfg, 'fundacion', nav.fundacion) },
+      {
+        key: 'consultaCertificados',
+        route: '/consulta-certificados',
+        label: etiquetaPagina(cfg, 'consultaCertificados', nav.consultaCertificados),
+      },
+      { key: 'acerca', route: '/acerca', label: etiquetaPagina(cfg, 'acerca', nav.acerca) },
+    ];
+    return items.filter((i) => paginaActiva(cfg, i.key));
+  });
+
+  footerEnlaces = computed((): FooterEnlace[] => {
+    const pageLinks: FooterEnlace[] = this.navItems().map((i) => ({
+      label: i.label,
+      route: i.route,
+    }));
     return [
-      { label: nav.home, route: '/' },
-      { label: nav.cursos, route: '/cursos' },
-      { label: nav.tienda, route: '/tienda' },
-      { label: nav.aula, route: '/aula' },
-      { label: nav.fundacion, route: '/fundacion' },
-      { label: nav.consultaCertificados, route: '/consulta-certificados' },
-      { label: nav.acerca, route: '/acerca' },
+      ...pageLinks,
       { label: 'Servicios', route: '/', fragment: 'servicios-empresa' },
       { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
       { label: 'Preguntas frecuentes', route: '/', fragment: 'preguntas-frecuentes' },
@@ -96,6 +115,12 @@ export class ShellComponent implements OnInit {
   sitioInstitucionalUrl = FUNDACION_SITIO_URL;
 
   nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
+
+  paginaActivaConsulta = computed(() => paginaActiva(this.config(), 'consultaCertificados'));
+
+  etiquetaConsultaCertificados = computed(() =>
+    etiquetaPagina(this.config(), 'consultaCertificados', this.landing().nav.consultaCertificados),
+  );
 
   /** Texto junto al logo en el header (marca corta). */
   brandMarca = computed(() => {
@@ -143,6 +168,7 @@ export class ShellComponent implements OnInit {
       next: (c) => {
         this.config.set(c);
         this.branding.apply(c);
+        this.theme.apply(c);
       },
       error: () => {
         const fallback = {
@@ -153,6 +179,7 @@ export class ShellComponent implements OnInit {
         };
         this.config.set(fallback);
         this.branding.apply(fallback);
+        this.theme.apply(fallback);
       },
     });
   }

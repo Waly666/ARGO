@@ -27,13 +27,14 @@
       [class.topbar-menu--open]="menuAbierto()"
     >
       <nav class="nav">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="cerrarMenu()">{{ landing().nav.home }}</a>
-        <a routerLink="/tienda" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.tienda }}</a>
-        <a routerLink="/cursos" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.cursos }}</a>
-        <a routerLink="/aula" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.aula }}</a>
-        <a routerLink="/fundacion" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.fundacion }}</a>
-        <a routerLink="/consulta-certificados" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.consultaCertificados }}</a>
-        <a routerLink="/acerca" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.acerca }}</a>
+        @for (item of navItems(); track item.key) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="item.route === '/' ? { exact: true } : { exact: false }"
+            (click)="cerrarMenu()"
+          >{{ item.label }}</a>
+        }
       </nav>
       <div class="actions">
         @if (auth.isLoggedIn()) {
@@ -57,13 +58,14 @@
   >
     <div class="container topbar-menu-inner">
       <nav class="nav">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="cerrarMenu()">{{ landing().nav.home }}</a>
-        <a routerLink="/tienda" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.tienda }}</a>
-        <a routerLink="/cursos" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.cursos }}</a>
-        <a routerLink="/aula" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.aula }}</a>
-        <a routerLink="/fundacion" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.fundacion }}</a>
-        <a routerLink="/consulta-certificados" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.consultaCertificados }}</a>
-        <a routerLink="/acerca" routerLinkActive="active" (click)="cerrarMenu()">{{ landing().nav.acerca }}</a>
+        @for (item of navItems(); track item.key) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="item.route === '/' ? { exact: true } : { exact: false }"
+            (click)="cerrarMenu()"
+          >{{ item.label }}</a>
+        }
       </nav>
       <div class="actions">
         @if (auth.isLoggedIn()) {
@@ -203,8 +205,10 @@
         <a routerLink="/login">{{ landing().nav.acceder }}</a>
         <span aria-hidden="true">·</span>
         <a routerLink="/registro">{{ landing().nav.registrarse }}</a>
-        <span aria-hidden="true">·</span>
-        <a routerLink="/consulta-certificados">{{ landing().nav.consultaCertificados }}</a>
+        @if (paginaActivaConsulta()) {
+          <span aria-hidden="true">·</span>
+          <a routerLink="/consulta-certificados">{{ etiquetaConsultaCertificados() }}</a>
+        }
       </nav>
     </div>
   </div>

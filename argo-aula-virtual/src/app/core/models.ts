@@ -1,5 +1,39 @@
 import type { PortalLandingConfig } from './portal-landing';
 
+export interface PortalPaginaConfig {
+  activa: boolean;
+  etiquetaMenu: string;
+  ruta: string;
+}
+
+export interface PortalTemaConfig {
+  colorPrimario: string;
+  colorPrimarioOscuro: string;
+  colorAcento: string;
+  colorFondo: string;
+  colorSuperficie: string;
+  colorTexto: string;
+  colorTextoSecundario: string;
+  fuente: string;
+  urlHero?: string;
+  urlHeroAbsoluta?: string;
+}
+
+export interface PortalSiteConfig {
+  paginas: Record<string, PortalPaginaConfig>;
+  tema: PortalTemaConfig;
+  marca?: {
+    textoCopyright?: string;
+    ocultarMarcaDesarrollador?: boolean;
+    textoPieDesarrollador?: string;
+  };
+  home: {
+    orden: string[];
+    secciones: Record<string, boolean>;
+  };
+  homeSeccionesLabels?: Record<string, string>;
+}
+
 export interface PortalConfig {
   nombreCea: string;
   nit?: string;
@@ -17,6 +51,7 @@ export interface PortalConfig {
   emailVerificacionRegistro?: boolean;
   turnstileSiteKey?: string;
   formularioContactoActivo?: boolean;
+  site?: PortalSiteConfig;
 }
 
 export type NivelVirtual = 'PRINCIPIANTE' | 'INTERMEDIO' | 'AVANZADO';

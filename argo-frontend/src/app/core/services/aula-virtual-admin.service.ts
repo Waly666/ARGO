@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { PortalLandingConfig } from '../constants/portal-landing-defaults';
+import { PortalSiteConfig } from '../constants/portal-site-defaults';
 
 export type NivelVirtual = 'PRINCIPIANTE' | 'INTERMEDIO' | 'AVANZADO';
 export const NIVELES_VIRTUAL: NivelVirtual[] = ['PRINCIPIANTE', 'INTERMEDIO', 'AVANZADO'];
@@ -79,6 +80,7 @@ export interface PortalAulaConfig {
   landing?: PortalLandingConfig;
   telefonoWhatsapp?: string;
   emailContacto?: string;
+  site?: PortalSiteConfig;
   urlLogo?: string;
   urlLogoAbsoluta?: string | null;
   logoDesdeRecibos?: boolean;
