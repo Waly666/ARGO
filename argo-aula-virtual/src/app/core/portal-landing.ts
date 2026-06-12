@@ -187,7 +187,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   carreras: {
     kicker: 'Titulación',
     titulo: 'Carreras técnicas en seguridad vial',
-    lead: 'Técnico laboral por competencias — información de referencia.',
+    lead: 'Técnicos laborales por competencias con formación presencial y titulación avalada institucionalmente.',
     items: [...CARRERAS_TECNICAS],
   },
   pilares: {

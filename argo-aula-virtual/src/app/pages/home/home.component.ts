@@ -96,15 +96,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   carrerasResumen = computed(() => {
     const items = this.landing().carreras.items;
     if (!items.length) {
-      return { total: 0, horasMin: 0, horasMax: 0, semestresMax: 0 };
+      return { total: 0, horasMin: 0, horasMax: 0 };
     }
     const horas = items.map((i) => i.horas);
-    const semestres = items.map((i) => i.semestres);
     return {
       total: items.length,
       horasMin: Math.min(...horas),
       horasMax: Math.max(...horas),
-      semestresMax: Math.max(...semestres),
     };
   });
 
