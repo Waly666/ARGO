@@ -2,6 +2,7 @@ const FacturaElectronica = require('../models/FacturaElectronica');
 const NotaCredito = require('../models/NotaCredito');
 const { obtenerConfigFacturacionInterno } = require('./configFacturacion');
 const { obtenerConfigRecibo } = require('./configRecibo');
+const { fmtFechaSolo } = require('../utils/timezoneColombia');
 const { esc, fmtMoney, fmtFecha } = require('./reciboHtmlShared');
 const { ESTADO_ANULADA } = require('../constants/facturacionElectronica');
 const {
@@ -21,9 +22,7 @@ function num(v) {
 
 function fmtFechaDoc(d) {
   if (!d) return '—';
-  const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return '—';
-  return dt.toLocaleDateString('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  return fmtFechaSolo(d) || '—';
 }
 
 async function emisorDesdeConfig(idSede) {

@@ -3,6 +3,7 @@ const { clasificarPrograma } = require('./clasificacionCertificado');
 const { numDocToString } = require('../utils/numDoc');
 const { resolverLayout, resolverQr, CAMPOS_IDS } = require('./certificadoLayout');
 const { fsToPrintSizes } = require('../utils/certificadoTipografia');
+const { fmtFechaSolo: fmtFecha } = require('../utils/timezoneColombia');
 
 function esc(s) {
   return String(s ?? '')
@@ -10,16 +11,6 @@ function esc(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-function fmtFecha(d) {
-  if (!d) return '';
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return '';
-  const dd = String(dt.getDate()).padStart(2, '0');
-  const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const yyyy = dt.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
 }
 
 function fechaIso(d) {

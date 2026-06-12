@@ -6,19 +6,14 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+const { fmtFecha } = require('../utils/timezoneColombia');
+
 function fmtMoney(n) {
   return Number(n || 0).toLocaleString('es-CO', {
     style: 'currency',
     currency: 'COP',
     maximumFractionDigits: 0,
   });
-}
-
-function fmtFecha(d) {
-  if (!d) return '';
-  const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return '';
-  return dt.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function lineaHtml(ancho = 32) {

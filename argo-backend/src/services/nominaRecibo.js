@@ -2,6 +2,7 @@ const LiquidacionNomina = require('../models/LiquidacionNomina');
 const PeriodoNomina = require('../models/PeriodoNomina');
 const Empleado = require('../models/Empleado');
 const { obtenerConfigRecibo } = require('./configRecibo');
+const { fmtFechaSolo } = require('../utils/timezoneColombia');
 
 function fmtMoney(n) {
   return Number(n || 0).toLocaleString('es-CO', {
@@ -78,7 +79,7 @@ async function generarReciboHtml(idPeriodo, empleadoId) {
   <p class="empresa">NIT ${esc(config.nit || '')} · Colilla de pago</p>
   <div class="meta">
     <div><strong>Período:</strong> ${esc(periodo.nombre)}</div>
-    <div><strong>Fecha liquidación:</strong> ${new Date(liq.fechaLiquidacion).toLocaleDateString('es-CO')}</div>
+    <div><strong>Fecha liquidación:</strong> ${fmtFechaSolo(liq.fechaLiquidacion)}</div>
     <div><strong>Empleado:</strong> ${esc(det.empleadoNombre)}</div>
     <div><strong>Documento:</strong> ${esc(det.tipoDocumento)} ${esc(det.numeroDocumento)}</div>
     <div><strong>EPS:</strong> ${esc(det.administradoras?.eps || '—')}</div>
