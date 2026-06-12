@@ -50,11 +50,17 @@ function buildZip(subdir) {
     limits: { fileSize: ZIP_MAX_MB * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
       const okZip =
         ext === '.zip' ||
-        file.mimetype === 'application/zip' ||
-        file.mimetype === 'application/x-zip-compressed';
-      if (!okZip) return cb(new Error('Solo se permiten archivos ZIP'));
+        mime === 'application/zip' ||
+        mime === 'application/x-zip-compressed' ||
+        mime === 'application/octet-stream';
+      if (!okZip) {
+        const err = new Error('Solo se permiten archivos .zip');
+        err.status = 400;
+        return cb(err);
+      }
       cb(null, true);
     },
   });

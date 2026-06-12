@@ -428,7 +428,7 @@ export class AulaVirtualAdminComponent implements OnInit {
 
         input.value = '';
 
-        this.toast(e?.error?.message || 'Error al subir ZIP', true);
+        this.toast(this.mensajeErrorSubida(e) || 'Error al subir ZIP', true);
 
       },
 
@@ -809,6 +809,21 @@ export class AulaVirtualAdminComponent implements OnInit {
 
     setTimeout(() => this.msg.set(null), 4000);
 
+  }
+
+  private mensajeErrorSubida(err: unknown): string | null {
+    const e = err as { status?: number; error?: { message?: string } | string; message?: string };
+    if (typeof e?.error === 'string' && e.error.trim()) return e.error;
+    if (e?.error && typeof e.error === 'object' && e.error.message) return e.error.message;
+    if (e?.message && !String(e.message).startsWith('Http failure')) return e.message;
+    if (e?.status === 0) {
+      return 'No hubo respuesta del servidor (red, timeout o subida cancelada). Intente de nuevo.';
+    }
+    if (e?.status === 413) return 'El ZIP supera el tamaño máximo permitido en el servidor.';
+    if (e?.status === 502 || e?.status === 504) {
+      return 'El servidor cortó la subida (timeout o proxy). Pruebe un ZIP más liviano o reintente.';
+    }
+    return null;
   }
 
 }

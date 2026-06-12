@@ -73,12 +73,45 @@ exports.guardarConfigCurso = async (req, res, next) => {
 
 exports.subirPaqueteZip = async (req, res, next) => {
   try {
-    if (!req.file) return res.status(400).json({ message: 'Suba un archivo ZIP con el curso' });
-    const { rel, abs } = asegurarDirPaquete(req.params.id);
+    if (!req.file) {
+      return res.status(400).json({
+        message:
+          'No llegó el archivo ZIP al servidor. Compruebe que el archivo tenga extensión .zip y que no supere el límite de tamaño.',
+      });
+    }
 
-    const zip = new AdmZip(req.file.path);
-    zip.extractAllTo(abs, true);
-    fs.unlinkSync(req.file.path);
+    const { rel, abs } = asegurarDirPaquete(req.params.id);
+    const zipPath = req.file.path;
+
+    try {
+      const zip = new AdmZip(zipPath);
+      zip.extractAllTo(abs, true);
+    } catch (extractErr) {
+      console.error('[ARGO] Error extrayendo ZIP curso virtual:', extractErr);
+      try {
+        fs.unlinkSync(zipPath);
+      } catch (_e) {
+        /* ignore */
+      }
+      const code = extractErr?.code;
+      if (code === 'ENOSPC') {
+        return res.status(507).json({ message: 'No hay espacio en disco en el servidor para extraer el curso.' });
+      }
+      if (code === 'EACCES' || code === 'EPERM') {
+        return res.status(500).json({
+          message: 'Sin permisos para escribir en la carpeta del curso en el servidor (uploads).',
+        });
+      }
+      return res.status(400).json({
+        message: `No se pudo extraer el ZIP: ${extractErr.message || 'archivo dañado o formato no válido'}`,
+      });
+    }
+
+    try {
+      fs.unlinkSync(zipPath);
+    } catch (_e) {
+      /* ignore */
+    }
 
     const indexRel = detectarIndexHtml(abs, 'index.html');
     if (!paqueteListo(abs, indexRel)) {
@@ -112,6 +145,7 @@ exports.subirPaqueteZip = async (req, res, next) => {
       storagePrefix: bridge.storagePrefix || config.storagePrefix || null,
     });
   } catch (e) {
+    console.error('[ARGO] subirPaqueteZip:', e);
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
