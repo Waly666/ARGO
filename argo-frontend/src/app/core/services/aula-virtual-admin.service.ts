@@ -226,10 +226,17 @@ export class AulaVirtualAdminService {
     return this.http.post<MatriculaVirtualAdminRes>(`${this.base}/cursos/${idPrograma}/matricular`, body);
   }
 
-  reintegrarBridge(idPrograma: string | number): Observable<{ message: string; bridgeInyectado: number; bridgePaginas: number }> {
-    return this.http.post<{ message: string; bridgeInyectado: number; bridgePaginas: number }>(
-      `${this.base}/cursos/${idPrograma}/reintegrar-bridge`,
-      {},
-    );
+  reintegrarBridge(idPrograma: string | number): Observable<{
+    message: string;
+    bridgeInyectado: number;
+    bridgePaginas: number;
+    storagePrefix?: string | null;
+  }> {
+    return this.http.post<{
+      message: string;
+      bridgeInyectado: number;
+      bridgePaginas: number;
+      storagePrefix?: string | null;
+    }>(`${this.base}/cursos/${idPrograma}/reintegrar-bridge`, {});
   }
 }

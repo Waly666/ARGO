@@ -14,7 +14,7 @@ import {
 } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
-import { resolveUploadUrl } from '../../core/upload-url.util';
+import { resolveUploadUrl, resolveUploadsPath } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
 
 export type PanelAula = 'tablero' | 'cursos' | 'puntajes' | 'certificados' | 'perfil';
@@ -467,12 +467,9 @@ export class AulaComponent implements OnInit, OnDestroy {
   }
 
   private resolverPlayerUrl(raw: string): string {
-    const uploadsBase = environment.uploadsUrl.replace(/\/+$/, '');
-    const pathMatch = raw.match(/\/uploads\/(.+)$/i);
-    if (pathMatch) return `${uploadsBase}/${pathMatch[1]}`;
-    if (raw.startsWith('/uploads/')) return `${uploadsBase}${raw.slice('/uploads'.length)}`;
-    if (raw.startsWith('http')) return raw;
-    return `${uploadsBase}/${raw.replace(/^\/+/, '')}`;
+    const rel = resolveUploadsPath(raw);
+    if (rel) return rel;
+    return raw.startsWith('/') ? raw : `/${raw.replace(/^\/+/, '')}`;
   }
 
   private enviarInitAlIframe() {

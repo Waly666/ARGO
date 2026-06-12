@@ -107,17 +107,19 @@ function inyectarBridgeEnArchivo(filePath, storagePrefix = null) {
     }
   }
 
-  if (html.includes(BRIDGE_MARKER) && html.includes('src="/api/aula-virtual/argo-bridge.js"')) {
-    return changed;
-  }
-  if (html.includes(BRIDGE_MARKER)) {
-    html = html.replace(/<script[^>]*argo-bridge\.js[^>]*>\s*<\/script>\s*/gi, '');
-  }
-  const scriptTag = `<script src="${bridgeScriptUrl()}"></script>`;
-  const withScript = inyectarScriptEnHtml(html, scriptTag);
-  if (withScript !== html) {
-    html = withScript;
-    changed = true;
+  const tieneBridgeOk =
+    html.includes(BRIDGE_MARKER) && html.includes('src="/api/aula-virtual/argo-bridge.js"');
+
+  if (!tieneBridgeOk) {
+    if (html.includes(BRIDGE_MARKER)) {
+      html = html.replace(/<script[^>]*argo-bridge\.js[^>]*>\s*<\/script>\s*/gi, '');
+    }
+    const scriptTag = `<script src="${bridgeScriptUrl()}"></script>`;
+    const withScript = inyectarScriptEnHtml(html, scriptTag);
+    if (withScript !== html) {
+      html = withScript;
+      changed = true;
+    }
   }
 
   if (changed) fs.writeFileSync(filePath, html, 'utf8');

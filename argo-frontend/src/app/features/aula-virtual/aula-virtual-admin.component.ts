@@ -385,7 +385,9 @@ export class AulaVirtualAdminComponent implements OnInit {
     this.svc.reintegrarBridge(sel.idPrograma).subscribe({
       next: (res) => {
         this.saving.set(false);
-        this.toast(res.message);
+        const extra = res.storagePrefix ? ` Prefijo: ${res.storagePrefix}.` : '';
+        this.toast(`${res.message}${extra}`);
+        this.refrescarLista();
       },
       error: (e) => {
         this.saving.set(false);

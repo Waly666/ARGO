@@ -1,20 +1,45 @@
 import { environment } from '../../environments/environment';
 
-/** Convierte ruta de uploads del API a URL absoluta del portal (8085). */
+/** Normaliza rutas /uploads/… a URL servible por el portal (mismo origen + proxy/nginx). */
 export function resolveUploadUrl(raw?: string | null): string | null {
   const r = String(raw || '').trim();
   if (!r) return null;
 
-  const uploadsBase = environment.uploadsUrl.replace(/\/+$/, '');
-
-  if (/^https?:\/\//i.test(r)) {
-    const m = r.match(/\/uploads\/(.+)$/i);
-    return m ? `${uploadsBase}/${m[1]}` : r;
+  const uploadsPath = extractUploadsPath(r);
+  if (!uploadsPath) {
+    if (/^https?:\/\//i.test(r)) return r;
+    return null;
   }
 
-  if (r.startsWith('/uploads/')) {
-    return `${uploadsBase}${r.slice('/uploads'.length)}`;
+  const base = environment.uploadsUrl.replace(/\/+$/, '');
+  if (!base || base.startsWith('/')) {
+    return `${base}/${uploadsPath}`.replace(/\/+/g, '/');
+  }
+  return `${base}/${uploadsPath}`;
+}
+
+/** Devuelve la ruta relativa /uploads/… para iframe y assets del curso. */
+export function resolveUploadsPath(raw?: string | null): string | null {
+  const uploadsPath = extractUploadsPath(String(raw || '').trim());
+  if (!uploadsPath) return null;
+  return `/uploads/${uploadsPath}`.replace(/\/+/g, '/');
+}
+
+function extractUploadsPath(raw: string): string | null {
+  if (!raw) return null;
+
+  if (/^https?:\/\//i.test(raw)) {
+    const m = raw.match(/\/uploads\/(.+)$/i);
+    return m ? m[1] : null;
   }
 
-  return `${uploadsBase}/${r.replace(/^\/+/, '')}`;
+  if (raw.startsWith('/uploads/')) {
+    return raw.slice('/uploads/'.length);
+  }
+
+  if (raw.startsWith('uploads/')) {
+    return raw.slice('uploads/'.length);
+  }
+
+  return raw.replace(/^\/+/, '') || null;
 }

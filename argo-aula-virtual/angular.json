@@ -76,7 +76,13 @@
                   "maximumError": "128kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -89,7 +95,8 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "port": 4202
+            "port": 4202,
+            "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
             "production": {
