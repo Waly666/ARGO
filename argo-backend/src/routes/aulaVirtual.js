@@ -15,6 +15,7 @@ const { requireTurnstile } = require('../middleware/turnstile');
 const router = Router();
 
 /** Público — portal estudiante */
+router.get('/sitemap.xml', ctrl.sitemapXml);
 router.get('/config', ctrl.configPublica);
 router.get('/catalogos/tipos-doc', ctrl.catalogosTiposDoc);
 router.get('/catalogos/generos', ctrl.catalogosGeneros);

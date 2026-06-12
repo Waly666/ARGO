@@ -28,6 +28,7 @@ const {
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
 const { enviarContactoPortal } = require('../services/aulaVirtualContacto');
+const { generarSitemapXml } = require('../services/aulaVirtualSitemap');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled, portalEmailVerifyEnabled } = require('../config/security');
 const { logAuthIntento } = require('../services/authSecurityLog');
@@ -320,6 +321,17 @@ exports.enviarContacto = async (req, res, next) => {
     res.json(result);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.sitemapXml = async (req, res, next) => {
+  try {
+    const xml = await generarSitemapXml(req);
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (e) {
     next(e);
   }
 };
