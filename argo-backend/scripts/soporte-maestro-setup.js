@@ -2,26 +2,34 @@
  * Genera las credenciales de la cuenta de soporte maestro (break-glass).
  *
  * Uso:
- *   node scripts/soporte-maestro-setup.js                 (genera contraseña aleatoria)
- *   node scripts/soporte-maestro-setup.js "MiClaveSegura" (usa la contraseña dada)
- *   node scripts/soporte-maestro-setup.js --user soporte-argo "MiClave"
- *   node scripts/soporte-maestro-setup.js --user soporte "MiClave" --env .env
+ *   node scripts/soporte-maestro-setup.js                       (contraseña aleatoria)
+ *   node scripts/soporte-maestro-setup.js "MiClave"             (usa la contraseña dada)
+ *   node scripts/soporte-maestro-setup.js --user soporte "MiClave"
+ *   node scripts/soporte-maestro-setup.js --user soporte "MiClave" --env ../deploy/.env
  *
  * Produce (todo en la terminal, sin crear archivos): un QR para escanear en
- * Google Authenticator, el secreto TOTP, el hash bcrypt de la contraseña y el
- * bloque .env listo para pegar en el servidor.
+ * Google Authenticator, el secreto TOTP y el bloque .env listo para usar.
  *
  * Con --env <ruta>, escribe/actualiza las líneas SOPORTE_MASTER_* directamente
  * en ese archivo .env (recomendado: evita errores al copiar el secreto a mano).
  *
- * IMPORTANTE: ejecútelo en el servidor, escanee el QR en Google Authenticator.
- * No guarde la contraseña en texto plano en ningún archivo del repositorio.
+ * NOTA sobre Docker: la contraseña se guarda en texto plano (SOPORTE_MASTER_PASSWORD)
+ * porque Docker Compose corrompe los caracteres "$" de un hash bcrypt al cargar el
+ * env_file. El archivo .env ya contiene otros secretos (JWT, Mongo) y está protegido;
+ * el segundo factor obligatorio (TOTP) es la defensa real de esta cuenta.
  */
 const fs = require('fs');
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
 const { generateSecret, generateURI } = require('otplib');
 const QRCode = require('qrcode');
+
+const CLAVES_SOPORTE = [
+  'SOPORTE_MASTER_ENABLED',
+  'SOPORTE_MASTER_USER',
+  'SOPORTE_MASTER_PASSWORD',
+  'SOPORTE_MASTER_PASSWORD_HASH',
+  'SOPORTE_MASTER_TOTP_SECRET',
+];
 
 function parseArgs(argv) {
   const out = { user: 'soporte-argo', password: null, env: null };
@@ -37,7 +45,7 @@ function parseArgs(argv) {
   return out;
 }
 
-/** Escribe/actualiza las líneas SOPORTE_MASTER_* en el archivo .env indicado. */
+/** Reemplaza TODAS las líneas SOPORTE_MASTER_* del .env por el nuevo juego de valores. */
 function actualizarEnv(rutaEnv, valores) {
   let contenido = '';
   try {
@@ -46,16 +54,15 @@ function actualizarEnv(rutaEnv, valores) {
     contenido = '';
   }
   let lineas = contenido.split(/\r?\n/);
-  const claves = Object.keys(valores);
-  lineas = lineas.filter((l) => !claves.some((k) => l.trim().startsWith(`${k}=`)));
+  lineas = lineas.filter((l) => !CLAVES_SOPORTE.some((k) => l.trim().startsWith(`${k}=`)));
   while (lineas.length && lineas[lineas.length - 1].trim() === '') lineas.pop();
-  for (const k of claves) lineas.push(`${k}=${valores[k]}`);
+  for (const [k, v] of Object.entries(valores)) lineas.push(`${k}=${v}`);
   fs.writeFileSync(rutaEnv, lineas.join('\n') + '\n', 'utf8');
 }
 
 function passwordAleatoria() {
-  // 18 caracteres legibles, sin ambigüedades.
-  const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#%+=';
+  // 18 caracteres legibles, sin "$" (Docker Compose lo trata como variable) ni ambigüedades.
+  const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   let p = '';
   const bytes = crypto.randomBytes(18);
   for (let i = 0; i < 18; i++) p += alfabeto[bytes[i] % alfabeto.length];
@@ -70,7 +77,6 @@ async function main() {
   const issuer = process.env.MFA_TOTP_ISSUER || 'ARGO Finstruvial';
   const secret = generateSecret();
   const uri = generateURI({ issuer, label: `${issuer}:${user}`, secret });
-  const hash = await bcrypt.hash(password, 12);
 
   // QR directamente en la terminal (no genera archivos).
   const qrTerminal = await QRCode.toString(uri, { type: 'terminal', small: true });
@@ -88,7 +94,7 @@ async function main() {
   const valoresEnv = {
     SOPORTE_MASTER_ENABLED: 'true',
     SOPORTE_MASTER_USER: user,
-    SOPORTE_MASTER_PASSWORD_HASH: hash,
+    SOPORTE_MASTER_PASSWORD: password,
     SOPORTE_MASTER_TOTP_SECRET: secret,
   };
 
@@ -97,7 +103,9 @@ async function main() {
     linea(`\n✓ Variables SOPORTE_MASTER_* escritas en ${envPath} (sin errores de copiado).`);
     linea('\nPasos:');
     linea(' 1. Escanee el QR de arriba en Google Authenticator (o use el Secreto TOTP a mano).');
-    linea(' 2. Reinicie el backend para que tome el .env (docker compose restart argo-backend, o reinicie pnpm dev).');
+    linea(' 2. Recargue el .env en el backend:');
+    linea('      docker compose up -d --force-recreate argo-backend   (en producción)');
+    linea('      o reinicie pnpm dev                                  (en local)');
     linea(' 3. Guarde la contraseña en su gestor de contraseñas y borre esta salida.');
     linea(' 4. Para deshabilitar el acceso: SOPORTE_MASTER_ENABLED=false (o quite las variables).');
   } else {
@@ -107,8 +115,8 @@ async function main() {
     linea('Pasos:');
     linea(' 1. Escanee el QR de arriba en Google Authenticator (o use el Secreto TOTP a mano).');
     linea(' 2. Copie el bloque COMPLETO y péguelo en el .env (el secreto tiene 32 caracteres).');
-    linea('    Sugerencia: vuelva a correr con  --env .env  para que se escriba solo, sin copiar.');
-    linea(' 3. Reinicie el backend (docker compose restart argo-backend).');
+    linea('    Sugerencia: vuelva a correr con  --env ../deploy/.env  para que se escriba solo.');
+    linea(' 3. Recargue: docker compose up -d --force-recreate argo-backend.');
     linea(' 4. Guarde la contraseña en su gestor de contraseñas y borre esta salida.');
     linea(' 5. Para deshabilitar el acceso: SOPORTE_MASTER_ENABLED=false (o quite las variables).');
   }
