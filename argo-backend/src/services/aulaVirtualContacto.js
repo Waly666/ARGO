@@ -1,5 +1,6 @@
 const { sendMail } = require('./mail');
-const { obtenerConfigAula } = require('./aulaVirtualPortal');
+const { obtenerConfigRecibo } = require('./configRecibo');
+const { obtenerConfigAula, resolverEmailFormularioContacto } = require('./aulaVirtualPortal');
 
 function escHtml(s) {
   return String(s || '')
@@ -15,10 +16,12 @@ function validarEmail(email) {
 }
 
 async function enviarContactoPortal(body) {
-  const aula = await obtenerConfigAula();
-  const destino = validarEmail(aula.emailContacto);
+  const [aula, recibo] = await Promise.all([obtenerConfigAula(), obtenerConfigRecibo()]);
+  const destino = resolverEmailFormularioContacto(aula, recibo);
   if (!destino) {
-    const err = new Error('El formulario de contacto no está configurado. Contacte al CEA por teléfono.');
+    const err = new Error(
+      'El formulario de contacto no está configurado. Indique un correo en Aula virtual o en Recibos.',
+    );
     err.status = 503;
     throw err;
   }

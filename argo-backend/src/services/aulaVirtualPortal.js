@@ -38,6 +38,20 @@ function pickLogo(aula, recibo) {
   };
 }
 
+function validarEmailPortal(email) {
+  const mail = String(email || '').trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? mail : null;
+}
+
+/** Correo donde llegan los mensajes del formulario (contacto → portal → recibos). */
+function resolverEmailFormularioContacto(aula, recibo) {
+  for (const raw of [aula?.emailContacto, aula?.email, recibo?.email]) {
+    const mail = validarEmailPortal(raw);
+    if (mail) return mail;
+  }
+  return null;
+}
+
 function pickEmpresa(aula, recibo) {
   return {
     nombreCea: String(aula.nombreEmpresa || recibo.nombreEmpresa || 'CEA').trim() || 'CEA',
@@ -115,7 +129,7 @@ async function obtenerConfigPortalPublica() {
     heroSubtitulo: aula.heroSubtitulo,
     acercaDeHtml: aula.acercaDeHtml || '',
     landing: mergeLanding(aula.landing),
-    formularioContactoActivo: !!String(aula.emailContacto || '').trim().includes('@'),
+    formularioContactoActivo: !!resolverEmailFormularioContacto(aula, recibo),
   };
 }
 
@@ -124,6 +138,7 @@ module.exports = {
   guardarConfigAula,
   obtenerConfigPortalAdmin,
   obtenerConfigPortalPublica,
+  resolverEmailFormularioContacto,
   pickLogo,
   logoAbsoluto,
   DEFAULTS_AULA,
