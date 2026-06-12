@@ -93,6 +93,21 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n || 0);
   }
 
+  carrerasResumen = computed(() => {
+    const items = this.landing().carreras.items;
+    if (!items.length) {
+      return { total: 0, horasMin: 0, horasMax: 0, semestresMax: 0 };
+    }
+    const horas = items.map((i) => i.horas);
+    const semestres = items.map((i) => i.semestres);
+    return {
+      total: items.length,
+      horasMin: Math.min(...horas),
+      horasMax: Math.max(...horas),
+      semestresMax: Math.max(...semestres),
+    };
+  });
+
   telHref() {
     const digits = this.telefono().replace(/\D/g, '');
     if (!digits) return null;

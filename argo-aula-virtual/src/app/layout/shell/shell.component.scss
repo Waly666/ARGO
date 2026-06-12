@@ -579,8 +579,19 @@
 }
 
 @media (max-width: 900px) {
+  .topbar {
+    z-index: 50;
+  }
+
+  .topbar-inner {
+    position: relative;
+    z-index: 52;
+  }
+
   .menu-toggle {
     display: flex;
+    position: relative;
+    z-index: 53;
   }
 
   .topbar-menu--desktop {
@@ -589,6 +600,8 @@
 
   .topbar-menu--mobile {
     display: block;
+    position: relative;
+    z-index: 51;
     background: rgba(11, 18, 36, 0.98);
     border-bottom: 1px solid var(--av-border);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
@@ -660,7 +673,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 39;
+    z-index: 49;
     border: 0;
     padding: 0;
     margin: 0;

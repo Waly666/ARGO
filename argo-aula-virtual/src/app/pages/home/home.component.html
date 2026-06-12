@@ -390,57 +390,73 @@
 
 
 <!-- Carreras técnicas (referencia Finstruvial) -->
-
-<section class="section" id="carreras-tecnicas">
-
+<section class="section section-carreras" id="carreras-tecnicas">
+  <div class="section-carreras__glow" aria-hidden="true"></div>
   <div class="container">
+    <header class="section-carreras__head">
+      <p class="kicker kicker--warm reveal" avRevealOnScroll>{{ landing().carreras.kicker }}</p>
+      <h2 class="section-carreras__title" avAnimateTitle [titleDelay]="50">{{ landing().carreras.titulo }}</h2>
+      <p class="section-carreras__lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().carreras.lead }}</p>
 
-    <header class="section-head center">
-
-      <p class="kicker reveal" avRevealOnScroll>{{ landing().carreras.kicker }}</p>
-
-      <h2 avAnimateTitle [titleDelay]="50">{{ landing().carreras.titulo }}</h2>
-
-      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="120">{{ landing().carreras.lead }}</p>
-
+      @if (carrerasResumen(); as cr) {
+        <div class="section-carreras__stats reveal" avRevealOnScroll [revealDelay]="140">
+          <span class="home-capsule home-capsule--violet">{{ cr.total }} programas técnicos</span>
+          <span class="home-capsule home-capsule--amber">{{ cr.horasMin | number }}–{{ cr.horasMax | number }} horas</span>
+          <span class="home-capsule home-capsule--cyan">Hasta {{ cr.semestresMax }} semestres</span>
+          <span class="home-capsule home-capsule--green">Titulación presencial</span>
+          <span class="home-capsule home-capsule--rose">9° · desde 15 años</span>
+        </div>
+      }
     </header>
 
     <div class="carreras-grid">
-
       @for (c of landing().carreras.items; track c.cno; let i = $index) {
+        <article class="carrera-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 100">
+          <header class="carrera-card__head">
+            <span class="carrera-card__index">{{ i + 1 | number: '2.0-0' }}</span>
+            <span class="carrera-card__cno">CNO {{ c.cno }}</span>
+          </header>
 
-        <article class="carrera-card card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 110">
+          <h3 class="carrera-card__titulo" avAnimateTitle [titleDelay]="80">{{ c.titulo }}</h3>
 
-          <p class="carrera-kicker">Técnico laboral por competencias</p>
-
-          <h3 avAnimateTitle [titleDelay]="90">{{ c.titulo }}</h3>
-
-          <dl class="carrera-meta">
-
-            <div><dt>Código CNO</dt><dd>{{ c.cno }}</dd></div>
-
-            <div><dt>Duración</dt><dd>{{ c.horas }} horas</dd></div>
-
-            <div><dt>Semestres</dt><dd>{{ c.semestres }}</dd></div>
-
-            <div><dt>Jornadas</dt><dd>{{ c.jornadas }}</dd></div>
-
-            <div><dt>Nivel requerido</dt><dd>9°</dd></div>
-
-            <div><dt>Edad mínima</dt><dd>15 años</dd></div>
-
+          <dl class="carrera-card__meta">
+            <div>
+              <dt>Duración</dt>
+              <dd><span class="carrera-val">{{ c.horas | number }} horas</span></dd>
+            </div>
+            <div>
+              <dt>Semestres</dt>
+              <dd><span class="carrera-val">{{ c.semestres }}</span></dd>
+            </div>
+            <div class="carrera-card__meta-wide">
+              <dt>Jornadas</dt>
+              <dd><span class="carrera-val">{{ c.jornadas }}</span></dd>
+            </div>
+            <div>
+              <dt>Nivel requerido</dt>
+              <dd><span class="carrera-val">9°</span></dd>
+            </div>
+            <div>
+              <dt>Edad mínima</dt>
+              <dd><span class="carrera-val">15 años</span></dd>
+            </div>
           </dl>
 
-          <a routerLink="/acerca" class="btn btn-ghost btn-sm">Más información</a>
-
+          <footer class="carrera-card__foot">
+            <a routerLink="/acerca" class="btn btn-primary btn-sm">Más información</a>
+          </footer>
         </article>
-
       }
-
     </div>
 
+    <div class="section-carreras__cta reveal" avRevealOnScroll [revealDelay]="180">
+      <p>¿Busca formación con titulación en seguridad vial?</p>
+      <div class="section-carreras__cta-actions">
+        <a routerLink="/acerca" class="btn btn-primary">Conocer la institución</a>
+        <a routerLink="/cursos" class="btn btn-outline">Ver cursos virtuales</a>
+      </div>
+    </div>
   </div>
-
 </section>
 
 

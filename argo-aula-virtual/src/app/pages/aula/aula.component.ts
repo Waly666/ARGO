@@ -41,6 +41,7 @@ export class AulaComponent implements OnInit, OnDestroy {
   portalConfig = signal<PortalConfig | null>(null);
   panel = signal<PanelAula>('tablero');
   sidebarCollapsed = signal(false);
+  mobileNavOpen = signal(false);
 
   safePlayerUrl = signal<SafeResourceUrl | null>(null);
   playerTitulo = signal('');
@@ -138,6 +139,26 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   irPanel(p: PanelAula) {
     this.panel.set(p);
+    this.mobileNavOpen.set(false);
+  }
+
+  toggleMobileNav() {
+    this.mobileNavOpen.update((v) => !v);
+  }
+
+  cerrarMobileNav() {
+    this.mobileNavOpen.set(false);
+  }
+
+  tituloPanel(): string {
+    const labels: Record<PanelAula, string> = {
+      tablero: 'Tablero',
+      cursos: 'Tus cursos',
+      puntajes: 'Mis puntajes',
+      certificados: 'Certificados',
+      perfil: 'Perfil',
+    };
+    return labels[this.panel()] || 'Mi aula';
   }
 
   toggleSidebar() {
@@ -253,6 +274,13 @@ export class AulaComponent implements OnInit, OnDestroy {
     if (c.progreso?.aprobado) return 'Aprobado';
     if (this.pct(c) > 0 || this.tieneHistorialPuntajes(c)) return 'En progreso';
     return 'Sin iniciar';
+  }
+
+  tonoEstadoCurso(c: CursoVirtual): string {
+    if (c.progreso?.certificadoEmitido) return 'cyan';
+    if (c.progreso?.aprobado) return 'green';
+    if (this.pct(c) > 0 || this.tieneHistorialPuntajes(c)) return 'amber';
+    return 'soft';
   }
 
   tieneHistorialPuntajes(c: CursoVirtual): boolean {
@@ -379,6 +407,7 @@ export class AulaComponent implements OnInit, OnDestroy {
       return;
     }
     if (!curso.playerUrl) return;
+    this.mobileNavOpen.set(false);
     const full = this.resolverPlayerUrl(curso.playerUrl);
     this.safePlayerUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(full));
     this.playerTitulo.set(curso.nombreProg);
