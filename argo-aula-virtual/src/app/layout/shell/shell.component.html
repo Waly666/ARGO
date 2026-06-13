@@ -8,11 +8,12 @@
     </a>
 
     <button
+      #menuToggle
       type="button"
       class="menu-toggle"
       [class.menu-toggle--open]="menuAbierto()"
       [attr.aria-expanded]="menuAbierto()"
-      aria-controls="portal-nav-menu"
+      aria-controls="portal-nav-menu-mobile"
       [attr.aria-label]="menuAbierto() ? 'Cerrar menú' : 'Abrir menú'"
       (click)="toggleMenu()"
     >
@@ -52,9 +53,10 @@
   </div>
 
   <div
+    id="portal-nav-menu-mobile"
     class="topbar-menu topbar-menu--mobile"
     [class.topbar-menu--open]="menuAbierto()"
-    [attr.aria-hidden]="!menuAbierto()"
+    [attr.inert]="menuAbierto() ? null : ''"
   >
     <div class="container topbar-menu-inner">
       <nav class="nav">

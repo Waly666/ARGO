@@ -1369,10 +1369,20 @@ blockquote {
 
   .hero-info-cards {
     margin-top: 1.75rem;
+    transform: none;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-info-cards.hero-in--6 {
+    animation: heroFadeUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.42s both;
+  }
+
+  .hero:has(.hero-info-cards) {
+    padding-bottom: 0.5rem;
   }
 
   .hero:has(.hero-info-cards) + .section {
-    padding-top: calc(2.75rem + 6.5rem);
+    padding-top: var(--av-section-y);
   }
 
   .info-cards {

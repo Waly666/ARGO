@@ -449,12 +449,12 @@ export class PortalSeoService {
 
   private upsertTag(tag: { name?: string; property?: string; content: string }) {
     if (!tag.content) return;
-    const key = tag.name ? `name="${tag.name}"` : `property="${tag.property}"`;
-    const selector = `meta[${key}]`;
-    if (this.meta.getTag(selector)) {
-      this.meta.updateTag(tag, selector);
-    } else {
-      this.meta.addTag(tag);
+    if (tag.name) {
+      this.meta.updateTag({ name: tag.name, content: tag.content }, `name="${tag.name}"`);
+      return;
+    }
+    if (tag.property) {
+      this.meta.updateTag({ property: tag.property, content: tag.content }, `property="${tag.property}"`);
     }
   }
 

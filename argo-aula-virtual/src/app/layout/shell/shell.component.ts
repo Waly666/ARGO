@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, DestroyRef, ElementRef, inject, OnInit, AfterViewInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, AfterViewInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -59,6 +59,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   private cardWaves = inject(CardWaveService);
   private destroyRef = inject(DestroyRef);
   private host = inject(ElementRef<HTMLElement>);
+  private menuToggle = viewChild<ElementRef<HTMLButtonElement>>('menuToggle');
   auth = inject(PortalAuthService);
 
   config = signal<PortalConfig | null>(null);
@@ -170,11 +171,19 @@ export class ShellComponent implements OnInit, AfterViewInit {
   });
 
   toggleMenu() {
-    this.menuAbierto.update((v) => !v);
+    const abrir = !this.menuAbierto();
+    this.menuAbierto.set(abrir);
+    if (!abrir) this.devolverFocoMenu();
   }
 
   cerrarMenu() {
+    if (!this.menuAbierto()) return;
     this.menuAbierto.set(false);
+    this.devolverFocoMenu();
+  }
+
+  private devolverFocoMenu() {
+    queueMicrotask(() => this.menuToggle()?.nativeElement.focus());
   }
 
   ngOnInit() {
