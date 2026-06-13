@@ -1,8 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
+
+/** Restauración completa: puede tardar varios minutos (BD + uploads). */
+const RESTAURAR_TIMEOUT_MS = 30 * 60 * 1000;
 
 export interface RespaldoMeta {
   archivo: string;
@@ -45,6 +49,18 @@ export interface ResultadoReset {
   coleccionesConservadas: number;
   usuariosEliminados: number;
   mensaje?: string;
+}
+
+export interface ProgresoOperacion {
+  activo: boolean;
+  tipo: 'respaldo' | 'restauracion' | 'reset' | null;
+  fase: string;
+  total: number;
+  hecho: number;
+  porcentaje: number | null;
+  estado: 'idle' | 'corriendo' | 'ok' | 'error';
+  mensaje: string;
+  transcurridoMs: number;
 }
 
 export interface ErrorMigracion {
@@ -109,10 +125,12 @@ export class SistemaService {
   }
 
   restaurarRespaldo(archivo: string, cred: CredencialesOperacion): Observable<ResultadoRestauracion> {
-    return this.http.post<ResultadoRestauracion>(
-      `${this.base}/respaldos/${encodeURIComponent(archivo)}/restaurar`,
-      cred,
-    );
+    return this.http
+      .post<ResultadoRestauracion>(
+        `${this.base}/respaldos/${encodeURIComponent(archivo)}/restaurar`,
+        cred,
+      )
+      .pipe(timeout(RESTAURAR_TIMEOUT_MS));
   }
 
   restaurarSubido(file: File, cred: CredencialesOperacion): Observable<ResultadoRestauracion> {
@@ -121,11 +139,17 @@ export class SistemaService {
     fd.append('password', cred.password);
     fd.append('codigoMfa', cred.codigoMfa || '');
     fd.append('confirmacion', cred.confirmacion);
-    return this.http.post<ResultadoRestauracion>(`${this.base}/respaldos/restaurar-subido`, fd);
+    return this.http
+      .post<ResultadoRestauracion>(`${this.base}/respaldos/restaurar-subido`, fd)
+      .pipe(timeout(RESTAURAR_TIMEOUT_MS));
   }
 
   guardarConfigRespaldos(cfg: Partial<ConfigRespaldos>): Observable<ConfigRespaldos> {
     return this.http.put<ConfigRespaldos>(`${this.base}/respaldos/config`, cfg);
+  }
+
+  progresoOperacion(): Observable<ProgresoOperacion> {
+    return this.http.get<ProgresoOperacion>(`${this.base}/respaldos/progreso`);
   }
 
   // ----- Puesta en cero -----

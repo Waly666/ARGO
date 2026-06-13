@@ -4,21 +4,26 @@
   background: #fff;
   border: 1px solid #dbe3f0;
   border-radius: var(--av-radius);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   height: 100%;
 
-  &:hover {
-    border-color: #93c5fd;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
-    transform: translateY(-2px);
+  &:not(.card-lift) {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      transform: translateY(-2px);
+    }
   }
 }
 
 .catalog-card__cover-link {
   display: block;
   text-decoration: none;
+  border-radius: var(--av-radius) var(--av-radius) 0 0;
+  overflow: hidden;
 }
 
 .catalog-card__cover {

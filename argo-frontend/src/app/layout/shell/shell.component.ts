@@ -825,10 +825,44 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Backup',
+          path: '/app/configuracion/backup',
+          icon: '⛁',
+          iconTone: 'emerald',
+          section: 'Backup · Reset · Restore',
+          adminOnly: true,
+        },
+        {
+          kind: 'link',
+          label: 'Restore',
+          path: '/app/configuracion/restore',
+          icon: '↺',
+          iconTone: 'amber',
+          adminOnly: true,
+        },
+        {
+          kind: 'link',
+          label: 'Reset',
+          path: '/app/configuracion/reset',
+          icon: '⚠',
+          iconTone: 'rose',
+          adminOnly: true,
+        },
+        {
+          kind: 'link',
+          label: 'Migración',
+          path: '/app/configuracion/migracion',
+          icon: '⇄',
+          iconTone: 'cyan',
+          adminOnly: true,
+        },
+        {
+          kind: 'link',
           label: 'Monitor de recursos',
           path: '/app/configuracion/monitor',
           icon: '◫',
           iconTone: 'cyan',
+          section: 'Auditoría',
           permiso: 'config.auditoria',
         },
         {
@@ -838,39 +872,6 @@ export class ShellComponent {
           icon: '◉',
           iconTone: 'rose',
           permiso: 'config.auditoria',
-        },
-      ],
-    },
-    {
-      kind: 'group',
-      label: 'Sistema',
-      icon: '🛡',
-      iconTone: 'rose',
-      adminOnly: true,
-      children: [
-        {
-          kind: 'link',
-          label: 'Copias de seguridad',
-          path: '/app/sistema/respaldos',
-          icon: '⛁',
-          iconTone: 'emerald',
-          adminOnly: true,
-        },
-        {
-          kind: 'link',
-          label: 'Migración de datos',
-          path: '/app/sistema/migracion',
-          icon: '⇄',
-          iconTone: 'cyan',
-          adminOnly: true,
-        },
-        {
-          kind: 'link',
-          label: 'Puesta en cero',
-          path: '/app/sistema/puesta-en-cero',
-          icon: '↺',
-          iconTone: 'rose',
-          adminOnly: true,
         },
       ],
     },
@@ -1469,7 +1470,11 @@ export class ShellComponent {
       u.includes('/configuracion/formato-inspeccion-vehiculos') ||
       u.includes('/configuracion/requisitos-documentos') ||
       u.includes('/configuracion/monitor') ||
-      u.includes('/configuracion/auditoria')
+      u.includes('/configuracion/auditoria') ||
+      u.includes('/configuracion/backup') ||
+      u.includes('/configuracion/restore') ||
+      u.includes('/configuracion/reset') ||
+      u.includes('/configuracion/migracion')
     ) {
       patch['Configuración'] = true;
     }

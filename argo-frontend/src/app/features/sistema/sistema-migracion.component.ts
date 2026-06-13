@@ -10,6 +10,7 @@ import {
   SistemaService,
 } from '../../core/services/sistema.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { BackupResetRestoreNavComponent } from './backup-reset-restore-nav.component';
 
 interface OpcionHoja {
   clave: HojaMigracion;
@@ -20,7 +21,7 @@ interface OpcionHoja {
 @Component({
   selector: 'argo-sistema-migracion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BackupResetRestoreNavComponent],
   templateUrl: './sistema-migracion.component.html',
   styleUrls: ['./sistema-migracion.component.scss'],
 })

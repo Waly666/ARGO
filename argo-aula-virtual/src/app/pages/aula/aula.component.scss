@@ -1185,44 +1185,50 @@
   }
 }
 
-/* —— Buttons —— */
+/* —— Buttons (alineados al sistema global .btn) —— */
 .dash-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  border-radius: 10px;
-  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  padding: var(--av-btn-pad-y) var(--av-btn-pad-x);
   font-size: 0.88rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+  position: relative;
+  overflow: visible;
 
-  &:hover {
+  &:not(.btn-wave-host):hover {
     transform: translateY(-1px);
   }
 }
 
 .dash-btn-primary {
-  background: linear-gradient(90deg, #6366f1, #4f46e5);
+  background: linear-gradient(135deg, var(--av-primary), var(--av-primary-dark));
   color: #fff;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.28);
 
   &:hover {
-    background: linear-gradient(90deg, #4f46e5, #4338ca);
+    box-shadow: 0 6px 22px rgba(59, 130, 246, 0.38);
   }
 }
 
 .dash-btn-outline {
   background: #fff;
-  color: var(--dash-text);
-  border: 1px solid var(--dash-border);
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
 
   &:hover {
-    border-color: #cbd5e1;
-    background: #f8fafc;
+    border-color: #3b82f6;
+    background: #eff6ff;
   }
 }
 
@@ -1231,8 +1237,8 @@
 }
 
 .dash-btn-sm {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
+  padding: var(--av-btn-sm-pad-y) var(--av-btn-sm-pad-x);
+  font-size: var(--av-btn-sm-font);
 }
 
 .dash-inline-actions {

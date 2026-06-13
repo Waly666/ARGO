@@ -1,4 +1,5 @@
 const Config = require('../models/Config');
+const { ensureConfigDocument } = require('./configEnsure');
 const { normalizePlantillaPorTipo, TIPOS, TIPOS_VALIDOS } = require('./clasificacionCertificado');
 const { normalizeLayoutPorTipo } = require('./certificadoLayout');
 
@@ -92,8 +93,7 @@ const DEFAULTS = {
 };
 
 async function obtenerConfigCertificado() {
-  let found = await Config.findOne({ clave: CLAVE }).lean();
-  if (!found) found = (await Config.create({ ...DEFAULTS })).toObject();
+  const found = await ensureConfigDocument(CLAVE, DEFAULTS);
   const merged = { ...DEFAULTS, ...found, clave: CLAVE };
   merged.plantillaPorTipo = normalizePlantillaPorTipo(merged.plantillaPorTipo);
   merged.layoutPorTipo = normalizeLayoutPorTipo(merged.layoutPorTipo);

@@ -105,10 +105,6 @@
         </span>
       </a>
       <p class="site-footer__about">{{ footerAbout() }}</p>
-      <div class="site-footer__cta">
-        <a routerLink="/cursos" class="site-footer__btn site-footer__btn--primary">Ver cursos</a>
-        <a routerLink="/aula" class="site-footer__btn site-footer__btn--ghost">Aula virtual</a>
-      </div>
       <a
         class="site-footer__ext"
         [href]="sitioInstitucionalUrl"
@@ -119,7 +115,7 @@
       </a>
     </div>
 
-    <nav class="site-footer__col" aria-label="Enlaces del portal">
+    <nav class="site-footer__col" aria-label="Enlaces rápidos">
       <h3 class="site-footer__title">{{ landing().footer.tituloEnlaces }}</h3>
       <ul class="site-footer__links">
         @for (link of footerEnlaces(); track link.label) {
@@ -155,9 +151,9 @@
       <h3 class="site-footer__title">{{ landing().footer.tituloContacto }}</h3>
       <ul class="site-footer__contact-list">
         @if (config()?.telefono; as tel) {
-          <li>
+          <li class="site-footer__contact-card">
             <span class="site-footer__contact-icon" aria-hidden="true">📞</span>
-            <div>
+            <div class="site-footer__contact-body">
               <strong>Teléfono</strong>
               @if (telHref(); as href) {
                 <a [href]="href">{{ telDisplay() }}</a>
@@ -168,27 +164,27 @@
           </li>
         }
         @if (config()?.email; as mail) {
-          <li>
+          <li class="site-footer__contact-card">
             <span class="site-footer__contact-icon" aria-hidden="true">✉️</span>
-            <div>
+            <div class="site-footer__contact-body">
               <strong>Correo</strong>
               <a [href]="'mailto:' + mail">{{ mail }}</a>
             </div>
           </li>
         }
         @if (direccionCompleta(); as dir) {
-          <li>
+          <li class="site-footer__contact-card">
             <span class="site-footer__contact-icon" aria-hidden="true">📍</span>
-            <div>
+            <div class="site-footer__contact-body">
               <strong>Dirección</strong>
               <span>{{ dir }}</span>
             </div>
           </li>
         }
         @if (whatsappHref(); as wa) {
-          <li>
+          <li class="site-footer__contact-card">
             <span class="site-footer__contact-icon" aria-hidden="true">💬</span>
-            <div>
+            <div class="site-footer__contact-body">
               <strong>WhatsApp</strong>
               <a [href]="wa" target="_blank" rel="noopener noreferrer">Escríbanos</a>
             </div>

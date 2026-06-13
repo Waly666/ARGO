@@ -1,12 +1,22 @@
 <section class="sys-page card">
+  <argo-backup-reset-restore-nav />
+
   <header class="sys-head">
     <div>
-      <h1>Copias de seguridad</h1>
-      <p>
-        Cada copia guarda absolutamente todo: alumnos, matrículas, pagos, certificados, caja,
-        nómina, configuración y los archivos subidos (fotos y documentos). Puede descargarlas
-        para guardarlas fuera del servidor y restaurarlas cuando lo necesite.
-      </p>
+      @if (vista() === 'restore') {
+        <h1>Restaurar copia de seguridad</h1>
+        <p>
+          Elija una copia del servidor o suba un archivo (.zip / .argobk) descargado previamente.
+          Antes de reemplazar los datos actuales, el sistema guarda una copia del estado actual.
+        </p>
+      } @else {
+        <h1>Copias de seguridad</h1>
+        <p>
+          Cada copia guarda absolutamente todo: alumnos, matrículas, pagos, certificados, caja,
+          nómina, configuración y los archivos subidos (fotos y documentos). Puede descargarlas
+          para guardarlas fuera del servidor.
+        </p>
+      }
     </div>
     @if (config(); as cfg) {
       <div>
@@ -21,9 +31,33 @@
     <div class="sys-msg" [class.sys-msg--err]="msgError()" role="status">{{ texto }}</div>
   }
 
+  @if (progreso(); as p) {
+    @if (creando() || restaurando()) {
+      <div class="sys-progress" role="status" aria-live="polite">
+        <div class="sys-progress__head">
+          <span>{{ p.fase || 'Procesando…' }}</span>
+          @if (p.porcentaje != null) {
+            <span class="pct">{{ p.porcentaje }}%</span>
+          }
+        </div>
+        <div class="sys-progress__track">
+          @if (p.porcentaje != null) {
+            <div class="sys-progress__fill" [style.width.%]="p.porcentaje"></div>
+          } @else {
+            <div class="sys-progress__fill sys-progress__fill--indeterminada"></div>
+          }
+        </div>
+        @if (p.total > 0) {
+          <div class="sys-progress__meta">{{ p.hecho | number }} / {{ p.total | number }}</div>
+        }
+      </div>
+    }
+  }
+
   @if (loading()) {
     <p class="sys-hint">Cargando copias de seguridad…</p>
   } @else {
+    @if (vista() === 'backup') {
     <!-- Crear copia manual -->
     <section class="sys-section sys-section--sky">
       <header class="sys-section-head">
@@ -81,9 +115,10 @@
         </div>
       </section>
     }
+    }
 
-    <!-- Restaurar desde archivo externo -->
-    <section class="sys-section sys-section--amber">
+    @if (vista() === 'restore') {
+    <section class="sys-section sys-section--amber" id="restaurar-archivo">
       <header class="sys-section-head">
         <h2>Restaurar desde un archivo</h2>
         <p>Si tiene una copia descargada (.zip o .argobk), súbala aquí para restaurarla en este servidor.</p>
@@ -97,9 +132,10 @@
         </div>
       </div>
     </section>
+    }
 
     <!-- Formulario de restauración (común) -->
-    @if (restaurarSel() || archivoSubido()) {
+    @if (vista() === 'restore' && (restaurarSel() || archivoSubido())) {
       <section class="sys-section sys-section--danger">
         <header class="sys-section-head">
           <h2>Confirmar restauración</h2>
@@ -120,11 +156,6 @@
               <input id="rpass" type="password" [(ngModel)]="password" autocomplete="current-password" />
             </div>
             <div class="sys-field">
-              <label for="rmfa">Código MFA (si lo tiene activo)</label>
-              <input id="rmfa" type="text" [(ngModel)]="codigoMfa" maxlength="6" inputmode="numeric"
-                     placeholder="000000" />
-            </div>
-            <div class="sys-field">
               <label for="rconf">Escriba RESTAURAR para confirmar</label>
               <input id="rconf" type="text" [(ngModel)]="confirmacion" placeholder="RESTAURAR" />
             </div>
@@ -133,6 +164,12 @@
             <button type="button" class="primary" (click)="restaurar()" [disabled]="!puedeRestaurar()">
               {{ restaurando() ? 'Restaurando… no cierre esta ventana' : 'Restaurar ahora' }}
             </button>
+            @if (restaurando()) {
+              <p class="sys-hint">
+                La restauración sigue en el servidor aunque se cierre sesión o recargue el ERP.
+                No reinicie el backend. Espere el mensaje de éxito o revise la terminal del API.
+              </p>
+            }
             <button type="button" class="ghost" (click)="restaurarSel.set(null); archivoSubido.set(null)"
                     [disabled]="restaurando()">
               Cancelar
@@ -145,11 +182,19 @@
     <!-- Listado -->
     <section class="sys-section sys-section--violet">
       <header class="sys-section-head">
-        <h2>Copias disponibles en el servidor ({{ respaldos().length }})</h2>
+        @if (vista() === 'restore') {
+          <h2>Copias en el servidor para restaurar ({{ respaldos().length }})</h2>
+        } @else {
+          <h2>Copias disponibles en el servidor ({{ respaldos().length }})</h2>
+        }
       </header>
       <div class="sys-section-body">
         @if (!respaldos().length) {
-          <p class="sys-hint">Todavía no hay copias. Cree la primera con el botón de arriba.</p>
+          @if (vista() === 'restore') {
+            <p class="sys-hint">No hay copias en el servidor. Suba un archivo o cree una copia en Backup.</p>
+          } @else {
+            <p class="sys-hint">Todavía no hay copias. Cree la primera con el botón de arriba.</p>
+          }
         } @else {
           <div style="overflow-x: auto">
             <table class="sys-table">
@@ -194,13 +239,17 @@
                     <td>{{ r.usuario || '—' }}</td>
                     <td>
                       <div class="acciones">
-                        <button type="button" class="sys-btn-sm" (click)="descargar(r)">Descargar</button>
-                        <button type="button" class="sys-btn-sm" (click)="abrirRestaurar(r)">
-                          {{ restaurarSel() === r.archivo ? 'Cerrar' : 'Restaurar' }}
-                        </button>
-                        <button type="button" class="sys-btn-sm sys-btn-sm--danger" (click)="eliminar(r)">
-                          Eliminar
-                        </button>
+                        @if (vista() === 'backup') {
+                          <button type="button" class="sys-btn-sm" (click)="descargar(r)">Descargar</button>
+                          <button type="button" class="sys-btn-sm sys-btn-sm--danger" (click)="eliminar(r)">
+                            Eliminar
+                          </button>
+                        } @else {
+                          <button type="button" class="sys-btn-sm" (click)="descargar(r)">Descargar</button>
+                          <button type="button" class="sys-btn-sm" (click)="abrirRestaurar(r)">
+                            {{ restaurarSel() === r.archivo ? 'Cerrar' : 'Restaurar' }}
+                          </button>
+                        }
                       </div>
                     </td>
                   </tr>

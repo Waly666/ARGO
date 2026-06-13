@@ -14,27 +14,81 @@
 </div>
     }
     @case ('hero') {
-<section class="hero">
+<section class="hero section-starfield">
 
-  <div class="container hero-inner">
+  <div class="starfield-bg" aria-hidden="true"></div>
 
-    <div class="hero-copy">
+  <div class="container hero-container">
 
-      <p class="eyebrow hero-in hero-in--1">{{ nombreCea() }}</p>
+    <div class="hero-inner">
 
-      <h1 #heroH1 class="hero-title hero-title--typing"></h1>
+      <div class="hero-copy">
 
-      <p class="lead hero-in hero-in--3">{{ heroSubtitulo() }}</p>
+        <p class="eyebrow hero-in hero-in--1">{{ nombreCea() }}</p>
 
-      <div class="hero-actions hero-in hero-in--4">
+        <h1 #heroH1 class="hero-title hero-title--typing"></h1>
 
-        <a routerLink="/cursos" class="btn btn-primary">{{ landing().hero.ctaPrincipal }}</a>
+        <p class="lead hero-in hero-in--3">{{ heroSubtitulo() }}</p>
 
-        <a routerLink="/registro" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
+        <div class="hero-actions hero-in hero-in--4">
 
-        @if (landing().hero.mostrarBotonLlamar && telefono(); as tel) {
+          <a routerLink="/cursos" class="btn btn-primary">{{ landing().hero.ctaPrincipal }}</a>
 
-          <a [href]="telHref()" class="btn btn-ghost">Llamar {{ tel }}</a>
+          <a routerLink="/registro" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
+
+          @if (landing().hero.mostrarBotonLlamar && telefono(); as tel) {
+
+            <a [href]="telHref()" class="btn btn-ghost">Llamar {{ tel }}</a>
+
+          }
+
+        </div>
+
+      </div>
+
+      <figure class="hero-visual hero-in hero-in--5">
+
+        <img [src]="heroImg()" [alt]="landing().hero.imagenAlt" />
+
+      </figure>
+
+    </div>
+
+  </div>
+
+  @if (infoCardsVisibles()) {
+
+    <div class="container hero-info-cards hero-in hero-in--6">
+
+      <div class="info-cards">
+
+        @for (card of landing().infoCards; track card.title; let i = $index) {
+
+          <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
+
+            <span class="info-icon icon-pop" aria-hidden="true">{{ card.icon }}</span>
+
+            <div>
+
+              <h3 avAnimateTitle [titleDelay]="120">{{ card.title }}</h3>
+
+              @if (card.fuente === 'telefono' && telefono(); as tel) {
+
+                <p><a [href]="telHref()">{{ tel }}</a></p>
+
+              } @else if (card.fuente === 'direccion') {
+
+                <p>{{ direccion() }}</p>
+
+              } @else {
+
+                <p>{{ card.text }}</p>
+
+              }
+
+            </div>
+
+          </article>
 
         }
 
@@ -42,56 +96,7 @@
 
     </div>
 
-    <figure class="hero-visual hero-in hero-in--5">
-
-      <img [src]="heroImg()" [alt]="landing().hero.imagenAlt" />
-
-    </figure>
-
-  </div>
-
-</section>
-    }
-    @case ('infoCards') {
-<section class="info-cards-band">
-
-  <div class="container">
-
-    <div class="info-cards">
-
-      @for (card of landing().infoCards; track card.title; let i = $index) {
-
-        <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
-
-          <span class="info-icon icon-pop" aria-hidden="true">{{ card.icon }}</span>
-
-          <div>
-
-            <h3 avAnimateTitle [titleDelay]="120">{{ card.title }}</h3>
-
-            @if (card.fuente === 'telefono' && telefono(); as tel) {
-
-              <p><a [href]="telHref()">{{ tel }}</a></p>
-
-            } @else if (card.fuente === 'direccion') {
-
-              <p>{{ direccion() }}</p>
-
-            } @else {
-
-              <p>{{ card.text }}</p>
-
-            }
-
-          </div>
-
-        </article>
-
-      }
-
-    </div>
-
-  </div>
+  }
 
 </section>
     }
@@ -131,11 +136,11 @@
 </section>
     }
     @case ('beneficios') {
-<section class="section section--alt" id="beneficios-cursos">
+<section class="section section-starfield" id="beneficios-cursos">
+  <div class="starfield-bg" aria-hidden="true"></div>
+  <div class="container starfield-container">
 
-  <div class="container">
-
-    <header class="section-head center">
+    <header class="section-head center starfield-head">
 
       <p class="kicker reveal" avRevealOnScroll>{{ landing().beneficios.kicker }}</p>
 
@@ -298,11 +303,11 @@
 </section>
     }
     @case ('valores') {
-<section class="section section--alt" id="somos-mejor-opcion">
+<section class="section section-starfield" id="somos-mejor-opcion">
+  <div class="starfield-bg" aria-hidden="true"></div>
+  <div class="container starfield-container">
 
-  <div class="container">
-
-    <header class="section-head center">
+    <header class="section-head center starfield-head">
 
       <h2 avAnimateTitle>{{ landing().valores.titulo }}</h2>
 
@@ -427,10 +432,10 @@
 </section>
     }
     @case ('carreras') {
-<section class="section section-carreras" id="carreras-tecnicas">
-  <div class="carreras-bg" aria-hidden="true"></div>
-  <div class="container carreras-container">
-    <header class="section-head center carreras-head">
+<section class="section section-starfield section-carreras" id="carreras-tecnicas">
+  <div class="starfield-bg" aria-hidden="true"></div>
+  <div class="container starfield-container carreras-container">
+    <header class="section-head center starfield-head carreras-head">
       <p class="kicker reveal" avRevealOnScroll>{{ landing().carreras.kicker }}</p>
       <h2 avAnimateTitle [titleDelay]="50">{{ landing().carreras.titulo }}</h2>
       <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().carreras.lead }}</p>
@@ -455,7 +460,7 @@
 
       @for (c of carrerasOrbita(); track c.cno; let i = $index) {
         <div class="carrera-nodo-pos" [style.left.%]="c.x" [style.top.%]="c.y">
-          <a routerLink="/acerca" class="carrera-nodo dark-card reveal-scale" avRevealOnScroll [revealDelay]="140 + i * 90">
+          <a routerLink="/acerca" class="carrera-nodo dark-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="140 + i * 90">
             <span class="dark-card__plus" aria-hidden="true">+</span>
             <span class="dark-card__icono" aria-hidden="true">
               @switch (i % 5) {
@@ -498,7 +503,7 @@
     </div>
 
     <div class="carreras-cta reveal" avRevealOnScroll [revealDelay]="160">
-      <a routerLink="/acerca" class="carreras-cta__btn">Solicita más información <span aria-hidden="true">→</span></a>
+      <a routerLink="/acerca" class="btn btn-accent">Solicita más información <span aria-hidden="true">→</span></a>
     </div>
   </div>
 </section>
@@ -568,7 +573,7 @@
 
       @for (item of landing().faq.items; track item.pregunta; let i = $index) {
 
-        <article class="dark-card faq-item reveal" avRevealOnScroll [revealDelay]="i * 60">
+        <article class="dark-card faq-item card-lift reveal" avRevealOnScroll [revealDelay]="i * 60">
 
           <button type="button" class="faq-pregunta" [class.faq-pregunta--open]="faqAbierta() === i" (click)="toggleFaq(i)">
 
@@ -600,11 +605,11 @@
 
       <div class="faq-contacto-actions">
 
-        <a routerLink="/acerca" class="btn btn-faq-outline">Conocer la institución</a>
+        <a routerLink="/acerca" class="btn btn-outline">Conocer la institución</a>
 
         @if (telefono(); as tel) {
 
-          <a [href]="telHref()" class="btn btn-faq-primary">Llamar {{ tel }}</a>
+          <a [href]="telHref()" class="btn btn-accent">Llamar {{ tel }}</a>
 
         }
 

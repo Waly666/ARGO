@@ -1,4 +1,5 @@
 const Config = require('../models/Config');
+const { ensureConfigDocument } = require('./configEnsure');
 
 const CLAVE = 'requisitosDocumentos';
 
@@ -84,8 +85,7 @@ function normalizeRequisitosPorCap(raw, tiposDocumento) {
 }
 
 async function obtenerConfigRequisitosDocumentos() {
-  let found = await Config.findOne({ clave: CLAVE }).lean();
-  if (!found) found = (await Config.create({ ...DEFAULTS })).toObject();
+  const found = await ensureConfigDocument(CLAVE, DEFAULTS);
   const tiposDocumento = normalizeTiposDocumento(found.tiposDocumento);
   const requisitosPorCap = normalizeRequisitosPorCap(found.requisitosPorCap, tiposDocumento);
   return { clave: CLAVE, tiposDocumento, requisitosPorCap };

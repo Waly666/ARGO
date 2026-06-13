@@ -96,10 +96,10 @@
     </div>
   </section>
 
-  <section class="fund-section fund-section--soft">
+  <section class="fund-section fund-section--cta" id="lineas-trabajo">
     <div class="container">
       <header class="fund-section__head fund-section__head--center">
-        <p class="fund-kicker fund-kicker--dark">{{ fund().lineas.kicker }}</p>
+        <p class="fund-kicker">{{ fund().lineas.kicker }}</p>
         <h2>{{ fund().lineas.titulo }}</h2>
         <p class="fund-section__lead">{{ fund().lineas.lead }}</p>
       </header>
@@ -111,20 +111,6 @@
             <p>{{ s.text }}</p>
           </article>
         }
-      </div>
-    </div>
-  </section>
-
-  <section class="fund-section fund-section--cta">
-    <div class="container fund-cta">
-      <div class="fund-cta__copy">
-        <p class="fund-kicker">{{ fund().cta.kicker }}</p>
-        <h2>{{ fund().cta.titulo }}</h2>
-        <p>{{ fund().cta.texto }}</p>
-      </div>
-      <div class="fund-cta__actions">
-        <a routerLink="/registro" class="btn btn-primary">{{ fund().cta.btnRegistro }}</a>
-        <a routerLink="/" fragment="servicios-empresa" class="btn btn-outline fund-btn-outline">{{ fund().cta.btnServicios }}</a>
       </div>
     </div>
   </section>
@@ -164,6 +150,20 @@
           <a class="btn btn-primary" [href]="wa" target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
         }
         <av-contacto-form origen="fundacion" />
+      </div>
+    </div>
+  </section>
+
+  <section class="fund-section fund-section--cta">
+    <div class="container fund-cta">
+      <div class="fund-cta__copy">
+        <p class="fund-kicker">{{ fund().cta.kicker }}</p>
+        <h2>{{ fund().cta.titulo }}</h2>
+        <p>{{ fund().cta.texto }}</p>
+      </div>
+      <div class="fund-cta__actions">
+        <a routerLink="/registro" class="btn btn-primary">{{ fund().cta.btnRegistro }}</a>
+        <a routerLink="/" fragment="servicios-empresa" class="btn btn-outline fund-btn-outline">{{ fund().cta.btnServicios }}</a>
       </div>
     </div>
   </section>

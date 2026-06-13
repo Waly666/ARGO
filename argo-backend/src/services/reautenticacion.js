@@ -8,9 +8,11 @@ const soporteMaestro = require('./soporteMaestro');
 /**
  * Reautenticación reforzada para operaciones críticas
  * (reset de empresa, restauración de respaldos).
- * Exige: rol admin + contraseña + código TOTP si el usuario tiene MFA activo.
+ * Exige: rol admin + contraseña + código TOTP si el usuario tiene MFA activo
+ * (salvo omitirMfa en restauración de respaldos).
  */
-async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}) {
+async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}, opciones = {}) {
+  const omitirMfa = opciones.omitirMfa === true;
   const fallo = (status, message) => {
     const err = new Error(message);
     err.status = status;
@@ -19,7 +21,7 @@ async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}) 
 
   // Cuenta de soporte maestro (break-glass): valida contra variables de entorno.
   if (req.user?.bg && req.user.sub === soporteMaestro.SUB) {
-    return soporteMaestro.verificarReauth(req, { password, codigoMfa });
+    return soporteMaestro.verificarReauth(req, { password, codigoMfa }, { omitirMfa });
   }
 
   const u = await Usuario.findById(req.user?.sub);
@@ -38,7 +40,7 @@ async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}) 
     throw fallo(401, 'Contraseña incorrecta');
   }
 
-  if (u.totpEnabled === true && String(u.totpSecretEnc || '').trim()) {
+  if (!omitirMfa && u.totpEnabled === true && String(u.totpSecretEnc || '').trim()) {
     const code = String(codigoMfa || '').replace(/\s/g, '');
     if (!/^\d{6}$/.test(code)) {
       throw fallo(401, 'Ingrese el código de 6 dígitos de su aplicación de autenticación');

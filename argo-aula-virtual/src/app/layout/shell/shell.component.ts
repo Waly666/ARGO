@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, AfterViewInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 
 import { AulaApiService } from '../../core/aula-api.service';
+import { CardWaveService } from '../../core/card-wave.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalBrandingService } from '../../core/portal-branding.service';
 import { etiquetaPagina, paginaActiva, type PortalPaginaKey } from '../../core/portal-site';
@@ -49,11 +51,14 @@ export interface FooterServicioEnlace {
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
-export class ShellComponent implements OnInit {
+export class ShellComponent implements OnInit, AfterViewInit {
   private api = inject(AulaApiService);
   private branding = inject(PortalBrandingService);
   private theme = inject(PortalThemeService);
   private router = inject(Router);
+  private cardWaves = inject(CardWaveService);
+  private destroyRef = inject(DestroyRef);
+  private host = inject(ElementRef<HTMLElement>);
   auth = inject(PortalAuthService);
 
   config = signal<PortalConfig | null>(null);
@@ -85,16 +90,27 @@ export class ShellComponent implements OnInit {
   });
 
   footerEnlaces = computed((): FooterEnlace[] => {
-    const pageLinks: FooterEnlace[] = this.navItems().map((i) => ({
-      label: i.label,
-      route: i.route,
-    }));
+    const cfg = this.config();
+    const nav = this.landing().nav;
+    const paginas: { key: PortalPaginaKey; route: string }[] = [
+      { key: 'cursos', route: '/cursos' },
+      { key: 'tienda', route: '/tienda' },
+      { key: 'aula', route: '/aula' },
+      { key: 'fundacion', route: '/fundacion' },
+      { key: 'acerca', route: '/acerca' },
+    ];
+    const pages = paginas
+      .filter((p) => paginaActiva(cfg, p.key))
+      .map((p) => ({
+        label: etiquetaPagina(cfg, p.key, nav[p.key as keyof typeof nav] as string),
+        route: p.route,
+      }));
     return [
-      ...pageLinks,
+      ...pages,
       { label: 'Servicios', route: '/', fragment: 'servicios-empresa' },
       { label: 'Cómo funciona', route: '/', fragment: 'como-funciona' },
       { label: 'Preguntas frecuentes', route: '/', fragment: 'preguntas-frecuentes' },
-      { label: 'Contáctanos', route: '/acerca', fragment: 'contacto' },
+      { label: 'Contacto', route: '/acerca', fragment: 'contacto' },
     ];
   });
 
@@ -182,6 +198,21 @@ export class ShellComponent implements OnInit {
         this.theme.apply(fallback);
       },
     });
+  }
+
+  ngAfterViewInit(): void {
+    this.cardWaves.bind(this.host.nativeElement);
+
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        setTimeout(() => this.cardWaves.refresh(), 0);
+      });
+
+    this.destroyRef.onDestroy(() => this.cardWaves.unbind());
   }
 
   telHref() {

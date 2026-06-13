@@ -341,3 +341,56 @@
 
   input[type='file'] { color: var(--text-soft); font-size: 0.8rem; max-width: 100%; }
 }
+
+.sys-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  background: rgba(8, 18, 45, 0.55);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.84rem;
+    color: var(--text);
+
+    .pct { font-weight: 700; color: #7dd3fc; }
+  }
+
+  &__track {
+    position: relative;
+    height: 0.7rem;
+    border-radius: 999px;
+    background: rgba(15, 28, 60, 0.9);
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #38bdf8, #818cf8);
+    transition: width 0.4s ease;
+  }
+
+  &__fill--indeterminada {
+    width: 40% !important;
+    position: absolute;
+    left: 0;
+    animation: sys-progress-slide 1.2s ease-in-out infinite;
+  }
+
+  &__meta {
+    font-size: 0.76rem;
+    color: var(--text-dim);
+  }
+}
+
+@keyframes sys-progress-slide {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}

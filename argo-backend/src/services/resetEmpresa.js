@@ -7,6 +7,7 @@ const { baseDir: uploadsDir } = require('../middleware/upload');
 const { CONSERVAR_EN_RESET, COLECCIONES_ESPECIALES } = require('../constants/cicloVidaColecciones');
 const { crearRespaldo, recrearIndices } = require('./respaldos');
 const { registrarAuditoria } = require('./auditoria');
+const progreso = require('./progresoOperacion');
 
 const FRASE_CONFIRMACION = 'REINICIAR EMPRESA';
 
@@ -35,10 +36,13 @@ async function vaciarUploads() {
 async function ejecutarResetEmpresa(req, adminDoc) {
   const usuario = adminDoc.username;
 
+  progreso.iniciar('reset', 'Creando copia de seguridad previa…');
   const respaldo = await crearRespaldo({
     tipo: 'pre-reset',
     usuario,
     nota: 'Respaldo automático antes de la puesta en cero',
+    _interno: true,
+    reportarProgreso: true,
   });
 
   const db = mongoose.connection.db;
@@ -46,7 +50,9 @@ async function ejecutarResetEmpresa(req, adminDoc) {
   const conservadas = [];
   const limpiadas = [];
 
+  progreso.fase('Limpiando datos de la empresa…', { total: todas.length });
   for (const nombre of todas) {
+    progreso.avanzar(1);
     if (CONSERVAR_EN_RESET.has(nombre)) {
       conservadas.push(nombre);
       continue;
@@ -71,6 +77,7 @@ async function ejecutarResetEmpresa(req, adminDoc) {
   await db.collection('roles_app').drop().catch(() => {});
   limpiadas.push('config', 'roles_app');
 
+  progreso.fase('Reinicializando catálogos y configuración…', { total: 0 });
   await recrearIndices();
   const { initRolesSistema, limpiarCache } = require('./rolesPermisos');
   await initRolesSistema({ force: true });
@@ -102,6 +109,11 @@ async function ejecutarResetEmpresa(req, adminDoc) {
     },
   });
 
+  progreso.finalizar(
+    'ok',
+    `Puesta en cero completada: ${limpiadas.length} tablas en cero, ${conservadas.length} catálogos conservados.`,
+  );
+
   return {
     respaldoPrevio: respaldo.archivo,
     coleccionesLimpiadas: limpiadas.length,
@@ -111,4 +123,16 @@ async function ejecutarResetEmpresa(req, adminDoc) {
   };
 }
 
-module.exports = { ejecutarResetEmpresa, FRASE_CONFIRMACION };
+async function ejecutarResetEmpresaConProgreso(req, adminDoc) {
+  try {
+    return await ejecutarResetEmpresa(req, adminDoc);
+  } catch (err) {
+    progreso.finalizar('error', err.message || 'La puesta en cero falló');
+    throw err;
+  }
+}
+
+module.exports = {
+  ejecutarResetEmpresa: ejecutarResetEmpresaConProgreso,
+  FRASE_CONFIRMACION,
+};

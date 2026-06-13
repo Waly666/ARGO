@@ -26,6 +26,7 @@ const subidaExcel = multer({
 // Respaldos
 router.get('/respaldos', ctrl.listarRespaldos);
 router.post('/respaldos', ctrl.crearRespaldo);
+router.get('/respaldos/progreso', ctrl.progresoOperacion);
 router.get('/respaldos/config', ctrl.configRespaldos);
 router.put('/respaldos/config', ctrl.actualizarConfigRespaldos);
 router.get('/respaldos/:archivo/descargar', ctrl.descargarRespaldo);

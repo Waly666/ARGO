@@ -1,5 +1,6 @@
 const Config = require('../models/Config');
 const { models } = require('../models/catalogos');
+const { ensureConfigDocument } = require('./configEnsure');
 
 const CLAVE = 'requisitosDocumentosVehiculos';
 const DEFAULT_DIAS_AVISO = 30;
@@ -179,20 +180,17 @@ async function buildDefaultRequisitosPorClase(tiposDocumento) {
 }
 
 async function obtenerConfigRequisitosDocumentosVehiculos() {
-  let found = await Config.findOne({ clave: CLAVE }).lean();
   const tiposCatalogo = await tiposDesdeCatalogo();
+  let found = await Config.findOne({ clave: CLAVE }).lean();
 
   if (!found) {
     const tiposDocumento = tiposCatalogo.length ? tiposCatalogo : [];
     const requisitosPorClase = tiposDocumento.length ? await buildDefaultRequisitosPorClase(tiposDocumento) : [];
-    found = (
-      await Config.create({
-        clave: CLAVE,
-        tiposDocumento,
-        requisitosPorClase,
-        diasAvisoVencimiento: DEFAULT_DIAS_AVISO,
-      })
-    ).toObject();
+    found = await ensureConfigDocument(CLAVE, {
+      tiposDocumento,
+      requisitosPorClase,
+      diasAvisoVencimiento: DEFAULT_DIAS_AVISO,
+    });
   }
 
   let tiposDocumento = normalizeTiposDocumento(found.tiposDocumento);

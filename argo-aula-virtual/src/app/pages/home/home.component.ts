@@ -63,8 +63,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ordenSecciones = computed(() => {
     const cfg = this.config();
-    return ordenSeccionesHome(cfg).filter((id) => seccionHomeVisible(cfg, id));
+    return ordenSeccionesHome(cfg)
+      .filter((id) => seccionHomeVisible(cfg, id) && id !== 'infoCards');
   });
+
+  infoCardsVisibles = computed(() => seccionHomeVisible(this.config(), 'infoCards'));
 
   heroImg = computed(() => this.theme.heroImageUrl(this.config()) || '/images/hero-estudiante.png');
 

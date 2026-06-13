@@ -1,3 +1,7 @@
+@import 'styles/tokens.scss';
+@import 'styles/card-wave.scss';
+@import 'styles/starfield.scss';
+
 :root {
   --av-font-sans:
     'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto',
@@ -110,21 +114,114 @@ textarea {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.15s ease;
+  position: relative;
+  overflow: visible;
 }
 
-.btn:hover {
+.btn:not(.btn-wave-host):hover {
   transform: translateY(-1px);
 }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--av-primary), var(--av-primary-dark));
   color: #fff;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.28);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 22px rgba(59, 130, 246, 0.38);
+  }
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--av-border-strong);
+  color: var(--av-text);
+
+  &:hover:not(:disabled) {
+    border-color: var(--av-accent);
+    background: rgba(34, 211, 238, 0.08);
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }
 
 .btn-ghost {
   background: transparent;
-  border: 1px solid var(--av-border);
+  border: 1px solid var(--av-border-strong);
   color: var(--av-text);
+
+  &:hover:not(:disabled) {
+    border-color: var(--av-accent);
+    background: rgba(34, 211, 238, 0.06);
+  }
+}
+
+/* Botones en fondos claros (formularios, secciones light) */
+.section--light .btn-outline,
+.registro-card .btn-outline,
+.catalog-page .btn-outline {
+  background: #fff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+
+  &:hover:not(:disabled) {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+}
+
+/* Acento teal en secciones oscuras (FAQ, carreras) */
+.btn-accent {
+  background: linear-gradient(135deg, #34d399, #14b8a6);
+  color: #04241e;
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.35);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 0 28px rgba(45, 212, 191, 0.5);
+    color: #04241e;
+  }
+
+  span {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover:not(:disabled) span {
+    transform: translateX(4px);
+  }
+}
+
+.section-faq .btn-outline {
+  border-color: rgba(45, 212, 191, 0.45);
+  color: #2dd4bf;
+  background: transparent;
+
+  &:hover:not(:disabled) {
+    background: rgba(45, 212, 191, 0.08);
+    border-color: #5eead4;
+    color: #5eead4;
+  }
+}
+
+.btn-sm {
+  padding: var(--av-btn-sm-pad-y) var(--av-btn-sm-pad-x);
+  font-size: var(--av-btn-sm-font);
+}
+
+.auth.card a {
+  color: var(--av-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+
+  &:hover {
+    color: #67e8f9;
+  }
 }
 
 .card {

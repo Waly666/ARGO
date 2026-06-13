@@ -580,18 +580,35 @@ export const routes: Routes = [
             (m) => m.MonitorRecursosAdminComponent,
           ),
       },
-      { path: 'sistema', pathMatch: 'full', redirectTo: 'sistema/respaldos' },
       {
-        path: 'sistema/respaldos',
+        path: 'configuracion/backup',
         canActivate: [adminGuard],
-        data: { title: 'Copias de seguridad' },
+        data: { title: 'Backup', vista: 'backup' },
         loadComponent: () =>
           import('./features/sistema/sistema-respaldos.component').then(
             (m) => m.SistemaRespaldosComponent,
           ),
       },
       {
-        path: 'sistema/migracion',
+        path: 'configuracion/restore',
+        canActivate: [adminGuard],
+        data: { title: 'Restore', vista: 'restore' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-respaldos.component').then(
+            (m) => m.SistemaRespaldosComponent,
+          ),
+      },
+      {
+        path: 'configuracion/reset',
+        canActivate: [adminGuard],
+        data: { title: 'Reset' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-reset.component').then(
+            (m) => m.SistemaResetComponent,
+          ),
+      },
+      {
+        path: 'configuracion/migracion',
         canActivate: [adminGuard],
         data: { title: 'Migración de datos' },
         loadComponent: () =>
@@ -599,15 +616,10 @@ export const routes: Routes = [
             (m) => m.SistemaMigracionComponent,
           ),
       },
-      {
-        path: 'sistema/puesta-en-cero',
-        canActivate: [adminGuard],
-        data: { title: 'Puesta en cero' },
-        loadComponent: () =>
-          import('./features/sistema/sistema-reset.component').then(
-            (m) => m.SistemaResetComponent,
-          ),
-      },
+      { path: 'sistema', pathMatch: 'full', redirectTo: 'configuracion/migracion' },
+      { path: 'sistema/respaldos', redirectTo: 'configuracion/backup', pathMatch: 'full' },
+      { path: 'sistema/puesta-en-cero', redirectTo: 'configuracion/reset', pathMatch: 'full' },
+      { path: 'sistema/migracion', redirectTo: 'configuracion/migracion', pathMatch: 'full' },
       { path: 'config/recibos', redirectTo: 'configuracion/recibos', pathMatch: 'full' },
       { path: 'config/certificados', redirectTo: 'configuracion/certificados', pathMatch: 'full' },
     ],

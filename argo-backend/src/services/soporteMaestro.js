@@ -173,7 +173,8 @@ async function verificarMfa(req, code) {
 }
 
 /** Reautenticación para operaciones críticas (reset/restauración) con la cuenta de soporte. */
-async function verificarReauth(req, { password, codigoMfa } = {}) {
+async function verificarReauth(req, { password, codigoMfa } = {}, opciones = {}) {
+  const omitirMfa = opciones.omitirMfa === true;
   if (!habilitado()) {
     const err = new Error('Acceso de soporte deshabilitado');
     err.status = 401;
@@ -186,7 +187,7 @@ async function verificarReauth(req, { password, codigoMfa } = {}) {
     err.status = 401;
     throw err;
   }
-  if (!validarTotp(codigoMfa)) {
+  if (!omitirMfa && !validarTotp(codigoMfa)) {
     logAuthIntento({ req, canal: 'soporte', identificador: nombreUser(), ok: false, motivo: 'reauth_mfa_invalido' });
     const err = new Error('Código de autenticación incorrecto');
     err.status = 401;

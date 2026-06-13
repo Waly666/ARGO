@@ -82,9 +82,14 @@ exports.eliminarRespaldo = async (req, res, next) => {
 exports.restaurarRespaldo = async (req, res, next) => {
   try {
     exigirFrase(req, 'RESTAURAR');
-    await verificarReautenticacionAdmin(req, req.body);
-    const ruta = respaldos.rutaRespaldo(req.params.archivo);
+    await verificarReautenticacionAdmin(req, req.body, { omitirMfa: true });
+    const archivo = req.params.archivo;
+    console.log(`[ARGO respaldos] Iniciando restauración: ${archivo} (${req.user.username})`);
+    const ruta = respaldos.rutaRespaldo(archivo);
     const r = await respaldos.restaurarRespaldo(ruta, { usuario: req.user.username });
+    console.log(
+      `[ARGO respaldos] Restauración OK: ${archivo} — ${r.docsRestaurados} docs, ${r.archivosRestaurados} archivos`,
+    );
     await registrarAuditoria({
       req,
       accion: 'respaldo_restaurar',
@@ -107,7 +112,7 @@ exports.restaurarRespaldo = async (req, res, next) => {
 exports.restaurarSubido = async (req, res, next) => {
   try {
     exigirFrase(req, 'RESTAURAR');
-    await verificarReautenticacionAdmin(req, req.body);
+    await verificarReautenticacionAdmin(req, req.body, { omitirMfa: true });
     if (!req.file?.path) {
       return res.status(400).json({ message: 'Adjunte el archivo de respaldo (.zip o .argobk)' });
     }
@@ -139,6 +144,10 @@ exports.configRespaldos = async (_req, res, next) => {
   } catch (e) {
     next(e);
   }
+};
+
+exports.progresoOperacion = (_req, res) => {
+  res.json(respaldos.obtenerProgreso());
 };
 
 exports.actualizarConfigRespaldos = async (req, res, next) => {

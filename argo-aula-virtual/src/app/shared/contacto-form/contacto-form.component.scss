@@ -6,6 +6,8 @@
   --cf-ink: #0f172a;
   --cf-muted: #475569;
   --cf-border: #e2e8f0;
+  position: relative;
+  overflow: visible;
   margin-top: 2rem;
   padding: clamp(1.25rem, 3vw, 1.75rem);
   border-radius: 18px;

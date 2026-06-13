@@ -16,7 +16,7 @@
             [value]="q()"
             (input)="q.set($any($event.target).value)"
             (keyup.enter)="cargar()" />
-          <button type="button" class="btn-search" (click)="cargar()">Buscar</button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="cargar()">Buscar</button>
         </div>
         @if (categorias().length) {
           <div class="cat-chips">

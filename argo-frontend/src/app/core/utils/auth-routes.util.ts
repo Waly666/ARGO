@@ -151,9 +151,16 @@ export function rutaAccesible(url: string, permisos: string[] | undefined | null
   if (!path.startsWith('/app')) return true;
   if (path === '/app' || path === '/app/') return true;
 
-  // Módulo Sistema: el acceso lo decide adminGuard (solo rol admin),
-  // no el catálogo de permisos.
+  // Rutas legacy /sistema y backup/reset/restore/migración: adminGuard (solo rol admin).
   if (path.startsWith('/app/sistema')) return true;
+  if (
+    path.startsWith('/app/configuracion/backup') ||
+    path.startsWith('/app/configuracion/restore') ||
+    path.startsWith('/app/configuracion/reset') ||
+    path.startsWith('/app/configuracion/migracion')
+  ) {
+    return true;
+  }
 
   if (path === '/app/instructores' || path.startsWith('/app/instructores/')) {
     if (path !== '/app/instructores') {

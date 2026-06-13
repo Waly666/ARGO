@@ -74,7 +74,7 @@ export function ordenSeccionesHome(config: PortalConfig | null): string[] {
 }
 
 function aplicarMigracionesOrdenHome(orden: string[]): string[] {
-  return posicionarTestimoniosAntesFaq(aplicarSwapValoresCarreras(orden));
+  return posicionarTestimoniosAntesFaq(aplicarSwapValoresCarreras(orden)).filter((id) => id !== 'infoCards');
 }
 
 /** Intercambia valores ↔ carreras si aún está el orden anterior guardado en BD. */

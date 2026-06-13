@@ -18,7 +18,7 @@
 }
 
 .registro-card {
-  max-width: 860px;
+  max-width: var(--av-prose-wide);
   margin: 0 auto;
   padding: clamp(1.35rem, 3vw, 2rem);
   border-radius: 20px;
@@ -193,38 +193,11 @@
   }
 }
 
-.btn-outline {
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #4338ca;
-  border-radius: 999px;
-  padding: 0.55rem 1rem;
-  font-size: 0.88rem;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    border-color: #6366f1;
-    background: #f5f3ff;
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-}
-
 .registro-submit {
   width: 100%;
   margin-top: 1rem;
   padding: 0.72rem 1.25rem;
   font-size: 0.95rem;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #4f46e5, #4338ca);
-  }
 }
 
 .info {

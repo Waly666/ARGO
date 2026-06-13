@@ -7,6 +7,8 @@ const unzipper = require('unzipper');
 
 const Config = require('../models/Config');
 const { baseDir: uploadsDir } = require('../middleware/upload');
+const { ensureConfigDocument } = require('./configEnsure');
+const progreso = require('./progresoOperacion');
 const {
   claveCifradoConfigurada,
   cifrarArchivo,
@@ -22,6 +24,9 @@ const CLAVE_CONFIG = 'respaldos';
 const FORMATO = 'argo-backup';
 const VERSION = 1;
 const BATCH_INSERT = 500;
+/** Sufijo de colecciones temporales durante restauración (no pisan datos hasta el swap final). */
+const STAGING_SUFFIX = '__argo_restore_staging';
+const UPLOADS_STAGING_DIR = path.join(path.dirname(uploadsDir), '.uploads-restore-staging');
 
 const DEFAULTS_CONFIG = {
   clave: CLAVE_CONFIG,
@@ -104,10 +109,12 @@ async function coleccionesApp() {
 }
 
 /** Exporta cada colección a JSONL (EJSON canónico) en dirSalida. */
-async function exportarColecciones(dirSalida) {
+async function exportarColecciones(dirSalida, onColeccion = null) {
   const db = mongoose.connection.db;
   const nombres = await coleccionesApp();
+  if (onColeccion) onColeccion(0, nombres.length, null);
   const resumen = [];
+  let i = 0;
   for (const nombre of nombres) {
     const rutaArchivo = path.join(dirSalida, `${nombre}.jsonl`);
     const ws = fs.createWriteStream(rutaArchivo, { encoding: 'utf8' });
@@ -125,6 +132,8 @@ async function exportarColecciones(dirSalida) {
       ws.on('error', reject);
     });
     resumen.push({ nombre, docs });
+    i += 1;
+    if (onColeccion) onColeccion(i, nombres.length, nombre);
   }
   return resumen;
 }
@@ -162,8 +171,19 @@ async function leerMeta(rutaFinal) {
  * Crea un respaldo completo (BD + archivos subidos).
  * tipo: manual | auto | pre-reset | pre-restauracion
  */
-async function crearRespaldo({ tipo = 'manual', usuario = 'sistema', nota = '' } = {}) {
-  marcarOperacion(`respaldo ${tipo}`);
+async function crearRespaldo({
+  tipo = 'manual',
+  usuario = 'sistema',
+  nota = '',
+  _interno = false,
+  reportarProgreso = !_interno,
+} = {}) {
+  if (!_interno) {
+    marcarOperacion(`respaldo ${tipo}`);
+    progreso.iniciar('respaldo', 'Exportando datos…');
+  }
+  // Etiqueta de fase: si es interno (copia previa de reset/restauración) se aclara.
+  const etiqueta = (txt) => (_interno ? `Copia de seguridad previa: ${txt}` : txt);
   const inicio = Date.now();
   const fecha = new Date();
   const base = `argo-respaldo-${tsArchivo(fecha)}-${tipo}`;
@@ -173,7 +193,15 @@ async function crearRespaldo({ tipo = 'manual', usuario = 'sistema', nota = '' }
     ensureDir(BACKUP_DIR);
     ensureDir(path.join(dirTrabajo, 'db'));
 
-    const colecciones = await exportarColecciones(path.join(dirTrabajo, 'db'));
+    if (reportarProgreso) progreso.fase(etiqueta('exportando datos…'), { total: 0 });
+    const reportar = reportarProgreso
+      ? (hechas, total) => {
+          if (total) progreso.definirTotal(total);
+          progreso.avanzar(hechas - progreso.obtener().hecho);
+        }
+      : null;
+    const colecciones = await exportarColecciones(path.join(dirTrabajo, 'db'), reportar);
+    if (reportarProgreso) progreso.fase(etiqueta('comprimiendo el archivo…'), { total: 0 });
     const manifest = {
       formato: FORMATO,
       version: VERSION,
@@ -196,6 +224,7 @@ async function crearRespaldo({ tipo = 'manual', usuario = 'sistema', nota = '' }
     let rutaFinal = rutaZip;
     const cifrado = claveCifradoConfigurada();
     if (cifrado) {
+      if (reportarProgreso) progreso.fase(etiqueta('cifrando el archivo…'), { total: 0 });
       rutaFinal = path.join(BACKUP_DIR, `${base}${EXTENSION_CIFRADA}`);
       await cifrarArchivo(rutaZip, rutaFinal);
     }
@@ -215,12 +244,16 @@ async function crearRespaldo({ tipo = 'manual', usuario = 'sistema', nota = '' }
       duracionMs: Date.now() - inicio,
     };
     await escribirMeta(rutaFinal, meta);
+    if (!_interno) {
+      progreso.finalizar('ok', `Copia creada: ${meta.archivo} (${meta.totalDocs} documentos)`);
+    }
     return meta;
   } catch (err) {
     await fs.promises.unlink(rutaZip).catch(() => {});
+    if (!_interno) progreso.finalizar('error', err.message || 'Error al crear la copia');
     throw err;
   } finally {
-    liberarOperacion();
+    if (!_interno) liberarOperacion();
     await fs.promises.rm(dirTrabajo, { recursive: true, force: true }).catch(() => {});
   }
 }
@@ -285,57 +318,116 @@ async function vaciarDirectorio(dir) {
   }
 }
 
-async function restaurarColeccionesDesdeZip(zipAbierto) {
+async function insertManyResiliente(collection, lote) {
+  if (!lote.length) return 0;
+  try {
+    const r = await collection.insertMany(lote, { ordered: false });
+    return r.insertedCount ?? lote.length;
+  } catch (e) {
+    if (e.code === 11000 || e.name === 'MongoBulkWriteError') {
+      return e.result?.insertedCount ?? 0;
+    }
+    throw e;
+  }
+}
+
+function dedupeConfigPorClave(docs) {
+  const map = new Map();
+  for (const doc of docs) {
+    const clave = doc?.clave != null ? String(doc.clave).trim() : '';
+    if (clave) map.set(clave, doc);
+  }
+  return [...map.values()];
+}
+
+async function limpiarColeccionesStaging(db) {
+  const cols = await coleccionesApp();
+  for (const nombre of cols) {
+    if (nombre.endsWith(STAGING_SUFFIX)) {
+      await db.collection(nombre).drop().catch(() => {});
+    }
+  }
+}
+
+async function insertarJsonlEnColeccion(entrada, nombreColeccion, db, esConfig = false, onDocs = null) {
+  const readline = require('readline');
+  // Crea la colección aunque quede vacía, para que el swap (rename) no falle.
+  await db.createCollection(nombreColeccion).catch(() => {});
+  const rl = readline.createInterface({ input: entrada.stream(), crlfDelay: Infinity });
+  let lote = [];
+  let docs = 0;
+  const collection = db.collection(nombreColeccion);
+  for await (const linea of rl) {
+    const t = linea.trim();
+    if (!t) continue;
+    lote.push(EJSON.parse(t, { relaxed: false }));
+    if (lote.length >= BATCH_INSERT) {
+      if (esConfig) lote = dedupeConfigPorClave(lote);
+      const ins = await insertManyResiliente(collection, lote);
+      docs += ins;
+      if (onDocs) onDocs(lote.length);
+      lote = [];
+    }
+  }
+  if (lote.length) {
+    if (esConfig) lote = dedupeConfigPorClave(lote);
+    const ins = await insertManyResiliente(collection, lote);
+    docs += ins;
+    if (onDocs) onDocs(lote.length);
+  }
+  return docs;
+}
+
+async function restaurarColeccionesDesdeZip(zipAbierto, onDocs = null) {
   const db = mongoose.connection.db;
   const entradasDb = zipAbierto.files.filter(
     (f) => f.path.startsWith('db/') && f.path.endsWith('.jsonl') && f.type === 'File',
   );
 
-  // Reemplazo total: se eliminan las colecciones actuales antes de insertar.
-  const actuales = await coleccionesApp();
-  for (const nombre of actuales) {
-    await db.collection(nombre).drop().catch(() => {});
-  }
-
-  const readline = require('readline');
+  await limpiarColeccionesStaging(db);
   const resumen = [];
-  for (const entrada of entradasDb) {
-    const nombre = path.basename(entrada.path, '.jsonl');
-    const rl = readline.createInterface({ input: entrada.stream(), crlfDelay: Infinity });
-    let lote = [];
-    let docs = 0;
-    for await (const linea of rl) {
-      const t = linea.trim();
-      if (!t) continue;
-      lote.push(EJSON.parse(t, { relaxed: false }));
-      if (lote.length >= BATCH_INSERT) {
-        await db.collection(nombre).insertMany(lote, { ordered: false });
-        docs += lote.length;
-        lote = [];
+  const nombresBackup = [];
+  try {
+    for (const entrada of entradasDb) {
+      const nombre = path.basename(entrada.path, '.jsonl');
+      const staging = `${nombre}${STAGING_SUFFIX}`;
+      nombresBackup.push(nombre);
+      const docs = await insertarJsonlEnColeccion(entrada, staging, db, nombre === 'config', onDocs);
+      resumen.push({ nombre, docs });
+    }
+
+    const nombresSet = new Set(nombresBackup);
+    const actuales = await coleccionesApp();
+    for (const nombre of actuales) {
+      if (!nombresSet.has(nombre) && !nombre.endsWith(STAGING_SUFFIX)) {
+        await db.collection(nombre).drop().catch(() => {});
       }
     }
-    if (lote.length) {
-      await db.collection(nombre).insertMany(lote, { ordered: false });
-      docs += lote.length;
+    for (const nombre of nombresBackup) {
+      const staging = `${nombre}${STAGING_SUFFIX}`;
+      await db.collection(nombre).drop().catch(() => {});
+      await db.collection(staging).rename(nombre);
     }
-    resumen.push({ nombre, docs });
+    return resumen;
+  } catch (err) {
+    await limpiarColeccionesStaging(db).catch(() => {});
+    throw err;
   }
-  return resumen;
 }
 
-async function restaurarUploadsDesdeZip(zipAbierto) {
-  await vaciarDirectorio(uploadsDir);
-  ensureDir(uploadsDir);
+async function restaurarUploadsDesdeZip(zipAbierto, onArchivo = null) {
+  await fs.promises.rm(UPLOADS_STAGING_DIR, { recursive: true, force: true }).catch(() => {});
+  ensureDir(UPLOADS_STAGING_DIR);
   const entradas = zipAbierto.files.filter(
     (f) => f.path.startsWith('uploads/') && f.type === 'File',
   );
+  if (onArchivo) onArchivo(0, entradas.length);
   let archivos = 0;
   for (const entrada of entradas) {
     const relativo = entrada.path.slice('uploads/'.length);
     if (!relativo) continue;
-    const destino = path.join(uploadsDir, relativo);
-    // Protección path traversal
-    if (!destino.startsWith(path.resolve(uploadsDir))) continue;
+    const destino = path.join(UPLOADS_STAGING_DIR, relativo);
+    if (!destino.startsWith(path.resolve(UPLOADS_STAGING_DIR))) continue;
     ensureDir(path.dirname(destino));
     await new Promise((resolve, reject) => {
       entrada
@@ -345,7 +437,28 @@ async function restaurarUploadsDesdeZip(zipAbierto) {
         .on('error', reject);
     });
     archivos += 1;
+    if (onArchivo) onArchivo(archivos, entradas.length);
   }
+  await vaciarDirectorio(uploadsDir);
+  ensureDir(uploadsDir);
+  const raiz = path.resolve(UPLOADS_STAGING_DIR);
+  const moverRecursivo = async (dir) => {
+    const entradas = await fs.promises.readdir(dir, { withFileTypes: true });
+    for (const e of entradas) {
+      const origen = path.join(dir, e.name);
+      const rel = path.relative(raiz, origen);
+      const destino = path.join(uploadsDir, rel);
+      if (e.isDirectory()) {
+        ensureDir(destino);
+        await moverRecursivo(origen);
+      } else {
+        ensureDir(path.dirname(destino));
+        await fs.promises.rename(origen, destino);
+      }
+    }
+  };
+  await moverRecursivo(UPLOADS_STAGING_DIR);
+  await fs.promises.rm(UPLOADS_STAGING_DIR, { recursive: true, force: true }).catch(() => {});
   return archivos;
 }
 
@@ -360,13 +473,18 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
     throw err;
   }
 
+  progreso.iniciar('restauracion', 'Preparando restauración…');
+
   // Respaldo de seguridad del estado actual antes de pisarlo.
   let respaldoSeguridad = null;
   if (crearSeguridad) {
+    progreso.fase('Creando copia de seguridad previa…', { total: 0 });
     respaldoSeguridad = await crearRespaldo({
       tipo: 'pre-restauracion',
       usuario,
       nota: `Antes de restaurar ${path.basename(rutaArchivo)}`,
+      _interno: true,
+      reportarProgreso: true,
     });
   }
 
@@ -375,6 +493,7 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
   let zipTemporal = null;
   try {
     if (esArchivoCifrado(rutaArchivo)) {
+      progreso.fase('Descifrando el archivo…', { total: 0 });
       zipTemporal = path.join(BACKUP_DIR, `.restore-${Date.now()}.zip`);
       await descifrarArchivo(rutaArchivo, zipTemporal);
       rutaZip = zipTemporal;
@@ -394,15 +513,24 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
       throw err;
     }
 
-    const colecciones = await restaurarColeccionesDesdeZip(zipAbierto);
-    const archivosRestaurados = await restaurarUploadsDesdeZip(zipAbierto);
+    progreso.fase('Cargando datos…', { total: Number(manifest.totalDocs) || 0 });
+    const colecciones = await restaurarColeccionesDesdeZip(zipAbierto, (n) => progreso.avanzar(n));
 
+    progreso.fase('Restaurando archivos (fotos, documentos)…', { total: 0 });
+    const archivosRestaurados = await restaurarUploadsDesdeZip(zipAbierto, (hechos, total) => {
+      if (total && progreso.obtener().total !== total) progreso.definirTotal(total);
+      progreso.avanzar(hechos - progreso.obtener().hecho);
+    });
+
+    progreso.fase('Reconstruyendo índices y caché…', { total: 0 });
     // Reinicializa índices, estructuras mínimas y cachés tras el reemplazo.
     await recrearIndices();
     const { initRolesSistema, limpiarCache } = require('./rolesPermisos');
     await initRolesSistema();
     limpiarCache();
 
+    const docsRestaurados = colecciones.reduce((s, c) => s + c.docs, 0);
+    progreso.finalizar('ok', `Restauración completada: ${docsRestaurados} documentos y ${archivosRestaurados} archivos.`);
     return {
       manifest: {
         fecha: manifest.fecha,
@@ -411,10 +539,13 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
         totalDocs: manifest.totalDocs,
       },
       colecciones: colecciones.length,
-      docsRestaurados: colecciones.reduce((s, c) => s + c.docs, 0),
+      docsRestaurados,
       archivosRestaurados,
       respaldoSeguridad: respaldoSeguridad?.archivo || null,
     };
+  } catch (err) {
+    progreso.finalizar('error', err.message || 'La restauración falló');
+    throw err;
   } finally {
     liberarOperacion();
     if (zipTemporal) await fs.promises.unlink(zipTemporal).catch(() => {});
@@ -428,7 +559,7 @@ function normalizarHora(h) {
 
 async function obtenerConfigRespaldos() {
   let doc = await Config.findOne({ clave: CLAVE_CONFIG }).lean();
-  if (!doc) doc = (await Config.create({ ...DEFAULTS_CONFIG })).toObject();
+  if (!doc) doc = await ensureConfigDocument(CLAVE_CONFIG, DEFAULTS_CONFIG);
   return {
     autoHabilitado: doc.autoHabilitado !== false,
     horaAuto: normalizarHora(doc.horaAuto),
@@ -463,4 +594,5 @@ module.exports = {
   aplicarRetencion,
   obtenerConfigRespaldos,
   actualizarConfigRespaldos,
+  obtenerProgreso: progreso.obtener,
 };

@@ -1,18 +1,24 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ResultadoReset, SistemaService } from '../../core/services/sistema.service';
+import {
+  ProgresoOperacion,
+  ResultadoReset,
+  SistemaService,
+} from '../../core/services/sistema.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+
+import { BackupResetRestoreNavComponent } from './backup-reset-restore-nav.component';
 
 @Component({
   selector: 'argo-sistema-reset',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BackupResetRestoreNavComponent],
   templateUrl: './sistema-reset.component.html',
   styleUrls: ['./sistema-reset.component.scss'],
 })
-export class SistemaResetComponent implements OnInit {
+export class SistemaResetComponent implements OnInit, OnDestroy {
   private svc = inject(SistemaService);
   private confirm = inject(ConfirmDialogService);
 
@@ -21,6 +27,9 @@ export class SistemaResetComponent implements OnInit {
   ejecutando = signal(false);
   msg = signal<string | null>(null);
   msgError = signal(false);
+  progreso = signal<ProgresoOperacion | null>(null);
+
+  private pollId: ReturnType<typeof setInterval> | null = null;
 
   password = '';
   codigoMfa = '';
@@ -32,6 +41,28 @@ export class SistemaResetComponent implements OnInit {
       next: (i) => this.frase.set(i.fraseConfirmacion),
       error: () => {},
     });
+  }
+
+  ngOnDestroy(): void {
+    this.detenerPolling();
+  }
+
+  private iniciarPolling() {
+    this.detenerPolling();
+    this.progreso.set(null);
+    this.pollId = setInterval(() => {
+      this.svc.progresoOperacion().subscribe({
+        next: (p) => this.progreso.set(p),
+        error: () => {},
+      });
+    }, 700);
+  }
+
+  private detenerPolling() {
+    if (this.pollId) {
+      clearInterval(this.pollId);
+      this.pollId = null;
+    }
   }
 
   puedeEjecutar(): boolean {
@@ -57,6 +88,7 @@ export class SistemaResetComponent implements OnInit {
 
     this.ejecutando.set(true);
     this.msg.set(null);
+    this.iniciarPolling();
     this.svc
       .resetEmpresa({
         password: this.password,
@@ -66,7 +98,14 @@ export class SistemaResetComponent implements OnInit {
       .subscribe({
         next: (r) => {
           this.ejecutando.set(false);
+          this.detenerPolling();
+          this.progreso.set(null);
           this.resultado.set(r);
+          this.msgError.set(false);
+          this.msg.set(
+            r.mensaje ||
+              `Puesta en cero completada: ${r.coleccionesLimpiadas} tablas en cero, ${r.coleccionesConservadas} catálogos conservados.`,
+          );
           this.password = '';
           this.codigoMfa = '';
           this.confirmacion = '';
@@ -74,6 +113,8 @@ export class SistemaResetComponent implements OnInit {
         },
         error: (e) => {
           this.ejecutando.set(false);
+          this.detenerPolling();
+          this.progreso.set(null);
           this.msgError.set(true);
           this.msg.set(e?.error?.message || 'La puesta en cero falló. No se borró nada.');
         },

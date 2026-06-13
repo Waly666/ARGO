@@ -1,4 +1,6 @@
 <section class="sys-page card">
+  <argo-backup-reset-restore-nav />
+
   <header class="sys-head">
     <div>
       <h1>Puesta en cero (nueva empresa)</h1>
@@ -12,6 +14,29 @@
 
   @if (msg(); as texto) {
     <div class="sys-msg" [class.sys-msg--err]="msgError()" role="status">{{ texto }}</div>
+  }
+
+  @if (progreso(); as p) {
+    @if (ejecutando()) {
+      <div class="sys-progress" role="status" aria-live="polite">
+        <div class="sys-progress__head">
+          <span>{{ p.fase || 'Procesando…' }}</span>
+          @if (p.porcentaje != null) {
+            <span class="pct">{{ p.porcentaje }}%</span>
+          }
+        </div>
+        <div class="sys-progress__track">
+          @if (p.porcentaje != null) {
+            <div class="sys-progress__fill" [style.width.%]="p.porcentaje"></div>
+          } @else {
+            <div class="sys-progress__fill sys-progress__fill--indeterminada"></div>
+          }
+        </div>
+        @if (p.total > 0) {
+          <div class="sys-progress__meta">{{ p.hecho | number }} / {{ p.total | number }}</div>
+        }
+      </div>
+    }
   }
 
   @if (resultado(); as r) {
@@ -35,7 +60,7 @@
           </div>
         </div>
         <p class="sys-hint">
-          Copia de seguridad previa: <strong>{{ r.respaldoPrevio }}</strong> (en Sistema → Copias de
+          Copia de seguridad previa: <strong>{{ r.respaldoPrevio }}</strong> (en Configuración → Backup
           seguridad). Próximos pasos: configure la nueva empresa en Configuración → Empresa y
           comprobantes, revise la sede en Configuración → Sedes y cree los usuarios del personal.
         </p>
@@ -48,7 +73,7 @@
       </header>
       <div class="sys-section-body">
         <ul class="sys-hint" style="margin: 0; padding-left: 1.1rem; line-height: 1.7">
-          <li>Catálogos: programas, servicios y tarifas, tipos de documento y de pago, bancos, municipios (DIVIPOLA), EPS / AFP / ARL, cargos, temarios CEA y demás listas.</li>
+          <li>Solo los catálogos base (Configuración → Catálogos): tipos de documento y de pago, bancos, municipios (DIVIPOLA), EPS / AFP / ARL, cargos, clases/marcas/líneas de vehículo, ítems de inspección y demás listas genéricas.</li>
           <li>Su usuario administrador (el que ejecuta esta operación).</li>
           <li>Una sede «Principal» lista para renombrar.</li>
         </ul>
@@ -62,6 +87,9 @@
       <div class="sys-section-body">
         <div class="sys-danger-box">
           <ul>
+            <li>Programas, servicios y tarifas, temarios y clases programadas.</li>
+            <li>Aulas y talleres/patios (dependen de las sedes, que también se reinician).</li>
+            <li>Sedes (queda una «Principal» vacía para configurar la nueva empresa).</li>
             <li>Alumnos, matrículas, liquidaciones, pagos, recibos y egresos.</li>
             <li>Certificados emitidos y sus plantillas de diseño.</li>
             <li>Caja (sesiones, cierres), facturación electrónica, contratos y jornadas.</li>

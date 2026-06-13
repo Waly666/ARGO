@@ -1,24 +1,31 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import {
   ConfigRespaldos,
+  ProgresoOperacion,
   RespaldoMeta,
   SistemaService,
 } from '../../core/services/sistema.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { BackupResetRestoreNavComponent } from './backup-reset-restore-nav.component';
 
 @Component({
   selector: 'argo-sistema-respaldos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BackupResetRestoreNavComponent],
   templateUrl: './sistema-respaldos.component.html',
   styleUrls: ['./sistema-respaldos.component.scss'],
 })
-export class SistemaRespaldosComponent implements OnInit {
+export class SistemaRespaldosComponent implements OnInit, OnDestroy {
   private svc = inject(SistemaService);
   private confirm = inject(ConfirmDialogService);
+  private route = inject(ActivatedRoute);
+
+  /** backup = crear y gestionar copias; restore = restaurar desde servidor o archivo */
+  vista = signal<'backup' | 'restore'>('backup');
 
   respaldos = signal<RespaldoMeta[]>([]);
   config = signal<ConfigRespaldos | null>(null);
@@ -28,6 +35,9 @@ export class SistemaRespaldosComponent implements OnInit {
   restaurando = signal(false);
   msg = signal<string | null>(null);
   msgError = signal(false);
+  progreso = signal<ProgresoOperacion | null>(null);
+
+  private pollId: ReturnType<typeof setInterval> | null = null;
 
   nota = '';
 
@@ -36,11 +46,34 @@ export class SistemaRespaldosComponent implements OnInit {
   /** Archivo externo subido para restaurar. */
   archivoSubido = signal<File | null>(null);
   password = '';
-  codigoMfa = '';
   confirmacion = '';
 
   ngOnInit(): void {
+    const v = this.route.snapshot.data['vista'];
+    this.vista.set(v === 'restore' ? 'restore' : 'backup');
     this.cargar();
+  }
+
+  ngOnDestroy(): void {
+    this.detenerPolling();
+  }
+
+  private iniciarPolling() {
+    this.detenerPolling();
+    this.progreso.set(null);
+    this.pollId = setInterval(() => {
+      this.svc.progresoOperacion().subscribe({
+        next: (p) => this.progreso.set(p),
+        error: () => {},
+      });
+    }, 700);
+  }
+
+  private detenerPolling() {
+    if (this.pollId) {
+      clearInterval(this.pollId);
+      this.pollId = null;
+    }
   }
 
   private toast(texto: string, esError = false) {
@@ -83,15 +116,20 @@ export class SistemaRespaldosComponent implements OnInit {
 
   crear() {
     this.creando.set(true);
+    this.iniciarPolling();
     this.svc.crearRespaldo(this.nota).subscribe({
       next: (meta) => {
         this.creando.set(false);
+        this.detenerPolling();
+        this.progreso.set(null);
         this.nota = '';
         this.toast(`Copia creada: ${meta.archivo} (${this.tamano(meta.tamano)})`);
         this.cargar();
       },
       error: (e) => {
         this.creando.set(false);
+        this.detenerPolling();
+        this.progreso.set(null);
         this.toast(e?.error?.message || 'No se pudo crear la copia de seguridad', true);
       },
     });
@@ -166,7 +204,6 @@ export class SistemaRespaldosComponent implements OnInit {
 
   private limpiarCredenciales() {
     this.password = '';
-    this.codigoMfa = '';
     this.confirmacion = '';
   }
 
@@ -181,7 +218,6 @@ export class SistemaRespaldosComponent implements OnInit {
   restaurar() {
     const cred = {
       password: this.password,
-      codigoMfa: this.codigoMfa,
       confirmacion: this.confirmacion,
     };
     const archivo = this.restaurarSel();
@@ -189,6 +225,7 @@ export class SistemaRespaldosComponent implements OnInit {
     if (!archivo && !subido) return;
 
     this.restaurando.set(true);
+    this.iniciarPolling();
     const obs = subido
       ? this.svc.restaurarSubido(subido, cred)
       : this.svc.restaurarRespaldo(archivo!, cred);
@@ -196,6 +233,8 @@ export class SistemaRespaldosComponent implements OnInit {
     obs.subscribe({
       next: (r) => {
         this.restaurando.set(false);
+        this.detenerPolling();
+        this.progreso.set(null);
         this.restaurarSel.set(null);
         this.archivoSubido.set(null);
         this.limpiarCredenciales();
@@ -207,7 +246,18 @@ export class SistemaRespaldosComponent implements OnInit {
       },
       error: (e) => {
         this.restaurando.set(false);
-        this.toast(e?.error?.message || 'La restauración falló', true);
+        this.detenerPolling();
+        this.progreso.set(null);
+        const msg =
+          e?.error?.message ||
+          (e?.name === 'TimeoutError'
+            ? 'La restauración tardó demasiado. Revise la terminal del servidor por si terminó en segundo plano.'
+            : e?.status === 0
+              ? 'Sin respuesta del servidor (reinicio, red o cierre de sesión).'
+              : e?.status
+                ? `Error del servidor (${e.status})`
+                : 'La restauración falló');
+        this.toast(msg, true);
       },
     });
   }
