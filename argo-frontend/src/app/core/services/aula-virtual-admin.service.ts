@@ -111,6 +111,36 @@ export interface UsuariosPortalRes {
   usuarios: UsuarioPortalAdmin[];
 }
 
+export interface CrearUsuarioPortalBody {
+  email: string;
+  password: string;
+  alumno: {
+    numDoc: number | string;
+    tipoDoc?: string;
+    apellido1?: string;
+    apellido2?: string;
+    nombre1?: string;
+    nombre2?: string;
+    celular?: string;
+    expedida?: string;
+  };
+}
+
+export interface CrearUsuarioPortalRes {
+  ok: boolean;
+  message: string;
+  alumnoCreado: boolean;
+  nombreCompleto: string;
+  numDoc: number;
+  usuarioPortal: {
+    creado: boolean;
+    actualizado: boolean;
+    email: string;
+    numDoc: number;
+    passwordTemporal: string | null;
+  };
+}
+
 export interface MatriculaVirtualAdminRes {
   yaMatriculado: boolean;
   message: string;
@@ -165,6 +195,10 @@ export class AulaVirtualAdminService {
 
   eliminarUsuario(id: string): Observable<{ ok: boolean; message: string }> {
     return this.http.delete<{ ok: boolean; message: string }>(`${this.base}/usuarios/${id}`);
+  }
+
+  crearUsuario(body: CrearUsuarioPortalBody): Observable<CrearUsuarioPortalRes> {
+    return this.http.post<CrearUsuarioPortalRes>(`${this.base}/usuarios`, body);
   }
 
   guardarConfig(id: string | number, body: GuardarCursoVirtualBody): Observable<{ config: VirtualConfig }> {
@@ -225,7 +259,13 @@ export class AulaVirtualAdminService {
 
   matricularAlumno(
     idPrograma: string | number,
-    body: { numDoc: number | string; email?: string; crearUsuarioPortal?: boolean; observaciones?: string },
+    body: {
+      numDoc: number | string;
+      email?: string;
+      password?: string;
+      crearUsuarioPortal?: boolean;
+      observaciones?: string;
+    },
   ): Observable<MatriculaVirtualAdminRes> {
     return this.http.post<MatriculaVirtualAdminRes>(`${this.base}/cursos/${idPrograma}/matricular`, body);
   }

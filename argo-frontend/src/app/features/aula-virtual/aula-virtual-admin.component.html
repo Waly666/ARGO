@@ -207,18 +207,27 @@
                     <label>Correo portal (si crea usuario)</label>
                     <input type="email" [(ngModel)]="matriculaEmail" placeholder="alumno@correo.com" />
                   </div>
-                  <div class="av-field av-field--check">
-                    <label class="av-check">
-                      <input type="checkbox" [(ngModel)]="matriculaCrearUsuario" />
-                      Crear / actualizar acceso al portal
-                    </label>
+                  <div class="av-field">
+                    <label>Contraseña portal (opcional)</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="matriculaPassword"
+                      placeholder="Mín. 6 caracteres; vacío = automática"
+                      autocomplete="new-password"
+                    />
                   </div>
+                </div>
+                <div class="av-field av-field--check">
+                  <label class="av-check">
+                    <input type="checkbox" [(ngModel)]="matriculaCrearUsuario" />
+                    Crear / actualizar acceso al portal
+                  </label>
                 </div>
                 @if (matriculaCredenciales()) {
                   <p class="av-ok">
                     Acceso portal: <strong>{{ matriculaCredenciales()!.email }}</strong>
-                    @if (matriculaCredenciales()!.passwordTemporal) {
-                      · Contraseña temporal: <code>{{ matriculaCredenciales()!.passwordTemporal }}</code>
+                    @if (matriculaCredenciales()!.passwordAsignada) {
+                      · Contraseña: <code>{{ matriculaCredenciales()!.passwordAsignada }}</code>
                     }
                   </p>
                 }
@@ -312,7 +321,10 @@
       <div class="av-users-head">
         <div>
           <h2>Usuarios registrados en el portal</h2>
-          <p class="av-muted">Cuentas creadas en el aula virtual (email + documento). Puede eliminar el acceso al portal sin borrar la ficha del alumno.</p>
+          <p class="av-muted">
+            Cree acceso al aula virtual desde aquí (ideal para adultos mayores que no se registran solos).
+            Si el alumno no existe en ARGO, se crea la ficha virtual automáticamente.
+          </p>
         </div>
         <div class="av-search">
           <input
@@ -323,6 +335,91 @@
           />
           <button type="button" class="av-btn av-btn--secondary" (click)="cargarUsuarios()">Buscar</button>
         </div>
+      </div>
+
+      <div class="av-block av-create-user">
+        <div class="av-create-user-head">
+          <h3>Crear alumno virtual + acceso al portal</h3>
+          <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="mostrarFormUsuario = !mostrarFormUsuario">
+            {{ mostrarFormUsuario ? 'Ocultar formulario' : 'Nuevo usuario' }}
+          </button>
+        </div>
+        @if (mostrarFormUsuario) {
+          <p class="av-muted">
+            Defina correo y contraseña que el alumno usará en el portal. Anote los datos para entregárselos en recepción o por teléfono.
+          </p>
+          <div class="av-grid3">
+            <div class="av-field">
+              <label>Tipo documento</label>
+              <select [(ngModel)]="nuevoUsuario.tipoDoc">
+                <option value="1">Cédula de ciudadanía</option>
+                <option value="2">Tarjeta de identidad</option>
+                <option value="3">Cédula de extranjería</option>
+                <option value="4">Pasaporte</option>
+              </select>
+            </div>
+            <div class="av-field">
+              <label>Número de documento</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.numDoc" placeholder="Ej. 1234567890" />
+            </div>
+            <div class="av-field">
+              <label>Celular</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.celular" placeholder="Opcional" />
+            </div>
+          </div>
+          <div class="av-grid2">
+            <div class="av-field">
+              <label>Primer apellido</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.apellido1" />
+            </div>
+            <div class="av-field">
+              <label>Segundo apellido</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.apellido2" />
+            </div>
+          </div>
+          <div class="av-grid2">
+            <div class="av-field">
+              <label>Primer nombre</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.nombre1" />
+            </div>
+            <div class="av-field">
+              <label>Segundo nombre</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.nombre2" />
+            </div>
+          </div>
+          <div class="av-grid2">
+            <div class="av-field">
+              <label>Correo (usuario del portal)</label>
+              <input type="email" [(ngModel)]="nuevoUsuario.email" placeholder="alumno@correo.com" />
+            </div>
+            <div class="av-field">
+              <label>Contraseña</label>
+              <input
+                type="text"
+                [(ngModel)]="nuevoUsuario.password"
+                placeholder="Mín. 6 caracteres"
+                autocomplete="new-password"
+              />
+            </div>
+          </div>
+          @if (credencialesCreadas()) {
+            <p class="av-ok av-credenciales">
+              <strong>{{ credencialesCreadas()!.nombre }}</strong> (doc. {{ credencialesCreadas()!.numDoc }})<br />
+              Usuario: <code>{{ credencialesCreadas()!.email }}</code> · Contraseña: <code>{{ credencialesCreadas()!.password }}</code>
+            </p>
+          }
+          <div class="av-create-user-actions">
+            <button
+              type="button"
+              class="av-btn av-btn--primary"
+              [disabled]="creandoUsuario()"
+              (click)="crearUsuarioPortal()"
+            >
+              {{ creandoUsuario() ? 'Creando…' : 'Crear acceso al portal' }}
+            </button>
+            <button type="button" class="av-btn av-btn--ghost" (click)="limpiarFormUsuario()">Limpiar</button>
+          </div>
+        }
       </div>
 
       @if (loadingUsuarios()) {

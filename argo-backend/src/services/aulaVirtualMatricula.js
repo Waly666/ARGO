@@ -122,9 +122,16 @@ async function crearUsuarioPortalAlumno({ numDoc: numDocRaw, email, password }) 
     throw err;
   }
 
-  const existente = await UsuarioPortal.findOne({ email: mail }).lean();
-  if (existente && Number(existente.numDoc) !== numDoc) {
+  const existenteMail = await UsuarioPortal.findOne({ email: mail }).lean();
+  if (existenteMail && Number(existenteMail.numDoc) !== numDoc) {
     const err = new Error('Ese correo ya está asociado a otro usuario del portal');
+    err.status = 409;
+    throw err;
+  }
+
+  const existenteDoc = await UsuarioPortal.findOne({ numDoc }).lean();
+  if (existenteDoc && existenteMail && String(existenteDoc._id) !== String(existenteMail._id)) {
+    const err = new Error('Conflicto de cuentas del portal para este documento');
     err.status = 409;
     throw err;
   }
@@ -139,11 +146,12 @@ async function crearUsuarioPortalAlumno({ numDoc: numDocRaw, email, password }) 
   const passwordHash = await bcrypt.hash(pass, 10);
   let portal;
   let creado = false;
+  const existente = existenteMail || existenteDoc;
 
   if (existente) {
     portal = await UsuarioPortal.findOneAndUpdate(
       { _id: existente._id },
-      { $set: { passwordHash, activo: true, numDoc } },
+      { $set: { email: mail, passwordHash, activo: true, numDoc } },
       { new: true },
     );
   } else {
@@ -164,7 +172,14 @@ async function crearUsuarioPortalAlumno({ numDoc: numDocRaw, email, password }) 
   };
 }
 
-async function matricularVirtual({ numDoc: numDocRaw, idPrograma, observaciones, crearUsuarioPortal = false, email }) {
+async function matricularVirtual({
+  numDoc: numDocRaw,
+  idPrograma,
+  observaciones,
+  crearUsuarioPortal = false,
+  email,
+  password,
+}) {
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null) {
     const err = new Error('Documento inválido');
@@ -216,6 +231,7 @@ async function matricularVirtual({ numDoc: numDocRaw, idPrograma, observaciones,
     usuarioPortal = await crearUsuarioPortalAlumno({
       numDoc,
       email: email || alumno.correo,
+      password,
     });
   }
 

@@ -136,9 +136,25 @@ export class AulaVirtualAdminComponent implements OnInit {
 
   matriculaNumDoc = '';
   matriculaEmail = '';
+  matriculaPassword = '';
   matriculaCrearUsuario = true;
   matriculando = signal(false);
-  matriculaCredenciales = signal<{ email: string; passwordTemporal: string | null } | null>(null);
+  matriculaCredenciales = signal<{ email: string; passwordTemporal: string | null; passwordAsignada?: string } | null>(null);
+
+  mostrarFormUsuario = false;
+  creandoUsuario = signal(false);
+  credencialesCreadas = signal<{ email: string; password: string; nombre: string; numDoc: number } | null>(null);
+  nuevoUsuario = {
+    tipoDoc: '1',
+    numDoc: '',
+    apellido1: '',
+    apellido2: '',
+    nombre1: '',
+    nombre2: '',
+    celular: '',
+    email: '',
+    password: '',
+  };
 
   ngOnInit(): void {
 
@@ -253,6 +269,74 @@ export class AulaVirtualAdminComponent implements OnInit {
     });
   }
 
+  crearUsuarioPortal() {
+    const f = this.nuevoUsuario;
+    const numDoc = f.numDoc.trim();
+    const email = f.email.trim();
+    const password = f.password.trim();
+    if (!numDoc || !email || !password) {
+      this.toast('Documento, correo y contraseña son obligatorios', true);
+      return;
+    }
+    if (password.length < 6) {
+      this.toast('La contraseña debe tener al menos 6 caracteres', true);
+      return;
+    }
+    if (!f.apellido1.trim() || !f.nombre1.trim()) {
+      this.toast('Apellido y nombre son obligatorios si el alumno no existe en ARGO', true);
+      return;
+    }
+    if (this.creandoUsuario()) return;
+    this.creandoUsuario.set(true);
+    this.credencialesCreadas.set(null);
+    this.svc
+      .crearUsuario({
+        email,
+        password,
+        alumno: {
+          numDoc,
+          tipoDoc: f.tipoDoc,
+          apellido1: f.apellido1.trim(),
+          apellido2: f.apellido2.trim(),
+          nombre1: f.nombre1.trim(),
+          nombre2: f.nombre2.trim(),
+          celular: f.celular.trim(),
+        },
+      })
+      .subscribe({
+        next: (res) => {
+          this.creandoUsuario.set(false);
+          this.toast(res.message);
+          this.credencialesCreadas.set({
+            email: res.usuarioPortal.email,
+            password,
+            nombre: res.nombreCompleto,
+            numDoc: res.numDoc,
+          });
+          this.cargarUsuarios();
+        },
+        error: (e) => {
+          this.creandoUsuario.set(false);
+          this.toast(e?.error?.message || 'No se pudo crear el usuario del portal', true);
+        },
+      });
+  }
+
+  limpiarFormUsuario() {
+    this.nuevoUsuario = {
+      tipoDoc: '1',
+      numDoc: '',
+      apellido1: '',
+      apellido2: '',
+      nombre1: '',
+      nombre2: '',
+      celular: '',
+      email: '',
+      password: '',
+    };
+    this.credencialesCreadas.set(null);
+  }
+
 
 
   matricularAlumno() {
@@ -265,6 +349,7 @@ export class AulaVirtualAdminComponent implements OnInit {
       .matricularAlumno(sel.idPrograma, {
         numDoc,
         email: this.matriculaEmail.trim() || undefined,
+        password: this.matriculaPassword.trim() || undefined,
         crearUsuarioPortal: this.matriculaCrearUsuario,
       })
       .subscribe({
@@ -272,9 +357,11 @@ export class AulaVirtualAdminComponent implements OnInit {
           this.matriculando.set(false);
           this.toast(res.message);
           if (res.usuarioPortal) {
+            const passManual = this.matriculaPassword.trim();
             this.matriculaCredenciales.set({
               email: res.usuarioPortal.email,
               passwordTemporal: res.usuarioPortal.passwordTemporal,
+              passwordAsignada: passManual || res.usuarioPortal.passwordTemporal || undefined,
             });
           }
         },

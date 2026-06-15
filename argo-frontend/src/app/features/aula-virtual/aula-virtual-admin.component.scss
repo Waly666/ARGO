@@ -338,6 +338,41 @@ textarea {
   border-top: 1px solid var(--line-soft);
 }
 
+.av-create-user-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+.av-create-user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  .av-btn {
+    margin-top: 0;
+  }
+}
+
+.av-btn--sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  margin-top: 0;
+}
+
+.av-credenciales {
+  margin-top: 0.75rem;
+  line-height: 1.5;
+}
+
 .av-items {
   margin: 0.4rem 0 0.65rem;
   padding-left: 1.1rem;

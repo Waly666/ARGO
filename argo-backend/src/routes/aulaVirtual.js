@@ -67,6 +67,7 @@ router.post('/cursos/:id/matricular', requirePortalAuth, ctrl.matricularCurso);
 const gestionar = requirePermiso('programas.gestionar');
 
 router.get('/admin/usuarios', requireAuth, gestionar, admin.listarUsuariosPortal);
+router.post('/admin/usuarios', requireAuth, gestionar, admin.crearUsuarioPortal);
 router.delete('/admin/usuarios/:id', requireAuth, gestionar, admin.eliminarUsuarioPortal);
 router.get('/admin/categorias', requireAuth, gestionar, admin.listarCategoriasAdmin);
 router.post('/admin/categorias', requireAuth, gestionar, admin.crearCategoria);

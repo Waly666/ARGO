@@ -1,10 +1,19 @@
 const DatosAlumno = require('../models/DatosAlumno');
 const UsuarioPortal = require('../models/UsuarioPortal');
-const { numDocQuery } = require('../utils/numDoc');
+const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
+const { TIPO_VIRTUAL } = require('../constants/tipoAlumno');
+const { crearUsuarioPortalAlumno } = require('./aulaVirtualMatricula');
 
 function nombreCompleto(a) {
   if (!a) return '';
   return [a.apellido1, a.apellido2, a.nombre1, a.nombre2].filter(Boolean).join(' ').trim();
+}
+
+function nombreMayusculas(v) {
+  return String(v || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, ' ');
 }
 
 function coincideBusqueda(row, q) {
@@ -16,6 +25,100 @@ function coincideBusqueda(row, q) {
   if (row.nombreCompleto?.toLowerCase().includes(t)) return true;
   if (row.celular?.toLowerCase().includes(t)) return true;
   return false;
+}
+
+async function asegurarAlumnoVirtual({ alumno, email, usuarioErp }) {
+  const numDoc = parseNumDoc(alumno?.numDoc);
+  if (numDoc == null) {
+    const err = new Error('Número de documento inválido');
+    err.status = 400;
+    throw err;
+  }
+
+  const mail = String(email || '').trim().toLowerCase();
+  let da = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+  if (!da) {
+    const apellido1 = nombreMayusculas(alumno?.apellido1);
+    const nombre1 = nombreMayusculas(alumno?.nombre1);
+    if (!apellido1 || !nombre1) {
+      const err = new Error('Apellido y nombre son obligatorios para crear la ficha del alumno');
+      err.status = 400;
+      throw err;
+    }
+    const creado = await DatosAlumno.create({
+      tipoAlumno: TIPO_VIRTUAL,
+      tipoDoc: alumno?.tipoDoc || '1',
+      numDoc,
+      expedida: alumno?.expedida || '',
+      apellido1,
+      apellido2: nombreMayusculas(alumno?.apellido2),
+      nombre1,
+      nombre2: nombreMayusculas(alumno?.nombre2),
+      fechaNac: alumno?.fechaNac ? new Date(alumno.fechaNac) : null,
+      genero: alumno?.genero || '',
+      correo: mail,
+      celular: String(alumno?.celular || '').trim(),
+      direccion: String(alumno?.direccion || '').trim(),
+      munOrigen: alumno?.munOrigen || alumno?.codMunicipio || '',
+      codMunicipio: alumno?.codMunicipio || alumno?.munOrigen || '',
+      userAddReg: usuarioErp || 'erp-aula',
+    });
+    return { alumnoCreado: true, alumno: creado.toObject() };
+  }
+
+  const patch = {};
+  if (!da.correo && mail) patch.correo = mail;
+  if (!da.celular && alumno?.celular) patch.celular = String(alumno.celular).trim();
+  if (!da.direccion && alumno?.direccion) patch.direccion = String(alumno.direccion).trim();
+  if (Object.keys(patch).length) {
+    await DatosAlumno.updateOne({ _id: da._id }, { $set: patch });
+    da = { ...da, ...patch };
+  }
+
+  return { alumnoCreado: false, alumno: da };
+}
+
+/**
+ * Crea o actualiza ficha alumno (virtual si es nueva) y cuenta del portal con contraseña elegida por staff.
+ */
+async function crearUsuarioPortalAdmin({ email, password, alumno, usuarioErp }) {
+  const mail = String(email || '').trim().toLowerCase();
+  if (!mail) {
+    const err = new Error('El correo del portal es obligatorio');
+    err.status = 400;
+    throw err;
+  }
+
+  const pass = String(password || '').trim();
+  if (!pass || pass.length < 6) {
+    const err = new Error('La contraseña debe tener al menos 6 caracteres');
+    err.status = 400;
+    throw err;
+  }
+
+  const { alumnoCreado, alumno: da } = await asegurarAlumnoVirtual({ alumno, email: mail, usuarioErp });
+  const usuarioPortal = await crearUsuarioPortalAlumno({
+    numDoc: da.numDoc,
+    email: mail,
+    password: pass,
+  });
+
+  const etiqueta = nombreCompleto(da) || mail;
+  let message = usuarioPortal.creado
+    ? `Cuenta del portal creada para ${etiqueta}.`
+    : `Acceso del portal actualizado para ${etiqueta}.`;
+  if (alumnoCreado) {
+    message = `Ficha de alumno virtual creada y ${message.charAt(0).toLowerCase()}${message.slice(1)}`;
+  }
+
+  return {
+    ok: true,
+    message,
+    alumnoCreado,
+    nombreCompleto: etiqueta,
+    numDoc: da.numDoc,
+    usuarioPortal,
+  };
 }
 
 async function listarUsuariosPortalAdmin({ q = '', limit = 200 } = {}) {
@@ -72,4 +175,8 @@ async function eliminarUsuarioPortal(id) {
   };
 }
 
-module.exports = { listarUsuariosPortalAdmin, eliminarUsuarioPortal };
+module.exports = {
+  listarUsuariosPortalAdmin,
+  eliminarUsuarioPortal,
+  crearUsuarioPortalAdmin,
+};
