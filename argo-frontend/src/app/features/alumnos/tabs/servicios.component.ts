@@ -18,7 +18,7 @@ import {
   EnumBuscarOption,
 } from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
-import { esLiquidacionVirtual } from '../catalogo.helpers';
+import { esLiquidacionVirtual, esTarifaVirtualMatricula, TARIFA_VIRTUAL } from '../catalogo.helpers';
 
 @Component({
   selector: 'argo-servicios',
@@ -44,7 +44,11 @@ export class ServiciosComponent {
 
   // form matrícula
   idProg = signal<string>('');
-  tarifa = signal<1 | 2 | 3>(1);
+  tarifa = signal<1 | 2 | 3 | 4>(1);
+  matriculaCrearPortal = true;
+  matriculaEmailPortal = '';
+  matriculaPasswordPortal = '';
+  matriculaCredenciales = signal<{ email: string; password: string } | null>(null);
 
   // form servicio adicional
   idServ = signal<string>('');
@@ -100,15 +104,30 @@ export class ServiciosComponent {
   programaSel = computed(() =>
     this.programas().find((p) => String(p.idPrograma ?? p.idProg ?? p._id) === this.idProg()),
   );
+
+  serviciosPrograma = computed(() => {
+    const p = this.programaSel();
+    if (!p) return [];
+    const idP = String(p.idPrograma ?? p.idProg);
+    return this.servicios().filter((s) => String(s.idProg) === idP && !this.esHoraPractica(s));
+  });
+
+  programaTieneTarifaVirtual = computed(() =>
+    this.serviciosPrograma().some((s) => this.num(s.tarifaVirtual) > 0),
+  );
+
+  esTarifaVirtualSeleccionada = computed(() => esTarifaVirtualMatricula(this.tarifa()));
+
   valorMatCalculado = computed(() => {
     const p = this.programaSel();
     if (!p) return 0;
     const t = this.tarifa();
+    if (esTarifaVirtualMatricula(t)) {
+      return this.serviciosPrograma().reduce((acc, s) => acc + this.num(s.tarifaVirtual), 0);
+    }
     const idP = String(p.idPrograma ?? p.idProg);
     const sem = Number(p.semestres);
-    const porProg = this.servicios().filter(
-      (s) => String(s.idProg) === idP && !this.esHoraPractica(s),
-    );
+    const porProg = this.serviciosPrograma();
     if (Number.isFinite(sem) && sem >= 1 && porProg.length > 0) {
       return porProg.reduce((acc, s) => {
         const v = s[`tarifa${t}`];
@@ -175,13 +194,23 @@ export class ServiciosComponent {
     return this.opcionesProgramas().find((o) => String(o.value) === id)?.label || '';
   });
 
-  opcionesTarifas: EnumBuscarOption[] = [
-    { value: 1, label: 'Tarifa 1' },
-    { value: 2, label: 'Tarifa 2' },
-    { value: 3, label: 'Tarifa 3' },
-  ];
+  opcionesTarifas = computed<EnumBuscarOption[]>(() => {
+    const opts: EnumBuscarOption[] = [
+      { value: 1, label: 'Tarifa 1' },
+      { value: 2, label: 'Tarifa 2' },
+      { value: 3, label: 'Tarifa 3' },
+    ];
+    if (this.programaTieneTarifaVirtual()) {
+      opts.push({ value: TARIFA_VIRTUAL, label: 'Virtual (aula en línea)' });
+    }
+    return opts;
+  });
 
-  textoTarifa = computed(() => `Tarifa ${this.tarifa()}`);
+  textoTarifa = computed(() => {
+    const t = this.tarifa();
+    const opt = this.opcionesTarifas().find((o) => Number(o.value) === t);
+    return opt?.label || `Tarifa ${t}`;
+  });
 
   opcionesServiciosAdicionales = computed<EnumBuscarOption[]>(() =>
     this.serviciosAdicionales().map((s) => ({
@@ -260,20 +289,33 @@ export class ServiciosComponent {
 
   setTarifa(v: number | string) {
     const n = Number(v);
-    if (n === 1 || n === 2 || n === 3) this.tarifa.set(n);
+    if (n === 1 || n === 2 || n === 3 || n === TARIFA_VIRTUAL) {
+      if (n === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) return;
+      this.tarifa.set(n as 1 | 2 | 3 | 4);
+    }
   }
 
   onProgramaPick(opt: EnumBuscarOption): void {
     this.idProg.set(String(opt.value));
+    this.matriculaCredenciales.set(null);
+    if (this.tarifa() === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) {
+      this.tarifa.set(1);
+    }
   }
 
   onProgramaLimpiar(): void {
     this.idProg.set('');
     this.docsPendientesMat.set([]);
+    this.matriculaCredenciales.set(null);
+    if (this.tarifa() === TARIFA_VIRTUAL) this.tarifa.set(1);
   }
 
   onTarifaPick(opt: EnumBuscarOption): void {
     this.setTarifa(opt.value);
+    if (Number(opt.value) === TARIFA_VIRTUAL && !this.matriculaEmailPortal.trim()) {
+      const mail = String(this.store.alumno()?.correo || '').trim();
+      if (mail) this.matriculaEmailPortal = mail;
+    }
   }
 
   onTarifaLimpiar(): void {
@@ -293,21 +335,55 @@ export class ServiciosComponent {
 
   crearMatricula() {
     const nd = this.store.numDoc();
-    const alumnoId = this.store.alumno()?._id;
     if (!nd) { this.setMsg('Selecciona o crea un alumno primero.', true); return; }
     if (!this.idProg()) { this.setMsg('Selecciona un programa.', true); return; }
     const prog = this.programaSel();
+    const esVirtual = this.esTarifaVirtualSeleccionada();
+    const emailPortal = this.matriculaEmailPortal.trim() || String(this.store.alumno()?.correo || '').trim();
+    const passwordPortal = this.matriculaPasswordPortal.trim();
+
+    if (esVirtual && this.matriculaCrearPortal) {
+      if (!emailPortal) {
+        this.setMsg('Indique el correo del portal (usuario de acceso).', true);
+        return;
+      }
+      if (passwordPortal && passwordPortal.length < 6) {
+        this.setMsg('La contraseña del portal debe tener al menos 6 caracteres.', true);
+        return;
+      }
+    }
+
     this.setMsg(null, false);
-    this.matSvc.crear({ numDoc: nd, idPrograma: this.idProg(), tarifa: this.tarifa() }).subscribe({
-      next: () => {
+    this.matriculaCredenciales.set(null);
+    this.matSvc
+      .crear({
+        numDoc: nd,
+        idPrograma: this.idProg(),
+        tarifa: this.tarifa(),
+        crearUsuarioPortal: esVirtual && this.matriculaCrearPortal,
+        email: esVirtual && this.matriculaCrearPortal ? emailPortal : undefined,
+        password: esVirtual && this.matriculaCrearPortal && passwordPortal ? passwordPortal : undefined,
+      })
+      .subscribe({
+      next: (res) => {
         this.idProg.set('');
         this.tarifa.set(1);
+        this.matriculaEmailPortal = '';
+        this.matriculaPasswordPortal = '';
         this.docsPendientesMat.set([]);
         this.recargar(nd);
         const avisoCea = this.esProgramaCea(prog)
           ? ' Debe programar las horas CEA (teoría, taller y práctica) en Programación CEA.'
           : '';
-        this.setMsg(`Matrícula creada. Se generaron los ítems de liquidación del programa.${avisoCea}`, false);
+        let msg = `Matrícula creada. Se generaron los ítems de liquidación del programa.${avisoCea}`;
+        if (res.usuarioPortal) {
+          const pass = passwordPortal || res.usuarioPortal.passwordTemporal || '';
+          if (pass) {
+            this.matriculaCredenciales.set({ email: res.usuarioPortal.email, password: pass });
+            msg += ` Acceso portal: ${res.usuarioPortal.email}.`;
+          }
+        }
+        this.setMsg(msg, false);
       },
       error: (e) => this.setMsg(e?.error?.message || 'Error creando matrícula.', true),
     });

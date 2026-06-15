@@ -14,6 +14,8 @@ const { estadoLiq } = require('../services/liquidacionMatricula');
 const { esProgramaJornadasCap, TIPO_JORNADAS_CAPACITACION, resolverIdSedeMatriculaJornada } = require('../services/jornadaCapacitacion');
 const { normalizarTipoRegularJornada, TIPO_REGULAR_JORNADA_DEFAULT } = require('../constants/tipoRegularJornada');
 const { normalizarIdSede } = require('../services/sedeContext');
+const { esTarifaVirtual } = require('../constants/tarifa');
+const { crearUsuarioPortalAlumno } = require('../services/aulaVirtualMatricula');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
@@ -52,6 +54,17 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
   const serviciosProg = await listarServiciosMatricula(prog);
   const usaSem = programaUsaSemestres(prog) && serviciosProg.length > 0;
   const t = Number(tarifa);
+
+  if (esTarifaVirtual(t)) {
+    const tieneVirtual = usaSem
+      ? serviciosProg.some((s) => num(s.tarifaVirtual) > 0)
+      : num(serviciosProg[0]?.tarifaVirtual) > 0;
+    if (!tieneVirtual) {
+      const err = new Error('Este programa no tiene tarifa virtual configurada en Programas');
+      err.status = 400;
+      throw err;
+    }
+  }
 
   let valorMat = 0;
   if (esJornada) {
@@ -134,7 +147,7 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
     await Matricula.findByIdAndUpdate(m._id, { pagada: 'Pagado' });
   }
 
-  return {
+  const result = {
     matricula: { ...m.toObject(), valorMat: num(m.valorMat) },
     liquidacion: liquidaciones[0]
       ? {
@@ -150,7 +163,21 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
       abonado: num(l.abonado),
       saldo: num(l.saldo),
     })),
+    usuarioPortal: null,
   };
+
+  const crearPortal =
+    esTarifaVirtual(t) &&
+    (body.crearUsuarioPortal === true || body.crearUsuarioPortal === 'true');
+  if (crearPortal) {
+    result.usuarioPortal = await crearUsuarioPortalAlumno({
+      numDoc,
+      email: body.email || alumno?.correo,
+      password: body.password,
+    });
+  }
+
+  return result;
 }
 
 exports.crearMatriculaDesdeBody = crearMatriculaDesdeBody;

@@ -35,7 +35,7 @@
             [modoCombo]="true"
             [remoto]="false"
             [minLength]="1"
-            [opcionesLocales]="opcionesTarifas"
+            [opcionesLocales]="opcionesTarifas()"
             (seleccionado)="onTarifaPick($event)"
             (limpiado)="onTarifaLimpiar()"
           />
@@ -45,6 +45,40 @@
           <input type="text" [value]="fmt(valorMatCalculado())" disabled />
         </div>
       </div>
+
+      <div class="portal-matricula" *ngIf="esTarifaVirtualSeleccionada()">
+        <p class="hint portal-matricula-lead">
+          Matrícula <strong>aula virtual</strong>. Puede crear el acceso al portal en el mismo paso.
+        </p>
+        <div class="row">
+          <div class="col-6">
+            <label>Correo portal (usuario)</label>
+            <input
+              type="email"
+              [(ngModel)]="matriculaEmailPortal"
+              [placeholder]="store.alumno()?.correo || 'alumno@correo.com'"
+            />
+          </div>
+          <div class="col-6">
+            <label>Contraseña portal</label>
+            <input
+              type="text"
+              [(ngModel)]="matriculaPasswordPortal"
+              placeholder="Mín. 6 caracteres; vacío = automática"
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+        <label class="portal-check">
+          <input type="checkbox" [(ngModel)]="matriculaCrearPortal" />
+          Crear / actualizar acceso al portal
+        </label>
+      </div>
+
+      <p class="msg ok portal-credenciales" *ngIf="matriculaCredenciales() as cred">
+        Acceso portal creado — Usuario: <strong>{{ cred.email }}</strong> · Contraseña: <code>{{ cred.password }}</code>
+      </p>
+
       <div class="actions">
         <button class="primary" (click)="crearMatricula()" [disabled]="!idProg()">
           Crear Matrícula

@@ -67,6 +67,34 @@ table.nested { font-size: .88rem; }
   z-index: 5000;
 }
 
+.portal-matricula {
+  margin: 4px 0 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  border-radius: 10px;
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.portal-matricula-lead {
+  margin: 0 0 10px;
+}
+
+.portal-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+.portal-credenciales {
+  margin-top: 0;
+  code {
+    font-weight: 600;
+  }
+}
+
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 
 .r { text-align: right; }

@@ -164,11 +164,18 @@ export function normalizarTipoAlumno(val?: string | null): TipoAlumno {
   return TIPO_ALUMNO_DEFAULT;
 }
 
+/** Tarifa 4 — matrícula aula virtual (portal en línea). */
+export const TARIFA_VIRTUAL = 4;
+
+export function esTarifaVirtualMatricula(tarifa?: number | string | null): boolean {
+  return Number(tarifa) === TARIFA_VIRTUAL;
+}
+
 export function esLiquidacionVirtual(it?: {
   esVirtual?: boolean;
   tarifaMatricula?: number | null;
 }): boolean {
-  return !!it?.esVirtual || Number(it?.tarifaMatricula) === 4;
+  return !!it?.esVirtual || esTarifaVirtualMatricula(it?.tarifaMatricula);
 }
 
 export const TIPOS_DOC_DEF = [
