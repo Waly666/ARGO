@@ -1009,8 +1009,10 @@ blockquote {
 
 .curso-cover {
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   width: 100%;
+  background: #e2e8f0;
 }
 
 .curso-cover--ph {
