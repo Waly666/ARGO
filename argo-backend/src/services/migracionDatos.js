@@ -23,6 +23,8 @@ const { esProgramaJornadasCap } = require('./jornadaCapacitacion');
 const { normalizarTipoCertificado } = require('./clasificacionCertificado');
 const { CLAVE: CLAVE_CERT } = require('./configCertificado');
 const { CLAVE: CLAVE_RECIBO } = require('./configRecibo');
+const { ID_PROG_HISTORICO } = require('../constants/migracionHistorico');
+const progreso = require('./progresoOperacion');
 
 /** Historial de lotes de migración. */
 const MigracionLote =
@@ -56,6 +58,21 @@ function normalizarHojas(raw) {
   return sel.length ? sel : [...CLAVES_HOJAS];
 }
 
+/** Integridad relacional: completa (default) o histórica para certificados sin alumno/programa. */
+function normalizarOpcionesIntegridad(raw = {}) {
+  const certificadosHistoricos =
+    raw.certificadosHistoricos === true
+    || raw.certificadosHistoricos === 'true'
+    || raw.modoIntegridad === 'historica'
+    || raw.modoIntegridad === 'parcial';
+  return {
+    modoIntegridad: certificadosHistoricos ? 'historica' : 'completa',
+    certificadosHistoricos,
+    exigirAlumnoEnCertificados: !certificadosHistoricos,
+    exigirProgramaEnCertificados: !certificadosHistoricos,
+  };
+}
+
 const COLUMNAS = {
   programas: [
     'codigoPrograma', 'nombrePrograma', 'tipoCapacitacion', 'horas', 'semestres',
@@ -72,8 +89,8 @@ const COLUMNAS = {
     'numDoc', 'numeroRecibo', 'fecha', 'valor', 'formaPago', 'concepto', 'observaciones',
   ],
   certificados: [
-    'numDoc', 'codigoPrograma', 'codigoCertificado', 'nombreCurso', 'fechaEmision',
-    'fechaVencimiento', 'numActa', 'numFolio', 'numRunt', 'estado',
+    'numDoc', 'nombreTitular', 'codVerificacion', 'codigoPrograma', 'codigoCertificado', 'nombreCurso', 'horas',
+    'fechaEmision', 'fechaVencimiento', 'numActa', 'numFolio', 'numRunt', 'estado',
   ],
 };
 
@@ -98,13 +115,15 @@ const EJEMPLOS = {
     formaPago: 'Efectivo', concepto: 'Abono curso de conducción', observaciones: '',
   }],
   certificados: [{
-    numDoc: 1098765432, codigoPrograma: '101', codigoCertificado: 'CERT-000045',
-    nombreCurso: 'Curso de conducción B1', fechaEmision: '2024-06-30', fechaVencimiento: '',
-    numActa: '', numFolio: '', numRunt: '', estado: 'vigente',
+    numDoc: 1098765432, nombreTitular: 'JUAN CARLOS PEREZ GOMEZ', codVerificacion: 'VRF-2024-000045',
+    codigoPrograma: '', codigoCertificado: 'CERT-000045', nombreCurso: 'Curso de conducción B1', horas: 40,
+    fechaEmision: '2024-06-30', fechaVencimiento: '', numActa: '', numFolio: '', numRunt: '',
+    estado: 'vigente',
   }],
 };
 
-function instrucciones(hojasSel) {
+function instrucciones(hojasSel, opciones = {}) {
+  const opts = normalizarOpcionesIntegridad(opciones);
   const filas = [
     ['PLANTILLA DE MIGRACIÓN DE DATOS — ARGO'],
     [`Incluye: ${hojasSel.map((h) => HOJAS[h]).join(', ')}`],
@@ -126,18 +145,29 @@ function instrucciones(hojasSel) {
     matriculas:
       'Hoja Matriculas: obligatorios numDoc y codigoPrograma. valorTotal y valorPagado calculan el saldo pendiente. El codigoPrograma debe existir en ARGO o venir en la hoja Programas.',
     pagos: 'Hoja Pagos: obligatorios numDoc y valor. numeroRecibo conserva el número del sistema anterior.',
-    certificados:
-      'Hoja Certificados: obligatorios numDoc, codigoPrograma y fechaEmision. estado: vigente o anulado.',
+    certificados: opts.certificadosHistoricos
+      ? 'Hoja Certificados (modo histórico): obligatorios numDoc y fechaEmision. codVerificacion es el código que verán en la consulta pública del Aula Virtual. Recomendado nombreCurso y nombreTitular. codigoPrograma es opcional. horas = horas del certificado. estado: vigente o anulado.'
+      : 'Hoja Certificados: obligatorios numDoc, codigoPrograma y fechaEmision. estado: vigente o anulado.',
   };
   for (const h of hojasSel) filas.push([detalle[h]]);
-  if (!hojasSel.includes('alumnos')) {
+  if (opts.certificadosHistoricos && hojasSel.includes('certificados')) {
+    filas.push(
+      [''],
+      ['MODO HISTÓRICO: no se exige que el alumno ni el programa existan en ARGO.'],
+      ['nombreTitular se usa en la consulta del Aula Virtual si el alumno aún no está registrado.'],
+    );
+  } else if (!hojasSel.includes('alumnos')) {
     filas.push(
       [''],
       ['IMPORTANTE: esta plantilla no incluye la hoja Alumnos. Los numDoc referenciados deben'],
       ['existir ya en ARGO; de lo contrario la validación marcará error en esas filas.'],
     );
   }
-  if (!hojasSel.includes('programas') && (hojasSel.includes('matriculas') || hojasSel.includes('certificados'))) {
+  if (
+    !opts.certificadosHistoricos
+    && !hojasSel.includes('programas')
+    && (hojasSel.includes('matriculas') || hojasSel.includes('certificados'))
+  ) {
     filas.push(
       [''],
       ['IMPORTANTE: esta plantilla no incluye la hoja Programas. Los codigoPrograma referenciados'],
@@ -147,10 +177,10 @@ function instrucciones(hojasSel) {
   return filas;
 }
 
-function generarPlantilla(hojas) {
+function generarPlantilla(hojas, opciones = {}) {
   const hojasSel = normalizarHojas(hojas);
   const wb = XLSX.utils.book_new();
-  const wsInstr = XLSX.utils.aoa_to_sheet(instrucciones(hojasSel));
+  const wsInstr = XLSX.utils.aoa_to_sheet(instrucciones(hojasSel, opciones));
   wsInstr['!cols'] = [{ wch: 110 }];
   XLSX.utils.book_append_sheet(wb, wsInstr, 'Instrucciones');
   for (const clave of hojasSel) {
@@ -275,8 +305,9 @@ async function crearProgramaConServicio(fila, indice, usuario) {
  * `hojas` define qué se migra (dinámico por cliente): las hojas no
  * seleccionadas se ignoran aunque tengan datos.
  */
-async function analizarArchivo(buffer, hojas) {
+async function analizarArchivo(buffer, hojas, opcionesIntegridad = {}) {
   const hojasSel = normalizarHojas(hojas);
+  const opts = normalizarOpcionesIntegridad(opcionesIntegridad);
   const activa = (h) => hojasSel.includes(h);
   let wb;
   try {
@@ -300,7 +331,7 @@ async function analizarArchivo(buffer, hojas) {
     (h) => !activa(h) && leerHoja(wb, HOJAS[h]).length > 0,
   ).map((h) => HOJAS[h]);
 
-  const indice = await cargarIndiceTipCap();
+  const indice = activa('programas') ? await cargarIndiceTipCap() : null;
 
   const errores = [];
   const addErr = (hoja, fila, mensaje) => errores.push({ hoja, fila, mensaje });
@@ -453,38 +484,59 @@ async function analizarArchivo(buffer, hojas) {
       addErr(HOJAS.certificados, f._fila, `numDoc inválido: "${f.numDoc}"`);
       continue;
     }
-    if (!(await existeAlumno(numDoc))) {
+    if (opts.exigirAlumnoEnCertificados && !(await existeAlumno(numDoc))) {
       addErr(HOJAS.certificados, f._fila, `Alumno ${numDoc} no existe (ni en ARGO ni en la hoja Alumnos)`);
       continue;
     }
     const codigoPrograma = str(f.codigoPrograma);
-    if (!(await existePrograma(codigoPrograma))) {
-      addErr(HOJAS.certificados, f._fila, `Programa "${codigoPrograma}" no existe en ARGO ni en la hoja Programas`);
-      continue;
+    if (opts.exigirProgramaEnCertificados) {
+      if (!(await existePrograma(codigoPrograma))) {
+        addErr(HOJAS.certificados, f._fila, `Programa "${codigoPrograma}" no existe en ARGO ni en la hoja Programas`);
+        continue;
+      }
+    } else if (codigoPrograma && !(await existePrograma(codigoPrograma))) {
+      // Programa opcional en modo histórico: se importa sin enlace si no existe.
     }
     const fechaEmision = parseFecha(f.fechaEmision);
     if (!fechaEmision) {
       addErr(HOJAS.certificados, f._fila, `Certificado de ${numDoc}: fechaEmision obligatoria o inválida`);
       continue;
     }
+    const encabezado = str(f.nombreCurso);
+    const nombreTitular = str(f.nombreTitular);
+    if (opts.certificadosHistoricos && !encabezado && !nombreTitular && !str(f.codigoCertificado) && !str(f.codVerificacion)) {
+      addErr(
+        HOJAS.certificados,
+        f._fila,
+        `Certificado de ${numDoc}: indique nombreCurso, nombreTitular, codVerificacion o codigoCertificado`,
+      );
+      continue;
+    }
+    const horasRaw = str(f.horas);
+    const horasCert = horasRaw !== '' && Number.isFinite(Number(horasRaw)) ? Number(horasRaw) : null;
     const estado = str(f.estado).toLowerCase() === 'anulado' ? 'anulado' : 'vigente';
     certificadosValidos.push({
       _fila: f._fila,
       numDoc,
-      codigoPrograma,
+      codigoPrograma: codigoPrograma || null,
       codigoCert: str(f.codigoCertificado),
-      encabezado: str(f.nombreCurso),
+      codVerificacion: str(f.codVerificacion),
+      encabezado,
+      nombreTitular,
+      horasCert,
       fechaEmision,
       fechaVencimiento: parseFecha(f.fechaVencimiento),
       numActa: str(f.numActa),
       numFolio: str(f.numFolio),
       numRunt: str(f.numRunt),
       estado,
+      historico: opts.certificadosHistoricos,
     });
   }
 
   return {
     hojas: hojasSel,
+    opcionesIntegridad: opts,
     ignoradas,
     errores,
     indice,
@@ -549,8 +601,30 @@ async function sincronizarConsecutivos() {
  * - actualizarExistentes: si un alumno ya existe, actualiza sus datos (default false: se omite).
  * - idSede: sede asignada a matrículas y pagos migrados.
  */
-async function importarArchivo(buffer, { usuario = 'sistema', nombreArchivo = '', idSede = null, actualizarExistentes = false, hojas } = {}) {
-  const analisis = await analizarArchivo(buffer, hojas);
+async function importarArchivo(
+  buffer,
+  {
+    usuario = 'sistema',
+    nombreArchivo = '',
+    idSede = null,
+    actualizarExistentes = false,
+    hojas,
+    certificadosHistoricos,
+    modoIntegridad,
+  } = {},
+) {
+  const analisis = await analizarArchivo(buffer, hojas, { certificadosHistoricos, modoIntegridad });
+  const totalFilas =
+    analisis.validos.programas.length
+    + analisis.validos.alumnos.length
+    + analisis.validos.matriculas.length
+    + analisis.validos.pagos.length
+    + analisis.validos.certificados.length;
+
+  progreso.iniciar('migracion', 'Validación completada, importando…');
+  progreso.definirTotal(totalFilas);
+
+  try {
   const lote = `MIG-${Date.now()}`;
   const marca = { migrado: true, loteMigracion: lote };
   const sede = String(idSede || '').trim() || 'PRINCIPAL';
@@ -586,19 +660,23 @@ async function importarArchivo(buffer, { usuario = 'sistema', nombreArchivo = ''
   };
 
   // 0) Programas (+ servicios con tarifas). Deben crearse antes que matrículas y certificados.
+  progreso.fase('Programas', { total: totalFilas, reiniciarHecho: false });
   for (const p of analisis.validos.programas) {
     const existente = await buscarPrograma(p.codigo);
     if (existente) {
       cacheProg.set(p.codigo, existente);
       resultado.programas.omitidos += 1;
+      progreso.avanzar(1);
       continue;
     }
     const prog = await crearProgramaConServicio(p.doc, analisis.indice, usuario);
     cacheProg.set(p.codigo, prog);
     resultado.programas.creados += 1;
+    progreso.avanzar(1);
   }
 
   // 1) Alumnos
+  progreso.fase('Alumnos', { reiniciarHecho: false });
   for (const a of analisis.validos.alumnos) {
     const f = a.doc;
     const existente = await DatosAlumno.findOne({ numDoc: a.numDoc }).select('_id').lean();
@@ -625,23 +703,28 @@ async function importarArchivo(buffer, { usuario = 'sistema', nombreArchivo = ''
       } else {
         resultado.alumnos.omitidos += 1;
       }
+      progreso.avanzar(1);
       continue;
     }
     await DatosAlumno.create({ numDoc: a.numDoc, ...payload });
     resultado.alumnos.creados += 1;
+    progreso.avanzar(1);
   }
 
   // 2) Matrículas (+ liquidación con el saldo pendiente, ligada a programa y servicio)
+  progreso.fase('Matrículas', { reiniciarHecho: false });
   for (const m of analisis.validos.matriculas) {
     const prog = await resolverProg(m.codigoPrograma);
     if (!prog) {
       resultado.matriculas.omitidas += 1;
+      progreso.avanzar(1);
       continue;
     }
     const idProg = idProgDe(prog);
     const ya = await Matricula.countDocuments({ numDoc: m.numDoc, idProg });
     if (ya > 0) {
       resultado.matriculas.omitidas += 1;
+      progreso.avanzar(1);
       continue;
     }
     const saldo = Math.max(0, m.valorTotal - m.valorPagado);
@@ -681,15 +764,18 @@ async function importarArchivo(buffer, { usuario = 'sistema', nombreArchivo = ''
       });
     }
     resultado.matriculas.creadas += 1;
+    progreso.avanzar(1);
   }
 
   // 3) Pagos históricos
+  progreso.fase('Pagos históricos', { reiniciarHecho: false });
   let secuenciaPago = 0;
   for (const p of analisis.validos.pagos) {
     const numRecibo = p.numeroRecibo || `${lote}-${String((secuenciaPago += 1)).padStart(4, '0')}`;
     const ya = await Ingreso.countDocuments({ numDoc: p.numDoc, numRecibo });
     if (ya > 0) {
       resultado.pagos.omitidos += 1;
+      progreso.avanzar(1);
       continue;
     }
     await Ingreso.create({
@@ -708,20 +794,44 @@ async function importarArchivo(buffer, { usuario = 'sistema', nombreArchivo = ''
       ...marca,
     });
     resultado.pagos.creados += 1;
+    progreso.avanzar(1);
   }
 
-  // 4) Certificados históricos
+  // 4) Certificados (históricos o ligados a programa)
+  progreso.fase('Certificados', { reiniciarHecho: false });
   for (const c of analisis.validos.certificados) {
-    const prog = await resolverProg(c.codigoPrograma);
-    if (!prog) {
+    let idProg = ID_PROG_HISTORICO;
+    let nombreProg = '';
+    if (c.codigoPrograma) {
+      const prog = await resolverProg(c.codigoPrograma);
+      if (prog) {
+        idProg = idProgDe(prog);
+        nombreProg = prog.nombreProg || '';
+      } else if (c.historico) {
+        idProg = ID_PROG_HISTORICO;
+      } else {
+        resultado.certificados.omitidos += 1;
+        progreso.avanzar(1);
+        continue;
+      }
+    } else if (!c.historico) {
       resultado.certificados.omitidos += 1;
+      progreso.avanzar(1);
       continue;
     }
-    const idProg = idProgDe(prog);
+    if (c.codVerificacion) {
+      const yaVer = await Certificado.countDocuments({ codVerificacion: c.codVerificacion });
+      if (yaVer > 0) {
+        resultado.certificados.omitidos += 1;
+        progreso.avanzar(1);
+        continue;
+      }
+    }
     if (c.codigoCert) {
       const ya = await Certificado.countDocuments({ codigoCert: c.codigoCert });
       if (ya > 0) {
         resultado.certificados.omitidos += 1;
+        progreso.avanzar(1);
         continue;
       }
     }
@@ -729,18 +839,24 @@ async function importarArchivo(buffer, { usuario = 'sistema', nombreArchivo = ''
       numDoc: c.numDoc,
       idProg,
       codigoCert: c.codigoCert || undefined,
-      encabezado: c.encabezado || prog.nombreProg || '',
+      codVerificacion: c.codVerificacion || undefined,
+      encabezado: c.encabezado || nombreProg || c.codigoCert || '',
+      nombreTitular: c.nombreTitular || undefined,
+      horasCert: c.horasCert != null ? String(c.horasCert) : undefined,
       fechaEmision: c.fechaEmision,
-      fechaVencimiento: c.fechaVencimiento || null,
-      numActa: c.numActa,
-      numFolio: c.numFolio,
-      numRunt: c.numRunt,
+      fechaVencimiento: c.fechaVencimiento || undefined,
+      numActa: c.numActa || undefined,
+      numFolio: c.numFolio || undefined,
+      numRunt: c.numRunt || undefined,
       estado: c.estado,
+      migracionHistorica: !!c.historico,
       ...marca,
     });
     resultado.certificados.creados += 1;
+    progreso.avanzar(1);
   }
 
+  progreso.fase('Finalizando', { reiniciarHecho: false });
   await sincronizarConsecutivos();
 
   await MigracionLote.create({
@@ -753,11 +869,23 @@ async function importarArchivo(buffer, { usuario = 'sistema', nombreArchivo = ''
     errores: analisis.errores.slice(0, 200),
   });
 
+  progreso.finalizar('ok', `Importación ${lote} completada`);
   return { ...resultado, ignoradas: analisis.ignoradas, errores: analisis.errores };
+  } catch (e) {
+    progreso.finalizar('error', e.message || 'Error en la importación');
+    throw e;
+  }
 }
 
 async function listarLotes() {
   return MigracionLote.find({}).sort({ fecha: -1 }).limit(50).lean();
 }
 
-module.exports = { generarPlantilla, analizarArchivo, importarArchivo, listarLotes, HOJAS };
+module.exports = {
+  generarPlantilla,
+  analizarArchivo,
+  importarArchivo,
+  listarLotes,
+  normalizarOpcionesIntegridad,
+  HOJAS,
+};

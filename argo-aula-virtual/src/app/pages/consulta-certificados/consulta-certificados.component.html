@@ -61,7 +61,7 @@
             <table class="consulta-table">
               <thead>
                 <tr>
-                  <th>ID certificado</th>
+                  <th>Cód. verificación</th>
                   <th>Nombre y apellidos</th>
                   <th>Cédula</th>
                   <th>Curso</th>
@@ -73,8 +73,8 @@
               <tbody>
                 @for (row of filas(); track row.idCertificado) {
                   <tr>
-                    <td data-label="ID certificado">
-                      <span class="consulta-id">{{ row.idCertificado }}</span>
+                    <td data-label="Cód. verificación">
+                      <span class="consulta-id">{{ row.codVerificacion || row.idCertificado || '—' }}</span>
                     </td>
                     <td data-label="Nombre y apellidos">{{ row.nombreApellidos || '—' }}</td>
                     <td data-label="Cédula">{{ row.cedula }}</td>

@@ -51,4 +51,25 @@ async function listarUsuariosPortalAdmin({ q = '', limit = 200 } = {}) {
   };
 }
 
-module.exports = { listarUsuariosPortalAdmin };
+async function eliminarUsuarioPortal(id) {
+  const idStr = String(id || '').trim();
+  if (!idStr) {
+    const err = new Error('ID de usuario requerido');
+    err.status = 400;
+    throw err;
+  }
+  const doc = await UsuarioPortal.findByIdAndDelete(idStr);
+  if (!doc) {
+    const err = new Error('Usuario del portal no encontrado');
+    err.status = 404;
+    throw err;
+  }
+  return {
+    ok: true,
+    message: `Cuenta del portal ${doc.email} eliminada. La ficha del alumno en el ERP no se modificó.`,
+    email: doc.email,
+    numDoc: doc.numDoc,
+  };
+}
+
+module.exports = { listarUsuariosPortalAdmin, eliminarUsuarioPortal };

@@ -22,6 +22,12 @@ export function catEtiqueta(item: Record<string, unknown>): string {
   return v;
 }
 
+/** Nombres y apellidos siempre en mayúsculas (recepción / portal). */
+export function nombreEnMayusculas(val?: string | null): string {
+  if (!val) return '';
+  return String(val).trim().toUpperCase().replace(/\s+/g, ' ');
+}
+
 export function etiquetaGenero(item: Record<string, unknown>): string {
   const v = catValor(item).toUpperCase();
   if (v === 'M') return 'Masculino (M)';

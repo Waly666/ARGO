@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
   HojaMigracion,
   LoteMigracion,
+  ProgresoOperacion,
   ReporteValidacion,
   ResultadoImportacion,
   SistemaService,
@@ -25,9 +26,10 @@ interface OpcionHoja {
   templateUrl: './sistema-migracion.component.html',
   styleUrls: ['./sistema-migracion.component.scss'],
 })
-export class SistemaMigracionComponent implements OnInit {
+export class SistemaMigracionComponent implements OnInit, OnDestroy {
   private svc = inject(SistemaService);
   private confirm = inject(ConfirmDialogService);
+  private pollId: ReturnType<typeof setInterval> | null = null;
 
   /** Qué migrar: dinámico según lo que entregue cada cliente. */
   readonly opcionesHojas: OpcionHoja[] = [
@@ -51,13 +53,38 @@ export class SistemaMigracionComponent implements OnInit {
   lotes = signal<LoteMigracion[]>([]);
   validando = signal(false);
   importando = signal(false);
+  progreso = signal<ProgresoOperacion | null>(null);
   msg = signal<string | null>(null);
   msgError = signal(false);
 
   actualizarExistentes = false;
+  /** Modo histórico: certificados sin alumno/programa obligatorios. */
+  certificadosHistoricos = false;
 
   ngOnInit(): void {
     this.cargarLotes();
+  }
+
+  ngOnDestroy(): void {
+    this.detenerPolling();
+  }
+
+  private iniciarPolling() {
+    this.detenerPolling();
+    this.progreso.set(null);
+    this.pollId = setInterval(() => {
+      this.svc.progresoOperacion().subscribe({
+        next: (p) => this.progreso.set(p),
+        error: () => {},
+      });
+    }, 700);
+  }
+
+  private detenerPolling() {
+    if (this.pollId) {
+      clearInterval(this.pollId);
+      this.pollId = null;
+    }
   }
 
   private toast(texto: string, esError = false) {
@@ -88,13 +115,27 @@ export class SistemaMigracionComponent implements OnInit {
 
   toggleHoja(clave: HojaMigracion, valor: boolean) {
     this.seleccion.update((s) => ({ ...s, [clave]: valor }));
-    // La selección cambia lo que se valida e importa: invalida el reporte anterior.
     this.reporte.set(null);
     this.resultado.set(null);
+    this.sugerirModoHistorico();
+  }
+
+  /** Si solo migran certificados, activar modo histórico por defecto. */
+  private sugerirModoHistorico() {
+    const sel = this.hojasSeleccionadas();
+    if (sel.length === 1 && sel[0] === 'certificados') {
+      this.certificadosHistoricos = true;
+    }
+  }
+
+  opcionesIntegridad() {
+    return this.certificadosHistoricos && this.estaSeleccionada('certificados')
+      ? { certificadosHistoricos: true, modoIntegridad: 'historica' as const }
+      : undefined;
   }
 
   descargarPlantilla() {
-    this.svc.descargarPlantilla(this.hojasSeleccionadas()).subscribe({
+    this.svc.descargarPlantilla(this.hojasSeleccionadas(), this.opcionesIntegridad()).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -120,7 +161,7 @@ export class SistemaMigracionComponent implements OnInit {
     this.validando.set(true);
     this.reporte.set(null);
     this.resultado.set(null);
-    this.svc.validarMigracion(file, this.hojasSeleccionadas()).subscribe({
+    this.svc.validarMigracion(file, this.hojasSeleccionadas(), this.opcionesIntegridad()).subscribe({
       next: (r) => {
         this.validando.set(false);
         this.reporte.set(r);
@@ -169,9 +210,16 @@ export class SistemaMigracionComponent implements OnInit {
     if (!ok) return;
 
     this.importando.set(true);
-    this.svc.importarMigracion(file, this.hojasSeleccionadas(), this.actualizarExistentes).subscribe({
+    this.iniciarPolling();
+    this.svc.importarMigracion(
+      file,
+      this.hojasSeleccionadas(),
+      this.actualizarExistentes,
+      this.opcionesIntegridad(),
+    ).subscribe({
       next: (r) => {
         this.importando.set(false);
+        this.detenerPolling();
         this.resultado.set(r);
         this.archivo.set(null);
         this.reporte.set(null);
@@ -180,6 +228,7 @@ export class SistemaMigracionComponent implements OnInit {
       },
       error: (e) => {
         this.importando.set(false);
+        this.detenerPolling();
         this.toast(e?.error?.message || 'La importación falló', true);
       },
     });

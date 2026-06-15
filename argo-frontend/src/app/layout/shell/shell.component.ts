@@ -394,6 +394,23 @@ export class ShellComponent {
     },
     {
       kind: 'link',
+      label: 'Informes académicos',
+      icon: '☰',
+      path: '/app/informes',
+      iconTone: 'sky',
+      permiso: [
+        'informes.ver',
+        'alumnos.ver',
+        'alumnos.gestionar',
+        'programas.ver',
+        'programas.gestionar',
+        'programas.agregar',
+        'servicios.ver',
+        'servicios.gestionar',
+      ],
+    },
+    {
+      kind: 'link',
       label: 'Programas',
       icon: '▤',
       path: '/app/programas',
@@ -555,6 +572,14 @@ export class ShellComponent {
       ],
     },
     {
+      kind: 'link',
+      label: 'Cohortes académicas',
+      icon: '🎓',
+      iconTone: 'indigo',
+      path: '/app/cohortes',
+      permiso: ['cohortes_academicas.ver', 'cohortes_academicas.gestionar', 'cohortes_academicas.operar'],
+    },
+    {
       kind: 'group',
       label: 'Flujo de Caja',
       icon: '⇅',
@@ -656,8 +681,8 @@ export class ShellComponent {
         { kind: 'link', label: 'Novedades', path: '/app/rrhh/novedades', icon: '▥', iconTone: 'pink', permiso: 'rrhh' },
         {
           kind: 'link',
-          label: 'Empresa (NIT)',
-          path: '/app/configuracion/recibos',
+          label: 'Empresa',
+          path: '/app/configuracion/empresa',
           icon: '▤',
           iconTone: 'teal',
           section: 'CONFIGURACIÓN',
@@ -761,10 +786,18 @@ export class ShellComponent {
         },
         {
           kind: 'link',
-          label: 'Empresa y comprobantes',
-          path: '/app/configuracion/recibos',
+          label: 'Empresa',
+          path: '/app/configuracion/empresa',
           icon: '▤',
           iconTone: 'blue',
+          permiso: 'config.recibos',
+        },
+        {
+          kind: 'link',
+          label: 'Comprobantes de caja',
+          path: '/app/configuracion/recibos',
+          icon: '▣',
+          iconTone: 'cyan',
           permiso: 'config.recibos',
         },
         {
@@ -1450,6 +1483,7 @@ export class ShellComponent {
     if (
       u.includes('/rrhh') ||
       u.includes('/configuracion/recibos') ||
+      u.includes('/configuracion/empresa') ||
       u.includes('/configuracion/nomina')
     ) {
       patch['RRHH'] = true;
@@ -1463,6 +1497,8 @@ export class ShellComponent {
       u.includes('/configuracion/clientes') ||
       u.includes('/configuracion/roles') ||
       u.includes('/configuracion/catalogos') ||
+      u.includes('/configuracion/empresa') ||
+      u.includes('/configuracion/recibos') ||
       u.includes('/configuracion/certificados') ||
       u.includes('/configuracion/requisitos-documentos-vehiculos') ||
       u.includes('/configuracion/requisitos-documentos-empleados') ||
@@ -1513,6 +1549,7 @@ export class ShellComponent {
     return (
       u.includes('/rrhh') ||
       u.includes('/configuracion/recibos') ||
+      u.includes('/configuracion/empresa') ||
       u.includes('/configuracion/nomina')
     );
   }

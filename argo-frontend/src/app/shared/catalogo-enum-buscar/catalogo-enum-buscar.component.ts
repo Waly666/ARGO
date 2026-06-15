@@ -28,6 +28,9 @@ export interface EnumBuscarOption {
   },
 })
 export class CatalogoEnumBuscarComponent implements OnChanges {
+  /** Cierra el dropdown de otra instancia al abrir esta. */
+  private static instanciaAbierta: CatalogoEnumBuscarComponent | null = null;
+
   @Input() label = '';
   @Input() placeholder = 'Escriba para buscar…';
   @Input() textoInicial = '';
@@ -48,7 +51,7 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   loading = signal(false);
   resultados = signal<EnumBuscarOption[]>([]);
   /** true mientras el usuario edita el texto para filtrar (no al abrir la lista). */
-  private filtrandoActivo = signal(false);
+  filtrandoActivo = signal(false);
 
   private q$ = new Subject<string>();
 
@@ -95,7 +98,7 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
     if (this.disabled) return;
     this.filtrandoActivo.set(true);
     this.query.set(v);
-    this.open.set(true);
+    this.abrirDropdown();
     const q = (v || '').trim();
     if (!q) {
       this.filtrandoActivo.set(false);
@@ -110,7 +113,7 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
 
   focus(): void {
     if (this.disabled) return;
-    this.open.set(true);
+    this.abrirDropdown();
     if (this.modoCombo) {
       this.filtrandoActivo.set(false);
       this.refrescarOpciones('');
@@ -123,11 +126,10 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   toggleOpen(): void {
     if (this.disabled) return;
     if (this.open()) {
-      this.open.set(false);
-      this.filtrandoActivo.set(false);
+      this.cerrarDropdown();
       return;
     }
-    this.open.set(true);
+    this.abrirDropdown();
     if (this.modoCombo) {
       this.filtrandoActivo.set(false);
       this.refrescarOpciones('');
@@ -138,16 +140,35 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
 
   pick(opt: EnumBuscarOption): void {
     this.query.set(opt.label);
-    this.open.set(false);
+    this.cerrarDropdown();
     this.filtrandoActivo.set(false);
     this.resultados.set([]);
     this.seleccionado.emit(opt);
+  }
+
+  private abrirDropdown(): void {
+    if (CatalogoEnumBuscarComponent.instanciaAbierta &&
+        CatalogoEnumBuscarComponent.instanciaAbierta !== this) {
+      CatalogoEnumBuscarComponent.instanciaAbierta.cerrarDropdown();
+    }
+    CatalogoEnumBuscarComponent.instanciaAbierta = this;
+    this.open.set(true);
+  }
+
+  private cerrarDropdown(): void {
+    this.open.set(false);
+    this.filtrandoActivo.set(false);
+    if (CatalogoEnumBuscarComponent.instanciaAbierta === this) {
+      CatalogoEnumBuscarComponent.instanciaAbierta = null;
+    }
   }
 
   private refrescarOpciones(q: string): void {
     const filtro =
       this.modoCombo && !this.filtrandoActivo() ? '' : q;
     if (this.remoto) {
+      this.loading.set(true);
+      this.resultados.set([]);
       this.q$.next(filtro);
       return;
     }
@@ -180,7 +201,7 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   outside(ev: MouseEvent): void {
     const t = ev.target as HTMLElement;
     if (!t.closest('.enum-buscar-host')) {
-      this.open.set(false);
+      this.cerrarDropdown();
     }
   }
 }

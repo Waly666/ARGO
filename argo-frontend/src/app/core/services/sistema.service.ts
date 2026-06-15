@@ -33,6 +33,8 @@ export interface CredencialesOperacion {
   password: string;
   codigoMfa?: string;
   confirmacion: string;
+  /** Vacío o omitido = reset completo; ids de módulo = reset parcial. */
+  modulos?: string[];
 }
 
 export interface ResultadoRestauracion {
@@ -43,17 +45,31 @@ export interface ResultadoRestauracion {
   mensaje?: string;
 }
 
+export interface ModuloReset {
+  id: string;
+  etiqueta: string;
+  descripcion: string;
+  advertencias: string[];
+}
+
+export interface InfoReset {
+  fraseConfirmacion: string;
+  modulos: ModuloReset[];
+}
+
 export interface ResultadoReset {
   respaldoPrevio: string;
   coleccionesLimpiadas: number;
   coleccionesConservadas: number;
   usuariosEliminados: number;
+  tipoReset?: 'completo' | 'parcial';
+  modulos?: string[];
   mensaje?: string;
 }
 
 export interface ProgresoOperacion {
   activo: boolean;
-  tipo: 'respaldo' | 'restauracion' | 'reset' | null;
+  tipo: 'respaldo' | 'restauracion' | 'reset' | 'migracion' | null;
   fase: string;
   total: number;
   hecho: number;
@@ -71,8 +87,15 @@ export interface ErrorMigracion {
 
 export type HojaMigracion = 'programas' | 'alumnos' | 'matriculas' | 'pagos' | 'certificados';
 
+export interface OpcionesIntegridadMigracion {
+  /** Certificados sin exigir alumno ni programa en catálogo. */
+  certificadosHistoricos?: boolean;
+  modoIntegridad?: 'completa' | 'historica';
+}
+
 export interface ReporteValidacion {
   hojas: HojaMigracion[];
+  opcionesIntegridad?: { modoIntegridad: string; certificadosHistoricos: boolean };
   ignoradas: string[];
   totales: Record<string, number>;
   validos: Record<string, number>;
@@ -153,8 +176,8 @@ export class SistemaService {
   }
 
   // ----- Puesta en cero -----
-  infoReset(): Observable<{ fraseConfirmacion: string }> {
-    return this.http.get<{ fraseConfirmacion: string }>(`${this.base}/reset-empresa`);
+  infoReset(): Observable<InfoReset> {
+    return this.http.get<InfoReset>(`${this.base}/reset-empresa`);
   }
 
   resetEmpresa(cred: CredencialesOperacion): Observable<ResultadoReset> {
@@ -162,17 +185,30 @@ export class SistemaService {
   }
 
   // ----- Migración -----
-  descargarPlantilla(hojas: HojaMigracion[]): Observable<Blob> {
+  descargarPlantilla(hojas: HojaMigracion[], opts?: OpcionesIntegridadMigracion): Observable<Blob> {
+    const params: Record<string, string> = { hojas: hojas.join(',') };
+    if (opts?.certificadosHistoricos) {
+      params['certificadosHistoricos'] = 'true';
+      params['modoIntegridad'] = 'historica';
+    }
     return this.http.get(`${this.base}/migracion/plantilla`, {
       responseType: 'blob',
-      params: { hojas: hojas.join(',') },
+      params,
     });
   }
 
-  validarMigracion(file: File, hojas: HojaMigracion[]): Observable<ReporteValidacion> {
+  validarMigracion(
+    file: File,
+    hojas: HojaMigracion[],
+    opts?: OpcionesIntegridadMigracion,
+  ): Observable<ReporteValidacion> {
     const fd = new FormData();
     fd.append('archivo', file);
     fd.append('hojas', hojas.join(','));
+    if (opts?.certificadosHistoricos) {
+      fd.append('certificadosHistoricos', 'true');
+      fd.append('modoIntegridad', 'historica');
+    }
     return this.http.post<ReporteValidacion>(`${this.base}/migracion/validar`, fd);
   }
 
@@ -180,11 +216,16 @@ export class SistemaService {
     file: File,
     hojas: HojaMigracion[],
     actualizarExistentes: boolean,
+    opts?: OpcionesIntegridadMigracion,
   ): Observable<ResultadoImportacion> {
     const fd = new FormData();
     fd.append('archivo', file);
     fd.append('hojas', hojas.join(','));
     fd.append('actualizarExistentes', String(actualizarExistentes));
+    if (opts?.certificadosHistoricos) {
+      fd.append('certificadosHistoricos', 'true');
+      fd.append('modoIntegridad', 'historica');
+    }
     return this.http.post<ResultadoImportacion>(`${this.base}/migracion/importar`, fd);
   }
 

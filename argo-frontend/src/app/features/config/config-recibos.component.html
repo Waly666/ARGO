@@ -1,10 +1,10 @@
 <section class="rec-page card">
   <header class="rec-head">
     <div class="rec-head-main">
-      <h1>Empresa y comprobantes</h1>
+      <h1>Comprobantes de caja</h1>
       <p>
-        Datos de la empresa en recibos de caja, colillas de nómina y archivo <strong>PILA</strong>.
         Numeración y formato de comprobantes de ingreso/egreso (global para todas las sedes).
+        Mensajes, eslogan y registro de alumnos.
       </p>
     </div>
     @if (!loading()) {
@@ -30,55 +30,20 @@
     }
 
     <div class="rec-form argo-form-shell">
-      <!-- 1. Empresa -->
-      <section class="rec-section rec-section--sky">
-        <header class="rec-section-head">
-          <span class="rec-section-badge">1</span>
-          <div>
-            <h2 class="rec-section-title">Datos de la empresa</h2>
-            <p class="rec-section-desc">Encabezado institucional en documentos impresos y electrónicos.</p>
-          </div>
-        </header>
-        <div class="rec-section-body rec-stack">
-          <div class="rec-grid rec-grid--empresa">
-            <label class="rec-field rec-field--grow">
-              <span class="rec-label">Nombre empresa</span>
-              <input type="text" [ngModel]="form().nombreEmpresa" (ngModelChange)="patch('nombreEmpresa', $event)" />
-            </label>
-            <label class="rec-field">
-              <span class="rec-label">NIT</span>
-              <input type="text" [ngModel]="form().nit" (ngModelChange)="patch('nit', $event)" />
-            </label>
-            <label class="rec-field">
-              <span class="rec-label">Teléfono</span>
-              <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch('telefono', $event)" />
-            </label>
-          </div>
-          <div class="rec-grid rec-grid--empresa2">
-            <label class="rec-field rec-field--grow">
-              <span class="rec-label">Dirección</span>
-              <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch('direccion', $event)" />
-            </label>
-            <label class="rec-field">
-              <span class="rec-label">Ciudad</span>
-              <input type="text" [ngModel]="form().ciudad" (ngModelChange)="patch('ciudad', $event)" />
-            </label>
-            <label class="rec-field">
-              <span class="rec-label">Email</span>
-              <input type="email" [ngModel]="form().email" (ngModelChange)="patch('email', $event)" />
-            </label>
-          </div>
-          <p class="rec-hint rec-hint--inline">
-            Dirección y ciudad de este formulario se usan en todos los comprobantes. Si deja un campo vacío,
-            se tomará el dato de la sede correspondiente (Configuración → Sedes).
-          </p>
+      <!-- Enlace a Empresa -->
+      <div class="rec-empresa-ref">
+        <span class="rec-empresa-ref-icon">▤</span>
+        <div class="rec-empresa-ref-body">
+          <strong>Datos de la empresa</strong>
+          <p>Nombre, NIT, logo, datos fiscales DIAN y nombre en certificados se configuran en <a routerLink="/app/configuracion/empresa">Empresa</a>.</p>
         </div>
-      </section>
+        <a routerLink="/app/configuracion/empresa" class="rec-empresa-ref-link">Ir a Empresa</a>
+      </div>
 
-      <!-- 2. Facturación -->
+      <!-- 1. Numeración de facturas -->
       <section class="rec-section rec-section--violet">
         <header class="rec-section-head">
-          <span class="rec-section-badge">2</span>
+          <span class="rec-section-badge">1</span>
           <div>
             <h2 class="rec-section-title">Numeración de facturas</h2>
             <p class="rec-section-desc">Prefijo y consecutivo para facturas (no aplica a comprobantes de caja).</p>
@@ -102,10 +67,10 @@
         </div>
       </section>
 
-      <!-- 3. Comprobantes -->
+      <!-- 2. Comprobantes -->
       <section class="rec-section rec-section--amber">
         <header class="rec-section-head">
-          <span class="rec-section-badge">3</span>
+          <span class="rec-section-badge">2</span>
           <div>
             <h2 class="rec-section-title">Comprobantes de ingreso y egreso</h2>
             <p class="rec-section-desc">
@@ -147,10 +112,10 @@
         </div>
       </section>
 
-      <!-- 4. Formato -->
+      <!-- 3. Formato -->
       <section class="rec-section rec-section--teal">
         <header class="rec-section-head">
-          <span class="rec-section-badge">4</span>
+          <span class="rec-section-badge">3</span>
           <div>
             <h2 class="rec-section-title">Formato e impresión</h2>
             <p class="rec-section-desc">
@@ -229,7 +194,7 @@
       <!-- 5. Alumnos -->
       <section class="rec-section rec-section--rose">
         <header class="rec-section-head">
-          <span class="rec-section-badge">5</span>
+          <span class="rec-section-badge">4</span>
           <div>
             <h2 class="rec-section-title">Registro de alumnos</h2>
             <p class="rec-section-desc">

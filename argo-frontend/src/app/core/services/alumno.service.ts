@@ -98,6 +98,7 @@ export interface AlumnoListItem {
   urlCedula?: string;
   urlLicencia?: string;
   docsAlumno?: Record<string, string>;
+  fechaReg?: string | Date | null;
   fechaMod?: string;
   indicadores?: {
     docsPendientes: number;

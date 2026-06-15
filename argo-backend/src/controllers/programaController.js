@@ -157,6 +157,7 @@ exports.crear = async (req, res, next) => {
       horasTaller:
         body.horasTaller != null && body.horasTaller !== '' ? Number(body.horasTaller) : null,
       valorMatricula,
+      usaCohortes: body.usaCohortes === true || body.usaCohortes === 'true',
       descripcion: (body.descripcion || '').trim() || null,
       estado: (body.estado || 'ACTIVO').trim(),
       requistos: (body.requistos || '').trim() || null,
@@ -280,6 +281,10 @@ exports.actualizar = async (req, res, next) => {
           ? Number(body.horasTaller)
           : prog.horasTaller,
       valorMatricula,
+      usaCohortes:
+        body.usaCohortes !== undefined
+          ? body.usaCohortes === true || body.usaCohortes === 'true'
+          : prog.usaCohortes === true,
       descripcion: body.descripcion !== undefined ? body.descripcion : prog.descripcion,
       estado: body.estado !== undefined ? body.estado : prog.estado,
       requistos: body.requistos !== undefined ? body.requistos : prog.requistos,

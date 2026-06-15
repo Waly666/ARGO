@@ -42,6 +42,12 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
         cuerpo:
           'Algunos programas vinculan módulos CEA automáticos. Verifique coherencia con Programación.',
       },
+      {
+        id: 'prog-6',
+        titulo: 'Cohortes académicas',
+        cuerpo:
+          'Active «Usa cohortes académicas» en programas de diplomados/técnicos por semestre. El plan curricular (materias, criterios de nota, evaluaciones) se configura a nivel programa; los grupos del año heredan esa configuración.',
+      },
     ],
   },
   'servicios.admin': {
@@ -542,7 +548,83 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
         id: 'cfg-aud-2',
         titulo: 'Monitor recursos',
         cuerpo:
-          'Estado técnico del servidor/API (si está habilitado). Para soporte TI.',
+          'Estado técnico del servidor/API (pestaña Monitor). Para soporte TI.',
+      },
+    ],
+  },
+  'config.empresa': {
+    id: 'config.empresa',
+    modulo: 'config',
+    saludo: 'Datos de la empresa (razón social, NIT, logo, contacto).',
+    tips: [
+      {
+        id: 'cfg-emp-1',
+        titulo: 'Aparece en documentos',
+        cuerpo:
+          'Estos datos salen en recibos, certificados y facturación. Manténgalos actualizados.',
+      },
+      {
+        id: 'cfg-emp-2',
+        titulo: 'Logo',
+        cuerpo:
+          'Use imagen clara en PNG o JPG. Se muestra en impresos y en algunos portales.',
+      },
+    ],
+  },
+  'config.alertas': {
+    id: 'config.alertas',
+    modulo: 'config',
+    saludo: 'Configuración de alertas del encabezado ARGO.',
+    tips: [
+      {
+        id: 'cfg-ale-1',
+        titulo: 'Franjas parpadeantes',
+        cuerpo:
+          'Defina qué situaciones muestran alerta urgente arriba: caja cerrada, certificado por vencer, clase hoy, etc.',
+      },
+      {
+        id: 'cfg-ale-2',
+        titulo: 'Por rol',
+        cuerpo:
+          'Algunas alertas solo ven usuarios con permiso del módulo relacionado.',
+      },
+    ],
+  },
+  'config.contratos-cap': {
+    id: 'config.contratos-cap',
+    modulo: 'config',
+    saludo: 'Contratos CAP y resolución fiscal para facturación.',
+    tips: [
+      {
+        id: 'cfg-cap-1',
+        titulo: 'Resolución DIAN',
+        cuerpo:
+          'Datos de numeración y vigencia para factura electrónica. Deben coincidir con la resolución oficial.',
+      },
+      {
+        id: 'cfg-cap-2',
+        titulo: 'Contratos',
+        cuerpo:
+          'Plantillas o referencias de contratos de capacitación usados en jornadas y facturación.',
+      },
+    ],
+  },
+  'config.formato-inspeccion': {
+    id: 'config.formato-inspeccion',
+    modulo: 'config',
+    saludo: 'Formato de inspección preoperacional de vehículos.',
+    tips: [
+      {
+        id: 'cfg-insp-1',
+        titulo: 'Checklist',
+        cuerpo:
+          'Defina ítems que el instructor o conductor marca en cada inspección del vehículo de práctica.',
+      },
+      {
+        id: 'cfg-insp-2',
+        titulo: 'Vinculación',
+        cuerpo:
+          'Se usa desde el módulo de vehículos e instructores al registrar inspecciones.',
       },
     ],
   },

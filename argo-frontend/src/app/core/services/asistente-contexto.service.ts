@@ -193,9 +193,18 @@ export class AsistenteContextoService {
     if (path.includes('/configuracion/catalogos')) return 'config.catalogos';
     if (path.includes('/configuracion/georef')) return 'config.georef';
     if (path.includes('/configuracion/nomina')) return 'config.nomina';
-    if (path.includes('/configuracion/auditoria') || path.includes('/configuracion/monitor')) {
-      return 'config.auditoria';
+    if (path.includes('/configuracion/monitor')) return 'config.auditoria';
+    if (path.includes('/configuracion/auditoria')) return 'config.auditoria';
+    if (path.includes('/configuracion/backup')) return 'sistema.backup';
+    if (path.includes('/configuracion/restore')) return 'sistema.restore';
+    if (path.includes('/configuracion/reset')) return 'sistema.reset';
+    if (path.includes('/configuracion/migracion') || path.includes('/sistema/migracion')) {
+      return 'sistema.migracion';
     }
+    if (path.includes('/configuracion/empresa')) return 'config.empresa';
+    if (path.includes('/configuracion/alertas')) return 'config.alertas';
+    if (path.includes('/configuracion/contratos-cap-fiscal')) return 'config.contratos-cap';
+    if (path.includes('/configuracion/formato-inspeccion-vehiculos')) return 'config.formato-inspeccion';
     if (path.includes('/configuracion/requisitos-documentos')) return 'config.requisitos';
 
     // —— Facturación ——
@@ -260,6 +269,18 @@ export class AsistenteContextoService {
       return 'alumnos.detalle.datos';
     }
     if (path.match(/\/alumnos\/?$/)) return 'alumnos.lista';
+
+    // —— Cohortes académicas ——
+    if (path.match(/\/cohortes\/[^/]+/)) return 'cohortes.detalle';
+    if (path.includes('/cohortes')) return 'cohortes.hub';
+
+    // —— Aula virtual ——
+    if (path.includes('/aula-virtual/sitio')) return 'aula-virtual.sitio';
+    if (path.includes('/aula-virtual')) return 'aula-virtual.admin';
+
+    // —— Informes ——
+    if (path.match(/\/informes\/[^/]+/)) return 'informes.detalle';
+    if (path.includes('/informes')) return 'informes.hub';
 
     // —— Otros módulos ——
     if (path.includes('/certificados')) return 'certificados.lista';

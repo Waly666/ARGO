@@ -24,6 +24,7 @@ const GRUPOS = [
       { key: 'programas.gestionar', label: 'Administrar programas (editar y eliminar)' },
       { key: 'servicios.ver', label: 'Consultar servicios' },
       { key: 'servicios.gestionar', label: 'Administrar servicios' },
+      { key: 'informes.ver', label: 'Informes académicos (listados parametrizables)' },
       { key: 'instructores', label: 'Módulo instructores (legacy)' },
       { key: 'instructores.mi_portal', label: 'Portal del instructor (mi perfil y mis clases)' },
       { key: 'instructores.inspeccion', label: 'Inspección preoperacional de vehículos (instructor)' },
@@ -45,6 +46,15 @@ const GRUPOS = [
       { key: 'programacion_cea.ver', label: 'Consultar programación, rastreo y calendario CEA' },
       { key: 'programacion_cea.gestionar', label: 'Configurar, temas y programar clases CEA' },
       { key: 'programacion_cea.operar', label: 'Operar clases CEA (inscribir, iniciar/finalizar)' },
+    ],
+  },
+  {
+    id: 'cohortes_academicas',
+    label: 'Cohortes académicas',
+    permisos: [
+      { key: 'cohortes_academicas.ver', label: 'Consultar cohortes, plan y clases' },
+      { key: 'cohortes_academicas.gestionar', label: 'Plan, cohortes, inscripción y programación de clases' },
+      { key: 'cohortes_academicas.operar', label: 'Registrar asistencia y notas (instructor)' },
     ],
   },
   {

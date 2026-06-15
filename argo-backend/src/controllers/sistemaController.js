@@ -4,6 +4,7 @@ const path = require('path');
 const respaldos = require('../services/respaldos');
 const { verificarReautenticacionAdmin } = require('../services/reautenticacion');
 const { ejecutarResetEmpresa, FRASE_CONFIRMACION } = require('../services/resetEmpresa');
+const { listarModulosReset } = require('../constants/modulosResetEmpresa');
 const migracion = require('../services/migracionDatos');
 const { registrarAuditoria } = require('../services/auditoria');
 
@@ -169,7 +170,10 @@ exports.actualizarConfigRespaldos = async (req, res, next) => {
 /* ---------- Reset de empresa ---------- */
 
 exports.infoReset = async (_req, res) => {
-  res.json({ fraseConfirmacion: FRASE_CONFIRMACION });
+  res.json({
+    fraseConfirmacion: FRASE_CONFIRMACION,
+    modulos: listarModulosReset(),
+  });
 };
 
 exports.resetEmpresa = async (req, res, next) => {
@@ -177,11 +181,13 @@ exports.resetEmpresa = async (req, res, next) => {
     exigirFrase(req, FRASE_CONFIRMACION);
     const admin = await verificarReautenticacionAdmin(req, req.body);
     const r = await ejecutarResetEmpresa(req, admin);
+    const esParcial = r.tipoReset === 'parcial';
     res.json({
       ...r,
-      mensaje:
-        'Puesta en cero completada. Los catálogos se conservaron, los consecutivos quedaron en 0 ' +
-        `y se creó el respaldo previo ${r.respaldoPrevio}.`,
+      mensaje: esParcial
+        ? `Reset parcial completado (${r.modulos.join(', ')}). Se creó el respaldo previo ${r.respaldoPrevio}.`
+        : 'Puesta en cero completada. Los catálogos se conservaron, los consecutivos quedaron en 0 ' +
+          `y se creó el respaldo previo ${r.respaldoPrevio}.`,
     });
   } catch (e) {
     next(e);
@@ -192,7 +198,10 @@ exports.resetEmpresa = async (req, res, next) => {
 
 exports.plantillaMigracion = async (req, res, next) => {
   try {
-    const buffer = migracion.generarPlantilla(req.query?.hojas);
+    const buffer = migracion.generarPlantilla(req.query?.hojas, {
+      certificadosHistoricos: req.query?.certificadosHistoricos,
+      modoIntegridad: req.query?.modoIntegridad,
+    });
     registrarAuditoria({
       req,
       accion: 'migracion_plantilla',
@@ -212,9 +221,14 @@ exports.validarMigracion = async (req, res, next) => {
     if (!req.file?.buffer) {
       return res.status(400).json({ message: 'Adjunte el archivo Excel con los datos a migrar' });
     }
-    const analisis = await migracion.analizarArchivo(req.file.buffer, req.body?.hojas);
+    const optsIntegridad = {
+      certificadosHistoricos: req.body?.certificadosHistoricos,
+      modoIntegridad: req.body?.modoIntegridad,
+    };
+    const analisis = await migracion.analizarArchivo(req.file.buffer, req.body?.hojas, optsIntegridad);
     res.json({
       hojas: analisis.hojas,
+      opcionesIntegridad: analisis.opcionesIntegridad,
       ignoradas: analisis.ignoradas,
       totales: analisis.totales,
       validos: {
@@ -242,6 +256,8 @@ exports.importarMigracion = async (req, res, next) => {
       idSede: req.idSede,
       actualizarExistentes: req.body?.actualizarExistentes === 'true' || req.body?.actualizarExistentes === true,
       hojas: req.body?.hojas,
+      certificadosHistoricos: req.body?.certificadosHistoricos,
+      modoIntegridad: req.body?.modoIntegridad,
     });
     await registrarAuditoria({
       req,

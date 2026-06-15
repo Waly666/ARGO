@@ -54,8 +54,8 @@ type SortDir = 'asc' | 'desc';
 
 const VISTA_STORAGE_KEY_GENERAL = 'argo-alumnos-vista';
 const VISTA_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-vista';
-const SORT_STORAGE_KEY_GENERAL = 'argo-alumnos-sort-v2';
-const SORT_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-sort-v2';
+const SORT_STORAGE_KEY_GENERAL = 'argo-alumnos-sort-v3';
+const SORT_STORAGE_KEY_JORNADA = 'argo-alumnos-jornada-sort-v3';
 
 const CERT_JORNADA_OPTS: EnumBuscarOption[] = [
   { value: '', label: 'Todos' },
@@ -64,6 +64,7 @@ const CERT_JORNADA_OPTS: EnumBuscarOption[] = [
 ];
 
 const SORT_COLUMNS: ReadonlyArray<{ key: SortColAlumnos; label: string }> = [
+  { key: 'fechaReg', label: 'Registro' },
   { key: 'numDoc', label: 'Documento' },
   { key: 'nombre', label: 'Nombre' },
   { key: 'fechaNac', label: 'Fecha nac.' },
@@ -411,7 +412,7 @@ export class AlumnosListaComponent implements OnInit {
       this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       this.sortCol.set(col);
-      this.sortDir.set('asc');
+      this.sortDir.set(col === 'fechaReg' ? 'desc' : 'asc');
     }
     const sortKey =
       this.modo() === 'jornadas' ? SORT_STORAGE_KEY_JORNADA : SORT_STORAGE_KEY_GENERAL;

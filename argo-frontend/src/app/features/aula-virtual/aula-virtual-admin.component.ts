@@ -237,6 +237,22 @@ export class AulaVirtualAdminComponent implements OnInit {
 
   }
 
+  eliminarUsuarioPortal(u: UsuarioPortalAdmin) {
+    const etiqueta = u.nombreCompleto?.trim() || u.email;
+    const ok = confirm(
+      `¿Eliminar la cuenta del portal de ${etiqueta}?\n\n` +
+        'La ficha del alumno en el ERP se conserva; solo se borra el acceso al aula virtual.',
+    );
+    if (!ok) return;
+    this.svc.eliminarUsuario(u.id).subscribe({
+      next: (r) => {
+        this.toast(r.message || 'Usuario del portal eliminado');
+        this.cargarUsuarios();
+      },
+      error: (e) => this.toast(e?.error?.message || 'No se pudo eliminar el usuario', true),
+    });
+  }
+
 
 
   matricularAlumno() {

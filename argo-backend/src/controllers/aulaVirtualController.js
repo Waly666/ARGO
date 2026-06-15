@@ -27,6 +27,15 @@ const {
   htmlCertificadoPortal,
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
+const {
+  misClasesPresenciales,
+  calendarioCohorte,
+  asistirMeet,
+  evaluacionesAlumno,
+  iniciarIntento,
+  enviarIntento,
+  materialesAlumno,
+} = require('../services/aulaVirtualCohorte');
 const { enviarContactoPortal } = require('../services/aulaVirtualContacto');
 const { generarSitemapXml } = require('../services/aulaVirtualSitemap');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
@@ -262,6 +271,70 @@ exports.misCertificados = async (req, res, next) => {
     const rows = await listarMisCertificados(req.portalUser.numDoc);
     res.json(rows);
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.misClasesPresenciales = async (req, res, next) => {
+  try {
+    res.json(await misClasesPresenciales(req.portalUser.numDoc));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.calendarioCohorte = async (req, res, next) => {
+  try {
+    res.json(await calendarioCohorte(req.portalUser.numDoc, req.params.idCohorte));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.asistirClaseMeet = async (req, res, next) => {
+  try {
+    res.json(await asistirMeet(req.portalUser.numDoc, req.params.idClase));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.evaluacionesCohorteAlumno = async (req, res, next) => {
+  try {
+    res.json(await evaluacionesAlumno(req.portalUser.numDoc, req.params.idCohorte));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.iniciarIntentoEvaluacion = async (req, res, next) => {
+  try {
+    res.json(await iniciarIntento(req.portalUser.numDoc, req.params.idEval));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.enviarIntentoEvaluacion = async (req, res, next) => {
+  try {
+    res.json(
+      await enviarIntento(req.portalUser.numDoc, req.params.idEval, req.body?.respuestas, 'portal'),
+    );
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.materialesCohorteAlumno = async (req, res, next) => {
+  try {
+    res.json(await materialesAlumno(req.portalUser.numDoc, req.params.idCohorte));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

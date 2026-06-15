@@ -17,6 +17,8 @@ export interface Programa {
   horasPractica?: number | null;
   horasTaller?: number | null;
   valorMatricula?: number;
+  /** Habilita el módulo de cohortes académicas (formación grupal por semestre). */
+  usaCohortes?: boolean;
   descripcion?: string | null;
   estado?: string;
   requistos?: string | null;
@@ -70,6 +72,7 @@ export interface ProgramaDto {
   horasPractica?: number | null;
   horasTaller?: number | null;
   valorMatricula?: number;
+  usaCohortes?: boolean;
   descripcion?: string;
   estado?: string;
   requistos?: string;

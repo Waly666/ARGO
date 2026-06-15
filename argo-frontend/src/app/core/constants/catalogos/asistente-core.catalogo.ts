@@ -42,6 +42,18 @@ export const ASISTENTE_CORE: Record<string, AsistenteContexto> = {
         cuerpo:
           '1) Crear alumno → 2) Matricular servicios → 3) Registrar pagos → 4) Documentos → 5) Programación CEA → 6) Certificado / factura si aplica.',
       },
+      {
+        id: 'ini-7',
+        titulo: 'Cohortes académicas',
+        cuerpo:
+          'Para diplomados y técnicos por semestre: menú Cohortes académicas. Catálogo de materias → plan del programa → grupos del año.',
+      },
+      {
+        id: 'ini-8',
+        titulo: 'Aula virtual',
+        cuerpo:
+          'Menú Aula virtual: admin del portal y editor del sitio público. Los alumnos de cohortes ven clases y evaluaciones allí.',
+      },
     ],
   },
   'dashboard.main': {

@@ -2,6 +2,7 @@
 export function catValor(item: Record<string, unknown>): string {
   const v =
     item['idTipoDoc'] ??
+    item['idTipCap'] ??
     item['idRegimen'] ??
     item['idJornada'] ??
     item['idEstrato'] ??

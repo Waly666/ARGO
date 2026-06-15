@@ -67,6 +67,12 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 0 4 22.5V6.5zM6.5 6H18v12H6.5a.5.5 0 0 0-.5.5v1A1.5 1.5 0 0 1 6.5 21H20V3H6.5A2.5 2.5 0 0 0 4 5.5V6h2.5z"/></svg>
           @if (!sidebarCollapsed()) { <span>Tus cursos</span> }
         </button>
+        @if (tienePresenciales()) {
+        <button type="button" class="dash-nav-item" [class.active]="panel() === 'presenciales'" (click)="irPanel('presenciales')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Mis clases presenciales</span> }
+        </button>
+        }
         <button type="button" class="dash-nav-item" [class.active]="panel() === 'puntajes'" (click)="irPanel('puntajes')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 9H8v-2h4V7l4 4-4 4v-2z"/></svg>
           @if (!sidebarCollapsed()) { <span>Mis puntajes</span> }
@@ -335,6 +341,131 @@
                   <p>No hay cursos matriculados.</p>
                   <a routerLink="/tienda" class="dash-btn dash-btn-primary">Ir a la tienda</a>
                 </div>
+              }
+            </div>
+          }
+
+          @case ('presenciales') {
+            <div class="dash-presenciales">
+              <header class="dash-page-head">
+                <div>
+                  <p class="dash-kicker">Formación grupal</p>
+                  <h1>Mis clases presenciales</h1>
+                  <p class="dash-sub">Calendario de clases, enlaces a sesiones en vivo, asistencia y avance por materia.</p>
+                </div>
+              </header>
+
+              @if (!cohortes().length) {
+                <div class="dash-empty"><p>No estás inscrito en ninguna cohorte presencial.</p></div>
+              } @else {
+                <p class="coh-tip">👉 Toca una tarjeta para ver el calendario de clases. Cuando una clase tenga videollamada, podrás entrar desde aquí y tu asistencia quedará registrada.</p>
+
+                @for (c of cohortes(); track c.idCohorte) {
+                  <article class="coh-card">
+                    <header class="coh-head" (click)="abrirCalendario(c)">
+                      <div>
+                        <h2>{{ c.cohorteNombre }}</h2>
+                        <p class="coh-meta">{{ c.nombreProg }} · Semestre {{ c.numSemestre }} · {{ c.anio }}-{{ c.periodo }}</p>
+                      </div>
+                      <div class="coh-prog">
+                        <div class="coh-prog-bar"><span [style.width.%]="c.pctAvance"></span></div>
+                        <span class="coh-prog-txt">{{ c.pctAvance }}% · {{ c.horasCubiertas }}/{{ c.horasTotal }} h</span>
+                      </div>
+                    </header>
+
+                    <div class="coh-materias">
+                      @for (m of c.materias; track m.idMateria) {
+                        <div class="coh-materia">
+                          <span class="coh-materia-nom">{{ m.nombre }}</span>
+                          <div class="coh-materia-bar"><span [style.width.%]="m.pct"></span></div>
+                          <span class="coh-materia-h">{{ m.horasCubiertas }}/{{ m.horas }} h</span>
+                        </div>
+                      }
+                    </div>
+
+                    @if (cohorteAbierta() === c.idCohorte) {
+                      <div class="coh-cal">
+                        @if (calendarioActivo()?.clases?.length) {
+                          <table class="coh-tabla">
+                            <thead><tr><th>Fecha</th><th>Hora</th><th>Materia</th><th>Asistencia</th><th></th></tr></thead>
+                            <tbody>
+                              @for (cl of calendarioActivo()!.clases; track cl.idClase) {
+                                <tr>
+                                  <td>{{ cl.fechaClase | date: 'dd/MM/yyyy' }}</td>
+                                  <td>{{ cl.horaDesde }}@if (cl.horaHasta) {–{{ cl.horaHasta }}}</td>
+                                  <td>{{ cl.materiaNombre }}</td>
+                                  <td>
+                                    <span class="coh-asis" [attr.data-estado]="cl.miAsistencia">{{ cl.miAsistencia }}</span>
+                                  </td>
+                                  <td>
+                                    @if (cl.urlMeet) {
+                                      <button type="button" class="dash-btn dash-btn-primary dash-btn-sm" (click)="entrarMeet(cl.idClase, cl.urlMeet)">Entrar a la clase</button>
+                                    } @else {
+                                      <span class="coh-presencial">Presencial</span>
+                                    }
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        } @else {
+                          <p class="dash-sub">Aún no hay clases programadas.</p>
+                        }
+
+                        <!-- Materiales -->
+                        @if (materialesCohorte().length) {
+                          <h3 class="coh-subt">📎 Materiales de apoyo</h3>
+                          <ul class="coh-materiales-list">
+                            @for (m of materialesCohorte(); track m._id) {
+                              <li>
+                                <span class="coh-mat-tipo">{{ m.tipo }}</span>
+                                <div class="coh-mat-info">
+                                  <strong>{{ m.titulo }}</strong>
+                                  <small>{{ m.materiaNombre }}</small>
+                                </div>
+                                @if (m.url) {
+                                  <a class="dash-btn dash-btn-sm" [href]="m.url" target="_blank" rel="noopener">Abrir</a>
+                                }
+                              </li>
+                            }
+                          </ul>
+                        }
+
+                        <!-- Evaluaciones -->
+                        @if (evaluacionesCohorte().length) {
+                          <h3 class="coh-subt">📝 Evaluaciones</h3>
+                          <ul class="coh-eval-list">
+                            @for (ev of evaluacionesCohorte(); track ev.idEvaluacion) {
+                              <li>
+                                <div class="coh-eval-info">
+                                  <strong>{{ ev.titulo }}</strong>
+                                  <small>
+                                    {{ ev.materiaNombre }} · {{ ev.numPreguntas }} preguntas · aprueba con {{ ev.notaAprobacion }}
+                                    · intentos {{ ev.intentosUsados }}/{{ ev.intentosPermitidos }}
+                                  </small>
+                                </div>
+                                @if (ev.miMejorNota !== null) {
+                                  <span class="coh-eval-nota" [class.ok]="ev.aprobado">{{ ev.miMejorNota }}</span>
+                                }
+                                @if (ev.puedeIniciar) {
+                                  <button type="button" class="dash-btn dash-btn-primary dash-btn-sm" (click)="iniciarEvaluacion(ev)">
+                                    {{ ev.intentosUsados > 0 ? 'Reintentar' : 'Presentar' }}
+                                  </button>
+                                } @else if (!ev.vigente) {
+                                  <span class="coh-presencial">No disponible</span>
+                                } @else if (ev.intentosUsados >= ev.intentosPermitidos) {
+                                  <span class="coh-presencial">Sin intentos</span>
+                                }
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    } @else {
+                      <button type="button" class="dash-link" (click)="abrirCalendario(c)">Ver calendario ›</button>
+                    }
+                  </article>
+                }
               }
             </div>
           }
@@ -722,4 +853,85 @@
       }
     </main>
   </div>
+
+  <!-- Modal: presentar evaluación -->
+  @if (intentoActivo(); as it) {
+    <div class="coh-modal-bg" (click)="cerrarIntento()">
+      <div class="coh-modal" (click)="$event.stopPropagation()">
+        <header class="coh-modal-head">
+          <div>
+            <h2>{{ it.titulo }}</h2>
+            <p class="dash-sub">{{ it.descripcion || 'Responde todas las preguntas y envía.' }}</p>
+          </div>
+          <button type="button" class="coh-modal-x" (click)="cerrarIntento()">✕</button>
+        </header>
+        <div class="coh-modal-body">
+          @for (p of it.preguntas; track p.idPregunta; let i = $index) {
+            <div class="coh-preg">
+              <p class="coh-preg-enun"><strong>{{ i + 1 }}.</strong> {{ p.enunciado }}
+                @if (p.tipo === 'MULTIPLE') { <span class="coh-preg-hint">(varias respuestas)</span> }
+              </p>
+              <div class="coh-preg-ops">
+                @for (o of p.opciones; track $index) {
+                  <button type="button" class="coh-op" [class.sel]="estaSeleccionada(p.idPregunta, $index)"
+                    (click)="toggleOpcion(p.idPregunta, $index, p.tipo)">
+                    <span class="coh-op-mark">{{ estaSeleccionada(p.idPregunta, $index) ? '✓' : '' }}</span>
+                    {{ o.texto }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <footer class="coh-modal-foot">
+          <button type="button" class="dash-btn dash-btn-outline" (click)="cerrarIntento()">Cancelar</button>
+          <button type="button" class="dash-btn dash-btn-primary" [disabled]="enviandoIntento()" (click)="enviarEvaluacion()">
+            {{ enviandoIntento() ? 'Enviando…' : 'Enviar respuestas' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: resultado evaluación -->
+  @if (resultadoIntento(); as r) {
+    <div class="coh-modal-bg" (click)="cerrarResultado()">
+      <div class="coh-modal" (click)="$event.stopPropagation()">
+        <header class="coh-modal-head">
+          <div>
+            <h2>Resultado</h2>
+            <p class="dash-sub">Obtuviste {{ r.puntajeObtenido }} de {{ r.puntajeTotal }} puntos.</p>
+          </div>
+          <button type="button" class="coh-modal-x" (click)="cerrarResultado()">✕</button>
+        </header>
+        <div class="coh-modal-body">
+          <div class="coh-result-nota" [class.ok]="r.aprobado">
+            <span class="coh-result-num">{{ r.nota }}</span>
+            <span class="coh-result-lbl">{{ r.aprobado ? '¡Aprobado!' : 'No aprobado' }}</span>
+          </div>
+          @if (r.mostrarResultados) {
+            @for (c of r.correccion; track c.idPregunta; let i = $index) {
+              <div class="coh-preg">
+                <p class="coh-preg-enun">
+                  <span class="coh-corr-icon" [class.ok]="c.correcta">{{ c.correcta ? '✓' : '✗' }}</span>
+                  <strong>{{ i + 1 }}.</strong> {{ c.enunciado }}
+                </p>
+                <div class="coh-preg-ops">
+                  @for (o of c.opciones; track $index) {
+                    <div class="coh-op-rev" [class.correcta]="o.correcta" [class.elegida-mal]="o.elegida && !o.correcta">
+                      <span class="coh-op-mark">{{ o.correcta ? '✓' : (o.elegida ? '✗' : '') }}</span>
+                      {{ o.texto }}
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+        <footer class="coh-modal-foot">
+          <button type="button" class="dash-btn dash-btn-primary" (click)="cerrarResultado()">Entendido</button>
+        </footer>
+      </div>
+    </div>
+  }
 }

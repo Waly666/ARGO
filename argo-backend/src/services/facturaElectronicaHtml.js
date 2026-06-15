@@ -44,6 +44,7 @@ async function emisorDesdeConfig(idSede) {
     telefono: rec?.telefono || '',
     email: rec?.email || '',
     regimen: fe.emisorRegimen || '',
+    urlLogo: rec?.urlLogoDataUrl || null,
   };
 }
 
@@ -58,7 +59,11 @@ function labelFormaPago(code) {
 }
 
 function bloqueEmisor(em) {
+  const logoHtml = em.urlLogo
+    ? `<img class="emisor-logo" src="${esc(em.urlLogo)}" alt="${esc(em.razonSocial || 'Logo')}" />`
+    : '';
   const lineas = [
+    logoHtml,
     em.razonSocial ? `<div class="emisor-nombre">${esc(em.razonSocial)}</div>` : '',
     em.nit ? `<div>NIT: ${esc(em.nit)}</div>` : '',
     em.direccion ? `<div>${esc(em.direccion)}</div>` : '',
@@ -125,6 +130,7 @@ function estilosDocumento() {
       padding-bottom: 12px;
       margin-bottom: 14px;
     }
+    .emisor-logo { max-height: 70px; max-width: 200px; object-fit: contain; display: block; margin-bottom: 10px; }
     .emisor-nombre { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .regimen { font-size: 11px; color: #444; margin-top: 4px; }
     .doc-tipo { text-align: right; }

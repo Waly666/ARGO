@@ -113,6 +113,16 @@
               <button
                 type="button"
                 class="th-sort"
+                [class.active]="sortCol() === 'fechaReg'"
+                [attr.aria-sort]="sortAria('fechaReg')"
+                (click)="toggleSort('fechaReg')">
+                Registro <span class="sort-icon">{{ sortIcon('fechaReg') }}</span>
+              </button>
+            </th>
+            <th>
+              <button
+                type="button"
+                class="th-sort"
                 [class.active]="sortCol() === 'numDoc'"
                 [attr.aria-sort]="sortAria('numDoc')"
                 (click)="toggleSort('numDoc')">
@@ -183,6 +193,9 @@
               </div>
             </td>
             <td>
+              <span *ngIf="r.fechaReg; else vacio" [ngClass]="capFecha(formatFecha(r.fechaReg))">{{ formatFecha(r.fechaReg) }}</span>
+            </td>
+            <td>
               <span [ngClass]="capDoc(r.numDoc)">{{ formatNumDoc(r.numDoc) }}</span>
             </td>
             <td class="col-nombre">{{ nombreCompleto(r) }}</td>
@@ -224,7 +237,7 @@
             </td>
           </tr>
           <tr *ngIf="items().length === 0">
-            <td [attr.colspan]="esJornadas() ? 10 : 9" class="empty">
+            <td [attr.colspan]="esJornadas() ? 11 : 10" class="empty">
               <ng-container *ngTemplateOutlet="emptyTpl"></ng-container>
             </td>
           </tr>

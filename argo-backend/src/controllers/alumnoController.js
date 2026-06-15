@@ -168,9 +168,11 @@ const SORT_ALUMNOS_KEYS = {
 };
 
 function resolveSortAlumnos(sortRaw, dirRaw) {
-  const sortKey = String(sortRaw || '').trim();
-  if (!sortKey) return { fechaReg: -1 };
-  const dir = String(dirRaw || '').toLowerCase() === 'desc' ? -1 : 1;
+  const sortKey = String(sortRaw || '').trim() || 'fechaReg';
+  const dir = String(dirRaw || '').toLowerCase() === 'asc' ? 1 : -1;
+  if (sortKey === 'fechaReg') {
+    return { fechaReg: dir, _id: dir };
+  }
   const fields = SORT_ALUMNOS_KEYS[sortKey] || SORT_ALUMNOS_KEYS.fechaReg;
   const out = {};
   for (const f of fields) out[f] = dir;
@@ -207,6 +209,7 @@ function mapListaItem(doc) {
     urlCedula: doc.urlCedula,
     urlLicencia: doc.urlLicencia,
     docsAlumno: doc.docsAlumno,
+    fechaReg: doc.fechaReg || doc.fechaAudi || null,
     fechaMod: doc.fechaMod || doc.fechaAudi,
   };
 }

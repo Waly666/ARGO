@@ -1,4 +1,5 @@
 const Certificado = require('../models/Certificado');
+const { ID_PROG_HISTORICO } = require('../constants/migracionHistorico');
 const DatosAlumno = require('../models/DatosAlumno');
 const { numDocQuery, parseNumDoc } = require('../utils/numDoc');
 const { buscarPrograma } = require('./programaServicio');
@@ -12,9 +13,12 @@ function nombreCompletoAlumno(da) {
   return [da.apellido1, da.apellido2, da.nombre1, da.nombre2].filter(Boolean).join(' ').trim();
 }
 
-async function descrPrograma(idProg) {
+async function descrPrograma(idProg, encabezado) {
+  if (String(idProg) === ID_PROG_HISTORICO) {
+    return String(encabezado || '').trim() || 'Certificado histórico';
+  }
   const p = await buscarPrograma(idProg);
-  if (!p) return String(idProg || '');
+  if (!p) return String(encabezado || idProg || '').trim();
   return p.nombreProg || p.descripcion || p.nomCert || String(idProg);
 }
 
@@ -45,7 +49,7 @@ async function listarMisCertificados(numDoc) {
       idProg: c.idProg,
       codigoCert: c.codigoCert || null,
       encabezado: c.encabezado || null,
-      programaDescr: await descrPrograma(c.idProg),
+      programaDescr: await descrPrograma(c.idProg, c.encabezado),
       nomCert: prog?.nomCert || null,
       fechaEmision: c.fechaEmision || c.createdAt || null,
       fechaVencimiento: c.fechaVencimiento || null,
@@ -99,17 +103,22 @@ async function consultarCertificadosPublico(numDocRaw) {
       .lean(),
   ]);
 
-  const nombreApellidos = nombreCompletoAlumno(alumno);
+  const nombreAlumno = nombreCompletoAlumno(alumno);
+  const nombreTitularCert = (c) => String(c.nombreTitular || '').trim();
 
   const items = certs.map((c) => ({
-    idCertificado: String(c.codigoCert || c._id || '').trim(),
-    nombreApellidos,
+    idCertificado: String(c.codVerificacion || c.codigoCert || c._id || '').trim(),
+    codVerificacion: String(c.codVerificacion || '').trim(),
+    nombreApellidos: nombreAlumno || nombreTitularCert(c),
     cedula: c.numDoc,
     encabezado: String(c.encabezado || '').trim(),
     horas: String(c.horasCert || '').trim(),
     fechaCert: c.fechaEmision || c.createdAt || null,
     fechaVence: c.fechaVencimiento || null,
   }));
+
+  const nombreApellidos =
+    nombreAlumno || items.map((i) => i.nombreApellidos).find(Boolean) || '';
 
   return {
     cedula: nd,

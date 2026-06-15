@@ -49,6 +49,7 @@ export interface ConfigRecibo {
   nombreEmpresa?: string;
   nombreSede?: string;
   nit?: string;
+  urlLogoDataUrl?: string | null;
   direccion?: string;
   ciudad?: string;
   departamento?: string;

@@ -38,6 +38,10 @@ function bloqueEmpresaHtml(config) {
   const v = (x) => esc((x || '').toString().trim());
   const ciudadLine = [config.ciudad, config.departamento].filter((x) => String(x || '').trim()).join(', ');
   const lineas = [];
+  const logoSrc = config.urlLogoDataUrl || null;
+  if (logoSrc) {
+    lineas.push(`<div class="center logo"><img src="${esc(logoSrc)}" alt="Logo" /></div>`);
+  }
   if (v(config.nombreEmpresa)) {
     lineas.push(`<div class="center empresa">${v(config.nombreEmpresa)}</div>`);
   }
@@ -71,6 +75,8 @@ function estilosRecibo(mm, w) {
       background: #fff;
     }
     .center { text-align: center; }
+    .logo { margin: 0 0 5px; }
+    .logo img { max-height: 56px; max-width: 130px; object-fit: contain; display: inline-block; }
     .empresa { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
     .sede-nombre { font-weight: bold; font-size: 11px; margin-bottom: 3px; }
     .dato { font-size: 10px; line-height: 1.3; }

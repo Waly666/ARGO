@@ -15,6 +15,10 @@ export type AsistenteModulo =
   | 'facturacion'
   | 'instructores'
   | 'programacion_cea'
+  | 'cohortes'
+  | 'aula_virtual'
+  | 'informes'
+  | 'sistema'
   | 'caja'
   | 'rrhh'
   | 'vehiculos'
@@ -39,6 +43,10 @@ export const ASISTENTE_MODULO_LABELS: Record<AsistenteModulo, string> = {
   facturacion: 'Facturación',
   instructores: 'Instructores',
   programacion_cea: 'Programación CEA',
+  cohortes: 'Cohortes académicas',
+  aula_virtual: 'Aula virtual',
+  informes: 'Informes',
+  sistema: 'Sistema',
   caja: 'Caja',
   rrhh: 'RRHH',
   vehiculos: 'Vehículos',

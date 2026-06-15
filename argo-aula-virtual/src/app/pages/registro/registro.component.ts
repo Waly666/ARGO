@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AulaApiService } from '../../core/aula-api.service';
-import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
+import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, nombreEnMayusculas, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
 import { PortalCatalogService } from '../../core/portal-catalog.service';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
@@ -187,6 +187,18 @@ export class RegistroComponent implements OnInit {
     return this.turnstileToken() || this.turnstile()?.getToken() || '';
   }
 
+  /** Convierte nombres/apellidos a mayúsculas al escribir (como Bloq Mayús). */
+  patchNombre(campo: 'apellido1' | 'apellido2' | 'nombre1' | 'nombre2', valor: string) {
+    this.form[campo] = nombreEnMayusculas(valor);
+  }
+
+  private normalizarNombresFormulario() {
+    this.form.apellido1 = nombreEnMayusculas(this.form.apellido1);
+    this.form.apellido2 = nombreEnMayusculas(this.form.apellido2);
+    this.form.nombre1 = nombreEnMayusculas(this.form.nombre1);
+    this.form.nombre2 = nombreEnMayusculas(this.form.nombre2);
+  }
+
   buscarDocumento() {
     const nd = String(this.form.numDoc || '').trim();
     if (!nd) return;
@@ -214,10 +226,10 @@ export class RegistroComponent implements OnInit {
           const a = res.alumno;
           this.form.tipoDoc = String(a['tipoDoc'] || this.form.tipoDoc);
           this.form.expedida = String(a['expedida'] || '');
-          this.form.apellido1 = String(a['apellido1'] || '');
-          this.form.apellido2 = String(a['apellido2'] || '');
-          this.form.nombre1 = String(a['nombre1'] || '');
-          this.form.nombre2 = String(a['nombre2'] || '');
+          this.form.apellido1 = nombreEnMayusculas(String(a['apellido1'] || ''));
+          this.form.apellido2 = nombreEnMayusculas(String(a['apellido2'] || ''));
+          this.form.nombre1 = nombreEnMayusculas(String(a['nombre1'] || ''));
+          this.form.nombre2 = nombreEnMayusculas(String(a['nombre2'] || ''));
           this.form.genero = String(a['genero'] || '').toUpperCase();
           this.form.fechaNac = String(a['fechaNac'] || '');
           this.form.codMunicipio = String(a['codMunicipio'] || a['munOrigen'] || '');
@@ -274,6 +286,7 @@ export class RegistroComponent implements OnInit {
       this.error.set('Complete la verificación anti-bot.');
       return;
     }
+    this.normalizarNombresFormulario();
     this.loading.set(true);
     this.error.set('');
     this.info.set('');

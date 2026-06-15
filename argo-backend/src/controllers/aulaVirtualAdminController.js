@@ -26,7 +26,7 @@ const {
   eliminarCategoria,
 } = require('../services/aulaVirtualCategorias');
 const { publicUrl, publicUrlPath, resolvePath } = require('../middleware/upload');
-const { listarUsuariosPortalAdmin } = require('../services/aulaVirtualUsuarios');
+const { listarUsuariosPortalAdmin, eliminarUsuarioPortal } = require('../services/aulaVirtualUsuarios');
 const { inyectarBridgeEnPaquete, detectarStoragePrefix } = require('../services/aulaVirtualBridge');
 const { detectarIndexHtml, paqueteListo, listarEntradasPaquete } = require('../services/aulaVirtualPaquete');
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
@@ -346,6 +346,15 @@ exports.listarUsuariosPortal = async (req, res, next) => {
     const limit = Number(req.query?.limit) || 200;
     res.json(await listarUsuariosPortalAdmin({ q, limit }));
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.eliminarUsuarioPortal = async (req, res, next) => {
+  try {
+    res.json(await eliminarUsuarioPortal(req.params.id));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

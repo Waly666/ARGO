@@ -458,6 +458,8 @@ export class ProgramasAdminComponent implements OnInit {
 
       valorMatricula: 0,
 
+      usaCohortes: false,
+
       tarifa1: 0,
 
       tarifa2: 0,
@@ -616,7 +618,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     const t = this.tiposCap()[0]?.id ?? '';
 
-    this.form.set({ ...this.formVacio(), idTipCap: t, tipoServ: this.inferirTipoServ(t), tipoCertificado: this.inferirTipoCert(t) });
+    this.form.set({ ...this.formVacio(), idTipCap: t, tipoServ: this.inferirTipoServ(t) });
 
     this.resetPortadaLocal();
     this.modalAbierto.set(true);
@@ -690,6 +692,7 @@ export class ProgramasAdminComponent implements OnInit {
       horasPractica: prog.horasPractica ?? null,
       horasTaller: prog.horasTaller ?? null,
       valorMatricula: this.num(prog.valorMatricula),
+      usaCohortes: prog.usaCohortes === true,
       tarifa1: this.num(s?.tarifa1 ?? prog.valorMatricula),
       tarifa2: this.num(s?.tarifa2),
       tarifa3: this.num(s?.tarifa3),
@@ -809,7 +812,7 @@ export class ProgramasAdminComponent implements OnInit {
 
       tarifa1: esJorn ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
 
-      tipoCertificado: esJorn ? 'jornada_capacitacion' : (f.tipoCertificado ?? this.inferirTipoCert(idTipCap, f.nombreProg)),
+      tipoCertificado: f.tipoCertificado ?? null,
 
       descrServicio: (f.descrServicio || f.nombreProg).trim(),
 
@@ -1180,7 +1183,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     if (!tipo) {
 
-      return 'Automático: se infiere del tipo de capacitación y del nombre del programa.';
+      return 'Opcional. Independiente del tipo de capacitación; al emitir certificados se usará la plantilla configurada para este formato.';
 
     }
 
@@ -1207,19 +1210,14 @@ export class ProgramasAdminComponent implements OnInit {
 
 
   esProgramaJornadasCapForm(): boolean {
-    const f = this.form();
-    if (f.tipoCertificado === 'jornada_capacitacion') return true;
-    const label = this.labelTipo(f.idTipCap).toLowerCase();
-    return /jornadas?\s*de\s*capacitaci[oó]n|jornada\s*capacitacion|cap\s*jornada/.test(label);
+    return this.esTipCapJornadaLabel(this.labelTipo(this.form().idTipCap));
   }
 
   onTipoCapChange(id: string | number) {
     const canon = this.resolverIdTipCap(id);
     this.patch('idTipCap', canon);
-    const cert = this.inferirTipoCert(canon, this.form().nombreProg);
     this.patch('tipoServ', this.inferirTipoServ(canon));
-    this.patch('tipoCertificado', cert);
-    if (cert === 'jornada_capacitacion') {
+    if (this.esTipCapJornadaLabel(this.labelTipo(canon))) {
       this.patch('valorMatricula', 0);
       this.patch('tarifa1', 0);
       this.patch('tarifa2', 0);

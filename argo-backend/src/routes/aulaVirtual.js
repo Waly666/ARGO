@@ -48,6 +48,13 @@ router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
 router.get('/argo-bridge.js', ctrl.bridgeScript);
 
 router.get('/mis-cursos', requirePortalAuth, ctrl.misCursos);
+router.get('/mis-clases-presenciales', requirePortalAuth, ctrl.misClasesPresenciales);
+router.get('/mis-clases-presenciales/:idCohorte/calendario', requirePortalAuth, ctrl.calendarioCohorte);
+router.post('/clases-cohorte/:idClase/asistir-meet', requirePortalAuth, ctrl.asistirClaseMeet);
+router.get('/mis-clases-presenciales/:idCohorte/evaluaciones', requirePortalAuth, ctrl.evaluacionesCohorteAlumno);
+router.get('/mis-clases-presenciales/:idCohorte/materiales', requirePortalAuth, ctrl.materialesCohorteAlumno);
+router.post('/evaluaciones-cohorte/:idEval/iniciar', requirePortalAuth, ctrl.iniciarIntentoEvaluacion);
+router.post('/evaluaciones-cohorte/:idEval/enviar', requirePortalAuth, ctrl.enviarIntentoEvaluacion);
 router.get('/mis-certificados', requirePortalAuth, ctrl.misCertificados);
 router.get('/certificados/:id/html', requirePortalAuth, ctrl.certificadoHtml);
 router.get('/recibos/:id/html', requirePortalAuth, ctrl.reciboHtml);
@@ -60,6 +67,7 @@ router.post('/cursos/:id/matricular', requirePortalAuth, ctrl.matricularCurso);
 const gestionar = requirePermiso('programas.gestionar');
 
 router.get('/admin/usuarios', requireAuth, gestionar, admin.listarUsuariosPortal);
+router.delete('/admin/usuarios/:id', requireAuth, gestionar, admin.eliminarUsuarioPortal);
 router.get('/admin/categorias', requireAuth, gestionar, admin.listarCategoriasAdmin);
 router.post('/admin/categorias', requireAuth, gestionar, admin.crearCategoria);
 router.put('/admin/categorias/:id', requireAuth, gestionar, admin.actualizarCategoria);

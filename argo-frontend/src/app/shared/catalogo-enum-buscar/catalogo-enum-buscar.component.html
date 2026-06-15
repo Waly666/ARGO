@@ -21,27 +21,29 @@
       (click)="toggleOpen()">
       ▾
     </button>
-    <span class="hint" *ngIf="loading()">Buscando…</span>
+    <span class="hint" *ngIf="loading() && !modoCombo">Buscando…</span>
   </div>
 
-  <ul class="dropdown" *ngIf="open() && resultados().length > 0">
-    <li *ngFor="let o of resultados()" (mousedown)="pick(o)">
-      <strong>{{ o.label }}</strong>
-      <span *ngIf="o.hint">{{ o.hint }}</span>
-    </li>
-  </ul>
-
-  <div
-    class="dropdown empty"
-    *ngIf="open() && !loading() && resultados().length === 0 && (modoCombo || query().trim().length >= minLength)"
-  >
-    {{ query().trim() ? 'No hay coincidencias.' : 'No hay opciones disponibles.' }}
-  </div>
-
-  <div
-    class="dropdown empty"
-    *ngIf="open() && !modoCombo && query().trim().length > 0 && query().trim().length < minLength"
-  >
-    Escriba al menos {{ minLength }} caracteres…
-  </div>
+  @if (open()) {
+    @if (loading() && modoCombo) {
+      <div class="dropdown empty">Cargando opciones…</div>
+    } @else if (resultados().length > 0) {
+      <ul class="dropdown">
+        @for (o of resultados(); track o.value) {
+          <li (mousedown)="pick(o)">
+            <strong>{{ o.label }}</strong>
+            @if (o.hint) {
+              <span>{{ o.hint }}</span>
+            }
+          </li>
+        }
+      </ul>
+    } @else if (!modoCombo && query().trim().length > 0 && query().trim().length < minLength) {
+      <div class="dropdown empty">Escriba al menos {{ minLength }} caracteres…</div>
+    } @else if (modoCombo ? filtrandoActivo() : query().trim().length >= minLength) {
+      <div class="dropdown empty">
+        {{ query().trim() ? 'No hay coincidencias.' : 'No hay opciones disponibles.' }}
+      </div>
+    }
+  }
 </div>

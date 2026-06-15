@@ -26,11 +26,13 @@ export interface CertificadoActualizarDto {
   fechaEmision?: string;
   fechaVencimiento?: string | null;
   observaciones?: string;
+  codVerificacion?: string | null;
 }
 
 export interface CertificadoListItem {
   _id: string;
   codigoCert?: string;
+  codVerificacion?: string | null;
   numDoc?: number;
   alumnoId?: string | null;
   nombreCompleto?: string;
@@ -75,6 +77,7 @@ export interface CertificadoDatosRes {
     numFolio?: string;
     numRunt?: string;
     observaciones?: string;
+    codVerificacion?: string | null;
   };
   alumno?: {
     _id?: string;

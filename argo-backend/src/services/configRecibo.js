@@ -1,6 +1,18 @@
 const Config = require('../models/Config');
 const Sede = require('../models/Sede');
 const { normalizarFormatoComprobante, FORMATOS } = require('./comprobanteFormato');
+const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
+
+/** Resuelve urlLogo (ruta relativa): primero el doc recibo, si no el aula_virtual. */
+async function resolverUrlLogoRelativa(urlLogoRecibo) {
+  if (String(urlLogoRecibo || '').trim()) return String(urlLogoRecibo).trim();
+  try {
+    const aula = await Config.findOne({ clave: 'aula_virtual' }).lean();
+    return String(aula?.urlLogo || '').trim() || '';
+  } catch {
+    return '';
+  }
+}
 
 const CLAVE = 'recibo';
 
@@ -105,10 +117,13 @@ async function cargarGlobalRecibo() {
  */
 async function obtenerConfigRecibo(idSede = null) {
   const global = await asegurarGlobalRecibo();
+  const urlLogoRel = await resolverUrlLogoRelativa(global.urlLogo);
+  const urlLogoDataUrl = urlLogoRel ? uploadFileToDataUrl(urlLogoRel) : null;
+  const conLogo = { ...global, urlLogo: urlLogoRel, urlLogoDataUrl: urlLogoDataUrl || null };
   const sid = String(idSede || '').trim();
-  if (!sid) return global;
+  if (!sid) return conLogo;
   const sede = await Sede.findOne({ idSede: sid }).lean();
-  return aplicarEncabezadoSede(global, sede);
+  return aplicarEncabezadoSede(conLogo, sede);
 }
 
 /** Compatibilidad: encabezados de sede se leen del catálogo Sede, no de config por sede. */

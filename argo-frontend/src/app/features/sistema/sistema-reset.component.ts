@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
+  ModuloReset,
   ProgresoOperacion,
   ResultadoReset,
   SistemaService,
@@ -23,11 +24,34 @@ export class SistemaResetComponent implements OnInit, OnDestroy {
   private confirm = inject(ConfirmDialogService);
 
   frase = signal('REINICIAR EMPRESA');
+  modulos = signal<ModuloReset[]>([]);
+  modoCompleto = signal(true);
+  seleccion = signal<Record<string, boolean>>({});
   resultado = signal<ResultadoReset | null>(null);
   ejecutando = signal(false);
   msg = signal<string | null>(null);
   msgError = signal(false);
   progreso = signal<ProgresoOperacion | null>(null);
+
+  modulosSeleccionados = computed(() => {
+    const sel = this.seleccion();
+    return this.modulos().filter((m) => sel[m.id]);
+  });
+
+  advertenciasActivas = computed(() => {
+    const ids = new Set(this.modulosSeleccionados().map((m) => m.id));
+    const avisos: string[] = [];
+    for (const mod of this.modulosSeleccionados()) {
+      for (const a of mod.advertencias || []) avisos.push(a);
+    }
+    if (!this.modoCompleto() && ids.has('contable') && !ids.has('academico')) {
+      avisos.push('Contable sin Académico: pueden quedar recibos huérfanos.');
+    }
+    if (!this.modoCompleto() && ids.has('academico') && !ids.has('contable')) {
+      avisos.push('Académico sin Contable: las matrículas conservarán saldos históricos.');
+    }
+    return [...new Set(avisos)];
+  });
 
   private pollId: ReturnType<typeof setInterval> | null = null;
 
@@ -38,7 +62,13 @@ export class SistemaResetComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.svc.infoReset().subscribe({
-      next: (i) => this.frase.set(i.fraseConfirmacion),
+      next: (i) => {
+        this.frase.set(i.fraseConfirmacion);
+        this.modulos.set(i.modulos || []);
+        const inicial: Record<string, boolean> = {};
+        for (const m of i.modulos || []) inicial[m.id] = false;
+        this.seleccion.set(inicial);
+      },
       error: () => {},
     });
   }
@@ -65,24 +95,88 @@ export class SistemaResetComponent implements OnInit, OnDestroy {
     }
   }
 
+  cambiarModo(completo: boolean) {
+    this.modoCompleto.set(completo);
+    if (completo) {
+      this.seleccion.update((s) => {
+        const next = { ...s };
+        for (const k of Object.keys(next)) next[k] = false;
+        return next;
+      });
+    }
+  }
+
+  estaSeleccionado(id: string): boolean {
+    return this.seleccion()[id];
+  }
+
+  toggleModulo(id: string, valor: boolean) {
+    this.seleccion.update((s) => ({ ...s, [id]: valor }));
+  }
+
+  seleccionarTodos() {
+    this.seleccion.update((s) => {
+      const next = { ...s };
+      for (const k of Object.keys(next)) next[k] = true;
+      return next;
+    });
+  }
+
+  limpiarSeleccion() {
+    this.seleccion.update((s) => {
+      const next = { ...s };
+      for (const k of Object.keys(next)) next[k] = false;
+      return next;
+    });
+  }
+
+  haySeleccionParcial(): boolean {
+    return this.modulosSeleccionados().length > 0;
+  }
+
+  idsModulosEnvio(): string[] | undefined {
+    if (this.modoCompleto()) return undefined;
+    return this.modulosSeleccionados().map((m) => m.id);
+  }
+
+  etiquetasModulos(ids: string[] | undefined): string {
+    if (!ids?.length) return '';
+    const map = Object.fromEntries(this.modulos().map((m) => [m.id, m.etiqueta]));
+    return ids.map((id) => map[id] || id).join(', ');
+  }
+
   puedeEjecutar(): boolean {
-    return (
+    const credenciales =
       this.entendido &&
       !!this.password &&
       this.confirmacion.trim().toUpperCase() === this.frase() &&
-      !this.ejecutando()
+      !this.ejecutando();
+    if (!credenciales) return false;
+    return this.modoCompleto() || this.haySeleccionParcial();
+  }
+
+  private mensajeConfirmacion(): string {
+    if (this.modoCompleto()) {
+      return (
+        'Última confirmación: se borrarán TODOS los datos de la empresa actual (alumnos, pagos, ' +
+        'certificados, caja, nómina…) y los consecutivos quedarán en 0. Se creará una copia de ' +
+        'seguridad completa antes de borrar. ¿Ejecutar la puesta en cero?'
+      );
+    }
+    const nombres = this.modulosSeleccionados().map((m) => m.etiqueta).join(', ');
+    return (
+      `Última confirmación: se borrarán solo los módulos seleccionados (${nombres}). ` +
+      'El resto de datos se conservará. Se creará una copia de seguridad completa antes de borrar. ' +
+      '¿Ejecutar el reset parcial?'
     );
   }
 
   async ejecutar() {
     const ok = await this.confirm.open({
-      title: 'Puesta en cero definitiva',
-      message:
-        'Última confirmación: se borrarán TODOS los datos de la empresa actual (alumnos, pagos, ' +
-        'certificados, caja, nómina…) y los consecutivos quedarán en 0. Se creará una copia de ' +
-        'seguridad completa antes de borrar. ¿Ejecutar la puesta en cero?',
+      title: this.modoCompleto() ? 'Puesta en cero definitiva' : 'Reset parcial',
+      message: this.mensajeConfirmacion(),
       variant: 'danger',
-      confirmLabel: 'Sí, poner en cero',
+      confirmLabel: this.modoCompleto() ? 'Sí, poner en cero' : 'Sí, reset parcial',
     });
     if (!ok) return;
 
@@ -94,6 +188,7 @@ export class SistemaResetComponent implements OnInit, OnDestroy {
         password: this.password,
         codigoMfa: this.codigoMfa,
         confirmacion: this.confirmacion,
+        modulos: this.idsModulosEnvio(),
       })
       .subscribe({
         next: (r) => {
@@ -104,7 +199,9 @@ export class SistemaResetComponent implements OnInit, OnDestroy {
           this.msgError.set(false);
           this.msg.set(
             r.mensaje ||
-              `Puesta en cero completada: ${r.coleccionesLimpiadas} tablas en cero, ${r.coleccionesConservadas} catálogos conservados.`,
+              (r.tipoReset === 'parcial'
+                ? `Reset parcial completado: ${r.coleccionesLimpiadas} tablas limpiadas.`
+                : `Puesta en cero completada: ${r.coleccionesLimpiadas} tablas en cero, ${r.coleccionesConservadas} catálogos conservados.`),
           );
           this.password = '';
           this.codigoMfa = '';

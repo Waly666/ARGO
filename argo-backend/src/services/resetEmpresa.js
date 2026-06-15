@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const Usuario = require('../models/Usuario');
 const { baseDir: uploadsDir } = require('../middleware/upload');
 const { CONSERVAR_EN_RESET, COLECCIONES_ESPECIALES } = require('../constants/cicloVidaColecciones');
+const { planReset, debeLimpiarColeccion } = require('../constants/modulosResetEmpresa');
 const { crearRespaldo, recrearIndices } = require('./respaldos');
 const { registrarAuditoria } = require('./auditoria');
 const progreso = require('./progresoOperacion');
@@ -25,22 +26,48 @@ async function vaciarUploads() {
   return entradas.length;
 }
 
+async function reinicializarConfigSistema() {
+  const db = mongoose.connection.db;
+  await db.collection('config').drop().catch(() => {});
+  await db.collection('roles_app').drop().catch(() => {});
+  await recrearIndices();
+  const { initRolesSistema, limpiarCache } = require('./rolesPermisos');
+  await initRolesSistema({ force: true });
+  limpiarCache();
+  const { initConfigNomina } = require('./configNomina');
+  await initConfigNomina().catch(() => {});
+}
+
+async function limpiarUsuariosExceptoAdmin(db, adminDoc) {
+  const rUsuarios = await db
+    .collection('usuarios')
+    .deleteMany({ _id: { $ne: adminDoc._id } });
+  await Usuario.updateOne(
+    { _id: adminDoc._id },
+    { $unset: { idEmpleado: '', numero: '', numeroDocumento: '' }, $set: { sedesPermitidas: [] } },
+  ).catch(() => {});
+  return rUsuarios.deletedCount;
+}
+
 /**
- * Puesta en cero para iniciar con otra empresa:
+ * Puesta en cero total o parcial por módulos:
  * - Respaldo completo previo (obligatorio).
- * - Conserva catálogos; elimina todos los datos transaccionales.
- * - Conserva únicamente al administrador que ejecuta la operación.
- * - Configuración vuelve a valores de fábrica (consecutivos en 0).
- * - Limpia archivos subidos (fotos, documentos, materiales).
+ * - Catálogos base (CONSERVAR_EN_RESET) nunca se tocan.
+ * - Reset completo: comportamiento histórico (todos los datos + config + usuarios + uploads).
+ * - Reset parcial: solo las colecciones de los módulos elegidos.
  */
 async function ejecutarResetEmpresa(req, adminDoc) {
   const usuario = adminDoc.username;
+  const plan = planReset(req.body?.modulos);
 
   progreso.iniciar('reset', 'Creando copia de seguridad previa…');
+  const notaRespaldo = plan.completo
+    ? 'Respaldo automático antes de la puesta en cero'
+    : `Respaldo automático antes del reset parcial (${plan.modulos.join(', ')})`;
   const respaldo = await crearRespaldo({
     tipo: 'pre-reset',
     usuario,
-    nota: 'Respaldo automático antes de la puesta en cero',
+    nota: notaRespaldo,
     _interno: true,
     reportarProgreso: true,
   });
@@ -50,7 +77,11 @@ async function ejecutarResetEmpresa(req, adminDoc) {
   const conservadas = [];
   const limpiadas = [];
 
-  progreso.fase('Limpiando datos de la empresa…', { total: todas.length });
+  progreso.fase(
+    plan.completo ? 'Limpiando datos de la empresa…' : 'Limpiando módulos seleccionados…',
+    { total: todas.length },
+  );
+
   for (const nombre of todas) {
     progreso.avanzar(1);
     if (CONSERVAR_EN_RESET.has(nombre)) {
@@ -58,67 +89,76 @@ async function ejecutarResetEmpresa(req, adminDoc) {
       continue;
     }
     if (COLECCIONES_ESPECIALES.has(nombre)) continue;
+
+    if (!debeLimpiarColeccion(nombre, plan)) {
+      conservadas.push(nombre);
+      continue;
+    }
+
     await db.collection(nombre).drop().catch(() => {});
     limpiadas.push(nombre);
   }
 
-  // usuarios: conservar solo al administrador que ejecuta
-  const rUsuarios = await db
-    .collection('usuarios')
-    .deleteMany({ _id: { $ne: adminDoc._id } });
-  // Desvincular referencias a empleados eliminados
-  await Usuario.updateOne(
-    { _id: adminDoc._id },
-    { $unset: { idEmpleado: '', numero: '', numeroDocumento: '' }, $set: { sedesPermitidas: [] } },
-  ).catch(() => {});
+  const huboTablas = limpiadas.some((n) => n !== 'config' && n !== 'roles_app');
+  if (huboTablas && !plan.flags.config) {
+    await recrearIndices().catch(() => {});
+  }
 
-  // config y roles: a valores de fábrica
-  await db.collection('config').drop().catch(() => {});
-  await db.collection('roles_app').drop().catch(() => {});
-  limpiadas.push('config', 'roles_app');
+  let usuariosEliminados = 0;
+  if (plan.flags.usuarios) {
+    usuariosEliminados = await limpiarUsuariosExceptoAdmin(db, adminDoc);
+  }
 
-  progreso.fase('Reinicializando catálogos y configuración…', { total: 0 });
-  await recrearIndices();
-  const { initRolesSistema, limpiarCache } = require('./rolesPermisos');
-  await initRolesSistema({ force: true });
-  limpiarCache();
-  const { initConfigNomina } = require('./configNomina');
-  await initConfigNomina().catch(() => {});
+  if (plan.flags.config) {
+    await reinicializarConfigSistema();
+    limpiadas.push('config', 'roles_app');
+  }
 
-  // Sede mínima para que el sistema sea operable de inmediato
-  const { asegurarSedePrincipal } = require('./sedeContext');
-  await asegurarSedePrincipal().catch(() => {});
+  if (plan.completo || plan.flags.sedePrincipal) {
+    progreso.fase('Reinicializando catálogos y configuración…', { total: 0 });
+    const { asegurarSedePrincipal } = require('./sedeContext');
+    await asegurarSedePrincipal().catch(() => {});
+  }
 
-  const archivosEliminados = await vaciarUploads();
+  let carpetasUploadsEliminadas = 0;
+  if (plan.flags.uploads) {
+    carpetasUploadsEliminadas = await vaciarUploads();
+  }
 
-  // La auditoría queda registrada en la BD ya reiniciada y en el log de archivo.
+  const tipoReset = plan.completo ? 'completo' : 'parcial';
   await registrarAuditoria({
     req,
     accion: 'reset_empresa',
     entidad: 'sistema',
     resumen:
-      `Puesta en cero ejecutada por ${usuario}. ` +
+      `Puesta en cero ${tipoReset} ejecutada por ${usuario}. ` +
+      `Módulos: ${plan.modulos.join(', ')}. ` +
       `Colecciones limpiadas: ${limpiadas.length}; conservadas: ${conservadas.length}. ` +
       `Respaldo previo: ${respaldo.archivo}`,
     datosDespues: {
+      tipoReset,
+      modulos: plan.modulos,
       respaldoPrevio: respaldo.archivo,
       coleccionesLimpiadas: limpiadas,
       coleccionesConservadas: conservadas,
-      usuariosEliminados: rUsuarios.deletedCount,
-      carpetasUploadsEliminadas: archivosEliminados,
+      usuariosEliminados,
+      carpetasUploadsEliminadas,
     },
   });
 
-  progreso.finalizar(
-    'ok',
-    `Puesta en cero completada: ${limpiadas.length} tablas en cero, ${conservadas.length} catálogos conservados.`,
-  );
+  const msgFin = plan.completo
+    ? `Puesta en cero completada: ${limpiadas.length} tablas en cero, ${conservadas.length} catálogos conservados.`
+    : `Reset parcial completado: ${limpiadas.length} tablas limpiadas (${plan.modulos.length} módulos).`;
+
+  progreso.finalizar('ok', msgFin);
 
   return {
+    tipoReset,
+    modulos: plan.modulos,
     respaldoPrevio: respaldo.archivo,
     coleccionesLimpiadas: limpiadas.length,
     coleccionesConservadas: conservadas.length,
-    usuariosEliminados: rUsuarios.deletedCount,
+    usuariosEliminados,
     detalle: { limpiadas, conservadas },
   };
 }

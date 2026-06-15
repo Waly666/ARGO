@@ -150,6 +150,23 @@
             <input type="text" [ngModel]="form().requistos" (ngModelChange)="patch('requistos', $event)" />
           </div>
         </div>
+        <div class="row">
+          <div class="col-12">
+            <div class="cohortes-callout" [class.activo]="form().usaCohortes">
+              <label class="cohortes-toggle">
+                <input type="checkbox" [ngModel]="form().usaCohortes" (ngModelChange)="patch('usaCohortes', $event)" />
+                <span class="cohortes-toggle-text">
+                  <span class="cohortes-toggle-title">🎓 Usar cohortes académicas</span>
+                  <span class="cohortes-toggle-desc">Formación grupal por semestre: materias y horas, grupos por periodo, clases y asistencia.</span>
+                </span>
+              </label>
+              <p class="cohortes-callout-hint" *ngIf="form().usaCohortes">
+                ✓ Activado. Luego define las materias y horas por semestre en
+                <strong>Cohortes académicas → Plan del programa</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
         <div class="row row-nota">
           <div class="col-12">
             <label>Descripción / notas</label>

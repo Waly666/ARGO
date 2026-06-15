@@ -3,10 +3,17 @@
 
   <div class="login-shell">
     <div class="brand-side">
-      <div class="logo">A</div>
+      @if (logoUrl()) {
+        <img class="brand-logo" [src]="logoUrl()" [alt]="nombreEmpresa() || 'Logo institución'" />
+      } @else {
+        <div class="logo">A</div>
+      }
       <h1>ARGO</h1>
       <p class="tag">Sistema de Información</p>
       <p class="desc">Gestión integral de alumnos, programación, facturación y vehículos.</p>
+      @if (nombreEmpresa()) {
+        <p class="licencia">Licenciado a <strong>{{ nombreEmpresa() }}</strong></p>
+      }
       <div class="grid-lines"></div>
     </div>
 
@@ -21,9 +28,6 @@
         @case ('credentials') {
           <h2>Iniciar Sesión</h2>
           <p class="hint">Acceso restringido a personal autorizado</p>
-          <p class="hint login-id-hint">
-            Usuario: documento, nick (ej. jose) o usuario del sistema. Contraseña: últimos 4 dígitos del documento.
-          </p>
 
           <label>Usuario</label>
           <input type="text"
@@ -128,8 +132,10 @@
           {{ loading() ? 'Validando...' : (uiStep() === 'mfa_setup' ? 'Activar y entrar' : 'Continuar') }}
         }
       </button>
-
-      <p class="foot">v1.0 · ARGO © 2026 · 2FA obligatorio</p>
     </form>
+
+    <p class="login-shell-foot">
+      © {{ anioActual }} · TODOS LOS DERECHOS RESERVADOS · DESARROLLADOR WALTER ALEXANDER AGUILAR
+    </p>
   </div>
 </div>

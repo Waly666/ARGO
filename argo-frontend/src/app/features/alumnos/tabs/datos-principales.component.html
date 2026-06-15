@@ -166,19 +166,23 @@
           <div class="row">
             <div class="col-3">
               <label>Primer apellido *</label>
-              <input type="text" [ngModel]="form().apellido1" (ngModelChange)="patch('apellido1', $event)" />
+              <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                     [ngModel]="form().apellido1" (ngModelChange)="patch('apellido1', $event)" />
             </div>
             <div class="col-3">
               <label>Segundo apellido</label>
-              <input type="text" [ngModel]="form().apellido2" (ngModelChange)="patch('apellido2', $event)" />
+              <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                     [ngModel]="form().apellido2" (ngModelChange)="patch('apellido2', $event)" />
             </div>
             <div class="col-3">
               <label>Primer nombre *</label>
-              <input type="text" [ngModel]="form().nombre1" (ngModelChange)="patch('nombre1', $event)" />
+              <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                     [ngModel]="form().nombre1" (ngModelChange)="patch('nombre1', $event)" />
             </div>
             <div class="col-3">
               <label>Segundo nombre</label>
-              <input type="text" [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" />
+              <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                     [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" />
             </div>
           </div>
           <div class="row">

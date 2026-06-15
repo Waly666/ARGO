@@ -70,19 +70,23 @@
 
         <div class="field">
           <label>Primer apellido *</label>
-          <input type="text" [(ngModel)]="form.apellido1" />
+          <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                 [ngModel]="form.apellido1" (ngModelChange)="patchNombre('apellido1', $event)" />
         </div>
         <div class="field">
           <label>Segundo apellido</label>
-          <input type="text" [(ngModel)]="form.apellido2" />
+          <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                 [ngModel]="form.apellido2" (ngModelChange)="patchNombre('apellido2', $event)" />
         </div>
         <div class="field">
           <label>Primer nombre *</label>
-          <input type="text" [(ngModel)]="form.nombre1" />
+          <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                 [ngModel]="form.nombre1" (ngModelChange)="patchNombre('nombre1', $event)" />
         </div>
         <div class="field">
           <label>Segundo nombre</label>
-          <input type="text" [(ngModel)]="form.nombre2" />
+          <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
+                 [ngModel]="form.nombre2" (ngModelChange)="patchNombre('nombre2', $event)" />
         </div>
         <div class="field">
           <label>Género</label>

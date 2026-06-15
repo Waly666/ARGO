@@ -7,9 +7,6 @@ const CertificadoSchema = new mongoose.Schema(
     idLiquidacion: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Liquidacion',
-      default: null,
-      sparse: true,
-      unique: true,
     },
     idContrato: { type: mongoose.Schema.Types.ObjectId, ref: 'Contratacion', default: null, index: true },
     /** Jornada donde se completó y emitió el certificado (capacitación). */
@@ -25,6 +22,8 @@ const CertificadoSchema = new mongoose.Schema(
     observaciones:   { type: String, trim: true },
     estado:        { type: String, trim: true, default: 'vigente' }, // vigente | anulado
     codigoCert:    { type: String, trim: true, index: true },
+    /** Código de verificación público (históricos / consulta Aula Virtual). */
+    codVerificacion: { type: String, trim: true, index: true, sparse: true },
     idPlantilla:   { type: mongoose.Schema.Types.ObjectId, ref: 'PlantillaCertificado', default: null },
     orientacion:   { type: String, enum: ['vertical', 'horizontal'], default: 'vertical' },
     /** Formato/plantilla: curso, tecnico, competencias, … */
@@ -41,6 +40,15 @@ const CertificadoSchema = new mongoose.Schema(
     idUsuario:     { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null },
   },
   { collection: 'certificados', timestamps: true, strict: false },
+);
+
+/** Un certificado por liquidación; los históricos no llevan idLiquidacion (campo ausente). */
+CertificadoSchema.index(
+  { idLiquidacion: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { idLiquidacion: { $type: 'objectId' } },
+  },
 );
 
 module.exports = mongoose.model('Certificado', CertificadoSchema);

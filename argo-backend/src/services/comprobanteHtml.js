@@ -41,10 +41,13 @@ function estilosMediaCarta() {
       border-bottom: 2px solid #1e3a5f;
       margin-bottom: 10px;
     }
-    .doc-emisor { flex: 1; min-width: 0; }
+    .doc-emisor { flex: 1; min-width: 0; display: flex; flex-direction: row; align-items: center; gap: 10px; }
+    .doc-emisor-logo { flex-shrink: 0; }
+    .doc-logo { max-height: 64px; max-width: 160px; object-fit: contain; display: block; }
+    .doc-emisor-texto { flex: 1; min-width: 0; }
     .doc-razon { font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 2px; }
     .doc-sede { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
-    .doc-emisor div { font-size: 9px; color: #444; margin: 1px 0; }
+    .doc-emisor div, .doc-emisor-texto div { font-size: 9px; color: #444; margin: 1px 0; }
     .doc-badge {
       text-align: right;
       min-width: 120px;
@@ -171,16 +174,22 @@ function estilosMediaCarta() {
 function bloqueEmpresaMediaCarta(config) {
   const v = (x) => esc((x || '').toString().trim());
   const ciudadLine = [config.ciudad, config.departamento].filter((x) => String(x || '').trim()).join(', ');
-  const lineas = [];
-  if (v(config.nombreEmpresa)) lineas.push(`<div class="doc-razon">${v(config.nombreEmpresa)}</div>`);
-  if (v(config.nombreSede)) lineas.push(`<div class="doc-sede">${v(config.nombreSede)}</div>`);
-  if (v(config.nit)) lineas.push(`<div>NIT ${v(config.nit)}</div>`);
-  if (v(config.direccion)) lineas.push(`<div>${v(config.direccion)}</div>`);
-  if (ciudadLine) lineas.push(`<div>${esc(ciudadLine)}</div>`);
-  if (v(config.telefono)) lineas.push(`<div>Tel: ${v(config.telefono)}</div>`);
-  if (v(config.email)) lineas.push(`<div>${v(config.email)}</div>`);
-  if (!lineas.length) lineas.push(`<div class="doc-razon">ARGO</div>`);
-  return lineas.join('\n');
+  const logoSrc = config.urlLogoDataUrl || null;
+
+  const textoLineas = [];
+  if (v(config.nombreEmpresa)) textoLineas.push(`<div class="doc-razon">${v(config.nombreEmpresa)}</div>`);
+  if (v(config.nombreSede)) textoLineas.push(`<div class="doc-sede">${v(config.nombreSede)}</div>`);
+  if (v(config.nit)) textoLineas.push(`<div>NIT ${v(config.nit)}</div>`);
+  if (v(config.direccion)) textoLineas.push(`<div>${v(config.direccion)}</div>`);
+  if (ciudadLine) textoLineas.push(`<div>${esc(ciudadLine)}</div>`);
+  if (v(config.telefono)) textoLineas.push(`<div>Tel: ${v(config.telefono)}</div>`);
+  if (v(config.email)) textoLineas.push(`<div>${v(config.email)}</div>`);
+  if (!textoLineas.length) textoLineas.push(`<div class="doc-razon">ARGO</div>`);
+
+  if (logoSrc) {
+    return `<div class="doc-emisor-logo"><img class="doc-logo" src="${esc(logoSrc)}" alt="${v(config.nombreEmpresa) || 'Logo'}" /></div><div class="doc-emisor-texto">${textoLineas.join('\n')}</div>`;
+  }
+  return textoLineas.join('\n');
 }
 
 function badgeComprobante(titulo, numeroRecibo, fecha) {

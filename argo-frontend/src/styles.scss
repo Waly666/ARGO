@@ -236,6 +236,22 @@ button.danger.mini {
   z-index: 5000;
 }
 
+.inf-panel:has(argo-catalogo-enum-buscar.dropdown-open),
+.inf-page.card:has(argo-catalogo-enum-buscar.dropdown-open) {
+  overflow: visible;
+  z-index: 5000;
+}
+
+.inf-filtros:has(argo-catalogo-enum-buscar.dropdown-open) {
+  position: relative;
+  z-index: 5001;
+}
+
+.inf-field--combo:has(argo-catalogo-enum-buscar.dropdown-open) {
+  position: relative;
+  z-index: 5002;
+}
+
 .two-col:has(argo-catalogo-enum-buscar.dropdown-open),
 .two-col:has(argo-municipio-buscar.dropdown-open) {
   position: relative;

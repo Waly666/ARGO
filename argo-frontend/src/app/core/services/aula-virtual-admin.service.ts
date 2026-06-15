@@ -163,6 +163,10 @@ export class AulaVirtualAdminService {
     return this.http.get<UsuariosPortalRes>(`${this.base}/usuarios${params}`);
   }
 
+  eliminarUsuario(id: string): Observable<{ ok: boolean; message: string }> {
+    return this.http.delete<{ ok: boolean; message: string }>(`${this.base}/usuarios/${id}`);
+  }
+
   guardarConfig(id: string | number, body: GuardarCursoVirtualBody): Observable<{ config: VirtualConfig }> {
     return this.http.put<{ config: VirtualConfig }>(`${this.base}/cursos/${id}`, body);
   }

@@ -72,6 +72,59 @@ function resolverIdTipCapCanonico(idTipCap, indice) {
   return pref ? pref[1] : raw;
 }
 
+function idsTipCapIguales(a, b) {
+  const sa = String(a ?? '').trim();
+  const sb = String(b ?? '').trim();
+  if (!sa || !sb) return false;
+  if (sa === sb) return true;
+  const na = Number(sa);
+  const nb = Number(sb);
+  return Number.isFinite(na) && Number.isFinite(nb) && na === nb;
+}
+
+function filaCatalogoPorIdTipCap(filtroId, indice) {
+  const f = String(filtroId ?? '').trim();
+  if (!f) return null;
+  return indice.rows.find((r) => idsTipCapIguales(r.idTipCap ?? r.id, f)) || null;
+}
+
+function etiquetasTipCapEquivalentes(almacenado, etiquetaCatalogo, indice) {
+  const fs = String(almacenado ?? '').trim();
+  const et = String(etiquetaCatalogo ?? '').trim();
+  if (!fs || !et) return false;
+  const norm = indice.normalizarTextoCap;
+  if (norm(fs) === norm(et)) return true;
+  const sinPref = et.replace(/^\d+\)\s*/, '').trim();
+  return !!(sinPref && norm(fs) === norm(sinPref));
+}
+
+/** Coincidencia estricta: campo idTipCap del programa vs valor del catálogo (sin prefijo numérico fuzzy). */
+function programaCoincideIdTipCap(prog, filtroId, indice) {
+  const f = String(filtroId ?? '').trim();
+  if (!f) return true;
+  const almacenado = prog?.idTipCap;
+  if (almacenado == null || almacenado === '') return false;
+  if (idsTipCapIguales(almacenado, f)) return true;
+
+  const fila = filaCatalogoPorIdTipCap(f, indice);
+  if (!fila) return false;
+  const etiqueta = String(fila.tipoCap || fila.descripcion || fila.nombre || '').trim();
+  return etiquetasTipCapEquivalentes(almacenado, etiqueta, indice);
+}
+
+function filaCatalogoPorValorTipCap(valor, indice) {
+  const v = String(valor ?? '').trim();
+  if (!v) return null;
+  const directa = indice.rows.find((r) => idsTipCapIguales(r.idTipCap ?? r.id, v));
+  if (directa) return directa;
+  return (
+    indice.rows.find((r) => {
+      const etiqueta = String(r.tipoCap || r.descripcion || r.nombre || '').trim();
+      return etiqueta && etiquetasTipCapEquivalentes(v, etiqueta, indice);
+    }) || null
+  );
+}
+
 function matchIdTipCap(a, b, indice) {
   const sa = String(a ?? '').trim();
   const sb = String(b ?? '').trim();
@@ -101,6 +154,10 @@ module.exports = {
   cargarIndiceTipCap,
   resolverIdTipCapCanonico,
   matchIdTipCap,
+  idsTipCapIguales,
+  filaCatalogoPorIdTipCap,
+  filaCatalogoPorValorTipCap,
+  programaCoincideIdTipCap,
   findRequisitoPorCap,
   normalizarTextoCap,
   invalidarCacheTipCap,

@@ -112,6 +112,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   editNumFolio = signal('');
   editNumRunt = signal('');
   editObservaciones = signal('');
+  editCodVerificacion = signal('');
   editFechaEmision = signal('');
   editFechaVencimiento = signal('');
 
@@ -347,6 +348,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     this.editNumFolio.set(c.numFolio || '');
     this.editNumRunt.set(c.numRunt || '');
     this.editObservaciones.set(c.observaciones || '');
+    this.editCodVerificacion.set(c.codVerificacion || '');
     this.editFechaEmision.set(this.fechaInputLocal(c.fechaEmision));
     this.editFechaVencimiento.set(this.fechaInputLocal(c.fechaVencimiento || undefined));
     this.modalEditar.set(true);
@@ -394,6 +396,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
         numActa: this.editNumActa().trim(),
         numFolio: this.editNumFolio().trim(),
         numRunt: this.editNumRunt().trim(),
+        codVerificacion: this.editCodVerificacion().trim() || null,
         observaciones: this.editObservaciones().trim(),
         fechaEmision: this.editFechaEmision(),
         fechaVencimiento: this.editFechaVencimiento() || null,
@@ -521,6 +524,8 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
       numFolio: actualizado.numFolio ?? prev.numFolio,
       numRunt: actualizado.numRunt ?? prev.numRunt,
       observaciones: actualizado.observaciones ?? prev.observaciones,
+      codVerificacion:
+        actualizado.codVerificacion !== undefined ? actualizado.codVerificacion : prev.codVerificacion,
       fechaEmision: actualizado.fechaEmision ?? prev.fechaEmision,
       fechaVencimiento:
         actualizado.fechaVencimiento !== undefined
@@ -569,6 +574,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     return {
       _id: String(c._id),
       codigoCert: c.codigoCert,
+      codVerificacion: (c.codVerificacion as string | null | undefined) ?? null,
       numDoc: c.numDoc,
       alumnoId: al?._id ? String(al._id) : null,
       nombreCompleto: nombreCompletoAlumno(al || {}),

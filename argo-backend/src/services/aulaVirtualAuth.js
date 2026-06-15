@@ -91,15 +91,22 @@ async function buscarAlumnoRegistro(numDocRaw) {
   };
 }
 
+function nombreMayusculas(v) {
+  return String(v || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, ' ');
+}
+
 function buildAlumnoPayload(alumno, numDoc) {
   return {
     numDoc,
     tipoDoc: alumno?.tipoDoc || '1',
     expedida: alumno?.expedida || '',
-    apellido1: String(alumno?.apellido1 || '').trim(),
-    apellido2: String(alumno?.apellido2 || '').trim(),
-    nombre1: String(alumno?.nombre1 || '').trim(),
-    nombre2: String(alumno?.nombre2 || '').trim(),
+    apellido1: nombreMayusculas(alumno?.apellido1),
+    apellido2: nombreMayusculas(alumno?.apellido2),
+    nombre1: nombreMayusculas(alumno?.nombre1),
+    nombre2: nombreMayusculas(alumno?.nombre2),
     fechaNac: alumno?.fechaNac || '',
     genero: alumno?.genero || '',
     celular: alumno?.celular || '',
@@ -181,10 +188,10 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
       tipoDoc: alumno.tipoDoc || '1',
       numDoc,
       expedida: alumno.expedida || '',
-      apellido1: String(alumno.apellido1).trim(),
-      apellido2: String(alumno.apellido2 || '').trim(),
-      nombre1: String(alumno.nombre1).trim(),
-      nombre2: String(alumno.nombre2 || '').trim(),
+      apellido1: nombreMayusculas(alumno.apellido1),
+      apellido2: nombreMayusculas(alumno.apellido2),
+      nombre1: nombreMayusculas(alumno.nombre1),
+      nombre2: nombreMayusculas(alumno.nombre2),
       fechaNac: alumno.fechaNac ? new Date(alumno.fechaNac) : null,
       genero: alumno.genero || '',
       correo: mail,

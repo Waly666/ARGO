@@ -41,8 +41,12 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
 
   turnstileSiteKey = signal('');
   turnstileToken = signal('');
+  nombreEmpresa = signal('');
+  logoUrl = signal('');
   loading = signal(false);
   error = signal<string | null>(null);
+
+  readonly anioActual = new Date().getFullYear();
 
   private rafId: number | null = null;
   private resizeHandler = () => this.resizeCanvas();
@@ -50,11 +54,25 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     this.http
-      .get<{ turnstileSiteKey?: string }>(`${environment.apiUrl}/auth/config`)
+      .get<{ turnstileSiteKey?: string; nombreEmpresa?: string; urlLogo?: string | null }>(
+        `${environment.apiUrl}/auth/config`,
+      )
       .subscribe({
-        next: (c) => this.turnstileSiteKey.set(c.turnstileSiteKey || ''),
+        next: (c) => {
+          this.turnstileSiteKey.set(c.turnstileSiteKey || '');
+          this.nombreEmpresa.set(String(c.nombreEmpresa || '').trim());
+          this.logoUrl.set(this.resolveLogoUrl(c.urlLogo));
+        },
         error: () => {},
       });
+  }
+
+  private resolveLogoUrl(rel?: string | null): string {
+    if (!rel) return '';
+    if (/^https?:\/\//i.test(rel) || rel.startsWith('data:')) return rel;
+    const serverBase = environment.apiUrl.replace(/\/api$/, '');
+    if (rel.startsWith('/')) return `${serverBase}${rel}`;
+    return `${environment.uploadsUrl}/${rel.replace(/^uploads\//, '')}`;
   }
 
   ngAfterViewInit(): void {

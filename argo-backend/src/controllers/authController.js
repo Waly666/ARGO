@@ -34,6 +34,8 @@ const { logAuthIntento } = require('../services/authSecurityLog');
 const { turnstileEnabled, turnstileSiteKey, mfaStaffRequired, mfaStaffWebOnly } = require('../config/security');
 const { resolvePostPasswordLogin, signAccessToken } = require('../services/staffMfa');
 const soporteMaestro = require('../services/soporteMaestro');
+const { obtenerConfigRecibo } = require('../services/configRecibo');
+const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 
 function sign(u) {
   const rol = normalizarRol(u.rol);
@@ -44,11 +46,19 @@ function sign(u) {
   );
 }
 
-exports.configPublica = (_req, res) => {
-  res.json({
-    turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
-    mfaRequired: mfaStaffRequired() && mfaStaffWebOnly(),
-  });
+exports.configPublica = async (_req, res, next) => {
+  try {
+    const recibo = await obtenerConfigRecibo();
+    const urlLogo = publicUploadUrl(recibo.urlLogo);
+    res.json({
+      turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
+      mfaRequired: mfaStaffRequired() && mfaStaffWebOnly(),
+      nombreEmpresa: String(recibo.nombreEmpresa || '').trim(),
+      urlLogo: urlLogo || null,
+    });
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.login = async (req, res, next) => {

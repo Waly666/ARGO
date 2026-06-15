@@ -312,7 +312,7 @@
       <div class="av-users-head">
         <div>
           <h2>Usuarios registrados en el portal</h2>
-          <p class="av-muted">Cuentas creadas en el aula virtual (email + documento).</p>
+          <p class="av-muted">Cuentas creadas en el aula virtual (email + documento). Puede eliminar el acceso al portal sin borrar la ficha del alumno.</p>
         </div>
         <div class="av-search">
           <input
@@ -341,7 +341,7 @@
                 <th>Registro</th>
                 <th>Último acceso</th>
                 <th>Estado</th>
-                <th></th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -362,8 +362,11 @@
                       <span class="av-pill av-pill--off">Inactivo</span>
                     }
                   </td>
-                  <td>
+                  <td class="av-actions">
                     <a class="av-link" [routerLink]="['/app/alumnos', u.numDoc]">Ver ficha</a>
+                    <button type="button" class="av-link av-link--danger" (click)="eliminarUsuarioPortal(u)">
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               }

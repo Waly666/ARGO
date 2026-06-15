@@ -8,7 +8,7 @@
 
 let estado = {
   activo: false,
-  tipo: null, // 'respaldo' | 'restauracion' | 'reset'
+  tipo: null, // 'respaldo' | 'restauracion' | 'reset' | 'migracion'
   fase: '',
   total: 0,
   hecho: 0,

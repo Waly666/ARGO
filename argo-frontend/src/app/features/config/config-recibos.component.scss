@@ -403,6 +403,69 @@
   }
 }
 
+/* ── Enlace a Empresa ─────────────────── */
+
+.rec-empresa-ref {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(56, 189, 248, 0.05);
+
+  strong {
+    display: block;
+    font-size: 0.88rem;
+    color: var(--text);
+    margin-bottom: 0.1rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+
+    a {
+      color: #7dd3fc;
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  }
+}
+
+.rec-empresa-ref-icon {
+  font-size: 1.4rem;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.rec-empresa-ref-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.rec-empresa-ref-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.38rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.08);
+  color: #7dd3fc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(56, 189, 248, 0.16);
+    border-color: rgba(56, 189, 248, 0.5);
+  }
+}
+
 @media (max-width: 860px) {
   .rec-grid--empresa,
   .rec-grid--empresa2,

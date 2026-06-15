@@ -77,6 +77,43 @@ export const routes: Routes = [
           import('./features/certificados/certificados-lista.component').then((m) => m.CertificadosListaComponent),
       },
       {
+        path: 'informes',
+        pathMatch: 'full',
+        canActivate: [permisoGuard],
+        data: {
+          permiso: [
+            'informes.ver',
+            'alumnos.ver',
+            'alumnos.gestionar',
+            'programas.ver',
+            'programas.gestionar',
+            'programas.agregar',
+            'servicios.ver',
+            'servicios.gestionar',
+          ],
+        },
+        loadComponent: () =>
+          import('./features/informes/informes-hub.component').then((m) => m.InformesHubComponent),
+      },
+      {
+        path: 'informes/:id',
+        canActivate: [permisoGuard],
+        data: {
+          permiso: [
+            'informes.ver',
+            'alumnos.ver',
+            'alumnos.gestionar',
+            'programas.ver',
+            'programas.gestionar',
+            'programas.agregar',
+            'servicios.ver',
+            'servicios.gestionar',
+          ],
+        },
+        loadComponent: () =>
+          import('./features/informes/informe-detalle.component').then((m) => m.InformeDetalleComponent),
+      },
+      {
         path: 'programas',
         canActivate: [permisoGuard],
         data: { permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'] },
@@ -261,6 +298,24 @@ export const routes: Routes = [
           import('./features/programacion-cea/programacion-cea-clases-hoy.component').then(
             (m) => m.ProgramacionCeaClasesHoyComponent,
           ),
+      },
+      {
+        path: 'cohortes/:id',
+        canActivate: [permisoGuard],
+        data: {
+          permiso: ['cohortes_academicas.ver', 'cohortes_academicas.gestionar', 'cohortes_academicas.operar'],
+        },
+        loadComponent: () =>
+          import('./features/cohortes/cohorte-detalle.component').then((m) => m.CohorteDetalleComponent),
+      },
+      {
+        path: 'cohortes',
+        canActivate: [permisoGuard],
+        data: {
+          permiso: ['cohortes_academicas.ver', 'cohortes_academicas.gestionar', 'cohortes_academicas.operar'],
+        },
+        loadComponent: () =>
+          import('./features/cohortes/cohortes-hub.component').then((m) => m.CohortesHubComponent),
       },
       {
         path: 'cobros-pendientes',
@@ -453,6 +508,13 @@ export const routes: Routes = [
           import('./features/config/roles-permisos-admin.component').then(
             (m) => m.RolesPermisosAdminComponent,
           ),
+      },
+      {
+        path: 'configuracion/empresa',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.recibos' },
+        loadComponent: () =>
+          import('./features/config/config-empresa.component').then((m) => m.ConfigEmpresaComponent),
       },
       {
         path: 'configuracion/recibos',

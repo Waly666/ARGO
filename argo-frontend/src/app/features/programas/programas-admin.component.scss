@@ -172,3 +172,57 @@ input.readonly {
     min-height: 120px;
   }
 }
+
+/* Callout para activar cohortes académicas (tema oscuro) */
+.cohortes-callout {
+  border: 1px solid var(--line, rgba(120, 170, 255, 0.18));
+  border-radius: var(--radius, 12px);
+  background: var(--surface-muted, rgba(8, 16, 36, 0.78));
+  padding: 0.9rem 1.1rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &.activo {
+    border-color: rgba(78, 163, 255, 0.5);
+    background: rgba(78, 163, 255, 0.10);
+  }
+
+  .cohortes-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    cursor: pointer;
+    margin: 0;
+
+    input[type='checkbox'] {
+      margin-top: 0.2rem;
+      width: 1.15rem;
+      height: 1.15rem;
+    }
+
+    .cohortes-toggle-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .cohortes-toggle-title {
+      font-weight: 700;
+      color: var(--text, #e6eeff);
+    }
+    .cohortes-toggle-desc {
+      font-size: 0.82rem;
+      color: var(--text-dim, #9fb3e0);
+    }
+  }
+
+  .cohortes-callout-hint {
+    margin: 0.75rem 0 0;
+    padding-top: 0.65rem;
+    border-top: 1px dashed var(--line, rgba(120, 170, 255, 0.18));
+    font-size: 0.82rem;
+    color: var(--ok, #36d399);
+
+    strong {
+      color: var(--text, #e6eeff);
+    }
+  }
+}

@@ -545,6 +545,7 @@ exports.listarGlobal = async (req, res, next) => {
           coincideBusquedaTexto(nombreCompleto, qRaw) ||
           coincideBusquedaTexto(String(c.encabezado || ''), qRaw) ||
           coincideBusquedaTexto(String(c.codigoCert || ''), qRaw) ||
+          coincideBusquedaTexto(String(c.codVerificacion || ''), qRaw) ||
           coincideBusquedaTexto(TIPOS_LABEL[c.tipoFormatoCert] || '', qRaw) ||
           coincideBusquedaDocumento(c.numDoc, qRaw) ||
           coincideBusquedaTexto(codContrato, qRaw) ||
@@ -622,6 +623,7 @@ const CAMPOS_EDITABLES = [
   'numRunt',
   'observaciones',
   'encabezado',
+  'codVerificacion',
   'fechaEmision',
   'fechaVencimiento',
 ];
@@ -636,6 +638,9 @@ function pickCertificadoEdit(body) {
   if (dto.numRunt !== undefined) dto.numRunt = String(dto.numRunt || '').trim();
   if (dto.observaciones !== undefined) dto.observaciones = String(dto.observaciones || '').trim();
   if (dto.encabezado !== undefined) dto.encabezado = String(dto.encabezado || '').trim();
+  if (dto.codVerificacion !== undefined) {
+    dto.codVerificacion = String(dto.codVerificacion || '').trim() || null;
+  }
   if (dto.tipoCertificado !== undefined) {
     dto.tipoCertificado = normalizarTipoRegularJornada(dto.tipoCertificado);
   }
@@ -677,6 +682,16 @@ exports.actualizar = async (req, res, next) => {
       return res.status(400).json({
         message: 'No puede cambiar un certificado regular a jornada de capacitación desde este listado.',
       });
+    }
+
+    if (picked.dto.codVerificacion) {
+      const dup = await Certificado.countDocuments({
+        codVerificacion: picked.dto.codVerificacion,
+        _id: { $ne: req.params.id },
+      });
+      if (dup > 0) {
+        return res.status(409).json({ message: 'Ya existe otro certificado con ese código de verificación.' });
+      }
     }
 
     const cert = await Certificado.findByIdAndUpdate(

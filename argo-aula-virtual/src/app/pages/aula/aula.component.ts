@@ -5,19 +5,25 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import {
+  CalendarioCohorte,
   CertificadoPortal,
   ClaseProgresoVirtual,
+  CohorteAlumno,
   CursoVirtual,
+  EvaluacionCohorteAlumno,
+  IntentoEvalCohorte,
   IntentoEvalVirtual,
+  MaterialCohorteAlumno,
   PortalConfig,
   ReciboPortal,
+  ResultadoIntentoCohorte,
 } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl, resolveUploadsPath } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
 
-export type PanelAula = 'tablero' | 'cursos' | 'puntajes' | 'certificados' | 'perfil';
+export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil';
 
 @Component({
   selector: 'av-aula',
@@ -34,6 +40,15 @@ export class AulaComponent implements OnInit, OnDestroy {
   private seo = inject(PortalSeoService);
 
   cursos = signal<CursoVirtual[]>([]);
+  cohortes = signal<CohorteAlumno[]>([]);
+  calendarioActivo = signal<CalendarioCohorte | null>(null);
+  cohorteAbierta = signal<string | null>(null);
+  evaluacionesCohorte = signal<EvaluacionCohorteAlumno[]>([]);
+  materialesCohorte = signal<MaterialCohorteAlumno[]>([]);
+  intentoActivo = signal<IntentoEvalCohorte | null>(null);
+  respuestasIntento = signal<Record<string, number[]>>({});
+  resultadoIntento = signal<ResultadoIntentoCohorte | null>(null);
+  enviandoIntento = signal(false);
   certificados = signal<CertificadoPortal[]>([]);
   certificadosLoading = signal(false);
   certificadoError = signal('');
@@ -126,6 +141,7 @@ export class AulaComponent implements OnInit, OnDestroy {
     if (!this.auth.isLoggedIn()) return;
     this.cargarCursos();
     this.cargarCertificados();
+    this.cargarCohortes();
     window.addEventListener('message', this.onMessage);
     document.addEventListener('visibilitychange', this.onVisibility);
   }
@@ -154,6 +170,7 @@ export class AulaComponent implements OnInit, OnDestroy {
     const labels: Record<PanelAula, string> = {
       tablero: 'Tablero',
       cursos: 'Tus cursos',
+      presenciales: 'Mis clases presenciales',
       puntajes: 'Mis puntajes',
       certificados: 'Certificados',
       perfil: 'Perfil',
@@ -331,6 +348,117 @@ export class AulaComponent implements OnInit, OnDestroy {
     this.api.misCursos().subscribe({
       next: (rows) => this.cursos.set(rows),
       error: () => this.cursos.set([]),
+    });
+  }
+
+  cargarCohortes() {
+    this.api.misClasesPresenciales().subscribe({
+      next: (rows) => this.cohortes.set(rows || []),
+      error: () => this.cohortes.set([]),
+    });
+  }
+
+  tienePresenciales = computed(() => this.cohortes().length > 0);
+
+  abrirCalendario(c: CohorteAlumno) {
+    if (this.cohorteAbierta() === c.idCohorte) {
+      this.cohorteAbierta.set(null);
+      this.calendarioActivo.set(null);
+      this.evaluacionesCohorte.set([]);
+      this.materialesCohorte.set([]);
+      return;
+    }
+    this.cohorteAbierta.set(c.idCohorte);
+    this.calendarioActivo.set(null);
+    this.evaluacionesCohorte.set([]);
+    this.materialesCohorte.set([]);
+    this.api.calendarioCohorte(c.idCohorte).subscribe({
+      next: (cal) => this.calendarioActivo.set(cal),
+      error: () => this.calendarioActivo.set(null),
+    });
+    this.api.evaluacionesCohorte(c.idCohorte).subscribe({
+      next: (rows) => this.evaluacionesCohorte.set(rows || []),
+      error: () => this.evaluacionesCohorte.set([]),
+    });
+    this.api.materialesCohorte(c.idCohorte).subscribe({
+      next: (rows) => this.materialesCohorte.set(rows || []),
+      error: () => this.materialesCohorte.set([]),
+    });
+  }
+
+  /* ---- Evaluaciones del alumno ---- */
+
+  iniciarEvaluacion(ev: EvaluacionCohorteAlumno) {
+    this.resultadoIntento.set(null);
+    this.api.iniciarIntentoCohorte(ev.idEvaluacion).subscribe({
+      next: (it) => {
+        this.respuestasIntento.set({});
+        this.intentoActivo.set(it);
+      },
+      error: () => {},
+    });
+  }
+
+  estaSeleccionada(idPregunta: string, idx: number): boolean {
+    return (this.respuestasIntento()[idPregunta] || []).includes(idx);
+  }
+
+  toggleOpcion(idPregunta: string, idx: number, tipo: string) {
+    const actual = { ...this.respuestasIntento() };
+    const prev = actual[idPregunta] || [];
+    if (tipo === 'MULTIPLE') {
+      actual[idPregunta] = prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx];
+    } else {
+      actual[idPregunta] = [idx];
+    }
+    this.respuestasIntento.set(actual);
+  }
+
+  enviarEvaluacion() {
+    const it = this.intentoActivo();
+    if (!it) return;
+    const respuestas = it.preguntas.map((p) => ({
+      idPregunta: p.idPregunta,
+      seleccion: this.respuestasIntento()[p.idPregunta] || [],
+    }));
+    this.enviandoIntento.set(true);
+    this.api.enviarIntentoCohorte(it.idEvaluacion, respuestas).subscribe({
+      next: (r) => {
+        this.enviandoIntento.set(false);
+        this.intentoActivo.set(null);
+        this.resultadoIntento.set(r);
+        const id = this.cohorteAbierta();
+        if (id) {
+          this.api.evaluacionesCohorte(id).subscribe({
+            next: (rows) => this.evaluacionesCohorte.set(rows || []),
+          });
+        }
+      },
+      error: () => this.enviandoIntento.set(false),
+    });
+  }
+
+  cerrarIntento() {
+    this.intentoActivo.set(null);
+  }
+
+  cerrarResultado() {
+    this.resultadoIntento.set(null);
+  }
+
+  entrarMeet(idClase: string, url?: string) {
+    if (url) window.open(url, '_blank', 'noopener');
+    this.api.asistirMeet(idClase).subscribe({
+      next: () => {
+        const cohorteId = this.cohorteAbierta();
+        if (cohorteId) {
+          this.api.calendarioCohorte(cohorteId).subscribe({
+            next: (cal) => this.calendarioActivo.set(cal),
+          });
+        }
+        this.cargarCohortes();
+      },
+      error: () => {},
     });
   }
 

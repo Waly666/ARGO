@@ -60,13 +60,25 @@
       @if (!haySeleccion()) {
         <p class="sys-hint">Seleccione al menos un tipo de información para continuar.</p>
       }
-      @if (haySeleccion() && !estaSeleccionada('alumnos')) {
+      @if (haySeleccion() && estaSeleccionada('certificados')) {
+        <label class="sys-switch sys-switch--highlight">
+          <input type="checkbox" [(ngModel)]="certificadosHistoricos"
+                 (ngModelChange)="reporte.set(null); resultado.set(null)" />
+          Certificados históricos — no exigir alumno ni programa en ARGO
+        </label>
+        <p class="sys-hint">
+          Use esta opción para migrar certificados emitidos en otro sistema (~5000 registros).
+          Obligatorios: numDoc y fechaEmision. Recomendado: codVerificacion (consulta pública), nombreCurso, nombreTitular y horas.
+          Los alumnos pueden importarse después; la consulta del Aula Virtual usa nombreTitular si el alumno no existe.
+        </p>
+      }
+      @if (haySeleccion() && !estaSeleccionada('alumnos') && !certificadosHistoricos) {
         <p class="sys-hint">
           ⚠ Sin la hoja Alumnos, los documentos referenciados (matrículas, pagos o certificados)
           deben pertenecer a alumnos que ya existan en ARGO; de lo contrario esas filas saldrán con error.
         </p>
       }
-      @if (haySeleccion() && !estaSeleccionada('programas') && (estaSeleccionada('matriculas') || estaSeleccionada('certificados'))) {
+      @if (haySeleccion() && !estaSeleccionada('programas') && (estaSeleccionada('matriculas') || (estaSeleccionada('certificados') && !certificadosHistoricos))) {
         <p class="sys-hint">
           ⚠ Sin la hoja Programas, los codigoPrograma de matrículas y certificados deben existir
           ya en el catálogo de ARGO (Académico → Programas). Los saldos quedan ligados al programa
@@ -87,9 +99,13 @@
           Descargar plantilla Excel
         </button>
         <p class="sys-hint">
-          Obligatorios: Programas (codigoPrograma, nombrePrograma, tipoCapacitacion, tarifa1) ·
-          Alumnos (numDoc, nombre1, apellido1) · Matriculas (numDoc, codigoPrograma) ·
-          Pagos (numDoc, valor) · Certificados (numDoc, codigoPrograma, fechaEmision).
+          @if (certificadosHistoricos && estaSeleccionada('certificados')) {
+            Certificados históricos: numDoc, fechaEmision (y nombreCurso o nombreTitular).
+          } @else {
+            Obligatorios: Programas (codigoPrograma, nombrePrograma, tipoCapacitacion, tarifa1) ·
+            Alumnos (numDoc, nombre1, apellido1) · Matriculas (numDoc, codigoPrograma) ·
+            Pagos (numDoc, valor) · Certificados (numDoc, codigoPrograma, fechaEmision).
+          }
         </p>
       </div>
     </div>
@@ -169,6 +185,26 @@
             {{ importando() ? 'Importando… no cierre esta ventana' : 'Importar ' + totalValidos() + ' registros' }}
           </button>
         </div>
+        @if (importando() && progreso(); as p) {
+          <div class="sys-progress" role="status" aria-live="polite">
+            <div class="sys-progress__head">
+              <span>{{ p.fase || 'Importando…' }}</span>
+              @if (p.porcentaje != null) {
+                <span class="pct">{{ p.porcentaje }}%</span>
+              }
+            </div>
+            <div class="sys-progress__track">
+              @if (p.porcentaje != null) {
+                <div class="sys-progress__fill" [style.width.%]="p.porcentaje"></div>
+              } @else {
+                <div class="sys-progress__fill sys-progress__fill--indeterminada"></div>
+              }
+            </div>
+            @if (p.total > 0) {
+              <div class="sys-progress__meta">{{ p.hecho | number }} / {{ p.total | number }}</div>
+            }
+          </div>
+        }
       </div>
     </section>
   }

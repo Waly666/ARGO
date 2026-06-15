@@ -4,16 +4,22 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import {
+  CalendarioCohorte,
   CategoriaVirtual,
+  CohorteAlumno,
   CursoVirtual,
   CertificadoConsultaRes,
   CertificadoPortal,
   EstadoInscripcionVirtual,
+  EvaluacionCohorteAlumno,
+  IntentoEvalCohorte,
+  MaterialCohorteAlumno,
   MatriculaVirtualRes,
   PortalAuthRes,
   PortalConfig,
   ProgresoVirtualResp,
   RegistroVerificacionRes,
+  ResultadoIntentoCohorte,
 } from './models';
 import { PortalAuthService } from './portal-auth.service';
 
@@ -100,6 +106,60 @@ export class AulaApiService {
     return this.http.get<CursoVirtual[]>(`${this.base}/mis-cursos`, {
       headers: this.auth.authHeader(),
     });
+  }
+
+  misClasesPresenciales(): Observable<CohorteAlumno[]> {
+    return this.http.get<CohorteAlumno[]>(`${this.base}/mis-clases-presenciales`, {
+      headers: this.auth.authHeader(),
+    });
+  }
+
+  calendarioCohorte(idCohorte: string): Observable<CalendarioCohorte> {
+    return this.http.get<CalendarioCohorte>(
+      `${this.base}/mis-clases-presenciales/${idCohorte}/calendario`,
+      { headers: this.auth.authHeader() },
+    );
+  }
+
+  asistirMeet(idClase: string): Observable<{ registradas: number }> {
+    return this.http.post<{ registradas: number }>(
+      `${this.base}/clases-cohorte/${idClase}/asistir-meet`,
+      {},
+      { headers: this.auth.authHeader() },
+    );
+  }
+
+  evaluacionesCohorte(idCohorte: string): Observable<EvaluacionCohorteAlumno[]> {
+    return this.http.get<EvaluacionCohorteAlumno[]>(
+      `${this.base}/mis-clases-presenciales/${idCohorte}/evaluaciones`,
+      { headers: this.auth.authHeader() },
+    );
+  }
+
+  materialesCohorte(idCohorte: string): Observable<MaterialCohorteAlumno[]> {
+    return this.http.get<MaterialCohorteAlumno[]>(
+      `${this.base}/mis-clases-presenciales/${idCohorte}/materiales`,
+      { headers: this.auth.authHeader() },
+    );
+  }
+
+  iniciarIntentoCohorte(idEval: string): Observable<IntentoEvalCohorte> {
+    return this.http.post<IntentoEvalCohorte>(
+      `${this.base}/evaluaciones-cohorte/${idEval}/iniciar`,
+      {},
+      { headers: this.auth.authHeader() },
+    );
+  }
+
+  enviarIntentoCohorte(
+    idEval: string,
+    respuestas: { idPregunta: string; seleccion: number[] }[],
+  ): Observable<ResultadoIntentoCohorte> {
+    return this.http.post<ResultadoIntentoCohorte>(
+      `${this.base}/evaluaciones-cohorte/${idEval}/enviar`,
+      { respuestas },
+      { headers: this.auth.authHeader() },
+    );
   }
 
   progreso(id: string | number): Observable<ProgresoVirtualResp> {

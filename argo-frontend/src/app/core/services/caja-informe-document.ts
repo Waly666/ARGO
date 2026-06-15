@@ -30,7 +30,10 @@ const DOC_CSS = `
     display: flex; gap: 14px; align-items: flex-start;
     border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 12px;
   }
-  .doc-logo {
+  .doc-logo-img {
+    max-height: 72px; max-width: 180px; object-fit: contain; flex-shrink: 0; display: block;
+  }
+  .doc-logo-placeholder {
     width: 56px; height: 56px; border: 2px solid #1e3a5f; border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 13px; color: #1e3a5f; flex-shrink: 0;
@@ -214,9 +217,14 @@ function encabezadoEmpresa(empresa: ConfigRecibo | null | undefined, idSede?: st
     .filter(Boolean)
     .map((l) => `<p>${l}</p>`)
     .join('');
+
+  const logoHtml = empresa?.urlLogoDataUrl
+    ? `<img class="doc-logo-img" src="${esc(empresa.urlLogoDataUrl)}" alt="${institucion}" />`
+    : `<div class="doc-logo-placeholder">ARGO</div>`;
+
   return `
     <header class="doc-header">
-      <div class="doc-logo">ARGO</div>
+      ${logoHtml}
       <div class="doc-empresa">
         <h1>${institucion}</h1>
         ${sede ? `<h2 class="doc-sede">${sede}</h2>` : ''}

@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { ConfigRecibo, ConfigService } from '../../core/services/config.service';
 
 @Component({
   selector: 'argo-config-recibos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './config-recibos.component.html',
   styleUrls: ['./config-recibos.component.scss'],
 })

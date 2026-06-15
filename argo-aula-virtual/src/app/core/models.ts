@@ -1,5 +1,120 @@
 import type { PortalLandingConfig } from './portal-landing';
 
+export interface MateriaAvanceAlumno {
+  idMateria: string;
+  nombre: string;
+  horas: number;
+  horasCubiertas: number;
+  pct: number;
+}
+
+export interface CohorteAlumno {
+  idCohorte: string;
+  idProg: string;
+  nombreProg: string;
+  cohorteNombre: string;
+  codigo: string;
+  numSemestre: number;
+  anio: number;
+  periodo: number;
+  estado: string;
+  estadoInscripcion: string;
+  totalClases: number;
+  clasesPresente: number;
+  horasTotal: number;
+  horasCubiertas: number;
+  pctAvance: number;
+  materias: MateriaAvanceAlumno[];
+}
+
+export interface ClaseCohorteAlumno {
+  idClase: string;
+  materiaNombre: string;
+  fechaClase: string;
+  horaDesde?: string;
+  horaHasta?: string;
+  urlMeet?: string;
+  estado: string;
+  miAsistencia: string;
+}
+
+export interface CalendarioCohorte {
+  idCohorte: string;
+  cohorteNombre: string;
+  clases: ClaseCohorteAlumno[];
+}
+
+export interface EvaluacionCohorteAlumno {
+  idEvaluacion: string;
+  titulo: string;
+  descripcion?: string;
+  materiaNombre: string;
+  numPreguntas: number;
+  notaAprobacion: number;
+  duracionMin: number;
+  intentosPermitidos: number;
+  intentosUsados: number;
+  vigente: boolean;
+  estado: string;
+  fechaApertura?: string | null;
+  fechaCierre?: string | null;
+  miMejorNota: number | null;
+  aprobado: boolean;
+  tieneIntentoEnCurso: boolean;
+  idIntentoEnCurso: string | null;
+  puedeIniciar: boolean;
+}
+
+export interface OpcionEvalAlumno {
+  texto: string;
+}
+
+export interface PreguntaEvalAlumno {
+  idPregunta: string;
+  enunciado: string;
+  tipo: 'UNICA' | 'MULTIPLE' | 'VF';
+  puntos: number;
+  opciones: OpcionEvalAlumno[];
+}
+
+export interface IntentoEvalCohorte {
+  idIntento: string;
+  idEvaluacion: string;
+  titulo: string;
+  descripcion?: string;
+  duracionMin: number;
+  numeroIntento: number;
+  fechaInicio: string;
+  preguntas: PreguntaEvalAlumno[];
+}
+
+export interface CorreccionPregunta {
+  idPregunta: string;
+  enunciado: string;
+  opciones: { texto: string; correcta: boolean; elegida: boolean }[];
+  correcta: boolean;
+}
+
+export interface ResultadoIntentoCohorte {
+  idIntento: string;
+  nota: number;
+  aprobado: boolean;
+  puntajeObtenido: number;
+  puntajeTotal: number;
+  mostrarResultados: boolean;
+  correccion: CorreccionPregunta[];
+}
+
+export interface MaterialCohorteAlumno {
+  _id: string;
+  idMateria: string;
+  materiaNombre: string;
+  titulo: string;
+  tipo: string;
+  url: string;
+  descripcion?: string;
+}
+
 export interface PortalPaginaConfig {
   activa: boolean;
   etiquetaMenu: string;
@@ -226,6 +341,7 @@ export interface RegistroVerificacionRes {
 
 export interface CertificadoConsultaItem {
   idCertificado: string;
+  codVerificacion?: string;
   nombreApellidos: string;
   cedula: number;
   encabezado: string;
