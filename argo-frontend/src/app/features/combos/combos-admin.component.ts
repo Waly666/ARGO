@@ -4,14 +4,20 @@ import { FormsModule } from '@angular/forms';
 
 import { Combo, ComboService } from '../../core/services/combo.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
-import { CatalogoEnumBuscarComponent, EnumBuscarOption } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 
 type Modo = 'lista' | 'form';
+
+interface ProgItem {
+  id: string;
+  nombre: string;
+  codigo: string;
+  seleccionado: boolean;
+}
 
 @Component({
   selector: 'argo-combos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './combos-admin.component.html',
   styleUrls: ['./combos-admin.component.scss'],
 })
@@ -28,15 +34,16 @@ export class CombosAdminComponent implements OnInit {
 
   programas = signal<any[]>([]);
   editandoId: string | null = null;
+  busquedaProg = '';
 
   form = {
     nombre: '',
     descripcion: '',
     activo: true,
-    programasSeleccionados: [] as string[],
+    programasSeleccionados: new Set<string>(),
   };
 
-  opcionesProgramas = computed<EnumBuscarOption[]>(() =>
+  progItems = computed<ProgItem[]>(() =>
     [...this.programas()]
       .sort((a, b) => {
         const ca = String(a.codigoProg || a.idPrograma || '').trim();
@@ -46,26 +53,24 @@ export class CombosAdminComponent implements OnInit {
       .map((p) => {
         const id = String(p.idPrograma ?? p._id);
         const nombre = String(p.nombreProg || p.descripcion || '').trim();
-        const cod = String(p.codigoProg || '').trim();
-        return { value: id, label: cod ? `${nombre} (${cod})` : nombre };
+        const codigo = String(p.codigoProg || '').trim();
+        return { id, nombre, codigo, seleccionado: this.form.programasSeleccionados.has(id) };
       }),
   );
 
-  opcionesProgramasDisponibles = computed<EnumBuscarOption[]>(() =>
-    this.opcionesProgramas().filter(
-      (o) => !this.form.programasSeleccionados.includes(String(o.value)),
-    ),
+  progFiltrados = computed<ProgItem[]>(() => {
+    const q = this.busquedaProg.trim().toLowerCase();
+    if (!q) return this.progItems();
+    return this.progItems().filter(
+      (p) => p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q),
+    );
+  });
+
+  seleccionados = computed<ProgItem[]>(() =>
+    this.progItems().filter((p) => this.form.programasSeleccionados.has(p.id)),
   );
 
-  programasSeleccionadosDetalle = computed(() =>
-    this.form.programasSeleccionados.map((id) => {
-      const prog = this.programas().find((p) => String(p.idPrograma ?? p._id) === id);
-      if (!prog) return { id, nombre: id };
-      const cod = String(prog.codigoProg || '').trim();
-      const nombre = String(prog.nombreProg || prog.descripcion || id).trim();
-      return { id, nombre: cod ? `${nombre} (${cod})` : nombre };
-    }),
-  );
+  totalSeleccionados = computed(() => this.form.programasSeleccionados.size);
 
   ngOnInit() {
     this.catSvc.list('programas').subscribe((d) => this.programas.set(d || []));
@@ -82,18 +87,20 @@ export class CombosAdminComponent implements OnInit {
 
   nuevoCombo() {
     this.editandoId = null;
-    this.form = { nombre: '', descripcion: '', activo: true, programasSeleccionados: [] };
+    this.busquedaProg = '';
+    this.form = { nombre: '', descripcion: '', activo: true, programasSeleccionados: new Set() };
     this.msg.set(null);
     this.modo.set('form');
   }
 
   editarCombo(c: Combo) {
     this.editandoId = c.id;
+    this.busquedaProg = '';
     this.form = {
       nombre: c.nombre,
       descripcion: c.descripcion || '',
       activo: c.activo,
-      programasSeleccionados: [...(c.programas || [])],
+      programasSeleccionados: new Set(c.programas || []),
     };
     this.msg.set(null);
     this.modo.set('form');
@@ -105,21 +112,34 @@ export class CombosAdminComponent implements OnInit {
     this.msg.set(null);
   }
 
-  onProgramaAdd(opt: EnumBuscarOption) {
-    const id = String(opt.value);
-    if (!this.form.programasSeleccionados.includes(id)) {
-      this.form.programasSeleccionados = [...this.form.programasSeleccionados, id];
-    }
+  togglePrograma(id: string) {
+    const s = new Set(this.form.programasSeleccionados);
+    if (s.has(id)) s.delete(id);
+    else s.add(id);
+    this.form.programasSeleccionados = s;
   }
 
-  quitarPrograma(id: string) {
-    this.form.programasSeleccionados = this.form.programasSeleccionados.filter((p) => p !== id);
+  estaSeleccionado(id: string): boolean {
+    return this.form.programasSeleccionados.has(id);
+  }
+
+  deseleccionarTodos() {
+    this.form.programasSeleccionados = new Set();
+  }
+
+  /** Nombre de un programa por su id (para la tarjeta del combo en lista) */
+  nombreProg(id: string): string {
+    const prog = this.programas().find((p) => String(p.idPrograma ?? p._id) === id);
+    if (!prog) return id;
+    const cod = String(prog.codigoProg || '').trim();
+    const nom = String(prog.nombreProg || prog.descripcion || id).trim();
+    return cod ? `${nom} (${cod})` : nom;
   }
 
   guardar() {
     const nombre = this.form.nombre.trim();
     if (!nombre) { this.toast('El nombre del combo es obligatorio', true); return; }
-    if (this.form.programasSeleccionados.length < 2) {
+    if (this.form.programasSeleccionados.size < 2) {
       this.toast('Seleccione al menos 2 programas para el combo', true);
       return;
     }
@@ -130,7 +150,7 @@ export class CombosAdminComponent implements OnInit {
     const body = {
       nombre,
       descripcion: this.form.descripcion.trim(),
-      programas: this.form.programasSeleccionados,
+      programas: [...this.form.programasSeleccionados],
       activo: this.form.activo,
     };
 
