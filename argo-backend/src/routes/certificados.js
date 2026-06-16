@@ -3,7 +3,8 @@ const ctrl = require('../controllers/certificadoController');
 const render = require('../controllers/certificadoRenderController');
 const plantilla = require('../controllers/plantillaCertificadoController');
 const upload = require('../middleware/upload');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requirePermiso, requireAdmin } = require('../middleware/auth');
+const { actualizarCertificadosVencidos } = require('../services/certificadoVencimientoCron');
 
 const router = Router();
 router.use(requireAuth);
@@ -18,6 +19,23 @@ router.get('/plantillas/todas', config, plantilla.listarTodas);
 router.post('/plantillas', config, upload.certificados.single('fondo'), plantilla.crear);
 router.put('/plantillas/:id', config, upload.certificados.single('fondo'), plantilla.actualizar);
 router.delete('/plantillas/:id', config, plantilla.eliminar);
+
+/** Disparo manual del cron de vencimiento (solo admin) */
+router.post('/admin/marcar-vencidos', requireAdmin, async (req, res, next) => {
+  try {
+    const result = await actualizarCertificadosVencidos();
+    res.json({
+      ok: true,
+      actualizados: result.actualizados,
+      message: result.actualizados > 0
+        ? `${result.actualizados} certificado(s) marcado(s) como vencido.`
+        : 'No había certificados nuevos por marcar como vencidos.',
+      ...(result.error ? { error: result.error } : {}),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
 
 router.get('/recientes', verCertAlertas, ctrl.recientes);
 router.get('/listado', emitir, ctrl.listarGlobal);

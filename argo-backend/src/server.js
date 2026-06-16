@@ -46,6 +46,8 @@ const HOST = process.env.HOST || '0.0.0.0';
     );
     const { initRespaldosAuto } = require('./services/respaldoScheduler');
     initRespaldosAuto();
+    const { iniciarCronCertificadoVencimiento } = require('./services/certificadoVencimientoCron');
+    iniciarCronCertificadoVencimiento();
     const { sincronizarDefaultsTipoEgreso } = require('./services/tipoEgresoNomina');
     sincronizarDefaultsTipoEgreso()
       .then((n) => {

@@ -20,7 +20,7 @@ const CertificadoSchema = new mongoose.Schema(
     fechaEmision:    { type: Date, default: Date.now },
     fechaVencimiento:{ type: Date, default: null },
     observaciones:   { type: String, trim: true },
-    estado:        { type: String, trim: true, default: 'vigente' }, // vigente | anulado
+    estado:        { type: String, trim: true, default: 'vigente' }, // vigente | vencido | anulado
     codigoCert:    { type: String, trim: true, index: true },
     /** Código de verificación público (históricos / consulta Aula Virtual). */
     codVerificacion: { type: String, trim: true, index: true, sparse: true },
