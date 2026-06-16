@@ -68,11 +68,17 @@ export class ForoAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   cargarResumen() {
+    const activo = this.cursoActivo();
     this.cargandoCursos.set(true);
     this.http.get<ResumenForo[]>(`${this.base}/admin/resumen`).subscribe({
       next: (rows) => {
         this.cursos.set(rows);
         this.cargandoCursos.set(false);
+        if (activo) {
+          const actualizado = rows.find((x) => String(x.idPrograma) === String(activo.idPrograma));
+          if (actualizado) this.cursoActivo.set(actualizado);
+          this.foroSvc.recargarMensajes();
+        }
         this.intentarSeleccionarPendiente();
       },
       error: () => this.cargandoCursos.set(false),
@@ -82,7 +88,7 @@ export class ForoAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   private intentarSeleccionarPendiente() {
     if (!this.cursoPendiente) return;
     const id = this.cursoPendiente;
-    const c = this.cursos().find((x) => x.idPrograma === id);
+    const c = this.cursos().find((x) => String(x.idPrograma) === String(id));
     if (!c) return;
     this.seleccionarCurso(c);
     this.cursoPendiente = null;
