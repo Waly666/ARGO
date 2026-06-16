@@ -55,7 +55,12 @@ const HOST = process.env.HOST || '0.0.0.0';
       })
       .catch((err) => console.warn('[ARGO] sync tipoEgreso:', err.message));
 
-    const server = app.listen(PORT, HOST, () => {
+    const { initForoSocket } = require('./services/foroSocket');
+    const http = require('http');
+    const httpServer = http.createServer(app);
+    initForoSocket(httpServer);
+
+    const server = httpServer.listen(PORT, HOST, () => {
       console.log('');
       logCorsOnStartup();
       console.log('[ARGO] API en ejecución');
@@ -72,7 +77,7 @@ const HOST = process.env.HOST || '0.0.0.0';
       console.log('');
     });
 
-    server.on('error', (err) => {
+    httpServer.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
         console.error('');
         console.error(`[ARGO] El puerto ${PORT} ya está en uso.`);

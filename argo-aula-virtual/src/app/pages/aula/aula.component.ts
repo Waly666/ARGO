@@ -4,6 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
+import { ForoChatComponent } from '../../components/foro-chat/foro-chat.component';
 import {
   CalendarioCohorte,
   CertificadoPortal,
@@ -23,12 +24,12 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl, resolveUploadsPath } from '../../core/upload-url.util';
 import { environment } from '../../../environments/environment';
 
-export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil';
+export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'certificados' | 'perfil' | 'foro';
 
 @Component({
   selector: 'av-aula',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ForoChatComponent],
   templateUrl: './aula.component.html',
   styleUrl: './aula.component.scss',
 })
@@ -593,6 +594,17 @@ export class AulaComponent implements OnInit, OnDestroy {
     this.auth.logout();
     void this.router.navigate(['/login']);
   }
+
+  // ── Foro de cursos ──
+  foroIdPrograma  = signal<string | null>(null);
+  foroNombreCurso = signal('');
+
+  seleccionarForoCurso(c: CursoVirtual) {
+    this.foroIdPrograma.set(String(c.idPrograma));
+    this.foroNombreCurso.set(c.nombreProg);
+  }
+
+  String = String;
 
   // ── Empresa en perfil ──
   empresaEditando   = signal(false);

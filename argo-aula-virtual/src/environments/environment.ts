@@ -3,4 +3,5 @@ export const environment = {
   production: false,
   apiUrl: '/api',
   uploadsUrl: '/uploads',
+  socketUrl: 'http://localhost:3000',
 };

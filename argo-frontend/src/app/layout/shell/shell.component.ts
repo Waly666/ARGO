@@ -443,6 +443,14 @@ export class ShellComponent {
     },
     {
       kind: 'link',
+      label: 'Foro de cursos virtuales',
+      icon: '💬',
+      path: '/app/aula-virtual/foro',
+      iconTone: 'indigo',
+      permiso: 'programas.gestionar',
+    },
+    {
+      kind: 'link',
       label: 'Servicios',
       icon: '◇',
       path: '/app/servicios',
@@ -1487,6 +1495,10 @@ export class ShellComponent {
       'Flujo de Caja': false,
       'Jornadas Cap.': false,
     };
+
+    if (u.includes('/aula-virtual')) {
+      patch['Aula Virtual'] = true;
+    }
 
     if (u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/combos')) {
       patch['Flujo de Caja'] = true;

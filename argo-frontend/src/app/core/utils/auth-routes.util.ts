@@ -57,6 +57,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   },
   { prefix: '/app/programas', permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'] },
   { prefix: '/app/aula-virtual/sitio', permiso: 'programas.gestionar' },
+  { prefix: '/app/aula-virtual/foro', permiso: 'programas.gestionar' },
   { prefix: '/app/aula-virtual', permiso: 'programas.gestionar' },
   { prefix: '/app/jornadas/alumnos/nuevo', permiso: ['alumnos.gestionar', 'jornadas.gestionar'] },
   { prefix: '/app/jornadas/alumnos', permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.ver'] },

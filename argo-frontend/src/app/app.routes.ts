@@ -137,6 +137,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'aula-virtual/foro',
+        canActivate: [permisoGuard],
+        data: { permiso: 'programas.gestionar', title: 'Foro de cursos virtuales' },
+        loadComponent: () =>
+          import('./features/aula-virtual/foro-admin.component').then(
+            (m) => m.ForoAdminComponent,
+          ),
+      },
+      {
         path: 'aula-virtual',
         canActivate: [permisoGuard],
         data: { permiso: 'programas.gestionar', title: 'Aula virtual' },

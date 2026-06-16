@@ -81,6 +81,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.8 7.2 17l.9-5.4L4.2 7.7l5.4-.8L12 2z"/></svg>
           @if (!sidebarCollapsed()) { <span>Certificados</span> }
         </button>
+        <button type="button" class="dash-nav-item" [class.active]="panel() === 'foro'" (click)="irPanel('foro')">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+          @if (!sidebarCollapsed()) { <span>Foro de cursos</span> }
+        </button>
         <button type="button" class="dash-nav-item" [class.active]="panel() === 'perfil'" (click)="irPanel('perfil')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg>
           @if (!sidebarCollapsed()) { <span>Perfil</span> }
@@ -118,6 +122,14 @@
           }
           <iframe #playerFrame [src]="url" title="Curso virtual" class="dash-player-frame" (load)="onIframeLoad()"></iframe>
         </section>
+
+        @if (cursoActivo(); as ca) {
+          <section class="dash-player-foro">
+            <av-foro-chat
+              [idPrograma]="String(ca.idPrograma)"
+              [nombreCurso]="ca.nombreProg" />
+          </section>
+        }
       } @else {
         @switch (panel()) {
           @case ('tablero') {
@@ -910,6 +922,43 @@
 
               <button type="button" class="dash-btn dash-btn-outline" (click)="logout()">Cerrar sesión</button>
             </article>
+          }
+
+          @case ('foro') {
+            <header class="dash-page-head">
+              <h1>Foro de cursos</h1>
+              <p class="dash-welcome">Selecciona un curso para ver su foro de preguntas y discusión</p>
+            </header>
+
+            @if (cursos().length === 0) {
+              <div class="dash-empty">
+                <p>No tienes cursos inscritos. El foro estará disponible cuando te inscribas.</p>
+              </div>
+            } @else {
+              <div class="foro-curso-selector">
+                @for (c of cursos(); track c.idPrograma) {
+                  <button
+                    type="button"
+                    class="foro-curso-btn"
+                    [class.active]="foroIdPrograma() === String(c.idPrograma)"
+                    (click)="seleccionarForoCurso(c)">
+                    <span class="foro-curso-nombre">{{ c.nombreProg }}</span>
+                  </button>
+                }
+              </div>
+
+              @if (foroIdPrograma()) {
+                <div class="foro-panel-wrap">
+                  <av-foro-chat
+                    [idPrograma]="foroIdPrograma()!"
+                    [nombreCurso]="foroNombreCurso()" />
+                </div>
+              } @else {
+                <div class="dash-empty" style="margin-top:1.5rem">
+                  <p>👆 Selecciona un curso para abrir su foro</p>
+                </div>
+              }
+            }
           }
         }
       }

@@ -57,5 +57,6 @@ router.use('/clientes', require('./clientes'));
 router.use('/sistema', require('./sistema'));
 router.use('/informes', require('./informes'));
 router.use('/combos', require('./combos'));
+router.use('/foro', require('./foro'));
 
 module.exports = router;
