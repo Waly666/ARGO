@@ -1,123 +1,191 @@
-<section class="cert-page admin-list-page card">
-  <header class="cert-head panel">
-    <div class="cert-head-main">
+<section class="venc-page">
+
+  <!-- ══ HERO HEADER ══ -->
+  <div class="venc-hero">
+    <div class="hero-bg-stripe"></div>
+    <div class="hero-content">
       <nav class="breadcrumb" aria-label="Ubicación">
         <a routerLink="/app">Inicio</a>
-        <span aria-hidden="true"> / </span>
+        <span>/</span>
         <a routerLink="/app/certificados">Certificados</a>
-        <span aria-hidden="true"> / </span>
+        <span>/</span>
         <span>Vencidos</span>
       </nav>
-      <div class="title-row">
-        <h1>Certificados Vencidos</h1>
-        <span class="alert-hoy" style="background:rgba(248,114,114,.12);color:#f87272;border-color:rgba(248,114,114,.3)">
-          {{ totalRegistros() }} vencido{{ totalRegistros() !== 1 ? 's' : '' }}
-        </span>
+
+      <div class="hero-title-row">
+        <div class="hero-icon-wrap">
+          <span class="hero-icon">⚠</span>
+        </div>
+        <div>
+          <h1 class="hero-title">Certificados Vencidos</h1>
+          <p class="hero-sub">Ordenados del más reciente al más antiguo · actualización automática diaria</p>
+        </div>
+        <button type="button" class="btn-refresh" (click)="cargar()" [disabled]="loading()" title="Actualizar">
+          <span [class.spinning]="loading()">↻</span>
+          Actualizar
+        </button>
       </div>
-      <p class="hint">
-        Certificados regulares con estado <strong>Vencido</strong> en la base de datos,
-        ordenados del más recientemente vencido al más antiguo.
-      </p>
+
+      <!-- Cápsulas de estadísticas -->
+      <div class="hero-stats">
+        <div class="stat-chip stat-chip--red">
+          <span class="stat-icon">📋</span>
+          <div>
+            <span class="stat-num">{{ totalRegistros() }}</span>
+            <span class="stat-label">vencido{{ totalRegistros() !== 1 ? 's' : '' }}</span>
+          </div>
+        </div>
+        <div class="stat-chip stat-chip--amber">
+          <span class="stat-icon">📄</span>
+          <div>
+            <span class="stat-num">{{ totalPaginas() }}</span>
+            <span class="stat-label">{{ totalPaginas() !== 1 ? 'páginas' : 'página' }}</span>
+          </div>
+        </div>
+        <div class="stat-chip stat-chip--blue">
+          <span class="stat-icon">👁</span>
+          <div>
+            <span class="stat-num">{{ porPagina }}</span>
+            <span class="stat-label">por página</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="head-actions">
-      <button type="button" class="ghost" (click)="cargar()" [disabled]="loading()">↻ Actualizar</button>
-    </div>
-  </header>
+  </div>
 
   @if (msg()) {
-    <p class="cert-msg cert-msg--err">{{ msg() }}</p>
+    <div class="venc-alert">⚠ {{ msg() }}</div>
   }
 
-  <div class="panel filtros-panel">
-    <div class="filtros-grid">
-      <div class="filtro-field filtro-buscar">
-        <label>Buscar</label>
+  <!-- ══ FILTROS ══ -->
+  <div class="venc-filtros">
+    <div class="filtros-inner">
+      <div class="field-search">
+        <span class="search-icon">🔍</span>
         <input
           type="search"
-          placeholder="Nombre, encabezado, código, documento…"
+          class="search-input"
+          placeholder="Nombre, código, documento, encabezado…"
           [ngModel]="filtro()"
           (ngModelChange)="onFiltroChange($event)"
           autocomplete="off" />
       </div>
-      <div class="filtro-field">
-        <label>Tipo de capacitación</label>
+      <div class="field-select">
         <select [ngModel]="tipoFormato()" (ngModelChange)="onTipoChange($event)">
-          <option value="">Todos</option>
+          <option value="">Todos los tipos</option>
           @for (t of tiposFormato; track t.id) {
             <option [value]="t.id">{{ t.label }}</option>
           }
         </select>
       </div>
+      <button type="button" class="btn-limpiar" (click)="limpiar()" [disabled]="loading()">✕ Limpiar</button>
     </div>
-    <div class="filtros-actions">
-      <button type="button" class="ghost sm" (click)="limpiar()" [disabled]="loading()">Limpiar</button>
-      <span class="count">
-        {{ totalRegistros() }} certificado(s) · página {{ paginaActual() }} de {{ totalPaginas() }}
-      </span>
+    <div class="filtros-pag-info">
+      @if (totalRegistros() > 0) {
+        Mostrando <strong>{{ (paginaActual()-1)*porPagina + 1 }}–{{ pagHasta() }}</strong>
+        de <strong>{{ totalRegistros() }}</strong> certificados
+        · <span class="pag-label">Pág. {{ paginaActual() }} / {{ totalPaginas() }}</span>
+      }
     </div>
   </div>
 
-  <div class="panel table-wrap">
+  <!-- ══ TABLA ══ -->
+  <div class="venc-table-wrap">
     @if (loading()) {
-      <p class="hint loading">Cargando certificados vencidos…</p>
+      <div class="loading-state">
+        <span class="spinner">⏳</span>
+        <p>Cargando certificados vencidos…</p>
+      </div>
     } @else {
-      <table class="argo">
+      <table class="venc-table">
         <thead>
           <tr>
-            <th>Código</th>
-            <th>Alumno</th>
-            <th>Doc</th>
-            <th>Tipo capacitación</th>
-            <th>Encabezado</th>
-            <th>Emisión</th>
-            <th>Venció</th>
+            <th class="col-code">Código</th>
+            <th class="col-alumno">Alumno</th>
+            <th class="col-doc">Documento</th>
+            <th class="col-tipo">Tipo</th>
+            <th class="col-enc">Encabezado / Programa</th>
+            <th class="col-emision">Emisión</th>
+            <th class="col-vencio">Venció</th>
+            <th class="col-dias">Hace</th>
           </tr>
         </thead>
         <tbody>
           @for (c of certificados(); track c._id) {
-            <tr class="row-vencido">
-              <td><span class="cert-cod">{{ c.codigoCert || '—' }}</span></td>
+            <tr class="row-venc">
               <td>
+                <span class="code-badge">{{ c.codigoCert || '—' }}</span>
+              </td>
+              <td class="col-alumno">
                 @if (c.alumnoId) {
-                  <button type="button" class="link-name" (click)="abrirAlumno(c)">
+                  <button type="button" class="alumno-link" (click)="abrirAlumno(c)">
                     {{ c.nombreCompleto || '—' }}
                   </button>
                 } @else {
-                  {{ c.nombreCompleto || '—' }}
+                  <span class="alumno-text">{{ c.nombreCompleto || '—' }}</span>
                 }
               </td>
-              <td class="mono">{{ c.numDoc || '—' }}</td>
-              <td>{{ c.tipoFormatoCertLabel || labelTipoCert(c.tipoFormatoCert) || '—' }}</td>
-              <td>{{ c.encabezado || c.nomCert || c.programaDescr || '—' }}</td>
-              <td>{{ fecha(c.fechaEmision) }}</td>
-              <td class="fecha-vencida">{{ fecha(c.fechaVencimiento) }}</td>
+              <td class="doc-cell">{{ c.numDoc || '—' }}</td>
+              <td>
+                @if (c.tipoFormatoCert) {
+                  <span class="badge-tipo" [ngClass]="colorTipo(c.tipoFormatoCert)">
+                    {{ c.tipoFormatoCertLabel || labelTipoCert(c.tipoFormatoCert) }}
+                  </span>
+                } @else {
+                  <span class="text-dim">—</span>
+                }
+              </td>
+              <td class="enc-cell">{{ c.encabezado || c.nomCert || c.programaDescr || '—' }}</td>
+              <td class="fecha-cell">{{ fecha(c.fechaEmision) }}</td>
+              <td class="fecha-cell fecha-vencida">{{ fecha(c.fechaVencimiento) }}</td>
+              <td>
+                <span [ngClass]="claseDias(c.fechaVencimiento)">{{ etiquetaDias(c.fechaVencimiento) }}</span>
+              </td>
             </tr>
           }
           @if (certificados().length === 0) {
             <tr>
-              <td colspan="7" class="empty">No hay certificados vencidos.</td>
+              <td colspan="8" class="empty-cell">
+                <span class="empty-icon">✅</span>
+                <span>No hay certificados vencidos</span>
+              </td>
             </tr>
           }
         </tbody>
       </table>
 
+      <!-- ══ PAGINADOR ══ -->
       @if (totalPaginas() > 1) {
-        <nav class="paginador" aria-label="Paginación">
-          <button type="button" class="ghost mini" [disabled]="paginaActual() <= 1" (click)="irPagina(paginaActual() - 1)">‹ Ant</button>
-          @for (p of paginasVisibles(); track p) {
-            @if (p === -1) {
-              <span class="pag-ellipsis">…</span>
-            } @else {
-              <button
-                type="button"
-                class="mini"
-                [class.primary]="p === paginaActual()"
-                [class.ghost]="p !== paginaActual()"
-                (click)="irPagina(p)">{{ p }}</button>
+        <nav class="paginador" aria-label="Paginación de resultados">
+          <button
+            type="button"
+            class="pag-btn pag-arrow"
+            [disabled]="paginaActual() <= 1"
+            (click)="irPagina(paginaActual() - 1)">
+            ‹ Anterior
+          </button>
+
+          <div class="pag-nums">
+            @for (p of paginasVisibles(); track p) {
+              @if (p === -1) {
+                <span class="pag-ellipsis">…</span>
+              } @else {
+                <button
+                  type="button"
+                  class="pag-btn pag-num"
+                  [class.active]="p === paginaActual()"
+                  (click)="irPagina(p)">{{ p }}</button>
+              }
             }
-          }
-          <button type="button" class="ghost mini" [disabled]="paginaActual() >= totalPaginas()" (click)="irPagina(paginaActual() + 1)">Sig ›</button>
-          <span class="pag-info">{{ (paginaActual()-1)*porPagina + 1 }}–{{ pagHasta() }} de {{ totalRegistros() }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="pag-btn pag-arrow"
+            [disabled]="paginaActual() >= totalPaginas()"
+            (click)="irPagina(paginaActual() + 1)">
+            Siguiente ›
+          </button>
         </nav>
       }
     }

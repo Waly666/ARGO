@@ -109,4 +109,45 @@ export class CertificadosVencidosComponent implements OnInit, OnDestroy {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('es-CO');
   }
+
+  diasDesdeVencimiento(iso?: string | null): number | null {
+    if (!iso) return null;
+    const fv   = new Date(iso);
+    fv.setHours(0, 0, 0, 0);
+    const hoy  = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const diff = Math.floor((hoy.getTime() - fv.getTime()) / 86400000);
+    return diff >= 0 ? diff : null;
+  }
+
+  etiquetaDias(iso?: string | null): string {
+    const d = this.diasDesdeVencimiento(iso);
+    if (d === null) return '—';
+    if (d === 0) return 'hoy';
+    if (d === 1) return 'ayer';
+    return `hace ${d} días`;
+  }
+
+  claseDias(iso?: string | null): string {
+    const d = this.diasDesdeVencimiento(iso);
+    if (d === null) return '';
+    if (d <= 7)  return 'dias-chip dias-chip--warn';
+    if (d <= 30) return 'dias-chip dias-chip--orange';
+    return 'dias-chip dias-chip--red';
+  }
+
+  colorTipo(tipo?: string | null): string {
+    const map: Record<string, string> = {
+      presencial:        'badge-tipo--violet',
+      virtual:           'badge-tipo--blue',
+      semipresencial:    'badge-tipo--teal',
+      empresarial:       'badge-tipo--amber',
+      jornada:           'badge-tipo--sky',
+    };
+    const k = String(tipo || '').toLowerCase();
+    for (const [key, cls] of Object.entries(map)) {
+      if (k.includes(key)) return cls;
+    }
+    return 'badge-tipo--gray';
+  }
 }
