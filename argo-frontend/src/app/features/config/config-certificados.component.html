@@ -361,6 +361,46 @@
       </section>
     </div>
 
+    <!-- 7. Proceso de vencimiento manual -->
+    <section class="cert-section cert-section--slate">
+      <header class="cert-section-head">
+        <span class="cert-section-badge">⚙</span>
+        <div>
+          <h2 class="cert-section-title">Proceso de vencimiento</h2>
+          <p class="cert-section-desc">
+            El sistema actualiza automáticamente a <strong>Vencido</strong> todos los días a la <strong>01:00 AM</strong>.
+            Use este botón si necesita forzar el proceso ahora mismo sin esperar.
+          </p>
+        </div>
+      </header>
+      <div class="cert-section-body">
+        <div class="cert-marcar-vencidos">
+          <div class="cert-mv-info">
+            <span class="cert-mv-icon">🕐</span>
+            <div>
+              <p class="cert-mv-titulo">Marcar certificados vencidos ahora</p>
+              <p class="cert-mv-desc">
+                Busca todos los certificados con fecha de vencimiento pasada y los actualiza a estado <em>Vencido</em> en la base de datos.
+                Solo afecta los que aún figuren como <em>Vigente</em> y tengan fecha de vencimiento definida.
+              </p>
+            </div>
+          </div>
+          @if (msgVencidos(); as texto) {
+            <div class="cert-mv-result" [class.cert-mv-result--ok]="!msgVencidosError()" [class.cert-mv-result--err]="msgVencidosError()">
+              {{ texto }}
+            </div>
+          }
+          <button
+            type="button"
+            class="ghost"
+            [disabled]="marcandoVencidos()"
+            (click)="marcarVencidosAhora()">
+            {{ marcandoVencidos() ? 'Procesando…' : '⚡ Ejecutar proceso ahora' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
     <footer class="cert-foot">
       <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
         {{ saving() ? 'Guardando…' : 'Guardar configuración' }}

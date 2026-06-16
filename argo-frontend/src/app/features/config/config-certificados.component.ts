@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, QueryList, ViewChildren, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 import {
   ORIENTACIONES_CERTIFICADO,
@@ -32,6 +34,31 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 export class ConfigCertificadosComponent implements OnInit {
   private cfgSvc = inject(ConfigCertificadoService);
   private confirm = inject(ConfirmDialogService);
+  private http = inject(HttpClient);
+
+  marcandoVencidos = signal(false);
+  msgVencidos = signal<string | null>(null);
+  msgVencidosError = signal(false);
+
+  marcarVencidosAhora() {
+    if (this.marcandoVencidos()) return;
+    this.marcandoVencidos.set(true);
+    this.msgVencidos.set(null);
+    this.http.post<{ ok: boolean; actualizados: number; message: string }>(
+      `${environment.apiUrl}/certificados/admin/marcar-vencidos`, {}
+    ).subscribe({
+      next: (res) => {
+        this.marcandoVencidos.set(false);
+        this.msgVencidos.set(res.message);
+        this.msgVencidosError.set(false);
+      },
+      error: (e) => {
+        this.marcandoVencidos.set(false);
+        this.msgVencidos.set(e?.error?.message || 'Error al ejecutar el proceso.');
+        this.msgVencidosError.set(true);
+      },
+    });
+  }
 
   @ViewChildren(CertificadoLayoutEditorComponent)
   private layoutEditors?: QueryList<CertificadoLayoutEditorComponent>;

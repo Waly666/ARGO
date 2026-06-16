@@ -436,6 +436,67 @@
   }
 }
 
+/* ---- Marcar vencidos ---- */
+.cert-section--slate .cert-section-badge {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.2);
+  font-size: 1rem;
+}
+
+.cert-marcar-vencidos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cert-mv-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.cert-mv-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.cert-mv-titulo {
+  margin: 0 0 0.3rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.cert-mv-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+
+  em { font-style: normal; color: var(--accent-2); font-weight: 600; }
+}
+
+.cert-mv-result {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  &--ok {
+    background: rgba(54, 211, 153, 0.08);
+    border: 1px solid rgba(54, 211, 153, 0.3);
+    color: var(--ok);
+  }
+
+  &--err {
+    background: rgba(248, 114, 114, 0.08);
+    border: 1px solid rgba(248, 114, 114, 0.3);
+    color: var(--err);
+  }
+}
+
 .cert-foot {
   display: flex;
   justify-content: flex-end;
