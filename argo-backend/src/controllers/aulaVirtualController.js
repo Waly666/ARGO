@@ -37,6 +37,7 @@ const {
   materialesAlumno,
 } = require('../services/aulaVirtualCohorte');
 const { enviarContactoPortal } = require('../services/aulaVirtualContacto');
+const { enviarPqrPortal } = require('../services/aulaVirtualPqr');
 const { generarSitemapXml } = require('../services/aulaVirtualSitemap');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled, portalEmailVerifyEnabled } = require('../config/security');
@@ -455,6 +456,16 @@ exports.catalogosMunicipio = catalogoController.municipioPorCodigo;
 exports.enviarContacto = async (req, res, next) => {
   try {
     const result = await enviarContactoPortal(req.body);
+    res.json(result);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.enviarPqr = async (req, res, next) => {
+  try {
+    const result = await enviarPqrPortal(req.body);
     res.json(result);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

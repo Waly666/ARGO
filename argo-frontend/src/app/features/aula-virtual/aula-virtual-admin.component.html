@@ -543,16 +543,45 @@
           <input type="email" [(ngModel)]="portalForm.email" />
         </div>
       </div>
-      <div class="av-field">
-        <label>Correo destino — formulario de contacto</label>
-        <input
-          type="email"
-          [(ngModel)]="portalForm.emailContacto"
-          placeholder="contacto@finstruvial.edu.co"
-        />
-        <span class="av-muted av-field-hint">
-          Los mensajes de Fundación y Acerca de se envían aquí. Si está vacío, se usa el correo electrónico del portal o el de Recibos.
-        </span>
+      <!-- ── Correos del portal ── -->
+      <div class="av-emails-section">
+        <h3 class="av-emails-title">📧 Correos del portal</h3>
+
+        <div class="av-field">
+          <label>Correo destino — formulario de Contacto</label>
+          <input
+            type="email"
+            [(ngModel)]="portalForm.emailContacto"
+            placeholder="contacto@empresa.com"
+          />
+          <span class="av-muted av-field-hint">
+            Los mensajes del formulario de contacto del portal se envían aquí. Si está vacío, se usa el correo general o el de Recibos.
+          </span>
+        </div>
+
+        <div class="av-field">
+          <label>Correo remitente — confirmación de registro</label>
+          <input
+            type="email"
+            [(ngModel)]="portalForm.emailConfirmacion"
+            placeholder="aula@empresa.com"
+          />
+          <span class="av-muted av-field-hint">
+            Dirección desde la que se envían los correos con el código de verificación al registrarse. Si está vacío, se usa el remitente SMTP por defecto.
+          </span>
+        </div>
+
+        <div class="av-field">
+          <label>Correo destino — formulario PQR</label>
+          <input
+            type="email"
+            [(ngModel)]="portalForm.emailPqr"
+            placeholder="pqr@empresa.com"
+          />
+          <span class="av-muted av-field-hint">
+            Peticiones, Quejas, Reclamos y Sugerencias enviadas desde el formulario PQR del aula llegarán aquí. Si está vacío, el formulario PQR no estará visible en el portal.
+          </span>
+        </div>
       </div>
 
       @if (portalForm.vistaPreviaEmpresa; as prev) {

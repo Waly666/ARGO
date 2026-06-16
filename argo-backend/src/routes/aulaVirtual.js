@@ -44,6 +44,7 @@ router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirma
 router.post('/auth/registro/reenviar-codigo', portalAuthLimiter, ctrl.registroReenviarCodigo);
 router.post('/auth/login', portalAuthLimiter, requireTurnstile(), ctrl.login);
 router.post('/contacto', buscarAlumnoLimiter, requireTurnstile(), ctrl.enviarContacto);
+router.post('/pqr', buscarAlumnoLimiter, requireTurnstile(), ctrl.enviarPqr);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
 router.patch('/auth/empresa', requirePortalAuth, ctrl.actualizarEmpresa);
 router.get('/empresas/buscar', requirePortalAuth, ctrl.buscarEmpresasPortal);

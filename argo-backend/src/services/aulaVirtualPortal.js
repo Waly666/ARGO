@@ -29,7 +29,12 @@ const DEFAULTS_AULA = {
   acercaDeHtml:
     'La FUNDACIÓN FINSTRUVIAL lleva la seguridad vial en el alma.\n\nSomos tu mejor opción en formación, consultoría y campañas de seguridad vial para empresas, instituciones educativas y el sector público.\n\nMás de 28 años de experiencia práctica respaldan nuestro compromiso: educar para salvar vidas.',
   telefonoWhatsapp: '',
+  /** Correo destino del formulario de contacto general */
   emailContacto: '',
+  /** Remitente visible en los correos de confirmación de registro del aula */
+  emailConfirmacion: '',
+  /** Correo destino para el formulario PQR del aula */
+  emailPqr: '',
 };
 
 function logoAbsoluto(urlLogo) {
@@ -87,7 +92,9 @@ async function guardarConfigAula(body, usuario) {
     ciudad: String(body.ciudad ?? '').trim(),
     telefono: String(body.telefono ?? '').trim(),
     email: String(body.email ?? '').trim(),
-    emailContacto: String(body.emailContacto ?? '').trim().toLowerCase(),
+    emailContacto:      String(body.emailContacto ?? '').trim().toLowerCase(),
+    emailConfirmacion:  String(body.emailConfirmacion ?? '').trim().toLowerCase(),
+    emailPqr:           String(body.emailPqr ?? '').trim().toLowerCase(),
     telefonoWhatsapp: String(body.telefonoWhatsapp ?? '').trim(),
     urlLogo: body.urlLogo !== undefined ? String(body.urlLogo ?? '').trim() : undefined,
     userChangeRecord: usuario?.username || 'sistema',
@@ -164,6 +171,7 @@ async function obtenerConfigPortalPublica() {
     },
     site,
     formularioContactoActivo: !!resolverEmailFormularioContacto(aula, recibo),
+    formularioPqrActivo: !!validarEmailPortal(aula?.emailPqr),
   };
 }
 

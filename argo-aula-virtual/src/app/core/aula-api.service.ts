@@ -226,6 +226,23 @@ export class AulaApiService {
     });
   }
 
+  enviarPqr(
+    body: {
+      nombre: string;
+      email: string;
+      telefono?: string;
+      numDoc?: string;
+      tipo: string;
+      mensaje: string;
+    },
+    turnstileToken?: string,
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/pqr`, {
+      ...body,
+      turnstileToken: turnstileToken || undefined,
+    });
+  }
+
   misCertificados(): Observable<CertificadoPortal[]> {
     return this.http.get<CertificadoPortal[]>(`${this.base}/mis-certificados`, {
       headers: this.auth.authHeader(),

@@ -4,6 +4,7 @@ const RegistroPortalPendiente = require('../models/RegistroPortalPendiente');
 const { sendMail } = require('./mail');
 const { validarDatosRegistroPortal, crearCuentaPortal, maskEmail } = require('./aulaVirtualAuth');
 const { portalEmailVerifyEnabled } = require('../config/security');
+const { obtenerConfigAula } = require('./aulaVirtualPortal');
 
 const CODE_TTL_MS = 15 * 60 * 1000;
 const MAX_INTENTOS = 5;
@@ -35,7 +36,11 @@ async function enviarCodigoRegistro({ email, codigo, nombreCea }) {
     <p>El código vence en ${ttlMinutos()} minutos. Si no solicitó este registro, ignore este mensaje.</p>
   `.trim();
 
-  await sendMail({ to: email, subject, text, html });
+  const aula = await obtenerConfigAula().catch(() => null);
+  const fromCustom = aula?.emailConfirmacion?.trim() || null;
+  const fromHeader = fromCustom ? `"${cea}" <${fromCustom}>` : undefined;
+
+  await sendMail({ to: email, subject, text, html, from: fromHeader });
 }
 
 async function solicitarRegistroPortal({ email, password, alumno, nombreCea }) {

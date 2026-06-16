@@ -113,6 +113,8 @@ export class AulaVirtualAdminComponent implements OnInit {
     telefonoWhatsapp: '',
 
     emailContacto: '',
+    emailConfirmacion: '',
+    emailPqr: '',
 
     landing: mergePortalLanding(PORTAL_LANDING_DEFAULTS),
 

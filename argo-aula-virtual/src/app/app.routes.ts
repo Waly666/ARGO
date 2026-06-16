@@ -61,6 +61,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/registro/registro.component').then((m) => m.RegistroComponent),
       },
+      {
+        path: 'pqr',
+        canActivate: [portalPageGuard],
+        loadComponent: () => import('./pages/pqr/pqr.component').then((m) => m.PqrComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

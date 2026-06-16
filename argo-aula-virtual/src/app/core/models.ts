@@ -166,6 +166,7 @@ export interface PortalConfig {
   emailVerificacionRegistro?: boolean;
   turnstileSiteKey?: string;
   formularioContactoActivo?: boolean;
+  formularioPqrActivo?: boolean;
   site?: PortalSiteConfig;
 }
 
