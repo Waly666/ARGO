@@ -80,6 +80,8 @@ export interface PortalAulaConfig {
   landing?: PortalLandingConfig;
   telefonoWhatsapp?: string;
   emailContacto?: string;
+  emailConfirmacion?: string;
+  emailPqr?: string;
   site?: PortalSiteConfig;
   urlLogo?: string;
   urlLogoAbsoluta?: string | null;
