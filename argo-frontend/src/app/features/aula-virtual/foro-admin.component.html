@@ -4,7 +4,7 @@
       <h1>💬 Foro de cursos virtuales</h1>
       <p class="foro-subtitle">Responde preguntas de los alumnos directamente desde aquí</p>
     </div>
-    <button type="button" class="btn-refresh" (click)="cargarResumen()">↺ Actualizar</button>
+    <button type="button" class="btn-refresh" (click)="actualizar()">↺ Actualizar</button>
   </div>
 
   <div class="foro-layout">
@@ -72,6 +72,8 @@
         <div class="foro-msgs-list" #chatBody>
           @if (foroSvc.cargando()) {
             <div class="foro-loading-msgs">Cargando mensajes…</div>
+          } @else if (foroSvc.error(); as err) {
+            <div class="foro-empty-msgs foro-error-msgs">⚠️ {{ err }}</div>
           } @else if (foroSvc.mensajes().length === 0) {
             <div class="foro-empty-msgs">No hay mensajes en este foro. Sé el primero en responder.</div>
           } @else {

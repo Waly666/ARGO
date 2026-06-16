@@ -74,6 +74,8 @@ router.get('/admin/resumen', requireAuth, moderarForo, async (req, res, next) =>
 // ─── Admin: mensajes de un curso con filtros ─────────────────────────────────
 router.get('/admin/cursos/:idPrograma/mensajes', requireAuth, moderarForo, async (req, res, next) => {
   try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
     const { idPrograma } = req.params;
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Number(req.query.limit) || 50);

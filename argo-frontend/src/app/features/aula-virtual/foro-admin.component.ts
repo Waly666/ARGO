@@ -101,6 +101,10 @@ export class ForoAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.shouldScroll = true;
   }
 
+  actualizar() {
+    this.cargarResumen();
+  }
+
   enviar() {
     const c = this.cursoActivo();
     const t = this.texto().trim();
