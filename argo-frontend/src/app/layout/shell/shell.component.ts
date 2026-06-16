@@ -398,7 +398,7 @@ export class ShellComponent {
       icon: '⚠',
       path: '/app/certificados/vencidos',
       iconTone: 'red',
-      permiso: 'alumnos.certificados',
+      permiso: ['certificados.vencidos', 'alumnos.certificados'],
     },
     {
       kind: 'link',
@@ -430,11 +430,11 @@ export class ShellComponent {
       label: 'Aula Virtual',
       icon: '▣',
       iconTone: 'indigo',
-      permiso: 'programas.gestionar',
+      permiso: ['aula_virtual.gestionar', 'aula_virtual.sitio', 'aula_virtual.foro', 'programas.gestionar'],
       children: [
-        { kind: 'link', label: 'Cursos virtuales', icon: '▣', path: '/app/aula-virtual', iconTone: 'indigo', permiso: 'programas.gestionar' },
-        { kind: 'link', label: 'Editor sitio portal', icon: '✎', path: '/app/aula-virtual/sitio', iconTone: 'indigo', permiso: 'programas.gestionar' },
-        { kind: 'link', label: 'Foro de cursos', icon: '💬', path: '/app/aula-virtual/foro', iconTone: 'indigo', permiso: 'programas.gestionar' },
+        { kind: 'link', label: 'Cursos virtuales', icon: '▣', path: '/app/aula-virtual', iconTone: 'indigo', permiso: ['aula_virtual.gestionar', 'programas.gestionar'] },
+        { kind: 'link', label: 'Editor sitio portal', icon: '✎', path: '/app/aula-virtual/sitio', iconTone: 'indigo', permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'] },
+        { kind: 'link', label: 'Foro de cursos', icon: '💬', path: '/app/aula-virtual/foro', iconTone: 'indigo', permiso: ['aula_virtual.foro', 'aula_virtual.gestionar', 'programas.gestionar', 'instructores'] },
       ],
     },
     {
@@ -613,7 +613,7 @@ export class ShellComponent {
           icon: '⊞',
           path: '/app/combos',
           iconTone: 'teal',
-          permiso: ['alumnos.pagos', 'alumnos.gestionar'],
+          permiso: ['combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar'],
         },
         {
           kind: 'link',

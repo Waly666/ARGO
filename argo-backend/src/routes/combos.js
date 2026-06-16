@@ -5,7 +5,7 @@ const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = requir
 const router = Router();
 router.use(requireAuth);
 
-const gestionar = requirePermiso('alumnos.pagos', 'alumnos.gestionar');
+const gestionar = requirePermiso('combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar');
 
 router.get('/', gestionar, ctrl.listar);
 router.get('/:id', gestionar, ctrl.obtener);

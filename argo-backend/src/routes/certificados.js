@@ -10,6 +10,7 @@ const router = Router();
 router.use(requireAuth);
 
 const emitir = requirePermiso('alumnos.certificados');
+const verVencidos = requirePermiso('certificados.vencidos', 'alumnos.certificados');
 const verCertAlertas = requirePermiso('alumnos.certificados', 'jornadas.ver', 'jornadas.gestionar');
 const config = requirePermiso('config.certificados');
 
@@ -39,7 +40,7 @@ router.post('/admin/marcar-vencidos', requireAdmin, async (req, res, next) => {
 
 router.get('/recientes', verCertAlertas, ctrl.recientes);
 router.get('/listado', emitir, ctrl.listarGlobal);
-router.get('/vencidos', emitir, ctrl.listarVencidos);
+router.get('/vencidos', verVencidos, ctrl.listarVencidos);
 router.get('/alertas-vencimiento', verCertAlertas, ctrl.alertasPorVencer);
 router.get('/alertas-por-vencer', verCertAlertas, ctrl.alertasPorVencer);
 router.get('/alertas-vencidos', verCertAlertas, ctrl.alertasVencidos);

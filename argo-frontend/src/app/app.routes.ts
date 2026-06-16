@@ -79,7 +79,7 @@ export const routes: Routes = [
       {
         path: 'certificados/vencidos',
         canActivate: [permisoGuard],
-        data: { permiso: 'alumnos.certificados' },
+        data: { permiso: ['certificados.vencidos', 'alumnos.certificados'] },
         loadComponent: () =>
           import('./features/certificados/certificados-vencidos.component').then((m) => m.CertificadosVencidosComponent),
       },
@@ -130,7 +130,7 @@ export const routes: Routes = [
       {
         path: 'aula-virtual/sitio',
         canActivate: [permisoGuard],
-        data: { permiso: 'programas.gestionar', title: 'Editor sitio portal' },
+        data: { permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'], title: 'Editor sitio portal' },
         loadComponent: () =>
           import('./features/aula-virtual/aula-virtual-sitio.component').then(
             (m) => m.AulaVirtualSitioComponent,
@@ -139,7 +139,10 @@ export const routes: Routes = [
       {
         path: 'aula-virtual/foro',
         canActivate: [permisoGuard],
-        data: { permiso: 'programas.gestionar', title: 'Foro de cursos virtuales' },
+        data: {
+          permiso: ['aula_virtual.foro', 'aula_virtual.gestionar', 'programas.gestionar', 'instructores'],
+          title: 'Foro de cursos virtuales',
+        },
         loadComponent: () =>
           import('./features/aula-virtual/foro-admin.component').then(
             (m) => m.ForoAdminComponent,
@@ -148,7 +151,7 @@ export const routes: Routes = [
       {
         path: 'aula-virtual',
         canActivate: [permisoGuard],
-        data: { permiso: 'programas.gestionar', title: 'Aula virtual' },
+        data: { permiso: ['aula_virtual.gestionar', 'programas.gestionar'], title: 'Aula virtual' },
         loadComponent: () =>
           import('./features/aula-virtual/aula-virtual-admin.component').then(
             (m) => m.AulaVirtualAdminComponent,
@@ -235,7 +238,7 @@ export const routes: Routes = [
       {
         path: 'combos',
         canActivate: [permisoGuard],
-        data: { permiso: ['alumnos.pagos', 'alumnos.gestionar'], title: 'Combos de cursos' },
+        data: { permiso: ['combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar'], title: 'Combos de cursos' },
         loadComponent: () =>
           import('./features/combos/combos-admin.component').then((m) => m.CombosAdminComponent),
       },

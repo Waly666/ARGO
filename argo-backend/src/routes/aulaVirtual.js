@@ -68,7 +68,8 @@ router.get('/cursos/:id/inscripcion', requirePortalAuth, ctrl.estadoInscripcion)
 router.post('/cursos/:id/matricular', requirePortalAuth, ctrl.matricularCurso);
 
 /** Admin — app ARGO (staff) */
-const gestionar = requirePermiso('programas.gestionar');
+const gestionar = requirePermiso('aula_virtual.gestionar', 'programas.gestionar');
+const configPortal = requirePermiso('aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar');
 
 router.get('/admin/usuarios', requireAuth, gestionar, admin.listarUsuariosPortal);
 router.post('/admin/usuarios', requireAuth, gestionar, admin.crearUsuarioPortal);
@@ -107,15 +108,15 @@ router.delete('/admin/cursos/:id/materiales/:materialId', requireAuth, gestionar
 router.post('/admin/cursos/:id/matricular', requireAuth, gestionar, admin.matricularAlumnoCurso);
 router.post('/admin/cursos/:id/reintegrar-bridge', requireAuth, gestionar, admin.reintegrarBridge);
 
-router.get('/admin/portal', requireAuth, gestionar, admin.obtenerConfigPortal);
-router.put('/admin/portal', requireAuth, gestionar, admin.guardarConfigPortal);
+router.get('/admin/portal', requireAuth, configPortal, admin.obtenerConfigPortal);
+router.put('/admin/portal', requireAuth, configPortal, admin.guardarConfigPortal);
 router.post(
   '/admin/portal/logo',
   requireAuth,
-  gestionar,
+  configPortal,
   aulaVirtualLogo.single('logo'),
   admin.subirLogoPortal,
 );
-router.delete('/admin/portal/logo', requireAuth, gestionar, admin.quitarLogoPortal);
+router.delete('/admin/portal/logo', requireAuth, configPortal, admin.quitarLogoPortal);
 
 module.exports = router;

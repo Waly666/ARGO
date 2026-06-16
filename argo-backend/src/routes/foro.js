@@ -5,6 +5,13 @@ const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
 
+const moderarForo = requirePermiso(
+  'aula_virtual.foro',
+  'aula_virtual.gestionar',
+  'programas.gestionar',
+  'instructores',
+);
+
 // ─── Alumno: historial paginado del foro de un curso ─────────────────────────
 router.get('/cursos/:idPrograma/mensajes', requirePortalAuth, async (req, res, next) => {
   try {
@@ -35,7 +42,7 @@ router.get('/cursos/:idPrograma/mensajes', requirePortalAuth, async (req, res, n
 });
 
 // ─── Admin: listar cursos con actividad en foro ───────────────────────────────
-router.get('/admin/resumen', requireAuth, async (req, res, next) => {
+router.get('/admin/resumen', requireAuth, moderarForo, async (req, res, next) => {
   try {
     const resumen = await MensajeForo.aggregate([
       { $match: { eliminado: false } },
@@ -65,7 +72,7 @@ router.get('/admin/resumen', requireAuth, async (req, res, next) => {
 });
 
 // ─── Admin: mensajes de un curso con filtros ─────────────────────────────────
-router.get('/admin/cursos/:idPrograma/mensajes', requireAuth, async (req, res, next) => {
+router.get('/admin/cursos/:idPrograma/mensajes', requireAuth, moderarForo, async (req, res, next) => {
   try {
     const { idPrograma } = req.params;
     const page = Math.max(1, Number(req.query.page) || 1);
@@ -94,7 +101,7 @@ router.get('/admin/cursos/:idPrograma/mensajes', requireAuth, async (req, res, n
 });
 
 // ─── Admin: eliminar mensaje ──────────────────────────────────────────────────
-router.delete('/admin/mensajes/:id', requireAuth, async (req, res, next) => {
+router.delete('/admin/mensajes/:id', requireAuth, moderarForo, async (req, res, next) => {
   try {
     await MensajeForo.findByIdAndUpdate(req.params.id, { eliminado: true });
     res.json({ ok: true });

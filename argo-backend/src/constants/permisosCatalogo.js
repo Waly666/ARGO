@@ -12,7 +12,8 @@ const GRUPOS = [
       { key: 'alumnos.ver', label: 'Consultar alumnos' },
       { key: 'alumnos.gestionar', label: 'Crear, editar y eliminar alumnos' },
       { key: 'alumnos.pagos', label: 'Pagos, liquidaciones e ingresos' },
-      { key: 'alumnos.certificados', label: 'Emitir certificados' },
+      { key: 'alumnos.certificados', label: 'Emitir y consultar certificados' },
+      { key: 'certificados.vencidos', label: 'Listado de certificados vencidos' },
     ],
   },
   {
@@ -64,6 +65,7 @@ const GRUPOS = [
       { key: 'caja.turno', label: 'Caja del turno (apertura, cuadre, movimientos del día)' },
       { key: 'caja.cobros', label: 'Cobros pendientes' },
       { key: 'caja.admin', label: 'Cierres, descuadres y movimientos globales' },
+      { key: 'combos.gestionar', label: 'Combos de cursos presenciales (configurar y aplicar)' },
     ],
   },
   {
@@ -73,6 +75,15 @@ const GRUPOS = [
       { key: 'facturacion', label: 'Facturación' },
       { key: 'vehiculos', label: 'Vehículos' },
       { key: 'rrhh', label: 'Recursos humanos y nómina' },
+    ],
+  },
+  {
+    id: 'aula_virtual',
+    label: 'Aula virtual',
+    permisos: [
+      { key: 'aula_virtual.gestionar', label: 'Cursos virtuales, matrículas y usuarios del portal' },
+      { key: 'aula_virtual.sitio', label: 'Editor del sitio portal (landing, menús, páginas)' },
+      { key: 'aula_virtual.foro', label: 'Foro de cursos (moderar preguntas y respuestas)' },
     ],
   },
   {
