@@ -2,7 +2,7 @@
   <div class="foro-admin-header">
     <div>
       <h1>💬 Foro de cursos virtuales</h1>
-      <p class="foro-subtitle">Monitorea y modera los mensajes de los foros por curso</p>
+      <p class="foro-subtitle">Responde preguntas de los alumnos directamente desde aquí</p>
     </div>
     <button type="button" class="btn-refresh" (click)="cargarResumen()">↺ Actualizar</button>
   </div>
@@ -24,7 +24,7 @@
       } @else if (cursosFiltrados().length === 0) {
         <div class="foro-empty-side">
           @if (filtroBusqueda()) {
-            No hay cursos que coincidan con "{{ filtroBusqueda() }}"
+            Sin resultados para "{{ filtroBusqueda() }}"
           } @else {
             No hay mensajes en ningún foro aún.
           }
@@ -36,12 +36,7 @@
               class="foro-curso-item"
               [class.active]="cursoActivo()?.idPrograma === c.idPrograma"
               (click)="seleccionarCurso(c)">
-              <div class="foro-curso-info">
-                <span class="foro-curso-nombre">{{ c.nombreProg }}</span>
-                @if (c.codigoProg) {
-                  <span class="foro-curso-cod">{{ c.codigoProg }}</span>
-                }
-              </div>
+              <div class="foro-curso-nombre">{{ c.nombreProg }}</div>
               <div class="foro-curso-meta">
                 <span class="foro-badge-count">{{ c.total }}</span>
                 <span class="foro-ultimo">{{ formatFecha(c.ultimo) }}</span>
@@ -52,35 +47,39 @@
       }
     </aside>
 
-    <!-- Panel derecho: mensajes del curso seleccionado -->
+    <!-- Panel derecho: chat en tiempo real -->
     <main class="foro-content">
       @if (!cursoActivo()) {
         <div class="foro-select-hint">
           <span class="foro-select-icon">👈</span>
-          <p>Selecciona un curso de la izquierda para ver su foro</p>
+          <p>Selecciona un curso para ver y participar en su foro</p>
         </div>
       } @else {
         <div class="foro-content-header">
           <div>
             <h2>{{ cursoActivo()!.nombreProg }}</h2>
             <p class="foro-content-meta">
-              {{ cursoActivo()!.total }} mensajes · Último: {{ formatFecha(cursoActivo()!.ultimo) }}
+              {{ cursoActivo()!.total }} mensajes
             </p>
           </div>
-          <button type="button" class="btn-reload" (click)="cargarMensajes(cursoActivo()!.idPrograma)">↺</button>
+          <div class="foro-status" [class.foro-status--on]="foroSvc.conectado()">
+            <span class="foro-dot"></span>
+            <span>{{ foroSvc.conectado() ? 'En línea' : 'Conectando…' }}</span>
+          </div>
         </div>
 
-        @if (cargandoMensajes()) {
-          <div class="foro-loading-msgs">Cargando mensajes…</div>
-        } @else if (mensajes().length === 0) {
-          <div class="foro-empty-msgs">No hay mensajes en este foro.</div>
-        } @else {
-          <div class="foro-msgs-list">
-            @for (msg of mensajes(); track msg._id) {
-              <div class="foro-msg-item">
+        <!-- Mensajes -->
+        <div class="foro-msgs-list" #chatBody>
+          @if (foroSvc.cargando()) {
+            <div class="foro-loading-msgs">Cargando mensajes…</div>
+          } @else if (foroSvc.mensajes().length === 0) {
+            <div class="foro-empty-msgs">No hay mensajes en este foro. Sé el primero en responder.</div>
+          } @else {
+            @for (msg of foroSvc.mensajes(); track msg._id) {
+              <div class="foro-msg-item" [class.msg-staff]="msg.autorTipo !== 'alumno'">
                 <div class="foro-msg-left">
                   <div class="foro-msg-avatar" [class]="'avatar-' + msg.autorTipo">
-                    {{ msg.autorNombre.charAt(0).toUpperCase() }}
+                    {{ inicialAvatar(msg.autorNombre) }}
                   </div>
                 </div>
                 <div class="foro-msg-body">
@@ -96,8 +95,40 @@
                 </div>
               </div>
             }
+          }
+        </div>
+
+        <!-- Input de respuesta -->
+        <div class="foro-reply-area">
+          <div class="foro-reply-who">
+            Respondiendo como <strong>{{ authSvc.user()?.nombres || authSvc.user()?.username || authSvc.user()?.email }}</strong>
+            <span class="foro-tipo-badge badge-admin">🛡 Admin</span>
           </div>
-        }
+          <div class="foro-reply-wrap">
+            <textarea
+              class="foro-reply-input"
+              rows="2"
+              placeholder="Escribe tu respuesta o comentario… (Enter para enviar)"
+              [value]="texto()"
+              (input)="texto.set($any($event.target).value)"
+              (keydown)="onKeydown($event)"
+              [disabled]="!foroSvc.conectado() || foroSvc.enviando()">
+            </textarea>
+            <button
+              type="button"
+              class="foro-send-btn"
+              [disabled]="!texto().trim() || !foroSvc.conectado() || foroSvc.enviando()"
+              (click)="enviar()">
+              @if (foroSvc.enviando()) {
+                <span class="btn-spin"></span>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+              }
+            </button>
+          </div>
+        </div>
       }
     </main>
   </div>

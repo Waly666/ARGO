@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
+import { ForoAdminService, MensajeForoAdmin } from '../../core/services/foro-admin.service';
+import { AuthService } from '../../core/services/auth.service';
 
 interface ResumenForo {
   idPrograma: string;
@@ -12,16 +14,6 @@ interface ResumenForo {
   ultimo: string;
 }
 
-interface MensajeForo {
-  _id: string;
-  idPrograma: string;
-  autorNombre: string;
-  autorTipo: 'alumno' | 'instructor' | 'admin';
-  autorNumDoc?: number | null;
-  texto: string;
-  createdAt: string;
-}
-
 @Component({
   selector: 'app-foro-admin',
   standalone: true,
@@ -29,29 +21,41 @@ interface MensajeForo {
   templateUrl: './foro-admin.component.html',
   styleUrl: './foro-admin.component.scss',
 })
-export class ForoAdminComponent implements OnInit {
-  private http = inject(HttpClient);
-  private base = `${environment.apiUrl}/foro`;
+export class ForoAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
+  @ViewChild('chatBody') chatBody!: ElementRef<HTMLDivElement>;
 
-  cursos = signal<ResumenForo[]>([]);
-  cursoActivo = signal<ResumenForo | null>(null);
-  mensajes = signal<MensajeForo[]>([]);
+  private http    = inject(HttpClient);
+  private base    = `${environment.apiUrl}/foro`;
+  foroSvc         = inject(ForoAdminService);
+  authSvc         = inject(AuthService);
 
-  cargandoCursos = signal(false);
-  cargandoMensajes = signal(false);
+  cursos          = signal<ResumenForo[]>([]);
+  cursoActivo     = signal<ResumenForo | null>(null);
+  cargandoCursos  = signal(false);
+  filtroBusqueda  = signal('');
+  texto           = signal('');
 
-  filtroBusqueda = signal('');
+  private shouldScroll = false;
 
   cursosFiltrados = computed(() => {
     const q = this.filtroBusqueda().toLowerCase();
     if (!q) return this.cursos();
-    return this.cursos().filter(
-      (c) => c.nombreProg.toLowerCase().includes(q) || c.codigoProg?.toLowerCase().includes(q),
-    );
+    return this.cursos().filter((c) => c.nombreProg.toLowerCase().includes(q));
   });
 
   ngOnInit() {
     this.cargarResumen();
+  }
+
+  ngOnDestroy() {
+    this.foroSvc.disconnect();
+  }
+
+  ngAfterViewChecked() {
+    if (this.shouldScroll) {
+      try { const el = this.chatBody?.nativeElement; if (el) el.scrollTop = el.scrollHeight; } catch {}
+      this.shouldScroll = false;
+    }
   }
 
   cargarResumen() {
@@ -64,37 +68,42 @@ export class ForoAdminComponent implements OnInit {
 
   seleccionarCurso(c: ResumenForo) {
     this.cursoActivo.set(c);
-    this.cargarMensajes(c.idPrograma);
+    this.texto.set('');
+    this.foroSvc.joinForo(c.idPrograma, c.nombreProg);
+    this.shouldScroll = true;
   }
 
-  cargarMensajes(idPrograma: string) {
-    this.cargandoMensajes.set(true);
-    this.http
-      .get<{ mensajes: MensajeForo[] }>(`${this.base}/admin/cursos/${idPrograma}/mensajes?limit=100`)
-      .subscribe({
-        next: (res) => { this.mensajes.set(res.mensajes); this.cargandoMensajes.set(false); },
-        error: () => this.cargandoMensajes.set(false),
-      });
+  enviar() {
+    const c = this.cursoActivo();
+    const t = this.texto().trim();
+    if (!c || !t) return;
+    this.foroSvc.enviarMensaje(c.idPrograma, t, c.nombreProg);
+    this.texto.set('');
+    this.shouldScroll = true;
   }
 
-  eliminarMensaje(msg: MensajeForo) {
+  onKeydown(ev: KeyboardEvent) {
+    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); this.enviar(); }
+  }
+
+  eliminarMensaje(msg: MensajeForoAdmin) {
     if (!confirm('¿Eliminar este mensaje del foro?')) return;
     this.http.delete(`${this.base}/admin/mensajes/${msg._id}`).subscribe({
       next: () => {
-        this.mensajes.update((prev) => prev.filter((m) => m._id !== msg._id));
+        this.foroSvc.mensajes.update((prev) => prev.filter((m) => m._id !== msg._id));
         const cur = this.cursoActivo();
         if (cur) this.cursos.update((cs) => cs.map((c) => c.idPrograma === cur.idPrograma ? { ...c, total: Math.max(0, c.total - 1) } : c));
       },
     });
   }
 
-  tipoBadgeClass(tipo: MensajeForo['autorTipo']) {
+  tipoBadgeClass(tipo: MensajeForoAdmin['autorTipo']) {
     if (tipo === 'admin') return 'badge-admin';
     if (tipo === 'instructor') return 'badge-instructor';
     return 'badge-alumno';
   }
 
-  tipoLabel(tipo: MensajeForo['autorTipo']) {
+  tipoLabel(tipo: MensajeForoAdmin['autorTipo']) {
     if (tipo === 'admin') return '🛡 Admin';
     if (tipo === 'instructor') return '👨‍🏫 Instructor';
     return '🎓 Alumno';
@@ -103,5 +112,9 @@ export class ForoAdminComponent implements OnInit {
   formatFecha(iso: string) {
     try { return new Date(iso).toLocaleString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
     catch { return iso; }
+  }
+
+  inicialAvatar(nombre: string) {
+    return (nombre || '?').charAt(0).toUpperCase();
   }
 }
