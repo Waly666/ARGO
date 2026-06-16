@@ -71,22 +71,26 @@ export class ForoService implements OnDestroy {
     });
   }
 
-  joinForo(idPrograma: string) {
+  private nombreActual: string = '';
+
+  joinForo(idPrograma: string, nombrePrograma = '') {
     if (this.programaActual === idPrograma) return;
     if (this.programaActual) this.leaveForo();
 
     this.programaActual = idPrograma;
+    this.nombreActual   = nombrePrograma;
     this.mensajes.set([]);
     this.cargando.set(true);
     this.error.set(null);
 
     this.connect();
 
+    const payload = { idPrograma, nombrePrograma };
     if (this.socket?.connected) {
-      this.socket.emit('join-foro', { idPrograma });
+      this.socket.emit('join-foro', payload);
     } else {
       this.socket?.once('connect', () => {
-        this.socket?.emit('join-foro', { idPrograma });
+        this.socket?.emit('join-foro', payload);
       });
     }
   }
@@ -102,7 +106,7 @@ export class ForoService implements OnDestroy {
 
   enviarMensaje(idPrograma: string, texto: string) {
     if (!this.socket?.connected || !texto.trim()) return;
-    this.socket.emit('enviar-mensaje', { idPrograma, texto: texto.trim() });
+    this.socket.emit('enviar-mensaje', { idPrograma, texto: texto.trim(), nombrePrograma: this.nombreActual });
   }
 
   ngOnDestroy() {

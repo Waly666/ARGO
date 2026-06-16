@@ -80,15 +80,16 @@ function initForoSocket(httpServer) {
   foroNs.on('connection', (socket) => {
     const { user } = socket.data;
 
-    socket.on('join-foro', async ({ idPrograma }) => {
+    const nombrePorPrograma = {};
+
+    socket.on('join-foro', async ({ idPrograma, nombrePrograma }) => {
       if (!idPrograma) return;
-      socket.join(roomForo(idPrograma));
+      const id = String(idPrograma);
+      socket.join(roomForo(id));
+      if (nombrePrograma) nombrePorPrograma[id] = String(nombrePrograma);
 
       try {
-        const mensajes = await MensajeForo.find({
-          idPrograma,
-          eliminado: false,
-        })
+        const mensajes = await MensajeForo.find({ idPrograma: id, eliminado: false })
           .sort({ createdAt: 1 })
           .limit(200)
           .lean();
@@ -99,17 +100,20 @@ function initForoSocket(httpServer) {
     });
 
     socket.on('leave-foro', ({ idPrograma }) => {
-      if (idPrograma) socket.leave(roomForo(idPrograma));
+      if (idPrograma) socket.leave(roomForo(String(idPrograma)));
     });
 
-    socket.on('enviar-mensaje', async ({ idPrograma, texto }) => {
+    socket.on('enviar-mensaje', async ({ idPrograma, texto, nombrePrograma }) => {
       if (!idPrograma || !texto?.trim()) return;
 
+      const id = String(idPrograma);
       const textoLimpio = String(texto).trim().slice(0, 2000);
+      const nomProg = nombrePrograma || nombrePorPrograma[id] || '';
 
       try {
         const msg = await MensajeForo.create({
-          idPrograma,
+          idPrograma: id,
+          nombrePrograma: nomProg,
           autorNumDoc: user.tipo === 'alumno' ? user.numDoc : null,
           autorId: user.tipo !== 'alumno' ? user.id : null,
           autorNombre: user.nombre,
@@ -117,8 +121,9 @@ function initForoSocket(httpServer) {
           texto: textoLimpio,
         });
 
-        foroNs.to(roomForo(idPrograma)).emit('nuevo-mensaje', msg.toObject());
+        foroNs.to(roomForo(id)).emit('nuevo-mensaje', msg.toObject());
       } catch (e) {
+        console.error('[Foro] Error guardando mensaje:', e.message);
         socket.emit('error-foro', { message: 'Error enviando mensaje' });
       }
     });

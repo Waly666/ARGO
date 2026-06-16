@@ -49,13 +49,13 @@ export class ForoChatComponent implements OnInit, OnChanges, OnDestroy, AfterVie
 
   ngOnInit() {
     if (this.idPrograma) {
-      this.foro.joinForo(this.idPrograma);
+      this.foro.joinForo(this.idPrograma, this.nombreCurso);
     }
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['idPrograma'] && !changes['idPrograma'].firstChange) {
-      this.foro.joinForo(this.idPrograma);
+      this.foro.joinForo(this.idPrograma, this.nombreCurso);
     }
   }
 

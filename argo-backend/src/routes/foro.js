@@ -42,6 +42,7 @@ router.get('/admin/resumen', requireAuth, async (req, res, next) => {
       {
         $group: {
           _id: '$idPrograma',
+          nombrePrograma: { $last: '$nombrePrograma' },
           total: { $sum: 1 },
           ultimo: { $max: '$createdAt' },
         },
@@ -49,17 +50,11 @@ router.get('/admin/resumen', requireAuth, async (req, res, next) => {
       { $sort: { ultimo: -1 } },
     ]);
 
-    const mongoose = require('mongoose');
-    const Programa = require('../models/Programa');
-    const ids = resumen.map((r) => r._id);
-    const progs = await Programa.find({ _id: { $in: ids } }, { nombre: 1, codigo: 1 }).lean();
-    const progMap = Object.fromEntries(progs.map((p) => [String(p._id), p]));
-
     res.json(
       resumen.map((r) => ({
         idPrograma: String(r._id),
-        nombreProg: progMap[String(r._id)]?.nombre || String(r._id),
-        codigoProg: progMap[String(r._id)]?.codigo || '',
+        nombreProg: r.nombrePrograma || String(r._id),
+        codigoProg: '',
         total: r.total,
         ultimo: r.ultimo,
       })),

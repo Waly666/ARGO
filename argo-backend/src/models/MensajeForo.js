@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const MensajeForoSchema = new mongoose.Schema(
   {
-    idPrograma: { type: mongoose.Schema.Types.ObjectId, ref: 'Programa', required: true, index: true },
+    idPrograma:     { type: String, required: true, trim: true, index: true },
+    nombrePrograma: { type: String, default: '', trim: true },
     autorNumDoc: { type: Number, default: null },
     autorId: { type: String, default: null },
     autorNombre: { type: String, required: true, trim: true },
