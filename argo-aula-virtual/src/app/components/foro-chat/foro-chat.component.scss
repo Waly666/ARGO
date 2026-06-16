@@ -263,21 +263,21 @@
 
 .foro-input {
   flex: 1;
-  background: var(--dash-surface-alt, #0f172a);
-  border: 1px solid var(--dash-border, #334155);
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 10px;
   padding: 0.55rem 0.8rem;
   font-size: 0.88rem;
-  color: var(--dash-text, #f1f5f9);
+  color: #111827;
   resize: none;
   outline: none;
   font-family: inherit;
   line-height: 1.5;
   transition: border-color 0.2s;
 
-  &:focus { border-color: rgba(99, 102, 241, 0.6); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-  &::placeholder { color: var(--dash-muted, #64748b); }
+  &:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; background: #f9fafb; }
+  &::placeholder { color: #9ca3af; }
 }
 
 .foro-send-btn {
