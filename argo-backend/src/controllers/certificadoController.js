@@ -492,7 +492,7 @@ exports.listarGlobal = async (req, res, next) => {
       if (!Object.keys(q.fechaEmision).length) delete q.fechaEmision;
     }
 
-    const limit = Math.min(Math.max(Number(req.query.limit) || 500, 1), 1000);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 1000, 1), 2000);
     const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(limit).lean();
     const qRaw = String(req.query.q || '').trim();
 
