@@ -56,5 +56,6 @@ router.use('/aula-virtual', aulaVirtual);
 router.use('/clientes', require('./clientes'));
 router.use('/sistema', require('./sistema'));
 router.use('/informes', require('./informes'));
+router.use('/combos', require('./combos'));
 
 module.exports = router;

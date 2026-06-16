@@ -442,6 +442,14 @@ export class ShellComponent {
       permiso: ['servicios.ver', 'servicios.gestionar'],
     },
     {
+      kind: 'link',
+      label: 'Combos de cursos',
+      icon: '⊞',
+      path: '/app/combos',
+      iconTone: 'teal',
+      permiso: ['alumnos.pagos', 'alumnos.gestionar'],
+    },
+    {
       kind: 'group',
       label: 'Jornadas Cap.',
       icon: '⛺',

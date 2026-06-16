@@ -19,6 +19,7 @@ import {
 } from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
 import { esLiquidacionVirtual, esTarifaVirtualMatricula, TARIFA_VIRTUAL } from '../catalogo.helpers';
+import { ComboService, ComboPrevista, ComboAplicarRes, Combo } from '../../../core/services/combo.service';
 
 @Component({
   selector: 'argo-servicios',
@@ -38,9 +39,21 @@ export class ServiciosComponent {
   private ingSvc = inject(IngresoService);
   private reciboSvc = inject(ReciboService);
   private confirmSvc = inject(ConfirmDialogService);
+  private comboSvc = inject(ComboService);
 
   programas = signal<any[]>([]);
   servicios = signal<any[]>([]);
+
+  // --- Combos ---
+  combos = signal<Combo[]>([]);
+  comboIdSeleccionado = signal<string>('');
+  comboPrevista = signal<ComboPrevista | null>(null);
+  comboResultado = signal<ComboAplicarRes | null>(null);
+  aplicandoCombo = signal(false);
+
+  opcionesCombos = computed<EnumBuscarOption[]>(() =>
+    this.combos().map((c) => ({ value: c.id, label: c.nombre })),
+  );
 
   // form matrícula
   idProg = signal<string>('');
@@ -226,6 +239,7 @@ export class ServiciosComponent {
 
   constructor() {
     this.catSvc.list('programas').subscribe((d) => this.programas.set(d || []));
+    this.comboSvc.listar().subscribe({ next: (d) => this.combos.set(d || []), error: () => {} });
     this.cargarServicios();
 
     effect(() => {
@@ -320,6 +334,46 @@ export class ServiciosComponent {
 
   onTarifaLimpiar(): void {
     this.tarifa.set(1);
+  }
+
+  onComboPick(opt: EnumBuscarOption): void {
+    const id = String(opt.value);
+    this.comboIdSeleccionado.set(id);
+    this.comboPrevista.set(null);
+    this.comboResultado.set(null);
+    this.comboSvc.prevista(id).subscribe({
+      next: (p) => this.comboPrevista.set(p),
+      error: () => this.setMsg('No se pudo cargar la prevista del combo', true),
+    });
+  }
+
+  onComboLimpiar(): void {
+    this.comboIdSeleccionado.set('');
+    this.comboPrevista.set(null);
+    this.comboResultado.set(null);
+  }
+
+  aplicarCombo(): void {
+    const nd = this.store.numDoc();
+    if (!nd) { this.setMsg('Seleccione un alumno primero.', true); return; }
+    const id = this.comboIdSeleccionado();
+    if (!id) { this.setMsg('Seleccione un combo.', true); return; }
+    if (this.aplicandoCombo()) return;
+
+    this.aplicandoCombo.set(true);
+    this.comboResultado.set(null);
+    this.comboSvc.aplicar(id, nd).subscribe({
+      next: (res) => {
+        this.aplicandoCombo.set(false);
+        this.comboResultado.set(res);
+        this.recargar(nd);
+        this.setMsg(res.message, !res.ok);
+      },
+      error: (e) => {
+        this.aplicandoCombo.set(false);
+        this.setMsg(e?.error?.message || 'Error aplicando combo.', true);
+      },
+    });
   }
 
   onServicioAdicionalPick(opt: EnumBuscarOption): void {

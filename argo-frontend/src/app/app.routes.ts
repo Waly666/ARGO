@@ -216,6 +216,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/servicios/servicios-admin.component').then((m) => m.ServiciosAdminComponent),
       },
+      {
+        path: 'combos',
+        canActivate: [permisoGuard],
+        data: { permiso: ['alumnos.pagos', 'alumnos.gestionar'], title: 'Combos de cursos' },
+        loadComponent: () =>
+          import('./features/combos/combos-admin.component').then((m) => m.CombosAdminComponent),
+      },
       { path: 'clases', redirectTo: 'programas', pathMatch: 'full' },
       {
         path: 'facturacion',

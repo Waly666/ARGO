@@ -67,6 +67,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/jornadas', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
   { prefix: '/app/contratos', permiso: ['jornadas.ver', 'jornadas.gestionar'] },
   { prefix: '/app/servicios', permiso: ['servicios.ver', 'servicios.gestionar'] },
+  { prefix: '/app/combos', permiso: ['alumnos.pagos', 'alumnos.gestionar'] },
   { prefix: '/app/facturacion', permiso: 'facturacion' },
   { prefix: '/app/instructores', permiso: ['instructores.mi_portal', ...PERMISOS_INSTRUCTORES_DIRECTORIO] },
   { prefix: '/app/programacion-cea/clases-grupales', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },

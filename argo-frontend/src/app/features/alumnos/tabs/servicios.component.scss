@@ -196,3 +196,70 @@ table.nested { font-size: .88rem; }
 .badge.virtual-estado.warn {
   box-shadow: 0 0 10px rgba(99, 102, 241, 0.35);
 }
+
+/* ---- Combo de cursos ---- */
+.combo-prevista {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  font-size: 0.875rem;
+
+  &__titulo {
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  &__progs {
+    list-style: none;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+  }
+
+  .cp-nombre { color: #0c4a6e; }
+  .cp-valor  { font-weight: 600; color: #0369a1; white-space: nowrap; }
+
+  &__total {
+    margin: 0;
+    padding-top: 0.4rem;
+    border-top: 1px solid #bae6fd;
+    font-size: 0.9rem;
+
+    strong { color: #0369a1; }
+  }
+}
+
+.combo-resultado {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 10px;
+  font-size: 0.875rem;
+
+  &--parcial {
+    background: #fffbeb;
+    border-color: #fcd34d;
+  }
+
+  .cr-msg { font-weight: 600; margin: 0 0 0.4rem; }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    li { margin: 0.2rem 0; }
+  }
+
+  .cr-errores { color: #b91c1c; }
+}

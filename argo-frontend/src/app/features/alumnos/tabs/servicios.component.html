@@ -86,6 +86,63 @@
       </div>
     </div>
 
+    <!-- ============ APLICAR COMBO DE CURSOS ============ -->
+    <div class="card">
+      <h2>Aplicar Combo de cursos</h2>
+      <p class="hint">
+        Un combo aplica <strong>Tarifa 2</strong> a varios cursos presenciales en un solo paso.
+        Se crea una matrícula y liquidación por cada curso incluido.
+      </p>
+
+      <div class="row">
+        <div class="col-8">
+          <argo-catalogo-enum-buscar
+            label="Combo"
+            placeholder="Seleccione el combo…"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="0"
+            [opcionesLocales]="opcionesCombos()"
+            (seleccionado)="onComboPick($event)"
+            (limpiado)="onComboLimpiar()"
+          />
+        </div>
+      </div>
+
+      <ng-container *ngIf="comboPrevista() as cv">
+        <div class="combo-prevista">
+          <p class="combo-prevista__titulo">{{ cv.nombre }}</p>
+          <ul class="combo-prevista__progs">
+            <li *ngFor="let p of cv.programas">
+              <span class="cp-nombre">{{ p.nombreProg }}</span>
+              <span class="cp-valor">{{ fmt(p.valor) }}</span>
+            </li>
+          </ul>
+          <p class="combo-prevista__total">Total Tarifa 2: <strong>{{ fmt(cv.totalValor) }}</strong></p>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="comboResultado() as cr">
+        <div class="combo-resultado" [class.combo-resultado--parcial]="cr.errores.length">
+          <p class="cr-msg">{{ cr.message }}</p>
+          <ul *ngIf="cr.resultados.length">
+            <li *ngFor="let r of cr.resultados">✓ {{ r.nombreProg }} — {{ fmt(r.valor) }}</li>
+          </ul>
+          <ul class="cr-errores" *ngIf="cr.errores.length">
+            <li *ngFor="let e of cr.errores">✗ {{ e.nombreProg }}: {{ e.error }}</li>
+          </ul>
+        </div>
+      </ng-container>
+
+      <div class="actions" *ngIf="comboIdSeleccionado()">
+        <button class="primary" (click)="aplicarCombo()" [disabled]="aplicandoCombo()">
+          {{ aplicandoCombo() ? 'Aplicando…' : 'Aplicar combo' }}
+        </button>
+        <button class="ghost" (click)="onComboLimpiar()">Cancelar</button>
+      </div>
+    </div>
+    <!-- ============ FIN APLICAR COMBO ============ -->
+
     <div class="card">
       <h2>Agregar Servicio Adicional</h2>
       <div class="row">

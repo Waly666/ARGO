@@ -1,0 +1,119 @@
+<section class="combos-page">
+  <header class="combos-head">
+    <div>
+      <h1>Combos de cursos</h1>
+      <p class="combos-lead">
+        Agrupe programas presenciales en paquetes con precio especial (Tarifa 2).
+        Al aplicar un combo a un alumno se crean todas las matrículas en un solo paso.
+      </p>
+    </div>
+    @if (modo() === 'lista') {
+      <button type="button" class="cb-btn cb-btn--primary" (click)="nuevoCombo()">+ Nuevo combo</button>
+    }
+  </header>
+
+  @if (msg()) {
+    <p class="combos-msg" [class.combos-msg--err]="esError()">{{ msg() }}</p>
+  }
+
+  @if (modo() === 'lista') {
+    @if (loading()) {
+      <p class="combos-muted">Cargando combos…</p>
+    } @else if (!combos().length) {
+      <p class="combos-empty">No hay combos configurados. Cree el primero con <strong>+ Nuevo combo</strong>.</p>
+    } @else {
+      <div class="combos-grid">
+        @for (c of combos(); track c.id) {
+          <div class="combo-card" [class.combo-card--inactivo]="!c.activo">
+            <div class="combo-card__top">
+              <div>
+                <h3 class="combo-card__nombre">{{ c.nombre }}</h3>
+                @if (c.descripcion) {
+                  <p class="combo-card__desc">{{ c.descripcion }}</p>
+                }
+              </div>
+              <span class="combo-pill" [class.combo-pill--ok]="c.activo" [class.combo-pill--off]="!c.activo">
+                {{ c.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </div>
+
+            <p class="combo-card__meta">
+              <span class="combo-meta-tag">Tarifa 2</span>
+              <span class="combo-meta-count">{{ c.programas.length }} programa(s)</span>
+            </p>
+
+            <ul class="combo-progs">
+              @for (idProg of c.programas; track idProg) {
+                <li>{{ idProg }}</li>
+              }
+            </ul>
+
+            <div class="combo-card__actions">
+              <button type="button" class="cb-link" (click)="editarCombo(c)">Editar</button>
+              <button type="button" class="cb-link" (click)="toggleActivo(c)">
+                {{ c.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button type="button" class="cb-link cb-link--danger" (click)="eliminarCombo(c)">Eliminar</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  @if (modo() === 'form') {
+    <div class="combo-form card">
+      <h2>{{ editandoId ? 'Editar combo' : 'Nuevo combo' }}</h2>
+
+      <div class="cb-field">
+        <label>Nombre del combo *</label>
+        <input type="text" [(ngModel)]="form.nombre" placeholder="Ej. Paquete 5 cursos básicos" />
+      </div>
+
+      <div class="cb-field">
+        <label>Descripción (opcional)</label>
+        <input type="text" [(ngModel)]="form.descripcion" placeholder="Descripción breve del combo" />
+      </div>
+
+      <div class="cb-field cb-field--check">
+        <label class="cb-check">
+          <input type="checkbox" [(ngModel)]="form.activo" />
+          Combo activo (visible al aplicar)
+        </label>
+      </div>
+
+      <div class="cb-field">
+        <label>Agregar programas al combo</label>
+        <p class="cb-hint">Solo programas presenciales. El precio se tomará de la <strong>Tarifa 2</strong> de cada uno.</p>
+        <argo-catalogo-enum-buscar
+          placeholder="Busque y seleccione un programa…"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesProgramasDisponibles()"
+          (seleccionado)="onProgramaAdd($event)"
+        />
+      </div>
+
+      @if (programasSeleccionadosDetalle().length) {
+        <ul class="cb-progs-sel">
+          @for (p of programasSeleccionadosDetalle(); track p.id) {
+            <li>
+              <span class="cb-prog-nombre">{{ p.nombre }}</span>
+              <button type="button" class="cb-link cb-link--danger cb-link--sm" (click)="quitarPrograma(p.id)">✕</button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="cb-hint cb-hint--warn">Seleccione al menos 2 programas.</p>
+      }
+
+      <div class="cb-actions">
+        <button type="button" class="cb-btn cb-btn--primary" [disabled]="guardando()" (click)="guardar()">
+          {{ guardando() ? 'Guardando…' : (editandoId ? 'Guardar cambios' : 'Crear combo') }}
+        </button>
+        <button type="button" class="cb-btn cb-btn--ghost" (click)="cancelar()">Cancelar</button>
+      </div>
+    </div>
+  }
+</section>
