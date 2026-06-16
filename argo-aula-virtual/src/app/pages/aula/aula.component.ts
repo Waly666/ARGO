@@ -61,6 +61,8 @@ export class AulaComponent implements OnInit, OnDestroy {
 
   safePlayerUrl = signal<SafeResourceUrl | null>(null);
   playerTitulo = signal('');
+  playerForoId = signal<string | null>(null);
+  playerForoNombre = signal('');
   cursoActivo = signal<CursoVirtual | null>(null);
   avisoPlayer = signal('');
 
@@ -541,6 +543,8 @@ export class AulaComponent implements OnInit, OnDestroy {
     const full = this.resolverPlayerUrl(curso.playerUrl);
     this.safePlayerUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(full));
     this.playerTitulo.set(curso.nombreProg);
+    this.playerForoId.set(String(curso.idPrograma));
+    this.playerForoNombre.set(curso.nombreProg);
     this.cursoActivo.set(curso);
     this.avisoPlayer.set('');
     this.iniciarPoll(curso);
@@ -560,6 +564,8 @@ export class AulaComponent implements OnInit, OnDestroy {
     const finalizar = () => {
       this.safePlayerUrl.set(null);
       this.playerTitulo.set('');
+      this.playerForoId.set(null);
+      this.playerForoNombre.set('');
       this.cursoActivo.set(null);
       this.avisoPlayer.set('');
       this.cargarCursos();

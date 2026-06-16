@@ -56,47 +56,113 @@
         </div>
       } @else {
         <div class="foro-content-header">
-          <div>
-            <h2>{{ cursoActivo()!.nombreProg }}</h2>
-            <p class="foro-content-meta">
-              {{ cursoActivo()!.total }} mensajes
-            </p>
+          <div class="foro-content-header-top">
+            <div>
+              <h2>{{ cursoActivo()!.nombreProg }}</h2>
+              <p class="foro-content-meta">
+                @if (hayFiltroActivo()) {
+                  {{ mensajesFiltrados().length }} de {{ foroSvc.mensajes().length }} mensajes
+                } @else {
+                  {{ cursoActivo()!.total }} mensajes
+                }
+              </p>
+            </div>
+            <div class="foro-status" [class.foro-status--on]="foroSvc.conectado()">
+              <span class="foro-dot"></span>
+              <span>{{ foroSvc.conectado() ? 'En línea' : 'Conectando…' }}</span>
+            </div>
           </div>
-          <div class="foro-status" [class.foro-status--on]="foroSvc.conectado()">
-            <span class="foro-dot"></span>
-            <span>{{ foroSvc.conectado() ? 'En línea' : 'Conectando…' }}</span>
-          </div>
+
+          @if (!foroSvc.cargando() && foroSvc.mensajes().length > 0) {
+            <div class="foro-filtros-autor">
+              <label class="foro-filtro-label" for="foro-filtro-autor">Filtrar por autor</label>
+              <div class="foro-filtros-autor-row">
+                <select
+                  id="foro-filtro-autor"
+                  class="foro-filtro-select"
+                  [value]="filtroAutor()"
+                  (change)="filtroAutor.set($any($event.target).value)">
+                  <option value="">Todos los mensajes</option>
+                  <option value="__alumnos__">Solo mensajes de alumnos</option>
+                  <option value="__staff__">Solo respuestas del equipo</option>
+                  @if (alumnosEnForo().length > 0) {
+                    <option disabled>──────────</option>
+                    @for (a of alumnosEnForo(); track a.numDoc) {
+                      <option [value]="'a:' + a.numDoc">
+                        {{ a.nombre }} · Doc {{ a.numDoc }} ({{ a.total }})
+                      </option>
+                    }
+                  }
+                </select>
+                @if (esFiltroAlumno()) {
+                  <label class="foro-check-contexto">
+                    <input
+                      type="checkbox"
+                      [checked]="incluirRespuestasStaff()"
+                      (change)="incluirRespuestasStaff.set($any($event.target).checked)" />
+                    Incluir respuestas del equipo
+                  </label>
+                }
+                @if (hayFiltroActivo()) {
+                  <button type="button" class="foro-filtro-limpiar" (click)="limpiarFiltroAutor()">
+                    Quitar filtro
+                  </button>
+                }
+              </div>
+            </div>
+          }
         </div>
 
         <!-- Mensajes -->
-        <div class="foro-msgs-list" #chatBody>
-          @if (foroSvc.cargando()) {
-            <div class="foro-loading-msgs">Cargando mensajes…</div>
-          } @else if (foroSvc.error(); as err) {
-            <div class="foro-empty-msgs foro-error-msgs">⚠️ {{ err }}</div>
-          } @else if (foroSvc.mensajes().length === 0) {
-            <div class="foro-empty-msgs">No hay mensajes en este foro. Sé el primero en responder.</div>
-          } @else {
-            @for (msg of foroSvc.mensajes(); track msg._id) {
-              <div class="foro-msg-item" [class.msg-staff]="msg.autorTipo !== 'alumno'">
-                <div class="foro-msg-left">
-                  <div class="foro-msg-avatar" [class]="'avatar-' + msg.autorTipo">
-                    {{ inicialAvatar(msg.autorNombre) }}
-                  </div>
-                </div>
-                <div class="foro-msg-body">
-                  <div class="foro-msg-top">
-                    <span class="foro-msg-autor">{{ msg.autorNombre }}</span>
-                    <span class="foro-tipo-badge" [class]="tipoBadgeClass(msg.autorTipo)">{{ tipoLabel(msg.autorTipo) }}</span>
-                    <span class="foro-msg-fecha">{{ formatFecha(msg.createdAt) }}</span>
-                  </div>
-                  <p class="foro-msg-texto">{{ msg.texto }}</p>
-                </div>
-                <div class="foro-msg-actions">
-                  <button type="button" class="btn-delete-msg" title="Eliminar mensaje" (click)="eliminarMensaje(msg)">🗑</button>
-                </div>
+        <div class="foro-msgs-wrap">
+          <div class="foro-msgs-list" #chatBody (scroll)="onChatScroll()">
+            @if (foroSvc.cargando()) {
+              <div class="foro-loading-msgs">Cargando mensajes…</div>
+            } @else if (foroSvc.error()) {
+              <div class="foro-empty-msgs foro-error-msgs">⚠️ {{ foroSvc.error() }}</div>
+            } @else if (foroSvc.mensajes().length === 0) {
+              <div class="foro-empty-msgs">No hay mensajes en este foro. Sé el primero en responder.</div>
+            } @else if (mensajesFiltrados().length === 0) {
+              <div class="foro-empty-msgs">
+                Ningún mensaje coincide con el filtro seleccionado.
+                <button type="button" class="foro-filtro-limpiar foro-filtro-limpiar--inline" (click)="limpiarFiltroAutor()">
+                  Ver todos
+                </button>
               </div>
+            } @else {
+              @for (msg of mensajesFiltrados(); track msg._id) {
+                <div
+                  class="foro-msg-item"
+                  [class.msg-staff]="msg.autorTipo !== 'alumno'"
+                  [class.foro-msg--destacado]="esDestacado(msg)">
+                  <div class="foro-msg-left">
+                    <div class="foro-msg-avatar" [class]="'avatar-' + msg.autorTipo">
+                      {{ inicialAvatar(msg.autorNombre) }}
+                    </div>
+                  </div>
+                  <div class="foro-msg-body">
+                    <div class="foro-msg-top">
+                      <span class="foro-msg-autor">{{ msg.autorNombre }}</span>
+                      <span class="foro-tipo-badge" [class]="tipoBadgeClass(msg.autorTipo)">{{ tipoLabel(msg.autorTipo) }}</span>
+                      @if (esDestacado(msg)) {
+                        <span class="foro-badge-nuevo">Nuevo</span>
+                      }
+                      <span class="foro-msg-fecha">{{ formatFecha(msg.createdAt) }}</span>
+                    </div>
+                    <p class="foro-msg-texto">{{ msg.texto }}</p>
+                  </div>
+                  <div class="foro-msg-actions">
+                    <button type="button" class="btn-delete-msg" title="Eliminar mensaje" (click)="eliminarMensaje(msg)">🗑</button>
+                  </div>
+                </div>
+              }
             }
+          </div>
+
+          @if (mostrarIrAbajo()) {
+            <button type="button" class="foro-ir-abajo" (click)="irAlUltimo()">
+              ↓ Ver último mensaje
+            </button>
           }
         </div>
 

@@ -2214,5 +2214,11 @@
 }
 
 .foro-panel-wrap {
-  max-width: 860px;
+  max-width: 100%;
+}
+
+@media (min-width: 900px) {
+  .dash-player-foro {
+    padding: 1.25rem 1.5rem 2rem;
+  }
 }

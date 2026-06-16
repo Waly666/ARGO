@@ -1,8 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { io, Socket } from 'socket.io-client';
-import { AuthService } from './auth.service';
-import { environment } from '../../../environments/environment';
+import type { Socket } from 'socket.io-client';
+import { ForoSocketService } from './foro-socket.service';
 
 export interface MensajeForoAdmin {
   _id: string;
@@ -17,14 +15,11 @@ export interface MensajeForoAdmin {
 
 @Injectable({ providedIn: 'root' })
 export class ForoAdminService {
-  private authSvc = inject(AuthService);
-  private http = inject(HttpClient);
+  private foroSocket = inject(ForoSocketService);
 
-  private socket: Socket | null = null;
-  private listenersAttached = false;
   private programaActual: string | null = null;
   private nombreProgramaActual = '';
-  private restSeq = 0;
+  private listenersReady = false;
 
   mensajes       = signal<MensajeForoAdmin[]>([]);
   conectado      = signal(false);
@@ -34,45 +29,20 @@ export class ForoAdminService {
   /** Curso cuyo chat está abierto (para suprimir alertas duplicadas). */
   cursoActivo    = signal<string | null>(null);
 
-  private readonly noCacheHeaders = new HttpHeaders({
-    'Cache-Control': 'no-cache',
-    Pragma: 'no-cache',
-  });
+  private ensureListeners(socket: Socket) {
+    if (this.listenersReady) return;
+    this.listenersReady = true;
 
-  private socketBase(): string {
-    return environment.apiUrl.replace('/api', '') || window.location.origin;
-  }
+    socket.on('connect', () => this.conectado.set(true));
+    socket.on('disconnect', () => this.conectado.set(false));
+    this.conectado.set(socket.connected);
 
-  private ensureSocket() {
-    const token = this.authSvc.token();
-    if (!token) return;
-
-    if (this.socket) {
-      if (!this.socket.connected) this.socket.connect();
-      return;
-    }
-
-    this.socket = io(`${this.socketBase()}/foro`, {
-      path: '/socket.io',
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
+    socket.on('historial', (msgs: MensajeForoAdmin[]) => {
+      this.mensajes.set(Array.isArray(msgs) ? msgs : []);
+      this.cargando.set(false);
     });
 
-    if (this.listenersAttached) return;
-    this.listenersAttached = true;
-
-    this.socket.on('connect', () => {
-      this.conectado.set(true);
-      if (this.programaActual) {
-        this.emitJoin(this.programaActual, this.nombreProgramaActual);
-      }
-    });
-
-    this.socket.on('disconnect', () => this.conectado.set(false));
-
-    // Tiempo real: nuevos mensajes y borrados. El historial inicial va por REST.
-    this.socket.on('nuevo-mensaje', (msg: MensajeForoAdmin) => {
+    socket.on('nuevo-mensaje', (msg: MensajeForoAdmin) => {
       if (String(msg.idPrograma) !== String(this.programaActual)) return;
       this.mensajes.update((prev) => {
         if (prev.some((m) => m._id === msg._id)) return prev;
@@ -80,102 +50,71 @@ export class ForoAdminService {
       });
     });
 
-    this.socket.on('mensaje-eliminado', ({ _id }: { _id: string }) => {
+    socket.on('mensaje-eliminado', ({ _id }: { _id: string }) => {
       this.mensajes.update((prev) => prev.filter((m) => m._id !== _id));
     });
 
-    this.socket.on('error-foro', ({ message }: { message: string }) => {
+    socket.on('error-foro', ({ message }: { message: string }) => {
       this.error.set(message);
       this.enviando.set(false);
+      this.cargando.set(false);
     });
 
-    this.socket.on('connect_error', () => {
-      this.conectado.set(false);
-    });
-  }
-
-  private emitJoin(idPrograma: string, nombrePrograma: string) {
-    this.socket?.emit('join-foro', { idPrograma, nombrePrograma });
-  }
-
-  /** Carga confiable vía REST (no depende del WebSocket). */
-  cargarMensajesRest(idPrograma: string) {
-    const id = String(idPrograma);
-    const seq = ++this.restSeq;
-    this.cargando.set(true);
-    this.error.set(null);
-
-    const url =
-      `${environment.apiUrl}/foro/admin/cursos/${encodeURIComponent(id)}/mensajes` +
-      `?limit=200&_=${Date.now()}`;
-
-    this.http
-      .get<{ mensajes: MensajeForoAdmin[] }>(url, { headers: this.noCacheHeaders })
-      .subscribe({
-        next: (res) => {
-          if (seq !== this.restSeq || String(this.programaActual) !== id) return;
-          const lista = res?.mensajes;
-          if (!Array.isArray(lista)) return;
-          this.mensajes.set(lista);
-          this.cargando.set(false);
-        },
-        error: (e) => {
-          if (seq !== this.restSeq || String(this.programaActual) !== id) return;
-          this.cargando.set(false);
-          this.error.set(e?.error?.message || 'No se pudieron cargar los mensajes');
-        },
-      });
+    socket.on('connect_error', () => this.conectado.set(false));
   }
 
   joinForo(idPrograma: string, nombrePrograma = '') {
     const id = String(idPrograma);
     const nom = String(nombrePrograma || '');
 
+    const socket = this.foroSocket.connect();
+    if (!socket) {
+      this.error.set('No hay sesión activa');
+      return;
+    }
+
+    this.ensureListeners(socket);
+
     if (this.programaActual && this.programaActual !== id) {
-      this.socket?.emit('leave-foro', { idPrograma: this.programaActual });
+      this.foroSocket.emitLeave(this.programaActual);
     }
 
     this.programaActual = id;
     this.nombreProgramaActual = nom;
     this.cursoActivo.set(id);
+    this.mensajes.set([]);
+    this.cargando.set(true);
     this.error.set(null);
 
-    this.cargarMensajesRest(id);
-    this.ensureSocket();
-
-    if (this.socket?.connected) {
-      this.emitJoin(id, nom);
-    }
+    this.foroSocket.emitJoin(id, nom);
   }
 
-  recargarMensajes() {
+  rejoinForo() {
     if (!this.programaActual) return;
-    this.cargarMensajesRest(this.programaActual);
-    this.ensureSocket();
-    if (this.socket?.connected) {
-      this.emitJoin(this.programaActual, this.nombreProgramaActual);
-    }
+    this.mensajes.set([]);
+    this.cargando.set(true);
+    this.error.set(null);
+    this.foroSocket.emitJoin(this.programaActual, this.nombreProgramaActual);
   }
 
   enviarMensaje(idPrograma: string, texto: string, nombrePrograma = '') {
-    if (!this.socket?.connected || !texto.trim() || this.enviando()) return;
+    const socket = this.foroSocket.connect();
+    if (!socket?.connected || !texto.trim() || this.enviando()) return;
     this.enviando.set(true);
-    this.socket.emit('enviar-mensaje', { idPrograma, texto: texto.trim(), nombrePrograma });
-    this.socket.once('nuevo-mensaje', () => this.enviando.set(false));
+    socket.emit('enviar-mensaje', { idPrograma, texto: texto.trim(), nombrePrograma });
+    socket.once('nuevo-mensaje', () => this.enviando.set(false));
     setTimeout(() => this.enviando.set(false), 3000);
   }
 
+  /** Sale del curso actual sin cerrar el socket compartido (alertas siguen activas). */
   disconnect() {
-    if (this.programaActual && this.socket) {
-      this.socket.emit('leave-foro', { idPrograma: this.programaActual });
+    if (this.programaActual) {
+      this.foroSocket.emitLeave(this.programaActual);
     }
-    this.socket?.disconnect();
-    this.socket = null;
-    this.listenersAttached = false;
     this.programaActual = null;
     this.nombreProgramaActual = '';
     this.cursoActivo.set(null);
     this.mensajes.set([]);
-    this.restSeq++;
+    this.cargando.set(false);
   }
 }

@@ -123,11 +123,11 @@
           <iframe #playerFrame [src]="url" title="Curso virtual" class="dash-player-frame" (load)="onIframeLoad()"></iframe>
         </section>
 
-        @if (cursoActivo(); as ca) {
+        @if (playerForoId(); as pid) {
           <section class="dash-player-foro">
             <av-foro-chat
-              [idPrograma]="String(ca.idPrograma)"
-              [nombreCurso]="ca.nombreProg" />
+              [idPrograma]="pid"
+              [nombreCurso]="playerForoNombre()" />
           </section>
         }
       } @else {
@@ -940,7 +940,7 @@
                   <button
                     type="button"
                     class="foro-curso-btn"
-                    [class.active]="foroIdPrograma() === String(c.idPrograma)"
+                    [class.active]="foroIdPrograma() === ('' + c.idPrograma)"
                     (click)="seleccionarForoCurso(c)">
                     <span class="foro-curso-nombre">{{ c.nombreProg }}</span>
                   </button>

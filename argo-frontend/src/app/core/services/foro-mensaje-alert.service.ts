@@ -1,9 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { io, Socket } from 'socket.io-client';
-import { AuthService } from './auth.service';
 import { ForoAdminService } from './foro-admin.service';
-import { environment } from '../../../environments/environment';
+import { ForoSocketService } from './foro-socket.service';
 
 export interface ForoMensajeAlerta {
   id: string;
@@ -16,46 +14,33 @@ export interface ForoMensajeAlerta {
 
 @Injectable({ providedIn: 'root' })
 export class ForoMensajeAlertService {
-  private auth = inject(AuthService);
   private router = inject(Router);
   private foroAdmin = inject(ForoAdminService);
+  private foroSocket = inject(ForoSocketService);
 
-  private socket: Socket | null = null;
   private vistos = new Set<string>();
   private activo = false;
+  private listenerReady = false;
 
   private readonly _alertas = signal<ForoMensajeAlerta[]>([]);
   readonly alertas = this._alertas.asReadonly();
 
   conectar() {
-    if (this.activo && this.socket?.connected) return;
-    const token = this.auth.token();
-    if (!token) return;
+    if (this.activo) return;
+    const socket = this.foroSocket.connect();
+    if (!socket) return;
 
     this.activo = true;
 
-    if (this.socket) {
-      if (!this.socket.connected) this.socket.connect();
-      return;
-    }
+    if (this.listenerReady) return;
+    this.listenerReady = true;
 
-    const base = environment.apiUrl.replace('/api', '') || window.location.origin;
-
-    this.socket = io(`${base}/foro`, {
-      path: '/socket.io',
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 10,
-    });
-
-    this.socket.on('foro-nuevo-mensaje', (msg: ForoMensajeAlerta) => this.recibir(msg));
-    this.socket.on('disconnect', () => undefined);
+    socket.on('foro-nuevo-mensaje', (msg: ForoMensajeAlerta) => this.recibir(msg));
   }
 
   desconectar() {
     this.activo = false;
-    this.socket?.disconnect();
-    this.socket = null;
+    this._alertas.set([]);
   }
 
   private recibir(raw: Partial<ForoMensajeAlerta> & { _id?: string } | null | undefined) {

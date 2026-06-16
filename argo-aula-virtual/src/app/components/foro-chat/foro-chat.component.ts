@@ -1,5 +1,5 @@
 import {
-  AfterViewChecked,
+  AfterViewInit,
   Component,
   ElementRef,
   Input,
@@ -9,6 +9,7 @@ import {
   SimpleChanges,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -24,7 +25,7 @@ import { PortalAuthService } from '../../core/portal-auth.service';
   templateUrl: './foro-chat.component.html',
   styleUrl: './foro-chat.component.scss',
 })
-export class ForoChatComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
+export class ForoChatComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
   @Input() idPrograma!: string;
   @Input() nombreCurso = '';
 
@@ -36,7 +37,12 @@ export class ForoChatComponent implements OnInit, OnChanges, OnDestroy, AfterVie
   texto = signal('');
   filtro = signal<'todos' | 'mios'>('todos');
   enviando = signal(false);
-  private shouldScroll = false;
+  ultimoDestacadoId = signal<string | null>(null);
+  mostrarIrAbajo = signal(false);
+
+  private stickToBottom = true;
+  private prevCount = 0;
+  private highlightTimer: ReturnType<typeof setTimeout> | null = null;
 
   mensajesFiltrados = computed(() => {
     const msgs = this.foro.mensajes();
@@ -47,35 +53,79 @@ export class ForoChatComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     return msgs;
   });
 
+  constructor() {
+    effect(() => {
+      const msgs = this.mensajesFiltrados();
+      const count = msgs.length;
+      const last = count ? msgs[count - 1] : null;
+
+      if (count > this.prevCount && last) {
+        this.destacarMensaje(last._id);
+        if (this.stickToBottom) {
+          requestAnimationFrame(() => this.scrollAlFinal());
+        } else {
+          this.mostrarIrAbajo.set(true);
+        }
+      } else if (count !== this.prevCount && count > 0 && this.stickToBottom) {
+        requestAnimationFrame(() => this.scrollAlFinal());
+      }
+
+      this.prevCount = count;
+    });
+
+    effect(() => {
+      if (!this.foro.cargando() && this.mensajesFiltrados().length > 0 && this.stickToBottom) {
+        requestAnimationFrame(() => this.scrollAlFinal());
+      }
+    });
+  }
+
   ngOnInit() {
+    this.stickToBottom = true;
+    this.prevCount = 0;
     if (this.idPrograma) {
       this.foro.joinForo(this.idPrograma, this.nombreCurso);
     }
   }
 
+  ngAfterViewInit() {
+    requestAnimationFrame(() => this.scrollAlFinal());
+  }
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['idPrograma'] && !changes['idPrograma'].firstChange) {
+      this.stickToBottom = true;
+      this.prevCount = 0;
+      this.mostrarIrAbajo.set(false);
       this.foro.joinForo(this.idPrograma, this.nombreCurso);
     }
   }
 
   ngOnDestroy() {
+    if (this.highlightTimer) clearTimeout(this.highlightTimer);
     this.foro.leaveForo();
   }
 
-  ngAfterViewChecked() {
-    if (this.shouldScroll) {
-      this.scrollBottom();
-      this.shouldScroll = false;
-    }
+  onChatScroll() {
+    const el = this.chatBody?.nativeElement;
+    if (!el) return;
+    const cercaDelFinal = el.scrollHeight - el.scrollTop - el.clientHeight < 72;
+    this.stickToBottom = cercaDelFinal;
+    if (cercaDelFinal) this.mostrarIrAbajo.set(false);
+  }
+
+  irAlUltimo() {
+    this.stickToBottom = true;
+    this.mostrarIrAbajo.set(false);
+    this.scrollAlFinal();
   }
 
   enviar() {
     const t = this.texto().trim();
     if (!t || this.enviando()) return;
+    this.stickToBottom = true;
     this.foro.enviarMensaje(this.idPrograma, t);
     this.texto.set('');
-    this.shouldScroll = true;
   }
 
   onKeydown(ev: KeyboardEvent) {
@@ -85,11 +135,21 @@ export class ForoChatComponent implements OnInit, OnChanges, OnDestroy, AfterVie
     }
   }
 
-  private scrollBottom() {
+  esDestacado(msg: MensajeForo) {
+    return this.ultimoDestacadoId() === msg._id;
+  }
+
+  private scrollAlFinal() {
     try {
       const el = this.chatBody?.nativeElement;
       if (el) el.scrollTop = el.scrollHeight;
     } catch {}
+  }
+
+  private destacarMensaje(id: string) {
+    this.ultimoDestacadoId.set(id);
+    if (this.highlightTimer) clearTimeout(this.highlightTimer);
+    this.highlightTimer = setTimeout(() => this.ultimoDestacadoId.set(null), 2800);
   }
 
   esPropio(msg: MensajeForo) {

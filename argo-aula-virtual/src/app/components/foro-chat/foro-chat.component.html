@@ -1,5 +1,4 @@
 <div class="foro-wrap">
-  <!-- Header -->
   <div class="foro-header">
     <div class="foro-header-left">
       <span class="foro-icon">💬</span>
@@ -34,48 +33,61 @@
     </div>
   </div>
 
-  <!-- Chat body -->
-  <div class="foro-body" #chatBody>
-    @if (foro.cargando()) {
-      <div class="foro-loading">
-        <div class="foro-spinner"></div>
-        <span>Cargando mensajes…</span>
-      </div>
-    } @else if (foro.error()) {
-      <div class="foro-error-msg">⚠ {{ foro.error() }}</div>
-    } @else if (mensajesFiltrados().length === 0) {
-      <div class="foro-empty">
-        <span class="foro-empty-icon">🗨️</span>
-        <p>
-          @if (filtro() === 'mios') {
-            Aún no has escrito ningún mensaje en este foro.
-          } @else {
-            Sé el primero en hacer una pregunta o comentario en este curso.
-          }
-        </p>
-      </div>
-    } @else {
-      @for (msg of mensajesFiltrados(); track trackMsg($index, msg)) {
-        <div class="foro-msg" [class.foro-msg--propio]="esPropio(msg)" [class.foro-msg--staff]="msg.autorTipo !== 'alumno'">
-          <div class="foro-msg-avatar" [class.avatar-staff]="msg.autorTipo !== 'alumno'" [class.avatar-propio]="esPropio(msg)">
-            {{ inicialAvatar(msg.autorNombre) }}
-          </div>
-          <div class="foro-msg-content">
-            <div class="foro-msg-meta">
-              <span class="foro-msg-autor">{{ msg.autorNombre }}</span>
-              @if (tipoBadge(msg.autorTipo)) {
-                <span class="foro-badge-staff">{{ tipoBadge(msg.autorTipo) }}</span>
-              }
-              <span class="foro-msg-fecha">{{ formatFecha(msg.createdAt) }} · {{ formatHora(msg.createdAt) }}</span>
-            </div>
-            <div class="foro-msg-texto">{{ msg.texto }}</div>
-          </div>
+  <div class="foro-body-wrap">
+    <div class="foro-body" #chatBody (scroll)="onChatScroll()">
+      @if (foro.cargando()) {
+        <div class="foro-loading">
+          <div class="foro-spinner"></div>
+          <span>Cargando mensajes…</span>
         </div>
+      } @else if (foro.error()) {
+        <div class="foro-error-msg">⚠ {{ foro.error() }}</div>
+      } @else if (mensajesFiltrados().length === 0) {
+        <div class="foro-empty">
+          <span class="foro-empty-icon">🗨️</span>
+          <p>
+            @if (filtro() === 'mios') {
+              Aún no has escrito ningún mensaje en este foro.
+            } @else {
+              Sé el primero en hacer una pregunta o comentario en este curso.
+            }
+          </p>
+        </div>
+      } @else {
+        @for (msg of mensajesFiltrados(); track trackMsg($index, msg)) {
+          <div
+            class="foro-msg"
+            [class.foro-msg--propio]="esPropio(msg)"
+            [class.foro-msg--staff]="msg.autorTipo !== 'alumno'"
+            [class.foro-msg--destacado]="esDestacado(msg)">
+            <div class="foro-msg-avatar" [class.avatar-staff]="msg.autorTipo !== 'alumno'" [class.avatar-propio]="esPropio(msg)">
+              {{ inicialAvatar(msg.autorNombre) }}
+            </div>
+            <div class="foro-msg-content">
+              <div class="foro-msg-meta">
+                <span class="foro-msg-autor">{{ msg.autorNombre }}</span>
+                @if (tipoBadge(msg.autorTipo)) {
+                  <span class="foro-badge-staff">{{ tipoBadge(msg.autorTipo) }}</span>
+                }
+                @if (esDestacado(msg)) {
+                  <span class="foro-badge-nuevo">Nuevo</span>
+                }
+                <span class="foro-msg-fecha">{{ formatFecha(msg.createdAt) }} · {{ formatHora(msg.createdAt) }}</span>
+              </div>
+              <div class="foro-msg-texto">{{ msg.texto }}</div>
+            </div>
+          </div>
+        }
       }
+    </div>
+
+    @if (mostrarIrAbajo()) {
+      <button type="button" class="foro-ir-abajo" (click)="irAlUltimo()">
+        ↓ Ver último mensaje
+      </button>
     }
   </div>
 
-  <!-- Input -->
   @if (auth.isLoggedIn()) {
     <div class="foro-input-area">
       <div class="foro-input-wrap">
