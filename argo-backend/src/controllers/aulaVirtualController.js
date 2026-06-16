@@ -189,7 +189,71 @@ exports.login = async (req, res, next) => {
 
 exports.miPerfil = async (req, res, next) => {
   try {
-    res.json({ usuario: req.portalUser });
+    const DatosAlumno = require('../models/DatosAlumno');
+    const Cliente     = require('../models/Cliente');
+    const { numDocQuery } = require('../utils/numDoc');
+    const al = await DatosAlumno.findOne(numDocQuery(req.portalUser.numDoc), { empresaId: 1 }).lean();
+    let empresaId = null;
+    let empresaNombre = null;
+    if (al?.empresaId) {
+      empresaId = String(al.empresaId);
+      const cli = await Cliente.findById(al.empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+      if (cli) empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+    }
+    res.json({ usuario: { ...req.portalUser, empresaId, empresaNombre } });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.actualizarEmpresa = async (req, res, next) => {
+  try {
+    const DatosAlumno = require('../models/DatosAlumno');
+    const Cliente     = require('../models/Cliente');
+    const mongoose    = require('mongoose');
+    const { numDocQuery } = require('../utils/numDoc');
+
+    const { empresaId } = req.body || {};
+    const numDoc = req.portalUser.numDoc;
+
+    const al = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+    if (!al) return res.status(404).json({ message: 'Alumno no encontrado' });
+
+    let empresaNombre = null;
+    let idToSave = null;
+
+    if (empresaId && mongoose.isValidObjectId(empresaId)) {
+      const cli = await Cliente.findById(empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1, activo: 1 }).lean();
+      if (!cli || cli.activo === false) return res.status(404).json({ message: 'Empresa no encontrada' });
+      idToSave = cli._id;
+      empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+    }
+
+    await DatosAlumno.findByIdAndUpdate(al._id, {
+      $set: { empresaId: idToSave, fechaMod: new Date() },
+    });
+
+    res.json({ ok: true, empresaId: idToSave ? String(idToSave) : null, empresaNombre });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.buscarEmpresasPortal = async (req, res, next) => {
+  try {
+    const Cliente = require('../models/Cliente');
+    const q = String(req.query.q || '').trim();
+    if (!q || q.length < 2) return res.json([]);
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const rows = await Cliente.find({
+      activo: { $ne: false },
+      $or: [{ razonSocial: re }, { nombres: re }, { identificacion: re }, { nombreComercial: re }],
+    }, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).limit(10).lean();
+    res.json(rows.map((c) => ({
+      _id: String(c._id),
+      nombre: c.razonSocial?.trim() || c.nombreComercial?.trim() || c.nombres?.trim() || c.identificacion || '',
+      identificacion: c.identificacion,
+    })));
   } catch (e) {
     next(e);
   }

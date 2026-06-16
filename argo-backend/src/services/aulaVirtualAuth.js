@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const DatosAlumno = require('../models/DatosAlumno');
 const UsuarioPortal = require('../models/UsuarioPortal');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
@@ -103,6 +104,7 @@ function buildAlumnoPayload(alumno, numDoc) {
     numDoc,
     tipoDoc: alumno?.tipoDoc || '1',
     expedida: alumno?.expedida || '',
+    empresaId: alumno?.empresaId || null,
     apellido1: nombreMayusculas(alumno?.apellido1),
     apellido2: nombreMayusculas(alumno?.apellido2),
     nombre1: nombreMayusculas(alumno?.nombre1),
@@ -182,6 +184,10 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
   let da = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
   let alumnoExistente = !!da;
 
+  const empresaIdValido = alumno.empresaId && mongoose.isValidObjectId(alumno.empresaId)
+    ? alumno.empresaId
+    : null;
+
   if (!da) {
     da = await DatosAlumno.create({
       tipoAlumno: TIPO_VIRTUAL,
@@ -199,6 +205,7 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
       direccion: alumno.direccion || '',
       munOrigen: alumno.munOrigen || '',
       codMunicipio: alumno.codMunicipio || '',
+      empresaId: empresaIdValido,
       userAddReg: 'portal',
     });
     da = da.toObject();
@@ -208,6 +215,7 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
     if (!da.correo) patch.correo = mail;
     if (!da.celular && alumno.celular) patch.celular = String(alumno.celular).trim();
     if (!da.direccion && alumno.direccion) patch.direccion = String(alumno.direccion).trim();
+    if (empresaIdValido && !da.empresaId) patch.empresaId = empresaIdValido;
     if (Object.keys(patch).length) {
       await DatosAlumno.updateOne({ _id: da._id }, { $set: patch });
       da = { ...da, ...patch };
@@ -221,12 +229,24 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
   });
 
   const token = signPortalToken(portal);
+
+  let regEmpresaId = null;
+  let regEmpresaNombre = null;
+  if (da?.empresaId) {
+    const Cliente = require('../models/Cliente');
+    regEmpresaId = String(da.empresaId);
+    const cli = await Cliente.findById(da.empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+    if (cli) regEmpresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+  }
+
   return {
     token,
     usuario: { email: portal.email, numDoc: portal.numDoc },
     alumno: {
       numDoc,
       nombreCompleto: nombreCompletoAlumno(da),
+      empresaId: regEmpresaId,
+      empresaNombre: regEmpresaNombre,
     },
     alumnoExistente,
     message: alumnoExistente
@@ -273,6 +293,16 @@ async function loginPortal({ email, password }) {
 
   const da = await DatosAlumno.findOne(numDocQuery(portal.numDoc)).lean();
   const token = signPortalToken(portal);
+
+  let empresaId = null;
+  let empresaNombre = null;
+  if (da?.empresaId) {
+    const Cliente = require('../models/Cliente');
+    empresaId = String(da.empresaId);
+    const cli = await Cliente.findById(da.empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+    if (cli) empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+  }
+
   return {
     token,
     usuario: { email: portal.email, numDoc: portal.numDoc },
@@ -280,6 +310,8 @@ async function loginPortal({ email, password }) {
       ? {
           numDoc: portal.numDoc,
           nombreCompleto: [da.apellido1, da.apellido2, da.nombre1, da.nombre2].filter(Boolean).join(' '),
+          empresaId,
+          empresaNombre,
         }
       : { numDoc: portal.numDoc, nombreCompleto: '' },
   };

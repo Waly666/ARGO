@@ -45,6 +45,9 @@ router.post('/auth/registro/reenviar-codigo', portalAuthLimiter, ctrl.registroRe
 router.post('/auth/login', portalAuthLimiter, requireTurnstile(), ctrl.login);
 router.post('/contacto', buscarAlumnoLimiter, requireTurnstile(), ctrl.enviarContacto);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
+router.patch('/auth/empresa', requirePortalAuth, ctrl.actualizarEmpresa);
+router.get('/empresas/buscar', requirePortalAuth, ctrl.buscarEmpresasPortal);
+router.get('/empresas/buscar-publico', buscarAlumnoLimiter, ctrl.buscarEmpresasPortal);
 router.get('/argo-bridge.js', ctrl.bridgeScript);
 
 router.get('/mis-cursos', requirePortalAuth, ctrl.misCursos);

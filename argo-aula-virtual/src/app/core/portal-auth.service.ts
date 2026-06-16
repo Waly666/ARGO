@@ -7,6 +7,8 @@ export interface PortalSession {
   email: string;
   numDoc: number;
   nombreCompleto: string;
+  empresaId?: string | null;
+  empresaNombre?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -35,16 +37,26 @@ export class PortalAuthService {
     }
   }
 
-  setSession(token: string, usuario: { email: string; numDoc: number }, alumno: { nombreCompleto: string }) {
+  setSession(token: string, usuario: { email: string; numDoc: number }, alumno: { nombreCompleto: string; empresaId?: string | null; empresaNombre?: string | null }) {
     localStorage.setItem(TOKEN_KEY, token);
     const u: PortalSession = {
       email: usuario.email,
       numDoc: usuario.numDoc,
       nombreCompleto: alumno.nombreCompleto,
+      empresaId: alumno.empresaId ?? null,
+      empresaNombre: alumno.empresaNombre ?? null,
     };
     localStorage.setItem(USER_KEY, JSON.stringify(u));
     this.tokenSig.set(token);
     this.userSig.set(u);
+  }
+
+  updateEmpresa(empresaId: string | null, empresaNombre: string | null) {
+    const u = this.userSig();
+    if (!u) return;
+    const updated: PortalSession = { ...u, empresaId, empresaNombre };
+    localStorage.setItem(USER_KEY, JSON.stringify(updated));
+    this.userSig.set(updated);
   }
 
   logout() {

@@ -57,7 +57,14 @@ export class RegistroComponent implements OnInit {
     fechaNac: '',
     codMunicipio: '',
     munOrigen: '',
+    empresaId: null as string | null,
+    empresaNombre: null as string | null,
   };
+
+  empresaBusqReg   = signal('');
+  empresaSugsReg   = signal<{ _id: string; nombre: string; identificacion: string }[]>([]);
+  empresaDropReg   = signal(false);
+  empresaCargReg   = signal(false);
 
   error = signal('');
   info = signal('');
@@ -181,6 +188,34 @@ export class RegistroComponent implements OnInit {
         });
       },
     });
+  }
+
+  buscarEmpresaReg(q: string) {
+    this.empresaBusqReg.set(q);
+    if (!q.trim() || q.trim().length < 2) { this.empresaSugsReg.set([]); this.empresaDropReg.set(false); return; }
+    this.empresaCargReg.set(true);
+    this.api.buscarEmpresasPublico(q.trim()).subscribe({
+      next: (rows) => { this.empresaSugsReg.set(rows); this.empresaDropReg.set(rows.length > 0); this.empresaCargReg.set(false); },
+      error: () => this.empresaCargReg.set(false),
+    });
+  }
+
+  onEmpresaBlurReg() { setTimeout(() => this.empresaDropReg.set(false), 200); }
+
+  seleccionarEmpresaReg(e: { _id: string; nombre: string; identificacion: string }) {
+    this.form.empresaId = e._id;
+    this.form.empresaNombre = e.nombre;
+    this.empresaBusqReg.set(e.nombre);
+    this.empresaDropReg.set(false);
+    this.empresaSugsReg.set([]);
+  }
+
+  quitarEmpresaReg() {
+    this.form.empresaId = null;
+    this.form.empresaNombre = null;
+    this.empresaBusqReg.set('');
+    this.empresaSugsReg.set([]);
+    this.empresaDropReg.set(false);
   }
 
   private captchaToken(): string {

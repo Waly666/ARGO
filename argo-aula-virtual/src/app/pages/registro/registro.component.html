@@ -135,6 +135,44 @@
         </div>
       </div>
 
+      <!-- Empresa (opcional) -->
+      <div class="grid-section grid-section--empresa">
+        <p class="grid-section__title">🏢 Empresa (opcional)</p>
+        <p class="empresa-reg-hint">
+          Si trabaja para una empresa de transporte, vincúlela aquí. Esta información quedará en sus certificados.
+        </p>
+        <div class="empresa-reg-wrap" style="position:relative">
+          @if (form.empresaNombre) {
+            <div class="empresa-reg-seleccionada">
+              <span class="empresa-reg-chip">🏢 {{ form.empresaNombre }}</span>
+              <button type="button" class="empresa-reg-quitar" (click)="quitarEmpresaReg()">✕ Quitar</button>
+            </div>
+          } @else {
+            <input
+              type="search"
+              class="empresa-reg-input"
+              placeholder="Buscar empresa por nombre o NIT…"
+              [value]="empresaBusqReg()"
+              (input)="buscarEmpresaReg($any($event.target).value)"
+              (blur)="onEmpresaBlurReg()"
+              autocomplete="off" />
+            @if (empresaCargReg()) {
+              <span class="empresa-reg-loading">⏳</span>
+            }
+            @if (empresaDropReg() && empresaSugsReg().length > 0) {
+              <ul class="empresa-reg-dropdown">
+                @for (e of empresaSugsReg(); track e._id) {
+                  <li (mousedown)="seleccionarEmpresaReg(e)">
+                    <span class="emp-nombre">{{ e.nombre }}</span>
+                    <span class="emp-nit">{{ e.identificacion }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </div>
+      </div>
+
       @if (info()) {
         <p class="info">{{ info() }}</p>
       }

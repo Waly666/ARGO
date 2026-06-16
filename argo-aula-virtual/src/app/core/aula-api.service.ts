@@ -96,10 +96,31 @@ export class AulaApiService {
     });
   }
 
-  perfil(): Observable<{ usuario: { email: string; numDoc: number } }> {
-    return this.http.get<{ usuario: { email: string; numDoc: number } }>(`${this.base}/auth/perfil`, {
+  perfil(): Observable<{ usuario: { email: string; numDoc: number; empresaId?: string | null; empresaNombre?: string | null } }> {
+    return this.http.get<{ usuario: { email: string; numDoc: number; empresaId?: string | null; empresaNombre?: string | null } }>(`${this.base}/auth/perfil`, {
       headers: this.auth.authHeader(),
     });
+  }
+
+  buscarEmpresas(q: string): Observable<{ _id: string; nombre: string; identificacion: string }[]> {
+    return this.http.get<{ _id: string; nombre: string; identificacion: string }[]>(
+      `${this.base}/empresas/buscar?q=${encodeURIComponent(q)}`,
+      { headers: this.auth.authHeader() },
+    );
+  }
+
+  buscarEmpresasPublico(q: string): Observable<{ _id: string; nombre: string; identificacion: string }[]> {
+    return this.http.get<{ _id: string; nombre: string; identificacion: string }[]>(
+      `${this.base}/empresas/buscar-publico?q=${encodeURIComponent(q)}`,
+    );
+  }
+
+  actualizarEmpresa(empresaId: string | null): Observable<{ ok: boolean; empresaId: string | null; empresaNombre: string | null }> {
+    return this.http.patch<{ ok: boolean; empresaId: string | null; empresaNombre: string | null }>(
+      `${this.base}/auth/empresa`,
+      { empresaId },
+      { headers: this.auth.authHeader() },
+    );
   }
 
   misCursos(): Observable<CursoVirtual[]> {

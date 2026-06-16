@@ -846,6 +846,68 @@
                   <dd>{{ auth.user()?.numDoc }}</dd>
                 </div>
               </dl>
+
+              <!-- Empresa -->
+              <div class="perfil-empresa-section">
+                <h3 class="perfil-empresa-title">🏢 Empresa / Organización</h3>
+                <p class="perfil-empresa-hint">
+                  Si trabaja para una empresa de transporte, vincúlela aquí.
+                  Esta información se guardará en sus certificados.
+                </p>
+
+                @if (auth.user()?.empresaNombre) {
+                  <div class="perfil-empresa-actual">
+                    <span class="empresa-chip-portal">🏢 {{ auth.user()?.empresaNombre }}</span>
+                    <button type="button" class="empresa-cambiar-btn" (click)="iniciarCambioEmpresa()">Cambiar</button>
+                    <button type="button" class="empresa-quitar-btn" (click)="quitarEmpresa()">Quitar</button>
+                  </div>
+                } @else {
+                  <button type="button" class="empresa-asignar-btn" (click)="iniciarCambioEmpresa()">
+                    + Vincular empresa
+                  </button>
+                }
+
+                @if (empresaEditando()) {
+                  <div class="empresa-edit-box">
+                    <div class="empresa-search-wrap">
+                      <input
+                        type="search"
+                        class="empresa-search-input"
+                        placeholder="Escriba el nombre de la empresa…"
+                        [value]="empresaBusqueda()"
+                        (input)="buscarEmpresaPerfil($any($event.target).value)"
+                        (blur)="onEmpresaBlurPerfil()"
+                        autocomplete="off" />
+                      @if (empresaCargando()) {
+                        <span class="empresa-loading">⏳</span>
+                      }
+                    </div>
+
+                    @if (empresaDropdownOpen() && empresaSugerencias().length > 0) {
+                      <ul class="empresa-dropdown-portal">
+                        @for (e of empresaSugerencias(); track e._id) {
+                          <li (mousedown)="seleccionarEmpresaPerfil(e)">
+                            <span class="emp-nombre">{{ e.nombre }}</span>
+                            <span class="emp-nit">{{ e.identificacion }}</span>
+                          </li>
+                        }
+                      </ul>
+                    }
+
+                    @if (empresaMsgOk()) {
+                      <p class="empresa-msg empresa-msg-ok">✓ {{ empresaMsgOk() }}</p>
+                    }
+                    @if (empresaMsgErr()) {
+                      <p class="empresa-msg empresa-msg-err">⚠ {{ empresaMsgErr() }}</p>
+                    }
+
+                    <div class="empresa-edit-actions">
+                      <button type="button" class="empresa-cancelar-btn" (click)="cancelarCambioEmpresa()">Cancelar</button>
+                    </div>
+                  </div>
+                }
+              </div>
+
               <button type="button" class="dash-btn dash-btn-outline" (click)="logout()">Cerrar sesión</button>
             </article>
           }

@@ -594,6 +594,70 @@ export class AulaComponent implements OnInit, OnDestroy {
     void this.router.navigate(['/login']);
   }
 
+  // ── Empresa en perfil ──
+  empresaEditando   = signal(false);
+  empresaBusqueda   = signal('');
+  empresaSugerencias = signal<{ _id: string; nombre: string; identificacion: string }[]>([]);
+  empresaDropdownOpen = signal(false);
+  empresaCargando   = signal(false);
+  empresaMsgOk      = signal<string | null>(null);
+  empresaMsgErr     = signal<string | null>(null);
+
+  iniciarCambioEmpresa() {
+    this.empresaEditando.set(true);
+    this.empresaBusqueda.set('');
+    this.empresaSugerencias.set([]);
+    this.empresaDropdownOpen.set(false);
+    this.empresaMsgOk.set(null);
+    this.empresaMsgErr.set(null);
+  }
+
+  cancelarCambioEmpresa() {
+    this.empresaEditando.set(false);
+    this.empresaBusqueda.set('');
+    this.empresaSugerencias.set([]);
+    this.empresaDropdownOpen.set(false);
+  }
+
+  buscarEmpresaPerfil(q: string) {
+    this.empresaBusqueda.set(q);
+    if (!q.trim() || q.trim().length < 2) { this.empresaSugerencias.set([]); this.empresaDropdownOpen.set(false); return; }
+    this.empresaCargando.set(true);
+    this.api.buscarEmpresas(q.trim()).subscribe({
+      next: (rows) => { this.empresaSugerencias.set(rows); this.empresaDropdownOpen.set(rows.length > 0); this.empresaCargando.set(false); },
+      error: () => this.empresaCargando.set(false),
+    });
+  }
+
+  onEmpresaBlurPerfil() { setTimeout(() => this.empresaDropdownOpen.set(false), 200); }
+
+  seleccionarEmpresaPerfil(e: { _id: string; nombre: string; identificacion: string }) {
+    this.empresaDropdownOpen.set(false);
+    this.empresaSugerencias.set([]);
+    this.empresaCargando.set(true);
+    this.api.actualizarEmpresa(e._id).subscribe({
+      next: (res) => {
+        this.auth.updateEmpresa(res.empresaId, res.empresaNombre);
+        this.empresaMsgOk.set(`Empresa vinculada: ${res.empresaNombre}`);
+        this.empresaMsgErr.set(null);
+        this.empresaEditando.set(false);
+        this.empresaCargando.set(false);
+      },
+      error: (err) => {
+        this.empresaMsgErr.set(err?.error?.message || 'Error al guardar la empresa.');
+        this.empresaMsgOk.set(null);
+        this.empresaCargando.set(false);
+      },
+    });
+  }
+
+  quitarEmpresa() {
+    this.api.actualizarEmpresa(null).subscribe({
+      next: () => { this.auth.updateEmpresa(null, null); },
+      error: () => {},
+    });
+  }
+
   private resolverPlayerUrl(raw: string): string {
     const rel = resolveUploadsPath(raw);
     if (rel) return rel;
