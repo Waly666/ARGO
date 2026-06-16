@@ -467,6 +467,9 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
 
   esVencido(c: CertificadoListItem): boolean {
     if (this.esAnulado(c)) return false;
+    // Confía en el campo estado de BD si ya está marcado como vencido
+    if (String(c.estado || '').trim().toLowerCase() === 'vencido') return true;
+    // Cálculo en tiempo real como respaldo (p. ej. antes de que corra el cron)
     const fv = this.inicioDia(c.fechaVencimiento);
     const hoy = this.inicioDia(new Date());
     if (!fv || !hoy) return false;

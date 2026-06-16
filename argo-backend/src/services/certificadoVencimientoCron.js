@@ -3,7 +3,7 @@
  *
  * Regla:
  *  - Solo certificados con fechaVencimiento definida (no nula).
- *  - Solo si esa fecha ya pasó (< inicio del día de hoy).
+ *  - Solo si esa fecha ya pasó O es hoy (< inicio del día de mañana).
  *  - Solo los que siguen en estado 'vigente'.
  *  - Los pasa a estado 'vencido'.
  *
@@ -13,10 +13,11 @@
 const cron = require('node-cron');
 const Certificado = require('../models/Certificado');
 
-/** Retorna la medianoche (00:00:00.000) del día de hoy en hora local del servidor. */
-function inicioDiaHoy() {
+/** Retorna la medianoche (00:00:00.000) del inicio de mañana en hora local del servidor. */
+function inicioDiaMañana() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
   return d;
 }
 
@@ -25,11 +26,11 @@ function inicioDiaHoy() {
  * Retorna un objeto con el resultado: { actualizados, error? }
  */
 async function actualizarCertificadosVencidos() {
-  const hoy = inicioDiaHoy();
+  const manana = inicioDiaMañana();
   try {
     const result = await Certificado.updateMany(
       {
-        fechaVencimiento: { $ne: null, $lt: hoy },
+        fechaVencimiento: { $ne: null, $lt: manana },
         estado: 'vigente',
       },
       { $set: { estado: 'vencido' } },
@@ -38,7 +39,7 @@ async function actualizarCertificadosVencidos() {
     const actualizados = result.modifiedCount ?? result.nModified ?? 0;
 
     if (actualizados > 0) {
-      console.log(`[CRON cert-vencimiento] ${new Date().toISOString()} — ${actualizados} certificado(s) marcado(s) como vencido.`);
+      console.log(`[CRON cert-vencimiento] ${new Date().toISOString()} — ${actualizados} certificado(s) marcado(s) como vencido (umbral: ${manana.toISOString()}).`);
     } else {
       console.log(`[CRON cert-vencimiento] ${new Date().toISOString()} — Sin certificados nuevos por vencer.`);
     }
