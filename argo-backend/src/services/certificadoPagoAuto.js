@@ -1,5 +1,6 @@
 const Certificado = require('../models/Certificado');
 const DatosAlumno = require('../models/DatosAlumno');
+const Cliente     = require('../models/Cliente');
 const { models: cat } = require('../models/catalogos');
 const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
@@ -115,6 +116,14 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
   const dias = Number(prog?.diasVencimiento || prog?.vigenciaDias || 0);
   if (dias > 0) fechaVe = new Date(fechaEm.getTime() + dias * 24 * 60 * 60 * 1000);
 
+  let empresaId = null;
+  let empresaNombre = null;
+  if (alumno?.empresaId) {
+    empresaId = alumno.empresaId;
+    const cli = await Cliente.findById(empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+    if (cli) empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+  }
+
   const codigoCert = await siguienteCodigoCertificado();
   const encabezado = encabezadoCurso(prog);
 
@@ -132,6 +141,8 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
     observaciones: 'Certificado emitido automáticamente al completar el pago del programa.',
     fechaEmision: fechaEm,
     fechaVencimiento: fechaVe,
+    empresaId,
+    empresaNombre,
   });
 
   return {

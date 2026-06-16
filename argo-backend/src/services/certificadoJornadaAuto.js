@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const Certificado = require('../models/Certificado');
+const DatosAlumno = require('../models/DatosAlumno');
+const Cliente     = require('../models/Cliente');
 const Contratacion = require('../models/Contratacion');
 const ClaseJornadaCap = require('../models/ClaseJornadaCap');
 const JornadaCap = require('../models/JornadaCap');
@@ -260,6 +262,16 @@ async function intentarCertificadoJornadaAuto(numDocRaw, idProg, idContratoRaw, 
     }
   }
 
+  // Empresa del alumno al momento de emitir
+  let empresaId = null;
+  let empresaNombre = null;
+  const alumnoJornada = await DatosAlumno.findOne(numDocQuery(numDoc), { empresaId: 1 }).lean();
+  if (alumnoJornada?.empresaId) {
+    empresaId = alumnoJornada.empresaId;
+    const cli = await Cliente.findById(empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+    if (cli) empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+  }
+
   const cert = await Certificado.create({
     numDoc,
     idLiquidacion: liq._id,
@@ -276,6 +288,8 @@ async function intentarCertificadoJornadaAuto(numDocRaw, idProg, idContratoRaw, 
     generadoAutoJornada: true,
     observaciones: `Certificado automático al completar ${numSesCert} sesión(es) en el contrato`,
     fechaEmision: fechaEm,
+    empresaId,
+    empresaNombre,
   });
 
   const certificado = {

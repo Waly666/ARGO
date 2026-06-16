@@ -194,6 +194,17 @@ exports.crear = async (req, res, next) => {
     const codigoCert = await siguienteCodigoCertificado();
     const encabezado = encabezadoCurso(prog);
 
+    // Empresa del alumno al momento de emitir
+    let empresaId   = null;
+    let empresaNombre = null;
+    if (alumno?.empresaId) {
+      empresaId = alumno.empresaId;
+      const cli = await Cliente.findById(empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+      if (cli) {
+        empresaNombre = (cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null);
+      }
+    }
+
     const cert = await Certificado.create({
       numDoc,
       idLiquidacion: liq._id,
@@ -210,6 +221,8 @@ exports.crear = async (req, res, next) => {
       observaciones,
       fechaEmision: fechaEm,
       fechaVencimiento: fechaVe,
+      empresaId,
+      empresaNombre,
     });
     const descr = await descrPrograma(cert.idProg);
     res.status(201).json({
@@ -478,6 +491,11 @@ exports.listarGlobal = async (req, res, next) => {
       q.estado = estadoParam;
     }
 
+    const empresaIdParam = String(req.query.empresaId || '').trim();
+    if (empresaIdParam && require('mongoose').isValidObjectId(empresaIdParam)) {
+      q.empresaId = new (require('mongoose').Types.ObjectId)(empresaIdParam);
+    }
+
     if (req.query.desde || req.query.hasta) {
       q.fechaEmision = {};
       if (req.query.desde) {
@@ -575,26 +593,13 @@ exports.listarGlobal = async (req, res, next) => {
         municipio: municipio || null,
         direccion: direccion || null,
         ubicacionJornada: ubicacionJornada || null,
-        empresaId: al?.empresaId ? String(al.empresaId) : null,
+        empresaId: c.empresaId ? String(c.empresaId) : null,
+        empresaNombre: c.empresaNombre || null,
       });
     }
 
     const emitidosHoy = items.filter((c) => esFechaEmisionHoy(c.fechaEmision)).length;
     const totalPages  = Math.ceil(total / limit) || 1;
-
-    // Resolver nombres de empresa
-    const empresaIds = [...new Set(items.map((i) => String(i.empresaId || '')).filter(Boolean))];
-    if (empresaIds.length) {
-      const mongoose = require('mongoose');
-      const Cliente = require('../models/Cliente');
-      const clientes = await Cliente.find({
-        _id: { $in: empresaIds.filter((id) => mongoose.isValidObjectId(id)).map((id) => new mongoose.Types.ObjectId(id)) },
-      }, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
-      const empMap = new Map(clientes.map((c) => [String(c._id), (c.razonSocial?.trim() || c.nombreComercial?.trim() || c.nombres?.trim() || c.identificacion || '')]));
-      for (const it of items) {
-        if (it.empresaId) it.empresaNombre = empMap.get(String(it.empresaId)) || null;
-      }
-    }
 
     noCache(res);
     res.json({ total, page, limit, totalPages, emitidosHoy, items });

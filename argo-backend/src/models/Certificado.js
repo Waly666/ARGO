@@ -38,6 +38,10 @@ const CertificadoSchema = new mongoose.Schema(
     /** Nombre del curso / capacitación impreso en el certificado */
     encabezado: { type: String, trim: true, default: '' },
     idUsuario:     { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null },
+    /** Empresa del alumno al momento de emitir (ref a clientesFacturacion). */
+    empresaId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
+    /** Nombre de la empresa copiado al momento de emitir (para búsqueda y filtro). */
+    empresaNombre: { type: String, trim: true, default: null },
   },
   { collection: 'certificados', timestamps: true, strict: false },
 );

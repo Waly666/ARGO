@@ -175,6 +175,7 @@ export class CertificadoService {
     q?: string;
     tipoFormatoCert?: string;
     estado?: string;
+    empresaId?: string;
     desde?: string;
     hasta?: string;
     page?: number;
@@ -185,6 +186,7 @@ export class CertificadoService {
     if (params?.q?.trim()) p.set('q', params.q.trim());
     if (params?.tipoFormatoCert) p.set('tipoFormatoCert', params.tipoFormatoCert);
     if (params?.estado) p.set('estado', params.estado);
+    if (params?.empresaId) p.set('empresaId', params.empresaId);
     if (params?.desde) p.set('desde', params.desde);
     if (params?.hasta) p.set('hasta', params.hasta);
     if (params?.page != null) p.set('page', String(params.page));

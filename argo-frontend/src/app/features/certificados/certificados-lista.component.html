@@ -71,6 +71,35 @@
         <label for="hasta-cert">Hasta</label>
         <input id="hasta-cert" type="date" [ngModel]="fechaHasta()" (ngModelChange)="onFechaHastaChange($event)" />
       </div>
+      <div class="filtro-field filtro-empresa-wrap">
+        <label>Empresa</label>
+        <div class="empresa-combo-wrap">
+          <input
+            type="search"
+            class="empresa-combo-input"
+            placeholder="Buscar empresa…"
+            [value]="empresaFiltroNombre()"
+            (input)="buscarEmpresaFiltro($any($event.target).value)"
+            (blur)="onEmpresaFiltroBlur()"
+            autocomplete="off" />
+          @if (empresaFiltroId()) {
+            <button type="button" class="empresa-combo-clear" (click)="seleccionarEmpresaFiltro(null)" title="Quitar filtro de empresa">✕</button>
+          }
+          @if (empresaDropdown() && empresaSugerencias().length > 0) {
+            <ul class="empresa-combo-dropdown">
+              @for (c of empresaSugerencias(); track c._id) {
+                <li (mousedown)="seleccionarEmpresaFiltro(c)">
+                  <span class="ec-nombre">{{ c.razonSocial || c.nombres || c.nombreComercial || '—' }}</span>
+                  <span class="ec-nit">{{ c.identificacion }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        @if (empresaFiltroId()) {
+          <span class="empresa-active-chip">🏢 {{ empresaFiltroNombre() }}</span>
+        }
+      </div>
     </div>
     <div class="filtros-actions">
       <button type="button" class="primary sm" (click)="aplicarFiltrosServidor()" [disabled]="loading()">

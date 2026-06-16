@@ -19,6 +19,7 @@ import {
   CertificadoListItem,
   CertificadoService,
 } from '../../core/services/certificado.service';
+import { ClienteService, Cliente } from '../../core/services/cliente.service';
 import { nombreCompletoAlumno } from '../../core/utils/mensaje-plantilla.helpers';
 import { TIPOS_CERTIFICADO, capEncabezadoCert, capTipoFormatoCert, labelTipoCert } from '../../core/constants/tipos-certificado';
 import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
@@ -55,7 +56,8 @@ import {
   styleUrls: ['./certificados-lista.component.scss', './certificados-shared.scss'],
 })
 export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewInit {
-  private certSvc = inject(CertificadoService);
+  private certSvc    = inject(CertificadoService);
+  private clienteSvc = inject(ClienteService);
   private confirmSvc = inject(ConfirmDialogService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -68,6 +70,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
           q: this.filtro().trim() || undefined,
           tipoFormatoCert: this.tipoFormato() || undefined,
           estado: this.estadoFiltro() || undefined,
+          empresaId: this.empresaFiltroId() || undefined,
           desde: this.fechaDesde() || undefined,
           hasta: this.fechaHasta() || undefined,
           page: this.paginaActual(),
@@ -104,6 +107,47 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   paginaActual = signal(1);
   totalRegistros = signal(0);
   totalPaginas = signal(1);
+
+  // Filtro empresa
+  empresaFiltroId    = signal<string | null>(null);
+  empresaFiltroNombre = signal('');
+  empresaSugerencias = signal<Cliente[]>([]);
+  empresaDropdown    = signal(false);
+  empresaCargando    = signal(false);
+
+  buscarEmpresaFiltro(q: string) {
+    this.empresaFiltroNombre.set(q);
+    if (!q.trim()) {
+      this.empresaSugerencias.set([]);
+      this.empresaDropdown.set(false);
+      if (!q) this.seleccionarEmpresaFiltro(null);
+      return;
+    }
+    this.empresaCargando.set(true);
+    this.clienteSvc.listar(q.trim()).subscribe({
+      next: (rows) => { this.empresaSugerencias.set(rows.slice(0, 8)); this.empresaDropdown.set(rows.length > 0); this.empresaCargando.set(false); },
+      error: () => this.empresaCargando.set(false),
+    });
+  }
+
+  seleccionarEmpresaFiltro(c: Cliente | null) {
+    if (!c) {
+      this.empresaFiltroId.set(null);
+      this.empresaFiltroNombre.set('');
+      this.empresaSugerencias.set([]);
+      this.empresaDropdown.set(false);
+    } else {
+      const nombre = c.razonSocial?.trim() || c.nombreComercial?.trim() || c.nombres?.trim() || c.identificacion || '';
+      this.empresaFiltroId.set(c._id || null);
+      this.empresaFiltroNombre.set(nombre);
+      this.empresaSugerencias.set([]);
+      this.empresaDropdown.set(false);
+    }
+    this.paginaActual.set(1);
+    this.solicitarRecargaServidor();
+  }
+
+  onEmpresaFiltroBlur() { setTimeout(() => this.empresaDropdown.set(false), 200); }
   certificados = signal<CertificadoListItem[]>([]);
   emitidosHoy = signal(0);
   msg = signal<string | null>(null);
@@ -274,6 +318,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
         q: this.filtro().trim() || undefined,
         tipoFormatoCert: this.tipoFormato() || undefined,
         estado: this.estadoFiltro() || undefined,
+        empresaId: this.empresaFiltroId() || undefined,
         desde: this.fechaDesde() || undefined,
         hasta: this.fechaHasta() || undefined,
         page: this.paginaActual(),
@@ -306,6 +351,10 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     this.filtro.set('');
     this.tipoFormato.set('');
     this.estadoFiltro.set('');
+    this.empresaFiltroId.set(null);
+    this.empresaFiltroNombre.set('');
+    this.empresaSugerencias.set([]);
+    this.empresaDropdown.set(false);
     this.fechaDesde.set('');
     this.fechaHasta.set('');
     this.paginaActual.set(1);

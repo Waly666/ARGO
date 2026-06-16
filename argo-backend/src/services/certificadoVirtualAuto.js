@@ -1,6 +1,7 @@
 const Certificado = require('../models/Certificado');
 const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
+const Cliente     = require('../models/Cliente');
 const { models: cat } = require('../models/catalogos');
 const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
@@ -115,6 +116,14 @@ async function intentarCertificadoVirtualAprobar({ numDoc: numDocRaw, idPrograma
   const dias = Number(prog?.diasVencimiento || prog?.vigenciaDias || 0);
   if (dias > 0) fechaVe = new Date(fechaEm.getTime() + dias * 24 * 60 * 60 * 1000);
 
+  let empresaId = null;
+  let empresaNombre = null;
+  if (alumno?.empresaId) {
+    empresaId = alumno.empresaId;
+    const cli = await Cliente.findById(empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+    if (cli) empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+  }
+
   const codigoCert = await siguienteCodigoCertificado();
   const encabezado = encabezadoCurso(prog);
 
@@ -132,6 +141,8 @@ async function intentarCertificadoVirtualAprobar({ numDoc: numDocRaw, idPrograma
     observaciones: `Certificado emitido automáticamente al aprobar el curso virtual (nota ${estado.mejorNotaEval}%, completitud ${estado.pctCompletitud}%).`,
     fechaEmision: fechaEm,
     fechaVencimiento: fechaVe,
+    empresaId,
+    empresaNombre,
   });
 
   const ProgresoVirtualCurso = require('../models/ProgresoVirtualCurso');
