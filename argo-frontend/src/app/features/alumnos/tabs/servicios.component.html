@@ -94,19 +94,17 @@
         Se crea una matrícula y liquidación por cada curso incluido.
       </p>
 
-      <div class="row">
-        <div class="col-8">
-          <argo-catalogo-enum-buscar
-            label="Combo"
-            placeholder="Seleccione el combo…"
-            [modoCombo]="true"
-            [remoto]="false"
-            [minLength]="0"
-            [opcionesLocales]="opcionesCombos()"
-            (seleccionado)="onComboPick($event)"
-            (limpiado)="onComboLimpiar()"
-          />
-        </div>
+      <div class="combo-selector-wrap">
+        <argo-catalogo-enum-buscar
+          label="Seleccione un combo"
+          placeholder="Busque o elija el combo de cursos…"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="0"
+          [opcionesLocales]="opcionesCombos()"
+          (seleccionado)="onComboPick($event)"
+          (limpiado)="onComboLimpiar()"
+        />
       </div>
 
       <ng-container *ngIf="comboPrevista() as cv">
