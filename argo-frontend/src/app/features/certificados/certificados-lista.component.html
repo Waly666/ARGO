@@ -57,7 +57,7 @@
       </div>
       <div class="filtro-field">
         <label for="estado-cert">Estado</label>
-        <select id="estado-cert" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event)">
+        <select id="estado-cert" [ngModel]="estadoFiltro()" (ngModelChange)="onEstadoFiltroChange($event)">
           @for (e of estadosFiltro; track e.value) {
             <option [value]="e.value">{{ e.label }}</option>
           }
@@ -78,7 +78,9 @@
       </button>
       <button type="button" class="ghost sm" (click)="filtrarSoloHoy()" [disabled]="loading()">Solo hoy</button>
       <button type="button" class="ghost sm" (click)="limpiarFiltros()" [disabled]="loading()">Limpiar</button>
-      <span class="count">{{ filtrados().length }} de {{ certificados().length }} certificado(s)</span>
+      <span class="count">
+        {{ totalRegistros() }} certificado(s) · página {{ paginaActual() }} de {{ totalPaginas() }}
+      </span>
     </div>
   </div>
 
@@ -171,6 +173,26 @@
           }
         </tbody>
       </table>
+
+      @if (totalPaginas() > 1) {
+        <nav class="paginador" aria-label="Paginación">
+          <button type="button" class="ghost mini" [disabled]="paginaActual() <= 1" (click)="irPagina(paginaActual() - 1)">‹ Ant</button>
+          @for (p of paginasVisibles(); track p) {
+            @if (p === -1) {
+              <span class="pag-ellipsis">…</span>
+            } @else {
+              <button
+                type="button"
+                class="mini"
+                [class.primary]="p === paginaActual()"
+                [class.ghost]="p !== paginaActual()"
+                (click)="irPagina(p)">{{ p }}</button>
+            }
+          }
+          <button type="button" class="ghost mini" [disabled]="paginaActual() >= totalPaginas()" (click)="irPagina(paginaActual() + 1)">Sig ›</button>
+          <span class="pag-info">{{ (paginaActual()-1)*porPagina + 1 }}–{{ pagHasta() }} de {{ totalRegistros() }}</span>
+        </nav>
+      }
     }
   </div>
 </section>

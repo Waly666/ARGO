@@ -67,8 +67,11 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
         this.certSvc.listarGlobal({
           q: this.filtro().trim() || undefined,
           tipoFormatoCert: this.tipoFormato() || undefined,
+          estado: this.estadoFiltro() || undefined,
           desde: this.fechaDesde() || undefined,
           hasta: this.fechaHasta() || undefined,
+          page: this.paginaActual(),
+          limit: this.porPagina,
           cacheBust: Date.now(),
         }),
       ),
@@ -76,6 +79,8 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     .subscribe({
       next: (res) => {
         this.certificados.set(res.items || []);
+        this.totalRegistros.set(res.total || 0);
+        this.totalPaginas.set(res.totalPages || 1);
         this.recalcEmitidosHoy();
         this.loading.set(false);
         this.reabrirEditarSiEnLista();
@@ -87,6 +92,8 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
       },
     });
 
+  readonly porPagina = 100;
+
   loading = signal(false);
   guardando = signal(false);
   filtro = signal('');
@@ -94,6 +101,9 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   estadoFiltro = signal('');
   fechaDesde = signal('');
   fechaHasta = signal('');
+  paginaActual = signal(1);
+  totalRegistros = signal(0);
+  totalPaginas = signal(1);
   certificados = signal<CertificadoListItem[]>([]);
   emitidosHoy = signal(0);
   msg = signal<string | null>(null);
@@ -147,37 +157,8 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     }
   });
 
-  filtrados = computed(() => {
-    const q = this.filtro().trim();
-    const est = this.estadoFiltro();
-    const tipo = this.tipoFormato();
-    const desde = this.fechaDesde();
-    const hasta = this.fechaHasta();
-    return this.certificados().filter((c) => {
-      if (tipo && c.tipoFormatoCert !== tipo) return false;
-      if (desde || hasta) {
-        const em = ymdCalendario(c.fechaEmision);
-        if (desde && em && em < desde) return false;
-        if (hasta && em && em > hasta) return false;
-      }
-      if (est && this.estadoVigencia(c) !== est) return false;
-      if (!q) return true;
-      const enc = String(c.encabezado || '');
-      const cod = String(c.codigoCert || '');
-      const tipoLabel = String(c.tipoFormatoCertLabel || c.tipoFormatoCert || '');
-      const contrato = String(c.codContrato || '');
-      const ubicacion = String(c.ubicacionJornada || '');
-      return (
-        coincideBusquedaTexto(c.nombreCompleto, q) ||
-        coincideBusquedaTexto(enc, q) ||
-        coincideBusquedaTexto(cod, q) ||
-        coincideBusquedaTexto(tipoLabel, q) ||
-        coincideBusquedaDocumento(c.numDoc, q) ||
-        coincideBusquedaTexto(contrato, q) ||
-        coincideBusquedaTexto(ubicacion, q)
-      );
-    });
-  });
+  /** Todos los filtros se aplican en el servidor — aquí se expone directamente. */
+  filtrados = computed(() => this.certificados());
 
   readonly capCertCodigo = capCertCodigo;
   readonly capAlumnoNombre = capAlumnoNombre;
@@ -227,22 +208,59 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
 
   onFiltroChange(val: string) {
     this.filtro.set(val);
+    this.paginaActual.set(1);
     this.solicitarRecargaServidor();
   }
 
   onTipoFormatoChange(val: string) {
     this.tipoFormato.set(val);
+    this.paginaActual.set(1);
+    this.solicitarRecargaServidor();
+  }
+
+  onEstadoFiltroChange(val: string) {
+    this.estadoFiltro.set(val);
+    this.paginaActual.set(1);
     this.solicitarRecargaServidor();
   }
 
   onFechaDesdeChange(val: string) {
     this.fechaDesde.set(val);
+    this.paginaActual.set(1);
     this.solicitarRecargaServidor();
   }
 
   onFechaHastaChange(val: string) {
     this.fechaHasta.set(val);
+    this.paginaActual.set(1);
     this.solicitarRecargaServidor();
+  }
+
+  irPagina(p: number) {
+    const total = this.totalPaginas();
+    const pag = Math.max(1, Math.min(p, total));
+    if (pag === this.paginaActual()) return;
+    this.paginaActual.set(pag);
+    this.solicitarRecargaServidor();
+  }
+
+  pagHasta(): number {
+    return Math.min(this.paginaActual() * this.porPagina, this.totalRegistros());
+  }
+
+  paginasVisibles(): number[] {
+    const total = this.totalPaginas();
+    const actual = this.paginaActual();
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: number[] = [];
+    const start = Math.max(2, actual - 2);
+    const end   = Math.min(total - 1, actual + 2);
+    pages.push(1);
+    if (start > 2) pages.push(-1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push(-1);
+    pages.push(total);
+    return pages;
   }
 
   private solicitarRecargaServidor() {
@@ -255,13 +273,18 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
       .listarGlobal({
         q: this.filtro().trim() || undefined,
         tipoFormatoCert: this.tipoFormato() || undefined,
+        estado: this.estadoFiltro() || undefined,
         desde: this.fechaDesde() || undefined,
         hasta: this.fechaHasta() || undefined,
+        page: this.paginaActual(),
+        limit: this.porPagina,
         cacheBust: Date.now(),
       })
       .subscribe({
         next: (res) => {
           this.certificados.set(res.items || []);
+          this.totalRegistros.set(res.total || 0);
+          this.totalPaginas.set(res.totalPages || 1);
           this.recalcEmitidosHoy();
           this.loading.set(false);
           this.reabrirEditarSiEnLista();
@@ -275,6 +298,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   }
 
   aplicarFiltrosServidor() {
+    this.paginaActual.set(1);
     this.cargar(true);
   }
 
@@ -284,6 +308,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     this.estadoFiltro.set('');
     this.fechaDesde.set('');
     this.fechaHasta.set('');
+    this.paginaActual.set(1);
     this.cargar();
   }
 
@@ -291,6 +316,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     const hoy = ymdLocal(new Date());
     this.fechaDesde.set(hoy);
     this.fechaHasta.set(hoy);
+    this.paginaActual.set(1);
     this.cargar();
   }
 

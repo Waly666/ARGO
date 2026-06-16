@@ -57,7 +57,18 @@ export interface CertificadoListItem {
 
 export interface CertificadoListadoRes {
   total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   emitidosHoy: number;
+  items: CertificadoListItem[];
+}
+
+export interface CertificadosVencidosListadoRes {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   items: CertificadoListItem[];
 }
 
@@ -157,25 +168,46 @@ export class CertificadoService {
     });
   }
 
-  /** Listado global con filtros (tipo capacitación, fechas, búsqueda). */
+  /** Listado global paginado con filtros. */
   listarGlobal(params?: {
     q?: string;
     tipoFormatoCert?: string;
+    estado?: string;
     desde?: string;
     hasta?: string;
+    page?: number;
     limit?: number;
-    /** Evita respuesta 304 en caché del navegador tras editar. */
     cacheBust?: number;
   }): Observable<CertificadoListadoRes> {
     const p = new URLSearchParams();
     if (params?.q?.trim()) p.set('q', params.q.trim());
     if (params?.tipoFormatoCert) p.set('tipoFormatoCert', params.tipoFormatoCert);
+    if (params?.estado) p.set('estado', params.estado);
     if (params?.desde) p.set('desde', params.desde);
     if (params?.hasta) p.set('hasta', params.hasta);
+    if (params?.page != null) p.set('page', String(params.page));
     if (params?.limit != null) p.set('limit', String(params.limit));
     p.set('_', String(params?.cacheBust ?? Date.now()));
     const qs = p.toString() ? `?${p}` : '';
     return this.http.get<CertificadoListadoRes>(`${this.base}/listado${qs}`);
+  }
+
+  /** Certificados vencidos paginados, ordenados por fecha de vencimiento desc. */
+  listarVencidos(params?: {
+    q?: string;
+    tipoFormatoCert?: string;
+    page?: number;
+    limit?: number;
+    cacheBust?: number;
+  }): Observable<CertificadosVencidosListadoRes> {
+    const p = new URLSearchParams();
+    if (params?.q?.trim()) p.set('q', params.q.trim());
+    if (params?.tipoFormatoCert) p.set('tipoFormatoCert', params.tipoFormatoCert);
+    if (params?.page != null) p.set('page', String(params.page));
+    if (params?.limit != null) p.set('limit', String(params.limit));
+    p.set('_', String(params?.cacheBust ?? Date.now()));
+    const qs = p.toString() ? `?${p}` : '';
+    return this.http.get<CertificadosVencidosListadoRes>(`${this.base}/vencidos${qs}`);
   }
 
   alertasPorVencer(dias?: number): Observable<CertificadosVencimientoAlertasRes> {

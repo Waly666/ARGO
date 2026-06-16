@@ -39,6 +39,7 @@ router.post('/admin/marcar-vencidos', requireAdmin, async (req, res, next) => {
 
 router.get('/recientes', verCertAlertas, ctrl.recientes);
 router.get('/listado', emitir, ctrl.listarGlobal);
+router.get('/vencidos', emitir, ctrl.listarVencidos);
 router.get('/alertas-vencimiento', verCertAlertas, ctrl.alertasPorVencer);
 router.get('/alertas-por-vencer', verCertAlertas, ctrl.alertasPorVencer);
 router.get('/alertas-vencidos', verCertAlertas, ctrl.alertasVencidos);

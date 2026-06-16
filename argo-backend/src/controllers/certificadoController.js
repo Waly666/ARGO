@@ -473,6 +473,11 @@ exports.listarGlobal = async (req, res, next) => {
     const tipoFmt = String(req.query.tipoFormatoCert || req.query.tipo || '').trim();
     if (tipoFmt) q.tipoFormatoCert = tipoFmt;
 
+    const estadoParam = String(req.query.estado || '').trim().toLowerCase();
+    if (estadoParam === 'vencido' || estadoParam === 'vigente' || estadoParam === 'anulado') {
+      q.estado = estadoParam;
+    }
+
     if (req.query.desde || req.query.hasta) {
       q.fechaEmision = {};
       if (req.query.desde) {
@@ -492,8 +497,14 @@ exports.listarGlobal = async (req, res, next) => {
       if (!Object.keys(q.fechaEmision).length) delete q.fechaEmision;
     }
 
-    const limit = Math.min(Math.max(Number(req.query.limit) || 1000, 1), 2000);
-    const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(limit).lean();
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
+    const page  = Math.max(Number(req.query.page) || 1, 1);
+    const skip  = (page - 1) * limit;
+
+    const [total, rows] = await Promise.all([
+      Certificado.countDocuments(q),
+      Certificado.find(q).sort({ fechaEmision: -1 }).skip(skip).limit(limit).lean(),
+    ]);
     const qRaw = String(req.query.q || '').trim();
 
     const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
@@ -568,9 +579,74 @@ exports.listarGlobal = async (req, res, next) => {
     }
 
     const emitidosHoy = items.filter((c) => esFechaEmisionHoy(c.fechaEmision)).length;
+    const totalPages  = Math.ceil(total / limit) || 1;
 
     noCache(res);
-    res.json({ total: items.length, emitidosHoy, items });
+    res.json({ total, page, limit, totalPages, emitidosHoy, items });
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Certificados vencidos paginados — para la vista dedicada. */
+exports.listarVencidos = async (req, res, next) => {
+  try {
+    const q = {
+      ...filtrosExcluirJornadaCapacitacion(),
+      estado: 'vencido',
+    };
+
+    const tipoFmt = String(req.query.tipoFormatoCert || '').trim();
+    if (tipoFmt) q.tipoFormatoCert = tipoFmt;
+
+    const qRaw = String(req.query.q || '').trim();
+
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
+    const page  = Math.max(Number(req.query.page) || 1, 1);
+    const skip  = (page - 1) * limit;
+
+    const [total, rows] = await Promise.all([
+      Certificado.countDocuments(q),
+      Certificado.find(q).sort({ fechaVencimiento: -1 }).skip(skip).limit(limit).lean(),
+    ]);
+
+    const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+    const idProgs = [...new Set(rows.map((c) => String(c.idProg || '')).filter(Boolean))];
+
+    const [alumnosRows, programas] = await Promise.all([
+      numDocs.length ? DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [],
+      idProgs.length ? cat.programas.find({ idProg: { $in: idProgs } }).lean() : [],
+    ]);
+
+    const alByDoc  = new Map(alumnosRows.map((a) => [a.numDoc, a]));
+    const progById = new Map(programas.map((p) => [String(p.idProg), p]));
+
+    const items = [];
+    for (const c of rows) {
+      const al = alByDoc.get(c.numDoc);
+      const nombreCompleto = nombreCompletoAlumno(al);
+      if (qRaw) {
+        const hay =
+          (al && coincideBusquedaAlumno(al, qRaw)) ||
+          coincideBusquedaTexto(nombreCompleto, qRaw) ||
+          coincideBusquedaTexto(String(c.encabezado || ''), qRaw) ||
+          coincideBusquedaTexto(String(c.codigoCert || ''), qRaw) ||
+          coincideBusquedaDocumento(c.numDoc, qRaw);
+        if (!hay) continue;
+      }
+      const prog = c.idProg ? progById.get(String(c.idProg)) : null;
+      items.push({
+        ...c,
+        alumnoId: al?._id ? String(al._id) : null,
+        nombreCompleto,
+        programaDescr: prog?.descripcion || prog?.nombreProg || null,
+        nomCert: prog?.nomCert || null,
+        tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
+      });
+    }
+
+    noCache(res);
+    res.json({ total, page, limit, totalPages: Math.ceil(total / limit) || 1, items });
   } catch (e) {
     next(e);
   }

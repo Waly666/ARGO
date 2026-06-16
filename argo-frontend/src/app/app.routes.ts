@@ -77,6 +77,13 @@ export const routes: Routes = [
           import('./features/certificados/certificados-lista.component').then((m) => m.CertificadosListaComponent),
       },
       {
+        path: 'certificados/vencidos',
+        canActivate: [permisoGuard],
+        data: { permiso: 'alumnos.certificados' },
+        loadComponent: () =>
+          import('./features/certificados/certificados-vencidos.component').then((m) => m.CertificadosVencidosComponent),
+      },
+      {
         path: 'informes',
         pathMatch: 'full',
         canActivate: [permisoGuard],

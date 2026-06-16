@@ -394,6 +394,14 @@ export class ShellComponent {
     },
     {
       kind: 'link',
+      label: 'Certificados Vencidos',
+      icon: '⚠',
+      path: '/app/certificados/vencidos',
+      iconTone: 'red',
+      permiso: 'alumnos.certificados',
+    },
+    {
+      kind: 'link',
       label: 'Informes académicos',
       icon: '☰',
       path: '/app/informes',
