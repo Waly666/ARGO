@@ -149,6 +149,7 @@
                 Fecha nac. <span class="sort-icon">{{ sortIcon('fechaNac') }}</span>
               </button>
             </th>
+            <th class="col-empresa">Empresa</th>
             <th class="col-alertas">Alertas</th>
             <th *ngIf="esJornadas()" class="col-cert-jornada">Cert. jornada</th>
             <th>
@@ -201,6 +202,13 @@
             <td class="col-nombre">{{ nombreCompleto(r) }}</td>
             <td>
               <span *ngIf="r.fechaNac; else vacio" [ngClass]="capFecha(formatFecha(r.fechaNac))">{{ formatFecha(r.fechaNac) }}</span>
+            </td>
+            <td class="col-empresa">
+              @if (r.empresaNombre) {
+                <span class="empresa-chip">{{ r.empresaNombre }}</span>
+              } @else {
+                <span class="sin-empresa">—</span>
+              }
             </td>
             <td class="col-alertas" (click)="$event.stopPropagation()">
               <ng-container *ngTemplateOutlet="alarmasTpl; context: { $implicit: r }"></ng-container>

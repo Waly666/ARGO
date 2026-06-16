@@ -14,6 +14,9 @@
             <strong>{{ nombreCompleto() }}</strong>
             <span>{{ a.numDoc }}</span>
             <span class="badge virtual tipo-alumno-badge" *ngIf="esAlumnoVirtual()">Virtual</span>
+            @if (a.empresaNombre) {
+              <span class="empresa-badge-ficha">🏢 {{ a.empresaNombre }}</span>
+            }
           </div>
         </div>
 

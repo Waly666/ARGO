@@ -559,3 +559,29 @@ table.alumnos-grid .col-alertas {
 @media (max-width: 720px) {
   .page-head { flex-direction: column; }
 }
+
+/* ── Empresa en lista ── */
+.col-empresa {
+  min-width: 140px;
+  max-width: 220px;
+}
+
+.empresa-chip {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.sin-empresa {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}

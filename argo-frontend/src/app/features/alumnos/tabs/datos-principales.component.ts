@@ -27,6 +27,8 @@ import { CatalogoService } from '../../../core/services/catalogo.service';
 
 import { ConfigRecibo, ConfigService } from '../../../core/services/config.service';
 
+import { ClienteService, Cliente } from '../../../core/services/cliente.service';
+
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
 
 import { environment } from '../../../../environments/environment';
@@ -206,6 +208,53 @@ export class DatosPrincipalesComponent implements OnInit {
   scanning = signal(false);
   scanWarnings = signal<string[]>([]);
   scanApplied = signal(false);
+
+  /** Empresa — combobox de búsqueda incremental */
+  private clienteSvc    = inject(ClienteService);
+  empresaBusqueda       = signal('');
+  empresaSugerencias    = signal<Cliente[]>([]);
+  empresaCargando       = signal(false);
+  empresaDropdownOpen   = signal(false);
+
+  buscarEmpresa(q: string) {
+    this.empresaBusqueda.set(q);
+    if (!q.trim()) {
+      this.empresaSugerencias.set([]);
+      this.empresaDropdownOpen.set(false);
+      if (!q) {
+        this.form.update((f) => ({ ...f, empresaId: null, empresaNombre: null }));
+      }
+      return;
+    }
+    this.empresaCargando.set(true);
+    this.clienteSvc.listar(q.trim()).subscribe({
+      next: (rows) => {
+        this.empresaSugerencias.set(rows.slice(0, 10));
+        this.empresaDropdownOpen.set(rows.length > 0);
+        this.empresaCargando.set(false);
+      },
+      error: () => this.empresaCargando.set(false),
+    });
+  }
+
+  seleccionarEmpresa(c: Cliente) {
+    const nombre = c.razonSocial?.trim() || c.nombreComercial?.trim() || c.nombres?.trim() || c.identificacion || '';
+    this.empresaBusqueda.set(nombre);
+    this.form.update((f) => ({ ...f, empresaId: c._id || null, empresaNombre: nombre || null }));
+    this.empresaDropdownOpen.set(false);
+    this.empresaSugerencias.set([]);
+  }
+
+  limpiarEmpresa() {
+    this.empresaBusqueda.set('');
+    this.empresaSugerencias.set([]);
+    this.empresaDropdownOpen.set(false);
+    this.form.update((f) => ({ ...f, empresaId: null, empresaNombre: null }));
+  }
+
+  onEmpresaBlur() {
+    setTimeout(() => this.empresaDropdownOpen.set(false), 200);
+  }
 
   /** Firma del último estado guardado (o vacío en alumno nuevo) */
   private lineaBase = signal('');
@@ -767,6 +816,8 @@ export class DatosPrincipalesComponent implements OnInit {
 
       urlFoto: f.urlFoto,
 
+      empresaId: f.empresaId ?? null,
+
     };
 
   }
@@ -799,6 +850,9 @@ export class DatosPrincipalesComponent implements OnInit {
       this.scanPreview.set(null);
       this.scanFile.set(null);
       this.scanWarnings.set([]);
+      this.empresaBusqueda.set('');
+      this.empresaSugerencias.set([]);
+      this.empresaDropdownOpen.set(false);
       this.lineaBase.set('');
     }
     this.store.setDatosSinGuardar(false);
@@ -817,6 +871,9 @@ export class DatosPrincipalesComponent implements OnInit {
     this.scanPreview.set(null);
     this.scanFile.set(null);
     this.scanWarnings.set([]);
+    this.empresaBusqueda.set(mapped.empresaNombre || '');
+    this.empresaDropdownOpen.set(false);
+    this.empresaSugerencias.set([]);
     this.lineaBase.set(this.firmaEstadoActual(mapped, false));
   }
 
@@ -912,6 +969,9 @@ export class DatosPrincipalesComponent implements OnInit {
       userChangeRecord: String(raw.userChangeRecord || ''),
 
       fechaMod: raw.fechaMod as string,
+
+      empresaId: raw.empresaId ? String(raw.empresaId) : null,
+      empresaNombre: raw.empresaNombre ? String(raw.empresaNombre) : null,
 
     };
 

@@ -575,11 +575,26 @@ exports.listarGlobal = async (req, res, next) => {
         municipio: municipio || null,
         direccion: direccion || null,
         ubicacionJornada: ubicacionJornada || null,
+        empresaId: al?.empresaId ? String(al.empresaId) : null,
       });
     }
 
     const emitidosHoy = items.filter((c) => esFechaEmisionHoy(c.fechaEmision)).length;
     const totalPages  = Math.ceil(total / limit) || 1;
+
+    // Resolver nombres de empresa
+    const empresaIds = [...new Set(items.map((i) => String(i.empresaId || '')).filter(Boolean))];
+    if (empresaIds.length) {
+      const mongoose = require('mongoose');
+      const Cliente = require('../models/Cliente');
+      const clientes = await Cliente.find({
+        _id: { $in: empresaIds.filter((id) => mongoose.isValidObjectId(id)).map((id) => new mongoose.Types.ObjectId(id)) },
+      }, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+      const empMap = new Map(clientes.map((c) => [String(c._id), (c.razonSocial?.trim() || c.nombreComercial?.trim() || c.nombres?.trim() || c.identificacion || '')]));
+      for (const it of items) {
+        if (it.empresaId) it.empresaNombre = empMap.get(String(it.empresaId)) || null;
+      }
+    }
 
     noCache(res);
     res.json({ total, page, limit, totalPages, emitidosHoy, items });

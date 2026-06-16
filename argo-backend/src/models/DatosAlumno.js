@@ -45,6 +45,8 @@ const DatosAlumnoSchema = new mongoose.Schema(
     urlFoto: { type: String, trim: true },
     urlCedula: { type: String, trim: true },
     urlLicencia: { type: String, trim: true },
+    /** Empresa de transporte u organización a la que pertenece el alumno (ref a clientesFacturacion). */
+    empresaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
     /** Horas por sesión de práctica CEA al auto-generar clases (1–4). null = automático según config global. */
     duracionSesionPracticaCea: { type: Number, default: null, min: 1, max: 8 },
     docsAlumno: { type: mongoose.Schema.Types.Mixed, default: {} },

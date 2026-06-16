@@ -417,6 +417,60 @@
         </div>
       </div>
 
+      <!-- ── EMPRESA ── -->
+      <div class="form-section tone-amber">
+        <div class="section-head">
+          <span class="section-icon ic-amber">🏢</span>
+          <div>
+            <h3>Empresa</h3>
+            <p>Empresa de transporte u organización a la que pertenece el alumno</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="row">
+            <div class="col-12">
+              <div class="empresa-field">
+                <label>Empresa / Organización</label>
+                <div class="empresa-input-wrap">
+                  <input
+                    type="text"
+                    class="empresa-input"
+                    placeholder="Escriba el nombre de la empresa para buscar…"
+                    [value]="empresaBusqueda()"
+                    (input)="buscarEmpresa($any($event.target).value)"
+                    (blur)="onEmpresaBlur()"
+                    autocomplete="off" />
+                  @if (empresaCargando()) {
+                    <span class="empresa-spinner">⏳</span>
+                  }
+                  @if (empresaBusqueda() && !empresaCargando()) {
+                    <button type="button" class="empresa-clear" (click)="limpiarEmpresa()" title="Limpiar empresa">✕</button>
+                  }
+                  @if (empresaDropdownOpen() && empresaSugerencias().length > 0) {
+                    <ul class="empresa-dropdown">
+                      @for (c of empresaSugerencias(); track c._id) {
+                        <li (mousedown)="seleccionarEmpresa(c)" tabindex="0" role="option">
+                          <span class="emp-nombre">{{ c.razonSocial || c.nombres || c.nombreComercial || '—' }}</span>
+                          <span class="emp-nit">{{ c.identificacion }}</span>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+                @if (form().empresaId) {
+                  <p class="empresa-seleccionada">
+                    <span class="emp-chip">🏢 {{ form().empresaNombre || empresaBusqueda() }}</span>
+                    <span class="emp-chip-id">NIT/ID vinculado</span>
+                  </p>
+                } @else {
+                  <p class="empresa-hint">Sin empresa asignada — el alumno es independiente</p>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="form-section tone-slate" *ngIf="isEdit()">
         <div class="section-head">
           <span class="section-icon ic-slate">◷</span>

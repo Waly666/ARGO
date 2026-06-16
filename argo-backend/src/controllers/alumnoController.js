@@ -1,4 +1,5 @@
 const DatosAlumno = require('../models/DatosAlumno');
+const Cliente     = require('../models/Cliente');
 const { models } = require('../models/catalogos');
 const divipola = models.divipola;
 const jornadaModel = models.jornada;
@@ -211,7 +212,27 @@ function mapListaItem(doc) {
     docsAlumno: doc.docsAlumno,
     fechaReg: doc.fechaReg || doc.fechaAudi || null,
     fechaMod: doc.fechaMod || doc.fechaAudi,
+    empresaId: doc.empresaId || null,
+    empresaNombre: null,
   };
+}
+
+/** Resuelve el nombre de la empresa (Cliente) para una lista de items. */
+async function enriquecerEmpresas(items) {
+  const ids = [...new Set(items.map((i) => String(i.empresaId || '')).filter(Boolean))];
+  if (!ids.length) return items;
+  const mongoose = require('mongoose');
+  const clientes = await Cliente.find({
+    _id: { $in: ids.filter((id) => mongoose.isValidObjectId(id)).map((id) => new mongoose.Types.ObjectId(id)) },
+  }, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+  const map = new Map(clientes.map((c) => [String(c._id), c]));
+  return items.map((it) => {
+    if (!it.empresaId) return it;
+    const cli = map.get(String(it.empresaId));
+    if (!cli) return it;
+    const nombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || '';
+    return { ...it, empresaNombre: nombre || null };
+  });
 }
 
 async function enriquecerCatalogos(items) {
@@ -313,6 +334,7 @@ exports.listar = async (req, res, next) => {
     ]);
     let items = await enriquecerMunicipios(docs.map(mapListaItem));
     items = await enriquecerCatalogos(items);
+    items = await enriquecerEmpresas(items);
     items = await enriquecerIndicadoresLista(items);
     if (filtroJornadaActivo && jornadaIds.length) {
       items = await enriquecerCertificadoJornada(items, jornadaIds);
@@ -355,7 +377,14 @@ exports.porId = async (req, res, next) => {
   try {
     const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
-    res.json(a);
+    let empresaNombre = null;
+    if (a.empresaId) {
+      const cli = await Cliente.findById(a.empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
+      if (cli) {
+        empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
+      }
+    }
+    res.json({ ...a, empresaNombre });
   } catch (e) {
     next(e);
   }
@@ -506,7 +535,7 @@ const CAMPOS_ALUMNO = [
   'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
   'regimenSalud', 'nivelFormacion', 'ocupacion', 'discapacidad', 'munOrigen', 'codMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
-  'duracionSesionPracticaCea',
+  'duracionSesionPracticaCea', 'empresaId',
 ];
 
 function nombreMayusculas(v) {

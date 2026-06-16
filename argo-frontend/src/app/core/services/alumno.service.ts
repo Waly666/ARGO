@@ -48,6 +48,10 @@ export interface AlumnoDto {
   fechaMod?: string;
   /** Horas por sesión de práctica CEA al auto-generar (1–4). null = automático. */
   duracionSesionPracticaCea?: number | null;
+  /** ID del cliente (empresa de transporte) al que pertenece el alumno. */
+  empresaId?: string | null;
+  /** Nombre de la empresa (poblado desde BD). */
+  empresaNombre?: string | null;
 }
 
 export interface MovimientoAlarmaHoy {
@@ -100,6 +104,8 @@ export interface AlumnoListItem {
   docsAlumno?: Record<string, string>;
   fechaReg?: string | Date | null;
   fechaMod?: string;
+  empresaId?: string | null;
+  empresaNombre?: string | null;
   indicadores?: {
     docsPendientes: number;
     saldosPendientes: number;
