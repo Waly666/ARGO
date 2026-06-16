@@ -118,8 +118,8 @@
               </td>
               <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
               <td class="col-empresa-cert">
-                @if (c['empresaNombre']) {
-                  <span class="emp-chip-cert">{{ c['empresaNombre'] }}</span>
+                @if (c.empresaNombre) {
+                  <span class="emp-chip-cert">{{ c.empresaNombre }}</span>
                 } @else {
                   <span class="text-dim-cert">—</span>
                 }
@@ -176,7 +176,7 @@
           }
           @if (filtrados().length === 0) {
             <tr>
-              <td colspan="9" class="empty">No hay certificados que coincidan con los filtros.</td>
+              <td colspan="10" class="empty">No hay certificados que coincidan con los filtros.</td>
             </tr>
           }
         </tbody>

@@ -53,6 +53,8 @@ export interface CertificadoListItem {
   ubicacionJornada?: string | null;
   programaDescr?: string | null;
   nomCert?: string | null;
+  empresaId?: string | null;
+  empresaNombre?: string | null;
 }
 
 export interface CertificadoListadoRes {
