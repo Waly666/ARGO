@@ -114,14 +114,27 @@
         </p>
       </div>
       <div class="registro-header-actions" *ngIf="itemsConSaldo().length">
-        <button type="button" class="ghost mini" (click)="agregarTodosPendientes()" [disabled]="!opcionesItemsLiquidacion().length">
-          Agregar todos
-        </button>
         <button type="button" class="ghost mini" (click)="limpiarItemsPago()" [disabled]="!itemsPago().length">
           Vaciar lista
         </button>
       </div>
     </header>
+
+    <!-- BOTÓN LIQUIDAR TODO -->
+    <div class="liquidar-todo-wrap" *ngIf="itemsConSaldo().length && opcionesItemsLiquidacion().length">
+      <button
+        type="button"
+        class="liquidar-todo-btn"
+        (click)="agregarTodosPendientes()"
+        title="Agrega todos los ítems pendientes al saldo completo en un solo clic">
+        <span class="ltb-icon">⚡</span>
+        <span class="ltb-texto">
+          <span class="ltb-titulo">Agregar todo lo pendiente</span>
+          <span class="ltb-sub">{{ opcionesItemsLiquidacion().length }} ítem(s) · {{ fmt(totales().saldo) }} total</span>
+        </span>
+        <span class="ltb-arrow">→</span>
+      </button>
+    </div>
 
     <div class="registro-layout">
       <!-- Paso 1: Servicios -->
