@@ -426,28 +426,16 @@ export class ShellComponent {
       permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'],
     },
     {
-      kind: 'link',
-      label: 'Aula virtual',
+      kind: 'group',
+      label: 'Aula Virtual',
       icon: '▣',
-      path: '/app/aula-virtual',
       iconTone: 'indigo',
       permiso: 'programas.gestionar',
-    },
-    {
-      kind: 'link',
-      label: 'Editor sitio portal',
-      icon: '✎',
-      path: '/app/aula-virtual/sitio',
-      iconTone: 'indigo',
-      permiso: 'programas.gestionar',
-    },
-    {
-      kind: 'link',
-      label: 'Foro de cursos virtuales',
-      icon: '💬',
-      path: '/app/aula-virtual/foro',
-      iconTone: 'indigo',
-      permiso: 'programas.gestionar',
+      children: [
+        { kind: 'link', label: 'Cursos virtuales', icon: '▣', path: '/app/aula-virtual', iconTone: 'indigo', permiso: 'programas.gestionar' },
+        { kind: 'link', label: 'Editor sitio portal', icon: '✎', path: '/app/aula-virtual/sitio', iconTone: 'indigo', permiso: 'programas.gestionar' },
+        { kind: 'link', label: 'Foro de cursos', icon: '💬', path: '/app/aula-virtual/foro', iconTone: 'indigo', permiso: 'programas.gestionar' },
+      ],
     },
     {
       kind: 'link',
@@ -1499,7 +1487,6 @@ export class ShellComponent {
     if (u.includes('/aula-virtual')) {
       patch['Aula Virtual'] = true;
     }
-
     if (u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/combos')) {
       patch['Flujo de Caja'] = true;
     }
