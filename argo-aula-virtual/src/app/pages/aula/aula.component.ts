@@ -175,6 +175,7 @@ export class AulaComponent implements OnInit, OnDestroy {
       puntajes: 'Mis puntajes',
       certificados: 'Certificados',
       perfil: 'Perfil',
+      foro: 'Foro de cursos',
     };
     return labels[this.panel()] || 'Mi aula';
   }
