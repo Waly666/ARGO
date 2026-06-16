@@ -45,6 +45,9 @@ export interface ContratacionDto {
   jornadasGeneradas?: boolean;
   /** juridica_empresa | juridica_oficial | juridica_ong | persona_natural */
   idClienteFacturacion?: string | null;
+  /** Nombre mostrado en listados (desde catálogo clientes). */
+  clienteNombre?: string;
+  clienteIdentificacion?: string | null;
   valorContrato?: number;
   idFacturaElectronica?: string | null;
   facturadoAt?: string;

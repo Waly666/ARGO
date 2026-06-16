@@ -1,4 +1,5 @@
 const Contratacion = require('../models/Contratacion');
+const Cliente = require('../models/Cliente');
 const fs = require('fs');
 const path = require('path');
 const upload = require('../middleware/upload');
@@ -32,7 +33,7 @@ const {
   crearContextoCertificadoContrato,
 } = require('../services/certificadoJornadaAuto');
 const { buscarPrograma } = require('../services/programaServicio');
-const { crearMatriculaDesdeBody } = require('./matriculaController');
+const { crearMatriculaDesdeBody } = require('../services/matriculaCreator');
 const { ESTADOS_CLASE, UBICACIONES_CLASE, DETE_GEOREFE_VALORES, ESTADO_JORNADA_EN_PROCESO } = require('../constants/jornadaCapacitacion');
 const {
   sincronizarEstadoJornada,
@@ -113,6 +114,73 @@ function parseDeteGeorefe(v) {
 
 const ESTADOS_CONTRATO = ['En Ejecución', 'Ejecutado'];
 
+const TIPO_ID_DESDE_CLIENTE = {
+  '31': 'NIT',
+  '13': 'CC',
+  '22': 'CE',
+  '12': 'TI',
+  '41': 'PP',
+};
+
+async function syncContratoDesdeCliente(dto) {
+  const cli = await Cliente.findById(dto.idClienteFacturacion).lean();
+  if (!cli) {
+    const err = new Error('Cliente no encontrado. Créelo en Configuración → Clientes.');
+    err.status = 400;
+    throw err;
+  }
+  if (cli.activo === false) {
+    const err = new Error('El cliente seleccionado está inactivo.');
+    err.status = 400;
+    throw err;
+  }
+  dto.numeroIdentificacion = String(cli.identificacion || '').trim();
+  dto.tipoIdentificacion =
+    TIPO_ID_DESDE_CLIENTE[String(cli.identificationDocumentCode || '').trim()] ||
+    String(cli.identificationDocumentCode || 'NIT').trim() ||
+    'NIT';
+  dto.razoSocial = String(cli.razonSocial || cli.nombres || '').trim();
+  dto.nombreComercial = String(cli.nombreComercial || '').trim();
+  dto.email = String(cli.correo || '').trim();
+  dto.telefono = String(cli.telefono || '').trim();
+  if (!String(dto.direccion || '').trim() && cli.direccion) {
+    dto.direccion = String(cli.direccion).trim();
+  }
+  if (!String(dto.codMunicipio || '').trim() && cli.municipioCodigo) {
+    dto.codMunicipio = String(cli.municipioCodigo).trim();
+  }
+  if (!String(dto.ciudad || '').trim() && cli.municipioNombre) {
+    dto.ciudad = String(cli.municipioNombre).trim();
+  }
+  return dto;
+}
+
+function enrichContratoRespuesta(c, clienteMap) {
+  const cli = c.idClienteFacturacion ? clienteMap.get(String(c.idClienteFacturacion)) : null;
+  const base = { ...c, estado: normalizarEstadoContrato(c.estado) };
+  if (!cli) return base;
+  const nombre = String(cli.nombreComercial || cli.razonSocial || cli.nombres || '').trim();
+  return {
+    ...base,
+    clienteNombre: nombre,
+    clienteIdentificacion: cli.identificacion || null,
+    razoSocial: String(cli.razonSocial || cli.nombres || base.razoSocial || '').trim(),
+    nombreComercial: String(cli.nombreComercial || base.nombreComercial || '').trim(),
+    numeroIdentificacion: String(cli.identificacion || base.numeroIdentificacion || '').trim(),
+  };
+}
+
+async function enrichContratosRespuesta(rows) {
+  const ids = [
+    ...new Set(
+      rows.map((r) => r.idClienteFacturacion).filter(Boolean).map((id) => String(id)),
+    ),
+  ];
+  const clientes = ids.length ? await Cliente.find({ _id: { $in: ids } }).lean() : [];
+  const map = new Map(clientes.map((cl) => [String(cl._id), cl]));
+  return rows.map((c) => enrichContratoRespuesta(c, map));
+}
+
 function pickContrato(body) {
   const fields = [
     'tipoIdentificacion',
@@ -170,7 +238,20 @@ function pickContrato(body) {
   return dto;
 }
 
-async function enrichContratoDto(dto) {
+async function enrichContratoDto(dto, prev = null) {
+  const clienteId =
+    dto.idClienteFacturacion !== undefined
+      ? dto.idClienteFacturacion
+      : prev?.idClienteFacturacion || null;
+  if (!clienteId) {
+    const err = new Error(
+      'Seleccione la empresa desde el catálogo de clientes (Configuración → Clientes).',
+    );
+    err.status = 400;
+    throw err;
+  }
+  dto.idClienteFacturacion = clienteId;
+  await syncContratoDesdeCliente(dto);
   if (dto.idSupervisor) {
     const sup = await Supervisor.findById(dto.idSupervisor).lean();
     if (sup?.nombre) dto.supervisor = sup.nombre;
@@ -181,7 +262,7 @@ async function enrichContratoDto(dto) {
 exports.listarContratos = async (_req, res, next) => {
   try {
     const rows = await Contratacion.find().sort({ createdAt: -1 }).lean();
-    res.json(rows.map((c) => ({ ...c, estado: normalizarEstadoContrato(c.estado) })));
+    res.json(await enrichContratosRespuesta(rows));
   } catch (e) {
     next(e);
   }
@@ -191,7 +272,8 @@ exports.obtenerContrato = async (req, res, next) => {
   try {
     const c = await Contratacion.findById(req.params.id).lean();
     if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
-    res.json({ ...c, estado: normalizarEstadoContrato(c.estado) });
+    const [enriched] = await enrichContratosRespuesta([c]);
+    res.json(enriched);
   } catch (e) {
     next(e);
   }
@@ -202,7 +284,8 @@ exports.crearContrato = async (req, res, next) => {
     const dto = await enrichContratoDto(pickContrato(req.body || {}));
     dto.userAddReg = auditoriaUsuario(req);
     const c = await Contratacion.create(dto);
-    res.status(201).json(c);
+    const [enriched] = await enrichContratosRespuesta([c.toObject ? c.toObject() : c]);
+    res.status(201).json(enriched);
   } catch (e) {
     next(e);
   }
@@ -212,7 +295,7 @@ exports.actualizarContrato = async (req, res, next) => {
   try {
     const prev = await Contratacion.findById(req.params.id).lean();
     if (!prev) return res.status(404).json({ message: 'Contrato no encontrado' });
-    const dto = await enrichContratoDto(pickContrato(req.body || {}));
+    const dto = await enrichContratoDto(pickContrato(req.body || {}), prev);
     dto.userChangeRecord = auditoriaUsuario(req);
     const pasoAEjecutado =
       dto.estado === 'Ejecutado' && normalizarEstadoContrato(prev.estado) !== 'Ejecutado';
@@ -224,7 +307,8 @@ exports.actualizarContrato = async (req, res, next) => {
     if (pasoAEjecutado) {
       await cerrarJornadasActivasContrato(c._id);
     }
-    res.json({ ...c, estado: normalizarEstadoContrato(c.estado) });
+    const [enriched] = await enrichContratosRespuesta([c]);
+    res.json(enriched);
   } catch (e) {
     next(e);
   }

@@ -6,6 +6,7 @@ const { parseNumDoc } = require('../utils/numDoc');
 const { numeroDocumentoQuery } = require('../utils/empleadoDoc');
 const { validarDocumentosPendientesAlumno } = require('./alumnoDocumentos');
 const { indicadoresClasesCeaCreadoPorAlumnos } = require('./programacionCeaAuto');
+const { detalleTextoIngreso, idsLiquidacionIngreso } = require('./comprobantesAlertas');
 
 function inicioDia(d = new Date()) {
   const x = new Date(d);
@@ -88,11 +89,12 @@ function numValor(v) {
   return Number(v) || 0;
 }
 
-function mapIngresoHoy(ing) {
+function mapIngresoHoy(ing, descrMap = {}) {
   return {
     id: String(ing._id),
     numRecibo: ing.numRecibo || null,
     valor: numValor(ing.valor),
+    detalle: detalleTextoIngreso(ing, descrMap) || null,
     fecha: ing.fecha || ing.createdAt || null,
   };
 }
@@ -102,6 +104,7 @@ function mapEgresoHoy(eg) {
     id: String(eg._id),
     numRecibo: eg.numRecibo || null,
     valor: numValor(eg.valorEgreso),
+    detalle: String(eg.concepto || '').trim() || null,
     fecha: eg.fechaEgreso || eg.fechaAudi || null,
   };
 }
@@ -145,7 +148,7 @@ async function movimientosHoyPorAlumnos(numDocs) {
         { fecha: { $gte: hoy, $lte: fin } },
       ],
     })
-      .select('_id numDoc numRecibo valor fecha createdAt')
+      .select('_id numDoc numRecibo valor fecha createdAt detalle idLiquidacion concepto tipoIngreso')
       .sort({ createdAt: -1 })
       .lean(),
     FacturaElectronica.find({
@@ -164,17 +167,23 @@ async function movimientosHoyPorAlumnos(numDocs) {
           $or: orEgreso,
           fechaEgreso: { $gte: hoy, $lte: fin },
         })
-          .select('_id numeroDocumento numDoc numRecibo valorEgreso fechaEgreso fechaAudi')
+          .select('_id numeroDocumento numDoc numRecibo valorEgreso concepto fechaEgreso fechaAudi')
           .sort({ fechaEgreso: -1 })
           .lean()
       : [],
   ]);
 
+  const liqIds = [...new Set(ingresos.flatMap((ing) => idsLiquidacionIngreso(ing)))];
+  const liqs = liqIds.length
+    ? await Liquidacion.find({ _id: { $in: liqIds } }).select('_id descripcion').lean()
+    : [];
+  const descrMap = Object.fromEntries(liqs.map((l) => [String(l._id), l.descripcion || '']));
+
   for (const ing of ingresos) {
     const k = claveNumDoc(ing.numDoc);
     if (k == null || !map.has(k)) continue;
     const slot = map.get(k);
-    if (!slot.ingreso) slot.ingreso = mapIngresoHoy(ing);
+    if (!slot.ingreso) slot.ingreso = mapIngresoHoy(ing, descrMap);
   }
 
   for (const eg of egresos) {

@@ -362,6 +362,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.supervisores().map((s) => ({ value: s._id, label: s.nombre })),
   );
 
+  opcionesClientesContrato = computed<EnumBuscarOption[]>(() =>
+    this.clientesFe().map((c) => ({
+      value: c._id || '',
+      label: `${c.nombre || c.razonSocial || c.nombres || '—'} · ${c.identificacion}`,
+    })),
+  );
+
+  textoClienteContrato = computed(() => {
+    const cli = this.clienteFeSeleccionado();
+    if (!cli) return '';
+    const nom = (cli.nombre || cli.razonSocial || cli.nombres || '').trim();
+    return nom ? `${nom} · ${cli.identificacion}` : String(cli.identificacion || '');
+  });
+
   opcionesContratosToolbar = computed<EnumBuscarOption[]>(() =>
     this.contratos().map((c) => ({
       value: c._id || '',
@@ -1605,7 +1619,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   cargarDatosFacturacionContrato(): void {
     this.clienteSvc.listar().subscribe({
-      next: (rows) => this.clientesFe.set(rows || []),
+      next: (rows) => {
+        this.clientesFe.set(rows || []);
+        const cli = this.clienteFeSeleccionado();
+        if (cli) this.aplicarClienteAlContrato(cli);
+      },
       error: () => this.clientesFe.set([]),
     });
     this.clienteSvc.catalogos().subscribe({
@@ -1631,16 +1649,62 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.clientesFe().find((x) => x._id === id) || null;
   }
 
+  private tipoIdDesdeCliente(code?: string | null): string {
+    const map: Record<string, string> = {
+      '31': 'NIT',
+      '13': 'CC',
+      '22': 'CE',
+      '12': 'TI',
+      '41': 'PP',
+    };
+    const c = String(code || '').trim();
+    return map[c] || c || 'NIT';
+  }
+
+  private contratoDtoConCliente(f: ContratacionDto, cli: Cliente): ContratacionDto {
+    return {
+      ...f,
+      idClienteFacturacion: cli._id || f.idClienteFacturacion || null,
+      razoSocial: (cli.razonSocial || cli.nombres || '').trim(),
+      nombreComercial: (cli.nombreComercial || '').trim(),
+      numeroIdentificacion: (cli.identificacion || '').trim(),
+      tipoIdentificacion: this.tipoIdDesdeCliente(cli.identificationDocumentCode),
+      email: cli.correo || f.email || '',
+      telefono: cli.telefono || f.telefono || '',
+    };
+  }
+
+  private aplicarClienteAlContrato(cli: Cliente | null): void {
+    if (!cli?._id) {
+      this.patchContrato('idClienteFacturacion', null);
+      return;
+    }
+    this.formContrato.update((f) => this.contratoDtoConCliente(f, cli));
+  }
+
   onClienteFacturacionChange(id: string): void {
-    this.patchContrato('idClienteFacturacion', id || null);
-    const c = this.clientesFe().find((x) => x._id === id);
-    if (c && !this.formContrato().razoSocial?.trim()) {
-      this.patchContrato('razoSocial', c.razonSocial || c.nombres || '');
-    }
-    if (c && !this.formContrato().numeroIdentificacion?.trim()) {
-      this.patchContrato('numeroIdentificacion', c.identificacion || '');
-    }
+    const c = this.clientesFe().find((x) => x._id === id) || null;
+    this.aplicarClienteAlContrato(c);
     this.previewFacturaContrato.set(null);
+  }
+
+  onClienteContratoPick(opt: EnumBuscarOption): void {
+    this.onClienteFacturacionChange(String(opt.value));
+  }
+
+  onClienteContratoLimpiar(): void {
+    this.onClienteFacturacionChange('');
+  }
+
+  inicialesCliente(cli: Cliente): string {
+    const base = (cli.razonSocial || cli.nombres || cli.nombreComercial || cli.nombre || '?').trim();
+    const parts = base.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return base.slice(0, 2).toUpperCase();
+  }
+
+  nombreMostrarCliente(cli: Cliente): string {
+    return (cli.razonSocial || cli.nombres || cli.nombre || cli.nombreComercial || '—').trim();
   }
 
   abrirCrearClienteFe(): void {
@@ -1651,6 +1715,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.clienteSvc.listar().subscribe({
       next: (rows) => {
         this.clientesFe.set(rows || []);
+        const cli = this.clienteFeSeleccionado();
+        if (cli) this.aplicarClienteAlContrato(cli);
         this.mostrarMsg('Lista de clientes actualizada.', 'ok', 'Clientes');
       },
       error: () => this.mostrarMsg('No se pudieron recargar los clientes.', 'error', 'Clientes'),
@@ -1766,14 +1832,28 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   guardarContrato() {
     const f = this.formContrato();
-    if (!f.razoSocial?.trim() && !f.nombreComercial?.trim()) {
-      this.mostrarMsg('Indique la razón social o el nombre comercial del cliente.', 'warn', 'Datos del contrato');
+    if (!f.idClienteFacturacion) {
+      this.mostrarMsg(
+        'Seleccione la empresa desde el catálogo de clientes.',
+        'warn',
+        'Datos del contrato',
+      );
       return;
     }
+    const cli = this.clientesFe().find((x) => x._id === f.idClienteFacturacion);
+    if (!cli) {
+      this.mostrarMsg(
+        'Cliente no encontrado. Recargue la lista o créelo en Configuración → Clientes.',
+        'warn',
+        'Datos del contrato',
+      );
+      return;
+    }
+    const payload = this.contratoDtoConCliente(f, cli);
     this.loading.set(true);
-    const req = f._id
-      ? this.jornadaSvc.actualizarContrato(f._id, f)
-      : this.jornadaSvc.crearContrato(f);
+    const req = payload._id
+      ? this.jornadaSvc.actualizarContrato(payload._id, payload)
+      : this.jornadaSvc.crearContrato(payload);
     req.subscribe({
       next: (c) => {
         this.loading.set(false);
@@ -1795,6 +1875,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       objetoContrato: c.objetoContrato || c.objeto || '',
       fechaInicJornadas: c.fechaInicJornadas ? ymdCalendario(c.fechaInicJornadas) : '',
     });
+    const cli = this.clientesFe().find((x) => x._id === c.idClienteFacturacion);
+    if (cli) this.aplicarClienteAlContrato(cli);
     this.fechaFinalizacionContrato.set(
       c.fechaFinalizacion ? ymdCalendario(c.fechaFinalizacion) : ymdLocal(new Date()),
     );
@@ -2203,11 +2285,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.recargarClases();
   }
 
+  labelClienteContrato(c: ContratacionDto): string {
+    const nom = (c.clienteNombre || c.nombreComercial || c.razoSocial || '').trim();
+    const id = (c.clienteIdentificacion || c.numeroIdentificacion || '').trim();
+    if (nom && id) return `${nom} (${id})`;
+    return nom || id || '—';
+  }
+
   labelContratoCorto(idContrato?: string): string {
     if (!idContrato) return '—';
     const c = this.contratos().find((x) => x._id === idContrato);
     if (!c) return '—';
-    return (c.codContrato || c.nombreComercial || c.razoSocial || '').trim() || '—';
+    return (c.codContrato || c.clienteNombre || c.nombreComercial || c.razoSocial || '').trim() || '—';
   }
 
   labelContratoDeJornada(idJornada?: string): string {
@@ -2318,7 +2407,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   labelContrato(c: ContratacionDto): string {
     const cod = (c.codContrato || '').trim();
-    const nom = (c.nombreComercial || c.razoSocial || '').trim();
+    const nom = (c.clienteNombre || c.nombreComercial || c.razoSocial || '').trim();
     if (cod && nom) return `${cod} — ${nom}`;
     return cod || nom || '—';
   }

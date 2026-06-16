@@ -86,91 +86,181 @@
       <h2>Contratación con empresas</h2>
 
       <div class="contrato-form argo-form-shell">
-        <section class="form-block">
-          <h3 class="form-block-title">Contrato</h3>
-          <div class="row row-fields">
-            <div class="field col-w-cod field-cod-contrato">
-              <label title="codContrato">Código contrato</label>
-              <input
-                type="text"
-                class="mono input-cod-contrato"
-                [ngModel]="formContrato().codContrato"
-                (ngModelChange)="patchContrato('codContrato', $event)"
-                placeholder="Ej. JOR-2025-001" />
+        @if (formContrato()._id) {
+          <div class="contrato-form-banner">
+            <div class="contrato-form-banner-main">
+              <span class="contrato-form-banner-label">Editando contrato</span>
+              <span class="contrato-form-banner-cod mono">{{ formContrato().codContrato || 'Sin código' }}</span>
             </div>
-            <div class="field col-w-md">
-              <label>Razón social</label>
-              <input type="text" [ngModel]="formContrato().razoSocial" (ngModelChange)="patchContrato('razoSocial', $event)" />
-            </div>
-            <div class="field col-w-md">
-              <label>Nombre comercial</label>
-              <input type="text" [ngModel]="formContrato().nombreComercial" (ngModelChange)="patchContrato('nombreComercial', $event)" />
-            </div>
-            <div class="field col-w-sm">
-              <label>Nº identificación</label>
-              <input type="text" [ngModel]="formContrato().numeroIdentificacion" (ngModelChange)="patchContrato('numeroIdentificacion', $event)" />
-            </div>
+            <span [ngClass]="estadoContratoLiveClass(formContrato().estado)">
+              {{ labelEstadoContrato(formContrato().estado) }}
+            </span>
           </div>
-          <div class="row row-fields">
-            <div class="field col-w-full field-objeto-contrato">
+        }
+
+        <div class="contrato-form-layout">
+          <section class="form-block contrato-empresa-block">
+            <header class="contrato-block-head">
+              <span class="contrato-block-icon" aria-hidden="true"></span>
+              <div>
+                <h3 class="form-block-title">Empresa contratante</h3>
+                <p class="contrato-block-sub">
+                  Seleccione del
+                  <a routerLink="/app/configuracion/clientes" target="_blank">catálogo de clientes</a>.
+                  Los mismos datos se usan al facturar.
+                </p>
+              </div>
+            </header>
+
+            <div class="empresa-picker">
+              <div class="empresa-picker-buscar">
+                <argo-catalogo-enum-buscar
+                  label="Empresa *"
+                  placeholder="Escriba razón social, nombre o NIT…"
+                  [textoInicial]="textoClienteContrato()"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesClientesContrato()"
+                  (seleccionado)="onClienteContratoPick($event)"
+                  (limpiado)="onClienteContratoLimpiar()"
+                />
+              </div>
+              <div class="empresa-picker-actions">
+                <button type="button" class="ghost sm" (click)="abrirCrearClienteFe()">+ Nuevo cliente</button>
+                <button type="button" class="ghost sm icon-btn" (click)="recargarClientesFe()" title="Actualizar lista">↻</button>
+              </div>
+            </div>
+
+            @if (clienteFeSeleccionado(); as cli) {
+              <div class="empresa-resumen-card">
+                <div class="empresa-resumen-top">
+                  <div class="empresa-avatar" aria-hidden="true">{{ inicialesCliente(cli) }}</div>
+                  <div class="empresa-resumen-titulo">
+                    <strong class="empresa-nombre-principal">{{ nombreMostrarCliente(cli) }}</strong>
+                    @if (cli.nombreComercial && cli.nombreComercial !== nombreMostrarCliente(cli)) {
+                      <span class="empresa-nombre-comercial">{{ cli.nombreComercial }}</span>
+                    }
+                    <span class="empresa-nit mono">{{ cli.identificacion }}</span>
+                  </div>
+                  <button type="button" class="ghost sm linkish empresa-editar" (click)="abrirCrearClienteFe()">
+                    Editar en Clientes
+                  </button>
+                </div>
+
+                <dl class="empresa-datos-grid">
+                  <div class="empresa-dato">
+                    <dt>Razón social</dt>
+                    <dd>{{ cli.razonSocial || cli.nombres || '—' }}</dd>
+                  </div>
+                  <div class="empresa-dato">
+                    <dt>Nombre comercial</dt>
+                    <dd>{{ cli.nombreComercial || '—' }}</dd>
+                  </div>
+                  <div class="empresa-dato">
+                    <dt>Identificación</dt>
+                    <dd class="mono">{{ cli.identificacion || '—' }}</dd>
+                  </div>
+                  @if (cli.correo || cli.telefono) {
+                    <div class="empresa-dato empresa-dato--wide">
+                      <dt>Contacto</dt>
+                      <dd>
+                        @if (cli.correo) { <span>{{ cli.correo }}</span> }
+                        @if (cli.correo && cli.telefono) { <span class="sep">·</span> }
+                        @if (cli.telefono) { <span>{{ cli.telefono }}</span> }
+                      </dd>
+                    </div>
+                  }
+                </dl>
+
+                <div class="cliente-fe-fiscal empresa-fiscal">
+                  <span class="fiscal-tag fiscal-tag--tipo" [class.on]="!!cli.tipoContratoCap" [class.off]="!cli.tipoContratoCap">
+                    {{ cli.tipoContratoCapLabel || labelTipoContratoCap(cli.tipoContratoCap) || 'Sin tipo fiscal' }}
+                  </span>
+                  <span class="fiscal-tag" [class.on]="cli.granContribuyente" [class.off]="!cli.granContribuyente">
+                    Gran contribuyente
+                  </span>
+                  <span class="fiscal-tag" [class.on]="cli.autoretenedor" [class.off]="!cli.autoretenedor">
+                    Autorretenedor{{ cli.autoretenedor && cli.porcentajeReteFuente ? ' ' + cli.porcentajeReteFuente + '%' : '' }}
+                  </span>
+                  <span class="fiscal-tag" [class.on]="cli.agenteRetenedorIva" [class.off]="!cli.agenteRetenedorIva">
+                    ReteIVA{{ cli.agenteRetenedorIva && cli.porcentajeReteIva ? ' ' + cli.porcentajeReteIva + '%' : '' }}
+                  </span>
+                </div>
+              </div>
+            } @else {
+              <div class="empresa-empty-state">
+                <p><strong>Sin empresa seleccionada</strong></p>
+                <p>Busque y elija la empresa contratante. Si no existe, créela en Clientes y vuelva aquí.</p>
+              </div>
+            }
+          </section>
+
+          <section class="form-block contrato-identidad-block">
+            <header class="contrato-block-head">
+              <span class="contrato-block-icon contrato-block-icon--doc" aria-hidden="true"></span>
+              <div>
+                <h3 class="form-block-title">Datos del contrato</h3>
+                <p class="contrato-block-sub">Código interno y objeto contractual (detalle de la factura).</p>
+              </div>
+            </header>
+
+            <div class="row row-fields contrato-identidad-fields">
+              <div class="field col-w-cod field-cod-contrato">
+                <label title="codContrato">Código contrato</label>
+                <input
+                  type="text"
+                  class="mono input-cod-contrato"
+                  [ngModel]="formContrato().codContrato"
+                  (ngModelChange)="patchContrato('codContrato', $event)"
+                  placeholder="Ej. JOR-2025-001" />
+              </div>
+            </div>
+
+            <div class="field field-objeto-contrato field-objeto-full">
               <label>Objeto del contrato</label>
               <textarea
-                rows="6"
+                rows="5"
                 [ngModel]="formContrato().objetoContrato"
                 (ngModelChange)="patchContrato('objetoContrato', $event)"
-                placeholder="Describa el objeto contractual: alcance, programa, obligaciones, etc. (será el detalle de la factura)."></textarea>
+                placeholder="Alcance, programa, obligaciones, lugar de ejecución… Este texto será la línea de detalle al facturar."></textarea>
+              <span class="field-hint">Describa con claridad: será el detalle visible en la factura electrónica.</span>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         <section class="form-block form-block-factura" *ngIf="puedeFacturarContrato()">
-          <h3 class="form-block-title">Facturación del contrato</h3>
-          <p class="hint-block">
-            Una factura por contrato, en cualquier momento. El tipo de contratante y perfil fiscal vienen del
-            <a routerLink="/app/configuracion/clientes" target="_blank">cliente de facturación</a>
-            (reglas en
-            <a routerLink="/app/configuracion/contratos-cap-fiscal" target="_blank">Contratos capacitación (fiscal)</a>).
-          </p>
-          <div class="row row-fields">
-            <div class="field col-w-lg field-cliente-fe">
-              <label>Cliente facturación *</label>
-              <div class="inline cliente-fe-row">
-                <select
-                  [ngModel]="formContrato().idClienteFacturacion || ''"
-                  (ngModelChange)="onClienteFacturacionChange($event)">
-                  <option value="">— Seleccione cliente —</option>
-                  <option *ngFor="let c of clientesFe()" [value]="c._id">
-                    {{ c.nombre || c.razonSocial || c.nombres }} ({{ c.identificacion }})
-                  </option>
-                </select>
-                <button type="button" class="ghost mini" (click)="abrirCrearClienteFe()">+ Crear</button>
-                <button type="button" class="ghost mini" (click)="recargarClientesFe()">↻</button>
-              </div>
-              <div class="cliente-fe-fiscal" *ngIf="clienteFeSeleccionado() as cli">
-                <span class="fiscal-tag fiscal-tag--tipo" [class.on]="!!cli.tipoContratoCap" [class.off]="!cli.tipoContratoCap">
-                  {{ cli.tipoContratoCapLabel || labelTipoContratoCap(cli.tipoContratoCap) || 'Sin tipo — edite en Clientes' }}
-                </span>
-                <span class="fiscal-tag" [class.on]="cli.granContribuyente" [class.off]="!cli.granContribuyente">
-                  Gran contribuyente
-                </span>
-                <span class="fiscal-tag" [class.on]="cli.autoretenedor" [class.off]="!cli.autoretenedor">
-                  Autorretenedor{{ cli.autoretenedor && cli.porcentajeReteFuente ? ' ' + cli.porcentajeReteFuente + '%' : '' }}
-                </span>
-                <span class="fiscal-tag" [class.on]="cli.agenteRetenedorIva" [class.off]="!cli.agenteRetenedorIva">
-                  ReteIVA{{ cli.agenteRetenedorIva && cli.porcentajeReteIva ? ' ' + cli.porcentajeReteIva + '%' : '' }}
-                </span>
-                <button type="button" class="ghost mini linkish" (click)="abrirCrearClienteFe()">Editar en Clientes</button>
+          <header class="contrato-block-head">
+            <span class="contrato-block-icon contrato-block-icon--money" aria-hidden="true"></span>
+            <div>
+              <h3 class="form-block-title">Facturación</h3>
+              <p class="contrato-block-sub">
+                Una factura por contrato. Perfil fiscal según el cliente y
+                <a routerLink="/app/configuracion/contratos-cap-fiscal" target="_blank">reglas de capacitación</a>.
+              </p>
+            </div>
+          </header>
+
+          <div class="factura-valor-row">
+            <div class="field field-valor-contrato">
+              <label>Valor del contrato *</label>
+              <div class="input-money-wrap">
+                <span class="input-money-prefix">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  class="input-money"
+                  [ngModel]="formContrato().valorContrato"
+                  (ngModelChange)="patchContrato('valorContrato', +$event); previewFacturaContrato.set(null)" />
               </div>
             </div>
-            <div class="field col-w-sm">
-              <label>Valor contrato *</label>
-              <input
-                type="number"
-                min="0"
-                [ngModel]="formContrato().valorContrato"
-                (ngModelChange)="patchContrato('valorContrato', +$event); previewFacturaContrato.set(null)" />
-            </div>
+            @if (formContrato().valorContrato) {
+              <p class="factura-valor-hint">
+                {{ fmtMoney(formContrato().valorContrato) }}
+              </p>
+            }
           </div>
+
           <div class="factura-contrato-actions" *ngIf="formContrato()._id">
             <ng-container *ngIf="!contratoYaFacturado(); else yaFacturado">
               <button type="button" class="ghost" (click)="calcularPreviewFacturaContrato()">Calcular factura</button>
@@ -183,26 +273,27 @@
               </button>
             </ng-container>
             <ng-template #yaFacturado>
-              <span class="badge ok">
+              <span class="badge ok factura-badge-ok">
                 Facturado: {{ estadoFacturaContrato()?.factura?.numeroFactura || '—' }}
               </span>
             </ng-template>
           </div>
+
           <div class="preview-factura-contrato" *ngIf="previewFacturaContrato() as p">
-            <p><strong>Línea:</strong> {{ p.detalle?.descripcion }}</p>
-            <p><strong>Cliente:</strong> {{ p.adquirente?.nombre }}</p>
-            <p><strong>Perfil:</strong> {{ p.regla?.label }} · IVA {{ p.regla?.condicionIva }}</p>
-            <p *ngIf="p.adquirente?.granContribuyente || p.adquirente?.autoretenedor || p.adquirente?.agenteRetenedorIva">
-              <strong>Cliente:</strong>
-              <span *ngIf="p.adquirente?.granContribuyente"> Gran contribuyente</span>
-              <span *ngIf="p.adquirente?.autoretenedor"> · Autorretenedor</span>
-              <span *ngIf="p.adquirente?.agenteRetenedorIva"> · Agente ReteIVA {{ p.adquirente?.porcentajeReteIva }}%</span>
-            </p>
-            <p>
-              <strong>Total:</strong> {{ fmtMoney(p.totales?.total) }}
-              <span *ngIf="p.retenciones?.reteIva?.aplica"> · ReteIVA {{ fmtMoney(p.retenciones.reteIva.valor) }}</span>
-              <span *ngIf="p.retenciones?.reteFuente?.aplica"> · ReteFuente {{ fmtMoney(p.retenciones.reteFuente.valor) }}</span>
-            </p>
+            <h4 class="preview-factura-title">Vista previa</h4>
+            <dl class="preview-factura-grid">
+              <div><dt>Línea</dt><dd>{{ p.detalle?.descripcion }}</dd></div>
+              <div><dt>Cliente</dt><dd>{{ p.adquirente?.nombre }}</dd></div>
+              <div><dt>Perfil</dt><dd>{{ p.regla?.label }} · IVA {{ p.regla?.condicionIva }}</dd></div>
+              <div class="preview-factura-total">
+                <dt>Total</dt>
+                <dd>
+                  <strong>{{ fmtMoney(p.totales?.total) }}</strong>
+                  <span *ngIf="p.retenciones?.reteIva?.aplica"> · ReteIVA {{ fmtMoney(p.retenciones.reteIva.valor) }}</span>
+                  <span *ngIf="p.retenciones?.reteFuente?.aplica"> · ReteFuente {{ fmtMoney(p.retenciones.reteFuente.valor) }}</span>
+                </dd>
+              </div>
+            </dl>
           </div>
         </section>
 
@@ -369,7 +460,7 @@
             [ngClass]="rowContratoClass(c.estado)"
             [title]="'Abrir jornadas del contrato ' + (c.codContrato || '')">
             <td><span [ngClass]="capCodContrato(c.codContrato)">{{ c.codContrato || '—' }}</span></td>
-            <td><span [ngClass]="capCliente(c.nombreComercial || c.razoSocial)">{{ c.nombreComercial || c.razoSocial }}</span></td>
+            <td><span [ngClass]="capCliente(labelClienteContrato(c))">{{ labelClienteContrato(c) }}</span></td>
             <td><span [ngClass]="capMunicipioJor(c.ciudad)">{{ c.ciudad || '—' }}</span></td>
             <td>
               <span [ngClass]="estadoContratoLiveClass(c.estado)">{{ labelEstadoContrato(c.estado) }}</span>

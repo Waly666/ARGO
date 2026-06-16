@@ -106,7 +106,10 @@ export class ContratosListaComponent implements OnInit {
   }
 
   labelCliente(c: ContratacionDto): string {
-    return (c.nombreComercial || c.razoSocial || '—').trim() || '—';
+    const nom = (c.clienteNombre || c.nombreComercial || c.razoSocial || '').trim();
+    const id = (c.clienteIdentificacion || c.numeroIdentificacion || '').trim();
+    if (nom && id) return `${nom} (${id})`;
+    return nom || id || '—';
   }
 
   labelCiudad(c: ContratacionDto): string {

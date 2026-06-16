@@ -28,6 +28,10 @@
             @if (a.nombreCompleto) {
               · {{ a.nombreCompleto }}
             }
+            · {{ fmt(a.valor) }}
+            @if (a.detalle) {
+              · {{ a.detalle }}
+            }
           </span>
         </button>
       </div>

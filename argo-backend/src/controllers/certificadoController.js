@@ -1,13 +1,17 @@
 const Certificado = require('../models/Certificado');
+const mongoose = require('mongoose');
+const XLSX = require('xlsx');
 const PlantillaCertificado = require('../models/PlantillaCertificado');
 const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado, siguienteCodigoCertificado, normalizeDiasAvisoCert, DEFAULT_DIAS_AVISO_POR_VENCER, DEFAULT_DIAS_AVISO_VENCIDO } = require('../services/configCertificado');
+const { reglaPorClave } = require('../services/configAlertas');
 const { buscarPrograma } = require('../services/programaServicio');
 const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery } = require('../utils/numDoc');
-const { coincideBusquedaAlumno, coincideBusquedaTexto, coincideBusquedaDocumento } = require('../utils/busquedaAlumnoNombre');
+const { coincideBusquedaAlumno, coincideBusquedaTexto, coincideBusquedaDocumento, filtroBusquedaAlumno } = require('../utils/busquedaAlumnoNombre');
+const { regexSinTildes } = require('../utils/regexSinTildes');
 const {
   clasificarProgramaAsync,
   orientacionPorTipo,
@@ -246,6 +250,139 @@ function nombreCompletoAlumno(al) {
   return [ap, n].filter(Boolean).join(' ').trim();
 }
 
+/** Nombre en listados: alumno → titular migrado → documento. */
+function nombreMostrarCertificado(c, al) {
+  const deAlumno = nombreCompletoAlumno(al);
+  if (deAlumno) return deAlumno;
+  const titular = String(c?.nombreTitular || '').trim();
+  if (titular) return titular;
+  if (c?.numDoc != null) return `Doc ${c.numDoc}`;
+  return '';
+}
+
+async function filtroBusquedaVencidos(qRaw) {
+  const q = String(qRaw || '').trim();
+  if (!q) return null;
+
+  const or = [
+    { codigoCert: regexSinTildes(q) },
+    { encabezado: regexSinTildes(q) },
+    { nombreTitular: regexSinTildes(q) },
+    { empresaNombre: regexSinTildes(q) },
+    { codVerificacion: regexSinTildes(q) },
+  ];
+
+  const nd = parseNumDoc(q);
+  if (nd != null) or.push({ numDoc: nd });
+
+  const digits = q.replace(/\D/g, '');
+  if (digits.length >= 3) {
+    or.push({
+      $expr: {
+        $regexMatch: { input: { $toString: '$numDoc' }, regex: digits },
+      },
+    });
+  }
+
+  const filtroAl = filtroBusquedaAlumno(q);
+  if (filtroAl) {
+    const alumnos = await DatosAlumno.find(filtroAl).select('numDoc').limit(800).lean();
+    const docs = [...new Set(alumnos.map((a) => a.numDoc).filter((n) => n != null))];
+    if (docs.length) or.push({ numDoc: { $in: docs } });
+  }
+
+  return { $or: or };
+}
+
+async function queryBaseVencidos(req) {
+  const base = {
+    ...filtrosExcluirJornadaCapacitacion(),
+    estado: 'vencido',
+  };
+
+  const tipoFmt = String(req.query.tipoFormatoCert || '').trim();
+  if (tipoFmt) base.tipoFormatoCert = tipoFmt;
+
+  const empresaIdParam = String(req.query.empresaId || '').trim();
+  if (empresaIdParam && mongoose.isValidObjectId(empresaIdParam)) {
+    base.empresaId = new mongoose.Types.ObjectId(empresaIdParam);
+  }
+
+  const desdeParam = String(req.query.vencimientoDesde || '').trim();
+  const hastaParam = String(req.query.vencimientoHasta || '').trim();
+  if (desdeParam || hastaParam) {
+    base.fechaVencimiento = {};
+    if (desdeParam) {
+      const d = parseFechaLocal(desdeParam);
+      if (d) {
+        d.setHours(0, 0, 0, 0);
+        base.fechaVencimiento.$gte = d;
+      }
+    }
+    if (hastaParam) {
+      const d = parseFechaLocal(hastaParam);
+      if (d) {
+        d.setHours(23, 59, 59, 999);
+        base.fechaVencimiento.$lte = d;
+      }
+    }
+    if (!Object.keys(base.fechaVencimiento).length) delete base.fechaVencimiento;
+  }
+
+  const busqueda = await filtroBusquedaVencidos(req.query.q);
+  if (busqueda) return { $and: [base, busqueda] };
+  return base;
+}
+
+async function mapearFilasVencidos(rows) {
+  const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+  const idProgs = [...new Set(rows.map((c) => String(c.idProg || '')).filter(Boolean))];
+
+  const [alumnosRows, programas] = await Promise.all([
+    numDocs.length ? DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [],
+    idProgs.length ? cat.programas.find({ idProg: { $in: idProgs } }).lean() : [],
+  ]);
+
+  const alByDoc = new Map(alumnosRows.map((a) => [a.numDoc, a]));
+  const progById = new Map(programas.map((p) => [String(p.idProg), p]));
+
+  return rows.map((c) => {
+    const al = alByDoc.get(c.numDoc);
+    const prog = c.idProg ? progById.get(String(c.idProg)) : null;
+    return {
+      ...c,
+      _id: String(c._id),
+      alumnoId: al?._id ? String(al._id) : null,
+      nombreCompleto: nombreMostrarCertificado(c, al),
+      programaDescr: prog?.descripcion || prog?.nombreProg || null,
+      nomCert: prog?.nomCert || null,
+      tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
+      empresaId: c.empresaId ? String(c.empresaId) : null,
+      empresaNombre: c.empresaNombre || null,
+    };
+  });
+}
+
+function ymdExport(val) {
+  if (!val) return '';
+  const d = new Date(val);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('es-CO');
+}
+
+function diasDesdeVencimientoExport(iso) {
+  if (!iso) return '';
+  const fv = new Date(iso);
+  fv.setHours(0, 0, 0, 0);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const diff = Math.floor((hoy.getTime() - fv.getTime()) / 86400000);
+  if (diff < 0) return '';
+  if (diff === 0) return 'hoy';
+  if (diff === 1) return 'ayer';
+  return `hace ${diff} días`;
+}
+
 function ymdLocalDate(d = new Date()) {
   const x = d instanceof Date ? d : new Date(d);
   if (Number.isNaN(x.getTime())) return '';
@@ -330,7 +467,7 @@ function mapAlertaPorVencerItem(c, al) {
     codigoCert: c.codigoCert || null,
     numDoc: c.numDoc,
     alumnoId: al?._id ? String(al._id) : null,
-    nombreCompleto: nombreCompletoAlumno(al) || `Doc ${c.numDoc}`,
+    nombreCompleto: nombreMostrarCertificado(c, al),
     celular: al?.celular || null,
     encabezado: c.encabezado || null,
     tipoFormatoCert: c.tipoFormatoCert || null,
@@ -350,7 +487,7 @@ function mapAlertaVencidoItem(c, al) {
     codigoCert: c.codigoCert || null,
     numDoc: c.numDoc,
     alumnoId: al?._id ? String(al._id) : null,
-    nombreCompleto: nombreCompletoAlumno(al) || `Doc ${c.numDoc}`,
+    nombreCompleto: nombreMostrarCertificado(c, al),
     celular: al?.celular || null,
     encabezado: c.encabezado || null,
     tipoFormatoCert: c.tipoFormatoCert || null,
@@ -363,28 +500,56 @@ function mapAlertaVencidoItem(c, al) {
   };
 }
 
+function claveNumDocCert(numDoc) {
+  const n = parseNumDoc(numDoc);
+  return n != null ? n : numDoc;
+}
+
 async function alumnosPorCertificados(rows) {
-  const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+  const numDocs = [...new Set(rows.map((c) => claveNumDocCert(c.numDoc)).filter((n) => n != null))];
   if (!numDocs.length) return new Map();
-  const alumnos = await DatosAlumno.find({ numDoc: { $in: numDocs } })
+  const valores = [];
+  const seen = new Set();
+  for (const nd of numDocs) {
+    const n = parseNumDoc(nd);
+    if (n == null) continue;
+    for (const v of [n, String(n)]) {
+      const key = `${typeof v}:${v}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        valores.push(v);
+      }
+    }
+  }
+  if (!valores.length) return new Map();
+  const alumnos = await DatosAlumno.find({ numDoc: { $in: valores } })
     .select('_id numDoc nombre1 nombre2 apellido1 apellido2 celular')
     .lean();
-  return new Map(alumnos.map((a) => [a.numDoc, a]));
+  const alByDoc = new Map();
+  for (const a of alumnos) {
+    const k = claveNumDocCert(a.numDoc);
+    if (k != null) alByDoc.set(k, a);
+  }
+  return alByDoc;
 }
 
 async function diasVentanaPorVencer(req) {
+  const diasQuery = req?.query?.dias != null ? parseInt(req.query.dias, 10) : null;
+  if (diasQuery != null && diasQuery > 0 && diasQuery <= 90) return diasQuery;
+  const regla = await reglaPorClave('alarmas.certificados.vencimiento');
+  const d = Number(regla?.diasAntelacion) || 0;
+  if (d > 0) return Math.min(d, 90);
   const cfg = await obtenerConfigCertificado();
-  if (req.query.dias != null && String(req.query.dias).trim() !== '') {
-    return normalizeDiasAvisoCert(req.query.dias, DEFAULT_DIAS_AVISO_POR_VENCER, 60);
-  }
   return normalizeDiasAvisoCert(cfg.diasAvisoCertificadoPorVencer, DEFAULT_DIAS_AVISO_POR_VENCER, 60);
 }
 
 async function diasVentanaVencidos(req) {
+  const diasQuery = req?.query?.dias != null ? parseInt(req.query.dias, 10) : null;
+  if (diasQuery != null && diasQuery > 0 && diasQuery <= 30) return diasQuery;
+  const regla = await reglaPorClave('alarmas.certificados.vencidos');
+  const d = Number(regla?.diasGracia) || 0;
+  if (d > 0) return Math.min(d, 30);
   const cfg = await obtenerConfigCertificado();
-  if (req.query.dias != null && String(req.query.dias).trim() !== '') {
-    return normalizeDiasAvisoCert(req.query.dias, DEFAULT_DIAS_AVISO_VENCIDO, 30);
-  }
   return normalizeDiasAvisoCert(cfg.diasAvisoCertificadoVencido, DEFAULT_DIAS_AVISO_VENCIDO, 30);
 }
 
@@ -398,7 +563,7 @@ exports.alertasPorVencer = async (req, res, next) => {
     const rows = await Certificado.find({
       ...filtrosExcluirJornadaCapacitacion(),
       fechaVencimiento: { $ne: null, $gte: hoy, $lte: limite },
-      estado: { $ne: 'anulado' },
+      estado: 'vigente',
     })
       .sort({ fechaVencimiento: 1 })
       .limit(200)
@@ -412,7 +577,7 @@ exports.alertasPorVencer = async (req, res, next) => {
     let urgente = 0;
 
     for (const c of rows) {
-      const al = alByDoc.get(c.numDoc);
+      const al = alByDoc.get(claveNumDocCert(c.numDoc));
       const item = mapAlertaPorVencerItem(c, al);
       const { diasRestantes } = item;
       if (diasRestantes == null || diasRestantes < 0 || diasRestantes > diasVentana) continue;
@@ -459,7 +624,7 @@ exports.alertasVencidos = async (req, res, next) => {
     const items = [];
 
     for (const c of rows) {
-      const al = alByDoc.get(c.numDoc);
+      const al = alByDoc.get(claveNumDocCert(c.numDoc));
       const item = mapAlertaVencidoItem(c, al);
       const { diasVencidos } = item;
       if (!diasVencidos || diasVencidos < 1 || diasVencidos > diasVentana) continue;
@@ -611,62 +776,85 @@ exports.listarGlobal = async (req, res, next) => {
 /** Certificados vencidos paginados — para la vista dedicada. */
 exports.listarVencidos = async (req, res, next) => {
   try {
-    const q = {
-      ...filtrosExcluirJornadaCapacitacion(),
-      estado: 'vencido',
-    };
-
-    const tipoFmt = String(req.query.tipoFormatoCert || '').trim();
-    if (tipoFmt) q.tipoFormatoCert = tipoFmt;
-
-    const qRaw = String(req.query.q || '').trim();
+    const q = await queryBaseVencidos(req);
 
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 200);
-    const page  = Math.max(Number(req.query.page) || 1, 1);
-    const skip  = (page - 1) * limit;
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
 
     const [total, rows] = await Promise.all([
       Certificado.countDocuments(q),
       Certificado.find(q).sort({ fechaVencimiento: -1 }).skip(skip).limit(limit).lean(),
     ]);
 
-    const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
-    const idProgs = [...new Set(rows.map((c) => String(c.idProg || '')).filter(Boolean))];
-
-    const [alumnosRows, programas] = await Promise.all([
-      numDocs.length ? DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [],
-      idProgs.length ? cat.programas.find({ idProg: { $in: idProgs } }).lean() : [],
-    ]);
-
-    const alByDoc  = new Map(alumnosRows.map((a) => [a.numDoc, a]));
-    const progById = new Map(programas.map((p) => [String(p.idProg), p]));
-
-    const items = [];
-    for (const c of rows) {
-      const al = alByDoc.get(c.numDoc);
-      const nombreCompleto = nombreCompletoAlumno(al);
-      if (qRaw) {
-        const hay =
-          (al && coincideBusquedaAlumno(al, qRaw)) ||
-          coincideBusquedaTexto(nombreCompleto, qRaw) ||
-          coincideBusquedaTexto(String(c.encabezado || ''), qRaw) ||
-          coincideBusquedaTexto(String(c.codigoCert || ''), qRaw) ||
-          coincideBusquedaDocumento(c.numDoc, qRaw);
-        if (!hay) continue;
-      }
-      const prog = c.idProg ? progById.get(String(c.idProg)) : null;
-      items.push({
-        ...c,
-        alumnoId: al?._id ? String(al._id) : null,
-        nombreCompleto,
-        programaDescr: prog?.descripcion || prog?.nombreProg || null,
-        nomCert: prog?.nomCert || null,
-        tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
-      });
-    }
+    const items = await mapearFilasVencidos(rows);
 
     noCache(res);
     res.json({ total, page, limit, totalPages: Math.ceil(total / limit) || 1, items });
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Exportar certificados vencidos filtrados a Excel. */
+exports.exportarVencidos = async (req, res, next) => {
+  try {
+    const q = await queryBaseVencidos(req);
+    const max = 15000;
+    const total = await Certificado.countDocuments(q);
+    if (total > max) {
+      return res.status(400).json({
+        message: `Hay ${total} certificados con el filtro actual. Refine la búsqueda (máximo ${max} filas por exportación).`,
+      });
+    }
+
+    const rows = await Certificado.find(q).sort({ fechaVencimiento: -1 }).limit(max).lean();
+    const items = await mapearFilasVencidos(rows);
+
+    const headers = [
+      'Código',
+      'Alumno / titular',
+      'Documento',
+      'Empresa',
+      'Encabezado / programa',
+      'Emisión',
+      'Venció',
+      'Hace',
+      'Estado',
+    ];
+
+    const dataRows = items.map((c) => [
+      c.codigoCert || '',
+      c.nombreCompleto || '',
+      c.numDoc != null ? String(c.numDoc) : '',
+      c.empresaNombre || '',
+      c.encabezado || c.nomCert || c.programaDescr || '',
+      ymdExport(c.fechaEmision),
+      ymdExport(c.fechaVencimiento),
+      diasDesdeVencimientoExport(c.fechaVencimiento),
+      c.estado || 'vencido',
+    ]);
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+    ws['!cols'] = [
+      { wch: 16 },
+      { wch: 32 },
+      { wch: 14 },
+      { wch: 28 },
+      { wch: 40 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 10 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Vencidos');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const fecha = new Date().toISOString().slice(0, 10);
+    noCache(res);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="certificados-vencidos-${fecha}.xlsx"`);
+    res.send(buffer);
   } catch (e) {
     next(e);
   }

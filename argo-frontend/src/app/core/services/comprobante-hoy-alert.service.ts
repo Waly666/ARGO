@@ -11,6 +11,7 @@ export interface ComprobanteHoyAlerta {
   numRecibo?: string | null;
   numeroFactura?: string | null;
   valor: number;
+  detalle?: string | null;
   numDoc?: number | string;
   nombreCompleto?: string;
   alumnoId?: string | null;
@@ -37,6 +38,22 @@ export class ComprobanteHoyAlertService {
 
   private claveAlarma(tipo: ComprobanteHoyTipo): string {
     return AlertasRuntimeService.claveComprobante(tipo);
+  }
+
+  private detalleDesdeIngreso(ing: Record<string, unknown>): string | null {
+    const detalle = ing['detalle'];
+    if (Array.isArray(detalle) && detalle.length) {
+      const descrs = detalle
+        .map((d) => String((d as Record<string, unknown>)?.['descripcion'] || '').trim())
+        .filter(Boolean);
+      if (descrs.length) return descrs.join(' · ');
+    }
+    const concepto = String(ing['concepto'] || '').trim();
+    if (concepto) return concepto;
+    const tipoIngreso = String(ing['tipoIngreso'] || '').trim();
+    if (tipoIngreso) return tipoIngreso;
+    const descripcion = String(ing['descripcion'] || '').trim();
+    return descripcion || null;
   }
 
   private puedeMostrarTipo(tipo: ComprobanteHoyTipo): boolean {
@@ -68,6 +85,7 @@ export class ComprobanteHoyAlertService {
         id,
         numRecibo: eg['numRecibo'] != null ? String(eg['numRecibo']) : null,
         valor: Number(eg['valorEgreso'] ?? eg['valor']) || 0,
+        detalle: String(eg['concepto'] || eg['detalle'] || '').trim() || null,
         numDoc: (eg['numeroDocumento'] as string | undefined) ?? ctx?.numDoc,
         nombreCompleto:
           ctx?.nombreCompleto ||
@@ -120,6 +138,7 @@ export class ComprobanteHoyAlertService {
         id,
         numRecibo: ing['numRecibo'] != null ? String(ing['numRecibo']) : null,
         valor: Number(ing['valor']) || 0,
+        detalle: this.detalleDesdeIngreso(ing),
         numDoc: (ing['numDoc'] as number | string | undefined) ?? ctx?.numDoc,
         nombreCompleto: ctx?.nombreCompleto || '',
         alumnoId: ctx?.alumnoId || null,
@@ -143,6 +162,7 @@ export class ComprobanteHoyAlertService {
       numRecibo: row['numRecibo'] != null ? String(row['numRecibo']) : null,
       numeroFactura: row['numeroFactura'] != null ? String(row['numeroFactura']) : null,
       valor: Number(row['valor']) || 0,
+      detalle: row['detalle'] != null ? String(row['detalle']).trim() || null : null,
       numDoc: row['numDoc'] as number | string | undefined,
       nombreCompleto: row['nombreCompleto'] != null ? String(row['nombreCompleto']) : '',
       alumnoId: row['alumnoId'] != null ? String(row['alumnoId']) : null,

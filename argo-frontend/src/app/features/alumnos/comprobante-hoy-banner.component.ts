@@ -51,10 +51,14 @@ export class ComprobanteHoyBannerComponent {
   }
 
   titulo(a: ComprobanteHoyAlerta): string {
-    const ref = this.etiquetaRef(a);
-    const nom = a.nombreCompleto ? ` · ${a.nombreCompleto}` : '';
-    const val = this.fmt(a.valor);
-    return `${this.etiquetaTipo(a.tipo, a)} ${ref}${nom} · ${val}`;
+    const partes = [
+      this.etiquetaTipo(a.tipo, a),
+      this.etiquetaRef(a),
+      a.nombreCompleto || '',
+      this.fmt(a.valor),
+      a.detalle || '',
+    ].filter(Boolean);
+    return partes.join(' · ');
   }
 
   fmt(v: number): string {

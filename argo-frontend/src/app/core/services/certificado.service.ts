@@ -36,6 +36,7 @@ export interface CertificadoListItem {
   numDoc?: number;
   alumnoId?: string | null;
   nombreCompleto?: string;
+  nombreTitular?: string | null;
   encabezado?: string;
   tipoFormatoCert?: string;
   tipoFormatoCertLabel?: string;
@@ -200,6 +201,9 @@ export class CertificadoService {
   listarVencidos(params?: {
     q?: string;
     tipoFormatoCert?: string;
+    empresaId?: string;
+    vencimientoDesde?: string;
+    vencimientoHasta?: string;
     page?: number;
     limit?: number;
     cacheBust?: number;
@@ -207,11 +211,33 @@ export class CertificadoService {
     const p = new URLSearchParams();
     if (params?.q?.trim()) p.set('q', params.q.trim());
     if (params?.tipoFormatoCert) p.set('tipoFormatoCert', params.tipoFormatoCert);
+    if (params?.empresaId) p.set('empresaId', params.empresaId);
+    if (params?.vencimientoDesde) p.set('vencimientoDesde', params.vencimientoDesde);
+    if (params?.vencimientoHasta) p.set('vencimientoHasta', params.vencimientoHasta);
     if (params?.page != null) p.set('page', String(params.page));
     if (params?.limit != null) p.set('limit', String(params.limit));
     p.set('_', String(params?.cacheBust ?? Date.now()));
     const qs = p.toString() ? `?${p}` : '';
     return this.http.get<CertificadosVencidosListadoRes>(`${this.base}/vencidos${qs}`);
+  }
+
+  exportarVencidos(params?: {
+    q?: string;
+    tipoFormatoCert?: string;
+    empresaId?: string;
+    vencimientoDesde?: string;
+    vencimientoHasta?: string;
+  }): Observable<Blob> {
+    const p = new URLSearchParams();
+    if (params?.q?.trim()) p.set('q', params.q.trim());
+    if (params?.tipoFormatoCert) p.set('tipoFormatoCert', params.tipoFormatoCert);
+    if (params?.empresaId) p.set('empresaId', params.empresaId);
+    if (params?.vencimientoDesde) p.set('vencimientoDesde', params.vencimientoDesde);
+    if (params?.vencimientoHasta) p.set('vencimientoHasta', params.vencimientoHasta);
+    const qs = p.toString() ? `?${p}` : '';
+    return this.http.get(`${this.base}/vencidos/exportar${qs}`, {
+      responseType: 'blob',
+    });
   }
 
   alertasPorVencer(dias?: number): Observable<CertificadosVencimientoAlertasRes> {

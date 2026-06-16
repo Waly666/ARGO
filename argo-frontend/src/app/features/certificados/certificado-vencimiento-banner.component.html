@@ -13,7 +13,7 @@
         class="head-alarm"
         [ngClass]="toneClass()"
         (click)="irCertificados()"
-        [title]="'Certificados por vencer — aviso desde ' + (alertSvc.data()?.diasVentana ?? 15) + ' días antes hasta el vencimiento'">
+        [title]="'Certificados por vencer — próximos ' + (alertSvc.data()?.diasVentana ?? 15) + ' días hasta el vencimiento'">
         <span class="head-alarm-pulse" aria-hidden="true"></span>
         <span class="head-alarm-icon" aria-hidden="true">⚠</span>
         <span class="head-alarm-body">

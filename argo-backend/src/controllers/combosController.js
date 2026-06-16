@@ -7,7 +7,7 @@ const {
   previstaCombo,
   TARIFA_COMBO,
 } = require('../services/combosPrograma');
-const { crearMatriculaDesdeBody } = require('./matriculaController');
+const { crearMatriculaDesdeBody } = require('../services/matriculaCreator');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const DatosAlumno = require('../models/DatosAlumno');
 

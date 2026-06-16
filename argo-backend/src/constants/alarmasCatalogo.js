@@ -83,11 +83,11 @@ const GRUPOS = [
     alarmas: [
       {
         key: 'alarmas.certificados.vencimiento',
-        label: 'Certificados por vencer (15 días antes, banner superior)',
+        label: 'Certificados por vencer (banner superior)',
       },
       {
         key: 'alarmas.certificados.vencidos',
-        label: 'Certificados vencidos (3 días después, banner superior)',
+        label: 'Certificados vencidos (banner superior)',
       },
     ],
   },

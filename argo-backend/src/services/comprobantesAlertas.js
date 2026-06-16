@@ -2,6 +2,7 @@ const DatosAlumno = require('../models/DatosAlumno');
 const Ingreso = require('../models/Ingreso');
 const Egreso = require('../models/Egreso');
 const FacturaElectronica = require('../models/FacturaElectronica');
+const Liquidacion = require('../models/Liquidacion');
 const { parseNumDoc } = require('../utils/numDoc');
 function inicioDia(d = new Date()) {
   const x = new Date(d);
@@ -60,6 +61,31 @@ function fechaMovimiento(row, campos = []) {
   return row?.createdAt || null;
 }
 
+function idsLiquidacionIngreso(ing) {
+  const ids = new Set();
+  if (ing?.idLiquidacion) ids.add(String(ing.idLiquidacion));
+  if (Array.isArray(ing?.detalle)) {
+    for (const d of ing.detalle) {
+      if (d?.idLiquidacion) ids.add(String(d.idLiquidacion));
+    }
+  }
+  return [...ids];
+}
+
+function detalleTextoIngreso(ing, descrMap = {}) {
+  if (Array.isArray(ing.detalle) && ing.detalle.length) {
+    const descrs = ing.detalle.map((d) => String(d.descripcion || '').trim()).filter(Boolean);
+    if (descrs.length) return descrs.join(' · ');
+  }
+  const idLiq = ing.idLiquidacion ? String(ing.idLiquidacion) : '';
+  if (idLiq && descrMap[idLiq]) return String(descrMap[idLiq]).trim();
+  const concepto = String(ing.concepto || '').trim();
+  if (concepto) return concepto;
+  const tipo = String(ing.tipoIngreso || '').trim();
+  if (tipo) return tipo;
+  return '';
+}
+
 /** Comprobantes y facturas recientes (alertas globales en cabecera). */
 async function listarComprobantesRecientes(desde) {
   const hoy = inicioDia();
@@ -73,7 +99,7 @@ async function listarComprobantesRecientes(desde) {
       ingresoCaja: { $ne: true },
       $or: [{ createdAt: rango }, { fecha: rango }],
     })
-      .select('_id numDoc numRecibo valor fecha createdAt')
+      .select('_id numDoc numRecibo valor fecha createdAt detalle idLiquidacion concepto tipoIngreso')
       .sort({ createdAt: -1 })
       .limit(80)
       .lean(),
@@ -88,7 +114,7 @@ async function listarComprobantesRecientes(desde) {
     Egreso.find({
       $or: [{ fechaEgreso: rango }, { fechaAudi: rango }],
     })
-      .select('_id numeroDocumento numDoc numRecibo valorEgreso pagueA fechaEgreso fechaAudi')
+      .select('_id numeroDocumento numDoc numRecibo valorEgreso pagueA concepto fechaEgreso fechaAudi')
       .sort({ fechaEgreso: -1, fechaAudi: -1 })
       .limit(80)
       .lean(),
@@ -121,6 +147,12 @@ async function listarComprobantesRecientes(desde) {
     if (k != null) alByDoc.set(k, a);
   }
 
+  const liqIds = [...new Set(ingresos.flatMap((ing) => idsLiquidacionIngreso(ing)))];
+  const liqs = liqIds.length
+    ? await Liquidacion.find({ _id: { $in: liqIds } }).select('_id descripcion').lean()
+    : [];
+  const descrMap = Object.fromEntries(liqs.map((l) => [String(l._id), l.descripcion || '']));
+
   const out = [];
 
   for (const ing of ingresos) {
@@ -131,6 +163,7 @@ async function listarComprobantesRecientes(desde) {
       id: String(ing._id),
       numRecibo: ing.numRecibo || null,
       valor: numValor(ing.valor),
+      detalle: detalleTextoIngreso(ing, descrMap) || null,
       numDoc: ing.numDoc,
       nombreCompleto: nombreCompleto(al) || (ing.numDoc != null ? `Doc ${ing.numDoc}` : ''),
       alumnoId: al?._id ? String(al._id) : null,
@@ -149,6 +182,7 @@ async function listarComprobantesRecientes(desde) {
       id: String(eg._id),
       numRecibo: eg.numRecibo || null,
       valor: numValor(eg.valorEgreso),
+      detalle: String(eg.concepto || '').trim() || null,
       numDoc: al?.numDoc ?? doc ?? null,
       nombreCompleto: nomAl || pagueA || (doc != null ? `Doc ${doc}` : 'Egreso'),
       alumnoId: al?._id ? String(al._id) : null,
@@ -188,4 +222,4 @@ async function listarComprobantesRecientes(desde) {
   return out.slice(0, 24);
 }
 
-module.exports = { listarComprobantesRecientes };
+module.exports = { listarComprobantesRecientes, detalleTextoIngreso, idsLiquidacionIngreso };

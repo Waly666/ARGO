@@ -557,25 +557,31 @@ export class AlumnosListaComponent implements OnInit {
   tituloComprobanteIngreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteIngresoHoy;
     if (!m) return '';
-    const ref = m.numRecibo ? ` ${m.numRecibo}` : '';
-    return `Comprobante de ingreso hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+    return ['Comprobante de ingreso hoy', m.numRecibo, this.fmtSaldo(m.valor), m.detalle]
+      .filter(Boolean)
+      .join(' · ');
   }
 
   etiquetaComprobanteIngreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteIngresoHoy;
-    return m?.numRecibo || 'Ingreso';
+    if (!m) return 'Ingreso';
+    const ref = m.numRecibo || 'Ingreso';
+    return [ref, this.fmtSaldo(m.valor), m.detalle].filter(Boolean).join(' · ');
   }
 
   tituloComprobanteEgreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteEgresoHoy;
     if (!m) return '';
-    const ref = m.numRecibo ? ` ${m.numRecibo}` : '';
-    return `Comprobante de egreso hoy${ref} · ${this.fmtSaldo(m.valor)}`;
+    return ['Comprobante de egreso hoy', m.numRecibo, this.fmtSaldo(m.valor), m.detalle]
+      .filter(Boolean)
+      .join(' · ');
   }
 
   etiquetaComprobanteEgreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteEgresoHoy;
-    return m?.numRecibo || 'Egreso';
+    if (!m) return 'Egreso';
+    const ref = m.numRecibo || 'Egreso';
+    return [ref, this.fmtSaldo(m.valor), m.detalle].filter(Boolean).join(' · ');
   }
 
   tituloFacturaHoy(r: AlumnoListItem): string {

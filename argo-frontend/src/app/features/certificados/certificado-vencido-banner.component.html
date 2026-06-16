@@ -12,7 +12,7 @@
         type="button"
         class="head-alarm cert-vencido"
         (click)="irCertificados()"
-        [title]="'Certificados vencidos — aviso durante ' + (alertSvc.data()?.diasVentana ?? 3) + ' días después del vencimiento'">
+        [title]="'Certificados vencidos — últimos ' + (alertSvc.data()?.diasVentana ?? 3) + ' días desde el vencimiento'">
         <span class="head-alarm-pulse" aria-hidden="true"></span>
         <span class="head-alarm-icon" aria-hidden="true">⚠</span>
         <span class="head-alarm-body">

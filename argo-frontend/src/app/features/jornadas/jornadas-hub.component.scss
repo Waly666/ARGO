@@ -139,12 +139,427 @@
     }
 
     .form-block-title {
-      margin: 0 0 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
+      margin: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       color: var(--accent-2, #7eb8ff);
+    }
+
+    .contrato-form-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem 1rem;
+      margin-bottom: 1rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid rgba(78, 163, 255, 0.28);
+      background: linear-gradient(135deg, rgba(30, 58, 95, 0.55), rgba(15, 23, 42, 0.35));
+    }
+
+    .contrato-form-banner-label {
+      display: block;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+    }
+
+    .contrato-form-banner-cod {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #e8f2ff;
+    }
+
+    .contrato-form-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+
+      @media (max-width: 960px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .contrato-block-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .contrato-block-sub {
+      margin: 0.2rem 0 0;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: var(--text-soft);
+
+      a {
+        color: var(--accent-2, #7eb8ff);
+      }
+    }
+
+    .contrato-block-icon {
+      flex: 0 0 2rem;
+      width: 2rem;
+      height: 2rem;
+      margin-top: 0.1rem;
+      border-radius: 8px;
+      background:
+        linear-gradient(145deg, rgba(56, 189, 248, 0.22), rgba(37, 99, 235, 0.12)),
+        rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: 0.95rem;
+        height: 0.75rem;
+        border: 2px solid rgba(186, 230, 253, 0.85);
+        border-radius: 2px;
+        box-shadow: inset 0 -4px 0 rgba(186, 230, 253, 0.35);
+      }
+
+      &--doc::after {
+        width: 0.7rem;
+        height: 0.9rem;
+        border-radius: 1px;
+        box-shadow: none;
+      }
+
+      &--money::after {
+        width: 0.55rem;
+        height: 0.85rem;
+        border-radius: 50%;
+        border-width: 2px;
+        box-shadow: none;
+      }
+    }
+
+    .contrato-empresa-block,
+    .contrato-identidad-block {
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--line-soft, rgba(120, 170, 255, 0.12));
+      background: rgba(8, 16, 32, 0.22);
+    }
+
+    .contrato-empresa-block {
+      border-color: rgba(56, 189, 248, 0.22);
+      background: linear-gradient(160deg, rgba(14, 40, 68, 0.45), rgba(8, 16, 32, 0.2));
+
+      &:has(argo-catalogo-enum-buscar.dropdown-open) {
+        position: relative;
+        z-index: 5000;
+      }
+    }
+
+    .empresa-picker {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 0.5rem 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .empresa-picker-buscar {
+      flex: 1 1 16rem;
+      min-width: 0;
+
+      argo-catalogo-enum-buscar {
+        display: block;
+      }
+    }
+
+    .empresa-picker-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+      padding-bottom: 0.15rem;
+    }
+
+    .empresa-resumen-card {
+      padding: 0.85rem;
+      border-radius: 10px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: rgba(2, 8, 20, 0.35);
+    }
+
+    .empresa-resumen-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 0.65rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .empresa-avatar {
+      flex: 0 0 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #e0f2fe;
+      background: linear-gradient(145deg, #0369a1, #0c4a6e);
+      border: 1px solid rgba(125, 211, 252, 0.35);
+    }
+
+    .empresa-resumen-titulo {
+      flex: 1 1 12rem;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .empresa-nombre-principal {
+      font-size: 0.95rem;
+      line-height: 1.25;
+      color: #f1f5f9;
+    }
+
+    .empresa-nombre-comercial {
+      font-size: 0.78rem;
+      color: var(--text-soft);
+    }
+
+    .empresa-nit {
+      font-size: 0.8rem;
+      color: #93c5fd;
+    }
+
+    .empresa-editar {
+      margin-left: auto;
+    }
+
+    .empresa-datos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem 0.75rem;
+      margin: 0 0 0.75rem;
+
+      @media (max-width: 720px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .empresa-dato {
+      margin: 0;
+      padding: 0.45rem 0.55rem;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+
+      dt {
+        margin: 0 0 0.2rem;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-dim);
+      }
+
+      dd {
+        margin: 0;
+        font-size: 0.84rem;
+        line-height: 1.3;
+        color: #e2e8f0;
+        word-break: break-word;
+      }
+
+      &--wide {
+        grid-column: 1 / -1;
+      }
+
+      .sep {
+        margin: 0 0.25rem;
+        color: var(--text-dim);
+      }
+    }
+
+    .empresa-fiscal {
+      margin-top: 0;
+      padding-top: 0.65rem;
+      border-top: 1px dashed rgba(148, 163, 184, 0.2);
+    }
+
+    .empresa-empty-state {
+      padding: 1rem 1.1rem;
+      border-radius: 10px;
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.25);
+      text-align: center;
+
+      p {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--text-soft);
+        line-height: 1.4;
+      }
+
+      p strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: #cbd5e1;
+      }
+    }
+
+    .field-objeto-full {
+      margin-top: 0.35rem;
+
+      textarea {
+        width: 100%;
+        min-height: 7.5rem;
+        resize: vertical;
+        line-height: 1.45;
+        font-size: 0.9rem;
+        padding: 0.55rem 0.65rem;
+        box-sizing: border-box;
+      }
+
+      .field-hint {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+      }
+    }
+
+    .form-block-factura {
+      margin-top: 0.25rem;
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(34, 197, 94, 0.18);
+      background: linear-gradient(160deg, rgba(6, 40, 28, 0.28), rgba(8, 16, 32, 0.18));
+    }
+
+    .factura-valor-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 0.65rem 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .field-valor-contrato {
+      min-width: 11rem;
+    }
+
+    .input-money-wrap {
+      display: flex;
+      align-items: stretch;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .input-money-prefix {
+      display: flex;
+      align-items: center;
+      padding: 0 0.55rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.12);
+      border-right: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .input-money {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      height: var(--cf-input-h);
+      padding: 0.4rem 0.55rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ecfdf5;
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    .factura-valor-hint {
+      margin: 0;
+      padding-bottom: 0.35rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #86efac;
+    }
+
+    .factura-contrato-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .factura-badge-ok {
+      font-size: 0.82rem;
+    }
+
+    .preview-factura-contrato {
+      padding: 0.75rem 0.85rem;
+      border-radius: 10px;
+      border: 1px solid rgba(34, 197, 94, 0.22);
+      background: rgba(2, 12, 8, 0.35);
+    }
+
+    .preview-factura-title {
+      margin: 0 0 0.55rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #86efac;
+    }
+
+    .preview-factura-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem 1rem;
+      margin: 0;
+
+      @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+      }
+
+      > div {
+        margin: 0;
+      }
+
+      dt {
+        margin: 0 0 0.15rem;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-dim);
+      }
+
+      dd {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.35;
+        color: #e2e8f0;
+      }
+    }
+
+    .preview-factura-total dd strong {
+      font-size: 0.95rem;
+      color: #bbf7d0;
     }
 
     .form-block-inline {
@@ -1305,12 +1720,18 @@
   gap: 0.35rem;
 }
 
-.cliente-fe-fiscal {
+.cliente-fe-fiscal,
+.empresa-fiscal {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
   margin-top: 0.45rem;
+}
+
+.icon-btn {
+  min-width: 2.1rem;
+  padding-inline: 0.45rem;
 }
 
 .fiscal-tag {

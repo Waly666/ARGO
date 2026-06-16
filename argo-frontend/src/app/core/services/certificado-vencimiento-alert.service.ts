@@ -73,12 +73,13 @@ export class CertificadoVencimientoAlertService {
   }
 
   resumenItem(item: CertificadoVencimientoAlertaItem): string {
+    const nombre = String(item.nombreCompleto || '').trim() || '—';
     const curso =
       String(item.encabezado || '').trim() ||
       String(item.tipoFormatoCertLabel || '').trim() ||
       'Certificado';
     const vence = this.fmtFecha(item.fechaVencimiento);
-    const cod = item.codigoCert ? ` (${item.codigoCert})` : '';
-    return `${item.nombreCompleto} · ${curso}${cod} · ${vence} · ${this.etiquetaDias(item)}`;
+    const cod = item.codigoCert ? ` · ${item.codigoCert}` : '';
+    return `${nombre} · ${curso}${cod} · ${vence} · ${this.etiquetaDias(item)}`;
   }
 }

@@ -58,6 +58,7 @@ export interface MovimientoAlarmaHoy {
   id: string;
   numRecibo?: string | null;
   valor: number;
+  detalle?: string | null;
   fecha?: string | null;
 }
 
@@ -230,6 +231,7 @@ export class AlumnoService {
       numRecibo?: string | null;
       numeroFactura?: string | null;
       valor: number;
+      detalle?: string | null;
       numDoc?: number | string;
       nombreCompleto?: string;
       alumnoId?: string | null;
@@ -244,6 +246,7 @@ export class AlumnoService {
         numRecibo?: string | null;
         numeroFactura?: string | null;
         valor: number;
+        detalle?: string | null;
         numDoc?: number | string;
         nombreCompleto?: string;
         alumnoId?: string | null;

@@ -21,16 +21,18 @@ export class CertificadoVencimientoBannerComponent {
   peorNivel = this.alertSvc.peorNivel;
 
   titulo = computed(() => {
+    const d = this.alertSvc.data();
+    const ventana = d?.diasVentana ?? 15;
     const hoy = this.alertSvc.venceHoy();
     const total = this.alertSvc.total();
     if (hoy > 0) {
       return hoy === 1
-        ? '¡Certificado vence HOY — contacte al cliente!'
-        : `¡${hoy} certificados vencen HOY — contacte a los clientes!`;
+        ? `¡Certificado vence HOY (ventana ${ventana} días)!`
+        : `¡${hoy} certificados vencen HOY (ventana ${ventana} días)!`;
     }
     return total === 1
-      ? 'Certificado por vencer — revalidación'
-      : `${total} certificados por vencer — revalidación`;
+      ? `1 certificado por vencer — próximos ${ventana} días`
+      : `${total} certificados por vencer — próximos ${ventana} días`;
   });
 
   detalle = computed(() => {
@@ -39,15 +41,13 @@ export class CertificadoVencimientoBannerComponent {
     const partes: string[] = [];
     if (d.venceHoy > 0) partes.push(`${d.venceHoy} hoy`);
     if (d.venceManana > 0) partes.push(`${d.venceManana} mañana`);
-    if (d.critico > 0) partes.push(`${d.critico} en ≤3 días`);
-    else if (d.urgente > 0) partes.push(`${d.urgente} en ≤7 días`);
-    const resumen = partes.length ? partes.join(' · ') : `Ventana ${d.diasVentana} días`;
+    const resumen = partes.length ? partes.join(' · ') : `${d.total} en los próximos ${d.diasVentana} días`;
 
     const muestra = this.items()
-      .slice(0, 3)
+      .slice(0, 2)
       .map((it) => this.alertSvc.resumenItem(it))
       .join(' · ');
-    const extra = d.total > 3 ? ` · +${d.total - 3} más` : '';
+    const extra = d.total > 2 ? ` · +${d.total - 2} más` : '';
     return `${resumen}${muestra ? `: ${muestra}${extra}` : ''}`;
   });
 

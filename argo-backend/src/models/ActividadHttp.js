@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const ActividadHttpSchema = new mongoose.Schema(
   {
     idActividad: { type: Number, required: true, unique: true, index: true },
-    fecha: { type: Date, default: Date.now, index: true },
+    fecha: { type: Date, default: Date.now },
     idUsuario: { type: String, index: true },
     usuario: { type: String, trim: true, index: true },
     nombreUsuario: { type: String, trim: true },

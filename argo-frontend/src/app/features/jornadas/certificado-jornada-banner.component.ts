@@ -30,6 +30,16 @@ export class CertificadoJornadaBannerComponent {
     return a.tipoFormatoCertLabel || labelTipoCert(a.tipoFormatoCert);
   }
 
+  titulo(a: CertificadoJornadaAlerta): string {
+    const partes = [
+      this.etiquetaTipoAlerta(a),
+      a.codigoCert || '—',
+      a.nombreCompleto || '',
+      a.encabezado || '',
+    ].filter(Boolean);
+    return partes.join(' · ');
+  }
+
   imprimirCertificado(a: CertificadoJornadaAlerta) {
     this.alertSvc.descartar(a.id);
     this.certSvc.abrirHtml(a.id, (msg) => {

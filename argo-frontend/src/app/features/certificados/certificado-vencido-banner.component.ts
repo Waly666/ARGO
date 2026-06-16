@@ -19,22 +19,24 @@ export class CertificadoVencidoBannerComponent {
   items = this.alertSvc.items;
 
   titulo = computed(() => {
+    const d = this.alertSvc.data();
+    const ventana = d?.diasVentana ?? 3;
     const total = this.alertSvc.total();
     return total === 1
-      ? '¡Certificado VENCIDO — contacte al cliente!'
-      : `¡${total} certificados VENCIDOS — contacte a los clientes!`;
+      ? `¡1 certificado vencido (últimos ${ventana} días)!`
+      : `¡${total} certificados vencidos (últimos ${ventana} días)!`;
   });
 
   detalle = computed(() => {
     const d = this.alertSvc.data();
     if (!d) return '';
     const dias = d.diasVentana ?? 3;
-    const resumen = `${d.total} vencido(s) · aviso ${dias} días después`;
+    const resumen = `${d.total} vencido(s) en los últimos ${dias} día${dias === 1 ? '' : 's'}`;
     const muestra = this.items()
-      .slice(0, 3)
+      .slice(0, 2)
       .map((it) => this.alertSvc.resumenItem(it))
       .join(' · ');
-    const extra = d.total > 3 ? ` · +${d.total - 3} más` : '';
+    const extra = d.total > 2 ? ` · +${d.total - 2} más` : '';
     return `${resumen}${muestra ? `: ${muestra}${extra}` : ''}`;
   });
 

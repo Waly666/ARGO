@@ -1421,7 +1421,7 @@ export class ShellComponent {
       .subscribe(() => poll(3, true));
   }
 
-  /** Certificados por vencer: 15 días antes hasta el día del vencimiento. */
+  /** Certificados por vencer: días configurados en alertas o en config certificados. */
   private pollCertificadosPorVencer(): void {
     if (!this.mostrarAlertaCertificadoVencimiento()) {
       this.certVencimientoAlert.actualizar(null);
@@ -1441,7 +1441,7 @@ export class ShellComponent {
       .subscribe(() => this.pollCertificadosPorVencer());
   }
 
-  /** Certificados vencidos: aviso 3 días después del vencimiento. */
+  /** Certificados vencidos: días de gracia configurados en alertas o en config certificados. */
   private pollCertificadosVencidos(): void {
     if (!this.mostrarAlertaCertificadoVencido()) {
       this.certVencidoAlert.actualizar(null);
