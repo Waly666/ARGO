@@ -25,6 +25,8 @@ export class ForoAdminService implements OnDestroy {
   cargando       = signal(false);
   error          = signal<string | null>(null);
   enviando       = signal(false);
+  /** Curso cuyo chat está abierto (para suprimir alertas duplicadas). */
+  cursoActivo    = signal<string | null>(null);
 
   private connect() {
     if (this.socket?.connected) return;
@@ -77,6 +79,7 @@ export class ForoAdminService implements OnDestroy {
       this.socket.emit('leave-foro', { idPrograma: this.programaActual });
     }
     this.programaActual = idPrograma;
+    this.cursoActivo.set(idPrograma);
     this.mensajes.set([]);
     this.cargando.set(true);
     this.error.set(null);
@@ -106,6 +109,7 @@ export class ForoAdminService implements OnDestroy {
     this.socket?.disconnect();
     this.socket = null;
     this.programaActual = null;
+    this.cursoActivo.set(null);
   }
 
   ngOnDestroy() {

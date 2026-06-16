@@ -49,8 +49,10 @@ import { ProgramacionCeaPendienteBannerComponent } from '../../features/programa
 import { ProgramacionCeaClaseCreadoBannerComponent } from '../../features/programacion-cea/programacion-cea-clase-creado-banner.component';
 import { ProgramacionCeaClaseProximaBannerComponent } from '../../features/programacion-cea/programacion-cea-clase-proxima-banner.component';
 import { InstructorPortalBannerComponent } from '../../features/instructores/instructor-portal-banner.component';
+import { ForoMensajeBannerComponent } from '../../features/aula-virtual/foro-mensaje-banner.component';
 import { ComprobanteHoyBannerComponent } from '../../features/alumnos/comprobante-hoy-banner.component';
 import { AsistenteFlotanteComponent } from '../../shared/asistente-flotante/asistente-flotante.component';
+import { ForoMensajeAlertService } from '../../core/services/foro-mensaje-alert.service';
 import {
   ComprobanteHoyAlertService,
   ComprobanteHoyTipo,
@@ -93,7 +95,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, AsistenteFlotanteComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AsistenteFlotanteComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -127,6 +129,7 @@ export class ShellComponent {
   private programacionCeaSvc = inject(ProgramacionCeaService);
   private instructorPortalSvc = inject(InstructorPortalService);
   private instructorPortalAlert = inject(InstructorPortalAlertService);
+  private foroMensajeAlert = inject(ForoMensajeAlertService);
   private vehiculoSvc = inject(VehiculoService);
   private inspeccionSvc = inject(InspeccionVehiculoService);
   readonly cajaEstado = inject(CajaEstadoService);
@@ -265,6 +268,24 @@ export class ShellComponent {
 
   mostrarAlertaInstructorPortal = computed(() =>
     this.CLAVES_INSTRUCTOR_PORTAL.some((k) => this.alarmaHabilitada(k)),
+  );
+
+  puedeModerarForo = computed(() =>
+    this.permisos.tiene([
+      'aula_virtual.foro',
+      'aula_virtual.gestionar',
+      'programas.gestionar',
+      'instructores',
+    ]),
+  );
+
+  mostrarAlertaForoMensaje = computed(() => this.alarmaHabilitada('alarmas.aula_virtual.foro_mensaje'));
+
+  mostrarBannerForoMensaje = computed(
+    () =>
+      this.mostrarAlertaForoMensaje() &&
+      this.puedeModerarForo() &&
+      this.foroMensajeAlert.alertas().length > 0,
   );
 
   mostrarBannerCertificado = computed(
@@ -1053,6 +1074,7 @@ export class ShellComponent {
     this.iniciarPollAlertasClasesCeaCreado();
     this.iniciarPollAlertasClaseProximaCea();
     this.iniciarPollInstructorPortal();
+    this.iniciarForoMensajeAlert();
     this.iniciarPollPermisosSesion();
   }
 
@@ -1122,6 +1144,17 @@ export class ShellComponent {
     if (!this.CLAVES_INSTRUCTOR_PORTAL.some((k) => this.alarmaHabilitada(k))) {
       this.instructorPortalAlert.actualizar(null);
     }
+    if (!this.alarmaHabilitada('alarmas.aula_virtual.foro_mensaje')) {
+      this.foroMensajeAlert.descartarTodas();
+      this.foroMensajeAlert.desconectar();
+    } else if (this.puedeModerarForo()) {
+      this.foroMensajeAlert.conectar();
+    }
+  }
+
+  private iniciarForoMensajeAlert(): void {
+    if (!this.mostrarAlertaForoMensaje() || !this.puedeModerarForo()) return;
+    this.foroMensajeAlert.conectar();
   }
 
   /** Alertas globales de documentos de vehículos. */

@@ -29,6 +29,7 @@ const DEFAULTS_POR_CLAVE = {
   'alarmas.alumnos.comprobante_ingreso': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 60, intervaloPollSegundos: 12 },
   'alarmas.alumnos.comprobante_egreso': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 60, intervaloPollSegundos: 12 },
   'alarmas.alumnos.factura': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 45, intervaloPollSegundos: 12 },
+  'alarmas.aula_virtual.foro_mensaje': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 0 },
 };
 
 function reglaVacia(meta) {

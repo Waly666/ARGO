@@ -68,6 +68,16 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'aula_virtual',
+    label: 'Aula virtual',
+    alarmas: [
+      {
+        key: 'alarmas.aula_virtual.foro_mensaje',
+        label: 'Nuevo mensaje de alumno en foro de curso (banner superior)',
+      },
+    ],
+  },
+  {
     id: 'certificados',
     label: 'Certificados',
     alarmas: [
@@ -123,6 +133,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.comprobante_ingreso',
     'alarmas.alumnos.comprobante_egreso',
     'alarmas.alumnos.factura',
+    'alarmas.aula_virtual.foro_mensaje',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -139,6 +150,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.instructores.clase_proxima',
     'alarmas.instructores.inspeccion_requerida',
     'alarmas.alumnos.clases_cea_creado',
+    'alarmas.aula_virtual.foro_mensaje',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -163,6 +175,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.empleados.docs_faltantes',
     'alarmas.programacion_cea.pendiente',
     'alarmas.programacion_cea.clase_proxima',
+    'alarmas.aula_virtual.foro_mensaje',
   ],
   usuario: [
     'alarmas.vehiculos.docs_vencidos',

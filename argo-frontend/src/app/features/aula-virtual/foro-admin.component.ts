@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
 import { ForoAdminService, MensajeForoAdmin } from '../../core/services/foro-admin.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -26,8 +28,11 @@ export class ForoAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   private http    = inject(HttpClient);
   private base    = `${environment.apiUrl}/foro`;
+  private route   = inject(ActivatedRoute);
   foroSvc         = inject(ForoAdminService);
   authSvc         = inject(AuthService);
+
+  private cursoPendiente: string | null = null;
 
   cursos          = signal<ResumenForo[]>([]);
   cursoActivo     = signal<ResumenForo | null>(null);
@@ -44,6 +49,10 @@ export class ForoAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   });
 
   ngOnInit() {
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.cursoPendiente = params.get('curso');
+      this.intentarSeleccionarPendiente();
+    });
     this.cargarResumen();
   }
 
@@ -61,9 +70,22 @@ export class ForoAdminComponent implements OnInit, OnDestroy, AfterViewChecked {
   cargarResumen() {
     this.cargandoCursos.set(true);
     this.http.get<ResumenForo[]>(`${this.base}/admin/resumen`).subscribe({
-      next: (rows) => { this.cursos.set(rows); this.cargandoCursos.set(false); },
+      next: (rows) => {
+        this.cursos.set(rows);
+        this.cargandoCursos.set(false);
+        this.intentarSeleccionarPendiente();
+      },
       error: () => this.cargandoCursos.set(false),
     });
+  }
+
+  private intentarSeleccionarPendiente() {
+    if (!this.cursoPendiente) return;
+    const id = this.cursoPendiente;
+    const c = this.cursos().find((x) => x.idPrograma === id);
+    if (!c) return;
+    this.seleccionarCurso(c);
+    this.cursoPendiente = null;
   }
 
   seleccionarCurso(c: ResumenForo) {

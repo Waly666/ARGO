@@ -143,6 +143,11 @@
               <argo-instructor-portal-banner />
             </div>
           }
+          @if (mostrarBannerForoMensaje()) {
+            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Nuevos mensajes foro aula virtual">
+              <argo-foro-mensaje-banner />
+            </div>
+          }
         </div>
         }
         @if (mostrarToastJornadaLive()) {

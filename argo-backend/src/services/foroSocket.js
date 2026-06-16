@@ -26,6 +26,8 @@ function roomForo(idPrograma) {
   return `foro:${idPrograma}`;
 }
 
+const STAFF_ROOM = 'foro:staff';
+
 function initForoSocket(httpServer) {
   const corsOptions = createCorsOptions();
 
@@ -80,6 +82,10 @@ function initForoSocket(httpServer) {
   foroNs.on('connection', (socket) => {
     const { user } = socket.data;
 
+    if (user.tipo !== 'alumno') {
+      socket.join(STAFF_ROOM);
+    }
+
     const nombrePorPrograma = {};
 
     socket.on('join-foro', async ({ idPrograma, nombrePrograma }) => {
@@ -122,6 +128,17 @@ function initForoSocket(httpServer) {
         });
 
         foroNs.to(roomForo(id)).emit('nuevo-mensaje', msg.toObject());
+
+        if (user.tipo === 'alumno') {
+          foroNs.to(STAFF_ROOM).emit('foro-nuevo-mensaje', {
+            _id: String(msg._id),
+            idPrograma: id,
+            nombrePrograma: nomProg || msg.nombrePrograma || id,
+            autorNombre: user.nombre,
+            texto: textoLimpio,
+            createdAt: msg.createdAt,
+          });
+        }
       } catch (e) {
         console.error('[Foro] Error guardando mensaje:', e.message);
         socket.emit('error-foro', { message: 'Error enviando mensaje' });
