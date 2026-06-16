@@ -442,14 +442,6 @@ export class ShellComponent {
       permiso: ['servicios.ver', 'servicios.gestionar'],
     },
     {
-      kind: 'link',
-      label: 'Combos de cursos',
-      icon: '⊞',
-      path: '/app/combos',
-      iconTone: 'teal',
-      permiso: ['alumnos.pagos', 'alumnos.gestionar'],
-    },
-    {
       kind: 'group',
       label: 'Jornadas Cap.',
       icon: '⛺',
@@ -610,6 +602,14 @@ export class ShellComponent {
           icon: '◉',
           iconTone: 'cyan',
           permiso: ['caja.cobros', 'caja.turno'],
+        },
+        {
+          kind: 'link',
+          label: 'Combos de cursos',
+          icon: '⊞',
+          path: '/app/combos',
+          iconTone: 'teal',
+          permiso: ['alumnos.pagos', 'alumnos.gestionar'],
         },
         {
           kind: 'link',
@@ -1480,7 +1480,7 @@ export class ShellComponent {
       'Jornadas Cap.': false,
     };
 
-    if (u.includes('/caja') || u.includes('/cobros-pendientes')) {
+    if (u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/combos')) {
       patch['Flujo de Caja'] = true;
     }
 
