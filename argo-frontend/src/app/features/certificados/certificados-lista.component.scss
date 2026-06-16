@@ -176,6 +176,32 @@
   }
 }
 
+/* ---- Empresa en certificados ---- */
+.col-empresa-cert {
+  min-width: 130px;
+  max-width: 200px;
+}
+
+.emp-chip-cert {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-dim-cert {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
 /* ---- Paginador ---- */
 .paginador {
   display: flex;

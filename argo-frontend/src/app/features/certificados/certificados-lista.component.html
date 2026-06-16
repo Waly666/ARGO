@@ -94,6 +94,7 @@
             <th>Código</th>
             <th>Alumno</th>
             <th>Doc</th>
+            <th class="col-empresa-cert">Empresa</th>
             <th>Tipo capacitación</th>
             <th>Encabezado</th>
             <th>Emisión</th>
@@ -116,6 +117,13 @@
                 }
               </td>
               <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
+              <td class="col-empresa-cert">
+                @if (c['empresaNombre']) {
+                  <span class="emp-chip-cert">{{ c['empresaNombre'] }}</span>
+                } @else {
+                  <span class="text-dim-cert">—</span>
+                }
+              </td>
               <td>
                 <span [ngClass]="capTipoFormatoCert(c.tipoFormatoCert)">
                   {{ c.tipoFormatoCertLabel || labelTipoCert(c.tipoFormatoCert) }}
