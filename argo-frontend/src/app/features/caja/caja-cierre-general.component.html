@@ -100,10 +100,7 @@
         cerraron hoy o en días anteriores.
       </p>
       <div class="fila-fecha">
-        <label>
-          Fecha del cierre general
-          <input type="date" [ngModel]="fecha()" (ngModelChange)="setFecha($event)" />
-        </label>
+        <argo-date-input label="Fecha del cierre general" [ngModel]="fecha()" (ngModelChange)="setFecha($event)" ></argo-date-input>
         <button type="button" class="primary" [disabled]="loading()" (click)="cargarDia()">
           {{ loading() ? 'Cargando…' : 'Cargar cajas pendientes' }}
         </button>

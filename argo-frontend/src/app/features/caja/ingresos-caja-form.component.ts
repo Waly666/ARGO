@@ -1,4 +1,5 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -28,7 +29,9 @@ const TIPOS_PAGO_DEF = [
 @Component({
   selector: 'argo-ingresos-caja-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './ingresos-caja-form.component.html',
   styleUrls: ['./ingresos-caja-form.component.scss'],
 })

@@ -7,6 +7,7 @@ router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const pagos = requirePermiso('alumnos.pagos', 'alumnos.gestionar');
 
+router.get('/revalidacion-preview', pagos, ctrl.previewRevalidacion);
 router.post('/', pagos, ctrl.crear);
 router.get('/alumno/:numDoc', pagos, ctrl.listarPorAlumno);
 

@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -40,7 +41,9 @@ import { ymdLocal } from './jornada-calendario.util';
 @Component({
   selector: 'argo-jornada-instructor',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CatalogoEnumBuscarComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './jornada-instructor.component.html',
   styleUrls: ['./jornada-instructor.component.scss'],
 })

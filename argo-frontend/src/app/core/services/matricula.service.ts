@@ -10,6 +10,8 @@ export interface MatriculaCrearDto {
   idPrograma: string;
   idProg?: string;
   tarifa?: 1 | 2 | 3 | 4;
+  /** Si true, no aplica tarifa 3 automática aunque califique refrendación. */
+  tarifaManual?: boolean;
   fechaMat?: string;
   observaciones?: string;
   crearUsuarioPortal?: boolean;
@@ -17,9 +19,33 @@ export interface MatriculaCrearDto {
   password?: string;
 }
 
+export interface RevalidacionPreview {
+  califica: boolean;
+  admiteRevalidacion: boolean;
+  aplicarAuto: boolean;
+  tarifaSugerida: number;
+  tarifaAplicada?: number;
+  aplicadaAuto: boolean;
+  tarifa3Disponible: boolean;
+  valorSugerido: number;
+  mensaje?: string | null;
+  certificado?: {
+    codigoCert?: string;
+    fechaEmision?: string;
+    fechaVencimiento?: string | null;
+    estado?: string;
+  } | null;
+}
+
 export interface MatriculaCrearRes {
   matricula?: unknown;
   liquidacion?: unknown;
+  revalidacion?: {
+    aplica: boolean;
+    aplicadaAuto: boolean;
+    mensaje?: string | null;
+    tarifa: number;
+  };
   usuarioPortal?: {
     creado: boolean;
     actualizado: boolean;
@@ -37,6 +63,15 @@ export class MatriculaService {
   crear(dto: MatriculaCrearDto): Observable<MatriculaCrearRes> {
     const numDoc = parseNumDocForApi(dto.numDoc);
     return this.http.post<MatriculaCrearRes>(this.base, { ...dto, numDoc: numDoc ?? dto.numDoc });
+  }
+
+  previewRevalidacion(numDoc: number | string, idPrograma: string): Observable<RevalidacionPreview> {
+    const nd = parseNumDocForApi(numDoc) ?? numDoc;
+    const params = new URLSearchParams({
+      numDoc: String(nd),
+      idPrograma: String(idPrograma),
+    });
+    return this.http.get<RevalidacionPreview>(`${this.base}/revalidacion-preview?${params}`);
   }
 
   listarPorAlumno(numDoc: number | string): Observable<any[]> {

@@ -51,13 +51,9 @@
 
     <div class="jornada-filters" *ngIf="esJornadas()">
       <div class="field-fecha">
-        <label for="filtro-fecha-jornada">Fecha jornada</label>
-        <input
-          id="filtro-fecha-jornada"
-          type="date"
-          [ngModel]="fechaJornadaCap()"
+        <argo-date-input label="Fecha jornada" inputId="filtro-fecha-jornada" [ngModel]="fechaJornadaCap()"
           (ngModelChange)="onFechaJornadaCap($event)"
-        />
+        ></argo-date-input>
       </div>
       <div class="field-jornada">
         <argo-catalogo-enum-buscar

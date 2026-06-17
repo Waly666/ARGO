@@ -1,5 +1,6 @@
 const sharp = require('sharp');
 const { createWorker } = require('tesseract.js');
+const { NUM_DOC_MIN_DIGITS, NUM_DOC_MAX_DIGITS, isValidNumDocDigits } = require('../utils/numDoc');
 
 const SPLIT_RATIO = 0.5;
 const MIN_RESPALDO_CHARS = 12;
@@ -196,14 +197,14 @@ function extraerNumDocDigitos(texto, lineas) {
   const numeroEtiqueta = texto.match(/NUMERO\s+([\d.\s]{8,22})/i);
   if (numeroEtiqueta) {
     const n = soloDigitos(numeroEtiqueta[1]);
-    if (n.length >= 6 && n.length <= 11) return n;
+    if (isValidNumDocDigits(n)) return n;
   }
 
   const conPuntos = texto.match(/\b(\d{1,3}(?:\.\d{3}){2,3})\b/g);
   if (conPuntos?.length) {
     const ordenados = conPuntos
       .map((s) => soloDigitos(s))
-      .filter((n) => n.length >= 6 && n.length <= 11)
+      .filter((n) => isValidNumDocDigits(n))
       .sort((a, b) => b.length - a.length);
     if (ordenados[0]) return ordenados[0];
   }
@@ -211,16 +212,16 @@ function extraerNumDocDigitos(texto, lineas) {
   const nuip = flat.match(/NUIP\s*[:.]?\s*([\d.\s]{6,18})/);
   if (nuip) {
     const n = soloDigitos(nuip[1]);
-    if (n.length >= 6 && n.length <= 11) return n;
+    if (isValidNumDocDigits(n)) return n;
   }
 
-  const nums = flat.match(/\d{6,11}/g) || [];
+  const nums = flat.match(new RegExp(`\\d{${NUM_DOC_MIN_DIGITS},${NUM_DOC_MAX_DIGITS}}`, 'g')) || [];
   if (nums.length) {
     return nums.sort((a, b) => b.length - a.length)[0];
   }
   for (const l of lineas) {
     const n = soloDigitos(l);
-    if (n.length >= 6 && n.length <= 11) return n;
+    if (isValidNumDocDigits(n)) return n;
   }
   return '';
 }

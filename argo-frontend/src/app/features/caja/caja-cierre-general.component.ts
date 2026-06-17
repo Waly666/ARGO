@@ -1,4 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -29,7 +30,9 @@ interface CierrePendiente {
 @Component({
   selector: 'argo-caja-cierre-general',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CurrencyPipe, DatePipe, CajaResumenServiciosComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CurrencyPipe, DatePipe, CajaResumenServiciosComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './caja-cierre-general.component.html',
   styleUrls: ['./caja-cierre-general.component.scss'],
 })

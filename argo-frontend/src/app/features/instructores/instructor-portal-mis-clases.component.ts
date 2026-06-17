@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -50,7 +51,9 @@ const CAL_MAX_EVENTOS_DIA = 4;
 @Component({
   selector: 'argo-instructor-portal-mis-clases',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProgramacionCeaClasesComponent, JornadaClaseEditorComponent],
+  imports: [CommonModule, FormsModule, ProgramacionCeaClasesComponent, JornadaClaseEditorComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './instructor-portal-mis-clases.component.html',
   styleUrls: [
     './instructor-portal-mis-clases.component.scss',

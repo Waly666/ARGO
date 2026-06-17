@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 
+import { ArgoDateInputComponent } from '../../../shared/argo-date-input/argo-date-input.component';
 import {
   Component,
   OnInit,
@@ -85,7 +86,13 @@ import {
 
 } from '../catalogo.helpers';
 
-import { formatNumDoc, parseNumDocForApi } from '../../../core/utils/num-doc.helpers';
+import {
+  formatNumDoc,
+  NUM_DOC_MAX_DIGITS,
+  numDocValidationHint,
+  parseNumDocForApi,
+  sanitizeNumDocInput,
+} from '../../../core/utils/num-doc.helpers';
 
 import {
   aplicarPlantillaMensaje,
@@ -99,7 +106,9 @@ import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, MunicipioBuscarComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, MunicipioBuscarComponent, CatalogoEnumBuscarComponent,
+    ArgoDateInputComponent,
+  ],
 
   templateUrl: './datos-principales.component.html',
 
@@ -129,6 +138,9 @@ export class DatosPrincipalesComponent implements OnInit {
   private configSvc = inject(ConfigService);
 
   store = inject(AlumnoStore);
+
+  readonly numDocMaxLength = NUM_DOC_MAX_DIGITS;
+  readonly numDocHint = numDocValidationHint();
 
   private configRecibo = signal<ConfigRecibo | null>(null);
 
@@ -459,6 +471,9 @@ export class DatosPrincipalesComponent implements OnInit {
     if (k === 'apellido1' || k === 'apellido2' || k === 'nombre1' || k === 'nombre2') {
       valor = nombreEnMayusculas(String(v ?? '')) as AlumnoDto[K];
     }
+    if (k === 'numDoc') {
+      valor = sanitizeNumDocInput(v) as AlumnoDto[K];
+    }
     this.form.update((f) => ({ ...f, [k]: valor }));
 
     if (k === 'numDoc') this.verificarDoc();
@@ -596,7 +611,7 @@ export class DatosPrincipalesComponent implements OnInit {
     }
     const nd = parseNumDocForApi(f.numDoc);
     if (nd == null || !f.nombre1 || !f.apellido1) {
-      this.dispararAlertaGuardar('numDoc válido (6–11 dígitos), nombre1 y apellido1 son obligatorios.');
+      this.dispararAlertaGuardar(`numDoc válido (${this.numDocHint}), nombre1 y apellido1 son obligatorios.`);
       return;
     }
 

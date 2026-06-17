@@ -35,14 +35,8 @@
       Sesión caja
       <input type="number" min="1" placeholder="# sesión" [ngModel]="idSesion()" (ngModelChange)="idSesion.set($event)" (keyup.enter)="cargar()" />
     </label>
-    <label>
-      Desde
-      <input type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
-    </label>
-    <label>
-      Hasta
-      <input type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
-    </label>
+    <argo-date-input label="Desde" [ngModel]="desde()" (ngModelChange)="desde.set($event)" ></argo-date-input>
+    <argo-date-input label="Hasta" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" ></argo-date-input>
     <div class="filtro-actions">
       <button type="button" class="primary sm" (click)="cargar()">Filtrar</button>
       <button type="button" class="ghost sm" (click)="limpiarFiltros()">Limpiar</button>

@@ -18,13 +18,24 @@ const {
 } = require('./jornadaCapacitacion');
 const { normalizarIdSede } = require('./sedeContext');
 const { esTarifaVirtual } = require('../constants/tarifa');
+const {
+  resolverTarifaMatricula,
+  descripcionConRevalidacion,
+} = require('./revalidacionPrograma');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
 }
 
 async function crearMatriculaDesdeBody(body, idSedeCtx) {
-  const { numDoc: numDocRaw, idPrograma, idProg, tarifa = 1, observaciones } = body || {};
+  const {
+    numDoc: numDocRaw,
+    idPrograma,
+    idProg,
+    tarifa: tarifaBody = 1,
+    observaciones,
+    tarifaManual = false,
+  } = body || {};
   const numDoc = parseNumDoc(numDocRaw);
   const progId = idPrograma || idProg;
   if (numDoc == null || !progId) {
@@ -55,7 +66,17 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
   const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
   const serviciosProg = await listarServiciosMatricula(prog);
   const usaSem = programaUsaSemestres(prog) && serviciosProg.length > 0;
-  const t = Number(tarifa);
+
+  const tarifaManualFlag =
+    tarifaManual === true || tarifaManual === 'true' || body?.forzarTarifa === true;
+  const resTarifa = await resolverTarifaMatricula({
+    numDoc,
+    prog,
+    tarifa: tarifaBody,
+    tarifaManual: tarifaManualFlag,
+  });
+  const t = resTarifa.tarifa;
+  const esRevalidacion = resTarifa.revalidacion === true;
 
   if (esTarifaVirtual(t)) {
     const tieneVirtual = usaSem
@@ -86,6 +107,11 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
   }
 
   const idProgramaVal = String(prog.idPrograma ?? prog._id);
+  const obsBase = String(observaciones || '').trim();
+  const obsRevalidacion = esRevalidacion
+    ? [obsBase, 'Refrendación / renovación de certificado'].filter(Boolean).join(' · ')
+    : obsBase;
+
   const m = await Matricula.create({
     numDoc,
     idSede,
@@ -95,7 +121,8 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
     tarifa: t,
     pagada: 'No Pago',
     estado: 'Activo',
-    observaciones,
+    observaciones: obsRevalidacion,
+    esRevalidacion,
   });
 
   const liquidaciones = [];
@@ -110,11 +137,15 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
         idMat: m._id,
         idProg: idProgramaVal,
         idServ: String(serv.idServ),
-        descripcion: serv.descrServicio || serv.descripcion || prog.nombreProg,
+        descripcion: descripcionConRevalidacion(
+          serv.descrServicio || serv.descripcion || prog.nombreProg,
+          esRevalidacion,
+        ),
         valor: toDec(v),
         abonado: toDec(0),
         saldo: toDec(v),
         estado: v <= 0 ? 'pagado' : 'pendiente',
+        esRevalidacion,
       });
       liquidaciones.push(liq);
     }
@@ -128,12 +159,15 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
       idMat: m._id,
       idProg: idProgramaVal,
       idServ: serv ? String(serv.idServ) : null,
-      descripcion:
+      descripcion: descripcionConRevalidacion(
         serv?.descrServicio || serv?.descripcion || prog.nombreProg || prog.descripcion || 'Matrícula programa',
+        esRevalidacion,
+      ),
       valor: toDec(valorMat),
       abonado: toDec(0),
       saldo: toDec(valorMat),
       estado: valorMat <= 0 ? 'pagado' : 'pendiente',
+      esRevalidacion,
     });
     liquidaciones.push(liq);
   }
@@ -150,6 +184,12 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
 
   const result = {
     matricula: { ...m.toObject(), valorMat: num(m.valorMat) },
+    revalidacion: {
+      aplica: esRevalidacion,
+      aplicadaAuto: resTarifa.aplicadaAuto === true,
+      mensaje: resTarifa.mensaje,
+      tarifa: t,
+    },
     liquidacion: liquidaciones[0]
       ? {
           ...liquidaciones[0].toObject(),

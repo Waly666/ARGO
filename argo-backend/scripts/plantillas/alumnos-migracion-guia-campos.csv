@@ -1,6 +1,6 @@
 campo_csv;campo_argo;obligatorio;notas
 tipoDoc;tipoDoc;SI;Use codigo 1-6 o texto 1) CEDULA... (se extrae el numero)
-numDoc;numDoc;SI;6-11 digitos unico
+numDoc;numDoc;SI;6-14 digitos unico
 apellido1;apellido1;SI;
 apellido2;apellido2;NO;
 nombre1;nombre1;SI;

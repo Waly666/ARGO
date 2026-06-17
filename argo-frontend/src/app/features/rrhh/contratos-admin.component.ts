@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -11,7 +12,9 @@ import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vis
 @Component({
   selector: 'argo-contratos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './contratos-admin.component.html',
   styleUrls: ['./rrhh-catalog-admin.component.scss', './rrhh-shared.scss'],
 })

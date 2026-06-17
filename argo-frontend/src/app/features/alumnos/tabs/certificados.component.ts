@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../../shared/argo-date-input/argo-date-input.component';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -26,7 +27,9 @@ import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dia
 @Component({
   selector: 'argo-certificados',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './certificados.component.html',
   styleUrls: ['./certificados.component.scss'],
 })

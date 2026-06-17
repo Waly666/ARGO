@@ -494,11 +494,11 @@
             <div class="veh-grid veh-grid--2">
               <label class="veh-field">
                 <span class="veh-label">Expedición *</span>
-                <input type="date" [ngModel]="docForm().fechaExp" (ngModelChange)="patchDoc('fechaExp', $event)" />
+                <argo-date-input [ngModel]="docForm().fechaExp" (ngModelChange)="patchDoc('fechaExp', $event)" ></argo-date-input>
               </label>
               <label class="veh-field">
                 <span class="veh-label">Vencimiento *</span>
-                <input type="date" [ngModel]="docForm().fechaVence" (ngModelChange)="patchDoc('fechaVence', $event)" />
+                <argo-date-input [ngModel]="docForm().fechaVence" (ngModelChange)="patchDoc('fechaVence', $event)" ></argo-date-input>
               </label>
             </div>
           }

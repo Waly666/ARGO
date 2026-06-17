@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import {
   AfterViewInit,
   Component,
@@ -51,7 +52,9 @@ import {
 @Component({
   selector: 'argo-certificados-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './certificados-lista.component.html',
   styleUrls: ['./certificados-lista.component.scss', './certificados-shared.scss'],
 })

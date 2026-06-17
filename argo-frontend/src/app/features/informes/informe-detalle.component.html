@@ -29,9 +29,8 @@
           } @else if (f.tipo === 'fecha') {
             <label class="inf-field">
               <span>{{ f.etiqueta }}</span>
-              <input type="date"
-                     [ngModel]="valorFiltro(f.clave)"
-                     (ngModelChange)="setFiltro(f.clave, $event)" />
+              <argo-date-input [ngModel]="valorFiltro(f.clave)"
+                     (ngModelChange)="setFiltro(f.clave, $event)" ></argo-date-input>
             </label>
           } @else if (f.tipo === 'booleano') {
             <label class="inf-check inf-check--full">

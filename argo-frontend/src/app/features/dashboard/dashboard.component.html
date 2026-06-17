@@ -19,11 +19,11 @@
     <div class="df-row">
       <label>
         <span>Desde</span>
-        <input type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)" name="desde" />
+        <argo-date-input [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)" name="desde" ></argo-date-input>
       </label>
       <label>
         <span>Hasta</span>
-        <input type="date" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)" name="hasta" />
+        <argo-date-input [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)" name="hasta" ></argo-date-input>
       </label>
       <div class="df-actions">
         <button type="submit" class="primary sm" [disabled]="loading()">Aplicar</button>

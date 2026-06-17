@@ -75,8 +75,7 @@
         <p class="hint">Regular o Jornada según el tipo de capacitación del programa.</p>
       </div>
       <div class="col-6">
-        <label>Fecha de emisión</label>
-        <input type="date" [ngModel]="fechaEmision()" (ngModelChange)="fechaEmision.set($event)" />
+        <argo-date-input label="Fecha de emisión" [ngModel]="fechaEmision()" (ngModelChange)="fechaEmision.set($event)" ></argo-date-input>
         <p class="hint">Opcional. Si no indica fecha, se usa la de hoy.</p>
       </div>
     </div>
@@ -169,12 +168,10 @@
       </div>
       <div class="row">
         <div class="col-6">
-          <label>Fecha de emisión *</label>
-          <input type="date" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" />
+          <argo-date-input label="Fecha de emisión *" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" ></argo-date-input>
         </div>
         <div class="col-6">
-          <label>Fecha de vencimiento</label>
-          <input type="date" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" />
+          <argo-date-input label="Fecha de vencimiento" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" ></argo-date-input>
           <p class="hint">Deje vacío si no aplica vencimiento.</p>
         </div>
       </div>

@@ -248,12 +248,10 @@
               <input type="number" min="0" [ngModel]="cfg.planificacion?.diasInicioDesdeGeneracion ?? 5" (ngModelChange)="patchPlanificacionConfig('diasInicioDesdeGeneracion', $event)" />
             </div>
             <div class="field">
-              <label>Periodo — desde</label>
-              <input type="date" [ngModel]="planForm().fechaDesde" (ngModelChange)="patchPlanForm('fechaDesde', $event)" />
+              <argo-date-input label="Periodo — desde" [ngModel]="planForm().fechaDesde" (ngModelChange)="patchPlanForm('fechaDesde', $event)" ></argo-date-input>
             </div>
             <div class="field">
-              <label>Periodo — hasta</label>
-              <input type="date" [ngModel]="planForm().fechaHasta" (ngModelChange)="patchPlanForm('fechaHasta', $event)" />
+              <argo-date-input label="Periodo — hasta" [ngModel]="planForm().fechaHasta" (ngModelChange)="patchPlanForm('fechaHasta', $event)" ></argo-date-input>
             </div>
             <div class="field">
               <label>Aula teórica (opcional)</label>

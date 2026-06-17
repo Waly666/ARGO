@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
@@ -24,7 +25,9 @@ type FormSeccion = 'datos' | 'documentos';
 @Component({
   selector: 'argo-empleados-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, EmpleadoDocumentosPanelComponent],
+  imports: [CommonModule, FormsModule, RouterLink, EmpleadoDocumentosPanelComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './empleados-admin.component.html',
   styleUrls: ['./empleados-admin.component.scss', './rrhh-catalog-admin.component.scss', './rrhh-shared.scss'],
 })

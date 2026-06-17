@@ -1,4 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -30,6 +31,8 @@ import { imprimirInformeTabla } from './informe-print.util';
     CurrencyPipe,
     DatePipe,
     CatalogoEnumBuscarComponent,
+  
+    ArgoDateInputComponent,
   ],
   templateUrl: './informe-detalle.component.html',
   styleUrls: ['./informe-detalle.component.scss'],

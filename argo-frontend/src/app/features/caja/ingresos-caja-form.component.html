@@ -29,10 +29,7 @@
           <option *ngFor="let t of tiposIngreso()" [value]="t.idTipoIngreso">{{ labelTipo(t) }}</option>
         </select>
       </label>
-      <label class="col-6">
-        Fecha
-        <input type="date" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" name="fecha" />
-      </label>
+      <argo-date-input label="Fecha" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" name="fecha" ></argo-date-input>
     </div>
 
     <p class="hint tipo-hint" *ngIf="esContrato()">

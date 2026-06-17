@@ -64,12 +64,10 @@
         </select>
       </div>
       <div class="filtro-field">
-        <label for="desde-cert">Desde</label>
-        <input id="desde-cert" type="date" [ngModel]="fechaDesde()" (ngModelChange)="onFechaDesdeChange($event)" />
+        <argo-date-input label="Desde" inputId="desde-cert" [ngModel]="fechaDesde()" (ngModelChange)="onFechaDesdeChange($event)" ></argo-date-input>
       </div>
       <div class="filtro-field">
-        <label for="hasta-cert">Hasta</label>
-        <input id="hasta-cert" type="date" [ngModel]="fechaHasta()" (ngModelChange)="onFechaHastaChange($event)" />
+        <argo-date-input label="Hasta" inputId="hasta-cert" [ngModel]="fechaHasta()" (ngModelChange)="onFechaHastaChange($event)" ></argo-date-input>
       </div>
       <div class="filtro-field filtro-empresa-wrap">
         <label>Empresa</label>
@@ -369,12 +367,10 @@
               <input type="text" [ngModel]="editNumRunt()" (ngModelChange)="editNumRunt.set($event)" />
             </div>
             <div class="col-4">
-              <label>Fecha emisión *</label>
-              <input type="date" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" />
+              <argo-date-input label="Fecha emisión *" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" ></argo-date-input>
             </div>
             <div class="col-4">
-              <label>Fecha vencimiento</label>
-              <input type="date" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" />
+              <argo-date-input label="Fecha vencimiento" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" ></argo-date-input>
               <p class="hint-inline">Deje vacío si el certificado no tiene vencimiento.</p>
             </div>
           </div>

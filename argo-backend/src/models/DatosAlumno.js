@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { parseNumDoc } = require('../utils/numDoc');
+const { parseNumDoc, numDocInvalidMessage } = require('../utils/numDoc');
 const { TIPOS_ALUMNO, TIPO_ALUMNO_DEFAULT } = require('../constants/tipoAlumno');
 
 function normalizarNumDocEnDoc(doc) {
@@ -63,7 +63,7 @@ DatosAlumnoSchema.index({ apellido1: 'text', apellido2: 'text', nombre1: 'text',
 DatosAlumnoSchema.pre('validate', function preValidateNumDoc(next) {
   normalizarNumDocEnDoc(this);
   if (this.numDoc == null || !Number.isFinite(this.numDoc)) {
-    return next(new Error('Número de documento inválido (use 6 a 11 dígitos)'));
+    return next(new Error(numDocInvalidMessage()));
   }
   next();
 });

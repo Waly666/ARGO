@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -20,7 +21,9 @@ const CODIGOS_PILA = [
 @Component({
   selector: 'argo-novedades-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './novedades-admin.component.html',
   styleUrls: [
     './rrhh-catalog-admin.component.scss',

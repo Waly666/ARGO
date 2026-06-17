@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -104,7 +105,9 @@ function saveSortPrefs(storageKey: string, col: SortColAlumnos, dir: SortDir): v
 @Component({
   selector: 'argo-alumnos-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './alumnos-lista.component.html',
   styleUrls: ['./alumnos-lista.component.scss'],
 })

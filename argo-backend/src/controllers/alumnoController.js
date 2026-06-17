@@ -18,7 +18,7 @@ const {
   enriquecerCertificadoJornada,
 } = require('../services/alumnosJornadaCapLista');
 const mongoose = require('mongoose');
-const { parseNumDoc, numDocFromParams, numDocQueryNativo } = require('../utils/numDoc');
+const { parseNumDoc, numDocFromParams, numDocQueryNativo, numDocInvalidMessage } = require('../utils/numDoc');
 
 function claveNumDocIndicador(numDoc) {
   const n = parseNumDoc(numDoc);
@@ -625,7 +625,7 @@ exports.crear = async (req, res, next) => {
     }
     dto.numDoc = parseNumDoc(dto.numDoc);
     if (dto.numDoc == null) {
-      return res.status(400).json({ message: 'Número de documento inválido (use 6 a 11 dígitos)' });
+      return res.status(400).json({ message: numDocInvalidMessage() });
     }
     const existe = await alumnoConMismoNumDoc(dto.numDoc);
     if (existe) return respuestaDuplicado(res, existe);
@@ -673,7 +673,7 @@ exports.actualizar = async (req, res, next) => {
     if (dto.numDoc != null) {
       dto.numDoc = parseNumDoc(dto.numDoc);
       if (dto.numDoc == null) {
-        return res.status(400).json({ message: 'Número de documento inválido (use 6 a 11 dígitos)' });
+        return res.status(400).json({ message: numDocInvalidMessage() });
       }
       const dup = await alumnoConMismoNumDoc(dto.numDoc, prev._id);
       if (dup) return respuestaDuplicado(res, dup);

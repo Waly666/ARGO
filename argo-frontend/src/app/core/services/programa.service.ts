@@ -31,6 +31,10 @@ export interface Programa {
   urlPortadaVirtual?: string | null;
   /** Precio virtual del servicio de matrícula (solo informativo en listado). */
   tarifaVirtual?: number;
+  /** Permite refrendación (renovación) con tarifa 3 para alumnos ya certificados. */
+  admiteRevalidacion?: boolean;
+  /** Al matricular, aplica tarifa 3 automáticamente si califica refrendación. */
+  aplicarTarifaRevalidacionAuto?: boolean;
   esCapacitacionVirtual?: boolean;
   fechaAudi?: string | Date;
   userAddReg?: string;
@@ -77,6 +81,9 @@ export interface ProgramaDto {
   estado?: string;
   requistos?: string;
   diasVencimiento?: number;
+  /** Refrendación / renovación de certificados no formales. */
+  admiteRevalidacion?: boolean;
+  aplicarTarifaRevalidacionAuto?: boolean;
   tipoCertificado?: string | null;
   tarifa1?: number;
   tarifa2?: number;

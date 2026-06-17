@@ -162,6 +162,10 @@ exports.crear = async (req, res, next) => {
       estado: (body.estado || 'ACTIVO').trim(),
       requistos: (body.requistos || '').trim() || null,
       diasVencimiento: body.diasVencimiento != null ? Number(body.diasVencimiento) : 365,
+      admiteRevalidacion: body.admiteRevalidacion === true || body.admiteRevalidacion === 'true',
+      aplicarTarifaRevalidacionAuto:
+        (body.admiteRevalidacion === true || body.admiteRevalidacion === 'true')
+        && (body.aplicarTarifaRevalidacionAuto === true || body.aplicarTarifaRevalidacionAuto === 'true'),
       tipoCertificado: normalizarTipoCertificado(body.tipoCertificado),
       descripcionVirtual: (body.descripcionVirtual || '').trim() || null,
       urlPortadaVirtual: (body.urlPortadaVirtual || '').trim() || null,
@@ -257,6 +261,17 @@ exports.actualizar = async (req, res, next) => {
     }
 
     const user = usuario(req).username || 'sistema';
+    const admiteRev =
+      body.admiteRevalidacion !== undefined
+        ? body.admiteRevalidacion === true || body.admiteRevalidacion === 'true'
+        : prog.admiteRevalidacion === true;
+    const autoRev =
+      admiteRev
+      && (body.aplicarTarifaRevalidacionAuto !== undefined
+        ? body.aplicarTarifaRevalidacionAuto === true
+          || body.aplicarTarifaRevalidacionAuto === 'true'
+        : prog.aplicarTarifaRevalidacionAuto === true);
+
     const patch = {
       codigoProg: body.codigoProg ?? prog.codigoProg,
       nombreProg,
@@ -290,6 +305,8 @@ exports.actualizar = async (req, res, next) => {
       requistos: body.requistos !== undefined ? body.requistos : prog.requistos,
       diasVencimiento:
         body.diasVencimiento !== undefined ? Number(body.diasVencimiento) : prog.diasVencimiento,
+      admiteRevalidacion: admiteRev,
+      aplicarTarifaRevalidacionAuto: autoRev,
       tipoCertificado:
         body.tipoCertificado !== undefined
           ? normalizarTipoCertificado(body.tipoCertificado)

@@ -71,8 +71,8 @@
 
     <h3>Historial del período</h3>
     <div class="filtros-inline">
-      <label>Desde <input type="date" [ngModel]="filtroHistDesde()" (ngModelChange)="filtroHistDesde.set($event)" /></label>
-      <label>Hasta <input type="date" [ngModel]="filtroHistHasta()" (ngModelChange)="filtroHistHasta.set($event)" /></label>
+      <argo-date-input label="Desde" [ngModel]="filtroHistDesde()" (ngModelChange)="filtroHistDesde.set($event)" ></argo-date-input>
+      <argo-date-input label="Hasta" [ngModel]="filtroHistHasta()" (ngModelChange)="filtroHistHasta.set($event)" ></argo-date-input>
       <button type="button" class="ghost sm" (click)="cargarHistorialCajas()">Buscar</button>
     </div>
     <table class="tabla">
@@ -109,7 +109,7 @@
     <h2>Cierre de caja general</h2>
     <p class="hint">Consolida todas las cajas del período (varios cajeros). Regístrelo al final del día.</p>
     <div class="filtros-inline">
-      <label>Fecha <input type="date" [ngModel]="fechaGenDesde()" (ngModelChange)="fechaGenDesde.set($event)" /></label>
+      <argo-date-input label="Fecha" [ngModel]="fechaGenDesde()" (ngModelChange)="fechaGenDesde.set($event)" ></argo-date-input>
       <button type="button" class="ghost sm" (click)="cargarPreviewGeneral()">Vista previa</button>
       <button type="button" class="primary sm" [disabled]="cajaLoading()" (click)="confirmarCierreGeneral()">
         Registrar cierre general
@@ -332,9 +332,7 @@
 
       <div class="col-4">
 
-        <label>Fecha egreso *</label>
-
-        <input type="date" [ngModel]="form().fechaEgreso" (ngModelChange)="patch('fechaEgreso', $event)" />
+        <argo-date-input label="Fecha egreso *" [ngModel]="form().fechaEgreso" (ngModelChange)="patch('fechaEgreso', $event)" ></argo-date-input>
 
       </div>
 
@@ -660,17 +658,11 @@
 
       <div class="col-4">
 
-        <label>Fecha transferencia</label>
-
-        <input
-
-          type="date"
-
-          [ngModel]="form().fechaTransferencia"
+        <argo-date-input label="Fecha transferencia" [ngModel]="form().fechaTransferencia"
 
           (ngModelChange)="patch('fechaTransferencia', $event)"
 
-        />
+        ></argo-date-input>
 
       </div>
 

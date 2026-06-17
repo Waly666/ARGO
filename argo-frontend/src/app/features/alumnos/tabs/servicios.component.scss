@@ -21,6 +21,35 @@
 .recibos-panel { margin: 0; }
 table.nested { font-size: .88rem; }
 .hint { color: var(--text-soft); font-size: .85rem; margin: 0 0 10px; }
+
+.revalidacion-banner {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(14, 116, 144, 0.12);
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #bae6fd;
+  }
+
+  p {
+    margin: 0 0 6px;
+    font-size: 0.86rem;
+    color: var(--text-soft);
+  }
+
+  .rev-meta {
+    font-size: 0.8rem;
+  }
+
+  .rev-actions {
+    margin-top: 6px;
+  }
+}
+
 .msg {
   padding: 8px 10px;
   background: rgba(78, 163, 255, 0.08);

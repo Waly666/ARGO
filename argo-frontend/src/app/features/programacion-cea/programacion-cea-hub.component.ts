@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -43,7 +44,9 @@ function rangoMesActual(): { fechaDesde: string; fechaHasta: string } {
 @Component({
   selector: 'argo-programacion-cea-hub',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './programacion-cea-hub.component.html',
   styleUrls: ['./programacion-cea-hub.component.scss'],
 })

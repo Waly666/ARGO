@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -56,7 +57,9 @@ export interface CertificadoJornadaItem {
 @Component({
   selector: 'argo-certificados-jornada-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './certificados-jornada-lista.component.html',
   styleUrls: ['./certificados-jornada-lista.component.scss'],
 })

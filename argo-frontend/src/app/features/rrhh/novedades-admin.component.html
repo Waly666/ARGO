@@ -68,12 +68,10 @@
         <input type="number" min="1" max="30" [ngModel]="$any(form()).diasNovedad" (ngModelChange)="patch('diasNovedad', +$event)" />
       </div>
       <div class="col-3">
-        <label>Inicio</label>
-        <input type="date" [ngModel]="$any(form()).fechaInicioNovedad" (ngModelChange)="patch('fechaInicioNovedad', $event)" />
+        <argo-date-input label="Inicio" [ngModel]="$any(form()).fechaInicioNovedad" (ngModelChange)="patch('fechaInicioNovedad', $event)" ></argo-date-input>
       </div>
       <div class="col-3">
-        <label>Fin</label>
-        <input type="date" [ngModel]="$any(form()).fechaFinNovedad" (ngModelChange)="patch('fechaFinNovedad', $event)" />
+        <argo-date-input label="Fin" [ngModel]="$any(form()).fechaFinNovedad" (ngModelChange)="patch('fechaFinNovedad', $event)" ></argo-date-input>
       </div>
       <div class="col-3" *ngIf="$any(form()).codigoPila === 'VAC_LR'">
         <label>Subtipo</label>
@@ -102,8 +100,7 @@
     </div>
     <div class="row">
       <div class="col-4">
-        <label>Fecha registro</label>
-        <input type="date" [ngModel]="$any(form()).fecha" (ngModelChange)="patch('fecha', $event)" />
+        <argo-date-input label="Fecha registro" [ngModel]="$any(form()).fecha" (ngModelChange)="patch('fecha', $event)" ></argo-date-input>
       </div>
       <div class="col-8">
         <label>Descripción</label>

@@ -111,20 +111,12 @@
     </div>
     <div class="filtros-inner filtros-inner--fechas">
       <div class="field-date">
-        <label for="venc-desde">Venció desde</label>
-        <input
-          id="venc-desde"
-          type="date"
-          [ngModel]="vencimientoDesde()"
-          (ngModelChange)="onVencimientoDesdeChange($event)" />
+        <argo-date-input label="Venció desde" inputId="venc-desde" [ngModel]="vencimientoDesde()"
+          (ngModelChange)="onVencimientoDesdeChange($event)" ></argo-date-input>
       </div>
       <div class="field-date">
-        <label for="venc-hasta">Venció hasta</label>
-        <input
-          id="venc-hasta"
-          type="date"
-          [ngModel]="vencimientoHasta()"
-          (ngModelChange)="onVencimientoHastaChange($event)" />
+        <argo-date-input label="Venció hasta" inputId="venc-hasta" [ngModel]="vencimientoHasta()"
+          (ngModelChange)="onVencimientoHastaChange($event)" ></argo-date-input>
       </div>
     </div>
     @if (empresaFiltroId()) {

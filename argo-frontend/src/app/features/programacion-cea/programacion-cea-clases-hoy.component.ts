@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -54,7 +55,9 @@ const CAL_MAX_EVENTOS_DIA = 4;
 @Component({
   selector: 'argo-programacion-cea-clases-hoy',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ProgramacionCeaClasesComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ProgramacionCeaClasesComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './programacion-cea-clases-hoy.component.html',
   styleUrls: ['./programacion-cea-clases-hoy.component.scss'],
 })

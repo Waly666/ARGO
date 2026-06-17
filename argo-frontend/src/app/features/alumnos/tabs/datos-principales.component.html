@@ -146,10 +146,14 @@
               <label>Número documento *</label>
               <input
                 type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                [attr.maxlength]="numDocMaxLength"
                 [ngModel]="form().numDoc"
                 (ngModelChange)="patch('numDoc', $event)"
                 (blur)="verificarDoc()"
                 [readonly]="isEdit()" />
+              <p class="hint doc-hint">Solo dígitos · {{ numDocHint }}</p>
             </div>
             <div class="col-6">
               <argo-municipio-buscar
@@ -187,8 +191,7 @@
           </div>
           <div class="row">
             <div class="col-3">
-              <label>Fecha nacimiento</label>
-              <input type="date" [ngModel]="form().fechaNac" (ngModelChange)="patch('fechaNac', $event)" />
+              <argo-date-input label="Fecha nacimiento" [ngModel]="form().fechaNac" (ngModelChange)="patch('fechaNac', $event)" ></argo-date-input>
             </div>
           </div>
           </div>

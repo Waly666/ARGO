@@ -9,7 +9,7 @@ import type { DocumentoPendienteRes } from '../../../core/services/config-requis
 import { CatalogoService } from '../../../core/services/catalogo.service';
 import { IngresoService } from '../../../core/services/ingreso.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
-import { MatriculaService } from '../../../core/services/matricula.service';
+import { MatriculaService, RevalidacionPreview } from '../../../core/services/matricula.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ServicioCatalogoService } from '../../../core/services/servicio-catalogo.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
@@ -58,6 +58,8 @@ export class ServiciosComponent {
   // form matrícula
   idProg = signal<string>('');
   tarifa = signal<1 | 2 | 3 | 4>(1);
+  tarifaManual = signal(false);
+  revalidacionPreview = signal<RevalidacionPreview | null>(null);
   matriculaCrearPortal = true;
   matriculaEmailPortal = '';
   matriculaPasswordPortal = '';
@@ -211,7 +213,10 @@ export class ServiciosComponent {
     const opts: EnumBuscarOption[] = [
       { value: 1, label: 'Tarifa 1' },
       { value: 2, label: 'Tarifa 2' },
-      { value: 3, label: 'Tarifa 3' },
+      {
+        value: 3,
+        label: this.programaSel()?.admiteRevalidacion ? 'Tarifa 3 (refrendación)' : 'Tarifa 3',
+      },
     ];
     if (this.programaTieneTarifaVirtual()) {
       opts.push({ value: TARIFA_VIRTUAL, label: 'Virtual (aula en línea)' });
@@ -312,20 +317,54 @@ export class ServiciosComponent {
   onProgramaPick(opt: EnumBuscarOption): void {
     this.idProg.set(String(opt.value));
     this.matriculaCredenciales.set(null);
+    this.tarifaManual.set(false);
+    this.revalidacionPreview.set(null);
     if (this.tarifa() === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) {
       this.tarifa.set(1);
     }
+    this.consultarRevalidacion(String(opt.value));
   }
 
   onProgramaLimpiar(): void {
     this.idProg.set('');
     this.docsPendientesMat.set([]);
     this.matriculaCredenciales.set(null);
+    this.revalidacionPreview.set(null);
+    this.tarifaManual.set(false);
     if (this.tarifa() === TARIFA_VIRTUAL) this.tarifa.set(1);
   }
 
+  private consultarRevalidacion(idPrograma: string): void {
+    const nd = this.store.numDoc();
+    if (!nd || !idPrograma) {
+      this.revalidacionPreview.set(null);
+      return;
+    }
+    this.matSvc.previewRevalidacion(nd, idPrograma).subscribe({
+      next: (p) => {
+        this.revalidacionPreview.set(p);
+        if (p.aplicadaAuto && p.tarifa3Disponible) {
+          this.tarifa.set(3);
+          this.tarifaManual.set(false);
+        } else if (p.califica && !this.tarifaManual()) {
+          this.tarifa.set(1);
+        }
+      },
+      error: () => this.revalidacionPreview.set(null),
+    });
+  }
+
+  aplicarTarifaRevalidacion(): void {
+    this.tarifa.set(3);
+    this.tarifaManual.set(false);
+  }
+
   onTarifaPick(opt: EnumBuscarOption): void {
+    const n = Number(opt.value);
+    const prev = this.revalidacionPreview();
+    const sugerida = prev?.califica && prev?.tarifa3Disponible ? 3 : null;
     this.setTarifa(opt.value);
+    this.tarifaManual.set(sugerida != null && n !== sugerida);
     if (Number(opt.value) === TARIFA_VIRTUAL && !this.matriculaEmailPortal.trim()) {
       const mail = String(this.store.alumno()?.correo || '').trim();
       if (mail) this.matriculaEmailPortal = mail;
@@ -334,6 +373,7 @@ export class ServiciosComponent {
 
   onTarifaLimpiar(): void {
     this.tarifa.set(1);
+    this.tarifaManual.set(true);
   }
 
   onComboPick(opt: EnumBuscarOption): void {
@@ -414,6 +454,7 @@ export class ServiciosComponent {
         numDoc: nd,
         idPrograma: this.idProg(),
         tarifa: this.tarifa(),
+        tarifaManual: this.tarifaManual(),
         crearUsuarioPortal: esVirtual && this.matriculaCrearPortal,
         email: esVirtual && this.matriculaCrearPortal ? emailPortal : undefined,
         password: esVirtual && this.matriculaCrearPortal && passwordPortal ? passwordPortal : undefined,
@@ -422,6 +463,8 @@ export class ServiciosComponent {
       next: (res) => {
         this.idProg.set('');
         this.tarifa.set(1);
+        this.tarifaManual.set(false);
+        this.revalidacionPreview.set(null);
         this.matriculaEmailPortal = '';
         this.matriculaPasswordPortal = '';
         this.docsPendientesMat.set([]);
@@ -430,6 +473,11 @@ export class ServiciosComponent {
           ? ' Debe programar las horas CEA (teoría, taller y práctica) en Programación CEA.'
           : '';
         let msg = `Matrícula creada. Se generaron los ítems de liquidación del programa.${avisoCea}`;
+        if (res.revalidacion?.aplica) {
+          msg += ` Refrendación: tarifa ${res.revalidacion.tarifa}.`;
+        } else if (res.revalidacion?.mensaje) {
+          msg += ` ${res.revalidacion.mensaje}`;
+        }
         if (res.usuarioPortal) {
           const pass = passwordPortal || res.usuarioPortal.passwordTemporal || '';
           if (pass) {

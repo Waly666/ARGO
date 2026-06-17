@@ -97,13 +97,15 @@
   padding: 14px 20px;
 
   &:has(argo-catalogo-enum-buscar.dropdown-open),
-  &:has(argo-municipio-buscar.dropdown-open) {
+  &:has(argo-municipio-buscar.dropdown-open),
+  &:has(argo-date-input.dropdown-open) {
     overflow: visible;
   }
 }
 
 .fm-panel:has(argo-catalogo-enum-buscar.dropdown-open),
-.fm-panel:has(argo-municipio-buscar.dropdown-open) {
+.fm-panel:has(argo-municipio-buscar.dropdown-open),
+.fm-panel:has(argo-date-input.dropdown-open) {
   overflow: visible;
 }
 

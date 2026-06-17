@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -28,7 +29,9 @@ import { PermisoService } from '../../core/services/permiso.service';
 @Component({
   selector: 'argo-cohorte-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './cohorte-detalle.component.html',
   styleUrls: ['./cohortes-hub.component.scss', './cohorte-detalle.component.scss'],
 })

@@ -278,20 +278,33 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-/* Combobox dentro de sección: evitar recorte del dropdown (overflow:hidden del surface). */
+/* Combobox / date picker dentro de sección: evitar recorte del dropdown (overflow:hidden del surface). */
 .argo-form-section:has(argo-catalogo-enum-buscar.dropdown-open),
-.clase-form-section:has(argo-catalogo-enum-buscar.dropdown-open) {
+.clase-form-section:has(argo-catalogo-enum-buscar.dropdown-open),
+.argo-form-section:has(argo-date-input.dropdown-open),
+.clase-form-section:has(argo-date-input.dropdown-open) {
   overflow: visible;
   position: relative;
   z-index: 30;
 }
 
-.section-body:has(argo-catalogo-enum-buscar.dropdown-open) {
+.section-body:has(argo-catalogo-enum-buscar.dropdown-open),
+.section-body:has(argo-date-input.dropdown-open) {
   overflow: visible;
 }
 
-.modal-edit-form:has(argo-catalogo-enum-buscar.dropdown-open) {
+.modal-edit-form:has(argo-catalogo-enum-buscar.dropdown-open),
+.modal-edit-form:has(argo-date-input.dropdown-open) {
   overflow: visible;
+}
+
+.form-cols [class*='col-']:has(argo-date-input.dropdown-open),
+.row [class*='col-']:has(argo-date-input.dropdown-open),
+.field-date:has(argo-date-input.dropdown-open),
+.field-fecha:has(argo-date-input.dropdown-open),
+label:has(> argo-date-input.dropdown-open) {
+  position: relative;
+  z-index: 5000;
 }
 
 /* Legacy .form-section auto-upgrade dentro de shells */
@@ -388,6 +401,10 @@
 .form-select-accent,
 .fecha-input-accent,
 .cupo-input {
+  @include argo-input-accent;
+}
+
+argo-date-input.fecha-input-accent .argo-date-text {
   @include argo-input-accent;
 }
 

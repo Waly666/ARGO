@@ -1,4 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -22,7 +23,9 @@ const REFRESH_MS = 3000;
 @Component({
   selector: 'argo-auditoria-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './auditoria-admin.component.html',
   styleUrls: ['./auditoria-admin.component.scss'],
 })

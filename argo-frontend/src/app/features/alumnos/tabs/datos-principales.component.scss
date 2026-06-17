@@ -361,7 +361,13 @@
 .form-cols .col-12:has(argo-catalogo-enum-buscar.dropdown-open),
 .form-cols .col-3:has(argo-municipio-buscar.dropdown-open),
 .form-cols .col-6:has(argo-municipio-buscar.dropdown-open),
-.form-cols .col-8:has(argo-municipio-buscar.dropdown-open) {
+.form-cols .col-8:has(argo-municipio-buscar.dropdown-open),
+.form-cols .col-2:has(argo-date-input.dropdown-open),
+.form-cols .col-3:has(argo-date-input.dropdown-open),
+.form-cols .col-4:has(argo-date-input.dropdown-open),
+.form-cols .col-6:has(argo-date-input.dropdown-open),
+.form-cols .col-8:has(argo-date-input.dropdown-open),
+.form-cols .col-12:has(argo-date-input.dropdown-open) {
   z-index: 5000;
 }
 

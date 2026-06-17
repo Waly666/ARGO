@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -28,7 +29,9 @@ type TabKey = 'datos' | 'documentos' | 'inspeccion';
 @Component({
   selector: 'argo-vehiculo-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, FormModalComponent, VehiculoInspeccionPanelComponent],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, FormModalComponent, VehiculoInspeccionPanelComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './vehiculo-detalle.component.html',
   styleUrls: ['./vehiculo-detalle.component.scss'],
 })

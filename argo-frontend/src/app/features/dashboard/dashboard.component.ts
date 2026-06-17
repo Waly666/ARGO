@@ -1,4 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -36,7 +37,9 @@ interface NavChip {
 @Component({
   selector: 'argo-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CurrencyPipe, DatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, CurrencyPipe, DatePipe,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
 })

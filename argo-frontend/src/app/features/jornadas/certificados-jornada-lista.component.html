@@ -162,12 +162,10 @@
       </div>
       <div class="row">
         <div class="col-4">
-          <label>Fecha emisión</label>
-          <input type="date" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" />
+          <argo-date-input label="Fecha emisión" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" ></argo-date-input>
         </div>
         <div class="col-4">
-          <label>Fecha vencimiento</label>
-          <input type="date" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" />
+          <argo-date-input label="Fecha vencimiento" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" ></argo-date-input>
         </div>
         <div class="col-4">
           <label>Horas cert.</label>

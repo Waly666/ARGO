@@ -474,6 +474,10 @@ export class ProgramasAdminComponent implements OnInit {
 
       diasVencimiento: 365,
 
+      admiteRevalidacion: false,
+
+      aplicarTarifaRevalidacionAuto: false,
+
       tipoCertificado: null,
 
       estado: 'ACTIVO',
@@ -584,6 +588,11 @@ export class ProgramasAdminComponent implements OnInit {
       }
       return next;
     });
+  }
+
+  onAdmiteRevalidacionChange(v: boolean): void {
+    this.patch('admiteRevalidacion', v);
+    if (!v) this.patch('aplicarTarifaRevalidacionAuto', false);
   }
 
 
@@ -700,6 +709,8 @@ export class ProgramasAdminComponent implements OnInit {
       descripcionVirtual: prog.descripcionVirtual ?? '',
       urlPortadaVirtual: prog.urlPortadaVirtual ?? '',
       diasVencimiento: prog.diasVencimiento ?? 365,
+      admiteRevalidacion: prog.admiteRevalidacion === true,
+      aplicarTarifaRevalidacionAuto: prog.aplicarTarifaRevalidacionAuto === true,
       tipoCertificado: prog.tipoCertificado ?? null,
       estado: prog.estado || 'ACTIVO',
       descripcion: prog.descripcion ?? '',

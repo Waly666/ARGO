@@ -113,12 +113,10 @@
       <input type="text" [ngModel]="docForm().numero" (ngModelChange)="patchDoc('numero', $event)" />
         <div class="row" *ngIf="docControlaVencimiento()">
           <div class="col-6">
-            <label>Expedición *</label>
-            <input type="date" [ngModel]="docForm().fechaExp" (ngModelChange)="patchDoc('fechaExp', $event)" />
+            <argo-date-input label="Expedición *" [ngModel]="docForm().fechaExp" (ngModelChange)="patchDoc('fechaExp', $event)" ></argo-date-input>
           </div>
           <div class="col-6">
-            <label>Vencimiento *</label>
-            <input type="date" [ngModel]="docForm().fechaVence" (ngModelChange)="patchDoc('fechaVence', $event)" />
+            <argo-date-input label="Vencimiento *" [ngModel]="docForm().fechaVence" (ngModelChange)="patchDoc('fechaVence', $event)" ></argo-date-input>
           </div>
         </div>
         <p class="hint" *ngIf="!docControlaVencimiento()">

@@ -35,7 +35,7 @@
   <div class="toolbar">
     <label class="fecha-field">
       <span>Fecha</span>
-      <input type="date" [ngModel]="fechaSel()" (ngModelChange)="onFechaChange($event)" />
+      <argo-date-input [ngModel]="fechaSel()" (ngModelChange)="onFechaChange($event)" ></argo-date-input>
     </label>
     <button type="button" class="ghost mini" (click)="irHoy()">Hoy</button>
     <div class="vista-toggle" role="group">

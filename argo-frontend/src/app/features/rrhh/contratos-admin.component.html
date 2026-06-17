@@ -43,8 +43,8 @@
       </div>
     </div>
     <div class="row">
-      <div class="col-3"><label>Inicio</label><input type="date" [ngModel]="$any(form()).fechaInicio" (ngModelChange)="patch('fechaInicio', $event)" /></div>
-      <div class="col-3"><label>Fin</label><input type="date" [ngModel]="$any(form()).fechaFin" (ngModelChange)="patch('fechaFin', $event)" /></div>
+      <div class="col-3"><label>Inicio</label><argo-date-input [ngModel]="$any(form()).fechaInicio" (ngModelChange)="patch('fechaInicio', $event)" ></argo-date-input></div>
+      <div class="col-3"><label>Fin</label><argo-date-input [ngModel]="$any(form()).fechaFin" (ngModelChange)="patch('fechaFin', $event)" ></argo-date-input></div>
       <div class="col-3"><label>Salario</label><input type="number" [ngModel]="$any(form()).salario" (ngModelChange)="patch('salario', +$event)" /></div>
       <div class="col-3"><label>Horas/sem</label><input type="number" [ngModel]="$any(form()).horasSemanales" (ngModelChange)="patch('horasSemanales', +$event)" /></div>
     </div>

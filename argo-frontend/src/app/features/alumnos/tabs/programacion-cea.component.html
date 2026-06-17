@@ -171,7 +171,7 @@
         <div class="toolbar">
           <label class="fecha-field">
             <span>Fecha</span>
-            <input type="date" [ngModel]="fechaSel()" (ngModelChange)="onFechaChange($event)" />
+            <argo-date-input [ngModel]="fechaSel()" (ngModelChange)="onFechaChange($event)" ></argo-date-input>
           </label>
           <button type="button" class="ghost mini" (click)="irHoy()">Hoy</button>
           <div class="vista-toggle" role="group" aria-label="Vista">
@@ -412,8 +412,7 @@
             <div class="section-body">
               <div class="horario-manual">
                 <div class="horario-manual-col">
-                  <label>Fecha</label>
-                  <input type="date" class="fecha-input-accent" [ngModel]="formClase().fechaClase" (ngModelChange)="patchForm({ fechaClase: $event })" />
+                  <argo-date-input label="Fecha" class="fecha-input-accent" [ngModel]="formClase().fechaClase" (ngModelChange)="patchForm({ fechaClase: $event })" ></argo-date-input>
                 </div>
                 <div class="horario-manual-col">
                   <label>Hora inicio</label>

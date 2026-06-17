@@ -40,11 +40,13 @@ const MODULOS_RESET = [
   },
   {
     id: 'programacion_cea',
-    etiqueta: 'Programación CEA',
-    descripcion: 'Clases programadas, inscripciones, jornadas de capacitación, supervisores y temarios por programa.',
+    etiqueta: 'Programación CEA y jornadas',
+    descripcion:
+      'Clases CEA, jornadas de capacitación con empresas, contratos de contratación, supervisores y temarios por programa.',
     colecciones: [
       'clasesProgramadasCea',
       'inscripcionesClaseCea',
+      'contratacion',
       'jornadasCap',
       'clasesJornadaCap',
       'asisClasJorCap',
@@ -53,10 +55,35 @@ const MODULOS_RESET = [
     ],
   },
   {
+    id: 'cohortes_academicas',
+    etiqueta: 'Cohortes académicas (técnicos / diplomados)',
+    descripcion:
+      'Plan por semestres, materias, grupos (cohortes), inscripciones, clases, asistencias, evaluaciones y materias aprobadas.',
+    colecciones: [
+      'semestresPrograma',
+      'materiasCohorte',
+      'catalogoMaterias',
+      'esquemasNotasPrograma',
+      'cohortes',
+      'inscripcionesCohorte',
+      'clasesCohorte',
+      'asistenciasCohorte',
+      'materiasAprobadasCohorte',
+      'materialesCohorte',
+      'evaluacionesCohorte',
+      'intentosEvaluacionCohorte',
+      'bancoPreguntasCohorte',
+      'notasCriterioCohorte',
+    ],
+    advertencias: [
+      'No borra programas ni alumnos; si conserva Académico pueden quedar referencias huérfanas.',
+    ],
+  },
+  {
     id: 'catalogos_operacion',
     etiqueta: 'Programas, sedes e infraestructura',
-    descripcion: 'Programas y servicios con tarifas, sedes, aulas, talleres/patios y plantillas de certificado.',
-    colecciones: ['programas', 'servicios', 'sedes', 'aulas', 'talleres', 'plantillasCertificado'],
+    descripcion: 'Programas y servicios con tarifas, combos, sedes, aulas, talleres/patios y plantillas de certificado.',
+    colecciones: ['programas', 'servicios', 'combosPrograma', 'sedes', 'aulas', 'talleres', 'plantillasCertificado'],
     advertencias: [
       'Al borrar sedes, el sistema intentará dejar una sede «Principal» solo si ejecuta reset completo o incluye Configuración del sistema.',
     ],
@@ -64,11 +91,10 @@ const MODULOS_RESET = [
   {
     id: 'rrhh',
     etiqueta: 'RRHH y nómina',
-    descripcion: 'Empleados, contratos, contratación, documentos del personal y liquidaciones de nómina.',
+    descripcion: 'Empleados, contratos laborales, documentos del personal y liquidaciones de nómina.',
     colecciones: [
       'empleados',
       'contratos',
-      'contratacion',
       'docsempleados',
       'periodosNomina',
       'novedadesNomina',

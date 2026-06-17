@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -10,7 +11,9 @@ import { TIPOS_CERTIFICADO } from '../../core/constants/tipos-certificado';
 @Component({
   selector: 'argo-certificados-vencidos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './certificados-vencidos.component.html',
   styleUrls: ['./certificados-vencidos.component.scss'],
 })

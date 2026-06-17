@@ -110,11 +110,11 @@
       <form class="aud-filtros" (ngSubmit)="buscarHistorial()">
         <label class="aud-field">
           <span class="aud-label">Desde</span>
-          <input type="date" [(ngModel)]="filtrosHistorial.desde" name="hDesde" />
+          <argo-date-input [(ngModel)]="filtrosHistorial.desde" name="hDesde" ></argo-date-input>
         </label>
         <label class="aud-field">
           <span class="aud-label">Hasta</span>
-          <input type="date" [(ngModel)]="filtrosHistorial.hasta" name="hHasta" />
+          <argo-date-input [(ngModel)]="filtrosHistorial.hasta" name="hHasta" ></argo-date-input>
         </label>
         <label class="aud-field">
           <span class="aud-label">Usuario</span>
@@ -188,11 +188,11 @@
       <form class="aud-filtros" (ngSubmit)="page.set(1); cargar()">
         <label class="aud-field">
           <span class="aud-label">Desde</span>
-          <input type="date" [(ngModel)]="filtros.desde" name="desde" />
+          <argo-date-input [(ngModel)]="filtros.desde" name="desde" ></argo-date-input>
         </label>
         <label class="aud-field">
           <span class="aud-label">Hasta</span>
-          <input type="date" [(ngModel)]="filtros.hasta" name="hasta" />
+          <argo-date-input [(ngModel)]="filtros.hasta" name="hasta" ></argo-date-input>
         </label>
         <label class="aud-field">
           <span class="aud-label">Usuario</span>

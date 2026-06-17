@@ -5,8 +5,26 @@ const {
 } = require('../services/programaServicio');
 const { normalizarTipoRegularJornada, TIPO_REGULAR_JORNADA_DEFAULT } = require('../constants/tipoRegularJornada');
 const { crearMatriculaDesdeBody } = require('../services/matriculaCreator');
+const { buscarPrograma } = require('../services/programaServicio');
+const { previewRevalidacionMatricula } = require('../services/revalidacionPrograma');
 
 exports.crearMatriculaDesdeBody = crearMatriculaDesdeBody;
+
+exports.previewRevalidacion = async (req, res, next) => {
+  try {
+    const numDoc = parseNumDoc(req.query.numDoc);
+    const idPrograma = req.query.idPrograma || req.query.idProg;
+    if (numDoc == null || !idPrograma) {
+      return res.status(400).json({ message: 'numDoc e idPrograma son obligatorios' });
+    }
+    const prog = await buscarPrograma(idPrograma);
+    if (!prog) return res.status(404).json({ message: 'Programa no encontrado' });
+    res.json(await previewRevalidacionMatricula(numDoc, prog));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
 
 exports.crear = async (req, res, next) => {
   try {

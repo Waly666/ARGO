@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
@@ -97,7 +98,9 @@ function fechaEnRango(fechaClase: string | Date | undefined, desde: string, hast
 @Component({
   selector: 'argo-alumno-programacion-cea',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent, Hora12InputComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, FormModalComponent, Hora12InputComponent, CatalogoEnumBuscarComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './programacion-cea.component.html',
   styleUrls: [
     './programacion-cea.component.scss',

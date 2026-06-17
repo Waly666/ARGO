@@ -343,8 +343,7 @@
               </div>
             </div>
             <div class="field col-w-date">
-              <label>Inicio jornadas</label>
-              <input type="date" [ngModel]="formContrato().fechaInicJornadas" (ngModelChange)="patchContrato('fechaInicJornadas', $event)" />
+              <argo-date-input label="Inicio jornadas" [ngModel]="formContrato().fechaInicJornadas" (ngModelChange)="patchContrato('fechaInicJornadas', $event)" ></argo-date-input>
             </div>
           </div>
           <div class="row row-fields">
@@ -407,12 +406,8 @@
 
         @if (formContrato()._id && !contratoFormEjecutado()) {
           <section class="form-block form-block-inline contrato-finalizar-block">
-            <label for="fecha-finalizacion-contrato">Fecha de finalización</label>
-            <input
-              id="fecha-finalizacion-contrato"
-              type="date"
-              [ngModel]="fechaFinalizacionContrato()"
-              (ngModelChange)="fechaFinalizacionContrato.set($event)" />
+            <argo-date-input label="Fecha de finalización" inputId="fecha-finalizacion-contrato" [ngModel]="fechaFinalizacionContrato()"
+              (ngModelChange)="fechaFinalizacionContrato.set($event)" ></argo-date-input>
             <button
               type="button"
               class="btn-finalizar-contrato"
@@ -540,8 +535,7 @@
         <p class="hint">Defina la <strong>fecha</strong>, la <strong>dirección</strong> y las coordenadas. El mapa está plegado hasta que lo abra.</p>
         <div class="jornada-edit-fila-meta">
           <div class="field field-fecha">
-            <label>Fecha programación *</label>
-            <input type="date" [ngModel]="jornadaEditFecha()" (ngModelChange)="jornadaEditFecha.set($event)" />
+            <argo-date-input label="Fecha programación *" [ngModel]="jornadaEditFecha()" (ngModelChange)="jornadaEditFecha.set($event)" ></argo-date-input>
           </div>
           <div class="field field-meta">
             <label>Meta alumnos</label>

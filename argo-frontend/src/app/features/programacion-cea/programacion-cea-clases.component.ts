@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import {
   Component,
   EventEmitter,
@@ -92,7 +93,9 @@ const CAL_MAX_EVENTOS_DIA = 15;
 @Component({
   selector: 'argo-programacion-cea-clases',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent, Hora12InputComponent, VehiculoInspeccionPanelComponent],
+  imports: [CommonModule, FormsModule, FormModalComponent, Hora12InputComponent, VehiculoInspeccionPanelComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './programacion-cea-clases.component.html',
   styleUrls: ['./programacion-cea-clases.component.scss'],
 })

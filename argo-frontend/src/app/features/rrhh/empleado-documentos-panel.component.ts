@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, Input, OnChanges, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -16,7 +17,9 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'argo-empleado-documentos-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './empleado-documentos-panel.component.html',
   styleUrls: ['./empleado-documentos-panel.component.scss'],
 })

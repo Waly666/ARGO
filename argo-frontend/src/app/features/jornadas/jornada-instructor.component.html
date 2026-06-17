@@ -29,8 +29,7 @@
 
   <div class="row">
     <div class="col-4">
-      <label>Fecha (consulta)</label>
-      <input type="date" [ngModel]="fecha()" (ngModelChange)="onFechaChange($event)" />
+      <argo-date-input label="Fecha (consulta)" [ngModel]="fecha()" (ngModelChange)="onFechaChange($event)" ></argo-date-input>
     </div>
     <div class="col-8 hint-col">
       <p class="hint">

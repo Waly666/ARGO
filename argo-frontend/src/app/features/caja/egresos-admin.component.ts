@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -61,7 +62,9 @@ import {
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink,
+    ArgoDateInputComponent,
+  ],
 
   templateUrl: './egresos-admin.component.html',
 

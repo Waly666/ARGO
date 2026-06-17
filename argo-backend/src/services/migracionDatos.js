@@ -8,7 +8,7 @@ const Ingreso = require('../models/Ingreso');
 const Certificado = require('../models/Certificado');
 const Config = require('../models/Config');
 const { models: cat } = require('../models/catalogos');
-const { parseNumDoc } = require('../utils/numDoc');
+const { parseNumDoc, numDocInvalidMessage } = require('../utils/numDoc');
 const {
   num,
   maxNumericId,
@@ -133,7 +133,7 @@ function instrucciones(hojasSel, opciones = {}) {
     ['2. No cambie los nombres de las hojas ni de las columnas de la fila 1.'],
     ['3. Borre las filas de ejemplo antes de importar.'],
     ['4. Las fechas pueden ir como AAAA-MM-DD o DD/MM/AAAA.'],
-    ['5. numDoc es el número de documento sin puntos ni espacios (6 a 11 dígitos).'],
+    [`5. numDoc es el número de documento sin puntos ni espacios (6 a 14 dígitos).`],
     ['6. codigoPrograma enlaza matrículas y certificados con el programa: debe venir en la hoja Programas o existir ya en ARGO (Académico → Programas).'],
     ['7. En el ERP: Sistema → Migración de datos → "Validar archivo" para revisar errores antes de importar.'],
     [''],
@@ -380,7 +380,7 @@ async function analizarArchivo(buffer, hojas, opcionesIntegridad = {}) {
   for (const f of datos.alumnos) {
     const numDoc = parseNumDoc(f.numDoc);
     if (numDoc == null) {
-      addErr(HOJAS.alumnos, f._fila, `numDoc inválido: "${f.numDoc}" (use 6 a 11 dígitos)`);
+      addErr(HOJAS.alumnos, f._fila, `numDoc inválido: "${f.numDoc}" (${numDocInvalidMessage()})`);
       continue;
     }
     if (vistosAlumno.has(numDoc)) {

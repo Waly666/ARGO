@@ -91,8 +91,7 @@
     </div>
     <div class="row">
       <div class="col-3">
-        <label>Fecha nacimiento</label>
-        <input type="date" [ngModel]="form().fechaNacimiento" (ngModelChange)="patch('fechaNacimiento', $event)" />
+        <argo-date-input label="Fecha nacimiento" [ngModel]="form().fechaNacimiento" (ngModelChange)="patch('fechaNacimiento', $event)" ></argo-date-input>
       </div>
       <div class="col-3">
         <label>Estado civil</label>
@@ -187,12 +186,10 @@
     </div>
     <div class="row">
       <div class="col-3">
-        <label>Fecha ingreso</label>
-        <input type="date" [ngModel]="form().fechaIngreso" (ngModelChange)="patch('fechaIngreso', $event)" />
+        <argo-date-input label="Fecha ingreso" [ngModel]="form().fechaIngreso" (ngModelChange)="patch('fechaIngreso', $event)" ></argo-date-input>
       </div>
       <div class="col-3">
-        <label>Fecha retiro</label>
-        <input type="date" [ngModel]="form().fechaRetiro" (ngModelChange)="patch('fechaRetiro', $event)" />
+        <argo-date-input label="Fecha retiro" [ngModel]="form().fechaRetiro" (ngModelChange)="patch('fechaRetiro', $event)" ></argo-date-input>
       </div>
       <div class="col-3">
         <label>EPS</label>

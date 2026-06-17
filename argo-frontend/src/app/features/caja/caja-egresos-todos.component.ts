@@ -1,4 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -28,7 +29,9 @@ import { ReciboService } from '../../core/services/recibo.service';
 @Component({
   selector: 'argo-caja-egresos-todos',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, CajaDescuadresBannerComponent],
+  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, CajaDescuadresBannerComponent,
+    ArgoDateInputComponent,
+  ],
   templateUrl: './caja-egresos-todos.component.html',
   styleUrls: ['./caja-listados-admin.scss'],
 })

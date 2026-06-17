@@ -324,8 +324,7 @@
   } @else {
 
   <div class="agenda-bar">
-    <label>Fecha</label>
-    <input type="date" [ngModel]="fecha()" (ngModelChange)="onFechaAgenda($event)" />
+    <argo-date-input label="Fecha" [ngModel]="fecha()" (ngModelChange)="onFechaAgenda($event)" ></argo-date-input>
     <button type="button" class="ghost sm" (click)="irHoy()">Hoy</button>
     <label class="filtro-tipo">Tipo</label>
     <select [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
@@ -619,12 +618,9 @@
             </header>
             <div class="section-body">
               <div class="field horario-fecha-field">
-                <label>Fecha de la clase</label>
-                <input
-                  type="date"
-                  class="fecha-input-accent"
+                <argo-date-input label="Fecha de la clase" class="fecha-input-accent"
                   [ngModel]="form().fechaClase"
-                  (ngModelChange)="patchForm({ fechaClase: $event })" />
+                  (ngModelChange)="patchForm({ fechaClase: $event })" ></argo-date-input>
               </div>
               @if (horarioPermitidoHint(); as hint) {
                 <p class="horario-rango-hint">{{ hint }}</p>
