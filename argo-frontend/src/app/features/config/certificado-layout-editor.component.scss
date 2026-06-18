@@ -54,6 +54,76 @@
   line-height: 1.45;
 }
 
+.copy-layout-bar {
+  margin: 12px 18px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(78, 163, 255, 0.28);
+  background: rgba(78, 163, 255, 0.08);
+}
+
+.copy-layout-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+}
+
+.copy-layout-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.copy-layout-select {
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 420px;
+  border: 1px solid var(--line);
+  border-radius: var(--btn-radius);
+  padding: 0.45rem 0.65rem;
+  background: rgba(6, 16, 41, 0.65);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-family: inherit;
+}
+
+.copy-layout-btn {
+  border: 1px solid rgba(78, 163, 255, 0.45);
+  background: rgba(78, 163, 255, 0.18);
+  color: var(--accent-2);
+  border-radius: var(--btn-radius);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(78, 163, 255, 0.28);
+  }
+}
+
+.copy-layout-hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.copy-layout-msg {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #86efac;
+}
+
 .editor-split {
   display: grid;
   grid-template-columns: minmax(280px, 1.1fr) minmax(300px, 0.9fr);

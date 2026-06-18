@@ -13,6 +13,36 @@
       Elija un texto o el QR a la derecha, o haga clic sobre el certificado. Al terminar, guarde la configuración abajo en la página.
     </div>
 
+    <div class="copy-layout-bar">
+      <div class="copy-layout-main">
+        <span class="copy-layout-label">Copiar medidas desde</span>
+        <select
+          class="copy-layout-select"
+          [ngModel]="copiarDesdeKey()"
+          (ngModelChange)="copiarDesdeKey.set($event)">
+          <option value="">— Elija un formato configurado —</option>
+          @for (f of fuentesCopia(); track f.key) {
+            <option [value]="f.key">{{ f.label }}</option>
+          }
+        </select>
+        <button type="button" class="copy-layout-btn" [disabled]="!copiarDesdeKey()" (click)="copiarMedidas()">
+          Aplicar
+        </button>
+      </div>
+      @if (fuentesCopia().length === 0) {
+        <p class="copy-layout-hint">
+          Aún no hay otros formatos con medidas. Configure uno, guarde, y podrá reutilizarlo aquí.
+        </p>
+      } @else {
+        <p class="copy-layout-hint">
+          Copia posiciones, tamaños de letra, color y QR. Luego pulse <strong>Guardar configuración</strong>.
+        </p>
+      }
+      @if (copyMsg(); as msg) {
+        <p class="copy-layout-msg" role="status">{{ msg }}</p>
+      }
+    </div>
+
     <div class="editor-split">
       <!-- Izquierda: certificado siempre visible -->
       <section class="panel-preview" aria-label="Vista del certificado">

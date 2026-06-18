@@ -20,12 +20,15 @@ import {
   QrLayoutCert,
 } from '../../core/constants/certificado-campos-layout';
 import {
+  ORIENTACIONES_CERTIFICADO,
   OrientacionCertificado,
+  TIPOS_CERTIFICADO,
   TipoCertificadoId,
   labelOrientacion,
   labelTipoCert,
 } from '../../core/constants/tipos-certificado';
 import { ConfigCertificadoService } from '../../core/services/config-certificado.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { fsToEditorFontSize } from '../../core/utils/certificado-tipografia';
 
 @Component({
@@ -38,6 +41,7 @@ import { fsToEditorFontSize } from '../../core/utils/certificado-tipografia';
 export class CertificadoLayoutEditorComponent implements OnInit {
   private cfgSvc = inject(ConfigCertificadoService);
   private sanitizer = inject(DomSanitizer);
+  private confirm = inject(ConfirmDialogService);
 
   @Input({ required: true }) tipo!: TipoCertificadoId;
   @Input({ required: true }) orientacion!: OrientacionCertificado;
@@ -60,6 +64,8 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   labelOri = labelOrientacion;
 
   abierto = signal(false);
+  copiarDesdeKey = signal('');
+  copyMsg = signal<string | null>(null);
   campoSel = signal<EditorSeleccion>('nombre');
   textoSel = computed(() => {
     const s = this.campoSel();
@@ -560,5 +566,67 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       certId: 'CERT-000001',
     };
     return map[id];
+  }
+
+  /** Formatos con medidas guardadas (excluye el actual). */
+  fuentesCopia(): { key: string; label: string }[] {
+    const layout = this.layoutPorTipo || {};
+    const out: { key: string; label: string }[] = [];
+    for (const t of TIPOS_CERTIFICADO) {
+      for (const o of ORIENTACIONES_CERTIFICADO) {
+        if (t.id === this.tipo && o.id === this.orientacion) continue;
+        const slot = layout[t.id]?.[o.id];
+        if (!this.slotTieneMedidas(slot)) continue;
+        out.push({
+          key: `${t.id}|${o.id}`,
+          label: `${labelTipoCert(t.id)} · ${labelOrientacion(o.id)}`,
+        });
+      }
+    }
+    return out.sort((a, b) => a.label.localeCompare(b.label, 'es'));
+  }
+
+  async copiarMedidas() {
+    const key = this.copiarDesdeKey().trim();
+    if (!key) return;
+    const sep = key.indexOf('|');
+    if (sep < 0) return;
+    const srcTipo = key.slice(0, sep) as TipoCertificadoId;
+    const srcOri = key.slice(sep + 1) as OrientacionCertificado;
+    const src = this.layoutPorTipo?.[srcTipo]?.[srcOri];
+    if (!src || !this.slotTieneMedidas(src)) {
+      this.copyMsg.set('El formato origen no tiene medidas guardadas.');
+      setTimeout(() => this.copyMsg.set(null), 4000);
+      return;
+    }
+    const origen = `${labelTipoCert(srcTipo)} · ${labelOrientacion(srcOri)}`;
+    const destino = `${labelTipoCert(this.tipo)} · ${labelOrientacion(this.orientacion)}`;
+    const ok = await this.confirm.open({
+      title: 'Copiar medidas',
+      message:
+        `¿Copiar posiciones, tamaños, color y QR de «${origen}» a «${destino}»? ` +
+        'Se reemplazarán las medidas actuales de este formato.',
+      confirmLabel: 'Copiar medidas',
+      variant: 'primary',
+    });
+    if (!ok) return;
+    this.emit(this.clonarSlot(src));
+    this.copyMsg.set(`Medidas copiadas desde ${origen}. Pulse «Guardar configuración» abajo.`);
+    setTimeout(() => this.copyMsg.set(null), 6000);
+  }
+
+  private slotTieneMedidas(slot: LayoutOrientacionCert | undefined): boolean {
+    if (!slot || typeof slot !== 'object') return false;
+    if (String(slot.color || '').trim()) return true;
+    if (slot.qr && Object.keys(slot.qr).length > 0) return true;
+    if (slot.campos && Object.keys(slot.campos).length > 0) return true;
+    return this.campos.some((c) => {
+      const legacy = (slot as LayoutOrientacionCert & Record<string, CampoLayoutCert | undefined>)[c.id];
+      return legacy && typeof legacy === 'object' && Object.keys(legacy).length > 0;
+    });
+  }
+
+  private clonarSlot(slot: LayoutOrientacionCert): LayoutOrientacionCert {
+    return JSON.parse(JSON.stringify(slot)) as LayoutOrientacionCert;
   }
 }
