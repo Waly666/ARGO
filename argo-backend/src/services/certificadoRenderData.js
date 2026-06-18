@@ -12,6 +12,7 @@ const {
 } = require('./clasificacionCertificado');
 const { resolverPlantillaImpresion } = require('./plantillaCertificado');
 const { numDocQuery } = require('../utils/numDoc');
+const { codigoTipoDocumentoAlumno } = require('../utils/tipoDocCodigo');
 
 async function armarDatosCertificado(id) {
   const cert = await Certificado.findById(id).lean();
@@ -31,7 +32,7 @@ async function armarDatosCertificado(id) {
         .findOne({ $or: [{ idTipoDoc: alumno.tipoDoc }, { codigo: alumno.tipoDoc }] })
         .lean()
     : null;
-  const tipoDocDescr = tipo?.descripcion || tipo?.codigo || alumno?.tipoDoc;
+  const tipoDocCod = codigoTipoDocumentoAlumno(alumno, tipo);
 
   const legacyFormato =
     cert.tipoFormatoCert ||
@@ -53,7 +54,7 @@ async function armarDatosCertificado(id) {
     certificado: cert,
     alumno,
     programa,
-    tipoDocDescr,
+    tipoDocCod,
     tipoFormatoCert,
     tipoCertificado: tipoFormatoCert,
   };

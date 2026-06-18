@@ -1,6 +1,7 @@
 /** Campos de datos que se superponen sobre la plantilla PNG */
 const CAMPOS_IDS = [
   'nombre',
+  'tipoDoc',
   'doc',
   'curso',
   'ciudad',
@@ -16,6 +17,7 @@ const CAMPOS_IDS = [
 
 const CAMPOS_LABEL = {
   nombre: 'Nombre del alumno',
+  tipoDoc: 'Tipo de documento (código)',
   doc: 'Número de documento',
   curso: 'Nombre del curso / encabezado',
   ciudad: 'Ciudad (constancia)',
@@ -34,6 +36,7 @@ const LAYOUT_HORIZONTAL = {
   pageH: '210mm',
   color: '#4a3a6a',
   nombre: { top: '28%', fs: '28pt', fw: '700', align: 'center', w: '82%' },
+  tipoDoc: { top: '35.5%', left: '48%', w: '10%', align: 'right', fs: '12.5pt' },
   doc: { top: '35.5%', left: '62%', w: '34%', align: 'left', fs: '12.5pt' },
   curso: { top: '42%', fs: '32pt', fw: '700', align: 'center', w: '82%' },
   ciudad: { top: '54%', fs: '10pt', align: 'center' },
@@ -52,6 +55,7 @@ const LAYOUT_VERTICAL = {
   pageH: '297mm',
   color: '#4a3a6a',
   nombre: { top: '31%', fs: '26pt', fw: '700', ls: '0.03em', align: 'center', w: '82%' },
+  tipoDoc: { top: '39%', left: '46%', w: '12%', align: 'right', fs: '12.5pt' },
   doc: { top: '39%', left: '62%', w: '34%', align: 'left', fs: '12.5pt' },
   curso: { top: '47%', fs: '32pt', fw: '700', align: 'center', w: '82%' },
   ciudad: { top: '57%', fs: '10pt', align: 'center' },
@@ -87,8 +91,10 @@ const MUESTRA_PREVIEW = {
     nombre2: 'CARLOS',
     apellido1: 'PEREZ',
     apellido2: 'GOMEZ',
+    tipoDoc: '1',
     numDoc: '1234567890',
   },
+  tipoDocCod: 'CC',
   programa: {
     nomCert: 'CAPACITACIÓN EJEMPLO ARGO',
     horas: 40,

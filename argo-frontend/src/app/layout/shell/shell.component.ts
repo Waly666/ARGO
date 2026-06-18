@@ -57,6 +57,8 @@ import {
   ComprobanteHoyAlertService,
   ComprobanteHoyTipo,
 } from '../../core/services/comprobante-hoy-alert.service';
+import { AlertaPagoAlumnoService } from '../../core/services/alerta-pago-alumno.service';
+import { AlertaPagoAlumnoBannerComponent } from '../../features/alumnos/alerta-pago-alumno-banner.component';
 import { AlumnoService } from '../../core/services/alumno.service';
 
 interface MenuLink {
@@ -95,7 +97,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AsistenteFlotanteComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, AsistenteFlotanteComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -130,6 +132,7 @@ export class ShellComponent {
   private instructorPortalSvc = inject(InstructorPortalService);
   private instructorPortalAlert = inject(InstructorPortalAlertService);
   private foroMensajeAlert = inject(ForoMensajeAlertService);
+  private alertaPagoSvc = inject(AlertaPagoAlumnoService);
   private vehiculoSvc = inject(VehiculoService);
   private inspeccionSvc = inject(InspeccionVehiculoService);
   readonly cajaEstado = inject(CajaEstadoService);
@@ -280,6 +283,12 @@ export class ShellComponent {
   );
 
   mostrarAlertaForoMensaje = computed(() => this.alarmaHabilitada('alarmas.aula_virtual.foro_mensaje'));
+
+  mostrarAlertaPagoAlumno = computed(() => this.alarmaHabilitada('alarmas.caja.alerta_pago'));
+
+  mostrarBannerAlertaPagoAlumno = computed(
+    () => this.mostrarAlertaPagoAlumno() && this.alertaPagoSvc.visibleBanner(),
+  );
 
   mostrarBannerForoMensaje = computed(
     () =>
@@ -1065,6 +1074,7 @@ export class ShellComponent {
   private iniciarAlertasPolls(): void {
     this.iniciarPollCertificados();
     this.iniciarPollComprobantesHoy();
+    this.iniciarPollAlertasPago();
     this.iniciarPollCertificadosPorVencer();
     this.iniciarPollCertificadosVencidos();
     this.iniciarPollJornadasLive();
@@ -1341,6 +1351,22 @@ export class ShellComponent {
     if (t === 'ingreso') return this.mostrarAlertaComprobanteIngreso();
     if (t === 'egreso') return this.mostrarAlertaComprobanteEgreso();
     return this.mostrarAlertaComprobanteFactura();
+  }
+
+  /** Recordatorios de cobro programados para hoy (técnicos / cuotas). */
+  private pollAlertasPago(): void {
+    if (!this.mostrarAlertaPagoAlumno()) {
+      this.alertaPagoSvc.limpiar();
+      return;
+    }
+    this.alertaPagoSvc.cargar().subscribe({ error: () => this.alertaPagoSvc.limpiar() });
+  }
+
+  private iniciarPollAlertasPago(): void {
+    this.pollAlertasPago();
+    interval(this.pollIntervalMs('alarmas.caja.alerta_pago'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.pollAlertasPago());
   }
 
   /** Comprobantes y facturas recientes (alertas globales en cabecera). */

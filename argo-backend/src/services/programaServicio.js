@@ -1,4 +1,5 @@
 const { models: cat } = require('../models/catalogos');
+const mongoose = require('mongoose');
 const Liquidacion = require('../models/Liquidacion');
 const { TARIFA_VIRTUAL } = require('../constants/tarifa');
 const { actualizarSaldosLiquidacionesPorServicio } = require('./liquidacionMatricula');
@@ -79,18 +80,19 @@ async function generarCodigoProg(idTipCap) {
 }
 
 async function buscarPrograma(idPrograma) {
-  const q = String(idPrograma);
+  const q = String(idPrograma ?? '').trim();
+  if (!q) return null;
   const n = Number(q);
-  return cat.programas
-    .findOne({
-      $or: [
-        { idPrograma: q },
-        ...(Number.isFinite(n) ? [{ idPrograma: n }, { idProg: n }] : []),
-        { idProg: q },
-        { codigoProg: q },
-      ],
-    })
-    .lean();
+  const or = [
+    { idPrograma: q },
+    { idProg: q },
+    { codigoProg: q },
+    ...(Number.isFinite(n) ? [{ idPrograma: n }, { idProg: n }] : []),
+  ];
+  if (mongoose.isValidObjectId(q)) {
+    or.unshift({ _id: q });
+  }
+  return cat.programas.findOne({ $or: or }).lean();
 }
 
 function idProgDePrograma(prog) {

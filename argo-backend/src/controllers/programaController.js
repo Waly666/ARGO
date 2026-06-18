@@ -19,6 +19,7 @@ const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
 const { filtrarProgramas } = require('../services/sedeOferta');
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('../services/tipoCapacitacionMatch');
 const { publicUrl } = require('../middleware/upload');
+const { listarMatriculasPrograma } = require('../services/programaMatriculas');
 
 function idTipCapJornadaDesdeIndice(indice) {
   for (const r of indice.rows) {
@@ -103,6 +104,18 @@ exports.obtener = async (req, res, next) => {
       servicio,
       servicios,
     });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.matriculas = async (req, res, next) => {
+  try {
+    const prog = await buscarPrograma(req.params.id);
+    if (!prog) return res.status(404).json({ message: 'Programa no encontrado' });
+    const idProg = String(prog.idPrograma ?? prog.idProg ?? '');
+    const data = await listarMatriculasPrograma(idProg, req.query, { idSede: req.idSede });
+    res.json(data);
   } catch (e) {
     next(e);
   }

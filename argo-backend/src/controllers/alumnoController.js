@@ -19,6 +19,10 @@ const {
 } = require('../services/alumnosJornadaCapLista');
 const mongoose = require('mongoose');
 const { parseNumDoc, numDocFromParams, numDocQueryNativo, numDocInvalidMessage } = require('../utils/numDoc');
+const {
+  normalizarAlertaPagoEnDto,
+  listarAlertasPagoHoy,
+} = require('../services/alertaPagoAlumno');
 
 function claveNumDocIndicador(numDoc) {
   const n = parseNumDoc(numDoc);
@@ -405,6 +409,16 @@ exports.comprobantesRecientes = async (req, res, next) => {
   }
 };
 
+/** Alumnos con recordatorio de cobro programado para hoy (cajero). */
+exports.alertasPagoHoy = async (req, res, next) => {
+  try {
+    const rows = await listarAlertasPagoHoy(new Date());
+    res.json(rows);
+  } catch (e) {
+    next(e);
+  }
+};
+
 /** Comprobantes y factura emitidos hoy (alarmas en ficha y lista). */
 exports.indicadoresHoy = async (req, res, next) => {
   try {
@@ -535,7 +549,7 @@ const CAMPOS_ALUMNO = [
   'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
   'regimenSalud', 'nivelFormacion', 'ocupacion', 'discapacidad', 'munOrigen', 'codMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
-  'duracionSesionPracticaCea', 'empresaId',
+  'duracionSesionPracticaCea', 'empresaId', 'alertaPago', 'alertaPagoFrecuencia',
 ];
 
 function nombreMayusculas(v) {
@@ -613,6 +627,10 @@ function pickAlumno(body) {
   if (body.tipoAlumno !== undefined || dto.tipoAlumno !== undefined) {
     dto.tipoAlumno = normalizarTipoAlumno(dto.tipoAlumno);
   }
+  if (body.alertaPagoFrecuencia) dto.alertaPagoFrecuencia = body.alertaPagoFrecuencia;
+  if (body.alertaPago) dto.alertaPago = body.alertaPago;
+  if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
+  normalizarAlertaPagoEnDto(dto);
   return dto;
 }
 
@@ -669,7 +687,8 @@ exports.actualizar = async (req, res, next) => {
   try {
     const prev = await buscarAlumnoPorIdParam(req.params.id);
     if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
-    const dto = pickAlumno(req.body);
+    const body = req.body;
+    const dto = pickAlumno(body);
     if (dto.numDoc != null) {
       dto.numDoc = parseNumDoc(dto.numDoc);
       if (dto.numDoc == null) {
@@ -683,7 +702,23 @@ exports.actualizar = async (req, res, next) => {
     dto.userChangeRecord = dto.userChangeRecord || req.user?.username || req.user?.sub || 'sistema';
     if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
 
-    const a = await DatosAlumno.findByIdAndUpdate(prev._id, dto, { new: true });
+    const unset = {};
+    if (
+      body.alertaPagoFrecuencia === ''
+      || body.alertaPago === ''
+      || (body.alertaPagoFrecuencia == null && body.alertaPago == null
+        && ('alertaPagoFrecuencia' in body || 'alertaPago' in body))
+    ) {
+      unset.alertaPagoFrecuencia = '';
+      unset.alertaPago = '';
+      delete dto.alertaPagoFrecuencia;
+      delete dto.alertaPago;
+    }
+
+    const op = { $set: dto };
+    if (Object.keys(unset).length) op.$unset = unset;
+
+    const a = await DatosAlumno.findByIdAndUpdate(prev._id, op, { new: true });
     res.json(a);
   } catch (e) {
     next(e);

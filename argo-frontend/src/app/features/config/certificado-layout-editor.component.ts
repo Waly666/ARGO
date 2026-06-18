@@ -534,6 +534,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   textoMuestra(id: CampoCertificadoId): string {
     const map: Record<CampoCertificadoId, string> = {
       nombre: 'JUAN CARLOS PEREZ GOMEZ MARTINEZ',
+      tipoDoc: 'CC',
       doc: '1234567890',
       curso: 'TRANSPORTE DE MERCANCIAS PELIGROSAS CLASE 3',
       ciudad: 'Villavicencio',

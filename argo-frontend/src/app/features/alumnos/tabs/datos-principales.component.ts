@@ -186,6 +186,7 @@ export class DatosPrincipalesComponent implements OnInit {
   opcionesTipoAlumno = computed<EnumBuscarOption[]>(() =>
     this.tiposAlumno.map((t) => ({ value: t, label: t })),
   );
+  opcionesTiposDoc = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.tiposDoc()));
   opcionesGeneros = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.generos()));
   opcionesTiposSangre = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.tiposSangre()));
   opcionesJornadas = computed<EnumBuscarOption[]>(() => this.mapOpcionesCatalogo(this.jornadas()));
@@ -350,6 +351,7 @@ export class DatosPrincipalesComponent implements OnInit {
       }
     });
 
+    this.cargarCatalogo('catTipoDoc', this.tiposDoc, TIPOS_DOC_DEF);
     this.cargarCatalogo('catRegimenSalud', this.regimenesSalud, REGIMEN_SALUD_DEF);
 
     this.configSvc.obtenerRecibo().subscribe({
@@ -424,7 +426,13 @@ export class DatosPrincipalesComponent implements OnInit {
     const norm = normalizarEnum(v);
     const hit = items.find((i) => {
       const cv = catValor(i);
-      return cv === v || cv === norm || catEtiqueta(i).toUpperCase() === v.toUpperCase();
+      const cod = String(i['codigo'] ?? '').trim();
+      return (
+        cv === v
+        || cv === norm
+        || (cod && (cod === v || cod.toUpperCase() === v.toUpperCase()))
+        || catEtiqueta(i).toUpperCase() === v.toUpperCase()
+      );
     });
     return hit ? catEtiqueta(hit) : v;
   }
@@ -473,6 +481,10 @@ export class DatosPrincipalesComponent implements OnInit {
     }
     if (k === 'numDoc') {
       valor = sanitizeNumDocInput(v) as AlumnoDto[K];
+    }
+    if (k === 'alertaPagoFrecuencia' && !v) {
+      this.form.update((f) => ({ ...f, alertaPagoFrecuencia: '', alertaPago: null }));
+      return;
     }
     this.form.update((f) => ({ ...f, [k]: valor }));
 
@@ -833,6 +845,9 @@ export class DatosPrincipalesComponent implements OnInit {
 
       empresaId: f.empresaId ?? null,
 
+      alertaPagoFrecuencia: f.alertaPagoFrecuencia || '',
+      alertaPago: f.alertaPago || '',
+
     };
 
   }
@@ -985,8 +1000,14 @@ export class DatosPrincipalesComponent implements OnInit {
 
       fechaMod: raw.fechaMod as string,
 
-      empresaId: raw.empresaId ? String(raw.empresaId) : null,
-      empresaNombre: raw.empresaNombre ? String(raw.empresaNombre) : null,
+      empresaId: raw['empresaId'] ? String(raw['empresaId']) : null,
+      empresaNombre: raw['empresaNombre'] ? String(raw['empresaNombre']) : null,
+
+      alertaPagoFrecuencia:
+        raw['alertaPagoFrecuencia'] === 'quincenal' || raw['alertaPagoFrecuencia'] === 'mensual'
+          ? raw['alertaPagoFrecuencia']
+          : '',
+      alertaPago: raw['alertaPago'] ? String(raw['alertaPago']).slice(0, 10) : null,
 
     };
 
@@ -1046,6 +1067,9 @@ export class DatosPrincipalesComponent implements OnInit {
       multiCulturalidad: 'NO_APLICA',
 
       urlFoto: '',
+
+      alertaPagoFrecuencia: '',
+      alertaPago: null,
 
     };
 

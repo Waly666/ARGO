@@ -137,10 +137,17 @@
               </p>
             </div>
             <div class="col-3">
-              <label>Tipo documento *</label>
-              <select [ngModel]="form().tipoDoc" (ngModelChange)="patch('tipoDoc', $event)">
-                <option *ngFor="let t of tiposDoc()" [value]="catValor(t)">{{ catEtiqueta(t) }}</option>
-              </select>
+              <argo-catalogo-enum-buscar
+                label="Tipo documento *"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="etiquetaCatalogo(tiposDoc(), form().tipoDoc)"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesTiposDoc()"
+                (seleccionado)="onCatalogoPick('tipoDoc', $event)"
+                (limpiado)="onCatalogoLimpiar('tipoDoc', '1')"
+              />
             </div>
             <div class="col-3">
               <label>Número documento *</label>
@@ -364,6 +371,38 @@
                 (seleccionado)="onMunOrigenSel($event)"
                 (limpiado)="onMunOrigenLimpiar()"
               />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section tone-teal">
+        <div class="section-head">
+          <span class="section-icon ic-teal">💰</span>
+          <div>
+            <h3>Recordatorio de cobro</h3>
+            <p>Para técnicos con cuotas recurrentes: avisa al cajero qué día cobrar (se borra al registrar un abono).</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="row">
+            <div class="col-4">
+              <label>Frecuencia</label>
+              <select
+                [ngModel]="form().alertaPagoFrecuencia || ''"
+                (ngModelChange)="patch('alertaPagoFrecuencia', $event)">
+                <option value="">Sin recordatorio</option>
+                <option value="mensual">Mensual</option>
+                <option value="quincenal">Quincenal</option>
+              </select>
+            </div>
+            <div class="col-4" *ngIf="form().alertaPagoFrecuencia">
+              <argo-date-input
+                label="Día de referencia"
+                [ngModel]="form().alertaPago || ''"
+                (ngModelChange)="patch('alertaPago', $event || null)"
+              ></argo-date-input>
+              <p class="hint doc-hint">Mensual: mismo día cada mes. Quincenal: cada 15 días desde esta fecha.</p>
             </div>
           </div>
         </div>

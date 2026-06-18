@@ -25,6 +25,7 @@ import {
   FacturacionService,
 } from '../../../core/services/facturacion.service';
 import { ComprobanteHoyAlertService } from '../../../core/services/comprobante-hoy-alert.service';
+import { AlertaPagoAlumnoService } from '../../../core/services/alerta-pago-alumno.service';
 
 interface ItemPagoSel {
   idLiquidacion: string;
@@ -57,6 +58,7 @@ export class PagosComponent {
   permisoSvc = inject(PermisoService);
   private router = inject(Router);
   private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
+  private alertaPagoSvc = inject(AlertaPagoAlumnoService);
   private route = inject(ActivatedRoute);
   private catSvc = inject(CatalogoService);
   private liqSvc = inject(LiquidacionService);
@@ -544,6 +546,7 @@ export class PagosComponent {
           this.numComprobante.set('');
           this.observaciones.set('');
           this.recargar(nd);
+          this.alertaPagoSvc.cargar().subscribe();
           const id = ing?._id || ing?.id;
           const certs: { _id?: string; codigoCert?: string }[] =
             ing?.certificadosAuto?.length

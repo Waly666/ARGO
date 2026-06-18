@@ -128,6 +128,13 @@ export const routes: Routes = [
           import('./features/programas/programas-admin.component').then((m) => m.ProgramasAdminComponent),
       },
       {
+        path: 'programas/:id',
+        canActivate: [permisoGuard],
+        data: { permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'], title: 'Ficha programa' },
+        loadComponent: () =>
+          import('./features/programas/programa-detalle.component').then((m) => m.ProgramaDetalleComponent),
+      },
+      {
         path: 'aula-virtual/sitio',
         canActivate: [permisoGuard],
         data: { permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'], title: 'Editor sitio portal' },

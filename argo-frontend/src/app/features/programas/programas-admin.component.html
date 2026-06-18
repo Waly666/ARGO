@@ -25,6 +25,11 @@
       (ngModelChange)="busqueda.set($event)"
       (keyup.enter)="cargar()" />
     <button type="button" class="ghost" (click)="cargar()">Buscar</button>
+    <div class="view-toggle prog-modalidad" role="group" aria-label="Modalidad">
+      <button type="button" class="view-btn" [class.active]="filtroModalidad() === 'todos'" (click)="filtroModalidad.set('todos')">Todos</button>
+      <button type="button" class="view-btn" [class.active]="filtroModalidad() === 'presencial'" (click)="filtroModalidad.set('presencial')">Presencial</button>
+      <button type="button" class="view-btn" [class.active]="filtroModalidad() === 'virtual'" (click)="filtroModalidad.set('virtual')">Virtual</button>
+    </div>
     <div class="view-toggle" role="group" aria-label="Modo de vista">
       <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')" title="Vista tabla">☰ Lista</button>
       <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')" title="Vista tarjetas">▦ Cards</button>
@@ -361,7 +366,7 @@
         <tr *ngFor="let p of programasOrdenados()">
           <td><span [ngClass]="capCodigo(p.codigoProg)">{{ p.codigoProg || p.idPrograma }}</span></td>
           <td>
-            <strong>{{ p.nombreProg }}</strong>
+            <a [routerLink]="fichaProgramaLink(p)" class="prog-link-ficha"><strong>{{ p.nombreProg }}</strong></a>
             <span class="cap cap-cyan cap-sm" *ngIf="p.esCapacitacionVirtual" style="margin-left: 6px;">Virtual</span>
           </td>
           <td><span class="cap cap-violet cap-sm">{{ p.nomCert || '—' }}</span></td>
@@ -375,6 +380,7 @@
           <td><span [ngClass]="[capMoneda(p.valorMatricula), 'cap-money']">${{ num(p.valorMatricula) | number }}</span></td>
           <td><span [ngClass]="capEstado(p.estado)">{{ p.estado || '—' }}</span></td>
           <td class="acciones actions-cell">
+            <a [routerLink]="fichaProgramaLink(p)" [queryParams]="{ tab: 'alumnos' }" class="ghost mini linkish">Ficha</a>
             <button type="button" class="ghost mini" *ngIf="puedeGestionarPrograma()" (click)="editar(p)">Editar</button>
             <button type="button" class="danger mini" *ngIf="puedeGestionarPrograma()" (click)="eliminar(p)">Eliminar</button>
           </td>
@@ -389,7 +395,7 @@
   <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
     <article class="list-card" *ngFor="let p of programasOrdenados()">
       <header class="card-title">
-        <h3>{{ p.nombreProg }}</h3>
+        <h3><a [routerLink]="fichaProgramaLink(p)" class="prog-link-ficha">{{ p.nombreProg }}</a></h3>
         <span class="cap cap-cyan cap-sm" *ngIf="p.esCapacitacionVirtual">Virtual</span>
       </header>
       <div class="card-body">
@@ -413,6 +419,7 @@
       <footer class="card-foot">
         <span class="card-hint">Programa educativo</span>
         <div class="card-actions">
+          <a [routerLink]="fichaProgramaLink(p)" [queryParams]="{ tab: 'alumnos' }" class="act open linkish">Ficha</a>
           <button type="button" class="act open" *ngIf="puedeGestionarPrograma()" (click)="editar(p)">Editar</button>
           <button type="button" class="act doc" *ngIf="puedeGestionarPrograma()" (click)="eliminar(p)">Eliminar</button>
         </div>

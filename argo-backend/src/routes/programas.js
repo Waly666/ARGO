@@ -13,6 +13,7 @@ const agregar = requirePermiso('programas.agregar', 'programas.gestionar');
 const gestionar = requirePermiso('programas.gestionar');
 
 router.get('/', ver, ctrl.listar);
+router.get('/:id/matriculas', ver, ctrl.matriculas);
 router.get('/:id', ver, ctrl.obtener);
 router.post('/', agregar, ctrl.crear);
 router.post(

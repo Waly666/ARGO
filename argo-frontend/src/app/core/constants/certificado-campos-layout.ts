@@ -2,6 +2,7 @@ import { OrientacionCertificado, TipoCertificadoId } from './tipos-certificado';
 
 export type CampoCertificadoId =
   | 'nombre'
+  | 'tipoDoc'
   | 'doc'
   | 'curso'
   | 'ciudad'
@@ -58,6 +59,7 @@ export type LayoutPorTipoCert = Partial<
 
 export const CAMPOS_CERTIFICADO_LAYOUT: { id: CampoCertificadoId; label: string }[] = [
   { id: 'nombre', label: 'Nombre del alumno' },
+  { id: 'tipoDoc', label: 'Tipo de documento (código)' },
   { id: 'doc', label: 'Número de documento' },
   { id: 'curso', label: 'Nombre del curso / encabezado' },
   { id: 'ciudad', label: 'Ciudad (constancia)' },

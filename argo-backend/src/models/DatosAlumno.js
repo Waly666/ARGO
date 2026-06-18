@@ -49,7 +49,10 @@ const DatosAlumnoSchema = new mongoose.Schema(
     empresaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
     /** Horas por sesión de práctica CEA al auto-generar clases (1–4). null = automático según config global. */
     duracionSesionPracticaCea: { type: Number, default: null, min: 1, max: 8 },
-    docsAlumno: { type: mongoose.Schema.Types.Mixed, default: {} },
+    /** Día de referencia acordado con el alumno para recordatorio de cobro (técnicos / cuotas). */
+    alertaPago: { type: Date, default: null },
+    /** quincenal | mensual */
+    alertaPagoFrecuencia: { type: String, trim: true, default: null },
     fechaAudi: { type: Date, default: Date.now },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },

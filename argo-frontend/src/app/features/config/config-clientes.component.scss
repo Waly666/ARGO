@@ -304,7 +304,7 @@
 
 .cli-modal {
   width: min(780px, 100%);
-  max-height: calc(100vh - 2.5rem);
+  max-height: min(920px, calc(100dvh - 2rem));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -374,18 +374,30 @@
 .cli-form {
   display: flex;
   flex-direction: column;
+  align-content: flex-start;
   gap: 0.65rem;
   padding: 0.85rem 1rem 0.5rem;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+
+  &.argo-form-shell {
+    display: flex;
+    flex-direction: column;
+  }
 
   &:has(argo-municipio-buscar.dropdown-open) {
     overflow: visible;
   }
+
+  > .cli-section {
+    flex-shrink: 0;
+  }
 }
 
 .cli-section {
+  flex-shrink: 0;
   border: 1px solid rgba(120, 170, 255, 0.12);
   border-left: 3px solid rgba(56, 189, 248, 0.65);
   border-radius: 10px;
@@ -436,6 +448,7 @@
 
 .cli-section-body {
   padding: 0.65rem 0.75rem 0.75rem;
+  min-height: min-content;
 
   &:has(argo-municipio-buscar.dropdown-open) {
     overflow: visible;
@@ -514,6 +527,11 @@
   display: grid;
   gap: 0.28rem;
   min-width: 0;
+  align-content: start;
+
+  &--grow {
+    min-width: 0;
+  }
 
   &--dv input {
     text-align: center;
@@ -540,6 +558,7 @@
 .cli-field select {
   width: 100%;
   min-height: 2.1rem;
+  flex-shrink: 0;
   padding: 0.32rem 0.52rem;
   font-size: 0.86rem;
   border-radius: 8px;

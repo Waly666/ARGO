@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 
 
@@ -167,6 +167,7 @@ export class ProgramasAdminComponent implements OnInit {
 
   private confirm = inject(ConfirmDialogService);
   private asistente = inject(AsistenteContextoService);
+  private route = inject(ActivatedRoute);
 
   modalTop = signal(80);
 
@@ -196,7 +197,10 @@ export class ProgramasAdminComponent implements OnInit {
   sortDir = signal<SortDir>('asc');
 
   programasOrdenados = computed(() => {
-    const rows = [...this.programas()];
+    const fm = this.filtroModalidad();
+    let rows = [...this.programas()];
+    if (fm === 'virtual') rows = rows.filter((p) => p.esCapacitacionVirtual);
+    else if (fm === 'presencial') rows = rows.filter((p) => !p.esCapacitacionVirtual);
     const col = this.sortCol();
     const dir = this.sortDir();
     const mul = dir === 'asc' ? 1 : -1;
@@ -260,6 +264,8 @@ export class ProgramasAdminComponent implements OnInit {
   msgError = signal(false);
 
   busqueda = signal('');
+
+  filtroModalidad = signal<'todos' | 'virtual' | 'presencial'>('todos');
 
   vista = signal<VistaLista>(readVistaLista('argo-programas-vista'));
 
@@ -364,6 +370,11 @@ export class ProgramasAdminComponent implements OnInit {
     this.esAdmin.set(r === 'admin' || r.includes('admin'));
 
     this.cargar();
+
+    this.route.queryParamMap.subscribe((q) => {
+      const editId = q.get('editar');
+      if (editId) this.abrirEditarPorId(editId);
+    });
 
     this.cfgCertSvc.obtener().subscribe({ next: (c) => this.configCert.set(c) });
 
@@ -637,6 +648,24 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
 
+
+  abrirEditarPorId(id: string) {
+    const hit = this.programas().find(
+      (p) => String(p._id) === id || String(p.idPrograma) === id,
+    );
+    if (hit) {
+      this.editar(hit);
+      return;
+    }
+    this.progSvc.obtener(id).subscribe({
+      next: (det) => this.editar(det.programa),
+      error: () => this.inform('No se encontró el programa para editar', true),
+    });
+  }
+
+  fichaProgramaLink(p: Programa): string[] {
+    return ['/app/programas', String(p.idPrograma ?? p._id ?? '')];
+  }
 
   editar(p: Programa) {
     this.modalAbierto.set(false);

@@ -22,6 +22,8 @@ import {
 } from '../../core/utils/capsule.util';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { AlertaPagoAlumnoBannerComponent } from '../alumnos/alerta-pago-alumno-banner.component';
+import { AlertaPagoAlumnoService } from '../../core/services/alerta-pago-alumno.service';
 
 const TIPOS_PAGO_DEF = [
   { idTipoPago: '1', codigo: 'EF', descripcion: 'Efectivo' },
@@ -35,7 +37,7 @@ const TIPOS_PAGO_DEF = [
 @Component({
   selector: 'argo-caja-cobros-pendientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe],
+  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, AlertaPagoAlumnoBannerComponent],
   templateUrl: './caja-cobros-pendientes.component.html',
   styleUrls: ['./caja-cobros-pendientes.component.scss'],
 })
@@ -51,6 +53,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
   private confirmSvc = inject(ConfirmDialogService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private alertaPagoSvc = inject(AlertaPagoAlumnoService);
 
   private readonly vistaKey = 'argo-caja-cobros-vista';
 
@@ -88,6 +91,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
   capValorIngreso = capValorIngreso;
 
   ngOnInit(): void {
+    this.alertaPagoSvc.cargar().subscribe();
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
       next: (d) => this.tiposPago.set(d?.length ? d : TIPOS_PAGO_DEF),
       error: () => this.tiposPago.set(TIPOS_PAGO_DEF),
@@ -252,6 +256,7 @@ export class CajaCobrosPendientesComponent implements OnInit {
         next: (ing) => {
           this.saving.set(false);
           this.inform(`Pago registrado (${ing.numRecibo || ''}).`);
+          this.alertaPagoSvc.cargar().subscribe();
           this.cargar();
           if (it._id) this.cargarPagos(it._id);
           const id = ing?._id;

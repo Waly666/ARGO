@@ -5,6 +5,7 @@ import { Observable, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { formatNumDoc, parseNumDocForApi } from '../utils/num-doc.helpers';
 import type { DocumentosRequeridosRes, ValidacionDocumentosRes } from './config-requisitos-documentos.service';
+import type { AlertaPagoAlumnoItem } from './alerta-pago-alumno.service';
 
 /** Esquema datosAlumnos — _id es idAlumno en Mongo */
 export interface AlumnoDto {
@@ -50,7 +51,9 @@ export interface AlumnoDto {
   duracionSesionPracticaCea?: number | null;
   /** ID del cliente (empresa de transporte) al que pertenece el alumno. */
   empresaId?: string | null;
-  /** Nombre de la empresa (poblado desde BD). */
+  /** Recordatorio de cobro recurrente (técnicos / cuotas). */
+  alertaPago?: string | null;
+  alertaPagoFrecuencia?: 'quincenal' | 'mensual' | '' | null;
   empresaNombre?: string | null;
 }
 
@@ -255,6 +258,10 @@ export class AlumnoService {
     >(`${this.base}/alertas-comprobantes-recientes`, { params });
   }
 
+  alertasPagoHoy(): Observable<AlertaPagoAlumnoItem[]> {
+    return this.http.get<AlertaPagoAlumnoItem[]>(`${this.base}/alertas-pago-hoy`);
+  }
+
   indicadoresMovimientosHoy(id: string): Observable<{
     comprobanteIngresoHoy: MovimientoAlarmaHoy | null;
     comprobanteEgresoHoy: MovimientoAlarmaHoy | null;
@@ -322,6 +329,10 @@ export class AlumnoService {
     const form = new FormData();
     Object.entries(data || {}).forEach(([k, v]) => {
       if (v === undefined || v === null || k === '_id') return;
+      if (k === 'alertaPago' || k === 'alertaPagoFrecuencia') {
+        form.append(k, String(v ?? ''));
+        return;
+      }
       if (k === 'numDoc') {
         const n = parseNumDocForApi(v);
         if (n != null) form.append(k, String(n));

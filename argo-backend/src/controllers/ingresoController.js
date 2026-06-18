@@ -380,6 +380,13 @@ exports.crearAlumno = async (req, res, next) => {
       if (a.liq.idMat) await refrescarPagoMatricula(a.liq.idMat);
     }
 
+    try {
+      const { limpiarAlertaPagoPorNumDoc } = require('../services/alertaPagoAlumno');
+      await limpiarAlertaPagoPorNumDoc(numDoc);
+    } catch (errAlertaPago) {
+      console.error('[alertaPago] limpiar tras abono:', errAlertaPago?.message || errAlertaPago);
+    }
+
     for (const a of aplicadas) {
       try {
         const { onPrimerAbonoIngreso } = require('../services/programacionCeaAuto');

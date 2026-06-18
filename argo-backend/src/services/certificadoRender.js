@@ -191,6 +191,7 @@ async function generarHtmlCertificado(data, options = {}) {
 
   const nombre = nombreCompleto(alumno);
   const numDoc = numDocToString(alumno?.numDoc);
+  const tipoDoc = String(data.tipoDocCod || '').trim().toUpperCase();
   const curso = encabezadoCurso(programa, certificado);
   const horasCertStr = String(certificado?.horasCert || '').trim();
   const horasProg = programa?.horas != null ? Number(programa.horas) : null;
@@ -208,6 +209,7 @@ async function generarHtmlCertificado(data, options = {}) {
 
   const valores = {
     nombre,
+    tipoDoc,
     doc: numDoc,
     curso,
     ciudad: ciudadTxt,
@@ -305,7 +307,7 @@ async function generarHtmlCertificado(data, options = {}) {
       line-height: 1.2;
       overflow: visible;
     }
-    .dato.doc, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
+    .dato.tipoDoc, .dato.doc, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
     .cert-id { font-family: Consolas, monospace; line-height: 1.2; }
     .qr-wrap img { display: block; }
     .no-print {

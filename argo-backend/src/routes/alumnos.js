@@ -17,6 +17,7 @@ const files = upload.alumnos.fields([
 
 router.get('/', ver, ctrl.listar);
 router.get('/alertas-comprobantes-recientes', ver, ctrl.comprobantesRecientes);
+router.get('/alertas-pago-hoy', ver, ctrl.alertasPagoHoy);
 router.get('/verificar-doc/:numDoc', ver, ctrl.verificarDocumento);
 router.get('/doc/:numDoc', ver, ctrl.porDocumento);
 router.post('/escanear-cedula', gestionar, upload.memory.single('imagen'), ctrl.escanearCedula);

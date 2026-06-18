@@ -148,4 +148,37 @@ export class ProgramaService {
   eliminar(id: string | number): Observable<{ ok: boolean; message?: string }> {
     return this.http.delete<{ ok: boolean; message?: string }>(`${this.base}/${id}`);
   }
+
+  listarMatriculas(
+    id: string | number,
+    opts?: { q?: string; pagada?: string; modalidad?: 'virtual' | 'presencial' | ''; skip?: number; limit?: number },
+  ): Observable<{ items: MatriculaProgramaItem[]; total: number; skip: number; limit: number }> {
+    let params = new HttpParams();
+    if (opts?.q) params = params.set('q', opts.q);
+    if (opts?.pagada) params = params.set('pagada', opts.pagada);
+    if (opts?.modalidad) params = params.set('modalidad', opts.modalidad);
+    if (opts?.skip != null) params = params.set('skip', String(opts.skip));
+    if (opts?.limit != null) params = params.set('limit', String(opts.limit));
+    return this.http.get<{ items: MatriculaProgramaItem[]; total: number; skip: number; limit: number }>(
+      `${this.base}/${id}/matriculas`,
+      { params },
+    );
+  }
+}
+
+export interface MatriculaProgramaItem {
+  idMatricula: string;
+  numDoc: number | string;
+  alumnoId?: string | null;
+  nombreCompleto: string;
+  celular?: string | null;
+  correo?: string | null;
+  fechaMat?: string | Date;
+  valorMat: number;
+  tarifa: number;
+  modalidad: 'virtual' | 'presencial';
+  modalidadLabel: string;
+  pagada: string;
+  saldo: number;
+  estado: string;
 }

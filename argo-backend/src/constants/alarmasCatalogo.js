@@ -7,6 +7,7 @@ const GRUPOS = [
       { key: 'alarmas.caja.cerrada', label: 'Caja personal cerrada (banner superior)' },
       { key: 'alarmas.caja.sin_abrir', label: 'Aviso modal al cobrar o egresar sin caja abierta' },
       { key: 'alarmas.caja.descuadres', label: 'Descuadres de caja pendientes' },
+      { key: 'alarmas.caja.alerta_pago', label: 'Recordatorio de cobro a alumnos (día programado)' },
     ],
   },
   {
@@ -123,6 +124,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.caja.cerrada',
     'alarmas.caja.sin_abrir',
     'alarmas.caja.descuadres',
+    'alarmas.caja.alerta_pago',
     'alarmas.jornadas.en_proceso',
     'alarmas.jornadas.certificado_nuevo',
     'alarmas.certificados.vencimiento',
@@ -166,6 +168,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.comprobante_ingreso',
     'alarmas.alumnos.comprobante_egreso',
     'alarmas.alumnos.factura',
+    'alarmas.caja.alerta_pago',
     'alarmas.certificados.vencimiento',
     'alarmas.certificados.vencidos',
     'alarmas.vehiculos.docs_vencidos',

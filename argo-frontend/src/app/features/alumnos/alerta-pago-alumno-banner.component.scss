@@ -1,0 +1,73 @@
+@import '../../shared/styles/head-alarm-uniform';
+
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.alerta-pago-root {
+  position: relative;
+  width: 100%;
+}
+
+.alerta-pago-banner {
+  padding: 10px 12px;
+  padding-top: 28px;
+  border-radius: 10px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.1);
+
+  &--panel {
+    margin-bottom: 12px;
+  }
+}
+
+.banner-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+
+  .hint {
+    font-size: 0.78rem;
+    color: var(--text-dim, #94a3b8);
+    font-weight: 500;
+  }
+}
+
+.banner-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.banner-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(15, 23, 42, 0.35);
+
+  &:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.08);
+  }
+
+  .nombre {
+    font-weight: 700;
+    font-size: 0.88rem;
+  }
+
+  .meta {
+    font-size: 0.76rem;
+    color: var(--text-dim, #94a3b8);
+  }
+}

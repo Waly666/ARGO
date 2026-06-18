@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
+import { AlertaPagoAlumnoBannerComponent } from '../alumnos/alerta-pago-alumno-banner.component';
+import { AlertaPagoAlumnoService } from '../../core/services/alerta-pago-alumno.service';
 import { DashboardService, DashboardStats } from '../../core/services/dashboard.service';
 import { buildMetodosPagoCards, MetodoPagoCard } from '../../core/utils/metodo-pago.util';
 import {
@@ -39,6 +41,7 @@ interface NavChip {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, CurrencyPipe, DatePipe,
     ArgoDateInputComponent,
+    AlertaPagoAlumnoBannerComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
@@ -46,6 +49,7 @@ interface NavChip {
 export class DashboardComponent implements OnInit {
   private auth = inject(AuthService);
   private dashboardSvc = inject(DashboardService);
+  private alertaPagoSvc = inject(AlertaPagoAlumnoService);
 
   readonly donutSize = 260;
   readonly donutSizeSm = 200;
@@ -299,6 +303,7 @@ export class DashboardComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    this.alertaPagoSvc.cargar().subscribe();
     this.aplicarPresetMesActual();
     this.cargar();
   }
