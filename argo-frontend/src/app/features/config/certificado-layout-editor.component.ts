@@ -152,19 +152,68 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     return modern ?? legacy ?? {};
   }
 
+  /** Mezcla guardado + defaults del API (posición y tipografía efectivas). */
+  private campoEfectivo(id: CampoCertificadoId): CampoLayoutCert {
+    const c = this.campo(id);
+    const d = this.defectoCampo(id) as CampoLayoutCert;
+    const out: CampoLayoutCert = { visible: c.visible !== false };
+    if (c.top != null && String(c.top).trim() !== '') out.top = c.top;
+    else if (d.top) out.top = d.top;
+    if (c.bottom != null && String(c.bottom).trim() !== '') out.bottom = c.bottom;
+    else if (d.bottom) out.bottom = d.bottom;
+    if (c.left != null && String(c.left).trim() !== '') out.left = c.left;
+    else if (d.left) out.left = d.left;
+    if (c.right != null && String(c.right).trim() !== '') out.right = c.right;
+    else if (d.right) out.right = d.right;
+    if (c.w) out.w = c.w;
+    else if (d.w) out.w = d.w;
+    if (c.align) out.align = c.align;
+    else if (d.align) out.align = d.align;
+    if (c.fs) out.fs = c.fs;
+    else if (d.fs) out.fs = d.fs;
+    if (c.fw) out.fw = c.fw;
+    else if (d.fw) out.fw = d.fw;
+    if (c.ls) out.ls = c.ls;
+    else if (d.ls) out.ls = d.ls;
+    if (c.fontFamily) out.fontFamily = c.fontFamily;
+    else if (d.fontFamily) out.fontFamily = d.fontFamily;
+    if (c.color) out.color = c.color;
+    return out;
+  }
+
+  /** Campos anclados con left/right en plantilla (no usar modo «centrado en página»). */
+  esCampoPosicional(id: CampoCertificadoId): boolean {
+    const d = this.defectoCampo(id);
+    return !!(d['left'] || d['right']);
+  }
+
+  alineacionActual(id: CampoCertificadoId): 'left' | 'center' | 'right' {
+    const a = this.campoEfectivo(id).align;
+    return a === 'left' || a === 'right' ? a : 'center';
+  }
+
   visible(id: CampoCertificadoId): boolean {
     return this.campo(id).visible !== false;
   }
 
+  private limpiarLegacyCampos(slot: LayoutOrientacionCert): LayoutOrientacionCert {
+    const s = { ...slot } as LayoutOrientacionCert & Record<string, unknown>;
+    for (const meta of this.campos) {
+      delete s[meta.id];
+    }
+    return s;
+  }
+
   private emit(slot: LayoutOrientacionCert) {
-    const next: LayoutPorTipoCert = {
+    const slotLimpio = this.limpiarLegacyCampos(slot);
+    const layoutNext: LayoutPorTipoCert = {
       ...(this.layoutPorTipo || {}),
       [this.tipo]: {
         ...(this.layoutPorTipo?.[this.tipo] || {}),
-        [this.orientacion]: slot,
+        [this.orientacion]: slotLimpio,
       },
     };
-    this.layoutChange.emit(next);
+    this.layoutChange.emit(layoutNext);
   }
 
   patchSlot(partial: Partial<LayoutOrientacionCert>) {
@@ -175,42 +224,28 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     this.patchSlot({ color });
   }
 
-  /** Valores de tipografía que el usuario ve en el panel (para persistirlos al imprimir). */
-  private tipografiaEfectiva(id: CampoCertificadoId): Partial<CampoLayoutCert> {
-    const c = this.campo(id);
-    const d = this.defectoCampo(id);
-    const out: Partial<CampoLayoutCert> = {};
-    const fs = c.fs || d['fs'];
-    const fw = c.fw || d['fw'];
-    const ls = c.ls || d['ls'];
-    const fontFamily = c.fontFamily || d['fontFamily'];
-    if (fs) out.fs = fs;
-    if (fw) out.fw = fw;
-    if (ls) out.ls = ls;
-    if (fontFamily) out.fontFamily = fontFamily;
-    return out;
-  }
-
-  /** Escribe fs/fuente en `campos` para todos los textos (evita perderlos al mover posición). */
+  /** Persiste posición, alineación y tipografía efectivas de todos los campos. */
   materializarTipografiaEnCampos() {
     if (!this.defaults()) return;
     const campos = { ...(this.slot().campos || {}) };
     for (const meta of this.campos) {
       const id = meta.id;
-      campos[id] = { ...this.campo(id), ...this.tipografiaEfectiva(id) };
+      const eff = this.campoEfectivo(id);
+      campos[id] = eff.visible === false ? { visible: false } : { ...eff, visible: true };
     }
     this.patchSlot({ campos });
   }
 
-  /** Fusiona tipografía de este tipo/orientación en el layout (para Guardar configuración). */
+  /** Fusiona layout completo de este tipo/orientación (para Guardar configuración). */
   snapshotLayoutPorTipo(base: LayoutPorTipoCert): LayoutPorTipoCert {
     if (!this.defaults()) return base;
     const campos = { ...(this.slot().campos || {}) };
     for (const meta of this.campos) {
       const id = meta.id;
-      campos[id] = { ...this.campo(id), ...this.tipografiaEfectiva(id) };
+      const eff = this.campoEfectivo(id);
+      campos[id] = eff.visible === false ? { visible: false } : { ...eff, visible: true };
     }
-    const slot: LayoutOrientacionCert = { ...this.slot(), campos };
+    const slot: LayoutOrientacionCert = this.limpiarLegacyCampos({ ...this.slot(), campos });
     return {
       ...(base || {}),
       [this.tipo]: {
@@ -223,12 +258,12 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   patchCampo(id: CampoCertificadoId, partial: Partial<CampoLayoutCert>) {
     const campos = { ...(this.slot().campos || {}) };
     const next: CampoLayoutCert = {
-      ...this.campo(id),
-      ...this.tipografiaEfectiva(id),
+      ...this.campoEfectivo(id),
       ...partial,
     };
     if (partial.top === null) delete next.top;
     if (partial.bottom === null) delete next.bottom;
+    if (partial.left === undefined) delete next.left;
     campos[id] = next;
     this.patchSlot({ campos });
   }
@@ -354,11 +389,11 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   leftActual(id: CampoCertificadoId): number {
-    return this.pctVal(this.campo(id).left, 50);
+    return this.pctVal(this.campoEfectivo(id).left, this.pctVal(this.defectoCampo(id)['left'], 50));
   }
 
   anchoActual(id: CampoCertificadoId): number {
-    return this.pctVal(this.campo(id).w, this.pctVal(this.defectoCampo(id)['w'], 82));
+    return this.pctVal(this.campoEfectivo(id).w, this.pctVal(this.defectoCampo(id)['w'], 82));
   }
 
   onAncho(id: CampoCertificadoId, n: number) {
@@ -378,17 +413,22 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   esCentrado(id: CampoCertificadoId): boolean {
-    const c = this.campo(id);
-    const d = this.defectoCampo(id);
-    const sinLeft = !c.left && !d['left'];
-    return sinLeft && (c.align || d['align'] || 'center') === 'center';
+    if (this.esCampoPosicional(id)) return false;
+    const eff = this.campoEfectivo(id);
+    const sinLeft = !eff.left || String(eff.left).trim() === '';
+    return sinLeft && (eff.align || 'center') === 'center';
   }
 
   setCentrado(id: CampoCertificadoId, centrado: boolean) {
+    const d = this.defectoCampo(id) as CampoLayoutCert;
     if (centrado) {
-      this.patchCampo(id, { left: undefined, align: 'center' });
+      this.patchCampo(id, { left: undefined, align: 'center', w: d.w || '82%' });
     } else {
-      this.patchCampo(id, { left: '34%', align: 'center' });
+      this.patchCampo(id, {
+        left: d.left || '34%',
+        align: (d.align as CampoLayoutCert['align']) || 'left',
+        w: d.w,
+      });
     }
   }
 
@@ -398,7 +438,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   tamanoActual(id: CampoCertificadoId): number {
-    return this.fsPt(this.campo(id).fs || this.defectoCampo(id)['fs']);
+    return this.fsPt(this.campoEfectivo(id).fs);
   }
 
   onTamano(id: CampoCertificadoId, n: number) {
@@ -503,35 +543,33 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   estiloOverlay(id: CampoCertificadoId): Record<string, string> {
-    const c = this.campo(id);
-    const d = this.defectoCampo(id) as CampoLayoutCert;
-    const left = c.left ?? d.left;
-    const align = c.align || d.align || 'center';
-    const color = c.color || this.colorGlobal();
+    const eff = this.campoEfectivo(id);
+    const align = eff.align || 'center';
+    const color = eff.color || this.colorGlobal();
     const sel = this.campoSel() === id;
     const st: Record<string, string> = {
       color,
-      fontSize: fsToEditorFontSize(c.fs || d.fs, this.orientacion),
-      fontWeight: String(c.fw || d.fw || '600'),
+      fontSize: fsToEditorFontSize(eff.fs, this.orientacion),
+      fontWeight: String(eff.fw || '600'),
       textAlign: align,
-      fontFamily: c.fontFamily || d.fontFamily || FUENTE_CERTIFICADO_DEFAULT,
+      fontFamily: eff.fontFamily || FUENTE_CERTIFICADO_DEFAULT,
     };
     if (this.usaAnclaAbajo(id)) {
       st['top'] = 'auto';
-      st['bottom'] = c.bottom || d.bottom || '10%';
+      st['bottom'] = eff.bottom || '10%';
     } else {
-      st['top'] = c.top || d.top || '50%';
+      st['top'] = eff.top || '50%';
     }
-    if (left) {
-      st['left'] = left;
-      st['width'] = c.w || d.w || '30%';
+    if (eff.left) {
+      st['left'] = eff.left;
+      st['width'] = eff.w || '30%';
       st['transform'] = 'none';
     } else if (align === 'center') {
       st['left'] = '50%';
       st['transform'] = 'translateX(-50%)';
-      st['width'] = c.w || d.w || (this.esMultilinea(id) ? '82%' : '82%');
+      st['width'] = eff.w || (this.esMultilinea(id) ? '82%' : '82%');
     }
-    if (c.visible === false) st['display'] = 'none';
+    if (this.visible(id) === false) st['display'] = 'none';
     if (this.esMultilinea(id)) {
       st['whiteSpace'] = 'normal';
       st['wordWrap'] = 'break-word';

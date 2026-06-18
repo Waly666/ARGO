@@ -288,10 +288,12 @@
               }
 
               <div class="control-block">
-                <label class="switch-row compact">
-                  <input type="checkbox" [ngModel]="esCentrado(id)" (ngModelChange)="setCentrado(id, $event)" />
-                  <span>Centrado en la página (recomendado para nombres y títulos)</span>
-                </label>
+                @if (!esCampoPosicional(id)) {
+                  <label class="switch-row compact">
+                    <input type="checkbox" [ngModel]="esCentrado(id)" (ngModelChange)="setCentrado(id, $event)" />
+                    <span>Centrado en la página (recomendado para nombres y títulos)</span>
+                  </label>
+                }
                 @if (!esCentrado(id)) {
                   <label class="field-label">Mover izquierda / derecha</label>
                   <div class="nudge-row">
@@ -343,7 +345,7 @@
               <div class="control-block row-2">
                 <div>
                   <label class="field-label">Alineación del texto</label>
-                  <select [ngModel]="campo(id).align || 'center'" (ngModelChange)="patchCampo(id, { align: $event })">
+                  <select [ngModel]="alineacionActual(id)" (ngModelChange)="patchCampo(id, { align: $event })">
                     <option value="left">Izquierda</option>
                     <option value="center">Centro</option>
                     <option value="right">Derecha</option>
