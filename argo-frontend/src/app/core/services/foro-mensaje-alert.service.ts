@@ -20,22 +20,18 @@ export class ForoMensajeAlertService {
 
   private vistos = new Set<string>();
   private activo = false;
-  private listenerReady = false;
+  private readonly onForoNuevoMensaje = (msg: ForoMensajeAlerta) => this.recibir(msg);
 
   private readonly _alertas = signal<ForoMensajeAlerta[]>([]);
   readonly alertas = this._alertas.asReadonly();
 
   conectar() {
-    if (this.activo) return;
     const socket = this.foroSocket.connect();
     if (!socket) return;
 
     this.activo = true;
-
-    if (this.listenerReady) return;
-    this.listenerReady = true;
-
-    socket.on('foro-nuevo-mensaje', (msg: ForoMensajeAlerta) => this.recibir(msg));
+    socket.off('foro-nuevo-mensaje', this.onForoNuevoMensaje);
+    socket.on('foro-nuevo-mensaje', this.onForoNuevoMensaje);
   }
 
   desconectar() {
@@ -82,7 +78,9 @@ export class ForoMensajeAlertService {
   }
 
   descartarTodas() {
-    for (const a of this._alertas()) this.vistos.add(a.id);
+    const actuales = this._alertas();
+    if (!actuales.length) return;
+    for (const a of actuales) this.vistos.add(a.id);
     this._alertas.set([]);
   }
 }

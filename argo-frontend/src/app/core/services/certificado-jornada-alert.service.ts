@@ -57,7 +57,9 @@ export class CertificadoJornadaAlertService {
   }
 
   descartarTodas() {
-    for (const a of this._alertas()) this.vistos.add(a.id);
+    const actuales = this._alertas();
+    if (!actuales.length) return;
+    for (const a of actuales) this.vistos.add(a.id);
     this._alertas.set([]);
   }
 

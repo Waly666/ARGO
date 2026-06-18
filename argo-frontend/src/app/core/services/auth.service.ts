@@ -120,6 +120,7 @@ export class AuthService {
 
   /** Aplica usuario/permisos en memoria; devuelve true si los permisos cambiaron. */
   aplicarUsuarioSesion(user: AuthUser, opts?: { corregirRuta?: boolean }): boolean {
+    if (!this._token()) return false;
     const firmaAntes = this.permisoSvc.firma();
     localStorage.setItem(USER_KEY, JSON.stringify(user));
     this._user.set(user);
@@ -135,6 +136,7 @@ export class AuthService {
 
   /** Si revocaron permiso estando en una pantalla, redirige sin bloquear. */
   corregirRutaTrasPermisos(permisos?: string[] | null): void {
+    if (!this._token()) return;
     const ctx = { puedeUsarPortalInstructor: this.puedeUsarPortalInstructor() };
     const destino = destinoTrasRevocar(this.router.url, permisos ?? this.permisoSvc.permisos(), ctx);
     if (destino) {
@@ -183,6 +185,11 @@ export class AuthService {
   }
 
   logout(): void {
+    const enApp = this.router.url.split('?')[0].startsWith('/app');
+    if (!this._token() && !this._user()) {
+      if (enApp) this.irLogin();
+      return;
+    }
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this._token.set(null);
@@ -190,7 +197,15 @@ export class AuthService {
     this.permisoSvc.setPermisos([]);
     this.alarmaSvc.setAlarmas([]);
     this.sedeSvc.seleccionar(null);
-    this.router.navigateByUrl('/login');
+    this.irLogin();
+  }
+
+  private irLogin(): void {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) {
+      window.location.assign('/login');
+      return;
+    }
+    void this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
   private read(key: string): string | null {

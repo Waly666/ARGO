@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { effect, Injectable, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
@@ -11,6 +11,12 @@ import { environment } from '../../../environments/environment';
 export class ForoSocketService {
   private auth = inject(AuthService);
   private socket: Socket | null = null;
+
+  constructor() {
+    effect(() => {
+      if (!this.auth.token()) this.cerrarConexion();
+    });
+  }
 
   private socketUrl(): string {
     const base = environment.apiUrl.replace('/api', '');
@@ -35,6 +41,14 @@ export class ForoSocketService {
     });
 
     return this.socket;
+  }
+
+  /** Cierra la conexión al cerrar sesión (evita reconexiones en segundo plano). */
+  cerrarConexion(): void {
+    if (!this.socket) return;
+    this.socket.removeAllListeners();
+    this.socket.disconnect();
+    this.socket = null;
   }
 
   get connected(): boolean {

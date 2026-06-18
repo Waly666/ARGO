@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -104,6 +104,10 @@ type MenuEntry = MenuLink | MenuGroup;
 export class ShellComponent {
   private destroyRef = inject(DestroyRef);
   private pollsAlertasIniciados = false;
+  private readonly syncPermisosOnFocus = () => {
+    if (!this.auth.isAuth()) return;
+    this.auth.refreshMe().subscribe({ error: () => undefined });
+  };
   private auth = inject(AuthService);
   readonly sedeSvc = inject(SedeService);
   private permisos = inject(PermisoService);
@@ -1025,7 +1029,9 @@ export class ShellComponent {
     effect(() => {
       if (!this.alertasRuntime.cargado()) return;
       this.alertasRuntime.reglasMap();
-      this.sincronizarAlertasConConfig();
+      this.alarmas.alarmas();
+      if (!this.auth.isAuth()) return;
+      untracked(() => this.sincronizarAlertasConConfig());
     });
 
     this.auth.refreshMe().subscribe({
@@ -1126,7 +1132,7 @@ export class ShellComponent {
       !this.alarmaHabilitada('alarmas.alumnos.comprobante_egreso') &&
       !this.alarmaHabilitada('alarmas.alumnos.factura')
     ) {
-      for (const a of this.comprobanteAlertSvc.alertas()) {
+      for (const a of [...this.comprobanteAlertSvc.alertas()]) {
         this.comprobanteAlertSvc.descartar(a.key);
       }
     }
@@ -1339,7 +1345,8 @@ export class ShellComponent {
     };
     interval(8_000).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => sync());
     if (typeof window !== 'undefined') {
-      window.addEventListener('focus', () => sync());
+      window.addEventListener('focus', this.syncPermisosOnFocus);
+      this.destroyRef.onDestroy(() => window.removeEventListener('focus', this.syncPermisosOnFocus));
     }
   }
 
@@ -1662,8 +1669,10 @@ export class ShellComponent {
     return url === link.path || url.startsWith(`${link.path}/`);
   }
 
-  logout() { this.auth.logout(); this.router.navigateByUrl('/login'); }
-
+  logout() {
+    this.foroMensajeAlert.desconectar();
+    this.auth.logout();
+  }
   iconClass(tone?: string): string {
     return tone ? `icon-cap tone-${tone}` : 'icon-cap tone-slate';
   }
