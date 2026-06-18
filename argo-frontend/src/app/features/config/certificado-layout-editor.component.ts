@@ -9,6 +9,8 @@ import {
   CampoLayoutCert,
   EditorSeleccion,
   FUENTES_CERTIFICADO,
+  FUENTE_CERTIFICADO_DEFAULT,
+  ensureCertificadoGoogleFonts,
   TAMANO_FUENTE_MAX_PT,
   TAMANO_FUENTE_MIN_PT,
   LayoutDefaultsApi,
@@ -53,6 +55,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   qrPosMax = 90;
   qrEsquinas = QR_ESQUINAS;
   fuentes = FUENTES_CERTIFICADO;
+  fuenteDefault = FUENTE_CERTIFICADO_DEFAULT;
   labelTipo = labelTipoCert;
   labelOri = labelOrientacion;
 
@@ -67,10 +70,12 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   cargandoPreview = signal(false);
 
   ngOnInit(): void {
+    ensureCertificadoGoogleFonts();
     this.cfgSvc.layoutDefaults().subscribe({ next: (d) => this.defaults.set(d) });
   }
 
   abrirEditor() {
+    ensureCertificadoGoogleFonts();
     const abrir = () => {
       this.materializarTipografiaEnCampos();
       this.abierto.set(true);
@@ -503,7 +508,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       fontSize: fsToEditorFontSize(c.fs || d.fs, this.orientacion),
       fontWeight: String(c.fw || d.fw || '600'),
       textAlign: align,
-      fontFamily: c.fontFamily || d.fontFamily || 'Arial, sans-serif',
+      fontFamily: c.fontFamily || d.fontFamily || FUENTE_CERTIFICADO_DEFAULT,
     };
     if (this.usaAnclaAbajo(id)) {
       st['top'] = 'auto';

@@ -4,6 +4,7 @@ const { numDocToString } = require('../utils/numDoc');
 const { resolverLayout, resolverQr, CAMPOS_IDS } = require('./certificadoLayout');
 const { fsToPrintSizes } = require('../utils/certificadoTipografia');
 const { fmtFechaSolo: fmtFecha } = require('../utils/timezoneColombia');
+const { cssFontFamily, googleFontsHeadHtml } = require('../constants/certificadoFuentes');
 
 function esc(s) {
   return String(s ?? '')
@@ -62,13 +63,6 @@ function urlUpload(rel, publicOrigin) {
 
 
 const CAMPOS_MULTILINEA = new Set(['nombre', 'curso']);
-
-function cssFontFamily(ff) {
-  const s = String(ff ?? '').trim();
-  if (!s) return 'Arial, Helvetica, sans-serif';
-  if (s.includes(',') || s.includes(' ')) return `"${s.replace(/"/g, '')}"`;
-  return s;
-}
 
 function declFontSize(pos, orientacion) {
   if (!pos?.fs) return [];
@@ -249,12 +243,14 @@ async function generarHtmlCertificado(data, options = {}) {
 
   const fontBase = cssFontFamily(L.nombre?.fontFamily);
   const tipografiaCss = reglasTipografia(L, oriKey);
+  const googleFonts = googleFontsHeadHtml();
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <title>Certificado ${esc(codigo)}</title>
+  ${googleFonts}
   <style>
     @page { size: ${L.pageW} ${L.pageH}; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
