@@ -1,26 +1,26 @@
 const DatosAlumno = require('../models/DatosAlumno');
 const { normalizarFrecuenciaAlertaPago } = require('../constants/alertaPago');
 const { numDocQuery } = require('../utils/numDoc');
+const {
+  partesCalendarioColombia,
+  partesFechaSoloAlmacenada,
+  diffDiasCalendario,
+} = require('../utils/timezoneColombia');
 
-function startOfDayLocal(d) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-/** ¿Hoy corresponde cobrar según frecuencia y fecha ancla? */
+/** ¿Hoy (Colombia) corresponde cobrar según frecuencia y fecha ancla? */
 function esDiaAlertaPago(frecuencia, fechaAncla, hoy = new Date()) {
   const f = normalizarFrecuenciaAlertaPago(frecuencia);
   if (!f || !fechaAncla) return false;
-  const anchor = new Date(fechaAncla);
-  if (Number.isNaN(anchor.getTime())) return false;
 
-  const h = startOfDayLocal(hoy);
-  const a = startOfDayLocal(anchor);
+  const hCol = partesCalendarioColombia(hoy);
+  const a = partesFechaSoloAlmacenada(fechaAncla);
+  if (!hCol || !a) return false;
 
   if (f === 'mensual') {
-    return h.getDate() === a.getDate();
+    return hCol.d === a.d;
   }
   if (f === 'quincenal') {
-    const diffDays = Math.round((h.getTime() - a.getTime()) / 86400000);
+    const diffDays = diffDiasCalendario(a, hCol);
     return diffDays >= 0 && diffDays % 15 === 0;
   }
   return false;
