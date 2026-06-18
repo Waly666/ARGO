@@ -553,6 +553,75 @@
 
 </section>
     }
+    @case ('appMobile') {
+<section class="section section-starfield section-app-mobile" id="app-mobile">
+  <div class="starfield-bg" aria-hidden="true"></div>
+  <div class="container starfield-container">
+    <div class="app-mobile-grid">
+      <div class="app-mobile-copy">
+        <p class="kicker reveal" avRevealOnScroll>{{ landing().appMobile.kicker }}</p>
+        <h2 avAnimateTitle [titleDelay]="50">{{ landing().appMobile.titulo }}</h2>
+        <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().appMobile.lead }}</p>
+
+        <ul class="app-mobile-features">
+          @for (f of landing().appMobile.features; track f.title; let i = $index) {
+            <li class="app-mobile-feature reveal" avRevealOnScroll [revealDelay]="140 + i * 70">
+              <span class="app-mobile-feature__icon" aria-hidden="true">{{ f.icon }}</span>
+              <div>
+                <strong>{{ f.title }}</strong>
+                <p>{{ f.text }}</p>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <div class="app-mobile-actions reveal" avRevealOnScroll [revealDelay]="320">
+          <a
+            class="btn btn-primary app-mobile-download"
+            [href]="apkDownloadUrl()"
+            [attr.download]="apkDownloadName()"
+            rel="noopener">
+            <svg class="app-mobile-download__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.523 15.341l-1.243 1.243-3.28-3.28V2.25h-1.5v11.054l-3.28 3.28-1.243-1.243L12 19.5l5.523-4.159zM3.75 19.5a.75.75 0 0 0-.75.75v1.5c0 .414.336.75.75.75h16.5a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-.75-.75H3.75z"/>
+            </svg>
+            {{ landing().appMobile.btnDescargar }}
+          </a>
+          <p class="app-mobile-note">{{ landing().appMobile.notaInstalacion }}</p>
+        </div>
+      </div>
+
+      <div class="app-mobile-visual reveal-scale" avRevealOnScroll [revealDelay]="180">
+        <div class="app-mobile-glow" aria-hidden="true"></div>
+        <div class="app-phone">
+          <div class="app-phone__bezel">
+            <div class="app-phone__notch" aria-hidden="true"></div>
+            <div class="app-phone__screen">
+              <div class="app-phone__status" aria-hidden="true">
+                <span>9:41</span>
+                <span class="app-phone__signal">●●●</span>
+              </div>
+              <div class="app-phone__brand">
+                @if (logoUrl(); as logo) {
+                  <img [src]="logo" [alt]="nombreCea()" class="app-phone__logo" />
+                } @else {
+                  <span class="app-phone__logo-fallback" aria-hidden="true">📱</span>
+                }
+                <p class="app-phone__app-name">Aula Virtual</p>
+                <p class="app-phone__app-sub">{{ nombreCea() }}</p>
+              </div>
+              <ul class="app-phone__menu" aria-hidden="true">
+                <li><span>📚</span> Mis cursos</li>
+                <li><span>🎓</span> Certificados</li>
+                <li><span>👤</span> Mi perfil</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+    }
     @case ('faq') {
 <section class="section section-faq" id="preguntas-frecuentes">
   <div class="faq-bg" aria-hidden="true"></div>

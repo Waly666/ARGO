@@ -65,6 +65,8 @@ services:
     restart: unless-stopped
     ports:
       - "8085:80"
+    volumes:
+      - ./apk:/usr/share/nginx/html/apk:ro
     depends_on:
       - argo-backend
     networks:

@@ -1,6 +1,7 @@
 import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaults';
 import { FUNDACION_LANDING_DEFAULTS } from '../pages/fundacion/fundacion-content';
 import {
+  APP_MOBILE,
   BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
   FAQ_CURSOS,
@@ -131,6 +132,16 @@ export interface PortalLandingConfig {
     lead: string;
     items: { paso: string; title: string; text: string }[];
   };
+  appMobile: {
+    kicker: string;
+    titulo: string;
+    lead: string;
+    features: { icon: string; title: string; text: string }[];
+    btnDescargar: string;
+    notaInstalacion: string;
+    apkUrl: string;
+    apkNombre: string;
+  };
   faq: {
     kicker: string;
     titulo: string;
@@ -225,6 +236,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     lead: 'Tres pasos para matricularse en el aula virtual y comenzar su capacitación.',
     items: [...PASOS_PROGRAMAS],
   },
+  appMobile: { ...APP_MOBILE, features: [...APP_MOBILE.features] },
   faq: {
     kicker: 'Ayuda',
     titulo: 'Preguntas frecuentes sobre cursos y programas',
@@ -328,6 +340,11 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       ...d.pasos,
       ...raw.pasos,
       items: raw.pasos?.items?.length ? raw.pasos.items : d.pasos.items,
+    },
+    appMobile: {
+      ...d.appMobile,
+      ...raw.appMobile,
+      features: raw.appMobile?.features?.length ? raw.appMobile.features : d.appMobile.features,
     },
     faq: {
       ...d.faq,

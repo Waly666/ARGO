@@ -240,6 +240,35 @@ export const PILARES = {
   ],
 };
 
+/** Sección App Mobile — descarga APK Android del aula virtual. */
+export const APP_MOBILE = {
+  kicker: 'App Mobile',
+  titulo: 'Lleve el aula virtual en su bolsillo',
+  lead:
+    'Acceda a sus cursos, consulte certificados y manténgase al día desde su celular con la app oficial de la institución.',
+  features: [
+    {
+      icon: '📚',
+      title: 'Cursos y programas',
+      text: 'Ingrese al aula virtual y retome su capacitación donde la dejó.',
+    },
+    {
+      icon: '🎓',
+      title: 'Certificados',
+      text: 'Consulte y verifique sus certificados expedidos en línea.',
+    },
+    {
+      icon: '🔔',
+      title: 'Siempre conectado',
+      text: 'Experiencia optimizada para Android, rápida y fácil de usar.',
+    },
+  ],
+  btnDescargar: 'Descargar APK para Android',
+  notaInstalacion: 'Android 8.0 o superior · Instalación manual del archivo APK',
+  apkUrl: '/apk/aula-virtual-finstruvial.apk',
+  apkNombre: 'aula-virtual-finstruvial.apk',
+};
+
 export const HERO_DEFAULT = {
   eyebrow: 'Fundación Finstruvial',
   titulo: 'Cursos y programas virtuales para formar conductores y equipos más seguros.',

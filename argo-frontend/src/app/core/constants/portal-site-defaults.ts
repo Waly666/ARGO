@@ -68,6 +68,7 @@ export const PORTAL_HOME_SECCIONES_ORDEN = [
   'cursosVirtuales',
   'valores',
   'pasos',
+  'appMobile',
   'testimonios',
   'faq',
   'pilares',
@@ -86,6 +87,7 @@ export const PORTAL_HOME_SECCIONES_LABELS: Record<string, string> = {
   cursosVirtuales: 'Cursos virtuales',
   carreras: 'Carreras técnicas',
   pasos: 'Cómo funciona',
+  appMobile: 'App Mobile',
   faq: 'Preguntas frecuentes',
   pilares: 'Capacitación y campañas',
 };

@@ -31,6 +31,7 @@ const DEFAULT_HOME_ORDER = [
   'cursosVirtuales',
   'valores',
   'pasos',
+  'appMobile',
   'testimonios',
   'faq',
   'pilares',

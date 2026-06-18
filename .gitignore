@@ -34,6 +34,9 @@ Thumbs.db
 argo-sitio/public/videos/*.mp4
 argo-sitio/public/imagenes/*.mp4
 
+# APK del portal (copia de build; origen en /apk)
+argo-aula-virtual/public/apk/*.apk
+
 # Backup local Mongo (no subir a Git)
 backup-argo.zip
 backup-argo/

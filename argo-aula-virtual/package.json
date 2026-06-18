@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "copy-apk": "node scripts/copy-apk.mjs",
+    "prestart": "node scripts/copy-apk.mjs",
+    "prebuild": "node scripts/copy-apk.mjs",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",

@@ -71,6 +71,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   heroImg = computed(() => this.theme.heroImageUrl(this.config()) || '/images/hero-estudiante.png');
 
+  apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || '/apk/aula-virtual-finstruvial.apk');
+
+  apkDownloadName = computed(() => this.landing().appMobile.apkNombre || 'aula-virtual-finstruvial.apk');
+
   ngOnInit() {
     this.api.config().subscribe({
       next: (c) => {

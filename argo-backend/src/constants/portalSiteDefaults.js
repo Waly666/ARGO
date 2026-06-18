@@ -12,6 +12,7 @@ const HOME_SECCIONES_ORDEN = [
   'cursosVirtuales',
   'valores',
   'pasos',
+  'appMobile',
   'testimonios',
   'faq',
   'pilares',
@@ -30,6 +31,7 @@ const HOME_SECCIONES_LABELS = {
   cursosVirtuales: 'Cursos virtuales (catálogo)',
   carreras: 'Carreras técnicas',
   pasos: 'Cómo funciona',
+  appMobile: 'App Mobile',
   faq: 'Preguntas frecuentes',
   pilares: 'Capacitación y campañas',
 };
