@@ -24,6 +24,7 @@ const {
 const {
   listarMisCertificados,
   consultarCertificadosPublico,
+  consultarCertificadoPorCodigoPublico,
   htmlCertificadoPortal,
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
@@ -325,6 +326,15 @@ exports.matricularCurso = async (req, res, next) => {
 exports.consultarCertificados = async (req, res, next) => {
   try {
     res.json(await consultarCertificadosPublico(req.query.numDoc));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.verificarCertificadoCodigo = async (req, res, next) => {
+  try {
+    res.json(await consultarCertificadoPorCodigoPublico(req.query.cod));
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
