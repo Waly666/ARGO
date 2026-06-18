@@ -296,7 +296,7 @@ export class ConfigCertificadosComponent implements OnInit {
   }
 
   private layoutParaGuardar(): ConfigCertificado['layoutPorTipo'] {
-    let layout = { ...(this.form().layoutPorTipo || {}) };
+    let layout = JSON.parse(JSON.stringify(this.form().layoutPorTipo || {})) as LayoutPorTipoCert;
     for (const ed of this.layoutEditors ?? []) {
       layout = ed.snapshotLayoutPorTipo(layout);
     }

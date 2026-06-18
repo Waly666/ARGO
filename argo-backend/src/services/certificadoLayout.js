@@ -85,6 +85,11 @@ function normalizeCampo(raw, defaults) {
   if (fwRaw != null || d.fw != null) out.fw = String(fwRaw ?? d.fw).trim() || d.fw;
   if (d.ls != null || r.ls != null) out.ls = String(r.ls ?? d.ls).trim() || d.ls;
   if (d.align != null || r.align != null) out.align = limpiarAlign(r.align, d.align || 'center');
+  // Campos con left por defecto (expedida, tipoDoc, doc…): no heredar center si no hubo left explícito
+  const leftUsuario = r.left != null && String(r.left).trim() !== '';
+  if (d.left && d.align === 'left' && out.align === 'center' && !leftUsuario) {
+    out.align = 'left';
+  }
   const ffRaw =
     r.fontFamily != null && String(r.fontFamily).trim() !== '' ? r.fontFamily : null;
   if (ffRaw != null || d.fontFamily != null) {

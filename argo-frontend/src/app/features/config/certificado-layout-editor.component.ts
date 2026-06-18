@@ -109,10 +109,61 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     return this.campos.find((c) => c.id === id)?.label || id;
   }
 
-  private slot(): LayoutOrientacionCert {
-    return this.layoutPorTipo?.[this.tipo]?.[this.orientacion] || {};
+  private slotFrom(layout: LayoutPorTipoCert): LayoutOrientacionCert {
+    return layout?.[this.tipo]?.[this.orientacion] || {};
   }
 
+  private slot(): LayoutOrientacionCert {
+    return this.slotFrom(this.layoutPorTipo);
+  }
+
+  /** Mezcla campos guardados en `campos` con valores legados en la raíz del slot. */
+  private campoFrom(layout: LayoutPorTipoCert, id: CampoCertificadoId): CampoLayoutCert {
+    const s = this.slotFrom(layout);
+    const legacy = (s as LayoutOrientacionCert & Record<string, CampoLayoutCert | undefined>)[id];
+    const modern = s.campos?.[id];
+    if (modern != null && legacy != null && typeof modern === 'object' && typeof legacy === 'object') {
+      return { ...legacy, ...modern };
+    }
+    return modern ?? legacy ?? {};
+  }
+
+  campo(id: CampoCertificadoId): CampoLayoutCert {
+    return this.campoFrom(this.layoutPorTipo, id);
+  }
+
+  /** Mezcla guardado + defaults del API (posición y tipografía efectivas). */
+  private campoEfectivoFrom(layout: LayoutPorTipoCert, id: CampoCertificadoId): CampoLayoutCert {
+    const c = this.campoFrom(layout, id);
+    const d = this.defectoCampo(id) as CampoLayoutCert;
+    const out: CampoLayoutCert = { visible: c.visible !== false };
+    if (c.top != null && String(c.top).trim() !== '') out.top = c.top;
+    else if (d.top) out.top = d.top;
+    if (c.bottom != null && String(c.bottom).trim() !== '') out.bottom = c.bottom;
+    else if (d.bottom) out.bottom = d.bottom;
+    if (c.left != null && String(c.left).trim() !== '') out.left = c.left;
+    else if (d.left) out.left = d.left;
+    if (c.right != null && String(c.right).trim() !== '') out.right = c.right;
+    else if (d.right) out.right = d.right;
+    if (c.w) out.w = c.w;
+    else if (d.w) out.w = d.w;
+    if (c.align) out.align = c.align;
+    else if (d.align) out.align = d.align;
+    if (c.fs) out.fs = c.fs;
+    else if (d.fs) out.fs = d.fs;
+    if (c.fw) out.fw = c.fw;
+    else if (d.fw) out.fw = d.fw;
+    if (c.ls) out.ls = c.ls;
+    else if (d.ls) out.ls = d.ls;
+    if (c.fontFamily) out.fontFamily = c.fontFamily;
+    else if (d.fontFamily) out.fontFamily = d.fontFamily;
+    if (c.color) out.color = c.color;
+    return out;
+  }
+
+  private campoEfectivo(id: CampoCertificadoId): CampoLayoutCert {
+    return this.campoEfectivoFrom(this.layoutPorTipo, id);
+  }
   private presetQr(esquina: string): QrLayoutCert {
     const defs = this.defaults();
     const ori = this.orientacion === 'horizontal' ? 'horizontal' : 'vertical';
@@ -139,46 +190,6 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
   colorGlobal(): string {
     return this.slot().color || '#4a3a6a';
-  }
-
-  /** Mezcla campos guardados en `campos` con valores legados en la raíz del slot. */
-  campo(id: CampoCertificadoId): CampoLayoutCert {
-    const s = this.slot();
-    const legacy = (s as LayoutOrientacionCert & Record<string, CampoLayoutCert | undefined>)[id];
-    const modern = s.campos?.[id];
-    if (modern != null && legacy != null && typeof modern === 'object' && typeof legacy === 'object') {
-      return { ...legacy, ...modern };
-    }
-    return modern ?? legacy ?? {};
-  }
-
-  /** Mezcla guardado + defaults del API (posición y tipografía efectivas). */
-  private campoEfectivo(id: CampoCertificadoId): CampoLayoutCert {
-    const c = this.campo(id);
-    const d = this.defectoCampo(id) as CampoLayoutCert;
-    const out: CampoLayoutCert = { visible: c.visible !== false };
-    if (c.top != null && String(c.top).trim() !== '') out.top = c.top;
-    else if (d.top) out.top = d.top;
-    if (c.bottom != null && String(c.bottom).trim() !== '') out.bottom = c.bottom;
-    else if (d.bottom) out.bottom = d.bottom;
-    if (c.left != null && String(c.left).trim() !== '') out.left = c.left;
-    else if (d.left) out.left = d.left;
-    if (c.right != null && String(c.right).trim() !== '') out.right = c.right;
-    else if (d.right) out.right = d.right;
-    if (c.w) out.w = c.w;
-    else if (d.w) out.w = d.w;
-    if (c.align) out.align = c.align;
-    else if (d.align) out.align = d.align;
-    if (c.fs) out.fs = c.fs;
-    else if (d.fs) out.fs = d.fs;
-    if (c.fw) out.fw = c.fw;
-    else if (d.fw) out.fw = d.fw;
-    if (c.ls) out.ls = c.ls;
-    else if (d.ls) out.ls = d.ls;
-    if (c.fontFamily) out.fontFamily = c.fontFamily;
-    else if (d.fontFamily) out.fontFamily = d.fontFamily;
-    if (c.color) out.color = c.color;
-    return out;
   }
 
   /** Campos anclados con left/right en plantilla (no usar modo «centrado en página»). */
@@ -239,17 +250,19 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   /** Fusiona layout completo de este tipo/orientación (para Guardar configuración). */
   snapshotLayoutPorTipo(base: LayoutPorTipoCert): LayoutPorTipoCert {
     if (!this.defaults()) return base;
-    const campos = { ...(this.slot().campos || {}) };
+    const layoutSrc = base || {};
+    const slotBase = this.slotFrom(layoutSrc);
+    const campos = { ...(slotBase.campos || {}) };
     for (const meta of this.campos) {
       const id = meta.id;
-      const eff = this.campoEfectivo(id);
+      const eff = this.campoEfectivoFrom(layoutSrc, id);
       campos[id] = eff.visible === false ? { visible: false } : { ...eff, visible: true };
     }
-    const slot: LayoutOrientacionCert = this.limpiarLegacyCampos({ ...this.slot(), campos });
+    const slot: LayoutOrientacionCert = this.limpiarLegacyCampos({ ...slotBase, campos });
     return {
-      ...(base || {}),
+      ...layoutSrc,
       [this.tipo]: {
-        ...(base?.[this.tipo] || {}),
+        ...(layoutSrc[this.tipo] || {}),
         [this.orientacion]: slot,
       },
     };
