@@ -90,10 +90,18 @@ function reglasTipografia(L, orientacion) {
   return rules.join('\n    ');
 }
 
+function tieneAnclaPct(v) {
+  return v != null && String(v).trim() !== '';
+}
+
+/** Posicionamiento alineado con el editor (left/right + text-align, sin ignorar left por align). */
 function blockStyle(pos, colorDefault, orientacion, multiline = false) {
   if (!pos || pos.visible === false) return '';
   const color = pos.color || colorDefault;
-  const centered = !pos.left && !pos.right && pos.align !== 'left' && pos.align !== 'right';
+  const align = pos.align || 'center';
+  const anclaLeft = tieneAnclaPct(pos.left);
+  const anclaRight = !anclaLeft && tieneAnclaPct(pos.right);
+  const centrado = !anclaLeft && !anclaRight && align !== 'left' && align !== 'right';
   const parts = [
     'position:absolute',
     'z-index:2',
@@ -106,14 +114,18 @@ function blockStyle(pos, colorDefault, orientacion, multiline = false) {
     parts.push(`top:${pos.top}`);
   }
 
-  if (centered) {
+  if (centrado) {
     parts.push('left:50%', 'transform:translateX(-50%)', `width:${pos.w || '82%'}`, 'text-align:center');
-  } else if (pos.align === 'left') {
-    parts.push(`left:${pos.left || '8%'}`, 'transform:none', `width:${pos.w || '40%'}`, 'text-align:left');
-  } else if (pos.align === 'right') {
+  } else if (anclaLeft) {
+    parts.push(`left:${pos.left}`, 'right:auto', 'transform:none', `width:${pos.w || '40%'}`, `text-align:${align}`);
+  } else if (anclaRight) {
+    parts.push(`right:${pos.right}`, 'left:auto', 'transform:none', `width:${pos.w || '40%'}`, `text-align:${align}`);
+  } else if (align === 'left') {
+    parts.push(`left:${pos.left || '8%'}`, 'right:auto', 'transform:none', `width:${pos.w || '40%'}`, 'text-align:left');
+  } else if (align === 'right') {
     parts.push(`right:${pos.right || '8%'}`, 'left:auto', 'transform:none', `width:${pos.w || '40%'}`, 'text-align:right');
   } else {
-    parts.push(`left:${pos.left || '34%'}`, 'transform:none', `width:${pos.w || '40%'}`, `text-align:${pos.align || 'center'}`);
+    parts.push(`left:${pos.left || '34%'}`, 'transform:none', `width:${pos.w || '40%'}`, `text-align:${align}`);
   }
 
   if (pos.fs) {
