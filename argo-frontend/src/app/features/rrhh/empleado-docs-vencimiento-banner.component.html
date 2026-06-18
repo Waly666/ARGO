@@ -1,21 +1,9 @@
-@if (visible()) {
-  <div class="head-alarm-root">
-    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">
-      Cerrar <span aria-hidden="true">×</span>
-    </button>
-    <div class="head-alarm-wrap">
-      <button
-        type="button"
-        class="head-alarm alarm-empleado-docs"
-        (click)="irEmpleados()"
-        [title]="detalle() || 'Hay documentos de empleados vencidos o por vencer'">
-        <span class="head-alarm-pulse" aria-hidden="true"></span>
-        <span class="head-alarm-icon" aria-hidden="true">◐</span>
-        <span class="head-alarm-body">
-          <span class="head-alarm-title"><strong>Papeles empleados</strong> · {{ titulo() }}</span>
-          <span class="head-alarm-detail">{{ detalle() }}</span>
-        </span>
-      </button>
-    </div>
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-emp-docs-venc"
+  icon="📋"
+  [title]="titulo()"
+  hint="Documentos vencidos o por vencer. Pulse para abrir la ficha del empleado."
+  [items]="rows()"
+  (closed)="cerrar()"
+/>

@@ -109,6 +109,8 @@ export interface AlertaDocFaltanteEmpleado {
   idEmpleado: number;
   empleadoId?: string;
   nombreEmpleado: string;
+  numeroDocumento?: string;
+  esInstructor?: boolean;
   idDocumento: string;
   documento: string;
 }

@@ -31,6 +31,7 @@ const { inyectarBridgeEnPaquete, detectarStoragePrefix } = require('../services/
 const { detectarIndexHtml, paqueteListo, listarEntradasPaquete } = require('../services/aulaVirtualPaquete');
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
 const { matricularVirtual } = require('../services/aulaVirtualMatricula');
+const { listarProgresoAlumnosAdmin } = require('../services/aulaVirtualProgresoAdmin');
 
 async function persistirStoragePrefix(idPrograma, abs, indexRel, user) {
   const storagePrefix = detectarStoragePrefix(abs, indexRel);
@@ -370,6 +371,18 @@ exports.crearUsuarioPortal = async (req, res, next) => {
 exports.eliminarUsuarioPortal = async (req, res, next) => {
   try {
     res.json(await eliminarUsuarioPortal(req.params.id));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.listarProgresoAlumnos = async (req, res, next) => {
+  try {
+    const curso = await obtenerCursoVirtual(req.params.id, { requierePublicado: false });
+    if (!curso) return res.status(404).json({ message: 'Programa virtual no encontrado' });
+    const ctx = req.sedeId ? { idSede: req.sedeId } : {};
+    res.json(await listarProgresoAlumnosAdmin(req.params.id, req.query, ctx));
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);

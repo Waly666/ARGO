@@ -1,64 +1,10 @@
-@if (visible()) {
-  <div class="head-alarm-root">
-    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">
-      Cerrar <span aria-hidden="true">×</span>
-    </button>
-
-    <div class="head-jornada-proceso-row">
-      <button
-        type="button"
-        class="head-alarm alarm-proceso"
-        (click)="irJornadas()"
-        title="Hay jornada(s) EN PROCESO hoy — ir al listado">
-        <span class="head-alarm-pulse" aria-hidden="true"></span>
-        <span class="head-alarm-icon" aria-hidden="true">⛺</span>
-        <span class="head-alarm-body">
-          <span class="head-alarm-title">{{ tituloProceso() }}</span>
-          <span class="head-alarm-detail">{{ detalleProceso() }}</span>
-        </span>
-      </button>
-
-      @for (c of alertasContrato(); track trackContrato(c)) {
-        <button
-          type="button"
-          class="head-alarm alarm-contrato"
-          [class.alarm-cumplido]="c.cumplidoContrato"
-          (click)="irContrato(c, $event)"
-          [title]="c.cumplidoContrato ? 'Meta del contrato cumplida — editar contrato' : 'Editar contrato y ver avance de certificados'">
-          <span class="head-alarm-pulse" aria-hidden="true"></span>
-          <span class="head-alarm-icon" aria-hidden="true">📋</span>
-          <span class="head-alarm-body">
-            <span class="head-alarm-title">{{ tituloContrato(c) }}</span>
-            <span class="head-alarm-detail">
-              {{ detalleContrato(c) }}
-              @if (c.cumplidoContrato) {
-                · <strong class="tag-cumplido">META CUMPLIDA</strong>
-              }
-            </span>
-          </span>
-        </button>
-      }
-
-      @for (j of alertasJornada(); track j.id) {
-        <button
-          type="button"
-          class="head-alarm alarm-jornada-meta"
-          [class.alarm-cumplido]="j.cumplidoJornada"
-          (click)="irJornadaEdit(j, $event)"
-          [title]="j.cumplidoJornada ? 'Meta de la jornada cumplida — editar jornada' : 'Editar jornada y ver avance de certificados'">
-          <span class="head-alarm-pulse" aria-hidden="true"></span>
-          <span class="head-alarm-icon" aria-hidden="true">🎯</span>
-          <span class="head-alarm-body">
-            <span class="head-alarm-title"><strong>Meta jornada</strong> · {{ tituloJornada(j) }}</span>
-            <span class="head-alarm-detail head-alarm-direccion" [title]="j.direccion || ''">
-              {{ detalleJornada(j) }}
-              @if (j.cumplidoJornada) {
-                · <strong class="tag-cumplido">META CUMPLIDA</strong>
-              }
-            </span>
-          </span>
-        </button>
-      }
-    </div>
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-jornada"
+  icon="⛺"
+  [title]="'Jornadas en proceso (' + activas().length + ')'"
+  hint="Operaciones activas hoy. Pulse una fila para ir al detalle."
+  [items]="rows()"
+  (closed)="cerrar()"
+  (itemClick)="onItemClick($event)"
+/>

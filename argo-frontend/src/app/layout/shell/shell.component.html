@@ -77,79 +77,55 @@
         @if (mostrarAlarmasCabecera()) {
         <div class="head-alarms-stack">
           @if (mostrarBannerCajaCerrada()) {
-            <argo-caja-cerrada-banner class="head-caja-alarm" [blink]="true" />
+            <argo-caja-cerrada-banner class="head-caja-alarm head-alerta-pago-wrap" [blink]="true" />
           }
           @if (mostrarBannerCertificado()) {
-            <argo-certificado-jornada-banner class="head-cert-alarm-wrap" />
+            <argo-certificado-jornada-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerComprobantesHoy()) {
-            <argo-comprobante-hoy-banner class="head-comp-alarm-wrap" />
+            <argo-comprobante-hoy-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerAlertaPagoAlumno()) {
             <argo-alerta-pago-alumno-banner class="head-alerta-pago-wrap" modo="inline" />
           }
-          @if (mostrarFilaCertificadosVencimiento()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Certificados por vencer y vencidos">
-              @if (mostrarBannerCertificadoVencimiento()) {
-                <argo-certificado-vencimiento-banner />
-              }
-              @if (mostrarBannerCertificadoVencido()) {
-                <argo-certificado-vencido-banner />
-              }
-            </div>
+          @if (mostrarBannerDocsVehiculosFaltantes()) {
+            <argo-vehiculo-docs-faltantes-banner class="head-alerta-pago-wrap" />
+          }
+          @if (mostrarBannerDocsEmpleadosFaltantes()) {
+            <argo-empleado-docs-faltantes-banner class="head-alerta-pago-wrap" />
+          }
+          @if (mostrarBannerCertificadoVencimiento()) {
+            <argo-certificado-vencimiento-banner class="head-alerta-pago-wrap" />
+          }
+          @if (mostrarBannerCertificadoVencido()) {
+            <argo-certificado-vencido-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerJornadaProceso()) {
-            <argo-jornada-en-proceso-banner class="head-jornada-proceso-alarm" />
+            <argo-jornada-en-proceso-banner class="head-alerta-pago-wrap" />
           }
-          @if (mostrarFilaPapelesVehiculos()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Papeles de vehículos">
-              @if (mostrarBannerDocsVehiculosVencidos()) {
-                <argo-vehiculo-docs-vencimiento-banner />
-              }
-              @if (mostrarBannerDocsVehiculosFaltantes()) {
-                <argo-vehiculo-docs-faltantes-banner />
-              }
-            </div>
+          @if (mostrarBannerDocsVehiculosVencidos()) {
+            <argo-vehiculo-docs-vencimiento-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerInspeccionVehiculos()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Inspección de vehículos">
-              <argo-vehiculo-inspeccion-banner />
-            </div>
+            <argo-vehiculo-inspeccion-banner class="head-alerta-pago-wrap" />
           }
-          @if (mostrarFilaEmpleados()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Documentos de empleados">
-              @if (mostrarBannerDocsEmpleadosVencidos()) {
-                <argo-empleado-docs-vencimiento-banner />
-              }
-              @if (mostrarBannerDocsEmpleadosFaltantes()) {
-                <argo-empleado-docs-faltantes-banner />
-              }
-            </div>
+          @if (mostrarBannerDocsEmpleadosVencidos()) {
+            <argo-empleado-docs-vencimiento-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerProgramacionCea()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Alerta programación CEA">
-              <argo-programacion-cea-pendiente-banner />
-            </div>
+            <argo-programacion-cea-pendiente-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerClasesCeaCreado()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Clases licencia por programar">
-              <argo-programacion-cea-clase-creado-banner />
-            </div>
+            <argo-programacion-cea-clase-creado-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerClaseProximaCea()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Alerta clase CEA próxima">
-              <argo-programacion-cea-clase-proxima-banner />
-            </div>
+            <argo-programacion-cea-clase-proxima-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerInstructorPortal()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Alertas portal instructor">
-              <argo-instructor-portal-banner />
-            </div>
+            <argo-instructor-portal-banner class="head-alerta-pago-wrap" />
           }
           @if (mostrarBannerForoMensaje()) {
-            <div class="head-alarms-grid head-alarms-grid-wide" aria-label="Nuevos mensajes foro aula virtual">
-              <argo-foro-mensaje-banner />
-            </div>
+            <argo-foro-mensaje-banner class="head-alerta-pago-wrap" />
           }
         </div>
         }

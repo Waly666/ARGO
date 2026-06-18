@@ -383,19 +383,18 @@ export class ShellComponent {
       this.instructorPortalAlert.hayAlertasActivas(),
   );
 
-  mostrarFilaPapelesVehiculos = computed(
-    () => this.mostrarBannerDocsVehiculosVencidos() || this.mostrarBannerDocsVehiculosFaltantes(),
-  );
+  mostrarFilaPapelesVehiculos = computed(() => this.mostrarBannerDocsVehiculosVencidos());
 
-  mostrarFilaEmpleados = computed(
-    () => this.mostrarBannerDocsEmpleadosVencidos() || this.mostrarBannerDocsEmpleadosFaltantes(),
-  );
+  mostrarFilaEmpleados = computed(() => this.mostrarBannerDocsEmpleadosVencidos());
 
   mostrarAlarmasCabecera = computed(
     () =>
       this.mostrarBannerCajaCerrada() ||
       this.mostrarBannerCertificado() ||
       this.mostrarBannerComprobantesHoy() ||
+      this.mostrarBannerAlertaPagoAlumno() ||
+      this.mostrarBannerDocsVehiculosFaltantes() ||
+      this.mostrarBannerDocsEmpleadosFaltantes() ||
       this.mostrarBannerCertificadoVencimiento() ||
       this.mostrarBannerCertificadoVencido() ||
       this.mostrarBannerJornadaProceso() ||
@@ -405,7 +404,8 @@ export class ShellComponent {
       this.mostrarBannerProgramacionCea() ||
       this.mostrarBannerClasesCeaCreado() ||
       this.mostrarBannerClaseProximaCea() ||
-      this.mostrarBannerInstructorPortal(),
+      this.mostrarBannerInstructorPortal() ||
+      this.mostrarBannerForoMensaje(),
   );
 
   private readonly menuAll: MenuEntry[] = [

@@ -1,22 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { CertificadoVencidoAlertService } from '../../core/services/certificado-vencido-alert.service';
+import type { CertificadoVencimientoAlertaItem } from '../../core/services/certificado.service';
+import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
+import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
 @Component({
   selector: 'argo-certificado-vencido-banner',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeadAlarmListBannerComponent],
   templateUrl: './certificado-vencido-banner.component.html',
   styleUrls: ['./certificado-vencido-banner.component.scss'],
 })
 export class CertificadoVencidoBannerComponent {
   readonly alertSvc = inject(CertificadoVencidoAlertService);
-  private router = inject(Router);
 
   visible = this.alertSvc.visible;
-  items = this.alertSvc.items;
 
   titulo = computed(() => {
     const d = this.alertSvc.data();
@@ -27,26 +27,22 @@ export class CertificadoVencidoBannerComponent {
       : `¡${total} certificados vencidos (últimos ${ventana} días)!`;
   });
 
-  detalle = computed(() => {
-    const d = this.alertSvc.data();
-    if (!d) return '';
-    const dias = d.diasVentana ?? 3;
-    const resumen = `${d.total} vencido(s) en los últimos ${dias} día${dias === 1 ? '' : 's'}`;
-    const muestra = this.items()
-      .slice(0, 2)
-      .map((it) => this.alertSvc.resumenItem(it))
-      .join(' · ');
-    const extra = d.total > 2 ? ` · +${d.total - 2} más` : '';
-    return `${resumen}${muestra ? `: ${muestra}${extra}` : ''}`;
-  });
+  rows = computed<HeadAlarmListRow[]>(() =>
+    this.alertSvc.items().map((it) => ({
+      id: it._id,
+      title: this.tituloItem(it),
+      meta: this.alertSvc.resumenItem(it),
+      routerLink: it.alumnoId ? ['/app/alumnos', it.alumnoId] : ['/app/certificados'],
+      queryParams: it.alumnoId ? { tab: 'certificados' } : undefined,
+    })),
+  );
 
-  irCertificados(ev?: Event) {
-    ev?.stopPropagation();
-    void this.router.navigate(['/app/certificados']);
+  cerrar() {
+    this.alertSvc.cerrar();
   }
 
-  cerrar(ev: Event) {
-    ev.stopPropagation();
-    this.alertSvc.cerrar();
+  private tituloItem(it: CertificadoVencimientoAlertaItem): string {
+    const nombre = String(it.nombreCompleto || '').trim() || '—';
+    return `${nombre} · ${this.alertSvc.etiquetaDias(it)}`;
   }
 }

@@ -1,28 +1,12 @@
-@if (alertas().length > 0) {
-  <div class="foro-alerts" aria-label="Nuevos mensajes en foro de cursos">
-    @for (a of alertas(); track a.id) {
-      <div class="foro-alert-root">
-        <button
-          type="button"
-          class="foro-alert-close"
-          (click)="cerrar($event, a.id)"
-          aria-label="Cerrar aviso">
-          Cerrar <span aria-hidden="true">×</span>
-        </button>
-        <button
-          type="button"
-          class="foro-alert"
-          (click)="abrir(a)"
-          [attr.title]="'Ver conversación en ' + a.nombrePrograma">
-          <span class="foro-alert-pulse" aria-hidden="true"></span>
-          <span class="foro-alert-icon" aria-hidden="true">💬</span>
-          <span class="foro-alert-body">
-            <span class="foro-alert-course">{{ a.nombrePrograma }}</span>
-            <span class="foro-alert-meta">{{ a.autorNombre }}</span>
-            <span class="foro-alert-text">«{{ resumenTexto(a) }}»</span>
-          </span>
-        </button>
-      </div>
-    }
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-foro"
+  icon="💬"
+  [title]="'Nuevos mensajes en foro (' + rows().length + ')'"
+  hint="Pulse una fila para abrir el foro del programa."
+  [items]="rows()"
+  [itemDismissible]="true"
+  (closed)="cerrar()"
+  (itemClick)="onItemClick($event)"
+  (itemDismiss)="onItemDismiss($event)"
+/>

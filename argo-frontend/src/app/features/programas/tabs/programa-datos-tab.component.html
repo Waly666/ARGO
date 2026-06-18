@@ -54,7 +54,7 @@
           @if (d.programa.descripcionVirtual) {
             <div class="prog-datos-desc" [innerHTML]="d.programa.descripcionVirtual"></div>
           }
-          <a routerLink="/app/aula-virtual" class="prog-link-portal">Ir a configuración del aula virtual →</a>
+          <a [routerLink]="['/app/aula-virtual/cursos', d.programa.idPrograma]" class="prog-link-portal">Ir a configuración del aula virtual →</a>
         </div>
       }
     </section>

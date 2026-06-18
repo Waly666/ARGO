@@ -1,51 +1,5 @@
-.inst-shell-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.55rem 5.5rem 0.55rem 0.85rem;
-  margin-bottom: 0.5rem;
-  border-radius: 10px;
-  border: 1px solid rgba(45, 212, 191, 0.55);
-  background: linear-gradient(90deg, rgba(20, 184, 166, 0.22), rgba(59, 130, 246, 0.14));
-  cursor: pointer;
-  animation: inst-shell-pulse 2.2s ease-in-out infinite;
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
-
-.inst-shell-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  font-size: 0.86rem;
-
-  strong {
-    color: #ccfbf1;
-  }
-
-  span {
-    color: var(--text-dim);
-  }
-}
-
-.inst-shell-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.inst-shell-btn {
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: linear-gradient(135deg, #0f766e, #2563eb);
-  color: #fff;
-  border-radius: 8px;
-  padding: 0.3rem 0.65rem;
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-@keyframes inst-shell-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.28); }
-  50% { box-shadow: 0 0 0 5px rgba(45, 212, 191, 0); }
-}
-
-@import '../../shared/styles/head-alarm-uniform';

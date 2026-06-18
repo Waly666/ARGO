@@ -1,5 +1,6 @@
 const Empleado = require('../models/Empleado');
 const DocEmpleado = require('../models/DocEmpleado');
+const Cargo = require('../models/Cargo');
 const {
   obtenerConfigRequisitosDocumentosEmpleados,
   findRequisitoPorCargo,
@@ -108,13 +109,19 @@ async function calcularAlertasDocumentosEmpleados() {
 }
 
 async function calcularAlertasDocsFaltantesEmpleados() {
-  const [empleados, docs, config] = await Promise.all([
+  const [empleados, docs, config, cargos] = await Promise.all([
     Empleado.find(FILTER_ACTIVOS)
       .select('_id idEmpleado cargoId primerNombre segundoNombre primerApellido segundoApellido numeroDocumento')
       .lean(),
     DocEmpleado.find({}).lean(),
     obtenerConfigRequisitosDocumentosEmpleados(),
+    Cargo.find({}).select('idCargo nombreCargo').lean(),
   ]);
+
+  const cargoPorId = new Map(
+    (cargos || []).map((c) => [String(c.idCargo), String(c.nombreCargo || '').trim()]),
+  );
+  const esInstructorCargo = (cargoId) => /\binstructor/i.test(cargoPorId.get(String(cargoId)) || '');
 
   const docsByEmpleado = new Map();
   for (const d of docs) {
@@ -157,6 +164,8 @@ async function calcularAlertasDocsFaltantesEmpleados() {
         idEmpleado: Number(idEmpleado),
         empleadoId: String(empleado._id || ''),
         nombreEmpleado: nombre,
+        numeroDocumento: String(empleado.numeroDocumento || '').trim(),
+        esInstructor: esInstructorCargo(cargoId),
         idDocumento: idDoc,
         documento: String(meta?.nombre || idDoc).trim(),
       });

@@ -156,6 +156,83 @@ export interface MatriculaVirtualAdminRes {
   pago?: { pagado: boolean; saldo: number | null; valor: number | null };
 }
 
+export interface ProgresoAlumnoVirtualClase {
+  numero: number;
+  pct: number;
+  aprobada: boolean;
+}
+
+export interface ProgresoAlumnoVirtualIntento {
+  numero: number;
+  nota: number;
+  pctCompletitud: number;
+  aprobado: boolean;
+  fecha: string | null;
+}
+
+export interface ProgresoAlumnoVirtualItem {
+  idMatricula: string;
+  alumnoId: string | null;
+  numDoc: number | string;
+  nombreCompleto: string;
+  celular: string | null;
+  correo: string | null;
+  emailPortal: string | null;
+  fechaMat?: string;
+  pago: {
+    pagado: boolean;
+    saldo: number;
+    valorMat: number;
+    pagada: string;
+  };
+  progreso: {
+    pctCompletitud: number;
+    promedioClases: number | null;
+    clasesAprobadas: number;
+    totalClases: number | null;
+    clases: ProgresoAlumnoVirtualClase[];
+    mejorNotaEval: number | null;
+    ultimaNotaEval: number | null;
+    intentosEval: number;
+    intentosRestantes: number;
+    intentos: ProgresoAlumnoVirtualIntento[];
+    aprobado: boolean;
+    cumpleCompletitud: boolean;
+    cumpleNota: boolean;
+    certificadoEmitido: boolean;
+    sinIniciar: boolean;
+    contadorSyncs: number;
+    fechaUltimaActividad: string | null;
+  };
+  certificado: {
+    codigoCert: string | null;
+    fechaEmision: string | null;
+    generadoAutoVirtual: boolean;
+  } | null;
+  portal: {
+    activo: boolean;
+    ultimoAcceso: string | null;
+  };
+  conexion: {
+    codigo: string;
+    label: string;
+    enLinea: boolean;
+  };
+}
+
+export interface ProgresoAlumnosVirtualRes {
+  items: ProgresoAlumnoVirtualItem[];
+  total: number;
+  skip: number;
+  limit: number;
+  reglas: {
+    modoCertificado: string;
+    pctMinCompletitud: number;
+    pctMinEvaluaciones: number;
+    intentosMaxEval: number;
+  } | null;
+}
+
 /** Payload al guardar curso: config virtual + ficha comercial editable. */
 export interface GuardarCursoVirtualBody extends Partial<VirtualConfig> {
   descripcionVirtual?: string | null;
@@ -284,5 +361,20 @@ export class AulaVirtualAdminService {
       bridgePaginas: number;
       storagePrefix?: string | null;
     }>(`${this.base}/cursos/${idPrograma}/reintegrar-bridge`, {});
+  }
+
+  listarProgresoAlumnos(
+    idPrograma: string | number,
+    params?: { q?: string; filtro?: string; skip?: number; limit?: number },
+  ): Observable<ProgresoAlumnosVirtualRes> {
+    const sp = new URLSearchParams();
+    if (params?.q) sp.set('q', params.q);
+    if (params?.filtro) sp.set('filtro', params.filtro);
+    if (params?.skip != null) sp.set('skip', String(params.skip));
+    if (params?.limit != null) sp.set('limit', String(params.limit));
+    const qs = sp.toString();
+    return this.http.get<ProgresoAlumnosVirtualRes>(
+      `${this.base}/cursos/${idPrograma}/progreso-alumnos${qs ? `?${qs}` : ''}`,
+    );
   }
 }

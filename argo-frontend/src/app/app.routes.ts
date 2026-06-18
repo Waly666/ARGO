@@ -135,6 +135,15 @@ export const routes: Routes = [
           import('./features/programas/programa-detalle.component').then((m) => m.ProgramaDetalleComponent),
       },
       {
+        path: 'aula-virtual/cursos/:id',
+        canActivate: [permisoGuard],
+        data: { permiso: ['aula_virtual.gestionar', 'programas.gestionar'], title: 'Ficha curso virtual' },
+        loadComponent: () =>
+          import('./features/aula-virtual/aula-virtual-curso-detalle.component').then(
+            (m) => m.AulaVirtualCursoDetalleComponent,
+          ),
+      },
+      {
         path: 'aula-virtual/sitio',
         canActivate: [permisoGuard],
         data: { permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'], title: 'Editor sitio portal' },

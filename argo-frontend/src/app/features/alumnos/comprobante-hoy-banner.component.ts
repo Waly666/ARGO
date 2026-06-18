@@ -8,11 +8,13 @@ import {
   ComprobanteHoyTipo,
 } from '../../core/services/comprobante-hoy-alert.service';
 import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
+import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
+import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
 @Component({
   selector: 'argo-comprobante-hoy-banner',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeadAlarmListBannerComponent],
   templateUrl: './comprobante-hoy-banner.component.html',
   styleUrls: ['./comprobante-hoy-banner.component.scss'],
 })
@@ -25,6 +27,31 @@ export class ComprobanteHoyBannerComponent {
     this.alertSvc.alertas().filter((a) => this.puedeVerTipo(a.tipo)),
   );
 
+  visible = computed(() => this.alertas().length > 0);
+
+  rows = computed<HeadAlarmListRow[]>(() =>
+    this.alertas().map((a) => ({
+      id: a.key,
+      title: this.titulo(a),
+      rowClass: this.rowClass(a.tipo),
+    })),
+  );
+
+  onItemClick(row: HeadAlarmListRow) {
+    const a = this.alertas().find((x) => x.key === row.id);
+    if (a) this.abrir(a);
+  }
+
+  onItemDismiss(row: HeadAlarmListRow) {
+    this.alertSvc.descartar(row.id);
+  }
+
+  cerrar() {
+    for (const a of this.alertas()) {
+      this.alertSvc.descartar(a.key);
+    }
+  }
+
   private puedeVerTipo(tipo: ComprobanteHoyTipo): boolean {
     if (tipo === 'ingreso') return this.alarmas.tiene('alarmas.alumnos.comprobante_ingreso');
     if (tipo === 'egreso') return this.alarmas.tiene('alarmas.alumnos.comprobante_egreso');
@@ -32,25 +59,25 @@ export class ComprobanteHoyBannerComponent {
     return false;
   }
 
-  toneClass(tipo: ComprobanteHoyTipo): string {
-    if (tipo === 'ingreso') return 'comp-tone-ingreso';
-    if (tipo === 'egreso') return 'comp-tone-egreso';
-    return 'comp-tone-factura';
+  private rowClass(tipo: ComprobanteHoyTipo): string {
+    if (tipo === 'ingreso') return 'hal-row-comp-ingreso';
+    if (tipo === 'egreso') return 'hal-row-comp-egreso';
+    return 'hal-row-comp-factura';
   }
 
-  etiquetaTipo(tipo: ComprobanteHoyTipo, a?: ComprobanteHoyAlerta): string {
+  private etiquetaTipo(tipo: ComprobanteHoyTipo, a?: ComprobanteHoyAlerta): string {
     if (tipo === 'ingreso') return 'Comprobante ingreso';
     if (tipo === 'egreso') return 'Comprobante egreso';
     if (a?.idContrato || a?.origenFactura === 'contrato_cap') return 'Factura contrato';
     return 'Factura electrónica';
   }
 
-  etiquetaRef(a: ComprobanteHoyAlerta): string {
+  private etiquetaRef(a: ComprobanteHoyAlerta): string {
     if (a.tipo === 'factura') return a.numeroFactura || 'Factura';
     return a.numRecibo || (a.tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
   }
 
-  titulo(a: ComprobanteHoyAlerta): string {
+  private titulo(a: ComprobanteHoyAlerta): string {
     const partes = [
       this.etiquetaTipo(a.tipo, a),
       this.etiquetaRef(a),
@@ -61,7 +88,7 @@ export class ComprobanteHoyBannerComponent {
     return partes.join(' · ');
   }
 
-  fmt(v: number): string {
+  private fmt(v: number): string {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
@@ -69,14 +96,7 @@ export class ComprobanteHoyBannerComponent {
     }).format(v || 0);
   }
 
-  abrir(a: ComprobanteHoyAlerta, ev?: Event) {
-    ev?.preventDefault();
-    ev?.stopPropagation();
+  private abrir(a: ComprobanteHoyAlerta) {
     this.impresionSvc.abrir(a.tipo, a.id);
-  }
-
-  cerrar(ev: Event, key: string) {
-    ev.stopPropagation();
-    this.alertSvc.descartar(key);
   }
 }

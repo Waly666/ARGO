@@ -34,6 +34,8 @@ const ProgresoVirtualCursoSchema = new mongoose.Schema(
     certificadoEmitido: { type: Boolean, default: false },
     intentos: { type: [IntentoEvalSchema], default: [] },
     fechaUltimaActividad: { type: Date, default: Date.now },
+    /** Sincronizaciones desde el paquete HTML (argo-bridge). */
+    contadorSyncs: { type: Number, default: 0, min: 0 },
   },
   { collection: 'progresoVirtualCurso', timestamps: true },
 );

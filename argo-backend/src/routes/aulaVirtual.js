@@ -106,6 +106,7 @@ router.post(
 );
 router.delete('/admin/cursos/:id/materiales/:materialId', requireAuth, gestionar, admin.eliminarMaterial);
 router.post('/admin/cursos/:id/matricular', requireAuth, gestionar, admin.matricularAlumnoCurso);
+router.get('/admin/cursos/:id/progreso-alumnos', requireAuth, gestionar, admin.listarProgresoAlumnos);
 router.post('/admin/cursos/:id/reintegrar-bridge', requireAuth, gestionar, admin.reintegrarBridge);
 
 router.get('/admin/portal', requireAuth, configPortal, admin.obtenerConfigPortal);

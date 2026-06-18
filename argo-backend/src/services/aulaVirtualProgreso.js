@@ -317,6 +317,7 @@ async function reportarProgreso(numDoc, idPrograma, body = {}) {
   }
 
   doc.fechaUltimaActividad = new Date();
+  doc.contadorSyncs = (doc.contadorSyncs || 0) + 1;
   await doc.save();
 
   const estado = await evaluarAprobacion(numDoc, idProg);
@@ -435,4 +436,5 @@ module.exports = {
   reportarProgreso,
   listarMisCursos,
   mapProgresoRespuesta,
+  mapIntentosPublicos,
 };

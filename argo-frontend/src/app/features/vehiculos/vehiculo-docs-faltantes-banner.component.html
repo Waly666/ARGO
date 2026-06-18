@@ -1,21 +1,9 @@
-@if (visible()) {
-  <div class="head-alarm-root">
-    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">
-      Cerrar <span aria-hidden="true">×</span>
-    </button>
-    <div class="head-alarm-wrap">
-      <button
-        type="button"
-        class="head-alarm alarm-vehiculo-docs-faltantes"
-        (click)="irVehiculos()"
-        [title]="detalle() || 'Hay vehículos con documentos requeridos sin registrar'">
-        <span class="head-alarm-pulse" aria-hidden="true"></span>
-        <span class="head-alarm-icon" aria-hidden="true">📄</span>
-        <span class="head-alarm-body">
-          <span class="head-alarm-title"><strong>Papeles incompletos</strong> · {{ titulo() }}</span>
-          <span class="head-alarm-detail">{{ detalle() }}</span>
-        </span>
-      </button>
-    </div>
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-docs-falt-veh"
+  icon="📄"
+  [title]="'Papeles incompletos — vehículos (' + rows().length + ')'"
+  hint="Documentos requeridos sin registrar. Pulse para abrir la ficha del vehículo."
+  [items]="rows()"
+  (closed)="cerrar()"
+/>

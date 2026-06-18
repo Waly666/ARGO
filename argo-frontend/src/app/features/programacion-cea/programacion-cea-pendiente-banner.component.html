@@ -1,21 +1,9 @@
-@if (visible()) {
-  <div class="head-alarm-root">
-    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">
-      Cerrar <span aria-hidden="true">×</span>
-    </button>
-    <div class="head-alarm-wrap">
-      <button
-        type="button"
-        class="head-alarm alarm-cea-pendiente"
-        (click)="irPendientes()"
-        title="Hay alumnos o servicios CEA con horas sin programar">
-        <span class="head-alarm-pulse" aria-hidden="true"></span>
-        <span class="head-alarm-icon" aria-hidden="true">📅</span>
-        <span class="head-alarm-body">
-          <span class="head-alarm-title">Programación CEA pendiente</span>
-          <span class="head-alarm-detail">{{ detalle() }}</span>
-        </span>
-      </button>
-    </div>
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-cea-pendiente"
+  icon="📅"
+  [title]="titulo()"
+  hint="Horas CEA pendientes de programar. Pulse para ir a pendientes."
+  [items]="rows()"
+  (closed)="cerrar()"
+/>

@@ -1,55 +1,60 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { VehiculoDocsFaltantesAlertService } from '../../core/services/vehiculo-docs-faltantes-alert.service';
+import type { AlertaDocFaltanteVehiculo } from '../../core/services/vehiculo.service';
+import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
+import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
 @Component({
   selector: 'argo-vehiculo-docs-faltantes-banner',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeadAlarmListBannerComponent],
   templateUrl: './vehiculo-docs-faltantes-banner.component.html',
   styleUrls: ['./vehiculo-docs-faltantes-banner.component.scss'],
 })
 export class VehiculoDocsFaltantesBannerComponent {
   private alertSvc = inject(VehiculoDocsFaltantesAlertService);
-  private router = inject(Router);
 
   visible = this.alertSvc.visible;
-  resumen = this.alertSvc.resumen;
 
-  titulo = computed(() => {
-    const r = this.resumen();
-    if (!r) return 'Documentos de vehículos sin registrar';
-    const n = r.totalFaltantes;
-    return n === 1 ? '1 documento sin registrar' : `${n} documentos sin registrar`;
-  });
+  rows = computed(() => this.agrupar(this.alertSvc.resumen()?.alertas || []));
 
-  detalle = computed(() => {
-    const r = this.resumen();
-    if (!r) return '';
-    const veh = r.vehiculosAfectados === 1 ? '1 vehículo' : `${r.vehiculosAfectados} vehículos`;
-    const muestra = (r.alertas || [])
-      .slice(0, 4)
-      .map((a) => `${a.placa}: falta ${a.documento}`)
-      .join(' · ');
-    const extra = r.totalFaltantes > 4 ? ` · +${r.totalFaltantes - 4} más` : '';
-    return `${veh} · ${muestra}${extra}`;
-  });
-
-  irVehiculos() {
-    const primera = this.resumen()?.alertas?.[0];
-    if (primera?.vehiculoId) {
-      void this.router.navigate(['/app/vehiculos', primera.vehiculoId], {
-        queryParams: { tab: 'documentos' },
-      });
-      return;
-    }
-    void this.router.navigate(['/app/vehiculos']);
+  cerrar() {
+    this.alertSvc.cerrar();
   }
 
-  cerrar(ev: Event) {
-    ev.stopPropagation();
-    this.alertSvc.cerrar();
+  private agrupar(alertas: AlertaDocFaltanteVehiculo[]): HeadAlarmListRow[] {
+    const map = new Map<string, HeadAlarmListRow & { docs: string[] }>();
+    for (const a of alertas) {
+      const key = a.vehiculoId || a.placa;
+      if (!key) continue;
+      let row = map.get(key);
+      if (!row) {
+        row = {
+          id: key,
+          title: `Placa ${a.placa}${a.claseVehiculo ? ` · ${a.claseVehiculo}` : ''}`,
+          meta: '',
+          routerLink: ['/app/vehiculos', a.vehiculoId],
+          queryParams: { tab: 'documentos' },
+          docs: [],
+        };
+        map.set(key, row);
+      }
+      if (!row.docs.includes(a.documento)) row.docs.push(a.documento);
+    }
+    return [...map.values()]
+      .map(({ docs, ...row }) => ({
+        ...row,
+        meta: this.metaDocs(docs),
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title, 'es'));
+  }
+
+  private metaDocs(docs: string[]): string {
+    const n = docs.length;
+    const lista = docs.slice(0, 3).join(', ');
+    const extra = n > 3 ? ` · +${n - 3} más` : '';
+    return `Falta${n === 1 ? '' : 'n'}: ${lista}${extra}`;
   }
 }

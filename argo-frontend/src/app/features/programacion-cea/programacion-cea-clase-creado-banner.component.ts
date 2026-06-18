@@ -1,22 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { ProgramacionCeaClaseCreadoAlertService } from '../../core/services/programacion-cea-clase-creado-alert.service';
+import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
+import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
 @Component({
   selector: 'argo-programacion-cea-clase-creado-banner',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeadAlarmListBannerComponent],
   templateUrl: './programacion-cea-clase-creado-banner.component.html',
   styleUrls: ['./programacion-cea-clase-creado-banner.component.scss'],
 })
 export class ProgramacionCeaClaseCreadoBannerComponent {
   private alertSvc = inject(ProgramacionCeaClaseCreadoAlertService);
-  private router = inject(Router);
 
   visible = this.alertSvc.visible;
-  total = this.alertSvc.total;
   totalClases = this.alertSvc.totalClases;
 
   titulo = computed(() => {
@@ -27,33 +26,16 @@ export class ProgramacionCeaClaseCreadoBannerComponent {
       : `Pendiente programar clase licencia (${n} clases)`;
   });
 
-  detalle = computed(() => {
-    const items = this.alertSvc.items();
-    if (!items.length) return '';
-    if (items.length === 1) return this.alertSvc.tituloItem(items[0]);
-    const alumnos = this.total() === 1 ? '1 alumno' : `${this.total()} alumnos`;
-    const muestra = items
-      .slice(0, 3)
-      .map((it) => this.alertSvc.tituloItem(it))
-      .join(' · ');
-    const extra = items.length > 3 ? ` · +${items.length - 3} más` : '';
-    return `${alumnos} · ${muestra}${extra}`;
-  });
+  rows = computed<HeadAlarmListRow[]>(() =>
+    this.alertSvc.items().map((it) => ({
+      id: String(it.numDoc),
+      title: this.alertSvc.tituloItem(it),
+      routerLink: it.alumnoId ? ['/app/alumnos', it.alumnoId] : undefined,
+      queryParams: it.alumnoId ? { tab: 'programacion' } : undefined,
+    })),
+  );
 
-  irProgramacion(ev?: Event) {
-    ev?.stopPropagation();
-    const primera = this.alertSvc.items()[0];
-    if (primera?.alumnoId) {
-      void this.router.navigate(['/app/alumnos', primera.alumnoId], {
-        queryParams: { tab: 'programacion' },
-      });
-      return;
-    }
-    void this.router.navigate(['/app/alumnos']);
-  }
-
-  cerrar(ev: Event) {
-    ev.stopPropagation();
+  cerrar() {
     this.alertSvc.cerrar();
   }
 }

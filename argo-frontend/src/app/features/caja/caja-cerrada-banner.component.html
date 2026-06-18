@@ -1,15 +1,10 @@
-@if (visible()) {
-  <div class="head-alarm-root">
-    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">
-      Cerrar <span aria-hidden="true">×</span>
-    </button>
-    <div class="estado-caja" [class.alarm-blink]="blink">
-      <span class="estado-icon" aria-hidden="true">🔒</span>
-      <div class="estado-body">
-        <strong>Mi caja cerrada</strong>
-        <p>Abra su caja para registrar cobros y egresos del turno.</p>
-      </div>
-      <button type="button" class="btn-abrir sm" (click)="irAbrirCaja()">Abrir caja</button>
-    </div>
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-caja"
+  icon="🔒"
+  title="Caja cerrada"
+  hint="Debe abrir la caja para registrar movimientos."
+  [items]="rows()"
+  (closed)="cerrar()"
+  (itemClick)="onItemClick($event)"
+/>

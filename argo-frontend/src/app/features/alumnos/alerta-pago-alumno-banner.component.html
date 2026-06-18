@@ -1,28 +1,9 @@
-@if (visible()) {
-  <div class="alerta-pago-root">
-    <button type="button" class="head-alarm-close" (click)="cerrar($event)" aria-label="Cerrar aviso">
-      Cerrar <span aria-hidden="true">×</span>
-    </button>
-    <section class="alerta-pago-banner" [class.alerta-pago-banner--panel]="modo() === 'panel'">
-      <header class="banner-head">
-        <strong>💰 Cobros programados hoy ({{ items().length }})</strong>
-        <span class="hint">Recordatorio acordado con el alumno — ideal para técnicos con cuotas recurrentes.</span>
-      </header>
-      <ul class="banner-list">
-        @for (item of items(); track item.alumnoId) {
-          <li>
-            <a [routerLink]="fichaLink(item)" [queryParams]="fichaQuery" class="banner-link">
-              <span class="nombre">{{ item.nombreCompleto }}</span>
-              <span class="meta">
-                Doc. {{ item.numDoc }} · {{ svc.etiquetaFrecuencia(item.alertaPagoFrecuencia) }}
-                @if (item.celular) {
-                  · {{ item.celular }}
-                }
-              </span>
-            </a>
-          </li>
-        }
-      </ul>
-    </section>
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-pago"
+  icon="💰"
+  [title]="'Cobros programados hoy (' + rows().length + ')'"
+  hint="Recordatorio acordado con el alumno — pulse una fila para ir a la ficha."
+  [items]="rows()"
+  (closed)="cerrar()"
+/>

@@ -1,25 +1,9 @@
-@if (visible()) {
-  <div class="head-alarm-root">
-    <button
-      type="button"
-      class="head-alarm-close"
-      (click)="cerrar($event)"
-      aria-label="Cerrar aviso de certificados vencidos">
-      Cerrar <span aria-hidden="true">×</span>
-    </button>
-    <div class="head-alarm-wrap">
-      <button
-        type="button"
-        class="head-alarm cert-vencido"
-        (click)="irCertificados()"
-        [title]="'Certificados vencidos — últimos ' + (alertSvc.data()?.diasVentana ?? 3) + ' días desde el vencimiento'">
-        <span class="head-alarm-pulse" aria-hidden="true"></span>
-        <span class="head-alarm-icon" aria-hidden="true">⚠</span>
-        <span class="head-alarm-body">
-          <span class="head-alarm-title">{{ titulo() }}</span>
-          <span class="head-alarm-detail">{{ detalle() }}</span>
-        </span>
-      </button>
-    </div>
-  </div>
-}
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-cert-vencido"
+  icon="⛔"
+  [title]="titulo()"
+  [hint]="'Certificados vencidos — últimos ' + (alertSvc.data()?.diasVentana ?? 3) + ' días'"
+  [items]="rows()"
+  (closed)="cerrar()"
+/>

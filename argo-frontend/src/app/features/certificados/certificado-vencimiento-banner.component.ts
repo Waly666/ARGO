@@ -1,24 +1,25 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { CertificadoVencimientoAlertService } from '../../core/services/certificado-vencimiento-alert.service';
 import type { CertificadoVencimientoAlertaItem } from '../../core/services/certificado.service';
+import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
+import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
 @Component({
   selector: 'argo-certificado-vencimiento-banner',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeadAlarmListBannerComponent],
   templateUrl: './certificado-vencimiento-banner.component.html',
   styleUrls: ['./certificado-vencimiento-banner.component.scss'],
 })
 export class CertificadoVencimientoBannerComponent {
   readonly alertSvc = inject(CertificadoVencimientoAlertService);
-  private router = inject(Router);
 
   visible = this.alertSvc.visible;
-  items = this.alertSvc.items;
   peorNivel = this.alertSvc.peorNivel;
+
+  theme = computed(() => `hal-theme-cert-vence-${this.peorNivel()}`);
 
   titulo = computed(() => {
     const d = this.alertSvc.data();
@@ -35,34 +36,23 @@ export class CertificadoVencimientoBannerComponent {
       : `${total} certificados por vencer — próximos ${ventana} días`;
   });
 
-  detalle = computed(() => {
-    const d = this.alertSvc.data();
-    if (!d) return '';
-    const partes: string[] = [];
-    if (d.venceHoy > 0) partes.push(`${d.venceHoy} hoy`);
-    if (d.venceManana > 0) partes.push(`${d.venceManana} mañana`);
-    const resumen = partes.length ? partes.join(' · ') : `${d.total} en los próximos ${d.diasVentana} días`;
+  rows = computed<HeadAlarmListRow[]>(() =>
+    this.alertSvc.items().map((it) => ({
+      id: it._id,
+      title: this.tituloItem(it),
+      meta: this.alertSvc.resumenItem(it),
+      rowClass: `hal-row-cert-vence-${it.nivelUrgencia}`,
+      routerLink: it.alumnoId ? ['/app/alumnos', it.alumnoId] : ['/app/certificados'],
+      queryParams: it.alumnoId ? { tab: 'certificados' } : undefined,
+    })),
+  );
 
-    const muestra = this.items()
-      .slice(0, 2)
-      .map((it) => this.alertSvc.resumenItem(it))
-      .join(' · ');
-    const extra = d.total > 2 ? ` · +${d.total - 2} más` : '';
-    return `${resumen}${muestra ? `: ${muestra}${extra}` : ''}`;
-  });
-
-  toneClass(item?: CertificadoVencimientoAlertaItem): string {
-    const n = item?.nivelUrgencia || this.peorNivel();
-    return `cert-vence-${n}`;
-  }
-
-  irCertificados(ev?: Event) {
-    ev?.stopPropagation();
-    void this.router.navigate(['/app/certificados']);
-  }
-
-  cerrar(ev: Event) {
-    ev.stopPropagation();
+  cerrar() {
     this.alertSvc.cerrar();
+  }
+
+  private tituloItem(it: CertificadoVencimientoAlertaItem): string {
+    const nombre = String(it.nombreCompleto || '').trim() || '—';
+    return `${nombre} · ${this.alertSvc.etiquetaDias(it)}`;
   }
 }

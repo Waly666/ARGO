@@ -1,54 +1,40 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { VehiculoInspeccionAlertService } from '../../core/services/vehiculo-inspeccion-alert.service';
+import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
+import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
 @Component({
   selector: 'argo-vehiculo-inspeccion-banner',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HeadAlarmListBannerComponent],
   templateUrl: './vehiculo-inspeccion-banner.component.html',
   styleUrls: ['./vehiculo-inspeccion-banner.component.scss'],
 })
 export class VehiculoInspeccionBannerComponent {
   private alertSvc = inject(VehiculoInspeccionAlertService);
-  private router = inject(Router);
 
   visible = this.alertSvc.visible;
   resumen = this.alertSvc.resumen;
 
-  titulo = computed(() => {
+  rows = computed<HeadAlarmListRow[]>(() => {
     const r = this.resumen();
-    if (!r) return 'Vehículos sin inspección de hoy';
-    const n = r.totalPendientes;
+    return (r?.alertas || []).map((a) => ({
+      id: a.vehiculoId || a.placa,
+      title: `Placa ${a.placa}`,
+      meta: r?.fecha ? `Sin inspección hoy · ${r.fecha}` : 'Sin inspección hoy',
+      routerLink: ['/app/vehiculos', a.vehiculoId],
+      queryParams: { tab: 'inspeccion' },
+    }));
+  });
+
+  titulo = computed(() => {
+    const n = this.resumen()?.totalPendientes ?? this.rows().length;
     return n === 1 ? '1 vehículo sin inspección hoy' : `${n} vehículos sin inspección hoy`;
   });
 
-  detalle = computed(() => {
-    const r = this.resumen();
-    if (!r) return '';
-    const muestra = (r.alertas || [])
-      .slice(0, 5)
-      .map((a) => a.placa)
-      .join(', ');
-    const extra = r.totalPendientes > 5 ? ` · +${r.totalPendientes - 5} más` : '';
-    return `Fecha ${r.fecha} · ${muestra}${extra}`;
-  });
-
-  irVehiculos() {
-    const primera = this.resumen()?.alertas?.[0];
-    if (primera?.vehiculoId) {
-      void this.router.navigate(['/app/vehiculos', primera.vehiculoId], {
-        queryParams: { tab: 'inspeccion' },
-      });
-      return;
-    }
-    void this.router.navigate(['/app/vehiculos']);
-  }
-
-  cerrar(ev: Event) {
-    ev.stopPropagation();
+  cerrar() {
     this.alertSvc.cerrar();
   }
 }
