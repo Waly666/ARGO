@@ -12,6 +12,9 @@ const {
 const { portalAuthLimiter, buscarAlumnoLimiter } = require('../middleware/security');
 const { requireTurnstile } = require('../middleware/turnstile');
 
+/** Turnstile activo en web; apps móviles envían X-ARGO-Cliente: mobile */
+const turnstilePortal = requireTurnstile({ allowNativeClients: true });
+
 const router = Router();
 
 /** Público — portal estudiante */
@@ -29,22 +32,22 @@ router.get('/cursos/:id', ctrl.obtenerCurso);
 router.get(
   '/auth/buscar-alumno',
   buscarAlumnoLimiter,
-  requireTurnstile(),
+  turnstilePortal,
   ctrl.buscarAlumnoRegistro,
 );
 router.get(
   '/certificados/consulta',
   buscarAlumnoLimiter,
-  requireTurnstile(),
+  turnstilePortal,
   ctrl.consultarCertificados,
 );
-router.post('/auth/registro', portalAuthLimiter, requireTurnstile(), ctrl.registro);
-router.post('/auth/registro/solicitar', portalAuthLimiter, requireTurnstile(), ctrl.registroSolicitar);
+router.post('/auth/registro', portalAuthLimiter, turnstilePortal, ctrl.registro);
+router.post('/auth/registro/solicitar', portalAuthLimiter, turnstilePortal, ctrl.registroSolicitar);
 router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirmar);
 router.post('/auth/registro/reenviar-codigo', portalAuthLimiter, ctrl.registroReenviarCodigo);
-router.post('/auth/login', portalAuthLimiter, requireTurnstile(), ctrl.login);
-router.post('/contacto', buscarAlumnoLimiter, requireTurnstile(), ctrl.enviarContacto);
-router.post('/pqr', buscarAlumnoLimiter, requireTurnstile(), ctrl.enviarPqr);
+router.post('/auth/login', portalAuthLimiter, turnstilePortal, ctrl.login);
+router.post('/contacto', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarContacto);
+router.post('/pqr', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarPqr);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
 router.patch('/auth/empresa', requirePortalAuth, ctrl.actualizarEmpresa);
 router.get('/empresas/buscar', requirePortalAuth, ctrl.buscarEmpresasPortal);

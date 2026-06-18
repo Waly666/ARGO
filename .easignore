@@ -1,7 +1,9 @@
-# EAS Build: solo argo-mobile-cajero (monorepo ARGO)
+# EAS Build: monorepo ARGO
 argo-backend/
 argo-frontend/
 argo-sitio/
+argo-aula-virtual/
+argo-mobile-aula/
 excel/
 backup/
 backup-argo/
