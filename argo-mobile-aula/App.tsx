@@ -1,7 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
@@ -10,6 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { PortalConfigProvider } from './src/context/PortalConfigContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { BootstrapScreen, SplashGate } from './src/bootstrap/splash';
 import LoginScreen from './src/screens/LoginScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import CatalogoScreen from './src/screens/CatalogoScreen';
@@ -23,19 +22,6 @@ import EvaluacionCohorteScreen from './src/screens/EvaluacionCohorteScreen';
 import type { RootStackParamList } from './src/navigation/types';
 
 const Stack = createStackNavigator<RootStackParamList>();
-
-function BootstrapScreen() {
-  const c = useTheme();
-  return (
-    <LinearGradient colors={[c.primaryDark, c.primary, c.accent]} style={styles.boot}>
-      <View style={styles.bootLogoRing}>
-        <Image source={require('./assets/icon.png')} style={styles.bootLogo} />
-      </View>
-      <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
-      <Text style={styles.bootText}>ARGO Aula</Text>
-    </LinearGradient>
-  );
-}
 
 function ThemedNavigator() {
   const { state } = useAuth();
@@ -129,29 +115,17 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <PortalConfigProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <ThemedNavigator />
+        <AuthProvider>
+          <PortalConfigProvider>
+            <ThemeProvider>
+              <SplashGate>
+                <ThemedNavigator />
+              </SplashGate>
               <StatusBar style="light" />
-            </AuthProvider>
-          </ThemeProvider>
-        </PortalConfigProvider>
+            </ThemeProvider>
+          </PortalConfigProvider>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  boot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  bootLogoRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bootLogo: { width: 64, height: 64, borderRadius: 12 },
-  bootText: { color: '#fff', marginTop: 16, fontSize: 18, fontWeight: '700' },
-});

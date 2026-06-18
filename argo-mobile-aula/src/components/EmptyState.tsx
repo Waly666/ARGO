@@ -5,6 +5,7 @@ import type { ComponentProps } from 'react';
 
 import { ScaledText } from './ScaledText';
 import { useTheme } from '../context/ThemeContext';
+import { radius, space } from '../theme/spacing';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -14,12 +15,14 @@ export function EmptyState({ title, subtitle, icon = 'folder-open-outline' }: Pr
   const c = useTheme();
   return (
     <View style={styles.wrap}>
-      <Ionicons name={icon} size={44} color={c.textSoft} />
-      <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '700', marginTop: 12, textAlign: 'center' }}>
+      <View style={[styles.circle, { backgroundColor: c.accentSoft }]}>
+        <Ionicons name={icon} size={40} color={c.primary} />
+      </View>
+      <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800', marginTop: space.lg, textAlign: 'center' }}>
         {title}
       </ScaledText>
       {subtitle ? (
-        <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 6, textAlign: 'center' }}>
+        <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: space.sm, textAlign: 'center', lineHeight: 20 }}>
           {subtitle}
         </ScaledText>
       ) : null}
@@ -28,5 +31,12 @@ export function EmptyState({ title, subtitle, icon = 'folder-open-outline' }: Pr
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', padding: 32 },
+  wrap: { alignItems: 'center', justifyContent: 'center', padding: space.xxxl },
+  circle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

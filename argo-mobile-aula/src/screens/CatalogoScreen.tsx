@@ -1,17 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { CursoCard } from '../components/CursoCard';
 import { EmptyState } from '../components/EmptyState';
+import { FilterChip } from '../components/FilterChip';
 import { ScaledText } from '../components/ScaledText';
 import { SearchField } from '../components/SearchField';
+import { SectionHeader } from '../components/SectionHeader';
 import { useTheme } from '../context/ThemeContext';
 import { useDebounced } from '../hooks/useDebounced';
 import { fetchCategorias, fetchCursos } from '../api/aulaApi';
 import type { CategoriaVirtual, CursoVirtual } from '../api/types';
 import type { RootStackParamList } from '../navigation/types';
+import { space } from '../theme/spacing';
 
 export default function CatalogoScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -46,44 +49,30 @@ export default function CatalogoScreen() {
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
       <View style={styles.pad}>
-        <SearchField value={q} onChangeText={setQ} placeholder="Buscar curso…" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catRow}>
-          <Pressable
-            onPress={() => setCatId(null)}
-            style={[styles.chip, { backgroundColor: catId == null ? c.primary : c.card, borderColor: c.border }]}
-          >
-            <ScaledText baseSize={13} style={{ color: catId == null ? '#fff' : c.text }}>
-              Todos
-            </ScaledText>
-          </Pressable>
+        <SectionHeader
+          title="Catálogo"
+          subtitle={loading ? 'Cargando…' : `${cursos.length} curso(s) disponibles`}
+          icon="library-outline"
+        />
+        <SearchField value={q} onChangeText={setQ} placeholder="Buscar por nombre…" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <FilterChip label="Todos" active={catId == null} onPress={() => setCatId(null)} />
           {cats.map((cat) => (
-            <Pressable
+            <FilterChip
               key={cat.idCategoria}
+              label={cat.nombre}
+              active={catId === cat.idCategoria}
               onPress={() => setCatId(cat.idCategoria)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: catId === cat.idCategoria ? c.primary : c.card,
-                  borderColor: c.border,
-                },
-              ]}
-            >
-              <ScaledText
-                baseSize={13}
-                style={{ color: catId === cat.idCategoria ? '#fff' : c.text }}
-              >
-                {cat.nombre}
-              </ScaledText>
-            </Pressable>
+            />
           ))}
         </ScrollView>
       </View>
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 24 }} color={c.primary} />
+        <ActivityIndicator style={{ marginTop: space.xxl }} color={c.primary} size="large" />
       ) : cursos.length === 0 ? (
-        <EmptyState title="Sin cursos" subtitle="Pruebe otro filtro o búsqueda" />
+        <EmptyState title="Sin resultados" subtitle="Prueba otra búsqueda o categoría" icon="search-outline" />
       ) : (
-        <ScrollView contentContainerStyle={styles.pad}>
+        <ScrollView contentContainerStyle={styles.pad} showsVerticalScrollIndicator={false}>
           {cursos.map((curso) => (
             <CursoCard
               key={String(curso.idPrograma)}
@@ -101,13 +90,6 @@ export default function CatalogoScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  pad: { paddingHorizontal: 16 },
-  catRow: { marginBottom: 8, maxHeight: 44 },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginRight: 8,
-  },
+  pad: { paddingHorizontal: space.lg },
+  chips: { paddingBottom: space.md },
 });

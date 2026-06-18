@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 
 import { IconInput } from '../../components/IconInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
@@ -12,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { actualizarEmpresa, buscarEmpresas } from '../../api/aulaApi';
 import type { RootStackParamList } from '../../navigation/types';
+import { radius, space } from '../../theme/spacing';
 
 export default function PerfilPanel() {
   const { state, signOut, updateEmpresa } = useAuth();
@@ -24,6 +28,7 @@ export default function PerfilPanel() {
 
   if (state.status !== 'signedIn') return null;
   const { user } = state;
+  const inicial = (user.nombreCompleto || user.email).charAt(0).toUpperCase();
 
   async function onBuscarEmpresa(q: string) {
     setBusqueda(q);
@@ -63,36 +68,45 @@ export default function PerfilPanel() {
 
   return (
     <ScreenBody>
-      <SurfaceCard>
-        <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>
-          {user.nombreCompleto}
-        </ScaledText>
-        <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 4 }}>
-          {user.email}
-        </ScaledText>
-        <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 2 }}>
-          Documento: {user.numDoc}
-        </ScaledText>
-        <View style={[styles.empresa, { borderColor: c.border }]}>
-          <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>
-            Empresa
-          </ScaledText>
-          <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4 }}>
+      <SurfaceCard tint={c.accentSoft} accentLeft={c.primary}>
+        <View style={styles.profileHead}>
+          <LinearGradient colors={c.gradient} style={styles.avatar}>
+            <ScaledText baseSize={28} style={{ color: '#fff', fontWeight: '800' }}>
+              {inicial}
+            </ScaledText>
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>
+              {user.nombreCompleto}
+            </ScaledText>
+            <InfoChip icon="mail-outline" text={user.email} color={c.primary} bg={c.accentSoft} />
+            <InfoChip icon="card-outline" text={`Doc. ${user.numDoc}`} color={c.violet} bg={c.violetSoft} />
+          </View>
+        </View>
+
+        <View style={[styles.empresa, { borderColor: `${c.accent}55` }]}>
+          <View style={styles.empresaTitle}>
+            <Ionicons name="business-outline" size={18} color={c.accent} />
+            <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700', marginLeft: 6 }}>
+              Empresa
+            </ScaledText>
+          </View>
+          <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 6 }}>
             {user.empresaNombre ?? 'Sin empresa vinculada'}
           </ScaledText>
           {!editEmpresa ? (
             <View style={styles.empBtns}>
-              <PrimaryButton label="Cambiar" variant="ghost" onPress={() => setEditEmpresa(true)} />
+              <PrimaryButton label="Cambiar" variant="secondary" onPress={() => setEditEmpresa(true)} icon="create-outline" />
               {user.empresaId ? (
-                <PrimaryButton label="Quitar" variant="ghost" onPress={() => void onQuitarEmpresa()} />
+                <PrimaryButton label="Quitar" variant="ghost" onPress={() => void onQuitarEmpresa()} icon="close-circle-outline" />
               ) : null}
             </View>
           ) : (
             <>
-              <IconInput value={busqueda} onChangeText={onBuscarEmpresa} placeholder="Buscar empresa…" />
+              <IconInput value={busqueda} onChangeText={onBuscarEmpresa} placeholder="Buscar empresa…" icon="search-outline" />
               {sugerencias.map((e) => (
-                <Pressable key={e._id} onPress={() => void onSeleccionarEmpresa(e)} style={styles.sug}>
-                  <ScaledText baseSize={14} style={{ color: c.text }}>
+                <Pressable key={e._id} onPress={() => void onSeleccionarEmpresa(e)} style={[styles.sug, { backgroundColor: c.foroSoft }]}>
+                  <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>
                     {e.nombre}
                   </ScaledText>
                   <ScaledText baseSize={12} style={{ color: c.textSoft }}>
@@ -105,8 +119,15 @@ export default function PerfilPanel() {
           )}
         </View>
       </SurfaceCard>
-      <View style={{ marginTop: 16, gap: 10 }}>
-        <PrimaryButton label="Catálogo público" variant="ghost" onPress={() => nav.navigate('Catalogo')} fullWidth />
+
+      <View style={{ marginTop: space.lg, gap: space.md }}>
+        <PrimaryButton
+          label="Catálogo público"
+          variant="secondary"
+          onPress={() => nav.navigate('Catalogo')}
+          icon="compass-outline"
+          fullWidth
+        />
         <PrimaryButton
           label="Cerrar sesión"
           variant="danger"
@@ -119,8 +140,48 @@ export default function PerfilPanel() {
   );
 }
 
+function InfoChip({
+  icon,
+  text,
+  color,
+  bg,
+}: {
+  icon: ComponentProps<typeof Ionicons>['name'];
+  text: string;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <View style={[styles.chip, { backgroundColor: bg }]}>
+      <Ionicons name={icon} size={14} color={color} />
+      <ScaledText baseSize={12} style={{ color, marginLeft: 6, fontWeight: '600', flex: 1 }} numberOfLines={1}>
+        {text}
+      </ScaledText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  empresa: { borderTopWidth: 1, marginTop: 16, paddingTop: 12 },
-  empBtns: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  sug: { paddingVertical: 8 },
+  profileHead: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: space.sm,
+    paddingHorizontal: space.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  empresa: { borderTopWidth: 1, marginTop: space.lg, paddingTop: space.md },
+  empresaTitle: { flexDirection: 'row', alignItems: 'center' },
+  empBtns: { flexDirection: 'row', gap: space.sm, marginTop: space.md, flexWrap: 'wrap' },
+  sug: { padding: space.md, borderRadius: radius.md, marginTop: space.sm },
 });

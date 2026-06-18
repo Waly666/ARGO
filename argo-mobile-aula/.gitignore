@@ -10,3 +10,5 @@ dist/
 *.mobileprovision
 .env
 *.log
+build-info.json
+build2.json

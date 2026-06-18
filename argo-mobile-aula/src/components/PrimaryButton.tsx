@@ -1,10 +1,13 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
 import { ScaledText } from './ScaledText';
 import { useTheme } from '../context/ThemeContext';
+import { radius, space } from '../theme/spacing';
+import { shadow } from '../theme/shadows';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -12,10 +15,11 @@ type Props = {
   label: string;
   onPress: () => void;
   icon?: IonName;
-  variant?: 'primary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'light';
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
+  size?: 'md' | 'lg';
 };
 
 export function PrimaryButton({
@@ -26,11 +30,57 @@ export function PrimaryButton({
   disabled,
   loading,
   fullWidth,
+  size = 'md',
 }: Props) {
   const c = useTheme();
-  const bg =
-    variant === 'danger' ? c.danger : variant === 'ghost' ? 'transparent' : c.primary;
-  const color = variant === 'ghost' ? c.primary : '#fff';
+  const isGhost = variant === 'ghost';
+  const isLight = variant === 'light';
+  const isDanger = variant === 'danger';
+  const isSecondary = variant === 'secondary';
+  const color = isGhost || isLight ? c.primary : '#fff';
+  const py = size === 'lg' ? 16 : 14;
+
+  const content = loading ? (
+    <ActivityIndicator color={color} />
+  ) : (
+    <View style={styles.row}>
+      {icon ? <Ionicons name={icon} size={18} color={color} /> : null}
+      <ScaledText baseSize={size === 'lg' ? 16 : 15} style={{ color, fontWeight: '700' }}>
+        {label}
+      </ScaledText>
+    </View>
+  );
+
+  if (variant === 'primary' && !disabled && !loading) {
+    return (
+      <Pressable
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={({ pressed }) => [fullWidth && styles.full, { opacity: pressed ? 0.9 : 1 }]}
+      >
+        <LinearGradient
+          colors={c.gradientHero}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.btn, { paddingVertical: py }, shadow.sm]}
+        >
+          {content}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
+  const bg = isDanger
+    ? c.danger
+    : isSecondary
+      ? c.accentSoft
+      : isLight
+        ? 'rgba(255,255,255,0.2)'
+        : isGhost
+          ? 'transparent'
+          : c.primary;
+
+  const textColor = isSecondary ? c.primary : isLight ? '#fff' : isGhost ? c.primary : '#fff';
 
   return (
     <Pressable
@@ -39,20 +89,20 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.btn,
         fullWidth && styles.full,
+        shadow.sm,
         {
+          paddingVertical: py,
           backgroundColor: bg,
-          borderColor: variant === 'ghost' ? c.primary : 'transparent',
-          borderWidth: variant === 'ghost' ? 2 : 0,
-          opacity: pressed || disabled || loading ? 0.75 : 1,
+          borderColor: isGhost ? c.primary : isLight ? 'rgba(255,255,255,0.5)' : 'transparent',
+          borderWidth: isGhost || isLight ? 1.5 : 0,
+          opacity: pressed || disabled || loading ? 0.78 : 1,
         },
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={color} />
-      ) : (
+      {loading ? <ActivityIndicator color={textColor} /> : (
         <View style={styles.row}>
-          {icon ? <Ionicons name={icon} size={18} color={color} /> : null}
-          <ScaledText baseSize={15} style={{ color, fontWeight: '700' }}>
+          {icon ? <Ionicons name={icon} size={18} color={textColor} /> : null}
+          <ScaledText baseSize={15} style={{ color: textColor, fontWeight: '700' }}>
             {label}
           </ScaledText>
         </View>
@@ -63,12 +113,11 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   btn: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 14,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   full: { alignSelf: 'stretch' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

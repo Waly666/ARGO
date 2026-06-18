@@ -1,5 +1,6 @@
 import React from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { MensajeForo } from '../api/types';
@@ -7,6 +8,8 @@ import { useForo } from '../hooks/useForo';
 import { ScaledText } from './ScaledText';
 import { useTheme } from '../context/ThemeContext';
 import { fmtFecha } from '../utils/cursoUtils';
+import { radius, space } from '../theme/spacing';
+import { shadow } from '../theme/shadows';
 
 type Props = {
   token: string | null;
@@ -31,23 +34,19 @@ export function ForoChat({ token, idPrograma, nombreCurso = '' }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: c.bg }]}
+      style={[styles.root, { backgroundColor: c.card, borderColor: `${c.accent}55` }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
-      <View style={styles.statusRow}>
+      <View style={[styles.statusPill, { backgroundColor: conectado ? c.okSoft : c.warnSoft }]}>
         <View style={[styles.dot, { backgroundColor: conectado ? c.ok : c.warn }]} />
-        <ScaledText baseSize={12} style={{ color: c.textSoft }}>
-          {conectado ? 'Conectado' : 'Reconectando…'}
+        <ScaledText baseSize={12} style={{ color: c.text, fontWeight: '600' }}>
+          {conectado ? 'En línea' : 'Reconectando…'}
+          {cargando ? ' · cargando…' : ''}
         </ScaledText>
-        {cargando ? (
-          <ScaledText baseSize={12} style={{ color: c.textSoft, marginLeft: 8 }}>
-            Cargando…
-          </ScaledText>
-        ) : null}
       </View>
       {error ? (
-        <ScaledText baseSize={13} style={{ color: c.danger, marginBottom: 8 }}>
+        <ScaledText baseSize={13} style={{ color: c.danger, marginBottom: space.sm, paddingHorizontal: space.sm }}>
           {error}
         </ScaledText>
       ) : null}
@@ -58,13 +57,16 @@ export function ForoChat({ token, idPrograma, nombreCurso = '' }: Props) {
         renderItem={({ item }) => <MensajeRow msg={item} />}
         ListEmptyComponent={
           !cargando ? (
-            <ScaledText baseSize={14} style={{ color: c.textSoft, textAlign: 'center', padding: 24 }}>
-              Sé el primero en escribir en este foro.
-            </ScaledText>
+            <View style={styles.empty}>
+              <Ionicons name="chatbubble-ellipses-outline" size={36} color={c.textSoft} />
+              <ScaledText baseSize={14} style={{ color: c.textSoft, textAlign: 'center', marginTop: space.sm }}>
+                Sé el primero en escribir en este foro.
+              </ScaledText>
+            </View>
           ) : null
         }
       />
-      <View style={[styles.composer, { borderColor: c.border, backgroundColor: c.card }]}>
+      <View style={[styles.composer, shadow.sm, { borderColor: c.border, backgroundColor: c.inputBg }]}>
         <TextInput
           value={texto}
           onChangeText={setTexto}
@@ -73,8 +75,10 @@ export function ForoChat({ token, idPrograma, nombreCurso = '' }: Props) {
           style={[styles.input, { color: c.text }]}
           multiline
         />
-        <Pressable onPress={onEnviar} style={[styles.send, { backgroundColor: c.primary }]}>
-          <Ionicons name="send" size={18} color="#fff" />
+        <Pressable onPress={onEnviar} style={styles.sendWrap}>
+          <LinearGradient colors={[c.primary, c.accent]} style={styles.send}>
+            <Ionicons name="send" size={18} color="#fff" />
+          </LinearGradient>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -85,17 +89,26 @@ function MensajeRow({ msg }: { msg: MensajeForo }) {
   const c = useTheme();
   const esStaff = msg.autorTipo === 'instructor' || msg.autorTipo === 'admin';
   return (
-    <View style={[styles.msg, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.msg, { backgroundColor: esStaff ? c.accentSoft : c.bg, borderColor: c.borderLight }]}>
       <View style={styles.msgHead}>
-        <ScaledText baseSize={13} style={{ color: esStaff ? c.primary : c.text, fontWeight: '700' }}>
-          {msg.autorNombre}
-          {esStaff ? ' · Instructor' : ''}
-        </ScaledText>
-        <ScaledText baseSize={11} style={{ color: c.textSoft }}>
-          {fmtFecha(msg.createdAt)}
-        </ScaledText>
+        <View style={styles.authorRow}>
+          <View style={[styles.avatar, { backgroundColor: esStaff ? c.primary : c.border }]}>
+            <ScaledText baseSize={11} style={{ color: esStaff ? '#fff' : c.text, fontWeight: '700' }}>
+              {msg.autorNombre.charAt(0).toUpperCase()}
+            </ScaledText>
+          </View>
+          <View>
+            <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700' }}>
+              {msg.autorNombre}
+              {esStaff ? ' · Instructor' : ''}
+            </ScaledText>
+            <ScaledText baseSize={10} style={{ color: c.textSoft }}>
+              {fmtFecha(msg.createdAt)}
+            </ScaledText>
+          </View>
+        </View>
       </View>
-      <ScaledText baseSize={14} style={{ color: c.text, marginTop: 4 }}>
+      <ScaledText baseSize={14} style={{ color: c.text, marginTop: space.sm, lineHeight: 20 }}>
         {msg.texto}
       </ScaledText>
     </View>
@@ -103,20 +116,38 @@ function MensajeRow({ msg }: { msg: MensajeForo }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, marginBottom: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  list: { paddingBottom: 8, flexGrow: 1 },
-  msg: { borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 8 },
-  msgHead: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  root: { flex: 1, borderWidth: 1, borderRadius: radius.lg, overflow: 'hidden' },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    margin: space.md,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+    borderRadius: radius.pill,
+    gap: 6,
+  },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  list: { paddingHorizontal: space.md, paddingBottom: space.sm, flexGrow: 1 },
+  empty: { alignItems: 'center', padding: space.xxl },
+  msg: { borderWidth: 1, borderRadius: radius.md, padding: space.md, marginBottom: space.sm },
+  msgHead: { flexDirection: 'row', justifyContent: 'space-between' },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 8,
-    gap: 8,
+    borderTopWidth: 1,
+    padding: space.sm,
+    gap: space.sm,
   },
-  input: { flex: 1, fontSize: 15, maxHeight: 100, padding: 4 },
-  send: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  input: { flex: 1, fontSize: 15, maxHeight: 100, padding: space.sm },
+  sendWrap: { borderRadius: 22, overflow: 'hidden' },
+  send: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

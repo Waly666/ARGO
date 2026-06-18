@@ -3,6 +3,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { portalLogin, setTokenGetter } from '../api/client';
 import type { PortalAuthRes, PortalSession } from '../api/types';
 import { SERVIDOR_API_STORAGE_KEY, setRuntimeApiBase } from '../config/apiBase';
+import { clearCachedPortalConfig } from '../storage/portalConfigCache';
+import { initAppRuntime } from '../bootstrap/runtime';
 import { secureDelete, secureGet, secureSet } from '../storage/safeStore';
 
 const TOKEN_KEY = 'argo_aula_token';
@@ -48,12 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) setState({ status: 'signedOut' });
       }, 4000);
       try {
-        const savedApi = await secureGet(SERVIDOR_API_STORAGE_KEY);
-        if (savedApi) setRuntimeApiBase(savedApi);
+        await initAppRuntime();
         const token = await secureGet(TOKEN_KEY);
         const rawUser = await secureGet(USER_KEY);
         if (token && rawUser) {
           const user = JSON.parse(rawUser) as PortalSession;
+          setTokenGetter(() => token);
           if (!cancelled) setState({ status: 'signedIn', token, user });
         } else if (!cancelled) {
           setState({ status: 'signedOut' });
@@ -73,12 +75,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const res = await portalLogin(email.trim(), password);
     const user = sessionFromAuth(res);
+    setTokenGetter(() => res.token);
     await secureSet(TOKEN_KEY, res.token);
     await secureSet(USER_KEY, JSON.stringify(user));
     setState({ status: 'signedIn', token: res.token, user });
   }, []);
 
   const signOut = useCallback(async () => {
+    setTokenGetter(() => null);
     await secureDelete(TOKEN_KEY);
     await secureDelete(USER_KEY);
     setState({ status: 'signedOut' });
@@ -96,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setServidor = useCallback(async (url: string) => {
     setRuntimeApiBase(url);
     await secureSet(SERVIDOR_API_STORAGE_KEY, url);
+    await clearCachedPortalConfig();
   }, []);
 
   const getServidor = useCallback(async () => {

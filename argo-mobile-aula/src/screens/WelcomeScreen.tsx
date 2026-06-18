@@ -1,107 +1,198 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CursoCard } from '../components/CursoCard';
+import { GradientHeader } from '../components/GradientHeader';
+import { WelcomeBrandHeader } from '../components/WelcomeBrandHeader';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { QuickAction } from '../components/QuickAction';
 import { ScaledText } from '../components/ScaledText';
 import { ScreenBody } from '../components/ScreenBody';
-import { SurfaceCard } from '../components/SurfaceCard';
+import { SectionHeader } from '../components/SectionHeader';
 import { usePortalConfig } from '../context/PortalConfigContext';
 import { useTheme } from '../context/ThemeContext';
 import { fetchCursos } from '../api/aulaApi';
 import type { CursoVirtual } from '../api/types';
-import { CursoCard } from '../components/CursoCard';
 import { resolveUploadUrl } from '../utils/uploadUrl';
 import type { RootStackParamList } from '../navigation/types';
+import { radius, space } from '../theme/spacing';
+import { shadow } from '../theme/shadows';
 
 export default function WelcomeScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const { config } = usePortalConfig();
+  const { config, refresh: refreshConfig } = usePortalConfig();
   const c = useTheme();
+  const insets = useSafeAreaInsets();
   const [destacados, setDestacados] = useState<CursoVirtual[]>([]);
 
   const load = useCallback(async () => {
-    try {
-      const rows = await fetchCursos();
-      setDestacados(rows.slice(0, 4));
-    } catch {
-      setDestacados([]);
-    }
-  }, []);
+    await Promise.all([
+      refreshConfig(),
+      (async () => {
+        try {
+          const rows = await fetchCursos();
+          setDestacados(rows.slice(0, 6));
+        } catch {
+          setDestacados([]);
+        }
+      })(),
+    ]);
+  }, [refreshConfig]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  useFocusEffect(
+    useCallback(() => {
+      void refreshConfig();
+    }, [refreshConfig]),
+  );
+
   const heroImg = resolveUploadUrl(config?.site?.tema?.urlHeroAbsoluta) || resolveUploadUrl(config?.site?.tema?.urlHero);
-  const logo = resolveUploadUrl(config?.urlLogoAbsoluta) || resolveUploadUrl(config?.urlLogo);
+  const heroLead = config?.heroTitulo?.trim() || '';
+  const heroSub = config?.heroSubtitulo?.trim() || '';
 
   return (
-    <ScreenBody onRefresh={load}>
-      <LinearGradient colors={[c.primaryDark, c.primary]} style={styles.hero}>
-        {logo ? <Image source={{ uri: logo }} style={styles.logo} resizeMode="contain" /> : null}
-        <ScaledText baseSize={24} style={styles.heroTitle}>
-          {config?.heroTitulo ?? config?.nombreCea ?? 'Aula virtual'}
-        </ScaledText>
-        <ScaledText baseSize={15} style={styles.heroSub}>
-          {config?.heroSubtitulo ?? 'Capacitación en línea'}
-        </ScaledText>
-        {heroImg ? <Image source={{ uri: heroImg }} style={styles.heroImg} resizeMode="cover" /> : null}
-        <PrimaryButton label="Iniciar sesión" onPress={() => nav.navigate('Login')} icon="log-in-outline" />
-        <Pressable onPress={() => nav.navigate('Catalogo')} style={styles.linkBtn}>
-          <ScaledText baseSize={15} style={{ color: '#fff', fontWeight: '600' }}>
-            Explorar cursos
-          </ScaledText>
-        </Pressable>
-      </LinearGradient>
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <GradientHeader height={188}>
+        <WelcomeBrandHeader />
+      </GradientHeader>
 
-      {destacados.length > 0 ? (
-        <SurfaceCard style={{ marginTop: 16 }}>
-          <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800', marginBottom: 12 }}>
-            Cursos destacados
-          </ScaledText>
-          {destacados.map((curso) => (
-            <CursoCard
-              key={String(curso.idPrograma)}
-              curso={curso}
-              onPress={() =>
-                nav.navigate('CursoDetalle', { id: String(curso.idPrograma), titulo: curso.nombreProg })
-              }
-            />
-          ))}
-        </SurfaceCard>
-      ) : null}
+      <ScreenBody onRefresh={load}>
+        {heroLead || heroSub ? (
+          <View
+            style={[
+              styles.heroTextCard,
+              shadow.sm,
+              {
+                backgroundColor: c.card,
+                borderColor: c.borderLight,
+                borderWidth: 1,
+                marginTop: space.md,
+              },
+            ]}
+          >
+            {heroLead ? (
+              <ScaledText baseSize={16} style={[styles.heroLead, { color: c.text }]}>
+                {heroLead}
+              </ScaledText>
+            ) : null}
+            {heroSub && heroSub !== heroLead ? (
+              <ScaledText
+                baseSize={14}
+                style={[styles.heroSub, { color: c.textSoft }, heroLead ? { marginTop: space.sm } : null]}
+              >
+                {heroSub}
+              </ScaledText>
+            ) : null}
+          </View>
+        ) : null}
+        {heroImg ? (
+          <View style={[styles.heroImgWrap, shadow.lg]}>
+            <Image source={{ uri: heroImg }} style={styles.heroImg} resizeMode="cover" />
+          </View>
+        ) : null}
 
-      <View style={styles.quick}>
-        <PrimaryButton
-          label="Consultar certificados"
-          variant="ghost"
-          onPress={() => nav.navigate('ConsultaCertificados')}
-          icon="ribbon-outline"
-          fullWidth
-        />
-        {config?.registroAbierto !== false ? (
+        <View style={[styles.ctaCard, shadow.md, { backgroundColor: c.card, marginTop: heroImg ? space.lg : 0 }]}>
+          <PrimaryButton label="Iniciar sesión" onPress={() => nav.navigate('Login')} icon="log-in-outline" fullWidth size="lg" />
           <PrimaryButton
-            label="Registrarse"
-            variant="ghost"
-            onPress={() => nav.navigate('Registro')}
-            icon="person-add-outline"
+            label="Explorar catálogo"
+            variant="secondary"
+            onPress={() => nav.navigate('Catalogo')}
+            icon="compass-outline"
             fullWidth
           />
+        </View>
+
+        <View style={styles.actions}>
+          <QuickAction
+            label="Certificados"
+            subtitle="Consulta por documento"
+            icon="ribbon-outline"
+            tint={c.accent}
+            onPress={() => nav.navigate('ConsultaCertificados')}
+          />
+          {config?.registroAbierto !== false ? (
+            <QuickAction
+              label="Registrarse"
+              subtitle="Crea tu cuenta"
+              icon="person-add-outline"
+              tint={c.ok}
+              onPress={() => nav.navigate('Registro')}
+            />
+          ) : (
+            <QuickAction
+              label="Catálogo"
+              subtitle="Ver todos los cursos"
+              icon="library-outline"
+              onPress={() => nav.navigate('Catalogo')}
+            />
+          )}
+        </View>
+
+        {destacados.length > 0 ? (
+          <>
+            <SectionHeader title="Cursos destacados" subtitle="Empieza hoy" icon="star-outline" />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll}>
+              {destacados.map((curso) => (
+                <View key={String(curso.idPrograma)} style={styles.hItem}>
+                  <CursoCard
+                    curso={curso}
+                    layout="vertical"
+                    onPress={() =>
+                      nav.navigate('CursoDetalle', { id: String(curso.idPrograma), titulo: curso.nombreProg })
+                    }
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </>
         ) : null}
-      </View>
-    </ScreenBody>
+
+        <View style={{ height: insets.bottom + space.lg }} />
+      </ScreenBody>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { borderRadius: 20, padding: 20, marginBottom: 4 },
-  logo: { width: 100, height: 56, marginBottom: 8, alignSelf: 'center' },
-  heroTitle: { color: '#fff', fontWeight: '800', textAlign: 'center' },
-  heroSub: { color: 'rgba(255,255,255,0.92)', textAlign: 'center', marginBottom: 16, marginTop: 6 },
-  heroImg: { width: '100%', height: 140, borderRadius: 12, marginBottom: 16 },
-  linkBtn: { alignItems: 'center', marginTop: 12, padding: 8 },
-  quick: { marginTop: 16, gap: 8 },
+  heroTextCard: {
+    borderRadius: radius.lg,
+    padding: space.lg,
+    marginBottom: space.lg,
+  },
+  heroLead: {
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  heroSub: {
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  heroImgWrap: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginBottom: space.sm,
+  },
+  heroImg: { width: '100%', height: 160 },
+  ctaCard: {
+    borderRadius: radius.lg,
+    padding: space.lg,
+    gap: space.md,
+    marginBottom: space.lg,
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: space.md,
+    justifyContent: 'space-between',
+    marginBottom: space.xl,
+  },
+  hScroll: { marginHorizontal: -space.lg, paddingHorizontal: space.lg, marginBottom: space.lg },
+  hItem: { width: 280, marginRight: space.md },
 });

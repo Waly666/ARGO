@@ -2,17 +2,34 @@ import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { useTheme } from '../context/ThemeContext';
+import { radius, space } from '../theme/spacing';
+import { shadow } from '../theme/shadows';
 
-type Props = { children: React.ReactNode; style?: ViewStyle; elevated?: boolean };
+type Props = {
+  children: React.ReactNode;
+  style?: ViewStyle;
+  elevated?: boolean;
+  padding?: 'md' | 'lg';
+  /** Fondo suave de acento (sin cambiar el layout). */
+  tint?: string;
+  /** Borde izquierdo de color. */
+  accentLeft?: string;
+};
 
-export function SurfaceCard({ children, style, elevated = true }: Props) {
+export function SurfaceCard({ children, style, elevated = true, padding = 'lg', tint, accentLeft }: Props) {
   const c = useTheme();
   return (
     <View
       style={[
         styles.card,
-        { backgroundColor: c.card, borderColor: c.border },
-        elevated && styles.shadow,
+        {
+          backgroundColor: tint ?? c.card,
+          borderWidth: 1,
+          borderColor: accentLeft ? `${accentLeft}40` : c.borderLight,
+          ...(accentLeft ? { borderLeftWidth: 4, borderLeftColor: accentLeft } : {}),
+          padding: padding === 'lg' ? space.lg : space.md,
+        },
+        elevated && shadow.md,
         style,
       ]}
     >
@@ -22,12 +39,5 @@ export function SurfaceCard({ children, style, elevated = true }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 16, padding: 14 },
-  shadow: {
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
+  card: { borderWidth: 1, borderRadius: radius.lg },
 });

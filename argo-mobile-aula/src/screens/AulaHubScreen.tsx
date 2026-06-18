@@ -1,11 +1,16 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { ComponentProps } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { usePortalConfig } from '../context/PortalConfigContext';
+import { PortalHeaderTitle } from '../components/PortalHeaderTitle';
 import { useTheme } from '../context/ThemeContext';
 import type { AulaTabParamList } from '../navigation/types';
+import { radius, space } from '../theme/spacing';
+import { shadow } from '../theme/shadows';
 import TableroPanel from './aula/TableroPanel';
 import MisCursosPanel from './aula/MisCursosPanel';
 import PresencialesPanel from './aula/PresencialesPanel';
@@ -17,42 +22,78 @@ import PerfilPanel from './aula/PerfilPanel';
 const Tab = createBottomTabNavigator<AulaTabParamList>();
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
-const TAB_ICONS: Record<keyof AulaTabParamList, IonName> = {
-  Tablero: 'grid-outline',
-  MisCursos: 'book-outline',
-  Presenciales: 'people-outline',
-  Puntajes: 'stats-chart-outline',
-  Certificados: 'ribbon-outline',
-  Foro: 'chatbubbles-outline',
-  Perfil: 'person-outline',
+const TAB_ICONS: Record<keyof AulaTabParamList, { active: IonName; inactive: IonName }> = {
+  Tablero: { active: 'grid', inactive: 'grid-outline' },
+  MisCursos: { active: 'book', inactive: 'book-outline' },
+  Presenciales: { active: 'people', inactive: 'people-outline' },
+  Puntajes: { active: 'stats-chart', inactive: 'stats-chart-outline' },
+  Certificados: { active: 'ribbon', inactive: 'ribbon-outline' },
+  Foro: { active: 'chatbubbles', inactive: 'chatbubbles-outline' },
+  Perfil: { active: 'person', inactive: 'person-outline' },
+};
+
+function GradientHeaderBg() {
+  const c = useTheme();
+  return <LinearGradient colors={c.gradientHero} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />;
+}
+
+const TAB_SUBTITLES: Record<keyof AulaTabParamList, string> = {
+  Tablero: 'Inicio',
+  MisCursos: 'Mis cursos',
+  Presenciales: 'Clases presenciales',
+  Puntajes: 'Mis puntajes',
+  Certificados: 'Certificados',
+  Foro: 'Foro',
+  Perfil: 'Mi perfil',
 };
 
 export default function AulaHubScreen() {
   const c = useTheme();
-  const { config } = usePortalConfig();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: c.primaryDark },
+        headerBackground: () => <GradientHeaderBg />,
         headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700' },
-        headerTitle: config?.nombreCea ?? 'Mi aula',
+        headerTitleStyle: { fontWeight: '800', fontSize: 17 },
+        headerTitle: () => <PortalHeaderTitle subtitle={TAB_SUBTITLES[route.name]} />,
+        headerShadowVisible: false,
         tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: c.textSoft,
-        tabBarStyle: { borderTopColor: c.border },
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarStyle: {
+          backgroundColor: c.tabBar,
+          borderTopWidth: 0,
+          height: 58 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom - 4 : space.sm,
+          paddingTop: space.sm,
+          ...shadow.md,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
+          marginTop: -2,
+        },
+        tabBarIcon: ({ color, focused, size }) => (
+          <Ionicons
+            name={focused ? TAB_ICONS[route.name].active : TAB_ICONS[route.name].inactive}
+            size={focused ? size + 1 : size}
+            color={color}
+          />
         ),
       })}
     >
-      <Tab.Screen name="Tablero" component={TableroPanel} options={{ title: 'Tablero', tabBarLabel: 'Inicio' }} />
-      <Tab.Screen name="MisCursos" component={MisCursosPanel} options={{ title: 'Mis cursos' }} />
-      <Tab.Screen name="Presenciales" component={PresencialesPanel} options={{ title: 'Presenciales' }} />
-      <Tab.Screen name="Puntajes" component={PuntajesPanel} options={{ title: 'Puntajes' }} />
-      <Tab.Screen name="Certificados" component={CertificadosPanel} options={{ title: 'Certificados' }} />
-      <Tab.Screen name="Foro" component={ForoPanel} options={{ title: 'Foro', headerShown: false }} />
-      <Tab.Screen name="Perfil" component={PerfilPanel} options={{ title: 'Perfil' }} />
+      <Tab.Screen name="Tablero" component={TableroPanel} options={{ title: 'Inicio', tabBarLabel: 'Inicio' }} />
+      <Tab.Screen name="MisCursos" component={MisCursosPanel} options={{ title: 'Mis cursos', tabBarLabel: 'Cursos' }} />
+      <Tab.Screen name="Presenciales" component={PresencialesPanel} options={{ title: 'Presenciales', tabBarLabel: 'Clases' }} />
+      <Tab.Screen name="Puntajes" component={PuntajesPanel} options={{ title: 'Mis puntajes', tabBarLabel: 'Notas' }} />
+      <Tab.Screen name="Certificados" component={CertificadosPanel} options={{ title: 'Certificados', tabBarLabel: 'Certs' }} />
+      <Tab.Screen
+        name="Foro"
+        component={ForoPanel}
+        options={{ title: 'Foro', tabBarLabel: 'Foro', headerShown: false }}
+      />
+      <Tab.Screen name="Perfil" component={PerfilPanel} options={{ title: 'Mi perfil', tabBarLabel: 'Perfil' }} />
     </Tab.Navigator>
   );
 }

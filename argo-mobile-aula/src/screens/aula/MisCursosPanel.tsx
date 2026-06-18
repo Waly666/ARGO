@@ -1,35 +1,27 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { CursoCard } from '../../components/CursoCard';
 import { EmptyState } from '../../components/EmptyState';
+import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenBody } from '../../components/ScreenBody';
+import { SectionHeader } from '../../components/SectionHeader';
 import { ScaledText } from '../../components/ScaledText';
+import { SurfaceCard } from '../../components/SurfaceCard';
 import { useTheme } from '../../context/ThemeContext';
-import { fetchMisCursos } from '../../api/aulaApi';
+import { useMisCursos } from '../../hooks/useMisCursos';
 import type { CursoVirtual } from '../../api/types';
 import { puedeCursar } from '../../utils/cursoUtils';
 import { resolvePlayerUrl } from '../../utils/uploadUrl';
 import type { RootStackParamList } from '../../navigation/types';
+import { space } from '../../theme/spacing';
 
 export default function MisCursosPanel() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const c = useTheme();
-  const [cursos, setCursos] = useState<CursoVirtual[]>([]);
-
-  const load = useCallback(async () => {
-    try {
-      setCursos(await fetchMisCursos());
-    } catch {
-      setCursos([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { cursos, loading, error, reload } = useMisCursos();
 
   function abrir(curso: CursoVirtual) {
     if (!puedeCursar(curso)) {
@@ -50,15 +42,25 @@ export default function MisCursosPanel() {
   }
 
   return (
-    <ScreenBody onRefresh={load}>
-      <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800', marginBottom: 12 }}>
-        Mis cursos
-      </ScaledText>
-      {cursos.length === 0 ? (
-        <EmptyState title="Sin cursos matriculados" icon="book-outline" />
+    <ScreenBody onRefresh={reload} refreshing={loading}>
+      <SectionHeader
+        title="Mis cursos"
+        subtitle={`${cursos.length} matriculado(s)`}
+        icon="book-outline"
+      />
+      {error ? (
+        <SurfaceCard style={{ marginBottom: space.md }}>
+          <ScaledText baseSize={14} style={{ color: c.danger, marginBottom: space.sm }}>
+            {error}
+          </ScaledText>
+          <PrimaryButton label="Reintentar" onPress={() => void reload()} variant="secondary" />
+        </SurfaceCard>
+      ) : null}
+      {!loading && cursos.length === 0 ? (
+        <EmptyState title="Sin cursos matriculados" subtitle="Matricúlate desde el catálogo" icon="book-outline" />
       ) : (
         cursos.map((curso) => (
-          <CursoCard key={String(curso.idPrograma)} curso={curso} onPress={() => abrir(curso)} />
+          <CursoCard key={String(curso.idPrograma)} curso={curso} layout="horizontal" onPress={() => abrir(curso)} />
         ))
       )}
     </ScreenBody>

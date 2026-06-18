@@ -29,6 +29,13 @@ function applyDefaultBackendPort(u: string): string {
 }
 
 let runtimeApiBase: string | null = null;
+const apiBaseListeners = new Set<() => void>();
+
+/** Notifica cuando cambia la URL del API (servidor guardado o configurado en login). */
+export function subscribeApiBase(listener: () => void): () => void {
+  apiBaseListeners.add(listener);
+  return () => apiBaseListeners.delete(listener);
+}
 
 export function normalizeApiBaseUrl(input: string): string {
   let u = input.trim();
@@ -43,11 +50,15 @@ export function normalizeApiBaseUrl(input: string): string {
 }
 
 export function setRuntimeApiBase(apiBase: string | null): void {
+  const prev = runtimeApiBase;
   if (!apiBase?.trim()) {
     runtimeApiBase = null;
-    return;
+  } else {
+    runtimeApiBase = normalizeApiBaseUrl(apiBase) || null;
   }
-  runtimeApiBase = normalizeApiBaseUrl(apiBase) || null;
+  if (prev !== runtimeApiBase) {
+    apiBaseListeners.forEach((fn) => fn());
+  }
 }
 
 export function getApiBaseUrl(): string {

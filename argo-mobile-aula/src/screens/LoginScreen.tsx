@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,14 +8,17 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
 
+import { GradientHeader } from '../components/GradientHeader';
 import { IconInput } from '../components/IconInput';
+import { PortalLogo } from '../components/PortalLogo';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
+import { APP_BRANDING } from '../config/appBranding';
 import { useAuth } from '../context/AuthContext';
 import { usePortalConfig } from '../context/PortalConfigContext';
 import { useTheme } from '../context/ThemeContext';
@@ -24,8 +26,9 @@ import { pingHealth } from '../api/client';
 import { getApiBaseUrl, SERVIDOR_API_STORAGE_KEY } from '../config/apiBase';
 import { loadSavedLogin, persistSavedLogin } from '../storage/loginCredentials';
 import { secureGet } from '../storage/safeStore';
-import { resolveUploadUrl } from '../utils/uploadUrl';
 import type { RootStackParamList } from '../navigation/types';
+import { radius, space } from '../theme/spacing';
+import { shadow } from '../theme/shadows';
 
 export default function LoginScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -85,27 +88,34 @@ export default function LoginScreen() {
     }
   }
 
-  const logo = resolveUploadUrl(config?.urlLogoAbsoluta) || resolveUploadUrl(config?.urlLogo);
-
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <LinearGradient colors={[c.primaryDark, c.primary, c.accent]} style={styles.hero}>
-        {logo ? (
-          <Image source={{ uri: logo }} style={styles.logo} resizeMode="contain" />
-        ) : (
-          <ScaledText baseSize={28} style={styles.heroTitle}>
-            {config?.nombreCea ?? 'ARGO Aula'}
-          </ScaledText>
-        )}
-        <ScaledText baseSize={15} style={styles.heroSub}>
-          Portal del alumno
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <GradientHeader height={172}>
+        <Pressable onPress={() => nav.goBack()} style={styles.back} hitSlop={12}>
+          <Ionicons name="arrow-back" size={22} color="#fff" />
+        </Pressable>
+        <PortalLogo width={120} height={56} hideLetterFallback />
+        <ScaledText baseSize={15} style={styles.brandAula}>
+          {APP_BRANDING.tituloApp}
         </ScaledText>
-      </LinearGradient>
-      <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={styles.form}>
-        <SurfaceCard>
-          <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800', marginBottom: 16 }}>
+        <ScaledText baseSize={16} style={styles.brandEmpresa}>
+          {APP_BRANDING.nombreEmpresa}
+        </ScaledText>
+      </GradientHeader>
+
+      <ScrollView
+        contentContainerStyle={styles.form}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <SurfaceCard style={{ marginTop: -28, borderRadius: radius.xl, ...shadow.lg }}>
+          <ScaledText baseSize={22} style={{ color: c.text, fontWeight: '800', marginBottom: 4 }}>
             Iniciar sesión
           </ScaledText>
+          <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: space.lg }}>
+            Accede a tus cursos y certificados
+          </ScaledText>
+
           <IconInput
             value={email}
             onChangeText={setEmail}
@@ -120,16 +130,25 @@ export default function LoginScreen() {
             icon="lock-closed-outline"
             secureTextEntry
           />
+
           <Pressable onPress={() => setRemember((r) => !r)} style={styles.remember}>
+            <View style={[styles.check, { borderColor: remember ? c.primary : c.border, backgroundColor: remember ? c.primary : c.card }]}>
+              {remember ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+            </View>
             <ScaledText baseSize={14} style={{ color: c.textSoft }}>
-              {remember ? '☑' : '☐'} Recordar credenciales
+              Recordar credenciales
             </ScaledText>
           </Pressable>
+
           {err ? (
-            <ScaledText baseSize={14} style={{ color: c.danger, marginBottom: 8 }}>
-              {err}
-            </ScaledText>
+            <View style={[styles.alert, { backgroundColor: c.dangerSoft }]}>
+              <Ionicons name="alert-circle" size={18} color={c.danger} />
+              <ScaledText baseSize={14} style={{ color: c.danger, flex: 1, marginLeft: 8 }}>
+                {err}
+              </ScaledText>
+            </View>
           ) : null}
+
           {status ? (
             <View style={styles.statusRow}>
               <ActivityIndicator size="small" color={c.primary} />
@@ -138,9 +157,12 @@ export default function LoginScreen() {
               </ScaledText>
             </View>
           ) : null}
-          <PrimaryButton label="Entrar" onPress={onLogin} loading={loading} fullWidth icon="log-in-outline" />
-          <Pressable onPress={() => setShowServer((s) => !s)} style={{ marginTop: 12 }}>
-            <ScaledText baseSize={13} style={{ color: c.textSoft, textAlign: 'center' }}>
+
+          <PrimaryButton label="Entrar al aula" onPress={onLogin} loading={loading} fullWidth icon="log-in-outline" size="lg" />
+
+          <Pressable onPress={() => setShowServer((s) => !s)} style={styles.serverToggle}>
+            <Ionicons name="server-outline" size={16} color={c.textSoft} />
+            <ScaledText baseSize={13} style={{ color: c.textSoft, marginLeft: 6 }}>
               {showServer ? 'Ocultar servidor' : 'Configurar servidor'}
             </ScaledText>
           </Pressable>
@@ -148,42 +170,82 @@ export default function LoginScreen() {
             <IconInput
               value={servidor}
               onChangeText={setServidorLocal}
-              placeholder="https://su-servidor.com"
-              icon="server-outline"
+              placeholder="https://infravial.cloud"
+              icon="globe-outline"
             />
           ) : null}
         </SurfaceCard>
+
         <View style={styles.links}>
           {config?.registroAbierto !== false ? (
-            <Pressable onPress={() => nav.navigate('Registro')}>
-              <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '600' }}>
-                Crear cuenta
-              </ScaledText>
-            </Pressable>
+            <LinkRow label="Crear cuenta nueva" icon="person-add-outline" onPress={() => nav.navigate('Registro')} />
           ) : null}
-          <Pressable onPress={() => nav.navigate('Catalogo')}>
-            <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '600' }}>
-              Ver catálogo de cursos
-            </ScaledText>
-          </Pressable>
-          <Pressable onPress={() => nav.navigate('ConsultaCertificados')}>
-            <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '600' }}>
-              Consultar certificados
-            </ScaledText>
-          </Pressable>
+          <LinkRow label="Explorar catálogo" icon="compass-outline" onPress={() => nav.navigate('Catalogo')} />
+          <LinkRow label="Consultar certificados" icon="ribbon-outline" onPress={() => nav.navigate('ConsultaCertificados')} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+import type { ComponentProps } from 'react';
+
+function LinkRow({
+  label,
+  icon,
+  onPress,
+}: {
+  label: string;
+  icon: ComponentProps<typeof Ionicons>['name'];
+  onPress: () => void;
+}) {
+  const c = useTheme();
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.linkRow, { opacity: pressed ? 0.7 : 1 }]}>
+      <Ionicons name={icon} size={18} color={c.primary} />
+      <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '600', marginLeft: 10 }}>
+        {label}
+      </ScaledText>
+      <Ionicons name="chevron-forward" size={16} color={c.textSoft} style={{ marginLeft: 'auto' }} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  hero: { paddingTop: 56, paddingBottom: 32, paddingHorizontal: 24, alignItems: 'center' },
-  logo: { width: 120, height: 80 },
-  heroTitle: { color: '#fff', fontWeight: '800' },
-  heroSub: { color: 'rgba(255,255,255,0.9)', marginTop: 8 },
-  form: { padding: 16, paddingBottom: 40 },
-  remember: { marginBottom: 12 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  links: { marginTop: 20, gap: 14, alignItems: 'center' },
+  back: { alignSelf: 'flex-start', marginBottom: space.sm },
+  brandEmpresa: { color: 'rgba(255,255,255,0.95)', fontWeight: '700', textAlign: 'center', marginTop: 4 },
+  brandAula: {
+    color: '#fff',
+    fontWeight: '800',
+    textAlign: 'center',
+    marginTop: space.sm,
+    letterSpacing: 1.5,
+  },
+  form: { paddingHorizontal: space.lg, paddingBottom: 40 },
+  formCard: { borderRadius: radius.xl },
+  remember: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.lg },
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: space.md,
+    borderRadius: radius.md,
+    marginBottom: space.md,
+  },
+  statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: space.md },
+  serverToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: space.lg },
+  links: { marginTop: space.xl, gap: space.sm },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: space.md,
+    paddingHorizontal: space.sm,
+  },
 });

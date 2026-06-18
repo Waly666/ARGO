@@ -20,8 +20,54 @@ import type {
 
 const B = '/aula-virtual';
 
-export function fetchPortalConfig(): Promise<PortalConfig> {
-  return apiFetch<PortalConfig>(`${B}/config`, { auth: false });
+type AuthPublicConfig = {
+  nombreEmpresa?: string;
+  urlLogo?: string | null;
+};
+
+/** Config del portal; si falla el endpoint del aula, completa marca desde /auth/config (recibos). */
+export async function fetchPortalConfig(): Promise<PortalConfig> {
+  let cfg: Partial<PortalConfig> = {};
+
+  try {
+    cfg = await apiFetch<PortalConfig>(`${B}/config`, { auth: false });
+  } catch {
+    /* endpoint aula-virtual/config puede no existir en servidores antiguos */
+  }
+
+  try {
+    const auth = await apiFetch<AuthPublicConfig>('/auth/config', { auth: false });
+    if (auth.nombreEmpresa?.trim()) {
+      cfg.nombreCea = cfg.nombreCea?.trim() || auth.nombreEmpresa.trim();
+    }
+    if (auth.urlLogo) {
+      cfg.urlLogo = cfg.urlLogo?.trim() || auth.urlLogo;
+      cfg.urlLogoAbsoluta = cfg.urlLogoAbsoluta?.trim() || auth.urlLogo;
+    }
+  } catch {
+    /* sin respaldo de recibos */
+  }
+
+  const nombreCea = String(cfg.nombreCea || '').trim();
+
+  return {
+    nombreCea: nombreCea || 'CEA',
+    heroTitulo: cfg.heroTitulo || 'Aula virtual',
+    heroSubtitulo: cfg.heroSubtitulo || '',
+    urlLogo: cfg.urlLogo,
+    urlLogoAbsoluta: cfg.urlLogoAbsoluta,
+    registroAbierto: cfg.registroAbierto,
+    emailVerificacionRegistro: cfg.emailVerificacionRegistro,
+    turnstileSiteKey: cfg.turnstileSiteKey,
+    formularioContactoActivo: cfg.formularioContactoActivo,
+    formularioPqrActivo: cfg.formularioPqrActivo,
+    site: cfg.site,
+    nit: cfg.nit,
+    direccion: cfg.direccion,
+    ciudad: cfg.ciudad,
+    telefono: cfg.telefono,
+    email: cfg.email,
+  };
 }
 
 export function fetchCategorias(): Promise<CategoriaVirtual[]> {
@@ -110,7 +156,7 @@ export function buscarEmpresas(q: string) {
 }
 
 export function fetchMisCursos(): Promise<CursoVirtual[]> {
-  return apiFetch<CursoVirtual[]>(`${B}/mis-cursos`);
+  return apiFetch<CursoVirtual[]>(`${B}/mis-cursos?_=${Date.now()}`);
 }
 
 export function fetchMisClasesPresenciales(): Promise<CohorteAlumno[]> {

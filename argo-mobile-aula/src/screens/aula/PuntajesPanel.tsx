@@ -1,82 +1,94 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { EmptyState } from '../../components/EmptyState';
 import { ScaledText } from '../../components/ScaledText';
 import { ScreenBody } from '../../components/ScreenBody';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { useTheme } from '../../context/ThemeContext';
-import { fetchMisCursos } from '../../api/aulaApi';
-import type { CursoVirtual } from '../../api/types';
+import { useMisCursos } from '../../hooks/useMisCursos';
 import { pctCurso } from '../../utils/cursoUtils';
+import { radius, space } from '../../theme/spacing';
 
 export default function PuntajesPanel() {
   const c = useTheme();
-  const [cursos, setCursos] = useState<CursoVirtual[]>([]);
-
-  const load = useCallback(async () => {
-    try {
-      setCursos(await fetchMisCursos());
-    } catch {
-      setCursos([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { cursos, loading, reload } = useMisCursos();
 
   const conProgreso = cursos.filter((x) => pctCurso(x) > 0 || (x.progreso?.mejorNotaEval ?? null) != null);
 
   return (
-    <ScreenBody onRefresh={load}>
-      <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800', marginBottom: 4 }}>
-        Mis puntajes
-      </ScaledText>
-      <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 16 }}>
-        Avance y evaluaciones de tus cursos virtuales
-      </ScaledText>
-      {conProgreso.length === 0 ? (
-        <EmptyState title="Sin puntajes aún" subtitle="Matricúlese y avance en un curso" icon="stats-chart-outline" />
+    <ScreenBody onRefresh={reload} refreshing={loading}>
+      <LinearGradient colors={c.gradientViolet} style={styles.banner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+        <ScaledText baseSize={18} style={{ color: '#fff', fontWeight: '800' }}>
+          Mis puntajes
+        </ScaledText>
+        <ScaledText baseSize={13} style={{ color: 'rgba(255,255,255,0.9)', marginTop: 4 }}>
+          Avance y evaluaciones de tus cursos
+        </ScaledText>
+      </LinearGradient>
+
+      {!loading && conProgreso.length === 0 ? (
+        <EmptyState title="Sin puntajes aún" subtitle="Avanza en un curso para ver tus notas" icon="stats-chart-outline" />
       ) : (
-        conProgreso.map((curso) => (
-          <SurfaceCard key={String(curso.idPrograma)} style={{ marginBottom: 12 }}>
-            <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '700' }}>
-              {curso.nombreProg}
-            </ScaledText>
-            <View style={styles.grid}>
-              <Metric label="Completitud" value={`${Math.round(pctCurso(curso))}%`} />
-              <Metric
-                label="Mejor nota"
-                value={curso.progreso?.mejorNotaEval != null ? String(curso.progreso.mejorNotaEval) : '—'}
-              />
-              <Metric label="Intentos" value={String(curso.progreso?.intentosEval ?? 0)} />
-              <Metric label="Aprobado" value={curso.progreso?.aprobado ? 'Sí' : 'No'} />
-            </View>
-            {curso.progreso?.clases?.length ? (
-              <View style={{ marginTop: 10 }}>
-                {curso.progreso.clases.map((cl) => (
-                  <ScaledText key={cl.numero} baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
-                    Clase {cl.numero}: {Math.round(cl.pct)}% {cl.aprobada ? '✓' : ''}
-                  </ScaledText>
-                ))}
+        conProgreso.map((curso, idx) => {
+          const tint = idx % 2 === 0 ? c.violetSoft : c.accentSoft;
+          const accent = idx % 2 === 0 ? c.violet : c.accent;
+          return (
+            <SurfaceCard key={String(curso.idPrograma)} style={{ marginBottom: space.md }} tint={tint} accentLeft={accent}>
+              <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '700' }}>
+                {curso.nombreProg}
+              </ScaledText>
+              <View style={styles.grid}>
+                <Metric
+                  label="Completitud"
+                  value={`${Math.round(pctCurso(curso))}%`}
+                  bg={c.accentSoft}
+                  color={c.primary}
+                />
+                <Metric
+                  label="Mejor nota"
+                  value={curso.progreso?.mejorNotaEval != null ? String(curso.progreso.mejorNotaEval) : '—'}
+                  bg={c.violetSoft}
+                  color={c.violet}
+                />
+                <Metric
+                  label="Intentos"
+                  value={String(curso.progreso?.intentosEval ?? 0)}
+                  bg={c.foroSoft}
+                  color={c.accent}
+                />
+                <Metric
+                  label="Aprobado"
+                  value={curso.progreso?.aprobado ? 'Sí' : 'No'}
+                  bg={curso.progreso?.aprobado ? c.okSoft : c.warnSoft}
+                  color={curso.progreso?.aprobado ? c.ok : c.warn}
+                />
               </View>
-            ) : null}
-          </SurfaceCard>
-        ))
+              {curso.progreso?.clases?.length ? (
+                <View style={[styles.clasesBox, { backgroundColor: `${accent}18` }]}>
+                  {curso.progreso.clases.map((cl) => (
+                    <ScaledText key={cl.numero} baseSize={12} style={{ color: c.text, marginTop: 2 }}>
+                      Clase {cl.numero}: {Math.round(cl.pct)}% {cl.aprobada ? '✓' : ''}
+                    </ScaledText>
+                  ))}
+                </View>
+              ) : null}
+            </SurfaceCard>
+          );
+        })
       )}
     </ScreenBody>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  const c = useTheme();
+function Metric({ label, value, bg, color }: { label: string; value: string; bg: string; color: string }) {
   return (
-    <View style={styles.metric}>
-      <ScaledText baseSize={11} style={{ color: c.textSoft }}>
+    <View style={[styles.metric, { backgroundColor: bg }]}>
+      <ScaledText baseSize={11} style={{ color: color, fontWeight: '600', opacity: 0.85 }}>
         {label}
       </ScaledText>
-      <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '700' }}>
+      <ScaledText baseSize={16} style={{ color: color, fontWeight: '800', marginTop: 2 }}>
         {value}
       </ScaledText>
     </View>
@@ -84,6 +96,20 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, gap: 12 },
-  metric: { width: '45%' },
+  banner: {
+    borderRadius: radius.lg,
+    padding: space.lg,
+    marginBottom: space.lg,
+  },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: space.md, gap: space.sm },
+  metric: {
+    width: '47%',
+    borderRadius: radius.md,
+    padding: space.md,
+  },
+  clasesBox: {
+    marginTop: space.md,
+    borderRadius: radius.md,
+    padding: space.md,
+  },
 });

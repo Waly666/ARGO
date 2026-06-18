@@ -5,13 +5,19 @@ export function pctCurso(c: CursoVirtual): number {
 }
 
 export function cursoCompletado(c: CursoVirtual): boolean {
-  const p = pctCurso(c);
-  return p >= 100 || !!c.progreso?.aprobado;
+  const p = c.progreso;
+  return !!(p?.aprobado || p?.certificadoEmitido || pctCurso(c) >= 100);
 }
 
 export function cursoEnProgreso(c: CursoVirtual): boolean {
   const p = pctCurso(c);
   return p > 0 && !cursoCompletado(c);
+}
+
+/** Igual que el portal web: en progreso o matriculado sin empezar (0 %). */
+export function cursoParaContinuar(c: CursoVirtual): boolean {
+  if (!puedeCursar(c)) return false;
+  return cursoEnProgreso(c) || (pctCurso(c) === 0 && !!c.tienePaquete);
 }
 
 export function puedeCursar(c: CursoVirtual): boolean {
