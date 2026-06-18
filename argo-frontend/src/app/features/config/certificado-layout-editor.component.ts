@@ -49,6 +49,8 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   campos = CAMPOS_CERTIFICADO_LAYOUT;
   fuenteMinPt = TAMANO_FUENTE_MIN_PT;
   fuenteMaxPt = TAMANO_FUENTE_MAX_PT;
+  qrPosMin = 2;
+  qrPosMax = 90;
   qrEsquinas = QR_ESQUINAS;
   fuentes = FUENTES_CERTIFICADO;
   labelTipo = labelTipoCert;
@@ -268,11 +270,11 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   onQrLeft(n: number) {
-    this.patchQr({ left: `${n}%`, right: null });
+    this.patchQr({ left: `${this.clampQrHorizontal(n)}%`, right: null });
   }
 
   onQrRight(n: number) {
-    this.patchQr({ right: `${n}%`, left: null });
+    this.patchQr({ right: `${this.clampQrHorizontal(n)}%`, left: null });
   }
 
   aplicarEsquinaQr(esquina: string) {
@@ -301,11 +303,15 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     const q = this.qrEfectivo();
     if (q.right && !q.left) {
       const r = this.qrRightActual() + (dir === 'left' ? paso : -paso);
-      this.onQrRight(Math.min(45, Math.max(2, r)));
+      this.onQrRight(this.clampQrHorizontal(r));
     } else {
       const l = this.qrLeftActual() + (dir === 'left' ? -paso : paso);
-      this.onQrLeft(Math.min(45, Math.max(2, l)));
+      this.onQrLeft(this.clampQrHorizontal(l));
     }
+  }
+
+  private clampQrHorizontal(n: number): number {
+    return Math.min(this.qrPosMax, Math.max(this.qrPosMin, n));
   }
 
   restaurarQr() {

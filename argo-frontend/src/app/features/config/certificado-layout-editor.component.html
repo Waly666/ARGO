@@ -172,8 +172,8 @@
                 <input
                   type="range"
                   class="slider"
-                  min="2"
-                  max="45"
+                  [min]="qrPosMin"
+                  [max]="qrPosMax"
                   step="0.5"
                   [ngModel]="qrRightActual()"
                   (ngModelChange)="onQrRight($event)" />
@@ -182,8 +182,8 @@
                 <input
                   type="range"
                   class="slider"
-                  min="2"
-                  max="45"
+                  [min]="qrPosMin"
+                  [max]="qrPosMax"
                   step="0.5"
                   [ngModel]="qrLeftActual()"
                   (ngModelChange)="onQrLeft($event)" />
