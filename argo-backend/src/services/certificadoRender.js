@@ -14,41 +14,23 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-function resolvePortalSiteUrl(publicOrigin) {
-  const portal = String(process.env.PORTAL_SITE_URL || '').trim().replace(/\/$/, '');
-  if (portal) return portal;
-  return resolvePublicOrigin(publicOrigin);
+function fechaIso(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toISOString();
 }
 
-/** URL corta al portal (menos densa y escaneable que JSON embebido). */
-function textoQrCertificado(certificado, publicOrigin) {
-  const base = resolvePortalSiteUrl(publicOrigin);
-  const cod = String(
-    certificado?.codVerificacion || certificado?.codigoCert || certificado?._id || '',
-  ).trim();
-  if (!cod) return `${base}/consulta-certificados`;
-  const params = new URLSearchParams({ cod });
-  return `${base}/consulta-certificados?${params.toString()}`;
-}
-
-const QR_RENDER_SCALE = 3;
-const QR_QUIET_MARGIN = 2;
-
-async function generarQrCertificadoImg(texto, displayPx) {
-  const display = Math.min(160, Math.max(48, Math.round(Number(displayPx) || 72)));
-  const render = Math.min(640, Math.max(display, Math.round(display * QR_RENDER_SCALE)));
-  return QRCode.toDataURL(texto, {
-    width: render,
-    margin: QR_QUIET_MARGIN,
-    errorCorrectionLevel: 'M',
-    color: { dark: '#000000', light: '#ffffff' },
-  });
-}
-
-function qrImgHtml(qrDataUrl, displayPx) {
-  const px = Math.min(160, Math.max(48, Math.round(Number(displayPx) || 72)));
-  const mm = ((px * 25.4) / 96).toFixed(2);
-  return `<img src="${qrDataUrl}" alt="QR verificación" width="${px}" height="${px}" style="width:${mm}mm;height:${mm}mm;max-width:none;display:block;image-rendering:pixelated;image-rendering:crisp-edges"/>`;
+function payloadQrCertificado(certificado, alumno, encabezado, nombres) {
+  return {
+    _id: String(certificado._id),
+    numDoc: numDocToString(alumno?.numDoc ?? certificado.numDoc),
+    fechaEmision: fechaIso(certificado.fechaEmision || certificado.createdAt),
+    fechaVencimiento: fechaIso(certificado.fechaVencimiento),
+    estado: (certificado.estado || 'vigente').trim(),
+    nombres: nombres || nombreCompleto(alumno),
+    encabezado: encabezado || '',
+  };
 }
 
 function nombreCompleto(a) {
@@ -249,13 +231,19 @@ async function generarHtmlCertificado(data, options = {}) {
     certId: codigo,
   };
 
-  const qrTexto = textoQrCertificado(certificado, publicOrigin);
+  const qrPayload = JSON.stringify(
+    payloadQrCertificado(certificado, alumno, curso, nombre),
+  );
   const mostrarQr = config?.mostrarQr !== false;
   const qrEstilo = resolverQr(config, tipo, orientacion);
   let qrDataUrl = '';
   if (mostrarQr) {
     try {
-      qrDataUrl = await generarQrCertificadoImg(qrTexto, qrEstilo.size);
+      qrDataUrl = await QRCode.toDataURL(qrPayload, {
+        width: qrEstilo.size,
+        margin: 0,
+        errorCorrectionLevel: 'M',
+      });
     } catch {
       qrDataUrl = '';
     }
@@ -331,11 +319,7 @@ async function generarHtmlCertificado(data, options = {}) {
     }
     .dato.tipoDoc, .dato.doc, .dato.expedida, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
     .cert-id { font-family: Consolas, monospace; line-height: 1.2; }
-    .qr-wrap img {
-      display: block;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
+    .qr-wrap img { display: block; }
     .no-print {
       position: fixed;
       bottom: 12px;
@@ -363,7 +347,7 @@ async function generarHtmlCertificado(data, options = {}) {
       ${certIdHtml(L.certId, codigo, color, oriKey)}
       ${
         qrDataUrl
-          ? `<div class="qr-wrap" style="${qrEstilo.css}">${qrImgHtml(qrDataUrl, qrEstilo.size)}</div>`
+          ? `<div class="qr-wrap" style="${qrEstilo.css}"><img src="${qrDataUrl}" width="${qrEstilo.size}" height="${qrEstilo.size}" alt="QR verificación"/></div>`
           : ''
       }
     </div>

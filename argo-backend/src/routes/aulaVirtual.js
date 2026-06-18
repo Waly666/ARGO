@@ -38,11 +38,6 @@ router.get(
   requireTurnstile(),
   ctrl.consultarCertificados,
 );
-router.get(
-  '/certificados/verificar-codigo',
-  buscarAlumnoLimiter,
-  ctrl.verificarCertificadoCodigo,
-);
 router.post('/auth/registro', portalAuthLimiter, requireTurnstile(), ctrl.registro);
 router.post('/auth/registro/solicitar', portalAuthLimiter, requireTurnstile(), ctrl.registroSolicitar);
 router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirmar);

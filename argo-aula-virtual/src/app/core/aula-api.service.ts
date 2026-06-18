@@ -209,11 +209,6 @@ export class AulaApiService {
     return this.http.get<CertificadoConsultaRes>(`${this.base}/certificados/consulta?${q.toString()}`);
   }
 
-  verificarCertificadoCodigo(cod: string): Observable<CertificadoConsultaRes> {
-    const q = new URLSearchParams({ cod: String(cod).trim() });
-    return this.http.get<CertificadoConsultaRes>(`${this.base}/certificados/verificar-codigo?${q.toString()}`);
-  }
-
   enviarContacto(
     body: {
       nombre: string;

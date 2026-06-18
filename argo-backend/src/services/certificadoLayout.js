@@ -181,8 +181,8 @@ function buildQrEstilo(qr) {
     'position:absolute',
     'z-index:4',
     'background:#fff',
-    'padding:1px',
-    'border-radius:2px',
+    'padding:3px',
+    'border-radius:4px',
   ];
   if (qr.top) parts.push(`top:${qr.top}`, 'bottom:auto');
   if (qr.bottom) parts.push(`bottom:${qr.bottom}`, 'top:auto');

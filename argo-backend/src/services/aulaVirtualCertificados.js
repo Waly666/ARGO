@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Certificado = require('../models/Certificado');
 const { ID_PROG_HISTORICO } = require('../constants/migracionHistorico');
 const DatosAlumno = require('../models/DatosAlumno');
@@ -129,53 +128,6 @@ async function consultarCertificadosPublico(numDocRaw) {
   };
 }
 
-/** Consulta pública por código de verificación (QR del certificado). */
-async function consultarCertificadoPorCodigoPublico(codRaw) {
-  const cod = String(codRaw || '').trim();
-  if (!cod) {
-    const err = new Error('Código de verificación requerido.');
-    err.status = 400;
-    throw err;
-  }
-
-  const filtros = [{ codVerificacion: cod }, { codigoCert: cod }];
-  if (mongoose.Types.ObjectId.isValid(cod)) {
-    filtros.push({ _id: cod });
-  }
-
-  const cert = await Certificado.findOne({
-    $or: filtros,
-    estado: { $ne: 'anulado' },
-  }).lean();
-
-  if (!cert) {
-    const err = new Error('Certificado no encontrado o no vigente.');
-    err.status = 404;
-    throw err;
-  }
-
-  const alumno = await DatosAlumno.findOne(numDocQuery(cert.numDoc)).lean();
-  const nombreAlumno = nombreCompletoAlumno(alumno);
-  const nombreTitularCert = String(cert.nombreTitular || '').trim();
-  const item = {
-    idCertificado: String(cert.codVerificacion || cert.codigoCert || cert._id || '').trim(),
-    codVerificacion: String(cert.codVerificacion || '').trim(),
-    nombreApellidos: nombreAlumno || nombreTitularCert,
-    cedula: cert.numDoc,
-    encabezado: String(cert.encabezado || '').trim(),
-    horas: String(cert.horasCert || '').trim(),
-    fechaCert: cert.fechaEmision || cert.createdAt || null,
-    fechaVence: cert.fechaVencimiento || null,
-  };
-
-  return {
-    cedula: cert.numDoc,
-    nombreApellidos: item.nombreApellidos,
-    total: 1,
-    items: [item],
-  };
-}
-
 async function htmlCertificadoPortal(numDoc, certId, publicOrigin) {
   await verificarCertificadoAlumno(numDoc, certId);
   const data = await armarDatosCertificado(certId);
@@ -190,7 +142,6 @@ async function htmlCertificadoPortal(numDoc, certId, publicOrigin) {
 module.exports = {
   listarMisCertificados,
   consultarCertificadosPublico,
-  consultarCertificadoPorCodigoPublico,
   verificarCertificadoAlumno,
   htmlCertificadoPortal,
 };
