@@ -547,6 +547,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       nombre: 'JUAN CARLOS PEREZ GOMEZ MARTINEZ',
       tipoDoc: 'CC',
       doc: '1234567890',
+      expedida: 'BOGOTÁ D.C.',
       curso: 'TRANSPORTE DE MERCANCIAS PELIGROSAS CLASE 3',
       ciudad: 'Villavicencio',
       horas: '40',

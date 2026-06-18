@@ -200,11 +200,13 @@ async function generarHtmlCertificado(data, options = {}) {
   const observaciones = (certificado.observaciones || '').trim();
   const codigo = (certificado.codigoCert || String(certificado._id)).trim();
   const ciudadTxt = (config?.ciudad || '').trim();
+  const expedidaTxt = String(alumno?.expedida || '').trim();
 
   const valores = {
     nombre,
     tipoDoc,
     doc: numDoc,
+    expedida: expedidaTxt,
     curso,
     ciudad: ciudadTxt,
     horas: horasTxt,
@@ -303,7 +305,7 @@ async function generarHtmlCertificado(data, options = {}) {
       line-height: 1.2;
       overflow: visible;
     }
-    .dato.tipoDoc, .dato.doc, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
+    .dato.tipoDoc, .dato.doc, .dato.expedida, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
     .cert-id { font-family: Consolas, monospace; line-height: 1.2; }
     .qr-wrap img { display: block; }
     .no-print {

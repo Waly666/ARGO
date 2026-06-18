@@ -36,6 +36,7 @@ export interface CertificadoListItem {
   numDoc?: number;
   alumnoId?: string | null;
   nombreCompleto?: string;
+  expedida?: string | null;
   nombreTitular?: string | null;
   encabezado?: string;
   tipoFormatoCert?: string;
@@ -100,6 +101,7 @@ export interface CertificadoDatosRes {
     nombre2?: string;
     apellido1?: string;
     apellido2?: string;
+    expedida?: string;
   } | null;
   programa?: {
     descripcion?: string;
