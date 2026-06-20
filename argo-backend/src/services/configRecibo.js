@@ -51,6 +51,8 @@ const DEFAULTS = {
   mostrarQr: true,
   formatoComprobanteIngreso: FORMATOS.VALIDADORA,
   formatoComprobanteEgreso: FORMATOS.VALIDADORA,
+  /** Rebaja de valor al crear matrícula (ficha alumno → Servicios). */
+  permitirAjusteValorMatricula: true,
 };
 
 /** Clave legado por sede (solo scripts/migración; ya no se usa en runtime). */
@@ -90,6 +92,7 @@ function normalizar(doc, claveOverride) {
   if (!String(raw.segundoPrefijoComprobanteEgreso || '').trim()) {
     raw.segundoPrefijoComprobanteEgreso = anio;
   }
+  raw.permitirAjusteValorMatricula = raw.permitirAjusteValorMatricula !== false;
   return raw;
 }
 

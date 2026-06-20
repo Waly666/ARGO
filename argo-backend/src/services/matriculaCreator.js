@@ -24,16 +24,24 @@ const {
   descripcionConRevalidacion,
 } = require('./revalidacionPrograma');
 const { resolverModalidadPrograma } = require('./programaModalidad');
+const { obtenerConfigRecibo } = require('./configRecibo');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
 }
 
-function resolverAjusteValor(body, { valorCatalogo, tarifa, esJornada, usuario }) {
+function resolverAjusteValor(body, { valorCatalogo, tarifa, esJornada, usuario, permitirAjuste = true }) {
   const catalogo = Math.round(Number(valorCatalogo) || 0);
-  const rechazarAjuste = () => {
-    const err = new Error('No se puede ajustar el valor en este tipo de matrícula');
+  const rechazarAjuste = (msg) => {
+    const err = new Error(msg || 'No se puede ajustar el valor en este tipo de matrícula');
     err.status = 400;
+    throw err;
+  };
+  const rechazarAjusteDeshabilitado = () => {
+    const err = new Error(
+      'El ajuste de valor en matrícula está deshabilitado en Configuración → Comprobantes',
+    );
+    err.status = 403;
     throw err;
   };
 
@@ -43,6 +51,7 @@ function resolverAjusteValor(body, { valorCatalogo, tarifa, esJornada, usuario }
       body?.ajustarValor === 'true' ||
       (body?.valorAcordado != null && body?.valorAcordado !== '');
     if (intento) {
+      if (!permitirAjuste) rechazarAjusteDeshabilitado();
       const ac = Math.round(Number(body.valorAcordado));
       if (Number.isFinite(ac) && ac !== catalogo) rechazarAjuste();
     }
@@ -54,6 +63,7 @@ function resolverAjusteValor(body, { valorCatalogo, tarifa, esJornada, usuario }
     body?.ajustarValor === 'true' ||
     (body?.valorAcordado != null && body?.valorAcordado !== '');
   if (!activo) return null;
+  if (!permitirAjuste) rechazarAjusteDeshabilitado();
 
   const acordado = Math.round(Number(body.valorAcordado));
   if (!Number.isFinite(acordado) || acordado < 0) {
@@ -227,6 +237,7 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
         tarifa: t,
         esJornada,
         usuario: ctx.usuario,
+        permitirAjuste: (await obtenerConfigRecibo()).permitirAjusteValorMatricula !== false,
       });
   const valorMat = ajuste ? ajuste.valorAcordado : valorCatalogo;
   const valoresPorSemestre =

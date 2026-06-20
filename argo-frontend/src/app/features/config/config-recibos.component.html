@@ -277,10 +277,38 @@
         </div>
       </section>
 
+      <!-- 4. Matrícula -->
+      <section class="rec-section rec-section--sky">
+        <header class="rec-section-head">
+          <span class="rec-section-badge">4</span>
+          <div>
+            <h2 class="rec-section-title">Matrícula en caja</h2>
+            <p class="rec-section-desc">
+              Controla si el cajero puede rebajar el valor de matrícula al crear una matrícula en la ficha del alumno.
+            </p>
+          </div>
+        </header>
+        <div class="rec-section-body">
+          <div class="rec-toggle">
+            <argo-switch
+              [checked]="form().permitirAjusteValorMatricula !== false"
+              (checkedChange)="patch('permitirAjusteValorMatricula', $event)"
+            />
+            <span class="rec-toggle-box">
+              <span class="rec-toggle-title">Permitir rebaja de valor en matrícula</span>
+              <span class="rec-toggle-desc">
+                Muestra el switch «Ajustar valor (solo rebaja)» en Alumnos → Servicios → Crear matrícula.
+                Si está desactivado, el valor siempre será el del catálogo.
+              </span>
+            </span>
+          </div>
+        </div>
+      </section>
+
       <!-- 5. Alumnos -->
       <section class="rec-section rec-section--rose">
         <header class="rec-section-head">
-          <span class="rec-section-badge">4</span>
+          <span class="rec-section-badge">5</span>
           <div>
             <h2 class="rec-section-title">Registro de alumnos</h2>
             <p class="rec-section-desc">

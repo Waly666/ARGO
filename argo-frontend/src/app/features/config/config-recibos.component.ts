@@ -34,6 +34,7 @@ export class ConfigRecibosComponent implements OnInit {
       next: (c) => {
         this.form.set({
           ...c,
+          permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
           segundoPrefijoComprobanteIngreso:
             c.segundoPrefijoComprobanteIngreso?.trim() || this.anioActual,
           segundoPrefijoComprobanteEgreso:
@@ -105,7 +106,14 @@ export class ConfigRecibosComponent implements OnInit {
     this.msgError.set(false);
     this.cfgSvc.guardarRecibo(this.form()).subscribe({
       next: (c) => {
-        this.form.set(c);
+        this.form.set({
+          ...c,
+          permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
+          segundoPrefijoComprobanteIngreso:
+            c.segundoPrefijoComprobanteIngreso?.trim() || this.anioActual,
+          segundoPrefijoComprobanteEgreso:
+            c.segundoPrefijoComprobanteEgreso?.trim() || this.anioActual,
+        });
         this.saving.set(false);
         this.msgError.set(false);
         this.msg.set('Configuración guardada.');

@@ -71,6 +71,7 @@ router.post(
 );
 
 router.get('/recibo/encabezado', requireAuth, loadSedeActiva, ctrl.obtenerReciboEncabezado);
+router.get('/recibo/opciones-matricula', requireAuth, ctrl.obtenerReciboOpcionesMatricula);
 router.get('/recibo', requirePermiso('config.recibos'), ctrl.obtenerRecibo);
 router.put('/recibo', requirePermiso('config.recibos'), ctrl.actualizarRecibo);
 

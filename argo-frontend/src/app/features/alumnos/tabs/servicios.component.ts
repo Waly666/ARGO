@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { fromEvent, Observable } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
 import { AlumnoService } from '../../../core/services/alumno.service';
@@ -15,6 +16,7 @@ import { ProgramaService } from '../../../core/services/programa.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ServicioCatalogoService } from '../../../core/services/servicio-catalogo.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
+import { ConfigService } from '../../../core/services/config.service';
 import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
@@ -35,7 +37,7 @@ import { ComboService, ComboPrevista, ComboAplicarRes, Combo } from '../../../co
   templateUrl: './servicios.component.html',
   styleUrls: ['./servicios.component.scss'],
 })
-export class ServiciosComponent {
+export class ServiciosComponent implements OnInit {
   store = inject(AlumnoStore);
   private router = inject(Router);
   private alumnoSvc = inject(AlumnoService);
@@ -47,6 +49,10 @@ export class ServiciosComponent {
   private reciboSvc = inject(ReciboService);
   private confirmSvc = inject(ConfirmDialogService);
   private comboSvc = inject(ComboService);
+  private cfgSvc = inject(ConfigService);
+
+  /** Config global: rebaja de valor en matrícula (default true hasta cargar). */
+  permitirAjusteValorMatricula = signal(true);
 
   // --- Combos ---
   combos = signal<Combo[]>([]);
@@ -171,6 +177,7 @@ export class ServiciosComponent {
   esTarifaVirtualSeleccionada = computed(() => esTarifaVirtualMatricula(this.tarifa()));
 
   puedeAjustarValorMat = computed(() => {
+    if (!this.permitirAjusteValorMatricula()) return false;
     if (!this.idProg() || this.esTarifaVirtualSeleccionada()) return false;
     return this.valorMatCalculado() > 0;
   });
@@ -301,6 +308,13 @@ export class ServiciosComponent {
   };
 
   constructor() {
+    fromEvent(document, 'visibilitychange')
+      .pipe(
+        filter(() => document.visibilityState === 'visible'),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.cargarOpcionesMatricula());
+
     this.comboSvc.listar().subscribe({ next: (d) => this.combos.set(d || []), error: () => {} });
 
     effect(() => {
@@ -320,6 +334,21 @@ export class ServiciosComponent {
       }
       if (id && prog) this.revisarDocsMatricula(id, prog);
       else this.docsPendientesMat.set([]);
+    });
+  }
+
+  ngOnInit(): void {
+    this.cargarOpcionesMatricula();
+  }
+
+  private cargarOpcionesMatricula(): void {
+    this.cfgSvc.obtenerReciboOpcionesMatricula().subscribe({
+      next: (c) => {
+        const ok = c.permitirAjusteValorMatricula !== false;
+        this.permitirAjusteValorMatricula.set(ok);
+        if (!ok) this.limpiarAjusteValorMat();
+      },
+      error: () => this.permitirAjusteValorMatricula.set(true),
     });
   }
 

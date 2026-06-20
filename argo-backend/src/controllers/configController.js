@@ -35,6 +35,7 @@ const CAMPOS = [
   'mostrarQr',
   'formatoComprobanteIngreso',
   'formatoComprobanteEgreso',
+  'permitirAjusteValorMatricula',
 ];
 
 exports.obtenerReciboEncabezado = async (req, res, next) => {
@@ -61,6 +62,18 @@ exports.obtenerRecibo = async (_req, res, next) => {
   try {
     const doc = await obtenerConfigRecibo();
     res.json(doc);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerReciboOpcionesMatricula = async (_req, res, next) => {
+  try {
+    const doc = await obtenerConfigRecibo();
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      permitirAjusteValorMatricula: doc.permitirAjusteValorMatricula !== false,
+    });
   } catch (e) {
     next(e);
   }
@@ -96,6 +109,9 @@ exports.actualizarRecibo = async (req, res, next) => {
       'usarSegundoPrefijoComprobanteEgreso',
     ]) {
       if (dto[k] !== undefined) dto[k] = !!dto[k];
+    }
+    for (const k of ['mostrarQr', 'permitirAjusteValorMatricula']) {
+      if (dto[k] !== undefined) dto[k] = dto[k] === true || dto[k] === 'true';
     }
     for (const k of [
       'usarPrefijoComprobanteIngreso',

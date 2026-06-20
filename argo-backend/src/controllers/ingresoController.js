@@ -29,6 +29,13 @@ const {
 const { registrarCreacion, registrarEliminacion } = require('../services/auditoria');
 const { esIngresoCaja } = require('../utils/ingresoClasificacion');
 
+/** Usuarios sintéticos (p. ej. soporte-maestro) no tienen ObjectId en Mongo. */
+function idUsuarioObjectIdDesdeReq(req) {
+  const s = String(req.user?.sub || '').trim();
+  if (/^[a-fA-F0-9]{24}$/.test(s)) return new mongoose.Types.ObjectId(s);
+  return null;
+}
+
 function parseBodyIngreso(raw) {
   const body = { ...(raw || {}) };
   if (typeof body.items === 'string' && body.items.trim()) {
@@ -401,7 +408,7 @@ exports.crearAlumno = async (req, res, next) => {
         fecha: fecha ? new Date(fecha) : new Date(),
         idSesion: sesion.idSesion,
         idSede: req.idSede,
-        idUsuario: req.user?.sub ? String(req.user.sub) : null,
+        idUsuario: idUsuarioObjectIdDesdeReq(req),
         userAddReg: username,
       });
     } catch (errIngreso) {
@@ -567,7 +574,7 @@ exports.crearCaja = async (req, res, next) => {
       fecha: fecha ? new Date(fecha) : new Date(),
       idSesion: sesion.idSesion,
       idSede: req.idSede,
-      idUsuario: req.user?.sub ? String(req.user.sub) : null,
+      idUsuario: idUsuarioObjectIdDesdeReq(req),
       userAddReg: username,
     });
 

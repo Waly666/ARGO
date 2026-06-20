@@ -79,6 +79,12 @@ export interface ConfigRecibo {
   mostrarQr?: boolean;
   formatoComprobanteIngreso?: 'validadora' | 'media_carta';
   formatoComprobanteEgreso?: 'validadora' | 'media_carta';
+  /** Rebaja de valor al crear matrícula (ficha alumno → Servicios). */
+  permitirAjusteValorMatricula?: boolean;
+}
+
+export interface ReciboOpcionesMatricula {
+  permitirAjusteValorMatricula?: boolean;
 }
 
 export interface GeorefProveedorOpcion {
@@ -156,6 +162,13 @@ export class ConfigService {
 
   guardarRecibo(data: ConfigRecibo): Observable<ConfigRecibo> {
     return this.http.put<ConfigRecibo>(`${environment.apiUrl}/config/recibo`, data);
+  }
+
+  /** Opciones de matrícula expuestas a caja (sin permiso config.recibos). */
+  obtenerReciboOpcionesMatricula(): Observable<ReciboOpcionesMatricula> {
+    return this.http.get<ReciboOpcionesMatricula>(
+      `${environment.apiUrl}/config/recibo/opciones-matricula`,
+    );
   }
 
   obtenerNomina(): Observable<ConfigNomina> {
