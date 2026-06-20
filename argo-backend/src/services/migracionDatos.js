@@ -945,6 +945,7 @@ module.exports = {
   analizarArchivo,
   importarArchivo,
   listarLotes,
+  crearProgramaConServicio,
   normalizarOpcionesIntegridad,
   HOJAS,
 };

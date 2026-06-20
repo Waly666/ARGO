@@ -19,6 +19,7 @@
     "sync:consecutivo-cert": "node scripts/syncConsecutivoCertificado.js",
     "import:administradoras": "node scripts/importAdministradoras.js",
     "import:alumnos-csv": "node scripts/importAlumnosCsv.js",
+    "import:programas-txt": "node scripts/importProgramasExportTxt.js",
     "cea:completar-faltantes": "node scripts/completarCeaAutoTodos.js",
     "cea:completar-faltantes:dry": "node scripts/completarCeaAutoTodos.js --dry-run",
     "cea:depurar-clases": "node scripts/depurarClasesCea.js --listar",
