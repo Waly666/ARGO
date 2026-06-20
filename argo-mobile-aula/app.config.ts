@@ -12,14 +12,15 @@ const config: ExpoConfig = {
   splash: {
     image: './assets/branding/logo.png',
     resizeMode: 'contain',
-    backgroundColor: '#0d47a1',
+    backgroundColor: '#f8fafc',
   },
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#0d47a1',
+      backgroundColor: '#ffffff',
     },
     package: 'co.finstruvial.aula',
+    softwareKeyboardLayoutMode: 'resize',
   },
   plugins: [
     'expo-font',
@@ -27,7 +28,7 @@ const config: ExpoConfig = {
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#0d47a1',
+        backgroundColor: '#f8fafc',
         image: './assets/branding/logo.png',
         imageWidth: 220,
       },

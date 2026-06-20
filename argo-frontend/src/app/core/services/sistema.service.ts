@@ -5,8 +5,8 @@ import { timeout } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 
-/** Restauración completa: puede tardar varios minutos (BD + uploads). */
-const RESTAURAR_TIMEOUT_MS = 30 * 60 * 1000;
+/** Restauración / reset: pueden tardar varios minutos (BD + respaldo previo). */
+const OPERACION_CRITICA_TIMEOUT_MS = 30 * 60 * 1000;
 
 export interface RespaldoMeta {
   archivo: string;
@@ -153,7 +153,7 @@ export class SistemaService {
         `${this.base}/respaldos/${encodeURIComponent(archivo)}/restaurar`,
         cred,
       )
-      .pipe(timeout(RESTAURAR_TIMEOUT_MS));
+      .pipe(timeout(OPERACION_CRITICA_TIMEOUT_MS));
   }
 
   restaurarSubido(file: File, cred: CredencialesOperacion): Observable<ResultadoRestauracion> {
@@ -164,7 +164,7 @@ export class SistemaService {
     fd.append('confirmacion', cred.confirmacion);
     return this.http
       .post<ResultadoRestauracion>(`${this.base}/respaldos/restaurar-subido`, fd)
-      .pipe(timeout(RESTAURAR_TIMEOUT_MS));
+      .pipe(timeout(OPERACION_CRITICA_TIMEOUT_MS));
   }
 
   guardarConfigRespaldos(cfg: Partial<ConfigRespaldos>): Observable<ConfigRespaldos> {
@@ -181,7 +181,9 @@ export class SistemaService {
   }
 
   resetEmpresa(cred: CredencialesOperacion): Observable<ResultadoReset> {
-    return this.http.post<ResultadoReset>(`${this.base}/reset-empresa`, cred);
+    return this.http
+      .post<ResultadoReset>(`${this.base}/reset-empresa`, cred)
+      .pipe(timeout(OPERACION_CRITICA_TIMEOUT_MS));
   }
 
   // ----- Migración -----

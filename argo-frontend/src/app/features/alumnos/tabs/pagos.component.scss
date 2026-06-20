@@ -382,6 +382,11 @@
   font-size: 0.78rem;
   color: var(--warn, #d97706);
   text-align: center;
+
+  &.err {
+    color: #b91c1c;
+    font-weight: 600;
+  }
 }
 
 .header-row {

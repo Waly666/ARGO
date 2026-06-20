@@ -20,6 +20,32 @@
     <p class="av-toast" [class.av-toast--err]="err()">{{ m }}</p>
   }
 
+  @if (puedeDisenoPortal()) {
+    <div class="av-diseno-toolbar">
+      <p class="av-diseno-toolbar__hint">
+        Herramientas de soporte: copie diseños entre clientes o aplique plantillas base.
+        <strong>No incluye logo ni datos fiscales.</strong>
+        Tras importar o aplicar plantilla, pulse <strong>Publicar cambios</strong>.
+      </p>
+      <div class="av-diseno-toolbar__actions">
+        <button type="button" class="av-btn av-btn--ghost" (click)="exportarDiseno()">↓ Exportar diseño</button>
+        <label class="av-btn av-btn--ghost av-btn--file">
+          ↑ Importar diseño
+          <input type="file" accept=".json,application/json" hidden (change)="importarDiseno($event)" />
+        </label>
+        <span class="av-diseno-toolbar__sep" aria-hidden="true"></span>
+        <button type="button" class="av-btn av-btn--primary av-btn--plantillas" (click)="galeriaAbierta.set(true)">
+          ✦ Explorar plantillas ({{ plantillas.length }})
+        </button>
+      </div>
+    </div>
+
+    <argo-portal-plantilla-galeria
+      [open]="galeriaAbierta()"
+      (closed)="galeriaAbierta.set(false)"
+      (applied)="aplicarPlantillaDesdeGaleria($event)" />
+  }
+
   <argo-portal-site-builder [portalForm]="portalForm" [portalUrl]="portalUrl" />
 
   <div class="av-save-bar av-save-bar--builder">

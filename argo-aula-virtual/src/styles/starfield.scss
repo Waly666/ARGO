@@ -1,12 +1,10 @@
-/* Fondo estrellado compartido (home, fundación, etc.) */
+/* Fondo estrellado compartido (home, fundación, etc.) — usa variables del tema */
 .section-starfield,
 .section-carreras {
   position: relative;
   overflow: hidden;
   padding: 4rem 0 3.5rem;
-  background:
-    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(37, 99, 235, 0.5), transparent 70%),
-    linear-gradient(180deg, #101b3c 0%, #0a1130 55%, #070d26 100%);
+  background: var(--av-starfield-bg);
   color: var(--av-text);
 }
 
@@ -40,7 +38,7 @@
     width: min(640px, 80vw);
     height: min(640px, 80vw);
     transform: translate(-50%, -50%);
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.16) 0%, rgba(34, 211, 238, 0.05) 38%, transparent 68%);
+    background: var(--av-starfield-accent-glow-radial);
     filter: blur(4px);
   }
 }
@@ -63,13 +61,13 @@
 
   .section-lead,
   .fund-section__lead {
-    color: #b6c5e8;
+    color: var(--av-starfield-section-lead);
   }
 
   .kicker,
   .fund-kicker:not(.fund-kicker--dark) {
     color: var(--av-accent);
-    background: rgba(34, 211, 238, 0.12);
-    border-color: rgba(34, 211, 238, 0.35);
+    background: color-mix(in srgb, var(--av-accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--av-accent) 35%, transparent);
   }
 }

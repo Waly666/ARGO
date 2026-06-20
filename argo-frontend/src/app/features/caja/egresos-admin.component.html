@@ -636,7 +636,7 @@
 
       <div class="col-4" *ngIf="requiereRefBancaria()">
 
-        <label>Nº transferencia / voucher</label>
+        <label>Nº comprobante / referencia *</label>
 
         <input
 
@@ -692,28 +692,25 @@
 
 
 
-    <div class="warn-docs card" *ngIf="faltaSoporteEnForm()">
-      <strong>Aviso: sin soporte adjunto (puede guardar igual)</strong>
-      <p class="hint">Se recomienda adjuntar factura, voucher bancario o foto del comprobante de pago.</p>
+    <div class="warn-docs card err" *ngIf="requiereRefBancaria() && mensajePagoIntangible() as aviso">
+      <strong>No se puede procesar el pago</strong>
+      <p class="hint">{{ aviso }}</p>
     </div>
 
     <div class="row soporte-row">
 
-      <div class="col-6">
+      <div class="col-12">
 
-        <label>Soporte (imagen) — opcional</label>
-
-        <input type="file" accept="image/*" (change)="onSoporte($event)" />
-
-        <p class="hint">Comprobante o voucher del egreso. No es obligatorio para guardar.</p>
-
-      </div>
-
-      <div class="col-6 preview-wrap" *ngIf="previewSoporte() as src">
-
-        <img [src]="src" alt="Vista previa soporte" class="soporte-preview" />
-
-        <button type="button" class="ghost sm" (click)="quitarSoporte()">Quitar imagen nueva</button>
+        <argo-pago-soporte-field
+          [obligatorio]="requiereRefBancaria()"
+          [previewUrl]="previewSoporte()"
+          [nombreArchivo]="archivoSoporte()?.name ?? null"
+          [hint]="requiereRefBancaria()
+            ? 'Obligatorio para transferencia, cheque, tarjeta, etc.'
+            : 'Opcional en pagos en efectivo.'"
+          (seleccionado)="onSoporteArchivo($event)"
+          (quitado)="quitarSoporte()"
+        />
 
       </div>
 
@@ -754,7 +751,7 @@
 
       <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
 
-      <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+      <button type="button" class="primary" (click)="guardar()" [disabled]="saving() || !puedeGuardarEgreso()">
 
         {{ saving() ? 'Guardando…' : 'Guardar' }}
 
@@ -803,9 +800,12 @@
 
     <tbody>
 
-      <tr *ngFor="let e of egresos()" [class.fila-sin-soporte]="!tieneSoporte(e)">
+      <tr *ngFor="let e of egresos()" [class.fila-sin-soporte]="!tieneSoporte(e)" [class.row-anulado]="esAnulado(e)">
 
-        <td class="mono comprobante-cell">{{ e.numRecibo || '—' }}</td>
+        <td class="mono comprobante-cell">
+          {{ e.numRecibo || '—' }}
+          <span class="badge err sm" *ngIf="esAnulado(e)">ANULADO</span>
+        </td>
 
         <td>{{ e.fechaEgreso | date: 'dd/MM/yyyy' }}</td>
 
@@ -858,9 +858,11 @@
               Imprimir
             </button>
 
-            <button type="button" class="ghost sm" (click)="editar(e)" *ngIf="puedeGestionarEgreso(e)">Editar</button>
+            <button type="button" class="ghost sm" (click)="editar(e)" *ngIf="puedeGestionarEgreso(e) && !esAnulado(e)">Editar</button>
 
-            <button type="button" class="danger sm" *ngIf="puedeGestionarEgreso(e)" (click)="eliminar(e)">Anular</button>
+            <button type="button" class="danger sm" *ngIf="!esAnulado(e)" (click)="eliminar(e)">Anular</button>
+
+            <span class="dim sm" *ngIf="esAnulado(e)" [attr.title]="tituloAnulado(e)">Anulado</span>
 
           </div>
 

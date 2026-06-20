@@ -10,6 +10,10 @@ import {
 import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
 import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
 import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
+import {
+  partesEtiquetaComprobanteAlarma,
+} from '../../core/utils/comprobante-alarma.helpers';
+import type { MovimientoAlarmaHoy } from '../../core/services/alumno.service';
 
 @Component({
   selector: 'argo-comprobante-hoy-banner',
@@ -78,12 +82,30 @@ export class ComprobanteHoyBannerComponent {
   }
 
   private titulo(a: ComprobanteHoyAlerta): string {
+    if (a.tipo === 'factura') {
+      const partes = [
+        this.etiquetaTipo(a.tipo, a),
+        this.etiquetaRef(a),
+        a.nombreCompleto || '',
+        this.fmt(a.valor),
+        a.detalle || '',
+      ].filter(Boolean);
+      return partes.join(' · ');
+    }
+    const mov: MovimientoAlarmaHoy = {
+      id: a.id,
+      numRecibo: a.numRecibo,
+      valor: a.valor,
+      detalle: a.detalle,
+      formaPago: a.formaPago,
+      tipoPago: a.tipoPago,
+      numComprobante: a.numComprobante,
+    };
+    const base = a.tipo === 'ingreso' ? 'Comprobante ingreso' : 'Comprobante egreso';
     const partes = [
-      this.etiquetaTipo(a.tipo, a),
-      this.etiquetaRef(a),
+      base,
       a.nombreCompleto || '',
-      this.fmt(a.valor),
-      a.detalle || '',
+      ...partesEtiquetaComprobanteAlarma(mov, a.tipo, (n) => this.fmt(n)),
     ].filter(Boolean);
     return partes.join(' · ');
   }

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
@@ -70,11 +69,11 @@ export default function PerfilPanel() {
     <ScreenBody>
       <SurfaceCard tint={c.accentSoft} accentLeft={c.primary}>
         <View style={styles.profileHead}>
-          <LinearGradient colors={c.gradient} style={styles.avatar}>
-            <ScaledText baseSize={28} style={{ color: '#fff', fontWeight: '800' }}>
+          <View style={[styles.avatar, { backgroundColor: c.accentSoft }]}>
+            <ScaledText baseSize={28} style={{ color: c.primary, fontWeight: '800' }}>
               {inicial}
             </ScaledText>
-          </LinearGradient>
+          </View>
           <View style={{ flex: 1 }}>
             <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>
               {user.nombreCompleto}

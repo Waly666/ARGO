@@ -8,6 +8,10 @@ import { CatalogoService } from '../../core/services/catalogo.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { IngresoService } from '../../core/services/ingreso.service';
+import { requiereReferenciaPago, requiereSoportePago } from '../../core/utils/referencia-pago.util';
+import { leerImagenSoporte } from '../../core/utils/pago-soporte.helpers';
+import { pagoIntangibleCompleto, validarPagoIntangible } from '../../core/utils/pago-intangible.validators';
+import { PagoSoporteFieldComponent } from '../../shared/pago-soporte-field/pago-soporte-field.component';
 import {
   TipoIngresoCat,
   esAprovisionamientoCaja,
@@ -31,6 +35,7 @@ const TIPOS_PAGO_DEF = [
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink,
     ArgoDateInputComponent,
+    PagoSoporteFieldComponent,
   ],
   templateUrl: './ingresos-caja-form.component.html',
   styleUrls: ['./ingresos-caja-form.component.scss'],
@@ -57,6 +62,8 @@ export class IngresosCajaFormComponent implements OnInit {
   idTipoPago = signal('');
   idCuentaBancaria = signal('');
   numComprobante = signal('');
+  archivoSoporte = signal<File | null>(null);
+  previewSoporte = signal<string | null>(null);
   observaciones = signal('');
   fecha = signal(new Date().toISOString().slice(0, 10));
 
@@ -80,6 +87,56 @@ export class IngresosCajaFormComponent implements OnInit {
   });
 
   requiereCuentaEmpresa = computed(() => !!this.idTipoPago() && !this.esEfectivo());
+
+  requiereComprobante = computed(() => {
+    const t = this.tipoPagoSel();
+    if (!t) return false;
+    const d = t['descripcion'] ?? t['nombre'] ?? t['tipo'];
+    return requiereReferenciaPago(d ? String(d) : '');
+  });
+
+  requiereSoporte = computed(() => {
+    const t = this.tipoPagoSel();
+    if (!t) return false;
+    const d = t['descripcion'] ?? t['nombre'] ?? t['tipo'];
+    return requiereSoportePago(d ? String(d) : '');
+  });
+
+  onSoporteArchivo(file: File) {
+    const ok = leerImagenSoporte(
+      file,
+      (dataUrl) => {
+        this.archivoSoporte.set(file);
+        this.previewSoporte.set(dataUrl);
+      },
+      (msg) => this.inform(msg, true),
+    );
+    if (!ok) this.quitarSoporte();
+  }
+
+  quitarSoporte() {
+    this.archivoSoporte.set(null);
+    this.previewSoporte.set(null);
+  }
+
+  inputPagoIntangible = computed(() => ({
+    esIntangible: this.requiereCuentaEmpresa(),
+    referencia: this.numComprobante(),
+    archivo: this.archivoSoporte(),
+  }));
+
+  mensajePagoIntangible = computed(() => {
+    const v = validarPagoIntangible(this.inputPagoIntangible());
+    return v.ok ? null : v.message;
+  });
+
+  puedeGuardar = computed(() => {
+    if (!this.idTipoIngreso() || !this.concepto().trim() || !(this.valor() > 0) || !this.idTipoPago()) {
+      return false;
+    }
+    if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) return false;
+    return pagoIntangibleCompleto(this.inputPagoIntangible());
+  });
 
   ngOnInit(): void {
     this.catSvc.list('tipoIngreso', { refresh: true }).subscribe({
@@ -184,6 +241,15 @@ export class IngresosCajaFormComponent implements OnInit {
       this.inform('Indique la cuenta bancaria de la empresa.');
       return;
     }
+    const intangible = validarPagoIntangible(this.inputPagoIntangible());
+    if (!intangible.ok) {
+      this.inform(intangible.message, true);
+      return;
+    }
+    if (!this.puedeGuardar()) {
+      this.inform(this.mensajePagoIntangible() || 'Complete referencia y pantallazo del movimiento.', true);
+      return;
+    }
     if (this.esContrato()) {
       if (!this.recibidoDe().trim()) {
         this.inform('Indique el nombre del contratante.');
@@ -207,19 +273,22 @@ export class IngresosCajaFormComponent implements OnInit {
     this.saving.set(true);
     this.inform(null);
     this.ingSvc
-      .crearCaja({
-        idTipoIngreso: this.idTipoIngreso(),
-        concepto: this.concepto().trim(),
-        recibidoDe: this.recibidoDe().trim() || undefined,
-        documentoTercero: this.documentoTercero().trim() || undefined,
-        tipoPersona: this.tipoPersona() || undefined,
-        valor: this.valor(),
-        idTipoPago: this.idTipoPago(),
-        idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() : undefined,
-        numComprobante: this.numComprobante().trim() || undefined,
-        observaciones: this.observaciones().trim() || undefined,
-        fecha: this.fecha() || undefined,
-      })
+      .crearCaja(
+        {
+          idTipoIngreso: this.idTipoIngreso(),
+          concepto: this.concepto().trim(),
+          recibidoDe: this.recibidoDe().trim() || undefined,
+          documentoTercero: this.documentoTercero().trim() || undefined,
+          tipoPersona: this.tipoPersona() || undefined,
+          valor: this.valor(),
+          idTipoPago: this.idTipoPago(),
+          idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() : undefined,
+          numComprobante: this.numComprobante().trim() || undefined,
+          observaciones: this.observaciones().trim() || undefined,
+          fecha: this.fecha() || undefined,
+        },
+        this.archivoSoporte(),
+      )
       .subscribe({
         next: (res) => {
           this.saving.set(false);

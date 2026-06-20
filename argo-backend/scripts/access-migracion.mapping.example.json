@@ -24,6 +24,7 @@
       "codigoPrograma": "CodPrograma",
       "nombrePrograma": "Nombre",
       "tipoCapacitacion": "TipoCap",
+      "modalidad": "Modalidad",
       "horas": "Horas",
       "semestres": "Semestres",
       "diasVencimiento": "DiasVenc",

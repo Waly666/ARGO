@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
 
 import { PortalConfig } from './models';
+import { buildPortalThemeCssVars } from './portal-theme-css.util';
 import { resolveUploadUrl } from './upload-url.util';
 
 @Injectable({ providedIn: 'root' })
@@ -13,24 +14,14 @@ export class PortalThemeService {
     const root = this.doc.documentElement;
     if (!tema) return;
 
-    const vars: Record<string, string> = {
-      '--av-primary': tema.colorPrimario,
-      '--av-primary-dark': tema.colorPrimarioOscuro,
-      '--av-accent': tema.colorAcento,
-      '--av-bg': tema.colorFondo,
-      '--av-surface': tema.colorSuperficie,
-      '--av-text': tema.colorTexto,
-      '--av-dim': tema.colorTextoSecundario,
-    };
-
+    const vars = buildPortalThemeCssVars(tema);
     for (const [key, val] of Object.entries(vars)) {
       if (val) root.style.setProperty(key, val);
     }
 
-    const fuente = tema.fuente?.trim();
-    if (fuente) {
-      root.style.setProperty('--av-font-sans', `'${fuente}', 'Segoe UI', system-ui, sans-serif`);
-      root.style.setProperty('--av-font-display', `'${fuente}', 'Segoe UI', system-ui, sans-serif`);
+    const themeColor = vars['--av-bg'];
+    if (themeColor) {
+      this.doc.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
     }
   }
 

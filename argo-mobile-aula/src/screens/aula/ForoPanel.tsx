@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +11,37 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useMisCursos } from '../../hooks/useMisCursos';
 import { radius, space } from '../../theme/spacing';
+
+function ForoHeader({ insetsTop = 0 }: { insetsTop?: number }) {
+  const c = useTheme();
+
+  return (
+    <View
+      style={[
+        styles.header,
+        {
+          paddingTop: insetsTop + space.md,
+          backgroundColor: c.headerBg,
+          borderBottomColor: c.border,
+        },
+      ]}
+    >
+      <View style={styles.headerRow}>
+        <View style={[styles.headerIcon, { backgroundColor: c.accentSoft }]}>
+          <Ionicons name="chatbubbles" size={22} color={c.primary} />
+        </View>
+        <View>
+          <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>
+            Foro de cursos
+          </ScaledText>
+          <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4 }}>
+            Preguntas y discusión con instructores
+          </ScaledText>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 export default function ForoPanel() {
   const { state } = useAuth();
@@ -32,13 +62,8 @@ export default function ForoPanel() {
 
   if (cursos.length === 0) {
     return (
-      <View style={[styles.root, { backgroundColor: c.bg, paddingTop: insets.top }]}>
-        <LinearGradient colors={c.gradientForo} style={styles.header}>
-          <Ionicons name="chatbubbles-outline" size={24} color="#fff" />
-          <ScaledText baseSize={20} style={{ color: '#fff', fontWeight: '800', marginTop: space.sm }}>
-            Foro de cursos
-          </ScaledText>
-        </LinearGradient>
+      <View style={[styles.root, { backgroundColor: c.bg }]}>
+        <ForoHeader insetsTop={insets.top} />
         <EmptyState
           title="Sin cursos para el foro"
           subtitle="Matricúlese en un curso para participar"
@@ -50,22 +75,8 @@ export default function ForoPanel() {
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
-      <LinearGradient colors={c.gradientForo} style={[styles.header, { paddingTop: insets.top + space.md }]}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerIcon}>
-            <Ionicons name="chatbubbles" size={22} color="#fff" />
-          </View>
-          <View>
-            <ScaledText baseSize={20} style={{ color: '#fff', fontWeight: '800' }}>
-              Foro de cursos
-            </ScaledText>
-            <ScaledText baseSize={13} style={{ color: 'rgba(255,255,255,0.9)', marginTop: 4 }}>
-              Preguntas y discusión con instructores
-            </ScaledText>
-          </View>
-        </View>
-      </LinearGradient>
-      <View style={[styles.chipsWrap, { backgroundColor: c.foroSoft }]}>
+      <ForoHeader insetsTop={insets.top} />
+      <View style={[styles.chipsWrap, { backgroundColor: c.card, borderBottomColor: c.border }]}>
         <View style={styles.chips}>
           {cursos.map((curso) => {
             const id = String(curso.idPrograma);
@@ -98,24 +109,20 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: space.lg,
     paddingBottom: space.lg,
-    borderBottomLeftRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
-    alignItems: 'center',
+    borderBottomWidth: 1,
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   headerIcon: {
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   chipsWrap: {
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: radius.lg,
+    borderBottomWidth: 1,
     marginBottom: space.xs,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap' },

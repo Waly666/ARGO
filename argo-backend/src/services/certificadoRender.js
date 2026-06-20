@@ -5,6 +5,7 @@ const { resolverLayout, resolverQr, CAMPOS_IDS } = require('./certificadoLayout'
 const { fsToPrintSizes } = require('../utils/certificadoTipografia');
 const { fmtFechaSolo: fmtFecha } = require('../utils/timezoneColombia');
 const { cssFontFamily, googleFontsHeadHtml } = require('../constants/certificadoFuentes');
+const { bloqueComprobanteAnulado, estilosMarcaAguaAnulado } = require('./reciboHtmlShared');
 
 function esc(s) {
   return String(s ?? '')
@@ -258,6 +259,7 @@ async function generarHtmlCertificado(data, options = {}) {
   const fontBase = cssFontFamily(L.nombre?.fontFamily);
   const tipografiaCss = reglasTipografia(L, oriKey);
   const googleFonts = googleFontsHeadHtml();
+  const anulado = bloqueComprobanteAnulado(certificado);
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -327,6 +329,18 @@ async function generarHtmlCertificado(data, options = {}) {
       transform: translateX(-50%);
       z-index: 99;
     }
+    ${estilosMarcaAguaAnulado()}
+    body.doc-anulado .anulado-banner {
+      position: absolute;
+      top: 8mm;
+      left: 8mm;
+      right: 8mm;
+      z-index: 20;
+      font-size: 9px;
+    }
+    body.doc-anulado .marca-agua-anulado span {
+      font-size: 88px;
+    }
     @media print {
       .no-print { display: none !important; }
       .sheet { page-break-after: avoid; }
@@ -339,7 +353,8 @@ async function generarHtmlCertificado(data, options = {}) {
     }
   </style>
 </head>
-<body>
+<body class="${anulado.bodyClass.trim()}">
+  ${anulado.html}
   <div class="sheet">
     ${fondoImg}
     <div class="content">

@@ -9,6 +9,9 @@ import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { IngresoService } from '../../core/services/ingreso.service';
+import { requiereReferenciaPago, requiereSoportePago } from '../../core/utils/referencia-pago.util';
+import { leerImagenSoporte, tieneSoportePago } from '../../core/utils/pago-soporte.helpers';
+import { pagoIntangibleCompleto, validarPagoIntangible } from '../../core/utils/pago-intangible.validators';
 import {
   LiquidacionConSaldoItem,
   LiquidacionService,
@@ -24,6 +27,7 @@ import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vis
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { AlertaPagoAlumnoBannerComponent } from '../alumnos/alerta-pago-alumno-banner.component';
 import { AlertaPagoAlumnoService } from '../../core/services/alerta-pago-alumno.service';
+import { PagoSoporteFieldComponent } from '../../shared/pago-soporte-field/pago-soporte-field.component';
 
 const TIPOS_PAGO_DEF = [
   { idTipoPago: '1', codigo: 'EF', descripcion: 'Efectivo' },
@@ -37,7 +41,7 @@ const TIPOS_PAGO_DEF = [
 @Component({
   selector: 'argo-caja-cobros-pendientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, AlertaPagoAlumnoBannerComponent],
+  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, AlertaPagoAlumnoBannerComponent, PagoSoporteFieldComponent],
   templateUrl: './caja-cobros-pendientes.component.html',
   styleUrls: ['./caja-cobros-pendientes.component.scss'],
 })
@@ -78,6 +82,8 @@ export class CajaCobrosPendientesComponent implements OnInit {
   idTipoPago = signal('');
   idCuentaBancaria = signal('');
   numComprobante = signal('');
+  archivoSoporte = signal<File | null>(null);
+  previewSoporte = signal<string | null>(null);
   observaciones = signal('');
 
   ingresoPendienteAnular = signal<any | null>(null);
@@ -200,6 +206,56 @@ export class CajaCobrosPendientesComponent implements OnInit {
     return !!this.idTipoPago() && !this.esEfectivo();
   }
 
+  requiereComprobante(): boolean {
+    const id = this.idTipoPago();
+    if (!id) return false;
+    const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
+    return requiereReferenciaPago(t ? this.tipoPagoLabel(t) : '');
+  }
+
+  requiereSoporte(): boolean {
+    const id = this.idTipoPago();
+    if (!id) return false;
+    const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
+    return requiereSoportePago(t ? this.tipoPagoLabel(t) : '');
+  }
+
+  onSoporteArchivo(file: File) {
+    const ok = leerImagenSoporte(
+      file,
+      (dataUrl) => {
+        this.archivoSoporte.set(file);
+        this.previewSoporte.set(dataUrl);
+      },
+      (msg) => this.inform(msg),
+    );
+    if (!ok) this.quitarSoporte();
+  }
+
+  quitarSoporte() {
+    this.archivoSoporte.set(null);
+    this.previewSoporte.set(null);
+  }
+
+  inputPagoIntangible() {
+    return {
+      esIntangible: this.requiereCuentaEmpresa(),
+      referencia: this.numComprobante(),
+      archivo: this.archivoSoporte(),
+    };
+  }
+
+  mensajePagoIntangible(): string | null {
+    const v = validarPagoIntangible(this.inputPagoIntangible());
+    return v.ok ? null : v.message;
+  }
+
+  puedeRegistrar(): boolean {
+    if (!this.seleccionado() || !this.idTipoPago() || !(this.valor() > 0)) return false;
+    if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) return false;
+    return pagoIntangibleCompleto(this.inputPagoIntangible());
+  }
+
   onTipoPagoChange(id: string): void {
     this.idTipoPago.set(id);
     if (!id) {
@@ -235,6 +291,15 @@ export class CajaCobrosPendientesComponent implements OnInit {
       this.inform('Seleccione la cuenta bancaria de la empresa.');
       return;
     }
+    const intangible = validarPagoIntangible(this.inputPagoIntangible());
+    if (!intangible.ok) {
+      this.inform(intangible.message);
+      return;
+    }
+    if (!this.puedeRegistrar()) {
+      this.inform(this.mensajePagoIntangible() || 'Complete referencia y pantallazo del movimiento.');
+      return;
+    }
     if (this.valor() > this.num(it.saldo)) {
       this.inform('El valor excede el saldo pendiente.');
       return;
@@ -243,15 +308,18 @@ export class CajaCobrosPendientesComponent implements OnInit {
     this.saving.set(true);
     this.inform(null);
     this.ingSvc
-      .crear({
-        numDoc: it.alumnoDoc ?? it.numDoc,
-        idLiquidacion: it._id,
-        valor: this.valor(),
-        idTipoPago: this.idTipoPago(),
-        idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() || undefined : undefined,
-        numComprobante: this.numComprobante() || undefined,
-        observaciones: this.observaciones() || undefined,
-      })
+      .crear(
+        {
+          numDoc: it.alumnoDoc ?? it.numDoc,
+          idLiquidacion: it._id,
+          valor: this.valor(),
+          idTipoPago: this.idTipoPago(),
+          idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() || undefined : undefined,
+          numComprobante: this.numComprobante() || undefined,
+          observaciones: this.observaciones() || undefined,
+        },
+        this.archivoSoporte(),
+      )
       .subscribe({
         next: (ing) => {
           this.saving.set(false);

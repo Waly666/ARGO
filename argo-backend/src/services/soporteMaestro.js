@@ -94,7 +94,7 @@ function validarTotp(code) {
   const c = String(code || '').replace(/\s/g, '');
   if (!/^\d{6}$/.test(c)) return false;
   try {
-    return verifySync({ secret: secretoTotp(), token: c }).valid === true;
+    return verifySync({ secret: secretoTotp(), token: c, window: 1 }).valid === true;
   } catch {
     return false;
   }
@@ -184,13 +184,15 @@ async function verificarReauth(req, { password, codigoMfa } = {}, opciones = {})
   if (!passOk) {
     logAuthIntento({ req, canal: 'soporte', identificador: nombreUser(), ok: false, motivo: 'reauth_password_invalido' });
     const err = new Error('Contraseña incorrecta');
-    err.status = 401;
+    err.status = 403;
+    err.code = 'REAUTH_FAILED';
     throw err;
   }
   if (!omitirMfa && !validarTotp(codigoMfa)) {
     logAuthIntento({ req, canal: 'soporte', identificador: nombreUser(), ok: false, motivo: 'reauth_mfa_invalido' });
-    const err = new Error('Código de autenticación incorrecto');
-    err.status = 401;
+    const err = new Error('Código de autenticación incorrecto o expirado');
+    err.status = 403;
+    err.code = 'REAUTH_FAILED';
     throw err;
   }
   logAuthIntento({ req, canal: 'soporte', identificador: nombreUser(), ok: true, motivo: 'reauth_ok' });

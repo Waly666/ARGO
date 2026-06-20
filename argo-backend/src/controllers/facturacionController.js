@@ -4,6 +4,7 @@ const notaSvc = require('../services/notaCredito');
 const { generarHtmlFactura, generarHtmlNotaCredito } = require('../services/facturaElectronicaHtml');
 const { listarRangosFactus, probarConexionFactus } = require('../services/facturaProveedor');
 const { parseNumDoc } = require('../utils/numDoc');
+const { autorizarAnulacionSimple } = require('../services/anulacionComprobante');
 const {
   PROVEEDORES_FE,
   PROVEEDOR_LABELS,
@@ -184,11 +185,22 @@ exports.notaCreditoPreview = async (req, res, next) => {
 
 exports.notaCreditoEmitir = async (req, res, next) => {
   try {
+    // La nota crédito es la anulación legal de una factura electrónica:
+    // requiere autorización de un administrador (cajeros aportan credenciales).
+    const auth = await autorizarAnulacionSimple(
+      req,
+      'Anular una factura (emitir nota crédito) requiere autorización de un administrador.',
+    );
+    if (!auth.ok) {
+      return res.status(auth.status).json({ message: auth.message, code: auth.code });
+    }
     const doc = await notaSvc.emitirNota({
       ...parsearNotaBody(req.params.id, req.body),
       idSede: req.idSede,
       idUsuario: req.user?.sub || null,
       userAddReg: req.user?.username || req.user?.nombre || null,
+      autorizadoPor: auth.supervisor?.autorizadoPor || req.user?.username || null,
+      nombreAutoriza: auth.supervisor?.nombreAutoriza || null,
     });
     res.status(201).json(doc);
   } catch (e) {

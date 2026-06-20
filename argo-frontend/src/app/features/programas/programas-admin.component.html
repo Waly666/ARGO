@@ -88,7 +88,26 @@
             <p class="hint-inline">{{ formatoCertHint(form().tipoCertificado) }}</p>
           </div>
         </div>
-        <div class="row">
+        <div class="modalidades-programa" *ngIf="!esProgramaJornadasCapForm()">
+          <label class="modalidades-programa-label">Modalidades de oferta *</label>
+          <p class="modalidades-programa-hint">
+            Virtual → tarifa virtual (portal). Presencial / Mixta → tarifas 1, 2 y 3 en caja. Puede combinar varias.
+          </p>
+          <div class="modalidades-programa-checks">
+            <label class="mod-check" *ngFor="let m of opcionesModalidadPrograma">
+              <input
+                type="checkbox"
+                [checked]="modalidadProgramaActiva(m.codigo)"
+                (change)="toggleModalidadPrograma(m.codigo)"
+              />
+              <span>{{ m.label }}</span>
+            </label>
+          </div>
+          <p class="modalidades-programa-aviso" *ngIf="esSoloVirtualForm()">
+            Solo virtual: matrícula en portal; el cajero cobra la liquidación generada.
+          </p>
+        </div>
+        <div class="row row-align-fields">
           <div class="col-4">
             <argo-catalogo-enum-buscar
               label="Tipo capacitación (idTipCap) *"
@@ -120,24 +139,28 @@
             <input type="number" min="0" [ngModel]="form().horasPractica" (ngModelChange)="patch('horasPractica', $event)" />
           </div>
         </div>
-        <div class="row">
-          <div class="col-2">
+        <div class="row row-align-fields">
+          <div class="col-2 field-cell">
             <label>Horas taller</label>
             <input type="number" min="0" [ngModel]="form().horasTaller" (ngModelChange)="patch('horasTaller', $event)" />
           </div>
-          <div class="col-2" *ngIf="!esProgramaJornadasCapForm()">
+          <div class="col-2 field-cell" *ngIf="!esProgramaJornadasCapForm() && !esSoloVirtualForm()">
             <label>Valor matrícula</label>
             <input type="number" min="0" [ngModel]="form().valorMatricula" (ngModelChange)="patch('valorMatricula', $event)" />
           </div>
-          <div class="col-2" *ngIf="esProgramaJornadasCapForm()">
+          <div class="col-2 field-cell" *ngIf="!esProgramaJornadasCapForm() && esSoloVirtualForm()">
+            <label>Valor matrícula (virtual)</label>
+            <input type="number" min="0" [ngModel]="form().tarifaVirtual" (ngModelChange)="patch('tarifaVirtual', $event)" />
+          </div>
+          <div class="col-2 field-cell" *ngIf="esProgramaJornadasCapForm()">
             <label>Matrícula</label>
             <input type="text" value="No aplica (sin cobro)" readonly class="readonly" />
           </div>
-          <div class="col-2">
+          <div class="col-2 field-cell">
             <label>Vigencia (días)</label>
             <input type="number" min="0" [ngModel]="form().diasVencimiento" (ngModelChange)="patch('diasVencimiento', $event)" />
           </div>
-          <div class="col-2">
+          <div class="col-2 field-cell">
             <argo-catalogo-enum-buscar
               label="Estado"
               placeholder="Seleccione estado…"
@@ -150,7 +173,7 @@
               (limpiado)="onEstadoLimpiar()"
             />
           </div>
-          <div class="col-4">
+          <div class="col-4 field-cell">
             <label>Requisitos (requistos)</label>
             <input type="text" [ngModel]="form().requistos" (ngModelChange)="patch('requistos', $event)" />
           </div>
@@ -243,25 +266,30 @@
             <input type="number" min="0" [ngModel]="form().iva" (ngModelChange)="patch('iva', $event)" />
           </div>
         </div>
-        <div class="row">
-          <div class="col-3">
+        <div class="tarifas-programa-grid" *ngIf="admiteModalidadPresencialForm() || (admiteModalidadVirtualForm() && !esSoloVirtualForm())">
+          <div class="field-cell" *ngIf="admiteModalidadPresencialForm()">
             <label>Tarifa 1 *</label>
             <input type="number" min="0" [ngModel]="form().tarifa1" (ngModelChange)="patch('tarifa1', $event)" />
           </div>
-          <div class="col-3">
+          <div class="field-cell" *ngIf="admiteModalidadPresencialForm()">
             <label>Tarifa 2</label>
             <input type="number" min="0" [ngModel]="form().tarifa2" (ngModelChange)="patch('tarifa2', $event)" />
           </div>
-          <div class="col-3">
+          <div class="field-cell" *ngIf="admiteModalidadPresencialForm()">
             <label>Tarifa 3</label>
             <input type="number" min="0" [ngModel]="form().tarifa3" (ngModelChange)="patch('tarifa3', $event)" />
           </div>
-          <div class="col-3">
-            <label>Tarifa virtual</label>
+          <div class="field-cell" *ngIf="admiteModalidadVirtualForm() && !esSoloVirtualForm()">
+            <label>Tarifa virtual *</label>
             <input type="number" min="0" [ngModel]="form().tarifaVirtual" (ngModelChange)="patch('tarifaVirtual', $event)" />
-            <p class="hint-inline">Si es &gt; 0, el curso se publica como educación virtual en el portal.</p>
           </div>
         </div>
+        <p class="form-note form-note--tarifas" *ngIf="esSoloVirtualForm()">
+          Precio de matrícula definido arriba como <strong>valor matrícula (virtual)</strong> (tarifa 4 en portal).
+        </p>
+        <p class="form-note form-note--tarifas" *ngIf="!admiteModalidadPresencialForm() && !admiteModalidadVirtualForm()">
+          Seleccione al menos una modalidad para configurar tarifas.
+        </p>
         <div class="audit-grid" *ngIf="auditServicio() as a">
           <h4>Auditoría — servicio</h4>
           <div><span>Creado</span><strong>{{ a.fechaAudi }}</strong></div>
@@ -273,8 +301,11 @@
 
       <section class="form-section form-section--virtual" *ngIf="!esProgramaJornadasCapForm()">
         <h3 class="sec sec--virtual">Ficha portal — educación virtual</h3>
-        <p class="form-note" *ngIf="!esFormularioVirtual()">
-          Asigne <strong>tarifa virtual</strong> mayor a 0 para habilitar este curso en la tienda y el aula virtual.
+        <p class="form-note" *ngIf="!esFormularioVirtual() && admiteModalidadVirtualForm()">
+          Asigne <strong>tarifa virtual</strong> mayor a 0 para publicar en el portal aula virtual.
+        </p>
+        <p class="form-note" *ngIf="!admiteModalidadVirtualForm()">
+          Este programa no incluye modalidad virtual; no aparecerá en la tienda del aula virtual.
         </p>
         <ng-container *ngIf="esFormularioVirtual()">
           <div class="row">

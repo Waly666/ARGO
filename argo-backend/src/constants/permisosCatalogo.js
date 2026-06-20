@@ -97,6 +97,17 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'migracion',
+    label: 'Migración de datos',
+    permisos: [
+      { key: 'sistema.migracion', label: 'Importación Excel (alumnos, certificados, lotes)' },
+      {
+        key: 'migracion.movimientos',
+        label: 'Movimientos históricos (matrícula con fecha anterior y recibos de migración)',
+      },
+    ],
+  },
+  {
     id: 'config',
     label: 'Configuración',
     permisos: [

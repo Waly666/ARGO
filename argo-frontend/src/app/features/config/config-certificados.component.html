@@ -34,7 +34,7 @@
           <span class="cert-section-badge">1</span>
           <div>
             <h2 class="cert-section-title">Datos del certificado</h2>
-            <p class="cert-section-desc">Encabezado institucional, firmantes y prefijo del identificador.</p>
+            <p class="cert-section-desc">Encabezado institucional, firmantes y prefijo del identificador (2.º prefijo opcional, ej. año).</p>
           </div>
         </header>
         <div class="cert-section-body cert-stack">
@@ -57,10 +57,50 @@
               <span class="cert-label">Nombre instructor</span>
               <input type="text" [ngModel]="form().nombreInstructor" (ngModelChange)="patch('nombreInstructor', $event)" />
             </label>
-            <label class="cert-field">
-              <span class="cert-label">Prefijo ID certificado</span>
-              <input type="text" [ngModel]="form().prefijoCertificado" (ngModelChange)="patch('prefijoCertificado', $event)" />
-            </label>
+          </div>
+          <div class="num-id-block num-card--cert">
+            <h3 class="num-card-title num-card-title--cert">Identificador del certificado</h3>
+            <div class="num-codigo-form">
+              <div class="num-codigo-grid num-codigo-grid--2">
+                <div class="num-codigo-cell">
+                  <div class="num-codigo-head">
+                    <span class="num-codigo-label">Prefijo</span>
+                    <argo-switch
+                      [checked]="form().usarPrefijoCertificado !== false"
+                      (checkedChange)="patch('usarPrefijoCertificado', $event)"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    [ngModel]="form().prefijoCertificado"
+                    (ngModelChange)="patch('prefijoCertificado', $event)"
+                    [disabled]="form().usarPrefijoCertificado === false"
+                    placeholder="CERT"
+                  />
+                </div>
+                <div class="num-codigo-cell">
+                  <div class="num-codigo-head">
+                    <span class="num-codigo-label">2.º prefijo</span>
+                    <argo-switch
+                      [checked]="!!form().usarSegundoPrefijoCertificado"
+                      (checkedChange)="patch('usarSegundoPrefijoCertificado', $event)"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    [ngModel]="form().segundoPrefijoCertificado"
+                    (ngModelChange)="patch('segundoPrefijoCertificado', $event)"
+                    [disabled]="!form().usarSegundoPrefijoCertificado"
+                    [placeholder]="anioActual"
+                  />
+                </div>
+              </div>
+              <p class="num-codigo-note">Use el switch para incluir u omitir cada segmento. El 2.º prefijo suele ser el año.</p>
+              <div class="num-codigo-preview">
+                <span class="num-codigo-preview-k">Vista previa</span>
+                <code class="num-codigo-preview-v">{{ previewCodigoCertificado() }}</code>
+              </div>
+            </div>
           </div>
         </div>
       </section>

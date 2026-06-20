@@ -10,6 +10,9 @@ import {
   CONSULTA_CERT_SEO_DESCRIPTION,
   CONSULTA_CERT_SEO_KEYWORDS,
   CONSULTA_CERT_SEO_TITLE,
+  BLOG_SEO_DESCRIPTION,
+  BLOG_SEO_KEYWORDS,
+  BLOG_SEO_TITLE,
   CURSOS_SEO_DESCRIPTION,
   CURSOS_SEO_TITLE,
   FUNDACION_SEO_DESCRIPTION,
@@ -33,6 +36,7 @@ type PageMetaOpts = {
   image: string;
   siteName?: string;
   robots?: string;
+  themeColor?: string;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[] | null;
 };
 
@@ -60,6 +64,7 @@ export class PortalSeoService {
       url,
       image,
       siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
       jsonLd: this.buildHomeJsonLd(config, cursos, url, nombre),
     });
   }
@@ -74,6 +79,7 @@ export class PortalSeoService {
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
       jsonLd: this.breadcrumbJsonLd(url, [
         { name: 'Inicio', path: '/' },
         { name: isTienda ? 'Tienda' : 'Cursos', path: isTienda ? '/tienda' : '/cursos' },
@@ -101,6 +107,7 @@ export class PortalSeoService {
       url,
       image,
       siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
       jsonLd: [
         ...this.breadcrumbJsonLd(url, [
           { name: 'Inicio', path: '/' },
@@ -138,6 +145,7 @@ export class PortalSeoService {
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
       jsonLd: this.breadcrumbJsonLd(url, [
         { name: 'Inicio', path: '/' },
         { name: 'Acerca de', path: '/acerca' },
@@ -154,6 +162,7 @@ export class PortalSeoService {
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
       jsonLd: [
         ...this.breadcrumbJsonLd(url, [
           { name: 'Inicio', path: '/' },
@@ -170,6 +179,68 @@ export class PortalSeoService {
     });
   }
 
+  applyBlog(config: PortalConfig | null) {
+    const landing = config?.landing;
+    const pageTitle = landing?.blog?.titulo
+      ? `${landing.blog.titulo} | ${SEO_BRAND}`
+      : BLOG_SEO_TITLE;
+    const description = this.truncate(landing?.blog?.lead?.trim() || BLOG_SEO_DESCRIPTION);
+    const url = this.pageUrl('/blog');
+    this.applyPageMeta({
+      pageTitle,
+      description,
+      keywords: BLOG_SEO_KEYWORDS,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: landing?.blog?.titulo || 'Blog', path: '/blog' },
+      ]),
+    });
+  }
+
+  applyBlogPost(
+    config: PortalConfig | null,
+    post: { titulo: string; slug: string; contenido?: string; autorNombre?: string; publicadoAt?: string | null },
+  ) {
+    const url = this.pageUrl(`/blog/${post.slug}`);
+    const description = this.truncate(
+      (post.contenido || '').replace(/\s+/g, ' ').trim().slice(0, 160) ||
+        config?.landing?.blog?.lead ||
+        BLOG_SEO_DESCRIPTION,
+    );
+    this.applyPageMeta({
+      pageTitle: `${post.titulo} | ${SEO_BRAND}`,
+      description,
+      keywords: BLOG_SEO_KEYWORDS,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: [
+        ...this.breadcrumbJsonLd(url, [
+          { name: 'Inicio', path: '/' },
+          { name: config?.landing?.blog?.titulo || 'Blog', path: '/blog' },
+          { name: post.titulo, path: `/blog/${post.slug}` },
+        ]),
+        {
+          '@type': 'BlogPosting',
+          headline: post.titulo,
+          description,
+          url,
+          datePublished: post.publicadoAt || undefined,
+          author: post.autorNombre
+            ? { '@type': 'Person', name: post.autorNombre }
+            : { '@type': 'Organization', name: SEO_BRAND },
+          publisher: { '@type': 'Organization', name: SEO_BRAND },
+          isPartOf: { '@type': 'WebSite', name: `${SEO_BRAND} — Aula virtual`, url: this.pageUrl('/') },
+        },
+      ],
+    });
+  }
+
   applyFundacion(config: PortalConfig | null) {
     const url = this.pageUrl('/fundacion');
     this.applyPageMeta({
@@ -179,6 +250,7 @@ export class PortalSeoService {
       url,
       image: this.defaultImage(config, '/images/fundacion-equipo.png'),
       siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
       jsonLd: [
         ...this.breadcrumbJsonLd(url, [
           { name: 'Inicio', path: '/' },
@@ -236,6 +308,7 @@ export class PortalSeoService {
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
       robots: 'noindex, follow',
+      themeColor: this.themeColor(config),
       jsonLd: null,
     });
   }
@@ -254,7 +327,7 @@ export class PortalSeoService {
     this.setMeta('geo.placename', SEO_LOCALITY);
     this.setMeta('geo.position', '4.142;-73.626');
     this.setMeta('ICBM', '4.142, -73.626');
-    this.setMeta('theme-color', '#0b1224');
+    this.setMeta('theme-color', opts.themeColor?.trim() || '#0b1224');
 
     this.setOg('og:title', this.truncateTitle(opts.pageTitle));
     this.setOg('og:description', opts.description);
@@ -278,6 +351,10 @@ export class PortalSeoService {
 
   private orgName(config: PortalConfig | null): string {
     return config?.nombreCea?.trim() || 'Fundación Finstruvial';
+  }
+
+  private themeColor(config: PortalConfig | null): string {
+    return config?.site?.tema?.colorFondo?.trim() || '#0b1224';
   }
 
   private pageUrl(path: string): string {

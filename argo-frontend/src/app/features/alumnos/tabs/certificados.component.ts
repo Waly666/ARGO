@@ -23,6 +23,8 @@ import {
   PlantillaCertificado,
 } from '../../../core/services/config-certificado.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
+import { SupervisorAuthService } from '../../../shared/supervisor-auth/supervisor-auth.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'argo-certificados',
@@ -41,6 +43,8 @@ export class CertificadosComponent {
   private cfgCertSvc = inject(ConfigCertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
+  private supervisorAuth = inject(SupervisorAuthService);
+  private auth = inject(AuthService);
 
   elegibles = signal<any[]>([]);
   certificados = signal<any[]>([]);
@@ -271,10 +275,24 @@ export class CertificadosComponent {
       confirmLabel: 'Sí, anular',
     });
     if (!ok) return;
-    this.certSvc.eliminar(c._id).subscribe({
+    let auth: { autorizadoUsername?: string; autorizadoPassword?: string } | undefined;
+    if (!this.auth.isAdmin()) {
+      const cred = await this.supervisorAuth.solicitar({
+        title: 'Autorización para anular certificado',
+        message: `Anular el certificado del programa «${prog}» requiere autorización de un administrador.`,
+        confirmLabel: 'Autorizar y anular',
+      });
+      if (!cred) return;
+      auth = cred;
+    }
+    this.certSvc.eliminar(c._id, auth).subscribe({
       next: () => this.recargar(nd),
       error: (e) => this.msg.set(e?.error?.message || 'Error anulando.'),
     });
+  }
+
+  esAnulado(c: { estado?: string }): boolean {
+    return String(c?.estado || '').trim().toLowerCase() === 'anulado';
   }
 
   imprimir(c: { _id: string }) {

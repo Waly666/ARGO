@@ -25,6 +25,8 @@ import { nombreCompletoAlumno } from '../../core/utils/mensaje-plantilla.helpers
 import { TIPOS_CERTIFICADO, capEncabezadoCert, capTipoFormatoCert, labelTipoCert } from '../../core/constants/tipos-certificado';
 import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { SupervisorAuthService } from '../../shared/supervisor-auth/supervisor-auth.service';
+import { AuthService } from '../../core/services/auth.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import {
   CatalogoEnumBuscarComponent,
@@ -62,6 +64,8 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   private certSvc    = inject(CertificadoService);
   private clienteSvc = inject(ClienteService);
   private confirmSvc = inject(ConfirmDialogService);
+  private supervisorAuth = inject(SupervisorAuthService);
+  private auth = inject(AuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private readonly recargar$ = new Subject<void>();
@@ -504,13 +508,23 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
 
   async eliminar(c: CertificadoListItem) {
     const ok = await this.confirmSvc.open({
-      title: 'Eliminar certificado',
-      message: `¿Eliminar el certificado ${c.codigoCert || c._id} de ${c.nombreCompleto || 'el alumno'}?`,
-      confirmLabel: 'Eliminar',
+      title: 'Anular certificado',
+      message: `¿Anular el certificado ${c.codigoCert || c._id} de ${c.nombreCompleto || 'el alumno'}? Pasará a estado anulado y conservará su consecutivo.`,
+      confirmLabel: 'Anular',
       variant: 'danger',
     });
     if (!ok) return;
-    this.certSvc.eliminar(c._id).subscribe({
+    let auth: { autorizadoUsername?: string; autorizadoPassword?: string } | undefined;
+    if (!this.auth.isAdmin()) {
+      const cred = await this.supervisorAuth.solicitar({
+        title: 'Autorización para anular certificado',
+        message: `Anular el certificado ${c.codigoCert || c._id} requiere autorización de un administrador.`,
+        confirmLabel: 'Autorizar y anular',
+      });
+      if (!cred) return;
+      auth = cred;
+    }
+    this.certSvc.eliminar(c._id, auth).subscribe({
       next: () => {
         this.certificados.update((list) => list.filter((x) => x._id !== c._id));
         this.msgError.set(false);

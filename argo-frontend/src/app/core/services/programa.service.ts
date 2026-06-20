@@ -36,6 +36,13 @@ export interface Programa {
   /** Al matricular, aplica tarifa 3 automáticamente si califica refrendación. */
   aplicarTarifaRevalidacionAuto?: boolean;
   esCapacitacionVirtual?: boolean;
+  /** Modalidades de oferta: VIRTUAL, PRESENCIAL, MIXTA */
+  modalidades?: string[];
+  tarifasPermitidas?: number[];
+  soloVirtual?: boolean;
+  admiteVirtual?: boolean;
+  admitePresencial?: boolean;
+  modalidadLabels?: string[];
   fechaAudi?: string | Date;
   userAddReg?: string;
   userChangeRecord?: string;
@@ -97,6 +104,7 @@ export interface ProgramaDto {
   iva?: number;
   /** Tarifa por hora del servicio adicional de clase práctica (programas licencia de conducción). */
   tarifaHoraPractica?: number;
+  modalidades?: string[];
 }
 
 export interface ProgramaDetalle {
@@ -110,11 +118,12 @@ export class ProgramaService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/programas`;
 
-  listar(opts?: { q?: string; activos?: boolean; catalogo?: boolean }): Observable<Programa[]> {
+  listar(opts?: { q?: string; activos?: boolean; catalogo?: boolean; limit?: number }): Observable<Programa[]> {
     let params = new HttpParams();
     if (opts?.q) params = params.set('q', opts.q);
     if (opts?.activos === false) params = params.set('activos', 'false');
     if (opts?.catalogo) params = params.set('catalogo', '1');
+    if (opts?.limit != null) params = params.set('limit', String(opts.limit));
     return this.http.get<Programa[]>(this.base, { params });
   }
 

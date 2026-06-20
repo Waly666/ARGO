@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { formatNumDoc, parseNumDocForApi } from '../utils/num-doc.helpers';
+import { AutorizacionSupervisorDto } from './supervisor-auth.types';
 
 export interface CertificadoCrearDto {
   numDoc: number | string;
@@ -271,8 +272,8 @@ export class CertificadoService {
     return this.http.put(`${this.base}/${encodeURIComponent(id)}`, dto);
   }
 
-  eliminar(id: string): Observable<{ ok: boolean }> {
-    return this.http.delete<{ ok: boolean }>(`${this.base}/${id}`);
+  eliminar(id: string, auth?: AutorizacionSupervisorDto): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/${id}`, { body: auth || {} });
   }
 
   abrirHtml(id: string, onError?: (msg: string) => void): void {

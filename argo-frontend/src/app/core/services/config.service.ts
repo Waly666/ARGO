@@ -60,8 +60,14 @@ export interface ConfigRecibo {
   consecutivoFactura?: number;
   prefijoComprobanteIngreso?: string;
   consecutivoComprobanteIngreso?: number;
+  usarPrefijoComprobanteIngreso?: boolean;
+  usarSegundoPrefijoComprobanteIngreso?: boolean;
+  segundoPrefijoComprobanteIngreso?: string;
   prefijoComprobanteEgreso?: string;
   consecutivoComprobanteEgreso?: number;
+  usarPrefijoComprobanteEgreso?: boolean;
+  usarSegundoPrefijoComprobanteEgreso?: boolean;
+  segundoPrefijoComprobanteEgreso?: string;
   slogan1?: string;
   mensajeEncabezado?: string;
   mensajeEncabezadoEgreso?: string;

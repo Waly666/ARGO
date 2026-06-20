@@ -153,6 +153,16 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'aula-virtual/blog',
+        canActivate: [permisoGuard],
+        data: {
+          permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'],
+          title: 'Blog del portal',
+        },
+        loadComponent: () =>
+          import('./features/aula-virtual/blog-admin.component').then((m) => m.BlogAdminComponent),
+      },
+      {
         path: 'aula-virtual/foro',
         canActivate: [permisoGuard],
         data: {

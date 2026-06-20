@@ -36,12 +36,14 @@ export class ServicioCatalogoService {
     soloPrograma?: boolean;
     sinPrograma?: boolean;
     catalogo?: boolean;
+    limit?: number;
   }): Observable<ServicioCatalogo[]> {
     let params = new HttpParams();
     if (opts?.q) params = params.set('q', opts.q);
     if (opts?.soloPrograma) params = params.set('soloPrograma', 'true');
     if (opts?.sinPrograma) params = params.set('sinPrograma', 'true');
     if (opts?.catalogo) params = params.set('catalogo', '1');
+    if (opts?.limit != null) params = params.set('limit', String(opts.limit));
     return this.http.get<ServicioCatalogo[]>(this.base, { params });
   }
 

@@ -1,3 +1,5 @@
+@import './config-numeracion-codigo.scss';
+
 .cert-page {
   display: flex;
   flex-direction: column;
@@ -195,7 +197,7 @@
   }
 
   &--datos2 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   &--pair {
@@ -260,10 +262,44 @@
   min-width: 0;
 
   input[type='checkbox'] {
-    width: auto;
     flex-shrink: 0;
-    accent-color: var(--accent-2);
   }
+
+  &--inline {
+    align-items: flex-start;
+    margin: 0;
+    padding: 0.4rem 0.5rem;
+    border-radius: 10px;
+    border: 1px solid rgba(120, 170, 255, 0.16);
+    background: rgba(6, 16, 41, 0.35);
+
+    &:has(input:checked) {
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(56, 189, 248, 0.08);
+
+      .cert-check-title {
+        color: #7dd3fc;
+      }
+    }
+  }
+}
+
+.cert-check-box {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.cert-check-title {
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.cert-check-desc {
+  font-size: 0.68rem;
+  color: var(--text-soft);
+  line-height: 1.3;
 }
 
 .cert-check-grid {
@@ -378,7 +414,7 @@
     background: rgba(56, 189, 248, 0.1);
   }
 
-  input {
+  input:not([type='checkbox']) {
     accent-color: var(--accent-2);
   }
 }

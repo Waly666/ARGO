@@ -1,0 +1,100 @@
+.mig-hist {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.intro {
+  margin: 0;
+  color: var(--text-muted, #64748b);
+  font-size: 0.92rem;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1rem 1.1rem;
+}
+
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.col-6 {
+  flex: 1 1 calc(50% - 0.5rem);
+  min-width: 140px;
+}
+
+.col-12 {
+  flex: 1 1 100%;
+}
+
+label {
+  display: block;
+  font-size: 0.82rem;
+  margin-bottom: 0.25rem;
+}
+
+input,
+select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, #64748b);
+}
+
+.warn {
+  border-left: 4px solid #f59e0b;
+  padding: 0.75rem 1rem;
+}
+
+.msg {
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+}
+
+.msg.ok {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.msg.err {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tbl th,
+.tbl td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.tbl .r {
+  text-align: right;
+}
+
+.primary {
+  margin-top: 0.25rem;
+}

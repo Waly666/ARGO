@@ -90,12 +90,27 @@
       </label>
     </div>
 
-    <div class="row">
+    <div class="row" *ngIf="requiereCuentaEmpresa()">
       <label class="col-6">
-        Ref. comprobante / transferencia
+        Ref. comprobante / transferencia *
         <input type="text" [ngModel]="numComprobante()" (ngModelChange)="numComprobante.set($event)" name="ref" />
       </label>
-      <label class="col-6">
+    </div>
+
+    <div class="row" *ngIf="requiereCuentaEmpresa()">
+      <div class="col-12">
+        <argo-pago-soporte-field
+          [obligatorio]="true"
+          [previewUrl]="previewSoporte()"
+          [nombreArchivo]="archivoSoporte()?.name ?? null"
+          (seleccionado)="onSoporteArchivo($event)"
+          (quitado)="quitarSoporte()"
+        />
+      </div>
+    </div>
+
+    <div class="row" *ngIf="!requiereCuentaEmpresa()">
+      <label class="col-12">
         Observaciones
         <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" name="obs" />
       </label>
@@ -103,9 +118,10 @@
 
     <div class="actions">
       <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
-      <button type="submit" class="primary" [disabled]="saving()">
+      <button type="submit" class="primary" [disabled]="saving() || !puedeGuardar()">
         {{ saving() ? 'Guardando…' : 'Registrar ingreso' }}
       </button>
+      <p class="hint err" *ngIf="mensajePagoIntangible() as aviso">{{ aviso }}</p>
     </div>
   </form>
 </section>

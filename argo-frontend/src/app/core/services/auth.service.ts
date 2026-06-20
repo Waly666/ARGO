@@ -34,6 +34,8 @@ export interface AuthUser {
   empleado?: AuthEmpleadoResumen;
   /** true si puede llamar /api/instructor-portal (permisos + cargo instructor). */
   puedeUsarPortalInstructor?: boolean;
+  /** Cuenta de soporte maestro (break-glass), no está en la BD. */
+  soporteMaestro?: boolean;
   sedes?: { idSede: string; nombre: string; codigo?: string; esPrincipal?: boolean }[];
   sedesPermitidas?: string[];
 }
@@ -107,6 +109,9 @@ export class AuthService {
   });
 
   puedeUsarPortalInstructor = computed(() => this._user()?.puedeUsarPortalInstructor === true);
+
+  /** Cuenta break-glass (soporte-argo / variables SOPORTE_MASTER_*). */
+  isSoporteMaestro = computed(() => this._user()?.soporteMaestro === true);
 
   tienePermiso(clave: string | string[]): boolean {
     return this.permisoSvc.tiene(clave);

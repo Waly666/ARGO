@@ -114,10 +114,18 @@
                 <span class="row-alarm-icon">!</span>
                 <span class="row-alarm-label">Sop.</span>
               </button>
-              <span *ngIf="tieneSoporte(e)" class="dim">—</span>
+              <span *ngIf="tieneSoporte(e)" class="dim">OK</span>
             </td>
             <td class="actions-cell">
               <button type="button" class="ghost mini" (click)="verRecibo(e)">Ver</button>
+              <button
+                type="button"
+                class="primary mini"
+                *ngIf="tieneSoporte(e)"
+                (click)="abrirSoporte(e)"
+                title="Abrir imagen del soporte de pago">
+                Soporte
+              </button>
               <button type="button" class="primary mini" *ngIf="puedeEditarEgreso(e)" (click)="editarEgreso(e)">Editar</button>
               <button type="button" class="danger mini" (click)="anularEgreso(e)">Anular</button>
             </td>
@@ -156,6 +164,7 @@
         <div class="card-foot">
           <button type="button" class="ghost sm" *ngIf="e.idSesion" (click)="irAlCierre(e.idSesion)">Cierre #{{ e.idSesion }}</button>
           <button type="button" class="ghost sm" (click)="verRecibo(e)">Ver recibo</button>
+          <button type="button" class="primary sm" *ngIf="tieneSoporte(e)" (click)="abrirSoporte(e)">Ver soporte</button>
           <button type="button" class="primary sm" *ngIf="puedeEditarEgreso(e)" (click)="editarEgreso(e)">Editar</button>
           <button type="button" class="danger sm" (click)="anularEgreso(e)">Anular</button>
         </div>

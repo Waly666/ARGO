@@ -95,6 +95,12 @@ async function enriquecerEgreso(raw) {
     autorizadoPor: e.autorizadoPor || null,
     nombreAutoriza: e.nombreAutoriza || null,
     autorizadoEn: e.autorizadoEn || null,
+    estado: e.estado || (e.anulado ? 'ANULADO' : null),
+    anulado: e.anulado === true || String(e.estado || '').trim().toUpperCase() === 'ANULADO',
+    anuladoEn: e.anuladoEn || null,
+    anuladoPor: e.anuladoPor || null,
+    valorAnulado: e.valorAnulado != null ? num(e.valorAnulado) : null,
+    motivoAnulacion: e.motivoAnulacion || null,
   };
 }
 

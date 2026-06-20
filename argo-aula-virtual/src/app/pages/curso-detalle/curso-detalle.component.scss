@@ -19,7 +19,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  color: #1d4ed8;
+  color: var(--av-primary-dark);
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
@@ -73,7 +73,7 @@
   padding: 0.25rem 0.6rem;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.95);
-  color: #1d4ed8;
+  color: var(--av-primary-dark);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -93,7 +93,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #1d4ed8;
+  color: var(--av-primary-dark);
   background: #fff;
 }
 
@@ -206,7 +206,7 @@
   padding: 0.7rem 1rem;
   margin-bottom: 0.55rem;
   border-radius: 8px;
-  background: #1d4ed8;
+  background: var(--av-primary-dark);
   color: #fff;
   font-weight: 700;
   font-size: 0.92rem;
@@ -222,7 +222,7 @@
 
   &--ghost {
     background: #fff;
-    color: #1d4ed8;
+    color: var(--av-primary-dark);
     border: 1px solid #93c5fd;
 
     &:hover {
@@ -284,8 +284,8 @@
     }
 
     &.active {
-      color: #1d4ed8;
-      border-bottom-color: #1d4ed8;
+      color: var(--av-primary-dark);
+      border-bottom-color: var(--av-primary-dark);
     }
   }
 }
@@ -357,7 +357,7 @@
 }
 
 .detail-link {
-  color: #1d4ed8;
+  color: var(--av-primary-dark);
   font-weight: 600;
   font-size: 0.88rem;
   text-decoration: none;

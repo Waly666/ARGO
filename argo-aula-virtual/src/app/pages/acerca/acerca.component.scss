@@ -17,9 +17,9 @@
   overflow: hidden;
   padding: clamp(2.25rem, 5vw, 3.25rem) 0;
   background:
-    radial-gradient(ellipse at 75% 25%, rgba(99, 102, 241, 0.35), transparent 55%),
-    radial-gradient(ellipse at 15% 85%, rgba(6, 182, 212, 0.22), transparent 50%),
-    linear-gradient(135deg, #030712 0%, #0b1224 45%, #0f172a 100%);
+    radial-gradient(ellipse at 75% 25%, var(--av-primary-a35), transparent 55%),
+    radial-gradient(ellipse at 15% 85%, var(--av-accent-a22), transparent 50%),
+    var(--av-page-hero-bg);
 
   &::after {
     content: '';
@@ -28,7 +28,7 @@
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.18), transparent 70%);
+    background: radial-gradient(circle, var(--av-page-hero-glow), transparent 70%);
     pointer-events: none;
   }
 }
@@ -55,9 +55,9 @@
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #22d3ee;
-  background: rgba(34, 211, 238, 0.12);
-  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: var(--av-page-hero-kicker-text);
+  background: var(--av-page-hero-kicker-bg);
+  border: 1px solid var(--av-page-hero-kicker-border);
 
   &--light {
     color: #4338ca;
@@ -312,7 +312,7 @@
   }
 
   &--2 {
-    border-top: 3px solid #06b6d4;
+    border-top: 3px solid var(--av-accent);
 
     .acerca-valor__icon {
       background: #ecfeff;

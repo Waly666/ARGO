@@ -50,6 +50,8 @@ function normalizarLanding(input) {
   const catalogoSrc = src.catalogo && typeof src.catalogo === 'object' ? src.catalogo : {};
   const pilaresSrc = src.pilares && typeof src.pilares === 'object' ? src.pilares : {};
   const faqSrc = src.faq && typeof src.faq === 'object' ? src.faq : {};
+  const appMobileSrc = src.appMobile && typeof src.appMobile === 'object' ? src.appMobile : {};
+  const blogSrc = src.blog && typeof src.blog === 'object' ? src.blog : {};
   const fundSrc = src.fundacion && typeof src.fundacion === 'object' ? src.fundacion : {};
   const fundD = d.fundacion || {};
 
@@ -127,6 +129,7 @@ function normalizarLanding(input) {
       acerca: str(navSrc.acerca, d.nav.acerca),
       fundacion: str(navSrc.fundacion, d.nav.fundacion),
       consultaCertificados: str(navSrc.consultaCertificados, d.nav.consultaCertificados),
+      blog: str(navSrc.blog, d.nav.blog),
       acceder: str(navSrc.acceder, d.nav.acceder),
       registrarse: str(navSrc.registrarse, d.nav.registrarse),
       salir: str(navSrc.salir, d.nav.salir),
@@ -190,6 +193,27 @@ function normalizarLanding(input) {
       titulo: str(carrerasSrc.titulo, d.carreras.titulo),
       lead: str(carrerasSrc.lead, d.carreras.lead),
       items: carrerasItems.length ? carrerasItems : d.carreras.items.map((x) => ({ ...x })),
+    },
+    appMobile: {
+      kicker: str(appMobileSrc.kicker, d.appMobile.kicker),
+      titulo: str(appMobileSrc.titulo, d.appMobile.titulo),
+      lead: str(appMobileSrc.lead, d.appMobile.lead),
+      features: normalizarItemsIcono(appMobileSrc.features, d.appMobile.features, [
+        'icon',
+        'title',
+        'text',
+      ]),
+      btnDescargar: str(appMobileSrc.btnDescargar, d.appMobile.btnDescargar),
+      notaInstalacion: str(appMobileSrc.notaInstalacion, d.appMobile.notaInstalacion),
+      apkUrl: str(appMobileSrc.apkUrl, d.appMobile.apkUrl),
+      apkNombre: str(appMobileSrc.apkNombre, d.appMobile.apkNombre),
+    },
+    blog: {
+      kicker: str(blogSrc.kicker, d.blog.kicker),
+      titulo: str(blogSrc.titulo, d.blog.titulo),
+      lead: str(blogSrc.lead, d.blog.lead),
+      emptyTitulo: str(blogSrc.emptyTitulo, d.blog.emptyTitulo),
+      emptyTexto: str(blogSrc.emptyTexto, d.blog.emptyTexto),
     },
     pilares: {
       tabCapacitacion: str(pilaresSrc.tabCapacitacion, d.pilares.tabCapacitacion),

@@ -40,9 +40,14 @@ import { CajaAperturaAlertService } from '../../core/services/caja-apertura-aler
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
 import {
+  pagoIntangibleCompleto,
+  validarPagoIntangible,
+} from '../../core/utils/pago-intangible.validators';
+import {
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
+import { PagoSoporteFieldComponent } from '../../shared/pago-soporte-field/pago-soporte-field.component';
 import {
   CajaActivaResponse,
   CajaAbiertaItem,
@@ -64,6 +69,7 @@ import {
 
   imports: [CommonModule, FormsModule, RouterLink,
     ArgoDateInputComponent,
+    PagoSoporteFieldComponent,
   ],
 
   templateUrl: './egresos-admin.component.html',
@@ -178,6 +184,26 @@ export class EgresosAdminComponent implements OnInit {
 
     return f !== 'Efectivo' && f !== '';
 
+  });
+
+  inputPagoIntangible = computed(() => ({
+    esIntangible: this.requiereRefBancaria(),
+    referencia: this.form().numTransferencia,
+    archivo: this.archivoSoporte(),
+    urlSoporteExistente: this.editando()?.urlSoporte,
+  }));
+
+  mensajePagoIntangible = computed(() => {
+    const v = validarPagoIntangible(this.inputPagoIntangible());
+    return v.ok ? null : v.message;
+  });
+
+  puedeGuardarEgreso = computed(() => {
+    const f = this.form();
+    if (!f.concepto?.trim() || !(Number(f.valorEgreso) > 0) || !f.pagueA?.trim() || !f.numeroDocumento?.trim() || !f.tipoEgreso) {
+      return false;
+    }
+    return pagoIntangibleCompleto(this.inputPagoIntangible());
   });
 
 
@@ -943,35 +969,16 @@ export class EgresosAdminComponent implements OnInit {
 
 
 
-  onSoporte(ev: Event) {
-
-    const input = ev.target as HTMLInputElement;
-
-    const file = input.files?.[0];
-
-    if (!file) return;
-
+  onSoporteArchivo(file: File) {
     if (!file.type.startsWith('image/')) {
-
       this.inform('Seleccione una imagen (JPG, PNG, etc.).');
-
-      input.value = '';
-
       return;
-
     }
-
     this.archivoSoporte.set(file);
-
     const reader = new FileReader();
-
     reader.onload = () => this.previewSoporte.set(String(reader.result));
-
     reader.readAsDataURL(file);
-
   }
-
-
 
   quitarSoporte() {
 
@@ -1097,6 +1104,16 @@ export class EgresosAdminComponent implements OnInit {
 
     }
 
+    const intangible = validarPagoIntangible(this.inputPagoIntangible());
+    if (!intangible.ok) {
+      this.inform(intangible.message);
+      return;
+    }
+    if (!this.puedeGuardarEgreso()) {
+      this.inform(this.mensajePagoIntangible() || 'Complete referencia y pantallazo del movimiento.');
+      return;
+    }
+
     if (!ed) {
       if (!(await this.cajaAlert.ensureAbierta('registrar egresos'))) return;
     }
@@ -1184,7 +1201,7 @@ export class EgresosAdminComponent implements OnInit {
 
         if (eg.numRecibo) txt += ` Comprobante ${eg.numRecibo}.`;
 
-        if (!this.tieneSoporte(eg)) {
+        if (!this.tieneSoporte(eg) && this.requiereRefBancaria()) {
           txt += ' Atención: quedó sin soporte adjunto.';
         }
 
@@ -1213,19 +1230,11 @@ export class EgresosAdminComponent implements OnInit {
 
   async eliminar(e: Egreso) {
 
-    if (!this.puedeGestionarEgreso(e)) {
-
-      this.inform('Solo puede anular egresos de su sesión de caja actual.');
-
-      return;
-
-    }
-
     const ok = await this.confirm.open({
 
       title: 'Anular egreso',
 
-      message: `¿Anular el egreso a ${e.pagueA || e.concepto}?`,
+      message: `¿Anular el egreso a ${e.pagueA || e.concepto}? Pasará a estado anulado en cero y conservará su consecutivo.`,
 
       confirmLabel: 'Anular',
 
@@ -1333,6 +1342,18 @@ export class EgresosAdminComponent implements OnInit {
 
   }
 
+  esAnulado(e: Egreso): boolean {
+    if (e?.anulado === true) return true;
+    return String(e?.estado || '').trim().toUpperCase() === 'ANULADO';
+  }
+
+  tituloAnulado(e: Egreso): string {
+    const partes: string[] = [];
+    if (e?.anuladoPor) partes.push(`Anuló: ${e.anuladoPor}`);
+    if (e?.autorizadoPor) partes.push(`Autorizó: ${e.autorizadoPor}`);
+    return partes.join(' · ') || 'Egreso anulado';
+  }
+
 
 
   tituloAutorizacionSupervisor(): string {
@@ -1358,10 +1379,14 @@ export class EgresosAdminComponent implements OnInit {
   tituloSoporte = tituloSoporteEgreso;
 
   faltaSoporteEnForm(): boolean {
+    if (!this.requiereRefBancaria()) return false;
     if (this.archivoSoporte()) return false;
     const ed = this.editando();
     if (ed?.urlSoporte) return false;
-    if (this.previewSoporte()) return false;
+    if (this.previewSoporte() && !this.archivoSoporte()) {
+      // preview de soporte ya guardado en edición
+      return false;
+    }
     return true;
   }
 

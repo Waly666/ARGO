@@ -37,6 +37,10 @@ import {
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
+import {
+  partesEtiquetaComprobanteAlarma,
+  tituloComprobanteAlarma,
+} from '../../core/utils/comprobante-alarma.helpers';
 import { ymdLocal } from '../jornadas/jornada-calendario.util';
 
 type VistaAlumnos = VistaLista;
@@ -560,31 +564,25 @@ export class AlumnosListaComponent implements OnInit {
   tituloComprobanteIngreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteIngresoHoy;
     if (!m) return '';
-    return ['Comprobante de ingreso hoy', m.numRecibo, this.fmtSaldo(m.valor), m.detalle]
-      .filter(Boolean)
-      .join(' · ');
+    return tituloComprobanteAlarma(m, 'ingreso', (n) => this.fmtSaldo(n));
   }
 
   etiquetaComprobanteIngreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteIngresoHoy;
     if (!m) return 'Ingreso';
-    const ref = m.numRecibo || 'Ingreso';
-    return [ref, this.fmtSaldo(m.valor), m.detalle].filter(Boolean).join(' · ');
+    return partesEtiquetaComprobanteAlarma(m, 'ingreso', (n) => this.fmtSaldo(n)).join(' · ');
   }
 
   tituloComprobanteEgreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteEgresoHoy;
     if (!m) return '';
-    return ['Comprobante de egreso hoy', m.numRecibo, this.fmtSaldo(m.valor), m.detalle]
-      .filter(Boolean)
-      .join(' · ');
+    return tituloComprobanteAlarma(m, 'egreso', (n) => this.fmtSaldo(n));
   }
 
   etiquetaComprobanteEgreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteEgresoHoy;
     if (!m) return 'Egreso';
-    const ref = m.numRecibo || 'Egreso';
-    return [ref, this.fmtSaldo(m.valor), m.detalle].filter(Boolean).join(' · ');
+    return partesEtiquetaComprobanteAlarma(m, 'egreso', (n) => this.fmtSaldo(n)).join(' · ');
   }
 
   tituloFacturaHoy(r: AlumnoListItem): string {

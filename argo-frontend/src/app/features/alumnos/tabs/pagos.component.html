@@ -274,9 +274,22 @@
             (limpiado)="onCuentaBancariaLimpiar()"
           />
           <label class="campo-simple">
-            Nº comprobante / referencia
-            <input type="text" [ngModel]="numComprobante()" (ngModelChange)="numComprobante.set($event)" placeholder="Opcional" />
+            Nº comprobante / referencia<span *ngIf="requiereComprobante()"> *</span>
+            <input
+              type="text"
+              [ngModel]="numComprobante()"
+              (ngModelChange)="numComprobante.set($event)"
+              [placeholder]="requiereComprobante() ? 'Obligatorio para este medio de pago' : 'Opcional'"
+            />
           </label>
+          <argo-pago-soporte-field
+            *ngIf="requiereSoporte()"
+            [obligatorio]="true"
+            [previewUrl]="previewSoporte()"
+            [nombreArchivo]="archivoSoporte()?.name ?? null"
+            (seleccionado)="onSoporteArchivo($event)"
+            (quitado)="quitarSoporte()"
+          />
         </div>
 
         <label class="campo-simple">
@@ -301,7 +314,8 @@
             {{ saving() ? 'Registrando…' : 'Registrar pago' }}
           </button>
           <p class="resumen-ayuda" *ngIf="itemsPago().length && !idTipoPago()">Seleccione la forma de pago.</p>
-          <p class="resumen-ayuda" *ngIf="requiereCuentaEmpresa() && !idCuentaBancaria()">
+          <p class="resumen-ayuda err" *ngIf="mensajePagoIntangible() as aviso">{{ aviso }}</p>
+          <p class="resumen-ayuda" *ngIf="requiereCuentaEmpresa() && !idCuentaBancaria() && !mensajePagoIntangible()">
             Indique la cuenta de la empresa.
           </p>
         </div>
@@ -330,9 +344,14 @@
         <tr
           *ngFor="let p of pagos()"
           [id]="esIngresoDestacado(p) ? 'ingreso-row-' + (p._id || p.id) : null"
-          [class.row-ingreso-destacado]="esIngresoDestacado(p)">
+          [class.row-ingreso-destacado]="esIngresoDestacado(p)"
+          [class.row-anulado]="esAnulado(p)">
           <td>{{ tiempoFmt(p.fecha || p.createdAt) }}</td>
-          <td>{{ conceptoPago(p) }}</td>
+          <td>
+            {{ conceptoPago(p) }}
+            <span class="badge err mini-badge" *ngIf="esAnulado(p)">ANULADO</span>
+            <span class="badge info mini-badge" *ngIf="!esAnulado(p) && esMigracion(p)">MIGRACIÓN</span>
+          </td>
           <td>
             <span class="badge" [ngClass]="tipoAbonoClass(p)">{{ tipoAbonoLabel(p) }}</span>
           </td>
@@ -343,7 +362,12 @@
           <td class="r actions-cell">
             <button type="button" class="primary mini" (click)="imprimirRecibo(p)">Imprimir</button>
             <button type="button" class="ghost mini" (click)="verRecibo(p)">Vista</button>
-            <button type="button" class="danger mini" (click)="reversar(p)">Reversar</button>
+            <button
+              type="button"
+              class="danger mini"
+              *ngIf="!esAnulado(p)"
+              (click)="reversar(p)">Reversar</button>
+            <span class="anulado-tag" *ngIf="esAnulado(p)" [attr.title]="tituloAnulado(p)">Anulado</span>
           </td>
         </tr>
         <tr *ngIf="pagos().length === 0">

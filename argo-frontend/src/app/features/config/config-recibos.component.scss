@@ -1,3 +1,5 @@
+@import './config-numeracion-codigo.scss';
+
 .rec-page {
   display: flex;
   flex-direction: column;
@@ -296,43 +298,6 @@
   letter-spacing: 0.04em;
 }
 
-.rec-num-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.rec-num-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid rgba(120, 170, 255, 0.14);
-  background: rgba(3, 10, 28, 0.35);
-}
-
-.rec-num-kicker {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-
-  &--ing { color: #7dd3fc; }
-  &--egr { color: #fde68a; }
-}
-
-.rec-preview-mini {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-dim);
-  padding: 0.2rem 0.35rem;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.03);
-  align-self: flex-start;
-}
-
 .rec-toggle {
   display: flex;
   align-items: flex-start;
@@ -347,12 +312,7 @@
   min-height: 100%;
 
   input[type='checkbox'] {
-    margin-top: 0.15rem;
-    width: auto;
-    min-width: 1rem;
-    height: 1rem;
     flex-shrink: 0;
-    accent-color: #2dd4bf;
   }
 
   &:hover {
@@ -472,10 +432,6 @@
   .rec-grid--num,
   .rec-grid--format,
   .rec-grid--2 {
-    grid-template-columns: 1fr;
-  }
-
-  .rec-num-pair {
     grid-template-columns: 1fr;
   }
 

@@ -28,64 +28,76 @@
     "headers": [
       "idTipoServ",
       "tipoServ",
-      "descTipoServ"
+      "descTipoServ",
+      "claseServ"
     ],
     "rowCount": 11,
     "rows": [
       {
         "idTipoServ": 1,
         "tipoServ": "CUR",
-        "descTipoServ": "CURSOS"
+        "descTipoServ": "CURSOS",
+        "claseServ": "Educativo"
       },
       {
         "idTipoServ": 2,
         "tipoServ": "DIP",
-        "descTipoServ": "DIPLOMADOS"
+        "descTipoServ": "DIPLOMADOS",
+        "claseServ": "Educativo"
       },
       {
         "idTipoServ": 3,
         "tipoServ": "TEC",
-        "descTipoServ": "TECNICOS"
+        "descTipoServ": "TECNICOS",
+        "claseServ": "Educativo"
       },
       {
         "idTipoServ": 4,
         "tipoServ": "SEG",
-        "descTipoServ": "SEGURO"
+        "descTipoServ": "SEGURO",
+        "claseServ": "Otro"
       },
       {
         "idTipoServ": 5,
         "tipoServ": "CEA",
-        "descTipoServ": "CEA"
+        "descTipoServ": "CEA",
+        "claseServ": "Educativo"
       },
       {
         "idTipoServ": 6,
         "tipoServ": "CRC",
-        "descTipoServ": "CRC"
+        "descTipoServ": "CRC",
+        "claseServ": "Otro"
       },
       {
         "idTipoServ": 7,
         "tipoServ": "ASE",
-        "descTipoServ": "ASESORIA"
+        "descTipoServ": "ASESORIA",
+        "claseServ": "Consultoria"
       },
       {
         "idTipoServ": 8,
         "tipoServ": "TRM",
-        "descTipoServ": "TRAMITES"
+        "descTipoServ": "TRAMITES",
+        "claseServ": "Otro"
       },
       {
         "idTipoServ": 9,
         "tipoServ": "DET",
-        "descTipoServ": "DERECHOS TRANSITO"
+        "descTipoServ": "DERECHOS TRANSITO",
+        "claseServ": "Otro"
       },
       {
         "idTipoServ": 10,
         "tipoServ": "RUNT",
-        "descTipoServ": "DERECHOS RUNT"
+        "descTipoServ": "DERECHOS RUNT",
+        "claseServ": "Otro"
       },
       {
         "idTipoServ": 11,
         "tipoServ": "FNSV",
-        "descTipoServ": "DERECHOS FNSV"
+        "descTipoServ": "DERECHOS FNSV",
+        "claseServ": "Otro"
       }
     ]
   },

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Liquidacion = require('../models/Liquidacion');
 const Matricula = require('../models/Matricula');
+const Ingreso = require('../models/Ingreso');
 
 function num(v) {
   if (v == null) return 0;
@@ -74,10 +75,58 @@ async function actualizarSaldosLiquidacionesPorServicio(idServ, nuevoValor) {
   return liqs.length;
 }
 
+/** Recalcula abonado/saldo/estado de una liquidación sumando ingresos vigentes.
+ *  Los ingresos ANULADOS aportan 0 (valor en cero), así el servicio queda habilitado de nuevo. */
+async function recalcularAbonoLiquidacion(idLiquidacion) {
+  if (!idLiquidacion) return null;
+  const liq = await Liquidacion.findById(idLiquidacion);
+  if (!liq) return null;
+
+  const idStr = String(idLiquidacion);
+  const ingresos = await Ingreso.find({
+    $or: [{ idLiquidacion }, { 'detalle.idLiquidacion': idLiquidacion }],
+  }).lean();
+
+  let abonado = 0;
+  for (const ing of ingresos) {
+    if (Array.isArray(ing.detalle) && ing.detalle.length) {
+      for (const d of ing.detalle) {
+        if (String(d.idLiquidacion) === idStr) abonado += num(d.valor);
+      }
+    } else if (ing.idLiquidacion && String(ing.idLiquidacion) === idStr) {
+      abonado += num(ing.valor);
+    }
+  }
+
+  const valor = num(liq.valor);
+  abonado = Math.max(0, Math.min(abonado, valor));
+  const saldo = Math.max(0, valor - abonado);
+  const estado = estadoLiq(valor, abonado);
+
+  await Liquidacion.updateOne(
+    { _id: idLiquidacion },
+    { $set: { abonado: toDec(abonado), saldo: toDec(saldo), estado } },
+  );
+
+  return { abonado, saldo, estado, idMat: liq.idMat || liq.idMatricula || null };
+}
+
+/** Ítems de liquidación afectados por un ingreso (simple o multi-ítem). */
+function idsLiquidacionDeIngreso(ing) {
+  if (!ing) return [];
+  if (Array.isArray(ing.detalle) && ing.detalle.length) {
+    return [...new Set(ing.detalle.map((d) => d.idLiquidacion).filter(Boolean).map(String))];
+  }
+  if (ing.idLiquidacion) return [String(ing.idLiquidacion)];
+  return [];
+}
+
 module.exports = {
   num,
   estadoLiq,
   estadoPagadaMatricula,
   refrescarPagoMatricula,
   actualizarSaldosLiquidacionesPorServicio,
+  recalcularAbonoLiquidacion,
+  idsLiquidacionDeIngreso,
 };

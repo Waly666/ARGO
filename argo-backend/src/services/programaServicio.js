@@ -299,18 +299,32 @@ async function crearServicioDocumento(prog, servicioBody, usuario, campos) {
 }
 
 async function crearServiciosPorSemestres(prog, servicioBody, usuario) {
+  const { esSoloVirtual, modalidadesEfectivas } = require('./programaModalidad');
   const n = Math.floor(Number(prog.semestres));
-  const total = num(servicioBody?.tarifa1 ?? servicioBody?.valorMatricula ?? prog.valorMatricula);
+  const soloVir = esSoloVirtual(modalidadesEfectivas(prog));
+  const total = soloVir
+    ? num(servicioBody?.tarifaVirtual)
+    : num(servicioBody?.tarifa1 ?? servicioBody?.valorMatricula ?? prog.valorMatricula);
   const valores = repartirValor(total, n);
   const tipoServ = (servicioBody?.tipoServ || '').trim() || inferirTipoServ(prog.idTipCap);
   const creados = [];
   for (let i = 1; i <= n; i++) {
-    const bodySem = {
-      ...servicioBody,
-      tarifa1: valores[i - 1],
-      descrServicio: descrServicioSemestre(i, prog, tipoServ),
-      tipoServ,
-    };
+    const bodySem = soloVir
+      ? {
+          ...servicioBody,
+          tarifa1: 0,
+          tarifa2: 0,
+          tarifa3: 0,
+          tarifaVirtual: valores[i - 1],
+          descrServicio: descrServicioSemestre(i, prog, tipoServ),
+          tipoServ,
+        }
+      : {
+          ...servicioBody,
+          tarifa1: valores[i - 1],
+          descrServicio: descrServicioSemestre(i, prog, tipoServ),
+          tipoServ,
+        };
     const s = await crearServicioDocumento(prog, bodySem, usuario, { numSemestre: i });
     creados.push(s);
   }
@@ -367,8 +381,12 @@ async function sincronizarServicioUnico(prog, servicioBody, usuario) {
 }
 
 async function sincronizarServiciosPorSemestres(prog, servicioBody, usuario) {
+  const { esSoloVirtual, modalidadesEfectivas } = require('./programaModalidad');
   const n = Math.floor(Number(prog.semestres));
-  const total = num(servicioBody?.tarifa1 ?? servicioBody?.valorMatricula ?? prog.valorMatricula);
+  const soloVir = esSoloVirtual(modalidadesEfectivas(prog));
+  const total = soloVir
+    ? num(servicioBody?.tarifaVirtual ?? prog.valorMatricula)
+    : num(servicioBody?.tarifa1 ?? servicioBody?.valorMatricula ?? prog.valorMatricula);
   const valores = repartirValor(total, n);
   const tipoServ = (servicioBody?.tipoServ || '').trim() || inferirTipoServ(prog.idTipCap);
   const existentes = ordenarServicios(
@@ -394,7 +412,8 @@ async function sincronizarServiciosPorSemestres(prog, servicioBody, usuario) {
       }
     }
     const descr = descrServicioSemestre(i, prog, tipoServ);
-    const tarifa1 = valores[i - 1];
+    const tarifa1 = soloVir ? 0 : valores[i - 1];
+    const tarifaVirtual = soloVir ? valores[i - 1] : num(servicioBody?.tarifaVirtual ?? serv?.tarifaVirtual);
     const patch = {
       tipoServ,
       idProg: idProgDePrograma(prog),
@@ -406,17 +425,35 @@ async function sincronizarServiciosPorSemestres(prog, servicioBody, usuario) {
       fechaMod: new Date(),
       userChangeRecord: usuario?.username || 'sistema',
     };
-    const tarifaAnterior = serv ? num(serv.tarifa1) : null;
+    if (soloVir) {
+      patch.tarifaVirtual = tarifaVirtual;
+      patch.tarifa2 = 0;
+      patch.tarifa3 = 0;
+    } else if (servicioBody?.tarifaVirtual != null && servicioBody?.tarifaVirtual !== '') {
+      patch.tarifaVirtual = num(servicioBody.tarifaVirtual);
+    }
+    const tarifaAnterior = serv ? num(soloVir ? serv.tarifaVirtual : serv.tarifa1) : null;
+    const tarifaNueva = soloVir ? tarifaVirtual : tarifa1;
 
     if (serv) {
       await cat.servicios.updateOne({ idServ: serv.idServ }, { $set: patch });
       const actualizado = await cat.servicios.findOne({ idServ: serv.idServ }).lean();
       resultado.push(actualizado);
-      if (tarifaAnterior !== tarifa1) {
-        await actualizarSaldosLiquidacionesPorServicio(serv.idServ, tarifa1);
+      if (tarifaAnterior !== tarifaNueva) {
+        await actualizarSaldosLiquidacionesPorServicio(serv.idServ, tarifaNueva);
       }
     } else {
-      const bodySem = { ...servicioBody, tarifa1, descrServicio: descr, tipoServ };
+      const bodySem = soloVir
+        ? {
+            ...servicioBody,
+            tarifa1: 0,
+            tarifa2: 0,
+            tarifa3: 0,
+            tarifaVirtual: tarifaVirtual,
+            descrServicio: descr,
+            tipoServ,
+          }
+        : { ...servicioBody, tarifa1, descrServicio: descr, tipoServ };
       const nuevo = await crearServicioDocumento(prog, bodySem, usuario, { numSemestre: i });
       resultado.push(nuevo);
     }
@@ -508,6 +545,7 @@ function esCapacitacionVirtualServicio(serv) {
 
 async function adjuntarVirtualidadProgramas(rows) {
   if (!rows?.length) return rows || [];
+  const { enriquecerProgramaModalidad } = require('./programaModalidad');
   const ids = [...new Set(rows.map((r) => String(r.idPrograma)))];
   const servs = await cat.servicios
     .find({
@@ -516,20 +554,23 @@ async function adjuntarVirtualidadProgramas(rows) {
       rolServicio: { $ne: 'hora_practica' },
     })
     .lean();
-  const tv = new Map();
+  const servsPorProg = new Map();
   for (const s of servs) {
     const k = String(s.idProg);
-    const v = num(s.tarifaVirtual);
-    const prev = tv.get(k) ?? 0;
-    if (v > prev) tv.set(k, v);
+    if (!servsPorProg.has(k)) servsPorProg.set(k, []);
+    servsPorProg.get(k).push(s);
   }
   return rows.map((r) => {
-    const tarifaVirtual = tv.get(String(r.idPrograma)) ?? 0;
-    return {
-      ...r,
-      tarifaVirtual,
-      esCapacitacionVirtual: tarifaVirtual > 0,
-    };
+    const id = String(r.idPrograma);
+    const serviciosProg = servsPorProg.get(id) || [];
+    const tarifaVirtual = serviciosProg.reduce((m, s) => Math.max(m, num(s.tarifaVirtual)), 0);
+    return enriquecerProgramaModalidad(
+      {
+        ...r,
+        tarifaVirtual,
+      },
+      serviciosProg,
+    );
   });
 }
 

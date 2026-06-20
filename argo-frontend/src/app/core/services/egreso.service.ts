@@ -159,6 +159,18 @@ export interface Egreso {
 
   autorizadoEn?: string | null;
 
+  estado?: string | null;
+
+  anulado?: boolean;
+
+  anuladoEn?: string | null;
+
+  anuladoPor?: string | null;
+
+  valorAnulado?: number | null;
+
+  motivoAnulacion?: string | null;
+
 }
 
 

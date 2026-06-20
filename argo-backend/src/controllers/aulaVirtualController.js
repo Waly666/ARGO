@@ -3,6 +3,7 @@ const {
   obtenerCursoVirtual,
 } = require('../services/aulaVirtualCatalogo');
 const { listarCategorias } = require('../services/aulaVirtualCategorias');
+const { listarPublicos, obtenerPublicoPorSlug } = require('../services/aulaVirtualBlog');
 const { obtenerConfigPortalPublica } = require('../services/aulaVirtualPortal');
 const { registrarPortal, loginPortal, buscarAlumnoRegistro } = require('../services/aulaVirtualAuth');
 const {
@@ -64,6 +65,23 @@ exports.listarCategorias = async (_req, res, next) => {
   try {
     res.json(await listarCategorias({ soloActivas: true }));
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.listarBlog = async (_req, res, next) => {
+  try {
+    res.json(await listarPublicos());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerBlogPost = async (req, res, next) => {
+  try {
+    res.json(await obtenerPublicoPorSlug(req.params.slug));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

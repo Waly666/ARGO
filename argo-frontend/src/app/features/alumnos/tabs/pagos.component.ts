@@ -26,6 +26,10 @@ import {
 } from '../../../core/services/facturacion.service';
 import { ComprobanteHoyAlertService } from '../../../core/services/comprobante-hoy-alert.service';
 import { AlertaPagoAlumnoService } from '../../../core/services/alerta-pago-alumno.service';
+import { requiereReferenciaPago } from '../../../core/utils/referencia-pago.util';
+import { leerImagenSoporte } from '../../../core/utils/pago-soporte.helpers';
+import { pagoIntangibleCompleto, validarPagoIntangible } from '../../../core/utils/pago-intangible.validators';
+import { PagoSoporteFieldComponent } from '../../../shared/pago-soporte-field/pago-soporte-field.component';
 
 interface ItemPagoSel {
   idLiquidacion: string;
@@ -48,7 +52,7 @@ const TIPOS_PAGO_DEF = [
 @Component({
   selector: 'argo-pagos',
   standalone: true,
-  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, FacturaEmitirModalComponent],
+  imports: [CommonModule, FormsModule, CatalogoEnumBuscarComponent, FacturaEmitirModalComponent, PagoSoporteFieldComponent],
   templateUrl: './pagos.component.html',
   styleUrls: ['./pagos.component.scss'],
 })
@@ -79,6 +83,8 @@ export class PagosComponent {
   idTipoPago = signal<string>('');
   idCuentaBancaria = signal<string>('');
   numComprobante = signal<string>('');
+  archivoSoporte = signal<File | null>(null);
+  previewSoporte = signal<string | null>(null);
   observaciones = signal<string>('');
 
   loading = signal(false);
@@ -96,6 +102,9 @@ export class PagosComponent {
   mostrarAuthAnular = signal(false);
   authAdminUser = signal('');
   authAdminPass = signal('');
+
+  /** Evita spinner en recargas por sync entre pestañas (solo liqTick). */
+  private lastRecargaNumDoc: string | number | null = null;
 
   itemsConSaldo = computed(() =>
     this.liquidacion()
@@ -122,6 +131,25 @@ export class PagosComponent {
   });
 
   requiereCuentaEmpresa = computed(() => !!this.idTipoPago() && !this.esEfectivo());
+
+  requiereComprobante = computed(() => {
+    const t = this.tipoPagoSel();
+    if (!t) return false;
+    return requiereReferenciaPago(this.tipoPagoLabel(t));
+  });
+
+  requiereSoporte = computed(() => this.requiereCuentaEmpresa());
+
+  inputPagoIntangible = computed(() => ({
+    esIntangible: this.requiereCuentaEmpresa(),
+    referencia: this.numComprobante(),
+    archivo: this.archivoSoporte(),
+  }));
+
+  mensajePagoIntangible = computed(() => {
+    const v = validarPagoIntangible(this.inputPagoIntangible());
+    return v.ok ? null : v.message;
+  });
 
   opcionesItemsLiquidacion = computed<EnumBuscarOption[]>(() =>
     this.itemsConSaldo()
@@ -170,11 +198,16 @@ export class PagosComponent {
 
     effect(() => {
       const nd = this.store.numDoc();
-      if (nd) this.recargar(nd);
-      else {
+      const _liq = this.store.liqTick();
+      if (!nd) {
+        this.lastRecargaNumDoc = null;
         this.liquidacion.set({ items: [], totales: { valor: 0, abonado: 0, saldo: 0 } });
         this.pagos.set([]);
+        return;
       }
+      const soloSync = this.lastRecargaNumDoc === nd && _liq > 0;
+      this.lastRecargaNumDoc = nd;
+      this.recargar(nd, { silencioso: soloSync });
     });
 
     this.route.queryParamMap.subscribe((q) => {
@@ -223,6 +256,7 @@ export class PagosComponent {
     this.idTipoPago.set(id);
     if (!id) {
       this.idCuentaBancaria.set('');
+      this.quitarSoporte();
       return;
     }
     const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
@@ -238,6 +272,24 @@ export class PagosComponent {
     if (match) {
       this.idCuentaBancaria.set(this.cuentaValor(match));
     }
+    if (!this.requiereSoporte()) this.quitarSoporte();
+  }
+
+  onSoporteArchivo(file: File) {
+    const ok = leerImagenSoporte(
+      file,
+      (dataUrl) => {
+        this.archivoSoporte.set(file);
+        this.previewSoporte.set(dataUrl);
+      },
+      (msg) => this.msg.set(msg),
+    );
+    if (!ok) this.quitarSoporte();
+  }
+
+  quitarSoporte() {
+    this.archivoSoporte.set(null);
+    this.previewSoporte.set(null);
   }
 
   tipoPagoSel(): Record<string, unknown> | undefined {
@@ -324,12 +376,17 @@ export class PagosComponent {
   }
 
   puedeRegistrar(): boolean {
-    return (
-      this.itemsPago().length > 0 &&
-      !!this.idTipoPago() &&
-      this.totalPago() > 0 &&
-      (!this.requiereCuentaEmpresa() || !!this.idCuentaBancaria())
-    );
+    if (
+      !(
+        this.itemsPago().length > 0 &&
+        !!this.idTipoPago() &&
+        this.totalPago() > 0 &&
+        (!this.requiereCuentaEmpresa() || !!this.idCuentaBancaria())
+      )
+    ) {
+      return false;
+    }
+    return pagoIntangibleCompleto(this.inputPagoIntangible());
   }
 
   onItemLiquidacionPick(opt: EnumBuscarOption): void {
@@ -376,7 +433,7 @@ export class PagosComponent {
 
   onFacturaEmitida(): void {
     const nd = this.store.numDoc();
-    if (nd) this.recargar(nd);
+    if (nd) this.recargar(nd, { notificar: true });
   }
 
   toggleDetalleFactura(id: string): void {
@@ -461,9 +518,16 @@ export class PagosComponent {
     });
   }
 
-  recargar(numDoc: number | string) {
+  recargar(numDoc: number | string, opts: { notificar?: boolean; silencioso?: boolean } = {}) {
+    const { notificar = false, silencioso = false } = opts;
     this.cargarFacturas(numDoc);
-    this.loading.set(true);
+    if (!silencioso) this.loading.set(true);
+    let pending = 2;
+    const done = () => {
+      pending -= 1;
+      if (pending > 0) return;
+      if (notificar) this.store.touchLiquidacion();
+    };
     this.liqSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {
         this.liquidacion.set(r);
@@ -479,20 +543,22 @@ export class PagosComponent {
             })
             .filter((x): x is ItemPagoSel => x !== null),
         );
-        this.store.touchLiquidacion();
+        done();
       },
+      error: () => done(),
     });
     this.ingSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {
         this.pagos.set(r || []);
-        this.loading.set(false);
-        this.store.touchLiquidacion();
+        if (!silencioso) this.loading.set(false);
         this.scrollIngresoDestacado();
+        done();
       },
       error: (e) => {
         this.pagos.set([]);
-        this.loading.set(false);
+        if (!silencioso) this.loading.set(false);
         this.msg.set(e?.error?.message || 'No se pudo cargar el historial de pagos.');
+        done();
       },
     });
   }
@@ -527,25 +593,38 @@ export class PagosComponent {
       this.msg.set('Selecciona la cuenta bancaria de la empresa donde ingresa el pago.');
       return;
     }
+    const intangible = validarPagoIntangible(this.inputPagoIntangible());
+    if (!intangible.ok) {
+      this.msg.set(intangible.message);
+      return;
+    }
+    if (!this.puedeRegistrar()) {
+      this.msg.set(this.mensajePagoIntangible() || 'Complete los datos del pago antes de continuar.');
+      return;
+    }
     this.saving.set(true);
     this.msg.set(null);
     this.ingSvc
-      .crear({
-        numDoc: nd,
-        items: items.map((i) => ({ idLiquidacion: i.idLiquidacion, valor: i.valor })),
-        idTipoPago: this.idTipoPago(),
-        idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() || undefined : undefined,
-        numComprobante: this.numComprobante() || undefined,
-        observaciones: this.observaciones() || undefined,
-      })
+      .crear(
+        {
+          numDoc: nd,
+          items: items.map((i) => ({ idLiquidacion: i.idLiquidacion, valor: i.valor })),
+          idTipoPago: this.idTipoPago(),
+          idCuentaBancaria: this.requiereCuentaEmpresa() ? this.idCuentaBancaria() || undefined : undefined,
+          numComprobante: this.numComprobante() || undefined,
+          observaciones: this.observaciones() || undefined,
+        },
+        this.archivoSoporte(),
+      )
       .subscribe({
         next: (ing) => {
           this.saving.set(false);
           this.itemsPago.set([]);
           this.idCuentaBancaria.set('');
           this.numComprobante.set('');
+          this.quitarSoporte();
           this.observaciones.set('');
-          this.recargar(nd);
+          this.recargar(nd, { notificar: true });
           this.alertaPagoSvc.cargar().subscribe();
           const id = ing?._id || ing?.id;
           const certs: { _id?: string; codigoCert?: string }[] =
@@ -640,7 +719,7 @@ export class PagosComponent {
     const ref = p.numRecibo ? ` «${p.numRecibo}»` : '';
     const ok = await this.confirmSvc.open({
       title: '¿Reversar este pago?',
-      message: `Se anulará el comprobante${ref} y se descontará el valor de la liquidación. Esta acción no se puede deshacer.`,
+      message: `Se anulará el comprobante${ref}. El saldo del servicio quedará disponible para volver a cobrarlo.`,
       variant: 'warn',
       icon: 'warning',
       confirmLabel: 'Sí, reversar',
@@ -687,11 +766,30 @@ export class PagosComponent {
         this.ingresoPendienteAnular.set(null);
         this.authAdminUser.set('');
         this.authAdminPass.set('');
-        this.recargar(nd);
-        this.msg.set('Pago reversado.');
+        this.recargar(nd, { notificar: true });
+        this.msg.set('Pago anulado. El servicio quedó habilitado para volver a cobrarlo.');
       },
       error: (e) => this.msg.set(e?.error?.message || 'Error reversando pago.'),
     });
+  }
+
+  esAnulado(p: { estado?: string; anulado?: boolean }): boolean {
+    if (p?.anulado === true) return true;
+    return String(p?.estado || '').trim().toUpperCase() === 'ANULADO';
+  }
+
+  esMigracion(p: { esMigracion?: boolean; origenMigracion?: boolean; tipoIngreso?: string; idTipoPago?: string }): boolean {
+    if (p?.esMigracion === true || p?.origenMigracion === true) return true;
+    const t = String(p?.tipoIngreso || p?.idTipoPago || '').toUpperCase();
+    return t === 'MIGRACION';
+  }
+
+  tituloAnulado(p: { anuladoPor?: string; autorizadoPor?: string; anuladoEn?: string }): string {
+    const partes: string[] = [];
+    if (p?.anuladoPor) partes.push(`Anuló: ${p.anuladoPor}`);
+    if (p?.autorizadoPor) partes.push(`Autorizó: ${p.autorizadoPor}`);
+    if (p?.anuladoEn) partes.push(this.tiempoFmt(p.anuladoEn));
+    return partes.join(' · ') || 'Comprobante anulado';
   }
 
   num(v: any): number {

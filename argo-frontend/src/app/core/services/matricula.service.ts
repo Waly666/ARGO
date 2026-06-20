@@ -12,6 +12,10 @@ export interface MatriculaCrearDto {
   tarifa?: 1 | 2 | 3 | 4;
   /** Si true, no aplica tarifa 3 automática aunque califique refrendación. */
   tarifaManual?: boolean;
+  /** Rebaja sobre valor catálogo (tarifas 1–3). Total del programa; en multisemestre se reparte. */
+  ajustarValor?: boolean;
+  valorAcordado?: number;
+  motivoAjuste?: string;
   fechaMat?: string;
   observaciones?: string;
   crearUsuarioPortal?: boolean;
@@ -40,6 +44,7 @@ export interface RevalidacionPreview {
 export interface MatriculaCrearRes {
   matricula?: unknown;
   liquidacion?: unknown;
+  liquidaciones?: unknown[];
   revalidacion?: {
     aplica: boolean;
     aplicadaAuto: boolean;
@@ -52,6 +57,12 @@ export interface MatriculaCrearRes {
     email: string;
     numDoc: number;
     passwordTemporal: string | null;
+  } | null;
+  ajuste?: {
+    valorCatalogo: number;
+    valorAcordado: number;
+    rebaja: number;
+    motivoAjuste: string;
   } | null;
 }
 

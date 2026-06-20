@@ -4,16 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ConfigRecibo, ConfigService } from '../../core/services/config.service';
+import { ArgoSwitchComponent } from '../../shared/argo-switch/argo-switch.component';
 
 @Component({
   selector: 'argo-config-recibos',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ArgoSwitchComponent],
   templateUrl: './config-recibos.component.html',
   styleUrls: ['./config-recibos.component.scss'],
 })
 export class ConfigRecibosComponent implements OnInit {
   private cfgSvc = inject(ConfigService);
+
+  readonly anioActual = String(new Date().getFullYear());
 
   readonly formatosComprobante = [
     { id: 'validadora', label: 'Validadora (térmica ~80 mm)' },
@@ -29,7 +32,13 @@ export class ConfigRecibosComponent implements OnInit {
   ngOnInit(): void {
     this.cfgSvc.obtenerRecibo().subscribe({
       next: (c) => {
-        this.form.set({ ...c });
+        this.form.set({
+          ...c,
+          segundoPrefijoComprobanteIngreso:
+            c.segundoPrefijoComprobanteIngreso?.trim() || this.anioActual,
+          segundoPrefijoComprobanteEgreso:
+            c.segundoPrefijoComprobanteEgreso?.trim() || this.anioActual,
+        });
         this.loading.set(false);
       },
       error: () => {
@@ -47,8 +56,37 @@ export class ConfigRecibosComponent implements OnInit {
 
   previewNum(prefijo?: string, consecutivo?: number): string {
     const p = (prefijo || '—').trim() || '—';
-    const n = String(consecutivo ?? 0).padStart(5, '0');
+    const n = String(consecutivo ?? 0).padStart(6, '0');
     return `${p}-${n}`;
+  }
+
+  previewComprobante(tipo: 'ingreso' | 'egreso'): string {
+    const f = this.form();
+    const partes: string[] = [];
+    const usarPrimero =
+      tipo === 'ingreso'
+        ? f.usarPrefijoComprobanteIngreso !== false
+        : f.usarPrefijoComprobanteEgreso !== false;
+    const prefijo =
+      tipo === 'ingreso' ? f.prefijoComprobanteIngreso : f.prefijoComprobanteEgreso;
+    const consecutivo =
+      tipo === 'ingreso' ? f.consecutivoComprobanteIngreso : f.consecutivoComprobanteEgreso;
+    const usarSegundo =
+      tipo === 'ingreso'
+        ? !!f.usarSegundoPrefijoComprobanteIngreso
+        : !!f.usarSegundoPrefijoComprobanteEgreso;
+    const segundo =
+      tipo === 'ingreso'
+        ? f.segundoPrefijoComprobanteIngreso
+        : f.segundoPrefijoComprobanteEgreso;
+    if (usarPrimero) {
+      partes.push((prefijo || 'DOC').trim() || 'DOC');
+    }
+    if (usarSegundo) {
+      partes.push(String(segundo || '').trim() || this.anioActual);
+    }
+    const n = String(consecutivo ?? 0).padStart(6, '0');
+    return partes.length ? `${partes.join('-')}-${n}` : n;
   }
 
   patch<K extends keyof ConfigRecibo>(k: K, v: ConfigRecibo[K]) {

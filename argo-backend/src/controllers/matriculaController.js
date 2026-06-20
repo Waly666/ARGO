@@ -28,7 +28,7 @@ exports.previewRevalidacion = async (req, res, next) => {
 
 exports.crear = async (req, res, next) => {
   try {
-    const result = await crearMatriculaDesdeBody(req.body, req.idSede);
+    const result = await crearMatriculaDesdeBody(req.body, req.idSede, { usuario: req.user, desdePortal: false });
     res.status(201).json(result);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

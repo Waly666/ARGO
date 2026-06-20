@@ -2,14 +2,13 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { ComponentProps } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PortalHeaderTitle } from '../components/PortalHeaderTitle';
 import { useTheme } from '../context/ThemeContext';
 import type { AulaTabParamList } from '../navigation/types';
-import { radius, space } from '../theme/spacing';
+import { space } from '../theme/spacing';
 import { shadow } from '../theme/shadows';
 import TableroPanel from './aula/TableroPanel';
 import MisCursosPanel from './aula/MisCursosPanel';
@@ -32,11 +31,6 @@ const TAB_ICONS: Record<keyof AulaTabParamList, { active: IonName; inactive: Ion
   Perfil: { active: 'person', inactive: 'person-outline' },
 };
 
-function GradientHeaderBg() {
-  const c = useTheme();
-  return <LinearGradient colors={c.gradientHero} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />;
-}
-
 const TAB_SUBTITLES: Record<keyof AulaTabParamList, string> = {
   Tablero: 'Inicio',
   MisCursos: 'Mis cursos',
@@ -54,20 +48,27 @@ export default function AulaHubScreen() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerBackground: () => <GradientHeaderBg />,
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '800', fontSize: 17 },
+        headerStyle: {
+          backgroundColor: c.headerBg,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: c.headerBorder,
+        },
+        headerTintColor: c.primary,
+        headerTitleStyle: { fontWeight: '800', fontSize: 17, color: c.text },
         headerTitle: () => <PortalHeaderTitle subtitle={TAB_SUBTITLES[route.name]} />,
         headerShadowVisible: false,
         tabBarActiveTintColor: c.primary,
         tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
           backgroundColor: c.tabBar,
-          borderTopWidth: 0,
+          borderTopWidth: 1,
+          borderTopColor: c.border,
           height: 58 + insets.bottom,
           paddingBottom: insets.bottom > 0 ? insets.bottom - 4 : space.sm,
           paddingTop: space.sm,
-          ...shadow.md,
+          ...shadow.sm,
         },
         tabBarLabelStyle: {
           fontSize: 10,

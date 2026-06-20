@@ -46,13 +46,40 @@ export class IngresoService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/ingresos`;
 
-  crear(dto: IngresoCrearDto): Observable<any> {
-    const numDoc = parseNumDocForApi(dto.numDoc);
-    return this.http.post(this.base, { ...dto, numDoc: numDoc ?? dto.numDoc });
+  urlArchivo(path?: string | null): string | null {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${environment.uploadsUrl}/${path.replace(/^\/+/, '')}`;
   }
 
-  crearCaja(dto: IngresoCajaCrearDto): Observable<any> {
+  crear(dto: IngresoCrearDto, soporte?: File | null): Observable<any> {
+    const numDoc = parseNumDocForApi(dto.numDoc);
+    const payload = { ...dto, numDoc: numDoc ?? dto.numDoc };
+    if (soporte) {
+      return this.http.post(this.base, this.toFormData(payload, soporte));
+    }
+    return this.http.post(this.base, payload);
+  }
+
+  crearCaja(dto: IngresoCajaCrearDto, soporte?: File | null): Observable<any> {
+    if (soporte) {
+      return this.http.post(this.base, this.toFormData(dto, soporte));
+    }
     return this.http.post(this.base, dto);
+  }
+
+  private toFormData(dto: object, soporte: File): FormData {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(dto)) {
+      if (v === undefined || v === null || v === '') continue;
+      if (k === 'items' && Array.isArray(v)) {
+        fd.append(k, JSON.stringify(v));
+        continue;
+      }
+      fd.append(k, String(v));
+    }
+    fd.append('soporte', soporte, soporte.name);
+    return fd;
   }
 
   listarPorAlumno(numDoc: number | string): Observable<any[]> {

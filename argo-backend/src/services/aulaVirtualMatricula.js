@@ -222,8 +222,10 @@ async function matricularVirtual({
       tarifa: TARIFA_VIRTUAL,
       idSede,
       observaciones: observaciones || 'Matrícula virtual — portal aula',
+      origenMatricula: 'portal',
     },
     idSede,
+    { desdePortal: true },
   );
 
   let usuarioPortal = null;

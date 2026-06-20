@@ -7,6 +7,7 @@ const { numeroDocumentoQuery } = require('../utils/empleadoDoc');
 const { validarDocumentosPendientesAlumno } = require('./alumnoDocumentos');
 const { indicadoresClasesCeaCreadoPorAlumnos } = require('./programacionCeaAuto');
 const { detalleTextoIngreso, idsLiquidacionIngreso } = require('./comprobantesAlertas');
+const { referenciaPagoTexto } = require('../utils/referenciaPago');
 
 function inicioDia(d = new Date()) {
   const x = new Date(d);
@@ -95,6 +96,9 @@ function mapIngresoHoy(ing, descrMap = {}) {
     numRecibo: ing.numRecibo || null,
     valor: numValor(ing.valor),
     detalle: detalleTextoIngreso(ing, descrMap) || null,
+    formaPago: ing.formaPago || null,
+    tipoPago: ing.formaPago || ing.idTipoPago || null,
+    numComprobante: referenciaPagoTexto(ing.numTransferencia, ing.numComprobante),
     fecha: ing.fecha || ing.createdAt || null,
   };
 }
@@ -105,6 +109,9 @@ function mapEgresoHoy(eg) {
     numRecibo: eg.numRecibo || null,
     valor: numValor(eg.valorEgreso),
     detalle: String(eg.concepto || '').trim() || null,
+    formaPago: eg.formaPago || null,
+    tipoPago: eg.formaPago || null,
+    numComprobante: referenciaPagoTexto(eg.numTransferencia, eg.numComprobante),
     fecha: eg.fechaEgreso || eg.fechaAudi || null,
   };
 }
@@ -148,7 +155,7 @@ async function movimientosHoyPorAlumnos(numDocs) {
         { fecha: { $gte: hoy, $lte: fin } },
       ],
     })
-      .select('_id numDoc numRecibo valor fecha createdAt detalle idLiquidacion concepto tipoIngreso')
+      .select('_id numDoc numRecibo valor fecha createdAt detalle idLiquidacion concepto tipoIngreso idTipoPago formaPago numTransferencia numComprobante')
       .sort({ createdAt: -1 })
       .lean(),
     FacturaElectronica.find({
@@ -167,7 +174,7 @@ async function movimientosHoyPorAlumnos(numDocs) {
           $or: orEgreso,
           fechaEgreso: { $gte: hoy, $lte: fin },
         })
-          .select('_id numeroDocumento numDoc numRecibo valorEgreso concepto fechaEgreso fechaAudi')
+          .select('_id numeroDocumento numDoc numRecibo valorEgreso concepto fechaEgreso fechaAudi formaPago numTransferencia')
           .sort({ fechaEgreso: -1 })
           .lean()
       : [],

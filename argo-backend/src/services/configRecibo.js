@@ -29,8 +29,14 @@ const DEFAULTS = {
   consecutivoFactura: 0,
   prefijoComprobanteIngreso: 'CI',
   consecutivoComprobanteIngreso: 0,
+  usarPrefijoComprobanteIngreso: true,
+  usarSegundoPrefijoComprobanteIngreso: false,
+  segundoPrefijoComprobanteIngreso: String(new Date().getFullYear()),
   prefijoComprobanteEgreso: 'CE',
   consecutivoComprobanteEgreso: 0,
+  usarPrefijoComprobanteEgreso: true,
+  usarSegundoPrefijoComprobanteEgreso: false,
+  segundoPrefijoComprobanteEgreso: String(new Date().getFullYear()),
   slogan1: '',
   mensajeEncabezado: 'COMPROBANTE DE INGRESO',
   mensajeEncabezadoEgreso: 'COMPROBANTE DE EGRESO',
@@ -73,7 +79,41 @@ function normalizar(doc, claveOverride) {
     raw.formatoComprobanteEgreso,
     FORMATOS.VALIDADORA,
   );
+  raw.usarSegundoPrefijoComprobanteIngreso = !!raw.usarSegundoPrefijoComprobanteIngreso;
+  raw.usarSegundoPrefijoComprobanteEgreso = !!raw.usarSegundoPrefijoComprobanteEgreso;
+  raw.usarPrefijoComprobanteIngreso = raw.usarPrefijoComprobanteIngreso !== false;
+  raw.usarPrefijoComprobanteEgreso = raw.usarPrefijoComprobanteEgreso !== false;
+  const anio = String(new Date().getFullYear());
+  if (!String(raw.segundoPrefijoComprobanteIngreso || '').trim()) {
+    raw.segundoPrefijoComprobanteIngreso = anio;
+  }
+  if (!String(raw.segundoPrefijoComprobanteEgreso || '').trim()) {
+    raw.segundoPrefijoComprobanteEgreso = anio;
+  }
   return raw;
+}
+
+function armarCodigoComprobante(
+  doc,
+  prefijoField,
+  usarSegundoField,
+  segundoPrefijoField,
+  n,
+  usarPrefijoField = null,
+) {
+  const partes = [];
+  const usarPrimero = usarPrefijoField ? doc[usarPrefijoField] !== false : true;
+  if (usarPrimero) {
+    const pref = String(doc[prefijoField] || '').trim() || 'DOC';
+    partes.push(pref);
+  }
+  if (doc[usarSegundoField]) {
+    const seg =
+      String(doc[segundoPrefijoField] || '').trim() || String(new Date().getFullYear());
+    partes.push(seg);
+  }
+  const num = String(n).padStart(6, '0');
+  return partes.length ? `${partes.join('-')}-${num}` : num;
 }
 
 /** Datos operativos de la sede en comprobantes (no duplica config en Mongo). */
@@ -131,7 +171,13 @@ async function sincronizarEncabezadoReciboDesdeSede(_idSede) {
   await asegurarGlobalRecibo();
 }
 
-async function reservarConsecutivo(campoConsecutivo, prefijo) {
+async function reservarConsecutivo(
+  campoConsecutivo,
+  prefijo,
+  usarSegundo,
+  segundoPrefijo,
+  usarPrefijo,
+) {
   let doc = await Config.findOne({ clave: CLAVE });
   if (!doc) {
     doc = await Config.create({ ...DEFAULTS, clave: CLAVE, [campoConsecutivo]: 1 });
@@ -140,18 +186,29 @@ async function reservarConsecutivo(campoConsecutivo, prefijo) {
     await doc.save();
   }
   const n = doc[campoConsecutivo] || 1;
-  const pref = (doc[prefijo] || '').trim() || 'DOC';
-  return `${pref}-${String(n).padStart(6, '0')}`;
+  return armarCodigoComprobante(doc, prefijo, usarSegundo, segundoPrefijo, n, usarPrefijo);
 }
 
 async function siguienteNumComprobanteIngreso(_idSede = null) {
   await asegurarGlobalRecibo();
-  return reservarConsecutivo('consecutivoComprobanteIngreso', 'prefijoComprobanteIngreso');
+  return reservarConsecutivo(
+    'consecutivoComprobanteIngreso',
+    'prefijoComprobanteIngreso',
+    'usarSegundoPrefijoComprobanteIngreso',
+    'segundoPrefijoComprobanteIngreso',
+    'usarPrefijoComprobanteIngreso',
+  );
 }
 
 async function siguienteNumComprobanteEgreso(_idSede = null) {
   await asegurarGlobalRecibo();
-  return reservarConsecutivo('consecutivoComprobanteEgreso', 'prefijoComprobanteEgreso');
+  return reservarConsecutivo(
+    'consecutivoComprobanteEgreso',
+    'prefijoComprobanteEgreso',
+    'usarSegundoPrefijoComprobanteEgreso',
+    'segundoPrefijoComprobanteEgreso',
+    'usarPrefijoComprobanteEgreso',
+  );
 }
 
 async function siguienteNumFactura(_idSede = null) {
@@ -171,6 +228,7 @@ module.exports = {
   aplicarEncabezadoSede,
   obtenerConfigRecibo,
   sincronizarEncabezadoReciboDesdeSede,
+  armarCodigoComprobante,
   siguienteNumComprobanteIngreso,
   siguienteNumComprobanteEgreso,
   siguienteNumFactura,

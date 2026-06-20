@@ -22,6 +22,13 @@ const { resolverPlantillaImpresion } = require('../services/plantillaCertificado
 
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
 const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
+const {
+  autorizarAnulacionSimple,
+  metadatosAnulacion,
+  sufijoAutoriza,
+} = require('../services/anulacionComprobante');
+const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
+const { registrarEliminacion } = require('../services/auditoria');
 
 function tipoCertCategoria(tipoFormato, alumno) {
   if (tipoFormato === TIPOS.JORNADA_CAPACITACION) return TIPO_JORNADAS_CAPACITACION;
@@ -895,8 +902,30 @@ exports.eliminar = async (req, res, next) => {
         message: 'Los certificados de jornadas de capacitación se gestionan en el módulo Jornadas.',
       });
     }
-    await Certificado.findByIdAndDelete(req.params.id);
-    res.json({ ok: true });
+    if (esComprobanteAnulado(c)) {
+      return res.status(409).json({ message: 'Este certificado ya está anulado.' });
+    }
+
+    const auth = await autorizarAnulacionSimple(
+      req,
+      'Anular certificados requiere autorización de un administrador.',
+    );
+    if (!auth.ok) {
+      return res.status(auth.status).json({ message: auth.message, code: auth.code });
+    }
+
+    const antes = c.toObject();
+    const motivo = String(req.body?.motivo || req.body?.motivoAnulacion || '').trim() || null;
+    // No se borra: pasa a estado 'anulado' conservando el consecutivo (codigoCert)
+    // para trazabilidad y auditoría.
+    c.set(metadatosAnulacion(req, auth.supervisor, { motivo }));
+    c.estado = 'anulado';
+    await c.save();
+
+    registrarEliminacion(req, 'certificado', antes, {
+      resumen: `Anulación certificado ${antes.codigoCert || req.params.id}${sufijoAutoriza(auth.supervisor)}`,
+    });
+    res.json({ ok: true, estado: 'anulado' });
   } catch (e) {
     next(e);
   }

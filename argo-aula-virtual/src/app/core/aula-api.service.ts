@@ -10,6 +10,7 @@ import {
   CursoVirtual,
   CertificadoConsultaRes,
   CertificadoPortal,
+  BlogPost,
   EstadoInscripcionVirtual,
   EvaluacionCohorteAlumno,
   IntentoEvalCohorte,
@@ -31,6 +32,14 @@ export class AulaApiService {
 
   config(): Observable<PortalConfig> {
     return this.http.get<PortalConfig>(`${this.base}/config`);
+  }
+
+  listarBlog(): Observable<BlogPost[]> {
+    return this.http.get<BlogPost[]>(`${this.base}/blog`);
+  }
+
+  blogPost(slug: string): Observable<BlogPost> {
+    return this.http.get<BlogPost>(`${this.base}/blog/${encodeURIComponent(slug)}`);
   }
 
   categorias(): Observable<CategoriaVirtual[]> {

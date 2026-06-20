@@ -46,6 +46,7 @@ export class SistemaRespaldosComponent implements OnInit, OnDestroy {
   /** Archivo externo subido para restaurar. */
   archivoSubido = signal<File | null>(null);
   password = '';
+  codigoMfa = '';
   confirmacion = '';
 
   ngOnInit(): void {
@@ -204,6 +205,7 @@ export class SistemaRespaldosComponent implements OnInit, OnDestroy {
 
   private limpiarCredenciales() {
     this.password = '';
+    this.codigoMfa = '';
     this.confirmacion = '';
   }
 
@@ -218,6 +220,7 @@ export class SistemaRespaldosComponent implements OnInit, OnDestroy {
   restaurar() {
     const cred = {
       password: this.password,
+      codigoMfa: this.codigoMfa,
       confirmacion: this.confirmacion,
     };
     const archivo = this.restaurarSel();

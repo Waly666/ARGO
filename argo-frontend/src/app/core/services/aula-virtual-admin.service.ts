@@ -239,6 +239,25 @@ export interface GuardarCursoVirtualBody extends Partial<VirtualConfig> {
   horas?: number | null;
 }
 
+export interface BlogImagen {
+  url: string;
+  leyenda?: string;
+}
+
+export interface BlogPostAdmin {
+  _id: string;
+  titulo: string;
+  slug: string;
+  contenido: string;
+  imagenes: BlogImagen[];
+  autorNombre: string;
+  autorId?: string | null;
+  publicado: boolean;
+  publicadoAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AulaVirtualAdminService {
   private http = inject(HttpClient);
@@ -376,5 +395,34 @@ export class AulaVirtualAdminService {
     return this.http.get<ProgresoAlumnosVirtualRes>(
       `${this.base}/cursos/${idPrograma}/progreso-alumnos${qs ? `?${qs}` : ''}`,
     );
+  }
+
+  listarBlogPosts(): Observable<BlogPostAdmin[]> {
+    return this.http.get<BlogPostAdmin[]>(`${this.base}/blog`);
+  }
+
+  obtenerBlogPost(id: string): Observable<BlogPostAdmin> {
+    return this.http.get<BlogPostAdmin>(`${this.base}/blog/${id}`);
+  }
+
+  crearBlogPost(body: Partial<BlogPostAdmin>): Observable<{ post: BlogPostAdmin; message: string }> {
+    return this.http.post<{ post: BlogPostAdmin; message: string }>(`${this.base}/blog`, body);
+  }
+
+  actualizarBlogPost(
+    id: string,
+    body: Partial<BlogPostAdmin>,
+  ): Observable<{ post: BlogPostAdmin; message: string }> {
+    return this.http.put<{ post: BlogPostAdmin; message: string }>(`${this.base}/blog/${id}`, body);
+  }
+
+  eliminarBlogPost(id: string): Observable<{ ok: boolean; message: string }> {
+    return this.http.delete<{ ok: boolean; message: string }>(`${this.base}/blog/${id}`);
+  }
+
+  subirImagenBlog(file: File): Observable<{ url: string; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ url: string; message: string }>(`${this.base}/blog/imagen`, fd);
   }
 }

@@ -20,10 +20,16 @@ const { configDesdeTipoDoc, resolverTipoEgresoDoc, esRetiroCajaTipo } = require(
 const { normalizarPlaca } = require('../constants/vehiculo');
 const {
   exigirSesionAbierta,
-  requiereAutorizacionAnularMovimiento,
   verificarMovimientoSesionCajero,
 } = require('../services/cajaSesion');
-const { exigirAdminOSupervisor, verificarAdminCredenciales } = require('../services/authVerify');
+const { exigirAdminOSupervisor } = require('../services/authVerify');
+const {
+  autorizarAnulacionComprobante,
+  metadatosAnulacion,
+  sufijoAutoriza,
+} = require('../services/anulacionComprobante');
+const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
+const { validarPagoIntangibleEgreso } = require('../utils/referenciaPago');
 const {
   registrarCreacion,
   registrarModificacion,
@@ -262,6 +268,12 @@ async function enriquecer(raw) {
     autorizadoPor: e.autorizadoPor || null,
     nombreAutoriza: e.nombreAutoriza || null,
     autorizadoEn: e.autorizadoEn || null,
+    estado: e.estado || (e.anulado ? 'ANULADO' : 'ACTIVO'),
+    anulado: esComprobanteAnulado(e),
+    anuladoEn: e.anuladoEn || null,
+    anuladoPor: e.anuladoPor || null,
+    valorAnulado: e.valorAnulado != null ? num(e.valorAnulado) : null,
+    motivoAnulacion: e.motivoAnulacion || null,
   };
 }
 
@@ -455,6 +467,10 @@ exports.crear = async (req, res, next) => {
     }
     const vinc = await validarBeneficiarioEgreso(dto);
     if (!vinc.ok) return res.status(vinc.status).json({ message: vinc.message });
+    let urlSoporte = null;
+    if (req.file?.filename) urlSoporte = upload.publicUrl('egresos', req.file.filename);
+    const intangibleVal = validarPagoIntangibleEgreso(dto, urlSoporte);
+    if (!intangibleVal.ok) return res.status(intangibleVal.status).json({ message: intangibleVal.message });
 
     const authRet = await resolverAutorizacionRetiro(req, vinc.tipoDoc);
     if (!authRet.ok) return res.status(authRet.status).json({ message: authRet.message });
@@ -465,9 +481,6 @@ exports.crear = async (req, res, next) => {
     }
 
     const sesion = await exigirSesionAbierta(req.user?.sub, req.idSede);
-
-    let urlSoporte = null;
-    if (req.file?.filename) urlSoporte = upload.publicUrl('egresos', req.file.filename);
 
     const user = req.user?.username || 'sistema';
     const now = new Date();
@@ -573,11 +586,19 @@ exports.actualizar = async (req, res, next) => {
       tipoEgreso: eg.tipoEgreso,
       numeroDocumento: eg.numeroDocumento,
       pagueA: eg.pagueA,
+      formaPago: dto.formaPago ?? eg.formaPago,
       placa: dto.placa !== undefined ? dto.placa : eg.placa,
       ...dto,
     };
     const vinc = await validarBeneficiarioEgreso(merged);
     if (!vinc.ok) return res.status(vinc.status).json({ message: vinc.message });
+    if (req.file?.filename) dto.urlSoporte = upload.publicUrl('egresos', req.file.filename);
+    const urlSoporteFinal = dto.urlSoporte || eg.urlSoporte;
+    const intangibleVal = validarPagoIntangibleEgreso(
+      { ...merged, numTransferencia: merged.numTransferencia ?? dto.numTransferencia ?? eg.numTransferencia },
+      urlSoporteFinal,
+    );
+    if (!intangibleVal.ok) return res.status(intangibleVal.status).json({ message: intangibleVal.message });
     if (vinc.empleado) {
       dto.idEmpleado = vinc.empleado.idEmpleado;
       dto.numeroDocumento = merged.numeroDocumento;
@@ -595,7 +616,6 @@ exports.actualizar = async (req, res, next) => {
     delete dto.idPeriodo;
     delete dto.idEmpleado;
     delete dto.idNovedadGenerada;
-    if (req.file?.filename) dto.urlSoporte = upload.publicUrl('egresos', req.file.filename);
 
     const user = req.user?.username || 'sistema';
     Object.assign(eg, dto, { fechaMod: new Date(), userChangeRecord: user });
@@ -622,37 +642,29 @@ exports.eliminar = async (req, res, next) => {
   try {
     const eg = await Egreso.findById(req.params.id);
     if (!eg) return res.status(404).json({ message: 'Egreso no encontrado' });
+    if (esComprobanteAnulado(eg)) {
+      return res.status(409).json({ message: 'Este egreso ya está anulado.' });
+    }
     const antes = eg.toObject();
 
-    let supervisor = null;
-    if (!esAdmin(req.user?.rol)) {
-      const sesOk = await verificarMovimientoSesionCajero(req, eg.idSesion);
-      if (!sesOk.ok) return res.status(sesOk.status).json({ message: sesOk.message, code: sesOk.code });
-      const auth = await exigirAdminOSupervisor(
-        req,
-        'Anular egresos requiere autorización de un administrador.',
-      );
-      if (!auth.ok) return res.status(auth.status).json({ message: auth.message });
-      supervisor = auth.supervisor;
-    } else if (await requiereAutorizacionAnularMovimiento(req, eg.idSesion)) {
-      const { autorizadoUsername, autorizadoPassword } = req.body || {};
-      const ver = await verificarAdminCredenciales(autorizadoUsername, autorizadoPassword);
-      if (!ver.ok) {
-        return res.status(ver.status).json({
-          message:
-            ver.message ||
-            'Anular movimientos de otra sesión o sin caja abierta requiere usuario y contraseña de administrador.',
-          code: 'SUPERVISOR_AUTH_REQUIRED',
-        });
-      }
-      supervisor = {
-        autorizadoPor: ver.username,
-        nombreAutoriza: ver.nombreAutoriza,
-        autorizadoEn: new Date(),
-      };
+    const auth = await autorizarAnulacionComprobante(
+      req,
+      eg.idSesion,
+      'Anular egresos requiere autorización de un administrador.',
+    );
+    if (!auth.ok) {
+      return res.status(auth.status).json({ message: auth.message, code: auth.code });
     }
+    const supervisor = auth.supervisor;
 
-    await eg.deleteOne();
+    // No se borra: pasa a estado ANULADO con valor en cero conservando consecutivo.
+    const motivo = String(req.body?.motivo || req.body?.motivoAnulacion || '').trim() || null;
+    eg.set(metadatosAnulacion(req, supervisor, { valorOriginal: num(eg.valorEgreso), motivo }));
+    eg.valorEgreso = toDec(0);
+    eg.userChangeRecord = req.user?.username || 'sistema';
+    eg.fechaMod = new Date();
+    await eg.save();
+
     if (antes.idSesion) {
       const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
       await sincronizarDescuadreSesion(antes.idSesion).catch(() => null);
@@ -661,11 +673,9 @@ exports.eliminar = async (req, res, next) => {
       await eliminarNovedadPorEgreso(antes._id);
     }
     registrarEliminacion(req, 'egreso', antes, {
-      resumen: `Eliminación egreso ${antes.numRecibo || req.params.id}${
-        supervisor?.autorizadoPor ? ` (autorizó ${supervisor.autorizadoPor})` : ''
-      }`,
+      resumen: `Anulación egreso ${antes.numRecibo || req.params.id}${sufijoAutoriza(supervisor)}`,
     });
-    res.json({ ok: true });
+    res.json({ ok: true, estado: 'ANULADO' });
   } catch (e) {
     next(e);
   }

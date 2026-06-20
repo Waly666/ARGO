@@ -23,11 +23,12 @@ import {
 } from '../../core/services/config-certificado.service';
 import { CertificadoLayoutEditorComponent } from './certificado-layout-editor.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { ArgoSwitchComponent } from '../../shared/argo-switch/argo-switch.component';
 
 @Component({
   selector: 'argo-config-certificados',
   standalone: true,
-  imports: [CommonModule, FormsModule, CertificadoLayoutEditorComponent],
+  imports: [CommonModule, FormsModule, CertificadoLayoutEditorComponent, ArgoSwitchComponent],
   templateUrl: './config-certificados.component.html',
   styleUrls: ['./config-certificados.component.scss'],
 })
@@ -35,6 +36,8 @@ export class ConfigCertificadosComponent implements OnInit {
   private cfgSvc = inject(ConfigCertificadoService);
   private confirm = inject(ConfirmDialogService);
   private http = inject(HttpClient);
+
+  readonly anioActual = String(new Date().getFullYear());
 
   marcandoVencidos = signal(false);
   msgVencidos = signal<string | null>(null);
@@ -91,6 +94,19 @@ export class ConfigCertificadosComponent implements OnInit {
     return Object.values(ppt).filter((s) => s?.id).length;
   });
 
+  previewCodigoCertificado(): string {
+    const f = this.form();
+    const partes: string[] = [];
+    if (f.usarPrefijoCertificado !== false) {
+      partes.push((f.prefijoCertificado || 'CERT').trim() || 'CERT');
+    }
+    if (f.usarSegundoPrefijoCertificado) {
+      partes.push(String(f.segundoPrefijoCertificado || '').trim() || this.anioActual);
+    }
+    const n = String(f.consecutivoCertificado ?? 0).padStart(6, '0');
+    return partes.length ? `${partes.join('-')}-${n}` : n;
+  }
+
   /** Formatos que se pueden certificar automáticamente al pagar (jornada se certifica por asistencia). */
   tiposAutoCert = [
     ...TIPOS_CERTIFICADO_PRINCIPALES.filter((t) => t.id !== 'jornada_capacitacion'),
@@ -106,6 +122,7 @@ export class ConfigCertificadosComponent implements OnInit {
           layoutPorTipo: { ...(c.layoutPorTipo || {}) },
           autoCertificadoPorTipo: { ...(c.autoCertificadoPorTipo || {}) },
           autoCertificadoTiposCapExcluidos: [...(c.autoCertificadoTiposCapExcluidos || [])],
+          segundoPrefijoCertificado: c.segundoPrefijoCertificado?.trim() || this.anioActual,
         });
         this.loading.set(false);
       },

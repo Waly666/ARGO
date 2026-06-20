@@ -2,14 +2,16 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
 import { AlumnoService } from '../../../core/services/alumno.service';
 import type { DocumentoPendienteRes } from '../../../core/services/config-requisitos-documentos.service';
-import { CatalogoService } from '../../../core/services/catalogo.service';
 import { IngresoService } from '../../../core/services/ingreso.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
 import { MatriculaService, RevalidacionPreview } from '../../../core/services/matricula.service';
+import { ProgramaService } from '../../../core/services/programa.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ServicioCatalogoService } from '../../../core/services/servicio-catalogo.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
@@ -19,6 +21,11 @@ import {
 } from '../../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
 import { esLiquidacionVirtual, esTarifaVirtualMatricula, TARIFA_VIRTUAL } from '../catalogo.helpers';
+import {
+  esProgramaSoloVirtual,
+  tarifasPermitidasPrograma,
+  etiquetasModalidad,
+} from '../../programas/programa-modalidad.helpers';
 import { ComboService, ComboPrevista, ComboAplicarRes, Combo } from '../../../core/services/combo.service';
 
 @Component({
@@ -32,7 +39,7 @@ export class ServiciosComponent {
   store = inject(AlumnoStore);
   private router = inject(Router);
   private alumnoSvc = inject(AlumnoService);
-  private catSvc = inject(CatalogoService);
+  private progSvc = inject(ProgramaService);
   private servCatSvc = inject(ServicioCatalogoService);
   private matSvc = inject(MatriculaService);
   private liqSvc = inject(LiquidacionService);
@@ -41,15 +48,21 @@ export class ServiciosComponent {
   private confirmSvc = inject(ConfirmDialogService);
   private comboSvc = inject(ComboService);
 
-  programas = signal<any[]>([]);
-  servicios = signal<any[]>([]);
-
   // --- Combos ---
   combos = signal<Combo[]>([]);
   comboIdSeleccionado = signal<string>('');
   comboPrevista = signal<ComboPrevista | null>(null);
   comboResultado = signal<ComboAplicarRes | null>(null);
   aplicandoCombo = signal(false);
+
+  /** Detalle del programa elegido (búsqueda remota). */
+  programaDetalle = signal<any | null>(null);
+  serviciosMatriculaProg = signal<any[]>([]);
+  textoProgramaLabel = signal('');
+
+  /** Detalle del servicio adicional elegido (búsqueda remota). */
+  servicioAdicionalDetalle = signal<any | null>(null);
+  textoServicioLabel = signal('');
 
   opcionesCombos = computed<EnumBuscarOption[]>(() =>
     this.combos().map((c) => ({ value: c.id, label: c.nombre })),
@@ -64,6 +77,9 @@ export class ServiciosComponent {
   matriculaEmailPortal = '';
   matriculaPasswordPortal = '';
   matriculaCredenciales = signal<{ email: string; password: string } | null>(null);
+  ajustarValorMat = false;
+  valorAcordadoMat: number | null = null;
+  motivoAjusteMat = '';
 
   // form servicio adicional
   idServ = signal<string>('');
@@ -78,6 +94,8 @@ export class ServiciosComponent {
   msg = signal<string | null>(null);
   msgEsError = signal(false);
   docsPendientesMat = signal<DocumentoPendienteRes[]>([]);
+
+  private lastRecargaNumDoc: string | number | null = null;
 
   itemsConSaldo = computed(() =>
     this.liquidacion()
@@ -95,7 +113,10 @@ export class ServiciosComponent {
   tituloSaldoItem = tituloSaldoItem;
 
   comprobantesPorItem = (idLiq: string) =>
-    this.comprobantes().filter((p) => String(p.idLiquidacion) === String(idLiq));
+    this.comprobantes().filter((p) => {
+      if (String(p.idLiquidacion) === String(idLiq)) return true;
+      return Array.isArray(p.detalle) && p.detalle.some((d: { idLiquidacion?: string }) => String(d.idLiquidacion) === String(idLiq));
+    });
 
   descrComprobante(p: { idLiquidacion?: string; liquidacionDescr?: string }): string {
     if (p.liquidacionDescr) return p.liquidacionDescr;
@@ -116,22 +137,62 @@ export class ServiciosComponent {
     return '';
   }
 
-  programaSel = computed(() =>
-    this.programas().find((p) => String(p.idPrograma ?? p.idProg ?? p._id) === this.idProg()),
-  );
-
-  serviciosPrograma = computed(() => {
-    const p = this.programaSel();
-    if (!p) return [];
-    const idP = String(p.idPrograma ?? p.idProg);
-    return this.servicios().filter((s) => String(s.idProg) === idP && !this.esHoraPractica(s));
+  programaSel = computed(() => {
+    const id = this.idProg();
+    const det = this.programaDetalle();
+    if (!id || !det) return null;
+    const detId = String(det.idPrograma ?? det.idProg ?? det._id);
+    return detId === id ? det : null;
   });
 
+  serviciosPrograma = computed(() =>
+    this.serviciosMatriculaProg().filter((s) => !this.esHoraPractica(s)),
+  );
+
   programaTieneTarifaVirtual = computed(() =>
-    this.serviciosPrograma().some((s) => this.num(s.tarifaVirtual) > 0),
+    tarifasPermitidasPrograma(this.programaSel(), this.serviciosPrograma()).includes(TARIFA_VIRTUAL),
+  );
+
+  programaSoloVirtual = computed(() =>
+    esProgramaSoloVirtual(this.programaSel(), this.serviciosPrograma()),
+  );
+
+  modalidadProgramaLabel = computed(() => {
+    const p = this.programaSel();
+    if (!p) return '';
+    const labels = p.modalidadLabels?.length ? p.modalidadLabels : etiquetasModalidad(p);
+    return labels.join(' · ');
+  });
+
+  tarifasPermitidasMat = computed(() =>
+    tarifasPermitidasPrograma(this.programaSel(), this.serviciosPrograma()),
   );
 
   esTarifaVirtualSeleccionada = computed(() => esTarifaVirtualMatricula(this.tarifa()));
+
+  puedeAjustarValorMat = computed(() => {
+    if (!this.idProg() || this.esTarifaVirtualSeleccionada()) return false;
+    return this.valorMatCalculado() > 0;
+  });
+
+  programaNumSemestres = computed(() => {
+    const sem = Number(this.programaSel()?.semestres);
+    const n = this.serviciosPrograma().length;
+    if (Number.isFinite(sem) && sem >= 2) return Math.floor(sem);
+    return n >= 2 ? n : 0;
+  });
+
+  valorMatFinal = computed(() => {
+    if (!this.ajustarValorMat || !this.puedeAjustarValorMat()) return this.valorMatCalculado();
+    const v = Math.round(Number(this.valorAcordadoMat));
+    return Number.isFinite(v) && v >= 0 ? v : this.valorMatCalculado();
+  });
+
+  rebajaMatricula = computed(() => {
+    const cat = this.valorMatCalculado();
+    const fin = this.valorMatFinal();
+    return cat > fin ? cat - fin : 0;
+  });
 
   valorMatCalculado = computed(() => {
     const p = this.programaSel();
@@ -150,7 +211,7 @@ export class ServiciosComponent {
         return acc + this.num(s.tarifa1);
       }, 0);
     }
-    const serv = porProg[0] || this.servicios().find((s) => String(s.idServ) === String(p.idServ));
+    const serv = porProg[0];
     if (serv) {
       const v = serv[`tarifa${t}`];
       if (v != null && v !== '') return this.num(v);
@@ -158,11 +219,12 @@ export class ServiciosComponent {
     return this.num(p.valorMatricula);
   });
 
-  servicioSel = computed(() => this.buscarServicio(this.idServ()));
-
-  serviciosAdicionales = computed(() =>
-    this.servicios().filter((s) => !this.esServicioMatriculaPrograma(s)),
-  );
+  servicioSel = computed(() => {
+    const id = this.idServ();
+    const cached = this.servicioAdicionalDetalle();
+    if (cached && String(cached.idServ ?? cached._id) === id) return cached;
+    return undefined;
+  });
 
   servicioUsaCantidad = computed(() => {
     if (!this.idServ()) return false;
@@ -186,39 +248,31 @@ export class ServiciosComponent {
     return this.servValor();
   });
 
-  opcionesProgramas = computed<EnumBuscarOption[]>(() =>
-    [...this.programas()]
-      .sort((a, b) => {
-        const ca = String(a.codigoProg || (a.idPrograma ?? a.idProg ?? '')).trim();
-        const cb = String(b.codigoProg || (b.idPrograma ?? b.idProg ?? '')).trim();
-        return ca.localeCompare(cb, 'es', { sensitivity: 'base', numeric: true });
-      })
-      .map((p) => {
-        const id = String(p.idPrograma ?? p.idProg ?? p._id);
-        const nombre = String(p.nombreProg || p.descripcion || '').trim();
-        const cod = String(p.codigoProg || '').trim();
-        return {
-          value: id,
-          label: cod ? `${nombre} (${cod})` : nombre || id,
-        };
-      }),
-  );
+  textoPrograma = computed(() => this.textoProgramaLabel());
 
-  textoPrograma = computed(() => {
-    const id = this.idProg();
-    return this.opcionesProgramas().find((o) => String(o.value) === id)?.label || '';
-  });
+  buscarProgramasRemoto = (q: string): Observable<EnumBuscarOption[]> => {
+    const t = q.trim();
+    return this.progSvc
+      .listar({ q: t || undefined, catalogo: true, limit: t ? 35 : 40 })
+      .pipe(map((rows) => (rows || []).map((p) => this.programaToOption(p))));
+  };
 
   opcionesTarifas = computed<EnumBuscarOption[]>(() => {
-    const opts: EnumBuscarOption[] = [
-      { value: 1, label: 'Tarifa 1' },
-      { value: 2, label: 'Tarifa 2' },
-      {
+    const permitidas = this.tarifasPermitidasMat();
+    const opts: EnumBuscarOption[] = [];
+    if (permitidas.includes(1)) {
+      opts.push({ value: 1, label: 'Tarifa 1' });
+    }
+    if (permitidas.includes(2)) {
+      opts.push({ value: 2, label: 'Tarifa 2' });
+    }
+    if (permitidas.includes(3)) {
+      opts.push({
         value: 3,
         label: this.programaSel()?.admiteRevalidacion ? 'Tarifa 3 (refrendación)' : 'Tarifa 3',
-      },
-    ];
-    if (this.programaTieneTarifaVirtual()) {
+      });
+    }
+    if (permitidas.includes(TARIFA_VIRTUAL)) {
       opts.push({ value: TARIFA_VIRTUAL, label: 'Virtual (aula en línea)' });
     }
     return opts;
@@ -230,44 +284,42 @@ export class ServiciosComponent {
     return opt?.label || `Tarifa ${t}`;
   });
 
-  opcionesServiciosAdicionales = computed<EnumBuscarOption[]>(() =>
-    this.serviciosAdicionales().map((s) => ({
-      value: String(s.idServ ?? s._id),
-      label: String(s.descrServicio || s.descripcion || s.nombre || '').trim(),
-    })),
-  );
+  textoServicioAdicional = computed(() => this.textoServicioLabel());
 
-  textoServicioAdicional = computed(() => {
-    const id = this.idServ();
-    return this.opcionesServiciosAdicionales().find((o) => String(o.value) === id)?.label || '';
-  });
+  buscarServiciosAdicionalesRemoto = (q: string): Observable<EnumBuscarOption[]> => {
+    const t = q.trim();
+    return this.servCatSvc
+      .listar({ q: t || undefined, sinPrograma: true, catalogo: true, limit: t ? 35 : 40 })
+      .pipe(
+        map((rows) =>
+          (rows || []).map((s) => ({
+            value: String(s.idServ ?? s._id),
+            label: String(s.descrServicio || '').trim(),
+          })),
+        ),
+      );
+  };
 
   constructor() {
-    this.catSvc.list('programas').subscribe((d) => this.programas.set(d || []));
     this.comboSvc.listar().subscribe({ next: (d) => this.combos.set(d || []), error: () => {} });
-    this.cargarServicios();
 
     effect(() => {
       const nd = this.store.numDoc();
       const prog = this.idProg();
       const id = this.store.alumno()?._id;
       const _docTouch = this.store.alumno()?.fechaMod;
-      if (nd) this.recargar(nd);
-      else {
+      const _liq = this.store.liqTick();
+      if (!nd) {
+        this.lastRecargaNumDoc = null;
         this.liquidacion.set({ items: [], totales: { valor: 0, abonado: 0, saldo: 0 } });
         this.comprobantes.set([]);
+      } else {
+        const soloSync = this.lastRecargaNumDoc === nd && _liq > 0;
+        this.lastRecargaNumDoc = nd;
+        this.recargar(nd, { silencioso: soloSync });
       }
       if (id && prog) this.revisarDocsMatricula(id, prog);
       else this.docsPendientesMat.set([]);
-    });
-  }
-
-  cargarServicios() {
-    this.servCatSvc.listar().subscribe({
-      next: (d) => this.servicios.set(d || []),
-      error: () => {
-        this.catSvc.list('servicios').subscribe((rows) => this.servicios.set(rows || []));
-      },
     });
   }
 
@@ -287,50 +339,119 @@ export class ServiciosComponent {
     this.router.navigate([], { queryParams: { tab: 'pagos' }, queryParamsHandling: 'merge' });
   }
 
-  recargar(numDoc: number | string) {
-    this.loading.set(true);
+  recargar(numDoc: number | string, opts: { notificar?: boolean; silencioso?: boolean } = {}) {
+    const { notificar = false, silencioso = false } = opts;
+    if (!silencioso) this.loading.set(true);
+    let pending = 2;
+    const done = () => {
+      pending -= 1;
+      if (pending > 0) return;
+      if (notificar) this.store.touchLiquidacion();
+    };
     this.liqSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {
         this.liquidacion.set(r);
-        this.store.touchLiquidacion();
+        done();
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        if (!silencioso) this.loading.set(false);
+        done();
+      },
     });
     this.ingSvc.listarPorAlumno(numDoc).subscribe({
       next: (r) => {
         this.comprobantes.set(r || []);
-        this.loading.set(false);
-        this.store.touchLiquidacion();
+        if (!silencioso) this.loading.set(false);
+        done();
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        if (!silencioso) this.loading.set(false);
+        done();
+      },
     });
   }
 
   setTarifa(v: number | string) {
     const n = Number(v);
+    const permitidas = this.tarifasPermitidasMat();
     if (n === 1 || n === 2 || n === 3 || n === TARIFA_VIRTUAL) {
-      if (n === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) return;
+      if (n === TARIFA_VIRTUAL && !permitidas.includes(TARIFA_VIRTUAL)) return;
+      if ((n === 1 || n === 2 || n === 3) && !permitidas.includes(n)) return;
       this.tarifa.set(n as 1 | 2 | 3 | 4);
+      if (n === TARIFA_VIRTUAL) this.limpiarAjusteValorMat();
+      else this.syncValorAcordadoMat();
+    }
+  }
+
+  private ajustarTarifaPermitida(): void {
+    const permitidas = this.tarifasPermitidasMat();
+    if (!permitidas.length) return;
+    if (!permitidas.includes(this.tarifa())) {
+      this.tarifa.set(permitidas[0] as 1 | 2 | 3 | 4);
+    }
+  }
+
+  private limpiarAjusteValorMat(): void {
+    this.ajustarValorMat = false;
+    this.valorAcordadoMat = null;
+    this.motivoAjusteMat = '';
+  }
+
+  private syncValorAcordadoMat(): void {
+    if (this.ajustarValorMat) {
+      this.valorAcordadoMat = this.valorMatCalculado();
+    }
+  }
+
+  onAjustarValorMatChange(activo: boolean): void {
+    this.ajustarValorMat = activo;
+    if (activo) {
+      this.valorAcordadoMat = this.valorMatCalculado();
+    } else {
+      this.valorAcordadoMat = null;
+      this.motivoAjusteMat = '';
     }
   }
 
   onProgramaPick(opt: EnumBuscarOption): void {
-    this.idProg.set(String(opt.value));
+    const id = String(opt.value);
+    this.textoProgramaLabel.set(opt.label);
+    this.idProg.set(id);
+    this.programaDetalle.set(null);
+    this.serviciosMatriculaProg.set([]);
     this.matriculaCredenciales.set(null);
     this.tarifaManual.set(false);
+    this.limpiarAjusteValorMat();
     this.revalidacionPreview.set(null);
-    if (this.tarifa() === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) {
-      this.tarifa.set(1);
-    }
-    this.consultarRevalidacion(String(opt.value));
+    this.progSvc.obtener(id).subscribe({
+      next: (det) => {
+        this.programaDetalle.set(det.programa);
+        const servs = det.servicios?.length
+          ? det.servicios
+          : det.servicio
+            ? [det.servicio]
+            : [];
+        this.serviciosMatriculaProg.set(servs);
+        if (this.tarifa() === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) {
+          this.tarifa.set(1);
+        }
+        this.ajustarTarifaPermitida();
+      },
+      error: () => this.setMsg('No se pudo cargar el detalle del programa.', true),
+    });
+    this.consultarRevalidacion(id);
   }
 
   onProgramaLimpiar(): void {
     this.idProg.set('');
+    this.textoProgramaLabel.set('');
+    this.programaDetalle.set(null);
+    this.serviciosMatriculaProg.set([]);
     this.docsPendientesMat.set([]);
     this.matriculaCredenciales.set(null);
     this.revalidacionPreview.set(null);
     this.tarifaManual.set(false);
+    this.limpiarAjusteValorMat();
     if (this.tarifa() === TARIFA_VIRTUAL) this.tarifa.set(1);
   }
 
@@ -343,11 +464,11 @@ export class ServiciosComponent {
     this.matSvc.previewRevalidacion(nd, idPrograma).subscribe({
       next: (p) => {
         this.revalidacionPreview.set(p);
-        if (p.aplicadaAuto && p.tarifa3Disponible) {
+        if (p.aplicadaAuto && p.tarifa3Disponible && this.tarifasPermitidasMat().includes(3)) {
           this.tarifa.set(3);
           this.tarifaManual.set(false);
         } else if (p.califica && !this.tarifaManual()) {
-          this.tarifa.set(1);
+          this.ajustarTarifaPermitida();
         }
       },
       error: () => this.revalidacionPreview.set(null),
@@ -365,6 +486,7 @@ export class ServiciosComponent {
     const sugerida = prev?.califica && prev?.tarifa3Disponible ? 3 : null;
     this.setTarifa(opt.value);
     this.tarifaManual.set(sugerida != null && n !== sugerida);
+    this.syncValorAcordadoMat();
     if (Number(opt.value) === TARIFA_VIRTUAL && !this.matriculaEmailPortal.trim()) {
       const mail = String(this.store.alumno()?.correo || '').trim();
       if (mail) this.matriculaEmailPortal = mail;
@@ -406,7 +528,7 @@ export class ServiciosComponent {
       next: (res) => {
         this.aplicandoCombo.set(false);
         this.comboResultado.set(res);
-        this.recargar(nd);
+        this.recargar(nd, { notificar: true });
         this.setMsg(res.message, !res.ok);
       },
       error: (e) => {
@@ -417,11 +539,24 @@ export class ServiciosComponent {
   }
 
   onServicioAdicionalPick(opt: EnumBuscarOption): void {
-    this.onServicioChange(String(opt.value));
+    const id = String(opt.value);
+    this.textoServicioLabel.set(opt.label);
+    this.servCatSvc.obtener(id).subscribe({
+      next: (r) => {
+        this.servicioAdicionalDetalle.set(r.servicio);
+        this.onServicioChange(id);
+      },
+      error: () => {
+        this.servicioAdicionalDetalle.set(null);
+        this.onServicioChange(id);
+      },
+    });
   }
 
   onServicioAdicionalLimpiar(): void {
     this.idServ.set('');
+    this.textoServicioLabel.set('');
+    this.servicioAdicionalDetalle.set(null);
     this.servDescripcion.set('');
     this.servValor.set(0);
     this.servCantidad.set(1);
@@ -431,6 +566,13 @@ export class ServiciosComponent {
     const nd = this.store.numDoc();
     if (!nd) { this.setMsg('Selecciona o crea un alumno primero.', true); return; }
     if (!this.idProg()) { this.setMsg('Selecciona un programa.', true); return; }
+    if (this.programaSoloVirtual()) {
+      this.setMsg(
+        'Este programa es solo virtual. El alumno debe matricularse en el portal; usted puede cobrar cuando aparezca la liquidación.',
+        true,
+      );
+      return;
+    }
     const prog = this.programaSel();
     const esVirtual = this.esTarifaVirtualSeleccionada();
     const emailPortal = this.matriculaEmailPortal.trim() || String(this.store.alumno()?.correo || '').trim();
@@ -447,6 +589,24 @@ export class ServiciosComponent {
       }
     }
 
+    const catalogo = this.valorMatCalculado();
+    const ajuste = this.ajustarValorMat && this.puedeAjustarValorMat();
+    const acordado = ajuste ? Math.round(Number(this.valorAcordadoMat)) : catalogo;
+    if (ajuste) {
+      if (!Number.isFinite(acordado) || acordado < 0) {
+        this.setMsg('Indique un valor acordado válido.', true);
+        return;
+      }
+      if (acordado > catalogo) {
+        this.setMsg('Solo se permiten rebajas: el valor no puede superar el catálogo.', true);
+        return;
+      }
+      if (acordado < catalogo && !this.motivoAjusteMat.trim()) {
+        this.setMsg('Indique el motivo de la rebaja.', true);
+        return;
+      }
+    }
+
     this.setMsg(null, false);
     this.matriculaCredenciales.set(null);
     this.matSvc
@@ -455,6 +615,13 @@ export class ServiciosComponent {
         idPrograma: this.idProg(),
         tarifa: this.tarifa(),
         tarifaManual: this.tarifaManual(),
+        ...(ajuste && acordado < catalogo
+          ? {
+              ajustarValor: true,
+              valorAcordado: acordado,
+              motivoAjuste: this.motivoAjusteMat.trim(),
+            }
+          : {}),
         crearUsuarioPortal: esVirtual && this.matriculaCrearPortal,
         email: esVirtual && this.matriculaCrearPortal ? emailPortal : undefined,
         password: esVirtual && this.matriculaCrearPortal && passwordPortal ? passwordPortal : undefined,
@@ -462,17 +629,24 @@ export class ServiciosComponent {
       .subscribe({
       next: (res) => {
         this.idProg.set('');
+        this.textoProgramaLabel.set('');
+        this.programaDetalle.set(null);
+        this.serviciosMatriculaProg.set([]);
         this.tarifa.set(1);
         this.tarifaManual.set(false);
+        this.limpiarAjusteValorMat();
         this.revalidacionPreview.set(null);
         this.matriculaEmailPortal = '';
         this.matriculaPasswordPortal = '';
         this.docsPendientesMat.set([]);
-        this.recargar(nd);
+        this.recargar(nd, { notificar: true });
         const avisoCea = this.esProgramaCea(prog)
           ? ' Debe programar las horas CEA (teoría, taller y práctica) en Programación CEA.'
           : '';
         let msg = `Matrícula creada. Se generaron los ítems de liquidación del programa.${avisoCea}`;
+        if (res.ajuste?.rebaja) {
+          msg += ` Rebaja aplicada: ${this.fmt(res.ajuste.rebaja)} (total ${this.fmt(res.ajuste.valorAcordado)}).`;
+        }
         if (res.revalidacion?.aplica) {
           msg += ` Refrendación: tarifa ${res.revalidacion.tarifa}.`;
         } else if (res.revalidacion?.mensaje) {
@@ -493,7 +667,7 @@ export class ServiciosComponent {
 
   onServicioChange(id: string) {
     this.idServ.set(id);
-    const s = this.buscarServicio(id);
+    const s = this.servicioSel();
     if (!s) return;
     const base = String(s.descrServicio || s.descripcion || s.nombre || '');
     this.servCantidad.set(1);
@@ -556,11 +730,12 @@ export class ServiciosComponent {
       .subscribe({
         next: () => {
           this.idServ.set('');
+          this.textoServicioLabel.set('');
+          this.servicioAdicionalDetalle.set(null);
           this.servDescripcion.set('');
           this.servValor.set(0);
           this.servCantidad.set(1);
-          this.cargarServicios();
-          this.recargar(nd);
+          this.recargar(nd, { notificar: true });
           const avisoPractica = this.esHoraPractica(servicio)
             ? ' Programe estas horas prácticas en Programación CEA.'
             : '';
@@ -587,7 +762,7 @@ export class ServiciosComponent {
     });
     if (!ok) return;
     this.liqSvc.eliminar(item._id).subscribe({
-      next: () => this.recargar(nd),
+      next: () => this.recargar(nd, { notificar: true }),
       error: (e) => this.msg.set(e?.error?.message || 'Error eliminando.'),
     });
   }
@@ -613,6 +788,11 @@ export class ServiciosComponent {
   }
 
   esVirtual = esLiquidacionVirtual;
+
+  esAnulado(p: { estado?: string; anulado?: boolean }): boolean {
+    if (p?.anulado === true) return true;
+    return String(p?.estado || '').trim().toUpperCase() === 'ANULADO';
+  }
 
   estadoVirtualLabel(it: LiquidacionItem): string {
     const base = String(it.estado || 'pendiente').toUpperCase();
@@ -643,17 +823,22 @@ export class ServiciosComponent {
     return d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
   }
 
-  private buscarServicio(id: string | number | null | undefined) {
-    if (id == null || id === '') return undefined;
-    return this.servicios().find((s) => String(s.idServ ?? s._id) === String(id));
-  }
-
-  private tieneIdProg(s: { idProg?: string | number | null } | null | undefined): boolean {
-    return s?.idProg != null && String(s.idProg).trim() !== '';
-  }
-
-  private esServicioMatriculaPrograma(s: { idProg?: string | number | null; rolServicio?: string; descrServicio?: string; descripcion?: string } | null | undefined): boolean {
-    return this.tieneIdProg(s) && !this.esHoraPractica(s);
+  private programaToOption(p: {
+    idPrograma?: string | number;
+    idProg?: string | number;
+    _id?: string;
+    nombreProg?: string;
+    descripcion?: string | null;
+    codigoProg?: string;
+  }): EnumBuscarOption {
+    const id = String(p.idPrograma ?? p.idProg ?? p._id);
+    const nombre = String(p.nombreProg || p.descripcion || '').trim();
+    const cod = String(p.codigoProg || '').trim();
+    return {
+      value: id,
+      label: cod ? `${nombre} (${cod})` : nombre || id,
+      hint: cod ? `Código ${cod}` : undefined,
+    };
   }
 
   private permiteCantidad(s: {
@@ -671,7 +856,7 @@ export class ServiciosComponent {
     if (s.permiteCantidad === false) return false;
     if (s.valorVariable === true) return false;
     if (s.usaCantidad === false) return false;
-    if (this.esServicioMatriculaPrograma(s)) return false;
+    if (s.idProg != null && String(s.idProg).trim() !== '' && !this.esHoraPractica(s)) return false;
     if (this.num(s.tarifa1) <= 0) return false;
     if (this.esHoraPractica(s)) return true;
     if (s.usaCantidad === true) return true;

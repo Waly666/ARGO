@@ -29,6 +29,7 @@ const LANDING_DEFAULTS = {
     acerca: 'Acerca de',
     fundacion: 'Fundación',
     consultaCertificados: 'Certificados',
+    blog: 'Blog',
     acceder: 'Acceder',
     registrarse: 'Registrarse',
     salir: 'Salir',
@@ -308,6 +309,40 @@ const LANDING_DEFAULTS = {
         jornadas: 'Diurna, nocturna, sábados',
       },
     ],
+  },
+  appMobile: {
+    kicker: 'App Mobile',
+    titulo: 'Lleve el aula virtual en su bolsillo',
+    lead:
+      'Acceda a sus cursos, consulte certificados y manténgase al día desde su celular con la app oficial de la institución.',
+    features: [
+      {
+        icon: '📚',
+        title: 'Cursos y programas',
+        text: 'Ingrese al aula virtual y retome su capacitación donde la dejó.',
+      },
+      {
+        icon: '🎓',
+        title: 'Certificados',
+        text: 'Consulte y verifique sus certificados expedidos en línea.',
+      },
+      {
+        icon: '🔔',
+        title: 'Siempre conectado',
+        text: 'Experiencia optimizada para Android, rápida y fácil de usar.',
+      },
+    ],
+    btnDescargar: 'Descargar APK para Android',
+    notaInstalacion: 'Android 8.0 o superior · Instalación manual del archivo APK',
+    apkUrl: '/apk/aula-virtual-finstruvial.apk',
+    apkNombre: 'aula-virtual-finstruvial.apk',
+  },
+  blog: {
+    kicker: 'Blog',
+    titulo: 'Noticias y artículos',
+    lead: 'Novedades, consejos y contenido de interés sobre capacitación y seguridad vial.',
+    emptyTitulo: 'Próximamente publicaremos artículos',
+    emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
   },
   pilares: {
     tabCapacitacion: 'Capacitación',

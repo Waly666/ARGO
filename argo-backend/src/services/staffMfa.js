@@ -77,7 +77,8 @@ function verifyTotpCode(secret, code) {
   const c = String(code || '').replace(/\s/g, '');
   if (!/^\d{6}$/.test(c)) return false;
   try {
-    return verifySync({ secret, token: c }).valid === true;
+    // window: 1 → acepta ±30 s por desfase de reloj (login y reauth).
+    return verifySync({ secret, token: c, window: 1 }).valid === true;
   } catch {
     return false;
   }
@@ -255,4 +256,5 @@ module.exports = {
   verifyMfaLogin,
   verifyMfaRecovery,
   signAccessToken,
+  verifyTotpCode,
 };

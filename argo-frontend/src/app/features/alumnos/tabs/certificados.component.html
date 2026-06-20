@@ -127,8 +127,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let c of certificados()" [class.sel]="editId() === c._id">
-          <td>{{ c.encabezado || c.nomCert || c.programaDescr || '—' }}</td>
+        <tr *ngFor="let c of certificados()" [class.sel]="editId() === c._id" [class.row-anulado]="esAnulado(c)">
+          <td>
+            {{ c.encabezado || c.nomCert || c.programaDescr || '—' }}
+            <span class="badge err mini-badge" *ngIf="esAnulado(c)">ANULADO</span>
+          </td>
           <td>{{ labelTipo(c.tipoFormatoCert) }}</td>
           <td>{{ c.tipoCertificado || 'Regular' }}</td>
           <td class="mono">{{ c.codigoCert || '—' }}</td>
@@ -138,9 +141,9 @@
           <td>{{ fecha(c.fechaEmision) }}</td>
           <td>{{ fecha(c.fechaVencimiento) || '—' }}</td>
           <td class="r actions-cell">
-            <button class="ghost mini" (click)="abrirEditar(c)">Editar</button>
             <button class="ghost mini" (click)="imprimir(c)">Imprimir</button>
-            <button class="danger mini" (click)="anular(c)">Anular</button>
+            <button class="ghost mini" (click)="abrirEditar(c)" *ngIf="!esAnulado(c)">Editar</button>
+            <button class="danger mini" (click)="anular(c)" *ngIf="!esAnulado(c)">Anular</button>
           </td>
         </tr>
         <tr *ngIf="certificados().length === 0">

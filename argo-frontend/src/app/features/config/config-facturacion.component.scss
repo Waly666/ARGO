@@ -256,12 +256,7 @@
   min-height: 100%;
 
   input[type='checkbox'] {
-    margin-top: 0.15rem;
-    width: auto;
-    min-width: 1rem;
-    height: 1rem;
     flex-shrink: 0;
-    accent-color: #38bdf8;
   }
 
   &:hover {

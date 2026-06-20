@@ -24,9 +24,15 @@ import { environment } from '../../../environments/environment';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../core/utils/saldo-alerta.helpers';
 import { esLiquidacionVirtual, normalizarTipoAlumno, TIPO_VIRTUAL } from './catalogo.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
+import { MigracionHistoricaComponent } from './tabs/migracion-historica.component';
+import { MigracionMovimientosService } from '../../core/services/migracion-movimientos.service';
 import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
+import {
+  partesEtiquetaComprobanteAlarma,
+  tituloComprobanteAlarma,
+} from '../../core/utils/comprobante-alarma.helpers';
 
-type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos' | 'programacion';
+type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos' | 'programacion' | 'migracion';
 
 interface AlertaClaseCeaCreada {
   programaLabel: string;
@@ -44,6 +50,7 @@ interface AlertaClaseCeaCreada {
     CertificadosComponent,
     DocumentosComponent,
     AlumnoProgramacionCeaComponent,
+    MigracionHistoricaComponent,
   ],
   templateUrl: './alumno-detalle.component.html',
   styleUrls: ['./alumno-detalle.component.scss'],
@@ -57,6 +64,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   private ceaSvc = inject(ProgramacionCeaService);
   readonly alarmas = inject(AlarmaService);
   private comprobanteImpresion = inject(ComprobanteHoyImpresionService);
+  private migMovSvc = inject(MigracionMovimientosService);
   store = inject(AlumnoStore);
 
   tab = signal<TabKey>('datos');
@@ -81,20 +89,27 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     this.esJornadas() ? '← Lista alumnos jornada' : '← Lista',
   );
 
+  migracionMovimientos = signal(false);
+
   tabsBase: { key: TabKey; label: string }[] = [
     { key: 'datos',        label: 'Datos Principales' },
     { key: 'servicios',    label: 'Servicios' },
     { key: 'pagos',        label: 'Pagos' },
     { key: 'certificados', label: 'Certificados' },
     { key: 'documentos',   label: 'Documentos' },
+    { key: 'migracion',    label: 'Migración histórica' },
     { key: 'programacion', label: 'Programación CEA' },
   ];
 
   tabs = computed(() => {
-    if (!this.permisos.tiene(['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'])) {
-      return this.tabsBase.filter((t) => t.key !== 'programacion');
+    let list = [...this.tabsBase];
+    if (!this.migracionMovimientos()) {
+      list = list.filter((t) => t.key !== 'migracion');
     }
-    return this.tabsBase;
+    if (!this.permisos.tiene(['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'])) {
+      list = list.filter((t) => t.key !== 'programacion');
+    }
+    return list;
   });
 
   docsPendientes = signal<DocumentoPendienteRes[]>([]);
@@ -199,6 +214,11 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.migMovSvc.estado().subscribe({
+      next: (st) => this.migracionMovimientos.set(!!st.puedeUsar),
+      error: () => this.migracionMovimientos.set(false),
+    });
+
     const modo: ModoAlumnos =
       this.route.snapshot.data['modoAlumnos'] === 'jornadas' ? 'jornadas' : 'general';
     this.modo.set(modo);
@@ -263,33 +283,25 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
   tituloComprobanteIngresoHoy(): string {
     const m = this.comprobanteIngresoHoy();
     if (!m) return '';
-    return ['Comprobante de ingreso hoy', m.numRecibo, this.fmtSaldo(m.valor), m.detalle]
-      .filter(Boolean)
-      .join(' · ');
+    return tituloComprobanteAlarma(m, 'ingreso', (n) => this.fmtSaldo(n));
   }
 
   etiquetaComprobanteIngresoHoy(): string {
     const m = this.comprobanteIngresoHoy();
     if (!m) return 'Ingreso';
-    const ref = m.numRecibo || 'Ingreso';
-    const partes = [ref, this.fmtSaldo(m.valor), m.detalle].filter(Boolean);
-    return partes.join(' · ');
+    return partesEtiquetaComprobanteAlarma(m, 'ingreso', (n) => this.fmtSaldo(n)).join(' · ');
   }
 
   tituloComprobanteEgresoHoy(): string {
     const m = this.comprobanteEgresoHoy();
     if (!m) return '';
-    return ['Comprobante de egreso hoy', m.numRecibo, this.fmtSaldo(m.valor), m.detalle]
-      .filter(Boolean)
-      .join(' · ');
+    return tituloComprobanteAlarma(m, 'egreso', (n) => this.fmtSaldo(n));
   }
 
   etiquetaComprobanteEgresoHoy(): string {
     const m = this.comprobanteEgresoHoy();
     if (!m) return 'Egreso';
-    const ref = m.numRecibo || 'Egreso';
-    const partes = [ref, this.fmtSaldo(m.valor), m.detalle].filter(Boolean);
-    return partes.join(' · ');
+    return partesEtiquetaComprobanteAlarma(m, 'egreso', (n) => this.fmtSaldo(n)).join(' · ');
   }
 
   tituloFacturaHoy(): string {

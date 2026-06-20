@@ -186,18 +186,28 @@
           </select>
         </label>
         <label *ngIf="requiereCuentaEmpresa()">
-          Referencia
+          Referencia *
           <input type="text" [ngModel]="numComprobante()" (ngModelChange)="numComprobante.set($event)" />
         </label>
+        <argo-pago-soporte-field
+          *ngIf="requiereSoporte()"
+          class="full"
+          [obligatorio]="true"
+          [previewUrl]="previewSoporte()"
+          [nombreArchivo]="archivoSoporte()?.name ?? null"
+          (seleccionado)="onSoporteArchivo($event)"
+          (quitado)="quitarSoporte()"
+        />
         <label class="full">
           Observaciones
           <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" />
         </label>
       </div>
       <div class="detalle-actions">
-        <button type="button" class="primary" [disabled]="saving() || !cajaAbierta()" (click)="registrar()">
+        <button type="button" class="primary" [disabled]="saving() || !cajaAbierta() || !puedeRegistrar()" (click)="registrar()">
           {{ saving() ? 'Guardando…' : 'Registrar cobro' }}
         </button>
+        <p class="hint err" *ngIf="mensajePagoIntangible() as aviso">{{ aviso }}</p>
       </div>
     </section>
 

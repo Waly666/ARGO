@@ -7,6 +7,7 @@ export type PortalPaginaKey =
   | 'aula'
   | 'fundacion'
   | 'consultaCertificados'
+  | 'blog'
   | 'acerca';
 
 export interface PortalPaginaConfig {
@@ -50,6 +51,7 @@ export interface PortalSiteConfig {
 
 export const PORTAL_FUENTES = [
   'Plus Jakarta Sans',
+  'Poppins',
   'Inter',
   'Roboto',
   'Open Sans',
@@ -100,6 +102,7 @@ export const PORTAL_PAGINA_META: { key: PortalPaginaKey; titulo: string; descrip
   { key: 'fundacion', titulo: 'Institucional', descripcion: 'Página institucional (renombrable: Empresa, Nosotros…)' },
   { key: 'acerca', titulo: 'Acerca de', descripcion: 'Contacto e información de la institución' },
   { key: 'consultaCertificados', titulo: 'Certificados', descripcion: 'Consulta pública de certificados' },
+  { key: 'blog', titulo: 'Blog', descripcion: 'Noticias y artículos del portal' },
 ];
 
 export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null): PortalSiteConfig {
@@ -109,7 +112,7 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
       paginas[m.key] = {
         activa: true,
         etiquetaMenu: m.titulo,
-        ruta: m.key === 'home' ? '/' : `/${m.key === 'consultaCertificados' ? 'consulta-certificados' : m.key}`,
+        ruta: m.key === 'home' ? '/' : `/${m.key === 'consultaCertificados' ? 'consulta-certificados' : m.key === 'blog' ? 'blog' : m.key}`,
       };
     }
   }

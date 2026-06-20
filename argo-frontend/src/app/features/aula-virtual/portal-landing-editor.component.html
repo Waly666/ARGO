@@ -20,6 +20,8 @@
       { id: 'cursos', label: 'Sección cursos' },
       { id: 'carreras', label: 'Carreras técnicas' },
       { id: 'pasos', label: 'Cómo matricularse' },
+      { id: 'appMobile', label: 'App Mobile' },
+      { id: 'blog', label: 'Página Blog' },
       { id: 'faq', label: 'Preguntas frecuentes' },
       { id: 'pilares', label: 'Capacitación' },
       { id: 'footer', label: 'Pie de página' },
@@ -110,6 +112,7 @@
         <div class="av-field"><label>Aula virtual</label><input [(ngModel)]="landing.nav.aula" /></div>
         <div class="av-field"><label>Fundación</label><input [(ngModel)]="landing.nav.fundacion" /></div>
         <div class="av-field"><label>Consultar certificados</label><input [(ngModel)]="landing.nav.consultaCertificados" /></div>
+        <div class="av-field"><label>Blog</label><input [(ngModel)]="landing.nav.blog" /></div>
         <div class="av-field"><label>Acerca de</label><input [(ngModel)]="landing.nav.acerca" /></div>
         <div class="av-field"><label>Acceder</label><input [(ngModel)]="landing.nav.acceder" /></div>
         <div class="av-field"><label>Registrarse</label><input [(ngModel)]="landing.nav.registrarse" /></div>
@@ -271,6 +274,48 @@
         </div>
       }
       <button type="button" class="av-btn av-btn--ghost" (click)="addPaso()">+ Añadir paso</button>
+    </div>
+  }
+
+  @if (bloque() === 'appMobile') {
+    <div class="ple-block">
+      <div class="av-grid3">
+        <div class="av-field"><label>Etiqueta</label><input [(ngModel)]="landing.appMobile.kicker" /></div>
+        <div class="av-field av-field--span2"><label>Título</label><input [(ngModel)]="landing.appMobile.titulo" /></div>
+      </div>
+      <div class="av-field"><label>Intro</label><textarea rows="2" [(ngModel)]="landing.appMobile.lead"></textarea></div>
+      <div class="av-grid2">
+        <div class="av-field"><label>Texto botón descarga</label><input [(ngModel)]="landing.appMobile.btnDescargar" /></div>
+        <div class="av-field"><label>Nota instalación</label><input [(ngModel)]="landing.appMobile.notaInstalacion" /></div>
+      </div>
+      <div class="av-grid2">
+        <div class="av-field"><label>URL APK</label><input [(ngModel)]="landing.appMobile.apkUrl" placeholder="/apk/aula-virtual-finstruvial.apk" /></div>
+        <div class="av-field"><label>Nombre archivo APK</label><input [(ngModel)]="landing.appMobile.apkNombre" /></div>
+      </div>
+      @for (item of landing.appMobile.features; track $index; let i = $index) {
+        <div class="ple-card">
+          <div class="ple-card-head"><strong>Característica {{ i + 1 }}</strong><button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeAppMobileFeature(i)">Quitar</button></div>
+          <div class="av-grid3">
+            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" /></div>
+            <div class="av-field av-field--span2"><label>Título</label><input [(ngModel)]="item.title" /></div>
+          </div>
+          <div class="av-field"><label>Descripción</label><textarea rows="2" [(ngModel)]="item.text"></textarea></div>
+        </div>
+      }
+      <button type="button" class="av-btn av-btn--ghost" (click)="addAppMobileFeature()">+ Añadir característica</button>
+    </div>
+  }
+
+  @if (bloque() === 'blog') {
+    <div class="ple-block">
+      <p class="av-muted">Textos de la página pública <strong>/blog</strong>. Los artículos se administran en <strong>Aula virtual → Blog</strong>.</p>
+      <div class="av-grid3">
+        <div class="av-field"><label>Etiqueta</label><input [(ngModel)]="landing.blog.kicker" /></div>
+        <div class="av-field av-field--span2"><label>Título</label><input [(ngModel)]="landing.blog.titulo" /></div>
+      </div>
+      <div class="av-field"><label>Intro</label><textarea rows="2" [(ngModel)]="landing.blog.lead"></textarea></div>
+      <div class="av-field"><label>Título sin artículos</label><input [(ngModel)]="landing.blog.emptyTitulo" /></div>
+      <div class="av-field"><label>Texto sin artículos</label><textarea rows="2" [(ngModel)]="landing.blog.emptyTexto"></textarea></div>
     </div>
   }
 

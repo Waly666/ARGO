@@ -32,7 +32,8 @@ export function PortalConfigProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    const hadConfig = config != null;
+    if (!hadConfig) setLoading(true);
     try {
       const c = await fetchPortalConfig();
       setConfig(c);
@@ -40,9 +41,9 @@ export function PortalConfigProvider({ children }: { children: React.ReactNode }
     } catch {
       /* mantener config previa si falla un refresh */
     } finally {
-      setLoading(false);
+      if (!hadConfig) setLoading(false);
     }
-  }, []);
+  }, [config]);
 
   // Precarga en cuanto monta (caché + API guardada), sin esperar auth.
   useEffect(() => {

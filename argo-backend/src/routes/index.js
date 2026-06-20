@@ -55,6 +55,7 @@ router.use('/facturacion', facturacion);
 router.use('/aula-virtual', aulaVirtual);
 router.use('/clientes', require('./clientes'));
 router.use('/sistema', require('./sistema'));
+router.use('/migracion', require('./migracion'));
 router.use('/informes', require('./informes'));
 router.use('/combos', require('./combos'));
 router.use('/foro', require('./foro'));

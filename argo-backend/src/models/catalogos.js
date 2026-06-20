@@ -47,6 +47,7 @@ const CATALOGOS = {
   itemsInspeccion: 'itemsInspeccion',
   caractInspeccion: 'caractInspeccion',
   categoriasVirtual: 'categoriasVirtual',
+  modalidades: 'modalidades',
 };
 
 const models = {};

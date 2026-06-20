@@ -8,6 +8,7 @@ const {
   listarServiciosMatricula,
   programaUsaSemestres,
   num,
+  repartirValor,
   valorTarifaServicio,
 } = require('./programaServicio');
 const { estadoLiq } = require('./liquidacionMatricula');
@@ -22,12 +23,97 @@ const {
   resolverTarifaMatricula,
   descripcionConRevalidacion,
 } = require('./revalidacionPrograma');
+const { resolverModalidadPrograma } = require('./programaModalidad');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
 }
 
-async function crearMatriculaDesdeBody(body, idSedeCtx) {
+function resolverAjusteValor(body, { valorCatalogo, tarifa, esJornada, usuario }) {
+  const catalogo = Math.round(Number(valorCatalogo) || 0);
+  const rechazarAjuste = () => {
+    const err = new Error('No se puede ajustar el valor en este tipo de matrícula');
+    err.status = 400;
+    throw err;
+  };
+
+  if (esJornada || esTarifaVirtual(tarifa) || catalogo <= 0) {
+    const intento =
+      body?.ajustarValor === true ||
+      body?.ajustarValor === 'true' ||
+      (body?.valorAcordado != null && body?.valorAcordado !== '');
+    if (intento) {
+      const ac = Math.round(Number(body.valorAcordado));
+      if (Number.isFinite(ac) && ac !== catalogo) rechazarAjuste();
+    }
+    return null;
+  }
+
+  const activo =
+    body?.ajustarValor === true ||
+    body?.ajustarValor === 'true' ||
+    (body?.valorAcordado != null && body?.valorAcordado !== '');
+  if (!activo) return null;
+
+  const acordado = Math.round(Number(body.valorAcordado));
+  if (!Number.isFinite(acordado) || acordado < 0) {
+    const err = new Error('Valor acordado inválido');
+    err.status = 400;
+    throw err;
+  }
+  if (acordado > catalogo) {
+    const err = new Error('Solo se permiten rebajas: el valor acordado no puede superar el valor catálogo');
+    err.status = 400;
+    throw err;
+  }
+
+  const motivo = String(body.motivoAjuste || '').trim();
+  if (acordado < catalogo && !motivo) {
+    const err = new Error('Indique el motivo de la rebaja sobre el valor catálogo');
+    err.status = 400;
+    throw err;
+  }
+  if (acordado === catalogo) return null;
+
+  return {
+    valorCatalogo: catalogo,
+    valorAcordado: acordado,
+    motivoAjuste: motivo,
+    ajustadoPor: usuario?.sub ? String(usuario.sub) : usuario?.username || null,
+    fechaAjuste: new Date(),
+  };
+}
+
+function tieneValorHistoricoMigracion(body) {
+  const raw = body?.valorHistorico ?? body?.valorAcordado;
+  return raw != null && raw !== '';
+}
+
+function resolverValorMigracionHistorica(body, { valorCatalogo, usuario }) {
+  const raw = body?.valorHistorico ?? body?.valorAcordado;
+  if (raw == null || raw === '') return null;
+
+  const acordado = Math.round(Number(raw));
+  if (!Number.isFinite(acordado) || acordado < 0) {
+    const err = new Error('Valor histórico inválido');
+    err.status = 400;
+    throw err;
+  }
+
+  const catalogo = Math.round(Number(valorCatalogo) || 0);
+  if (acordado === catalogo) return null;
+
+  const motivo = String(body.motivoAjuste || body.motivoValorHistorico || '').trim();
+  return {
+    valorCatalogo: catalogo,
+    valorAcordado: acordado,
+    motivoAjuste: motivo || 'Valor histórico migración (Access)',
+    ajustadoPor: usuario?.sub ? String(usuario.sub) : usuario?.username || null,
+    fechaAjuste: new Date(),
+  };
+}
+
+async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
   const {
     numDoc: numDocRaw,
     idPrograma,
@@ -67,6 +153,21 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
   const serviciosProg = await listarServiciosMatricula(prog);
   const usaSem = programaUsaSemestres(prog) && serviciosProg.length > 0;
 
+  const modoMigracion = ctx.modoMigracion === true;
+  const modInfo = resolverModalidadPrograma(prog, serviciosProg);
+  const desdePortal =
+    ctx.desdePortal === true ||
+    body?.origenMatricula === 'portal' ||
+    body?.origenMatricula === 'aula_virtual';
+  if (modInfo.soloVirtual && !desdePortal && !esJornada && !modoMigracion) {
+    const err = new Error(
+      'Este programa es solo virtual. El alumno debe matricularse desde el portal; el cajero puede cobrar la liquidación generada.',
+    );
+    err.status = 403;
+    err.code = 'MATRICULA_SOLO_PORTAL';
+    throw err;
+  }
+
   const tarifaManualFlag =
     tarifaManual === true || tarifaManual === 'true' || body?.forzarTarifa === true;
   const resTarifa = await resolverTarifaMatricula({
@@ -78,7 +179,17 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
   const t = resTarifa.tarifa;
   const esRevalidacion = resTarifa.revalidacion === true;
 
-  if (esTarifaVirtual(t)) {
+  if (!modInfo.tarifasPermitidas.includes(t)) {
+    const err = new Error(
+      `Tarifa ${t} no permitida. Modalidades del programa: ${modInfo.modalidadLabels.join(', ')}. Tarifas permitidas: ${modInfo.tarifasPermitidas.join(', ')}.`,
+    );
+    err.status = 400;
+    err.code = 'TARIFA_NO_PERMITIDA_MODALIDAD';
+    throw err;
+  }
+
+  const valorHistoricoMigracion = modoMigracion && tieneValorHistoricoMigracion(body);
+  if (esTarifaVirtual(t) && !valorHistoricoMigracion) {
     const tieneVirtual = usaSem
       ? serviciosProg.some((s) => num(s.tarifaVirtual) > 0)
       : num(serviciosProg[0]?.tarifaVirtual) > 0;
@@ -89,15 +200,44 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
     }
   }
 
-  let valorMat = 0;
+  let numSemLiquidaciones = usaSem ? serviciosProg.length : 1;
+  if (modoMigracion && usaSem && body?.semestreHasta != null && body?.semestreHasta !== '') {
+    const h = Math.round(Number(body.semestreHasta));
+    if (Number.isFinite(h) && h >= 1) {
+      numSemLiquidaciones = Math.min(h, serviciosProg.length);
+    }
+  }
+
+  let valorCatalogo = 0;
   if (esJornada) {
-    valorMat = 0;
+    valorCatalogo = 0;
   } else if (usaSem) {
-    valorMat = serviciosProg.reduce((acc, s) => acc + valorTarifaServicio(s, t, prog), 0);
+    valorCatalogo = serviciosProg
+      .slice(0, numSemLiquidaciones)
+      .reduce((acc, s) => acc + valorTarifaServicio(s, t, prog), 0);
   } else {
     const serv = serviciosProg[0] || null;
-    valorMat = valorTarifaServicio(serv, t, prog);
+    valorCatalogo = valorTarifaServicio(serv, t, prog);
   }
+
+  const ajuste = modoMigracion
+    ? resolverValorMigracionHistorica(body, { valorCatalogo, usuario: ctx.usuario })
+    : resolverAjusteValor(body, {
+        valorCatalogo,
+        tarifa: t,
+        esJornada,
+        usuario: ctx.usuario,
+      });
+  const valorMat = ajuste ? ajuste.valorAcordado : valorCatalogo;
+  const valoresPorSemestre =
+    ajuste && usaSem ? repartirValor(valorMat, numSemLiquidaciones) : null;
+
+  let fechaMat = new Date();
+  if (modoMigracion && body?.fechaMat) {
+    const fm = new Date(body.fechaMat);
+    if (!Number.isNaN(fm.getTime())) fechaMat = fm;
+  }
+  const marcaMigracion = modoMigracion ? { origenMigracion: true } : {};
 
   if (esJornada && alumno?._id) {
     await DatosAlumno.updateOne(
@@ -112,23 +252,38 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
     ? [obsBase, 'Refrendación / renovación de certificado'].filter(Boolean).join(' · ')
     : obsBase;
 
+  const camposAjuste = ajuste
+    ? {
+        valorCatalogo: toDec(ajuste.valorCatalogo),
+        valorAcordado: toDec(ajuste.valorAcordado),
+        motivoAjuste: ajuste.motivoAjuste,
+        ajustadoPor: ajuste.ajustadoPor,
+        fechaAjuste: ajuste.fechaAjuste,
+      }
+    : {};
+
   const m = await Matricula.create({
     numDoc,
     idSede,
     idPrograma: idProgramaVal,
     idProg: idProgramaVal,
+    fechaMat,
     valorMat: toDec(valorMat),
     tarifa: t,
     pagada: 'No Pago',
     estado: 'Activo',
     observaciones: obsRevalidacion,
     esRevalidacion,
+    ...camposAjuste,
+    ...marcaMigracion,
   });
 
   const liquidaciones = [];
   if (usaSem) {
-    for (const serv of serviciosProg) {
-      const v = valorTarifaServicio(serv, t, prog);
+    for (let i = 0; i < numSemLiquidaciones; i++) {
+      const serv = serviciosProg[i];
+      const vCatalogoSem = valorTarifaServicio(serv, t, prog);
+      const v = valoresPorSemestre ? valoresPorSemestre[i] : vCatalogoSem;
       const liq = await Liquidacion.create({
         numDoc,
         idSede,
@@ -146,6 +301,17 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
         saldo: toDec(v),
         estado: v <= 0 ? 'pagado' : 'pendiente',
         esRevalidacion,
+        fechaCreacion: fechaMat,
+        ...(ajuste
+          ? {
+              valorCatalogo: toDec(vCatalogoSem),
+              valorAcordado: toDec(v),
+              motivoAjuste: ajuste.motivoAjuste,
+              ajustadoPor: ajuste.ajustadoPor,
+              fechaAjuste: ajuste.fechaAjuste,
+            }
+          : {}),
+        ...marcaMigracion,
       });
       liquidaciones.push(liq);
     }
@@ -168,6 +334,17 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
       saldo: toDec(valorMat),
       estado: valorMat <= 0 ? 'pagado' : 'pendiente',
       esRevalidacion,
+      fechaCreacion: fechaMat,
+      ...(ajuste
+        ? {
+            valorCatalogo: toDec(valorCatalogo),
+            valorAcordado: toDec(valorMat),
+            motivoAjuste: ajuste.motivoAjuste,
+            ajustadoPor: ajuste.ajustadoPor,
+            fechaAjuste: ajuste.fechaAjuste,
+          }
+        : {}),
+      ...marcaMigracion,
     });
     liquidaciones.push(liq);
   }
@@ -204,10 +381,19 @@ async function crearMatriculaDesdeBody(body, idSedeCtx) {
       abonado: num(l.abonado),
       saldo: num(l.saldo),
     })),
+    ajuste: ajuste
+      ? {
+          valorCatalogo: ajuste.valorCatalogo,
+          valorAcordado: ajuste.valorAcordado,
+          rebaja: ajuste.valorCatalogo - ajuste.valorAcordado,
+          motivoAjuste: ajuste.motivoAjuste,
+        }
+      : null,
     usuarioPortal: null,
   };
 
   const crearPortal =
+    !modoMigracion &&
     esTarifaVirtual(t) &&
     (body.crearUsuarioPortal === true || body.crearUsuarioPortal === 'true');
   if (crearPortal) {

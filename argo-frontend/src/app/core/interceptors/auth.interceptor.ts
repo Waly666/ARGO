@@ -25,7 +25,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((err) => {
-      if (err?.status === 401 && auth.isAuth()) {
+      // 401 por contraseña/MFA incorrectos en reset/restore: no cerrar sesión.
+      const code = err?.error?.code;
+      const esReauthFallida = code === 'REAUTH_FAILED' || err?.status === 403;
+      if (err?.status === 401 && auth.isAuth() && !esReauthFallida) {
         auth.logout();
       }
       return throwError(() => err);

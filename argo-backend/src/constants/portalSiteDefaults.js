@@ -48,6 +48,7 @@ function paginasDefault(nav = {}) {
       etiquetaMenu: nav.consultaCertificados || 'Certificados',
       ruta: '/consulta-certificados',
     },
+    blog: { activa: true, etiquetaMenu: nav.blog || 'Blog', ruta: '/blog' },
     acerca: { activa: true, etiquetaMenu: nav.acerca || 'Acerca de', ruta: '/acerca' },
   };
 }

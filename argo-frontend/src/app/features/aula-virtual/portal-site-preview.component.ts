@@ -7,6 +7,7 @@ import {
   PORTAL_HOME_SECCIONES_ORDEN,
   PortalPaginaKey,
 } from '../../core/constants/portal-site-defaults';
+import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { mergePortalLanding } from '../../core/constants/portal-landing-defaults';
 import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { BuilderPanel } from './portal-site-builder.component';
@@ -134,6 +135,7 @@ export class PortalSitePreviewComponent {
         key: 'consultaCertificados',
         label: paginas?.consultaCertificados?.etiquetaMenu || nav.consultaCertificados,
       },
+      { key: 'blog', label: paginas?.blog?.etiquetaMenu || nav.blog },
       { key: 'acerca', label: paginas?.acerca?.etiquetaMenu || nav.acerca },
     ];
     return items.filter((i) => {
@@ -170,17 +172,7 @@ export class PortalSitePreviewComponent {
   }
 
   themeVars(): Record<string, string> {
-    const t = this.site?.tema;
-    return {
-      '--pv-primary': t?.colorPrimario || '#3b82f6',
-      '--pv-primary-dark': t?.colorPrimarioOscuro || '#1d4ed8',
-      '--pv-accent': t?.colorAcento || '#22d3ee',
-      '--pv-bg': t?.colorFondo || '#0b1224',
-      '--pv-surface': t?.colorSuperficie || '#121c33',
-      '--pv-text': t?.colorTexto || '#eef3ff',
-      '--pv-dim': t?.colorTextoSecundario || '#9fb0d0',
-      '--pv-font': `'${t?.fuente || 'Plus Jakarta Sans'}', system-ui, sans-serif`,
-    };
+    return buildPortalThemeCssVars(this.site?.tema);
   }
 
   panelHint(): string {
@@ -191,6 +183,7 @@ export class PortalSitePreviewComponent {
       inicio: 'Bloques del inicio',
       contenido: 'Textos del inicio',
       institucional: 'Quiénes somos',
+      blog: 'Blog',
       apariencia: 'Colores y estilo',
       marca: 'Pie de página',
     };

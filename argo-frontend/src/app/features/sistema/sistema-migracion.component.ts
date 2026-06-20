@@ -11,6 +11,7 @@ import {
   SistemaService,
 } from '../../core/services/sistema.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { MigracionMovimientosService, ConfigMigracion } from '../../core/services/migracion-movimientos.service';
 import { BackupResetRestoreNavComponent } from './backup-reset-restore-nav.component';
 
 interface OpcionHoja {
@@ -28,6 +29,7 @@ interface OpcionHoja {
 })
 export class SistemaMigracionComponent implements OnInit, OnDestroy {
   private svc = inject(SistemaService);
+  private migCfgSvc = inject(MigracionMovimientosService);
   private confirm = inject(ConfirmDialogService);
   private pollId: ReturnType<typeof setInterval> | null = null;
 
@@ -61,8 +63,37 @@ export class SistemaMigracionComponent implements OnInit, OnDestroy {
   /** Modo histórico: certificados sin alumno/programa obligatorios. */
   certificadosHistoricos = false;
 
+  configMigracion = signal<ConfigMigracion | null>(null);
+  guardandoConfig = signal(false);
+
   ngOnInit(): void {
     this.cargarLotes();
+    this.cargarConfigMigracion();
+    this.sugerirModoHistorico();
+  }
+
+  cargarConfigMigracion() {
+    this.migCfgSvc.obtenerConfig().subscribe({
+      next: (c) => this.configMigracion.set(c),
+      error: () => this.configMigracion.set({ movimientosHabilitados: false, prefijoRecibo: 'MIG-' }),
+    });
+  }
+
+  guardarConfigMigracion() {
+    const c = this.configMigracion();
+    if (!c) return;
+    this.guardandoConfig.set(true);
+    this.migCfgSvc.guardarConfig(c).subscribe({
+      next: (r) => {
+        this.configMigracion.set(r);
+        this.guardandoConfig.set(false);
+        this.toast('Configuración de migración guardada.');
+      },
+      error: (e) => {
+        this.guardandoConfig.set(false);
+        this.toast(e?.error?.message || 'No se pudo guardar la configuración', true);
+      },
+    });
   }
 
   ngOnDestroy(): void {
@@ -120,16 +151,20 @@ export class SistemaMigracionComponent implements OnInit, OnDestroy {
     this.sugerirModoHistorico();
   }
 
-  /** Si solo migran certificados, activar modo histórico por defecto. */
+  /** Si migran certificados sin programas, activar modo histórico por defecto. */
   private sugerirModoHistorico() {
     const sel = this.hojasSeleccionadas();
-    if (sel.length === 1 && sel[0] === 'certificados') {
+    if (sel.includes('certificados') && !sel.includes('programas')) {
       this.certificadosHistoricos = true;
     }
   }
 
   opcionesIntegridad() {
-    return this.certificadosHistoricos && this.estaSeleccionada('certificados')
+    const sel = this.hojasSeleccionadas();
+    const modoHistorico =
+      this.certificadosHistoricos ||
+      (sel.includes('certificados') && !sel.includes('programas'));
+    return sel.includes('certificados') && modoHistorico
       ? { certificadosHistoricos: true, modoIntegridad: 'historica' as const }
       : undefined;
   }

@@ -2,8 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
 const { models: cat } = require('../models/catalogos');
-const { buscarPrograma, esCapacitacionVirtualServicio } = require('./programaServicio');
+const { buscarPrograma, listarServiciosMatricula } = require('./programaServicio');
 const { servicioMatriculaPrograma } = require('./aulaVirtualCatalogo');
+const { programaAdmiteMatriculaVirtual } = require('./programaModalidad');
 const { resolvePath, publicUrlPath } = require('../middleware/upload');
 const { normalizarNivelVirtual } = require('../constants/nivelVirtual');
 const { idsCategoriasConfig } = require('./aulaVirtualCategorias');
@@ -29,12 +30,13 @@ async function asegurarProgramaVirtual(idPrograma) {
     err.status = 404;
     throw err;
   }
-  const serv = await servicioMatriculaPrograma(prog);
-  if (!esCapacitacionVirtualServicio(serv)) {
-    const err = new Error('El programa no tiene tarifa virtual. Asígnela en Programas.');
+  const servicios = await listarServiciosMatricula(prog);
+  if (!programaAdmiteMatriculaVirtual(prog, servicios)) {
+    const err = new Error('El programa no admite modalidad virtual o no tiene tarifa virtual configurada.');
     err.status = 400;
     throw err;
   }
+  const serv = servicios[0] || null;
   return { prog, serv };
 }
 

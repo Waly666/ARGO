@@ -103,6 +103,11 @@ const CATALOGOS = {
     { id: 'POBLACION_ROM', descripcion: 'POBLACIÓN ROM' },
     { id: 'NO_APLICA', descripcion: 'NO APLICA' },
   ],
+  modalidades: [
+    { idModalidad: '1', codigo: 'PRESENCIAL', descripcion: 'Presencial', activo: true },
+    { idModalidad: '2', codigo: 'VIRTUAL', descripcion: 'Virtual', activo: true },
+    { idModalidad: '3', codigo: 'MIXTA', descripcion: 'Mixta', activo: true },
+  ],
 };
 
 async function seedCollection(db, name, rows, force = false) {

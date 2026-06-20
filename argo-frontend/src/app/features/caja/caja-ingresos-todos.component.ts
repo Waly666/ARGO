@@ -24,6 +24,7 @@ import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vis
 import { resolverFormaPagoIngreso } from '../../core/utils/caja-forma-pago.util';
 import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { abrirUrlSoporte, tieneSoporteAdjunto } from '../../core/utils/pago-soporte.helpers';
 
 @Component({
   selector: 'argo-caja-ingresos-todos',
@@ -157,6 +158,16 @@ export class CajaIngresosTodosComponent implements OnInit {
 
   refComprobante(i: any): string {
     return String(i.numTransferencia || i.numComprobante || '').trim();
+  }
+
+  tieneSoporte = tieneSoporteAdjunto;
+
+  urlSoporte(i: { urlSoporte?: string | null }): string | null {
+    return this.ingSvc.urlArchivo(i.urlSoporte);
+  }
+
+  abrirSoporte(i: { urlSoporte?: string | null }): void {
+    abrirUrlSoporte(this.urlSoporte(i), (m) => this.inform(m));
   }
 
   irAlCierre(idSesion: number | null | undefined): void {

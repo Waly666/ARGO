@@ -24,6 +24,9 @@ export interface ConfigCertificado {
   urlFirmaInstructor?: string;
   prefijoCertificado?: string;
   consecutivoCertificado?: number;
+  usarPrefijoCertificado?: boolean;
+  usarSegundoPrefijoCertificado?: boolean;
+  segundoPrefijoCertificado?: string;
   plantillaPorTipo?: Partial<Record<TipoCertificadoId, PlantillaPorTipoSlot>>;
   /** Posición y estilo de campos por tipo y orientación */
   layoutPorTipo?: LayoutPorTipoCert;

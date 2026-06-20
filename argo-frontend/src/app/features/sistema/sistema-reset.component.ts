@@ -213,7 +213,12 @@ export class SistemaResetComponent implements OnInit, OnDestroy {
           this.detenerPolling();
           this.progreso.set(null);
           this.msgError.set(true);
-          this.msg.set(e?.error?.message || 'La puesta en cero falló. No se borró nada.');
+          const msg = e?.error?.message || 'La puesta en cero falló. No se borró nada.';
+          this.msg.set(
+            e?.error?.code === 'REAUTH_FAILED' || e?.status === 403
+              ? `${msg} Su sesión sigue activa: corrija los datos e intente de nuevo.`
+              : msg,
+          );
         },
       });
   }

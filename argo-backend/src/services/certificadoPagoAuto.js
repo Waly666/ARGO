@@ -157,4 +157,37 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
   };
 }
 
-module.exports = { intentarCertificadoPagoAuto };
+/**
+ * Al anular un ingreso, los certificados vigentes ligados a esas liquidaciones
+ * pasan a anulado para que el servicio pueda cobrarse y certificarse de nuevo.
+ */
+async function revertirCertificadosPorAnulacionIngreso({
+  idsLiquidacion = [],
+  req,
+  supervisor = null,
+  numDoc = null,
+} = {}) {
+  const ids = [...new Set((idsLiquidacion || []).map(String).filter(Boolean))];
+  if (!ids.length) return { anulados: 0 };
+
+  const { metadatosAnulacion } = require('./anulacionComprobante');
+  const certs = await Certificado.find({
+    idLiquidacion: { $in: ids },
+    estado: { $ne: 'anulado' },
+  });
+
+  let anulados = 0;
+  for (const c of certs) {
+    c.set(
+      metadatosAnulacion(req, supervisor, {
+        motivo: `Anulado automáticamente por reversión del pago del alumno ${numDoc || ''}`.trim(),
+      }),
+    );
+    c.estado = 'anulado';
+    await c.save();
+    anulados += 1;
+  }
+  return { anulados };
+}
+
+module.exports = { intentarCertificadoPagoAuto, revertirCertificadosPorAnulacionIngreso };

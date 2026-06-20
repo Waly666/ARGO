@@ -20,6 +20,7 @@ function errorHandler(err, req, res, _next) {
   if (status >= 500) console.error('[ARGO] Error:', err);
   res.status(status).json({
     message: err.message || 'Error interno',
+    ...(err.code ? { code: err.code } : {}),
     ...(err.details ? { details: err.details } : {}),
   });
 }

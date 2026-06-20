@@ -5,6 +5,7 @@ const { obtenerConfigRecibo } = require('./configRecibo');
 const { fmtFechaSolo } = require('../utils/timezoneColombia');
 const { esc, fmtMoney, fmtFecha } = require('./reciboHtmlShared');
 const { ESTADO_ANULADA } = require('../constants/facturacionElectronica');
+const { bloqueComprobanteAnulado, estilosMarcaAguaAnulado } = require('./reciboHtmlShared');
 const {
   buildTextoQrFactura,
   buildTextoQrNotaCredito,
@@ -232,6 +233,7 @@ function estilosDocumento() {
       .no-print { display: none !important; }
       body { padding: 0; }
     }
+    ${estilosMarcaAguaAnulado()}
   `;
 }
 
@@ -284,7 +286,8 @@ async function bloqueQrCufe(doc, em, tipo = 'factura') {
     </div>`;
 }
 
-function wrapHtml(titulo, bodyInner) {
+function wrapHtml(titulo, bodyInner, { anuladoDoc = null } = {}) {
+  const anulado = anuladoDoc ? bloqueComprobanteAnulado(anuladoDoc) : { bodyClass: '', html: '' };
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -292,7 +295,8 @@ function wrapHtml(titulo, bodyInner) {
   <title>${esc(titulo)}</title>
   <style>${estilosDocumento()}</style>
 </head>
-<body>
+<body class="${anulado.bodyClass.trim()}">
+${anulado.html}
 ${bodyInner}
 ${botonesImpresion(titulo)}
 </body>
@@ -373,7 +377,9 @@ async function generarHtmlFactura(id) {
       Generado por ARGO · ${fmtFecha(new Date())}
     </div>`;
 
-  return wrapHtml(titulo, body);
+  return wrapHtml(titulo, body, {
+    anuladoDoc: doc.estado === ESTADO_ANULADA ? doc : null,
+  });
 }
 
 async function generarHtmlNotaCredito(id) {

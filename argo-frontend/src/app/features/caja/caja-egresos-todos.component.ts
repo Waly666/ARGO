@@ -21,6 +21,7 @@ import {
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
+import { abrirUrlSoporte } from '../../core/utils/pago-soporte.helpers';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
@@ -162,6 +163,14 @@ export class CajaEgresosTodosComponent implements OnInit {
     const id = e.idEgreso;
     if (!id) return;
     this.reciboSvc.abrirHtmlEgreso(id, (m) => this.inform(m));
+  }
+
+  urlSoporte(e: Egreso): string | null {
+    return this.egresoSvc.urlArchivo(e.urlSoporte);
+  }
+
+  abrirSoporte(e: Egreso): void {
+    abrirUrlSoporte(this.urlSoporte(e), (m) => this.inform(m));
   }
 
   puedeEditarEgreso(e: Egreso): boolean {

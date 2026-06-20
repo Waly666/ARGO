@@ -3,7 +3,6 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { ContinueCourseCard } from '../../components/ContinueCourseCard';
 import { PortalLogo } from '../../components/PortalLogo';
@@ -32,6 +31,7 @@ import { resolvePlayerUrl } from '../../utils/uploadUrl';
 import type { RootStackParamList } from '../../navigation/types';
 import { radius, space } from '../../theme/spacing';
 import { type } from '../../theme/typography';
+import { shadow } from '../../theme/shadows';
 
 export default function TableroPanel() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -95,24 +95,23 @@ export default function TableroPanel() {
 
   return (
     <ScreenBody onRefresh={onRefresh} refreshing={loading || certsLoading}>
-      <LinearGradient colors={c.gradient} style={styles.welcome} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-        <View style={styles.welcomeDeco} />
+      <SurfaceCard style={{ ...styles.welcome, ...shadow.sm }} tint={c.accentSoft} accentLeft={c.primary}>
         <View style={styles.brandBlock}>
           <PortalLogo width={112} height={56} hideLetterFallback />
-          <ScaledText baseSize={17} style={styles.brandName} numberOfLines={2}>
+          <ScaledText baseSize={17} style={[styles.brandName, { color: c.text }]} numberOfLines={2}>
             {nombreEmpresa}
           </ScaledText>
-          <ScaledText baseSize={12} style={styles.welcomeKicker}>
+          <ScaledText baseSize={12} style={[styles.welcomeKicker, { color: c.textSoft }]}>
             Mi aula virtual
           </ScaledText>
         </View>
-        <ScaledText baseSize={type.h1.fontSize} style={styles.welcomeName}>
+        <ScaledText baseSize={type.h1.fontSize} style={[styles.welcomeName, { color: c.primary }]}>
           Hola, {primerNombre}
         </ScaledText>
-        <ScaledText baseSize={14} style={styles.welcomeSub}>
+        <ScaledText baseSize={14} style={[styles.welcomeSub, { color: c.textSoft }]}>
           Sigue aprendiendo con {nombreEmpresa}
         </ScaledText>
-      </LinearGradient>
+      </SurfaceCard>
 
       {loading && cursos.length === 0 ? (
         <ActivityIndicator color={c.primary} style={{ marginVertical: space.xl }} />
@@ -177,28 +176,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: space.xl,
     marginBottom: space.lg,
-    overflow: 'hidden',
   },
-  welcomeLabel: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', letterSpacing: 1 },
   brandBlock: { alignItems: 'center', marginBottom: space.md },
   brandName: {
-    color: '#fff',
     fontWeight: '800',
     textAlign: 'center',
     marginTop: space.sm,
     lineHeight: 22,
   },
-  welcomeName: { color: '#fff', fontWeight: '800', marginTop: space.xs },
-  welcomeSub: { color: 'rgba(255,255,255,0.9)', marginTop: 4 },
-  welcomeDeco: {
-    position: 'absolute',
-    right: -30,
-    top: -20,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  welcomeKicker: { color: 'rgba(255,255,255,0.85)', marginTop: 4, textAlign: 'center' },
+  welcomeName: { fontWeight: '800', marginTop: space.xs },
+  welcomeSub: { marginTop: 4 },
+  welcomeKicker: { marginTop: 4, textAlign: 'center' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md, justifyContent: 'space-between' },
 });

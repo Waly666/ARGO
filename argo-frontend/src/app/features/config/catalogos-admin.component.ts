@@ -23,6 +23,7 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import { CLASES_SERVICIO, CLASE_SERV_DEFAULT } from '../../core/constants/clase-servicio';
 import { ClaseVehiculo, VehiculoService } from '../../core/services/vehiculo.service';
 import {
   CATEGORIAS_LICENCIA_VEHICULO,
@@ -295,6 +296,13 @@ export class CatalogosAdminComponent implements OnInit {
     return this.catalogos().find((c) => c.nombre === n)?.label || n || '';
   }
 
+  labelColumna(campo: string): string {
+    if (this.esCatalogoTipServicio() || this.esCatalogoInspeccion() || this.esCatalogoDocumento()) {
+      return this.labelCampo(campo);
+    }
+    return campo;
+  }
+
   camposTabla(): string[] {
     const L = this.listado();
     if (!L?.campos?.length) return [];
@@ -414,6 +422,12 @@ export class CatalogosAdminComponent implements OnInit {
   esCatalogoClaseVehiculo(): boolean {
     return this.seleccionado() === 'claseVehiculo';
   }
+
+  esCatalogoTipServicio(): boolean {
+    return this.seleccionado() === 'catTipServicio';
+  }
+
+  clasesServicioOpciones = CLASES_SERVICIO;
 
   categoriasLicenciaLista = CATEGORIAS_LICENCIA_VEHICULO;
 
@@ -541,6 +555,10 @@ export class CatalogosAdminComponent implements OnInit {
     return this.esCatalogoCaractInspeccion() && campo === 'idItem';
   }
 
+  esCampoSelectClaseServ(campo: string): boolean {
+    return this.esCatalogoTipServicio() && campo === 'claseServ';
+  }
+
   private syncFormTiposVehiculo(row?: Record<string, unknown>) {
     if (!this.esCatalogoItemsInspeccion()) {
       this.formTiposVehiculo.set([]);
@@ -622,6 +640,10 @@ export class CatalogosAdminComponent implements OnInit {
       idClases: 'Clases de vehículo',
       controlaVencimiento: 'Vencimiento',
       licenciasCap: 'Licencias capacitación',
+      tipoServ: 'Código (tipoServ)',
+      descTipoServ: 'Descripción',
+      idTipoServ: 'ID',
+      claseServ: 'Clase de servicio',
     };
     return map[campo] || campo;
   }
@@ -651,6 +673,7 @@ export class CatalogosAdminComponent implements OnInit {
     const campos = this.camposFormBase();
     const doc: Record<string, string> = {};
     for (const c of campos) doc[c] = '';
+    if (this.esCatalogoTipServicio()) doc['claseServ'] = CLASE_SERV_DEFAULT;
     this.editandoId.set(null);
     this.formDoc.set(doc);
     this.syncFormIdClases();
@@ -679,6 +702,9 @@ export class CatalogosAdminComponent implements OnInit {
         continue;
       }
       doc[c] = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+    }
+    if (this.esCatalogoTipServicio() && !doc['claseServ']?.trim()) {
+      doc['claseServ'] = CLASE_SERV_DEFAULT;
     }
     this.editandoId.set(id);
     this.formDoc.set(doc);

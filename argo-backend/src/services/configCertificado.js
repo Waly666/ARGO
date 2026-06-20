@@ -1,5 +1,6 @@
 const Config = require('../models/Config');
 const { ensureConfigDocument } = require('./configEnsure');
+const { armarCodigoComprobante } = require('./configRecibo');
 const { normalizePlantillaPorTipo, TIPOS, TIPOS_VALIDOS } = require('./clasificacionCertificado');
 const { normalizeLayoutPorTipo } = require('./certificadoLayout');
 
@@ -72,6 +73,9 @@ const DEFAULTS = {
   urlFirmaInstructor: '',
   prefijoCertificado: 'CERT',
   consecutivoCertificado: 0,
+  usarPrefijoCertificado: true,
+  usarSegundoPrefijoCertificado: false,
+  segundoPrefijoCertificado: String(new Date().getFullYear()),
   /** Días antes del vencimiento para la alarma «por vencer» (banner superior). */
   diasAvisoCertificadoPorVencer: DEFAULT_DIAS_AVISO_POR_VENCER,
   /** Días después del vencimiento para la alarma «vencidos» (banner superior). */
@@ -115,6 +119,12 @@ async function obtenerConfigCertificado() {
     DEFAULT_DIAS_AVISO_VENCIDO,
     30,
   );
+  merged.usarSegundoPrefijoCertificado = !!merged.usarSegundoPrefijoCertificado;
+  merged.usarPrefijoCertificado = merged.usarPrefijoCertificado !== false;
+  const anio = String(new Date().getFullYear());
+  if (!String(merged.segundoPrefijoCertificado || '').trim()) {
+    merged.segundoPrefijoCertificado = anio;
+  }
   return merged;
 }
 
@@ -129,8 +139,14 @@ async function siguienteCodigoCertificado() {
     { new: true, upsert: true },
   );
   const n = updated.consecutivoCertificado || 1;
-  const pref = (updated.prefijoCertificado || DEFAULTS.prefijoCertificado).trim();
-  return `${pref}-${String(n).padStart(6, '0')}`;
+  return armarCodigoComprobante(
+    updated,
+    'prefijoCertificado',
+    'usarSegundoPrefijoCertificado',
+    'segundoPrefijoCertificado',
+    n,
+    'usarPrefijoCertificado',
+  );
 }
 
 module.exports = {

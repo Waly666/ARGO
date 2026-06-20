@@ -12,6 +12,9 @@ export interface ComprobanteHoyAlerta {
   numeroFactura?: string | null;
   valor: number;
   detalle?: string | null;
+  formaPago?: string | null;
+  tipoPago?: string | null;
+  numComprobante?: string | null;
   numDoc?: number | string;
   nombreCompleto?: string;
   alumnoId?: string | null;
@@ -86,6 +89,10 @@ export class ComprobanteHoyAlertService {
         numRecibo: eg['numRecibo'] != null ? String(eg['numRecibo']) : null,
         valor: Number(eg['valorEgreso'] ?? eg['valor']) || 0,
         detalle: String(eg['concepto'] || eg['detalle'] || '').trim() || null,
+        formaPago: eg['formaPago'] != null ? String(eg['formaPago']) : null,
+        tipoPago: eg['formaPago'] != null ? String(eg['formaPago']) : null,
+        numComprobante:
+          String(eg['numTransferencia'] || eg['numComprobante'] || '').trim() || null,
         numDoc: (eg['numeroDocumento'] as string | undefined) ?? ctx?.numDoc,
         nombreCompleto:
           ctx?.nombreCompleto ||
@@ -139,6 +146,10 @@ export class ComprobanteHoyAlertService {
         numRecibo: ing['numRecibo'] != null ? String(ing['numRecibo']) : null,
         valor: Number(ing['valor']) || 0,
         detalle: this.detalleDesdeIngreso(ing),
+        formaPago: ing['formaPago'] != null ? String(ing['formaPago']) : null,
+        tipoPago: String(ing['tipoPagoDescr'] || ing['formaPago'] || ing['idTipoPago'] || '').trim() || null,
+        numComprobante:
+          String(ing['numTransferencia'] || ing['numComprobante'] || '').trim() || null,
         numDoc: (ing['numDoc'] as number | string | undefined) ?? ctx?.numDoc,
         nombreCompleto: ctx?.nombreCompleto || '',
         alumnoId: ctx?.alumnoId || null,
@@ -163,6 +174,9 @@ export class ComprobanteHoyAlertService {
       numeroFactura: row['numeroFactura'] != null ? String(row['numeroFactura']) : null,
       valor: Number(row['valor']) || 0,
       detalle: row['detalle'] != null ? String(row['detalle']).trim() || null : null,
+      formaPago: row['formaPago'] != null ? String(row['formaPago']) : null,
+      tipoPago: row['tipoPago'] != null ? String(row['tipoPago']) : null,
+      numComprobante: row['numComprobante'] != null ? String(row['numComprobante']) : null,
       numDoc: row['numDoc'] as number | string | undefined,
       nombreCompleto: row['nombreCompleto'] != null ? String(row['nombreCompleto']) : '',
       alumnoId: row['alumnoId'] != null ? String(row['alumnoId']) : null,

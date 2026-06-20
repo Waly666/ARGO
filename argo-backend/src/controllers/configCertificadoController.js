@@ -27,6 +27,9 @@ const CAMPOS = [
   'urlFirmaInstructor',
   'prefijoCertificado',
   'consecutivoCertificado',
+  'usarPrefijoCertificado',
+  'usarSegundoPrefijoCertificado',
+  'segundoPrefijoCertificado',
   'plantillaPorTipo',
   'layoutPorTipo',
   'mostrarQr',
@@ -86,6 +89,15 @@ exports.actualizar = async (req, res, next) => {
     }
     if (dto.consecutivoCertificado != null) {
       dto.consecutivoCertificado = Math.max(0, parseInt(dto.consecutivoCertificado, 10) || 0);
+    }
+    if (dto.usarSegundoPrefijoCertificado != null) {
+      dto.usarSegundoPrefijoCertificado = !!dto.usarSegundoPrefijoCertificado;
+    }
+    if (dto.usarPrefijoCertificado != null) {
+      dto.usarPrefijoCertificado = dto.usarPrefijoCertificado !== false;
+    }
+    if (dto.segundoPrefijoCertificado !== undefined) {
+      dto.segundoPrefijoCertificado = String(dto.segundoPrefijoCertificado ?? '').trim();
     }
     if (dto.mostrarQr != null) {
       dto.mostrarQr = dto.mostrarQr === true || dto.mostrarQr === 'true';

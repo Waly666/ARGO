@@ -5,10 +5,9 @@
     <div>
       <h1>Migración de datos</h1>
       <p>
-        Traiga la información de su sistema anterior: programas con sus tarifas, alumnos,
-        matrículas con su saldo (ligado al programa y su servicio), pagos históricos y
-        certificados emitidos. Todo se hace con una plantilla Excel estándar y los consecutivos
-        se ajustan solos para no chocar con los números migrados.
+        Importe alumnos y certificados del sistema anterior (sin programas viejos). Después, en la ficha de
+        cada alumno — pestaña <strong>Migración histórica</strong> — matricule en un programa actual de ARGO
+        y registre los recibos del Access.
       </p>
     </div>
   </header>
@@ -16,6 +15,33 @@
   @if (msg(); as texto) {
     <div class="sys-msg" [class.sys-msg--err]="msgError()" role="status">{{ texto }}</div>
   }
+
+  <!-- Config movimientos históricos -->
+  <section class="sys-section sys-section--emerald">
+    <header class="sys-section-head">
+      <h2>Movimientos históricos (post-importación)</h2>
+      <p>Matrícula con fecha anterior y recibos de migración en la ficha del alumno.</p>
+    </header>
+    <div class="sys-section-body" *ngIf="configMigracion() as cfg">
+      <label class="sys-switch sys-switch--highlight">
+        <input type="checkbox" [(ngModel)]="cfg.movimientosHabilitados" />
+        Habilitar movimientos de migración (matrícula histórica + recibos)
+      </label>
+      <div class="sys-row" style="margin-top: 0.75rem">
+        <label>
+          Prefijo recibo (si no indican número del Access)
+          <input type="text" [(ngModel)]="cfg.prefijoRecibo" style="max-width: 8rem; margin-left: 0.5rem" />
+        </label>
+        <button type="button" class="primary" (click)="guardarConfigMigracion()" [disabled]="guardandoConfig()">
+          {{ guardandoConfig() ? 'Guardando…' : 'Guardar configuración' }}
+        </button>
+      </div>
+      <p class="sys-hint">
+        Asigne el permiso «Movimientos históricos de migración» en Configuración → Roles a quien operará la carga.
+        Mientras esté desactivado, nadie puede usar la pestaña aunque tenga permiso.
+      </p>
+    </div>
+  </section>
 
   <!-- Pasos -->
   <div class="sys-steps">
@@ -64,12 +90,13 @@
         <label class="sys-switch sys-switch--highlight">
           <input type="checkbox" [(ngModel)]="certificadosHistoricos"
                  (ngModelChange)="reporte.set(null); resultado.set(null)" />
-          Certificados históricos — no exigir alumno ni programa en ARGO
+          Certificados históricos — sin exigir alumno ni programa en ARGO
         </label>
         <p class="sys-hint">
-          Use esta opción para migrar certificados emitidos en otro sistema (~5000 registros).
-          Obligatorios: numDoc y fechaEmision. Recomendado: codVerificacion (consulta pública), nombreCurso, nombreTitular y horas.
-          Los alumnos pueden importarse después; la consulta del Aula Virtual usa nombreTitular si el alumno no existe.
+          Recomendado al migrar del Access: marque Alumnos + Certificados (sin Programas).
+          Si el <strong>codigoPrograma</strong> del Excel no existe en ARGO, el certificado se importa
+          igual como histórico (nombreCurso / nombreTitular / codVerificacion).
+          Obligatorios en certificados: <strong>numDoc</strong> y <strong>fechaEmision</strong>.
         </p>
       }
       @if (haySeleccion() && !estaSeleccionada('alumnos') && !certificadosHistoricos) {

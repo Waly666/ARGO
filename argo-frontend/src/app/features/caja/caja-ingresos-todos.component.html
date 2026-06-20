@@ -90,6 +90,14 @@
             <td class="actions-cell">
               <button type="button" class="ghost mini" (click)="verRecibo(i)">Ver</button>
               <button type="button" class="ghost mini" (click)="imprimirRecibo(i)">Imprimir</button>
+              <button
+                type="button"
+                class="primary mini"
+                *ngIf="tieneSoporte(i)"
+                (click)="abrirSoporte(i)"
+                title="Abrir imagen del soporte de pago">
+                Soporte
+              </button>
               <button type="button" class="danger mini" (click)="anularIngreso(i)">Anular</button>
             </td>
           </tr>
@@ -115,6 +123,7 @@
         <div class="card-foot">
           <button type="button" class="ghost sm" *ngIf="i.idSesion" (click)="irAlCierre(i.idSesion)">Cierre #{{ i.idSesion }}</button>
           <button type="button" class="ghost sm" (click)="verRecibo(i)">Ver recibo</button>
+          <button type="button" class="primary sm" *ngIf="tieneSoporte(i)" (click)="abrirSoporte(i)">Ver soporte</button>
           <button type="button" class="danger sm" (click)="anularIngreso(i)">Anular</button>
         </div>
       </article>

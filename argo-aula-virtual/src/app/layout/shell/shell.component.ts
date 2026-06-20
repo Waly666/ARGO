@@ -85,6 +85,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
         route: '/consulta-certificados',
         label: etiquetaPagina(cfg, 'consultaCertificados', nav.consultaCertificados),
       },
+      { key: 'blog', route: '/blog', label: etiquetaPagina(cfg, 'blog', nav.blog) },
       { key: 'acerca', route: '/acerca', label: etiquetaPagina(cfg, 'acerca', nav.acerca) },
     ];
     return items.filter((i) => paginaActiva(cfg, i.key));
@@ -98,6 +99,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
       { key: 'tienda', route: '/tienda' },
       { key: 'aula', route: '/aula' },
       { key: 'fundacion', route: '/fundacion' },
+      { key: 'blog', route: '/blog' },
       { key: 'acerca', route: '/acerca' },
     ];
     const pages = paginas

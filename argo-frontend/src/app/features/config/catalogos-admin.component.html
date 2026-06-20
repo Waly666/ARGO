@@ -118,9 +118,15 @@
                 <div
                   class="cat-field"
                   [class.cat-field--wide]="esCatalogoInspeccion() && campoEsTextoLargo(c)"
-                  [class.cat-field--select]="esCampoSelectCaract(c)">
-                  <span class="cat-label">{{ esCatalogoInspeccion() || esCatalogoDocumento() ? labelCampo(c) : c }}</span>
-                  @if (esCatalogoInspeccion() && campoEsTextoLargo(c)) {
+                  [class.cat-field--select]="esCampoSelectCaract(c) || esCampoSelectClaseServ(c)">
+                  <span class="cat-label">{{ labelColumna(c) }}</span>
+                  @if (esCampoSelectClaseServ(c)) {
+                    <select [ngModel]="formDoc()[c]" (ngModelChange)="patchCampo(c, $event)">
+                      @for (opt of clasesServicioOpciones; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                      }
+                    </select>
+                  } @else if (esCatalogoInspeccion() && campoEsTextoLargo(c)) {
                     <textarea rows="4" [ngModel]="formDoc()[c]" (ngModelChange)="patchCampo(c, $event)"></textarea>
                   } @else if (esCatalogoCaractInspeccion() && c === 'idItem') {
                     <div class="cat-combo-wrap">
@@ -306,7 +312,7 @@
                   <thead>
                     <tr>
                       @for (c of columnasListado(); track c) {
-                        <th>{{ esCatalogoInspeccion() || esCatalogoDocumento() ? labelCampo(c) : c }}</th>
+                        <th>{{ labelColumna(c) }}</th>
                       }
                       <th></th>
                     </tr>
@@ -356,7 +362,7 @@
                       }
                       @for (c of columnasCards(); track c) {
                         <div>
-                          <dt>{{ esCatalogoInspeccion() || esCatalogoDocumento() ? labelCampo(c) : c }}</dt>
+                          <dt>{{ labelColumna(c) }}</dt>
                           <dd>
                             @if (usarCapsula(c)) {
                               <span [ngClass]="capParaCampo(c, valorCelda(row, c))">{{ valorCelda(row, c) }}</span>

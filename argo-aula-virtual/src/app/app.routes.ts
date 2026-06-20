@@ -53,6 +53,17 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'blog',
+        canActivate: [portalPageGuard],
+        loadComponent: () => import('./pages/blog/blog.component').then((m) => m.BlogComponent),
+      },
+      {
+        path: 'blog/:slug',
+        canActivate: [portalPageGuard],
+        loadComponent: () =>
+          import('./pages/blog-detalle/blog-detalle.component').then((m) => m.BlogDetalleComponent),
+      },
+      {
         path: 'login',
         loadComponent: () => import('./pages/login/login.component').then((m) => m.LoginComponent),
       },

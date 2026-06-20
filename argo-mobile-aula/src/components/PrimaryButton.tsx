@@ -1,6 +1,5 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
@@ -58,14 +57,9 @@ export function PrimaryButton({
         disabled={disabled || loading}
         style={({ pressed }) => [fullWidth && styles.full, { opacity: pressed ? 0.9 : 1 }]}
       >
-        <LinearGradient
-          colors={c.gradientHero}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.btn, { paddingVertical: py }, shadow.sm]}
-        >
+        <View style={[styles.btn, { paddingVertical: py, backgroundColor: c.primary }, shadow.sm]}>
           {content}
-        </LinearGradient>
+        </View>
       </Pressable>
     );
   }

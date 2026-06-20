@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { EmptyState } from '../../components/EmptyState';
 import { ScaledText } from '../../components/ScaledText';
@@ -19,14 +18,14 @@ export default function PuntajesPanel() {
 
   return (
     <ScreenBody onRefresh={reload} refreshing={loading}>
-      <LinearGradient colors={c.gradientViolet} style={styles.banner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-        <ScaledText baseSize={18} style={{ color: '#fff', fontWeight: '800' }}>
+      <View style={[styles.banner, { backgroundColor: c.violetSoft, borderColor: c.border }]}>
+        <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800' }}>
           Mis puntajes
         </ScaledText>
-        <ScaledText baseSize={13} style={{ color: 'rgba(255,255,255,0.9)', marginTop: 4 }}>
+        <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4 }}>
           Avance y evaluaciones de tus cursos
         </ScaledText>
-      </LinearGradient>
+      </View>
 
       {!loading && conProgreso.length === 0 ? (
         <EmptyState title="Sin puntajes aún" subtitle="Avanza en un curso para ver tus notas" icon="stats-chart-outline" />
@@ -100,6 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: space.lg,
     marginBottom: space.lg,
+    borderWidth: 1,
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: space.md, gap: space.sm },
   metric: {

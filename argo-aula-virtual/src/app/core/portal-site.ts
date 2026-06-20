@@ -7,6 +7,7 @@ export type PortalPaginaKey =
   | 'aula'
   | 'fundacion'
   | 'consultaCertificados'
+  | 'blog'
   | 'acerca';
 
 const RUTA_PAGINA: Record<PortalPaginaKey, string> = {
@@ -16,6 +17,7 @@ const RUTA_PAGINA: Record<PortalPaginaKey, string> = {
   aula: '/aula',
   fundacion: '/fundacion',
   consultaCertificados: '/consulta-certificados',
+  blog: '/blog',
   acerca: '/acerca',
 };
 
@@ -106,10 +108,12 @@ function posicionarTestimoniosAntesFaq(orden: string[]): string[] {
 
 export function clavePaginaPorRuta(path: string): PortalPaginaKey | null {
   const clean = path.split('?')[0].split('#')[0];
-  if (clean === '/' || clean === '') return 'home';
-  if (clean.startsWith('/cursos/')) return 'cursos';
+  const base = clean.replace(/\/:[^/]+.*$/, '').replace(/\/$/, '') || '/';
+  if (base === '/' || base === '') return 'home';
+  if (base.startsWith('/cursos/')) return 'cursos';
+  if (base === '/blog' || base.startsWith('/blog/')) return 'blog';
   for (const [key, ruta] of Object.entries(RUTA_PAGINA)) {
-    if (ruta !== '/' && clean === ruta) return key as PortalPaginaKey;
+    if (ruta !== '/' && base === ruta) return key as PortalPaginaKey;
   }
   return null;
 }

@@ -25,6 +25,14 @@ const {
   actualizarCategoria,
   eliminarCategoria,
 } = require('../services/aulaVirtualCategorias');
+const {
+  listarAdmin: listarBlogAdmin,
+  obtenerAdmin: obtenerBlogAdmin,
+  crearPost,
+  actualizarPost,
+  eliminarPost,
+  urlImagenSubida,
+} = require('../services/aulaVirtualBlog');
 const { publicUrl, publicUrlPath, resolvePath } = require('../middleware/upload');
 const { listarUsuariosPortalAdmin, eliminarUsuarioPortal, crearUsuarioPortalAdmin } = require('../services/aulaVirtualUsuarios');
 const { inyectarBridgeEnPaquete, detectarStoragePrefix } = require('../services/aulaVirtualBridge');
@@ -385,6 +393,65 @@ exports.listarProgresoAlumnos = async (req, res, next) => {
     res.json(await listarProgresoAlumnosAdmin(req.params.id, req.query, ctx));
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.listarBlogAdmin = async (_req, res, next) => {
+  try {
+    res.json(await listarBlogAdmin());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerBlogAdmin = async (req, res, next) => {
+  try {
+    res.json(await obtenerBlogAdmin(req.params.id));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.crearBlogPost = async (req, res, next) => {
+  try {
+    const post = await crearPost(req.body || {}, req.user);
+    res.status(201).json({ post, message: 'Artículo creado' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.actualizarBlogPost = async (req, res, next) => {
+  try {
+    const post = await actualizarPost(req.params.id, req.body || {}, req.user);
+    res.json({ post, message: 'Artículo actualizado' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.eliminarBlogPost = async (req, res, next) => {
+  try {
+    await eliminarPost(req.params.id);
+    res.json({ ok: true, message: 'Artículo eliminado' });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.subirImagenBlog = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const url = urlImagenSubida(req.file.filename);
+    res.status(201).json({ url, message: 'Imagen subida' });
+  } catch (e) {
     next(e);
   }
 };

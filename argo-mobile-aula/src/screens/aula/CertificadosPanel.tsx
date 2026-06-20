@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { EmptyState } from '../../components/EmptyState';
@@ -40,17 +39,17 @@ export default function CertificadosPanel() {
 
   return (
     <ScreenBody onRefresh={load}>
-      <LinearGradient colors={c.gradientGold} style={styles.banner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-        <Ionicons name="ribbon" size={28} color="#fff" />
+      <View style={[styles.banner, { backgroundColor: c.goldSoft, borderColor: c.border }]}>
+        <Ionicons name="ribbon" size={28} color={c.gold} />
         <View style={{ flex: 1, marginLeft: space.md }}>
-          <ScaledText baseSize={18} style={{ color: '#fff', fontWeight: '800' }}>
+          <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800' }}>
             Mis certificados
           </ScaledText>
-          <ScaledText baseSize={13} style={{ color: 'rgba(255,255,255,0.9)', marginTop: 2 }}>
+          <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 2 }}>
             {certs.length} emitido(s)
           </ScaledText>
         </View>
-      </LinearGradient>
+      </View>
 
       {certs.length === 0 ? (
         <EmptyState title="Sin certificados" subtitle="Complete cursos para obtener certificados" icon="ribbon-outline" />
@@ -117,6 +116,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: space.lg,
     marginBottom: space.lg,
+    borderWidth: 1,
   },
   certHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   certIcon: {

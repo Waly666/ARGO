@@ -16,8 +16,14 @@ const CAMPOS = [
   'consecutivoFactura',
   'prefijoComprobanteIngreso',
   'consecutivoComprobanteIngreso',
+  'usarPrefijoComprobanteIngreso',
+  'usarSegundoPrefijoComprobanteIngreso',
+  'segundoPrefijoComprobanteIngreso',
   'prefijoComprobanteEgreso',
   'consecutivoComprobanteEgreso',
+  'usarPrefijoComprobanteEgreso',
+  'usarSegundoPrefijoComprobanteEgreso',
+  'segundoPrefijoComprobanteEgreso',
   'slogan1',
   'mensajeEncabezado',
   'mensajeEncabezadoEgreso',
@@ -84,6 +90,24 @@ exports.actualizarRecibo = async (req, res, next) => {
         }
         dto[k] = norm;
       }
+    }
+    for (const k of [
+      'usarSegundoPrefijoComprobanteIngreso',
+      'usarSegundoPrefijoComprobanteEgreso',
+    ]) {
+      if (dto[k] !== undefined) dto[k] = !!dto[k];
+    }
+    for (const k of [
+      'usarPrefijoComprobanteIngreso',
+      'usarPrefijoComprobanteEgreso',
+    ]) {
+      if (dto[k] !== undefined) dto[k] = dto[k] !== false;
+    }
+    for (const k of [
+      'segundoPrefijoComprobanteIngreso',
+      'segundoPrefijoComprobanteEgreso',
+    ]) {
+      if (dto[k] !== undefined) dto[k] = String(dto[k] ?? '').trim();
     }
     const existe = await Config.findOne({ clave: CLAVE });
     if (existe) {

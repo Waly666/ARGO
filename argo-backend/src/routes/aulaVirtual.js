@@ -7,6 +7,7 @@ const {
   aulaVirtualZip,
   aulaVirtualMateriales,
   aulaVirtualLogo,
+  aulaVirtualBlog,
   programasVirtual,
 } = require('../middleware/upload');
 const { portalAuthLimiter, buscarAlumnoLimiter } = require('../middleware/security');
@@ -27,6 +28,8 @@ router.get('/catalogos/municipios-buscar', ctrl.catalogosBuscarMunicipios);
 router.get('/catalogos/municipio/:codMunicipio', ctrl.catalogosMunicipio);
 router.get('/catalogos/municipios/:codDepto', ctrl.catalogosMunicipios);
 router.get('/categorias', ctrl.listarCategorias);
+router.get('/blog', ctrl.listarBlog);
+router.get('/blog/:slug', ctrl.obtenerBlogPost);
 router.get('/cursos', ctrl.listarCursos);
 router.get('/cursos/:id', ctrl.obtenerCurso);
 router.get(
@@ -122,5 +125,18 @@ router.post(
   admin.subirLogoPortal,
 );
 router.delete('/admin/portal/logo', requireAuth, configPortal, admin.quitarLogoPortal);
+
+router.get('/admin/blog', requireAuth, configPortal, admin.listarBlogAdmin);
+router.get('/admin/blog/:id', requireAuth, configPortal, admin.obtenerBlogAdmin);
+router.post('/admin/blog', requireAuth, configPortal, admin.crearBlogPost);
+router.put('/admin/blog/:id', requireAuth, configPortal, admin.actualizarBlogPost);
+router.delete('/admin/blog/:id', requireAuth, configPortal, admin.eliminarBlogPost);
+router.post(
+  '/admin/blog/imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualBlog.single('imagen'),
+  admin.subirImagenBlog,
+);
 
 module.exports = router;

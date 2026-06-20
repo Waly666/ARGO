@@ -15,6 +15,7 @@ import { mergePortalLanding } from '../../core/constants/portal-landing-defaults
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 import { PortalFundacionEditorComponent } from './portal-fundacion-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
+import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 
 export type BuilderPanel =
   | 'panel'
@@ -23,6 +24,7 @@ export type BuilderPanel =
   | 'inicio'
   | 'contenido'
   | 'institucional'
+  | 'blog'
   | 'empresa'
   | 'marca';
 
@@ -92,7 +94,10 @@ export class PortalSiteBuilderComponent {
     },
     {
       title: 'Más páginas',
-      items: [{ id: 'institucional', icon: '🏛️', label: 'Quiénes somos' }],
+      items: [
+        { id: 'institucional', icon: '🏛️', label: 'Quiénes somos' },
+        { id: 'blog', icon: '📰', label: 'Blog' },
+      ],
     },
     {
       title: 'Diseño',
@@ -110,6 +115,8 @@ export class PortalSiteBuilderComponent {
   get landing() {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding();
+    } else if (!this.portalForm.landing.blog) {
+      this.portalForm.landing.blog = { ...mergePortalLanding().blog };
     }
     return this.portalForm.landing;
   }
@@ -146,6 +153,10 @@ export class PortalSiteBuilderComponent {
       institucional: {
         title: 'Página «Quiénes somos»',
         help: 'Misión, visión, quiénes somos y servicios. Ideal si renombró «Fundación» por «Empresa» o «Institución».',
+      },
+      blog: {
+        title: 'Página Blog',
+        help: 'Encabezado y textos de la página /blog. Los artículos se publican en Aula virtual → Blog del portal.',
       },
       apariencia: {
         title: 'Colores y estilo',
@@ -253,5 +264,9 @@ export class PortalSiteBuilderComponent {
 
   paginaSiempreVisible(key: string): boolean {
     return key === 'home' || key === 'aula';
+  }
+
+  themePreviewVars(): Record<string, string> {
+    return buildPortalThemeCssVars(this.site.tema);
   }
 }

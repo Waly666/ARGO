@@ -98,7 +98,7 @@
   transition: all 0.15s;
 
   &.active {
-    background: var(--dash-primary, #2563eb);
+    background: var(--dash-primary);
     color: #fff;
     font-weight: 600;
   }
@@ -146,8 +146,8 @@
   font-weight: 600;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+  background: linear-gradient(135deg, var(--av-primary), var(--av-primary-dark));
+  box-shadow: 0 4px 14px var(--av-primary-a45);
   animation: foro-bounce-in 0.25s ease;
 
   &:hover {
@@ -219,7 +219,7 @@
 }
 
 .avatar-propio {
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: linear-gradient(135deg, var(--av-primary), var(--av-primary-dark));
   color: #fff;
 }
 
@@ -240,8 +240,8 @@
 }
 
 .foro-msg--propio .foro-msg-content {
-  background: rgba(37, 99, 235, 0.15);
-  border-color: rgba(37, 99, 235, 0.3);
+  background: var(--av-primary-a15);
+  border-color: var(--av-primary-a30);
 }
 
 .foro-msg--staff .foro-msg-content {
@@ -349,7 +349,7 @@
   width: 40px;
   height: 40px;
   min-width: 40px;
-  background: var(--dash-primary, #2563eb);
+  background: var(--dash-primary);
   border: none;
   border-radius: 10px;
   color: #fff;
@@ -358,7 +358,7 @@
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
 
-  &:hover:not(:disabled) { background: #1d4ed8; }
+  &:hover:not(:disabled) { background: var(--av-primary-dark); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 

@@ -4,6 +4,7 @@ const Egreso = require('../models/Egreso');
 const FacturaElectronica = require('../models/FacturaElectronica');
 const Liquidacion = require('../models/Liquidacion');
 const { parseNumDoc } = require('../utils/numDoc');
+const { referenciaPagoTexto } = require('../utils/referenciaPago');
 function inicioDia(d = new Date()) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -99,7 +100,7 @@ async function listarComprobantesRecientes(desde) {
       ingresoCaja: { $ne: true },
       $or: [{ createdAt: rango }, { fecha: rango }],
     })
-      .select('_id numDoc numRecibo valor fecha createdAt detalle idLiquidacion concepto tipoIngreso')
+      .select('_id numDoc numRecibo valor fecha createdAt detalle idLiquidacion concepto tipoIngreso idTipoPago formaPago numTransferencia numComprobante')
       .sort({ createdAt: -1 })
       .limit(80)
       .lean(),
@@ -114,7 +115,7 @@ async function listarComprobantesRecientes(desde) {
     Egreso.find({
       $or: [{ fechaEgreso: rango }, { fechaAudi: rango }],
     })
-      .select('_id numeroDocumento numDoc numRecibo valorEgreso pagueA concepto fechaEgreso fechaAudi')
+      .select('_id numeroDocumento numDoc numRecibo valorEgreso pagueA concepto fechaEgreso fechaAudi formaPago numTransferencia')
       .sort({ fechaEgreso: -1, fechaAudi: -1 })
       .limit(80)
       .lean(),
@@ -164,6 +165,9 @@ async function listarComprobantesRecientes(desde) {
       numRecibo: ing.numRecibo || null,
       valor: numValor(ing.valor),
       detalle: detalleTextoIngreso(ing, descrMap) || null,
+      formaPago: ing.formaPago || null,
+      tipoPago: ing.formaPago || ing.idTipoPago || null,
+      numComprobante: referenciaPagoTexto(ing.numTransferencia, ing.numComprobante),
       numDoc: ing.numDoc,
       nombreCompleto: nombreCompleto(al) || (ing.numDoc != null ? `Doc ${ing.numDoc}` : ''),
       alumnoId: al?._id ? String(al._id) : null,
@@ -183,6 +187,9 @@ async function listarComprobantesRecientes(desde) {
       numRecibo: eg.numRecibo || null,
       valor: numValor(eg.valorEgreso),
       detalle: String(eg.concepto || '').trim() || null,
+      formaPago: eg.formaPago || null,
+      tipoPago: eg.formaPago || null,
+      numComprobante: referenciaPagoTexto(eg.numTransferencia, eg.numComprobante),
       numDoc: al?.numDoc ?? doc ?? null,
       nombreCompleto: nomAl || pagueA || (doc != null ? `Doc ${doc}` : 'Egreso'),
       alumnoId: al?._id ? String(al._id) : null,

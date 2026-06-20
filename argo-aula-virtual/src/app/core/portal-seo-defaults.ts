@@ -68,6 +68,17 @@ export const FUNDACION_SEO_KEYWORDS = [
   'planes estratégicos seguridad vial',
 ].join(', ');
 
+export const BLOG_SEO_TITLE = `Blog y noticias | ${SEO_BRAND} — ${SEO_SITE_SUFFIX}`;
+export const BLOG_SEO_DESCRIPTION =
+  'Artículos, novedades y contenido sobre capacitación, seguridad vial y el aula virtual de FINSTRUVIAL en Villavicencio, Meta y Colombia.';
+
+export const BLOG_SEO_KEYWORDS = [
+  'blog FINSTRUVIAL',
+  'noticias seguridad vial Villavicencio',
+  'artículos capacitación Meta',
+  'novedades aula virtual Colombia',
+].join(', ');
+
 export const LOGIN_SEO_TITLE = `Acceder al aula | ${SEO_BRAND}`;
 export const REGISTRO_SEO_TITLE = `Crear cuenta | ${SEO_BRAND}`;
 export const AULA_SEO_TITLE = `Mi aula virtual | ${SEO_BRAND}`;

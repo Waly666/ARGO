@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { WelcomeBrandHeader } from '../components/WelcomeBrandHeader';
 import { useAuth } from '../context/AuthContext';
@@ -14,11 +13,9 @@ function BrandedSplashOverlay() {
   const c = useTheme();
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="auto">
-      <LinearGradient colors={c.gradient} style={styles.boot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-        <WelcomeBrandHeader />
-        <ActivityIndicator size="large" color="#fff" style={{ marginTop: space.xl }} />
-      </LinearGradient>
+    <View style={[StyleSheet.absoluteFill, styles.boot, { backgroundColor: c.bg }]} pointerEvents="auto">
+      <WelcomeBrandHeader />
+      <ActivityIndicator size="large" color={c.primary} style={{ marginTop: space.xl }} />
     </View>
   );
 }
@@ -43,10 +40,10 @@ function BootstrapScreen() {
   const c = useTheme();
 
   return (
-    <LinearGradient colors={c.gradient} style={styles.boot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+    <View style={[styles.boot, { backgroundColor: c.bg }]}>
       <WelcomeBrandHeader />
-      <ActivityIndicator size="large" color="#fff" style={{ marginTop: space.xl }} />
-    </LinearGradient>
+      <ActivityIndicator size="large" color={c.primary} style={{ marginTop: space.xl }} />
+    </View>
   );
 }
 

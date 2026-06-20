@@ -156,6 +156,11 @@
               <input id="rpass" type="password" [(ngModel)]="password" autocomplete="current-password" />
             </div>
             <div class="sys-field">
+              <label for="rmfa">Código MFA (si lo tiene activo)</label>
+              <input id="rmfa" type="text" [(ngModel)]="codigoMfa" maxlength="6" inputmode="numeric"
+                     placeholder="000000" />
+            </div>
+            <div class="sys-field">
               <label for="rconf">Escriba RESTAURAR para confirmar</label>
               <input id="rconf" type="text" [(ngModel)]="confirmacion" placeholder="RESTAURAR" />
             </div>

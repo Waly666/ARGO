@@ -13,21 +13,31 @@
   <div class="two-col">
     <div class="card">
       <h2>Crear Matrícula</h2>
+
       <div class="row">
-        <div class="col-6">
+        <div class="col-12 programa-combo-wrap">
           <argo-catalogo-enum-buscar
             label="Programa"
             placeholder="Seleccione o escriba programa…"
             [textoInicial]="textoPrograma()"
             [modoCombo]="true"
-            [remoto]="false"
+            [remoto]="true"
             [minLength]="1"
-            [opcionesLocales]="opcionesProgramas()"
+            [buscarRemoto]="buscarProgramasRemoto"
             (seleccionado)="onProgramaPick($event)"
             (limpiado)="onProgramaLimpiar()"
           />
         </div>
-        <div class="col-3">
+      </div>
+
+      <div class="solo-virtual-banner" *ngIf="idProg() && programaSoloVirtual()">
+        <strong>Programa solo virtual</strong>
+        <p>Modalidad: {{ modalidadProgramaLabel() || 'Virtual' }}. La matrícula la hace el alumno en el portal (tarifa virtual). Aquí puede <strong>cobrar</strong> cuando se genere la liquidación.</p>
+      </div>
+
+      <ng-container *ngIf="idProg() && !programaSoloVirtual()">
+      <div class="row row-align-fields matricula-fields-row">
+        <div class="col-6 field-cell">
           <argo-catalogo-enum-buscar
             label="Tarifa"
             placeholder="Seleccione tarifa…"
@@ -40,10 +50,56 @@
             (limpiado)="onTarifaLimpiar()"
           />
         </div>
-        <div class="col-3">
+        <div class="col-6 field-cell">
           <label>Valor Matrícula</label>
-          <input type="text" [value]="fmt(valorMatCalculado())" disabled />
+          <input type="text" class="input-valor-readonly" [value]="fmt(ajustarValorMat ? valorMatFinal() : valorMatCalculado())" disabled />
         </div>
+      </div>
+
+      <div class="ajuste-valor-mat" *ngIf="puedeAjustarValorMat()">
+        <label class="ajuste-check">
+          <input
+            type="checkbox"
+            [ngModel]="ajustarValorMat"
+            (ngModelChange)="onAjustarValorMatChange($event)"
+          />
+          Ajustar valor (solo rebaja)
+        </label>
+
+        <ng-container *ngIf="ajustarValorMat">
+          <div class="row row-align-fields ajuste-valor-row">
+            <div class="col-4 field-cell">
+              <label>Valor catálogo</label>
+              <input type="text" class="input-valor-readonly" [value]="fmt(valorMatCalculado())" disabled />
+            </div>
+            <div class="col-4 field-cell">
+              <label>Valor a cobrar (total)</label>
+              <input
+                type="number"
+                min="0"
+                [max]="valorMatCalculado()"
+                [(ngModel)]="valorAcordadoMat"
+                placeholder="Total del programa"
+              />
+            </div>
+            <div class="col-4 field-cell">
+              <label>Motivo de la rebaja <span class="req">*</span></label>
+              <input
+                type="text"
+                [(ngModel)]="motivoAjusteMat"
+                placeholder="Ej. convenio empresa, beca parcial…"
+                maxlength="300"
+              />
+            </div>
+          </div>
+          <p class="hint ajuste-hint" *ngIf="rebajaMatricula() > 0">
+            Rebaja: <strong>{{ fmt(rebajaMatricula()) }}</strong>
+            · Total a liquidar: <strong>{{ fmt(valorMatFinal()) }}</strong>
+            <ng-container *ngIf="programaNumSemestres() as nSem">
+              · Se reparte en <strong>{{ nSem }}</strong> semestre(s)
+            </ng-container>
+          </p>
+        </ng-container>
       </div>
 
       <div class="portal-matricula" *ngIf="esTarifaVirtualSeleccionada()">
@@ -84,6 +140,7 @@
           Crear Matrícula
         </button>
       </div>
+      </ng-container>
     </div>
 
     <!-- ============ APLICAR COMBO DE CURSOS ============ -->
@@ -144,15 +201,15 @@
     <div class="card">
       <h2>Agregar Servicio Adicional</h2>
       <div class="row">
-        <div class="col-6">
+        <div class="col-12 servicio-combo-wrap">
           <argo-catalogo-enum-buscar
             label="Servicio"
             placeholder="Seleccione o escriba servicio…"
             [textoInicial]="textoServicioAdicional()"
             [modoCombo]="true"
-            [remoto]="false"
+            [remoto]="true"
             [minLength]="1"
-            [opcionesLocales]="opcionesServiciosAdicionales()"
+            [buscarRemoto]="buscarServiciosAdicionalesRemoto"
             (seleccionado)="onServicioAdicionalPick($event)"
             (limpiado)="onServicioAdicionalLimpiar()"
           />
@@ -293,9 +350,12 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let p of comprobantesPorItem(it._id)">
+                    <tr *ngFor="let p of comprobantesPorItem(it._id)" [class.row-anulado]="esAnulado(p)">
                       <td>{{ tiempoFmt(p.fecha || p.createdAt) }}</td>
-                      <td>{{ descrComprobante(p) }}</td>
+                      <td>
+                        {{ descrComprobante(p) }}
+                        <span class="badge err mini-badge" *ngIf="esAnulado(p)">ANULADO</span>
+                      </td>
                       <td>
                         <span class="badge" [ngClass]="tipoAbonoClass(p)">{{ tipoAbonoLabel(p) }}</span>
                       </td>

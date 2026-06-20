@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { models } = require('../models/catalogos');
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
-const { metaCatalogo, inferirCamposId, nombreValido, docSegunEsquema, resolverCamposListado, camposEsquema, CATALOGOS_INSPECCION, CATALOGOS_DOCUMENTOS } = require('./catalogoMeta');
+const { metaCatalogo, inferirCamposId, nombreValido, docSegunEsquema, resolverCamposListado, camposEsquema, CATALOGOS_INSPECCION, CATALOGOS_DOCUMENTOS, validarClaseServCatalogo } = require('./catalogoMeta');
 const { syncControlaVencimientoDesdeCatalogo: syncVehiDesdeCatalogo, invalidarCacheClases } = require('./configRequisitosDocumentosVehiculos');
 const { syncControlaVencimientoDesdeCatalogo: syncEmpDesdeCatalogo } = require('./configRequisitosDocumentosEmpleados');
 const { coerceDocument, num: numCoerce } = require('../utils/coerceTypes');
@@ -111,6 +111,7 @@ async function crear(nombre, body) {
   if (!nombreValido(nombre)) return null;
   const doc = limpiarBodyCatalogo(nombre, body);
   if (nombre === 'categoriasVirtual') await validarCategoriaVirtual(doc);
+  if (nombre === 'catTipServicio') validarClaseServCatalogo(doc);
   const meta = metaCatalogo(nombre);
   const idField = meta.idFields[0];
   if (idField && (doc[idField] == null || doc[idField] === '')) {
@@ -144,6 +145,7 @@ async function actualizar(nombre, mongoId, body) {
   if (nombre === 'categoriasVirtual') {
     await validarCategoriaVirtual({ ...existing, ...doc }, existing.idCategoria);
   }
+  if (nombre === 'catTipServicio') validarClaseServCatalogo(doc);
   const update = { $set: doc };
   if (CATALOGOS_INSPECCION.has(nombre)) {
     update.$unset = { claseVehiculo: '' };
@@ -201,6 +203,9 @@ async function importar(nombre, rows, modo = 'reemplazar') {
     throw err;
   }
   const limpias = rows.map((r) => limpiarBodyCatalogo(nombre, limpiarBody(r)));
+  if (nombre === 'catTipServicio') {
+    for (const row of limpias) validarClaseServCatalogo(row);
+  }
   const col = models[nombre].collection;
   if (modo === 'reemplazar') {
     await col.deleteMany({});

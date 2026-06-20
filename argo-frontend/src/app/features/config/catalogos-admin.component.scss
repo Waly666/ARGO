@@ -823,12 +823,7 @@ button.linkish {
   color: var(--text);
 
   input[type='checkbox'] {
-    margin-top: 0.15rem;
-    width: auto;
-    min-width: 1rem;
-    height: 1rem;
     flex-shrink: 0;
-    accent-color: #fbbf24;
   }
 
   .clase-item-text {

@@ -11,8 +11,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GradientHeader } from '../components/GradientHeader';
 import { IconInput } from '../components/IconInput';
 import { PortalLogo } from '../components/PortalLogo';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -35,6 +35,7 @@ export default function LoginScreen() {
   const { signIn, setServidor } = useAuth();
   const { config } = usePortalConfig();
   const c = useTheme();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [servidor, setServidorLocal] = useState('');
@@ -43,10 +44,13 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [showServer, setShowServer] = useState(false);
+  const [bootDone, setBootDone] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
       const [s, saved] = await Promise.all([secureGet(SERVIDOR_API_STORAGE_KEY), loadSavedLogin()]);
+      if (cancelled) return;
       const base = s || getApiBaseUrl();
       setServidorLocal(base.replace(/\/api\/?$/i, ''));
       setRemember(saved.remember);
@@ -54,7 +58,11 @@ export default function LoginScreen() {
         setEmail(saved.email);
         setPass(saved.password);
       }
+      setBootDone(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function onLogin() {
@@ -89,26 +97,32 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <GradientHeader height={172}>
-        <Pressable onPress={() => nav.goBack()} style={styles.back} hitSlop={12}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </Pressable>
-        <PortalLogo width={120} height={56} hideLetterFallback />
-        <ScaledText baseSize={15} style={styles.brandAula}>
-          {APP_BRANDING.tituloApp}
-        </ScaledText>
-        <ScaledText baseSize={16} style={styles.brandEmpresa}>
-          {APP_BRANDING.nombreEmpresa}
-        </ScaledText>
-      </GradientHeader>
-
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: c.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+    >
       <ScrollView
-        contentContainerStyle={styles.form}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="none"
         showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        <SurfaceCard style={{ marginTop: -28, borderRadius: radius.xl, ...shadow.lg }}>
+        <View style={[styles.hero, { paddingTop: insets.top + space.md, backgroundColor: c.accentSoft }]}>
+          <Pressable onPress={() => nav.goBack()} style={styles.back} hitSlop={12}>
+            <Ionicons name="arrow-back" size={22} color={c.primary} />
+          </Pressable>
+          <PortalLogo width={120} height={56} hideLetterFallback />
+          <ScaledText baseSize={15} style={[styles.brandAula, { color: c.primary }]}>
+            {APP_BRANDING.tituloApp}
+          </ScaledText>
+          <ScaledText baseSize={16} style={[styles.brandEmpresa, { color: c.text }]}>
+            {APP_BRANDING.nombreEmpresa}
+          </ScaledText>
+        </View>
+
+        <SurfaceCard style={{ marginHorizontal: space.lg, marginTop: -28, borderRadius: radius.xl, ...shadow.lg }}>
           <ScaledText baseSize={22} style={{ color: c.text, fontWeight: '800', marginBottom: 4 }}>
             Iniciar sesión
           </ScaledText>
@@ -116,20 +130,33 @@ export default function LoginScreen() {
             Accede a tus cursos y certificados
           </ScaledText>
 
-          <IconInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Correo electrónico"
-            icon="mail-outline"
-            keyboardType="email-address"
-          />
-          <IconInput
-            value={pass}
-            onChangeText={setPass}
-            placeholder="Contraseña"
-            icon="lock-closed-outline"
-            secureTextEntry
-          />
+          {bootDone ? (
+            <>
+              <IconInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Correo electrónico"
+                icon="mail-outline"
+                keyboardType="email-address"
+                textContentType="username"
+                autoComplete="email"
+                returnKeyType="next"
+              />
+              <IconInput
+                value={pass}
+                onChangeText={setPass}
+                placeholder="Contraseña"
+                icon="lock-closed-outline"
+                secureTextEntry
+                textContentType="password"
+                autoComplete="password"
+                returnKeyType="go"
+                onSubmitEditing={() => void onLogin()}
+              />
+            </>
+          ) : (
+            <ActivityIndicator color={c.primary} style={{ marginVertical: space.lg }} />
+          )}
 
           <Pressable onPress={() => setRemember((r) => !r)} style={styles.remember}>
             <View style={[styles.check, { borderColor: remember ? c.primary : c.border, backgroundColor: remember ? c.primary : c.card }]}>
@@ -170,13 +197,15 @@ export default function LoginScreen() {
             <IconInput
               value={servidor}
               onChangeText={setServidorLocal}
-              placeholder="https://infravial.cloud"
+              placeholder="https://app.finstruvial.edu.co"
               icon="globe-outline"
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
           ) : null}
         </SurfaceCard>
 
-        <View style={styles.links}>
+        <View style={[styles.links, { paddingHorizontal: space.lg }]}>
           {config?.registroAbierto !== false ? (
             <LinkRow label="Crear cuenta nueva" icon="person-add-outline" onPress={() => nav.navigate('Registro')} />
           ) : null}
@@ -212,17 +241,24 @@ function LinkRow({
 }
 
 const styles = StyleSheet.create({
+  scroll: { flexGrow: 1 },
+  hero: {
+    paddingHorizontal: space.lg,
+    paddingBottom: space.xxl,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    alignItems: 'center',
+  },
   back: { alignSelf: 'flex-start', marginBottom: space.sm },
-  brandEmpresa: { color: 'rgba(255,255,255,0.95)', fontWeight: '700', textAlign: 'center', marginTop: 4 },
+  brandEmpresa: { fontWeight: '700', textAlign: 'center', marginTop: 4 },
   brandAula: {
-    color: '#fff',
     fontWeight: '800',
     textAlign: 'center',
     marginTop: space.sm,
     letterSpacing: 1.5,
   },
-  form: { paddingHorizontal: space.lg, paddingBottom: 40 },
-  formCard: { borderRadius: radius.xl },
   remember: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.lg },
   check: {
     width: 22,

@@ -57,6 +57,8 @@ const IngresoSchema = new mongoose.Schema(
     bancoEmisor: { type: String, trim: true },
     /** id o descripción cuenta CEA que recibe */
     cuentaRecibe: { type: String, trim: true },
+    /** Voucher / captura / foto del cheque para pagos no efectivo */
+    urlSoporte: { type: String, trim: true },
 
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },

@@ -4,12 +4,18 @@ const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const { models: cat } = require('../models/catalogos');
 const { siguienteNumComprobanteIngreso } = require('../services/configRecibo');
-const { esAdmin } = require('../utils/roles');
 const { parseNumDoc, numDocFromParams, numDocEquals, numDocQuery, numDocQueryNativo } = require('../utils/numDoc');
 const { buscarNumDocsAlumno } = require('../utils/busquedaAlumnoNombre');
-const { refrescarPagoMatricula } = require('../services/liquidacionMatricula');
-const { exigirSesionAbierta, verificarMovimientoSesionCajero, requiereAutorizacionAnularMovimiento } = require('../services/cajaSesion');
-const { exigirAdminOSupervisor, verificarAdminCredenciales } = require('../services/authVerify');
+const { refrescarPagoMatricula, recalcularAbonoLiquidacion, idsLiquidacionDeIngreso } = require('../services/liquidacionMatricula');
+const { exigirSesionAbierta } = require('../services/cajaSesion');
+const {
+  autorizarAnulacionComprobante,
+  metadatosAnulacion,
+  sufijoAutoriza,
+} = require('../services/anulacionComprobante');
+const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
+const { validarPagoIntangibleIngreso } = require('../utils/referenciaPago');
+const upload = require('../middleware/upload');
 const {
   validarTipoIngresoCaja,
   esIngresoContrato,
@@ -22,6 +28,24 @@ const {
 } = require('../services/tipoIngresoResolver');
 const { registrarCreacion, registrarEliminacion } = require('../services/auditoria');
 const { esIngresoCaja } = require('../utils/ingresoClasificacion');
+
+function parseBodyIngreso(raw) {
+  const body = { ...(raw || {}) };
+  if (typeof body.items === 'string' && body.items.trim()) {
+    try {
+      body.items = JSON.parse(body.items);
+    } catch {
+      body.items = [];
+    }
+  }
+  if (body.valor != null && body.valor !== '') body.valor = Number(body.valor);
+  return body;
+}
+
+function urlSoporteDesdeReq(req) {
+  if (req.file?.filename) return upload.publicUrl('ingresos', req.file.filename);
+  return null;
+}
 
 function num(v) {
   if (v == null) return 0;
@@ -212,6 +236,7 @@ async function enriquecer(p) {
     cuentaBancariaDescr: descrCuentaBancaria(cuenta) || p.cuentaRecibe || null,
     cuentaRecibe: p.cuentaRecibe || p.idCuentaBancaria || descrCuentaBancaria(cuenta),
     numTransferencia: p.numTransferencia || p.numComprobante || null,
+    urlSoporte: p.urlSoporte || null,
     tipoAbonoDescr: tipoAbonoDescr(p.tipoAbono),
     idTipoIngreso: p.idTipoIngreso || (tipoIngDoc?.idTipoIngreso != null ? String(tipoIngDoc.idTipoIngreso) : null),
     tipoIngreso: p.tipoIngreso || tipoIngDoc?.tipo || null,
@@ -221,11 +246,22 @@ async function enriquecer(p) {
     cuadreDescuadre: !!p.cuadreDescuadre,
     idSesion: p.idSesion ?? null,
     esIngresoCaja: esIngresoCaja(p),
+    esMigracion:
+      p.origenMigracion === true ||
+      String(p.tipoIngreso || '').toUpperCase() === 'MIGRACION' ||
+      String(p.idTipoPago || '').toUpperCase() === 'MIGRACION',
+    estado: p.estado || (p.anulado ? 'ANULADO' : 'ACTIVO'),
+    anulado: esComprobanteAnulado(p),
+    anuladoEn: p.anuladoEn || null,
+    anuladoPor: p.anuladoPor || null,
+    valorAnulado: p.valorAnulado != null ? num(p.valorAnulado) : null,
+    motivoAnulacion: p.motivoAnulacion || null,
   };
 }
 
 exports.crear = async (req, res, next) => {
   try {
+    req.body = parseBodyIngreso(req.body);
     const body = req.body || {};
     const items = Array.isArray(body.items) ? body.items : [];
     const esCobroAlumno =
@@ -281,6 +317,9 @@ exports.crearAlumno = async (req, res, next) => {
         message: 'Indique la cuenta bancaria de la empresa donde ingresa el pago (transferencia, cheque, Nequi, etc.)',
       });
     }
+    const urlSoporte = urlSoporteDesdeReq(req);
+    const intangibleVal = validarPagoIntangibleIngreso(pago, urlSoporte);
+    if (!intangibleVal.ok) return res.status(intangibleVal.status).json({ message: intangibleVal.message });
 
     // Cargar y validar todas las liquidaciones antes de tocar nada.
     const liqDocs = [];
@@ -357,6 +396,7 @@ exports.crearAlumno = async (req, res, next) => {
         idBanco: pago.idBanco,
         idCuentaBancaria: pago.idCuentaBancaria,
         cuentaRecibe: pago.cuentaRecibe,
+        urlSoporte,
         observaciones,
         fecha: fecha ? new Date(fecha) : new Date(),
         idSesion: sesion.idSesion,
@@ -492,6 +532,9 @@ exports.crearCaja = async (req, res, next) => {
         message: 'Indique la cuenta bancaria de la empresa donde ingresa el pago (transferencia, cheque, Nequi, etc.)',
       });
     }
+    const urlSoporte = urlSoporteDesdeReq(req);
+    const intangibleVal = validarPagoIntangibleIngreso(pago, urlSoporte);
+    if (!intangibleVal.ok) return res.status(intangibleVal.status).json({ message: intangibleVal.message });
 
     const tipoIng = camposTipoIngreso(valTipo.tipo);
     const numRecibo = await siguienteNumComprobanteIngreso(req.idSede);
@@ -519,6 +562,7 @@ exports.crearCaja = async (req, res, next) => {
       idBanco: pago.idBanco,
       idCuentaBancaria: pago.idCuentaBancaria,
       cuentaRecibe: pago.cuentaRecibe,
+      urlSoporte,
       observaciones,
       fecha: fecha ? new Date(fecha) : new Date(),
       idSesion: sesion.idSesion,
@@ -682,54 +726,68 @@ exports.eliminar = async (req, res, next) => {
   try {
     const ing = await Ingreso.findById(req.params.id);
     if (!ing) return res.status(404).json({ message: 'Ingreso no encontrado' });
+    if (esComprobanteAnulado(ing)) {
+      return res.status(409).json({ message: 'Este ingreso ya está anulado.' });
+    }
     const antesIngreso = ing.toObject();
 
-    let supervisor = null;
-    if (!esAdmin(req.user?.rol)) {
-      const sesOk = await verificarMovimientoSesionCajero(req, ing.idSesion);
-      if (!sesOk.ok) return res.status(sesOk.status).json({ message: sesOk.message, code: sesOk.code });
-      const auth = await exigirAdminOSupervisor(
-        req,
-        'Anular ingresos requiere autorización de un administrador.',
-      );
-      if (!auth.ok) return res.status(auth.status).json({ message: auth.message });
-      supervisor = auth.supervisor;
-    } else if (await requiereAutorizacionAnularMovimiento(req, ing.idSesion)) {
-      const { autorizadoUsername, autorizadoPassword } = req.body || {};
-      const ver = await verificarAdminCredenciales(autorizadoUsername, autorizadoPassword);
-      if (!ver.ok) {
-        return res.status(ver.status).json({
-          message:
-            ver.message ||
-            'Anular movimientos de otra sesión o sin caja abierta requiere usuario y contraseña de administrador.',
-          code: 'SUPERVISOR_AUTH_REQUIRED',
-        });
-      }
-      supervisor = {
-        autorizadoPor: ver.username,
-        nombreAutoriza: ver.nombreAutoriza,
-        autorizadoEn: new Date(),
-      };
+    const auth = await autorizarAnulacionComprobante(
+      req,
+      ing.idSesion,
+      'Anular ingresos requiere autorización de un administrador.',
+    );
+    if (!auth.ok) {
+      return res.status(auth.status).json({ message: auth.message, code: auth.code });
+    }
+    const supervisor = auth.supervisor;
+
+    const v =
+      num(antesIngreso.valor) ||
+      num(antesIngreso.valorAnulado) ||
+      (Array.isArray(antesIngreso.detalle) && antesIngreso.detalle.length
+        ? antesIngreso.detalle.reduce((a, d) => a + num(d.valor), 0)
+        : 0);
+    const liqIds = idsLiquidacionDeIngreso(antesIngreso);
+
+    // No se borra: pasa a estado ANULADO con valores en cero, conservando el
+    // consecutivo (numRecibo) y los datos de origen para auditoría.
+    const motivo = String(req.body?.motivo || req.body?.motivoAnulacion || '').trim() || null;
+    ing.set(metadatosAnulacion(req, supervisor, { valorOriginal: v, motivo }));
+    ing.valor = toDec(0);
+    if (Array.isArray(ing.detalle) && ing.detalle.length) {
+      ing.detalle = ing.detalle.map((d) => {
+        const plano = typeof d.toObject === 'function' ? d.toObject() : d;
+        return { ...plano, valor: toDec(0) };
+      });
+    }
+    ing.tipoAbono = undefined;
+    ing.userChangeRecord = req.user?.username || 'sistema';
+    ing.fechaMod = new Date();
+    await ing.save();
+
+    // Restaura saldo en cada servicio/ítem: recalcula abonado solo con ingresos
+    // vigentes (anulados aportan 0) para que el servicio quede cobrable de nuevo.
+    const mats = new Set();
+    for (const idLiq of liqIds) {
+      const r = await recalcularAbonoLiquidacion(idLiq);
+      if (r?.idMat) mats.add(String(r.idMat));
+    }
+    for (const idMat of mats) {
+      await refrescarPagoMatricula(idMat);
     }
 
-    const v = num(ing.valor);
-    // Anula el comprobante completo: revierte cada ítem (detalle multi-ítem o el ítem único).
-    const reversos = ing.detalle?.length
-      ? ing.detalle.map((d) => ({ idLiquidacion: d.idLiquidacion, valor: num(d.valor) }))
-      : ing.idLiquidacion
-        ? [{ idLiquidacion: ing.idLiquidacion, valor: v }]
-        : [];
-    for (const r of reversos) {
-      const liq = await Liquidacion.findById(r.idLiquidacion);
-      if (!liq) continue;
-      const nuevoAbonado = Math.max(0, num(liq.abonado) - r.valor);
-      const nuevoSaldo = num(liq.valor) - nuevoAbonado;
-      liq.abonado = toDec(nuevoAbonado);
-      liq.saldo = toDec(nuevoSaldo);
-      liq.estado = estadoLiq(num(liq.valor), nuevoAbonado);
-      await liq.save();
-      if (liq.idMat) await refrescarPagoMatricula(liq.idMat);
+    try {
+      const { revertirCertificadosPorAnulacionIngreso } = require('../services/certificadoPagoAuto');
+      await revertirCertificadosPorAnulacionIngreso({
+        idsLiquidacion: liqIds,
+        req,
+        supervisor,
+        numDoc: ing.numDoc,
+      });
+    } catch (errCert) {
+      console.error('[certificadoPagoAuto] revertir por anulación ingreso:', errCert?.message || errCert);
     }
+
     if (ing.cuadreDescuadre && ing.idSesion) {
       const CajaSesion = require('../models/CajaSesion');
       const { toDec } = require('../utils/coerceTypes');
@@ -742,17 +800,15 @@ exports.eliminar = async (req, res, next) => {
         );
       }
     }
-    await ing.deleteOne();
+
     if (ing.idSesion) {
       const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
       await sincronizarDescuadreSesion(ing.idSesion).catch(() => null);
     }
     registrarEliminacion(req, 'ingreso', antesIngreso, {
-      resumen: `Reversa ingreso ${antesIngreso.numRecibo || req.params.id}${
-        supervisor?.autorizadoPor ? ` (autorizó ${supervisor.autorizadoPor})` : ''
-      }`,
+      resumen: `Anulación ingreso ${antesIngreso.numRecibo || req.params.id}${sufijoAutoriza(supervisor)}`,
     });
-    res.json({ ok: true });
+    res.json({ ok: true, estado: 'ANULADO' });
   } catch (e) {
     next(e);
   }

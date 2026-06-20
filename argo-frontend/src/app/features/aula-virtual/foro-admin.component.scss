@@ -238,7 +238,7 @@
   cursor: pointer;
   user-select: none;
 
-  input {
+  input:not([type='checkbox']) {
     accent-color: #6366f1;
   }
 }

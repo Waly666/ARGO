@@ -63,6 +63,72 @@
   gap: 0.5rem;
 }
 
+.av-diseno-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(78, 163, 255, 0.05);
+
+  &__hint {
+    margin: 0;
+    max-width: 36rem;
+    font-size: 0.82rem;
+    color: var(--text-soft);
+    line-height: 1.45;
+
+    strong {
+      color: var(--text-dim);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  &__sep {
+    width: 1px;
+    height: 1.5rem;
+    background: var(--line);
+    margin: 0 0.15rem;
+  }
+
+  &__select {
+    min-width: 11rem;
+    border: 1px solid var(--line);
+    border-radius: var(--btn-radius);
+    padding: 0.45rem 0.6rem;
+    background: rgba(6, 16, 41, 0.65);
+    color: var(--text);
+    font-size: 0.84rem;
+  }
+}
+
+.av-btn--plantillas {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(37, 99, 235, 0.35));
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  color: #e9d5ff;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.5), rgba(37, 99, 235, 0.45));
+  }
+}
+
+.av-btn--file {
+  cursor: pointer;
+
+  input {
+    display: none;
+  }
+}
+
 .av-panel {
   background: var(--surface-elevated);
   border: 1px solid var(--line);

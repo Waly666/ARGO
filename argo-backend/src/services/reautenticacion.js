@@ -1,9 +1,25 @@
-const { verifySync } = require('otplib');
 const Usuario = require('../models/Usuario');
 const { esAdmin } = require('../utils/roles');
-const { decryptSecret } = require('../utils/totpCrypto');
 const { logAuthIntento } = require('./authSecurityLog');
+const { verifyTotpCode } = require('./staffMfa');
 const soporteMaestro = require('./soporteMaestro');
+
+/**
+ * Error de reautenticación: credenciales incorrectas pero la sesión JWT sigue válida.
+ * Debe ser 403 (no 401) para que el cliente no cierre sesión al fallar contraseña/MFA.
+ */
+function falloReauth(message) {
+  const err = new Error(message);
+  err.status = 403;
+  err.code = 'REAUTH_FAILED';
+  return err;
+}
+
+function falloSesion(message) {
+  const err = new Error(message);
+  err.status = 401;
+  return err;
+}
 
 /**
  * Reautenticación reforzada para operaciones críticas
@@ -13,11 +29,6 @@ const soporteMaestro = require('./soporteMaestro');
  */
 async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}, opciones = {}) {
   const omitirMfa = opciones.omitirMfa === true;
-  const fallo = (status, message) => {
-    const err = new Error(message);
-    err.status = status;
-    return err;
-  };
 
   // Cuenta de soporte maestro (break-glass): valida contra variables de entorno.
   if (req.user?.bg && req.user.sub === soporteMaestro.SUB) {
@@ -25,8 +36,12 @@ async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}, 
   }
 
   const u = await Usuario.findById(req.user?.sub);
-  if (!u || u.activo === false) throw fallo(401, 'Usuario no encontrado o inactivo');
-  if (!esAdmin(u.rol)) throw fallo(403, 'Solo un administrador puede ejecutar esta operación');
+  if (!u || u.activo === false) throw falloSesion('Usuario no encontrado o inactivo');
+  if (!esAdmin(u.rol)) {
+    const err = new Error('Solo un administrador puede ejecutar esta operación');
+    err.status = 403;
+    throw err;
+  }
 
   const passOk = await u.compararPassword(String(password || ''));
   if (!passOk) {
@@ -37,18 +52,19 @@ async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}, 
       ok: false,
       motivo: 'reauth_password_invalido',
     });
-    throw fallo(401, 'Contraseña incorrecta');
+    throw falloReauth('Contraseña incorrecta');
   }
 
   if (!omitirMfa && u.totpEnabled === true && String(u.totpSecretEnc || '').trim()) {
     const code = String(codigoMfa || '').replace(/\s/g, '');
     if (!/^\d{6}$/.test(code)) {
-      throw fallo(401, 'Ingrese el código de 6 dígitos de su aplicación de autenticación');
+      throw falloReauth('Ingrese el código de 6 dígitos de su aplicación de autenticación');
     }
     let valido = false;
     try {
+      const { decryptSecret } = require('../utils/totpCrypto');
       const secret = decryptSecret(u.totpSecretEnc);
-      valido = verifySync({ secret, token: code }).valid === true;
+      valido = verifyTotpCode(secret, code);
     } catch {
       valido = false;
     }
@@ -60,7 +76,9 @@ async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}, 
         ok: false,
         motivo: 'reauth_mfa_invalido',
       });
-      throw fallo(401, 'Código de autenticación incorrecto');
+      throw falloReauth(
+        'Código de autenticación incorrecto o expirado. Use el código actual de su app (válido ~30 s).',
+      );
     }
   }
 

@@ -6,6 +6,9 @@ const {
   filasConSede,
   bloqueEmpresaHtml,
   estilosRecibo,
+  estilosMarcaAguaAnulado,
+  bloqueComprobanteAnulado,
+  filasAnulacionComprobante,
 } = require('./reciboHtmlShared');
 const { FORMATOS, MEDIA_CARTA_ANCHO_MM, MEDIA_CARTA_ALTO_MM, formatoIngreso, formatoEgreso } =
   require('./comprobanteFormato');
@@ -168,6 +171,7 @@ function estilosMediaCarta() {
       .no-print { display: none !important; }
       body { max-width: ${MEDIA_CARTA_ANCHO_MM}mm; }
     }
+    ${estilosMarcaAguaAnulado()}
   `;
 }
 
@@ -273,6 +277,7 @@ function buildFilasIngreso(data) {
       ...(ingreso.cuentaBancariaDescr ? [['Cuenta empresa', ingreso.cuentaBancariaDescr]] : []),
       ...(ingreso.bancoDescr ? [['Banco', ingreso.bancoDescr]] : []),
       ...(ingreso.numComprobante ? [['Ref / Comprob.', ingreso.numComprobante]] : []),
+      ...(ingreso.urlSoporte ? [['Soporte digital', 'Adjunto en sistema']] : []),
       ...(liquidacion && !esIngresoCaja && !esMulti
         ? [
             ['Total ítem', fmtMoney(liquidacion.valor)],
@@ -370,11 +375,13 @@ function htmlIngresoValidadora(data) {
   const detalleItems = Array.isArray(data.detalle) && data.detalle.length ? data.detalle : null;
   const esMulti = !!detalleItems;
   const filas = buildFilasIngreso(data);
+  const anulado = bloqueComprobanteAnulado(ingreso, { compact: true });
 
   const filasConMeta = [
     ['Comprobante N°', numeroRecibo],
     ['Fecha', fmtFecha(ingreso.fecha || ingreso.createdAt)],
     ...filas,
+    ...filasAnulacionComprobante(ingreso),
     ['Valor pagado', fmtMoney(ingreso.valor)],
   ];
 
@@ -406,7 +413,8 @@ function htmlIngresoValidadora(data) {
   <title>Recibo ${esc(numeroRecibo)}</title>
   <style>${estilosValidadoraIngreso(mm, w)}</style>
 </head>
-<body>
+<body class="${anulado.bodyClass.trim()}">
+  ${anulado.html}
   ${bloqueEmpresaHtml(config)}
   ${lineaHtml(32)}
   ${bloqueTituloValidadora(config, 'mensajeEncabezado', 'COMPROBANTE DE INGRESO')}
@@ -428,7 +436,11 @@ function htmlIngresoMediaCarta(data) {
   const esMulti = !!detalleItems;
   const titulo = (config.mensajeEncabezado || 'COMPROBANTE DE INGRESO').trim();
   const fecha = ingreso.fecha || ingreso.createdAt;
-  const filasExtra = buildFilasIngresoMediaCartaExtra(data);
+  const filasExtra = [
+    ...buildFilasIngresoMediaCartaExtra(data),
+    ...filasAnulacionComprobante(ingreso),
+  ];
+  const anulado = bloqueComprobanteAnulado(ingreso);
 
   const bodyRows = filasExtra
     .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`)
@@ -481,6 +493,7 @@ function htmlIngresoMediaCarta(data) {
       ${ingreso.cuentaBancariaDescr ? metaRowHtml('Cuenta empresa', ingreso.cuentaBancariaDescr) : ''}
       ${ingreso.bancoDescr ? metaRowHtml('Banco', ingreso.bancoDescr) : ''}
       ${ingreso.numComprobante ? metaRowHtml('Ref / Comprob.', ingreso.numComprobante) : ''}
+      ${ingreso.urlSoporte ? metaRowHtml('Soporte digital', 'Adjunto en sistema') : ''}
     `;
 
   const tablaExtra = bodyRows ? `<table class="datos">${bodyRows}</table>` : '';
@@ -492,7 +505,8 @@ function htmlIngresoMediaCarta(data) {
   <title>Recibo ${esc(numeroRecibo)}</title>
   <style>${estilosMediaCarta()}</style>
 </head>
-<body>
+<body class="${anulado.bodyClass.trim()}">
+  ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
     ${badgeComprobante(titulo, numeroRecibo, fecha)}
@@ -526,11 +540,13 @@ function htmlEgresoValidadora(data) {
   const w = Math.round(mm * 3.78);
   const titulo = esc(config.mensajeEncabezadoEgreso || 'COMPROBANTE DE EGRESO');
   const slogan = (config.slogan1 || '').toString().trim();
+  const anulado = bloqueComprobanteAnulado(egreso, { compact: true });
 
   const filas = [
     ['Comprobante N°', numeroRecibo],
     ['Fecha pago', fmtFecha(egreso.fechaEgreso)],
     ...buildFilasEgreso(data),
+    ...filasAnulacionComprobante(egreso),
     ['Valor pagado', fmtMoney(egreso.valorEgreso)],
   ];
 
@@ -548,7 +564,8 @@ function htmlEgresoValidadora(data) {
   <title>Egreso ${esc(numeroRecibo)}</title>
   <style>${estilosRecibo(mm, w)}</style>
 </head>
-<body>
+<body class="${anulado.bodyClass.trim()}">
+  ${anulado.html}
   ${bloqueEmpresaHtml(config)}
   ${lineaHtml(32)}
   <div class="center titulo">${titulo}</div>
@@ -577,7 +594,11 @@ function htmlEgresoValidadora(data) {
 function htmlEgresoMediaCarta(data) {
   const { config, egreso, numeroRecibo, qrDataUrl } = data;
   const titulo = (config.mensajeEncabezadoEgreso || 'COMPROBANTE DE EGRESO').trim();
-  const filasExtra = buildFilasEgresoMediaCartaExtra(data);
+  const filasExtra = [
+    ...buildFilasEgresoMediaCartaExtra(data),
+    ...filasAnulacionComprobante(egreso),
+  ];
+  const anulado = bloqueComprobanteAnulado(egreso);
   const bodyRows = filasExtra
     .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`)
     .join('');
@@ -610,7 +631,8 @@ function htmlEgresoMediaCarta(data) {
   <title>Egreso ${esc(numeroRecibo)}</title>
   <style>${estilosMediaCarta()}</style>
 </head>
-<body>
+<body class="${anulado.bodyClass.trim()}">
+  ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
     ${badgeComprobante(titulo, numeroRecibo, egreso.fechaEgreso)}

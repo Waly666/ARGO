@@ -93,6 +93,7 @@ export interface PortalLandingConfig {
     acerca: string;
     fundacion: string;
     consultaCertificados: string;
+    blog: string;
     acceder: string;
     registrarse: string;
     salir: string;
@@ -150,6 +151,13 @@ export interface PortalLandingConfig {
     items: { pregunta: string; respuesta: string }[];
   };
   cursos: { kicker: string; titulo: string; emptyTitulo: string; emptyTexto: string };
+  blog: {
+    kicker: string;
+    titulo: string;
+    lead: string;
+    emptyTitulo: string;
+    emptyTexto: string;
+  };
   carreras: {
     kicker: string;
     titulo: string;
@@ -192,6 +200,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     acerca: 'Acerca de',
     fundacion: 'Fundación',
     consultaCertificados: 'Certificados',
+    blog: 'Blog',
     acceder: 'Acceder',
     registrarse: 'Registrarse',
     salir: 'Salir',
@@ -249,6 +258,13 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     titulo: 'Cursos y programas virtuales disponibles',
     emptyTitulo: 'Próximamente nuevos cursos y programas',
     emptyTexto: 'Estamos publicando más programas de capacitación virtual. Vuelva pronto o contáctenos.',
+  },
+  blog: {
+    kicker: 'Blog',
+    titulo: 'Noticias y artículos',
+    lead: 'Novedades, consejos y contenido de interés sobre capacitación y seguridad vial.',
+    emptyTitulo: 'Próximamente publicaremos artículos',
+    emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
   },
   carreras: {
     kicker: 'Titulación',
@@ -360,6 +376,7 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     metaDescription: raw.metaDescription?.trim() || d.metaDescription,
     metaKeywords: raw.metaKeywords?.trim() || d.metaKeywords,
     cursos: { ...d.cursos, ...raw.cursos },
+    blog: { ...d.blog, ...raw.blog },
     carreras: {
       ...d.carreras,
       ...raw.carreras,

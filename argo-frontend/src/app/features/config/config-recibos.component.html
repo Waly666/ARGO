@@ -74,40 +74,126 @@
           <div>
             <h2 class="rec-section-title">Comprobantes de ingreso y egreso</h2>
             <p class="rec-section-desc">
-              Configuración global. Al imprimir solo se muestra el nombre y dirección de la sede del movimiento.
+              Prefijo, 2.º prefijo opcional (por defecto el año, editable) y consecutivo.
+              Al imprimir solo se muestra el nombre y dirección de la sede del movimiento.
             </p>
           </div>
         </header>
         <div class="rec-section-body rec-stack">
-          <div class="rec-num-pair">
-            <div class="rec-num-block">
-              <span class="rec-num-kicker rec-num-kicker--ing">Ingreso</span>
-              <div class="rec-grid rec-grid--pair">
-                <label class="rec-field">
-                  <span class="rec-label">Prefijo</span>
-                  <input type="text" [ngModel]="form().prefijoComprobanteIngreso" (ngModelChange)="patch('prefijoComprobanteIngreso', $event)" placeholder="CI" />
-                </label>
-                <label class="rec-field">
-                  <span class="rec-label">Consecutivo</span>
-                  <input type="number" min="0" [ngModel]="form().consecutivoComprobanteIngreso" (ngModelChange)="patch('consecutivoComprobanteIngreso', +$event)" />
-                </label>
+          <div class="num-card-pair">
+            <article class="num-card num-card--ing">
+              <h3 class="num-card-title num-card-title--ing">Ingreso</h3>
+              <div class="num-codigo-form">
+                <div class="num-codigo-grid">
+                  <div class="num-codigo-cell">
+                    <div class="num-codigo-head">
+                      <span class="num-codigo-label">Prefijo</span>
+                      <argo-switch
+                        [checked]="form().usarPrefijoComprobanteIngreso !== false"
+                        (checkedChange)="patch('usarPrefijoComprobanteIngreso', $event)"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      [ngModel]="form().prefijoComprobanteIngreso"
+                      (ngModelChange)="patch('prefijoComprobanteIngreso', $event)"
+                      [disabled]="form().usarPrefijoComprobanteIngreso === false"
+                      placeholder="CI"
+                    />
+                  </div>
+                  <div class="num-codigo-cell">
+                    <div class="num-codigo-head">
+                      <span class="num-codigo-label">2.º prefijo</span>
+                      <argo-switch
+                        [checked]="!!form().usarSegundoPrefijoComprobanteIngreso"
+                        (checkedChange)="patch('usarSegundoPrefijoComprobanteIngreso', $event)"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      [ngModel]="form().segundoPrefijoComprobanteIngreso"
+                      (ngModelChange)="patch('segundoPrefijoComprobanteIngreso', $event)"
+                      [disabled]="!form().usarSegundoPrefijoComprobanteIngreso"
+                      [placeholder]="anioActual"
+                    />
+                  </div>
+                  <div class="num-codigo-cell">
+                    <div class="num-codigo-head">
+                      <span class="num-codigo-label">Consecutivo</span>
+                      <span class="num-codigo-head-spacer" aria-hidden="true"></span>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      [ngModel]="form().consecutivoComprobanteIngreso"
+                      (ngModelChange)="patch('consecutivoComprobanteIngreso', +$event)"
+                    />
+                  </div>
+                </div>
+                <p class="num-codigo-note">Use el switch para incluir u omitir cada segmento. El 2.º prefijo suele ser el año.</p>
+                <div class="num-codigo-preview">
+                  <span class="num-codigo-preview-k">Vista previa</span>
+                  <code class="num-codigo-preview-v">{{ previewComprobante('ingreso') }}</code>
+                </div>
               </div>
-              <span class="rec-preview-mini">{{ previewNum(form().prefijoComprobanteIngreso, form().consecutivoComprobanteIngreso) }}</span>
-            </div>
-            <div class="rec-num-block">
-              <span class="rec-num-kicker rec-num-kicker--egr">Egreso</span>
-              <div class="rec-grid rec-grid--pair">
-                <label class="rec-field">
-                  <span class="rec-label">Prefijo</span>
-                  <input type="text" [ngModel]="form().prefijoComprobanteEgreso" (ngModelChange)="patch('prefijoComprobanteEgreso', $event)" placeholder="CE" />
-                </label>
-                <label class="rec-field">
-                  <span class="rec-label">Consecutivo</span>
-                  <input type="number" min="0" [ngModel]="form().consecutivoComprobanteEgreso" (ngModelChange)="patch('consecutivoComprobanteEgreso', +$event)" />
-                </label>
+            </article>
+
+            <article class="num-card num-card--egr">
+              <h3 class="num-card-title num-card-title--egr">Egreso</h3>
+              <div class="num-codigo-form">
+                <div class="num-codigo-grid">
+                  <div class="num-codigo-cell">
+                    <div class="num-codigo-head">
+                      <span class="num-codigo-label">Prefijo</span>
+                      <argo-switch
+                        [checked]="form().usarPrefijoComprobanteEgreso !== false"
+                        (checkedChange)="patch('usarPrefijoComprobanteEgreso', $event)"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      [ngModel]="form().prefijoComprobanteEgreso"
+                      (ngModelChange)="patch('prefijoComprobanteEgreso', $event)"
+                      [disabled]="form().usarPrefijoComprobanteEgreso === false"
+                      placeholder="CE"
+                    />
+                  </div>
+                  <div class="num-codigo-cell">
+                    <div class="num-codigo-head">
+                      <span class="num-codigo-label">2.º prefijo</span>
+                      <argo-switch
+                        [checked]="!!form().usarSegundoPrefijoComprobanteEgreso"
+                        (checkedChange)="patch('usarSegundoPrefijoComprobanteEgreso', $event)"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      [ngModel]="form().segundoPrefijoComprobanteEgreso"
+                      (ngModelChange)="patch('segundoPrefijoComprobanteEgreso', $event)"
+                      [disabled]="!form().usarSegundoPrefijoComprobanteEgreso"
+                      [placeholder]="anioActual"
+                    />
+                  </div>
+                  <div class="num-codigo-cell">
+                    <div class="num-codigo-head">
+                      <span class="num-codigo-label">Consecutivo</span>
+                      <span class="num-codigo-head-spacer" aria-hidden="true"></span>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      [ngModel]="form().consecutivoComprobanteEgreso"
+                      (ngModelChange)="patch('consecutivoComprobanteEgreso', +$event)"
+                    />
+                  </div>
+                </div>
+                <p class="num-codigo-note">Use el switch para incluir u omitir cada segmento. El 2.º prefijo suele ser el año.</p>
+                <div class="num-codigo-preview">
+                  <span class="num-codigo-preview-k">Vista previa</span>
+                  <code class="num-codigo-preview-v">{{ previewComprobante('egreso') }}</code>
+                </div>
               </div>
-              <span class="rec-preview-mini">{{ previewNum(form().prefijoComprobanteEgreso, form().consecutivoComprobanteEgreso) }}</span>
-            </div>
+            </article>
           </div>
         </div>
       </section>

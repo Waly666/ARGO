@@ -6,11 +6,11 @@
 
 .consulta {
   --c-ink: #0f172a;
-  --c-blue: #1d4ed8;
-  --c-cyan: #06b6d4;
-  --c-violet: #7c3aed;
+  --c-blue: var(--av-primary-dark);
+  --c-cyan: var(--av-accent);
+  --c-violet: var(--av-primary);
   min-height: calc(100vh - 12rem);
-  background: linear-gradient(180deg, #eef2ff 0%, #f0f9ff 40%, #ecfeff 100%);
+  background: var(--av-page-body-light-bg);
 }
 
 /* —— Hero —— */
@@ -19,9 +19,9 @@
   overflow: hidden;
   padding: clamp(2rem, 5vw, 3rem) 0;
   background:
-    radial-gradient(ellipse at 80% 30%, rgba(124, 58, 237, 0.35), transparent 55%),
-    radial-gradient(ellipse at 20% 80%, rgba(6, 182, 212, 0.25), transparent 50%),
-    linear-gradient(135deg, #030712 0%, #0b1224 45%, #0f172a 100%);
+    radial-gradient(ellipse at 80% 30%, var(--av-primary-a35), transparent 55%),
+    radial-gradient(ellipse at 20% 80%, var(--av-accent-a25), transparent 50%),
+    var(--av-page-hero-bg);
 
   &::after {
     content: '';
@@ -30,7 +30,7 @@
     width: 280px;
     height: 280px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.2), transparent 70%);
+    background: radial-gradient(circle, var(--av-page-hero-glow), transparent 70%);
     pointer-events: none;
   }
 }
@@ -52,8 +52,8 @@
   justify-content: center;
   font-size: 1.75rem;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(124, 58, 237, 0.25));
-  border: 1px solid rgba(34, 211, 238, 0.35);
+  background: linear-gradient(135deg, var(--av-accent-a18), var(--av-primary-a22));
+  border: 1px solid var(--av-page-hero-kicker-border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
@@ -66,9 +66,9 @@
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #22d3ee;
-  background: rgba(34, 211, 238, 0.12);
-  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: var(--av-page-hero-kicker-text);
+  background: var(--av-page-hero-kicker-bg);
+  border: 1px solid var(--av-page-hero-kicker-border);
 }
 
 .consulta-hero h1 {
@@ -105,10 +105,10 @@
   border: 2px solid transparent;
   background-image:
     linear-gradient(#fff, #fff),
-    linear-gradient(135deg, #3b82f6, #06b6d4, #8b5cf6);
+    var(--av-btn-gradient);
   background-origin: border-box;
   background-clip: padding-box, border-box;
-  box-shadow: 0 20px 50px rgba(29, 78, 216, 0.12);
+  box-shadow: 0 20px 50px var(--av-primary-a12);
 }
 
 .consulta-form {
@@ -156,8 +156,8 @@
 
     &:focus {
       outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+      border-color: var(--av-primary);
+      box-shadow: 0 0 0 4px var(--av-primary-a15);
     }
   }
 }
@@ -171,7 +171,7 @@
   font-weight: 800;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(135deg, #1d4ed8 0%, #06b6d4 100%);
+  background: var(--av-btn-gradient);
   box-shadow: 0 6px 20px rgba(29, 78, 216, 0.35);
   transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
 
@@ -230,7 +230,7 @@
   margin-bottom: 1rem;
   padding: 0.9rem 1.1rem;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+  background: var(--av-btn-gradient-alt);
   color: #fff;
   box-shadow: 0 8px 24px rgba(30, 58, 138, 0.25);
 
@@ -247,7 +247,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: rgba(34, 211, 238, 0.25);
+  background: var(--av-accent-a25);
   color: #a5f3fc;
 }
 
@@ -311,7 +311,7 @@
   border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 800;
-  color: #1d4ed8;
+  color: var(--av-link-primary);
   background: #dbeafe;
 }
 
@@ -343,7 +343,7 @@
   font-size: 0.95rem;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  background: var(--av-btn-gradient);
 }
 
 @media (max-width: 640px) {

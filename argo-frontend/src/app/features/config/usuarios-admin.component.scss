@@ -285,12 +285,7 @@
   transition: border-color 0.15s, background 0.15s;
 
   input[type='checkbox'] {
-    margin-top: 0.12rem;
-    width: auto;
-    min-width: 1rem;
-    height: 1rem;
     flex-shrink: 0;
-    accent-color: #fbbf24;
   }
 
   &:hover {

@@ -99,7 +99,7 @@
   &.active,
   &:hover {
     border-color: #93c5fd;
-    color: #1d4ed8;
+    color: var(--av-primary-dark);
   }
 
   &.active {

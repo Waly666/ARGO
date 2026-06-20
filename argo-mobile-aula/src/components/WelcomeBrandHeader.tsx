@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { APP_BRANDING } from '../config/appBranding';
+import { useTheme } from '../context/ThemeContext';
 import { PortalLogo } from './PortalLogo';
 import { ScaledText } from './ScaledText';
 import { space } from '../theme/spacing';
@@ -14,13 +15,15 @@ type Props = {
 
 /** Logo embebido + AULA VIRTUAL + nombre empresa (sin depender del servidor). */
 export function WelcomeBrandHeader({ logoWidth = 168, logoHeight = 86 }: Props) {
+  const c = useTheme();
+
   return (
     <View style={styles.wrap}>
       <PortalLogo width={logoWidth} height={logoHeight} logoFrame="transparent" />
-      <ScaledText baseSize={type.hero.fontSize} style={styles.aulaVirtual}>
+      <ScaledText baseSize={type.hero.fontSize} style={[styles.aulaVirtual, { color: c.primary }]}>
         {APP_BRANDING.tituloApp}
       </ScaledText>
-      <ScaledText baseSize={17} style={styles.empresaNombre}>
+      <ScaledText baseSize={17} style={[styles.empresaNombre, { color: c.text }]}>
         {APP_BRANDING.nombreEmpresa}
       </ScaledText>
     </View>
@@ -30,14 +33,12 @@ export function WelcomeBrandHeader({ logoWidth = 168, logoHeight = 86 }: Props) 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', width: '100%' },
   aulaVirtual: {
-    color: '#fff',
     fontWeight: '800',
     textAlign: 'center',
     letterSpacing: 2,
     marginTop: space.sm,
   },
   empresaNombre: {
-    color: 'rgba(255,255,255,0.95)',
     fontWeight: '700',
     textAlign: 'center',
     marginTop: space.xs,

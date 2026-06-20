@@ -373,3 +373,20 @@ export interface CertificadoPortal {
   generadoAutoPago?: boolean;
   recibo?: ReciboPortal | null;
 }
+
+export interface BlogImagen {
+  url: string;
+  leyenda?: string;
+}
+
+export interface BlogPost {
+  _id: string;
+  titulo: string;
+  slug: string;
+  contenido: string;
+  imagenes: BlogImagen[];
+  autorNombre: string;
+  publicadoAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}

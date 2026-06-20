@@ -107,7 +107,6 @@ textarea {
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
 
-input[type='checkbox'],
 input[type='radio'] {
   font-family: var(--font);
   width: auto;
@@ -117,7 +116,9 @@ input[type='radio'] {
   flex-shrink: 0;
   accent-color: var(--accent, #4ea3ff);
 }
+
 input::placeholder, textarea::placeholder { color: var(--text-soft); }
+
 input:focus, select:focus, textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
@@ -286,6 +287,26 @@ button.danger.mini {
 .badge.warn { background: rgba(251, 189, 35, 0.12); color: var(--warn); border-color: rgba(251, 189, 35, 0.35); }
 .badge.err  { background: rgba(248, 114, 114, 0.12); color: var(--err);  border-color: rgba(248, 114, 114, 0.35); }
 .badge.info { background: rgba(78, 163, 255, 0.12); color: var(--accent-2); border-color: rgba(78, 163, 255, 0.35); }
+
+/* Etiqueta pequeña junto al texto (estado en celdas) */
+.mini-badge {
+  margin-left: 6px;
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
+
+/* Fila de comprobante anulado (ingreso, egreso, certificado) */
+tr.row-anulado > td {
+  opacity: 0.62;
+  text-decoration: line-through;
+  text-decoration-color: rgba(248, 114, 114, 0.6);
+}
+tr.row-anulado > td .badge,
+tr.row-anulado > td button {
+  text-decoration: none;
+  opacity: 1;
+}
 
 /* —— Cápsulas de color (estilo dashboard) —— */
 .cap {
@@ -1405,3 +1426,4 @@ table.argo .empty {
 
 @import 'app/theme/argo-form-system.scss';
 @import 'app/theme/argo-neuro-theme.scss';
+@import 'styles/argo-switch-global.scss';

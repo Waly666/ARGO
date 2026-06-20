@@ -1,6 +1,7 @@
 const { CATALOGOS } = require('../models/catalogos');
 const { CATEGORIAS_LICENCIA_VEHICULO } = require('../constants/categoriasLicenciaVehiculo');
 const { normClaseVehiculoInspeccion } = require('../constants/inspeccionPreop');
+const { CLASES_SERVICIO, CLASE_SERV_DEFAULT, normalizarClaseServ } = require('../constants/claseServicio');
 
 /** Catálogos con pantallas dedicadas (no editar aquí). */
 const EXCLUIDOS_ADMIN = new Set([
@@ -48,6 +49,7 @@ const ETIQUETAS = {
   itemsInspeccion: 'Ítems inspección preoperacional',
   caractInspeccion: 'Características inspección',
   categoriasVirtual: 'Categorías cursos virtuales',
+  modalidades: 'Modalidades de programa',
 };
 
 const ID_FIELDS_HINT = {
@@ -83,6 +85,7 @@ const ID_FIELDS_HINT = {
   itemsInspeccion: ['idItem'],
   caractInspeccion: ['idCaracteristica'],
   categoriasVirtual: ['idCategoria'],
+  modalidades: ['idModalidad', 'codigo'],
 };
 
 /** Campos válidos por catálogo (evita columnas basura del Excel en admin). */
@@ -103,8 +106,25 @@ const CAMPOS_ESQUEMA = {
   itemsInspeccion: ['idItem', 'item', 'tiposVehiculo'],
   caractInspeccion: ['idCaracteristica', 'idItem', 'caracteristica'],
   tipoEgreso: ['idTipoEgreso', 'tipo', 'requiereEmpleado', 'efectoNomina', 'requiereVehiculo'],
+  catTipServicio: ['idTipoServ', 'tipoServ', 'descTipoServ', 'claseServ'],
   categoriasVirtual: ['idCategoria', 'nombre', 'orden', 'activo'],
+  modalidades: ['idModalidad', 'codigo', 'descripcion', 'activo'],
 };
+
+function validarClaseServCatalogo(doc) {
+  const raw = doc?.claseServ;
+  if (raw == null || String(raw).trim() === '') {
+    doc.claseServ = CLASE_SERV_DEFAULT;
+    return;
+  }
+  const norm = normalizarClaseServ(raw);
+  if (!norm) {
+    const err = new Error(`claseServ inválido. Use: ${CLASES_SERVICIO.join(', ')}`);
+    err.status = 400;
+    throw err;
+  }
+  doc.claseServ = norm;
+}
 
 /** Catálogos legacy del checklist (solo migración; no admin). */
 const CATALOGOS_INSPECCION_LEGACY = new Set(['itemsEstGral', 'aspecto1', 'aspecto2', 'adaptaciones']);
@@ -163,6 +183,11 @@ function docSegunEsquema(nombre, body) {
     }
     if (k === 'controlaVencimiento') {
       doc[k] = normBoolCatalogo(v) ?? true;
+      continue;
+    }
+    if (nombre === 'catTipServicio' && k === 'claseServ') {
+      const norm = normalizarClaseServ(v);
+      doc[k] = norm || (v == null || String(v).trim() === '' ? null : String(v).trim());
       continue;
     }
     if (CATEGORIAS_LICENCIA_VEHICULO.includes(k)) {
@@ -233,4 +258,5 @@ module.exports = {
   camposEsquema,
   docSegunEsquema,
   resolverCamposListado,
+  validarClaseServCatalogo,
 };

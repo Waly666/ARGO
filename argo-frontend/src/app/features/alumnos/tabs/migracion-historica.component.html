@@ -1,0 +1,179 @@
+<section class="mig-hist" *ngIf="store.hasAlumno(); else noAlumno">
+  <div class="msg ok" *ngIf="msg() && !msgEsError()">{{ msg() }}</div>
+  <div class="msg err" *ngIf="msg() && msgEsError()">{{ msg() }}</div>
+
+  <div class="warn card" *ngIf="estado() && !estado()!.habilitado">
+    <strong>Movimientos de migración deshabilitados</strong>
+    <p>Un administrador debe activarlos en Configuración → Migración.</p>
+  </div>
+
+  <div class="warn card" *ngIf="estado()?.habilitado && !estado()?.puedeUsar">
+    <strong>Sin permiso</strong>
+    <p>Su rol no tiene el permiso «Movimientos históricos de migración».</p>
+  </div>
+
+  <ng-container *ngIf="estado()?.puedeUsar">
+    <p class="intro">
+      Use programas <strong>actuales</strong> de ARGO (no los del sistema anterior). Cree la matrícula con fecha
+      histórica, luego registre los recibos del Access sin abrir caja.
+    </p>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>1 · Matrícula histórica</h2>
+
+        <argo-catalogo-enum-buscar
+          label="Programa (catálogo actual)"
+          placeholder="Seleccione programa…"
+          [textoInicial]="textoPrograma()"
+          [modoCombo]="true"
+          [remoto]="true"
+          [minLength]="1"
+          [buscarRemoto]="buscarProgramasRemoto"
+          (seleccionado)="onProgramaPick($event)"
+          (limpiado)="onProgramaLimpiar()"
+        />
+
+        <div class="row" *ngIf="idProg()">
+          <div class="col-6">
+            <label>Fecha matrícula (histórica)</label>
+            <input type="date" [(ngModel)]="fechaMat" />
+          </div>
+          <div class="col-6">
+            <label>Tarifa (modalidad)</label>
+            <select [(ngModel)]="tarifa" (ngModelChange)="onTarifaChange()">
+              <option [ngValue]="1">Tarifa 1</option>
+              <option [ngValue]="2">Tarifa 2</option>
+              <option [ngValue]="3">Tarifa 3</option>
+              <option [ngValue]="4">Virtual</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" *ngIf="idProg()">
+          <div class="col-12">
+            <label>Valor matrícula (histórico)</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              [(ngModel)]="valorHistorico"
+              (ngModelChange)="onValorHistoricoChange()"
+              placeholder="Precio del curso en Access"
+            />
+            <p class="hint">
+              Referencia catálogo actual: {{ fmt(valorCatalogoReferencia()) }}.
+              Edite si el precio en Access era distinto{{ usaSemestres() ? ' (total de los semestres indicados)' : '' }}.
+            </p>
+          </div>
+        </div>
+
+        <div class="row" *ngIf="idProg() && usaSemestres()">
+          <div class="col-12">
+            <label>Hasta semestre (técnicos)</label>
+            <input
+              type="number"
+              min="1"
+              [max]="maxSemestres()"
+              [(ngModel)]="semestreHasta"
+              (ngModelChange)="onSemestreHastaChange()"
+              placeholder="Ej. 3 de {{ maxSemestres() }}"
+            />
+            <p class="hint">Genera liquidaciones del 1.º al semestre indicado según el programa.</p>
+          </div>
+        </div>
+
+        <div class="row" *ngIf="idProg()">
+          <div class="col-12">
+            <label>Observaciones</label>
+            <input type="text" [(ngModel)]="observacionesMat" placeholder="Opcional — curso equivalente en Access" />
+          </div>
+        </div>
+
+        <button type="button" class="primary" (click)="crearMatriculaHistorica()" [disabled]="loading() || !idProg()">
+          Crear matrícula histórica
+        </button>
+      </div>
+
+      <div class="card">
+        <h2>2 · Recibo de migración</h2>
+
+        <div class="row">
+          <div class="col-12">
+            <label>Liquidación</label>
+            <select [ngModel]="idLiquidacionPago()" (ngModelChange)="onLiquidacionChange($event)">
+              <option value="">— Seleccione —</option>
+              <option *ngFor="let l of liquidacionesPendientes()" [value]="l._id">
+                {{ l.descripcion }} · saldo {{ fmt(num(l.saldo)) }}
+              </option>
+            </select>
+            <p class="hint" *ngIf="!liquidacionesPendientes().length">No hay liquidaciones pendientes. Cree matrícula primero.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-6">
+            <label>Fecha del recibo (histórica)</label>
+            <input type="date" [(ngModel)]="fechaPago" />
+          </div>
+          <div class="col-6">
+            <label>Nº recibo (Access)</label>
+            <input type="text" [(ngModel)]="numRecibo" [placeholder]="estado()?.prefijoRecibo + '…'" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-6">
+            <label>Valor</label>
+            <input type="number" min="0" [(ngModel)]="valorPago" />
+          </div>
+          <div class="col-6">
+            <label>Forma de pago</label>
+            <select [(ngModel)]="formaPago">
+              <option *ngFor="let f of formasPago" [value]="f">{{ f }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <label>Observaciones</label>
+            <input type="text" [(ngModel)]="observacionesPago" placeholder="Opcional" />
+          </div>
+        </div>
+
+        <button type="button" class="primary" (click)="registrarPago()" [disabled]="loading() || !idLiquidacionPago()">
+          Registrar recibo de migración
+        </button>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="pagosMigracion().length">
+      <h2>Recibos de migración de este alumno</h2>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Recibo</th>
+            <th>Concepto</th>
+            <th class="r">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of pagosMigracion()">
+            <td>{{ fechaFmt(p['fecha']) }}</td>
+            <td>{{ p['numRecibo'] }}</td>
+            <td>{{ p['concepto'] || p['observaciones'] || '—' }}</td>
+            <td class="r">{{ fmt(num(p['valor'])) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</section>
+
+<ng-template #noAlumno>
+  <div class="empty-state card">
+    <p>Guarde o seleccione un alumno para registrar movimientos de migración.</p>
+  </div>
+</ng-template>

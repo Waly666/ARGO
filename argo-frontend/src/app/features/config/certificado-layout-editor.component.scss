@@ -466,7 +466,7 @@
   color: var(--text);
   cursor: pointer;
 
-  input { margin-top: 3px; accent-color: var(--accent); }
+  input:not([type='checkbox']) { margin-top: 3px; accent-color: var(--accent); }
   &.compact { font-size: 0.85rem; color: var(--text-dim); }
 }
 

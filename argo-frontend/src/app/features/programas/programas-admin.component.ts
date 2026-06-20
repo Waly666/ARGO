@@ -60,6 +60,12 @@ import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vis
 import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
+import {
+  MODALIDADES_PROGRAMA_OPTS,
+  MODALIDAD_PRESENCIAL,
+  programaAdmitePresencial,
+  programaAdmiteVirtual,
+} from './programa-modalidad.helpers';
 
 type SortColPrograma =
   | 'codigo'
@@ -199,8 +205,8 @@ export class ProgramasAdminComponent implements OnInit {
   programasOrdenados = computed(() => {
     const fm = this.filtroModalidad();
     let rows = [...this.programas()];
-    if (fm === 'virtual') rows = rows.filter((p) => p.esCapacitacionVirtual);
-    else if (fm === 'presencial') rows = rows.filter((p) => !p.esCapacitacionVirtual);
+    if (fm === 'virtual') rows = rows.filter((p) => programaAdmiteVirtual(p));
+    else if (fm === 'presencial') rows = rows.filter((p) => programaAdmitePresencial(p));
     const col = this.sortCol();
     const dir = this.sortDir();
     const mul = dir === 'asc' ? 1 : -1;
@@ -299,7 +305,24 @@ export class ProgramasAdminComponent implements OnInit {
   portadaFile = signal<File | null>(null);
   portadaPreviewLocal = signal<string | null>(null);
 
-  esFormularioVirtual = computed(() => this.num(this.form().tarifaVirtual) > 0);
+  readonly opcionesModalidadPrograma = MODALIDADES_PROGRAMA_OPTS;
+
+  formModalidades = computed(() => this.form().modalidades ?? [MODALIDAD_PRESENCIAL]);
+
+  admiteModalidadVirtualForm = computed(() => this.formModalidades().includes('VIRTUAL'));
+
+  admiteModalidadPresencialForm = computed(() =>
+    this.formModalidades().some((m) => m === 'PRESENCIAL' || m === 'MIXTA'),
+  );
+
+  esSoloVirtualForm = computed(() => {
+    const m = this.formModalidades();
+    return m.length === 1 && m[0] === 'VIRTUAL';
+  });
+
+  esFormularioVirtual = computed(
+    () => this.admiteModalidadVirtualForm() && this.num(this.form().tarifaVirtual) > 0,
+  );
 
   portadaPreviewUrl = computed(() => {
     const local = this.portadaPreviewLocal();
@@ -507,6 +530,8 @@ export class ProgramasAdminComponent implements OnInit {
 
       tarifaHoraPractica: 0,
 
+      modalidades: [MODALIDAD_PRESENCIAL],
+
     };
 
   }
@@ -597,8 +622,30 @@ export class ProgramasAdminComponent implements OnInit {
         next.tarifa1 = v1;
         next.valorMatricula = v1;
       }
+      if (k === 'tarifaVirtual' && this.esSoloVirtualForm()) {
+        next.valorMatricula = Number(coerced) || 0;
+      }
       return next;
     });
+  }
+
+  toggleModalidadPrograma(codigo: string): void {
+    const cur = [...(this.form().modalidades || [])];
+    const idx = cur.indexOf(codigo);
+    if (idx >= 0) {
+      if (cur.length <= 1) return;
+      cur.splice(idx, 1);
+    } else {
+      cur.push(codigo);
+    }
+    this.patch('modalidades', cur);
+    if (cur.length === 1 && cur[0] === 'VIRTUAL') {
+      this.patch('valorMatricula', this.num(this.form().tarifaVirtual));
+    }
+  }
+
+  modalidadProgramaActiva(codigo: string): boolean {
+    return (this.form().modalidades || []).includes(codigo);
   }
 
   onAdmiteRevalidacionChange(v: boolean): void {
@@ -729,7 +776,11 @@ export class ProgramasAdminComponent implements OnInit {
       horasTeoria: prog.horasTeoria ?? null,
       horasPractica: prog.horasPractica ?? null,
       horasTaller: prog.horasTaller ?? null,
-      valorMatricula: this.num(prog.valorMatricula),
+      valorMatricula: this.num(
+        prog.soloVirtual
+          ? (s?.tarifaVirtual ?? prog.tarifaVirtual ?? prog.valorMatricula)
+          : prog.valorMatricula,
+      ),
       usaCohortes: prog.usaCohortes === true,
       tarifa1: this.num(s?.tarifa1 ?? prog.valorMatricula),
       tarifa2: this.num(s?.tarifa2),
@@ -752,6 +803,7 @@ export class ProgramasAdminComponent implements OnInit {
       facturar: this.facturarStr(s?.facturar),
       iva: this.num(s?.iva),
       tarifaHoraPractica: this.num(horaP?.tarifa1),
+      modalidades: prog.modalidades?.length ? [...prog.modalidades] : [MODALIDAD_PRESENCIAL],
     };
   }
 
@@ -826,12 +878,27 @@ export class ProgramasAdminComponent implements OnInit {
 
     }
 
-    if (!this.esProgramaJornadasCapForm() && (f.tarifa1 ?? f.valorMatricula ?? 0) <= 0) {
-
-      this.inform('Indique la tarifa 1 / valor de matrícula.');
-
+    if (!this.esProgramaJornadasCapForm() && (!f.modalidades || f.modalidades.length === 0)) {
+      this.inform('Seleccione al menos una modalidad (Virtual, Presencial o Mixta).');
       return;
+    }
 
+    if (
+      !this.esProgramaJornadasCapForm() &&
+      this.admiteModalidadVirtualForm() &&
+      (f.tarifaVirtual ?? 0) <= 0
+    ) {
+      this.inform('Con modalidad Virtual indique tarifa virtual mayor a 0.');
+      return;
+    }
+
+    if (
+      !this.esProgramaJornadasCapForm() &&
+      this.admiteModalidadPresencialForm() &&
+      (f.tarifa1 ?? f.valorMatricula ?? 0) <= 0
+    ) {
+      this.inform('Con modalidad Presencial o Mixta indique tarifa 1 / valor de matrícula.');
+      return;
     }
 
     const esJorn = this.esProgramaJornadasCapForm();
@@ -848,9 +915,13 @@ export class ProgramasAdminComponent implements OnInit {
 
       idTipCap,
 
-      valorMatricula: esJorn ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
+      valorMatricula: esJorn
+        ? 0
+        : this.esSoloVirtualForm()
+          ? (f.tarifaVirtual ?? 0)
+          : (f.tarifa1 ?? f.valorMatricula ?? 0),
 
-      tarifa1: esJorn ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
+      tarifa1: esJorn ? 0 : this.esSoloVirtualForm() ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
 
       tipoCertificado: f.tipoCertificado ?? null,
 

@@ -62,6 +62,9 @@ export interface MovimientoAlarmaHoy {
   numRecibo?: string | null;
   valor: number;
   detalle?: string | null;
+  formaPago?: string | null;
+  tipoPago?: string | null;
+  numComprobante?: string | null;
   fecha?: string | null;
 }
 

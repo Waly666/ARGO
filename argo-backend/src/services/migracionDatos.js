@@ -21,9 +21,19 @@ const {
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('./tipoCapacitacionMatch');
 const { esProgramaJornadasCap } = require('./jornadaCapacitacion');
 const { normalizarTipoCertificado } = require('./clasificacionCertificado');
+const {
+  normalizarModalidadesPrograma,
+  esSoloVirtual,
+  valorMatriculaPrograma,
+} = require('./programaModalidad');
+const {
+  MODALIDAD_VIRTUAL,
+  MODALIDAD_PRESENCIAL,
+} = require('../constants/modalidadPrograma');
 const { CLAVE: CLAVE_CERT } = require('./configCertificado');
 const { CLAVE: CLAVE_RECIBO } = require('./configRecibo');
 const { ID_PROG_HISTORICO } = require('../constants/migracionHistorico');
+const { vincularPagoMigradoALiquidaciones } = require('./migracionMovimientos');
 const progreso = require('./progresoOperacion');
 
 /** Historial de lotes de migración. */
@@ -75,7 +85,7 @@ function normalizarOpcionesIntegridad(raw = {}) {
 
 const COLUMNAS = {
   programas: [
-    'codigoPrograma', 'nombrePrograma', 'tipoCapacitacion', 'horas', 'semestres',
+    'codigoPrograma', 'nombrePrograma', 'tipoCapacitacion', 'modalidad', 'horas', 'semestres',
     'diasVencimiento', 'tarifa1', 'tarifa2', 'tarifa3', 'tarifaVirtual',
   ],
   alumnos: [
@@ -97,8 +107,12 @@ const COLUMNAS = {
 const EJEMPLOS = {
   programas: [{
     codigoPrograma: '101', nombrePrograma: 'CURSO DE CONDUCCIÓN B1',
-    tipoCapacitacion: 'Licencia de conducción', horas: 40, semestres: '',
+    tipoCapacitacion: 'Licencia de conducción', modalidad: 'Presencial', horas: 40, semestres: '',
     diasVencimiento: 365, tarifa1: 1200000, tarifa2: '', tarifa3: '', tarifaVirtual: '',
+  }, {
+    codigoPrograma: '201', nombrePrograma: 'CURSO PRIMER RESPONDIENTE (VIRTUAL)',
+    tipoCapacitacion: 'Curso', modalidad: 'Virtual', horas: 20, semestres: '',
+    diasVencimiento: 365, tarifa1: '', tarifa2: '', tarifa3: '', tarifaVirtual: 150000,
   }],
   alumnos: [{
     numDoc: 1098765432, tipoDoc: 'CC', nombre1: 'JUAN', nombre2: 'CARLOS',
@@ -140,14 +154,14 @@ function instrucciones(hojasSel, opciones = {}) {
   ];
   const detalle = {
     programas:
-      'Hoja Programas: obligatorios codigoPrograma, nombrePrograma y tipoCapacitacion. tarifa1 = valor de matrícula (obligatorio salvo jornadas de capacitación). semestres vacío = un solo cobro; con número, el valor se reparte en cuotas. tarifa2/tarifa3 = precios alternativos; tarifaVirtual = precio aula virtual. tipoCapacitacion debe coincidir con un tipo del catálogo de ARGO.',
+      'Hoja Programas: obligatorios codigoPrograma, nombrePrograma y tipoCapacitacion. modalidad = Presencial, Virtual o Mixta (vacío = se deduce de las tarifas). En Presencial/Mixta tarifa1 = valor de matrícula (obligatorio); en Virtual configure tarifaVirtual (obligatorio) y tarifa1 puede ir vacío. semestres vacío = un solo cobro; con número, el valor se reparte en cuotas. tarifa2/tarifa3 = precios alternativos presenciales; tarifaVirtual = precio aula virtual. tipoCapacitacion debe coincidir con un tipo del catálogo de ARGO.',
     alumnos: 'Hoja Alumnos: obligatorios numDoc, nombre1, apellido1.',
     matriculas:
       'Hoja Matriculas: obligatorios numDoc y codigoPrograma. valorTotal y valorPagado calculan el saldo pendiente. El codigoPrograma debe existir en ARGO o venir en la hoja Programas.',
     pagos: 'Hoja Pagos: obligatorios numDoc y valor. numeroRecibo conserva el número del sistema anterior.',
     certificados: opts.certificadosHistoricos
-      ? 'Hoja Certificados (modo histórico): obligatorios numDoc y fechaEmision. codVerificacion es el código que verán en la consulta pública del Aula Virtual. Recomendado nombreCurso y nombreTitular. codigoPrograma es opcional. horas = horas del certificado. estado: vigente o anulado.'
-      : 'Hoja Certificados: obligatorios numDoc, codigoPrograma y fechaEmision. estado: vigente o anulado.',
+      ? 'Hoja Certificados (modo histórico): obligatorios numDoc y fechaEmision. codVerificacion es el código que verán en la consulta pública del Aula Virtual. Recomendado nombreCurso y nombreTitular. codigoPrograma es opcional (si viene y no existe en ARGO, se importa como histórico). horas = horas del certificado. estado: vigente o anulado.'
+      : 'Hoja Certificados: obligatorios numDoc y fechaEmision. Si codigoPrograma existe en ARGO se vincula; si viene vacío o el programa no está en ARGO, se importa como certificado histórico (use nombreCurso). estado: vigente o anulado.',
   };
   for (const h of hojasSel) filas.push([detalle[h]]);
   if (opts.certificadosHistoricos && hojasSel.includes('certificados')) {
@@ -247,6 +261,24 @@ async function resolverTipoCap(raw, indice) {
 }
 
 /**
+ * Deduce las modalidades de un programa de la migración: usa la columna
+ * `modalidad` si viene; si no, las infiere de las tarifas (tarifaVirtual =>
+ * virtual; tarifa1 => presencial).
+ */
+function modalidadesDeFila(fila) {
+  const explicit = normalizarModalidadesPrograma(
+    str(fila.modalidad) ? [fila.modalidad] : [],
+  );
+  if (explicit.length) return explicit;
+  const mods = [];
+  const tienePres = num(fila.tarifa1) > 0;
+  const tieneVirtual = num(fila.tarifaVirtual) > 0;
+  if (tienePres || !tieneVirtual) mods.push(MODALIDAD_PRESENCIAL);
+  if (tieneVirtual) mods.push(MODALIDAD_VIRTUAL);
+  return mods.length ? mods : [MODALIDAD_PRESENCIAL];
+}
+
+/**
  * Crea un programa (y su servicio de matrícula con tarifas) replicando la
  * lógica del alta normal: idPrograma/codigoProg, servicio vía
  * sincronizarServicioPrograma. Reutilizable desde la migración.
@@ -255,7 +287,12 @@ async function crearProgramaConServicio(fila, indice, usuario) {
   const { idTipCap, esJornada } = await resolverTipoCap(fila.tipoCapacitacion, indice);
   const nombreProg = str(fila.nombrePrograma).toUpperCase();
   const tarifa1 = num(fila.tarifa1);
-  const valorMatricula = esJornada ? 0 : tarifa1;
+  const tarifaVirtual = num(fila.tarifaVirtual);
+  const modalidades = esJornada ? [] : modalidadesDeFila(fila);
+  const soloVirtual = !esJornada && esSoloVirtual(modalidades);
+  const valorMatricula = esJornada
+    ? 0
+    : valorMatriculaPrograma({ modalidades }, [], { tarifa1, tarifaVirtual });
 
   let codigoProg = str(fila.codigoPrograma);
   if (!codigoProg) codigoProg = await generarCodigoProg(idTipCap);
@@ -276,6 +313,7 @@ async function crearProgramaConServicio(fila, indice, usuario) {
     estado: 'ACTIVO',
     diasVencimiento: str(fila.diasVencimiento) !== '' ? Number(fila.diasVencimiento) : 365,
     tipoCertificado: normalizarTipoCertificado(null),
+    ...(esJornada ? {} : { modalidades }),
     migrado: true,
     fechaAudi: now,
     userAddReg: usuario,
@@ -288,10 +326,10 @@ async function crearProgramaConServicio(fila, indice, usuario) {
     await sincronizarServicioPrograma(
       prog,
       {
-        tarifa1,
+        tarifa1: soloVirtual ? num(fila.tarifa1) || undefined : tarifa1,
         tarifa2: num(fila.tarifa2) || undefined,
         tarifa3: num(fila.tarifa3) || undefined,
-        tarifaVirtual: num(fila.tarifaVirtual) || undefined,
+        tarifaVirtual: tarifaVirtual || undefined,
       },
       { username: usuario },
     );
@@ -364,9 +402,22 @@ async function analizarArchivo(buffer, hojas, opcionesIntegridad = {}) {
       addErr(HOJAS.programas, f._fila, `Programa ${codigo}: tipoCapacitacion "${f.tipoCapacitacion}" no se reconoce`);
       continue;
     }
-    if (!esJornada && num(f.tarifa1) <= 0) {
-      addErr(HOJAS.programas, f._fila, `Programa ${codigo}: tarifa1 (valor de matrícula) debe ser mayor a 0`);
-      continue;
+    if (!esJornada) {
+      const modalidades = modalidadesDeFila(f);
+      const soloVirtual = esSoloVirtual(modalidades);
+      const tienePres = modalidades.some((m) => m !== MODALIDAD_VIRTUAL);
+      if (soloVirtual && num(f.tarifaVirtual) <= 0) {
+        addErr(HOJAS.programas, f._fila, `Programa ${codigo}: modalidad Virtual requiere tarifaVirtual mayor a 0`);
+        continue;
+      }
+      if (tienePres && num(f.tarifa1) <= 0) {
+        addErr(HOJAS.programas, f._fila, `Programa ${codigo}: tarifa1 (valor de matrícula) debe ser mayor a 0`);
+        continue;
+      }
+      if (modalidades.includes(MODALIDAD_VIRTUAL) && num(f.tarifaVirtual) <= 0) {
+        addErr(HOJAS.programas, f._fila, `Programa ${codigo}: modalidad Virtual requiere tarifaVirtual mayor a 0`);
+        continue;
+      }
     }
     codigosProgramaArchivo.add(codigo.toLowerCase());
     programasValidos.push({ _fila: f._fila, codigo, doc: f });
@@ -484,18 +535,14 @@ async function analizarArchivo(buffer, hojas, opcionesIntegridad = {}) {
       addErr(HOJAS.certificados, f._fila, `numDoc inválido: "${f.numDoc}"`);
       continue;
     }
-    if (opts.exigirAlumnoEnCertificados && !(await existeAlumno(numDoc))) {
+    const codigoPrograma = str(f.codigoPrograma);
+    const progEnArgo = codigoPrograma ? await existePrograma(codigoPrograma) : false;
+    /** Sin programa en ARGO, código vacío o modo histórico → certificado independiente (idProg HISTORICO). */
+    const historico =
+      opts.certificadosHistoricos || !codigoPrograma || (codigoPrograma && !progEnArgo);
+    if (!historico && !(await existeAlumno(numDoc))) {
       addErr(HOJAS.certificados, f._fila, `Alumno ${numDoc} no existe (ni en ARGO ni en la hoja Alumnos)`);
       continue;
-    }
-    const codigoPrograma = str(f.codigoPrograma);
-    if (opts.exigirProgramaEnCertificados) {
-      if (!(await existePrograma(codigoPrograma))) {
-        addErr(HOJAS.certificados, f._fila, `Programa "${codigoPrograma}" no existe en ARGO ni en la hoja Programas`);
-        continue;
-      }
-    } else if (codigoPrograma && !(await existePrograma(codigoPrograma))) {
-      // Programa opcional en modo histórico: se importa sin enlace si no existe.
     }
     const fechaEmision = parseFecha(f.fechaEmision);
     if (!fechaEmision) {
@@ -504,11 +551,27 @@ async function analizarArchivo(buffer, hojas, opcionesIntegridad = {}) {
     }
     const encabezado = str(f.nombreCurso);
     const nombreTitular = str(f.nombreTitular);
-    if (opts.certificadosHistoricos && !encabezado && !nombreTitular && !str(f.codigoCertificado) && !str(f.codVerificacion)) {
+    if (historico && !encabezado && !nombreTitular && !str(f.codigoCertificado) && !str(f.codVerificacion)) {
       addErr(
         HOJAS.certificados,
         f._fila,
         `Certificado de ${numDoc}: indique nombreCurso, nombreTitular, codVerificacion o codigoCertificado`,
+      );
+      continue;
+    }
+    if (!historico && !codigoPrograma) {
+      addErr(
+        HOJAS.certificados,
+        f._fila,
+        'codigoPrograma es obligatorio cuando el certificado debe ligarse a un programa de ARGO',
+      );
+      continue;
+    }
+    if (!historico && codigoPrograma && !progEnArgo) {
+      addErr(
+        HOJAS.certificados,
+        f._fila,
+        `Programa "${codigoPrograma}" no existe en ARGO ni en la hoja Programas`,
       );
       continue;
     }
@@ -518,7 +581,8 @@ async function analizarArchivo(buffer, hojas, opcionesIntegridad = {}) {
     certificadosValidos.push({
       _fila: f._fila,
       numDoc,
-      codigoPrograma: codigoPrograma || null,
+      codigoPrograma: progEnArgo ? codigoPrograma : null,
+      codigoProgramaOrigen: codigoPrograma || null,
       codigoCert: str(f.codigoCertificado),
       codVerificacion: str(f.codVerificacion),
       encabezado,
@@ -530,7 +594,7 @@ async function analizarArchivo(buffer, hojas, opcionesIntegridad = {}) {
       numFolio: str(f.numFolio),
       numRunt: str(f.numRunt),
       estado,
-      historico: opts.certificadosHistoricos,
+      historico,
     });
   }
 
@@ -778,12 +842,13 @@ async function importarArchivo(
       progreso.avanzar(1);
       continue;
     }
-    await Ingreso.create({
+    const ing = await Ingreso.create({
       numDoc: p.numDoc,
       valor: toDec(p.valor),
       numRecibo,
       idTipoPago: 'MIGRACION',
       tipoIngreso: 'MIGRACION',
+      idTipoIngreso: 'MIGRACION',
       concepto: p.concepto || 'Pago migrado del sistema anterior',
       fecha: p.fecha,
       formaPago: p.formaPago,
@@ -791,13 +856,15 @@ async function importarArchivo(
       ingresoCaja: false,
       idSede: sede,
       userAddReg: usuario,
+      origenMigracion: true,
       ...marca,
     });
+    await vincularPagoMigradoALiquidaciones(ing._id);
     resultado.pagos.creados += 1;
     progreso.avanzar(1);
   }
 
-  // 4) Certificados (históricos o ligados a programa)
+  // 4) Certificados (históricos o ligados a programa existente en ARGO)
   progreso.fase('Certificados', { reiniciarHecho: false });
   for (const c of analisis.validos.certificados) {
     let idProg = ID_PROG_HISTORICO;
@@ -807,18 +874,9 @@ async function importarArchivo(
       if (prog) {
         idProg = idProgDe(prog);
         nombreProg = prog.nombreProg || '';
-      } else if (c.historico) {
-        idProg = ID_PROG_HISTORICO;
-      } else {
-        resultado.certificados.omitidos += 1;
-        progreso.avanzar(1);
-        continue;
       }
-    } else if (!c.historico) {
-      resultado.certificados.omitidos += 1;
-      progreso.avanzar(1);
-      continue;
     }
+    const esHistorico = c.historico === true || idProg === ID_PROG_HISTORICO;
     if (c.codVerificacion) {
       const yaVer = await Certificado.countDocuments({ codVerificacion: c.codVerificacion });
       if (yaVer > 0) {
@@ -849,7 +907,8 @@ async function importarArchivo(
       numFolio: c.numFolio || undefined,
       numRunt: c.numRunt || undefined,
       estado: c.estado,
-      migracionHistorica: !!c.historico,
+      migracionHistorica: esHistorico,
+      codigoProgramaOrigen: c.codigoProgramaOrigen || undefined,
       ...marca,
     });
     resultado.certificados.creados += 1;

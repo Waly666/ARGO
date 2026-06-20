@@ -20,6 +20,14 @@ const { filtrarProgramas } = require('../services/sedeOferta');
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('../services/tipoCapacitacionMatch');
 const { publicUrl } = require('../middleware/upload');
 const { listarMatriculasPrograma } = require('../services/programaMatriculas');
+const {
+  validarModalidadesParaPrograma,
+  esSoloVirtual,
+  admiteModalidadPresencial,
+  enriquecerProgramaModalidad,
+  valorMatriculaPrograma,
+} = require('../services/programaModalidad');
+const { MODALIDAD_PRESENCIAL } = require('../constants/modalidadPrograma');
 
 function idTipCapJornadaDesdeIndice(indice) {
   for (const r of indice.rows) {
@@ -66,17 +74,28 @@ function bodyServicio(body) {
   };
 }
 
+function escRegexPrograma(s) {
+  return String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 exports.listar = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
+    const esCatalogo = req.query.catalogo === '1';
     const soloActivos = req.query.activos !== 'false';
+    const minQ = esCatalogo ? 1 : 2;
     const filter = {};
     if (soloActivos) filter.estado = { $in: [/^activo$/i, 'ACTIVO', 'Activo', null] };
-    if (q.length >= 2) {
-      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    if (q.length >= minQ) {
+      const re = new RegExp(escRegexPrograma(q), 'i');
       filter.$or = [{ nombreProg: re }, { codigoProg: re }, { nomCert: re }, { descripcion: re }];
     }
-    let rows = await cat.programas.find(filter).sort({ idPrograma: 1, nombreProg: 1 }).lean();
+    const limitRaw = Number(req.query.limit);
+    let limit = limitRaw > 0 ? limitRaw : 0;
+    if (!limit && esCatalogo) limit = q.length >= 1 ? 35 : 40;
+    let query = cat.programas.find(filter).sort({ idPrograma: 1, nombreProg: 1 });
+    if (limit > 0) query = query.limit(limit);
+    let rows = await query.lean();
     if (req.idSede && req.query.catalogo !== '1') {
       rows = await filtrarProgramas(rows, req.idSede);
     }
@@ -95,12 +114,15 @@ exports.obtener = async (req, res, next) => {
     const matricula = await listarServiciosMatricula(prog);
     const servicio = matricula[0] || null;
     const tarifaVirtual = servicio ? num(servicio.tarifaVirtual) : 0;
-    res.json({
-      programa: {
+    const programa = enriquecerProgramaModalidad(
+      {
         ...prog,
         tarifaVirtual,
-        esCapacitacionVirtual: tarifaVirtual > 0,
       },
+      matricula,
+    );
+    res.json({
+      programa,
       servicio,
       servicios,
     });
@@ -147,9 +169,23 @@ exports.crear = async (req, res, next) => {
       nombreProg,
     };
     const esJornada = await esProgramaJornadasCap(borradorTip);
-    const valorMatricula = esJornada ? 0 : num(body.tarifa1 ?? body.valorMatricula);
-    if (!esJornada && valorMatricula <= 0) {
+    const modalidadesInput = body.modalidades ?? [MODALIDAD_PRESENCIAL];
+    const modalidades = esJornada
+      ? []
+      : validarModalidadesParaPrograma(modalidadesInput, body, { esJornada: false });
+    const soloVirtual = !esJornada && esSoloVirtual(modalidades);
+    let valorMatricula = esJornada
+      ? 0
+      : valorMatriculaPrograma({ ...borradorTip, modalidades }, [], {
+          tarifa1: body.tarifa1 ?? body.valorMatricula,
+          tarifaVirtual: body.tarifaVirtual,
+          valorMatricula: body.valorMatricula,
+        });
+    if (!esJornada && !soloVirtual && admiteModalidadPresencial(modalidades) && valorMatricula <= 0) {
       return res.status(400).json({ message: 'La tarifa 1 / valor de matrícula debe ser mayor a 0' });
+    }
+    if (!esJornada && soloVirtual && num(body.tarifaVirtual) <= 0) {
+      return res.status(400).json({ message: 'Programa solo virtual: indique tarifa virtual mayor a 0' });
     }
 
     const now = new Date();
@@ -182,6 +218,7 @@ exports.crear = async (req, res, next) => {
       tipoCertificado: normalizarTipoCertificado(body.tipoCertificado),
       descripcionVirtual: (body.descripcionVirtual || '').trim() || null,
       urlPortadaVirtual: (body.urlPortadaVirtual || '').trim() || null,
+      modalidades: esJornada ? [] : modalidades,
       fechaAudi: now,
       userAddReg: user,
       fechaMod: now,
@@ -268,9 +305,31 @@ exports.actualizar = async (req, res, next) => {
       nombreProg,
     };
     const esJornada = await esProgramaJornadasCap(mergedTip);
-    const valorMatricula = esJornada ? 0 : valorMatriculaRaw;
-    if (!esJornada && valorMatricula <= 0) {
+    const serviciosActuales = await listarServiciosMatricula(prog);
+    const servMat = serviciosActuales[0] || null;
+    const bodyTarifas = {
+      tarifa1: body.tarifa1 ?? body.valorMatricula ?? servMat?.tarifa1 ?? prog.valorMatricula,
+      tarifaVirtual: body.tarifaVirtual ?? servMat?.tarifaVirtual ?? 0,
+      valorMatricula: valorMatriculaRaw,
+    };
+    const modalidadesInput =
+      body.modalidades !== undefined ? body.modalidades : prog.modalidades ?? [MODALIDAD_PRESENCIAL];
+    const modalidades = esJornada
+      ? []
+      : validarModalidadesParaPrograma(modalidadesInput, bodyTarifas, { esJornada: false });
+    const soloVirtual = !esJornada && esSoloVirtual(modalidades);
+    const valorMatricula = esJornada
+      ? 0
+      : valorMatriculaPrograma(
+          { ...prog, modalidades },
+          serviciosActuales,
+          bodyTarifas,
+        );
+    if (!esJornada && !soloVirtual && admiteModalidadPresencial(modalidades) && valorMatricula <= 0) {
       return res.status(400).json({ message: 'La tarifa 1 / valor de matrícula debe ser mayor a 0' });
+    }
+    if (!esJornada && soloVirtual && num(bodyTarifas.tarifaVirtual) <= 0) {
+      return res.status(400).json({ message: 'Programa solo virtual: indique tarifa virtual mayor a 0' });
     }
 
     const user = usuario(req).username || 'sistema';
@@ -332,6 +391,7 @@ exports.actualizar = async (req, res, next) => {
         body.urlPortadaVirtual !== undefined
           ? String(body.urlPortadaVirtual || '').trim() || null
           : prog.urlPortadaVirtual ?? null,
+      modalidades: esJornada ? [] : modalidades,
       fechaMod: new Date(),
       userChangeRecord: user,
     };

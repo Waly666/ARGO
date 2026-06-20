@@ -9,11 +9,17 @@ const {
 } = require('../services/programaServicio');
 const { filtrarServicios } = require('../services/sedeOferta');
 
+function escRegexServicio(s) {
+  return String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 exports.listar = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
+    const esCatalogo = req.query.catalogo === '1';
     const soloProg = req.query.soloPrograma === 'true';
     const sinProg = req.query.sinPrograma === 'true';
+    const minQ = esCatalogo ? 1 : 2;
 
     const clauses = [];
     if (soloProg) clauses.push({ idProg: { $ne: null } });
@@ -22,13 +28,18 @@ exports.listar = async (req, res, next) => {
         $or: [{ idProg: null }, { idProg: { $exists: false } }, { idProg: '' }],
       });
     }
-    if (q.length >= 2) {
-      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    if (q.length >= minQ) {
+      const re = new RegExp(escRegexServicio(q), 'i');
       clauses.push({ $or: [{ descrServicio: re }, { tipoServ: re }] });
     }
     const filter = clauses.length ? (clauses.length === 1 ? clauses[0] : { $and: clauses }) : {};
 
-    let rows = await cat.servicios.find(filter).sort({ idServ: 1 }).lean();
+    const limitRaw = Number(req.query.limit);
+    let limit = limitRaw > 0 ? limitRaw : 0;
+    if (!limit && esCatalogo) limit = q.length >= 1 ? 35 : 40;
+    let query = cat.servicios.find(filter).sort({ idServ: 1 });
+    if (limit > 0) query = query.limit(limit);
+    let rows = await query.lean();
     if (req.idSede && req.query.catalogo !== '1') {
       rows = await filtrarServicios(rows, req.idSede);
     }

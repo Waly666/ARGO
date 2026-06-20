@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import React, { memo } from 'react';
+import { StyleSheet, TextInput, type TextInputProps, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
@@ -8,17 +8,14 @@ import { radius, space } from '../theme/spacing';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
-type Props = {
-  value: string;
-  onChangeText: (t: string) => void;
+type Props = TextInputProps & {
   placeholder?: string;
   icon?: IonName;
-  secureTextEntry?: boolean;
   keyboardType?: 'default' | 'email-address' | 'numeric';
   autoCapitalize?: 'none' | 'sentences' | 'words';
 };
 
-export function IconInput({
+function IconInputInner({
   value,
   onChangeText,
   placeholder,
@@ -26,23 +23,14 @@ export function IconInput({
   secureTextEntry,
   keyboardType = 'default',
   autoCapitalize = 'none',
+  ...rest
 }: Props) {
   const c = useTheme();
-  const [focused, setFocused] = useState(false);
 
   return (
-    <View
-      style={[
-        styles.wrap,
-        {
-          borderColor: focused ? c.primary : c.border,
-          backgroundColor: c.inputBg,
-        },
-        focused && styles.focused,
-      ]}
-    >
-      <View style={[styles.iconBox, { backgroundColor: focused ? c.accentSoft : '#f1f5f9' }]}>
-        <Ionicons name={icon} size={18} color={focused ? c.primary : '#64748b'} />
+    <View style={[styles.wrap, { borderColor: c.border, backgroundColor: c.inputBg }]}>
+      <View style={[styles.iconBox, { backgroundColor: '#f1f5f9' }]}>
+        <Ionicons name={icon} size={18} color="#64748b" />
       </View>
       <TextInput
         value={value}
@@ -52,13 +40,15 @@ export function IconInput({
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        autoCorrect={false}
         style={[styles.input, { color: c.inputText }]}
+        {...rest}
       />
     </View>
   );
 }
+
+export const IconInput = memo(IconInputInner);
 
 const styles = StyleSheet.create({
   wrap: {
@@ -70,13 +60,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: space.sm,
     marginBottom: space.md,
-  },
-  focused: {
-    shadowColor: '#1565c0',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   iconBox: {
     width: 36,

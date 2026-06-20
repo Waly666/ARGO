@@ -187,6 +187,20 @@
                   <input type="text" class="psb-input" [(ngModel)]="site.tema.colorTexto" />
                 </div>
               </label>
+              <label class="psb-field psb-field--plain psb-field--color">
+                <span>Superficie (tarjetas y paneles)</span>
+                <div class="psb-color-row">
+                  <input type="color" [(ngModel)]="site.tema.colorSuperficie" />
+                  <input type="text" class="psb-input" [(ngModel)]="site.tema.colorSuperficie" />
+                </div>
+              </label>
+              <label class="psb-field psb-field--plain psb-field--color">
+                <span>Texto secundario</span>
+                <div class="psb-color-row">
+                  <input type="color" [(ngModel)]="site.tema.colorTextoSecundario" />
+                  <input type="text" class="psb-input" [(ngModel)]="site.tema.colorTextoSecundario" />
+                </div>
+              </label>
             </div>
           }
 
@@ -210,9 +224,14 @@
             <span class="psb-hint">Si tiene una foto de su institución, pregunte a soporte cómo subirla o pegue aquí la dirección web de la imagen.</span>
           </label>
 
-          <div class="psb-preview-theme" [style.--preview-primary]="site.tema.colorPrimario" [style.--preview-accent]="site.tema.colorAcento">
-            <span class="psb-preview-theme__label">Así se verán los botones:</span>
-            <span class="psb-preview-theme__btn">Botón de ejemplo</span>
+          <div class="psb-preview-theme" [ngStyle]="themePreviewVars()">
+            <span class="psb-preview-theme__label">Vista previa del tema:</span>
+            <div class="psb-preview-theme__samples">
+              <span class="psb-preview-theme__btn">Botón principal</span>
+              <span class="psb-preview-theme__chip">Detalle / acento</span>
+              <span class="psb-preview-theme__hero">Hero oscuro</span>
+              <span class="psb-preview-theme__footer">Pie de página</span>
+            </div>
           </div>
         </div>
       }
@@ -257,6 +276,38 @@
           [fundacion]="landing.fundacion"
           [nombreEmpresa]="portalForm.nombreEmpresa || ''"
         />
+      }
+
+      @case ('blog') {
+        <p class="psb-note">
+          Estos textos aparecen siempre en la página <strong>/blog</strong> del sitio público.
+          Para crear o publicar artículos use
+          <a routerLink="/app/aula-virtual/blog">Aula virtual → Blog del portal</a>.
+        </p>
+        <div class="psb-stack">
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Etiqueta pequeña</span>
+              <input type="text" class="psb-input" [(ngModel)]="landing.blog.kicker" placeholder="Blog" />
+            </label>
+            <label class="psb-field psb-field--plain psb-field--span2">
+              <span>Título de la página</span>
+              <input type="text" class="psb-input" [(ngModel)]="landing.blog.titulo" placeholder="Noticias y artículos" />
+            </label>
+          </div>
+          <label class="psb-field psb-field--plain">
+            <span>Texto introductorio</span>
+            <textarea class="psb-input" rows="3" [(ngModel)]="landing.blog.lead"></textarea>
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título cuando no hay artículos</span>
+            <input type="text" class="psb-input" [(ngModel)]="landing.blog.emptyTitulo" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Mensaje cuando no hay artículos</span>
+            <textarea class="psb-input" rows="2" [(ngModel)]="landing.blog.emptyTexto"></textarea>
+          </label>
+        </div>
       }
 
       @case ('empresa') {

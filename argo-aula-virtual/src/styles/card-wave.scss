@@ -15,8 +15,8 @@
 }
 
 .card-wave-host {
-  --card-wave-a: rgba(34, 211, 238, 0.75);
-  --card-wave-b: rgba(59, 130, 246, 0.5);
+  --card-wave-a: var(--av-card-wave-a);
+  --card-wave-b: var(--av-card-wave-b);
   position: relative;
   overflow: visible;
   transition:
@@ -77,8 +77,8 @@
 .registro-card.card-wave-host,
 .auth.card.card-wave-host,
 .detail-buy-card.card-wave-host {
-  --card-wave-a: rgba(37, 99, 235, 0.65);
-  --card-wave-b: rgba(34, 211, 238, 0.55);
+  --card-wave-a: var(--av-card-wave-light-a);
+  --card-wave-b: var(--av-card-wave-light-b);
 }
 
 .dark-card.card-wave-host,
@@ -93,18 +93,18 @@
 .section-starfield .card-wave-host,
 .hero.section-starfield .card-wave-host,
 .site-footer__contact-card.card-wave-host {
-  --card-wave-a: rgba(186, 230, 253, 0.95);
-  --card-wave-b: rgba(34, 211, 238, 0.78);
+  --card-wave-a: var(--av-card-wave-dark-a);
+  --card-wave-b: var(--av-card-wave-dark-b);
 }
 
 .paso-card.card-wave-host {
-  --card-wave-a: rgba(59, 130, 246, 0.65);
-  --card-wave-b: rgba(34, 211, 238, 0.45);
+  --card-wave-a: var(--av-card-wave-light-a);
+  --card-wave-b: var(--av-card-wave-light-b);
 }
 
 .nav a.card-wave-host {
-  --card-wave-a: rgba(34, 211, 238, 0.88);
-  --card-wave-b: rgba(186, 230, 253, 0.62);
+  --card-wave-a: var(--av-card-wave-dark-a);
+  --card-wave-b: var(--av-accent-a22);
 }
 
 .nav a.card-wave-host:hover {

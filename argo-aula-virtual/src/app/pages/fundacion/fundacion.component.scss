@@ -7,8 +7,8 @@
 
 .fund-page {
   --fund-ink: #1e293b;
-  --fund-blue: #2563eb;
-  --fund-cyan: #06b6d4;
+  --fund-blue: var(--av-primary);
+  --fund-cyan: var(--av-accent);
   --fund-orange: #ea580c;
   --fund-red: #dc2626;
   --fund-warm: #fff7ed;
@@ -22,8 +22,8 @@
   overflow: hidden;
   padding: clamp(3rem, 6vw, 4.2rem) 0 clamp(2.5rem, 5vw, 3.6rem);
   background:
-    radial-gradient(ellipse at 70% 50%, rgba(30, 58, 138, 0.45), transparent 55%),
-    linear-gradient(135deg, #030712 0%, #0b1224 45%, #0f172a 100%);
+    radial-gradient(ellipse at 70% 50%, var(--av-primary-a42), transparent 55%),
+    var(--av-page-hero-bg);
 
   &::before {
     content: '';
@@ -32,14 +32,14 @@
     width: 360px;
     height: 360px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.12), transparent 70%);
+    background: radial-gradient(circle, var(--av-page-hero-glow), transparent 70%);
     pointer-events: none;
   }
 
   .fund-kicker {
-    color: var(--av-accent);
-    background: rgba(34, 211, 238, 0.12);
-    border-color: rgba(34, 211, 238, 0.35);
+    color: var(--av-page-hero-kicker-text);
+    background: var(--av-page-hero-kicker-bg);
+    border-color: var(--av-page-hero-kicker-border);
   }
 
   h1 {
@@ -52,7 +52,7 @@
     background: none;
     -webkit-background-clip: unset;
     background-clip: unset;
-    text-shadow: 0 0 28px rgba(34, 211, 238, 0.15);
+    text-shadow: 0 0 28px var(--av-title-glow);
   }
 
   .fund-hero__lead {
@@ -70,7 +70,7 @@
 
     &:hover {
       border-color: var(--av-accent);
-      background: rgba(34, 211, 238, 0.08);
+      background: var(--av-accent-a08);
       color: #fff;
     }
   }
@@ -97,7 +97,7 @@
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #1d4ed8;
+  color: var(--av-link-primary);
   background: linear-gradient(135deg, #dbeafe, #cffafe);
   border: 1px solid #93c5fd;
 
@@ -123,7 +123,7 @@
 
   &:hover {
     border-color: var(--av-accent);
-    background: rgba(34, 211, 238, 0.08);
+    background: var(--av-accent-a08);
   }
 }
 
@@ -142,7 +142,7 @@
     border: 1px solid rgba(148, 163, 184, 0.25);
     box-shadow:
       0 24px 48px rgba(0, 0, 0, 0.45),
-      0 0 0 1px rgba(34, 211, 238, 0.08);
+      0 0 0 1px var(--av-accent-a08);
   }
 }
 
@@ -172,7 +172,7 @@
   }
 
   &--cta {
-    background: linear-gradient(120deg, #2563eb 0%, #0891b2 50%, #ea580c 100%);
+    background: var(--av-fundacion-cta-bg);
     color: #fff;
 
     .fund-kicker {
@@ -290,7 +290,7 @@
   border-radius: 16px;
   background: #fff;
   border: 2px solid #bae6fd;
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 8px 24px var(--av-primary-a08);
 }
 
 .fund-about__stats {
@@ -349,7 +349,7 @@
   border-radius: 999px;
   font-size: 0.88rem;
   font-weight: 700;
-  color: #1d4ed8;
+  color: var(--av-link-primary);
   background: #fff;
   border: 2px solid #93c5fd;
   text-decoration: none;
@@ -381,7 +381,7 @@
   transition: box-shadow 0.2s;
 
   &:nth-child(2) {
-    border-left-color: #06b6d4;
+    border-left-color: var(--av-accent);
   }
 
   &:nth-child(3) {
@@ -389,7 +389,7 @@
   }
 
   &.card-wave-host:hover {
-    box-shadow: 0 10px 28px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 10px 28px var(--av-primary-a12);
   }
 
   h3 {
@@ -440,7 +440,7 @@
     border-color: #93c5fd;
 
     .fund-card__label {
-      color: #1d4ed8;
+      color: var(--av-link-primary);
       background: #dbeafe;
     }
   }
@@ -528,7 +528,7 @@
   }
 
   &:nth-child(4n + 2) {
-    border-top-color: #06b6d4;
+    border-top-color: var(--av-accent);
   }
 
   &:nth-child(4n + 3) {
@@ -540,7 +540,7 @@
   }
 
   &.card-wave-host:hover {
-    box-shadow: 0 14px 32px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 14px 32px var(--av-primary-a12);
   }
 
   &__icon {
@@ -635,7 +635,7 @@
     }
 
     a {
-      color: #2563eb;
+      color: var(--av-primary);
       text-decoration: none;
 
       &:hover {

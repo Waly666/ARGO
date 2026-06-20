@@ -8,6 +8,7 @@ const {
   num,
   esCapacitacionVirtualServicio,
 } = require('./programaServicio');
+const { programaAdmiteMatriculaVirtual } = require('./programaModalidad');
 const { mapaCategorias, idsCategoriasConfig, resolverCategoriasCurso } = require('./aulaVirtualCategorias');
 const { obtenerConfigPortalPublica } = require('./aulaVirtualPortal');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
@@ -102,8 +103,9 @@ async function listarCursosVirtuales({ soloPublicados = true, q = '', idCategori
   const out = [];
 
   for (const prog of programas) {
-    const serv = await servicioMatriculaPrograma(prog);
-    if (!esCapacitacionVirtualServicio(serv)) continue;
+    const servicios = await listarServiciosMatricula(prog);
+    if (!programaAdmiteMatriculaVirtual(prog, servicios)) continue;
+    const serv = servicios[0] || null;
     const cfg = cfgMap.get(String(prog.idPrograma)) || null;
     if (soloPublicados && !(cfg && cfg.publicadoPortal)) continue;
     if (catFilter != null && !idsCategoriasConfig(cfg).includes(catFilter)) continue;
@@ -128,8 +130,9 @@ async function listarCursosVirtuales({ soloPublicados = true, q = '', idCategori
 async function obtenerCursoVirtual(idPrograma, { requierePublicado = true } = {}) {
   const prog = await buscarPrograma(idPrograma);
   if (!prog) return null;
-  const serv = await servicioMatriculaPrograma(prog);
-  if (!esCapacitacionVirtualServicio(serv)) return null;
+  const servicios = await listarServiciosMatricula(prog);
+  if (!programaAdmiteMatriculaVirtual(prog, servicios)) return null;
+  const serv = servicios[0] || null;
   const cfg = await configPorPrograma(prog.idPrograma);
   if (requierePublicado && !(cfg && cfg.publicadoPortal)) return null;
   const [categoriasMap, portal] = await Promise.all([mapaCategorias(), obtenerConfigPortalPublica()]);
@@ -154,8 +157,9 @@ async function listarCursosVirtualesAdmin() {
   const out = [];
 
   for (const prog of programas) {
-    const serv = await servicioMatriculaPrograma(prog);
-    if (!esCapacitacionVirtualServicio(serv)) continue;
+    const servicios = await listarServiciosMatricula(prog);
+    if (!programaAdmiteMatriculaVirtual(prog, servicios)) continue;
+    const serv = servicios[0] || null;
     const cfg = cfgMap.get(String(prog.idPrograma)) || null;
     out.push({
       ...mapCursoPublico(prog, serv, cfg, { detalle: true, categoriasMap, autor }),

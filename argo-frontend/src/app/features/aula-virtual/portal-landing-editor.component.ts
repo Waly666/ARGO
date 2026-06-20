@@ -77,6 +77,14 @@ export class PortalLandingEditorComponent {
     this.landing.pasos.items.splice(i, 1);
   }
 
+  addAppMobileFeature() {
+    this.landing.appMobile.features.push({ icon: '📱', title: '', text: '' });
+  }
+
+  removeAppMobileFeature(i: number) {
+    this.landing.appMobile.features.splice(i, 1);
+  }
+
   addFaq() {
     this.landing.faq.items.push({ pregunta: '', respuesta: '' });
   }
