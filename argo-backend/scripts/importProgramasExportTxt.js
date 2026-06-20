@@ -260,6 +260,13 @@ function dedupeProgramas(filas) {
   return [...map.values()];
 }
 
+function inferirTipoCapDesdeCodigo(codigo) {
+  const c = String(codigo || '').toUpperCase();
+  if (c.startsWith('TEC') || c.startsWith('NCL')) return 'TECNICO LABORAL';
+  if (c.startsWith('DIP')) return 'DIPLOMADO';
+  return 'CURSO DE CONDUCCIÓN';
+}
+
 function normalizarFila(fila, tipoCapDefault) {
   const nombrePrograma = String(fila.nombrePrograma || '').trim();
   let codigoPrograma = String(fila.codigoPrograma || '').trim();
@@ -271,7 +278,9 @@ function normalizarFila(fila, tipoCapDefault) {
       .slice(0, 24);
   }
   const tipoCapacitacion =
-    String(fila.tipoCapacitacion || '').trim() || tipoCapDefault || 'CURSO DE CONDUCCIÓN';
+    String(fila.tipoCapacitacion || '').trim() ||
+    tipoCapDefault ||
+    inferirTipoCapDesdeCodigo(codigoPrograma);
   const tarifa1 = num(fila.tarifa1) || num(fila.valorMatricula);
 
   return {
@@ -391,7 +400,7 @@ async function main() {
         continue;
       }
 
-      const prog = await crearProgramaConServicio(fila, i, USUARIO);
+      const prog = await crearProgramaConServicio(fila, null, USUARIO);
       console.log(`  + ${label} → programa #${prog.idPrograma} (${prog.codigoProg})`);
       creados += 1;
     } catch (e) {

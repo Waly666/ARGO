@@ -254,7 +254,11 @@ function str(v) {
 }
 
 /** Resuelve el tipo de capacitación y si es jornada (sin cobro al alumno). */
-async function resolverTipoCap(raw, indice) {
+async function resolverTipoCap(raw, indiceTipCap) {
+  const indice =
+    indiceTipCap && typeof indiceTipCap === 'object' && indiceTipCap.byCanon
+      ? indiceTipCap
+      : await cargarIndiceTipCap();
   const idTipCap = resolverIdTipCapCanonico(raw, indice) || str(raw);
   const esJornada = await esProgramaJornadasCap({ idTipCap, nombreProg: '' });
   return { idTipCap, esJornada };
@@ -283,8 +287,8 @@ function modalidadesDeFila(fila) {
  * lógica del alta normal: idPrograma/codigoProg, servicio vía
  * sincronizarServicioPrograma. Reutilizable desde la migración.
  */
-async function crearProgramaConServicio(fila, indice, usuario) {
-  const { idTipCap, esJornada } = await resolverTipoCap(fila.tipoCapacitacion, indice);
+async function crearProgramaConServicio(fila, indiceTipCap, usuario) {
+  const { idTipCap, esJornada } = await resolverTipoCap(fila.tipoCapacitacion, indiceTipCap);
   const nombreProg = str(fila.nombrePrograma).toUpperCase();
   const tarifa1 = num(fila.tarifa1);
   const tarifaVirtual = num(fila.tarifaVirtual);
