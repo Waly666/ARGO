@@ -6,9 +6,11 @@ import {
   HostListener,
   Input,
   OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
   ViewChild,
+  inject,
 } from '@angular/core';
 
 @Component({
@@ -18,7 +20,11 @@ import {
   templateUrl: './form-modal.component.html',
   styleUrls: ['./form-modal.component.scss'],
 })
-export class FormModalComponent implements OnChanges {
+export class FormModalComponent implements OnChanges, OnDestroy {
+  private el = inject(ElementRef<HTMLElement>);
+  private originalParent: HTMLElement | null = null;
+  private originalNextSibling: ChildNode | null = null;
+
   @Input({ required: true }) open = false;
   @Input({ required: true }) title = '';
   @Input() wide = false;
@@ -35,9 +41,38 @@ export class FormModalComponent implements OnChanges {
   @ViewChild('panel') panelRef?: ElementRef<HTMLElement>;
 
   ngOnChanges(changes: SimpleChanges) {
+    if (changes['open']) {
+      if (this.open) this.attachToBody();
+      else this.restoreParent();
+    }
     if (changes['open']?.currentValue || changes['anchorTopPx'] || changes['tall']) {
       setTimeout(() => this.syncPanelMaxHeight());
     }
+  }
+
+  ngOnDestroy() {
+    this.restoreParent();
+  }
+
+  /** Evita que backdrop-filter/transform de .card desplace position:fixed del modal. */
+  private attachToBody() {
+    const host = this.el.nativeElement;
+    if (host.parentElement === document.body) return;
+    this.originalParent = host.parentElement;
+    this.originalNextSibling = host.nextSibling;
+    document.body.appendChild(host);
+  }
+
+  private restoreParent() {
+    const host = this.el.nativeElement;
+    if (!this.originalParent || host.parentElement !== document.body) return;
+    if (this.originalNextSibling && this.originalNextSibling.parentElement === this.originalParent) {
+      this.originalParent.insertBefore(host, this.originalNextSibling);
+    } else {
+      this.originalParent.appendChild(host);
+    }
+    this.originalParent = null;
+    this.originalNextSibling = null;
   }
 
   @HostListener('document:keydown.escape')

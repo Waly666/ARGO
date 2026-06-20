@@ -178,7 +178,6 @@ export class ProgramasAdminComponent implements OnInit {
   modalTop = signal(80);
 
   @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
-  @ViewChild('titleAnchor') titleAnchor?: ElementRef<HTMLElement>;
 
   @HostListener('window:resize')
   onResize() {
@@ -1411,10 +1410,10 @@ export class ProgramasAdminComponent implements OnInit {
     }
 
     const measure = () => {
-      const title = this.titleAnchor?.nativeElement ?? this.pageHead?.nativeElement;
-      if (!title) return;
-      const bottom = title.getBoundingClientRect().bottom;
-      this.modalTop.set(Math.max(8, Math.round(bottom + 6)));
+      const anchor = this.pageHead?.nativeElement;
+      if (!anchor) return;
+      const bottom = anchor.getBoundingClientRect().bottom;
+      this.modalTop.set(Math.max(8, Math.round(bottom + 8)));
     };
 
     requestAnimationFrame(() => {

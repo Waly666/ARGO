@@ -460,6 +460,14 @@ export class ShellComponent {
       permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'],
     },
     {
+      kind: 'link',
+      label: 'Servicios',
+      icon: '◇',
+      path: '/app/servicios',
+      iconTone: 'teal',
+      permiso: ['servicios.ver', 'servicios.gestionar'],
+    },
+    {
       kind: 'group',
       label: 'Aula Virtual',
       icon: '▣',
@@ -471,14 +479,6 @@ export class ShellComponent {
         { kind: 'link', label: 'Blog del portal', icon: '📰', path: '/app/aula-virtual/blog', iconTone: 'indigo', permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'] },
         { kind: 'link', label: 'Foro de cursos', icon: '💬', path: '/app/aula-virtual/foro', iconTone: 'indigo', permiso: ['aula_virtual.foro', 'aula_virtual.gestionar', 'programas.gestionar', 'instructores'] },
       ],
-    },
-    {
-      kind: 'link',
-      label: 'Servicios',
-      icon: '◇',
-      path: '/app/servicios',
-      iconTone: 'teal',
-      permiso: ['servicios.ver', 'servicios.gestionar'],
     },
     {
       kind: 'group',
