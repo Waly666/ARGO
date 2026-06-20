@@ -451,6 +451,7 @@
 }
 
 .cat-field input:not([type='checkbox']),
+.cat-field select,
 .cat-field textarea {
   width: 100%;
   min-height: 2.1rem;

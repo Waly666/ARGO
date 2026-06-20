@@ -4,6 +4,9 @@ const MONEY_KEY =
 
 const MONEY_TOTAL_KEY = /^total(Devengos|Deducciones|Neto|Patronal|Provisiones|CostoEmpresa)$/i;
 
+/** Códigos alfanuméricos que no deben ser input type=number. */
+const STRING_ID_KEYS = new Set(['idSede']);
+
 /** Enteros: horas, cantidades, IDs, porcentaje IVA, etc. */
 const INT_KEY =
   /^(cantidad|semestres|horas|horasTeoria|horasPractica|horasTaller|diasVencimiento|nivelRiesgo|horasSemanales|diasNovedad|numSemestre|iva|consecutivo|idServ|idProg|idPrograma|id[A-Z])/i;
@@ -15,7 +18,7 @@ export function isMoneyField(name: string): boolean {
 
 export function isIntegerField(name: string): boolean {
   const k = String(name || '');
-  if (isMoneyField(k)) return false;
+  if (isMoneyField(k) || STRING_ID_KEYS.has(k)) return false;
   return INT_KEY.test(k);
 }
 

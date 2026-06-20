@@ -114,11 +114,16 @@
             </header>
 
             <div class="cat-fields-grid">
+              @if (!camposForm().length) {
+                <p class="cat-field-hint cat-field-hint--warn cat-field--wide">
+                  No se pudieron cargar los campos del formulario. Recargue la página o contacte soporte.
+                </p>
+              }
               @for (c of camposForm(); track c) {
                 <div
                   class="cat-field"
                   [class.cat-field--wide]="esCatalogoInspeccion() && campoEsTextoLargo(c)"
-                  [class.cat-field--select]="esCampoSelectCaract(c) || esCampoSelectClaseServ(c)">
+                  [class.cat-field--select]="esCampoSelectCaract(c) || esCampoSelectClaseServ(c) || esCampoSelectSede(c)">
                   <span class="cat-label">{{ labelColumna(c) }}</span>
                   @if (esCampoSelectClaseServ(c)) {
                     <select [ngModel]="formDoc()[c]" (ngModelChange)="patchCampo(c, $event)">
@@ -126,6 +131,18 @@
                         <option [value]="opt">{{ opt }}</option>
                       }
                     </select>
+                  } @else if (esCampoSelectSede(c)) {
+                    <select [ngModel]="formDoc()[c]" (ngModelChange)="patchCampo(c, $event)">
+                      <option value="">— Seleccione sede —</option>
+                      @for (s of sedesCatalogo(); track s.idSede) {
+                        <option [value]="s.idSede">{{ s.nombre }}{{ s.codigo ? ' (' + s.codigo + ')' : '' }}</option>
+                      }
+                    </select>
+                    @if (!sedesCatalogo().length) {
+                      <p class="cat-field-hint cat-field-hint--warn">
+                        No hay sedes activas. Créelas primero en Configuración → Sedes.
+                      </p>
+                    }
                   } @else if (esCatalogoInspeccion() && campoEsTextoLargo(c)) {
                     <textarea rows="4" [ngModel]="formDoc()[c]" (ngModelChange)="patchCampo(c, $event)"></textarea>
                   } @else if (esCatalogoCaractInspeccion() && c === 'idItem') {

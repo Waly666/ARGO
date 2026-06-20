@@ -9,6 +9,7 @@ import {
   CatalogoMetaItem,
 } from '../../core/services/catalogo-admin.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { SedeDto, SedeService } from '../../core/services/sede.service';
 import { capEstado, capId, capTipoServ } from '../../core/utils/capsule.util';
 import {
   coerceNumberInput,
@@ -59,6 +60,7 @@ export class CatalogosAdminComponent implements OnInit {
   private confirm = inject(ConfirmDialogService);
   private vehSvc = inject(VehiculoService);
   private route = inject(ActivatedRoute);
+  private sedeSvc = inject(SedeService);
 
   catalogos = signal<CatalogoMetaItem[]>([]);
   seleccionado = signal<string | null>(null);
@@ -94,6 +96,7 @@ export class CatalogosAdminComponent implements OnInit {
   cargandoItemsInspeccion = signal(false);
   formControlaVencimiento = signal(true);
   formLicenciaCats = signal<Record<string, boolean>>({});
+  sedesCatalogo = signal<SedeDto[]>([]);
 
   importJson = signal('');
   mostrarImport = signal(false);
@@ -168,6 +171,10 @@ export class CatalogosAdminComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.sedeSvc.listar().subscribe({
+      next: (rows) => this.sedesCatalogo.set((rows || []).filter((s) => s.activa !== false)),
+      error: () => this.sedesCatalogo.set([]),
+    });
     this.vehSvc.listarClases().subscribe({
       next: (rows) => {
         const caps = (rows || [])
@@ -297,6 +304,25 @@ export class CatalogosAdminComponent implements OnInit {
   }
 
   labelColumna(campo: string): string {
+    if (this.esCatalogoAula()) {
+      const map: Record<string, string> = {
+        idAula: 'Código',
+        nombre: 'Nombre del aula',
+        estado: 'Estado',
+        idSede: 'Sede',
+      };
+      if (map[campo]) return map[campo];
+    }
+    if (this.esCatalogoTaller()) {
+      const map: Record<string, string> = {
+        idTaller: 'Código',
+        nombre: 'Nombre',
+        ubicacion: 'Ubicación',
+        activo: 'Activo',
+        idSede: 'Sede',
+      };
+      if (map[campo]) return map[campo];
+    }
     if (this.esCatalogoTipServicio() || this.esCatalogoInspeccion() || this.esCatalogoDocumento()) {
       return this.labelCampo(campo);
     }
@@ -559,6 +585,18 @@ export class CatalogosAdminComponent implements OnInit {
     return this.esCatalogoTipServicio() && campo === 'claseServ';
   }
 
+  esCampoSelectSede(campo: string): boolean {
+    return (this.esCatalogoAula() || this.esCatalogoTaller()) && campo === 'idSede';
+  }
+
+  esCatalogoAula(): boolean {
+    return this.seleccionado() === 'aulas';
+  }
+
+  esCatalogoTaller(): boolean {
+    return this.seleccionado() === 'talleres';
+  }
+
   private syncFormTiposVehiculo(row?: Record<string, unknown>) {
     if (!this.esCatalogoItemsInspeccion()) {
       this.formTiposVehiculo.set([]);
@@ -666,13 +704,34 @@ export class CatalogosAdminComponent implements OnInit {
 
   private camposFormBase(): string[] {
     const skip = new Set(['_id', '__v', 'idClases', 'controlaVencimiento', 'tiposVehiculo', 'claseVehiculo']);
-    return this.listado()?.campos?.filter((c) => !skip.has(c)) || [];
+    const fromList = this.listado()?.campos?.filter((c) => !skip.has(c)) || [];
+    const campos = fromList.length ? fromList : this.camposFallbackCatalogo();
+    return campos.filter((c) => c !== '_id');
+  }
+
+  private camposFallbackCatalogo(): string[] {
+    const n = this.seleccionado();
+    const map: Record<string, string[]> = {
+      aulas: ['idAula', 'nombre', 'estado', 'idSede'],
+      talleres: ['idTaller', 'nombre', 'ubicacion', 'activo', 'idSede'],
+    };
+    return map[n || ''] || [];
+  }
+
+  private idSedeDefaultForm(): string {
+    const activa = this.sedeSvc.idSede();
+    if (activa) return activa;
+    const principal = this.sedesCatalogo().find((s) => s.esPrincipal);
+    return principal?.idSede || this.sedesCatalogo()[0]?.idSede || '';
   }
 
   nuevo() {
     const campos = this.camposFormBase();
     const doc: Record<string, string> = {};
     for (const c of campos) doc[c] = '';
+    if (this.esCatalogoAula() || this.esCatalogoTaller()) {
+      doc['idSede'] = this.idSedeDefaultForm();
+    }
     if (this.esCatalogoTipServicio()) doc['claseServ'] = CLASE_SERV_DEFAULT;
     this.editandoId.set(null);
     this.formDoc.set(doc);
@@ -791,6 +850,16 @@ export class CatalogosAdminComponent implements OnInit {
   guardar() {
     const nombre = this.seleccionado();
     if (!nombre) return;
+    if (this.esCatalogoAula() && !String(this.formDoc()['nombre'] ?? '').trim()) {
+      this.msgError.set(true);
+      this.msg.set('Indique el nombre del aula.');
+      return;
+    }
+    if ((this.esCatalogoAula() || this.esCatalogoTaller()) && !String(this.formDoc()['idSede'] ?? '').trim()) {
+      this.msgError.set(true);
+      this.msg.set('Seleccione la sede del registro.');
+      return;
+    }
     const doc = this.parseDoc();
     const id = this.editandoId();
     this.saving.set(true);
@@ -939,9 +1008,12 @@ export class CatalogosAdminComponent implements OnInit {
       'claseVehiculo',
       ...CATEGORIAS_LICENCIA_VEHICULO,
     ]);
-    if (L?.campos?.length) {
-      return L.campos.filter((c) => !omit.has(c) && keys.has(c));
-    }
+    const fromList = L?.campos?.length
+      ? L.campos.filter((c) => !omit.has(c) && keys.has(c))
+      : [];
+    if (fromList.length) return fromList;
+    const fallback = this.camposFallbackCatalogo().filter((c) => keys.has(c));
+    if (fallback.length) return fallback;
     return [...keys].filter((k) => k !== '_id' && !omit.has(k));
   }
 

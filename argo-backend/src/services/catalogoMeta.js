@@ -90,7 +90,8 @@ const ID_FIELDS_HINT = {
 
 /** Campos válidos por catálogo (evita columnas basura del Excel en admin). */
 const CAMPOS_ESQUEMA = {
-  talleres: ['idTaller', 'nombre', 'ubicacion', 'activo'],
+  aulas: ['idAula', 'nombre', 'estado', 'idSede'],
+  talleres: ['idTaller', 'nombre', 'ubicacion', 'activo', 'idSede'],
   claseVehiculo: [
     'idClase',
     'descripcion',
