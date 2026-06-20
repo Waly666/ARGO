@@ -185,8 +185,8 @@ exports.crear = async (req, res, next) => {
         ? String(body.condicionIva).toLowerCase()
         : 'gravado',
       tarifa1: valorVariable ? 0 : tarifa1,
-      tarifa2: valorVariable ? null : num(body.tarifa2) || tarifa1 * 2,
-      tarifa3: valorVariable ? null : num(body.tarifa3) || tarifa1 * 3,
+      tarifa2: valorVariable ? null : num(body.tarifa2) > 0 ? num(body.tarifa2) : null,
+      tarifa3: valorVariable ? null : num(body.tarifa3) > 0 ? num(body.tarifa3) : null,
       tarifaVirtual: valorVariable ? null : num(body.tarifaVirtual) || 0,
       valorVariable: valorVariable || undefined,
       usaCantidad: !valorVariable && body.usaCantidad === true,

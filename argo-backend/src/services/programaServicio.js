@@ -281,9 +281,7 @@ function docServicioDesdePrograma(prog, servicioBody, usuario, extras = {}) {
     userChangeRecord: user,
   };
   if (t2 > 0) doc.tarifa2 = t2;
-  else if (!programaUsaSemestres(prog) && valor > 0) doc.tarifa2 = valor * 2;
   if (t3 > 0) doc.tarifa3 = t3;
-  else if (!programaUsaSemestres(prog) && valor > 0) doc.tarifa3 = valor * 3;
   if (servicioBody?.tarifaVirtual != null && servicioBody?.tarifaVirtual !== '') {
     doc.tarifaVirtual = tVirtual;
   } else if (tVirtual > 0) {
@@ -367,7 +365,13 @@ async function sincronizarServicioUnico(prog, servicioBody, usuario) {
   const tarifaAnterior = serv ? num(serv.tarifa1) : null;
 
   if (serv) {
-    await cat.servicios.updateOne({ idServ: serv.idServ }, { $set: { ...base, idProg }, $unset: { numSemestre: '' } });
+    const unset = { numSemestre: '' };
+    if (base.tarifa2 == null) unset.tarifa2 = '';
+    if (base.tarifa3 == null) unset.tarifa3 = '';
+    await cat.servicios.updateOne(
+      { idServ: serv.idServ },
+      { $set: { ...base, idProg }, $unset: unset },
+    );
     const actualizado = await cat.servicios.findOne({ idServ: serv.idServ }).lean();
     if (tarifaAnterior != null && num(base.tarifa1) !== tarifaAnterior) {
       await actualizarSaldosLiquidacionesPorServicio(serv.idServ, base.tarifa1);
