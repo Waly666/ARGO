@@ -17,6 +17,7 @@
     <p class="prog-msg" [class.prog-msg--err]="msgError()">{{ msg() }}</p>
   }
 
+  @if (!modalAbierto()) {
   <div class="toolbar">
     <input
       type="search"
@@ -35,16 +36,18 @@
       <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')" title="Vista tarjetas">▦ Cards</button>
     </div>
   </div>
+  }
 
-  <argo-form-modal
-    [open]="modalAbierto()"
-    [title]="modalTitulo()"
-    [subtitle]="modalSubtitulo()"
-    [anchorTopPx]="modalTop()"
-    [xwide]="true"
-    [tall]="true"
-    (closed)="cerrarModal()">
-    @if (modalAbierto()) {
+  @if (modalAbierto()) {
+  <div #formPanel class="prog-form-panel">
+    <header class="prog-form-head">
+      <div>
+        <span class="prog-form-kicker">{{ editando() ? 'Edición' : 'Alta' }}</span>
+        <h2>{{ modalTitulo() }}</h2>
+        <p class="prog-form-sub">{{ modalSubtitulo() }}</p>
+      </div>
+      <button type="button" class="ghost prog-form-close" (click)="cerrarModal()" aria-label="Cerrar">×</button>
+    </header>
     <div class="modal-form argo-form-shell prog-modal-form">
       <section class="form-section form-section--1">
         <h3 class="sec sec--1">1. Datos del programa</h3>
@@ -367,16 +370,16 @@
         </div>
       </section>
     </div>
-    <div modal-actions>
+    <footer class="prog-form-foot">
       <button type="button" class="ghost" (click)="cerrarModal()">Cancelar</button>
       <button type="button" class="primary" (click)="guardar()" [disabled]="saving() || !tiposCap().length">
         {{ saving() ? 'Guardando…' : 'Guardar' }}
       </button>
-    </div>
-    }
-  </argo-form-modal>
+    </footer>
+  </div>
+  }
 
-  <div class="table-wrap" *ngIf="!loading() && vista() === 'lista'">
+  <div class="table-wrap" *ngIf="!modalAbierto() && !loading() && vista() === 'lista'">
     <table class="argo data-table">
       <thead>
         <tr>
@@ -423,7 +426,7 @@
     </table>
   </div>
 
-  <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
+  <div class="cards-grid" *ngIf="!modalAbierto() && !loading() && vista() === 'cards'">
     <article class="list-card" *ngFor="let p of programasOrdenados()">
       <header class="card-title">
         <h3><a [routerLink]="fichaProgramaLink(p)" class="prog-link-ficha">{{ p.nombreProg }}</a></h3>

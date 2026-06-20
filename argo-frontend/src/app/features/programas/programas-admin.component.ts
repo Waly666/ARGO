@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   ElementRef,
-  HostListener,
   OnInit,
   ViewChild,
   computed,
@@ -127,7 +126,6 @@ function cmpNum(a: number | null | undefined, b: number | null | undefined): num
   return na - nb;
 }
 
-import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
@@ -152,7 +150,7 @@ interface AuditInfo {
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CatalogoEnumBuscarComponent],
 
   templateUrl: './programas-admin.component.html',
 
@@ -175,20 +173,14 @@ export class ProgramasAdminComponent implements OnInit {
   private asistente = inject(AsistenteContextoService);
   private route = inject(ActivatedRoute);
 
-  modalTop = signal(80);
-
   @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
-
-  @HostListener('window:resize')
-  onResize() {
-    if (this.modalAbierto()) this.posicionarModal();
-  }
+  @ViewChild('formPanel') formPanel?: ElementRef<HTMLElement>;
 
   constructor() {
     effect(() => {
       if (this.modalAbierto()) {
         this.asistente.setTipsPrepend([tipFormulario('Este formulario', this.modalSubtitulo(), 'prog-form-ctx')]);
-        this.posicionarModal();
+        this.scrollAlFormulario();
       } else {
         this.asistente.clearTipsPrepend();
       }
@@ -688,7 +680,7 @@ export class ProgramasAdminComponent implements OnInit {
 
     this.resetPortadaLocal();
     this.modalAbierto.set(true);
-    this.posicionarModal();
+    this.scrollAlFormulario();
     this.inform(null);
 
   }
@@ -732,7 +724,7 @@ export class ProgramasAdminComponent implements OnInit {
         this.form.set(this.formDesdeDetalle(prog, s, horaP));
         this.resetPortadaLocal();
         this.modalAbierto.set(true);
-        this.posicionarModal();
+        this.scrollAlFormulario();
       },
       error: (e) => this.inform(e?.error?.message || 'No se pudo cargar el programa', true),
     });
@@ -1402,25 +1394,13 @@ export class ProgramasAdminComponent implements OnInit {
       : 'El código se asigna si lo deja vacío. El servicio se crea al guardar.';
   }
 
-  private posicionarModal() {
-    const head = this.pageHead?.nativeElement;
-    if (head) {
-      const scrollTop = head.getBoundingClientRect().top + window.scrollY - 12;
-      window.scrollTo({ top: Math.max(0, scrollTop), behavior: 'auto' });
-    }
-
-    const measure = () => {
-      const anchor = this.pageHead?.nativeElement;
-      if (!anchor) return;
-      const bottom = anchor.getBoundingClientRect().bottom;
-      this.modalTop.set(Math.max(8, Math.round(bottom + 8)));
-    };
-
+  private scrollAlFormulario() {
     requestAnimationFrame(() => {
-      measure();
-      requestAnimationFrame(measure);
+      requestAnimationFrame(() => {
+        const el = this.formPanel?.nativeElement ?? this.pageHead?.nativeElement;
+        el?.scrollIntoView({ behavior: 'auto', block: 'start' });
+      });
     });
-    setTimeout(measure, 80);
   }
 
   private inform(text: string | null, isErr?: boolean): void {

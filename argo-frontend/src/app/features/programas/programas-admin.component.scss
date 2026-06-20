@@ -50,6 +50,80 @@
   resize: vertical;
 }
 
+.prog-form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  background: linear-gradient(165deg, rgba(12, 28, 62, 0.55), rgba(6, 14, 34, 0.65));
+  scroll-margin-top: 1rem;
+}
+
+.prog-form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(120, 170, 255, 0.1);
+
+  h2 {
+    margin: 0.15rem 0 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+}
+
+.prog-form-kicker {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+}
+
+.prog-form-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.prog-form-close {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(248, 113, 113, 0.15);
+    color: #fecaca;
+  }
+}
+
+.prog-form-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(120, 170, 255, 0.1);
+
+  .primary {
+    min-height: 2.2rem;
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.2);
+  }
+}
+
 .modal-form,
 .prog-modal-form {
   display: flex;
