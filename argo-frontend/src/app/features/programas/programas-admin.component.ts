@@ -646,6 +646,19 @@ export class ProgramasAdminComponent implements OnInit {
     if (!v) this.patch('aplicarTarifaRevalidacionAuto', false);
   }
 
+  onDiasVencimientoChange(raw: unknown): void {
+    const n = Math.max(0, Math.round(Number(raw) || 0));
+    this.patch('diasVencimiento', n);
+    if (n <= 0) {
+      this.patch('admiteRevalidacion', false);
+      this.patch('aplicarTarifaRevalidacionAuto', false);
+    }
+  }
+
+  tieneVigenciaCertificado(): boolean {
+    return (Number(this.form().diasVencimiento) || 0) > 0;
+  }
+
 
 
   nuevo() {
@@ -782,8 +795,10 @@ export class ProgramasAdminComponent implements OnInit {
       descripcionVirtual: prog.descripcionVirtual ?? '',
       urlPortadaVirtual: prog.urlPortadaVirtual ?? '',
       diasVencimiento: prog.diasVencimiento ?? 365,
-      admiteRevalidacion: prog.admiteRevalidacion === true,
-      aplicarTarifaRevalidacionAuto: prog.aplicarTarifaRevalidacionAuto === true,
+      admiteRevalidacion:
+        (Number(prog.diasVencimiento) || 0) > 0 && prog.admiteRevalidacion === true,
+      aplicarTarifaRevalidacionAuto:
+        (Number(prog.diasVencimiento) || 0) > 0 && prog.aplicarTarifaRevalidacionAuto === true,
       tipoCertificado: prog.tipoCertificado ?? null,
       estado: prog.estado || 'ACTIVO',
       descripcion: prog.descripcion ?? '',

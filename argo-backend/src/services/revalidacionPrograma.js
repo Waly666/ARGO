@@ -10,6 +10,8 @@ const { TARIFA_REVALIDACION, SUFIJO_DESCRIPCION_REVALIDACION } = require('../con
 const { esTarifaVirtual } = require('../constants/tarifa');
 
 function programaAdmiteRevalidacion(prog) {
+  const dias = Number(prog?.diasVencimiento);
+  if (!Number.isFinite(dias) || dias <= 0) return false;
   return prog?.admiteRevalidacion === true;
 }
 

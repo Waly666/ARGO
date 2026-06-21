@@ -44,7 +44,7 @@
             <div><span class="lbl">Tarifa virtual (4)</span><strong>{{ num(d.servicio.tarifaVirtual) | currency:'COP':'symbol-narrow':'1.0-0' }}</strong></div>
           }
         }
-        <div><span class="lbl">Refrendación</span><strong>{{ d.programa.admiteRevalidacion ? 'Admite' : 'No' }}</strong></div>
+        <div><span class="lbl">Refrendación</span><strong>{{ (d.programa.diasVencimiento ?? 0) > 0 && d.programa.admiteRevalidacion ? 'Admite' : 'No aplica' }}</strong></div>
       </div>
       @if (d.programa.esCapacitacionVirtual) {
         <div class="prog-datos-virtual">
