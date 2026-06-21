@@ -162,7 +162,56 @@
 }
 
 .row-align-fields {
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+
+  > [class*='col-'] {
+    flex: unset;
+    min-width: 0;
+    width: auto;
+  }
+
+  > .col-2 {
+    grid-column: span 2;
+  }
+
+  > .col-3 {
+    grid-column: span 3;
+  }
+
+  > .col-4 {
+    grid-column: span 4;
+  }
+
+  argo-catalogo-enum-buscar {
+    display: block;
+    width: 100%;
+  }
+
+  .field-cell label {
+    min-height: 2.55rem;
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 4px;
+    line-height: 1.25;
+  }
+
+  ::ng-deep argo-catalogo-enum-buscar label {
+    min-height: 2.55rem;
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 4px;
+    line-height: 1.25;
+  }
+
+  .field-cell input:not([type='checkbox']),
+  ::ng-deep argo-catalogo-enum-buscar .input-wrap input {
+    min-height: 2.35rem;
+    box-sizing: border-box;
+  }
 }
 
 .field-cell {
@@ -333,6 +382,21 @@ input.readonly {
 }
 
 @media (max-width: 768px) {
+  .row-align-fields {
+    grid-template-columns: 1fr;
+
+    > .col-2,
+    > .col-3,
+    > .col-4 {
+      grid-column: 1 / -1;
+    }
+
+    .field-cell label,
+    ::ng-deep argo-catalogo-enum-buscar label {
+      min-height: 0;
+    }
+  }
+
   .col-2,
   .col-3,
   .col-4,

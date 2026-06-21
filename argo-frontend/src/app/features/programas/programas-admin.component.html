@@ -111,7 +111,7 @@
           </p>
         </div>
         <div class="row row-align-fields">
-          <div class="col-4">
+          <div class="col-4 field-cell">
             <argo-catalogo-enum-buscar
               label="Tipo capacitación (idTipCap) *"
               placeholder="Seleccione o escriba tipo…"
@@ -125,19 +125,19 @@
               (limpiado)="onTipoCapLimpiar()"
             />
           </div>
-          <div class="col-2">
+          <div class="col-2 field-cell">
             <label>Semestres</label>
             <input type="number" min="0" [ngModel]="form().semestres" (ngModelChange)="patch('semestres', $event)" />
           </div>
-          <div class="col-2">
+          <div class="col-2 field-cell">
             <label>Horas totales</label>
             <input type="number" min="0" [ngModel]="form().horas" (ngModelChange)="patch('horas', $event)" />
           </div>
-          <div class="col-2">
+          <div class="col-2 field-cell">
             <label>Horas teoría</label>
             <input type="number" min="0" [ngModel]="form().horasTeoria" (ngModelChange)="patch('horasTeoria', $event)" />
           </div>
-          <div class="col-2">
+          <div class="col-2 field-cell">
             <label>Horas práctica</label>
             <input type="number" min="0" [ngModel]="form().horasPractica" (ngModelChange)="patch('horasPractica', $event)" />
           </div>
@@ -167,7 +167,6 @@
               [ngModel]="form().diasVencimiento"
               (ngModelChange)="onDiasVencimientoChange($event)"
             />
-            <span class="hint-inline">0 = sin vencimiento (no refrendación).</span>
           </div>
           <div class="col-2 field-cell">
             <argo-catalogo-enum-buscar
