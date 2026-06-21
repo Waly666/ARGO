@@ -18,6 +18,8 @@ import {
 import { TARIFA_VIRTUAL } from '../alumnos/catalogo.helpers';
 
 interface TipoCapRow {
+  /** Clave única para DOM / @for track (evita switches enlazados si idTipCap se repite). */
+  uid: string;
   idTipCap: string;
   label: string;
 }
@@ -32,6 +34,36 @@ function nuevoIdRegla(): string {
     return crypto.randomUUID();
   }
   return `r-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+/** Misma lógica que backend: prefijo numérico de idTipCap legacy. */
+function canonTipCapId(raw: unknown): string {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  const m = s.match(/^(\d+)/);
+  return m ? m[1] : s;
+}
+
+function normalizarTiposCapCatalogo(rows: Record<string, unknown>[]): TipoCapRow[] {
+  const porCanon = new Map<string, TipoCapRow>();
+  for (const r of rows || []) {
+    const idRaw = String(r['idTipCap'] ?? r['id'] ?? '').trim();
+    if (!idRaw) continue;
+    const canon = canonTipCapId(idRaw);
+    if (!canon) continue;
+    const label = String(r['tipoCap'] || r['descripcion'] || r['nombre'] || canon).trim();
+    const uid = String(r['_id'] ?? `${canon}::${label}`).trim();
+    const row: TipoCapRow = { uid, idTipCap: canon, label };
+    const prev = porCanon.get(canon);
+    if (!prev || label.length > prev.label.length) {
+      porCanon.set(canon, row);
+    }
+  }
+  return [...porCanon.values()].sort((a, b) => a.label.localeCompare(b.label, 'es'));
+}
+
+function normalizarIdTipCaps(ids: string[] | undefined): string[] {
+  return [...new Set((ids || []).map((id) => canonTipCapId(id)).filter(Boolean))];
 }
 
 function nuevaRegla(orden: number): ReglaServicioAdicional {
@@ -115,14 +147,7 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
 
     this.catSvc.list('catTipoCapacitacion').subscribe({
       next: (rows) => {
-        this.tiposCap.set(
-          (rows || [])
-            .map((r: Record<string, unknown>) => ({
-              idTipCap: String(r['idTipCap'] ?? r['id'] ?? '').trim(),
-              label: String(r['tipoCap'] || r['descripcion'] || r['nombre'] || '').trim(),
-            }))
-            .filter((c) => c.idTipCap),
-        );
+        this.tiposCap.set(normalizarTiposCapCatalogo(rows || []));
       },
     });
 
@@ -146,7 +171,12 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
 
     this.cfgSvc.obtener().subscribe({
       next: (c) => {
-        this.reglas.set([...(c.reglas || [])]);
+        this.reglas.set(
+          (c.reglas || []).map((r) => ({
+            ...r,
+            idTipCaps: normalizarIdTipCaps(r.idTipCaps),
+          })),
+        );
         this.loading.set(false);
       },
       error: () => {
@@ -199,15 +229,19 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
   }
 
   toggleTipCap(i: number, id: string, checked: boolean): void {
+    const canon = canonTipCapId(id);
+    if (!canon) return;
     const r = this.reglas()[i];
-    const set = new Set(r.idTipCaps || []);
-    if (checked) set.add(id);
-    else set.delete(id);
+    const set = new Set(normalizarIdTipCaps(r.idTipCaps));
+    if (checked) set.add(canon);
+    else set.delete(canon);
     this.patchRegla(i, { idTipCaps: [...set] });
   }
 
   tieneTipCap(i: number, id: string): boolean {
-    return (this.reglas()[i]?.idTipCaps || []).includes(id);
+    const canon = canonTipCapId(id);
+    if (!canon) return false;
+    return normalizarIdTipCaps(this.reglas()[i]?.idTipCaps).includes(canon);
   }
 
   toggleTipoPago(i: number, id: string, checked: boolean): void {
@@ -311,7 +345,11 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
 
     this.saving.set(true);
     this.setMsg(null, false);
-    this.cfgSvc.guardar({ reglas }).subscribe({
+    const reglasNorm = reglas.map((r) => ({
+      ...r,
+      idTipCaps: normalizarIdTipCaps(r.idTipCaps),
+    }));
+    this.cfgSvc.guardar({ reglas: reglasNorm }).subscribe({
       next: (c) => {
         this.reglas.set([...(c.reglas || [])]);
         this.saving.set(false);

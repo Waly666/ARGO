@@ -128,10 +128,11 @@
         <div class="sa-block">
           <span class="sa-label">Tipo de capacitación (opcional)</span>
           <div class="sa-checks sa-checks--wrap">
-            @for (tc of tiposCap(); track tc.idTipCap) {
+            @for (tc of tiposCap(); track tc.uid) {
               <label class="sa-check">
                 <input
                   type="checkbox"
+                  [attr.name]="'tipcap-' + r.id + '-' + tc.uid"
                   [checked]="tieneTipCap(i, tc.idTipCap)"
                   (change)="toggleTipCap(i, tc.idTipCap, $any($event.target).checked)"
                 />
