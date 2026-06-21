@@ -24,7 +24,7 @@
         <li><strong>Pasarela de pago</strong> — Al cobrar recibo · Modalidad Virtual · Tipo de pago pasarela/tarjeta en línea</li>
       </ul>
       <p class="sa-hint">
-        Si deja modalidades o tarifas vacías, aplica a todas las que coincidan con el resto de filtros.
+        Si deja modalidades, tarifas o programas vacíos, aplica a todas las coincidencias del resto de filtros.
         El valor se toma de <strong>tarifa 1</strong> del servicio en catálogo.
       </p>
     </div>
@@ -151,6 +151,56 @@
           />
           <span class="sa-field-hint">Separados por coma. Ej. TEC para técnicos laborales.</span>
         </label>
+
+        <div class="sa-block sa-programas">
+          <div class="sa-programas-head">
+            <span class="sa-label">Programas específicos (opcional)</span>
+            @if (cantidadProgramasRegla(r) > 0) {
+              <span class="sa-programas-count">{{ cantidadProgramasRegla(r) }} seleccionado(s)</span>
+              <button type="button" class="ghost mini" (click)="limpiarProgramasRegla(i)">Limpiar</button>
+            }
+          </div>
+          <span class="sa-field-hint">
+            Vacío = aplica a todos los programas que cumplan el resto de filtros. Si elige uno o más, la regla solo
+            aplica a esos programas.
+          </span>
+          @if (!programas().length) {
+            <p class="sa-field-hint">Cargando catálogo de programas…</p>
+          } @else {
+            <input
+              type="search"
+              class="sa-programas-buscar"
+              placeholder="Buscar por código, nombre o ID…"
+              [ngModel]="buscarProgramaRegla(r.id)"
+              (ngModelChange)="setBuscarProgramaRegla(r.id, $event)"
+            />
+            @if (cantidadProgramasRegla(r) > 0) {
+              <div class="sa-programas-chips">
+                @for (pid of r.idProgramas; track pid) {
+                  <span class="sa-chip">{{ programaLabel(pid) }}</span>
+                }
+              </div>
+            }
+            <div class="sa-programas-list">
+              @for (p of programasFiltradosRegla(r.id); track idProgramaStr(p)) {
+                <label
+                  class="sa-pick-row"
+                  [class.selected]="tienePrograma(i, idProgramaStr(p))"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="tienePrograma(i, idProgramaStr(p))"
+                    (change)="togglePrograma(i, idProgramaStr(p), $any($event.target).checked)"
+                  />
+                  <span class="sa-pick-code">{{ p.codigoProg || idProgramaStr(p) }}</span>
+                  <span class="sa-pick-name">{{ p.nombreProg }}</span>
+                </label>
+              } @empty {
+                <p class="sa-field-hint sa-programas-empty">Sin coincidencias para la búsqueda.</p>
+              }
+            </div>
+          }
+        </div>
 
         @if (r.momento === 'matricula') {
           <label class="sa-check sa-check--block">

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { Programa, ProgramaService } from '../../core/services/programa.service';
 import { ServicioCatalogoService } from '../../core/services/servicio-catalogo.service';
 import {
   ConfigServiciosAdicionalesService,
@@ -62,6 +63,7 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
   private cfgSvc = inject(ConfigServiciosAdicionalesService);
   private servCatSvc = inject(ServicioCatalogoService);
   private catSvc = inject(CatalogoService);
+  private progSvc = inject(ProgramaService);
 
   readonly modalidadesOpts = MODALIDADES_PROGRAMA_OPTS;
   readonly tarifasOpts = [
@@ -85,6 +87,9 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
 
   reglas = signal<ReglaServicioAdicional[]>([]);
   serviciosGlobales = signal<{ idServ: string; label: string; valor: number }[]>([]);
+  programas = signal<Programa[]>([]);
+  /** Búsqueda de programas por regla (clave = id de regla). */
+  buscarProgramasPorRegla = signal<Record<string, string>>({});
   tiposCap = signal<TipoCapRow[]>([]);
   tiposPago = signal<TipoPagoRow[]>([]);
 
@@ -132,6 +137,11 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
             .filter((t) => t.id),
         );
       },
+    });
+
+    this.progSvc.listar({ catalogo: true, limit: 500 }).subscribe({
+      next: (rows) => this.programas.set(rows || []),
+      error: () => this.programas.set([]),
     });
 
     this.cfgSvc.obtener().subscribe({
@@ -222,6 +232,61 @@ export class ConfigServiciosAdicionalesComponent implements OnInit {
 
   prefijosTexto(r: ReglaServicioAdicional): string {
     return (r.prefijosCodigo || []).join(', ');
+  }
+
+  idProgramaStr(p: Programa): string {
+    return String(p.idPrograma ?? p._id ?? '').trim();
+  }
+
+  buscarProgramaRegla(reglaId: string): string {
+    return this.buscarProgramasPorRegla()[reglaId] || '';
+  }
+
+  setBuscarProgramaRegla(reglaId: string, q: string): void {
+    this.buscarProgramasPorRegla.update((m) => ({ ...m, [reglaId]: q }));
+  }
+
+  programasFiltradosRegla(reglaId: string): Programa[] {
+    const q = this.buscarProgramaRegla(reglaId).trim().toLowerCase();
+    const list = this.programas();
+    if (!q) return list;
+    return list.filter(
+      (p) =>
+        String(p.nombreProg || '').toLowerCase().includes(q) ||
+        String(p.codigoProg || '').toLowerCase().includes(q) ||
+        this.idProgramaStr(p).includes(q),
+    );
+  }
+
+  togglePrograma(i: number, idPrograma: string, checked: boolean): void {
+    const id = String(idPrograma).trim();
+    if (!id) return;
+    const r = this.reglas()[i];
+    const set = new Set((r.idProgramas || []).map(String));
+    if (checked) set.add(id);
+    else set.delete(id);
+    this.patchRegla(i, { idProgramas: [...set] });
+  }
+
+  tienePrograma(i: number, idPrograma: string): boolean {
+    const id = String(idPrograma).trim();
+    return (this.reglas()[i]?.idProgramas || []).some((x) => String(x).trim() === id);
+  }
+
+  limpiarProgramasRegla(i: number): void {
+    this.patchRegla(i, { idProgramas: [] });
+  }
+
+  cantidadProgramasRegla(r: ReglaServicioAdicional): number {
+    return (r.idProgramas || []).filter((id) => String(id).trim()).length;
+  }
+
+  programaLabel(id: string): string {
+    const idStr = String(id).trim();
+    const p = this.programas().find((x) => this.idProgramaStr(x) === idStr);
+    if (!p) return idStr;
+    const cod = String(p.codigoProg || '').trim();
+    return cod ? `${cod} — ${p.nombreProg}` : p.nombreProg;
   }
 
   servicioLabel(idServ: string): string {
