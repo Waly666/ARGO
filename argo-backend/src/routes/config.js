@@ -10,6 +10,7 @@ const fmtInspVehiCtrl = require('../controllers/configFormatoInspeccionVehiculos
 const nominaCfgCtrl = require('../controllers/configNominaController');
 const contratoCapCfgCtrl = require('../controllers/configContratoCapController');
 const alertasCfgCtrl = require('../controllers/configAlertasController');
+const servAdicCtrl = require('../controllers/configServiciosAdicionalesController');
 const upload = require('../middleware/upload');
 const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
 
@@ -74,6 +75,21 @@ router.get('/recibo/encabezado', requireAuth, loadSedeActiva, ctrl.obtenerRecibo
 router.get('/recibo/opciones-matricula', requireAuth, ctrl.obtenerReciboOpcionesMatricula);
 router.get('/recibo', requirePermiso('config.recibos'), ctrl.obtenerRecibo);
 router.put('/recibo', requirePermiso('config.recibos'), ctrl.actualizarRecibo);
+
+router.get('/servicios-adicionales', requirePermiso('config.recibos'), servAdicCtrl.obtener);
+router.put('/servicios-adicionales', requirePermiso('config.recibos'), servAdicCtrl.actualizar);
+router.get(
+  '/servicios-adicionales/preview-matricula',
+  requireAuth,
+  requirePermiso('alumnos.pagos', 'alumnos.gestionar'),
+  servAdicCtrl.previewMatricula,
+);
+router.post(
+  '/servicios-adicionales/preview-pago',
+  requireAuth,
+  requirePermiso('alumnos.pagos', 'alumnos.gestionar'),
+  servAdicCtrl.previewPago,
+);
 
 router.get('/nomina', requirePermiso('config.nomina'), nominaCfgCtrl.obtener);
 router.put('/nomina', requirePermiso('config.nomina'), nominaCfgCtrl.actualizar);

@@ -369,6 +369,23 @@
   }
 }
 
+.resumen-extras {
+  margin: -0.25rem 0 0;
+  padding: 0 0 0 1rem;
+  list-style: disc;
+  font-size: 0.78rem;
+  color: var(--text-soft, #64748b);
+
+  li + li {
+    margin-top: 0.15rem;
+  }
+}
+
+.resumen-extras-hint {
+  color: var(--text-soft, #64748b) !important;
+  font-weight: 400;
+}
+
 .btn-registrar {
   width: 100%;
   margin-top: 0.35rem;

@@ -36,8 +36,8 @@
       </div>
 
       <ng-container *ngIf="idProg() && !programaSoloVirtual()">
-      <div class="row row-align-fields matricula-fields-row">
-        <div class="col-6 field-cell">
+      <div class="row matricula-fields-row">
+        <div class="col-6 field-cell field-cell--tarifa">
           <argo-catalogo-enum-buscar
             label="Tarifa"
             placeholder="Seleccione tarifa…"
@@ -50,11 +50,25 @@
             (limpiado)="onTarifaLimpiar()"
           />
         </div>
-        <div class="col-6 field-cell">
-          <label>Valor Matrícula</label>
-          <input type="text" class="input-valor-readonly" [value]="fmt(ajustarValorMat ? valorMatFinal() : valorMatCalculado())" disabled />
+        <div class="col-6 field-cell field-cell--valor">
+          <label for="valor-matricula-readonly">Valor Matrícula</label>
+          <input
+            id="valor-matricula-readonly"
+            type="text"
+            class="input-valor-readonly"
+            [value]="fmt(ajustarValorMat ? valorMatFinal() : valorMatCalculado())"
+            disabled
+          />
         </div>
       </div>
+      <p class="hint matricula-dg-hint" *ngIf="extrasMatriculaPreview().length">
+        <span *ngFor="let ex of extrasMatriculaPreview(); let last = last">
+          {{ ex.descripcion }}: <strong>{{ fmt(ex.valor) }}</strong><span *ngIf="!last"> · </span>
+        </span>
+        <span *ngIf="extrasMatriculaPreview().length">
+          — ítems aparte (configuración), no se reparten en semestres salvo regla explícita.
+        </span>
+      </p>
 
       <div class="ajuste-valor-mat" *ngIf="puedeAjustarValorMat()">
         <label class="ajuste-check">
@@ -69,17 +83,17 @@
         <ng-container *ngIf="ajustarValorMat">
           <div class="row row-align-fields ajuste-valor-row">
             <div class="col-4 field-cell">
-              <label>Valor catálogo</label>
-              <input type="text" class="input-valor-readonly" [value]="fmt(valorMatCalculado())" disabled />
+              <label>Valor catálogo (matrícula)</label>
+              <input type="text" class="input-valor-readonly" [value]="fmt(valorMatriculaBase())" disabled />
             </div>
             <div class="col-4 field-cell">
-              <label>Valor a cobrar (total)</label>
+              <label>Valor a cobrar (matrícula)</label>
               <input
                 type="number"
                 min="0"
-                [max]="valorMatCalculado()"
+                [max]="valorMatriculaBase()"
                 [(ngModel)]="valorAcordadoMat"
-                placeholder="Total del programa"
+                placeholder="Matrícula sin derechos de grado"
               />
             </div>
             <div class="col-4 field-cell">
@@ -92,11 +106,17 @@
               />
             </div>
           </div>
-          <p class="hint ajuste-hint" *ngIf="rebajaMatricula() > 0">
-            Rebaja: <strong>{{ fmt(rebajaMatricula()) }}</strong>
+          <p class="hint ajuste-hint" *ngIf="rebajaMatricula() > 0 || totalExtrasMatricula() > 0">
+            <ng-container *ngIf="rebajaMatricula() > 0">
+              Rebaja matrícula: <strong>{{ fmt(rebajaMatricula()) }}</strong>
+            </ng-container>
+            <ng-container *ngIf="totalExtrasMatricula() > 0">
+              <span *ngIf="rebajaMatricula() > 0"> · </span>
+              Servicios adicionales: <strong>{{ fmt(totalExtrasMatricula()) }}</strong>
+            </ng-container>
             · Total a liquidar: <strong>{{ fmt(valorMatFinal()) }}</strong>
             <ng-container *ngIf="programaNumSemestres() as nSem">
-              · Se reparte en <strong>{{ nSem }}</strong> semestre(s)
+              · Cuotas de matrícula en <strong>{{ nSem }}</strong> semestre(s)
             </ng-container>
           </p>
         </ng-container>

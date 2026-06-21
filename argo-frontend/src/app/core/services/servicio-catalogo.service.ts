@@ -7,6 +7,7 @@ import { ServicioPrograma } from './programa.service';
 
 export interface ServicioCatalogo extends ServicioPrograma {
   _id?: string;
+  descripcion?: string;
   programaNombre?: string | null;
   programaCodigo?: string | null;
   permiteCantidad?: boolean;

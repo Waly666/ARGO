@@ -403,7 +403,7 @@
             <a [routerLink]="fichaProgramaLink(p)" class="prog-link-ficha"><strong>{{ p.nombreProg }}</strong></a>
             <span class="cap cap-cyan cap-sm" *ngIf="p.esCapacitacionVirtual" style="margin-left: 6px;">Virtual</span>
           </td>
-          <td><span class="cap cap-violet cap-sm">{{ p.nomCert || '—' }}</span></td>
+          <td><span class="cap cap-violet cap-sm">{{ labelModalidadesPrograma(p) }}</span></td>
           <td><span class="cap cap-indigo cap-sm">{{ p.tipoCertificado ? labelTipoCert(p.tipoCertificado) : 'Automático' }}</span></td>
           <td><span [ngClass]="capTipoCap(labelTipoPrograma(p))">{{ labelTipoPrograma(p) }}</span></td>
           <td><span [ngClass]="capHoras(p.horas)">{{ p.horas ?? '—' }} h</span></td>
@@ -443,7 +443,7 @@
             <span class="cap cap-indigo cap-sm">{{ p.tipoCertificado ? labelTipoCert(p.tipoCertificado) : 'Automático' }}</span>
           </div>
           <dl class="card-fields">
-            <div><dt>Certificado</dt><dd>{{ p.nomCert || '—' }}</dd></div>
+            <div><dt>Modalidades</dt><dd>{{ labelModalidadesPrograma(p) }}</dd></div>
             <div><dt>Horas</dt><dd [ngClass]="capHoras(p.horas)">{{ p.horas ?? '—' }} h</dd></div>
             <div *ngIf="p.semestres != null && +p.semestres >= 1"><dt>Semestres</dt><dd>{{ p.semestres }}</dd></div>
             <div><dt>Matrícula</dt><dd [ngClass]="[capMoneda(p.valorMatricula), 'cap-money']">${{ num(p.valorMatricula) | number }}</dd></div>

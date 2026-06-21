@@ -849,6 +849,14 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Servicios adicionales',
+          path: '/app/configuracion/servicios-adicionales',
+          icon: '⊕',
+          iconTone: 'teal',
+          permiso: 'config.recibos',
+        },
+        {
+          kind: 'link',
           label: 'Parámetros nómina',
           path: '/app/configuracion/nomina',
           icon: '％',

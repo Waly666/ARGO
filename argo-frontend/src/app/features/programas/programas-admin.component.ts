@@ -60,6 +60,7 @@ import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import {
+  etiquetasModalidad,
   MODALIDADES_PROGRAMA_OPTS,
   MODALIDAD_PRESENCIAL,
   programaAdmitePresencial,
@@ -69,7 +70,7 @@ import {
 type SortColPrograma =
   | 'codigo'
   | 'programa'
-  | 'certificado'
+  | 'modalidades'
   | 'formatoCert'
   | 'tipo'
   | 'horas'
@@ -83,7 +84,7 @@ const SORT_STORAGE_KEY = 'argo-programas-sort';
 const SORT_COLUMNS: ReadonlyArray<{ key: SortColPrograma; label: string }> = [
   { key: 'codigo', label: 'Código' },
   { key: 'programa', label: 'Programa' },
-  { key: 'certificado', label: 'Certificado' },
+  { key: 'modalidades', label: 'Modalidades' },
   { key: 'formatoCert', label: 'Formato cert.' },
   { key: 'tipo', label: 'Tipo' },
   { key: 'horas', label: 'Horas' },
@@ -97,7 +98,8 @@ function readSortPrefs(): { col: SortColPrograma; dir: SortDir } {
     const raw = localStorage.getItem(SORT_STORAGE_KEY);
     if (!raw) return { col: 'programa', dir: 'asc' };
     const parsed = JSON.parse(raw) as { col?: string; dir?: string };
-    const col = SORT_COLUMNS.some((c) => c.key === parsed.col) ? (parsed.col as SortColPrograma) : 'programa';
+    const colRaw = parsed.col === 'certificado' ? 'modalidades' : parsed.col;
+    const col = SORT_COLUMNS.some((c) => c.key === colRaw) ? (colRaw as SortColPrograma) : 'programa';
     const dir: SortDir = parsed.dir === 'desc' ? 'desc' : 'asc';
     return { col, dir };
   } catch {
@@ -211,8 +213,8 @@ export class ProgramasAdminComponent implements OnInit {
         case 'programa':
           c = cmpStr(a.nombreProg || '', b.nombreProg || '');
           break;
-        case 'certificado':
-          c = cmpStr(a.nomCert || '', b.nomCert || '');
+        case 'modalidades':
+          c = cmpStr(this.labelModalidadesPrograma(a), this.labelModalidadesPrograma(b));
           break;
         case 'formatoCert': {
           const fa = a.tipoCertificado ? labelTipoCert(a.tipoCertificado) : 'Automático';
@@ -1122,6 +1124,12 @@ export class ProgramasAdminComponent implements OnInit {
       this.esTipCapJornadaLabel(String(p.idTipCap ?? '')) ||
       this.esTipCapJornadaLabel(this.labelTipo(p.idTipCap))
     );
+  }
+
+  labelModalidadesPrograma(p: Programa): string {
+    if (this.esProgramaJornadasCapList(p)) return 'Jornada';
+    const labels = p.modalidadLabels?.length ? p.modalidadLabels : etiquetasModalidad(p);
+    return labels.length ? labels.join(' · ') : '—';
   }
 
   private etiquetaTipCapJornada(): string {

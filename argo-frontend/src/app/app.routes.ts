@@ -576,6 +576,15 @@ export const routes: Routes = [
           import('./features/config/config-recibos.component').then((m) => m.ConfigRecibosComponent),
       },
       {
+        path: 'configuracion/servicios-adicionales',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.recibos' },
+        loadComponent: () =>
+          import('./features/config/config-servicios-adicionales.component').then(
+            (m) => m.ConfigServiciosAdicionalesComponent,
+          ),
+      },
+      {
         path: 'configuracion/georef',
         canActivate: [permisoGuard],
         data: { permiso: 'config.georef' },

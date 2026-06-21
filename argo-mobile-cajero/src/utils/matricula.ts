@@ -86,12 +86,26 @@ function esHoraPractica(s: ServicioItem | null | undefined): boolean {
   return /\bhoras?\b.*\bpractic/i.test(String(s.descrServicio || s.descripcion || ''));
 }
 
+function esDerechosGrado(s: ServicioItem | null | undefined): boolean {
+  if (!s) return false;
+  if (s.rolServicio === 'derechos_grado') return true;
+  return /derechos\s+de\s+grado/i.test(String(s.descrServicio || s.descripcion || ''));
+}
+
 function tieneIdProg(s: ServicioItem | null | undefined): boolean {
   return s?.idProg != null && String(s.idProg).trim() !== '';
 }
 
+export function esProgramaTecnicoLaboral(prog: ProgramaItem | null | undefined): boolean {
+  if (!prog) return false;
+  const cod = String(prog.codigoProg || '').trim().toUpperCase();
+  if (cod.startsWith('TEC')) return true;
+  const tip = String(prog.idTipCap || '').toLowerCase();
+  return /tecnico|competenc/.test(tip);
+}
+
 export function esServicioMatriculaPrograma(s: ServicioItem | null | undefined): boolean {
-  return tieneIdProg(s) && !esHoraPractica(s);
+  return tieneIdProg(s) && !esHoraPractica(s) && !esDerechosGrado(s);
 }
 
 export function serviciosAdicionalesLista(servicios: ServicioItem[]): ServicioItem[] {
@@ -118,26 +132,32 @@ export function calcularValorMatricula(
 ): number {
   if (!prog) return 0;
   const idP = idPrograma(prog);
-  const porProg = servicios.filter((s) => String(s.idProg) === idP && !esHoraPractica(s));
+  const porProg = servicios.filter(
+    (s) => String(s.idProg) === idP && !esHoraPractica(s) && !esDerechosGrado(s),
+  );
+  let base = 0;
   const sem = Number(prog.semestres);
   if (Number.isFinite(sem) && sem >= 1 && porProg.length > 0) {
-    return porProg.reduce((acc, s) => {
+    base = porProg.reduce((acc, s) => {
       const key = `tarifa${tarifa}` as keyof ServicioItem;
       const v = s[key];
       if (v != null && v !== '') return acc + num(v);
       return acc + num(s.tarifa1);
     }, 0);
+  } else {
+    const serv = porProg[0] || servicios.find((s) => String(s.idServ) === String(prog.idServ));
+    if (serv) {
+      const key = `tarifa${tarifa}` as keyof ServicioItem;
+      const v = serv[key];
+      if (v != null && v !== '') base = num(v);
+    } else {
+      const keyProg = `tarifa${tarifa}` as keyof ProgramaItem;
+      const vProg = prog[keyProg];
+      if (vProg != null && vProg !== '') base = num(vProg);
+      else base = num(prog.valorMatricula);
+    }
   }
-  const serv = porProg[0] || servicios.find((s) => String(s.idServ) === String(prog.idServ));
-  if (serv) {
-    const key = `tarifa${tarifa}` as keyof ServicioItem;
-    const v = serv[key];
-    if (v != null && v !== '') return num(v);
-  }
-  const keyProg = `tarifa${tarifa}` as keyof ProgramaItem;
-  const vProg = prog[keyProg];
-  if (vProg != null && vProg !== '') return num(vProg);
-  return num(prog.valorMatricula);
+  return base;
 }
 
 export function esProgramaCea(prog: ProgramaItem | null | undefined): boolean {

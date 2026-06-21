@@ -111,8 +111,47 @@ table.nested { font-size: .88rem; }
   min-height: 2.35rem;
 }
 
-.matricula-fields-row .field-cell argo-catalogo-enum-buscar {
-  display: block;
+.matricula-fields-row {
+  align-items: start;
+  margin-bottom: 0;
+
+  .field-cell > label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .field-cell--tarifa,
+  .field-cell--valor {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .field-cell argo-catalogo-enum-buscar {
+    display: block;
+    width: 100%;
+
+    ::ng-deep .input-wrap input {
+      min-height: 2.35rem;
+      box-sizing: border-box;
+    }
+  }
+
+  .input-valor-readonly {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+  }
+}
+
+.matricula-dg-hint {
+  margin: 6px 0 10px;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .col-3  { grid-column: span 3; position: relative; z-index: 0; }

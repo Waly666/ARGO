@@ -29,6 +29,10 @@ import {
   etiquetasModalidad,
 } from '../../programas/programa-modalidad.helpers';
 import { ComboService, ComboPrevista, ComboAplicarRes, Combo } from '../../../core/services/combo.service';
+import {
+  ConfigServiciosAdicionalesService,
+  PreviewServicioAdicionalItem,
+} from '../../../core/services/config-servicios-adicionales.service';
 
 @Component({
   selector: 'argo-servicios',
@@ -50,9 +54,12 @@ export class ServiciosComponent implements OnInit {
   private confirmSvc = inject(ConfirmDialogService);
   private comboSvc = inject(ComboService);
   private cfgSvc = inject(ConfigService);
+  private servAdicCfgSvc = inject(ConfigServiciosAdicionalesService);
 
   /** Config global: rebaja de valor en matrícula (default true hasta cargar). */
   permitirAjusteValorMatricula = signal(true);
+  /** Preview servicios adicionales al matricular (desde Config). */
+  extrasMatriculaPreview = signal<PreviewServicioAdicionalItem[]>([]);
 
   // --- Combos ---
   combos = signal<Combo[]>([]);
@@ -179,36 +186,29 @@ export class ServiciosComponent implements OnInit {
   puedeAjustarValorMat = computed(() => {
     if (!this.permitirAjusteValorMatricula()) return false;
     if (!this.idProg() || this.esTarifaVirtualSeleccionada()) return false;
-    return this.valorMatCalculado() > 0;
+    return this.valorMatriculaBase() > 0;
   });
 
-  programaNumSemestres = computed(() => {
-    const sem = Number(this.programaSel()?.semestres);
-    const n = this.serviciosPrograma().length;
-    if (Number.isFinite(sem) && sem >= 2) return Math.floor(sem);
-    return n >= 2 ? n : 0;
+  esProgramaTecnico = computed(() => {
+    const p = this.programaSel();
+    if (!p) return false;
+    const cod = String(p.codigoProg || '').trim().toUpperCase();
+    if (cod.startsWith('TEC')) return true;
+    const tip = String(p.idTipCap || '').toLowerCase();
+    return /tecnico|competenc/.test(tip);
   });
 
-  valorMatFinal = computed(() => {
-    if (!this.ajustarValorMat || !this.puedeAjustarValorMat()) return this.valorMatCalculado();
-    const v = Math.round(Number(this.valorAcordadoMat));
-    return Number.isFinite(v) && v >= 0 ? v : this.valorMatCalculado();
-  });
+  totalExtrasMatricula = computed(() =>
+    this.extrasMatriculaPreview().reduce((acc, i) => acc + this.num(i.valor), 0),
+  );
 
-  rebajaMatricula = computed(() => {
-    const cat = this.valorMatCalculado();
-    const fin = this.valorMatFinal();
-    return cat > fin ? cat - fin : 0;
-  });
-
-  valorMatCalculado = computed(() => {
+  valorMatriculaBase = computed(() => {
     const p = this.programaSel();
     if (!p) return 0;
     const t = this.tarifa();
     if (esTarifaVirtualMatricula(t)) {
       return this.serviciosPrograma().reduce((acc, s) => acc + this.num(s.tarifaVirtual), 0);
     }
-    const idP = String(p.idPrograma ?? p.idProg);
     const sem = Number(p.semestres);
     const porProg = this.serviciosPrograma();
     if (Number.isFinite(sem) && sem >= 1 && porProg.length > 0) {
@@ -225,6 +225,31 @@ export class ServiciosComponent implements OnInit {
     }
     return this.num(p.valorMatricula);
   });
+
+  programaNumSemestres = computed(() => {
+    const sem = Number(this.programaSel()?.semestres);
+    const n = this.serviciosPrograma().length;
+    if (Number.isFinite(sem) && sem >= 2) return Math.floor(sem);
+    return n >= 2 ? n : 0;
+  });
+
+  valorMatFinal = computed(() => {
+    if (!this.ajustarValorMat || !this.puedeAjustarValorMat()) return this.valorMatCalculado();
+    const v = Math.round(Number(this.valorAcordadoMat));
+    const base = Number.isFinite(v) && v >= 0 ? v : this.valorMatriculaBase();
+    return base + this.totalExtrasMatricula();
+  });
+
+  rebajaMatricula = computed(() => {
+    const cat = this.valorMatriculaBase();
+    const fin = this.ajustarValorMat && this.puedeAjustarValorMat()
+      ? Math.round(Number(this.valorAcordadoMat))
+      : cat;
+    const acordadoBase = Number.isFinite(fin) && fin >= 0 ? fin : cat;
+    return cat > acordadoBase ? cat - acordadoBase : 0;
+  });
+
+  valorMatCalculado = computed(() => this.valorMatriculaBase() + this.totalExtrasMatricula());
 
   servicioSel = computed(() => {
     const id = this.idServ();
@@ -341,6 +366,18 @@ export class ServiciosComponent implements OnInit {
     this.cargarOpcionesMatricula();
   }
 
+  private cargarPreviewMatricula(): void {
+    const id = this.idProg();
+    if (!id) {
+      this.extrasMatriculaPreview.set([]);
+      return;
+    }
+    this.servAdicCfgSvc.previewMatricula(id, this.tarifa()).subscribe({
+      next: (r) => this.extrasMatriculaPreview.set(r.items || []),
+      error: () => this.extrasMatriculaPreview.set([]),
+    });
+  }
+
   private cargarOpcionesMatricula(): void {
     this.cfgSvc.obtenerReciboOpcionesMatricula().subscribe({
       next: (c) => {
@@ -409,6 +446,7 @@ export class ServiciosComponent implements OnInit {
       this.tarifa.set(n as 1 | 2 | 3 | 4);
       if (n === TARIFA_VIRTUAL) this.limpiarAjusteValorMat();
       else this.syncValorAcordadoMat();
+      this.cargarPreviewMatricula();
     }
   }
 
@@ -428,14 +466,14 @@ export class ServiciosComponent implements OnInit {
 
   private syncValorAcordadoMat(): void {
     if (this.ajustarValorMat) {
-      this.valorAcordadoMat = this.valorMatCalculado();
+      this.valorAcordadoMat = this.valorMatriculaBase();
     }
   }
 
   onAjustarValorMatChange(activo: boolean): void {
     this.ajustarValorMat = activo;
     if (activo) {
-      this.valorAcordadoMat = this.valorMatCalculado();
+      this.valorAcordadoMat = this.valorMatriculaBase();
     } else {
       this.valorAcordadoMat = null;
       this.motivoAjusteMat = '';
@@ -465,6 +503,7 @@ export class ServiciosComponent implements OnInit {
           this.tarifa.set(1);
         }
         this.ajustarTarifaPermitida();
+        this.cargarPreviewMatricula();
       },
       error: () => this.setMsg('No se pudo cargar el detalle del programa.', true),
     });
@@ -479,6 +518,7 @@ export class ServiciosComponent implements OnInit {
     this.docsPendientesMat.set([]);
     this.matriculaCredenciales.set(null);
     this.revalidacionPreview.set(null);
+    this.extrasMatriculaPreview.set([]);
     this.tarifaManual.set(false);
     this.limpiarAjusteValorMat();
     if (this.tarifa() === TARIFA_VIRTUAL) this.tarifa.set(1);
@@ -516,6 +556,7 @@ export class ServiciosComponent implements OnInit {
     this.setTarifa(opt.value);
     this.tarifaManual.set(sugerida != null && n !== sugerida);
     this.syncValorAcordadoMat();
+    this.cargarPreviewMatricula();
     if (Number(opt.value) === TARIFA_VIRTUAL && !this.matriculaEmailPortal.trim()) {
       const mail = String(this.store.alumno()?.correo || '').trim();
       if (mail) this.matriculaEmailPortal = mail;
@@ -618,19 +659,19 @@ export class ServiciosComponent implements OnInit {
       }
     }
 
-    const catalogo = this.valorMatCalculado();
+    const catalogoBase = this.valorMatriculaBase();
     const ajuste = this.ajustarValorMat && this.puedeAjustarValorMat();
-    const acordado = ajuste ? Math.round(Number(this.valorAcordadoMat)) : catalogo;
+    const acordado = ajuste ? Math.round(Number(this.valorAcordadoMat)) : catalogoBase;
     if (ajuste) {
       if (!Number.isFinite(acordado) || acordado < 0) {
         this.setMsg('Indique un valor acordado válido.', true);
         return;
       }
-      if (acordado > catalogo) {
-        this.setMsg('Solo se permiten rebajas: el valor no puede superar el catálogo.', true);
+      if (acordado > catalogoBase) {
+        this.setMsg('Solo se permiten rebajas sobre la matrícula (no incluye derechos de grado).', true);
         return;
       }
-      if (acordado < catalogo && !this.motivoAjusteMat.trim()) {
+      if (acordado < catalogoBase && !this.motivoAjusteMat.trim()) {
         this.setMsg('Indique el motivo de la rebaja.', true);
         return;
       }
@@ -644,7 +685,7 @@ export class ServiciosComponent implements OnInit {
         idPrograma: this.idProg(),
         tarifa: this.tarifa(),
         tarifaManual: this.tarifaManual(),
-        ...(ajuste && acordado < catalogo
+        ...(ajuste && acordado < catalogoBase
           ? {
               ajustarValor: true,
               valorAcordado: acordado,

@@ -302,10 +302,22 @@
             <span>Servicios</span>
             <strong>{{ itemsPago().length }}</strong>
           </div>
+          <div class="resumen-linea" *ngIf="totalExtrasPago() > 0">
+            <span>Servicios adicionales</span>
+            <strong>{{ fmt(totalExtrasPago()) }}</strong>
+          </div>
+          <ul class="resumen-extras" *ngIf="extrasPagoPreview().length">
+            <li *ngFor="let ex of extrasPagoPreview()">
+              {{ ex.descripcion }} — {{ fmt(ex.valor) }}
+            </li>
+          </ul>
           <div class="resumen-linea resumen-total">
             <span>Total a cobrar</span>
             <strong>{{ fmt(totalPago()) }}</strong>
           </div>
+          <p class="resumen-ayuda resumen-extras-hint" *ngIf="totalExtrasPago() > 0">
+            Incluye cargos configurados al cobrar con esta forma de pago (ej. pasarela).
+          </p>
           <button
             type="button"
             class="primary btn-registrar"

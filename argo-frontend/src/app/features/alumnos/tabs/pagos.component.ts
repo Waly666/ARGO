@@ -30,6 +30,10 @@ import { requiereReferenciaPago } from '../../../core/utils/referencia-pago.util
 import { leerImagenSoporte } from '../../../core/utils/pago-soporte.helpers';
 import { pagoIntangibleCompleto, validarPagoIntangible } from '../../../core/utils/pago-intangible.validators';
 import { PagoSoporteFieldComponent } from '../../../shared/pago-soporte-field/pago-soporte-field.component';
+import {
+  ConfigServiciosAdicionalesService,
+  PreviewServicioAdicionalItem,
+} from '../../../core/services/config-servicios-adicionales.service';
 
 interface ItemPagoSel {
   idLiquidacion: string;
@@ -72,6 +76,7 @@ export class PagosComponent {
   private confirmSvc = inject(ConfirmDialogService);
   private cajaAlert = inject(CajaAperturaAlertService);
   private feSvc = inject(FacturacionService);
+  private cfgServAdic = inject(ConfigServiciosAdicionalesService);
 
   tiposPago = signal<Record<string, unknown>[]>(TIPOS_PAGO_DEF);
   cuentasBancarias = signal<Record<string, unknown>[]>([]);
@@ -119,7 +124,17 @@ export class PagosComponent {
   esVirtual = esLiquidacionVirtual;
   tituloSaldoItem = tituloSaldoItem;
 
-  totalPago = computed(() => this.itemsPago().reduce((a, i) => a + (Number(i.valor) || 0), 0));
+  extrasPagoPreview = signal<PreviewServicioAdicionalItem[]>([]);
+
+  subtotalItemsPago = computed(() =>
+    this.itemsPago().reduce((a, i) => a + (Number(i.valor) || 0), 0),
+  );
+
+  totalExtrasPago = computed(() =>
+    this.extrasPagoPreview().reduce((a, i) => a + (Number(i.valor) || 0), 0),
+  );
+
+  totalPago = computed(() => this.subtotalItemsPago() + this.totalExtrasPago());
 
   itemSeleccionado = (id: string) => this.itemsPago().some((x) => x.idLiquidacion === String(id));
 
@@ -252,11 +267,25 @@ export class PagosComponent {
     return [b, t, n].filter(Boolean).join(' — ');
   }
 
+  cargarPreviewPago(): void {
+    const idTipo = this.idTipoPago();
+    const ids = this.itemsPago().map((i) => i.idLiquidacion);
+    if (!idTipo || !ids.length) {
+      this.extrasPagoPreview.set([]);
+      return;
+    }
+    this.cfgServAdic.previewPago(idTipo, ids).subscribe({
+      next: (r) => this.extrasPagoPreview.set(r.items || []),
+      error: () => this.extrasPagoPreview.set([]),
+    });
+  }
+
   onTipoPagoChange(id: string) {
     this.idTipoPago.set(id);
     if (!id) {
       this.idCuentaBancaria.set('');
       this.quitarSoporte();
+      this.extrasPagoPreview.set([]);
       return;
     }
     const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
@@ -273,6 +302,7 @@ export class PagosComponent {
       this.idCuentaBancaria.set(this.cuentaValor(match));
     }
     if (!this.requiereSoporte()) this.quitarSoporte();
+    this.cargarPreviewPago();
   }
 
   onSoporteArchivo(file: File) {
@@ -309,6 +339,7 @@ export class PagosComponent {
       ...arr,
       { idLiquidacion: idLiq, descripcion: it.descripcion || '(sin descripción)', saldo, valor: saldo },
     ]);
+    this.cargarPreviewPago();
   }
 
   trackItemPago(_index: number, it: ItemPagoSel): string {
@@ -323,6 +354,7 @@ export class PagosComponent {
 
   quitarItem(idLiq: string) {
     this.itemsPago.update((arr) => arr.filter((x) => x.idLiquidacion !== idLiq));
+    this.cargarPreviewPago();
   }
 
   setValorItem(idLiq: string, val: unknown) {
@@ -361,10 +393,12 @@ export class PagosComponent {
         this.agregarItem(String(it._id));
       }
     }
+    this.cargarPreviewPago();
   }
 
   limpiarItemsPago() {
     this.itemsPago.set([]);
+    this.extrasPagoPreview.set([]);
   }
 
   seleccionarTipoPagoRapido(id: string) {

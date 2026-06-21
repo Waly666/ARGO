@@ -28,6 +28,9 @@ const {
 } = require('../services/tipoIngresoResolver');
 const { registrarCreacion, registrarEliminacion } = require('../services/auditoria');
 const { esIngresoCaja } = require('../utils/ingresoClasificacion');
+const { resolverServiciosAdicionalesPago } = require('../services/serviciosAdicionalesResolver');
+const { crearLiquidacionesServiciosAdicionales } = require('../services/serviciosAdicionalesLiquidacion');
+const { num: numProg } = require('../services/programaServicio');
 
 /** Usuarios sintéticos (p. ej. soporte-maestro) no tienen ObjectId en Mongo. */
 function idUsuarioObjectIdDesdeReq(req) {
@@ -315,6 +318,41 @@ exports.crearAlumno = async (req, res, next) => {
       pedidos.push({ idLiquidacion: idLiq, valor: vit });
     }
 
+    const liqRefs = [];
+    for (const p of pedidos) {
+      const liq = await Liquidacion.findById(p.idLiquidacion).lean();
+      if (liq) liqRefs.push(liq);
+    }
+
+    const extrasPago = await resolverServiciosAdicionalesPago({
+      numDoc,
+      idTipoPago,
+      liquidaciones: liqRefs,
+    });
+
+    const serviciosAdicionalesCreados = [];
+    if (extrasPago.length && liqRefs.length) {
+      const ref = liqRefs[0];
+      const alumnoRef = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+      const extrasLiq = await crearLiquidacionesServiciosAdicionales({
+        items: extrasPago,
+        numDoc,
+        idSede: req.idSede,
+        idMatricula: ref.idMat || ref.idMatricula,
+        idProg: ref.idProg,
+        idAlumno: ref.idAlumno || alumnoRef?._id,
+      });
+      for (const liq of extrasLiq) {
+        const v = numProg(liq.valor);
+        pedidos.push({ idLiquidacion: String(liq._id), valor: v });
+        serviciosAdicionalesCreados.push({
+          idLiquidacion: String(liq._id),
+          descripcion: liq.descripcion,
+          valor: v,
+        });
+      }
+    }
+
     const tipoDoc = await cat.catTipoPago
       .findOne({ $or: [{ idTipoPago }, { codigo: idTipoPago }] })
       .lean();
@@ -478,6 +516,7 @@ exports.crearAlumno = async (req, res, next) => {
       numRecibo,
       certificadoAuto: certificadosAuto[0] || null,
       certificadosAuto,
+      serviciosAdicionales: serviciosAdicionalesCreados,
     });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });

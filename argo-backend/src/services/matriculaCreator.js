@@ -25,6 +25,11 @@ const {
 } = require('./revalidacionPrograma');
 const { resolverModalidadPrograma } = require('./programaModalidad');
 const { obtenerConfigRecibo } = require('./configRecibo');
+const {
+  resolverServiciosAdicionalesMatricula,
+  sumaExtrasMatricula,
+} = require('./serviciosAdicionalesResolver');
+const { crearLiquidacionesServiciosAdicionales } = require('./serviciosAdicionalesLiquidacion');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
@@ -161,10 +166,25 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
 
   const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
   const serviciosProg = await listarServiciosMatricula(prog);
-  const usaSem = programaUsaSemestres(prog) && serviciosProg.length > 0;
+  const modInfo = resolverModalidadPrograma(prog, serviciosProg);
+
+  const tarifaManualFlag =
+    tarifaManual === true || tarifaManual === 'true' || body?.forzarTarifa === true;
+  const resTarifa = await resolverTarifaMatricula({
+    numDoc,
+    prog,
+    tarifa: tarifaBody,
+    tarifaManual: tarifaManualFlag,
+  });
+  const t = resTarifa.tarifa;
+  const esRevalidacion = resTarifa.revalidacion === true;
+
+  const usaSemBase = programaUsaSemestres(prog) && serviciosProg.length > 0;
+  /** Virtual: total en una sola liquidación, sin cuotas por semestre. */
+  const usaSemCuotas = usaSemBase && !esTarifaVirtual(t);
+  const usaSem = usaSemBase;
 
   const modoMigracion = ctx.modoMigracion === true;
-  const modInfo = resolverModalidadPrograma(prog, serviciosProg);
   const desdePortal =
     ctx.desdePortal === true ||
     body?.origenMatricula === 'portal' ||
@@ -177,17 +197,6 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     err.code = 'MATRICULA_SOLO_PORTAL';
     throw err;
   }
-
-  const tarifaManualFlag =
-    tarifaManual === true || tarifaManual === 'true' || body?.forzarTarifa === true;
-  const resTarifa = await resolverTarifaMatricula({
-    numDoc,
-    prog,
-    tarifa: tarifaBody,
-    tarifaManual: tarifaManualFlag,
-  });
-  const t = resTarifa.tarifa;
-  const esRevalidacion = resTarifa.revalidacion === true;
 
   if (!modInfo.tarifasPermitidas.includes(t)) {
     const err = new Error(
@@ -210,38 +219,47 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     }
   }
 
-  let numSemLiquidaciones = usaSem ? serviciosProg.length : 1;
-  if (modoMigracion && usaSem && body?.semestreHasta != null && body?.semestreHasta !== '') {
+  let numSemLiquidaciones = usaSemCuotas ? serviciosProg.length : 1;
+  if (modoMigracion && usaSemCuotas && body?.semestreHasta != null && body?.semestreHasta !== '') {
     const h = Math.round(Number(body.semestreHasta));
     if (Number.isFinite(h) && h >= 1) {
       numSemLiquidaciones = Math.min(h, serviciosProg.length);
     }
   }
 
-  let valorCatalogo = 0;
+  let valorCatalogoMat = 0;
   if (esJornada) {
-    valorCatalogo = 0;
+    valorCatalogoMat = 0;
   } else if (usaSem) {
-    valorCatalogo = serviciosProg
-      .slice(0, numSemLiquidaciones)
-      .reduce((acc, s) => acc + valorTarifaServicio(s, t, prog), 0);
+    const slice = usaSemCuotas
+      ? serviciosProg.slice(0, numSemLiquidaciones)
+      : serviciosProg;
+    valorCatalogoMat = slice.reduce((acc, s) => acc + valorTarifaServicio(s, t, prog), 0);
   } else {
     const serv = serviciosProg[0] || null;
-    valorCatalogo = valorTarifaServicio(serv, t, prog);
+    valorCatalogoMat = valorTarifaServicio(serv, t, prog);
   }
 
+  const extrasMatricula = await resolverServiciosAdicionalesMatricula(prog, {
+    tarifa: t,
+    serviciosProg,
+    modoMigracion: ctx.modoMigracion,
+  });
+  const valorExtrasMatricula = sumaExtrasMatricula(extrasMatricula);
+
   const ajuste = modoMigracion
-    ? resolverValorMigracionHistorica(body, { valorCatalogo, usuario: ctx.usuario })
+    ? resolverValorMigracionHistorica(body, { valorCatalogo: valorCatalogoMat, usuario: ctx.usuario })
     : resolverAjusteValor(body, {
-        valorCatalogo,
+        valorCatalogo: valorCatalogoMat,
         tarifa: t,
         esJornada,
         usuario: ctx.usuario,
         permitirAjuste: (await obtenerConfigRecibo()).permitirAjusteValorMatricula !== false,
       });
-  const valorMat = ajuste ? ajuste.valorAcordado : valorCatalogo;
+  const valorMatriculaNet = ajuste ? ajuste.valorAcordado : valorCatalogoMat;
+  const valorMat = valorMatriculaNet + valorExtrasMatricula;
   const valoresPorSemestre =
-    ajuste && usaSem ? repartirValor(valorMat, numSemLiquidaciones) : null;
+    ajuste && usaSemCuotas ? repartirValor(valorMatriculaNet, numSemLiquidaciones) : null;
 
   let fechaMat = new Date();
   if (modoMigracion && body?.fechaMat) {
@@ -290,7 +308,7 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
   });
 
   const liquidaciones = [];
-  if (usaSem) {
+  if (usaSemCuotas) {
     for (let i = 0; i < numSemLiquidaciones; i++) {
       const serv = serviciosProg[i];
       const vCatalogoSem = valorTarifaServicio(serv, t, prog);
@@ -326,6 +344,38 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
       });
       liquidaciones.push(liq);
     }
+  } else if (usaSem && esTarifaVirtual(t)) {
+    const serv = serviciosProg[0] || null;
+    const liq = await Liquidacion.create({
+      numDoc,
+      idSede,
+      idAlumno: alumno?._id ? String(alumno._id) : null,
+      idMatricula: m._id,
+      idMat: m._id,
+      idProg: idProgramaVal,
+      idServ: serv ? String(serv.idServ) : null,
+      descripcion: descripcionConRevalidacion(
+        prog.nombreProg || prog.nomCert || serv?.descrServicio || 'Matrícula virtual',
+        esRevalidacion,
+      ),
+      valor: toDec(valorMatriculaNet),
+      abonado: toDec(0),
+      saldo: toDec(valorMatriculaNet),
+      estado: valorMatriculaNet <= 0 ? 'pagado' : 'pendiente',
+      esRevalidacion,
+      fechaCreacion: fechaMat,
+      ...(ajuste
+        ? {
+            valorCatalogo: toDec(valorCatalogoMat),
+            valorAcordado: toDec(valorMatriculaNet),
+            motivoAjuste: ajuste.motivoAjuste,
+            ajustadoPor: ajuste.ajustadoPor,
+            fechaAjuste: ajuste.fechaAjuste,
+          }
+        : {}),
+      ...marcaMigracion,
+    });
+    liquidaciones.push(liq);
   } else {
     const serv = serviciosProg[0] || null;
     const liq = await Liquidacion.create({
@@ -340,16 +390,16 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
         serv?.descrServicio || serv?.descripcion || prog.nombreProg || prog.descripcion || 'Matrícula programa',
         esRevalidacion,
       ),
-      valor: toDec(valorMat),
+      valor: toDec(valorMatriculaNet),
       abonado: toDec(0),
-      saldo: toDec(valorMat),
-      estado: valorMat <= 0 ? 'pagado' : 'pendiente',
+      saldo: toDec(valorMatriculaNet),
+      estado: valorMatriculaNet <= 0 ? 'pagado' : 'pendiente',
       esRevalidacion,
       fechaCreacion: fechaMat,
       ...(ajuste
         ? {
-            valorCatalogo: toDec(valorCatalogo),
-            valorAcordado: toDec(valorMat),
+            valorCatalogo: toDec(valorCatalogoMat),
+            valorAcordado: toDec(valorMatriculaNet),
             motivoAjuste: ajuste.motivoAjuste,
             ajustadoPor: ajuste.ajustadoPor,
             fechaAjuste: ajuste.fechaAjuste,
@@ -359,6 +409,18 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     });
     liquidaciones.push(liq);
   }
+
+  const extrasLiq = await crearLiquidacionesServiciosAdicionales({
+    items: extrasMatricula.filter((i) => !i.repartirSemestres),
+    numDoc,
+    idSede,
+    idMatricula: m._id,
+    idProg: idProgramaVal,
+    idAlumno: alumno?._id,
+    fechaCreacion: fechaMat,
+    extras: marcaMigracion,
+  });
+  liquidaciones.push(...extrasLiq);
 
   const estadoAgregado = liquidaciones.length
     ? estadoLiq(
@@ -394,12 +456,19 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     })),
     ajuste: ajuste
       ? {
-          valorCatalogo: ajuste.valorCatalogo,
-          valorAcordado: ajuste.valorAcordado,
+          valorCatalogo: ajuste.valorCatalogo + valorExtrasMatricula,
+          valorAcordado: ajuste.valorAcordado + valorExtrasMatricula,
           rebaja: ajuste.valorCatalogo - ajuste.valorAcordado,
           motivoAjuste: ajuste.motivoAjuste,
         }
       : null,
+    serviciosAdicionales: extrasMatricula.map((i) => ({
+      reglaId: i.reglaId,
+      idServ: i.idServ,
+      descripcion: i.descripcion,
+      valor: i.valor,
+      repartirSemestres: i.repartirSemestres,
+    })),
     usuarioPortal: null,
   };
 

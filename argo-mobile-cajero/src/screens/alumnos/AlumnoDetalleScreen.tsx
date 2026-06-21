@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -19,6 +19,7 @@ import { listarProgramas } from '../../api/programasApi';
 import { listarServicios } from '../../api/serviciosApi';
 import { emitirFactura, facturaHtmlPath, listarElegiblesFe, listarFacturasAlumno } from '../../api/facturacionApi';
 import { listarCertificadosAlumno } from '../../api/certificadosApi';
+import { previewMatriculaExtras, type PreviewServicioAdicionalItem } from '../../api/configApi';
 import type {
   CertificadoItem,
   FacturaElectronicaItem,
@@ -97,6 +98,7 @@ export default function AlumnoDetalleScreen() {
   const [servSelId, setServSelId] = useState('');
   const [servCantidad, setServCantidad] = useState('1');
   const [servValorManual, setServValorManual] = useState('');
+  const [extrasMatricula, setExtrasMatricula] = useState<PreviewServicioAdicionalItem[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,6 +153,30 @@ export default function AlumnoDetalleScreen() {
     () => calcularValorMatricula(programaSel, servicios, tarifa),
     [programaSel, servicios, tarifa],
   );
+  const totalExtrasMatricula = useMemo(
+    () => extrasMatricula.reduce((a, i) => a + (Number(i.valor) || 0), 0),
+    [extrasMatricula],
+  );
+  const valorMatriculaTotal = valorMatricula + totalExtrasMatricula;
+
+  useEffect(() => {
+    const idP = programaSel ? idPrograma(programaSel) : '';
+    if (!idP) {
+      setExtrasMatricula([]);
+      return;
+    }
+    let cancel = false;
+    previewMatriculaExtras(idP, tarifa)
+      .then((r) => {
+        if (!cancel) setExtrasMatricula(r.items || []);
+      })
+      .catch(() => {
+        if (!cancel) setExtrasMatricula([]);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [programaSel, tarifa]);
   const serviciosAdicionales = useMemo(() => serviciosAdicionalesLista(servicios), [servicios]);
   const serviciosFiltrados = useMemo(() => {
     const t = servBusqueda.trim().toLowerCase();
@@ -270,7 +296,7 @@ export default function AlumnoDetalleScreen() {
       Alert.alert('Matrícula', 'Seleccione un programa.');
       return;
     }
-    const valor = valorMatricula;
+    const valor = valorMatriculaTotal;
     Alert.alert(
       'Crear matrícula',
       `${labelPrograma(programaSel)}\nTarifa ${tarifa}\nValor: ${valor.toLocaleString('es-CO')}`,
@@ -565,8 +591,13 @@ export default function AlumnoDetalleScreen() {
               </View>
               <View style={styles.valorMatRow}>
                 <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor matrícula</ScaledText>
-                <MoneyText value={valorMatricula} baseSize={16} style={{ color: c.primary }} bold />
+                <MoneyText value={valorMatriculaTotal} baseSize={16} style={{ color: c.primary }} bold />
               </View>
+              {extrasMatricula.length ? (
+                <ScaledText baseSize={12} style={{ color: c.textSoft }}>
+                  {extrasMatricula.map((ex) => `${ex.descripcion}: ${Number(ex.valor).toLocaleString('es-CO')}`).join(' · ')}
+                </ScaledText>
+              ) : null}
               <PrimaryButton
                 label="Crear matrícula"
                 icon="school-outline"
