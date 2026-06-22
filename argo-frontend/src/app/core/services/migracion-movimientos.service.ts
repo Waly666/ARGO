@@ -30,6 +30,10 @@ export interface MatriculaHistoricaDto {
   ajustarValor?: boolean;
   valorAcordado?: number;
   motivoAjuste?: string;
+  /** Cuotas por semestre (presencial/mixta; migración histórica). */
+  ajustarCuotasSemestre?: boolean;
+  valoresCuotasSemestre?: number[];
+  motivoAjusteCuotas?: string;
 }
 
 export interface PagoMigracionDto {

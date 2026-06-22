@@ -72,6 +72,7 @@ router.get('/cursos/:id/progreso', requirePortalAuth, ctrl.obtenerProgreso);
 router.post('/cursos/:id/progreso', requirePortalAuth, ctrl.reportarProgreso);
 router.get('/cursos/:id/inscripcion', requirePortalAuth, ctrl.estadoInscripcion);
 router.post('/cursos/:id/matricular', requirePortalAuth, ctrl.matricularCurso);
+router.post('/cursos/:id/pagar-linea', requirePortalAuth, ctrl.iniciarPagoEnLinea);
 
 /** Admin — app ARGO (staff) */
 const gestionar = requirePermiso('aula_virtual.gestionar', 'programas.gestionar');

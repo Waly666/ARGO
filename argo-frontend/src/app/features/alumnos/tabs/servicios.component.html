@@ -56,9 +56,13 @@
             id="valor-matricula-readonly"
             type="text"
             class="input-valor-readonly"
-            [value]="fmt(ajustarValorMat ? valorMatFinal() : valorMatCalculado())"
+            [value]="fmt(valorMatFinal())"
             disabled
           />
+          <span class="valor-mat-sub" *ngIf="ajustarCuotasSemestre && puedeAjustarCuotasSemestre()">
+            Suma de {{ numCuotasSemestre() }} cuotas
+            <ng-container *ngIf="totalExtrasMatricula() > 0"> + extras</ng-container>
+          </span>
         </div>
       </div>
       <p class="hint matricula-dg-hint" *ngIf="extrasMatriculaPreview().length">
@@ -119,6 +123,87 @@
               · Cuotas de matrícula en <strong>{{ nSem }}</strong> semestre(s)
             </ng-container>
           </p>
+        </ng-container>
+      </div>
+
+      <div class="cuotas-semestre-panel" *ngIf="puedeAjustarCuotasSemestre()">
+        <div class="cuotas-semestre-head">
+          <label class="cuotas-check">
+            <input
+              type="checkbox"
+              [ngModel]="ajustarCuotasSemestre"
+              (ngModelChange)="onAjustarCuotasSemestreChange($event)"
+            />
+            <span class="cuotas-check-text">
+              <strong>Personalizar cuotas por semestre</strong>
+              <small>Presencial / mixta · define el valor de cada periodo</small>
+            </span>
+          </label>
+        </div>
+
+        <ng-container *ngIf="ajustarCuotasSemestre">
+          <div class="cuotas-toolbar">
+            <button type="button" class="ghost mini" (click)="repartirCuotasEquitativo()">
+              Repartir equitativamente
+            </button>
+            <button type="button" class="ghost mini" (click)="restaurarCuotasCatalogo()">
+              Restaurar catálogo
+            </button>
+          </div>
+          <p class="hint cuotas-formato-hint">Valores en pesos colombianos, <strong>solo números enteros</strong> (sin puntos ni comas).</p>
+
+          <div class="cuotas-grid">
+            <div
+              class="cuota-card"
+              *ngFor="let v of valoresCuotasSemestre(); let i = index; trackBy: trackByCuotaIndex"
+              [class.cuota-card--invalid]="cuotaSemestreInvalida(i)"
+            >
+              <div class="cuota-card-head">
+                <span class="cuota-badge">Sem. {{ i + 1 }}</span>
+                <span class="cuota-nombre" [title]="etiquetaSemestre(i)">{{ etiquetaSemestre(i) }}</span>
+              </div>
+              <div class="cuota-card-body">
+                <label class="cuota-label">Catálogo</label>
+                <span class="cuota-catalogo">{{ fmt(cuotasSemestreCatalogo()[i]) }}</span>
+                <label class="cuota-label" [for]="'cuota-sem-' + i">A cobrar</label>
+                <input
+                  [id]="'cuota-sem-' + i"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="cuota-input"
+                  [ngModel]="valoresCuotasSemestre()[i]"
+                  (ngModelChange)="onCuotaSemestreChange(i, $event)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="cuotas-resumen">
+            <div class="cuotas-resumen-row">
+              <span>Subtotal cuotas</span>
+              <strong>{{ fmt(totalCuotasSemestre()) }}</strong>
+            </div>
+            <div class="cuotas-resumen-row" *ngIf="totalExtrasMatricula() > 0">
+              <span>Servicios adicionales</span>
+              <strong>{{ fmt(totalExtrasMatricula()) }}</strong>
+            </div>
+            <div class="cuotas-resumen-row cuotas-resumen-row--total">
+              <span>Total a liquidar</span>
+              <strong>{{ fmt(valorMatFinal()) }}</strong>
+            </div>
+          </div>
+
+          <div class="cuotas-motivo">
+            <label for="motivo-cuotas">Motivo del ajuste <span class="opt">(opcional)</span></label>
+            <input
+              id="motivo-cuotas"
+              type="text"
+              [(ngModel)]="motivoAjusteCuotas"
+              placeholder="Ej. convenio por semestre, beca en periodo 2…"
+              maxlength="300"
+            />
+          </div>
         </ng-container>
       </div>
 
@@ -296,6 +381,106 @@
         <ng-container *ngIf="esVirtual(it)">Virtual · </ng-container>{{ etiquetaSaldo(it.descripcion) }} · {{ fmt(it.saldo) }}
       </span>
     </button>
+  </div>
+
+  <div class="card cuotas-matriculas-card" *ngIf="matriculasCuotasEditables().length && permitirAjusteCuotasSemestre()">
+    <div class="cuotas-matriculas-head">
+      <h2>Cuotas por semestre</h2>
+      <p class="hint">Ajuste los valores de matrícula ya creada (presencial / mixta).</p>
+    </div>
+
+    <div class="cuotas-matricula-list">
+      <article class="cuotas-matricula-item" *ngFor="let m of matriculasCuotasEditables()">
+        <header class="cuotas-matricula-item-head">
+          <div>
+            <strong>{{ nombreProgramaMatricula(m) }}</strong>
+            <span class="cuotas-mat-meta">
+              Tarifa {{ m.tarifa }} · Total {{ fmt(m.valorMat) }} · {{ m.pagada || 'No Pago' }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="ghost mini cuotas-edit-btn"
+            (click)="abrirEditorCuotas(m._id)"
+            [class.cuotas-edit-btn--active]="cuotasEditorId() === m._id"
+          >
+            {{ cuotasEditorId() === m._id ? 'Cerrar' : 'Ajustar cuotas' }}
+          </button>
+        </header>
+
+        <div class="cuotas-editor" *ngIf="cuotasEditorId() === m._id">
+          <div class="loading" *ngIf="cuotasEditorLoading()">Cargando cuotas…</div>
+
+          <ng-container *ngIf="!cuotasEditorLoading() && cuotasEditorData() as ed">
+            <div class="cuotas-grid cuotas-grid--editor">
+              <div
+                class="cuota-card"
+                *ngFor="let c of ed.cuotas; let i = index; trackBy: trackByCuotaIndex"
+                [class.cuota-card--invalid]="cuotaEditorInvalida(i)"
+                [class.cuota-card--pagada]="c.abonado > 0 && c.saldo <= 0"
+                [class.cuota-card--parcial]="c.abonado > 0 && c.saldo > 0"
+              >
+                <div class="cuota-card-head">
+                  <span class="cuota-badge">Sem. {{ c.semestre }}</span>
+                  <span class="cuota-estado" *ngIf="c.abonado > 0">
+                    Abonado {{ fmt(c.abonado) }}
+                  </span>
+                </div>
+                <p class="cuota-nombre cuota-nombre--full">{{ c.descripcion }}</p>
+                <div class="cuota-card-body">
+                  <label class="cuota-label">Catálogo</label>
+                  <span class="cuota-catalogo">{{ fmt(c.valorCatalogo) }}</span>
+                  <label class="cuota-label">Nuevo valor</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    class="cuota-input"
+                    [ngModel]="cuotasEditorDraft()[i]"
+                    (ngModelChange)="onCuotaEditorChange(i, $event)"
+                  />
+                  <span class="cuota-saldo-hint" *ngIf="c.abonado > 0">
+                    Mínimo: {{ fmt(c.abonado) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="cuotas-resumen cuotas-resumen--editor">
+              <div class="cuotas-resumen-row">
+                <span>Subtotal cuotas</span>
+                <strong>{{ fmt(totalCuotasEditor()) }}</strong>
+              </div>
+              <div class="cuotas-resumen-row" *ngIf="ed.totales?.extras">
+                <span>Extras matrícula</span>
+                <strong>{{ fmt(ed.totales!.extras) }}</strong>
+              </div>
+              <div class="cuotas-resumen-row cuotas-resumen-row--total">
+                <span>Nuevo total matrícula</span>
+                <strong>{{ fmt(totalCuotasEditor() + (ed.totales?.extras || 0)) }}</strong>
+              </div>
+            </div>
+
+            <div class="cuotas-motivo">
+              <label>Motivo <span class="opt">(opcional)</span></label>
+              <input
+                type="text"
+                [(ngModel)]="cuotasEditorMotivo"
+                placeholder="Ej. acuerdo de pago por semestre…"
+                maxlength="300"
+              />
+            </div>
+
+            <div class="cuotas-editor-actions">
+              <button type="button" class="primary" (click)="guardarCuotasEditor()" [disabled]="cuotasEditorSaving()">
+                {{ cuotasEditorSaving() ? 'Guardando…' : 'Guardar cuotas' }}
+              </button>
+              <button type="button" class="ghost" (click)="cerrarEditorCuotas()">Cancelar</button>
+            </div>
+          </ng-container>
+        </div>
+      </article>
+    </div>
   </div>
 
   <div class="card liq-card">

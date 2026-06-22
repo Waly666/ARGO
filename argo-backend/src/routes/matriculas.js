@@ -8,6 +8,8 @@ router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 const pagos = requirePermiso('alumnos.pagos', 'alumnos.gestionar');
 
 router.get('/revalidacion-preview', pagos, ctrl.previewRevalidacion);
+router.get('/:id/cuotas-semestre', pagos, ctrl.obtenerCuotasSemestre);
+router.patch('/:id/cuotas-semestre', pagos, ctrl.actualizarCuotasSemestre);
 router.post('/', pagos, ctrl.crear);
 router.get('/alumno/:numDoc', pagos, ctrl.listarPorAlumno);
 

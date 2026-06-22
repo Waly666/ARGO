@@ -11,7 +11,7 @@ import { AlumnoService } from '../../../core/services/alumno.service';
 import type { DocumentoPendienteRes } from '../../../core/services/config-requisitos-documentos.service';
 import { IngresoService } from '../../../core/services/ingreso.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
-import { MatriculaService, RevalidacionPreview } from '../../../core/services/matricula.service';
+import { MatriculaService, RevalidacionPreview, CuotasSemestreInfo } from '../../../core/services/matricula.service';
 import { ProgramaService } from '../../../core/services/programa.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ServicioCatalogoService } from '../../../core/services/servicio-catalogo.service';
@@ -58,6 +58,8 @@ export class ServiciosComponent implements OnInit {
 
   /** Config global: rebaja de valor en matrícula (default true hasta cargar). */
   permitirAjusteValorMatricula = signal(true);
+  /** Config global: cuotas personalizadas por semestre. */
+  permitirAjusteCuotasSemestre = signal(false);
   /** Preview servicios adicionales al matricular (desde Config). */
   extrasMatriculaPreview = signal<PreviewServicioAdicionalItem[]>([]);
 
@@ -93,6 +95,20 @@ export class ServiciosComponent implements OnInit {
   ajustarValorMat = false;
   valorAcordadoMat: number | null = null;
   motivoAjusteMat = '';
+
+  /** Cuotas por semestre al crear matrícula (enteros COP; null = campo vacío mientras edita). */
+  ajustarCuotasSemestre = false;
+  valoresCuotasSemestre = signal<(number | null)[]>([]);
+  motivoAjusteCuotas = '';
+
+  /** Editor de cuotas en matrículas existentes. */
+  cuotasEditorId = signal<string | null>(null);
+  cuotasEditorData = signal<CuotasSemestreInfo | null>(null);
+  cuotasEditorDraft = signal<(number | null)[]>([]);
+  cuotasEditorMotivo = '';
+  cuotasEditorLoading = signal(false);
+  cuotasEditorSaving = signal(false);
+  matriculasAlumno = signal<any[]>([]);
 
   // form servicio adicional
   idServ = signal<string>('');
@@ -186,7 +202,48 @@ export class ServiciosComponent implements OnInit {
   puedeAjustarValorMat = computed(() => {
     if (!this.permitirAjusteValorMatricula()) return false;
     if (!this.idProg() || this.esTarifaVirtualSeleccionada()) return false;
+    if (this.ajustarCuotasSemestre) return false;
     return this.valorMatriculaBase() > 0;
+  });
+
+  puedeAjustarCuotasSemestre = computed(() => {
+    if (!this.permitirAjusteCuotasSemestre()) return false;
+    if (!this.idProg() || this.esTarifaVirtualSeleccionada()) return false;
+    return this.cuotasSemestreCatalogo().length >= 2;
+  });
+
+  numCuotasSemestre = computed(() => this.cuotasSemestreCatalogo().length);
+
+  cuotasSemestreCatalogo = computed(() => {
+    const t = this.tarifa();
+    return this.serviciosPrograma().map((s) => {
+      const v = s[`tarifa${t}`];
+      if (v != null && v !== '') return this.num(v);
+      return this.num(s.tarifa1);
+    });
+  });
+
+  totalCuotasSemestre = computed((): number =>
+    this.valoresCuotasSemestre().reduce<number>((acc, v) => acc + (v ?? 0), 0),
+  );
+
+  totalCuotasEditor = computed((): number =>
+    this.cuotasEditorDraft().reduce<number>((acc, v) => acc + (v ?? 0), 0),
+  );
+
+  matriculasCuotasEditables = computed(() => {
+    if (!this.permitirAjusteCuotasSemestre()) return [];
+    const mats = this.matriculasAlumno();
+    const items = this.liquidacion().items;
+    return mats.filter((m) => {
+      const tarifa = Number(m.tarifa);
+      if (tarifa === 4) return false;
+      const idMat = String(m._id);
+      const cuotas = items.filter(
+        (it) => it.idMat && String(it.idMat) === idMat && it.idProg && !this.esVirtual(it),
+      );
+      return cuotas.length >= 2;
+    });
   });
 
   esProgramaTecnico = computed(() => {
@@ -234,10 +291,23 @@ export class ServiciosComponent implements OnInit {
   });
 
   valorMatFinal = computed(() => {
+    if (this.ajustarCuotasSemestre && this.puedeAjustarCuotasSemestre()) {
+      return this.totalCuotasSemestre() + this.totalExtrasMatricula();
+    }
     if (!this.ajustarValorMat || !this.puedeAjustarValorMat()) return this.valorMatCalculado();
     const v = Math.round(Number(this.valorAcordadoMat));
     const base = Number.isFinite(v) && v >= 0 ? v : this.valorMatriculaBase();
     return base + this.totalExtrasMatricula();
+  });
+
+  valorMatriculaMostrar = computed(() => {
+    if (this.ajustarCuotasSemestre && this.puedeAjustarCuotasSemestre()) {
+      return this.totalCuotasSemestre();
+    }
+    if (this.ajustarValorMat && this.puedeAjustarValorMat()) {
+      return this.valorMatFinal() - this.totalExtrasMatricula();
+    }
+    return this.valorMatriculaBase();
   });
 
   rebajaMatricula = computed(() => {
@@ -381,11 +451,17 @@ export class ServiciosComponent implements OnInit {
   private cargarOpcionesMatricula(): void {
     this.cfgSvc.obtenerReciboOpcionesMatricula().subscribe({
       next: (c) => {
-        const ok = c.permitirAjusteValorMatricula !== false;
-        this.permitirAjusteValorMatricula.set(ok);
-        if (!ok) this.limpiarAjusteValorMat();
+        const okRebaja = c.permitirAjusteValorMatricula !== false;
+        const okCuotas = c.permitirAjusteCuotasSemestre === true;
+        this.permitirAjusteValorMatricula.set(okRebaja);
+        this.permitirAjusteCuotasSemestre.set(okCuotas);
+        if (!okRebaja) this.limpiarAjusteValorMat();
+        if (!okCuotas) this.limpiarAjusteCuotasSemestre();
       },
-      error: () => this.permitirAjusteValorMatricula.set(true),
+      error: () => {
+        this.permitirAjusteValorMatricula.set(true);
+        this.permitirAjusteCuotasSemestre.set(false);
+      },
     });
   }
 
@@ -435,6 +511,10 @@ export class ServiciosComponent implements OnInit {
         done();
       },
     });
+    this.matSvc.listarPorAlumno(numDoc).subscribe({
+      next: (rows) => this.matriculasAlumno.set(rows || []),
+      error: () => this.matriculasAlumno.set([]),
+    });
   }
 
   setTarifa(v: number | string) {
@@ -444,8 +524,13 @@ export class ServiciosComponent implements OnInit {
       if (n === TARIFA_VIRTUAL && !permitidas.includes(TARIFA_VIRTUAL)) return;
       if ((n === 1 || n === 2 || n === 3) && !permitidas.includes(n)) return;
       this.tarifa.set(n as 1 | 2 | 3 | 4);
-      if (n === TARIFA_VIRTUAL) this.limpiarAjusteValorMat();
-      else this.syncValorAcordadoMat();
+      if (n === TARIFA_VIRTUAL) {
+        this.limpiarAjusteValorMat();
+        this.limpiarAjusteCuotasSemestre();
+      } else {
+        this.syncValorAcordadoMat();
+        this.syncCuotasDesdeCatalogo();
+      }
       this.cargarPreviewMatricula();
     }
   }
@@ -464,6 +549,191 @@ export class ServiciosComponent implements OnInit {
     this.motivoAjusteMat = '';
   }
 
+  private limpiarAjusteCuotasSemestre(): void {
+    this.ajustarCuotasSemestre = false;
+    this.valoresCuotasSemestre.set([]);
+    this.motivoAjusteCuotas = '';
+  }
+
+  /** Entero COP ≥ 0; null si vacío o inválido (no se fuerza 0 al borrar). */
+  private normalizarCuotaEntera(raw: number | string | null | undefined): number | null {
+    if (raw === '' || raw === null || raw === undefined) return null;
+    const v = Math.round(Number(raw));
+    if (!Number.isFinite(v) || v < 0) return null;
+    return v;
+  }
+
+  private cuotasDesdeCatalogo(): (number | null)[] {
+    return this.cuotasSemestreCatalogo().map((v) => Math.round(v));
+  }
+
+  private syncCuotasDesdeCatalogo(): void {
+    if (this.ajustarCuotasSemestre && this.puedeAjustarCuotasSemestre()) {
+      this.valoresCuotasSemestre.set(this.cuotasDesdeCatalogo());
+    }
+  }
+
+  onAjustarCuotasSemestreChange(activo: boolean): void {
+    this.ajustarCuotasSemestre = activo;
+    if (activo) {
+      this.limpiarAjusteValorMat();
+      this.valoresCuotasSemestre.set(this.cuotasDesdeCatalogo());
+    } else {
+      this.valoresCuotasSemestre.set([]);
+      this.motivoAjusteCuotas = '';
+    }
+  }
+
+  onCuotaSemestreChange(index: number, raw: number | string | null): void {
+    const next = [...this.valoresCuotasSemestre()];
+    next[index] = this.normalizarCuotaEntera(raw);
+    this.valoresCuotasSemestre.set(next);
+  }
+
+  repartirCuotasEquitativo(): void {
+    const n = this.valoresCuotasSemestre().length || this.numCuotasSemestre();
+    if (!n) return;
+    const total = this.totalCuotasSemestre() || this.valorMatriculaBase();
+    const base = Math.floor(total / n);
+    const arr: number[] = Array(n).fill(base);
+    let rest = total - base * n;
+    for (let i = 0; i < rest; i++) arr[i] += 1;
+    this.valoresCuotasSemestre.set(arr);
+  }
+
+  restaurarCuotasCatalogo(): void {
+    this.valoresCuotasSemestre.set(this.cuotasDesdeCatalogo());
+  }
+
+  trackByCuotaIndex = (index: number): number => index;
+
+  resolverCuotasSemestreNumeros(): number[] | null {
+    const vals = this.valoresCuotasSemestre();
+    const esperado = this.numCuotasSemestre();
+    if (vals.length !== esperado) return null;
+    const nums: number[] = [];
+    for (const v of vals) {
+      if (v === null || !Number.isFinite(v) || v < 0) return null;
+      nums.push(Math.round(v));
+    }
+    return nums;
+  }
+
+  etiquetaSemestre(index: number): string {
+    const serv = this.serviciosPrograma()[index];
+    const descr = String(serv?.descrServicio || serv?.descripcion || '').trim();
+    if (descr) return descr;
+    return `Semestre ${index + 1}`;
+  }
+
+  cuotaSemestreInvalida(index: number): boolean {
+    const v = this.valoresCuotasSemestre()[index];
+    return v === null;
+  }
+
+  abrirEditorCuotas(idMatricula: string): void {
+    if (this.cuotasEditorId() === idMatricula) {
+      this.cerrarEditorCuotas();
+      return;
+    }
+    this.cuotasEditorId.set(idMatricula);
+    this.cuotasEditorData.set(null);
+    this.cuotasEditorDraft.set([]);
+    this.cuotasEditorMotivo = '';
+    this.cuotasEditorLoading.set(true);
+    this.matSvc.obtenerCuotasSemestre(idMatricula).subscribe({
+      next: (info) => {
+        this.cuotasEditorLoading.set(false);
+        if (!info.permitido || !info.configHabilitada) {
+          this.setMsg(info.motivo || 'No se pueden editar las cuotas de esta matrícula.', true);
+          this.cerrarEditorCuotas();
+          return;
+        }
+        this.cuotasEditorData.set(info);
+        this.cuotasEditorDraft.set((info.cuotas || []).map((c) => Math.round(c.valor)));
+      },
+      error: (e) => {
+        this.cuotasEditorLoading.set(false);
+        this.setMsg(e?.error?.message || 'No se pudieron cargar las cuotas.', true);
+        this.cerrarEditorCuotas();
+      },
+    });
+  }
+
+  cerrarEditorCuotas(): void {
+    this.cuotasEditorId.set(null);
+    this.cuotasEditorData.set(null);
+    this.cuotasEditorDraft.set([]);
+    this.cuotasEditorMotivo = '';
+  }
+
+  onCuotaEditorChange(index: number, raw: number | string | null): void {
+    const next = [...this.cuotasEditorDraft()];
+    next[index] = this.normalizarCuotaEntera(raw);
+    this.cuotasEditorDraft.set(next);
+  }
+
+  cuotaEditorInvalida(index: number): boolean {
+    const info = this.cuotasEditorData();
+    const cuota = info?.cuotas?.[index];
+    if (!cuota) return false;
+    const v = this.cuotasEditorDraft()[index];
+    if (v === null) return true;
+    return v < cuota.abonado;
+  }
+
+  guardarCuotasEditor(): void {
+    const id = this.cuotasEditorId();
+    const info = this.cuotasEditorData();
+    if (!id || !info?.cuotas?.length) return;
+
+    const draft = this.cuotasEditorDraft();
+    for (let i = 0; i < info.cuotas.length; i++) {
+      const c = info.cuotas[i];
+      const v = draft[i];
+      if (v === null || !Number.isFinite(v) || v < 0) {
+        this.setMsg(`Indique un valor entero válido en ${c.descripcion}.`, true);
+        return;
+      }
+      if (v < c.abonado) {
+        this.setMsg(
+          `${c.descripcion}: el valor no puede ser menor que lo abonado (${this.fmt(c.abonado)}).`,
+          true,
+        );
+        return;
+      }
+    }
+
+    this.cuotasEditorSaving.set(true);
+    this.matSvc
+      .actualizarCuotasSemestre(id, {
+        cuotas: info.cuotas.map((c, i) => ({
+          idLiquidacion: c.idLiquidacion,
+          valor: Math.round(draft[i]!),
+        })),
+        motivoAjuste: this.cuotasEditorMotivo.trim() || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.cuotasEditorSaving.set(false);
+          const nd = this.store.numDoc();
+          if (nd) this.recargar(nd, { notificar: true });
+          this.cerrarEditorCuotas();
+          this.setMsg('Cuotas por semestre actualizadas. El total de matrícula se recalculó.', false);
+        },
+        error: (e) => {
+          this.cuotasEditorSaving.set(false);
+          this.setMsg(e?.error?.message || 'Error al guardar las cuotas.', true);
+        },
+      });
+  }
+
+  nombreProgramaMatricula(m: { idProg?: string; idPrograma?: string }): string {
+    const id = String(m.idProg || m.idPrograma || '');
+    const it = this.liquidacion().items.find((i) => i.idProg && String(i.idProg) === id);
+    return it?.descripcion?.replace(/^\d+\s+SEM\s+\w+\s+/i, '').trim() || `Programa ${id}`;
+  }
+
   private syncValorAcordadoMat(): void {
     if (this.ajustarValorMat) {
       this.valorAcordadoMat = this.valorMatriculaBase();
@@ -473,6 +743,7 @@ export class ServiciosComponent implements OnInit {
   onAjustarValorMatChange(activo: boolean): void {
     this.ajustarValorMat = activo;
     if (activo) {
+      this.limpiarAjusteCuotasSemestre();
       this.valorAcordadoMat = this.valorMatriculaBase();
     } else {
       this.valorAcordadoMat = null;
@@ -489,6 +760,7 @@ export class ServiciosComponent implements OnInit {
     this.matriculaCredenciales.set(null);
     this.tarifaManual.set(false);
     this.limpiarAjusteValorMat();
+    this.limpiarAjusteCuotasSemestre();
     this.revalidacionPreview.set(null);
     this.progSvc.obtener(id).subscribe({
       next: (det) => {
@@ -503,6 +775,7 @@ export class ServiciosComponent implements OnInit {
           this.tarifa.set(1);
         }
         this.ajustarTarifaPermitida();
+        this.syncCuotasDesdeCatalogo();
         this.cargarPreviewMatricula();
       },
       error: () => this.setMsg('No se pudo cargar el detalle del programa.', true),
@@ -521,6 +794,7 @@ export class ServiciosComponent implements OnInit {
     this.extrasMatriculaPreview.set([]);
     this.tarifaManual.set(false);
     this.limpiarAjusteValorMat();
+    this.limpiarAjusteCuotasSemestre();
     if (this.tarifa() === TARIFA_VIRTUAL) this.tarifa.set(1);
   }
 
@@ -556,6 +830,7 @@ export class ServiciosComponent implements OnInit {
     this.setTarifa(opt.value);
     this.tarifaManual.set(sugerida != null && n !== sugerida);
     this.syncValorAcordadoMat();
+    this.syncCuotasDesdeCatalogo();
     this.cargarPreviewMatricula();
     if (Number(opt.value) === TARIFA_VIRTUAL && !this.matriculaEmailPortal.trim()) {
       const mail = String(this.store.alumno()?.correo || '').trim();
@@ -659,6 +934,25 @@ export class ServiciosComponent implements OnInit {
       }
     }
 
+    const cuotasCustom = this.ajustarCuotasSemestre && this.puedeAjustarCuotasSemestre();
+    let cuotasNumeros: number[] | null = null;
+    if (cuotasCustom) {
+      cuotasNumeros = this.resolverCuotasSemestreNumeros();
+      if (!cuotasNumeros) {
+        const esperado = this.numCuotasSemestre();
+        const actual = this.valoresCuotasSemestre().length;
+        if (actual !== esperado) {
+          this.setMsg(
+            `Hay ${esperado} cuota(s) en el programa; verifique que todas estén visibles e intente activar de nuevo «Personalizar cuotas».`,
+            true,
+          );
+        } else {
+          this.setMsg('Indique un valor entero en cada semestre (solo números, sin decimales).', true);
+        }
+        return;
+      }
+    }
+
     const catalogoBase = this.valorMatriculaBase();
     const ajuste = this.ajustarValorMat && this.puedeAjustarValorMat();
     const acordado = ajuste ? Math.round(Number(this.valorAcordadoMat)) : catalogoBase;
@@ -692,6 +986,13 @@ export class ServiciosComponent implements OnInit {
               motivoAjuste: this.motivoAjusteMat.trim(),
             }
           : {}),
+        ...(cuotasCustom && cuotasNumeros
+          ? {
+              ajustarCuotasSemestre: true,
+              valoresCuotasSemestre: cuotasNumeros,
+              motivoAjusteCuotas: this.motivoAjusteCuotas.trim() || undefined,
+            }
+          : {}),
         crearUsuarioPortal: esVirtual && this.matriculaCrearPortal,
         email: esVirtual && this.matriculaCrearPortal ? emailPortal : undefined,
         password: esVirtual && this.matriculaCrearPortal && passwordPortal ? passwordPortal : undefined,
@@ -705,6 +1006,7 @@ export class ServiciosComponent implements OnInit {
         this.tarifa.set(1);
         this.tarifaManual.set(false);
         this.limpiarAjusteValorMat();
+        this.limpiarAjusteCuotasSemestre();
         this.revalidacionPreview.set(null);
         this.matriculaEmailPortal = '';
         this.matriculaPasswordPortal = '';
@@ -714,6 +1016,9 @@ export class ServiciosComponent implements OnInit {
           ? ' Debe programar las horas CEA (teoría, taller y práctica) en Programación CEA.'
           : '';
         let msg = `Matrícula creada. Se generaron los ítems de liquidación del programa.${avisoCea}`;
+        if (res.cuotasSemestre?.valores?.length) {
+          msg += ` Cuotas personalizadas (${res.cuotasSemestre.valores.length} semestres, total ${this.fmt(res.cuotasSemestre.total)}).`;
+        }
         if (res.ajuste?.rebaja) {
           msg += ` Rebaja aplicada: ${this.fmt(res.ajuste.rebaja)} (total ${this.fmt(res.ajuste.valorAcordado)}).`;
         }

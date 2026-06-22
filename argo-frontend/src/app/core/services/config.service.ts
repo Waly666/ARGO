@@ -81,10 +81,13 @@ export interface ConfigRecibo {
   formatoComprobanteEgreso?: 'validadora' | 'media_carta';
   /** Rebaja de valor al crear matrícula (ficha alumno → Servicios). */
   permitirAjusteValorMatricula?: boolean;
+  /** Cuotas personalizadas por semestre (presencial/mixta). */
+  permitirAjusteCuotasSemestre?: boolean;
 }
 
 export interface ReciboOpcionesMatricula {
   permitirAjusteValorMatricula?: boolean;
+  permitirAjusteCuotasSemestre?: boolean;
 }
 
 export interface GeorefProveedorOpcion {

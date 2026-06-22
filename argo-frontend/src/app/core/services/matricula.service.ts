@@ -16,6 +16,10 @@ export interface MatriculaCrearDto {
   ajustarValor?: boolean;
   valorAcordado?: number;
   motivoAjuste?: string;
+  /** Cuotas personalizadas por semestre (presencial/mixta). */
+  ajustarCuotasSemestre?: boolean;
+  valoresCuotasSemestre?: number[];
+  motivoAjusteCuotas?: string;
   fechaMat?: string;
   observaciones?: string;
   crearUsuarioPortal?: boolean;
@@ -64,6 +68,44 @@ export interface MatriculaCrearRes {
     rebaja: number;
     motivoAjuste: string;
   } | null;
+  cuotasSemestre?: {
+    valores: number[];
+    total: number;
+    totalMatricula: number;
+  } | null;
+}
+
+export interface CuotaSemestreItem {
+  idLiquidacion: string;
+  semestre: number;
+  idServ?: string | null;
+  descripcion: string;
+  valorCatalogo: number;
+  valor: number;
+  abonado: number;
+  saldo: number;
+  estado?: string;
+}
+
+export interface CuotasSemestreInfo {
+  permitido: boolean;
+  configHabilitada?: boolean;
+  motivo?: string;
+  idMatricula?: string;
+  idPrograma?: string;
+  programaNombre?: string;
+  tarifa?: number;
+  numDoc?: number | string;
+  valorMatricula?: number;
+  cuotas?: CuotaSemestreItem[];
+  extras?: { idLiquidacion: string; descripcion: string; valor: number; abonado: number; saldo: number }[];
+  totales?: { cuotas: number; extras: number; matricula: number };
+}
+
+export interface ActualizarCuotasSemestreDto {
+  cuotas?: { idLiquidacion: string; valor: number }[];
+  valoresCuotasSemestre?: number[];
+  motivoAjuste?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -87,5 +129,19 @@ export class MatriculaService {
 
   listarPorAlumno(numDoc: number | string): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/alumno/${encodeURIComponent(formatNumDoc(numDoc))}`);
+  }
+
+  obtenerCuotasSemestre(idMatricula: string): Observable<CuotasSemestreInfo> {
+    return this.http.get<CuotasSemestreInfo>(`${this.base}/${encodeURIComponent(idMatricula)}/cuotas-semestre`);
+  }
+
+  actualizarCuotasSemestre(
+    idMatricula: string,
+    dto: ActualizarCuotasSemestreDto,
+  ): Observable<CuotasSemestreInfo> {
+    return this.http.patch<CuotasSemestreInfo>(
+      `${this.base}/${encodeURIComponent(idMatricula)}/cuotas-semestre`,
+      dto,
+    );
   }
 }

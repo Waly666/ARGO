@@ -56,6 +56,8 @@ export class CursoDetalleComponent implements OnInit {
   msg = signal('');
 
   matriculando = signal(false);
+  pagando = signal(false);
+  pasarelaActiva = signal(false);
 
 
 
@@ -68,6 +70,11 @@ export class CursoDetalleComponent implements OnInit {
         this.portalConfig.set(cfg);
         this.logoUrl.set(resolveUploadUrl(cfg.urlLogoAbsoluta || cfg.urlLogo));
       },
+    });
+
+    this.api.pasarelaPublica().subscribe({
+      next: (p) => this.pasarelaActiva.set(p.activo === true),
+      error: () => this.pasarelaActiva.set(false),
     });
 
     this.api.curso(id).subscribe({
@@ -132,6 +139,30 @@ export class CursoDetalleComponent implements OnInit {
 
     });
 
+  }
+
+
+
+  pagarEnLinea() {
+    const c = this.curso();
+    if (!c || this.pagando()) return;
+    this.pagando.set(true);
+    this.msg.set('');
+    const redirectUrl = `${window.location.origin}/cursos/${c.idPrograma}?pago=ok`;
+    this.api.iniciarPagoEnLinea(c.idPrograma, redirectUrl).subscribe({
+      next: (res) => {
+        this.pagando.set(false);
+        if (res.checkoutUrl) {
+          window.location.href = res.checkoutUrl;
+        } else {
+          this.msg.set('No se pudo iniciar el pago en línea.');
+        }
+      },
+      error: (e) => {
+        this.pagando.set(false);
+        this.msg.set(e?.error?.message || 'No se pudo iniciar el pago en línea.');
+      },
+    });
   }
 
 

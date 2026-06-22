@@ -31,6 +31,10 @@ const { esIngresoCaja } = require('../utils/ingresoClasificacion');
 const { resolverServiciosAdicionalesPago } = require('../services/serviciosAdicionalesResolver');
 const { crearLiquidacionesServiciosAdicionales } = require('../services/serviciosAdicionalesLiquidacion');
 const { num: numProg } = require('../services/programaServicio');
+const {
+  esLiquidacionMatriculaVirtual,
+  validarPagoTotalMatriculaVirtual,
+} = require('../services/pagoVirtual');
 
 /** Usuarios sintéticos (p. ej. soporte-maestro) no tienen ObjectId en Mongo. */
 function idUsuarioObjectIdDesdeReq(req) {
@@ -379,6 +383,12 @@ exports.crearAlumno = async (req, res, next) => {
         return res.status(400).json({
           message: `El pago de «${liq.descripcion || 'ítem'}» excede el saldo (${saldoActual})`,
         });
+      }
+      if (await esLiquidacionMatriculaVirtual(liq)) {
+        const valVirtual = validarPagoTotalMatriculaVirtual(liq, p.valor);
+        if (!valVirtual.ok) {
+          return res.status(400).json({ message: valVirtual.message });
+        }
       }
       liqDocs.push({ liq, valor: p.valor, saldoActual });
     }

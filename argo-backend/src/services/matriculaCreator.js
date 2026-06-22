@@ -30,6 +30,7 @@ const {
   sumaExtrasMatricula,
 } = require('./serviciosAdicionalesResolver');
 const { crearLiquidacionesServiciosAdicionales } = require('./serviciosAdicionalesLiquidacion');
+const { resolverCuotasSemestreCreacion } = require('./ajusteCuotasSemestre');
 
 function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
@@ -256,10 +257,27 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
         usuario: ctx.usuario,
         permitirAjuste: (await obtenerConfigRecibo()).permitirAjusteValorMatricula !== false,
       });
-  const valorMatriculaNet = ajuste ? ajuste.valorAcordado : valorCatalogoMat;
+
+  const cuotasPersonalizadas = await resolverCuotasSemestreCreacion(body, {
+    usaSemCuotas,
+    numSemLiquidaciones,
+    tarifa: t,
+    serviciosProg,
+    prog,
+    modoMigracion: ctx.modoMigracion === true,
+  });
+
+  let valorMatriculaNet = ajuste ? ajuste.valorAcordado : valorCatalogoMat;
+  let valoresPorSemestre = null;
+
+  if (cuotasPersonalizadas) {
+    valorMatriculaNet = cuotasPersonalizadas.total;
+    valoresPorSemestre = cuotasPersonalizadas.valores;
+  } else if (ajuste && usaSemCuotas) {
+    valoresPorSemestre = repartirValor(valorMatriculaNet, numSemLiquidaciones);
+  }
+
   const valorMat = valorMatriculaNet + valorExtrasMatricula;
-  const valoresPorSemestre =
-    ajuste && usaSemCuotas ? repartirValor(valorMatriculaNet, numSemLiquidaciones) : null;
 
   let fechaMat = new Date();
   if (modoMigracion && body?.fechaMat) {
@@ -313,6 +331,16 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
       const serv = serviciosProg[i];
       const vCatalogoSem = valorTarifaServicio(serv, t, prog);
       const v = valoresPorSemestre ? valoresPorSemestre[i] : vCatalogoSem;
+      const marcaCuotas =
+        cuotasPersonalizadas && v !== vCatalogoSem
+          ? {
+              valorCatalogo: toDec(vCatalogoSem),
+              valorAcordado: toDec(v),
+              motivoAjusteCuotas: String(body.motivoAjusteCuotas || body.motivoAjuste || '').trim() || 'Cuotas personalizadas',
+              ajustadoPor: ctx.usuario?.sub ? String(ctx.usuario.sub) : ctx.usuario?.username || null,
+              fechaAjuste: new Date(),
+            }
+          : {};
       const liq = await Liquidacion.create({
         numDoc,
         idSede,
@@ -331,7 +359,7 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
         estado: v <= 0 ? 'pagado' : 'pendiente',
         esRevalidacion,
         fechaCreacion: fechaMat,
-        ...(ajuste
+        ...(ajuste && !cuotasPersonalizadas
           ? {
               valorCatalogo: toDec(vCatalogoSem),
               valorAcordado: toDec(v),
@@ -340,6 +368,7 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
               fechaAjuste: ajuste.fechaAjuste,
             }
           : {}),
+        ...marcaCuotas,
         ...marcaMigracion,
       });
       liquidaciones.push(liq);
@@ -454,12 +483,19 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
       abonado: num(l.abonado),
       saldo: num(l.saldo),
     })),
-    ajuste: ajuste
+    ajuste: ajuste && !cuotasPersonalizadas
       ? {
           valorCatalogo: ajuste.valorCatalogo + valorExtrasMatricula,
           valorAcordado: ajuste.valorAcordado + valorExtrasMatricula,
           rebaja: ajuste.valorCatalogo - ajuste.valorAcordado,
           motivoAjuste: ajuste.motivoAjuste,
+        }
+      : null,
+    cuotasSemestre: cuotasPersonalizadas
+      ? {
+          valores: cuotasPersonalizadas.valores,
+          total: cuotasPersonalizadas.total + valorExtrasMatricula,
+          totalMatricula: cuotasPersonalizadas.total,
         }
       : null,
     serviciosAdicionales: extrasMatricula.map((i) => ({

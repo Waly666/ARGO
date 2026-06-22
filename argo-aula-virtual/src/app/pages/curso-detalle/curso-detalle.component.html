@@ -72,18 +72,25 @@
                     <p class="detail-buy-hint detail-buy-hint--ok">Pago registrado. Certificado según reglas del curso.</p>
                   } @else if (ins.accesoBloqueadoPago || ins.curso.requierePagoParaCursar || c.requierePagoParaCursar) {
                     <p class="detail-buy-hint detail-buy-hint--warn">
-                      Matriculado. Debe completar el pago en el CEA para acceder al contenido del curso.
+                      Matriculado. Complete el pago para acceder al contenido del curso.
                     </p>
-                    <button type="button" class="detail-buy-btn detail-buy-btn--ghost" disabled>
-                      Pagar en línea — próximamente
-                    </button>
+                    @if (pasarelaActiva()) {
+                      <button type="button" class="detail-buy-btn" [disabled]="pagando()" (click)="pagarEnLinea()">
+                        {{ pagando() ? 'Redirigiendo…' : 'Pagar matrícula en línea' }}
+                      </button>
+                      <p class="detail-buy-hint">Pago total del valor del curso. También puede pagar en el CEA.</p>
+                    } @else {
+                      <p class="detail-buy-hint">Acérquese al CEA para completar el pago de la matrícula.</p>
+                    }
                   } @else {
                     <p class="detail-buy-hint">
                       Matriculado. Puede cursar sin pagar; el certificado se habilita al completar el pago.
                     </p>
-                    <button type="button" class="detail-buy-btn detail-buy-btn--ghost" disabled>
-                      Pagar en línea — próximamente
-                    </button>
+                    @if (pasarelaActiva() && ins.pago && !ins.pago.pagado) {
+                      <button type="button" class="detail-buy-btn detail-buy-btn--ghost" [disabled]="pagando()" (click)="pagarEnLinea()">
+                        {{ pagando() ? 'Redirigiendo…' : 'Pagar matrícula en línea' }}
+                      </button>
+                    }
                   }
                 } @else {
                   <button

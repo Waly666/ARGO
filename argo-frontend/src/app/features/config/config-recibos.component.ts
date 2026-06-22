@@ -35,6 +35,7 @@ export class ConfigRecibosComponent implements OnInit {
         this.form.set({
           ...c,
           permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
+          permitirAjusteCuotasSemestre: c.permitirAjusteCuotasSemestre === true,
           segundoPrefijoComprobanteIngreso:
             c.segundoPrefijoComprobanteIngreso?.trim() || this.anioActual,
           segundoPrefijoComprobanteEgreso:
@@ -109,6 +110,7 @@ export class ConfigRecibosComponent implements OnInit {
         this.form.set({
           ...c,
           permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
+          permitirAjusteCuotasSemestre: c.permitirAjusteCuotasSemestre === true,
           segundoPrefijoComprobanteIngreso:
             c.segundoPrefijoComprobanteIngreso?.trim() || this.anioActual,
           segundoPrefijoComprobanteEgreso:

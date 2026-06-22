@@ -809,6 +809,14 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Pasarela Wompi',
+          path: '/app/configuracion/pasarela',
+          icon: '◉',
+          iconTone: 'violet',
+          permiso: ['config.recibos', 'aula_virtual.gestionar'],
+        },
+        {
+          kind: 'link',
           label: 'Facturación electrónica',
           path: '/app/configuracion/facturacion',
           icon: '$',

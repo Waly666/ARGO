@@ -302,6 +302,19 @@
               </span>
             </span>
           </div>
+          <div class="rec-toggle rec-toggle--spaced">
+            <argo-switch
+              [checked]="form().permitirAjusteCuotasSemestre === true"
+              (checkedChange)="patch('permitirAjusteCuotasSemestre', $event)"
+            />
+            <span class="rec-toggle-box">
+              <span class="rec-toggle-title">Permitir ajuste de cuotas por semestre</span>
+              <span class="rec-toggle-desc">
+                Presencial y mixta únicamente (no virtual). Permite definir el valor de cada semestre al matricular
+                y editarlo después. El total de matrícula se recalcula automáticamente.
+              </span>
+            </span>
+          </div>
         </div>
       </section>
 

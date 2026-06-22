@@ -216,6 +216,313 @@ table.nested { font-size: .88rem; }
   margin: 8px 0 0;
 }
 
+/* ---- Cuotas por semestre ---- */
+.valor-mat-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.cuotas-semestre-panel {
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.08), rgba(6, 78, 59, 0.12));
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.06);
+}
+
+.cuotas-semestre-head {
+  margin-bottom: 0;
+}
+
+.cuotas-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  margin: 0;
+
+  input[type='checkbox'] {
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+}
+
+.cuotas-check-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 0.92rem;
+    color: #a7f3d0;
+  }
+
+  small {
+    font-size: 0.78rem;
+    color: var(--text-soft);
+  }
+}
+
+.cuotas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 10px;
+}
+
+.cuotas-formato-hint {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+}
+
+.cuotas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cuotas-grid--editor {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.cuota-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  background: rgba(6, 24, 20, 0.45);
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &--invalid {
+    border-color: rgba(248, 113, 113, 0.55);
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.2);
+  }
+
+  &--pagada {
+    border-color: rgba(52, 211, 153, 0.5);
+    background: rgba(16, 185, 129, 0.1);
+  }
+
+  &--parcial {
+    border-color: rgba(251, 191, 36, 0.45);
+    background: rgba(251, 191, 36, 0.06);
+  }
+}
+
+.cuota-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cuota-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.cuota-estado {
+  font-size: 0.72rem;
+  color: #fcd34d;
+  white-space: nowrap;
+}
+
+.cuota-nombre {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 8px;
+
+  &--full {
+    white-space: normal;
+    line-height: 1.35;
+    margin: 0 0 8px;
+  }
+}
+
+.cuota-card-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.cuota-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.cuota-catalogo {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+.cuota-input {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.cuota-saldo-hint {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  color: #fcd34d;
+}
+
+.cuotas-resumen {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  margin-bottom: 10px;
+
+  &--editor {
+    margin-top: 4px;
+  }
+}
+
+.cuotas-resumen-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  padding: 3px 0;
+
+  strong {
+    color: #a7f3d0;
+    font-size: 0.92rem;
+  }
+
+  &--total {
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(52, 211, 153, 0.25);
+
+    span {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    strong {
+      font-size: 1.05rem;
+      color: #6ee7b7;
+    }
+  }
+}
+
+.cuotas-motivo {
+  margin-bottom: 4px;
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+    margin-bottom: 4px;
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .opt {
+    font-weight: 400;
+    opacity: 0.75;
+  }
+}
+
+.cuotas-matriculas-card {
+  border: 1px solid rgba(52, 211, 153, 0.22);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.04), transparent);
+}
+
+.cuotas-matriculas-head {
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0 0 4px;
+  }
+
+  .hint {
+    margin: 0;
+  }
+}
+
+.cuotas-matricula-item {
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.cuotas-matricula-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(6, 24, 20, 0.35);
+
+  strong {
+    display: block;
+    margin-bottom: 2px;
+  }
+}
+
+.cuotas-mat-meta {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.cuotas-edit-btn--active {
+  border-color: rgba(52, 211, 153, 0.5);
+  color: #6ee7b7;
+}
+
+.cuotas-editor {
+  padding: 14px;
+  border-top: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.cuotas-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .solo-virtual-banner {
   margin-bottom: 12px;
   padding: 12px 14px;

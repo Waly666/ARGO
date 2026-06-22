@@ -212,6 +212,23 @@ export class AulaApiService {
     );
   }
 
+  pasarelaPublica(): Observable<{ activo: boolean; ambiente?: string; publicKey?: string | null }> {
+    return this.http.get<{ activo: boolean; ambiente?: string; publicKey?: string | null }>(
+      `${environment.apiUrl}/pasarela/config/publico`,
+    );
+  }
+
+  iniciarPagoEnLinea(
+    id: string | number,
+    redirectUrl?: string,
+  ): Observable<{ checkoutUrl: string; montoCop: number; reference: string }> {
+    return this.http.post<{ checkoutUrl: string; montoCop: number; reference: string }>(
+      `${this.base}/cursos/${id}/pagar-linea`,
+      redirectUrl ? { redirectUrl } : {},
+      { headers: this.auth.authHeader() },
+    );
+  }
+
   consultarCertificados(numDoc: string | number, turnstileToken?: string): Observable<CertificadoConsultaRes> {
     const q = new URLSearchParams({ numDoc: String(numDoc) });
     if (turnstileToken) q.set('turnstileToken', turnstileToken);

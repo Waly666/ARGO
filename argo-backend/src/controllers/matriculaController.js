@@ -7,6 +7,10 @@ const { normalizarTipoRegularJornada, TIPO_REGULAR_JORNADA_DEFAULT } = require('
 const { crearMatriculaDesdeBody } = require('../services/matriculaCreator');
 const { buscarPrograma } = require('../services/programaServicio');
 const { previewRevalidacionMatricula } = require('../services/revalidacionPrograma');
+const {
+  cargarMatriculaCuotas,
+  actualizarCuotasSemestreMatricula,
+} = require('../services/ajusteCuotasSemestre');
 
 exports.crearMatriculaDesdeBody = crearMatriculaDesdeBody;
 
@@ -57,6 +61,26 @@ exports.listarPorAlumno = async (req, res, next) => {
       })),
     );
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerCuotasSemestre = async (req, res, next) => {
+  try {
+    const info = await cargarMatriculaCuotas(req.params.id);
+    res.json(info);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.actualizarCuotasSemestre = async (req, res, next) => {
+  try {
+    const info = await actualizarCuotasSemestreMatricula(req.params.id, req.body, req.user);
+    res.json(info);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

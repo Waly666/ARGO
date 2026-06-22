@@ -36,6 +36,7 @@ const CAMPOS = [
   'formatoComprobanteIngreso',
   'formatoComprobanteEgreso',
   'permitirAjusteValorMatricula',
+  'permitirAjusteCuotasSemestre',
 ];
 
 exports.obtenerReciboEncabezado = async (req, res, next) => {
@@ -73,6 +74,7 @@ exports.obtenerReciboOpcionesMatricula = async (_req, res, next) => {
     res.set('Cache-Control', 'no-store');
     res.json({
       permitirAjusteValorMatricula: doc.permitirAjusteValorMatricula !== false,
+      permitirAjusteCuotasSemestre: doc.permitirAjusteCuotasSemestre === true,
     });
   } catch (e) {
     next(e);
@@ -110,7 +112,7 @@ exports.actualizarRecibo = async (req, res, next) => {
     ]) {
       if (dto[k] !== undefined) dto[k] = !!dto[k];
     }
-    for (const k of ['mostrarQr', 'permitirAjusteValorMatricula']) {
+    for (const k of ['mostrarQr', 'permitirAjusteValorMatricula', 'permitirAjusteCuotasSemestre']) {
       if (dto[k] !== undefined) dto[k] = dto[k] === true || dto[k] === 'true';
     }
     for (const k of [

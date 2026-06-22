@@ -57,6 +57,8 @@ router.use('/clientes', require('./clientes'));
 router.use('/sistema', require('./sistema'));
 router.use('/migracion', require('./migracion'));
 router.use('/informes', require('./informes'));
+router.use('/pasarela', require('./pasarela'));
+router.use('/webhooks', require('./webhooks'));
 router.use('/combos', require('./combos'));
 router.use('/foro', require('./foro'));
 

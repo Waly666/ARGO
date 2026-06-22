@@ -11,6 +11,7 @@ const { esAdmin } = require('../utils/roles');
 const { esRetiroCajaTipo } = require('./tipoEgresoNomina');
 const { formaPagoDesdeCatalogo } = require('./tipoIngresoResolver');
 const { normalizarIdSede } = require('./sedeContext');
+const { esSesionCajaVirtual } = require('./cajaVirtualDiaria');
 
 function filtroIdSede(idSede) {
   const sid = normalizarIdSede(idSede);
@@ -725,8 +726,10 @@ function diaCalendarioSesion(fecha) {
 
 async function listarCajasAbiertasResumen(idSede) {
   const filter = { estado: 'abierta', ...filtroIdSede(idSede) };
-  const rows = await CajaSesion.find(filter).select('idSesion usuario idSede').lean();
-  return rows.map((s) => ({ idSesion: s.idSesion, usuario: s.usuario, idSede: s.idSede || null }));
+  const rows = await CajaSesion.find(filter).select('idSesion usuario idSede tipoSesion excluirCierreGeneral').lean();
+  return rows
+    .filter((s) => !esSesionCajaVirtual(s))
+    .map((s) => ({ idSesion: s.idSesion, usuario: s.usuario, idSede: s.idSede || null }));
 }
 
 /** Cajas cerradas por cajeros que aún no entraron en ningún cierre general (cualquier fecha). */
@@ -734,7 +737,7 @@ async function sesionesPendientesCierreGeneral(excluirIds = [], idSede) {
   const ex = new Set((excluirIds || []).map(Number));
   const filter = { estado: 'cerrada', fechaCierre: { $ne: null }, ...filtroIdSede(idSede) };
   const rows = await CajaSesion.find(filter).sort({ fechaCierre: 1 }).lean();
-  return rows.filter((s) => !ex.has(Number(s.idSesion)));
+  return rows.filter((s) => !ex.has(Number(s.idSesion)) && !esSesionCajaVirtual(s));
 }
 
 async function sesionesEnPeriodo(desde, hasta, opts = {}) {
@@ -771,7 +774,7 @@ async function sesionesEnPeriodo(desde, hasta, opts = {}) {
     const ex = new Set(excluirIds.map(Number));
     rows = rows.filter((s) => !ex.has(Number(s.idSesion)));
   }
-  return rows;
+  return rows.filter((s) => !esSesionCajaVirtual(s));
 }
 
 async function calcularCierreGeneral(fechaDiaInput, opts = {}) {

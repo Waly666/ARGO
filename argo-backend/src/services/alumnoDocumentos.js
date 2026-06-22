@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Matricula = require('../models/Matricula');
+const Certificado = require('../models/Certificado');
 const { models: cat } = require('../models/catalogos');
 const { numDocQuery } = require('../utils/numDoc');
 const {
@@ -72,6 +73,56 @@ function docsAlumnoMap(alumno) {
   return {};
 }
 
+/** Matrícula vigente (no anulada / cancelada / eliminada). */
+function esMatriculaActiva(m) {
+  const est = String(m?.estado ?? 'activa').trim().toLowerCase();
+  if (['anulada', 'anulado', 'cancelada', 'inactiva', 'eliminada'].includes(est)) return false;
+  return true;
+}
+
+function idsProgramaEquivalentes(progId, prog) {
+  const ids = new Set();
+  const raw = String(progId ?? '').trim();
+  if (raw) ids.add(raw);
+  if (prog) {
+    if (prog.idPrograma != null && String(prog.idPrograma).trim()) {
+      ids.add(String(prog.idPrograma).trim());
+    }
+    if (prog.idProg != null && String(prog.idProg).trim()) {
+      ids.add(String(prog.idProg).trim());
+    }
+  }
+  return ids;
+}
+
+/** Programas con certificado emitido (no anulado) — ya no exigen documentos por esa matrícula. */
+async function idsProgramaConCertificadoValido(numDoc) {
+  const certs = await Certificado.find({
+    ...numDocQuery(numDoc),
+    estado: { $nin: ['anulado', 'anulada'] },
+  })
+    .select('idProg')
+    .lean();
+
+  const ids = new Set();
+  for (const c of certs) {
+    const raw = String(c.idProg ?? '').trim();
+    if (!raw) continue;
+    const prog = await buscarPrograma(raw);
+    for (const id of idsProgramaEquivalentes(raw, prog)) ids.add(id);
+  }
+  return ids;
+}
+
+function matriculaExcluidaDeRequisitosDocs(m, prog, idsCertificados) {
+  if (!esMatriculaActiva(m)) return true;
+  const progId = m.idProg || m.idPrograma;
+  for (const id of idsProgramaEquivalentes(progId, prog)) {
+    if (idsCertificados.has(id)) return true;
+  }
+  return false;
+}
+
 function tipoDocumentoConfig(config, idDoc) {
   const id = String(idDoc).trim();
   return (config.tiposDocumento || []).find(
@@ -96,18 +147,22 @@ async function calcularDocumentosRequeridos(alumno) {
     return { tiposCapacitacion: [], documentos: [], sinMatriculas: true };
   }
 
-  const [config, matriculas, labelCap, indiceTipCap] = await Promise.all([
+  const [config, matriculasRaw, labelCap, indiceTipCap, idsCertificados] = await Promise.all([
     obtenerConfigRequisitosDocumentos(),
     Matricula.find(numDocQuery(numDoc)).sort({ createdAt: -1 }).lean(),
     etiquetasTipoCap(),
     cargarIndiceTipCap(),
+    idsProgramaConCertificadoValido(numDoc),
   ]);
+
+  const matriculas = matriculasRaw.filter(esMatriculaActiva);
 
   const capMap = new Map();
 
   for (const m of matriculas) {
     const progId = m.idProg || m.idPrograma;
     const prog = await buscarPrograma(progId);
+    if (matriculaExcluidaDeRequisitosDocs(m, prog, idsCertificados)) continue;
     const idTipCap = prog?.idTipCap;
     if (idTipCap == null || idTipCap === '') continue;
     const key = resolverIdTipCapCanonico(idTipCap, indiceTipCap);

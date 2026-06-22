@@ -357,7 +357,16 @@ export class PagosComponent {
     this.cargarPreviewPago();
   }
 
+  itemEsVirtualEnPago(idLiq: string): boolean {
+    const it = this.liquidacion().items.find((i) => String(i._id) === String(idLiq));
+    return this.esVirtual(it);
+  }
+
   setValorItem(idLiq: string, val: unknown) {
+    if (this.itemEsVirtualEnPago(idLiq)) {
+      this.pagarSaldoCompleto(idLiq);
+      return;
+    }
     const raw = String(val ?? '').replace(/[^\d]/g, '');
     const n = raw === '' ? 0 : Number(raw);
     this.itemsPago.update((arr) =>

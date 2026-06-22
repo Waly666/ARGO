@@ -201,6 +201,7 @@
                   inputmode="numeric"
                   autocomplete="off"
                   placeholder="0"
+                  [readonly]="itemEsVirtualEnPago(it.idLiquidacion)"
                   [ngModel]="valorItemInput(it)"
                   (ngModelChange)="setValorItem(it.idLiquidacion, $event)"
                   (blur)="blurValorItem(it.idLiquidacion)"
@@ -208,13 +209,15 @@
                 <button
                   type="button"
                   class="ghost mini"
+                  *ngIf="!itemEsVirtualEnPago(it.idLiquidacion)"
                   (click)="pagarSaldoCompleto(it.idLiquidacion)"
                   title="Usar saldo completo">
                   Total
                 </button>
               </div>
-              <span class="item-pago-parcial" *ngIf="it.valor > 0 && it.valor < it.saldo - 0.0001">Abono parcial</span>
-              <span class="item-pago-parcial ok" *ngIf="it.valor >= it.saldo - 0.0001">Pago total del ítem</span>
+              <span class="item-pago-parcial ok" *ngIf="itemEsVirtualEnPago(it.idLiquidacion)">Matrícula virtual — pago total</span>
+              <span class="item-pago-parcial" *ngIf="!itemEsVirtualEnPago(it.idLiquidacion) && it.valor > 0 && it.valor < it.saldo - 0.0001">Abono parcial</span>
+              <span class="item-pago-parcial ok" *ngIf="!itemEsVirtualEnPago(it.idLiquidacion) && it.valor >= it.saldo - 0.0001">Pago total del ítem</span>
             </div>
             <button
               type="button"

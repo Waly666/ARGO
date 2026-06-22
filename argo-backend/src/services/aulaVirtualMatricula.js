@@ -306,10 +306,10 @@ async function estadoInscripcionVirtual(numDoc, idPrograma) {
 module.exports = {
   generarPasswordPortal,
   resolverIdSedeVirtual,
+  buscarLiquidacionVirtual,
   estadoPagoVirtual,
   crearUsuarioPortalAlumno,
   matricularVirtual,
   estadoInscripcionVirtual,
-  buscarLiquidacionVirtual,
   buscarMatriculaVirtual,
 };

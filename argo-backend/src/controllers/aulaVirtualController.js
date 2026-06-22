@@ -340,6 +340,39 @@ exports.matricularCurso = async (req, res, next) => {
   }
 };
 
+exports.iniciarPagoEnLinea = async (req, res, next) => {
+  try {
+    const { obtenerConfigPasarela } = require('../services/configPasarela');
+    const { buscarLiquidacionVirtual } = require('../services/aulaVirtualMatricula');
+    const { crearIntentoPagoEnLinea } = require('../services/pasarelaWompi');
+    const DatosAlumno = require('../models/DatosAlumno');
+    const { numDocQuery } = require('../utils/numDoc');
+
+    const cfg = await obtenerConfigPasarela();
+    if (!cfg.activo) {
+      return res.status(503).json({ message: 'Los pagos en línea no están disponibles en este momento.' });
+    }
+
+    const numDoc = req.portalUser.numDoc;
+    const liq = await buscarLiquidacionVirtual(numDoc, req.params.id);
+    if (!liq) {
+      return res.status(404).json({ message: 'No hay matrícula con pago pendiente para este curso.' });
+    }
+
+    const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+    const checkout = await crearIntentoPagoEnLinea({
+      numDoc,
+      idLiquidacion: liq._id,
+      customerEmail: alumno?.correo || req.portalUser?.email || null,
+      redirectUrl: req.body?.redirectUrl || cfg.redirectUrlBase || null,
+    });
+    res.json(checkout);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
+    next(e);
+  }
+};
+
 exports.consultarCertificados = async (req, res, next) => {
   try {
     res.json(await consultarCertificadosPublico(req.query.numDoc));

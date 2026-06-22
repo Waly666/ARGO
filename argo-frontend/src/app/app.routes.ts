@@ -103,6 +103,13 @@ export const routes: Routes = [
           import('./features/informes/informes-hub.component').then((m) => m.InformesHubComponent),
       },
       {
+        path: 'informes/matriculas-virtuales',
+        canActivate: [permisoGuard],
+        data: { permiso: ['informes.ver', 'aula_virtual.gestionar', 'alumnos.ver'] },
+        loadComponent: () =>
+          import('./features/informes/informes-virtuales.component').then((m) => m.InformesVirtualesComponent),
+      },
+      {
         path: 'informes/:id',
         canActivate: [permisoGuard],
         data: {
@@ -597,6 +604,13 @@ export const routes: Routes = [
         data: { permiso: ['config.facturacion', 'facturacion'] },
         loadComponent: () =>
           import('./features/config/config-facturacion.component').then((m) => m.ConfigFacturacionComponent),
+      },
+      {
+        path: 'configuracion/pasarela',
+        canActivate: [permisoGuard],
+        data: { permiso: ['config.recibos', 'aula_virtual.gestionar'] },
+        loadComponent: () =>
+          import('./features/config/config-pasarela.component').then((m) => m.ConfigPasarelaComponent),
       },
       {
         path: 'configuracion/clientes',
