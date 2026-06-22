@@ -53,6 +53,8 @@ export interface AlumnoListItem {
   nombreCompleto?: string;
   correo?: string;
   celular?: string;
+  empresaId?: string | null;
+  empresaNombre?: string | null;
   indicadores?: {
     saldosPendientes?: number;
     saldoTotal?: number;
@@ -143,6 +145,7 @@ export interface LiquidacionItem {
   estado?: string;
   idServ?: string | null;
   idProg?: string | null;
+  idMat?: string | null;
   esVirtual?: boolean;
   tarifaMatricula?: number | null;
 }
@@ -227,6 +230,7 @@ export interface ProgramaItem {
   horasTeoria?: number;
   horasPractica?: number;
   horasTaller?: number;
+  horas?: number;
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
@@ -237,6 +241,8 @@ export interface ProgramaItem {
   admiteVirtual?: boolean;
   admitePresencial?: boolean;
   estado?: string;
+  esCapacitacionVirtual?: boolean;
+  modalidadLabels?: string[];
 }
 
 export interface ServicioItem {
@@ -250,8 +256,10 @@ export interface ServicioItem {
   tarifa3?: number;
   tarifaVirtual?: number;
   programaNombre?: string | null;
+  programaCodigo?: string | null;
   tipoServ?: string | number;
   rolServicio?: string;
+  facturar?: string;
   usaCantidad?: boolean;
   permiteCantidad?: boolean;
   valorVariable?: boolean;
@@ -295,6 +303,9 @@ export interface CertificadoItem {
   estado?: string;
   numActa?: string;
   numFolio?: string;
+  empresaId?: string | null;
+  empresaNombre?: string | null;
+  codVerificacion?: string | null;
 }
 
 export interface CertificadoListadoRes {

@@ -15,11 +15,12 @@ import { ScaledText } from '../../components/ScaledText';
 import { MoneyText } from '../../components/MoneyText';
 import { EmptyState } from '../../components/EmptyState';
 import { SurfaceCard } from '../../components/SurfaceCard';
+import { AlumnoCard } from '../../components/AlumnoCard';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { buscarAlumnos, listarAlumnosRecientes } from '../../api/alumnosApi';
 import type { AlumnoListItem } from '../../api/domain';
 import { useDebounced } from '../../hooks/useDebounced';
-import { inicialesAlumno, nombreCompleto } from '../../utils/format';
+import { nombreCompleto } from '../../utils/format';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { themeColors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
@@ -138,50 +139,14 @@ export default function AlumnosScreen() {
             />
           ) : null
         }
-        renderItem={({ item }) => {
-          const nombre = nombreCompleto(item);
-          const saldo = item.indicadores?.saldoTotal ?? 0;
-          const pendientes = item.indicadores?.saldosPendientes ?? 0;
-          const ini = inicialesAlumno(item);
-          return (
-            <Pressable
-              onPress={() => irDetalle(item)}
-              style={({ pressed }) => [
-                styles.row,
-                {
-                  backgroundColor: c.card,
-                  borderColor: saldo > 0 ? c.warn : c.border,
-                  opacity: pressed ? 0.92 : 1,
-                },
-              ]}
-            >
-              <View style={[styles.avatar, { backgroundColor: c.primary }]}>
-                <ScaledText baseSize={14} style={{ color: '#fff', fontWeight: '800' }}>{ini}</ScaledText>
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '700' }} numberOfLines={1}>
-                  {nombre || `Doc ${item.numDoc}`}
-                </ScaledText>
-                <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 3 }}>
-                  Doc. {item.numDoc}
-                  {item.celular ? ` · ${item.celular}` : ''}
-                </ScaledText>
-                {pendientes > 0 ? (
-                  <ScaledText baseSize={11} style={{ color: c.warn, fontWeight: '600', marginTop: 4 }}>
-                    {pendientes} saldo{pendientes > 1 ? 's' : ''} pendiente{pendientes > 1 ? 's' : ''}
-                  </ScaledText>
-                ) : null}
-              </View>
-              {saldo > 0 ? (
-                <View style={{ alignItems: 'flex-end' }}>
-                  <MoneyText value={saldo} baseSize={14} style={{ color: c.warn }} bold />
-                </View>
-              ) : (
-                <Ionicons name="chevron-forward" size={20} color={c.textSoft} />
-              )}
-            </Pressable>
-          );
-        }}
+        renderItem={({ item }) => (
+          <AlumnoCard
+            alumno={item}
+            saldo={item.indicadores?.saldoTotal ?? 0}
+            pendientes={item.indicadores?.saldosPendientes ?? 0}
+            onPress={() => irDetalle(item)}
+          />
+        )}
       />
 
       <Pressable
@@ -218,22 +183,6 @@ const styles = StyleSheet.create({
   },
   list: { paddingHorizontal: 16, paddingTop: 4 },
   listEmpty: { flexGrow: 1 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   fab: {
     position: 'absolute',
     right: 20,

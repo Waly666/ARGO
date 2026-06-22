@@ -19,7 +19,7 @@ import {
   type PagoCobroState,
 } from '../../components/PagoCobroFields';
 import { fetchTiposPago } from '../../api/catalogosApi';
-import { fetchAlumnoPorDoc } from '../../api/alumnosApi';
+import { fetchAlumnoPorDoc, fetchAlumnoPorId } from '../../api/alumnosApi';
 import {
   aplicarCombo,
   listarCombos,
@@ -31,6 +31,15 @@ import {
 import { crearLiquidacion, listarLiquidacionAlumno } from '../../api/liquidacionApi';
 import { crearIngreso, listarIngresosAlumno, reciboIngresoHtmlPath } from '../../api/ingresosApi';
 import { crearMatricula } from '../../api/matriculasApi';
+import { fetchOpcionesMatricula } from '../../api/configApi';
+import { MatriculaAjustePanel } from '../../components/MatriculaAjustePanel';
+import { AlumnoCard } from '../../components/AlumnoCard';
+import {
+  cuotasSemestreCatalogo,
+  normalizarCuotaEntera,
+  repartirCuotasEquitativo,
+  resolverCuotasSemestreNumeros,
+} from '../../utils/cuotasSemestre';
 import { listarProgramas } from '../../api/programasApi';
 import { listarServicios } from '../../api/serviciosApi';
 import { emitirFactura, facturaHtmlPath, listarElegiblesFe, listarFacturasAlumno } from '../../api/facturacionApi';
@@ -43,6 +52,7 @@ import type {
   LiquidacionItem,
   ProgramaItem,
   ServicioItem,
+  AlumnoDetalleItem,
 } from '../../api/domain';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { themeColors } from '../../theme/colors';
@@ -127,17 +137,26 @@ export default function AlumnoDetalleScreen() {
   const [pagoCobro, setPagoCobro] = useState<PagoCobroState>(() => pagoCobroStateInicial());
   const [tiposPago, setTiposPago] = useState<Awaited<ReturnType<typeof fetchTiposPago>>>([]);
   const [alumnoCorreo, setAlumnoCorreo] = useState('');
+  const [alumnoInfo, setAlumnoInfo] = useState<AlumnoDetalleItem | null>(null);
   const [matriculaEmailPortal, setMatriculaEmailPortal] = useState('');
   const [combos, setCombos] = useState<ComboItem[]>([]);
   const [comboSelId, setComboSelId] = useState('');
   const [comboPrevista, setComboPrevista] = useState<ComboPrevista | null>(null);
   const [comboResultado, setComboResultado] = useState<ComboAplicarRes | null>(null);
+  const [permitirAjusteValorMatricula, setPermitirAjusteValorMatricula] = useState(true);
+  const [permitirAjusteCuotasSemestre, setPermitirAjusteCuotasSemestre] = useState(false);
+  const [ajustarValorMat, setAjustarValorMat] = useState(false);
+  const [valorAcordadoMat, setValorAcordadoMat] = useState('');
+  const [motivoAjusteMat, setMotivoAjusteMat] = useState('');
+  const [ajustarCuotasSemestre, setAjustarCuotasSemestre] = useState(false);
+  const [valoresCuotasSemestre, setValoresCuotasSemestre] = useState<(number | null)[]>([]);
+  const [motivoAjusteCuotas, setMotivoAjusteCuotas] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     setCertErr(null);
     try {
-      const [liq, ing, progs, servs, eleg, fac, alumno, tipos, combosList] = await Promise.all([
+      const [liq, ing, progs, servs, eleg, fac, alumno, tipos, combosList, opcionesMat] = await Promise.all([
         listarLiquidacionAlumno(numDoc),
         listarIngresosAlumno(numDoc),
         listarProgramas({ catalogo: true }),
@@ -147,7 +166,13 @@ export default function AlumnoDetalleScreen() {
         fetchAlumnoPorDoc(numDoc).catch(() => null),
         fetchTiposPago().catch(() => []),
         listarCombos().catch(() => []),
+        fetchOpcionesMatricula().catch(() => ({
+          permitirAjusteValorMatricula: true,
+          permitirAjusteCuotasSemestre: false,
+        })),
       ]);
+      setPermitirAjusteValorMatricula(opcionesMat.permitirAjusteValorMatricula !== false);
+      setPermitirAjusteCuotasSemestre(opcionesMat.permitirAjusteCuotasSemestre === true);
       setLiquidacion(liq.items);
       setTotales({ saldo: liq.totales?.saldo ?? 0 });
       setPagos(ing);
@@ -155,10 +180,20 @@ export default function AlumnoDetalleScreen() {
       setServicios(servs);
       setElegiblesFe(eleg.map((e) => e._id));
       setFacturas(fac);
-      setAlumnoCorreo(String(alumno?.correo || '').trim());
-      if (alumno?._id) setAlumnoId(alumno._id);
-      if (alumno) {
-        const nc = nombreCompleto(alumno);
+      let info: AlumnoDetalleItem | null = null;
+      const idAlumno = route.params.alumnoId || alumnoId;
+      if (idAlumno) {
+        info = await fetchAlumnoPorId(idAlumno).catch(() => null);
+      } else if (alumno?._id) {
+        info = await fetchAlumnoPorId(alumno._id).catch(() => null);
+      }
+      if (!info && alumno) info = alumno as AlumnoDetalleItem;
+      setAlumnoInfo(info);
+      setAlumnoCorreo(String(info?.correo || alumno?.correo || '').trim());
+      if (info?._id) setAlumnoId(info._id);
+      else if (alumno?._id) setAlumnoId(alumno._id);
+      if (info || alumno) {
+        const nc = nombreCompleto(info || alumno!);
         if (nc) {
           setDisplayNombre(nc);
           nav.setOptions({ title: nc });
@@ -179,7 +214,7 @@ export default function AlumnoDetalleScreen() {
     } finally {
       setLoading(false);
     }
-  }, [numDoc]);
+  }, [numDoc, route.params.alumnoId, alumnoId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -223,7 +258,92 @@ export default function AlumnoDetalleScreen() {
     () => extrasMatricula.reduce((a, i) => a + (Number(i.valor) || 0), 0),
     [extrasMatricula],
   );
-  const valorMatriculaTotal = valorMatricula + totalExtrasMatricula;
+  const cuotasCatalogo = useMemo(
+    () => cuotasSemestreCatalogo(serviciosProgSel, tarifa),
+    [serviciosProgSel, tarifa],
+  );
+  const numCuotasSemestre = cuotasCatalogo.length;
+  const totalCuotasSemestre = useMemo(
+    () => valoresCuotasSemestre.reduce<number>((acc, v) => acc + (v ?? 0), 0),
+    [valoresCuotasSemestre],
+  );
+  const valorAcordadoNum = useMemo(() => {
+    const n = Math.round(Number(valorAcordadoMat.replace(/\D/g, '') || '0'));
+    return Number.isFinite(n) && n >= 0 ? n : valorMatricula;
+  }, [valorAcordadoMat, valorMatricula]);
+  const rebajaMatricula = useMemo(() => {
+    if (!ajustarValorMat) return 0;
+    return valorMatricula > valorAcordadoNum ? valorMatricula - valorAcordadoNum : 0;
+  }, [ajustarValorMat, valorMatricula, valorAcordadoNum]);
+  const valorMatriculaTotal = useMemo(() => {
+    if (ajustarCuotasSemestre && permitirAjusteCuotasSemestre && !esTarifaVirtualSel && numCuotasSemestre >= 2) {
+      return totalCuotasSemestre + totalExtrasMatricula;
+    }
+    if (ajustarValorMat && permitirAjusteValorMatricula && !esTarifaVirtualSel && valorMatricula > 0) {
+      return valorAcordadoNum + totalExtrasMatricula;
+    }
+    return valorMatricula + totalExtrasMatricula;
+  }, [
+    ajustarCuotasSemestre,
+    permitirAjusteCuotasSemestre,
+    esTarifaVirtualSel,
+    numCuotasSemestre,
+    totalCuotasSemestre,
+    totalExtrasMatricula,
+    ajustarValorMat,
+    permitirAjusteValorMatricula,
+    valorMatricula,
+    valorAcordadoNum,
+  ]);
+
+  function limpiarAjustesMatricula() {
+    setAjustarValorMat(false);
+    setValorAcordadoMat('');
+    setMotivoAjusteMat('');
+    setAjustarCuotasSemestre(false);
+    setValoresCuotasSemestre([]);
+    setMotivoAjusteCuotas('');
+  }
+
+  function cuotasDesdeCatalogo(): number[] {
+    return cuotasCatalogo.map((v) => Math.round(v));
+  }
+
+  function onAjustarValorMatChange(activo: boolean) {
+    setAjustarValorMat(activo);
+    if (activo) {
+      setAjustarCuotasSemestre(false);
+      setValoresCuotasSemestre([]);
+      setMotivoAjusteCuotas('');
+      setValorAcordadoMat(String(Math.round(valorMatricula)));
+    } else {
+      setValorAcordadoMat('');
+      setMotivoAjusteMat('');
+    }
+  }
+
+  function onAjustarCuotasSemestreChange(activo: boolean) {
+    setAjustarCuotasSemestre(activo);
+    if (activo) {
+      setAjustarValorMat(false);
+      setValorAcordadoMat('');
+      setMotivoAjusteMat('');
+      setValoresCuotasSemestre(cuotasDesdeCatalogo());
+    } else {
+      setValoresCuotasSemestre([]);
+      setMotivoAjusteCuotas('');
+    }
+  }
+
+  function onCuotaSemestreChange(index: number, raw: string) {
+    const next = [...valoresCuotasSemestre];
+    next[index] = normalizarCuotaEntera(raw.replace(/[^\d]/g, ''));
+    setValoresCuotasSemestre(next);
+  }
+
+  function cuotaSemestreInvalida(index: number): boolean {
+    return valoresCuotasSemestre[index] === null;
+  }
 
   useEffect(() => {
     const idP = programaSel ? idPrograma(programaSel) : '';
@@ -484,6 +604,43 @@ export default function AlumnoDetalleScreen() {
         return;
       }
     }
+
+    const cuotasCustom =
+      ajustarCuotasSemestre &&
+      permitirAjusteCuotasSemestre &&
+      !esTarifaVirtualSel &&
+      numCuotasSemestre >= 2;
+    let cuotasNumeros: number[] | null = null;
+    if (cuotasCustom) {
+      cuotasNumeros = resolverCuotasSemestreNumeros(valoresCuotasSemestre, numCuotasSemestre);
+      if (!cuotasNumeros) {
+        Alert.alert(
+          'Cuotas por semestre',
+          'Indique un valor entero en cada semestre (solo números, sin decimales).',
+        );
+        return;
+      }
+    }
+
+    const catalogoBase = valorMatricula;
+    const ajuste =
+      ajustarValorMat && permitirAjusteValorMatricula && !esTarifaVirtualSel && !cuotasCustom;
+    const acordado = ajuste ? valorAcordadoNum : catalogoBase;
+    if (ajuste) {
+      if (!Number.isFinite(acordado) || acordado < 0) {
+        Alert.alert('Matrícula', 'Indique un valor acordado válido.');
+        return;
+      }
+      if (acordado > catalogoBase) {
+        Alert.alert('Matrícula', 'Solo se permiten rebajas sobre la matrícula (no incluye derechos de grado).');
+        return;
+      }
+      if (acordado < catalogoBase && !motivoAjusteMat.trim()) {
+        Alert.alert('Matrícula', 'Indique el motivo de la rebaja.');
+        return;
+      }
+    }
+
     const valor = valorMatriculaTotal;
     Alert.alert(
       'Crear matrícula',
@@ -501,9 +658,21 @@ export default function AlumnoDetalleScreen() {
                   numDoc,
                   idPrograma: progSelId,
                   tarifa,
-                  ...(esTarifaVirtualSel
-                    ? { crearUsuarioPortal: true, email }
+                  ...(ajuste && acordado < catalogoBase
+                    ? {
+                        ajustarValor: true,
+                        valorAcordado: acordado,
+                        motivoAjuste: motivoAjusteMat.trim(),
+                      }
                     : {}),
+                  ...(cuotasCustom && cuotasNumeros
+                    ? {
+                        ajustarCuotasSemestre: true,
+                        valoresCuotasSemestre: cuotasNumeros,
+                        motivoAjusteCuotas: motivoAjusteCuotas.trim() || undefined,
+                      }
+                    : {}),
+                  ...(esTarifaVirtualSel ? { crearUsuarioPortal: true, email } : {}),
                 });
                 const avisoCea = esProgramaCea(programaSel)
                   ? ' Programe las horas CEA en el módulo de programación.'
@@ -512,6 +681,7 @@ export default function AlumnoDetalleScreen() {
                 setProgSelId('');
                 setTarifa(1);
                 setMatriculaEmailPortal('');
+                limpiarAjustesMatricula();
                 await load();
                 setTab('pagos');
               } catch (e) {
@@ -533,6 +703,7 @@ export default function AlumnoDetalleScreen() {
     const permitidas = tarifasPermitidasPrograma(p, servsProg);
     setTarifa((permitidas[0] ?? 1) as TarifaMatricula);
     setMatriculaEmailPortal('');
+    limpiarAjustesMatricula();
   }
 
   function patchServicioDraft(id: string, patch: Partial<{ cantidad: string; valor: string }>) {
@@ -633,33 +804,39 @@ export default function AlumnoDetalleScreen() {
 
   return (
     <ScreenBody refreshing={loading} onRefresh={() => { setLoading(true); void load(); }}>
-      <SurfaceCard style={{ marginBottom: 12 }}>
-        <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>{displayNombre}</ScaledText>
-        <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 4 }}>Documento {numDoc}</ScaledText>
-        <PrimaryButton
-          label="Editar datos del alumno"
-          icon="create-outline"
-          variant="ghost"
-          onPress={() =>
-            nav.navigate('AlumnoEditar', {
-              alumnoId: alumnoId || undefined,
-              numDoc,
-              nombre: displayNombre,
-            })
+      <AlumnoCard
+        alumno={
+          alumnoInfo ?? {
+            _id: alumnoId || '',
+            numDoc,
+            nombreCompleto: displayNombre,
+            correo: alumnoCorreo || undefined,
           }
-          style={{ marginTop: 12 }}
-          fullWidth
-        />
-        <View style={styles.saldoRow}>
-          <ScaledText baseSize={14} style={{ color: c.textSoft }}>Saldo pendiente</ScaledText>
-          <MoneyText value={totales.saldo} baseSize={18} style={{ color: c.warn }} bold />
-        </View>
-        {certificados.length > 0 ? (
-          <ScaledText baseSize={13} style={{ color: c.ok, marginTop: 8, fontWeight: '600' }}>
-            {certificados.length} certificado(s) emitido(s) — pestaña Certificados
-          </ScaledText>
-        ) : null}
-      </SurfaceCard>
+        }
+        saldo={totales.saldo}
+        footer={
+          <>
+            <PrimaryButton
+              label="Editar datos del alumno"
+              icon="create-outline"
+              variant="ghost"
+              onPress={() =>
+                nav.navigate('AlumnoEditar', {
+                  alumnoId: alumnoId || undefined,
+                  numDoc,
+                  nombre: displayNombre,
+                })
+              }
+              fullWidth
+            />
+            {certificados.length > 0 ? (
+              <ScaledText baseSize={13} style={{ color: c.ok, marginTop: 10, fontWeight: '600', textAlign: 'center' }}>
+                {certificados.length} certificado(s) emitido(s) — pestaña Certificados
+              </ScaledText>
+            ) : null}
+          </>
+        }
+      />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {TABS.map((t) => (
@@ -795,6 +972,7 @@ export default function AlumnoDetalleScreen() {
               onChange={(id) => {
                 if (!id) {
                   setProgSelId('');
+                  limpiarAjustesMatricula();
                   return;
                 }
                 onProgramaElegido(id);
@@ -835,6 +1013,23 @@ export default function AlumnoDetalleScreen() {
                         if (t === TARIFA_VIRTUAL && !matriculaEmailPortal && alumnoCorreo) {
                           setMatriculaEmailPortal(alumnoCorreo);
                         }
+                        if (ajustarCuotasSemestre) {
+                          setValoresCuotasSemestre(
+                            cuotasSemestreCatalogo(
+                              serviciosPrograma(programaSel, servicios),
+                              t as TarifaMatricula,
+                            ).map((v) => Math.round(v)),
+                          );
+                        }
+                        if (ajustarValorMat) {
+                          setValorAcordadoMat(
+                            String(
+                              Math.round(
+                                calcularValorMatricula(programaSel, servicios, t as TarifaMatricula),
+                              ),
+                            ),
+                          );
+                        }
                       }}
                       style={[
                         styles.tarifaChip,
@@ -869,6 +1064,38 @@ export default function AlumnoDetalleScreen() {
                     />
                   </>
                 ) : null}
+                <MatriculaAjustePanel
+                  c={c}
+                  serviciosProg={serviciosProgSel}
+                  valorMatriculaBase={valorMatricula}
+                  totalExtrasMatricula={totalExtrasMatricula}
+                  numCuotasSemestre={numCuotasSemestre}
+                  cuotasCatalogo={cuotasCatalogo}
+                  permitirRebaja={permitirAjusteValorMatricula}
+                  permitirCuotas={permitirAjusteCuotasSemestre}
+                  esTarifaVirtual={esTarifaVirtualSel}
+                  ajustarValorMat={ajustarValorMat}
+                  onAjustarValorMatChange={onAjustarValorMatChange}
+                  valorAcordadoMat={valorAcordadoMat}
+                  onValorAcordadoMatChange={setValorAcordadoMat}
+                  motivoAjusteMat={motivoAjusteMat}
+                  onMotivoAjusteMatChange={setMotivoAjusteMat}
+                  rebajaMatricula={rebajaMatricula}
+                  ajustarCuotasSemestre={ajustarCuotasSemestre}
+                  onAjustarCuotasSemestreChange={onAjustarCuotasSemestreChange}
+                  valoresCuotasSemestre={valoresCuotasSemestre}
+                  onCuotaSemestreChange={onCuotaSemestreChange}
+                  motivoAjusteCuotas={motivoAjusteCuotas}
+                  onMotivoAjusteCuotasChange={setMotivoAjusteCuotas}
+                  totalCuotasSemestre={totalCuotasSemestre}
+                  onRepartirEquitativo={() => {
+                    const n = valoresCuotasSemestre.length || numCuotasSemestre;
+                    const total = totalCuotasSemestre || valorMatricula;
+                    setValoresCuotasSemestre(repartirCuotasEquitativo(total, n));
+                  }}
+                  onRestaurarCatalogo={() => setValoresCuotasSemestre(cuotasDesdeCatalogo())}
+                  cuotaSemestreInvalida={cuotaSemestreInvalida}
+                />
                 <View style={styles.valorMatRow}>
                   <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor matrícula</ScaledText>
                   <MoneyText value={valorMatriculaTotal} baseSize={16} style={{ color: c.primary }} bold />

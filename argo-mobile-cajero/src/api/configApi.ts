@@ -15,6 +15,15 @@ export async function previewMatriculaExtras(
   return apiFetch(`/config/servicios-adicionales/preview-matricula?${q}`);
 }
 
+export type OpcionesMatriculaConfig = {
+  permitirAjusteValorMatricula?: boolean;
+  permitirAjusteCuotasSemestre?: boolean;
+};
+
+export async function fetchOpcionesMatricula(): Promise<OpcionesMatriculaConfig> {
+  return apiFetch<OpcionesMatriculaConfig>('/config/recibo/opciones-matricula');
+}
+
 export async function previewPagoExtras(
   idTipoPago: string,
   idLiquidaciones: string[],

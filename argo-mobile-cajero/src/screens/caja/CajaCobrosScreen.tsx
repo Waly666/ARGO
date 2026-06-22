@@ -2,14 +2,17 @@ import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenBody } from '../../components/ScreenBody';
 import { SearchField } from '../../components/SearchField';
 import { ScaledText } from '../../components/ScaledText';
 import { MoneyText } from '../../components/MoneyText';
 import { EmptyState } from '../../components/EmptyState';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { CobroPendienteCard } from '../../components/CobroPendienteCard';
 import {
   PagoCobroFields,
   pagoCobroStateInicial,
@@ -28,6 +31,7 @@ import { esLiquidacionVirtual, mensajeErrorApi } from '../../utils/pago';
 
 export default function CajaCobrosScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const [q, setQ] = useState('');
@@ -149,48 +153,70 @@ export default function CajaCobrosScreen() {
     }
   }
 
+  const listHeader = (
+    <View style={styles.headerBlock}>
+      <LinearGradient
+        colors={highContrast ? [c.card, c.bgAlt] : ['#ea580c', '#f97316']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <View style={styles.heroRow}>
+          <View style={[styles.heroIcon, { backgroundColor: highContrast ? c.bgAlt : 'rgba(255,255,255,0.2)' }]}>
+            <Ionicons name="wallet" size={24} color={highContrast ? c.warn : '#fff'} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <ScaledText baseSize={12} style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.85)', fontWeight: '700' }}>
+              COBROS PENDIENTES
+            </ScaledText>
+            <ScaledText baseSize={18} style={{ color: highContrast ? c.text : '#fff', fontWeight: '800', marginTop: 2 }}>
+              Por recaudar
+            </ScaledText>
+          </View>
+        </View>
+        <View style={[styles.heroTotal, { backgroundColor: highContrast ? c.bgAlt : 'rgba(255,255,255,0.15)' }]}>
+          <ScaledText baseSize={12} style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.85)' }}>
+            Saldo total en lista
+          </ScaledText>
+          <MoneyText value={totales.saldo} baseSize={26} style={{ color: highContrast ? c.warn : '#fff' }} bold />
+          <ScaledText baseSize={11} style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.8)', marginTop: 4 }}>
+            {items.length} liquidación{items.length === 1 ? '' : 'es'} con saldo
+          </ScaledText>
+        </View>
+      </LinearGradient>
+
+      <SearchField value={q} onChangeText={setQ} placeholder="Alumno, documento o servicio…" />
+    </View>
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
-      <View style={styles.searchWrap}>
-        <SearchField value={q} onChangeText={setQ} placeholder="Alumno, documento o servicio…" />
-      </View>
-      <SurfaceCard style={styles.totals} elevated={false}>
-        <ScaledText baseSize={13} style={{ color: c.textSoft }}>Saldo pendiente (lista)</ScaledText>
-        <MoneyText value={totales.saldo} baseSize={20} style={{ color: c.warn }} bold />
-      </SurfaceCard>
       <FlatList
         data={items}
         keyExtractor={(it) => it._id}
         refreshing={loading}
         onRefresh={() => { setLoading(true); void load(); }}
-        contentContainerStyle={items.length ? styles.list : styles.listEmpty}
+        ListHeaderComponent={listHeader}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: 24 + insets.bottom },
+          !items.length && styles.listEmpty,
+        ]}
         ListEmptyComponent={
-          !loading ? <EmptyState title="Sin cobros pendientes" subtitle="No hay liquidaciones con saldo." /> : null
+          !loading ? (
+            <EmptyState
+              icon="checkmark-circle-outline"
+              title="Sin cobros pendientes"
+              subtitle="No hay liquidaciones con saldo en este momento."
+            />
+          ) : null
         }
         renderItem={({ item }) => (
-          <Pressable
+          <CobroPendienteCard
+            item={item}
             onPress={() => abrirCobro(item)}
             disabled={payingId === item._id}
-            style={({ pressed }) => [
-              styles.row,
-              { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.9 : payingId === item._id ? 0.6 : 1 },
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '700' }}>
-                {item.alumnoNombre || `Doc ${item.alumnoDoc ?? item.numDoc}`}
-              </ScaledText>
-              <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4 }} numberOfLines={2}>
-                {item.descripcion || 'Servicio'}
-              </ScaledText>
-              {esLiquidacionVirtual(item) ? (
-                <ScaledText baseSize={11} style={{ color: c.accent, fontWeight: '700', marginTop: 4 }}>
-                  Virtual — pago total
-                </ScaledText>
-              ) : null}
-            </View>
-            <MoneyText value={item.saldo} baseSize={16} style={{ color: c.primary }} bold />
-          </Pressable>
+          />
         )}
       />
 
@@ -199,27 +225,37 @@ export default function CajaCobrosScreen() {
           <SurfaceCard style={{ ...styles.modalCard, backgroundColor: c.card }} elevated>
             {cobroItem ? (
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800' }}>
-                  Registrar cobro
-                </ScaledText>
-                <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 6 }}>
-                  {cobroItem.alumnoNombre || `Doc ${cobroItem.alumnoDoc ?? cobroItem.numDoc}`}
-                </ScaledText>
-                <ScaledText baseSize={14} style={{ color: c.text, marginTop: 4 }} numberOfLines={2}>
-                  {cobroItem.descripcion || 'Servicio'}
-                </ScaledText>
-                {cobroVirtual ? (
-                  <ScaledText baseSize={12} style={{ color: c.accent, fontWeight: '700', marginTop: 6 }}>
-                    Matrícula virtual: solo pago del saldo completo
-                  </ScaledText>
-                ) : null}
-                <View style={styles.modalSaldo}>
-                  <ScaledText baseSize={13} style={{ color: c.textSoft }}>Saldo pendiente</ScaledText>
-                  <MoneyText value={cobroItem.saldo} baseSize={16} style={{ color: c.warn }} bold />
+                <View style={styles.modalHeader}>
+                  <LinearGradient
+                    colors={highContrast ? [c.bgAlt, c.card] : ['#4f46e5', '#6366f1']}
+                    style={styles.modalIcon}
+                  >
+                    <Ionicons name="cash-outline" size={22} color={highContrast ? c.primary : '#fff'} />
+                  </LinearGradient>
+                  <View style={{ flex: 1 }}>
+                    <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800' }}>
+                      Registrar cobro
+                    </ScaledText>
+                    <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 2 }}>
+                      Complete el pago y confirme
+                    </ScaledText>
+                  </View>
                 </View>
+
+                <CobroPendienteCard item={cobroItem} />
+
+                {cobroVirtual ? (
+                  <View style={[styles.virtualHint, { backgroundColor: '#ecfeff', borderColor: '#a5f3fc' }]}>
+                    <Ionicons name="laptop-outline" size={16} color="#0e7490" />
+                    <ScaledText baseSize={12} style={{ color: '#0e7490', fontWeight: '600', flex: 1 }}>
+                      Matrícula virtual: solo pago del saldo completo
+                    </ScaledText>
+                  </View>
+                ) : null}
+
                 {!cobroVirtual ? (
                   <>
-                    <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 12, marginBottom: 6 }}>
+                    <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4, marginBottom: 6 }}>
                       Valor a pagar (abono o total)
                     </ScaledText>
                     <TextInput
@@ -227,29 +263,31 @@ export default function CajaCobrosScreen() {
                       onChangeText={(t) => setMontoText(t.replace(/[^\d]/g, ''))}
                       keyboardType="number-pad"
                       placeholder="0"
-                      placeholderTextColor="#94a3b8"
-                      style={[styles.montoInput, { borderColor: c.border, color: c.text, backgroundColor: c.bg }]}
+                      placeholderTextColor={c.textSoft}
+                      style={[styles.montoInput, { borderColor: c.border, color: c.text, backgroundColor: c.bgAlt }]}
                     />
                     <Pressable
                       onPress={() => setMontoText(String(Math.round(Number(cobroItem.saldo) || 0)))}
-                      style={[styles.totalLink, { borderColor: c.primary }]}
+                      style={[styles.totalLink, { borderColor: c.primary, backgroundColor: c.accentSoft }]}
                     >
+                      <Ionicons name="checkmark-done-outline" size={16} color={c.primary} />
                       <ScaledText baseSize={13} style={{ color: c.primary, fontWeight: '700' }}>
                         Usar saldo completo
                       </ScaledText>
                     </Pressable>
                     {parseMonto() > 0 && parseMonto() < (Number(cobroItem.saldo) || 0) - 0.0001 ? (
-                      <ScaledText baseSize={12} style={{ color: c.warn, fontWeight: '600', marginTop: 8 }}>
+                      <ScaledText baseSize={12} style={{ color: c.warn, fontWeight: '700', marginTop: 8 }}>
                         Abono parcial
                       </ScaledText>
                     ) : null}
                   </>
                 ) : (
-                  <View style={[styles.modalSaldo, { marginTop: 8 }]}>
+                  <View style={[styles.modalSaldoBox, { backgroundColor: c.warnBg, borderColor: c.warn }]}>
                     <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor a cobrar</ScaledText>
-                    <MoneyText value={cobroItem.saldo} baseSize={18} style={{ color: c.primary }} bold />
+                    <MoneyText value={cobroItem.saldo} baseSize={20} style={{ color: c.warn }} bold />
                   </View>
                 )}
+
                 <PagoCobroFields
                   idLiquidaciones={[cobroItem._id]}
                   subtotalItems={cobroVirtual ? Number(cobroItem.saldo) || 0 : parseMonto()}
@@ -277,50 +315,71 @@ export default function CajaCobrosScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  searchWrap: { paddingHorizontal: 16, paddingTop: 8 },
-  totals: { marginHorizontal: 16, marginTop: 10, marginBottom: 8, paddingVertical: 12 },
-  list: { padding: 16, paddingTop: 4, gap: 10 },
-  listEmpty: { flexGrow: 1 },
-  row: {
-    borderWidth: 1,
+  headerBlock: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
+  hero: { borderRadius: 18, padding: 16, gap: 12 },
+  heroRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  heroIcon: {
+    width: 48,
+    height: 48,
     borderRadius: 14,
-    padding: 14,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 10,
+    justifyContent: 'center',
   },
+  heroTotal: { borderRadius: 14, padding: 14, gap: 2 },
+  list: { paddingHorizontal: 16, paddingTop: 4 },
+  listEmpty: { flexGrow: 1 },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.55)',
     justifyContent: 'center',
     padding: 20,
   },
-  modalCard: { padding: 18, gap: 4, maxHeight: '92%' },
-  modalSaldo: {
+  modalCard: { padding: 18, maxHeight: '92%' },
+  modalHeader: { flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 12 },
+  modalIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  virtualHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
+  },
+  modalSaldoBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#cbd5e1',
+    marginTop: 8,
+    marginBottom: 8,
   },
   montoInput: {
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
   },
   totalLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     alignSelf: 'flex-start',
     marginTop: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
 });

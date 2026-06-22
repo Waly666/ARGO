@@ -113,6 +113,22 @@ export async function fetchTiposPago(): Promise<CatalogoItem[]> {
   }
 }
 
+export async function fetchTiposCapacitacion(): Promise<CatalogoItem[]> {
+  try {
+    return await listarCatalogo('catTipoCapacitacion');
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchTiposServicio(): Promise<CatalogoItem[]> {
+  try {
+    return await listarCatalogo('catTipServicio');
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchCuentasBancarias(): Promise<CatalogoItem[]> {
   try {
     return await listarCatalogo('cuentasBancarias');
