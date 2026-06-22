@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-const { ObjectId } = require('mongodb');
+
+const { ObjectId } = mongoose.Types;
 
 const FRASE_VACIAR = 'VACIAR TABLA';
 const FRASE_BORRAR = 'BORRAR REGISTROS';
