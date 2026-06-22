@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,13 +9,14 @@ import {
   Switch,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
+import { EmpresaBrandHeader } from '../components/EmpresaBrandHeader';
 import { ScaledText } from '../components/ScaledText';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { IconInput } from '../components/IconInput';
 import { SurfaceCard } from '../components/SurfaceCard';
+import { CAJERO_AZUL_REY } from '../config/appBranding';
 import { useAuth } from '../context/AuthContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { pingHealth } from '../api/client';
@@ -102,27 +102,14 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        <LinearGradient
-          colors={highContrast ? [c.card, c.bgAlt] : ['#4f46e5', '#06b6d4']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          <View style={styles.logoRing}>
-            <Image source={require('../../assets/icon.png')} style={styles.logo} />
-          </View>
-          <ScaledText baseSize={28} style={styles.heroTitle}>
-            ARGO Cajero
-          </ScaledText>
-          <ScaledText baseSize={15} style={styles.heroSub}>
-            Caja, alumnos y facturación en tu bolsillo
-          </ScaledText>
+        <View style={styles.hero}>
+          <EmpresaBrandHeader logoWidth={152} logoHeight={78} onDark />
           <View style={styles.chips}>
             <Chip icon="cash-outline" label="Caja" />
             <Chip icon="school-outline" label="Alumnos" />
             <Chip icon="notifications-outline" label="Alertas" />
           </View>
-        </LinearGradient>
+        </View>
 
         <SurfaceCard style={styles.formCard}>
           <IconInput
@@ -170,8 +157,8 @@ export default function LoginScreen() {
             <Switch
               value={remember}
               onValueChange={setRemember}
-              trackColor={{ false: '#cbd5e1', true: '#a5b4fc' }}
-              thumbColor={remember ? '#4f46e5' : '#f8fafc'}
+              trackColor={{ false: '#cbd5e1', true: '#9fa8da' }}
+              thumbColor={remember ? CAJERO_AZUL_REY : '#f8fafc'}
             />
             <ScaledText baseSize={14} style={{ color: c.text, flex: 1 }}>
               Recordar usuario y contraseña
@@ -240,17 +227,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
+    backgroundColor: CAJERO_AZUL_REY,
   },
-  logoRing: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    padding: 10,
-    borderRadius: 24,
-    marginBottom: 14,
-  },
-  logo: { width: 72, height: 72, borderRadius: 16 },
-  heroTitle: { color: '#fff', fontWeight: '800', textAlign: 'center' },
-  heroSub: { color: 'rgba(255,255,255,0.92)', textAlign: 'center', marginTop: 6, marginBottom: 14 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

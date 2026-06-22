@@ -13,6 +13,14 @@ export function getServerPublicOrigin(): string {
   return getApiBaseUrl().replace(/\/api\/?$/i, '');
 }
 
+/** URL absoluta de foto/cédula almacenada en el servidor. */
+export function urlArchivoAlumno(path?: string | null): string | null {
+  if (!path?.trim()) return null;
+  if (path.startsWith('http')) return path;
+  const origin = getServerPublicOrigin();
+  return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 function injectViewport(html: string): string {
   if (/name=["']viewport["']/i.test(html)) return html;
   return html.replace(

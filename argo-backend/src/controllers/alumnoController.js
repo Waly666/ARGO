@@ -357,7 +357,7 @@ exports.escanearCedula = async (req, res, next) => {
   try {
     const file = req.file;
     if (!file?.buffer?.length) {
-      return res.status(400).json({ message: 'Envíe una imagen en el campo "imagen" (frente arriba, respaldo abajo).' });
+      return res.status(400).json({ message: 'Envíe una imagen del frente de la cédula en el campo "imagen".' });
     }
     if (!/^image\//.test(file.mimetype || '')) {
       return res.status(400).json({ message: 'El archivo debe ser una imagen (JPEG, PNG, etc.).' });

@@ -6,6 +6,7 @@ const { verificarReautenticacionAdmin } = require('../services/reautenticacion')
 const { ejecutarResetEmpresa, FRASE_CONFIRMACION } = require('../services/resetEmpresa');
 const { listarModulosReset } = require('../constants/modulosResetEmpresa');
 const migracion = require('../services/migracionDatos');
+const limpiezaTablas = require('../services/limpiezaTablas');
 const { registrarAuditoria } = require('../services/auditoria');
 
 function exigirFrase(req, frase) {
@@ -278,6 +279,83 @@ exports.importarMigracion = async (req, res, next) => {
 exports.lotesMigracion = async (_req, res, next) => {
   try {
     res.json(await migracion.listarLotes());
+  } catch (e) {
+    next(e);
+  }
+};
+
+/* ---------- Limpieza de tablas (soporte) ---------- */
+
+exports.metaLimpiezaTablas = (_req, res) => {
+  res.json({
+    fraseVaciar: limpiezaTablas.FRASE_VACIAR,
+    fraseBorrar: limpiezaTablas.FRASE_BORRAR,
+    coleccionesCriticas: [...limpiezaTablas.COLECCIONES_CRITICAS],
+  });
+};
+
+exports.listarTablas = async (_req, res, next) => {
+  try {
+    res.json({ tablas: await limpiezaTablas.listarColecciones() });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.registrosTabla = async (req, res, next) => {
+  try {
+    const data = await limpiezaTablas.listarRegistros(req.params.nombre, {
+      page: req.query.page,
+      limit: req.query.limit,
+      buscar: req.query.buscar,
+    });
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.vaciarTabla = async (req, res, next) => {
+  try {
+    exigirFrase(req, limpiezaTablas.FRASE_VACIAR);
+    await verificarReautenticacionAdmin(req, req.body, { omitirMfa: true });
+    const nombre = req.params.nombre;
+    const r = await limpiezaTablas.vaciarColeccion(nombre);
+    await registrarAuditoria({
+      req,
+      accion: 'tabla_vaciar',
+      entidad: 'coleccion',
+      idEntidad: nombre,
+      resumen: `Soporte: vaciada tabla ${nombre} (${r.eliminados} registros) por ${req.user.username}`,
+      datosDespues: r,
+    });
+    res.json({ ...r, mensaje: `Tabla ${nombre} vaciada: ${r.eliminados} registros eliminados.` });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.borrarRegistrosTabla = async (req, res, next) => {
+  try {
+    exigirFrase(req, limpiezaTablas.FRASE_BORRAR);
+    await verificarReautenticacionAdmin(req, req.body, { omitirMfa: true });
+    const nombre = req.params.nombre;
+    const ids = req.body?.ids;
+    const r = await limpiezaTablas.eliminarRegistros(nombre, ids);
+    await registrarAuditoria({
+      req,
+      accion: 'tabla_borrar_registros',
+      entidad: 'coleccion',
+      idEntidad: nombre,
+      resumen:
+        `Soporte: eliminados ${r.eliminados}/${r.solicitados} registros en ${nombre} ` +
+        `por ${req.user.username}`,
+      datosDespues: r,
+    });
+    res.json({
+      ...r,
+      mensaje: `Eliminados ${r.eliminados} registro(s) de ${nombre}.`,
+    });
   } catch (e) {
     next(e);
   }

@@ -71,6 +71,106 @@ export async function apiFetch<T>(
   return json as T;
 }
 
+/** POST multipart (p. ej. ingreso con soporte). No fijar Content-Type: el cliente añade el boundary. */
+export async function apiPostForm<T>(
+  path: string,
+  formData: FormData,
+  opts?: { auth?: boolean; timeoutMs?: number },
+): Promise<T> {
+  const base = getApiBaseUrl();
+  const timeoutMs = opts?.timeoutMs ?? 30_000;
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (opts?.auth !== false) {
+    const t = tokenGetter();
+    if (t) headers.Authorization = `Bearer ${t}`;
+  }
+  const idSede = getSedeActivaSync();
+  if (idSede) headers['X-ARGO-Sede'] = idSede;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`${base}${path.startsWith('/') ? path : `/${path}`}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    throw new Error(mensajeRed(e, base));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  let json: unknown = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Respuesta no JSON (${res.status}) desde ${base}`);
+    }
+  }
+  if (!res.ok) {
+    const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
+    throw new Error(msg);
+  }
+  return json as T;
+}
+
+/** PUT multipart (actualizar alumno con archivos). */
+export async function apiPutForm<T>(
+  path: string,
+  formData: FormData,
+  opts?: { auth?: boolean; timeoutMs?: number },
+): Promise<T> {
+  const base = getApiBaseUrl();
+  const timeoutMs = opts?.timeoutMs ?? 30_000;
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (opts?.auth !== false) {
+    const t = tokenGetter();
+    if (t) headers.Authorization = `Bearer ${t}`;
+  }
+  const idSede = getSedeActivaSync();
+  if (idSede) headers['X-ARGO-Sede'] = idSede;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`${base}${path.startsWith('/') ? path : `/${path}`}`, {
+      method: 'PUT',
+      headers,
+      body: formData,
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    throw new Error(mensajeRed(e, base));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  let json: unknown = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Respuesta no JSON (${res.status}) desde ${base}`);
+    }
+  }
+  if (!res.ok) {
+    const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
+    throw new Error(msg);
+  }
+  return json as T;
+}
+
 /** HTML o texto plano (recibos, certificados, facturas). */
 export async function apiFetchText(
   path: string,

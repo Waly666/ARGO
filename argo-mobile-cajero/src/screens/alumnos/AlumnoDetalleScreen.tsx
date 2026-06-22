@@ -12,6 +12,14 @@ import { MoneyText } from '../../components/MoneyText';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { VerDocumentoButton } from '../../components/VerDocumentoButton';
 import { CertificadoFila } from '../../components/CertificadoFila';
+import {
+  PagoCobroFields,
+  pagoCobroStateInicial,
+  validarEstadoPago,
+  type PagoCobroState,
+} from '../../components/PagoCobroFields';
+import { fetchTiposPago } from '../../api/catalogosApi';
+import { fetchAlumnoPorDoc } from '../../api/alumnosApi';
 import { crearLiquidacion, listarLiquidacionAlumno } from '../../api/liquidacionApi';
 import { crearIngreso, listarIngresosAlumno, reciboIngresoHtmlPath } from '../../api/ingresosApi';
 import { crearMatricula } from '../../api/matriculasApi';
@@ -35,15 +43,25 @@ import {
   calcularValorMatricula,
   descrConCantidad,
   esProgramaCea,
+  esProgramaSoloVirtual,
+  etiquetaTarifa,
   filtrarProgramasBusqueda,
   idPrograma,
   labelPrograma,
   permiteCantidadServicio,
   programasParaMatricula,
   serviciosAdicionalesLista,
+  serviciosPrograma,
+  tarifasPermitidasPrograma,
   valorServicioAdicional,
+  TARIFA_VIRTUAL,
   type TarifaMatricula,
 } from '../../utils/matricula';
+import {
+  esLiquidacionVirtual,
+  mensajeErrorApi,
+} from '../../utils/pago';
+import { nombreCompleto } from '../../utils/format';
 
 type Tab = 'pagos' | 'servicios' | 'comprobantes' | 'certificados';
 
@@ -75,7 +93,9 @@ const TABS: { id: Tab; label: string }[] = [
 export default function AlumnoDetalleScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'AlumnoDetalle'>>();
-  const { numDoc, nombre } = route.params;
+  const { numDoc, nombre: nombreRoute } = route.params;
+  const [alumnoId, setAlumnoId] = useState(route.params.alumnoId ?? '');
+  const [displayNombre, setDisplayNombre] = useState(nombreRoute);
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const [tab, setTab] = useState<Tab>('pagos');
@@ -99,18 +119,24 @@ export default function AlumnoDetalleScreen() {
   const [servCantidad, setServCantidad] = useState('1');
   const [servValorManual, setServValorManual] = useState('');
   const [extrasMatricula, setExtrasMatricula] = useState<PreviewServicioAdicionalItem[]>([]);
+  const [pagoCobro, setPagoCobro] = useState<PagoCobroState>(() => pagoCobroStateInicial());
+  const [tiposPago, setTiposPago] = useState<Awaited<ReturnType<typeof fetchTiposPago>>>([]);
+  const [alumnoCorreo, setAlumnoCorreo] = useState('');
+  const [matriculaEmailPortal, setMatriculaEmailPortal] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     setCertErr(null);
     try {
-      const [liq, ing, progs, servs, eleg, fac] = await Promise.all([
+      const [liq, ing, progs, servs, eleg, fac, alumno, tipos] = await Promise.all([
         listarLiquidacionAlumno(numDoc),
         listarIngresosAlumno(numDoc),
         listarProgramas({ catalogo: true }),
         listarServicios({ catalogo: true }),
         listarElegiblesFe(numDoc).catch(() => []),
         listarFacturasAlumno(numDoc).catch(() => []),
+        fetchAlumnoPorDoc(numDoc).catch(() => null),
+        fetchTiposPago().catch(() => []),
       ]);
       setLiquidacion(liq.items);
       setTotales({ saldo: liq.totales?.saldo ?? 0 });
@@ -119,6 +145,16 @@ export default function AlumnoDetalleScreen() {
       setServicios(servs);
       setElegiblesFe(eleg.map((e) => e._id));
       setFacturas(fac);
+      setAlumnoCorreo(String(alumno?.correo || '').trim());
+      if (alumno?._id) setAlumnoId(alumno._id);
+      if (alumno) {
+        const nc = nombreCompleto(alumno);
+        if (nc) {
+          setDisplayNombre(nc);
+          nav.setOptions({ title: nc });
+        }
+      }
+      setTiposPago(tipos);
 
       try {
         const certs = await listarCertificadosAlumno(numDoc);
@@ -149,6 +185,19 @@ export default function AlumnoDetalleScreen() {
     () => programasMat.find((p) => idPrograma(p) === progSelId) ?? null,
     [programasMat, progSelId],
   );
+  const serviciosProgSel = useMemo(
+    () => serviciosPrograma(programaSel, servicios),
+    [programaSel, servicios],
+  );
+  const tarifasPermitidas = useMemo(
+    () => (programaSel ? tarifasPermitidasPrograma(programaSel, serviciosProgSel) : [1, 2, 3]),
+    [programaSel, serviciosProgSel],
+  );
+  const programaSoloVirtual = useMemo(
+    () => esProgramaSoloVirtual(programaSel, serviciosProgSel),
+    [programaSel, serviciosProgSel],
+  );
+  const esTarifaVirtualSel = tarifa === TARIFA_VIRTUAL;
   const valorMatricula = useMemo(
     () => calcularValorMatricula(programaSel, servicios, tarifa),
     [programaSel, servicios, tarifa],
@@ -200,7 +249,17 @@ export default function AlumnoDetalleScreen() {
   );
 
   const pendientes = liquidacion.filter((i) => (Number(i.saldo) || 0) > 0);
-  const totalPago = itemsPago.reduce((a, i) => a + (Number(i.valor) || 0), 0);
+  const subtotalPago = itemsPago.reduce((a, i) => a + (Number(i.valor) || 0), 0);
+  const totalPago = subtotalPago + (pagoCobro.totalExtras || 0);
+  const idsLiquidacionPago = itemsPago.map((i) => i.idLiquidacion);
+
+  function liquidacionPorId(id: string): LiquidacionItem | undefined {
+    return liquidacion.find((i) => i._id === id);
+  }
+
+  function patchPagoCobro(patch: Partial<PagoCobroState>) {
+    setPagoCobro((s) => ({ ...s, ...patch }));
+  }
 
   function itemSeleccionado(id: string): boolean {
     return itemsPago.some((x) => x.idLiquidacion === id);
@@ -226,6 +285,11 @@ export default function AlumnoDetalleScreen() {
   }
 
   function setValorItem(idLiq: string, val: string) {
+    const liq = liquidacionPorId(idLiq);
+    if (liq && esLiquidacionVirtual(liq)) {
+      pagarSaldoCompleto(idLiq);
+      return;
+    }
     const raw = val.replace(/[^\d]/g, '');
     const n = raw === '' ? 0 : Number(raw);
     setItemsPago((arr) =>
@@ -251,18 +315,39 @@ export default function AlumnoDetalleScreen() {
       Alert.alert('Pagos', 'Seleccione ítems e indique un valor mayor a cero.');
       return;
     }
+    for (const i of validos) {
+      const liq = liquidacionPorId(i.idLiquidacion);
+      if (liq && esLiquidacionVirtual(liq) && Math.abs(i.valor - i.saldo) > 0.0001) {
+        Alert.alert(
+          'Matrícula virtual',
+          `«${i.descripcion}» debe pagarse en su totalidad (${Math.round(i.saldo).toLocaleString('es-CO')} COP).`,
+        );
+        return;
+      }
+    }
     const excede = validos.find((i) => i.valor > i.saldo + 0.0001);
     if (excede) {
       Alert.alert('Pagos', `El valor de «${excede.descripcion}» excede el saldo pendiente.`);
       return;
     }
+    const valPago = validarEstadoPago(pagoCobro, tiposPago);
+    if (!valPago.ok) {
+      Alert.alert('Pagos', valPago.message ?? 'Complete los datos del pago.');
+      return;
+    }
     setBusy(true);
     try {
-      const ing = await crearIngreso({
-        numDoc,
-        items: validos.map((i) => ({ idLiquidacion: i.idLiquidacion, valor: i.valor })),
-        idTipoPago: '1',
-      });
+      const ing = await crearIngreso(
+        {
+          numDoc,
+          items: validos.map((i) => ({ idLiquidacion: i.idLiquidacion, valor: i.valor })),
+          idTipoPago: pagoCobro.idTipoPago,
+          idCuentaBancaria: pagoCobro.idCuentaBancaria || undefined,
+          numComprobante: pagoCobro.numComprobante.trim() || undefined,
+          observaciones: pagoCobro.observaciones.trim() || undefined,
+        },
+        pagoCobro.soporte,
+      );
       const num = ing.numRecibo ?? ing._id;
       Alert.alert('Pago registrado', `Recibo #${num}`, [
         { text: 'Cerrar', style: 'cancel' },
@@ -276,10 +361,11 @@ export default function AlumnoDetalleScreen() {
         },
       ]);
       setItemsPago([]);
+      setPagoCobro(pagoCobroStateInicial());
       await load();
       setTab('comprobantes');
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo registrar el pago');
+      Alert.alert('Error', mensajeErrorApi(e));
     } finally {
       setBusy(false);
     }
@@ -288,7 +374,10 @@ export default function AlumnoDetalleScreen() {
   function seleccionarPrograma(p: ProgramaItem) {
     const id = idPrograma(p);
     setProgSelId(id);
-    setTarifa(1);
+    const servsProg = serviciosPrograma(p, servicios);
+    const permitidas = tarifasPermitidasPrograma(p, servsProg);
+    setTarifa((permitidas[0] ?? 1) as TarifaMatricula);
+    setMatriculaEmailPortal('');
   }
 
   async function crearMatriculaPrograma() {
@@ -296,10 +385,24 @@ export default function AlumnoDetalleScreen() {
       Alert.alert('Matrícula', 'Seleccione un programa.');
       return;
     }
+    if (programaSoloVirtual) {
+      Alert.alert(
+        'Solo portal',
+        'Este programa es solo virtual. El alumno debe matricularse en el portal; usted puede cobrar cuando aparezca la liquidación.',
+      );
+      return;
+    }
+    if (esTarifaVirtualSel) {
+      const email = matriculaEmailPortal.trim() || alumnoCorreo;
+      if (!email) {
+        Alert.alert('Matrícula virtual', 'Indique el correo del portal (usuario de acceso).');
+        return;
+      }
+    }
     const valor = valorMatriculaTotal;
     Alert.alert(
       'Crear matrícula',
-      `${labelPrograma(programaSel)}\nTarifa ${tarifa}\nValor: ${valor.toLocaleString('es-CO')}`,
+      `${labelPrograma(programaSel)}\n${etiquetaTarifa(tarifa)}\nValor: ${valor.toLocaleString('es-CO')}`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -308,7 +411,15 @@ export default function AlumnoDetalleScreen() {
             void (async () => {
               setBusy(true);
               try {
-                await crearMatricula({ numDoc, idPrograma: progSelId, tarifa });
+                const email = matriculaEmailPortal.trim() || alumnoCorreo;
+                await crearMatricula({
+                  numDoc,
+                  idPrograma: progSelId,
+                  tarifa,
+                  ...(esTarifaVirtualSel
+                    ? { crearUsuarioPortal: true, email }
+                    : {}),
+                });
                 const avisoCea = esProgramaCea(programaSel)
                   ? ' Programe las horas CEA en el módulo de programación.'
                   : '';
@@ -316,10 +427,11 @@ export default function AlumnoDetalleScreen() {
                 setProgSelId('');
                 setProgBusqueda('');
                 setTarifa(1);
+                setMatriculaEmailPortal('');
                 await load();
                 setTab('pagos');
               } catch (e) {
-                Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo matricular');
+                Alert.alert('Error', mensajeErrorApi(e));
               } finally {
                 setBusy(false);
               }
@@ -412,8 +524,22 @@ export default function AlumnoDetalleScreen() {
   return (
     <ScreenBody refreshing={loading} onRefresh={() => { setLoading(true); void load(); }}>
       <SurfaceCard style={{ marginBottom: 12 }}>
-        <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>{nombre}</ScaledText>
+        <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>{displayNombre}</ScaledText>
         <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 4 }}>Documento {numDoc}</ScaledText>
+        <PrimaryButton
+          label="Editar datos del alumno"
+          icon="create-outline"
+          variant="ghost"
+          onPress={() =>
+            nav.navigate('AlumnoEditar', {
+              alumnoId: alumnoId || undefined,
+              numDoc,
+              nombre: displayNombre,
+            })
+          }
+          style={{ marginTop: 12 }}
+          fullWidth
+        />
         <View style={styles.saldoRow}>
           <ScaledText baseSize={14} style={{ color: c.textSoft }}>Saldo pendiente</ScaledText>
           <MoneyText value={totales.saldo} baseSize={18} style={{ color: c.warn }} bold />
@@ -460,6 +586,11 @@ export default function AlumnoDetalleScreen() {
               />
               <View style={{ flex: 1 }}>
                 <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>{item.descripcion}</ScaledText>
+                {esLiquidacionVirtual(item) ? (
+                  <ScaledText baseSize={11} style={{ color: c.accent, fontWeight: '700', marginTop: 2 }}>
+                    Matrícula virtual — pago total
+                  </ScaledText>
+                ) : null}
                 <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
                   Saldo pendiente
                 </ScaledText>
@@ -474,9 +605,17 @@ export default function AlumnoDetalleScreen() {
               <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }}>
                 Valor a pagar
               </ScaledText>
-              {itemsPago.map((it) => (
+              {itemsPago.map((it) => {
+                const liq = liquidacionPorId(it.idLiquidacion);
+                const virtual = liq ? esLiquidacionVirtual(liq) : false;
+                return (
                 <SurfaceCard key={it.idLiquidacion} elevated={false} style={{ padding: 12, gap: 8 }}>
                   <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>{it.descripcion}</ScaledText>
+                  {virtual ? (
+                    <ScaledText baseSize={11} style={{ color: c.accent, fontWeight: '700' }}>
+                      Debe pagarse el saldo completo
+                    </ScaledText>
+                  ) : null}
                   <ScaledText baseSize={12} style={{ color: c.textSoft }}>
                     Saldo: {it.saldo.toLocaleString('es-CO')}
                   </ScaledText>
@@ -486,32 +625,38 @@ export default function AlumnoDetalleScreen() {
                       onChangeText={(t) => setValorItem(it.idLiquidacion, t)}
                       keyboardType="number-pad"
                       placeholder="0"
+                      editable={!virtual}
                       placeholderTextColor="#94a3b8"
                       style={[
                         styles.valorInput,
-                        { borderColor: c.border, backgroundColor: c.card, color: c.text },
+                        { borderColor: c.border, backgroundColor: virtual ? c.bg : c.card, color: c.text },
                       ]}
                     />
+                    {!virtual ? (
                     <Pressable
                       onPress={() => pagarSaldoCompleto(it.idLiquidacion)}
                       style={[styles.totalBtn, { borderColor: c.primary, backgroundColor: c.accentSoft }]}
                     >
                       <ScaledText baseSize={13} style={{ color: c.primary, fontWeight: '700' }}>Total</ScaledText>
                     </Pressable>
+                    ) : null}
                   </View>
                   {it.valor > 0 ? (
                     <ScaledText
                       baseSize={12}
-                      style={{ color: esAbonoParcial(it) ? c.warn : c.ok, fontWeight: '600' }}
+                      style={{ color: esAbonoParcial(it) && !virtual ? c.warn : c.ok, fontWeight: '600' }}
                     >
-                      {esAbonoParcial(it) ? 'Abono parcial' : 'Pago total del ítem'}
+                      {virtual || !esAbonoParcial(it) ? 'Pago total del ítem' : 'Abono parcial'}
                     </ScaledText>
                   ) : null}
                 </SurfaceCard>
-              ))}
-              <ScaledText baseSize={14} style={{ color: c.textSoft }}>
-                Total comprobante: {totalPago.toLocaleString('es-CO')} (efectivo)
-              </ScaledText>
+              );})}
+              <PagoCobroFields
+                idLiquidaciones={idsLiquidacionPago}
+                subtotalItems={subtotalPago}
+                value={pagoCobro}
+                onChange={patchPagoCobro}
+              />
               <PrimaryButton
                 label="Registrar cobro"
                 icon="cash-outline"
@@ -567,11 +712,21 @@ export default function AlumnoDetalleScreen() {
               <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }}>
                 {labelPrograma(programaSel)}
               </ScaledText>
+              {programaSoloVirtual ? (
+                <ScaledText baseSize={13} style={{ color: c.warn, lineHeight: 18 }}>
+                  Programa solo virtual: el alumno debe matricularse en el portal. Puede cobrar la liquidación en Pagos.
+                </ScaledText>
+              ) : null}
               <View style={styles.tarifaRow}>
-                {([1, 2, 3] as TarifaMatricula[]).map((t) => (
+                {tarifasPermitidas.map((t) => (
                   <Pressable
                     key={t}
-                    onPress={() => setTarifa(t)}
+                    onPress={() => {
+                      setTarifa(t as TarifaMatricula);
+                      if (t === TARIFA_VIRTUAL && !matriculaEmailPortal && alumnoCorreo) {
+                        setMatriculaEmailPortal(alumnoCorreo);
+                      }
+                    }}
                     style={[
                       styles.tarifaChip,
                       {
@@ -584,11 +739,27 @@ export default function AlumnoDetalleScreen() {
                       baseSize={13}
                       style={{ color: tarifa === t ? '#fff' : c.primary, fontWeight: '700' }}
                     >
-                      Tarifa {t}
+                      {etiquetaTarifa(t)}
                     </ScaledText>
                   </Pressable>
                 ))}
               </View>
+              {esTarifaVirtualSel && !programaSoloVirtual ? (
+                <>
+                  <ScaledText baseSize={13} style={{ color: c.textSoft }}>
+                    Correo portal (acceso aula virtual)
+                  </ScaledText>
+                  <TextInput
+                    value={matriculaEmailPortal}
+                    onChangeText={setMatriculaEmailPortal}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    placeholder={alumnoCorreo || 'correo@ejemplo.com'}
+                    placeholderTextColor="#94a3b8"
+                    style={[styles.valorInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
+                  />
+                </>
+              ) : null}
               <View style={styles.valorMatRow}>
                 <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor matrícula</ScaledText>
                 <MoneyText value={valorMatriculaTotal} baseSize={16} style={{ color: c.primary }} bold />
@@ -602,7 +773,7 @@ export default function AlumnoDetalleScreen() {
                 label="Crear matrícula"
                 icon="school-outline"
                 onPress={() => void crearMatriculaPrograma()}
-                disabled={busy}
+                disabled={busy || programaSoloVirtual}
                 fullWidth
               />
             </SurfaceCard>

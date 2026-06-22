@@ -753,6 +753,15 @@ export const routes: Routes = [
             (m) => m.SistemaMigracionComponent,
           ),
       },
+      {
+        path: 'configuracion/limpieza-tablas',
+        canActivate: [adminGuard],
+        data: { title: 'Limpieza de tablas' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-limpieza-tablas.component').then(
+            (m) => m.SistemaLimpiezaTablasComponent,
+          ),
+      },
       { path: 'sistema', pathMatch: 'full', redirectTo: 'configuracion/migracion' },
       { path: 'sistema/respaldos', redirectTo: 'configuracion/backup', pathMatch: 'full' },
       { path: 'sistema/puesta-en-cero', redirectTo: 'configuracion/reset', pathMatch: 'full' },

@@ -1,10 +1,13 @@
 import { apiFetch } from './client';
 import { formatNumDoc } from '../utils/format';
+import type { TarifaMatricula } from '../utils/matricula';
 
 export async function crearMatricula(body: {
   numDoc: string | number;
   idPrograma: string;
-  tarifa?: 1 | 2 | 3;
+  tarifa?: TarifaMatricula;
+  email?: string;
+  crearUsuarioPortal?: boolean;
 }): Promise<Record<string, unknown>> {
   return apiFetch<Record<string, unknown>>('/matriculas', {
     method: 'POST',

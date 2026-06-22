@@ -51,11 +51,79 @@ export interface AlumnoListItem {
   apellido1?: string;
   apellido2?: string;
   nombreCompleto?: string;
+  correo?: string;
   celular?: string;
   indicadores?: {
     saldosPendientes?: number;
     saldoTotal?: number;
   };
+}
+
+/** Ficha completa del alumno (GET /alumnos/:id). */
+export interface AlumnoDetalleItem extends AlumnoListItem {
+  tipoAlumno?: string;
+  expedida?: string;
+  fechaNac?: string;
+  observaciones?: string;
+  genero?: string;
+  tipoSangre?: string;
+  jornada?: string;
+  estadoCivil?: string;
+  estrato?: string;
+  regimenSalud?: string;
+  nivelFormacion?: string;
+  ocupacion?: string;
+  discapacidad?: string;
+  munOrigen?: string;
+  codMunicipio?: string;
+  direccion?: string;
+  multiCulturalidad?: string;
+  empresaId?: string | null;
+  empresaNombre?: string | null;
+  alertaPago?: string | null;
+  alertaPagoFrecuencia?: '' | 'mensual' | 'quincenal' | null;
+  urlFoto?: string;
+  urlCedula?: string;
+  urlLicencia?: string;
+}
+
+export interface AlumnoCrearDto {
+  tipoAlumno?: string;
+  tipoDoc?: string;
+  numDoc: number | string;
+  expedida?: string;
+  nombre1: string;
+  nombre2?: string;
+  apellido1: string;
+  apellido2?: string;
+  fechaNac?: string;
+  observaciones?: string;
+  genero?: string;
+  tipoSangre?: string;
+  jornada?: string;
+  estadoCivil?: string;
+  estrato?: string;
+  regimenSalud?: string;
+  nivelFormacion?: string;
+  ocupacion?: string;
+  discapacidad?: string;
+  munOrigen?: string;
+  codMunicipio?: string;
+  celular?: string;
+  correo?: string;
+  direccion?: string;
+  multiCulturalidad?: string;
+  empresaId?: string | null;
+  alertaPagoFrecuencia?: '' | 'mensual' | 'quincenal';
+  alertaPago?: string;
+  esJornadaCap?: string;
+}
+
+export interface AlumnoDocVerificacion {
+  existe: boolean;
+  _id?: string;
+  numDoc?: number | string;
+  nombreCompleto?: string;
 }
 
 export interface AlumnosListResponse {
@@ -75,6 +143,8 @@ export interface LiquidacionItem {
   estado?: string;
   idServ?: string | null;
   idProg?: string | null;
+  esVirtual?: boolean;
+  tarifaMatricula?: number | null;
 }
 
 export interface LiquidacionResumen {
@@ -122,11 +192,22 @@ export interface IngresoRow {
 export interface CatalogoItem {
   _id?: string;
   idTipoPago?: string;
+  idTipoDoc?: string;
+  idGenero?: string;
+  idJornada?: string;
+  idEstadoCivil?: string;
+  idEstrato?: string;
+  idRegimen?: string;
+  idNivel?: string;
+  idOcupacion?: string;
+  idDiscapacidad?: string;
+  id?: string;
   codigo?: string;
   descripcion?: string;
   idCuentaBancaria?: string;
   nombre?: string;
   banco?: string;
+  [key: string]: unknown;
 }
 
 export interface ProgramaItem {
@@ -150,6 +231,11 @@ export interface ProgramaItem {
   tarifa2?: number;
   tarifa3?: number;
   tarifaVirtual?: number;
+  modalidades?: string[];
+  tarifasPermitidas?: number[];
+  soloVirtual?: boolean;
+  admiteVirtual?: boolean;
+  admitePresencial?: boolean;
   estado?: string;
 }
 

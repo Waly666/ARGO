@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAccessibility } from '../context/AccessibilityContext';
@@ -25,8 +25,18 @@ export function SearchField({ value, onChangeText, placeholder = 'Buscar…' }: 
         placeholderTextColor="#94a3b8"
         autoCapitalize="none"
         autoCorrect={false}
+        returnKeyType="search"
         style={[styles.input, { color: c.text, fontSize: 16 * textMultiplier }]}
       />
+      {value.length > 0 ? (
+        <Pressable
+          onPress={() => onChangeText('')}
+          hitSlop={8}
+          accessibilityLabel="Limpiar búsqueda"
+        >
+          <Ionicons name="close-circle" size={20} color={c.textSoft} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }

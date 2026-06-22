@@ -75,11 +75,79 @@ async function dividirVertical(buffer) {
     corte < h
       ? await img.clone().extract({ left: 0, top: corte, width: w, height: h - corte }).png().toBuffer()
       : null;
-  return { frente, respaldo, altoTotal: h, corte };
+  return { frente, respaldo, altoTotal: h, corte, modo: 'vertical' };
 }
 
+async function dividirHorizontal(buffer) {
+  const img = sharp(buffer);
+  const meta = await img.metadata();
+  const h = meta.height || 0;
+  const w = meta.width || 0;
+  if (h < 80 || w < 80) {
+    const err = new Error('La imagen es demasiado pequeña. Use una foto más grande.');
+    err.status = 400;
+    throw err;
+  }
+  const corte = Math.round(w * SPLIT_RATIO);
+  const frente = await img.clone().extract({ left: 0, top: 0, width: corte, height: h }).png().toBuffer();
+  const respaldo =
+    corte < w
+      ? await img.clone().extract({ left: corte, top: 0, width: w - corte, height: h }).png().toBuffer()
+      : null;
+  return { frente, respaldo, anchoTotal: w, corte, modo: 'horizontal' };
+}
+
+/** vertical | horizontal | auto (por proporción de la imagen). */
+async function dividirImagen(buffer, disposicion = 'auto') {
+  const meta = await sharp(buffer).metadata();
+  const w = meta.width || 0;
+  const h = meta.height || 0;
+  if (disposicion === 'vertical') return dividirVertical(buffer);
+  if (disposicion === 'horizontal') return dividirHorizontal(buffer);
+  if (w > h * 1.08) return dividirHorizontal(buffer);
+  return dividirVertical(buffer);
+}
+
+async function ocrSoloFrente(frenteBuffer) {
+  const frentePrep = await prepararParaOcr(frenteBuffer);
+  const zonaNombres = await recortarZonaNombres(frentePrep);
+
+  const [textoFrente, textoZonaNombres] = await Promise.all([
+    ocrBuffer(frentePrep),
+    ocrBuffer(zonaNombres),
+  ]);
+
+  const datosFrente = parseFrente(textoFrente, textoZonaNombres);
+  return { datosFrente, textoFrente, textoZonaNombres };
+}
+
+async function validarImagenFrente(buffer) {
+  const meta = await sharp(buffer).metadata();
+  const h = meta.height || 0;
+  const w = meta.width || 0;
+  if (h < 80 || w < 80) {
+    const err = new Error('La imagen es demasiado pequeña. Fotografíe solo el frente de la cédula.');
+    err.status = 400;
+    throw err;
+  }
+}
+
+/** Mejora contraste para originales y fotocopias ampliadas (escaneos de celular). */
 async function prepararParaOcr(buffer) {
-  return sharp(buffer).grayscale().normalize().sharpen().png().toBuffer();
+  const meta = await sharp(buffer).metadata();
+  const w = meta.width || 0;
+  const minW = 1400;
+  let pipe = sharp(buffer);
+  if (w > 0 && w < minW) {
+    pipe = pipe.resize(minW, null, { withoutEnlargement: false, kernel: 'lanczos3' });
+  }
+  return pipe
+    .grayscale()
+    .normalize()
+    .linear(1.18, -(128 * 0.14))
+    .sharpen({ sigma: 1.1 })
+    .png()
+    .toBuffer();
 }
 
 async function recortarZonaNombres(frenteBuffer) {
@@ -561,57 +629,42 @@ function parseRespaldo(texto) {
   };
 }
 
+/** Solo frente: documento, nombres, apellidos y fecha de nacimiento. */
 async function procesarCedulaImagen(buffer) {
-  const { frente, respaldo } = await dividirVertical(buffer);
-  const frentePrep = await prepararParaOcr(frente);
-  const zonaNombres = await recortarZonaNombres(frentePrep);
-
-  const [textoFrente, textoZonaNombres] = await Promise.all([
-    ocrBuffer(frentePrep),
-    ocrBuffer(zonaNombres),
-  ]);
-
-  const datosFrente = parseFrente(textoFrente, textoZonaNombres);
-
-  let datosRespaldo = { genero: '', tipoSangre: '', expedida: '', detectado: false };
-  let textoRespaldo = '';
-  if (respaldo) {
-    const respaldoPrep = await prepararParaOcr(respaldo);
-    textoRespaldo = await ocrBuffer(respaldoPrep);
-    datosRespaldo = parseRespaldo(textoRespaldo);
-  }
+  await validarImagenFrente(buffer);
+  const { datosFrente, textoFrente, textoZonaNombres } = await ocrSoloFrente(buffer);
 
   const advertencias = [];
   if (!datosFrente.numDoc) advertencias.push('No se detectó el número de documento (campo NUMERO).');
   if (!datosFrente.apellido1) advertencias.push('No se detectaron apellidos (línea sobre la etiqueta APELLIDOS).');
   if (!datosFrente.nombre1) advertencias.push('No se detectaron nombres (línea sobre la etiqueta NOMBRES).');
-  if (respaldo && datosRespaldo.detectado && !datosRespaldo.genero && !datosRespaldo.tipoSangre) {
-    advertencias.push('Respaldo: no se leyó sexo (arriba de SEXO) ni tipo de sangre (arriba de G.S. RH).');
-  }
-  if (respaldo && datosRespaldo.detectado && !datosRespaldo.expedida) {
-    advertencias.push('Respaldo: no se detectó ciudad de expedición (arriba de FECHA Y LUGAR DE EXPEDICION).');
-  }
-  if (!respaldo || !datosRespaldo.detectado) {
-    advertencias.push('Solo se usaron datos del frente (respaldo vacío o no legible).');
-  }
+  advertencias.push('Género, tipo de sangre, expedición y demás datos debe digitirlos manualmente.');
 
   return {
     sugerido: {
-      ...datosFrente,
-      genero: datosRespaldo.genero || '',
-      tipoSangre: datosRespaldo.tipoSangre || '',
-      expedida: datosRespaldo.expedida || datosFrente.expedida || '',
+      tipoDoc: datosFrente.tipoDoc,
+      numDoc: datosFrente.numDoc,
+      apellido1: datosFrente.apellido1,
+      apellido2: datosFrente.apellido2,
+      nombre1: datosFrente.nombre1,
+      nombre2: datosFrente.nombre2,
+      fechaNac: datosFrente.fechaNac,
     },
     meta: {
-      tieneRespaldo: !!(respaldo && datosRespaldo.detectado),
+      soloFrente: true,
       advertencias,
     },
     debug: {
       textoFrente: textoFrente.slice(0, 2000),
       textoZonaNombres: textoZonaNombres.slice(0, 1500),
-      textoRespaldo: textoRespaldo.slice(0, 1500),
     },
   };
 }
 
-module.exports = { procesarCedulaImagen, dividirVertical, parseFrente, parseRespaldo };
+module.exports = {
+  procesarCedulaImagen,
+  dividirVertical,
+  dividirHorizontal,
+  parseFrente,
+  parseRespaldo,
+};

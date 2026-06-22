@@ -123,6 +123,36 @@ export interface LoteMigracion {
   resultado?: Partial<ResultadoImportacion>;
 }
 
+export interface TablaColeccion {
+  nombre: string;
+  total: number;
+  critica: boolean;
+}
+
+export interface RegistrosTabla {
+  coleccion: string;
+  columnas: string[];
+  filas: Record<string, string>[];
+  pagina: number;
+  porPagina: number;
+  total: number;
+  totalPaginas: number;
+  critica: boolean;
+}
+
+export interface MetaLimpiezaTablas {
+  fraseVaciar: string;
+  fraseBorrar: string;
+  coleccionesCriticas: string[];
+}
+
+export interface ResultadoLimpiezaTabla {
+  coleccion: string;
+  eliminados: number;
+  solicitados?: number;
+  mensaje?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SistemaService {
   private http = inject(HttpClient);
@@ -233,5 +263,47 @@ export class SistemaService {
 
   lotesMigracion(): Observable<LoteMigracion[]> {
     return this.http.get<LoteMigracion[]>(`${this.base}/migracion/lotes`);
+  }
+
+  // ----- Limpieza de tablas (soporte) -----
+  metaLimpiezaTablas(): Observable<MetaLimpiezaTablas> {
+    return this.http.get<MetaLimpiezaTablas>(`${this.base}/tablas/meta`);
+  }
+
+  listarTablas(): Observable<{ tablas: TablaColeccion[] }> {
+    return this.http.get<{ tablas: TablaColeccion[] }>(`${this.base}/tablas`);
+  }
+
+  registrosTabla(
+    nombre: string,
+    page = 1,
+    limit = 50,
+    buscar = '',
+  ): Observable<RegistrosTabla> {
+    return this.http.get<RegistrosTabla>(`${this.base}/tablas/${encodeURIComponent(nombre)}/registros`, {
+      params: {
+        page: String(page),
+        limit: String(limit),
+        ...(buscar.trim() ? { buscar: buscar.trim() } : {}),
+      },
+    });
+  }
+
+  vaciarTabla(nombre: string, cred: CredencialesOperacion): Observable<ResultadoLimpiezaTabla> {
+    return this.http.delete<ResultadoLimpiezaTabla>(
+      `${this.base}/tablas/${encodeURIComponent(nombre)}/vaciar`,
+      { body: cred },
+    );
+  }
+
+  borrarRegistrosTabla(
+    nombre: string,
+    ids: string[],
+    cred: CredencialesOperacion,
+  ): Observable<ResultadoLimpiezaTabla> {
+    return this.http.delete<ResultadoLimpiezaTabla>(
+      `${this.base}/tablas/${encodeURIComponent(nombre)}/registros`,
+      { body: { ...cred, ids } },
+    );
   }
 }

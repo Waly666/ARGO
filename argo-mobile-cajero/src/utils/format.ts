@@ -26,3 +26,23 @@ export function nombreCompleto(parts: {
     .join(' ')
     .trim();
 }
+
+export function inicialesAlumno(parts: {
+  nombre1?: string;
+  apellido1?: string;
+  nombreCompleto?: string;
+}): string {
+  const n = parts.nombreCompleto?.trim();
+  if (n) {
+    const bits = n.split(/\s+/).filter(Boolean);
+    if (bits.length >= 2) return `${bits[0][0]}${bits[1][0]}`.toUpperCase();
+    return bits[0]?.slice(0, 2).toUpperCase() || '?';
+  }
+  const a = (parts.apellido1 || '?').charAt(0);
+  const b = (parts.nombre1 || '?').charAt(0);
+  return `${b}${a}`.toUpperCase();
+}
+
+export function mayusculasNombre(v: string): string {
+  return v.trim().toUpperCase().replace(/\s+/g, ' ');
+}

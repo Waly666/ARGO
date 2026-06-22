@@ -946,6 +946,14 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Limpieza tablas',
+          path: '/app/configuracion/limpieza-tablas',
+          icon: '⌫',
+          iconTone: 'rose',
+          adminOnly: true,
+        },
+        {
+          kind: 'link',
           label: 'Migración',
           path: '/app/configuracion/migracion',
           icon: '⇄',
@@ -1608,6 +1616,7 @@ export class ShellComponent {
       u.includes('/configuracion/backup') ||
       u.includes('/configuracion/restore') ||
       u.includes('/configuracion/reset') ||
+      u.includes('/configuracion/limpieza-tablas') ||
       u.includes('/configuracion/migracion')
     ) {
       patch['Configuración'] = true;

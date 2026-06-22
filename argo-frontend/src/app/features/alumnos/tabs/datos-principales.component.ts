@@ -570,7 +570,7 @@ export class DatosPrincipalesComponent implements OnInit {
   escanearCedula() {
     const file = this.scanFile();
     if (!file) {
-      this.message.set('Seleccione una imagen de la cédula (frente arriba, respaldo abajo).');
+      this.message.set('Seleccione una imagen del frente de la cédula.');
       return;
     }
     this.scanning.set(true);

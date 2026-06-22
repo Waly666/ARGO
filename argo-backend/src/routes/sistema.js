@@ -44,4 +44,11 @@ router.post('/migracion/validar', subidaExcel.single('archivo'), ctrl.validarMig
 router.post('/migracion/importar', loadSedeActiva, subidaExcel.single('archivo'), ctrl.importarMigracion);
 router.get('/migracion/lotes', ctrl.lotesMigracion);
 
+// Limpieza de tablas (soporte técnico)
+router.get('/tablas/meta', ctrl.metaLimpiezaTablas);
+router.get('/tablas', ctrl.listarTablas);
+router.get('/tablas/:nombre/registros', ctrl.registrosTabla);
+router.delete('/tablas/:nombre/vaciar', ctrl.vaciarTabla);
+router.delete('/tablas/:nombre/registros', ctrl.borrarRegistrosTabla);
+
 module.exports = router;

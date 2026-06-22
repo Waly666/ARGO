@@ -1,6 +1,19 @@
 import type { ProgramaItem, ServicioItem } from '../api/domain';
+import { TARIFA_VIRTUAL } from './pago';
 
-export type TarifaMatricula = 1 | 2 | 3;
+export type TarifaMatricula = 1 | 2 | 3 | 4;
+
+export { TARIFA_VIRTUAL };
+
+const MODALIDAD_VIRTUAL = 'VIRTUAL';
+const MODALIDAD_PRESENCIAL = 'PRESENCIAL';
+const MODALIDAD_MIXTA = 'MIXTA';
+
+const TARIFAS_POR_MODALIDAD: Record<string, number[]> = {
+  [MODALIDAD_VIRTUAL]: [TARIFA_VIRTUAL],
+  [MODALIDAD_PRESENCIAL]: [1, 2, 3],
+  [MODALIDAD_MIXTA]: [1, 2, 3],
+};
 
 function num(v: unknown): number {
   if (v == null) return 0;
@@ -10,6 +23,76 @@ function num(v: unknown): number {
     return Number((v as { $numberDecimal: string }).$numberDecimal) || 0;
   }
   return Number(v) || 0;
+}
+
+function normalizarCodigoModalidad(raw: unknown): string | null {
+  const t = String(raw ?? '')
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '');
+  if (!t) return null;
+  if (t === 'VIR' || t.startsWith('VIRTUAL')) return MODALIDAD_VIRTUAL;
+  if (t === 'PRE' || t.startsWith('PRESENCIAL')) return MODALIDAD_PRESENCIAL;
+  if (t === 'MIX' || t.startsWith('MIXTA')) return MODALIDAD_MIXTA;
+  if ([MODALIDAD_VIRTUAL, MODALIDAD_PRESENCIAL, MODALIDAD_MIXTA].includes(t)) return t;
+  return null;
+}
+
+export function modalidadesEfectivas(
+  prog: ProgramaItem | null | undefined,
+  servicios?: ServicioItem[],
+): string[] {
+  const raw = prog?.modalidades;
+  if (Array.isArray(raw) && raw.length) {
+    const out: string[] = [];
+    for (const item of raw) {
+      const c = normalizarCodigoModalidad(item);
+      if (c && !out.includes(c)) out.push(c);
+    }
+    if (out.length) return out;
+  }
+  const servs = servicios || [];
+  const hasVirtual =
+    servs.some((s) => num(s.tarifaVirtual) > 0) || num(prog?.tarifaVirtual) > 0;
+  const hasPres =
+    servs.some((s) => num(s.tarifa1) > 0 || num(s.tarifa2) > 0 || num(s.tarifa3) > 0) ||
+    num(prog?.valorMatricula) > 0;
+  const mods: string[] = [];
+  if (hasPres || !hasVirtual) mods.push(MODALIDAD_PRESENCIAL);
+  if (hasVirtual) mods.push(MODALIDAD_VIRTUAL);
+  return mods.length ? mods : [MODALIDAD_PRESENCIAL];
+}
+
+export function tarifasPermitidasPrograma(
+  prog: ProgramaItem | null | undefined,
+  servicios?: ServicioItem[],
+): number[] {
+  if (prog?.tarifasPermitidas?.length) {
+    return [...prog.tarifasPermitidas].sort((a, b) => a - b);
+  }
+  const set = new Set<number>();
+  for (const m of modalidadesEfectivas(prog, servicios)) {
+    for (const t of TARIFAS_POR_MODALIDAD[m] || []) set.add(t);
+  }
+  return [...set].sort((a, b) => a - b);
+}
+
+export function esProgramaSoloVirtual(
+  prog: ProgramaItem | null | undefined,
+  servicios?: ServicioItem[],
+): boolean {
+  if (prog?.soloVirtual === true) return true;
+  const mods = modalidadesEfectivas(prog, servicios);
+  return mods.length === 1 && mods[0] === MODALIDAD_VIRTUAL;
+}
+
+export function serviciosPrograma(prog: ProgramaItem | null | undefined, servicios: ServicioItem[]): ServicioItem[] {
+  if (!prog) return [];
+  const idP = idPrograma(prog);
+  return servicios.filter(
+    (s) => String(s.idProg) === idP && !esHoraPractica(s) && !esDerechosGrado(s),
+  );
 }
 
 function normTipoCap(s: string): string {
@@ -80,6 +163,11 @@ export function labelPrograma(prog: ProgramaItem): string {
   return cod ? `${nombre} (${cod})` : nombre || idPrograma(prog);
 }
 
+export function etiquetaTarifa(t: number): string {
+  if (t === TARIFA_VIRTUAL) return 'Virtual (aula en línea)';
+  return `Tarifa ${t}`;
+}
+
 function esHoraPractica(s: ServicioItem | null | undefined): boolean {
   if (!s) return false;
   if (s.rolServicio === 'hora_practica') return true;
@@ -135,6 +223,9 @@ export function calcularValorMatricula(
   const porProg = servicios.filter(
     (s) => String(s.idProg) === idP && !esHoraPractica(s) && !esDerechosGrado(s),
   );
+  if (tarifa === TARIFA_VIRTUAL) {
+    return porProg.reduce((acc, s) => acc + num(s.tarifaVirtual), 0);
+  }
   let base = 0;
   const sem = Number(prog.semestres);
   if (Number.isFinite(sem) && sem >= 1 && porProg.length > 0) {

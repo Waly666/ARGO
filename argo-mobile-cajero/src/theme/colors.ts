@@ -1,9 +1,9 @@
 export const colors = {
-  primary: '#4f46e5',
-  primaryDark: '#3730a3',
-  primaryLight: '#818cf8',
+  primary: '#3578F0',
+  primaryDark: '#2563D4',
+  primaryLight: '#6B9AF5',
   accent: '#06b6d4',
-  accentSoft: '#e0f7fa',
+  accentSoft: '#e8eaf6',
   bg: '#eef2ff',
   bgAlt: '#f8fafc',
   card: '#ffffff',
@@ -16,7 +16,7 @@ export const colors = {
   warnBg: '#fff7ed',
   ok: '#16a34a',
   okBg: '#f0fdf4',
-  shadow: '#4f46e5',
+  shadow: '#3578F0',
 };
 
 export function themeColors(highContrast: boolean) {

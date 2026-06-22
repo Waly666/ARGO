@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
@@ -10,13 +10,21 @@ import { MoneyText } from '../../components/MoneyText';
 import { EmptyState } from '../../components/EmptyState';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import {
+  PagoCobroFields,
+  pagoCobroStateInicial,
+  validarEstadoPago,
+  type PagoCobroState,
+} from '../../components/PagoCobroFields';
 import { listarLiquidacionConSaldo } from '../../api/liquidacionApi';
 import { crearIngreso, reciboIngresoHtmlPath } from '../../api/ingresosApi';
+import { fetchTiposPago } from '../../api/catalogosApi';
 import type { RootStackParamList } from '../../navigation/types';
 import type { LiquidacionConSaldoItem } from '../../api/domain';
 import { useDebounced } from '../../hooks/useDebounced';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { themeColors } from '../../theme/colors';
+import { esLiquidacionVirtual, mensajeErrorApi } from '../../utils/pago';
 
 export default function CajaCobrosScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -30,12 +38,18 @@ export default function CajaCobrosScreen() {
   const [payingId, setPayingId] = useState<string | null>(null);
   const [cobroItem, setCobroItem] = useState<LiquidacionConSaldoItem | null>(null);
   const [montoText, setMontoText] = useState('');
+  const [pagoCobro, setPagoCobro] = useState<PagoCobroState>(() => pagoCobroStateInicial());
+  const [tiposPago, setTiposPago] = useState<Awaited<ReturnType<typeof fetchTiposPago>>>([]);
 
   const load = useCallback(async () => {
     try {
-      const r = await listarLiquidacionConSaldo({ q: debounced, limit: 80 });
+      const [r, tipos] = await Promise.all([
+        listarLiquidacionConSaldo({ q: debounced, limit: 80 }),
+        fetchTiposPago().catch(() => []),
+      ]);
       setItems(r.items);
       setTotales({ saldo: r.totales?.saldo ?? 0 });
+      setTiposPago(tipos);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo cargar');
     } finally {
@@ -50,16 +64,20 @@ export default function CajaCobrosScreen() {
     }, [load]),
   );
 
+  const cobroVirtual = cobroItem ? esLiquidacionVirtual(cobroItem) : false;
+
   function abrirCobro(item: LiquidacionConSaldoItem) {
     const saldo = Number(item.saldo) || 0;
     if (saldo <= 0) return;
     setCobroItem(item);
     setMontoText(String(Math.round(saldo)));
+    setPagoCobro(pagoCobroStateInicial());
   }
 
   function cerrarCobro() {
     setCobroItem(null);
     setMontoText('');
+    setPagoCobro(pagoCobroStateInicial());
   }
 
   function parseMonto(): number {
@@ -67,26 +85,48 @@ export default function CajaCobrosScreen() {
     return raw === '' ? 0 : Number(raw);
   }
 
+  function patchPagoCobro(patch: Partial<PagoCobroState>) {
+    setPagoCobro((s) => ({ ...s, ...patch }));
+  }
+
   async function confirmarCobro() {
     if (!cobroItem) return;
     const saldo = Number(cobroItem.saldo) || 0;
-    const valor = parseMonto();
+    const valor = cobroVirtual ? saldo : parseMonto();
     if (valor <= 0) {
       Alert.alert('Cobro', 'Indique un valor mayor a cero.');
+      return;
+    }
+    if (cobroVirtual && Math.abs(valor - saldo) > 0.0001) {
+      Alert.alert(
+        'Matrícula virtual',
+        `Debe cobrarse el saldo completo (${Math.round(saldo).toLocaleString('es-CO')} COP).`,
+      );
       return;
     }
     if (valor > saldo + 0.0001) {
       Alert.alert('Cobro', `El valor no puede superar el saldo (${saldo.toLocaleString('es-CO')}).`);
       return;
     }
+    const valPago = validarEstadoPago(pagoCobro, tiposPago);
+    if (!valPago.ok) {
+      Alert.alert('Cobro', valPago.message ?? 'Complete los datos del pago.');
+      return;
+    }
     setPayingId(cobroItem._id);
     try {
-      const ing = await crearIngreso({
-        numDoc: cobroItem.alumnoDoc ?? cobroItem.numDoc,
-        idLiquidacion: cobroItem._id,
-        valor,
-        idTipoPago: '1',
-      });
+      const ing = await crearIngreso(
+        {
+          numDoc: cobroItem.alumnoDoc ?? cobroItem.numDoc,
+          idLiquidacion: cobroItem._id,
+          valor,
+          idTipoPago: pagoCobro.idTipoPago,
+          idCuentaBancaria: pagoCobro.idCuentaBancaria || undefined,
+          numComprobante: pagoCobro.numComprobante.trim() || undefined,
+          observaciones: pagoCobro.observaciones.trim() || undefined,
+        },
+        pagoCobro.soporte,
+      );
       const num = ing.numRecibo ?? ing._id;
       const tipo = valor >= saldo - 0.0001 ? 'Pago total' : 'Abono parcial';
       cerrarCobro();
@@ -103,7 +143,7 @@ export default function CajaCobrosScreen() {
       ]);
       await load();
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo cobrar');
+      Alert.alert('Error', mensajeErrorApi(e));
     } finally {
       setPayingId(null);
     }
@@ -143,6 +183,11 @@ export default function CajaCobrosScreen() {
               <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4 }} numberOfLines={2}>
                 {item.descripcion || 'Servicio'}
               </ScaledText>
+              {esLiquidacionVirtual(item) ? (
+                <ScaledText baseSize={11} style={{ color: c.accent, fontWeight: '700', marginTop: 4 }}>
+                  Virtual — pago total
+                </ScaledText>
+              ) : null}
             </View>
             <MoneyText value={item.saldo} baseSize={16} style={{ color: c.primary }} bold />
           </Pressable>
@@ -153,7 +198,7 @@ export default function CajaCobrosScreen() {
         <View style={styles.modalBackdrop}>
           <SurfaceCard style={{ ...styles.modalCard, backgroundColor: c.card }} elevated>
             {cobroItem ? (
-              <>
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800' }}>
                   Registrar cobro
                 </ScaledText>
@@ -163,34 +208,54 @@ export default function CajaCobrosScreen() {
                 <ScaledText baseSize={14} style={{ color: c.text, marginTop: 4 }} numberOfLines={2}>
                   {cobroItem.descripcion || 'Servicio'}
                 </ScaledText>
+                {cobroVirtual ? (
+                  <ScaledText baseSize={12} style={{ color: c.accent, fontWeight: '700', marginTop: 6 }}>
+                    Matrícula virtual: solo pago del saldo completo
+                  </ScaledText>
+                ) : null}
                 <View style={styles.modalSaldo}>
                   <ScaledText baseSize={13} style={{ color: c.textSoft }}>Saldo pendiente</ScaledText>
                   <MoneyText value={cobroItem.saldo} baseSize={16} style={{ color: c.warn }} bold />
                 </View>
-                <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 12, marginBottom: 6 }}>
-                  Valor a pagar (abono o total)
-                </ScaledText>
-                <TextInput
-                  value={montoText}
-                  onChangeText={(t) => setMontoText(t.replace(/[^\d]/g, ''))}
-                  keyboardType="number-pad"
-                  placeholder="0"
-                  placeholderTextColor="#94a3b8"
-                  style={[styles.montoInput, { borderColor: c.border, color: c.text, backgroundColor: c.bg }]}
+                {!cobroVirtual ? (
+                  <>
+                    <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 12, marginBottom: 6 }}>
+                      Valor a pagar (abono o total)
+                    </ScaledText>
+                    <TextInput
+                      value={montoText}
+                      onChangeText={(t) => setMontoText(t.replace(/[^\d]/g, ''))}
+                      keyboardType="number-pad"
+                      placeholder="0"
+                      placeholderTextColor="#94a3b8"
+                      style={[styles.montoInput, { borderColor: c.border, color: c.text, backgroundColor: c.bg }]}
+                    />
+                    <Pressable
+                      onPress={() => setMontoText(String(Math.round(Number(cobroItem.saldo) || 0)))}
+                      style={[styles.totalLink, { borderColor: c.primary }]}
+                    >
+                      <ScaledText baseSize={13} style={{ color: c.primary, fontWeight: '700' }}>
+                        Usar saldo completo
+                      </ScaledText>
+                    </Pressable>
+                    {parseMonto() > 0 && parseMonto() < (Number(cobroItem.saldo) || 0) - 0.0001 ? (
+                      <ScaledText baseSize={12} style={{ color: c.warn, fontWeight: '600', marginTop: 8 }}>
+                        Abono parcial
+                      </ScaledText>
+                    ) : null}
+                  </>
+                ) : (
+                  <View style={[styles.modalSaldo, { marginTop: 8 }]}>
+                    <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor a cobrar</ScaledText>
+                    <MoneyText value={cobroItem.saldo} baseSize={18} style={{ color: c.primary }} bold />
+                  </View>
+                )}
+                <PagoCobroFields
+                  idLiquidaciones={[cobroItem._id]}
+                  subtotalItems={cobroVirtual ? Number(cobroItem.saldo) || 0 : parseMonto()}
+                  value={pagoCobro}
+                  onChange={patchPagoCobro}
                 />
-                <Pressable
-                  onPress={() => setMontoText(String(Math.round(Number(cobroItem.saldo) || 0)))}
-                  style={[styles.totalLink, { borderColor: c.primary }]}
-                >
-                  <ScaledText baseSize={13} style={{ color: c.primary, fontWeight: '700' }}>
-                    Usar saldo completo
-                  </ScaledText>
-                </Pressable>
-                {parseMonto() > 0 && parseMonto() < (Number(cobroItem.saldo) || 0) - 0.0001 ? (
-                  <ScaledText baseSize={12} style={{ color: c.warn, fontWeight: '600', marginTop: 8 }}>
-                    Abono parcial
-                  </ScaledText>
-                ) : null}
                 <View style={styles.modalActions}>
                   <PrimaryButton label="Cancelar" variant="ghost" onPress={cerrarCobro} style={{ flex: 1 }} />
                   <PrimaryButton
@@ -201,7 +266,7 @@ export default function CajaCobrosScreen() {
                     style={{ flex: 1 }}
                   />
                 </View>
-              </>
+              </ScrollView>
             ) : null}
           </SurfaceCard>
         </View>
@@ -231,7 +296,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  modalCard: { padding: 18, gap: 4 },
+  modalCard: { padding: 18, gap: 4, maxHeight: '92%' },
   modalSaldo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
