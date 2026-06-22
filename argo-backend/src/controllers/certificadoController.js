@@ -4,6 +4,7 @@ const XLSX = require('xlsx');
 const PlantillaCertificado = require('../models/PlantillaCertificado');
 const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
+const Cliente = require('../models/Cliente');
 const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado, siguienteCodigoCertificado, normalizeDiasAvisoCert, DEFAULT_DIAS_AVISO_POR_VENCER, DEFAULT_DIAS_AVISO_VENCIDO } = require('../services/configCertificado');
@@ -267,6 +268,17 @@ function nombreMostrarCertificado(c, al) {
   return '';
 }
 
+function nombreClienteEmpresa(cli) {
+  if (!cli) return null;
+  return (
+    cli.razonSocial?.trim()
+    || cli.nombreComercial?.trim()
+    || cli.nombres?.trim()
+    || cli.identificacion
+    || null
+  );
+}
+
 async function filtroBusquedaVencidos(qRaw) {
   const q = String(qRaw || '').trim();
   if (!q) return null;
@@ -306,13 +318,19 @@ async function queryBaseVencidos(req) {
     ...filtrosExcluirJornadaCapacitacion(),
     estado: 'vencido',
   };
+  const andParts = [base];
 
   const tipoFmt = String(req.query.tipoFormatoCert || '').trim();
   if (tipoFmt) base.tipoFormatoCert = tipoFmt;
 
   const empresaIdParam = String(req.query.empresaId || '').trim();
   if (empresaIdParam && mongoose.isValidObjectId(empresaIdParam)) {
-    base.empresaId = new mongoose.Types.ObjectId(empresaIdParam);
+    const oid = new mongoose.Types.ObjectId(empresaIdParam);
+    const alumnosEmp = await DatosAlumno.find({ empresaId: oid }).select('numDoc').limit(8000).lean();
+    const docs = [...new Set(alumnosEmp.map((a) => a.numDoc).filter((n) => n != null))];
+    const empresaOr = [{ empresaId: oid }];
+    if (docs.length) empresaOr.push({ numDoc: { $in: docs } });
+    andParts.push({ $or: empresaOr });
   }
 
   const desdeParam = String(req.query.vencimientoDesde || '').trim();
@@ -337,8 +355,9 @@ async function queryBaseVencidos(req) {
   }
 
   const busqueda = await filtroBusquedaVencidos(req.query.q);
-  if (busqueda) return { $and: [base, busqueda] };
-  return base;
+  if (busqueda) andParts.push(busqueda);
+  if (andParts.length === 1) return base;
+  return { $and: andParts };
 }
 
 async function mapearFilasVencidos(rows) {
@@ -346,16 +365,41 @@ async function mapearFilasVencidos(rows) {
   const idProgs = [...new Set(rows.map((c) => String(c.idProg || '')).filter(Boolean))];
 
   const [alumnosRows, programas] = await Promise.all([
-    numDocs.length ? DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [],
+    numDocs.length
+      ? DatosAlumno.find({ numDoc: { $in: numDocs } })
+        .select('numDoc empresaId apellido1 apellido2 nombre1 nombre2 expedida')
+        .lean()
+      : [],
     idProgs.length ? cat.programas.find({ idProg: { $in: idProgs } }).lean() : [],
   ]);
 
   const alByDoc = new Map(alumnosRows.map((a) => [a.numDoc, a]));
   const progById = new Map(programas.map((p) => [String(p.idProg), p]));
 
+  const empresaIds = new Set();
+  for (const c of rows) {
+    const al = alByDoc.get(c.numDoc);
+    const eid = c.empresaId || al?.empresaId;
+    if (eid && mongoose.isValidObjectId(String(eid))) empresaIds.add(String(eid));
+  }
+
+  const clientes = empresaIds.size
+    ? await Cliente.find(
+      { _id: { $in: [...empresaIds].map((id) => new mongoose.Types.ObjectId(id)) } },
+      { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 },
+    ).lean()
+    : [];
+  const cliById = new Map(clientes.map((cl) => [String(cl._id), cl]));
+
   return rows.map((c) => {
     const al = alByDoc.get(c.numDoc);
     const prog = c.idProg ? progById.get(String(c.idProg)) : null;
+    const empresaIdRaw = c.empresaId || al?.empresaId || null;
+    const empresaId = empresaIdRaw ? String(empresaIdRaw) : null;
+    let empresaNombre = String(c.empresaNombre || '').trim() || null;
+    if (!empresaNombre && empresaId) {
+      empresaNombre = nombreClienteEmpresa(cliById.get(empresaId));
+    }
     return {
       ...c,
       _id: String(c._id),
@@ -365,8 +409,8 @@ async function mapearFilasVencidos(rows) {
       programaDescr: prog?.descripcion || prog?.nombreProg || null,
       nomCert: prog?.nomCert || null,
       tipoFormatoCertLabel: TIPOS_LABEL[c.tipoFormatoCert] || c.tipoFormatoCert || null,
-      empresaId: c.empresaId ? String(c.empresaId) : null,
-      empresaNombre: c.empresaNombre || null,
+      empresaId,
+      empresaNombre,
     };
   });
 }
