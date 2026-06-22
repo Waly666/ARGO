@@ -128,16 +128,17 @@
             <input
               type="text"
               class="cb-search"
-              [(ngModel)]="busquedaProg"
+              [ngModel]="busquedaProg()"
+              (ngModelChange)="busquedaProg.set($event)"
               placeholder="Buscar programa por nombre o código…"
             />
-            @if (busquedaProg) {
-              <button type="button" class="cb-search-clear" (click)="busquedaProg = ''">✕</button>
+            @if (busquedaProg()) {
+              <button type="button" class="cb-search-clear" (click)="busquedaProg.set('')">✕</button>
             }
           </div>
 
           @if (!progFiltrados().length) {
-            <p class="cb-no-res">Sin resultados para "{{ busquedaProg }}".</p>
+            <p class="cb-no-res">Sin resultados para "{{ busquedaProg() }}".</p>
           } @else {
             <div class="cb-prog-list">
               @for (p of progFiltrados(); track p.id) {

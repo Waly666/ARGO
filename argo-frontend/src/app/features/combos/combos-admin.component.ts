@@ -34,7 +34,8 @@ export class CombosAdminComponent implements OnInit {
 
   programas = signal<any[]>([]);
   editandoId: string | null = null;
-  busquedaProg = '';
+  /** Signal: el filtro debe ser reactivo para que `progFiltrados` se recalcule al escribir. */
+  busquedaProg = signal('');
 
   form = {
     nombre: '',
@@ -59,7 +60,7 @@ export class CombosAdminComponent implements OnInit {
   );
 
   progFiltrados = computed<ProgItem[]>(() => {
-    const q = this.busquedaProg.trim().toLowerCase();
+    const q = this.busquedaProg().trim().toLowerCase();
     if (!q) return this.progItems();
     return this.progItems().filter(
       (p) => p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q),
@@ -87,7 +88,7 @@ export class CombosAdminComponent implements OnInit {
 
   nuevoCombo() {
     this.editandoId = null;
-    this.busquedaProg = '';
+    this.busquedaProg.set('');
     this.form = { nombre: '', descripcion: '', activo: true, programasSeleccionados: new Set() };
     this.msg.set(null);
     this.modo.set('form');
@@ -95,7 +96,7 @@ export class CombosAdminComponent implements OnInit {
 
   editarCombo(c: Combo) {
     this.editandoId = c.id;
-    this.busquedaProg = '';
+    this.busquedaProg.set('');
     this.form = {
       nombre: c.nombre,
       descripcion: c.descripcion || '',

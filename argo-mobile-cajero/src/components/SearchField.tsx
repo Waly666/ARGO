@@ -9,9 +9,10 @@ type Props = {
   value: string;
   onChangeText: (t: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
 };
 
-export function SearchField({ value, onChangeText, placeholder = 'Buscar…' }: Props) {
+export function SearchField({ value, onChangeText, placeholder = 'Buscar…', autoFocus }: Props) {
   const { textMultiplier, highContrast } = useAccessibility();
   const c = themeColors(highContrast);
 
@@ -25,6 +26,7 @@ export function SearchField({ value, onChangeText, placeholder = 'Buscar…' }: 
         placeholderTextColor="#94a3b8"
         autoCapitalize="none"
         autoCorrect={false}
+        autoFocus={autoFocus}
         returnKeyType="search"
         style={[styles.input, { color: c.text, fontSize: 16 * textMultiplier }]}
       />

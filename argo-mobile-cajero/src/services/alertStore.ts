@@ -1,5 +1,14 @@
+import { certificadoHtmlPath } from '../api/certificadosApi';
+import { reciboEgresoHtmlPath } from '../api/egresosApi';
+import { facturaHtmlPath } from '../api/facturacionApi';
+import { reciboIngresoHtmlPath } from '../api/ingresosApi';
 import type { ComprobanteHoyTipo } from '../api/types';
 import * as alertRuntime from './alertRuntime';
+
+export type AlertaDocumento = {
+  title: string;
+  htmlPath: string;
+};
 
 export type AlertaItem = {
   id: string;
@@ -9,6 +18,7 @@ export type AlertaItem = {
   critico?: boolean;
   mostradaAt: number;
   route?: string;
+  documento?: AlertaDocumento;
 };
 
 type Listener = () => void;
@@ -106,12 +116,33 @@ export function syncComprobante(
     tipo === 'factura'
       ? `Factura ${row.numeroFactura || ''}`.trim()
       : `${tipo === 'ingreso' ? 'Ingreso' : 'Egreso'} ${row.numRecibo || ''}`.trim();
+  const docId = String(row.id || '');
+  let documento: AlertaDocumento | undefined;
+  if (docId) {
+    if (tipo === 'factura') {
+      documento = {
+        title: label || 'Factura electrónica',
+        htmlPath: facturaHtmlPath(docId),
+      };
+    } else if (tipo === 'ingreso') {
+      documento = {
+        title: label || 'Recibo de ingreso',
+        htmlPath: reciboIngresoHtmlPath(docId),
+      };
+    } else {
+      documento = {
+        title: label || 'Recibo de egreso',
+        htmlPath: reciboEgresoHtmlPath(docId),
+      };
+    }
+  }
   return pushAlerta({
     id,
     clave,
     titulo: label,
     detalle: `${nombre || 'Movimiento'} — $${valor.toLocaleString('es-CO')}`,
     route: tipo === 'factura' ? 'Facturacion' : 'Caja',
+    documento,
   });
 }
 
@@ -119,12 +150,21 @@ export function syncCertificadoNuevo(cert: Record<string, unknown>, habilitada: 
   if (!habilitada) return false;
   const id = String(cert._id || cert.id || '');
   if (!id) return false;
+  const nombre = String(cert.nombreCompleto || '').trim();
+  const encabezado = String(cert.encabezado || cert.nomCert || cert.programaDescr || '').trim();
+  const codigo = String(cert.codigoCert || '').trim();
+  const detallePartes = [nombre, encabezado || codigo].filter(Boolean);
+  const docTitulo = codigo ? `Certificado ${codigo}` : encabezado ? `Certificado ${encabezado}` : 'Certificado';
   return pushAlerta({
     id: `cert:${id}`,
     clave: 'alarmas.jornadas.certificado_nuevo',
     titulo: 'Certificado emitido',
-    detalle: String(cert.nombreCompleto || cert.codigoCert || 'Nuevo certificado'),
+    detalle: detallePartes.join(' · ') || 'Nuevo certificado',
     route: 'Home',
+    documento: {
+      title: docTitulo,
+      htmlPath: certificadoHtmlPath(id),
+    },
   });
 }
 

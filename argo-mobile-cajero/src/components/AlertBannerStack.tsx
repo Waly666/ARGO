@@ -46,7 +46,11 @@ export function AlertBannerStack() {
           <Pressable
             style={styles.body}
             onPress={() => {
-              if (a.route) nav.navigate(a.route as 'Caja' | 'Facturacion' | 'Alumnos');
+              if (a.documento) {
+                nav.navigate('DocumentoViewer', a.documento);
+                return;
+              }
+              if (a.route) nav.navigate(a.route as 'Caja' | 'Facturacion' | 'Alumnos' | 'Home');
             }}
           >
             <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800' }}>

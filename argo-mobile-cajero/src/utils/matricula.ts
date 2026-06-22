@@ -1,4 +1,5 @@
 import type { ProgramaItem, ServicioItem } from '../api/domain';
+import { coincideBusqueda, normalizarBlob } from './buscarTexto';
 import { TARIFA_VIRTUAL } from './pago';
 
 export type TarifaMatricula = 1 | 2 | 3 | 4;
@@ -146,15 +147,32 @@ export function programasParaMatricula(programas: ProgramaItem[]): ProgramaItem[
 }
 
 export function filtrarProgramasBusqueda(programas: ProgramaItem[], q: string): ProgramaItem[] {
-  const t = q.trim().toLowerCase();
+  const t = q.trim();
   if (!t) return programas;
   return programas.filter((p) => {
-    const blob = [p.nombreProg, p.codigoProg, p.descripcion, p.nomCert, idPrograma(p)]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return blob.includes(t);
+    const blob = normalizarBlob([p.nombreProg, p.codigoProg, p.descripcion, p.nomCert, idPrograma(p)]);
+    return coincideBusqueda(blob, t);
   });
+}
+
+export function filtrarServiciosBusqueda(servicios: ServicioItem[], q: string): ServicioItem[] {
+  const t = q.trim();
+  if (!t) return servicios;
+  return servicios.filter((s) => {
+    const blob = normalizarBlob([
+      s.descrServicio,
+      s.descripcion,
+      s.programaNombre,
+      s.idServ,
+      s._id,
+      s.tipoServ,
+    ]);
+    return coincideBusqueda(blob, t);
+  });
+}
+
+export function idServicio(s: ServicioItem): string {
+  return String(s.idServ ?? s._id ?? '');
 }
 
 export function labelPrograma(prog: ProgramaItem): string {

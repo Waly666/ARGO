@@ -4,7 +4,7 @@ import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navig
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
-import { SearchField } from '../../components/SearchField';
+import { BuscarPickerField } from '../../components/BuscarPickerField';
 import { ScreenBody } from '../../components/ScreenBody';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { ScaledText } from '../../components/ScaledText';
@@ -20,6 +20,14 @@ import {
 } from '../../components/PagoCobroFields';
 import { fetchTiposPago } from '../../api/catalogosApi';
 import { fetchAlumnoPorDoc } from '../../api/alumnosApi';
+import {
+  aplicarCombo,
+  listarCombos,
+  previstaCombo,
+  type ComboAplicarRes,
+  type ComboItem,
+  type ComboPrevista,
+} from '../../api/combosApi';
 import { crearLiquidacion, listarLiquidacionAlumno } from '../../api/liquidacionApi';
 import { crearIngreso, listarIngresosAlumno, reciboIngresoHtmlPath } from '../../api/ingresosApi';
 import { crearMatricula } from '../../api/matriculasApi';
@@ -45,8 +53,8 @@ import {
   esProgramaCea,
   esProgramaSoloVirtual,
   etiquetaTarifa,
-  filtrarProgramasBusqueda,
   idPrograma,
+  idServicio,
   labelPrograma,
   permiteCantidadServicio,
   programasParaMatricula,
@@ -111,24 +119,25 @@ export default function AlumnoDetalleScreen() {
   const [programas, setProgramas] = useState<ProgramaItem[]>([]);
   const [servicios, setServicios] = useState<ServicioItem[]>([]);
   const [elegiblesFe, setElegiblesFe] = useState<string[]>([]);
-  const [progBusqueda, setProgBusqueda] = useState('');
   const [progSelId, setProgSelId] = useState('');
   const [tarifa, setTarifa] = useState<TarifaMatricula>(1);
-  const [servBusqueda, setServBusqueda] = useState('');
-  const [servSelId, setServSelId] = useState('');
-  const [servCantidad, setServCantidad] = useState('1');
-  const [servValorManual, setServValorManual] = useState('');
+  const [servSelIds, setServSelIds] = useState<string[]>([]);
+  const [serviciosDraft, setServiciosDraft] = useState<Record<string, { cantidad: string; valor: string }>>({});
   const [extrasMatricula, setExtrasMatricula] = useState<PreviewServicioAdicionalItem[]>([]);
   const [pagoCobro, setPagoCobro] = useState<PagoCobroState>(() => pagoCobroStateInicial());
   const [tiposPago, setTiposPago] = useState<Awaited<ReturnType<typeof fetchTiposPago>>>([]);
   const [alumnoCorreo, setAlumnoCorreo] = useState('');
   const [matriculaEmailPortal, setMatriculaEmailPortal] = useState('');
+  const [combos, setCombos] = useState<ComboItem[]>([]);
+  const [comboSelId, setComboSelId] = useState('');
+  const [comboPrevista, setComboPrevista] = useState<ComboPrevista | null>(null);
+  const [comboResultado, setComboResultado] = useState<ComboAplicarRes | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setCertErr(null);
     try {
-      const [liq, ing, progs, servs, eleg, fac, alumno, tipos] = await Promise.all([
+      const [liq, ing, progs, servs, eleg, fac, alumno, tipos, combosList] = await Promise.all([
         listarLiquidacionAlumno(numDoc),
         listarIngresosAlumno(numDoc),
         listarProgramas({ catalogo: true }),
@@ -137,6 +146,7 @@ export default function AlumnoDetalleScreen() {
         listarFacturasAlumno(numDoc).catch(() => []),
         fetchAlumnoPorDoc(numDoc).catch(() => null),
         fetchTiposPago().catch(() => []),
+        listarCombos().catch(() => []),
       ]);
       setLiquidacion(liq.items);
       setTotales({ saldo: liq.totales?.saldo ?? 0 });
@@ -155,6 +165,7 @@ export default function AlumnoDetalleScreen() {
         }
       }
       setTiposPago(tipos);
+      setCombos(combosList);
 
       try {
         const certs = await listarCertificadosAlumno(numDoc);
@@ -177,9 +188,15 @@ export default function AlumnoDetalleScreen() {
   );
 
   const programasMat = useMemo(() => programasParaMatricula(programas), [programas]);
-  const programasFiltrados = useMemo(
-    () => filtrarProgramasBusqueda(programasMat, progBusqueda),
-    [programasMat, progBusqueda],
+  const opcionesProgramas = useMemo(
+    () =>
+      programasMat.map((p) => ({
+        id: idPrograma(p),
+        title: labelPrograma(p),
+        subtitle: p.codigoProg ? `Código ${p.codigoProg}` : undefined,
+        keywords: [p.descripcion, p.nomCert, p.tipoCap].filter(Boolean).join(' '),
+      })),
+    [programasMat],
   );
   const programaSel = useMemo(
     () => programasMat.find((p) => idPrograma(p) === progSelId) ?? null,
@@ -226,27 +243,52 @@ export default function AlumnoDetalleScreen() {
       cancel = true;
     };
   }, [programaSel, tarifa]);
-  const serviciosAdicionales = useMemo(() => serviciosAdicionalesLista(servicios), [servicios]);
-  const serviciosFiltrados = useMemo(() => {
-    const t = servBusqueda.trim().toLowerCase();
-    if (!t) return serviciosAdicionales;
-    return serviciosAdicionales.filter((s) =>
-      String(s.descrServicio || s.descripcion || '')
-        .toLowerCase()
-        .includes(t),
-    );
-  }, [serviciosAdicionales, servBusqueda]);
-  const servicioSel = useMemo(
+  const opcionesCombos = useMemo(
     () =>
-      serviciosAdicionales.find((s) => String(s.idServ ?? s._id) === servSelId) ?? null,
-    [serviciosAdicionales, servSelId],
+      combos.map((cb) => ({
+        id: cb.id,
+        title: cb.nombre,
+        subtitle: cb.descripcion?.trim() || `${cb.programas?.length ?? 0} programa(s) · Tarifa 2`,
+        keywords: cb.descripcion,
+      })),
+    [combos],
   );
-  const servUsaCantidad = permiteCantidadServicio(servicioSel);
-  const servValorTotal = valorServicioAdicional(
-    servicioSel,
-    Number(servCantidad.replace(/[^\d]/g, '') || '1'),
-    Number(servValorManual.replace(/[^\d]/g, '') || '0'),
+
+  const serviciosAdicionales = useMemo(() => serviciosAdicionalesLista(servicios), [servicios]);
+  const opcionesServicios = useMemo(
+    () =>
+      serviciosAdicionales.map((s) => {
+        const tarifa1 = Number(s.tarifa1) || 0;
+        return {
+          id: idServicio(s),
+          title: String(s.descrServicio || s.descripcion || 'Servicio'),
+          subtitle: [s.programaNombre, tarifa1 > 0 ? `$${tarifa1.toLocaleString('es-CO')}` : 'Valor variable']
+            .filter(Boolean)
+            .join(' · '),
+          keywords: [s.tipoServ, s.programaNombre].filter(Boolean).join(' '),
+        };
+      }),
+    [serviciosAdicionales],
   );
+
+  useEffect(() => {
+    setServiciosDraft((prev) => {
+      const next = { ...prev };
+      for (const id of servSelIds) {
+        if (next[id]) continue;
+        const s = serviciosAdicionales.find((x) => idServicio(x) === id);
+        const sugerido = Number(s?.tarifa1) || 0;
+        next[id] = {
+          cantidad: '1',
+          valor: sugerido > 0 ? String(Math.round(sugerido)) : '',
+        };
+      }
+      for (const k of Object.keys(next)) {
+        if (!servSelIds.includes(k)) delete next[k];
+      }
+      return next;
+    });
+  }, [servSelIds, serviciosAdicionales]);
 
   const pendientes = liquidacion.filter((i) => (Number(i.saldo) || 0) > 0);
   const subtotalPago = itemsPago.reduce((a, i) => a + (Number(i.valor) || 0), 0);
@@ -371,13 +413,56 @@ export default function AlumnoDetalleScreen() {
     }
   }
 
-  function seleccionarPrograma(p: ProgramaItem) {
-    const id = idPrograma(p);
-    setProgSelId(id);
-    const servsProg = serviciosPrograma(p, servicios);
-    const permitidas = tarifasPermitidasPrograma(p, servsProg);
-    setTarifa((permitidas[0] ?? 1) as TarifaMatricula);
-    setMatriculaEmailPortal('');
+  function limpiarCombo() {
+    setComboSelId('');
+    setComboPrevista(null);
+    setComboResultado(null);
+  }
+
+  async function onComboElegido(id: string) {
+    if (!id) {
+      limpiarCombo();
+      return;
+    }
+    setComboSelId(id);
+    setComboPrevista(null);
+    setComboResultado(null);
+    try {
+      const prev = await previstaCombo(id);
+      setComboPrevista(prev);
+    } catch (e) {
+      limpiarCombo();
+      Alert.alert('Combo', e instanceof Error ? e.message : 'No se pudo cargar la prevista del combo');
+    }
+  }
+
+  async function aplicarComboAlumno() {
+    if (!comboSelId) {
+      Alert.alert('Combo', 'Seleccione un combo.');
+      return;
+    }
+    setBusy(true);
+    setComboResultado(null);
+    try {
+      const res = await aplicarCombo(comboSelId, numDoc);
+      setComboResultado(res);
+      Alert.alert(res.ok ? 'Combo aplicado' : 'Combo parcial', res.message);
+      await load();
+      setTab('pagos');
+    } catch (e) {
+      Alert.alert('Error', mensajeErrorApi(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function onProgramaElegido(id: string) {
+    const p = programasMat.find((x) => idPrograma(x) === id);
+    if (!p) {
+      setProgSelId('');
+      return;
+    }
+    seleccionarPrograma(p);
   }
 
   async function crearMatriculaPrograma() {
@@ -425,7 +510,6 @@ export default function AlumnoDetalleScreen() {
                   : '';
                 Alert.alert('Listo', `Matrícula creada. Revise la pestaña Pagos.${avisoCea}`);
                 setProgSelId('');
-                setProgBusqueda('');
                 setTarifa(1);
                 setMatriculaEmailPortal('');
                 await load();
@@ -442,47 +526,73 @@ export default function AlumnoDetalleScreen() {
     );
   }
 
-  function seleccionarServicioAdicional(s: ServicioItem) {
-    const id = String(s.idServ ?? s._id ?? '');
-    if (!id) return;
-    setServSelId(id);
-    setServCantidad('1');
-    const sugerido = Number(s.tarifa1) || 0;
-    setServValorManual(sugerido > 0 ? String(Math.round(sugerido)) : '');
+  function seleccionarPrograma(p: ProgramaItem) {
+    const id = idPrograma(p);
+    setProgSelId(id);
+    const servsProg = serviciosPrograma(p, servicios);
+    const permitidas = tarifasPermitidasPrograma(p, servsProg);
+    setTarifa((permitidas[0] ?? 1) as TarifaMatricula);
+    setMatriculaEmailPortal('');
   }
 
-  async function agregarServicioAdicional() {
-    if (!servicioSel || !servSelId) {
-      Alert.alert('Servicio', 'Seleccione un servicio adicional.');
+  function patchServicioDraft(id: string, patch: Partial<{ cantidad: string; valor: string }>) {
+    setServiciosDraft((prev) => ({
+      ...prev,
+      [id]: { ...{ cantidad: '1', valor: '' }, ...prev[id], ...patch },
+    }));
+  }
+
+  async function agregarServiciosSeleccionados() {
+    if (!servSelIds.length) {
+      Alert.alert('Servicio', 'Seleccione uno o más servicios adicionales.');
       return;
     }
-    const cant = Math.max(1, Math.floor(Number(servCantidad.replace(/[^\d]/g, '') || '1')));
-    const valor = servValorTotal;
-    if (valor <= 0) {
-      Alert.alert(
-        'Servicio',
-        servUsaCantidad
-          ? 'Indique cantidad y verifique la tarifa unitaria.'
-          : 'Indique el valor del servicio (mayor a cero).',
+    const filas: { id: string; servicio: ServicioItem; cant: number; valor: number; descripcion: string }[] = [];
+    for (const id of servSelIds) {
+      const servicio = serviciosAdicionales.find((s) => idServicio(s) === id);
+      if (!servicio) continue;
+      const draft = serviciosDraft[id] ?? { cantidad: '1', valor: '' };
+      const cant = Math.max(1, Math.floor(Number(draft.cantidad.replace(/[^\d]/g, '') || '1')));
+      const usaCant = permiteCantidadServicio(servicio);
+      const valor = valorServicioAdicional(
+        servicio,
+        cant,
+        Number(draft.valor.replace(/[^\d]/g, '') || '0'),
       );
+      if (valor <= 0) {
+        Alert.alert(
+          'Servicio',
+          `Revise el valor de «${servicio.descrServicio || servicio.descripcion}».`,
+        );
+        return;
+      }
+      const base = String(servicio.descrServicio || servicio.descripcion || '').trim();
+      filas.push({
+        id,
+        servicio,
+        cant,
+        valor,
+        descripcion: usaCant ? descrConCantidad(base, cant) : base,
+      });
+    }
+    if (!filas.length) {
+      Alert.alert('Servicio', 'No hay servicios válidos para agregar.');
       return;
     }
-    const base = String(servicioSel.descrServicio || servicioSel.descripcion || '').trim();
-    const descripcion = servUsaCantidad ? descrConCantidad(base, cant) : base;
     setBusy(true);
     try {
-      await crearLiquidacion({
-        numDoc,
-        idServ: servSelId,
-        descripcion: descripcion || undefined,
-        valor,
-        cantidad: servUsaCantidad ? cant : undefined,
-      });
-      Alert.alert('Listo', 'Servicio adicional agregado a la cuenta del alumno.');
-      setServSelId('');
-      setServBusqueda('');
-      setServCantidad('1');
-      setServValorManual('');
+      for (const f of filas) {
+        await crearLiquidacion({
+          numDoc,
+          idServ: f.id,
+          descripcion: f.descripcion || undefined,
+          valor: f.valor,
+          cantidad: permiteCantidadServicio(f.servicio) ? f.cant : undefined,
+        });
+      }
+      Alert.alert('Listo', `${filas.length} servicio(s) agregado(s) a la cuenta del alumno.`);
+      setServSelIds([]);
+      setServiciosDraft({});
       await load();
       setTab('pagos');
     } catch (e) {
@@ -671,196 +781,283 @@ export default function AlumnoDetalleScreen() {
 
       {tab === 'servicios' ? (
         <>
-          <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 8 }}>
-            Crear matrícula
-          </ScaledText>
-          <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 8, lineHeight: 18 }}>
-            Todos los programas activos excepto jornadas de capacitación (esas van en el módulo Jornadas).
-          </ScaledText>
-          <SearchField
-            value={progBusqueda}
-            onChangeText={setProgBusqueda}
-            placeholder="Buscar programa por nombre o código…"
-          />
-          {programasFiltrados.length ? programasFiltrados.slice(0, 40).map((p) => {
-            const id = idPrograma(p);
-            const sel = progSelId === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => seleccionarPrograma(p)}
-                style={[
-                  styles.itemRow,
-                  { borderColor: c.border, backgroundColor: sel ? c.accentSoft : c.card },
-                ]}
-              >
-                <Ionicons name={sel ? 'radio-button-on' : 'radio-button-off'} size={20} color={c.primary} />
-                <View style={{ flex: 1 }}>
-                  <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>
-                    {labelPrograma(p)}
-                  </ScaledText>
-                </View>
-              </Pressable>
-            );
-          }) : (
-            <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 12 }}>
-              No hay programas disponibles para matrícula.
+          <SurfaceCard style={{ marginBottom: 14 }}>
+            <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 6 }}>
+              Crear matrícula
             </ScaledText>
-          )}
-          {programaSel ? (
-            <SurfaceCard style={{ marginTop: 10, marginBottom: 12, padding: 12, gap: 10 }} elevated={false}>
-              <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }}>
-                {labelPrograma(programaSel)}
-              </ScaledText>
-              {programaSoloVirtual ? (
-                <ScaledText baseSize={13} style={{ color: c.warn, lineHeight: 18 }}>
-                  Programa solo virtual: el alumno debe matricularse en el portal. Puede cobrar la liquidación en Pagos.
-                </ScaledText>
-              ) : null}
-              <View style={styles.tarifaRow}>
-                {tarifasPermitidas.map((t) => (
-                  <Pressable
-                    key={t}
-                    onPress={() => {
-                      setTarifa(t as TarifaMatricula);
-                      if (t === TARIFA_VIRTUAL && !matriculaEmailPortal && alumnoCorreo) {
-                        setMatriculaEmailPortal(alumnoCorreo);
-                      }
-                    }}
-                    style={[
-                      styles.tarifaChip,
-                      {
-                        borderColor: c.primary,
-                        backgroundColor: tarifa === t ? c.primary : c.card,
-                      },
-                    ]}
-                  >
-                    <ScaledText
-                      baseSize={13}
-                      style={{ color: tarifa === t ? '#fff' : c.primary, fontWeight: '700' }}
-                    >
-                      {etiquetaTarifa(t)}
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 12, lineHeight: 18 }}>
+              {programasMat.length} programas disponibles. Toque el campo, escriba para filtrar y elija uno.
+            </ScaledText>
+            <BuscarPickerField
+              label="Programa"
+              value={progSelId}
+              options={opcionesProgramas}
+              onChange={(id) => {
+                if (!id) {
+                  setProgSelId('');
+                  return;
+                }
+                onProgramaElegido(id);
+              }}
+              placeholder="Buscar programa por nombre o código…"
+              emptyText="No hay programas que coincidan"
+              modalTitle="Elegir programa"
+            />
+            {programaSel ? (
+              <View style={{ marginTop: 4, gap: 10 }}>
+                {serviciosProgSel.length ? (
+                  <View>
+                    <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 6, fontWeight: '600' }}>
+                      Servicios incluidos en el programa
                     </ScaledText>
-                  </Pressable>
-                ))}
-              </View>
-              {esTarifaVirtualSel && !programaSoloVirtual ? (
-                <>
-                  <ScaledText baseSize={13} style={{ color: c.textSoft }}>
-                    Correo portal (acceso aula virtual)
+                    <View style={styles.chipRow}>
+                      {serviciosProgSel.map((s) => (
+                        <View key={idServicio(s)} style={[styles.chip, { backgroundColor: c.accentSoft, borderColor: c.border }]}>
+                          <ScaledText baseSize={11} style={{ color: c.text }}>
+                            {s.descrServicio || s.descripcion}
+                          </ScaledText>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ) : null}
+                {programaSoloVirtual ? (
+                  <ScaledText baseSize={13} style={{ color: c.warn, lineHeight: 18 }}>
+                    Programa solo virtual: el alumno debe matricularse en el portal. Puede cobrar la liquidación en Pagos.
                   </ScaledText>
-                  <TextInput
-                    value={matriculaEmailPortal}
-                    onChangeText={setMatriculaEmailPortal}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    placeholder={alumnoCorreo || 'correo@ejemplo.com'}
-                    placeholderTextColor="#94a3b8"
-                    style={[styles.valorInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
-                  />
-                </>
-              ) : null}
-              <View style={styles.valorMatRow}>
-                <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor matrícula</ScaledText>
-                <MoneyText value={valorMatriculaTotal} baseSize={16} style={{ color: c.primary }} bold />
+                ) : null}
+                <View style={styles.tarifaRow}>
+                  {tarifasPermitidas.map((t) => (
+                    <Pressable
+                      key={t}
+                      onPress={() => {
+                        setTarifa(t as TarifaMatricula);
+                        if (t === TARIFA_VIRTUAL && !matriculaEmailPortal && alumnoCorreo) {
+                          setMatriculaEmailPortal(alumnoCorreo);
+                        }
+                      }}
+                      style={[
+                        styles.tarifaChip,
+                        {
+                          borderColor: c.primary,
+                          backgroundColor: tarifa === t ? c.primary : c.card,
+                        },
+                      ]}
+                    >
+                      <ScaledText
+                        baseSize={13}
+                        style={{ color: tarifa === t ? '#fff' : c.primary, fontWeight: '700' }}
+                      >
+                        {etiquetaTarifa(t)}
+                      </ScaledText>
+                    </Pressable>
+                  ))}
+                </View>
+                {esTarifaVirtualSel && !programaSoloVirtual ? (
+                  <>
+                    <ScaledText baseSize={13} style={{ color: c.textSoft }}>
+                      Correo portal (acceso aula virtual)
+                    </ScaledText>
+                    <TextInput
+                      value={matriculaEmailPortal}
+                      onChangeText={setMatriculaEmailPortal}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      placeholder={alumnoCorreo || 'correo@ejemplo.com'}
+                      placeholderTextColor="#94a3b8"
+                      style={[styles.valorInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
+                    />
+                  </>
+                ) : null}
+                <View style={styles.valorMatRow}>
+                  <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor matrícula</ScaledText>
+                  <MoneyText value={valorMatriculaTotal} baseSize={16} style={{ color: c.primary }} bold />
+                </View>
+                {extrasMatricula.length ? (
+                  <ScaledText baseSize={12} style={{ color: c.textSoft }}>
+                    {extrasMatricula.map((ex) => `${ex.descripcion}: ${Number(ex.valor).toLocaleString('es-CO')}`).join(' · ')}
+                  </ScaledText>
+                ) : null}
+                <PrimaryButton
+                  label="Crear matrícula"
+                  icon="school-outline"
+                  onPress={() => void crearMatriculaPrograma()}
+                  disabled={busy || programaSoloVirtual}
+                  fullWidth
+                />
               </View>
-              {extrasMatricula.length ? (
-                <ScaledText baseSize={12} style={{ color: c.textSoft }}>
-                  {extrasMatricula.map((ex) => `${ex.descripcion}: ${Number(ex.valor).toLocaleString('es-CO')}`).join(' · ')}
-                </ScaledText>
-              ) : null}
-              <PrimaryButton
-                label="Crear matrícula"
-                icon="school-outline"
-                onPress={() => void crearMatriculaPrograma()}
-                disabled={busy || programaSoloVirtual}
-                fullWidth
+            ) : null}
+          </SurfaceCard>
+
+          {combos.length ? (
+            <SurfaceCard style={{ marginBottom: 14 }}>
+              <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 6 }}>
+                Aplicar combo de cursos
+              </ScaledText>
+              <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 12, lineHeight: 18 }}>
+                Un combo aplica Tarifa 2 a varios cursos presenciales en un solo paso. Se crea una matrícula y
+                liquidación por cada curso incluido.
+              </ScaledText>
+              <BuscarPickerField
+                label="Combo"
+                value={comboSelId}
+                options={opcionesCombos}
+                onChange={(id) => void onComboElegido(id)}
+                placeholder="Buscar y elegir combo de cursos…"
+                emptyText="No hay combos que coincidan"
+                modalTitle="Elegir combo"
               />
+              {comboPrevista ? (
+                <View style={[styles.comboPrevista, { borderColor: c.border, backgroundColor: c.bgAlt }]}>
+                  <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700', marginBottom: 8 }}>
+                    {comboPrevista.nombre}
+                  </ScaledText>
+                  {comboPrevista.programas.map((p) => (
+                    <View key={p.idPrograma} style={styles.comboProgRow}>
+                      <ScaledText baseSize={13} style={{ color: c.text, flex: 1 }} numberOfLines={2}>
+                        {p.nombreProg}
+                      </ScaledText>
+                      <ScaledText baseSize={13} style={{ color: c.primary, fontWeight: '700' }}>
+                        ${Math.round(p.valor).toLocaleString('es-CO')}
+                      </ScaledText>
+                    </View>
+                  ))}
+                  <View style={[styles.valorMatRow, { marginTop: 10 }]}>
+                    <ScaledText baseSize={13} style={{ color: c.textSoft }}>Total Tarifa 2</ScaledText>
+                    <MoneyText value={comboPrevista.totalValor} baseSize={16} style={{ color: c.primary }} bold />
+                  </View>
+                </View>
+              ) : null}
+              {comboResultado ? (
+                <View
+                  style={[
+                    styles.comboPrevista,
+                    {
+                      borderColor: comboResultado.errores.length ? c.warn : c.ok,
+                      backgroundColor: comboResultado.errores.length ? c.warnBg : c.okBg,
+                      marginTop: comboPrevista ? 10 : 0,
+                    },
+                  ]}
+                >
+                  <ScaledText baseSize={13} style={{ color: c.text, marginBottom: 6 }}>
+                    {comboResultado.message}
+                  </ScaledText>
+                  {comboResultado.resultados.map((r) => (
+                    <ScaledText key={r.idPrograma} baseSize={12} style={{ color: c.ok, marginTop: 2 }}>
+                      ✓ {r.nombreProg} — ${Math.round(r.valor).toLocaleString('es-CO')}
+                    </ScaledText>
+                  ))}
+                  {comboResultado.errores.map((e) => (
+                    <ScaledText key={e.idPrograma} baseSize={12} style={{ color: c.danger, marginTop: 2 }}>
+                      ✗ {e.nombreProg}: {e.error}
+                    </ScaledText>
+                  ))}
+                </View>
+              ) : null}
+              {comboSelId ? (
+                <View style={{ marginTop: 12, gap: 8 }}>
+                  <PrimaryButton
+                    label="Aplicar combo"
+                    icon="layers-outline"
+                    onPress={() => void aplicarComboAlumno()}
+                    disabled={busy || !comboPrevista}
+                    fullWidth
+                  />
+                  <PrimaryButton
+                    label="Cancelar"
+                    variant="ghost"
+                    onPress={limpiarCombo}
+                    disabled={busy}
+                    fullWidth
+                  />
+                </View>
+              ) : null}
             </SurfaceCard>
           ) : null}
 
-          <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginTop: 8, marginBottom: 8 }}>
-            Agregar servicio adicional
-          </ScaledText>
-          <SearchField
-            value={servBusqueda}
-            onChangeText={setServBusqueda}
-            placeholder="Buscar servicio adicional…"
-          />
-          {serviciosFiltrados.length ? serviciosFiltrados.slice(0, 30).map((s) => {
-            const id = String(s.idServ ?? s._id);
-            const sel = servSelId === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => seleccionarServicioAdicional(s)}
-                style={[
-                  styles.itemRow,
-                  { borderColor: c.border, backgroundColor: sel ? c.accentSoft : c.card },
-                ]}
-              >
-                <Ionicons name={sel ? 'radio-button-on' : 'radio-button-off'} size={20} color={c.accent} />
-                <View style={{ flex: 1 }}>
-                  <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>
-                    {s.descrServicio || s.descripcion}
-                  </ScaledText>
-                  {Number(s.tarifa1) > 0 ? (
-                    <MoneyText value={s.tarifa1} baseSize={13} style={{ color: c.textSoft, marginTop: 2 }} />
-                  ) : (
-                    <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
-                      Valor variable
-                    </ScaledText>
-                  )}
-                </View>
-              </Pressable>
-            );
-          }) : (
-            <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 12 }}>
-              Sin servicios adicionales.
+          <SurfaceCard>
+            <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 6 }}>
+              Servicios adicionales
             </ScaledText>
-          )}
-          {servicioSel ? (
-            <SurfaceCard style={{ marginTop: 10, padding: 12, gap: 10 }} elevated={false}>
-              {servUsaCantidad ? (
-                <>
-                  <ScaledText baseSize={13} style={{ color: c.textSoft }}>
-                    {/\bhoras?\b.*\bpractic/i.test(String(servicioSel.descrServicio || ''))
-                      ? 'Cantidad (horas)'
-                      : 'Cantidad'}
-                  </ScaledText>
-                  <TextInput
-                    value={servCantidad}
-                    onChangeText={(t) => setServCantidad(t.replace(/[^\d]/g, ''))}
-                    keyboardType="number-pad"
-                    style={[styles.valorInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
-                  />
-                  <View style={styles.valorMatRow}>
-                    <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor total</ScaledText>
-                    <MoneyText value={servValorTotal} baseSize={16} style={{ color: c.primary }} bold />
-                  </View>
-                </>
-              ) : (
-                <>
-                  <ScaledText baseSize={13} style={{ color: c.textSoft }}>Valor a cobrar</ScaledText>
-                  <TextInput
-                    value={servValorManual}
-                    onChangeText={(t) => setServValorManual(t.replace(/[^\d]/g, ''))}
-                    keyboardType="number-pad"
-                    placeholder="0"
-                    placeholderTextColor="#94a3b8"
-                    style={[styles.valorInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
-                  />
-                </>
-              )}
-              <PrimaryButton
-                label="Agregar servicio"
-                icon="construct-outline"
-                onPress={() => void agregarServicioAdicional()}
-                disabled={busy || servValorTotal <= 0}
-                fullWidth
-              />
-            </SurfaceCard>
-          ) : null}
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 12, lineHeight: 18 }}>
+              Puede elegir varios a la vez. Escriba para filtrar por nombre o programa.
+            </ScaledText>
+            <BuscarPickerField
+              multiple
+              label="Servicios a agregar"
+              value={servSelIds}
+              options={opcionesServicios}
+              onChange={setServSelIds}
+              placeholder="Buscar y marcar uno o varios servicios…"
+              emptyText="Sin servicios adicionales que coincidan"
+              modalTitle="Elegir servicios adicionales"
+            />
+            {servSelIds.length ? (
+              <View style={{ marginTop: 8, gap: 10 }}>
+                {servSelIds.map((id) => {
+                  const servicio = serviciosAdicionales.find((s) => idServicio(s) === id);
+                  if (!servicio) return null;
+                  const draft = serviciosDraft[id] ?? { cantidad: '1', valor: '' };
+                  const usaCant = permiteCantidadServicio(servicio);
+                  const valor = valorServicioAdicional(
+                    servicio,
+                    Number(draft.cantidad.replace(/[^\d]/g, '') || '1'),
+                    Number(draft.valor.replace(/[^\d]/g, '') || '0'),
+                  );
+                  return (
+                    <View
+                      key={id}
+                      style={[styles.draftRow, { borderColor: c.border, backgroundColor: c.bgAlt }]}
+                    >
+                      <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700', marginBottom: 8 }}>
+                        {servicio.descrServicio || servicio.descripcion}
+                      </ScaledText>
+                      {usaCant ? (
+                        <>
+                          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 4 }}>
+                            {/\bhoras?\b.*\bpractic/i.test(String(servicio.descrServicio || ''))
+                              ? 'Cantidad (horas)'
+                              : 'Cantidad'}
+                          </ScaledText>
+                          <TextInput
+                            value={draft.cantidad}
+                            onChangeText={(t) => patchServicioDraft(id, { cantidad: t.replace(/[^\d]/g, '') })}
+                            keyboardType="number-pad"
+                            style={[styles.valorInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 4 }}>
+                            Valor a cobrar
+                          </ScaledText>
+                          <TextInput
+                            value={draft.valor}
+                            onChangeText={(t) => patchServicioDraft(id, { valor: t.replace(/[^\d]/g, '') })}
+                            keyboardType="number-pad"
+                            placeholder="0"
+                            placeholderTextColor="#94a3b8"
+                            style={[styles.valorInput, { borderColor: c.border, color: c.text, backgroundColor: c.card }]}
+                          />
+                        </>
+                      )}
+                      <View style={styles.valorMatRow}>
+                        <ScaledText baseSize={12} style={{ color: c.textSoft }}>Subtotal</ScaledText>
+                        <MoneyText value={valor} baseSize={15} style={{ color: c.primary }} bold />
+                      </View>
+                    </View>
+                  );
+                })}
+                <PrimaryButton
+                  label={`Agregar ${servSelIds.length} servicio(s)`}
+                  icon="construct-outline"
+                  onPress={() => void agregarServiciosSeleccionados()}
+                  disabled={busy}
+                  fullWidth
+                />
+              </View>
+            ) : null}
+          </SurfaceCard>
         </>
       ) : null}
 
@@ -990,5 +1187,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    maxWidth: '100%',
+  },
+  draftRow: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  comboPrevista: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  comboProgRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
   },
 });

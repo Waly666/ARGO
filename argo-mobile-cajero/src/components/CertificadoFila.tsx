@@ -17,13 +17,21 @@ type Props = {
 export function CertificadoFila({ cert, onPressAlumno }: Props) {
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
-  const titulo = cert.codigoCert ?? cert.encabezado ?? 'Certificado';
+  const curso =
+    cert.encabezado?.trim() ||
+    cert.nomCert?.trim() ||
+    cert.programaDescr?.trim() ||
+    '—';
+  const codigo = cert.codigoCert?.trim();
+  const docTitulo = codigo ? `Certificado ${codigo}` : `Certificado ${curso}`;
 
   return (
     <View style={[styles.row, { borderColor: c.border, backgroundColor: c.card }]}>
       <Ionicons name="ribbon-outline" size={24} color={c.primary} />
       <Pressable style={{ flex: 1 }} onPress={onPressAlumno} disabled={!onPressAlumno}>
-        <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }}>{titulo}</ScaledText>
+        <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }} numberOfLines={2}>
+          {curso}
+        </ScaledText>
         {cert.nombreCompleto ? (
           <ScaledText baseSize={13} style={{ color: c.primary, marginTop: 3, fontWeight: '600' }}>
             {cert.nombreCompleto}
@@ -31,14 +39,14 @@ export function CertificadoFila({ cert, onPressAlumno }: Props) {
           </ScaledText>
         ) : null}
         <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }} numberOfLines={2}>
-          {cert.programaDescr ?? cert.nomCert ?? cert.tipoFormatoCertLabel ?? ''}
+          {[codigo, cert.tipoFormatoCertLabel].filter(Boolean).join(' · ')}
         </ScaledText>
         <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
           {cert.fechaEmision ? `Emitido ${new Date(cert.fechaEmision).toLocaleDateString('es-CO')}` : ''}
           {cert.estado ? ` · ${cert.estado}` : ''}
         </ScaledText>
       </Pressable>
-      <VerDocumentoButton titulo={`Certificado ${titulo}`} htmlPath={certificadoHtmlPath(cert._id)} />
+      <VerDocumentoButton titulo={docTitulo} htmlPath={certificadoHtmlPath(cert._id)} />
     </View>
   );
 }
