@@ -22,7 +22,7 @@ import {
   RegistroVerificacionRes,
   ResultadoIntentoCohorte,
 } from './models';
-import { PortalAuthService } from './portal-auth.service';
+import { rewriteCertificadoHtmlForPreview } from './certificado-mobile-html';
 
 @Injectable({ providedIn: 'root' })
 export class AulaApiService {
@@ -290,8 +290,9 @@ export class AulaApiService {
           onError?.('Permita ventanas emergentes para ver el certificado.');
           return;
         }
+        const adapted = rewriteCertificadoHtmlForPreview(html);
         w.document.open();
-        w.document.write(html);
+        w.document.write(adapted);
         w.document.close();
         w.focus();
       },

@@ -27,12 +27,25 @@ export interface PortalTemaConfig {
   urlHeroAbsoluta?: string;
 }
 
+export interface PasarelaPublicaConfig {
+  activo: boolean;
+  ambiente?: string;
+  publicKey?: string | null;
+}
+
+export interface PagoEnLineaRes {
+  checkoutUrl: string;
+  montoCop: number;
+  reference: string;
+}
+
 export interface PortalConfig {
   nombreCea: string;
   nit?: string;
   direccion?: string;
   ciudad?: string;
   telefono?: string;
+  telefonoWhatsapp?: string;
   email?: string;
   urlLogo?: string;
   urlLogoAbsoluta?: string | null;

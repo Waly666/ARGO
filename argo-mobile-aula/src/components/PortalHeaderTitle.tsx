@@ -20,10 +20,10 @@ export function PortalHeaderTitle({ subtitle }: Props) {
     <View style={styles.row}>
       <PortalLogo width={44} height={40} hideLetterFallback style={styles.logo} />
       <View style={styles.copy}>
-        <ScaledText baseSize={16} style={[styles.title, { color: c.text }]} numberOfLines={1}>
+        <ScaledText baseSize={16} style={[styles.title, { color: c.headerTitle }]} numberOfLines={1}>
           {nombreEmpresa}
         </ScaledText>
-        <ScaledText baseSize={11} style={[styles.sub, { color: c.textSoft }]} numberOfLines={1}>
+        <ScaledText baseSize={11} style={[styles.sub, { color: c.headerSubtitle }]} numberOfLines={1}>
           {subtitle ?? 'Mi aula virtual'}
         </ScaledText>
       </View>

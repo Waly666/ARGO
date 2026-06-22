@@ -11,19 +11,28 @@ import { type } from '../theme/typography';
 type Props = {
   logoWidth?: number;
   logoHeight?: number;
+  light?: boolean;
 };
 
-/** Logo embebido + AULA VIRTUAL + nombre empresa (sin depender del servidor). */
-export function WelcomeBrandHeader({ logoWidth = 168, logoHeight = 86 }: Props) {
+export function WelcomeBrandHeader({ logoWidth = 168, logoHeight = 86, light = true }: Props) {
   const c = useTheme();
 
   return (
     <View style={styles.wrap}>
       <PortalLogo width={logoWidth} height={logoHeight} logoFrame="transparent" />
-      <ScaledText baseSize={type.hero.fontSize} style={[styles.aulaVirtual, { color: c.primary }]}>
+      <ScaledText
+        baseSize={type.hero.fontSize}
+        style={[
+          styles.aulaVirtual,
+          { color: light ? c.accent : c.primary },
+        ]}
+      >
         {APP_BRANDING.tituloApp}
       </ScaledText>
-      <ScaledText baseSize={17} style={[styles.empresaNombre, { color: c.text }]}>
+      <ScaledText
+        baseSize={17}
+        style={[styles.empresaNombre, { color: light ? c.text : c.text }]}
+      >
         {APP_BRANDING.nombreEmpresa}
       </ScaledText>
     </View>
@@ -35,7 +44,7 @@ const styles = StyleSheet.create({
   aulaVirtual: {
     fontWeight: '800',
     textAlign: 'center',
-    letterSpacing: 2,
+    letterSpacing: 2.5,
     marginTop: space.sm,
   },
   empresaNombre: {
@@ -43,5 +52,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: space.xs,
     paddingHorizontal: space.md,
+    lineHeight: 24,
   },
 });

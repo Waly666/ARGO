@@ -39,5 +39,5 @@ export function SurfaceCard({ children, style, elevated = true, padding = 'lg', 
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: radius.lg },
+  card: { borderRadius: radius.xl },
 });

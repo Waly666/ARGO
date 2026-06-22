@@ -24,8 +24,8 @@ export function StatTile({ label, value, icon, color, softColor }: Props) {
   const soft = softColor ?? c.accentSoft;
 
   return (
-    <View style={[styles.tile, shadow.sm, { backgroundColor: soft, borderColor: `${main}44` }]}>
-      <View style={[styles.icon, { backgroundColor: `${main}22` }]}>
+    <View style={[styles.tile, shadow.sm, { backgroundColor: c.card, borderColor: c.borderLight, borderLeftColor: main, borderLeftWidth: 3 }]}>
+      <View style={[styles.icon, { backgroundColor: soft }]}>
         <Ionicons name={icon} size={20} color={main} />
       </View>
       <ScaledText baseSize={24} style={{ color: main, fontWeight: '800', marginTop: space.sm }}>

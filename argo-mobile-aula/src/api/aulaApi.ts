@@ -11,6 +11,8 @@ import type {
   IntentoEvalCohorte,
   MaterialCohorteAlumno,
   MatriculaVirtualRes,
+  PasarelaPublicaConfig,
+  PagoEnLineaRes,
   PortalAuthRes,
   PortalConfig,
   ProgresoVirtualResp,
@@ -66,6 +68,7 @@ export async function fetchPortalConfig(): Promise<PortalConfig> {
     direccion: cfg.direccion,
     ciudad: cfg.ciudad,
     telefono: cfg.telefono,
+    telefonoWhatsapp: cfg.telefonoWhatsapp,
     email: cfg.email,
   };
 }
@@ -155,6 +158,13 @@ export function buscarEmpresas(q: string) {
   );
 }
 
+export function buscarEmpresasPublico(q: string) {
+  return apiFetch<{ _id: string; nombre: string; identificacion: string }[]>(
+    `${B}/empresas/buscar-publico?q=${encodeURIComponent(q)}`,
+    { auth: false },
+  );
+}
+
 export function fetchMisCursos(): Promise<CursoVirtual[]> {
   return apiFetch<CursoVirtual[]>(`${B}/mis-cursos?_=${Date.now()}`);
 }
@@ -223,6 +233,22 @@ export function matricularCurso(id: string | number): Promise<MatriculaVirtualRe
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: '{}',
+  });
+}
+
+/** Misma config pública que el portal web (Wompi). */
+export function fetchPasarelaPublica(): Promise<PasarelaPublicaConfig> {
+  return apiFetch<PasarelaPublicaConfig>('/pasarela/config/publico', { auth: false });
+}
+
+export function iniciarPagoEnLinea(
+  id: string | number,
+  redirectUrl?: string,
+): Promise<PagoEnLineaRes> {
+  return apiFetch<PagoEnLineaRes>(`${B}/cursos/${encodeURIComponent(String(id))}/pagar-linea`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(redirectUrl ? { redirectUrl } : {}),
   });
 }
 

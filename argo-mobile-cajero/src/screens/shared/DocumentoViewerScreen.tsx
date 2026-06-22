@@ -90,7 +90,8 @@ export default function DocumentoViewerScreen() {
             baseUrl: `${getServerPublicOrigin()}/`,
           }}
           style={styles.web}
-          scalesPageToFit
+          scalesPageToFit={false}
+          textZoom={100}
           setBuiltInZoomControls
           setDisplayZoomControls
           allowsInlineMediaPlayback

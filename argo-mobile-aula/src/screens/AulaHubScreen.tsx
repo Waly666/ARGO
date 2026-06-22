@@ -6,10 +6,12 @@ import type { ComponentProps } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PortalHeaderTitle } from '../components/PortalHeaderTitle';
+import { DashboardHeaderBackground } from '../components/DashboardHeaderBackground';
 import { useTheme } from '../context/ThemeContext';
 import type { AulaTabParamList } from '../navigation/types';
 import { space } from '../theme/spacing';
 import { shadow } from '../theme/shadows';
+import CursosPanel from './aula/CursosPanel';
 import TableroPanel from './aula/TableroPanel';
 import MisCursosPanel from './aula/MisCursosPanel';
 import PresencialesPanel from './aula/PresencialesPanel';
@@ -23,6 +25,7 @@ type IonName = ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<keyof AulaTabParamList, { active: IonName; inactive: IonName }> = {
   Tablero: { active: 'grid', inactive: 'grid-outline' },
+  Cursos: { active: 'library', inactive: 'library-outline' },
   MisCursos: { active: 'book', inactive: 'book-outline' },
   Presenciales: { active: 'people', inactive: 'people-outline' },
   Puntajes: { active: 'stats-chart', inactive: 'stats-chart-outline' },
@@ -33,6 +36,7 @@ const TAB_ICONS: Record<keyof AulaTabParamList, { active: IonName; inactive: Ion
 
 const TAB_SUBTITLES: Record<keyof AulaTabParamList, string> = {
   Tablero: 'Inicio',
+  Cursos: 'Explorar y matricularse',
   MisCursos: 'Mis cursos',
   Presenciales: 'Clases presenciales',
   Puntajes: 'Mis puntajes',
@@ -48,44 +52,44 @@ export default function AulaHubScreen() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerBackground: () => <DashboardHeaderBackground />,
         headerStyle: {
-          backgroundColor: c.headerBg,
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 1,
           borderBottomColor: c.headerBorder,
         },
-        headerTintColor: c.primary,
-        headerTitleStyle: { fontWeight: '800', fontSize: 17, color: c.text },
+        headerTintColor: c.headerTitle,
+        headerTitleStyle: { fontWeight: '800', fontSize: 17, color: c.headerTitle },
         headerTitle: () => <PortalHeaderTitle subtitle={TAB_SUBTITLES[route.name]} />,
         headerShadowVisible: false,
-        tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: c.tabBarActive,
+        tabBarInactiveTintColor: c.textSoft,
         tabBarStyle: {
           backgroundColor: c.tabBar,
-          borderTopWidth: 1,
-          borderTopColor: c.border,
-          height: 58 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom - 4 : space.sm,
+          borderTopWidth: 0,
+          height: 64 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom - 2 : space.sm,
           paddingTop: space.sm,
-          ...shadow.sm,
+          ...shadow.lg,
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
+          fontWeight: '700',
           marginTop: -2,
         },
         tabBarIcon: ({ color, focused, size }) => (
           <Ionicons
             name={focused ? TAB_ICONS[route.name].active : TAB_ICONS[route.name].inactive}
-            size={focused ? size + 1 : size}
+            size={focused ? size + 2 : size}
             color={color}
           />
         ),
       })}
     >
       <Tab.Screen name="Tablero" component={TableroPanel} options={{ title: 'Inicio', tabBarLabel: 'Inicio' }} />
-      <Tab.Screen name="MisCursos" component={MisCursosPanel} options={{ title: 'Mis cursos', tabBarLabel: 'Cursos' }} />
+      <Tab.Screen name="Cursos" component={CursosPanel} options={{ title: 'Cursos', tabBarLabel: 'Cursos' }} />
+      <Tab.Screen name="MisCursos" component={MisCursosPanel} options={{ title: 'Mis cursos', tabBarLabel: 'Matriculados' }} />
       <Tab.Screen name="Presenciales" component={PresencialesPanel} options={{ title: 'Presenciales', tabBarLabel: 'Clases' }} />
       <Tab.Screen name="Puntajes" component={PuntajesPanel} options={{ title: 'Mis puntajes', tabBarLabel: 'Notas' }} />
       <Tab.Screen name="Certificados" component={CertificadosPanel} options={{ title: 'Certificados', tabBarLabel: 'Certs' }} />

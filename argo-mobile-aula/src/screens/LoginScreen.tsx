@@ -14,9 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconInput } from '../components/IconInput';
+import { InstBar } from '../components/InstBar';
 import { PortalLogo } from '../components/PortalLogo';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScaledText } from '../components/ScaledText';
+import { StarfieldHero } from '../components/StarfieldHero';
 import { SurfaceCard } from '../components/SurfaceCard';
 import { APP_BRANDING } from '../config/appBranding';
 import { useAuth } from '../context/AuthContext';
@@ -102,27 +104,27 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
     >
+      <InstBar />
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="always"
-        keyboardDismissMode="none"
         showsVerticalScrollIndicator={false}
         bounces={false}
       >
-        <View style={[styles.hero, { paddingTop: insets.top + space.md, backgroundColor: c.accentSoft }]}>
+        <StarfieldHero minHeight={200} includeSafeTop={false} roundedBottom={false}>
           <Pressable onPress={() => nav.goBack()} style={styles.back} hitSlop={12}>
-            <Ionicons name="arrow-back" size={22} color={c.primary} />
+            <Ionicons name="arrow-back" size={22} color={c.accent} />
           </Pressable>
           <PortalLogo width={120} height={56} hideLetterFallback />
-          <ScaledText baseSize={15} style={[styles.brandAula, { color: c.primary }]}>
+          <ScaledText baseSize={14} style={[styles.brandAula, { color: c.accent }]}>
             {APP_BRANDING.tituloApp}
           </ScaledText>
           <ScaledText baseSize={16} style={[styles.brandEmpresa, { color: c.text }]}>
             {APP_BRANDING.nombreEmpresa}
           </ScaledText>
-        </View>
+        </StarfieldHero>
 
-        <SurfaceCard style={{ marginHorizontal: space.lg, marginTop: -28, borderRadius: radius.xl, ...shadow.lg }}>
+        <SurfaceCard style={{ marginHorizontal: space.lg, marginTop: -32, borderRadius: radius.xl, ...shadow.lg }}>
           <ScaledText baseSize={22} style={{ color: c.text, fontWeight: '800', marginBottom: 4 }}>
             Iniciar sesión
           </ScaledText>
@@ -159,7 +161,7 @@ export default function LoginScreen() {
           )}
 
           <Pressable onPress={() => setRemember((r) => !r)} style={styles.remember}>
-            <View style={[styles.check, { borderColor: remember ? c.primary : c.border, backgroundColor: remember ? c.primary : c.card }]}>
+            <View style={[styles.check, { borderColor: remember ? c.primary : c.border, backgroundColor: remember ? c.primary : c.inputBg }]}>
               {remember ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
             </View>
             <ScaledText baseSize={14} style={{ color: c.textSoft }}>
@@ -209,7 +211,7 @@ export default function LoginScreen() {
           {config?.registroAbierto !== false ? (
             <LinkRow label="Crear cuenta nueva" icon="person-add-outline" onPress={() => nav.navigate('Registro')} />
           ) : null}
-          <LinkRow label="Explorar catálogo" icon="compass-outline" onPress={() => nav.navigate('Catalogo')} />
+          <LinkRow label="Explorar cursos" icon="library-outline" onPress={() => nav.navigate('Catalogo')} />
           <LinkRow label="Consultar certificados" icon="ribbon-outline" onPress={() => nav.navigate('ConsultaCertificados')} />
         </View>
       </ScrollView>
@@ -230,28 +232,21 @@ function LinkRow({
 }) {
   const c = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.linkRow, { opacity: pressed ? 0.7 : 1 }]}>
-      <Ionicons name={icon} size={18} color={c.primary} />
-      <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '600', marginLeft: 10 }}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.linkRow, { borderColor: c.border, opacity: pressed ? 0.7 : 1 }]}>
+      <View style={[styles.linkIcon, { backgroundColor: c.accentSoft }]}>
+        <Ionicons name={icon} size={18} color={c.accent} />
+      </View>
+      <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600', flex: 1 }}>
         {label}
       </ScaledText>
-      <Ionicons name="chevron-forward" size={16} color={c.textSoft} style={{ marginLeft: 'auto' }} />
+      <Ionicons name="chevron-forward" size={16} color={c.textSoft} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1 },
-  hero: {
-    paddingHorizontal: space.lg,
-    paddingBottom: space.xxl,
-    borderBottomLeftRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    alignItems: 'center',
-  },
-  back: { alignSelf: 'flex-start', marginBottom: space.sm },
+  back: { alignSelf: 'flex-start', marginBottom: space.md },
   brandEmpresa: { fontWeight: '700', textAlign: 'center', marginTop: 4 },
   brandAula: {
     fontWeight: '800',
@@ -283,5 +278,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: space.md,
     paddingHorizontal: space.sm,
+    borderWidth: 1,
+    borderRadius: radius.md,
+  },
+  linkIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: space.sm,
   },
 });

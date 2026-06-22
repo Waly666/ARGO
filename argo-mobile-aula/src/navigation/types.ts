@@ -17,6 +17,7 @@ export type RootStackParamList = {
 
 export type AulaTabParamList = {
   Tablero: undefined;
+  Cursos: undefined;
   MisCursos: undefined;
   Presenciales: undefined;
   Puntajes: undefined;

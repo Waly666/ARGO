@@ -6,7 +6,7 @@ import { WebView } from 'react-native-webview';
 import { apiFetchText } from '../api/client';
 import { ScaledText } from '../components/ScaledText';
 import { useTheme } from '../context/ThemeContext';
-import { rewriteDocumentHtmlForMobile } from '../utils/documentHtml';
+import { getServerPublicOrigin, rewriteDocumentHtmlForMobile } from '../utils/documentHtml';
 import type { RootStackParamList } from '../navigation/types';
 
 export default function DocumentoHtmlScreen() {
@@ -54,9 +54,13 @@ export default function DocumentoHtmlScreen() {
   return (
     <WebView
       originWhitelist={['*']}
-      source={{ html }}
+      source={{
+        html,
+        baseUrl: `${getServerPublicOrigin()}/`,
+      }}
       style={{ flex: 1, backgroundColor: c.bg }}
-      scalesPageToFit
+      scalesPageToFit={false}
+      textZoom={100}
     />
   );
 }

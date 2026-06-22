@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
@@ -14,7 +15,7 @@ type Props = {
   label: string;
   onPress: () => void;
   icon?: IonName;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'light';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'light' | 'accent';
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
@@ -32,34 +33,46 @@ export function PrimaryButton({
   size = 'md',
 }: Props) {
   const c = useTheme();
+  const py = size === 'lg' ? 16 : 14;
+  const fs = size === 'lg' ? 16 : 15;
+
   const isGhost = variant === 'ghost';
   const isLight = variant === 'light';
   const isDanger = variant === 'danger';
   const isSecondary = variant === 'secondary';
-  const color = isGhost || isLight ? c.primary : '#fff';
-  const py = size === 'lg' ? 16 : 14;
+  const isAccent = variant === 'accent';
+
+  const textColor =
+    isGhost || isSecondary ? c.primary : isLight ? '#fff' : isAccent ? '#042f2e' : '#fff';
 
   const content = loading ? (
-    <ActivityIndicator color={color} />
+    <ActivityIndicator color={textColor} />
   ) : (
     <View style={styles.row}>
-      {icon ? <Ionicons name={icon} size={18} color={color} /> : null}
-      <ScaledText baseSize={size === 'lg' ? 16 : 15} style={{ color, fontWeight: '700' }}>
+      {icon ? <Ionicons name={icon} size={18} color={textColor} /> : null}
+      <ScaledText baseSize={fs} style={{ color: textColor, fontWeight: '700' }}>
         {label}
       </ScaledText>
     </View>
   );
 
-  if (variant === 'primary' && !disabled && !loading) {
+  const pressedStyle = ({ pressed }: { pressed: boolean }) => [
+    fullWidth && styles.full,
+    { opacity: pressed || disabled || loading ? 0.86 : 1 },
+  ];
+
+  if ((variant === 'primary' || variant === 'accent') && !disabled && !loading) {
+    const colors = variant === 'accent' ? c.gradientAccent : c.gradientPrimary;
     return (
-      <Pressable
-        onPress={onPress}
-        disabled={disabled || loading}
-        style={({ pressed }) => [fullWidth && styles.full, { opacity: pressed ? 0.9 : 1 }]}
-      >
-        <View style={[styles.btn, { paddingVertical: py, backgroundColor: c.primary }, shadow.sm]}>
+      <Pressable onPress={onPress} disabled={disabled || loading} style={pressedStyle}>
+        <LinearGradient
+          colors={colors}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={[styles.btn, { paddingVertical: py }, shadow.sm]}
+        >
           {content}
-        </View>
+        </LinearGradient>
       </Pressable>
     );
   }
@@ -69,12 +82,12 @@ export function PrimaryButton({
     : isSecondary
       ? c.accentSoft
       : isLight
-        ? 'rgba(255,255,255,0.2)'
+        ? 'rgba(255,255,255,0.14)'
         : isGhost
           ? 'transparent'
           : c.primary;
 
-  const textColor = isSecondary ? c.primary : isLight ? '#fff' : isGhost ? c.primary : '#fff';
+  const borderColor = isGhost ? c.primary : isLight ? 'rgba(255,255,255,0.45)' : 'transparent';
 
   return (
     <Pressable
@@ -87,16 +100,16 @@ export function PrimaryButton({
         {
           paddingVertical: py,
           backgroundColor: bg,
-          borderColor: isGhost ? c.primary : isLight ? 'rgba(255,255,255,0.5)' : 'transparent',
+          borderColor,
           borderWidth: isGhost || isLight ? 1.5 : 0,
-          opacity: pressed || disabled || loading ? 0.78 : 1,
+          opacity: pressed || disabled || loading ? 0.82 : 1,
         },
       ]}
     >
       {loading ? <ActivityIndicator color={textColor} /> : (
         <View style={styles.row}>
           {icon ? <Ionicons name={icon} size={18} color={textColor} /> : null}
-          <ScaledText baseSize={15} style={{ color: textColor, fontWeight: '700' }}>
+          <ScaledText baseSize={fs} style={{ color: textColor, fontWeight: '700' }}>
             {label}
           </ScaledText>
         </View>
@@ -108,7 +121,7 @@ export function PrimaryButton({
 const styles = StyleSheet.create({
   btn: {
     paddingHorizontal: space.xl,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },

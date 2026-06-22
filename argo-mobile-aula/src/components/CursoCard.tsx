@@ -7,6 +7,7 @@ import type { CursoVirtual } from '../api/types';
 import { ProgressBar } from './ProgressBar';
 import { ScaledText } from './ScaledText';
 import { useTheme } from '../context/ThemeContext';
+import { etiquetaPrecioCatalogo } from '../utils/cursoPrecio';
 import { resolveUploadUrl } from '../utils/uploadUrl';
 import { radius, space } from '../theme/spacing';
 import { shadow } from '../theme/shadows';
@@ -25,6 +26,7 @@ export function CursoCard({ curso, onPress, pct, layout = 'vertical' }: Props) {
     resolveUploadUrl(curso.urlPortadaVirtual) ||
     null;
   const progreso = pct ?? curso.progreso?.pctCompletitud ?? 0;
+  const precio = etiquetaPrecioCatalogo(curso);
 
   if (layout === 'horizontal') {
     return (
@@ -39,7 +41,7 @@ export function CursoCard({ curso, onPress, pct, layout = 'vertical' }: Props) {
         {img ? (
           <Image source={{ uri: img }} style={styles.hImg} resizeMode="cover" />
         ) : (
-          <LinearGradient colors={c.gradientHero} style={styles.hImg} />
+          <LinearGradient colors={['#1e3a8a', '#0e7490']} style={styles.hImg} />
         )}
         <View style={styles.hBody}>
           <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }} numberOfLines={2}>
@@ -74,7 +76,7 @@ export function CursoCard({ curso, onPress, pct, layout = 'vertical' }: Props) {
         {img ? (
           <Image source={{ uri: img }} style={styles.img} resizeMode="cover" />
         ) : (
-          <LinearGradient colors={c.gradientHero} style={[styles.img, styles.imgPh]}>
+          <LinearGradient colors={['#1e3a8a', '#0e7490']} style={[styles.img, styles.imgPh]}>
             <Ionicons name="school-outline" size={36} color="rgba(255,255,255,0.9)" />
           </LinearGradient>
         )}
@@ -94,16 +96,30 @@ export function CursoCard({ curso, onPress, pct, layout = 'vertical' }: Props) {
           <View style={styles.barWrap}>
             <ProgressBar pct={progreso} label="Tu avance" />
           </View>
-        ) : curso.tarifaVirtual > 0 ? (
-          <View style={[styles.price, { backgroundColor: c.accentSoft }]}>
-            <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '800' }}>
-              ${curso.tarifaVirtual.toLocaleString('es-CO')}
+        ) : (
+          <View style={{ marginTop: space.sm }}>
+            <View
+              style={[
+                styles.price,
+                {
+                  backgroundColor: precio.badgeTone === 'free' ? c.okSoft : c.accentSoft,
+                },
+              ]}
+            >
+              <ScaledText
+                baseSize={13}
+                style={{
+                  color: precio.badgeTone === 'free' ? c.ok : c.primary,
+                  fontWeight: '800',
+                }}
+              >
+                {precio.badge}
+              </ScaledText>
+            </View>
+            <ScaledText baseSize={11} style={{ color: c.textSoft, marginTop: 4 }}>
+              {precio.hint}
             </ScaledText>
           </View>
-        ) : (
-          <ScaledText baseSize={12} style={{ color: c.ok, marginTop: space.sm, fontWeight: '600' }}>
-            Disponible
-          </ScaledText>
         )}
       </View>
     </Pressable>

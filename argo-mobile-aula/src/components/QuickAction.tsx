@@ -29,8 +29,8 @@ export function QuickAction({ label, subtitle, icon, onPress, tint }: Props) {
         styles.card,
         shadow.sm,
         {
-          backgroundColor: c.card,
-          borderColor: c.borderLight,
+          backgroundColor: c.cardElevated,
+          borderColor: c.border,
           opacity: pressed ? 0.92 : 1,
         },
       ]}

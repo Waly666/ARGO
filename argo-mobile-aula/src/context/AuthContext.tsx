@@ -18,6 +18,7 @@ type AuthState =
 type AuthContextValue = {
   state: AuthState;
   signIn: (email: string, password: string) => Promise<void>;
+  applyAuthResponse: (res: PortalAuthRes) => Promise<void>;
   signOut: () => Promise<void>;
   updateEmpresa: (empresaId: string | null, empresaNombre: string | null) => void;
   setServidor: (url: string) => Promise<void>;
@@ -72,14 +73,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const res = await portalLogin(email.trim(), password);
+  const applyAuthResponse = useCallback(async (res: PortalAuthRes) => {
     const user = sessionFromAuth(res);
     setTokenGetter(() => res.token);
     await secureSet(TOKEN_KEY, res.token);
     await secureSet(USER_KEY, JSON.stringify(user));
     setState({ status: 'signedIn', token: res.token, user });
   }, []);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const res = await portalLogin(email.trim(), password);
+    await applyAuthResponse(res);
+  }, [applyAuthResponse]);
 
   const signOut = useCallback(async () => {
     setTokenGetter(() => null);
@@ -108,8 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ state, signIn, signOut, updateEmpresa, setServidor, getServidor }),
-    [state, signIn, signOut, updateEmpresa, setServidor, getServidor],
+    () => ({ state, signIn, applyAuthResponse, signOut, updateEmpresa, setServidor, getServidor }),
+    [state, signIn, applyAuthResponse, signOut, updateEmpresa, setServidor, getServidor],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
