@@ -1,5 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -30,6 +42,15 @@ import {
 import { ConfigCertificadoService } from '../../core/services/config-certificado.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { fsToEditorFontSize } from '../../core/utils/certificado-tipografia';
+import {
+  QR_DEFAULT_SIZE_PCT,
+  QR_SIZE_PCT_MAX,
+  QR_SIZE_PCT_MIN,
+  clampQrSizePct,
+  qrSizePctToMm,
+  qrSizeToEditorWidth,
+  resolveQrSizePct,
+} from '../../core/utils/certificado-qr';
 
 @Component({
   selector: 'argo-certificado-layout-editor',
@@ -46,11 +67,18 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   @Input({ required: true }) tipo!: TipoCertificadoId;
   @Input({ required: true }) orientacion!: OrientacionCertificado;
   @Input() urlFondoPreview = '';
+  /** Ruta relativa del PNG (certificados/…); la vista previa la necesita sin URL absoluta. */
+  @Input() urlFondoRel = '';
   @Input() layoutPorTipo: LayoutPorTipoCert = {};
   @Input() mostrarQr = true;
   @Input() qrPosicionGlobal: string = 'inferior_izquierda';
-  @Input() qrTamanoGlobal = 72;
+  @Input() qrTamanoGlobalPct = QR_DEFAULT_SIZE_PCT;
   @Output() layoutChange = new EventEmitter<LayoutPorTipoCert>();
+
+  @ViewChild('certCanvas') certCanvas?: ElementRef<HTMLElement>;
+
+  qrSizeMin = QR_SIZE_PCT_MIN;
+  qrSizeMax = QR_SIZE_PCT_MAX;
 
   campos = CAMPOS_CERTIFICADO_LAYOUT;
   fuenteMinPt = TAMANO_FUENTE_MIN_PT;
@@ -74,6 +102,34 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   defaults = signal<LayoutDefaultsApi | null>(null);
   previewHtml = signal<string | null>(null);
   cargandoPreview = signal(false);
+  arrastrando = signal(false);
+  /** Posición/tamaño en vivo durante arrastre (sin guardar hasta soltar). */
+  dragVista = signal<{
+    texto?: Partial<
+      Record<
+        CampoCertificadoId,
+        {
+          top?: number;
+          bottom?: number;
+          left?: number;
+          right?: number;
+          w?: number;
+          fs?: number;
+          mantenerCentro?: boolean;
+        }
+      >
+    >;
+    qr?: {
+      top?: number;
+      bottom?: number;
+      left?: number;
+      right?: number;
+      sizePct?: number;
+    };
+  } | null>(null);
+
+  private readonly umbralArrastrePx = 4;
+  private readonly umbralDesanclarCentroPct = 0.35;
 
   ngOnInit(): void {
     ensureCertificadoGoogleFonts();
@@ -137,14 +193,28 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     const c = this.campoFrom(layout, id);
     const d = this.defectoCampo(id) as CampoLayoutCert;
     const out: CampoLayoutCert = { visible: c.visible !== false };
-    if (c.top != null && String(c.top).trim() !== '') out.top = c.top;
-    else if (d.top) out.top = d.top;
-    if (c.bottom != null && String(c.bottom).trim() !== '') out.bottom = c.bottom;
-    else if (d.bottom) out.bottom = d.bottom;
-    if (c.left != null && String(c.left).trim() !== '') out.left = c.left;
+
+    const hasTop = c.top != null && String(c.top).trim() !== '';
+    const hasBottom = c.bottom != null && String(c.bottom).trim() !== '';
+    if (hasTop || c.bottom === null) {
+      if (hasTop) out.top = c.top;
+      else if (d.top) out.top = d.top;
+    } else if (hasBottom || c.top === null) {
+      if (hasBottom) out.bottom = c.bottom;
+      else if (d.bottom) out.bottom = d.bottom;
+    } else if (d.top) {
+      out.top = d.top;
+    } else if (d.bottom) {
+      out.bottom = d.bottom;
+    }
+
+    const hasLeft = c.left != null && String(c.left).trim() !== '';
+    const hasRight = c.right != null && String(c.right).trim() !== '';
+    if (hasLeft) out.left = c.left;
+    else if (hasRight) out.right = c.right;
     else if (d.left) out.left = d.left;
-    if (c.right != null && String(c.right).trim() !== '') out.right = c.right;
     else if (d.right) out.right = d.right;
+
     if (c.w) out.w = c.w;
     else if (d.w) out.w = d.w;
     if (c.align) out.align = c.align;
@@ -175,17 +245,44 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     return this.slot().qr || {};
   }
 
-  /** Valores efectivos (guardados + valores por defecto globales) */
+  /** Valores efectivos (guardados + preset global), con un solo ancla vertical y uno horizontal. */
   qrEfectivo(): QrLayoutCert {
     const q = this.qrGuardado();
     const preset = this.presetQr(this.qrPosicionGlobal);
-    return {
-      sizePx: q.sizePx ?? this.qrTamanoGlobal,
-      top: q.top ?? preset.top,
-      bottom: q.bottom ?? preset.bottom,
-      left: q.left ?? preset.left,
-      right: q.right ?? preset.right,
-    };
+    const sizePct = resolveQrSizePct(
+      q,
+      this.orientacion,
+      this.qrTamanoGlobalPct,
+      undefined,
+    );
+    const out: QrLayoutCert = { sizePct };
+
+    const hasTop = q.top != null && String(q.top).trim() !== '';
+    const hasBottom = q.bottom != null && String(q.bottom).trim() !== '';
+    if (hasTop || q.bottom === null) out.top = q.top ?? preset.top;
+    else if (hasBottom || q.top === null) out.bottom = q.bottom ?? preset.bottom;
+    else if (preset.top) out.top = preset.top;
+    else if (preset.bottom) out.bottom = preset.bottom;
+
+    const hasLeft = q.left != null && String(q.left).trim() !== '';
+    const hasRight = q.right != null && String(q.right).trim() !== '';
+    if (hasLeft) out.left = q.left;
+    else if (hasRight) out.right = q.right;
+    else if (preset.left) out.left = preset.left;
+    else if (preset.right) out.right = preset.right;
+
+    return out;
+  }
+
+  /** Persiste la posición/tamaño QR tal como se ve en el editor (WYSIWYG con impresión). */
+  materializarQrEnSlot(): QrLayoutCert {
+    const eff = this.qrEfectivo();
+    const out: QrLayoutCert = { sizePct: eff.sizePct };
+    if (eff.top) out.top = eff.top;
+    else if (eff.bottom) out.bottom = eff.bottom;
+    if (eff.left) out.left = eff.left;
+    else if (eff.right) out.right = eff.right;
+    return out;
   }
 
   colorGlobal(): string {
@@ -258,7 +355,11 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       const eff = this.campoEfectivoFrom(layoutSrc, id);
       campos[id] = eff.visible === false ? { visible: false } : { ...eff, visible: true };
     }
-    const slot: LayoutOrientacionCert = this.limpiarLegacyCampos({ ...slotBase, campos });
+    const slot: LayoutOrientacionCert = this.limpiarLegacyCampos({
+      ...slotBase,
+      campos,
+      qr: this.materializarQrEnSlot(),
+    });
     return {
       ...layoutSrc,
       [this.tipo]: {
@@ -268,21 +369,119 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     };
   }
 
+  private normalizarAnclasCampo(c: CampoLayoutCert): CampoLayoutCert {
+    const out = { ...c };
+    const hasTop = out.top != null && String(out.top).trim() !== '';
+    const hasBottom = out.bottom != null && String(out.bottom).trim() !== '';
+    if (hasTop) delete out.bottom;
+    else if (hasBottom) delete out.top;
+
+    const hasLeft = out.left != null && String(out.left).trim() !== '';
+    const hasRight = out.right != null && String(out.right).trim() !== '';
+    if (hasLeft) delete out.right;
+    else if (hasRight) delete out.left;
+    return out;
+  }
+
+  /** Fija en guardado la posición absoluta que se ve ahora (anclas exclusivas). */
+  private materializarPosicionCampo(id: CampoCertificadoId): Partial<CampoLayoutCert> {
+    const live = this.dragVista()?.texto?.[id];
+    const eff = this.campoEfectivo(id);
+    const patch: Partial<CampoLayoutCert> = {};
+
+    if (live?.bottom != null) {
+      patch.bottom = `${live.bottom}%`;
+      patch.top = null;
+    } else if (live?.top != null) {
+      patch.top = `${live.top}%`;
+      patch.bottom = null;
+    } else if (eff.bottom) {
+      patch.bottom = eff.bottom;
+      patch.top = null;
+    } else if (eff.top) {
+      patch.top = eff.top;
+      patch.bottom = null;
+    }
+
+    if (live?.mantenerCentro) {
+      patch.align = 'center';
+      patch.left = undefined;
+      patch.right = undefined;
+    } else if (live?.right != null) {
+      patch.right = `${live.right}%`;
+      patch.left = undefined;
+      patch.align = 'right';
+    } else if (live?.left != null) {
+      patch.left = `${live.left}%`;
+      patch.right = undefined;
+    } else if (eff.right && !eff.left) {
+      patch.right = eff.right;
+      patch.left = undefined;
+    } else if (eff.left) {
+      patch.left = eff.left;
+      patch.right = undefined;
+    } else if (this.esCentrado(id)) {
+      patch.align = 'center';
+      patch.left = undefined;
+      patch.right = undefined;
+    }
+
+    return patch;
+  }
+
+  private materializarPosicionQr(): Partial<QrLayoutCert> {
+    const live = this.dragVista()?.qr;
+    const eff = this.qrEfectivo();
+    const patch: Partial<QrLayoutCert> = {};
+
+    if (live?.bottom != null) {
+      patch.bottom = `${live.bottom}%`;
+      patch.top = null;
+    } else if (live?.top != null) {
+      patch.top = `${live.top}%`;
+      patch.bottom = null;
+    } else if (eff.bottom) {
+      patch.bottom = eff.bottom;
+      patch.top = null;
+    } else if (eff.top) {
+      patch.top = eff.top;
+      patch.bottom = null;
+    }
+
+    if (live?.right != null) {
+      patch.right = `${live.right}%`;
+      patch.left = null;
+    } else if (live?.left != null) {
+      patch.left = `${live.left}%`;
+      patch.right = null;
+    } else if (eff.right && !eff.left) {
+      patch.right = eff.right;
+      patch.left = null;
+    } else if (eff.left) {
+      patch.left = eff.left;
+      patch.right = null;
+    }
+
+    return patch;
+  }
+
   patchCampo(id: CampoCertificadoId, partial: Partial<CampoLayoutCert>) {
     const campos = { ...(this.slot().campos || {}) };
     const next: CampoLayoutCert = {
-      ...this.campoEfectivo(id),
+      ...this.campo(id),
       ...partial,
     };
     if (partial.top === null) delete next.top;
     if (partial.bottom === null) delete next.bottom;
     if (partial.left === undefined) delete next.left;
-    campos[id] = next;
+    if (partial.right === undefined) delete next.right;
+    campos[id] = this.normalizarAnclasCampo(next);
     this.patchSlot({ campos });
   }
 
   patchQr(partial: Partial<QrLayoutCert>) {
     const prev = { ...this.qrGuardado(), ...partial };
+    delete prev.sizePx;
     if (partial.top === null) delete prev.top;
     if (partial.bottom === null) delete prev.bottom;
     if (partial.left === null) delete prev.left;
@@ -290,18 +489,27 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     this.patchSlot({ qr: prev });
   }
 
+  qrSizeActual(): number {
+    return resolveQrSizePct(
+      this.qrGuardado(),
+      this.orientacion,
+      this.qrTamanoGlobalPct,
+      undefined,
+    );
+  }
+
+  qrSizeMmActual(): number {
+    return Math.round(qrSizePctToMm(this.qrSizeActual(), this.orientacion) * 10) / 10;
+  }
+
+  onQrSize(n: number) {
+    this.patchQr({ ...this.materializarPosicionQr(), sizePct: clampQrSizePct(n) });
+  }
+
   usaAnclaAbajoQr(): boolean {
     const q = this.qrEfectivo();
     if (q.top != null && String(q.top).trim() !== '') return false;
     return !!(q.bottom && String(q.bottom).trim());
-  }
-
-  qrSizeActual(): number {
-    return Math.min(140, Math.max(40, this.qrEfectivo().sizePx ?? 72));
-  }
-
-  onQrSize(n: number) {
-    this.patchQr({ sizePx: Math.min(140, Math.max(40, Math.round(n))) });
   }
 
   qrTopActual(): number {
@@ -321,11 +529,11 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   onQrTop(n: number) {
-    this.patchQr({ top: `${n}%`, bottom: null, right: null });
+    this.patchQr({ top: `${this.clampQrTop(n)}%`, bottom: null });
   }
 
   onQrBottom(n: number) {
-    this.patchQr({ bottom: `${n}%`, top: null });
+    this.patchQr({ bottom: `${this.clampQrBottom(n)}%`, top: null });
   }
 
   onQrLeft(n: number) {
@@ -343,7 +551,7 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       bottom: p.bottom ?? null,
       left: p.left ?? null,
       right: p.right ?? null,
-      sizePx: this.qrSizeActual(),
+      sizePct: this.qrSizeActual(),
     });
   }
 
@@ -352,10 +560,10 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     if (dir === 'up' || dir === 'down') {
       if (this.usaAnclaAbajoQr()) {
         const b = this.qrBottomActual() + (dir === 'up' ? paso : -paso);
-        this.onQrBottom(Math.min(45, Math.max(2, b)));
+        this.onQrBottom(this.clampQrBottom(b));
       } else {
         const t = this.qrTopActual() + (dir === 'up' ? -paso : paso);
-        this.onQrTop(Math.min(40, Math.max(1, t)));
+        this.onQrTop(this.clampQrTop(t));
       }
       return;
     }
@@ -373,6 +581,76 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     return Math.min(this.qrPosMax, Math.max(this.qrPosMin, n));
   }
 
+  private clampVerticalTop(n: number, alturaPct: number): number {
+    const max = Math.max(this.qrPosMin, 98 - alturaPct);
+    return Math.min(max, Math.max(1, n));
+  }
+
+  private clampVerticalBottom(n: number, alturaPct: number): number {
+    const max = Math.max(this.qrPosMin, 98 - alturaPct);
+    return Math.min(max, Math.max(1, n));
+  }
+
+  /** Alto del QR como % de la altura de la hoja (cuadrado, ancho en % del ancho). */
+  private qrAlturaPct(): number {
+    const sizePct = this.qrSizeActual();
+    const pageW = this.orientacion === 'horizontal' ? 297 : 210;
+    const pageH = this.orientacion === 'horizontal' ? 210 : 297;
+    return (sizePct / 100) * (pageW / pageH) * 100;
+  }
+
+  /** Alto estimado del campo de texto como % de la altura de la hoja. */
+  private campoAlturaPct(id: CampoCertificadoId): number {
+    if (this.esMultilinea(id)) return 14;
+    const pt = this.tamanoActual(id);
+    const pageH = this.orientacion === 'horizontal' ? 210 : 297;
+    const mm = ((pt * 25.4) / 72) * 1.35;
+    return Math.max(1.5, (mm / pageH) * 100);
+  }
+
+  private verticalDesdeArrastre(
+    alturaPct: number,
+    anchorBottom: boolean,
+    origTop: number | undefined,
+    origBottom: number | undefined,
+    dyPct: number,
+  ): { top?: number; bottom?: number } {
+    if (anchorBottom && origBottom != null) {
+      const bottom = origBottom - dyPct;
+      const equivTop = 100 - bottom - alturaPct;
+      if (equivTop <= 52) {
+        return { top: this.clampVerticalTop(equivTop, alturaPct) };
+      }
+      return { bottom: this.clampVerticalBottom(bottom, alturaPct) };
+    }
+    if (origTop != null) {
+      const top = origTop + dyPct;
+      const equivBottom = 100 - top - alturaPct;
+      if (top >= 52) {
+        return { bottom: this.clampVerticalBottom(equivBottom, alturaPct) };
+      }
+      return { top: this.clampVerticalTop(top, alturaPct) };
+    }
+    return {};
+  }
+
+  private clampQrTop(n: number): number {
+    return this.clampVerticalTop(n, this.qrAlturaPct());
+  }
+
+  private clampQrBottom(n: number): number {
+    return this.clampVerticalBottom(n, this.qrAlturaPct());
+  }
+
+  private qrVerticalDesdeArrastre(
+    anchorBottom: boolean,
+    origTop: number | undefined,
+    origBottom: number | undefined,
+    dyPct: number,
+  ): { top?: number; bottom?: number } {
+    return this.verticalDesdeArrastre(this.qrAlturaPct(), anchorBottom, origTop, origBottom, dyPct);
+  }
+
   restaurarQr() {
     const slot = { ...this.slot() };
     delete slot.qr;
@@ -381,11 +659,17 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
   usaAnclaAbajo(id: CampoCertificadoId): boolean {
     const c = this.campo(id);
-    const d = this.defectoCampo(id);
     if (c.top != null && String(c.top).trim() !== '') return false;
     if (c.bottom === null) return false;
     if (c.bottom != null && String(c.bottom).trim() !== '') return true;
-    return !!d['bottom'] && !d['top'];
+    const eff = this.campoEfectivo(id);
+    if (eff.top != null && String(eff.top).trim() !== '') return false;
+    return !!(eff.bottom && String(eff.bottom).trim());
+  }
+
+  private anclaDerechaEfectiva(id: CampoCertificadoId): boolean {
+    const eff = this.campoEfectivo(id);
+    return !!(eff.right && String(eff.right).trim() !== '' && (!eff.left || String(eff.left).trim() === ''));
   }
 
   pctVal(v?: string | null, fallback = 50): number {
@@ -394,11 +678,13 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   topActual(id: CampoCertificadoId): number {
-    return this.pctVal(this.campo(id).top, this.pctVal(this.defectoCampo(id)['top'], 50));
+    const eff = this.campoEfectivo(id);
+    return this.pctVal(eff.top, this.pctVal(this.defectoCampo(id)['top'], 50));
   }
 
   bottomActual(id: CampoCertificadoId): number {
-    return this.pctVal(this.campo(id).bottom, this.pctVal(this.defectoCampo(id)['bottom'], 11));
+    const eff = this.campoEfectivo(id);
+    return this.pctVal(eff.bottom, this.pctVal(this.defectoCampo(id)['bottom'], 11));
   }
 
   leftActual(id: CampoCertificadoId): number {
@@ -414,11 +700,17 @@ export class CertificadoLayoutEditorComponent implements OnInit {
   }
 
   onTop(id: CampoCertificadoId, n: number) {
-    this.patchCampo(id, { top: `${n}%`, bottom: null });
+    this.patchCampo(id, {
+      top: `${this.clampVerticalTop(n, this.campoAlturaPct(id))}%`,
+      bottom: null,
+    });
   }
 
   onBottom(id: CampoCertificadoId, n: number) {
-    this.patchCampo(id, { bottom: `${n}%`, top: null });
+    this.patchCampo(id, {
+      bottom: `${this.clampVerticalBottom(n, this.campoAlturaPct(id))}%`,
+      top: null,
+    });
   }
 
   onLeft(id: CampoCertificadoId, n: number) {
@@ -456,7 +748,10 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
   onTamano(id: CampoCertificadoId, n: number) {
     const v = Math.min(this.fuenteMaxPt, Math.max(this.fuenteMinPt, Number(n) || this.fuenteMinPt));
-    this.patchCampo(id, { fs: `${Math.round(v * 2) / 2}pt` });
+    this.patchCampo(id, {
+      ...this.materializarPosicionCampo(id),
+      fs: `${Math.round(v * 2) / 2}pt`,
+    });
   }
 
   ajustarTamano(id: CampoCertificadoId, delta: number) {
@@ -468,10 +763,10 @@ export class CertificadoLayoutEditorComponent implements OnInit {
     if (dir === 'up' || dir === 'down') {
       if (this.usaAnclaAbajo(id)) {
         const b = this.bottomActual(id) + (dir === 'up' ? paso : -paso);
-        this.onBottom(id, Math.min(45, Math.max(2, b)));
+        this.onBottom(id, b);
       } else {
         const t = this.topActual(id) + (dir === 'up' ? -paso : paso);
-        this.onTop(id, Math.min(95, Math.max(0, t)));
+        this.onTop(id, t);
       }
       return;
     }
@@ -510,13 +805,14 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
   abrirPreview() {
     this.materializarTipografiaEnCampos();
+    this.patchSlot({ qr: this.materializarQrEnSlot() });
     this.cargandoPreview.set(true);
     this.cfgSvc
       .vistaPrevia({
         tipo: this.tipo,
         orientacion: this.orientacion,
         layoutPorTipo: this.layoutPorTipo,
-        urlFondo: this.urlFondoPreview,
+        urlFondo: this.urlFondoRel || this.cfgSvc.urlFondoRel(this.urlFondoPreview),
       })
       .subscribe({
         next: (html) => {
@@ -533,47 +829,107 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
   estiloOverlayQr(): Record<string, string> {
     const q = this.qrEfectivo();
-    const px = this.qrSizeActual();
-    const pct = (px / 380) * 100;
+    const live = this.dragVista()?.qr;
     const st: Record<string, string> = {
-      width: `${pct}%`,
+      width: qrSizeToEditorWidth(live?.sizePct ?? this.qrSizeActual()),
       aspectRatio: '1',
     };
-    if (q.top) {
+    if (live?.bottom != null) {
+      st['bottom'] = `${live.bottom}%`;
+      st['top'] = 'auto';
+    } else if (live?.top != null) {
+      st['top'] = `${live.top}%`;
+      st['bottom'] = 'auto';
+    } else if (q.top) {
       st['top'] = q.top;
       st['bottom'] = 'auto';
     } else if (q.bottom) {
       st['bottom'] = q.bottom;
       st['top'] = 'auto';
     }
-    if (q.left) st['left'] = q.left;
-    if (q.right) st['right'] = q.right;
-    if (this.esQrSel()) {
-      st['outline'] = '2px solid #4ea3ff';
-      st['boxShadow'] = '0 0 0 2px rgba(78,163,255,0.35)';
+    if (live?.right != null) {
+      st['right'] = `${live.right}%`;
+      st['left'] = 'auto';
+    } else if (live?.left != null) {
+      st['left'] = `${live.left}%`;
+      st['right'] = 'auto';
+    } else {
+      if (q.left) {
+        st['left'] = q.left;
+        st['right'] = 'auto';
+      } else if (q.right) {
+        st['right'] = q.right;
+        st['left'] = 'auto';
+      }
     }
     return st;
   }
 
-  estiloOverlay(id: CampoCertificadoId): Record<string, string> {
-    const eff = this.campoEfectivo(id);
-    const align = eff.align || 'center';
-    const color = eff.color || this.colorGlobal();
-    const sel = this.campoSel() === id;
-    const st: Record<string, string> = {
-      color,
-      fontSize: fsToEditorFontSize(eff.fs, this.orientacion),
-      fontWeight: String(eff.fw || '600'),
-      textAlign: align,
-      fontFamily: eff.fontFamily || FUENTE_CERTIFICADO_DEFAULT,
-    };
+  private aplicarPosicionOverlay(
+    st: Record<string, string>,
+    id: CampoCertificadoId,
+    eff: CampoLayoutCert,
+    align: string,
+  ) {
+    const live = this.dragVista()?.texto?.[id];
+    if (live) {
+      let hasVertical = false;
+      if (live.bottom != null) {
+        st['top'] = 'auto';
+        st['bottom'] = `${live.bottom}%`;
+        hasVertical = true;
+      } else if (live.top != null) {
+        st['top'] = `${live.top}%`;
+        st['bottom'] = 'auto';
+        hasVertical = true;
+      }
+      if (live.mantenerCentro) {
+        st['left'] = '50%';
+        st['transform'] = 'translateX(-50%)';
+        st['width'] = `${live.w ?? this.anchoActual(id)}%`;
+        return;
+      }
+      if (live.right != null) {
+        st['right'] = `${live.right}%`;
+        st['left'] = 'auto';
+        st['width'] = `${live.w ?? eff.w ?? '30%'}`;
+        st['transform'] = 'none';
+        return;
+      }
+      if (live.left != null) {
+        st['left'] = `${live.left}%`;
+        st['width'] = `${live.w ?? eff.w ?? '30%'}`;
+        st['transform'] = 'none';
+        return;
+      }
+      if (hasVertical) {
+        st['width'] = `${live.w ?? eff.w ?? '30%'}`;
+        if (eff.right && (!eff.left || String(eff.left).trim() === '')) {
+          st['right'] = eff.right;
+          st['left'] = 'auto';
+          st['transform'] = 'none';
+        } else if (eff.left) {
+          st['left'] = eff.left;
+          st['transform'] = 'none';
+        } else if (align === 'center') {
+          st['left'] = '50%';
+          st['transform'] = 'translateX(-50%)';
+        }
+        return;
+      }
+    }
     if (this.usaAnclaAbajo(id)) {
       st['top'] = 'auto';
       st['bottom'] = eff.bottom || '10%';
     } else {
       st['top'] = eff.top || '50%';
     }
-    if (eff.left) {
+    if (eff.right && (!eff.left || String(eff.left).trim() === '')) {
+      st['right'] = eff.right;
+      st['left'] = 'auto';
+      st['width'] = eff.w || '30%';
+      st['transform'] = 'none';
+    } else if (eff.left) {
       st['left'] = eff.left;
       st['width'] = eff.w || '30%';
       st['transform'] = 'none';
@@ -582,6 +938,24 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       st['transform'] = 'translateX(-50%)';
       st['width'] = eff.w || (this.esMultilinea(id) ? '82%' : '82%');
     }
+  }
+
+  estiloOverlay(id: CampoCertificadoId): Record<string, string> {
+    const eff = this.campoEfectivo(id);
+    const live = this.dragVista()?.texto?.[id];
+    const align = live?.mantenerCentro ? 'center' : eff.align || 'center';
+    const color = eff.color || this.colorGlobal();
+    const st: Record<string, string> = {
+      color,
+      fontSize: fsToEditorFontSize(
+        live?.fs != null ? `${live.fs}pt` : eff.fs,
+        this.orientacion,
+      ),
+      fontWeight: String(eff.fw || '600'),
+      textAlign: align === 'center' ? 'center' : align,
+      fontFamily: eff.fontFamily || FUENTE_CERTIFICADO_DEFAULT,
+    };
+    this.aplicarPosicionOverlay(st, id, eff, align);
     if (this.visible(id) === false) st['display'] = 'none';
     if (this.esMultilinea(id)) {
       st['whiteSpace'] = 'normal';
@@ -591,8 +965,81 @@ export class CertificadoLayoutEditorComponent implements OnInit {
       st['overflow'] = 'visible';
       st['maxHeight'] = 'none';
     }
-    if (sel) st['outline'] = '2px solid #4ea3ff';
     return st;
+  }
+
+  setAlineacion(id: CampoCertificadoId, align: 'left' | 'center' | 'right') {
+    this.dragVista.set(null);
+    if (align === 'center' && !this.esCampoPosicional(id)) {
+      this.setCentrado(id, true);
+      return;
+    }
+    const w = this.anchoActual(id);
+    if (align === 'left') {
+      this.patchCampo(id, {
+        align: 'left',
+        left: `${Math.max(2, this.esCentrado(id) ? (100 - w) / 2 : this.leftActual(id))}%`,
+        right: undefined,
+        w: `${w}%`,
+      });
+    } else {
+      this.patchCampo(id, {
+        align: 'right',
+        right: `${this.usaAnclaDerecha(id) ? this.rightActual(id) : 8}%`,
+        left: undefined,
+        w: `${w}%`,
+      });
+    }
+  }
+
+  /** Centra el cuadro solo en horizontal; mantiene la posición vertical actual. */
+  centrarCuadroEnCertificado(id: CampoCertificadoId) {
+    this.dragVista.set(null);
+    const w = this.anchoActual(id);
+
+    if (this.esCampoPosicional(id)) return;
+
+    if (this.usaAnclaAbajo(id)) {
+      const left = Math.max(2, Math.min(88, (100 - w) / 2));
+      this.patchCampo(id, {
+        left: `${left}%`,
+        align: 'left',
+        w: `${w}%`,
+        right: undefined,
+      });
+      return;
+    }
+
+    this.patchCampo(id, {
+      align: 'center',
+      left: undefined,
+      right: undefined,
+      w: `${w}%`,
+    });
+  }
+
+  puedeCentrarEnHoja(id: CampoCertificadoId): boolean {
+    return !this.esCampoPosicional(id);
+  }
+
+  /** Centra el QR solo en horizontal; mantiene arriba/abajo como está. */
+  centrarQrEnCertificado() {
+    this.dragVista.set(null);
+    const size = this.qrSizeActual();
+    const left = Math.max(2, Math.min(88, (100 - size) / 2));
+    this.patchQr({
+      left: `${Math.round(left * 10) / 10}%`,
+      right: null,
+    });
+  }
+
+  usaAnclaDerecha(id: CampoCertificadoId): boolean {
+    const eff = this.campoEfectivo(id);
+    return !!(eff.right && String(eff.right).trim() && (!eff.left || String(eff.left).trim() === ''));
+  }
+
+  rightActual(id: CampoCertificadoId): number {
+    return this.pctVal(this.campoEfectivo(id).right, 8);
   }
 
   esMultilinea(id: CampoCertificadoId): boolean {
@@ -679,5 +1126,458 @@ export class CertificadoLayoutEditorComponent implements OnInit {
 
   private clonarSlot(slot: LayoutOrientacionCert): LayoutOrientacionCert {
     return JSON.parse(JSON.stringify(slot)) as LayoutOrientacionCert;
+  }
+
+  /** --- Arrastre y redimensionado interactivo --- */
+  private drag:
+    | {
+        kind: 'move-text';
+        id: CampoCertificadoId;
+        startX: number;
+        startY: number;
+        origTop?: number;
+        origBottom?: number;
+        origLeft: number;
+        useBottom: boolean;
+        anchorRight: boolean;
+        origRight?: number;
+        wasCentered: boolean;
+      }
+    | {
+        kind: 'move-qr';
+        startX: number;
+        startY: number;
+        origTop?: number;
+        origBottom?: number;
+        origLeft?: number;
+        origRight?: number;
+        anchorBottom: boolean;
+        anchorRight: boolean;
+      }
+    | {
+        kind: 'resize-qr';
+        startX: number;
+        origPct: number;
+        rectW: number;
+        origTop?: number;
+        origBottom?: number;
+        origLeft?: number;
+        origRight?: number;
+      }
+    | {
+        kind: 'resize-text';
+        id: CampoCertificadoId;
+        mode: 'e' | 'w' | 's' | 'se';
+        startX: number;
+        startY: number;
+        origTop?: number;
+        origBottom?: number;
+        origLeft?: number;
+        origRight?: number;
+        origW: number;
+        origPt: number;
+        wasCentered: boolean;
+        useBottom: boolean;
+        anchorRight: boolean;
+      }
+    | null = null;
+
+  private arrastrePendiente:
+    | {
+        kind: 'move-text';
+        id: CampoCertificadoId;
+        startX: number;
+        startY: number;
+        origTop?: number;
+        origBottom?: number;
+        origLeft: number;
+        useBottom: boolean;
+        anchorRight: boolean;
+        origRight?: number;
+        wasCentered: boolean;
+        pointerId: number;
+      }
+    | {
+        kind: 'move-qr';
+        startX: number;
+        startY: number;
+        origTop?: number;
+        origBottom?: number;
+        origLeft?: number;
+        origRight?: number;
+        anchorBottom: boolean;
+        anchorRight: boolean;
+        pointerId: number;
+      }
+    | null = null;
+
+  private pointerCapturado = false;
+
+  private canvasRect(): DOMRect | null {
+    return this.certCanvas?.nativeElement.getBoundingClientRect() ?? null;
+  }
+
+  /** Posición horizontal virtual para arrastre sin alterar alineación guardada. */
+  private leftVirtualParaArrastre(id: CampoCertificadoId): number {
+    if (this.esCentrado(id)) {
+      const w = this.anchoActual(id);
+      return Math.max(2, Math.min(88, (100 - w) / 2));
+    }
+    return this.leftActual(id);
+  }
+
+  private capturarCanvas(ev: PointerEvent) {
+    const canvas = this.certCanvas?.nativeElement;
+    if (!canvas) return;
+    canvas.setPointerCapture(ev.pointerId);
+    this.pointerCapturado = true;
+  }
+
+  private liberarCanvas(ev: PointerEvent) {
+    if (!this.pointerCapturado) return;
+    try {
+      this.certCanvas?.nativeElement.releasePointerCapture(ev.pointerId);
+    } catch {
+      /* ignore */
+    }
+    this.pointerCapturado = false;
+  }
+
+  private confirmarDragVista() {
+    const v = this.dragVista();
+    if (!v) return;
+
+    if (v.texto) {
+      for (const [rawId, live] of Object.entries(v.texto)) {
+        if (!live) continue;
+        const id = rawId as CampoCertificadoId;
+        const patch: Partial<CampoLayoutCert> = {};
+        if (live.bottom != null) {
+          patch.bottom = `${live.bottom}%`;
+          patch.top = null;
+        } else if (live.top != null) {
+          patch.top = `${live.top}%`;
+          patch.bottom = null;
+        }
+        if (live.fs != null) patch.fs = `${live.fs}pt`;
+        if (live.mantenerCentro) {
+          patch.align = 'center';
+          patch.left = undefined;
+          patch.right = undefined;
+          if (live.w != null) patch.w = `${live.w}%`;
+        } else if (live.right != null) {
+          patch.right = `${live.right}%`;
+          patch.left = undefined;
+          patch.align = 'right';
+          if (live.w != null) patch.w = `${live.w}%`;
+        } else if (live.left != null) {
+          patch.left = `${live.left}%`;
+          patch.right = undefined;
+          patch.align = 'left';
+          patch.w = `${live.w ?? this.anchoActual(id)}%`;
+        } else if (live.w != null) {
+          patch.w = `${live.w}%`;
+        }
+        if (Object.keys(patch).length) this.patchCampo(id, patch);
+      }
+    }
+
+    if (v.qr) {
+      const q: Partial<QrLayoutCert> = {};
+      if (v.qr.bottom != null) {
+        q.bottom = `${v.qr.bottom}%`;
+        q.top = null;
+      } else if (v.qr.top != null) {
+        q.top = `${v.qr.top}%`;
+        q.bottom = null;
+      }
+      if (v.qr.right != null) {
+        q.right = `${v.qr.right}%`;
+        q.left = null;
+      } else if (v.qr.left != null) {
+        q.left = `${v.qr.left}%`;
+        q.right = null;
+      }
+      if (v.qr.sizePct != null) q.sizePct = clampQrSizePct(v.qr.sizePct);
+      if (Object.keys(q).length) this.patchQr(q);
+    }
+
+    this.dragVista.set(null);
+  }
+
+  iniciarArrastreTexto(ev: PointerEvent, id: CampoCertificadoId) {
+    if (!this.visible(id)) return;
+    if ((ev.target as HTMLElement).closest('.handle, .preview-toolbar')) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.seleccionar(id);
+
+    const useBottom = this.usaAnclaAbajo(id);
+    const anchorRight = this.usaAnclaDerecha(id);
+    const wasCentered = this.esCentrado(id);
+    this.capturarCanvas(ev);
+
+    this.arrastrePendiente = {
+      kind: 'move-text',
+      id,
+      startX: ev.clientX,
+      startY: ev.clientY,
+      origTop: useBottom ? undefined : this.topActual(id),
+      origBottom: useBottom ? this.bottomActual(id) : undefined,
+      origLeft: anchorRight ? 0 : this.leftVirtualParaArrastre(id),
+      useBottom,
+      anchorRight,
+      origRight: anchorRight ? this.rightActual(id) : undefined,
+      wasCentered,
+      pointerId: ev.pointerId,
+    };
+  }
+
+  iniciarResizeTexto(ev: PointerEvent, id: CampoCertificadoId, mode: 'e' | 'w' | 's' | 'se') {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.seleccionar(id);
+    this.capturarCanvas(ev);
+    const useBottom = this.usaAnclaAbajo(id);
+    const anchorRight = this.anclaDerechaEfectiva(id);
+    const wasCentered = this.esCentrado(id);
+    this.drag = {
+      kind: 'resize-text',
+      id,
+      mode,
+      startX: ev.clientX,
+      startY: ev.clientY,
+      origTop: useBottom ? undefined : this.topActual(id),
+      origBottom: useBottom ? this.bottomActual(id) : undefined,
+      origLeft: anchorRight || wasCentered ? undefined : this.leftVirtualParaArrastre(id),
+      origRight: anchorRight ? this.rightActual(id) : undefined,
+      origW: this.anchoActual(id),
+      origPt: this.tamanoActual(id),
+      wasCentered,
+      useBottom,
+      anchorRight,
+    };
+    this.arrastrando.set(true);
+  }
+
+  iniciarArrastreQr(ev: PointerEvent) {
+    if ((ev.target as HTMLElement).closest('.handle')) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.seleccionar('qr');
+    const anchorBottom = this.usaAnclaAbajoQr();
+    const anchorRight = !!(this.qrEfectivo().right && !this.qrEfectivo().left);
+    this.capturarCanvas(ev);
+
+    this.arrastrePendiente = {
+      kind: 'move-qr',
+      startX: ev.clientX,
+      startY: ev.clientY,
+      origTop: anchorBottom ? undefined : this.qrTopActual(),
+      origBottom: anchorBottom ? this.qrBottomActual() : undefined,
+      origLeft: anchorRight ? undefined : this.qrLeftActual(),
+      origRight: anchorRight ? this.qrRightActual() : undefined,
+      anchorBottom,
+      anchorRight,
+      pointerId: ev.pointerId,
+    };
+  }
+
+  iniciarResizeQr(ev: PointerEvent) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.seleccionar('qr');
+    this.capturarCanvas(ev);
+    const anchorBottom = this.usaAnclaAbajoQr();
+    const anchorRight = !!(this.qrEfectivo().right && !this.qrEfectivo().left);
+    this.drag = {
+      kind: 'resize-qr',
+      startX: ev.clientX,
+      origPct: this.qrSizeActual(),
+      rectW: this.canvasRect()?.width ?? 380,
+      origTop: anchorBottom ? undefined : this.qrTopActual(),
+      origBottom: anchorBottom ? this.qrBottomActual() : undefined,
+      origLeft: anchorRight ? undefined : this.qrLeftActual(),
+      origRight: anchorRight ? this.qrRightActual() : undefined,
+    };
+    this.arrastrando.set(true);
+  }
+
+  private activarArrastrePendiente(ev: PointerEvent) {
+    const p = this.arrastrePendiente;
+    if (!p || p.pointerId !== ev.pointerId) return;
+    const { pointerId, ...rest } = p;
+    this.drag = rest;
+    this.arrastrePendiente = null;
+    this.arrastrando.set(true);
+  }
+
+  private distanciaArrastre(ev: PointerEvent, startX: number, startY: number): number {
+    const dx = ev.clientX - startX;
+    const dy = ev.clientY - startY;
+    return Math.hypot(dx, dy);
+  }
+
+  @HostListener('document:pointermove', ['$event'])
+  onDocumentPointerMove(ev: PointerEvent) {
+    const pend = this.arrastrePendiente;
+    if (pend && pend.pointerId === ev.pointerId) {
+      if (this.distanciaArrastre(ev, pend.startX, pend.startY) >= this.umbralArrastrePx) {
+        this.activarArrastrePendiente(ev);
+      } else {
+        return;
+      }
+    }
+
+    const d = this.drag;
+    if (!d) return;
+    const rect = this.canvasRect();
+    if (!rect) return;
+    const dxPct = ((ev.clientX - d.startX) / rect.width) * 100;
+
+    if (d.kind === 'resize-qr') {
+      const deltaPct = (dxPct / 100) * (d.origPct * 2);
+      const qrLive: {
+        top?: number;
+        bottom?: number;
+        left?: number;
+        right?: number;
+        sizePct: number;
+      } = { sizePct: clampQrSizePct(d.origPct + deltaPct) };
+      if (d.origBottom != null) qrLive.bottom = d.origBottom;
+      else if (d.origTop != null) qrLive.top = d.origTop;
+      if (d.origRight != null) qrLive.right = d.origRight;
+      else if (d.origLeft != null) qrLive.left = d.origLeft;
+      this.dragVista.set({ qr: qrLive });
+      return;
+    }
+
+    const dyPct = ((ev.clientY - d.startY) / rect.height) * 100;
+
+    if (d.kind === 'resize-text') {
+      const live: {
+        top?: number;
+        bottom?: number;
+        left?: number;
+        right?: number;
+        w?: number;
+        fs?: number;
+        mantenerCentro?: boolean;
+      } = {
+        w: d.origW,
+        fs: d.origPt,
+        mantenerCentro: d.wasCentered,
+      };
+
+      if (d.useBottom && d.origBottom != null) {
+        live.bottom = d.origBottom;
+      } else if (d.origTop != null) {
+        live.top = d.origTop;
+      }
+
+      if (d.anchorRight && d.origRight != null) {
+        live.right = d.origRight;
+        live.mantenerCentro = false;
+      } else if (d.wasCentered && d.mode === 's') {
+        live.mantenerCentro = true;
+      } else if (d.origLeft != null) {
+        live.left = d.origLeft;
+      }
+
+      if (d.mode === 'e') {
+        live.w = Math.min(92, Math.max(18, d.origW + dxPct));
+        live.mantenerCentro = false;
+      } else if (d.mode === 'w') {
+        live.w = Math.min(92, Math.max(18, d.origW - dxPct));
+        if (d.origLeft != null) {
+          live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
+        }
+        live.mantenerCentro = false;
+      } else if (d.mode === 'se') {
+        live.w = Math.min(92, Math.max(18, d.origW + dxPct));
+        live.fs = Math.min(
+          this.fuenteMaxPt,
+          Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
+        );
+        live.mantenerCentro = false;
+      } else if (d.mode === 's') {
+        live.fs = Math.min(
+          this.fuenteMaxPt,
+          Math.max(this.fuenteMinPt, d.origPt - dyPct * 0.35),
+        );
+      }
+      if (d.wasCentered && d.mode !== 's') live.mantenerCentro = false;
+      this.dragVista.set({ texto: { [d.id]: live } });
+      return;
+    }
+
+    if (d.kind === 'move-text') {
+      const desanclarCentro =
+        d.wasCentered && Math.abs(dxPct) > this.umbralDesanclarCentroPct;
+      const live: {
+        top?: number;
+        bottom?: number;
+        left?: number;
+        right?: number;
+        mantenerCentro?: boolean;
+      } = {};
+
+      Object.assign(
+        live,
+        this.verticalDesdeArrastre(
+          this.campoAlturaPct(d.id),
+          !!d.useBottom,
+          d.origTop,
+          d.origBottom,
+          dyPct,
+        ),
+      );
+
+      if (d.anchorRight && d.origRight != null) {
+        live.right = Math.min(88, Math.max(2, d.origRight - dxPct));
+        live.mantenerCentro = false;
+      } else if (desanclarCentro || !d.wasCentered) {
+        live.left = Math.min(88, Math.max(2, d.origLeft + dxPct));
+        live.mantenerCentro = false;
+      } else {
+        live.mantenerCentro = true;
+      }
+
+      this.dragVista.set({ texto: { [d.id]: live } });
+      return;
+    }
+
+    if (d.kind === 'move-qr') {
+      const qrLive: {
+        top?: number;
+        bottom?: number;
+        left?: number;
+        right?: number;
+        sizePct?: number;
+      } = {
+        ...this.qrVerticalDesdeArrastre(d.anchorBottom, d.origTop, d.origBottom, dyPct),
+      };
+      if (d.anchorRight && d.origRight != null) {
+        qrLive.right = this.clampQrHorizontal(d.origRight - dxPct);
+      } else if (d.origLeft != null) {
+        qrLive.left = this.clampQrHorizontal(d.origLeft + dxPct);
+      }
+      this.dragVista.set({ qr: qrLive });
+    }
+  }
+
+  @HostListener('document:pointerup', ['$event'])
+  @HostListener('document:pointercancel', ['$event'])
+  finalizarArrastre(ev: PointerEvent) {
+    const huboArrastre = !!this.drag || !!this.dragVista();
+    if (this.arrastrePendiente?.pointerId === ev.pointerId) {
+      this.arrastrePendiente = null;
+    }
+    if (huboArrastre) {
+      this.confirmarDragVista();
+    }
+    this.liberarCanvas(ev);
+    this.drag = null;
+    this.arrastrando.set(false);
   }
 }

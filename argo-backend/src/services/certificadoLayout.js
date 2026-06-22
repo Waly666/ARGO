@@ -3,8 +3,16 @@ const {
   CAMPOS_IDS,
   DEFAULTS_ORIENTACION,
   QR_PRESETS,
-  QR_DEFAULT_SIZE,
+  QR_DEFAULT_SIZE_PCT,
 } = require('../constants/certificadoLayoutDefaults');
+const {
+  clampSizePct,
+  qrCssWidth,
+  qrRasterPx,
+  resolveSizePct,
+  QR_SIZE_PCT_MIN,
+  QR_SIZE_PCT_MAX,
+} = require('../utils/certificadoQr');
 
 const ALIGN_VALIDOS = new Set(['left', 'center', 'right']);
 const COLOR_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -135,60 +143,63 @@ function presetQr(orientacion, presetKey) {
   return map[presetKey] || map.inferior_izquierda;
 }
 
-function normalizeQr(raw, orientacion, globalConfig) {
-  const key = globalConfig?.qrPosicion || 'inferior_izquierda';
-  const def = presetQr(orientacion, key);
+function normalizeQr(raw, orientacion, globalConfig, options = {}) {
+  const fillDefaults = options.fillDefaults !== false;
+  const presetKey = globalConfig?.qrPosicion || 'inferior_izquierda';
+  const def = presetQr(orientacion, presetKey);
   const r = raw && typeof raw === 'object' ? raw : {};
-  const sizePx = Math.min(
-    140,
-    Math.max(40, parseInt(r.sizePx ?? globalConfig?.qrTamanoPx, 10) || QR_DEFAULT_SIZE),
-  );
+  const sizePct = resolveSizePct(r, orientacion, globalConfig);
 
-  const usuarioFijoTop = r.top != null && String(r.top).trim() !== '';
-  const usuarioFijoBottom = r.bottom != null && String(r.bottom).trim() !== '';
-  const usuarioQuitaBottom = r.bottom === null;
-  const usuarioQuitaTop = r.top === null;
+  const explicitTop = r.top != null && String(r.top).trim() !== '';
+  const explicitBottom = r.bottom != null && String(r.bottom).trim() !== '';
+  const userClearsBottom = r.bottom === null;
+  const userClearsTop = r.top === null;
+  const explicitLeft = r.left != null && String(r.left).trim() !== '';
+  const explicitRight = r.right != null && String(r.right).trim() !== '';
 
-  const out = { sizePx };
-  if (usuarioFijoTop || usuarioQuitaBottom) {
+  const out = { sizePct: clampSizePct(sizePct) };
+
+  if (explicitTop || userClearsBottom) {
     out.top = limpiarPct(r.top, def.top || '2%');
-  } else if (usuarioFijoBottom || (def.bottom && !def.top)) {
+  } else if (explicitBottom || userClearsTop) {
     out.bottom = limpiarPct(r.bottom, def.bottom || '2.5%');
-  } else if (def.top) {
-    out.top = limpiarPct(r.top, def.top);
-  } else if (def.bottom) {
-    out.bottom = limpiarPct(r.bottom, def.bottom);
+  } else if (fillDefaults) {
+    if (def.top) out.top = def.top;
+    else if (def.bottom) out.bottom = def.bottom || '2.5%';
   }
 
-  if (r.left != null && String(r.left).trim() !== '') {
-    out.left = limpiarPct(r.left, def.left);
-  } else if (def.left) {
-    out.left = limpiarPct(undefined, def.left);
-  }
-
-  if (r.right != null && String(r.right).trim() !== '') {
-    out.right = limpiarPct(r.right, def.right);
-  } else if (def.right && !out.left) {
-    out.right = limpiarPct(undefined, def.right);
+  if (explicitLeft) {
+    out.left = limpiarPct(r.left, def.left || '2.5%');
+  } else if (explicitRight) {
+    out.right = limpiarPct(r.right, def.right || '2.5%');
+  } else if (fillDefaults) {
+    if (def.left) out.left = def.left;
+    else if (def.right) out.right = def.right;
   }
 
   return out;
 }
 
-function buildQrEstilo(qr) {
-  const px = qr.sizePx || QR_DEFAULT_SIZE;
+function buildQrEstilo(qr, orientacion) {
+  const sizePct = qr.sizePct ?? QR_DEFAULT_SIZE_PCT;
+  const dims = qrCssWidth(sizePct, orientacion);
   const parts = [
     'position:absolute',
     'z-index:4',
     'background:#fff',
     'padding:3px',
     'border-radius:4px',
+    'box-sizing:border-box',
+    `width:${dims.mm}`,
+    `width:${dims.cqw}`,
+    'aspect-ratio:1',
+    'height:auto',
   ];
   if (qr.top) parts.push(`top:${qr.top}`, 'bottom:auto');
   if (qr.bottom) parts.push(`bottom:${qr.bottom}`, 'top:auto');
-  if (qr.left) parts.push(`left:${qr.left}`);
-  if (qr.right) parts.push(`right:${qr.right}`);
-  return { css: parts.join(';'), size: px };
+  if (qr.left) parts.push(`left:${qr.left}`, 'right:auto');
+  if (qr.right) parts.push(`right:${qr.right}`, 'left:auto');
+  return { css: parts.join(';'), rasterPx: qrRasterPx(sizePct, orientacion), sizePct: dims.pct };
 }
 
 function resolverQr(config, tipo, orientacion) {
@@ -196,7 +207,7 @@ function resolverQr(config, tipo, orientacion) {
   const tipoKey = TIPOS_VALIDOS.includes(tipo) ? tipo : 'curso';
   const guardado = config?.layoutPorTipo?.[tipoKey]?.[ori]?.qr;
   const norm = normalizeQr(guardado, ori, config);
-  return buildQrEstilo(norm);
+  return buildQrEstilo(norm, ori);
 }
 
 const CAMPOS_STORAGE_KEYS = [
@@ -233,7 +244,9 @@ function slotToStorage(val, orientacion) {
     if (stored) campos[id] = stored;
   }
   const slot = { color: norm.color, campos };
-  if (val?.qr && typeof val.qr === 'object') slot.qr = normalizeQr(val.qr, orientacion, null);
+  if (val?.qr && typeof val.qr === 'object') {
+    slot.qr = normalizeQr(val.qr, orientacion, null, { fillDefaults: false });
+  }
   return slot;
 }
 
@@ -290,7 +303,9 @@ function layoutDefaultsApi() {
     qr: {
       vertical: QR_PRESETS.vertical,
       horizontal: QR_PRESETS.horizontal,
-      defaultSizePx: QR_DEFAULT_SIZE,
+      defaultSizePct: QR_DEFAULT_SIZE_PCT,
+      sizePctMin: QR_SIZE_PCT_MIN,
+      sizePctMax: QR_SIZE_PCT_MAX,
     },
   };
 }

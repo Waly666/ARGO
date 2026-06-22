@@ -10,7 +10,7 @@
   @if (abierto()) {
     <div class="editor-intro">
       <strong>{{ labelTipo(tipo) }}</strong> · formato {{ labelOri(orientacion) }}.
-      Elija un texto o el QR a la derecha, o haga clic sobre el certificado. Al terminar, guarde la configuración abajo en la página.
+      Elija un campo en el certificado y manipúlelo con el mouse: mover, redimensionar y alinear. Guarde al terminar.
     </div>
 
     <div class="copy-layout-bar">
@@ -54,37 +54,134 @@
         </div>
 
         @if (urlFondoPreview) {
+          @if (textoSel(); as tbId) {
+            <div class="preview-toolbar" aria-label="Herramientas del campo seleccionado">
+              <span class="tb-label">{{ labelCampo(tbId) }}</span>
+              <span class="tb-sep"></span>
+              @if (puedeCentrarEnHoja(tbId)) {
+                <button
+                  type="button"
+                  class="tb-btn tb-btn-labeled"
+                  title="Centrar horizontalmente en la hoja"
+                  (click)="centrarCuadroEnCertificado(tbId)">
+                  <span class="tb-icon tb-icon-sheet"></span>
+                  <span>Centrar H</span>
+                </button>
+                <span class="tb-sep"></span>
+              }
+              @if (!esCampoPosicional(tbId)) {
+                <button
+                  type="button"
+                  class="tb-btn"
+                  [class.active]="alineacionActual(tbId) === 'left' && !esCentrado(tbId)"
+                  title="Alinear texto a la izquierda"
+                  (click)="setAlineacion(tbId, 'left')">
+                  <span class="tb-icon tb-icon-left"></span>
+                </button>
+                <button
+                  type="button"
+                  class="tb-btn"
+                  [class.active]="esCentrado(tbId)"
+                  title="Alinear texto al centro"
+                  (click)="setAlineacion(tbId, 'center')">
+                  <span class="tb-icon tb-icon-center"></span>
+                </button>
+                <button
+                  type="button"
+                  class="tb-btn"
+                  [class.active]="alineacionActual(tbId) === 'right' && !esCentrado(tbId)"
+                  title="Alinear texto a la derecha"
+                  (click)="setAlineacion(tbId, 'right')">
+                  <span class="tb-icon tb-icon-right"></span>
+                </button>
+                <span class="tb-sep"></span>
+              }
+              <div class="font-size-control font-size-control--compact" title="Tamaño de la letra">
+                <button type="button" class="font-size-btn" (click)="ajustarTamano(tbId, -0.5)" aria-label="Reducir tamaño">−</button>
+                <input
+                  type="number"
+                  class="font-size-input"
+                  [min]="fuenteMinPt"
+                  [max]="fuenteMaxPt"
+                  step="0.5"
+                  [ngModel]="tamanoActual(tbId)"
+                  (ngModelChange)="onTamano(tbId, $event)" />
+                <span class="font-size-unit">pt</span>
+                <button type="button" class="font-size-btn" (click)="ajustarTamano(tbId, 0.5)" aria-label="Aumentar tamaño">+</button>
+              </div>
+            </div>
+          } @else if (esQrSel() && mostrarQr) {
+            <div class="preview-toolbar" aria-label="Herramientas del QR">
+              <span class="tb-label">Código QR</span>
+              <span class="tb-sep"></span>
+              <button
+                type="button"
+                class="tb-btn tb-btn-labeled"
+                title="Centrar QR horizontalmente"
+                (click)="centrarQrEnCertificado()">
+                <span class="tb-icon tb-icon-sheet"></span>
+                <span>Centrar H</span>
+              </button>
+              <span class="tb-sep"></span>
+              <span class="tb-meta">{{ qrSizeActual() | number:'1.1-1' }}% · ~{{ qrSizeMmActual() }} mm</span>
+            </div>
+          } @else {
+            <p class="preview-toolbar-hint">Seleccione un texto o el QR en el certificado para ver las herramientas.</p>
+          }
+
           <div class="cert-stage" [class.horizontal]="orientacion === 'horizontal'">
-            <div class="cert-preview">
-              <img [src]="urlFondoPreview" alt="Plantilla del certificado" />
-              <div class="overlay">
+            <div class="cert-preview" #certCanvas>
+              <img [src]="urlFondoPreview" alt="Plantilla del certificado" draggable="false" />
+              <div class="overlay" [class.is-dragging]="arrastrando()">
                 @for (c of campos; track c.id) {
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabindex="0"
                     class="ov-text"
                     [class.multilinea]="esMultilinea(c.id)"
-                    [class.selected]="campoSel() === c.id"
+                    [class.is-selected]="campoSel() === c.id"
                     [class.hidden-field]="!visible(c.id)"
+                    [class.draggable]="visible(c.id)"
                     [style]="estiloOverlay(c.id)"
-                    (click)="seleccionar(c.id)">
+                    (keydown.enter)="seleccionar(c.id)"
+                    (keydown.space)="seleccionar(c.id); $event.preventDefault()"
+                    (pointerdown)="iniciarArrastreTexto($event, c.id)">
                     {{ textoMuestra(c.id) }}
-                  </button>
+                    @if (campoSel() === c.id && visible(c.id)) {
+                      <span class="handle handle-w" title="Ancho izquierdo" (pointerdown)="iniciarResizeTexto($event, c.id, 'w')"></span>
+                      <span class="handle handle-e" title="Ancho derecho" (pointerdown)="iniciarResizeTexto($event, c.id, 'e')"></span>
+                      <span class="handle handle-s" title="Tamaño de letra" (pointerdown)="iniciarResizeTexto($event, c.id, 's')"></span>
+                      <span class="handle handle-se" title="Ancho y tamaño" (pointerdown)="iniciarResizeTexto($event, c.id, 'se')"></span>
+                    }
+                  </div>
                 }
                 @if (mostrarQr) {
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabindex="0"
                     class="ov-qr"
-                    [class.selected]="esQrSel()"
+                    [class.is-selected]="esQrSel()"
                     [style]="estiloOverlayQr()"
-                    (click)="seleccionar('qr')">
+                    (keydown.enter)="seleccionar('qr')"
+                    (keydown.space)="seleccionar('qr'); $event.preventDefault()"
+                    (pointerdown)="iniciarArrastreQr($event)">
                     <span class="qr-mock">QR</span>
-                  </button>
+                    @if (esQrSel()) {
+                      <span
+                        class="handle handle-se"
+                        title="Tamaño del QR"
+                        (pointerdown)="iniciarResizeQr($event)"></span>
+                    }
+                  </div>
                 }
               </div>
             </div>
           </div>
           <p class="preview-tip">
-            <span class="tip-icon">①</span> Clic en un texto o en el cuadro <strong>QR</strong> para ajustarlo.
+            <span class="tip-icon">①</span>
+            <strong>Clic</strong> para seleccionar · <strong>Arrastrar</strong> para mover ·
+            <strong>Asas</strong> en los bordes para ancho y tamaño de letra ·
+            <strong>Barra fija</strong> arriba del certificado para centrar, alinear y tamaño de letra.
           </p>
         } @else {
           <div class="no-plantilla">
@@ -135,8 +232,10 @@
 
         @if (esQrSel() && mostrarQr) {
           <div class="campo-editor qr-editor">
-            <h3 class="editing-title">Ajustando: Código QR</h3>
-            <p class="control-hint">Solo para este tipo de certificado ({{ labelTipo(tipo) }}).</p>
+            <h3 class="editing-title">Código QR</h3>
+            <p class="control-hint visual-hint">
+              Arrástrelo en el certificado para moverlo. Use la esquina inferior derecha para el tamaño.
+            </p>
 
             <label class="field-label">Ubicación rápida</label>
             <div class="esquina-grid">
@@ -146,79 +245,14 @@
             </div>
 
             <div class="control-block">
-              <label class="field-label">Tamaño del QR</label>
-              <input
-                type="range"
-                class="slider"
-                min="40"
-                max="140"
-                step="2"
-                [ngModel]="qrSizeActual()"
-                (ngModelChange)="onQrSize($event)" />
-              <span class="value-readout">{{ qrSizeActual() }} píxeles</span>
+              <button type="button" class="tool-btn full" (click)="centrarQrEnCertificado()">
+                <span class="tool-icon tool-icon-sheet"></span>
+                Centrar QR horizontalmente
+              </button>
             </div>
 
-            <div class="control-block">
-              @if (usaAnclaAbajoQr()) {
-                <label class="field-label">Mover arriba / abajo</label>
-                <div class="nudge-row">
-                  <button type="button" class="nudge" (click)="nudgeQr('up')">▲ Subir</button>
-                  <button type="button" class="nudge" (click)="nudgeQr('down')">▼ Bajar</button>
-                </div>
-                <input
-                  type="range"
-                  class="slider"
-                  min="2"
-                  max="40"
-                  step="0.5"
-                  [ngModel]="qrBottomActual()"
-                  (ngModelChange)="onQrBottom($event)" />
-                <span class="value-readout">{{ qrBottomActual() | number:'1.1-1' }}% desde abajo</span>
-              } @else {
-                <label class="field-label">Mover arriba / abajo</label>
-                <div class="nudge-row">
-                  <button type="button" class="nudge" (click)="nudgeQr('up')">▲ Subir</button>
-                  <button type="button" class="nudge" (click)="nudgeQr('down')">▼ Bajar</button>
-                </div>
-                <input
-                  type="range"
-                  class="slider"
-                  min="1"
-                  max="40"
-                  step="0.5"
-                  [ngModel]="qrTopActual()"
-                  (ngModelChange)="onQrTop($event)" />
-                <span class="value-readout">{{ qrTopActual() | number:'1.1-1' }}% desde arriba</span>
-              }
-            </div>
-
-            <div class="control-block">
-              <label class="field-label">Mover izquierda / derecha</label>
-              <div class="nudge-row">
-                <button type="button" class="nudge" (click)="nudgeQr('left')">◀ Izquierda</button>
-                <button type="button" class="nudge" (click)="nudgeQr('right')">Derecha ▶</button>
-              </div>
-              @if (qrEfectivo().right) {
-                <input
-                  type="range"
-                  class="slider"
-                  [min]="qrPosMin"
-                  [max]="qrPosMax"
-                  step="0.5"
-                  [ngModel]="qrRightActual()"
-                  (ngModelChange)="onQrRight($event)" />
-                <span class="value-readout">{{ qrRightActual() | number:'1.1-1' }}% desde la derecha</span>
-              } @else {
-                <input
-                  type="range"
-                  class="slider"
-                  [min]="qrPosMin"
-                  [max]="qrPosMax"
-                  step="0.5"
-                  [ngModel]="qrLeftActual()"
-                  (ngModelChange)="onQrLeft($event)" />
-                <span class="value-readout">{{ qrLeftActual() | number:'1.1-1' }}% desde la izquierda</span>
-              }
+            <div class="control-block compact-readout">
+              <span class="value-readout">{{ qrSizeActual() | number:'1.1-1' }}% del ancho · ~{{ qrSizeMmActual() }} mm</span>
             </div>
 
             <div class="editor-actions">
@@ -228,129 +262,46 @@
         } @else {
           @if (textoSel(); as id) {
           <div class="campo-editor">
-            <h3 class="editing-title">Ajustando: {{ labelCampo(id) }}</h3>
+            <h3 class="editing-title">{{ labelCampo(id) }}</h3>
+
+            <p class="control-hint visual-hint">
+              Manipule el texto directamente en el certificado: arrastre para mover, asas laterales para ancho,
+              asa inferior o esquina para el tamaño de letra, barra flotante para alinear.
+            </p>
 
             <label class="switch-row">
               <input type="checkbox" [ngModel]="visible(id)" (ngModelChange)="patchCampo(id, { visible: $event })" />
-              <span>Mostrar este texto en el certificado</span>
+              <span>Mostrar en el certificado</span>
             </label>
 
             @if (visible(id)) {
-              <div class="control-block">
-                @if (usaAnclaAbajo(id)) {
-                  <label class="field-label">Mover arriba / abajo (desde el borde inferior)</label>
-                  <p class="control-hint">Este texto está anclado abajo, como el código del certificado.</p>
-                  <div class="nudge-row">
-                    <button type="button" class="nudge" (click)="nudge(id, 'up')" title="Subir">▲ Subir</button>
-                    <button type="button" class="nudge" (click)="nudge(id, 'down')" title="Bajar">▼ Bajar</button>
+              <div class="herramientas-rapidas">
+                <label class="field-label">Herramientas</label>
+                @if (puedeCentrarEnHoja(id)) {
+                  <button type="button" class="tool-btn" (click)="centrarCuadroEnCertificado(id)">
+                    <span class="tool-icon tool-icon-sheet"></span>
+                    Centrar horizontalmente en la hoja
+                  </button>
+                }
+                <div class="tool-font-row">
+                  <span class="tool-font-label">Tamaño de letra</span>
+                  <div class="font-size-control">
+                    <button type="button" class="font-size-btn" (click)="ajustarTamano(id, -0.5)" aria-label="Reducir tamaño">−</button>
+                    <input
+                      type="number"
+                      class="font-size-input"
+                      [min]="fuenteMinPt"
+                      [max]="fuenteMaxPt"
+                      step="0.5"
+                      [ngModel]="tamanoActual(id)"
+                      (ngModelChange)="onTamano(id, $event)" />
+                    <span class="font-size-unit">pt</span>
+                    <button type="button" class="font-size-btn" (click)="ajustarTamano(id, 0.5)" aria-label="Aumentar tamaño">+</button>
                   </div>
-                  <input
-                    type="range"
-                    class="slider"
-                    min="2"
-                    max="45"
-                    step="0.5"
-                    [ngModel]="bottomActual(id)"
-                    (ngModelChange)="onBottom(id, $event)" />
-                  <span class="value-readout">{{ bottomActual(id) | number:'1.1-1' }}% desde abajo</span>
-                } @else {
-                  <label class="field-label">Mover arriba / abajo</label>
-                  <div class="nudge-row">
-                    <button type="button" class="nudge" (click)="nudge(id, 'up')" title="Subir un poco">▲ Subir</button>
-                    <button type="button" class="nudge" (click)="nudge(id, 'down')" title="Bajar un poco">▼ Bajar</button>
-                  </div>
-                  <input
-                    type="range"
-                    class="slider"
-                    min="0"
-                    max="92"
-                    step="0.5"
-                    [ngModel]="topActual(id)"
-                    (ngModelChange)="onTop(id, $event)" />
-                  <span class="value-readout">{{ topActual(id) | number:'1.1-1' }}% desde arriba</span>
-                }
-              </div>
-
-              @if (esMultilinea(id)) {
-                <div class="control-block">
-                  <label class="field-label">Ancho del texto (salto de línea)</label>
-                  <p class="control-hint">Si el nombre o curso es largo, reduzca el ancho para que baje a otra línea.</p>
-                  <input
-                    type="range"
-                    class="slider"
-                    min="40"
-                    max="92"
-                    step="1"
-                    [ngModel]="anchoActual(id)"
-                    (ngModelChange)="onAncho(id, $event)" />
-                  <span class="value-readout">{{ anchoActual(id) | number:'1.0-0' }}% de ancho</span>
-                </div>
-              }
-
-              <div class="control-block">
-                @if (!esCampoPosicional(id)) {
-                  <label class="switch-row compact">
-                    <input type="checkbox" [ngModel]="esCentrado(id)" (ngModelChange)="setCentrado(id, $event)" />
-                    <span>Centrado en la página (recomendado para nombres y títulos)</span>
-                  </label>
-                }
-                @if (!esCentrado(id)) {
-                  <label class="field-label">Mover izquierda / derecha</label>
-                  <div class="nudge-row">
-                    <button type="button" class="nudge" (click)="nudge(id, 'left')">◀ Izquierda</button>
-                    <button type="button" class="nudge" (click)="nudge(id, 'right')">Derecha ▶</button>
-                  </div>
-                  <input
-                    type="range"
-                    class="slider"
-                    min="2"
-                    max="88"
-                    step="0.5"
-                    [ngModel]="leftActual(id)"
-                    (ngModelChange)="onLeft(id, $event)" />
-                  <span class="value-readout">{{ leftActual(id) | number:'1.1-1' }}% desde la izquierda</span>
-                }
-              </div>
-
-              <div class="control-block">
-                <label class="field-label">Tamaño de la letra (puntos)</label>
-                @if (esMultilinea(id)) {
-                  <p class="control-hint">Puede bajar hasta {{ fuenteMinPt }} pt si el nombre o curso es muy largo.</p>
-                }
-                <div class="nudge-row">
-                  <button type="button" class="nudge" (click)="ajustarTamano(id, -1)">− Más pequeña</button>
-                  <button type="button" class="nudge" (click)="ajustarTamano(id, 1)">+ Más grande</button>
-                </div>
-                <input
-                  type="range"
-                  class="slider"
-                  [min]="fuenteMinPt"
-                  [max]="fuenteMaxPt"
-                  step="0.5"
-                  [ngModel]="tamanoActual(id)"
-                  (ngModelChange)="onTamano(id, $event)" />
-                <div class="tamano-exacto">
-                  <input
-                    type="number"
-                    class="num-pt"
-                    [min]="fuenteMinPt"
-                    [max]="fuenteMaxPt"
-                    step="0.5"
-                    [ngModel]="tamanoActual(id)"
-                    (ngModelChange)="onTamano(id, $event)" />
-                  <span class="value-readout">pt (mín. {{ fuenteMinPt }}, máx. {{ fuenteMaxPt }})</span>
                 </div>
               </div>
 
               <div class="control-block row-2">
-                <div>
-                  <label class="field-label">Alineación del texto</label>
-                  <select [ngModel]="alineacionActual(id)" (ngModelChange)="patchCampo(id, { align: $event })">
-                    <option value="left">Izquierda</option>
-                    <option value="center">Centro</option>
-                    <option value="right">Derecha</option>
-                  </select>
-                </div>
                 <div>
                   <label class="field-label">Negrilla</label>
                   <select [ngModel]="campo(id).fw || '600'" (ngModelChange)="patchCampo(id, { fw: $event })">
@@ -373,7 +324,7 @@
               </div>
 
               <div class="control-block">
-                <label class="field-label">Color solo de este texto (opcional)</label>
+                <label class="field-label">Color (opcional)</label>
                 <div class="color-pick">
                   <input
                     type="color"

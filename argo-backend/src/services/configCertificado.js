@@ -2,6 +2,7 @@ const Config = require('../models/Config');
 const { ensureConfigDocument } = require('./configEnsure');
 const { armarCodigoComprobante } = require('./configRecibo');
 const { normalizePlantillaPorTipo, TIPOS, TIPOS_VALIDOS } = require('./clasificacionCertificado');
+const { clampSizePct, sizePxLegacyToPct } = require('../utils/certificadoQr');
 const { normalizeLayoutPorTipo } = require('./certificadoLayout');
 
 const CLAVE = 'certificado';
@@ -83,6 +84,9 @@ const DEFAULTS = {
   /** QR global en todos los certificados emitidos */
   mostrarQr: true,
   qrPosicion: 'inferior_izquierda',
+  /** Tamaño QR global: % del ancho de la hoja (~9.5 ≈ 20 mm en A4 vertical). */
+  qrTamanoPct: 9.5,
+  /** @deprecated — se migra a qrTamanoPct al leer */
   qrTamanoPx: 72,
   /** Plantilla por tipo y orientación: { curso: { vertical, horizontal }, ... } */
   plantillaPorTipo: normalizePlantillaPorTipo(null),
@@ -108,6 +112,13 @@ async function obtenerConfigCertificado() {
   );
   if (merged.mostrarQr == null) merged.mostrarQr = true;
   if (!merged.qrPosicion) merged.qrPosicion = 'inferior_izquierda';
+  if (merged.qrTamanoPct == null || String(merged.qrTamanoPct).trim() === '') {
+    merged.qrTamanoPct = clampSizePct(
+      sizePxLegacyToPct(parseInt(merged.qrTamanoPx, 10) || 72, 'vertical'),
+    );
+  } else {
+    merged.qrTamanoPct = clampSizePct(merged.qrTamanoPct);
+  }
   merged.qrTamanoPx = Math.min(140, Math.max(40, parseInt(merged.qrTamanoPx, 10) || 72));
   merged.diasAvisoCertificadoPorVencer = normalizeDiasAvisoCert(
     merged.diasAvisoCertificadoPorVencer,

@@ -33,6 +33,9 @@ export interface ConfigCertificado {
   /** Incluir QR en todos los certificados (global) */
   mostrarQr?: boolean;
   qrPosicion?: 'inferior_izquierda' | 'inferior_derecha' | 'superior_derecha' | 'superior_izquierda';
+  /** % del ancho de la hoja para el QR global */
+  qrTamanoPct?: number;
+  /** @deprecated */
   qrTamanoPx?: number;
   /** Días antes del vencimiento — alarma «por vencer» en el banner superior. */
   diasAvisoCertificadoPorVencer?: number;
@@ -142,5 +145,16 @@ export class ConfigCertificadoService {
     if (!path) return '';
     const p = path.replace(/^\//, '');
     return `${environment.uploadsUrl}/${p}`;
+  }
+
+  /** Ruta relativa bajo uploads/ (certificados/archivo.png) para el API de vista previa. */
+  urlFondoRel(path?: string): string {
+    if (!path) return '';
+    const s = path.trim();
+    if (!/^https?:\/\//i.test(s)) return s.replace(/^\/+/, '');
+    const marker = '/uploads/';
+    const i = s.indexOf(marker);
+    if (i >= 0) return s.slice(i + marker.length);
+    return s.replace(/^\/+/, '');
   }
 }

@@ -21,6 +21,13 @@ function injectViewport(html: string): string {
   );
 }
 
+function injectBeforeHeadClose(html: string, snippet: string): string {
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${snippet}\n</head>`);
+  }
+  return `${html}${snippet}`;
+}
+
 function rewriteLocalOrigins(html: string): string {
   const origin = getServerPublicOrigin();
   let out = html;
@@ -30,8 +37,69 @@ function rewriteLocalOrigins(html: string): string {
   return out;
 }
 
-export function rewriteDocumentHtmlForMobile(html: string, _htmlPath?: string): string {
+function isCertificadoHtml(html: string, htmlPath?: string): boolean {
+  if (/certificados\/[^/]+\/html/i.test(htmlPath || '')) return true;
+  return html.includes('class="bg-fondo"') || html.includes("class='bg-fondo'");
+}
+
+function certificadoEsHorizontal(html: string): boolean {
+  return /@page\s*\{[^}]*size:\s*297mm\s+210mm/i.test(html);
+}
+
+function fixCqhUnits(html: string, horizontal: boolean): string {
+  const heightFactor = horizontal ? 210 / 297 : 297 / 210;
+  return html.replace(/(\d+(?:\.\d+)?)\s*cqh/gi, (_, num) => {
+    const n = parseFloat(num);
+    const vw = (n * heightFactor) / 100;
+    return `${vw.toFixed(4)}vw`;
+  });
+}
+
+function fixCqwUnits(html: string): string {
+  return html.replace(/(\d+(?:\.\d+)?)\s*cqw/gi, (_, num) => {
+    return `${parseFloat(num).toFixed(4)}vw`;
+  });
+}
+
+function certificadoMobileCss(horizontal: boolean): string {
+  const aspectRatio = horizontal ? '297 / 210' : '210 / 297';
+  return `
+<style id="argo-mobile-cert">
+  @media screen {
+    html, body {
+      width: 100% !important;
+      height: auto !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow-x: hidden;
+      background: #ececec;
+    }
+    .no-print { display: none !important; }
+    .sheet {
+      width: 100vw !important;
+      max-width: 100vw !important;
+      height: auto !important;
+      aspect-ratio: ${aspectRatio} !important;
+      margin: 0 auto;
+    }
+    .bg-fondo, .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .bg-fondo { object-fit: fill !important; }
+  }
+</style>`;
+}
+
+export function rewriteDocumentHtmlForMobile(html: string, htmlPath?: string): string {
   let out = injectViewport(html);
   out = rewriteLocalOrigins(out);
-  return out;
+
+  if (!isCertificadoHtml(out, htmlPath)) return out;
+
+  const horizontal = certificadoEsHorizontal(out);
+  out = fixCqhUnits(out, horizontal);
+  out = fixCqwUnits(out);
+  return injectBeforeHeadClose(out, certificadoMobileCss(horizontal));
 }

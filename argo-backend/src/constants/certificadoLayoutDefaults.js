@@ -122,7 +122,7 @@ const QR_PRESETS = {
   },
 };
 
-const QR_DEFAULT_SIZE = 72;
+const { QR_DEFAULT_SIZE_PCT } = require('../utils/certificadoQr');
 
 module.exports = {
   CAMPOS_IDS,
@@ -132,5 +132,5 @@ module.exports = {
   DEFAULTS_ORIENTACION,
   MUESTRA_PREVIEW,
   QR_PRESETS,
-  QR_DEFAULT_SIZE,
+  QR_DEFAULT_SIZE_PCT,
 };

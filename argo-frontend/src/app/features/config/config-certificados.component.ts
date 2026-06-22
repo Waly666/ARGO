@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, IMAGE_CONFIG } from '@angular/common';
 import { Component, OnInit, QueryList, ViewChildren, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -13,6 +13,11 @@ import {
   labelOrientacion,
 } from '../../core/constants/tipos-certificado';
 import { LayoutPorTipoCert } from '../../core/constants/certificado-campos-layout';
+import {
+  QR_DEFAULT_SIZE_PCT,
+  clampQrSizePct,
+  sizePxLegacyToPct,
+} from '../../core/utils/certificado-qr';
 import {
   ConfigCertificado,
   ConfigCertificadoService,
@@ -31,6 +36,12 @@ import { ArgoSwitchComponent } from '../../shared/argo-switch/argo-switch.compon
   imports: [CommonModule, FormsModule, CertificadoLayoutEditorComponent, ArgoSwitchComponent],
   templateUrl: './config-certificados.component.html',
   styleUrls: ['./config-certificados.component.scss'],
+  providers: [
+    {
+      provide: IMAGE_CONFIG,
+      useValue: { disableOversizedImageWarnings: true },
+    },
+  ],
 })
 export class ConfigCertificadosComponent implements OnInit {
   private cfgSvc = inject(ConfigCertificadoService);
@@ -71,12 +82,14 @@ export class ConfigCertificadosComponent implements OnInit {
   qrPosiciones = QR_POSICIONES_CERT;
   labelTipo = labelTipoCert;
   labelOrientacion = labelOrientacion;
+  clampQrPct = clampQrSizePct;
 
   form = signal<ConfigCertificado>({
     plantillaPorTipo: {},
     layoutPorTipo: {},
     mostrarQr: true,
     qrPosicion: 'inferior_izquierda',
+    qrTamanoPct: QR_DEFAULT_SIZE_PCT,
     qrTamanoPx: 72,
     diasAvisoCertificadoPorVencer: 15,
     diasAvisoCertificadoVencido: 3,
@@ -123,6 +136,10 @@ export class ConfigCertificadosComponent implements OnInit {
           autoCertificadoPorTipo: { ...(c.autoCertificadoPorTipo || {}) },
           autoCertificadoTiposCapExcluidos: [...(c.autoCertificadoTiposCapExcluidos || [])],
           segundoPrefijoCertificado: c.segundoPrefijoCertificado?.trim() || this.anioActual,
+          qrTamanoPct:
+            c.qrTamanoPct != null
+              ? clampQrSizePct(c.qrTamanoPct)
+              : sizePxLegacyToPct(c.qrTamanoPx ?? 72, 'vertical'),
         });
         this.loading.set(false);
       },

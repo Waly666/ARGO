@@ -36,6 +36,9 @@ export interface QrLayoutCert {
   left?: string | null;
   right?: string | null;
   bottom?: string | null;
+  /** % del ancho de la hoja (5–22). Preferido. */
+  sizePct?: number;
+  /** @deprecated — migrado a sizePct al leer */
   sizePx?: number;
 }
 
@@ -199,6 +202,8 @@ export interface LayoutDefaultsApi {
   qr?: {
     vertical: Record<string, Record<string, string>>;
     horizontal: Record<string, Record<string, string>>;
-    defaultSizePx: number;
+    defaultSizePct: number;
+    sizePctMin: number;
+    sizePctMax: number;
   };
 }

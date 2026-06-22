@@ -5,6 +5,8 @@ const {
   DEFAULT_DIAS_AVISO_POR_VENCER,
   DEFAULT_DIAS_AVISO_VENCIDO,
   normalizeDiasAvisoCert,
+  normalizeAutoCertPorTipo,
+  normalizeTiposCapExcluidos,
   obtenerConfigCertificado,
 } = require('../services/configCertificado');
 const {
@@ -16,7 +18,7 @@ const { generarHtmlCertificado } = require('../services/certificadoRender');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { MUESTRA_PREVIEW } = require('../constants/certificadoLayoutDefaults');
 const { TIPOS_VALIDOS, normalizePlantillaPorTipo } = require('../services/clasificacionCertificado');
-const { normalizeAutoCertPorTipo, normalizeTiposCapExcluidos } = require('../services/configCertificado');
+const { clampSizePct } = require('../utils/certificadoQr');
 
 const CAMPOS = [
   'nombreInstitucion',
@@ -34,6 +36,7 @@ const CAMPOS = [
   'layoutPorTipo',
   'mostrarQr',
   'qrPosicion',
+  'qrTamanoPct',
   'qrTamanoPx',
   'diasAvisoCertificadoPorVencer',
   'diasAvisoCertificadoVencido',
@@ -113,6 +116,9 @@ exports.actualizar = async (req, res, next) => {
       dto.autoCertificadoTiposCapExcluidos = normalizeTiposCapExcluidos(
         dto.autoCertificadoTiposCapExcluidos,
       );
+    }
+    if (dto.qrTamanoPct != null) {
+      dto.qrTamanoPct = clampSizePct(parseFloat(dto.qrTamanoPct) || 9.5);
     }
     if (dto.qrTamanoPx != null) {
       dto.qrTamanoPx = Math.min(140, Math.max(40, parseInt(dto.qrTamanoPx, 10) || 72));

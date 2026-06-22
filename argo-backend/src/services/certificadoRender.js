@@ -58,8 +58,12 @@ function uploadsBase(publicOrigin) {
 
 function urlUpload(rel, publicOrigin) {
   if (!rel) return '';
-  const p = String(rel).replace(/^\//, '');
-  return `${uploadsBase(publicOrigin)}/${p}`;
+  const s = String(rel).trim();
+  if (/^https?:\/\//i.test(s)) return s;
+  const p = s.replace(/^\/+/, '');
+  const base = resolvePublicOrigin(publicOrigin).replace(/\/$/, '');
+  if (p.startsWith('uploads/')) return `${base}/${p}`;
+  return `${base}/uploads/${p}`;
 }
 
 
@@ -241,7 +245,7 @@ async function generarHtmlCertificado(data, options = {}) {
   if (mostrarQr) {
     try {
       qrDataUrl = await QRCode.toDataURL(qrPayload, {
-        width: qrEstilo.size,
+        width: qrEstilo.rasterPx,
         margin: 0,
         errorCorrectionLevel: 'M',
       });
@@ -321,7 +325,7 @@ async function generarHtmlCertificado(data, options = {}) {
     }
     .dato.tipoDoc, .dato.doc, .dato.expedida, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
     .cert-id { font-family: Consolas, monospace; line-height: 1.2; }
-    .qr-wrap img { display: block; }
+    .qr-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; }
     .no-print {
       position: fixed;
       bottom: 12px;
@@ -362,7 +366,7 @@ async function generarHtmlCertificado(data, options = {}) {
       ${certIdHtml(L.certId, codigo, color, oriKey)}
       ${
         qrDataUrl
-          ? `<div class="qr-wrap" style="${qrEstilo.css}"><img src="${qrDataUrl}" width="${qrEstilo.size}" height="${qrEstilo.size}" alt="QR verificación"/></div>`
+          ? `<div class="qr-wrap" style="${qrEstilo.css}"><img src="${qrDataUrl}" alt="QR verificación"/></div>`
           : ''
       }
     </div>

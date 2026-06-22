@@ -64,6 +64,13 @@ function fixCqhUnits(html: string, horizontal: boolean): string {
   });
 }
 
+/** cqw → vw: la hoja ocupa 100vw en pantalla móvil. */
+function fixCqwUnits(html: string): string {
+  return html.replace(/(\d+(?:\.\d+)?)\s*cqw/gi, (_, num) => {
+    return `${parseFloat(num).toFixed(4)}vw`;
+  });
+}
+
 function certificadoMobileCss(horizontal: boolean): string {
   const aspectRatio = horizontal ? '297 / 210' : '210 / 297';
   return `
@@ -104,5 +111,6 @@ export function rewriteDocumentHtmlForMobile(html: string, htmlPath?: string): s
 
   const horizontal = certificadoEsHorizontal(out);
   out = fixCqhUnits(out, horizontal);
+  out = fixCqwUnits(out);
   return injectBeforeHeadClose(out, certificadoMobileCss(horizontal));
 }

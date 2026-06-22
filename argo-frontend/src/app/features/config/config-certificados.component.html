@@ -170,8 +170,15 @@
                 </select>
               </label>
               <label class="cert-field cert-field--ancho">
-                <span class="cert-label">Tamaño inicial (px)</span>
-                <input type="number" min="40" max="140" [ngModel]="form().qrTamanoPx ?? 72" (ngModelChange)="patch('qrTamanoPx', $event)" />
+                <span class="cert-label">Tamaño inicial (% del ancho)</span>
+                <input
+                  type="number"
+                  min="5"
+                  max="22"
+                  step="0.5"
+                  [ngModel]="form().qrTamanoPct ?? 9.5"
+                  (ngModelChange)="patch('qrTamanoPct', clampQrPct($event))" />
+                <span class="cert-field-hint">~9–10% ≈ 20 mm en A4 vertical</span>
               </label>
             </div>
           }
@@ -330,10 +337,11 @@
                 [tipo]="t.id"
                 [orientacion]="orientacionLayout(t.id)"
                 [urlFondoPreview]="urlFondoAbs(plantillaDoc(slotTipo(t.id).id))"
+                [urlFondoRel]="plantillaDoc(slotTipo(t.id).id)?.urlFondo || ''"
                 [layoutPorTipo]="form().layoutPorTipo || {}"
                 [mostrarQr]="form().mostrarQr !== false"
                 [qrPosicionGlobal]="form().qrPosicion || 'inferior_izquierda'"
-                [qrTamanoGlobal]="form().qrTamanoPx ?? 72"
+                [qrTamanoGlobalPct]="form().qrTamanoPct ?? 9.5"
                 (layoutChange)="onLayoutChange($event)" />
             </article>
           }
@@ -391,10 +399,11 @@
               tipo="mercancias_peligrosas"
               [orientacion]="orientacionLayout('mercancias_peligrosas')"
               [urlFondoPreview]="urlFondoAbs(plantillaDoc(slotTipo('mercancias_peligrosas').id))"
+              [urlFondoRel]="plantillaDoc(slotTipo('mercancias_peligrosas').id)?.urlFondo || ''"
               [layoutPorTipo]="form().layoutPorTipo || {}"
               [mostrarQr]="form().mostrarQr !== false"
               [qrPosicionGlobal]="form().qrPosicion || 'inferior_izquierda'"
-              [qrTamanoGlobal]="form().qrTamanoPx ?? 72"
+              [qrTamanoGlobalPct]="form().qrTamanoPct ?? 9.5"
               (layoutChange)="onLayoutChange($event)" />
           </article>
         </div>
