@@ -1,5 +1,6 @@
 const Usuario = require('../models/Usuario');
 const Empleado = require('../models/Empleado');
+const Sede = require('../models/Sede');
 const { esAdmin, normalizarRol } = require('../utils/roles');
 const { normalizarEmpleadoLegacy } = require('../utils/empleadoDoc');
 const { normalizarIdSede, asegurarSedePrincipal } = require('../services/sedeContext');
