@@ -158,7 +158,7 @@ export class CajaIngresosTodosComponent implements OnInit {
     return i.conceptoLabel || i.liquidacionDescr || i.concepto || '—';
   }
 
-  conceptoCorto(i: any, max = 32): string {
+  conceptoCorto(i: any, max = 24): string {
     const full = this.conceptoLabel(i);
     if (full === '—' || full.length <= max) return full;
     return `${full.slice(0, max - 1).trimEnd()}…`;

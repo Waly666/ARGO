@@ -552,6 +552,28 @@ table.argo .empty {
   border: none !important;
 }
 
+/* Caja — todos los ingresos: columna concepto compacta */
+table.ingresos-todos-table {
+  table-layout: fixed;
+}
+table.ingresos-todos-table col.col-concepto {
+  width: 7rem;
+}
+table.ingresos-todos-table th.col-concepto,
+table.ingresos-todos-table td.col-concepto {
+  width: 7rem;
+  max-width: 7rem;
+  overflow: hidden;
+}
+table.ingresos-todos-table td.col-concepto .concepto-cell-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 7rem;
+  font-size: 0.82rem;
+}
+
 
 /* mini definido arriba con estilos de lista */
 

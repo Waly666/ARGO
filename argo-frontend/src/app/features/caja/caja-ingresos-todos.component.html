@@ -53,6 +53,18 @@
 
     <div class="table-scroll" *ngIf="!loading() && vista() === 'lista'">
       <table class="argo data-table ingresos-todos-table">
+        <colgroup>
+          <col class="col-fecha" />
+          <col class="col-recibo" />
+          <col class="col-sesion" />
+          <col class="col-pagador" />
+          <col class="col-doc" />
+          <col class="col-tipo" />
+          <col class="col-concepto" />
+          <col class="col-pago" />
+          <col class="col-valor" />
+          <col class="col-actions" />
+        </colgroup>
         <thead>
           <tr>
             <th>Fecha</th>
