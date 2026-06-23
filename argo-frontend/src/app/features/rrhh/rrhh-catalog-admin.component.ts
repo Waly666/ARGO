@@ -6,8 +6,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RrhhCatalogService } from '../../core/services/rrhh-catalog.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import { formatMoneyValue, parseMoneyValue } from '../../core/utils/money.helpers';
 import { catalogConfigByTab, RRHH_CATALOG_TABS } from './rrhh-catalog.config';
-import { RrhhCatalogConfig } from './rrhh-catalog.types';
+import { RrhhCatalogConfig, RrhhCatalogField } from './rrhh-catalog.types';
 
 @Component({
   selector: 'argo-rrhh-catalog-admin',
@@ -110,7 +111,7 @@ export class RrhhCatalogAdminComponent implements OnInit {
     const cfg = this.config()!;
     const f: Record<string, unknown> = {};
     for (const field of cfg.fields) {
-      f[field.key] = row[field.key] ?? '';
+      f[field.key] = this.fieldValueFromRow(row, field);
     }
     this.form.set(f);
     this.editando.set(row);
@@ -134,9 +135,10 @@ export class RrhhCatalogAdminComponent implements OnInit {
     this.saving.set(true);
     const ed = this.editando();
     const id = ed?.[cfg.idKey] as number | string;
+    const payload = this.payloadForApi(cfg.fields, f);
     const req = ed
-      ? this.svc.actualizar(cfg.apiPath, id, f)
-      : this.svc.crear(cfg.apiPath, f);
+      ? this.svc.actualizar(cfg.apiPath, id, payload)
+      : this.svc.crear(cfg.apiPath, payload);
     req.subscribe({
       next: () => {
         this.saving.set(false);
@@ -181,8 +183,32 @@ export class RrhhCatalogAdminComponent implements OnInit {
   }
 
   cell(row: Record<string, unknown>, key: string): string {
+    const cfg = this.config();
+    const field = cfg?.fields.find((f) => f.key === key);
+    if (field?.type === 'number' || /^salario/i.test(key)) {
+      return formatMoneyValue(row[key]);
+    }
     const v = row[key];
-    if (v == null) return '—';
+    if (v == null || v === '') return '—';
     return String(v);
+  }
+
+  private fieldValueFromRow(row: Record<string, unknown>, field: RrhhCatalogField): unknown {
+    const raw = row[field.key];
+    if (field.type === 'number') {
+      const n = parseMoneyValue(raw);
+      return n == null ? '' : n;
+    }
+    return raw ?? '';
+  }
+
+  private payloadForApi(fields: RrhhCatalogField[], form: Record<string, unknown>): Record<string, unknown> {
+    const out = { ...form };
+    for (const field of fields) {
+      if (field.type !== 'number') continue;
+      const n = parseMoneyValue(out[field.key]);
+      out[field.key] = n == null ? null : n;
+    }
+    return out;
   }
 }

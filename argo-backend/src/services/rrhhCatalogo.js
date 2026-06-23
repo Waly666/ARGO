@@ -1,5 +1,16 @@
 const { maxNumericId } = require('./programaServicio');
-const { coerceDocument, num } = require('../utils/coerceTypes');
+const { coerceDocument, num, isMoneyField } = require('../utils/coerceTypes');
+
+function serializeCatalogRow(row, fields) {
+  if (!row || typeof row !== 'object') return row;
+  const out = { ...row };
+  for (const k of fields) {
+    if (!isMoneyField(k)) continue;
+    const raw = out[k];
+    out[k] = raw == null || raw === '' ? null : num(raw);
+  }
+  return out;
+}
 
 function pickFields(body, fields) {
   const dto = {};
@@ -34,7 +45,7 @@ function createCatalogController(Model, opts) {
           filter.estado = { $in: [/^activo$/i, 'activo', 'ACTIVO', 'Activo', null] };
         }
         const rows = await Model.find(filter).sort({ nombre: 1 }).lean();
-        res.json(rows);
+        res.json(rows.map((r) => serializeCatalogRow(r, fields)));
       } catch (e) {
         next(e);
       }
@@ -44,7 +55,7 @@ function createCatalogController(Model, opts) {
       try {
         const row = await buscarPorId(req.params.id);
         if (!row) return res.status(404).json({ message: 'Registro no encontrado' });
-        res.json(row);
+        res.json(serializeCatalogRow(row, fields));
       } catch (e) {
         next(e);
       }
@@ -73,7 +84,7 @@ function createCatalogController(Model, opts) {
         });
         const created = await Model.create(doc);
         const row = created.toObject ? created.toObject() : created;
-        res.status(201).json(row);
+        res.status(201).json(serializeCatalogRow(row, fields));
       } catch (e) {
         next(e);
       }
@@ -93,7 +104,7 @@ function createCatalogController(Model, opts) {
         });
         await Model.updateOne({ [idField]: row[idField] }, { $set: patch });
         const actualizado = await Model.findOne({ [idField]: row[idField] }).lean();
-        res.json(actualizado);
+        res.json(serializeCatalogRow(actualizado, fields));
       } catch (e) {
         next(e);
       }
