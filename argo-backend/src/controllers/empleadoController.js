@@ -16,7 +16,7 @@ const {
   normalizarEmpleadoLegacy,
   nombreCompletoEmpleado,
 } = require('../utils/empleadoDoc');
-const { procesarUsuarioEmpleado, rolDesdeCargoNombre } = require('../services/empleadoUsuario');
+const { procesarUsuarioEmpleado, rolDesdeCargoNombre, desvincularUsuariosDeEmpleadoEliminado } = require('../services/empleadoUsuario');
 const { normalizarIdSede, asegurarSedePrincipal } = require('../services/sedeContext');
 const upload = require('../middleware/upload');
 
@@ -421,6 +421,7 @@ exports.eliminar = async (req, res, next) => {
         message: 'No se puede eliminar: tiene egresos. Cambie estado a retirado.',
       });
     }
+    await desvincularUsuariosDeEmpleadoEliminado(emp.idEmpleado);
     await Empleado.deleteOne({ idEmpleado: emp.idEmpleado });
     res.json({ ok: true });
   } catch (e) {

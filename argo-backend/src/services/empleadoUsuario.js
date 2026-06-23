@@ -177,6 +177,33 @@ async function desvincularUsuarioDeEmpleado(idEmpleado) {
   );
 }
 
+/** Al borrar empleado: quita idEmpleado del usuario aunque el registro RRHH ya no exista. */
+async function desvincularUsuariosDeEmpleadoEliminado(idEmpleado) {
+  if (idEmpleado == null || idEmpleado === '') return;
+  const idNum = Number(idEmpleado);
+  const emp = await Empleado.findOne({ idEmpleado: idNum }).lean();
+  if (emp?.idUsuario) {
+    await Usuario.updateOne({ _id: emp.idUsuario }, { $unset: { idEmpleado: '' } });
+  }
+  await Usuario.updateMany({ idEmpleado: idNum }, { $unset: { idEmpleado: '' } });
+}
+
+/** Si usuario.idEmpleado apunta a un empleado que ya no existe, limpia el campo. */
+async function liberarVinculoUsuarioHuerfano(usuario) {
+  if (usuario.idEmpleado == null || usuario.idEmpleado === '') return false;
+  const idNum = Number(usuario.idEmpleado);
+  if (!Number.isFinite(idNum)) {
+    await Usuario.updateOne({ _id: usuario._id }, { $unset: { idEmpleado: '' } });
+    usuario.idEmpleado = undefined;
+    return true;
+  }
+  const emp = await Empleado.findOne({ idEmpleado: idNum }).lean();
+  if (emp) return false;
+  await Usuario.updateOne({ _id: usuario._id }, { $unset: { idEmpleado: '' } });
+  usuario.idEmpleado = undefined;
+  return true;
+}
+
 /**
  * Vincula un usuario ya existente al empleado (sin crear cuenta nueva).
  */
@@ -189,6 +216,7 @@ async function vincularUsuarioExistente(emp, usuarioId, { cargoNombre } = {}) {
   if (!usuario) {
     throw Object.assign(new Error('Usuario no encontrado'), { status: 404 });
   }
+  await liberarVinculoUsuarioHuerfano(usuario);
   if (usuario.idEmpleado && Number(usuario.idEmpleado) !== Number(e.idEmpleado)) {
     throw Object.assign(
       new Error(`El usuario ${usuario.username} ya está vinculado al empleado #${usuario.idEmpleado}`),
@@ -383,5 +411,7 @@ module.exports = {
   procesarUsuarioEmpleado,
   vincularUsuarioExistente,
   desvincularUsuarioDeEmpleado,
+  desvincularUsuariosDeEmpleadoEliminado,
+  liberarVinculoUsuarioHuerfano,
   repararUsuariosNumeroNulo,
 };
