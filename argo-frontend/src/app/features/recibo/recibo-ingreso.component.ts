@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ReciboIngresoData, ReciboService } from '../../core/services/recibo.service';
+import { esMediaCarta, ReciboIngresoData, ReciboService } from '../../core/services/recibo.service';
 
 @Component({
   selector: 'argo-recibo-ingreso',
@@ -19,6 +19,7 @@ export class ReciboIngresoComponent implements OnInit {
   data = signal<ReciboIngresoData | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
+  usaMediaCarta = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('ingresoId');
@@ -29,8 +30,13 @@ export class ReciboIngresoComponent implements OnInit {
     }
     this.reciboSvc.datos(id).subscribe({
       next: (d) => {
+        const mediaCarta = esMediaCarta(d.config.formatoComprobanteIngreso);
+        this.usaMediaCarta.set(mediaCarta);
         this.data.set(d);
         this.loading.set(false);
+        if (mediaCarta) {
+          this.reciboSvc.abrirHtml(id, (m) => this.error.set(m));
+        }
       },
       error: (e) => {
         this.loading.set(false);

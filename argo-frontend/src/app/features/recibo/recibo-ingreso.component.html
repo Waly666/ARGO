@@ -1,14 +1,18 @@
 <div class="recibo-page">
-  <div class="toolbar no-print" *ngIf="!loading() && !error()">
+  <div class="toolbar no-print" *ngIf="!loading() && !error() && (data() || usaMediaCarta())">
     <button type="button" class="ghost" (click)="volver()">← Volver</button>
     <button type="button" class="primary" (click)="imprimir()">Imprimir / Guardar PDF</button>
-    <button type="button" class="ghost" (click)="abrirHtml()">Abrir en ventana</button>
+    <button type="button" class="ghost" (click)="abrirHtml()" *ngIf="!usaMediaCarta()">Abrir en ventana</button>
   </div>
 
   <div class="loading no-print" *ngIf="loading()">Cargando recibo…</div>
   <div class="err no-print" *ngIf="error()">{{ error() }}</div>
 
-  <article class="ticket" *ngIf="data() as d">
+  <div class="loading no-print media-carta-hint" *ngIf="!loading() && usaMediaCarta()">
+    Comprobante en formato media carta. Si no se abrió la ventana, use «Imprimir / Guardar PDF» o permita ventanas emergentes.
+  </div>
+
+  <article class="ticket" *ngIf="data() as d && !usaMediaCarta()">
     <header class="center empresa-block">
       <div class="empresa">{{ d.config.nombreEmpresa || '—' }}</div>
       <div class="dato">NIT: {{ d.config.nit || '—' }}</div>

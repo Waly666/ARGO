@@ -14,8 +14,9 @@ function normalizarFormatoComprobante(val, fallback = FORMATOS.VALIDADORA) {
   const s = String(val ?? '')
     .trim()
     .toLowerCase()
-    .replace(/-/g, '_');
+    .replace(/[\s-]+/g, '_');
   if (FORMATOS_VALIDOS.includes(s)) return s;
+  if (s === 'mediacarta' || s === 'media_carta_colombia') return FORMATOS.MEDIA_CARTA;
   return fallback;
 }
 

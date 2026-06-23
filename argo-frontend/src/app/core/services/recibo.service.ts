@@ -1,9 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ConfigRecibo } from './config.service';
+
+export type FormatoComprobante = 'validadora' | 'media_carta';
 
 export interface ReciboEgresoData {
   config: ConfigRecibo & { mensajeEncabezadoEgreso?: string; mensajePieEgreso?: string };
@@ -64,13 +66,23 @@ export interface ReciboIngresoData {
 @Injectable({ providedIn: 'root' })
 export class ReciboService {
   private http = inject(HttpClient);
+  private formatoIngresoCache: FormatoComprobante | null = null;
+  private formatoEgresoCache: FormatoComprobante | null = null;
 
   datos(idIngreso: string): Observable<ReciboIngresoData> {
-    return this.http.get<ReciboIngresoData>(`${environment.apiUrl}/ingresos/${idIngreso}/recibo`);
+    return this.http.get<ReciboIngresoData>(`${environment.apiUrl}/ingresos/${idIngreso}/recibo`).pipe(
+      tap((d) => {
+        this.formatoIngresoCache = normalizarFormatoComprobante(d.config?.formatoComprobanteIngreso);
+      }),
+    );
   }
 
   datosEgreso(idEgreso: string): Observable<ReciboEgresoData> {
-    return this.http.get<ReciboEgresoData>(`${environment.apiUrl}/egresos/${idEgreso}/recibo`);
+    return this.http.get<ReciboEgresoData>(`${environment.apiUrl}/egresos/${idEgreso}/recibo`).pipe(
+      tap((d) => {
+        this.formatoEgresoCache = normalizarFormatoComprobante(d.config?.formatoComprobanteEgreso);
+      }),
+    );
   }
 
   abrirHtmlEgreso(idEgreso: string, onError?: (msg: string) => void): boolean {
@@ -80,7 +92,7 @@ export class ReciboService {
     }
     return this.abrirHtmlEnVentana(
       `${environment.apiUrl}/egresos/${idEgreso}/recibo/html?v=${Date.now()}`,
-      'width=420,height=820',
+      featuresVentanaComprobante(this.formatoEgresoCache),
       onError,
       'No se pudo generar el comprobante de egreso.',
     );
@@ -94,10 +106,18 @@ export class ReciboService {
     }
     return this.abrirHtmlEnVentana(
       `${environment.apiUrl}/ingresos/${idIngreso}/recibo/html?v=${Date.now()}`,
-      'width=420,height=720',
+      featuresVentanaComprobante(this.formatoIngresoCache),
       onError,
       'No se pudo generar el comprobante.',
     );
+  }
+
+  registrarFormatoIngreso(formato?: string | null): void {
+    this.formatoIngresoCache = normalizarFormatoComprobante(formato);
+  }
+
+  registrarFormatoEgreso(formato?: string | null): void {
+    this.formatoEgresoCache = normalizarFormatoComprobante(formato);
   }
 
   /** Abre la ventana en el mismo gesto del clic; luego carga el HTML (evita bloqueo de popups). */
@@ -142,6 +162,24 @@ export class ReciboService {
     });
     return true;
   }
+}
+
+export function normalizarFormatoComprobante(val?: string | null): FormatoComprobante {
+  const s = String(val ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (s === 'media_carta' || s === 'mediacarta') return 'media_carta';
+  return 'validadora';
+}
+
+export function featuresVentanaComprobante(formato?: FormatoComprobante | null): string {
+  if (formato === 'validadora') return 'width=420,height=760';
+  return 'width=620,height=900';
+}
+
+export function esMediaCarta(formato?: string | null): boolean {
+  return normalizarFormatoComprobante(formato) === 'media_carta';
 }
 
 /** ID de ingreso desde documento API (string u ObjectId) */

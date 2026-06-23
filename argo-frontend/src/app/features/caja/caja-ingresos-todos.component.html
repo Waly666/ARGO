@@ -61,7 +61,7 @@
             <th>Alumno / Pagador</th>
             <th>Documento</th>
             <th>Tipo ingreso</th>
-            <th>Concepto / Servicio</th>
+            <th class="col-concepto">Concepto / Servicio</th>
             <th>Forma pago</th>
             <th class="r">Valor</th>
             <th></th>
@@ -81,8 +81,8 @@
             <td><span [ngClass]="capBeneficiario(pagadorLabel(i))">{{ pagadorLabel(i) }}</span></td>
             <td><span [ngClass]="capDoc(i.numDoc)">{{ i.numDoc ?? '—' }}</span></td>
             <td><span [ngClass]="capTipoIngreso(i.tipoIngresoDescr)">{{ i.tipoIngresoDescr || '—' }}</span></td>
-            <td>
-              <span [ngClass]="capConceptoCaja(conceptoLabel(i))">{{ conceptoLabel(i) }}</span>
+            <td class="col-concepto" [title]="conceptoLabel(i)">
+              <span [ngClass]="capConceptoCaja(conceptoCorto(i))">{{ conceptoCorto(i) }}</span>
               <span class="tag-cuadre" *ngIf="i.cuadreDescuadre">Cuadre</span>
             </td>
             <td><span [ngClass]="capFormaPago(formaPagoLabel(i))">{{ formaPagoLabel(i) }}</span></td>
@@ -117,7 +117,7 @@
         </div>
         <div class="card-body">
           <div class="card-row"><span class="lbl">Tipo</span><span [ngClass]="capTipoIngreso(i.tipoIngresoDescr)">{{ i.tipoIngresoDescr || '—' }}</span></div>
-          <div class="card-row"><span class="lbl">Concepto</span><span>{{ conceptoLabel(i) }}</span></div>
+          <div class="card-row"><span class="lbl">Concepto</span><span [title]="conceptoLabel(i)">{{ conceptoCorto(i, 56) }}</span></div>
           <div class="card-row"><span class="lbl">Valor</span><span [ngClass]="capValorIngreso()">{{ i.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></div>
         </div>
         <div class="card-foot">

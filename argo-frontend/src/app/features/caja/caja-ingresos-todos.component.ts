@@ -4,6 +4,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { ConfigService } from '../../core/services/config.service';
 import { IngresoService } from '../../core/services/ingreso.service';
 import { ReciboService, idIngreso } from '../../core/services/recibo.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
@@ -38,6 +39,7 @@ import { abrirUrlSoporte, tieneSoporteAdjunto } from '../../core/utils/pago-sopo
 export class CajaIngresosTodosComponent implements OnInit {
   private ingSvc = inject(IngresoService);
   private reciboSvc = inject(ReciboService);
+  private configSvc = inject(ConfigService);
   private cajaSvc = inject(CajaSesionService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -78,6 +80,10 @@ export class CajaIngresosTodosComponent implements OnInit {
   capRefComprobante = capRefComprobante;
 
   ngOnInit(): void {
+    this.configSvc.obtenerReciboEncabezado().subscribe({
+      next: (c) => this.reciboSvc.registrarFormatoIngreso(c.formatoComprobanteIngreso),
+      error: () => undefined,
+    });
     this.cajaSvc.activa().subscribe({
       next: (r) => this.sesionAbiertaId.set(r.sesion?.idSesion ?? null),
       error: () => this.sesionAbiertaId.set(null),
@@ -152,6 +158,12 @@ export class CajaIngresosTodosComponent implements OnInit {
     return i.conceptoLabel || i.liquidacionDescr || i.concepto || '—';
   }
 
+  conceptoCorto(i: any, max = 42): string {
+    const full = this.conceptoLabel(i);
+    if (full === '—' || full.length <= max) return full;
+    return `${full.slice(0, max - 1).trimEnd()}…`;
+  }
+
   formaPagoLabel(i: any): string {
     return resolverFormaPagoIngreso(i);
   }
@@ -183,16 +195,19 @@ export class CajaIngresosTodosComponent implements OnInit {
   }
 
   verRecibo(ing: { _id?: unknown }): void {
-    const id = idIngreso(ing);
-    if (!id) return;
-    const url = this.router.serializeUrl(this.router.createUrlTree(['/recibo', id]));
-    window.open(url, '_blank', 'width=420,height=720');
+    this.abrirComprobanteIngreso(ing);
   }
 
   imprimirRecibo(ing: { _id?: unknown }): void {
+    this.abrirComprobanteIngreso(ing);
+  }
+
+  private abrirComprobanteIngreso(ing: { _id?: unknown }): void {
     const id = idIngreso(ing);
     if (!id) return;
-    this.reciboSvc.abrirHtml(id, (m) => this.inform(m));
+    if (!this.reciboSvc.abrirHtml(id, (m) => this.inform(m))) {
+      this.inform('Permita ventanas emergentes para ver o imprimir el comprobante.', true);
+    }
   }
 
   requiereAuthSupervisor(ing: { idSesion?: number | null }): boolean {

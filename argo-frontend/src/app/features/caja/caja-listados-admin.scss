@@ -174,4 +174,26 @@
   }
 }
 
+.data-table {
+  th.col-concepto,
+  td.col-concepto {
+    max-width: 10.5rem;
+    width: 10.5rem;
+  }
+
+  td.col-concepto {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    > span:first-child {
+      display: inline-block;
+      max-width: calc(100% - 3.5rem);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: bottom;
+    }
+  }
+}
+
 @import './caja-egreso-soporte-alerts.scss';
