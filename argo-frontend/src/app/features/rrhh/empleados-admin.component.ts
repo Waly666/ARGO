@@ -68,11 +68,19 @@ export class EmpleadosAdminComponent implements OnInit {
     return /\bcajer/i.test(n) || /\binstructor/i.test(n);
   });
 
+  /** Usuarios que se pueden vincular: sin empleado activo o ya ligados al empleado en edición. */
   usuariosDisponibles = computed(() => {
     const ed = this.editando();
+    const edId = ed?.idEmpleado != null ? Number(ed.idEmpleado) : null;
     return this.usuarios().filter((u) => {
-      if (!u.idEmpleado) return true;
-      return ed ? Number(u.idEmpleado) === Number(ed.idEmpleado) : false;
+      const uid = this.usuarioId(u);
+      const empVinculado = this.empleados().find(
+        (e) =>
+          (uid && String(e.idUsuario || '') === uid) ||
+          (u.idEmpleado != null && Number(u.idEmpleado) === Number(e.idEmpleado)),
+      );
+      if (!empVinculado) return true;
+      return edId != null && Number(empVinculado.idEmpleado) === edId;
     });
   });
 

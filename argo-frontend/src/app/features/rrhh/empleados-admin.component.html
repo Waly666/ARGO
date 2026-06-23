@@ -277,6 +277,9 @@
         <p class="hint acceso-vincular-hint" *ngIf="!usuariosDisponibles().length">
           No hay usuarios disponibles. Créelos en <a routerLink="/app/configuracion/usuarios">Configuración → Usuarios</a>.
         </p>
+        <p class="hint acceso-vincular-hint" *ngIf="usuarios().length && usuariosDisponibles().length < usuarios().length">
+          Solo aparecen usuarios sin empleado vinculado. Si falta alguien, puede estar enlazado a otro empleado en RRHH.
+        </p>
       </div>
     </section>
 
