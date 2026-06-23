@@ -234,7 +234,9 @@ async function vincularUsuarioExistente(emp, usuarioId, { cargoNombre } = {}) {
     );
   }
   const rolEsperado = rolDesdeCargoNombre(cargoNombre);
-  await sincronizarDatosUsuario(usuario, e, rolEsperado || normalizarRol(usuario.rol));
+  await sincronizarDatosUsuario(usuario, e, rolEsperado || normalizarRol(usuario.rol), {
+    conservarIdentidad: true,
+  });
   return {
     existente: true,
     vinculado: true,
@@ -338,11 +340,24 @@ async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {})
   };
 }
 
-async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado) {
+async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado, opts = {}) {
   const u = usuarioDoc;
   const e = normalizarEmpleadoLegacy(emp);
+  const conservarIdentidad = opts.conservarIdentidad === true;
   const email = emailUsuario(e);
-  const numero = numeroDesdeDocumento(e);
+
+  if (conservarIdentidad) {
+    if (!String(u.nombres || '').trim() && nombresUsuario(e)) u.nombres = nombresUsuario(e);
+    if (!String(u.apellidos || '').trim() && apellidosUsuario(e)) u.apellidos = apellidosUsuario(e);
+    if (email && !String(u.email || '').trim()) u.email = email;
+    u.idEmpleado = e.idEmpleado;
+    if (String(e.estado || '').toLowerCase() === 'retirado') u.activo = false;
+    if (!esAdmin(normalizarRol(u.rol))) {
+      u.sedesPermitidas = await sedesPermitidasDesdeEmpleado(e);
+    }
+    await guardarUsuario(u);
+    return;
+  }
 
   u.nombres = nombresUsuario(e);
   u.apellidos = apellidosUsuario(e);
@@ -354,6 +369,7 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado) {
   const loginActual = String(u.username || '').trim();
   const loginEsDocumento = /^\d+$/.test(loginActual);
 
+  const numero = numeroDesdeDocumento(e);
   if (numero != null) {
     const dupNum = await Usuario.findOne({ numero, _id: { $ne: u._id } }).lean();
     if (!dupNum) u.numero = numero;
@@ -375,7 +391,27 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado) {
     u.sedesPermitidas = await sedesPermitidasDesdeEmpleado(e);
   }
 
-  await u.save();
+  await guardarUsuario(u);
+}
+
+async function guardarUsuario(u) {
+  try {
+    await u.save();
+  } catch (err) {
+    if (err?.code === 11000) {
+      const msg = String(err.message || '');
+      const campo = /username/i.test(msg) ? 'login (usuario)' : 'documento (campo numero)';
+      throw Object.assign(
+        new Error(
+          `No se pudo guardar la cuenta: ya existe otro usuario con ese ${campo}. ` +
+            'Al vincular, use el mismo número de documento del usuario en la ficha del empleado, ' +
+            'o cree el empleado con el documento que ya tiene la cuenta.',
+        ),
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 }
 
 /** Repara usuarios legacy con numero null (evita E11000 en índice único). */

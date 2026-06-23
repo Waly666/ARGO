@@ -274,6 +274,9 @@
           <option value="">— Seleccione un usuario —</option>
           <option *ngFor="let u of usuariosDisponibles()" [value]="usuarioId(u)">{{ labelUsuario(u) }}</option>
         </select>
+        <p class="hint acceso-vincular-hint">
+          El login y documento del usuario no se cambian. Use el mismo <strong>numeroDocumento</strong> en la ficha del empleado que en Configuración → Usuarios.
+        </p>
         <p class="hint acceso-vincular-hint" *ngIf="!usuariosDisponibles().length">
           No hay usuarios disponibles. Créelos en <a routerLink="/app/configuracion/usuarios">Configuración → Usuarios</a>.
         </p>
