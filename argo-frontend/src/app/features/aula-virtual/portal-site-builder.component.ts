@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import {
   mergePortalSiteDefaults,
@@ -10,12 +11,13 @@ import {
   PORTAL_PAGINA_META,
   PortalSiteConfig,
 } from '../../core/constants/portal-site-defaults';
-import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
+import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { mergePortalLanding } from '../../core/constants/portal-landing-defaults';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 import { PortalFundacionEditorComponent } from './portal-fundacion-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
+import { environment } from '../../../environments/environment';
 
 export type BuilderPanel =
   | 'panel'
@@ -67,8 +69,13 @@ interface GuiaPaso {
   styleUrl: './portal-site-builder.component.scss',
 })
 export class PortalSiteBuilderComponent {
+  private svc = inject(AulaVirtualAdminService);
+
   @Input({ required: true }) portalForm!: PortalAulaConfig;
   @Input({ required: true }) portalUrl!: string;
+  @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
+
+  heroUploading = signal(false);
 
   readonly paginaMeta = PORTAL_PAGINA_META;
   readonly fuentes = PORTAL_FUENTES;
@@ -268,5 +275,72 @@ export class PortalSiteBuilderComponent {
 
   themePreviewVars(): Record<string, string> {
     return buildPortalThemeCssVars(this.site.tema);
+  }
+
+  tieneImagenHero(): boolean {
+    return !!this.site.tema?.urlHero?.trim();
+  }
+
+  heroPreviewUrl(): string | null {
+    const abs = this.site.tema?.urlHeroAbsoluta?.trim();
+    if (abs) return abs;
+    const rel = this.site.tema?.urlHero?.trim();
+    if (!rel) return null;
+    if (/^https?:\/\//i.test(rel)) return rel;
+    if (rel.startsWith('/')) return rel;
+    const base = environment.uploadsUrl.replace(/\/+$/, '');
+    return `${base}/${rel.replace(/^\/+/, '')}`;
+  }
+
+  onHeroImagen(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.heroUploading.set(true);
+    this.svc
+      .subirImagenHeroPortal(file)
+      .pipe(
+        finalize(() => {
+          this.heroUploading.set(false);
+          input.value = '';
+        }),
+      )
+      .subscribe({
+        next: (res) => {
+          this.applyPortalConfig(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen del banner actualizada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo subir la imagen del banner',
+            error: true,
+          });
+        },
+      });
+  }
+
+  quitarImagenHero() {
+    this.heroUploading.set(true);
+    this.svc
+      .quitarImagenHeroPortal()
+      .pipe(finalize(() => this.heroUploading.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.applyPortalConfig(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen del banner eliminada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo quitar la imagen del banner',
+            error: true,
+          });
+        },
+      });
+  }
+
+  applyPortalConfig(config: PortalAulaConfig) {
+    Object.assign(this.portalForm, config);
+    this.portalForm.landing = mergePortalLanding(config.landing);
+    this.portalForm.site = mergePortalSiteDefaults(config.site);
   }
 }

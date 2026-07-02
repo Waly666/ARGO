@@ -147,4 +147,8 @@ export class AulaVirtualSitioComponent implements OnInit {
     this.err.set(isError);
     setTimeout(() => this.msg.set(null), 4000);
   }
+
+  onBuilderNotice(event: { message: string; error?: boolean }) {
+    this.toast(event.message, !!event.error);
+  }
 }

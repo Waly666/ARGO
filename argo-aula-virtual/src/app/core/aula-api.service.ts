@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+import { PortalAuthService } from './portal-auth.service';
 import {
   CalendarioCohorte,
   CategoriaVirtual,

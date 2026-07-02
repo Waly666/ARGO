@@ -46,7 +46,11 @@
       (applied)="aplicarPlantillaDesdeGaleria($event)" />
   }
 
-  <argo-portal-site-builder [portalForm]="portalForm" [portalUrl]="portalUrl" />
+  <argo-portal-site-builder
+    [portalForm]="portalForm"
+    [portalUrl]="portalUrl"
+    (avNotice)="onBuilderNotice($event)"
+  />
 
   <div class="av-save-bar av-save-bar--builder">
     <div class="av-save-bar__text">

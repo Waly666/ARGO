@@ -7,6 +7,8 @@ const {
   aulaVirtualZip,
   aulaVirtualMateriales,
   aulaVirtualLogo,
+  aulaVirtualHero,
+  aulaVirtualFundacionHero,
   aulaVirtualBlog,
   programasVirtual,
 } = require('../middleware/upload');
@@ -126,6 +128,27 @@ router.post(
   admin.subirLogoPortal,
 );
 router.delete('/admin/portal/logo', requireAuth, configPortal, admin.quitarLogoPortal);
+router.post(
+  '/admin/portal/hero-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualHero.single('imagen'),
+  admin.subirImagenHeroPortal,
+);
+router.delete('/admin/portal/hero-imagen', requireAuth, configPortal, admin.quitarImagenHeroPortal);
+router.post(
+  '/admin/portal/fundacion-hero-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualFundacionHero.single('imagen'),
+  admin.subirImagenFundacionPortal,
+);
+router.delete(
+  '/admin/portal/fundacion-hero-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenFundacionPortal,
+);
 
 router.get('/admin/blog', requireAuth, configPortal, admin.listarBlogAdmin);
 router.get('/admin/blog/:id', requireAuth, configPortal, admin.obtenerBlogAdmin);

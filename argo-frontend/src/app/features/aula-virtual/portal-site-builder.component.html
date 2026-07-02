@@ -213,16 +213,46 @@
             </select>
           </label>
 
-          <label class="psb-field psb-field--plain">
-            <span>Imagen grande del inicio (opcional)</span>
-            <input
-              type="text"
-              class="psb-input"
-              [(ngModel)]="site.tema.urlHero"
-              placeholder="Deje vacío para usar la imagen por defecto"
-            />
-            <span class="psb-hint">Si tiene una foto de su institución, pregunte a soporte cómo subirla o pegue aquí la dirección web de la imagen.</span>
-          </label>
+          <div class="psb-hero-image">
+            <span class="psb-field-label">Imagen grande del inicio (banner)</span>
+            <p class="psb-hint">
+              Foto o ilustración que aparece a la derecha del texto principal. Se guarda al instante en el sitio;
+              no necesita publicar cambios. PNG, JPG o WEBP. Máx. 8 MB.
+            </p>
+            <div class="psb-hero-image__row">
+              @if (heroPreviewUrl(); as heroUrl) {
+                <figure class="psb-hero-image__preview">
+                  <img [src]="heroUrl" alt="Vista previa imagen del banner" />
+                </figure>
+              } @else {
+                <div class="psb-hero-image__preview psb-hero-image__preview--empty">
+                  Imagen por defecto del portal
+                </div>
+              }
+              <div class="psb-hero-image__actions">
+                <label class="psb-btn psb-btn--ghost psb-btn--file" [class.psb-btn--disabled]="heroUploading()">
+                  {{ heroUploading() ? 'Subiendo…' : 'Elegir imagen' }}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    hidden
+                    (change)="onHeroImagen($event)"
+                    [disabled]="heroUploading()"
+                  />
+                </label>
+                @if (tieneImagenHero()) {
+                  <button
+                    type="button"
+                    class="psb-btn psb-btn--ghost"
+                    [disabled]="heroUploading()"
+                    (click)="quitarImagenHero()"
+                  >
+                    Quitar imagen
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
 
           <div class="psb-preview-theme" [ngStyle]="themePreviewVars()">
             <span class="psb-preview-theme__label">Vista previa del tema:</span>
@@ -275,6 +305,9 @@
         <argo-portal-fundacion-editor
           [fundacion]="landing.fundacion"
           [nombreEmpresa]="portalForm.nombreEmpresa || ''"
+          [portalUrl]="portalUrl"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
         />
       }
 
