@@ -8,12 +8,18 @@ export function setTokenGetter(fn: TokenGetter): void {
   tokenGetter = fn;
 }
 
+const CLIENTE_JORNADAS = 'jornadas';
+
 function mensajeRed(err: unknown, base: string): string {
   const m = err instanceof Error ? err.message : String(err);
   if (err instanceof Error && err.name === 'AbortError') {
-    return `El servidor no respondió a tiempo (${base}). Revise red y que el backend esté activo.`;
+    return `El servidor no respondió a tiempo (${base}). Revise datos móviles/Wi‑Fi y que app.finstruvial.edu.co esté en línea.`;
   }
   if (/Network request failed|Failed to fetch|ECONNREFUSED|ETIMEDOUT|aborted/i.test(m)) {
+    const esProd = /finstruvial\.edu\.co/i.test(base);
+    if (esProd) {
+      return `Sin conexión con ${base}. Active datos o Wi‑Fi en el celular y pruebe abrir https://app.finstruvial.edu.co en el navegador del teléfono.`;
+    }
     return `Sin conexión con ${base}. Celular y PC en la misma Wi‑Fi; permita el puerto en el firewall.`;
   }
   return m;
@@ -27,6 +33,7 @@ export async function apiFetch<T>(
   const timeoutMs = opts?.timeoutMs ?? 25_000;
   const headers: Record<string, string> = {
     Accept: 'application/json',
+    'X-ARGO-Cliente': CLIENTE_JORNADAS,
     ...(opts?.headers as Record<string, string>),
   };
   if (opts?.auth !== false) {
@@ -80,7 +87,10 @@ export async function apiPostForm<T>(
 ): Promise<T> {
   const base = getApiBaseUrl();
   const timeoutMs = opts?.timeoutMs ?? 45_000;
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'X-ARGO-Cliente': CLIENTE_JORNADAS,
+  };
   if (opts?.auth !== false) {
     const t = tokenGetter();
     if (t) headers.Authorization = `Bearer ${t}`;
@@ -126,6 +136,7 @@ export async function apiFetchText(
   const timeoutMs = opts?.timeoutMs ?? 30_000;
   const headers: Record<string, string> = {
     Accept: 'text/html, text/plain, */*',
+    'X-ARGO-Cliente': CLIENTE_JORNADAS,
     ...(opts?.headers as Record<string, string>),
   };
   if (opts?.auth !== false) {
@@ -171,22 +182,17 @@ export async function login(username: string, password: string): Promise<import(
   const raw = await apiFetch<import('./types').LoginApiRaw & Record<string, unknown>>('/auth/login', {
     method: 'POST',
     auth: false,
-    timeoutMs: 12_000,
+    timeoutMs: 20_000,
     headers: {
       'Content-Type': 'application/json',
-      'X-ARGO-Cliente': 'jornadas',
     },
     body: JSON.stringify({ username, password }),
   });
 
-  if (raw.step === 'mfa_verify') {
+  // Backend nativo (X-ARGO-Cliente: jornadas) debe devolver step complete sin MFA web.
+  if (raw.step === 'mfa_verify' || raw.step === 'mfa_setup') {
     throw new Error(
-      'Su cuenta exige verificación en dos pasos (MFA). Ingrese primero en la web ARGO o use un usuario instructor sin MFA para la app móvil.',
-    );
-  }
-  if (raw.step === 'mfa_setup') {
-    throw new Error(
-      'Debe configurar verificación en dos pasos (MFA) en la web ARGO antes de usar la app móvil, o use un usuario sin MFA.',
+      'El servidor exige MFA en la app. En el servidor confirme MFA_STAFF_WEB_ONLY=true (o 1) en deploy/.env y reinicie argo-backend.',
     );
   }
 
@@ -195,7 +201,7 @@ export async function login(username: string, password: string): Promise<import(
   if (!token || !user) {
     throw new Error(
       raw.message ||
-        'El servidor no devolvió sesión válida. Verifique usuario/contraseña o actualice el backend ARGO.',
+        'El servidor no devolvió sesión válida. Verifique usuario/contraseña y el campo Servidor (app.finstruvial.edu.co).',
     );
   }
   return { token, user };
