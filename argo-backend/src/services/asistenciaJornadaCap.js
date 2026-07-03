@@ -12,6 +12,7 @@ const {
   validarAlumnoSinCertificadoContrato,
   crearContextoCertificadoContrato,
 } = require('./certificadoJornadaAuto');
+const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
 const { tieneAlguno, permisosParaRol } = require('./rolesPermisos');
 
 const QUERY_MATRICULA_ACTIVA = { estado: { $regex: /^activo?a?$/i } };
@@ -55,7 +56,12 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
   }
   alumno = (await asegurarTipoAlumnoJornada(numDoc)) || alumno;
 
-  const progId = String(clase.idPrograma);
+  const progId = String(clase.idPrograma || '').trim();
+  if (!progId) {
+    const err = new Error('Asigne el programa a la clase antes de registrar asistencia.');
+    err.status = 400;
+    throw err;
+  }
   const mat = await Matricula.findOne({ numDoc, idProg: progId, ...QUERY_MATRICULA_ACTIVA }).lean();
   if (!mat) {
     const err = new Error('El alumno no está matriculado en el programa de esta clase');
@@ -149,14 +155,21 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
     /* ignore */
   }
 
+  // Certificados se emiten al finalizar la clase (no al marcar asistencia).
   let resultadoCert = { creado: false, motivo: null };
-  if (idContrato) {
+  if (opts.omitirCertificado !== false) {
+    resultadoCert = {
+      creado: false,
+      motivo: idContrato ? 'diferido_al_finalizar' : 'sin_contrato_jornada',
+    };
+  } else if (idContrato) {
     resultadoCert = await intentarCertificadoJornadaAuto(
       numDoc,
       progId,
       idContrato,
       clase.idJornada,
       ctxCert,
+      clase,
     );
   } else {
     resultadoCert = { creado: false, motivo: 'sin_contrato_jornada' };
@@ -211,16 +224,30 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
   }
 
   const jornada = await sincronizarEstadoJornada(clase.idJornada);
+  const ctxCert = jornada?.idContrato
+    ? await crearContextoCertificadoContrato(jornada.idContrato)
+    : null;
+
   let aProcesar = pendientes;
   let omitidosCertificados = 0;
   if (jornada?.idContrato) {
     const docsPend = pendientes.map((i) => Number(i.numDoc)).filter((n) => Number.isFinite(n));
+    const esPorClase = ctxCert?.contrato?.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
     const certs = docsPend.length
-      ? await Certificado.find({
-          numDoc: { $in: docsPend },
-          idContrato: jornada.idContrato,
-          estado: { $ne: 'anulado' },
-        })
+      ? await Certificado.find(
+          esPorClase
+            ? {
+                numDoc: { $in: docsPend },
+                idClaseJornada: clase._id,
+                estado: { $ne: 'anulado' },
+              }
+            : {
+                numDoc: { $in: docsPend },
+                idContrato: jornada.idContrato,
+                estado: { $ne: 'anulado' },
+                $or: [{ idClaseJornada: null }, { idClaseJornada: { $exists: false } }],
+              },
+        )
           .select('numDoc')
           .lean()
       : [];
@@ -240,10 +267,6 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
       resultados: [],
     };
   }
-
-  const ctxCert = jornada?.idContrato
-    ? await crearContextoCertificadoContrato(jornada.idContrato)
-    : null;
 
   for (const ins of aProcesar) {
     try {
@@ -283,8 +306,69 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
   };
 }
 
+/**
+ * Emite certificados de todos los alumnos con asistencia en la clase
+ * (se llama al finalizar, no al registrar cada alumno).
+ */
+async function emitirCertificadosAsistentesClase(req, claseDoc, opts = {}) {
+  const clase = claseDoc?.toObject ? claseDoc.toObject() : { ...claseDoc };
+  const asistencias = await AsisClasJorCap.find({ idclaseJornada: clase._id }).lean();
+  if (!asistencias.length) {
+    return { certificadosNuevos: 0, certificadosEmitidos: [], evaluados: 0 };
+  }
+
+  const jornada = opts.jornada || (await sincronizarEstadoJornada(clase.idJornada));
+  const idContrato = jornada?.idContrato;
+  if (!idContrato) {
+    return { certificadosNuevos: 0, certificadosEmitidos: [], evaluados: asistencias.length };
+  }
+
+  const ctxCert = opts.ctxCert || (await crearContextoCertificadoContrato(idContrato));
+  const progId = String(clase.idPrograma || '').trim();
+  let certificadosNuevos = 0;
+  const certificadosEmitidos = [];
+
+  for (const a of asistencias) {
+    const numDoc = Number(a.numDocAlumno);
+    if (!Number.isFinite(numDoc)) continue;
+    try {
+      const resultadoCert = await intentarCertificadoJornadaAuto(
+        numDoc,
+        progId,
+        idContrato,
+        clase.idJornada,
+        ctxCert,
+        clase,
+      );
+      if (resultadoCert?.creado && resultadoCert.certificado) {
+        certificadosNuevos += 1;
+        const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+        const nombreAlumno = alumno
+          ? [alumno.nombre1, alumno.nombre2, alumno.apellido1, alumno.apellido2]
+              .filter(Boolean)
+              .join(' ')
+          : String(numDoc);
+        certificadosEmitidos.push({
+          certificado: resultadoCert.certificado,
+          nombreAlumno,
+          numDoc,
+        });
+      }
+    } catch (_) {
+      /* sigue con el siguiente alumno */
+    }
+  }
+
+  return {
+    certificadosNuevos,
+    certificadosEmitidos,
+    evaluados: asistencias.length,
+  };
+}
+
 module.exports = {
   QUERY_MATRICULA_ACTIVA,
   registrarAsistenciaAlumnoEnClase,
   registrarAsistenciasInscritosPendientes,
+  emitirCertificadosAsistentesClase,
 };

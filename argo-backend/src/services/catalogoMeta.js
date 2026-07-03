@@ -40,6 +40,7 @@ const ETIQUETAS = {
   divipola: 'Divipola (municipios)',
   aulas: 'Aulas',
   talleres: 'Talleres / patios / parqueaderos',
+  carpas: 'Carpas (jornadas de capacitación)',
   itemDocumentosVehiculo: 'Documentos vehículo',
   itemDocumentosInstructores: 'Documentos instructores',
   itemsEstGral: 'Ítems estado general',
@@ -79,6 +80,7 @@ const ID_FIELDS_HINT = {
   divipola: ['codMunicipio'],
   aulas: ['idAula'],
   talleres: ['idTaller'],
+  carpas: ['idCarpa'],
   itemDocumentosVehiculo: ['idDocVehi'],
   itemDocumentosInstructores: ['idDocInst'],
   itemsEstGral: ['idItemEsGral'],
@@ -92,6 +94,7 @@ const ID_FIELDS_HINT = {
 const CAMPOS_ESQUEMA = {
   aulas: ['idAula', 'nombre', 'estado', 'idSede'],
   talleres: ['idTaller', 'nombre', 'ubicacion', 'activo', 'idSede'],
+  carpas: ['idCarpa', 'nombre', 'activo'],
   claseVehiculo: [
     'idClase',
     'descripcion',

@@ -36,6 +36,8 @@ import { InstructorPortalAlertService } from '../../core/services/instructor-por
 import { InstructorPortalService } from '../../core/services/instructor-portal.service';
 import { CajaCerradaBannerComponent } from '../../features/caja/caja-cerrada-banner.component';
 import { CertificadoJornadaBannerComponent } from '../../features/jornadas/certificado-jornada-banner.component';
+import { MetaAlumnosJornadaBannerComponent } from '../../features/jornadas/meta-alumnos-jornada-banner.component';
+import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos-jornada-alert.service';
 import { CertificadoVencimientoBannerComponent } from '../../features/certificados/certificado-vencimiento-banner.component';
 import { CertificadoVencidoBannerComponent } from '../../features/certificados/certificado-vencido-banner.component';
 import { JornadaEnProcesoBannerComponent } from '../../features/jornadas/jornada-en-proceso-banner.component';
@@ -97,7 +99,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, AsistenteFlotanteComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, AsistenteFlotanteComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -114,6 +116,7 @@ export class ShellComponent {
   private alarmas = inject(AlarmaService);
   private router = inject(Router);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
+  private metaAlumnosJornadaAlertSvc = inject(MetaAlumnosJornadaAlertService);
   private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
   private alertasRuntime = inject(AlertasRuntimeService);
   private alumnoSvc = inject(AlumnoService);
@@ -305,6 +308,12 @@ export class ShellComponent {
     () => this.mostrarAlertaCertificado() && this.certAlertSvc.alertas().length > 0,
   );
 
+  mostrarBannerMetaAlumnosJornada = computed(
+    () =>
+      (this.permisos.tiene('jornadas.operar') || this.permisos.tiene('jornadas.gestionar')) &&
+      this.metaAlumnosJornadaAlertSvc.alertas().length > 0,
+  );
+
   mostrarBannerComprobantesHoy = computed(() => {
     if (
       !this.mostrarAlertaComprobanteIngreso() &&
@@ -391,6 +400,7 @@ export class ShellComponent {
     () =>
       this.mostrarBannerCajaCerrada() ||
       this.mostrarBannerCertificado() ||
+      this.mostrarBannerMetaAlumnosJornada() ||
       this.mostrarBannerComprobantesHoy() ||
       this.mostrarBannerAlertaPagoAlumno() ||
       this.mostrarBannerDocsVehiculosFaltantes() ||
@@ -536,6 +546,15 @@ export class ShellComponent {
           path: '/app/jornadas/certificados',
           icon: '▣',
           iconTone: 'violet',
+          permiso: ['jornadas.ver', 'jornadas.gestionar'],
+          permisoMenu: 'jornadas.gestionar',
+        },
+        {
+          kind: 'link',
+          label: 'Informes',
+          path: '/app/jornadas/informes',
+          icon: '▤',
+          iconTone: 'teal',
           permiso: ['jornadas.ver', 'jornadas.gestionar'],
           permisoMenu: 'jornadas.gestionar',
         },

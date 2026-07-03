@@ -38,6 +38,8 @@ export interface Programa {
   esCapacitacionVirtual?: boolean;
   /** Modalidades de oferta: VIRTUAL, PRESENCIAL, MIXTA */
   modalidades?: string[];
+  /** Carpa del catálogo (programas de jornadas de capacitación). */
+  idCarpa?: number | string | null;
   tarifasPermitidas?: number[];
   soloVirtual?: boolean;
   admiteVirtual?: boolean;
@@ -105,6 +107,8 @@ export interface ProgramaDto {
   /** Tarifa por hora del servicio adicional de clase práctica (programas licencia de conducción). */
   tarifaHoraPractica?: number;
   modalidades?: string[];
+  /** Carpa del catálogo (solo programas de jornadas). */
+  idCarpa?: number | string | null;
 }
 
 export interface ProgramaDetalle {

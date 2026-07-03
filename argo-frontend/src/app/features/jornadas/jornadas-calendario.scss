@@ -104,6 +104,19 @@
     }
   }
 
+  .vista-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .jornada-gen-clases {
+    display: block;
+    margin: 0.35rem 0 0.75rem;
+    font-size: 0.92rem;
+  }
+
   .vista-toggle {
     display: inline-flex;
     padding: 3px;

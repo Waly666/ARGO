@@ -72,7 +72,7 @@
           <th>Ubicación</th>
           <th>Municipio</th>
           <th>Instructor</th>
-          <th>Carpa #</th>
+          <th>Carpa</th>
           <th>Estado</th>
           <th class="col-actions"></th>
         </tr>
@@ -89,7 +89,10 @@
               {{ labelInstructorClase(c) }}
             </span>
           </td>
-          <td>#{{ c.indiceEnDia || 1 }}</td>
+          <td>
+            <span *ngIf="labelCarpaClase(c)" [ngClass]="capCarpa(labelCarpaClase(c))">{{ labelCarpaClase(c) }}</span>
+            <span *ngIf="!labelCarpaClase(c)" class="cap cap-slate cap-sm">—</span>
+          </td>
           <td>
             <span [ngClass]="estadoClaseLiveClass(c.estado)">{{ c.estado || '—' }}</span>
           </td>

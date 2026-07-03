@@ -99,6 +99,7 @@ import {
   nombreCompletoAlumno,
 } from '../../../core/utils/mensaje-plantilla.helpers';
 import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
+import { AlumnoJornadaQrPanelComponent } from '../alumno-jornada-qr-panel.component';
 
 @Component({
 
@@ -106,8 +107,13 @@ import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, MunicipioBuscarComponent, CatalogoEnumBuscarComponent,
+  imports: [
+    CommonModule,
+    FormsModule,
+    MunicipioBuscarComponent,
+    CatalogoEnumBuscarComponent,
     ArgoDateInputComponent,
+    AlumnoJornadaQrPanelComponent,
   ],
 
   templateUrl: './datos-principales.component.html',
@@ -274,7 +280,11 @@ export class DatosPrincipalesComponent implements OnInit {
 
   saveAlarmFlash = signal(false);
 
+  /** Evita que el effect de sincronización pise ediciones locales (p. ej. tipo de alumno). */
+  private formDirty = signal(false);
+
   formSinGuardar = computed(() => {
+    if (this.formDirty()) return true;
     const base = this.lineaBase();
     const cur = this.firmaEstadoActual();
     if (!base) return this.tieneDatosDigitados();
@@ -288,6 +298,25 @@ export class DatosPrincipalesComponent implements OnInit {
   );
 
   isEdit = computed(() => !!this.form()._id);
+
+  /** Nombre para etiqueta QR (ficha jornadas). */
+  nombreParaQr = computed(() => nombreCompletoAlumno(this.form()) || '');
+
+  /** Empresa en etiqueta: la del alumno o la de la institución (config recibo). */
+  empresaParaQr = computed(() => {
+    const empAlumno = String(this.form().empresaNombre || '').trim();
+    if (empAlumno) return empAlumno;
+    return String(this.configRecibo()?.nombreEmpresa || '').trim();
+  });
+
+  /** Fecha de jornada: query de lista o hoy. */
+  fechaJornadaParaQr = computed(() => {
+    const q =
+      this.route.snapshot.queryParamMap.get('fechaJornada') ||
+      this.route.snapshot.queryParamMap.get('fecha') ||
+      '';
+    return q.trim();
+  });
 
   /** Alta desde Jornadas Cap. (query esJornadaCap / tipoAlumno). */
   private origenJornadaCap = signal(
@@ -446,12 +475,16 @@ export class DatosPrincipalesComponent implements OnInit {
   }
 
   onTipoAlumnoPick(opt: EnumBuscarOption): void {
-    this.patch('tipoAlumno', String(opt.value));
+    const tipo = normalizarTipoAlumno(String(opt.value));
+    this.patch('tipoAlumno', tipo);
+    this.formDirty.set(true);
   }
 
   onTipoAlumnoLimpiar(): void {
-    if (this.esAlumnoJornada()) return;
+    // En ruta de jornadas el tipo queda fijo; en /app/alumnos se puede cambiar.
+    if (this.modo() === 'jornadas') return;
     this.patch('tipoAlumno', normalizarTipoAlumno(undefined));
+    this.formDirty.set(true);
   }
 
 
@@ -482,11 +515,16 @@ export class DatosPrincipalesComponent implements OnInit {
     if (k === 'numDoc') {
       valor = sanitizeNumDocInput(v) as AlumnoDto[K];
     }
+    if (k === 'tipoAlumno') {
+      valor = normalizarTipoAlumno(String(v ?? '')) as AlumnoDto[K];
+    }
     if (k === 'alertaPagoFrecuencia' && !v) {
       this.form.update((f) => ({ ...f, alertaPagoFrecuencia: '', alertaPago: null }));
+      this.formDirty.set(true);
       return;
     }
     this.form.update((f) => ({ ...f, [k]: valor }));
+    this.formDirty.set(true);
 
     if (k === 'numDoc') this.verificarDoc();
   }
@@ -612,12 +650,16 @@ export class DatosPrincipalesComponent implements OnInit {
   }
 
   guardar() {
-    if (this.isEdit() && !this.formSinGuardar()) {
+    const tipoForm = normalizarTipoAlumno(this.form().tipoAlumno);
+    const tipoBd = normalizarTipoAlumno(this.store.alumno()?.tipoAlumno);
+    const cambioTipo = this.isEdit() && tipoForm !== tipoBd;
+
+    if (this.isEdit() && !this.formSinGuardar() && !cambioTipo) {
       this.dispararAlertaGuardar('No hay cambios pendientes por guardar.');
       return;
     }
 
-    const f = { ...this.form() };
+    const f = { ...this.form(), tipoAlumno: tipoForm };
     if (!f.expedida?.trim() && this.expedidaTexto().trim()) {
       f.expedida = this.expedidaTexto().trim();
     }
@@ -681,8 +723,12 @@ export class DatosPrincipalesComponent implements OnInit {
           });
           return;
         }
-        this.lineaBase.set(this.firmaEstadoActual(this.mapDesdeBd(saved as AlumnoDto & Record<string, unknown>), false));
+        const mapped = this.mapDesdeBd(saved as AlumnoDto & Record<string, unknown>);
+        this.form.set(mapped);
+        this.formDirty.set(false);
+        this.lineaBase.set(this.firmaEstadoActual(mapped, false));
         this.fotoFile.set(null);
+        this.store.setDatosSinGuardar(false);
         this.message.set('Datos guardados correctamente.');
       },
       error: (err) => {
@@ -867,6 +913,9 @@ export class DatosPrincipalesComponent implements OnInit {
 
 
   private sincronizarDesdeAlumno(src?: AlumnoDto | null): void {
+    // No sobrescribir mientras el usuario edita (p. ej. cambio de tipo de alumno).
+    if (this.formDirty()) return;
+
     const a = src !== undefined ? src : this.alumno() ?? this.store.alumno();
     if (a?._id || (a?.numDoc != null && String(a.numDoc).trim() !== '')) {
       this.aplicarAlumnoEnForm(a as AlumnoDto & Record<string, unknown>);
@@ -884,8 +933,9 @@ export class DatosPrincipalesComponent implements OnInit {
       this.empresaSugerencias.set([]);
       this.empresaDropdownOpen.set(false);
       this.lineaBase.set('');
+      this.formDirty.set(false);
     }
-    this.store.setDatosSinGuardar(false);
+    this.store.setDatosSinGuardar(this.formDirty());
   }
 
   private aplicarAlumnoEnForm(raw: AlumnoDto & Record<string, unknown>): void {
@@ -904,6 +954,7 @@ export class DatosPrincipalesComponent implements OnInit {
     this.empresaBusqueda.set(mapped.empresaNombre || '');
     this.empresaDropdownOpen.set(false);
     this.empresaSugerencias.set([]);
+    this.formDirty.set(false);
     this.lineaBase.set(this.firmaEstadoActual(mapped, false));
   }
 

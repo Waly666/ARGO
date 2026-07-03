@@ -31,6 +31,17 @@
   <div class="msg ok" *ngIf="message() && !docDuplicado() && !saveAlarmFlash()">{{ message() }}</div>
   <div class="msg err" *ngIf="message() && (docDuplicado() || saveAlarmFlash())">{{ message() }}</div>
 
+  @if (isEdit()) {
+    <div class="jor-qr-banner">
+      <argo-alumno-jornada-qr-panel
+        [numDoc]="form().numDoc"
+        [nombre]="nombreParaQr()"
+        [empresa]="empresaParaQr()"
+        [fechaJornada]="fechaJornadaParaQr()"
+      />
+    </div>
+  }
+
   <div class="dup" *ngIf="docDuplicado() as dup">
     <span>Documento ya registrado: <strong>{{ dup.nombreCompleto }}</strong></span>
     <button type="button" class="primary mini" (click)="irAlDuplicado()">Abrir registro</button>
@@ -126,12 +137,15 @@
                 [modoCombo]="true"
                 [remoto]="false"
                 [minLength]="1"
-                [disabled]="esAlumnoJornada()"
+                [disabled]="modo() === 'jornadas'"
                 [opcionesLocales]="opcionesTipoAlumno()"
                 (seleccionado)="onTipoAlumnoPick($event)"
                 (limpiado)="onTipoAlumnoLimpiar()"
               />
               <p class="hint" *ngIf="!isEdit() && esAlumnoJornada()">Alta para Jornadas de Capacitación (no Regular).</p>
+              <p class="hint" *ngIf="modo() === 'general' && isEdit()">
+                Si asiste a una jornada, cambie el tipo a <strong>Jornadas de Capacitación</strong>, guarde e imprima el QR.
+              </p>
               <p class="hint virtual-hint" *ngIf="normalizarTipoAlumno(form().tipoAlumno) === 'Virtual'">
                 Alumno del <strong>aula virtual</strong> (portal en línea).
               </p>

@@ -199,12 +199,18 @@ exports.crear = async (req, res, next) => {
     const now = new Date();
     const user = usuario(req).username || 'sistema';
 
+    const idCarpaProg =
+      body.idCarpa != null && String(body.idCarpa).trim() !== ''
+        ? Number(body.idCarpa)
+        : null;
+
     const progDoc = {
       idPrograma,
       codigoProg,
       nombreProg,
       nomCert: (body.nomCert || nombreProg).trim(),
       idTipCap,
+      idCarpa: esJornada && Number.isFinite(idCarpaProg) ? idCarpaProg : null,
       semestres: body.semestres != null && body.semestres !== '' ? Number(body.semestres) : null,
       horas: body.horas != null && body.horas !== '' ? Number(body.horas) : null,
       horasTeoria:
@@ -394,6 +400,13 @@ exports.actualizar = async (req, res, next) => {
         body.tipoCertificado !== undefined
           ? normalizarTipoCertificado(body.tipoCertificado)
           : prog.tipoCertificado ?? null,
+      idCarpa: (() => {
+        if (!esJornada) return null;
+        if (body.idCarpa === undefined) return prog.idCarpa ?? null;
+        if (body.idCarpa == null || String(body.idCarpa).trim() === '') return null;
+        const n = Number(body.idCarpa);
+        return Number.isFinite(n) ? n : null;
+      })(),
       descripcionVirtual:
         body.descripcionVirtual !== undefined
           ? String(body.descripcionVirtual || '').trim() || null

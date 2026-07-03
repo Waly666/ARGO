@@ -86,6 +86,13 @@
             {{ modalFechaClase() ? fmtFecha(modalFechaClase()) : '—' }}
           </p>
         </div>
+        <div class="cm-field cm-carpa" *ngIf="claseActiva() as clCarpa">
+          <label>Carpa</label>
+          <p class="fecha-clase-readonly">
+            <span *ngIf="labelCarpaClase(clCarpa)" [ngClass]="capCarpa(labelCarpaClase(clCarpa))">{{ labelCarpaClase(clCarpa) }}</span>
+            <span *ngIf="!labelCarpaClase(clCarpa)" class="cap cap-slate cap-sm">Sin carpa (asigne en el programa)</span>
+          </p>
+        </div>
         <div class="cm-field cm-ubicacion">
           <argo-catalogo-enum-buscar
             label="Ubicación"
@@ -99,11 +106,69 @@
             (limpiado)="onUbicacionClaseLimpiar()"
           />
         </div>
+      </div>
+
+      @if (puedeEditarHorarioClase() || claseSel()) {
+        <div class="clase-modal-extra-grid clase-modal-extra-grid--top">
+          @if (puedeEditarHorarioClase()) {
+            <div class="cm-panel cm-horario argo-form-section variant-horario">
+              <h3 class="clase-modal-section">Horario de la clase</h3>
+              <p class="hint hint-compact">Hora de inicio y fin editables según criterio del instructor.</p>
+              <div class="clase-horario-admin horario-manual">
+                <div class="cm-field horario-manual-col">
+                  <label>Inicio</label>
+                  <argo-hora-12-input
+                    [minuteStep]="15"
+                    [value]="modalHoraInicio() || '08:00'"
+                    (valueChange)="modalHoraInicio.set($event)" />
+                </div>
+                <div class="cm-field horario-manual-col">
+                  <label>Fin</label>
+                  <argo-hora-12-input
+                    [minuteStep]="15"
+                    [value]="modalHoraFin() || '10:00'"
+                    (valueChange)="modalHoraFin.set($event)" />
+                </div>
+                <div class="cm-field horario-manual-col">
+                  <label>Duración</label>
+                  <p class="horario-readonly-val">{{ lapsoClaseEtiqueta() || '—' }}</p>
+                </div>
+              </div>
+            </div>
+          }
+          @if (claseSel()) {
+            <div class="cm-panel cm-evidencia">
+              <h3 class="clase-modal-section">Evidencia fotográfica</h3>
+              <div class="evidencia-foto-panel compact">
+                @if (claseActiva()?.urlforo) {
+                  <img
+                    [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
+                    alt="Evidencia de clase"
+                    class="evidencia-preview" />
+                } @else {
+                  <p class="hint hint-compact">Sin foto cargada.</p>
+                }
+                <label class="evidencia-upload">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    (change)="onFotoEvidenciaSelected($event)"
+                    [disabled]="subiendoFotoEvidencia()" />
+                  <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto' }}</span>
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="clase-modal-datos-grid clase-modal-datos-grid--continuacion">
         <div class="cm-field cm-instructor">
           @if (puedeAsignarInstructor()) {
             <argo-catalogo-enum-buscar
               label="Instructor"
-              placeholder="Seleccione instructor…"
+              placeholder="Sin asignar — seleccione para programar"
               [textoInicial]="textoInstructorModal()"
               [modoCombo]="true"
               [remoto]="false"
@@ -115,24 +180,9 @@
           } @else {
             <label>Instructor</label>
             <p class="instructor-readonly compact">
-              <span [ngClass]="capInstructor(instructorSesionNombre())">{{ instructorSesionNombre() }}</span>
+              <span [ngClass]="capInstructor(labelInstructorClase(claseActiva()))">{{ labelInstructorClase(claseActiva()) }}</span>
             </p>
           }
-        </div>
-        <div class="cm-field cm-matriculados">
-          <label>Matriculados</label>
-          <span class="clase-matricula-contador block" aria-live="polite">
-            <strong class="contador-num">{{ totalAlumnosMatriculadosModal() }}</strong>
-            @if (inscritosConAsistencia() > 0) {
-              <span class="contador-sub">{{ inscritosConAsistencia() }} asist.</span>
-            }
-            @if (inscritosCertificadosContrato() > 0) {
-              <span class="contador-sub">{{ inscritosCertificadosContrato() }} cert.</span>
-            }
-            @if (inscritosSinAsistencia() > 0) {
-              <span class="contador-sub">{{ inscritosSinAsistencia() }} sin asist.</span>
-            }
-          </span>
         </div>
       </div>
 
@@ -154,6 +204,20 @@
       </div>
 
       <h3 class="clase-modal-section">Alumnos</h3>
+      @if (totalAlumnosMatriculadosModal() > 0) {
+        <p class="hint hint-compact clase-matriculados-resumen">
+          <strong>{{ totalAlumnosMatriculadosModal() }}</strong> inscrito(s)
+          @if (inscritosConAsistencia() > 0) {
+            · {{ inscritosConAsistencia() }} con asistencia
+          }
+          @if (inscritosSinAsistencia() > 0) {
+            · {{ inscritosSinAsistencia() }} pendiente(s)
+          }
+          @if (inscritosCertificadosContrato() > 0) {
+            · {{ inscritosCertificadosContrato() }} certificado(s) en contrato
+          }
+        </p>
+      }
       <p class="hint">
         Busque por <strong>nombre</strong> o <strong>número de cédula</strong> en la base de datos y agréguelos.
         Un alumno <strong>ya certificado en el contrato</strong> no puede inscribirse en más clases del mismo contrato.
@@ -264,6 +328,13 @@
                 }
               </td>
               <td class="actions-cell">
+                <button
+                  type="button"
+                  class="mini ghost"
+                  (click)="imprimirEtiquetaQrInscrito(a)"
+                  title="Imprimir etiqueta QR para la app del instructor">
+                  QR etiqueta
+                </button>
                 @if (puedeQuitarInscritoDeClase()) {
                   <button
                     type="button"
@@ -308,60 +379,6 @@
           Hay <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
           Si elimina la clase, también se borrarán esas asistencias e inscripciones.
         </p>
-      }
-
-      @if (puedeAsignarInstructor() || claseSel()) {
-        <div class="clase-modal-extra-grid">
-          @if (puedeAsignarInstructor()) {
-            <div class="cm-panel cm-horario argo-form-section variant-horario">
-              <h3 class="clase-modal-section">Horario</h3>
-              <div class="clase-horario-admin horario-manual">
-                <div class="cm-field horario-manual-col">
-                  <label>Inicio</label>
-                  <argo-hora-12-input
-                    [minuteStep]="15"
-                    [value]="modalHoraInicio() || '08:00'"
-                    (valueChange)="modalHoraInicio.set($event)" />
-                </div>
-                <div class="cm-field horario-manual-col">
-                  <label>Fin</label>
-                  <argo-hora-12-input
-                    [minuteStep]="15"
-                    [value]="modalHoraFin() || '10:00'"
-                    (valueChange)="modalHoraFin.set($event)" />
-                </div>
-                <div class="cm-field horario-manual-col">
-                  <label>Duración</label>
-                  <p class="horario-readonly-val">{{ lapsoClaseEtiqueta() || '—' }}</p>
-                </div>
-              </div>
-            </div>
-          }
-          @if (claseSel()) {
-            <div class="cm-panel cm-evidencia">
-              <h3 class="clase-modal-section">Evidencia fotográfica</h3>
-              <div class="evidencia-foto-panel compact">
-                @if (claseActiva()?.urlforo) {
-                  <img
-                    [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
-                    alt="Evidencia de clase"
-                    class="evidencia-preview" />
-                } @else {
-                  <p class="hint hint-compact">Sin foto cargada.</p>
-                }
-                <label class="evidencia-upload">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    (change)="onFotoEvidenciaSelected($event)"
-                    [disabled]="subiendoFotoEvidencia()" />
-                  <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto' }}</span>
-                </label>
-              </div>
-            </div>
-          }
-        </div>
       }
     </section>
 

@@ -60,6 +60,20 @@ export function capUbicacionClase(ubicacion?: string | null): string {
   return 'cap cap-cyan cap-sm cap-text';
 }
 
+/** Cápsula rosada para la carpa del catálogo (resalta en listas de clases). */
+export function capCarpa(nombre?: string | null): string {
+  return String(nombre ?? '').trim()
+    ? 'cap cap-pink cap-sm cap-text'
+    : 'cap cap-slate cap-sm cap-text';
+}
+
+export function labelCarpaClase(c?: { carpaNombre?: string | null; idCarpa?: number | null } | null): string {
+  const nom = String(c?.carpaNombre ?? '').trim();
+  if (nom) return nom;
+  if (c?.idCarpa != null) return `Carpa ${c.idCarpa}`;
+  return '';
+}
+
 export function capDeteGeorefe(v?: string | null): string {
   switch (v) {
     case 'MAPA':
@@ -247,6 +261,23 @@ export function estadoClaseCalAccentClass(estado?: string | null): string {
   return '';
 }
 
+export function labelEstadoClaseAmigable(estado?: string | null): string {
+  const e = String(estado ?? '').trim().toUpperCase();
+  if (e === 'EN PROCESO') return 'En curso';
+  if (e === 'PROGRAMADA') return 'Programada';
+  if (e === 'FINALIZADO') return 'Terminada';
+  if (e === 'CREADO') return 'Creada';
+  return String(estado ?? '').trim() || '—';
+}
+
+export function labelEstadoJornadaAmigable(estado?: string | null): string {
+  const e = String(estado ?? '').trim().toUpperCase();
+  if (e === 'EN PROCESO') return 'Hoy en curso';
+  if (e === 'PROGRAMADA') return 'Programada';
+  if (e === 'FINALIZADA') return 'Finalizada';
+  return String(estado ?? '').trim() || '—';
+}
+
 export function claseJornadaEstadoNorm(estado?: string | null): string {
   return String(estado ?? '').trim().toUpperCase();
 }
@@ -295,6 +326,32 @@ export function isoAHoraInput(iso?: string | Date | null): string {
 export function validarHoraInput(val?: string | null): boolean {
   if (!val || !String(val).trim()) return true;
   return /^([01]?\d|2[0-3]):[0-5]\d$/.test(String(val).trim());
+}
+
+/** ¿La clase tiene instructor asignado en BD (no el usuario de la sesión)? */
+export function claseTieneInstructor(
+  c?: {
+    idEmpleadoInstructor?: number | string | null;
+    idinstructor?: string | null;
+    instructorNombre?: string | null;
+  } | null,
+): boolean {
+  if (!c) return false;
+  const idEmp = c.idEmpleadoInstructor;
+  if (idEmp != null && String(idEmp).trim() !== '') return true;
+  return !!(c.instructorNombre || c.idinstructor || '').trim();
+}
+
+export function labelInstructorClase(
+  c?: {
+    idEmpleadoInstructor?: number | string | null;
+    idinstructor?: string | null;
+    instructorNombre?: string | null;
+  } | null,
+  sinAsignar = 'Sin asignar',
+): string {
+  if (!claseTieneInstructor(c)) return sinAsignar;
+  return (c!.instructorNombre || c!.idinstructor || '—').trim() || sinAsignar;
 }
 
 /** HH:mm → texto colombiano (ej. 17:10 → "5:10 p. m."). */

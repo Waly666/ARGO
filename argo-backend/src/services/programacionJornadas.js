@@ -32,9 +32,15 @@ async function generarJornadasContrato(contrato, userLogin = '') {
 
   const existentes = await JornadaCap.find({ idContrato: contrato._id }).lean();
   if (existentes.length >= n) {
-    throw new Error(
-      `El contrato ya tiene ${existentes.length} jornada(s) (meta: ${n}). Elimine alguna para volver a generar.`,
-    );
+    return {
+      count: 0,
+      total: existentes.length,
+      numeObjeJornada: calcNumeObjeJornada(contrato.numeroAlumnos, n),
+      fechaDesde: fechaCalendarioIso(hoyCalendario()),
+      fechaInicioContrato: fechaCalendarioIso(inicioContrato),
+      ajustadoDesdeHoy: inicioContrato.getTime() < hoyCalendario().getTime(),
+      jornadasCompletas: true,
+    };
   }
   const faltan = n - existentes.length;
 

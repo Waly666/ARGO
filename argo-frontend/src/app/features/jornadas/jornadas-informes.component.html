@@ -1,0 +1,269 @@
+<section class="card ji-page jornadas-page">
+  <header class="ji-header">
+    <div>
+      <h1>Informes de jornadas</h1>
+      <p class="intro">
+        Alumnos por clase, jornada y contrato, más certificados emitidos. Consulte en pantalla, imprima en PDF o exporte a Excel.
+      </p>
+    </div>
+    <div class="ji-export-all">
+      <button
+        type="button"
+        class="ghost"
+        (click)="imprimirTodo()"
+        [disabled]="loading() || !data()"
+      >
+        PDF completo
+      </button>
+      <button
+        type="button"
+        class="primary"
+        (click)="exportar('completo')"
+        [disabled]="exportando() || loading()"
+      >
+        {{ exportando() ? 'Exportando…' : 'Excel completo' }}
+      </button>
+    </div>
+  </header>
+
+  @if (msg()) {
+    <div class="msg err" role="alert">{{ msg() }}</div>
+  }
+
+  <div class="filtros">
+    <argo-catalogo-enum-buscar
+      label="Contrato"
+      placeholder="Todos los contratos…"
+      [textoInicial]="textoContrato()"
+      [modoCombo]="true"
+      [remoto]="false"
+      [minLength]="1"
+      [opcionesLocales]="opcionesContrato()"
+      (seleccionado)="onContratoPick($event)"
+      (limpiado)="onContratoLimpiar()"
+    />
+    <argo-catalogo-enum-buscar
+      label="Jornada"
+      placeholder="Todas las jornadas…"
+      [textoInicial]="textoJornada()"
+      [modoCombo]="true"
+      [remoto]="false"
+      [minLength]="1"
+      [opcionesLocales]="opcionesJornada()"
+      (seleccionado)="onJornadaPick($event)"
+      (limpiado)="onJornadaLimpiar()"
+    />
+    <argo-catalogo-enum-buscar
+      label="Clase"
+      placeholder="Todas las clases…"
+      [textoInicial]="textoClase()"
+      [modoCombo]="true"
+      [remoto]="false"
+      [minLength]="1"
+      [disabled]="!idJornada"
+      [opcionesLocales]="opcionesClase()"
+      (seleccionado)="onClasePick($event)"
+      (limpiado)="onClaseLimpiar()"
+    />
+    <argo-date-input label="Desde" [ngModel]="desde" (ngModelChange)="desde = $event" />
+    <argo-date-input label="Hasta" [ngModel]="hasta" (ngModelChange)="hasta = $event" />
+    <button type="button" class="primary" (click)="cargar()" [disabled]="loading()">
+      {{ loading() ? 'Consultando…' : 'Consultar' }}
+    </button>
+  </div>
+
+  <article class="doc-preview" aria-label="Vista previa del informe">
+    <header class="doc-header">
+      @if (logoEmpresa()) {
+        <img class="doc-logo" [src]="logoEmpresa()" [alt]="empresa()?.nombreEmpresa || 'Empresa'" />
+      } @else {
+        <div class="doc-logo-ph">ARGO</div>
+      }
+      <div class="doc-empresa">
+        <h2>{{ empresa()?.nombreEmpresa || 'ARGO' }}</h2>
+        @if (empresa()?.nit) {
+          <p>NIT: {{ empresa()?.nit }}</p>
+        }
+        @if (empresa()?.telefono) {
+          <p>Tel: {{ empresa()?.telefono }}</p>
+        }
+        @if (empresa()?.direccion) {
+          <p>Dir: {{ empresa()?.direccion }}</p>
+        }
+        @if (empresa()?.ciudad || empresa()?.departamento) {
+          <p>{{ empresa()?.ciudad }}{{ empresa()?.ciudad && empresa()?.departamento ? ', ' : '' }}{{ empresa()?.departamento }}</p>
+        }
+        @if (empresa()?.email) {
+          <p>Email: {{ empresa()?.email }}</p>
+        }
+      </div>
+    </header>
+
+    <div class="doc-titulo">
+      <h3>{{ tituloTabActual() }}</h3>
+      <p>Informe de jornadas de capacitación</p>
+      <div class="destacado-bloque">
+        @if (codigoContratoFiltro()) {
+          <div class="destacado-par">
+            <span class="destacado-label">Contrato</span>
+            <span class="destacado-valor">{{ codigoContratoFiltro() }}</span>
+          </div>
+        }
+        @if (idJornadaCortoFiltro()) {
+          <div class="destacado-par">
+            <span class="destacado-label">ID jornada</span>
+            <span class="destacado-valor">{{ idJornadaCortoFiltro() }}</span>
+            @if (fechaJornadaFiltro()) {
+              <span class="destacado-extra">{{ fechaJornadaFiltro() }}</span>
+            }
+          </div>
+        }
+        @if (idClaseCortoFiltro()) {
+          <div class="destacado-par">
+            <span class="destacado-label">ID clase</span>
+            <span class="destacado-valor">{{ idClaseCortoFiltro() }}</span>
+          </div>
+        }
+      </div>
+      @if (!codigoContratoFiltro() && !idJornadaCortoFiltro() && !idClaseCortoFiltro()) {
+        <p class="doc-meta-line">Sin filtro de contrato / jornada / clase (todos)</p>
+      }
+      @if (desde || hasta) {
+        <p class="doc-meta-line">
+          Periodo: <strong>{{ desde || '…' }} — {{ hasta || '…' }}</strong>
+        </p>
+      }
+    </div>
+
+    @if (data(); as d) {
+      <div class="stats">
+        <div class="stat">
+          <span>Alumnos únicos</span>
+          <strong>{{ d.resumen.alumnosUnicos }}</strong>
+        </div>
+        <div class="stat">
+          <span>Registros por clase</span>
+          <strong>{{ d.resumen.totalFilasClase }}</strong>
+        </div>
+        <div class="stat">
+          <span>Asistencias</span>
+          <strong>{{ d.resumen.registrosAsistencia }}</strong>
+        </div>
+        <div class="stat">
+          <span>Inscripciones</span>
+          <strong>{{ d.resumen.registrosInscripcion }}</strong>
+        </div>
+        <div class="stat">
+          <span>Certificados</span>
+          <strong>{{ d.resumen.certificados }}</strong>
+        </div>
+      </div>
+    }
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab" [class.active]="tab() === 'porClase'" (click)="setTab('porClase')">
+        Por clase
+      </button>
+      <button type="button" class="tab" [class.active]="tab() === 'porJornada'" (click)="setTab('porJornada')">
+        Por jornada
+      </button>
+      <button type="button" class="tab" [class.active]="tab() === 'porContrato'" (click)="setTab('porContrato')">
+        Por contrato
+      </button>
+      <button type="button" class="tab" [class.active]="tab() === 'certificados'" (click)="setTab('certificados')">
+        Certificados
+      </button>
+    </div>
+
+    <div class="toolbar">
+      <button type="button" class="primary" (click)="imprimirTabActual()" [disabled]="loading() || !data()">
+        Imprimir / PDF (pestaña)
+      </button>
+      <button type="button" class="ghost" (click)="exportarTabActual()" [disabled]="exportando() || loading()">
+        Excel (pestaña)
+      </button>
+      <span class="hint-count">{{ filasActivas().length }} fila(s)</span>
+    </div>
+
+    @if (loading()) {
+      <p class="hint">Cargando informes…</p>
+    } @else if (tab() === 'porJornada') {
+      @for (g of gruposPorJornada(); track g.key) {
+        <div class="grupo-jornada">
+          <div class="destacado-bloque grupo-cabecera">
+            <div class="destacado-par">
+              <span class="destacado-label">Contrato</span>
+              <span class="destacado-valor">{{ g.codContrato }}</span>
+            </div>
+            <div class="destacado-par">
+              <span class="destacado-label">ID jornada</span>
+              <span class="destacado-valor">{{ g.idJornadaCorto }}</span>
+            </div>
+            @if (g.fechaJornada || g.municipio) {
+              <span class="destacado-extra">
+                {{ g.fechaJornada }}{{ g.fechaJornada && g.municipio ? ' · ' : '' }}{{ g.municipio }}
+              </span>
+            }
+          </div>
+          <div class="table-wrap">
+            <table class="argo">
+              <thead>
+                <tr>
+                  @for (col of columnasActivas(); track col.k) {
+                    @if (col.k !== 'codContrato' && col.k !== 'idJornadaCorto') {
+                      <th>{{ col.l }}</th>
+                    }
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of g.filas; track $index) {
+                  <tr>
+                    @for (col of columnasActivas(); track col.k) {
+                      @if (col.k !== 'codContrato' && col.k !== 'idJornadaCorto') {
+                        <td>{{ celda(row, col.k) }}</td>
+                      }
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      } @empty {
+        <p class="hint">Sin datos para los filtros seleccionados.</p>
+      }
+    } @else {
+      <div class="table-wrap">
+        <table class="argo">
+          <thead>
+            <tr>
+              @for (col of columnasActivas(); track col.k) {
+                <th>{{ col.l }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filasActivas(); track $index) {
+              <tr>
+                @for (col of columnasActivas(); track col.k) {
+                  <td>{{ celda(row, col.k) }}</td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="columnasActivas().length" class="empty">
+                  Sin datos para los filtros seleccionados.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <footer class="doc-footer-screen">
+      {{ empresa()?.mensajePie || 'Documento generado por ARGO — Jornadas de Capacitación' }}
+    </footer>
+  </article>
+</section>

@@ -139,7 +139,8 @@
         ·
         <span [ngClass]="capInstructor(labelInstructorClase(c))">{{ labelInstructorClase(c) }}</span>
         ·
-        <span [ngClass]="capUbicacionClase(c.ubicacion)">{{ c.ubicacion }}</span>
+        <span *ngIf="labelCarpaClase(c)" [ngClass]="capCarpa(labelCarpaClase(c))">{{ labelCarpaClase(c) }}</span>
+        <span *ngIf="!labelCarpaClase(c)" [ngClass]="capUbicacionClase(c.ubicacion)">{{ c.ubicacion }}</span>
         ·
         <span [ngClass]="estadoClaseLiveClass(c.estado)">{{ c.estado }}</span>
       </button>
@@ -147,14 +148,41 @@
     </div>
 
     <div *ngIf="claseActiva() as cl" class="clase-ops">
-      <p class="clase-horas">
-        Inicio:
-        <span [ngClass]="capHoraJor(cl.horaInicio)">{{ fmtHora(cl.horaInicio) }}</span>
-        · Fin:
-        <span [ngClass]="capHoraJor(cl.horaFin)">{{ fmtHora(cl.horaFin) }}</span>
-        ·
-        <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ cl.estado }}</span>
-      </p>
+      <div class="clase-horario-instructor">
+        <h3>Horario de la clase</h3>
+        <p class="hint hint-compact">Ajuste inicio y fin según criterio del instructor.</p>
+        <div class="row horario-manual">
+          <div class="col-3">
+            <label>Inicio</label>
+            <argo-hora-12-input
+              [minuteStep]="15"
+              [value]="horaInicioClase() || '08:00'"
+              (valueChange)="horaInicioClase.set($event)" />
+          </div>
+          <div class="col-3">
+            <label>Fin</label>
+            <argo-hora-12-input
+              [minuteStep]="15"
+              [value]="horaFinClase() || '10:00'"
+              (valueChange)="horaFinClase.set($event)" />
+          </div>
+          <div class="col-3 actions-inline">
+            <button type="button" class="ghost" (click)="guardarHorarioClase()" [disabled]="guardandoHorario()">
+              {{ guardandoHorario() ? 'Guardando…' : 'Guardar horario' }}
+            </button>
+          </div>
+        </div>
+        <p class="clase-horas">
+          Estado:
+          <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ cl.estado }}</span>
+          @if (cl.horaInicio) {
+            · Inicio registrado: <span [ngClass]="capHoraJor(cl.horaInicio)">{{ fmtHora(cl.horaInicio) }}</span>
+          }
+          @if (cl.horaFin) {
+            · Fin: <span [ngClass]="capHoraJor(cl.horaFin)">{{ fmtHora(cl.horaFin) }}</span>
+          }
+        </p>
+      </div>
       <div class="actions">
         <button type="button" class="primary" (click)="iniciarClase()" [disabled]="!jornadaOperable()">Iniciar</button>
         <button type="button" class="ghost" (click)="finalizarClase()">Finalizar</button>

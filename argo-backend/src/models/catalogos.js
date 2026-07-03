@@ -38,6 +38,7 @@ const CATALOGOS = {
   divipola: 'divipola',
   aulas: 'aulas',
   talleres: 'talleres',
+  carpas: 'carpas',
   itemDocumentosVehiculo: 'itemDocumentosVehiculo',
   itemDocumentosInstructores: 'itemDocumentosInstructores',
   itemsEstGral: 'itemsEstGral',

@@ -229,6 +229,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'jornadas/informes',
+        canActivate: [permisoGuard],
+        data: { permiso: ['jornadas.ver', 'jornadas.gestionar'] },
+        loadComponent: () =>
+          import('./features/jornadas/jornadas-informes.component').then(
+            (m) => m.JornadasInformesComponent,
+          ),
+      },
+      {
         path: 'jornadas/en-proceso',
         canActivate: [permisoGuard],
         data: { permiso: ['jornadas.ver', 'jornadas.gestionar'] },

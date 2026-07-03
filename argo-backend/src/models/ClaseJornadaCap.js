@@ -3,8 +3,12 @@ const { ESTADOS_CLASE, UBICACIONES_CLASE } = require('../constants/jornadaCapaci
 
 const ClaseJornadaCapSchema = new mongoose.Schema(
   {
-    idPrograma: { type: String, required: true, trim: true, index: true },
+    idPrograma: { type: String, trim: true, default: '', index: true },
     idJornada: { type: mongoose.Schema.Types.ObjectId, ref: 'JornadaCap', required: true, index: true },
+    /** 1..N dentro de la jornada (autogeneración). */
+    indiceClaseEnJornada: { type: Number, default: 1 },
+    /** Intensidad horaria de la clase (valor del certificado); no es duración real horaInicio–horaFin. */
+    horasCertificadas: { type: Number, default: null },
     /** Misma fecha programada de la jornada seleccionada (inicio de día local). */
     fechaClase: { type: Date, required: true, index: true },
     /** Ruta relativa: evidenciascap/{codContrato}/fotos/{idClase}_{YYYYMMDDHHmmss}.ext */
@@ -14,6 +18,8 @@ const ClaseJornadaCapSchema = new mongoose.Schema(
     /** Segundos transcurridos entre horaInicio y horaFin (calculado al finalizar). */
     duracionSegundos: { type: Number, default: null },
     ubicacion: { type: String, enum: UBICACIONES_CLASE, default: 'Carpa' },
+    /** Carpa del catálogo (heredada del programa de capacitación). */
+    idCarpa: { type: Number, default: null, index: true },
     idinstructor: { type: String, trim: true, default: '' },
     /** Empleado instructor (RRHH) vinculado al usuario que crea/opera la clase */
     idEmpleadoInstructor: { type: Number, index: true, default: null },

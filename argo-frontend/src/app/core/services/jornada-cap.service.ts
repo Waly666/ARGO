@@ -33,6 +33,12 @@ export interface ContratacionDto {
   numerojornadas?: number;
   /** Cuántas jornadas se generan el mismo día calendario. */
   jornadasPorDia?: number;
+  /** Clases autogeneradas por jornada. */
+  clasesPorJornada?: number;
+  /** Intensidad horaria impresa en certificado (modo por_clase); no define duración de la sesión. */
+  horasPorClase?: number;
+  /** global | por_clase */
+  tipoCertificado?: string;
   numeroAlumnos?: number;
   numeObjeJornada?: number;
   nombreCertificacion?: string;
@@ -51,6 +57,15 @@ export interface ContratacionDto {
   valorContrato?: number;
   idFacturaElectronica?: string | null;
   facturadoAt?: string;
+}
+
+/** Contadores del contrato recalculados tras jornadas/clases extra. */
+export interface ContratoSyncDto {
+  _id: string;
+  numerojornadas?: number;
+  numeObjeJornada?: number;
+  clasesPorJornada?: number;
+  jornadasGeneradas?: boolean;
 }
 
 export interface JornadaCapDto {
@@ -88,6 +103,9 @@ export interface ClaseJornadaDto {
   idPrograma: string;
   fechaClase?: string;
   ubicacion?: string;
+  /** Carpa del catálogo (heredada del programa). */
+  idCarpa?: number | null;
+  carpaNombre?: string;
   idinstructor?: string;
   idEmpleadoInstructor?: number | null;
   idUsuarioInstructor?: string;
@@ -115,6 +133,29 @@ export interface InstructorJornadaDto {
   nombreCompleto: string;
   numeroDocumento?: string;
   cargo?: string;
+}
+
+export interface InformesJornadaResumen {
+  totalFilasClase: number;
+  alumnosUnicos: number;
+  registrosAsistencia: number;
+  registrosInscripcion: number;
+  certificados: number;
+}
+
+export interface InformesJornadaResp {
+  filtros: {
+    idContrato?: string | null;
+    idJornada?: string | null;
+    idClase?: string | null;
+    desde?: string | null;
+    hasta?: string | null;
+  };
+  resumen: InformesJornadaResumen;
+  porClase: Record<string, unknown>[];
+  porJornada: Record<string, unknown>[];
+  porContrato: Record<string, unknown>[];
+  certificados: Record<string, unknown>[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -147,6 +188,10 @@ export class JornadaCapService {
     fechaDesde?: string;
     fechaInicioContrato?: string;
     ajustadoDesdeHoy?: boolean;
+    jornadasCompletas?: boolean;
+    clasesCreadas?: number;
+    jornadasProcesadasClases?: number;
+    contrato?: ContratoSyncDto;
   }> {
     return this.http.post<{
       ok: boolean;
@@ -155,7 +200,38 @@ export class JornadaCapService {
       fechaDesde?: string;
       fechaInicioContrato?: string;
       ajustadoDesdeHoy?: boolean;
+      jornadasCompletas?: boolean;
+      clasesCreadas?: number;
+      jornadasProcesadasClases?: number;
+      contrato?: ContratoSyncDto;
     }>(`${this.base}/contratos/${idContrato}/generar-jornadas`, {});
+  }
+
+  crearJornadaContrato(
+    idContrato: string,
+    dto: {
+      fechaProgramacion: string;
+      direccion: string;
+      municipio?: string;
+      depto?: string;
+      codMunicipio?: string;
+      lat?: number | null;
+      lng?: number | null;
+      deteGeorefe?: string;
+      supervisor?: string;
+      indiceEnDia?: number;
+      generarClases?: boolean;
+    },
+  ): Observable<{
+    jornada: JornadaCapDto;
+    clasesCreadas: number;
+    contrato?: ContratoSyncDto;
+  }> {
+    return this.http.post<{
+      jornada: JornadaCapDto;
+      clasesCreadas: number;
+      contrato?: ContratoSyncDto;
+    }>(`${this.base}/contratos/${idContrato}/jornadas`, dto);
   }
 
   finalizarContrato(
@@ -176,9 +252,12 @@ export class JornadaCapService {
   }
 
   eliminarJornada(id: string) {
-    return this.http.delete<{ ok: boolean; message: string; restantes?: number }>(
-      `${this.base}/jornadas/${id}`,
-    );
+    return this.http.delete<{
+      ok: boolean;
+      message: string;
+      restantes?: number;
+      contrato?: ContratoSyncDto;
+    }>(`${this.base}/jornadas/${id}`);
   }
 
   jornadasDelDia(fecha?: string, idContrato?: string) {
@@ -250,9 +329,9 @@ export class JornadaCapService {
     idJornada: string;
     idPrograma: string;
     ubicacion?: string;
-    idEmpleadoInstructor?: number;
+    idEmpleadoInstructor?: number | null;
   }) {
-    return this.http.post<ClaseJornadaDto>(`${this.base}/clases`, dto);
+    return this.http.post<ClaseJornadaDto & { contrato?: ContratoSyncDto }>(`${this.base}/clases`, dto);
   }
 
   actualizarClase(
@@ -260,7 +339,7 @@ export class JornadaCapService {
     dto: {
       idPrograma?: string;
       ubicacion?: string;
-      idEmpleadoInstructor?: number;
+      idEmpleadoInstructor?: number | null;
       horaInicio?: string | null;
       horaFin?: string | null;
     },
@@ -269,7 +348,11 @@ export class JornadaCapService {
   }
 
   eliminarClase(id: string) {
-    return this.http.delete<{ ok: boolean; message: string }>(`${this.base}/clases/${id}`);
+    return this.http.delete<{
+      ok: boolean;
+      message: string;
+      contrato?: ContratoSyncDto;
+    }>(`${this.base}/clases/${id}`);
   }
 
   iniciarClase(id: string) {
@@ -346,6 +429,43 @@ export class JornadaCapService {
     if (opts?.q) p = p.set('q', opts.q);
     if (opts?.desde) p = p.set('desde', opts.desde);
     return this.http.get<any[]>(`${this.base}/certificados-generados`, { params: p });
+  }
+
+  informesJornada(opts?: {
+    idContrato?: string;
+    idJornada?: string;
+    idClase?: string;
+    desde?: string;
+    hasta?: string;
+  }) {
+    let p = new HttpParams();
+    if (opts?.idContrato) p = p.set('idContrato', opts.idContrato);
+    if (opts?.idJornada) p = p.set('idJornada', opts.idJornada);
+    if (opts?.idClase) p = p.set('idClase', opts.idClase);
+    if (opts?.desde) p = p.set('desde', opts.desde);
+    if (opts?.hasta) p = p.set('hasta', opts.hasta);
+    return this.http.get<InformesJornadaResp>(`${this.base}/informes`, { params: p });
+  }
+
+  exportarInformesJornada(opts?: {
+    idContrato?: string;
+    idJornada?: string;
+    idClase?: string;
+    desde?: string;
+    hasta?: string;
+    tipo?: 'completo' | 'por-clase' | 'por-jornada' | 'por-contrato' | 'certificados';
+  }) {
+    let p = new HttpParams();
+    if (opts?.idContrato) p = p.set('idContrato', opts.idContrato);
+    if (opts?.idJornada) p = p.set('idJornada', opts.idJornada);
+    if (opts?.idClase) p = p.set('idClase', opts.idClase);
+    if (opts?.desde) p = p.set('desde', opts.desde);
+    if (opts?.hasta) p = p.set('hasta', opts.hasta);
+    if (opts?.tipo) p = p.set('tipo', opts.tipo);
+    return this.http.get(`${this.base}/informes/export`, {
+      params: p,
+      responseType: 'blob',
+    });
   }
 
   actualizarCertificadoJornada(id: string, dto: Record<string, unknown>) {

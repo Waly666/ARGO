@@ -11,6 +11,14 @@ const CertificadoSchema = new mongoose.Schema(
     idContrato: { type: mongoose.Schema.Types.ObjectId, ref: 'Contratacion', default: null, index: true },
     /** Jornada donde se completó y emitió el certificado (capacitación). */
     idJornada: { type: mongoose.Schema.Types.ObjectId, ref: 'JornadaCap', default: null, index: true },
+    /** Clase concreta (certificado por clase). */
+    idClaseJornada: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ClaseJornadaCap',
+      default: null,
+      index: true,
+      sparse: true,
+    },
     generadoAutoJornada: { type: Boolean, default: false },
     horasCert: { type: String, trim: true, default: '' },
     idProg:        { type: String, required: true, trim: true },

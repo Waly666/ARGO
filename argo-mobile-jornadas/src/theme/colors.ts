@@ -1,0 +1,87 @@
+/** Tema verde ARGO + pasteles solo para cápsulas y acentos de cards. */
+export const colors = {
+  primary: '#0d9488',
+  primaryDark: '#0f766e',
+  primaryLight: '#14b8a6',
+  accent: '#06b6d4',
+  accentSoft: '#ecfdf5',
+  bg: '#f0fdfa',
+  bgAlt: '#f8fafc',
+  card: '#ffffff',
+  text: '#134e4a',
+  textSoft: '#64748b',
+  border: '#ccfbf1',
+  danger: '#dc2626',
+  dangerBg: '#fef2f2',
+  warn: '#ea580c',
+  warnBg: '#fff7ed',
+  ok: '#16a34a',
+  okBg: '#f0fdf4',
+  shadow: '#0d9488',
+
+  /** Pasteles para cápsulas y barras de acento (no fondos de pantalla). */
+  pastelLavender: '#ede9fe',
+  pastelLavenderFg: '#6d28d9',
+  pastelLavenderBorder: '#c4b5fd',
+  pastelSky: '#e0f2fe',
+  pastelSkyFg: '#0369a1',
+  pastelSkyBorder: '#7dd3fc',
+  pastelPeach: '#ffedd5',
+  pastelPeachFg: '#c2410c',
+  pastelPeachBorder: '#fdba74',
+  pastelRose: '#fce7f3',
+  pastelRoseFg: '#be185d',
+  pastelRoseBorder: '#f9a8d4',
+  pastelMint: '#d1fae5',
+  pastelMintFg: '#047857',
+  pastelMintBorder: '#6ee7b7',
+  pastelAmber: '#fef3c7',
+  pastelAmberFg: '#b45309',
+  pastelAmberBorder: '#fcd34d',
+  pastelLilac: '#f3e8ff',
+  pastelLilacFg: '#7e22ce',
+  pastelLilacBorder: '#d8b4fe',
+  pastelSlate: '#f1f5f9',
+  pastelSlateFg: '#475569',
+  pastelSlateBorder: '#cbd5e1',
+
+  /** Clase terminada: gris fuerte + texto blanco. */
+  terminadaBg: '#475569',
+  terminadaBgAlt: '#334155',
+  terminadaText: '#ffffff',
+  terminadaTextSoft: '#e2e8f0',
+  terminadaBorder: '#1e293b',
+  terminadaAccent: '#94a3b8',
+
+  heroGradient: ['#0d9488', '#14b8a6'] as [string, string],
+  headerBg: '#0d9488',
+};
+
+export type ThemeColors = typeof colors;
+
+export function themeColors(highContrast: boolean): ThemeColors {
+  if (!highContrast) return colors;
+  return {
+    ...colors,
+    bg: '#0f172a',
+    bgAlt: '#1e293b',
+    card: '#1e293b',
+    text: '#f8fafc',
+    textSoft: '#cbd5e1',
+    border: '#475569',
+    primary: '#5eead4',
+    primaryDark: '#2dd4bf',
+    primaryLight: '#99f6e4',
+    accentSoft: '#134e4a',
+    shadow: '#000000',
+    accent: '#5eead4',
+    terminadaBg: '#1e293b',
+    terminadaBgAlt: '#0f172a',
+    terminadaText: '#f8fafc',
+    terminadaTextSoft: '#cbd5e1',
+    terminadaBorder: '#64748b',
+    terminadaAccent: '#94a3b8',
+    heroGradient: ['#0f766e', '#134e4a'],
+    headerBg: '#0f766e',
+  };
+}

@@ -249,6 +249,8 @@ export class ProgramasAdminComponent implements OnInit {
 
   tiposServ = signal<{ id: number; code: string; label: string }[]>([]);
 
+  carpas = signal<{ id: string | number; label: string }[]>([]);
+
   tiposCert = TIPOS_CERTIFICADO;
 
   configCert = signal<ConfigCertificado | null>(null);
@@ -340,6 +342,17 @@ export class ProgramasAdminComponent implements OnInit {
     this.tiposCap().map((t) => ({ value: t.id, label: t.label })),
   );
 
+  opcionesCarpa = computed<EnumBuscarOption[]>(() =>
+    this.carpas().map((t) => ({ value: t.id, label: t.label })),
+  );
+
+  textoCarpa = computed(() => {
+    const id = this.form().idCarpa;
+    if (id == null || id === '') return '';
+    const hit = this.carpas().find((c) => String(c.id) === String(id));
+    return hit?.label || `Carpa ${id}`;
+  });
+
   textoTipoCap = computed(() => {
     if (this.esProgramaJornadasCapForm()) {
       return this.etiquetaTipCapJornada();
@@ -398,6 +411,22 @@ export class ProgramasAdminComponent implements OnInit {
 
       next: (r) => this.plantillasCert.set(r || []),
 
+    });
+
+    this.catSvc.list('carpas').subscribe({
+      next: (rows) => {
+        const list: { id: string | number; label: string }[] = (rows || [])
+          .map((r: { idCarpa?: string | number; id?: string | number; nombre?: string; descripcion?: string; activo?: boolean }) => {
+            if (r.activo === false) return null;
+            const idRaw = r.idCarpa ?? r.id;
+            if (idRaw == null || idRaw === '') return null;
+            const label = String(r.nombre ?? r.descripcion ?? idRaw).trim();
+            return { id: idRaw, label: label || String(idRaw) };
+          })
+          .filter((x): x is { id: string | number; label: string } => !!x);
+        this.carpas.set(list);
+      },
+      error: () => this.carpas.set([]),
     });
 
     this.catSvc.list('catTipoCapacitacion').subscribe({
@@ -524,6 +553,8 @@ export class ProgramasAdminComponent implements OnInit {
       tarifaHoraPractica: 0,
 
       modalidades: [MODALIDAD_PRESENCIAL],
+
+      idCarpa: null,
 
     };
 
@@ -812,7 +843,16 @@ export class ProgramasAdminComponent implements OnInit {
       iva: this.num(s?.iva),
       tarifaHoraPractica: this.num(horaP?.tarifa1),
       modalidades: prog.modalidades?.length ? [...prog.modalidades] : [MODALIDAD_PRESENCIAL],
+      idCarpa: prog.idCarpa ?? null,
     };
+  }
+
+  onCarpaPick(opt: EnumBuscarOption): void {
+    this.patch('idCarpa', opt.value);
+  }
+
+  onCarpaLimpiar(): void {
+    this.patch('idCarpa', null);
   }
 
   /** Etiqueta del tipo cap. para el formulario (fiel al id guardado en BD). */
@@ -936,6 +976,8 @@ export class ProgramasAdminComponent implements OnInit {
       descrServicio: (f.descrServicio || f.nombreProg).trim(),
 
       nomCert: (f.nomCert || f.nombreProg).trim(),
+
+      idCarpa: esJorn ? (f.idCarpa ?? null) : null,
 
     };
 

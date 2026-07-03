@@ -372,10 +372,9 @@ export class AlumnosListaComponent implements OnInit {
 
   labelJornadaCap(j: JornadaCapDto): string {
     const f = this.formatFecha(j.fechaProgramacion);
-    const idx = j.indiceEnDia && j.indiceEnDia > 1 ? ` #${j.indiceEnDia}` : '';
     const m = j.municipio ? ` · ${j.municipio}` : '';
     const cod = (j.codContrato || j.contratoLabel || '').trim();
-    return `${cod ? cod + ' · ' : ''}${f}${idx}${m}`;
+    return `${cod ? cod + ' · ' : ''}${f}${m}`;
   }
 
   tituloCertJornada(r: AlumnoListItem): string {

@@ -114,19 +114,146 @@ async function listarInstructoresConUsuario() {
   return out.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto, 'es'));
 }
 
-/** Admin/gestor: sin filtro. Instructor: solo clases asignadas a su empleado o usuario. */
+function sinInstructorAsignadoQuery() {
+  return {
+    $and: [
+      {
+        $or: [
+          { idEmpleadoInstructor: null },
+          { idEmpleadoInstructor: { $exists: false } },
+          { idEmpleadoInstructor: '' },
+        ],
+      },
+      {
+        $or: [
+          { idUsuarioInstructor: null },
+          { idUsuarioInstructor: { $exists: false } },
+          { idUsuarioInstructor: '' },
+        ],
+      },
+    ],
+  };
+}
+
+function esClaseSinInstructor(clase) {
+  const emp =
+    clase?.idEmpleadoInstructor == null ||
+    clase?.idEmpleadoInstructor === '' ||
+    !Number.isFinite(Number(clase.idEmpleadoInstructor));
+  const user = !String(clase?.idUsuarioInstructor || '').trim();
+  return emp && user;
+}
+
+function esClaseDelInstructor(clase, emp, userId) {
+  const uid = userId ? String(userId).trim() : '';
+  if (uid && String(clase?.idUsuarioInstructor || '').trim() === uid) return true;
+  if (emp?.idEmpleado != null && clase?.idEmpleadoInstructor != null) {
+    return Number(clase.idEmpleadoInstructor) === Number(emp.idEmpleado);
+  }
+  return false;
+}
+
+/**
+ * Admin/gestor: sin filtro.
+ * Instructor (jornadas.operar):
+ *  - clases PROGRAMADA sin instructor (disponibles para tomar), y
+ *  - clases propias (asignadas a su empleado/usuario), en cualquier estado.
+ * No ve clases de otros instructores.
+ */
 async function filtroClasesQueryPorRol(req) {
   const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
   if (tieneAlguno(permisos, ['jornadas.gestionar'])) {
     return { aplicar: false };
   }
   const emp = await empleadoPorUsuarioId(req.user?.sub);
-  const condiciones = [];
-  if (emp?.idEmpleado != null) condiciones.push({ idEmpleadoInstructor: emp.idEmpleado });
+  const propias = [];
+  if (emp?.idEmpleado != null) {
+    const idNum = Number(emp.idEmpleado);
+    propias.push({ idEmpleadoInstructor: idNum });
+    propias.push({ idEmpleadoInstructor: String(idNum) });
+  }
   const userId = req.user?.sub ? String(req.user.sub) : '';
-  if (userId) condiciones.push({ idUsuarioInstructor: userId });
-  if (!condiciones.length) return { aplicar: true, vacio: true };
+  if (userId) propias.push({ idUsuarioInstructor: userId });
+
+  const disponibles = {
+    estado: 'PROGRAMADA',
+    ...sinInstructorAsignadoQuery(),
+  };
+
+  const condiciones = [disponibles, ...propias];
+  if (!propias.length) {
+    // Sin vínculo RRHH solo ve programadas libres (si las hay).
+    return { aplicar: true, $or: [disponibles] };
+  }
   return { aplicar: true, $or: condiciones };
+}
+
+/**
+ * Al operar una clase libre, el usuario queda asignado como instructor (historial / listados).
+ * - Si ya tiene otro instructor: instructor normal → 403; admin puede operar sin pisar.
+ * - Admin u operador sin cargo instructor: igual se guarda usuario y nombre si hay empleado RRHH.
+ * @param {import('mongoose').Document} claseDoc
+ */
+async function asegurarInstructorOperandoClase(claseDoc, req) {
+  if (!claseDoc) return claseDoc;
+
+  const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
+  const esAdmin = tieneAlguno(permisos, ['jornadas.gestionar']);
+  const emp = await empleadoPorUsuarioId(req.user?.sub);
+  const userId = req.user?.sub ? String(req.user.sub) : '';
+
+  if (!esClaseSinInstructor(claseDoc)) {
+    if (!esClaseDelInstructor(claseDoc, emp, userId) && !esAdmin) {
+      const err = new Error('Esta clase está asignada a otro instructor.');
+      err.status = 403;
+      throw err;
+    }
+    return claseDoc;
+  }
+
+  // Clase libre: asignar siempre a quien está operando.
+  let idEmpleadoInstructor = emp?.idEmpleado ?? null;
+  let idUsuarioInstructor = userId;
+  let idinstructor = emp ? nombreEmpleado(emp) : '';
+
+  if (emp) {
+    try {
+      const instructor = await resolverInstructorParaClase(req, {});
+      idEmpleadoInstructor = instructor.idEmpleadoInstructor;
+      idUsuarioInstructor = instructor.idUsuarioInstructor || userId;
+      idinstructor = instructor.idinstructor || idinstructor;
+    } catch (e) {
+      // Admin u operador con empleado pero sin cargo instructor: usar datos RRHH / sesión.
+      if (!esAdmin && !emp) throw e;
+      idinstructor =
+        idinstructor ||
+        String(req.user?.nombres || req.user?.username || req.user?.rolNombre || 'Operador').trim();
+    }
+  } else if (esAdmin) {
+    idinstructor = String(
+      req.user?.nombres || req.user?.username || req.user?.rolNombre || 'Administrador',
+    ).trim();
+    idUsuarioInstructor = userId;
+  } else {
+    const err = new Error(
+      'Su usuario debe estar vinculado a un empleado en RRHH para operar clases.',
+    );
+    err.status = 400;
+    throw err;
+  }
+
+  claseDoc.idEmpleadoInstructor =
+    idEmpleadoInstructor != null && Number.isFinite(Number(idEmpleadoInstructor))
+      ? Number(idEmpleadoInstructor)
+      : null;
+  claseDoc.idUsuarioInstructor = String(idUsuarioInstructor || '').trim();
+  claseDoc.idinstructor = String(idinstructor || '').trim();
+  if (typeof claseDoc.markModified === 'function') {
+    claseDoc.markModified('idEmpleadoInstructor');
+    claseDoc.markModified('idUsuarioInstructor');
+    claseDoc.markModified('idinstructor');
+  }
+  return claseDoc;
 }
 
 async function aplicarFiltroClasesQueryPorRol(q, req) {
@@ -162,29 +289,46 @@ function filtroInstructorQuery(emp, userId) {
 }
 
 async function enriquecerClases(rows) {
+  const { mapaNombresCarpas, normalizarIdCarpa } = require('./carpaJornada');
   const ids = [...new Set(rows.map((r) => r.idEmpleadoInstructor).filter((x) => x != null))];
   const empleados = ids.length
     ? await Empleado.find({ idEmpleado: { $in: ids } }).lean()
     : [];
   const map = new Map(empleados.map((e) => [e.idEmpleado, e]));
   const progCache = new Map();
+  const carpaIds = [];
 
+  for (const c of rows) {
+    const idClase = normalizarIdCarpa(c.idCarpa);
+    if (idClase != null) carpaIds.push(idClase);
+    const progId = String(c.idPrograma || '');
+    if (progCache.has(progId)) continue;
+    const prog = progId ? await buscarPrograma(progId) : null;
+    const idCarpaProg = normalizarIdCarpa(prog?.idCarpa);
+    progCache.set(progId, {
+      programaNombre:
+        (prog?.nombreProg || prog?.descripcion || prog?.nomCert || progId || '').trim() || progId,
+      idCarpa: idCarpaProg,
+    });
+    if (idCarpaProg != null) carpaIds.push(idCarpaProg);
+  }
+
+  const carpaNombres = await mapaNombresCarpas(carpaIds);
   const out = [];
   for (const c of rows) {
     const emp = c.idEmpleadoInstructor != null ? map.get(c.idEmpleadoInstructor) : null;
     const instructorNombre = emp ? nombreEmpleado(emp) : c.idinstructor || '';
     const progId = String(c.idPrograma || '');
-    let programaNombre = progCache.get(progId);
-    if (programaNombre === undefined) {
-      const prog = progId ? await buscarPrograma(progId) : null;
-      programaNombre =
-        (prog?.nombreProg || prog?.descripcion || prog?.nomCert || progId || '').trim() || progId;
-      progCache.set(progId, programaNombre);
-    }
+    const progInfo = progCache.get(progId) || { programaNombre: progId, idCarpa: null };
+    let idCarpa = normalizarIdCarpa(c.idCarpa);
+    if (idCarpa == null) idCarpa = progInfo.idCarpa;
+    const carpaNombre = idCarpa != null ? carpaNombres.get(idCarpa) || `Carpa ${idCarpa}` : '';
     out.push({
       ...c,
       instructorNombre,
-      programaNombre,
+      programaNombre: progInfo.programaNombre,
+      idCarpa,
+      carpaNombre,
       idEmpleadoInstructor: c.idEmpleadoInstructor ?? null,
       idUsuarioInstructor: c.idUsuarioInstructor || '',
     });
@@ -201,4 +345,7 @@ module.exports = {
   filtroInstructorQuery,
   enriquecerClases,
   esEmpleadoInstructor,
+  asegurarInstructorOperandoClase,
+  esClaseSinInstructor,
+  esClaseDelInstructor,
 };

@@ -12,13 +12,16 @@ import {
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import { fmtFechaCalendario, ymdLocal } from './jornada-calendario.util';
 import {
+  capCarpa,
   capCodContrato,
   capInstructor,
   capMunicipioJor,
   capUbicacionClase,
   estadoClaseLiveClass,
   isoAHoraInput,
+  labelCarpaClase,
   rowClaseClass,
+  labelInstructorClase,
 } from './jornada-ui.util';
 
 @Component({
@@ -97,6 +100,7 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
         c.programaNombre,
         c.instructorNombre,
         c.ubicacion,
+        c.carpaNombre,
         c.municipioJornada,
         c.direccionJornada,
         c.estado,
@@ -111,8 +115,11 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   capInstructor = capInstructor;
   capMunicipioJor = capMunicipioJor;
   capUbicacionClase = capUbicacionClase;
+  capCarpa = capCarpa;
+  labelCarpaClase = labelCarpaClase;
   estadoClaseLiveClass = estadoClaseLiveClass;
   rowClaseClass = rowClaseClass;
+  labelInstructorClase = labelInstructorClase;
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -141,10 +148,6 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
 
   cerrarMsg() {
     this.msg.set(null);
-  }
-
-  labelInstructorClase(c: ClaseJornadaDto): string {
-    return (c.instructorNombre || c.idinstructor || '—').trim() || '—';
   }
 
   fmtHora(iso?: string | null): string {

@@ -29,6 +29,13 @@ const ContratacionSchema = new mongoose.Schema(
     numerojornadas: { type: Number, default: 0 },
     /** Cuántas jornadas (carpas/sedes) se programan el mismo día calendario. */
     jornadasPorDia: { type: Number, default: 1 },
+    /** Clases autogeneradas por cada jornada al usar «Generar faltantes». */
+    clasesPorJornada: { type: Number, default: 1 },
+    /** Horas certificadas por clase (referencia contractual). */
+    /** Intensidad horaria impresa en el certificado (por clase); no define duración de la sesión. */
+    horasPorClase: { type: Number, default: 0 },
+    /** global = certificado al completar numSesCert; por_clase = certificado por asistencia/clase. */
+    tipoCertificado: { type: String, trim: true, default: 'global' },
     numeroAlumnos: { type: Number, default: 0 },
     numeObjeJornada: { type: Number, default: 0 },
     nombreCertificacion: { type: String, trim: true },

@@ -6,6 +6,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
+import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos-jornada-alert.service';
 import { CertificadoJornadaBloqueoService } from '../../core/services/certificado-jornada-bloqueo.service';
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import { JornadaCapService } from '../../core/services/jornada-cap.service';
@@ -24,6 +25,8 @@ import {
   capPrograma,
   capSesCert,
   capUbicacionClase,
+  capCarpa,
+  labelCarpaClase,
   capInstructor,
   estadoClaseLiveClass,
   estadoJornadaLiveClass,
@@ -31,11 +34,15 @@ import {
   rowClaseClass,
   rowJornadaClass,
   tituloJorMsg,
+  isoAHoraInput,
+  validarHoraInput,
+  labelInstructorClase,
 } from './jornada-ui.util';
 import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import { Hora12InputComponent } from '../../shared/hora-12-input/hora-12-input.component';
 import { ymdLocal } from './jornada-calendario.util';
 
 @Component({
@@ -43,6 +50,7 @@ import { ymdLocal } from './jornada-calendario.util';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, CatalogoEnumBuscarComponent,
     ArgoDateInputComponent,
+    Hora12InputComponent,
   ],
   templateUrl: './jornada-instructor.component.html',
   styleUrls: ['./jornada-instructor.component.scss'],
@@ -52,6 +60,7 @@ export class JornadaInstructorComponent implements OnInit {
   private jornadaSvc = inject(JornadaCapService);
   private auth = inject(AuthService);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
+  private metaAlumnosAlertSvc = inject(MetaAlumnosJornadaAlertService);
   private certBloqueoSvc = inject(CertificadoJornadaBloqueoService);
   private liveSync = inject(JornadaLiveSyncService);
 
@@ -70,6 +79,9 @@ export class JornadaInstructorComponent implements OnInit {
   programasJornada = signal<any[]>([]);
   nuevaClaseProg = signal('');
   nuevaClaseUbic = signal('Carpa');
+  horaInicioClase = signal('');
+  horaFinClase = signal('');
+  guardandoHorario = signal(false);
 
   asistencias = signal<any[]>([]);
   numDocAsis = signal('');
@@ -86,6 +98,8 @@ export class JornadaInstructorComponent implements OnInit {
   estadoClaseLiveClass = estadoClaseLiveClass;
   rowClaseClass = rowClaseClass;
   capUbicacionClase = capUbicacionClase;
+  capCarpa = capCarpa;
+  labelCarpaClase = labelCarpaClase;
   capContratoLabel = capContratoLabel;
   capMunicipioJor = capMunicipioJor;
   capFechaJor = capFechaJor;
@@ -95,6 +109,7 @@ export class JornadaInstructorComponent implements OnInit {
   capDocAsis = capDocAsis;
   capAlumnoNombre = capAlumnoNombre;
   capInstructor = capInstructor;
+  labelInstructorClase = labelInstructorClase;
 
   instructorSesionNombre = computed(
     () => this.auth.user()?.empleado?.nombreCompleto || this.auth.user()?.username || '—',
@@ -230,6 +245,8 @@ export class JornadaInstructorComponent implements OnInit {
           if (c) {
             this.claseSel.set(c._id);
             this.claseActiva.set(c);
+            this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
+            this.horaFinClase.set(isoAHoraInput(c.horaFin));
             this.cargarAsistencias(c._id);
           }
         }
@@ -265,8 +282,38 @@ export class JornadaInstructorComponent implements OnInit {
   seleccionarClase(c: any) {
     this.claseSel.set(c._id);
     this.claseActiva.set(c);
+    this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
+    this.horaFinClase.set(isoAHoraInput(c.horaFin));
     this.cargarAsistencias(c._id);
     this.consultarProgresoPreview(this.numDocAsis());
+  }
+
+  guardarHorarioClase() {
+    const id = this.claseSel();
+    if (!id) return;
+    const hi = this.horaInicioClase().trim();
+    const hf = this.horaFinClase().trim();
+    if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
+      this.mostrarMsg('Use formato HH:mm (ej. 08:30).', 'error', 'Horario inválido');
+      return;
+    }
+    this.guardandoHorario.set(true);
+    this.jornadaSvc
+      .actualizarClase(id, { horaInicio: hi || null, horaFin: hf || null })
+      .subscribe({
+        next: (c) => {
+          this.guardandoHorario.set(false);
+          this.claseActiva.set(c);
+          this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
+          this.horaFinClase.set(isoAHoraInput(c.horaFin));
+          this.recargarClases(id);
+          this.mostrarMsg('Horario de la clase actualizado.', 'ok', 'Horario guardado');
+        },
+        error: (e) => {
+          this.guardandoHorario.set(false);
+          this.mostrarMsg(e?.error?.message || 'No se pudo guardar el horario.', 'error', 'Error');
+        },
+      });
   }
 
   onNumDocAsisChange(value: string) {
@@ -328,6 +375,8 @@ export class JornadaInstructorComponent implements OnInit {
     this.jornadaSvc.iniciarClase(id).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
+        this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
+        this.horaFinClase.set(isoAHoraInput(c.horaFin));
         this.recargarClases(id);
         this.liveSync.notificarClaseIniciada(c as unknown as Record<string, unknown>);
         this.mostrarMsg('Reloj de clase iniciado. Ya puede registrar asistencias.', 'ok', 'Clase en curso');
@@ -343,6 +392,8 @@ export class JornadaInstructorComponent implements OnInit {
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
+        this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
+        this.horaFinClase.set(isoAHoraInput(c.horaFin));
         this.recargarClases(id);
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         if (r?.certificadosGenerados > 0) {
@@ -389,6 +440,9 @@ export class JornadaInstructorComponent implements OnInit {
         this.progresoPreview.set(null);
         this.nombreAlumnoPreview.set('');
         this.cargarAsistencias(id);
+        this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
+          contratoLabel: this.jornadaActiva()?.contratoLabel || this.jornadaActiva()?.codContrato,
+        });
         if (r.certificadoGenerado && r.certificado) {
           this.certAlertSvc.notificarDesdeRespuesta(r.certificado, r.nombreAlumno);
         }
@@ -425,12 +479,7 @@ export class JornadaInstructorComponent implements OnInit {
 
   chipClaseCal(c: any): string {
     const prog = this.nombrePrograma(c.idPrograma);
-    const inst = c.instructorNombre || c.idinstructor || this.instructorSesionNombre();
-    return `${prog} · ${inst}`;
-  }
-
-  labelInstructorClase(c: { instructorNombre?: string; idinstructor?: string }): string {
-    return (c.instructorNombre || c.idinstructor || this.instructorSesionNombre()).trim();
+    return `${prog} · ${labelInstructorClase(c)}`;
   }
 
   fmtFecha(f?: string) {

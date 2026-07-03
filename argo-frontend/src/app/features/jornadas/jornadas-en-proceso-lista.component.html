@@ -46,7 +46,6 @@
           <th>Municipio</th>
           <th>Dirección</th>
           <th>Supervisor</th>
-          <th>Carpa #</th>
           <th>Meta alumnos</th>
           <th>Estado</th>
           <th class="col-actions"></th>
@@ -59,7 +58,6 @@
           <td><span [ngClass]="capMunicipioJor(j.municipio)">{{ j.municipio || '—' }}</span></td>
           <td class="direccion-cell" [title]="j.direccion || ''">{{ j.direccion || '—' }}</td>
           <td>{{ j.supervisor || '—' }}</td>
-          <td><span [ngClass]="capMetaNum(j.indiceEnDia)">#{{ j.indiceEnDia || 1 }}</span></td>
           <td><span [ngClass]="capMetaNum(j.numeObjeJornada)">{{ j.numeObjeJornada ?? '—' }}</span></td>
           <td>
             <span [ngClass]="estadoJornadaLiveClass(j.estado)">{{ j.estado || 'EN PROCESO' }}</span>

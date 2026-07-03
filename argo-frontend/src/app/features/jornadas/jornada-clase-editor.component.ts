@@ -21,6 +21,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { AlumnoListItem } from '../../core/services/alumno.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
+import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos-jornada-alert.service';
 import { CertificadoJornadaBloqueoService } from '../../core/services/certificado-jornada-bloqueo.service';
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import {
@@ -41,6 +42,7 @@ import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { esFechaHoy, fmtFechaCalendario } from './jornada-calendario.util';
+import { JornadaEtiquetaQrService } from './jornada-etiqueta-qr.service';
 import {
   JorMsgTipo,
   capAlumnoNombre,
@@ -50,12 +52,16 @@ import {
   capInstructor,
   capPrograma,
   capUbicacionClase,
+  capCarpa,
+  labelCarpaClase,
   claseJornadaSePuedeEliminar,
   estadoClaseLiveClass,
   iconoJorMsg,
   isoAHoraInput,
   tituloJorMsg,
   validarHoraInput,
+  labelInstructorClase,
+  claseTieneInstructor,
 } from './jornada-ui.util';
 
 @Component({
@@ -76,8 +82,10 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private permisoSvc = inject(PermisoService);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
+  private metaAlumnosAlertSvc = inject(MetaAlumnosJornadaAlertService);
   private liveSync = inject(JornadaLiveSyncService);
   private certBloqueoSvc = inject(CertificadoJornadaBloqueoService);
+  private etiquetaQrSvc = inject(JornadaEtiquetaQrService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   private confirmSvc = inject(ConfirmDialogService);
@@ -147,11 +155,15 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   iconoJorMsg = iconoJorMsg;
   capEstadoClase = capEstadoClase;
   capUbicacionClase = capUbicacionClase;
+  capCarpa = capCarpa;
+  labelCarpaClase = labelCarpaClase;
   capFechaJor = capFechaJor;
   capDocAsis = capDocAsis;
   capAlumnoNombre = capAlumnoNombre;
   capPrograma = capPrograma;
   capInstructor = capInstructor;
+  labelInstructorClase = labelInstructorClase;
+  claseTieneInstructor = claseTieneInstructor;
   estadoClaseLiveClass = estadoClaseLiveClass;
   claseJornadaSePuedeEliminar = claseJornadaSePuedeEliminar;
 
@@ -159,6 +171,9 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     this.permisoSvc.tiene(['jornadas.operar', 'jornadas.gestionar']),
   );
   puedeAsignarInstructor = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
+  puedeEditarHorarioClase = computed(() =>
+    this.permisoSvc.tiene(['jornadas.gestionar', 'jornadas.operar']),
+  );
   puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
   puedeEliminarClaseActiva = computed(
     () => this.puedeEliminarClase() && claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
@@ -398,9 +413,8 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   labelJornadaClase(cl: ClaseJornadaDto): string {
     const f = this.fmtFecha(cl.fechaClase || cl.fechaJornada);
-    const idx = cl.indiceEnDia && cl.indiceEnDia > 1 ? ` #${cl.indiceEnDia}` : '';
     const m = cl.municipioJornada ? ` · ${cl.municipioJornada}` : '';
-    return `${f}${idx}${m}`;
+    return `${f}${m}`;
   }
 
   claseEsHoy(cl?: ClaseJornadaDto | null): boolean {
@@ -521,17 +535,18 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     const dto: {
       idPrograma?: string;
       ubicacion?: string;
-      idEmpleadoInstructor?: number;
+      idEmpleadoInstructor?: number | null;
       horaInicio?: string | null;
       horaFin?: string | null;
     } = {
-      idPrograma: this.nuevaClaseProg(),
       ubicacion: this.nuevaClaseUbic(),
     };
-    if (this.puedeAsignarInstructor() && this.modalClaseInstructorId()) {
-      dto.idEmpleadoInstructor = Number(this.modalClaseInstructorId());
-    }
+    if (this.nuevaClaseProg()) dto.idPrograma = this.nuevaClaseProg();
     if (this.puedeAsignarInstructor()) {
+      const insId = this.modalClaseInstructorId();
+      dto.idEmpleadoInstructor = insId ? Number(insId) : null;
+    }
+    if (this.puedeEditarHorarioClase()) {
       const hi = this.modalHoraInicio().trim();
       const hf = this.modalHoraFin().trim();
       if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
@@ -712,10 +727,21 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       next: (r: any) => {
         this.guardandoInscripcion.set(false);
         this.cargarInscritos(idC);
+        if (!r?.inscripcionDuplicada) {
+          this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
+            contratoLabel: this.claseActiva()?.contratoLabel || this.claseActiva()?.codContrato,
+          });
+        }
         const nombre = this.nombreAlumnoItem(a);
         const msg = this.mensajeInscripcionOk(r, nombre);
         const tipo = r?.inscripcionDuplicada ? 'info' : 'ok';
-        this.mostrarMsgModal(msg, tipo, 'Alumno inscrito');
+        this.mostrarMsgModal(
+          r?.inscripcionDuplicada
+            ? msg
+            : `${msg} Etiqueta QR en la ficha del alumno (Jornadas → Alumnos).`,
+          tipo,
+          'Alumno inscrito',
+        );
         this.emitClaseGuardada();
       },
       error: (e) => {
@@ -847,6 +873,24 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Etiqueta QR para escanear en la app móvil del instructor. */
+  imprimirEtiquetaQrInscrito(a: { numDoc: number; nombreCompleto?: string }): void {
+    const c = this.claseActiva();
+    const empresa =
+      String(c?.contratoLabel || c?.codContrato || '').trim() || undefined;
+    const fechaJornada =
+      String(c?.fechaClase || c?.fechaJornada || '').trim() || undefined;
+    void this.etiquetaQrSvc
+      .imprimirUna(a.numDoc, a.nombreCompleto || String(a.numDoc), { empresa, fechaJornada })
+      .catch((err) => {
+        this.mostrarMsgModal(
+          err instanceof Error ? err.message : 'No se pudo abrir la etiqueta QR.',
+          'warn',
+          'Etiqueta QR',
+        );
+      });
+  }
+
   nuevoAlumnoJornada(): void {
     void this.router.navigate(['/app/jornadas/alumnos/nuevo']);
   }
@@ -886,6 +930,9 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   }
 
   private mostrarResultadoAsistencia(r: any): void {
+    this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
+      contratoLabel: this.claseActiva()?.contratoLabel || this.claseActiva()?.codContrato,
+    });
     const ses = r.sesiones ?? 0;
     const req = r.numSesCert ?? '?';
     if (r.certificadoGenerado && r.certificado) {

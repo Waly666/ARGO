@@ -91,6 +91,24 @@
             <p class="hint-inline">{{ formatoCertHint(form().tipoCertificado) }}</p>
           </div>
         </div>
+        <div class="row" *ngIf="esProgramaJornadasCapForm()">
+          <div class="col-5">
+            <argo-catalogo-enum-buscar
+              label="Carpa (catálogo)"
+              placeholder="Seleccione la carpa del programa…"
+              [textoInicial]="textoCarpa()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesCarpa()"
+              (seleccionado)="onCarpaPick($event)"
+              (limpiado)="onCarpaLimpiar()"
+            />
+            <p class="hint-inline">
+              Al asignar este programa a una clase, la carpa se hereda automáticamente. Gestione el catálogo en Configuración → Catálogos → Carpas.
+            </p>
+          </div>
+        </div>
         <div class="modalidades-programa" *ngIf="!esProgramaJornadasCapForm()">
           <label class="modalidades-programa-label">Modalidades de oferta *</label>
           <p class="modalidades-programa-hint">

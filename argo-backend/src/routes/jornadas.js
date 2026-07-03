@@ -26,6 +26,7 @@ router.post('/contratos', gest, ctrl.crearContrato);
 router.put('/contratos/:id', gest, ctrl.actualizarContrato);
 router.delete('/contratos/:id', gest, ctrl.eliminarContrato);
 router.post('/contratos/:id/generar-jornadas', gest, ctrl.generarJornadas);
+router.post('/contratos/:id/jornadas', gest, ctrl.crearJornadaContrato);
 router.post('/contratos/:id/finalizar', gest, ctrl.finalizarContrato);
 router.get('/programas-jornada', ver, ctrl.programasJornadaCap);
 router.get('/instructores', ver, ctrl.listarInstructores);
@@ -58,6 +59,9 @@ router.delete('/clases/:id/asistencias/:numDoc', operar, ctrl.eliminarAsistencia
 router.get('/clases/:id/asistencias', ver, ctrl.listarAsistenciasClase);
 router.get('/clases/:id/inscritos', ver, ctrl.inscritosClase);
 router.delete('/clases/:id/inscritos/:numDoc', operar, ctrl.quitarInscripcionClase);
+
+router.get('/informes', ver, ctrl.informesJornada);
+router.get('/informes/export', ver, ctrl.exportarInformesJornada);
 
 router.get('/certificados-generados', ver, ctrl.certificadosGenerados);
 router.get('/certificados-generados/:id/html', ver, soloCertificadoJornada, certRender.html);

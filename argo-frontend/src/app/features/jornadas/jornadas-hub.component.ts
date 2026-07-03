@@ -10,11 +10,13 @@ import { forkJoin, of } from 'rxjs';
 
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
+import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos-jornada-alert.service';
 import { CertificadoJornadaBloqueoService } from '../../core/services/certificado-jornada-bloqueo.service';
 import { JornadaHubDeepLinkService } from '../../core/services/jornada-hub-deeplink.service';
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import {
   ContratacionDto,
+  ContratoSyncDto,
   InstructorJornadaDto,
   JornadaCapService,
 } from '../../core/services/jornada-cap.service';
@@ -89,6 +91,8 @@ import {
   capPrograma,
   capSesCert,
   capUbicacionClase,
+  capCarpa,
+  labelCarpaClase,
   etiquetaGenerado,
   iconoJorMsg,
   isoAHoraInput,
@@ -107,6 +111,10 @@ import {
   estadoClaseCalAccentClass,
   rowClaseClass,
   rowCertificadoHoyClass,
+  labelEstadoClaseAmigable,
+  labelEstadoJornadaAmigable,
+  labelInstructorClase,
+  claseTieneInstructor,
 } from './jornada-ui.util';
 
 type Tab = 'contratos' | 'jornadas' | 'clases' | 'certificados';
@@ -135,6 +143,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private permisoSvc = inject(PermisoService);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
+  private metaAlumnosAlertSvc = inject(MetaAlumnosJornadaAlertService);
   private liveSync = inject(JornadaLiveSyncService);
   private certBloqueoSvc = inject(CertificadoJornadaBloqueoService);
   private catSvc = inject(CatalogoService);
@@ -168,6 +177,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   jornadaEditError = signal<string | null>(null);
   direccionAlertaActiva = signal(false);
   loading = signal(false);
+  vistaContratoCal = signal(false);
+  clasesContratoCal = signal<any[]>([]);
+  loadingClasesContratoCal = signal(false);
 
   contratos = signal<ContratacionDto[]>([]);
   contratoSel = signal<string>('');
@@ -211,6 +223,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   capEstadoJornadaColor = capEstadoJornadaColor;
   capEstadoClase = capEstadoClase;
   capUbicacionClase = capUbicacionClase;
+  capCarpa = capCarpa;
+  labelCarpaClase = labelCarpaClase;
   capDeteGeorefe = capDeteGeorefe;
   capCodContrato = capCodContrato;
   capCliente = capCliente;
@@ -228,6 +242,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   capInstructor = capInstructor;
   estadoContratoLiveClass = estadoContratoLiveClass;
   labelEstadoContrato = labelEstadoContrato;
+  labelEstadoClaseAmigable = labelEstadoClaseAmigable;
+  labelEstadoJornadaAmigable = labelEstadoJornadaAmigable;
+  labelInstructorClase = labelInstructorClase;
+  claseTieneInstructor = claseTieneInstructor;
   rowContratoClass = rowContratoClass;
   estadoJornadaLiveClass = estadoJornadaLiveClass;
   estadoJornadaCalClass = estadoJornadaCalClass;
@@ -243,7 +261,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private progresoDebounce: ReturnType<typeof setTimeout> | null = null;
 
   contratoActivo = computed(() => this.contratos().find((c) => c._id === this.contratoSel()));
+  puedeAgregarJornadaExtra = computed(() => {
+    if (!this.puedeAsignarInstructor()) return false;
+    const c = this.contratoActivo();
+    if (!c?._id) return false;
+    return (c.estado || 'En Ejecución') !== 'Ejecutado';
+  });
   puedeAsignarInstructor = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
+  puedeEditarHorarioClase = computed(() =>
+    this.permisoSvc.tiene(['jornadas.gestionar', 'jornadas.operar']),
+  );
   /** Solo administrador (jornadas.gestionar) puede eliminar clases no finalizadas. */
   puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
   puedeEliminarClaseActiva = computed(
@@ -277,10 +304,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   diasSemanaClases = computed((): DiaSemana[] => diasSemana(this.semanaInicio()));
   horasCal = horasSlots();
   diasSemanaLabels = DIAS_SEMANA_CORTO;
+  clasesCalFuente = computed(() =>
+    this.tab() === 'contratos' && this.vistaContratoCal() ? this.clasesContratoCal() : this.clases(),
+  );
   clasesSemanaFiltradas = computed(() => {
     const est = this.filtroAdminEstado();
     const keys = new Set(this.diasSemanaClases().map((d) => d.key));
-    return this.clases().filter((c) => {
+    return this.clasesCalFuente().filter((c) => {
       if (!keys.has(ymdLocal(c.fechaJornada))) return false;
       if (!est) return true;
       return String(c.estado || '').toUpperCase() === est.toUpperCase();
@@ -359,6 +389,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   jornadaEditIdSupervisor = signal('');
   jornadaEditFecha = signal('');
   jornadaEditMapaAbierto = signal(false);
+  /** edit = jornada existente; nueva = jornada extra manual. */
+  jornadaEditModo = signal<'edit' | 'nueva'>('edit');
+  /** Autogenerar clases al crear jornada extra (según clasesPorJornada del contrato). */
+  jornadaEditGenerarClases = signal(true);
   supNuevoNombreJornada = signal('');
 
   opcionesSupervisores = computed<EnumBuscarOption[]>(() =>
@@ -649,6 +683,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       valorContrato: 0,
       numerojornadas: 1,
       jornadasPorDia: 1,
+      clasesPorJornada: 1,
+      horasPorClase: 0,
+      tipoCertificado: 'global',
       numeroAlumnos: 0,
       numSesCert: 1,
       incluiSab: false,
@@ -856,10 +893,6 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       next: (r) => this.instructores.set(r || []),
       error: () => this.instructores.set([]),
     });
-  }
-
-  labelInstructorClase(c: { instructorNombre?: string; idinstructor?: string }): string {
-    return (c.instructorNombre || c.idinstructor || '—').trim() || '—';
   }
 
   cargarSupervisores() {
@@ -1157,17 +1190,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const dto: {
       idPrograma?: string;
       ubicacion?: string;
-      idEmpleadoInstructor?: number;
+      idEmpleadoInstructor?: number | null;
       horaInicio?: string | null;
       horaFin?: string | null;
     } = {
-      idPrograma: this.nuevaClaseProg(),
       ubicacion: this.nuevaClaseUbic(),
     };
-    if (this.puedeAsignarInstructor() && this.modalClaseInstructorId()) {
-      dto.idEmpleadoInstructor = Number(this.modalClaseInstructorId());
-    }
+    if (this.nuevaClaseProg()) dto.idPrograma = this.nuevaClaseProg();
     if (this.puedeAsignarInstructor()) {
+      const insId = this.modalClaseInstructorId();
+      dto.idEmpleadoInstructor = insId ? Number(insId) : null;
+    }
+    if (this.puedeEditarHorarioClase()) {
       const hi = this.modalHoraInicio().trim();
       const hf = this.modalHoraFin().trim();
       if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
@@ -1290,6 +1324,26 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.sincronizarFechaClaseDesdeJornada(id);
   }
 
+  seleccionarUbicacionClase(ubicacion: string) {
+    this.nuevaClaseUbic.set(ubicacion || 'Carpa');
+  }
+
+  crearClaseListo(): boolean {
+    return !!(this.modalCrearJornadaId() && this.nuevaClaseProg());
+  }
+
+  textoBotonCrearClase(): string {
+    if (this.guardandoClase()) return 'Guardando…';
+    if (!this.modalCrearJornadaId()) return '① Elija el día de la jornada';
+    if (!this.nuevaClaseProg()) return '② Elija el programa';
+    const n = this.alumnosMatricular().length;
+    return n ? `✓ Crear clase (${n} alumno${n === 1 ? '' : 's'})` : '✓ Crear clase';
+  }
+
+  usarTarjetasJornadaCrear(): boolean {
+    return this.jornadasParaCrear().length > 0 && this.jornadasParaCrear().length <= 6;
+  }
+
   private sincronizarFechaClaseDesdeJornada(jornadaId: string) {
     if (!jornadaId) {
       this.modalFechaClase.set('');
@@ -1304,11 +1358,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   cargarJornadasParaCrear() {
     this.jornadaSvc.listarJornadas().subscribe({
       next: (rows) => {
-        this.jornadasParaCrear.set(
-          (rows || []).filter((j: any) => this.jornadaEnVentanaCreacion(j)),
-        );
-        if (this.modalCrearJornadaId()) {
-          this.sincronizarFechaClaseDesdeJornada(this.modalCrearJornadaId());
+        const filtered = (rows || []).filter((j: any) => this.jornadaEnVentanaCreacion(j));
+        this.jornadasParaCrear.set(filtered);
+        const actual = this.modalCrearJornadaId();
+        if (actual && filtered.some((j: any) => j._id === actual)) {
+          this.sincronizarFechaClaseDesdeJornada(actual);
+          return;
+        }
+        const desdeToolbar = this.jornadaSel();
+        if (desdeToolbar && filtered.some((j: any) => j._id === desdeToolbar)) {
+          this.onModalCrearJornadaChange(desdeToolbar);
+          return;
+        }
+        if (filtered.length === 1) {
+          this.onModalCrearJornadaChange(filtered[0]._id);
         }
       },
       error: () => this.jornadasParaCrear.set([]),
@@ -1333,8 +1396,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const cod = this.codContratoDe(j?.idContrato);
     const fecha = this.fmtFecha(j?.fechaProgramacion);
     const muni = j?.municipio ? ` · ${j.municipio}` : '';
-    const idx = j?.indiceEnDia && j.indiceEnDia > 1 ? ` #${j.indiceEnDia}` : '';
-    return `${cod ? cod + ' · ' : ''}${fecha}${idx}${muni}`;
+    return `${cod ? cod + ' · ' : ''}${fecha}${muni}`;
   }
 
   cerrarModalCrearClase() {
@@ -1430,11 +1492,25 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           next: (r: any) => {
             this.guardandoInscripcion.set(false);
             this.cargarInscritos(idC);
+            if (!r?.inscripcionDuplicada) {
+              this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
+                contratoLabel:
+                  this.claseActiva()?.contratoLabel ||
+                  this.claseActiva()?.codContrato ||
+                  this.contratoActivo()?.codContrato,
+              });
+            }
             const nombre = this.nombreAlumnoItem(a);
             const msg = this.mensajeInscripcionOk(r, nombre);
             const tipo = r?.inscripcionDuplicada ? 'info' : 'ok';
             this.mostrarMsgModal(msg, tipo, 'Alumno inscrito');
-            this.mostrarMsg(msg, tipo, 'Alumno inscrito');
+            this.mostrarMsg(
+              r?.inscripcionDuplicada
+                ? msg
+                : `${msg} Etiqueta QR en la ficha del alumno (Jornadas → Alumnos).`,
+              tipo,
+              'Alumno inscrito',
+            );
           },
           error: (e) => {
             this.guardandoInscripcion.set(false);
@@ -1618,6 +1694,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaSvc.listarContratos().subscribe({
       next: (r) => this.contratos.set(r || []),
     });
+  }
+
+  /** Refleja en listado y formulario los contadores recalculados del contrato. */
+  aplicarContratoSync(partial: ContratoSyncDto | null | undefined) {
+    if (!partial?._id) return;
+    const id = String(partial._id);
+    this.contratos.update((arr) => arr.map((x) => (x._id === id ? { ...x, ...partial } : x)));
+    if (this.formContrato()._id === id) {
+      this.formContrato.update((f) => ({ ...f, ...partial }));
+    }
   }
 
   cargarDatosFacturacionContrato(): void {
@@ -1891,6 +1977,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.ciudadContratoTexto.set(label);
     this.previewFacturaContrato.set(null);
     this.cargarEstadoFacturaContrato(c._id);
+    if (this.vistaContratoCal()) this.recargarClasesContratoCal();
     if (c.codMunicipio) {
       this.catSvc.municipioPorCodigo(c.codMunicipio).subscribe({
         next: (m) => this.ciudadContratoTexto.set(m.label || label),
@@ -1921,16 +2008,32 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           r.ajustadoDesdeHoy && r.fechaInicioContrato
             ? ` (inicio contrato ${this.fmtFecha(r.fechaInicioContrato)}; se omitieron días pasados)`
             : '';
+        const notaClases =
+          (r.clasesCreadas ?? 0) > 0
+            ? ` Se autogeneraron ${r.clasesCreadas} clase(s) en ${r.jornadasProcesadasClases ?? 'las'} jornada(s).`
+            : '';
+        let cuerpo = '';
+        if (r.count > 0) {
+          cuerpo = `Se crearon ${r.count} jornada(s) desde el ${desde}${notaHoy}. Total en contrato: ${r.total ?? r.count}.`;
+        } else if (r.jornadasCompletas) {
+          cuerpo = `Las jornadas del contrato ya están completas (${r.total ?? '—'} en total).`;
+        } else {
+          cuerpo = 'No había fechas pendientes por programar.';
+        }
+        cuerpo += notaClases;
+        const huboCambios = r.count > 0 || (r.clasesCreadas ?? 0) > 0;
         this.mostrarMsg(
-          r.count > 0
-            ? `Se crearon ${r.count} jornada(s) desde el ${desde}${notaHoy}. Total en contrato: ${r.total ?? r.count}.`
-            : 'No había fechas pendientes por programar.',
-          r.count > 0 ? 'ok' : 'info',
-          r.count > 0 ? 'Jornadas generadas' : 'Sin cambios',
+          cuerpo,
+          huboCambios ? 'ok' : 'info',
+          huboCambios ? 'Programación actualizada' : 'Sin cambios',
         );
+        this.aplicarContratoSync(r.contrato);
         this.recargarContratos();
         this.onContratoSelChange(id);
-        this.setTab('jornadas');
+        if (this.vistaContratoCal()) this.recargarClasesContratoCal();
+        if (r.count > 0) {
+          this.setTab('jornadas');
+        }
         if (r.count > 0) {
           this.liveSync.mostrarToastGeneracionJornadas(r.count);
           this.jornadaSvc.listarJornadas({ idContrato: id }).subscribe({
@@ -1943,6 +2046,37 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.mostrarMsg(e?.error?.message || 'No fue posible generar las jornadas.', 'error', 'Error de programación');
       },
     });
+  }
+
+  setVistaContratoCal(v: boolean) {
+    this.vistaContratoCal.set(v);
+    if (v) {
+      this.irSemanaHoy();
+      this.recargarClasesContratoCal();
+    }
+  }
+
+  recargarClasesContratoCal() {
+    const id = this.formContrato()._id || this.contratoSel();
+    if (!id) {
+      this.clasesContratoCal.set([]);
+      return;
+    }
+    this.loadingClasesContratoCal.set(true);
+    this.jornadaSvc.listarClases({ idContrato: id }).subscribe({
+      next: (r) => {
+        this.clasesContratoCal.set(r || []);
+        this.loadingClasesContratoCal.set(false);
+      },
+      error: () => {
+        this.clasesContratoCal.set([]);
+        this.loadingClasesContratoCal.set(false);
+      },
+    });
+  }
+
+  labelTipoCertificado(tipo?: string): string {
+    return tipo === 'por_clase' ? 'Por clase' : 'Global (contrato)';
   }
 
   setVistaJornadas(v: VistaAgenda) {
@@ -2114,15 +2248,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   chipJornadaCal(j: JornadaCapDto): string {
     const cod = this.codContratoDe(j.idContrato);
     const m = (j.municipio || '').trim();
-    const idx = j.indiceEnDia && j.indiceEnDia > 1 ? ` #${j.indiceEnDia}` : '';
-    if (cod && m) return `${cod} · ${m}${idx}`;
-    return cod || m || 'Jornada' + idx;
+    if (cod && m) return `${cod} · ${m}`;
+    return cod || m || 'Jornada';
   }
 
   chipClaseCal(c: any): string {
     const prog = this.nombrePrograma(c.idPrograma);
     const inst = this.labelInstructorClase(c);
-    const base = c.ubicacion ? `${prog} · ${c.ubicacion}` : prog;
+    const carpa = labelCarpaClase(c);
+    const base = carpa ? `${prog} · ${carpa}` : prog;
     return inst && inst !== '—' ? `${base} · ${inst}` : base;
   }
 
@@ -2339,6 +2473,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: ({ c, matResults }) => {
+          this.aplicarContratoSync(c.contrato);
           this.modalModoClase.set('editar');
           this.modalCrearClase.set(true);
           this.claseSel.set(c._id);
@@ -2349,14 +2484,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           this.recargarClases();
           this.liveSync.registrarClaseLocal(c);
           this.liveSync.mostrarToastClase(c as unknown as Record<string, unknown>);
-          const ok = matResults.filter((r) => r.ok).length;
+          const okRows = matResults.filter((r) => r.ok);
           const fail = matResults.filter((r) => !r.ok);
           let texto = 'Clase creada. Pulse ▶ Iniciar clase cuando la jornada esté EN PROCESO.';
           if (matResults.length) {
-            texto += ` Inscritos: ${ok}/${matResults.length}.`;
+            texto += ` Inscritos: ${okRows.length}/${matResults.length}.`;
             if (fail.length) {
               texto += ` No inscritos: ${fail.map((f) => f.nombre).join(', ')}.`;
             }
+          }
+          if (okRows.length) {
+            texto += ' Etiquetas QR en la ficha de cada alumno (Jornadas → Alumnos).';
           }
           this.mostrarMsg(texto, fail.length ? 'warn' : 'ok', 'Clase creada');
         },
@@ -2370,11 +2508,23 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return forkJoin(
       alumnos.map((a) =>
         this.jornadaSvc.matricularAlumno({ numDoc: a.numDoc, idPrograma, idClase }).pipe(
-          map(() => ({ ok: true as const, nombre: this.nombreAlumnoItem(a) })),
+          map((r: any) => {
+            if (!r?.inscripcionDuplicada) {
+              this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
+                contratoLabel: this.contratoActivo()?.codContrato,
+              });
+            }
+            return {
+              ok: true as const,
+              nombre: this.nombreAlumnoItem(a),
+              numDoc: a.numDoc,
+            };
+          }),
           catchError((e) =>
             of({
               ok: false as const,
               nombre: this.nombreAlumnoItem(a),
+              numDoc: a.numDoc,
               error: e?.error?.message || 'Error al matricular',
             }),
           ),
@@ -2392,6 +2542,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   seleccionarClaseCalendario(c: any) {
+    if (this.tab() === 'contratos') {
+      if (c.idContrato) this.onContratoSelChange(c.idContrato);
+      if (c.idJornada) this.jornadaSel.set(c.idJornada);
+      this.setTab('clases');
+      this.vistaClases.set('calendario');
+    }
     this.seleccionarClase(c);
     queueMicrotask(() => {
       document.getElementById('clase-panel-ops')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -2415,11 +2571,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return cod || nom || '—';
   }
 
-  labelJornada(j: { fechaProgramacion?: string; indiceEnDia?: number; municipio?: string }) {
+  labelJornada(j: { fechaProgramacion?: string; municipio?: string }) {
     const f = this.fmtFecha(j.fechaProgramacion);
-    const idx = j.indiceEnDia && j.indiceEnDia > 1 ? ` #${j.indiceEnDia}` : '';
     const m = j.municipio ? ` · ${j.municipio}` : '';
-    return `${f}${idx}${m}`;
+    return `${f}${m}`;
   }
 
   subtituloModalClase(): string {
@@ -2434,6 +2589,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   editarJornada(j: JornadaCapDto, ev?: Event) {
     ev?.stopPropagation();
     ev?.preventDefault();
+    this.jornadaEditModo.set('edit');
     this.jornadaEditError.set(null);
     this.direccionAlertaActiva.set(false);
     this.jornadaEdit.set({ ...j });
@@ -2457,6 +2613,56 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (j.lat != null && j.lng != null) {
       this.resolverMunicipioDesdeCoords(j.lat, j.lng);
     }
+    queueMicrotask(() => {
+      document.getElementById('jornada-edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
+  abrirNuevaJornada(ev?: Event) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    const c = this.contratoActivo();
+    const id = this.contratoSel();
+    if (!id || !c) {
+      this.mostrarMsg('Seleccione un contrato en el filtro superior.', 'warn', 'Sin contrato');
+      return;
+    }
+    if ((c.estado || 'En Ejecución') === 'Ejecutado') {
+      this.mostrarMsg('El contrato está ejecutado; no puede agregar jornadas.', 'warn', 'Contrato cerrado');
+      return;
+    }
+    this.jornadaEditModo.set('nueva');
+    this.jornadaEditGenerarClases.set((c.clasesPorJornada ?? 0) > 0);
+    this.jornadaEditError.set(null);
+    this.direccionAlertaActiva.set(false);
+    this.jornadaEdit.set({ _id: '', idContrato: id, estado: 'INACTIVO' } as JornadaCapDto);
+    this.jornadaEditDireccion.set(c.direccion || '');
+    this.jornadaEditLat.set('');
+    this.jornadaEditLng.set('');
+    this.jornadaEditDeteGeorefe.set('');
+    this.jornadaEditMunicipio.set(c.ciudad || '');
+    this.jornadaEditDepto.set(c.departamento || '');
+    this.jornadaEditCodMunicipio.set(c.codMunicipio || '');
+    this.jornadaEditMunicipioTexto.set('');
+    if (c.codMunicipio) {
+      this.catSvc.municipioPorCodigo(c.codMunicipio).subscribe({
+        next: (m) => this.jornadaEditMunicipioTexto.set(m.label || c.ciudad || ''),
+        error: () => this.jornadaEditMunicipioTexto.set(c.ciudad || ''),
+      });
+    }
+    this.jornadaEditSupervisor.set(c.supervisor || '');
+    const supMatch = this.supervisores().find(
+      (s) => s.nombre.trim().toLowerCase() === String(c.supervisor || '').trim().toLowerCase(),
+    );
+    this.jornadaEditIdSupervisor.set(supMatch?._id || c.idSupervisor || '');
+    this.supNuevoNombreJornada.set('');
+    this.jornadaEditFecha.set('');
+    this.jornadaEditMapaAbierto.set(false);
+    this.mostrarMsg(
+      'Nueva jornada extra: el número de jornadas del contrato se actualizará al guardar.',
+      'info',
+      'Agregar jornada',
+    );
     queueMicrotask(() => {
       document.getElementById('jornada-edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
@@ -2490,6 +2696,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditMapaAbierto.set(false);
     this.direccionAlertaActiva.set(false);
     this.jornadaEditError.set(null);
+    this.jornadaEditModo.set('edit');
+    this.jornadaEditGenerarClases.set(true);
   }
 
   onDireccionJornadaChange(valor: string) {
@@ -2539,7 +2747,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditError.set(null);
     this.direccionAlertaActiva.set(false);
     const j = this.jornadaEdit();
-    if (!j?._id) {
+    if (!j) {
+      this.jornadaEditError.set('No hay jornada en edición.');
+      return;
+    }
+    if (this.jornadaEditModo() === 'nueva') {
+      this.guardarNuevaJornada();
+      return;
+    }
+    if (!j._id) {
       this.jornadaEditError.set('No hay jornada seleccionada para guardar.');
       return;
     }
@@ -2597,12 +2813,76 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       });
   }
 
+  private guardarNuevaJornada() {
+    const idContrato = this.contratoSel();
+    if (!idContrato) {
+      this.jornadaEditError.set('Seleccione un contrato.');
+      return;
+    }
+    const direccion = this.jornadaEditDireccion().trim();
+    if (!direccion) {
+      this.alertaDireccionObligatoria();
+      return;
+    }
+    const lat = this.parseCoordInput(this.jornadaEditLat());
+    const lng = this.parseCoordInput(this.jornadaEditLng());
+    let deteGeorefe = this.jornadaEditDeteGeorefe();
+    if (lat != null && lng != null && !deteGeorefe) {
+      deteGeorefe = 'MANUAL';
+    }
+    if (lat == null || lng == null) {
+      deteGeorefe = '';
+    }
+    const codMuni = this.jornadaEditCodMunicipio().trim();
+    const fechaProg = this.jornadaEditFecha().trim();
+    if (!fechaProg) {
+      this.jornadaEditError.set('La fecha de programación es obligatoria.');
+      return;
+    }
+    this.loading.set(true);
+    this.jornadaSvc
+      .crearJornadaContrato(idContrato, {
+        fechaProgramacion: fechaProg,
+        lat,
+        lng,
+        deteGeorefe: deteGeorefe || '',
+        direccion,
+        municipio: this.jornadaEditMunicipio().trim(),
+        depto: this.jornadaEditDepto().trim(),
+        codMunicipio: codMuni && codMuni !== '—' ? codMuni : '',
+        supervisor: this.jornadaEditSupervisor().trim(),
+        generarClases: this.jornadaEditGenerarClases(),
+      })
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (r) => {
+          this.cerrarEdicionJornada();
+          this.aplicarContratoSync(r.contrato);
+          this.recargarVistaJornadas();
+          if ((r.clasesCreadas ?? 0) > 0) this.recargarClases();
+          let texto = `Jornada extra creada. Contrato: ${r.contrato?.numerojornadas ?? '—'} jornada(s), meta ${r.contrato?.numeObjeJornada ?? '—'} alumnos/jornada.`;
+          if ((r.clasesCreadas ?? 0) > 0) {
+            texto += ` Se autogeneraron ${r.clasesCreadas} clase(s).`;
+          }
+          this.mostrarMsg(texto, 'ok', 'Jornada agregada');
+          this.scrollAListadoJornadas();
+        },
+        error: (e) => {
+          const texto =
+            e?.error?.message ||
+            (typeof e?.error === 'string' ? e.error : null) ||
+            'No se pudo crear la jornada.';
+          this.jornadaEditError.set(texto);
+        },
+      });
+  }
+
   async eliminarJornada(j: JornadaCapDto, ev?: Event) {
     ev?.stopPropagation();
     ev?.preventDefault();
     const ok = await this.confirmSvc.open({
       title: 'Eliminar jornada',
-      message: `¿Eliminar la jornada ${this.labelJornada(j)}? También se borran sus clases sin asistencias. Luego puede usar «Generar faltantes».`,
+      message: `¿Eliminar la jornada ${this.labelJornada(j)}? También se borran sus clases sin asistencias. El número de jornadas del contrato se recalculará.`,
       variant: 'danger',
       confirmLabel: 'Eliminar',
     });
@@ -2615,10 +2895,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           this.claseSel.set('');
           this.claseActiva.set(null);
         }
+        this.aplicarContratoSync(r.contrato);
         this.recargarVistaJornadas();
         this.recargarClases();
         this.mostrarMsg(
-          r.message || `Jornada eliminada. Quedan ${r.restantes ?? 0} en el contrato.`,
+          r.message ||
+            `Jornada eliminada. Contrato actualizado: ${r.contrato?.numerojornadas ?? r.restantes ?? 0} jornada(s).`,
           'ok',
           'Jornada eliminada',
         );
@@ -2628,7 +2910,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   jornadaEnEdicion(id?: string): boolean {
-    return !!id && this.jornadaEdit()?._id === id;
+    return this.jornadaEditModo() === 'edit' && !!id && this.jornadaEdit()?._id === id;
   }
 
   parseCoordInput(raw: string): number | null {
@@ -2772,14 +3054,19 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
     if (!ok) return;
     this.jornadaSvc.eliminarClase(c._id).subscribe({
-      next: () => {
+      next: (r) => {
+        this.aplicarContratoSync(r.contrato);
         if (this.claseSel() === c._id) {
           this.claseSel.set('');
           this.claseActiva.set(null);
           this.claseEditando.set(false);
         }
         this.recargarClases();
-        this.mostrarMsg('La clase fue eliminada del turno.', 'ok', 'Clase eliminada');
+        const extra =
+          r.contrato?.clasesPorJornada != null
+            ? ` Contrato: máx. ${r.contrato.clasesPorJornada} clase(s) por jornada.`
+            : '';
+        this.mostrarMsg(`La clase fue eliminada del turno.${extra}`, 'ok', 'Clase eliminada');
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo eliminar la clase.', 'error', 'Error'),
     });
@@ -2899,6 +3186,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   private mostrarResultadoAsistencia(r: any) {
+    this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
+      contratoLabel:
+        this.claseActiva()?.contratoLabel ||
+        this.claseActiva()?.codContrato ||
+        this.contratoActivo()?.codContrato,
+    });
     const ses = r.sesiones ?? 0;
     const req = r.numSesCert ?? this.contratoActivo()?.numSesCert ?? '?';
     if (r.certificadoGenerado && r.certificado) {
