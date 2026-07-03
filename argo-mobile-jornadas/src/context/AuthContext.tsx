@@ -40,7 +40,8 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ status: 'loading' });
+  // Arranca en login de inmediato; la sesión se restaura en segundo plano.
+  const [state, setState] = useState<AuthState>({ status: 'signedOut' });
   const bootstrapped = useRef(false);
 
   useEffect(() => {
@@ -52,9 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     bootstrapped.current = true;
 
     let cancelled = false;
-    const safety = setTimeout(() => {
-      if (!cancelled) setState((s) => (s.status === 'loading' ? { status: 'signedOut' } : s));
-    }, 4000);
 
     void (async () => {
       try {
@@ -72,10 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userRaw = await storeGet(K_USER);
         if (cancelled) return;
 
-        if (!token || !userRaw) {
-          setState({ status: 'signedOut' });
-          return;
-        }
+        if (!token || !userRaw) return;
 
         let user: AuthUser;
         try {
@@ -83,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {
           await storeDelete(K_TOKEN);
           await storeDelete(K_USER);
-          setState({ status: 'signedOut' });
           return;
         }
 
@@ -112,15 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setState({ status: 'signedOut' });
         }
       } catch {
-        if (!cancelled) setState({ status: 'signedOut' });
-      } finally {
-        clearTimeout(safety);
+        /* login visible de todos modos */
       }
     })();
 
     return () => {
       cancelled = true;
-      clearTimeout(safety);
     };
   }, []);
 

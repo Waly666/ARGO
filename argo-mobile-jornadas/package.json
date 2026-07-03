@@ -5,6 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start --go",
+    "start:tunnel": "expo start --go --tunnel",
+    "start:lan": "expo start --go --lan",
     "android": "expo run:android",
     "doctor": "npx expo-doctor",
     "build:apk": "pnpm dlx eas-cli@18.13.0 build --platform android --profile preview --non-interactive",

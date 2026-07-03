@@ -43,14 +43,6 @@ const headerOptions = {
 function RootNavigator() {
   const { state } = useAuth();
 
-  if (state.status === 'loading') {
-    return (
-      <Stack.Navigator key="nav-loading" detachInactiveScreens={false} screenOptions={headerOptions}>
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      </Stack.Navigator>
-    );
-  }
-
   if (state.status === 'denied') {
     return (
       <Stack.Navigator key="nav-denied" detachInactiveScreens={false} screenOptions={headerOptions}>
