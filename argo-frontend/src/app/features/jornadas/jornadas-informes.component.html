@@ -1,212 +1,242 @@
 <section class="card ji-page jornadas-page">
-  <header class="ji-header">
-    <div>
+  <header class="ji-hero">
+    <div class="ji-hero-text">
+      <div class="ji-hero-badge">
+        <span class="ji-hero-badge-icon">📊</span>
+        <span>Informes y trazabilidad</span>
+      </div>
       <h1>Informes de jornadas</h1>
       <p class="intro">
-        Alumnos por clase, jornada y contrato, más certificados emitidos. Consulte en pantalla, imprima en PDF o exporte a Excel.
+        Contratos, jornadas, clases, alumnos, instructores y certificados en un solo lugar.
+        Consulte, imprima en PDF o exporte a Excel.
       </p>
+      <div class="jor-flow-chips ji-flow">
+        <span class="cap cap-indigo cap-sm cap-text">Contrato</span>
+        <span class="jor-flow-arrow">→</span>
+        <span class="cap cap-amber cap-sm cap-text">Jornada</span>
+        <span class="jor-flow-arrow">→</span>
+        <span class="cap cap-blue cap-sm cap-text">Clase</span>
+        <span class="jor-flow-arrow">→</span>
+        <span class="cap cap-emerald cap-sm cap-text">Alumno</span>
+      </div>
     </div>
     <div class="ji-export-all">
       <button
         type="button"
-        class="ghost"
+        class="ghost ji-btn-icon"
         (click)="imprimirTodo()"
         [disabled]="loading() || !data()"
       >
+        <span class="ji-btn-ico" aria-hidden="true">🖨️</span>
         PDF completo
       </button>
       <button
         type="button"
-        class="primary"
+        class="primary ji-btn-icon"
         (click)="exportar('completo')"
         [disabled]="exportando() || loading()"
       >
+        <span class="ji-btn-ico" aria-hidden="true">📗</span>
         {{ exportando() ? 'Exportando…' : 'Excel completo' }}
       </button>
     </div>
   </header>
 
   @if (msg()) {
-    <div class="msg err" role="alert">{{ msg() }}</div>
+    <div class="jor-banner jor-banner--error" role="alert">
+      <span class="jor-banner-icon">✕</span>
+      <span>{{ msg() }}</span>
+    </div>
   }
 
-  <div class="filtros">
-    <argo-catalogo-enum-buscar
-      label="Contrato"
-      placeholder="Todos los contratos…"
-      [textoInicial]="textoContrato()"
-      [modoCombo]="true"
-      [remoto]="false"
-      [minLength]="1"
-      [opcionesLocales]="opcionesContrato()"
-      (seleccionado)="onContratoPick($event)"
-      (limpiado)="onContratoLimpiar()"
-    />
-    <argo-catalogo-enum-buscar
-      label="Jornada"
-      placeholder="Todas las jornadas…"
-      [textoInicial]="textoJornada()"
-      [modoCombo]="true"
-      [remoto]="false"
-      [minLength]="1"
-      [opcionesLocales]="opcionesJornada()"
-      (seleccionado)="onJornadaPick($event)"
-      (limpiado)="onJornadaLimpiar()"
-    />
-    <argo-catalogo-enum-buscar
-      label="Clase"
-      placeholder="Todas las clases…"
-      [textoInicial]="textoClase()"
-      [modoCombo]="true"
-      [remoto]="false"
-      [minLength]="1"
-      [disabled]="!idJornada"
-      [opcionesLocales]="opcionesClase()"
-      (seleccionado)="onClasePick($event)"
-      (limpiado)="onClaseLimpiar()"
-    />
-    <argo-date-input label="Desde" [ngModel]="desde" (ngModelChange)="desde = $event" />
-    <argo-date-input label="Hasta" [ngModel]="hasta" (ngModelChange)="hasta = $event" />
-    <button type="button" class="primary" (click)="cargar()" [disabled]="loading()">
-      {{ loading() ? 'Consultando…' : 'Consultar' }}
-    </button>
+  <div class="ji-filtros-card">
+    <div class="ji-filtros-head">
+      <span class="ji-filtros-icon">🔍</span>
+      <div>
+        <strong>Filtros de consulta</strong>
+        <p class="hint">Los resultados se actualizan al cambiar contrato, jornada, clase o fechas</p>
+      </div>
+      <button
+        type="button"
+        class="ghost ji-btn-icon ji-btn-limpiar"
+        (click)="limpiarFiltros()"
+        [disabled]="!hayFiltrosActivos() || loading()"
+      >
+        <span class="ji-btn-ico" aria-hidden="true">✕</span>
+        Limpiar filtros
+      </button>
+    </div>
+    <div class="filtros">
+      <argo-catalogo-enum-buscar
+        label="Contrato"
+        placeholder="Todos los contratos…"
+        [textoInicial]="textoContrato()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="opcionesContrato()"
+        (seleccionado)="onContratoPick($event)"
+        (limpiado)="onContratoLimpiar()"
+      />
+      <argo-catalogo-enum-buscar
+        label="Jornada"
+        placeholder="Todas las jornadas…"
+        [textoInicial]="textoJornada()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="opcionesJornada()"
+        (seleccionado)="onJornadaPick($event)"
+        (limpiado)="onJornadaLimpiar()"
+      />
+      <argo-catalogo-enum-buscar
+        label="Clase"
+        placeholder="Todas las clases…"
+        [textoInicial]="textoClase()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [disabled]="!idJornada()"
+        [opcionesLocales]="opcionesClase()"
+        (seleccionado)="onClasePick($event)"
+        (limpiado)="onClaseLimpiar()"
+      />
+      <argo-date-input label="Desde" [ngModel]="desde()" (ngModelChange)="onDesdeChange($event)" />
+      <argo-date-input label="Hasta" [ngModel]="hasta()" (ngModelChange)="onHastaChange($event)" />
+      @if (loading()) {
+        <span class="hint ji-filtros-actualizando cap cap-indigo cap-sm cap-text">
+          Actualizando…
+        </span>
+      }
+    </div>
   </div>
 
   <article class="doc-preview" aria-label="Vista previa del informe">
-    <header class="doc-header">
-      @if (logoEmpresa()) {
-        <img class="doc-logo" [src]="logoEmpresa()" [alt]="empresa()?.nombreEmpresa || 'Empresa'" />
-      } @else {
-        <div class="doc-logo-ph">ARGO</div>
-      }
-      <div class="doc-empresa">
-        <h2>{{ empresa()?.nombreEmpresa || 'ARGO' }}</h2>
-        @if (empresa()?.nit) {
-          <p>NIT: {{ empresa()?.nit }}</p>
-        }
-        @if (empresa()?.telefono) {
-          <p>Tel: {{ empresa()?.telefono }}</p>
-        }
-        @if (empresa()?.direccion) {
-          <p>Dir: {{ empresa()?.direccion }}</p>
-        }
-        @if (empresa()?.ciudad || empresa()?.departamento) {
-          <p>{{ empresa()?.ciudad }}{{ empresa()?.ciudad && empresa()?.departamento ? ', ' : '' }}{{ empresa()?.departamento }}</p>
-        }
-        @if (empresa()?.email) {
-          <p>Email: {{ empresa()?.email }}</p>
-        }
-      </div>
-    </header>
-
     <div class="doc-titulo">
+      <div class="doc-titulo-icon" aria-hidden="true">📄</div>
       <h3>{{ tituloTabActual() }}</h3>
       <p>Informe de jornadas de capacitación</p>
+
+      @if (filtrosActivos().length) {
+        <div class="ji-filter-chips">
+          @for (chip of filtrosActivos(); track chip.label) {
+            <span class="ji-filter-chip">
+              <span class="ji-filter-chip-ico">{{ chip.icon }}</span>
+              <span class="ji-filter-chip-lbl">{{ chip.label }}:</span>
+              <span class="ji-filter-chip-val">{{ chip.value }}</span>
+            </span>
+          }
+        </div>
+      } @else {
+        <p class="doc-meta-line">
+          <span class="cap cap-slate cap-sm cap-text">Sin filtros — todos los registros del periodo</span>
+        </p>
+      }
+
       <div class="destacado-bloque">
         @if (codigoContratoFiltro()) {
-          <div class="destacado-par">
-            <span class="destacado-label">Contrato</span>
+          <div class="destacado-par ji-kpi">
+            <span class="destacado-label">📋 Contrato</span>
             <span class="destacado-valor">{{ codigoContratoFiltro() }}</span>
           </div>
         }
         @if (idJornadaCortoFiltro()) {
-          <div class="destacado-par">
-            <span class="destacado-label">ID jornada</span>
+          <div class="destacado-par ji-kpi">
+            <span class="destacado-label">📅 ID jornada</span>
             <span class="destacado-valor">{{ idJornadaCortoFiltro() }}</span>
             @if (fechaJornadaFiltro()) {
-              <span class="destacado-extra">{{ fechaJornadaFiltro() }}</span>
+              <span class="destacado-extra cap cap-amber cap-sm cap-text">{{ fechaJornadaFiltro() }}</span>
             }
           </div>
         }
         @if (idClaseCortoFiltro()) {
-          <div class="destacado-par">
-            <span class="destacado-label">ID clase</span>
+          <div class="destacado-par ji-kpi">
+            <span class="destacado-label">🎓 ID clase</span>
             <span class="destacado-valor">{{ idClaseCortoFiltro() }}</span>
           </div>
         }
       </div>
-      @if (!codigoContratoFiltro() && !idJornadaCortoFiltro() && !idClaseCortoFiltro()) {
-        <p class="doc-meta-line">Sin filtro de contrato / jornada / clase (todos)</p>
-      }
-      @if (desde || hasta) {
-        <p class="doc-meta-line">
-          Periodo: <strong>{{ desde || '…' }} — {{ hasta || '…' }}</strong>
-        </p>
-      }
     </div>
 
     @if (data(); as d) {
       <div class="stats">
-        <div class="stat">
-          <span>Alumnos únicos</span>
-          <strong>{{ d.resumen.alumnosUnicos }}</strong>
-        </div>
-        <div class="stat">
-          <span>Registros por clase</span>
-          <strong>{{ d.resumen.totalFilasClase }}</strong>
-        </div>
-        <div class="stat">
-          <span>Asistencias</span>
-          <strong>{{ d.resumen.registrosAsistencia }}</strong>
-        </div>
-        <div class="stat">
-          <span>Inscripciones</span>
-          <strong>{{ d.resumen.registrosInscripcion }}</strong>
-        </div>
-        <div class="stat">
-          <span>Certificados</span>
-          <strong>{{ d.resumen.certificados }}</strong>
-        </div>
+        @for (s of statsCards(); track s.label) {
+          <div class="stat" [class]="'stat--' + s.tone">
+            <span class="stat-icon" aria-hidden="true">{{ s.icon }}</span>
+            <span class="stat-label">{{ s.label }}</span>
+            <strong class="stat-value">{{ s.value }}</strong>
+          </div>
+        }
       </div>
     }
 
     <div class="tabs" role="tablist">
-      <button type="button" class="tab" [class.active]="tab() === 'porClase'" (click)="setTab('porClase')">
-        Por clase
-      </button>
-      <button type="button" class="tab" [class.active]="tab() === 'porJornada'" (click)="setTab('porJornada')">
-        Por jornada
-      </button>
-      <button type="button" class="tab" [class.active]="tab() === 'porContrato'" (click)="setTab('porContrato')">
-        Por contrato
-      </button>
-      <button type="button" class="tab" [class.active]="tab() === 'certificados'" (click)="setTab('certificados')">
-        Certificados
-      </button>
+      @for (t of tabsNav; track t.id) {
+        <button
+          type="button"
+          class="tab"
+          [class]="'tab tab--' + t.tone"
+          [class.active]="tab() === t.id"
+          (click)="setTab(t.id)"
+        >
+          <span class="tab-icon" aria-hidden="true">{{ t.icon }}</span>
+          <span class="tab-label">{{ t.label }}</span>
+        </button>
+      }
     </div>
 
     <div class="toolbar">
-      <button type="button" class="primary" (click)="imprimirTabActual()" [disabled]="loading() || !data()">
-        Imprimir / PDF (pestaña)
+      @if (tab() === 'alumnos') {
+        <label class="ji-filtro-alumno">
+          <span class="ji-filtro-alumno-lbl">Buscar alumno</span>
+          <input
+            type="search"
+            class="ji-filtro-alumno-input"
+            placeholder="Nombre, documento o empresa…"
+            [ngModel]="filtroAlumno()"
+            (ngModelChange)="onFiltroAlumnoChange($event)"
+          />
+        </label>
+      }
+      <button type="button" class="primary ji-btn-icon" (click)="imprimirTabActual()" [disabled]="loading() || !data()">
+        <span class="ji-btn-ico">🖨️</span>
+        PDF pestaña
       </button>
-      <button type="button" class="ghost" (click)="exportarTabActual()" [disabled]="exportando() || loading()">
-        Excel (pestaña)
+      <button type="button" class="ghost ji-btn-icon" (click)="exportarTabActual()" [disabled]="exportando() || loading()">
+        <span class="ji-btn-ico">📗</span>
+        Excel pestaña
       </button>
-      <span class="hint-count">{{ filasActivas().length }} fila(s)</span>
+      <span class="hint-count cap cap-indigo cap-sm cap-text">
+        {{ filasActivas().length }} fila{{ filasActivas().length === 1 ? '' : 's' }}
+      </span>
     </div>
 
     @if (loading()) {
-      <p class="hint">Cargando informes…</p>
-    } @else if (tab() === 'porJornada') {
+      <div class="ji-loading">
+        <div class="ji-loading-spinner" aria-hidden="true"></div>
+        <p>Cargando informes…</p>
+      </div>
+    } @else if (tab() === 'trazabilidad') {
       @for (g of gruposPorJornada(); track g.key) {
         <div class="grupo-jornada">
-          <div class="destacado-bloque grupo-cabecera">
-            <div class="destacado-par">
-              <span class="destacado-label">Contrato</span>
-              <span class="destacado-valor">{{ g.codContrato }}</span>
+          <div class="grupo-cabecera">
+            <div class="grupo-cabecera-icon">📅</div>
+            <div class="grupo-cabecera-body">
+              <div class="grupo-cabecera-chips">
+                <span class="cap cap-indigo cap-sm cap-text">📋 {{ g.codContrato }}</span>
+                <span class="cap cap-amber cap-sm cap-text cap-mono">#{{ g.idJornadaCorto }}</span>
+                @if (g.fechaJornada) {
+                  <span class="cap cap-teal cap-sm cap-text">{{ g.fechaJornada }}</span>
+                }
+                @if (g.municipio) {
+                  <span class="cap cap-cyan cap-sm cap-text">📍 {{ g.municipio }}</span>
+                }
+              </div>
+              <span class="grupo-cabecera-meta">{{ g.filas.length }} alumno{{ g.filas.length === 1 ? '' : 's' }}</span>
             </div>
-            <div class="destacado-par">
-              <span class="destacado-label">ID jornada</span>
-              <span class="destacado-valor">{{ g.idJornadaCorto }}</span>
-            </div>
-            @if (g.fechaJornada || g.municipio) {
-              <span class="destacado-extra">
-                {{ g.fechaJornada }}{{ g.fechaJornada && g.municipio ? ' · ' : '' }}{{ g.municipio }}
-              </span>
-            }
           </div>
           <div class="table-wrap">
-            <table class="argo">
+            <table class="argo ji-table">
               <thead>
                 <tr>
                   @for (col of columnasActivas(); track col.k) {
@@ -221,7 +251,9 @@
                   <tr>
                     @for (col of columnasActivas(); track col.k) {
                       @if (col.k !== 'codContrato' && col.k !== 'idJornadaCorto') {
-                        <td>{{ celda(row, col.k) }}</td>
+                        <ng-container
+                          *ngTemplateOutlet="celdaTpl; context: { $implicit: row, col: col }"
+                        ></ng-container>
                       }
                     }
                   </tr>
@@ -231,11 +263,15 @@
           </div>
         </div>
       } @empty {
-        <p class="hint">Sin datos para los filtros seleccionados.</p>
+        <div class="ji-empty">
+          <span class="ji-empty-icon">📭</span>
+          <p>Sin datos para los filtros seleccionados.</p>
+          <span class="hint">Ajuste los filtros para ver resultados.</span>
+        </div>
       }
     } @else {
       <div class="table-wrap">
-        <table class="argo">
+        <table class="argo ji-table">
           <thead>
             <tr>
               @for (col of columnasActivas(); track col.k) {
@@ -247,13 +283,16 @@
             @for (row of filasActivas(); track $index) {
               <tr>
                 @for (col of columnasActivas(); track col.k) {
-                  <td>{{ celda(row, col.k) }}</td>
+                  <ng-container *ngTemplateOutlet="celdaTpl; context: { $implicit: row, col: col }"></ng-container>
                 }
               </tr>
             } @empty {
               <tr>
                 <td [attr.colspan]="columnasActivas().length" class="empty">
-                  Sin datos para los filtros seleccionados.
+                  <div class="ji-empty ji-empty--table">
+                    <span class="ji-empty-icon">📭</span>
+                    <p>Sin datos para los filtros seleccionados.</p>
+                  </div>
                 </td>
               </tr>
             }
@@ -262,8 +301,40 @@
       </div>
     }
 
-    <footer class="doc-footer-screen">
-      {{ empresa()?.mensajePie || 'Documento generado por ARGO — Jornadas de Capacitación' }}
-    </footer>
   </article>
 </section>
+
+<ng-template #celdaTpl let-row let-col="col">
+  <td [class.td-mono]="esMono(col.k)" [class.td-num]="esNumeroDestacado(col.k)">
+    @if (esSiNo(col.k)) {
+      <span [class]="capSiNo(row, col.k)">
+        <span class="ji-cap-ico">{{ iconoSiNo(row, col.k) }}</span>
+        {{ celda(row, col.k) }}
+      </span>
+    } @else if (col.k === 'estadoClase') {
+      <span [class]="capEstadoClase(celda(row, col.k))">{{ celda(row, col.k) }}</span>
+    } @else if (col.k === 'estadoJornada') {
+      <span [class]="capEstadoJornada(celda(row, col.k))">{{ celda(row, col.k) }}</span>
+    } @else if (esEstado(col.k)) {
+      <span [class]="capEstado(celda(row, col.k))">{{ celda(row, col.k) }}</span>
+    } @else if (esCertCodigo(col.k)) {
+      <span [class]="capCert(celda(row, col.k))">{{ celda(row, col.k) }}</span>
+    } @else if (col.k === 'carpa' || col.k === 'carpas') {
+      <span [class]="capCarpa(celda(row, col.k))">{{ celda(row, col.k) }}</span>
+    } @else if (col.k === 'encabezado') {
+      <span class="ji-cert-encabezado">{{ celda(row, col.k) }}</span>
+    } @else if (col.k === 'codContrato') {
+      <span class="cap cap-indigo cap-sm cap-text">{{ celda(row, col.k) }}</span>
+    } @else if (col.k === 'tipoCertificado') {
+      <span class="cap cap-violet cap-sm cap-text">{{ celda(row, col.k) }}</span>
+    } @else if (col.k === 'instructor' || col.k === 'instructores') {
+      <span class="cap cap-orange cap-sm cap-text">👨‍🏫 {{ celda(row, col.k) }}</span>
+    } @else if (col.k === 'municipio' || col.k === 'municipios') {
+      <span class="cap cap-cyan cap-sm cap-text">📍 {{ celda(row, col.k) }}</span>
+    } @else if (esNumeroDestacado(col.k)) {
+      <span class="ji-num-badge">{{ celda(row, col.k) }}</span>
+    } @else {
+      {{ celda(row, col.k) }}
+    }
+  </td>
+</ng-template>

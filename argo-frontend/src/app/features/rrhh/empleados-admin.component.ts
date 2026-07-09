@@ -19,6 +19,8 @@ import { SedeDto, SedeService } from '../../core/services/sede.service';
 import { inicialesNombre, readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { environment } from '../../../environments/environment';
 import { EmpleadoDocumentosPanelComponent } from './empleado-documentos-panel.component';
+import { CelularInputComponent } from '../../shared/celular-input/celular-input.component';
+import { mensajeErrorCelularAlmacenado } from '../../core/utils/celular.util';
 
 type FormSeccion = 'datos' | 'documentos';
 
@@ -27,6 +29,7 @@ type FormSeccion = 'datos' | 'documentos';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, EmpleadoDocumentosPanelComponent,
     ArgoDateInputComponent,
+    CelularInputComponent,
   ],
   templateUrl: './empleados-admin.component.html',
   styleUrls: ['./empleados-admin.component.scss', './rrhh-catalog-admin.component.scss', './rrhh-shared.scss'],
@@ -315,6 +318,11 @@ export class EmpleadosAdminComponent implements OnInit {
     const modo = this.modoAcceso();
     if (modo === 'vincular' && !this.idUsuarioVincular().trim()) {
       this.inform('Seleccione el usuario existente a vincular.', true);
+      return;
+    }
+    const errCel = mensajeErrorCelularAlmacenado(f.celular, 'celular');
+    if (errCel) {
+      this.inform(errCel, true);
       return;
     }
     this.saving.set(true);

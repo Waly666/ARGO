@@ -1,0 +1,50 @@
+<section class="cfg-jornadas card">
+  <header class="cfg-head">
+    <p class="breadcrumb">
+      <a routerLink="/app">Inicio</a> / <a routerLink="/app/configuracion/usuarios">Configuración</a> / Jornadas
+    </p>
+    <h1>Jornadas de capacitación</h1>
+    <p class="hint">
+      Ajustes operativos del módulo de jornadas en carpa. El comportamiento habitual sigue siendo operar solo el día
+      programado.
+    </p>
+  </header>
+
+  @if (msg(); as texto) {
+    <div class="cfg-msg" [class.cfg-msg--err]="msgError()" role="status">{{ texto }}</div>
+  }
+
+  @if (loading()) {
+    <p class="hint">Cargando…</p>
+  } @else {
+    <section class="cfg-panel">
+      <h2>Operación fuera del día programado</h2>
+      <p class="cfg-intro">
+        Use esta opción en casos especiales: carga histórica, corrección de datos, preparación de contratos con fechas
+        pasadas o futuras. Mientras esté desactivada, instructores y administradores solo pueden operar jornadas y clases
+        el mismo día calendario de la programación.
+      </p>
+
+      <label class="cfg-switch">
+        <input
+          type="checkbox"
+          [ngModel]="config().operacionFueraDeDiaHabilitada"
+          (ngModelChange)="config.set({ operacionFueraDeDiaHabilitada: $event })" />
+        Habilitar operación en fechas distintas al día programado
+      </label>
+
+      <ul class="cfg-list">
+        <li>Requiere permiso <strong>jornadas.gestionar</strong>.</li>
+        <li>En el hub de jornadas podrá abrir cualquier jornada del contrato y manipular sus clases y alumnos.</li>
+        <li>Los instructores con solo <strong>jornadas.operar</strong> siguen limitados al día de hoy.</li>
+        <li>Desactívelo al terminar la corrección o carga para volver al modo normal.</li>
+      </ul>
+
+      <div class="cfg-actions">
+        <button type="button" class="primary" (click)="guardar()" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Guardar configuración' }}
+        </button>
+      </div>
+    </section>
+  }
+</section>

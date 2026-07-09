@@ -67,6 +67,8 @@ import {
   programaAdmiteVirtual,
 } from './programa-modalidad.helpers';
 
+type FormTabPrograma = 'general' | 'matricula' | 'portal' | 'mas';
+
 type SortColPrograma =
   | 'codigo'
   | 'programa'
@@ -271,6 +273,22 @@ export class ProgramasAdminComponent implements OnInit {
   vista = signal<VistaLista>(readVistaLista('argo-programas-vista'));
 
   modalAbierto = signal(false);
+  formTab = signal<FormTabPrograma>('general');
+
+  readonly formTabsNav: { id: FormTabPrograma; label: string; icon: string }[] = [
+    { id: 'general', label: 'General', icon: '📋' },
+    { id: 'matricula', label: 'Matrícula', icon: '💳' },
+    { id: 'portal', label: 'Portal', icon: '🌐' },
+    { id: 'mas', label: 'Más', icon: '⚙️' },
+  ];
+
+  showTabPortal = computed(
+    () => !this.esProgramaJornadasCapForm() && this.admiteModalidadVirtualForm(),
+  );
+
+  formTabsVisibles = computed(() =>
+    this.formTabsNav.filter((t) => t.id !== 'portal' || this.showTabPortal()),
+  );
 
   editando = signal<Programa | null>(null);
 
@@ -637,6 +655,17 @@ export class ProgramasAdminComponent implements OnInit {
 
 
 
+  setFormTab(t: FormTabPrograma): void {
+    if (t === 'portal' && !this.showTabPortal()) return;
+    this.formTab.set(t);
+  }
+
+  private ensureFormTabVisible(): void {
+    if (this.formTab() === 'portal' && !this.showTabPortal()) {
+      this.formTab.set('general');
+    }
+  }
+
   patch<K extends keyof ProgramaDto>(k: K, v: ProgramaDto[K]) {
     const coerced = coerceProgramaNumeric(k, v);
     this.form.update((f) => {
@@ -666,6 +695,7 @@ export class ProgramasAdminComponent implements OnInit {
     if (cur.length === 1 && cur[0] === 'VIRTUAL') {
       this.patch('valorMatricula', this.num(this.form().tarifaVirtual));
     }
+    this.ensureFormTabVisible();
   }
 
   modalidadProgramaActiva(codigo: string): boolean {
@@ -725,6 +755,7 @@ export class ProgramasAdminComponent implements OnInit {
     this.form.set({ ...this.formVacio(), idTipCap: t, tipoServ: this.inferirTipoServ(t) });
 
     this.resetPortadaLocal();
+    this.formTab.set('general');
     this.modalAbierto.set(true);
     this.scrollAlFormulario();
     this.inform(null);
@@ -769,6 +800,7 @@ export class ProgramasAdminComponent implements OnInit {
         this.auditServicio.set(this.auditDe(s as unknown as Record<string, unknown>));
         this.form.set(this.formDesdeDetalle(prog, s, horaP));
         this.resetPortadaLocal();
+        this.formTab.set('general');
         this.modalAbierto.set(true);
         this.scrollAlFormulario();
       },
@@ -870,6 +902,7 @@ export class ProgramasAdminComponent implements OnInit {
   cerrarModal() {
 
     this.modalAbierto.set(false);
+    this.formTab.set('general');
 
     this.editando.set(null);
     this.resetPortadaLocal();
@@ -1392,6 +1425,7 @@ export class ProgramasAdminComponent implements OnInit {
       this.patch('tarifaVirtual', 0);
       this.patch('semestres', null);
     }
+    this.ensureFormTabVisible();
   }
 
   onTipoCertPick(opt: EnumBuscarOption): void {

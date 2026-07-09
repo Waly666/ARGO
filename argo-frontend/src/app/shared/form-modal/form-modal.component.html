@@ -4,9 +4,10 @@
     <div
       #panel
       class="fm-panel"
-      [class.wide]="wide && !xwide"
-      [class.xwide]="xwide"
+      [class.wide]="wide && !xwide && !sheet"
+      [class.xwide]="xwide && !sheet"
       [class.tall]="tall"
+      [class.sheet]="sheet"
       role="dialog"
       aria-modal="true"
       [attr.aria-labelledby]="'fm-title'"

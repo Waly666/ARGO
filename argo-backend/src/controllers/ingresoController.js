@@ -823,13 +823,24 @@ exports.eliminar = async (req, res, next) => {
 
     // Restaura saldo en cada servicio/ítem: recalcula abonado solo con ingresos
     // vigentes (anulados aportan 0) para que el servicio quede cobrable de nuevo.
+    // En contratos de capacitación se elimina la liquidación causada (servicio #53).
     const mats = new Set();
     for (const idLiq of liqIds) {
+      const liqSnap = await Liquidacion.findById(idLiq).lean();
+      if (liqSnap?.origenContratoCap) {
+        await Liquidacion.deleteOne({ _id: idLiq });
+        continue;
+      }
       const r = await recalcularAbonoLiquidacion(idLiq);
       if (r?.idMat) mats.add(String(r.idMat));
     }
     for (const idMat of mats) {
       await refrescarPagoMatricula(idMat);
+    }
+
+    if (antesIngreso.origenContratoCap) {
+      const { revertirComprobanteIngresoContratoCap } = require('../services/contratoCobroCap');
+      await revertirComprobanteIngresoContratoCap(ing).catch(() => null);
     }
 
     try {

@@ -6,6 +6,49 @@ import { environment } from '../../../environments/environment';
 import { formatNumDoc, parseNumDocForApi } from '../utils/num-doc.helpers';
 import type { AlumnoListItem } from './alumno.service';
 
+export interface AlumnoClaseAnteriorItem {
+  numDoc: number;
+  nombreCompleto?: string;
+  yaInscritoEnEstaClase?: boolean;
+  yaCertificadoContrato?: boolean;
+  /** Si false, no se puede matricular (certificado global o ya en esta clase). */
+  puedeMatricular?: boolean;
+  certificadoCodigo?: string | null;
+}
+
+export interface ClaseAnteriorResumenDto {
+  _id: string;
+  indiceClaseEnJornada?: number | null;
+  programaNombre?: string;
+  carpaNombre?: string;
+  estado?: string;
+}
+
+export interface AlumnosClaseAnteriorRespuestaDto {
+  clase: ClaseAnteriorResumenDto | null;
+  alumnos: AlumnoClaseAnteriorItem[];
+}
+
+export interface CuotaPlanCobroDto {
+  id: string;
+  etiqueta?: string;
+  valor: number;
+  orden?: number;
+  idIngreso?: string | null;
+  pagadoAt?: string | null;
+  pagado?: boolean;
+}
+
+export interface EstadoCobroContratoDto {
+  valorContrato: number;
+  comprobantesIngresoCaja: boolean;
+  planCobro: CuotaPlanCobroDto[];
+  totalCuotas: number;
+  totalPagado: number;
+  saldoPendiente: number;
+  cuentaCobro: { numero: string; generadaAt?: string | null } | null;
+}
+
 export interface ContratacionDto {
   _id?: string;
   tipoIdentificacion?: string;
@@ -47,25 +90,81 @@ export interface ContratacionDto {
   incluiDom?: boolean;
   incluiFest?: boolean;
   fechaInicJornadas?: string;
+  /** Último día para programar jornadas (planificación). */
+  fechaFinJornadas?: string;
   numSesCert?: number;
+  /** Programas del contrato para reparto equitativo al autogenerar clases. */
+  idProgramas?: string[];
   jornadasGeneradas?: boolean;
+  /** Jornadas ya creadas en BD (informativo). */
+  jornadasExistentes?: number;
   /** juridica_empresa | juridica_oficial | juridica_ong | persona_natural */
   idClienteFacturacion?: string | null;
   /** Nombre mostrado en listados (desde catálogo clientes). */
   clienteNombre?: string;
   clienteIdentificacion?: string | null;
   valorContrato?: number;
+  /** Preferencia: comprobantes de ingreso entran a caja por defecto. */
+  comprobantesIngresoCaja?: boolean;
+  planCobro?: CuotaPlanCobroDto[];
+  cuentaCobroNumero?: string;
+  cuentaCobroGeneradaAt?: string;
   idFacturaElectronica?: string | null;
   facturadoAt?: string;
+}
+
+export interface AvanceContratoResumenDto {
+  jornadasProgramadas: number;
+  jornadasMeta: number;
+  clasesTotales: number;
+  clasesDictadas: number;
+  clasesEnProceso: number;
+  clasesProgramadas: number;
+  clasesFaltanDictar: number;
+  metaClasesContrato: number;
+  clasesFaltanMeta: number | null;
+  alumnosCapacitados: number;
+  alumnosCertificados: number;
+  numeroAlumnosMeta: number;
+  numSesCert: number;
+  tipoCertificado: string;
+}
+
+export interface AvanceContratoAlumnoDto {
+  numDoc: number;
+  nombreCompleto: string;
+  clasesAsistidas: number;
+  certificado: boolean;
+  certificadosEmitidos: number;
+  codigosCertificado: string[];
+  cumplioSesiones: boolean;
+  faltanSesiones: number;
+}
+
+export interface AvanceContratoDto {
+  resumen: AvanceContratoResumenDto;
+  alumnos: AvanceContratoAlumnoDto[];
+}
+
+export interface ConfigOperacionJornadas {
+  operacionFueraDeDiaHabilitada: boolean;
+}
+
+export interface EstadoOperacionJornadas extends ConfigOperacionJornadas {
+  puedeUsar: boolean;
+  motivo?: string | null;
 }
 
 /** Contadores del contrato recalculados tras jornadas/clases extra. */
 export interface ContratoSyncDto {
   _id: string;
   numerojornadas?: number;
+  jornadasPorDia?: number;
   numeObjeJornada?: number;
   clasesPorJornada?: number;
   jornadasGeneradas?: boolean;
+  /** Jornadas ya creadas en BD (informativo). */
+  jornadasExistentes?: number;
 }
 
 export interface JornadaCapDto {
@@ -141,6 +240,9 @@ export interface InformesJornadaResumen {
   registrosAsistencia: number;
   registrosInscripcion: number;
   certificados: number;
+  contratos?: number;
+  jornadas?: number;
+  instructores?: number;
 }
 
 export interface InformesJornadaResp {
@@ -152,9 +254,14 @@ export interface InformesJornadaResp {
     hasta?: string | null;
   };
   resumen: InformesJornadaResumen;
-  porClase: Record<string, unknown>[];
-  porJornada: Record<string, unknown>[];
-  porContrato: Record<string, unknown>[];
+  /** Detalle alumno×clase (solo uso interno / trazabilidad). */
+  porClase?: Record<string, unknown>[];
+  trazabilidad: Record<string, unknown>[];
+  resumenContratos: Record<string, unknown>[];
+  catalogoJornadas: Record<string, unknown>[];
+  catalogoClases: Record<string, unknown>[];
+  alumnos: Record<string, unknown>[];
+  instructores: Record<string, unknown>[];
   certificados: Record<string, unknown>[];
 }
 
@@ -175,6 +282,10 @@ export class JornadaCapService {
     return this.http.put<ContratacionDto>(`${this.base}/contratos/${id}`, dto);
   }
 
+  avanceContrato(id: string): Observable<AvanceContratoDto> {
+    return this.http.get<AvanceContratoDto>(`${this.base}/contratos/${id}/avance`);
+  }
+
   eliminarContrato(id: string): Observable<{ ok: boolean; message?: string; jornadasEliminadas?: number }> {
     return this.http.delete<{ ok: boolean; message?: string; jornadasEliminadas?: number }>(
       `${this.base}/contratos/${id}`,
@@ -185,9 +296,9 @@ export class JornadaCapService {
     ok: boolean;
     count: number;
     total?: number;
+    metaJornadas?: number;
     fechaDesde?: string;
-    fechaInicioContrato?: string;
-    ajustadoDesdeHoy?: boolean;
+    fechaFin?: string | null;
     jornadasCompletas?: boolean;
     clasesCreadas?: number;
     jornadasProcesadasClases?: number;
@@ -197,9 +308,9 @@ export class JornadaCapService {
       ok: boolean;
       count: number;
       total?: number;
+      metaJornadas?: number;
       fechaDesde?: string;
-      fechaInicioContrato?: string;
-      ajustadoDesdeHoy?: boolean;
+      fechaFin?: string | null;
       jornadasCompletas?: boolean;
       clasesCreadas?: number;
       jornadasProcesadasClases?: number;
@@ -289,6 +400,14 @@ export class JornadaCapService {
     return this.http.patch<JornadaCapDto>(`${this.base}/jornadas/${id}`, dto);
   }
 
+  cerrarJornadaOperacion(id: string) {
+    return this.http.post<JornadaCapDto>(`${this.base}/jornadas/${id}/cerrar-operacion`, {});
+  }
+
+  reabrirJornadaOperacion(id: string) {
+    return this.http.post<JornadaCapDto>(`${this.base}/jornadas/${id}/reabrir-operacion`, {});
+  }
+
   /** Municipio/departamento según lat/lng (proveedor configurable + Divipola). */
   resolverMunicipioGeoref(lat: number, lng: number): Observable<{
     municipio: string;
@@ -351,6 +470,7 @@ export class JornadaCapService {
     return this.http.delete<{
       ok: boolean;
       message: string;
+      certificadosAnulados?: number;
       contrato?: ContratoSyncDto;
     }>(`${this.base}/clases/${id}`);
   }
@@ -359,8 +479,8 @@ export class JornadaCapService {
     return this.http.post<ClaseJornadaDto>(`${this.base}/clases/${id}/iniciar`, {});
   }
 
-  finalizarClase(id: string) {
-    return this.http.post(`${this.base}/clases/${id}/finalizar`, {});
+  finalizarClase(id: string, horario?: { horaInicio?: string; horaFin?: string }) {
+    return this.http.post(`${this.base}/clases/${id}/finalizar`, horario ?? {});
   }
 
   sincronizarAsistenciasInscritos(idClase: string) {
@@ -417,6 +537,13 @@ export class JornadaCapService {
     }>>(`${this.base}/clases/${idClase}/inscritos`);
   }
 
+  /** Alumnos de la clase inmediatamente anterior de la misma jornada (para copiar matrícula). */
+  alumnosClaseAnterior(idClase: string): Observable<AlumnosClaseAnteriorRespuestaDto> {
+    return this.http.get<AlumnosClaseAnteriorRespuestaDto>(
+      `${this.base}/clases/${idClase}/inscritos-clase-anterior`,
+    );
+  }
+
   certificadosGenerados(idContrato?: string) {
     let p = new HttpParams();
     if (idContrato) p = p.set('idContrato', idContrato);
@@ -453,7 +580,18 @@ export class JornadaCapService {
     idClase?: string;
     desde?: string;
     hasta?: string;
-    tipo?: 'completo' | 'por-clase' | 'por-jornada' | 'por-contrato' | 'certificados';
+    tipo?:
+      | 'completo'
+      | 'contratos'
+      | 'trazabilidad'
+      | 'jornadas'
+      | 'clases'
+      | 'alumnos'
+      | 'instructores'
+      | 'certificados'
+      | 'resumen-contratos'
+      | 'catalogo-jornadas'
+      | 'catalogo-clases';
   }) {
     let p = new HttpParams();
     if (opts?.idContrato) p = p.set('idContrato', opts.idContrato);
@@ -540,5 +678,107 @@ export class JornadaCapService {
     }>(`${this.base}/alumnos/${encodeURIComponent(formatNumDoc(nd ?? numDoc))}/progreso-cert`, {
       params: { idContrato },
     });
+  }
+
+  obtenerConfigOperacionJornadas() {
+    return this.http.get<ConfigOperacionJornadas>(`${this.base}/config/operacion`);
+  }
+
+  estadoOperacionEspecialJornadas() {
+    return this.http.get<EstadoOperacionJornadas>(`${this.base}/config/operacion/estado`);
+  }
+
+  guardarConfigOperacionJornadas(cfg: Partial<ConfigOperacionJornadas>) {
+    return this.http.put<ConfigOperacionJornadas>(`${this.base}/config/operacion`, cfg);
+  }
+
+  estadoCobroContrato(id: string) {
+    return this.http.get<EstadoCobroContratoDto>(`${this.base}/contratos/${id}/cobro`);
+  }
+
+  generarCuentaCobroContrato(id: string) {
+    return this.http.post<{
+      numero: string;
+      generadaAt?: string;
+      valorContrato: number;
+    }>(`${this.base}/contratos/${id}/cuenta-cobro/generar`, {});
+  }
+
+  urlCuentaCobroContrato(id: string): string {
+    return `${this.base}/contratos/${id}/cuenta-cobro/html`;
+  }
+
+  generarComprobanteIngresoContrato(
+    id: string,
+    body: {
+      idCuota: string;
+      entraCaja?: boolean;
+      fecha?: string;
+      idTipoPago: string;
+      idCuentaBancaria?: string;
+      numTransferencia?: string;
+      observaciones?: string;
+    },
+    soporte?: File | null,
+  ) {
+    const payload = { ...body };
+    if (soporte) {
+      const fd = new FormData();
+      for (const [k, v] of Object.entries(payload)) {
+        if (v === undefined || v === null || v === '') continue;
+        fd.append(k, typeof v === 'boolean' ? (v ? 'true' : 'false') : String(v));
+      }
+      fd.append('soporte', soporte, soporte.name);
+      return this.http.post<{
+        ingreso: { _id: string; numRecibo: string; valor: number; entraCaja: boolean; idSesion?: number | null };
+        cobro: EstadoCobroContratoDto;
+      }>(`${this.base}/contratos/${id}/comprobantes-ingreso`, fd);
+    }
+    return this.http.post<{
+      ingreso: { _id: string; numRecibo: string; valor: number; entraCaja: boolean; idSesion?: number | null };
+      cobro: EstadoCobroContratoDto;
+    }>(`${this.base}/contratos/${id}/comprobantes-ingreso`, payload);
+  }
+
+  /** Igual que recibos: fetch autenticado + ventana en blanco (evita COOP/HTTP en IP LAN). */
+  abrirHtmlCuentaCobroContrato(id: string, onError?: (msg: string) => void): boolean {
+    if (!id) {
+      onError?.('Contrato sin identificador.');
+      return false;
+    }
+    const url = `${this.urlCuentaCobroContrato(id)}?v=${Date.now()}`;
+    const w = window.open('', '_blank', 'width=820,height=960');
+    if (!w) {
+      onError?.('El navegador bloqueó la ventana emergente. Permita ventanas emergentes para este sitio.');
+      return false;
+    }
+    try {
+      w.document.open();
+      w.document.write('<p style="font-family:sans-serif;padding:1rem">Cargando cuenta de cobro…</p>');
+      w.document.close();
+    } catch {
+      /* ventana en blanco */
+    }
+    this.http.get(url, { responseType: 'text' }).subscribe({
+      next: (html) => {
+        try {
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        } catch {
+          w.close();
+          onError?.('No se pudo mostrar la cuenta de cobro en la ventana.');
+        }
+      },
+      error: (e) => {
+        try {
+          w.close();
+        } catch {
+          /* ignore */
+        }
+        onError?.(e?.error?.message || 'No se pudo generar la cuenta de cobro.');
+      },
+    });
+    return true;
   }
 }

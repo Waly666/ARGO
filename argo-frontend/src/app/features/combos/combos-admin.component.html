@@ -109,7 +109,7 @@
           </div>
         </div>
 
-        <!-- Selector de programas con checkboxes -->
+        <!-- Selector de programas con switches -->
         <div class="cb-card cb-card--progs">
           <div class="cb-progs-header">
             <div>
@@ -142,17 +142,18 @@
           } @else {
             <div class="cb-prog-list">
               @for (p of progFiltrados(); track p.id) {
-                <label class="cb-prog-row" [class.cb-prog-row--sel]="estaSeleccionado(p.id)" (click)="togglePrograma(p.id)">
-                  <span class="cb-checkbox" [class.cb-checkbox--on]="estaSeleccionado(p.id)">
-                    @if (estaSeleccionado(p.id)) { <span class="cb-check-mark">✓</span> }
-                  </span>
-                  <span class="cb-prog-texto">
+                <div class="cb-prog-row" [class.cb-prog-row--sel]="estaSeleccionado(p.id)">
+                  <argo-switch
+                    class="cb-prog-switch"
+                    [checked]="estaSeleccionado(p.id)"
+                    (checkedChange)="onProgramaSwitch(p.id, $event)" />
+                  <button type="button" class="cb-prog-texto" (click)="togglePrograma(p.id)">
                     <span class="cb-prog-nombre">{{ p.nombre }}</span>
                     @if (p.codigo) {
                       <span class="cb-prog-codigo">{{ p.codigo }}</span>
                     }
-                  </span>
-                </label>
+                  </button>
+                </div>
               }
             </div>
           }

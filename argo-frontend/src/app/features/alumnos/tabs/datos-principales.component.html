@@ -366,7 +366,9 @@
             </div>
             <div class="col-6">
               <label>Celular</label>
-              <input type="tel" [ngModel]="form().celular" (ngModelChange)="patch('celular', $event)" placeholder="3001234567" />
+              <argo-celular-input
+                [value]="form().celular || ''"
+                (valueChange)="patch('celular', $event)" />
             </div>
           </div>
           <div class="row">

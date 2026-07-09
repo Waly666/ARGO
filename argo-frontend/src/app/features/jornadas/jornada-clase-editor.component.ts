@@ -16,7 +16,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, forkJoin, of } from 'rxjs';
+import { catchError, finalize, map } from 'rxjs/operators';
 
 import { AlumnoListItem } from '../../core/services/alumno.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -25,6 +26,8 @@ import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos
 import { CertificadoJornadaBloqueoService } from '../../core/services/certificado-jornada-bloqueo.service';
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import {
+  AlumnoClaseAnteriorItem,
+  ClaseAnteriorResumenDto,
   ClaseJornadaDto,
   InstructorJornadaDto,
   JornadaCapService,
@@ -41,7 +44,8 @@ import { Hora12InputComponent } from '../../shared/hora-12-input/hora-12-input.c
 import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
-import { esFechaHoy, fmtFechaCalendario } from './jornada-calendario.util';
+import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
+import { duracionSegundosDesdeHHmm, esFechaHoy, fmtFechaCalendario } from './jornada-calendario.util';
 import { JornadaEtiquetaQrService } from './jornada-etiqueta-qr.service';
 import {
   JorMsgTipo,
@@ -63,6 +67,18 @@ import {
   labelInstructorClase,
   claseTieneInstructor,
 } from './jornada-ui.util';
+
+/** Alumno con datos mínimos para mostrar nombre y matricular. */
+type AlumnoNombrable = {
+  numDoc: number | string;
+  nombreCompleto?: string;
+  nombre1?: string;
+  nombre2?: string;
+  nombres?: string;
+  apellido1?: string;
+  apellido2?: string;
+  apellidos?: string;
+};
 
 @Component({
   selector: 'argo-jornada-clase-editor',
@@ -90,6 +106,8 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   private destroyRef = inject(DestroyRef);
   private confirmSvc = inject(ConfirmDialogService);
   private asistente = inject(AsistenteContextoService);
+  operacionCfg = inject(JornadasOperacionConfigService);
+  operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
 
   constructor() {
     effect(() => {
@@ -105,7 +123,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   }
 
   @Input() editorHost = false;
-  @Output() claseGuardada = new EventEmitter<ClaseJornadaDto>();
+  @Output() claseGuardada = new EventEmitter<void>();
 
   modalOpen = signal(false);
   claseSel = signal('');
@@ -130,6 +148,13 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   guardandoAsistencia = signal<number | null>(null);
   guardandoInscripcion = signal(false);
   cronometroDisplay = signal('00:00:00');
+
+  /** Utilidad «Copiar alumnos de la clase anterior de la misma jornada». */
+  claseAnteriorInfo = signal<ClaseAnteriorResumenDto | null>(null);
+  alumnosClaseAnterior = signal<AlumnoClaseAnteriorItem[]>([]);
+  cargandoAlumnosClaseAnterior = signal(false);
+  alumnosClaseAnteriorSeleccion = signal<Set<number>>(new Set());
+  matriculandoDesdeAnterior = signal(false);
 
   modalMsg = signal<string | null>(null);
   modalMsgTipo = signal<JorMsgTipo>('info');
@@ -191,6 +216,11 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   inscritosCertificadosContrato = computed(() =>
     this.inscritos().filter((i) => i.yaCertificadoContrato).length,
   );
+  /** Alumnos de la clase anterior que aún no están matriculados en la clase actual. */
+  alumnosClaseAnteriorDisponibles = computed(() => {
+    const inscritosDocs = new Set(this.inscritos().map((i) => Number(i.numDoc)));
+    return this.alumnosClaseAnterior().filter((a) => !inscritosDocs.has(Number(a.numDoc)));
+  });
   totalAlumnosMatriculadosModal = computed(() => this.inscritos().length);
 
   opcionesUbicacionClase = computed<EnumBuscarOption[]>(() =>
@@ -252,6 +282,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.operacionCfg.cargar();
     this.cargarProgramasJornada();
     this.cargarInstructores();
     this.alumnoBusqueda$
@@ -327,12 +358,125 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     this.alumnoBusquedaResults.set([]);
     this.alumnoBusquedaOpen.set(false);
     this.inscritos.set([]);
+    this.alumnosClaseAnteriorSeleccion.set(new Set());
     this.limpiarMsgModal();
     this.sincronizarProgramaModal(String(c.idPrograma || ''));
     this.cargarProgramasJornada();
     this.cargarInscritos(c._id);
+    this.cargarAlumnosClaseAnterior(c._id);
     this.modalOpen.set(true);
     this.iniciarCronometroSiAplica();
+  }
+
+  cargarAlumnosClaseAnterior(idClase: string): void {
+    this.claseAnteriorInfo.set(null);
+    this.alumnosClaseAnterior.set([]);
+    if (!idClase) return;
+    this.cargandoAlumnosClaseAnterior.set(true);
+    this.jornadaSvc.alumnosClaseAnterior(idClase).subscribe({
+      next: (r) => {
+        this.cargandoAlumnosClaseAnterior.set(false);
+        this.claseAnteriorInfo.set(r?.clase || null);
+        this.alumnosClaseAnterior.set(r?.alumnos || []);
+      },
+      error: () => {
+        this.cargandoAlumnosClaseAnterior.set(false);
+        this.claseAnteriorInfo.set(null);
+        this.alumnosClaseAnterior.set([]);
+      },
+    });
+  }
+
+  toggleAlumnoClaseAnterior(numDoc: number, checked: boolean): void {
+    this.alumnosClaseAnteriorSeleccion.update((set) => {
+      const next = new Set(set);
+      if (checked) next.add(Number(numDoc));
+      else next.delete(Number(numDoc));
+      return next;
+    });
+  }
+
+  alumnoClaseAnteriorSeleccionado(numDoc: number): boolean {
+    return this.alumnosClaseAnteriorSeleccion().has(Number(numDoc));
+  }
+
+  alumnoPuedeMatricularDesdeAnterior(a: AlumnoClaseAnteriorItem): boolean {
+    if (a.puedeMatricular === false) return false;
+    if (a.puedeMatricular === true) return true;
+    return !a.yaCertificadoContrato;
+  }
+
+  seleccionarTodosAlumnosClaseAnterior(): void {
+    const disponibles = this.alumnosClaseAnteriorDisponibles().filter((a) =>
+      this.alumnoPuedeMatricularDesdeAnterior(a),
+    );
+    this.alumnosClaseAnteriorSeleccion.set(new Set(disponibles.map((a) => Number(a.numDoc))));
+  }
+
+  limpiarSeleccionAlumnosClaseAnterior(): void {
+    this.alumnosClaseAnteriorSeleccion.set(new Set());
+  }
+
+  matricularSeleccionClaseAnterior(): void {
+    const idClase = this.claseSel();
+    const idP = this.nuevaClaseProg();
+    if (!idClase || !idP) return;
+    const seleccion = this.alumnosClaseAnteriorSeleccion();
+    if (!seleccion.size) return;
+    const alumnos = this.alumnosClaseAnteriorDisponibles().filter((a) =>
+      seleccion.has(Number(a.numDoc)),
+    );
+    if (!alumnos.length) return;
+    this.matriculandoDesdeAnterior.set(true);
+    this.matricularAlumnosEnPrograma(idP, alumnos, idClase)
+      .pipe(finalize(() => this.matriculandoDesdeAnterior.set(false)))
+      .subscribe((results) => {
+        const okRows = results.filter((r) => r.ok);
+        const fail = results.filter((r) => !r.ok);
+        this.cargarInscritos(idClase);
+        this.alumnosClaseAnteriorSeleccion.set(new Set());
+        let texto = `Matriculados ${okRows.length}/${results.length} desde la clase anterior.`;
+        if (fail.length) texto += ` No matriculados: ${fail.map((f) => f.nombre).join(', ')}.`;
+        this.mostrarMsg(texto, fail.length ? 'warn' : 'ok', 'Matrícula desde clase anterior');
+        this.emitClaseGuardada();
+      });
+  }
+
+  private matricularAlumnosEnPrograma(
+    idPrograma: string,
+    alumnos: AlumnoNombrable[],
+    idClase?: string,
+  ) {
+    if (!alumnos.length) return of([]);
+    return forkJoin(
+      alumnos.map((a) =>
+        this.jornadaSvc.matricularAlumno({ numDoc: a.numDoc, idPrograma, idClase }).pipe(
+          map((r: any) => {
+            if (!r?.inscripcionDuplicada) {
+              this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
+                contratoLabel:
+                  this.claseActiva()?.contratoLabel ||
+                  this.claseActiva()?.codContrato ||
+                  undefined,
+              });
+            }
+            return {
+              ok: true as const,
+              nombre: this.nombreAlumnoItem(a),
+              numDoc: a.numDoc,
+            };
+          }),
+          catchError((e) =>
+            of({
+              ok: false as const,
+              nombre: this.nombreAlumnoItem(a),
+              numDoc: a.numDoc,
+              error: e?.error?.message || 'Error al matricular',
+            }),
+          ),
+        ),
+      ),
+    );
   }
 
   cerrarModal(): void {
@@ -345,8 +489,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   }
 
   private emitClaseGuardada(): void {
-    const cl = this.claseActiva();
-    if (cl) this.claseGuardada.emit(cl);
+    this.claseGuardada.emit();
   }
 
   cargarProgramasJornada(): void {
@@ -425,6 +568,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   jornadaClaseModalOperable(): boolean {
     const cl = this.claseActiva();
     if (!cl) return false;
+    if (this.operacionEspecialActiva()) return true;
     if (!this.claseEsHoy(cl)) return false;
     return cl.jornadaEstado === 'EN PROCESO';
   }
@@ -438,7 +582,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   tituloBotonIniciarClase(): string {
     const cl = this.claseActiva();
-    if (cl && !this.claseEsHoy(cl)) {
+    if (cl && !this.operacionEspecialActiva() && !this.claseEsHoy(cl)) {
       return 'Solo puede iniciar la clase el día programado (hoy).';
     }
     if (!this.jornadaClaseModalOperable()) {
@@ -452,7 +596,15 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   claseModalFinalizable(): boolean {
     const cl = this.claseActiva();
-    return !!cl && cl.estado === 'EN PROCESO';
+    if (!cl) return false;
+    if (cl.estado === 'FINALIZADO') return true;
+    if (cl.estado === 'EN PROCESO') return true;
+    if (this.operacionEspecialActiva()) {
+      const hi = this.modalHoraInicio().trim();
+      const hf = this.modalHoraFin().trim();
+      return validarHoraInput(hi) && validarHoraInput(hf) && duracionSegundosDesdeHHmm(hi, hf) != null;
+    }
+    return false;
   }
 
   claseModalEnProceso(): boolean {
@@ -461,6 +613,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   puedeMarcarAsistenciaInscrito(): boolean {
     if (this.claseModalEnProceso()) return true;
+    if (this.operacionEspecialActiva() && this.claseActiva()?.estado !== 'FINALIZADO') return true;
     return this.puedeEliminarClase() && this.claseActiva()?.estado === 'FINALIZADO';
   }
 
@@ -494,13 +647,81 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   lapsoClaseEtiqueta(): string {
     const cl = this.claseActiva();
     if (!cl) return '';
+    if (cl.estado === 'FINALIZADO' && cl.duracionSegundos != null) {
+      return this.formatDuracion(cl.duracionSegundos);
+    }
+    if (this.operacionEspecialActiva()) {
+      const secs = duracionSegundosDesdeHHmm(this.modalHoraInicio(), this.modalHoraFin());
+      if (secs != null) return this.formatDuracion(secs);
+    }
     if (cl.duracionSegundos != null) return this.formatDuracion(cl.duracionSegundos);
     if (this.claseModalEnProceso() && cl.horaInicio) return this.cronometroDisplay();
     return '';
   }
 
+  private horarioPayloadFinalizarClase(): { horaInicio?: string; horaFin?: string } {
+    if (!this.operacionEspecialActiva()) return {};
+    const hi = this.modalHoraInicio().trim();
+    const hf = this.modalHoraFin().trim();
+    const out: { horaInicio?: string; horaFin?: string } = {};
+    if (validarHoraInput(hi)) out.horaInicio = hi;
+    if (validarHoraInput(hf)) out.horaFin = hf;
+    return out;
+  }
+
+  private validarHorarioAntesFinalizarEspecial(): boolean {
+    if (!this.operacionEspecialActiva()) return true;
+    if (this.claseActiva()?.estado === 'EN PROCESO') return true;
+    const hi = this.modalHoraInicio().trim();
+    const hf = this.modalHoraFin().trim();
+    if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
+      this.mostrarMsg(
+        'Indique hora de inicio y hora de fin antes de finalizar.',
+        'error',
+        'Horario requerido',
+      );
+      return false;
+    }
+    if (duracionSegundosDesdeHHmm(hi, hf) == null) {
+      this.mostrarMsg('La hora de fin debe ser posterior a la de inicio.', 'error', 'Horario inválido');
+      return false;
+    }
+    return true;
+  }
+
+  tituloBotonFinalizarClase(): string {
+    if (this.claseActiva()?.estado === 'FINALIZADO') {
+      return 'Reprocesar: emite certificados pendientes de alumnos matriculados después del cierre.';
+    }
+    if (!this.claseModalFinalizable()) {
+      if (this.operacionEspecialActiva() && this.claseActiva()?.estado === 'PROGRAMADA') {
+        return 'Indique hora de inicio y fin para finalizar en modo especial';
+      }
+      return 'Solo se puede finalizar una clase EN PROCESO';
+    }
+    if (this.operacionEspecialActiva()) {
+      return 'Finalizar con el horario indicado (sin cambiar la hora de fin)';
+    }
+    return 'Finalizar clase y registrar hora de fin';
+  }
+
+  textoBotonFinalizarClase(): string {
+    return this.claseActiva()?.estado === 'FINALIZADO' ? '↻ Reprocesar certificados' : '■ Finalizar clase';
+  }
+
   fmtFecha(f?: string | Date): string {
     return fmtFechaCalendario(f);
+  }
+
+  modalClaseSubtitle(): string {
+    const cl = this.claseActiva();
+    if (!cl) return 'Datos, horario, instructor y alumnos';
+    const partes = [
+      cl.fechaJornada || cl.fechaClase ? this.fmtFecha(cl.fechaJornada || cl.fechaClase) : '',
+      this.textoProgramaModalCombo() || '',
+      cl.ubicacion || '',
+    ].filter(Boolean);
+    return partes.length ? partes.join(' · ') : 'Datos, horario, instructor y alumnos';
   }
 
   fmtHora(f?: string): string {
@@ -557,13 +778,19 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       dto.horaFin = hf || null;
     }
     this.jornadaSvc.actualizarClase(id, dto).subscribe({
-      next: (c) => {
+      next: (r: any) => {
+        const c = r?.clase || r;
         this.claseActiva.set(c);
         this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
         this.modalHoraFin.set(isoAHoraInput(c.horaFin));
         this.iniciarCronometroSiAplica();
         this.cargarInscritos(id);
-        this.mostrarMsg('Cambios guardados.', 'ok', 'Clase actualizada');
+        if (r?.certificadosGenerados > 0) {
+          this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+        }
+        let msg = r?.message || 'Cambios guardados.';
+        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase actualizada');
+        this.mostrarMsgModal(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase actualizada');
         this.emitClaseGuardada();
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo guardar la clase.', 'error', 'Error'),
@@ -589,18 +816,25 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   finalizarClaseModal(): void {
     const id = this.claseSel();
     if (!id) return;
-    this.jornadaSvc.finalizarClase(id).subscribe({
+    const yaFinalizada = this.claseActiva()?.estado === 'FINALIZADO';
+    if (!yaFinalizada && !this.validarHorarioAntesFinalizarEspecial()) return;
+    this.jornadaSvc.finalizarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
         this.detenerCronometro();
         this.actualizarCronometroDisplay();
         this.cargarInscritos(id);
-        const lapso =
-          c.duracionSegundos != null ? this.formatDuracion(c.duracionSegundos) : this.cronometroDisplay();
-        let msg = `Clase finalizada. Duración: ${lapso}.`;
-        if (r?.asistenciasRegistradas > 0) {
-          msg += ` Asistencia registrada a ${r.asistenciasRegistradas} alumno(s).`;
+        let msg: string;
+        if (r?.reproceso) {
+          msg = r?.message || 'Certificados pendientes reprocesados.';
+        } else {
+          const lapso =
+            c.duracionSegundos != null ? this.formatDuracion(c.duracionSegundos) : this.cronometroDisplay();
+          msg = `Clase finalizada. Duración: ${lapso}.`;
+          if (r?.asistenciasRegistradas > 0) {
+            msg += ` Asistencia registrada a ${r.asistenciasRegistradas} alumno(s).`;
+          }
         }
         if (r?.certificadosGenerados > 0) {
           msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
@@ -612,6 +846,39 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
         this.emitClaseGuardada();
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo finalizar la clase.', 'error', 'Error'),
+    });
+  }
+
+  async eliminarClase(c: { _id: string; estado?: string }): Promise<void> {
+    if (!this.puedeEliminarClase()) {
+      this.mostrarMsg('Solo un administrador puede eliminar clases.', 'warn', 'Sin permiso');
+      return;
+    }
+    const finalizada = String(c.estado || '').toUpperCase() === 'FINALIZADO';
+    const ok = await this.confirmSvc.open({
+      title: 'Eliminar clase',
+      message: finalizada
+        ? '¿Eliminar esta clase finalizada? Se borrarán inscripciones y asistencias, y se anularán los certificados emitidos por esta clase.'
+        : '¿Eliminar esta clase? También se borrarán las inscripciones y asistencias registradas (si las hay).',
+      variant: 'danger',
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
+    this.jornadaSvc.eliminarClase(c._id).subscribe({
+      next: (r) => {
+        this.detenerCronometro();
+        this.claseSel.set('');
+        this.claseActiva.set(null);
+        this.modalOpen.set(false);
+        this.limpiarMsgModal();
+        const extraCerts =
+          r.certificadosAnulados != null && r.certificadosAnulados > 0
+            ? ` ${r.certificadosAnulados} certificado(s) anulado(s).`
+            : '';
+        this.mostrarMsg(`La clase fue eliminada.${extraCerts}`, 'ok', 'Clase eliminada');
+        this.claseGuardada.emit();
+      },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo eliminar la clase.', 'error', 'Error'),
     });
   }
 
@@ -676,7 +943,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     if (!this.alumnoBusqueda().trim()) this.alumnoBusqueda$.next('');
   }
 
-  nombreAlumnoItem(a: AlumnoListItem): string {
+  nombreAlumnoItem(a: AlumnoNombrable): string {
     if (a.nombreCompleto?.trim()) return a.nombreCompleto.trim();
     const n = [a.nombre1, a.nombre2, a.nombres].filter(Boolean).join(' ').trim();
     const ap = [a.apellido1, a.apellido2, a.apellidos].filter(Boolean).join(' ').trim();

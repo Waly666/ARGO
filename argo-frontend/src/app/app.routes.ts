@@ -652,6 +652,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'configuracion/jornadas',
+        canActivate: [permisoGuard],
+        data: { permiso: 'jornadas.gestionar' },
+        loadComponent: () =>
+          import('./features/config/config-jornadas.component').then((m) => m.ConfigJornadasComponent),
+      },
+      {
         path: 'configuracion/alertas',
         canActivate: [permisoGuard],
         data: { permiso: ['config.alertas', 'config.roles'] },

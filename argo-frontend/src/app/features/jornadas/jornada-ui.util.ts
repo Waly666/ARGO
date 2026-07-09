@@ -286,9 +286,9 @@ export function claseJornadaEsFinalizada(estado?: string | null): boolean {
   return claseJornadaEstadoNorm(estado) === 'FINALIZADO';
 }
 
-/** Las clases finalizadas no se eliminan (historial y certificados). */
-export function claseJornadaSePuedeEliminar(estado?: string | null): boolean {
-  return !claseJornadaEsFinalizada(estado);
+/** Con permiso jornadas.gestionar se puede eliminar en cualquier estado (validación en UI). */
+export function claseJornadaSePuedeEliminar(_estado?: string | null): boolean {
+  return true;
 }
 
 export function rowClaseClass(estado?: string | null): string {

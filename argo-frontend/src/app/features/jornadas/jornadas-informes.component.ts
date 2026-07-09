@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 
 import { ConfigRecibo, ConfigService } from '../../core/services/config.service';
 import {
@@ -20,57 +22,122 @@ import {
   buildJornadasInformeHtml,
   type ColumnaInformeJornada,
 } from './jornadas-informe-document';
+import { capEstadoClase, capEstadoJornadaColor } from './jornada-ui.util';
 
-type TabInforme = 'porClase' | 'porJornada' | 'porContrato' | 'certificados';
+type TabInforme =
+  | 'resumenContratos'
+  | 'trazabilidad'
+  | 'catalogoJornadas'
+  | 'catalogoClases'
+  | 'instructores'
+  | 'alumnos'
+  | 'certificados';
 
 const TITULOS_TAB: Record<TabInforme, string> = {
-  porClase: 'Alumnos por clase',
-  porJornada: 'Alumnos por jornada',
-  porContrato: 'Alumnos por contrato',
-  certificados: 'Certificados de jornadas',
+  resumenContratos: 'Contratos',
+  trazabilidad: 'Trazabilidad',
+  catalogoJornadas: 'Jornadas',
+  catalogoClases: 'Clases',
+  instructores: 'Instructores',
+  alumnos: 'Alumnos',
+  certificados: 'Certificados',
 };
 
 function columnasDeTab(t: TabInforme): ColumnaInformeJornada[] {
   switch (t) {
-    case 'porClase':
+    case 'resumenContratos':
+      return [
+        { k: 'codContrato', l: 'Contrato' },
+        { k: 'cliente', l: 'Cliente' },
+        { k: 'estadoContrato', l: 'Estado' },
+        { k: 'tipoCertificado', l: 'Certificación' },
+        { k: 'jornadasRegistradas', l: 'Jornadas' },
+        { k: 'clasesProgramadas', l: 'Clases' },
+        { k: 'primeraJornada', l: 'Primera jornada' },
+        { k: 'ultimaJornada', l: 'Última jornada' },
+        { k: 'alumnosUnicos', l: 'Alumnos' },
+        { k: 'alumnosAsistieron', l: 'Asistieron' },
+        { k: 'certificadosEmitidos', l: 'Certificados' },
+        { k: 'municipios', l: 'Municipios' },
+        { k: 'instructores', l: 'Instructores' },
+      ];
+    case 'trazabilidad':
+      return [
+        { k: 'codContrato', l: 'Contrato' },
+        { k: 'fechaJornada', l: 'Fecha jornada' },
+        { k: 'idJornadaCorto', l: 'ID jornada' },
+        { k: 'municipio', l: 'Municipio' },
+        { k: 'numDoc', l: 'Documento' },
+        { k: 'nombreAlumno', l: 'Alumno' },
+        { k: 'empresaNombre', l: 'Empresa' },
+        { k: 'clasesInscrito', l: 'Inscrito' },
+        { k: 'clasesAsistidas', l: 'Asistió' },
+        { k: 'instructores', l: 'Instructores' },
+        { k: 'programas', l: 'Programas' },
+        { k: 'detalleClases', l: 'Detalle clases' },
+        { k: 'certificado', l: 'Certificado' },
+        { k: 'certificadoCodigo', l: 'Código cert.' },
+      ];
+    case 'catalogoJornadas':
+      return [
+        { k: 'codContrato', l: 'Contrato' },
+        { k: 'fechaJornada', l: 'Fecha' },
+        { k: 'idJornadaCorto', l: 'ID jornada' },
+        { k: 'municipio', l: 'Municipio' },
+        { k: 'estadoJornada', l: 'Estado' },
+        { k: 'numClases', l: 'Clases' },
+        { k: 'clasesFinalizadas', l: 'Finalizadas' },
+        { k: 'alumnosInscritos', l: 'Inscritos' },
+        { k: 'alumnosAsistieron', l: 'Asistieron' },
+        { k: 'instructores', l: 'Instructores' },
+        { k: 'programas', l: 'Programas' },
+        { k: 'certificadosEmitidos', l: 'Certificados' },
+      ];
+    case 'catalogoClases':
       return [
         { k: 'codContrato', l: 'Contrato' },
         { k: 'fechaJornada', l: 'Fecha jornada' },
         { k: 'idJornadaCorto', l: 'ID jornada' },
         { k: 'municipio', l: 'Municipio' },
         { k: 'idClaseCorto', l: 'ID clase' },
+        { k: 'indiceClaseEnJornada', l: 'Nº' },
         { k: 'programa', l: 'Programa' },
         { k: 'carpa', l: 'Carpa' },
-        { k: 'estadoClase', l: 'Estado clase' },
+        { k: 'estadoClase', l: 'Estado' },
         { k: 'instructor', l: 'Instructor' },
-        { k: 'numDoc', l: 'Documento' },
-        { k: 'nombreAlumno', l: 'Alumno' },
-        { k: 'inscrito', l: 'Inscrito' },
-        { k: 'asistio', l: 'Asistió' },
-        { k: 'certificadoCodigo', l: 'Certificado' },
+        { k: 'horaInicio', l: 'Inicio' },
+        { k: 'horaFin', l: 'Fin' },
+        { k: 'alumnosInscritos', l: 'Inscritos' },
+        { k: 'alumnosAsistieron', l: 'Asistieron' },
+        { k: 'certificadosEmitidos', l: 'Certificados' },
       ];
-    case 'porJornada':
+    case 'instructores':
       return [
+        { k: 'instructor', l: 'Instructor' },
         { k: 'codContrato', l: 'Contrato' },
         { k: 'fechaJornada', l: 'Fecha jornada' },
-        { k: 'idJornadaCorto', l: 'ID jornada' },
         { k: 'municipio', l: 'Municipio' },
-        { k: 'numDoc', l: 'Documento' },
-        { k: 'nombreAlumno', l: 'Alumno' },
-        { k: 'clasesInscrito', l: 'Clases inscrito' },
-        { k: 'clasesAsistidas', l: 'Clases asistidas' },
-        { k: 'programas', l: 'Programas' },
-        { k: 'certificado', l: 'Certificado' },
-        { k: 'certificadoCodigo', l: 'Código cert.' },
+        { k: 'idClaseCorto', l: 'ID clase' },
+        { k: 'programa', l: 'Programa' },
+        { k: 'carpa', l: 'Carpa' },
+        { k: 'estadoClase', l: 'Estado' },
+        { k: 'horaInicio', l: 'Inicio' },
+        { k: 'horaFin', l: 'Fin' },
+        { k: 'alumnosInscritos', l: 'Inscritos' },
+        { k: 'alumnosAsistieron', l: 'Asistieron' },
       ];
-    case 'porContrato':
+    case 'alumnos':
       return [
         { k: 'codContrato', l: 'Contrato' },
         { k: 'numDoc', l: 'Documento' },
         { k: 'nombreAlumno', l: 'Alumno' },
         { k: 'empresaNombre', l: 'Empresa' },
-        { k: 'clasesInscrito', l: 'Clases inscrito' },
-        { k: 'clasesAsistidas', l: 'Clases asistidas' },
+        { k: 'telefono', l: 'Teléfono' },
+        { k: 'email', l: 'Email' },
+        { k: 'numJornadas', l: 'Jornadas' },
+        { k: 'fechasJornada', l: 'Fechas' },
+        { k: 'clasesInscrito', l: 'Clases insc.' },
+        { k: 'clasesAsistidas', l: 'Clases asist.' },
         { k: 'programas', l: 'Programas' },
         { k: 'certificado', l: 'Certificado' },
         { k: 'certificadoCodigo', l: 'Código cert.' },
@@ -78,14 +145,16 @@ function columnasDeTab(t: TabInforme): ColumnaInformeJornada[] {
     case 'certificados':
       return [
         { k: 'codigoCert', l: 'Código' },
+        { k: 'encabezado', l: 'Encabezado' },
         { k: 'fechaEmision', l: 'Emisión' },
+        { k: 'estado', l: 'Estado' },
         { k: 'numDoc', l: 'Documento' },
         { k: 'nombreAlumno', l: 'Alumno' },
+        { k: 'empresaNombre', l: 'Empresa' },
         { k: 'codContrato', l: 'Contrato' },
         { k: 'idJornadaCorto', l: 'ID jornada' },
         { k: 'fechaJornada', l: 'Fecha jornada' },
         { k: 'municipio', l: 'Municipio' },
-        { k: 'estado', l: 'Estado' },
       ];
   }
 }
@@ -105,27 +174,27 @@ function idCorto(id?: string | null): string {
 export class JornadasInformesComponent implements OnInit {
   private jornadaSvc = inject(JornadaCapService);
   private configSvc = inject(ConfigService);
+  private destroyRef = inject(DestroyRef);
+  private recarga$ = new Subject<void>();
 
-  desde = '';
-  hasta = '';
-  idContrato = '';
-  idJornada = '';
-  idClase = '';
+  desde = signal('');
+  hasta = signal('');
+  idContrato = signal('');
+  idJornada = signal('');
+  idClase = signal('');
+  filtroAlumno = signal('');
 
   contratos = signal<ContratacionDto[]>([]);
   jornadas = signal<JornadaCapDto[]>([]);
   clases = signal<ClaseJornadaDto[]>([]);
   empresa = signal<ConfigRecibo | null>(null);
-  tab = signal<TabInforme>('porClase');
+  tab = signal<TabInforme>('resumenContratos');
   loading = signal(false);
   exportando = signal(false);
   msg = signal<string | null>(null);
   data = signal<InformesJornadaResp | null>(null);
 
   tituloTabActual = computed(() => TITULOS_TAB[this.tab()]);
-  logoEmpresa = computed(
-    () => this.empresa()?.urlLogoDataUrl || this.empresa()?.urlLogo || '',
-  );
 
   opcionesContrato = computed<EnumBuscarOption[]>(() =>
     this.contratos()
@@ -163,7 +232,7 @@ export class JornadasInformesComponent implements OnInit {
   );
 
   textoContrato = computed(() => {
-    const id = this.idContrato;
+    const id = this.idContrato();
     if (!id) return '';
     const c = this.contratos().find((x) => x._id === id);
     if (!c) return '';
@@ -171,39 +240,51 @@ export class JornadasInformesComponent implements OnInit {
   });
 
   codigoContratoFiltro = computed(() => {
-    const id = this.idContrato;
+    const id = this.idContrato();
     if (!id) return '';
     const c = this.contratos().find((x) => x._id === id);
     return String(c?.codContrato || '').trim();
   });
 
   textoJornada = computed(() => {
-    const id = this.idJornada;
+    const id = this.idJornada();
     if (!id) return '';
     return this.opcionesJornada().find((o) => String(o.value) === id)?.label || idCorto(id);
   });
 
-  idJornadaCortoFiltro = computed(() => (this.idJornada ? idCorto(this.idJornada) : ''));
+  idJornadaCortoFiltro = computed(() => (this.idJornada() ? idCorto(this.idJornada()) : ''));
 
   fechaJornadaFiltro = computed(() => {
-    const j = this.jornadas().find((x) => x._id === this.idJornada);
+    const j = this.jornadas().find((x) => x._id === this.idJornada());
     if (!j?.fechaProgramacion) return '';
     return new Date(j.fechaProgramacion).toLocaleDateString('es-CO');
   });
 
   textoClase = computed(() => {
-    const id = this.idClase;
+    const id = this.idClase();
     if (!id) return '';
     return this.opcionesClase().find((o) => String(o.value) === id)?.label || idCorto(id);
   });
 
-  idClaseCortoFiltro = computed(() => (this.idClase ? idCorto(this.idClase) : ''));
+  idClaseCortoFiltro = computed(() => (this.idClase() ? idCorto(this.idClase()) : ''));
 
-  /** Filas de la pestaña activa ya recortadas por filtros (misma fuente que el PDF). */
-  filasActivas = computed(() => this.dataFiltradaPorTab(this.tab()));
+  /** Filas de la pestaña activa (con filtro local de alumno si aplica). */
+  filasActivas = computed(() => {
+    let filas = this.dataFiltradaPorTab(this.tab());
+    const q = this.filtroAlumno().trim().toLowerCase();
+    if (this.tab() === 'alumnos' && q) {
+      filas = filas.filter((r) => {
+        const nombre = String(r['nombreAlumno'] || '').toLowerCase();
+        const doc = String(r['numDoc'] ?? '');
+        const empresa = String(r['empresaNombre'] || '').toLowerCase();
+        return nombre.includes(q) || doc.includes(q) || empresa.includes(q);
+      });
+    }
+    return filas;
+  });
 
   gruposPorJornada = computed(() => {
-    if (this.tab() !== 'porJornada') return [];
+    if (this.tab() !== 'trazabilidad') return [];
     const filas = this.filasActivas();
     const map = new Map<
       string,
@@ -239,6 +320,59 @@ export class JornadasInformesComponent implements OnInit {
 
   columnasActivas = computed<ColumnaInformeJornada[]>(() => columnasDeTab(this.tab()));
 
+  readonly tabsNav: { id: TabInforme; label: string; icon: string; tone: string }[] = [
+    { id: 'resumenContratos', label: 'Contratos', icon: '📋', tone: 'indigo' },
+    { id: 'trazabilidad', label: 'Trazabilidad', icon: '🔗', tone: 'cyan' },
+    { id: 'catalogoJornadas', label: 'Jornadas', icon: '📅', tone: 'amber' },
+    { id: 'catalogoClases', label: 'Clases', icon: '🎓', tone: 'blue' },
+    { id: 'instructores', label: 'Instructores', icon: '👨‍🏫', tone: 'orange' },
+    { id: 'alumnos', label: 'Alumnos', icon: '👥', tone: 'teal' },
+    { id: 'certificados', label: 'Certificados', icon: '🏅', tone: 'emerald' },
+  ];
+
+  statsCards = computed(() => {
+    const d = this.data();
+    if (!d) return [];
+    const r = d.resumen;
+    return [
+      { icon: '👥', label: 'Alumnos únicos', value: r.alumnosUnicos, tone: 'blue' },
+      { icon: '📚', label: 'Registros clase', value: r.totalFilasClase, tone: 'indigo' },
+      { icon: '✓', label: 'Asistencias', value: r.registrosAsistencia, tone: 'emerald' },
+      { icon: '📝', label: 'Inscripciones', value: r.registrosInscripcion, tone: 'cyan' },
+      { icon: '🏅', label: 'Certificados', value: r.certificados, tone: 'violet' },
+      { icon: '📋', label: 'Contratos', value: r.contratos ?? 0, tone: 'amber' },
+      { icon: '📅', label: 'Jornadas', value: r.jornadas ?? 0, tone: 'teal' },
+      { icon: '👨‍🏫', label: 'Instructores', value: r.instructores ?? 0, tone: 'orange' },
+    ];
+  });
+
+  filtrosActivos = computed(() => {
+    const chips: { icon: string; label: string; value: string }[] = [];
+    if (this.textoContrato()) chips.push({ icon: '📋', label: 'Contrato', value: this.textoContrato() });
+    if (this.textoJornada()) chips.push({ icon: '📅', label: 'Jornada', value: this.textoJornada() });
+    if (this.textoClase()) chips.push({ icon: '🎓', label: 'Clase', value: this.textoClase() });
+    if (this.desde() || this.hasta()) {
+      chips.push({
+        icon: '🗓️',
+        label: 'Periodo',
+        value: `${this.desde() || '…'} — ${this.hasta() || '…'}`,
+      });
+    }
+    return chips;
+  });
+
+  hayFiltrosActivos = computed(
+    () =>
+      !!(
+        this.idContrato() ||
+        this.idJornada() ||
+        this.idClase() ||
+        this.desde() ||
+        this.hasta() ||
+        this.filtroAlumno().trim()
+      ),
+  );
+
   ngOnInit(): void {
     this.configSvc.obtenerReciboEncabezado().subscribe({
       next: (c) => this.empresa.set(c),
@@ -248,56 +382,119 @@ export class JornadasInformesComponent implements OnInit {
       next: (rows) => this.contratos.set(rows || []),
       error: () => this.contratos.set([]),
     });
+    this.configurarRecargaReactiva();
     this.cargarOpcionesJornada();
-    this.cargar();
+    this.programarRecarga();
+  }
+
+  private configurarRecargaReactiva(): void {
+    this.recarga$
+      .pipe(
+        debounceTime(350),
+        switchMap(() => {
+          this.loading.set(true);
+          this.msg.set(null);
+          if (this.idJornada()) this.cargarOpcionesClase();
+          return this.jornadaSvc.informesJornada(this.paramsFiltro()).pipe(
+            catchError((e) => {
+              this.msg.set(e?.error?.message || 'No se pudieron cargar los informes.');
+              return of(null);
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((d) => {
+        this.loading.set(false);
+        this.data.set(d);
+      });
+  }
+
+  private programarRecarga(): void {
+    this.recarga$.next();
+  }
+
+  onDesdeChange(v: string): void {
+    this.desde.set(v || '');
+    this.cargarOpcionesJornada();
+    this.programarRecarga();
+  }
+
+  onHastaChange(v: string): void {
+    this.hasta.set(v || '');
+    this.cargarOpcionesJornada();
+    this.programarRecarga();
+  }
+
+  onFiltroAlumnoChange(v: string): void {
+    this.filtroAlumno.set(v || '');
+  }
+
+  limpiarFiltros(): void {
+    this.idContrato.set('');
+    this.idJornada.set('');
+    this.idClase.set('');
+    this.desde.set('');
+    this.hasta.set('');
+    this.filtroAlumno.set('');
+    this.clases.set([]);
+    this.cargarOpcionesJornada();
+    this.programarRecarga();
   }
 
   onContratoPick(opt: EnumBuscarOption): void {
-    this.idContrato = String(opt.value || '');
-    this.idJornada = '';
-    this.idClase = '';
+    this.idContrato.set(String(opt.value || ''));
+    this.idJornada.set('');
+    this.idClase.set('');
     this.clases.set([]);
     this.cargarOpcionesJornada();
+    this.programarRecarga();
   }
 
   onContratoLimpiar(): void {
-    this.idContrato = '';
-    this.idJornada = '';
-    this.idClase = '';
+    this.idContrato.set('');
+    this.idJornada.set('');
+    this.idClase.set('');
     this.clases.set([]);
     this.cargarOpcionesJornada();
+    this.programarRecarga();
   }
 
   onJornadaPick(opt: EnumBuscarOption): void {
-    this.idJornada = String(opt.value || '');
-    this.idClase = '';
+    this.idJornada.set(String(opt.value || ''));
+    this.idClase.set('');
     this.cargarOpcionesClase();
+    this.programarRecarga();
   }
 
   onJornadaLimpiar(): void {
-    this.idJornada = '';
-    this.idClase = '';
+    this.idJornada.set('');
+    this.idClase.set('');
     this.clases.set([]);
+    this.programarRecarga();
   }
 
   onClasePick(opt: EnumBuscarOption): void {
-    this.idClase = String(opt.value || '');
+    this.idClase.set(String(opt.value || ''));
+    this.programarRecarga();
   }
 
   onClaseLimpiar(): void {
-    this.idClase = '';
+    this.idClase.set('');
+    this.programarRecarga();
   }
 
   setTab(t: TabInforme): void {
+    if (t !== 'alumnos') this.filtroAlumno.set('');
     this.tab.set(t);
   }
 
   cargarOpcionesJornada(): void {
     this.jornadaSvc
       .listarJornadas({
-        idContrato: this.idContrato || undefined,
-        desde: this.desde || undefined,
-        hasta: this.hasta || undefined,
+        idContrato: this.idContrato() || undefined,
+        desde: this.desde() || undefined,
+        hasta: this.hasta() || undefined,
       })
       .subscribe({
         next: (rows) => this.jornadas.set(rows || []),
@@ -306,11 +503,11 @@ export class JornadasInformesComponent implements OnInit {
   }
 
   cargarOpcionesClase(): void {
-    if (!this.idJornada) {
+    if (!this.idJornada()) {
       this.clases.set([]);
       return;
     }
-    this.jornadaSvc.listarClases({ idJornada: this.idJornada }).subscribe({
+    this.jornadaSvc.listarClases({ idJornada: this.idJornada() }).subscribe({
       next: (rows) => this.clases.set(rows || []),
       error: () => this.clases.set([]),
     });
@@ -318,46 +515,108 @@ export class JornadasInformesComponent implements OnInit {
 
   paramsFiltro() {
     return {
-      idContrato: this.idContrato || undefined,
-      idJornada: this.idJornada || undefined,
-      idClase: this.idClase || undefined,
-      desde: this.desde || undefined,
-      hasta: this.hasta || undefined,
+      idContrato: this.idContrato() || undefined,
+      idJornada: this.idJornada() || undefined,
+      idClase: this.idClase() || undefined,
+      desde: this.desde() || undefined,
+      hasta: this.hasta() || undefined,
     };
-  }
-
-  cargar(): void {
-    this.loading.set(true);
-    this.msg.set(null);
-    this.cargarOpcionesJornada();
-    if (this.idJornada) this.cargarOpcionesClase();
-    this.jornadaSvc.informesJornada(this.paramsFiltro()).subscribe({
-      next: (d) => {
-        this.data.set(d);
-        this.loading.set(false);
-      },
-      error: (e) => {
-        this.loading.set(false);
-        this.data.set(null);
-        this.msg.set(e?.error?.message || 'No se pudieron cargar los informes.');
-      },
-    });
   }
 
   /**
    * Recorte local de seguridad: el PDF usa exactamente estas filas.
-   * Parte de porClase (detalle) para no mezclar contratos/jornadas ajenos.
    */
   private dataFiltradaPorTab(tab: TabInforme): Record<string, unknown>[] {
     const d = this.data();
     if (!d) return [];
 
-    const idC = this.idContrato;
+    const idC = this.idContrato();
     const cod = this.codigoContratoFiltro();
-    const idJ = this.idJornada;
-    const idCl = this.idClase;
+    const idJ = this.idJornada();
+    const idCl = this.idClase();
+    const docs = this.docsFiltradosPorDetalle();
+
+    const filtrarContrato = (filas: Record<string, unknown>[]) => {
+      if (!idC && !cod) return filas;
+      return filas.filter(
+        (r) =>
+          (idC && String(r['idContrato'] || '') === idC) ||
+          (cod && String(r['codContrato'] || '') === cod),
+      );
+    };
+
+    const filtrarJornada = (filas: Record<string, unknown>[]) => {
+      if (!idJ) return filas;
+      const idJCorto = idCorto(idJ);
+      return filas.filter(
+        (r) =>
+          String(r['idJornada'] || '') === idJ ||
+          String(r['idJornadaCorto'] || '') === idJCorto,
+      );
+    };
+
+    const filtrarClase = (filas: Record<string, unknown>[]) => {
+      if (!idCl) return filas;
+      const idClCorto = idCorto(idCl);
+      return filas.filter(
+        (r) =>
+          String(r['idClase'] || '') === idCl ||
+          String(r['idClaseCorto'] || '') === idClCorto,
+      );
+    };
+
+    const filtrarAlumno = (filas: Record<string, unknown>[]) => {
+      if (!docs) return filas;
+      return filas.filter((r) => docs.has(String(r['numDoc'])));
+    };
+
+    switch (tab) {
+      case 'resumenContratos':
+        return filtrarContrato((d.resumenContratos || []) as Record<string, unknown>[]);
+      case 'catalogoJornadas':
+        return filtrarJornada(filtrarContrato((d.catalogoJornadas || []) as Record<string, unknown>[]));
+      case 'catalogoClases':
+        return filtrarClase(
+          filtrarJornada(filtrarContrato((d.catalogoClases || []) as Record<string, unknown>[])),
+        );
+      case 'instructores': {
+        let filas = (d.instructores || []) as Record<string, unknown>[];
+        filas = filtrarContrato(filas);
+        filas = filtrarJornada(filas);
+        filas = filtrarClase(filas);
+        return filas;
+      }
+      case 'trazabilidad': {
+        let filas = (d.trazabilidad || []) as Record<string, unknown>[];
+        filas = filtrarContrato(filas);
+        filas = filtrarJornada(filas);
+        filas = filtrarAlumno(filas);
+        return filas;
+      }
+      case 'alumnos': {
+        let filas = (d.alumnos || []) as Record<string, unknown>[];
+        filas = filtrarContrato(filas);
+        filas = filtrarAlumno(filas);
+        return filas;
+      }
+      case 'certificados': {
+        let filas = (d.certificados || []) as Record<string, unknown>[];
+        filas = filtrarContrato(filas);
+        filas = filtrarJornada(filas);
+        filas = filtrarAlumno(filas);
+        return filas;
+      }
+    }
+  }
+
+  /** Documentos que pasan filtros de jornada/clase (detalle alumno×clase). */
+  private docsFiltradosPorDetalle(): Set<string> | null {
+    const d = this.data();
+    if (!d || (!this.idJornada() && !this.idClase())) return null;
 
     let porClase = (d.porClase || []) as Record<string, unknown>[];
+    const idC = this.idContrato();
+    const cod = this.codigoContratoFiltro();
     if (idC || cod) {
       porClase = porClase.filter(
         (r) =>
@@ -365,45 +624,13 @@ export class JornadasInformesComponent implements OnInit {
           (cod && String(r['codContrato'] || '') === cod),
       );
     }
-    if (idJ) {
-      porClase = porClase.filter((r) => String(r['idJornada'] || '') === idJ);
+    if (this.idJornada()) {
+      porClase = porClase.filter((r) => String(r['idJornada'] || '') === this.idJornada());
     }
-    if (idCl) {
-      porClase = porClase.filter((r) => String(r['idClase'] || '') === idCl);
+    if (this.idClase()) {
+      porClase = porClase.filter((r) => String(r['idClase'] || '') === this.idClase());
     }
-
-    if (tab === 'porClase') return porClase;
-
-    const docs = new Set(porClase.map((r) => String(r['numDoc'])));
-    const jornadas = new Set(porClase.map((r) => String(r['idJornada'])));
-    const contratos = new Set(porClase.map((r) => String(r['idContrato'])));
-    const codigos = new Set(porClase.map((r) => String(r['codContrato'])));
-
-    let filas = (d[tab] as Record<string, unknown>[]) || [];
-    if (tab === 'porJornada') {
-      return filas.filter(
-        (r) =>
-          docs.has(String(r['numDoc'])) &&
-          (!idJ || String(r['idJornada'] || '') === idJ) &&
-          (!idC || String(r['idContrato'] || '') === idC || codigos.has(String(r['codContrato'] || ''))),
-      );
-    }
-    if (tab === 'porContrato') {
-      return filas.filter(
-        (r) =>
-          docs.has(String(r['numDoc'])) &&
-          (contratos.has(String(r['idContrato'] || '')) ||
-            codigos.has(String(r['codContrato'] || ''))),
-      );
-    }
-    // certificados
-    return filas.filter((r) => {
-      if (!docs.has(String(r['numDoc']))) return false;
-      if (idJ && r['idJornada'] && String(r['idJornada']) !== idJ) return false;
-      if (idC && r['idContrato'] && String(r['idContrato']) !== idC) return false;
-      if (cod && r['codContrato'] && String(r['codContrato']) !== cod) return false;
-      return true;
-    });
+    return new Set(porClase.map((r) => String(r['numDoc'])));
   }
 
   celda(row: Record<string, unknown>, k: string): string {
@@ -413,7 +640,105 @@ export class JornadasInformesComponent implements OnInit {
     return String(v);
   }
 
-  exportar(tipo: 'completo' | 'por-clase' | 'por-jornada' | 'por-contrato' | 'certificados'): void {
+  esSiNo(k: string): boolean {
+    return k === 'inscrito' || k === 'asistio' || k === 'certificado';
+  }
+
+  esEstado(k: string): boolean {
+    return k === 'estadoClase' || k === 'estadoJornada' || k === 'estadoContrato' || k === 'estado';
+  }
+
+  esCertCodigo(k: string): boolean {
+    return k === 'certificadoCodigo' || k === 'codigoCert';
+  }
+
+  esMono(k: string): boolean {
+    return [
+      'numDoc',
+      'idJornadaCorto',
+      'idClaseCorto',
+      'codigoCert',
+      'certificadoCodigo',
+      'codContrato',
+    ].includes(k);
+  }
+
+  esNumeroDestacado(k: string): boolean {
+    return [
+      'clasesInscrito',
+      'clasesAsistidas',
+      'clasesInscritos',
+      'clasesAsistieron',
+      'alumnosUnicos',
+      'alumnosAsistieron',
+      'certificadosEmitidos',
+      'numJornadas',
+      'numClases',
+      'clasesFinalizadas',
+      'alumnosInscritos',
+      'alumnosAsistieron',
+      'jornadasRegistradas',
+      'clasesProgramadas',
+      'indiceClaseEnJornada',
+    ].includes(k);
+  }
+
+  capSiNo(row: Record<string, unknown>, k: string): string {
+    const v = row[k];
+    const yes = v === true || v === 'Sí';
+    return yes ? 'cap cap-emerald cap-sm cap-text' : 'cap cap-slate cap-sm cap-text';
+  }
+
+  capEstado(val: unknown): string {
+    const t = String(val ?? '').toUpperCase();
+    if (t.includes('PROCESO') || t.includes('EJECU')) {
+      return `cap cap-emerald cap-sm cap-text`;
+    }
+    if (t.includes('FINAL') || t.includes('EJECUT')) {
+      return `cap cap-slate cap-sm cap-text`;
+    }
+    if (t.includes('VENC')) return `cap cap-amber cap-sm cap-text`;
+    if (t.includes('VIGEN') || t.includes('ACTIV')) return `cap cap-emerald cap-sm cap-text`;
+    if (t.includes('CREAD')) return `cap cap-amber cap-sm cap-text`;
+    return `cap cap-indigo cap-sm cap-text`;
+  }
+
+  capEstadoClase = capEstadoClase;
+
+  capEstadoJornada(val: unknown): string {
+    return `cap ${capEstadoJornadaColor(String(val ?? ''))} cap-sm cap-text`;
+  }
+
+  capCert(val: unknown): string {
+    const t = String(val ?? '').trim();
+    if (!t || t === '—' || t === 'No') return 'cap cap-slate cap-sm cap-text';
+    return 'cap cap-violet cap-sm cap-text';
+  }
+
+  capCarpa(val: unknown): string {
+    const t = String(val ?? '').trim();
+    return t && t !== '—' ? 'cap cap-pink cap-sm cap-text' : 'cap cap-slate cap-sm cap-text';
+  }
+
+  iconoSiNo(row: Record<string, unknown>, k: string): string {
+    const v = row[k];
+    return v === true || v === 'Sí' ? '✓' : '—';
+  }
+
+  exportar(
+    tipo:
+      | 'completo'
+      | 'contratos'
+      | 'trazabilidad'
+      | 'jornadas'
+      | 'clases'
+      | 'alumnos'
+      | 'instructores'
+      | 'certificados'
+      | 'resumen-contratos'
+      | 'catalogo-jornadas'
+      | 'catalogo-clases',
+  ): void {
     this.exportando.set(true);
     this.msg.set(null);
     this.jornadaSvc.exportarInformesJornada({ ...this.paramsFiltro(), tipo }).subscribe({
@@ -430,10 +755,22 @@ export class JornadasInformesComponent implements OnInit {
   }
 
   exportarTabActual(): void {
-    const map: Record<TabInforme, 'por-clase' | 'por-jornada' | 'por-contrato' | 'certificados'> = {
-      porClase: 'por-clase',
-      porJornada: 'por-jornada',
-      porContrato: 'por-contrato',
+    const map: Record<
+      TabInforme,
+      | 'contratos'
+      | 'trazabilidad'
+      | 'jornadas'
+      | 'clases'
+      | 'alumnos'
+      | 'instructores'
+      | 'certificados'
+    > = {
+      resumenContratos: 'contratos',
+      trazabilidad: 'trazabilidad',
+      catalogoJornadas: 'jornadas',
+      catalogoClases: 'clases',
+      instructores: 'instructores',
+      alumnos: 'alumnos',
       certificados: 'certificados',
     };
     this.exportar(map[this.tab()]);
@@ -456,7 +793,7 @@ export class JornadasInformesComponent implements OnInit {
       idClaseDestacado: this.idClaseCortoFiltro() || undefined,
       resumen: this.resumenDeFilas(filas, t),
       secciones:
-        t === 'porJornada'
+        t === 'trazabilidad'
           ? this.seccionesPdfPorJornada(filas)
           : [
               {
@@ -477,10 +814,18 @@ export class JornadasInformesComponent implements OnInit {
       this.msg.set('Consulte primero los informes.');
       return;
     }
-    const tabs: TabInforme[] = ['porClase', 'porJornada', 'porContrato', 'certificados'];
+    const tabs: TabInforme[] = [
+      'resumenContratos',
+      'trazabilidad',
+      'catalogoJornadas',
+      'catalogoClases',
+      'instructores',
+      'alumnos',
+      'certificados',
+    ];
     const secciones = tabs.flatMap((t) => {
       const filas = this.dataFiltradaPorTab(t);
-      if (t === 'porJornada') return this.seccionesPdfPorJornada(filas);
+      if (t === 'trazabilidad') return this.seccionesPdfPorJornada(filas);
       return [
         {
           titulo: TITULOS_TAB[t],
@@ -489,16 +834,16 @@ export class JornadasInformesComponent implements OnInit {
         },
       ];
     });
-    const filasClase = this.dataFiltradaPorTab('porClase');
+    const filasRef = this.dataFiltradaPorTab('alumnos');
     const html = buildJornadasInformeHtml({
       titulo: 'Informes de jornadas de capacitación',
-      subtitulo: 'Consolidado de alumnos y certificados (filtros aplicados)',
+      subtitulo: 'Consolidado de contratos, jornadas, clases, alumnos y certificados',
       filtros: this.filtrosDoc(),
-      codigoContratoDestacado: this.codigoContratoParaPdf(filasClase),
-      idJornadaDestacado: this.idJornadaCortoParaPdf(filasClase),
-      fechaJornadaDestacada: this.fechaJornadaParaPdf(filasClase),
+      codigoContratoDestacado: this.codigoContratoParaPdf(filasRef),
+      idJornadaDestacado: this.idJornadaCortoParaPdf(filasRef),
+      fechaJornadaDestacada: this.fechaJornadaParaPdf(filasRef),
       idClaseDestacado: this.idClaseCortoFiltro() || undefined,
-      resumen: this.resumenDeFilas(filasClase, 'porClase'),
+      resumen: this.resumenDeFilas(filasRef, 'alumnos'),
       secciones,
       empresa: this.empresa(),
     });
@@ -536,7 +881,7 @@ export class JornadasInformesComponent implements OnInit {
             .length;
     return {
       alumnosUnicos: alumnos.size,
-      totalFilasClase: tab === 'porClase' ? filas.length : alumnos.size,
+      totalFilasClase: tab === 'catalogoClases' ? filas.length : alumnos.size,
       registrosAsistencia: asist,
       registrosInscripcion: insc,
       certificados: certs,
@@ -544,7 +889,7 @@ export class JornadasInformesComponent implements OnInit {
   }
 
   private seccionesPdfPorJornada(filas: Record<string, unknown>[]) {
-    const cols = columnasDeTab('porJornada').filter(
+    const cols = columnasDeTab('trazabilidad').filter(
       (c) => c.k !== 'codContrato' && c.k !== 'idJornadaCorto',
     );
     const map = new Map<string, { titulo: string; filas: Record<string, unknown>[] }>();
@@ -582,8 +927,8 @@ export class JornadasInformesComponent implements OnInit {
       contrato: this.textoContrato() || (this.codigoContratoFiltro() ? this.codigoContratoFiltro() : 'Todos los contratos'),
       jornada: this.textoJornada() || undefined,
       clase: this.textoClase() || undefined,
-      desde: this.desde || undefined,
-      hasta: this.hasta || undefined,
+      desde: this.desde() || undefined,
+      hasta: this.hasta() || undefined,
     };
   }
 

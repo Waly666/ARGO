@@ -1,0 +1,40 @@
+<div class="celular-input" [class.celular-input--invalid]="esInvalido">
+  <div class="celular-input-row">
+    <div class="celular-pais-wrap">
+      <label class="celular-sr" for="cel-pais">País</label>
+      <select
+        id="cel-pais"
+        class="celular-pais"
+        [ngModel]="paisIso"
+        (ngModelChange)="onPaisChange($event)"
+        aria-label="País del celular">
+        @for (p of paises; track p.iso) {
+          <option [ngValue]="p.iso">{{ p.nombre }} (+{{ p.dial }})</option>
+        }
+      </select>
+    </div>
+    <div class="celular-num-wrap">
+      <label class="celular-sr" for="cel-num">Número</label>
+      <input
+        id="cel-num"
+        type="tel"
+        inputmode="numeric"
+        autocomplete="tel-national"
+        class="celular-num"
+        [class.invalid]="esInvalido"
+        [attr.maxlength]="maxLength"
+        [placeholder]="placeholder"
+        [ngModel]="localDisplay"
+        (ngModelChange)="onLocalInput($event)"
+        (blur)="onBlur()"
+        aria-label="Número de celular" />
+    </div>
+  </div>
+  @if (errorMensaje) {
+    <p class="celular-error" role="alert">{{ errorMensaje }}</p>
+  } @else if (modo === 'celular' && paisIso === 'CO') {
+    <p class="celular-hint">10 dígitos, empieza por 3 (ej. 300 123 4567).</p>
+  } @else if (modo === 'telefono' && paisIso === 'CO') {
+    <p class="celular-hint">7 a 10 dígitos (fijo o móvil).</p>
+  }
+</div>

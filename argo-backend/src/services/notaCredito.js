@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const FacturaElectronica = require('../models/FacturaElectronica');
 const NotaCredito = require('../models/NotaCredito');
+const Contratacion = require('../models/Contratacion');
 const { roundMoney } = require('../utils/coerceTypes');
 const { obtenerConfigFacturacionInterno } = require('./configFacturacion');
 const { emitirNotaCredito } = require('./facturaProveedor');
@@ -255,6 +256,12 @@ async function emitirNota({
   // Anulación total → la factura queda anulada y sus liquidaciones vuelven a ser facturables.
   if (tipoOk === NOTA_CREDITO_TOTAL) {
     await FacturaElectronica.updateOne({ _id: factura._id }, { $set: { estado: ESTADO_ANULADA } });
+    if (factura.idContrato) {
+      await Contratacion.updateOne(
+        { _id: factura.idContrato },
+        { $set: { idFacturaElectronica: null, facturadoAt: null } },
+      );
+    }
   }
 
   return planoNota(doc);

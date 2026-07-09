@@ -1,6 +1,6 @@
 const JornadaCap = require('../models/JornadaCap');
 const { esDiaProgramable } = require('../constants/jornadaCapacitacion');
-const { parseFechaCalendario, fechaCalendarioIso, fechaCalendarioParaGuardar, hoyCalendario } = require('../utils/fechaCalendario');
+const { parseFechaCalendario, fechaCalendarioIso, fechaCalendarioParaGuardar } = require('../utils/fechaCalendario');
 const { estadoJornadaPorFecha } = require('./estadoJornadaCap');
 
 function calcNumeObjeJornada(numeroAlumnos, numerojornadas) {
@@ -16,7 +16,7 @@ function slotKey(fecha, indiceEnDia) {
 
 /**
  * Genera jornadas faltantes hasta completar numerojornadas del contrato.
- * Respeta huecos si el usuario eliminó jornadas (misma fecha + indiceEnDia).
+ * Programa desde fechaInicJornadas hasta fechaFinJornadas (si existe), respetando sáb/dom/festivos.
  */
 async function generarJornadasContrato(contrato, userLogin = '') {
   if (!contrato?._id) throw new Error('Contrato inválido');
@@ -24,21 +24,23 @@ async function generarJornadasContrato(contrato, userLogin = '') {
   if (n < 1) throw new Error('numerojornadas debe ser mayor a 0');
   const inicioContrato = parseFechaCalendario(contrato.fechaInicJornadas);
   if (!inicioContrato) throw new Error('fechaInicJornadas inválida');
-  const hoy = hoyCalendario();
-  /** No programar jornadas en días ya pasados: desde max(inicio contrato, hoy). */
-  const cursor = new Date(Math.max(inicioContrato.getTime(), hoy.getTime()));
-  const ajustadoDesdeHoy = inicioContrato.getTime() < hoy.getTime();
-  const fechaDesdeProgramacion = fechaCalendarioIso(cursor);
+  const finJornadas = parseFechaCalendario(contrato.fechaFinJornadas);
+  if (finJornadas && finJornadas.getTime() < inicioContrato.getTime()) {
+    throw new Error('La fecha fin de jornadas debe ser igual o posterior al inicio.');
+  }
+
+  const cursor = new Date(inicioContrato.getTime());
+  const fechaDesdeProgramacion = fechaCalendarioIso(inicioContrato);
 
   const existentes = await JornadaCap.find({ idContrato: contrato._id }).lean();
   if (existentes.length >= n) {
     return {
       count: 0,
       total: existentes.length,
+      metaJornadas: n,
       numeObjeJornada: calcNumeObjeJornada(contrato.numeroAlumnos, n),
-      fechaDesde: fechaCalendarioIso(hoyCalendario()),
-      fechaInicioContrato: fechaCalendarioIso(inicioContrato),
-      ajustadoDesdeHoy: inicioContrato.getTime() < hoyCalendario().getTime(),
+      fechaDesde: fechaDesdeProgramacion,
+      fechaFin: finJornadas ? fechaCalendarioIso(finJornadas) : null,
       jornadasCompletas: true,
     };
   }
@@ -58,8 +60,11 @@ async function generarJornadasContrato(contrato, userLogin = '') {
 
   const docs = [];
   let guard = 0;
-  while (docs.length < faltan && guard < 800) {
+  const maxDias = 2000;
+  while (docs.length < faltan && guard < maxDias) {
     guard += 1;
+    if (finJornadas && cursor.getTime() > finJornadas.getTime()) break;
+
     if (esDiaProgramable(cursor, flags)) {
       for (let i = 0; i < porDia && docs.length < faltan; i += 1) {
         const indiceEnDia = i + 1;
@@ -86,8 +91,12 @@ async function generarJornadasContrato(contrato, userLogin = '') {
   }
 
   if (docs.length < faltan) {
+    const rango =
+      finJornadas != null
+        ? ` entre ${fechaDesdeProgramacion} y ${fechaCalendarioIso(finJornadas)}`
+        : '';
     throw new Error(
-      `No fue posible programar ${faltan} jornada(s) faltante(s) con las reglas de calendario indicadas.`,
+      `No fue posible programar ${faltan} jornada(s) faltante(s)${rango} con las reglas de calendario (sábados, domingos y festivos). Amplíe la fecha fin, ajuste el número de jornadas o revise los días hábiles.`,
     );
   }
 
@@ -98,10 +107,10 @@ async function generarJornadasContrato(contrato, userLogin = '') {
   return {
     count: inserted.length,
     total: existentes.length + inserted.length,
+    metaJornadas: n,
     numeObjeJornada: numeObje,
     fechaDesde: fechaDesdeProgramacion,
-    fechaInicioContrato: fechaCalendarioIso(inicioContrato),
-    ajustadoDesdeHoy,
+    fechaFin: finJornadas ? fechaCalendarioIso(finJornadas) : null,
   };
 }
 

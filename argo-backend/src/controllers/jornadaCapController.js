@@ -19,15 +19,27 @@ const {
   generarClasesFaltantesContrato,
   generarClasesFaltantesJornada,
 } = require('../services/programacionClasesJornada');
+const { obtenerAvanceContratoJornada } = require('../services/avanceContratoJornada');
 const { syncContadoresContrato, siguienteIndiceEnDia } = require('../services/contratoJornadaSync');
 const {
   TIPOS_CERTIFICADO_CONTRATO,
   TIPO_CERTIFICADO_GLOBAL,
+  TIPO_CERTIFICADO_POR_CLASE,
 } = require('../constants/jornadaCapacitacion');
 const { cumplimientoParaJornada } = require('../services/cumplimientoJornadaCap');
+const { num: numMoney, roundMoney } = require('../utils/coerceTypes');
+const {
+  serializarPlanCobro,
+  normalizarPlanCobroEntrada,
+  estadoCobroContrato,
+  generarCuentaCobroContrato,
+  htmlCuentaCobroContrato,
+  generarComprobanteIngresoContrato,
+} = require('../services/contratoCobroCap');
 const {
   auditoriaUsuario,
   asegurarTipoAlumnoJornada,
+  asignarEmpresaContratoAlumno,
   esProgramaJornadasCap,
   TIPO_JORNADAS_CAPACITACION,
 } = require('../services/jornadaCapacitacion');
@@ -35,25 +47,44 @@ const {
   registrarAsistenciaAlumnoEnClase,
   registrarAsistenciasInscritosPendientes,
   emitirCertificadosAsistentesClase,
+  postCierreClaseJornada,
 } = require('../services/asistenciaJornadaCap');
 const {
   MOTIVOS_CERT,
   progresoCertificacion,
   validarAlumnoSinCertificadoContrato,
   crearContextoCertificadoContrato,
+  certificadoExistenteClase,
 } = require('../services/certificadoJornadaAuto');
 const { buscarPrograma } = require('../services/programaServicio');
+const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
+const { TIPOS_LABEL } = require('../services/clasificacionCertificado');
+const {
+  autorizarAnulacionSimple,
+  metadatosAnulacion,
+  sufijoAutoriza,
+} = require('../services/anulacionComprobante');
+const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
 const { crearMatriculaDesdeBody } = require('../services/matriculaCreator');
-const { ESTADOS_CLASE, UBICACIONES_CLASE, DETE_GEOREFE_VALORES, ESTADO_JORNADA_EN_PROCESO } = require('../constants/jornadaCapacitacion');
+const { ESTADOS_CLASE, UBICACIONES_CLASE, DETE_GEOREFE_VALORES, ESTADO_JORNADA_EN_PROCESO, ESTADO_JORNADA_FINALIZADO, ESTADOS_JORNADA } = require('../constants/jornadaCapacitacion');
 const {
   sincronizarEstadoJornada,
   sincronizarEstadosJornadas,
   estadoJornadaPorFecha,
   inicioDia,
-  mensajeSiJornadaNoOperable,
-  mensajeSiJornadaNoIniciableClase,
-  mensajeSiJornadaNoDisponibleParaClase,
 } = require('../services/estadoJornadaCap');
+const {
+  bloqueoOperacionJornada,
+  bloqueoIniciarClaseJornada,
+  bloqueoCrearClaseJornada,
+  estadoOperacionEspecialJornadas,
+  operacionFueraDeDiaActiva,
+} = require('../services/jornadasOperacionEspecial');
+const {
+  obtenerConfigJornadasOperacion,
+  actualizarConfigJornadasOperacion,
+} = require('../services/configJornadasOperacion');
+const { registrarAuditoria, registrarEliminacion } = require('../services/auditoria');
 const { municipioPorCoords } = require('../services/georefMunicipio');
 const {
   normalizarEstadoContrato,
@@ -104,7 +135,6 @@ async function dtoClaseConJornada(claseDoc) {
   ]);
   return enriched;
 }
-const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
 
 function parseCoord(v) {
   if (v === null || v === undefined || v === '') return null;
@@ -130,9 +160,11 @@ function resumenContratoSync(contrato) {
   return {
     _id: c._id,
     numerojornadas: c.numerojornadas,
+    jornadasPorDia: c.jornadasPorDia,
     numeObjeJornada: c.numeObjeJornada,
     clasesPorJornada: c.clasesPorJornada,
     jornadasGeneradas: c.jornadasGeneradas,
+    jornadasExistentes: c.jornadasExistentes,
   };
 }
 
@@ -181,7 +213,13 @@ async function syncContratoDesdeCliente(dto) {
 
 function enrichContratoRespuesta(c, clienteMap) {
   const cli = c.idClienteFacturacion ? clienteMap.get(String(c.idClienteFacturacion)) : null;
-  const base = { ...c, estado: normalizarEstadoContrato(c.estado) };
+  const base = {
+    ...c,
+    estado: normalizarEstadoContrato(c.estado),
+    valorContrato: roundMoney(numMoney(c.valorContrato)),
+    planCobro: serializarPlanCobro(c.planCobro),
+    comprobantesIngresoCaja: !!c.comprobantesIngresoCaja,
+  };
   if (!cli) return base;
   const nombre = String(cli.nombreComercial || cli.razonSocial || cli.nombres || '').trim();
   return {
@@ -238,9 +276,13 @@ function pickContrato(body) {
     'incluiDom',
     'incluiFest',
     'fechaInicJornadas',
+    'fechaFinJornadas',
     'numSesCert',
+    'idProgramas',
     'idClienteFacturacion',
     'valorContrato',
+    'comprobantesIngresoCaja',
+    'planCobro',
   ];
   const dto = {};
   for (const k of fields) {
@@ -265,11 +307,22 @@ function pickContrato(body) {
   if (dto.numeroAlumnos != null) dto.numeroAlumnos = Math.max(0, parseInt(dto.numeroAlumnos, 10) || 0);
   if (dto.numSesCert != null) dto.numSesCert = Math.max(1, parseInt(dto.numSesCert, 10) || 1);
   if (dto.valorContrato != null) dto.valorContrato = Math.max(0, Number(dto.valorContrato) || 0);
+  if (dto.comprobantesIngresoCaja != null) dto.comprobantesIngresoCaja = !!dto.comprobantesIngresoCaja;
   if (dto.idClienteFacturacion === '' || dto.idClienteFacturacion == null) {
     dto.idClienteFacturacion = null;
   }
   if (dto.fechaInicJornadas != null && dto.fechaInicJornadas !== '') {
     dto.fechaInicJornadas = fechaCalendarioParaGuardar(dto.fechaInicJornadas);
+  }
+  if (dto.fechaFinJornadas != null && dto.fechaFinJornadas !== '') {
+    dto.fechaFinJornadas = fechaCalendarioParaGuardar(dto.fechaFinJornadas);
+  } else if (dto.fechaFinJornadas === '' || dto.fechaFinJornadas == null) {
+    dto.fechaFinJornadas = null;
+  }
+  if (dto.idProgramas !== undefined) {
+    dto.idProgramas = Array.isArray(dto.idProgramas)
+      ? dto.idProgramas.map((x) => String(x).trim()).filter(Boolean)
+      : [];
   }
   dto.numeObjeJornada = calcNumeObjeJornada(dto.numeroAlumnos, dto.numerojornadas);
   return dto;
@@ -293,6 +346,24 @@ async function enrichContratoDto(dto, prev = null) {
     const sup = await Supervisor.findById(dto.idSupervisor).lean();
     if (sup?.nombre) dto.supervisor = sup.nombre;
   }
+  if (dto.idProgramas !== undefined) {
+    const { normalizarYValidarProgramasContrato } = require('../services/programasContratoJornada');
+    dto.idProgramas = await normalizarYValidarProgramasContrato(dto.idProgramas);
+  }
+  if (dto.fechaInicJornadas && dto.fechaFinJornadas) {
+    const ini = parseFechaCalendario(dto.fechaInicJornadas);
+    const fin = parseFechaCalendario(dto.fechaFinJornadas);
+    if (ini && fin && fin.getTime() < ini.getTime()) {
+      const err = new Error('La fecha fin de jornadas debe ser igual o posterior al inicio.');
+      err.status = 400;
+      throw err;
+    }
+  }
+  const valorRef =
+    dto.valorContrato != null ? dto.valorContrato : prev ? numMoney(prev.valorContrato) : 0;
+  if (dto.planCobro !== undefined) {
+    dto.planCobro = normalizarPlanCobroEntrada(dto.planCobro, valorRef, prev);
+  }
   return dto;
 }
 
@@ -311,6 +382,16 @@ exports.obtenerContrato = async (req, res, next) => {
     if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
     const [enriched] = await enrichContratosRespuesta([c]);
     res.json(enriched);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.avanceContrato = async (req, res, next) => {
+  try {
+    const avance = await obtenerAvanceContratoJornada(req.params.id);
+    if (!avance) return res.status(404).json({ message: 'Contrato no encontrado' });
+    res.json(avance);
   } catch (e) {
     next(e);
   }
@@ -422,15 +503,14 @@ exports.generarJornadas = async (req, res, next) => {
     const userLogin = auditoriaUsuario(req);
     const result = await generarJornadasContrato(c, userLogin);
     const clasesResult = await generarClasesFaltantesContrato(c, userLogin);
-    await syncContadoresContrato(c._id);
-    const actualizado = await Contratacion.findById(c._id).lean();
+    const contratoSync = await syncContadoresContrato(c._id);
     res.json({
       ok: true,
       ...result,
-      numeObjeJornada: actualizado?.numeObjeJornada ?? result.numeObjeJornada,
+      numeObjeJornada: contratoSync?.numeObjeJornada ?? result.numeObjeJornada,
       clasesCreadas: clasesResult.clasesCreadas,
       jornadasProcesadasClases: clasesResult.jornadasProcesadas,
-      contrato: resumenContratoSync(actualizado),
+      contrato: resumenContratoSync(contratoSync),
     });
   } catch (e) {
     res.status(400).json({ message: e.message || 'Error generando jornadas' });
@@ -473,7 +553,11 @@ exports.crearJornadaContrato = async (req, res, next) => {
 
     const userLogin = auditoriaUsuario(req);
     const prevCount = await JornadaCap.countDocuments({ idContrato: contrato._id });
-    const numeObjePre = calcNumeObjeJornada(contrato.numeroAlumnos, prevCount + 1);
+    const metaJornadas = Math.max(0, parseInt(contrato.numerojornadas, 10) || 0);
+    const numeObjePre = calcNumeObjeJornada(
+      contrato.numeroAlumnos,
+      metaJornadas > 0 ? metaJornadas : prevCount + 1,
+    );
 
     const jornada = await JornadaCap.create({
       idContrato: contrato._id,
@@ -657,7 +741,7 @@ exports.actualizarJornada = async (req, res, next) => {
     const actual = await JornadaCap.findById(req.params.id).lean();
     if (!actual) return res.status(404).json({ message: 'Jornada no encontrada' });
 
-    const { supervisor, municipio, depto, codMunicipio, direccion, lat, lng, deteGeorefe, fechaProgramacion } =
+    const { supervisor, municipio, depto, codMunicipio, direccion, lat, lng, deteGeorefe, fechaProgramacion, estado } =
       req.body || {};
     const dto = { userChangeRecord: auditoriaUsuario(req) };
     if (supervisor != null) dto.supervisor = String(supervisor).trim();
@@ -668,6 +752,15 @@ exports.actualizarJornada = async (req, res, next) => {
     if (municipio != null) dto.municipio = String(municipio).trim();
     if (depto != null) dto.depto = String(depto).trim();
     if (codMunicipio != null) dto.codMunicipio = String(codMunicipio).trim();
+
+    if (estado != null && (await operacionFueraDeDiaActiva(req))) {
+      const est = String(estado).trim().toUpperCase();
+      if (!ESTADOS_JORNADA.includes(est)) {
+        return res.status(400).json({ message: 'Estado de jornada inválido' });
+      }
+      dto.estado = est;
+      dto.estadoOperacionManual = est === ESTADO_JORNADA_FINALIZADO;
+    }
 
     if (fechaProgramacion != null && fechaProgramacion !== '') {
       const nuevaFecha = fechaCalendarioParaGuardar(fechaProgramacion);
@@ -732,6 +825,54 @@ exports.actualizarJornada = async (req, res, next) => {
   }
 };
 
+/** Cierra la jornada manualmente (modo operación especial). */
+exports.cerrarJornadaOperacion = async (req, res, next) => {
+  try {
+    if (!(await operacionFueraDeDiaActiva(req))) {
+      return res.status(403).json({
+        message: 'Cerrar jornada manualmente requiere el modo operación fuera del día activo.',
+      });
+    }
+    const j = await JornadaCap.findByIdAndUpdate(
+      req.params.id,
+      { $set: { estado: ESTADO_JORNADA_FINALIZADO, estadoOperacionManual: true, userChangeRecord: auditoriaUsuario(req) } },
+      { new: true },
+    ).lean();
+    if (!j) return res.status(404).json({ message: 'Jornada no encontrada' });
+    registrarAuditoria({
+      req,
+      accion: 'jornada_cerrar_operacion',
+      entidad: 'jornadaCap',
+      idEntidad: String(j._id),
+      resumen: 'Jornada cerrada manualmente (modo operación especial)',
+    }).catch(() => {});
+    res.json(j);
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Reabre la jornada al estado calculado por fecha (modo operación especial). */
+exports.reabrirJornadaOperacion = async (req, res, next) => {
+  try {
+    if (!(await operacionFueraDeDiaActiva(req))) {
+      return res.status(403).json({
+        message: 'Reabrir jornada requiere el modo operación fuera del día activo.',
+      });
+    }
+    const actual = await JornadaCap.findById(req.params.id).lean();
+    if (!actual) return res.status(404).json({ message: 'Jornada no encontrada' });
+    await JornadaCap.updateOne(
+      { _id: actual._id },
+      { $set: { estadoOperacionManual: false, userChangeRecord: auditoriaUsuario(req) } },
+    );
+    const j = await sincronizarEstadoJornada(actual._id);
+    res.json(j);
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.eliminarJornada = async (req, res, next) => {
   try {
     const jornada = await JornadaCap.findById(req.params.id).lean();
@@ -751,7 +892,7 @@ exports.eliminarJornada = async (req, res, next) => {
     await JornadaCap.deleteOne({ _id: jornada._id });
 
     const contratoSync = await syncContadoresContrato(jornada.idContrato);
-    const restantes = contratoSync?.numerojornadas ?? 0;
+    const restantes = contratoSync?.jornadasExistentes ?? 0;
 
     res.json({
       ok: true,
@@ -898,7 +1039,7 @@ exports.crearClase = async (req, res, next) => {
     }
     const jornada = await sincronizarEstadoJornada(idJornada);
     if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
-    const bloqueo = mensajeSiJornadaNoDisponibleParaClase(jornada);
+    const bloqueo = await bloqueoCrearClaseJornada(req, jornada);
     if (bloqueo) return res.status(400).json({ message: bloqueo });
     const idProg = idPrograma != null && String(idPrograma).trim() !== '' ? String(idPrograma).trim() : '';
     if (idProg) {
@@ -1051,6 +1192,12 @@ exports.actualizarClase = async (req, res, next) => {
     }
 
     if (puedeEditarHorario && (horaInicio !== undefined || horaFin !== undefined)) {
+      const bloqueoHorario = await bloqueoOperacionJornada(
+        req,
+        await sincronizarEstadoJornada(clase.idJornada),
+      );
+      if (bloqueoHorario) return res.status(400).json({ message: bloqueoHorario });
+
       let fechaRef = clase.fechaClase;
       if (!fechaRef) {
         const j = await JornadaCap.findById(clase.idJornada).select('fechaProgramacion').lean();
@@ -1079,12 +1226,12 @@ exports.actualizarClase = async (req, res, next) => {
         return res.status(400).json({ message: 'La hora de fin debe ser posterior a la de inicio.' });
       }
       const estadoActual = String(clase.estado || '').toUpperCase();
+      const modoEspecial = await operacionFueraDeDiaActiva(req);
       if (hi && hf) {
         dto.duracionSegundos = Math.max(0, Math.round((hf.getTime() - hi.getTime()) / 1000));
-        // Solo cerrar si la clase ya estaba en operación.
-        // Clases PROGRAMADA pueden tener horaInicio/horaFin planificados (autogeneración)
-        // sin estar finalizadas.
         if (estadoActual === 'EN PROCESO' || estadoActual === 'FINALIZADO') {
+          dto.estado = 'FINALIZADO';
+        } else if (modoEspecial && estadoActual === 'PROGRAMADA') {
           dto.estado = 'FINALIZADO';
         }
       } else if (hi && !hf) {
@@ -1098,9 +1245,35 @@ exports.actualizarClase = async (req, res, next) => {
       }
     }
 
+    const estadoAntes = String(clase.estado || '').toUpperCase();
     Object.assign(clase, dto);
     await clase.save();
-    res.json(await dtoClaseConJornada(clase));
+    const estadoDespues = String(clase.estado || '').toUpperCase();
+    const dtoResp = await dtoClaseConJornada(clase);
+
+    if (estadoDespues === 'FINALIZADO' && estadoAntes !== 'FINALIZADO') {
+      const post = await postCierreClaseJornada(req, clase);
+      return res.json({
+        ...dtoResp,
+        idContrato: post.jornada?.idContrato,
+        asistenciasRegistradas: post.asistenciasRegistradas || 0,
+        certificadosGenerados: post.certificadosNuevos || 0,
+        certificadosEmitidos: post.certificadosEmitidos || [],
+        mensajeAsistencias:
+          post.asistenciasRegistradas > 0
+            ? `Se registró asistencia de ${post.asistenciasRegistradas} alumno(s) al cerrar la clase.`
+            : null,
+        message:
+          post.certificadosNuevos > 0
+            ? `Clase finalizada. Certificados emitidos: ${post.certificadosNuevos}.`
+            : post.ok
+              ? 'Clase finalizada.'
+              : 'Clase finalizada. Hubo un aviso al emitir certificados o asistencias pendientes; revise la lista.',
+        advertenciaPostCierre: post.ok ? undefined : post.error,
+      });
+    }
+
+    res.json(dtoResp);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
@@ -1112,10 +1285,23 @@ exports.eliminarClase = async (req, res, next) => {
     const clase = await ClaseJornadaCap.findById(req.params.id);
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    if (String(clase.estado || '').toUpperCase() === 'FINALIZADO') {
-      return res.status(409).json({
-        message:
-          'No se puede eliminar una clase finalizada. Conserva historial, asistencias y certificados emitidos.',
+    const certsVigentes = await Certificado.find({
+      idClaseJornada: clase._id,
+      estado: { $ne: 'anulado' },
+    });
+    let certificadosAnulados = 0;
+    for (const cert of certsVigentes) {
+      const antes = cert.toObject();
+      cert.set(
+        metadatosAnulacion(req, null, {
+          motivo: 'Clase de jornada eliminada',
+        }),
+      );
+      cert.estado = 'anulado';
+      await cert.save();
+      certificadosAnulados += 1;
+      registrarEliminacion(req, 'certificado_jornada', antes, {
+        resumen: `Anulación por eliminar clase ${clase._id} · cert ${antes.codigoCert || cert._id}`,
       });
     }
 
@@ -1141,6 +1327,7 @@ exports.eliminarClase = async (req, res, next) => {
       message: 'Clase eliminada',
       asistenciasEliminadas: asistencias.deletedCount || 0,
       inscripcionesEliminadas: inscritos.deletedCount || 0,
+      certificadosAnulados,
       contrato: resumenContratoSync(contratoSync),
     });
   } catch (e) {
@@ -1160,7 +1347,7 @@ exports.iniciarClase = async (req, res, next) => {
     }
     const jornada = await sincronizarEstadoJornada(clase.idJornada);
     if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
-    const bloqueo = mensajeSiJornadaNoIniciableClase(jornada);
+    const bloqueo = await bloqueoIniciarClaseJornada(req, jornada);
     if (bloqueo) return res.status(400).json({ message: bloqueo });
     await asegurarInstructorOperandoClase(clase, req);
     clase.horaInicio = new Date();
@@ -1196,10 +1383,30 @@ exports.finalizarClase = async (req, res, next) => {
     const clase = await ClaseJornadaCap.findById(req.params.id);
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
     if (clase.estado === 'FINALIZADO') {
-      return res.status(409).json({ message: 'La clase ya está finalizada.' });
+      const post = await postCierreClaseJornada(req, clase);
+      return res.json({
+        clase: await dtoClaseConJornada(clase),
+        idContrato: post.jornada?.idContrato,
+        asistenciasRegistradas: post.asistenciasRegistradas || 0,
+        certificadosGenerados: post.certificadosNuevos || 0,
+        certificadosEmitidos: post.certificadosEmitidos || [],
+        reproceso: true,
+        message:
+          post.certificadosNuevos > 0
+            ? `Certificados emitidos: ${post.certificadosNuevos}.`
+            : post.ok
+              ? 'La clase ya estaba finalizada. No había certificados pendientes.'
+              : 'La clase ya estaba finalizada. Hubo un aviso al emitir certificados; revise la lista.',
+        advertenciaPostCierre: post.ok ? undefined : post.error,
+      });
     }
 
     await asegurarInstructorOperandoClase(clase, req);
+
+    const jornada = await sincronizarEstadoJornada(clase.idJornada);
+    if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
+    const bloqueoFin = await bloqueoOperacionJornada(req, jornada);
+    if (bloqueoFin) return res.status(400).json({ message: bloqueoFin });
 
     const body = req.body || {};
     let fechaRef = clase.fechaClase;
@@ -1208,12 +1415,20 @@ exports.finalizarClase = async (req, res, next) => {
       fechaRef = jRef?.fechaProgramacion ? inicioDia(jRef.fechaProgramacion) : inicioDia(new Date());
     }
 
-    // Horas manuales (HH:mm) o, si no envían fin, hora actual.
+    const modoEspecial = await operacionFueraDeDiaActiva(req);
+
+    // Horas manuales (HH:mm). En modo especial no se sobrescribe fin con "ahora".
     if (body.horaInicio != null && String(body.horaInicio).trim() !== '') {
       clase.horaInicio = parseHoraClase(fechaRef, body.horaInicio);
     }
     if (body.horaFin != null && String(body.horaFin).trim() !== '') {
       clase.horaFin = parseHoraClase(fechaRef, body.horaFin);
+    } else if (modoEspecial && clase.horaFin) {
+      // Conservar hora de fin planificada o guardada.
+    } else if (modoEspecial) {
+      return res.status(400).json({
+        message: 'Indique la hora de fin en el horario de la clase antes de finalizar.',
+      });
     } else {
       clase.horaFin = new Date();
     }
@@ -1252,51 +1467,34 @@ exports.finalizarClase = async (req, res, next) => {
     const claseFinal = await ClaseJornadaCap.findById(clase._id);
     if (!claseFinal) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    let syncAsis = {
-      registradas: 0,
-      certificadosNuevos: 0,
-      certificadosEmitidos: [],
-    };
-    let certs = { certificadosNuevos: 0, certificadosEmitidos: [] };
-    try {
-      // Asistencias pendientes (no debe revertir el cierre si falla).
-      syncAsis = await registrarAsistenciasInscritosPendientes(req, claseFinal, {
-        omitirValidacionJornada: true,
-      });
-      const jornada = await JornadaCap.findById(claseFinal.idJornada).lean();
-      const ctxCert = jornada?.idContrato
-        ? await crearContextoCertificadoContrato(jornada.idContrato)
-        : null;
-      certs = await emitirCertificadosAsistentesClase(req, claseFinal, { jornada, ctxCert });
-
+    const post = await postCierreClaseJornada(req, claseFinal);
+    if (post.ok) {
       res.json({
         clase: await dtoClaseConJornada(claseFinal),
-        idContrato: jornada?.idContrato,
-        asistenciasRegistradas: syncAsis.registradas,
-        certificadosGenerados: certs.certificadosNuevos,
-        certificadosEmitidos: certs.certificadosEmitidos || [],
+        idContrato: post.jornada?.idContrato,
+        asistenciasRegistradas: post.asistenciasRegistradas || 0,
+        certificadosGenerados: post.certificadosNuevos || 0,
+        certificadosEmitidos: post.certificadosEmitidos || [],
         mensajeAsistencias:
-          syncAsis.registradas > 0
-            ? `Se registró asistencia de ${syncAsis.registradas} alumno(s) al finalizar la clase.`
+          post.asistenciasRegistradas > 0
+            ? `Se registró asistencia de ${post.asistenciasRegistradas} alumno(s) al finalizar la clase.`
             : null,
         message:
-          certs.certificadosNuevos > 0
-            ? `Clase finalizada. Certificados emitidos: ${certs.certificadosNuevos}.`
+          post.certificadosNuevos > 0
+            ? `Clase finalizada. Certificados emitidos: ${post.certificadosNuevos}.`
             : 'Clase finalizada.',
       });
-    } catch (postErr) {
-      console.error('[finalizarClase] post-cierre:', postErr?.message || postErr);
-      // La clase ya quedó FINALIZADO; no fallar la respuesta por certificados/asistencias.
-      const jornada = await JornadaCap.findById(claseFinal.idJornada).lean();
+    } else {
+      console.error('[finalizarClase] post-cierre:', post.error);
       res.json({
         clase: await dtoClaseConJornada(claseFinal),
-        idContrato: jornada?.idContrato,
-        asistenciasRegistradas: syncAsis.registradas || 0,
-        certificadosGenerados: certs.certificadosNuevos || 0,
-        certificadosEmitidos: certs.certificadosEmitidos || [],
+        idContrato: post.jornada?.idContrato,
+        asistenciasRegistradas: post.asistenciasRegistradas || 0,
+        certificadosGenerados: post.certificadosNuevos || 0,
+        certificadosEmitidos: post.certificadosEmitidos || [],
         message:
           'Clase finalizada. Hubo un aviso al emitir certificados o asistencias pendientes; revise la lista.',
-        advertenciaPostCierre: postErr?.message || 'Error posterior al cierre',
+        advertenciaPostCierre: post.error,
       });
     }
   } catch (e) {
@@ -1315,14 +1513,30 @@ exports.sincronizarAsistenciasInscritos = async (req, res, next) => {
       omitirValidacionJornada: true,
     });
 
+    let certificadosNuevos = syncAsis.certificadosNuevos || 0;
+    let certificadosEmitidos = syncAsis.certificadosEmitidos || [];
+    if (String(clase.estado || '').toUpperCase() === 'FINALIZADO') {
+      const jornada = await JornadaCap.findById(clase.idJornada).lean();
+      const ctxCert = jornada?.idContrato
+        ? await crearContextoCertificadoContrato(jornada.idContrato)
+        : null;
+      const certs = await emitirCertificadosAsistentesClase(req, clase, { jornada, ctxCert });
+      certificadosNuevos += certs.certificadosNuevos || 0;
+      certificadosEmitidos = [...certificadosEmitidos, ...(certs.certificadosEmitidos || [])];
+    }
+
     res.json({
       ...syncAsis,
+      certificadosNuevos,
+      certificadosEmitidos,
       message:
-        syncAsis.registradas > 0
-          ? `Asistencia registrada para ${syncAsis.registradas} alumno(s). Certificados nuevos: ${syncAsis.certificadosNuevos}.`
+        syncAsis.registradas > 0 || certificadosNuevos > 0
+          ? `Asistencia registrada para ${syncAsis.registradas} alumno(s). Certificados nuevos: ${certificadosNuevos}.`
           : syncAsis.omitidosCertificados > 0
             ? 'Todos los inscritos pendientes ya tienen certificado vigente en el contrato o asistencia registrada.'
-            : 'No había inscritos pendientes de asistencia.',
+            : String(clase.estado || '').toUpperCase() === 'FINALIZADO'
+              ? 'No había certificados pendientes por emitir.'
+              : 'No había inscritos pendientes de asistencia.',
     });
   } catch (e) {
     next(e);
@@ -1547,6 +1761,103 @@ exports.inscritosClase = async (req, res, next) => {
   }
 };
 
+/**
+ * Alumnos matriculados en la clase inmediatamente anterior de la misma jornada
+ * (por `indiceClaseEnJornada`, o por horario/creación si no hay índice), para
+ * copiar la matrícula rápidamente sin re-digitar cada alumno.
+ */
+exports.alumnosClaseAnterior = async (req, res, next) => {
+  try {
+    const clase = await ClaseJornadaCap.findById(req.params.id).lean();
+    if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
+
+    const todas = await ClaseJornadaCap.find({ idJornada: clase.idJornada }).lean();
+    todas.sort((a, b) => {
+      const ia = a.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
+      const ib = b.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
+      if (ia !== ib) return ia - ib;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+    const pos = todas.findIndex((c) => String(c._id) === String(clase._id));
+    const anterior = pos > 0 ? todas[pos - 1] : null;
+    if (!anterior) {
+      return res.json({ clase: null, alumnos: [] });
+    }
+
+    const [inscripcionesAnterior, inscripcionesActual] = await Promise.all([
+      InscripcionClase.find({ idClase: anterior._id }).sort({ createdAt: 1 }).lean(),
+      InscripcionClase.find({ idClase: clase._id }).lean(),
+    ]);
+    const yaEnEstaClase = new Set(
+      inscripcionesActual.map((i) => Number(i.numDoc)).filter((n) => Number.isFinite(n)),
+    );
+    const docs = inscripcionesAnterior
+      .map((i) => Number(i.numDoc))
+      .filter((n) => Number.isFinite(n));
+    const alumnos = docs.length ? await DatosAlumno.find({ numDoc: { $in: docs } }).lean() : [];
+    const mapAlu = new Map(alumnos.map((a) => [Number(a.numDoc), a]));
+
+    const jornada = await JornadaCap.findById(clase.idJornada).lean();
+    let mapCert = new Map();
+    if (jornada?.idContrato && docs.length) {
+      const certs = await Certificado.find({
+        numDoc: { $in: docs },
+        idContrato: jornada.idContrato,
+        estado: { $ne: 'anulado' },
+      }).lean();
+      mapCert = new Map(certs.map((c) => [Number(c.numDoc), c]));
+    }
+
+    const [claseAnteriorInfo] = await enriquecerClases([anterior]);
+
+    const contrato = jornada?.idContrato
+      ? await Contratacion.findById(jornada.idContrato).select('tipoCertificado').lean()
+      : null;
+    const esPorClase = contrato?.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
+
+    const alumnosOut = await Promise.all(
+      inscripcionesAnterior.map(async (ins) => {
+        const nd = Number(ins.numDoc);
+        const al = mapAlu.get(nd);
+        const cert = mapCert.get(nd);
+        let puedeMatricular = !yaEnEstaClase.has(nd);
+        if (puedeMatricular && jornada?.idContrato) {
+          if (esPorClase) {
+            const certEstaClase = await certificadoExistenteClase(nd, clase._id);
+            if (certEstaClase) puedeMatricular = false;
+          } else {
+            const bloqueo = await validarAlumnoSinCertificadoContrato(nd, jornada.idContrato);
+            if (bloqueo) puedeMatricular = false;
+          }
+        }
+        return {
+          numDoc: nd,
+          nombreCompleto: al
+            ? [al.nombre1, al.nombre2, al.apellido1, al.apellido2].filter(Boolean).join(' ')
+            : '',
+          yaInscritoEnEstaClase: yaEnEstaClase.has(nd),
+          yaCertificadoContrato: !!cert,
+          puedeMatricular,
+          certificadoCodigo: cert?.codigoCert || null,
+        };
+      }),
+    );
+
+    res.json({
+      clase: {
+        _id: String(anterior._id),
+        indiceClaseEnJornada: anterior.indiceClaseEnJornada ?? null,
+        programaNombre: claseAnteriorInfo?.programaNombre || '',
+        carpaNombre: claseAnteriorInfo?.carpaNombre || '',
+        estado: anterior.estado,
+      },
+      alumnos: alumnosOut,
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.listarAsistenciasClase = async (req, res, next) => {
   try {
     const rows = await AsisClasJorCap.find({ idclaseJornada: req.params.id })
@@ -1570,7 +1881,7 @@ exports.listarAsistenciasClase = async (req, res, next) => {
 
 exports.certificadosGenerados = async (req, res, next) => {
   try {
-    const q = { generadoAutoJornada: true };
+    const q = { generadoAutoJornada: true, estado: { $ne: 'anulado' } };
     if (req.query.idContrato) q.idContrato = req.query.idContrato;
     if (req.query.desde) {
       const d = new Date(String(req.query.desde));
@@ -1632,6 +1943,133 @@ exports.certificadosGenerados = async (req, res, next) => {
       out.push({ ...c, nombreCompleto, municipio, direccion, ubicacionJornada, codContrato });
     }
     res.json(out);
+  } catch (e) {
+    next(e);
+  }
+};
+
+const CAMPOS_CERT_JORNADA_EDIT = [
+  'tipoCertificado',
+  'numActa',
+  'numFolio',
+  'numRunt',
+  'observaciones',
+  'encabezado',
+  'codVerificacion',
+  'fechaEmision',
+  'fechaVencimiento',
+];
+
+function pickCertificadoJornadaEdit(body) {
+  const dto = {};
+  for (const k of CAMPOS_CERT_JORNADA_EDIT) {
+    if (body[k] !== undefined) dto[k] = body[k];
+  }
+  if (dto.numActa !== undefined) dto.numActa = String(dto.numActa || '').trim();
+  if (dto.numFolio !== undefined) dto.numFolio = String(dto.numFolio || '').trim();
+  if (dto.numRunt !== undefined) dto.numRunt = String(dto.numRunt || '').trim();
+  if (dto.observaciones !== undefined) dto.observaciones = String(dto.observaciones || '').trim();
+  if (dto.encabezado !== undefined) dto.encabezado = String(dto.encabezado || '').trim();
+  if (dto.codVerificacion !== undefined) {
+    dto.codVerificacion = String(dto.codVerificacion || '').trim() || null;
+  }
+  if (dto.tipoCertificado !== undefined) {
+    dto.tipoCertificado = normalizarTipoRegularJornada(dto.tipoCertificado);
+  }
+  if (dto.fechaEmision !== undefined) {
+    if (!dto.fechaEmision) return { error: 'fechaEmision inválida' };
+    const d = parseFechaCalendario(dto.fechaEmision);
+    if (!d) return { error: 'fechaEmision inválida' };
+    dto.fechaEmision = d;
+  }
+  if (dto.fechaVencimiento !== undefined) {
+    if (dto.fechaVencimiento === null || dto.fechaVencimiento === '') {
+      dto.fechaVencimiento = null;
+    } else {
+      const d = parseFechaCalendario(dto.fechaVencimiento);
+      if (!d) return { error: 'fechaVencimiento inválida' };
+      dto.fechaVencimiento = d;
+    }
+  }
+  return { dto };
+}
+
+exports.actualizarCertificadoGenerado = async (req, res, next) => {
+  try {
+    const existente = await Certificado.findById(req.params.id).lean();
+    if (!existente) return res.status(404).json({ message: 'Certificado no encontrado' });
+    if (!existente.generadoAutoJornada) {
+      return res.status(403).json({ message: 'Solo aplica a certificados generados por jornadas.' });
+    }
+    if (esComprobanteAnulado(existente)) {
+      return res.status(409).json({ message: 'Este certificado ya está anulado.' });
+    }
+
+    const picked = pickCertificadoJornadaEdit(req.body || {});
+    if (picked.error) return res.status(400).json({ message: picked.error });
+    if (!Object.keys(picked.dto).length) {
+      return res.status(400).json({ message: 'No hay campos para actualizar' });
+    }
+
+    if (picked.dto.codVerificacion) {
+      const dup = await Certificado.countDocuments({
+        codVerificacion: picked.dto.codVerificacion,
+        _id: { $ne: req.params.id },
+      });
+      if (dup > 0) {
+        return res.status(409).json({ message: 'Ya existe otro certificado con ese código de verificación.' });
+      }
+    }
+
+    const cert = await Certificado.findByIdAndUpdate(
+      req.params.id,
+      { $set: picked.dto },
+      { new: true, runValidators: true },
+    );
+    if (!cert) return res.status(404).json({ message: 'Certificado no encontrado' });
+
+    const prog = await buscarPrograma(cert.idProg);
+    res.json({
+      ...cert.toObject(),
+      programaDescr: prog?.descripcion || prog?.nombreProg || prog?.nomCert || null,
+      nomCert: prog?.nomCert || null,
+      tipoFormatoCertLabel: TIPOS_LABEL[cert.tipoFormatoCert] || cert.tipoFormatoCert || null,
+      tipoCertificado: cert.tipoCertificado,
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.eliminarCertificadoGenerado = async (req, res, next) => {
+  try {
+    const c = await Certificado.findById(req.params.id);
+    if (!c) return res.status(404).json({ message: 'Certificado no encontrado' });
+    if (!c.generadoAutoJornada) {
+      return res.status(403).json({ message: 'Solo aplica a certificados generados por jornadas.' });
+    }
+    if (esComprobanteAnulado(c)) {
+      return res.status(409).json({ message: 'Este certificado ya está anulado.' });
+    }
+
+    const auth = await autorizarAnulacionSimple(
+      req,
+      'Anular certificados requiere autorización de un administrador.',
+    );
+    if (!auth.ok) {
+      return res.status(auth.status).json({ message: auth.message, code: auth.code });
+    }
+
+    const antes = c.toObject();
+    const motivo = String(req.body?.motivo || req.body?.motivoAnulacion || '').trim() || null;
+    c.set(metadatosAnulacion(req, auth.supervisor, { motivo }));
+    c.estado = 'anulado';
+    await c.save();
+
+    registrarEliminacion(req, 'certificado_jornada', antes, {
+      resumen: `Anulación certificado jornada ${antes.codigoCert || req.params.id}${sufijoAutoriza(auth.supervisor)}`,
+    });
+    res.json({ ok: true, estado: 'anulado' });
   } catch (e) {
     next(e);
   }
@@ -1699,7 +2137,7 @@ exports.buscarAlumnos = async (req, res, next) => {
 /** Matrícula al programa de jornada (permiso jornadas.operar). */
 exports.matricularAlumnoJornada = async (req, res, next) => {
   try {
-    const { numDoc, idPrograma, idProg, idClase } = req.body || {};
+    const { numDoc, idPrograma, idProg, idClase, idContrato } = req.body || {};
     const progId = idPrograma || idProg;
     const prog = await buscarPrograma(progId);
     if (!prog) return res.status(404).json({ message: 'Programa no encontrado' });
@@ -1710,9 +2148,12 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
     if (nd == null) return res.status(400).json({ message: 'numDoc inválido' });
     const alumno = await DatosAlumno.findOne(numDocQuery(nd)).lean();
     if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+    const userLogin = auditoriaUsuario(req);
+    await asegurarTipoAlumnoJornada(nd);
     const idProgramaVal = String(prog.idPrograma ?? prog._id);
 
     let matriculaResult = null;
+    let empresaAsignada = null;
     const ya = await Matricula.findOne({ numDoc: nd, idProg: idProgramaVal, estado: /^activo$/i }).lean();
     if (!ya) {
       matriculaResult = await crearMatriculaDesdeBody({ numDoc: nd, idPrograma: idProgramaVal });
@@ -1758,7 +2199,15 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
         });
       }
       const jornada = await JornadaCap.findById(clase.idJornada).lean();
+      if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
+      const bloqueoMat = await bloqueoOperacionJornada(req, jornada);
+      if (bloqueoMat) return res.status(400).json({ message: bloqueoMat });
       if (jornada?.idContrato) {
+        empresaAsignada = await asignarEmpresaContratoAlumno(
+          nd,
+          jornada.idContrato,
+          userLogin,
+        );
         const bloqueo = await validarAlumnoSinCertificadoContrato(nd, jornada.idContrato);
         if (bloqueo) {
           return res.status(409).json({
@@ -1786,6 +2235,8 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
         }
       }
       metaJornada = await evaluarMetaAlumnosJornada(jornada || clase.idJornada);
+    } else if (idContrato) {
+      empresaAsignada = await asignarEmpresaContratoAlumno(nd, idContrato, userLogin);
     }
 
     res.status(201).json({
@@ -1793,6 +2244,7 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
       inscripcion,
       inscripcionDuplicada,
       metaJornada,
+      empresaAsignada,
     });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
@@ -1839,6 +2291,84 @@ exports.exportarInformesJornada = async (req, res, next) => {
     res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
     res.send(buffer);
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.obtenerConfigOperacionJornadas = async (req, res, next) => {
+  try {
+    res.json(await obtenerConfigJornadasOperacion());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.estadoOperacionEspecialJornadas = async (req, res, next) => {
+  try {
+    res.json(await estadoOperacionEspecialJornadas(req));
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.actualizarConfigOperacionJornadas = async (req, res, next) => {
+  try {
+    const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
+    if (!tieneAlguno(permisos, ['jornadas.gestionar'])) {
+      return res.status(403).json({ message: 'Requiere permiso jornadas.gestionar' });
+    }
+    const antes = await obtenerConfigJornadasOperacion();
+    const cfg = await actualizarConfigJornadasOperacion(req.body || {});
+    registrarAuditoria({
+      req,
+      accion: 'jornadas_operacion_config',
+      entidad: 'jornadas',
+      resumen: `Operación fuera del día ${cfg.operacionFueraDeDiaHabilitada ? 'habilitada' : 'deshabilitada'}`,
+      datosAntes: antes,
+      datosDespues: cfg,
+    }).catch(() => {});
+    res.json(cfg);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.estadoCobroContrato = async (req, res, next) => {
+  try {
+    res.json(await estadoCobroContrato(req.params.id));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
+    next(e);
+  }
+};
+
+exports.generarCuentaCobroContrato = async (req, res, next) => {
+  try {
+    const r = await generarCuentaCobroContrato(req.params.id, req);
+    res.status(201).json(r);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
+    next(e);
+  }
+};
+
+exports.htmlCuentaCobroContrato = async (req, res, next) => {
+  try {
+    const html = await htmlCuentaCobroContrato(req.params.id, req.idSede);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
+    next(e);
+  }
+};
+
+exports.generarComprobanteIngresoContrato = async (req, res, next) => {
+  try {
+    const r = await generarComprobanteIngresoContrato(req.params.id, req.body || {}, req);
+    res.status(201).json(r);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
     next(e);
   }
 };

@@ -355,7 +355,12 @@ export class ServiciosComponent implements OnInit {
   buscarProgramasRemoto = (q: string): Observable<EnumBuscarOption[]> => {
     const t = q.trim();
     return this.progSvc
-      .listar({ q: t || undefined, catalogo: true, limit: t ? 35 : 40 })
+      .listar({
+        q: t || undefined,
+        catalogo: true,
+        limit: t ? 35 : 40,
+        excluirJornadasCap: true,
+      })
       .pipe(map((rows) => (rows || []).map((p) => this.programaToOption(p))));
   };
 

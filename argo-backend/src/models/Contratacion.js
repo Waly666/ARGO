@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+const CuotaPlanCobroSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, trim: true },
+    etiqueta: { type: String, trim: true, default: '' },
+    valor: { type: mongoose.Schema.Types.Decimal128, required: true },
+    orden: { type: Number, default: 0 },
+    idIngreso: { type: mongoose.Schema.Types.ObjectId, ref: 'Ingreso', default: null },
+    pagadoAt: { type: Date, default: null },
+  },
+  { _id: false },
+);
+
 const ContratacionSchema = new mongoose.Schema(
   {
     tipoIdentificacion: { type: String, trim: true },
@@ -17,8 +29,10 @@ const ContratacionSchema = new mongoose.Schema(
     pais: { type: String, trim: true, default: 'Colombia' },
     codigoPostal: { type: String, trim: true },
     estado: { type: String, trim: true, default: 'En Ejecución' },
-    /** Fecha en que se cerró el contrato (estado Ejecutado). */
+    /** Fecha de cierre del contrato (estado Ejecutado). */
     fechaFinalizacion: { type: Date, default: null },
+    /** Último día calendario para programar jornadas (planificación). */
+    fechaFinJornadas: { type: Date, default: null },
     fechaRegistro: { type: Date, default: Date.now },
     fechacontrato: { type: String, trim: true },
     objeto: { type: String, trim: true },
@@ -49,8 +63,16 @@ const ContratacionSchema = new mongoose.Schema(
     /** Cliente en catálogo clientesFacturacion (obligatorio para facturar; el tipo fiscal vive en el cliente). */
     idClienteFacturacion: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null },
     valorContrato: { type: mongoose.Schema.Types.Decimal128, default: 0 },
+    /** Preferencia por defecto al generar comprobantes de ingreso del contrato. */
+    comprobantesIngresoCaja: { type: Boolean, default: false },
+    /** Cuotas de cobro (montos manuales; deben sumar valorContrato). */
+    planCobro: { type: [CuotaPlanCobroSchema], default: [] },
+    cuentaCobroNumero: { type: String, trim: true, default: '' },
+    cuentaCobroGeneradaAt: { type: Date, default: null },
     idFacturaElectronica: { type: mongoose.Schema.Types.ObjectId, ref: 'FacturaElectronica', default: null },
     facturadoAt: { type: Date, default: null },
+    /** Programas del contrato para reparto equitativo al autogenerar clases. */
+    idProgramas: { type: [String], default: [] },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
   },

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
@@ -7,11 +7,13 @@ import { Cliente, ClienteCatalogos, ClienteService } from '../../core/services/c
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { MunicipioBuscarComponent } from '../alumnos/municipio-buscar.component';
+import { CelularInputComponent } from '../../shared/celular-input/celular-input.component';
+import { mensajeErrorCelularAlmacenado } from '../../core/utils/celular.util';
 
 @Component({
   selector: 'argo-config-clientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, MunicipioBuscarComponent],
+  imports: [CommonModule, FormsModule, MunicipioBuscarComponent, CelularInputComponent],
   templateUrl: './config-clientes.component.html',
   styleUrls: ['./config-clientes.component.scss'],
 })
@@ -20,6 +22,9 @@ export class ConfigClientesComponent implements OnInit {
   private catSvc = inject(CatalogoService);
   private asistente = inject(AsistenteContextoService);
   private confirm = inject(ConfirmDialogService);
+
+  @ViewChild('formPanel') formPanel?: ElementRef<HTMLElement>;
+  @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
 
   loading = signal(true);
   saving = signal(false);
@@ -30,7 +35,7 @@ export class ConfigClientesComponent implements OnInit {
   filtro = signal('');
   catalogos = signal<ClienteCatalogos | null>(null);
 
-  modalAbierto = signal(false);
+  formAbierto = signal(false);
   editId = signal<string | null>(null);
   form = signal<Cliente>(this.vacio());
   /** Texto del buscador Divipola (independiente del form para no pisar lo que escribe el usuario). */
@@ -93,8 +98,9 @@ export class ConfigClientesComponent implements OnInit {
     this.form.set(this.vacio());
     this.municipioTexto.set('');
     this.msg.set(null);
-    this.modalAbierto.set(true);
+    this.formAbierto.set(true);
     this.asistente.setOverride('facturacion.clientes');
+    this.scrollAlFormulario();
   }
 
   editar(c: Cliente): void {
@@ -103,13 +109,21 @@ export class ConfigClientesComponent implements OnInit {
     this.municipioTexto.set(c.municipioNombre || '');
     this.normalizarMunicipioCliente(c);
     this.msg.set(null);
-    this.modalAbierto.set(true);
+    this.formAbierto.set(true);
     this.asistente.setOverride('facturacion.clientes');
+    this.scrollAlFormulario();
   }
 
   cerrar(): void {
-    this.modalAbierto.set(false);
+    this.formAbierto.set(false);
     this.asistente.setOverride(null);
+  }
+
+  private scrollAlFormulario(): void {
+    queueMicrotask(() => {
+      const el = this.formPanel?.nativeElement ?? this.pageHead?.nativeElement;
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   onMunicipio(m: MunicipioDivipola): void {
@@ -193,12 +207,18 @@ export class ConfigClientesComponent implements OnInit {
       this.msg.set('Seleccione el tipo de contratante (define IVA y retenciones al facturar contratos).');
       return;
     }
+    const errTel = mensajeErrorCelularAlmacenado(f.telefono, 'telefono');
+    if (errTel) {
+      this.msgError.set(true);
+      this.msg.set(errTel);
+      return;
+    }
     this.saving.set(true);
     const obs = this.editId() ? this.svc.actualizar(this.editId()!, f) : this.svc.crear(f);
     obs.subscribe({
       next: () => {
         this.saving.set(false);
-        this.modalAbierto.set(false);
+        this.formAbierto.set(false);
         this.msgError.set(false);
         this.msg.set('Cliente guardado');
         this.recargar();

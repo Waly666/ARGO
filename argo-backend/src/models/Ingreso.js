@@ -60,6 +60,11 @@ const IngresoSchema = new mongoose.Schema(
     /** Voucher / captura / foto del cheque para pagos no efectivo */
     urlSoporte: { type: String, trim: true },
 
+    /** Ingreso originado desde contrato de capacitación (jornadas). */
+    idContrato: { type: mongoose.Schema.Types.ObjectId, ref: 'Contratacion', default: null, index: true },
+    idCuotaContrato: { type: String, trim: true, default: null },
+    origenContratoCap: { type: Boolean, default: false, index: true },
+
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
     fechaMod: { type: Date },

@@ -46,8 +46,16 @@
     width: min(1280px, calc(100vw - 24px));
   }
 
+  &.sheet {
+    width: min(1480px, calc(100vw - 28px));
+  }
+
   &.tall {
     max-height: calc(100vh - 48px);
+  }
+
+  &.sheet.tall {
+    max-height: calc(100vh - 36px);
   }
 }
 
@@ -88,6 +96,20 @@
     color: var(--text);
     border-color: var(--line);
   }
+}
+
+.fm-panel.sheet .fm-header {
+  padding: 18px 24px 12px;
+}
+
+.fm-panel.sheet .fm-body {
+  padding: 16px 24px 20px;
+}
+
+.fm-panel.sheet .fm-footer {
+  padding: 12px 24px 18px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .fm-body {

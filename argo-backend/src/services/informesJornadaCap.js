@@ -87,7 +87,9 @@ async function cargarContextoInformes(query = {}) {
   const [contratos, clasesRaw] = await Promise.all([
     contratoIds.length
       ? Contratacion.find({ _id: { $in: contratoIds.map(oid).filter(Boolean) } })
-          .select('codContrato nombreComercial razoSocial numeroAlumnos numSesCert numeObjeJornada estado')
+          .select(
+            'codContrato nombreComercial razoSocial numeroAlumnos numSesCert numeObjeJornada estado numerojornadas tipoCertificado fechaInicJornadas fechaFinJornadas objetoContrato supervisor',
+          )
           .lean()
       : [],
     jornadaIds.length || idClase
@@ -109,7 +111,9 @@ async function cargarContextoInformes(query = {}) {
         if (jExtra.idContrato && !contratoIds.includes(String(jExtra.idContrato))) {
           contratoIds.push(String(jExtra.idContrato));
           const cExtra = await Contratacion.findById(jExtra.idContrato)
-            .select('codContrato nombreComercial razoSocial numeroAlumnos numSesCert numeObjeJornada estado')
+            .select(
+              'codContrato nombreComercial razoSocial numeroAlumnos numSesCert numeObjeJornada estado numerojornadas tipoCertificado fechaInicJornadas fechaFinJornadas objetoContrato supervisor',
+            )
             .lean();
           if (cExtra) contratos.push(cExtra);
         }
@@ -213,8 +217,13 @@ function mapsDesdeContexto(ctx) {
   }
 
   const certByContratoDoc = new Map();
+  const certByClaseDoc = new Map();
   for (const c of ctx.certs) {
-    const key = `${c.idContrato}|${Number(c.numDoc)}`;
+    const nd = Number(c.numDoc);
+    if (c.idClaseJornada) {
+      certByClaseDoc.set(`${String(c.idClaseJornada)}|${nd}`, c);
+    }
+    const key = `${c.idContrato}|${nd}`;
     if (!certByContratoDoc.has(key)) certByContratoDoc.set(key, c);
   }
 
@@ -226,6 +235,7 @@ function mapsDesdeContexto(ctx) {
     inscByClaseDoc,
     asisByClaseDoc,
     certByContratoDoc,
+    certByClaseDoc,
   };
 }
 
@@ -259,7 +269,9 @@ function construirFilasPorClase(ctx) {
     const al = m.alByDoc.get(numDoc);
     const insc = m.inscByClaseDoc.get(key);
     const asis = m.asisByClaseDoc.get(key);
-    const cert = m.certByContratoDoc.get(`${jornada.idContrato}|${numDoc}`);
+    const cert =
+      m.certByClaseDoc.get(`${String(clase._id)}|${numDoc}`) ||
+      m.certByContratoDoc.get(`${jornada.idContrato}|${numDoc}`);
     const idCarpa = normalizarIdCarpa(clase.idCarpa);
     const progId = String(clase.idPrograma || '').trim();
 
@@ -304,7 +316,13 @@ function construirFilasPorClase(ctx) {
   return filas;
 }
 
-function agregarDesdeFilasClase(filasClase, groupKeyFn) {
+function etiquetaContrato(contrato) {
+  if (!contrato) return '';
+  return `${contrato.codContrato || ''} — ${contrato.nombreComercial || contrato.razoSocial || ''}`.trim();
+}
+
+function agregarDesdeFilasClase(filasClase, groupKeyFn, opts = {}) {
+  const { omitJornadaCols = false } = opts;
   const map = new Map();
   for (const f of filasClase) {
     const key = groupKeyFn(f);
@@ -316,6 +334,10 @@ function agregarDesdeFilasClase(filasClase, groupKeyFn) {
         clasesInscrito: 0,
         programas: new Set(),
         carpas: new Set(),
+        fechasJornada: new Set(),
+        municipios: new Set(),
+        instructores: new Set(),
+        detalleClases: [],
       };
       map.set(key, g);
     }
@@ -323,54 +345,403 @@ function agregarDesdeFilasClase(filasClase, groupKeyFn) {
     if (f.inscrito) g.clasesInscrito += 1;
     if (f.programa) g.programas.add(f.programa);
     if (f.carpa) g.carpas.add(f.carpa);
+    if (f.fechaJornada) g.fechasJornada.add(f.fechaJornada);
+    if (f.municipio) g.municipios.add(f.municipio);
+    if (f.instructor) g.instructores.add(f.instructor);
+    if (f.inscrito || f.asistio) {
+      g.detalleClases.push({
+        idClaseCorto: f.idClaseCorto,
+        programa: f.programa,
+        instructor: f.instructor,
+        inscrito: f.inscrito,
+        asistio: f.asistio,
+        certificadoCodigo: f.certificadoCodigo,
+      });
+    }
     if (f.certificadoCodigo && !g.certificadoCodigo) {
       g.certificadoCodigo = f.certificadoCodigo;
       g.certificadoFecha = f.certificadoFecha;
       g.certificadoEstado = f.certificadoEstado;
     }
   }
-  return [...map.values()].map((g) => ({
-    numDoc: g.numDoc,
-    nombreAlumno: g.nombreAlumno,
-    nombre1: g.nombre1,
-    nombre2: g.nombre2,
-    apellido1: g.apellido1,
-    apellido2: g.apellido2,
-    telefono: g.telefono,
-    email: g.email,
-    empresaNombre: g.empresaNombre,
-    codContrato: g.codContrato,
-    contratoLabel: g.contratoLabel,
-    idContrato: g.idContrato,
-    idJornada: g.idJornada,
-    idJornadaCorto: g.idJornadaCorto,
-    fechaJornada: g.fechaJornada,
-    municipio: g.municipio,
-    direccion: g.direccion,
-    estadoJornada: g.estadoJornada,
-    metaAlumnosJornada: g.metaAlumnosJornada,
-    clasesAsistidas: g.clasesAsistidas,
-    clasesInscrito: g.clasesInscrito,
-    programas: [...g.programas].join('; '),
-    carpas: [...g.carpas].join('; '),
-    certificadoCodigo: g.certificadoCodigo || '',
-    certificadoFecha: g.certificadoFecha || '',
-    certificadoEstado: g.certificadoEstado || '',
-    certificado: g.certificadoCodigo ? 'Sí' : 'No',
-  }));
+  return [...map.values()].map((g) => {
+    const fechas = [...g.fechasJornada].sort();
+    const base = {
+      numDoc: g.numDoc,
+      nombreAlumno: g.nombreAlumno,
+      nombre1: g.nombre1,
+      nombre2: g.nombre2,
+      apellido1: g.apellido1,
+      apellido2: g.apellido2,
+      telefono: g.telefono,
+      email: g.email,
+      empresaNombre: g.empresaNombre,
+      codContrato: g.codContrato,
+      contratoLabel: g.contratoLabel,
+      idContrato: g.idContrato,
+      fechasJornada: fechas.join('; '),
+      numJornadas: fechas.length,
+      municipios: [...g.municipios].join('; '),
+      instructores: [...g.instructores].join('; '),
+      detalleClases: g.detalleClases
+        .map((d) => {
+          const prog = d.programa || '—';
+          const inst = d.instructor ? ` · ${d.instructor}` : '';
+          const est = d.asistio ? 'asistió' : d.inscrito ? 'inscrito' : '—';
+          const cert = d.certificadoCodigo ? ` · cert. ${d.certificadoCodigo}` : '';
+          return `${prog}${inst}: ${est}${cert}`;
+        })
+        .join(' | '),
+      clasesAsistidas: g.clasesAsistidas,
+      clasesInscrito: g.clasesInscrito,
+      programas: [...g.programas].join('; '),
+      carpas: [...g.carpas].join('; '),
+      certificadoCodigo: g.certificadoCodigo || '',
+      certificadoFecha: g.certificadoFecha || '',
+      certificadoEstado: g.certificadoEstado || '',
+      certificado: g.certificadoCodigo ? 'Sí' : 'No',
+    };
+    if (!omitJornadaCols) {
+      Object.assign(base, {
+        idJornada: g.idJornada,
+        idJornadaCorto: g.idJornadaCorto,
+        fechaJornada: g.fechaJornada,
+        municipio: g.municipio,
+        direccion: g.direccion,
+        estadoJornada: g.estadoJornada,
+        metaAlumnosJornada: g.metaAlumnosJornada,
+      });
+    }
+    return base;
+  });
 }
 
 function construirFilasPorJornada(filasClase) {
   return agregarDesdeFilasClase(filasClase, (f) => `${f.idJornada}|${f.numDoc}`);
 }
 
+function construirFilasTrazabilidad(filasClase) {
+  return construirFilasPorJornada(filasClase);
+}
+
 function construirFilasPorContrato(filasClase) {
-  const rows = agregarDesdeFilasClase(filasClase, (f) => `${f.idContrato}|${f.numDoc}`);
-  return rows.map((r) => {
-    const { idJornada, idJornadaCorto, fechaJornada, municipio, direccion, estadoJornada, metaAlumnosJornada, ...rest } =
-      r;
-    return rest;
+  return agregarDesdeFilasClase(filasClase, (f) => `${f.idContrato}|${f.numDoc}`, {
+    omitJornadaCols: true,
   });
+}
+
+function construirResumenContratos(ctx, filasClase) {
+  const m = mapsDesdeContexto(ctx);
+  const byContrato = new Map();
+
+  for (const contrato of ctx.contratos) {
+    const id = String(contrato._id);
+    byContrato.set(id, {
+      codContrato: contrato.codContrato || '',
+      contratoLabel: etiquetaContrato(contrato),
+      idContrato: id,
+      cliente: contrato.nombreComercial || contrato.razoSocial || '',
+      estadoContrato: contrato.estado || '',
+      tipoCertificado: contrato.tipoCertificado || '',
+      metaAlumnosContrato: contrato.numeroAlumnos ?? '',
+      sesionesCertificar: contrato.numSesCert ?? '',
+      jornadasPlanificadas: contrato.numerojornadas ?? '',
+      fechaInicio: ymd(contrato.fechaInicJornadas),
+      fechaFin: ymd(contrato.fechaFinJornadas),
+      supervisor: contrato.supervisor || '',
+      jornadasRegistradas: 0,
+      clasesProgramadas: 0,
+      alumnosUnicos: new Set(),
+      alumnosAsistieron: new Set(),
+      municipios: new Set(),
+      instructores: new Set(),
+      primeraJornada: '',
+      ultimaJornada: '',
+      certificadosEmitidos: 0,
+    });
+  }
+
+  const fechasPorContrato = new Map();
+  for (const j of ctx.jornadas) {
+    const cid = String(j.idContrato);
+    const g = byContrato.get(cid);
+    if (!g) continue;
+    g.jornadasRegistradas += 1;
+    if (j.municipio) g.municipios.add(j.municipio);
+    const f = ymd(j.fechaProgramacion);
+    if (f) {
+      if (!fechasPorContrato.has(cid)) fechasPorContrato.set(cid, []);
+      fechasPorContrato.get(cid).push(f);
+    }
+  }
+  for (const [cid, fechas] of fechasPorContrato) {
+    const g = byContrato.get(cid);
+    if (!g || !fechas.length) continue;
+    fechas.sort();
+    g.primeraJornada = fechas[0];
+    g.ultimaJornada = fechas[fechas.length - 1];
+  }
+
+  for (const cl of ctx.clases) {
+    const jornada = m.jorById.get(String(cl.idJornada));
+    if (!jornada) continue;
+    const g = byContrato.get(String(jornada.idContrato));
+    if (!g) continue;
+    g.clasesProgramadas += 1;
+    if (cl.instructorNombre) g.instructores.add(cl.instructorNombre);
+  }
+
+  for (const f of filasClase) {
+    const g = byContrato.get(String(f.idContrato));
+    if (!g) continue;
+    g.alumnosUnicos.add(f.numDoc);
+    if (f.asistio) g.alumnosAsistieron.add(f.numDoc);
+    if (f.instructor) g.instructores.add(f.instructor);
+    if (f.municipio) g.municipios.add(f.municipio);
+  }
+
+  for (const c of ctx.certs) {
+    const g = byContrato.get(String(c.idContrato));
+    if (g) g.certificadosEmitidos += 1;
+  }
+
+  return [...byContrato.values()]
+    .map((g) => ({
+      codContrato: g.codContrato,
+      contratoLabel: g.contratoLabel,
+      idContrato: g.idContrato,
+      cliente: g.cliente,
+      estadoContrato: g.estadoContrato,
+      tipoCertificado: g.tipoCertificado,
+      metaAlumnosContrato: g.metaAlumnosContrato,
+      sesionesCertificar: g.sesionesCertificar,
+      jornadasPlanificadas: g.jornadasPlanificadas,
+      jornadasRegistradas: g.jornadasRegistradas,
+      clasesProgramadas: g.clasesProgramadas,
+      fechaInicio: g.fechaInicio,
+      fechaFin: g.fechaFin,
+      primeraJornada: g.primeraJornada,
+      ultimaJornada: g.ultimaJornada,
+      alumnosUnicos: g.alumnosUnicos.size,
+      alumnosAsistieron: g.alumnosAsistieron.size,
+      certificadosEmitidos: g.certificadosEmitidos,
+      municipios: [...g.municipios].join('; '),
+      instructores: [...g.instructores].join('; '),
+      supervisor: g.supervisor,
+    }))
+    .sort((a, b) => String(a.codContrato).localeCompare(String(b.codContrato)));
+}
+
+function construirCatalogoJornadas(ctx, filasClase) {
+  const m = mapsDesdeContexto(ctx);
+  const map = new Map();
+
+  for (const j of ctx.jornadas) {
+    const contrato = m.contrById.get(String(j.idContrato));
+    map.set(String(j._id), {
+      codContrato: contrato?.codContrato || '',
+      contratoLabel: etiquetaContrato(contrato),
+      idContrato: String(j.idContrato || ''),
+      idJornada: String(j._id),
+      idJornadaCorto: String(j._id).slice(-6).toUpperCase(),
+      fechaJornada: ymd(j.fechaProgramacion),
+      municipio: j.municipio || '',
+      direccion: j.direccion || '',
+      estadoJornada: j.estado || '',
+      metaAlumnos: j.numeObjeJornada ?? '',
+      numClases: 0,
+      clasesFinalizadas: 0,
+      alumnosInscritos: new Set(),
+      alumnosAsistieron: new Set(),
+      instructores: new Set(),
+      programas: new Set(),
+      certificadosEmitidos: 0,
+    });
+  }
+
+  for (const cl of ctx.clases) {
+    const g = map.get(String(cl.idJornada));
+    if (!g) continue;
+    g.numClases += 1;
+    if (String(cl.estado || '').toUpperCase() === 'FINALIZADO') g.clasesFinalizadas += 1;
+    if (cl.instructorNombre) g.instructores.add(cl.instructorNombre);
+    const progId = String(cl.idPrograma || '').trim();
+    if (progId) g.programas.add(ctx.progMap.get(progId) || progId);
+  }
+
+  for (const f of filasClase) {
+    const g = map.get(String(f.idJornada));
+    if (!g) continue;
+    if (f.inscrito) g.alumnosInscritos.add(f.numDoc);
+    if (f.asistio) g.alumnosAsistieron.add(f.numDoc);
+  }
+
+  for (const c of ctx.certs) {
+    if (!c.idJornada) continue;
+    const g = map.get(String(c.idJornada));
+    if (g) g.certificadosEmitidos += 1;
+  }
+
+  return [...map.values()]
+    .map((g) => ({
+      codContrato: g.codContrato,
+      contratoLabel: g.contratoLabel,
+      idContrato: g.idContrato,
+      idJornada: g.idJornada,
+      idJornadaCorto: g.idJornadaCorto,
+      fechaJornada: g.fechaJornada,
+      municipio: g.municipio,
+      direccion: g.direccion,
+      estadoJornada: g.estadoJornada,
+      metaAlumnos: g.metaAlumnos,
+      numClases: g.numClases,
+      clasesFinalizadas: g.clasesFinalizadas,
+      alumnosInscritos: g.alumnosInscritos.size,
+      alumnosAsistieron: g.alumnosAsistieron.size,
+      instructores: [...g.instructores].join('; '),
+      programas: [...g.programas].join('; '),
+      certificadosEmitidos: g.certificadosEmitidos,
+    }))
+    .sort((a, b) => `${a.fechaJornada}|${a.codContrato}`.localeCompare(`${b.fechaJornada}|${b.codContrato}`));
+}
+
+function construirCatalogoClases(ctx, filasClase) {
+  const m = mapsDesdeContexto(ctx);
+  const map = new Map();
+
+  for (const cl of ctx.clases) {
+    const jornada = m.jorById.get(String(cl.idJornada));
+    const contrato = jornada ? m.contrById.get(String(jornada.idContrato)) : null;
+    const progId = String(cl.idPrograma || '').trim();
+    const idCarpa = normalizarIdCarpa(cl.idCarpa);
+    map.set(String(cl._id), {
+      codContrato: contrato?.codContrato || '',
+      contratoLabel: etiquetaContrato(contrato),
+      idContrato: String(jornada?.idContrato || ''),
+      idJornada: String(jornada?._id || ''),
+      idJornadaCorto: jornada ? String(jornada._id).slice(-6).toUpperCase() : '',
+      fechaJornada: jornada ? ymd(jornada.fechaProgramacion) : '',
+      municipio: jornada?.municipio || '',
+      estadoJornada: jornada?.estado || '',
+      idClase: String(cl._id),
+      idClaseCorto: String(cl._id).slice(-6).toUpperCase(),
+      indiceClaseEnJornada: cl.indiceClaseEnJornada ?? '',
+      programa: ctx.progMap.get(progId) || progId || '',
+      carpa: idCarpa != null ? ctx.carpaNombres.get(idCarpa) || `Carpa ${idCarpa}` : '',
+      ubicacion: cl.ubicacion || '',
+      estadoClase: cl.estado || '',
+      instructor: cl.instructorNombre || cl.idinstructor || '',
+      horaInicio: hhmm(cl.horaInicio),
+      horaFin: hhmm(cl.horaFin),
+      alumnosInscritos: new Set(),
+      alumnosAsistieron: new Set(),
+      certificadosEmitidos: 0,
+    });
+  }
+
+  for (const f of filasClase) {
+    const g = map.get(String(f.idClase));
+    if (!g) continue;
+    if (f.inscrito) g.alumnosInscritos.add(f.numDoc);
+    if (f.asistio) g.alumnosAsistieron.add(f.numDoc);
+  }
+
+  for (const c of ctx.certs) {
+    if (!c.idClaseJornada) continue;
+    const g = map.get(String(c.idClaseJornada));
+    if (g) g.certificadosEmitidos += 1;
+  }
+
+  return [...map.values()]
+    .map((g) => ({
+      codContrato: g.codContrato,
+      contratoLabel: g.contratoLabel,
+      idContrato: g.idContrato,
+      idJornada: g.idJornada,
+      idJornadaCorto: g.idJornadaCorto,
+      fechaJornada: g.fechaJornada,
+      municipio: g.municipio,
+      estadoJornada: g.estadoJornada,
+      idClase: g.idClase,
+      idClaseCorto: g.idClaseCorto,
+      indiceClaseEnJornada: g.indiceClaseEnJornada,
+      programa: g.programa,
+      carpa: g.carpa,
+      ubicacion: g.ubicacion,
+      estadoClase: g.estadoClase,
+      instructor: g.instructor,
+      horaInicio: g.horaInicio,
+      horaFin: g.horaFin,
+      alumnosInscritos: g.alumnosInscritos.size,
+      alumnosAsistieron: g.alumnosAsistieron.size,
+      certificadosEmitidos: g.certificadosEmitidos,
+    }))
+    .sort((a, b) =>
+      `${a.fechaJornada}|${a.codContrato}|${a.indiceClaseEnJornada}|${a.idClase}`.localeCompare(
+        `${b.fechaJornada}|${b.codContrato}|${b.indiceClaseEnJornada}|${b.idClase}`,
+      ),
+    );
+}
+
+function construirResumenAlumnos(filasClase) {
+  return construirFilasPorContrato(filasClase);
+}
+
+function construirFilasInstructores(filasClase) {
+  const map = new Map();
+  for (const f of filasClase) {
+    const instructor = String(f.instructor || '').trim();
+    if (!instructor) continue;
+    const key = `${instructor}|${f.idClase}`;
+    let g = map.get(key);
+    if (!g) {
+      g = {
+        instructor,
+        codContrato: f.codContrato,
+        contratoLabel: f.contratoLabel,
+        idContrato: f.idContrato,
+        idJornada: f.idJornada,
+        idJornadaCorto: f.idJornadaCorto,
+        fechaJornada: f.fechaJornada,
+        municipio: f.municipio,
+        idClase: f.idClase,
+        idClaseCorto: f.idClaseCorto,
+        programa: f.programa,
+        carpa: f.carpa,
+        estadoClase: f.estadoClase,
+        horaInicio: f.horaInicio,
+        horaFin: f.horaFin,
+        alumnosInscritos: new Set(),
+        alumnosAsistieron: new Set(),
+      };
+      map.set(key, g);
+    }
+    if (f.inscrito) g.alumnosInscritos.add(f.numDoc);
+    if (f.asistio) g.alumnosAsistieron.add(f.numDoc);
+  }
+  return [...map.values()]
+    .map((g) => ({
+      instructor: g.instructor,
+      codContrato: g.codContrato,
+      contratoLabel: g.contratoLabel,
+      idContrato: g.idContrato,
+      idJornadaCorto: g.idJornadaCorto,
+      fechaJornada: g.fechaJornada,
+      municipio: g.municipio,
+      idClaseCorto: g.idClaseCorto,
+      programa: g.programa,
+      carpa: g.carpa,
+      estadoClase: g.estadoClase,
+      horaInicio: g.horaInicio,
+      horaFin: g.horaFin,
+      alumnosInscritos: g.alumnosInscritos.size,
+      alumnosAsistieron: g.alumnosAsistieron.size,
+    }))
+    .sort((a, b) =>
+      `${a.fechaJornada}|${a.codContrato}|${a.instructor}`.localeCompare(
+        `${b.fechaJornada}|${b.codContrato}|${b.instructor}`,
+      ),
+    );
 }
 
 function construirFilasCertificados(ctx) {
@@ -382,6 +753,7 @@ function construirFilasCertificados(ctx) {
     const jornada = cert.idJornada ? m.jorById.get(String(cert.idJornada)) : null;
     filas.push({
       ...filaBaseAlumno(al, cert.numDoc),
+      empresaNombre: cert.empresaNombre || al?.empresaNombre || '',
       codigoCert: cert.codigoCert || '',
       fechaEmision: ymd(cert.fechaEmision || cert.createdAt),
       estado: cert.estado || '',
@@ -401,7 +773,7 @@ function construirFilasCertificados(ctx) {
   return filas;
 }
 
-function resumenDesdeFilas(filasClase, filasCert) {
+function resumenDesdeFilas(filasClase, filasCert, extras = {}) {
   const alumnosUnicos = new Set(filasClase.map((f) => f.numDoc));
   const asistencias = filasClase.filter((f) => f.asistio).length;
   const inscritos = filasClase.filter((f) => f.inscrito).length;
@@ -411,15 +783,23 @@ function resumenDesdeFilas(filasClase, filasCert) {
     registrosAsistencia: asistencias,
     registrosInscripcion: inscritos,
     certificados: filasCert.length,
+    contratos: extras.contratos ?? 0,
+    jornadas: extras.jornadas ?? 0,
+    instructores: extras.instructores ?? 0,
   };
 }
 
 async function generarInformesJornada(query = {}) {
   const ctx = await cargarContextoInformes(query);
   const porClase = construirFilasPorClase(ctx);
-  const porJornada = construirFilasPorJornada(porClase);
-  const porContrato = construirFilasPorContrato(porClase);
+  const trazabilidad = construirFilasTrazabilidad(porClase);
+  const resumenContratos = construirResumenContratos(ctx, porClase);
+  const catalogoJornadas = construirCatalogoJornadas(ctx, porClase);
+  const catalogoClases = construirCatalogoClases(ctx, porClase);
+  const alumnos = construirResumenAlumnos(porClase);
+  const instructores = construirFilasInstructores(porClase);
   const certificados = construirFilasCertificados(ctx);
+  const instructoresUnicos = new Set(instructores.map((i) => i.instructor).filter(Boolean));
   return {
     filtros: {
       idContrato: query.idContrato || null,
@@ -428,10 +808,18 @@ async function generarInformesJornada(query = {}) {
       desde: query.desde || null,
       hasta: query.hasta || null,
     },
-    resumen: resumenDesdeFilas(porClase, certificados),
+    resumen: resumenDesdeFilas(porClase, certificados, {
+      contratos: resumenContratos.length,
+      jornadas: catalogoJornadas.length,
+      instructores: instructoresUnicos.size,
+    }),
     porClase,
-    porJornada,
-    porContrato,
+    trazabilidad,
+    resumenContratos,
+    catalogoJornadas,
+    catalogoClases,
+    alumnos,
+    instructores,
     certificados,
   };
 }
@@ -492,11 +880,33 @@ const HOJAS = {
       ['empresaNombre', 'Empresa'],
       ['clasesInscrito', 'Clases inscrito'],
       ['clasesAsistidas', 'Clases asistidas'],
+      ['instructores', 'Instructores'],
       ['programas', 'Programas'],
       ['carpas', 'Carpas'],
+      ['detalleClases', 'Detalle clases'],
       ['certificado', 'Certificado'],
       ['certificadoCodigo', 'Código certificado'],
       ['certificadoFecha', 'Fecha certificado'],
+    ],
+  },
+  trazabilidad: {
+    nombre: 'Trazabilidad',
+    columnas: [
+      ['codContrato', 'Contrato'],
+      ['contratoLabel', 'Contrato (detalle)'],
+      ['fechaJornada', 'Fecha jornada'],
+      ['idJornadaCorto', 'ID jornada'],
+      ['municipio', 'Municipio'],
+      ['numDoc', 'Documento'],
+      ['nombreAlumno', 'Alumno'],
+      ['empresaNombre', 'Empresa'],
+      ['clasesInscrito', 'Clases inscrito'],
+      ['clasesAsistidas', 'Clases asistidas'],
+      ['instructores', 'Instructores'],
+      ['programas', 'Programas'],
+      ['detalleClases', 'Detalle por clase'],
+      ['certificado', 'Certificado'],
+      ['certificadoCodigo', 'Código certificado'],
     ],
   },
   porContrato: {
@@ -509,22 +919,131 @@ const HOJAS = {
       ['telefono', 'Teléfono'],
       ['email', 'Email'],
       ['empresaNombre', 'Empresa'],
+      ['numJornadas', 'Jornadas'],
+      ['fechasJornada', 'Fechas jornadas'],
+      ['municipios', 'Municipios'],
+      ['instructores', 'Instructores'],
       ['clasesInscrito', 'Clases inscrito'],
       ['clasesAsistidas', 'Clases asistidas'],
       ['programas', 'Programas'],
       ['carpas', 'Carpas'],
+      ['detalleClases', 'Detalle clases'],
       ['certificado', 'Certificado'],
       ['certificadoCodigo', 'Código certificado'],
       ['certificadoFecha', 'Fecha certificado'],
+    ],
+  },
+  resumenContratos: {
+    nombre: 'Contratos',
+    columnas: [
+      ['codContrato', 'Contrato'],
+      ['contratoLabel', 'Contrato (detalle)'],
+      ['cliente', 'Cliente'],
+      ['estadoContrato', 'Estado'],
+      ['tipoCertificado', 'Tipo certificación'],
+      ['metaAlumnosContrato', 'Meta alumnos'],
+      ['sesionesCertificar', 'Sesiones cert.'],
+      ['jornadasPlanificadas', 'Jornadas planificadas'],
+      ['jornadasRegistradas', 'Jornadas registradas'],
+      ['clasesProgramadas', 'Clases programadas'],
+      ['fechaInicio', 'Inicio contrato'],
+      ['fechaFin', 'Fin contrato'],
+      ['primeraJornada', 'Primera jornada'],
+      ['ultimaJornada', 'Última jornada'],
+      ['alumnosUnicos', 'Alumnos únicos'],
+      ['alumnosAsistieron', 'Alumnos asistieron'],
+      ['certificadosEmitidos', 'Certificados'],
+      ['municipios', 'Municipios'],
+      ['instructores', 'Instructores'],
+      ['supervisor', 'Supervisor'],
+    ],
+  },
+  catalogoJornadas: {
+    nombre: 'Jornadas',
+    columnas: [
+      ['codContrato', 'Contrato'],
+      ['contratoLabel', 'Contrato (detalle)'],
+      ['idJornadaCorto', 'ID jornada'],
+      ['fechaJornada', 'Fecha jornada'],
+      ['municipio', 'Municipio'],
+      ['direccion', 'Dirección'],
+      ['estadoJornada', 'Estado'],
+      ['metaAlumnos', 'Meta alumnos'],
+      ['numClases', 'Clases'],
+      ['clasesFinalizadas', 'Clases finalizadas'],
+      ['alumnosInscritos', 'Alumnos inscritos'],
+      ['alumnosAsistieron', 'Alumnos asistieron'],
+      ['instructores', 'Instructores'],
+      ['programas', 'Programas'],
+      ['certificadosEmitidos', 'Certificados'],
+    ],
+  },
+  catalogoClases: {
+    nombre: 'Clases',
+    columnas: [
+      ['codContrato', 'Contrato'],
+      ['fechaJornada', 'Fecha jornada'],
+      ['idJornadaCorto', 'ID jornada'],
+      ['municipio', 'Municipio'],
+      ['idClaseCorto', 'ID clase'],
+      ['indiceClaseEnJornada', 'Nº clase'],
+      ['programa', 'Programa'],
+      ['carpa', 'Carpa'],
+      ['ubicacion', 'Ubicación'],
+      ['estadoClase', 'Estado'],
+      ['instructor', 'Instructor'],
+      ['horaInicio', 'Hora inicio'],
+      ['horaFin', 'Hora fin'],
+      ['alumnosInscritos', 'Inscritos'],
+      ['alumnosAsistieron', 'Asistieron'],
+      ['certificadosEmitidos', 'Certificados'],
+    ],
+  },
+  alumnos: {
+    nombre: 'Alumnos',
+    columnas: [
+      ['codContrato', 'Contrato'],
+      ['numDoc', 'Documento'],
+      ['nombreAlumno', 'Nombre completo'],
+      ['telefono', 'Teléfono'],
+      ['email', 'Email'],
+      ['empresaNombre', 'Empresa'],
+      ['numJornadas', 'Jornadas'],
+      ['fechasJornada', 'Fechas jornadas'],
+      ['municipios', 'Municipios'],
+      ['clasesInscrito', 'Clases inscrito'],
+      ['clasesAsistidas', 'Clases asistidas'],
+      ['programas', 'Programas'],
+      ['instructores', 'Instructores'],
+      ['certificado', 'Certificado'],
+      ['certificadoCodigo', 'Código certificado'],
+      ['certificadoFecha', 'Fecha certificado'],
+    ],
+  },
+  instructores: {
+    nombre: 'Instructores',
+    columnas: [
+      ['instructor', 'Instructor'],
+      ['codContrato', 'Contrato'],
+      ['fechaJornada', 'Fecha jornada'],
+      ['municipio', 'Municipio'],
+      ['idClaseCorto', 'ID clase'],
+      ['programa', 'Programa'],
+      ['carpa', 'Carpa'],
+      ['estadoClase', 'Estado clase'],
+      ['horaInicio', 'Hora inicio'],
+      ['horaFin', 'Hora fin'],
+      ['alumnosInscritos', 'Alumnos inscritos'],
+      ['alumnosAsistieron', 'Alumnos asistieron'],
     ],
   },
   certificados: {
     nombre: 'Certificados',
     columnas: [
       ['codigoCert', 'Código'],
+      ['encabezado', 'Encabezado'],
       ['fechaEmision', 'Fecha emisión'],
       ['estado', 'Estado'],
-      ['encabezado', 'Encabezado'],
       ['numDoc', 'Documento'],
       ['nombreAlumno', 'Nombre completo'],
       ['telefono', 'Teléfono'],
@@ -564,13 +1083,22 @@ async function exportarInformesJornadaExcel(query = {}, tipo = 'completo') {
     XLSX.utils.book_append_sheet(wb, ws, def.nombre.slice(0, 31));
   };
 
-  if (t === 'por-clase' || t === 'completo') append('porClase', data.porClase);
-  if (t === 'por-jornada' || t === 'completo') append('porJornada', data.porJornada);
-  if (t === 'por-contrato' || t === 'completo') append('porContrato', data.porContrato);
+  if (t === 'resumen-contratos' || t === 'contratos' || t === 'completo') {
+    append('resumenContratos', data.resumenContratos);
+  }
+  if (t === 'trazabilidad' || t === 'completo') append('trazabilidad', data.trazabilidad);
+  if (t === 'catalogo-jornadas' || t === 'jornadas' || t === 'completo') {
+    append('catalogoJornadas', data.catalogoJornadas);
+  }
+  if (t === 'catalogo-clases' || t === 'clases' || t === 'completo') {
+    append('catalogoClases', data.catalogoClases);
+  }
+  if (t === 'alumnos' || t === 'completo') append('alumnos', data.alumnos);
+  if (t === 'instructores' || t === 'completo') append('instructores', data.instructores);
   if (t === 'certificados' || t === 'completo') append('certificados', data.certificados);
 
   if (!wb.SheetNames.length) {
-    append('porClase', data.porClase);
+    append('resumenContratos', data.resumenContratos);
   }
 
   const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });

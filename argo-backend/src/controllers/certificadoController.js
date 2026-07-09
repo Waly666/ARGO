@@ -360,6 +360,76 @@ async function queryBaseVencidos(req) {
   return { $and: andParts };
 }
 
+/** Excluye vencidos si el alumno ya tiene certificado vigente del mismo programa (idProg). */
+function etapaLookupVigenteMismoPrograma() {
+  const filtrosJornada = filtrosExcluirJornadaCapacitacion();
+  return {
+    $lookup: {
+      from: 'certificados',
+      let: { nd: '$numDoc', prog: '$idProg' },
+      pipeline: [
+        {
+          $match: {
+            ...filtrosJornada,
+            estado: 'vigente',
+            $expr: {
+              $and: [
+                { $eq: ['$numDoc', '$$nd'] },
+                { $eq: ['$idProg', '$$prog'] },
+              ],
+            },
+          },
+        },
+        { $project: { _id: 1 } },
+        { $limit: 1 },
+      ],
+      as: '_vigenteMismoProg',
+    },
+  };
+}
+
+function pipelineVencidosSinRenovacion(q) {
+  return [
+    { $match: q },
+    etapaLookupVigenteMismoPrograma(),
+    { $match: { _vigenteMismoProg: { $size: 0 } } },
+    { $project: { _vigenteMismoProg: 0 } },
+  ];
+}
+
+async function contarVencidosSinRenovacion(q) {
+  const r = await Certificado.aggregate([
+    ...pipelineVencidosSinRenovacion(q),
+    { $count: 'total' },
+  ]);
+  return r[0]?.total ?? 0;
+}
+
+async function listarVencidosSinRenovacion(q, { skip = 0, limit = 100, sort = { fechaVencimiento: -1 } } = {}) {
+  return Certificado.aggregate([
+    ...pipelineVencidosSinRenovacion(q),
+    { $sort: sort },
+    { $skip: skip },
+    { $limit: limit },
+  ]);
+}
+
+/** Misma regla que el listado, para alertas con pocos registros (sin agregación paginada). */
+async function filtrarVencidosSinRenovacionVigente(rows) {
+  if (!rows.length) return rows;
+  const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
+  if (!numDocs.length) return rows;
+  const vigentes = await Certificado.find({
+    ...filtrosExcluirJornadaCapacitacion(),
+    numDoc: { $in: numDocs },
+    estado: 'vigente',
+  })
+    .select('numDoc idProg')
+    .lean();
+  const keys = new Set(vigentes.map((v) => `${v.numDoc}|${String(v.idProg || '')}`));
+  return rows.filter((c) => !keys.has(`${c.numDoc}|${String(c.idProg || '')}`));
+}
+
 async function mapearFilasVencidos(rows) {
   const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
   const idProgs = [...new Set(rows.map((c) => String(c.idProg || '')).filter(Boolean))];
@@ -663,7 +733,7 @@ exports.alertasVencidos = async (req, res, next) => {
     const hoy = inicioDia();
     const desdeVencido = inicioDia(new Date(hoy.getTime() - diasVentana * 24 * 60 * 60 * 1000));
 
-    const rows = await Certificado.find({
+    const rowsRaw = await Certificado.find({
       ...filtrosExcluirJornadaCapacitacion(),
       fechaVencimiento: { $ne: null, $gte: desdeVencido, $lt: hoy },
       estado: { $ne: 'anulado' },
@@ -671,6 +741,8 @@ exports.alertasVencidos = async (req, res, next) => {
       .sort({ fechaVencimiento: -1 })
       .limit(200)
       .lean();
+
+    const rows = await filtrarVencidosSinRenovacionVigente(rowsRaw);
 
     const alByDoc = await alumnosPorCertificados(rows);
     const items = [];
@@ -836,8 +908,8 @@ exports.listarVencidos = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const [total, rows] = await Promise.all([
-      Certificado.countDocuments(q),
-      Certificado.find(q).sort({ fechaVencimiento: -1 }).skip(skip).limit(limit).lean(),
+      contarVencidosSinRenovacion(q),
+      listarVencidosSinRenovacion(q, { skip, limit }),
     ]);
 
     const items = await mapearFilasVencidos(rows);
@@ -854,14 +926,14 @@ exports.exportarVencidos = async (req, res, next) => {
   try {
     const q = await queryBaseVencidos(req);
     const max = 15000;
-    const total = await Certificado.countDocuments(q);
+    const total = await contarVencidosSinRenovacion(q);
     if (total > max) {
       return res.status(400).json({
         message: `Hay ${total} certificados con el filtro actual. Refine la búsqueda (máximo ${max} filas por exportación).`,
       });
     }
 
-    const rows = await Certificado.find(q).sort({ fechaVencimiento: -1 }).limit(max).lean();
+    const rows = await listarVencidosSinRenovacion(q, { skip: 0, limit: max });
     const items = await mapearFilasVencidos(rows);
 
     const headers = [

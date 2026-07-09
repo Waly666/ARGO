@@ -16,7 +16,9 @@
   <argo-form-modal
     [open]="true"
     title="Editar clase"
-    [xwide]="true"
+    [subtitle]="modalClaseSubtitle()"
+    [sheet]="true"
+    [tall]="true"
     (closed)="cerrarModal()">
     <section class="clase-modal-form argo-form-shell">
       @if (claseActiva(); as cl) {
@@ -55,17 +57,24 @@
       }
 
       @if (claseActiva(); as cl) {
-        @if (!claseEsHoy(cl) && cl.estado !== 'FINALIZADO' && !cl.horaInicio) {
+        @if (cl.estado === 'FINALIZADO') {
+          <p class="hint hint-ok">
+            Esta clase ya está <strong>finalizada</strong>. Puede seguir matriculando alumnos y usar
+            <strong>«Reprocesar certificados»</strong> para emitir los que falten.
+          </p>
+        } @else if (!claseEsHoy(cl) && !cl.horaInicio) {
           <p class="hint hint-warn">
             Esta clase es de otro día. Solo puede <strong>iniciarla el día programado</strong> (hoy).
           </p>
-        } @else if (!jornadaClaseModalOperable() && cl.estado !== 'FINALIZADO' && !cl.horaInicio) {
+        } @else if (!jornadaClaseModalOperable() && !cl.horaInicio) {
           <p class="hint hint-warn">
             La jornada aún no está <strong>EN PROCESO</strong>. Podrá iniciar la clase el día programado de la jornada.
           </p>
         }
       }
 
+      <div class="clase-modal-edit-layout">
+        <div class="clase-modal-edit-main">
       <h3 class="clase-modal-section">Datos de la clase</h3>
       <div class="clase-modal-datos-grid">
         <div class="cm-field cm-jornada">
@@ -109,7 +118,7 @@
       </div>
 
       @if (puedeEditarHorarioClase() || claseSel()) {
-        <div class="clase-modal-extra-grid clase-modal-extra-grid--top">
+        <div class="clase-modal-extra-stack">
           @if (puedeEditarHorarioClase()) {
             <div class="cm-panel cm-horario argo-form-section variant-horario">
               <h3 class="clase-modal-section">Horario de la clase</h3>
@@ -119,6 +128,7 @@
                   <label>Inicio</label>
                   <argo-hora-12-input
                     [minuteStep]="15"
+                    [showPreview]="false"
                     [value]="modalHoraInicio() || '08:00'"
                     (valueChange)="modalHoraInicio.set($event)" />
                 </div>
@@ -126,6 +136,7 @@
                   <label>Fin</label>
                   <argo-hora-12-input
                     [minuteStep]="15"
+                    [showPreview]="false"
                     [value]="modalHoraFin() || '10:00'"
                     (valueChange)="modalHoraFin.set($event)" />
                 </div>
@@ -202,8 +213,10 @@
           <p class="hint hint-compact hint-warn">No se cargaron programas. Verifique permisos o recargue la página.</p>
         }
       </div>
+        </div>
 
-      <h3 class="clase-modal-section">Alumnos</h3>
+        <aside class="clase-modal-edit-side" aria-label="Alumnos inscritos">
+      <h3 class="clase-modal-section clase-modal-section--side">Alumnos</h3>
       @if (totalAlumnosMatriculadosModal() > 0) {
         <p class="hint hint-compact clase-matriculados-resumen">
           <strong>{{ totalAlumnosMatriculadosModal() }}</strong> inscrito(s)
@@ -270,6 +283,62 @@
         }
       </div>
 
+      @if (cargandoAlumnosClaseAnterior()) {
+        <p class="hint hint-compact">Buscando alumnos de la clase anterior de esta jornada…</p>
+      }
+      @if (claseAnteriorInfo(); as ant) {
+        @if (alumnosClaseAnteriorDisponibles().length > 0) {
+          <div class="clase-anterior-copiar">
+            <div class="clase-anterior-copiar-head">
+              <span class="clase-anterior-copiar-title">
+                ↻ Alumnos de «{{ ant.programaNombre || 'la clase anterior' }}{{ ant.carpaNombre ? ' — ' + ant.carpaNombre : '' }}»
+              </span>
+              <div class="clase-anterior-copiar-acciones">
+                <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
+                <button type="button" class="mini ghost" (click)="limpiarSeleccionAlumnosClaseAnterior()">Ninguno</button>
+              </div>
+            </div>
+            <p class="hint hint-compact">
+              Marque quiénes continúan en esta clase (opcional) y pulse «Matricular seleccionados».
+            </p>
+            <ul class="clase-anterior-copiar-lista">
+              @for (a of alumnosClaseAnteriorDisponibles(); track a.numDoc) {
+                <li [class.certificado]="!alumnoPuedeMatricularDesdeAnterior(a)">
+                  <label class="clase-anterior-copiar-item">
+                    <input
+                      type="checkbox"
+                      [checked]="alumnoClaseAnteriorSeleccionado(a.numDoc)"
+                      [disabled]="!alumnoPuedeMatricularDesdeAnterior(a)"
+                      (change)="toggleAlumnoClaseAnterior(a.numDoc, $any($event.target).checked)" />
+                    <span class="buscar-name">{{ a.nombreCompleto || a.numDoc }}</span>
+                    <span class="buscar-meta">{{ a.numDoc }}</span>
+                  </label>
+                  @if (!alumnoPuedeMatricularDesdeAnterior(a) && a.yaCertificadoContrato) {
+                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado vigente en este contrato">
+                      Ya certificado
+                    </span>
+                  } @else if (a.yaCertificadoContrato) {
+                    <span class="cap cap-muted cap-sm cap-text" title="Certificado en la clase anterior; puede continuar en esta">
+                      Cert. clase anterior
+                    </span>
+                  }
+                </li>
+              }
+            </ul>
+            <div class="clase-anterior-copiar-footer">
+              <button
+                type="button"
+                class="mini primary"
+                (click)="matricularSeleccionClaseAnterior()"
+                [disabled]="matriculandoDesdeAnterior() || alumnosClaseAnteriorSeleccion().size === 0">
+                {{ matriculandoDesdeAnterior() ? 'Matriculando…' : 'Matricular seleccionados (' + alumnosClaseAnteriorSeleccion().size + ')' }}
+              </button>
+            </div>
+          </div>
+        }
+      }
+
+      <div class="clase-modal-alumnos-scroll">
       <table class="argo mini clase-matricula-list">
         <thead>
           <tr>
@@ -355,31 +424,33 @@
           }
         </tbody>
       </table>
+      </div>
 
       @if (claseActiva()?.estado === 'FINALIZADO' && inscritosConAsistencia() > 0) {
-        <p class="hint">
+        <p class="hint hint-compact">
           Sesión finalizada con <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
-          Las clases finalizadas no se pueden eliminar.
         </p>
       }
 
       @if (claseActiva()?.estado === 'FINALIZADO' && inscritosSinAsistencia() > 0) {
-        <p class="hint hint-warn">
-          Hay <strong>{{ inscritosSinAsistencia() }}</strong> inscrito(s) pendiente(s) de asistencia.
-          El certificado automático cuenta <strong>asistencias</strong>, no solo inscripción o finalizar la clase.
-          Los alumnos <strong>ya certificados</strong> en el contrato no requieren asistencia en esta clase.
+        <p class="hint hint-compact hint-warn">
+          <strong>{{ inscritosSinAsistencia() }}</strong> pendiente(s) de asistencia.
         </p>
         <button type="button" class="mini primary" (click)="sincronizarAsistenciasClaseModal()">
-          Registrar asistencia de todos los inscritos ({{ inscritosSinAsistencia() }})
+          Registrar asistencia de todos ({{ inscritosSinAsistencia() }})
         </button>
       }
 
       @if (puedeEliminarClaseActiva() && inscritosConAsistencia() > 0) {
-        <p class="hint hint-warn">
-          Hay <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
-          Si elimina la clase, también se borrarán esas asistencias e inscripciones.
+        <p class="hint hint-compact hint-warn">
+          {{ inscritosConAsistencia() }} asistencia(s): al borrar la clase se pierden.
+          @if (claseActiva()?.estado === 'FINALIZADO') {
+            Los certificados emitidos por esta clase se anularán.
+          }
         </p>
       }
+        </aside>
+      </div>
     </section>
 
     <div modal-actions>
@@ -403,13 +474,18 @@
           [title]="tituloBotonIniciarClase()">
           ▶ Iniciar clase
         </button>
-        <button
-          type="button"
-          class="danger"
-          (click)="finalizarClaseModal()"
-          [disabled]="!claseModalFinalizable()"
-          [title]="claseModalFinalizable() ? 'Finalizar clase y registrar hora de fin' : 'Solo se puede finalizar una clase EN PROCESO'">
-          ■ Finalizar clase
+      }
+      <button
+        type="button"
+        class="danger"
+        (click)="finalizarClaseModal()"
+        [disabled]="!claseModalFinalizable()"
+        [title]="tituloBotonFinalizarClase()">
+        {{ textoBotonFinalizarClase() }}
+      </button>
+      @if (puedeEliminarClase() && claseActiva(); as clDel) {
+        <button type="button" class="danger ghost" (click)="eliminarClase(clDel)">
+          🗑 Borrar clase
         </button>
       }
     </div>

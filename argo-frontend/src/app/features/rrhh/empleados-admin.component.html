@@ -114,21 +114,25 @@
 
     <h3 class="sec">Contacto y ubicación</h3>
     <div class="row">
-      <div class="col-4">
+      <div class="col-6">
         <label>Correo personal</label>
         <input type="email" [ngModel]="form().correoPersonal" (ngModelChange)="patch('correoPersonal', $event)" />
       </div>
-      <div class="col-4">
+      <div class="col-6">
         <label>Correo corporativo</label>
         <input type="email" [ngModel]="form().correoCorporativo" (ngModelChange)="patch('correoCorporativo', $event)" />
       </div>
-      <div class="col-2">
+    </div>
+    <div class="row">
+      <div class="col-6">
         <label>Teléfono</label>
-        <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch('telefono', $event)" />
+        <input type="text" [ngModel]="form().telefono" (ngModelChange)="patch('telefono', $event)" placeholder="Ej. (602) 824 1234" />
       </div>
-      <div class="col-2">
+      <div class="col-6 emp-tel-field">
         <label>Celular</label>
-        <input type="text" [ngModel]="form().celular" (ngModelChange)="patch('celular', $event)" />
+        <argo-celular-input
+          [value]="form().celular || ''"
+          (valueChange)="patch('celular', $event)" />
       </div>
     </div>
     <div class="row">

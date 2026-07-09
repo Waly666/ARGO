@@ -101,13 +101,20 @@ exports.listar = async (req, res, next) => {
     const limitRaw = Number(req.query.limit);
     let limit = limitRaw > 0 ? limitRaw : 0;
     if (!limit && esCatalogo) limit = q.length >= 1 ? 35 : 40;
+    const excluirJornadas = req.query.excluirJornadasCap === '1';
     let query = cat.programas.find(filter).sort({ idPrograma: 1, nombreProg: 1 });
-    if (limit > 0) query = query.limit(limit);
+    const fetchLimit = excluirJornadas && limit > 0 ? Math.min(limit * 5, 250) : limit;
+    if (fetchLimit > 0) query = query.limit(fetchLimit);
     let rows = await query.lean();
     if (req.idSede && req.query.catalogo !== '1') {
       rows = await filtrarProgramas(rows, req.idSede);
     }
     rows = await adjuntarVirtualidadProgramas(rows);
+    if (excluirJornadas) {
+      const flags = await Promise.all(rows.map((p) => esProgramaJornadasCap(p)));
+      rows = rows.filter((_, i) => !flags[i]);
+      if (limit > 0) rows = rows.slice(0, limit);
+    }
     res.json(rows);
   } catch (e) {
     next(e);

@@ -1,6 +1,12 @@
 const ClaseJornadaCap = require('../models/ClaseJornadaCap');
 const JornadaCap = require('../models/JornadaCap');
 const { inicioDia } = require('./estadoJornadaCap');
+const {
+  normalizeIdProgramasContrato,
+  programaRoundRobin,
+  contarClasesContrato,
+  resolverProgramaAutogeneracion,
+} = require('./programasContratoJornada');
 
 /** Ventana horaria diaria para repartir clases autogeneradas (8:00–17:00). */
 const HORA_DIA_INICIO = 8;
@@ -52,14 +58,32 @@ async function generarClasesFaltantesJornada(jornada, contrato, userLogin = '') 
     existentes.map((c) => Math.max(1, parseInt(c.indiceClaseEnJornada, 10) || 0)),
   );
 
+  const programasContrato = normalizeIdProgramasContrato(contrato?.idProgramas);
+  let indiceGlobal =
+    programasContrato.length && contrato?._id ? await contarClasesContrato(contrato._id) : 0;
+
   const docs = [];
   for (const slot of horarios) {
     if (indicesOcupados.has(slot.indiceClaseEnJornada)) continue;
     if (docs.length >= meta - total) break;
+
+    let idPrograma = '';
+    let idCarpa = null;
+    if (programasContrato.length) {
+      const idProg = programaRoundRobin(programasContrato, indiceGlobal);
+      const resolved = await resolverProgramaAutogeneracion(idProg);
+      if (resolved) {
+        idPrograma = resolved.idPrograma;
+        idCarpa = resolved.idCarpa;
+      }
+      indiceGlobal += 1;
+    }
+
     docs.push({
       idJornada: jornada._id,
       fechaClase: inicioDia(jornada.fechaProgramacion),
-      idPrograma: '',
+      idPrograma,
+      idCarpa,
       ubicacion: 'Carpa',
       estado: 'PROGRAMADA',
       indiceClaseEnJornada: slot.indiceClaseEnJornada,

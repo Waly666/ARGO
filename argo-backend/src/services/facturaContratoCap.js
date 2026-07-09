@@ -14,6 +14,7 @@ const {
 } = require('./facturaPayload');
 const { emitirFactura } = require('./facturaProveedor');
 const { esTipoContratoCapValido } = require('../constants/tipoContratoCap');
+const { buscarServicioCapacitacionContrato, perfilFiscalServicioCap } = require('./servicioContratoCap');
 const {
   ESTADO_RECHAZADA,
   ESTADO_ANULADA,
@@ -99,38 +100,42 @@ async function cargarContratoFacturable(idContrato) {
   return { contrato: c, cliente, regla, valor, objeto };
 }
 
-function armarItemContrato({ contrato, regla, valor, objeto }) {
-  const pctIva = regla.condicionIva === 'gravado' ? regla.porcentajeIva : 0;
-  const m = desglosarItem(valor, regla.condicionIva, pctIva);
+function armarItemContrato({ regla, valor, objeto, servicio, perfilIva }) {
+  const condicionIva = perfilIva?.condicionIva || 'excluido';
+  const pctIva = condicionIva === 'gravado' ? Number(perfilIva?.porcentajeIva) || 0 : 0;
+  const m = desglosarItem(valor, condicionIva, pctIva);
   const desc = Math.max(0, Math.min(100, Number(regla.descuentoPorcentaje) || 0));
   const nombre = String(objeto).slice(0, 250);
-  const cod = String(contrato.codContrato || contrato._id || 'CONTRATO').trim();
+  const idServ = String(servicio?.idServ ?? perfilIva?.idServ ?? '53');
   const item = {
-    code_reference: `CAP-CONTRATO-${cod}`.slice(0, 40),
+    code_reference: idServ.slice(0, 40),
     name: nombre,
     quantity: '1.00',
     discount_rate: desc.toFixed(2),
     price: m.base.toFixed(2),
     unit_measure_code: '94',
     standard_code: '999',
-    taxes: taxesItem(regla.condicionIva, m.porcentajeIva),
+    taxes: taxesItem(condicionIva, m.porcentajeIva),
   };
-  const totalFactus = totalFactusDesdeItems([item]);
+  // Valor del contrato: IVA incluido si el servicio es gravado; sin IVA si exento/excluido.
+  const total = roundMoney(m.total * (1 - desc / 100));
   const base = roundMoney(m.base * (1 - desc / 100));
-  const valorIvaFactus = roundMoney(totalFactus - base);
+  const valorIva = roundMoney(total - base);
+  const lineTotalFactus = totalFactusDesdeItems([item]);
   return {
     item,
     detalle: {
+      idServ,
       descripcion: nombre,
-      condicionIva: regla.condicionIva,
+      condicionIva,
       porcentajeIva: m.porcentajeIva,
-      valorLiquidacion: valor,
+      valorLiquidacion: roundMoney(valor),
       base,
-      valorIva: valorIvaFactus,
-      total: totalFactus,
+      valorIva,
+      total,
       descuentoPorcentaje: desc,
     },
-    totales: { base, valorIva: valorIvaFactus, total: totalFactus },
+    totales: { base, valorIva, total, lineTotalFactus },
   };
 }
 
@@ -171,12 +176,16 @@ function calcularRetenciones(regla, totales, cliente = {}) {
 async function armarFacturaContrato(idContrato) {
   const cfg = await obtenerConfigFacturacionInterno();
   const { contrato, cliente, regla, valor, objeto } = await cargarContratoFacturable(idContrato);
+  const servicio = await buscarServicioCapacitacionContrato();
+  const perfilIva = perfilFiscalServicioCap(servicio, cfg);
   const adquirente = { tipo: ADQUIRENTE_CLIENTE, cliente };
   const customerFactus = await buildCustomerFactus(adquirente);
   validarCustomerFactus(customerFactus, adquirente);
 
-  const { item, detalle, totales } = armarItemContrato({ contrato, regla, valor, objeto });
+  const { item, detalle, totales } = armarItemContrato({ regla, valor, objeto, servicio, perfilIva });
   const retenciones = calcularRetenciones(regla, totales, cliente);
+  const lineTotalFactus = totales.lineTotalFactus ?? totalFactusDesdeItems([item]);
+  const cashRounding = Math.round((totales.total - lineTotalFactus) * 100) / 100;
 
   const payload = {
     reference_code: referenceCodeFactura(`C-${contrato.codContrato || contrato._id}`),
@@ -191,7 +200,7 @@ async function armarFacturaContrato(idContrato) {
         amount: totales.total.toFixed(2),
       },
     ],
-    cash_rounding_amount: '0.00',
+    cash_rounding_amount: cashRounding.toFixed(2),
     customer: customerFactus,
     items: [item],
   };
@@ -202,9 +211,11 @@ async function armarFacturaContrato(idContrato) {
     cliente,
     regla,
     retenciones,
+    servicio: perfilIva,
+    perfilIva,
     payload,
     detalle,
-    totales: { ...totales, formaPago: FORMA_PAGO_CONTADO, esCredito: false },
+    totales: { ...totales, formaPago: FORMA_PAGO_CONTADO, esCredito: false, cashRounding },
     adquirente: {
       tipo: ADQUIRENTE_CLIENTE,
       nombre: cliente.razonSocial || cliente.nombres || '',
@@ -269,6 +280,7 @@ async function emitirFacturaContrato(idContrato, { idSede = null, idUsuario = nu
     },
     items: [
       {
+        idServ: detalle.idServ,
         descripcion: detalle.descripcion,
         condicionIva: detalle.condicionIva,
         porcentajeIva: detalle.porcentajeIva,

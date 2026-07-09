@@ -100,6 +100,8 @@ import {
 } from '../../../core/utils/mensaje-plantilla.helpers';
 import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
 import { AlumnoJornadaQrPanelComponent } from '../alumno-jornada-qr-panel.component';
+import { CelularInputComponent } from '../../../shared/celular-input/celular-input.component';
+import { mensajeErrorCelularAlmacenado } from '../../../core/utils/celular.util';
 
 @Component({
 
@@ -114,6 +116,7 @@ import { AlumnoJornadaQrPanelComponent } from '../alumno-jornada-qr-panel.compon
     CatalogoEnumBuscarComponent,
     ArgoDateInputComponent,
     AlumnoJornadaQrPanelComponent,
+    CelularInputComponent,
   ],
 
   templateUrl: './datos-principales.component.html',
@@ -666,6 +669,12 @@ export class DatosPrincipalesComponent implements OnInit {
     const nd = parseNumDocForApi(f.numDoc);
     if (nd == null || !f.nombre1 || !f.apellido1) {
       this.dispararAlertaGuardar(`numDoc válido (${this.numDocHint}), nombre1 y apellido1 son obligatorios.`);
+      return;
+    }
+
+    const errCel = mensajeErrorCelularAlmacenado(f.celular);
+    if (errCel) {
+      this.dispararAlertaGuardar(errCel);
       return;
     }
 

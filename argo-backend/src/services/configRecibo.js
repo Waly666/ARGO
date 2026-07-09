@@ -34,6 +34,8 @@ const DEFAULTS = {
   segundoPrefijoComprobanteIngreso: String(new Date().getFullYear()),
   prefijoComprobanteEgreso: 'CE',
   consecutivoComprobanteEgreso: 0,
+  prefijoCuentaCobro: 'CC',
+  consecutivoCuentaCobro: 0,
   usarPrefijoComprobanteEgreso: true,
   usarSegundoPrefijoComprobanteEgreso: false,
   segundoPrefijoComprobanteEgreso: String(new Date().getFullYear()),
@@ -222,6 +224,11 @@ async function siguienteNumFactura(_idSede = null) {
   return reservarConsecutivo('consecutivoFactura', 'prefijoFactura');
 }
 
+async function siguienteNumCuentaCobro() {
+  await asegurarGlobalRecibo();
+  return reservarConsecutivo('consecutivoCuentaCobro', 'prefijoCuentaCobro', false, '', true);
+}
+
 async function siguienteNumRecibo(idSede = null) {
   return siguienteNumComprobanteIngreso(idSede);
 }
@@ -238,5 +245,6 @@ module.exports = {
   siguienteNumComprobanteIngreso,
   siguienteNumComprobanteEgreso,
   siguienteNumFactura,
+  siguienteNumCuentaCobro,
   siguienteNumRecibo,
 };

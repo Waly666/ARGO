@@ -4,8 +4,9 @@ const DatosAlumno = require('../models/DatosAlumno');
 const Matricula = require('../models/Matricula');
 const Certificado = require('../models/Certificado');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
-const { asegurarTipoAlumnoJornada, auditoriaUsuario } = require('./jornadaCapacitacion');
-const { sincronizarEstadoJornada, mensajeSiJornadaNoOperable } = require('./estadoJornadaCap');
+const { asegurarTipoAlumnoJornada, auditoriaUsuario, asignarEmpresaContratoAlumno } = require('./jornadaCapacitacion');
+const { sincronizarEstadoJornada } = require('./estadoJornadaCap');
+const { bloqueoOperacionJornada } = require('./jornadasOperacionEspecial');
 const {
   intentarCertificadoJornadaAuto,
   progresoCertificacion,
@@ -13,7 +14,6 @@ const {
   crearContextoCertificadoContrato,
 } = require('./certificadoJornadaAuto');
 const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
-const { tieneAlguno, permisosParaRol } = require('./rolesPermisos');
 
 const QUERY_MATRICULA_ACTIVA = { estado: { $regex: /^activo?a?$/i } };
 
@@ -56,6 +56,11 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
   }
   alumno = (await asegurarTipoAlumnoJornada(numDoc)) || alumno;
 
+  const jornada = jornadaPrecargada || (await sincronizarEstadoJornada(clase.idJornada));
+  if (jornada?.idContrato) {
+    await asignarEmpresaContratoAlumno(numDoc, jornada.idContrato, auditoriaUsuario(req));
+  }
+
   const progId = String(clase.idPrograma || '').trim();
   if (!progId) {
     const err = new Error('Asigne el programa a la clase antes de registrar asistencia.');
@@ -69,17 +74,12 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
     throw err;
   }
 
-  const jornada = jornadaPrecargada || (await sincronizarEstadoJornada(clase.idJornada));
   if (!omitirValidacionJornada) {
-    const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
-    const esAdminJornadas = tieneAlguno(permisos, ['jornadas.gestionar']);
-    if (!esAdminJornadas) {
-      const bloqueoAsis = mensajeSiJornadaNoOperable(jornada);
-      if (bloqueoAsis) {
-        const err = new Error(bloqueoAsis);
-        err.status = 400;
-        throw err;
-      }
+    const bloqueoAsis = await bloqueoOperacionJornada(req, jornada);
+    if (bloqueoAsis) {
+      const err = new Error(bloqueoAsis);
+      err.status = 400;
+      throw err;
     }
   }
 
@@ -366,9 +366,58 @@ async function emitirCertificadosAsistentesClase(req, claseDoc, opts = {}) {
   };
 }
 
+/**
+ * Tras cerrar una clase: asistencias pendientes de inscritos + certificados automáticos.
+ * Usado al finalizar explícitamente y cuando actualizarClase pasa a FINALIZADO (p. ej. modo especial).
+ */
+async function postCierreClaseJornada(req, claseDoc, opts = {}) {
+  const clase = claseDoc?.toObject ? claseDoc.toObject() : { ...claseDoc };
+  let syncAsis = {
+    registradas: 0,
+    certificadosNuevos: 0,
+    certificadosEmitidos: [],
+  };
+  let certs = { certificadosNuevos: 0, certificadosEmitidos: [], evaluados: 0 };
+  let jornada = opts.jornada || null;
+
+  try {
+    syncAsis = await registrarAsistenciasInscritosPendientes(req, clase, {
+      omitirValidacionJornada: true,
+      ...opts,
+    });
+    jornada = opts.jornada || (await sincronizarEstadoJornada(clase.idJornada));
+    const ctxCert =
+      opts.ctxCert ||
+      (jornada?.idContrato ? await crearContextoCertificadoContrato(jornada.idContrato) : null);
+    certs = await emitirCertificadosAsistentesClase(req, clase, { jornada, ctxCert });
+  } catch (e) {
+    return {
+      ok: false,
+      error: e?.message || String(e),
+      syncAsis,
+      certs,
+      jornada,
+      asistenciasRegistradas: syncAsis.registradas || 0,
+      certificadosNuevos: certs.certificadosNuevos || 0,
+      certificadosEmitidos: certs.certificadosEmitidos || [],
+    };
+  }
+
+  return {
+    ok: true,
+    syncAsis,
+    certs,
+    jornada,
+    asistenciasRegistradas: syncAsis.registradas || 0,
+    certificadosNuevos: certs.certificadosNuevos || 0,
+    certificadosEmitidos: certs.certificadosEmitidos || [],
+  };
+}
+
 module.exports = {
   QUERY_MATRICULA_ACTIVA,
   registrarAsistenciaAlumnoEnClase,
   registrarAsistenciasInscritosPendientes,
   emitirCertificadosAsistentesClase,
+  postCierreClaseJornada,
 };

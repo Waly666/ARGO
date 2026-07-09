@@ -122,12 +122,20 @@ export class ProgramaService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/programas`;
 
-  listar(opts?: { q?: string; activos?: boolean; catalogo?: boolean; limit?: number }): Observable<Programa[]> {
+  listar(opts?: {
+    q?: string;
+    activos?: boolean;
+    catalogo?: boolean;
+    limit?: number;
+    /** Oculta programas de jornadas de capacitación (p. ej. matrícula manual en ficha alumno). */
+    excluirJornadasCap?: boolean;
+  }): Observable<Programa[]> {
     let params = new HttpParams();
     if (opts?.q) params = params.set('q', opts.q);
     if (opts?.activos === false) params = params.set('activos', 'false');
     if (opts?.catalogo) params = params.set('catalogo', '1');
     if (opts?.limit != null) params = params.set('limit', String(opts.limit));
+    if (opts?.excluirJornadasCap) params = params.set('excluirJornadasCap', '1');
     return this.http.get<Programa[]>(this.base, { params });
   }
 

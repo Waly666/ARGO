@@ -2,6 +2,8 @@
 
 Documento **vivo** para registrar cada cambio del módulo de **jornadas de capacitación** en este repo (**Finstruvial / ARGO**) y poder **replicarlo** en otros despliegues (p. ej. Educarte, otro cliente con fork o copia del producto).
 
+**Última auditoría código ↔ MD:** 2026-07-09 — lote JOR-011…JOR-024 implementado sin commit; ver [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09).
+
 ---
 
 ## Cómo usar este documento
@@ -54,6 +56,7 @@ Documento **vivo** para registrar cada cambio del módulo de **jornadas de capac
 | `/app/jornadas/en-proceso` | `jornadas-en-proceso-lista.component` | `jornadas.ver`, `jornadas.gestionar` |
 | `/app/jornadas/certificados` | `certificados-jornada-lista.component` | `jornadas.ver`, `jornadas.gestionar` |
 | `/app/jornadas/informes` | `jornadas-informes.component` | `jornadas.ver`, `jornadas.gestionar` |
+| `/app/configuracion/jornadas` | `config-jornadas.component` | `jornadas.gestionar` |
 | `/app/jornadas/alumnos` | alumnos (modo jornadas) | `alumnos.*`, `jornadas.ver` |
 | `/app/contratos` | `contratos-lista.component` | `jornadas.ver`, `jornadas.gestionar` |
 
@@ -82,12 +85,19 @@ argo-frontend/src/app/features/alumnos/
   alumno-jornada-qr-panel.component.ts
   tabs/datos-principales.*            # Panel QR en ficha alumno
 
+argo-frontend/src/app/features/config/
+  config-jornadas.component.*         # Modo operación fuera del día (JOR-011)
+
 argo-frontend/src/app/core/services/
   jornada-cap.service.ts
+  jornadas-operacion-config.service.ts
+  programa.service.ts                 # excluirJornadasCap en matrícula (JOR-024)
+  facturacion.service.ts              # Cobro contrato (JOR-021)
   meta-alumnos-jornada-alert.service.ts
   jornada-live-sync.service.ts
   certificado-jornada-alert.service.ts
   certificado-jornada-bloqueo.service.ts
+  jornada-hub-deeplink.service.ts     # tab=avance (JOR-016)
 ```
 
 ### Backend
@@ -97,17 +107,32 @@ argo-backend/src/routes/jornadas.js
 argo-backend/src/controllers/jornadaCapController.js
 argo-backend/src/controllers/programaController.js   # idCarpa en programas jornada
 argo-backend/src/middleware/turnstile.js             # X-ARGO-Cliente: jornadas
-argo-backend/src/models/ClaseJornadaCap.js           # idCarpa
-argo-backend/src/models/catalogos.js                 # catálogo carpas
+argo-backend/src/models/Contratacion.js          # plan cobro, programas, metas (JOR-012/013/021)
+argo-backend/src/models/Ingreso.js               # idContrato en ingresos contrato (JOR-021)
+argo-backend/src/models/JornadaCap.js
+argo-backend/src/constants/servicioContratoCap.js
 argo-backend/src/services/catalogoMeta.js
 argo-backend/src/services/carpaJornada.js
 argo-backend/src/services/contratoJornadaSync.js
 argo-backend/src/services/metaAlumnosJornada.js
 argo-backend/src/services/informesJornadaCap.js
 argo-backend/src/services/programacionClasesJornada.js
+argo-backend/src/services/programacionJornadas.js
 argo-backend/src/services/asistenciaJornadaCap.js
 argo-backend/src/services/instructorJornada.js
 argo-backend/src/services/certificadoJornadaAuto.js
+argo-backend/src/services/jornadaCapacitacion.js
+argo-backend/src/services/configJornadasOperacion.js    # JOR-011
+argo-backend/src/services/jornadasOperacionEspecial.js  # JOR-011
+argo-backend/src/services/programasContratoJornada.js   # JOR-012
+argo-backend/src/services/avanceContratoJornada.js      # JOR-016
+argo-backend/src/services/contratoCobroCap.js           # JOR-021
+argo-backend/src/services/cuentaCobroHtml.js            # JOR-021
+argo-backend/src/services/servicioContratoCap.js        # JOR-021
+argo-backend/src/services/facturaContratoCap.js         # JOR-021
+argo-backend/src/controllers/certificadoController.js   # JOR-023 vencidos
+argo-backend/src/controllers/ingresoController.js       # JOR-021
+argo-backend/src/controllers/programaController.js        # idCarpa + excluirJornadasCap
 ```
 
 ### App móvil (`argo-mobile-jornadas`)
@@ -130,8 +155,24 @@ argo-mobile-jornadas/
 | Método | Ruta | Uso |
 |--------|------|-----|
 | GET | `/api/jornadas/informes` | JSON informes (filtros contrato/jornada/clase/fechas) |
-| GET | `/api/jornadas/informes/export` | Excel (`tipo=completo\|por-clase\|por-jornada\|por-contrato\|certificados`) |
+| GET | `/api/jornadas/informes/export` | Excel (`tipo=completo\|contratos\|trazabilidad\|jornadas\|clases\|alumnos\|instructores\|certificados` + alias `resumen-contratos`, `catalogo-jornadas`, `catalogo-clases`) |
+| GET | `/api/jornadas/contratos/:id/avance` | Panel avance contrato (JOR-016) |
+| GET | `/api/jornadas/contratos/:id/cobro` | Estado plan de cobro / cuotas (JOR-021) |
+| POST | `/api/jornadas/contratos/:id/comprobantes-ingreso` | Comprobante ingreso por cuota (JOR-021) |
+| POST | `/api/jornadas/contratos/:id/cuenta-cobro/generar` | Generar cuenta de cobro (JOR-021) |
+| GET | `/api/jornadas/contratos/:id/cuenta-cobro/html` | HTML imprimible cuenta de cobro (JOR-021) |
+| GET | `/api/jornadas/config/operacion` | Config modo operación especial (JOR-011) |
+| PUT | `/api/jornadas/config/operacion` | Activar/desactivar modo especial (JOR-011) |
+| GET | `/api/jornadas/config/operacion/estado` | Estado efectivo para el usuario (JOR-011) |
+| GET | `/api/jornadas/clases/:id/inscritos-clase-anterior` | Alumnos clase anterior misma jornada (JOR-019) |
+| DELETE | `/api/jornadas/clases/:id` | Borrar clase (incl. finalizada; JOR-020) |
+| PUT/DELETE | `/api/jornadas/certificados-generados/:id` | Editar / anular certificado jornada (JOR-017) |
 | GET | `/api/jornadas/jornadas/del-dia` | Jornadas del día + `totalClases`, `alumnosLleva`, `metaAlumnos`, `metaAlcanzada` |
+| POST | `/api/jornadas/:id/cerrar-operacion` | Cerrar jornada manual (modo operación especial) |
+| POST | `/api/jornadas/:id/reabrir-operacion` | Reabrir jornada al estado por fecha (modo especial) |
+| GET | `/api/programas?excluirJornadasCap=1` | Buscador programas sin jornadas CAP (JOR-024) |
+| POST | `/api/jornadas/:id/cerrar-operacion` | Cerrar jornada manual (modo operación especial) |
+| POST | `/api/jornadas/:id/reabrir-operacion` | Reabrir jornada al estado por fecha (modo especial) |
 | POST | `/api/auth/login` | Con `X-ARGO-Cliente: jornadas` → sesión sin MFA web |
 | GET | `/api/auth/config` | Config pública (no existe `config-publica`) |
 
@@ -182,7 +223,35 @@ argo-mobile-jornadas/
 
 | ID | Descripción | Prioridad | Notas |
 |----|-------------|-----------|-------|
-| — | _(Sin pendientes abiertos en este documento)_ | — | Conectar Expo a GitHub (`Base directory` = `argo-mobile-jornadas`) y generar APK cuando el cliente lo pida |
+| — | Commits y push del lote JOR-011…JOR-024 | Alta | Código implementado; falta commitear y marcar hash en este MD |
+| — | Conectar Expo a GitHub y generar APK | Baja | Cuando el cliente lo pida |
+| — | Verificación manual checklists JOR-011…024 | Media | Probar en `/app/jornadas` antes de desplegar |
+
+> **Nota auditoría 2026-07-09:** JOR-011 a JOR-024 están **implementados en código** (sin commit). Ya no figuran como «en curso» abajo; ver historial y sección [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09).
+
+---
+
+## Mapa archivos sin commitear (auditoría 2026-07-09)
+
+Referencia cruzada **ID → archivos** del working tree actual (útil al commitear o replicar).
+
+| ID | Archivos nuevos (`??`) | Archivos modificados relevantes (`M`) |
+|----|------------------------|----------------------------------------|
+| **JOR-011** | `configJornadasOperacion.js`, `jornadasOperacionEspecial.js`, `config-jornadas.component.*`, `jornadas-operacion-config.service.ts` | `jornadaCapController.js`, `jornadas.js`, `asistenciaJornadaCap.js`, `estadoJornadaCap.js`, `jornadas-hub.*`, `jornada-clase-editor.*`, `jornada-instructor.*`, `clases-hoy-lista.*`, `app.routes.ts`, `shell.component.ts` |
+| **JOR-012** | `programasContratoJornada.js` | `Contratacion.js`, `programacionClasesJornada.js`, `jornadaCapController.js`, `jornadas-hub.*`, `jornada-cap.service.ts` |
+| **JOR-013** | — | `contratoJornadaSync.js`, `programacionJornadas.js`, `Contratacion.js`, `JornadaCap.js`, `jornadas-hub.*`, `jornada-calendario.util.ts` |
+| **JOR-014** | — | `jornadaCapacitacion.js`, `asistenciaJornadaCap.js` |
+| **JOR-015** | — | `certificadoJornadaAuto.js`, `jornadaCapController.js`, `jornadas-hub.*`, `jornada-clase-editor.*` |
+| **JOR-016** | `avanceContratoJornada.js` | `jornadaCapController.js`, `jornadas.js`, `jornadas-hub.*`, `jornada-hub-deeplink.service.ts` |
+| **JOR-017** | — | `jornadaCapController.js`, `jornadas.js`, `certificados-jornada-lista.*` (si aplica UI) |
+| **JOR-018** | — | `certificadoJornadaAuto.js` |
+| **JOR-019** | — | `jornadaCapController.js` (`alumnosClaseAnterior`), `jornadas-hub.*`, `jornada-clase-editor.*` |
+| **JOR-020** | — | `jornadaCapController.js` (`eliminarClase`), `jornadas-hub.*`, `jornada-clase-editor.*` |
+| **JOR-021** | `servicioContratoCap.js`, `contratoCobroCap.js`, `cuentaCobroHtml.js`, `constants/servicioContratoCap.js` | `Contratacion.js`, `Ingreso.js`, `ingresoController.js`, `facturaContratoCap.js`, `notaCredito.js`, `configRecibo.js`, `jornadas-hub.*`, `jornada-cap.service.ts`, `facturacion.service.ts` |
+| **JOR-022** | — | `informesJornadaCap.js`, `jornadas-informes.component.*`, `jornada-cap.service.ts` |
+| **JOR-023** | — | `certificadoController.js` |
+| **JOR-024** | — | `programaController.js`, `programa.service.ts`, `servicios.component.ts` |
+| **Compartidos** | `clase-modal.scss` | `form-modal.component.*`, `hora-12-input.component.scss` (UX modal clase) |
 
 ---
 
@@ -190,6 +259,20 @@ argo-mobile-jornadas/
 
 | ID | Fecha | Resumen | Commit | Alcance |
 |----|-------|---------|--------|---------|
+| JOR-024 | 2026-07-09 | Matrícula alumno (Servicios): ocultar programas de jornadas en buscador | _(pendiente)_ | backend + frontend |
+| JOR-023 | 2026-07-09 | Certificados vencidos: no listar si hay vigente del mismo programa | _(pendiente)_ | backend |
+| JOR-022 | 2026-07-09 | Informes: pestañas por entidad, filtros reactivos, limpiar filtros, sin bloque empresa en pantalla | _(pendiente)_ | backend + frontend |
+| JOR-021 | 2026-07-08 | Cobro contrato: plan cuotas, comprobantes ingreso, factura idServ 53, cuenta de cobro | _(pendiente)_ | backend + frontend |
+| JOR-020 | 2026-07-08 | Eliminar clases (incl. finalizadas) con anulación de certificados por_clase | _(pendiente)_ | backend + frontend |
+| JOR-019 | 2026-07-09 | Copiar alumnos de la clase anterior de la misma jornada (matrícula rápida) | _(pendiente)_ | backend + frontend |
+| JOR-018 | 2026-07-08 | Certificado por_clase: encabezado y horas del programa de la clase | _(pendiente)_ | backend |
+| JOR-017 | 2026-07-08 | Anular/editar certificados generados en módulo Jornadas | _(pendiente)_ | backend |
+| JOR-016 | 2026-07-08 | Panel avance contrato: clases dictadas, alumnos capacitados/certificados | _(pendiente)_ | backend + frontend |
+| JOR-015 | 2026-07-08 | Emitir certificados al cerrar clase vía guardar horario (modo especial) + reprocesar | _(pendiente)_ | backend + frontend |
+| JOR-014 | 2026-07-08 | Asignar empresa del contrato al matricular en jornada | _(pendiente)_ | backend |
+| JOR-013 | 2026-07-08 | Metas de contrato estables + generar jornadas por rango inicio/fin | _(pendiente)_ | backend + frontend |
+| JOR-012 | 2026-07-08 | Programas del contrato y reparto equitativo al autogenerar clases | _(pendiente)_ | backend + frontend |
+| JOR-011 | 2026-07-08 | Config operación fuera del día programado (casos especiales / carga histórica) | _(pendiente)_ | backend + frontend |
 | JOR-010 | 2026-07-03 | App móvil: cliente nativo + arranque login + API producción | `9be6d70`, `a679da9` | móvil |
 | JOR-009 | 2026-07-03 | Informes web: Excel, PDF con encabezado empresa, filtros contrato/jornada/clase | `47c79d7` | backend + frontend |
 | JOR-008 | 2026-07-03 | Alarma tope alumnos jornada (meta `numeObjeJornada`) | `47c79d7` | backend + frontend + móvil |
@@ -200,6 +283,496 @@ argo-mobile-jornadas/
 | JOR-003 | 2026-07-02 | Jornadas/clases extra con sync automático en contrato | `47c79d7` | backend + frontend |
 | JOR-002 | 2026-07-02 | Contrato: clases/jornada, horas/clase, cert global/por_clase; autogenerar clases | `47c79d7` | backend + frontend |
 | JOR-001 | 2026-07-02 | UX simplificada: pestaña Clases + modal «Nueva clase» | `47c79d7` | frontend |
+
+---
+
+### JOR-022 — Informes: pestañas por entidad, filtros reactivos y UI
+
+- **Fecha:** 2026-07-09
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+- **Replica en otro repo:** Sí
+
+#### Problema
+- Las pestañas «Por clase», «Por jornada» y «Por contrato» repetían el mismo listado de alumnos con distinta agrupación.
+- Faltaba una vista resumida por tipo de registro (contratos, jornadas, clases, instructores, alumnos, certificados).
+- Los filtros exigían pulsar **Consultar** manualmente.
+- En pantalla aparecía el bloque de logo/datos de la empresa (NIT, teléfono, dirección…) innecesario para el uso diario.
+
+#### Qué se hizo
+- **Pestañas nuevas** (sin repetir alumnos × clase/jornada/contrato):
+  - **Contratos** — resumen por contrato.
+  - **Trazabilidad** — detalle alumno × jornada (agrupado por jornada; se mantiene para análisis fino).
+  - **Jornadas** — catálogo de jornadas con conteos.
+  - **Clases** — una fila por clase (programa, instructor, inscritos, asistieron).
+  - **Instructores** — una fila por instructor/clase.
+  - **Alumnos** — todos los alumnos del contrato con buscador local (nombre, documento, empresa).
+  - **Certificados** — listado con **encabezado** del certificado (nombre del curso/capacitación) destacado.
+- **Backend** (`informesJornadaCap.js`):
+  - `construirCatalogoClases` — una fila por clase con conteos.
+  - `construirResumenAlumnos` — alumnos únicos por contrato.
+  - Respuesta API: `resumenContratos`, `trazabilidad`, `catalogoJornadas`, `catalogoClases`, `alumnos`, `instructores`, `certificados` (+ `porClase` interno para agregaciones).
+  - Excel actualizado con hojas `Contratos`, `Clases`, `Alumnos`, etc.
+- **Frontend** (`jornadas-informes.component.*`, `jornada-cap.service.ts`):
+  - Filtros **reactivos**: al cambiar contrato, jornada, clase o fechas se recarga automáticamente (debounce 350 ms en fechas).
+  - Botón **Limpiar filtros** (deshabilitado si no hay filtros activos).
+  - Eliminado botón **Consultar** y bloque de empresa en la vista previa (logo, NIT, teléfono, dirección, pie). El **PDF** exportado sigue llevando encabezado de empresa vía `jornadas-informe-document.ts`.
+  - UI informes: cápsulas/badges sin bordes blancos; columna **Empresa** en certificados; estilo destacado para **encabezado** certificado.
+- Eliminadas de la UI las pestañas `porClase`, `porJornada`, `porContrato`.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/informesJornadaCap.js` | Catálogo clases, alumnos, Excel, encabezado cert |
+| `argo-backend/src/controllers/jornadaCapController.js` | Endpoints informes (si aplica) |
+| `argo-backend/src/routes/jornadas.js` | Rutas informes/export |
+| `argo-frontend/src/app/features/jornadas/jornadas-informes.component.ts` | Pestañas, filtros reactivos, limpiar |
+| `argo-frontend/src/app/features/jornadas/jornadas-informes.component.html` | UI pestañas, sin empresa en pantalla |
+| `argo-frontend/src/app/features/jornadas/jornadas-informes.component.scss` | Estilos tabla/cápsulas/filtros |
+| `argo-frontend/src/app/core/services/jornada-cap.service.ts` | Tipos API y export Excel |
+
+#### Verificación
+- [ ] Sin filtros → todas las pestañas muestran datos del periodo.
+- [ ] Filtrar contrato → Contratos muestra solo ese contrato; Alumnos lista alumnos del contrato.
+- [ ] Clases → una fila por clase, no alumno × alumno.
+- [ ] Certificados → columna **Encabezado** visible.
+- [ ] Cambiar filtro → datos se actualizan sin pulsar Consultar.
+- [ ] Limpiar filtros → vuelve a vista global.
+- [ ] PDF pestaña / completo → sigue con datos de empresa en el documento impreso.
+- [ ] Excel por pestaña y completo con hojas nuevas.
+
+---
+
+### JOR-023 — Certificados vencidos: excluir renovados
+
+- **Fecha:** 2026-07-09
+- **Alcance:** backend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- En el listado de certificados vencidos seguían apareciendo alumnos que ya tenían un certificado **vigente** del **mismo programa** (`idProg`).
+
+#### Qué se hizo
+- Pipeline en `certificadoController.js` con `$lookup` para excluir vencidos cuando existe vigente del mismo `idProg` y `numDoc`.
+- Aplicado a listado web, export Excel y endpoint `alertas-vencidos`.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/controllers/certificadoController.js` | Filtro vencidos renovados |
+
+#### Verificación
+- [ ] Alumno con cert vencido + cert vigente mismo programa → solo aparece el vigente en listas normales; el vencido no en alertas vencidos.
+- [ ] Excel vencidos coherente con el listado.
+
+---
+
+### JOR-024 — Matrícula alumno: sin programas de jornadas
+
+- **Fecha:** 2026-07-09
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- Al crear matrícula desde la ficha del alumno (pestaña Servicios), el buscador de programas mostraba programas de **Jornadas de capacitación**, que no aplican a matrícula académica tradicional.
+
+#### Qué se hizo
+- `programaController.js`: query `excluirJornadasCap=1` filtra programas tipo jornada.
+- `programa.service.ts` + `servicios.component.ts`: envían ese filtro en el buscador de programas al matricular.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/controllers/programaController.js` | Filtro `excluirJornadasCap` |
+| `argo-frontend/src/app/core/services/programa.service.ts` | Parámetro en búsqueda |
+| `argo-frontend/src/app/features/alumnos/tabs/servicios.component.ts` | Usa filtro al matricular |
+
+#### Verificación
+- [ ] Ficha alumno → nueva matrícula → buscador de programas no lista programas de jornadas CAP.
+- [ ] Hub jornadas / contrato sigue viendo sus programas con normalidad.
+
+---
+
+### JOR-021 — Cobro contrato: plan cuotas, CI y cuenta de cobro
+
+- **Fecha:** 2026-07-08
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+
+#### Qué se hizo
+- **Valor del contrato** persistente (serialización Decimal128 al listar/cargar).
+- **Plan de cobro** en contrato: cuotas con montos manuales (deben sumar el valor).
+- **Preferencia** `comprobantesIngresoCaja` en contrato + override al generar cada comprobante.
+- **Comprobante de ingreso** por cuota (`INGRESO CONTRATO`): sin caja por defecto; pagos no efectivo exigen referencia + soporte (imagen), igual que cobros de alumnos.
+- **Causación de servicio** al generar cada comprobante: catálogo **idServ 53** (Capacitación / servicio general, valor variable según contrato/cuota) → liquidación pagada vinculada al ingreso.
+- **Factura electrónica** del contrato: misma referencia de servicio **idServ 53**; **IVA dinámico** según catálogo de Servicios (gravado/exento/sin IVA); retenciones según regla fiscal del tipo de contratante.
+- **Anulación**: comprobantes vía `DELETE /ingresos/:id` (revierte cuota y liquidación causada); factura vía nota crédito total (libera el contrato para nueva emisión).
+- **Cuenta de cobro** (una por contrato, consecutivo CC): HTML imprimible hacia la empresa contratante.
+
+#### API
+- `GET /api/jornadas/contratos/:id/cobro`
+- `POST /api/jornadas/contratos/:id/cuenta-cobro/generar`
+- `GET /api/jornadas/contratos/:id/cuenta-cobro/html`
+- `POST /api/jornadas/contratos/:id/comprobantes-ingreso`
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/constants/servicioContratoCap.js` | idServ 53 referencia |
+| `argo-backend/src/services/servicioContratoCap.js` | Causación servicio contrato |
+| `argo-backend/src/services/contratoCobroCap.js` | Plan cuotas, comprobantes |
+| `argo-backend/src/services/cuentaCobroHtml.js` | Plantilla cuenta de cobro |
+| `argo-backend/src/services/facturaContratoCap.js` | Factura contrato idServ 53 |
+| `argo-backend/src/models/Contratacion.js` | valorContrato, plan cobro |
+| `argo-backend/src/models/Ingreso.js` | idContrato en ingreso |
+| `argo-backend/src/controllers/ingresoController.js` | Comprobantes contrato |
+| `argo-backend/src/controllers/jornadaCapController.js` | Endpoints cobro |
+| `argo-backend/src/routes/jornadas.js` | Rutas cobro |
+| `argo-frontend/src/app/core/services/jornada-cap.service.ts` | API cobro contrato |
+| `argo-frontend/src/app/core/services/facturacion.service.ts` | Integración facturación |
+| `argo-frontend/src/app/features/jornadas/jornadas-hub.component.*` | UI facturación contrato |
+
+#### Verificación
+- [ ] Valor contrato persiste al recargar contrato.
+- [ ] Plan 2–3 cuotas + suma = valor → guardar contrato.
+- [ ] Comprobante sin caja → aparece en Todos los ingresos, no en sesión caja.
+- [ ] Pago no efectivo → referencia + imagen soporte obligatorias (igual que alumnos).
+- [ ] Comprobante con caja → suma en caja abierta.
+- [ ] Comprobante → liquidación idServ 53 causada y pagada; ingreso con `idLiquidacion`.
+- [ ] Emitir factura contrato → ítem con `idServ` 53 (no código CAP-CONTRATO-*).
+- [ ] Anular comprobante de cuota → cuota pendiente, liquidación servicio 53 eliminada, ingreso en estado ANULADO.
+- [ ] Anular factura contrato (nota crédito total) → contrato libre para volver a facturar.
+- [ ] Cuenta de cobro generada e imprimible.
+
+---
+
+### JOR-020 — Eliminar clases (incl. finalizadas)
+
+- **Fecha:** 2026-07-08
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- Las clases finalizadas no se podían borrar (409 en backend; botones ocultos en UI).
+- No había acción **Borrar clase** en el pie del modal de edición.
+
+#### Qué se hizo
+- **Backend** (`eliminarClase`): elimina inscripciones, asistencias y foto de evidencia; **anula** certificados con `idClaseJornada` antes de borrar la clase; responde `certificadosAnulados`.
+- **Frontend:** `claseJornadaSePuedeEliminar()` siempre `true` (permiso real: `jornadas.gestionar`); botón **Borrar clase** en lista, panel inferior y modal (hub + editor standalone); confirmación distinta si la clase está finalizada; aviso de certificados anulados.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/controllers/jornadaCapController.js` | `eliminarClase` |
+| `argo-backend/src/routes/jornadas.js` | `DELETE /clases/:id` |
+| `argo-frontend/src/app/features/jornadas/jornadas-hub.component.*` | Botón borrar clase |
+| `argo-frontend/src/app/features/jornadas/jornada-clase-editor.component.*` | Botón borrar en editor |
+
+#### Verificación
+- [ ] Admin borra clase PROGRAMADA / EN PROCESO / FINALIZADA.
+- [ ] Clase finalizada con certificados por_clase → certificados anulados en listado.
+- [ ] Usuario sin `jornadas.gestionar` no ve botón ni puede DELETE.
+
+---
+
+### JOR-018 — Encabezado certificado por_clase vs global
+
+- **Fecha:** 2026-07-08
+- **Alcance:** backend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- Con `tipoCertificado: por_clase`, el certificado usaba `nombreCertificacion` del contrato (o el texto genérico «Jornadas de Capacitación») en lugar del **programa de la clase**.
+- Las horas caían en `numeroHorascert` del contrato (modo global) en vez de horas por clase / programa.
+
+#### Qué se hizo
+- **Global:** sigue usando `nombreCertificacion` y `numeroHorascert` del contrato.
+- **Por clase:** encabezado = `nomCert` / descripción / `nombreProg` del programa de la clase; horas = `horasCertificadas` de la clase → `horasPorClase` del contrato → horas del programa.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/certificadoJornadaAuto.js` | Encabezado y horas por_clase vs global |
+
+#### Verificación
+- [ ] Contrato global + encabezado contrato → certificado con ese título.
+- [ ] Contrato por_clase sin encabezado contrato → certificado con nombre del programa de cada clase.
+- [ ] Horas por_clase desde horas por clase del contrato o del programa.
+
+---
+
+### JOR-017 — Anular certificado en listado Jornadas
+
+- **Fecha:** 2026-07-08
+- **Alcance:** backend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- `DELETE /api/jornadas/certificados-generados/:id` devolvía **403** porque usaba el controlador académico, que rechaza certificados de jornada.
+
+#### Qué se hizo
+- Handlers propios `actualizarCertificadoGenerado` y `eliminarCertificadoGenerado` en `jornadaCapController`.
+- Anulación (estado `anulado`) con auditoría; el listado excluye anulados.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/controllers/jornadaCapController.js` | `actualizarCertificadoGenerado`, `eliminarCertificadoGenerado` |
+| `argo-backend/src/routes/jornadas.js` | Rutas certificados-generados |
+
+#### Verificación
+- [ ] Eliminar certificado en Jornadas → Certificados desaparece de la lista.
+- [ ] Editar certificado jornada guarda cambios.
+- [ ] Tras anular, el alumno puede volver a recibir certificado si cumple requisitos.
+
+---
+
+### JOR-016 — Panel de avance del contrato
+
+- **Fecha:** 2026-07-08
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+
+#### Qué se hizo
+- API `GET /api/jornadas/contratos/:id/avance` con resumen y listado de alumnos con asistencia.
+- KPIs: clases dictadas/faltantes, meta contractual, alumnos capacitados y certificados, jornadas.
+- Sección «Avance del contrato» como **pestaña 2. Avance** (misma ficha que Jornadas, Clases y Certificados).
+- URL: `?contrato=ID&tab=avance` abre directamente la ficha de avance.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/avanceContratoJornada.js` | Lógica KPIs y alumnos |
+| `argo-backend/src/controllers/jornadaCapController.js` | `avanceContrato` |
+| `argo-backend/src/routes/jornadas.js` | `GET /contratos/:id/avance` |
+| `argo-frontend/src/app/features/jornadas/jornadas-hub.component.*` | Pestaña Avance |
+| `argo-frontend/src/app/core/services/jornada-hub-deeplink.service.ts` | Deep link `tab=avance` |
+
+#### Verificación
+- [ ] Contrato con clases finalizadas y asistencias muestra contadores correctos.
+- [ ] Tabla lista solo alumnos con al menos una asistencia.
+- [ ] Botón Actualizar refresca tras dictar clases o emitir certificados.
+
+---
+
+### JOR-019 — Copiar alumnos de la clase anterior de la misma jornada
+
+- **Fecha:** 2026-07-09
+- **Alcance:** backend + frontend
+
+#### Problema
+- En una jornada con varias clases (carpas/temas) el mismo grupo de alumnos suele repetirse en cada clase (p. ej. Alistamiento motocicleta → Normas de tránsito → Concéntrese…). El instructor/admin debía volver a buscar y matricular a cada alumno en cada clase, aunque ya estaba matriculado en la clase anterior de la misma jornada.
+
+#### Qué se hizo
+- **Backend:** nuevo endpoint `GET /clases/:id/inscritos-clase-anterior` (`jornadaCapController.alumnosClaseAnterior`).
+  - Ubica la clase inmediatamente **anterior** dentro de la misma jornada usando `indiceClaseEnJornada` (orden de generación de carpas), con `createdAt` como respaldo si no hay índice.
+  - Devuelve el resumen de esa clase (programa, carpa) y su lista de alumnos matriculados, marcando `puedeMatricular` según tipo certificado del contrato (`por_clase`: solo bloquea si ya tiene cert de esa clase; `global`: bloquea si ya tiene cert del contrato).
+- **Frontend** (`jornadas-hub.component`, hub admin → pestaña Clases → «Abrir» una clase):
+  - Al abrir una clase existente, se consulta automáticamente la clase anterior de la jornada.
+  - Si tiene alumnos que aún no están en la clase actual, se muestra un panel **«↻ Alumnos de «‹programa›»»** con checkboxes (todo **voluntario**, nada se matricula solo): botones «Todos» / «Ninguno» y «Matricular seleccionados (N)».
+  - Los alumnos con certificado vigente en el contrato aparecen deshabilitados con la etiqueta «Ya certificado» (no se pueden volver a matricular).
+  - **Fix 2026-07-09:** checkboxes con `[checked]` + `(change)` (no `ngModel`); deshabilitar por `puedeMatricular` según tipo certificado (`por_clase` vs global), no solo por certificado de contrato. Botones Todos/Ninguno actualizan la vista correctamente.
+  - Reutiliza el endpoint existente `POST /matricular` (uno por alumno seleccionado), igual que la matrícula manual; refresca la lista de inscritos al terminar.
+- **Frontend instructor** (`jornada-clase-editor.component`, portal instructores → Mis clases → abrir clase): misma utilidad y panel que en el hub admin.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/controllers/jornadaCapController.js` | `alumnosClaseAnterior`, `puedeMatricular` |
+| `argo-backend/src/routes/jornadas.js` | `GET /clases/:id/inscritos-clase-anterior` |
+| `argo-frontend/src/app/features/jornadas/jornadas-hub.component.*` | Panel copiar alumnos |
+| `argo-frontend/src/app/features/jornadas/jornada-clase-editor.component.*` | Panel copiar alumnos instructor |
+
+#### Verificación
+- [ ] Jornada con 2+ clases autogeneradas en orden: abrir la 2ª clase → aparece el panel con los alumnos de la 1ª.
+- [ ] Seleccionar algunos alumnos (no todos) y matricular → solo esos quedan inscritos en la clase actual.
+- [ ] Alumno ya certificado en el contrato → aparece deshabilitado, no se puede seleccionar.
+- [ ] Alumno ya matriculado en la clase actual → no aparece en la lista de «disponibles».
+- [ ] Primera clase de la jornada (sin anterior) → el panel no aparece.
+- [ ] Portal instructores (Mis clases): mismo panel y matrícula masiva desde clase anterior.
+
+---
+
+### JOR-015 — Certificados al cerrar clase en modo especial
+
+- **Fecha:** 2026-07-08
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- En modo operación especial, al guardar hora inicio/fin la clase pasaba a **FINALIZADO** vía `actualizarClase`, pero **no** se ejecutaba la emisión de certificados (solo ocurría con el botón «Finalizar»).
+- Clases ya cerradas sin certificados no tenían forma de reprocesar (409 al pulsar Finalizar de nuevo; sincronizar asistencias tampoco emitía).
+
+#### Qué se hizo
+- Función compartida `postCierreClaseJornada`: asistencias pendientes + `emitirCertificadosAsistentesClase`.
+- Se invoca al pasar a FINALIZADO en `actualizarClase` y en `finalizarClase`.
+- `finalizarClase` en clase ya finalizada: reprocesa certificados pendientes (idempotente).
+- `sincronizarAsistenciasInscritos` en clase FINALIZADA: emite certificados faltantes.
+- UI: al guardar horario/clase, muestra alerta si se emitieron certificados.
+- `fechaEmision` del certificado automático = **fecha de la clase** (`fechaClase`), no la fecha del cierre en sistema.
+- **Fix 2026-07-09:** el modal de clase (hub admin `jornadas-hub.component` y editor de instructor `jornada-clase-editor.component`) ocultaba **ambos** botones (Iniciar y Finalizar) en cuanto `estado === 'FINALIZADO'`. Eso bloqueaba el reproceso ya soportado en backend: al editar/reabrir una clase ya finalizada (típico en modo especial, donde guardar cambios con horaInicio+horaFin ya cargados la finaliza sola) no había forma de volver a pulsar «Finalizar» para emitir certificados de alumnos matriculados después del cierre.
+  - Ahora el botón «Finalizar clase» permanece visible cuando la clase está FINALIZADO, cambia a **«↻ Reprocesar certificados»** y llama al mismo endpoint (`POST /clases/:id/finalizar`), que ya es idempotente.
+  - Solo se oculta «Iniciar clase» (no aplica sobre una clase ya cerrada).
+  - Se agregó aviso (`hint-ok`) explicando que puede seguir matriculando alumnos y reprocesar.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/certificadoJornadaAuto.js` | `postCierreClaseJornada`, fechaEmision = fecha clase |
+| `argo-backend/src/controllers/jornadaCapController.js` | Cierre/reproceso certificados |
+| `argo-frontend/src/app/features/jornadas/jornadas-hub.component.*` | Botón Reprocesar certificados |
+| `argo-frontend/src/app/features/jornadas/jornada-clase-editor.component.*` | Idem instructor |
+
+#### Verificación
+- [ ] Modo especial: guardar horario inicio+fin en clase PROGRAMADA → certificado por_clase emitido.
+- [ ] Clase ya finalizada sin certificado: pulsar «Reprocesar certificados» → emite pendientes.
+- [ ] Clase finalizada + matricular alumno nuevo + «Reprocesar certificados» → certificado del alumno nuevo emitido.
+- [ ] Sincronizar asistencias en clase finalizada → emite certificados faltantes.
+- [ ] Certificado impreso/PDF muestra la fecha de la clase dictada, no la de hoy.
+
+---
+
+### JOR-014 — Empresa del contrato al matricular alumno
+
+- **Fecha:** 2026-07-08
+- **Alcance:** backend (+ móvil/web vía API existente)
+- **Commit ARGO:** _(pendiente)_
+
+#### Qué se hizo
+- Al matricular/inscribir en una clase de jornada, el alumno recibe `empresaId` = cliente del contrato (`idClienteFacturacion`).
+- Si el alumno ya existía sin empresa o con otra, se actualiza a la empresa del contrato activo.
+- También al registrar asistencia (por si el flujo omite matrícula explícita).
+- Función `asignarEmpresaContratoAlumno` en `jornadaCapacitacion.js`.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/jornadaCapacitacion.js` | `asignarEmpresaContratoAlumno` |
+| `argo-backend/src/services/asistenciaJornadaCap.js` | Empresa en asistencia |
+
+#### Verificación
+- [ ] Matricular alumno existente sin empresa → queda con empresa del contrato.
+- [ ] Matricular en clase de otro contrato → empresa se actualiza al nuevo cliente.
+- [ ] Certificados/informes muestran empresa correcta.
+
+---
+
+### JOR-013 — Metas de contrato y programación por fechas
+
+- **Fecha:** 2026-07-08
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- Tras «Generar faltantes», `numerojornadas`, `clasesPorJornada` y `jornadasPorDia` se reiniciaban a 0 (sync los pisaba con conteos reales).
+- La generación arrancaba desde «hoy» en lugar de `fechaInicJornadas`, impidiendo programar con meses de antelación.
+
+#### Qué se hizo
+- `syncContadoresContrato` ya **no modifica** las metas de planificación; solo `numeObjeJornada`, `jornadasGeneradas` y `jornadasExistentes` (informativo).
+- Nuevo campo **`fechaFinJornadas`**: marco final de programación (distinto de «Finalizar contrato»).
+- `generarJornadasContrato`: programa desde **inicio** hasta **fin** de jornadas, respetando sáb/dom/festivos (modo normal y especial).
+- UI: campo «Fin jornadas» junto a «Inicio jornadas»; mensajes de generación actualizados.
+- UI Clases / programación contrato: filtro por **todas las jornadas** del contrato; encabezado reorganizado.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/contratoJornadaSync.js` | Metas no se pisan al sync |
+| `argo-backend/src/services/programacionJornadas.js` | Rango fechaInic–fechaFin |
+| `argo-backend/src/models/Contratacion.js` | `fechaFinJornadas` |
+| `argo-frontend/src/app/features/jornadas/jornadas-hub.component.*` | UI fechas y metas |
+
+#### Verificación
+- [ ] Guardar Nº jornadas / clases por jornada → Generar faltantes → los números **no** vuelven a 0.
+- [ ] Inicio en 2 meses + fin en 3 meses → jornadas creadas en ese rango (estado INACTIVO si son futuras).
+- [ ] Sin cupo en el rango → error claro (ampliar fin o ajustar meta).
+
+---
+
+### JOR-012 — Programas del contrato y reparto en autogeneración de clases
+
+- **Fecha:** 2026-07-08
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+- **Replica en otro repo:** Sí
+
+#### Qué pide el cliente / problema
+- En el contrato, elegir qué programas aplican a las clases de capacitación.
+- Al generar jornadas/clases faltantes, repartir esos programas de forma equitativa (A, B, C, A, B, C…).
+- Las clases siguen siendo editables: instructor o administrador pueden cambiar el programa en cualquier momento.
+- Aplica en **modo normal** y **modo especial** (la lógica de generación es la misma).
+
+#### Qué se hizo
+- Campo `idProgramas: string[]` en contrato (`contratacion`).
+- Validación al guardar: solo programas de tipo «Jornadas de Capacitación».
+- `generarClasesFaltantesJornada`: asigna programa y carpa (round-robin por índice global de clases del contrato).
+- UI en **Contratación** (hub): checkboxes de programas con búsqueda y chips.
+- Corrección: el catálogo de programas se carga al abrir Contratación (antes solo en pestaña Clases → lista vacía / «Cargando…» eterno).
+- Sin programas configurados: comportamiento anterior (clases sin programa).
+
+#### Archivos tocados (ARGO)
+Ver también tabla en [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09) (JOR-012).
+
+#### Archivos principales
+| Área | Archivos |
+|------|----------|
+| Backend | `Contratacion.js`, `programasContratoJornada.js`, `programacionClasesJornada.js`, `jornadaCapController.js` |
+| Frontend | `jornada-cap.service.ts`, `jornadas-hub.component.*` |
+
+#### Verificación
+- [ ] Contrato con 3 programas + 6 clases/jornada × 2 jornadas → reparto A,B,C,A,B,C en clases nuevas.
+- [ ] Sin programas en contrato → clases autogeneradas sin `idPrograma`.
+- [ ] Cambiar programa en clase manualmente sigue funcionando (instructor/admin).
+- [ ] Modo especial: misma generación y edición de programa en clase.
+
+---
+
+### JOR-011 — Operación fuera del día programado (modo especial)
+
+- **Fecha:** 2026-07-08
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+- **Replica en otro repo:** Sí
+
+#### Qué pide el cliente / problema
+- Operación habitual: solo jornadas/clases del **día programado = hoy**.
+- Casos especiales (carga histórica, corrección, preparación de contratos): poder elegir **contrato → jornada → fecha** y manipular clases/alumnos aunque no sea hoy.
+- Interruptor en **Configuración → Jornadas** (como migración).
+
+#### Qué se hizo
+- Config en BD (`jornadas-operacion`): `operacionFueraDeDiaHabilitada`.
+- API: `GET/PUT /api/jornadas/config/operacion`, `GET /api/jornadas/config/operacion/estado`.
+- Con modo **ON** + permiso `jornadas.gestionar`: backend omite bloqueo de fecha en iniciar, asistencia, matricular, finalizar y crear clase.
+- Botones **Cerrar jornada** / **Reabrir jornada** en listado y edición (estado manual `estadoOperacionManual`).
+- Finalizar clase en modo especial aunque esté `PROGRAMADA` (con horas o tras Iniciar).
+- **Horario en modo especial:** elegir hora inicio y fin en el modal; la duración se calcula al vuelo; **Finalizar** envía esas horas y no reemplaza la hora de fin por la hora actual (no hace falta pulsar Guardar antes).
+- Pantalla **Configuración → Jornadas** con interruptor y ayuda.
+- Hub / editor de clase / instructor / clases-hoy: desbloquean UI cuando el modo está activo; banner de aviso en el hub.
+- Modal **+ Crear clase** en modo especial: lista todas las jornadas del contrato seleccionado (no solo hoy/mañana).
+- Modal de clase ampliado (`sheet` + `tall`): ~1480px, layout en dos columnas (datos | alumnos).
+- Instructores (`jornadas.operar` sin gestionar) siguen limitados al día de hoy.
+- Auditoría: acción `jornadas_operacion_config`.
+
+#### Archivos tocados (ARGO)
+Ver tabla en [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09) (JOR-011).
+
+#### Archivos principales
+| Área | Archivos |
+|------|----------|
+| Backend | `configJornadasOperacion.js`, `jornadasOperacionEspecial.js`, `jornadaCapController.js`, `asistenciaJornadaCap.js`, `jornadas.js` |
+| Frontend | `config-jornadas.component.*`, `jornadas-operacion-config.service.ts`, `jornada-cap.service.ts`, `jornadas-hub.*`, `jornada-clase-editor.*`, `jornada-instructor.*`, `clases-hoy-lista.*`, `app.routes.ts`, `shell.component.ts` |
+
+#### Verificación
+- [ ] Modo OFF: no opera jornada de ayer ni mañana (API 400).
+- [ ] Modo ON en Configuración → Jornadas: opera jornada pasada/futura desde hub (contrato + calendario).
+- [ ] Modo ON: **+ Crear clase** muestra jornadas del contrato aunque no sean hoy.
+- [ ] Instructor sin gestionar: sigue bloqueado fuera de hoy.
+- [ ] Modo ON: clase PROGRAMADA con inicio/fin HH:mm → duración visible → Finalizar sin tocar fin otra vez.
+- [ ] Desactivar modo: vuelve comportamiento normal.
 
 ---
 
@@ -240,13 +813,15 @@ curl -sS -X POST https://app.finstruvial.edu.co/api/auth/login \
 
 #### Qué se hizo
 - Menú **Jornadas Cap. → Informes** (`/app/jornadas/informes`).
-- Pestañas: por clase, por jornada, por contrato, certificados.
+- Versión inicial: pestañas por clase, por jornada, por contrato, certificados.
 - Filtros: **contrato**, **jornada**, **clase**, desde/hasta.
 - Export Excel (pestaña o completo, varias hojas).
 - PDF / imprimir con encabezado de empresa (colores azul oscuro tipo media carta).
 - Pantalla en **tema oscuro**; PDF en papel blanco.
 - Destacados grandes: código contrato, ID jornada, ID clase según filtros.
 - PDF usa las **mismas filas filtradas** que la pantalla (no mezcla todos los contratos).
+
+> **Actualización 2026-07-09:** ver **JOR-022** (pestañas por entidad, filtros reactivos, sin bloque empresa en pantalla, encabezado en certificados).
 
 #### Archivos principales
 | Área | Archivos |
@@ -257,7 +832,7 @@ curl -sS -X POST https://app.finstruvial.edu.co/api/auth/login \
 #### Verificación
 - [ ] Consultar con contrato filtrado → solo ese contrato en tabla y PDF
 - [ ] Filtrar jornada/clase → PDF refleja el recorte
-- [ ] Excel completo descarga 4 hojas
+- [ ] Excel completo descarga hojas Contratos, Trazabilidad, Jornadas, Clases, Alumnos, Instructores, Certificados (JOR-022)
 
 ---
 

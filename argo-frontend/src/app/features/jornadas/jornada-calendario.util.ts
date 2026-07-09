@@ -216,6 +216,17 @@ export function parseMinutosHHmm(hora?: string | null): number | null {
   return h * 60 + min;
 }
 
+/** Duración en segundos entre dos horas HH:mm del mismo día (fin > inicio). */
+export function duracionSegundosDesdeHHmm(
+  horaDesde?: string | null,
+  horaHasta?: string | null,
+): number | null {
+  const ini = parseMinutosHHmm(horaDesde);
+  const fin = parseMinutosHHmm(horaHasta);
+  if (ini == null || fin == null || fin <= ini) return null;
+  return (fin - ini) * 60;
+}
+
 function rangoMinutosHHmm(horaDesde?: string | null, horaHasta?: string | null): { start: number; end: number } | null {
   const start = parseMinutosHHmm(horaDesde);
   if (start == null) return null;

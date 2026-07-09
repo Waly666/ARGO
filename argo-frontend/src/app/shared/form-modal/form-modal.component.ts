@@ -32,6 +32,8 @@ export class FormModalComponent implements OnChanges, OnDestroy {
   @Input() xwide = false;
   /** Formulario alto: ancla arriba y usa casi toda la altura del viewport. */
   @Input() tall = false;
+  /** Modal extra ancho (~1480px) para formularios densos (p. ej. clase jornada). */
+  @Input() sheet = false;
   @Input() subtitle = '';
   /** Distancia desde arriba del viewport (px). Si no se pasa, se usa el valor por defecto del CSS. */
   @Input() anchorTopPx: number | null = null;
@@ -91,7 +93,7 @@ export class FormModalComponent implements OnChanges, OnDestroy {
 
   layerTopPx(): number {
     if (this.anchorTopPx != null) return this.anchorTopPx;
-    if (this.tall) return 36;
+    if (this.tall || this.sheet) return 24;
     return 168;
   }
 

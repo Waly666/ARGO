@@ -67,8 +67,8 @@
               type="button"
               class="mini"
               (click)="seleccionarJornada(j._id); $event.stopPropagation()"
-              [disabled]="j.estado !== 'EN PROCESO'"
-              [title]="j.estado !== 'EN PROCESO' ? 'Solo opera la jornada de hoy (EN PROCESO)' : ''">
+              [disabled]="!operacionEspecialActiva() && j.estado !== 'EN PROCESO'"
+              [title]="!operacionEspecialActiva() && j.estado !== 'EN PROCESO' ? 'Solo opera la jornada de hoy (EN PROCESO)' : ''">
               Usar
             </button>
           </td>
@@ -84,7 +84,7 @@
     <p class="hint" *ngIf="jornadaActiva() as ja">
       Jornada activa:
       <span [ngClass]="estadoJornadaLiveClass(ja.estado)">{{ ja.estado }}</span>
-      <span *ngIf="ja.estado !== 'EN PROCESO'"> — operación bloqueada hasta el día programado.</span>
+      <span *ngIf="!operacionEspecialActiva() && ja.estado !== 'EN PROCESO'"> — operación bloqueada hasta el día programado.</span>
     </p>
   </div>
 

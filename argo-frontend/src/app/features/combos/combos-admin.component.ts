@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Combo, ComboService } from '../../core/services/combo.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { ArgoSwitchComponent } from '../../shared/argo-switch/argo-switch.component';
 
 type Modo = 'lista' | 'form';
 
@@ -17,7 +18,7 @@ interface ProgItem {
 @Component({
   selector: 'argo-combos-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ArgoSwitchComponent],
   templateUrl: './combos-admin.component.html',
   styleUrls: ['./combos-admin.component.scss'],
 })
@@ -117,6 +118,13 @@ export class CombosAdminComponent implements OnInit {
     const s = new Set(this.form.programasSeleccionados);
     if (s.has(id)) s.delete(id);
     else s.add(id);
+    this.form.programasSeleccionados = s;
+  }
+
+  onProgramaSwitch(id: string, on: boolean): void {
+    const s = new Set(this.form.programasSeleccionados);
+    if (on) s.add(id);
+    else s.delete(id);
     this.form.programasSeleccionados = s;
   }
 

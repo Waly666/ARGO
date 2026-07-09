@@ -34,6 +34,7 @@ async function sincronizarEstadoJornada(jornadaOrId) {
     j = await JornadaCap.findById(id).lean();
   }
   if (!j) return null;
+  if (j.estadoOperacionManual === true) return j;
   let esperado = estadoJornadaPorFecha(j.fechaProgramacion);
   if (j.idContrato) {
     const c = await Contratacion.findById(j.idContrato).select('estado').lean();

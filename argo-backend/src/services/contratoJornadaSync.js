@@ -5,10 +5,10 @@ const ClaseJornadaCap = require('../models/ClaseJornadaCap');
 const { calcNumeObjeJornada } = require('./programacionJornadas');
 
 /**
- * Sincroniza contadores del contrato con la realidad en BD:
- * - numerojornadas = cantidad de jornadas existentes
- * - numeObjeJornada = alumnos ÷ jornadas
- * - clasesPorJornada = máximo de clases en cualquier jornada del contrato
+ * Sincroniza datos derivados del contrato sin pisar la planificación del usuario:
+ * - numerojornadas, jornadasPorDia, clasesPorJornada = metas configuradas (no se modifican)
+ * - numeObjeJornada = alumnos ÷ meta de jornadas
+ * - jornadasGeneradas = hay al menos una jornada en BD
  */
 async function syncContadoresContrato(idContratoRaw) {
   if (!idContratoRaw) return null;
@@ -20,31 +20,21 @@ async function syncContadoresContrato(idContratoRaw) {
   const contrato = await Contratacion.findById(idContrato);
   if (!contrato) return null;
 
-  const numerojornadas = await JornadaCap.countDocuments({ idContrato });
-  const numeObjeJornada = calcNumeObjeJornada(contrato.numeroAlumnos, numerojornadas);
+  const jornadasExistentes = await JornadaCap.countDocuments({ idContrato });
+  const metaJornadas = Math.max(0, parseInt(contrato.numerojornadas, 10) || 0);
+  const divisorMeta = metaJornadas > 0 ? metaJornadas : jornadasExistentes;
+  const numeObjeJornada = calcNumeObjeJornada(contrato.numeroAlumnos, divisorMeta);
 
-  const jornadaIds = await JornadaCap.find({ idContrato }).distinct('_id');
-  let clasesPorJornada = 0;
-  if (jornadaIds.length) {
-    const agg = await ClaseJornadaCap.aggregate([
-      { $match: { idJornada: { $in: jornadaIds } } },
-      { $group: { _id: '$idJornada', total: { $sum: 1 } } },
-      { $group: { _id: null, maxClases: { $max: '$total' } } },
-    ]);
-    clasesPorJornada = Math.max(0, parseInt(agg[0]?.maxClases, 10) || 0);
-  }
-
-  contrato.numerojornadas = numerojornadas;
   contrato.numeObjeJornada = numeObjeJornada;
-  contrato.clasesPorJornada = clasesPorJornada;
-  contrato.jornadasGeneradas = numerojornadas > 0;
+  contrato.jornadasGeneradas = jornadasExistentes > 0;
   await contrato.save();
 
-  if (numeObjeJornada > 0 && numerojornadas > 0) {
+  if (numeObjeJornada > 0 && jornadasExistentes > 0) {
     await JornadaCap.updateMany({ idContrato }, { $set: { numeObjeJornada } });
   }
 
-  return contrato.toObject ? contrato.toObject() : contrato;
+  const plain = contrato.toObject ? contrato.toObject() : contrato;
+  return { ...plain, jornadasExistentes };
 }
 
 /** Próximo índice libre en un día calendario para el contrato. */

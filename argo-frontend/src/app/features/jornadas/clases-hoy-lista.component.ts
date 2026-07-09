@@ -10,6 +10,7 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
+import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
 import { fmtFechaCalendario, ymdLocal } from './jornada-calendario.util';
 import {
   capCarpa,
@@ -35,6 +36,8 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   private jornadaSvc = inject(JornadaCapService);
   private permisoSvc = inject(PermisoService);
   private router = inject(Router);
+  operacionCfg = inject(JornadasOperacionConfigService);
+  operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
 
   loading = signal(false);
   clases = signal<ClaseJornadaDto[]>([]);
@@ -124,6 +127,7 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
+    this.operacionCfg.cargar();
     this.cargar();
     this.refreshTimer = setInterval(() => this.cargar(true), 15_000);
   }
@@ -253,7 +257,7 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
       this.msg.set('Seleccione la jornada del día y el programa de capacitación.');
       return;
     }
-    if (this.jornadaCrearActiva()?.estado !== 'EN PROCESO') {
+    if (!this.operacionEspecialActiva() && this.jornadaCrearActiva()?.estado !== 'EN PROCESO') {
       this.msg.set('Solo puede crear clases en jornadas EN PROCESO (día de hoy).');
       return;
     }

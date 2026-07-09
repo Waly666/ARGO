@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { Component, DestroyRef, HostListener, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
@@ -12,11 +12,17 @@ import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
 import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos-jornada-alert.service';
 import { CertificadoJornadaBloqueoService } from '../../core/services/certificado-jornada-bloqueo.service';
-import { JornadaHubDeepLinkService } from '../../core/services/jornada-hub-deeplink.service';
+import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
+import { JornadaHubDeepLinkService, JornadaHubDeepLink } from '../../core/services/jornada-hub-deeplink.service';
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import {
+  AlumnoClaseAnteriorItem,
+  AvanceContratoDto,
+  ClaseAnteriorResumenDto,
   ContratacionDto,
   ContratoSyncDto,
+  CuotaPlanCobroDto,
+  EstadoCobroContratoDto,
   InstructorJornadaDto,
   JornadaCapService,
 } from '../../core/services/jornada-cap.service';
@@ -35,8 +41,16 @@ import {
 import { environment } from '../../../environments/environment';
 import { AsistenteContextoService } from '../../core/services/asistente-contexto.service';
 import { Cliente, ClienteService } from '../../core/services/cliente.service';
+import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
 import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
-import { FacturacionService, PreviewFacturaContrato } from '../../core/services/facturacion.service';
+import { CajaSesionService } from '../../core/services/caja-sesion.service';
+import { FacturacionService, FacturaElectronicaItem, PreviewFacturaContrato } from '../../core/services/facturacion.service';
+import { IngresoService } from '../../core/services/ingreso.service';
+import { NotaCreditoModalComponent } from '../facturacion/nota-credito-modal.component';
+import { PagoSoporteFieldComponent } from '../../shared/pago-soporte-field/pago-soporte-field.component';
+import { requiereReferenciaPago, requiereSoportePago } from '../../core/utils/referencia-pago.util';
+import { leerImagenSoporte } from '../../core/utils/pago-soporte.helpers';
+import { pagoIntangibleCompleto } from '../../core/utils/pago-intangible.validators';
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { JornadaCapDto } from '../../core/services/jornada-cap.service';
 import { JornadaMapaPickerComponent } from './jornada-mapa-picker.component';
@@ -69,6 +83,7 @@ import {
   ahoraLineaTopPct,
   esFinDeSemana,
   rangoVisibleMes,
+  duracionSegundosDesdeHHmm,
 } from './jornada-calendario.util';
 import {
   JorMsgTipo,
@@ -117,8 +132,22 @@ import {
   claseTieneInstructor,
 } from './jornada-ui.util';
 
-type Tab = 'contratos' | 'jornadas' | 'clases' | 'certificados';
+type Tab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas';
+
+const TABS_CON_CONTRATO: Tab[] = ['avance', 'jornadas', 'clases', 'certificados'];
 type VistaAgenda = 'lista' | 'calendario';
+
+/** Alumno con datos mínimos para mostrar nombre y matricular (búsqueda, clase anterior, etc.). */
+type AlumnoNombrable = {
+  numDoc: number | string;
+  nombreCompleto?: string;
+  nombre1?: string;
+  nombre2?: string;
+  nombres?: string;
+  apellido1?: string;
+  apellido2?: string;
+  apellidos?: string;
+};
 
 @Component({
   selector: 'argo-jornadas-hub',
@@ -130,10 +159,11 @@ type VistaAgenda = 'lista' | 'calendario';
     MunicipioBuscarComponent,
     JornadaMapaPickerComponent,
     FormModalComponent,
+    ArgoDateInputComponent,
     CatalogoEnumBuscarComponent,
     Hora12InputComponent,
-  
-    ArgoDateInputComponent,
+    PagoSoporteFieldComponent,
+    NotaCreditoModalComponent,
   ],
   templateUrl: './jornadas-hub.component.html',
   styleUrls: ['./jornadas-hub.component.scss'],
@@ -156,6 +186,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private clienteSvc = inject(ClienteService);
   private feSvc = inject(FacturacionService);
   private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
+  private comprobanteImpresion = inject(ComprobanteHoyImpresionService);
+  private cajaSvc = inject(CajaSesionService);
+  private ingresoSvc = inject(IngresoService);
+  operacionCfg = inject(JornadasOperacionConfigService);
+  operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
 
   tab = signal<Tab>('contratos');
   vistaJornadas = signal<VistaAgenda>('lista');
@@ -185,13 +220,48 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   contratoSel = signal<string>('');
   clientesFe = signal<Cliente[]>([]);
   tiposContrato = signal<{ id: string; label: string }[]>([]);
-  estadoFacturaContrato = signal<{ facturado: boolean; factura: { _id: string; numeroFactura: string } | null } | null>(
-    null,
-  );
+  estadoFacturaContrato = signal<{
+    facturado: boolean;
+    factura: { _id: string; numeroFactura: string; estado?: string; valorTotal?: number } | null;
+  } | null>(null);
   previewFacturaContrato = signal<PreviewFacturaContrato | null>(null);
+  estadoCobroContrato = signal<EstadoCobroContratoDto | null>(null);
+  generandoCuentaCobro = signal(false);
+  generandoComprobanteCuota = signal(false);
+  modalComprobanteCuotaOpen = signal(false);
+  cuotaComprobanteSel = signal<CuotaPlanCobroDto | null>(null);
+  comprobanteCuotaFecha = signal('');
+  comprobanteCuotaTipoPago = signal('');
+  comprobanteCuotaCuenta = signal('');
+  comprobanteCuotaRef = signal('');
+  comprobanteCuotaEntraCaja = signal(false);
+  comprobanteCuotaObs = signal('');
+  comprobanteCuotaArchivoSoporte = signal<File | null>(null);
+  comprobanteCuotaPreviewSoporte = signal<string | null>(null);
+  tiposPagoContrato = signal<Record<string, unknown>[]>([]);
+  cuentasBancariasContrato = signal<Record<string, unknown>[]>([]);
+  cajaAbiertaContrato = signal(false);
   emitiendoFactura = signal(false);
+  mostrarAuthAnularIngresoContrato = signal(false);
+  ingresoAnularContratoPendiente = signal<{ idIngreso: string; cuotaId: string } | null>(null);
+  authAdminUserAnular = signal('');
+  authAdminPassAnular = signal('');
+  facturaContratoNota = signal<FacturaElectronicaItem | null>(null);
+  cargandoFacturaContratoNota = signal(false);
   formContrato = signal<ContratacionDto>(this.emptyContrato());
   fechaFinalizacionContrato = signal(ymdLocal(new Date()));
+  avanceContrato = signal<AvanceContratoDto | null>(null);
+  avanceContratoLoading = signal(false);
+  avanceRefreshTick = signal(0);
+  formatNumDoc = formatNumDoc;
+
+  /** ID de contrato en la URL (?contrato=) — visible aunque aún no se haya sincronizado contratoSel. */
+  contratoDesdeUrl = toSignal(
+    this.route.queryParamMap.pipe(map((qp) => String(qp.get('contrato') || '').trim())),
+    {
+      initialValue: String(this.route.snapshot.queryParamMap.get('contrato') || '').trim(),
+    },
+  );
 
   jornadas = signal<any[]>([]);
   jornadasEnProcesoAhora = computed(() => this.jornadas().filter((j) => j?.estado === 'EN PROCESO'));
@@ -201,6 +271,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   claseSel = signal<string>('');
   claseActiva = signal<any | null>(null);
   programasJornada = signal<any[]>([]);
+  programasJornadaLoading = signal(false);
+  buscarProgramasContrato = signal('');
   nuevaClaseProg = signal('');
   nuevaClaseUbic = signal('Carpa');
   asistencias = signal<any[]>([]);
@@ -261,6 +333,23 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private progresoDebounce: ReturnType<typeof setTimeout> | null = null;
 
   contratoActivo = computed(() => this.contratos().find((c) => c._id === this.contratoSel()));
+
+  contratoAvanceId = computed(
+    () => this.contratoSel() || this.formContrato()._id || this.contratoDesdeUrl() || '',
+  );
+
+  contratoAvanceMeta = computed(() => {
+    const id = this.contratoAvanceId();
+    if (!id) return null;
+    const c = this.buscarContratoPorId(id);
+    if (c) return c;
+    if (this.mismoContratoId(this.formContrato()._id, id)) return this.formContrato();
+    return null;
+  });
+
+  avanceContratoAlumnos = computed(() => this.avanceContrato()?.alumnos ?? []);
+
+  avanceContratoResumen = computed(() => this.avanceContrato()?.resumen ?? null);
   puedeAgregarJornadaExtra = computed(() => {
     if (!this.puedeAsignarInstructor()) return false;
     const c = this.contratoActivo();
@@ -271,7 +360,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   puedeEditarHorarioClase = computed(() =>
     this.permisoSvc.tiene(['jornadas.gestionar', 'jornadas.operar']),
   );
-  /** Solo administrador (jornadas.gestionar) puede eliminar clases no finalizadas. */
+  /** Solo administrador (jornadas.gestionar) puede eliminar clases (cualquier estado). */
   puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
   puedeEliminarClaseActiva = computed(
     () => this.puedeEliminarClase() && claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
@@ -285,6 +374,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   inscritosCertificadosContrato = computed(() =>
     this.inscritos().filter((i) => i.yaCertificadoContrato).length,
   );
+  /** Alumnos de la clase anterior que aún no están matriculados en la clase actual. */
+  alumnosClaseAnteriorDisponibles = computed(() => {
+    const inscritosDocs = new Set(this.inscritos().map((i) => Number(i.numDoc)));
+    return this.alumnosClaseAnterior().filter((a) => !inscritosDocs.has(Number(a.numDoc)));
+  });
   totalAlumnosMatriculadosModal = computed(() =>
     this.modalModoClase() === 'editar'
       ? this.inscritos().length
@@ -307,10 +401,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   clasesCalFuente = computed(() =>
     this.tab() === 'contratos' && this.vistaContratoCal() ? this.clasesContratoCal() : this.clases(),
   );
+  clasesCalFuenteFiltradas = computed(() => {
+    const src = this.clasesCalFuente();
+    const idJ = this.jornadaSel();
+    if (!idJ) return src;
+    return src.filter((c) => String(c.idJornada || '') === idJ);
+  });
   clasesSemanaFiltradas = computed(() => {
     const est = this.filtroAdminEstado();
     const keys = new Set(this.diasSemanaClases().map((d) => d.key));
-    return this.clasesCalFuente().filter((c) => {
+    return this.clasesCalFuenteFiltradas().filter((c) => {
       if (!keys.has(ymdLocal(c.fechaJornada))) return false;
       if (!est) return true;
       return String(c.estado || '').toUpperCase() === est.toUpperCase();
@@ -368,6 +468,36 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   jornadasOperablesHoy = computed(() =>
     this.jornadas().filter((j) => j.estado === 'EN PROCESO'),
   );
+
+  /** Jornadas del contrato activo, ordenadas por fecha. */
+  jornadasContratoOrdenadas = computed(() =>
+    [...this.jornadas()].sort((a, b) =>
+      String(a.fechaProgramacion || '').localeCompare(String(b.fechaProgramacion || '')),
+    ),
+  );
+
+  opcionesJornadasFiltroClases = computed<EnumBuscarOption[]>(() => {
+    const rows = this.jornadasContratoOrdenadas();
+    if (!rows.length) {
+      return [{ value: '', label: 'Sin jornadas en el contrato' }];
+    }
+    return [
+      { value: '', label: 'Todas las jornadas del contrato' },
+      ...rows.map((j) => ({
+        value: j._id || '',
+        label: this.etiquetaJornadaFiltro(j),
+      })),
+    ];
+  });
+
+  textoJornadaFiltroClases = computed(() => {
+    const id = this.jornadaSel();
+    if (!id) return '';
+    const j = this.jornadas().find((x) => x._id === id);
+    return j ? this.etiquetaJornadaFiltro(j) : '';
+  });
+
+  clasesListaFiltradas = computed(() => this.clases());
 
   ubicaciones = ['Carpa', 'Domo', 'Empresa', 'Colegio', 'Auditorio', 'Coliseo', 'Estadio', 'Otro'];
 
@@ -428,18 +558,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   });
 
   opcionesJornadasHoyToolbar = computed<EnumBuscarOption[]>(() =>
-    this.jornadasOperablesHoy().map((j) => ({
-      value: j._id || '',
-      label: `${this.labelJornada(j)} — ${j.estado}`,
-    })),
+    this.opcionesJornadasFiltroClases(),
   );
 
-  textoJornadaSel = computed(() => {
-    const id = this.jornadaSel();
-    if (!id) return '';
-    const j = this.jornadasOperablesHoy().find((x) => x._id === id);
-    return j ? `${this.labelJornada(j)} — ${j.estado}` : '';
-  });
+  textoJornadaSel = computed(() => this.textoJornadaFiltroClases());
 
   textoSupervisorContrato = computed(() => {
     const id = this.formContrato().idSupervisor || '';
@@ -508,6 +630,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.etiquetaProgramaModal();
   });
 
+  programasContratoFiltrados = computed(() => {
+    const q = this.buscarProgramasContrato().trim().toLowerCase();
+    const list = this.programasJornada();
+    if (!q) return list;
+    return list.filter(
+      (p) =>
+        String(p.nombreProg || '').toLowerCase().includes(q) ||
+        String(p.codigoProg || '').toLowerCase().includes(q) ||
+        this.programaOptionValue(p).toLowerCase().includes(q),
+    );
+  });
+
   georefLoading = signal(false);
   private georefDebounce: ReturnType<typeof setTimeout> | null = null;
 
@@ -549,6 +683,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   guardandoAsistencia = signal<number | null>(null);
   guardandoInscripcion = signal(false);
   cronometroDisplay = signal('00:00:00');
+
+  /** Utilidad «Copiar alumnos de la clase anterior de la misma jornada». */
+  claseAnteriorInfo = signal<ClaseAnteriorResumenDto | null>(null);
+  alumnosClaseAnterior = signal<AlumnoClaseAnteriorItem[]>([]);
+  cargandoAlumnosClaseAnterior = signal(false);
+  alumnosClaseAnteriorSeleccion = signal<Set<number>>(new Set());
+  matriculandoDesdeAnterior = signal(false);
   private cronometroTimer: ReturnType<typeof setInterval> | null = null;
   private alumnoBusqueda$ = new Subject<string>();
   private livePollTimer: ReturnType<typeof setInterval> | null = null;
@@ -556,6 +697,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private jornadaPendienteQp = signal<string | null>(null);
   private clasePendienteQp = signal<string | null>(null);
   private tabPendienteQp = signal<Tab | null>(null);
+  private deepLinkPendiente: JornadaHubDeepLink | null = null;
+  private avanceFetchGen = 0;
+  private contratosListos = false;
 
   constructor() {
     effect(() => {
@@ -575,25 +719,73 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.asistente.clearTipsPrepend();
       }
     });
+    effect(() => {
+      const id = this.contratoAvanceId();
+      this.avanceRefreshTick();
+      if (this.tab() !== 'avance' || !id) {
+        if (!id) {
+          this.avanceContrato.set(null);
+          this.avanceContratoLoading.set(false);
+        }
+        return;
+      }
+      const gen = ++this.avanceFetchGen;
+      this.avanceContratoLoading.set(true);
+      this.jornadaSvc.avanceContrato(id).subscribe({
+        next: (av) => {
+          if (gen !== this.avanceFetchGen) return;
+          this.avanceContrato.set(av);
+          this.avanceContratoLoading.set(false);
+        },
+        error: () => {
+          if (gen !== this.avanceFetchGen) return;
+          this.avanceContrato.set(null);
+          this.avanceContratoLoading.set(false);
+        },
+      });
+    });
+    effect(() => {
+      const idUrl = this.contratoDesdeUrl();
+      const n = this.contratos().length;
+      if (!idUrl || !n || !this.contratosListos) return;
+      if (this.contratoSel() && this.mismoContratoId(this.contratoSel(), idUrl)) return;
+      const c = this.buscarContratoPorId(idUrl);
+      if (!c) return;
+      this.contratoSel.set(String(c._id));
+      if (!this.mismoContratoId(this.formContrato()._id, c._id)) {
+        this.editarContratoSinAvance(c);
+      }
+    });
   }
 
   ngOnInit() {
+    this.operacionCfg.cargar();
     this.cargarSupervisores();
     this.cargarInstructores();
+    this.cargarProgramasJornada();
     this.cargarDatosFacturacionContrato();
-    let contratosListos = false;
+    this.cargarCatalogosCobroContrato();
     this.jornadaSvc.listarContratos().subscribe({
       next: (rows) => {
         this.contratos.set(rows || []);
-        contratosListos = true;
+        this.contratosListos = true;
         this.aplicarQueryParams(this.route.snapshot.queryParamMap);
+        if (this.deepLinkPendiente) {
+          this.aplicarDeepLink(this.deepLinkPendiente);
+          this.deepLinkPendiente = null;
+        }
       },
     });
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((qp) => {
-      if (contratosListos) this.aplicarQueryParams(qp);
+      if (!this.contratosListos) return;
+      this.aplicarQueryParams(qp);
     });
     this.deeplink.nav$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((link) => {
-      if (contratosListos) this.aplicarDeepLink(link);
+      if (!this.contratosListos) {
+        this.deepLinkPendiente = link;
+        return;
+      }
+      this.aplicarDeepLink(link);
     });
     this.alumnoBusqueda$
       .pipe(
@@ -640,15 +832,30 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!contratoQp) return;
 
     const tab =
-      tabQp === 'jornadas' || tabQp === 'clases' || tabQp === 'certificados' || tabQp === 'contratos'
+      tabQp === 'jornadas' ||
+        tabQp === 'clases' ||
+        tabQp === 'certificados' ||
+        tabQp === 'finanzas' ||
+        tabQp === 'contratos' ||
+        tabQp === 'avance'
         ? tabQp
         : undefined;
     this.aplicarDeepLink({ contrato: contratoQp, tab, jornada: jornadaQp || undefined });
   }
 
   private aplicarDeepLink(link: { contrato: string; tab?: Tab; jornada?: string }) {
+    const idContrato = String(link.contrato || '').trim();
+    if (!idContrato) return;
+
     const tabDest = link.tab;
-    if (tabDest === 'jornadas' || tabDest === 'clases' || tabDest === 'certificados' || tabDest === 'contratos') {
+    if (
+      tabDest === 'jornadas' ||
+      tabDest === 'clases' ||
+      tabDest === 'certificados' ||
+      tabDest === 'finanzas' ||
+      tabDest === 'contratos' ||
+      tabDest === 'avance'
+    ) {
       this.tab.set(tabDest);
       this.tabPendienteQp.set(tabDest);
     } else {
@@ -657,18 +864,42 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (link.jornada) this.jornadaPendienteQp.set(link.jornada);
     else this.jornadaPendienteQp.set(null);
 
-    const c = this.contratos().find((x) => x._id === link.contrato);
-    if (!c) return;
+    this.contratoSel.set(idContrato);
 
-    this.contratoSel.set(link.contrato);
+    const c = this.buscarContratoPorId(idContrato);
     const tab = this.tabPendienteQp();
-    if (tab === 'jornadas' || tab === 'clases') {
+    if (tab === 'jornadas' || tab === 'clases' || tab === 'avance') {
       this.tab.set(tab);
-      this.onContratoSelChange(link.contrato);
-    } else {
+      if (c) this.onContratoSelChange(idContrato);
+      else if (tab === 'jornadas') this.recargarVistaJornadas();
+    } else if (c) {
       this.editarContrato(c);
+      if (tab === 'certificados') {
+        this.tab.set('certificados');
+        this.recargarCerts();
+      } else if (tab === 'finanzas') {
+        this.tab.set('finanzas');
+        this.cargarFinanzasContrato();
+      } else {
+        this.tab.set('contratos');
+      }
+    } else if (tab) {
+      this.tab.set(tab);
+      if (tab === 'certificados') this.recargarCerts();
+      if (tab === 'finanzas') this.cargarFinanzasContrato();
+    } else {
       this.tab.set('contratos');
     }
+  }
+
+  private mismoContratoId(a?: string | null, b?: string | null): boolean {
+    return String(a || '').trim() === String(b || '').trim();
+  }
+
+  private buscarContratoPorId(id?: string | null): ContratacionDto | undefined {
+    const key = String(id || '').trim();
+    if (!key) return undefined;
+    return this.contratos().find((x) => this.mismoContratoId(x._id, key));
   }
 
   ESTADOS_CONTRATO: ReadonlyArray<'En Ejecución' | 'Ejecutado'> = ['En Ejecución', 'Ejecutado'];
@@ -681,6 +912,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       objetoContrato: '',
       idClienteFacturacion: null,
       valorContrato: 0,
+      comprobantesIngresoCaja: false,
+      planCobro: [],
       numerojornadas: 1,
       jornadasPorDia: 1,
       clasesPorJornada: 1,
@@ -691,11 +924,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       incluiSab: false,
       incluiDom: false,
       incluiFest: false,
+      idProgramas: [],
     };
   }
 
   nuevoContratoForm() {
     this.formContrato.set(this.emptyContrato());
+    this.avanceContrato.set(null);
     this.ciudadContratoTexto.set('');
     this.fechaFinalizacionContrato.set(ymdLocal(new Date()));
   }
@@ -768,6 +1003,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         });
         this.recargarContratos();
         if (this.contratoSel() === c._id) this.recargarVistaJornadas();
+        this.cargarAvanceContrato(c._id);
         this.mostrarMsg(
           r.message || 'Contrato finalizado correctamente.',
           'ok',
@@ -783,12 +1019,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   setTab(t: Tab) {
     this.tab.set(t);
-    if (t === 'jornadas' || t === 'clases' || t === 'certificados') {
+    if (t === 'contratos') {
+      this.cargarProgramasJornada();
+    }
+    if (TABS_CON_CONTRATO.includes(t)) {
       if (!this.contratoSel() && this.contratos().length) {
         const c = this.contratos()[0];
         if (c._id) this.onContratoSelChange(c._id);
       }
     }
+    if (t === 'avance') this.cargarAvanceContrato();
     if (t === 'jornadas') this.recargarVistaJornadas();
     if (t === 'clases') {
       this.cargarProgramasJornada();
@@ -806,6 +1046,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       }
     }
     if (t === 'certificados') this.recargarCerts();
+    if (t === 'finanzas') {
+      if (!this.contratoSel() && this.contratos().length) {
+        const c = this.contratos()[0];
+        if (c._id) this.onContratoSelChange(c._id);
+      }
+      this.cargarFinanzasContrato();
+    }
     this.syncLivePoll();
   }
 
@@ -830,15 +1077,21 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   cargarProgramasJornada() {
+    if (this.programasJornadaLoading()) return;
+    this.programasJornadaLoading.set(true);
     this.jornadaSvc.programasJornadaCap().subscribe({
       next: (p) => {
+        this.programasJornadaLoading.set(false);
         this.programasJornada.set(p || []);
         if (this.modalCrearClase()) {
           const idRaw = this.nuevaClaseProg() || this.claseActiva()?.idPrograma;
           if (idRaw) this.sincronizarProgramaModal(String(idRaw));
         }
       },
-      error: () => this.programasJornada.set([]),
+      error: () => {
+        this.programasJornadaLoading.set(false);
+        this.programasJornada.set([]);
+      },
     });
   }
 
@@ -888,6 +1141,38 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return String(cl?.programaNombre || v);
   }
 
+  programaContratoLabel(id: string): string {
+    const idStr = String(id).trim();
+    const p = this.buscarProgramaEnLista(idStr);
+    if (!p) return idStr;
+    const cod = String(p.codigoProg || '').trim();
+    return cod ? `${cod} — ${p.nombreProg}` : String(p.nombreProg || idStr);
+  }
+
+  tieneProgramaContrato(idPrograma: string): boolean {
+    const id = String(idPrograma).trim();
+    return (this.formContrato().idProgramas || []).some((x) => String(x).trim() === id);
+  }
+
+  toggleProgramaContrato(idPrograma: string, checked: boolean): void {
+    if (this.contratoFormEjecutado()) return;
+    const id = String(idPrograma).trim();
+    if (!id) return;
+    const set = new Set((this.formContrato().idProgramas || []).map(String));
+    if (checked) set.add(id);
+    else set.delete(id);
+    this.patchContrato('idProgramas', [...set]);
+  }
+
+  limpiarProgramasContrato(): void {
+    if (this.contratoFormEjecutado()) return;
+    this.patchContrato('idProgramas', []);
+  }
+
+  cantidadProgramasContrato(): number {
+    return (this.formContrato().idProgramas || []).filter((id) => String(id).trim()).length;
+  }
+
   cargarInstructores() {
     this.jornadaSvc.listarInstructores().subscribe({
       next: (r) => this.instructores.set(r || []),
@@ -919,11 +1204,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.alumnoBusquedaOpen.set(false);
     this.alumnosMatricular.set([]);
     this.inscritos.set([]);
+    this.claseAnteriorInfo.set(null);
+    this.alumnosClaseAnterior.set([]);
+    this.alumnosClaseAnteriorSeleccion.set(new Set());
     this.nuevaClaseProg.set('');
     this.nuevaClaseUbic.set('Carpa');
     this.modalFechaClase.set('');
     this.modalCrearJornadaId.set(this.jornadaSel() || '');
-    if (!this.jornadasParaCrear().length) this.cargarJornadasParaCrear();
+    this.cargarJornadasParaCrear();
     this.cargarProgramasJornada();
     this.sincronizarFechaClaseDesdeJornada(this.modalCrearJornadaId());
     this.modalCrearClase.set(true);
@@ -945,12 +1233,89 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.alumnoBusquedaOpen.set(false);
     this.alumnosMatricular.set([]);
     this.inscritos.set([]);
+    this.alumnosClaseAnteriorSeleccion.set(new Set());
     if (!this.jornadasParaCrear().length) this.cargarJornadasParaCrear();
     this.sincronizarProgramaModal(String(c.idPrograma || ''));
     this.cargarProgramasJornada();
     this.cargarInscritos(c._id);
+    this.cargarAlumnosClaseAnterior(c._id);
     this.modalCrearClase.set(true);
     this.iniciarCronometroSiAplica();
+  }
+
+  cargarAlumnosClaseAnterior(idClase: string) {
+    this.claseAnteriorInfo.set(null);
+    this.alumnosClaseAnterior.set([]);
+    if (!idClase) return;
+    this.cargandoAlumnosClaseAnterior.set(true);
+    this.jornadaSvc.alumnosClaseAnterior(idClase).subscribe({
+      next: (r) => {
+        this.cargandoAlumnosClaseAnterior.set(false);
+        this.claseAnteriorInfo.set(r?.clase || null);
+        this.alumnosClaseAnterior.set(r?.alumnos || []);
+      },
+      error: () => {
+        this.cargandoAlumnosClaseAnterior.set(false);
+        this.claseAnteriorInfo.set(null);
+        this.alumnosClaseAnterior.set([]);
+      },
+    });
+  }
+
+  toggleAlumnoClaseAnterior(numDoc: number, checked: boolean): void {
+    this.alumnosClaseAnteriorSeleccion.update((set) => {
+      const next = new Set(set);
+      if (checked) next.add(Number(numDoc));
+      else next.delete(Number(numDoc));
+      return next;
+    });
+  }
+
+  alumnoClaseAnteriorSeleccionado(numDoc: number): boolean {
+    return this.alumnosClaseAnteriorSeleccion().has(Number(numDoc));
+  }
+
+  alumnoPuedeMatricularDesdeAnterior(a: AlumnoClaseAnteriorItem): boolean {
+    if (a.puedeMatricular === false) return false;
+    if (a.puedeMatricular === true) return true;
+    return !a.yaCertificadoContrato;
+  }
+
+  seleccionarTodosAlumnosClaseAnterior(): void {
+    const disponibles = this.alumnosClaseAnteriorDisponibles().filter((a) =>
+      this.alumnoPuedeMatricularDesdeAnterior(a),
+    );
+    this.alumnosClaseAnteriorSeleccion.set(new Set(disponibles.map((a) => Number(a.numDoc))));
+  }
+
+  limpiarSeleccionAlumnosClaseAnterior(): void {
+    this.alumnosClaseAnteriorSeleccion.set(new Set());
+  }
+
+  matricularSeleccionClaseAnterior(): void {
+    const idClase = this.claseSel();
+    const idP = this.nuevaClaseProg();
+    if (!idClase || !idP) return;
+    const seleccion = this.alumnosClaseAnteriorSeleccion();
+    if (!seleccion.size) return;
+    const alumnos = this.alumnosClaseAnteriorDisponibles().filter((a) =>
+      seleccion.has(Number(a.numDoc)),
+    );
+    if (!alumnos.length) return;
+    this.matriculandoDesdeAnterior.set(true);
+    this.matricularAlumnosEnPrograma(idP, alumnos, idClase)
+      .pipe(finalize(() => this.matriculandoDesdeAnterior.set(false)))
+      .subscribe((results) => {
+        const okRows = results.filter((r) => r.ok);
+        const fail = results.filter((r) => !r.ok);
+        this.cargarInscritos(idClase);
+        this.recargarClases();
+        this.alumnosClaseAnteriorSeleccion.set(new Set());
+        let texto = `Matriculados ${okRows.length}/${results.length} desde la clase anterior.`;
+        if (fail.length) texto += ` No matriculados: ${fail.map((f) => f.nombre).join(', ')}.`;
+        this.mostrarMsgModal(texto, fail.length ? 'warn' : 'ok', 'Matrícula desde clase anterior');
+        this.mostrarMsg(texto, fail.length ? 'warn' : 'ok', 'Matrícula desde clase anterior');
+      });
   }
 
   cargarInscritos(idClase: string) {
@@ -963,6 +1328,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   jornadaClaseModalOperable(): boolean {
     const cl = this.claseActiva();
     if (!cl) return false;
+    if (this.operacionEspecialActiva()) return true;
     if (!esFechaHoy(cl.fechaClase || cl.fechaJornada)) return false;
     if (cl.jornadaEstado === 'EN PROCESO') return true;
     const jId = String(this.modalCrearJornadaId() || cl.idJornada || '');
@@ -981,7 +1347,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   tituloBotonIniciarClase(): string {
     const cl = this.claseActiva();
-    if (cl && !esFechaHoy(cl.fechaClase || cl.fechaJornada)) {
+    if (cl && !this.operacionEspecialActiva() && !esFechaHoy(cl.fechaClase || cl.fechaJornada)) {
       return 'Solo puede iniciar la clase el día programado (hoy).';
     }
     if (!this.jornadaClaseModalOperable()) {
@@ -1004,9 +1370,66 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   lapsoClaseEtiqueta(): string {
     const cl = this.claseActiva();
     if (!cl) return '';
+    if (cl.estado === 'FINALIZADO' && cl.duracionSegundos != null) {
+      return this.formatDuracion(cl.duracionSegundos);
+    }
+    if (this.operacionEspecialActiva()) {
+      const secs = duracionSegundosDesdeHHmm(this.modalHoraInicio(), this.modalHoraFin());
+      if (secs != null) return this.formatDuracion(secs);
+    }
     if (cl.duracionSegundos != null) return this.formatDuracion(cl.duracionSegundos);
     if (this.claseModalEnProceso() && cl.horaInicio) return this.cronometroDisplay();
     return '';
+  }
+
+  private horarioPayloadFinalizarClase(): { horaInicio?: string; horaFin?: string } {
+    if (!this.operacionEspecialActiva()) return {};
+    const hi = this.modalHoraInicio().trim();
+    const hf = this.modalHoraFin().trim();
+    const out: { horaInicio?: string; horaFin?: string } = {};
+    if (validarHoraInput(hi)) out.horaInicio = hi;
+    if (validarHoraInput(hf)) out.horaFin = hf;
+    return out;
+  }
+
+  private validarHorarioAntesFinalizarEspecial(): boolean {
+    if (!this.operacionEspecialActiva()) return true;
+    if (this.claseActiva()?.estado === 'EN PROCESO') return true;
+    const hi = this.modalHoraInicio().trim();
+    const hf = this.modalHoraFin().trim();
+    if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
+      this.mostrarMsg(
+        'Indique hora de inicio y hora de fin antes de finalizar.',
+        'error',
+        'Horario requerido',
+      );
+      return false;
+    }
+    if (duracionSegundosDesdeHHmm(hi, hf) == null) {
+      this.mostrarMsg('La hora de fin debe ser posterior a la de inicio.', 'error', 'Horario inválido');
+      return false;
+    }
+    return true;
+  }
+
+  tituloBotonFinalizarClase(): string {
+    if (this.claseActiva()?.estado === 'FINALIZADO') {
+      return 'Reprocesar: emite certificados pendientes de alumnos matriculados después del cierre.';
+    }
+    if (!this.claseModalFinalizable()) {
+      if (this.operacionEspecialActiva() && this.claseActiva()?.estado === 'PROGRAMADA') {
+        return 'Indique hora de inicio y fin para finalizar en modo especial';
+      }
+      return 'Solo se puede finalizar una clase EN PROCESO';
+    }
+    if (this.operacionEspecialActiva()) {
+      return 'Finalizar con el horario indicado (sin cambiar la hora de fin)';
+    }
+    return 'Finalizar clase y registrar hora de fin';
+  }
+
+  textoBotonFinalizarClase(): string {
+    return this.claseActiva()?.estado === 'FINALIZADO' ? '↻ Reprocesar certificados' : '■ Finalizar clase';
   }
 
   private actualizarCronometroDisplay() {
@@ -1039,7 +1462,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   claseModalFinalizable(): boolean {
     const cl = this.claseActiva();
-    return !!cl && cl.estado === 'EN PROCESO';
+    if (!cl) return false;
+    if (cl.estado === 'FINALIZADO') return true;
+    if (cl.estado === 'EN PROCESO') return true;
+    if (this.operacionEspecialActiva()) {
+      const hi = this.modalHoraInicio().trim();
+      const hf = this.modalHoraFin().trim();
+      return validarHoraInput(hi) && validarHoraInput(hf) && duracionSegundosDesdeHHmm(hi, hf) != null;
+    }
+    return false;
   }
 
   claseModalEnProceso(): boolean {
@@ -1049,6 +1480,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   /** Admin: también en clases finalizadas (correcciones). */
   puedeMarcarAsistenciaInscrito(): boolean {
     if (this.claseModalEnProceso()) return true;
+    if (this.operacionEspecialActiva() && this.claseActiva()?.estado !== 'FINALIZADO') return true;
     return this.puedeEliminarClase() && this.claseActiva()?.estado === 'FINALIZADO';
   }
 
@@ -1126,7 +1558,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   finalizarClaseModal() {
     const id = this.claseSel();
     if (!id) return;
-    this.jornadaSvc.finalizarClase(id).subscribe({
+    const yaFinalizada = this.claseActiva()?.estado === 'FINALIZADO';
+    if (!yaFinalizada && !this.validarHorarioAntesFinalizarEspecial()) return;
+    this.jornadaSvc.finalizarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
@@ -1135,11 +1569,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.cargarInscritos(id);
         this.recargarClases();
         this.recargarCerts();
-        const lapso =
-          c.duracionSegundos != null ? this.formatDuracion(c.duracionSegundos) : this.cronometroDisplay();
-        let msg = `Clase finalizada. Duración: ${lapso}.`;
-        if (r?.asistenciasRegistradas > 0) {
-          msg += ` Asistencia registrada a ${r.asistenciasRegistradas} alumno(s).`;
+        let msg: string;
+        if (r?.reproceso) {
+          msg = r?.message || 'Certificados pendientes reprocesados.';
+        } else {
+          const lapso =
+            c.duracionSegundos != null ? this.formatDuracion(c.duracionSegundos) : this.cronometroDisplay();
+          msg = `Clase finalizada. Duración: ${lapso}.`;
+          if (r?.asistenciasRegistradas > 0) {
+            msg += ` Asistencia registrada a ${r.asistenciasRegistradas} alumno(s).`;
+          }
         }
         if (r?.certificadosGenerados > 0) {
           msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
@@ -1212,13 +1651,19 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       dto.horaFin = hf || null;
     }
     this.jornadaSvc.actualizarClase(id, dto).subscribe({
-      next: (c) => {
+      next: (r: any) => {
+        const c = r?.clase || r;
         this.claseActiva.set(c);
         this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
         this.modalHoraFin.set(isoAHoraInput(c.horaFin));
         this.iniciarCronometroSiAplica();
         this.recargarClases();
-        this.mostrarMsg('Cambios guardados.', 'ok', 'Clase actualizada');
+        this.recargarCerts();
+        if (r?.certificadosGenerados > 0) {
+          this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+        }
+        const msg = r?.message || 'Cambios guardados.';
+        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase actualizada');
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo guardar la clase.', 'error', 'Error'),
     });
@@ -1313,7 +1758,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Jornadas disponibles para crear clase (EN PROCESO de hoy, todas las del sistema). */
+  /** Jornadas disponibles para crear clase (hoy/mañana en modo normal; todas las del contrato en modo especial). */
   jornadasParaCrear = signal<any[]>([]);
   modalCrearJornadaId = signal<string>('');
   /** Fecha de la clase (= fecha programada de la jornada elegida). */
@@ -1340,6 +1785,22 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return n ? `✓ Crear clase (${n} alumno${n === 1 ? '' : 's'})` : '✓ Crear clase';
   }
 
+  modalClaseSubtitle(): string {
+    if (this.modalModoClase() === 'nuevo') {
+      return this.operacionEspecialActiva()
+        ? 'Modo operación especial — elija jornada, curso y ubicación'
+        : 'Complete los pasos y pulse Crear clase';
+    }
+    const cl = this.claseActiva();
+    if (!cl) return 'Datos, horario, instructor y alumnos';
+    const partes = [
+      cl.fechaJornada || cl.fechaClase ? this.fmtFecha(cl.fechaJornada || cl.fechaClase) : '',
+      cl.idPrograma ? this.nombrePrograma(cl.idPrograma) : '',
+      cl.ubicacion || '',
+    ].filter(Boolean);
+    return partes.length ? partes.join(' · ') : 'Datos, horario, instructor y alumnos';
+  }
+
   usarTarjetasJornadaCrear(): boolean {
     return this.jornadasParaCrear().length > 0 && this.jornadasParaCrear().length <= 6;
   }
@@ -1355,24 +1816,65 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.modalFechaClase.set(j?.fechaProgramacion ? String(j.fechaProgramacion) : '');
   }
 
+  private filtrarJornadasParaCrear(rows: any[]): any[] {
+    const list = rows || [];
+    if (this.operacionEspecialActiva()) {
+      const idContrato = this.contratoSel();
+      if (!idContrato) return [];
+      return list.filter((j) => String(j.idContrato || '') === String(idContrato));
+    }
+    return list.filter((j) => this.jornadaEnVentanaCreacion(j));
+  }
+
+  private aplicarSeleccionDefaultJornadaCrear(filtered: any[]) {
+    const actual = this.modalCrearJornadaId();
+    if (actual && filtered.some((j) => j._id === actual)) {
+      this.sincronizarFechaClaseDesdeJornada(actual);
+      return;
+    }
+    const desdeToolbar = this.jornadaSel();
+    if (desdeToolbar && filtered.some((j) => j._id === desdeToolbar)) {
+      this.onModalCrearJornadaChange(desdeToolbar);
+      return;
+    }
+    if (filtered.length === 1) {
+      this.onModalCrearJornadaChange(filtered[0]._id);
+    }
+  }
+
   cargarJornadasParaCrear() {
+    if (this.operacionEspecialActiva()) {
+      const idContrato = this.contratoSel();
+      if (!idContrato) {
+        this.jornadasParaCrear.set([]);
+        return;
+      }
+      const locales = this.jornadas();
+      const localesDelContrato =
+        locales.length > 0 &&
+        locales.every((j) => String(j.idContrato || '') === String(idContrato));
+      if (localesDelContrato) {
+        const filtered = this.filtrarJornadasParaCrear(locales);
+        this.jornadasParaCrear.set(filtered);
+        this.aplicarSeleccionDefaultJornadaCrear(filtered);
+        return;
+      }
+      this.jornadaSvc.listarJornadas({ idContrato }).subscribe({
+        next: (rows) => {
+          const filtered = this.filtrarJornadasParaCrear(rows);
+          this.jornadasParaCrear.set(filtered);
+          this.aplicarSeleccionDefaultJornadaCrear(filtered);
+        },
+        error: () => this.jornadasParaCrear.set([]),
+      });
+      return;
+    }
+
     this.jornadaSvc.listarJornadas().subscribe({
       next: (rows) => {
-        const filtered = (rows || []).filter((j: any) => this.jornadaEnVentanaCreacion(j));
+        const filtered = this.filtrarJornadasParaCrear(rows);
         this.jornadasParaCrear.set(filtered);
-        const actual = this.modalCrearJornadaId();
-        if (actual && filtered.some((j: any) => j._id === actual)) {
-          this.sincronizarFechaClaseDesdeJornada(actual);
-          return;
-        }
-        const desdeToolbar = this.jornadaSel();
-        if (desdeToolbar && filtered.some((j: any) => j._id === desdeToolbar)) {
-          this.onModalCrearJornadaChange(desdeToolbar);
-          return;
-        }
-        if (filtered.length === 1) {
-          this.onModalCrearJornadaChange(filtered[0]._id);
-        }
+        this.aplicarSeleccionDefaultJornadaCrear(filtered);
       },
       error: () => this.jornadasParaCrear.set([]),
     });
@@ -1436,7 +1938,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!this.alumnoBusqueda().trim()) this.alumnoBusqueda$.next('');
   }
 
-  nombreAlumnoItem(a: AlumnoListItem): string {
+  nombreAlumnoItem(a: AlumnoNombrable): string {
     if (a.nombreCompleto?.trim()) return a.nombreCompleto.trim();
     const n = [a.nombre1, a.nombre2, a.nombres].filter(Boolean).join(' ').trim();
     const ap = [a.apellido1, a.apellido2, a.apellidos].filter(Boolean).join(' ').trim();
@@ -1696,13 +2198,27 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Refleja en listado y formulario los contadores recalculados del contrato. */
+  /** Refleja en listado y formulario contadores derivados (sin pisar metas de planificación). */
   aplicarContratoSync(partial: ContratoSyncDto | null | undefined) {
     if (!partial?._id) return;
     const id = String(partial._id);
-    this.contratos.update((arr) => arr.map((x) => (x._id === id ? { ...x, ...partial } : x)));
+    const patch: Partial<ContratacionDto> = {
+      numeObjeJornada: partial.numeObjeJornada,
+      jornadasGeneradas: partial.jornadasGeneradas,
+      jornadasExistentes: partial.jornadasExistentes,
+    };
+    if (partial.numerojornadas != null && partial.numerojornadas > 0) {
+      patch.numerojornadas = partial.numerojornadas;
+    }
+    if (partial.clasesPorJornada != null && partial.clasesPorJornada > 0) {
+      patch.clasesPorJornada = partial.clasesPorJornada;
+    }
+    if (partial.jornadasPorDia != null && partial.jornadasPorDia > 0) {
+      patch.jornadasPorDia = partial.jornadasPorDia;
+    }
+    this.contratos.update((arr) => arr.map((x) => (x._id === id ? { ...x, ...patch } : x)));
     if (this.formContrato()._id === id) {
-      this.formContrato.update((f) => ({ ...f, ...partial }));
+      this.formContrato.update((f) => ({ ...f, ...patch }));
     }
   }
 
@@ -1823,6 +2339,30 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
+  puedeVerFinanzasContrato(): boolean {
+    return this.puedeFacturarContrato() || this.puedeGestionarCobroContrato();
+  }
+
+  cargarFinanzasContrato(): void {
+    const id = this.formContrato()._id || this.contratoSel();
+    if (!id) return;
+    if (!this.formContrato()._id) {
+      const c = this.buscarContratoPorId(id);
+      if (c) this.editarContrato(c);
+      return;
+    }
+    this.cargarEstadoFacturaContrato(id);
+    this.cargarEstadoCobroContrato(id);
+  }
+
+  avanceCobroPct(): number {
+    const ec = this.estadoCobroContrato();
+    const v = Number(this.formContrato().valorContrato) || Number(ec?.valorContrato) || 0;
+    if (!(v > 0)) return 0;
+    const pagado = Number(ec?.totalPagado) || 0;
+    return Math.min(100, Math.round((pagado / v) * 100));
+  }
+
   puedeFacturarContrato(): boolean {
     return (
       this.permisoSvc.tiene('facturacion') || this.permisoSvc.tiene('alumnos.pagos')
@@ -1919,6 +2459,453 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
+  etiquetaIvaServicioContrato(perfil?: {
+    condicionIva?: string;
+    porcentajeIva?: number;
+  } | null): string {
+    const c = String(perfil?.condicionIva || 'excluido').toLowerCase();
+    const pct = Number(perfil?.porcentajeIva) || 0;
+    if (c === 'gravado' && pct > 0) return `Gravado ${pct}%`;
+    if (c === 'exento') return 'Exento';
+    return 'Sin IVA';
+  }
+
+  sumaPlanCobro = computed(() =>
+    (this.formContrato().planCobro || []).reduce((a, c) => a + (Number(c.valor) || 0), 0),
+  );
+
+  planCobroCuadrado = computed(() => {
+    const total = Number(this.formContrato().valorContrato) || 0;
+    if (!(total > 0)) return true;
+    return Math.abs(this.sumaPlanCobro() - total) <= 1;
+  });
+
+  puedeGestionarCobroContrato(): boolean {
+    return this.permisoSvc.tiene(['jornadas.gestionar', 'facturacion']);
+  }
+
+  private cargarCatalogosCobroContrato(): void {
+    this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
+      next: (rows) => this.tiposPagoContrato.set(rows?.length ? rows : []),
+    });
+    this.catSvc.list('cuentasBancarias', { refresh: true }).subscribe({
+      next: (rows) => this.cuentasBancariasContrato.set(rows || []),
+    });
+    this.cajaSvc.activa().subscribe({
+      next: (r) => this.cajaAbiertaContrato.set(!!r.abierta),
+    });
+  }
+
+  cargarEstadoCobroContrato(id?: string): void {
+    const cid = id || this.formContrato()._id;
+    if (!cid) {
+      this.estadoCobroContrato.set(null);
+      return;
+    }
+    this.jornadaSvc.estadoCobroContrato(cid).subscribe({
+      next: (r) => {
+        this.estadoCobroContrato.set(r);
+        this.formContrato.update((f) => ({
+          ...f,
+          planCobro: r.planCobro || f.planCobro || [],
+          comprobantesIngresoCaja: r.comprobantesIngresoCaja,
+          cuentaCobroNumero: r.cuentaCobro?.numero || f.cuentaCobroNumero,
+          cuentaCobroGeneradaAt: r.cuentaCobro?.generadaAt || f.cuentaCobroGeneradaAt,
+        }));
+      },
+      error: () => this.estadoCobroContrato.set(null),
+    });
+  }
+
+  private nuevaIdCuota(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  agregarCuotaPlan(): void {
+    const n = (this.formContrato().planCobro || []).length + 1;
+    const cuota: CuotaPlanCobroDto = {
+      id: this.nuevaIdCuota(),
+      etiqueta: `Cuota ${n}`,
+      valor: 0,
+      orden: n - 1,
+    };
+    this.formContrato.update((f) => ({
+      ...f,
+      planCobro: [...(f.planCobro || []), cuota],
+    }));
+  }
+
+  quitarCuotaPlan(id: string): void {
+    const cuota = (this.formContrato().planCobro || []).find((c) => c.id === id);
+    if (cuota?.pagado || cuota?.idIngreso) {
+      this.mostrarMsg('No puede quitar una cuota que ya tiene comprobante.', 'warn', 'Plan de cobro');
+      return;
+    }
+    this.formContrato.update((f) => ({
+      ...f,
+      planCobro: (f.planCobro || []).filter((c) => c.id !== id),
+    }));
+  }
+
+  patchCuotaPlan(id: string, patch: Partial<CuotaPlanCobroDto>): void {
+    this.formContrato.update((f) => ({
+      ...f,
+      planCobro: (f.planCobro || []).map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  }
+
+  dividirPlanEnCuotasIguales(cantidad: number): void {
+    const total = Number(this.formContrato().valorContrato) || 0;
+    if (!(total > 0) || cantidad < 1) {
+      this.mostrarMsg('Indique el valor del contrato primero.', 'warn', 'Plan de cobro');
+      return;
+    }
+    const pagadas = (this.formContrato().planCobro || []).filter((c) => c.pagado || c.idIngreso);
+    if (pagadas.length) {
+      this.mostrarMsg('No puede redividir: hay cuotas con comprobante.', 'warn', 'Plan de cobro');
+      return;
+    }
+    const base = Math.floor(total / cantidad);
+    let resto = total - base * cantidad;
+    const cuotas: CuotaPlanCobroDto[] = [];
+    for (let i = 0; i < cantidad; i++) {
+      const extra = resto > 0 ? 1 : 0;
+      if (resto > 0) resto -= 1;
+      cuotas.push({
+        id: this.nuevaIdCuota(),
+        etiqueta: cantidad === 1 ? 'Pago total' : `Cuota ${i + 1}`,
+        valor: base + extra,
+        orden: i,
+      });
+    }
+    this.formContrato.update((f) => ({ ...f, planCobro: cuotas }));
+  }
+
+  async generarCuentaCobroContrato(): Promise<void> {
+    const f = this.formContrato();
+    const id = f._id;
+    if (!id) {
+      this.mostrarMsg('Guarde el contrato antes de generar la cuenta de cobro.', 'warn', 'Cuenta de cobro');
+      return;
+    }
+    if (!(Number(f.valorContrato) > 0)) {
+      this.mostrarMsg('Indique el valor del contrato.', 'warn', 'Cuenta de cobro');
+      return;
+    }
+    const cli = this.clientesFe().find((x) => x._id === f.idClienteFacturacion);
+    if (!cli) {
+      this.mostrarMsg('Seleccione el cliente del contrato.', 'warn', 'Cuenta de cobro');
+      return;
+    }
+    this.generandoCuentaCobro.set(true);
+    this.jornadaSvc.actualizarContrato(id, this.contratoDtoConCliente(f, cli)).subscribe({
+      next: (c) => {
+        this.formContrato.set(c);
+        this.jornadaSvc.generarCuentaCobroContrato(id).subscribe({
+          next: (r) => {
+            this.generandoCuentaCobro.set(false);
+            this.formContrato.update((f) => ({
+              ...f,
+              cuentaCobroNumero: r.numero,
+              cuentaCobroGeneradaAt: r.generadaAt,
+            }));
+            this.cargarEstadoCobroContrato(id);
+            this.mostrarMsg(`Cuenta de cobro ${r.numero} generada.`, 'ok', 'Cuenta de cobro');
+          },
+          error: (e) => {
+            this.generandoCuentaCobro.set(false);
+            this.mostrarMsg(e?.error?.message || 'No se pudo generar la cuenta de cobro.', 'error', 'Error');
+          },
+        });
+      },
+      error: (e) => {
+        this.generandoCuentaCobro.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo guardar el contrato.', 'error', 'Error');
+      },
+    });
+  }
+
+  imprimirCuentaCobroContrato(): void {
+    const id = this.formContrato()._id;
+    if (!id || !this.formContrato().cuentaCobroNumero) {
+      this.mostrarMsg('Genere primero la cuenta de cobro.', 'warn', 'Cuenta de cobro');
+      return;
+    }
+    this.jornadaSvc.abrirHtmlCuentaCobroContrato(id, (msg) =>
+      this.mostrarMsg(msg, 'error', 'Cuenta de cobro'),
+    );
+  }
+
+  abrirModalComprobanteCuota(cuota: CuotaPlanCobroDto): void {
+    if (cuota.pagado || cuota.idIngreso) return;
+    this.cuotaComprobanteSel.set(cuota);
+    this.comprobanteCuotaFecha.set(ymdLocal(new Date()));
+    this.comprobanteCuotaTipoPago.set('');
+    this.comprobanteCuotaCuenta.set('');
+    this.comprobanteCuotaRef.set('');
+    this.comprobanteCuotaObs.set('');
+    this.quitarSoporteComprobanteCuota();
+    this.comprobanteCuotaEntraCaja.set(!!this.formContrato().comprobantesIngresoCaja);
+    this.cajaSvc.activa().subscribe({
+      next: (r) => this.cajaAbiertaContrato.set(!!r.abierta),
+    });
+    this.modalComprobanteCuotaOpen.set(true);
+  }
+
+  cerrarModalComprobanteCuota(): void {
+    if (this.generandoComprobanteCuota()) return;
+    this.modalComprobanteCuotaOpen.set(false);
+    this.cuotaComprobanteSel.set(null);
+    this.quitarSoporteComprobanteCuota();
+  }
+
+  onComprobanteCuotaTipoPagoChange(id: string): void {
+    this.comprobanteCuotaTipoPago.set(id);
+    this.quitarSoporteComprobanteCuota();
+  }
+
+  quitarSoporteComprobanteCuota(): void {
+    this.comprobanteCuotaArchivoSoporte.set(null);
+    this.comprobanteCuotaPreviewSoporte.set(null);
+  }
+
+  onSoporteComprobanteCuota(file: File): void {
+    const ok = leerImagenSoporte(
+      file,
+      (dataUrl) => {
+        this.comprobanteCuotaArchivoSoporte.set(file);
+        this.comprobanteCuotaPreviewSoporte.set(dataUrl);
+      },
+      (msg) => this.mostrarMsg(msg, 'warn', 'Soporte de pago'),
+    );
+    if (!ok) this.quitarSoporteComprobanteCuota();
+  }
+
+  comprobanteCuotaFormaPagoLabel(): string {
+    const id = this.comprobanteCuotaTipoPago();
+    const t = this.tiposPagoContrato().find((x) => this.tipoPagoValorContrato(x) === id);
+    return t ? this.tipoPagoLabelContrato(t) : '';
+  }
+
+  comprobanteCuotaRequiereCuenta(): boolean {
+    return this.comprobanteCuotaRequiereReferencia();
+  }
+
+  comprobanteCuotaRequiereReferencia(): boolean {
+    const label = this.comprobanteCuotaFormaPagoLabel();
+    return !!label && requiereReferenciaPago(label);
+  }
+
+  comprobanteCuotaRequiereSoporte(): boolean {
+    const label = this.comprobanteCuotaFormaPagoLabel();
+    return !!label && requiereSoportePago(label);
+  }
+
+  private inputPagoIntangibleComprobanteCuota() {
+    return {
+      esIntangible: this.comprobanteCuotaRequiereReferencia(),
+      referencia: this.comprobanteCuotaRef(),
+      archivo: this.comprobanteCuotaArchivoSoporte(),
+    };
+  }
+
+  puedeRegistrarComprobanteCuota(): boolean {
+    const cuota = this.cuotaComprobanteSel();
+    if (!cuota || !(Number(cuota.valor) > 0) || !this.comprobanteCuotaTipoPago()) return false;
+    if (this.comprobanteCuotaEntraCaja() && !this.cajaAbiertaContrato()) return false;
+    if (this.comprobanteCuotaRequiereCuenta() && !this.comprobanteCuotaCuenta()) return false;
+    return pagoIntangibleCompleto(this.inputPagoIntangibleComprobanteCuota());
+  }
+
+  tipoPagoValorContrato(t: Record<string, unknown>): string {
+    const v = t['idTipoPago'] ?? t['codigo'] ?? t['_id'];
+    return v != null ? String(v) : '';
+  }
+
+  tipoPagoLabelContrato(t: Record<string, unknown>): string {
+    const d = t['descripcion'] ?? t['nombre'] ?? t['tipo'];
+    return d ? String(d) : this.tipoPagoValorContrato(t);
+  }
+
+  cuentaValorContrato(c: Record<string, unknown>): string {
+    const v = c['idCuentaBancaria'] ?? c['idCuenta'] ?? c['_id'];
+    return v != null ? String(v) : '';
+  }
+
+  labelCuentaContrato(c: Record<string, unknown>): string {
+    const b = String(c['banco'] || '').trim();
+    const n = c['numCuenta'] ?? '';
+    const t = String(c['tipo'] || '').trim();
+    return [b, t, n].filter(Boolean).join(' — ');
+  }
+
+  registrarComprobanteCuota(): void {
+    const id = this.formContrato()._id;
+    const cuota = this.cuotaComprobanteSel();
+    if (!id || !cuota) return;
+    if (!this.planCobroCuadrado()) {
+      this.mostrarMsg('Las cuotas deben sumar el valor del contrato. Guarde el plan primero.', 'warn', 'Plan de cobro');
+      return;
+    }
+    this.generandoComprobanteCuota.set(true);
+    const cli = this.clientesFe().find((x) => x._id === this.formContrato().idClienteFacturacion);
+    const payload = cli ? this.contratoDtoConCliente(this.formContrato(), cli) : this.formContrato();
+    this.jornadaSvc.actualizarContrato(id, payload).subscribe({
+      next: (c) => {
+        this.formContrato.set(c);
+        this.jornadaSvc
+          .generarComprobanteIngresoContrato(
+            id,
+            {
+              idCuota: cuota.id,
+              entraCaja: this.comprobanteCuotaEntraCaja(),
+              fecha: this.comprobanteCuotaFecha(),
+              idTipoPago: this.comprobanteCuotaTipoPago(),
+              idCuentaBancaria: this.comprobanteCuotaCuenta() || undefined,
+              numTransferencia: this.comprobanteCuotaRef() || undefined,
+              observaciones: this.comprobanteCuotaObs() || undefined,
+            },
+            this.comprobanteCuotaArchivoSoporte(),
+          )
+          .subscribe({
+            next: (r) => {
+              this.generandoComprobanteCuota.set(false);
+              this.estadoCobroContrato.set(r.cobro);
+              this.formContrato.update((f) => ({ ...f, planCobro: r.cobro.planCobro }));
+              this.cerrarModalComprobanteCuota();
+              this.mostrarMsg(`Comprobante ${r.ingreso.numRecibo} registrado.`, 'ok', 'Ingreso contrato');
+              this.comprobanteImpresion.abrirIngreso(r.ingreso._id);
+            },
+            error: (e) => {
+              this.generandoComprobanteCuota.set(false);
+              this.mostrarMsg(e?.error?.message || 'No se pudo registrar el comprobante.', 'error', 'Error');
+            },
+          });
+      },
+      error: (e) => {
+        this.generandoComprobanteCuota.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo guardar el plan de cobro.', 'error', 'Error');
+      },
+    });
+  }
+
+  imprimirComprobanteCuota(idIngreso?: string | null): void {
+    if (!idIngreso) return;
+    this.comprobanteImpresion.abrirIngreso(idIngreso);
+  }
+
+  puedeAnularComprobanteContrato(): boolean {
+    return this.permisoSvc.tiene(['jornadas.gestionar', 'alumnos.pagos', 'facturacion']);
+  }
+
+  puedeAnularFacturaContrato(): boolean {
+    const est = String(this.estadoFacturaContrato()?.factura?.estado || '').toLowerCase();
+    return this.puedeFacturarContrato() && est !== 'anulada';
+  }
+
+  async anularComprobanteCuota(cuota: CuotaPlanCobroDto): Promise<void> {
+    const idIngreso = cuota.idIngreso ? String(cuota.idIngreso) : '';
+    if (!idIngreso || !this.puedeAnularComprobanteContrato()) return;
+    const ok = await this.confirmSvc.open({
+      title: 'Anular comprobante',
+      message: `¿Anular el comprobante de «${cuota.etiqueta || 'cuota'}»? La cuota quedará pendiente y se revertirá el servicio causado.`,
+      confirmLabel: 'Anular',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    this.ejecutarAnularComprobanteContrato(cuota, idIngreso);
+  }
+
+  private ejecutarAnularComprobanteContrato(
+    cuota: CuotaPlanCobroDto,
+    idIngreso: string,
+    auth?: { autorizadoUsername: string; autorizadoPassword: string },
+  ): void {
+    this.ingresoSvc.eliminar(idIngreso, auth).subscribe({
+      next: () => {
+        this.cancelarAuthAnularIngresoContrato();
+        const cid = this.formContrato()._id;
+        if (cid) this.cargarEstadoCobroContrato(cid);
+        this.mostrarMsg(`Comprobante de «${cuota.etiqueta || 'cuota'}» anulado.`, 'ok', 'Ingreso contrato');
+      },
+      error: (e) => {
+        if (e?.error?.code === 'SUPERVISOR_AUTH_REQUIRED') {
+          this.ingresoAnularContratoPendiente.set({ idIngreso, cuotaId: cuota.id });
+          this.mostrarAuthAnularIngresoContrato.set(true);
+          return;
+        }
+        this.mostrarMsg(e?.error?.message || 'No se pudo anular el comprobante.', 'error', 'Error');
+      },
+    });
+  }
+
+  confirmarAuthAnularIngresoContrato(): void {
+    const pend = this.ingresoAnularContratoPendiente();
+    if (!pend) return;
+    const u = this.authAdminUserAnular().trim();
+    const p = this.authAdminPassAnular();
+    if (!u || !p) {
+      this.mostrarMsg('Ingrese usuario y contraseña de administrador.', 'warn', 'Autorización');
+      return;
+    }
+    const cuota = (this.formContrato().planCobro || []).find((c) => c.id === pend.cuotaId);
+    if (!cuota) {
+      this.mostrarMsg('Cuota no encontrada.', 'error', 'Error');
+      return;
+    }
+    this.ejecutarAnularComprobanteContrato(cuota, pend.idIngreso, {
+      autorizadoUsername: u,
+      autorizadoPassword: p,
+    });
+  }
+
+  cancelarAuthAnularIngresoContrato(): void {
+    this.mostrarAuthAnularIngresoContrato.set(false);
+    this.ingresoAnularContratoPendiente.set(null);
+    this.authAdminUserAnular.set('');
+    this.authAdminPassAnular.set('');
+  }
+
+  verFacturaContrato(): void {
+    const id = this.estadoFacturaContrato()?.factura?._id;
+    if (!id) return;
+    this.feSvc.obtener(id).subscribe({
+      next: (f) => this.feSvc.verFactura(f, (m) => this.mostrarMsg(m, 'error', 'Factura')),
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo abrir la factura.', 'error', 'Factura'),
+    });
+  }
+
+  abrirAnularFacturaContrato(): void {
+    const id = this.estadoFacturaContrato()?.factura?._id;
+    if (!id || !this.puedeAnularFacturaContrato()) return;
+    this.cargandoFacturaContratoNota.set(true);
+    this.feSvc.obtener(id).subscribe({
+      next: (f) => {
+        this.cargandoFacturaContratoNota.set(false);
+        this.facturaContratoNota.set(f);
+      },
+      error: (e) => {
+        this.cargandoFacturaContratoNota.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo cargar la factura.', 'error', 'Factura');
+      },
+    });
+  }
+
+  cerrarNotaCreditoFacturaContrato(): void {
+    this.facturaContratoNota.set(null);
+  }
+
+  onNotaCreditoFacturaContratoEmitida(): void {
+    this.facturaContratoNota.set(null);
+    const cid = this.formContrato()._id;
+    if (cid) {
+      this.cargarEstadoFacturaContrato(cid);
+      this.previewFacturaContrato.set(null);
+    }
+    this.mostrarMsg('Factura anulada con nota crédito. Puede emitir una nueva factura si lo requiere.', 'ok', 'Facturación');
+  }
+
   guardarContrato() {
     const f = this.formContrato();
     if (!f.idClienteFacturacion) {
@@ -1949,6 +2936,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.formContrato.set(c);
         this.contratoSel.set(c._id || '');
         this.recargarContratos();
+        this.cargarAvanceContrato(c._id);
+        this.cargarEstadoCobroContrato(c._id);
         this.mostrarMsg('La contratación quedó registrada. Ya puede generar las jornadas.', 'ok', 'Contrato guardado');
       },
       error: (e) => {
@@ -1959,10 +2948,19 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   editarContrato(c: ContratacionDto) {
+    this.editarContratoSinAvance(c);
+  }
+
+  /** Carga formulario del contrato sin disparar fetch duplicado de avance (lo hace el effect). */
+  private editarContratoSinAvance(c: ContratacionDto) {
     this.formContrato.set({
       ...c,
       objetoContrato: c.objetoContrato || c.objeto || '',
       fechaInicJornadas: c.fechaInicJornadas ? ymdCalendario(c.fechaInicJornadas) : '',
+      fechaFinJornadas: c.fechaFinJornadas ? ymdCalendario(c.fechaFinJornadas) : '',
+      idProgramas: [...(c.idProgramas || [])],
+      planCobro: [...(c.planCobro || [])],
+      comprobantesIngresoCaja: !!c.comprobantesIngresoCaja,
     });
     const cli = this.clientesFe().find((x) => x._id === c.idClienteFacturacion);
     if (cli) this.aplicarClienteAlContrato(cli);
@@ -1977,6 +2975,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.ciudadContratoTexto.set(label);
     this.previewFacturaContrato.set(null);
     this.cargarEstadoFacturaContrato(c._id);
+    this.cargarEstadoCobroContrato(c._id);
     if (this.vistaContratoCal()) this.recargarClasesContratoCal();
     if (c.codMunicipio) {
       this.catSvc.municipioPorCodigo(c.codMunicipio).subscribe({
@@ -1984,6 +2983,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         error: () => this.ciudadContratoTexto.set(label),
       });
     }
+  }
+
+  cargarAvanceContrato(_idContrato?: string) {
+    if (!this.contratoAvanceId()) return;
+    this.avanceRefreshTick.update((n) => n + 1);
   }
 
   generarJornadas() {
@@ -1999,24 +3003,38 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.mostrarMsg('Indique la fecha de inicio de jornadas en el contrato y guárdelo.', 'warn', 'Fecha requerida');
       return;
     }
+    const finTxt = this.formContrato().fechaFinJornadas
+      ? this.fmtFecha(this.formContrato().fechaFinJornadas)
+      : '';
+    if (!finTxt || finTxt === '—') {
+      this.mostrarMsg(
+        'Indique la fecha fin de jornadas en el contrato y guárdela (marco de programación).',
+        'warn',
+        'Fecha fin requerida',
+      );
+      return;
+    }
     this.loading.set(true);
     this.jornadaSvc.generarJornadas(id).subscribe({
       next: (r) => {
         this.loading.set(false);
         const desde = r.fechaDesde ? this.fmtFecha(r.fechaDesde) : inicioTxt;
-        const notaHoy =
-          r.ajustadoDesdeHoy && r.fechaInicioContrato
-            ? ` (inicio contrato ${this.fmtFecha(r.fechaInicioContrato)}; se omitieron días pasados)`
-            : '';
+        const hasta = r.fechaFin ? this.fmtFecha(r.fechaFin) : finTxt;
         const notaClases =
           (r.clasesCreadas ?? 0) > 0
-            ? ` Se autogeneraron ${r.clasesCreadas} clase(s) en ${r.jornadasProcesadasClases ?? 'las'} jornada(s).`
+            ? ` Se autogeneraron ${r.clasesCreadas} clase(s) en ${r.jornadasProcesadasClases ?? 'las'} jornada(s).${
+                (this.formContrato().idProgramas?.length ?? 0) > 0
+                  ? ' Programas repartidos según la configuración del contrato.'
+                  : ''
+              }`
             : '';
         let cuerpo = '';
         if (r.count > 0) {
-          cuerpo = `Se crearon ${r.count} jornada(s) desde el ${desde}${notaHoy}. Total en contrato: ${r.total ?? r.count}.`;
+          const meta = r.metaJornadas ?? this.formContrato().numerojornadas ?? r.total;
+          cuerpo = `Se crearon ${r.count} jornada(s) del ${desde} al ${hasta}. Total generadas: ${r.total ?? r.count} de ${meta} planificada(s).`;
         } else if (r.jornadasCompletas) {
-          cuerpo = `Las jornadas del contrato ya están completas (${r.total ?? '—'} en total).`;
+          const meta = r.metaJornadas ?? this.formContrato().numerojornadas ?? r.total;
+          cuerpo = `Las jornadas del contrato ya están completas (${r.total ?? '—'} de ${meta} planificada(s)).`;
         } else {
           cuerpo = 'No había fechas pendientes por programar.';
         }
@@ -2029,8 +3047,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         );
         this.aplicarContratoSync(r.contrato);
         this.recargarContratos();
-        this.onContratoSelChange(id);
+        if (this.contratoSel() === id || this.formContrato()._id === id) {
+          this.recargarVistaJornadas();
+        }
         if (this.vistaContratoCal()) this.recargarClasesContratoCal();
+        this.cargarAvanceContrato(id);
         if (r.count > 0) {
           this.setTab('jornadas');
         }
@@ -2051,6 +3072,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   setVistaContratoCal(v: boolean) {
     this.vistaContratoCal.set(v);
     if (v) {
+      const id = this.formContrato()._id;
+      if (id && this.contratoSel() !== id) {
+        this.contratoSel.set(id);
+        this.recargarJornadas();
+      }
       this.irSemanaHoy();
       this.recargarClasesContratoCal();
     }
@@ -2279,26 +3305,35 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   private autoSeleccionarJornadaHoy() {
     if (this.tab() !== 'clases') return;
-    const ops = this.jornadasOperablesHoy();
     const actual = this.jornadaSel();
+    if (actual && this.jornadas().some((j) => j._id === actual)) return;
+    const ops = this.jornadasOperablesHoy();
     if (ops.length === 1) {
       if (actual !== ops[0]._id) {
-        this.jornadaSel.set(ops[0]._id);
+        this.jornadaSel.set(ops[0]._id!);
         this.recargarClases();
       }
       return;
     }
-    if (!ops.some((j) => j._id === actual)) {
-      this.jornadaSel.set('');
-      this.claseSel.set('');
-      this.claseActiva.set(null);
-      this.clases.set([]);
-    }
+  }
+
+  etiquetaJornadaFiltro(j: {
+    fechaProgramacion?: string;
+    municipio?: string;
+    indiceEnDia?: number;
+    estado?: string;
+  }): string {
+    const f = this.fmtFecha(j.fechaProgramacion);
+    const turno =
+      j.indiceEnDia != null && Number(j.indiceEnDia) > 1 ? ` · turno ${j.indiceEnDia}` : '';
+    const m = j.municipio ? ` · ${j.municipio}` : '';
+    const est = j.estado ? ` — ${j.estado}` : '';
+    return `${f}${turno}${m}${est}`;
   }
 
   onContratoSelChange(id: string) {
     this.contratoSel.set(id);
-    const c = this.contratos().find((x) => x._id === id);
+    const c = this.buscarContratoPorId(id);
     if (c) this.editarContrato(c);
     this.jornadaSel.set('');
     this.claseSel.set('');
@@ -2311,6 +3346,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     this.consultarProgresoPreview(this.numDocAsis());
     if (this.tab() === 'certificados') this.recargarCerts();
+    if (this.tab() === 'finanzas') this.cargarFinanzasContrato();
   }
 
   onContratoToolbarPick(opt: EnumBuscarOption): void {
@@ -2341,21 +3377,23 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   jornadaSeleccionadaOperable(): boolean {
+    if (this.operacionEspecialActiva()) return !!this.jornadaSel();
     const j = this.jornadas().find((x) => x._id === this.jornadaSel());
     return j?.estado === 'EN PROCESO';
   }
 
-  /** ¿La clase seleccionada pertenece a una jornada EN PROCESO operable? */
+  /** ¿La clase seleccionada pertenece a una jornada operable? */
   claseSeleccionadaOperable(): boolean {
     const cl = this.claseActiva();
     if (!cl) return false;
+    if (this.operacionEspecialActiva()) return true;
     if (cl.jornadaEstado === 'EN PROCESO') return true;
     const j = this.jornadas().find((x) => x._id === cl.idJornada);
     return j?.estado === 'EN PROCESO';
   }
 
   abrirJornadaEnClases(j: any) {
-    if (j.estado !== 'EN PROCESO') {
+    if (!this.operacionEspecialActiva() && j.estado !== 'EN PROCESO') {
       this.mostrarMsg('Solo puede operar clases el día programado (estado EN PROCESO).', 'warn', 'Jornada no operable');
       return;
     }
@@ -2446,7 +3484,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const idJ = this.modalCrearJornadaId() || this.jornadaSel();
     const idP = this.nuevaClaseProg();
     if (!idJ) {
-      this.mostrarMsg('Seleccione la jornada del día (EN PROCESO) en el formulario.', 'warn', 'Falta jornada');
+      this.mostrarMsg(
+        this.operacionEspecialActiva()
+          ? 'Seleccione la jornada del contrato en el formulario.'
+          : 'Seleccione la jornada del día (EN PROCESO) en el formulario.',
+        'warn',
+        'Falta jornada',
+      );
       return;
     }
     if (!idP) {
@@ -2503,7 +3547,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       });
   }
 
-  private matricularAlumnosEnPrograma(idPrograma: string, alumnos: AlumnoListItem[], idClase?: string) {
+  private matricularAlumnosEnPrograma(
+    idPrograma: string,
+    alumnos: AlumnoNombrable[],
+    idClase?: string,
+  ) {
     if (!alumnos.length) return of([]);
     return forkJoin(
       alumnos.map((a) =>
@@ -2561,6 +3609,32 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.editarJornada(j);
     queueMicrotask(() => {
       document.getElementById('jornada-edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  cerrarJornadaOperacion(j: JornadaCapDto, ev?: Event) {
+    ev?.stopPropagation();
+    if (!this.operacionEspecialActiva()) return;
+    if (!j._id) return;
+    this.jornadaSvc.cerrarJornadaOperacion(j._id).subscribe({
+      next: () => {
+        this.recargarVistaJornadas();
+        this.mostrarMsg('Jornada cerrada (FINALIZADO).', 'ok', 'Jornada finalizada');
+      },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo cerrar la jornada.', 'error', 'Error'),
+    });
+  }
+
+  reabrirJornadaOperacion(j: JornadaCapDto, ev?: Event) {
+    ev?.stopPropagation();
+    if (!this.operacionEspecialActiva()) return;
+    if (!j._id) return;
+    this.jornadaSvc.reabrirJornadaOperacion(j._id).subscribe({
+      next: () => {
+        this.recargarVistaJornadas();
+        this.mostrarMsg('Jornada reabierta según su fecha programada.', 'ok', 'Jornada actualizada');
+      },
+      error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo reabrir la jornada.', 'error', 'Error'),
     });
   }
 
@@ -3037,18 +4111,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.mostrarMsg('Solo un administrador puede eliminar clases.', 'warn', 'Sin permiso');
       return;
     }
-    if (!claseJornadaSePuedeEliminar(c.estado)) {
-      this.mostrarMsg(
-        'No se puede eliminar una clase finalizada. Conserva historial, asistencias y certificados.',
-        'warn',
-        'Clase finalizada',
-      );
-      return;
-    }
+    const finalizada = String(c.estado || '').toUpperCase() === 'FINALIZADO';
     const ok = await this.confirmSvc.open({
       title: 'Eliminar clase',
-      message:
-        '¿Eliminar esta clase? También se borrarán las inscripciones y asistencias registradas (si las hay).',
+      message: finalizada
+        ? '¿Eliminar esta clase finalizada? Se borrarán inscripciones y asistencias, y se anularán los certificados emitidos por esta clase.'
+        : '¿Eliminar esta clase? También se borrarán las inscripciones y asistencias registradas (si las hay).',
       variant: 'danger',
       confirmLabel: 'Eliminar',
     });
@@ -3061,12 +4129,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           this.claseActiva.set(null);
           this.claseEditando.set(false);
         }
+        if (this.modalCrearClase()) {
+          this.cerrarModalCrearClase();
+        }
         this.recargarClases();
+        if (this.tab() === 'certificados') this.recargarCerts();
+        const extraCerts =
+          r.certificadosAnulados != null && r.certificadosAnulados > 0
+            ? ` ${r.certificadosAnulados} certificado(s) anulado(s).`
+            : '';
         const extra =
           r.contrato?.clasesPorJornada != null
             ? ` Contrato: máx. ${r.contrato.clasesPorJornada} clase(s) por jornada.`
             : '';
-        this.mostrarMsg(`La clase fue eliminada del turno.${extra}`, 'ok', 'Clase eliminada');
+        this.mostrarMsg(`La clase fue eliminada.${extraCerts}${extra}`, 'ok', 'Clase eliminada');
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo eliminar la clase.', 'error', 'Error'),
     });
@@ -3131,7 +4207,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   finalizarClase() {
     const id = this.claseSel();
     if (!id) return;
-    this.jornadaSvc.finalizarClase(id).subscribe({
+    if (!this.validarHorarioAntesFinalizarEspecial()) return;
+    this.jornadaSvc.finalizarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);

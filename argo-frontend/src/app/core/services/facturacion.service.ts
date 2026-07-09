@@ -121,6 +121,8 @@ export interface PreviewNotaCredito {
 export interface PreviewFacturaContrato {
   contrato: { _id?: string; codContrato?: string; tipoContrato?: string; objetoContrato?: string };
   regla: { label?: string; condicionIva?: string; descuentoPorcentaje?: number };
+  servicio?: { idServ?: string; descrServicio?: string; condicionIva?: string; porcentajeIva?: number };
+  perfilIva?: { idServ?: string; descrServicio?: string; condicionIva?: string; porcentajeIva?: number };
   totales: { base: number; valorIva: number; total: number };
   retenciones: {
     reteIva: { aplica: boolean; porcentaje: number; valor: number };

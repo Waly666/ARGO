@@ -53,7 +53,6 @@ import { ProgramacionCeaClaseProximaBannerComponent } from '../../features/progr
 import { InstructorPortalBannerComponent } from '../../features/instructores/instructor-portal-banner.component';
 import { ForoMensajeBannerComponent } from '../../features/aula-virtual/foro-mensaje-banner.component';
 import { ComprobanteHoyBannerComponent } from '../../features/alumnos/comprobante-hoy-banner.component';
-import { AsistenteFlotanteComponent } from '../../shared/asistente-flotante/asistente-flotante.component';
 import { ForoMensajeAlertService } from '../../core/services/foro-mensaje-alert.service';
 import {
   ComprobanteHoyAlertService,
@@ -99,7 +98,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, AsistenteFlotanteComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -900,6 +899,14 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Jornadas',
+          path: '/app/configuracion/jornadas',
+          icon: '▦',
+          iconTone: 'emerald',
+          permiso: 'jornadas.gestionar',
+        },
+        {
+          kind: 'link',
           label: 'Alertas y notificaciones',
           path: '/app/configuracion/alertas',
           icon: '◉',
@@ -1625,6 +1632,7 @@ export class ShellComponent {
       u.includes('/configuracion/empresa') ||
       u.includes('/configuracion/recibos') ||
       u.includes('/configuracion/certificados') ||
+      u.includes('/configuracion/jornadas') ||
       u.includes('/configuracion/requisitos-documentos-vehiculos') ||
       u.includes('/configuracion/requisitos-documentos-empleados') ||
       u.includes('/configuracion/requisitos-documentos-alumnos') ||

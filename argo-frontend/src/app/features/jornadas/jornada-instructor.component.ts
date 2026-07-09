@@ -43,6 +43,7 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { Hora12InputComponent } from '../../shared/hora-12-input/hora-12-input.component';
+import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
 import { ymdLocal } from './jornada-calendario.util';
 
 @Component({
@@ -63,6 +64,8 @@ export class JornadaInstructorComponent implements OnInit {
   private metaAlumnosAlertSvc = inject(MetaAlumnosJornadaAlertService);
   private certBloqueoSvc = inject(CertificadoJornadaBloqueoService);
   private liveSync = inject(JornadaLiveSyncService);
+  operacionCfg = inject(JornadasOperacionConfigService);
+  operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
 
   msg = signal<string | null>(null);
   msgTipo = signal<JorMsgTipo>('info');
@@ -143,6 +146,7 @@ export class JornadaInstructorComponent implements OnInit {
   textoUbicacionInstructor = computed(() => this.nuevaClaseUbic() || 'Carpa');
 
   ngOnInit() {
+    this.operacionCfg.cargar();
     const q = this.route.snapshot.queryParamMap;
     const f = q.get('fecha');
     const j = q.get('jornada');
@@ -218,7 +222,7 @@ export class JornadaInstructorComponent implements OnInit {
 
   seleccionarJornada(id: string) {
     const j = this.jornadasHoy().find((x) => x._id === id);
-    if (j && j.estado !== 'EN PROCESO') {
+    if (!this.operacionEspecialActiva() && j && j.estado !== 'EN PROCESO') {
       this.mostrarMsg('Solo puede operar la jornada del día en estado EN PROCESO.', 'warn', 'Jornada no operable');
       return;
     }
@@ -301,13 +305,18 @@ export class JornadaInstructorComponent implements OnInit {
     this.jornadaSvc
       .actualizarClase(id, { horaInicio: hi || null, horaFin: hf || null })
       .subscribe({
-        next: (c) => {
+        next: (r: any) => {
           this.guardandoHorario.set(false);
+          const c = r?.clase || r;
           this.claseActiva.set(c);
           this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
           this.horaFinClase.set(isoAHoraInput(c.horaFin));
           this.recargarClases(id);
-          this.mostrarMsg('Horario de la clase actualizado.', 'ok', 'Horario guardado');
+          if (r?.certificadosGenerados > 0) {
+            this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+          }
+          const msg = r?.message || 'Horario de la clase actualizado.';
+          this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Horario guardado');
         },
         error: (e) => {
           this.guardandoHorario.set(false);
@@ -388,7 +397,24 @@ export class JornadaInstructorComponent implements OnInit {
   finalizarClase() {
     const id = this.claseSel();
     if (!id) return;
-    this.jornadaSvc.finalizarClase(id).subscribe({
+    const payload: { horaInicio?: string; horaFin?: string } = {};
+    if (this.operacionEspecialActiva()) {
+      const hi = this.horaInicioClase().trim();
+      const hf = this.horaFinClase().trim();
+      if (this.claseActiva()?.estado !== 'EN PROCESO') {
+        if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
+          this.mostrarMsg(
+            'Indique hora de inicio y hora de fin antes de finalizar.',
+            'error',
+            'Horario requerido',
+          );
+          return;
+        }
+      }
+      if (validarHoraInput(hi)) payload.horaInicio = hi;
+      if (validarHoraInput(hf)) payload.horaFin = hf;
+    }
+    this.jornadaSvc.finalizarClase(id, payload).subscribe({
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
@@ -474,6 +500,7 @@ export class JornadaInstructorComponent implements OnInit {
   }
 
   jornadaOperable(): boolean {
+    if (this.operacionEspecialActiva()) return !!this.jornadaActiva();
     return this.jornadaActiva()?.estado === 'EN PROCESO';
   }
 

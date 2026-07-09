@@ -20,6 +20,7 @@ const {
 const { resolverIdSedeMatriculaJornada } = require('./jornadaCapacitacion');
 const { normalizarIdSede } = require('./sedeContext');
 const { buscarPrograma } = require('./programaServicio');
+const { parseFechaCalendario, fechaCalendarioParaGuardar } = require('../utils/fechaCalendario');
 
 const tipoFormatoJornada = TIPOS.JORNADA_CAPACITACION;
 const QUERY_MATRICULA_ACTIVA = { estado: { $regex: /^activo?a?$/i } };
@@ -206,6 +207,45 @@ async function resolverEmpresaAlumno(numDoc) {
   return { empresaId, empresaNombre };
 }
 
+/** Título del curso impreso en certificado por_clase (programa de la clase). */
+function encabezadoCursoPrograma(prog) {
+  return (prog?.nomCert || prog?.descripcion || prog?.nombreProg || '').trim();
+}
+
+/** Encabezado del certificado global del contrato. */
+function encabezadoCertificadoGlobal(contrato) {
+  return String(contrato?.nombreCertificacion || '').trim() || 'Jornadas de Capacitación';
+}
+
+/** Horas impresas en certificado por_clase: clase → horasPorClase contrato → horas del programa. */
+function resolverHorasCertificadoPorClase(clase, contrato, prog) {
+  const hClase = Number(clase?.horasCertificadas);
+  if (Number.isFinite(hClase) && hClase > 0) return String(hClase);
+  const hContrato = Number(contrato?.horasPorClase);
+  if (Number.isFinite(hContrato) && hContrato > 0) return String(hContrato);
+  const hProg = prog?.horas != null ? Number(prog.horas) : NaN;
+  if (Number.isFinite(hProg) && hProg > 0) return String(hProg);
+  return '';
+}
+
+/** Fecha impresa en el certificado: día civil de la clase (o de la jornada). */
+async function resolverFechaEmisionCertificadoJornada(clase, idJornadaRaw) {
+  if (clase?.fechaClase) {
+    const fe =
+      fechaCalendarioParaGuardar(clase.fechaClase) || parseFechaCalendario(clase.fechaClase);
+    if (fe) return fe;
+  }
+  const idJornada = idJornadaRaw || clase?.idJornada;
+  if (idJornada) {
+    const jornada = await JornadaCap.findById(idJornada).select('fechaProgramacion').lean();
+    if (jornada?.fechaProgramacion) {
+      const fe = fechaCalendarioParaGuardar(jornada.fechaProgramacion);
+      if (fe) return fe;
+    }
+  }
+  return new Date();
+}
+
 async function crearCertificadoJornadaBase({
   numDoc,
   progId,
@@ -218,10 +258,15 @@ async function crearCertificadoJornadaBase({
   plantilla,
   horasCert,
   observaciones,
+  fechaEmision,
+  encabezado: encabezadoExplicito,
 }) {
-  const encabezado = String(contrato.nombreCertificacion || '').trim() || 'Jornadas de Capacitación';
+  const encabezado =
+    String(encabezadoExplicito || '').trim() || encabezadoCertificadoGlobal(contrato);
   const codigoCert = await siguienteCodigoCertificado();
-  const fechaEm = new Date();
+  const fechaEm = fechaEmision instanceof Date && !Number.isNaN(fechaEmision.getTime())
+    ? fechaEmision
+    : new Date();
   const { empresaId, empresaNombre } = await resolverEmpresaAlumno(numDoc);
 
   const cert = await Certificado.create({
@@ -304,11 +349,17 @@ async function intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornada
     return { creado: false, motivo: 'sin_plantilla', mensaje: MOTIVOS_CERT.sin_plantilla };
   }
 
-  const horasNum = Number(clase.horasCertificadas ?? contrato.horasPorClase ?? 0);
-  const horasCert =
-    horasNum > 0
-      ? String(horasNum)
-      : String(contrato.numeroHorascert || '').trim();
+  const prog = await buscarPrograma(progId);
+  const encabezado = encabezadoCursoPrograma(prog);
+  if (!encabezado) {
+    return {
+      creado: false,
+      motivo: 'sin_programa',
+      mensaje: 'La clase no tiene un programa con nombre para el certificado.',
+    };
+  }
+
+  const horasCert = resolverHorasCertificadoPorClase(clase, contrato, prog);
 
   let idJornada = null;
   if (idJornadaRaw) {
@@ -322,6 +373,7 @@ async function intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornada
     }
   }
 
+  const fechaEmision = await resolverFechaEmisionCertificadoJornada(clase, idJornadaRaw);
   const certificado = await crearCertificadoJornadaBase({
     numDoc,
     progId,
@@ -334,6 +386,8 @@ async function intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornada
     plantilla,
     horasCert,
     observaciones: 'Certificado automático por asistencia a la clase',
+    fechaEmision,
+    encabezado,
   });
 
   return {
@@ -450,6 +504,7 @@ async function intentarCertificadoJornadaAuto(
   }
 
   const horasCert = String(contrato.numeroHorascert || '').trim();
+  const fechaEmision = await resolverFechaEmisionCertificadoJornada(clase, idJornadaRaw);
   const certificado = await crearCertificadoJornadaBase({
     numDoc,
     progId,
@@ -462,6 +517,8 @@ async function intentarCertificadoJornadaAuto(
     plantilla,
     horasCert,
     observaciones: `Certificado automático al completar ${numSesCert} sesión(es) en el contrato`,
+    fechaEmision,
+    encabezado: encabezadoCertificadoGlobal(contrato),
   });
 
   return {

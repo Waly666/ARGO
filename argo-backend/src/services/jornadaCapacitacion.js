@@ -2,7 +2,8 @@ const { models: cat } = require('../models/catalogos');
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('./tipoCapacitacionMatch');
 const { esCapJornadaCapacitacion } = require('./clasificacionCertificado');
 const DatosAlumno = require('../models/DatosAlumno');
-const { numDocQuery } = require('../utils/numDoc');
+const Contratacion = require('../models/Contratacion');
+const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
 const { normalizarTipoAlumno, TIPO_ALUMNO_DEFAULT } = require('../constants/tipoAlumno');
 const { asegurarSedePrincipal, ID_SEDE_PRINCIPAL } = require('./sedeContext');
@@ -49,6 +50,39 @@ async function asegurarTipoAlumnoJornada(numDoc) {
   return { ...al, tipoAlumno: TIPO_JORNADAS_CAPACITACION };
 }
 
+/**
+ * Asigna al alumno la empresa del contrato (idClienteFacturacion → empresaId).
+ * Se aplica al matricular/inscribir en jornadas para trazabilidad por cliente contratante.
+ */
+async function asignarEmpresaContratoAlumno(numDoc, idContrato, userLogin = 'sistema') {
+  if (!idContrato) return { empresaId: null, actualizado: false };
+  const nd = typeof numDoc === 'number' ? numDoc : parseNumDoc(numDoc);
+  if (nd == null) return { empresaId: null, actualizado: false };
+
+  const contrato = await Contratacion.findById(idContrato).select('idClienteFacturacion').lean();
+  if (!contrato?.idClienteFacturacion) return { empresaId: null, actualizado: false };
+
+  const empresaId = contrato.idClienteFacturacion;
+  const al = await DatosAlumno.findOne(numDocQuery(nd));
+  if (!al) return { empresaId: String(empresaId), actualizado: false };
+
+  const actual = al.empresaId ? String(al.empresaId) : '';
+  const nuevo = String(empresaId);
+  if (actual === nuevo) return { empresaId: nuevo, actualizado: false };
+
+  await DatosAlumno.updateOne(
+    { _id: al._id },
+    {
+      $set: {
+        empresaId,
+        userChangeRecord: userLogin,
+        fechaMod: new Date(),
+      },
+    },
+  );
+  return { empresaId: nuevo, actualizado: true };
+}
+
 /** Matrículas/liquidaciones de jornada van siempre a la sede principal (operación móvil, sin sede física). */
 async function resolverIdSedeMatriculaJornada() {
   const principal = await asegurarSedePrincipal();
@@ -60,6 +94,7 @@ module.exports = {
   etiquetaTipCap,
   auditoriaUsuario,
   asegurarTipoAlumnoJornada,
+  asignarEmpresaContratoAlumno,
   resolverIdSedeMatriculaJornada,
   TIPO_JORNADAS_CAPACITACION,
   TIPO_ALUMNO_DEFAULT,

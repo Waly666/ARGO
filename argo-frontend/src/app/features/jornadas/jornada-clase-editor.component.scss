@@ -1,4 +1,5 @@
 @use './jornadas-ui.scss';
+@use './clase-modal';
 
 @keyframes argo-blink-soft {
   0%, 100% { opacity: 1; }
@@ -329,6 +330,82 @@
 
   .clase-alumno-buscar {
     position: relative;
+  }
+
+  .clase-anterior-copiar {
+    margin: 10px 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    background: linear-gradient(160deg, rgba(8, 30, 48, 0.35), rgba(15, 23, 42, 0.25));
+  }
+
+  .clase-anterior-copiar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .clase-anterior-copiar-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #7dd3fc;
+  }
+
+  .clase-anterior-copiar-acciones {
+    display: flex;
+    gap: 6px;
+  }
+
+  .clase-anterior-copiar-lista {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+
+      &.certificado {
+        opacity: 0.65;
+      }
+    }
+  }
+
+  .clase-anterior-copiar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+
+    input[type='checkbox'] {
+      flex: 0 0 auto;
+    }
+
+    .buscar-name {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .clase-anterior-copiar-footer {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
   }
 
   .buscar-wrap {
