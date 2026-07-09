@@ -8,6 +8,12 @@ import {
   JornadaCapService,
 } from '../../core/services/jornada-cap.service';
 import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
+import { ServicioCatalogoService } from '../../core/services/servicio-catalogo.service';
+
+interface ServicioOpcion {
+  idServ: string;
+  label: string;
+}
 
 @Component({
   selector: 'argo-config-jornadas',
@@ -19,14 +25,29 @@ import { JornadasOperacionConfigService } from '../../core/services/jornadas-ope
 export class ConfigJornadasComponent implements OnInit {
   private jornadaSvc = inject(JornadaCapService);
   private operacionCfg = inject(JornadasOperacionConfigService);
+  private servCatSvc = inject(ServicioCatalogoService);
 
   loading = signal(true);
   guardando = signal(false);
   msg = signal<string | null>(null);
   msgError = signal(false);
-  config = signal<ConfigOperacionJornadas>({ operacionFueraDeDiaHabilitada: false });
+  serviciosGlobales = signal<ServicioOpcion[]>([]);
+  config = signal<ConfigOperacionJornadas>({
+    operacionFueraDeDiaHabilitada: false,
+    idServCapacitacionContrato: '53',
+  });
 
   ngOnInit(): void {
+    this.servCatSvc.listar({ sinPrograma: true, catalogo: true, limit: 300 }).subscribe({
+      next: (rows) => {
+        this.serviciosGlobales.set(
+          (rows || []).map((s) => ({
+            idServ: String(s.idServ ?? s._id ?? ''),
+            label: String(s.descrServicio || s.descripcion || s.idServ || '').trim(),
+          })),
+        );
+      },
+    });
     this.recargar();
   }
 
@@ -38,11 +59,19 @@ export class ConfigJornadasComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.config.set({ operacionFueraDeDiaHabilitada: false });
+        this.config.set({ operacionFueraDeDiaHabilitada: false, idServCapacitacionContrato: '53' });
         this.loading.set(false);
         this.mostrar('No se pudo cargar la configuración.', true);
       },
     });
+  }
+
+  patchOperacionFueraDeDia(valor: boolean): void {
+    this.config.set({ ...this.config(), operacionFueraDeDiaHabilitada: valor });
+  }
+
+  patchIdServCapacitacionContrato(idServ: string): void {
+    this.config.set({ ...this.config(), idServCapacitacionContrato: idServ });
   }
 
   guardar(): void {
@@ -52,12 +81,14 @@ export class ConfigJornadasComponent implements OnInit {
         this.config.set(cfg);
         this.operacionCfg.marcarDesdeConfig(cfg);
         this.guardando.set(false);
-        this.mostrar(
-          cfg.operacionFueraDeDiaHabilitada
-            ? 'Operación fuera del día habilitada. Puede operar jornadas y clases en cualquier fecha programada.'
-            : 'Operación fuera del día deshabilitada. Solo el día programado (hoy).',
-          false,
-        );
+        const partes: string[] = [];
+        if (cfg.operacionFueraDeDiaHabilitada) {
+          partes.push('Operación fuera del día habilitada.');
+        } else {
+          partes.push('Operación fuera del día deshabilitada.');
+        }
+        partes.push(`Servicio contrato: idServ ${cfg.idServCapacitacionContrato}.`);
+        this.mostrar(partes.join(' '), false);
       },
       error: (e) => {
         this.guardando.set(false);

@@ -29,7 +29,7 @@
         <input
           type="checkbox"
           [ngModel]="config().operacionFueraDeDiaHabilitada"
-          (ngModelChange)="config.set({ operacionFueraDeDiaHabilitada: $event })" />
+          (ngModelChange)="patchOperacionFueraDeDia($event)" />
         Habilitar operación en fechas distintas al día programado
       </label>
 
@@ -38,6 +38,32 @@
         <li>En el hub de jornadas podrá abrir cualquier jornada del contrato y manipular sus clases y alumnos.</li>
         <li>Los instructores con solo <strong>jornadas.operar</strong> siguen limitados al día de hoy.</li>
         <li>Desactívelo al terminar la corrección o carga para volver al modo normal.</li>
+      </ul>
+    </section>
+
+    <section class="cfg-panel">
+      <h2>Servicio de capacitación para contratos</h2>
+      <p class="cfg-intro">
+        Comprobantes de ingreso y facturas electrónicas de contratos de capacitación causan este servicio del catálogo.
+        El valor lo define el contrato o cada cuota; el servicio no necesita tarifa propia. En desarrollo suele ser
+        <strong>idServ 53</strong>; en producción Finstruvial puede ser otro (p. ej. <strong>129</strong>).
+      </p>
+
+      <label class="cfg-field">
+        <span class="cfg-field-label">Servicio del catálogo (sin programa)</span>
+        <select
+          [ngModel]="config().idServCapacitacionContrato"
+          (ngModelChange)="patchIdServCapacitacionContrato($event)">
+          <option value="" disabled>Seleccione…</option>
+          @for (s of serviciosGlobales(); track s.idServ) {
+            <option [value]="s.idServ">{{ s.idServ }} — {{ s.label }}</option>
+          }
+        </select>
+      </label>
+
+      <ul class="cfg-list">
+        <li>Debe existir en <a routerLink="/app/servicios">Catálogo de servicios</a> (servicios globales, sin programa).</li>
+        <li>El IVA de la factura del contrato se toma de la configuración fiscal de ese servicio.</li>
       </ul>
 
       <div class="cfg-actions">

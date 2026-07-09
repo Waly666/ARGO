@@ -4,17 +4,30 @@ const { models: cat } = require('../models/catalogos');
 const { parseNumDoc } = require('../utils/numDoc');
 const { toDec, roundMoney, num } = require('../utils/coerceTypes');
 const { SERVICIO_CAPACITACION_CONTRATO_ID } = require('../constants/servicioContratoCap');
+const { obtenerConfigJornadasOperacion } = require('./configJornadasOperacion');
 const { condicionIvaServicio } = require('./facturaPayload');
 
-async function buscarServicioCapacitacionContrato() {
-  const id = SERVICIO_CAPACITACION_CONTRATO_ID;
+async function obtenerIdServCapacitacionContrato() {
+  const cfg = await obtenerConfigJornadasOperacion();
+  const id = String(cfg.idServCapacitacionContrato ?? SERVICIO_CAPACITACION_CONTRATO_ID).trim();
+  return id || SERVICIO_CAPACITACION_CONTRATO_ID;
+}
+
+async function buscarServicioCapacitacionContratoPorId(idRaw) {
+  const id = String(idRaw ?? '').trim();
+  if (!id) {
+    const err = new Error('idServ de capacitación para contratos no configurado.');
+    err.status = 400;
+    err.code = 'SERVICIO_CAP_CONTRATO_ID_INVALIDO';
+    throw err;
+  }
   const n = Number(id);
   const serv = await cat.servicios
     .findOne({ $or: [{ idServ: id }, ...(Number.isFinite(n) ? [{ idServ: n }] : [])] })
     .lean();
   if (!serv) {
     const err = new Error(
-      `Servicio de capacitación (idServ ${id}) no encontrado en catálogo. Configúrelo en Servicios.`,
+      `Servicio de capacitación (idServ ${id}) no encontrado en catálogo. Configúrelo en Configuración → Jornadas o en Servicios.`,
     );
     err.status = 400;
     err.code = 'SERVICIO_CAP_CONTRATO_NO_ENCONTRADO';
@@ -23,8 +36,17 @@ async function buscarServicioCapacitacionContrato() {
   return serv;
 }
 
+async function buscarServicioCapacitacionContrato() {
+  const id = await obtenerIdServCapacitacionContrato();
+  return buscarServicioCapacitacionContratoPorId(id);
+}
+
+async function validarServicioCapacitacionContrato(idRaw) {
+  return buscarServicioCapacitacionContratoPorId(idRaw);
+}
+
 /**
- * IVA del servicio de capacitación (catálogo idServ 53).
+ * IVA del servicio de capacitación (idServ configurado en jornadas-operacion).
  * Cada empresa lo configura en Servicios: gravado con %, exento o excluido/sin IVA.
  */
 function perfilFiscalServicioCap(servicio, cfgFacturacion = null) {
@@ -79,7 +101,7 @@ function descripcionLiquidacionContrato({ servicio, contrato, objeto, etiquetaCu
 }
 
 /**
- * Causa el servicio de capacitación (#53) y lo marca pagado con el comprobante de ingreso.
+ * Causa el servicio de capacitación configurado y lo marca pagado con el comprobante de ingreso.
  */
 async function causarServicioContratoCap({
   contrato,
@@ -123,7 +145,10 @@ async function causarServicioContratoCap({
 
 module.exports = {
   SERVICIO_CAPACITACION_CONTRATO_ID,
+  obtenerIdServCapacitacionContrato,
+  buscarServicioCapacitacionContratoPorId,
   buscarServicioCapacitacionContrato,
+  validarServicioCapacitacionContrato,
   perfilFiscalServicioCap,
   resolverNumDocContratante,
   descripcionLiquidacionContrato,

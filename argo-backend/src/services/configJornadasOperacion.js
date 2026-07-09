@@ -1,17 +1,35 @@
 const Config = require('../models/Config');
 const { ensureConfigDocument } = require('./configEnsure');
+const { SERVICIO_CAPACITACION_CONTRATO_ID } = require('../constants/servicioContratoCap');
 
 const CLAVE = 'jornadas-operacion';
 
 const DEFAULTS = {
   /** Permite operar jornadas/clases en fechas distintas al día programado (carga histórica, correcciones). */
   operacionFueraDeDiaHabilitada: false,
+  /** idServ del catálogo para comprobantes de ingreso y facturas de contratos de capacitación. */
+  idServCapacitacionContrato: SERVICIO_CAPACITACION_CONTRATO_ID,
 };
+
+function normalizarIdServCapacitacionContrato(raw) {
+  const id = String(raw ?? '').trim();
+  if (!id) {
+    const err = new Error(
+      'Indique el idServ del servicio de capacitación para contratos (comprobantes y facturas).',
+    );
+    err.status = 400;
+    err.code = 'SERVICIO_CAP_CONTRATO_ID_INVALIDO';
+    throw err;
+  }
+  return id;
+}
 
 async function obtenerConfigJornadasOperacion() {
   const doc = await ensureConfigDocument(CLAVE, DEFAULTS);
+  const idServ = String(doc.idServCapacitacionContrato ?? DEFAULTS.idServCapacitacionContrato).trim();
   return {
     operacionFueraDeDiaHabilitada: doc.operacionFueraDeDiaHabilitada === true,
+    idServCapacitacionContrato: idServ || DEFAULTS.idServCapacitacionContrato,
   };
 }
 
@@ -23,6 +41,10 @@ async function actualizarConfigJornadasOperacion(patch = {}) {
         ? patch.operacionFueraDeDiaHabilitada === true ||
           patch.operacionFueraDeDiaHabilitada === 'true'
         : actual.operacionFueraDeDiaHabilitada,
+    idServCapacitacionContrato:
+      patch.idServCapacitacionContrato !== undefined
+        ? normalizarIdServCapacitacionContrato(patch.idServCapacitacionContrato)
+        : actual.idServCapacitacionContrato,
   };
   await Config.findOneAndUpdate(
     { clave: CLAVE },

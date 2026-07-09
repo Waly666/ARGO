@@ -2,7 +2,7 @@
 
 Documento **vivo** para registrar cada cambio del módulo de **jornadas de capacitación** en este repo (**Finstruvial / ARGO**) y poder **replicarlo** en otros despliegues (p. ej. Educarte, otro cliente con fork o copia del producto).
 
-**Última auditoría código ↔ MD:** 2026-07-09 — lote JOR-011…JOR-024 implementado sin commit; ver [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09).
+**Última auditoría código ↔ MD:** 2026-07-09 — lote JOR-011…JOR-025 (JOR-025: idServ contrato configurable).
 
 ---
 
@@ -86,7 +86,7 @@ argo-frontend/src/app/features/alumnos/
   tabs/datos-principales.*            # Panel QR en ficha alumno
 
 argo-frontend/src/app/features/config/
-  config-jornadas.component.*         # Modo operación fuera del día (JOR-011)
+  config-jornadas.component.*         # Modo operación fuera del día + idServ contrato (JOR-011, JOR-025)
 
 argo-frontend/src/app/core/services/
   jornada-cap.service.ts
@@ -161,8 +161,8 @@ argo-mobile-jornadas/
 | POST | `/api/jornadas/contratos/:id/comprobantes-ingreso` | Comprobante ingreso por cuota (JOR-021) |
 | POST | `/api/jornadas/contratos/:id/cuenta-cobro/generar` | Generar cuenta de cobro (JOR-021) |
 | GET | `/api/jornadas/contratos/:id/cuenta-cobro/html` | HTML imprimible cuenta de cobro (JOR-021) |
-| GET | `/api/jornadas/config/operacion` | Config modo operación especial (JOR-011) |
-| PUT | `/api/jornadas/config/operacion` | Activar/desactivar modo especial (JOR-011) |
+| GET | `/api/jornadas/config/operacion` | Config jornadas: modo especial + idServ contrato (JOR-011, JOR-025) |
+| PUT | `/api/jornadas/config/operacion` | Actualizar config jornadas (JOR-011, JOR-025) |
 | GET | `/api/jornadas/config/operacion/estado` | Estado efectivo para el usuario (JOR-011) |
 | GET | `/api/jornadas/clases/:id/inscritos-clase-anterior` | Alumnos clase anterior misma jornada (JOR-019) |
 | DELETE | `/api/jornadas/clases/:id` | Borrar clase (incl. finalizada; JOR-020) |
@@ -223,7 +223,8 @@ argo-mobile-jornadas/
 
 | ID | Descripción | Prioridad | Notas |
 |----|-------------|-----------|-------|
-| — | Commits y push del lote JOR-011…JOR-024 | Alta | Código implementado; falta commitear y marcar hash en este MD |
+| — | Commits y push del lote JOR-011…JOR-025 | Alta | Tras verificar en local/VPS |
+| — | VPS Finstruvial: Config → Jornadas → idServ **129** | Alta | Tras desplegar JOR-025 |
 | — | Conectar Expo a GitHub y generar APK | Baja | Cuando el cliente lo pida |
 | — | Verificación manual checklists JOR-011…024 | Media | Probar en `/app/jornadas` antes de desplegar |
 
@@ -251,6 +252,7 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 | **JOR-022** | — | `informesJornadaCap.js`, `jornadas-informes.component.*`, `jornada-cap.service.ts` |
 | **JOR-023** | — | `certificadoController.js` |
 | **JOR-024** | — | `programaController.js`, `programa.service.ts`, `servicios.component.ts` |
+| **JOR-025** | — | `configJornadasOperacion.js`, `servicioContratoCap.js`, `config-jornadas.component.*`, `jornada-cap.service.ts` | `jornadaCapController.js`, `constants/servicioContratoCap.js`, `ingresoController.js` |
 | **Compartidos** | `clase-modal.scss` | `form-modal.component.*`, `hora-12-input.component.scss` (UX modal clase) |
 
 ---
@@ -259,6 +261,7 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 
 | ID | Fecha | Resumen | Commit | Alcance |
 |----|-------|---------|--------|---------|
+| JOR-025 | 2026-07-09 | idServ contrato configurable (comprobantes/factura); fallback 53 | _(pendiente)_ | backend + frontend |
 | JOR-024 | 2026-07-09 | Matrícula alumno (Servicios): ocultar programas de jornadas en buscador | _(pendiente)_ | backend + frontend |
 | JOR-023 | 2026-07-09 | Certificados vencidos: no listar si hay vigente del mismo programa | _(pendiente)_ | backend |
 | JOR-022 | 2026-07-09 | Informes: pestañas por entidad, filtros reactivos, limpiar filtros, sin bloque empresa en pantalla | _(pendiente)_ | backend + frontend |
@@ -394,6 +397,47 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 
 ---
 
+### JOR-025 — idServ contrato configurable (comprobantes y factura)
+
+- **Fecha:** 2026-07-09
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+
+#### Problema
+- Comprobantes de ingreso y facturas de contratos de capacitación usaban **idServ 53** fijo en código.
+- En desarrollo local el servicio es **53**; en VPS Finstruvial es **129** (mismo rol: capacitación con valor definido por el contrato).
+
+#### Qué se hizo
+- Config BD `jornadas-operacion`: campo `idServCapacitacionContrato` (fallback constante **53** si no está guardado).
+- `servicioContratoCap.js` lee el id desde config al causar liquidaciones y armar factura.
+- Validación al guardar: el servicio debe existir en catálogo.
+- Pantalla **Configuración → Jornadas**: selector de servicio global (sin programa).
+- API `GET/PUT /api/jornadas/config/operacion` devuelve/acepta el nuevo campo junto con el modo operación especial.
+
+#### Despliegue Finstruvial
+Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con **idServ 129** antes de generar comprobantes o facturas de contrato.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/configJornadasOperacion.js` | Campo `idServCapacitacionContrato` |
+| `argo-backend/src/services/servicioContratoCap.js` | Lee id desde config |
+| `argo-backend/src/constants/servicioContratoCap.js` | Solo fallback desarrollo |
+| `argo-backend/src/controllers/jornadaCapController.js` | Validación + auditoría |
+| `argo-backend/src/controllers/ingresoController.js` | Comentario |
+| `argo-frontend/src/app/features/config/config-jornadas.component.*` | UI selector servicio |
+| `argo-frontend/src/app/core/services/jornada-cap.service.ts` | Tipo `ConfigOperacionJornadas` |
+
+#### Verificación
+- [ ] Local: sin tocar config → sigue usando idServ 53.
+- [ ] Cambiar a otro idServ válido en Config → Jornadas → comprobante contrato causa ese servicio.
+- [ ] Factura contrato usa el mismo idServ e IVA del catálogo.
+- [ ] idServ inexistente al guardar → error claro.
+- [ ] VPS: configurar **129** y probar un comprobante de contrato.
+
+---
+
 ### JOR-021 — Cobro contrato: plan cuotas, CI y cuenta de cobro
 
 - **Fecha:** 2026-07-08
@@ -405,8 +449,8 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 - **Plan de cobro** en contrato: cuotas con montos manuales (deben sumar el valor).
 - **Preferencia** `comprobantesIngresoCaja` en contrato + override al generar cada comprobante.
 - **Comprobante de ingreso** por cuota (`INGRESO CONTRATO`): sin caja por defecto; pagos no efectivo exigen referencia + soporte (imagen), igual que cobros de alumnos.
-- **Causación de servicio** al generar cada comprobante: catálogo **idServ 53** (Capacitación / servicio general, valor variable según contrato/cuota) → liquidación pagada vinculada al ingreso.
-- **Factura electrónica** del contrato: misma referencia de servicio **idServ 53**; **IVA dinámico** según catálogo de Servicios (gravado/exento/sin IVA); retenciones según regla fiscal del tipo de contratante.
+- **Causación de servicio** al generar cada comprobante: servicio del catálogo configurado en **Configuración → Jornadas** (`idServCapacitacionContrato`; fallback **53**) → liquidación pagada vinculada al ingreso.
+- **Factura electrónica** del contrato: misma referencia de servicio configurable; **IVA dinámico** según catálogo de Servicios (gravado/exento/sin IVA); retenciones según regla fiscal del tipo de contratante.
 - **Anulación**: comprobantes vía `DELETE /ingresos/:id` (revierte cuota y liquidación causada); factura vía nota crédito total (libera el contrato para nueva emisión).
 - **Cuenta de cobro** (una por contrato, consecutivo CC): HTML imprimible hacia la empresa contratante.
 
@@ -419,11 +463,11 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 #### Archivos tocados (ARGO)
 | Archivo | Tipo de cambio |
 |---------|----------------|
-| `argo-backend/src/constants/servicioContratoCap.js` | idServ 53 referencia |
-| `argo-backend/src/services/servicioContratoCap.js` | Causación servicio contrato |
+| `argo-backend/src/constants/servicioContratoCap.js` | Fallback idServ 53 |
+| `argo-backend/src/services/servicioContratoCap.js` | Causación servicio contrato (id configurable, JOR-025) |
 | `argo-backend/src/services/contratoCobroCap.js` | Plan cuotas, comprobantes |
 | `argo-backend/src/services/cuentaCobroHtml.js` | Plantilla cuenta de cobro |
-| `argo-backend/src/services/facturaContratoCap.js` | Factura contrato idServ 53 |
+| `argo-backend/src/services/facturaContratoCap.js` | Factura contrato (idServ configurable) |
 | `argo-backend/src/models/Contratacion.js` | valorContrato, plan cobro |
 | `argo-backend/src/models/Ingreso.js` | idContrato en ingreso |
 | `argo-backend/src/controllers/ingresoController.js` | Comprobantes contrato |
@@ -439,9 +483,9 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 - [ ] Comprobante sin caja → aparece en Todos los ingresos, no en sesión caja.
 - [ ] Pago no efectivo → referencia + imagen soporte obligatorias (igual que alumnos).
 - [ ] Comprobante con caja → suma en caja abierta.
-- [ ] Comprobante → liquidación idServ 53 causada y pagada; ingreso con `idLiquidacion`.
-- [ ] Emitir factura contrato → ítem con `idServ` 53 (no código CAP-CONTRATO-*).
-- [ ] Anular comprobante de cuota → cuota pendiente, liquidación servicio 53 eliminada, ingreso en estado ANULADO.
+- [ ] Comprobante → liquidación con idServ configurado causada y pagada; ingreso con `idLiquidacion`.
+- [ ] Emitir factura contrato → ítem con `idServ` configurado (no código CAP-CONTRATO-*).
+- [ ] Anular comprobante de cuota → cuota pendiente, liquidación del servicio eliminada, ingreso en estado ANULADO.
 - [ ] Anular factura contrato (nota crédito total) → contrato libre para volver a facturar.
 - [ ] Cuenta de cobro generada e imprimible.
 
@@ -744,7 +788,7 @@ Ver también tabla en [Mapa archivos sin commitear](#mapa-archivos-sin-commitear
 - Interruptor en **Configuración → Jornadas** (como migración).
 
 #### Qué se hizo
-- Config en BD (`jornadas-operacion`): `operacionFueraDeDiaHabilitada`.
+- Config en BD (`jornadas-operacion`): `operacionFueraDeDiaHabilitada`, `idServCapacitacionContrato` (JOR-025).
 - API: `GET/PUT /api/jornadas/config/operacion`, `GET /api/jornadas/config/operacion/estado`.
 - Con modo **ON** + permiso `jornadas.gestionar`: backend omite bloqueo de fecha en iniciar, asistencia, matricular, finalizar y crear clase.
 - Botones **Cerrar jornada** / **Reabrir jornada** en listado y edición (estado manual `estadoOperacionManual`).

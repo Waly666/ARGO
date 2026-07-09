@@ -38,6 +38,26 @@
   margin-top: 0.2rem;
 }
 
+.cfg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.cfg-field-label {
+  font-weight: 600;
+}
+
+.cfg-field select {
+  max-width: 36rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--argo-border, #334155);
+  background: var(--argo-surface, #0f172a);
+  color: inherit;
+}
+
 .cfg-list {
   margin: 0.75rem 0 1rem;
   padding-left: 1.2rem;

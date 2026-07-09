@@ -148,9 +148,12 @@ export interface AvanceContratoDto {
 
 export interface ConfigOperacionJornadas {
   operacionFueraDeDiaHabilitada: boolean;
+  /** idServ del catálogo para comprobantes y facturas de contratos de capacitación. */
+  idServCapacitacionContrato: string;
 }
 
-export interface EstadoOperacionJornadas extends ConfigOperacionJornadas {
+export interface EstadoOperacionJornadas {
+  operacionFueraDeDiaHabilitada: boolean;
   puedeUsar: boolean;
   motivo?: string | null;
 }

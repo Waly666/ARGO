@@ -823,7 +823,7 @@ exports.eliminar = async (req, res, next) => {
 
     // Restaura saldo en cada servicio/ítem: recalcula abonado solo con ingresos
     // vigentes (anulados aportan 0) para que el servicio quede cobrable de nuevo.
-    // En contratos de capacitación se elimina la liquidación causada (servicio #53).
+    // En contratos de capacitación se elimina la liquidación causada (servicio configurado en jornadas-operacion).
     const mats = new Set();
     for (const idLiq of liqIds) {
       const liqSnap = await Liquidacion.findById(idLiq).lean();

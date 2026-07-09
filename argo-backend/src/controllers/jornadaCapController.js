@@ -84,6 +84,7 @@ const {
   obtenerConfigJornadasOperacion,
   actualizarConfigJornadasOperacion,
 } = require('../services/configJornadasOperacion');
+const { validarServicioCapacitacionContrato } = require('../services/servicioContratoCap');
 const { registrarAuditoria, registrarEliminacion } = require('../services/auditoria');
 const { municipioPorCoords } = require('../services/georefMunicipio');
 const {
@@ -2318,12 +2319,25 @@ exports.actualizarConfigOperacionJornadas = async (req, res, next) => {
       return res.status(403).json({ message: 'Requiere permiso jornadas.gestionar' });
     }
     const antes = await obtenerConfigJornadasOperacion();
-    const cfg = await actualizarConfigJornadasOperacion(req.body || {});
+    const body = req.body || {};
+    if (body.idServCapacitacionContrato !== undefined) {
+      await validarServicioCapacitacionContrato(body.idServCapacitacionContrato);
+    }
+    const cfg = await actualizarConfigJornadasOperacion(body);
+    const partes = [];
+    if (cfg.operacionFueraDeDiaHabilitada !== antes.operacionFueraDeDiaHabilitada) {
+      partes.push(
+        `Operación fuera del día ${cfg.operacionFueraDeDiaHabilitada ? 'habilitada' : 'deshabilitada'}`,
+      );
+    }
+    if (cfg.idServCapacitacionContrato !== antes.idServCapacitacionContrato) {
+      partes.push(`Servicio contrato idServ ${cfg.idServCapacitacionContrato}`);
+    }
     registrarAuditoria({
       req,
       accion: 'jornadas_operacion_config',
       entidad: 'jornadas',
-      resumen: `Operación fuera del día ${cfg.operacionFueraDeDiaHabilitada ? 'habilitada' : 'deshabilitada'}`,
+      resumen: partes.length ? partes.join('; ') : 'Configuración jornadas actualizada',
       datosAntes: antes,
       datosDespues: cfg,
     }).catch(() => {});
