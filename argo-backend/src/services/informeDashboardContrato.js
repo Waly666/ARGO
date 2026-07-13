@@ -328,7 +328,9 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       ciudad: config?.ciudad || '',
       direccion: config?.direccion || '',
       telefono: config?.telefono || '',
-      logoUrl: config?.logoUrl || config?.urlLogo || '',
+      /** Preferir data URL embebida para PDF/Chromium (ruta relativa no carga en page.setContent). */
+      logoUrl: config?.urlLogoDataUrl || '',
+      urlLogo: config?.urlLogo || '',
     },
     filtros: {
       idJornada: idJornadaF ? String(idJornadaF) : null,
@@ -445,8 +447,9 @@ function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   const c = data.contrato || {};
   const k = data.kpis || {};
   const titulo = alcanceTitulo(alcance, data);
-  const logo = emp.logoUrl
-    ? `<img class="logo" src="${esc(emp.logoUrl)}" alt="Logo" />`
+  const logoSrc = emp.logoUrl || emp.urlLogoDataUrl || '';
+  const logo = logoSrc
+    ? `<img class="logo" src="${esc(logoSrc)}" alt="${esc(emp.nombre || 'Logo')}" />`
     : `<div class="logo-ph">${esc((emp.nombre || 'ARGO').slice(0, 2).toUpperCase())}</div>`;
 
   let cuerpo = '';
