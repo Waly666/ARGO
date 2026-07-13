@@ -922,7 +922,9 @@ exports.listarClases = async (req, res, next) => {
     const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
     if (vacio) return res.json([]);
 
-    const rows = await ClaseJornadaCap.find(q).sort({ createdAt: -1 }).lean();
+    const rows = await ClaseJornadaCap.find(q)
+      .sort({ fechaClase: 1, indiceClaseEnJornada: 1, createdAt: 1 })
+      .lean();
     const out = [];
     for (const c of rows) {
       const j = await sincronizarEstadoJornada(c.idJornada);
@@ -934,7 +936,19 @@ exports.listarClases = async (req, res, next) => {
         municipioJornada: j?.municipio,
       });
     }
-    res.json(await enriquecerClases(out));
+    const enriched = await enriquecerClases(out);
+    enriched.sort((a, b) => {
+      const fa = a.fechaJornada || a.fechaClase;
+      const fb = b.fechaJornada || b.fechaClase;
+      const ta = fa ? new Date(fa).getTime() : 0;
+      const tb = fb ? new Date(fb).getTime() : 0;
+      if (ta !== tb) return ta - tb;
+      const ia = a.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
+      const ib = b.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
+      if (ia !== ib) return ia - ib;
+      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+    });
+    res.json(enriched);
   } catch (e) {
     next(e);
   }
@@ -1803,93 +1817,126 @@ async function siguienteIndiceClaseEnJornada(idJornada) {
 }
 
 /**
- * Alumnos matriculados en la clase inmediatamente anterior de la misma jornada
- * (por `indiceClaseEnJornada`, o por horario/creación si no hay índice), para
- * copiar la matrícula rápidamente sin re-digitar cada alumno.
+ * Construye respuesta de alumnos de una clase fuente para copiar a la clase destino.
+ */
+async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
+  const [inscripcionesFuente, inscripcionesActual] = await Promise.all([
+    InscripcionClase.find({ idClase: claseFuente._id }).sort({ createdAt: 1 }).lean(),
+    InscripcionClase.find({ idClase: claseDestino._id }).lean(),
+  ]);
+  const yaEnEstaClase = new Set(
+    inscripcionesActual.map((i) => Number(i.numDoc)).filter((n) => Number.isFinite(n)),
+  );
+  const docs = inscripcionesFuente
+    .map((i) => Number(i.numDoc))
+    .filter((n) => Number.isFinite(n));
+  const alumnos = docs.length ? await DatosAlumno.find({ numDoc: { $in: docs } }).lean() : [];
+  const mapAlu = new Map(alumnos.map((a) => [Number(a.numDoc), a]));
+
+  const jornadaDestino = await JornadaCap.findById(claseDestino.idJornada).lean();
+  let mapCert = new Map();
+  if (jornadaDestino?.idContrato && docs.length) {
+    const certs = await Certificado.find({
+      numDoc: { $in: docs },
+      idContrato: jornadaDestino.idContrato,
+      estado: { $ne: 'anulado' },
+    }).lean();
+    mapCert = new Map(certs.map((c) => [Number(c.numDoc), c]));
+  }
+
+  const [claseFuenteInfo] = await enriquecerClases([claseFuente]);
+  const jornadaFuente = await JornadaCap.findById(claseFuente.idJornada).lean();
+
+  const contrato = jornadaDestino?.idContrato
+    ? await Contratacion.findById(jornadaDestino.idContrato).select('tipoCertificado').lean()
+    : null;
+  const esPorClase = contrato?.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
+
+  const alumnosOut = await Promise.all(
+    insccripcionesFuente.map(async (ins) => {
+      const nd = Number(ins.numDoc);
+      const al = mapAlu.get(nd);
+      const cert = mapCert.get(nd);
+      let puedeMatricular = !yaEnEstaClase.has(nd);
+      if (puedeMatricular && jornadaDestino?.idContrato) {
+        if (esPorClase) {
+          const certEstaClase = await certificadoExistenteClase(nd, claseDestino._id);
+          if (certEstaClase) puedeMatricular = false;
+        } else {
+          const bloqueo = await validarAlumnoSinCertificadoContrato(nd, jornadaDestino.idContrato);
+          if (bloqueo) puedeMatricular = false;
+        }
+      }
+      return {
+        numDoc: nd,
+        nombreCompleto: al
+          ? [al.nombre1, al.nombre2, al.apellido1, al.apellido2].filter(Boolean).join(' ')
+          : '',
+        yaInscritoEnEstaClase: yaEnEstaClase.has(nd),
+        yaCertificadoContrato: !!cert,
+        puedeMatricular,
+        certificadoCodigo: cert?.codigoCert || null,
+      };
+    }),
+  );
+
+  return {
+    clase: {
+      _id: String(claseFuente._id),
+      indiceClaseEnJornada: claseFuente.indiceClaseEnJornada ?? null,
+      programaNombre: claseFuenteInfo?.programaNombre || '',
+      carpaNombre: claseFuenteInfo?.carpaNombre || '',
+      estado: claseFuente.estado,
+      fechaClase: claseFuente.fechaClase || jornadaFuente?.fechaProgramacion || null,
+      fechaJornada: jornadaFuente?.fechaProgramacion || null,
+    },
+    alumnos: alumnosOut,
+  };
+}
+
+/**
+ * Alumnos de otra clase para copiar matrícula a la clase actual.
+ * - Sin query: clase inmediatamente anterior de la misma jornada (auto).
+ * - Con `?idClaseFuente=`: clase elegida manualmente (mismo contrato).
  */
 exports.alumnosClaseAnterior = async (req, res, next) => {
   try {
     const clase = await ClaseJornadaCap.findById(req.params.id).lean();
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    const todas = ordenarClasesMismaJornada(
-      await ClaseJornadaCap.find({ idJornada: clase.idJornada }).lean(),
-    );
-    const pos = todas.findIndex((c) => String(c._id) === String(clase._id));
-    const anterior = pos > 0 ? todas[pos - 1] : null;
-    if (!anterior) {
-      return res.json({ clase: null, alumnos: [] });
+    const idFuente = String(req.query.idClaseFuente || '').trim();
+    let fuente = null;
+
+    if (idFuente) {
+      if (idFuente === String(clase._id)) {
+        return res.status(400).json({ message: 'Seleccione una clase distinta a la actual.' });
+      }
+      fuente = await ClaseJornadaCap.findById(idFuente).lean();
+      if (!fuente) return res.status(404).json({ message: 'Clase fuente no encontrada' });
+
+      const [jorDest, jorFuente] = await Promise.all([
+        JornadaCap.findById(clase.idJornada).select('idContrato').lean(),
+        JornadaCap.findById(fuente.idJornada).select('idContrato').lean(),
+      ]);
+      const idCDest = jorDest?.idContrato ? String(jorDest.idContrato) : '';
+      const idCFuente = jorFuente?.idContrato ? String(jorFuente.idContrato) : '';
+      if (!idCDest || !idCFuente || idCDest !== idCFuente) {
+        return res.status(400).json({
+          message: 'La clase elegida debe pertenecer al mismo contrato.',
+        });
+      }
+    } else {
+      const todas = ordenarClasesMismaJornada(
+        await ClaseJornadaCap.find({ idJornada: clase.idJornada }).lean(),
+      );
+      const pos = todas.findIndex((c) => String(c._id) === String(clase._id));
+      fuente = pos > 0 ? todas[pos - 1] : null;
+      if (!fuente) {
+        return res.json({ clase: null, alumnos: [] });
+      }
     }
 
-    const [inscripcionesAnterior, inscripcionesActual] = await Promise.all([
-      InscripcionClase.find({ idClase: anterior._id }).sort({ createdAt: 1 }).lean(),
-      InscripcionClase.find({ idClase: clase._id }).lean(),
-    ]);
-    const yaEnEstaClase = new Set(
-      inscripcionesActual.map((i) => Number(i.numDoc)).filter((n) => Number.isFinite(n)),
-    );
-    const docs = inscripcionesAnterior
-      .map((i) => Number(i.numDoc))
-      .filter((n) => Number.isFinite(n));
-    const alumnos = docs.length ? await DatosAlumno.find({ numDoc: { $in: docs } }).lean() : [];
-    const mapAlu = new Map(alumnos.map((a) => [Number(a.numDoc), a]));
-
-    const jornada = await JornadaCap.findById(clase.idJornada).lean();
-    let mapCert = new Map();
-    if (jornada?.idContrato && docs.length) {
-      const certs = await Certificado.find({
-        numDoc: { $in: docs },
-        idContrato: jornada.idContrato,
-        estado: { $ne: 'anulado' },
-      }).lean();
-      mapCert = new Map(certs.map((c) => [Number(c.numDoc), c]));
-    }
-
-    const [claseAnteriorInfo] = await enriquecerClases([anterior]);
-
-    const contrato = jornada?.idContrato
-      ? await Contratacion.findById(jornada.idContrato).select('tipoCertificado').lean()
-      : null;
-    const esPorClase = contrato?.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
-
-    const alumnosOut = await Promise.all(
-      inscripcionesAnterior.map(async (ins) => {
-        const nd = Number(ins.numDoc);
-        const al = mapAlu.get(nd);
-        const cert = mapCert.get(nd);
-        let puedeMatricular = !yaEnEstaClase.has(nd);
-        if (puedeMatricular && jornada?.idContrato) {
-          if (esPorClase) {
-            const certEstaClase = await certificadoExistenteClase(nd, clase._id);
-            if (certEstaClase) puedeMatricular = false;
-          } else {
-            const bloqueo = await validarAlumnoSinCertificadoContrato(nd, jornada.idContrato);
-            if (bloqueo) puedeMatricular = false;
-          }
-        }
-        return {
-          numDoc: nd,
-          nombreCompleto: al
-            ? [al.nombre1, al.nombre2, al.apellido1, al.apellido2].filter(Boolean).join(' ')
-            : '',
-          yaInscritoEnEstaClase: yaEnEstaClase.has(nd),
-          yaCertificadoContrato: !!cert,
-          puedeMatricular,
-          certificadoCodigo: cert?.codigoCert || null,
-        };
-      }),
-    );
-
-    res.json({
-      clase: {
-        _id: String(anterior._id),
-        indiceClaseEnJornada: anterior.indiceClaseEnJornada ?? null,
-        programaNombre: claseAnteriorInfo?.programaNombre || '',
-        carpaNombre: claseAnteriorInfo?.carpaNombre || '',
-        estado: anterior.estado,
-      },
-      alumnos: alumnosOut,
-    });
+    res.json(await construirAlumnosDesdeClaseFuente(clase, fuente));
   } catch (e) {
     next(e);
   }

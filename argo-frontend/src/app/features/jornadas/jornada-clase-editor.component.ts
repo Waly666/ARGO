@@ -216,19 +216,34 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   inscritosCertificadosContrato = computed(() =>
     this.inscritos().filter((i) => i.yaCertificadoContrato).length,
   );
+  /** Otras clases del mismo contrato (para combo manual). */
+  clasesContratoCopiar = signal<any[]>([]);
+  idClaseFuenteCopiar = signal('');
+  textoClaseFuenteCopiar = signal('');
+
   /** Alumnos de la clase anterior que aún no están matriculados en la clase actual. */
   alumnosClaseAnteriorDisponibles = computed(() => {
     const inscritosDocs = new Set(this.inscritos().map((i) => Number(i.numDoc)));
     return this.alumnosClaseAnterior().filter((a) => !inscritosDocs.has(Number(a.numDoc)));
   });
   claseAnteriorSinPrevia = signal(false);
+  opcionesClasesCopiarContrato = computed<EnumBuscarOption[]>(() => {
+    const actual = String(this.claseSel() || '');
+    return this.clasesContratoCopiar()
+      .filter((c) => String(c._id) !== actual)
+      .map((c) => ({
+        value: String(c._id),
+        label: this.labelClaseCopiar(c),
+      }));
+  });
   claseAnteriorMensajeVacio = computed(() => {
-    if (this.cargandoAlumnosClaseAnterior() || !this.claseAnteriorInfo()) return '';
+    if (this.cargandoAlumnosClaseAnterior() || !this.idClaseFuenteCopiar()) return '';
+    if (!this.claseAnteriorInfo()) return '';
     if (this.alumnosClaseAnteriorDisponibles().length > 0) return '';
     if (this.alumnosClaseAnterior().length === 0) {
-      return 'La clase anterior de esta jornada no tiene alumnos inscritos.';
+      return 'La clase elegida no tiene alumnos inscritos.';
     }
-    return 'Los alumnos de la clase anterior ya están matriculados en esta clase.';
+    return 'Los alumnos de esa clase ya están matriculados en la clase actual.';
   });
   totalAlumnosMatriculadosModal = computed(() => this.inscritos().length);
 
@@ -368,16 +383,102 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     this.alumnoBusquedaOpen.set(false);
     this.inscritos.set([]);
     this.alumnosClaseAnteriorSeleccion.set(new Set());
+    this.idClaseFuenteCopiar.set('');
+    this.textoClaseFuenteCopiar.set('');
+    this.claseAnteriorInfo.set(null);
+    this.alumnosClaseAnterior.set([]);
+    this.claseAnteriorSinPrevia.set(false);
     this.limpiarMsgModal();
     this.sincronizarProgramaModal(String(c.idPrograma || ''));
     this.cargarProgramasJornada();
     this.cargarInscritos(c._id);
-    this.cargarAlumnosClaseAnterior(c._id);
+    this.cargarClasesContratoParaCopiar(c);
     this.modalOpen.set(true);
     this.iniciarCronometroSiAplica();
   }
 
-  cargarAlumnosClaseAnterior(idClase: string): void {
+  labelClaseCopiar(c: any): string {
+    const fecha = this.fmtFecha(c.fechaJornada || c.fechaClase);
+    const prog = c.programaNombre || String(c.idPrograma || 'Sin programa');
+    const carpa = labelCarpaClase(c);
+    const idx = c.indiceClaseEnJornada != null ? `#${c.indiceClaseEnJornada}` : '';
+    return [fecha, prog, carpa, idx].filter(Boolean).join(' · ');
+  }
+
+  cargarClasesContratoParaCopiar(claseActual?: ClaseJornadaDto | any): void {
+    const idContrato = String(claseActual?.idContrato || '').trim();
+    if (!idContrato) {
+      this.clasesContratoCopiar.set([]);
+      this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+      return;
+    }
+    this.jornadaSvc.listarClases({ idContrato }).subscribe({
+      next: (rows) => {
+        this.clasesContratoCopiar.set(rows || []);
+        const idActual = String(claseActual?._id || this.claseSel() || '');
+        this.cargarAlumnosClaseAnterior(idActual, { autoSeleccionar: true });
+      },
+      error: () => {
+        this.clasesContratoCopiar.set([]);
+        this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+      },
+    });
+  }
+
+  onClaseFuenteCopiarPick(opt: EnumBuscarOption): void {
+    const idFuente = String(opt.value || '');
+    this.idClaseFuenteCopiar.set(idFuente);
+    this.textoClaseFuenteCopiar.set(opt.label || '');
+    this.alumnosClaseAnteriorSeleccion.set(new Set());
+    const idActual = this.claseSel();
+    if (!idActual || !idFuente) return;
+    this.cargarAlumnosDesdeFuente(idActual, idFuente);
+  }
+
+  onClaseFuenteCopiarLimpiar(): void {
+    this.idClaseFuenteCopiar.set('');
+    this.textoClaseFuenteCopiar.set('');
+    this.claseAnteriorInfo.set(null);
+    this.alumnosClaseAnterior.set([]);
+    this.alumnosClaseAnteriorSeleccion.set(new Set());
+    this.claseAnteriorSinPrevia.set(false);
+  }
+
+  private cargarAlumnosDesdeFuente(idClase: string, idClaseFuente: string): void {
+    this.cargandoAlumnosClaseAnterior.set(true);
+    this.jornadaSvc.alumnosClaseAnterior(idClase, idClaseFuente).subscribe({
+      next: (r) => {
+        this.cargandoAlumnosClaseAnterior.set(false);
+        this.claseAnteriorInfo.set(r?.clase || null);
+        this.alumnosClaseAnterior.set(r?.alumnos || []);
+        this.claseAnteriorSinPrevia.set(false);
+        if (r?.clase) {
+          this.textoClaseFuenteCopiar.set(
+            this.labelClaseCopiar({
+              ...r.clase,
+              fechaJornada: r.clase.fechaJornada,
+              fechaClase: r.clase.fechaClase,
+            }),
+          );
+        }
+      },
+      error: (e) => {
+        this.cargandoAlumnosClaseAnterior.set(false);
+        this.claseAnteriorInfo.set(null);
+        this.alumnosClaseAnterior.set([]);
+        this.mostrarMsg(
+          e?.error?.message || 'No se pudieron cargar los alumnos de la clase elegida.',
+          'warn',
+          'Copiar alumnos',
+        );
+      },
+    });
+  }
+
+  cargarAlumnosClaseAnterior(
+    idClase: string,
+    opts?: { autoSeleccionar?: boolean },
+  ): void {
     this.claseAnteriorInfo.set(null);
     this.alumnosClaseAnterior.set([]);
     this.claseAnteriorSinPrevia.set(false);
@@ -389,16 +490,30 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
         this.claseAnteriorInfo.set(r?.clase || null);
         this.alumnosClaseAnterior.set(r?.alumnos || []);
         this.claseAnteriorSinPrevia.set(!r?.clase);
+        if (opts?.autoSeleccionar && r?.clase?._id) {
+          this.idClaseFuenteCopiar.set(String(r.clase._id));
+          this.textoClaseFuenteCopiar.set(
+            this.labelClaseCopiar({
+              ...r.clase,
+              fechaJornada: r.clase.fechaJornada,
+              fechaClase: r.clase.fechaClase,
+            }),
+          );
+        }
       },
       error: (e) => {
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(null);
         this.alumnosClaseAnterior.set([]);
         this.claseAnteriorSinPrevia.set(false);
-        const msg =
-          e?.error?.message ||
-          'No se pudo consultar alumnos de la clase anterior. Verifique que el servidor esté actualizado.';
-        this.mostrarMsg(msg, 'warn', 'Clase anterior');
+        if (!opts?.autoSeleccionar) {
+          this.mostrarMsg(
+            e?.error?.message ||
+              'No se pudo consultar alumnos de la clase anterior. Verifique que el servidor esté actualizado.',
+            'warn',
+            'Clase anterior',
+          );
+        }
       },
     });
   }

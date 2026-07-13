@@ -283,12 +283,28 @@
         }
       </div>
 
+        <div class="clase-anterior-copiar clase-anterior-copiar--picker">
+          <argo-catalogo-enum-buscar
+            label="Copiar alumnos desde clase del contrato"
+            placeholder="Elija una clase anterior del contrato…"
+            [textoInicial]="textoClaseFuenteCopiar()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesClasesCopiarContrato()"
+            (seleccionado)="onClaseFuenteCopiarPick($event)"
+            (limpiado)="onClaseFuenteCopiarLimpiar()"
+          />
+          <p class="hint hint-compact">
+            Elija cualquier clase del contrato. Luego marque quiénes desea matricular en esta clase.
+          </p>
+        </div>
       @if (cargandoAlumnosClaseAnterior()) {
-        <p class="hint hint-compact">Buscando alumnos de la clase anterior de esta jornada…</p>
+        <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
       }
-      @if (claseAnteriorSinPrevia()) {
+      @if (claseAnteriorSinPrevia() && !idClaseFuenteCopiar()) {
         <p class="hint hint-compact">
-          Es la primera clase de esta jornada; no hay clase anterior de la cual copiar alumnos.
+          No hay clase «anterior» automática. Use el selector para tomar alumnos de otra clase del contrato.
         </p>
       }
       @if (claseAnteriorMensajeVacio()) {
@@ -299,7 +315,7 @@
           <div class="clase-anterior-copiar">
             <div class="clase-anterior-copiar-head">
               <span class="clase-anterior-copiar-title">
-                ↻ Alumnos de «{{ ant.programaNombre || 'la clase anterior' }}{{ ant.carpaNombre ? ' — ' + ant.carpaNombre : '' }}»
+                ↻ Alumnos de «{{ ant.programaNombre || 'la clase elegida' }}{{ ant.carpaNombre ? ' — ' + ant.carpaNombre : '' }}»
               </span>
               <div class="clase-anterior-copiar-acciones">
                 <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
@@ -326,8 +342,8 @@
                       Ya certificado
                     </span>
                   } @else if (a.yaCertificadoContrato) {
-                    <span class="cap cap-muted cap-sm cap-text" title="Certificado en la clase anterior; puede continuar en esta">
-                      Cert. clase anterior
+                    <span class="cap cap-muted cap-sm cap-text" title="Certificado en la clase fuente; puede continuar en esta">
+                      Cert. otra clase
                     </span>
                   }
                 </li>

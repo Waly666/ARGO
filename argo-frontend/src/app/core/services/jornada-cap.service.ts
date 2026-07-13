@@ -22,6 +22,8 @@ export interface ClaseAnteriorResumenDto {
   programaNombre?: string;
   carpaNombre?: string;
   estado?: string;
+  fechaClase?: string | Date | null;
+  fechaJornada?: string | Date | null;
 }
 
 export interface AlumnosClaseAnteriorRespuestaDto {
@@ -540,10 +542,16 @@ export class JornadaCapService {
     }>>(`${this.base}/clases/${idClase}/inscritos`);
   }
 
-  /** Alumnos de la clase inmediatamente anterior de la misma jornada (para copiar matrícula). */
-  alumnosClaseAnterior(idClase: string): Observable<AlumnosClaseAnteriorRespuestaDto> {
+  /** Alumnos de otra clase para copiar. Sin idClaseFuente = clase anterior auto; con id = elección manual. */
+  alumnosClaseAnterior(
+    idClase: string,
+    idClaseFuente?: string,
+  ): Observable<AlumnosClaseAnteriorRespuestaDto> {
+    let p = new HttpParams();
+    if (idClaseFuente) p = p.set('idClaseFuente', idClaseFuente);
     return this.http.get<AlumnosClaseAnteriorRespuestaDto>(
       `${this.base}/clases/${idClase}/inscritos-clase-anterior`,
+      { params: p },
     );
   }
 
