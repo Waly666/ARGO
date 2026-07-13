@@ -2,7 +2,7 @@
 
 Documento **vivo** para registrar cada cambio del módulo de **jornadas de capacitación** en este repo (**Finstruvial / ARGO**) y poder **replicarlo** en otros despliegues (p. ej. Educarte, otro cliente con fork o copia del producto).
 
-**Última auditoría código ↔ MD:** 2026-07-09 — lote JOR-011…JOR-025 (JOR-025: idServ contrato configurable).
+**Última auditoría código ↔ MD:** 2026-07-13 — JOR-025 (`c092f0b`), JOR-026 (`0065414`); lote JOR-011…024 en `75f08b7`.
 
 ---
 
@@ -38,6 +38,9 @@ Documento **vivo** para registrar cada cambio del módulo de **jornadas de capac
 
 | Commit | Resumen |
 |--------|---------|
+| `0065414` | Programas: persistir tipo capacitación y combos; nginx portal API/uploads → backend |
+| `c092f0b` | idServ contrato configurable (Config → Jornadas); fallback 53 |
+| `75f08b7` | Lote JOR-011…024: informes, cobro contrato, formularios, celular, hub jornadas |
 | `47c79d7` | Lote grande: móvil, informes, carpas, meta alumnos, QR, operación en campo |
 | `9be6d70` | Móvil: `X-ARGO-Cliente: jornadas` en todas las peticiones |
 | `a679da9` | Móvil: arranque al login + script `start:tunnel` |
@@ -87,6 +90,16 @@ argo-frontend/src/app/features/alumnos/
 
 argo-frontend/src/app/features/config/
   config-jornadas.component.*         # Modo operación fuera del día + idServ contrato (JOR-011, JOR-025)
+
+argo-frontend/src/app/features/programas/
+  programas-admin.component.*         # Alta/edición programas (JOR-026: tipo capacitación)
+
+argo-frontend/src/app/shared/
+  catalogo-enum-buscar/                 # Combobox formularios (JOR-026)
+
+deploy/
+  nginx/finstruvial.edu.co.conf         # Portal: /api y /uploads directo al backend (JOR-026)
+  diagnose-vps-domains.sh               # Prueba HTTP cursos/API portal (JOR-026)
 
 argo-frontend/src/app/core/services/
   jornada-cap.service.ts
@@ -223,37 +236,38 @@ argo-mobile-jornadas/
 
 | ID | Descripción | Prioridad | Notas |
 |----|-------------|-----------|-------|
-| — | Commits y push del lote JOR-011…JOR-025 | Alta | Tras verificar en local/VPS |
-| — | VPS Finstruvial: Config → Jornadas → idServ **129** | Alta | Tras desplegar JOR-025 |
+| — | VPS Finstruvial: Config → Jornadas → idServ **129** | Alta | Tras desplegar `c092f0b` |
+| — | VPS: aplicar `deploy/nginx/finstruvial.edu.co.conf` + `nginx -t && systemctl reload nginx` | Alta | Tras `0065414` (portal cursos/API) |
+| — | Verificación manual checklists JOR-011…026 | Media | Probar `/app/jornadas` y `/app/programas` |
 | — | Conectar Expo a GitHub y generar APK | Baja | Cuando el cliente lo pida |
-| — | Verificación manual checklists JOR-011…024 | Media | Probar en `/app/jornadas` antes de desplegar |
 
-> **Nota auditoría 2026-07-09:** JOR-011 a JOR-024 están **implementados en código** (sin commit). Ya no figuran como «en curso» abajo; ver historial y sección [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09).
+> **Nota auditoría 2026-07-13:** JOR-011…024 en `75f08b7`; JOR-025 en `c092f0b`; JOR-026 en `0065414`.
 
 ---
 
-## Mapa archivos sin commitear (auditoría 2026-07-09)
+## Mapa archivos por commit (auditoría 2026-07-13)
 
-Referencia cruzada **ID → archivos** del working tree actual (útil al commitear o replicar).
+Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar en otro cliente).
 
-| ID | Archivos nuevos (`??`) | Archivos modificados relevantes (`M`) |
-|----|------------------------|----------------------------------------|
-| **JOR-011** | `configJornadasOperacion.js`, `jornadasOperacionEspecial.js`, `config-jornadas.component.*`, `jornadas-operacion-config.service.ts` | `jornadaCapController.js`, `jornadas.js`, `asistenciaJornadaCap.js`, `estadoJornadaCap.js`, `jornadas-hub.*`, `jornada-clase-editor.*`, `jornada-instructor.*`, `clases-hoy-lista.*`, `app.routes.ts`, `shell.component.ts` |
-| **JOR-012** | `programasContratoJornada.js` | `Contratacion.js`, `programacionClasesJornada.js`, `jornadaCapController.js`, `jornadas-hub.*`, `jornada-cap.service.ts` |
-| **JOR-013** | — | `contratoJornadaSync.js`, `programacionJornadas.js`, `Contratacion.js`, `JornadaCap.js`, `jornadas-hub.*`, `jornada-calendario.util.ts` |
-| **JOR-014** | — | `jornadaCapacitacion.js`, `asistenciaJornadaCap.js` |
-| **JOR-015** | — | `certificadoJornadaAuto.js`, `jornadaCapController.js`, `jornadas-hub.*`, `jornada-clase-editor.*` |
-| **JOR-016** | `avanceContratoJornada.js` | `jornadaCapController.js`, `jornadas.js`, `jornadas-hub.*`, `jornada-hub-deeplink.service.ts` |
-| **JOR-017** | — | `jornadaCapController.js`, `jornadas.js`, `certificados-jornada-lista.*` (si aplica UI) |
-| **JOR-018** | — | `certificadoJornadaAuto.js` |
-| **JOR-019** | — | `jornadaCapController.js` (`alumnosClaseAnterior`), `jornadas-hub.*`, `jornada-clase-editor.*` |
-| **JOR-020** | — | `jornadaCapController.js` (`eliminarClase`), `jornadas-hub.*`, `jornada-clase-editor.*` |
-| **JOR-021** | `servicioContratoCap.js`, `contratoCobroCap.js`, `cuentaCobroHtml.js`, `constants/servicioContratoCap.js` | `Contratacion.js`, `Ingreso.js`, `ingresoController.js`, `facturaContratoCap.js`, `notaCredito.js`, `configRecibo.js`, `jornadas-hub.*`, `jornada-cap.service.ts`, `facturacion.service.ts` |
-| **JOR-022** | — | `informesJornadaCap.js`, `jornadas-informes.component.*`, `jornada-cap.service.ts` |
-| **JOR-023** | — | `certificadoController.js` |
-| **JOR-024** | — | `programaController.js`, `programa.service.ts`, `servicios.component.ts` |
-| **JOR-025** | — | `configJornadasOperacion.js`, `servicioContratoCap.js`, `config-jornadas.component.*`, `jornada-cap.service.ts` | `jornadaCapController.js`, `constants/servicioContratoCap.js`, `ingresoController.js` |
-| **Compartidos** | `clase-modal.scss` | `form-modal.component.*`, `hora-12-input.component.scss` (UX modal clase) |
+| ID | Commit | Archivos nuevos | Archivos modificados relevantes |
+|----|--------|-----------------|----------------------------------|
+| **JOR-011** | `75f08b7` | `configJornadasOperacion.js`, `jornadasOperacionEspecial.js`, `config-jornadas.component.*`, `jornadas-operacion-config.service.ts` | `jornadaCapController.js`, `jornadas.js`, `asistenciaJornadaCap.js`, `estadoJornadaCap.js`, `jornadas-hub.*`, `jornada-clase-editor.*`, `jornada-instructor.*`, `clases-hoy-lista.*`, `app.routes.ts`, `shell.component.ts` |
+| **JOR-012** | `75f08b7` | `programasContratoJornada.js` | `Contratacion.js`, `programacionClasesJornada.js`, `jornadaCapController.js`, `jornadas-hub.*`, `jornada-cap.service.ts` |
+| **JOR-013** | `75f08b7` | — | `contratoJornadaSync.js`, `programacionJornadas.js`, `Contratacion.js`, `JornadaCap.js`, `jornadas-hub.*`, `jornada-calendario.util.ts` |
+| **JOR-014** | `75f08b7` | — | `jornadaCapacitacion.js`, `asistenciaJornadaCap.js` |
+| **JOR-015** | `75f08b7` | — | `certificadoJornadaAuto.js`, `jornadaCapController.js`, `jornadas-hub.*`, `jornada-clase-editor.*` |
+| **JOR-016** | `75f08b7` | `avanceContratoJornada.js` | `jornadaCapController.js`, `jornadas.js`, `jornadas-hub.*`, `jornada-hub-deeplink.service.ts` |
+| **JOR-017** | `75f08b7` | — | `jornadaCapController.js`, `jornadas.js`, `certificados-jornada-lista.*` |
+| **JOR-018** | `75f08b7` | — | `certificadoJornadaAuto.js` |
+| **JOR-019** | `75f08b7` | — | `jornadaCapController.js` (`alumnosClaseAnterior`), `jornadas-hub.*`, `jornada-clase-editor.*` |
+| **JOR-020** | `75f08b7` | — | `jornadaCapController.js` (`eliminarClase`), `jornadas-hub.*`, `jornada-clase-editor.*` |
+| **JOR-021** | `75f08b7` | `servicioContratoCap.js`, `contratoCobroCap.js`, `cuentaCobroHtml.js`, `constants/servicioContratoCap.js` | `Contratacion.js`, `Ingreso.js`, `ingresoController.js`, `facturaContratoCap.js`, `notaCredito.js`, `configRecibo.js`, `jornadas-hub.*`, `jornada-cap.service.ts`, `facturacion.service.ts` |
+| **JOR-022** | `75f08b7` | — | `informesJornadaCap.js`, `jornadas-informes.component.*`, `jornada-cap.service.ts` |
+| **JOR-023** | `75f08b7` | — | `certificadoController.js` |
+| **JOR-024** | `75f08b7` | — | `programaController.js`, `programa.service.ts`, `servicios.component.ts` |
+| **JOR-025** | `c092f0b` | `constants/servicioContratoCap.js` (si no venía de JOR-021) | `configJornadasOperacion.js`, `servicioContratoCap.js`, `config-jornadas.component.*`, `jornada-cap.service.ts`, `jornadaCapController.js`, `ingresoController.js` |
+| **JOR-026** | `0065414` | — | `programas-admin.component.*`, `catalogo-enum-buscar/*`, `programaController.js`, `deploy/nginx/finstruvial.edu.co.conf`, `deploy/diagnose-vps-domains.sh` |
+| **Compartidos** | `75f08b7` | `clase-modal.scss` | `form-modal.component.*`, `hora-12-input.component.scss` (UX modal clase) |
 
 ---
 
@@ -261,21 +275,22 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 
 | ID | Fecha | Resumen | Commit | Alcance |
 |----|-------|---------|--------|---------|
-| JOR-025 | 2026-07-09 | idServ contrato configurable (comprobantes/factura); fallback 53 | _(pendiente)_ | backend + frontend |
-| JOR-024 | 2026-07-09 | Matrícula alumno (Servicios): ocultar programas de jornadas en buscador | _(pendiente)_ | backend + frontend |
-| JOR-023 | 2026-07-09 | Certificados vencidos: no listar si hay vigente del mismo programa | _(pendiente)_ | backend |
-| JOR-022 | 2026-07-09 | Informes: pestañas por entidad, filtros reactivos, limpiar filtros, sin bloque empresa en pantalla | _(pendiente)_ | backend + frontend |
-| JOR-021 | 2026-07-08 | Cobro contrato: plan cuotas, comprobantes ingreso, factura idServ 53, cuenta de cobro | _(pendiente)_ | backend + frontend |
-| JOR-020 | 2026-07-08 | Eliminar clases (incl. finalizadas) con anulación de certificados por_clase | _(pendiente)_ | backend + frontend |
-| JOR-019 | 2026-07-09 | Copiar alumnos de la clase anterior de la misma jornada (matrícula rápida) | _(pendiente)_ | backend + frontend |
-| JOR-018 | 2026-07-08 | Certificado por_clase: encabezado y horas del programa de la clase | _(pendiente)_ | backend |
-| JOR-017 | 2026-07-08 | Anular/editar certificados generados en módulo Jornadas | _(pendiente)_ | backend |
-| JOR-016 | 2026-07-08 | Panel avance contrato: clases dictadas, alumnos capacitados/certificados | _(pendiente)_ | backend + frontend |
-| JOR-015 | 2026-07-08 | Emitir certificados al cerrar clase vía guardar horario (modo especial) + reprocesar | _(pendiente)_ | backend + frontend |
-| JOR-014 | 2026-07-08 | Asignar empresa del contrato al matricular en jornada | _(pendiente)_ | backend |
-| JOR-013 | 2026-07-08 | Metas de contrato estables + generar jornadas por rango inicio/fin | _(pendiente)_ | backend + frontend |
-| JOR-012 | 2026-07-08 | Programas del contrato y reparto equitativo al autogenerar clases | _(pendiente)_ | backend + frontend |
-| JOR-011 | 2026-07-08 | Config operación fuera del día programado (casos especiales / carga histórica) | _(pendiente)_ | backend + frontend |
+| JOR-026 | 2026-07-13 | Programas: persistir tipo capacitación y combos; nginx portal API | `0065414` | backend + frontend + deploy |
+| JOR-025 | 2026-07-09 | idServ contrato configurable (comprobantes/factura); fallback 53 | `c092f0b` | backend + frontend |
+| JOR-024 | 2026-07-09 | Matrícula alumno (Servicios): ocultar programas de jornadas en buscador | `75f08b7` | backend + frontend |
+| JOR-023 | 2026-07-09 | Certificados vencidos: no listar si hay vigente del mismo programa | `75f08b7` | backend |
+| JOR-022 | 2026-07-09 | Informes: pestañas por entidad, filtros reactivos, limpiar filtros, sin bloque empresa en pantalla | `75f08b7` | backend + frontend |
+| JOR-021 | 2026-07-08 | Cobro contrato: plan cuotas, comprobantes ingreso, factura contrato, cuenta de cobro | `75f08b7` | backend + frontend |
+| JOR-020 | 2026-07-08 | Eliminar clases (incl. finalizadas) con anulación de certificados por_clase | `75f08b7` | backend + frontend |
+| JOR-019 | 2026-07-09 | Copiar alumnos de la clase anterior de la misma jornada (matrícula rápida) | `75f08b7` | backend + frontend |
+| JOR-018 | 2026-07-08 | Certificado por_clase: encabezado y horas del programa de la clase | `75f08b7` | backend |
+| JOR-017 | 2026-07-08 | Anular/editar certificados generados en módulo Jornadas | `75f08b7` | backend |
+| JOR-016 | 2026-07-08 | Panel avance contrato: clases dictadas, alumnos capacitados/certificados | `75f08b7` | backend + frontend |
+| JOR-015 | 2026-07-08 | Emitir certificados al cerrar clase vía guardar horario (modo especial) + reprocesar | `75f08b7` | backend + frontend |
+| JOR-014 | 2026-07-08 | Asignar empresa del contrato al matricular en jornada | `75f08b7` | backend |
+| JOR-013 | 2026-07-08 | Metas de contrato estables + generar jornadas por rango inicio/fin | `75f08b7` | backend + frontend |
+| JOR-012 | 2026-07-08 | Programas del contrato y reparto equitativo al autogenerar clases | `75f08b7` | backend + frontend |
+| JOR-011 | 2026-07-08 | Config operación fuera del día programado (casos especiales / carga histórica) | `75f08b7` | backend + frontend |
 | JOR-010 | 2026-07-03 | App móvil: cliente nativo + arranque login + API producción | `9be6d70`, `a679da9` | móvil |
 | JOR-009 | 2026-07-03 | Informes web: Excel, PDF con encabezado empresa, filtros contrato/jornada/clase | `47c79d7` | backend + frontend |
 | JOR-008 | 2026-07-03 | Alarma tope alumnos jornada (meta `numeObjeJornada`) | `47c79d7` | backend + frontend + móvil |
@@ -294,7 +309,7 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 - **Fecha:** 2026-07-09
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 - **Replica en otro repo:** Sí
 
 #### Problema
@@ -351,7 +366,7 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 
 - **Fecha:** 2026-07-09
 - **Alcance:** backend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Problema
 - En el listado de certificados vencidos seguían apareciendo alumnos que ya tenían un certificado **vigente** del **mismo programa** (`idProg`).
@@ -375,7 +390,7 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 
 - **Fecha:** 2026-07-09
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Problema
 - Al crear matrícula desde la ficha del alumno (pestaña Servicios), el buscador de programas mostraba programas de **Jornadas de capacitación**, que no aplican a matrícula académica tradicional.
@@ -397,12 +412,59 @@ Referencia cruzada **ID → archivos** del working tree actual (útil al commite
 
 ---
 
+### JOR-026 — Programas: persistir tipo capacitación y combos del formulario
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend + deploy nginx
+- **Commit ARGO:** `0065414`
+- **Replica en otro repo:** Sí (programas jornadas y portal aula virtual)
+
+#### Problema
+- En **Programas educativos** (`/app/programas`), al crear o editar, el **tipo de capacitación** (y otros combos) no persistía: siempre quedaba «Técnico Laboral por Competencias».
+- El combobox mostraba un texto distinto al valor guardado si el usuario escribía o filtraba sin hacer clic en la lista.
+- Catálogo legacy con `idTipCap` tipo `"1) TECNICO..."` se emparejaba mal con ids numéricos.
+- En **www.finstruvial.edu.co**, la página de cursos del portal fallaba con **502** en `/api` (nginx interno del contenedor aula-virtual no alcanzaba el backend).
+
+#### Qué se hizo
+- **Combobox** (`catalogo-enum-buscar`): al salir del campo o al guardar, confirma la opción si el texto coincide; no pisa el texto mientras se filtra.
+- **Programas admin**: normaliza `idTipCap` del catálogo (id canónico `1`, `2`, `3`…); sincroniza combos antes de guardar.
+- **Backend** `PUT /api/programas/:id`: exige `idTipCap` en body y no reutiliza el valor anterior por defecto.
+- **Nginx portal** (`deploy/nginx/finstruvial.edu.co.conf`): `/api/` y `/uploads/` van directo a `127.0.0.1:5002` (backend); el SPA sigue en `:8085`.
+- Script `deploy/diagnose-vps-domains.sh`: prueba HTTP de `/api/aula-virtual/cursos` en el dominio del portal.
+
+#### Despliegue VPS
+```bash
+cd /opt/argo && git pull origin main
+docker compose build argo-backend argo-frontend
+docker compose up -d --force-recreate argo-backend argo-frontend
+cp deploy/nginx/finstruvial.edu.co.conf /etc/nginx/sites-available/finstruvial.edu.co
+nginx -t && systemctl reload nginx
+```
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-frontend/src/app/features/programas/programas-admin.component.*` | Normalización idTipCap, confirmar combos al guardar |
+| `argo-frontend/src/app/shared/catalogo-enum-buscar/*` | Blur/guardar confirma selección |
+| `argo-backend/src/controllers/programaController.js` | idTipCap obligatorio en PUT |
+| `deploy/nginx/finstruvial.edu.co.conf` | Proxy API/uploads al backend |
+| `deploy/diagnose-vps-domains.sh` | Diagnóstico API portal |
+
+#### Verificación
+- [ ] Programas → editar → cambiar tipo capacitación → guardar → recargar → tipo correcto.
+- [ ] Programa jornadas: tipo «Jornadas de Capacitación» + carpa persisten.
+- [ ] `https://www.finstruvial.edu.co/api/aula-virtual/cursos` → HTTP 200 (no 502).
+- [ ] Portal `/cursos` lista cursos publicados.
+
+---
+
 ### JOR-025 — idServ contrato configurable (comprobantes y factura)
 
 - **Fecha:** 2026-07-09
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `c092f0b`
 
 #### Problema
 - Comprobantes de ingreso y facturas de contratos de capacitación usaban **idServ 53** fijo en código.
@@ -442,7 +504,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 
 - **Fecha:** 2026-07-08
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Qué se hizo
 - **Valor del contrato** persistente (serialización Decimal128 al listar/cargar).
@@ -495,7 +557,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 
 - **Fecha:** 2026-07-08
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Problema
 - Las clases finalizadas no se podían borrar (409 en backend; botones ocultos en UI).
@@ -524,7 +586,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 
 - **Fecha:** 2026-07-08
 - **Alcance:** backend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Problema
 - Con `tipoCertificado: por_clase`, el certificado usaba `nombreCertificacion` del contrato (o el texto genérico «Jornadas de Capacitación») en lugar del **programa de la clase**.
@@ -550,7 +612,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 
 - **Fecha:** 2026-07-08
 - **Alcance:** backend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Problema
 - `DELETE /api/jornadas/certificados-generados/:id` devolvía **403** porque usaba el controlador académico, que rechaza certificados de jornada.
@@ -576,7 +638,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 
 - **Fecha:** 2026-07-08
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Qué se hizo
 - API `GET /api/jornadas/contratos/:id/avance` con resumen y listado de alumnos con asistencia.
@@ -642,7 +704,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 
 - **Fecha:** 2026-07-08
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Problema
 - En modo operación especial, al guardar hora inicio/fin la clase pasaba a **FINALIZADO** vía `actualizarClase`, pero **no** se ejecutaba la emisión de certificados (solo ocurría con el botón «Finalizar»).
@@ -681,7 +743,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 
 - **Fecha:** 2026-07-08
 - **Alcance:** backend (+ móvil/web vía API existente)
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Qué se hizo
 - Al matricular/inscribir en una clase de jornada, el alumno recibe `empresaId` = cliente del contrato (`idClienteFacturacion`).
@@ -707,7 +769,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 - **Fecha:** 2026-07-08
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 
 #### Problema
 - Tras «Generar faltantes», `numerojornadas`, `clasesPorJornada` y `jornadasPorDia` se reiniciaban a 0 (sync los pisaba con conteos reales).
@@ -740,7 +802,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 - **Fecha:** 2026-07-08
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 - **Replica en otro repo:** Sí
 
 #### Qué pide el cliente / problema
@@ -758,7 +820,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 - Sin programas configurados: comportamiento anterior (clases sin programa).
 
 #### Archivos tocados (ARGO)
-Ver también tabla en [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09) (JOR-012).
+Ver también tabla en [Mapa archivos por commit](#mapa-archivos-por-commit-auditoría-2026-07-13) (JOR-012).
 
 #### Archivos principales
 | Área | Archivos |
@@ -779,7 +841,7 @@ Ver también tabla en [Mapa archivos sin commitear](#mapa-archivos-sin-commitear
 - **Fecha:** 2026-07-08
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `75f08b7`
 - **Replica en otro repo:** Sí
 
 #### Qué pide el cliente / problema
@@ -802,7 +864,7 @@ Ver también tabla en [Mapa archivos sin commitear](#mapa-archivos-sin-commitear
 - Auditoría: acción `jornadas_operacion_config`.
 
 #### Archivos tocados (ARGO)
-Ver tabla en [Mapa archivos sin commitear](#mapa-archivos-sin-commitear-auditoría-2026-07-09) (JOR-011).
+Ver tabla en [Mapa archivos por commit](#mapa-archivos-por-commit-auditoría-2026-07-13) (JOR-011).
 
 #### Archivos principales
 | Área | Archivos |

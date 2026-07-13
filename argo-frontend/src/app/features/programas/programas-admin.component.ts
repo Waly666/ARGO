@@ -411,6 +411,20 @@ export class ProgramasAdminComponent implements OnInit {
     return this.etiquetaTipCapForm(this.form().idTipCap);
   });
 
+  /** Formato certificado = jornada (aunque idTipCap del catálogo sea otro, p. ej. Técnico). */
+  private esTipoCertJornada(tipo?: string | null): boolean {
+    const tc = String(tipo ?? '')
+      .toLowerCase()
+      .replace(/-/g, '_');
+    return tc === 'jornada_capacitacion';
+  }
+
+  /** Misma regla que backend `esProgramaJornadasCap`: tipo certificado o etiqueta idTipCap. */
+  private esProgramaJornadasCapDesdeForm(f: ProgramaDto = this.form()): boolean {
+    if (this.esTipoCertJornada(f.tipoCertificado)) return true;
+    return this.esTipCapJornadaLabel(this.labelTipo(f.idTipCap));
+  }
+
   opcionesEstado: EnumBuscarOption[] = [
     { value: 'ACTIVO', label: 'ACTIVO' },
     { value: 'INACTIVO', label: 'INACTIVO' },
@@ -836,10 +850,7 @@ export class ProgramasAdminComponent implements OnInit {
 
   /** Programa de jornadas según documento BD (tipoCertificado o idTipCap textual). */
   private esProgramaJornadasCapProg(prog: Programa): boolean {
-    const tc = String(prog.tipoCertificado || '')
-      .toLowerCase()
-      .replace(/-/g, '_');
-    if (tc === 'jornada_capacitacion') return true;
+    if (this.esTipoCertJornada(prog.tipoCertificado)) return true;
     return this.esTipCapJornadaLabel(String(prog.idTipCap ?? ''));
   }
 
@@ -1010,12 +1021,17 @@ export class ProgramasAdminComponent implements OnInit {
       return;
     }
 
-    const esJorn = this.esProgramaJornadasCapForm();
+    const esJorn = this.esProgramaJornadasCapDesdeForm(f);
 
     let idTipCap = this.resolverIdTipCap(f.idTipCap);
     if (esJorn) {
       const jid = this.findTipCapJornadaId();
       if (jid != null && jid !== '') idTipCap = jid;
+    }
+
+    let tipoCertificado = f.tipoCertificado ?? null;
+    if (esJorn && !this.esTipoCertJornada(tipoCertificado)) {
+      tipoCertificado = 'jornada_capacitacion';
     }
 
     const payload: ProgramaDto = {
@@ -1032,7 +1048,7 @@ export class ProgramasAdminComponent implements OnInit {
 
       tarifa1: esJorn ? 0 : this.esSoloVirtualForm() ? 0 : (f.tarifa1 ?? f.valorMatricula ?? 0),
 
-      tipoCertificado: f.tipoCertificado ?? null,
+      tipoCertificado,
 
       descrServicio: (f.descrServicio || f.nombreProg).trim(),
 
@@ -1290,12 +1306,39 @@ export class ProgramasAdminComponent implements OnInit {
     this.tipoServBuscar?.confirmarSeleccionSiCoincide();
     this.facturarBuscar?.confirmarSeleccionSiCoincide();
     this.carpaBuscar?.confirmarSeleccionSiCoincide();
+
+    const textoCert = this.tipoCertBuscar?.textoActual()?.trim();
+    if (textoCert) {
+      const normCert = this.normTipoCap(textoCert);
+      if (normCert === 'automatico' || normCert === '') {
+        this.patch('tipoCertificado', null);
+      } else {
+        const hitCert = this.opcionesTipoCertificado().find(
+          (o) => this.normTipoCap(o.label) === normCert,
+        );
+        if (hitCert) {
+          const v = String(hitCert.value);
+          this.patch('tipoCertificado', v === '' ? null : (v as TipoCertificadoId));
+        }
+      }
+    }
+
     const textoCap = this.tipoCapBuscar?.textoActual();
     if (textoCap) {
       const id = this.resolverIdTipCapDesdeTexto(textoCap, this.form().idTipCap);
       if (id !== '' && id != null) {
         this.patch('idTipCap', id);
         this.patch('tipoServ', this.inferirTipoServ(id));
+      }
+    }
+
+    const f = this.form();
+    if (this.esProgramaJornadasCapDesdeForm(f)) {
+      const textoCarpa = this.carpaBuscar?.textoActual()?.trim();
+      if (textoCarpa) {
+        const normCarpa = this.normTipoCap(textoCarpa);
+        const hitCarpa = this.carpas().find((c) => this.normTipoCap(c.label) === normCarpa);
+        if (hitCarpa) this.patch('idCarpa', hitCarpa.id);
       }
     }
   }
@@ -1471,7 +1514,7 @@ export class ProgramasAdminComponent implements OnInit {
 
 
   esProgramaJornadasCapForm(): boolean {
-    return this.esTipCapJornadaLabel(this.labelTipo(this.form().idTipCap));
+    return this.esProgramaJornadasCapDesdeForm();
   }
 
   onTipoCapChange(id: string | number) {
@@ -1485,13 +1528,31 @@ export class ProgramasAdminComponent implements OnInit {
       this.patch('tarifa3', 0);
       this.patch('tarifaVirtual', 0);
       this.patch('semestres', null);
+      if (!this.esTipoCertJornada(this.form().tipoCertificado)) {
+        this.patch('tipoCertificado', 'jornada_capacitacion');
+      }
     }
     this.ensureFormTabVisible();
   }
 
   onTipoCertPick(opt: EnumBuscarOption): void {
     const v = String(opt.value);
-    this.patch('tipoCertificado', v === '' ? null : (v as TipoCertificadoId));
+    const tipo = v === '' ? null : (v as TipoCertificadoId);
+    this.patch('tipoCertificado', tipo);
+    if (this.esTipoCertJornada(tipo)) {
+      const jid = this.findTipCapJornadaId();
+      if (jid != null && jid !== '') {
+        this.onTipoCapChange(jid);
+      } else {
+        this.patch('valorMatricula', 0);
+        this.patch('tarifa1', 0);
+        this.patch('tarifa2', 0);
+        this.patch('tarifa3', 0);
+        this.patch('tarifaVirtual', 0);
+        this.patch('semestres', null);
+      }
+      this.ensureFormTabVisible();
+    }
   }
 
   onTipoCertLimpiar(): void {
