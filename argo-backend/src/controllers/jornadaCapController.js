@@ -2105,7 +2105,7 @@ exports.certificadosGenerados = async (req, res, next) => {
   }
 };
 
-/** ZIP con HTML individuales + 00-todos-imprimir.html (impresión masiva). */
+/** ZIP con PDFs (sincrónico; compatibilidad). */
 exports.exportarCertificadosJornadaZip = async (req, res, next) => {
   try {
     const {
@@ -2116,6 +2116,80 @@ exports.exportarCertificadosJornadaZip = async (req, res, next) => {
     if (error) return res.status(400).json({ message: error });
     const rows = await Certificado.find(q).sort({ fechaEmision: 1, codigoCert: 1 }).lean();
     await streamZipCertificadosJornada(req, res, rows);
+  } catch (e) {
+    if (e.status && !res.headersSent) {
+      return res.status(e.status).json({ message: e.message });
+    }
+    next(e);
+  }
+};
+
+/** Inicia generación asíncrona del ZIP con progreso. */
+exports.iniciarExportZipCertificadosJob = async (req, res, next) => {
+  try {
+    const {
+      buildQueryCertificadosJornada,
+      startZipJob,
+      progressSnapshot,
+      getZipJob,
+    } = require('../services/certificadosJornadaZip');
+    const { publicOriginFromReq } = require('../utils/publicOrigin');
+    const filtros = { ...(req.body || {}), ...(req.query || {}) };
+    const { q, error } = buildQueryCertificadosJornada(filtros);
+    if (error) return res.status(400).json({ message: error });
+    const rows = await Certificado.find(q).sort({ fechaEmision: 1, codigoCert: 1 }).lean();
+    if (!rows.length) {
+      return res.status(404).json({ message: 'No hay certificados con los filtros indicados.' });
+    }
+    const { jobId } = startZipJob({
+      rows,
+      publicOrigin: publicOriginFromReq(req),
+      filtros,
+      ownerSub: req.user?.sub || null,
+    });
+    const job = getZipJob(jobId, req.user?.sub);
+    res.status(202).json(progressSnapshot(job));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+/** Estado / progreso de un job ZIP. */
+exports.progresoExportZipCertificadosJob = async (req, res, next) => {
+  try {
+    const { getZipJob, progressSnapshot } = require('../services/certificadosJornadaZip');
+    const job = getZipJob(req.params.jobId, req.user?.sub);
+    if (!job) return res.status(404).json({ message: 'Job no encontrado o expirado' });
+    res.json(progressSnapshot(job));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+/** Descarga el ZIP cuando el job está listo. */
+exports.descargarExportZipCertificadosJob = async (req, res, next) => {
+  try {
+    const fs = require('fs');
+    const { takeZipDownload } = require('../services/certificadosJornadaZip');
+    const meta = takeZipDownload(req.params.jobId, req.user?.sub);
+    if (!meta) return res.status(404).json({ message: 'Job no encontrado o expirado' });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${meta.filename}"`);
+    const stream = fs.createReadStream(meta.filePath);
+    stream.on('close', () => {
+      fs.promises.unlink(meta.filePath).catch(() => {});
+    });
+    stream.on('error', (e) => {
+      fs.promises.unlink(meta.filePath).catch(() => {});
+      if (!res.headersSent) {
+        res.status(500).json({ message: e.message || 'Error al enviar ZIP' });
+      } else {
+        res.destroy(e);
+      }
+    });
+    stream.pipe(res);
   } catch (e) {
     if (e.status && !res.headersSent) {
       return res.status(e.status).json({ message: e.message });

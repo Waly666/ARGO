@@ -80,6 +80,13 @@ router.get('/informes/export', ver, ctrl.exportarInformesJornada);
 
 router.get('/certificados-generados', ver, ctrl.certificadosGenerados);
 router.get('/certificados-generados/export-zip', ver, ctrl.exportarCertificadosJornadaZip);
+router.post('/certificados-generados/export-zip/jobs', ver, ctrl.iniciarExportZipCertificadosJob);
+router.get('/certificados-generados/export-zip/jobs/:jobId', ver, ctrl.progresoExportZipCertificadosJob);
+router.get(
+  '/certificados-generados/export-zip/jobs/:jobId/download',
+  ver,
+  ctrl.descargarExportZipCertificadosJob,
+);
 router.get('/certificados-generados/:id/html', ver, soloCertificadoJornada, certRender.html);
 router.patch('/certificados-generados/:id', gest, soloCertificadoJornada, ctrl.actualizarCertificadoGenerado);
 router.delete('/certificados-generados/:id', gest, soloCertificadoJornada, ctrl.eliminarCertificadoGenerado);

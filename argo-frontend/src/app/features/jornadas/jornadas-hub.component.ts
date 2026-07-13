@@ -132,7 +132,11 @@ import {
   labelInstructorClase,
   claseTieneInstructor,
 } from './jornada-ui.util';
-import { descargarBlob, mensajeErrorBlob } from '../../core/utils/descargar-blob';
+import {
+  CertZipProgreso,
+  CertificadosZipProgresoModalComponent,
+} from './certificados-zip-progreso-modal.component';
+import { ejecutarExportZipCertificados } from './certificados-zip-export.helper';
 
 type Tab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas' | 'informes';
 
@@ -167,6 +171,7 @@ type AlumnoNombrable = {
     PagoSoporteFieldComponent,
     NotaCreditoModalComponent,
     ContratoInformesDashboardComponent,
+    CertificadosZipProgresoModalComponent,
   ],
   templateUrl: './jornadas-hub.component.html',
   styleUrls: ['./jornadas-hub.component.scss'],
@@ -289,6 +294,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     () => this.certsGenerados().filter((c) => esFechaHoy(c?.fechaEmision)).length,
   );
   descargandoZipCerts = signal(false);
+  zipProgresoOpen = signal(false);
+  zipProgreso = signal<CertZipProgreso>({
+    status: 'idle',
+    fase: '',
+    hecho: 0,
+    total: 0,
+    porcentaje: 0,
+  });
   certFiltroJornadaId = signal('');
   certFiltroJornadaTexto = signal('');
   certFiltroClaseId = signal('');
@@ -4669,7 +4682,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
-  descargarZipCertificadosContrato() {
+  async descargarZipCertificadosContrato() {
     const idContrato = this.contratoSel();
     if (!idContrato) {
       this.mostrarMsg('Seleccione un contrato para descargar el ZIP.', 'warn', 'Certificados');
@@ -4680,38 +4693,43 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     this.descargandoZipCerts.set(true);
-    this.mostrarMsg(
-      `Generando PDFs de ${this.certsGenerados().length} certificado(s). Puede tardar unos minutos…`,
-      'info',
-      'Certificados',
-    );
-    this.jornadaSvc.descargarCertificadosJornadaZip(this.filtrosCertZip()).subscribe({
-      next: async (blob) => {
-        try {
-          await descargarBlob(
-            blob,
-            `certificados-contrato_${new Date().toISOString().slice(0, 10)}.zip`,
-          );
-          this.mostrarMsg(
-            `ZIP con PDFs descargado (${this.certsGenerados().length}). Abra 00-todos-imprimir.pdf para imprimir todos.`,
-            'ok',
-            'Certificados',
-          );
-        } catch (e: unknown) {
-          this.mostrarMsg(
-            e instanceof Error ? e.message : 'No se pudo guardar el ZIP.',
-            'error',
-            'Certificados',
-          );
-        } finally {
-          this.descargandoZipCerts.set(false);
-        }
-      },
-      error: async (e) => {
-        this.descargandoZipCerts.set(false);
-        this.mostrarMsg(await mensajeErrorBlob(e, 'No se pudo generar el ZIP.'), 'error', 'Certificados');
-      },
+    this.zipProgresoOpen.set(true);
+    this.zipProgreso.set({
+      status: 'running',
+      fase: 'Iniciando…',
+      hecho: 0,
+      total: this.certsGenerados().length,
+      porcentaje: 1,
     });
+    try {
+      await ejecutarExportZipCertificados(
+        this.jornadaSvc,
+        this.filtrosCertZip(),
+        (p) => this.zipProgreso.set(p),
+        `certificados-contrato_${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+      this.zipProgresoOpen.set(false);
+      this.mostrarMsg(
+        `ZIP con PDFs descargado (${this.certsGenerados().length}). Abra 00-todos-imprimir.pdf para imprimir todos.`,
+        'ok',
+        'Certificados',
+      );
+    } catch (e: unknown) {
+      const texto = e instanceof Error ? e.message : 'No se pudo generar el ZIP.';
+      this.zipProgreso.update((p) => ({
+        ...p,
+        status: 'error',
+        fase: 'Error',
+        message: texto,
+      }));
+      this.mostrarMsg(texto, 'error', 'Certificados');
+    } finally {
+      this.descargandoZipCerts.set(false);
+    }
+  }
+
+  cerrarZipProgreso(): void {
+    this.zipProgresoOpen.set(false);
   }
 
   nuevoAlumnoJornada() {

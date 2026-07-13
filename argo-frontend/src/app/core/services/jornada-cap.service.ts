@@ -165,6 +165,18 @@ export interface InformeDashboardChartItem {
   value: number;
 }
 
+/** Progreso de job ZIP de certificados de jornadas. */
+export interface CertificadosZipJobProgreso {
+  jobId: string;
+  status: 'running' | 'ready' | 'error';
+  fase: string;
+  hecho: number;
+  total: number;
+  porcentaje: number;
+  message?: string | null;
+  filename?: string | null;
+}
+
 export interface InformeDashboardAlumno {
   numDoc: number;
   nombreCompleto: string;
@@ -733,6 +745,33 @@ export class JornadaCapService {
       params: p,
       responseType: 'blob',
     });
+  }
+
+  /** Job asíncrono ZIP con progreso (recomendado para UI). */
+  iniciarCertificadosJornadaZipJob(opts?: {
+    idContrato?: string;
+    idJornada?: string;
+    idClase?: string;
+    desde?: string;
+    hasta?: string;
+  }) {
+    return this.http.post<CertificadosZipJobProgreso>(
+      `${this.base}/certificados-generados/export-zip/jobs`,
+      opts || {},
+    );
+  }
+
+  progresoCertificadosJornadaZipJob(jobId: string) {
+    return this.http.get<CertificadosZipJobProgreso>(
+      `${this.base}/certificados-generados/export-zip/jobs/${encodeURIComponent(jobId)}`,
+    );
+  }
+
+  descargarCertificadosJornadaZipJob(jobId: string): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/certificados-generados/export-zip/jobs/${encodeURIComponent(jobId)}/download`,
+      { responseType: 'blob' },
+    );
   }
 
   informesJornada(opts?: {

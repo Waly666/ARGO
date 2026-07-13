@@ -33,7 +33,11 @@ import {
   rowCertificadoHoyClass,
   ubicacionJornadaLabel,
 } from './jornada-ui.util';
-import { descargarBlob, mensajeErrorBlob } from '../../core/utils/descargar-blob';
+import {
+  CertZipProgreso,
+  CertificadosZipProgresoModalComponent,
+} from './certificados-zip-progreso-modal.component';
+import { ejecutarExportZipCertificados } from './certificados-zip-export.helper';
 
 export interface CertificadoJornadaItem {
   _id: string;
@@ -69,6 +73,7 @@ export interface CertificadoJornadaItem {
     FormModalComponent,
     CatalogoEnumBuscarComponent,
     ArgoDateInputComponent,
+    CertificadosZipProgresoModalComponent,
   ],
   templateUrl: './certificados-jornada-lista.component.html',
   styleUrls: ['./certificados-jornada-lista.component.scss'],
@@ -82,6 +87,14 @@ export class CertificadosJornadaListaComponent implements OnInit {
 
   loading = signal(false);
   descargandoZip = signal(false);
+  zipProgresoOpen = signal(false);
+  zipProgreso = signal<CertZipProgreso>({
+    status: 'idle',
+    fase: '',
+    hecho: 0,
+    total: 0,
+    porcentaje: 0,
+  });
   guardando = signal(false);
   filtro = signal('');
   certificados = signal<CertificadoJornadaItem[]>([]);
@@ -329,7 +342,7 @@ export class CertificadosJornadaListaComponent implements OnInit {
     this.cargar();
   }
 
-  descargarZip(): void {
+  async descargarZip(): Promise<void> {
     if (!this.certificados().length) {
       this.msgError.set(true);
       this.msg.set('No hay certificados para exportar con los filtros actuales.');
@@ -337,33 +350,44 @@ export class CertificadosJornadaListaComponent implements OnInit {
     }
     this.descargandoZip.set(true);
     this.msgError.set(false);
-    this.msg.set(
-      `Generando PDFs de ${this.certificados().length} certificado(s). Puede tardar unos minutos; no cierre esta pantalla…`,
-    );
-    this.jornadaSvc.descargarCertificadosJornadaZip(this.filtrosApi()).subscribe({
-      next: async (blob) => {
-        try {
-          await descargarBlob(
-            blob,
-            `certificados-jornadas_${new Date().toISOString().slice(0, 10)}.zip`,
-          );
-          this.msgError.set(false);
-          this.msg.set(
-            `ZIP descargado (${this.certificados().length} PDF(s)). Abra «00-todos-imprimir.pdf» para imprimir todos, o los PDF de individuales/.`,
-          );
-        } catch (e: unknown) {
-          this.msgError.set(true);
-          this.msg.set(e instanceof Error ? e.message : 'No se pudo guardar el ZIP.');
-        } finally {
-          this.descargandoZip.set(false);
-        }
-      },
-      error: async (e) => {
-        this.descargandoZip.set(false);
-        this.msgError.set(true);
-        this.msg.set(await mensajeErrorBlob(e, 'No se pudo generar el ZIP.'));
-      },
+    this.msg.set(null);
+    this.zipProgresoOpen.set(true);
+    this.zipProgreso.set({
+      status: 'running',
+      fase: 'Iniciando…',
+      hecho: 0,
+      total: this.certificados().length,
+      porcentaje: 1,
     });
+    try {
+      await ejecutarExportZipCertificados(
+        this.jornadaSvc,
+        this.filtrosApi(),
+        (p) => this.zipProgreso.set(p),
+        `certificados-jornadas_${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+      this.zipProgresoOpen.set(false);
+      this.msgError.set(false);
+      this.msg.set(
+        `ZIP descargado (${this.certificados().length} PDF(s)). Abra «00-todos-imprimir.pdf» para imprimir todos, o los PDF de individuales/.`,
+      );
+    } catch (e: unknown) {
+      const texto = e instanceof Error ? e.message : 'No se pudo generar el ZIP.';
+      this.zipProgreso.update((p) => ({
+        ...p,
+        status: 'error',
+        fase: 'Error',
+        message: texto,
+      }));
+      this.msgError.set(true);
+      this.msg.set(texto);
+    } finally {
+      this.descargandoZip.set(false);
+    }
+  }
+
+  cerrarZipProgreso(): void {
+    this.zipProgresoOpen.set(false);
   }
 
   onTipoCertPick(opt: EnumBuscarOption): void {
