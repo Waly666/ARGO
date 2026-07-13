@@ -134,65 +134,114 @@
         <div class="inf-charts">
           <section class="inf-card inf-chart-card">
             <h3>Alumnos por jornada</h3>
-            <div class="inf-bars">
-              @for (it of charts()!.alumnosPorJornada; track it.label) {
-                <div class="inf-bar-row">
-                  <span class="inf-bar-lbl" [title]="it.label">{{ it.label }}</span>
-                  <div class="inf-bar-track">
-                    <div class="inf-bar-fill" [style.width.%]="barPct(it, charts()!.alumnosPorJornada)"></div>
+            @if (chartBarrasJornada().length) {
+              <div class="inf-vbars" role="img" aria-label="Alumnos por jornada">
+                @for (it of chartBarrasJornada(); track it.label) {
+                  <div class="inf-vbar-col" [title]="it.label + ': ' + it.value">
+                    <span class="inf-vbar-val">{{ it.value }}</span>
+                    <div class="inf-vbar-track">
+                      <div
+                        class="inf-vbar-fill"
+                        [style.height.%]="it.pct"
+                        [style.background]="it.color"
+                      ></div>
+                    </div>
+                    <span class="inf-vbar-lbl">{{ it.label }}</span>
                   </div>
-                  <strong class="inf-bar-val">{{ it.value }}</strong>
-                </div>
-              } @empty {
-                <p class="inf-muted">Sin datos</p>
-              }
-            </div>
+                }
+              </div>
+            } @else {
+              <p class="inf-muted">Sin datos</p>
+            }
           </section>
+
           <section class="inf-card inf-chart-card">
             <h3>Clases por estado</h3>
-            <div class="inf-bars">
-              @for (it of charts()!.clasesPorEstado; track it.label) {
-                <div class="inf-bar-row">
-                  <span class="inf-bar-lbl">{{ it.label }}</span>
-                  <div class="inf-bar-track">
-                    <div class="inf-bar-fill inf-bar-fill--amber" [style.width.%]="barPct(it, charts()!.clasesPorEstado)"></div>
+            @if (chartTortaEstado().slices.length) {
+              <div class="inf-pie" role="img" aria-label="Clases por estado">
+                <div class="inf-pie-visual">
+                  <svg viewBox="0 0 100 100" class="inf-pie-svg">
+                    @for (s of chartTortaEstado().slices; track s.label) {
+                      <path [attr.d]="s.path" [attr.fill]="s.color">
+                        <title>{{ s.label }}: {{ s.value }} ({{ s.pct }}%)</title>
+                      </path>
+                    }
+                  </svg>
+                  <div class="inf-pie-center">
+                    <strong>{{ chartTortaEstado().total }}</strong>
+                    <span>clases</span>
                   </div>
-                  <strong class="inf-bar-val">{{ it.value }}</strong>
                 </div>
-              }
-            </div>
+                <ul class="inf-pie-legend">
+                  @for (s of chartTortaEstado().slices; track s.label) {
+                    <li>
+                      <span class="inf-pie-swatch" [style.background]="s.color"></span>
+                      <span class="inf-pie-leg-lbl">{{ s.label }}</span>
+                      <strong>{{ s.value }}</strong>
+                      <em>{{ s.pct }}%</em>
+                    </li>
+                  }
+                </ul>
+              </div>
+            } @else {
+              <p class="inf-muted">Sin datos</p>
+            }
           </section>
+
           <section class="inf-card inf-chart-card">
             <h3>Alumnos por programa</h3>
-            <div class="inf-bars">
-              @for (it of charts()!.alumnosPorPrograma; track it.label) {
-                <div class="inf-bar-row">
-                  <span class="inf-bar-lbl" [title]="it.label">{{ it.label }}</span>
-                  <div class="inf-bar-track">
-                    <div class="inf-bar-fill inf-bar-fill--emerald" [style.width.%]="barPct(it, charts()!.alumnosPorPrograma)"></div>
+            @if (chartTortaPrograma().slices.length) {
+              <div class="inf-pie" role="img" aria-label="Alumnos por programa">
+                <div class="inf-pie-visual">
+                  <svg viewBox="0 0 100 100" class="inf-pie-svg">
+                    @for (s of chartTortaPrograma().slices; track s.label) {
+                      <path [attr.d]="s.path" [attr.fill]="s.color">
+                        <title>{{ s.label }}: {{ s.value }} ({{ s.pct }}%)</title>
+                      </path>
+                    }
+                  </svg>
+                  <div class="inf-pie-center">
+                    <strong>{{ chartTortaPrograma().total }}</strong>
+                    <span>alumnos</span>
                   </div>
-                  <strong class="inf-bar-val">{{ it.value }}</strong>
                 </div>
-              } @empty {
-                <p class="inf-muted">Sin datos</p>
-              }
-            </div>
+                <ul class="inf-pie-legend">
+                  @for (s of chartTortaPrograma().slices; track s.label) {
+                    <li>
+                      <span class="inf-pie-swatch" [style.background]="s.color"></span>
+                      <span class="inf-pie-leg-lbl" [title]="s.label">{{ s.label }}</span>
+                      <strong>{{ s.value }}</strong>
+                      <em>{{ s.pct }}%</em>
+                    </li>
+                  }
+                </ul>
+              </div>
+            } @else {
+              <p class="inf-muted">Sin datos</p>
+            }
           </section>
+
           <section class="inf-card inf-chart-card">
             <h3>Clases dictadas por instructor</h3>
-            <div class="inf-bars">
-              @for (it of charts()!.clasesPorInstructor; track it.label) {
-                <div class="inf-bar-row">
-                  <span class="inf-bar-lbl" [title]="it.label">{{ it.label }}</span>
-                  <div class="inf-bar-track">
-                    <div class="inf-bar-fill inf-bar-fill--teal" [style.width.%]="barPct(it, charts()!.clasesPorInstructor)"></div>
+            @if (chartBarrasInstructor().length) {
+              <div class="inf-vbars" role="img" aria-label="Clases por instructor">
+                @for (it of chartBarrasInstructor(); track it.label) {
+                  <div class="inf-vbar-col" [title]="it.label + ': ' + it.value">
+                    <span class="inf-vbar-val">{{ it.value }}</span>
+                    <div class="inf-vbar-track">
+                      <div
+                        class="inf-vbar-fill inf-vbar-fill--teal"
+                        [style.height.%]="it.pct"
+                        [style.background]="it.color"
+                      ></div>
+                    </div>
+                    <span class="inf-vbar-lbl">{{ it.label }}</span>
                   </div>
-                  <strong class="inf-bar-val">{{ it.value }}</strong>
-                </div>
-              } @empty {
-                <p class="inf-muted">Sin datos</p>
-              }
-            </div>
+                }
+              </div>
+            } @else {
+              <p class="inf-muted">Sin datos</p>
+            }
           </section>
         </div>
       }

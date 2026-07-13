@@ -73,6 +73,34 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     (this.data()?.opciones?.instructores || []).map((o) => ({ value: o.value, label: o.label })),
   );
 
+  /** Barras: alumnos por jornada */
+  chartBarrasJornada = computed(() => this.buildBarras(this.charts()?.alumnosPorJornada || [], 'sky'));
+  /** Torta: clases por estado */
+  chartTortaEstado = computed(() => this.buildTorta(this.charts()?.clasesPorEstado || [], 'estado'));
+  /** Torta: alumnos por programa */
+  chartTortaPrograma = computed(() => this.buildTorta(this.charts()?.alumnosPorPrograma || [], 'programa'));
+  /** Barras: clases por instructor */
+  chartBarrasInstructor = computed(() => this.buildBarras(this.charts()?.clasesPorInstructor || [], 'teal'));
+
+  private readonly palette = [
+    '#38bdf8',
+    '#34d399',
+    '#a78bfa',
+    '#fbbf24',
+    '#fb7185',
+    '#2dd4bf',
+    '#60a5fa',
+    '#c084fc',
+    '#f472b6',
+    '#4ade80',
+  ];
+
+  private readonly paletteEstado: Record<string, string> = {
+    Finalizadas: '#34d399',
+    'En proceso': '#38bdf8',
+    Programadas: '#fbbf24',
+  };
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['idContrato']) {
       this.limpiarFiltros(false);
@@ -164,9 +192,104 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     this.cargar();
   }
 
-  barPct(item: InformeDashboardChartItem, list: InformeDashboardChartItem[]): number {
+  buildBarras(
+    items: InformeDashboardChartItem[],
+    tone: 'sky' | 'teal' = 'sky',
+  ): Array<InformeDashboardChartItem & { pct: number; color: string }> {
+    const list = (items || []).filter((x) => Number(x.value) >= 0).slice(0, 10);
     const max = Math.max(1, ...list.map((x) => Number(x.value) || 0));
-    return Math.round(((Number(item.value) || 0) / max) * 100);
+    return list.map((it, i) => ({
+      ...it,
+      pct: Math.max(4, Math.round(((Number(it.value) || 0) / max) * 100)),
+      color:
+        tone === 'teal'
+          ? this.palette[(i + 4) % this.palette.length]
+          : this.palette[i % this.palette.length],
+    }));
+  }
+
+  buildTorta(
+    items: InformeDashboardChartItem[],
+    kind: 'estado' | 'programa' = 'programa',
+  ): {
+    total: number;
+    slices: Array<{
+      label: string;
+      value: number;
+      pct: number;
+      color: string;
+      path: string;
+    }>;
+  } {
+    const list = (items || []).filter((x) => Number(x.value) > 0).slice(0, 8);
+    const total = list.reduce((s, x) => s + (Number(x.value) || 0), 0) || 1;
+    const cx = 50;
+    const cy = 50;
+    const r = 36;
+    const rInner = 20;
+    let angle = -Math.PI / 2;
+    const slices = list.map((it, i) => {
+      const value = Number(it.value) || 0;
+      const pct = Math.round((value / total) * 1000) / 10;
+      const sweep = (value / total) * Math.PI * 2;
+      const a0 = angle;
+      const a1 = angle + sweep;
+      angle = a1;
+      const color =
+        kind === 'estado'
+          ? this.paletteEstado[it.label] || this.palette[i % this.palette.length]
+          : this.palette[i % this.palette.length];
+      return {
+        label: it.label,
+        value,
+        pct,
+        color,
+        path: this.donutSlicePath(cx, cy, r, rInner, a0, a1),
+      };
+    });
+    return { total: list.reduce((s, x) => s + (Number(x.value) || 0), 0), slices };
+  }
+
+  private donutSlicePath(
+    cx: number,
+    cy: number,
+    r: number,
+    rInner: number,
+    a0: number,
+    a1: number,
+  ): string {
+    const large = a1 - a0 > Math.PI ? 1 : 0;
+    const x0 = cx + r * Math.cos(a0);
+    const y0 = cy + r * Math.sin(a0);
+    const x1 = cx + r * Math.cos(a1);
+    const y1 = cy + r * Math.sin(a1);
+    const xi0 = cx + rInner * Math.cos(a1);
+    const yi0 = cy + rInner * Math.sin(a1);
+    const xi1 = cx + rInner * Math.cos(a0);
+    const yi1 = cy + rInner * Math.sin(a0);
+    if (Math.abs(a1 - a0) >= Math.PI * 2 - 1e-6) {
+      const mid = a0 + Math.PI;
+      const xm = cx + r * Math.cos(mid);
+      const ym = cy + r * Math.sin(mid);
+      const xim = cx + rInner * Math.cos(mid);
+      const yim = cy + rInner * Math.sin(mid);
+      return [
+        `M ${x0} ${y0}`,
+        `A ${r} ${r} 0 1 1 ${xm} ${ym}`,
+        `A ${r} ${r} 0 1 1 ${x0} ${y0}`,
+        `L ${xi1} ${yi1}`,
+        `A ${rInner} ${rInner} 0 1 0 ${xim} ${yim}`,
+        `A ${rInner} ${rInner} 0 1 0 ${xi1} ${yi1}`,
+        'Z',
+      ].join(' ');
+    }
+    return [
+      `M ${x0} ${y0}`,
+      `A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`,
+      `L ${xi0} ${yi0}`,
+      `A ${rInner} ${rInner} 0 ${large} 0 ${xi1} ${yi1}`,
+      'Z',
+    ].join(' ');
   }
 
   exportarPdf(
