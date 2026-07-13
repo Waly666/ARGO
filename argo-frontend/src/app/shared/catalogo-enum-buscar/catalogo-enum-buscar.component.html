@@ -7,6 +7,7 @@
       [ngModel]="query()"
       (ngModelChange)="onInput($event)"
       (focus)="focus()"
+      (blur)="onBlur()"
       [disabled]="disabled"
       autocomplete="off"
     />
@@ -29,7 +30,7 @@
       <div class="dropdown empty">Cargando opciones…</div>
     } @else if (resultados().length > 0) {
       <ul class="dropdown">
-        @for (o of resultados(); track o.value) {
+        @for (o of resultados(); track o.value + '|' + o.label) {
           <li (mousedown)="pick(o)">
             <strong>{{ o.label }}</strong>
             @if (o.hint) {

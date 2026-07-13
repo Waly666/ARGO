@@ -97,6 +97,7 @@
         <div class="row row-compact">
           <div class="col-4">
             <argo-catalogo-enum-buscar
+              #tipoCertBuscar
               label="Formato certificado"
               placeholder="Seleccione formato…"
               [textoInicial]="textoTipoCertificado()"
@@ -110,6 +111,7 @@
           </div>
           <div class="col-4" *ngIf="esProgramaJornadasCapForm()">
             <argo-catalogo-enum-buscar
+              #carpaBuscar
               label="Carpa"
               placeholder="Seleccione carpa…"
               [textoInicial]="textoCarpa()"
@@ -143,6 +145,7 @@
         <div class="row row-align-fields row-align-fields--dense">
           <div class="col-4 field-cell">
             <argo-catalogo-enum-buscar
+              #tipoCapBuscar
               label="Tipo capacitación *"
               placeholder="Tipo…"
               [textoInicial]="textoTipoCap()"
@@ -198,6 +201,7 @@
           </div>
           <div class="col-2 field-cell">
             <argo-catalogo-enum-buscar
+              #estadoBuscar
               label="Estado"
               placeholder="Estado…"
               [textoInicial]="textoEstado()"
@@ -248,6 +252,7 @@
           </div>
           <div class="col-3">
             <argo-catalogo-enum-buscar
+              #tipoServBuscar
               label="Tipo servicio"
               placeholder="Tipo…"
               [textoInicial]="textoTipoServ()"
@@ -261,6 +266,7 @@
           </div>
           <div class="col-2">
             <argo-catalogo-enum-buscar
+              #facturarBuscar
               label="Facturar"
               placeholder="…"
               [textoInicial]="textoFacturar()"

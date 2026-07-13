@@ -134,6 +134,33 @@ import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+
+/** Misma lógica que backend: prefijo numérico de idTipCap legacy. */
+function canonTipCapId(raw: unknown): string {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  const m = s.match(/^(\d+)/);
+  return m ? m[1] : s;
+}
+
+function normalizarTiposCapCatalogo(
+  rows: { idTipCap?: string | number; id?: string | number; tipoCap?: string; descripcion?: string }[],
+): { id: string; label: string }[] {
+  const porCanon = new Map<string, { id: string; label: string }>();
+  for (const t of rows || []) {
+    const idRaw = t.idTipCap ?? t.id;
+    const label = String(t.tipoCap ?? t.descripcion ?? idRaw ?? '').trim();
+    if (idRaw == null || idRaw === '') continue;
+    const canon = canonTipCapId(idRaw) || String(idRaw).trim();
+    if (!canon) continue;
+    const row = { id: canon, label: label || canon };
+    const prev = porCanon.get(canon);
+    if (!prev || label.length > prev.label.length) {
+      porCanon.set(canon, row);
+    }
+  }
+  return [...porCanon.values()].sort((a, b) => a.label.localeCompare(b.label, 'es'));
+}
 interface AuditInfo {
 
   fechaAudi?: string;
@@ -179,6 +206,12 @@ export class ProgramasAdminComponent implements OnInit {
 
   @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
   @ViewChild('formPanel') formPanel?: ElementRef<HTMLElement>;
+  @ViewChild('tipoCapBuscar') tipoCapBuscar?: CatalogoEnumBuscarComponent;
+  @ViewChild('tipoCertBuscar') tipoCertBuscar?: CatalogoEnumBuscarComponent;
+  @ViewChild('estadoBuscar') estadoBuscar?: CatalogoEnumBuscarComponent;
+  @ViewChild('tipoServBuscar') tipoServBuscar?: CatalogoEnumBuscarComponent;
+  @ViewChild('facturarBuscar') facturarBuscar?: CatalogoEnumBuscarComponent;
+  @ViewChild('carpaBuscar') carpaBuscar?: CatalogoEnumBuscarComponent;
 
   constructor() {
     effect(() => {
@@ -453,14 +486,7 @@ export class ProgramasAdminComponent implements OnInit {
 
         this.tiposCargando.set(false);
 
-        const list: { id: string | number; label: string }[] = (rows || [])
-          .map((t: { idTipCap?: string | number; id?: string | number; tipoCap?: string; descripcion?: string }) => {
-            const idRaw = t.idTipCap ?? t.id;
-            const label = String(t.tipoCap ?? t.descripcion ?? idRaw ?? '').trim();
-            if (idRaw == null || idRaw === '') return null;
-            return { id: idRaw, label: label || String(idRaw) };
-          })
-          .filter((x): x is { id: string | number; label: string } => !!x);
+        const list = normalizarTiposCapCatalogo(rows || []);
 
         this.tiposCap.set(list);
 
@@ -826,7 +852,7 @@ export class ProgramasAdminComponent implements OnInit {
       const jid = this.findTipCapJornadaId();
       if (jid != null && jid !== '') return jid;
     }
-    return prog.idTipCap ?? '';
+    return canonTipCapId(prog.idTipCap) || String(prog.idTipCap ?? '').trim();
   }
 
   private formDesdeDetalle(
@@ -940,6 +966,8 @@ export class ProgramasAdminComponent implements OnInit {
 
 
   guardar() {
+
+    this.confirmarCombosAntesGuardar();
 
     const f = this.form();
 
@@ -1255,11 +1283,46 @@ export class ProgramasAdminComponent implements OnInit {
       .trim();
   }
 
+  private confirmarCombosAntesGuardar(): void {
+    this.tipoCapBuscar?.confirmarSeleccionSiCoincide();
+    this.tipoCertBuscar?.confirmarSeleccionSiCoincide();
+    this.estadoBuscar?.confirmarSeleccionSiCoincide();
+    this.tipoServBuscar?.confirmarSeleccionSiCoincide();
+    this.facturarBuscar?.confirmarSeleccionSiCoincide();
+    this.carpaBuscar?.confirmarSeleccionSiCoincide();
+    const textoCap = this.tipoCapBuscar?.textoActual();
+    if (textoCap) {
+      const id = this.resolverIdTipCapDesdeTexto(textoCap, this.form().idTipCap);
+      if (id !== '' && id != null) {
+        this.patch('idTipCap', id);
+        this.patch('tipoServ', this.inferirTipoServ(id));
+      }
+    }
+  }
+
+  /** Resuelve idTipCap desde texto del combobox o valor ya guardado en el formulario. */
+  private resolverIdTipCapDesdeTexto(
+    texto: string,
+    fallback: string | number | '',
+  ): string | number {
+    const norm = this.normTipoCap(texto);
+    if (!norm) return fallback;
+    const porLabel = this.tiposCap().find((t) => this.normTipoCap(t.label) === norm);
+    if (porLabel) return porLabel.id;
+    return this.resolverIdTipCap(fallback || texto);
+  }
+
   private idsTipCapCoinciden(a: string | number, b: string | number): boolean {
-    if (String(a) === String(b)) return true;
-    const na = String(a).match(/^(\d+)/)?.[1];
-    const nb = String(b).match(/^(\d+)/)?.[1];
-    return !!(na && nb && na === nb);
+    const sa = String(a).trim();
+    const sb = String(b).trim();
+    if (!sa || !sb) return false;
+    if (sa === sb) return true;
+    const ca = canonTipCapId(a);
+    const cb = canonTipCapId(b);
+    if (ca && cb && ca === cb) return true;
+    const na = Number(ca || sa);
+    const nb = Number(cb || sb);
+    return Number.isFinite(na) && Number.isFinite(nb) && na === nb;
   }
 
   private resolverIdTipCap(raw: string | number | '' | null | undefined): string | number {
@@ -1278,9 +1341,7 @@ export class ProgramasAdminComponent implements OnInit {
       return porId.id;
     }
     const norm = this.normTipoCap(sid);
-    const porLabel = this.tiposCap().find(
-      (x) => this.normTipoCap(x.label) === norm || this.normTipoCap(String(x.id)) === norm,
-    );
+    const porLabel = this.tiposCap().find((x) => this.normTipoCap(x.label) === norm);
     if (porLabel) {
       if (this.esTipCapJornadaLabel(porLabel.label)) {
         const jid = this.findTipCapJornadaId();
@@ -1288,10 +1349,10 @@ export class ProgramasAdminComponent implements OnInit {
       }
       return porLabel.id;
     }
-    const pref = sid.match(/^(\d+)/);
-    if (pref) {
-      const porNum = this.tiposCap().find((x) => String(x.id) === pref[1]);
-      if (porNum) return porNum.id;
+    const canon = canonTipCapId(sid);
+    if (canon) {
+      const porCanon = this.tiposCap().find((x) => x.id === canon);
+      if (porCanon) return porCanon.id;
     }
     return raw;
   }
@@ -1414,7 +1475,7 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   onTipoCapChange(id: string | number) {
-    const canon = this.resolverIdTipCap(id);
+    const canon = canonTipCapId(id) || String(id).trim();
     this.patch('idTipCap', canon);
     this.patch('tipoServ', this.inferirTipoServ(canon));
     if (this.esTipCapJornadaLabel(this.labelTipo(canon))) {

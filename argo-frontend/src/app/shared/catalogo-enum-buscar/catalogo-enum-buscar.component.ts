@@ -81,10 +81,31 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
       });
   }
 
+  /** Texto visible actual (útil al guardar formularios con combobox). */
+  textoActual(): string {
+    return this.query().trim();
+  }
+
+  /**
+   * Si el texto coincide con una opción, confirma la selección (p. ej. al guardar sin clic en la lista).
+   * Devuelve true si aplicó un valor.
+   */
+  confirmarSeleccionSiCoincide(): boolean {
+    const q = this.query().trim();
+    if (!q) return false;
+    const nq = this.normalizar(q);
+    const pool = this.opcionesLocales?.length ? this.opcionesLocales : this.resultados();
+    const match =
+      pool.find((o) => this.normalizar(o.label) === nq) ||
+      pool.find((o) => String(o.value).trim() === q);
+    if (!match) return false;
+    this.pick(match);
+    return true;
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['textoInicial']) {
+    if (changes['textoInicial'] && !this.filtrandoActivo() && !this.open()) {
       this.query.set(this.textoInicial || '');
-      this.filtrandoActivo.set(false);
     }
     if (changes['opcionesLocales']) {
       const q = this.filtrandoActivo() ? this.query().trim() : '';
@@ -144,6 +165,14 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
     this.filtrandoActivo.set(false);
     this.resultados.set([]);
     this.seleccionado.emit(opt);
+  }
+
+  onBlur(): void {
+    if (this.disabled) return;
+    if (this.modoCombo) {
+      this.confirmarSeleccionSiCoincide();
+    }
+    this.cerrarDropdown();
   }
 
   private abrirDropdown(): void {

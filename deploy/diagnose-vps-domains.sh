@@ -51,3 +51,18 @@ echo ""
 echo "Si CORS falla, edita deploy/.env:"
 echo "  CORS_ORIGIN=https://app.finstruvial.edu.co,https://finstruvial.edu.co,https://www.finstruvial.edu.co"
 echo "  docker compose restart argo-backend"
+
+echo ""
+echo "==> API aula virtual (debe ser HTTP 200, no 502)"
+for url in \
+  "https://finstruvial.edu.co/api/aula-virtual/cursos" \
+  "https://www.finstruvial.edu.co/api/aula-virtual/cursos" \
+  "https://app.finstruvial.edu.co/api/aula-virtual/cursos"; do
+  code="$(curl -s -o /dev/null -w '%{http_code}' "$url" || echo '?')"
+  echo "  $url → HTTP $code"
+done
+
+echo ""
+echo "==> Backend local (puerto 5002)"
+code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:5002/api/health" 2>/dev/null || echo '?')"
+echo "  http://127.0.0.1:5002/api/health → HTTP $code"

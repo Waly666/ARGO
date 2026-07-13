@@ -299,6 +299,10 @@ exports.actualizar = async (req, res, next) => {
     const nombreProg = String(body.nombreProg ?? prog.nombreProg ?? '').trim();
     if (!nombreProg) return res.status(400).json({ message: 'nombreProg es obligatorio' });
 
+    if (body.idTipCap === '' || body.idTipCap == null) {
+      return res.status(400).json({ message: 'idTipCap (tipo de capacitación) es obligatorio' });
+    }
+
     if (body.codigoProg && body.codigoProg !== prog.codigoProg) {
       const dup = await cat.programas
         .findOne({ codigoProg: body.codigoProg, idPrograma: { $ne: prog.idPrograma } })
@@ -315,7 +319,7 @@ exports.actualizar = async (req, res, next) => {
       body.tipoCertificado !== undefined
         ? normalizarTipoCertificado(body.tipoCertificado)
         : prog.tipoCertificado;
-    const idTipCap = await idTipCapCanonico(body.idTipCap, prog.idTipCap, {
+    const idTipCap = await idTipCapCanonico(body.idTipCap, undefined, {
       forzarJornada: tipoCertInput === 'jornada_capacitacion',
     });
     const mergedTip = {
