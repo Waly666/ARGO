@@ -2,7 +2,7 @@
 
 Documento **vivo** para registrar cada cambio del módulo de **jornadas de capacitación** en este repo (**Finstruvial / ARGO**) y poder **replicarlo** en otros despliegues (p. ej. Educarte, otro cliente con fork o copia del producto).
 
-**Última auditoría código ↔ MD:** 2026-07-13 — JOR-025 (`c092f0b`), JOR-026 (`0065414`); lote JOR-011…024 en `75f08b7`.
+**Última auditoría código ↔ MD:** 2026-07-13 — JOR-028 (dashboard informes contrato); JOR-027 (ZIP PDF); JOR-025/026.
 
 ---
 
@@ -169,6 +169,10 @@ argo-mobile-jornadas/
 |--------|------|-----|
 | GET | `/api/jornadas/informes` | JSON informes (filtros contrato/jornada/clase/fechas) |
 | GET | `/api/jornadas/informes/export` | Excel (`tipo=completo\|contratos\|trazabilidad\|jornadas\|clases\|alumnos\|instructores\|certificados` + alias `resumen-contratos`, `catalogo-jornadas`, `catalogo-clases`) |
+| GET | `/api/jornadas/contratos/:id/informe-dashboard` | Dashboard KPIs/gráficos informe contrato (JOR-028) |
+| GET | `/api/jornadas/contratos/:id/informe-pdf` | PDF informe (alcance contrato/jornada/clase/programa/instructor) (JOR-028) |
+| GET | `/api/jornadas/certificados-generados` | Listado certificados jornada (filtros contrato/jornada/clase/desde/hasta/q) (JOR-027) |
+| GET | `/api/jornadas/certificados-generados/export-zip` | ZIP con PDFs (individuales + todos) (JOR-027) |
 | GET | `/api/jornadas/contratos/:id/avance` | Panel avance contrato (JOR-016) |
 | GET | `/api/jornadas/contratos/:id/cobro` | Estado plan de cobro / cuotas (JOR-021) |
 | POST | `/api/jornadas/contratos/:id/comprobantes-ingreso` | Comprobante ingreso por cuota (JOR-021) |
@@ -267,14 +271,44 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 | **JOR-024** | `75f08b7` | — | `programaController.js`, `programa.service.ts`, `servicios.component.ts` |
 | **JOR-025** | `c092f0b` | `constants/servicioContratoCap.js` (si no venía de JOR-021) | `configJornadasOperacion.js`, `servicioContratoCap.js`, `config-jornadas.component.*`, `jornada-cap.service.ts`, `jornadaCapController.js`, `ingresoController.js` |
 | **JOR-026** | `0065414` | — | `programas-admin.component.*`, `catalogo-enum-buscar/*`, `programaController.js`, `deploy/nginx/finstruvial.edu.co.conf`, `deploy/diagnose-vps-domains.sh` |
+| **JOR-028** | *(pendiente commit)* | `informeDashboardContrato.js` | `jornadaCapController.js`, `jornadas.js`, `contrato-informes-dashboard.*`, `jornadas-hub.*`, `jornada-cap.service.ts` |
+| **JOR-027** | *(pendiente commit)* | `certificadosJornadaZip.js`, `htmlToPdf.js` | `jornadaCapController.js`, `jornadas.js`, `jornada-cap.service.ts`, `certificados-jornada-lista.*`, `jornadas-hub.*`, `Dockerfile` |
 | **Compartidos** | `75f08b7` | `clase-modal.scss` | `form-modal.component.*`, `hora-12-input.component.scss` (UX modal clase) |
 
 ---
 
 ## Historial de cambios
 
+### JOR-028 — Ficha Informes: dashboard + PDF por contrato/jornada/clase/programa/instructor
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** *(pendiente)*
+- **Replica en otro repo:** Sí
+
+**Qué:** Pestaña «7. Informes» en el hub del contrato: KPIs, gráficos de barras, filtros (jornada/clase/programa/instructor) y exportación PDF formal para la empresa contratante (completo o parcial).
+
+---
+
+### JOR-027 — Certificados: filtros + ZIP masivo en PDF
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** *(pendiente)*
+- **Replica en otro repo:** Sí
+
+**Qué:** En `/app/jornadas/certificados` y en la pestaña Certificados del hub, filtrar por contrato / jornada / clase / rango de fechas de emisión y descargar un ZIP con **PDFs** individuales + `00-todos-imprimir.pdf` (máx. 400). Requiere Chromium en el backend (`PUPPETEER_EXECUTABLE_PATH`).
+
+**Archivos:** `htmlToPdf.js`, `certificadosJornadaZip.js`, `jornadaCapController.js`, `jornadas.js`, `jornada-cap.service.ts`, `certificados-jornada-lista.*`, `jornadas-hub.*`, `argo-backend/Dockerfile`.
+
+---
+
 | ID | Fecha | Resumen | Commit | Alcance |
 |----|-------|---------|--------|---------|
+| JOR-028 | 2026-07-13 | Hub: pestaña Informes dashboard + PDF (contrato/parciales) | *(pendiente)* | backend + frontend |
+| JOR-027 | 2026-07-13 | Certificados: filtros + ZIP masivo en PDF | *(pendiente)* | backend + frontend |
 | JOR-026 | 2026-07-13 | Programas: persistir tipo capacitación y combos; nginx portal API | `0065414` | backend + frontend + deploy |
 | JOR-025 | 2026-07-09 | idServ contrato configurable (comprobantes/factura); fallback 53 | `c092f0b` | backend + frontend |
 | JOR-024 | 2026-07-09 | Matrícula alumno (Servicios): ocultar programas de jornadas en buscador | `75f08b7` | backend + frontend |

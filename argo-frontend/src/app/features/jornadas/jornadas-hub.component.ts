@@ -54,6 +54,7 @@ import { pagoIntangibleCompleto } from '../../core/utils/pago-intangible.validat
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { JornadaCapDto } from '../../core/services/jornada-cap.service';
 import { JornadaMapaPickerComponent } from './jornada-mapa-picker.component';
+import { ContratoInformesDashboardComponent } from './contrato-informes-dashboard.component';
 import {
   ProgresoCertResp,
   etiquetaProgresoCert,
@@ -132,9 +133,9 @@ import {
   claseTieneInstructor,
 } from './jornada-ui.util';
 
-type Tab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas';
+type Tab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas' | 'informes';
 
-const TABS_CON_CONTRATO: Tab[] = ['avance', 'jornadas', 'clases', 'certificados'];
+const TABS_CON_CONTRATO: Tab[] = ['avance', 'jornadas', 'clases', 'certificados', 'informes'];
 type VistaAgenda = 'lista' | 'calendario';
 
 /** Alumno con datos mínimos para mostrar nombre y matricular (búsqueda, clase anterior, etc.). */
@@ -164,6 +165,7 @@ type AlumnoNombrable = {
     Hora12InputComponent,
     PagoSoporteFieldComponent,
     NotaCreditoModalComponent,
+    ContratoInformesDashboardComponent,
   ],
   templateUrl: './jornadas-hub.component.html',
   styleUrls: ['./jornadas-hub.component.scss'],
@@ -285,6 +287,53 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   certsHoyCount = computed(
     () => this.certsGenerados().filter((c) => esFechaHoy(c?.fechaEmision)).length,
   );
+  descargandoZipCerts = signal(false);
+  certFiltroJornadaId = signal('');
+  certFiltroJornadaTexto = signal('');
+  certFiltroClaseId = signal('');
+  certFiltroClaseTexto = signal('');
+  certFiltroDesde = signal('');
+  certFiltroHasta = signal('');
+  certFiltroTexto = signal('');
+
+  opcionesCertJornada = computed<EnumBuscarOption[]>(() =>
+    (this.jornadas() || []).map((j: any) => ({
+      value: String(j._id),
+      label: `${fmtFechaCalendario(j.fechaProgramacion)} · ${j.municipio || 'Sin municipio'} · ${j.estado || ''}`.trim(),
+    })),
+  );
+
+  opcionesCertClase = computed<EnumBuscarOption[]>(() => {
+    const jid = this.certFiltroJornadaId() || this.jornadaSel();
+    return (this.clases() || [])
+      .filter((c: any) => !jid || String(c.idJornada || '') === jid)
+      .map((c: any) => ({
+        value: String(c._id),
+        label: [
+          fmtFechaCalendario(c.fechaJornada || c.fechaClase),
+          c.programaNombre || c.idPrograma || 'Sin programa',
+          c.carpaNombre || '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      }));
+  });
+
+  certsFiltradosVista = computed(() => {
+    const q = this.certFiltroTexto().trim().toLowerCase();
+    const list = this.certsGenerados();
+    if (!q) return list;
+    return list.filter((c: any) => {
+      const campos = [
+        c.nombreCompleto,
+        c.encabezado,
+        c.codigoCert,
+        c.numDoc,
+        c.codContrato,
+      ];
+      return campos.some((v) => String(v ?? '').toLowerCase().includes(q));
+    });
+  });
 
   etiquetaProgresoCert = etiquetaProgresoCert;
   etiquetaDeteGeorefe = etiquetaDeteGeorefe;
@@ -859,6 +908,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       tabQp === 'jornadas' ||
         tabQp === 'clases' ||
         tabQp === 'certificados' ||
+        tabQp === 'informes' ||
         tabQp === 'finanzas' ||
         tabQp === 'contratos' ||
         tabQp === 'avance'
@@ -876,6 +926,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       tabDest === 'jornadas' ||
       tabDest === 'clases' ||
       tabDest === 'certificados' ||
+      tabDest === 'informes' ||
       tabDest === 'finanzas' ||
       tabDest === 'contratos' ||
       tabDest === 'avance'
@@ -901,6 +952,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       if (tab === 'certificados') {
         this.tab.set('certificados');
         this.recargarCerts();
+      } else if (tab === 'informes') {
+        this.tab.set('informes');
       } else if (tab === 'finanzas') {
         this.tab.set('finanzas');
         this.cargarFinanzasContrato();
@@ -1069,7 +1122,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.recargarClases();
       }
     }
-    if (t === 'certificados') this.recargarCerts();
+    if (t === 'certificados') {
+      if (this.contratoSel()) {
+        this.jornadaSvc.listarJornadas({ idContrato: this.contratoSel() }).subscribe({
+          next: (r) => {
+            this.jornadas.set(r || []);
+            this.recargarClases();
+          },
+        });
+      }
+      this.recargarCerts();
+    }
     if (t === 'finanzas') {
       if (!this.contratoSel() && this.contratos().length) {
         const c = this.contratos()[0];
@@ -1188,8 +1251,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.patchContrato('idProgramas', [...set]);
   }
 
-  limpiarProgramasContrato(): void {
+  async limpiarProgramasContrato(): Promise<void> {
     if (this.contratoFormEjecutado()) return;
+    if (!this.cantidadProgramasContrato()) return;
+    const ok = await this.confirmSvc.open({
+      title: 'Confirmar borrado',
+      message: '¿De verdad desea quitar todos los programas seleccionados de este contrato?',
+      variant: 'danger',
+      confirmLabel: 'Sí, quitar todos',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
     this.patchContrato('idProgramas', []);
   }
 
@@ -1823,11 +1895,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         ? ' También se eliminará su asistencia en esta clase.'
         : '';
     const ok = await this.confirmSvc.open({
-      title: 'Quitar de la clase',
+      title: 'Confirmar borrado',
       message:
-        `¿Quitar a ${nombre || 'el alumno'} (doc ${numDoc}) de esta clase?` +
-        ` La matrícula al programa se conserva.${extraAsist}`,
-      confirmLabel: 'Quitar',
+        `¿De verdad desea quitar a ${nombre || 'el alumno'} (doc ${numDoc}) de esta clase?\n\n` +
+        `La matrícula al programa se conserva.${extraAsist}`,
+      confirmLabel: 'Sí, quitar',
+      cancelLabel: 'Cancelar',
       variant: 'danger',
     });
     if (!ok) return;
@@ -1850,9 +1923,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const id = this.claseSel();
     if (!id) return;
     const ok = await this.confirmSvc.open({
-      title: 'Borrar asistencia',
-      message: `¿Eliminar la asistencia de ${nombre || 'el alumno'} (doc ${numDoc}) en esta clase?`,
-      confirmLabel: 'Borrar',
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea borrar la asistencia de ${nombre || 'el alumno'} (doc ${numDoc}) en esta clase?\n\nEl alumno permanecerá inscrito.`,
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
       variant: 'danger',
     });
     if (!ok) return;
@@ -2205,7 +2279,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
-  quitarAlumnoMatricula(a: AlumnoListItem) {
+  async quitarAlumnoMatricula(a: AlumnoListItem) {
+    const ok = await this.confirmSvc.open({
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea quitar a ${a.nombreCompleto || 'este alumno'} de la lista a matricular?`,
+      variant: 'danger',
+      confirmLabel: 'Sí, quitar',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
     const doc = formatNumDoc(a.numDoc);
     this.alumnosMatricular.update((list) =>
       list.filter((x) => formatNumDoc(x.numDoc) !== doc),
@@ -2678,12 +2760,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }));
   }
 
-  quitarCuotaPlan(id: string): void {
+  async quitarCuotaPlan(id: string): Promise<void> {
     const cuota = (this.formContrato().planCobro || []).find((c) => c.id === id);
     if (cuota?.pagado || cuota?.idIngreso) {
       this.mostrarMsg('No puede quitar una cuota que ya tiene comprobante.', 'warn', 'Plan de cobro');
       return;
     }
+    const ok = await this.confirmSvc.open({
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea borrar la cuota «${cuota?.etiqueta || 'sin nombre'}» del plan de cobro?`,
+      variant: 'danger',
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
     this.formContrato.update((f) => ({
       ...f,
       planCobro: (f.planCobro || []).filter((c) => c.id !== id),
@@ -2950,9 +3040,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const idIngreso = cuota.idIngreso ? String(cuota.idIngreso) : '';
     if (!idIngreso || !this.puedeAnularComprobanteContrato()) return;
     const ok = await this.confirmSvc.open({
-      title: 'Anular comprobante',
-      message: `¿Anular el comprobante de «${cuota.etiqueta || 'cuota'}»? La cuota quedará pendiente y se revertirá el servicio causado.`,
-      confirmLabel: 'Anular',
+      title: 'Confirmar anulación',
+      message: `¿De verdad desea anular el comprobante de «${cuota.etiqueta || 'cuota'}»?\n\nLa cuota quedará pendiente y se revertirá el servicio causado.`,
+      confirmLabel: 'Sí, anular',
+      cancelLabel: 'Cancelar',
       variant: 'danger',
     });
     if (!ok) return;
@@ -3480,6 +3571,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaSel.set('');
     this.claseSel.set('');
     this.claseActiva.set(null);
+    this.certFiltroJornadaId.set('');
+    this.certFiltroJornadaTexto.set('');
+    this.certFiltroClaseId.set('');
+    this.certFiltroClaseTexto.set('');
+    this.certFiltroDesde.set('');
+    this.certFiltroHasta.set('');
+    this.certFiltroTexto.set('');
     this.recargarVistaJornadas();
     if (this.tab() === 'clases') {
       this.cargarProgramasJornada();
@@ -4103,10 +4201,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     ev?.stopPropagation();
     ev?.preventDefault();
     const ok = await this.confirmSvc.open({
-      title: 'Eliminar jornada',
-      message: `¿Eliminar la jornada ${this.labelJornada(j)}? También se borran sus clases sin asistencias. El número de jornadas del contrato se recalculará.`,
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea borrar esta jornada?\n\n${this.labelJornada(j)}\n\nTambién se borrarán sus clases sin asistencias. El número de jornadas del contrato se recalculará.`,
       variant: 'danger',
-      confirmLabel: 'Eliminar',
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
     });
     if (!ok) return;
     this.jornadaSvc.eliminarJornada(j._id).subscribe({
@@ -4261,12 +4360,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     const finalizada = String(c.estado || '').toUpperCase() === 'FINALIZADO';
     const ok = await this.confirmSvc.open({
-      title: 'Eliminar clase',
+      title: 'Confirmar borrado',
       message: finalizada
-        ? '¿Eliminar esta clase finalizada? Se borrarán inscripciones y asistencias, y se anularán los certificados emitidos por esta clase.'
-        : '¿Eliminar esta clase? También se borrarán las inscripciones y asistencias registradas (si las hay).',
+        ? '¿De verdad desea borrar esta clase finalizada?\n\nSe borrarán inscripciones y asistencias, y se anularán los certificados emitidos por esta clase.'
+        : '¿De verdad desea borrar esta clase?\n\nTambién se borrarán las inscripciones y asistencias registradas (si las hay).',
       variant: 'danger',
-      confirmLabel: 'Eliminar',
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
     });
     if (!ok) return;
     this.jornadaSvc.eliminarClase(c._id).subscribe({
@@ -4463,13 +4563,152 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   recargarCerts() {
     const id = this.contratoSel();
-    this.jornadaSvc.certificadosGenerados(id || undefined).subscribe({
-      next: (r) => this.certsGenerados.set(r || []),
-    });
+    if (!id) {
+      this.certsGenerados.set([]);
+      return;
+    }
+    this.jornadaSvc
+      .listarCertificadosJornada({
+        idContrato: id,
+        idJornada: this.certFiltroJornadaId() || undefined,
+        idClase: this.certFiltroClaseId() || undefined,
+        desde: this.certFiltroDesde() || undefined,
+        hasta: this.certFiltroHasta() || undefined,
+      })
+      .subscribe({
+        next: (r) => this.certsGenerados.set(r || []),
+        error: (e) =>
+          this.mostrarMsg(e?.error?.message || 'No se pudieron cargar certificados.', 'error', 'Certificados'),
+      });
+  }
+
+  limpiarFiltrosCerts() {
+    this.certFiltroJornadaId.set('');
+    this.certFiltroJornadaTexto.set('');
+    this.certFiltroClaseId.set('');
+    this.certFiltroClaseTexto.set('');
+    this.certFiltroDesde.set('');
+    this.certFiltroHasta.set('');
+    this.certFiltroTexto.set('');
+    this.recargarCerts();
+  }
+
+  onCertJornadaPick(opt: EnumBuscarOption): void {
+    this.certFiltroJornadaId.set(String(opt.value));
+    this.certFiltroJornadaTexto.set(opt.label);
+    this.certFiltroClaseId.set('');
+    this.certFiltroClaseTexto.set('');
+    this.recargarCerts();
+  }
+
+  onCertJornadaLimpiar(): void {
+    this.certFiltroJornadaId.set('');
+    this.certFiltroJornadaTexto.set('');
+    this.recargarCerts();
+  }
+
+  onCertClasePick(opt: EnumBuscarOption): void {
+    this.certFiltroClaseId.set(String(opt.value));
+    this.certFiltroClaseTexto.set(opt.label);
+    this.recargarCerts();
+  }
+
+  onCertClaseLimpiar(): void {
+    this.certFiltroClaseId.set('');
+    this.certFiltroClaseTexto.set('');
+    this.recargarCerts();
+  }
+
+  onCertDesdeChange(v: string): void {
+    this.certFiltroDesde.set(v || '');
+    this.recargarCerts();
+  }
+
+  onCertHastaChange(v: string): void {
+    this.certFiltroHasta.set(v || '');
+    this.recargarCerts();
+  }
+
+  filtrosCertZip() {
+    return {
+      idContrato: this.contratoSel() || undefined,
+      idJornada: this.certFiltroJornadaId() || undefined,
+      idClase: this.certFiltroClaseId() || undefined,
+      desde: this.certFiltroDesde() || undefined,
+      hasta: this.certFiltroHasta() || undefined,
+    };
   }
 
   imprimirCert(c: { _id: string }) {
     this.jornadaSvc.imprimirCertificadoJornada(c._id, (m) => this.mostrarMsg(m, 'info', 'Certificado'));
+  }
+
+  editarCertDesdeHub(c: { _id: string }) {
+    const q: Record<string, string> = { editar: c._id };
+    if (this.contratoSel()) q['contrato'] = this.contratoSel();
+    void this.router.navigate(['/app/jornadas/certificados'], { queryParams: q });
+  }
+
+  async eliminarCertDesdeHub(c: { _id: string; codigoCert?: string; nombreCompleto?: string }) {
+    const ok = await this.confirmSvc.open({
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea borrar este certificado?\n\n${c.codigoCert || c._id}${c.nombreCompleto ? ` · ${c.nombreCompleto}` : ''}`,
+      variant: 'danger',
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
+    this.jornadaSvc.eliminarCertificadoJornada(c._id).subscribe({
+      next: () => {
+        this.mostrarMsg('Certificado eliminado.', 'ok', 'Certificados');
+        this.recargarCerts();
+      },
+      error: (e) =>
+        this.mostrarMsg(e?.error?.message || 'No se pudo eliminar.', 'error', 'Certificados'),
+    });
+  }
+
+  descargarZipCertificadosContrato() {
+    const idContrato = this.contratoSel();
+    if (!idContrato) {
+      this.mostrarMsg('Seleccione un contrato para descargar el ZIP.', 'warn', 'Certificados');
+      return;
+    }
+    if (!this.certsGenerados().length) {
+      this.mostrarMsg('No hay certificados con los filtros actuales.', 'warn', 'Certificados');
+      return;
+    }
+    this.descargandoZipCerts.set(true);
+    this.jornadaSvc.descargarCertificadosJornadaZip(this.filtrosCertZip()).subscribe({
+      next: (blob) => {
+        this.descargandoZipCerts.set(false);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificados-contrato_${new Date().toISOString().slice(0, 10)}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.mostrarMsg(
+          `ZIP con PDFs descargado (${this.certsGenerados().length}). Abra 00-todos-imprimir.pdf para imprimir todos.`,
+          'ok',
+          'Certificados',
+        );
+      },
+      error: async (e) => {
+        this.descargandoZipCerts.set(false);
+        let texto = 'No se pudo generar el ZIP.';
+        try {
+          const t = await e?.error?.text?.();
+          if (t) {
+            const j = JSON.parse(t);
+            if (j?.message) texto = j.message;
+          }
+        } catch {
+          /* ignore */
+        }
+        this.mostrarMsg(e?.error?.message || texto, 'error', 'Certificados');
+      },
+    });
   }
 
   nuevoAlumnoJornada() {

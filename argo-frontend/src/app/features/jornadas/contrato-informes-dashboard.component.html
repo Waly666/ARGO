@@ -1,0 +1,391 @@
+<div class="inf-dash">
+  @if (!idContrato) {
+    <div class="inf-empty">
+      <span class="inf-empty-icon" aria-hidden="true">📊</span>
+      <p>Seleccione un contrato para ver el dashboard de informes y exportar PDF.</p>
+    </div>
+  } @else {
+    <header class="inf-hero">
+      <div class="inf-hero-copy">
+        <p class="inf-hero-eyebrow">Capacitación · reportes</p>
+        <h2>Informes del contrato</h2>
+        @if (contrato(); as c) {
+          <p class="inf-hero-sub">
+            <span class="mono">{{ c.codContrato || '—' }}</span>
+            · {{ c.cliente || 'Empresa contratante' }}
+          </p>
+        } @else {
+          <p class="inf-hero-sub">
+            Cifras, gráficos y PDF formal para la empresa contratante.
+          </p>
+        }
+      </div>
+      <div class="inf-hero-actions">
+        <button type="button" class="mini ghost" (click)="cargar()" [disabled]="loading()">
+          {{ loading() ? 'Actualizando…' : '↻ Actualizar' }}
+        </button>
+        <button
+          type="button"
+          class="mini primary"
+          (click)="exportarPdf('contrato')"
+          [disabled]="loading() || exportando() || !data()">
+          {{ exportandoEsta('contrato::::') ? 'Generando…' : '⬇ PDF del contrato' }}
+        </button>
+      </div>
+    </header>
+
+    @if (msg()) {
+      <p class="inf-toast" role="status">{{ msg() }}</p>
+    }
+    @if (error()) {
+      <p class="inf-toast inf-toast--err">{{ error() }}</p>
+    }
+
+    <section class="inf-card inf-card--filters">
+      <div class="inf-card-head">
+        <h3>Filtros del dashboard</h3>
+        <button type="button" class="ghost mini" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+      <div class="inf-filtros">
+        <argo-catalogo-enum-buscar
+          label="Jornada"
+          placeholder="Todas…"
+          [textoInicial]="filtroJornadaTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesJornada()"
+          (seleccionado)="onJornadaPick($event)"
+          (limpiado)="onJornadaLimpiar()"
+        />
+        <argo-catalogo-enum-buscar
+          label="Clase"
+          placeholder="Todas…"
+          [textoInicial]="filtroClaseTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesClase()"
+          (seleccionado)="onClasePick($event)"
+          (limpiado)="onClaseLimpiar()"
+        />
+        <argo-catalogo-enum-buscar
+          label="Programa"
+          placeholder="Todos…"
+          [textoInicial]="filtroProgramaTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesPrograma()"
+          (seleccionado)="onProgramaPick($event)"
+          (limpiado)="onProgramaLimpiar()"
+        />
+        <argo-catalogo-enum-buscar
+          label="Instructor"
+          placeholder="Todos…"
+          [textoInicial]="filtroInstructorTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesInstructor()"
+          (seleccionado)="onInstructorPick($event)"
+          (limpiado)="onInstructorLimpiar()"
+        />
+      </div>
+    </section>
+
+    @if (loading() && !data()) {
+      <p class="inf-loading">Cargando dashboard…</p>
+    } @else if (data()) {
+      <div class="inf-kpis">
+        <article class="inf-kpi inf-kpi--sky">
+          <span class="inf-kpi-ico" aria-hidden="true">⛺</span>
+          <span class="inf-kpi-label">Jornadas</span>
+          <strong class="inf-kpi-val">{{ kpis()!.jornadas }}</strong>
+          @if (kpis()!.metaJornadas > 0) {
+            <span class="inf-kpi-sub">meta {{ kpis()!.metaJornadas }}</span>
+          }
+        </article>
+        <article class="inf-kpi inf-kpi--amber">
+          <span class="inf-kpi-ico" aria-hidden="true">▣</span>
+          <span class="inf-kpi-label">Clases dictadas</span>
+          <strong class="inf-kpi-val">{{ kpis()!.clasesDictadas }}/{{ kpis()!.clasesTotales }}</strong>
+          @if (kpis()!.clasesEnProceso > 0) {
+            <span class="inf-kpi-sub">{{ kpis()!.clasesEnProceso }} en proceso</span>
+          }
+        </article>
+        <article class="inf-kpi inf-kpi--emerald">
+          <span class="inf-kpi-ico" aria-hidden="true">◉</span>
+          <span class="inf-kpi-label">Alumnos capacitados</span>
+          <strong class="inf-kpi-val">{{ kpis()!.alumnosCapacitados }}</strong>
+          @if (kpis()!.metaAlumnos > 0) {
+            <span class="inf-kpi-sub">meta {{ kpis()!.metaAlumnos }}</span>
+          }
+        </article>
+        <article class="inf-kpi inf-kpi--violet">
+          <span class="inf-kpi-ico" aria-hidden="true">✦</span>
+          <span class="inf-kpi-label">Alumnos certificados</span>
+          <strong class="inf-kpi-val">{{ kpis()!.alumnosCertificados }}</strong>
+          <span class="inf-kpi-sub">{{ kpis()!.certificadosEmitidos }} cert. emitidos</span>
+        </article>
+      </div>
+
+      @if (charts()) {
+        <div class="inf-charts">
+          <section class="inf-card inf-chart-card">
+            <h3>Alumnos por jornada</h3>
+            <div class="inf-bars">
+              @for (it of charts()!.alumnosPorJornada; track it.label) {
+                <div class="inf-bar-row">
+                  <span class="inf-bar-lbl" [title]="it.label">{{ it.label }}</span>
+                  <div class="inf-bar-track">
+                    <div class="inf-bar-fill" [style.width.%]="barPct(it, charts()!.alumnosPorJornada)"></div>
+                  </div>
+                  <strong class="inf-bar-val">{{ it.value }}</strong>
+                </div>
+              } @empty {
+                <p class="inf-muted">Sin datos</p>
+              }
+            </div>
+          </section>
+          <section class="inf-card inf-chart-card">
+            <h3>Clases por estado</h3>
+            <div class="inf-bars">
+              @for (it of charts()!.clasesPorEstado; track it.label) {
+                <div class="inf-bar-row">
+                  <span class="inf-bar-lbl">{{ it.label }}</span>
+                  <div class="inf-bar-track">
+                    <div class="inf-bar-fill inf-bar-fill--amber" [style.width.%]="barPct(it, charts()!.clasesPorEstado)"></div>
+                  </div>
+                  <strong class="inf-bar-val">{{ it.value }}</strong>
+                </div>
+              }
+            </div>
+          </section>
+          <section class="inf-card inf-chart-card">
+            <h3>Alumnos por programa</h3>
+            <div class="inf-bars">
+              @for (it of charts()!.alumnosPorPrograma; track it.label) {
+                <div class="inf-bar-row">
+                  <span class="inf-bar-lbl" [title]="it.label">{{ it.label }}</span>
+                  <div class="inf-bar-track">
+                    <div class="inf-bar-fill inf-bar-fill--emerald" [style.width.%]="barPct(it, charts()!.alumnosPorPrograma)"></div>
+                  </div>
+                  <strong class="inf-bar-val">{{ it.value }}</strong>
+                </div>
+              } @empty {
+                <p class="inf-muted">Sin datos</p>
+              }
+            </div>
+          </section>
+          <section class="inf-card inf-chart-card">
+            <h3>Clases dictadas por instructor</h3>
+            <div class="inf-bars">
+              @for (it of charts()!.clasesPorInstructor; track it.label) {
+                <div class="inf-bar-row">
+                  <span class="inf-bar-lbl" [title]="it.label">{{ it.label }}</span>
+                  <div class="inf-bar-track">
+                    <div class="inf-bar-fill inf-bar-fill--teal" [style.width.%]="barPct(it, charts()!.clasesPorInstructor)"></div>
+                  </div>
+                  <strong class="inf-bar-val">{{ it.value }}</strong>
+                </div>
+              } @empty {
+                <p class="inf-muted">Sin datos</p>
+              }
+            </div>
+          </section>
+        </div>
+      }
+
+      <!-- Jornadas -->
+      <section class="inf-card inf-section">
+        <div class="inf-card-head">
+          <div>
+            <h3>Por jornada</h3>
+            <p class="inf-muted">Capacitados y certificados en cada jornada del contrato.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="argo inf-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Municipio</th>
+                <th>Estado</th>
+                <th>Clases</th>
+                <th>Capacitados</th>
+                <th>Certificados</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (j of porJornada(); track j._id) {
+                <tr>
+                  <td>{{ j.fechaLabel }}</td>
+                  <td>{{ j.municipio || '—' }}</td>
+                  <td><span class="inf-chip">{{ j.estado || '—' }}</span></td>
+                  <td>{{ j.numClases }}</td>
+                  <td>{{ j.alumnosCapacitados }}</td>
+                  <td>{{ j.alumnosCertificados }}</td>
+                  <td class="inf-actions">
+                    <button
+                      type="button"
+                      class="mini primary"
+                      (click)="exportarPdf('jornada', { idJornada: j._id })"
+                      [disabled]="exportando()">
+                      {{ exportandoEsta('jornada:' + j._id + ':::') ? '…' : '⬇ PDF' }}
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="empty">Sin jornadas con el filtro actual.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Clases -->
+      <section class="inf-card inf-section">
+        <div class="inf-card-head">
+          <div>
+            <h3>Por clase</h3>
+            <p class="inf-muted">Detalle de cada clase: programa, instructor y alumnos.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="argo inf-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Programa</th>
+                <th>Instructor</th>
+                <th>Estado</th>
+                <th>Alumnos</th>
+                <th>Certificados</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of porClase(); track c._id) {
+                <tr>
+                  <td>{{ c.fechaLabel }}</td>
+                  <td>{{ c.programaNombre }}</td>
+                  <td>{{ c.instructorNombre }}</td>
+                  <td><span class="inf-chip">{{ c.estado || '—' }}</span></td>
+                  <td>{{ c.alumnosInscritos }}</td>
+                  <td>{{ c.alumnosCertificados }}</td>
+                  <td class="inf-actions">
+                    <button
+                      type="button"
+                      class="mini primary"
+                      (click)="exportarPdf('clase', { idClase: c._id, idJornada: c.idJornada })"
+                      [disabled]="exportando()">
+                      {{ exportandoEsta('clase:' + c.idJornada + ':' + c._id + '::') ? '…' : '⬇ PDF' }}
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="empty">Sin clases con el filtro actual.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Programas -->
+      <section class="inf-card inf-section">
+        <div class="inf-card-head">
+          <div>
+            <h3>Por programa</h3>
+            <p class="inf-muted">Resumen de capacitación por programa en el contrato.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="argo inf-table">
+            <thead>
+              <tr>
+                <th>Programa</th>
+                <th>Clases</th>
+                <th>Dictadas</th>
+                <th>Capacitados</th>
+                <th>Certificados</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of porPrograma(); track p.idPrograma || p.programaNombre) {
+                <tr>
+                  <td>{{ p.programaNombre }}</td>
+                  <td>{{ p.numClases }}</td>
+                  <td>{{ p.clasesDictadas }}</td>
+                  <td>{{ p.alumnosCapacitados }}</td>
+                  <td>{{ p.alumnosCertificados }}</td>
+                  <td class="inf-actions">
+                    <button
+                      type="button"
+                      class="mini primary"
+                      (click)="exportarPdf('programa', { idPrograma: p.idPrograma })"
+                      [disabled]="exportando() || !p.idPrograma">
+                      {{ exportandoEsta('programa:::' + p.idPrograma + ':') ? '…' : '⬇ PDF' }}
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="empty">Sin programas.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Instructores -->
+      <section class="inf-card inf-section">
+        <div class="inf-card-head">
+          <div>
+            <h3>Por instructor</h3>
+            <p class="inf-muted">Clases dictadas y alumnos capacitados por instructor.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="argo inf-table">
+            <thead>
+              <tr>
+                <th>Instructor</th>
+                <th>Clases</th>
+                <th>Dictadas</th>
+                <th>Alumnos capacitados</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (i of porInstructor(); track i.instructorNombre) {
+                <tr>
+                  <td>{{ i.instructorNombre }}</td>
+                  <td>{{ i.numClases }}</td>
+                  <td>{{ i.clasesDictadas }}</td>
+                  <td>{{ i.alumnosCapacitados }}</td>
+                  <td class="inf-actions">
+                    <button
+                      type="button"
+                      class="mini primary"
+                      (click)="exportarPdf('instructor', { idInstructor: i.idEmpleadoInstructor })"
+                      [disabled]="exportando() || i.idEmpleadoInstructor == null">
+                      {{
+                        exportandoEsta('instructor::::' + (i.idEmpleadoInstructor ?? ''))
+                          ? '…'
+                          : '⬇ PDF'
+                      }}
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="empty">Sin instructores.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>

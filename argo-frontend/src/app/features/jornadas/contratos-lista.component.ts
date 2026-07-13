@@ -133,10 +133,11 @@ export class ContratosListaComponent implements OnInit {
       return;
     }
     const ok = await this.confirmSvc.open({
-      title: 'Eliminar contrato',
-      message: `¿Eliminar el contrato ${c.codContrato || this.labelCliente(c)}? Solo se permite si no tiene jornadas con clases o asistencias.`,
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea borrar el contrato ${c.codContrato || this.labelCliente(c)}?\n\nSolo se permite si no tiene jornadas con clases o asistencias.`,
       variant: 'danger',
-      confirmLabel: 'Eliminar',
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
     });
     if (!ok) return;
     this.jornadaSvc.eliminarContrato(c._id).subscribe({

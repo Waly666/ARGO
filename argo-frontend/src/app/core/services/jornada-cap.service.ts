@@ -148,6 +148,98 @@ export interface AvanceContratoDto {
   alumnos: AvanceContratoAlumnoDto[];
 }
 
+export interface InformeDashboardKpis {
+  jornadas: number;
+  clasesTotales: number;
+  clasesDictadas: number;
+  clasesEnProceso: number;
+  alumnosCapacitados: number;
+  alumnosCertificados: number;
+  certificadosEmitidos: number;
+  metaAlumnos: number;
+  metaJornadas: number;
+}
+
+export interface InformeDashboardChartItem {
+  label: string;
+  value: number;
+}
+
+export interface InformeDashboardAlumno {
+  numDoc: number;
+  nombreCompleto: string;
+  certificado?: boolean;
+}
+
+export interface InformeDashboardClase {
+  _id: string;
+  idJornada: string;
+  fechaLabel: string;
+  programaNombre: string;
+  instructorNombre: string;
+  estado: string;
+  alumnosInscritos: number;
+  alumnosCertificados: number;
+  alumnos: InformeDashboardAlumno[];
+}
+
+export interface InformeDashboardDto {
+  contrato: {
+    _id: string;
+    codContrato?: string;
+    cliente?: string;
+    nit?: string;
+    ciudad?: string;
+    objetoContrato?: string;
+    estado?: string;
+    tipoCertificado?: string;
+  };
+  empresaCapacitadora?: { nombre?: string };
+  filtros?: Record<string, string | number | null>;
+  kpis: InformeDashboardKpis;
+  charts: {
+    clasesPorEstado: InformeDashboardChartItem[];
+    alumnosPorJornada: InformeDashboardChartItem[];
+    alumnosPorPrograma: InformeDashboardChartItem[];
+    clasesPorInstructor: InformeDashboardChartItem[];
+  };
+  porJornada: Array<{
+    _id: string;
+    fechaLabel: string;
+    municipio?: string;
+    estado?: string;
+    numClases: number;
+    alumnosCapacitados: number;
+    alumnosCertificados: number;
+    clases: InformeDashboardClase[];
+  }>;
+  porClase: InformeDashboardClase[];
+  porPrograma: Array<{
+    idPrograma: string;
+    programaNombre: string;
+    numClases: number;
+    clasesDictadas: number;
+    alumnosCapacitados: number;
+    alumnosCertificados: number;
+  }>;
+  porInstructor: Array<{
+    idEmpleadoInstructor?: number | null;
+    instructorNombre: string;
+    numClases: number;
+    clasesDictadas: number;
+    alumnosCapacitados: number;
+  }>;
+  opciones: {
+    jornadas: Array<{ value: string; label: string }>;
+    clases: Array<{ value: string; label: string; idJornada?: string }>;
+    programas: Array<{ value: string; label: string }>;
+    instructores: Array<{ value: string; label: string }>;
+  };
+  generadoAt?: string;
+}
+
+export type InformeContratoAlcance = 'contrato' | 'jornada' | 'clase' | 'programa' | 'instructor';
+
 export interface ConfigOperacionJornadas {
   operacionFueraDeDiaHabilitada: boolean;
   /** idServ del catálogo para comprobantes y facturas de contratos de capacitación. */
@@ -289,6 +381,50 @@ export class JornadaCapService {
 
   avanceContrato(id: string): Observable<AvanceContratoDto> {
     return this.http.get<AvanceContratoDto>(`${this.base}/contratos/${id}/avance`);
+  }
+
+  informeDashboardContrato(
+    id: string,
+    opts?: {
+      idJornada?: string;
+      idClase?: string;
+      idPrograma?: string;
+      idInstructor?: string | number;
+    },
+  ): Observable<InformeDashboardDto> {
+    let p = new HttpParams();
+    if (opts?.idJornada) p = p.set('idJornada', opts.idJornada);
+    if (opts?.idClase) p = p.set('idClase', opts.idClase);
+    if (opts?.idPrograma) p = p.set('idPrograma', opts.idPrograma);
+    if (opts?.idInstructor != null && opts.idInstructor !== '') {
+      p = p.set('idInstructor', String(opts.idInstructor));
+    }
+    return this.http.get<InformeDashboardDto>(`${this.base}/contratos/${id}/informe-dashboard`, {
+      params: p,
+    });
+  }
+
+  descargarInformeContratoPdf(
+    id: string,
+    opts: {
+      alcance: InformeContratoAlcance;
+      idJornada?: string;
+      idClase?: string;
+      idPrograma?: string;
+      idInstructor?: string | number;
+    },
+  ): Observable<Blob> {
+    let p = new HttpParams().set('alcance', opts.alcance);
+    if (opts.idJornada) p = p.set('idJornada', opts.idJornada);
+    if (opts.idClase) p = p.set('idClase', opts.idClase);
+    if (opts.idPrograma) p = p.set('idPrograma', opts.idPrograma);
+    if (opts.idInstructor != null && opts.idInstructor !== '') {
+      p = p.set('idInstructor', String(opts.idInstructor));
+    }
+    return this.http.get(`${this.base}/contratos/${id}/informe-pdf`, {
+      params: p,
+      responseType: 'blob',
+    });
   }
 
   eliminarContrato(id: string): Observable<{ ok: boolean; message?: string; jornadasEliminadas?: number }> {
@@ -561,12 +697,42 @@ export class JornadaCapService {
     return this.http.get<any[]>(`${this.base}/certificados-generados`, { params: p });
   }
 
-  listarCertificadosJornada(opts?: { idContrato?: string; q?: string; desde?: string }) {
+  listarCertificadosJornada(opts?: {
+    idContrato?: string;
+    idJornada?: string;
+    idClase?: string;
+    q?: string;
+    desde?: string;
+    hasta?: string;
+  }) {
     let p = new HttpParams();
     if (opts?.idContrato) p = p.set('idContrato', opts.idContrato);
+    if (opts?.idJornada) p = p.set('idJornada', opts.idJornada);
+    if (opts?.idClase) p = p.set('idClase', opts.idClase);
     if (opts?.q) p = p.set('q', opts.q);
     if (opts?.desde) p = p.set('desde', opts.desde);
+    if (opts?.hasta) p = p.set('hasta', opts.hasta);
     return this.http.get<any[]>(`${this.base}/certificados-generados`, { params: p });
+  }
+
+  /** Descarga ZIP de certificados PDF (individuales + todos-imprimir). */
+  descargarCertificadosJornadaZip(opts?: {
+    idContrato?: string;
+    idJornada?: string;
+    idClase?: string;
+    desde?: string;
+    hasta?: string;
+  }): Observable<Blob> {
+    let p = new HttpParams();
+    if (opts?.idContrato) p = p.set('idContrato', opts.idContrato);
+    if (opts?.idJornada) p = p.set('idJornada', opts.idJornada);
+    if (opts?.idClase) p = p.set('idClase', opts.idClase);
+    if (opts?.desde) p = p.set('desde', opts.desde);
+    if (opts?.hasta) p = p.set('hasta', opts.hasta);
+    return this.http.get(`${this.base}/certificados-generados/export-zip`, {
+      params: p,
+      responseType: 'blob',
+    });
   }
 
   informesJornada(opts?: {

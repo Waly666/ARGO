@@ -398,6 +398,71 @@ exports.avanceContrato = async (req, res, next) => {
   }
 };
 
+exports.informeDashboardContrato = async (req, res, next) => {
+  try {
+    const {
+      obtenerDashboardInformeContrato,
+    } = require('../services/informeDashboardContrato');
+    const data = await obtenerDashboardInformeContrato(req.params.id, req.query || {});
+    if (!data) return res.status(404).json({ message: 'Contrato no encontrado' });
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** PDF del informe (alcance=contrato|jornada|clase|programa|instructor). */
+exports.informeContratoPdf = async (req, res, next) => {
+  try {
+    const {
+      obtenerDashboardInformeContrato,
+      buildHtmlInformeContratoPdf,
+    } = require('../services/informeDashboardContrato');
+    const { launchBrowser, htmlToPdfBuffer } = require('../services/htmlToPdf');
+    const alcance = String(req.query.alcance || 'contrato').trim().toLowerCase();
+    const alcancesOk = new Set(['contrato', 'jornada', 'clase', 'programa', 'instructor']);
+    if (!alcancesOk.has(alcance)) {
+      return res.status(400).json({ message: 'alcance inválido' });
+    }
+    if (alcance === 'jornada' && !req.query.idJornada) {
+      return res.status(400).json({ message: 'Indique idJornada para el informe de jornada' });
+    }
+    if (alcance === 'clase' && !req.query.idClase) {
+      return res.status(400).json({ message: 'Indique idClase para el informe de clase' });
+    }
+    if (alcance === 'programa' && !req.query.idPrograma) {
+      return res.status(400).json({ message: 'Indique idPrograma para el informe por programa' });
+    }
+    if (alcance === 'instructor' && !req.query.idInstructor) {
+      return res.status(400).json({ message: 'Indique idInstructor para el informe por instructor' });
+    }
+
+    const data = await obtenerDashboardInformeContrato(req.params.id, req.query || {});
+    if (!data) return res.status(404).json({ message: 'Contrato no encontrado' });
+
+    const html = buildHtmlInformeContratoPdf(data, alcance);
+    const browser = await launchBrowser();
+    try {
+      const pdf = await htmlToPdfBuffer(browser, html);
+      const cod = String(data.contrato?.codContrato || data.contrato?._id || 'contrato')
+        .replace(/[^\w.-]+/g, '_');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="informe_${alcance}_${cod}.pdf"`,
+      );
+      res.send(pdf);
+    } finally {
+      await browser.close().catch(() => {});
+    }
+  } catch (e) {
+    if (e.status && !res.headersSent) {
+      return res.status(e.status).json({ message: e.message });
+    }
+    next(e);
+  }
+};
+
 exports.crearContrato = async (req, res, next) => {
   try {
     const dto = await enrichContratoDto(pickContrato(req.body || {}));
@@ -1965,13 +2030,12 @@ exports.listarAsistenciasClase = async (req, res, next) => {
 
 exports.certificadosGenerados = async (req, res, next) => {
   try {
-    const q = { generadoAutoJornada: true, estado: { $ne: 'anulado' } };
-    if (req.query.idContrato) q.idContrato = req.query.idContrato;
-    if (req.query.desde) {
-      const d = new Date(String(req.query.desde));
-      if (!Number.isNaN(d.getTime())) q.fechaEmision = { $gte: d };
-    }
-    const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(500).lean();
+    const {
+      buildQueryCertificadosJornada,
+    } = require('../services/certificadosJornadaZip');
+    const { q, error } = buildQueryCertificadosJornada(req.query || {});
+    if (error) return res.status(400).json({ message: error });
+    const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(800).lean();
     const qRaw = String(req.query.q || '').trim();
 
     const jornadaIds = [...new Set(rows.map((c) => String(c.idJornada || '')).filter(Boolean))];
@@ -2024,10 +2088,38 @@ exports.certificadosGenerados = async (req, res, next) => {
           coincideBusquedaTexto(ubicacionJornada, qRaw);
         if (!hay) continue;
       }
-      out.push({ ...c, nombreCompleto, municipio, direccion, ubicacionJornada, codContrato });
+      out.push({
+        ...c,
+        nombreCompleto,
+        municipio,
+        direccion,
+        ubicacionJornada,
+        codContrato,
+        idContrato: idContrato || null,
+        idClase: c.idClaseJornada || null,
+      });
     }
     res.json(out);
   } catch (e) {
+    next(e);
+  }
+};
+
+/** ZIP con HTML individuales + 00-todos-imprimir.html (impresión masiva). */
+exports.exportarCertificadosJornadaZip = async (req, res, next) => {
+  try {
+    const {
+      buildQueryCertificadosJornada,
+      streamZipCertificadosJornada,
+    } = require('../services/certificadosJornadaZip');
+    const { q, error } = buildQueryCertificadosJornada(req.query || {});
+    if (error) return res.status(400).json({ message: error });
+    const rows = await Certificado.find(q).sort({ fechaEmision: 1, codigoCert: 1 }).lean();
+    await streamZipCertificadosJornada(req, res, rows);
+  } catch (e) {
+    if (e.status && !res.headersSent) {
+      return res.status(e.status).json({ message: e.message });
+    }
     next(e);
   }
 };

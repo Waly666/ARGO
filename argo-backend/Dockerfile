@@ -3,7 +3,11 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ ca-certificates tzdata \
+  && apt-get install -y --no-install-recommends \
+    python3 make g++ ca-certificates tzdata \
+    chromium \
+    fonts-liberation \
+    fonts-noto-core \
   && rm -rf /var/lib/apt/lists/* \
   && corepack enable \
   && corepack prepare pnpm@11.2.2 --activate
@@ -16,6 +20,8 @@ COPY scripts ./scripts
 
 ENV NODE_ENV=production
 ENV TZ=America/Bogota
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=1
 EXPOSE 3000
 
 CMD ["node", "src/server.js"]

@@ -19,7 +19,7 @@ import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
-import { esFechaHoy } from './jornada-calendario.util';
+import { esFechaHoy, fmtFechaCalendario } from './jornada-calendario.util';
 import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
 import {
   capAlumnoNombre,
@@ -52,12 +52,21 @@ export interface CertificadoJornadaItem {
   direccion?: string;
   ubicacionJornada?: string;
   codContrato?: string;
+  idContrato?: string;
+  idJornada?: string;
+  idClase?: string;
+  idClaseJornada?: string;
 }
 
 @Component({
   selector: 'argo-certificados-jornada-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent,
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    FormModalComponent,
+    CatalogoEnumBuscarComponent,
     ArgoDateInputComponent,
   ],
   templateUrl: './certificados-jornada-lista.component.html',
@@ -71,11 +80,25 @@ export class CertificadosJornadaListaComponent implements OnInit {
   private router = inject(Router);
 
   loading = signal(false);
+  descargandoZip = signal(false);
   guardando = signal(false);
   filtro = signal('');
   certificados = signal<CertificadoJornadaItem[]>([]);
   msg = signal<string | null>(null);
   msgError = signal(false);
+
+  contratos = signal<Array<{ _id: string; label: string }>>([]);
+  jornadas = signal<Array<{ _id: string; label: string; idContrato?: string }>>([]);
+  clases = signal<Array<{ _id: string; label: string; idJornada?: string }>>([]);
+
+  filtroContratoId = signal('');
+  filtroContratoTexto = signal('');
+  filtroJornadaId = signal('');
+  filtroJornadaTexto = signal('');
+  filtroClaseId = signal('');
+  filtroClaseTexto = signal('');
+  filtroDesde = signal('');
+  filtroHasta = signal('');
 
   modalEditar = signal(false);
   editId = signal('');
@@ -107,6 +130,30 @@ export class CertificadosJornadaListaComponent implements OnInit {
   readonly rowCertificadoHoyClass = rowCertificadoHoyClass;
   readonly esFechaHoy = esFechaHoy;
 
+  opcionesContrato = computed<EnumBuscarOption[]>(() =>
+    this.contratos().map((c) => ({ value: c._id, label: c.label })),
+  );
+
+  opcionesJornada = computed<EnumBuscarOption[]>(() => {
+    const cid = this.filtroContratoId();
+    return this.jornadas()
+      .filter((j) => !cid || String(j.idContrato || '') === cid)
+      .map((j) => ({ value: j._id, label: j.label }));
+  });
+
+  opcionesClase = computed<EnumBuscarOption[]>(() => {
+    const jid = this.filtroJornadaId();
+    const cid = this.filtroContratoId();
+    return this.clases()
+      .filter((c) => {
+        if (jid) return String(c.idJornada || '') === jid;
+        if (!cid) return true;
+        const j = this.jornadas().find((x) => x._id === c.idJornada);
+        return j && String(j.idContrato || '') === cid;
+      })
+      .map((c) => ({ value: c._id, label: c.label }));
+  });
+
   certificadoEdit = computed(() => this.certificados().find((c) => c._id === this.editId()) || null);
   certsHoyCount = computed(
     () => this.certificados().filter((c) => esFechaHoy(c.fechaEmision)).length,
@@ -133,12 +180,74 @@ export class CertificadosJornadaListaComponent implements OnInit {
   });
 
   ngOnInit() {
+    const qContrato = this.route.snapshot.queryParamMap.get('contrato') || '';
+    if (qContrato) this.filtroContratoId.set(qContrato);
+    this.cargarCatalogos();
     this.cargar();
+  }
+
+  private cargarCatalogos() {
+    this.jornadaSvc.listarContratos().subscribe({
+      next: (rows) => {
+        this.contratos.set(
+          (rows || []).map((c: any) => ({
+            _id: String(c._id),
+            label:
+              [c.codContrato, c.nombreComercial || c.razoSocial || c.clienteNombre]
+                .filter(Boolean)
+                .join(' — ') || String(c._id),
+          })),
+        );
+        const cid = this.filtroContratoId();
+        if (cid) {
+          const hit = this.contratos().find((c) => c._id === cid);
+          if (hit) this.filtroContratoTexto.set(hit.label);
+        }
+      },
+    });
+    this.jornadaSvc.listarJornadas().subscribe({
+      next: (rows) => {
+        this.jornadas.set(
+          (rows || []).map((j: any) => ({
+            _id: String(j._id),
+            idContrato: j.idContrato ? String(j.idContrato) : '',
+            label: `${fmtFechaCalendario(j.fechaProgramacion)} · ${j.municipio || 'Sin municipio'} · ${j.estado || ''}`.trim(),
+          })),
+        );
+      },
+    });
+    this.jornadaSvc.listarClases().subscribe({
+      next: (rows) => {
+        this.clases.set(
+          (rows || []).map((c: any) => ({
+            _id: String(c._id),
+            idJornada: c.idJornada ? String(c.idJornada) : '',
+            label: [
+              fmtFechaCalendario(c.fechaJornada || c.fechaClase),
+              c.programaNombre || c.idPrograma || 'Sin programa',
+              c.carpaNombre || '',
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          })),
+        );
+      },
+    });
+  }
+
+  private filtrosApi() {
+    return {
+      idContrato: this.filtroContratoId() || undefined,
+      idJornada: this.filtroJornadaId() || undefined,
+      idClase: this.filtroClaseId() || undefined,
+      desde: this.filtroDesde() || undefined,
+      hasta: this.filtroHasta() || undefined,
+    };
   }
 
   cargar() {
     this.loading.set(true);
-    this.jornadaSvc.listarCertificadosJornada().subscribe({
+    this.jornadaSvc.listarCertificadosJornada(this.filtrosApi()).subscribe({
       next: (rows) => {
         this.certificados.set(rows || []);
         this.alertSvc.marcarConocidos((rows || []).map((c) => String(c._id)));
@@ -150,6 +259,111 @@ export class CertificadosJornadaListaComponent implements OnInit {
         this.loading.set(false);
         this.msgError.set(true);
         this.msg.set(e?.error?.message || 'No se pudo cargar los certificados.');
+      },
+    });
+  }
+
+  limpiarFiltros() {
+    this.filtroContratoId.set('');
+    this.filtroContratoTexto.set('');
+    this.filtroJornadaId.set('');
+    this.filtroJornadaTexto.set('');
+    this.filtroClaseId.set('');
+    this.filtroClaseTexto.set('');
+    this.filtroDesde.set('');
+    this.filtroHasta.set('');
+    this.filtro.set('');
+    this.cargar();
+  }
+
+  onContratoFiltroPick(opt: EnumBuscarOption): void {
+    this.filtroContratoId.set(String(opt.value));
+    this.filtroContratoTexto.set(opt.label);
+    this.filtroJornadaId.set('');
+    this.filtroJornadaTexto.set('');
+    this.filtroClaseId.set('');
+    this.filtroClaseTexto.set('');
+    this.cargar();
+  }
+
+  onContratoFiltroLimpiar(): void {
+    this.filtroContratoId.set('');
+    this.filtroContratoTexto.set('');
+    this.cargar();
+  }
+
+  onJornadaFiltroPick(opt: EnumBuscarOption): void {
+    this.filtroJornadaId.set(String(opt.value));
+    this.filtroJornadaTexto.set(opt.label);
+    this.filtroClaseId.set('');
+    this.filtroClaseTexto.set('');
+    this.cargar();
+  }
+
+  onJornadaFiltroLimpiar(): void {
+    this.filtroJornadaId.set('');
+    this.filtroJornadaTexto.set('');
+    this.cargar();
+  }
+
+  onClaseFiltroPick(opt: EnumBuscarOption): void {
+    this.filtroClaseId.set(String(opt.value));
+    this.filtroClaseTexto.set(opt.label);
+    this.cargar();
+  }
+
+  onClaseFiltroLimpiar(): void {
+    this.filtroClaseId.set('');
+    this.filtroClaseTexto.set('');
+    this.cargar();
+  }
+
+  onDesdeChange(v: string): void {
+    this.filtroDesde.set(v || '');
+    this.cargar();
+  }
+
+  onHastaChange(v: string): void {
+    this.filtroHasta.set(v || '');
+    this.cargar();
+  }
+
+  descargarZip(): void {
+    if (!this.certificados().length) {
+      this.msgError.set(true);
+      this.msg.set('No hay certificados para exportar con los filtros actuales.');
+      return;
+    }
+    this.descargandoZip.set(true);
+    this.msg.set(null);
+    this.jornadaSvc.descargarCertificadosJornadaZip(this.filtrosApi()).subscribe({
+      next: (blob) => {
+        this.descargandoZip.set(false);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificados-jornadas_${new Date().toISOString().slice(0, 10)}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.msgError.set(false);
+        this.msg.set(
+          `ZIP descargado (${this.certificados().length} PDF(s)). Abra «00-todos-imprimir.pdf» para imprimir todos, o los PDF de individuales/.`,
+        );
+      },
+      error: async (e) => {
+        this.descargandoZip.set(false);
+        this.msgError.set(true);
+        let texto = 'No se pudo generar el ZIP.';
+        try {
+          const t = await e?.error?.text?.();
+          if (t) {
+            const j = JSON.parse(t);
+            if (j?.message) texto = j.message;
+          }
+        } catch {
+          /* ignore */
+        }
+        this.msg.set(e?.error?.message || texto);
       },
     });
   }
@@ -227,9 +441,10 @@ export class CertificadosJornadaListaComponent implements OnInit {
 
   async eliminar(c: CertificadoJornadaItem) {
     const ok = await this.confirmSvc.open({
-      title: 'Eliminar certificado',
-      message: `¿Eliminar el certificado ${c.codigoCert || c._id} de ${c.nombreCompleto || 'el alumno'}?`,
-      confirmLabel: 'Eliminar',
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea borrar este certificado?\n\n${c.codigoCert || c._id} · ${c.nombreCompleto || 'el alumno'}`,
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
       variant: 'danger',
     });
     if (!ok) return;
@@ -256,6 +471,6 @@ export class CertificadosJornadaListaComponent implements OnInit {
 
   fmtFecha(f?: string) {
     if (!f) return '—';
-    return new Date(f).toLocaleDateString('es-CO');
+    return fmtFechaCalendario(f);
   }
 }

@@ -9,7 +9,7 @@ import {
 } from './confirm-dialog.types';
 
 const DEFAULT_LABELS: Record<ConfirmVariant, { confirm: string; cancel: string }> = {
-  danger: { confirm: 'Sí, eliminar', cancel: 'Cancelar' },
+  danger: { confirm: 'Sí, borrar', cancel: 'Cancelar' },
   primary: { confirm: 'Aceptar', cancel: 'Cancelar' },
   success: { confirm: 'Confirmar', cancel: 'Cancelar' },
   warn: { confirm: 'Continuar', cancel: 'Cancelar' },

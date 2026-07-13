@@ -1,16 +1,23 @@
-<div class="cert-jor-page admin-list-page">
+﻿<div class="cert-jor-page admin-list-page">
   <header class="jor-head page-head panel">
     <div class="jor-head-main">
       <p class="breadcrumb"><a routerLink="/app/jornadas">Jornadas</a> / Certificados</p>
       <h1>Certificados generados</h1>
       <p class="hint">
-        Certificados automáticos emitidos al completar las sesiones del contrato en Jornadas de Capacitación.
+        Filtre por contrato, jornada, clase o fechas y descargue un ZIP con PDFs listos para imprimir.
       </p>
     </div>
     <div class="jor-badges head-actions">
       @if (certsHoyCount() > 0) {
         <span class="jor-chip jor-chip--emerald">{{ certsHoyCount() }} hoy</span>
       }
+      <button
+        type="button"
+        class="primary"
+        (click)="descargarZip()"
+        [disabled]="loading() || descargandoZip() || !certificados().length">
+        {{ descargandoZip() ? 'Generando PDFs…' : '⬇ Descargar ZIP (PDFs)' }}
+      </button>
       <button type="button" class="ghost" (click)="cargar()" [disabled]="loading()">↻ Actualizar</button>
     </div>
   </header>
@@ -19,22 +26,73 @@
     <p class="jor-banner" [class.jor-banner--error]="msgError()">{{ msg() }}</p>
   }
 
-  <div class="panel filtros">
-    <label for="filtro-cert">Buscar</label>
-    <input
-      id="filtro-cert"
-      type="search"
-      placeholder="Filtrar por nombre, contrato, ubicación jornada, encabezado, código cert. o documento…"
-      [ngModel]="filtro()"
-      (ngModelChange)="filtro.set($event)"
-      autocomplete="off" />
-    <p class="hint">{{ filtrados().length }} de {{ certificados().length }} certificado(s)</p>
-    @if (certsHoyCount() > 0) {
-      <p class="hint certs-hoy-hint">
-        <span class="jor-live-badge">{{ certsHoyCount() }} emitido(s) hoy</span>
-        — resaltados en verde parpadeante aunque se listen todos.
-      </p>
-    }
+  <div class="panel filtros filtros--grid">
+    <div class="filtros-row">
+      <argo-catalogo-enum-buscar
+        label="Contrato"
+        placeholder="Todos los contratos…"
+        [textoInicial]="filtroContratoTexto()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="opcionesContrato()"
+        (seleccionado)="onContratoFiltroPick($event)"
+        (limpiado)="onContratoFiltroLimpiar()"
+      />
+      <argo-catalogo-enum-buscar
+        label="Jornada"
+        placeholder="Todas las jornadas…"
+        [textoInicial]="filtroJornadaTexto()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="opcionesJornada()"
+        (seleccionado)="onJornadaFiltroPick($event)"
+        (limpiado)="onJornadaFiltroLimpiar()"
+      />
+      <argo-catalogo-enum-buscar
+        label="Clase"
+        placeholder="Todas las clases…"
+        [textoInicial]="filtroClaseTexto()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="opcionesClase()"
+        (seleccionado)="onClaseFiltroPick($event)"
+        (limpiado)="onClaseFiltroLimpiar()"
+      />
+    </div>
+    <div class="filtros-row filtros-row--dates">
+      <argo-date-input
+        label="Desde (emisión)"
+        [ngModel]="filtroDesde()"
+        (ngModelChange)="onDesdeChange($event)" />
+      <argo-date-input
+        label="Hasta (emisión)"
+        [ngModel]="filtroHasta()"
+        (ngModelChange)="onHastaChange($event)" />
+      <div class="filtro-buscar">
+        <label for="filtro-cert">Buscar en lista</label>
+        <input
+          id="filtro-cert"
+          type="search"
+          placeholder="Nombre, documento, código, contrato…"
+          [ngModel]="filtro()"
+          (ngModelChange)="filtro.set($event)"
+          autocomplete="off" />
+      </div>
+      <button type="button" class="ghost mini filtros-limpiar" (click)="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+    <p class="hint">
+      {{ filtrados().length }} de {{ certificados().length }} certificado(s)
+      @if (certsHoyCount() > 0) {
+        · <span class="jor-live-badge">{{ certsHoyCount() }} emitido(s) hoy</span>
+      }
+    </p>
+    <p class="hint hint-compact">
+      El ZIP incluye <strong>00-todos-imprimir.pdf</strong> (todos en un solo archivo) y la carpeta
+      <strong>individuales/</strong> con un PDF por certificado.
+    </p>
   </div>
 
   <div class="panel">

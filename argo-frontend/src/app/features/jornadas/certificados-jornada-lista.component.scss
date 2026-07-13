@@ -23,10 +23,48 @@
 .filtros {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 
   input[type='search'] {
-    max-width: 520px;
+    max-width: 100%;
+  }
+}
+
+.filtros--grid {
+  .filtros-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .filtros-row--dates {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .filtro-buscar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .filtros-limpiar {
+    align-self: end;
+    justify-self: start;
+  }
+
+  .hint-compact {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
   }
 }
 

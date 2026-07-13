@@ -987,12 +987,13 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     }
     const finalizada = String(c.estado || '').toUpperCase() === 'FINALIZADO';
     const ok = await this.confirmSvc.open({
-      title: 'Eliminar clase',
+      title: 'Confirmar borrado',
       message: finalizada
-        ? '¿Eliminar esta clase finalizada? Se borrarán inscripciones y asistencias, y se anularán los certificados emitidos por esta clase.'
-        : '¿Eliminar esta clase? También se borrarán las inscripciones y asistencias registradas (si las hay).',
+        ? '¿De verdad desea borrar esta clase finalizada?\n\nSe borrarán inscripciones y asistencias, y se anularán los certificados emitidos por esta clase.'
+        : '¿De verdad desea borrar esta clase?\n\nTambién se borrarán las inscripciones y asistencias registradas (si las hay).',
       variant: 'danger',
-      confirmLabel: 'Eliminar',
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
     });
     if (!ok) return;
     this.jornadaSvc.eliminarClase(c._id).subscribe({
@@ -1201,9 +1202,10 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     const id = this.claseSel();
     if (!id) return;
     const ok = await this.confirmSvc.open({
-      title: 'Borrar asistencia',
-      message: `¿Eliminar la asistencia de ${nombre || 'el alumno'} (doc ${numDoc}) en esta clase?`,
-      confirmLabel: 'Borrar',
+      title: 'Confirmar borrado',
+      message: `¿De verdad desea borrar la asistencia de ${nombre || 'el alumno'} (doc ${numDoc}) en esta clase?\n\nEl alumno permanecerá inscrito.`,
+      confirmLabel: 'Sí, borrar',
+      cancelLabel: 'Cancelar',
       variant: 'danger',
     });
     if (!ok) return;
@@ -1231,11 +1233,12 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     if (!id) return;
     const extraAsist = opts?.tieneAsistencia ? ' También se eliminará su asistencia en esta clase.' : '';
     const ok = await this.confirmSvc.open({
-      title: 'Quitar de la clase',
+      title: 'Confirmar borrado',
       message:
-        `¿Quitar a ${nombre || 'el alumno'} (doc ${numDoc}) de esta clase?` +
-        ` La matrícula al programa se conserva.${extraAsist}`,
-      confirmLabel: 'Quitar',
+        `¿De verdad desea quitar a ${nombre || 'el alumno'} (doc ${numDoc}) de esta clase?\n\n` +
+        `La matrícula al programa se conserva.${extraAsist}`,
+      confirmLabel: 'Sí, quitar',
+      cancelLabel: 'Cancelar',
       variant: 'danger',
     });
     if (!ok) return;

@@ -23,6 +23,8 @@ router.put('/supervisores/:id', gest, sup.actualizar);
 
 router.get('/contratos', ver, ctrl.listarContratos);
 router.get('/contratos/:id/avance', ver, ctrl.avanceContrato);
+router.get('/contratos/:id/informe-dashboard', ver, ctrl.informeDashboardContrato);
+router.get('/contratos/:id/informe-pdf', ver, ctrl.informeContratoPdf);
 router.get('/contratos/:id', ver, ctrl.obtenerContrato);
 router.post('/contratos', gest, ctrl.crearContrato);
 router.put('/contratos/:id', gest, ctrl.actualizarContrato);
@@ -77,6 +79,7 @@ router.get('/informes', ver, ctrl.informesJornada);
 router.get('/informes/export', ver, ctrl.exportarInformesJornada);
 
 router.get('/certificados-generados', ver, ctrl.certificadosGenerados);
+router.get('/certificados-generados/export-zip', ver, ctrl.exportarCertificadosJornadaZip);
 router.get('/certificados-generados/:id/html', ver, soloCertificadoJornada, certRender.html);
 router.patch('/certificados-generados/:id', gest, soloCertificadoJornada, ctrl.actualizarCertificadoGenerado);
 router.delete('/certificados-generados/:id', gest, soloCertificadoJornada, ctrl.eliminarCertificadoGenerado);

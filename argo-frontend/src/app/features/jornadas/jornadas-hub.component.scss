@@ -2694,3 +2694,46 @@
     margin-top: 12px;
   }
 }
+
+.cert-hub-filtros {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  .cert-hub-filtros-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+
+    @media (max-width: 980px) {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .cert-hub-filtros-row--search {
+    grid-template-columns: minmax(12rem, 1fr) auto auto;
+    align-items: end;
+  }
+
+  .filtro-buscar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    input {
+      width: 100%;
+    }
+  }
+
+  .hint-compact {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+}

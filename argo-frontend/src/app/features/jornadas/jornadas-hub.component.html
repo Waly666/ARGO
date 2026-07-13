@@ -61,6 +61,7 @@
     <button type="button" [class.active]="tab() === 'jornadas'" (click)="setTab('jornadas')">4. Jornadas</button>
     <button type="button" [class.active]="tab() === 'clases'" (click)="setTab('clases')">5. Clases</button>
     <button type="button" [class.active]="tab() === 'certificados'" (click)="setTab('certificados')">6. Certificados</button>
+    <button type="button" [class.active]="tab() === 'informes'" (click)="setTab('informes')">7. Informes</button>
     <button type="button" class="ghost" (click)="listaAlumnosJornada()">Alumnos jornada</button>
     <button type="button" class="ghost" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
   </nav>
@@ -2151,68 +2152,156 @@
         <div class="panel-head-title">
           <h2>Certificados del contrato</h2>
           <p class="hint">
-            Todos los certificados emitidos para este contrato. Los generados <strong>hoy</strong> se resaltan en verde parpadeante.
+            Filtre por jornada, clase o fechas y descargue un ZIP con PDFs.
+            Los generados <strong>hoy</strong> se resaltan en verde.
           </p>
         </div>
         <div class="panel-head-actions">
           @if (certsHoyCount() > 0) {
             <span class="jor-live-badge">{{ certsHoyCount() }} emitido(s) hoy</span>
           }
-          <a routerLink="/app/jornadas/certificados" class="mini ghost link-btn">Ver listado completo →</a>
+          <button
+            type="button"
+            class="mini primary"
+            (click)="descargarZipCertificadosContrato()"
+            [disabled]="!contratoSel() || !certsGenerados().length || descargandoZipCerts()">
+            {{ descargandoZipCerts() ? 'Generando PDFs…' : '⬇ ZIP PDFs' }}
+          </button>
+          <a
+            [routerLink]="['/app/jornadas/certificados']"
+            [queryParams]="contratoSel() ? { contrato: contratoSel() } : {}"
+            class="mini ghost link-btn">
+            Ver listado completo →
+          </a>
         </div>
       </div>
-      <div class="table-wrap">
-      <table class="argo">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Alumno</th>
-            <th>Doc</th>
-            <th class="col-cert-encabezado">Encabezado</th>
-            <th>Horas</th>
-            <th>Emisión</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let c of certsGenerados()" [ngClass]="rowCertificadoHoyClass(c.fechaEmision)">
-            <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert }}</span></td>
-            <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto }}</span></td>
-            <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
-            <td class="col-cert-encabezado">
-              @if (esFechaHoy(c.fechaEmision)) {
-                <span
-                  class="serv-saldo-inline encabezado-hoy-blink cert-encabezado-hoy"
-                  [attr.title]="'Certificado emitido hoy · ' + fmtFecha(c.fechaEmision)">
-                  {{ c.encabezado || '—' }}
-                </span>
-              } @else {
-                <span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span>
-              }
-            </td>
-            <td><span [ngClass]="capHorasCert(c.horasCert)">{{ c.horasCert }}</span></td>
-            <td>
-              @if (esFechaHoy(c.fechaEmision)) {
-                <span
-                  class="serv-saldo-inline encabezado-hoy-blink"
-                  [attr.title]="'Emitido hoy'">
-                  {{ fmtFecha(c.fechaEmision) }}
-                </span>
-              } @else {
-                <span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span>
-              }
-            </td>
-            <td><button type="button" class="mini ghost" (click)="imprimirCert(c)">Imprimir</button></td>
-          </tr>
-          <tr *ngIf="certsGenerados().length === 0">
-            <td colspan="7" class="empty jor-empty">
-              <span class="jor-empty-icon">📜</span>
-              <p>Los certificados automáticos aparecerán aquí cuando un alumno complete las sesiones del contrato.</p>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      </div>
+
+      @if (!contratoSel()) {
+        <p class="hint">Seleccione un contrato para ver y exportar certificados.</p>
+      } @else {
+        <div class="cert-hub-filtros">
+          <div class="cert-hub-filtros-row">
+            <argo-catalogo-enum-buscar
+              label="Jornada"
+              placeholder="Todas las jornadas…"
+              [textoInicial]="certFiltroJornadaTexto()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesCertJornada()"
+              (seleccionado)="onCertJornadaPick($event)"
+              (limpiado)="onCertJornadaLimpiar()"
+            />
+            <argo-catalogo-enum-buscar
+              label="Clase"
+              placeholder="Todas las clases…"
+              [textoInicial]="certFiltroClaseTexto()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesCertClase()"
+              (seleccionado)="onCertClasePick($event)"
+              (limpiado)="onCertClaseLimpiar()"
+            />
+            <argo-date-input
+              label="Desde (emisión)"
+              [ngModel]="certFiltroDesde()"
+              (ngModelChange)="onCertDesdeChange($event)" />
+            <argo-date-input
+              label="Hasta (emisión)"
+              [ngModel]="certFiltroHasta()"
+              (ngModelChange)="onCertHastaChange($event)" />
+          </div>
+          <div class="cert-hub-filtros-row cert-hub-filtros-row--search">
+            <div class="filtro-buscar">
+              <label for="filtro-cert-hub">Buscar en lista</label>
+              <input
+                id="filtro-cert-hub"
+                type="search"
+                placeholder="Nombre, documento, código…"
+                [ngModel]="certFiltroTexto()"
+                (ngModelChange)="certFiltroTexto.set($event)"
+                autocomplete="off" />
+            </div>
+            <button type="button" class="ghost mini" (click)="limpiarFiltrosCerts()">Limpiar filtros</button>
+            <span class="hint">
+              {{ certsFiltradosVista().length }} de {{ certsGenerados().length }} certificado(s)
+            </span>
+          </div>
+          <p class="hint hint-compact">
+            El ZIP incluye <strong>00-todos-imprimir.pdf</strong> y la carpeta <strong>individuales/</strong>.
+          </p>
+        </div>
+
+        <div class="table-wrap">
+        <table class="argo">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Alumno</th>
+              <th>Doc</th>
+              <th class="col-cert-encabezado">Encabezado</th>
+              <th>Horas</th>
+              <th>Emisión</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of certsFiltradosVista()" [ngClass]="rowCertificadoHoyClass(c.fechaEmision)">
+              <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert }}</span></td>
+              <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto }}</span></td>
+              <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
+              <td class="col-cert-encabezado">
+                @if (esFechaHoy(c.fechaEmision)) {
+                  <span
+                    class="serv-saldo-inline encabezado-hoy-blink cert-encabezado-hoy"
+                    [attr.title]="'Certificado emitido hoy · ' + fmtFecha(c.fechaEmision)">
+                    {{ c.encabezado || '—' }}
+                  </span>
+                } @else {
+                  <span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span>
+                }
+              </td>
+              <td><span [ngClass]="capHorasCert(c.horasCert)">{{ c.horasCert }}</span></td>
+              <td>
+                @if (esFechaHoy(c.fechaEmision)) {
+                  <span
+                    class="serv-saldo-inline encabezado-hoy-blink"
+                    [attr.title]="'Emitido hoy'">
+                    {{ fmtFecha(c.fechaEmision) }}
+                  </span>
+                } @else {
+                  <span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span>
+                }
+              </td>
+              <td class="actions-cell">
+                <button type="button" class="mini ghost" (click)="imprimirCert(c)">Imprimir</button>
+                <button type="button" class="mini primary" (click)="editarCertDesdeHub(c)">Editar</button>
+                <button type="button" class="mini danger" (click)="eliminarCertDesdeHub(c)">Eliminar</button>
+              </td>
+            </tr>
+            <tr *ngIf="certsFiltradosVista().length === 0">
+              <td colspan="7" class="empty jor-empty">
+                <span class="jor-empty-icon">📜</span>
+                <p>
+                  @if (certsGenerados().length === 0) {
+                    No hay certificados con estos filtros (o aún no se han emitido en el contrato).
+                  } @else {
+                    No hay certificados que coincidan con la búsqueda.
+                  }
+                </p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      }
+    </div>
+  }
+
+  @if (tab() === 'informes') {
+    <div class="panel">
+      <argo-contrato-informes-dashboard [idContrato]="contratoSel()" />
     </div>
   }
 
