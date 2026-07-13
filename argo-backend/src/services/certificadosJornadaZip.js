@@ -93,7 +93,10 @@ async function streamZipCertificadosJornada(req, res, rows) {
       const cert = rows[i];
       const data = await armarDatosCertificado(cert._id);
       if (!data) continue;
-      const html = await generarHtmlCertificado(data, { publicOrigin });
+      const html = await generarHtmlCertificado(data, {
+        publicOrigin,
+        embedLocalAssets: true,
+      });
       const pdf = await htmlToPdfBuffer(browser, html);
       let name = nombreArchivoCert(cert, i);
       if (usados.has(name)) name = `${i + 1}_${name}`;

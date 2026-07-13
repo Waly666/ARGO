@@ -72,9 +72,10 @@ async function htmlToPdfBuffer(browser, html) {
   const page = await browser.newPage();
   try {
     await page.emulateMediaType('print');
+    // Evitar networkidle0: fuentes externas / analítica dejan la red “viva” y alargan o cuelgan el PDF.
     await page.setContent(String(html || ''), {
-      waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
-      timeout: 90_000,
+      waitUntil: 'load',
+      timeout: 60_000,
     });
     await page.evaluate(async () => {
       const imgs = Array.from(document.images || []);
@@ -86,9 +87,20 @@ async function htmlToPdfBuffer(browser, html) {
               : new Promise((resolve) => {
                   img.onload = () => resolve();
                   img.onerror = () => resolve();
+                  window.setTimeout(resolve, 8_000);
                 }),
         ),
       );
+      if (document.fonts?.ready) {
+        try {
+          await Promise.race([
+            document.fonts.ready,
+            new Promise((r) => window.setTimeout(r, 5_000)),
+          ]);
+        } catch {
+          /* ignore */
+        }
+      }
     });
     const buf = await page.pdf({
       printBackground: true,

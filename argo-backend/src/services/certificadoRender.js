@@ -6,6 +6,7 @@ const { fsToPrintSizes } = require('../utils/certificadoTipografia');
 const { fmtFechaSolo: fmtFecha } = require('../utils/timezoneColombia');
 const { cssFontFamily, googleFontsHeadHtml } = require('../constants/certificadoFuentes');
 const { bloqueComprobanteAnulado, estilosMarcaAguaAnulado } = require('./reciboHtmlShared');
+const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
 
 function esc(s) {
   return String(s ?? '')
@@ -197,7 +198,12 @@ async function generarHtmlCertificado(data, options = {}) {
     clasificarPrograma(programa);
   const L = resolverLayout(config, tipo, orientacion);
   const oriKey = orientacion;
-  const fondo = urlUpload(plantilla?.urlFondo, publicOrigin);
+  // PDF/ZIP: embeber fondo local evita N peticiones HTTP + esperas de red en Chromium.
+  let fondo = urlUpload(plantilla?.urlFondo, publicOrigin);
+  if (options.embedLocalAssets) {
+    const dataUrl = uploadFileToDataUrl(plantilla?.urlFondo);
+    if (dataUrl) fondo = dataUrl;
+  }
   const color = L.color;
 
   const nombre = nombreCompleto(alumno);

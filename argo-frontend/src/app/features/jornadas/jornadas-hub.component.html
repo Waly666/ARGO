@@ -2165,7 +2165,7 @@
             class="mini primary"
             (click)="descargarZipCertificadosContrato()"
             [disabled]="!contratoSel() || !certsGenerados().length || descargandoZipCerts()">
-            {{ descargandoZipCerts() ? 'Generando PDFs…' : '⬇ ZIP PDFs' }}
+            {{ descargandoZipCerts() ? 'Generando PDFs (espere)…' : '⬇ ZIP PDFs' }}
           </button>
           <a
             [routerLink]="['/app/jornadas/certificados']"

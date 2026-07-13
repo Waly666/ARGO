@@ -16,7 +16,7 @@
         class="primary"
         (click)="descargarZip()"
         [disabled]="loading() || descargandoZip() || !certificados().length">
-        {{ descargandoZip() ? 'Generando PDFs…' : '⬇ Descargar ZIP (PDFs)' }}
+        {{ descargandoZip() ? 'Generando PDFs (espere)…' : '⬇ Descargar ZIP (PDFs)' }}
       </button>
       <button type="button" class="ghost" (click)="cargar()" [disabled]="loading()">↻ Actualizar</button>
     </div>

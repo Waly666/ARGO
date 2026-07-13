@@ -33,6 +33,7 @@ import {
   rowCertificadoHoyClass,
   ubicacionJornadaLabel,
 } from './jornada-ui.util';
+import { descargarBlob, mensajeErrorBlob } from '../../core/utils/descargar-blob';
 
 export interface CertificadoJornadaItem {
   _id: string;
@@ -335,35 +336,32 @@ export class CertificadosJornadaListaComponent implements OnInit {
       return;
     }
     this.descargandoZip.set(true);
-    this.msg.set(null);
+    this.msgError.set(false);
+    this.msg.set(
+      `Generando PDFs de ${this.certificados().length} certificado(s). Puede tardar unos minutos; no cierre esta pantalla…`,
+    );
     this.jornadaSvc.descargarCertificadosJornadaZip(this.filtrosApi()).subscribe({
-      next: (blob) => {
-        this.descargandoZip.set(false);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `certificados-jornadas_${new Date().toISOString().slice(0, 10)}.zip`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.msgError.set(false);
-        this.msg.set(
-          `ZIP descargado (${this.certificados().length} PDF(s)). Abra «00-todos-imprimir.pdf» para imprimir todos, o los PDF de individuales/.`,
-        );
+      next: async (blob) => {
+        try {
+          await descargarBlob(
+            blob,
+            `certificados-jornadas_${new Date().toISOString().slice(0, 10)}.zip`,
+          );
+          this.msgError.set(false);
+          this.msg.set(
+            `ZIP descargado (${this.certificados().length} PDF(s)). Abra «00-todos-imprimir.pdf» para imprimir todos, o los PDF de individuales/.`,
+          );
+        } catch (e: unknown) {
+          this.msgError.set(true);
+          this.msg.set(e instanceof Error ? e.message : 'No se pudo guardar el ZIP.');
+        } finally {
+          this.descargandoZip.set(false);
+        }
       },
       error: async (e) => {
         this.descargandoZip.set(false);
         this.msgError.set(true);
-        let texto = 'No se pudo generar el ZIP.';
-        try {
-          const t = await e?.error?.text?.();
-          if (t) {
-            const j = JSON.parse(t);
-            if (j?.message) texto = j.message;
-          }
-        } catch {
-          /* ignore */
-        }
-        this.msg.set(e?.error?.message || texto);
+        this.msg.set(await mensajeErrorBlob(e, 'No se pudo generar el ZIP.'));
       },
     });
   }
