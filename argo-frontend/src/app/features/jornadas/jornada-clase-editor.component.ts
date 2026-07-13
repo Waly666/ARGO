@@ -221,6 +221,15 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     const inscritosDocs = new Set(this.inscritos().map((i) => Number(i.numDoc)));
     return this.alumnosClaseAnterior().filter((a) => !inscritosDocs.has(Number(a.numDoc)));
   });
+  claseAnteriorSinPrevia = signal(false);
+  claseAnteriorMensajeVacio = computed(() => {
+    if (this.cargandoAlumnosClaseAnterior() || !this.claseAnteriorInfo()) return '';
+    if (this.alumnosClaseAnteriorDisponibles().length > 0) return '';
+    if (this.alumnosClaseAnterior().length === 0) {
+      return 'La clase anterior de esta jornada no tiene alumnos inscritos.';
+    }
+    return 'Los alumnos de la clase anterior ya están matriculados en esta clase.';
+  });
   totalAlumnosMatriculadosModal = computed(() => this.inscritos().length);
 
   opcionesUbicacionClase = computed<EnumBuscarOption[]>(() =>
@@ -371,6 +380,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   cargarAlumnosClaseAnterior(idClase: string): void {
     this.claseAnteriorInfo.set(null);
     this.alumnosClaseAnterior.set([]);
+    this.claseAnteriorSinPrevia.set(false);
     if (!idClase) return;
     this.cargandoAlumnosClaseAnterior.set(true);
     this.jornadaSvc.alumnosClaseAnterior(idClase).subscribe({
@@ -378,11 +388,17 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(r?.clase || null);
         this.alumnosClaseAnterior.set(r?.alumnos || []);
+        this.claseAnteriorSinPrevia.set(!r?.clase);
       },
-      error: () => {
+      error: (e) => {
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(null);
         this.alumnosClaseAnterior.set([]);
+        this.claseAnteriorSinPrevia.set(false);
+        const msg =
+          e?.error?.message ||
+          'No se pudo consultar alumnos de la clase anterior. Verifique que el servidor esté actualizado.';
+        this.mostrarMsg(msg, 'warn', 'Clase anterior');
       },
     });
   }

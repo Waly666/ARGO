@@ -1822,6 +1822,14 @@
       @if (cargandoAlumnosClaseAnterior()) {
         <p class="hint hint-compact">Buscando alumnos de la clase anterior de esta jornada…</p>
       }
+      @if (claseAnteriorSinPrevia() && modalModoClase() === 'editar') {
+        <p class="hint hint-compact">
+          Es la primera clase de esta jornada; no hay clase anterior de la cual copiar alumnos.
+        </p>
+      }
+      @if (claseAnteriorMensajeVacio()) {
+        <p class="hint hint-compact hint-warn">{{ claseAnteriorMensajeVacio() }}</p>
+      }
       @if (claseAnteriorInfo(); as ant) {
         @if (alumnosClaseAnteriorDisponibles().length > 0) {
           <div class="clase-anterior-copiar">

@@ -1076,11 +1076,13 @@ exports.crearClase = async (req, res, next) => {
       const carpa = await resolverCarpaDesdePrograma(prog);
       idCarpaClase = carpa.idCarpa;
     }
+    const indiceClaseEnJornada = await siguienteIndiceClaseEnJornada(idJornada);
     const clase = await ClaseJornadaCap.create({
       idJornada,
       fechaClase: inicioDia(jornada.fechaProgramacion),
       idPrograma: idProg,
       idCarpa: idCarpaClase,
+      indiceClaseEnJornada,
       ubicacion: ubi,
       estado: 'PROGRAMADA',
       horaInicio: null,
@@ -1763,6 +1765,44 @@ exports.inscritosClase = async (req, res, next) => {
 };
 
 /**
+ * Orden de clases dentro de una jornada para «clase anterior».
+ * Si hay índices duplicados o todos son 1 (clases manuales en modo especial), prioriza createdAt.
+ */
+function ordenarClasesMismaJornada(todas) {
+  if (!todas?.length) return [];
+  const indices = todas.map((c) => {
+    const n = Number(c.indiceClaseEnJornada);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  });
+  const definidos = indices.filter((n) => n != null);
+  const hayDup = definidos.length > 0 && new Set(definidos).size < definidos.length;
+  const todosUno = definidos.length > 0 && definidos.every((n) => n === 1);
+  const usarCreacion = hayDup || todosUno || definidos.length === 0;
+
+  return [...todas].sort((a, b) => {
+    if (usarCreacion) {
+      const ta = new Date(a.createdAt || 0).getTime();
+      const tb = new Date(b.createdAt || 0).getTime();
+      if (ta !== tb) return ta - tb;
+    }
+    const ia = a.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
+    const ib = b.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
+    if (ia !== ib) return ia - ib;
+    return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+  });
+}
+
+async function siguienteIndiceClaseEnJornada(idJornada) {
+  const rows = await ClaseJornadaCap.find({ idJornada }).select('indiceClaseEnJornada').lean();
+  let max = 0;
+  for (const r of rows) {
+    const n = Number(r.indiceClaseEnJornada);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return max + 1;
+}
+
+/**
  * Alumnos matriculados en la clase inmediatamente anterior de la misma jornada
  * (por `indiceClaseEnJornada`, o por horario/creación si no hay índice), para
  * copiar la matrícula rápidamente sin re-digitar cada alumno.
@@ -1772,13 +1812,9 @@ exports.alumnosClaseAnterior = async (req, res, next) => {
     const clase = await ClaseJornadaCap.findById(req.params.id).lean();
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    const todas = await ClaseJornadaCap.find({ idJornada: clase.idJornada }).lean();
-    todas.sort((a, b) => {
-      const ia = a.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
-      const ib = b.indiceClaseEnJornada ?? Number.MAX_SAFE_INTEGER;
-      if (ia !== ib) return ia - ib;
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
+    const todas = ordenarClasesMismaJornada(
+      await ClaseJornadaCap.find({ idJornada: clase.idJornada }).lean(),
+    );
     const pos = todas.findIndex((c) => String(c._id) === String(clase._id));
     const anterior = pos > 0 ? todas[pos - 1] : null;
     if (!anterior) {

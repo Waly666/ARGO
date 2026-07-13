@@ -379,6 +379,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const inscritosDocs = new Set(this.inscritos().map((i) => Number(i.numDoc)));
     return this.alumnosClaseAnterior().filter((a) => !inscritosDocs.has(Number(a.numDoc)));
   });
+  /** Sin clase previa en la jornada (primera clase). */
+  claseAnteriorSinPrevia = signal(false);
+  claseAnteriorMensajeVacio = computed(() => {
+    if (this.cargandoAlumnosClaseAnterior() || !this.claseAnteriorInfo()) return '';
+    if (this.alumnosClaseAnteriorDisponibles().length > 0) return '';
+    if (this.alumnosClaseAnterior().length === 0) {
+      return 'La clase anterior de esta jornada no tiene alumnos inscritos.';
+    }
+    return 'Los alumnos de la clase anterior ya están matriculados en esta clase.';
+  });
   totalAlumnosMatriculadosModal = computed(() =>
     this.modalModoClase() === 'editar'
       ? this.inscritos().length
@@ -1207,6 +1217,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.claseAnteriorInfo.set(null);
     this.alumnosClaseAnterior.set([]);
     this.alumnosClaseAnteriorSeleccion.set(new Set());
+    this.claseAnteriorSinPrevia.set(false);
     this.nuevaClaseProg.set('');
     this.nuevaClaseUbic.set('Carpa');
     this.modalFechaClase.set('');
@@ -1246,6 +1257,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   cargarAlumnosClaseAnterior(idClase: string) {
     this.claseAnteriorInfo.set(null);
     this.alumnosClaseAnterior.set([]);
+    this.claseAnteriorSinPrevia.set(false);
     if (!idClase) return;
     this.cargandoAlumnosClaseAnterior.set(true);
     this.jornadaSvc.alumnosClaseAnterior(idClase).subscribe({
@@ -1253,11 +1265,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(r?.clase || null);
         this.alumnosClaseAnterior.set(r?.alumnos || []);
+        this.claseAnteriorSinPrevia.set(!r?.clase);
       },
-      error: () => {
+      error: (e) => {
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(null);
         this.alumnosClaseAnterior.set([]);
+        this.claseAnteriorSinPrevia.set(false);
+        const msg =
+          e?.error?.message ||
+          'No se pudo consultar alumnos de la clase anterior. Verifique que el servidor esté actualizado.';
+        this.mostrarMsg(msg, 'warn', 'Clase anterior');
       },
     });
   }
@@ -3423,7 +3441,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         if (act) {
           const c = (r || []).find((x: any) => x._id === act);
           this.claseActiva.set(c || null);
-          if (c) this.cargarAsistencias(c._id);
+          if (c) {
+            this.cargarAsistencias(c._id);
+            if (this.modalCrearClase() && this.modalModoClase() === 'editar') {
+              this.cargarAlumnosClaseAnterior(c._id);
+            }
+          }
         }
       },
     });
@@ -3524,6 +3547,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           this.claseActiva.set(c);
           this.alumnosMatricular.set([]);
           this.cargarInscritos(c._id);
+          this.cargarAlumnosClaseAnterior(c._id);
           this.iniciarCronometroSiAplica();
           this.recargarClases();
           this.liveSync.registrarClaseLocal(c);
