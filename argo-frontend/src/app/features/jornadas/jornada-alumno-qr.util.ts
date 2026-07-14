@@ -65,7 +65,10 @@ export function etiquetaHtmlAlumno(opts: {
   const codRaw = String(opts.codContrato || '').trim();
   const fecha = escapeHtml(fmtFechaEtiqueta(opts.fechaJornada));
   const lineaContrato = codRaw
-    ? `<div class="contrato">Contrato ${escapeHtml(codRaw)}</div>`
+    ? `<div class="contrato">
+        <span class="contrato-lbl">Contrato</span>
+        <strong class="contrato-cod">${escapeHtml(codRaw)}</strong>
+      </div>`
     : '';
   return `
   <div class="label">
@@ -101,46 +104,59 @@ export function paginaEtiquetasHtml(etiquetas: string[], atPageCss?: string): st
     .label {
       width: 52mm;
       min-height: 30mm;
-      padding: 2mm;
+      padding: 1.6mm;
       border: 0.3mm dashed #94a3b8;
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 2mm;
+      gap: 1.6mm;
       page-break-inside: avoid;
       break-inside: avoid;
     }
-    .qr { width: 22mm; height: 22mm; flex-shrink: 0; }
+    .qr { width: 20mm; height: 20mm; flex-shrink: 0; }
     .qr img { width: 100%; height: 100%; display: block; }
     .meta { flex: 1; overflow: hidden; min-width: 0; }
     .nombre {
-      font-size: 8.5pt;
+      font-size: 7.5pt;
       font-weight: 700;
-      line-height: 1.15;
+      line-height: 1.12;
       max-height: 2.3em;
       overflow: hidden;
     }
-    .doc { font-size: 7.5pt; margin-top: 0.8mm; font-weight: 600; }
+    .doc { font-size: 6.5pt; margin-top: 0.5mm; font-weight: 600; }
     .empresa {
-      font-size: 6.5pt;
-      margin-top: 1mm;
+      font-size: 5.8pt;
+      margin-top: 0.7mm;
       font-weight: 700;
       color: #0f766e;
-      line-height: 1.15;
+      line-height: 1.12;
       max-height: 2.2em;
       overflow: hidden;
     }
     .contrato {
-      font-size: 6.5pt;
       margin-top: 0.5mm;
-      font-weight: 700;
       color: #1e3a8a;
-      line-height: 1.15;
-      max-height: 1.3em;
+      line-height: 1.12;
+    }
+    .contrato-lbl {
+      display: block;
+      font-size: 5.2pt;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+    .contrato-cod {
+      display: block;
+      font-size: 6.2pt;
+      font-weight: 700;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      max-height: 2.4em;
       overflow: hidden;
     }
     .fecha {
-      font-size: 6.5pt;
+      font-size: 5.8pt;
       margin-top: 0.4mm;
       font-weight: 700;
       color: #334155;

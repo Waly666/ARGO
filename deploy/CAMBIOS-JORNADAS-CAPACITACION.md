@@ -312,7 +312,7 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 - **Fecha:** 2026-07-13
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** *(este commit)*
+- **Commit ARGO:** `3bd066c`
 - **Replica en otro repo:** Sí
 
 #### Qué pide el cliente / problema
@@ -320,11 +320,12 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 - Al inicio salía un guión (`—`) sin número: el código no se resolvía si no venía en la URL.
 
 #### Qué se hizo
-- Etiqueta imprimible y panel QR: orden `empresa` → **`Contrato {codContrato}`** → `Jornada {fecha}`.
+- Etiqueta imprimible y panel QR: orden `empresa` → **Contrato** (etiqueta) + **código en negrita debajo** → `Jornada {fecha}`.
+- Fuentes de la etiqueta algo más compactas para que el código largo quepa completo (`word-break`).
 - Resolución del código: query (`codContrato` / `contrato`) o, si falta, contrato de la **empresa del alumno** (prioriza «En Ejecución»).
 - Lista de alumnos: al abrir ficha con filtro de jornada/fecha, pasa `codContrato` y `fechaJornada` en query.
 - Impresión desde clase: usa `codContrato` (fallback por `idContrato` / label); `clienteNombre` en DTO de clase.
-- No se pinta la línea «Contrato» si aún no hay código (evita el guión vacío).
+- No se pinta el bloque «Contrato» si aún no hay código (evita el guión vacío).
 
 #### Archivos tocados (ARGO)
 | Archivo | Tipo de cambio |
@@ -532,7 +533,7 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 
 | ID | Fecha | Resumen | Commit | Alcance |
 |----|-------|---------|--------|---------|
-| JOR-033 | 2026-07-13 | Etiqueta QR: código contrato antes de jornada | *(este commit)* | backend + frontend |
+| JOR-033 | 2026-07-13 | Etiqueta QR: código contrato antes de jornada | `3bd066c` | backend + frontend |
 | JOR-032 | 2026-07-13 | Copiar alumnos desde cualquier clase del contrato | `a282abd` | backend + frontend |
 | JOR-031 | 2026-07-13 | Alarma cabecera certificados por `createdAt` + recientes | `9f6e822` | backend + frontend |
 | JOR-030 | 2026-07-13 | Config Páginas de informes (tamaño/márgenes/@page) | `9f6e822` | backend + frontend |

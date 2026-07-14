@@ -43,7 +43,10 @@ import { JornadaEtiquetaQrService } from '../jornadas/jornada-etiqueta-qr.servic
           <span>Doc. {{ docMostrar() }}</span>
           <span class="jor-qr-empresa">{{ empresaMostrar() }}</span>
           @if (contratoMostrar()) {
-            <span class="jor-qr-contrato">Contrato {{ contratoMostrar() }}</span>
+            <span class="jor-qr-contrato">
+              <span class="jor-qr-contrato-lbl">Contrato</span>
+              <strong class="jor-qr-contrato-cod">{{ contratoMostrar() }}</strong>
+            </span>
           }
           <span class="jor-qr-fecha">Jornada {{ fechaMostrar() }}</span>
         </p>
@@ -147,15 +150,36 @@ import { JornadaEtiquetaQrService } from '../jornadas/jornada-etiqueta-qr.servic
         .jor-qr-empresa {
           font-weight: 700;
           margin-top: 4px !important;
+          font-size: 0.72rem !important;
         }
         .jor-qr-contrato {
-          font-weight: 700;
+          display: block;
+          margin-top: 4px !important;
           color: #1e3a8a !important;
-          margin-top: 2px !important;
+          line-height: 1.2;
+        }
+        .jor-qr-contrato-lbl {
+          display: block !important;
+          font-size: 0.65rem !important;
+          font-weight: 600 !important;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+          margin-top: 0 !important;
+          color: #1e3a8a !important;
+          opacity: 0.9;
+        }
+        .jor-qr-contrato-cod {
+          display: block;
+          font-size: 0.78rem;
+          font-weight: 700;
+          word-break: break-word;
+          margin-top: 1px;
+          color: #1e3a8a;
         }
         .jor-qr-fecha {
           font-weight: 700;
           color: #334155 !important;
+          font-size: 0.72rem !important;
         }
       }
       .jor-qr-hint {
