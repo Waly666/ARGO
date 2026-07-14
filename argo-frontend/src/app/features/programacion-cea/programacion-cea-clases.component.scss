@@ -611,7 +611,7 @@
     }
   }
 
-  $cal-ubic-hues: #38bdf8, #c084fc, #34d399, #fb7185, #fbbf24, #22d3ee;
+  $cal-ubic-hues: #38bdf8, #c084fc, #34d399, #fb7185, #38bdf8, #22d3ee;
 
   @for $i from 0 through 5 {
     .cal-ubic-h#{$i} {

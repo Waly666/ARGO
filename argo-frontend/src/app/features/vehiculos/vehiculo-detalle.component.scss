@@ -95,9 +95,9 @@
   }
 
   &--warn {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.32);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.32);
   }
 
   &--err {
@@ -218,7 +218,7 @@
   font-size: 0.62rem;
   font-weight: 800;
   color: #1e293b;
-  background: #fde68a;
+  background: #c7d2fe;
 }
 
 .veh-loading {
@@ -257,7 +257,7 @@
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
   &--teal { border-left-color: #2dd4bf; }
   &--emerald { border-left-color: #34d399; }
   &--rose { border-left-color: #f472b6; }
@@ -577,8 +577,8 @@
   }
 
   &--pronto {
-    border-color: rgba(245, 158, 11, 0.45);
-    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.1);
+    border-color: rgba(139, 92, 246, 0.45);
+    box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.1);
   }
 }
 
@@ -634,8 +634,8 @@
   }
 
   &--warn {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.18);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.18);
   }
 
   &--err {
@@ -724,7 +724,7 @@
   }
 
   .doc-pronto td {
-    color: #fdba74;
+    color: #93c5fd;
   }
 }
 

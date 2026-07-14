@@ -2,12 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
-import { CertificadoService } from '../../core/services/certificado.service';
 import { certAlertToneClass, labelTipoCert } from '../../core/constants/tipos-certificado';
 import {
   CertificadoJornadaAlertService,
   CertificadoJornadaAlerta,
 } from '../../core/services/certificado-jornada-alert.service';
+import { JornadaCapService } from '../../core/services/jornada-cap.service';
 import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
 import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
@@ -20,7 +20,7 @@ import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-b
 })
 export class CertificadoJornadaBannerComponent {
   private alertSvc = inject(CertificadoJornadaAlertService);
-  private certSvc = inject(CertificadoService);
+  private jornadaSvc = inject(JornadaCapService);
   private confirmSvc = inject(ConfirmDialogService);
 
   visible = computed(() => this.alertSvc.alertas().length > 0);
@@ -67,8 +67,8 @@ export class CertificadoJornadaBannerComponent {
   }
 
   private imprimirCertificado(a: CertificadoJornadaAlerta) {
-    this.alertSvc.descartar(a.id);
-    this.certSvc.abrirHtml(a.id, (msg) => {
+    // Abrir ventana en el gesto del clic; luego descartar la fila de la alarma.
+    this.jornadaSvc.imprimirCertificadoJornada(a.id, (msg) => {
       void this.confirmSvc.open({
         title: 'Impresión',
         message: msg,
@@ -77,5 +77,6 @@ export class CertificadoJornadaBannerComponent {
         confirmLabel: 'Entendido',
       });
     });
+    this.alertSvc.descartar(a.id);
   }
 }

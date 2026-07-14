@@ -62,15 +62,71 @@
     }
 
     &--warn {
-      background: rgba(251, 191, 36, 0.1);
-      border-color: rgba(251, 191, 36, 0.35);
-      color: #fcd34d;
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(251, 191, 36, 0.5);
+      color: #fde68a;
     }
 
     &--info {
       background: rgba(78, 163, 255, 0.1);
       border-color: rgba(78, 163, 255, 0.35);
       color: var(--accent-2);
+    }
+
+    /* Aviso fuerte: modo operación especial (amarillo/rojo para que no pase desapercibido). */
+    &--operacion-especial {
+      background: linear-gradient(90deg, rgba(220, 38, 38, 0.28), rgba(245, 158, 11, 0.22) 45%, rgba(251, 191, 36, 0.16));
+      border: 1px solid rgba(251, 191, 36, 0.85);
+      border-left: 4px solid #ef4444;
+      color: #fef3c7;
+      box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.25),
+        0 4px 18px rgba(245, 158, 11, 0.22);
+      animation: jor-banner-alerta-pulse 2.2s ease-in-out infinite;
+
+      .jor-banner-icon {
+        background: rgba(239, 68, 68, 0.35);
+        color: #fef08a;
+        box-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
+      }
+
+      .jor-banner-title {
+        color: #fde047;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+      }
+
+      a {
+        color: #fef08a;
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+
+        &:hover {
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  @keyframes jor-banner-alerta-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.25),
+        0 4px 18px rgba(245, 158, 11, 0.22);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px rgba(239, 68, 68, 0.45),
+        0 4px 22px rgba(239, 68, 68, 0.28),
+        0 0 28px rgba(251, 191, 36, 0.18);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .jor-banner--operacion-especial {
+      animation: none;
     }
   }
 
@@ -451,14 +507,14 @@
   }
 
   .cea-card.warn {
-    border-color: rgba(245, 158, 11, 0.45);
-    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(139, 92, 246, 0.45);
+    background: rgba(139, 92, 246, 0.08);
   }
 
   .cea-alerta-resumen,
   .cea-prog-alertas,
   .resumen-warn {
-    color: #fcd34d;
+    color: #a5b4fc;
   }
 
   .cea-banner {
@@ -473,9 +529,9 @@
       color: #fca5a5;
     }
     &.warn {
-      background: rgba(251, 191, 36, 0.1);
-      border-color: rgba(251, 191, 36, 0.35);
-      color: #fcd34d;
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.35);
+      color: #a5b4fc;
     }
   }
 
@@ -514,7 +570,7 @@
   }
 
   .estado-prog { color: var(--text-soft); }
-  .estado-proceso { color: #fcd34d; font-weight: 600; }
+  .estado-proceso { color: #a5b4fc; font-weight: 600; }
   .estado-ok { color: var(--ok); font-weight: 600; }
   .estado-cancel { color: var(--text-soft); text-decoration: line-through; }
 
@@ -524,7 +580,7 @@
   }
 
   .warn-text {
-    color: #fcd34d;
+    color: #a5b4fc;
   }
 
   .linkish {
@@ -532,9 +588,9 @@
   }
 
   .cronometro {
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.35);
-    color: #fde68a;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.35);
+    color: #c7d2fe;
   }
 
   .conflictos-box {

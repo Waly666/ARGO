@@ -23,7 +23,7 @@
   h1 {
     margin: 0 0 0.35rem;
     font-size: 1.28rem;
-    background: linear-gradient(90deg, #fde68a 0%, #7dd3fc 50%, #86efac 100%);
+    background: linear-gradient(90deg, #c7d2fe 0%, #7dd3fc 50%, #86efac 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -53,9 +53,9 @@
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #fde68a;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #c7d2fe;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.3);
 }
 
 .cat-banner {
@@ -113,15 +113,15 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #fde68a;
+  color: #c7d2fe;
 }
 
 .cat-sidebar-count {
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-soft);
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.28);
   border-radius: 999px;
   padding: 0.12rem 0.5rem;
 }
@@ -138,7 +138,7 @@
 
   &:focus {
     outline: none;
-    border-color: rgba(251, 191, 36, 0.45);
+    border-color: rgba(56, 189, 248, 0.45);
   }
 }
 
@@ -176,14 +176,14 @@
   transition: background 0.15s, border-color 0.15s;
 
   &:hover {
-    background: rgba(251, 191, 36, 0.08);
-    border-color: rgba(251, 191, 36, 0.18);
+    background: rgba(56, 189, 248, 0.08);
+    border-color: rgba(56, 189, 248, 0.18);
   }
 
   &--active {
-    background: rgba(251, 191, 36, 0.14);
-    border-color: rgba(251, 191, 36, 0.38);
-    color: #fde68a;
+    background: rgba(56, 189, 248, 0.14);
+    border-color: rgba(56, 189, 248, 0.38);
+    color: #c7d2fe;
     font-weight: 650;
   }
 }
@@ -245,7 +245,7 @@
 }
 
 .cat-search-icon {
-  color: rgba(251, 191, 36, 0.55);
+  color: rgba(56, 189, 248, 0.55);
   font-size: 1rem;
   flex-shrink: 0;
 }
@@ -264,7 +264,7 @@
 
   &:focus {
     outline: none;
-    border-color: rgba(251, 191, 36, 0.45);
+    border-color: rgba(56, 189, 248, 0.45);
   }
 }
 
@@ -273,7 +273,7 @@
   padding: 0.35rem 0.85rem;
   font-size: 0.86rem;
   border-radius: 9px;
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.18);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.18);
 }
 
 .cat-view-toggle {
@@ -293,9 +293,9 @@
   cursor: pointer;
 
   &--active {
-    background: rgba(251, 191, 36, 0.14);
-    border-color: rgba(251, 191, 36, 0.38);
-    color: #fde68a;
+    background: rgba(56, 189, 248, 0.14);
+    border-color: rgba(56, 189, 248, 0.38);
+    color: #c7d2fe;
   }
 }
 
@@ -306,8 +306,8 @@
   gap: 0.65rem;
   padding: 0.85rem 1rem;
   border-radius: 12px;
-  border: 1px dashed rgba(251, 191, 36, 0.28);
-  background: rgba(251, 191, 36, 0.04);
+  border: 1px dashed rgba(56, 189, 248, 0.28);
+  background: rgba(56, 189, 248, 0.04);
 
   h3 {
     margin: 0;
@@ -390,7 +390,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #fde68a;
+  color: #c7d2fe;
 }
 
 .cat-form-sub {
@@ -465,8 +465,8 @@
 
   &:focus {
     outline: none;
-    border-color: rgba(251, 191, 36, 0.45);
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.1);
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1);
   }
 }
 
@@ -518,7 +518,7 @@ button.linkish {
 
   .primary {
     min-height: 2.2rem;
-    box-shadow: 0 4px 14px rgba(251, 191, 36, 0.18);
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.18);
   }
 }
 
@@ -656,7 +656,7 @@ button.linkish {
   }
 
   tbody tr:hover td {
-    background: rgba(251, 191, 36, 0.04);
+    background: rgba(56, 189, 248, 0.04);
   }
 }
 
@@ -702,7 +702,7 @@ button.linkish {
   background: linear-gradient(160deg, rgba(8, 18, 45, 0.6), rgba(5, 12, 32, 0.45));
 
   &:hover {
-    border-color: rgba(251, 191, 36, 0.28);
+    border-color: rgba(56, 189, 248, 0.28);
   }
 }
 
@@ -781,7 +781,7 @@ button.linkish {
 
 .cat-empty-icon {
   font-size: 1.8rem;
-  color: rgba(251, 191, 36, 0.45);
+  color: rgba(56, 189, 248, 0.45);
 }
 
 /* —— Specialized blocks (inspección, licencias, tipos) —— */
@@ -838,8 +838,8 @@ button.linkish {
   }
 
   &:hover {
-    border-color: rgba(251, 191, 36, 0.35);
-    background: rgba(251, 191, 36, 0.06);
+    border-color: rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.06);
   }
 }
 

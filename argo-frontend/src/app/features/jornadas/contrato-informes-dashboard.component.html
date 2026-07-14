@@ -134,15 +134,25 @@
         <div class="inf-charts">
           <section class="inf-card inf-chart-card">
             <h3>Alumnos por jornada</h3>
-            @if (chartBarrasJornada().length) {
+            <p class="inf-chart-hint">
+              Cantidad de alumnos capacitados en cada jornada. El % es la participación sobre el total
+              del gráfico ({{ chartBarrasJornada().total }} alumnos).
+            </p>
+            @if (chartBarrasJornada().items.length) {
               <div class="inf-vbars" role="img" aria-label="Alumnos por jornada">
-                @for (it of chartBarrasJornada(); track it.label) {
-                  <div class="inf-vbar-col" [title]="it.label + ': ' + it.value">
-                    <span class="inf-vbar-val">{{ it.value }}</span>
+                @for (it of chartBarrasJornada().items; track it.label) {
+                  <div
+                    class="inf-vbar-col"
+                    [title]="it.label + ': ' + it.value + ' (' + formatPct(it.pctTotal) + ')'"
+                  >
+                    <span class="inf-vbar-val">
+                      <strong>{{ it.value }}</strong>
+                      <em>{{ formatPct(it.pctTotal) }}</em>
+                    </span>
                     <div class="inf-vbar-track">
                       <div
                         class="inf-vbar-fill"
-                        [style.height.%]="it.pct"
+                        [style.height.%]="it.pctAltura"
                         [style.background]="it.color"
                       ></div>
                     </div>
@@ -150,6 +160,34 @@
                   </div>
                 }
               </div>
+              <table class="inf-chart-table">
+                <thead>
+                  <tr>
+                    <th>Jornada</th>
+                    <th>Alumnos</th>
+                    <th>% del total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (it of chartBarrasJornada().items; track it.label) {
+                    <tr>
+                      <td>
+                        <span class="inf-chart-dot" [style.background]="it.color"></span>
+                        {{ it.label }}
+                      </td>
+                      <td>{{ it.value }}</td>
+                      <td>{{ formatPct(it.pctTotal) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Total</td>
+                    <td>{{ chartBarrasJornada().total }}</td>
+                    <td>100%</td>
+                  </tr>
+                </tfoot>
+              </table>
             } @else {
               <p class="inf-muted">Sin datos</p>
             }
@@ -157,14 +195,31 @@
 
           <section class="inf-card inf-chart-card">
             <h3>Clases por estado</h3>
+            <p class="inf-chart-hint">
+              Distribución de clases según su estado. El % es la participación sobre el total de clases
+              del gráfico ({{ chartTortaEstado().total }}).
+            </p>
             @if (chartTortaEstado().slices.length) {
               <div class="inf-pie" role="img" aria-label="Clases por estado">
                 <div class="inf-pie-visual">
                   <svg viewBox="0 0 100 100" class="inf-pie-svg">
                     @for (s of chartTortaEstado().slices; track s.label) {
                       <path [attr.d]="s.path" [attr.fill]="s.color">
-                        <title>{{ s.label }}: {{ s.value }} ({{ s.pct }}%)</title>
+                        <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
                       </path>
+                    }
+                    @for (s of chartTortaEstado().slices; track s.label + '-lbl') {
+                      @if (s.showLabel) {
+                        <text
+                          class="inf-pie-slice-lbl"
+                          [attr.x]="s.labelX"
+                          [attr.y]="s.labelY"
+                          text-anchor="middle"
+                          dominant-baseline="middle"
+                        >
+                          {{ formatPct(s.pct) }}
+                        </text>
+                      }
                     }
                   </svg>
                   <div class="inf-pie-center">
@@ -178,11 +233,39 @@
                       <span class="inf-pie-swatch" [style.background]="s.color"></span>
                       <span class="inf-pie-leg-lbl">{{ s.label }}</span>
                       <strong>{{ s.value }}</strong>
-                      <em>{{ s.pct }}%</em>
+                      <em>{{ formatPct(s.pct) }}</em>
                     </li>
                   }
                 </ul>
               </div>
+              <table class="inf-chart-table">
+                <thead>
+                  <tr>
+                    <th>Estado</th>
+                    <th>Clases</th>
+                    <th>% del total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of chartTortaEstado().slices; track s.label) {
+                    <tr>
+                      <td>
+                        <span class="inf-chart-dot" [style.background]="s.color"></span>
+                        {{ s.label }}
+                      </td>
+                      <td>{{ s.value }}</td>
+                      <td>{{ formatPct(s.pct) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Total</td>
+                    <td>{{ chartTortaEstado().total }}</td>
+                    <td>100%</td>
+                  </tr>
+                </tfoot>
+              </table>
             } @else {
               <p class="inf-muted">Sin datos</p>
             }
@@ -190,14 +273,31 @@
 
           <section class="inf-card inf-chart-card">
             <h3>Alumnos por programa</h3>
+            <p class="inf-chart-hint">
+              Alumnos capacitados agrupados por programa. El % es la participación sobre el total de
+              alumnos del gráfico ({{ chartTortaPrograma().total }}).
+            </p>
             @if (chartTortaPrograma().slices.length) {
               <div class="inf-pie" role="img" aria-label="Alumnos por programa">
                 <div class="inf-pie-visual">
                   <svg viewBox="0 0 100 100" class="inf-pie-svg">
                     @for (s of chartTortaPrograma().slices; track s.label) {
                       <path [attr.d]="s.path" [attr.fill]="s.color">
-                        <title>{{ s.label }}: {{ s.value }} ({{ s.pct }}%)</title>
+                        <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
                       </path>
+                    }
+                    @for (s of chartTortaPrograma().slices; track s.label + '-lbl') {
+                      @if (s.showLabel) {
+                        <text
+                          class="inf-pie-slice-lbl"
+                          [attr.x]="s.labelX"
+                          [attr.y]="s.labelY"
+                          text-anchor="middle"
+                          dominant-baseline="middle"
+                        >
+                          {{ formatPct(s.pct) }}
+                        </text>
+                      }
                     }
                   </svg>
                   <div class="inf-pie-center">
@@ -211,11 +311,39 @@
                       <span class="inf-pie-swatch" [style.background]="s.color"></span>
                       <span class="inf-pie-leg-lbl" [title]="s.label">{{ s.label }}</span>
                       <strong>{{ s.value }}</strong>
-                      <em>{{ s.pct }}%</em>
+                      <em>{{ formatPct(s.pct) }}</em>
                     </li>
                   }
                 </ul>
               </div>
+              <table class="inf-chart-table">
+                <thead>
+                  <tr>
+                    <th>Programa</th>
+                    <th>Alumnos</th>
+                    <th>% del total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of chartTortaPrograma().slices; track s.label) {
+                    <tr>
+                      <td>
+                        <span class="inf-chart-dot" [style.background]="s.color"></span>
+                        {{ s.label }}
+                      </td>
+                      <td>{{ s.value }}</td>
+                      <td>{{ formatPct(s.pct) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Total</td>
+                    <td>{{ chartTortaPrograma().total }}</td>
+                    <td>100%</td>
+                  </tr>
+                </tfoot>
+              </table>
             } @else {
               <p class="inf-muted">Sin datos</p>
             }
@@ -223,15 +351,25 @@
 
           <section class="inf-card inf-chart-card">
             <h3>Clases dictadas por instructor</h3>
-            @if (chartBarrasInstructor().length) {
+            <p class="inf-chart-hint">
+              Clases finalizadas por instructor. El % es la participación sobre el total del gráfico
+              ({{ chartBarrasInstructor().total }} clases).
+            </p>
+            @if (chartBarrasInstructor().items.length) {
               <div class="inf-vbars" role="img" aria-label="Clases por instructor">
-                @for (it of chartBarrasInstructor(); track it.label) {
-                  <div class="inf-vbar-col" [title]="it.label + ': ' + it.value">
-                    <span class="inf-vbar-val">{{ it.value }}</span>
+                @for (it of chartBarrasInstructor().items; track it.label) {
+                  <div
+                    class="inf-vbar-col"
+                    [title]="it.label + ': ' + it.value + ' (' + formatPct(it.pctTotal) + ')'"
+                  >
+                    <span class="inf-vbar-val">
+                      <strong>{{ it.value }}</strong>
+                      <em>{{ formatPct(it.pctTotal) }}</em>
+                    </span>
                     <div class="inf-vbar-track">
                       <div
                         class="inf-vbar-fill inf-vbar-fill--teal"
-                        [style.height.%]="it.pct"
+                        [style.height.%]="it.pctAltura"
                         [style.background]="it.color"
                       ></div>
                     </div>
@@ -239,6 +377,34 @@
                   </div>
                 }
               </div>
+              <table class="inf-chart-table">
+                <thead>
+                  <tr>
+                    <th>Instructor</th>
+                    <th>Clases</th>
+                    <th>% del total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (it of chartBarrasInstructor().items; track it.label) {
+                    <tr>
+                      <td>
+                        <span class="inf-chart-dot" [style.background]="it.color"></span>
+                        {{ it.label }}
+                      </td>
+                      <td>{{ it.value }}</td>
+                      <td>{{ formatPct(it.pctTotal) }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Total</td>
+                    <td>{{ chartBarrasInstructor().total }}</td>
+                    <td>100%</td>
+                  </tr>
+                </tfoot>
+              </table>
             } @else {
               <p class="inf-muted">Sin datos</p>
             }

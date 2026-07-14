@@ -312,11 +312,12 @@ export class JornadaInstructorComponent implements OnInit {
           this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
           this.horaFinClase.set(isoAHoraInput(c.horaFin));
           this.recargarClases(id);
-          if (r?.certificadosGenerados > 0) {
+          const nCert = this.contarCertificadosEmitidos(r);
+          if (nCert > 0) {
             this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
           }
           const msg = r?.message || 'Horario de la clase actualizado.';
-          this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Horario guardado');
+          this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Horario guardado');
         },
         error: (e) => {
           this.guardandoHorario.set(false);
@@ -422,17 +423,18 @@ export class JornadaInstructorComponent implements OnInit {
         this.horaFinClase.set(isoAHoraInput(c.horaFin));
         this.recargarClases(id);
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
-        if (r?.certificadosGenerados > 0) {
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         let msg = 'Clase cerrada correctamente.';
         if (r?.asistenciasRegistradas > 0) {
           msg += ` Asistencia a ${r.asistenciasRegistradas} alumno(s).`;
         }
-        if (r?.certificadosGenerados > 0) {
-          msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
+        if (nCert > 0) {
+          msg += ` Certificados emitidos: ${nCert}.`;
         }
-        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
+        this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo finalizar la clase.', 'error', 'Error'),
     });
@@ -487,6 +489,16 @@ export class JornadaInstructorComponent implements OnInit {
         this.mostrarMsg(body?.message || 'No se pudo registrar la asistencia.', 'error', 'Error');
       },
     });
+  }
+
+  private contarCertificadosEmitidos(r: {
+    certificadosGenerados?: number;
+    certificadosNuevos?: number;
+    certificadosEmitidos?: unknown[];
+  } | null | undefined): number {
+    const porLista = Array.isArray(r?.certificadosEmitidos) ? r!.certificadosEmitidos!.length : 0;
+    const porContador = Math.max(Number(r?.certificadosGenerados) || 0, Number(r?.certificadosNuevos) || 0);
+    return Math.max(porLista, porContador);
   }
 
   private textoAsistencia(r: any, nd: string): string {

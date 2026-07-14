@@ -25,7 +25,7 @@
   h1 {
     margin: 0 0 0.35rem;
     font-size: 1.28rem;
-    background: linear-gradient(90deg, #fbcfe8 0%, #7dd3fc 50%, #fde68a 100%);
+    background: linear-gradient(90deg, #fbcfe8 0%, #7dd3fc 50%, #c7d2fe 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -75,9 +75,9 @@
   }
 
   &--amber {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.3);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.3);
   }
 
   &--teal {
@@ -97,7 +97,7 @@
     text-decoration: none;
 
     &:hover {
-      color: #fde68a;
+      color: #c7d2fe;
     }
   }
 }
@@ -221,9 +221,9 @@
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.08);
-    border-left: 3px solid #fbbf24;
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.08);
+    border-left: 3px solid #38bdf8;
     border-radius: 0 6px 6px 0;
     border-bottom: none;
   }
@@ -329,7 +329,7 @@ textarea {
     }
 
     tbody tr:hover td {
-      background: rgba(251, 191, 36, 0.04);
+      background: rgba(56, 189, 248, 0.04);
     }
 
     tr.sel td {
@@ -386,7 +386,7 @@ textarea {
   padding: 0.75rem 0.9rem !important;
   border-radius: 12px !important;
   border: 1px solid rgba(120, 170, 255, 0.14) !important;
-  border-left: 3px solid #fbbf24 !important;
+  border-left: 3px solid #38bdf8 !important;
   background: linear-gradient(145deg, rgba(8, 18, 45, 0.55), rgba(5, 12, 32, 0.45)) !important;
 }
 

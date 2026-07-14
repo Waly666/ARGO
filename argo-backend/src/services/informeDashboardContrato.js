@@ -416,16 +416,207 @@ function alcanceTitulo(alcance, data) {
   }
 }
 
-function htmlBarChart(items, maxH = 90) {
-  const max = Math.max(1, ...items.map((i) => Number(i.value) || 0));
-  const bars = items
-    .slice(0, 12)
-    .map((i) => {
-      const h = Math.round(((Number(i.value) || 0) / max) * maxH);
-      return `<div class="bar"><div class="bar-fill" style="height:${h}px"></div><span class="bar-val">${esc(i.value)}</span><span class="bar-lbl">${esc(i.label)}</span></div>`;
+function formatPct(n) {
+  if (!Number.isFinite(n)) return '0%';
+  const rounded = Math.round(n * 10) / 10;
+  return `${rounded}%`;
+}
+
+const CHART_PALETTE = [
+  '#0ea5e9',
+  '#10b981',
+  '#8b5cf6',
+  '#6366f1',
+  '#f43f5e',
+  '#14b8a6',
+  '#3b82f6',
+  '#a855f7',
+  '#ec4899',
+  '#22c55e',
+];
+
+const CHART_PALETTE_ESTADO = {
+  Finalizadas: '#10b981',
+  'En proceso': '#0ea5e9',
+  Programadas: '#8b5cf6',
+};
+
+function chartColor(i, offset = 0) {
+  return CHART_PALETTE[(i + offset) % CHART_PALETTE.length];
+}
+
+function htmlChartDataTable(items, colLabel, colValue) {
+  const list = (items || []).filter((x) => Number(x.value) >= 0);
+  if (!list.length) return '';
+  const total = list.reduce((s, x) => s + (Number(x.value) || 0), 0);
+  const rows = list
+    .map((it, i) => {
+      const value = Number(it.value) || 0;
+      const pct = total > 0 ? Math.round((value / total) * 1000) / 10 : 0;
+      const color = it.color || chartColor(i);
+      return `<tr>
+        <td><span class="swatch" style="background:${esc(color)}"></span>${esc(it.label)}</td>
+        <td class="num">${esc(value)}</td>
+        <td class="num">${esc(formatPct(pct))}</td>
+      </tr>`;
     })
     .join('');
-  return `<div class="bars">${bars || '<p class="muted">Sin datos</p>'}</div>`;
+  return `<table class="t chart-t">
+    <thead><tr><th>${esc(colLabel)}</th><th class="num">${esc(colValue)}</th><th class="num">% del total</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td>Total</td><td class="num">${esc(total)}</td><td class="num">100%</td></tr></tfoot>
+  </table>`;
+}
+
+function htmlBarChart(items, opts = {}) {
+  const { maxH = 90, colorOffset = 0, colLabel = 'Concepto', colValue = 'Cantidad' } = opts;
+  const list = (items || []).filter((x) => Number(x.value) >= 0).slice(0, 12);
+  if (!list.length) return '<p class="muted">Sin datos</p>';
+  const values = list.map((i) => Number(i.value) || 0);
+  const max = Math.max(1, ...values);
+  const total = values.reduce((s, n) => s + n, 0);
+  const enriched = list.map((i, idx) => {
+    const value = Number(i.value) || 0;
+    return {
+      ...i,
+      value,
+      color: chartColor(idx, colorOffset),
+      pctAltura: Math.max(4, Math.round((value / max) * maxH)),
+      pctTotal: total > 0 ? Math.round((value / total) * 1000) / 10 : 0,
+    };
+  });
+  const bars = enriched
+    .map(
+      (i) =>
+        `<div class="bar">
+          <div class="bar-val"><strong>${esc(i.value)}</strong><em>${esc(formatPct(i.pctTotal))}</em></div>
+          <div class="bar-fill" style="height:${i.pctAltura}px;background:${esc(i.color)}"></div>
+          <span class="bar-lbl">${esc(i.label)}</span>
+        </div>`,
+    )
+    .join('');
+  return `<div class="bars">${bars}</div>${htmlChartDataTable(enriched, colLabel, colValue)}`;
+}
+
+function donutSlicePath(cx, cy, r, rInner, a0, a1) {
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  const x0 = cx + r * Math.cos(a0);
+  const y0 = cy + r * Math.sin(a0);
+  const x1 = cx + r * Math.cos(a1);
+  const y1 = cy + r * Math.sin(a1);
+  const xi0 = cx + rInner * Math.cos(a1);
+  const yi0 = cy + rInner * Math.sin(a1);
+  const xi1 = cx + rInner * Math.cos(a0);
+  const yi1 = cy + rInner * Math.sin(a0);
+  if (Math.abs(a1 - a0) >= Math.PI * 2 - 1e-6) {
+    const mid = a0 + Math.PI;
+    const xm = cx + r * Math.cos(mid);
+    const ym = cy + r * Math.sin(mid);
+    const xim = cx + rInner * Math.cos(mid);
+    const yim = cy + rInner * Math.sin(mid);
+    return [
+      `M ${x0} ${y0}`,
+      `A ${r} ${r} 0 1 1 ${xm} ${ym}`,
+      `A ${r} ${r} 0 1 1 ${x0} ${y0}`,
+      `L ${xi1} ${yi1}`,
+      `A ${rInner} ${rInner} 0 1 0 ${xim} ${yim}`,
+      `A ${rInner} ${rInner} 0 1 0 ${xi1} ${yi1}`,
+      'Z',
+    ].join(' ');
+  }
+  return [
+    `M ${x0} ${y0}`,
+    `A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`,
+    `L ${xi0} ${yi0}`,
+    `A ${rInner} ${rInner} 0 ${large} 0 ${xi1} ${yi1}`,
+    'Z',
+  ].join(' ');
+}
+
+function htmlPieChart(items, opts = {}) {
+  const { kind = 'programa', colLabel = 'Concepto', colValue = 'Cantidad', unit = 'total' } = opts;
+  const list = (items || []).filter((x) => Number(x.value) > 0).slice(0, 8);
+  if (!list.length) return '<p class="muted">Sin datos</p>';
+  const totalRaw = list.reduce((s, x) => s + (Number(x.value) || 0), 0);
+  const total = totalRaw || 1;
+  const cx = 50;
+  const cy = 50;
+  const r = 36;
+  const rInner = 20;
+  const rLabel = (r + rInner) / 2;
+  let angle = -Math.PI / 2;
+  const slices = list.map((it, i) => {
+    const value = Number(it.value) || 0;
+    const pct = Math.round((value / total) * 1000) / 10;
+    const sweep = (value / total) * Math.PI * 2;
+    const a0 = angle;
+    const a1 = angle + sweep;
+    const aMid = a0 + sweep / 2;
+    angle = a1;
+    const color =
+      kind === 'estado'
+        ? CHART_PALETTE_ESTADO[it.label] || chartColor(i)
+        : chartColor(i);
+    return {
+      label: it.label,
+      value,
+      pct,
+      color,
+      path: donutSlicePath(cx, cy, r, rInner, a0, a1),
+      labelX: cx + rLabel * Math.cos(aMid),
+      labelY: cy + rLabel * Math.sin(aMid),
+      showLabel: pct >= 8 || sweep >= 0.45,
+    };
+  });
+  const paths = slices
+    .map((s) => `<path d="${s.path}" fill="${esc(s.color)}"><title>${esc(s.label)}: ${s.value} (${formatPct(s.pct)})</title></path>`)
+    .join('');
+  const labels = slices
+    .filter((s) => s.showLabel)
+    .map(
+      (s) =>
+        `<text x="${s.labelX.toFixed(2)}" y="${s.labelY.toFixed(2)}" text-anchor="middle" dominant-baseline="middle" class="pie-lbl">${esc(formatPct(s.pct))}</text>`,
+    )
+    .join('');
+  const legend = slices
+    .map(
+      (s) =>
+        `<li><span class="swatch" style="background:${esc(s.color)}"></span><span class="leg-lbl">${esc(s.label)}</span><strong>${esc(s.value)}</strong><em>${esc(formatPct(s.pct))}</em></li>`,
+    )
+    .join('');
+  return `<div class="pie-wrap">
+    <div class="pie-visual">
+      <svg viewBox="0 0 100 100" class="pie-svg">${paths}${labels}</svg>
+      <div class="pie-center"><strong>${esc(totalRaw)}</strong><span>${esc(unit)}</span></div>
+    </div>
+    <ul class="pie-legend">${legend}</ul>
+  </div>${htmlChartDataTable(slices, colLabel, colValue)}`;
+}
+
+function htmlChartsDashboard(charts) {
+  const c = charts || {};
+  return `<div class="charts-grid">
+    <section class="chart-card">
+      <h3 class="sec">Alumnos por jornada</h3>
+      <p class="chart-hint">Participación sobre el total de alumnos capacitados del gráfico.</p>
+      ${htmlBarChart(c.alumnosPorJornada || [], { colLabel: 'Jornada', colValue: 'Alumnos', colorOffset: 0 })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Clases por estado</h3>
+      <p class="chart-hint">Participación sobre el total de clases del gráfico.</p>
+      ${htmlPieChart(c.clasesPorEstado || [], { kind: 'estado', colLabel: 'Estado', colValue: 'Clases', unit: 'clases' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Alumnos por programa</h3>
+      <p class="chart-hint">Participación sobre el total de alumnos del gráfico.</p>
+      ${htmlPieChart(c.alumnosPorPrograma || [], { kind: 'programa', colLabel: 'Programa', colValue: 'Alumnos', unit: 'alumnos' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Clases dictadas por instructor</h3>
+      <p class="chart-hint">Participación sobre el total de clases dictadas del gráfico.</p>
+      ${htmlBarChart(c.clasesPorInstructor || [], { colLabel: 'Instructor', colValue: 'Clases', colorOffset: 4 })}
+    </section>
+  </div>`;
 }
 
 function htmlTablaAlumnos(alumnos) {
@@ -442,11 +633,13 @@ function htmlTablaAlumnos(alumnos) {
 /**
  * HTML imprimible / PDF del informe dirigido a la empresa contratante.
  */
-function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
+async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   const emp = data.empresaCapacitadora || {};
   const c = data.contrato || {};
   const k = data.kpis || {};
   const titulo = alcanceTitulo(alcance, data);
+  const { atPageCssPara } = require('./configPaginasInformes');
+  const atPage = await atPageCssPara('informe_contrato_jornadas');
   const logoSrc = emp.logoUrl || emp.urlLogoDataUrl || '';
   const logo = logoSrc
     ? `<img class="logo" src="${esc(logoSrc)}" alt="${esc(emp.nombre || 'Logo')}" />`
@@ -497,13 +690,16 @@ function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     }
   }
 
+  const chartsBlock =
+    alcance === 'contrato' ? htmlChartsDashboard(data.charts) : '';
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <title>${esc(titulo)}</title>
 <style>
-  @page { size: A4; margin: 14mm; }
+  ${atPage}
   * { box-sizing: border-box; }
   body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; font-size: 10pt; }
   .hdr { display: flex; gap: 14px; border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 12px; }
@@ -517,18 +713,47 @@ function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   .kpi { border: 1px solid #94a3b8; background: #edf2f7; padding: 8px; text-align: center; }
   .kpi span { display:block; font-size: 8pt; text-transform: uppercase; color: #1e3a5f; }
   .kpi strong { font-size: 14pt; }
-  .sec { margin: 16px 0 6px; color: #1e3a5f; border-bottom: 1px solid #bbb; padding-bottom: 3px; text-transform: uppercase; font-size: 10pt; }
+  .sec { margin: 14px 0 6px; color: #1e3a5f; border-bottom: 1px solid #bbb; padding-bottom: 3px; text-transform: uppercase; font-size: 10pt; }
   h4 { margin: 10px 0 4px; font-size: 10pt; }
   .t { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt; }
   .t th, .t td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
   .t th { background: #e2e8f0; }
-  .bars { display: flex; align-items: flex-end; gap: 8px; min-height: 110px; margin: 8px 0 16px; }
-  .bar { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
-  .bar-fill { width: 100%; max-width: 36px; background: #1e3a5f; border-radius: 3px 3px 0 0; }
-  .bar-val { font-size: 8pt; font-weight: 700; }
+  .t .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .chart-t { margin-top: 6px; font-size: 8pt; }
+  .chart-t tfoot td { font-weight: 700; background: #f1f5f9; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 16px; }
+  .chart-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px 10px; background: #fff; break-inside: avoid; page-break-inside: avoid; }
+  .chart-card .sec { margin-top: 2px; font-size: 9pt; }
+  .chart-hint { margin: 0 0 8px; font-size: 7.5pt; color: #64748b; }
+  .bars { display: flex; align-items: flex-end; gap: 8px; min-height: 110px; margin: 4px 0 8px; }
+  .bar { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
+  .bar-fill { width: 100%; max-width: 36px; border-radius: 3px 3px 0 0; }
+  .bar-val { display: flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: 7.5pt; }
+  .bar-val strong { font-weight: 800; color: #0f172a; }
+  .bar-val em { font-style: normal; font-weight: 700; color: #0369a1; font-size: 7pt; }
   .bar-lbl { font-size: 7pt; color: #555; word-break: break-word; max-width: 70px; }
-  .pie { margin-top: 18px; font-size: 8pt; color: #666; border-top: 1px solid #ddd; padding-top: 8px; }
-  @media print { .no-print { display: none !important; } }
+  .pie-wrap { display: grid; grid-template-columns: 88px 1fr; gap: 10px; align-items: center; margin: 4px 0 8px; }
+  .pie-visual { position: relative; width: 88px; height: 88px; }
+  .pie-svg { width: 100%; height: 100%; }
+  .pie-svg path { stroke: #fff; stroke-width: 0.7; }
+  .pie-lbl { fill: #fff; font-size: 5.2px; font-weight: 800; paint-order: stroke; stroke: rgba(15,23,42,.65); stroke-width: .55px; }
+  .pie-center { position: absolute; inset: 28%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none; }
+  .pie-center strong { font-size: 9pt; line-height: 1.05; color: #0f172a; }
+  .pie-center span { font-size: 6pt; text-transform: uppercase; color: #64748b; letter-spacing: .03em; }
+  .pie-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 7.5pt; }
+  .pie-legend li { display: grid; grid-template-columns: 8px minmax(0,1fr) auto auto; gap: 4px; align-items: center; }
+  .pie-legend strong { font-variant-numeric: tabular-nums; }
+  .pie-legend em { font-style: normal; color: #64748b; font-variant-numeric: tabular-nums; min-width: 2.2rem; text-align: right; }
+  .leg-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; }
+  .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+  .ftr { margin-top: 18px; font-size: 8pt; color: #666; border-top: 1px solid #ddd; padding-top: 8px; }
+  @media print {
+    .no-print { display: none !important; }
+    .charts-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 700px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -550,13 +775,9 @@ function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     <div class="kpi"><span>Alumnos capacitados</span><strong>${k.alumnosCapacitados || 0}</strong></div>
     <div class="kpi"><span>Alumnos certificados</span><strong>${k.alumnosCertificados || 0}</strong></div>
   </div>
-  ${
-    alcance === 'contrato'
-      ? `<h3 class="sec">Alumnos capacitados por jornada</h3>${htmlBarChart(data.charts?.alumnosPorJornada || [])}`
-      : ''
-  }
+  ${chartsBlock}
   ${cuerpo || '<p class="muted">No hay datos para el alcance seleccionado.</p>'}
-  <div class="pie">
+  <div class="ftr">
     Generado el ${esc(fmtFechaSolo(data.generadoAt) || new Date().toLocaleDateString('es-CO'))}.
     Documento de seguimiento de capacitación — uso empresarial.
   </div>

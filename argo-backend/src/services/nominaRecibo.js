@@ -54,13 +54,16 @@ async function generarReciboHtml(idPeriodo, empleadoId) {
       ? `<p class="warn">${det.advertencias.map(esc).join(' · ')}</p>`
       : '';
 
+  const atPage = await require('./configPaginasInformes').atPageCssPara('colilla_nomina');
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <title>Colilla de pago ${esc(periodo.nombre)}</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 24px; color: #111; font-size: 13px; }
+  ${atPage}
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 12mm; color: #111; font-size: 13px; }
   h1 { font-size: 1.2rem; margin: 0 0 4px; }
   .empresa { color: #444; margin-bottom: 16px; }
   table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }

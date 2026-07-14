@@ -54,7 +54,11 @@ function buildQueryCertificadosJornada(query = {}) {
     if (!d) return { q: null, error: 'Fecha «hasta» inválida' };
     fecha.$lte = finDia(d);
   }
-  if (Object.keys(fecha).length) q.fechaEmision = fecha;
+  if (Object.keys(fecha).length) {
+    // Las fechas del filtro son el día en que se GENERÓ el certificado (createdAt).
+    // fechaEmision puede ser el día de la clase (impreso en el PDF) y no coincide con «hoy».
+    q.createdAt = fecha;
+  }
   return { q };
 }
 

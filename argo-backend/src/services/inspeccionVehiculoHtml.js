@@ -167,7 +167,7 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
   <meta charset="utf-8" />
   <title>Inspección vehículo ${esc(inspeccion.placa)} — ${esc(inspeccion.fecha)}</title>
   <style>
-    @page { size: A4 portrait; margin: 12mm; }
+    ${(await require('./configPaginasInformes').atPageCssPara('inspeccion_vehiculo'))}
     * { box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 16px; }
     h1 { text-align: center; font-size: 15px; margin: 0; letter-spacing: 0.4px; text-transform: uppercase; }

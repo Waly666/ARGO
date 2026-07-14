@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject, catchError, debounceTime, of, switchMap } from 'rxjs';
 
 import { ConfigRecibo, ConfigService } from '../../core/services/config.service';
+import { ConfigPaginasInformesService } from '../../core/services/config-paginas-informes.service';
 import {
   ClaseJornadaDto,
   ContratacionDto,
@@ -174,6 +175,7 @@ function idCorto(id?: string | null): string {
 export class JornadasInformesComponent implements OnInit {
   private jornadaSvc = inject(JornadaCapService);
   private configSvc = inject(ConfigService);
+  private paginasSvc = inject(ConfigPaginasInformesService);
   private destroyRef = inject(DestroyRef);
   private recarga$ = new Subject<void>();
 
@@ -783,30 +785,35 @@ export class JornadasInformesComponent implements OnInit {
     }
     const t = this.tab();
     const filas = this.filasActivas();
-    const html = buildJornadasInformeHtml({
-      titulo: TITULOS_TAB[t],
-      subtitulo: 'Informe de jornadas de capacitación',
-      filtros: this.filtrosDoc(),
-      codigoContratoDestacado: this.codigoContratoParaPdf(filas),
-      idJornadaDestacado: this.idJornadaCortoParaPdf(filas),
-      fechaJornadaDestacada: this.fechaJornadaParaPdf(filas),
-      idClaseDestacado: this.idClaseCortoFiltro() || undefined,
-      resumen: this.resumenDeFilas(filas, t),
-      secciones:
-        t === 'trazabilidad'
-          ? this.seccionesPdfPorJornada(filas)
-          : [
-              {
-                titulo: TITULOS_TAB[t],
-                columnas: this.columnasActivas(),
-                filas,
-              },
-            ],
-      empresa: this.empresa(),
+    this.paginasSvc.ensureAndAtPageCss('informe_jornadas_listado').subscribe({
+      next: (atPageCss) => {
+        const html = buildJornadasInformeHtml({
+          titulo: TITULOS_TAB[t],
+          subtitulo: 'Informe de jornadas de capacitación',
+          filtros: this.filtrosDoc(),
+          codigoContratoDestacado: this.codigoContratoParaPdf(filas),
+          idJornadaDestacado: this.idJornadaCortoParaPdf(filas),
+          fechaJornadaDestacada: this.fechaJornadaParaPdf(filas),
+          idClaseDestacado: this.idClaseCortoFiltro() || undefined,
+          resumen: this.resumenDeFilas(filas, t),
+          secciones:
+            t === 'trazabilidad'
+              ? this.seccionesPdfPorJornada(filas)
+              : [
+                  {
+                    titulo: TITULOS_TAB[t],
+                    columnas: this.columnasActivas(),
+                    filas,
+                  },
+                ],
+          empresa: this.empresa(),
+          atPageCss,
+        });
+        if (!abrirInformeJornadasPdf(html)) {
+          this.msg.set('Permita ventanas emergentes para ver e imprimir el PDF.');
+        }
+      },
     });
-    if (!abrirInformeJornadasPdf(html)) {
-      this.msg.set('Permita ventanas emergentes para ver e imprimir el PDF.');
-    }
   }
 
   imprimirTodo(): void {
@@ -835,21 +842,26 @@ export class JornadasInformesComponent implements OnInit {
       ];
     });
     const filasRef = this.dataFiltradaPorTab('alumnos');
-    const html = buildJornadasInformeHtml({
-      titulo: 'Informes de jornadas de capacitación',
-      subtitulo: 'Consolidado de contratos, jornadas, clases, alumnos y certificados',
-      filtros: this.filtrosDoc(),
-      codigoContratoDestacado: this.codigoContratoParaPdf(filasRef),
-      idJornadaDestacado: this.idJornadaCortoParaPdf(filasRef),
-      fechaJornadaDestacada: this.fechaJornadaParaPdf(filasRef),
-      idClaseDestacado: this.idClaseCortoFiltro() || undefined,
-      resumen: this.resumenDeFilas(filasRef, 'alumnos'),
-      secciones,
-      empresa: this.empresa(),
+    this.paginasSvc.ensureAndAtPageCss('informe_jornadas_listado').subscribe({
+      next: (atPageCss) => {
+        const html = buildJornadasInformeHtml({
+          titulo: 'Informes de jornadas de capacitación',
+          subtitulo: 'Consolidado de contratos, jornadas, clases, alumnos y certificados',
+          filtros: this.filtrosDoc(),
+          codigoContratoDestacado: this.codigoContratoParaPdf(filasRef),
+          idJornadaDestacado: this.idJornadaCortoParaPdf(filasRef),
+          fechaJornadaDestacada: this.fechaJornadaParaPdf(filasRef),
+          idClaseDestacado: this.idClaseCortoFiltro() || undefined,
+          resumen: this.resumenDeFilas(filasRef, 'alumnos'),
+          secciones,
+          empresa: this.empresa(),
+          atPageCss,
+        });
+        if (!abrirInformeJornadasPdf(html)) {
+          this.msg.set('Permita ventanas emergentes para ver e imprimir el PDF.');
+        }
+      },
     });
-    if (!abrirInformeJornadasPdf(html)) {
-      this.msg.set('Permita ventanas emergentes para ver e imprimir el PDF.');
-    }
   }
 
   private codigoContratoParaPdf(filas: Record<string, unknown>[]): string | undefined {

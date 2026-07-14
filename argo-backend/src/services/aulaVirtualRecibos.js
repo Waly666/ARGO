@@ -108,7 +108,7 @@ async function htmlReciboPortal(numDoc, idIngreso) {
     err.status = 404;
     throw err;
   }
-  return generarHtmlIngreso(data);
+  return await generarHtmlIngreso(data);
 }
 
 module.exports = {

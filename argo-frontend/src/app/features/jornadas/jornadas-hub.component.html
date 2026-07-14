@@ -22,7 +22,7 @@
   </header>
 
   @if (operacionEspecialActiva()) {
-    <div class="jor-banner jor-banner--warn" role="status">
+    <div class="jor-banner jor-banner--operacion-especial" role="status">
       <span class="jor-banner-icon" aria-hidden="true">⚠</span>
       <div class="jor-banner-body">
         <strong class="jor-banner-title">Modo operación especial activo</strong>
@@ -305,110 +305,162 @@
               <label>Sesiones cert.</label>
               <input type="number" min="1" [ngModel]="formContrato().numSesCert" (ngModelChange)="patchContrato('numSesCert', $event)" [disabled]="formContrato().tipoCertificado === 'por_clase'" />
             </div>
-            <div class="field col-w-num">
-              <label>Intensidad horaria</label>
-              <input type="number" min="0" step="0.5" [ngModel]="formContrato().horasPorClase" (ngModelChange)="patchContrato('horasPorClase', $event)" title="Horas que se imprimen en el certificado por clase; no define la duración de la sesión" />
-            </div>
             <div class="field col-w-md">
               <label>Tipo certificado</label>
-              <select [ngModel]="formContrato().tipoCertificado || 'global'" (ngModelChange)="patchContrato('tipoCertificado', $event)">
+              <select
+                [ngModel]="contratoTipoCertificado()"
+                (ngModelChange)="patchContrato('tipoCertificado', $event)">
                 <option value="global">Global (al completar sesiones)</option>
                 <option value="por_clase">Por clase (cada asistencia)</option>
               </select>
             </div>
           </div>
-          <section class="form-block contrato-programas-block">
-            <h3 class="form-block-title">Programas del contrato</h3>
-            <p class="hint block-hint">
-              Elija los programas que aplican a este contrato. Al usar «Generar faltantes» o crear jornadas con
-              autogeneración de clases, el sistema reparte los programas de forma equitativa entre las clases nuevas.
-              Cada clase sigue siendo editable: instructor o administrador pueden cambiar el programa después.
-            </p>
-            @if (contratoFormEjecutado()) {
-              <p class="hint block-hint">Contrato ejecutado: los programas no se pueden modificar.</p>
-            }
-            @if (programasJornadaLoading()) {
-              <p class="field-hint">Cargando catálogo de programas…</p>
-            } @else if (programasJornada().length === 0) {
-              <p class="field-hint">
-                No hay programas de «Jornadas de Capacitación» en el catálogo. Créelos en
-                <a routerLink="/app/programas" target="_blank">Programas</a> con tipo de capacitación adecuado.
-              </p>
-            } @else {
-              <input
-                type="search"
-                class="contrato-programas-buscar"
-                placeholder="Buscar por código, nombre o ID…"
-                [ngModel]="buscarProgramasContrato()"
-                (ngModelChange)="buscarProgramasContrato.set($event)"
-                [disabled]="contratoFormEjecutado()" />
-              @if (cantidadProgramasContrato() > 0) {
-                <div class="contrato-programas-chips">
-                  @for (pid of formContrato().idProgramas; track pid) {
-                    <span class="contrato-programa-chip">{{ programaContratoLabel(pid) }}</span>
-                  }
-                  @if (!contratoFormEjecutado()) {
-                    <button type="button" class="mini ghost" (click)="limpiarProgramasContrato()">Quitar todos</button>
-                  }
-                </div>
-              }
-              <div class="contrato-programas-list">
-                @for (p of programasContratoFiltrados(); track programaOptionValue(p)) {
-                  <label
-                    class="contrato-programa-pick"
-                    [class.selected]="tieneProgramaContrato(programaOptionValue(p))"
-                    [class.disabled]="contratoFormEjecutado()">
-                    <input
-                      type="checkbox"
-                      [checked]="tieneProgramaContrato(programaOptionValue(p))"
-                      [disabled]="contratoFormEjecutado()"
-                      (change)="toggleProgramaContrato(programaOptionValue(p), $any($event.target).checked)" />
-                    <span class="contrato-programa-code">{{ p.codigoProg || programaOptionValue(p) }}</span>
-                    <span class="contrato-programa-name">{{ p.nombreProg }}</span>
-                  </label>
-                } @empty {
-                  <p class="field-hint">Sin coincidencias para la búsqueda.</p>
-                }
-              </div>
-            }
-          </section>
+          <div class="row row-fields form-block-inline contrato-dias-semana">
+            <label><input type="checkbox" [ngModel]="formContrato().incluiSab" (ngModelChange)="patchContrato('incluiSab', $event)" /> Sábados</label>
+            <label><input type="checkbox" [ngModel]="formContrato().incluiDom" (ngModelChange)="patchContrato('incluiDom', $event)" /> Domingos</label>
+            <label><input type="checkbox" [ngModel]="formContrato().incluiFest" (ngModelChange)="patchContrato('incluiFest', $event)" /> Festivos</label>
+          </div>
           <p class="hint block-hint">
             Por día: varias jornadas el mismo calendario.
-            @if ((formContrato().tipoCertificado || 'global') === 'por_clase') {
-              Certificado automático al marcar asistencia en cada clase (intensidad horaria del certificado).
+            @if (contratoTipoCertificado() === 'por_clase') {
+              Certificado automático al marcar asistencia en cada clase (horas del programa de la clase).
             } @else {
-              Certificado automático al completar las sesiones indicadas.
+              Certificado automático al completar las sesiones indicadas (horas del programa de certificación).
             }
             «Generar faltantes» crea jornadas pendientes y autogenera clases (franjas 8:00–17:00; sin instructor).
             Programa desde <strong>inicio jornadas</strong> hasta <strong>fin jornadas</strong> (puede ser meses adelante), respetando sábados, domingos y festivos.
-            @if (cantidadProgramasContrato() > 0) {
+            @if (esCertPorClase() && cantidadProgramasContrato() > 0) {
               Con los {{ cantidadProgramasContrato() }} programa(s) del contrato, cada clase nueva recibe uno en reparto equitativo.
-            } @else {
+            } @else if (esCertPorClase()) {
               Sin programas en el contrato, las clases autogeneradas quedan sin programa (se asigna al operar).
             }
           </p>
         </section>
 
-        <section class="form-block">
-          <h3 class="form-block-title">Certificado</h3>
-          <div class="row row-fields">
-            <div class="field col-w-full field-certificado-encabezado">
-              <label>Encabezado certificado</label>
-              <input type="text" [ngModel]="formContrato().nombreCertificacion" (ngModelChange)="patchContrato('nombreCertificacion', $event)" />
+        <section
+          class="form-block contrato-programas-block"
+          [class.form-block--muted]="programasSeccionInactiva()">
+          <h3 class="form-block-title">Programas del contrato</h3>
+          <p class="hint block-hint">
+            Elija los programas que aplican a este contrato. Al usar «Generar faltantes» o crear jornadas con
+            autogeneración de clases, el sistema reparte los programas de forma equitativa entre las clases nuevas.
+            Cada clase sigue siendo editable: instructor o administrador pueden cambiar el programa después.
+          </p>
+          @if (esCertGlobal()) {
+            <p class="hint block-hint">
+              Certificación global: esta lista no aplica. Elija un solo programa en la sección Certificado; de ahí
+              salen el encabezado y las horas del certificado.
+            </p>
+          }
+          @if (contratoFormEjecutado()) {
+            <p class="hint block-hint">Contrato ejecutado: los programas no se pueden modificar.</p>
+          }
+          @if (programasJornadaLoading()) {
+            <p class="field-hint">Cargando catálogo de programas…</p>
+          } @else if (programasJornada().length === 0) {
+            <p class="field-hint">
+              No hay programas de «Jornadas de Capacitación» en el catálogo. Créelos en
+              <a routerLink="/app/programas" target="_blank">Programas</a> con tipo de capacitación adecuado.
+            </p>
+          } @else {
+            <input
+              type="search"
+              class="contrato-programas-buscar"
+              placeholder="Buscar por código, nombre o ID…"
+              [ngModel]="buscarProgramasContrato()"
+              (ngModelChange)="buscarProgramasContrato.set($event)"
+              [disabled]="programasContratoDeshabilitados()" />
+            @if (cantidadProgramasContrato() > 0) {
+              <div class="contrato-programas-chips">
+                @for (pid of formContrato().idProgramas; track pid) {
+                  <span class="contrato-programa-chip">{{ programaContratoLabel(pid) }}</span>
+                }
+                @if (programasContratoHabilitados()) {
+                  <button type="button" class="mini ghost" (click)="limpiarProgramasContrato()">Quitar todos</button>
+                }
+              </div>
+            }
+            <div class="contrato-programas-list">
+              @for (p of programasContratoFiltrados(); track programaOptionValue(p)) {
+                <label
+                  class="contrato-programa-pick"
+                  [class.selected]="tieneProgramaContrato(programaOptionValue(p))"
+                  [class.disabled]="programasContratoDeshabilitados()">
+                  <input
+                    type="checkbox"
+                    [checked]="tieneProgramaContrato(programaOptionValue(p))"
+                    [disabled]="programasContratoDeshabilitados()"
+                    (change)="toggleProgramaContrato(programaOptionValue(p), $any($event.target).checked)" />
+                  <span class="contrato-programa-code">{{ p.codigoProg || programaOptionValue(p) }}</span>
+                  <span class="contrato-programa-name">{{ p.nombreProg }}</span>
+                </label>
+              } @empty {
+                <p class="field-hint">Sin coincidencias para la búsqueda.</p>
+              }
             </div>
-          </div>
-          <div class="row row-fields">
-            <div class="field col-w-sm">
-              <label>Horas cert.</label>
-              <input type="text" [ngModel]="formContrato().numeroHorascert" (ngModelChange)="patchContrato('numeroHorascert', $event)" />
-            </div>
-          </div>
+          }
+          @if (esCertPorClase() && cantidadProgramasContrato() > 0) {
+            <p class="hint block-hint">
+              {{ cantidadProgramasContrato() }} programa(s) seleccionados: al generar faltantes se reparte(n) entre las clases nuevas.
+            </p>
+          } @else if (esCertPorClase()) {
+            <p class="hint block-hint">
+              Sin programas seleccionados, las clases autogeneradas quedan sin programa (se asigna al operar).
+            </p>
+          }
         </section>
 
-        <section class="form-block form-block-inline">
-          <label><input type="checkbox" [ngModel]="formContrato().incluiSab" (ngModelChange)="patchContrato('incluiSab', $event)" /> Sábados</label>
-          <label><input type="checkbox" [ngModel]="formContrato().incluiDom" (ngModelChange)="patchContrato('incluiDom', $event)" /> Domingos</label>
-          <label><input type="checkbox" [ngModel]="formContrato().incluiFest" (ngModelChange)="patchContrato('incluiFest', $event)" /> Festivos</label>
+        <section class="form-block" [class.form-block--muted]="certificadoSeccionInactiva()">
+          <h3 class="form-block-title">Certificado</h3>
+          @if (esCertPorClase()) {
+            <p class="hint block-hint">
+              Certificación por clase: el encabezado y las horas salen del programa de cada clase. Esta
+              sección solo aplica en modo global.
+            </p>
+          } @else {
+            <p class="hint block-hint">
+              Certificación global: elija el programa de Jornadas de Capacitación. Su nombre de certificado (o
+              descripción / nombre) y las horas del programa se imprimen al completar las sesiones indicadas.
+            </p>
+            <div class="row row-fields">
+              <div class="field col-w-full field-certificado-programa">
+                <argo-catalogo-enum-buscar
+                  label="Programa de certificación *"
+                  placeholder="Seleccione o escriba programa…"
+                  [textoInicial]="textoProgramaCertificacion()"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [disabled]="contratoFormEjecutado()"
+                  [opcionesLocales]="opcionesProgramaCertificacion()"
+                  (seleccionado)="onProgramaCertificacionPick($event)"
+                  (limpiado)="onProgramaCertificacionLimpiar()"
+                />
+              </div>
+            </div>
+            @if (programasJornadaLoading()) {
+              <p class="field-hint">Cargando programas…</p>
+            } @else if (programasJornada().length === 0) {
+              <p class="field-hint">
+                No hay programas de «Jornadas de Capacitación». Créelos en
+                <a routerLink="/app/programas" target="_blank">Programas</a>.
+              </p>
+            }
+            @if (previewCertificadoGlobal(); as prev) {
+              <div class="row row-fields">
+                <div class="field col-w-full">
+                  <label>Encabezado (del programa)</label>
+                  <input type="text" [value]="prev.encabezado" readonly class="readonly" />
+                </div>
+              </div>
+              <div class="row row-fields">
+                <div class="field col-w-sm">
+                  <label>Horas (del programa)</label>
+                  <input type="text" [value]="prev.horas" readonly class="readonly" />
+                </div>
+              </div>
+            }
+          }
         </section>
 
         <section class="form-block form-block-inline" *ngIf="formContrato()._id">
@@ -444,8 +496,8 @@
 
       <div class="actions">
         <button type="button" class="ghost" (click)="nuevoContratoForm()">Nuevo</button>
-        <button type="button" class="primary" (click)="guardarContrato()" [disabled]="loading() || contratoFormEjecutado()">Guardar</button>
-        <button type="button" class="primary" (click)="generarJornadas()" [disabled]="loading() || contratoFormEjecutado()">
+        <button type="button" class="primary" (click)="guardarContrato()" [disabled]="loading()">Guardar</button>
+        <button type="button" class="primary" (click)="generarJornadas()" [disabled]="loading()">
           Generar faltantes
         </button>
         @if (formContrato()._id) {
@@ -1774,6 +1826,88 @@
           }
         </p>
       }
+
+      @if (modalModoClase() === 'editar') {
+        <div class="clase-anterior-copiar clase-anterior-copiar--picker">
+          <div class="field">
+            <label>Copiar alumnos desde clase del contrato</label>
+            <select
+              [ngModel]="idClaseFuenteCopiar()"
+              (ngModelChange)="onClaseFuenteCopiarChange($event)">
+              <option value="">Seleccione una clase del contrato…</option>
+              @for (o of opcionesClasesCopiarContrato(); track o.value) {
+                <option [value]="o.value">{{ o.label }}</option>
+              }
+            </select>
+          </div>
+          @if (opcionesClasesCopiarContrato().length === 0) {
+            <p class="hint hint-compact hint-warn">
+              No hay otras clases en este contrato para copiar alumnos.
+            </p>
+          } @else {
+            <p class="hint hint-compact">
+              Elija la clase y verá los alumnos para marcar y matricular en esta.
+            </p>
+          }
+        </div>
+      }
+      @if (cargandoAlumnosClaseAnterior()) {
+        <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
+      }
+      @if (claseAnteriorSinPrevia() && modalModoClase() === 'editar' && !idClaseFuenteCopiar()) {
+        <p class="hint hint-compact">
+          No hay clase «anterior» automática. Use el selector para tomar alumnos de otra clase del contrato.
+        </p>
+      }
+      @if (claseAnteriorMensajeVacio()) {
+        <p class="hint hint-compact hint-warn">{{ claseAnteriorMensajeVacio() }}</p>
+      }
+      @if (alumnosClaseAnteriorDisponibles().length > 0) {
+          <div class="clase-anterior-copiar">
+            <div class="clase-anterior-copiar-head">
+              <span class="clase-anterior-copiar-title">
+                ↻ Alumnos de «{{ claseAnteriorInfo()?.programaNombre || 'la clase elegida' }}{{ claseAnteriorInfo()?.carpaNombre ? ' — ' + claseAnteriorInfo()!.carpaNombre : '' }}»
+              </span>
+              <div class="clase-anterior-copiar-acciones">
+                <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
+                <button type="button" class="mini ghost" (click)="limpiarSeleccionAlumnosClaseAnterior()">Ninguno</button>
+              </div>
+            </div>
+            <p class="hint hint-compact">
+              Marque quiénes continúan en esta clase (opcional) y pulse «Matricular seleccionados».
+            </p>
+            <ul class="clase-anterior-copiar-lista">
+              @for (a of alumnosClaseAnteriorDisponibles(); track a.numDoc) {
+                <li [class.certificado]="!alumnoPuedeMatricularDesdeAnterior(a)">
+                  <label class="clase-anterior-copiar-item">
+                    <input
+                      type="checkbox"
+                      [checked]="alumnoClaseAnteriorSeleccionado(a.numDoc)"
+                      [disabled]="!alumnoPuedeMatricularDesdeAnterior(a)"
+                      (change)="toggleAlumnoClaseAnterior(a.numDoc, $any($event.target).checked)" />
+                    <span class="buscar-name">{{ a.nombreCompleto || a.numDoc }}</span>
+                    <span class="buscar-meta">{{ a.numDoc }}</span>
+                  </label>
+                  @if (a.yaCertificadoContrato) {
+                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado en este contrato; puede seguir matriculándose en otras clases">
+                      Ya certificado
+                    </span>
+                  }
+                </li>
+              }
+            </ul>
+            <div class="clase-anterior-copiar-footer">
+              <button
+                type="button"
+                class="mini primary"
+                (click)="matricularSeleccionClaseAnterior()"
+                [disabled]="matriculandoDesdeAnterior() || alumnosClaseAnteriorSeleccion().size === 0">
+                {{ matriculandoDesdeAnterior() ? 'Matriculando…' : 'Matricular seleccionados (' + alumnosClaseAnteriorSeleccion().size + ')' }}
+              </button>
+            </div>
+          </div>
+      }
+
       <p class="hint hint-compact">
         Busque por cédula o nombre. Marque asistencia cuando la clase esté <strong>en curso</strong>.
       </p>
@@ -1819,87 +1953,6 @@
           </div>
         }
       </div>
-
-      @if (modalModoClase() === 'editar') {
-        <div class="clase-anterior-copiar clase-anterior-copiar--picker">
-          <argo-catalogo-enum-buscar
-            label="Copiar alumnos desde clase del contrato"
-            placeholder="Elija una clase anterior del contrato…"
-            [textoInicial]="textoClaseFuenteCopiar()"
-            [modoCombo]="true"
-            [remoto]="false"
-            [minLength]="1"
-            [opcionesLocales]="opcionesClasesCopiarContrato()"
-            (seleccionado)="onClaseFuenteCopiarPick($event)"
-            (limpiado)="onClaseFuenteCopiarLimpiar()"
-          />
-          <p class="hint hint-compact">
-            Elija cualquier clase del contrato (misma o distinta jornada). Luego marque quiénes desea matricular en esta clase.
-          </p>
-        </div>
-      }
-      @if (cargandoAlumnosClaseAnterior()) {
-        <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
-      }
-      @if (claseAnteriorSinPrevia() && modalModoClase() === 'editar' && !idClaseFuenteCopiar()) {
-        <p class="hint hint-compact">
-          No hay clase «anterior» automática. Use el selector para tomar alumnos de otra clase del contrato.
-        </p>
-      }
-      @if (claseAnteriorMensajeVacio()) {
-        <p class="hint hint-compact hint-warn">{{ claseAnteriorMensajeVacio() }}</p>
-      }
-      @if (claseAnteriorInfo(); as ant) {
-        @if (alumnosClaseAnteriorDisponibles().length > 0) {
-          <div class="clase-anterior-copiar">
-            <div class="clase-anterior-copiar-head">
-              <span class="clase-anterior-copiar-title">
-                ↻ Alumnos de «{{ ant.programaNombre || 'la clase elegida' }}{{ ant.carpaNombre ? ' — ' + ant.carpaNombre : '' }}»
-              </span>
-              <div class="clase-anterior-copiar-acciones">
-                <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
-                <button type="button" class="mini ghost" (click)="limpiarSeleccionAlumnosClaseAnterior()">Ninguno</button>
-              </div>
-            </div>
-            <p class="hint hint-compact">
-              Marque quiénes continúan en esta clase (opcional) y pulse «Matricular seleccionados».
-            </p>
-            <ul class="clase-anterior-copiar-lista">
-              @for (a of alumnosClaseAnteriorDisponibles(); track a.numDoc) {
-                <li [class.certificado]="!alumnoPuedeMatricularDesdeAnterior(a)">
-                  <label class="clase-anterior-copiar-item">
-                    <input
-                      type="checkbox"
-                      [checked]="alumnoClaseAnteriorSeleccionado(a.numDoc)"
-                      [disabled]="!alumnoPuedeMatricularDesdeAnterior(a)"
-                      (change)="toggleAlumnoClaseAnterior(a.numDoc, $any($event.target).checked)" />
-                    <span class="buscar-name">{{ a.nombreCompleto || a.numDoc }}</span>
-                    <span class="buscar-meta">{{ a.numDoc }}</span>
-                  </label>
-                  @if (!alumnoPuedeMatricularDesdeAnterior(a) && a.yaCertificadoContrato) {
-                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado vigente en este contrato">
-                      Ya certificado
-                    </span>
-                  } @else if (a.yaCertificadoContrato) {
-                    <span class="cap cap-muted cap-sm cap-text" title="Certificado en la clase fuente; puede continuar en esta">
-                      Cert. otra clase
-                    </span>
-                  }
-                </li>
-              }
-            </ul>
-            <div class="clase-anterior-copiar-footer">
-              <button
-                type="button"
-                class="mini primary"
-                (click)="matricularSeleccionClaseAnterior()"
-                [disabled]="matriculandoDesdeAnterior() || alumnosClaseAnteriorSeleccion().size === 0">
-                {{ matriculandoDesdeAnterior() ? 'Matriculando…' : 'Matricular seleccionados (' + alumnosClaseAnteriorSeleccion().size + ')' }}
-              </button>
-            </div>
-          </div>
-        }
-      }
 
         <div class="clase-modal-alumnos-scroll">
         <table class="argo mini clase-matricula-list">
@@ -2204,11 +2257,11 @@
               (limpiado)="onCertClaseLimpiar()"
             />
             <argo-date-input
-              label="Desde (emisión)"
+              label="Desde (generados)"
               [ngModel]="certFiltroDesde()"
               (ngModelChange)="onCertDesdeChange($event)" />
             <argo-date-input
-              label="Hasta (emisión)"
+              label="Hasta (generados)"
               [ngModel]="certFiltroHasta()"
               (ngModelChange)="onCertHastaChange($event)" />
           </div>
@@ -2247,15 +2300,15 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let c of certsFiltradosVista()" [ngClass]="rowCertificadoHoyClass(c.fechaEmision)">
+            <tr *ngFor="let c of certsFiltradosVista()" [ngClass]="rowCertificadoHoyClass(c)">
               <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert }}</span></td>
               <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto }}</span></td>
               <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
               <td class="col-cert-encabezado">
-                @if (esFechaHoy(c.fechaEmision)) {
+                @if (certificadoEsDeHoy(c)) {
                   <span
                     class="serv-saldo-inline encabezado-hoy-blink cert-encabezado-hoy"
-                    [attr.title]="'Certificado emitido hoy · ' + fmtFecha(c.fechaEmision)">
+                    [attr.title]="'Certificado generado hoy · emisión impresa ' + fmtFecha(c.fechaEmision)">
                     {{ c.encabezado || '—' }}
                   </span>
                 } @else {
@@ -2264,10 +2317,10 @@
               </td>
               <td><span [ngClass]="capHorasCert(c.horasCert)">{{ c.horasCert }}</span></td>
               <td>
-                @if (esFechaHoy(c.fechaEmision)) {
+                @if (certificadoEsDeHoy(c)) {
                   <span
                     class="serv-saldo-inline encabezado-hoy-blink"
-                    [attr.title]="'Emitido hoy'">
+                    [attr.title]="'Generado hoy'">
                     {{ fmtFecha(c.fechaEmision) }}
                   </span>
                 } @else {

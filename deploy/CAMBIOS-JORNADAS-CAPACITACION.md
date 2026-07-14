@@ -2,7 +2,7 @@
 
 Documento **vivo** para registrar cada cambio del módulo de **jornadas de capacitación** en este repo (**Finstruvial / ARGO**) y poder **replicarlo** en otros despliegues (p. ej. Educarte, otro cliente con fork o copia del producto).
 
-**Última auditoría código ↔ MD:** 2026-07-13 — JOR-028 (dashboard informes contrato); JOR-027 (ZIP PDF); JOR-025/026.
+**Última auditoría código ↔ MD:** 2026-07-13 — JOR-029 (programa cert. global); JOR-028 (dashboard informes); JOR-027 (ZIP PDF).
 
 ---
 
@@ -278,6 +278,36 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 ---
 
 ## Historial de cambios
+
+### JOR-029 — Certificado global: programa de certificación (sin encabezado/horas libres)
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** _(pendiente)_
+- **Replica en otro repo:** Sí
+
+#### Qué se hizo
+- Campo `idProgramaCertificacion` en contrato: un programa de Jornadas de Cap. define encabezado y horas del certificado global.
+- Emisión automática global usa ese programa (matrícula/liquidación/PDF); fallback legado a `nombreCertificacion` / `numeroHorascert` y programa de la clase.
+- UI: sección Certificado = combobox de programa + vista previa; ya no campos libres de encabezado/horas. Programas del contrato (multi) solo en `por_clase`.
+- Se quitó **Intensidad horaria** del formulario de contrato: las horas salen del programa (y opcionalmente de la clase). Autogeneración copia horas del programa a `horasCertificadas`.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/models/Contratacion.js` | Campo `idProgramaCertificacion` |
+| `argo-backend/src/controllers/jornadaCapController.js` | pickContrato |
+| `argo-backend/src/services/certificadoJornadaAuto.js` | Encabezado/horas/global vía programa |
+| `argo-frontend/.../jornada-cap.service.ts` | DTO |
+| `argo-frontend/.../jornadas-hub.component.*` | UI selector + validación guardar |
+
+#### Verificación
+- [ ] Contrato global: sin programa → no guarda / no emite con mensaje claro.
+- [ ] Con programa → certificado usa `nomCert`/descripción/`nombreProg` y horas del programa.
+- [ ] Por clase: multi-programas del contrato sin cambios; sección Certificado atenuada.
+
+---
 
 ### JOR-028 — Ficha Informes: dashboard + PDF por contrato/jornada/clase/programa/instructor
 
@@ -627,8 +657,8 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 - Las horas caían en `numeroHorascert` del contrato (modo global) en vez de horas por clase / programa.
 
 #### Qué se hizo
-- **Global:** sigue usando `nombreCertificacion` y `numeroHorascert` del contrato.
-- **Por clase:** encabezado = `nomCert` / descripción / `nombreProg` del programa de la clase; horas = `horasCertificadas` de la clase → `horasPorClase` del contrato → horas del programa.
+- **Global:** `idProgramaCertificacion` del contrato (encabezado/horas del programa); fallback legado `nombreCertificacion` / `numeroHorascert`.
+- **Por clase:** encabezado = `nomCert` / descripción / `nombreProg` del programa de la clase; horas = `horasCertificadas` de la clase → horas del programa (legado: `horasPorClase` del contrato).
 
 #### Archivos tocados (ARGO)
 | Archivo | Tipo de cambio |

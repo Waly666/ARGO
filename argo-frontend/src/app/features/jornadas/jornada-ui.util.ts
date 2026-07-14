@@ -299,8 +299,30 @@ export function rowClaseClass(estado?: string | null): string {
   return '';
 }
 
-export function rowCertificadoHoyClass(fechaEmision?: string | Date | null): string {
-  return esFechaHoy(fechaEmision) ? 'row-certificado-hoy' : '';
+/** Resalta fila si el certificado se generó hoy (createdAt) o la fecha impresa es hoy. */
+export function rowCertificadoHoyClass(
+  fechaOCert?:
+    | string
+    | Date
+    | null
+    | { createdAt?: string | Date | null; fechaEmision?: string | Date | null },
+): string {
+  if (fechaOCert && typeof fechaOCert === 'object' && !(fechaOCert instanceof Date)) {
+    if (esFechaHoy(fechaOCert.createdAt) || esFechaHoy(fechaOCert.fechaEmision)) {
+      return 'row-certificado-hoy';
+    }
+    return '';
+  }
+  return esFechaHoy(fechaOCert as string | Date | null) ? 'row-certificado-hoy' : '';
+}
+
+/** ¿Se generó o emitió (fecha impresa) hoy? */
+export function certificadoEsDeHoy(c?: {
+  createdAt?: string | Date | null;
+  fechaEmision?: string | Date | null;
+} | null): boolean {
+  if (!c) return false;
+  return esFechaHoy(c.createdAt) || esFechaHoy(c.fechaEmision);
 }
 
 /** Opciones HH:mm cada `intervaloMin` minutos (00:00 … 23:45). */

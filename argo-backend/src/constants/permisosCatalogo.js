@@ -120,6 +120,7 @@ const GRUPOS = [
       { key: 'config.nomina', label: 'Parámetros de nómina' },
       { key: 'config.certificados', label: 'Diseño de certificados' },
       { key: 'config.alertas', label: 'Alertas y notificaciones' },
+      { key: 'config.paginas_informes', label: 'Páginas de informes (márgenes y tamaño)' },
       { key: 'config.requisitos', label: 'Requisitos de documentos (alumnos y vehículos)' },
       { key: 'config.auditoria', label: 'Auditoría y monitoreo' },
       { key: 'config.monitor', label: 'Monitor de recursos (incluido en auditoría)' },

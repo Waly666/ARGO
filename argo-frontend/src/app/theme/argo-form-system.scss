@@ -125,8 +125,8 @@
   .conflictos-box {
     padding: 0.75rem 1rem;
     border-radius: 8px;
-    border: 1px solid rgba(251, 191, 36, 0.45);
-    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.08);
   }
 }
 
@@ -193,7 +193,7 @@
 
   &.variant-practica,
   &.tipo-practica {
-    border-left-color: rgba(251, 191, 36, 0.75);
+    border-left-color: rgba(56, 189, 248, 0.75);
   }
 
   &.variant-success {
@@ -201,7 +201,7 @@
   }
 
   &.variant-warning {
-    border-left-color: rgba(251, 191, 36, 0.75);
+    border-left-color: rgba(56, 189, 248, 0.75);
   }
 
   &.tone-blue,
@@ -417,9 +417,9 @@ argo-date-input.fecha-input-accent .argo-date-text {
   font-weight: 600;
 
   &.practica {
-    color: #fde68a;
-    background: rgba(251, 191, 36, 0.12);
-    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #c7d2fe;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
   }
 }
 
@@ -515,20 +515,20 @@ argo-date-input.fecha-input-accent .argo-date-text {
   min-width: 2.75rem;
   padding: 0.45rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  background: rgba(251, 191, 36, 0.08);
-  color: #fde68a;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.08);
+  color: #c7d2fe;
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: rgba(251, 191, 36, 0.16);
+    background: rgba(56, 189, 248, 0.16);
   }
 
   &.active {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.45), rgba(245, 158, 11, 0.35));
-    border-color: rgba(251, 191, 36, 0.75);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(139, 92, 246, 0.35));
+    border-color: rgba(56, 189, 248, 0.75);
     color: #fffbeb;
   }
 

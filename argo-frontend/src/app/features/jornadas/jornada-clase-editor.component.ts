@@ -153,6 +153,8 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   claseAnteriorInfo = signal<ClaseAnteriorResumenDto | null>(null);
   alumnosClaseAnterior = signal<AlumnoClaseAnteriorItem[]>([]);
   cargandoAlumnosClaseAnterior = signal(false);
+  /** Evita que una respuesta auto/atrasada pise una selección manual. */
+  private reqAlumnosClaseAnteriorSeq = 0;
   alumnosClaseAnteriorSeleccion = signal<Set<number>>(new Set());
   matriculandoDesdeAnterior = signal(false);
 
@@ -238,10 +240,11 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   });
   claseAnteriorMensajeVacio = computed(() => {
     if (this.cargandoAlumnosClaseAnterior() || !this.idClaseFuenteCopiar()) return '';
-    if (!this.claseAnteriorInfo()) return '';
     if (this.alumnosClaseAnteriorDisponibles().length > 0) return '';
     if (this.alumnosClaseAnterior().length === 0) {
-      return 'La clase elegida no tiene alumnos inscritos.';
+      return this.claseAnteriorInfo()
+        ? 'La clase elegida no tiene alumnos inscritos.'
+        : 'No hay alumnos para copiar de esa clase. Elija otra del listado.';
     }
     return 'Los alumnos de esa clase ya están matriculados en la clase actual.';
   });
@@ -405,33 +408,61 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     return [fecha, prog, carpa, idx].filter(Boolean).join(' · ');
   }
 
-  cargarClasesContratoParaCopiar(claseActual?: ClaseJornadaDto | any): void {
-    const idContrato = String(claseActual?.idContrato || '').trim();
+  cargarClasesContratoParaCopiar(
+    claseActual?: ClaseJornadaDto | any,
+    opts?: { syncAlumnos?: boolean },
+  ): void {
+    const idContrato = String(
+      claseActual?.idContrato || this.claseActiva()?.idContrato || '',
+    ).trim();
+    const syncAlumnos = opts?.syncAlumnos !== false;
     if (!idContrato) {
       this.clasesContratoCopiar.set([]);
-      this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+      if (syncAlumnos) {
+        this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+      }
       return;
     }
     this.jornadaSvc.listarClases({ idContrato }).subscribe({
       next: (rows) => {
         this.clasesContratoCopiar.set(rows || []);
+        if (!syncAlumnos) return;
         const idActual = String(claseActual?._id || this.claseSel() || '');
+        const idFuente = String(this.idClaseFuenteCopiar() || '').trim();
+        if (idFuente) {
+          this.cargarAlumnosDesdeFuente(idActual, idFuente);
+          return;
+        }
         this.cargarAlumnosClaseAnterior(idActual, { autoSeleccionar: true });
       },
       error: () => {
         this.clasesContratoCopiar.set([]);
-        this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+        if (syncAlumnos) {
+          this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+        }
       },
     });
   }
 
   onClaseFuenteCopiarPick(opt: EnumBuscarOption): void {
-    const idFuente = String(opt.value || '');
+    this.onClaseFuenteCopiarChange(String(opt?.value ?? ''));
+  }
+
+  onClaseFuenteCopiarChange(idFuenteRaw: string): void {
+    const idFuente = String(idFuenteRaw || '').trim();
+    if (!idFuente) {
+      this.onClaseFuenteCopiarLimpiar();
+      return;
+    }
     this.idClaseFuenteCopiar.set(idFuente);
-    this.textoClaseFuenteCopiar.set(opt.label || '');
+    const opt = this.opcionesClasesCopiarContrato().find((o) => String(o.value) === idFuente);
+    this.textoClaseFuenteCopiar.set(opt?.label || idFuente);
     this.alumnosClaseAnteriorSeleccion.set(new Set());
-    const idActual = this.claseSel();
-    if (!idActual || !idFuente) return;
+    const idActual = String(this.claseSel() || '').trim();
+    if (!idActual) {
+      this.mostrarMsg('Abra una clase destino antes de copiar alumnos.', 'warn', 'Copiar alumnos');
+      return;
+    }
     this.cargarAlumnosDesdeFuente(idActual, idFuente);
   }
 
@@ -445,13 +476,25 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   }
 
   private cargarAlumnosDesdeFuente(idClase: string, idClaseFuente: string): void {
+    const seq = ++this.reqAlumnosClaseAnteriorSeq;
     this.cargandoAlumnosClaseAnterior.set(true);
+    this.claseAnteriorInfo.set(null);
+    this.alumnosClaseAnterior.set([]);
     this.jornadaSvc.alumnosClaseAnterior(idClase, idClaseFuente).subscribe({
       next: (r) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(r?.clase || null);
-        this.alumnosClaseAnterior.set(r?.alumnos || []);
+        const alumnos = r?.alumnos || [];
+        this.alumnosClaseAnterior.set(alumnos);
         this.claseAnteriorSinPrevia.set(false);
+        const sel = new Set<number>();
+        for (const a of alumnos) {
+          if (a?.puedeMatricular !== false && !a?.yaInscritoEnEstaClase && Number.isFinite(Number(a.numDoc))) {
+            sel.add(Number(a.numDoc));
+          }
+        }
+        this.alumnosClaseAnteriorSeleccion.set(sel);
         if (r?.clase) {
           this.textoClaseFuenteCopiar.set(
             this.labelClaseCopiar({
@@ -460,9 +503,16 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
               fechaClase: r.clase.fechaClase,
             }),
           );
+        } else {
+          this.mostrarMsg(
+            'No se encontró la clase fuente o no pertenece al mismo contrato.',
+            'warn',
+            'Copiar alumnos',
+          );
         }
       },
       error: (e) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(null);
         this.alumnosClaseAnterior.set([]);
@@ -479,6 +529,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     idClase: string,
     opts?: { autoSeleccionar?: boolean },
   ): void {
+    const seq = ++this.reqAlumnosClaseAnteriorSeq;
     this.claseAnteriorInfo.set(null);
     this.alumnosClaseAnterior.set([]);
     this.claseAnteriorSinPrevia.set(false);
@@ -486,6 +537,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     this.cargandoAlumnosClaseAnterior.set(true);
     this.jornadaSvc.alumnosClaseAnterior(idClase).subscribe({
       next: (r) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(r?.clase || null);
         this.alumnosClaseAnterior.set(r?.alumnos || []);
@@ -499,9 +551,13 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
               fechaClase: r.clase.fechaClase,
             }),
           );
+        } else if (opts?.autoSeleccionar && !r?.clase) {
+          this.idClaseFuenteCopiar.set('');
+          this.textoClaseFuenteCopiar.set('');
         }
       },
       error: (e) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(null);
         this.alumnosClaseAnterior.set([]);
@@ -532,15 +588,23 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   }
 
   alumnoPuedeMatricularDesdeAnterior(a: AlumnoClaseAnteriorItem): boolean {
+    if (a.yaInscritoEnEstaClase) return false;
     if (a.puedeMatricular === false) return false;
-    if (a.puedeMatricular === true) return true;
-    return !a.yaCertificadoContrato;
+    return true;
   }
 
   seleccionarTodosAlumnosClaseAnterior(): void {
     const disponibles = this.alumnosClaseAnteriorDisponibles().filter((a) =>
       this.alumnoPuedeMatricularDesdeAnterior(a),
     );
+    if (!disponibles.length) {
+      this.mostrarMsg(
+        'Ningún alumno de esa lista se puede marcar (ya están en esta clase o bloqueados).',
+        'warn',
+        'Copiar alumnos',
+      );
+      return;
+    }
     this.alumnosClaseAnteriorSeleccion.set(new Set(disponibles.map((a) => Number(a.numDoc))));
   }
 
@@ -916,12 +980,13 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
         this.modalHoraFin.set(isoAHoraInput(c.horaFin));
         this.iniciarCronometroSiAplica();
         this.cargarInscritos(id);
-        if (r?.certificadosGenerados > 0) {
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         let msg = r?.message || 'Cambios guardados.';
-        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase actualizada');
-        this.mostrarMsgModal(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase actualizada');
+        this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase actualizada');
+        this.mostrarMsgModal(msg, nCert > 0 ? 'ok' : 'info', 'Clase actualizada');
         this.emitClaseGuardada();
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo guardar la clase.', 'error', 'Error'),
@@ -967,13 +1032,14 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
             msg += ` Asistencia registrada a ${r.asistenciasRegistradas} alumno(s).`;
           }
         }
-        if (r?.certificadosGenerados > 0) {
-          msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
+          msg += ` Certificados emitidos: ${nCert}.`;
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
-        this.mostrarMsgModal(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
-        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
+        this.mostrarMsgModal(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
+        this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
         this.emitClaseGuardada();
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo finalizar la clase.', 'error', 'Error'),
@@ -1028,11 +1094,12 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     this.jornadaSvc.sincronizarAsistenciasInscritos(id).subscribe({
       next: (r) => {
         this.cargarInscritos(id);
-        if (r.certificadosNuevos > 0) {
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r.certificadosEmitidos);
         }
         const msg = r.message || 'Asistencias sincronizadas.';
-        const tipo = r.certificadosNuevos > 0 ? 'ok' : 'info';
+        const tipo = nCert > 0 ? 'ok' : 'info';
         this.mostrarMsgModal(msg, tipo, 'Asistencia');
         this.emitClaseGuardada();
       },
@@ -1328,6 +1395,16 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   cerrarBusquedaAlumnoFuera(ev: MouseEvent): void {
     const t = ev.target as HTMLElement;
     if (!t.closest('.clase-alumno-buscar')) this.alumnoBusquedaOpen.set(false);
+  }
+
+  private contarCertificadosEmitidos(r: {
+    certificadosGenerados?: number;
+    certificadosNuevos?: number;
+    certificadosEmitidos?: unknown[];
+  } | null | undefined): number {
+    const porLista = Array.isArray(r?.certificadosEmitidos) ? r!.certificadosEmitidos!.length : 0;
+    const porContador = Math.max(Number(r?.certificadosGenerados) || 0, Number(r?.certificadosNuevos) || 0);
+    return Math.max(porLista, porContador);
   }
 
   private mostrarResultadoAsistencia(r: any): void {

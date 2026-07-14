@@ -666,6 +666,15 @@ export const routes: Routes = [
           import('./features/config/config-alertas.component').then((m) => m.ConfigAlertasComponent),
       },
       {
+        path: 'configuracion/paginas-informes',
+        canActivate: [permisoGuard],
+        data: { permiso: ['config.paginas_informes', 'config.roles'] },
+        loadComponent: () =>
+          import('./features/config/config-paginas-informes.component').then(
+            (m) => m.ConfigPaginasInformesComponent,
+          ),
+      },
+      {
         path: 'configuracion/catalogos',
         canActivate: [permisoGuard],
         data: { permiso: 'config.catalogos' },

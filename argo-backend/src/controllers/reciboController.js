@@ -187,7 +187,7 @@ exports.html = async (req, res, next) => {
     const data = await armarRecibo(req.params.id);
     if (!data) return res.status(404).send('Ingreso no encontrado');
 
-    const html = generarHtmlIngreso(data);
+    const html = await generarHtmlIngreso(data);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);

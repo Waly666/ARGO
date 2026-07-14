@@ -24,7 +24,7 @@ export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente'>> &
 
 /** Derivados idénticos al CSS publicado en https://finstruvial.edu.co/ */
 export const FINSTRUVIAL_DERIVED_CSS_VARS: Record<string, string> = {
-  '--av-brand': '#c2410c',
+  '--av-brand': '#4338ca',
   '--av-surface-2': '#1a2744',
   '--av-border-strong': 'rgba(148, 163, 184, 0.45)',
   '--av-dark-lead': '#b6c5e8',
@@ -282,7 +282,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     '--dash-primary-hover': primaryDark,
     '--dash-accent': accent,
 
-    '--av-fundacion-cta-bg': `linear-gradient(120deg, ${primary} 0%, ${mixHex(primaryDark, accent, 0.5)} 50%, ${mixHex(accent, '#ea580c', 0.35)} 100%)`,
+    '--av-fundacion-cta-bg': `linear-gradient(120deg, ${primary} 0%, ${mixHex(primaryDark, accent, 0.5)} 50%, ${mixHex(accent, '#6366f1', 0.35)} 100%)`,
   };
 
   vars['--av-starfield-bg'] =

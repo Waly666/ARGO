@@ -234,9 +234,9 @@
   border: 1px solid rgba(56, 189, 248, 0.45);
 
   &.final {
-    color: #fde68a;
-    border-color: rgba(251, 191, 36, 0.45);
-    background: rgba(120, 80, 10, 0.22);
+    color: #c7d2fe;
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(30, 41, 89, 0.22);
   }
 }
 
@@ -368,8 +368,8 @@
   gap: 0.5rem;
   padding: 1rem 1.1rem;
   border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: rgba(180, 83, 9, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(67, 56, 202, 0.12);
 
   p {
     margin: 0;
@@ -588,9 +588,9 @@
 .hint-warn {
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.45);
-  background: rgba(120, 80, 10, 0.22);
-  color: #fde68a;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(30, 41, 89, 0.22);
+  color: #c7d2fe;
   line-height: 1.4;
 }
 

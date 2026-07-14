@@ -45,14 +45,20 @@ const ContratacionSchema = new mongoose.Schema(
     jornadasPorDia: { type: Number, default: 1 },
     /** Clases autogeneradas por cada jornada al usar «Generar faltantes». */
     clasesPorJornada: { type: Number, default: 1 },
-    /** Horas certificadas por clase (referencia contractual). */
-    /** Intensidad horaria impresa en el certificado (por clase); no define duración de la sesión. */
+    /** @deprecated Las horas del certificado salen del programa (y opcionalmente de la clase). */
     horasPorClase: { type: Number, default: 0 },
     /** global = certificado al completar numSesCert; por_clase = certificado por asistencia/clase. */
     tipoCertificado: { type: String, trim: true, default: 'global' },
+    /**
+     * Programa de Jornadas de Capacitación usado en certificado global
+     * (encabezado y horas del certificado).
+     */
+    idProgramaCertificacion: { type: String, trim: true, default: '' },
     numeroAlumnos: { type: Number, default: 0 },
     numeObjeJornada: { type: Number, default: 0 },
+    /** @deprecated Preferir idProgramaCertificacion en modo global. */
     nombreCertificacion: { type: String, trim: true },
+    /** @deprecated Preferir idProgramaCertificacion en modo global. */
     numeroHorascert: { type: String, trim: true },
     incluiSab: { type: Boolean, default: false },
     incluiDom: { type: Boolean, default: false },

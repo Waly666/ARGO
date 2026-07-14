@@ -64,11 +64,11 @@
     </div>
     <div class="filtros-row filtros-row--dates">
       <argo-date-input
-        label="Desde (emisión)"
+        label="Desde (generados)"
         [ngModel]="filtroDesde()"
         (ngModelChange)="onDesdeChange($event)" />
       <argo-date-input
-        label="Hasta (emisión)"
+        label="Hasta (generados)"
         [ngModel]="filtroHasta()"
         (ngModelChange)="onHastaChange($event)" />
       <div class="filtro-buscar">
@@ -115,7 +115,7 @@
         </thead>
         <tbody>
           @for (c of filtrados(); track c._id) {
-            <tr [ngClass]="rowCertificadoHoyClass(c.fechaEmision)">
+            <tr [ngClass]="rowCertificadoHoyClass(c)">
               <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert || '—' }}</span></td>
               <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto || '—' }}</span></td>
               <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc }}</span></td>
@@ -126,10 +126,10 @@
                 </span>
               </td>
               <td>
-                @if (esFechaHoy(c.fechaEmision)) {
+                @if (certificadoEsDeHoy(c)) {
                   <span
                     class="serv-saldo-inline encabezado-hoy-blink"
-                    [attr.title]="'Certificado emitido hoy · ' + fmtFecha(c.fechaEmision)">
+                    [attr.title]="'Generado hoy · emisión impresa ' + fmtFecha(c.fechaEmision)">
                     {{ c.encabezado || '—' }}
                   </span>
                 } @else {
@@ -138,8 +138,8 @@
               </td>
               <td><span [ngClass]="capHorasCert(c.horasCert)">{{ c.horasCert || '—' }}</span></td>
               <td>
-                @if (esFechaHoy(c.fechaEmision)) {
-                  <span class="serv-saldo-inline encabezado-hoy-blink" [attr.title]="'Emitido hoy'">
+                @if (certificadoEsDeHoy(c)) {
+                  <span class="serv-saldo-inline encabezado-hoy-blink" [attr.title]="'Generado hoy'">
                     {{ fmtFecha(c.fechaEmision) }}
                   </span>
                 } @else {

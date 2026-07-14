@@ -3,8 +3,11 @@ import { ConfigRecibo } from '../../core/services/config.service';
 export type ColumnaInformeJornada = { k: string; l: string };
 
 /** Colores alineados a comprobantes media carta / informes de caja. */
-const DOC_CSS = `
-  @page { size: A4 landscape; margin: 10mm; }
+const DEFAULT_JORNADAS_AT_PAGE = '@page { size: A4 landscape; margin: 10mm; }';
+
+export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): string {
+  return `
+  ${atPageCss}
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
@@ -127,6 +130,7 @@ const DOC_CSS = `
     }
   }
 `;
+}
 
 function esc(v: unknown): string {
   return String(v ?? '')
@@ -222,7 +226,9 @@ export function buildJornadasInformeHtml(opts: {
     filas: Record<string, unknown>[];
   }>;
   empresa?: ConfigRecibo | null;
+  atPageCss?: string;
 }): string {
+  const atPageCss = opts.atPageCss;
   const metaRows = [
     !opts.codigoContratoDestacado && opts.filtros?.contrato
       ? `<tr><td>Contrato</td><td>${esc(opts.filtros.contrato)}</td></tr>`
@@ -293,7 +299,7 @@ export function buildJornadasInformeHtml(opts: {
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>${esc(opts.titulo)}</title>
-  <style>${DOC_CSS}</style>
+  <style>${jornadasInformeDocCss(atPageCss)}</style>
 </head>
 <body>
   <div class="toolbar no-print">

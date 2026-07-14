@@ -5,8 +5,13 @@ export function imprimirInformeTabla(opts: {
   subtitulo?: string;
   columnas: ColumnaInformeDef[];
   filas: Record<string, unknown>[];
+  atPageCss?: string;
 }): void {
-  const { titulo, subtitulo, columnas, filas } = opts;
+  const { titulo, subtitulo, columnas, filas, atPageCss } = opts;
+  const pageRule = atPageCss || `@page {
+      size: letter portrait;
+      margin: 12mm 10mm;
+    }`;
   const th = columnas
     .map((c) => `<th${c.tipo === 'moneda' ? ' class="num"' : ''}>${esc(c.etiqueta)}</th>`)
     .join('');
@@ -28,10 +33,7 @@ export function imprimirInformeTabla(opts: {
   <meta charset="utf-8"/>
   <title>${esc(titulo)}</title>
   <style>
-    @page {
-      size: letter portrait;
-      margin: 12mm 10mm;
-    }
+    ${pageRule}
     * { box-sizing: border-box; }
     html, body {
       margin: 0;

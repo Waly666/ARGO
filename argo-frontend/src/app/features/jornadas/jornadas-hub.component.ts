@@ -127,6 +127,7 @@ import {
   estadoClaseCalAccentClass,
   rowClaseClass,
   rowCertificadoHoyClass,
+  certificadoEsDeHoy,
   labelEstadoClaseAmigable,
   labelEstadoJornadaAmigable,
   labelInstructorClase,
@@ -291,7 +292,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   certsGenerados = signal<any[]>([]);
   certsHoyCount = computed(
-    () => this.certsGenerados().filter((c) => esFechaHoy(c?.fechaEmision)).length,
+    () => this.certsGenerados().filter((c) => certificadoEsDeHoy(c)).length,
   );
   descargandoZipCerts = signal(false);
   zipProgresoOpen = signal(false);
@@ -392,6 +393,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   esFinDeSemana = esFinDeSemana;
   rowClaseClass = rowClaseClass;
   rowCertificadoHoyClass = rowCertificadoHoyClass;
+  certificadoEsDeHoy = certificadoEsDeHoy;
   esFechaHoy = esFechaHoy;
   private progresoDebounce: ReturnType<typeof setTimeout> | null = null;
 
@@ -455,10 +457,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   });
   claseAnteriorMensajeVacio = computed(() => {
     if (this.cargandoAlumnosClaseAnterior() || !this.idClaseFuenteCopiar()) return '';
-    if (!this.claseAnteriorInfo()) return '';
     if (this.alumnosClaseAnteriorDisponibles().length > 0) return '';
     if (this.alumnosClaseAnterior().length === 0) {
-      return 'La clase elegida no tiene alumnos inscritos.';
+      return this.claseAnteriorInfo()
+        ? 'La clase elegida no tiene alumnos inscritos.'
+        : 'No hay alumnos para copiar de esa clase. Elija otra del listado.';
     }
     return 'Los alumnos de esa clase ya están matriculados en la clase actual.';
   });
@@ -707,6 +710,32 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return base;
   });
 
+  /** Programas para el selector de certificación global del contrato. */
+  opcionesProgramaCertificacion = computed<EnumBuscarOption[]>(() => {
+    const base = this.programasJornada().map((p) => {
+      const id = this.programaOptionValue(p);
+      const cod = String(p.codigoProg || '').trim();
+      const nom = String(p.nombreProg || '').trim();
+      const horas = p.horas != null ? ` · ${p.horas} h` : '';
+      return {
+        value: id,
+        label: cod ? `${cod} — ${nom}${horas}` : `${nom || id}${horas}`,
+      };
+    });
+    const v = String(this.formContrato().idProgramaCertificacion || '').trim();
+    if (v && !base.some((o) => String(o.value) === v)) {
+      return [{ value: v, label: this.programaContratoLabel(v) }, ...base];
+    }
+    return base;
+  });
+
+  textoProgramaCertificacion = computed(() => {
+    const v = String(this.formContrato().idProgramaCertificacion || '').trim();
+    if (!v) return '';
+    const opt = this.opcionesProgramaCertificacion().find((o) => String(o.value) === v);
+    return opt?.label || this.programaContratoLabel(v);
+  });
+
   textoProgramaModalCombo = computed(() => {
     const v = this.nuevaClaseProg();
     if (!v) return '';
@@ -771,6 +800,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   claseAnteriorInfo = signal<ClaseAnteriorResumenDto | null>(null);
   alumnosClaseAnterior = signal<AlumnoClaseAnteriorItem[]>([]);
   cargandoAlumnosClaseAnterior = signal(false);
+  /** Evita que una respuesta auto/atrasada pise una selección manual. */
+  private reqAlumnosClaseAnteriorSeq = 0;
   alumnosClaseAnteriorSeleccion = signal<Set<number>>(new Set());
   matriculandoDesdeAnterior = signal(false);
   /** Otras clases del mismo contrato (para combo manual). */
@@ -1008,8 +1039,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       numerojornadas: 1,
       jornadasPorDia: 1,
       clasesPorJornada: 1,
-      horasPorClase: 0,
       tipoCertificado: 'global',
+      idProgramaCertificacion: '',
       numeroAlumnos: 0,
       numSesCert: 1,
       incluiSab: false,
@@ -1064,7 +1095,78 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   contratoFormEjecutado(): boolean {
-    return (this.formContrato().estado || 'En Ejecución') === 'Ejecutado';
+    // Solo el estado exacto "Ejecutado" (misma regla que el resto del hub).
+    return String(this.formContrato().estado || '').trim() === 'Ejecutado';
+  }
+
+  /**
+   * Normaliza el tipo de certificación del contrato (global | por_clase).
+   * Acepta variantes guardadas antiguas: "por clase", "por-clase", etc.
+   */
+  normalizarTipoCertificadoContrato(raw: unknown): 'global' | 'por_clase' {
+    const t = String(raw ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\s-]+/g, '_');
+    if (t === 'por_clase' || t === 'porclase') return 'por_clase';
+    return 'global';
+  }
+
+  /** Tipo de certificación efectivo del formulario. */
+  contratoTipoCertificado(): 'global' | 'por_clase' {
+    return this.normalizarTipoCertificadoContrato(this.formContrato().tipoCertificado);
+  }
+
+  esCertPorClase(): boolean {
+    return this.contratoTipoCertificado() === 'por_clase';
+  }
+
+  esCertGlobal(): boolean {
+    return this.contratoTipoCertificado() === 'global';
+  }
+
+  /** Campos de Programas del contrato: solo editables en modo por_clase. */
+  programasContratoDeshabilitados(): boolean {
+    return this.esCertGlobal();
+  }
+
+  /** Programas editables (atajo positivo para la plantilla). */
+  programasContratoHabilitados(): boolean {
+    return !this.programasContratoDeshabilitados();
+  }
+
+  /** Atenúa la sección que no aplica al tipo actual. */
+  programasSeccionInactiva(): boolean {
+    return this.esCertGlobal();
+  }
+
+  certificadoSeccionInactiva(): boolean {
+    return this.esCertPorClase();
+  }
+
+  /** Vista previa de encabezado/horas según el programa de certificación global. */
+  previewCertificadoGlobal(): { encabezado: string; horas: string } | null {
+    if (!this.esCertGlobal()) return null;
+    const id = String(this.formContrato().idProgramaCertificacion || '').trim();
+    if (!id) return null;
+    const p = this.buscarProgramaEnLista(id);
+    if (!p) {
+      return { encabezado: '(programa no encontrado en catálogo)', horas: '—' };
+    }
+    const encabezado = String(p.nomCert || p.descripcion || p.nombreProg || '').trim() || '—';
+    const h = p.horas != null && Number(p.horas) > 0 ? String(p.horas) : '—';
+    return { encabezado, horas: h };
+  }
+
+  onProgramaCertificacionPick(opt: EnumBuscarOption): void {
+    const id = String(opt?.value ?? '').trim();
+    this.patchContrato('idProgramaCertificacion', id);
+  }
+
+  onProgramaCertificacionLimpiar(): void {
+    this.patchContrato('idProgramaCertificacion', '');
   }
 
   async finalizarContratoActual() {
@@ -1256,7 +1358,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   toggleProgramaContrato(idPrograma: string, checked: boolean): void {
-    if (this.contratoFormEjecutado()) return;
+    if (this.programasContratoDeshabilitados()) return;
     const id = String(idPrograma).trim();
     if (!id) return;
     const set = new Set((this.formContrato().idProgramas || []).map(String));
@@ -1266,7 +1368,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   async limpiarProgramasContrato(): Promise<void> {
-    if (this.contratoFormEjecutado()) return;
+    if (this.programasContratoDeshabilitados()) return;
     if (!this.cantidadProgramasContrato()) return;
     const ok = await this.confirmSvc.open({
       title: 'Confirmar borrado',
@@ -1337,7 +1439,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.claseActiva.set(c);
     this.modalCrearJornadaId.set(String(c.idJornada || ''));
     this.modalFechaClase.set(c.fechaClase ? String(c.fechaClase) : c.fechaJornada ? String(c.fechaJornada) : '');
-    this.nuevaClaseProg.set(String(c.idPrograma || ''));
+    const progClase = String(c.idPrograma || '').trim();
+    this.nuevaClaseProg.set(progClase);
     this.nuevaClaseUbic.set(c.ubicacion || 'Carpa');
     this.modalClaseInstructorId.set(c.idEmpleadoInstructor ?? '');
     this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
@@ -1354,7 +1457,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.alumnosClaseAnterior.set([]);
     this.claseAnteriorSinPrevia.set(false);
     if (!this.jornadasParaCrear().length) this.cargarJornadasParaCrear();
-    this.sincronizarProgramaModal(String(c.idPrograma || ''));
+    this.sincronizarProgramaModal(progClase);
     this.cargarProgramasJornada();
     this.cargarInscritos(c._id);
     this.cargarClasesContratoParaCopiar(c);
@@ -1373,38 +1476,65 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return [fecha, prog, carpa, idx].filter(Boolean).join(' · ');
   }
 
-  cargarClasesContratoParaCopiar(claseActual?: any): void {
+  cargarClasesContratoParaCopiar(
+    claseActual?: any,
+    opts?: { syncAlumnos?: boolean },
+  ): void {
     const idContrato =
       claseActual?.idContrato ||
       this.idContratoParaClaseModal() ||
       this.contratoSel() ||
       '';
+    const syncAlumnos = opts?.syncAlumnos !== false;
     if (!idContrato) {
       this.clasesContratoCopiar.set([]);
-      this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+      if (syncAlumnos) {
+        this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+      }
       return;
     }
     this.jornadaSvc.listarClases({ idContrato: String(idContrato) }).subscribe({
       next: (rows) => {
         this.clasesContratoCopiar.set(rows || []);
+        if (!syncAlumnos) return;
         const idActual = String(claseActual?._id || this.claseSel() || '');
-        // Prefiere la clase anterior de la misma jornada si existe; si no, deja el combo vacío.
+        const idFuente = String(this.idClaseFuenteCopiar() || '').trim();
+        // Si el usuario ya eligió una clase, no pisar con la auto “anterior” de la jornada.
+        if (idFuente) {
+          this.cargarAlumnosDesdeFuente(idActual, idFuente);
+          return;
+        }
         this.cargarAlumnosClaseAnterior(idActual, { autoSeleccionar: true });
       },
       error: () => {
         this.clasesContratoCopiar.set([]);
-        this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+        if (syncAlumnos) {
+          this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+        }
       },
     });
   }
 
   onClaseFuenteCopiarPick(opt: EnumBuscarOption): void {
-    const idFuente = String(opt.value || '');
+    this.onClaseFuenteCopiarChange(String(opt?.value ?? ''));
+  }
+
+  /** Carga alumnos desde la clase elegida (select o combobox). */
+  onClaseFuenteCopiarChange(idFuenteRaw: string): void {
+    const idFuente = String(idFuenteRaw || '').trim();
+    if (!idFuente) {
+      this.onClaseFuenteCopiarLimpiar();
+      return;
+    }
     this.idClaseFuenteCopiar.set(idFuente);
-    this.textoClaseFuenteCopiar.set(opt.label || '');
+    const opt = this.opcionesClasesCopiarContrato().find((o) => String(o.value) === idFuente);
+    this.textoClaseFuenteCopiar.set(opt?.label || idFuente);
     this.alumnosClaseAnteriorSeleccion.set(new Set());
-    const idActual = this.claseSel();
-    if (!idActual || !idFuente) return;
+    const idActual = String(this.claseSel() || '').trim();
+    if (!idActual) {
+      this.mostrarMsg('Abra una clase destino antes de copiar alumnos.', 'warn', 'Copiar alumnos');
+      return;
+    }
     this.cargarAlumnosDesdeFuente(idActual, idFuente);
   }
 
@@ -1418,13 +1548,26 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   private cargarAlumnosDesdeFuente(idClase: string, idClaseFuente: string): void {
+    const seq = ++this.reqAlumnosClaseAnteriorSeq;
     this.cargandoAlumnosClaseAnterior.set(true);
+    this.claseAnteriorInfo.set(null);
+    this.alumnosClaseAnterior.set([]);
     this.jornadaSvc.alumnosClaseAnterior(idClase, idClaseFuente).subscribe({
       next: (r) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(r?.clase || null);
-        this.alumnosClaseAnterior.set(r?.alumnos || []);
+        const alumnos = r?.alumnos || [];
+        this.alumnosClaseAnterior.set(alumnos);
         this.claseAnteriorSinPrevia.set(false);
+        // Preseleccionar a quienes sí se pueden matricular.
+        const sel = new Set<number>();
+        for (const a of alumnos) {
+          if (a?.puedeMatricular !== false && !a?.yaInscritoEnEstaClase && Number.isFinite(Number(a.numDoc))) {
+            sel.add(Number(a.numDoc));
+          }
+        }
+        this.alumnosClaseAnteriorSeleccion.set(sel);
         if (r?.clase) {
           this.textoClaseFuenteCopiar.set(
             this.labelClaseCopiar({
@@ -1433,9 +1576,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
               fechaClase: r.clase.fechaClase,
             }),
           );
+        } else {
+          this.mostrarMsg(
+            'No se encontró la clase fuente o no pertenece al mismo contrato.',
+            'warn',
+            'Copiar alumnos',
+          );
         }
       },
       error: (e) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(null);
         this.alumnosClaseAnterior.set([]);
@@ -1443,6 +1593,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           e?.error?.message ||
           'No se pudieron cargar los alumnos de la clase elegida.';
         this.mostrarMsg(msg, 'warn', 'Copiar alumnos');
+        this.mostrarMsgModal(msg, 'warn', 'Copiar alumnos');
       },
     });
   }
@@ -1451,6 +1602,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     idClase: string,
     opts?: { autoSeleccionar?: boolean },
   ) {
+    const seq = ++this.reqAlumnosClaseAnteriorSeq;
     this.claseAnteriorInfo.set(null);
     this.alumnosClaseAnterior.set([]);
     this.claseAnteriorSinPrevia.set(false);
@@ -1458,6 +1610,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.cargandoAlumnosClaseAnterior.set(true);
     this.jornadaSvc.alumnosClaseAnterior(idClase).subscribe({
       next: (r) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(r?.clase || null);
         this.alumnosClaseAnterior.set(r?.alumnos || []);
@@ -1471,9 +1624,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
               fechaClase: r.clase.fechaClase,
             }),
           );
+        } else if (opts?.autoSeleccionar && !r?.clase) {
+          // No había “anterior” automática: no dejar un id de selección huérfano.
+          this.idClaseFuenteCopiar.set('');
+          this.textoClaseFuenteCopiar.set('');
         }
       },
       error: (e) => {
+        if (seq !== this.reqAlumnosClaseAnteriorSeq) return;
         this.cargandoAlumnosClaseAnterior.set(false);
         this.claseAnteriorInfo.set(null);
         this.alumnosClaseAnterior.set([]);
@@ -1502,15 +1660,23 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   alumnoPuedeMatricularDesdeAnterior(a: AlumnoClaseAnteriorItem): boolean {
+    if (a.yaInscritoEnEstaClase) return false;
     if (a.puedeMatricular === false) return false;
-    if (a.puedeMatricular === true) return true;
-    return !a.yaCertificadoContrato;
+    return true;
   }
 
   seleccionarTodosAlumnosClaseAnterior(): void {
     const disponibles = this.alumnosClaseAnteriorDisponibles().filter((a) =>
       this.alumnoPuedeMatricularDesdeAnterior(a),
     );
+    if (!disponibles.length) {
+      this.mostrarMsgModal(
+        'Ningún alumno de esa lista se puede marcar (ya están en esta clase o bloqueados).',
+        'warn',
+        'Copiar alumnos',
+      );
+      return;
+    }
     this.alumnosClaseAnteriorSeleccion.set(new Set(disponibles.map((a) => Number(a.numDoc))));
   }
 
@@ -1808,13 +1974,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
             msg += ` Asistencia registrada a ${r.asistenciasRegistradas} alumno(s).`;
           }
         }
-        if (r?.certificadosGenerados > 0) {
-          msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
+          msg += ` Certificados emitidos: ${nCert}.`;
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
-        this.mostrarMsgModal(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
-        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
+        this.mostrarMsgModal(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
+        this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo finalizar la clase.', 'error', 'Error'),
     });
@@ -1835,11 +2002,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       next: (r) => {
         this.cargarInscritos(id);
         this.recargarCerts();
-        if (r.certificadosNuevos > 0) {
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r.certificadosEmitidos);
         }
         const msg = r.message || 'Asistencias sincronizadas.';
-        const tipo = r.certificadosNuevos > 0 ? 'ok' : 'info';
+        const tipo = nCert > 0 ? 'ok' : 'info';
         this.mostrarMsgModal(msg, tipo, 'Asistencia');
         this.mostrarMsg(msg, tipo, 'Asistencia');
       },
@@ -1887,11 +2055,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.iniciarCronometroSiAplica();
         this.recargarClases();
         this.recargarCerts();
-        if (r?.certificadosGenerados > 0) {
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         const msg = r?.message || 'Cambios guardados.';
-        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase actualizada');
+        this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase actualizada');
       },
       error: (e) => this.mostrarMsg(e?.error?.message || 'No se pudo guardar la clase.', 'error', 'Error'),
     });
@@ -2211,9 +2380,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.mostrarMsg('El alumno ya está matriculado en esta clase.', 'info', 'Duplicado');
         return;
       }
-      const idP = this.nuevaClaseProg();
+      const idP = String(this.nuevaClaseProg() || '').trim();
       if (!idP) {
-        this.mostrarMsg('La clase no tiene programa.', 'error', 'Error');
+        this.mostrarMsg(
+          'Elija el programa de la clase antes de agregar alumnos.',
+          'error',
+          'Error',
+        );
         return;
       }
       const idC = this.claseSel();
@@ -3154,6 +3327,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   guardarContrato() {
+    if (this.contratoFormEjecutado()) {
+      this.mostrarMsg(
+        'El contrato está Ejecutado. No se pueden guardar cambios. Si necesita ajustar datos, reabra el contrato o cree uno nuevo.',
+        'warn',
+        'Contrato ejecutado',
+      );
+      return;
+    }
     const f = this.formContrato();
     if (!f.idClienteFacturacion) {
       this.mostrarMsg(
@@ -3172,6 +3353,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       );
       return;
     }
+    if (this.normalizarTipoCertificadoContrato(f.tipoCertificado) === 'global') {
+      if (!String(f.idProgramaCertificacion || '').trim()) {
+        this.mostrarMsg(
+          'En certificación global debe elegir el programa de certificación (sección Certificado).',
+          'warn',
+          'Datos del contrato',
+        );
+        return;
+      }
+    }
     const payload = this.contratoDtoConCliente(f, cli);
     this.loading.set(true);
     const req = payload._id
@@ -3180,7 +3371,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     req.subscribe({
       next: (c) => {
         this.loading.set(false);
-        this.formContrato.set(c);
+        this.formContrato.set({
+          ...c,
+          tipoCertificado: this.normalizarTipoCertificadoContrato(c.tipoCertificado),
+          idProgramas: [...(c.idProgramas || [])],
+          planCobro: [...(c.planCobro || [])],
+        });
         this.contratoSel.set(c._id || '');
         this.recargarContratos();
         this.cargarAvanceContrato(c._id);
@@ -3208,7 +3404,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       idProgramas: [...(c.idProgramas || [])],
       planCobro: [...(c.planCobro || [])],
       comprobantesIngresoCaja: !!c.comprobantesIngresoCaja,
+      tipoCertificado: this.normalizarTipoCertificadoContrato(c.tipoCertificado),
+      idProgramaCertificacion: String(c.idProgramaCertificacion || '').trim(),
     });
+    this.cargarProgramasJornada();
     const cli = this.clientesFe().find((x) => x._id === c.idClienteFacturacion);
     if (cli) this.aplicarClienteAlContrato(cli);
     this.fechaFinalizacionContrato.set(
@@ -3238,6 +3437,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   generarJornadas() {
+    if (this.contratoFormEjecutado()) {
+      this.mostrarMsg(
+        'El contrato está Ejecutado. No se pueden generar jornadas faltantes.',
+        'warn',
+        'Contrato ejecutado',
+      );
+      return;
+    }
     const id = this.formContrato()._id || this.contratoSel();
     if (!id) {
       this.mostrarMsg('Primero guarde la contratación; después use «Generar faltantes».', 'warn', 'Contrato sin guardar');
@@ -3349,7 +3556,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   labelTipoCertificado(tipo?: string): string {
-    return tipo === 'por_clase' ? 'Por clase' : 'Global (contrato)';
+    return this.normalizarTipoCertificadoContrato(tipo) === 'por_clase'
+      ? 'Por clase'
+      : 'Global (contrato)';
   }
 
   setVistaJornadas(v: VistaAgenda) {
@@ -3627,7 +3836,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   patchContrato(k: keyof ContratacionDto, v: unknown) {
-    this.formContrato.update((f) => ({ ...f, [k]: v }));
+    const valor =
+      k === 'tipoCertificado' ? this.normalizarTipoCertificadoContrato(v) : v;
+    this.formContrato.update((f) => ({ ...f, [k]: valor }));
   }
 
   jornadaSeleccionadaOperable(): boolean {
@@ -3680,7 +3891,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           if (c) {
             this.cargarAsistencias(c._id);
             if (this.modalCrearClase() && this.modalModoClase() === 'editar') {
-              this.cargarClasesContratoParaCopiar(c);
+              // Solo refrescar el combo; no pisar alumnos ya cargados por selección manual.
+              this.cargarClasesContratoParaCopiar(c, { syncAlumnos: false });
             }
           }
         }
@@ -4476,14 +4688,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.claseActiva.set(c);
         this.recargarClases();
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
-        if (r?.certificadosGenerados > 0) {
+        const nCert = this.contarCertificadosEmitidos(r);
+        if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
         }
         let msg = 'La clase quedó cerrada. Ya no admite nuevas asistencias.';
-        if (r?.certificadosGenerados > 0) {
-          msg += ` Certificados emitidos: ${r.certificadosGenerados}.`;
+        if (nCert > 0) {
+          msg += ` Certificados emitidos: ${nCert}.`;
         }
-        this.mostrarMsg(msg, r?.certificadosGenerados > 0 ? 'ok' : 'info', 'Clase finalizada');
+        this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
     });
   }
@@ -4522,6 +4735,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.mostrarMsg(body?.message || 'No se pudo registrar la asistencia.', 'error', 'Error');
       },
     });
+  }
+
+  private contarCertificadosEmitidos(r: {
+    certificadosGenerados?: number;
+    certificadosNuevos?: number;
+    certificadosEmitidos?: unknown[];
+  } | null | undefined): number {
+    const porLista = Array.isArray(r?.certificadosEmitidos) ? r!.certificadosEmitidos!.length : 0;
+    const porContador = Math.max(Number(r?.certificadosGenerados) || 0, Number(r?.certificadosNuevos) || 0);
+    return Math.max(porLista, porContador);
   }
 
   private mostrarResultadoAsistencia(r: any) {

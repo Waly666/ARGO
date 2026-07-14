@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ConfigRecibo, ConfigService } from './config.service';
+import { ConfigPaginasInformesService } from './config-paginas-informes.service';
 import {
   buildInformeGeneralHtml,
   buildInformeIndividualHtml,
@@ -18,6 +19,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CajaInformePrintService {
   private configSvc = inject(ConfigService);
+  private paginasSvc = inject(ConfigPaginasInformesService);
   private confirm = inject(ConfirmDialogService);
   private empresaCache = new Map<string, ConfigRecibo>();
 
@@ -30,28 +32,50 @@ export class CajaInformePrintService {
     empresa?: ConfigRecibo | null;
   }): void {
     const idSede = opts.sesion.idSede || undefined;
-    const run = (empresa: ConfigRecibo | null) => {
-      const html = buildInformeIndividualHtml({ ...opts, empresa });
+    const run = (empresa: ConfigRecibo | null, atPageCss?: string) => {
+      const html = buildInformeIndividualHtml({ ...opts, empresa, atPageCss });
       this.abrirVentana(html, `Cuadre de caja #${opts.sesion.idSesion}`);
     };
-    if (opts.empresa !== undefined) {
-      run(opts.empresa);
-      return;
-    }
-    this.obtenerEmpresa(idSede, run);
+    this.paginasSvc.ensureAndAtPageCss('informe_caja').subscribe({
+      next: (atPageCss) => {
+        if (opts.empresa !== undefined) {
+          run(opts.empresa, atPageCss);
+          return;
+        }
+        this.obtenerEmpresa(idSede, (empresa) => run(empresa, atPageCss));
+      },
+      error: () => {
+        if (opts.empresa !== undefined) {
+          run(opts.empresa);
+          return;
+        }
+        this.obtenerEmpresa(idSede, run);
+      },
+    });
   }
 
   imprimirGeneral(general: ResumenCierreGeneral, empresa?: ConfigRecibo | null): void {
     const idSede = general.idSede || undefined;
-    const run = (emp: ConfigRecibo | null) => {
-      const html = buildInformeGeneralHtml({ general, empresa: emp });
+    const run = (emp: ConfigRecibo | null, atPageCss?: string) => {
+      const html = buildInformeGeneralHtml({ general, empresa: emp, atPageCss });
       this.abrirVentana(html, 'Informe general de cierre de cajas');
     };
-    if (empresa !== undefined) {
-      run(empresa);
-      return;
-    }
-    this.obtenerEmpresa(idSede, run);
+    this.paginasSvc.ensureAndAtPageCss('informe_caja').subscribe({
+      next: (atPageCss) => {
+        if (empresa !== undefined) {
+          run(empresa, atPageCss);
+          return;
+        }
+        this.obtenerEmpresa(idSede, (emp) => run(emp, atPageCss));
+      },
+      error: () => {
+        if (empresa !== undefined) {
+          run(empresa);
+          return;
+        }
+        this.obtenerEmpresa(idSede, run);
+      },
+    });
   }
 
   private obtenerEmpresa(idSede: string | undefined, cb: (empresa: ConfigRecibo | null) => void): void {

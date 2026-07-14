@@ -12,8 +12,11 @@ import {
 import { ArqueoLinea } from '../constants/caja-arqueo.constants';
 import { resolverFormaPagoIngreso } from '../utils/caja-forma-pago.util';
 
-const DOC_CSS = `
-  @page { size: A4 landscape; margin: 10mm; }
+const DEFAULT_CAJA_AT_PAGE = '@page { size: A4 landscape; margin: 10mm; }';
+
+function cajaInformeDocCss(atPageCss = DEFAULT_CAJA_AT_PAGE): string {
+  return `
+  ${atPageCss}
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
@@ -139,7 +142,9 @@ const DOC_CSS = `
     }
   }
 `;
+}
 
+export { cajaInformeDocCss };
 function esc(v: unknown): string {
   return String(v ?? '')
     .replace(/&/g, '&amp;')
@@ -423,6 +428,7 @@ function wrapDocumento(
   cuerpo: string,
   empresa?: ConfigRecibo | null,
   idSede?: string | null,
+  atPageCss?: string,
 ): string {
   return `<!DOCTYPE html>
 <html lang="es">
@@ -430,7 +436,7 @@ function wrapDocumento(
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>${esc(titulo)}</title>
-  <style>${DOC_CSS}</style>
+  <style>${cajaInformeDocCss(atPageCss)}</style>
 </head>
 <body>
   <div class="toolbar no-print">
@@ -571,8 +577,9 @@ export function buildInformeIndividualHtml(opts: {
   egresos: CajaEgresoItem[];
   descuadre?: CajaDescuadre | null;
   empresa?: ConfigRecibo | null;
+  atPageCss?: string;
 }): string {
-  const { sesion, resumen: r, ingresos, egresos, descuadre, empresa } = opts;
+  const { sesion, resumen: r, ingresos, egresos, descuadre, empresa, atPageCss } = opts;
   const nombreCajero = r.nombreCajero || sesion.usuario || '—';
   const fechaCierre = sesion.fechaCierre || r.fechaCierre;
   const hayDescuadre =
@@ -672,7 +679,7 @@ export function buildInformeIndividualHtml(opts: {
       <tfoot><tr><td colspan="5"><strong>Total egresos</strong></td><td class="num"><strong>${money(r.totalEgresos)}</strong></td></tr></tfoot>
     </table>`;
 
-  return wrapDocumento(`Cuadre de caja #${sesion.idSesion}`, cuerpo, empresa, sesion.idSede);
+  return wrapDocumento(`Cuadre de caja #${sesion.idSesion}`, cuerpo, empresa, sesion.idSede, atPageCss);
 }
 
 function agruparServiciosDesdeIngresos(ingresos: CajaIngresoItem[]): ResumenServicioIngreso[] {
@@ -702,9 +709,11 @@ function agruparServiciosDesdeIngresos(ingresos: CajaIngresoItem[]): ResumenServ
 export function buildInformeGeneralHtml(opts: {
   general: ResumenCierreGeneral;
   empresa?: ConfigRecibo | null;
+  atPageCss?: string;
 }): string {
   const g = opts.general;
   const empresa = opts.empresa;
+  const atPageCss = opts.atPageCss;
 
   const filas = [
     ['Base inicial total', money(g.saldoInicialTotal)],
@@ -818,5 +827,5 @@ export function buildInformeGeneralHtml(opts: {
       <tfoot><tr><td colspan="6"><strong>Total egresos</strong></td><td class="num"><strong>${money(g.totalEgresos)}</strong></td></tr></tfoot>
     </table>`;
 
-  return wrapDocumento('Informe general de cierre de cajas', cuerpo, empresa, g.idSede);
+  return wrapDocumento('Informe general de cierre de cajas', cuerpo, empresa, g.idSede, atPageCss);
 }

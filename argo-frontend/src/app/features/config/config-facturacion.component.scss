@@ -15,7 +15,7 @@
   h1 {
     margin: 0 0 0.35rem;
     font-size: 1.3rem;
-    background: linear-gradient(90deg, #e0f2fe 0%, #c4b5fd 55%, #fde68a 100%);
+    background: linear-gradient(90deg, #e0f2fe 0%, #c4b5fd 55%, #c7d2fe 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -53,9 +53,9 @@
   border: 1px solid transparent;
 
   &--sandbox {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.14);
-    border-color: rgba(245, 158, 11, 0.35);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.14);
+    border-color: rgba(139, 92, 246, 0.35);
   }
 
   &--prod {
@@ -109,7 +109,7 @@
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
   &--emerald { border-left-color: #34d399; }
   &--test {
     border-left-color: #60a5fa;
@@ -334,8 +334,8 @@
 }
 
 .fac-section--sandbox {
-  border-color: rgba(245, 158, 11, 0.35);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(6, 16, 41, 0.4) 100%);
+  border-color: rgba(139, 92, 246, 0.35);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(6, 16, 41, 0.4) 100%);
 }
 
 .fac-sandbox-actions {
@@ -382,7 +382,7 @@
 .fac-rango-sel {
   margin: 0;
   font-size: 0.82rem;
-  color: #fde68a;
+  color: #c7d2fe;
 }
 
 .fac-emision-prueba {

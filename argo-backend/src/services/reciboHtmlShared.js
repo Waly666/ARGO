@@ -59,9 +59,12 @@ function bloqueEmpresaHtml(config) {
   return lineas.join('\n');
 }
 
-function estilosRecibo(mm, w) {
+function estilosRecibo(mm, w, atPageCss) {
+  const pageRule =
+    atPageCss ||
+    `@page { size: ${mm}mm auto; margin: 4mm; }`;
   return `
-    @page { size: ${mm}mm auto; margin: 4mm; }
+    ${pageRule}
     * { box-sizing: border-box; }
     body {
       font-family: "Courier New", Consolas, monospace;

@@ -50,9 +50,9 @@
   }
 
   &--warn {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.3);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.3);
   }
 
   &--info {
@@ -97,7 +97,7 @@
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
   &--emerald { border-left-color: #34d399; }
   &--danger { border-left-color: #f87171; }
 }

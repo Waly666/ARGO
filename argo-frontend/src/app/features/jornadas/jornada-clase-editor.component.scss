@@ -164,9 +164,9 @@
 
     &.final {
       animation: none;
-      color: #fde68a;
-      border-color: rgba(251, 191, 36, 0.45);
-      background: rgba(120, 80, 10, 0.22);
+      color: #c7d2fe;
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(30, 41, 89, 0.22);
     }
   }
 
@@ -183,9 +183,9 @@
   .hint-warn {
     padding: 8px 12px;
     border-radius: 6px;
-    border: 1px solid rgba(251, 191, 36, 0.45);
-    background: rgba(120, 80, 10, 0.22);
-    color: #fde68a;
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(30, 41, 89, 0.22);
+    color: #c7d2fe;
   }
 
   .clase-estado-bar {

@@ -60,9 +60,9 @@
   }
 
   &--egr {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.3);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.3);
   }
 
   &--on {
@@ -119,7 +119,7 @@
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
   &--teal { border-left-color: #2dd4bf; }
   &--rose { border-left-color: #f472b6; }
 }

@@ -18,7 +18,7 @@
   h1 {
     margin: 0 0 0.35rem;
     font-size: 1.28rem;
-    background: linear-gradient(90deg, #fde68a 0%, #c4b5fd 45%, #7dd3fc 100%);
+    background: linear-gradient(90deg, #c7d2fe 0%, #c4b5fd 45%, #7dd3fc 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -68,9 +68,9 @@
   white-space: nowrap;
 
   &--year {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.32);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.32);
   }
 
   &--money {
@@ -134,7 +134,7 @@
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
   &--teal { border-left-color: #2dd4bf; }
   &--rose { border-left-color: #f472b6; }
   &--emerald { border-left-color: #34d399; }
@@ -161,9 +161,9 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #fef3c7;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(167, 139, 250, 0.4));
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #ede9fe;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(167, 139, 250, 0.4));
+  border: 1px solid rgba(56, 189, 248, 0.3);
 }
 
 .nom-section-title {
@@ -253,8 +253,8 @@
 
   &:focus {
     outline: none;
-    border-color: rgba(251, 191, 36, 0.5);
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.12);
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12);
   }
 }
 
@@ -275,7 +275,7 @@
 
   &--sky { border-left: 3px solid #38bdf8; }
   &--violet { border-left: 3px solid #a78bfa; }
-  &--amber { border-left: 3px solid #fbbf24; }
+  &--amber { border-left: 3px solid #38bdf8; }
 }
 
 .nom-stat-label {
@@ -330,8 +330,8 @@
 
   &--r1 { border-left: 3px solid #86efac; }
   &--r2 { border-left: 3px solid #7dd3fc; }
-  &--r3 { border-left: 3px solid #fde68a; }
-  &--r4 { border-left: 3px solid #fdba74; }
+  &--r3 { border-left: 3px solid #c7d2fe; }
+  &--r4 { border-left: 3px solid #93c5fd; }
   &--r5 { border-left: 3px solid #fca5a5; }
 }
 
@@ -438,7 +438,7 @@
     padding: 0.45rem 1.1rem;
     font-size: 0.9rem;
     border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(251, 191, 36, 0.2);
+    box-shadow: 0 6px 18px rgba(56, 189, 248, 0.2);
   }
 }
 

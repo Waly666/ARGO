@@ -1,0 +1,171 @@
+<section class="pi-page">
+  <header class="pi-head">
+    <div>
+      <h1>Páginas de informes</h1>
+      <p>
+        Configure tamaño y márgenes por tipo de documento, con vista previa tipo Word / Windows.
+      </p>
+    </div>
+    <div class="pi-actions">
+      <button type="button" class="ghost mini" (click)="recargar()" [disabled]="loading() || saving()">
+        Recargar
+      </button>
+      <button type="button" class="primary mini" (click)="guardar()" [disabled]="loading() || saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </header>
+
+  @if (msg(); as texto) {
+    <div class="pi-msg" [class.pi-msg--err]="msgError()" role="status">{{ texto }}</div>
+  }
+
+  @if (loading()) {
+    <p class="pi-hint">Cargando…</p>
+  } @else {
+    <div class="pi-grupos">
+      @for (g of grupos(); track g.id) {
+        <section class="pi-grupo" [class.pi-grupo--open]="grupoAbierto() === g.id">
+          <button type="button" class="pi-grupo-head" (click)="toggleGrupo(g.id)">
+            <span class="pi-grupo-title">{{ g.label }}</span>
+            <span class="pi-grupo-meta">{{ g.paginas.length }} informe(s)</span>
+            <span class="pi-chev" aria-hidden="true">{{ grupoAbierto() === g.id ? '▾' : '▸' }}</span>
+          </button>
+
+          @if (grupoAbierto() === g.id) {
+            <div class="pi-grupo-body">
+              @for (p of g.paginas; track p.key) {
+                <article class="pi-card">
+                  <header class="pi-card-head">
+                    <h3>{{ p.label }}</h3>
+                    <code class="pi-key">{{ p.key }}</code>
+                  </header>
+                  @if (p.hint) {
+                    <p class="pi-hint">{{ p.hint }}</p>
+                  }
+
+                  <div class="pi-setup">
+                    <div class="pi-setup-form">
+                      <div class="pi-grid">
+                        <label class="pi-field">
+                          <span>Tamaño de página</span>
+                          <select
+                            [ngModel]="p.size"
+                            (ngModelChange)="patch(p.key, 'size', $event)"
+                          >
+                            @for (s of catalogos()?.sizePresets || []; track s.id) {
+                              <option [value]="s.id">{{ s.label }}</option>
+                            }
+                          </select>
+                        </label>
+                        <label class="pi-field">
+                          <span>Orientación</span>
+                          <select
+                            [ngModel]="p.orientation"
+                            (ngModelChange)="patch(p.key, 'orientation', $event)"
+                          >
+                            @for (o of catalogos()?.orientaciones || []; track o.id) {
+                              <option [value]="o.id">{{ o.label }}</option>
+                            }
+                          </select>
+                        </label>
+
+                        <label class="pi-field">
+                          <span>Superior (mm)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="0.5"
+                            [ngModel]="p.margins.top"
+                            (ngModelChange)="patchMargin(p.key, 'top', $event)"
+                          />
+                        </label>
+                        <label class="pi-field">
+                          <span>Inferior (mm)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="0.5"
+                            [ngModel]="p.margins.bottom"
+                            (ngModelChange)="patchMargin(p.key, 'bottom', $event)"
+                          />
+                        </label>
+                        <label class="pi-field">
+                          <span>Izquierdo (mm)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="0.5"
+                            [ngModel]="p.margins.left"
+                            (ngModelChange)="patchMargin(p.key, 'left', $event)"
+                          />
+                        </label>
+                        <label class="pi-field">
+                          <span>Derecho (mm)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            step="0.5"
+                            [ngModel]="p.margins.right"
+                            (ngModelChange)="patchMargin(p.key, 'right', $event)"
+                          />
+                        </label>
+                      </div>
+
+                      <div class="pi-card-foot">
+                        <button type="button" class="ghost mini" (click)="igualarMargenes(p.key)">
+                          Igualar márgenes al superior
+                        </button>
+                        <code class="pi-css">{{ cssPreview(p) }}</code>
+                      </div>
+                    </div>
+
+                    <aside class="pi-preview-pane" aria-label="Vista previa de página">
+                      <div class="pi-preview-title">Vista previa</div>
+                      <div class="pi-preview-stage">
+                        <div class="pi-ruler pi-ruler--v" aria-hidden="true">
+                          <span>{{ preview(p).heightMm }}</span>
+                          <em>mm</em>
+                        </div>
+                        <div class="pi-preview-col">
+                          <div class="pi-ruler pi-ruler--h" aria-hidden="true">
+                            <span>{{ preview(p).widthMm }} mm</span>
+                          </div>
+                          <div class="pi-paper-wrap">
+                            <div class="pi-margin-tag pi-margin-tag--top">{{ p.margins.top }}</div>
+                            <div class="pi-margin-tag pi-margin-tag--left">{{ p.margins.left }}</div>
+                            <div class="pi-margin-tag pi-margin-tag--right">{{ p.margins.right }}</div>
+                            <div class="pi-margin-tag pi-margin-tag--bottom">{{ p.margins.bottom }}</div>
+
+                            <div class="pi-paper" [ngStyle]="paperStyle(p)">
+                              <div class="pi-content">
+                                <div class="pi-lines" aria-hidden="true">
+                                  <span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <div class="pi-content-label">Área de impresión</div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="pi-preview-meta">
+                            {{ preview(p).label }} · {{ preview(p).widthMm }}×{{ preview(p).heightMm }} mm
+                          </div>
+                        </div>
+                      </div>
+                      <p class="pi-preview-legend">
+                        La franja sombreada son los márgenes; el rectángulo claro es el contenido.
+                      </p>
+                    </aside>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+  }
+</section>

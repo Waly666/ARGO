@@ -231,6 +231,86 @@
           }
         </p>
       }
+
+      <div class="clase-anterior-copiar clase-anterior-copiar--picker">
+        <div class="field">
+          <label>Copiar alumnos desde clase del contrato</label>
+          <select
+            [ngModel]="idClaseFuenteCopiar()"
+            (ngModelChange)="onClaseFuenteCopiarChange($event)">
+            <option value="">Seleccione una clase del contrato…</option>
+            @for (o of opcionesClasesCopiarContrato(); track o.value) {
+              <option [value]="o.value">{{ o.label }}</option>
+            }
+          </select>
+        </div>
+        @if (opcionesClasesCopiarContrato().length === 0) {
+          <p class="hint hint-compact hint-warn">
+            No hay otras clases en este contrato para copiar alumnos.
+          </p>
+        } @else {
+          <p class="hint hint-compact">
+            Elija la clase y verá los alumnos para marcar y matricular en esta.
+          </p>
+        }
+      </div>
+      @if (cargandoAlumnosClaseAnterior()) {
+        <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
+      }
+      @if (claseAnteriorSinPrevia() && !idClaseFuenteCopiar()) {
+        <p class="hint hint-compact">
+          No hay clase «anterior» automática. Use el selector para tomar alumnos de otra clase del contrato.
+        </p>
+      }
+      @if (claseAnteriorMensajeVacio()) {
+        <p class="hint hint-compact hint-warn">{{ claseAnteriorMensajeVacio() }}</p>
+      }
+      @if (alumnosClaseAnteriorDisponibles().length > 0) {
+          <div class="clase-anterior-copiar">
+            <div class="clase-anterior-copiar-head">
+              <span class="clase-anterior-copiar-title">
+                ↻ Alumnos de «{{ claseAnteriorInfo()?.programaNombre || 'la clase elegida' }}{{ claseAnteriorInfo()?.carpaNombre ? ' — ' + claseAnteriorInfo()!.carpaNombre : '' }}»
+              </span>
+              <div class="clase-anterior-copiar-acciones">
+                <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
+                <button type="button" class="mini ghost" (click)="limpiarSeleccionAlumnosClaseAnterior()">Ninguno</button>
+              </div>
+            </div>
+            <p class="hint hint-compact">
+              Marque quiénes continúan en esta clase (opcional) y pulse «Matricular seleccionados».
+            </p>
+            <ul class="clase-anterior-copiar-lista">
+              @for (a of alumnosClaseAnteriorDisponibles(); track a.numDoc) {
+                <li [class.certificado]="!alumnoPuedeMatricularDesdeAnterior(a)">
+                  <label class="clase-anterior-copiar-item">
+                    <input
+                      type="checkbox"
+                      [checked]="alumnoClaseAnteriorSeleccionado(a.numDoc)"
+                      [disabled]="!alumnoPuedeMatricularDesdeAnterior(a)"
+                      (change)="toggleAlumnoClaseAnterior(a.numDoc, $any($event.target).checked)" />
+                    <span class="buscar-name">{{ a.nombreCompleto || a.numDoc }}</span>
+                    <span class="buscar-meta">{{ a.numDoc }}</span>
+                  </label>
+                  @if (a.yaCertificadoContrato) {
+                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado en este contrato; puede seguir matriculándose en otras clases">
+                      Ya certificado
+                    </span>
+                  }
+                </li>
+              }
+            </ul>
+            <div class="clase-anterior-copiar-footer">
+              <button
+                type="button"
+                class="mini primary"
+                (click)="matricularSeleccionClaseAnterior()"
+                [disabled]="matriculandoDesdeAnterior() || alumnosClaseAnteriorSeleccion().size === 0">
+                {{ matriculandoDesdeAnterior() ? 'Matriculando…' : 'Matricular seleccionados (' + alumnosClaseAnteriorSeleccion().size + ')' }}
+              </button>
+            </div>
+          </div>
+      }
+
       <p class="hint">
         Busque por <strong>nombre</strong> o <strong>número de cédula</strong> en la base de datos y agréguelos.
         Un alumno <strong>ya certificado en el contrato</strong> no puede inscribirse en más clases del mismo contrato.
@@ -282,85 +362,6 @@
           </div>
         }
       </div>
-
-        <div class="clase-anterior-copiar clase-anterior-copiar--picker">
-          <argo-catalogo-enum-buscar
-            label="Copiar alumnos desde clase del contrato"
-            placeholder="Elija una clase anterior del contrato…"
-            [textoInicial]="textoClaseFuenteCopiar()"
-            [modoCombo]="true"
-            [remoto]="false"
-            [minLength]="1"
-            [opcionesLocales]="opcionesClasesCopiarContrato()"
-            (seleccionado)="onClaseFuenteCopiarPick($event)"
-            (limpiado)="onClaseFuenteCopiarLimpiar()"
-          />
-          <p class="hint hint-compact">
-            Elija cualquier clase del contrato. Luego marque quiénes desea matricular en esta clase.
-          </p>
-        </div>
-      @if (cargandoAlumnosClaseAnterior()) {
-        <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
-      }
-      @if (claseAnteriorSinPrevia() && !idClaseFuenteCopiar()) {
-        <p class="hint hint-compact">
-          No hay clase «anterior» automática. Use el selector para tomar alumnos de otra clase del contrato.
-        </p>
-      }
-      @if (claseAnteriorMensajeVacio()) {
-        <p class="hint hint-compact hint-warn">{{ claseAnteriorMensajeVacio() }}</p>
-      }
-      @if (claseAnteriorInfo(); as ant) {
-        @if (alumnosClaseAnteriorDisponibles().length > 0) {
-          <div class="clase-anterior-copiar">
-            <div class="clase-anterior-copiar-head">
-              <span class="clase-anterior-copiar-title">
-                ↻ Alumnos de «{{ ant.programaNombre || 'la clase elegida' }}{{ ant.carpaNombre ? ' — ' + ant.carpaNombre : '' }}»
-              </span>
-              <div class="clase-anterior-copiar-acciones">
-                <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
-                <button type="button" class="mini ghost" (click)="limpiarSeleccionAlumnosClaseAnterior()">Ninguno</button>
-              </div>
-            </div>
-            <p class="hint hint-compact">
-              Marque quiénes continúan en esta clase (opcional) y pulse «Matricular seleccionados».
-            </p>
-            <ul class="clase-anterior-copiar-lista">
-              @for (a of alumnosClaseAnteriorDisponibles(); track a.numDoc) {
-                <li [class.certificado]="!alumnoPuedeMatricularDesdeAnterior(a)">
-                  <label class="clase-anterior-copiar-item">
-                    <input
-                      type="checkbox"
-                      [checked]="alumnoClaseAnteriorSeleccionado(a.numDoc)"
-                      [disabled]="!alumnoPuedeMatricularDesdeAnterior(a)"
-                      (change)="toggleAlumnoClaseAnterior(a.numDoc, $any($event.target).checked)" />
-                    <span class="buscar-name">{{ a.nombreCompleto || a.numDoc }}</span>
-                    <span class="buscar-meta">{{ a.numDoc }}</span>
-                  </label>
-                  @if (!alumnoPuedeMatricularDesdeAnterior(a) && a.yaCertificadoContrato) {
-                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado vigente en este contrato">
-                      Ya certificado
-                    </span>
-                  } @else if (a.yaCertificadoContrato) {
-                    <span class="cap cap-muted cap-sm cap-text" title="Certificado en la clase fuente; puede continuar en esta">
-                      Cert. otra clase
-                    </span>
-                  }
-                </li>
-              }
-            </ul>
-            <div class="clase-anterior-copiar-footer">
-              <button
-                type="button"
-                class="mini primary"
-                (click)="matricularSeleccionClaseAnterior()"
-                [disabled]="matriculandoDesdeAnterior() || alumnosClaseAnteriorSeleccion().size === 0">
-                {{ matriculandoDesdeAnterior() ? 'Matriculando…' : 'Matricular seleccionados (' + alumnosClaseAnteriorSeleccion().size + ')' }}
-              </button>
-            </div>
-          </div>
-        }
-      }
 
       <div class="clase-modal-alumnos-scroll">
       <table class="argo mini clase-matricula-list">

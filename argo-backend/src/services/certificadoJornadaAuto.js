@@ -34,7 +34,7 @@ const MOTIVOS_CERT = {
   sin_contrato_jornada: 'La jornada no está vinculada a un contrato.',
   ya_certificado: 'El alumno ya tiene certificado vigente para este contrato.',
   ya_certificado_contrato:
-    'El alumno ya está certificado en este contrato. Solo se permite un certificado por alumno y contrato; no puede inscribirse ni registrar asistencia en nuevas clases.',
+    'El alumno ya tiene certificado vigente para este contrato (no se emite otro; puede seguir en otras clases).',
   ya_certificado_clase: 'El alumno ya tiene certificado vigente para esta clase.',
   sin_clase: 'Falta la clase para emitir certificado por asistencia.',
   contrato_no_encontrado: 'Contrato no encontrado.',
@@ -45,13 +45,7 @@ function toDec(n) {
   return mongoose.Types.Decimal128.fromString(String(Number(n) || 0));
 }
 
-async function asegurarLiquidacionJornada(numDoc, idProg, mat) {
-  let liq = await Liquidacion.findOne({ idMat: mat._id, idProg: String(idProg) }).lean();
-  if (!liq) {
-    liq = await Liquidacion.findOne({ ...numDocQuery(numDoc), idProg: String(idProg) }).lean();
-  }
-  if (liq) return liq;
-
+async function crearLiquidacionJornada(numDoc, idProg, mat) {
   const prog = await buscarPrograma(idProg);
   const desc =
     prog?.nombreProg || prog?.descripcion || prog?.nomCert || 'Jornadas de Capacitación';
@@ -64,13 +58,57 @@ async function asegurarLiquidacionJornada(numDoc, idProg, mat) {
     idMatricula: mat._id,
     idProg: String(idProg),
     idServ: null,
-    descripcion: desc,
+    descripcion: `${desc} (cert. jornada)`,
     valor: toDec(0),
     abonado: toDec(0),
     saldo: toDec(0),
     estado: 'pagado',
   });
   return creada.toObject();
+}
+
+/**
+ * Liquidación para vincular el certificado de jornada.
+ * Hay índice único en certificados.idLiquidacion: si la liq. de matrícula ya tiene
+ * certificado (p. ej. por pago), no se puede reutilizar — se crea una dedicada.
+ */
+async function asegurarLiquidacionJornada(numDoc, idProg, mat) {
+  const idProgStr = String(idProg);
+  const or = [{ idMat: mat._id }, { idMatricula: mat._id }];
+  const ndq = numDocQuery(numDoc);
+  if (ndq) or.push(ndq);
+
+  const candidatas = await Liquidacion.find({
+    idProg: idProgStr,
+    $or: or,
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  for (const liq of candidatas) {
+    const ocupada = await Certificado.exists({ idLiquidacion: liq._id });
+    if (!ocupada) return liq;
+  }
+
+  return crearLiquidacionJornada(numDoc, idProgStr, mat);
+}
+
+function esDupKeyIdLiquidacion(err) {
+  if (!err || err.code !== 11000) return false;
+  const msg = String(err.message || err.errmsg || '');
+  return msg.includes('idLiquidacion');
+}
+
+/** Crea certificado; si otra emisión ocupó la liquidación, reintenta con una nueva. */
+async function crearCertificadoJornadaConLiqLibre(params, numDoc, progIdLiq, mat) {
+  let liq = params.liq || (await asegurarLiquidacionJornada(numDoc, progIdLiq, mat));
+  try {
+    return await crearCertificadoJornadaBase({ ...params, liq });
+  } catch (err) {
+    if (!esDupKeyIdLiquidacion(err)) throw err;
+    liq = await crearLiquidacionJornada(numDoc, String(progIdLiq), mat);
+    return crearCertificadoJornadaBase({ ...params, liq });
+  }
 }
 
 /** Cuenta asistencias (clases distintas) del alumno en todas las jornadas del contrato. */
@@ -212,19 +250,92 @@ function encabezadoCursoPrograma(prog) {
   return (prog?.nomCert || prog?.descripcion || prog?.nombreProg || '').trim();
 }
 
-/** Encabezado del certificado global del contrato. */
-function encabezadoCertificadoGlobal(contrato) {
+/** Horas del programa para imprimir en certificado. */
+function horasDesdePrograma(prog) {
+  const hProg = prog?.horas != null ? Number(prog.horas) : NaN;
+  if (Number.isFinite(hProg) && hProg > 0) return String(hProg);
+  return '';
+}
+
+/**
+ * Encabezado del certificado global: programa del contrato → nombreCertificacion (legado).
+ */
+function encabezadoCertificadoGlobal(contrato, prog = null) {
+  const desdeProg = encabezadoCursoPrograma(prog);
+  if (desdeProg) return desdeProg;
   return String(contrato?.nombreCertificacion || '').trim() || 'Jornadas de Capacitación';
 }
 
-/** Horas impresas en certificado por_clase: clase → horasPorClase contrato → horas del programa. */
+/** Horas del certificado global: programa del contrato → numeroHorascert (legado). */
+function horasCertificadoGlobal(contrato, prog = null) {
+  const desdeProg = horasDesdePrograma(prog);
+  if (desdeProg) return desdeProg;
+  return String(contrato?.numeroHorascert || '').trim();
+}
+
+/** Programa elegido en el contrato para certificación global. */
+function idProgramaCertificacionContrato(contrato) {
+  return String(contrato?.idProgramaCertificacion || '').trim();
+}
+
+/** Alias de un id de programa (idPrograma numérico y _id). */
+async function aliasIdsPrograma(idRaw) {
+  const id = String(idRaw || '').trim();
+  if (!id) return [];
+  const out = new Set([id]);
+  const prog = await buscarPrograma(id);
+  if (prog) {
+    if (prog.idPrograma != null && String(prog.idPrograma).trim()) {
+      out.add(String(prog.idPrograma).trim());
+    }
+    if (prog._id != null) out.add(String(prog._id));
+  }
+  return [...out];
+}
+
+/**
+ * Matrícula activa del alumno para alguno de los programas candidatos
+ * (certificación global, programa de la clase, etc.).
+ */
+async function buscarMatriculaJornadaActiva(numDoc, ...progIdsPreferidos) {
+  const tried = new Set();
+  for (const raw of progIdsPreferidos) {
+    const aliases = await aliasIdsPrograma(raw);
+    for (const a of aliases) {
+      if (tried.has(a)) continue;
+      tried.add(a);
+      const mat = await Matricula.findOne({
+        numDoc,
+        idProg: a,
+        ...QUERY_MATRICULA_ACTIVA,
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+      if (mat) return { mat, progIdMatricula: String(mat.idProg) };
+    }
+  }
+  return null;
+}
+
+function normalizarTipoCertificado(raw) {
+  const t = String(raw ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_');
+  if (t === 'por_clase' || t === 'porclase') return TIPO_CERTIFICADO_POR_CLASE;
+  return TIPO_CERTIFICADO_GLOBAL;
+}
+
+/** Horas impresas en certificado por_clase: clase → programa (legado: horasPorClase del contrato). */
 function resolverHorasCertificadoPorClase(clase, contrato, prog) {
   const hClase = Number(clase?.horasCertificadas);
   if (Number.isFinite(hClase) && hClase > 0) return String(hClase);
+  const desdeProg = horasDesdePrograma(prog);
+  if (desdeProg) return desdeProg;
   const hContrato = Number(contrato?.horasPorClase);
   if (Number.isFinite(hContrato) && hContrato > 0) return String(hContrato);
-  const hProg = prog?.horas != null ? Number(prog.horas) : NaN;
-  if (Number.isFinite(hProg) && hProg > 0) return String(hProg);
   return '';
 }
 
@@ -323,18 +434,14 @@ async function intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornada
     return { creado: false, motivo: 'sin_matricula', mensaje: 'La clase no tiene programa asignado.' };
   }
 
-  const mat = await Matricula.findOne({
-    numDoc,
-    idProg: progId,
-    ...QUERY_MATRICULA_ACTIVA,
-  })
-    .sort({ createdAt: -1 })
-    .lean();
-  if (!mat) {
+  const matHit = await buscarMatriculaJornadaActiva(numDoc, progId, clase?.idPrograma);
+  if (!matHit) {
     return { creado: false, motivo: 'sin_matricula', mensaje: MOTIVOS_CERT.sin_matricula };
   }
+  const mat = matHit.mat;
+  const progIdLiq = matHit.progIdMatricula;
 
-  let liq = await asegurarLiquidacionJornada(numDoc, progId, mat);
+  let liq = await asegurarLiquidacionJornada(numDoc, progIdLiq, mat);
   if (!liq) {
     return { creado: false, motivo: 'sin_liquidacion', mensaje: MOTIVOS_CERT.sin_liquidacion };
   }
@@ -374,21 +481,26 @@ async function intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornada
   }
 
   const fechaEmision = await resolverFechaEmisionCertificadoJornada(clase, idJornadaRaw);
-  const certificado = await crearCertificadoJornadaBase({
+  const certificado = await crearCertificadoJornadaConLiqLibre(
+    {
+      numDoc,
+      progId,
+      idContrato,
+      idJornada,
+      idClaseJornada,
+      contrato,
+      liq,
+      cfg,
+      plantilla,
+      horasCert,
+      observaciones: 'Certificado automático por asistencia a la clase',
+      fechaEmision,
+      encabezado,
+    },
     numDoc,
-    progId,
-    idContrato,
-    idJornada,
-    idClaseJornada,
-    contrato,
-    liq,
-    cfg,
-    plantilla,
-    horasCert,
-    observaciones: 'Certificado automático por asistencia a la clase',
-    fechaEmision,
-    encabezado,
-  });
+    progIdLiq,
+    mat,
+  );
 
   return {
     creado: true,
@@ -419,7 +531,7 @@ async function intentarCertificadoJornadaAuto(
   const contrato = ctx?.contrato || (await Contratacion.findById(idContrato).lean());
   if (!contrato) return { creado: false, motivo: 'contrato_no_encontrado' };
 
-  const tipoCert = contrato.tipoCertificado || TIPO_CERTIFICADO_GLOBAL;
+  const tipoCert = normalizarTipoCertificado(contrato.tipoCertificado);
   if (tipoCert === TIPO_CERTIFICADO_POR_CLASE) {
     return intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornadaRaw, clase, ctx, contrato);
   }
@@ -454,26 +566,56 @@ async function intentarCertificadoJornadaAuto(
     };
   }
 
-  const progId = String(idProg);
-  const mat = await Matricula.findOne({
-    numDoc,
-    idProg: progId,
-    ...QUERY_MATRICULA_ACTIVA,
-  })
-    .sort({ createdAt: -1 })
-    .lean();
-  if (!mat) {
-    return { creado: false, motivo: 'sin_matricula', mensaje: MOTIVOS_CERT.sin_matricula, ...progreso };
+  // Programa para encabezado/horas: certificación del contrato → programa de la clase.
+  const progIdContrato = idProgramaCertificacionContrato(contrato);
+  const progIdClase = String(clase?.idPrograma || idProg || '').trim();
+  const progIdPreferido = progIdContrato || progIdClase;
+  if (!progIdPreferido) {
+    return {
+      creado: false,
+      motivo: 'sin_programa',
+      mensaje:
+        'Configure el programa de certificación en el contrato (tipo global) o asigne un programa a la clase.',
+      ...progreso,
+    };
   }
 
-  let liq = await asegurarLiquidacionJornada(numDoc, progId, mat);
+  const progEncabezado = await buscarPrograma(progIdPreferido);
+  if (progIdContrato && !progEncabezado) {
+    return {
+      creado: false,
+      motivo: 'sin_programa',
+      mensaje: 'El programa de certificación del contrato no existe o fue eliminado.',
+      ...progreso,
+    };
+  }
+  if (!encabezadoCursoPrograma(progEncabezado) && !String(contrato?.nombreCertificacion || '').trim()) {
+    return {
+      creado: false,
+      motivo: 'sin_programa',
+      mensaje: 'Configure un programa de certificación con nombre para el certificado (contrato global).',
+      ...progreso,
+    };
+  }
+
+  // Matrícula: aceptar la del programa de certificación o la del programa de la clase (compat.).
+  const matHit = await buscarMatriculaJornadaActiva(numDoc, progIdContrato, progIdClase, progIdPreferido);
+  if (!matHit) {
+    return {
+      creado: false,
+      motivo: 'sin_matricula',
+      mensaje:
+        MOTIVOS_CERT.sin_matricula +
+        ' Verifique que el alumno esté matriculado al programa de la clase o al de certificación del contrato.',
+      ...progreso,
+    };
+  }
+  const mat = matHit.mat;
+  const progIdLiq = matHit.progIdMatricula;
+
+  let liq = await asegurarLiquidacionJornada(numDoc, progIdLiq, mat);
   if (!liq) {
     return { creado: false, motivo: 'sin_liquidacion', mensaje: MOTIVOS_CERT.sin_liquidacion, ...progreso };
-  }
-
-  const dupLiq = await Certificado.findOne({ idLiquidacion: liq._id, estado: { $ne: 'anulado' } }).lean();
-  if (dupLiq) {
-    return { creado: false, motivo: 'ya_certificado', certificado: dupLiq, ...progreso };
   }
 
   const cfg = ctx?.cfg || (await obtenerConfigCertificado());
@@ -503,23 +645,28 @@ async function intentarCertificadoJornadaAuto(
     }
   }
 
-  const horasCert = String(contrato.numeroHorascert || '').trim();
+  const horasCert = horasCertificadoGlobal(contrato, progEncabezado);
   const fechaEmision = await resolverFechaEmisionCertificadoJornada(clase, idJornadaRaw);
-  const certificado = await crearCertificadoJornadaBase({
+  const certificado = await crearCertificadoJornadaConLiqLibre(
+    {
+      numDoc,
+      progId: progIdPreferido,
+      idContrato,
+      idJornada,
+      idClaseJornada: null,
+      contrato,
+      liq,
+      cfg,
+      plantilla,
+      horasCert,
+      observaciones: `Certificado automático al completar ${numSesCert} sesión(es) en el contrato`,
+      fechaEmision,
+      encabezado: encabezadoCertificadoGlobal(contrato, progEncabezado),
+    },
     numDoc,
-    progId,
-    idContrato,
-    idJornada,
-    idClaseJornada: null,
-    contrato,
-    liq,
-    cfg,
-    plantilla,
-    horasCert,
-    observaciones: `Certificado automático al completar ${numSesCert} sesión(es) en el contrato`,
-    fechaEmision,
-    encabezado: encabezadoCertificadoGlobal(contrato),
-  });
+    progIdLiq,
+    mat,
+  );
 
   return {
     creado: true,

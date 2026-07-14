@@ -59,6 +59,8 @@ async function generarHtmlCuentaCobro({ contrato, cliente, idSede }) {
   const cuentasHtml = await listarCuentasEmpresa();
 
   const valorLetras = `${fmtMoney(valor)} M/CTE`;
+  const { atPageCssPara } = require('./configPaginasInformes');
+  const atPage = await atPageCssPara('cuenta_cobro');
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -66,7 +68,7 @@ async function generarHtmlCuentaCobro({ contrato, cliente, idSede }) {
   <meta charset="utf-8" />
   <title>Cuenta de cobro ${esc(numero)}</title>
   <style>
-    @page { size: letter; margin: 18mm 16mm; }
+    ${atPage}
     * { box-sizing: border-box; }
     body {
       font-family: "Segoe UI", system-ui, sans-serif;

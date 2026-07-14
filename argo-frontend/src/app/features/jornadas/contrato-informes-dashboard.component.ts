@@ -78,15 +78,19 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   /** Torta: clases por estado */
   chartTortaEstado = computed(() => this.buildTorta(this.charts()?.clasesPorEstado || [], 'estado'));
   /** Torta: alumnos por programa */
-  chartTortaPrograma = computed(() => this.buildTorta(this.charts()?.alumnosPorPrograma || [], 'programa'));
+  chartTortaPrograma = computed(() =>
+    this.buildTorta(this.charts()?.alumnosPorPrograma || [], 'programa'),
+  );
   /** Barras: clases por instructor */
-  chartBarrasInstructor = computed(() => this.buildBarras(this.charts()?.clasesPorInstructor || [], 'teal'));
+  chartBarrasInstructor = computed(() =>
+    this.buildBarras(this.charts()?.clasesPorInstructor || [], 'teal'),
+  );
 
   private readonly palette = [
     '#38bdf8',
     '#34d399',
     '#a78bfa',
-    '#fbbf24',
+    '#818cf8',
     '#fb7185',
     '#2dd4bf',
     '#60a5fa',
@@ -98,7 +102,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   private readonly paletteEstado: Record<string, string> = {
     Finalizadas: '#34d399',
     'En proceso': '#38bdf8',
-    Programadas: '#fbbf24',
+    Programadas: '#a78bfa',
   };
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -195,17 +199,41 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   buildBarras(
     items: InformeDashboardChartItem[],
     tone: 'sky' | 'teal' = 'sky',
-  ): Array<InformeDashboardChartItem & { pct: number; color: string }> {
+  ): {
+    total: number;
+    max: number;
+    items: Array<
+      InformeDashboardChartItem & {
+        value: number;
+        /** Altura visual vs. la barra más alta (no es % del total). */
+        pctAltura: number;
+        /** Participación: value / suma del gráfico. */
+        pctTotal: number;
+        color: string;
+      }
+    >;
+  } {
     const list = (items || []).filter((x) => Number(x.value) >= 0).slice(0, 10);
-    const max = Math.max(1, ...list.map((x) => Number(x.value) || 0));
-    return list.map((it, i) => ({
-      ...it,
-      pct: Math.max(4, Math.round(((Number(it.value) || 0) / max) * 100)),
-      color:
-        tone === 'teal'
-          ? this.palette[(i + 4) % this.palette.length]
-          : this.palette[i % this.palette.length],
-    }));
+    const values = list.map((x) => Number(x.value) || 0);
+    const total = values.reduce((s, n) => s + n, 0);
+    const max = Math.max(1, ...values, 0);
+    return {
+      total,
+      max,
+      items: list.map((it, i) => {
+        const value = Number(it.value) || 0;
+        return {
+          ...it,
+          value,
+          pctAltura: Math.max(4, Math.round((value / max) * 100)),
+          pctTotal: total > 0 ? Math.round((value / total) * 1000) / 10 : 0,
+          color:
+            tone === 'teal'
+              ? this.palette[(i + 4) % this.palette.length]
+              : this.palette[i % this.palette.length],
+        };
+      }),
+    };
   }
 
   buildTorta(
@@ -219,14 +247,19 @@ export class ContratoInformesDashboardComponent implements OnChanges {
       pct: number;
       color: string;
       path: string;
+      labelX: number;
+      labelY: number;
+      showLabel: boolean;
     }>;
   } {
     const list = (items || []).filter((x) => Number(x.value) > 0).slice(0, 8);
-    const total = list.reduce((s, x) => s + (Number(x.value) || 0), 0) || 1;
+    const totalRaw = list.reduce((s, x) => s + (Number(x.value) || 0), 0);
+    const total = totalRaw || 1;
     const cx = 50;
     const cy = 50;
     const r = 36;
     const rInner = 20;
+    const rLabel = (r + rInner) / 2;
     let angle = -Math.PI / 2;
     const slices = list.map((it, i) => {
       const value = Number(it.value) || 0;
@@ -234,6 +267,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
       const sweep = (value / total) * Math.PI * 2;
       const a0 = angle;
       const a1 = angle + sweep;
+      const aMid = a0 + sweep / 2;
       angle = a1;
       const color =
         kind === 'estado'
@@ -245,9 +279,18 @@ export class ContratoInformesDashboardComponent implements OnChanges {
         pct,
         color,
         path: this.donutSlicePath(cx, cy, r, rInner, a0, a1),
+        labelX: cx + rLabel * Math.cos(aMid),
+        labelY: cy + rLabel * Math.sin(aMid),
+        showLabel: pct >= 8 || sweep >= 0.45,
       };
     });
-    return { total: list.reduce((s, x) => s + (Number(x.value) || 0), 0), slices };
+    return { total: totalRaw, slices };
+  }
+
+  formatPct(n: number): string {
+    if (!Number.isFinite(n)) return '0%';
+    const rounded = Math.round(n * 10) / 10;
+    return `${rounded}%`;
   }
 
   private donutSlicePath(

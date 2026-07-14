@@ -173,7 +173,7 @@ exports.html = async (req, res, next) => {
     const data = await armarReciboEgreso(req.params.id);
     if (!data) return res.status(404).send('Egreso no encontrado');
 
-    const html = generarHtmlEgreso(data);
+    const html = await generarHtmlEgreso(data);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);

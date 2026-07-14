@@ -235,9 +235,9 @@
   font-weight: 600;
 
   &--gold {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.28);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.28);
   }
 
   &--violet {
@@ -268,9 +268,9 @@
   }
 
   &--warn {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.28);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.28);
   }
 }
 
@@ -434,7 +434,7 @@
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
   &--teal { border-left-color: #2dd4bf; }
   &--rose { border-left-color: #f472b6; }
 }

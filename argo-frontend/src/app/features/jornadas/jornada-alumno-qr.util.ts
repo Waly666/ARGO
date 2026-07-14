@@ -72,14 +72,15 @@ export function etiquetaHtmlAlumno(opts: {
   </div>`;
 }
 
-export function paginaEtiquetasHtml(etiquetas: string[]): string {
+export function paginaEtiquetasHtml(etiquetas: string[], atPageCss?: string): string {
+  const pageRule = atPageCss || '@page { margin: 4mm; }';
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <title>Etiquetas QR — Jornadas</title>
   <style>
-    @page { margin: 4mm; }
+    ${pageRule}
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
     .sheet {

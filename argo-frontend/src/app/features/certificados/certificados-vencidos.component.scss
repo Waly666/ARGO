@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════ */
 
 $red:    #f87272;
-$amber:  #fbbf24;
+$amber:  #38bdf8;
 $blue:   #60a5fa;
 $teal:   #2dd4bf;
 $violet: #a78bfa;
@@ -619,7 +619,7 @@ $gray:   #6b7280;
   white-space: nowrap;
 
   &--warn   { background: rgba($amber, 0.12); color: $amber; border-color: rgba($amber, 0.3); }
-  &--orange { background: rgba(251, 146, 60, 0.12); color: #fb923c; border-color: rgba(251,146,60,0.3); }
+  &--orange { background: rgba(129, 140, 248, 0.12); color: #818cf8; border-color: rgba(129,140,248,0.3); }
   &--red    { background: rgba($red, 0.12);  color: $red;  border-color: rgba($red, 0.3); }
 }
 

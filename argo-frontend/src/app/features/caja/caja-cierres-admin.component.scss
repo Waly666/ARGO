@@ -56,7 +56,7 @@
   }
 
   &.kpi-warn {
-    border-color: rgba(245, 158, 11, 0.35);
+    border-color: rgba(139, 92, 246, 0.35);
     background: linear-gradient(165deg, rgba(62, 40, 8, 0.55), rgba(20, 14, 6, 0.85));
   }
 }
@@ -101,7 +101,7 @@
 }
 
 .row-pendiente {
-  background: rgba(245, 158, 11, 0.06);
+  background: rgba(139, 92, 246, 0.06);
 }
 
 .link-btn {
@@ -143,7 +143,7 @@
   }
 
   &.cierre-pendiente {
-    border-color: rgba(245, 158, 11, 0.4);
+    border-color: rgba(139, 92, 246, 0.4);
     background: linear-gradient(165deg, rgba(40, 28, 8, 0.55), rgba(12, 14, 34, 0.98));
   }
 }

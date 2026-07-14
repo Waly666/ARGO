@@ -320,7 +320,7 @@
   background: #334155;
   color: #94a3b8;
 
-  &.avatar-admin { background: linear-gradient(135deg, #d97706, #b45309); color: #fff; }
+  &.avatar-admin { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
   &.avatar-instructor { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
   &.avatar-alumno { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
 }
@@ -347,7 +347,7 @@
   padding: 0.1rem 0.45rem;
   font-weight: 500;
 
-  &.badge-admin { background: rgba(217, 119, 6, 0.15); color: #fcd34d; }
+  &.badge-admin { background: rgba(124, 58, 237, 0.15); color: #a5b4fc; }
   &.badge-instructor { background: rgba(124, 58, 237, 0.15); color: #c4b5fd; }
   &.badge-alumno { background: rgba(37, 99, 235, 0.15); color: #93c5fd; }
 }

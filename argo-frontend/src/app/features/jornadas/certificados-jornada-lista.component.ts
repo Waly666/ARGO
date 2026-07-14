@@ -31,6 +31,7 @@ import {
   capHorasCert,
   capUbicacionJornada,
   rowCertificadoHoyClass,
+  certificadoEsDeHoy,
   ubicacionJornadaLabel,
 } from './jornada-ui.util';
 import {
@@ -47,6 +48,7 @@ export interface CertificadoJornadaItem {
   encabezado?: string;
   horasCert?: string;
   fechaEmision?: string;
+  createdAt?: string;
   fechaVencimiento?: string | null;
   observaciones?: string;
   numActa?: string;
@@ -142,6 +144,7 @@ export class CertificadosJornadaListaComponent implements OnInit {
   readonly capHorasCert = capHorasCert;
   readonly capFechaJor = capFechaJor;
   readonly rowCertificadoHoyClass = rowCertificadoHoyClass;
+  readonly certificadoEsDeHoy = certificadoEsDeHoy;
   readonly esFechaHoy = esFechaHoy;
 
   opcionesContrato = computed<EnumBuscarOption[]>(() =>
@@ -170,7 +173,7 @@ export class CertificadosJornadaListaComponent implements OnInit {
 
   certificadoEdit = computed(() => this.certificados().find((c) => c._id === this.editId()) || null);
   certsHoyCount = computed(
-    () => this.certificados().filter((c) => esFechaHoy(c.fechaEmision)).length,
+    () => this.certificados().filter((c) => certificadoEsDeHoy(c)).length,
   );
 
   filtrados = computed(() => {

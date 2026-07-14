@@ -270,6 +270,10 @@ async function generarHtmlCertificado(data, options = {}) {
   const tipografiaCss = reglasTipografia(L, oriKey);
   const googleFonts = googleFontsHeadHtml();
   const anulado = bloqueComprobanteAnulado(certificado);
+  const { atPageCssPara } = require('./configPaginasInformes');
+  const atPage = await atPageCssPara('certificados', {
+    sizeOverride: `${L.pageW} ${L.pageH}`,
+  });
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -278,7 +282,7 @@ async function generarHtmlCertificado(data, options = {}) {
   <title>Certificado ${esc(codigo)}</title>
   ${googleFonts}
   <style>
-    @page { size: ${L.pageW} ${L.pageH}; margin: 0; }
+    ${atPage}
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: ${L.pageW};

@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import QRCode from 'qrcode';
 
 import { formatNumDoc } from '../../core/utils/num-doc.helpers';
+import { ConfigPaginasInformesService } from '../../core/services/config-paginas-informes.service';
 import {
   buildJornadaAlumnoQrPayload,
   etiquetaHtmlAlumno,
@@ -11,6 +13,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class JornadaEtiquetaQrService {
+  private paginasSvc = inject(ConfigPaginasInformesService);
+
   /**
    * Genera etiquetas QR (solo jornadas) y abre ventana de impresión.
    * El payload es el mismo que lee la app móvil al escanear.
@@ -51,7 +55,13 @@ export class JornadaEtiquetaQrService {
 
     if (!bloques.length) return { ok: 0, fail };
 
-    const html = paginaEtiquetasHtml(bloques);
+    let atPageCss: string | undefined;
+    try {
+      atPageCss = await firstValueFrom(this.paginasSvc.ensureAndAtPageCss('etiqueta_qr_jornada'));
+    } catch {
+      atPageCss = undefined;
+    }
+    const html = paginaEtiquetasHtml(bloques, atPageCss);
     const w = window.open('', '_blank', 'width=900,height=700');
     if (!w) {
       throw new Error('Permita ventanas emergentes para imprimir las etiquetas QR.');

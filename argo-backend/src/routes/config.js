@@ -10,6 +10,7 @@ const fmtInspVehiCtrl = require('../controllers/configFormatoInspeccionVehiculos
 const nominaCfgCtrl = require('../controllers/configNominaController');
 const contratoCapCfgCtrl = require('../controllers/configContratoCapController');
 const alertasCfgCtrl = require('../controllers/configAlertasController');
+const paginasInfCtrl = require('../controllers/configPaginasInformesController');
 const servAdicCtrl = require('../controllers/configServiciosAdicionalesController');
 const upload = require('../middleware/upload');
 const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
@@ -38,6 +39,14 @@ router.post('/georef/probar', requirePermiso('config.georef'), georefCtrl.probar
 router.get('/alertas/catalogos', requireAuth, alertasCfgCtrl.catalogos);
 router.get('/alertas', requireAuth, alertasCfgCtrl.obtener);
 router.put('/alertas', requirePermiso('config.alertas', 'config.roles'), alertasCfgCtrl.actualizar);
+
+router.get('/paginas-informes/catalogos', requireAuth, paginasInfCtrl.catalogos);
+router.get('/paginas-informes', requireAuth, paginasInfCtrl.obtener);
+router.put(
+  '/paginas-informes',
+  requirePermiso('config.paginas_informes', 'config.roles'),
+  paginasInfCtrl.actualizar,
+);
 
 router.get(
   '/contratos-cap-fiscal/catalogos',

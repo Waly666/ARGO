@@ -80,13 +80,17 @@ export interface ContratacionDto {
   jornadasPorDia?: number;
   /** Clases autogeneradas por jornada. */
   clasesPorJornada?: number;
-  /** Intensidad horaria impresa en certificado (modo por_clase); no define duración de la sesión. */
+  /** Intensidad horaria impresa en certificado; preferir horas del programa. @deprecated */
   horasPorClase?: number;
   /** global | por_clase */
   tipoCertificado?: string;
+  /** Programa de Jornadas de Capacitación para certificado global (encabezado/horas). */
+  idProgramaCertificacion?: string;
   numeroAlumnos?: number;
   numeObjeJornada?: number;
+  /** @deprecated Preferir idProgramaCertificacion en modo global. */
   nombreCertificacion?: string;
+  /** @deprecated Preferir idProgramaCertificacion en modo global. */
   numeroHorascert?: string;
   incluiSab?: boolean;
   incluiDom?: boolean;
@@ -831,19 +835,48 @@ export class JornadaCapService {
   }
 
   imprimirCertificadoJornada(id: string, onError?: (msg: string) => void): void {
+    // Abrir en el mismo gesto del clic; luego cargar HTML (evita bloqueo de popups).
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) {
+      onError?.('Permita ventanas emergentes para imprimir el certificado.');
+      return;
+    }
+    try {
+      w.document.open();
+      w.document.write('<p style="font-family:sans-serif;padding:1rem">Cargando certificado…</p>');
+      w.document.close();
+    } catch {
+      /* ventana en blanco */
+    }
+
     const url = `${this.base}/certificados-generados/${id}/html?v=${Date.now()}`;
     this.http.get(url, { responseType: 'text' }).subscribe({
       next: (html) => {
-        const w = window.open('', '_blank', 'width=900,height=700');
-        if (!w) {
-          onError?.('Permita ventanas emergentes para imprimir el certificado.');
-          return;
+        try {
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        } catch {
+          try {
+            w.close();
+          } catch {
+            /* ignore */
+          }
+          onError?.('No se pudo mostrar el certificado en la ventana.');
         }
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
       },
-      error: (e) => onError?.(e?.error?.message || 'No se pudo generar el certificado.'),
+      error: (e) => {
+        try {
+          w.close();
+        } catch {
+          /* ignore */
+        }
+        const msg =
+          (typeof e?.error === 'string' && e.error) ||
+          e?.error?.message ||
+          'No se pudo generar el certificado.';
+        onError?.(msg);
+      },
     });
   }
 

@@ -48,11 +48,11 @@ const {
   registrarAsistenciasInscritosPendientes,
   emitirCertificadosAsistentesClase,
   postCierreClaseJornada,
+  fusionarCertificadosEmitidos,
 } = require('../services/asistenciaJornadaCap');
 const {
   MOTIVOS_CERT,
   progresoCertificacion,
-  validarAlumnoSinCertificadoContrato,
   crearContextoCertificadoContrato,
   certificadoExistenteClase,
 } = require('../services/certificadoJornadaAuto');
@@ -270,6 +270,7 @@ function pickContrato(body) {
     'clasesPorJornada',
     'horasPorClase',
     'tipoCertificado',
+    'idProgramaCertificacion',
     'numeroAlumnos',
     'nombreCertificacion',
     'numeroHorascert',
@@ -304,6 +305,9 @@ function pickContrato(body) {
   if (dto.tipoCertificado != null) {
     const t = String(dto.tipoCertificado).trim().toLowerCase();
     dto.tipoCertificado = TIPOS_CERTIFICADO_CONTRATO.includes(t) ? t : TIPO_CERTIFICADO_GLOBAL;
+  }
+  if (dto.idProgramaCertificacion !== undefined) {
+    dto.idProgramaCertificacion = String(dto.idProgramaCertificacion || '').trim();
   }
   if (dto.numeroAlumnos != null) dto.numeroAlumnos = Math.max(0, parseInt(dto.numeroAlumnos, 10) || 0);
   if (dto.numSesCert != null) dto.numSesCert = Math.max(1, parseInt(dto.numSesCert, 10) || 1);
@@ -440,7 +444,7 @@ exports.informeContratoPdf = async (req, res, next) => {
     const data = await obtenerDashboardInformeContrato(req.params.id, req.query || {});
     if (!data) return res.status(404).json({ message: 'Contrato no encontrado' });
 
-    const html = buildHtmlInformeContratoPdf(data, alcance);
+    const html = await buildHtmlInformeContratoPdf(data, alcance);
     const browser = await launchBrowser();
     try {
       const pdf = await htmlToPdfBuffer(browser, html);
@@ -1595,7 +1599,6 @@ exports.sincronizarAsistenciasInscritos = async (req, res, next) => {
       omitirValidacionJornada: true,
     });
 
-    let certificadosNuevos = syncAsis.certificadosNuevos || 0;
     let certificadosEmitidos = syncAsis.certificadosEmitidos || [];
     if (String(clase.estado || '').toUpperCase() === 'FINALIZADO') {
       const jornada = await JornadaCap.findById(clase.idJornada).lean();
@@ -1603,9 +1606,12 @@ exports.sincronizarAsistenciasInscritos = async (req, res, next) => {
         ? await crearContextoCertificadoContrato(jornada.idContrato)
         : null;
       const certs = await emitirCertificadosAsistentesClase(req, clase, { jornada, ctxCert });
-      certificadosNuevos += certs.certificadosNuevos || 0;
-      certificadosEmitidos = [...certificadosEmitidos, ...(certs.certificadosEmitidos || [])];
+      certificadosEmitidos = fusionarCertificadosEmitidos(
+        syncAsis.certificadosEmitidos,
+        certs.certificadosEmitidos,
+      );
     }
+    const certificadosNuevos = certificadosEmitidos.length;
 
     res.json({
       ...syncAsis,
@@ -1915,22 +1921,25 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
   const contrato = jornadaDestino?.idContrato
     ? await Contratacion.findById(jornadaDestino.idContrato).select('tipoCertificado').lean()
     : null;
-  const esPorClase = contrato?.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
+  const tipoNorm = String(contrato?.tipoCertificado || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_');
+  const esPorClase = tipoNorm === TIPO_CERTIFICADO_POR_CLASE || tipoNorm === 'porclase';
 
   const alumnosOut = await Promise.all(
-    insccripcionesFuente.map(async (ins) => {
+    inscripcionesFuente.map(async (ins) => {
       const nd = Number(ins.numDoc);
       const al = mapAlu.get(nd);
       const cert = mapCert.get(nd);
+      // Certificado global del contrato no impide matricular en otras clases.
+      // En por_clase solo se bloquea si ya tiene certificado de ESTA clase destino.
       let puedeMatricular = !yaEnEstaClase.has(nd);
-      if (puedeMatricular && jornadaDestino?.idContrato) {
-        if (esPorClase) {
-          const certEstaClase = await certificadoExistenteClase(nd, claseDestino._id);
-          if (certEstaClase) puedeMatricular = false;
-        } else {
-          const bloqueo = await validarAlumnoSinCertificadoContrato(nd, jornadaDestino.idContrato);
-          if (bloqueo) puedeMatricular = false;
-        }
+      if (puedeMatricular && esPorClase && jornadaDestino?.idContrato) {
+        const certEstaClase = await certificadoExistenteClase(nd, claseDestino._id);
+        if (certEstaClase) puedeMatricular = false;
       }
       return {
         numDoc: nd,
@@ -2035,7 +2044,10 @@ exports.certificadosGenerados = async (req, res, next) => {
     } = require('../services/certificadosJornadaZip');
     const { q, error } = buildQueryCertificadosJornada(req.query || {});
     if (error) return res.status(400).json({ message: error });
-    const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(800).lean();
+    const rows = await Certificado.find(q).sort({ createdAt: -1, fechaEmision: -1 }).limit(800).lean();
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+
     const qRaw = String(req.query.q || '').trim();
 
     const jornadaIds = [...new Set(rows.map((c) => String(c.idJornada || '')).filter(Boolean))];
@@ -2431,11 +2443,21 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
       const clase =
         (await ClaseJornadaCap.findById(claseDoc._id).lean()) ||
         (claseDoc.toObject ? claseDoc.toObject() : claseDoc);
-      const idClaseProg = String(clase.idPrograma || '').trim();
+      let idClaseProg = String(clase.idPrograma || '').trim();
       if (!idClaseProg) {
-        return res.status(400).json({
-          message: 'Asigne y guarde el programa en la clase antes de inscribir alumnos.',
-        });
+        // El operador suele elegir el programa en el modal y agregar alumnos sin pulsar «Guardar».
+        await ClaseJornadaCap.updateOne(
+          { _id: claseDoc._id },
+          {
+            $set: {
+              idPrograma: idProgramaVal,
+              ...(Number.isFinite(Number(prog.horas)) && Number(prog.horas) > 0
+                ? { horasCertificadas: Number(prog.horas) }
+                : {}),
+            },
+          },
+        );
+        idClaseProg = idProgramaVal;
       }
       // Comparar por programa resuelto (idPrograma numérico o _id), no solo string crudo.
       const progClase = await buscarPrograma(idClaseProg);
@@ -2458,14 +2480,6 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
           jornada.idContrato,
           userLogin,
         );
-        const bloqueo = await validarAlumnoSinCertificadoContrato(nd, jornada.idContrato);
-        if (bloqueo) {
-          return res.status(409).json({
-            message: bloqueo.message,
-            codigo: 'ya_certificado_contrato',
-            certificado: bloqueo.certificado,
-          });
-        }
       }
       try {
         inscripcion = await InscripcionClase.create({

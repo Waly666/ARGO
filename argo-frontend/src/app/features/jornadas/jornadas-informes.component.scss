@@ -330,16 +330,16 @@
   .stat-label { color: #c4b5fd; }
 }
 .stat--amber {
-  background: rgba(245, 158, 11, 0.14);
-  .stat-label { color: #fcd34d; }
+  background: rgba(139, 92, 246, 0.14);
+  .stat-label { color: #a5b4fc; }
 }
 .stat--teal {
   background: rgba(20, 184, 166, 0.14);
   .stat-label { color: #5eead4; }
 }
 .stat--orange {
-  background: rgba(249, 115, 22, 0.14);
-  .stat-label { color: #fdba74; }
+  background: rgba(99, 102, 241, 0.14);
+  .stat-label { color: #93c5fd; }
 }
 
 /* —— Tabs —— */
@@ -387,11 +387,11 @@
 
 .tab--indigo.active { background: rgba(99, 102, 241, 0.45); border-color: #818cf8; }
 .tab--cyan.active { background: rgba(6, 182, 212, 0.4); border-color: #22d3ee; }
-.tab--amber.active { background: rgba(245, 158, 11, 0.38); border-color: #fbbf24; }
+.tab--amber.active { background: rgba(139, 92, 246, 0.38); border-color: #38bdf8; }
 .tab--blue.active { background: rgba(59, 130, 246, 0.42); border-color: #60a5fa; }
 .tab--teal.active { background: rgba(20, 184, 166, 0.38); border-color: #2dd4bf; }
 .tab--violet.active { background: rgba(139, 92, 246, 0.4); border-color: #a78bfa; }
-.tab--orange.active { background: rgba(249, 115, 22, 0.38); border-color: #fb923c; }
+.tab--orange.active { background: rgba(99, 102, 241, 0.38); border-color: #818cf8; }
 .tab--emerald.active { background: rgba(16, 185, 129, 0.38); border-color: #34d399; }
 
 /* —— Toolbar —— */

@@ -5,7 +5,7 @@
   --coh-ok: var(--ok, #36d399);
   --coh-ok-bg: rgba(54, 211, 153, 0.15);
   --coh-warn: var(--warn, #fbbd23);
-  --coh-warn-bg: rgba(251, 189, 35, 0.14);
+  --coh-warn-bg: rgba(56, 189, 248, 0.14);
   --coh-bad: var(--err, #f87272);
   --coh-bad-bg: rgba(248, 114, 114, 0.15);
   --coh-surface: var(--surface-elevated, rgba(16, 28, 58, 0.92));
@@ -224,7 +224,7 @@
       align-items: center;
       gap: 0.35rem;
       background: var(--coh-warn-bg);
-      border-color: rgba(251, 189, 35, 0.35);
+      border-color: rgba(56, 189, 248, 0.35);
       color: var(--coh-warn);
       font-size: 0.9rem;
     }

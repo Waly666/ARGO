@@ -10,7 +10,6 @@ const { bloqueoOperacionJornada } = require('./jornadasOperacionEspecial');
 const {
   intentarCertificadoJornadaAuto,
   progresoCertificacion,
-  validarAlumnoSinCertificadoContrato,
   crearContextoCertificadoContrato,
 } = require('./certificadoJornadaAuto');
 const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
@@ -86,24 +85,8 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
   const idContrato = jornada?.idContrato;
   const auditor = req?.user ? auditoriaUsuario(req) : 'sistema';
 
-  if (idContrato) {
-    const bloqueo = await validarAlumnoSinCertificadoContrato(numDoc, idContrato);
-    if (bloqueo) {
-      const yaAsis = skipAsistenciaExistente
-        ? null
-        : await AsisClasJorCap.findOne({
-            idclaseJornada: clase._id,
-            numDocAlumno: numDoc,
-          }).lean();
-      if (!yaAsis) {
-        const err = new Error(bloqueo.message);
-        err.status = 409;
-        err.codigo = 'ya_certificado_contrato';
-        err.certificado = bloqueo.certificado;
-        throw err;
-      }
-    }
-  }
+  // Nota: certificado global del contrato NO bloquea asistencia en otras clases
+  // (solo evita emitir un segundo certificado).
 
   let asis = null;
   let duplicada = false;
@@ -155,9 +138,21 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
     /* ignore */
   }
 
-  // Certificados se emiten al finalizar la clase (no al marcar asistencia).
+  // Global: intenta emitir al marcar asistencia (p. ej. al completar numSesCert).
+  // Por clase: se emite al finalizar (omitirCertificado por defecto), salvo que se force.
   let resultadoCert = { creado: false, motivo: null };
-  if (opts.omitirCertificado !== false) {
+  const tipoCertRaw = String(ctxCert?.contrato?.tipoCertificado || opts.jornada?.tipoCertificado || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_');
+  const esPorClase = tipoCertRaw === 'por_clase' || tipoCertRaw === 'porclase';
+  const omitirPorDefecto = esPorClase;
+  const omitirCert =
+    opts.omitirCertificado !== undefined ? opts.omitirCertificado !== false : omitirPorDefecto;
+
+  if (omitirCert) {
     resultadoCert = {
       creado: false,
       motivo: idContrato ? 'diferido_al_finalizar' : 'sin_contrato_jornada',
@@ -171,6 +166,11 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
       ctxCert,
       clase,
     );
+    if (!resultadoCert?.creado && resultadoCert?.motivo && resultadoCert.motivo !== 'sesiones_insuficientes') {
+      console.warn(
+        `[ARGO] Auto-cert jornada (asistencia) numDoc=${numDoc}: ${resultadoCert.motivo} — ${resultadoCert.mensaje || ''}`,
+      );
+    }
   } else {
     resultadoCert = { creado: false, motivo: 'sin_contrato_jornada' };
   }
@@ -353,9 +353,16 @@ async function emitirCertificadosAsistentesClase(req, claseDoc, opts = {}) {
           nombreAlumno,
           numDoc,
         });
+      } else if (resultadoCert?.motivo && resultadoCert.motivo !== 'sesiones_insuficientes') {
+        console.warn(
+          `[ARGO] Auto-cert jornada (finalizar) numDoc=${numDoc} clase=${clase._id}: ${resultadoCert.motivo} — ${resultadoCert.mensaje || ''}`,
+        );
       }
-    } catch (_) {
-      /* sigue con el siguiente alumno */
+    } catch (err) {
+      console.error(
+        `[ARGO] Auto-cert jornada (finalizar) numDoc=${numDoc} clase=${clase._id}:`,
+        err?.message || err,
+      );
     }
   }
 
@@ -391,6 +398,10 @@ async function postCierreClaseJornada(req, claseDoc, opts = {}) {
       (jornada?.idContrato ? await crearContextoCertificadoContrato(jornada.idContrato) : null);
     certs = await emitirCertificadosAsistentesClase(req, clase, { jornada, ctxCert });
   } catch (e) {
+    const mergedCatch = fusionarCertificadosEmitidos(
+      syncAsis.certificadosEmitidos,
+      certs.certificadosEmitidos,
+    );
     return {
       ok: false,
       error: e?.message || String(e),
@@ -398,10 +409,17 @@ async function postCierreClaseJornada(req, claseDoc, opts = {}) {
       certs,
       jornada,
       asistenciasRegistradas: syncAsis.registradas || 0,
-      certificadosNuevos: certs.certificadosNuevos || 0,
-      certificadosEmitidos: certs.certificadosEmitidos || [],
+      certificadosNuevos: mergedCatch.length,
+      certificadosEmitidos: mergedCatch,
     };
   }
+
+  // En modo global el certificado puede crearse al marcar asistencia (syncAsis)
+  // y luego «ya_certificado» en emitirCertificados — hay que unir ambas listas.
+  const certificadosEmitidos = fusionarCertificadosEmitidos(
+    syncAsis.certificadosEmitidos,
+    certs.certificadosEmitidos,
+  );
 
   return {
     ok: true,
@@ -409,9 +427,21 @@ async function postCierreClaseJornada(req, claseDoc, opts = {}) {
     certs,
     jornada,
     asistenciasRegistradas: syncAsis.registradas || 0,
-    certificadosNuevos: certs.certificadosNuevos || 0,
-    certificadosEmitidos: certs.certificadosEmitidos || [],
+    certificadosNuevos: certificadosEmitidos.length,
+    certificadosEmitidos,
   };
+}
+
+function fusionarCertificadosEmitidos(...listas) {
+  const map = new Map();
+  for (const lista of listas) {
+    for (const item of lista || []) {
+      const id = String(item?.certificado?._id || item?.certificado?.id || '').trim();
+      if (!id) continue;
+      if (!map.has(id)) map.set(id, item);
+    }
+  }
+  return [...map.values()];
 }
 
 module.exports = {
@@ -420,4 +450,5 @@ module.exports = {
   registrarAsistenciasInscritosPendientes,
   emitirCertificadosAsistentesClase,
   postCierreClaseJornada,
+  fusionarCertificadosEmitidos,
 };

@@ -779,6 +779,7 @@ export class ShellComponent {
         'config.nomina',
         'config.certificados',
         'config.alertas',
+        'config.paginas_informes',
         'config.requisitos',
         'config.auditoria',
         'sedes.gestionar',
@@ -912,6 +913,14 @@ export class ShellComponent {
           icon: '◉',
           iconTone: 'amber',
           permiso: ['config.alertas', 'config.roles'],
+        },
+        {
+          kind: 'link',
+          label: 'Páginas de informes',
+          path: '/app/configuracion/paginas-informes',
+          icon: '▤',
+          iconTone: 'blue',
+          permiso: ['config.paginas_informes', 'config.roles'],
         },
         {
           kind: 'link',
@@ -1499,10 +1508,13 @@ export class ShellComponent {
         },
       });
     };
+    const pollMs = this.pollIntervalMs('alarmas.jornadas.certificado_nuevo');
+    // Ventana ≥ intervalo: createdAt de jornadas a veces cae fuera de 3 min si el poll es más largo.
+    const minutosVentana = Math.max(5, Math.ceil(pollMs / 60_000) * 2);
     poll(60, false);
-    interval(this.pollIntervalMs('alarmas.jornadas.certificado_nuevo'))
+    interval(pollMs)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => poll(3, true));
+      .subscribe(() => poll(minutosVentana, true));
   }
 
   /** Certificados por vencer: días configurados en alertas o en config certificados. */

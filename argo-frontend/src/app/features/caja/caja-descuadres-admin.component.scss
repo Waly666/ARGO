@@ -81,7 +81,7 @@
 }
 
 .row-pendiente {
-  background: rgba(251, 189, 35, 0.06);
+  background: rgba(56, 189, 248, 0.06);
 }
 
 .badge {
@@ -91,8 +91,8 @@
   text-transform: uppercase;
 
   &.pendiente {
-    background: rgba(251, 189, 35, 0.2);
-    color: #fbbf24;
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
   }
   &.resuelto {
     background: rgba(54, 211, 153, 0.15);

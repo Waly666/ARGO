@@ -168,7 +168,7 @@
 
   &--sky { border-left-color: #38bdf8; }
   &--violet { border-left-color: #a78bfa; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
 }
 
 .usr-section-head {
@@ -289,16 +289,16 @@
   }
 
   &:hover {
-    border-color: rgba(251, 191, 36, 0.35);
-    background: rgba(251, 191, 36, 0.06);
+    border-color: rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.06);
   }
 
   &:has(input:checked) {
-    border-color: rgba(251, 191, 36, 0.45);
-    background: rgba(251, 191, 36, 0.1);
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.1);
 
     .usr-toggle-title {
-      color: #fde68a;
+      color: #c7d2fe;
     }
   }
 }
@@ -324,8 +324,8 @@
 .usr-sede-block {
   padding: 0.55rem 0.65rem;
   border-radius: 9px;
-  border: 1px dashed rgba(251, 191, 36, 0.22);
-  background: rgba(251, 191, 36, 0.04);
+  border: 1px dashed rgba(56, 189, 248, 0.22);
+  background: rgba(56, 189, 248, 0.04);
 }
 
 .usr-sede-hint {
@@ -480,9 +480,9 @@
   font-weight: 600;
 
   &--admin {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.28);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.28);
   }
 
   &--staff {
@@ -579,9 +579,9 @@
   letter-spacing: 0.04em;
 
   &.usr-rol-badge--admin {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.18);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.18);
+    border: 1px solid rgba(139, 92, 246, 0.3);
   }
 
   &.usr-rol-badge--staff {

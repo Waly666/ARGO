@@ -32,9 +32,9 @@
   font-weight: 700;
   padding: 6px 12px;
   border-radius: 6px;
-  background: rgba(251, 191, 36, 0.12);
+  background: rgba(56, 189, 248, 0.12);
   color: var(--warn);
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(56, 189, 248, 0.35);
 }
 
 .toolbar {
@@ -115,8 +115,8 @@
 
 .saldo-card {
   &.sel {
-    border-color: rgba(251, 191, 36, 0.65);
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.25);
+    border-color: rgba(56, 189, 248, 0.65);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
   }
 }
 

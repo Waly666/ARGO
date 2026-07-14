@@ -107,22 +107,29 @@ export class MetaAlumnosJornadaAlertService {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return;
       const ctx = new Ctx();
-      const now = ctx.currentTime;
-      const beep = (freq: number, start: number, dur: number) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(freq, now + start);
-        gain.gain.setValueAtTime(0, now + start);
-        gain.gain.linearRampToValueAtTime(0.08, now + start + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
-        osc.start(now + start);
-        osc.stop(now + start + dur);
+      const startBeeps = () => {
+        const now = ctx.currentTime;
+        const beep = (freq: number, start: number, dur: number) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(freq, now + start);
+          gain.gain.setValueAtTime(0, now + start);
+          gain.gain.linearRampToValueAtTime(0.08, now + start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+          osc.start(now + start);
+          osc.stop(now + start + dur);
+        };
+        beep(880, 0, 0.18);
+        beep(1174, 0.2, 0.22);
       };
-      beep(880, 0, 0.18);
-      beep(1174, 0.2, 0.22);
+      if (ctx.state === 'suspended') {
+        void ctx.resume().then(startBeeps).catch(() => startBeeps());
+      } else {
+        startBeeps();
+      }
     } catch {
       /* ignore */
     }

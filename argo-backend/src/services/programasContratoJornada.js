@@ -80,6 +80,7 @@ async function resolverProgramaAutogeneracion(idPrograma) {
   return {
     idPrograma: canon,
     idCarpa: carpa?.idCarpa ?? null,
+    horas: prog?.horas != null ? Number(prog.horas) : null,
   };
 }
 

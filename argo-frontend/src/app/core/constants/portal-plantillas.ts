@@ -272,22 +272,22 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
     },
   ),
 
-  // —— Ámbar / amarillo ——
+  // —— Índigo / violeta (antes «ámbar dorado») ——
   crearPlantilla(
     'sol-dorado',
-    'Sol dorado',
-    'Ámbar y oro sobre negro cálido. Premium y memorable.',
+    'Bruma índigo',
+    'Índigo y violeta sobre negro frío. Premium y memorable.',
     'ambar',
     {
       heroTitulo: 'Excelencia que brilla en cada certificado.',
       heroSubtitulo: 'Formación de alto nivel para quienes buscan destacar.',
       tema: {
-        colorPrimario: '#d97706',
-        colorPrimarioOscuro: '#b45309',
-        colorAcento: '#fcd34d',
-        colorFondo: '#0f0c06',
-        colorSuperficie: '#1c1608',
-        colorTexto: '#fffbeb',
+        colorPrimario: '#6366f1',
+        colorPrimarioOscuro: '#4338ca',
+        colorAcento: '#a5b4fc',
+        colorFondo: '#0a0f1f',
+        colorSuperficie: '#12182e',
+        colorTexto: '#eef2ff',
         colorTextoSecundario: '#a8a29e',
         fuente: 'Plus Jakarta Sans',
       },

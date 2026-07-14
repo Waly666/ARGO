@@ -307,8 +307,8 @@ table.nested { font-size: .88rem; }
   }
 
   &--parcial {
-    border-color: rgba(251, 191, 36, 0.45);
-    background: rgba(251, 191, 36, 0.06);
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.06);
   }
 }
 
@@ -336,7 +336,7 @@ table.nested { font-size: .88rem; }
 
 .cuota-estado {
   font-size: 0.72rem;
-  color: #fcd34d;
+  color: #a5b4fc;
   white-space: nowrap;
 }
 
@@ -392,7 +392,7 @@ table.nested { font-size: .88rem; }
 .cuota-saldo-hint {
   grid-column: 1 / -1;
   font-size: 0.72rem;
-  color: #fcd34d;
+  color: #a5b4fc;
 }
 
 .cuotas-resumen {
@@ -604,8 +604,8 @@ table.nested { font-size: .88rem; }
 
 .warn-docs {
   padding: 12px 14px;
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.08);
   border-radius: 8px;
 
   ul {
@@ -764,8 +764,8 @@ table.nested { font-size: .88rem; }
   font-size: 0.875rem;
 
   &--parcial {
-    background: rgba(251, 189, 35, 0.07);
-    border-color: rgba(251, 189, 35, 0.3);
+    background: rgba(56, 189, 248, 0.07);
+    border-color: rgba(56, 189, 248, 0.3);
   }
 
   .cr-msg {

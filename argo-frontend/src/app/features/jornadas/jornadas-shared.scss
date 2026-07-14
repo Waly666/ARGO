@@ -26,7 +26,7 @@
   h1 {
     margin: 0 0 0.35rem;
     font-size: 1.28rem;
-    background: linear-gradient(90deg, #fdba74 0%, #7dd3fc 48%, #a5b4fc 100%);
+    background: linear-gradient(90deg, #67e8f9 0%, #7dd3fc 48%, #a5b4fc 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -56,11 +56,11 @@
   color: var(--text-dim);
 
   a {
-    color: #fdba74;
+    color: #7dd3fc;
     text-decoration: none;
 
     &:hover {
-      color: #fde68a;
+      color: #bae6fd;
     }
   }
 }
@@ -101,7 +101,7 @@
   }
 
   &--amber {
-    color: #fde68a;
+    color: #fcd34d;
     background: rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.3);
   }
@@ -131,9 +131,11 @@
 .contrato-panel {
   padding: 0.85rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(249, 115, 22, 0.16);
-  border-left: 3px solid #f97316;
-  background: linear-gradient(145deg, rgba(28, 18, 12, 0.68), rgba(12, 10, 28, 0.5));
+  border: 1px solid rgba(78, 163, 255, 0.16);
+  border-left: 3px solid #38bdf8;
+  background:
+    linear-gradient(155deg, rgba(8, 18, 40, 0.88), rgba(6, 12, 28, 0.72)),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.45), rgba(2, 6, 18, 0.55));
 }
 
 h3.sec,
@@ -144,9 +146,9 @@ h3.sec,
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #fdba74;
-  background: rgba(249, 115, 22, 0.08);
-  border-left: 3px solid #f97316;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.08);
+  border-left: 3px solid #38bdf8;
   border-radius: 0 6px 6px 0;
 }
 
@@ -160,8 +162,8 @@ h3.sec,
   gap: 0.55rem 0.75rem;
   padding: 0.65rem 0.8rem;
   border-radius: 10px;
-  border: 1px solid rgba(249, 115, 22, 0.16);
-  background: rgba(3, 8, 28, 0.35);
+  border: 1px solid rgba(78, 163, 255, 0.16);
+  background: rgba(4, 12, 32, 0.55);
 }
 
 /* —— Tablas —— */
@@ -182,7 +184,7 @@ h3.sec,
 
     th, td {
       padding: 0.5rem 0.65rem;
-      border-bottom: 1px solid rgba(249, 115, 22, 0.08);
+      border-bottom: 1px solid rgba(78, 163, 255, 0.08);
       vertical-align: middle;
     }
 
@@ -196,7 +198,7 @@ h3.sec,
     }
 
     tbody tr:hover td {
-      background: rgba(249, 115, 22, 0.05);
+      background: rgba(56, 189, 248, 0.06);
     }
   }
 }
@@ -215,8 +217,8 @@ h3.sec,
 nav.tabs,
 .tabs-flow {
   border-radius: 12px;
-  border: 1px solid rgba(249, 115, 22, 0.18);
-  background: linear-gradient(160deg, rgba(20, 14, 10, 0.65), rgba(8, 8, 28, 0.5));
+  border: 1px solid rgba(78, 163, 255, 0.18);
+  background: linear-gradient(160deg, rgba(10, 22, 48, 0.85), rgba(6, 12, 28, 0.7));
   padding: 0.35rem;
 }
 

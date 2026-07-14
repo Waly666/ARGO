@@ -379,7 +379,7 @@
   overflow: hidden;
 
   &--sky { border-left-color: #38bdf8; }
-  &--amber { border-left-color: #fbbf24; }
+  &--amber { border-left-color: #38bdf8; }
   &--rose { border-left-color: #f472b6; }
 }
 
@@ -402,9 +402,9 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #fef3c7;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(244, 114, 182, 0.4));
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #ede9fe;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(244, 114, 182, 0.4));
+  border: 1px solid rgba(56, 189, 248, 0.3);
 }
 
 .rol-section-title {

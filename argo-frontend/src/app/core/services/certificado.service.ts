@@ -277,19 +277,48 @@ export class CertificadoService {
   }
 
   abrirHtml(id: string, onError?: (msg: string) => void): void {
+    // Abrir en el mismo gesto del clic; luego cargar HTML (evita bloqueo de popups).
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) {
+      onError?.('Permita ventanas emergentes para imprimir el certificado.');
+      return;
+    }
+    try {
+      w.document.open();
+      w.document.write('<p style="font-family:sans-serif;padding:1rem">Cargando certificado…</p>');
+      w.document.close();
+    } catch {
+      /* ventana en blanco */
+    }
+
     const url = `${this.base}/${id}/html?v=${Date.now()}`;
     this.http.get(url, { responseType: 'text' }).subscribe({
       next: (html) => {
-        const w = window.open('', '_blank', 'width=900,height=700');
-        if (!w) {
-          onError?.('Permita ventanas emergentes para imprimir el certificado.');
-          return;
+        try {
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        } catch {
+          try {
+            w.close();
+          } catch {
+            /* ignore */
+          }
+          onError?.('No se pudo mostrar el certificado en la ventana.');
         }
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
       },
-      error: (e) => onError?.(e?.error?.message || 'No se pudo generar el certificado.'),
+      error: (e) => {
+        try {
+          w.close();
+        } catch {
+          /* ignore */
+        }
+        const msg =
+          (typeof e?.error === 'string' && e.error) ||
+          e?.error?.message ||
+          'No se pudo generar el certificado.';
+        onError?.(msg);
+      },
     });
   }
 }

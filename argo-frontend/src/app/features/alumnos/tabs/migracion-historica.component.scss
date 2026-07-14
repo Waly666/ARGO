@@ -65,7 +65,7 @@ select {
 }
 
 .warn {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid #8b5cf6;
   padding: 0.75rem 1rem;
 }
 
@@ -402,8 +402,8 @@ select {
   gap: 1rem;
   width: 100%;
   padding: 0.9rem 1.25rem;
-  background: linear-gradient(135deg, rgba(251, 189, 35, 0.12), rgba(251, 189, 35, 0.06));
-  border: 1.5px solid rgba(251, 189, 35, 0.45);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0.06));
+  border: 1.5px solid rgba(56, 189, 248, 0.45);
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
@@ -411,9 +411,9 @@ select {
   color: var(--text);
 
   &:hover {
-    background: linear-gradient(135deg, rgba(251, 189, 35, 0.2), rgba(251, 189, 35, 0.1));
-    border-color: rgba(251, 189, 35, 0.75);
-    box-shadow: 0 0 18px rgba(251, 189, 35, 0.15);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.1));
+    border-color: rgba(56, 189, 248, 0.75);
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.15);
   }
 }
 

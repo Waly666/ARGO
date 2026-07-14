@@ -12,18 +12,21 @@ const {
 } = require('./reciboHtmlShared');
 const { FORMATOS, MEDIA_CARTA_ANCHO_MM, MEDIA_CARTA_ALTO_MM, formatoIngreso, formatoEgreso } =
   require('./comprobanteFormato');
+const { atPageCssPara } = require('./configPaginasInformes');
 
-function estilosValidadoraIngreso(mm, w) {
-  return `${estilosRecibo(mm, w)}
+async function estilosValidadoraIngreso(mm, w) {
+  const atPage = await atPageCssPara('comprobante_validadora');
+  return `${estilosRecibo(mm, w, atPage)}
     .detalle-titulo { font-weight: bold; font-size: 11px; margin: 4px 0 2px; }
     table.detalle td.k { width: 62%; font-weight: normal; }
     table.detalle td.v { width: 38%; font-weight: bold; }
     table.detalle .saldo-pend { font-weight: normal; font-size: 9px; color: #555; }`;
 }
 
-function estilosMediaCarta() {
+async function estilosMediaCarta() {
+  const atPage = await atPageCssPara('comprobante_media_carta');
   return `
-    @page { size: ${MEDIA_CARTA_ANCHO_MM}mm ${MEDIA_CARTA_ALTO_MM}mm; margin: 7mm; }
+    ${atPage}
     * { box-sizing: border-box; }
     body {
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -368,7 +371,7 @@ function bloqueTituloValidadora(config, tituloKey, fallback) {
   ${slogan ? `<div class="center slogan">${esc(slogan)}</div>` : ''}`;
 }
 
-function htmlIngresoValidadora(data) {
+async function htmlIngresoValidadora(data) {
   const { config, ingreso, numeroRecibo, qrDataUrl } = data;
   const mm = config.anchoReciboMm || 80;
   const w = Math.round(mm * 3.78);
@@ -376,6 +379,7 @@ function htmlIngresoValidadora(data) {
   const esMulti = !!detalleItems;
   const filas = buildFilasIngreso(data);
   const anulado = bloqueComprobanteAnulado(ingreso, { compact: true });
+  const estilos = await estilosValidadoraIngreso(mm, w);
 
   const filasConMeta = [
     ['Comprobante N°', numeroRecibo],
@@ -411,7 +415,7 @@ function htmlIngresoValidadora(data) {
 <head>
   <meta charset="utf-8"/>
   <title>Recibo ${esc(numeroRecibo)}</title>
-  <style>${estilosValidadoraIngreso(mm, w)}</style>
+  <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
   ${anulado.html}
@@ -430,7 +434,7 @@ function htmlIngresoValidadora(data) {
 </html>`;
 }
 
-function htmlIngresoMediaCarta(data) {
+async function htmlIngresoMediaCarta(data) {
   const { config, ingreso, alumno, liquidacion, numeroRecibo, qrDataUrl, esIngresoCaja } = data;
   const detalleItems = Array.isArray(data.detalle) && data.detalle.length ? data.detalle : null;
   const esMulti = !!detalleItems;
@@ -497,13 +501,14 @@ function htmlIngresoMediaCarta(data) {
     `;
 
   const tablaExtra = bodyRows ? `<table class="datos">${bodyRows}</table>` : '';
+  const estilos = await estilosMediaCarta();
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <title>Recibo ${esc(numeroRecibo)}</title>
-  <style>${estilosMediaCarta()}</style>
+  <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
   ${anulado.html}
@@ -534,13 +539,15 @@ function htmlIngresoMediaCarta(data) {
 </html>`;
 }
 
-function htmlEgresoValidadora(data) {
+async function htmlEgresoValidadora(data) {
   const { config, egreso, numeroRecibo, qrDataUrl } = data;
   const mm = config.anchoReciboMm || 80;
   const w = Math.round(mm * 3.78);
   const titulo = esc(config.mensajeEncabezadoEgreso || 'COMPROBANTE DE EGRESO');
   const slogan = (config.slogan1 || '').toString().trim();
   const anulado = bloqueComprobanteAnulado(egreso, { compact: true });
+  const atPage = await atPageCssPara('comprobante_validadora');
+  const estilos = estilosRecibo(mm, w, atPage);
 
   const filas = [
     ['Comprobante N°', numeroRecibo],
@@ -562,7 +569,7 @@ function htmlEgresoValidadora(data) {
 <head>
   <meta charset="utf-8"/>
   <title>Egreso ${esc(numeroRecibo)}</title>
-  <style>${estilosRecibo(mm, w)}</style>
+  <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
   ${anulado.html}
@@ -591,7 +598,7 @@ function htmlEgresoValidadora(data) {
 </html>`;
 }
 
-function htmlEgresoMediaCarta(data) {
+async function htmlEgresoMediaCarta(data) {
   const { config, egreso, numeroRecibo, qrDataUrl } = data;
   const titulo = (config.mensajeEncabezadoEgreso || 'COMPROBANTE DE EGRESO').trim();
   const filasExtra = [
@@ -623,13 +630,14 @@ function htmlEgresoMediaCarta(data) {
     `;
 
   const tablaExtra = bodyRows ? `<table class="datos">${bodyRows}</table>` : '';
+  const estilos = await estilosMediaCarta();
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <title>Egreso ${esc(numeroRecibo)}</title>
-  <style>${estilosMediaCarta()}</style>
+  <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
   ${anulado.html}
@@ -669,13 +677,13 @@ function htmlEgresoMediaCarta(data) {
 </html>`;
 }
 
-function generarHtmlIngreso(data) {
+async function generarHtmlIngreso(data) {
   const fmt = formatoIngreso(data.config);
   if (fmt === FORMATOS.MEDIA_CARTA) return htmlIngresoMediaCarta(data);
   return htmlIngresoValidadora(data);
 }
 
-function generarHtmlEgreso(data) {
+async function generarHtmlEgreso(data) {
   const fmt = formatoEgreso(data.config);
   if (fmt === FORMATOS.MEDIA_CARTA) return htmlEgresoMediaCarta(data);
   return htmlEgresoValidadora(data);

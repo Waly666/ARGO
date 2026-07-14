@@ -13,6 +13,7 @@ const {
   resolverCudeNota,
   generarQrDataUrl,
 } = require('./facturaQrDian');
+const { atPageCssPara } = require('./configPaginasInformes');
 
 function num(v) {
   if (v == null) return 0;
@@ -109,9 +110,9 @@ function filasItems(items = []) {
     .join('');
 }
 
-function estilosDocumento() {
+function estilosDocumento(atPageCss) {
   return `
-    @page { size: A4 portrait; margin: 12mm; }
+    ${atPageCss || '@page { size: A4 portrait; margin: 12mm; }'}
     * { box-sizing: border-box; }
     body {
       font-family: "Segoe UI", system-ui, sans-serif;
@@ -286,14 +287,15 @@ async function bloqueQrCufe(doc, em, tipo = 'factura') {
     </div>`;
 }
 
-function wrapHtml(titulo, bodyInner, { anuladoDoc = null } = {}) {
+async function wrapHtml(titulo, bodyInner, { anuladoDoc = null } = {}) {
   const anulado = anuladoDoc ? bloqueComprobanteAnulado(anuladoDoc) : { bodyClass: '', html: '' };
+  const atPage = await atPageCssPara('factura_electronica');
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <title>${esc(titulo)}</title>
-  <style>${estilosDocumento()}</style>
+  <style>${estilosDocumento(atPage)}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
 ${anulado.html}
@@ -377,7 +379,7 @@ async function generarHtmlFactura(id) {
       Generado por ARGO · ${fmtFecha(new Date())}
     </div>`;
 
-  return wrapHtml(titulo, body, {
+  return await wrapHtml(titulo, body, {
     anuladoDoc: doc.estado === ESTADO_ANULADA ? doc : null,
   });
 }
@@ -448,7 +450,7 @@ async function generarHtmlNotaCredito(id) {
       Generado por ARGO · ${fmtFecha(new Date())}
     </div>`;
 
-  return wrapHtml(titulo, body);
+  return await wrapHtml(titulo, body);
 }
 
 module.exports = {

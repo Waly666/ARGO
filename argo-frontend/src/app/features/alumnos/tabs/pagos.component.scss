@@ -31,7 +31,7 @@
   width: 100%;
   padding: 0.9rem 1.25rem;
   background: linear-gradient(135deg, rgba(251,189,35,0.12), rgba(251,189,35,0.06));
-  border: 1.5px solid rgba(251, 189, 35, 0.45);
+  border: 1.5px solid rgba(56, 189, 248, 0.45);
   border-radius: 12px;
   cursor: pointer;
   text-align: left;
@@ -40,8 +40,8 @@
 
   &:hover {
     background: linear-gradient(135deg, rgba(251,189,35,0.2), rgba(251,189,35,0.1));
-    border-color: rgba(251, 189, 35, 0.75);
-    box-shadow: 0 0 18px rgba(251, 189, 35, 0.15);
+    border-color: rgba(56, 189, 248, 0.75);
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.15);
   }
 }
 
@@ -283,7 +283,7 @@
 
 .item-pago-parcial {
   font-size: 0.72rem;
-  color: var(--warn, #d97706);
+  color: var(--warn, #7c3aed);
 
   &.ok {
     color: var(--ok, #059669);
@@ -397,7 +397,7 @@
 .resumen-ayuda {
   margin: 0;
   font-size: 0.78rem;
-  color: var(--warn, #d97706);
+  color: var(--warn, #7c3aed);
   text-align: center;
 
   &.err {

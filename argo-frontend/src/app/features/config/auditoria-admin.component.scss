@@ -22,7 +22,7 @@
     gap: 0.55rem;
     margin: 0 0 0.35rem;
     font-size: 1.28rem;
-    background: linear-gradient(90deg, #fde68a 0%, #7dd3fc 50%, #c4b5fd 100%);
+    background: linear-gradient(90deg, #c7d2fe 0%, #7dd3fc 50%, #c4b5fd 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -103,9 +103,9 @@
   }
 
   &--amber {
-    color: #fde68a;
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.3);
+    color: #c7d2fe;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.3);
   }
 
   &--teal {
@@ -335,7 +335,7 @@
 }
 
 .http-4xx {
-  color: #fbbf24;
+  color: #38bdf8;
   font-weight: 600;
 }
 
@@ -405,7 +405,7 @@
   }
 
   tbody tr:hover td {
-    background: rgba(251, 191, 36, 0.04);
+    background: rgba(56, 189, 248, 0.04);
   }
 
   &--sm {

@@ -19,6 +19,7 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { TIPOS_ALUMNO_DEF, catEtiqueta, catValor } from '../alumnos/catalogo.helpers';
+import { ConfigPaginasInformesService } from '../../core/services/config-paginas-informes.service';
 import { imprimirInformeTabla } from './informe-print.util';
 
 @Component({
@@ -43,6 +44,7 @@ export class InformeDetalleComponent implements OnInit {
   private progSvc = inject(ProgramaService);
   private servSvc = inject(ServicioCatalogoService);
   private catSvc = inject(CatalogoService);
+  private paginasSvc = inject(ConfigPaginasInformesService);
 
   informe = signal<InformeDef | null>(null);
   resultado = signal<ResultadoInforme | null>(null);
@@ -376,11 +378,16 @@ export class InformeDetalleComponent implements OnInit {
     const r = this.resultado();
     const def = this.informe();
     if (!r || !def) return;
-    imprimirInformeTabla({
-      titulo: def.etiqueta,
-      subtitulo: this.subtituloFiltros() || undefined,
-      columnas: r.columnas,
-      filas: r.items,
+    this.paginasSvc.ensureAndAtPageCss('informe_academico').subscribe({
+      next: (atPageCss) => {
+        imprimirInformeTabla({
+          titulo: def.etiqueta,
+          subtitulo: this.subtituloFiltros() || undefined,
+          columnas: r.columnas,
+          filas: r.items,
+          atPageCss,
+        });
+      },
     });
   }
 

@@ -47,7 +47,7 @@
   min-width: 130px;
 
   &.needs-save {
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.55), 0 0 18px rgba(251, 191, 36, 0.35);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.55), 0 0 18px rgba(56, 189, 248, 0.35);
   }
 
   &.alarm-flash { animation: argo-alarm-blink 0.55s ease-in-out 3; }
@@ -79,8 +79,8 @@
   gap: 10px;
   margin: 0 20px;
   padding: 10px 14px;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.4);
   border-radius: var(--btn-radius);
   font-size: 0.88rem;
 }
@@ -184,8 +184,8 @@
   margin: 0 20px;
   padding: 10px 14px 10px 28px;
   border-radius: var(--btn-radius);
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.35);
   font-size: 0.84rem;
   color: var(--text-dim);
 
@@ -496,15 +496,15 @@ textarea.observaciones-field {
     width: 100%;
     padding: 0.55rem 2.4rem 0.55rem 0.85rem;
     border-radius: 8px;
-    border: 1px solid rgba(251, 191, 36, 0.3);
-    background: rgba(251, 191, 36, 0.04);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(56, 189, 248, 0.04);
     color: var(--text);
     font-size: 0.87rem;
 
     &:focus {
       outline: none;
-      border-color: rgba(251, 191, 36, 0.6);
-      background: rgba(251, 191, 36, 0.07);
+      border-color: rgba(56, 189, 248, 0.6);
+      background: rgba(56, 189, 248, 0.07);
     }
 
     &::placeholder { color: var(--text-dim); opacity: 0.6; }
@@ -542,7 +542,7 @@ textarea.observaciones-field {
     right: 0;
     z-index: 200;
     background: var(--surface-dark, #111827);
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    border: 1px solid rgba(56, 189, 248, 0.3);
     border-radius: 8px;
     list-style: none;
     margin: 0;
@@ -560,7 +560,7 @@ textarea.observaciones-field {
       transition: background 0.12s;
 
       &:hover, &:focus {
-        background: rgba(251, 191, 36, 0.08);
+        background: rgba(56, 189, 248, 0.08);
         outline: none;
       }
 
@@ -597,9 +597,9 @@ textarea.observaciones-field {
     font-weight: 600;
     padding: 0.2rem 0.7rem;
     border-radius: 999px;
-    background: rgba(251, 191, 36, 0.12);
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
   }
 
   .emp-chip-id {

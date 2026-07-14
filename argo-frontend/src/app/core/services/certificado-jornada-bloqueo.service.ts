@@ -25,8 +25,8 @@ export class CertificadoJornadaBloqueoService {
     const imprimir = await this.confirm.open({
       title: 'Alumno ya certificado',
       message:
-        `${nombre} ya completó la capacitación en este contrato${codTxt}. ` +
-        'No es posible inscribirlo ni registrar asistencia de nuevo: solo se permite un certificado por alumno y contrato.',
+        `${nombre} ya tiene certificado vigente en este contrato${codTxt}. ` +
+        'Puede seguir en otras clases; no se emite un segundo certificado.',
       confirmLabel: id ? 'Imprimir certificado' : 'Entendido',
       cancelLabel: 'Cerrar',
       variant: 'warn',

@@ -991,9 +991,14 @@ exports.recientes = async (req, res, next) => {
     const q = {};
     if (req.query.desde) {
       const d = new Date(String(req.query.desde));
-      if (!Number.isNaN(d.getTime())) q.fechaEmision = { $gte: d };
+      if (!Number.isNaN(d.getTime())) {
+        // createdAt: cuando se generó (jornadas usan fechaEmision = día de la clase).
+        // fechaEmision: cursos/pago y emisión impresa el mismo día.
+        q.$or = [{ createdAt: { $gte: d } }, { fechaEmision: { $gte: d } }];
+      }
     }
-    const rows = await Certificado.find(q).sort({ fechaEmision: -1 }).limit(120).lean();
+    const rows = await Certificado.find(q).sort({ createdAt: -1, fechaEmision: -1 }).limit(120).lean();
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
     const alumnos = numDocs.length ? await DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [];
     const alByDoc = new Map(alumnos.map((a) => [a.numDoc, a]));
