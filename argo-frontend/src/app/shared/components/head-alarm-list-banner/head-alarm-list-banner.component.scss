@@ -183,7 +183,6 @@
 
 .hal-theme-cea-proxima,
 .hal-theme-foro,
-.hal-theme-cert-jornada,
 .hal-theme-instructor,
 .hal-theme-cert-vence-aviso {
   @include hali-level(
@@ -193,6 +192,27 @@
     var(--alert-info-border),
     hali-blink-info
   );
+}
+
+/* Certificado recién emitido: morado (color histórico solicitado) */
+@keyframes hali-blink-cert-jornada {
+  0%, 100% { opacity: 1; border-color: rgba(167, 139, 250, 0.95); box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); }
+  50% { opacity: 0.84; border-color: rgba(167, 139, 250, 0.45); box-shadow: 0 0 8px rgba(139, 92, 246, 0.18); }
+}
+
+.hal-theme-cert-jornada {
+  color: #e9d5ff;
+  background: linear-gradient(180deg, rgba(109, 40, 217, 0.45), rgba(46, 16, 101, 0.65));
+  border-color: rgba(167, 139, 250, 0.55);
+  animation: hali-blink-cert-jornada 1.1s ease-in-out infinite;
+
+  .hal-link {
+    border-color: rgba(167, 139, 250, 0.25);
+  }
+
+  .hal-link-meta {
+    color: #d8b4fe;
+  }
 }
 
 .hal-theme-pago,
