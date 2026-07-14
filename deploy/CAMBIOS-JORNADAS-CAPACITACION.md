@@ -38,8 +38,8 @@ Documento **vivo** para registrar cada cambio del módulo de **jornadas de capac
 
 | Commit | Resumen |
 |--------|---------|
+| `3bd066c` | Etiqueta QR: código de contrato antes de la jornada (ficha alumno + clase) |
 | `9f6e822` | Páginas de informes (márgenes/tamaño), cert global por programa, dashboard PDF multi-gráfico, alarmas cert. |
-| *(JOR-033)* | Etiqueta QR: código de contrato antes de la jornada (ficha alumno + clase) |
 | `e15f919` | Modal de progreso al generar ZIP de certificados |
 | `b6b19b8` / `8eb54c1` | ZIP: descarga fiable HTTP/LAN + PDF más rápido |
 | `02c4493` / `2ee508f` | Dashboard: barras/tortas; logo embebido en PDF |
@@ -268,7 +268,7 @@ argo-mobile-jornadas/
 | — | Verificación manual checklists JOR-011…033 | Media | Incluye etiqueta QR con código contrato |
 | — | Conectar Expo a GitHub y generar APK | Baja | Cuando el cliente lo pida |
 
-> **Nota auditoría 2026-07-13:** JOR-011…024 en `75f08b7`; JOR-025 en `c092f0b`; JOR-026 en `0065414`; JOR-027…032 en `36a948f`…`9f6e822`; JOR-033 en commit de etiqueta QR + contrato.
+> **Nota auditoría 2026-07-13:** JOR-011…024 en `75f08b7`; JOR-025 en `c092f0b`; JOR-026 en `0065414`; JOR-027…032 en `36a948f`…`9f6e822`; JOR-033 en `3bd066c`.
 
 ---
 
@@ -300,7 +300,7 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 | **JOR-030** | `9f6e822` | `paginasInformesCatalogo.js`, `configPaginasInformes.js`, `configPaginasInformesController.js`, `config-paginas-informes.*` | `routes/config.js`, `permisosCatalogo.js`, `comprobanteHtml.js`, `facturaElectronicaHtml.js`, print utils frontend, `app.routes.ts`, `shell.component.ts` |
 | **JOR-031** | `9f6e822` | — | `certificado-jornada-alert.service.ts`, `certificado.service.ts`, `certificadoController.js`, `shell.component.ts` |
 | **JOR-032** | `a282abd` | — | `jornadaCapController.js`, `jornadas-hub.*`, `jornada-clase-editor.*` |
-| **JOR-033** | *(este commit)* | — | `jornada-alumno-qr.util.ts`, `jornada-etiqueta-qr.service.ts`, `alumno-jornada-qr-panel.*`, `datos-principales.*`, `alumnos-lista.*`, `jornada-clase-editor.*`, `jornadaCapController.js` |
+| **JOR-033** | `3bd066c` | — | `jornada-alumno-qr.util.ts`, `jornada-etiqueta-qr.service.ts`, `alumno-jornada-qr-panel.*`, `datos-principales.*`, `alumnos-lista.*`, `jornada-clase-editor.*`, `jornadaCapController.js` |
 | **Compartidos** | `75f08b7` | `clase-modal.scss` | `form-modal.component.*`, `hora-12-input.component.scss` (UX modal clase) |
 
 ---
