@@ -604,9 +604,10 @@ table.nested { font-size: .88rem; }
 
 .warn-docs {
   padding: 12px 14px;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--alert-warning-border);
+  background: var(--alert-warning-bg);
   border-radius: 8px;
+  color: var(--alert-warning-text);
 
   ul {
     margin: 8px 0;

@@ -504,7 +504,7 @@
   transition: background 0.2s;
 
   &--ok { background: var(--accent); color: #fff; }
-  &--warn { background: rgba(56, 189, 248, 0.15); color: var(--warn); border: 1px solid rgba(56, 189, 248, 0.35); }
+  &--warn { background: var(--alert-warning-bg); color: var(--alert-warning); border: 1px solid var(--alert-warning-border); }
 }
 
 .cb-sel-empty {

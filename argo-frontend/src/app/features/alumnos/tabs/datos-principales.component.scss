@@ -79,10 +79,11 @@
   gap: 10px;
   margin: 0 20px;
   padding: 10px 14px;
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: var(--alert-warning-bg);
+  border: 1px solid var(--alert-warning-border);
   border-radius: var(--btn-radius);
   font-size: 0.88rem;
+  color: var(--alert-warning-text);
 }
 
 .mini { padding: 6px 10px; font-size: 0.82rem; }
@@ -175,8 +176,9 @@
   margin: 0 20px;
   padding: 10px 14px;
   border-radius: var(--btn-radius);
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: var(--alert-success-bg);
+  border: 1px solid var(--alert-success-border);
+  color: var(--alert-success-text);
   font-size: 0.86rem;
 }
 
@@ -184,10 +186,10 @@
   margin: 0 20px;
   padding: 10px 14px 10px 28px;
   border-radius: var(--btn-radius);
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: var(--alert-warning-bg);
+  border: 1px solid var(--alert-warning-border);
   font-size: 0.84rem;
-  color: var(--text-dim);
+  color: var(--alert-warning-text);
 
   li + li { margin-top: 4px; }
 }

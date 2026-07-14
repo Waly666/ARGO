@@ -50,27 +50,27 @@
     margin-bottom: 0.85rem;
 
     &--ok {
-      background: rgba(54, 211, 153, 0.1);
-      border-color: rgba(54, 211, 153, 0.35);
-      color: var(--ok);
+      background: var(--alert-success-bg);
+      border-color: var(--alert-success-border);
+      color: var(--alert-success);
     }
 
     &--error {
-      background: rgba(248, 113, 113, 0.1);
-      border-color: rgba(248, 113, 113, 0.4);
-      color: #fca5a5;
+      background: var(--alert-danger-bg);
+      border-color: var(--alert-danger-border);
+      color: var(--alert-danger-text);
     }
 
     &--warn {
-      background: rgba(245, 158, 11, 0.14);
-      border-color: rgba(251, 191, 36, 0.5);
-      color: #fde68a;
+      background: var(--alert-warning-bg);
+      border-color: var(--alert-warning-border);
+      color: var(--alert-warning-text);
     }
 
     &--info {
-      background: rgba(78, 163, 255, 0.1);
-      border-color: rgba(78, 163, 255, 0.35);
-      color: var(--accent-2);
+      background: var(--alert-info-bg);
+      border-color: var(--alert-info-border);
+      color: var(--alert-info);
     }
 
     /* Aviso fuerte: modo operación especial (amarillo/rojo para que no pase desapercibido). */

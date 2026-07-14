@@ -24,9 +24,46 @@
   --accent-2: #7bd0ff;
   --accent-glow: rgba(78, 163, 255, 0.45);
 
-  --ok: #36d399;
-  --warn: #fbbd23;
-  --err: #f87272;
+  /* Semáforo semántico de alertas (fuente única de verdad) */
+  --alert-success: #36d399;
+  --alert-success-rgb: 54, 211, 153;
+  --alert-success-text: #bbf7d0;
+  --alert-success-bg: rgba(54, 211, 153, 0.12);
+  --alert-success-bg-strong: rgba(54, 211, 153, 0.28);
+  --alert-success-border: rgba(54, 211, 153, 0.45);
+
+  --alert-info: #4ea3ff;
+  --alert-info-rgb: 78, 163, 255;
+  --alert-info-text: #bfdbfe;
+  --alert-info-bg: rgba(78, 163, 255, 0.12);
+  --alert-info-bg-strong: rgba(78, 163, 255, 0.28);
+  --alert-info-border: rgba(78, 163, 255, 0.45);
+
+  --alert-warning: #fbbf24;
+  --alert-warning-rgb: 251, 191, 36;
+  --alert-warning-text: #fef3c7;
+  --alert-warning-bg: rgba(251, 191, 36, 0.12);
+  --alert-warning-bg-strong: rgba(251, 191, 36, 0.28);
+  --alert-warning-border: rgba(251, 191, 36, 0.5);
+
+  --alert-danger: #f87272;
+  --alert-danger-rgb: 248, 114, 114;
+  --alert-danger-text: #fecaca;
+  --alert-danger-bg: rgba(248, 114, 114, 0.12);
+  --alert-danger-bg-strong: rgba(248, 114, 114, 0.28);
+  --alert-danger-border: rgba(248, 114, 114, 0.5);
+
+  --alert-neutral: #94a3b8;
+  --alert-neutral-rgb: 148, 163, 184;
+  --alert-neutral-text: #e2e8f0;
+  --alert-neutral-bg: rgba(148, 163, 184, 0.12);
+  --alert-neutral-bg-strong: rgba(148, 163, 184, 0.22);
+  --alert-neutral-border: rgba(148, 163, 184, 0.4);
+
+  /* Alias legacy — apuntan a semántica */
+  --ok: var(--alert-success);
+  --warn: var(--alert-warning);
+  --err: var(--alert-danger);
 
   --radius: 12px;
   --radius-lg: 18px;
@@ -283,10 +320,57 @@ button.danger.mini {
   border: 1px solid var(--line);
   color: var(--text-dim);
 }
-.badge.ok   { background: rgba(54, 211, 153, 0.12); color: var(--ok);   border-color: rgba(54, 211, 153, 0.35); }
-.badge.warn { background: rgba(56, 189, 248, 0.12); color: var(--warn); border-color: rgba(56, 189, 248, 0.35); }
-.badge.err  { background: rgba(248, 114, 114, 0.12); color: var(--err);  border-color: rgba(248, 114, 114, 0.35); }
-.badge.info { background: rgba(78, 163, 255, 0.12); color: var(--accent-2); border-color: rgba(78, 163, 255, 0.35); }
+.badge.ok   { background: var(--alert-success-bg); color: var(--alert-success); border-color: var(--alert-success-border); }
+.badge.warn { background: var(--alert-warning-bg); color: var(--alert-warning); border-color: var(--alert-warning-border); }
+.badge.err  { background: var(--alert-danger-bg);  color: var(--alert-danger);  border-color: var(--alert-danger-border); }
+.badge.info { background: var(--alert-info-bg);    color: var(--alert-info);    border-color: var(--alert-info-border); }
+
+/* Cajas de aviso reutilizables */
+.warn-docs,
+.alert-box {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--alert-warning-border);
+  background: var(--alert-warning-bg);
+  color: var(--alert-warning-text);
+
+  ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+  }
+}
+
+.alert-box--success {
+  border-color: var(--alert-success-border);
+  background: var(--alert-success-bg);
+  color: var(--alert-success-text);
+}
+
+.alert-box--info {
+  border-color: var(--alert-info-border);
+  background: var(--alert-info-bg);
+  color: var(--alert-info-text);
+}
+
+.alert-box--warning {
+  border-color: var(--alert-warning-border);
+  background: var(--alert-warning-bg);
+  color: var(--alert-warning-text);
+}
+
+.alert-box--danger {
+  border-color: var(--alert-danger-border);
+  background: var(--alert-danger-bg);
+  color: var(--alert-danger-text);
+}
+
+.alert-box--neutral {
+  border-color: var(--alert-neutral-border);
+  background: var(--alert-neutral-bg);
+  color: var(--alert-neutral-text);
+}
 
 /* Etiqueta pequeña junto al texto (estado en celdas) */
 .mini-badge {

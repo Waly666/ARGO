@@ -95,21 +95,21 @@
   }
 
   &--warn {
-    color: #c7d2fe;
-    background: rgba(139, 92, 246, 0.12);
-    border-color: rgba(139, 92, 246, 0.32);
+    color: var(--alert-warning-text);
+    background: var(--alert-warning-bg);
+    border-color: var(--alert-warning-border);
   }
 
   &--err {
-    color: #fca5a5;
-    background: rgba(239, 68, 68, 0.12);
-    border-color: rgba(239, 68, 68, 0.32);
+    color: var(--alert-danger-text);
+    background: var(--alert-danger-bg);
+    border-color: var(--alert-danger-border);
   }
 
   &--off {
     color: var(--text-soft);
-    background: rgba(100, 116, 139, 0.12);
-    border-color: rgba(100, 116, 139, 0.28);
+    background: var(--alert-neutral-bg);
+    border-color: var(--alert-neutral-border);
   }
 
   &--neutral {
@@ -629,23 +629,23 @@
   text-transform: uppercase;
 
   &--ok {
-    color: #86efac;
-    background: rgba(34, 197, 94, 0.18);
+    color: var(--alert-success-text);
+    background: var(--alert-success-bg);
   }
 
   &--warn {
-    color: #c7d2fe;
-    background: rgba(139, 92, 246, 0.18);
+    color: var(--alert-warning-text);
+    background: var(--alert-warning-bg);
   }
 
   &--err {
-    color: #fca5a5;
-    background: rgba(239, 68, 68, 0.18);
+    color: var(--alert-danger-text);
+    background: var(--alert-danger-bg);
   }
 
   &--muted {
     color: var(--text-soft);
-    background: rgba(100, 116, 139, 0.18);
+    background: var(--alert-neutral-bg);
   }
 }
 
