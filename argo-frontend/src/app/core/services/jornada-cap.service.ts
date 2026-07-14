@@ -335,6 +335,7 @@ export interface ClaseJornadaDto {
   indiceEnDia?: number;
   codContrato?: string;
   contratoLabel?: string;
+  clienteNombre?: string;
   /** Ruta relativa bajo uploads/ (evidenciascap/{codContrato}/fotos/...). */
   urlforo?: string;
 }

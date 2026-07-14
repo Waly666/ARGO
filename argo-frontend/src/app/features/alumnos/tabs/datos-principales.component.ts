@@ -30,6 +30,8 @@ import { ConfigRecibo, ConfigService } from '../../../core/services/config.servi
 
 import { ClienteService, Cliente } from '../../../core/services/cliente.service';
 
+import { JornadaCapService } from '../../../core/services/jornada-cap.service';
+
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
 
 import { environment } from '../../../../environments/environment';
@@ -233,6 +235,7 @@ export class DatosPrincipalesComponent implements OnInit {
 
   /** Empresa — combobox de búsqueda incremental */
   private clienteSvc    = inject(ClienteService);
+  private jornadaCapSvc = inject(JornadaCapService);
   empresaBusqueda       = signal('');
   empresaSugerencias    = signal<Cliente[]>([]);
   empresaCargando       = signal(false);
@@ -312,14 +315,19 @@ export class DatosPrincipalesComponent implements OnInit {
     return String(this.configRecibo()?.nombreEmpresa || '').trim();
   });
 
-  /** Fecha de jornada: query de lista o hoy. */
-  fechaJornadaParaQr = computed(() => {
-    const q =
-      this.route.snapshot.queryParamMap.get('fechaJornada') ||
-      this.route.snapshot.queryParamMap.get('fecha') ||
-      '';
-    return q.trim();
-  });
+  /** Código contrato (query lista/jornada) para la etiqueta QR. */
+  private qpCodContrato = signal('');
+  /** id de contrato en query (?contrato=). */
+  private qpIdContrato = signal('');
+  /** Código resuelto (query o contrato de la empresa del alumno). */
+  private codContratoResuelto = signal('');
+
+  /** Fecha jornada (query lista) para la etiqueta QR. */
+  private qpFechaJornada = signal('');
+
+  codContratoParaQr = computed(() => this.codContratoResuelto() || this.qpCodContrato());
+
+  fechaJornadaParaQr = computed(() => this.qpFechaJornada());
 
   /** Alta desde Jornadas Cap. (query esJornadaCap / tipoAlumno). */
   private origenJornadaCap = signal(
@@ -367,6 +375,13 @@ export class DatosPrincipalesComponent implements OnInit {
       return () => clearTimeout(t);
     });
 
+    effect(() => {
+      const qpCod = this.qpCodContrato();
+      const idContrato = this.qpIdContrato();
+      const empresaId = String(this.form().empresaId || '').trim();
+      void this.resolverCodContratoEtiqueta(qpCod, idContrato, empresaId);
+    });
+
   }
 
 
@@ -375,6 +390,9 @@ export class DatosPrincipalesComponent implements OnInit {
     this.route.queryParamMap.subscribe((q) => {
       const esJ = DatosPrincipalesComponent.esJornadaDesdeQuery(q);
       this.origenJornadaCap.set(esJ);
+      this.qpCodContrato.set((q.get('codContrato') || q.get('contratoCod') || '').trim());
+      this.qpIdContrato.set((q.get('contrato') || q.get('idContrato') || '').trim());
+      this.qpFechaJornada.set((q.get('fechaJornada') || q.get('fecha') || '').trim());
       if (esJ && !this.isEdit()) {
         this.form.update((f) => ({ ...f, tipoAlumno: TIPO_JORNADAS_CAPACITACION }));
         this.lineaBase.set(
@@ -391,6 +409,45 @@ export class DatosPrincipalesComponent implements OnInit {
       error: () => this.configRecibo.set(null),
     });
 
+  }
+
+  /** Prefiere query; si no, contrato por id; si no, contrato de la empresa del alumno. */
+  private async resolverCodContratoEtiqueta(
+    qpCod: string,
+    idContrato: string,
+    empresaId: string,
+  ): Promise<void> {
+    if (qpCod) {
+      this.codContratoResuelto.set(qpCod);
+      return;
+    }
+    if (!idContrato && !empresaId) {
+      this.codContratoResuelto.set('');
+      return;
+    }
+    try {
+      const rows = await firstValueFrom(this.jornadaCapSvc.listarContratos());
+      if (idContrato) {
+        const c = rows.find((x) => String(x._id || '') === idContrato);
+        const cod = String(c?.codContrato || '').trim();
+        if (cod) {
+          this.codContratoResuelto.set(cod);
+          return;
+        }
+      }
+      if (!empresaId) {
+        this.codContratoResuelto.set('');
+        return;
+      }
+      const deEmpresa = rows.filter(
+        (c) => String(c.idClienteFacturacion || '') === empresaId && String(c.codContrato || '').trim(),
+      );
+      const enEjec = deEmpresa.filter((c) => c.estado === 'En Ejecución');
+      const pool = enEjec.length ? enEjec : deEmpresa;
+      this.codContratoResuelto.set(String(pool[0]?.codContrato || '').trim());
+    } catch {
+      this.codContratoResuelto.set('');
+    }
   }
 
 

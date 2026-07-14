@@ -45,6 +45,7 @@ export class JornadaEtiquetaQrService {
             numDoc,
             nombre,
             empresa: a.empresa,
+            codContrato: a.codContrato,
             fechaJornada: a.fechaJornada,
           }),
         );
@@ -75,13 +76,18 @@ export class JornadaEtiquetaQrService {
   async imprimirUna(
     numDoc: string | number,
     nombre: string,
-    extra?: { empresa?: string | null; fechaJornada?: string | null },
+    extra?: {
+      empresa?: string | null;
+      codContrato?: string | null;
+      fechaJornada?: string | null;
+    },
   ): Promise<void> {
     await this.imprimirEtiquetas([
       {
         numDoc,
         nombre,
         empresa: extra?.empresa,
+        codContrato: extra?.codContrato,
         fechaJornada: extra?.fechaJornada,
       },
     ]);

@@ -20,6 +20,8 @@ export type JornadaAlumnoEtiqueta = {
   nombre: string;
   /** Nombre de la empresa (alumno o institución). */
   empresa?: string | null;
+  /** Código del contrato de capacitación (va antes de la fecha de jornada). */
+  codContrato?: string | null;
   /** Fecha de la jornada (texto ya formateado o ISO/YYYY-MM-DD). */
   fechaJornada?: string | null;
 };
@@ -54,12 +56,17 @@ export function etiquetaHtmlAlumno(opts: {
   numDoc: string;
   nombre: string;
   empresa?: string | null;
+  codContrato?: string | null;
   fechaJornada?: string | null;
 }): string {
   const nom = escapeHtml(opts.nombre || 'Alumno');
   const doc = escapeHtml(opts.numDoc);
   const empresa = escapeHtml(String(opts.empresa || '').trim() || '—');
+  const codRaw = String(opts.codContrato || '').trim();
   const fecha = escapeHtml(fmtFechaEtiqueta(opts.fechaJornada));
+  const lineaContrato = codRaw
+    ? `<div class="contrato">Contrato ${escapeHtml(codRaw)}</div>`
+    : '';
   return `
   <div class="label">
     <div class="qr"><img src="${opts.qrDataUrl}" alt="QR"/></div>
@@ -67,6 +74,7 @@ export function etiquetaHtmlAlumno(opts: {
       <div class="nombre">${nom}</div>
       <div class="doc">CC ${doc}</div>
       <div class="empresa">${empresa}</div>
+      ${lineaContrato}
       <div class="fecha">Jornada ${fecha}</div>
     </div>
   </div>`;
@@ -122,9 +130,18 @@ export function paginaEtiquetasHtml(etiquetas: string[], atPageCss?: string): st
       max-height: 2.2em;
       overflow: hidden;
     }
-    .fecha {
+    .contrato {
       font-size: 6.5pt;
       margin-top: 0.5mm;
+      font-weight: 700;
+      color: #1e3a8a;
+      line-height: 1.15;
+      max-height: 1.3em;
+      overflow: hidden;
+    }
+    .fecha {
+      font-size: 6.5pt;
+      margin-top: 0.4mm;
       font-weight: 700;
       color: #334155;
     }

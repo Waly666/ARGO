@@ -110,6 +110,7 @@ async function dtoClaseConJornada(claseDoc) {
   }
   let codContrato = '';
   let contratoLabel = '';
+  let clienteNombre = '';
   if (j?.idContrato) {
     const contrato = await Contratacion.findById(j.idContrato)
       .select('codContrato nombreComercial razoSocial')
@@ -117,6 +118,7 @@ async function dtoClaseConJornada(claseDoc) {
     if (contrato) {
       codContrato = String(contrato.codContrato || '').trim();
       const cliente = String(contrato.nombreComercial || contrato.razoSocial || '').trim();
+      clienteNombre = cliente;
       contratoLabel = codContrato
         ? `${codContrato} — ${cliente || 'Contrato'}`
         : cliente || '';
@@ -132,6 +134,7 @@ async function dtoClaseConJornada(claseDoc) {
       indiceEnDia: j?.indiceEnDia,
       codContrato,
       contratoLabel,
+      clienteNombre,
     },
   ]);
   return enriched;
@@ -1083,6 +1086,7 @@ exports.clasesDelDia = async (req, res, next) => {
         contratoLabel: contrato?.codContrato
           ? `${contrato.codContrato} — ${cliente || 'Contrato'}`
           : cliente || '',
+        clienteNombre: cliente,
       });
     }
 

@@ -2,7 +2,7 @@
 
 Documento **vivo** para registrar cada cambio del módulo de **jornadas de capacitación** en este repo (**Finstruvial / ARGO**) y poder **replicarlo** en otros despliegues (p. ej. Educarte, otro cliente con fork o copia del producto).
 
-**Última auditoría código ↔ MD:** 2026-07-13 — JOR-029 (programa cert. global); JOR-028 (dashboard informes); JOR-027 (ZIP PDF).
+**Última auditoría código ↔ MD:** 2026-07-13 — JOR-027…033 en `main`: ZIP PDF, dashboard/PDF, cert. global, páginas informes, alarmas cert., copiar alumnos, etiqueta QR con código de contrato.
 
 ---
 
@@ -38,6 +38,13 @@ Documento **vivo** para registrar cada cambio del módulo de **jornadas de capac
 
 | Commit | Resumen |
 |--------|---------|
+| `9f6e822` | Páginas de informes (márgenes/tamaño), cert global por programa, dashboard PDF multi-gráfico, alarmas cert. |
+| *(JOR-033)* | Etiqueta QR: código de contrato antes de la jornada (ficha alumno + clase) |
+| `e15f919` | Modal de progreso al generar ZIP de certificados |
+| `b6b19b8` / `8eb54c1` | ZIP: descarga fiable HTTP/LAN + PDF más rápido |
+| `02c4493` / `2ee508f` | Dashboard: barras/tortas; logo embebido en PDF |
+| `36a948f` | ZIP PDF certificados + ficha Informes dashboard + confirmaciones |
+| `a282abd` | Copiar alumnos desde cualquier clase del contrato (no solo la anterior) |
 | `0065414` | Programas: persistir tipo capacitación y combos; nginx portal API/uploads → backend |
 | `c092f0b` | idServ contrato configurable (Config → Jornadas); fallback 53 |
 | `75f08b7` | Lote JOR-011…024: informes, cobro contrato, formularios, celular, hub jornadas |
@@ -60,6 +67,7 @@ Documento **vivo** para registrar cada cambio del módulo de **jornadas de capac
 | `/app/jornadas/certificados` | `certificados-jornada-lista.component` | `jornadas.ver`, `jornadas.gestionar` |
 | `/app/jornadas/informes` | `jornadas-informes.component` | `jornadas.ver`, `jornadas.gestionar` |
 | `/app/configuracion/jornadas` | `config-jornadas.component` | `jornadas.gestionar` |
+| `/app/configuracion/paginas-informes` | `config-paginas-informes.component` | `config.paginas_informes`, `config.roles` (JOR-030) |
 | `/app/jornadas/alumnos` | alumnos (modo jornadas) | `alumnos.*`, `jornadas.ver` |
 | `/app/contratos` | `contratos-lista.component` | `jornadas.ver`, `jornadas.gestionar` |
 
@@ -78,9 +86,11 @@ argo-frontend/src/app/features/jornadas/
   certificados-jornada-lista.*
   jornadas-informes.component.*       # Informes pantalla + PDF + Excel
   jornadas-informe-document.ts        # HTML/PDF con encabezado empresa
+  contrato-informes-dashboard.*       # Dashboard KPIs + gráficos (JOR-028)
   jornada-alumno-qr.util.ts           # Payload QR ARGOJOR|1|doc|nombre
-  jornada-etiqueta-qr.service.ts      # Impresión etiquetas QR
+  jornada-etiqueta-qr.service.ts      # Impresión etiquetas QR (+ páginas informes JOR-030)
   meta-alumnos-jornada-banner.*       # Alarma tope alumnos
+  certificados-jornada-lista.*        # Listado + ZIP PDF (JOR-027)
   contratos-lista.component.*
   jornada-ui.util.ts                  # Cápsulas, labels, capCarpa (rosa)
 
@@ -90,6 +100,7 @@ argo-frontend/src/app/features/alumnos/
 
 argo-frontend/src/app/features/config/
   config-jornadas.component.*         # Modo operación fuera del día + idServ contrato (JOR-011, JOR-025)
+  config-paginas-informes.component.* # Tamaño/márgenes por tipo de documento (JOR-030)
 
 argo-frontend/src/app/features/programas/
   programas-admin.component.*         # Alta/edición programas (JOR-026: tipo capacitación)
@@ -108,9 +119,11 @@ argo-frontend/src/app/core/services/
   facturacion.service.ts              # Cobro contrato (JOR-021)
   meta-alumnos-jornada-alert.service.ts
   jornada-live-sync.service.ts
-  certificado-jornada-alert.service.ts
+  certificado-jornada-alert.service.ts  # poll por createdAt + merge recientes (JOR-031)
   certificado-jornada-bloqueo.service.ts
   jornada-hub-deeplink.service.ts     # tab=avance (JOR-016)
+  config-paginas-informes.service.ts  # @page size/márgenes (JOR-030)
+  certificado.service.ts              # GET /certificados/recientes (JOR-031)
 ```
 
 ### Backend
@@ -143,7 +156,12 @@ argo-backend/src/services/contratoCobroCap.js           # JOR-021
 argo-backend/src/services/cuentaCobroHtml.js            # JOR-021
 argo-backend/src/services/servicioContratoCap.js        # JOR-021
 argo-backend/src/services/facturaContratoCap.js         # JOR-021
-argo-backend/src/controllers/certificadoController.js   # JOR-023 vencidos
+argo-backend/src/services/informeDashboardContrato.js   # JOR-028 dashboard + PDF
+argo-backend/src/services/certificadosJornadaZip.js      # JOR-027 ZIP PDF
+argo-backend/src/services/configPaginasInformes.js      # JOR-030
+argo-backend/src/constants/paginasInformesCatalogo.js   # JOR-030
+argo-backend/src/controllers/configPaginasInformesController.js  # JOR-030
+argo-backend/src/controllers/certificadoController.js   # JOR-023 vencidos; JOR-031 recientes
 argo-backend/src/controllers/ingresoController.js       # JOR-021
 argo-backend/src/controllers/programaController.js        # idCarpa + excluirJornadasCap
 ```
@@ -173,6 +191,10 @@ argo-mobile-jornadas/
 | GET | `/api/jornadas/contratos/:id/informe-pdf` | PDF informe (alcance contrato/jornada/clase/programa/instructor) (JOR-028) |
 | GET | `/api/jornadas/certificados-generados` | Listado certificados jornada (filtros contrato/jornada/clase/desde/hasta/q) (JOR-027) |
 | GET | `/api/jornadas/certificados-generados/export-zip` | ZIP con PDFs (individuales + todos) (JOR-027) |
+| GET | `/api/config/paginas-informes` | Config tamaño/márgenes por tipo de informe (JOR-030) |
+| PUT | `/api/config/paginas-informes` | Guardar páginas de informes (JOR-030) |
+| GET | `/api/config/paginas-informes/catalogos` | Presets tamaño + orientaciones (JOR-030) |
+| GET | `/api/certificados/recientes?desde=` | Certificados recientes por `createdAt` (alarma cabecera, JOR-031) |
 | GET | `/api/jornadas/contratos/:id/avance` | Panel avance contrato (JOR-016) |
 | GET | `/api/jornadas/contratos/:id/cobro` | Estado plan de cobro / cuotas (JOR-021) |
 | POST | `/api/jornadas/contratos/:id/comprobantes-ingreso` | Comprobante ingreso por cuota (JOR-021) |
@@ -242,10 +264,11 @@ argo-mobile-jornadas/
 |----|-------------|-----------|-------|
 | — | VPS Finstruvial: Config → Jornadas → idServ **129** | Alta | Tras desplegar `c092f0b` |
 | — | VPS: aplicar `deploy/nginx/finstruvial.edu.co.conf` + `nginx -t && systemctl reload nginx` | Alta | Tras `0065414` (portal cursos/API) |
-| — | Verificación manual checklists JOR-011…026 | Media | Probar `/app/jornadas` y `/app/programas` |
+| — | Desplegar último `main` (backend + frontend) y verificar JOR-027…033 | Alta | `git pull` + `docker compose build/up` |
+| — | Verificación manual checklists JOR-011…033 | Media | Incluye etiqueta QR con código contrato |
 | — | Conectar Expo a GitHub y generar APK | Baja | Cuando el cliente lo pida |
 
-> **Nota auditoría 2026-07-13:** JOR-011…024 en `75f08b7`; JOR-025 en `c092f0b`; JOR-026 en `0065414`.
+> **Nota auditoría 2026-07-13:** JOR-011…024 en `75f08b7`; JOR-025 en `c092f0b`; JOR-026 en `0065414`; JOR-027…032 en `36a948f`…`9f6e822`; JOR-033 en commit de etiqueta QR + contrato.
 
 ---
 
@@ -271,27 +294,166 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 | **JOR-024** | `75f08b7` | — | `programaController.js`, `programa.service.ts`, `servicios.component.ts` |
 | **JOR-025** | `c092f0b` | `constants/servicioContratoCap.js` (si no venía de JOR-021) | `configJornadasOperacion.js`, `servicioContratoCap.js`, `config-jornadas.component.*`, `jornada-cap.service.ts`, `jornadaCapController.js`, `ingresoController.js` |
 | **JOR-026** | `0065414` | — | `programas-admin.component.*`, `catalogo-enum-buscar/*`, `programaController.js`, `deploy/nginx/finstruvial.edu.co.conf`, `deploy/diagnose-vps-domains.sh` |
-| **JOR-028** | *(pendiente commit)* | `informeDashboardContrato.js` | `jornadaCapController.js`, `jornadas.js`, `contrato-informes-dashboard.*`, `jornadas-hub.*`, `jornada-cap.service.ts` |
-| **JOR-027** | *(pendiente commit)* | `certificadosJornadaZip.js`, `htmlToPdf.js` | `jornadaCapController.js`, `jornadas.js`, `jornada-cap.service.ts`, `certificados-jornada-lista.*`, `jornadas-hub.*`, `Dockerfile` |
+| **JOR-027** | `36a948f`…`e15f919` | `certificadosJornadaZip.js`, `htmlToPdf.js` | `jornadaCapController.js`, `jornadas.js`, `jornada-cap.service.ts`, `certificados-jornada-lista.*`, `jornadas-hub.*`, `Dockerfile` |
+| **JOR-028** | `36a948f`…`9f6e822` | `informeDashboardContrato.js`, `contrato-informes-dashboard.*` | `jornadaCapController.js`, `jornadas.js`, `jornadas-hub.*`, `jornada-cap.service.ts` |
+| **JOR-029** | `9f6e822` | — | `Contratacion.js`, `certificadoJornadaAuto.js`, `jornadaCapController.js`, `jornadas-hub.*`, `jornada-cap.service.ts` |
+| **JOR-030** | `9f6e822` | `paginasInformesCatalogo.js`, `configPaginasInformes.js`, `configPaginasInformesController.js`, `config-paginas-informes.*` | `routes/config.js`, `permisosCatalogo.js`, `comprobanteHtml.js`, `facturaElectronicaHtml.js`, print utils frontend, `app.routes.ts`, `shell.component.ts` |
+| **JOR-031** | `9f6e822` | — | `certificado-jornada-alert.service.ts`, `certificado.service.ts`, `certificadoController.js`, `shell.component.ts` |
+| **JOR-032** | `a282abd` | — | `jornadaCapController.js`, `jornadas-hub.*`, `jornada-clase-editor.*` |
+| **JOR-033** | *(este commit)* | — | `jornada-alumno-qr.util.ts`, `jornada-etiqueta-qr.service.ts`, `alumno-jornada-qr-panel.*`, `datos-principales.*`, `alumnos-lista.*`, `jornada-clase-editor.*`, `jornadaCapController.js` |
 | **Compartidos** | `75f08b7` | `clase-modal.scss` | `form-modal.component.*`, `hora-12-input.component.scss` (UX modal clase) |
 
 ---
 
 ## Historial de cambios
 
+### JOR-033 — Etiqueta QR: código de contrato antes de la jornada
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** *(este commit)*
+- **Replica en otro repo:** Sí
+
+#### Qué pide el cliente / problema
+- En la etiqueta/panel QR del alumno (ficha jornadas y ficha principal) debía aparecer el **código del contrato** antes de la línea de jornada.
+- Al inicio salía un guión (`—`) sin número: el código no se resolvía si no venía en la URL.
+
+#### Qué se hizo
+- Etiqueta imprimible y panel QR: orden `empresa` → **`Contrato {codContrato}`** → `Jornada {fecha}`.
+- Resolución del código: query (`codContrato` / `contrato`) o, si falta, contrato de la **empresa del alumno** (prioriza «En Ejecución»).
+- Lista de alumnos: al abrir ficha con filtro de jornada/fecha, pasa `codContrato` y `fechaJornada` en query.
+- Impresión desde clase: usa `codContrato` (fallback por `idContrato` / label); `clienteNombre` en DTO de clase.
+- No se pinta la línea «Contrato» si aún no hay código (evita el guión vacío).
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-frontend/.../jornada-alumno-qr.util.ts` | HTML etiqueta + CSS contrato |
+| `argo-frontend/.../jornada-etiqueta-qr.service.ts` | Campo `codContrato` |
+| `argo-frontend/.../alumno-jornada-qr-panel.component.ts` | Panel muestra contrato |
+| `argo-frontend/.../datos-principales.component.*` | Resuelve código (query / empresa) |
+| `argo-frontend/.../alumnos-lista.component.ts` | Query al abrir ficha |
+| `argo-frontend/.../jornada-clase-editor.component.ts` | Print con contrato |
+| `argo-backend/.../jornadaCapController.js` | `clienteNombre` en DTO clase |
+
+#### Verificación
+- [ ] Ficha alumno con empresa de un contrato en ejecución → panel QR muestra `Contrato {código}`.
+- [ ] Imprimir etiqueta → mismo código antes de «Jornada …».
+- [ ] Abrir desde lista filtrada por jornada → código y fecha en la etiqueta.
+- [ ] Clase → «QR etiqueta» de inscrito → código del contrato de la clase.
+
+---
+
+### JOR-032 — Copiar alumnos desde cualquier clase del contrato
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** `a282abd` (+ fix `071d1e5` modo especial)
+- **Replica en otro repo:** Sí
+
+#### Qué se hizo
+- Extiende JOR-019: además de la «clase anterior» de la misma jornada, permite elegir **cualquier clase** del contrato como origen para copiar alumnos (matrícula masiva voluntaria).
+- Misma lógica `puedeMatricular` según `por_clase` vs `global`.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/controllers/jornadaCapController.js` | Origen de inscritos ampliado |
+| `argo-frontend/.../jornadas-hub.component.*` | Selector clase origen |
+| `argo-frontend/.../jornada-clase-editor.component.*` | Idem instructor |
+
+#### Verificación
+- [ ] Abrir clase B → elegir clase A de otra jornada del mismo contrato → matricular seleccionados.
+- [ ] Por_clase: alumno ya certificado en la clase destino no se puede volver a matricular.
+
+---
+
+### JOR-031 — Alarma cabecera de certificados emitidos (por `createdAt`)
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** `9f6e822`
+- **Replica en otro repo:** Sí
+
+#### Problema
+- La alarma de cabecera no mostraba certificados recien emitidos (p. ej. al cerrar clase): el poll miraba mal la ventana o no mezclaba el listado de emitidos con `/certificados/recientes` ordenado por `createdAt`.
+
+#### Qué se hizo
+- Poll por `createdAt` (ventana ≥ intervalo de poll).
+- Merge de certificados «emitidos» del flujo jornadas + endpoint `GET /api/certificados/recientes?desde=`.
+- Aviso audible/banner coherente con otras alarmas de cabecera.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-frontend/.../certificado-jornada-alert.service.ts` | Poll + merge |
+| `argo-frontend/.../certificado.service.ts` | Cliente `recientes` |
+| `argo-backend/.../certificadoController.js` | Endpoint recientes (si aplica) |
+| `argo-frontend/.../shell.component.ts` | Integración banner |
+
+#### Verificación
+- [ ] Cerrar clase con emisión → aparece alarma en cabecera en segundos.
+- [ ] Certificado con `fechaEmision` = fecha de clase antigua pero `createdAt` ahora → también alerta.
+
+---
+
+### JOR-030 — Configuración: Páginas de informes (tamaño y márgenes)
+
+- **Fecha:** 2026-07-13
+- **Cliente origen:** Finstruvial
+- **Alcance:** backend + frontend
+- **Commit ARGO:** `9f6e822`
+- **Replica en otro repo:** Sí
+
+#### Qué pide el cliente
+- Poder reducir márgenes (y definir tamaño) de impresión/PDF **por tipo de documento**, con vista previa tipo Word.
+
+#### Qué se hizo
+- Pantalla **Configuración → Páginas de informes** (`/app/configuracion/paginas-informes`).
+- Permiso `config.paginas_informes` (admin `*` lo cubre).
+- Catálogo por grupos: comprobantes, jornadas, caja/académicos, certificados; presets A4, letter, legal, media carta, térmico 80/58, etiqueta QR, cert horizontal/vertical.
+- **Todos** los informes muestran selector de tamaño + orientación + márgenes mm; vista previa gráfica (hoja + márgenes).
+- Persistencia Mongo `clave: 'paginasInformes'`; helper `buildAtPageCss` / `atPageCssPara`.
+- Generadores backend y print frontend aplican `@page { size; margin }` (comprobantes, factura, cuenta cobro, PDF contrato, inspección, nómina, certificados márgenes, impresiones caja/jornadas/etiquetas).
+- Fix CSS: A4/letter/legal con orientación (`size: A4 landscape`); presets con `mm`/`auto` no concatenan orientation.
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/constants/paginasInformesCatalogo.js` | Catálogo + presets |
+| `argo-backend/src/services/configPaginasInformes.js` | Persistencia + CSS |
+| `argo-backend/src/controllers/configPaginasInformesController.js` | API |
+| `argo-backend/src/routes/config.js` | Rutas |
+| `argo-backend/src/constants/permisosCatalogo.js` | Permiso |
+| Varios `*Html.js` / recibos | Consumen `@page` |
+| `argo-frontend/.../config-paginas-informes.*` | UI + preview |
+| `argo-frontend/.../config-paginas-informes.service.ts` | Cliente API / CSS print |
+| `app.routes.ts`, `shell.component.ts` | Ruta y menú |
+
+#### Verificación
+- [ ] Abrir Páginas de informes → cada tarjeta tiene tamaño + orientación + márgenes.
+- [ ] Guardar → recargar → valores persistidos.
+- [ ] Imprimir comprobante / PDF contrato / etiqueta QR respeta márgenes configurados.
+- [ ] A4 landscape en preview y CSS preview: `size: A4 landscape`.
+
+---
+
 ### JOR-029 — Certificado global: programa de certificación (sin encabezado/horas libres)
 
 - **Fecha:** 2026-07-13
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** _(pendiente)_
+- **Commit ARGO:** `9f6e822`
 - **Replica en otro repo:** Sí
 
 #### Qué se hizo
 - Campo `idProgramaCertificacion` en contrato: un programa de Jornadas de Cap. define encabezado y horas del certificado global.
 - Emisión automática global usa ese programa (matrícula/liquidación/PDF); fallback legado a `nombreCertificacion` / `numeroHorascert` y programa de la clase.
-- UI: sección Certificado = combobox de programa + vista previa; ya no campos libres de encabezado/horas. Programas del contrato (multi) solo en `por_clase`.
-- Se quitó **Intensidad horaria** del formulario de contrato: las horas salen del programa (y opcionalmente de la clase). Autogeneración copia horas del programa a `horasCertificadas`.
+- UI: sección Certificado = combobox de programa + vista previa; ya no campos libres de encabezado/horas. **Programas del contrato (multi)** solo editables en modo `por_clase` y se **reparten al Generar faltantes** (JOR-012).
+- Se quitó **Intensidad horaria** del formulario de contrato: las horas salen del programa (y opcionalmente de la clase).
 
 #### Archivos tocados (ARGO)
 | Archivo | Tipo de cambio |
@@ -299,13 +461,14 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 | `argo-backend/src/models/Contratacion.js` | Campo `idProgramaCertificacion` |
 | `argo-backend/src/controllers/jornadaCapController.js` | pickContrato |
 | `argo-backend/src/services/certificadoJornadaAuto.js` | Encabezado/horas/global vía programa |
+| `argo-backend/src/services/asistenciaJornadaCap.js` | Flujo por_clase / programa clase |
 | `argo-frontend/.../jornada-cap.service.ts` | DTO |
-| `argo-frontend/.../jornadas-hub.component.*` | UI selector + validación guardar |
+| `argo-frontend/.../jornadas-hub.component.*` | UI selector + validación guardar; textos Generar faltantes |
 
 #### Verificación
 - [ ] Contrato global: sin programa → no guarda / no emite con mensaje claro.
 - [ ] Con programa → certificado usa `nomCert`/descripción/`nombreProg` y horas del programa.
-- [ ] Por clase: multi-programas del contrato sin cambios; sección Certificado atenuada.
+- [ ] Por clase: multi-programas del contrato → Generar faltantes asigna programa (round-robin); sección Certificado atenuada.
 
 ---
 
@@ -314,10 +477,26 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 - **Fecha:** 2026-07-13
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** *(pendiente)*
+- **Commit ARGO:** `36a948f`, `2ee508f`, `02c4493`, `9f6e822`
 - **Replica en otro repo:** Sí
 
-**Qué:** Pestaña «7. Informes» en el hub del contrato: KPIs, gráficos de barras, filtros (jornada/clase/programa/instructor) y exportación PDF formal para la empresa contratante (completo o parcial).
+#### Qué se hizo
+- Pestaña **Informes** en el hub del contrato: KPIs, gráficos (barras verticales + tortas), filtros (jornada/clase/programa/instructor) y tablas de datos con cantidades y %.
+- Exportación **PDF** formal: mismos gráficos multi-color que el dashboard (no monocromo), logo embebido como data URL, todos los charts del tablero.
+- Alcance completo o parcial (contrato / jornada / clase / programa / instructor).
+
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/informeDashboardContrato.js` | KPIs, charts, PDF |
+| `argo-backend/src/controllers/jornadaCapController.js` | Endpoints dashboard/PDF |
+| `argo-frontend/.../contrato-informes-dashboard.*` | UI dashboard |
+| `argo-frontend/.../jornadas-hub.*`, `jornada-cap.service.ts` | Pestaña / API |
+
+#### Verificación
+- [ ] Hub contrato → Informes: 4 gráficos con % y tabla debajo.
+- [ ] PDF exportado: multi-color + logo visible + mismos charts.
+- [ ] Filtro por clase/programa/instructor recorta KPIs.
 
 ---
 
@@ -326,19 +505,40 @@ Referencia cruzada **ID → archivos** por commit en `main` (útil al replicar e
 - **Fecha:** 2026-07-13
 - **Cliente origen:** Finstruvial
 - **Alcance:** backend + frontend
-- **Commit ARGO:** *(pendiente)*
+- **Commit ARGO:** `36a948f`, `8eb54c1`, `b6b19b8`, `e15f919`
 - **Replica en otro repo:** Sí
 
-**Qué:** En `/app/jornadas/certificados` y en la pestaña Certificados del hub, filtrar por contrato / jornada / clase / rango de fechas de emisión y descargar un ZIP con **PDFs** individuales + `00-todos-imprimir.pdf` (máx. 400). Requiere Chromium en el backend (`PUPPETEER_EXECUTABLE_PATH`).
+#### Qué se hizo
+- En `/app/jornadas/certificados` y pestaña Certificados del hub: filtrar por contrato / jornada / clase / rango de fechas de emisión.
+- Descargar ZIP con **PDFs** individuales + `00-todos-imprimir.pdf` (máx. 400).
+- Modal de **progreso** al generar ZIP; descarga fiable tras espera larga (HTTP/LAN); PDF más rápido (Chromium/`htmlToPdf`).
+- Requiere Chromium en el backend (`PUPPETEER_EXECUTABLE_PATH` en Docker).
 
-**Archivos:** `htmlToPdf.js`, `certificadosJornadaZip.js`, `jornadaCapController.js`, `jornadas.js`, `jornada-cap.service.ts`, `certificados-jornada-lista.*`, `jornadas-hub.*`, `argo-backend/Dockerfile`.
+#### Archivos tocados (ARGO)
+| Archivo | Tipo de cambio |
+|---------|----------------|
+| `argo-backend/src/services/htmlToPdf.js` | Render PDF |
+| `argo-backend/src/services/certificadosJornadaZip.js` | ZIP |
+| `argo-backend/src/controllers/jornadaCapController.js` | export-zip |
+| `argo-frontend/.../certificados-jornada-lista.*` | UI filtros + ZIP + progreso |
+| `argo-backend/Dockerfile` | Chromium |
+
+#### Verificación
+- [ ] Filtrar contrato → listado acotado.
+- [ ] ZIP descarga y abre PDFs; modal muestra avance.
+- [ ] En LAN/HTTP tras espera larga sigue permitiendo guardar el archivo.
 
 ---
 
 | ID | Fecha | Resumen | Commit | Alcance |
 |----|-------|---------|--------|---------|
-| JOR-028 | 2026-07-13 | Hub: pestaña Informes dashboard + PDF (contrato/parciales) | *(pendiente)* | backend + frontend |
-| JOR-027 | 2026-07-13 | Certificados: filtros + ZIP masivo en PDF | *(pendiente)* | backend + frontend |
+| JOR-033 | 2026-07-13 | Etiqueta QR: código contrato antes de jornada | *(este commit)* | backend + frontend |
+| JOR-032 | 2026-07-13 | Copiar alumnos desde cualquier clase del contrato | `a282abd` | backend + frontend |
+| JOR-031 | 2026-07-13 | Alarma cabecera certificados por `createdAt` + recientes | `9f6e822` | backend + frontend |
+| JOR-030 | 2026-07-13 | Config Páginas de informes (tamaño/márgenes/@page) | `9f6e822` | backend + frontend |
+| JOR-029 | 2026-07-13 | Certificado global: programa de certificación | `9f6e822` | backend + frontend |
+| JOR-028 | 2026-07-13 | Hub: Informes dashboard + PDF multi-gráfico | `36a948f`…`9f6e822` | backend + frontend |
+| JOR-027 | 2026-07-13 | Certificados: filtros + ZIP masivo PDF + progreso | `36a948f`…`e15f919` | backend + frontend |
 | JOR-026 | 2026-07-13 | Programas: persistir tipo capacitación y combos; nginx portal API | `0065414` | backend + frontend + deploy |
 | JOR-025 | 2026-07-09 | idServ contrato configurable (comprobantes/factura); fallback 53 | `c092f0b` | backend + frontend |
 | JOR-024 | 2026-07-09 | Matrícula alumno (Servicios): ocultar programas de jornadas en buscador | `75f08b7` | backend + frontend |
@@ -746,6 +946,8 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
   - Reutiliza el endpoint existente `POST /matricular` (uno por alumno seleccionado), igual que la matrícula manual; refresca la lista de inscritos al terminar.
 - **Frontend instructor** (`jornada-clase-editor.component`, portal instructores → Mis clases → abrir clase): misma utilidad y panel que en el hub admin.
 
+> **Evolución 2026-07-13:** ver **JOR-032** (origen = cualquier clase del contrato, no solo la anterior de la jornada).
+
 #### Archivos tocados (ARGO)
 | Archivo | Tipo de cambio |
 |---------|----------------|
@@ -882,6 +1084,7 @@ Tras publicar, entrar a **Configuración → Jornadas** y elegir el servicio con
 - UI en **Contratación** (hub): checkboxes de programas con búsqueda y chips.
 - Corrección: el catálogo de programas se carga al abrir Contratación (antes solo en pestaña Clases → lista vacía / «Cargando…» eterno).
 - Sin programas configurados: comportamiento anterior (clases sin programa).
+- **Nota 2026-07-13:** en un cambio local intermedio se quitó la asignación automática; se restauró en `9f6e822` (`programacionClasesJornada.js` + textos UI). El comportamiento vigente es el de este JOR-012.
 
 #### Archivos tocados (ARGO)
 Ver también tabla en [Mapa archivos por commit](#mapa-archivos-por-commit-auditoría-2026-07-13) (JOR-012).
@@ -1067,6 +1270,8 @@ curl -sS -X POST https://app.finstruvial.edu.co/api/auth/login \
 - Móvil: escanear QR para registrar; no imprime QR tras el registro.
 - Bloqueo si el alumno ya está certificado en el contrato.
 
+> **Evolución 2026-07-13:** ver **JOR-033** (código de contrato en etiqueta/panel, antes de la fecha de jornada).
+
 ---
 
 ### JOR-005 — App móvil instructores (campo)
@@ -1134,8 +1339,10 @@ curl -sS -X POST https://app.finstruvial.edu.co/api/auth/login \
 
 #### Qué se hizo
 - Campos: `clasesPorJornada`, `horasPorClase`, `tipoCertificado` (`global` | `por_clase`).
-- Generar faltantes: jornadas y clases (horarios planificados, sin instructor/programa).
+- Generar faltantes: jornadas y clases (horarios 8:00–17:00, sin instructor).
 - Certificado por_clase o global según contrato.
+
+> **Evolución:** asignación de programa en autogeneración → **JOR-012**. Programa único de certificación global → **JOR-029**.
 
 ---
 

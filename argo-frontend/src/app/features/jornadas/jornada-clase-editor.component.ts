@@ -16,7 +16,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, forkJoin, of } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, forkJoin, of, firstValueFrom } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
 
 import { AlumnoListItem } from '../../core/services/alumno.service';
@@ -1343,20 +1343,42 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   /** Etiqueta QR para escanear en la app móvil del instructor. */
   imprimirEtiquetaQrInscrito(a: { numDoc: number; nombreCompleto?: string }): void {
+    void this.imprimirEtiquetaQrInscritoAsync(a);
+  }
+
+  private async imprimirEtiquetaQrInscritoAsync(a: {
+    numDoc: number;
+    nombreCompleto?: string;
+  }): Promise<void> {
     const c = this.claseActiva();
-    const empresa =
-      String(c?.contratoLabel || c?.codContrato || '').trim() || undefined;
+    const fromLabel = String(c?.contratoLabel || '').split(/[—–]/)[0]?.trim() || '';
+    let codContrato = String(c?.codContrato || '').trim() || fromLabel;
+    const idContrato = String(c?.idContrato || '').trim();
+    if (!codContrato && idContrato) {
+      try {
+        const rows = await firstValueFrom(this.jornadaSvc.listarContratos());
+        const found = rows.find((x) => String(x._id || '') === idContrato);
+        codContrato = String(found?.codContrato || '').trim();
+      } catch {
+        /* ignore */
+      }
+    }
+    const empresa = String(c?.clienteNombre || '').trim() || undefined;
     const fechaJornada =
       String(c?.fechaClase || c?.fechaJornada || '').trim() || undefined;
-    void this.etiquetaQrSvc
-      .imprimirUna(a.numDoc, a.nombreCompleto || String(a.numDoc), { empresa, fechaJornada })
-      .catch((err) => {
-        this.mostrarMsgModal(
-          err instanceof Error ? err.message : 'No se pudo abrir la etiqueta QR.',
-          'warn',
-          'Etiqueta QR',
-        );
+    try {
+      await this.etiquetaQrSvc.imprimirUna(a.numDoc, a.nombreCompleto || String(a.numDoc), {
+        empresa,
+        codContrato: codContrato || undefined,
+        fechaJornada,
       });
+    } catch (err) {
+      this.mostrarMsgModal(
+        err instanceof Error ? err.message : 'No se pudo abrir la etiqueta QR.',
+        'warn',
+        'Etiqueta QR',
+      );
+    }
   }
 
   nuevoAlumnoJornada(): void {

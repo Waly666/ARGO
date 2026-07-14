@@ -42,6 +42,9 @@ import { JornadaEtiquetaQrService } from '../jornadas/jornada-etiqueta-qr.servic
           <strong>{{ nombreMostrar() }}</strong>
           <span>Doc. {{ docMostrar() }}</span>
           <span class="jor-qr-empresa">{{ empresaMostrar() }}</span>
+          @if (contratoMostrar()) {
+            <span class="jor-qr-contrato">Contrato {{ contratoMostrar() }}</span>
+          }
           <span class="jor-qr-fecha">Jornada {{ fechaMostrar() }}</span>
         </p>
         <button
@@ -145,6 +148,11 @@ import { JornadaEtiquetaQrService } from '../jornadas/jornada-etiqueta-qr.servic
           font-weight: 700;
           margin-top: 4px !important;
         }
+        .jor-qr-contrato {
+          font-weight: 700;
+          color: #1e3a8a !important;
+          margin-top: 2px !important;
+        }
         .jor-qr-fecha {
           font-weight: 700;
           color: #334155 !important;
@@ -168,6 +176,7 @@ export class AlumnoJornadaQrPanelComponent {
   numDoc = input<string | number | null | undefined>('');
   nombre = input<string | null | undefined>('');
   empresa = input<string | null | undefined>('');
+  codContrato = input<string | null | undefined>('');
   fechaJornada = input<string | null | undefined>('');
 
   qrDataUrl = signal<string | null>(null);
@@ -186,6 +195,10 @@ export class AlumnoJornadaQrPanelComponent {
 
   empresaMostrar = computed(
     () => String(this.empresa() || '').trim() || '—',
+  );
+
+  contratoMostrar = computed(
+    () => String(this.codContrato() || '').trim(),
   );
 
   fechaMostrar = computed(() => fmtFechaEtiqueta(this.fechaJornada()));
@@ -231,6 +244,7 @@ export class AlumnoJornadaQrPanelComponent {
     try {
       await this.etiquetaSvc.imprimirUna(doc, nom, {
         empresa: this.empresaMostrar() === '—' ? '' : this.empresaMostrar(),
+        codContrato: this.contratoMostrar() || '',
         fechaJornada: this.fechaJornada() || this.fechaMostrar(),
       });
     } catch (e) {

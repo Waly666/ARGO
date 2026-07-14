@@ -475,7 +475,35 @@ export class AlumnosListaComponent implements OnInit {
   abrir(item: AlumnoListItem) {
     const id = item?._id ? String(item._id) : '';
     if (!id) return;
-    void this.router.navigate([this.rutas().ficha(id)]);
+    const qp: Record<string, string> = {};
+    const fecha = this.fechaJornadaCap().trim();
+    const idJor = this.idJornadaCap().trim();
+    if (fecha) qp['fechaJornada'] = fecha;
+    if (idJor) {
+      const j = this.jornadasCap().find((x) => x._id === idJor);
+      const cod = String(j?.codContrato || '').trim()
+        || String(j?.contratoLabel || '').split(/[—–-]/)[0]?.trim()
+        || '';
+      if (cod) qp['codContrato'] = cod;
+      if (!fecha && j?.fechaProgramacion) {
+        qp['fechaJornada'] = ymdLocal(j.fechaProgramacion);
+      }
+    } else if (fecha) {
+      const mismas = this.jornadasCap().filter((j) => ymdLocal(j.fechaProgramacion) === fecha);
+      const codes = [
+        ...new Set(
+          mismas
+            .map((j) => {
+              const c = String(j.codContrato || '').trim();
+              if (c) return c;
+              return String(j.contratoLabel || '').split(/[—–-]/)[0]?.trim() || '';
+            })
+            .filter(Boolean),
+        ),
+      ];
+      if (codes.length === 1) qp['codContrato'] = codes[0];
+    }
+    void this.router.navigate([this.rutas().ficha(id)], Object.keys(qp).length ? { queryParams: qp } : {});
   }
 
   async eliminar(item: AlumnoListItem, ev?: Event) {
