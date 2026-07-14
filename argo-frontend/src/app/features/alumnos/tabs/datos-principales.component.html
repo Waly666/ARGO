@@ -31,18 +31,6 @@
   <div class="msg ok" *ngIf="message() && !docDuplicado() && !saveAlarmFlash()">{{ message() }}</div>
   <div class="msg err" *ngIf="message() && (docDuplicado() || saveAlarmFlash())">{{ message() }}</div>
 
-  @if (isEdit()) {
-    <div class="jor-qr-banner">
-      <argo-alumno-jornada-qr-panel
-        [numDoc]="form().numDoc"
-        [nombre]="nombreParaQr()"
-        [empresa]="empresaParaQr()"
-        [codContrato]="codContratoParaQr()"
-        [fechaJornada]="fechaJornadaParaQr()"
-      />
-    </div>
-  }
-
   <div class="dup" *ngIf="docDuplicado() as dup">
     <span>Documento ya registrado: <strong>{{ dup.nombreCompleto }}</strong></span>
     <button type="button" class="primary mini" (click)="irAlDuplicado()">Abrir registro</button>
@@ -52,7 +40,10 @@
     <div class="scan-head">
       <div>
         <h3>Escanear cédula</h3>
-        <p>Fotografía solo el frente de la cédula. Se sugieren documento y nombres; el resto se digita manualmente.</p>
+        <p>
+          Foto nítida y de frente, con el número (puntos de miles) y los nombres bien visibles.
+          Se sugieren documento, apellidos y nombres; el resto se digita manualmente.
+        </p>
       </div>
       <button type="button" class="ghost mini" (click)="omitirEscaneo()">Digitar manual</button>
     </div>
@@ -92,7 +83,7 @@
     <div class="scan-head">
       <div>
         <h3>Escanear cédula</h3>
-        <p>Solo frente de la cédula (documento y nombres).</p>
+        <p>Solo frente, número completo y nombres legibles.</p>
       </div>
       <button type="button" class="ghost mini" (click)="omitirEscaneo()">Cancelar</button>
     </div>
@@ -118,7 +109,7 @@
           <span class="section-icon ic-blue">◉</span>
           <div>
             <h3>Identificación</h3>
-            <p>Documento, nombres, fecha de nacimiento y foto</p>
+            <p>Documento, nombres, fecha de nacimiento, foto y QR</p>
           </div>
         </div>
         <div class="section-body section-body-split">
@@ -177,6 +168,8 @@
                 [readonly]="isEdit()" />
               <p class="hint doc-hint">Solo dígitos · {{ numDocHint }}</p>
             </div>
+          </div>
+          <div class="row">
             <div class="col-6">
               <argo-municipio-buscar
                 label="Expedida en"
@@ -190,44 +183,57 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-3">
+            <div class="col-4">
               <label>Primer apellido *</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
                      [ngModel]="form().apellido1" (ngModelChange)="patch('apellido1', $event)" />
             </div>
-            <div class="col-3">
+            <div class="col-4">
               <label>Segundo apellido</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
                      [ngModel]="form().apellido2" (ngModelChange)="patch('apellido2', $event)" />
             </div>
-            <div class="col-3">
+            <div class="col-4">
               <label>Primer nombre *</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
                      [ngModel]="form().nombre1" (ngModelChange)="patch('nombre1', $event)" />
             </div>
+          </div>
+          <div class="row">
             <div class="col-3">
               <label>Segundo nombre</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
                      [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" />
             </div>
-          </div>
-          <div class="row">
             <div class="col-3">
               <argo-date-input label="Fecha nacimiento" [ngModel]="form().fechaNac" (ngModelChange)="patch('fechaNac', $event)" ></argo-date-input>
             </div>
           </div>
           </div>
-          <div class="foto-col">
-            <label class="field-label">Foto del alumno</label>
-            <div class="foto">
-              <img *ngIf="fotoPreview() as p" [src]="p" alt="Foto" />
-              <span *ngIf="!fotoPreview()">Sin foto</span>
+          <aside class="foto-col" aria-label="Foto y QR del alumno">
+            <div class="foto-block">
+              <label class="field-label">Foto del alumno</label>
+              <div class="foto">
+                <img *ngIf="fotoPreview() as p" [src]="p" alt="Foto" />
+                <span *ngIf="!fotoPreview()">Sin foto</span>
+              </div>
+              <label class="upload">
+                <input type="file" accept="image/*" (change)="onFoto($event)" hidden />
+                <span>Cargar foto</span>
+              </label>
             </div>
-            <label class="upload">
-              <input type="file" accept="image/*" (change)="onFoto($event)" hidden />
-              <span>Cargar foto</span>
-            </label>
-          </div>
+            @if (isEdit()) {
+              <div class="qr-block">
+                <argo-alumno-jornada-qr-panel
+                  [numDoc]="form().numDoc"
+                  [nombre]="nombreParaQr()"
+                  [empresa]="empresaParaQr()"
+                  [codContrato]="codContratoParaQr()"
+                  [fechaJornada]="fechaJornadaParaQr()"
+                />
+              </div>
+            }
+          </aside>
         </div>
       </div>
 

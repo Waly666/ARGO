@@ -1,9 +1,26 @@
 const sharp = require('sharp');
-const { createWorker } = require('tesseract.js');
+const { createWorker, PSM } = require('tesseract.js');
 const { NUM_DOC_MIN_DIGITS, NUM_DOC_MAX_DIGITS, isValidNumDocDigits } = require('../utils/numDoc');
 
 const SPLIT_RATIO = 0.5;
 const MIN_RESPALDO_CHARS = 12;
+const OCR_TARGET_WIDTH = 1700;
+const OCR_MIN_WIDTH = 1400;
+
+const OCR_PARAMS_GENERAL = {
+  tessedit_pageseg_mode: String(PSM.AUTO),
+  tessedit_char_whitelist: '',
+};
+
+const OCR_PARAMS_NUMERO = {
+  tessedit_pageseg_mode: String(PSM.SINGLE_LINE),
+  tessedit_char_whitelist: '0123456789.',
+};
+
+const OCR_PARAMS_NOMBRES = {
+  tessedit_pageseg_mode: String(PSM.SINGLE_BLOCK),
+  tessedit_char_whitelist: '',
+};
 
 /** Encabezado institucional (no confundir con etiquetas de campo en la zona de datos) */
 const ENCABEZADO_RE =
@@ -40,6 +57,24 @@ function normalizarTexto(t) {
 
 function soloDigitos(s) {
   return String(s || '').replace(/\D/g, '');
+}
+
+/** Confusiones O/I solo dentro de un token ya numérico (nunca S→5: corrompe «NUMERO»). */
+function corregirConfusionOcrDigitos(s) {
+  return String(s || '')
+    .replace(/[Oo]/g, '0')
+    .replace(/[Il|]/g, '1');
+}
+
+/** Deja solo dígitos, puntos y espacios (quita letras sin convertirlas en dígitos). */
+function soloCaracteresNumericos(s) {
+  return String(s || '').replace(/[^\d.\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function digitosDesdeTokenNumerico(s, { corregirOcr = false } = {}) {
+  let t = String(s || '');
+  if (corregirOcr) t = corregirConfusionOcrDigitos(t);
+  return soloDigitos(t);
 }
 
 function capitalizar(s) {
@@ -108,17 +143,55 @@ async function dividirImagen(buffer, disposicion = 'auto') {
   return dividirVertical(buffer);
 }
 
+function puntajeParseFrente(datos, texto) {
+  let score = 0;
+  if (datos.numDoc) score += 40;
+  if (datos.apellido1) score += 25;
+  if (datos.nombre1) score += 25;
+  if (datos.fechaNac) score += 10;
+  const t = String(texto || '');
+  if (/APELLIDOS?/i.test(t)) score += 5;
+  if (/NOMBRES?/i.test(t)) score += 5;
+  if (/\d{1,3}(?:\.\d{3}){2,3}/.test(t)) score += 8;
+  return score;
+}
+
+async function elegirMejorVariante(variantes) {
+  let mejor = variantes[0];
+  let mejorScore = -1;
+  let mejorTexto = '';
+
+  for (const variante of variantes) {
+    const texto = await ocrBuffer(variante.buffer, OCR_PARAMS_GENERAL);
+    const datos = parseFrente(texto, '');
+    const score = puntajeParseFrente(datos, texto);
+    if (score > mejorScore) {
+      mejorScore = score;
+      mejor = variante;
+      mejorTexto = texto;
+    }
+  }
+
+  return { variante: mejor, textoFrente: mejorTexto, score: mejorScore };
+}
+
 async function ocrSoloFrente(frenteBuffer) {
-  const frentePrep = await prepararParaOcr(frenteBuffer);
+  const variantes = await generarVariantesOcr(frenteBuffer);
+  const { variante: mejorVariante, textoFrente: textoFrenteBase } = await elegirMejorVariante(variantes);
+  const frentePrep = mejorVariante.buffer;
+
+  const zonaNumero = await recortarZonaNumero(frentePrep);
   const zonaNombres = await recortarZonaNombres(frentePrep);
 
-  const [textoFrente, textoZonaNombres] = await Promise.all([
-    ocrBuffer(frentePrep),
-    ocrBuffer(zonaNombres),
-  ]);
+  const textoNumero = await ocrBuffer(zonaNumero, OCR_PARAMS_NUMERO);
+  const textoZonaNombres = await ocrBuffer(zonaNombres, OCR_PARAMS_NOMBRES);
 
-  const datosFrente = parseFrente(textoFrente, textoZonaNombres);
-  return { datosFrente, textoFrente, textoZonaNombres };
+  const textoFrente = textoNumero
+    ? `${textoFrenteBase}\nNUMERO ${textoNumero}`
+    : textoFrenteBase;
+
+  const datosFrente = parseFrente(textoFrente, textoZonaNombres, textoNumero);
+  return { datosFrente, textoFrente, textoZonaNombres, textoNumero };
 }
 
 async function validarImagenFrente(buffer) {
@@ -132,60 +205,150 @@ async function validarImagenFrente(buffer) {
   }
 }
 
-/** Mejora contraste para originales y fotocopias ampliadas (escaneos de celular). */
-async function prepararParaOcr(buffer) {
+async function redimensionarParaOcr(buffer) {
   const meta = await sharp(buffer).metadata();
   const w = meta.width || 0;
-  const minW = 1400;
-  let pipe = sharp(buffer);
-  if (w > 0 && w < minW) {
-    pipe = pipe.resize(minW, null, { withoutEnlargement: false, kernel: 'lanczos3' });
-  }
-  return pipe
-    .grayscale()
-    .normalize()
-    .linear(1.18, -(128 * 0.14))
-    .sharpen({ sigma: 1.1 })
+  if (w <= 0) return buffer;
+  if (w >= OCR_MIN_WIDTH && w <= OCR_TARGET_WIDTH) return buffer;
+  return sharp(buffer)
+    .resize(OCR_TARGET_WIDTH, null, { withoutEnlargement: false, kernel: 'lanczos3' })
     .png()
     .toBuffer();
 }
 
+/**
+ * Tres variantes ligeras: base, alto contraste y binarizado suave.
+ * Se elige la que mejor parsea antes del OCR por zonas.
+ */
+async function generarVariantesOcr(buffer) {
+  const resized = await redimensionarParaOcr(buffer);
+  const base = sharp(resized);
+
+  const [vBase, vContraste, vBinarizado] = await Promise.all([
+    base
+      .clone()
+      .grayscale()
+      .normalize()
+      .linear(1.18, -(128 * 0.14))
+      .sharpen({ sigma: 1.1 })
+      .png()
+      .toBuffer(),
+    base
+      .clone()
+      .grayscale()
+      .normalize()
+      .linear(1.45, -(128 * 0.22))
+      .sharpen({ sigma: 1.35 })
+      .png()
+      .toBuffer(),
+    base
+      .clone()
+      .grayscale()
+      .normalize()
+      .linear(1.55, -(128 * 0.28))
+      .threshold(142)
+      .png()
+      .toBuffer(),
+  ]);
+
+  return [
+    { id: 'base', buffer: vBase },
+    { id: 'contraste', buffer: vContraste },
+    { id: 'binarizado', buffer: vBinarizado },
+  ];
+}
+
+/** Compatibilidad: primera variante (base) del pipeline multi-variante. */
+async function prepararParaOcr(buffer) {
+  const variantes = await generarVariantesOcr(buffer);
+  return variantes[0].buffer;
+}
+
+/**
+ * Banda izquierda-centro del NUMERO (foto a la derecha).
+ * Más ancha y alta para no cortar el primer dígito (1.xxx.xxx.xxx).
+ */
+async function recortarZonaNumero(frenteBuffer) {
+  const meta = await sharp(frenteBuffer).metadata();
+  const h = meta.height || 0;
+  const w = meta.width || 0;
+  if (h < 120 || w < 80) return frenteBuffer;
+
+  const left = Math.round(w * 0.02);
+  const top = Math.round(h * 0.06);
+  const width = Math.round(w * 0.68);
+  const height = Math.round(h * 0.34);
+  if (width < 40 || height < 30) return frenteBuffer;
+
+  return sharp(frenteBuffer)
+    .extract({ left, top, width, height })
+    .grayscale()
+    .normalize()
+    .linear(1.25, -(128 * 0.15))
+    .sharpen({ sigma: 1.35 })
+    .png()
+    .toBuffer();
+}
+
+/** Desde debajo del encabezado: apellidos + nombres (valor arriba, etiqueta abajo). */
 async function recortarZonaNombres(frenteBuffer) {
   const meta = await sharp(frenteBuffer).metadata();
   const h = meta.height || 0;
   const w = meta.width || 0;
   if (h < 120 || w < 80) return frenteBuffer;
-  const top = Math.round(h * 0.38);
-  const height = h - top;
-  if (height < 60) return frenteBuffer;
+  const top = Math.round(h * 0.22);
+  const height = Math.round(h * 0.58);
+  const width = Math.round(w * 0.72);
+  if (height < 60 || width < 60) return frenteBuffer;
   return sharp(frenteBuffer)
-    .extract({ left: 0, top, width: w, height })
+    .extract({ left: 0, top, width, height })
     .grayscale()
     .normalize()
-    .sharpen()
+    .linear(1.12, -(128 * 0.1))
+    .sharpen({ sigma: 1.05 })
     .png()
     .toBuffer();
 }
 
 let workerPromise = null;
+let ocrChain = Promise.resolve();
 
 async function getWorker() {
   if (!workerPromise) {
     workerPromise = (async () => {
       const worker = await createWorker('spa', 1, { logger: () => {} });
+      await worker.setParameters(OCR_PARAMS_GENERAL);
       return worker;
     })();
   }
   return workerPromise;
 }
 
-async function ocrBuffer(buffer) {
-  const worker = await getWorker();
-  const {
-    data: { text },
-  } = await worker.recognize(buffer);
-  return text || '';
+async function ocrBuffer(buffer, params = null) {
+  const run = async () => {
+    const worker = await getWorker();
+    if (params) {
+      await worker.setParameters({ ...OCR_PARAMS_GENERAL, ...params });
+    }
+    try {
+      const {
+        data: { text },
+      } = await worker.recognize(buffer);
+      return text || '';
+    } finally {
+      if (params) {
+        await worker.setParameters(OCR_PARAMS_GENERAL);
+      }
+    }
+  };
+
+  const result = ocrChain.then(run);
+  ocrChain = result.catch(() => {});
+  return result;
 }
+
+/** Artículos/conjunciones frecuentes en nombres compuestos (no invalidan la línea). */
+const CONECTOR_NOMBRE = new Set(['DE', 'LA', 'EL', 'Y', 'DEL', 'LOS', 'LAS', 'SAN', 'SANTA']);
 
 function contieneTextoInstitucional(linea) {
   const u = normalizarTexto(linea);
@@ -197,7 +360,8 @@ function contieneTextoInstitucional(linea) {
     return true;
   }
   const tokens = u.split(/\s+/).filter(Boolean);
-  if (tokens.some((t) => PALABRA_INSTITUCIONAL.has(t))) return true;
+  const fuertes = tokens.filter((t) => PALABRA_INSTITUCIONAL.has(t) && !CONECTOR_NOMBRE.has(t));
+  if (fuertes.length && fuertes.length >= Math.ceil(tokens.length * 0.5)) return true;
   return false;
 }
 
@@ -208,34 +372,81 @@ function esLineaEncabezado(linea) {
   return contieneTextoInstitucional(linea);
 }
 
+/** Distancia de edición pequeña para etiquetas OCR (NOMBFE, HOMBRES, APELLID0S…). */
+function distanciaLevenshtein(a, b) {
+  const s = String(a || '');
+  const t = String(b || '');
+  if (s === t) return 0;
+  if (!s.length) return t.length;
+  if (!t.length) return s.length;
+  const row = Array.from({ length: t.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= s.length; i++) {
+    let prev = row[0];
+    row[0] = i;
+    for (let j = 1; j <= t.length; j++) {
+      const tmp = row[j];
+      const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + cost);
+      prev = tmp;
+    }
+  }
+  return row[t.length];
+}
+
+function esEtiquetaCercana(palabra, objetivo, maxDist = 2) {
+  const u = normalizarTexto(palabra).replace(/[^A-Z]/g, '');
+  const o = normalizarTexto(objetivo).replace(/[^A-Z]/g, '');
+  if (!u || !o) return false;
+  if (u === o) return true;
+  if (Math.abs(u.length - o.length) > maxDist) return false;
+  return distanciaLevenshtein(u, o) <= maxDist;
+}
+
 function esEtiquetaApellidos(linea) {
-  const u = normalizarTexto(linea).trim();
-  return u.length <= 16 && /^APELLIDOS?$/.test(u);
+  const u = normalizarTexto(linea).trim().replace(/\s+/g, ' ');
+  if (!u || u.length > 36 || /NOMBR/.test(u)) return false;
+  if (/^APELLIDOS?$/.test(u)) return true;
+  // OCR deja basura: "APELLIDOS =— e"
+  const letras = u.replace(/[^A-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const primera = letras.split(/\s+/)[0] || '';
+  if (esEtiquetaCercana(primera, 'APELLIDOS', 2) || esEtiquetaCercana(primera, 'APELLIDO', 2)) return true;
+  return /APELLIDOS?/.test(letras) && letras.length <= 24;
 }
 
 function esEtiquetaNombres(linea) {
-  const u = normalizarTexto(linea).trim();
-  return u.length <= 14 && /^NOMBRES?$/.test(u) && !/APELLID/.test(u);
+  const u = normalizarTexto(linea).trim().replace(/\s+/g, ' ');
+  if (!u || u.length > 32 || /APELLID/.test(u)) return false;
+  if (/^NOMBRES?$/.test(u)) return true;
+  const letras = u.replace(/[^A-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const primera = letras.split(/\s+/)[0] || '';
+  // OCR frecuente: HOMBRES, NOMBFE, N0MBRES, "NOMBRES ."
+  if (esEtiquetaCercana(primera, 'NOMBRES', 2) || esEtiquetaCercana(primera, 'NOMBRE', 2)) return true;
+  return /^NOMBRES?\b/.test(letras) && letras.length <= 20;
 }
 
 function esLineaNombre(linea, numDoc) {
-  if (!linea || contieneTextoInstitucional(linea)) return false;
+  if (!linea) return false;
   const t = linea.trim();
   if (t.length < 3) return false;
   if (esEtiquetaApellidos(t) || esEtiquetaNombres(t)) return false;
+  if (ENCABEZADO_RE.test(normalizarTexto(t))) return false;
+  if (/\b(CEDULA|CIUDADANIA|REPUBLICA|COLOMBIA|IDENTIFICACION|NUMERO|NUIP|FIRMA)\b/i.test(t)) return false;
   const digits = soloDigitos(t);
   if (numDoc && digits === numDoc) return false;
   if (digits.length >= 5) return false;
   const palabras = t.split(/\s+/).filter(Boolean);
   if (!palabras.length || palabras.length > 6) return false;
   const validas = palabras.filter((p) => {
-    const w = normalizarTexto(p);
-    return w.length >= 2 && !PALABRA_INSTITUCIONAL.has(w);
+    const w = normalizarTexto(p).replace(/[^A-Z]/g, '');
+    if (w.length < 2) return false;
+    if (CONECTOR_NOMBRE.has(w)) return true;
+    if (PALABRA_INSTITUCIONAL.has(w)) return false;
+    return true;
   });
   if (!validas.length) return false;
-  if (validas.length / palabras.length < 0.6) return false;
+  if (validas.length / palabras.length < 0.5) return false;
   const letras = (t.match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/g) || []).length;
-  return letras >= 3 && letras / t.replace(/\s/g, '').length >= 0.7;
+  return letras >= 3 && letras / t.replace(/\s/g, '').length >= 0.65;
 }
 
 /** Etiqueta pequeña impresa debajo del valor (cédula colombiana) */
@@ -259,39 +470,106 @@ function indiceLineaNumDoc(lineas, numDoc) {
   return -1;
 }
 
-function extraerNumDocDigitos(texto, lineas) {
-  const flat = normalizarTexto(texto);
+/** Preferir NUIP CO de 8–10 dígitos; castigar basura de 12+ (letras convertidas). */
+function puntajeCandidatoNumDoc(digits) {
+  if (!isValidNumDocDigits(digits)) return -1;
+  let score = digits.length * 10;
+  if (digits.length === 10) score += 50;
+  else if (digits.length === 8 || digits.length === 9) score += 20;
+  else if (digits.length === 11) score += 5;
+  if (digits.length >= 12) score -= 80;
+  if (digits.startsWith('1') && digits.length === 10) score += 35;
+  if (digits.startsWith('0')) score -= 40;
+  if (digits.length === 7) score -= 25;
+  return score;
+}
 
-  const numeroEtiqueta = texto.match(/NUMERO\s+([\d.\s]{8,22})/i);
-  if (numeroEtiqueta) {
-    const n = soloDigitos(numeroEtiqueta[1]);
-    if (isValidNumDocDigits(n)) return n;
+/**
+ * Recupera el 1 inicial perdido (4040044473 / 040044473 → 1040044473)
+ * y NUIPs de 10 dígitos embebidos en basura más larga.
+ */
+function expandirCandidatosNumDoc(candidatos) {
+  const out = [];
+  for (const n of candidatos) {
+    if (!n) continue;
+    out.push(n);
+    const embebido = String(n).match(/1\d{9}/g);
+    if (embebido) out.push(...embebido);
+    if (n.length === 9 && n.startsWith('0')) out.push(`1${n}`);
+    // El «1.» inicial se confunde con 4/5: 4040044473 / 5040044473 → 1040044473
+    if (n.length === 10 && /^[45]0/.test(n)) out.push(`1${n.slice(1)}`);
+    // 5… basura típica de S→5 / ruido delante de un 1\d{9}
+    if (n.length >= 11 && n.length <= 14) {
+      const idx = n.indexOf('1');
+      if (idx > 0 && idx <= 3 && n.length - idx >= 10) out.push(n.slice(idx, idx + 10));
+    }
+  }
+  return out;
+}
+
+function elegirMejorNumDoc(candidatos) {
+  const unicos = [...new Set(expandirCandidatosNumDoc(candidatos).filter((n) => isValidNumDocDigits(n)))];
+  if (!unicos.length) return '';
+
+  const buenos = unicos.filter((n) => n.length >= 8 && n.length <= 11);
+  const pool = buenos.length ? buenos : unicos;
+
+  const deDiezConUno = pool.filter((n) => n.length === 10 && n.startsWith('1'));
+  if (deDiezConUno.length) {
+    deDiezConUno.sort((a, b) => puntajeCandidatoNumDoc(b) - puntajeCandidatoNumDoc(a));
+    return deDiezConUno[0];
   }
 
-  const conPuntos = texto.match(/\b(\d{1,3}(?:\.\d{3}){2,3})\b/g);
-  if (conPuntos?.length) {
-    const ordenados = conPuntos
-      .map((s) => soloDigitos(s))
-      .filter((n) => isValidNumDocDigits(n))
-      .sort((a, b) => b.length - a.length);
-    if (ordenados[0]) return ordenados[0];
+  const deDiez = pool.filter((n) => n.length === 10);
+  if (deDiez.length === 1) return deDiez[0];
+  if (deDiez.length > 1) {
+    deDiez.sort((a, b) => puntajeCandidatoNumDoc(b) - puntajeCandidatoNumDoc(a));
+    return deDiez[0];
   }
 
-  const nuip = flat.match(/NUIP\s*[:.]?\s*([\d.\s]{6,18})/);
-  if (nuip) {
-    const n = soloDigitos(nuip[1]);
-    if (isValidNumDocDigits(n)) return n;
+  pool.sort((a, b) => puntajeCandidatoNumDoc(b) - puntajeCandidatoNumDoc(a) || b.length - a.length);
+  return pool[0];
+}
+
+/**
+ * Extrae NUIP/cédula con puntos de miles (1.040.044.473).
+ * No convierte letras sueltas (S/O de «NUMERO») en dígitos pegados al número.
+ */
+function extraerNumDocDigitos(texto, lineas, { corregirOcr = false } = {}) {
+  const raw = String(texto || '');
+  const limpio = soloCaracteresNumericos(corregirOcr ? corregirConfusionOcrDigitos(soloCaracteresNumericos(raw)) : raw);
+  const candidatos = [];
+
+  const pushDigits = (digits) => {
+    if (digits && isValidNumDocDigits(digits)) candidatos.push(digits);
+  };
+  const pushToken = (s) => pushDigits(digitosDesdeTokenNumerico(s, { corregirOcr }));
+
+  // Formato CO: 1.040.044.473 o 1 040.044.473 (grupos de 3)
+  const patronEstricto = /(\d{1,3}(?:[.\s]\d{3}){2,3})/g;
+  for (const fuente of [limpio, soloCaracteresNumericos(raw)]) {
+    let m;
+    const re = new RegExp(patronEstricto.source, 'g');
+    while ((m = re.exec(fuente)) !== null) pushToken(m[1]);
   }
 
-  const nums = flat.match(new RegExp(`\\d{${NUM_DOC_MIN_DIGITS},${NUM_DOC_MAX_DIGITS}}`, 'g')) || [];
-  if (nums.length) {
-    return nums.sort((a, b) => b.length - a.length)[0];
+  const fuentesLinea = [...(lineas || []), ...limpiarLineas(raw)];
+  for (const l of fuentesLinea) {
+    const numLinea = soloCaracteresNumericos(l);
+    if (!numLinea) continue;
+    let m;
+    const re = new RegExp(patronEstricto.source, 'g');
+    while ((m = re.exec(numLinea)) !== null) pushToken(m[1]);
+    const letras = (String(l).match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/g) || []).length;
+    const digs = soloDigitos(numLinea);
+    if (letras <= 2 && digs.length >= 8 && digs.length <= 11) pushDigits(digs);
   }
-  for (const l of lineas) {
-    const n = soloDigitos(l);
-    if (isValidNumDocDigits(n)) return n;
-  }
-  return '';
+
+  // Planos 8–11 y posibles 10 dígitos dentro de basura larga
+  const planos = limpio.match(/\d{8,14}/g) || [];
+  for (const n of planos) pushDigits(n);
+
+  return elegirMejorNumDoc(candidatos);
 }
 
 function asignarNombrePartes(destino, texto) {
@@ -299,8 +577,10 @@ function asignarNombrePartes(destino, texto) {
     .trim()
     .split(/\s+/)
     .filter((p) => {
-      const w = normalizarTexto(p);
-      return w.length >= 2 && !PALABRA_INSTITUCIONAL.has(w);
+      const w = normalizarTexto(p).replace(/[^A-Z]/g, '');
+      if (w.length < 2 && !CONECTOR_NOMBRE.has(w)) return false;
+      if (CONECTOR_NOMBRE.has(w)) return true;
+      return !PALABRA_INSTITUCIONAL.has(w);
     });
   if (!palabras.length) return;
   destino.parte1 = palabras[0];
@@ -317,17 +597,17 @@ function indiceEtiqueta(lineas, tipo) {
 
 /**
  * Layout cédula colombiana (lectura de arriba hacia abajo):
- *   [dato apellidos]  ← valor
+ *   [dato apellidos]  ← valor (a veces OCR parte en 2 líneas: BEDOYA / CARDONA)
  *   APELLIDOS         ← etiqueta pequeña DEBAJO del dato
- *   [dato nombres]    ← valor
+ *   [dato nombres]    ← valor (YESSICA / YULIANA en líneas distintas)
  *   NOMBRES           ← etiqueta pequeña DEBAJO del dato
- * Solo se lee la línea INMEDIATAMENTE ENCIMA de cada etiqueta (nunca la de abajo).
+ * Une líneas de nombre consecutivas encima de la etiqueta.
  */
 function valorEncimaEtiqueta(lineas, idxEtiqueta, numDoc, excluirLinea = '', idxMin = 0) {
   if (idxEtiqueta < 0) return '';
 
   const lineaEtiqueta = lineas[idxEtiqueta] || '';
-  const enMismaLinea = lineaEtiqueta.match(/^(.+?)\s+(APELLIDOS?|NOMBRES?)\s*$/i);
+  const enMismaLinea = lineaEtiqueta.match(/^(.+?)\s+(APELLIDOS?|NOMBRES?|HOMBRES?)\s*$/i);
   if (enMismaLinea) {
     const val = enMismaLinea[1].trim();
     if (normalizarTexto(val) !== normalizarTexto(excluirLinea) && esLineaNombre(val, numDoc)) {
@@ -335,18 +615,38 @@ function valorEncimaEtiqueta(lineas, idxEtiqueta, numDoc, excluirLinea = '', idx
     }
   }
 
+  const fragmentos = [];
+  let modo = null; // single = palabras sueltas (YESSICA / YULIANA); multi = una sola línea
   for (let j = idxEtiqueta - 1; j >= idxMin; j--) {
     const l = lineas[j];
     if (esEtiquetaApellidos(l) || esEtiquetaNombres(l)) break;
     if (excluirLinea && normalizarTexto(l) === normalizarTexto(excluirLinea)) continue;
-    if (esLineaNombre(l, numDoc)) return l;
+    if (!esLineaNombre(l, numDoc)) {
+      if (fragmentos.length) break;
+      continue;
+    }
+    const nPalabras = l.trim().split(/\s+/).length;
+    if (!fragmentos.length) {
+      fragmentos.unshift(l);
+      modo = nPalabras === 1 ? 'single' : 'multi';
+      // Una línea con 2+ palabras ya es el valor completo del campo
+      if (modo === 'multi') break;
+      continue;
+    }
+    // Solo unir otra línea si ambas son de una sola palabra (OCR partió el nombre)
+    if (modo === 'single' && nPalabras === 1 && fragmentos.length < 2) {
+      fragmentos.unshift(l);
+      break;
+    }
+    // No absorber el bloque de arriba (apellidos) dentro de nombres
+    break;
   }
-  return '';
+  return fragmentos.join(' ').trim();
 }
 
 /**
- * Apellidos y nombres solo después del NUMERO.
- * Cada valor es la línea encima de su etiqueta (APELLIDOS / NOMBRES).
+ * Apellidos (arriba) y nombres (abajo) en cédula CO.
+ * Orden fijo tras el número: bloque1=apellidos, bloque2=nombres.
  */
 function parseNombres(lineasZona, numDoc, lineasCompletas) {
   let apellido1 = '';
@@ -356,69 +656,149 @@ function parseNombres(lineasZona, numDoc, lineasCompletas) {
 
   const idxDoc = indiceLineaNumDoc(lineasCompletas, numDoc);
   const zonaDesdeDoc = idxDoc >= 0 ? lineasCompletas.slice(idxDoc + 1) : [];
-  const lineasZonaFiltradas = lineasZona.filter((l) => !contieneTextoInstitucional(l) || esEtiquetaApellidos(l) || esEtiquetaNombres(l));
+  const lineasZonaFiltradas = lineasZona.filter(
+    (l) => !contieneTextoInstitucional(l) || esEtiquetaApellidos(l) || esEtiquetaNombres(l)
+  );
 
-  const opciones = [zonaDesdeDoc, lineasZonaFiltradas].filter((l) => l.length > 0);
+  const opciones = [lineasZonaFiltradas, lineasZona, zonaDesdeDoc, lineasCompletas].filter((l) => l.length > 0);
   let lineasTrabajo = opciones[0] || [];
+  let mejorScore = -1;
   for (const opt of opciones) {
-    if (indiceEtiqueta(opt, 'apellidos') >= 0 && indiceEtiqueta(opt, 'nombres') >= 0) {
+    let score = 0;
+    if (indiceEtiqueta(opt, 'apellidos') >= 0) score += 2;
+    if (indiceEtiqueta(opt, 'nombres') >= 0) score += 2;
+    const nomLines = opt.filter((l) => esLineaNombre(l, numDoc)).length;
+    score += Math.min(nomLines, 4);
+    if (score > mejorScore) {
+      mejorScore = score;
       lineasTrabajo = opt;
-      break;
     }
-  }
-  if (indiceEtiqueta(lineasTrabajo, 'apellidos') < 0 && lineasZonaFiltradas.length) {
-    lineasTrabajo = lineasZonaFiltradas;
   }
 
   const tomarValor = (val) => {
     if (!val || !esLineaNombre(val, numDoc)) return null;
     const p = { parte1: '', parte2: '' };
     asignarNombrePartes(p, val);
-    if (!p.parte1 || contieneTextoInstitucional(p.parte1)) return null;
-    if (p.parte2 && contieneTextoInstitucional(p.parte2)) p.parte2 = '';
+    if (!p.parte1) return null;
+    const p1n = normalizarTexto(p.parte1);
+    if (PALABRA_INSTITUCIONAL.has(p1n) && !CONECTOR_NOMBRE.has(p1n)) return null;
+    if (p.parte2) {
+      const toks = normalizarTexto(p.parte2).split(/\s+/);
+      if (toks.every((t) => PALABRA_INSTITUCIONAL.has(t) && !CONECTOR_NOMBRE.has(t))) p.parte2 = '';
+    }
     return p;
   };
 
-  const idxAp = indiceEtiqueta(lineasTrabajo, 'apellidos');
-  const idxNom = indiceEtiqueta(lineasTrabajo, 'nombres');
+  const aplicarAp = (p) => {
+    if (!p) return;
+    apellido1 = p.parte1;
+    apellido2 = p.parte2;
+  };
+  const aplicarNom = (p) => {
+    if (!p) return;
+    nombre1 = p.parte1;
+    nombre2 = p.parte2;
+  };
 
-  const idxMin = 0;
+  let idxAp = indiceEtiqueta(lineasTrabajo, 'apellidos');
+  let idxNom = indiceEtiqueta(lineasTrabajo, 'nombres');
+
+  if (idxNom >= 0 && idxAp >= 0 && idxNom < idxAp) {
+    for (let i = idxAp + 1; i < lineasTrabajo.length; i++) {
+      if (esEtiquetaNombres(lineasTrabajo[i])) {
+        idxNom = i;
+        break;
+      }
+    }
+  }
 
   if (idxAp >= 0) {
-    const lineaAp = valorEncimaEtiqueta(lineasTrabajo, idxAp, numDoc, '', idxMin);
-    const p = tomarValor(lineaAp);
-    if (p) {
-      apellido1 = p.parte1;
-      apellido2 = p.parte2;
-    }
+    aplicarAp(tomarValor(valorEncimaEtiqueta(lineasTrabajo, idxAp, numDoc, '', 0)));
   }
 
   if (idxNom >= 0 && (idxAp < 0 || idxNom > idxAp)) {
-    const lineaApCompleta = `${apellido1} ${apellido2}`.trim();
-    const lineaNom = valorEncimaEtiqueta(lineasTrabajo, idxNom, numDoc, lineaApCompleta, idxMin);
-    const p = tomarValor(lineaNom);
-    if (p) {
-      nombre1 = p.parte1;
-      nombre2 = p.parte2;
+    const excl = `${apellido1} ${apellido2}`.trim();
+    const min = idxAp >= 0 ? idxAp + 1 : 0;
+    aplicarNom(tomarValor(valorEncimaEtiqueta(lineasTrabajo, idxNom, numDoc, excl, min)));
+  }
+
+  // Etiqueta APELLIDOS no vista, pero sí NOMBRES: apellidos = líneas de nombre encima del valor de nombres
+  if (!apellido1 && idxNom >= 0) {
+    const exclNom = normalizarTexto(`${nombre1} ${nombre2}`.trim());
+    const arriba = [];
+    const desde = idxNom - 1;
+    for (let i = desde; i >= 0 && arriba.length < 4; i--) {
+      const l = lineasTrabajo[i];
+      if (esEtiquetaApellidos(l) || esEtiquetaNombres(l)) {
+        if (esEtiquetaApellidos(l)) {
+          const v = valorEncimaEtiqueta(lineasTrabajo, i, numDoc, exclNom, 0);
+          if (v) aplicarAp(tomarValor(v));
+        }
+        break;
+      }
+      if (!esLineaNombre(l, numDoc)) continue;
+      if (exclNom && normalizarTexto(l) === exclNom) continue;
+      if (nombre1 && normalizarTexto(l).includes(normalizarTexto(nombre1))) continue;
+      arriba.unshift(l);
+    }
+    if (!apellido1 && arriba.length) aplicarAp(tomarValor(arriba.join(' ')));
+  }
+
+  // Etiqueta NOMBRES no vista: líneas después de APELLIDOS
+  if (!nombre1 && idxAp >= 0) {
+    const despues = [];
+    for (let i = idxAp + 1; i < lineasTrabajo.length && despues.length < 3; i++) {
+      const l = lineasTrabajo[i];
+      if (esEtiquetaNombres(l) || esEtiquetaApellidos(l)) continue;
+      if (esLineaNombre(l, numDoc)) despues.push(l);
+    }
+    const exclAp = normalizarTexto(`${apellido1} ${apellido2}`);
+    const utiles = despues.filter((l) => normalizarTexto(l) !== exclAp);
+    if (utiles.length) aplicarNom(tomarValor(utiles.join(' ')));
+  }
+
+  // Sin etiquetas: primeros dos bloques de nombre tras el documento
+  if (!apellido1 || !nombre1) {
+    const candidatos = lineasTrabajo.filter((l) => esLineaNombre(l, numDoc));
+    // Agrupar líneas sueltas consecutivas ya viene en candidatos línea a línea;
+    // si hay 2+ líneas de una sola palabra, juntar de a 2
+    const bloques = [];
+    let i = 0;
+    while (i < candidatos.length && bloques.length < 2) {
+      const palabras = candidatos[i].trim().split(/\s+/);
+      if (palabras.length === 1 && i + 1 < candidatos.length && candidatos[i + 1].trim().split(/\s+/).length === 1) {
+        bloques.push(`${candidatos[i]} ${candidatos[i + 1]}`);
+        i += 2;
+      } else {
+        bloques.push(candidatos[i]);
+        i += 1;
+      }
+    }
+    if (!apellido1 && bloques[0]) aplicarAp(tomarValor(bloques[0]));
+    if (!nombre1 && bloques[1]) {
+      const p = tomarValor(bloques[1]);
+      if (p && normalizarTexto(p.parte1) !== normalizarTexto(apellido1)) aplicarNom(p);
     }
   }
 
-  if ((!apellido1 || !nombre1) && idxAp < 0 && idxNom < 0) {
-    const candidatos = lineasTrabajo.filter((l) => esLineaNombre(l, numDoc));
-    if (!apellido1 && candidatos[0]) {
-      const p = tomarValor(candidatos[0]);
-      if (p) {
-        apellido1 = p.parte1;
-        apellido2 = p.parte2;
-      }
-    }
-    if (!nombre1 && candidatos[1] && normalizarTexto(candidatos[1]) !== normalizarTexto(`${apellido1} ${apellido2}`.trim())) {
-      const p = tomarValor(candidatos[1]);
-      if (p) {
-        nombre1 = p.parte1;
-        nombre2 = p.parte2;
-      }
-    }
+  // Si solo hay nombres y el “nombre” parece el bloque de arriba mal asignado, no tocar.
+  // Si hay nombres pero no apellidos y hay otro bloque distinto, usarlo.
+  if (nombre1 && !apellido1) {
+    const candidatos = lineasTrabajo.filter((l) => {
+      if (!esLineaNombre(l, numDoc)) return false;
+      const n = normalizarTexto(l);
+      return n !== normalizarTexto(nombre1) && n !== normalizarTexto(`${nombre1} ${nombre2}`.trim());
+    });
+    if (candidatos.length) aplicarAp(tomarValor(candidatos.length >= 2 ? `${candidatos[0]} ${candidatos[1]}` : candidatos[0]));
+  }
+
+  if (apellido1 && !nombre1) {
+    const candidatos = lineasTrabajo.filter((l) => {
+      if (!esLineaNombre(l, numDoc)) return false;
+      const n = normalizarTexto(l);
+      return n !== normalizarTexto(apellido1) && n !== normalizarTexto(`${apellido1} ${apellido2}`.trim());
+    });
+    if (candidatos.length) aplicarNom(tomarValor(candidatos.length >= 2 ? `${candidatos[0]} ${candidatos[1]}` : candidatos[0]));
   }
 
   return {
@@ -436,19 +816,30 @@ function parseFechaIso(lineas, texto) {
   while ((m = re.exec(t)) !== null) {
     let y = parseInt(m[3], 10);
     if (y < 100) y += 2000;
-    if (y > 1900 && y < 2100) {
-      const mm = String(m[2]).padStart(2, '0');
-      const dd = String(m[1]).padStart(2, '0');
-      return `${y}-${mm}-${dd}`;
+    const mm = parseInt(m[2], 10);
+    const dd = parseInt(m[1], 10);
+    if (y > 1900 && y < 2100 && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      return `${y}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
     }
   }
   return '';
 }
 
-function parseFrente(textoCompleto, textoZonaNombres) {
+function parseFrente(textoCompleto, textoZonaNombres, textoZonaNumero = '') {
   const lineasCompletas = limpiarLineas(textoCompleto);
   const lineasZona = limpiarLineas(textoZonaNombres);
-  const numDocStr = extraerNumDocDigitos(textoCompleto, lineasCompletas);
+  const lineasNumero = limpiarLineas(textoZonaNumero);
+
+  const candidatosNum = [];
+  if (textoZonaNumero) {
+    const n = extraerNumDocDigitos(textoZonaNumero, lineasNumero, { corregirOcr: true });
+    if (n) candidatosNum.push(n);
+  }
+  {
+    const n = extraerNumDocDigitos(textoCompleto, lineasCompletas, { corregirOcr: true });
+    if (n) candidatosNum.push(n);
+  }
+  const numDocStr = elegirMejorNumDoc(candidatosNum);
   const nombres = parseNombres(lineasZona, numDocStr, lineasCompletas);
   const fechaNac = parseFechaIso(lineasCompletas, textoCompleto);
 
@@ -632,12 +1023,13 @@ function parseRespaldo(texto) {
 /** Solo frente: documento, nombres, apellidos y fecha de nacimiento. */
 async function procesarCedulaImagen(buffer) {
   await validarImagenFrente(buffer);
-  const { datosFrente, textoFrente, textoZonaNombres } = await ocrSoloFrente(buffer);
+  const { datosFrente, textoFrente, textoZonaNombres, textoNumero } = await ocrSoloFrente(buffer);
 
   const advertencias = [];
   if (!datosFrente.numDoc) advertencias.push('No se detectó el número de documento (campo NUMERO).');
   if (!datosFrente.apellido1) advertencias.push('No se detectaron apellidos (línea sobre la etiqueta APELLIDOS).');
   if (!datosFrente.nombre1) advertencias.push('No se detectaron nombres (línea sobre la etiqueta NOMBRES).');
+  advertencias.push('Revise el número completo (con todos los dígitos) y los dos nombres; el OCR a veces omite uno.');
   advertencias.push('Género, tipo de sangre, expedición y demás datos debe digitirlos manualmente.');
 
   return {
@@ -657,6 +1049,7 @@ async function procesarCedulaImagen(buffer) {
     debug: {
       textoFrente: textoFrente.slice(0, 2000),
       textoZonaNombres: textoZonaNombres.slice(0, 1500),
+      textoNumero: (textoNumero || '').slice(0, 400),
     },
   };
 }
