@@ -241,11 +241,16 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     valorCatalogoMat = valorTarifaServicio(serv, t, prog);
   }
 
-  const extrasMatricula = await resolverServiciosAdicionalesMatricula(prog, {
-    tarifa: t,
-    serviciosProg,
-    modoMigracion: ctx.modoMigracion,
-  });
+  // Jornadas Cap.: no liquidar servicios adicionales (ej. DEG / derechos de grado).
+  // Esas reglas son para técnicos/regulares; al matricular por clase/contrato en carpa
+  // cada programa nuevo crearía un cargo fantasma de $500.000 (visto en VPS).
+  const extrasMatricula = esJornada
+    ? []
+    : await resolverServiciosAdicionalesMatricula(prog, {
+        tarifa: t,
+        serviciosProg,
+        modoMigracion: ctx.modoMigracion,
+      });
   const valorExtrasMatricula = sumaExtrasMatricula(extrasMatricula);
 
   const ajuste = modoMigracion

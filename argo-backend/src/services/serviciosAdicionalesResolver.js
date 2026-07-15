@@ -10,7 +10,8 @@ const { esTarifaVirtual, TARIFA_VIRTUAL } = require('../constants/tarifa');
 const { obtenerConfigServiciosAdicionales } = require('./configServiciosAdicionales');
 const { buscarPrograma, num, inferirTipoServ } = require('./programaServicio');
 const { resolverModalidadPrograma } = require('./programaModalidad');
-const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('./tipoCapacitacionMatch');
+const { cargarIndiceTipCap, programaCoincideIdTipCap } = require('./tipoCapacitacionMatch');
+const { esProgramaJornadasCap } = require('./jornadaCapacitacion');
 
 let cacheConfig = null;
 let cacheEn = 0;
@@ -62,11 +63,9 @@ async function coincideTipCap(regla, prog) {
   const filt = regla.idTipCaps || [];
   if (!filt.length) return true;
   const indice = await cargarIndiceTipCap();
-  const canon = resolverIdTipCapCanonico(prog?.idTipCap, indice);
-  return filt.some((id) => {
-    const c = resolverIdTipCapCanonico(id, indice);
-    return c === canon || String(id).trim() === String(prog?.idTipCap ?? '').trim();
-  });
+  // Comparación estricta por ID o etiqueta exacta. No usar solo el prefijo
+  // numérico: catálogos legacy pueden tener valores distintos con igual prefijo.
+  return filt.some((id) => programaCoincideIdTipCap(prog, id, indice));
 }
 
 function coincidePrefijoCodigo(regla, prog) {
@@ -142,6 +141,8 @@ async function evaluarRegla(regla, ctx) {
  */
 async function resolverServiciosAdicionales(ctx) {
   if (ctx.modoMigracion === true) return [];
+  // Derechos de grado / extras de técnicos no aplican a Jornadas de Capacitación.
+  if (ctx.prog && (await esProgramaJornadasCap(ctx.prog))) return [];
 
   const cfg = await cargarConfig();
   const items = [];
