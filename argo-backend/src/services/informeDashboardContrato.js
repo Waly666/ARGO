@@ -33,6 +33,66 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+function buildChartsJornada(clasesJ) {
+  const clasesFinalizadas = clasesJ.filter((c) => String(c.estado).toUpperCase() === 'FINALIZADO').length;
+  const clasesEnProceso = clasesJ.filter((c) => String(c.estado).toUpperCase() === 'EN PROCESO').length;
+  const progMap = new Map();
+  const instMap = new Map();
+  const alumnosSet = new Set();
+  const certSet = new Set();
+
+  for (const c of clasesJ) {
+    const progKey = c.idPrograma || c.programaNombre || '_sin_';
+    if (!progMap.has(progKey)) {
+      progMap.set(progKey, {
+        label: c.programaNombre || c.idPrograma || 'Sin programa',
+        alumnos: new Set(),
+      });
+    }
+
+    const instKey =
+      c.idEmpleadoInstructor != null && Number.isFinite(Number(c.idEmpleadoInstructor))
+        ? String(c.idEmpleadoInstructor)
+        : c.instructorNombre || '_sin_';
+    if (!instMap.has(instKey)) {
+      instMap.set(instKey, {
+        label: c.instructorNombre || 'Sin instructor',
+        value: 0,
+      });
+    }
+    if (String(c.estado).toUpperCase() === 'FINALIZADO') {
+      instMap.get(instKey).value += 1;
+    }
+
+    c.alumnos.forEach((a) => {
+      alumnosSet.add(a.numDoc);
+      progMap.get(progKey).alumnos.add(a.numDoc);
+      if (a.certificado) certSet.add(a.numDoc);
+    });
+  }
+
+  return {
+    clasesPorEstado: [
+      { label: 'Finalizadas', value: clasesFinalizadas },
+      { label: 'En proceso', value: clasesEnProceso },
+      {
+        label: 'Programadas',
+        value: Math.max(0, clasesJ.length - clasesFinalizadas - clasesEnProceso),
+      },
+    ],
+    certificacionAlumnos: [
+      { label: 'Certificados', value: certSet.size },
+      { label: 'Pendientes', value: Math.max(0, alumnosSet.size - certSet.size) },
+    ],
+    alumnosPorPrograma: [...progMap.values()]
+      .map((p) => ({ label: p.label, value: p.alumnos.size }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'es')),
+    clasesPorInstructor: [...instMap.values()]
+      .map((i) => ({ label: i.label, value: i.value }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'es')),
+  };
+}
+
 /**
  * Dashboard + detalle de capacitación de un contrato (para ficha Informes).
  * Filtros opcionales: idJornada, idClase, idPrograma, idInstructor (idEmpleado).
@@ -208,6 +268,7 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       clasesFinalizadas: clasesJ.filter((c) => String(c.estado).toUpperCase() === 'FINALIZADO').length,
       alumnosCapacitados: alumnosSet.size,
       alumnosCertificados: certSet.size,
+      charts: buildChartsJornada(clasesJ),
       clases: clasesJ,
     };
   });
@@ -416,6 +477,51 @@ function alcanceTitulo(alcance, data) {
   }
 }
 
+function alcanceResumenTitulo(alcance) {
+  switch (alcance) {
+    case 'jornada':
+      return 'Resumen gráfico de la jornada';
+    case 'clase':
+      return 'Resumen gráfico de la clase';
+    case 'programa':
+      return 'Resumen gráfico del programa';
+    case 'instructor':
+      return 'Resumen gráfico del instructor';
+    default:
+      return 'Resumen gráfico general del contrato';
+  }
+}
+
+function alcanceResumenNumericoTitulo(alcance) {
+  switch (alcance) {
+    case 'jornada':
+      return 'Resumen de la jornada';
+    case 'clase':
+      return 'Resumen de la clase';
+    case 'programa':
+      return 'Resumen del programa';
+    case 'instructor':
+      return 'Resumen del instructor';
+    default:
+      return 'Resumen general del contrato';
+  }
+}
+
+function alcanceDetalleTitulo(alcance) {
+  switch (alcance) {
+    case 'jornada':
+      return 'Desarrollo de la jornada';
+    case 'clase':
+      return 'Detalle de la clase y alumnos';
+    case 'programa':
+      return 'Desarrollo del programa';
+    case 'instructor':
+      return 'Desarrollo por instructor';
+    default:
+      return 'Desarrollo por jornadas';
+  }
+}
+
 function formatPct(n) {
   if (!Number.isFinite(n)) return '0%';
   const rounded = Math.round(n * 10) / 10;
@@ -593,9 +699,10 @@ function htmlPieChart(items, opts = {}) {
   </div>${htmlChartDataTable(slices, colLabel, colValue)}`;
 }
 
-function htmlChartsDashboard(charts) {
+function htmlChartsDashboard(charts, titulo = 'Resumen gráfico general del contrato') {
   const c = charts || {};
-  return `<div class="charts-grid">
+  return `<h3 class="chart-section-title">${esc(titulo)}</h3>
+  <div class="charts-grid charts-grid--compact">
     <section class="chart-card">
       <h3 class="sec">Alumnos por jornada</h3>
       <p class="chart-hint">Participación sobre el total de alumnos capacitados del gráfico.</p>
@@ -619,6 +726,33 @@ function htmlChartsDashboard(charts) {
   </div>`;
 }
 
+function htmlChartsJornada(jornada, titulo = 'Resumen gráfico', compact = false) {
+  const c = jornada?.charts || {};
+  return `<h3 class="chart-section-title chart-section-title--sub">${esc(titulo)}</h3>
+  <div class="charts-grid charts-grid--jornada${compact ? ' charts-grid--compact' : ''}">
+    <section class="chart-card">
+      <h3 class="sec">Certificación de alumnos</h3>
+      <p class="chart-hint">Estado de certificación de los alumnos capacitados en esta jornada.</p>
+      ${htmlBarChart(c.certificacionAlumnos || [], { colLabel: 'Indicador', colValue: 'Alumnos', colorOffset: 1 })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Clases por estado</h3>
+      <p class="chart-hint">Distribución del avance de clases de esta jornada.</p>
+      ${htmlPieChart(c.clasesPorEstado || [], { kind: 'estado', colLabel: 'Estado', colValue: 'Clases', unit: 'clases' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Alumnos por programa</h3>
+      <p class="chart-hint">Participación de alumnos capacitados por programa en esta jornada.</p>
+      ${htmlPieChart(c.alumnosPorPrograma || [], { kind: 'programa', colLabel: 'Programa', colValue: 'Alumnos', unit: 'alumnos' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Clases dictadas por instructor</h3>
+      <p class="chart-hint">Clases finalizadas por instructor dentro de esta jornada.</p>
+      ${htmlBarChart(c.clasesPorInstructor || [], { colLabel: 'Instructor', colValue: 'Clases', colorOffset: 4 })}
+    </section>
+  </div>`;
+}
+
 function htmlTablaAlumnos(alumnos) {
   if (!alumnos?.length) return '<p class="muted">Sin alumnos con asistencia.</p>';
   const rows = alumnos
@@ -628,6 +762,48 @@ function htmlTablaAlumnos(alumnos) {
     )
     .join('');
   return `<table class="t"><thead><tr><th>Documento</th><th>Alumno</th><th>Certificado</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function referenciaJornada(j) {
+  const etiqueta =
+    j?.indiceEnDia > 1 ? `Jornada ${j.indiceEnDia}` : 'Jornada';
+  const fecha = j?.fechaLabel && j.fechaLabel !== '—' ? j.fechaLabel : '';
+  const lugar = [j?.municipio, j?.direccion].filter(Boolean).join(' — ');
+  return [etiqueta, fecha, lugar].filter(Boolean).join(' · ');
+}
+
+function htmlEncabezadoJornada(j) {
+  const stats = [
+    `${j.numClases} clase(s)`,
+    `${j.alumnosCapacitados} capacitado(s)`,
+    `${j.alumnosCertificados} certificado(s)`,
+    j.estado ? `Estado: ${j.estado}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return `<h3 class="jornada-section-title">${esc(referenciaJornada(j))}</h3>
+  <p class="jornada-section-sub">${esc(stats)}</p>`;
+}
+
+function referenciaClase(cl) {
+  const etiqueta = `Clase ${cl.indiceClaseEnJornada || 1}`;
+  const programa = cl.programaNombre || 'Sin programa';
+  const instructor = cl.instructorNombre || 'Sin instructor';
+  return `${etiqueta} · ${programa} · ${instructor}`;
+}
+
+function htmlEncabezadoClase(cl) {
+  const numAlumnos = cl.alumnosInscritos ?? cl.alumnos?.length ?? 0;
+  const stats = [
+    cl.fechaLabel && cl.fechaLabel !== '—' ? cl.fechaLabel : '',
+    cl.estado ? `Estado: ${cl.estado}` : '',
+    `${numAlumnos} alumno(s)`,
+    cl.alumnosCertificados != null ? `${cl.alumnosCertificados} certificado(s)` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return `<h4 class="clase-section-title">${esc(referenciaClase(cl))}</h4>
+  <p class="clase-section-sub">${esc(stats)}</p>`;
 }
 
 /**
@@ -648,7 +824,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   let cuerpo = '';
 
   if (alcance === 'instructor') {
-    cuerpo += `<h3 class="sec">Clases dictadas por instructor</h3>`;
+    cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
     for (const inst of data.porInstructor || []) {
       const clases = (data.porClase || []).filter(
         (cl) =>
@@ -656,42 +832,57 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
             Number(cl.idEmpleadoInstructor) === Number(inst.idEmpleadoInstructor)) ||
           cl.instructorNombre === inst.instructorNombre,
       );
-      cuerpo += `<h4>${esc(inst.instructorNombre)} — ${inst.clasesDictadas} dictada(s) / ${inst.numClases} clase(s) · ${inst.alumnosCapacitados} alumno(s)</h4>`;
+      cuerpo += `<h3 class="jornada-section-title">Instructor · ${esc(inst.instructorNombre)}</h3>`;
+      cuerpo += `<p class="jornada-section-sub">${inst.clasesDictadas} dictada(s) / ${inst.numClases} clase(s) · ${inst.alumnosCapacitados} alumno(s)</p>`;
       for (const cl of clases) {
-        cuerpo += `<p class="sub"><strong>${esc(cl.fechaLabel)}</strong> · ${esc(cl.programaNombre)} · ${esc(cl.estado)}</p>`;
+        cuerpo += htmlEncabezadoClase(cl);
         cuerpo += htmlTablaAlumnos(cl.alumnos);
       }
     }
   } else if (alcance === 'programa') {
+    cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
     for (const p of data.porPrograma || []) {
-      cuerpo += `<h3 class="sec">${esc(p.programaNombre)}</h3>`;
-      cuerpo += `<p>${p.numClases} clase(s) · ${p.alumnosCapacitados} capacitado(s) · ${p.alumnosCertificados} certificado(s)</p>`;
+      cuerpo += `<h3 class="programa-section-title">Programa · ${esc(p.programaNombre)}</h3>`;
+      cuerpo += `<p class="programa-section-sub">${p.numClases} clase(s) · ${p.alumnosCapacitados} capacitado(s) · ${p.alumnosCertificados} certificado(s)</p>`;
       const clases = (data.porClase || []).filter((cl) => cl.idPrograma === p.idPrograma);
       for (const cl of clases) {
-        cuerpo += `<p class="sub"><strong>${esc(cl.fechaLabel)}</strong> · ${esc(cl.instructorNombre)} · ${esc(cl.estado)}</p>`;
+        cuerpo += htmlEncabezadoClase(cl);
         cuerpo += htmlTablaAlumnos(cl.alumnos);
       }
     }
   } else if (alcance === 'clase') {
+    cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
     for (const cl of data.porClase || []) {
-      cuerpo += `<h3 class="sec">Clase · ${esc(cl.programaNombre)}</h3>`;
-      cuerpo += `<p>${esc(cl.fechaLabel)} · Instructor: ${esc(cl.instructorNombre)} · Estado: ${esc(cl.estado)}</p>`;
+      cuerpo += htmlEncabezadoClase(cl);
       cuerpo += htmlTablaAlumnos(cl.alumnos);
     }
   } else {
     // contrato o jornada
-    for (const j of data.porJornada || []) {
-      cuerpo += `<h3 class="sec">Jornada ${esc(j.fechaLabel)}${j.municipio ? ` — ${esc(j.municipio)}` : ''}</h3>`;
-      cuerpo += `<p>${j.numClases} clase(s) · ${j.alumnosCapacitados} capacitado(s) · ${j.alumnosCertificados} certificado(s) · Estado: ${esc(j.estado)}</p>`;
+    const jornadasInforme = data.porJornada || [];
+    if (jornadasInforme.length) {
+      cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
+    }
+    for (const [indiceJornada, j] of jornadasInforme.entries()) {
+      cuerpo += htmlEncabezadoJornada(j);
+      if (alcance === 'contrato') {
+        cuerpo += htmlChartsJornada(j);
+      }
+      cuerpo += `<h3 class="chart-section-title chart-section-title--sub">Detalle de clases y alumnos</h3>`;
       for (const cl of j.clases || []) {
-        cuerpo += `<h4>Clase ${cl.indiceClaseEnJornada}: ${esc(cl.programaNombre)} · ${esc(cl.instructorNombre)}</h4>`;
+        cuerpo += htmlEncabezadoClase(cl);
         cuerpo += htmlTablaAlumnos(cl.alumnos);
+      }
+      if (indiceJornada < jornadasInforme.length - 1) {
+        cuerpo += `<div class="page-break" aria-hidden="true"></div>`;
       }
     }
   }
 
   const chartsBlock =
-    alcance === 'contrato' ? htmlChartsDashboard(data.charts) : '';
+    alcance === 'jornada'
+      ? htmlChartsJornada(data.porJornada?.[0], alcanceResumenTitulo(alcance), true)
+      : htmlChartsDashboard(data.charts, alcanceResumenTitulo(alcance));
+  const resumenNumericoTitulo = alcanceResumenNumericoTitulo(alcance);
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -700,19 +891,21 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
 <title>${esc(titulo)}</title>
 <style>
   ${atPage}
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; font-size: 10pt; }
-  .hdr { display: flex; gap: 14px; border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 12px; }
-  .logo { max-height: 64px; max-width: 160px; object-fit: contain; }
-  .logo-ph { width: 56px; height: 56px; border: 2px solid #1e3a5f; border-radius: 6px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#1e3a5f; }
-  h1 { margin: 0 0 4px; font-size: 14pt; color: #1e3a5f; }
-  .muted, .sub { color: #555; font-size: 9pt; }
-  .titulo { text-align: center; margin: 12px 0; padding: 10px; background: #f8f9fb; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-  .titulo h2 { margin: 0; font-size: 12pt; text-transform: uppercase; color: #1e3a5f; letter-spacing: .06em; }
-  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
-  .kpi { border: 1px solid #94a3b8; background: #edf2f7; padding: 8px; text-align: center; }
-  .kpi span { display:block; font-size: 8pt; text-transform: uppercase; color: #1e3a5f; }
-  .kpi strong { font-size: 14pt; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; font-size: 10pt; }
+  .hdr { display: flex; gap: 12px; align-items: center; border-bottom: 3px solid #1e3a5f; padding-bottom: 8px; margin-bottom: 8px; }
+  .logo { max-height: 52px; max-width: 140px; object-fit: contain; }
+  .logo-ph { width: 48px; height: 48px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; background: linear-gradient(135deg, #1e3a5f, #2d5580); }
+  h1 { margin: 0 0 3px; font-size: 13pt; color: #1e3a5f; letter-spacing: .01em; }
+  .muted, .sub { color: #64748b; font-size: 9pt; }
+  .titulo { text-align: center; margin: 8px 0; padding: 9px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #2d5580); color: #fff; box-shadow: 0 2px 5px rgba(15,23,42,.18); }
+  .titulo h2 { margin: 0 0 3px; font-size: 12pt; text-transform: uppercase; color: #fff; letter-spacing: .06em; }
+  .titulo .muted { color: #dbeafe; }
+  .titulo .muted strong { color: #fff; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+  .kpi { border: 1px solid #dbe3ee; border-top: 3px solid #1e3a5f; border-radius: 8px; background: linear-gradient(180deg, #ffffff, #f1f5fb); padding: 7px 5px; text-align: center; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+  .kpi span { display:block; font-size: 7.5pt; text-transform: uppercase; color: #64748b; letter-spacing: .03em; margin-bottom: 2px; }
+  .kpi strong { font-size: 13pt; color: #1e3a5f; }
   .sec { margin: 14px 0 6px; color: #1e3a5f; border-bottom: 1px solid #bbb; padding-bottom: 3px; text-transform: uppercase; font-size: 10pt; }
   h4 { margin: 10px 0 4px; font-size: 10pt; }
   .t { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt; }
@@ -721,9 +914,26 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   .t .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .chart-t { margin-top: 6px; font-size: 8pt; }
   .chart-t tfoot td { font-weight: 700; background: #f1f5f9; }
+  .chart-section-title { margin: 12px 0 6px; padding: 6px 10px; border-left: 4px solid #1e3a5f; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, #e2eaf5, #f4f7fb); color: #1e3a5f; font-size: 11pt; text-transform: uppercase; letter-spacing: .03em; break-after: avoid; page-break-after: avoid; }
+  .chart-section-title--sub { margin-top: 10px; font-size: 10pt; border-left-width: 3px; background: linear-gradient(90deg, #eef2f7, #fafbfc); color: #334155; }
+  .jornada-section-title { margin: 18px 0 4px; padding: 10px 12px; border-left: 5px solid #0f766e; border-radius: 0 8px 8px 0; background: linear-gradient(90deg, #d7efe9, #eefaf7); color: #134e4a; font-size: 12pt; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; box-shadow: 0 1px 3px rgba(15,23,42,.08); break-after: avoid; page-break-after: avoid; }
+  .jornada-section-sub { margin: 0 0 10px 12px; font-size: 9pt; color: #475569; }
+  .programa-section-title { margin: 18px 0 4px; padding: 10px 12px; border-left: 5px solid #7c3aed; border-radius: 0 8px 8px 0; background: linear-gradient(90deg, #ede9fe, #f7f5ff); color: #5b21b6; font-size: 12pt; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; box-shadow: 0 1px 3px rgba(15,23,42,.08); break-after: avoid; page-break-after: avoid; }
+  .programa-section-sub { margin: 0 0 10px 12px; font-size: 9pt; color: #64748b; }
+  .clase-section-title { margin: 12px 0 4px; padding: 8px 11px; border-left: 4px solid #b45309; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, #fdecd7, #fff8ef); color: #9a3412; font-size: 10.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; break-after: avoid; page-break-after: avoid; }
+  .clase-section-sub { margin: 0 0 8px 11px; font-size: 8.5pt; color: #64748b; }
+  .page-break { break-after: page; page-break-after: always; height: 0; }
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 16px; }
-  .chart-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px 10px; background: #fff; break-inside: avoid; page-break-inside: avoid; }
-  .chart-card .sec { margin-top: 2px; font-size: 9pt; }
+  .charts-grid--compact { gap: 8px; margin: 6px 0 10px; }
+  .charts-grid--compact .chart-card { padding: 6px 8px 7px; }
+  .charts-grid--compact .chart-hint { margin: 0 0 4px; font-size: 7pt; }
+  .charts-grid--compact .bars { min-height: 84px; }
+  .charts-grid--compact .pie-wrap { grid-template-columns: 74px 1fr; }
+  .charts-grid--compact .pie-visual { width: 74px; height: 74px; }
+  .charts-grid--compact .chart-t { margin-top: 4px; font-size: 7pt; }
+  .charts-grid--compact .chart-t th, .charts-grid--compact .chart-t td { padding: 2px 5px; }
+  .chart-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px 10px; background: #fff; box-shadow: 0 1px 4px rgba(15,23,42,.07); break-inside: avoid; page-break-inside: avoid; }
+  .chart-card .sec { margin-top: 0; margin-bottom: 4px; font-size: 9pt; border-bottom: none; color: #1e3a5f; }
   .chart-hint { margin: 0 0 8px; font-size: 7.5pt; color: #64748b; }
   .bars { display: flex; align-items: flex-end; gap: 8px; min-height: 110px; margin: 4px 0 8px; }
   .bar { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
@@ -746,7 +956,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   .pie-legend em { font-style: normal; color: #64748b; font-variant-numeric: tabular-nums; min-width: 2.2rem; text-align: right; }
   .leg-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; }
   .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
-  .ftr { margin-top: 18px; font-size: 8pt; color: #666; border-top: 1px solid #ddd; padding-top: 8px; }
+  .ftr { margin-top: 18px; font-size: 8pt; color: #64748b; border-top: 2px solid #1e3a5f; padding-top: 8px; }
   @media print {
     .no-print { display: none !important; }
     .charts-grid { grid-template-columns: 1fr 1fr; }
@@ -769,6 +979,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     <p class="muted">Presentado a: <strong>${esc(c.cliente || 'Empresa contratante')}</strong>${c.nit ? ` · NIT ${esc(c.nit)}` : ''}</p>
     <p class="muted">Contrato <strong>${esc(c.codContrato || c._id)}</strong>${c.ciudad ? ` · ${esc(c.ciudad)}` : ''}</p>
   </div>
+  <h3 class="chart-section-title">${esc(resumenNumericoTitulo)}</h3>
   <div class="kpis">
     <div class="kpi"><span>Jornadas</span><strong>${k.jornadas || 0}</strong></div>
     <div class="kpi"><span>Clases dictadas</span><strong>${k.clasesDictadas || 0}/${k.clasesTotales || 0}</strong></div>
@@ -776,6 +987,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     <div class="kpi"><span>Alumnos certificados</span><strong>${k.alumnosCertificados || 0}</strong></div>
   </div>
   ${chartsBlock}
+  <div class="page-break" aria-hidden="true"></div>
   ${cuerpo || '<p class="muted">No hay datos para el alcance seleccionado.</p>'}
   <div class="ftr">
     Generado el ${esc(fmtFechaSolo(data.generadoAt) || new Date().toLocaleDateString('es-CO'))}.
