@@ -417,6 +417,33 @@
   }
 }
 
+.btn-chat {
+  position: relative;
+
+  .btn-chat-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+
+  .btn-chat-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(8, 18, 44, 0.9);
+    line-height: 1;
+  }
+}
+
 .btn-tool {
   padding: 8px 14px;
   border-radius: var(--btn-radius);

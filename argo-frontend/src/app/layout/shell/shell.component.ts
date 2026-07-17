@@ -54,6 +54,10 @@ import { InstructorPortalBannerComponent } from '../../features/instructores/ins
 import { ForoMensajeBannerComponent } from '../../features/aula-virtual/foro-mensaje-banner.component';
 import { ComprobanteHoyBannerComponent } from '../../features/alumnos/comprobante-hoy-banner.component';
 import { ForoMensajeAlertService } from '../../core/services/foro-mensaje-alert.service';
+import { ChatService } from '../../core/services/chat.service';
+import { ChatMensajeAlertService } from '../../core/services/chat-mensaje-alert.service';
+import { ChatPanelComponent } from '../../features/chat/chat-panel.component';
+import { ChatMensajeBannerComponent } from '../../features/chat/chat-mensaje-banner.component';
 import {
   ComprobanteHoyAlertService,
   ComprobanteHoyTipo,
@@ -98,7 +102,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -138,6 +142,8 @@ export class ShellComponent {
   private instructorPortalSvc = inject(InstructorPortalService);
   private instructorPortalAlert = inject(InstructorPortalAlertService);
   private foroMensajeAlert = inject(ForoMensajeAlertService);
+  readonly chatSvc = inject(ChatService);
+  private chatMensajeAlert = inject(ChatMensajeAlertService);
   private alertaPagoSvc = inject(AlertaPagoAlumnoService);
   private vehiculoSvc = inject(VehiculoService);
   private inspeccionSvc = inject(InspeccionVehiculoService);
@@ -303,6 +309,8 @@ export class ShellComponent {
       this.foroMensajeAlert.alertas().length > 0,
   );
 
+  mostrarBannerChatMensaje = computed(() => this.chatMensajeAlert.alertas().length > 0);
+
   mostrarBannerCertificado = computed(
     () => this.mostrarAlertaCertificado() && this.certAlertSvc.alertas().length > 0,
   );
@@ -414,7 +422,8 @@ export class ShellComponent {
       this.mostrarBannerClasesCeaCreado() ||
       this.mostrarBannerClaseProximaCea() ||
       this.mostrarBannerInstructorPortal() ||
-      this.mostrarBannerForoMensaje(),
+      this.mostrarBannerForoMensaje() ||
+      this.mostrarBannerChatMensaje(),
   );
 
   private readonly menuAll: MenuEntry[] = [
@@ -1151,7 +1160,13 @@ export class ShellComponent {
     this.iniciarPollAlertasClaseProximaCea();
     this.iniciarPollInstructorPortal();
     this.iniciarForoMensajeAlert();
+    this.iniciarChatInterno();
     this.iniciarPollPermisosSesion();
+  }
+
+  private iniciarChatInterno(): void {
+    if (!this.auth.isAuth()) return;
+    this.chatSvc.conectar();
   }
 
   private pollIntervalMs(...keys: string[]): number {
@@ -1736,6 +1751,7 @@ export class ShellComponent {
 
   logout() {
     this.foroMensajeAlert.desconectar();
+    this.chatSvc.desconectar();
     this.auth.logout();
   }
   iconClass(tone?: string): string {

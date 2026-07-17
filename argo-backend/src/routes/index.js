@@ -61,5 +61,6 @@ router.use('/pasarela', require('./pasarela'));
 router.use('/webhooks', require('./webhooks'));
 router.use('/combos', require('./combos'));
 router.use('/foro', require('./foro'));
+router.use('/chat', require('./chat'));
 
 module.exports = router;

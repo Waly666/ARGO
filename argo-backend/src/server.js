@@ -56,9 +56,11 @@ const HOST = process.env.HOST || '0.0.0.0';
       .catch((err) => console.warn('[ARGO] sync tipoEgreso:', err.message));
 
     const { initForoSocket } = require('./services/foroSocket');
+    const { initChatSocket } = require('./services/chatSocket');
     const http = require('http');
     const httpServer = http.createServer(app);
-    initForoSocket(httpServer);
+    const io = initForoSocket(httpServer);
+    initChatSocket(io);
 
     const server = httpServer.listen(PORT, HOST, () => {
       console.log('');

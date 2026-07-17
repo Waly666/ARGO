@@ -183,6 +183,7 @@
 
 .hal-theme-cea-proxima,
 .hal-theme-foro,
+.hal-theme-chat,
 .hal-theme-instructor,
 .hal-theme-cert-vence-aviso {
   @include hali-level(
@@ -324,7 +325,8 @@
   animation-duration: 0.7s;
 }
 
-.hal-theme-foro .hal-link-meta { color: #93c5fd; }
+.hal-theme-foro .hal-link-meta,
+.hal-theme-chat .hal-link-meta { color: #93c5fd; }
 
 .hal-row-meta-alcanzada {
   background: rgba(54, 211, 153, 0.32);

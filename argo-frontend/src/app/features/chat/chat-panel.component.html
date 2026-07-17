@@ -1,0 +1,129 @@
+@if (chat.abierto()) {
+  <div class="chat-backdrop" (click)="chat.cerrarPanel()" aria-hidden="true"></div>
+  <aside class="chat-panel" role="dialog" aria-label="Mensajería interna">
+    <header class="chat-header">
+      <div class="chat-header-title">
+        <span class="chat-header-icon" aria-hidden="true">💬</span>
+        <div>
+          <h2>Mensajes</h2>
+          <p>Usuarios del sistema</p>
+        </div>
+      </div>
+      <button type="button" class="chat-close" (click)="chat.cerrarPanel()" title="Cerrar">×</button>
+    </header>
+
+    <div class="chat-body">
+      <section class="chat-sidebar">
+        <div class="chat-search">
+          <input
+            type="search"
+            placeholder="Buscar usuario…"
+            [ngModel]="filtro()"
+            (ngModelChange)="filtro.set($event)"
+            autocomplete="off"
+          />
+        </div>
+
+        @if (chat.cargandoContactos() && !chat.contactos().length) {
+          <p class="chat-empty">Cargando contactos…</p>
+        } @else if (!contactosFiltrados().length) {
+          <p class="chat-empty">Sin contactos</p>
+        } @else {
+          <ul class="chat-contactos">
+            @for (c of contactosFiltrados(); track c._id) {
+              <li>
+                <button
+                  type="button"
+                  class="chat-contacto"
+                  [class.active]="chat.activoId() === c._id"
+                  (click)="seleccionar(c)"
+                >
+                  <span class="chat-avatar" [class.online]="c.enLinea">
+                    @if (fotoUrl(c.urlFoto); as foto) {
+                      <img [src]="foto" [alt]="c.nombre" />
+                    } @else {
+                      <span class="chat-iniciales">{{ iniciales(c.nombre) }}</span>
+                    }
+                    <span class="chat-dot" [class.on]="c.enLinea" title="{{ c.enLinea ? 'En línea' : 'Desconectado' }}"></span>
+                  </span>
+                  <span class="chat-contacto-meta">
+                    <span class="chat-contacto-nombre">{{ c.nombre }}</span>
+                    <span class="chat-contacto-sub">
+                      @if (c.ultimoMensaje) {
+                        {{ c.ultimoMensaje.texto }}
+                      } @else {
+                        {{ c.rol || 'usuario' }}
+                      }
+                    </span>
+                  </span>
+                  @if (c.noLeidos > 0) {
+                    <span class="chat-badge">{{ c.noLeidos > 99 ? '99+' : c.noLeidos }}</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="chat-thread">
+        @if (!chat.activoId()) {
+          <div class="chat-placeholder">
+            <p>Selecciona un usuario para conversar</p>
+            <span>Solo verás en línea a quienes tienen la app abierta.</span>
+          </div>
+        } @else {
+          <div class="chat-thread-head">
+            @if (chat.contactoActivo(); as act) {
+              <span class="chat-avatar sm" [class.online]="act.enLinea">
+                @if (fotoUrl(act.urlFoto); as foto) {
+                  <img [src]="foto" [alt]="act.nombre" />
+                } @else {
+                  <span class="chat-iniciales">{{ iniciales(act.nombre) }}</span>
+                }
+                <span class="chat-dot" [class.on]="act.enLinea"></span>
+              </span>
+              <div>
+                <strong>{{ act.nombre }}</strong>
+                <small>{{ act.enLinea ? 'En línea' : 'Desconectado' }} · {{ act.rol }}</small>
+              </div>
+            }
+          </div>
+
+          <div class="chat-hilo" #hilo>
+            @if (chat.cargandoMensajes()) {
+              <p class="chat-empty">Cargando mensajes…</p>
+            } @else if (!chat.mensajes().length) {
+              <p class="chat-empty">Aún no hay mensajes. ¡Saluda!</p>
+            } @else {
+              @for (m of chat.mensajes(); track m._id) {
+                <div class="chat-burbuja" [class.mio]="esMio(m.deId)" [class.ajeno]="!esMio(m.deId)">
+                  <div class="chat-burbuja-texto">{{ m.texto }}</div>
+                  <div class="chat-burbuja-meta">
+                    <time>{{ m.createdAt | date: 'shortTime' }}</time>
+                    @if (esMio(m.deId)) {
+                      <span class="chat-leido" [class.ok]="m.leido">{{ m.leido ? 'Leído' : 'Enviado' }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="chat-composer">
+            <textarea
+              rows="1"
+              placeholder="Escribe un mensaje…"
+              [ngModel]="borrador()"
+              (ngModelChange)="borrador.set($event)"
+              (keydown)="onKeydown($event)"
+            ></textarea>
+            <button type="button" class="chat-send" [disabled]="!borrador().trim()" (click)="enviar()">
+              Enviar
+            </button>
+          </div>
+        }
+      </section>
+    </div>
+  </aside>
+}

@@ -130,6 +130,9 @@
           @if (mostrarBannerForoMensaje()) {
             <argo-foro-mensaje-banner class="head-alerta-pago-wrap" />
           }
+          @if (mostrarBannerChatMensaje()) {
+            <argo-chat-mensaje-banner class="head-alerta-pago-wrap" />
+          }
         </div>
         }
         @if (mostrarToastJornadaLive()) {
@@ -161,6 +164,18 @@
         <span class="user" *ngIf="user() as u">
           <span [ngClass]="capRol(u.rol)">{{ u.rol || 'usuario' }}</span>
         </span>
+        <button
+          type="button"
+          class="btn-icon btn-chat"
+          title="Mensajes"
+          (click)="chatSvc.togglePanel()"
+          [attr.aria-label]="chatSvc.totalNoLeidos() ? 'Mensajes (' + chatSvc.totalNoLeidos() + ' sin leer)' : 'Mensajes'"
+        >
+          <span class="btn-chat-icon" aria-hidden="true">💬</span>
+          @if (chatSvc.totalNoLeidos() > 0) {
+            <span class="btn-chat-badge">{{ chatSvc.totalNoLeidos() > 99 ? '99+' : chatSvc.totalNoLeidos() }}</span>
+          }
+        </button>
         <button type="button" class="btn-icon" title="Panel" routerLink="/app/dashboard">⌂</button>
         <button type="button" class="btn-tool btn-dash-red" (click)="logout()">Salir</button>
       </div>
@@ -171,3 +186,5 @@
     </main>
   </div>
 </div>
+
+<argo-chat-panel />
