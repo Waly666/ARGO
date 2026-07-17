@@ -47,15 +47,16 @@
   }
 
   &.sheet {
-    width: min(1480px, calc(100vw - 28px));
+    width: min(1680px, calc(100vw - 12px));
   }
 
   &.tall {
-    max-height: calc(100vh - 48px);
+    max-height: calc(100vh - 20px);
   }
 
   &.sheet.tall {
-    max-height: calc(100vh - 36px);
+    height: min(94vh, calc(100vh - 20px));
+    max-height: calc(100vh - 20px);
   }
 }
 
@@ -99,15 +100,15 @@
 }
 
 .fm-panel.sheet .fm-header {
-  padding: 18px 24px 12px;
+  padding: 12px 18px 8px;
 }
 
 .fm-panel.sheet .fm-body {
-  padding: 16px 24px 20px;
+  padding: 10px 18px 12px;
 }
 
 .fm-panel.sheet .fm-footer {
-  padding: 12px 24px 18px;
+  padding: 8px 18px 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }

@@ -769,6 +769,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   modalCrearClase = signal(false);
   /** 'nuevo' = crea; 'editar' = abre clase existente */
   modalModoClase = signal<'nuevo' | 'editar'>('nuevo');
+  /** Ficha activa del modal de edición de clase. */
+  modalClaseFicha = signal<'datos' | 'alumnos'>('datos');
   subiendoFotoEvidencia = signal(false);
   modalHoraInicio = signal('');
   modalHoraFin = signal('');
@@ -1435,6 +1437,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   abrirModalEditarClase(c: any) {
     this.modalModoClase.set('editar');
+    this.modalClaseFicha.set('datos');
     this.claseSel.set(c._id);
     this.claseActiva.set(c);
     this.modalCrearJornadaId.set(String(c.idJornada || ''));
@@ -3990,6 +3993,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         next: ({ c, matResults }) => {
           this.aplicarContratoSync(c.contrato);
           this.modalModoClase.set('editar');
+          this.modalClaseFicha.set('datos');
           this.modalCrearClase.set(true);
           this.claseSel.set(c._id);
           this.claseActiva.set(c);

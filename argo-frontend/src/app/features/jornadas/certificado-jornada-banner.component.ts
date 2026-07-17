@@ -30,6 +30,8 @@ export class CertificadoJornadaBannerComponent {
       id: a.id,
       title: this.titulo(a),
       rowClass: this.rowClass(a.tipoFormatoCert),
+      badge: a.origenLabel,
+      badgeClass: a.origen ? `hal-badge-origen-${a.origen}` : undefined,
     })),
   );
 

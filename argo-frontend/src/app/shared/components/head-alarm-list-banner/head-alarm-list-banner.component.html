@@ -34,7 +34,12 @@
                 [queryParams]="item.queryParams || null"
                 class="hal-link"
                 [ngClass]="item.rowClass">
-                <span class="hal-link-title">{{ item.title }}</span>
+                <span class="hal-link-title">
+                  @if (item.badge) {
+                    <span class="hal-badge" [ngClass]="item.badgeClass">{{ item.badge }}</span>
+                  }
+                  {{ item.title }}
+                </span>
                 @if (item.meta) {
                   <span class="hal-link-meta">{{ item.meta }}</span>
                 }
@@ -45,7 +50,12 @@
                 class="hal-link hal-link--btn"
                 [ngClass]="item.rowClass"
                 (click)="onItemClick(item, $event)">
-                <span class="hal-link-title">{{ item.title }}</span>
+                <span class="hal-link-title">
+                  @if (item.badge) {
+                    <span class="hal-badge" [ngClass]="item.badgeClass">{{ item.badge }}</span>
+                  }
+                  {{ item.title }}
+                </span>
                 @if (item.meta) {
                   <span class="hal-link-meta">{{ item.meta }}</span>
                 }

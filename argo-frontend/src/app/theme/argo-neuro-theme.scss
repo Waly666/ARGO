@@ -45,21 +45,40 @@
   }
 }
 
-.dash-page .kpi-row {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 14px;
-}
-
 .dash-page .dash-hero {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.dash-page .kpi-hero-grid {
+/* Ambas filas de indicadores: 6 columnas idénticas para tarjetas uniformes */
+.dash-page .kpi-hero-grid,
+.dash-page .kpi-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
+  width: 100%;
+}
+
+@media (max-width: 1280px) {
+  .dash-page .kpi-hero-grid,
+  .dash-page .kpi-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .dash-page .kpi-hero-grid,
+  .dash-page .kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 460px) {
+  .dash-page .kpi-hero-grid,
+  .dash-page .kpi-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dash-page .dash-section-title {
@@ -86,13 +105,10 @@
   opacity: 0.85;
 }
 
-.dash-page .kpi-hero-grid .kpi-card {
-  min-height: 128px;
-}
-
 .dash-page .kpi-card {
   padding: 1.15rem 1.1rem 1.1rem;
-  min-height: 118px;
+  min-height: 128px;
+  height: 100%;
   background: var(--surface-elevated);
   border-color: var(--line-soft);
   box-shadow: var(--shadow-sm);

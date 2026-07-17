@@ -25,6 +25,7 @@ import {
   FacturacionService,
 } from '../../../core/services/facturacion.service';
 import { ComprobanteHoyAlertService } from '../../../core/services/comprobante-hoy-alert.service';
+import { CertificadoJornadaAlertService } from '../../../core/services/certificado-jornada-alert.service';
 import { AlertaPagoAlumnoService } from '../../../core/services/alerta-pago-alumno.service';
 import { requiereReferenciaPago } from '../../../core/utils/referencia-pago.util';
 import { leerImagenSoporte } from '../../../core/utils/pago-soporte.helpers';
@@ -66,6 +67,7 @@ export class PagosComponent {
   permisoSvc = inject(PermisoService);
   private router = inject(Router);
   private comprobanteAlertSvc = inject(ComprobanteHoyAlertService);
+  private certAlertSvc = inject(CertificadoJornadaAlertService);
   private alertaPagoSvc = inject(AlertaPagoAlumnoService);
   private route = inject(ActivatedRoute);
   private catSvc = inject(CatalogoService);
@@ -691,6 +693,14 @@ export class PagosComponent {
               nombreCompleto: this.store.nombreCompleto() ?? undefined,
               alumnoId: this.store.alumno()?._id ? String(this.store.alumno()!._id) : undefined,
             });
+            // Dispara el banner de "Certificado recién emitido" al instante,
+            // sin esperar al poll de fondo (evita el desfase de ~45 s).
+            for (const cert of certs) {
+              this.certAlertSvc.notificarDesdeRespuesta(
+                cert as Record<string, unknown>,
+                this.store.nombreCompleto() ?? undefined,
+              );
+            }
             void this.flujoPostPago(ing, certs);
           }
         },

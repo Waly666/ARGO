@@ -15,7 +15,6 @@ const GRUPOS = [
     label: 'Jornadas Cap.',
     alarmas: [
       { key: 'alarmas.jornadas.en_proceso', label: 'Jornada(s) EN PROCESO hoy (banner superior)' },
-      { key: 'alarmas.jornadas.certificado_nuevo', label: 'Certificado recién emitido (banner superior)' },
       { key: 'alarmas.jornadas.live_toast', label: 'Toast al crear clases o jornadas' },
     ],
   },
@@ -82,6 +81,10 @@ const GRUPOS = [
     id: 'certificados',
     label: 'Certificados',
     alarmas: [
+      {
+        key: 'alarmas.jornadas.certificado_nuevo',
+        label: 'Certificado recién emitido — jornada, normal y aula virtual (banner superior)',
+      },
       {
         key: 'alarmas.certificados.vencimiento',
         label: 'Certificados por vencer (banner superior)',

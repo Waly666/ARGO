@@ -1386,6 +1386,7 @@
         </div>
       }
 
+
       <div id="clase-panel-ops" class="clase-panel" *ngIf="claseActiva() as cl">
         <h3>Clase seleccionada</h3>
         <ul class="clase-panel-info">
@@ -1415,6 +1416,12 @@
       <div class="clase-estado-bar" *ngIf="modalModoClase() === 'editar' && claseActiva() as cl">
         <span class="estado-label">Estado</span>
         <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ labelEstadoClaseAmigable(cl.estado) }}</span>
+        <span class="hint">
+          Fecha:
+          <strong [ngClass]="capFechaJor(cl.fechaClase || cl.fechaJornada || modalFechaClase())">
+            {{ fmtFecha(cl.fechaClase || cl.fechaJornada || modalFechaClase()) || '—' }}
+          </strong>
+        </span>
         @if (claseModalEnProceso() && cl.horaInicio) {
           <span class="clase-cronometro" aria-live="polite">{{ cronometroDisplay() }}</span>
         }
@@ -1446,12 +1453,7 @@
       }
 
       @if (modalModoClase() === 'editar' && claseActiva(); as cl) {
-        @if (cl.estado === 'FINALIZADO') {
-          <p class="hint hint-ok">
-            Esta clase ya está <strong>finalizada</strong>. Puede seguir matriculando alumnos y usar
-            <strong>«Reprocesar certificados»</strong> para emitir los que falten.
-          </p>
-        } @else if (!operacionEspecialActiva() && !esFechaHoy(cl.fechaClase || cl.fechaJornada) && !cl.horaInicio) {
+        @if (!operacionEspecialActiva() && !esFechaHoy(cl.fechaClase || cl.fechaJornada) && !cl.horaInicio) {
           <p class="hint hint-warn">
             Esta clase es de otro día. Solo puede <strong>iniciarla el día programado</strong> (hoy).
           </p>
@@ -1664,401 +1666,607 @@
           </aside>
         </div>
       } @else {
-        <div class="clase-modal-edit-layout">
-          <div class="clase-modal-edit-main">
-      <h3 class="clase-modal-section">Datos de la clase</h3>
-      <div
-        class="clase-modal-datos-grid"
-        [class.sin-matriculados]="totalAlumnosMatriculadosModal() === 0">
-        <div class="cm-field cm-jornada">
-          <argo-catalogo-enum-buscar
-            label="Jornada"
-            placeholder="Seleccione jornada…"
-            [textoInicial]="textoJornadaModal()"
-            [modoCombo]="true"
-            [remoto]="false"
-            [minLength]="1"
-            [disabled]="true"
-            [opcionesLocales]="opcionesJornadasCrear()"
-            (seleccionado)="onJornadaModalPick($event)"
-            (limpiado)="onJornadaModalLimpiar()"
-          />
-        </div>
-        <div class="cm-field cm-fecha">
-          <label>Fecha</label>
-          <p class="fecha-clase-readonly" [ngClass]="capFechaJor(modalFechaClase())">
-            {{ modalFechaClase() ? fmtFecha(modalFechaClase()) : '—' }}
-          </p>
-        </div>
-        <div class="cm-field cm-ubicacion cm-ubicacion--full">
-          <label>Ubicación</label>
-          <div class="ubicacion-chips ubicacion-chips--compact" role="group" aria-label="Ubicación">
-            @for (u of ubicaciones; track u) {
-              <button
-                type="button"
-                class="ubicacion-chip"
-                [class.active]="nuevaClaseUbic() === u"
-                (click)="seleccionarUbicacionClase(u)">
-                {{ u }}
-              </button>
-            }
-          </div>
-        </div>
-      </div>
-
-      @if (modalModoClase() === 'editar' && (puedeEditarHorarioClase() || claseSel())) {
-        <div class="clase-modal-extra-stack">
-          @if (puedeEditarHorarioClase()) {
-            <div class="cm-panel cm-horario argo-form-section variant-horario">
-              <h3 class="clase-modal-section">Horario de la clase</h3>
-              <p class="hint hint-compact">Hora de inicio y fin editables según criterio del instructor (calendario y duración real).</p>
-              <div class="clase-horario-admin horario-manual">
-                <div class="cm-field horario-manual-col">
-                  <label>Inicio</label>
-                  <argo-hora-12-input
-                    [minuteStep]="15"
-                    [showPreview]="false"
-                    [value]="modalHoraInicio() || '08:00'"
-                    (valueChange)="modalHoraInicio.set($event)" />
-                </div>
-                <div class="cm-field horario-manual-col">
-                  <label>Fin</label>
-                  <argo-hora-12-input
-                    [minuteStep]="15"
-                    [showPreview]="false"
-                    [value]="modalHoraFin() || '10:00'"
-                    (valueChange)="modalHoraFin.set($event)" />
-                </div>
-                <div class="cm-field horario-manual-col">
-                  <label>Duración</label>
-                  <p class="horario-readonly-val">{{ lapsoClaseEtiqueta() || '—' }}</p>
-                </div>
-              </div>
-            </div>
-          }
-          @if (claseSel()) {
-            <div class="cm-panel cm-evidencia">
-              <h3 class="clase-modal-section">Evidencia fotográfica</h3>
-              <div class="evidencia-foto-panel compact">
-                @if (claseActiva()?.urlforo) {
-                  <img
-                    [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
-                    alt="Evidencia de clase"
-                    class="evidencia-preview" />
-                } @else {
-                  <p class="hint hint-compact">Sin foto cargada.</p>
-                }
-                <label class="evidencia-upload">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    (change)="onFotoEvidenciaSelected($event)"
-                    [disabled]="subiendoFotoEvidencia()" />
-                  <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto' }}</span>
-                </label>
-              </div>
-            </div>
-          }
-        </div>
-      }
-
-      <div
-        class="clase-modal-datos-grid clase-modal-datos-grid--continuacion"
-        [class.sin-matriculados]="totalAlumnosMatriculadosModal() === 0">
-        <div class="cm-field cm-instructor">
-          @if (puedeAsignarInstructor()) {
-            <argo-catalogo-enum-buscar
-              label="Instructor"
-              placeholder="Sin asignar — seleccione para programar"
-              [textoInicial]="textoInstructorModal()"
-              [modoCombo]="true"
-              [remoto]="false"
-              [minLength]="1"
-              [opcionesLocales]="opcionesInstructoresModal()"
-              (seleccionado)="onInstructorModalPick($event)"
-              (limpiado)="onInstructorModalLimpiar()"
-            />
-            <p class="hint hint-compact">Las clases autogeneradas vienen sin instructor; asígnelo aquí al programar.</p>
-          } @else {
-            <label>Instructor</label>
-            <p class="instructor-readonly compact">
-              <span [ngClass]="capInstructor(labelInstructorClase(claseActiva()))">{{ labelInstructorClase(claseActiva()) }}</span>
-            </p>
-            @if (!claseTieneInstructor(claseActiva())) {
-              <p class="hint hint-compact hint-warn">Sin instructor programado. Solicite la asignación en administración de jornadas.</p>
-            }
-          }
-        </div>
-      </div>
-
-      <div class="cm-field cm-programa cm-programa-destacado">
-        <argo-catalogo-enum-buscar
-          label="Programa"
-          placeholder="Seleccione o escriba programa…"
-          [textoInicial]="textoProgramaModalCombo()"
-          [modoCombo]="true"
-          [remoto]="false"
-          [minLength]="1"
-          [opcionesLocales]="opcionesProgramasModal()"
-          (seleccionado)="onProgramaModalPick($event)"
-          (limpiado)="onProgramaModalLimpiar()"
-        />
-        @if (programasJornada().length === 0) {
-          <p class="hint hint-compact hint-warn">No se cargaron programas. Verifique permisos o recargue la página.</p>
-        }
-      </div>
-          </div>
-
-          <aside class="clase-modal-edit-side" aria-label="Alumnos inscritos">
-      <h3 class="clase-modal-section clase-modal-section--side">Alumnos</h3>
-      @if (totalAlumnosMatriculadosModal() > 0) {
-        <p class="hint hint-compact clase-matriculados-resumen">
-          <strong>{{ totalAlumnosMatriculadosModal() }}</strong> inscrito(s)
-          @if (inscritosConAsistencia() > 0) {
-            · {{ inscritosConAsistencia() }} con asistencia
-          }
-          @if (inscritosSinAsistencia() > 0) {
-            · {{ inscritosSinAsistencia() }} pendiente(s)
-          }
-          @if (inscritosCertificadosContrato() > 0) {
-            · {{ inscritosCertificadosContrato() }} certificado(s) en contrato
-          }
-        </p>
-      }
-
-      @if (modalModoClase() === 'editar') {
-        <div class="clase-anterior-copiar clase-anterior-copiar--picker">
-          <div class="field">
-            <label>Copiar alumnos desde clase del contrato</label>
-            <select
-              [ngModel]="idClaseFuenteCopiar()"
-              (ngModelChange)="onClaseFuenteCopiarChange($event)">
-              <option value="">Seleccione una clase del contrato…</option>
-              @for (o of opcionesClasesCopiarContrato(); track o.value) {
-                <option [value]="o.value">{{ o.label }}</option>
+        <div class="clase-modal-edit-fichas">
+          <div class="vista-toggle clase-modal-fichas-toggle" role="tablist" aria-label="Secciones de la clase">
+            <button
+              type="button"
+              role="tab"
+              [class.active]="modalClaseFicha() === 'datos'"
+              [attr.aria-selected]="modalClaseFicha() === 'datos'"
+              (click)="modalClaseFicha.set('datos')">
+              1. Datos y horario
+            </button>
+            <button
+              type="button"
+              role="tab"
+              [class.active]="modalClaseFicha() === 'alumnos'"
+              [attr.aria-selected]="modalClaseFicha() === 'alumnos'"
+              (click)="modalClaseFicha.set('alumnos')">
+              2. Alumnos
+              @if (totalAlumnosMatriculadosModal() > 0) {
+                <span class="clase-ficha-badge">{{ totalAlumnosMatriculadosModal() }}</span>
               }
-            </select>
+            </button>
           </div>
-          @if (opcionesClasesCopiarContrato().length === 0) {
-            <p class="hint hint-compact hint-warn">
-              No hay otras clases en este contrato para copiar alumnos.
-            </p>
-          } @else {
-            <p class="hint hint-compact">
-              Elija la clase y verá los alumnos para marcar y matricular en esta.
-            </p>
-          }
-        </div>
-      }
-      @if (cargandoAlumnosClaseAnterior()) {
-        <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
-      }
-      @if (claseAnteriorSinPrevia() && modalModoClase() === 'editar' && !idClaseFuenteCopiar()) {
-        <p class="hint hint-compact">
-          No hay clase «anterior» automática. Use el selector para tomar alumnos de otra clase del contrato.
-        </p>
-      }
-      @if (claseAnteriorMensajeVacio()) {
-        <p class="hint hint-compact hint-warn">{{ claseAnteriorMensajeVacio() }}</p>
-      }
-      @if (alumnosClaseAnteriorDisponibles().length > 0) {
-          <div class="clase-anterior-copiar">
-            <div class="clase-anterior-copiar-head">
-              <span class="clase-anterior-copiar-title">
-                ↻ Alumnos de «{{ claseAnteriorInfo()?.programaNombre || 'la clase elegida' }}{{ claseAnteriorInfo()?.carpaNombre ? ' — ' + claseAnteriorInfo()!.carpaNombre : '' }}»
-              </span>
-              <div class="clase-anterior-copiar-acciones">
-                <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
-                <button type="button" class="mini ghost" (click)="limpiarSeleccionAlumnosClaseAnterior()">Ninguno</button>
-              </div>
-            </div>
-            <p class="hint hint-compact">
-              Marque quiénes continúan en esta clase (opcional) y pulse «Matricular seleccionados».
-            </p>
-            <ul class="clase-anterior-copiar-lista">
-              @for (a of alumnosClaseAnteriorDisponibles(); track a.numDoc) {
-                <li [class.certificado]="!alumnoPuedeMatricularDesdeAnterior(a)">
-                  <label class="clase-anterior-copiar-item">
-                    <input
-                      type="checkbox"
-                      [checked]="alumnoClaseAnteriorSeleccionado(a.numDoc)"
-                      [disabled]="!alumnoPuedeMatricularDesdeAnterior(a)"
-                      (change)="toggleAlumnoClaseAnterior(a.numDoc, $any($event.target).checked)" />
-                    <span class="buscar-name">{{ a.nombreCompleto || a.numDoc }}</span>
-                    <span class="buscar-meta">{{ a.numDoc }}</span>
-                  </label>
-                  @if (a.yaCertificadoContrato) {
-                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado en este contrato; puede seguir matriculándose en otras clases">
-                      Ya certificado
-                    </span>
-                  }
-                </li>
-              }
-            </ul>
-            <div class="clase-anterior-copiar-footer">
-              <button
-                type="button"
-                class="mini primary"
-                (click)="matricularSeleccionClaseAnterior()"
-                [disabled]="matriculandoDesdeAnterior() || alumnosClaseAnteriorSeleccion().size === 0">
-                {{ matriculandoDesdeAnterior() ? 'Matriculando…' : 'Matricular seleccionados (' + alumnosClaseAnteriorSeleccion().size + ')' }}
-              </button>
-            </div>
-          </div>
-      }
 
-      <p class="hint hint-compact">
-        Busque por cédula o nombre. Marque asistencia cuando la clase esté <strong>en curso</strong>.
-      </p>
-
-      <div class="clase-alumno-buscar">
-        <div class="buscar-wrap">
-          <span class="buscar-ic" aria-hidden="true">◎</span>
-          <input
-            type="text"
-            placeholder="Buscar alumno por nombre o cédula…"
-            [ngModel]="alumnoBusqueda()"
-            (ngModelChange)="onAlumnoBusquedaInput($event)"
-            (focus)="focusAlumnoBusqueda()"
-            autocomplete="off" />
-          <button type="button" class="ghost mini" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
-        </div>
-
-        @if (alumnoBusquedaOpen()) {
-          <div class="buscar-dropdown">
-            @if (alumnoBusquedaLoading()) {
-              <p class="buscar-msg">Buscando…</p>
-            } @else if (alumnoBusquedaResults().length === 0) {
-              <p class="buscar-msg">Sin resultados. Verifique el texto o cree un alumno nuevo.</p>
-            } @else {
-              <ul class="buscar-list">
-                @for (r of alumnoBusquedaResults(); track r._id) {
-                  <li>
-                    <div class="buscar-info">
-                      <span class="buscar-name">{{ nombreAlumnoItem(r) }}</span>
-                      <span class="buscar-meta">{{ r.tipoDoc || 'CC' }} {{ r.numDoc }}</span>
+          @if (modalClaseFicha() === 'datos') {
+            <div class="clase-modal-ficha clase-modal-ficha--datos" role="tabpanel">
+              <div class="clase-modal-datos-stack">
+                <div class="cm-block cm-datos">
+                  <h3 class="clase-modal-section">Datos de la clase</h3>
+                  <div class="clase-modal-datos-grid clase-modal-datos-grid--jor-ubic">
+                    <div class="cm-field cm-jornada">
+                      <argo-catalogo-enum-buscar
+                        label="Jornada"
+                        placeholder="Seleccione jornada…"
+                        [textoInicial]="textoJornadaModal()"
+                        [modoCombo]="true"
+                        [remoto]="false"
+                        [minLength]="1"
+                        [disabled]="true"
+                        [opcionesLocales]="opcionesJornadasCrear()"
+                        (seleccionado)="onJornadaModalPick($event)"
+                        (limpiado)="onJornadaModalLimpiar()"
+                      />
                     </div>
-                    <button
-                      type="button"
-                      class="mini primary"
-                      (click)="agregarAlumnoMatricula(r)"
-                      [disabled]="alumnoYaEnLista(r) || guardandoInscripcion()">
-                      {{ alumnoYaEnLista(r) ? 'Agregado' : guardandoInscripcion() ? '…' : 'Agregar' }}
-                    </button>
-                  </li>
+                    <div class="cm-field cm-ubicacion">
+                      <argo-catalogo-enum-buscar
+                        label="Ubicación"
+                        placeholder="Seleccione ubicación…"
+                        [textoInicial]="textoUbicacionClase()"
+                        [modoCombo]="true"
+                        [remoto]="false"
+                        [minLength]="1"
+                        [opcionesLocales]="opcionesUbicacionClase()"
+                        (seleccionado)="onUbicacionClasePick($event)"
+                        (limpiado)="onUbicacionClaseLimpiar()"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                @if (puedeEditarHorarioClase()) {
+                  <div class="cm-panel cm-horario argo-form-section variant-horario">
+                    <h3 class="clase-modal-section">Horario de la clase</h3>
+                    <div class="clase-horario-admin horario-manual">
+                      <div class="cm-field horario-manual-col">
+                        <label>Inicio</label>
+                        <argo-hora-12-input
+                          [minuteStep]="15"
+                          [showPreview]="false"
+                          [value]="modalHoraInicio() || '08:00'"
+                          (valueChange)="modalHoraInicio.set($event)" />
+                      </div>
+                      <div class="cm-field horario-manual-col">
+                        <label>Fin</label>
+                        <argo-hora-12-input
+                          [minuteStep]="15"
+                          [showPreview]="false"
+                          [value]="modalHoraFin() || '10:00'"
+                          (valueChange)="modalHoraFin.set($event)" />
+                      </div>
+                      <div class="cm-field horario-manual-col horario-manual-col--duracion">
+                        <label>Duración</label>
+                        <p class="horario-readonly-val">{{ lapsoClaseEtiqueta() || '—' }}</p>
+                      </div>
+                    </div>
+                  </div>
                 }
-              </ul>
-            }
-          </div>
-        }
-      </div>
 
-        <div class="clase-modal-alumnos-scroll">
-        <table class="argo mini clase-matricula-list">
-          <thead>
-            <tr>
-              <th>Documento</th>
-              <th>Nombre</th>
-              <th>Asistencia</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (a of inscritos(); track a.numDoc) {
-              <tr>
-                <td><span [ngClass]="capDocAsis(a.numDoc)">{{ a.numDoc }}</span></td>
-                <td><span [ngClass]="capAlumnoNombre(a.nombreCompleto)">{{ a.nombreCompleto || '—' }}</span></td>
-                <td>
-                  @if (a.yaCertificadoContrato && !a.tieneAsistencia) {
-                    <div class="asis-cell">
-                      <span class="cap cap-violet cap-sm cap-text" title="Certificado vigente en este contrato">
-                        ✓ Certificado{{ a.certificadoCodigo ? ' (' + a.certificadoCodigo + ')' : '' }}
-                      </span>
-                      <button type="button" class="mini ghost" (click)="imprimirCertificadoInscrito(a)">
-                        Imprimir certificado
-                      </button>
-                    </div>
-                  } @else if (a.tieneAsistencia) {
-                    <div class="asis-cell">
-                      <span class="cap cap-emerald cap-sm cap-text">✓ Asistió {{ fmtHora(a.asistenciaAt || undefined) }}</span>
-                      @if (puedeBorrarAsistenciaDeClase()) {
-                        <button
-                          type="button"
-                          class="mini danger"
-                          [disabled]="guardandoAsistencia() === a.numDoc"
-                          (click)="borrarAsistenciaInscrito(a.numDoc, a.nombreCompleto)"
-                          title="Borrar solo la asistencia de este alumno (no se desmatricula)">
-                          {{ guardandoAsistencia() === a.numDoc ? '…' : '✕ Borrar asistencia' }}
-                        </button>
+                <div class="cm-panel cm-instructor-programa">
+                  <h3 class="clase-modal-section">Instructor y programa</h3>
+                  <div class="clase-modal-datos-grid clase-modal-datos-grid--instructor-programa">
+                    <div class="cm-field cm-instructor cm-instructor--destacado">
+                      @if (puedeAsignarInstructor()) {
+                        <argo-catalogo-enum-buscar
+                          label="Instructor"
+                          placeholder="Sin asignar — seleccione para programar"
+                          [textoInicial]="textoInstructorModal()"
+                          [modoCombo]="true"
+                          [remoto]="false"
+                          [minLength]="1"
+                          [opcionesLocales]="opcionesInstructoresModal()"
+                          (seleccionado)="onInstructorModalPick($event)"
+                          (limpiado)="onInstructorModalLimpiar()"
+                        />
+                      } @else {
+                        <label>Instructor</label>
+                        <p class="instructor-readonly compact">
+                          <span [ngClass]="capInstructor(labelInstructorClase(claseActiva()))">{{ labelInstructorClase(claseActiva()) }}</span>
+                        </p>
                       }
                     </div>
-                  } @else if (puedeMarcarAsistenciaAlumno(a)) {
-                    <button
-                      type="button"
-                      class="mini primary"
-                      [disabled]="guardandoAsistencia() === a.numDoc"
-                    (click)="marcarAsistenciaInscrito(a.numDoc)">
-                    {{ guardandoAsistencia() === a.numDoc ? '…' : '✓ Asistió' }}
-                  </button>
-                  } @else if (a.yaCertificadoContrato) {
-                    <div class="asis-cell">
-                      <span class="cap cap-violet cap-sm cap-text">Certificado en contrato</span>
-                      <button type="button" class="mini ghost" (click)="imprimirCertificadoInscrito(a)">
-                        Imprimir certificado
-                      </button>
+                    <div class="cm-field cm-programa">
+                      <argo-catalogo-enum-buscar
+                        label="Programa"
+                        placeholder="Seleccione o escriba programa…"
+                        [textoInicial]="textoProgramaModalCombo()"
+                        [modoCombo]="true"
+                        [remoto]="false"
+                        [minLength]="1"
+                        [opcionesLocales]="opcionesProgramasModal()"
+                        (seleccionado)="onProgramaModalPick($event)"
+                        (limpiado)="onProgramaModalLimpiar()"
+                      />
                     </div>
-                  } @else {
-                    <span class="cap cap-slate cap-sm cap-text">Pendiente</span>
+                  </div>
+                </div>
+
+                <div class="cm-panel cm-evidencia cm-evidencia--under-datos">
+                  <h3 class="clase-modal-section">Evidencia fotográfica</h3>
+                  <div class="evidencia-foto-panel compact">
+                    @if (claseActiva()?.urlforo) {
+                      <img
+                        [src]="urlFotoEvidencia(claseActiva()!.urlforo)"
+                        alt="Evidencia de clase"
+                        class="evidencia-preview" />
+                    } @else {
+                      <p class="hint hint-compact">Sin foto cargada.</p>
+                    }
+                    <label class="evidencia-upload">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        (change)="onFotoEvidenciaSelected($event)"
+                        [disabled]="subiendoFotoEvidencia()" />
+                      <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto' }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="clase-modal-ficha clase-modal-ficha--alumnos" role="tabpanel">
+              <div class="clase-modal-edit-side clase-modal-edit-side--ficha" aria-label="Alumnos inscritos">
+<h3 class="clase-modal-section clase-modal-section--side">Alumnos</h3>
+
+              @if (totalAlumnosMatriculadosModal() > 0) {
+
+                <p class="hint hint-compact clase-matriculados-resumen">
+
+                  <strong>{{ totalAlumnosMatriculadosModal() }}</strong> inscrito(s)
+
+                  @if (inscritosConAsistencia() > 0) {
+
+                    · {{ inscritosConAsistencia() }} con asistencia
+
                   }
-                </td>
-                <td class="actions-cell">
-                  @if (puedeQuitarInscritoDeClase()) {
-                    <button
-                      type="button"
-                      class="mini danger"
-                      [disabled]="guardandoAsistencia() === a.numDoc"
-                      (click)="quitarInscritoDeClase(a.numDoc, a.nombreCompleto, { tieneAsistencia: a.tieneAsistencia })"
-                      title="Quitar al alumno de esta clase (no se desmatricula del programa)">
-                      {{ guardandoAsistencia() === a.numDoc ? '…' : '✕ Quitar' }}
-                    </button>
+
+                  @if (inscritosSinAsistencia() > 0) {
+
+                    · {{ inscritosSinAsistencia() }} pendiente(s)
+
                   }
-                </td>
-              </tr>
-            }
-            @if (inscritos().length === 0) {
-              <tr>
-                <td colspan="4" class="empty jor-empty-mini">Ningún alumno inscrito aún.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-        </div>
 
-      @if (claseActiva()?.estado === 'FINALIZADO' && inscritosConAsistencia() > 0) {
-        <p class="hint hint-compact">
-          Sesión finalizada con <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
-        </p>
-      }
+                  @if (inscritosCertificadosContrato() > 0) {
 
-      @if (claseActiva()?.estado === 'FINALIZADO' && inscritosSinAsistencia() > 0) {
-        <p class="hint hint-compact hint-warn">
-          <strong>{{ inscritosSinAsistencia() }}</strong> pendiente(s) de asistencia.
-        </p>
-        <button type="button" class="mini primary" (click)="sincronizarAsistenciasClaseModal()">
-          Registrar asistencia de todos ({{ inscritosSinAsistencia() }})
-        </button>
-      }
+                    · {{ inscritosCertificadosContrato() }} certificado(s) en contrato
 
-      @if (puedeEliminarClaseActiva() && inscritosConAsistencia() > 0) {
-        <p class="hint hint-compact hint-warn">
-          {{ inscritosConAsistencia() }} asistencia(s): al borrar la clase se pierden.
-          @if (claseActiva()?.estado === 'FINALIZADO') {
-            Los certificados emitidos por esta clase se anularán.
+                  }
+
+                </p>
+
+              }
+
+
+
+              @if (modalModoClase() === 'editar') {
+
+                <div class="clase-anterior-copiar clase-anterior-copiar--picker">
+
+                  <div class="field">
+
+                    <label>Copiar alumnos desde clase del contrato</label>
+
+                    <select
+
+                      [ngModel]="idClaseFuenteCopiar()"
+
+                      (ngModelChange)="onClaseFuenteCopiarChange($event)">
+
+                      <option value="">Seleccione una clase del contrato…</option>
+
+                      @for (o of opcionesClasesCopiarContrato(); track o.value) {
+
+                        <option [value]="o.value">{{ o.label }}</option>
+
+                      }
+
+                    </select>
+
+                  </div>
+
+                </div>
+
+              }
+
+              @if (cargandoAlumnosClaseAnterior()) {
+
+                <p class="hint hint-compact">Cargando alumnos de la clase elegida…</p>
+
+              }
+
+              @if (alumnosClaseAnteriorDisponibles().length > 0) {
+
+                  <div class="clase-anterior-copiar">
+
+                    <div class="clase-anterior-copiar-head">
+
+                      <span class="clase-anterior-copiar-title">
+
+                        ↻ Alumnos de «{{ claseAnteriorInfo()?.programaNombre || 'la clase elegida' }}{{ claseAnteriorInfo()?.carpaNombre ? ' — ' + claseAnteriorInfo()!.carpaNombre : '' }}»
+
+                      </span>
+
+                      <div class="clase-anterior-copiar-acciones">
+
+                        <button type="button" class="mini ghost" (click)="seleccionarTodosAlumnosClaseAnterior()">Todos</button>
+
+                        <button type="button" class="mini ghost" (click)="limpiarSeleccionAlumnosClaseAnterior()">Ninguno</button>
+
+                      </div>
+
+                    </div>
+
+                    <ul class="clase-anterior-copiar-lista">
+
+                      @for (a of alumnosClaseAnteriorDisponibles(); track a.numDoc) {
+
+                        <li [class.certificado]="!alumnoPuedeMatricularDesdeAnterior(a)">
+
+                          <label class="clase-anterior-copiar-item">
+
+                            <input
+
+                              type="checkbox"
+
+                              [checked]="alumnoClaseAnteriorSeleccionado(a.numDoc)"
+
+                              [disabled]="!alumnoPuedeMatricularDesdeAnterior(a)"
+
+                              (change)="toggleAlumnoClaseAnterior(a.numDoc, $any($event.target).checked)" />
+
+                            <span class="buscar-name">{{ a.nombreCompleto || a.numDoc }}</span>
+
+                            <span class="buscar-meta">{{ a.numDoc }}</span>
+
+                          </label>
+
+                          @if (a.yaCertificadoContrato) {
+
+                            <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado en este contrato; puede seguir matriculándose en otras clases">
+
+                              Ya certificado
+
+                            </span>
+
+                          }
+
+                        </li>
+
+                      }
+
+                    </ul>
+
+                    <div class="clase-anterior-copiar-footer">
+
+                      <button
+
+                        type="button"
+
+                        class="mini primary"
+
+                        (click)="matricularSeleccionClaseAnterior()"
+
+                        [disabled]="matriculandoDesdeAnterior() || alumnosClaseAnteriorSeleccion().size === 0">
+
+                        {{ matriculandoDesdeAnterior() ? 'Matriculando…' : 'Matricular seleccionados (' + alumnosClaseAnteriorSeleccion().size + ')' }}
+
+                      </button>
+
+                    </div>
+
+                  </div>
+
+              }
+
+
+
+              <div class="clase-alumno-buscar">
+
+                <div class="buscar-wrap">
+
+                  <span class="buscar-ic" aria-hidden="true">◎</span>
+
+                  <input
+
+                    type="text"
+
+                    placeholder="Buscar alumno por nombre o cédula…"
+
+                    [ngModel]="alumnoBusqueda()"
+
+                    (ngModelChange)="onAlumnoBusquedaInput($event)"
+
+                    (focus)="focusAlumnoBusqueda()"
+
+                    autocomplete="off" />
+
+                  <button type="button" class="ghost mini" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
+
+                </div>
+
+
+
+                @if (alumnoBusquedaOpen()) {
+
+                  <div class="buscar-dropdown">
+
+                    @if (alumnoBusquedaLoading()) {
+
+                      <p class="buscar-msg">Buscando…</p>
+
+                    } @else if (alumnoBusquedaResults().length === 0) {
+
+                      <p class="buscar-msg">Sin resultados. Verifique el texto o cree un alumno nuevo.</p>
+
+                    } @else {
+
+                      <ul class="buscar-list">
+
+                        @for (r of alumnoBusquedaResults(); track r._id) {
+
+                          <li>
+
+                            <div class="buscar-info">
+
+                              <span class="buscar-name">{{ nombreAlumnoItem(r) }}</span>
+
+                              <span class="buscar-meta">{{ r.tipoDoc || 'CC' }} {{ r.numDoc }}</span>
+
+                            </div>
+
+                            <button
+
+                              type="button"
+
+                              class="mini primary"
+
+                              (click)="agregarAlumnoMatricula(r)"
+
+                              [disabled]="alumnoYaEnLista(r) || guardandoInscripcion()">
+
+                              {{ alumnoYaEnLista(r) ? 'Agregado' : guardandoInscripcion() ? '…' : 'Agregar' }}
+
+                            </button>
+
+                          </li>
+
+                        }
+
+                      </ul>
+
+                    }
+
+                  </div>
+
+                }
+
+              </div>
+
+
+
+                <div class="clase-modal-alumnos-scroll">
+
+                <table class="argo mini clase-matricula-list">
+
+                  <thead>
+
+                    <tr>
+
+                      <th>Documento</th>
+
+                      <th>Nombre</th>
+
+                      <th>Asistencia</th>
+
+                      <th></th>
+
+                    </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                    @for (a of inscritos(); track a.numDoc) {
+
+                      <tr>
+
+                        <td><span [ngClass]="capDocAsis(a.numDoc)">{{ a.numDoc }}</span></td>
+
+                        <td><span [ngClass]="capAlumnoNombre(a.nombreCompleto)">{{ a.nombreCompleto || '—' }}</span></td>
+
+                        <td>
+
+                          @if (a.yaCertificadoContrato && !a.tieneAsistencia) {
+
+                            <div class="asis-cell">
+
+                              <span class="cap cap-violet cap-sm cap-text" title="Certificado vigente en este contrato">
+
+                                ✓ Certificado{{ a.certificadoCodigo ? ' (' + a.certificadoCodigo + ')' : '' }}
+
+                              </span>
+
+                              <button type="button" class="mini ghost" (click)="imprimirCertificadoInscrito(a)">
+
+                                Imprimir certificado
+
+                              </button>
+
+                            </div>
+
+                          } @else if (a.tieneAsistencia) {
+
+                            <div class="asis-cell">
+
+                              <span class="cap cap-emerald cap-sm cap-text">✓ Asistió {{ fmtHora(a.asistenciaAt || undefined) }}</span>
+
+                              @if (puedeBorrarAsistenciaDeClase()) {
+
+                                <button
+
+                                  type="button"
+
+                                  class="mini danger"
+
+                                  [disabled]="guardandoAsistencia() === a.numDoc"
+
+                                  (click)="borrarAsistenciaInscrito(a.numDoc, a.nombreCompleto)"
+
+                                  title="Borrar solo la asistencia de este alumno (no se desmatricula)">
+
+                                  {{ guardandoAsistencia() === a.numDoc ? '…' : '✕ Borrar asistencia' }}
+
+                                </button>
+
+                              }
+
+                            </div>
+
+                          } @else if (puedeMarcarAsistenciaAlumno(a)) {
+
+                            <button
+
+                              type="button"
+
+                              class="mini primary"
+
+                              [disabled]="guardandoAsistencia() === a.numDoc"
+
+                            (click)="marcarAsistenciaInscrito(a.numDoc)">
+
+                            {{ guardandoAsistencia() === a.numDoc ? '…' : '✓ Asistió' }}
+
+                          </button>
+
+                          } @else if (a.yaCertificadoContrato) {
+
+                            <div class="asis-cell">
+
+                              <span class="cap cap-violet cap-sm cap-text">Certificado en contrato</span>
+
+                              <button type="button" class="mini ghost" (click)="imprimirCertificadoInscrito(a)">
+
+                                Imprimir certificado
+
+                              </button>
+
+                            </div>
+
+                          } @else {
+
+                            <span class="cap cap-slate cap-sm cap-text">Pendiente</span>
+
+                          }
+
+                        </td>
+
+                        <td class="actions-cell">
+
+                          @if (puedeQuitarInscritoDeClase()) {
+
+                            <button
+
+                              type="button"
+
+                              class="mini danger"
+
+                              [disabled]="guardandoAsistencia() === a.numDoc"
+
+                              (click)="quitarInscritoDeClase(a.numDoc, a.nombreCompleto, { tieneAsistencia: a.tieneAsistencia })"
+
+                              title="Quitar al alumno de esta clase (no se desmatricula del programa)">
+
+                              {{ guardandoAsistencia() === a.numDoc ? '…' : '✕ Quitar' }}
+
+                            </button>
+
+                          }
+
+                        </td>
+
+                      </tr>
+
+                    }
+
+                    @if (inscritos().length === 0) {
+
+                      <tr>
+
+                        <td colspan="4" class="empty jor-empty-mini">Ningún alumno inscrito aún.</td>
+
+                      </tr>
+
+                    }
+
+                  </tbody>
+
+                </table>
+
+                </div>
+
+
+
+              @if (claseActiva()?.estado === 'FINALIZADO' && inscritosConAsistencia() > 0) {
+
+                <p class="hint hint-compact">
+
+                  Sesión finalizada con <strong>{{ inscritosConAsistencia() }}</strong> asistencia(s) registrada(s).
+
+                </p>
+
+              }
+
+
+
+              @if (claseActiva()?.estado === 'FINALIZADO' && inscritosSinAsistencia() > 0) {
+
+                <p class="hint hint-compact hint-warn">
+
+                  <strong>{{ inscritosSinAsistencia() }}</strong> pendiente(s) de asistencia.
+
+                </p>
+
+                <button type="button" class="mini primary" (click)="sincronizarAsistenciasClaseModal()">
+
+                  Registrar asistencia de todos ({{ inscritosSinAsistencia() }})
+
+                </button>
+
+              }
+
+
+
+              @if (puedeEliminarClaseActiva() && inscritosConAsistencia() > 0) {
+
+                <p class="hint hint-compact hint-warn">
+
+                  {{ inscritosConAsistencia() }} asistencia(s): al borrar la clase se pierden.
+
+                  @if (claseActiva()?.estado === 'FINALIZADO') {
+
+                    Los certificados emitidos por esta clase se anularán.
+
+                  }
+
+                </p>
+
+              }
+              </div>
+            </div>
           }
-        </p>
-      }
-          </aside>
         </div>
       }
 

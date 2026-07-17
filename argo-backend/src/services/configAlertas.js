@@ -9,7 +9,7 @@ const DEFAULTS_POR_CLAVE = {
   'alarmas.caja.sin_abrir': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 0 },
   'alarmas.caja.descuadres': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 0, intervaloPollSegundos: 60 },
   'alarmas.jornadas.en_proceso': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 0, intervaloPollSegundos: 12 },
-  'alarmas.jornadas.certificado_nuevo': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 30, intervaloPollSegundos: 45 },
+  'alarmas.jornadas.certificado_nuevo': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 30, intervaloPollSegundos: 15 },
   'alarmas.jornadas.live_toast': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 8, intervaloPollSegundos: 12 },
   'alarmas.instructores.clase_asignada': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 30, intervaloPollSegundos: 20 },
   'alarmas.instructores.clase_proxima': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 20, intervaloPollSegundos: 20, antelacionMinutos: 20 },

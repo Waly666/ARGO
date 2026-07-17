@@ -1,6 +1,31 @@
 import { Injectable, signal } from '@angular/core';
 import type { TipoCertificadoId } from '../constants/tipos-certificado';
 
+export type OrigenCertificado = 'jornada' | 'aula' | 'normal';
+
+export const ORIGEN_CERT_LABEL: Record<OrigenCertificado, string> = {
+  jornada: 'Jornada',
+  aula: 'Aula Virtual',
+  normal: 'Normal',
+};
+
+/** Deriva el origen del certificado a partir de sus campos. */
+export function resolverOrigenCertificado(
+  cert: Record<string, unknown> | null | undefined,
+): OrigenCertificado {
+  if (!cert) return 'normal';
+  if (cert['generadoAutoVirtual'] || cert['tipoCertificado'] === 'Virtual') return 'aula';
+  if (
+    cert['generadoAutoJornada'] ||
+    cert['idJornada'] ||
+    cert['idClaseJornada'] ||
+    cert['tipoCertificado'] === 'Jornadas de Capacitación'
+  ) {
+    return 'jornada';
+  }
+  return 'normal';
+}
+
 export interface CertificadoJornadaAlerta {
   id: string;
   codigoCert?: string;
@@ -10,6 +35,8 @@ export interface CertificadoJornadaAlerta {
   fechaEmision?: string;
   tipoFormatoCert?: TipoCertificadoId | string;
   tipoFormatoCertLabel?: string;
+  origen?: OrigenCertificado;
+  origenLabel?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +54,7 @@ export class CertificadoJornadaAlertService {
     if (!cert) return;
     const id = String(cert['_id'] || cert['id'] || '');
     if (!id) return;
+    const origen = resolverOrigenCertificado(cert);
     this.notificar(
       {
         id,
@@ -39,6 +67,8 @@ export class CertificadoJornadaAlertService {
         tipoFormatoCertLabel: cert['tipoFormatoCertLabel']
           ? String(cert['tipoFormatoCertLabel'])
           : undefined,
+        origen,
+        origenLabel: ORIGEN_CERT_LABEL[origen],
       },
       opts,
     );
