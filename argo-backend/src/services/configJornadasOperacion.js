@@ -7,6 +7,8 @@ const CLAVE = 'jornadas-operacion';
 const DEFAULTS = {
   /** Permite operar jornadas/clases en fechas distintas al día programado (carga histórica, correcciones). */
   operacionFueraDeDiaHabilitada: false,
+  /** Controla si el usuario puede elegir horario manual en formularios de clase. */
+  mostrarSwitchHorarioManual: true,
   /** idServ del catálogo para comprobantes de ingreso y facturas de contratos de capacitación. */
   idServCapacitacionContrato: SERVICIO_CAPACITACION_CONTRATO_ID,
 };
@@ -29,6 +31,7 @@ async function obtenerConfigJornadasOperacion() {
   const idServ = String(doc.idServCapacitacionContrato ?? DEFAULTS.idServCapacitacionContrato).trim();
   return {
     operacionFueraDeDiaHabilitada: doc.operacionFueraDeDiaHabilitada === true,
+    mostrarSwitchHorarioManual: doc.mostrarSwitchHorarioManual !== false,
     idServCapacitacionContrato: idServ || DEFAULTS.idServCapacitacionContrato,
   };
 }
@@ -41,6 +44,10 @@ async function actualizarConfigJornadasOperacion(patch = {}) {
         ? patch.operacionFueraDeDiaHabilitada === true ||
           patch.operacionFueraDeDiaHabilitada === 'true'
         : actual.operacionFueraDeDiaHabilitada,
+    mostrarSwitchHorarioManual:
+      patch.mostrarSwitchHorarioManual !== undefined
+        ? patch.mostrarSwitchHorarioManual === true || patch.mostrarSwitchHorarioManual === 'true'
+        : actual.mostrarSwitchHorarioManual,
     idServCapacitacionContrato:
       patch.idServCapacitacionContrato !== undefined
         ? normalizarIdServCapacitacionContrato(patch.idServCapacitacionContrato)

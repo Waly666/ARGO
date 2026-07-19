@@ -276,6 +276,7 @@ export default function ClaseDetalleScreen() {
     try {
       // Solo horarios planificados: no cierran la clase (eso lo hace Finalizar).
       const updated = await actualizarClase(claseId, {
+        horarioManual: true,
         horaInicio: hi || null,
         horaFin: hf || null,
       });
@@ -308,7 +309,11 @@ export default function ClaseDetalleScreen() {
   async function onIniciar() {
     setBusy(true);
     try {
-      const updated = await iniciarClase(claseId);
+      const updated = await iniciarClase(claseId, {
+        horarioManual: clase?.horarioManual === true,
+        ...(clase?.horarioManual === true && horaIni ? { horaInicio: horaIni } : {}),
+        ...(clase?.horarioManual === true && horaFin ? { horaFin } : {}),
+      });
       setClase(updated);
       setHoraIni(isoAHoraInput(updated.horaInicio));
       setTick(Date.now());
@@ -343,6 +348,7 @@ export default function ClaseDetalleScreen() {
     try {
       // Usa las horas del formulario (editables). Si no hay fin, el servidor pone la hora actual.
       const r = await finalizarClase(claseId, {
+        horarioManual: clase?.horarioManual === true,
         ...(hi ? { horaInicio: hi } : {}),
         ...(hf ? { horaFin: hf } : {}),
       });

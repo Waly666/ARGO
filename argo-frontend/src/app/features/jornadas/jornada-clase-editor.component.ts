@@ -108,6 +108,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   private asistente = inject(AsistenteContextoService);
   operacionCfg = inject(JornadasOperacionConfigService);
   operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
+  mostrarSwitchHorarioManual = this.operacionCfg.mostrarSwitchHorarioManual;
 
   constructor() {
     effect(() => {
@@ -135,6 +136,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   nuevaClaseUbic = signal('Carpa');
   modalHoraInicio = signal('');
   modalHoraFin = signal('');
+  modalHorarioManual = signal(false);
   modalClaseInstructorId = signal<number | ''>('');
   modalFechaClase = signal('');
   modalCrearJornadaId = signal('');
@@ -381,6 +383,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     this.modalClaseInstructorId.set(c.idEmpleadoInstructor ?? '');
     this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
     this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+    this.modalHorarioManual.set(c.horarioManual === true);
     this.alumnoBusqueda.set('');
     this.alumnoBusquedaResults.set([]);
     this.alumnoBusquedaOpen.set(false);
@@ -419,7 +422,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     if (!idContrato) {
       this.clasesContratoCopiar.set([]);
       if (syncAlumnos) {
-        this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+        this.onClaseFuenteCopiarLimpiar();
       }
       return;
     }
@@ -427,18 +430,13 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       next: (rows) => {
         this.clasesContratoCopiar.set(rows || []);
         if (!syncAlumnos) return;
-        const idActual = String(claseActual?._id || this.claseSel() || '');
-        const idFuente = String(this.idClaseFuenteCopiar() || '').trim();
-        if (idFuente) {
-          this.cargarAlumnosDesdeFuente(idActual, idFuente);
-          return;
-        }
-        this.cargarAlumnosClaseAnterior(idActual, { autoSeleccionar: true });
+        // No seleccionar una sesión anterior automáticamente.
+        this.onClaseFuenteCopiarLimpiar();
       },
       error: () => {
         this.clasesContratoCopiar.set([]);
         if (syncAlumnos) {
-          this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+          this.onClaseFuenteCopiarLimpiar();
         }
       },
     });
@@ -771,8 +769,24 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   claseModalIniciable(): boolean {
     const cl = this.claseActiva();
     if (!cl || cl.estado === 'FINALIZADO') return false;
-    if (cl.estado === 'EN PROCESO' && cl.horaInicio) return false;
+    if (cl.estado === 'EN PROCESO') return false;
     return this.jornadaClaseModalOperable();
+  }
+
+  horarioClaseEditable(): boolean {
+    return this.operacionEspecialActiva() || this.modalHorarioManual();
+  }
+
+  onModalHorarioManualChange(manual: boolean): void {
+    if (this.operacionEspecialActiva()) return;
+    this.modalHorarioManual.set(manual);
+    if (!manual || this.modalHoraInicio()) return;
+    const ahora = new Date();
+    const fin = new Date(ahora.getTime() + 60 * 60 * 1000);
+    const hhmm = (d: Date) =>
+      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    this.modalHoraInicio.set(hhmm(ahora));
+    this.modalHoraFin.set(hhmm(fin));
   }
 
   tituloBotonIniciarClase(): string {
@@ -786,7 +800,9 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     if (!this.claseModalIniciable()) {
       return 'La clase ya está iniciada o finalizada.';
     }
-    return 'Iniciar clase y registrar hora de inicio';
+    return this.modalHorarioManual()
+      ? 'Iniciar clase sin modificar el horario manual'
+      : 'Iniciar clase y registrar hora de inicio';
   }
 
   claseModalFinalizable(): boolean {
@@ -794,7 +810,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     if (!cl) return false;
     if (cl.estado === 'FINALIZADO') return true;
     if (cl.estado === 'EN PROCESO') return true;
-    if (this.operacionEspecialActiva()) {
+    if (this.horarioClaseEditable()) {
       const hi = this.modalHoraInicio().trim();
       const hf = this.modalHoraFin().trim();
       return validarHoraInput(hi) && validarHoraInput(hf) && duracionSegundosDesdeHHmm(hi, hf) != null;
@@ -854,19 +870,26 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  private horarioPayloadFinalizarClase(): { horaInicio?: string; horaFin?: string } {
-    if (!this.operacionEspecialActiva()) return {};
+  private horarioPayloadFinalizarClase(): {
+    horarioManual?: boolean;
+    horaInicio?: string;
+    horaFin?: string;
+  } {
+    const out: { horarioManual?: boolean; horaInicio?: string; horaFin?: string } = {};
+    if (!this.operacionEspecialActiva()) {
+      out.horarioManual = this.modalHorarioManual();
+    }
+    if (!this.horarioClaseEditable()) return out;
     const hi = this.modalHoraInicio().trim();
     const hf = this.modalHoraFin().trim();
-    const out: { horaInicio?: string; horaFin?: string } = {};
     if (validarHoraInput(hi)) out.horaInicio = hi;
     if (validarHoraInput(hf)) out.horaFin = hf;
     return out;
   }
 
   private validarHorarioAntesFinalizarEspecial(): boolean {
-    if (!this.operacionEspecialActiva()) return true;
-    if (this.claseActiva()?.estado === 'EN PROCESO') return true;
+    if (!this.horarioClaseEditable()) return true;
+    if (this.operacionEspecialActiva() && this.claseActiva()?.estado === 'EN PROCESO') return true;
     const hi = this.modalHoraInicio().trim();
     const hf = this.modalHoraFin().trim();
     if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
@@ -887,6 +910,9 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   tituloBotonFinalizarClase(): string {
     if (this.claseActiva()?.estado === 'FINALIZADO') {
       return 'Reprocesar: emite certificados pendientes de alumnos matriculados después del cierre.';
+    }
+    if (!this.operacionEspecialActiva() && this.modalHorarioManual()) {
+      return 'Finalizar clase conservando el horario manual';
     }
     if (!this.claseModalFinalizable()) {
       if (this.operacionEspecialActiva() && this.claseActiva()?.estado === 'PROGRAMADA') {
@@ -954,6 +980,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       idEmpleadoInstructor?: number | null;
       horaInicio?: string | null;
       horaFin?: string | null;
+      horarioManual?: boolean;
     } = {
       ubicacion: this.nuevaClaseUbic(),
     };
@@ -962,7 +989,10 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       const insId = this.modalClaseInstructorId();
       dto.idEmpleadoInstructor = insId ? Number(insId) : null;
     }
-    if (this.puedeEditarHorarioClase()) {
+    if (this.puedeEditarHorarioClase() && !this.operacionEspecialActiva()) {
+      dto.horarioManual = this.modalHorarioManual();
+    }
+    if (this.puedeEditarHorarioClase() && this.horarioClaseEditable()) {
       const hi = this.modalHoraInicio().trim();
       const hf = this.modalHoraFin().trim();
       if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
@@ -976,6 +1006,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       next: (r: any) => {
         const c = r?.clase || r;
         this.claseActiva.set(c);
+        this.modalHorarioManual.set(c.horarioManual === true);
         this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
         this.modalHoraFin.set(isoAHoraInput(c.horaFin));
         this.iniciarCronometroSiAplica();
@@ -996,9 +1027,12 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   iniciarClaseModal(): void {
     const id = this.claseSel();
     if (!id || !this.claseModalIniciable()) return;
-    this.jornadaSvc.iniciarClase(id).subscribe({
+    this.jornadaSvc.iniciarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
+        this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
+        this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+        this.modalHorarioManual.set(c.horarioManual === true);
         this.iniciarCronometroSiAplica();
         this.cargarInscritos(id);
         this.liveSync.notificarClaseIniciada(c as unknown as Record<string, unknown>);
@@ -1018,6 +1052,9 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
+        this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
+        this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+        this.modalHorarioManual.set(c.horarioManual === true);
         this.detenerCronometro();
         this.actualizarCronometroDisplay();
         this.cargarInscritos(id);

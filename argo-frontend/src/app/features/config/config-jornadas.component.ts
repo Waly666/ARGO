@@ -34,6 +34,7 @@ export class ConfigJornadasComponent implements OnInit {
   serviciosGlobales = signal<ServicioOpcion[]>([]);
   config = signal<ConfigOperacionJornadas>({
     operacionFueraDeDiaHabilitada: false,
+    mostrarSwitchHorarioManual: true,
     idServCapacitacionContrato: '53',
   });
 
@@ -59,7 +60,11 @@ export class ConfigJornadasComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.config.set({ operacionFueraDeDiaHabilitada: false, idServCapacitacionContrato: '53' });
+        this.config.set({
+          operacionFueraDeDiaHabilitada: false,
+          mostrarSwitchHorarioManual: true,
+          idServCapacitacionContrato: '53',
+        });
         this.loading.set(false);
         this.mostrar('No se pudo cargar la configuración.', true);
       },
@@ -68,6 +73,10 @@ export class ConfigJornadasComponent implements OnInit {
 
   patchOperacionFueraDeDia(valor: boolean): void {
     this.config.set({ ...this.config(), operacionFueraDeDiaHabilitada: valor });
+  }
+
+  patchMostrarSwitchHorarioManual(valor: boolean): void {
+    this.config.set({ ...this.config(), mostrarSwitchHorarioManual: valor });
   }
 
   patchIdServCapacitacionContrato(idServ: string): void {
@@ -87,6 +96,11 @@ export class ConfigJornadasComponent implements OnInit {
         } else {
           partes.push('Operación fuera del día deshabilitada.');
         }
+        partes.push(
+          cfg.mostrarSwitchHorarioManual
+            ? 'Selector de horario manual visible.'
+            : 'Selector de horario manual oculto.',
+        );
         partes.push(`Servicio contrato: idServ ${cfg.idServCapacitacionContrato}.`);
         this.mostrar(partes.join(' '), false);
       },

@@ -1,3 +1,47 @@
+export interface JornadaAlumnoQrData {
+  numDoc: string;
+  nombre: string;
+}
+
+/**
+ * Interpreta exactamente los formatos compatibles con ARGO Móvil Jornadas:
+ * ARGOJOR|1|{numDoc}|{nombre}, JSON de jornada o documento numérico puro.
+ */
+export function parseJornadaAlumnoQr(raw: string): JornadaAlumnoQrData | null {
+  const text = String(raw || '').trim();
+  if (!text) return null;
+
+  // El backend de jornadas acepta documentos de 6 a 14 dígitos.
+  if (/^\d{6,14}$/.test(text)) {
+    return { numDoc: text, nombre: '' };
+  }
+
+  if (text.startsWith('{')) {
+    try {
+      const data = JSON.parse(text) as {
+        t?: string;
+        tipo?: string;
+        d?: string;
+        numDoc?: string;
+        n?: string;
+        nombre?: string;
+      };
+      const tipo = String(data.t || data.tipo || '').toLowerCase();
+      if (tipo && tipo !== 'jor' && tipo !== 'jornada') return null;
+      const numDoc = String(data.d || data.numDoc || '').replace(/\D/g, '');
+      if (!/^\d{6,14}$/.test(numDoc)) return null;
+      return { numDoc, nombre: String(data.n || data.nombre || '').trim() };
+    } catch {
+      return null;
+    }
+  }
+
+  const parts = text.split('|');
+  if (parts[0] !== JORNADA_QR_PREFIX || parts[1] !== '1') return null;
+  const numDoc = String(parts[2] || '').replace(/\D/g, '');
+  if (!/^\d{6,14}$/.test(numDoc)) return null;
+  return { numDoc, nombre: parts.slice(3).join('|').trim() };
+}
 /** Prefijo de etiquetas QR solo para alumnos de jornadas (compatible con app móvil). */
 export const JORNADA_QR_PREFIX = 'ARGOJOR';
 

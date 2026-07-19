@@ -125,10 +125,21 @@ function mensajeSiJornadaNoDisponibleParaClase(jornada) {
 }
 
 async function migrarEstadosJornadaCap() {
-  const rows = await JornadaCap.find().select('_id fechaProgramacion estado').lean();
+  const rows = await JornadaCap.find().select('_id idContrato fechaProgramacion estado').lean();
+  const contratos = await Contratacion.find({
+    _id: { $in: rows.map((j) => j.idContrato).filter(Boolean) },
+  })
+    .select('_id estado')
+    .lean();
+  const estadosContrato = new Map(contratos.map((c) => [String(c._id), c.estado]));
   let n = 0;
   for (const j of rows) {
-    const esperado = estadoJornadaPorFecha(j.fechaProgramacion);
+    const contratoEnEjecucion = j.idContrato
+      ? contratoEstaEnEjecucion(estadosContrato.get(String(j.idContrato)))
+      : true;
+    const esperado = contratoEnEjecucion
+      ? estadoJornadaPorFecha(j.fechaProgramacion)
+      : ESTADO_JORNADA_FINALIZADO;
     if (j.estado !== esperado) {
       await JornadaCap.updateOne({ _id: j._id }, { $set: { estado: esperado } });
       n += 1;

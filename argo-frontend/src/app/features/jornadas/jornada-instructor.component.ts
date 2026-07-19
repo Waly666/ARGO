@@ -66,6 +66,7 @@ export class JornadaInstructorComponent implements OnInit {
   private liveSync = inject(JornadaLiveSyncService);
   operacionCfg = inject(JornadasOperacionConfigService);
   operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
+  mostrarSwitchHorarioManual = this.operacionCfg.mostrarSwitchHorarioManual;
 
   msg = signal<string | null>(null);
   msgTipo = signal<JorMsgTipo>('info');
@@ -78,6 +79,7 @@ export class JornadaInstructorComponent implements OnInit {
   clases = signal<any[]>([]);
   claseSel = signal<string>('');
   claseActiva = signal<any | null>(null);
+  horarioManualClase = signal(false);
 
   programasJornada = signal<any[]>([]);
   nuevaClaseProg = signal('');
@@ -251,6 +253,7 @@ export class JornadaInstructorComponent implements OnInit {
             this.claseActiva.set(c);
             this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
             this.horaFinClase.set(isoAHoraInput(c.horaFin));
+            this.horarioManualClase.set(c.horarioManual === true);
             this.cargarAsistencias(c._id);
           }
         }
@@ -288,6 +291,7 @@ export class JornadaInstructorComponent implements OnInit {
     this.claseActiva.set(c);
     this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
     this.horaFinClase.set(isoAHoraInput(c.horaFin));
+    this.horarioManualClase.set(c.horarioManual === true);
     this.cargarAsistencias(c._id);
     this.consultarProgresoPreview(this.numDocAsis());
   }
@@ -295,15 +299,20 @@ export class JornadaInstructorComponent implements OnInit {
   guardarHorarioClase() {
     const id = this.claseSel();
     if (!id) return;
+    const manual = !this.operacionEspecialActiva() && this.horarioManualClase();
+    const editable = this.operacionEspecialActiva() || manual;
     const hi = this.horaInicioClase().trim();
     const hf = this.horaFinClase().trim();
-    if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
+    if (editable && (!validarHoraInput(hi) || !validarHoraInput(hf))) {
       this.mostrarMsg('Use formato HH:mm (ej. 08:30).', 'error', 'Horario inválido');
       return;
     }
     this.guardandoHorario.set(true);
     this.jornadaSvc
-      .actualizarClase(id, { horaInicio: hi || null, horaFin: hf || null })
+      .actualizarClase(id, {
+        ...(!this.operacionEspecialActiva() ? { horarioManual: manual } : {}),
+        ...(editable ? { horaInicio: hi || null, horaFin: hf || null } : {}),
+      })
       .subscribe({
         next: (r: any) => {
           this.guardandoHorario.set(false);
@@ -311,6 +320,7 @@ export class JornadaInstructorComponent implements OnInit {
           this.claseActiva.set(c);
           this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
           this.horaFinClase.set(isoAHoraInput(c.horaFin));
+          this.horarioManualClase.set(c.horarioManual === true);
           this.recargarClases(id);
           const nCert = this.contarCertificadosEmitidos(r);
           if (nCert > 0) {
@@ -324,6 +334,18 @@ export class JornadaInstructorComponent implements OnInit {
           this.mostrarMsg(e?.error?.message || 'No se pudo guardar el horario.', 'error', 'Error');
         },
       });
+  }
+
+  onHorarioManualClaseChange(manual: boolean): void {
+    if (this.operacionEspecialActiva()) return;
+    this.horarioManualClase.set(manual);
+    if (!manual || this.horaInicioClase()) return;
+    const ahora = new Date();
+    const fin = new Date(ahora.getTime() + 60 * 60 * 1000);
+    const hhmm = (d: Date) =>
+      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    this.horaInicioClase.set(hhmm(ahora));
+    this.horaFinClase.set(hhmm(fin));
   }
 
   onNumDocAsisChange(value: string) {
@@ -382,11 +404,22 @@ export class JornadaInstructorComponent implements OnInit {
   iniciarClase() {
     const id = this.claseSel();
     if (!id) return;
-    this.jornadaSvc.iniciarClase(id).subscribe({
+    const payload: { horarioManual?: boolean; horaInicio?: string; horaFin?: string } = {};
+    if (!this.operacionEspecialActiva()) {
+      payload.horarioManual = this.horarioManualClase();
+      if (this.horarioManualClase()) {
+        const hi = this.horaInicioClase().trim();
+        const hf = this.horaFinClase().trim();
+        if (validarHoraInput(hi)) payload.horaInicio = hi;
+        if (validarHoraInput(hf)) payload.horaFin = hf;
+      }
+    }
+    this.jornadaSvc.iniciarClase(id, payload).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
         this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
         this.horaFinClase.set(isoAHoraInput(c.horaFin));
+        this.horarioManualClase.set(c.horarioManual === true);
         this.recargarClases(id);
         this.liveSync.notificarClaseIniciada(c as unknown as Record<string, unknown>);
         this.mostrarMsg('Reloj de clase iniciado. Ya puede registrar asistencias.', 'ok', 'Clase en curso');
@@ -398,11 +431,14 @@ export class JornadaInstructorComponent implements OnInit {
   finalizarClase() {
     const id = this.claseSel();
     if (!id) return;
-    const payload: { horaInicio?: string; horaFin?: string } = {};
-    if (this.operacionEspecialActiva()) {
+    const payload: { horarioManual?: boolean; horaInicio?: string; horaFin?: string } = {};
+    if (!this.operacionEspecialActiva()) {
+      payload.horarioManual = this.horarioManualClase();
+    }
+    if (this.operacionEspecialActiva() || this.horarioManualClase()) {
       const hi = this.horaInicioClase().trim();
       const hf = this.horaFinClase().trim();
-      if (this.claseActiva()?.estado !== 'EN PROCESO') {
+      if (this.horarioManualClase() || this.claseActiva()?.estado !== 'EN PROCESO') {
         if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
           this.mostrarMsg(
             'Indique hora de inicio y hora de fin antes de finalizar.',
@@ -421,6 +457,7 @@ export class JornadaInstructorComponent implements OnInit {
         this.claseActiva.set(c);
         this.horaInicioClase.set(isoAHoraInput(c.horaInicio));
         this.horaFinClase.set(isoAHoraInput(c.horaFin));
+        this.horarioManualClase.set(c.horarioManual === true);
         this.recargarClases(id);
         this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         const nCert = this.contarCertificadosEmitidos(r);

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ArgoDateInputComponent } from '../../../shared/argo-date-input/argo-date-input.component';
 import {
   Component,
+  OnDestroy,
   OnInit,
   afterNextRender,
   computed,
@@ -104,6 +105,11 @@ import { ModoAlumnos, rutasAlumnos } from '../alumnos-rutas.helpers';
 import { AlumnoJornadaQrPanelComponent } from '../alumno-jornada-qr-panel.component';
 import { CelularInputComponent } from '../../../shared/celular-input/celular-input.component';
 import { mensajeErrorCelularAlmacenado } from '../../../core/utils/celular.util';
+import { CedulaPdf417ScannerComponent } from '../cedula-pdf417-scanner.component';
+import {
+  CedulaPdf417Data,
+  parseCedulaColombianaPdf417,
+} from '../cedula-pdf417.util';
 
 @Component({
 
@@ -119,6 +125,7 @@ import { mensajeErrorCelularAlmacenado } from '../../../core/utils/celular.util'
     ArgoDateInputComponent,
     AlumnoJornadaQrPanelComponent,
     CelularInputComponent,
+    CedulaPdf417ScannerComponent,
   ],
 
   templateUrl: './datos-principales.component.html',
@@ -127,7 +134,7 @@ import { mensajeErrorCelularAlmacenado } from '../../../core/utils/celular.util'
 
 })
 
-export class DatosPrincipalesComponent implements OnInit {
+export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   /** Alumno cargado por la ficha (input desde alumno-detalle). */
   alumno = input<AlumnoDto | null>(null);
@@ -232,6 +239,12 @@ export class DatosPrincipalesComponent implements OnInit {
   scanning = signal(false);
   scanWarnings = signal<string[]>([]);
   scanApplied = signal(false);
+  scanMode = signal<'imagen' | 'pdf417'>('imagen');
+  private numDocScannerBuffer = '';
+  private numDocScannerTimer: ReturnType<typeof setTimeout> | null = null;
+  private numDocScannerLastKeyAt = 0;
+  private numDocScannerRapidKeys = 0;
+  private numDocScannerActivo = false;
 
   /** Empresa — combobox de búsqueda incremental */
   private clienteSvc    = inject(ClienteService);
@@ -411,6 +424,10 @@ export class DatosPrincipalesComponent implements OnInit {
 
   }
 
+  ngOnDestroy(): void {
+    if (this.numDocScannerTimer) clearTimeout(this.numDocScannerTimer);
+  }
+
   /** Prefiere query; si no, contrato por id; si no, contrato de la empresa del alumno. */
   private async resolverCodContratoEtiqueta(
     qpCod: string,
@@ -586,7 +603,80 @@ export class DatosPrincipalesComponent implements OnInit {
     this.form.update((f) => ({ ...f, [k]: valor }));
     this.formDirty.set(true);
 
-    if (k === 'numDoc') this.verificarDoc();
+    if (k === 'numDoc' && !this.numDocScannerActivo) this.verificarDoc();
+  }
+
+  onNumDocScannerKeydown(event: KeyboardEvent): void {
+    if (this.isEdit()) return;
+    const now = performance.now();
+    if (now - this.numDocScannerLastKeyAt > 90) {
+      this.numDocScannerBuffer = '';
+      this.numDocScannerRapidKeys = 0;
+      this.numDocScannerActivo = false;
+    }
+    const gap = now - this.numDocScannerLastKeyAt;
+    this.numDocScannerLastKeyAt = now;
+
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      if (/PubDSK_/i.test(this.numDocScannerBuffer)) {
+        event.preventDefault();
+        void this.finalizarLecturaNumDocScanner();
+      }
+      return;
+    }
+
+    let char = '';
+    if (event.key.length === 1) char = event.key;
+    else if (event.key === 'Unidentified') char = '\u0000';
+    if (!char || event.ctrlKey || event.altKey || event.metaKey) return;
+
+    this.numDocScannerBuffer += char;
+    this.numDocScannerRapidKeys = gap > 0 && gap < 55 ? this.numDocScannerRapidKeys + 1 : 1;
+    if (this.numDocScannerRapidKeys >= 4) this.numDocScannerActivo = true;
+
+    if (
+      this.numDocScannerActivo &&
+      (!/^\d$/.test(char) || /PubDSK_/i.test(this.numDocScannerBuffer))
+    ) {
+      event.preventDefault();
+    }
+
+    if (this.numDocScannerTimer) clearTimeout(this.numDocScannerTimer);
+    this.numDocScannerTimer = setTimeout(() => {
+      void this.finalizarLecturaNumDocScanner();
+    }, 220);
+  }
+
+  onNumDocScannerPaste(event: ClipboardEvent): void {
+    if (this.isEdit()) return;
+    const raw = event.clipboardData?.getData('text') || '';
+    if (!/PubDSK_/i.test(raw)) return;
+    event.preventDefault();
+    this.numDocScannerBuffer = raw;
+    this.numDocScannerActivo = true;
+    void this.finalizarLecturaNumDocScanner();
+  }
+
+  private async finalizarLecturaNumDocScanner(): Promise<void> {
+    if (this.numDocScannerTimer) {
+      clearTimeout(this.numDocScannerTimer);
+      this.numDocScannerTimer = null;
+    }
+    const raw = this.numDocScannerBuffer;
+    const pareciaPdf417 = /PubDSK_/i.test(raw);
+    this.numDocScannerBuffer = '';
+    this.numDocScannerRapidKeys = 0;
+    this.numDocScannerActivo = false;
+    if (!pareciaPdf417) return;
+
+    const parsed = parseCedulaColombianaPdf417(raw);
+    if (!parsed) {
+      this.message.set(
+        'El lector detectó un PDF417, pero la lectura llegó incompleta. Vuelva a accionar el lector.',
+      );
+      return;
+    }
+    await this.onCedulaPdf417Scanned(parsed);
   }
 
 
@@ -652,6 +742,52 @@ export class DatosPrincipalesComponent implements OnInit {
     r.readAsDataURL(file);
   }
 
+  seleccionarScanMode(mode: 'imagen' | 'pdf417'): void {
+    this.scanMode.set(mode);
+    this.scanWarnings.set([]);
+    this.message.set(null);
+  }
+
+  async onCedulaPdf417Scanned(data: CedulaPdf417Data): Promise<void> {
+    this.aplicarSugeridoOcr(data, false);
+    this.scanApplied.set(true);
+    this.scanVisible.set(false);
+    this.scanWarnings.set([]);
+    const nd = parseNumDocForApi(data.numDoc);
+    if (nd == null) {
+      this.message.set('El PDF417 no entregó un número de documento válido.');
+      return;
+    }
+    try {
+      const existente = await firstValueFrom(
+        this.alumnoSvc.verificarDocumento(nd, this.form()._id),
+      );
+      if (
+        existente.existe &&
+        existente._id &&
+        String(existente._id) !== String(this.form()._id || '')
+      ) {
+        const id = String(existente._id);
+        this.docDuplicado.set({ _id: id, nombreCompleto: existente.nombreCompleto });
+        await this.confirm.open({
+          title: 'Alumno ya registrado',
+          message: `${existente.nombreCompleto || `Documento ${formatNumDoc(nd)}`} ya está registrado. Se abrirá su ficha existente.`,
+          confirmLabel: 'Abrir registro',
+          hideCancel: true,
+          variant: 'warn',
+        });
+        await this.router.navigate([this.rutasAlumno().ficha(id)]);
+        return;
+      }
+      this.docDuplicado.set(null);
+      this.message.set('Datos leídos desde el PDF417. Revise y corrija antes de guardar.');
+    } catch {
+      this.message.set(
+        'Los datos fueron leídos, pero no fue posible verificar si el alumno ya existe.',
+      );
+    }
+  }
+
   omitirEscaneo() {
     this.scanVisible.set(false);
     this.scanPreview.set(null);
@@ -689,7 +825,7 @@ export class DatosPrincipalesComponent implements OnInit {
     });
   }
 
-  private aplicarSugeridoOcr(s: Partial<AlumnoDto>) {
+  private aplicarSugeridoOcr(s: Partial<AlumnoDto>, verificarDocumento = true) {
     const genero = normalizarGenero(s.genero);
     const tipoSangre = normalizarTipoSangre(s.tipoSangre);
     this.form.update((f) => ({
@@ -706,7 +842,7 @@ export class DatosPrincipalesComponent implements OnInit {
       tipoSangre: tipoSangre || f.tipoSangre,
     }));
     if (s.expedida?.trim()) this.expedidaTexto.set(s.expedida.trim());
-    if (formatNumDoc(s.numDoc)) this.verificarDoc();
+    if (verificarDocumento && formatNumDoc(s.numDoc)) this.verificarDoc();
   }
 
   guardar() {

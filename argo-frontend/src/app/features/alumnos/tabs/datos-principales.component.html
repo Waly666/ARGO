@@ -40,29 +40,41 @@
     <div class="scan-head">
       <div>
         <h3>Escanear cédula</h3>
-        <p>
-          Foto nítida y de frente, con el número (puntos de miles) y los nombres bien visibles.
-          Se sugieren documento, apellidos y nombres; el resto se digita manualmente.
-        </p>
+        <p>Use una imagen del frente o lea el código PDF417 del reverso.</p>
       </div>
       <button type="button" class="ghost mini" (click)="omitirEscaneo()">Digitar manual</button>
     </div>
-    <div class="scan-body">
-      <div class="scan-preview" *ngIf="scanPreview() as src">
-        <img [src]="src" alt="Vista previa cédula" />
+    <div class="scan-mode-tabs" role="tablist" aria-label="Método para escanear la cédula">
+      <button type="button" role="tab" [class.active]="scanMode() === 'imagen'" (click)="seleccionarScanMode('imagen')">
+        Imagen / OCR
+      </button>
+      <button type="button" role="tab" [class.active]="scanMode() === 'pdf417'" (click)="seleccionarScanMode('pdf417')">
+        Código PDF417
+      </button>
+    </div>
+    <div class="scan-workspace">
+      <div class="scan-body" *ngIf="scanMode() === 'imagen'">
+        <div class="scan-preview" *ngIf="scanPreview() as src">
+          <img [src]="src" alt="Vista previa cédula" />
+        </div>
+        <div class="scan-preview empty" *ngIf="!scanPreview()">
+          <span>Sin imagen</span>
+        </div>
+        <div class="scan-actions">
+          <p class="scan-method-hint">Fotografíe el frente completo, nítido y sin reflejos.</p>
+          <label class="upload scan-upload">
+            <input type="file" accept="image/*" capture="environment" (change)="onCedulaScan($event)" hidden />
+            <span>{{ scanPreview() ? 'Cambiar imagen' : 'Seleccionar imagen' }}</span>
+          </label>
+          <button type="button" class="primary" (click)="escanearCedula()" [disabled]="scanning() || !scanFile()">
+            {{ scanning() ? 'Leyendo…' : 'Leer cédula' }}
+          </button>
+        </div>
       </div>
-      <div class="scan-preview empty" *ngIf="!scanPreview()">
-        <span>Sin imagen</span>
-      </div>
-      <div class="scan-actions">
-        <label class="upload scan-upload">
-          <input type="file" accept="image/*" capture="environment" (change)="onCedulaScan($event)" hidden />
-          <span>{{ scanPreview() ? 'Cambiar imagen' : 'Seleccionar imagen' }}</span>
-        </label>
-        <button type="button" class="primary" (click)="escanearCedula()" [disabled]="scanning() || !scanFile()">
-          {{ scanning() ? 'Leyendo…' : 'Leer cédula' }}
-        </button>
-      </div>
+      <argo-cedula-pdf417-scanner
+        *ngIf="scanMode() === 'pdf417'"
+        (scanned)="onCedulaPdf417Scanned($event)"
+      />
     </div>
   </div>
 
@@ -83,23 +95,40 @@
     <div class="scan-head">
       <div>
         <h3>Escanear cédula</h3>
-        <p>Solo frente, número completo y nombres legibles.</p>
+        <p>Use imagen/OCR o el código PDF417 del reverso.</p>
       </div>
       <button type="button" class="ghost mini" (click)="omitirEscaneo()">Cancelar</button>
     </div>
-    <div class="scan-body">
-      <div class="scan-preview" *ngIf="scanPreview() as src">
-        <img [src]="src" alt="Vista previa cédula" />
+    <div class="scan-mode-tabs" role="tablist" aria-label="Método para escanear la cédula">
+      <button type="button" role="tab" [class.active]="scanMode() === 'imagen'" (click)="seleccionarScanMode('imagen')">
+        Imagen / OCR
+      </button>
+      <button type="button" role="tab" [class.active]="scanMode() === 'pdf417'" (click)="seleccionarScanMode('pdf417')">
+        Código PDF417
+      </button>
+    </div>
+    <div class="scan-workspace">
+      <div class="scan-body" *ngIf="scanMode() === 'imagen'">
+        <div class="scan-preview" *ngIf="scanPreview() as src">
+          <img [src]="src" alt="Vista previa cédula" />
+        </div>
+        <div class="scan-preview empty" *ngIf="!scanPreview()">
+          <span>Sin imagen</span>
+        </div>
+        <div class="scan-actions">
+          <label class="upload scan-upload">
+            <input type="file" accept="image/*" capture="environment" (change)="onCedulaScan($event)" hidden />
+            <span>{{ scanPreview() ? 'Cambiar imagen' : 'Seleccionar imagen' }}</span>
+          </label>
+          <button type="button" class="primary" (click)="escanearCedula()" [disabled]="scanning() || !scanFile()">
+            {{ scanning() ? 'Leyendo…' : 'Aplicar datos' }}
+          </button>
+        </div>
       </div>
-      <div class="scan-actions">
-        <label class="upload scan-upload">
-          <input type="file" accept="image/*" capture="environment" (change)="onCedulaScan($event)" hidden />
-          <span>{{ scanPreview() ? 'Cambiar imagen' : 'Seleccionar imagen' }}</span>
-        </label>
-        <button type="button" class="primary" (click)="escanearCedula()" [disabled]="scanning() || !scanFile()">
-          {{ scanning() ? 'Leyendo…' : 'Aplicar datos' }}
-        </button>
-      </div>
+      <argo-cedula-pdf417-scanner
+        *ngIf="scanMode() === 'pdf417'"
+        (scanned)="onCedulaPdf417Scanned($event)"
+      />
     </div>
   </div>
 
@@ -164,9 +193,11 @@
                 [attr.maxlength]="numDocMaxLength"
                 [ngModel]="form().numDoc"
                 (ngModelChange)="patch('numDoc', $event)"
+                (keydown)="onNumDocScannerKeydown($event)"
+                (paste)="onNumDocScannerPaste($event)"
                 (blur)="verificarDoc()"
                 [readonly]="isEdit()" />
-              <p class="hint doc-hint">Solo dígitos · {{ numDocHint }}</p>
+              <p class="hint doc-hint">Digite normalmente o accione aquí el lector PDF417 · {{ numDocHint }}</p>
             </div>
           </div>
           <div class="row">

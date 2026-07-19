@@ -120,6 +120,18 @@
     --cf-input-h: 2.05rem;
     overflow: visible;
 
+    &.contrato-finalizado {
+      > :not(.contrato-form-banner):not(.contrato-finalizado-aviso) {
+        pointer-events: none;
+        opacity: 0.72;
+        filter: saturate(0.68);
+      }
+    }
+
+    .contrato-finalizado-aviso {
+      margin: 0 0 0.85rem;
+    }
+
     .row-fields {
       overflow: visible;
     }

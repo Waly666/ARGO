@@ -1,0 +1,106 @@
+<div class="pdf417-reader">
+  <div class="pdf417-switch" role="tablist" aria-label="Método para leer PDF417">
+    <button
+      type="button"
+      role="tab"
+      [class.active]="modo() === 'camera'"
+      [attr.aria-selected]="modo() === 'camera'"
+      (click)="seleccionarModo('camera')">
+      Cámara
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [class.active]="modo() === 'lector'"
+      [attr.aria-selected]="modo() === 'lector'"
+      (click)="seleccionarModo('lector')">
+      Lector físico
+    </button>
+  </div>
+
+  <div class="pdf417-workspace">
+    <div class="camera-pane" [class.hidden]="modo() !== 'camera'">
+      <div class="video-box">
+        <video #video muted playsinline></video>
+        <div class="scan-guide" aria-hidden="true"></div>
+        @if (loading()) {
+          <span class="video-status">Abriendo cámara…</span>
+        }
+      </div>
+      <div class="camera-actions">
+        @if (resolution()) {
+          <div class="camera-resolution">
+            Resolución real: <strong>{{ resolution() }}</strong>
+          </div>
+        }
+        @if (devices().length > 1) {
+          <label>
+            <span>Cámara</span>
+            <select [ngModel]="deviceId()" (ngModelChange)="onDeviceChange($event)">
+              @for (device of devices(); track device.deviceId; let i = $index) {
+                <option [value]="device.deviceId">{{ device.label || 'Cámara ' + (i + 1) }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (zoomDisponible()) {
+          <label class="zoom-control">
+            <span>Zoom: {{ zoomValue() | number: '1.1-1' }}×</span>
+            <input
+              type="range"
+              [min]="zoomMin()"
+              [max]="zoomMax()"
+              [step]="zoomStep()"
+              [ngModel]="zoomValue()"
+              (ngModelChange)="aplicarZoom($event)"
+            />
+          </label>
+        }
+        <div class="camera-buttons">
+          @if (torchDisponible()) {
+            <button type="button" (click)="alternarLinterna()">
+              {{ torchOn() ? 'Apagar luz' : 'Encender luz' }}
+            </button>
+          }
+          <button type="button" (click)="capturarYAnalizar()" [disabled]="analizandoCaptura()">
+            {{ analizandoCaptura() ? 'Analizando…' : 'Capturar y analizar' }}
+          </button>
+          <label class="image-upload">
+            <input type="file" accept="image/*" capture="environment" (change)="analizarImagen($event)" hidden />
+            <span>Usar foto en alta resolución</span>
+          </label>
+        </div>
+        <p>Ubique horizontalmente el PDF417 del reverso dentro del recuadro.</p>
+      </div>
+    </div>
+
+    <div class="lector-pane" [class.hidden]="modo() !== 'lector'">
+      <div class="lector-icon" aria-hidden="true">▥</div>
+      <div>
+        <strong>Lector 2D PDF417</strong>
+        <p>Haga clic en el campo y oprima el gatillo. La lectura se procesará automáticamente.</p>
+        <input
+          #lectorInput
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Captura protegida del lector PDF417"
+          placeholder="Haga clic aquí y escanee…"
+          [ngModel]="rawLector()"
+          (ngModelChange)="onRawLectorChange($event)"
+          (keydown.enter)="procesarLector($event)"
+          (keydown.tab)="procesarLector($event)"
+        />
+      </div>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="pdf417-error" role="alert">
+      <span>{{ error() }}</span>
+      @if (modo() === 'camera') {
+        <button type="button" (click)="retry()">Reintentar</button>
+      }
+    </div>
+  }
+</div>

@@ -3,6 +3,7 @@ const ctrl = require('../controllers/ingresoController');
 const recibo = require('../controllers/reciboController');
 const upload = require('../middleware/upload');
 const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
+const contratoMutable = require('../middleware/contratoJornadaMutable');
 
 const router = Router();
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
@@ -16,7 +17,7 @@ router.get('/alumno/:numDoc', pagos, ctrl.listarPorAlumno);
 router.get('/liquidacion/:idLiquidacion', pagos, ctrl.listarPorLiquidacion);
 router.get('/:id/recibo', pagos, recibo.datos);
 router.get('/:id/recibo/html', pagos, recibo.html);
-router.post('/', pagos, soporte, ctrl.crear);
-router.delete('/:id', pagos, ctrl.eliminar);
+router.post('/', pagos, soporte, contratoMutable.contratoPorBodyOpcional, ctrl.crear);
+router.delete('/:id', pagos, contratoMutable.ingresoPorParametro, ctrl.eliminar);
 
 module.exports = router;

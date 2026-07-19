@@ -103,7 +103,7 @@ export class CertificadosJornadaListaComponent implements OnInit {
   msg = signal<string | null>(null);
   msgError = signal(false);
 
-  contratos = signal<Array<{ _id: string; label: string }>>([]);
+  contratos = signal<Array<{ _id: string; label: string; estado?: string }>>([]);
   jornadas = signal<Array<{ _id: string; label: string; idContrato?: string }>>([]);
   clases = signal<Array<{ _id: string; label: string; idJornada?: string }>>([]);
 
@@ -209,6 +209,7 @@ export class CertificadosJornadaListaComponent implements OnInit {
         this.contratos.set(
           (rows || []).map((c: any) => ({
             _id: String(c._id),
+            estado: String(c.estado || ''),
             label:
               [c.codContrato, c.nombreComercial || c.razoSocial || c.clienteNombre]
                 .filter(Boolean)
@@ -404,6 +405,11 @@ export class CertificadosJornadaListaComponent implements OnInit {
   abrirEditar(id: string) {
     const c = this.certificados().find((x) => x._id === id);
     if (!c) return;
+    if (this.certificadoContratoFinalizado(c)) {
+      this.msgError.set(true);
+      this.msg.set('El contrato está finalizado. El certificado es únicamente de consulta.');
+      return;
+    }
     this.editId.set(c._id);
     this.editEncabezado.set(c.encabezado || '');
     this.editTipoCertificado.set(normalizarTipoAlumno(c.tipoCertificado));
@@ -436,6 +442,13 @@ export class CertificadosJornadaListaComponent implements OnInit {
   guardarEditar() {
     const id = this.editId();
     if (!id) return;
+    const cert = this.certificados().find((x) => x._id === id);
+    if (cert && this.certificadoContratoFinalizado(cert)) {
+      this.msgError.set(true);
+      this.msg.set('El contrato está finalizado. No se puede editar el certificado.');
+      this.cerrarEditar();
+      return;
+    }
     this.guardando.set(true);
     this.jornadaSvc
       .actualizarCertificadoJornada(id, {
@@ -465,6 +478,11 @@ export class CertificadosJornadaListaComponent implements OnInit {
   }
 
   async eliminar(c: CertificadoJornadaItem) {
+    if (this.certificadoContratoFinalizado(c)) {
+      this.msgError.set(true);
+      this.msg.set('El contrato está finalizado. No se puede eliminar el certificado.');
+      return;
+    }
     const ok = await this.confirmSvc.open({
       title: 'Confirmar borrado',
       message: `¿De verdad desea borrar este certificado?\n\n${c.codigoCert || c._id} · ${c.nombreCompleto || 'el alumno'}`,
@@ -492,6 +510,17 @@ export class CertificadosJornadaListaComponent implements OnInit {
       this.msgError.set(true);
       this.msg.set(m);
     });
+  }
+
+  certificadoContratoFinalizado(c: CertificadoJornadaItem): boolean {
+    const contrato = this.contratos().find(
+      (x) => String(x._id) === String(c.idContrato || ''),
+    );
+    const estado = String(contrato?.estado || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+    return estado.includes('ejecutado') || estado.includes('finaliz') || estado.includes('cerrado');
   }
 
   fmtFecha(f?: string) {

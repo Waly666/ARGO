@@ -1,0 +1,57 @@
+<div class="qr-modal-backdrop" (click)="close()" aria-hidden="true"></div>
+
+<section
+  class="qr-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="qr-modal-title"
+  (click)="$event.stopPropagation()">
+  <header class="qr-modal-header">
+    <div>
+      <h2 id="qr-modal-title">Escanear QR del alumno</h2>
+      <p>Use la misma etiqueta generada por ARGO Jornadas.</p>
+    </div>
+    <button type="button" class="qr-close" (click)="close()" aria-label="Cerrar">×</button>
+  </header>
+
+  @if (devices().length > 1) {
+    <label class="qr-camera-select">
+      <span>Cámara</span>
+      <select [ngModel]="deviceId()" (ngModelChange)="onDeviceChange($event)">
+        @for (camera of devices(); track camera.deviceId; let i = $index) {
+          <option [value]="camera.deviceId">
+            {{ camera.label || 'Cámara ' + (i + 1) }}
+          </option>
+        }
+      </select>
+    </label>
+  }
+
+  <div class="qr-camera-wrap">
+    <video #video muted playsinline></video>
+
+    <div class="qr-overlay" aria-hidden="true">
+      <div class="qr-frame"></div>
+      <span>Centre el código QR dentro del recuadro</span>
+    </div>
+
+    @if (loading()) {
+      <div class="qr-camera-state">Iniciando cámara…</div>
+    }
+    @if (error()) {
+      <div class="qr-camera-state qr-camera-error">
+        <p>{{ error() }}</p>
+        <button type="button" class="primary mini" (click)="retry()">Reintentar</button>
+      </div>
+    }
+  </div>
+
+  @if (invalidQr()) {
+    <p class="qr-invalid" role="alert">{{ invalidQr() }}</p>
+  }
+
+  <footer class="qr-modal-footer">
+    <span>Al leerlo, ARGO buscará al alumno y lo inscribirá en esta clase.</span>
+    <button type="button" class="ghost" (click)="close()">Cerrar</button>
+  </footer>
+</section>

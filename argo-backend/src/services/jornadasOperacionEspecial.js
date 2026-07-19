@@ -21,6 +21,7 @@ async function estadoOperacionEspecialJornadas(req) {
   }
   return {
     operacionFueraDeDiaHabilitada: habilitada,
+    mostrarSwitchHorarioManual: cfg.mostrarSwitchHorarioManual !== false,
     puedeUsar,
     motivo,
   };

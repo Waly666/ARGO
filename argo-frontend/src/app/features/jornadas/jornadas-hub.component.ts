@@ -54,6 +54,8 @@ import { pagoIntangibleCompleto } from '../../core/utils/pago-intangible.validat
 import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { JornadaCapDto } from '../../core/services/jornada-cap.service';
 import { JornadaMapaPickerComponent } from './jornada-mapa-picker.component';
+import { JornadaQrScanModalComponent } from './jornada-qr-scan-modal.component';
+import { JornadaAlumnoQrData } from './jornada-alumno-qr.util';
 import { ContratoInformesDashboardComponent } from './contrato-informes-dashboard.component';
 import {
   ProgresoCertResp,
@@ -173,6 +175,7 @@ type AlumnoNombrable = {
     NotaCreditoModalComponent,
     ContratoInformesDashboardComponent,
     CertificadosZipProgresoModalComponent,
+    JornadaQrScanModalComponent,
   ],
   templateUrl: './jornadas-hub.component.html',
   styleUrls: ['./jornadas-hub.component.scss'],
@@ -200,6 +203,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private ingresoSvc = inject(IngresoService);
   operacionCfg = inject(JornadasOperacionConfigService);
   operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
+  mostrarSwitchHorarioManual = this.operacionCfg.mostrarSwitchHorarioManual;
 
   tab = signal<Tab>('contratos');
   vistaJornadas = signal<VistaAgenda>('lista');
@@ -398,6 +402,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private progresoDebounce: ReturnType<typeof setTimeout> | null = null;
 
   contratoActivo = computed(() => this.contratos().find((c) => c._id === this.contratoSel()));
+  contratoActivoFinalizado = computed(() => this.esContratoFinalizado(this.contratoActivo()));
+  contratoModalFinalizado = computed(() => {
+    const idContrato = this.idContratoParaClaseModal();
+    const contrato = this.contratos().find((c) => String(c._id) === String(idContrato));
+    return this.esContratoFinalizado(contrato);
+  });
 
   contratoAvanceId = computed(
     () => this.contratoSel() || this.formContrato()._id || this.contratoDesdeUrl() || '',
@@ -428,7 +438,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   /** Solo administrador (jornadas.gestionar) puede eliminar clases (cualquier estado). */
   puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
   puedeEliminarClaseActiva = computed(
-    () => this.puedeEliminarClase() && claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
+    () =>
+      !this.contratoModalFinalizado() &&
+      this.puedeEliminarClase() &&
+      claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
   );
   inscritosConAsistencia = computed(() => this.inscritos().filter((i) => i.tieneAsistencia).length);
   /** Inscritos que aún requieren asistencia (excluye certificados vigentes en el contrato). */
@@ -774,6 +787,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   subiendoFotoEvidencia = signal(false);
   modalHoraInicio = signal('');
   modalHoraFin = signal('');
+  modalHorarioManual = signal(false);
   readonly opcionesHoras = listaOpcionesHora(15);
   modalClaseInstructorId = signal<number | ''>('');
   guardandoClase = signal(false);
@@ -796,6 +810,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   >([]);
   guardandoAsistencia = signal<number | null>(null);
   guardandoInscripcion = signal(false);
+  qrAlumnoOpen = signal(false);
+  qrAlumnoBuscando = signal(false);
   cronometroDisplay = signal('00:00:00');
 
   /** Utilidad «Copiar alumnos de otra clase del contrato». */
@@ -1099,6 +1115,46 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   contratoFormEjecutado(): boolean {
     // Solo el estado exacto "Ejecutado" (misma regla que el resto del hub).
     return String(this.formContrato().estado || '').trim() === 'Ejecutado';
+  }
+
+  esContratoFinalizado(
+    contrato?: { estado?: string | null } | null,
+  ): boolean {
+    const estado = String(contrato?.estado || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+    return (
+      estado.includes('ejecutado') ||
+      estado.includes('finaliz') ||
+      estado.includes('cerrado')
+    );
+  }
+
+  contratoDeJornadaFinalizado(j?: { idContrato?: string | null } | null): boolean {
+    const contrato = this.contratos().find(
+      (c) => String(c._id) === String(j?.idContrato || ''),
+    );
+    return this.esContratoFinalizado(contrato);
+  }
+
+  contratoDeClaseFinalizado(c?: { idContrato?: string | null; idJornada?: string | null } | null): boolean {
+    const idContrato =
+      c?.idContrato ||
+      this.jornadas().find((j) => String(j._id) === String(c?.idJornada || ''))?.idContrato;
+    const contrato = this.contratos().find(
+      (x) => String(x._id) === String(idContrato || ''),
+    );
+    return this.esContratoFinalizado(contrato);
+  }
+
+  private avisarContratoFinalizado(): void {
+    this.mostrarMsg(
+      'El contrato está finalizado. Sus jornadas, clases, alumnos y certificados son únicamente de consulta.',
+      'warn',
+      'Contrato bloqueado',
+    );
   }
 
   /**
@@ -1409,7 +1465,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   abrirModalCrearClase() {
+    if (this.contratoActivoFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     this.modalModoClase.set('nuevo');
+    this.modalClaseFicha.set('datos');
     this.claseActiva.set(null);
     this.claseSel.set('');
     this.modalClaseInstructorId.set('');
@@ -1427,6 +1488,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.textoClaseFuenteCopiar.set('');
     this.nuevaClaseProg.set('');
     this.nuevaClaseUbic.set('Carpa');
+    this.modalHoraInicio.set('');
+    this.modalHoraFin.set('');
+    this.modalHorarioManual.set(false);
     this.modalFechaClase.set('');
     this.modalCrearJornadaId.set(this.jornadaSel() || '');
     this.cargarJornadasParaCrear();
@@ -1448,6 +1512,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.modalClaseInstructorId.set(c.idEmpleadoInstructor ?? '');
     this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
     this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+    this.modalHorarioManual.set(c.horarioManual === true);
     this.alumnoBusqueda.set('');
     this.alumnoBusquedaResults.set([]);
     this.alumnoBusquedaOpen.set(false);
@@ -1492,7 +1557,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!idContrato) {
       this.clasesContratoCopiar.set([]);
       if (syncAlumnos) {
-        this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+        this.onClaseFuenteCopiarLimpiar();
       }
       return;
     }
@@ -1500,19 +1565,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       next: (rows) => {
         this.clasesContratoCopiar.set(rows || []);
         if (!syncAlumnos) return;
-        const idActual = String(claseActual?._id || this.claseSel() || '');
-        const idFuente = String(this.idClaseFuenteCopiar() || '').trim();
-        // Si el usuario ya eligió una clase, no pisar con la auto “anterior” de la jornada.
-        if (idFuente) {
-          this.cargarAlumnosDesdeFuente(idActual, idFuente);
-          return;
-        }
-        this.cargarAlumnosClaseAnterior(idActual, { autoSeleccionar: true });
+        // El instructor debe elegir expresamente la clase fuente.
+        this.onClaseFuenteCopiarLimpiar();
       },
       error: () => {
         this.clasesContratoCopiar.set([]);
         if (syncAlumnos) {
-          this.cargarAlumnosClaseAnterior(claseActual?._id || this.claseSel());
+          this.onClaseFuenteCopiarLimpiar();
         }
       },
     });
@@ -1736,8 +1795,24 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   claseModalIniciable(): boolean {
     const cl = this.claseActiva();
     if (!cl || cl.estado === 'FINALIZADO') return false;
-    if (cl.estado === 'EN PROCESO' && cl.horaInicio) return false;
+    if (cl.estado === 'EN PROCESO') return false;
     return this.jornadaClaseModalOperable();
+  }
+
+  horarioClaseEditable(): boolean {
+    return this.operacionEspecialActiva() || this.modalHorarioManual();
+  }
+
+  onModalHorarioManualChange(manual: boolean): void {
+    if (this.operacionEspecialActiva()) return;
+    this.modalHorarioManual.set(manual);
+    if (!manual || this.modalHoraInicio()) return;
+    const ahora = new Date();
+    const fin = new Date(ahora.getTime() + 60 * 60 * 1000);
+    const hhmm = (d: Date) =>
+      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    this.modalHoraInicio.set(hhmm(ahora));
+    this.modalHoraFin.set(hhmm(fin));
   }
 
   tituloBotonIniciarClase(): string {
@@ -1751,7 +1826,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!this.claseModalIniciable()) {
       return 'La clase ya está iniciada o finalizada.';
     }
-    return 'Iniciar clase y registrar hora de inicio';
+    return this.modalHorarioManual()
+      ? 'Iniciar clase sin modificar el horario manual'
+      : 'Iniciar clase y registrar hora de inicio';
   }
 
   formatDuracion(totalSegundos: number): string {
@@ -1768,7 +1845,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (cl.estado === 'FINALIZADO' && cl.duracionSegundos != null) {
       return this.formatDuracion(cl.duracionSegundos);
     }
-    if (this.operacionEspecialActiva()) {
+    if (this.horarioClaseEditable()) {
       const secs = duracionSegundosDesdeHHmm(this.modalHoraInicio(), this.modalHoraFin());
       if (secs != null) return this.formatDuracion(secs);
     }
@@ -1777,19 +1854,26 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  private horarioPayloadFinalizarClase(): { horaInicio?: string; horaFin?: string } {
-    if (!this.operacionEspecialActiva()) return {};
+  private horarioPayloadFinalizarClase(): {
+    horarioManual?: boolean;
+    horaInicio?: string;
+    horaFin?: string;
+  } {
+    const out: { horarioManual?: boolean; horaInicio?: string; horaFin?: string } = {};
+    if (!this.operacionEspecialActiva()) {
+      out.horarioManual = this.modalHorarioManual();
+    }
+    if (!this.horarioClaseEditable()) return out;
     const hi = this.modalHoraInicio().trim();
     const hf = this.modalHoraFin().trim();
-    const out: { horaInicio?: string; horaFin?: string } = {};
     if (validarHoraInput(hi)) out.horaInicio = hi;
     if (validarHoraInput(hf)) out.horaFin = hf;
     return out;
   }
 
   private validarHorarioAntesFinalizarEspecial(): boolean {
-    if (!this.operacionEspecialActiva()) return true;
-    if (this.claseActiva()?.estado === 'EN PROCESO') return true;
+    if (!this.horarioClaseEditable()) return true;
+    if (this.operacionEspecialActiva() && this.claseActiva()?.estado === 'EN PROCESO') return true;
     const hi = this.modalHoraInicio().trim();
     const hf = this.modalHoraFin().trim();
     if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
@@ -1810,6 +1894,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   tituloBotonFinalizarClase(): string {
     if (this.claseActiva()?.estado === 'FINALIZADO') {
       return 'Reprocesar: emite certificados pendientes de alumnos matriculados después del cierre.';
+    }
+    if (!this.operacionEspecialActiva() && this.modalHorarioManual()) {
+      return 'Finalizar clase conservando el horario manual';
     }
     if (!this.claseModalFinalizable()) {
       if (this.operacionEspecialActiva() && this.claseActiva()?.estado === 'PROGRAMADA') {
@@ -1905,6 +1992,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   onFotoEvidenciaSelected(ev: Event) {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     const id = this.claseSel();
@@ -1913,6 +2004,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaSvc.subirFotoEvidenciaClase(id, file).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
+        this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
+        this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+        this.modalHorarioManual.set(c.horarioManual === true);
         this.subiendoFotoEvidencia.set(false);
         this.recargarClases();
         this.mostrarMsg('Foto de evidencia guardada.', 'ok', 'Evidencia');
@@ -1938,11 +2032,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   iniciarClaseModal() {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const id = this.claseSel();
     if (!id || !this.claseModalIniciable()) return;
-    this.jornadaSvc.iniciarClase(id).subscribe({
+    this.jornadaSvc.iniciarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
+        this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
+        this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+        this.modalHorarioManual.set(c.horarioManual === true);
         this.iniciarCronometroSiAplica();
         this.recargarClases();
         this.liveSync.notificarClaseIniciada(c as unknown as Record<string, unknown>);
@@ -1953,6 +2054,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   finalizarClaseModal() {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const id = this.claseSel();
     if (!id) return;
     const yaFinalizada = this.claseActiva()?.estado === 'FINALIZADO';
@@ -1961,6 +2066,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
+        this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
+        this.modalHoraFin.set(isoAHoraInput(c.horaFin));
+        this.modalHorarioManual.set(c.horarioManual === true);
         this.detenerCronometro();
         this.actualizarCronometroDisplay();
         this.cargarInscritos(id);
@@ -1991,6 +2099,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   sincronizarAsistenciasClaseModal() {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const id = this.claseSel();
     if (!id) return;
     if (this.inscritosSinAsistencia() === 0) {
@@ -2023,6 +2135,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   guardarCambiosClaseModal() {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const id = this.claseSel();
     if (!id) return;
     const dto: {
@@ -2031,6 +2147,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       idEmpleadoInstructor?: number | null;
       horaInicio?: string | null;
       horaFin?: string | null;
+      horarioManual?: boolean;
     } = {
       ubicacion: this.nuevaClaseUbic(),
     };
@@ -2039,7 +2156,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       const insId = this.modalClaseInstructorId();
       dto.idEmpleadoInstructor = insId ? Number(insId) : null;
     }
-    if (this.puedeEditarHorarioClase()) {
+    if (this.puedeEditarHorarioClase() && !this.operacionEspecialActiva()) {
+      dto.horarioManual = this.modalHorarioManual();
+    }
+    if (this.puedeEditarHorarioClase() && this.horarioClaseEditable()) {
       const hi = this.modalHoraInicio().trim();
       const hf = this.modalHoraFin().trim();
       if (!validarHoraInput(hi) || !validarHoraInput(hf)) {
@@ -2053,6 +2173,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       next: (r: any) => {
         const c = r?.clase || r;
         this.claseActiva.set(c);
+        this.modalHorarioManual.set(c.horarioManual === true);
         this.modalHoraInicio.set(isoAHoraInput(c.horaInicio));
         this.modalHoraFin.set(isoAHoraInput(c.horaFin));
         this.iniciarCronometroSiAplica();
@@ -2074,6 +2195,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     nombre?: string,
     opts?: { tieneAsistencia?: boolean },
   ) {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const id = this.claseSel();
     if (!id) return;
     const extraAsist =
@@ -2106,6 +2231,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   async borrarAsistenciaInscrito(numDoc: number, nombre?: string) {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const id = this.claseSel();
     if (!id) return;
     const ok = await this.confirmSvc.open({
@@ -2132,6 +2261,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   marcarAsistenciaInscrito(numDoc: number) {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const id = this.claseSel();
     if (!id) return;
     this.guardandoAsistencia.set(numDoc);
@@ -2306,6 +2439,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   cerrarModalCrearClase() {
     if (this.guardandoClase()) return;
     this.detenerCronometro();
+    this.qrAlumnoOpen.set(false);
     this.modalCrearClase.set(false);
     this.alumnoBusquedaOpen.set(false);
     this.limpiarMsgModal();
@@ -2355,7 +2489,72 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.alumnosMatricular().some((x) => formatNumDoc(x.numDoc) === doc);
   }
 
+  abrirEscanerQrAlumno() {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
+    if (this.modalModoClase() === 'editar' && !this.claseSel()) {
+      this.mostrarMsg(
+        'No se identificó la clase que recibirá al alumno.',
+        'info',
+        'Escanear alumno',
+      );
+      return;
+    }
+    this.qrAlumnoOpen.set(true);
+  }
+
+  cerrarEscanerQrAlumno() {
+    this.qrAlumnoOpen.set(false);
+  }
+
+  onQrAlumnoEscaneado(data: JornadaAlumnoQrData) {
+    this.qrAlumnoOpen.set(false);
+    const numDoc = String(data.numDoc || '').replace(/\D/g, '');
+    if (!numDoc) {
+      this.mostrarMsgModal('El QR no contiene un documento válido.', 'error', 'QR no válido');
+      return;
+    }
+
+    const duplicado =
+      this.modalModoClase() === 'editar'
+        ? this.inscritos().some((x) => formatNumDoc(x.numDoc) === formatNumDoc(numDoc))
+        : this.alumnosMatricular().some(
+            (x) => formatNumDoc(x.numDoc) === formatNumDoc(numDoc),
+          );
+    if (duplicado) {
+      this.mostrarMsgModal(
+        `${data.nombre || `Documento ${numDoc}`} ya está inscrito en esta clase.`,
+        'info',
+        'Alumno duplicado',
+      );
+      return;
+    }
+
+    this.qrAlumnoBuscando.set(true);
+    this.jornadaSvc.buscarAlumnoDoc(numDoc).subscribe({
+      next: (alumno: AlumnoListItem) => {
+        this.qrAlumnoBuscando.set(false);
+        this.agregarAlumnoMatricula(alumno);
+      },
+      error: (e) => {
+        this.qrAlumnoBuscando.set(false);
+        const msg =
+          e?.status === 404
+            ? `El alumno con documento ${numDoc} no está registrado en la base de datos.`
+            : e?.error?.message || 'No fue posible consultar el alumno del código QR.';
+        this.mostrarMsgModal(msg, 'error', 'Alumno no encontrado');
+        this.mostrarMsg(msg, 'error', 'Escáner QR');
+      },
+    });
+  }
+
   agregarAlumnoMatricula(a: AlumnoListItem) {
+    if (this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const idContrato = this.idContratoParaClaseModal();
     if (idContrato) {
       this.jornadaSvc.progresoCertificacion(a.numDoc, idContrato).subscribe({
@@ -3955,6 +4154,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   guardarClaseConMatriculas() {
+    if (this.contratoActivoFinalizado() || this.contratoModalFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const idJ = this.modalCrearJornadaId() || this.jornadaSel();
     const idP = this.nuevaClaseProg();
     if (!idJ) {
@@ -3971,12 +4174,30 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.mostrarMsg('Seleccione el programa de capacitación para la nueva clase.', 'warn', 'Falta programa');
       return;
     }
+    const horarioManual = !this.operacionEspecialActiva() && this.modalHorarioManual();
+    const horaInicio = this.modalHoraInicio().trim();
+    const horaFin = this.modalHoraFin().trim();
+    if (
+      horarioManual &&
+      (!validarHoraInput(horaInicio) ||
+        !validarHoraInput(horaFin) ||
+        duracionSegundosDesdeHHmm(horaInicio, horaFin) == null)
+    ) {
+      this.mostrarMsg(
+        'En modo manual indique horas válidas; la hora de fin debe ser posterior al inicio.',
+        'error',
+        'Horario manual inválido',
+      );
+      return;
+    }
     this.guardandoClase.set(true);
     this.jornadaSvc
       .crearClase({
         idJornada: idJ,
         idPrograma: idP,
         ubicacion: this.nuevaClaseUbic(),
+        horarioManual,
+        ...(horarioManual ? { horaInicio, horaFin } : {}),
         ...(this.puedeAsignarInstructor() && this.modalClaseInstructorId()
           ? { idEmpleadoInstructor: Number(this.modalClaseInstructorId()) }
           : {}),
@@ -3997,6 +4218,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           this.modalCrearClase.set(true);
           this.claseSel.set(c._id);
           this.claseActiva.set(c);
+          this.modalHorarioManual.set(c.horarioManual === true);
           this.alumnosMatricular.set([]);
           this.cargarInscritos(c._id);
           this.cargarClasesContratoParaCopiar(c);
@@ -4103,6 +4325,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   reabrirJornadaOperacion(j: JornadaCapDto, ev?: Event) {
     ev?.stopPropagation();
+    if (this.contratoDeJornadaFinalizado(j)) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     if (!this.operacionEspecialActiva()) return;
     if (!j._id) return;
     this.jornadaSvc.reabrirJornadaOperacion(j._id).subscribe({
@@ -4139,6 +4365,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   editarJornada(j: JornadaCapDto, ev?: Event) {
     ev?.stopPropagation();
     ev?.preventDefault();
+    if (this.contratoDeJornadaFinalizado(j)) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     this.jornadaEditModo.set('edit');
     this.jornadaEditError.set(null);
     this.direccionAlertaActiva.set(false);
@@ -4301,6 +4531,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.jornadaEditError.set('No hay jornada en edición.');
       return;
     }
+    if (
+      this.contratoDeJornadaFinalizado(j) ||
+      (this.jornadaEditModo() === 'nueva' && this.contratoActivoFinalizado())
+    ) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     if (this.jornadaEditModo() === 'nueva') {
       this.guardarNuevaJornada();
       return;
@@ -4430,6 +4667,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   async eliminarJornada(j: JornadaCapDto, ev?: Event) {
     ev?.stopPropagation();
     ev?.preventDefault();
+    if (this.contratoDeJornadaFinalizado(j)) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const ok = await this.confirmSvc.open({
       title: 'Confirmar borrado',
       message: `¿De verdad desea borrar esta jornada?\n\n${this.labelJornada(j)}\n\nTambién se borrarán sus clases sin asistencias. El número de jornadas del contrato se recalculará.`,
@@ -4584,6 +4825,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   async eliminarClase(c: { _id: string; estado?: string }) {
+    if (this.contratoDeClaseFinalizado(this.claseActiva() || c)) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     if (!this.puedeEliminarClase()) {
       this.mostrarMsg('Solo un administrador puede eliminar clases.', 'warn', 'Sin permiso');
       return;
@@ -4885,12 +5130,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   editarCertDesdeHub(c: { _id: string }) {
+    if (this.contratoActivoFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const q: Record<string, string> = { editar: c._id };
     if (this.contratoSel()) q['contrato'] = this.contratoSel();
     void this.router.navigate(['/app/jornadas/certificados'], { queryParams: q });
   }
 
   async eliminarCertDesdeHub(c: { _id: string; codigoCert?: string; nombreCompleto?: string }) {
+    if (this.contratoActivoFinalizado()) {
+      this.avisarContratoFinalizado();
+      return;
+    }
     const ok = await this.confirmSvc.open({
       title: 'Confirmar borrado',
       message: `¿De verdad desea borrar este certificado?\n\n${c.codigoCert || c._id}${c.nombreCompleto ? ` · ${c.nombreCompleto}` : ''}`,

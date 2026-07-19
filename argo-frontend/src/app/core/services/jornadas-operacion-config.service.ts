@@ -15,6 +15,9 @@ export class JornadasOperacionConfigService {
   readonly modoHabilitado = computed(
     () => this._estado()?.operacionFueraDeDiaHabilitada === true,
   );
+  readonly mostrarSwitchHorarioManual = computed(
+    () => this._estado()?.mostrarSwitchHorarioManual !== false,
+  );
 
   cargar(): void {
     this.jornadaSvc.estadoOperacionEspecialJornadas().subscribe({
@@ -22,13 +25,17 @@ export class JornadasOperacionConfigService {
       error: () =>
         this._estado.set({
           operacionFueraDeDiaHabilitada: false,
+          mostrarSwitchHorarioManual: true,
           puedeUsar: false,
           motivo: null,
         }),
     });
   }
 
-  marcarDesdeConfig(_cfg: { operacionFueraDeDiaHabilitada: boolean }): void {
+  marcarDesdeConfig(_cfg: {
+    operacionFueraDeDiaHabilitada: boolean;
+    mostrarSwitchHorarioManual: boolean;
+  }): void {
     this.cargar();
   }
 }

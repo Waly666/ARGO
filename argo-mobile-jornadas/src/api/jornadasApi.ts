@@ -47,6 +47,7 @@ export function actualizarClase(
     ubicacion?: string;
     horaInicio?: string | null;
     horaFin?: string | null;
+    horarioManual?: boolean;
     /** Reabre clase FINALIZADA sin asistencias (vuelve a PROGRAMADA). */
     reabrir?: boolean;
   },
@@ -58,13 +59,20 @@ export function actualizarClase(
   });
 }
 
-export function iniciarClase(id: string) {
-  return apiFetch<ClaseJornada>(`${BASE}/clases/${id}/iniciar`, { method: 'POST' });
+export function iniciarClase(
+  id: string,
+  dto?: { horarioManual?: boolean; horaInicio?: string; horaFin?: string },
+) {
+  return apiFetch<ClaseJornada>(`${BASE}/clases/${id}/iniciar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto || {}),
+  });
 }
 
 export function finalizarClase(
   id: string,
-  dto?: { horaInicio?: string; horaFin?: string },
+  dto?: { horarioManual?: boolean; horaInicio?: string; horaFin?: string },
 ) {
   return apiFetch<FinalizarClaseResp>(`${BASE}/clases/${id}/finalizar`, {
     method: 'POST',

@@ -194,6 +194,11 @@ export interface InformeDashboardClase {
   programaNombre: string;
   instructorNombre: string;
   estado: string;
+  jornadaLabel?: string;
+  horaInicioLabel?: string;
+  horaFinLabel?: string;
+  duracionSegundos?: number | null;
+  duracionLabel?: string;
   alumnosInscritos: number;
   alumnosCertificados: number;
   alumnos: InformeDashboardAlumno[];
@@ -227,6 +232,8 @@ export interface InformeDashboardDto {
     numClases: number;
     alumnosCapacitados: number;
     alumnosCertificados: number;
+    numProgramas?: number;
+    programas?: string[];
     clases: InformeDashboardClase[];
   }>;
   porClase: InformeDashboardClase[];
@@ -244,6 +251,9 @@ export interface InformeDashboardDto {
     numClases: number;
     clasesDictadas: number;
     alumnosCapacitados: number;
+    alumnosCertificados?: number;
+    duracionSegundos?: number;
+    duracionLabel?: string;
   }>;
   opciones: {
     jornadas: Array<{ value: string; label: string }>;
@@ -254,16 +264,24 @@ export interface InformeDashboardDto {
   generadoAt?: string;
 }
 
-export type InformeContratoAlcance = 'contrato' | 'jornada' | 'clase' | 'programa' | 'instructor';
+export type InformeContratoAlcance =
+  | 'contrato'
+  | 'jornada'
+  | 'clase'
+  | 'programa'
+  | 'instructor'
+  | 'desarrollo-general';
 
 export interface ConfigOperacionJornadas {
   operacionFueraDeDiaHabilitada: boolean;
+  mostrarSwitchHorarioManual: boolean;
   /** idServ del catálogo para comprobantes y facturas de contratos de capacitación. */
   idServCapacitacionContrato: string;
 }
 
 export interface EstadoOperacionJornadas {
   operacionFueraDeDiaHabilitada: boolean;
+  mostrarSwitchHorarioManual: boolean;
   puedeUsar: boolean;
   motivo?: string | null;
 }
@@ -325,6 +343,7 @@ export interface ClaseJornadaDto {
   programaNombre?: string;
   horaInicio?: string;
   horaFin?: string;
+  horarioManual?: boolean;
   duracionSegundos?: number | null;
   estado: string;
   fechaJornada?: string;
@@ -407,12 +426,16 @@ export class JornadaCapService {
       idClase?: string;
       idPrograma?: string;
       idInstructor?: string | number;
+      desde?: string;
+      hasta?: string;
     },
   ): Observable<InformeDashboardDto> {
     let p = new HttpParams();
     if (opts?.idJornada) p = p.set('idJornada', opts.idJornada);
     if (opts?.idClase) p = p.set('idClase', opts.idClase);
     if (opts?.idPrograma) p = p.set('idPrograma', opts.idPrograma);
+    if (opts?.desde) p = p.set('desde', opts.desde);
+    if (opts?.hasta) p = p.set('hasta', opts.hasta);
     if (opts?.idInstructor != null && opts.idInstructor !== '') {
       p = p.set('idInstructor', String(opts.idInstructor));
     }
@@ -429,12 +452,16 @@ export class JornadaCapService {
       idClase?: string;
       idPrograma?: string;
       idInstructor?: string | number;
+      desde?: string;
+      hasta?: string;
     },
   ): Observable<Blob> {
     let p = new HttpParams().set('alcance', opts.alcance);
     if (opts.idJornada) p = p.set('idJornada', opts.idJornada);
     if (opts.idClase) p = p.set('idClase', opts.idClase);
     if (opts.idPrograma) p = p.set('idPrograma', opts.idPrograma);
+    if (opts.desde) p = p.set('desde', opts.desde);
+    if (opts.hasta) p = p.set('hasta', opts.hasta);
     if (opts.idInstructor != null && opts.idInstructor !== '') {
       p = p.set('idInstructor', String(opts.idInstructor));
     }
@@ -607,6 +634,9 @@ export class JornadaCapService {
     idPrograma: string;
     ubicacion?: string;
     idEmpleadoInstructor?: number | null;
+    horarioManual?: boolean;
+    horaInicio?: string | null;
+    horaFin?: string | null;
   }) {
     return this.http.post<ClaseJornadaDto & { contrato?: ContratoSyncDto }>(`${this.base}/clases`, dto);
   }
@@ -619,6 +649,7 @@ export class JornadaCapService {
       idEmpleadoInstructor?: number | null;
       horaInicio?: string | null;
       horaFin?: string | null;
+      horarioManual?: boolean;
     },
   ) {
     return this.http.patch<ClaseJornadaDto>(`${this.base}/clases/${id}`, dto);
@@ -633,11 +664,17 @@ export class JornadaCapService {
     }>(`${this.base}/clases/${id}`);
   }
 
-  iniciarClase(id: string) {
-    return this.http.post<ClaseJornadaDto>(`${this.base}/clases/${id}/iniciar`, {});
+  iniciarClase(
+    id: string,
+    horario?: { horarioManual?: boolean; horaInicio?: string; horaFin?: string },
+  ) {
+    return this.http.post<ClaseJornadaDto>(`${this.base}/clases/${id}/iniciar`, horario ?? {});
   }
 
-  finalizarClase(id: string, horario?: { horaInicio?: string; horaFin?: string }) {
+  finalizarClase(
+    id: string,
+    horario?: { horarioManual?: boolean; horaInicio?: string; horaFin?: string },
+  ) {
     return this.http.post(`${this.base}/clases/${id}/finalizar`, horario ?? {});
   }
 

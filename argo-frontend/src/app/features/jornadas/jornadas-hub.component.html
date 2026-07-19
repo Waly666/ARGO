@@ -86,7 +86,9 @@
     <div class="panel contrato-panel">
       <h2>Contratación con empresas</h2>
 
-      <div class="contrato-form argo-form-shell">
+      <div
+        class="contrato-form argo-form-shell"
+        [class.contrato-finalizado]="contratoFormEjecutado()">
         @if (formContrato()._id) {
           <div class="contrato-form-banner">
             <div class="contrato-form-banner-main">
@@ -96,6 +98,16 @@
             <span [ngClass]="estadoContratoLiveClass(formContrato().estado)">
               {{ labelEstadoContrato(formContrato().estado) }}
             </span>
+          </div>
+        }
+
+        @if (contratoFormEjecutado()) {
+          <div class="jor-banner jor-banner--warn contrato-finalizado-aviso" role="status">
+            <span class="jor-banner-icon" aria-hidden="true">🔒</span>
+            <div class="jor-banner-body">
+              <strong class="jor-banner-title">Contrato finalizado</strong>
+              <span>La información está congelada y disponible únicamente para consulta.</span>
+            </div>
           </div>
         }
 
@@ -496,8 +508,8 @@
 
       <div class="actions">
         <button type="button" class="ghost" (click)="nuevoContratoForm()">Nuevo</button>
-        <button type="button" class="primary" (click)="guardarContrato()" [disabled]="loading()">Guardar</button>
-        <button type="button" class="primary" (click)="generarJornadas()" [disabled]="loading()">
+        <button type="button" class="primary" (click)="guardarContrato()" [disabled]="loading() || contratoFormEjecutado()">Guardar</button>
+        <button type="button" class="primary" (click)="generarJornadas()" [disabled]="loading() || contratoFormEjecutado()">
           Generar faltantes
         </button>
         @if (formContrato()._id) {
@@ -1136,8 +1148,22 @@
               <span [ngClass]="estadoJornadaLiveClass(j.estado)">{{ j.estado }}</span>
             </td>
             <td class="actions-cell">
-              <button type="button" class="mini ghost" (click)="editarJornada(j, $event)">Editar</button>
-              <button type="button" class="mini danger" (click)="eliminarJornada(j, $event)">Borrar</button>
+              <button
+                type="button"
+                class="mini ghost"
+                (click)="editarJornada(j, $event)"
+                [disabled]="contratoDeJornadaFinalizado(j)"
+                [title]="contratoDeJornadaFinalizado(j) ? 'Contrato finalizado: solo consulta' : 'Editar jornada'">
+                Editar
+              </button>
+              <button
+                type="button"
+                class="mini danger"
+                (click)="eliminarJornada(j, $event)"
+                [disabled]="contratoDeJornadaFinalizado(j)"
+                [title]="contratoDeJornadaFinalizado(j) ? 'Contrato finalizado: no se puede borrar' : 'Borrar jornada'">
+                Borrar
+              </button>
               <button
                 type="button"
                 class="mini primary"
@@ -1215,7 +1241,12 @@
             </select>
           </div>
           <div class="clases-panel-actions">
-            <button type="button" class="primary clases-btn-crear" (click)="abrirModalCrearClase()">
+            <button
+              type="button"
+              class="primary clases-btn-crear"
+              (click)="abrirModalCrearClase()"
+              [disabled]="contratoActivoFinalizado()"
+              [title]="contratoActivoFinalizado() ? 'Contrato finalizado: no se pueden crear clases' : 'Crear clase'">
               + Crear clase
             </button>
             <button type="button" class="ghost mini" (click)="irInstructor()">Vista instructor</button>
@@ -1260,9 +1291,9 @@
             <td><span [ngClass]="capHoraJor(c.horaFin)">{{ fmtHora(c.horaFin) }}</span></td>
             <td class="actions-cell">
               <button type="button" class="mini primary" (click)="abrirModalEditarClase(c); $event.stopPropagation()">
-                Abrir →
+                {{ contratoDeClaseFinalizado(c) ? 'Consultar →' : 'Abrir →' }}
               </button>
-              @if (puedeEliminarClase() && claseJornadaSePuedeEliminar(c.estado)) {
+              @if (puedeEliminarClase() && !contratoDeClaseFinalizado(c) && claseJornadaSePuedeEliminar(c.estado)) {
                 <button type="button" class="mini danger" (click)="eliminarClase(c); $event.stopPropagation()">Borrar</button>
               }
             </td>
@@ -1396,7 +1427,9 @@
           <li><strong>Instructor:</strong> <span [ngClass]="capInstructor(labelInstructorClase(cl))">{{ labelInstructorClase(cl) }}</span></li>
         </ul>
         <div class="actions">
-          <button type="button" class="primary" (click)="abrirModalEditarClase(cl)">Abrir clase →</button>
+          <button type="button" class="primary" (click)="abrirModalEditarClase(cl)">
+            {{ contratoDeClaseFinalizado(cl) ? 'Consultar clase →' : 'Abrir clase →' }}
+          </button>
           @if (puedeEliminarClaseActiva()) {
             <button type="button" class="danger" (click)="eliminarClase(cl)">Borrar clase</button>
           }
@@ -1412,7 +1445,9 @@
     [sheet]="true"
     [tall]="true"
     (closed)="cerrarModalCrearClase()">
-    <section class="clase-modal-form argo-form-shell">
+    <section
+      class="clase-modal-form argo-form-shell"
+      [class.contrato-finalizado]="contratoModalFinalizado()">
       <div class="clase-estado-bar" *ngIf="modalModoClase() === 'editar' && claseActiva() as cl">
         <span class="estado-label">Estado</span>
         <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ labelEstadoClaseAmigable(cl.estado) }}</span>
@@ -1452,6 +1487,16 @@
         </div>
       }
 
+      @if (contratoModalFinalizado()) {
+        <div class="jor-banner jor-banner--warn modal-inline-banner" role="status">
+          <span class="jor-banner-icon" aria-hidden="true">🔒</span>
+          <div class="jor-banner-body">
+            <strong class="jor-banner-title">Contrato finalizado</strong>
+            <span>Esta clase y sus alumnos están disponibles únicamente para consulta.</span>
+          </div>
+        </div>
+      }
+
       @if (modalModoClase() === 'editar' && claseActiva(); as cl) {
         @if (!operacionEspecialActiva() && !esFechaHoy(cl.fechaClase || cl.fechaJornada) && !cl.horaInicio) {
           <p class="hint hint-warn">
@@ -1464,7 +1509,7 @@
         }
       }
 
-      @if (modalModoClase() === 'nuevo') {
+      @if (false) {
         <div class="clase-modal-crear-layout">
           <div class="clase-modal-crear-main">
         <div class="clase-guia-pasos" aria-label="Pasos para crear clase">
@@ -1703,7 +1748,7 @@
                         [modoCombo]="true"
                         [remoto]="false"
                         [minLength]="1"
-                        [disabled]="true"
+                        [disabled]="modalModoClase() === 'editar'"
                         [opcionesLocales]="opcionesJornadasCrear()"
                         (seleccionado)="onJornadaModalPick($event)"
                         (limpiado)="onJornadaModalLimpiar()"
@@ -1728,7 +1773,25 @@
                 @if (puedeEditarHorarioClase()) {
                   <div class="cm-panel cm-horario argo-form-section variant-horario">
                     <h3 class="clase-modal-section">Horario de la clase</h3>
-                    <div class="clase-horario-admin horario-manual">
+                    @if (!operacionEspecialActiva() && mostrarSwitchHorarioManual()) {
+                      <label class="clase-horario-switch">
+                        <input
+                          type="checkbox"
+                          role="switch"
+                          [checked]="modalHorarioManual()"
+                          (change)="onModalHorarioManualChange($any($event.target).checked)" />
+                        <span>
+                          <strong>Horario manual</strong>
+                          <small>
+                            {{ modalHorarioManual()
+                              ? 'Las horas escritas no serán reemplazadas al iniciar o finalizar.'
+                              : 'Inicio y fin se registrarán automáticamente con los botones de operación.' }}
+                          </small>
+                        </span>
+                      </label>
+                    }
+                    @if (horarioClaseEditable()) {
+                      <div class="clase-horario-admin horario-manual">
                       <div class="cm-field horario-manual-col">
                         <label>Inicio</label>
                         <argo-hora-12-input
@@ -1750,6 +1813,12 @@
                         <p class="horario-readonly-val">{{ lapsoClaseEtiqueta() || '—' }}</p>
                       </div>
                     </div>
+                    } @else {
+                      <p class="hint hint-compact horario-automatico-hint">
+                        Modo automático activo. Use <strong>Iniciar clase</strong> y
+                        <strong>Finalizar clase</strong> para registrar las horas reales.
+                      </p>
+                    }
                   </div>
                 }
 
@@ -1772,7 +1841,11 @@
                       } @else {
                         <label>Instructor</label>
                         <p class="instructor-readonly compact">
-                          <span [ngClass]="capInstructor(labelInstructorClase(claseActiva()))">{{ labelInstructorClase(claseActiva()) }}</span>
+                          @if (modalModoClase() === 'nuevo') {
+                            <span [ngClass]="capInstructor(instructorSesionNombre())">{{ instructorSesionNombre() }}</span>
+                          } @else {
+                            <span [ngClass]="capInstructor(labelInstructorClase(claseActiva()))">{{ labelInstructorClase(claseActiva()) }}</span>
+                          }
                         </p>
                       }
                     </div>
@@ -1803,14 +1876,22 @@
                     } @else {
                       <p class="hint hint-compact">Sin foto cargada.</p>
                     }
-                    <label class="evidencia-upload">
+                    <label class="evidencia-upload" [class.disabled]="modalModoClase() === 'nuevo'">
                       <input
                         type="file"
                         accept="image/*"
                         capture="environment"
                         (change)="onFotoEvidenciaSelected($event)"
-                        [disabled]="subiendoFotoEvidencia()" />
-                      <span>{{ subiendoFotoEvidencia() ? 'Subiendo…' : '📷 Cargar foto' }}</span>
+                        [disabled]="modalModoClase() === 'nuevo' || subiendoFotoEvidencia()" />
+                      <span>
+                        {{
+                          modalModoClase() === 'nuevo'
+                            ? 'Disponible después de crear la clase'
+                            : subiendoFotoEvidencia()
+                              ? 'Subiendo…'
+                              : '📷 Cargar foto'
+                        }}
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -1825,21 +1906,22 @@
 
                 <p class="hint hint-compact clase-matriculados-resumen">
 
-                  <strong>{{ totalAlumnosMatriculadosModal() }}</strong> inscrito(s)
+                  <strong>{{ totalAlumnosMatriculadosModal() }}</strong>
+                  {{ modalModoClase() === 'nuevo' ? 'seleccionado(s) para matricular' : 'inscrito(s)' }}
 
-                  @if (inscritosConAsistencia() > 0) {
+                  @if (modalModoClase() === 'editar' && inscritosConAsistencia() > 0) {
 
                     · {{ inscritosConAsistencia() }} con asistencia
 
                   }
 
-                  @if (inscritosSinAsistencia() > 0) {
+                  @if (modalModoClase() === 'editar' && inscritosSinAsistencia() > 0) {
 
                     · {{ inscritosSinAsistencia() }} pendiente(s)
 
                   }
 
-                  @if (inscritosCertificadosContrato() > 0) {
+                  @if (modalModoClase() === 'editar' && inscritosCertificadosContrato() > 0) {
 
                     · {{ inscritosCertificadosContrato() }} certificado(s) en contrato
 
@@ -1993,6 +2075,14 @@
 
                     autocomplete="off" />
 
+                  <button
+                    type="button"
+                    class="mini primary clase-qr-scan-btn"
+                    (click)="abrirEscanerQrAlumno()"
+                    [disabled]="guardandoInscripcion() || qrAlumnoBuscando()">
+                    {{ qrAlumnoBuscando() ? 'Buscando alumno…' : '▣ Escanear QR' }}
+                  </button>
+
                   <button type="button" class="ghost mini" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
 
                 </div>
@@ -2069,7 +2159,9 @@
 
                       <th>Nombre</th>
 
-                      <th>Asistencia</th>
+                      @if (modalModoClase() === 'editar') {
+                        <th>Asistencia</th>
+                      }
 
                       <th></th>
 
@@ -2079,6 +2171,26 @@
 
                   <tbody>
 
+                    @if (modalModoClase() === 'nuevo') {
+                      @for (a of alumnosMatricular(); track a._id) {
+                        <tr>
+                          <td><span [ngClass]="capDocAsis(a.numDoc)">{{ a.numDoc }}</span></td>
+                          <td><span [ngClass]="capAlumnoNombre(nombreAlumnoItem(a))">{{ nombreAlumnoItem(a) }}</span></td>
+                          <td class="actions-cell">
+                            <button type="button" class="mini danger" (click)="quitarAlumnoMatricula(a)">
+                              ✕ Quitar
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                      @if (alumnosMatricular().length === 0) {
+                        <tr>
+                          <td colspan="3" class="empty jor-empty-mini">
+                            Ningún alumno seleccionado. Puede buscarlo o escanear su QR.
+                          </td>
+                        </tr>
+                      }
+                    } @else {
                     @for (a of inscritos(); track a.numDoc) {
 
                       <tr>
@@ -2210,6 +2322,7 @@
                       </tr>
 
                     }
+                    }
 
                   </tbody>
 
@@ -2276,7 +2389,7 @@
       <button type="button" class="ghost" (click)="cerrarModalCrearClase()" [disabled]="guardandoClase()">
         Cerrar
       </button>
-      @if (modalModoClase() === 'nuevo') {
+      @if (!contratoModalFinalizado() && modalModoClase() === 'nuevo') {
         <button
           type="button"
           class="primary clase-btn-guardar"
@@ -2284,7 +2397,7 @@
           [disabled]="guardandoClase() || !crearClaseListo()">
           {{ textoBotonCrearClase() }}
         </button>
-      } @else {
+      } @else if (!contratoModalFinalizado()) {
         <button
           type="button"
           class="ghost"
@@ -2321,6 +2434,12 @@
       }
     </div>
   </argo-form-modal>
+
+  @if (qrAlumnoOpen()) {
+    <argo-jornada-qr-scan-modal
+      (closed)="cerrarEscanerQrAlumno()"
+      (scanned)="onQrAlumnoEscaneado($event)" />
+  }
 
   <argo-form-modal
     [open]="modalComprobanteCuotaOpen()"
@@ -2537,8 +2656,22 @@
               </td>
               <td class="actions-cell">
                 <button type="button" class="mini ghost" (click)="imprimirCert(c)">Imprimir</button>
-                <button type="button" class="mini primary" (click)="editarCertDesdeHub(c)">Editar</button>
-                <button type="button" class="mini danger" (click)="eliminarCertDesdeHub(c)">Eliminar</button>
+                <button
+                  type="button"
+                  class="mini primary"
+                  (click)="editarCertDesdeHub(c)"
+                  [disabled]="contratoActivoFinalizado()"
+                  title="Editar certificado">
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="mini danger"
+                  (click)="eliminarCertDesdeHub(c)"
+                  [disabled]="contratoActivoFinalizado()"
+                  title="Eliminar certificado">
+                  Eliminar
+                </button>
               </td>
             </tr>
             <tr *ngIf="certsFiltradosVista().length === 0">

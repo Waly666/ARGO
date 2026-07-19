@@ -70,6 +70,7 @@ export interface ClaseJornada {
   programaNombre?: string;
   horaInicio?: string;
   horaFin?: string;
+  horarioManual?: boolean;
   estado: string;
   idContrato?: string;
   codContrato?: string;

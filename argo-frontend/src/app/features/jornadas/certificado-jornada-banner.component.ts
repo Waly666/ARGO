@@ -8,6 +8,7 @@ import {
   CertificadoJornadaAlerta,
 } from '../../core/services/certificado-jornada-alert.service';
 import { JornadaCapService } from '../../core/services/jornada-cap.service';
+import { CertificadoService } from '../../core/services/certificado.service';
 import { HeadAlarmListBannerComponent } from '../../shared/components/head-alarm-list-banner/head-alarm-list-banner.component';
 import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-banner/head-alarm-list.types';
 
@@ -21,6 +22,7 @@ import type { HeadAlarmListRow } from '../../shared/components/head-alarm-list-b
 export class CertificadoJornadaBannerComponent {
   private alertSvc = inject(CertificadoJornadaAlertService);
   private jornadaSvc = inject(JornadaCapService);
+  private certificadoSvc = inject(CertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
 
   visible = computed(() => this.alertSvc.alertas().length > 0);
@@ -70,7 +72,7 @@ export class CertificadoJornadaBannerComponent {
 
   private imprimirCertificado(a: CertificadoJornadaAlerta) {
     // Abrir ventana en el gesto del clic; luego descartar la fila de la alarma.
-    this.jornadaSvc.imprimirCertificadoJornada(a.id, (msg) => {
+    const onError = (msg: string) => {
       void this.confirmSvc.open({
         title: 'Impresión',
         message: msg,
@@ -78,7 +80,12 @@ export class CertificadoJornadaBannerComponent {
         hideCancel: true,
         confirmLabel: 'Entendido',
       });
-    });
+    };
+    if (a.origen === 'jornada') {
+      this.jornadaSvc.imprimirCertificadoJornada(a.id, onError);
+    } else {
+      this.certificadoSvc.abrirHtml(a.id, onError);
+    }
     this.alertSvc.descartar(a.id);
   }
 }

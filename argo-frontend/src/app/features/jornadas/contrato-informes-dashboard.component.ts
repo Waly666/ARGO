@@ -48,6 +48,8 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   filtroProgramaTexto = signal('');
   filtroInstructorId = signal('');
   filtroInstructorTexto = signal('');
+  filtroDesde = signal('');
+  filtroHasta = signal('');
 
   kpis = computed(() => this.data()?.kpis || null);
   charts = computed(() => this.data()?.charts || null);
@@ -118,6 +120,8 @@ export class ContratoInformesDashboardComponent implements OnChanges {
       idClase: this.filtroClaseId() || undefined,
       idPrograma: this.filtroProgramaId() || undefined,
       idInstructor: this.filtroInstructorId() || undefined,
+      desde: this.filtroDesde() || undefined,
+      hasta: this.filtroHasta() || undefined,
     };
   }
 
@@ -150,6 +154,8 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     this.filtroProgramaTexto.set('');
     this.filtroInstructorId.set('');
     this.filtroInstructorTexto.set('');
+    this.filtroDesde.set('');
+    this.filtroHasta.set('');
     if (recargar) this.cargar();
   }
 
@@ -193,6 +199,15 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   onInstructorLimpiar(): void {
     this.filtroInstructorId.set('');
     this.filtroInstructorTexto.set('');
+    this.cargar();
+  }
+
+  aplicarFechas(): void {
+    if (this.filtroDesde() && this.filtroHasta() && this.filtroDesde() > this.filtroHasta()) {
+      this.msg.set('La fecha inicial no puede ser posterior a la fecha final.');
+      return;
+    }
+    this.msg.set(null);
     this.cargar();
   }
 
@@ -366,11 +381,6 @@ export class ContratoInformesDashboardComponent implements OnChanges {
       this.msg.set('Elija un programa (filtro o fila) para generar ese PDF.');
       return;
     }
-    if (alcance === 'instructor' && (idInstructor == null || idInstructor === '')) {
-      this.msg.set('Elija un instructor (filtro o fila) para generar ese PDF.');
-      return;
-    }
-
     const key = [
       alcance,
       idJornada || '',
@@ -389,6 +399,8 @@ export class ContratoInformesDashboardComponent implements OnChanges {
         idClase: idClase || undefined,
         idPrograma: idPrograma || undefined,
         idInstructor: idInstructor ?? undefined,
+        desde: f.desde,
+        hasta: f.hasta,
       })
       .subscribe({
         next: (blob) => {

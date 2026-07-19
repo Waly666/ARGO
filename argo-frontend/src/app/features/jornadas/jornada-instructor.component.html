@@ -150,8 +150,25 @@
     <div *ngIf="claseActiva() as cl" class="clase-ops">
       <div class="clase-horario-instructor">
         <h3>Horario de la clase</h3>
-        <p class="hint hint-compact">Ajuste inicio y fin según criterio del instructor.</p>
-        <div class="row horario-manual">
+        @if (!operacionEspecialActiva() && mostrarSwitchHorarioManual()) {
+          <label class="clase-horario-switch">
+            <input
+              type="checkbox"
+              role="switch"
+              [checked]="horarioManualClase()"
+              (change)="onHorarioManualClaseChange($any($event.target).checked)" />
+            <span>
+              <strong>Horario manual</strong>
+              <small>
+                {{ horarioManualClase()
+                  ? 'Las horas escritas no serán reemplazadas al iniciar o finalizar.'
+                  : 'Las horas se registran automáticamente al iniciar y finalizar.' }}
+              </small>
+            </span>
+          </label>
+        }
+        @if (operacionEspecialActiva() || horarioManualClase()) {
+          <div class="row horario-manual">
           <div class="col-3">
             <label>Inicio</label>
             <argo-hora-12-input
@@ -172,6 +189,11 @@
             </button>
           </div>
         </div>
+        } @else {
+          <p class="hint hint-compact horario-automatico-hint">
+            Modo automático activo. Los botones de operación registrarán las horas reales.
+          </p>
+        }
         <p class="clase-horas">
           Estado:
           <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ cl.estado }}</span>

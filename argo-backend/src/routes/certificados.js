@@ -5,6 +5,7 @@ const plantilla = require('../controllers/plantillaCertificadoController');
 const upload = require('../middleware/upload');
 const { requireAuth, requirePermiso, requireAdmin } = require('../middleware/auth');
 const { actualizarCertificadosVencidos } = require('../services/certificadoVencimientoCron');
+const contratoMutable = require('../middleware/contratoJornadaMutable');
 
 const router = Router();
 router.use(requireAuth);
@@ -49,8 +50,8 @@ router.get('/elegibles/:numDoc', emitir, ctrl.elegibles);
 router.get('/alumno/:numDoc', emitir, ctrl.listarPorAlumno);
 router.get('/:id/html', emitir, render.html);
 router.get('/:id/datos', emitir, render.datos);
-router.post('/', emitir, ctrl.crear);
-router.put('/:id', emitir, ctrl.actualizar);
-router.delete('/:id', emitir, ctrl.eliminar);
+router.post('/', emitir, contratoMutable.contratoPorBodyOpcional, ctrl.crear);
+router.put('/:id', emitir, contratoMutable.certificadoPorParametro, ctrl.actualizar);
+router.delete('/:id', emitir, contratoMutable.certificadoPorParametro, ctrl.eliminar);
 
 module.exports = router;

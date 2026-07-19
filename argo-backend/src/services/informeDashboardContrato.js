@@ -9,6 +9,7 @@ const { parseNumDoc } = require('../utils/numDoc');
 const { enriquecerClases } = require('./instructorJornada');
 const { obtenerConfigRecibo } = require('./configRecibo');
 const { fmtFechaSolo } = require('../utils/timezoneColombia');
+const { parseFechaCalendario } = require('../utils/fechaCalendario');
 const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
 
 function toObjectId(raw) {
@@ -31,6 +32,37 @@ function esc(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function fmtHoraInforme(valor) {
+  if (!valor) return '—';
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(d);
+}
+
+function duracionClaseSegundos(clase) {
+  const guardada = Number(clase?.duracionSegundos);
+  if (Number.isFinite(guardada) && guardada >= 0) return guardada;
+  if (!clase?.horaInicio || !clase?.horaFin) return null;
+  const inicio = new Date(clase.horaInicio).getTime();
+  const fin = new Date(clase.horaFin).getTime();
+  if (!Number.isFinite(inicio) || !Number.isFinite(fin) || fin < inicio) return null;
+  return Math.round((fin - inicio) / 1000);
+}
+
+function fmtDuracionInforme(segundos) {
+  const total = Number(segundos);
+  if (!Number.isFinite(total) || total < 0) return '—';
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = Math.floor(total % 60);
+  return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
 function buildChartsJornada(clasesJ) {
@@ -111,9 +143,19 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
     filtros.idInstructor != null && String(filtros.idInstructor).trim() !== ''
       ? Number(filtros.idInstructor)
       : null;
+  const desdeF = filtros.desde ? parseFechaCalendario(filtros.desde) : null;
+  const hastaBase = filtros.hasta ? parseFechaCalendario(filtros.hasta) : null;
+  const hastaExclusiva = hastaBase
+    ? new Date(hastaBase.getTime() + 24 * 60 * 60 * 1000)
+    : null;
 
   let jornadasQ = { idContrato };
   if (idJornadaF) jornadasQ._id = idJornadaF;
+  if (desdeF || hastaExclusiva) {
+    jornadasQ.fechaProgramacion = {};
+    if (desdeF) jornadasQ.fechaProgramacion.$gte = desdeF;
+    if (hastaExclusiva) jornadasQ.fechaProgramacion.$lt = hastaExclusiva;
+  }
   let jornadas = await JornadaCap.find(jornadasQ)
     .sort({ fechaProgramacion: 1, indiceEnDia: 1, createdAt: 1 })
     .lean();
@@ -204,6 +246,7 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
   }
 
   const esPorClase = contrato.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
+  const jornadaById = new Map(jornadas.map((j) => [String(j._id), j]));
   const alumnosUnicos = new Set();
   const alumnosCertificados = new Set();
 
@@ -216,7 +259,9 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
     certDocs.forEach((nd) => alumnosCertificados.add(nd));
     const alumnosConFlag = alumnos.map((a) => ({
       ...a,
-      certificado: certDocs.has(a.numDoc) || (certPorAlumno.get(a.numDoc) || []).length > 0,
+      certificado: esPorClase
+        ? certDocs.has(a.numDoc)
+        : (certPorAlumno.get(a.numDoc) || []).some((x) => !x.idClaseJornada),
     }));
     if (!esPorClase) {
       alumnosConFlag.forEach((a) => {
@@ -226,6 +271,8 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
         }
       });
     }
+    const jornadaClase = jornadaById.get(String(cl.idJornada));
+    const duracionSegundos = duracionClaseSegundos(cl);
     porClase.push({
       _id: cid,
       idJornada: String(cl.idJornada),
@@ -237,6 +284,22 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       programaNombre: cl.programaNombre || cl.idPrograma || 'Sin programa',
       idEmpleadoInstructor: cl.idEmpleadoInstructor ?? null,
       instructorNombre: cl.instructorNombre || cl.idinstructor || 'Sin instructor',
+      jornadaNumero: jornadaClase?.indiceEnDia || 1,
+      jornadaFecha: jornadaClase?.fechaProgramacion || cl.fechaClase || cl.fechaJornada,
+      jornadaMunicipio: jornadaClase?.municipio || '',
+      jornadaLabel: [
+        `Jornada ${jornadaClase?.indiceEnDia || 1}`,
+        fmtFechaSolo(jornadaClase?.fechaProgramacion || cl.fechaClase || cl.fechaJornada) || '—',
+        jornadaClase?.municipio || '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      horaInicio: cl.horaInicio || null,
+      horaFin: cl.horaFin || null,
+      horaInicioLabel: fmtHoraInforme(cl.horaInicio),
+      horaFinLabel: fmtHoraInforme(cl.horaFin),
+      duracionSegundos,
+      duracionLabel: fmtDuracionInforme(duracionSegundos),
       alumnosInscritos: alumnosConFlag.length,
       alumnosCertificados: alumnosConFlag.filter((a) => a.certificado).length,
       alumnos: alumnosConFlag.sort((a, b) =>
@@ -250,7 +313,9 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
     const clasesJ = porClase.filter((c) => c.idJornada === jid);
     const alumnosSet = new Set();
     const certSet = new Set();
+    const programasMap = new Map();
     for (const c of clasesJ) {
+      programasMap.set(c.idPrograma || c.programaNombre, c.programaNombre || 'Sin programa');
       c.alumnos.forEach((a) => {
         alumnosSet.add(a.numDoc);
         if (a.certificado) certSet.add(a.numDoc);
@@ -268,6 +333,8 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       clasesFinalizadas: clasesJ.filter((c) => String(c.estado).toUpperCase() === 'FINALIZADO').length,
       alumnosCapacitados: alumnosSet.size,
       alumnosCertificados: certSet.size,
+      numProgramas: programasMap.size,
+      programas: [...programasMap.values()].sort((a, b) => a.localeCompare(b, 'es')),
       charts: buildChartsJornada(clasesJ),
       clases: clasesJ,
     };
@@ -318,12 +385,20 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
         numClases: 0,
         clasesDictadas: 0,
         alumnos: new Set(),
+        certificados: new Set(),
+        duracionSegundos: 0,
       });
     }
     const row = instMap.get(key);
     row.numClases += 1;
     if (String(c.estado).toUpperCase() === 'FINALIZADO') row.clasesDictadas += 1;
-    c.alumnos.forEach((a) => row.alumnos.add(a.numDoc));
+    c.alumnos.forEach((a) => {
+      row.alumnos.add(a.numDoc);
+      if (a.certificado) row.certificados.add(a.numDoc);
+    });
+    if (Number.isFinite(Number(c.duracionSegundos))) {
+      row.duracionSegundos += Number(c.duracionSegundos);
+    }
   }
   const porInstructor = [...instMap.values()]
     .map((r) => ({
@@ -332,6 +407,9 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       numClases: r.numClases,
       clasesDictadas: r.clasesDictadas,
       alumnosCapacitados: r.alumnos.size,
+      alumnosCertificados: r.certificados.size,
+      duracionSegundos: r.duracionSegundos,
+      duracionLabel: fmtDuracionInforme(r.duracionSegundos),
     }))
     .sort((a, b) => a.instructorNombre.localeCompare(b.instructorNombre, 'es'));
 
@@ -398,6 +476,8 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       idClase: idClaseF ? String(idClaseF) : null,
       idPrograma: idProgramaF || null,
       idInstructor: Number.isFinite(idInstructorF) ? idInstructorF : null,
+      desde: desdeF ? String(filtros.desde) : null,
+      hasta: hastaBase ? String(filtros.hasta) : null,
     },
     kpis: {
       jornadas: porJornada.length,
@@ -471,7 +551,11 @@ function alcanceTitulo(alcance, data) {
     case 'programa':
       return `Informe por programa — ${data.porPrograma[0]?.programaNombre || ''}`.trim();
     case 'instructor':
-      return `Clases dictadas por instructor — ${data.porInstructor[0]?.instructorNombre || ''}`.trim();
+      return data.filtros?.idInstructor != null
+        ? `Desarrollo de clases — ${data.porInstructor[0]?.instructorNombre || 'Instructor'}`
+        : 'Desarrollo de clases por instructor';
+    case 'desarrollo-general':
+      return 'Informe general de desarrollo de clases';
     default:
       return 'Informe de capacitación del contrato';
   }
@@ -517,6 +601,8 @@ function alcanceDetalleTitulo(alcance) {
       return 'Desarrollo del programa';
     case 'instructor':
       return 'Desarrollo por instructor';
+    case 'desarrollo-general':
+      return 'Desarrollo general por instructores';
     default:
       return 'Desarrollo por jornadas';
   }
@@ -602,6 +688,79 @@ function htmlBarChart(items, opts = {}) {
     )
     .join('');
   return `<div class="bars">${bars}</div>${htmlChartDataTable(enriched, colLabel, colValue)}`;
+}
+
+function htmlCruceJornadas(jornadas) {
+  const list = jornadas || [];
+  if (!list.length) return '';
+  const programasContrato = new Set();
+  let totalAlumnosJornada = 0;
+  let totalClases = 0;
+  const rows = list
+    .map((j) => {
+      const programas = j.programas || [];
+      programas.forEach((p) => programasContrato.add(p));
+      totalAlumnosJornada += Number(j.alumnosCapacitados) || 0;
+      totalClases += Number(j.numClases) || 0;
+      return `<tr>
+        <td>${esc(referenciaJornada(j))}</td>
+        <td class="num">${esc(j.alumnosCapacitados || 0)}</td>
+        <td class="num">${esc(j.numClases || 0)}</td>
+        <td class="num">${esc(j.numProgramas || 0)}</td>
+        <td>${esc(programas.join(', ') || 'Sin programas')}</td>
+      </tr>`;
+    })
+    .join('');
+
+  const maxValor = Math.max(
+    1,
+    ...list.flatMap((j) => [
+      Number(j.alumnosCapacitados) || 0,
+      Number(j.numClases) || 0,
+      Number(j.numProgramas) || 0,
+    ]),
+  );
+  const chart = list
+    .map((j) => {
+      const series = [
+        ['Alumnos', Number(j.alumnosCapacitados) || 0, 'cruce-bar--alumnos'],
+        ['Clases', Number(j.numClases) || 0, 'cruce-bar--clases'],
+        ['Programas', Number(j.numProgramas) || 0, 'cruce-bar--programas'],
+      ];
+      return `<div class="cruce-chart-row">
+        <strong>${esc(referenciaJornada(j))}</strong>
+        <div class="cruce-series">
+          ${series
+            .map(
+              ([label, value, clase]) => `<div class="cruce-serie">
+                <span>${esc(label)}</span>
+                <div class="cruce-track"><i class="${clase}" style="width:${Math.max(value ? 4 : 0, Math.round((value / maxValor) * 100))}%"></i></div>
+                <b>${esc(value)}</b>
+              </div>`,
+            )
+            .join('')}
+        </div>
+      </div>`;
+    })
+    .join('');
+
+  return `<section class="cruce-jornadas">
+    <h3 class="chart-section-title">Cuadro de referencias cruzadas por jornada</h3>
+    <p class="chart-hint">Relación entre alumnos capacitados, clases realizadas y programas impartidos en cada jornada.</p>
+    <table class="t cruce-table">
+      <thead><tr><th>Jornada</th><th class="num">Alumnos</th><th class="num">Clases</th><th class="num">Programas</th><th>Programas impartidos</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr>
+        <td><strong>Totales</strong></td>
+        <td class="num"><strong>${esc(totalAlumnosJornada)}</strong></td>
+        <td class="num"><strong>${esc(totalClases)}</strong></td>
+        <td class="num"><strong>${esc(programasContrato.size)}</strong></td>
+        <td><strong>${esc([...programasContrato].sort((a, b) => a.localeCompare(b, 'es')).join(', ') || 'Sin programas')}</strong></td>
+      </tr></tfoot>
+    </table>
+    <h3 class="chart-section-title chart-section-title--sub">Gráfico comparativo por jornada</h3>
+    <div class="cruce-chart">${chart}</div>
+  </section>`;
 }
 
 function donutSlicePath(cx, cy, r, rInner, a0, a1) {
@@ -806,6 +965,53 @@ function htmlEncabezadoClase(cl) {
   <p class="clase-section-sub">${esc(stats)}</p>`;
 }
 
+function htmlTablaDesarrolloInstructor(clases) {
+  const rows = (clases || [])
+    .map(
+      (cl) => `<tr>
+        <td>${esc(cl.jornadaLabel || `Jornada ${cl.jornadaNumero || 1}`)}</td>
+        <td>${esc(cl.fechaLabel || '—')}</td>
+        <td>${esc(`Clase ${cl.indiceClaseEnJornada || 1} · ${cl.programaNombre || 'Sin programa'}`)}</td>
+        <td class="num">${esc(cl.horaInicioLabel || '—')}</td>
+        <td class="num">${esc(cl.horaFinLabel || '—')}</td>
+        <td class="num">${esc(cl.duracionLabel || '—')}</td>
+        <td class="num">${esc(cl.alumnosInscritos || 0)}</td>
+        <td class="num">${esc(cl.alumnosCertificados || 0)}</td>
+      </tr>`,
+    )
+    .join('');
+  if (!rows) return '<p class="muted">Este instructor no tiene clases con los filtros seleccionados.</p>';
+  const clasesFinalizadas = clases.filter(
+    (cl) => String(cl.estado || '').toUpperCase() === 'FINALIZADO',
+  ).length;
+  const capacitados = new Set();
+  const certificados = new Set();
+  let duracion = 0;
+  for (const cl of clases) {
+    for (const a of cl.alumnos || []) {
+      capacitados.add(a.numDoc);
+      if (a.certificado) certificados.add(a.numDoc);
+    }
+    if (Number.isFinite(Number(cl.duracionSegundos))) duracion += Number(cl.duracionSegundos);
+  }
+  return `<table class="t desarrollo-inst">
+    <thead><tr>
+      <th>Jornada</th><th>Fecha</th><th>Clase / programa</th>
+      <th class="num">Inicio</th><th class="num">Fin</th><th class="num">Duración</th>
+      <th class="num">Capacitados</th><th class="num">Certificados</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr>
+      <td colspan="2"><strong>Total instructor</strong></td>
+      <td><strong>${esc(clasesFinalizadas)} finalizada(s) / ${esc(clases.length)} clase(s)</strong></td>
+      <td colspan="2"></td>
+      <td class="num"><strong>${esc(fmtDuracionInforme(duracion))}</strong></td>
+      <td class="num"><strong>${esc(capacitados.size)}</strong></td>
+      <td class="num"><strong>${esc(certificados.size)}</strong></td>
+    </tr></tfoot>
+  </table>`;
+}
+
 /**
  * HTML imprimible / PDF del informe dirigido a la empresa contratante.
  */
@@ -823,7 +1029,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
 
   let cuerpo = '';
 
-  if (alcance === 'instructor') {
+  if (alcance === 'instructor' || alcance === 'desarrollo-general') {
     cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
     for (const inst of data.porInstructor || []) {
       const clases = (data.porClase || []).filter(
@@ -833,11 +1039,8 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
           cl.instructorNombre === inst.instructorNombre,
       );
       cuerpo += `<h3 class="jornada-section-title">Instructor · ${esc(inst.instructorNombre)}</h3>`;
-      cuerpo += `<p class="jornada-section-sub">${inst.clasesDictadas} dictada(s) / ${inst.numClases} clase(s) · ${inst.alumnosCapacitados} alumno(s)</p>`;
-      for (const cl of clases) {
-        cuerpo += htmlEncabezadoClase(cl);
-        cuerpo += htmlTablaAlumnos(cl.alumnos);
-      }
+      cuerpo += `<p class="jornada-section-sub">${inst.clasesDictadas} dictada(s) / ${inst.numClases} clase(s) · ${inst.alumnosCapacitados} capacitado(s) · ${inst.alumnosCertificados || 0} certificado(s) · duración ${esc(inst.duracionLabel || '—')}</p>`;
+      cuerpo += htmlTablaDesarrolloInstructor(clases);
     }
   } else if (alcance === 'programa') {
     cuerpo += `<h3 class="chart-section-title">${esc(alcanceDetalleTitulo(alcance))}</h3>`;
@@ -882,7 +1085,27 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     alcance === 'jornada'
       ? htmlChartsJornada(data.porJornada?.[0], alcanceResumenTitulo(alcance), true)
       : htmlChartsDashboard(data.charts, alcanceResumenTitulo(alcance));
+  const cruceJornadasBlock =
+    alcance === 'contrato' || alcance === 'jornada' ? htmlCruceJornadas(data.porJornada) : '';
   const resumenNumericoTitulo = alcanceResumenNumericoTitulo(alcance);
+  const duracionTotalInforme = (data.porClase || []).reduce(
+    (total, cl) =>
+      total + (Number.isFinite(Number(cl.duracionSegundos)) ? Number(cl.duracionSegundos) : 0),
+    0,
+  );
+  const resumenFinal =
+    alcance === 'instructor' || alcance === 'desarrollo-general'
+      ? `<section class="resumen-final">
+          <h3>Resumen general del contrato</h3>
+          <div class="kpis">
+            <div class="kpi"><span>Instructores</span><strong>${esc((data.porInstructor || []).length)}</strong></div>
+            <div class="kpi"><span>Clases dictadas</span><strong>${esc(k.clasesDictadas || 0)}/${esc(k.clasesTotales || 0)}</strong></div>
+            <div class="kpi"><span>Duración total</span><strong>${esc(fmtDuracionInforme(duracionTotalInforme))}</strong></div>
+            <div class="kpi"><span>Capacitados únicos</span><strong>${esc(k.alumnosCapacitados || 0)}</strong></div>
+            <div class="kpi"><span>Certificados únicos</span><strong>${esc(k.alumnosCertificados || 0)}</strong></div>
+          </div>
+        </section>`
+      : '';
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -912,6 +1135,26 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   .t th, .t td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
   .t th { background: #e2e8f0; }
   .t .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .desarrollo-inst { font-size: 7.5pt; }
+  .desarrollo-inst th, .desarrollo-inst td { padding: 3px 4px; }
+  .desarrollo-inst tfoot td { background: #e8eef6; }
+  .resumen-final { margin-top: 18px; break-inside: avoid; page-break-inside: avoid; }
+  .resumen-final h3 { color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: 4px; }
+  .cruce-jornadas { margin: 12px 0 16px; }
+  .cruce-table { font-size: 8pt; }
+  .cruce-table tfoot td { background: #e8eef6; }
+  .cruce-chart { display: grid; gap: 9px; margin: 8px 0 14px; }
+  .cruce-chart-row { break-inside: avoid; page-break-inside: avoid; }
+  .cruce-chart-row > strong { display: block; margin-bottom: 3px; color: #334155; font-size: 8pt; }
+  .cruce-series { display: grid; gap: 2px; }
+  .cruce-serie { display: grid; grid-template-columns: 54px 1fr 28px; gap: 5px; align-items: center; font-size: 7pt; }
+  .cruce-serie span { color: #64748b; }
+  .cruce-serie b { text-align: right; font-variant-numeric: tabular-nums; }
+  .cruce-track { height: 9px; overflow: hidden; border-radius: 5px; background: #e2e8f0; }
+  .cruce-track i { display: block; height: 100%; border-radius: inherit; }
+  .cruce-bar--alumnos { background: #0284c7; }
+  .cruce-bar--clases { background: #0f766e; }
+  .cruce-bar--programas { background: #7c3aed; }
   .chart-t { margin-top: 6px; font-size: 8pt; }
   .chart-t tfoot td { font-weight: 700; background: #f1f5f9; }
   .chart-section-title { margin: 12px 0 6px; padding: 6px 10px; border-left: 4px solid #1e3a5f; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, #e2eaf5, #f4f7fb); color: #1e3a5f; font-size: 11pt; text-transform: uppercase; letter-spacing: .03em; break-after: avoid; page-break-after: avoid; }
@@ -986,9 +1229,11 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     <div class="kpi"><span>Alumnos capacitados</span><strong>${k.alumnosCapacitados || 0}</strong></div>
     <div class="kpi"><span>Alumnos certificados</span><strong>${k.alumnosCertificados || 0}</strong></div>
   </div>
+  ${cruceJornadasBlock}
   ${chartsBlock}
   <div class="page-break" aria-hidden="true"></div>
   ${cuerpo || '<p class="muted">No hay datos para el alcance seleccionado.</p>'}
+  ${resumenFinal}
   <div class="ftr">
     Generado el ${esc(fmtFechaSolo(data.generadoAt) || new Date().toLocaleDateString('es-CO'))}.
     Documento de seguimiento de capacitación — uso empresarial.

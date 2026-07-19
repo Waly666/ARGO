@@ -122,8 +122,25 @@
           @if (puedeEditarHorarioClase()) {
             <div class="cm-panel cm-horario argo-form-section variant-horario">
               <h3 class="clase-modal-section">Horario de la clase</h3>
-              <p class="hint hint-compact">Hora de inicio y fin editables según criterio del instructor.</p>
-              <div class="clase-horario-admin horario-manual">
+              @if (!operacionEspecialActiva() && mostrarSwitchHorarioManual()) {
+                <label class="clase-horario-switch">
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    [checked]="modalHorarioManual()"
+                    (change)="onModalHorarioManualChange($any($event.target).checked)" />
+                  <span>
+                    <strong>Horario manual</strong>
+                    <small>
+                      {{ modalHorarioManual()
+                        ? 'Las horas escritas no serán reemplazadas al iniciar o finalizar.'
+                        : 'Inicio y fin se registrarán automáticamente con los botones de operación.' }}
+                    </small>
+                  </span>
+                </label>
+              }
+              @if (horarioClaseEditable()) {
+                <div class="clase-horario-admin horario-manual">
                 <div class="cm-field horario-manual-col">
                   <label>Inicio</label>
                   <argo-hora-12-input
@@ -145,6 +162,12 @@
                   <p class="horario-readonly-val">{{ lapsoClaseEtiqueta() || '—' }}</p>
                 </div>
               </div>
+              } @else {
+                <p class="hint hint-compact horario-automatico-hint">
+                  Modo automático activo. Use <strong>Iniciar clase</strong> y
+                  <strong>Finalizar clase</strong> para registrar las horas reales.
+                </p>
+              }
             </div>
           }
           @if (claseSel()) {

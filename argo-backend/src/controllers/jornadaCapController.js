@@ -427,7 +427,14 @@ exports.informeContratoPdf = async (req, res, next) => {
     } = require('../services/informeDashboardContrato');
     const { launchBrowser, htmlToPdfBuffer } = require('../services/htmlToPdf');
     const alcance = String(req.query.alcance || 'contrato').trim().toLowerCase();
-    const alcancesOk = new Set(['contrato', 'jornada', 'clase', 'programa', 'instructor']);
+    const alcancesOk = new Set([
+      'contrato',
+      'jornada',
+      'clase',
+      'programa',
+      'instructor',
+      'desarrollo-general',
+    ]);
     if (!alcancesOk.has(alcance)) {
       return res.status(400).json({ message: 'alcance inválido' });
     }
@@ -440,10 +447,6 @@ exports.informeContratoPdf = async (req, res, next) => {
     if (alcance === 'programa' && !req.query.idPrograma) {
       return res.status(400).json({ message: 'Indique idPrograma para el informe por programa' });
     }
-    if (alcance === 'instructor' && !req.query.idInstructor) {
-      return res.status(400).json({ message: 'Indique idInstructor para el informe por instructor' });
-    }
-
     const data = await obtenerDashboardInformeContrato(req.params.id, req.query || {});
     if (!data) return res.status(404).json({ message: 'Contrato no encontrado' });
 
@@ -1121,7 +1124,7 @@ exports.listarInstructores = async (req, res, next) => {
 
 exports.crearClase = async (req, res, next) => {
   try {
-    const { idJornada, idPrograma, ubicacion } = req.body || {};
+    const { idJornada, idPrograma, ubicacion, horarioManual, horaInicio, horaFin } = req.body || {};
     if (!idJornada) {
       return res.status(400).json({ message: 'idJornada es obligatorio' });
     }
@@ -1164,6 +1167,22 @@ exports.crearClase = async (req, res, next) => {
       idCarpaClase = carpa.idCarpa;
     }
     const indiceClaseEnJornada = await siguienteIndiceClaseEnJornada(idJornada);
+    const modoEspecial = await operacionFueraDeDiaActiva(req);
+    const usaHorarioManual = !modoEspecial && horarioManual === true;
+    const inicioManual =
+      usaHorarioManual && horaInicio != null && String(horaInicio).trim() !== ''
+        ? parseHoraClase(jornada.fechaProgramacion, horaInicio)
+        : null;
+    const finManual =
+      usaHorarioManual && horaFin != null && String(horaFin).trim() !== ''
+        ? parseHoraClase(jornada.fechaProgramacion, horaFin)
+        : null;
+    if (finManual && !inicioManual) {
+      return res.status(400).json({ message: 'Indique la hora de inicio antes de la hora de fin.' });
+    }
+    if (inicioManual && finManual && finManual.getTime() <= inicioManual.getTime()) {
+      return res.status(400).json({ message: 'La hora de fin debe ser posterior a la de inicio.' });
+    }
     const clase = await ClaseJornadaCap.create({
       idJornada,
       fechaClase: inicioDia(jornada.fechaProgramacion),
@@ -1172,9 +1191,13 @@ exports.crearClase = async (req, res, next) => {
       indiceClaseEnJornada,
       ubicacion: ubi,
       estado: 'PROGRAMADA',
-      horaInicio: null,
-      horaFin: null,
-      duracionSegundos: null,
+      horaInicio: inicioManual,
+      horaFin: finManual,
+      horarioManual: usaHorarioManual,
+      duracionSegundos:
+        inicioManual && finManual
+          ? Math.max(0, Math.round((finManual.getTime() - inicioManual.getTime()) / 1000))
+          : null,
       idinstructor: instructor.idinstructor,
       idEmpleadoInstructor: instructor.idEmpleadoInstructor,
       idUsuarioInstructor: instructor.idUsuarioInstructor,
@@ -1213,12 +1236,27 @@ exports.actualizarClase = async (req, res, next) => {
     const clase = await ClaseJornadaCap.findById(req.params.id);
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    const { idPrograma, ubicacion, idEmpleadoInstructor, horaInicio, horaFin, reabrir } = req.body || {};
+    const {
+      idPrograma,
+      ubicacion,
+      idEmpleadoInstructor,
+      horaInicio,
+      horaFin,
+      horarioManual,
+      reabrir,
+    } = req.body || {};
     const dto = { userChangeRecord: auditoriaUsuario(req) };
     const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
     const esAdminJornadas = tieneAlguno(permisos, ['jornadas.gestionar']);
     const esOperarJornadas = tieneAlguno(permisos, ['jornadas.operar']);
     const puedeEditarHorario = esAdminJornadas || esOperarJornadas;
+    const modoEspecial = await operacionFueraDeDiaActiva(req);
+    const usaHorarioManual =
+      !modoEspecial &&
+      (horarioManual !== undefined ? horarioManual === true : clase.horarioManual === true);
+    if (!modoEspecial && horarioManual !== undefined && puedeEditarHorario) {
+      dto.horarioManual = horarioManual === true;
+    }
 
     // Reabrir clase cerrada por error (p. ej. horarios planificados guardados como finalizada).
     if (reabrir === true && (esAdminJornadas || esOperarJornadas)) {
@@ -1281,7 +1319,11 @@ exports.actualizarClase = async (req, res, next) => {
       }
     }
 
-    if (puedeEditarHorario && (horaInicio !== undefined || horaFin !== undefined)) {
+    if (
+      puedeEditarHorario &&
+      (horaInicio !== undefined || horaFin !== undefined) &&
+      (modoEspecial || usaHorarioManual)
+    ) {
       const bloqueoHorario = await bloqueoOperacionJornada(
         req,
         await sincronizarEstadoJornada(clase.idJornada),
@@ -1316,23 +1358,30 @@ exports.actualizarClase = async (req, res, next) => {
         return res.status(400).json({ message: 'La hora de fin debe ser posterior a la de inicio.' });
       }
       const estadoActual = String(clase.estado || '').toUpperCase();
-      const modoEspecial = await operacionFueraDeDiaActiva(req);
       if (hi && hf) {
         dto.duracionSegundos = Math.max(0, Math.round((hf.getTime() - hi.getTime()) / 1000));
-        if (estadoActual === 'EN PROCESO' || estadoActual === 'FINALIZADO') {
+        if (!usaHorarioManual && (estadoActual === 'EN PROCESO' || estadoActual === 'FINALIZADO')) {
           dto.estado = 'FINALIZADO';
         } else if (modoEspecial && estadoActual === 'PROGRAMADA') {
           dto.estado = 'FINALIZADO';
         }
       } else if (hi && !hf) {
         dto.duracionSegundos = null;
-        if (estadoActual !== 'FINALIZADO') dto.estado = 'EN PROCESO';
+        if (!usaHorarioManual && estadoActual !== 'FINALIZADO') dto.estado = 'EN PROCESO';
       } else if (!hi) {
         dto.duracionSegundos = null;
-        if (dto.horaFin === null && estadoActual === 'FINALIZADO') {
+        if (!usaHorarioManual && dto.horaFin === null && estadoActual === 'FINALIZADO') {
           dto.estado = 'PROGRAMADA';
         }
       }
+    } else if (
+      !modoEspecial &&
+      !usaHorarioManual &&
+      (horaInicio !== undefined || horaFin !== undefined)
+    ) {
+      return res.status(400).json({
+        message: 'Active el modo de horario manual para editar las horas de la clase.',
+      });
     }
 
     const estadoAntes = String(clase.estado || '').toUpperCase();
@@ -1432,7 +1481,7 @@ exports.iniciarClase = async (req, res, next) => {
     if (clase.estado === 'FINALIZADO') {
       return res.status(409).json({ message: 'La clase ya está finalizada.' });
     }
-    if (clase.estado === 'EN PROCESO' && clase.horaInicio) {
+    if (clase.estado === 'EN PROCESO') {
       return res.status(409).json({ message: 'La clase ya está EN PROCESO.' });
     }
     const jornada = await sincronizarEstadoJornada(clase.idJornada);
@@ -1440,9 +1489,34 @@ exports.iniciarClase = async (req, res, next) => {
     const bloqueo = await bloqueoIniciarClaseJornada(req, jornada);
     if (bloqueo) return res.status(400).json({ message: bloqueo });
     await asegurarInstructorOperandoClase(clase, req);
-    clase.horaInicio = new Date();
-    clase.horaFin = null;
-    clase.duracionSegundos = null;
+    const modoEspecial = await operacionFueraDeDiaActiva(req);
+    const body = req.body || {};
+    if (!modoEspecial && body.horarioManual !== undefined) {
+      clase.horarioManual = body.horarioManual === true;
+    }
+    const conservarHorarioManual = !modoEspecial && clase.horarioManual === true;
+    if (conservarHorarioManual) {
+      if (body.horaInicio != null && String(body.horaInicio).trim() !== '') {
+        clase.horaInicio = parseHoraClase(clase.fechaClase, body.horaInicio);
+      }
+      if (body.horaFin != null && String(body.horaFin).trim() !== '') {
+        clase.horaFin = parseHoraClase(clase.fechaClase, body.horaFin);
+      }
+      if (clase.horaFin && !clase.horaInicio) {
+        return res.status(400).json({ message: 'Indique la hora de inicio antes de la hora de fin.' });
+      }
+      if (clase.horaInicio && clase.horaFin && clase.horaFin.getTime() <= clase.horaInicio.getTime()) {
+        return res.status(400).json({ message: 'La hora de fin debe ser posterior a la de inicio.' });
+      }
+      clase.duracionSegundos =
+        clase.horaInicio && clase.horaFin
+          ? Math.max(0, Math.round((clase.horaFin.getTime() - clase.horaInicio.getTime()) / 1000))
+          : null;
+    } else {
+      clase.horaInicio = new Date();
+      clase.horaFin = null;
+      clase.duracionSegundos = null;
+    }
     clase.estado = 'EN PROCESO';
     clase.userChangeRecord = auditoriaUsuario(req);
     await ClaseJornadaCap.updateOne(
@@ -1451,8 +1525,9 @@ exports.iniciarClase = async (req, res, next) => {
         $set: {
           estado: 'EN PROCESO',
           horaInicio: clase.horaInicio,
-          horaFin: null,
-          duracionSegundos: null,
+          horaFin: clase.horaFin,
+          horarioManual: clase.horarioManual === true,
+          duracionSegundos: clase.duracionSegundos,
           idEmpleadoInstructor: clase.idEmpleadoInstructor ?? null,
           idUsuarioInstructor: String(clase.idUsuarioInstructor || '').trim(),
           idinstructor: String(clase.idinstructor || '').trim(),
@@ -1506,18 +1581,30 @@ exports.finalizarClase = async (req, res, next) => {
     }
 
     const modoEspecial = await operacionFueraDeDiaActiva(req);
+    if (!modoEspecial && body.horarioManual !== undefined) {
+      clase.horarioManual = body.horarioManual === true;
+    }
+    const horarioManualNormal = !modoEspecial && clase.horarioManual === true;
 
-    // Horas manuales (HH:mm). En modo especial no se sobrescribe fin con "ahora".
-    if (body.horaInicio != null && String(body.horaInicio).trim() !== '') {
+    // Horas manuales (HH:mm). En modo manual o especial no se reemplazan por "ahora".
+    if (
+      (modoEspecial || horarioManualNormal) &&
+      body.horaInicio != null &&
+      String(body.horaInicio).trim() !== ''
+    ) {
       clase.horaInicio = parseHoraClase(fechaRef, body.horaInicio);
     }
-    if (body.horaFin != null && String(body.horaFin).trim() !== '') {
+    if (
+      (modoEspecial || horarioManualNormal) &&
+      body.horaFin != null &&
+      String(body.horaFin).trim() !== ''
+    ) {
       clase.horaFin = parseHoraClase(fechaRef, body.horaFin);
-    } else if (modoEspecial && clase.horaFin) {
+    } else if ((modoEspecial || horarioManualNormal) && clase.horaFin) {
       // Conservar hora de fin planificada o guardada.
-    } else if (modoEspecial) {
+    } else if (modoEspecial || horarioManualNormal) {
       return res.status(400).json({
-        message: 'Indique la hora de fin en el horario de la clase antes de finalizar.',
+        message: 'Indique y guarde la hora de fin antes de finalizar la clase.',
       });
     } else {
       clase.horaFin = new Date();
@@ -1546,6 +1633,7 @@ exports.finalizarClase = async (req, res, next) => {
           estado: 'FINALIZADO',
           horaInicio: clase.horaInicio,
           horaFin: clase.horaFin,
+          horarioManual: clase.horarioManual === true,
           duracionSegundos: clase.duracionSegundos,
           idEmpleadoInstructor: clase.idEmpleadoInstructor ?? null,
           idUsuarioInstructor: String(clase.idUsuarioInstructor || '').trim(),
@@ -2595,6 +2683,11 @@ exports.actualizarConfigOperacionJornadas = async (req, res, next) => {
     if (cfg.operacionFueraDeDiaHabilitada !== antes.operacionFueraDeDiaHabilitada) {
       partes.push(
         `Operación fuera del día ${cfg.operacionFueraDeDiaHabilitada ? 'habilitada' : 'deshabilitada'}`,
+      );
+    }
+    if (cfg.mostrarSwitchHorarioManual !== antes.mostrarSwitchHorarioManual) {
+      partes.push(
+        `Selector de horario manual ${cfg.mostrarSwitchHorarioManual ? 'visible' : 'oculto'}`,
       );
     }
     if (cfg.idServCapacitacionContrato !== antes.idServCapacitacionContrato) {

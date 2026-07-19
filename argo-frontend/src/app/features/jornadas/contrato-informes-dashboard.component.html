@@ -31,6 +31,35 @@
           [disabled]="loading() || exportando() || !data()">
           {{ exportandoEsta('contrato::::') ? 'Generando…' : '⬇ PDF del contrato' }}
         </button>
+        <button
+          type="button"
+          class="mini primary"
+          (click)="exportarPdf('desarrollo-general', { idInstructor: null })"
+          [disabled]="loading() || exportando() || !data()">
+          {{
+            exportandoEsta('desarrollo-general::::')
+              ? 'Generando…'
+              : '⬇ Desarrollo general'
+          }}
+        </button>
+        <button
+          type="button"
+          class="mini primary"
+          (click)="exportarPdf('instructor')"
+          [disabled]="loading() || exportando() || !data()"
+          [title]="
+            filtroInstructorId()
+              ? 'Generar informe del instructor seleccionado'
+              : 'Generar informe agrupado de todos los instructores'
+          ">
+          {{
+            exportandoEsta('instructor::::' + filtroInstructorId())
+              ? 'Generando…'
+              : filtroInstructorId()
+                ? '⬇ Desarrollo del instructor'
+                : '⬇ Desarrollo por instructores'
+          }}
+        </button>
       </div>
     </header>
 
@@ -91,6 +120,25 @@
           (seleccionado)="onInstructorPick($event)"
           (limpiado)="onInstructorLimpiar()"
         />
+        <label class="inf-fecha">
+          <span>Fecha inicial</span>
+          <input
+            type="date"
+            [ngModel]="filtroDesde()"
+            (ngModelChange)="filtroDesde.set($event)"
+          />
+        </label>
+        <label class="inf-fecha">
+          <span>Fecha final</span>
+          <input
+            type="date"
+            [ngModel]="filtroHasta()"
+            (ngModelChange)="filtroHasta.set($event)"
+          />
+        </label>
+        <button type="button" class="mini primary inf-aplicar-fechas" (click)="aplicarFechas()">
+          Aplicar fechas
+        </button>
       </div>
     </section>
 

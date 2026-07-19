@@ -148,8 +148,22 @@
               </td>
               <td class="actions-cell">
                 <button type="button" class="mini ghost" (click)="imprimir(c)">Imprimir</button>
-                <button type="button" class="mini primary" (click)="abrirEditar(c._id)">Editar</button>
-                <button type="button" class="mini danger" (click)="eliminar(c)">Eliminar</button>
+                <button
+                  type="button"
+                  class="mini primary"
+                  (click)="abrirEditar(c._id)"
+                  [disabled]="certificadoContratoFinalizado(c)"
+                  [title]="certificadoContratoFinalizado(c) ? 'Contrato finalizado: solo consulta' : 'Editar certificado'">
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="mini danger"
+                  (click)="eliminar(c)"
+                  [disabled]="certificadoContratoFinalizado(c)"
+                  [title]="certificadoContratoFinalizado(c) ? 'Contrato finalizado: no se puede eliminar' : 'Eliminar certificado'">
+                  Eliminar
+                </button>
               </td>
             </tr>
           }

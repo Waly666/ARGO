@@ -1,0 +1,238 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.pdf417-reader {
+  display: grid;
+  gap: 8px;
+}
+
+.pdf417-switch {
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.14);
+
+  button {
+    padding: 5px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.76rem;
+    cursor: pointer;
+
+    &.active {
+      color: #fff;
+      background: #2563eb;
+    }
+  }
+}
+
+.pdf417-workspace {
+  min-height: 360px;
+}
+
+.camera-pane {
+  display: grid;
+  grid-template-columns: minmax(320px, 480px) minmax(170px, 1fr);
+  gap: 12px;
+  min-height: 360px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.video-box {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--btn-radius);
+  background: #020617;
+
+  video {
+    display: block;
+    width: 100%;
+    height: 360px;
+    object-fit: cover;
+  }
+}
+
+.scan-guide {
+  position: absolute;
+  inset: 34% 8%;
+  border: 2px solid #38bdf8;
+  border-radius: 5px;
+  box-shadow: 0 0 0 999px rgba(2, 6, 23, 0.24);
+  pointer-events: none;
+}
+
+.video-status {
+  position: absolute;
+  inset: auto 8px 7px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  color: #e0f2fe;
+  background: rgba(2, 6, 23, 0.78);
+  font-size: 0.72rem;
+}
+
+.camera-actions {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+
+  label {
+    display: grid;
+    gap: 4px;
+  }
+
+  label span,
+  p {
+    color: var(--text-dim);
+    font-size: 0.78rem;
+  }
+
+  select {
+    width: 100%;
+    padding: 7px 8px;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface, #0f172a);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.camera-resolution {
+  width: fit-content;
+  padding: 5px 8px;
+  color: #bae6fd;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 7px;
+  background: rgba(14, 116, 144, 0.16);
+  font-size: 0.75rem;
+}
+
+.zoom-control input {
+  width: 100%;
+  accent-color: #38bdf8;
+}
+
+.camera-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button,
+  .image-upload span {
+    display: inline-block;
+    padding: 6px 8px;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(30, 64, 175, 0.22);
+    font-size: 0.74rem;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.lector-pane {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  min-height: 360px;
+  align-items: start;
+
+  strong {
+    color: var(--text);
+    font-size: 0.86rem;
+  }
+
+  p {
+    margin: 3px 0 7px;
+    color: var(--text-dim);
+    font-size: 0.76rem;
+  }
+
+  input {
+    width: 100%;
+    min-height: 38px;
+    padding: 7px;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.16);
+    font-family: monospace;
+    font-size: 0.72rem;
+  }
+
+  button {
+    margin-top: 5px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 7px;
+    color: #fff;
+    background: #2563eb;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+.lector-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.38);
+  border-radius: 10px;
+  background: rgba(14, 116, 144, 0.18);
+  font-size: 1.6rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.pdf417-error {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  color: var(--alert-warning-text);
+  border: 1px solid var(--alert-warning-border);
+  border-radius: 7px;
+  background: var(--alert-warning-bg);
+  font-size: 0.75rem;
+
+  button {
+    flex: 0 0 auto;
+    padding: 4px 7px;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+  }
+}

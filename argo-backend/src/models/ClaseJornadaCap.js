@@ -15,6 +15,8 @@ const ClaseJornadaCapSchema = new mongoose.Schema(
     urlforo: { type: String, trim: true, default: '' },
     horaInicio: { type: Date, default: null },
     horaFin: { type: Date, default: null },
+    /** true: las horas las define el usuario y los botones iniciar/finalizar no las sobrescriben. */
+    horarioManual: { type: Boolean, default: false },
     /** Segundos transcurridos entre horaInicio y horaFin (calculado al finalizar). */
     duracionSegundos: { type: Number, default: null },
     ubicacion: { type: String, enum: UBICACIONES_CLASE, default: 'Carpa' },

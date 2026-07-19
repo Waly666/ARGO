@@ -42,6 +42,27 @@
     </section>
 
     <section class="cfg-panel">
+      <h2>Horario manual de clases</h2>
+      <p class="cfg-intro">
+        Define si los formularios de creación y edición muestran el selector para cambiar entre horario automático y
+        manual. Al ocultarlo, las clases nuevas usarán el registro automático al iniciar y finalizar.
+      </p>
+
+      <label class="cfg-switch">
+        <input
+          type="checkbox"
+          [ngModel]="config().mostrarSwitchHorarioManual"
+          (ngModelChange)="patchMostrarSwitchHorarioManual($event)" />
+        Mostrar el switch «Horario manual»
+      </label>
+
+      <ul class="cfg-list">
+        <li>Las clases que ya estén configuradas como manuales conservarán sus horas y su comportamiento.</li>
+        <li>Esta opción no modifica la operación especial ni cambia datos existentes.</li>
+      </ul>
+    </section>
+
+    <section class="cfg-panel">
       <h2>Servicio de capacitación para contratos</h2>
       <p class="cfg-intro">
         Comprobantes de ingreso y facturas electrónicas de contratos de capacitación causan este servicio del catálogo.

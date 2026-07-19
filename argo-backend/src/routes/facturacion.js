@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/facturacionController');
 const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
+const contratoMutable = require('../middleware/contratoJornadaMutable');
 
 const router = Router();
 router.use(requireAuth);
@@ -21,17 +22,17 @@ router.get('/elegibles/:numDoc', ver, ctrl.elegiblesAlumno);
 router.get('/alumno/:numDoc', verFacturasAlumno, ctrl.facturasAlumno);
 router.get('/contrato/:idContrato/estado', ver, ctrl.estadoFacturaContrato);
 router.get('/contrato/:idContrato/preview', ver, ctrl.previewFacturaContrato);
-router.post('/contrato/:idContrato/emitir', emitir, ctrl.emitirFacturaContrato);
+router.post('/contrato/:idContrato/emitir', emitir, contratoMutable.contratoPorParametroIdContrato, ctrl.emitirFacturaContrato);
 router.get('/rangos-factus', ver, ctrl.rangosFactus);
 router.get('/notas-credito/:notaId/html', ver, ctrl.htmlNotaCredito);
 router.get('/notas-credito', ver, ctrl.listarNotas);
 router.post('/probar-conexion', ver, ctrl.probarConexion);
 router.post('/preview', ver, ctrl.preview);
-router.post('/emitir', emitir, ctrl.emitir);
+router.post('/emitir', emitir, contratoMutable.contratoPorBodyOpcional, ctrl.emitir);
 router.get('/', ver, ctrl.listar);
 
 router.post('/:id/nota-credito/preview', ver, ctrl.notaCreditoPreview);
-router.post('/:id/nota-credito', emitir, ctrl.notaCreditoEmitir);
+router.post('/:id/nota-credito', emitir, contratoMutable.facturaPorParametro, ctrl.notaCreditoEmitir);
 router.get('/:id/notas-credito', ver, ctrl.notasDeFactura);
 router.get('/:id/html', ver, ctrl.htmlFactura);
 router.get('/:id', ver, ctrl.obtener);
