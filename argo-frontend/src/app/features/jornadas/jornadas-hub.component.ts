@@ -2689,6 +2689,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!t.closest('.clase-alumno-buscar')) this.alumnoBusquedaOpen.set(false);
   }
 
+  @HostListener('document:keydown.escape')
+  cerrarModalJornadaConEscape(): void {
+    if (this.jornadaEdit() && !this.loading()) this.cancelarEdicionJornada();
+  }
+
   crearSupervisor() {
     const nombre = this.supNuevoNombre().trim();
     if (!nombre) return;
@@ -4305,9 +4310,6 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.onContratoSelChange(j.idContrato);
     }
     this.editarJornada(j);
-    queueMicrotask(() => {
-      document.getElementById('jornada-edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
   }
 
   cerrarJornadaOperacion(j: JornadaCapDto, ev?: Event) {
@@ -4388,14 +4390,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditIdSupervisor.set(supMatch?._id || '');
     this.supNuevoNombreJornada.set('');
     this.jornadaEditFecha.set(j.fechaProgramacion ? ymdCalendario(j.fechaProgramacion) : '');
-    this.jornadaEditMapaAbierto.set(false);
+    this.jornadaEditMapaAbierto.set(true);
     this.mostrarMsg(`Editando ${this.labelJornada(j)} — complete dirección y ubicación.`, 'info', 'Edición de jornada');
     if (j.lat != null && j.lng != null) {
       this.resolverMunicipioDesdeCoords(j.lat, j.lng);
     }
-    queueMicrotask(() => {
-      document.getElementById('jornada-edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
   }
 
   abrirNuevaJornada(ev?: Event) {
@@ -4437,15 +4436,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditIdSupervisor.set(supMatch?._id || c.idSupervisor || '');
     this.supNuevoNombreJornada.set('');
     this.jornadaEditFecha.set('');
-    this.jornadaEditMapaAbierto.set(false);
+    this.jornadaEditMapaAbierto.set(true);
     this.mostrarMsg(
       'Nueva jornada extra: el número de jornadas del contrato se actualizará al guardar.',
       'info',
       'Agregar jornada',
     );
-    queueMicrotask(() => {
-      document.getElementById('jornada-edit-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
   }
 
   cancelarEdicionJornada() {

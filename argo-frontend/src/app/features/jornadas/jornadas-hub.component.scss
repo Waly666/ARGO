@@ -1494,6 +1494,235 @@
     }
   }
 
+  .jornada-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: grid;
+    place-items: center;
+    padding: clamp(0.5rem, 2vw, 1.5rem);
+    background: rgba(2, 8, 23, 0.82);
+    backdrop-filter: blur(5px);
+  }
+
+  .edit-panel.jornada-modal {
+    width: min(1180px, 96vw);
+    max-height: 95vh;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+    z-index: 1;
+    border: 1px solid rgba(96, 165, 250, 0.34);
+    border-radius: 16px;
+    background: linear-gradient(160deg, #10264a 0%, #08172f 58%, #071329 100%);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62);
+  }
+
+  .jornada-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.2rem 0.9rem;
+    border-bottom: 1px solid rgba(120, 170, 255, 0.2);
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.2), rgba(14, 116, 144, 0.08));
+
+    h3 {
+      margin: 0.15rem 0 0;
+      color: var(--text);
+      font-size: 1.15rem;
+    }
+  }
+
+  .jornada-modal-eyebrow {
+    display: block;
+    color: #7dd3fc;
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .jornada-modal-close {
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-color: rgba(148, 163, 184, 0.28);
+    border-radius: 9px;
+    color: #f8fafc;
+    background: rgba(2, 6, 23, 0.6);
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  .jornada-modal-body {
+    min-height: 0;
+    padding: 1rem 1.2rem 0.5rem;
+    overflow: auto;
+    scrollbar-gutter: stable;
+    background:
+      radial-gradient(circle at 100% 0, rgba(14, 165, 233, 0.08), transparent 28rem),
+      linear-gradient(180deg, rgba(15, 35, 68, 0.36), rgba(4, 13, 31, 0.12));
+  }
+
+  .jornada-modal-intro {
+    margin: 0 0 0.9rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    border-radius: 10px;
+    color: #cbdcf5;
+    background: rgba(14, 116, 144, 0.1);
+  }
+
+  .jornada-form-section {
+    position: relative;
+    margin-bottom: 0.9rem;
+    padding: 1rem;
+    border: 1px solid rgba(120, 170, 255, 0.18);
+    border-radius: 13px;
+    background: rgba(8, 24, 52, 0.66);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      border-radius: 13px 0 0 13px;
+      background: linear-gradient(180deg, #38bdf8, #2563eb);
+    }
+
+    &--ubicacion::before {
+      background: linear-gradient(180deg, #2dd4bf, #0891b2);
+    }
+
+    input:not([type='checkbox']),
+    select {
+      border-color: rgba(125, 167, 224, 0.28);
+      background: rgba(3, 12, 30, 0.72);
+      transition:
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        background 0.16s ease;
+
+      &:focus {
+        border-color: #38bdf8;
+        outline: none;
+        background: rgba(5, 20, 46, 0.9);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+      }
+    }
+
+    input.readonly {
+      color: #a9bad5;
+      background: rgba(15, 31, 58, 0.72);
+    }
+  }
+
+  .jornada-form-section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid rgba(120, 170, 255, 0.14);
+
+    h4 {
+      margin: 0;
+      color: #f1f5f9;
+      font-size: 0.94rem;
+    }
+
+    p {
+      margin: 0.15rem 0 0;
+      color: var(--text-dim);
+      font-size: 0.76rem;
+    }
+  }
+
+  .jornada-form-section-icon {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    border: 1px solid rgba(56, 189, 248, 0.34);
+    border-radius: 9px;
+    color: #bae6fd;
+    background: linear-gradient(145deg, rgba(14, 165, 233, 0.22), rgba(37, 99, 235, 0.16));
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  .jornada-form-section--ubicacion {
+    .jornada-form-section-icon {
+      border-color: rgba(45, 212, 191, 0.34);
+      color: #99f6e4;
+      background: linear-gradient(145deg, rgba(13, 148, 136, 0.24), rgba(8, 145, 178, 0.15));
+    }
+
+    .mapa-desplegable {
+      padding: 0.7rem;
+      border: 1px solid rgba(45, 212, 191, 0.18);
+      border-radius: 12px;
+      background: rgba(2, 12, 28, 0.62);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .mapa-toggle {
+      border-color: rgba(45, 212, 191, 0.3);
+      color: #99f6e4;
+      background: rgba(13, 148, 136, 0.1);
+    }
+  }
+
+  .jornada-modal-actions {
+    margin: 0;
+    padding: 0.85rem 1.2rem 1rem;
+    border-top: 1px solid rgba(120, 170, 255, 0.2);
+    background: rgba(4, 13, 31, 0.94);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.16);
+
+    button.primary {
+      min-width: 10rem;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .jornada-modal-backdrop {
+      padding: 0;
+    }
+
+    .edit-panel.jornada-modal {
+      width: 100vw;
+      max-height: 100dvh;
+      height: 100dvh;
+      border-radius: 0;
+    }
+
+    .jornada-modal-head,
+    .jornada-modal-body,
+    .jornada-modal-actions {
+      padding-left: 0.8rem;
+      padding-right: 0.8rem;
+    }
+
+    .jornada-form-section {
+      padding: 0.8rem;
+    }
+
+    .edit-panel.jornada-modal .jornada-edit-fila-meta,
+    .edit-panel.jornada-modal .jornada-edit-fila-muni {
+      flex-wrap: wrap;
+    }
+  }
+
   .actions-cell {
     display: flex;
     flex-wrap: wrap;

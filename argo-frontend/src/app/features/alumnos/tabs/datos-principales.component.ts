@@ -229,6 +229,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   saving = signal(false);
 
   message = signal<string | null>(null);
+  camposObligatoriosInvalidos = signal<string[]>([]);
 
   docDuplicado = signal<{ _id: string; nombreCompleto?: string } | null>(null);
 
@@ -512,6 +513,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
 
   onMunOrigenSel(m: { codMunicipio: string; label: string }) {
+    this.limpiarCampoObligatorio('munOrigen');
     this.munOrigenTexto.set(m.label);
     const cod = m.codMunicipio;
     this.form.update((f) => ({ ...f, munOrigen: cod, codMunicipio: cod }));
@@ -564,6 +566,14 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.formDirty.set(true);
   }
 
+  campoObligatorioInvalido(campo: string): boolean {
+    return this.camposObligatoriosInvalidos().includes(campo);
+  }
+
+  private limpiarCampoObligatorio(campo: string): void {
+    this.camposObligatoriosInvalidos.update((campos) => campos.filter((x) => x !== campo));
+  }
+
 
 
   private cargarCatalogo(
@@ -585,6 +595,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
 
   patch<K extends keyof AlumnoDto>(k: K, v: AlumnoDto[K]) {
+    this.limpiarCampoObligatorio(String(k));
     let valor = v;
     if (k === 'apellido1' || k === 'apellido2' || k === 'nombre1' || k === 'nombre2') {
       valor = nombreEnMayusculas(String(v ?? '')) as AlumnoDto[K];
@@ -720,6 +731,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     const file = (ev.target as HTMLInputElement).files?.[0];
 
     if (!file) return;
+    this.limpiarCampoObligatorio('foto');
 
     this.fotoFile.set(file);
 
@@ -845,31 +857,97 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     if (verificarDocumento && formatNumDoc(s.numDoc)) this.verificarDoc();
   }
 
+  private validarSeccionesObligatorias(f: AlumnoDto): string | null {
+    const vacio = (value: unknown) => value == null || String(value).trim() === '';
+    const faltantes: Array<{ seccion: string; campos: string[] }> = [];
+    const identificacion: string[] = [];
+    const personales: string[] = [];
+    const contacto: string[] = [];
+    const invalidos: string[] = [];
+    const falta = (condicion: boolean, id: string, etiqueta: string, grupo: string[]) => {
+      if (!condicion) return;
+      invalidos.push(id);
+      grupo.push(etiqueta);
+    };
+
+    falta(vacio(f.tipoAlumno), 'tipoAlumno', 'tipo de alumno', identificacion);
+    falta(vacio(f.tipoDoc), 'tipoDoc', 'tipo de documento', identificacion);
+    falta(
+      parseNumDocForApi(f.numDoc) == null,
+      'numDoc',
+      `número de documento válido (${this.numDocHint})`,
+      identificacion,
+    );
+    falta(vacio(f.expedida), 'expedida', 'lugar de expedición', identificacion);
+    falta(vacio(f.apellido1), 'apellido1', 'primer apellido', identificacion);
+    falta(vacio(f.apellido2), 'apellido2', 'segundo apellido', identificacion);
+    falta(vacio(f.nombre1), 'nombre1', 'primer nombre', identificacion);
+    falta(vacio(f.nombre2), 'nombre2', 'segundo nombre', identificacion);
+    falta(vacio(f.fechaNac), 'fechaNac', 'fecha de nacimiento', identificacion);
+
+    falta(vacio(f.genero), 'genero', 'género', personales);
+    falta(vacio(f.tipoSangre), 'tipoSangre', 'tipo de sangre', personales);
+    falta(vacio(f.jornada), 'jornada', 'jornada', personales);
+    falta(vacio(f.estadoCivil), 'estadoCivil', 'estado civil', personales);
+    falta(vacio(f.estrato), 'estrato', 'estrato', personales);
+    falta(vacio(f.regimenSalud), 'regimenSalud', 'régimen de salud', personales);
+    falta(vacio(f.nivelFormacion), 'nivelFormacion', 'nivel de formación', personales);
+    falta(vacio(f.ocupacion), 'ocupacion', 'ocupación', personales);
+
+    falta(vacio(f.correo), 'correo', 'correo', contacto);
+    falta(vacio(f.celular), 'celular', 'celular', contacto);
+    falta(vacio(f.direccion), 'direccion', 'dirección', contacto);
+    falta(
+      vacio(f.codMunicipio) && vacio(f.munOrigen),
+      'munOrigen',
+      'municipio de origen',
+      contacto,
+    );
+
+    if (identificacion.length) faltantes.push({ seccion: 'Identificación', campos: identificacion });
+    if (personales.length) faltantes.push({ seccion: 'Datos personales', campos: personales });
+    if (contacto.length) faltantes.push({ seccion: 'Contacto y ubicación', campos: contacto });
+    if (faltantes.length) {
+      this.camposObligatoriosInvalidos.set(invalidos);
+      return `Complete todos los campos obligatorios. ${faltantes
+        .map((grupo) => `${grupo.seccion}: ${grupo.campos.join(', ')}`)
+        .join(' · ')}`;
+    }
+
+    const correo = String(f.correo || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(correo)) {
+      this.camposObligatoriosInvalidos.set(['correo']);
+      return 'Ingrese un correo electrónico válido.';
+    }
+    const errCel = mensajeErrorCelularAlmacenado(f.celular);
+    if (errCel) {
+      this.camposObligatoriosInvalidos.set(['celular']);
+      return errCel;
+    }
+    this.camposObligatoriosInvalidos.set([]);
+    return null;
+  }
+
   guardar() {
     const tipoForm = normalizarTipoAlumno(this.form().tipoAlumno);
     const tipoBd = normalizarTipoAlumno(this.store.alumno()?.tipoAlumno);
     const cambioTipo = this.isEdit() && tipoForm !== tipoBd;
 
-    if (this.isEdit() && !this.formSinGuardar() && !cambioTipo) {
-      this.dispararAlertaGuardar('No hay cambios pendientes por guardar.');
-      return;
-    }
-
     const f = { ...this.form(), tipoAlumno: tipoForm };
     if (!f.expedida?.trim() && this.expedidaTexto().trim()) {
       f.expedida = this.expedidaTexto().trim();
     }
+    const errorObligatorios = this.validarSeccionesObligatorias(f);
+    if (errorObligatorios) {
+      this.dispararAlertaGuardar(errorObligatorios);
+      return;
+    }
+    if (this.isEdit() && !this.formSinGuardar() && !cambioTipo) {
+      this.dispararAlertaGuardar('No hay cambios pendientes por guardar.');
+      return;
+    }
     const nd = parseNumDocForApi(f.numDoc);
-    if (nd == null || !f.nombre1 || !f.apellido1) {
-      this.dispararAlertaGuardar(`numDoc válido (${this.numDocHint}), nombre1 y apellido1 son obligatorios.`);
-      return;
-    }
-
-    const errCel = mensajeErrorCelularAlmacenado(f.celular);
-    if (errCel) {
-      this.dispararAlertaGuardar(errCel);
-      return;
-    }
+    if (nd == null) return;
 
     if (this.isEdit()) {
       this.ejecutarGuardado(f);

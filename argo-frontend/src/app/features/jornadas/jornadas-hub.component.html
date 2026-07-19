@@ -860,14 +860,32 @@
         }
       </p>
 
-      <div id="jornada-edit-panel" class="edit-panel argo-form-shell" *ngIf="jornadaEdit() as je">
-        <h3>
-          @if (jornadaEditModo() === 'nueva') {
-            Agregar jornada extra
-          } @else {
-            Editar jornada — {{ labelJornada(je) }}
-          }
-        </h3>
+      <div class="jornada-modal-backdrop" *ngIf="jornadaEdit() as je">
+        <section
+          id="jornada-edit-panel"
+          class="edit-panel argo-form-shell jornada-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="jornada-modal-title">
+          <header class="jornada-modal-head">
+            <div>
+              <span class="jornada-modal-eyebrow">Jornadas del contrato</span>
+              <h3 id="jornada-modal-title">
+                @if (jornadaEditModo() === 'nueva') {
+                  Agregar jornada extra
+                } @else {
+                  Editar jornada — {{ labelJornada(je) }}
+                }
+              </h3>
+            </div>
+            <button
+              type="button"
+              class="ghost jornada-modal-close"
+              (click)="cancelarEdicionJornada()"
+              [disabled]="loading()"
+              aria-label="Cerrar editor de jornada">×</button>
+          </header>
+          <div class="jornada-modal-body">
         <p
           class="msg error panel-msg alerta-direccion"
           [class.alerta-blink]="direccionAlertaActiva()"
@@ -875,13 +893,21 @@
           role="alert">
           {{ jornadaEditError() }}
         </p>
-        <p class="hint">
+        <p class="hint jornada-modal-intro">
           @if (jornadaEditModo() === 'nueva') {
             Programe una jornada adicional. Al guardar, el contrato reflejará el nuevo total de jornadas y la meta de alumnos por jornada.
           } @else {
-            Defina la <strong>fecha</strong>, la <strong>dirección</strong> y las coordenadas. El mapa está plegado hasta que lo abra.
+            Defina la <strong>fecha</strong>, la <strong>dirección</strong> y fije la ubicación con precisión en el mapa.
           }
         </p>
+        <section class="jornada-form-section jornada-form-section--datos">
+          <header class="jornada-form-section-head">
+            <span class="jornada-form-section-icon" aria-hidden="true">01</span>
+            <div>
+              <h4>Programación y responsable</h4>
+              <p>Configure la fecha, meta de atención y supervisor encargado.</p>
+            </div>
+          </header>
         <div class="jornada-edit-fila-meta">
           <div class="field field-fecha">
             <argo-date-input label="Fecha programación *" [ngModel]="jornadaEditFecha()" (ngModelChange)="jornadaEditFecha.set($event)" ></argo-date-input>
@@ -931,6 +957,15 @@
             Autogenerar {{ contratoActivo()?.clasesPorJornada }} clase(s) en esta jornada
           </label>
         }
+        </section>
+        <section class="jornada-form-section jornada-form-section--ubicacion">
+          <header class="jornada-form-section-head">
+            <span class="jornada-form-section-icon" aria-hidden="true">02</span>
+            <div>
+              <h4>Ubicación de la jornada</h4>
+              <p>Registre la dirección y confirme el punto exacto directamente sobre el mapa.</p>
+            </div>
+          </header>
         <div class="jornada-edit-fila-ubicacion">
           <div class="field field-direccion">
             <label>Dirección *</label>
@@ -980,6 +1015,7 @@
             <argo-jornada-mapa-picker
               [lat]="jornadaEditLatNum()"
               [lng]="jornadaEditLngNum()"
+              [heightPx]="480"
               (coordsChange)="onMapaCoords($event)" />
           }
         </div>
@@ -1008,8 +1044,10 @@
         <p class="hint georef-hint">
           Elija municipio en Divipola (el departamento se asigna solo) o fije coordenadas en el mapa/GPS para actualizar ambos.
         </p>
+        </section>
+          </div>
 
-        <div class="actions">
+        <div class="actions jornada-modal-actions">
           <button type="button" class="primary" (click)="guardarEdicionJornada($event)" [disabled]="loading()">
             {{ jornadaEditModo() === 'nueva' ? 'Crear jornada extra' : 'Guardar jornada' }}
           </button>
@@ -1022,6 +1060,7 @@
           }
           <button type="button" class="ghost" (click)="cancelarEdicionJornada()">Cancelar</button>
         </div>
+        </section>
       </div>
 
       @if (vistaJornadas() === 'calendario') {

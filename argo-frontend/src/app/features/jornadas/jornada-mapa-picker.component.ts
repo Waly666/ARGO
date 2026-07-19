@@ -40,7 +40,7 @@ const DETAIL_ZOOM = 16;
           <span class="map-badge">Mapa: {{ proveedorMapa() }}</span>
         }
       </div>
-      <div #mapHost class="map-host"></div>
+      <div #mapHost class="map-host" [style.height.px]="heightPx"></div>
     </div>
   `,
   styles: [
@@ -88,6 +88,7 @@ export class JornadaMapaPickerComponent implements AfterViewInit, OnChanges, OnD
 
   @Input() lat: number | null = null;
   @Input() lng: number | null = null;
+  @Input() heightPx = 280;
 
   @Output() coordsChange = new EventEmitter<CoordsGeorefEvent>();
 

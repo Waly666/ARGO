@@ -11,6 +11,56 @@
   text-transform: uppercase;
 }
 
+@keyframes alumno-campo-obligatorio-blink {
+  0%,
+  100% {
+    border-color: #ef4444;
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.72),
+      0 0 12px rgba(239, 68, 68, 0.24);
+  }
+  50% {
+    border-color: #fb7185;
+    box-shadow:
+      0 0 0 4px rgba(248, 113, 113, 0.18),
+      0 0 20px rgba(239, 68, 68, 0.52);
+  }
+}
+
+input.campo-obligatorio-error,
+.foto-block.campo-obligatorio-error,
+argo-catalogo-enum-buscar.campo-obligatorio-error,
+argo-municipio-buscar.campo-obligatorio-error,
+argo-date-input.campo-obligatorio-error,
+argo-celular-input.campo-obligatorio-error {
+  border: 1px solid #ef4444 !important;
+  border-radius: 8px;
+  animation: alumno-campo-obligatorio-blink 0.68s ease-in-out infinite;
+}
+
+argo-catalogo-enum-buscar.campo-obligatorio-error,
+argo-municipio-buscar.campo-obligatorio-error,
+argo-date-input.campo-obligatorio-error,
+argo-celular-input.campo-obligatorio-error {
+  display: block;
+}
+
+:host ::ng-deep {
+  argo-catalogo-enum-buscar.campo-obligatorio-error input,
+  argo-municipio-buscar.campo-obligatorio-error input,
+  argo-date-input.campo-obligatorio-error input,
+  argo-celular-input.campo-obligatorio-error input {
+    border-color: #ef4444 !important;
+  }
+
+  argo-catalogo-enum-buscar.campo-obligatorio-error label,
+  argo-municipio-buscar.campo-obligatorio-error label,
+  argo-date-input.campo-obligatorio-error label {
+    color: #fca5a5 !important;
+    font-weight: 700;
+  }
+}
+
 .form-head {
   display: flex;
   justify-content: space-between;
@@ -481,6 +531,20 @@
     border-color: rgba(78, 163, 255, 0.55);
     box-shadow: 0 0 0 3px rgba(78, 163, 255, 0.15);
   }
+}
+
+// Edge/Chrome puede interpretar correo y dirección como datos autocompletados
+// al abrir una edición y reemplazar el tema oscuro por un fondo blanco.
+.form-cols input:-webkit-autofill,
+.form-cols input:-webkit-autofill:hover,
+.form-cols input:-webkit-autofill:focus,
+.form-cols input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px #061029 inset !important;
+  box-shadow: 0 0 0 1000px #061029 inset !important;
+  border-color: var(--line) !important;
+  transition: background-color 9999s ease-out 0s;
 }
 
 .tone-blue   .section-body select:focus,

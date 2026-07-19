@@ -138,7 +138,7 @@
           <span class="section-icon ic-blue">◉</span>
           <div>
             <h3>Identificación</h3>
-            <p>Documento, nombres, fecha de nacimiento, foto y QR</p>
+            <p>Documento, nombres, fecha de nacimiento y foto · todos obligatorios</p>
           </div>
         </div>
         <div class="section-body section-body-split">
@@ -152,7 +152,8 @@
           <div class="row">
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Tipo de alumno"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('tipoAlumno')"
+                label="Tipo de alumno *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="form().tipoAlumno || ''"
                 [modoCombo]="true"
@@ -173,6 +174,7 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('tipoDoc')"
                 label="Tipo documento *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(tiposDoc(), form().tipoDoc)"
@@ -192,10 +194,12 @@
                 autocomplete="off"
                 [attr.maxlength]="numDocMaxLength"
                 [ngModel]="form().numDoc"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('numDoc')"
                 (ngModelChange)="patch('numDoc', $event)"
                 (keydown)="onNumDocScannerKeydown($event)"
                 (paste)="onNumDocScannerPaste($event)"
                 (blur)="verificarDoc()"
+                required
                 [readonly]="isEdit()" />
               <p class="hint doc-hint">Digite normalmente o accione aquí el lector PDF417 · {{ numDocHint }}</p>
             </div>
@@ -203,7 +207,8 @@
           <div class="row">
             <div class="col-6">
               <argo-municipio-buscar
-                label="Expedida en"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('expedida')"
+                label="Expedida en *"
                 placeholder="Seleccione o escriba municipio…"
                 [modoCombo]="true"
                 [textoInicial]="expedidaTexto()"
@@ -217,27 +222,36 @@
             <div class="col-4">
               <label>Primer apellido *</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
-                     [ngModel]="form().apellido1" (ngModelChange)="patch('apellido1', $event)" />
+                     [class.campo-obligatorio-error]="campoObligatorioInvalido('apellido1')"
+                     [ngModel]="form().apellido1" (ngModelChange)="patch('apellido1', $event)" required />
             </div>
             <div class="col-4">
-              <label>Segundo apellido</label>
+              <label>Segundo apellido *</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
-                     [ngModel]="form().apellido2" (ngModelChange)="patch('apellido2', $event)" />
+                     [class.campo-obligatorio-error]="campoObligatorioInvalido('apellido2')"
+                     [ngModel]="form().apellido2" (ngModelChange)="patch('apellido2', $event)" required />
             </div>
             <div class="col-4">
               <label>Primer nombre *</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
-                     [ngModel]="form().nombre1" (ngModelChange)="patch('nombre1', $event)" />
+                     [class.campo-obligatorio-error]="campoObligatorioInvalido('nombre1')"
+                     [ngModel]="form().nombre1" (ngModelChange)="patch('nombre1', $event)" required />
             </div>
           </div>
           <div class="row">
             <div class="col-3">
-              <label>Segundo nombre</label>
+              <label>Segundo nombre *</label>
               <input type="text" class="input-nombre-alumno" autocapitalize="characters" spellcheck="false"
-                     [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" />
+                     [class.campo-obligatorio-error]="campoObligatorioInvalido('nombre2')"
+                     [ngModel]="form().nombre2" (ngModelChange)="patch('nombre2', $event)" required />
             </div>
             <div class="col-3">
-              <argo-date-input label="Fecha nacimiento" [ngModel]="form().fechaNac" (ngModelChange)="patch('fechaNac', $event)" ></argo-date-input>
+              <argo-date-input
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('fechaNac')"
+                label="Fecha nacimiento *"
+                [ngModel]="form().fechaNac"
+                (ngModelChange)="patch('fechaNac', $event)"
+              ></argo-date-input>
             </div>
           </div>
           </div>
@@ -273,14 +287,15 @@
           <span class="section-icon ic-purple">◈</span>
           <div>
             <h3>Datos personales</h3>
-            <p>Salud, formación, jornada y ocupación</p>
+            <p>Salud, formación, jornada y ocupación · todos obligatorios</p>
           </div>
         </div>
         <div class="section-body">
           <div class="row">
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Género"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('genero')"
+                label="Género *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(generos(), form().genero)"
                 [modoCombo]="true"
@@ -293,7 +308,8 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Tipo de sangre"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('tipoSangre')"
+                label="Tipo de sangre *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(tiposSangre(), form().tipoSangre)"
                 [modoCombo]="true"
@@ -306,7 +322,8 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Jornada"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('jornada')"
+                label="Jornada *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(jornadas(), form().jornada)"
                 [modoCombo]="true"
@@ -319,7 +336,8 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Estado civil"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('estadoCivil')"
+                label="Estado civil *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(estadosCiviles(), form().estadoCivil)"
                 [modoCombo]="true"
@@ -334,7 +352,8 @@
           <div class="row">
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Estrato"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('estrato')"
+                label="Estrato *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(estratos(), form().estrato)"
                 [modoCombo]="true"
@@ -347,7 +366,8 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Régimen de salud"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('regimenSalud')"
+                label="Régimen de salud *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(regimenesSalud(), form().regimenSalud)"
                 [modoCombo]="true"
@@ -360,7 +380,8 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Nivel de formación"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('nivelFormacion')"
+                label="Nivel de formación *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(nivelesFormacion(), form().nivelFormacion)"
                 [modoCombo]="true"
@@ -373,7 +394,8 @@
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
-                label="Ocupación"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('ocupacion')"
+                label="Ocupación *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(ocupaciones(), form().ocupacion)"
                 [modoCombo]="true"
@@ -393,32 +415,46 @@
           <span class="section-icon ic-teal">⌖</span>
           <div>
             <h3>Contacto y ubicación</h3>
-            <p>Correo, celular, dirección y municipio de origen</p>
+            <p>Correo, celular, dirección y municipio de origen · todos obligatorios</p>
           </div>
         </div>
         <div class="section-body">
           <div class="row">
             <div class="col-6">
-              <label>Correo</label>
-              <input type="email" [ngModel]="form().correo" (ngModelChange)="patch('correo', $event)" placeholder="correo@ejemplo.com" />
+              <label>Correo *</label>
+              <input
+                type="email"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('correo')"
+                [ngModel]="form().correo"
+                (ngModelChange)="patch('correo', $event)"
+                placeholder="correo@ejemplo.com"
+                required />
             </div>
             <div class="col-6">
-              <label>Celular</label>
+              <label>Celular *</label>
               <argo-celular-input
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('celular')"
                 [value]="form().celular || ''"
                 (valueChange)="patch('celular', $event)" />
             </div>
           </div>
           <div class="row">
             <div class="col-12">
-              <label>Dirección</label>
-              <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch('direccion', $event)" placeholder="Dirección de residencia" />
+              <label>Dirección *</label>
+              <input
+                type="text"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('direccion')"
+                [ngModel]="form().direccion"
+                (ngModelChange)="patch('direccion', $event)"
+                placeholder="Dirección de residencia"
+                required />
             </div>
           </div>
           <div class="row">
             <div class="col-8">
               <argo-municipio-buscar
-                label="Municipio de origen"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('munOrigen')"
+                label="Municipio de origen *"
                 placeholder="Seleccione o escriba municipio…"
                 [modoCombo]="true"
                 [textoInicial]="munOrigenTexto()"
