@@ -1,16 +1,225 @@
 @use './rrhh-shared' as *;
 
+:host {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+
 .empleados-page {
   display: flex;
   flex-direction: column;
   gap: 14px;
   max-width: none;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .emp-tel-field {
   min-width: 0;
+
+  argo-celular-input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
 }
+
+/* —— Formulario empleado (jerarquía visual) —— */
+.emp-form {
+  position: relative;
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+  background:
+    radial-gradient(ellipse 70% 40% at 0% 0%, rgba(56, 189, 248, 0.08), transparent 55%),
+    radial-gradient(ellipse 50% 35% at 100% 8%, rgba(244, 114, 182, 0.06), transparent 50%),
+    linear-gradient(160deg, rgba(8, 18, 45, 0.82), rgba(5, 12, 32, 0.62)) !important;
+
+  > h2 {
+    display: none;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+
+  .row {
+    padding: 0;
+    margin-bottom: 0.75rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.emp-form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem 0.85rem;
+  border-bottom: 1px solid rgba(120, 170, 255, 0.12);
+  margin-bottom: 0.35rem;
+}
+
+.emp-form-kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+
+.emp-form-head h2 {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  color: #f1f5f9 !important;
+  letter-spacing: -0.01em;
+}
+
+.emp-form .form-tabs {
+  margin: 0 0.85rem 0.5rem;
+  padding: 0.55rem 0 0.65rem;
+}
+
+.emp-block {
+  margin: 0.75rem 0.95rem;
+  padding: 1rem 1.05rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(120, 170, 255, 0.12);
+  background: rgba(4, 12, 30, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.emp-block--persona {
+  border-color: rgba(56, 189, 248, 0.22);
+  background:
+    linear-gradient(135deg, rgba(14, 116, 144, 0.1), transparent 42%),
+    rgba(4, 12, 30, 0.5);
+}
+
+.emp-block--laboral {
+  border-color: rgba(251, 191, 36, 0.2);
+  background:
+    linear-gradient(135deg, rgba(180, 120, 20, 0.08), transparent 45%),
+    rgba(4, 12, 30, 0.5);
+}
+
+.emp-block--ss {
+  border-color: rgba(45, 212, 191, 0.22);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.1), transparent 45%),
+    rgba(4, 12, 30, 0.5);
+}
+
+.emp-block--acceso {
+  margin: 0.75rem 0.95rem !important;
+  padding: 1rem 1.05rem 1.1rem !important;
+}
+
+.emp-block-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.95rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(120, 170, 255, 0.1);
+
+  h3 {
+    margin: 0 0 0.15rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    letter-spacing: 0.01em;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    line-height: 1.35;
+  }
+
+  &--inline {
+    margin: 0;
+    padding: 0;
+    border: none;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.emp-block-num {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #0f172a;
+  background: linear-gradient(145deg, #7dd3fc, #38bdf8);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+}
+
+.emp-block--laboral .emp-block-num {
+  background: linear-gradient(145deg, #fde68a, #fbbf24);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.22);
+}
+
+.emp-block--ss .emp-block-num {
+  background: linear-gradient(145deg, #5eead4, #2dd4bf);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.22);
+}
+
+.emp-block--acceso .emp-block-num {
+  background: linear-gradient(145deg, #c4b5fd, #a78bfa);
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.22);
+}
+
+.emp-subblock {
+  margin-top: 0.85rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
+  border: 1px dashed rgba(120, 170, 255, 0.22);
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.emp-subblock-head {
+  margin-bottom: 0.7rem;
+
+  h4 {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+  }
+}
+
+.emp-form-actions {
+  margin: 0.5rem 0 0 !important;
+  padding: 0.9rem 1.15rem 1rem !important;
+  background: rgba(2, 8, 22, 0.55);
+  border-top: 1px solid rgba(120, 170, 255, 0.14);
+  border-radius: 0 0 12px 12px;
+}
+
 .page-head {
   display: flex;
   justify-content: space-between;
@@ -28,7 +237,9 @@
 .col-2 { grid-column: span 2; }
 .col-3 { grid-column: span 3; }
 .col-4 { grid-column: span 4; }
+.col-5 { grid-column: span 5; }
 .col-6 { grid-column: span 6; }
+.col-8 { grid-column: span 8; }
 .col-12 { grid-column: span 12; }
 .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
 .toolbar { display: flex; gap: 8px; input { flex: 1; } }
@@ -41,7 +252,8 @@ input, select { width: 100%; }
   color: var(--text-soft);
   border-bottom: 1px solid var(--line-soft);
   padding-bottom: 4px;
-}.link-btn { text-decoration: none; }
+}
+.link-btn { text-decoration: none; }
 
 .emp-table-wrap {
   width: 100%;
@@ -51,21 +263,17 @@ input, select { width: 100%; }
 
 .emp-lista-table {
   width: 100%;
-  min-width: 1180px;
+  min-width: 0;
   table-layout: auto;
 
   .col-doc { min-width: 9rem; white-space: nowrap; }
-  .col-nombre { min-width: 10rem; max-width: 16rem; }
+  .col-nombre { min-width: 12rem; }
   .col-cargo,
   .col-sede,
   .col-depto {
-    min-width: 6.5rem;
-    max-width: 11rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 7rem;
   }
-  .col-usuario { min-width: 6rem; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-usuario { min-width: 6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .col-estado { min-width: 4.5rem; white-space: nowrap; }
   .col-egresos { min-width: 4rem; text-align: center; white-space: nowrap; }
   .th-actions { min-width: 15.5rem; width: 15.5rem; }
@@ -83,14 +291,42 @@ input, select { width: 100%; }
 
 .ident-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 1rem;
   align-items: start;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .ident-fields {
   min-width: 0;
+  overflow: visible;
+
+  .row {
+    overflow: visible;
+  }
+
+  .col-3,
+  .col-4,
+  .col-6,
+  .col-8,
+  .col-12 {
+    position: relative;
+    z-index: 0;
+  }
+
+  .col-3:has(argo-municipio-buscar.dropdown-open),
+  .col-4:has(argo-municipio-buscar.dropdown-open),
+  .col-6:has(argo-municipio-buscar.dropdown-open),
+  .col-8:has(argo-municipio-buscar.dropdown-open),
+  .col-12:has(argo-municipio-buscar.dropdown-open) {
+    z-index: 5000;
+  }
+
+  input.readonly {
+    color: var(--text-soft);
+    background: rgba(15, 31, 58, 0.72);
+    cursor: default;
+  }
 }
 
 @media (max-width: 960px) {
@@ -101,41 +337,47 @@ input, select { width: 100%; }
   .foto-col {
     max-width: 240px;
     margin: 0 auto;
+    position: static;
   }
 }
 
 .foto-col {
+  position: sticky;
+  top: 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 12px;
-  background: rgba(59, 130, 246, 0.06);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: 10px;
+  padding: 14px 12px;
+  background:
+    linear-gradient(165deg, rgba(56, 189, 248, 0.12), rgba(8, 18, 45, 0.7));
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(2, 8, 22, 0.35);
 
   .field-label {
     margin: 0;
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--text-soft);
+    color: #7dd3fc;
     text-align: center;
   }
 
   .foto {
     width: 100%;
-    max-width: 180px;
+    max-width: 168px;
     aspect-ratio: 3 / 4;
     border-radius: 12px;
     overflow: hidden;
-    background: linear-gradient(145deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1));
-    border: 2px solid rgba(59, 130, 246, 0.35);
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 58, 98, 0.55));
+    border: 2px solid rgba(125, 211, 252, 0.35);
     display: grid;
     place-items: center;
     color: var(--text-soft);
     font-size: 0.85rem;
+    box-shadow: inset 0 0 24px rgba(56, 189, 248, 0.08);
 
     img { width: 100%; height: 100%; object-fit: cover; }
   }
@@ -143,13 +385,19 @@ input, select { width: 100%; }
   .upload {
     width: 100%;
     text-align: center;
-    padding: 8px 0;
+    padding: 9px 0;
     border-radius: var(--btn-radius);
     cursor: pointer;
     color: #fff;
     font-size: 0.85rem;
     font-weight: 600;
     background: linear-gradient(180deg, var(--btn-cyan), var(--btn-cyan-d));
+    transition: transform 0.12s ease, filter 0.12s ease;
+
+    &:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
   }
 }
 
@@ -165,6 +413,7 @@ input, select { width: 100%; }
 
 .form-card {
   margin-bottom: 16px;
+  overflow: visible;
 }
 
 .form-tabs {
@@ -193,9 +442,11 @@ input, select { width: 100%; }
 .acceso-panel {
   margin: 18px 0 4px;
   padding: 14px 16px;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(78, 163, 255, 0.28);
-  background: rgba(78, 163, 255, 0.05);
+  border-radius: 14px;
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  background:
+    linear-gradient(135deg, rgba(109, 40, 217, 0.1), transparent 48%),
+    rgba(4, 12, 30, 0.5);
 }
 
 .acceso-head {
@@ -211,6 +462,13 @@ input, select { width: 100%; }
   margin: 0 0 6px !important;
   border-bottom: none !important;
   padding-bottom: 0 !important;
+  background: none !important;
+  border-left: none !important;
+  text-transform: none !important;
+  letter-spacing: 0.01em !important;
+  font-size: 0.95rem !important;
+  color: #e2e8f0 !important;
+  font-weight: 700 !important;
 }
 
 .acceso-hint {

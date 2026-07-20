@@ -32,9 +32,5 @@
   </div>
   @if (errorMensaje) {
     <p class="celular-error" role="alert">{{ errorMensaje }}</p>
-  } @else if (modo === 'celular' && paisIso === 'CO') {
-    <p class="celular-hint">10 dígitos, empieza por 3 (ej. 300 123 4567).</p>
-  } @else if (modo === 'telefono' && paisIso === 'CO') {
-    <p class="celular-hint">7 a 10 dígitos (fijo o móvil).</p>
   }
 </div>

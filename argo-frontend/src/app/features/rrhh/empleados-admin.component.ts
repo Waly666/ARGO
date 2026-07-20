@@ -21,6 +21,8 @@ import { environment } from '../../../environments/environment';
 import { EmpleadoDocumentosPanelComponent } from './empleado-documentos-panel.component';
 import { CelularInputComponent } from '../../shared/celular-input/celular-input.component';
 import { mensajeErrorCelularAlmacenado } from '../../core/utils/celular.util';
+import { MunicipioBuscarComponent } from '../alumnos/municipio-buscar.component';
+import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
 
 type FormSeccion = 'datos' | 'documentos';
 
@@ -30,6 +32,7 @@ type FormSeccion = 'datos' | 'documentos';
   imports: [CommonModule, FormsModule, RouterLink, EmpleadoDocumentosPanelComponent,
     ArgoDateInputComponent,
     CelularInputComponent,
+    MunicipioBuscarComponent,
   ],
   templateUrl: './empleados-admin.component.html',
   styleUrls: ['./empleados-admin.component.scss', './rrhh-catalog-admin.component.scss', './rrhh-shared.scss'],
@@ -37,6 +40,7 @@ type FormSeccion = 'datos' | 'documentos';
 export class EmpleadosAdminComponent implements OnInit {
   private svc = inject(EmpleadoService);
   private cat = inject(RrhhCatalogService);
+  private catDivipola = inject(CatalogoService);
   private usuarioSvc = inject(UsuarioService);
   private confirm = inject(ConfirmDialogService);
   private auth = inject(AuthService);
@@ -111,6 +115,8 @@ export class EmpleadosAdminComponent implements OnInit {
   readonly tiposContrato = ['indefinido', 'fijo', 'obra labor', 'aprendizaje'];
 
   form = signal<EmpleadoDto>(this.formVacio());
+  /** Texto visible del municipio Divipola (ciudad + depto). */
+  munResidenciaTexto = signal('');
 
   ngOnInit(): void {
     this.cargarCatalogos();
@@ -210,6 +216,7 @@ export class EmpleadosAdminComponent implements OnInit {
     this.editando.set(null);
     this.formSeccion.set('datos');
     this.form.set(this.formVacio());
+    this.munResidenciaTexto.set('');
     this.modoAcceso.set('auto');
     this.idUsuarioVincular.set('');
     if (this.esAdmin()) this.cargarUsuarios();
@@ -229,6 +236,7 @@ export class EmpleadosAdminComponent implements OnInit {
       fechaIngreso: e.fechaIngreso ? String(e.fechaIngreso).slice(0, 10) : '',
       fechaRetiro: e.fechaRetiro ? String(e.fechaRetiro).slice(0, 10) : '',
     });
+    this.syncMunResidenciaTexto(e.ciudad, e.departamento);
     if (e.idUsuario) {
       this.modoAcceso.set('vincular');
       this.idUsuarioVincular.set(String(e.idUsuario));
@@ -240,6 +248,43 @@ export class EmpleadosAdminComponent implements OnInit {
     this.fotoPreview.set(e.urlFoto ? this.fotoUrl(e.urlFoto) : null);
     this.mostrarForm.set(true);
     this.inform(null);
+  }
+
+  onMunResidenciaSel(m: MunicipioDivipola): void {
+    this.munResidenciaTexto.set(m.label);
+    this.form.update((f) => ({
+      ...f,
+      ciudad: m.nombreMunicipio,
+      departamento: m.nombreDepto,
+    }));
+  }
+
+  onMunResidenciaLimpiar(): void {
+    this.munResidenciaTexto.set('');
+    this.form.update((f) => ({ ...f, ciudad: '', departamento: '' }));
+  }
+
+  private syncMunResidenciaTexto(ciudad?: string | null, departamento?: string | null): void {
+    const c = String(ciudad || '').trim();
+    const d = String(departamento || '').trim();
+    if (!c && !d) {
+      this.munResidenciaTexto.set('');
+      return;
+    }
+    const label = d ? `${c} - ${d}` : c;
+    this.munResidenciaTexto.set(label);
+    if (!c) return;
+    this.catDivipola.buscarMunicipios(c, 12).subscribe({
+      next: (rows) => {
+        const hit =
+          rows.find(
+            (r) =>
+              r.nombreMunicipio.toUpperCase() === c.toUpperCase() &&
+              (!d || r.nombreDepto.toUpperCase() === d.toUpperCase()),
+          ) || rows.find((r) => r.nombreMunicipio.toUpperCase() === c.toUpperCase());
+        if (hit) this.munResidenciaTexto.set(hit.label);
+      },
+    });
   }
 
   private aplicarQueryEmpleado(): void {
@@ -288,6 +333,7 @@ export class EmpleadosAdminComponent implements OnInit {
     this.mostrarForm.set(false);
     this.editando.set(null);
     this.formSeccion.set('datos');
+    this.munResidenciaTexto.set('');
   }
 
   setFormSeccion(sec: FormSeccion): void {
