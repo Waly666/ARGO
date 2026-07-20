@@ -178,7 +178,8 @@ export interface AlumnoArchivosUpload {
 export interface CedulaOcrResponse {
   sugerido: CedulaOcrSugerido;
   meta: {
-    tieneRespaldo: boolean;
+    tieneRespaldo?: boolean;
+    origen?: string;
     advertencias: string[];
   };
 }
@@ -291,6 +292,12 @@ export class AlumnoService {
     const form = new FormData();
     form.append('imagen', imagen);
     return this.http.post<CedulaOcrResponse>(`${this.base}/escanear-cedula`, form);
+  }
+
+  escanearCedulaMrz(imagen: File): Observable<CedulaOcrResponse> {
+    const form = new FormData();
+    form.append('imagen', imagen);
+    return this.http.post<CedulaOcrResponse>(`${this.base}/escanear-cedula-mrz`, form);
   }
 
   crear(data: AlumnoDto, files?: AlumnoArchivosUpload): Observable<AlumnoDto> {

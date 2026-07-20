@@ -21,6 +21,7 @@ router.get('/alertas-pago-hoy', ver, ctrl.alertasPagoHoy);
 router.get('/verificar-doc/:numDoc', ver, ctrl.verificarDocumento);
 router.get('/doc/:numDoc', ver, ctrl.porDocumento);
 router.post('/escanear-cedula', gestionar, upload.memory.single('imagen'), ctrl.escanearCedula);
+router.post('/escanear-cedula-mrz', gestionar, upload.memory.single('imagen'), ctrl.escanearCedulaMrz);
 router.get('/:id/documentos-requeridos', ver, ctrl.documentosRequeridos);
 router.get('/:id/indicadores-hoy', ver, ctrl.indicadoresHoy);
 router.get('/:id/documentos-validacion', ver, ctrl.validarDocumentos);

@@ -1,0 +1,66 @@
+<div class="mrz-reader">
+  <p class="mrz-hint">
+    Para cédulas digitales: cargue una foto del <strong>reverso</strong> enfocada en las 3 líneas
+    inferiores (MRZ), o péguelas abajo como texto.
+  </p>
+
+  <div class="mrz-workspace">
+    <div class="mrz-preview" *ngIf="preview() as src">
+      <img [src]="src" alt="Vista previa MRZ" />
+    </div>
+    <div class="mrz-preview empty" *ngIf="!preview()">
+      <span>Sin imagen</span>
+    </div>
+
+    <div class="mrz-actions">
+      <label class="upload">
+        <input
+          #fileInput
+          type="file"
+          accept="image/*"
+          capture="environment"
+          (change)="onFileSelected($event)"
+          hidden
+        />
+        <span>{{ preview() ? 'Cambiar imagen' : 'Seleccionar imagen' }}</span>
+      </label>
+      <button
+        type="button"
+        class="primary"
+        (click)="leerDesdeArchivo()"
+        [disabled]="loading() || !file()"
+      >
+        {{ loading() ? 'Leyendo MRZ…' : 'Leer código MRZ' }}
+      </button>
+      <button type="button" class="ghost" *ngIf="file()" (click)="limpiarArchivo()" [disabled]="loading()">
+        Quitar imagen
+      </button>
+    </div>
+  </div>
+
+  <div class="mrz-paste">
+    <div class="mrz-paste-head">
+      <label for="mrz-texto">O pegue las 3 líneas MRZ</label>
+      <button type="button" class="ghost mini" (click)="cargarEjemplo()" [disabled]="loading()">
+        Cargar ejemplo
+      </button>
+    </div>
+    <textarea
+      id="mrz-texto"
+      name="mrzTexto"
+      rows="4"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="characters"
+      placeholder="ICCOL008176824852001<<<<<<<<<<
+7010103M3210204COL17344720<<<0
+DE<LA<PENA<MUNOZ<<JUAN<CARLOS<"
+      [(ngModel)]="textoMrz"
+    ></textarea>
+    <button type="button" class="primary" (click)="procesarTexto()" [disabled]="loading()">
+      Procesar texto MRZ
+    </button>
+  </div>
+
+  <div class="mrz-error" *ngIf="error()" role="alert">{{ error() }}</div>
+</div>

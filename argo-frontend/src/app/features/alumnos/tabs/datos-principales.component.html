@@ -40,7 +40,7 @@
     <div class="scan-head">
       <div>
         <h3>Escanear cédula</h3>
-        <p>Use una imagen del frente o lea el código PDF417 del reverso.</p>
+        <p>Use imagen/OCR, PDF417 (cédula amarilla) o MRZ (cédula digital).</p>
       </div>
       <button type="button" class="ghost mini" (click)="omitirEscaneo()">Digitar manual</button>
     </div>
@@ -50,6 +50,9 @@
       </button>
       <button type="button" role="tab" [class.active]="scanMode() === 'pdf417'" (click)="seleccionarScanMode('pdf417')">
         Código PDF417
+      </button>
+      <button type="button" role="tab" [class.active]="scanMode() === 'mrz'" (click)="seleccionarScanMode('mrz')">
+        Código MRZ
       </button>
     </div>
     <div class="scan-workspace">
@@ -75,6 +78,10 @@
         *ngIf="scanMode() === 'pdf417'"
         (scanned)="onCedulaPdf417Scanned($event)"
       />
+      <argo-cedula-mrz-scanner
+        *ngIf="scanMode() === 'mrz'"
+        (scanned)="onCedulaMrzScanned($event)"
+      />
     </div>
   </div>
 
@@ -95,7 +102,7 @@
     <div class="scan-head">
       <div>
         <h3>Escanear cédula</h3>
-        <p>Use imagen/OCR o el código PDF417 del reverso.</p>
+        <p>Use imagen/OCR, PDF417 (amarilla) o MRZ (digital).</p>
       </div>
       <button type="button" class="ghost mini" (click)="omitirEscaneo()">Cancelar</button>
     </div>
@@ -105,6 +112,9 @@
       </button>
       <button type="button" role="tab" [class.active]="scanMode() === 'pdf417'" (click)="seleccionarScanMode('pdf417')">
         Código PDF417
+      </button>
+      <button type="button" role="tab" [class.active]="scanMode() === 'mrz'" (click)="seleccionarScanMode('mrz')">
+        Código MRZ
       </button>
     </div>
     <div class="scan-workspace">
@@ -128,6 +138,10 @@
       <argo-cedula-pdf417-scanner
         *ngIf="scanMode() === 'pdf417'"
         (scanned)="onCedulaPdf417Scanned($event)"
+      />
+      <argo-cedula-mrz-scanner
+        *ngIf="scanMode() === 'mrz'"
+        (scanned)="onCedulaMrzScanned($event)"
       />
     </div>
   </div>

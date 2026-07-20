@@ -106,10 +106,12 @@ import { AlumnoJornadaQrPanelComponent } from '../alumno-jornada-qr-panel.compon
 import { CelularInputComponent } from '../../../shared/celular-input/celular-input.component';
 import { mensajeErrorCelularAlmacenado } from '../../../core/utils/celular.util';
 import { CedulaPdf417ScannerComponent } from '../cedula-pdf417-scanner.component';
+import { CedulaMrzScannerComponent } from '../cedula-mrz-scanner.component';
 import {
   CedulaPdf417Data,
   parseCedulaColombianaPdf417,
 } from '../cedula-pdf417.util';
+import type { CedulaMrzData } from '../cedula-mrz.util';
 
 @Component({
 
@@ -126,6 +128,7 @@ import {
     AlumnoJornadaQrPanelComponent,
     CelularInputComponent,
     CedulaPdf417ScannerComponent,
+    CedulaMrzScannerComponent,
   ],
 
   templateUrl: './datos-principales.component.html',
@@ -240,7 +243,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   scanning = signal(false);
   scanWarnings = signal<string[]>([]);
   scanApplied = signal(false);
-  scanMode = signal<'imagen' | 'pdf417'>('imagen');
+  scanMode = signal<'imagen' | 'pdf417' | 'mrz'>('imagen');
   private numDocScannerBuffer = '';
   private numDocScannerTimer: ReturnType<typeof setTimeout> | null = null;
   private numDocScannerLastKeyAt = 0;
@@ -754,20 +757,31 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     r.readAsDataURL(file);
   }
 
-  seleccionarScanMode(mode: 'imagen' | 'pdf417'): void {
+  seleccionarScanMode(mode: 'imagen' | 'pdf417' | 'mrz'): void {
     this.scanMode.set(mode);
     this.scanWarnings.set([]);
     this.message.set(null);
   }
 
+  async onCedulaMrzScanned(data: CedulaMrzData): Promise<void> {
+    await this.onCedulaCodigoScanned(data, 'MRZ');
+  }
+
   async onCedulaPdf417Scanned(data: CedulaPdf417Data): Promise<void> {
+    await this.onCedulaCodigoScanned(data, 'PDF417');
+  }
+
+  private async onCedulaCodigoScanned(
+    data: CedulaPdf417Data | CedulaMrzData,
+    origen: 'PDF417' | 'MRZ',
+  ): Promise<void> {
     this.aplicarSugeridoOcr(data, false);
     this.scanApplied.set(true);
     this.scanVisible.set(false);
     this.scanWarnings.set([]);
     const nd = parseNumDocForApi(data.numDoc);
     if (nd == null) {
-      this.message.set('El PDF417 no entregó un número de documento válido.');
+      this.message.set(`El ${origen} no entregó un número de documento válido.`);
       return;
     }
     try {
@@ -792,7 +806,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         return;
       }
       this.docDuplicado.set(null);
-      this.message.set('Datos leídos desde el PDF417. Revise y corrija antes de guardar.');
+      this.message.set(`Datos leídos desde el ${origen}. Revise y corrija antes de guardar.`);
     } catch {
       this.message.set(
         'Los datos fueron leídos, pero no fue posible verificar si el alumno ya existe.',

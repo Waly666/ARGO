@@ -6,6 +6,7 @@ const jornadaModel = models.jornada;
 const estadoCivilModel = models.estadoCivil;
 const upload = require('../middleware/upload');
 const { procesarCedulaImagen } = require('../services/cedulaOcr');
+const { procesarCedulaMrz } = require('../services/cedulaMrz');
 const { obtenerConfigRequisitosDocumentos } = require('../services/configRequisitosDocumentos');
 const { calcularDocumentosRequeridos, patchDocsAlumno, validarDocumentosParaPrograma, validarDocumentosPendientesAlumno, mensajeDocumentosPendientes } = require('../services/alumnoDocumentos');
 const { enriquecerIndicadoresLista, movimientosHoyPorAlumnos } = require('../services/alumnoIndicadores');
@@ -366,6 +367,29 @@ exports.escanearCedula = async (req, res, next) => {
     const sugerido = { ...resultado.sugerido };
     sugerido.genero = normalizarGenero(sugerido.genero);
     sugerido.tipoSangre = normalizarTipoSangre(sugerido.tipoSangre);
+    if (sugerido.numDoc) sugerido.numDoc = parseNumDoc(sugerido.numDoc) ?? sugerido.numDoc;
+    res.json({
+      sugerido,
+      meta: resultado.meta,
+    });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.escanearCedulaMrz = async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file?.buffer?.length) {
+      return res.status(400).json({ message: 'Envíe una imagen del reverso (zona MRZ) en el campo "imagen".' });
+    }
+    if (!/^image\//.test(file.mimetype || '')) {
+      return res.status(400).json({ message: 'El archivo debe ser una imagen (JPEG, PNG, etc.).' });
+    }
+    const resultado = await procesarCedulaMrz(file.buffer);
+    const sugerido = { ...resultado.sugerido };
+    sugerido.genero = normalizarGenero(sugerido.genero);
     if (sugerido.numDoc) sugerido.numDoc = parseNumDoc(sugerido.numDoc) ?? sugerido.numDoc;
     res.json({
       sugerido,
