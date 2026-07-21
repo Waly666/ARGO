@@ -16,6 +16,8 @@ export interface Empleado {
   segundoApellido?: string;
   fechaNacimiento?: string;
   sexo?: string;
+  genero?: string;
+  tipoSangre?: string;
   correoPersonal?: string;
   correoCorporativo?: string;
   telefono?: string;
@@ -24,6 +26,13 @@ export interface Empleado {
   ciudad?: string;
   departamento?: string;
   estadoCivil?: string;
+  estrato?: string;
+  regimenSalud?: string;
+  nivelFormacion?: string;
+  ocupacion?: string;
+  discapacidad?: string;
+  multiCulturalidad?: string;
+  observaciones?: string;
   nivelEducativo?: string;
   tituloProfesional?: string;
   especializacion?: string;
@@ -242,6 +251,8 @@ export const EMPLEADO_WRITE_FIELDS = [
   'segundoApellido',
   'fechaNacimiento',
   'sexo',
+  'genero',
+  'tipoSangre',
   'correoPersonal',
   'correoCorporativo',
   'telefono',
@@ -250,6 +261,13 @@ export const EMPLEADO_WRITE_FIELDS = [
   'ciudad',
   'departamento',
   'estadoCivil',
+  'estrato',
+  'regimenSalud',
+  'nivelFormacion',
+  'ocupacion',
+  'discapacidad',
+  'multiCulturalidad',
+  'observaciones',
   'nivelEducativo',
   'tituloProfesional',
   'especializacion',

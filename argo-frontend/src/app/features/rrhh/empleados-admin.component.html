@@ -118,11 +118,7 @@
               </select>
             </div>
             <div class="col-3">
-              <label>Sexo</label>
-              <select [ngModel]="form().sexo" (ngModelChange)="patch('sexo', $event)">
-                <option value="">—</option>
-                <option *ngFor="let s of sexos" [value]="s">{{ s }}</option>
-              </select>
+              <argo-date-input label="Fecha nacimiento" [ngModel]="form().fechaNacimiento" (ngModelChange)="patch('fechaNacimiento', $event)" ></argo-date-input>
             </div>
           </div>
           <div class="row">
@@ -145,19 +141,160 @@
           </div>
           <div class="row">
             <div class="col-3">
-              <argo-date-input label="Fecha nacimiento" [ngModel]="form().fechaNacimiento" (ngModelChange)="patch('fechaNacimiento', $event)" ></argo-date-input>
-            </div>
-            <div class="col-3">
-              <label>Estado civil</label>
-              <input type="text" [ngModel]="form().estadoCivil" (ngModelChange)="patch('estadoCivil', $event)" />
-            </div>
-            <div class="col-3">
               <label>Correo personal</label>
               <input type="email" [ngModel]="form().correoPersonal" (ngModelChange)="patch('correoPersonal', $event)" />
             </div>
             <div class="col-3">
               <label>Correo corporativo</label>
               <input type="email" [ngModel]="form().correoCorporativo" (ngModelChange)="patch('correoCorporativo', $event)" />
+            </div>
+          </div>
+
+          <div class="emp-subblock">
+            <header class="emp-subblock-head">
+              <h4>Datos personales</h4>
+              <p>Salud, formación, estado civil y ocupación — todos obligatorios</p>
+            </header>
+            <div class="row">
+              <div class="col-4">
+                <argo-catalogo-enum-buscar
+                  label="Género *"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesGenero"
+                  [textoInicial]="etiquetaCatalogo(generosDef, form().genero)"
+                  (seleccionado)="onCatalogoPick('genero', $event)"
+                  (limpiado)="onCatalogoLimpiar('genero')"
+                />
+              </div>
+              <div class="col-4">
+                <argo-catalogo-enum-buscar
+                  label="Tipo de sangre *"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesTipoSangre"
+                  [textoInicial]="etiquetaCatalogo(tiposSangreDef, form().tipoSangre)"
+                  (seleccionado)="onCatalogoPick('tipoSangre', $event)"
+                  (limpiado)="onCatalogoLimpiar('tipoSangre')"
+                />
+              </div>
+              <div class="col-4">
+                <argo-catalogo-enum-buscar
+                  label="Estado civil *"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesEstadoCivil"
+                  [textoInicial]="etiquetaCatalogo(estadosCivilDef, form().estadoCivil)"
+                  (seleccionado)="onCatalogoPick('estadoCivil', $event)"
+                  (limpiado)="onCatalogoLimpiar('estadoCivil')"
+                />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-3">
+                <argo-catalogo-enum-buscar
+                  label="Estrato *"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesEstrato"
+                  [textoInicial]="etiquetaCatalogo(estratosDef, form().estrato)"
+                  (seleccionado)="onCatalogoPick('estrato', $event)"
+                  (limpiado)="onCatalogoLimpiar('estrato')"
+                />
+              </div>
+              <div class="col-3">
+                <argo-catalogo-enum-buscar
+                  label="Régimen de salud *"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesRegimenSalud"
+                  [textoInicial]="etiquetaCatalogo(regimenesSaludDef, form().regimenSalud)"
+                  (seleccionado)="onCatalogoPick('regimenSalud', $event)"
+                  (limpiado)="onCatalogoLimpiar('regimenSalud')"
+                />
+              </div>
+              <div class="col-3">
+                <argo-catalogo-enum-buscar
+                  label="Nivel de formación *"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesNivelFormacion"
+                  [textoInicial]="etiquetaCatalogo(nivelesFormacionDef, form().nivelFormacion)"
+                  (seleccionado)="onCatalogoPick('nivelFormacion', $event)"
+                  (limpiado)="onCatalogoLimpiar('nivelFormacion')"
+                />
+              </div>
+              <div class="col-3">
+                <argo-catalogo-enum-buscar
+                  label="Ocupación *"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesOcupacion"
+                  [textoInicial]="etiquetaCatalogo(ocupacionesDef, form().ocupacion)"
+                  (seleccionado)="onCatalogoPick('ocupacion', $event)"
+                  (limpiado)="onCatalogoLimpiar('ocupacion')"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="emp-subblock">
+            <header class="emp-subblock-head">
+              <h4>Origen y diversidad</h4>
+              <p>Discapacidad, multiculturalidad y observaciones</p>
+            </header>
+            <div class="row">
+              <div class="col-6">
+                <argo-catalogo-enum-buscar
+                  label="Discapacidad"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesDiscapacidad"
+                  [textoInicial]="etiquetaCatalogo(discapacidadesDef, form().discapacidad)"
+                  (seleccionado)="onCatalogoPick('discapacidad', $event)"
+                  (limpiado)="onCatalogoLimpiar('discapacidad', '9')"
+                />
+              </div>
+              <div class="col-6">
+                <argo-catalogo-enum-buscar
+                  label="Multiculturalidad"
+                  placeholder="Seleccione…"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesMultiCulturalidad"
+                  [textoInicial]="etiquetaCatalogo(multiCulturalidadesDef, form().multiCulturalidad)"
+                  (seleccionado)="onCatalogoPick('multiCulturalidad', $event)"
+                  (limpiado)="onCatalogoLimpiar('multiCulturalidad', 'NO_APLICA')"
+                />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-12">
+                <label>Observaciones</label>
+                <textarea
+                  rows="3"
+                  [ngModel]="form().observaciones"
+                  (ngModelChange)="patch('observaciones', $event)"
+                  placeholder="Opcional"
+                ></textarea>
+              </div>
             </div>
           </div>
 

@@ -274,6 +274,15 @@ button.danger.mini {
   z-index: 5000;
 }
 
+/* Empleados RRHH: subbloques / filas no deben tapar el menú del combobox */
+.emp-subblock:has(argo-catalogo-enum-buscar.dropdown-open),
+.emp-block:has(argo-catalogo-enum-buscar.dropdown-open),
+.ident-fields:has(argo-catalogo-enum-buscar.dropdown-open) {
+  overflow: visible;
+  position: relative;
+  z-index: 5000;
+}
+
 .inf-panel:has(argo-catalogo-enum-buscar.dropdown-open),
 .inf-page.card:has(argo-catalogo-enum-buscar.dropdown-open) {
   overflow: visible;

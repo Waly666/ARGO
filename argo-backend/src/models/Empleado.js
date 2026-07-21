@@ -11,6 +11,9 @@ const EmpleadoSchema = new mongoose.Schema(
     segundoApellido: { type: String, trim: true, default: '' },
     fechaNacimiento: { type: Date },
     sexo: { type: String, trim: true },
+    /** Género (catálogo alumno): M | F */
+    genero: { type: String, trim: true },
+    tipoSangre: { type: String, trim: true },
     correoPersonal: { type: String, trim: true, lowercase: true },
     correoCorporativo: { type: String, trim: true, lowercase: true },
     telefono: { type: String, trim: true },
@@ -19,6 +22,14 @@ const EmpleadoSchema = new mongoose.Schema(
     ciudad: { type: String, trim: true },
     departamento: { type: String, trim: true },
     estadoCivil: { type: String, trim: true },
+    estrato: { type: String, trim: true },
+    regimenSalud: { type: String, trim: true },
+    /** Catálogo nivelFormación (mismo que alumnos). */
+    nivelFormacion: { type: String, trim: true },
+    ocupacion: { type: String, trim: true },
+    discapacidad: { type: String, trim: true, default: '9' },
+    multiCulturalidad: { type: String, trim: true, default: 'NO_APLICA' },
+    observaciones: { type: String, trim: true },
     /** Bachiller | Técnico | Tecnólogo | Universitario | Maestría | Doctorado */
     nivelEducativo: { type: String, trim: true },
     /** Título profesional (habilitado desde Técnico en adelante). */

@@ -31,8 +31,45 @@ import { MunicipioBuscarComponent } from '../alumnos/municipio-buscar.component'
 import { CatalogoEnumBuscarComponent, EnumBuscarOption } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
 import { abrirHojaVidaEmpleadoPdf, buildHojaVidaEmpleadoHtml } from './hoja-vida-empleado-print';
+import {
+  GENEROS_DEF,
+  TIPO_SANGRE_DEF,
+  ESTADOS_CIVIL_DEF,
+  ESTRATOS_DEF,
+  REGIMEN_SALUD_DEF,
+  NIVEL_FORMACION_DEF,
+  OCUPACIONES_DEF,
+  DISCAPACIDADES_DEF,
+  MULTICULTURALIDAD_DEF,
+  catValor,
+  catEtiqueta,
+  normalizarEnum,
+  normalizarGenero,
+} from '../alumnos/catalogo.helpers';
 
 type FormSeccion = 'datos' | 'documentos' | 'evaluaciones' | 'anotaciones';
+
+function mapOpcionesCatalogo(items: Record<string, unknown>[]): EnumBuscarOption[] {
+  return items.map((item) => ({ value: catValor(item), label: catEtiqueta(item) }));
+}
+
+function etiquetaDeCatalogo(items: Record<string, unknown>[], valor?: string | null): string {
+  const v = String(valor ?? '').trim();
+  if (!v) return '';
+  const norm = normalizarEnum(v);
+  const hit = items.find((i) => {
+    const cv = catValor(i);
+    return cv === v || cv === norm || catEtiqueta(i).toUpperCase() === v.toUpperCase();
+  });
+  return hit ? catEtiqueta(hit) : v;
+}
+
+function sexoDesdeGenero(genero?: string | null): string {
+  const g = normalizarGenero(genero || '');
+  if (g === 'M') return 'Masculino';
+  if (g === 'F') return 'Femenino';
+  return '';
+}
 
 const NIVELES_EDUCATIVOS: EnumBuscarOption[] = [
   { value: 'Bachiller', label: 'Bachiller' },
@@ -134,15 +171,36 @@ export class EmpleadosAdminComponent implements OnInit {
   formSeccion = signal<FormSeccion>('datos');
 
   readonly tiposDocumento = ['CC', 'CE', 'TI', 'PAS'];
-  readonly sexos = ['Masculino', 'Femenino', 'Otro'];
   readonly estados = ['activo', 'retirado', 'suspendido'];
   readonly tiposContrato = ['indefinido', 'fijo', 'obra labor', 'aprendizaje'];
   readonly nivelesEducativos = NIVELES_EDUCATIVOS;
+
+  readonly generosDef = GENEROS_DEF as unknown as Record<string, unknown>[];
+  readonly tiposSangreDef = TIPO_SANGRE_DEF as unknown as Record<string, unknown>[];
+  readonly estadosCivilDef = ESTADOS_CIVIL_DEF as unknown as Record<string, unknown>[];
+  readonly estratosDef = ESTRATOS_DEF as unknown as Record<string, unknown>[];
+  readonly regimenesSaludDef = REGIMEN_SALUD_DEF as unknown as Record<string, unknown>[];
+  readonly nivelesFormacionDef = NIVEL_FORMACION_DEF as unknown as Record<string, unknown>[];
+  readonly ocupacionesDef = OCUPACIONES_DEF as unknown as Record<string, unknown>[];
+  readonly discapacidadesDef = DISCAPACIDADES_DEF as unknown as Record<string, unknown>[];
+  readonly multiCulturalidadesDef = MULTICULTURALIDAD_DEF as unknown as Record<string, unknown>[];
+
+  opcionesGenero = mapOpcionesCatalogo(this.generosDef);
+  opcionesTipoSangre = mapOpcionesCatalogo(this.tiposSangreDef);
+  opcionesEstadoCivil = mapOpcionesCatalogo(this.estadosCivilDef);
+  opcionesEstrato = mapOpcionesCatalogo(this.estratosDef);
+  opcionesRegimenSalud = mapOpcionesCatalogo(this.regimenesSaludDef);
+  opcionesNivelFormacion = mapOpcionesCatalogo(this.nivelesFormacionDef);
+  opcionesOcupacion = mapOpcionesCatalogo(this.ocupacionesDef);
+  opcionesDiscapacidad = mapOpcionesCatalogo(this.discapacidadesDef);
+  opcionesMultiCulturalidad = mapOpcionesCatalogo(this.multiCulturalidadesDef);
 
   form = signal<EmpleadoDto>(this.formVacio());
   /** Texto visible del municipio Divipola (ciudad + depto). */
   munResidenciaTexto = signal('');
   nivelEducativoTexto = signal('');
+
+  etiquetaCatalogo = etiquetaDeCatalogo;
 
   puedeTituloProfesional = computed(() => {
     const n = String(this.form().nivelEducativo || '');
@@ -189,6 +247,16 @@ export class EmpleadosAdminComponent implements OnInit {
       segundoNombre: '',
       primerApellido: '',
       segundoApellido: '',
+      genero: '',
+      tipoSangre: '',
+      estadoCivil: '',
+      estrato: '',
+      regimenSalud: '',
+      nivelFormacion: '',
+      ocupacion: '',
+      discapacidad: '9',
+      multiCulturalidad: 'NO_APLICA',
+      observaciones: '',
       estado: 'activo',
       idSede: principal?.idSede,
     };
@@ -335,6 +403,8 @@ export class EmpleadosAdminComponent implements OnInit {
       segundoApellido: e.segundoApellido || '',
       fechaNacimiento: e.fechaNacimiento ? String(e.fechaNacimiento).slice(0, 10) : '',
       sexo: e.sexo || '',
+      genero: e.genero || normalizarGenero(e.sexo) || '',
+      tipoSangre: e.tipoSangre || '',
       correoPersonal: e.correoPersonal || '',
       correoCorporativo: e.correoCorporativo || '',
       telefono: e.telefono || '',
@@ -343,6 +413,13 @@ export class EmpleadosAdminComponent implements OnInit {
       ciudad: e.ciudad || '',
       departamento: e.departamento || '',
       estadoCivil: e.estadoCivil || '',
+      estrato: e.estrato || '',
+      regimenSalud: e.regimenSalud || '',
+      nivelFormacion: e.nivelFormacion || '',
+      ocupacion: e.ocupacion || '',
+      discapacidad: e.discapacidad || '9',
+      multiCulturalidad: e.multiCulturalidad || 'NO_APLICA',
+      observaciones: e.observaciones || '',
       nivelEducativo: e.nivelEducativo || '',
       tituloProfesional: e.tituloProfesional || '',
       especializacion: e.especializacion || '',
@@ -528,6 +605,30 @@ export class EmpleadosAdminComponent implements OnInit {
     this.form.update((f) => ({ ...f, [k]: v }));
   }
 
+  onCatalogoPick<K extends keyof EmpleadoDto>(campo: K, opt: EnumBuscarOption): void {
+    const valor = String(opt.value) as EmpleadoDto[K];
+    if (campo === 'genero') {
+      this.form.update((f) => ({
+        ...f,
+        genero: String(opt.value),
+        sexo: sexoDesdeGenero(String(opt.value)) || f.sexo,
+      }));
+      return;
+    }
+    this.patch(campo, valor);
+  }
+
+  onCatalogoLimpiar<K extends keyof EmpleadoDto>(
+    campo: K,
+    valorVacio: EmpleadoDto[K] = '' as EmpleadoDto[K],
+  ): void {
+    if (campo === 'genero') {
+      this.form.update((f) => ({ ...f, genero: '', sexo: '' }));
+      return;
+    }
+    this.patch(campo, valorVacio);
+  }
+
   guardar() {
     const f = this.form();
     if (!f.primerNombre?.trim() || !f.primerApellido?.trim()) {
@@ -541,6 +642,21 @@ export class EmpleadosAdminComponent implements OnInit {
     if (!f.idSede?.trim()) {
       this.inform('Seleccione la sede del empleado.', true);
       return;
+    }
+    const personalesObligatorios: { key: keyof EmpleadoDto; label: string }[] = [
+      { key: 'genero', label: 'Género' },
+      { key: 'tipoSangre', label: 'Tipo de sangre' },
+      { key: 'estadoCivil', label: 'Estado civil' },
+      { key: 'estrato', label: 'Estrato' },
+      { key: 'regimenSalud', label: 'Régimen de salud' },
+      { key: 'nivelFormacion', label: 'Nivel de formación' },
+      { key: 'ocupacion', label: 'Ocupación' },
+    ];
+    for (const c of personalesObligatorios) {
+      if (!String(f[c.key] ?? '').trim()) {
+        this.inform(`${c.label} es obligatorio.`, true);
+        return;
+      }
     }
     let modo = this.modoAcceso();
     const ed = this.editando();
