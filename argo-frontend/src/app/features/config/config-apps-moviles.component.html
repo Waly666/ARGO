@@ -1,0 +1,179 @@
+<section class="appm-page card">
+  <header class="appm-head">
+    <div class="appm-head-main">
+      <h1>Apps móviles</h1>
+      <p>
+        Configure <strong>permisos</strong> y <strong>alarmas</strong> por rol para cada app móvil
+        (Jornadas y Cajero). Los cambios se guardan en el mismo rol del sistema; el resto de permisos
+        web no se borra.
+        La app de Aula no aplica aquí.
+        Timing global de alertas:
+        <a routerLink="/app/configuracion/alertas">Alertas</a>.
+        Catálogo completo:
+        <a routerLink="/app/configuracion/roles">Roles, permisos y alarmas</a>.
+      </p>
+    </div>
+  </header>
+
+  <nav class="appm-tabs" aria-label="Apps móviles">
+    @for (a of apps; track a.id) {
+      <button
+        type="button"
+        class="appm-tab"
+        [class.appm-tab--on]="appId() === a.id"
+        [class.appm-tab--teal]="a.accent === 'teal'"
+        [class.appm-tab--emerald]="a.accent === 'emerald'"
+        (click)="setApp(a.id)">
+        <span class="appm-tab-ico" aria-hidden="true">{{ a.icon }}</span>
+        <span class="appm-tab-txt">
+          <strong>{{ a.label }}</strong>
+          <em>{{ a.descripcion }}</em>
+        </span>
+      </button>
+    }
+  </nav>
+
+  @if (msg(); as texto) {
+    <div class="appm-banner" [class.appm-banner--err]="msgError()" role="status">{{ texto }}</div>
+  }
+
+  @if (loading()) {
+    <p class="appm-loading">Cargando roles…</p>
+  } @else {
+    <div class="appm-layout">
+      <aside class="appm-sidebar">
+        <div class="appm-sidebar-head">
+          <span>Roles</span>
+          <span class="appm-sidebar-count">{{ rolesFiltrados().length }}</span>
+        </div>
+        <input
+          type="search"
+          class="appm-search"
+          placeholder="Filtrar roles…"
+          [ngModel]="filtroRoles()"
+          (ngModelChange)="filtroRoles.set($event)" />
+        <div class="appm-sidebar-list">
+          @for (r of rolesFiltrados(); track r.codigo) {
+            <button
+              type="button"
+              class="appm-rol"
+              [class.appm-rol--on]="seleccionado()?.codigo === r.codigo"
+              (click)="seleccionar(r)">
+              <span class="appm-dot" [ngClass]="dotRol(r)"></span>
+              <span class="appm-rol-meta">
+                <span class="appm-rol-name">{{ r.nombre }}</span>
+                <span class="appm-rol-code">{{ r.codigo }}</span>
+                <span class="appm-rol-stats" [title]="'Permisos · alarmas de ' + appActual().label">
+                  {{ detalleAppRol(r, appActual()) }}
+                </span>
+              </span>
+            </button>
+          }
+          @if (!rolesFiltrados().length) {
+            <p class="appm-empty">Sin coincidencias.</p>
+          }
+        </div>
+      </aside>
+
+      @if (seleccionado(); as rol) {
+        <main class="appm-main">
+          <header class="appm-editor-head">
+            <div>
+              <span class="appm-kicker">{{ appActual().label }}</span>
+              <h2>{{ rol.nombre }}</h2>
+              <p class="appm-sub">{{ appActual().descripcion }}</p>
+              <div class="appm-caps">
+                <span class="appm-cap">{{ rol.codigo }}</span>
+                <span class="appm-cap appm-cap--perm">{{ totalPermisosOn() }} permisos app</span>
+                <span class="appm-cap appm-cap--alm">{{ totalAlarmasOn() }} alarmas app</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="primary"
+              (click)="guardar()"
+              [disabled]="saving() || bloqueadoEdicion()">
+              {{ saving() ? 'Guardando…' : 'Guardar app móvil' }}
+            </button>
+          </header>
+
+          @if (bloqueadoEdicion()) {
+            <p class="appm-note">
+              Este rol tiene comodín <code>*</code> en permisos o alarmas. Edítelo en
+              <a routerLink="/app/configuracion/roles">Roles, permisos y alarmas</a>
+              si necesita un conjunto más fino para la app.
+            </p>
+          }
+
+          <section class="appm-section">
+            <header class="appm-section-head">
+              <h3>Permisos de la app</h3>
+              <div class="appm-section-actions">
+                <button type="button" class="ghost mini" (click)="marcarTodosPermisos(true)" [disabled]="bloqueadoEdicion()">
+                  Todos
+                </button>
+                <button type="button" class="ghost mini" (click)="marcarTodosPermisos(false)" [disabled]="bloqueadoEdicion()">
+                  Ninguno
+                </button>
+              </div>
+            </header>
+            <div class="appm-checks">
+              @for (p of appActual().permisos; track p.key) {
+                <label class="appm-check" [class.appm-check--on]="tienePermiso(p.key)">
+                  <input
+                    type="checkbox"
+                    [checked]="tienePermiso(p.key)"
+                    [disabled]="bloqueadoEdicion()"
+                    (change)="togglePermiso(p.key)" />
+                  <span class="appm-check-body">
+                    <strong>{{ p.label }}</strong>
+                    <code>{{ p.key }}</code>
+                    @if (p.hint) {
+                      <em>{{ p.hint }}</em>
+                    }
+                  </span>
+                </label>
+              }
+            </div>
+          </section>
+
+          <section class="appm-section appm-section--alm">
+            <header class="appm-section-head">
+              <h3>Alarmas de la app</h3>
+              <div class="appm-section-actions">
+                <button type="button" class="ghost mini" (click)="marcarTodasAlarmas(true)" [disabled]="bloqueadoEdicion()">
+                  Todas
+                </button>
+                <button type="button" class="ghost mini" (click)="marcarTodasAlarmas(false)" [disabled]="bloqueadoEdicion()">
+                  Ninguna
+                </button>
+              </div>
+            </header>
+            <div class="appm-checks">
+              @for (a of appActual().alarmas; track a.key) {
+                <label class="appm-check appm-check--alm" [class.appm-check--on]="tieneAlarma(a.key)">
+                  <input
+                    type="checkbox"
+                    [checked]="tieneAlarma(a.key)"
+                    [disabled]="bloqueadoEdicion()"
+                    (change)="toggleAlarma(a.key)" />
+                  <span class="appm-check-body">
+                    <strong>{{ a.label }}</strong>
+                    <code>{{ a.key }}</code>
+                    @if (a.hint) {
+                      <em>{{ a.hint }}</em>
+                    }
+                  </span>
+                </label>
+              }
+            </div>
+          </section>
+        </main>
+      } @else {
+        <main class="appm-main appm-main--empty">
+          <p>Seleccione un rol para configurar permisos y alarmas de {{ appActual().label }}.</p>
+        </main>
+      }
+    </div>
+  }
+</section>

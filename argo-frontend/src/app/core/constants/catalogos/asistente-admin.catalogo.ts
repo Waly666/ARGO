@@ -407,6 +407,25 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
       },
     ],
   },
+  'config.apps-moviles': {
+    id: 'config.apps-moviles',
+    modulo: 'config',
+    saludo: 'Permisos y alarmas de las apps móviles.',
+    tips: [
+      {
+        id: 'cfg-am-1',
+        titulo: 'App Jornadas vs Cajero',
+        cuerpo:
+          'Elija la pestaña de la app y el rol. Solo se tocan permisos/alarmas de esa app; el resto del rol web se conserva.',
+      },
+      {
+        id: 'cfg-am-2',
+        titulo: 'Aula no aplica',
+        cuerpo:
+          'La app de Aula es portal del alumno; no se configura aquí. Timing de alertas en Configuración → Alertas.',
+      },
+    ],
+  },
   'config.recibos': {
     id: 'config.recibos',
     modulo: 'config',

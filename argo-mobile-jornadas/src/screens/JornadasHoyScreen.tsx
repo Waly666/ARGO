@@ -299,8 +299,8 @@ export default function JornadasHoyScreen() {
           <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 12 }}>
             Hoy: {fmtFecha(new Date().toISOString())}.
             {esAdmin
-              ? ' Como administrador puede editar cualquier jornada (ubicación y GPS) o abrir sus clases.'
-              : ' Toque una jornada en curso para operar clases.'}
+              ? ' Como administrador puede editar cualquier jornada del día o abrir sus clases. Para otras fechas use Gestionar jornadas.'
+              : ' Solo puede operar la jornada en curso del día.'}
           </ScaledText>
           {err ? (
             <ScaledText baseSize={14} style={{ color: c.danger, marginBottom: 12 }}>
@@ -327,7 +327,7 @@ export default function JornadasHoyScreen() {
         ) : null
       }
       ListFooterComponent={
-        otras.length ? (
+        esAdmin && otras.length ? (
           <View style={{ marginTop: 16 }}>
             <ScaledText baseSize={15} style={{ color: c.textSoft, fontWeight: '700', marginBottom: 8 }}>
               Otras del día ({otras.length})

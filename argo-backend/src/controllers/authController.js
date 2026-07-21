@@ -117,6 +117,63 @@ exports.me = async (req, res, next) => {
   }
 };
 
+/**
+ * Cambia la contraseña del usuario autenticado (requiere contraseña actual).
+ * Body: { passwordActual, passwordNueva }
+ */
+exports.cambiarPassword = async (req, res, next) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+    if (req.user.bg && req.user.sub === soporteMaestro.SUB) {
+      return res.status(403).json({
+        message: 'La cuenta de soporte no cambia contraseña desde la aplicación.',
+      });
+    }
+
+    const passwordActual = String(req.body?.passwordActual ?? '');
+    const passwordNueva = String(req.body?.passwordNueva ?? '');
+    if (!passwordActual || !passwordNueva) {
+      return res.status(400).json({ message: 'Indique la contraseña actual y la nueva.' });
+    }
+    if (passwordNueva.length < 4) {
+      return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 4 caracteres.' });
+    }
+    if (passwordActual === passwordNueva) {
+      return res.status(400).json({ message: 'La nueva contraseña debe ser distinta a la actual.' });
+    }
+
+    const u = await Usuario.findById(req.user.sub);
+    if (!u) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    const ok = await validarPasswordUsuario(u, passwordActual);
+    if (!ok) {
+      logAuthIntento({
+        req,
+        canal: 'staff',
+        identificador: u.username || String(req.user.sub),
+        ok: false,
+        motivo: 'cambio_password_actual_invalida',
+      });
+      return res.status(401).json({ message: 'La contraseña actual no es correcta.' });
+    }
+
+    u.passwordHash = await Usuario.hashPassword(passwordNueva);
+    await u.save();
+
+    logAuthIntento({
+      req,
+      canal: 'staff',
+      identificador: u.username || String(req.user.sub),
+      ok: true,
+      motivo: 'cambio_password_ok',
+    });
+
+    return res.json({ ok: true, message: 'Contraseña actualizada.' });
+  } catch (e) {
+    next(e);
+  }
+};
+
 /** Valida credenciales de admin sin cambiar la sesión del cajero (autorización de retiros). */
 exports.verificarAdmin = async (req, res, next) => {
   try {

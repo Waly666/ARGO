@@ -19,9 +19,13 @@ import JornadasHoyScreen from './src/screens/JornadasHoyScreen';
 import ClasesJornadaScreen from './src/screens/ClasesJornadaScreen';
 import ClaseDetalleScreen from './src/screens/ClaseDetalleScreen';
 import EditarJornadaScreen from './src/screens/EditarJornadaScreen';
+import CrearJornadaScreen from './src/screens/CrearJornadaScreen';
+import JornadasGestionScreen from './src/screens/JornadasGestionScreen';
+import InformesJornadasScreen from './src/screens/InformesJornadasScreen';
 import CrearAlumnoJornadaScreen from './src/screens/CrearAlumnoJornadaScreen';
 import CertificadosScreen from './src/screens/CertificadosScreen';
 import CertificadoHtmlScreen from './src/screens/CertificadoHtmlScreen';
+import CambiarPasswordScreen from './src/screens/CambiarPasswordScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -93,6 +97,21 @@ function RootNavigator() {
         />
         <Stack.Screen name="JornadasHoy" component={JornadasHoyScreen} options={{ title: 'Jornadas de hoy' }} />
         <Stack.Screen
+          name="JornadasGestion"
+          component={JornadasGestionScreen}
+          options={{ title: 'Gestionar jornadas' }}
+        />
+        <Stack.Screen
+          name="CrearJornada"
+          component={CrearJornadaScreen}
+          options={{ title: 'Nueva jornada' }}
+        />
+        <Stack.Screen
+          name="InformesJornadas"
+          component={InformesJornadasScreen}
+          options={{ title: 'Informes' }}
+        />
+        <Stack.Screen
           name="ClasesJornada"
           component={ClasesJornadaScreen}
           options={({ route }) => ({ title: route.params.jornadaLabel.slice(0, 28) })}
@@ -117,6 +136,11 @@ function RootNavigator() {
           name="CertificadoHtml"
           component={CertificadoHtmlScreen}
           options={({ route }) => ({ title: route.params.titulo })}
+        />
+        <Stack.Screen
+          name="CambiarPassword"
+          component={CambiarPasswordScreen}
+          options={{ title: 'Cambiar contraseña' }}
         />
       </Stack.Navigator>
       <AppDrawerMenu />

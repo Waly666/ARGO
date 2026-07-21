@@ -3,6 +3,10 @@ export type RootStackParamList = {
   Denied: undefined;
   Home: undefined;
   JornadasHoy: undefined;
+  /** Admin: listar / editar jornadas de cualquier fecha. */
+  JornadasGestion: undefined;
+  CrearJornada: { idContrato?: string };
+  InformesJornadas: undefined;
   ClasesJornada: { jornadaId: string; jornadaLabel: string; idContrato: string };
   ClaseDetalle: {
     claseId: string;
@@ -22,4 +26,5 @@ export type RootStackParamList = {
   };
   Certificados: { idContrato?: string; contratoLabel?: string };
   CertificadoHtml: { id: string; titulo: string };
+  CambiarPassword: undefined;
 };

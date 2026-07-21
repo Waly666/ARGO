@@ -31,6 +31,19 @@ export type LoginApiRaw = {
   message?: string;
 };
 
+export interface ContratoJornada {
+  _id: string;
+  codContrato?: string;
+  razoSocial?: string;
+  nombreComercial?: string;
+  estado?: string;
+  supervisor?: string;
+  numerojornadas?: number;
+  jornadasPorDia?: number;
+  clasesPorJornada?: number;
+  numeObjeJornada?: number;
+}
+
 export interface JornadaCap {
   _id: string;
   idContrato: string;
@@ -57,6 +70,114 @@ export interface JornadaCap {
   metaAlumnos?: number;
   metaAlcanzada?: boolean;
   metaSuperada?: boolean;
+}
+
+export interface InformesJornadaResumen {
+  totalFilasClase: number;
+  alumnosUnicos: number;
+  registrosAsistencia: number;
+  registrosInscripcion: number;
+  certificados: number;
+  contratos?: number;
+  jornadas?: number;
+  instructores?: number;
+}
+
+export interface InformesJornadaResp {
+  filtros: {
+    idContrato?: string | null;
+    idJornada?: string | null;
+    idClase?: string | null;
+    desde?: string | null;
+    hasta?: string | null;
+  };
+  resumen: InformesJornadaResumen;
+  trazabilidad: Record<string, unknown>[];
+  resumenContratos: Record<string, unknown>[];
+  catalogoJornadas: Record<string, unknown>[];
+  catalogoClases: Record<string, unknown>[];
+  alumnos: Record<string, unknown>[];
+  instructores: Record<string, unknown>[];
+  certificados: Record<string, unknown>[];
+}
+
+export interface InformeDashboardChartItem {
+  label: string;
+  value: number;
+}
+
+export interface InformeDashboardKpis {
+  jornadas: number;
+  metaJornadas: number;
+  clasesTotales: number;
+  clasesDictadas: number;
+  clasesEnProceso: number;
+  alumnosCapacitados: number;
+  metaAlumnos: number;
+  alumnosCertificados: number;
+  certificadosEmitidos: number;
+}
+
+export interface InformeDashboardClase {
+  _id: string;
+  idJornada: string;
+  fechaLabel?: string;
+  programaNombre?: string;
+  instructorNombre?: string;
+  estado?: string;
+  alumnosInscritos?: number;
+  alumnosCertificados?: number;
+}
+
+export interface InformeDashboardDto {
+  contrato: {
+    _id: string;
+    codContrato?: string;
+    cliente?: string;
+    nit?: string;
+    ciudad?: string;
+    objetoContrato?: string;
+    estado?: string;
+    tipoCertificado?: string;
+  };
+  kpis: InformeDashboardKpis;
+  charts: {
+    clasesPorEstado: InformeDashboardChartItem[];
+    alumnosPorJornada: InformeDashboardChartItem[];
+    alumnosPorPrograma: InformeDashboardChartItem[];
+    clasesPorInstructor: InformeDashboardChartItem[];
+  };
+  porJornada: Array<{
+    _id: string;
+    fechaLabel: string;
+    municipio?: string;
+    estado?: string;
+    numClases: number;
+    alumnosCapacitados: number;
+    alumnosCertificados: number;
+  }>;
+  porClase: InformeDashboardClase[];
+  porPrograma: Array<{
+    idPrograma: string;
+    programaNombre: string;
+    numClases: number;
+    clasesDictadas: number;
+    alumnosCapacitados: number;
+    alumnosCertificados: number;
+  }>;
+  porInstructor: Array<{
+    idEmpleadoInstructor?: number | null;
+    instructorNombre: string;
+    numClases: number;
+    clasesDictadas: number;
+    alumnosCapacitados: number;
+  }>;
+  opciones: {
+    jornadas: Array<{ value: string; label: string }>;
+    clases: Array<{ value: string; label: string; idJornada?: string }>;
+    programas: Array<{ value: string; label: string }>;
+    instructores: Array<{ value: string; label: string }>;
+  };
 }
 
 export interface ClaseJornada {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 import { apiFetchText } from '../api/client';
@@ -16,6 +17,7 @@ type Route = RouteProp<RootStackParamList, 'CertificadoHtml'>;
 
 export default function CertificadoHtmlScreen() {
   const route = useRoute<Route>();
+  const insets = useSafeAreaInsets();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const { id, titulo } = route.params;
@@ -99,7 +101,16 @@ export default function CertificadoHtmlScreen() {
         allowFileAccess
         allowUniversalAccessFromFileURLs
       />
-      <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border }]}>
+      <View
+        style={[
+          styles.footer,
+          {
+            backgroundColor: c.card,
+            borderTopColor: c.border,
+            paddingBottom: Math.max(12, insets.bottom + 8),
+          },
+        ]}
+      >
         <PrimaryButton
           label="Imprimir"
           icon="print-outline"

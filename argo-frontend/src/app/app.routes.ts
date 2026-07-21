@@ -578,6 +578,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'configuracion/apps-moviles',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.roles' },
+        loadComponent: () =>
+          import('./features/config/config-apps-moviles.component').then(
+            (m) => m.ConfigAppsMovilesComponent,
+          ),
+      },
+      {
         path: 'configuracion/empresa',
         canActivate: [permisoGuard],
         data: { permiso: 'config.recibos' },

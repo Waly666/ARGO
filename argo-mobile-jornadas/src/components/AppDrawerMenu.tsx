@@ -103,16 +103,39 @@ export function AppDrawerMenu() {
       icon: 'ribbon-outline',
       onPress: () => go(() => nav.navigate('Certificados', {})),
     },
+    {
+      key: 'password',
+      label: 'Cambiar contraseña',
+      hint: 'Actualizar clave de su usuario',
+      icon: 'key-outline',
+      onPress: () => go(() => nav.navigate('CambiarPassword')),
+    },
   ];
 
   if (esAdmin) {
-    items.push({
-      key: 'admin',
-      label: 'Gestión (admin)',
-      hint: 'Editar jornadas desde la lista del día',
-      icon: 'settings-outline',
-      onPress: () => go(() => nav.navigate('JornadasHoy')),
-    });
+    items.push(
+      {
+        key: 'gestion',
+        label: 'Gestionar jornadas',
+        hint: 'Listar, editar y crear (cualquier fecha)',
+        icon: 'calendar-outline',
+        onPress: () => go(() => nav.navigate('JornadasGestion')),
+      },
+      {
+        key: 'crear',
+        label: 'Nueva jornada',
+        hint: 'Agregar jornada a un contrato',
+        icon: 'add-circle-outline',
+        onPress: () => go(() => nav.navigate('CrearJornada', {})),
+      },
+      {
+        key: 'informes',
+        label: 'Informes',
+        hint: 'Dashboard del contrato y PDF (como en el frontend)',
+        icon: 'stats-chart-outline',
+        onPress: () => go(() => nav.navigate('InformesJornadas')),
+      },
+    );
   }
 
   return (

@@ -12,36 +12,27 @@ import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navig
 import type { StackNavigationProp } from '@react-navigation/stack';
 import * as Location from 'expo-location';
 
+import { CatalogPickerField } from '../components/CatalogPickerField';
 import { IconInput } from '../components/IconInput';
 import { MunicipioBuscarField } from '../components/MunicipioBuscarField';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
 import {
-  actualizarJornada,
+  crearJornadaContrato,
   georefMunicipioPorCoords,
-  obtenerJornada,
+  listarContratos,
 } from '../api/jornadasApi';
+import type { CatalogOption } from '../catalogos/alumnoCatalogos';
 import type { MunicipioDivipola } from '../api/catalogosApi';
 import { useAuth } from '../context/AuthContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { puedeGestionarJornadas } from '../utils/permisos';
+import { ymdLocal } from '../utils/jornadaUi';
 import { themeColors } from '../theme/colors';
 import type { RootStackParamList } from '../navigation/types';
 
-type Route = RouteProp<RootStackParamList, 'EditarJornada'>;
-
-function ymdFromIso(raw?: string | null): string {
-  const t = String(raw || '').trim();
-  const m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  const d = new Date(t);
-  if (Number.isNaN(d.getTime())) return '';
-  const y = d.getFullYear();
-  const mo = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${mo}-${day}`;
-}
+type Route = RouteProp<RootStackParamList, 'CrearJornada'>;
 
 function parseCoordInput(raw: string): number | null {
   const t = String(raw || '').trim().replace(',', '.');
@@ -50,23 +41,22 @@ function parseCoordInput(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export default function EditarJornadaScreen() {
+export default function CrearJornadaScreen() {
   const route = useRoute<Route>();
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { state } = useAuth();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
-  const { jornadaId } = route.params;
   const user = state.status === 'signedIn' ? state.user : null;
   const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
 
-  const [loading, setLoading] = useState(true);
+  const [loadingOpts, setLoadingOpts] = useState(true);
   const [busy, setBusy] = useState(false);
   const [gpsBusy, setGpsBusy] = useState(false);
+  const [contratosOpts, setContratosOpts] = useState<CatalogOption[]>([]);
 
-  const [contratoLabel, setContratoLabel] = useState('');
-  const [estado, setEstado] = useState('');
-  const [fechaProgramacion, setFechaProgramacion] = useState('');
+  const [idContrato, setIdContrato] = useState(route.params?.idContrato || '');
+  const [fechaProgramacion, setFechaProgramacion] = useState(ymdLocal());
   const [municipio, setMunicipio] = useState('');
   const [depto, setDepto] = useState('');
   const [codMunicipio, setCodMunicipio] = useState('');
@@ -76,43 +66,35 @@ export default function EditarJornadaScreen() {
   const [latTxt, setLatTxt] = useState('');
   const [lngTxt, setLngTxt] = useState('');
   const [deteGeorefe, setDeteGeorefe] = useState('');
-  const [idContrato, setIdContrato] = useState('');
-
-  const cargar = useCallback(async () => {
-    setLoading(true);
-    try {
-      const j = await obtenerJornada(jornadaId);
-      setContratoLabel(j.contratoLabel || j.codContrato || '');
-      setEstado(String(j.estado || ''));
-      setIdContrato(String(j.idContrato || ''));
-      setFechaProgramacion(ymdFromIso(j.fechaProgramacion));
-      setMunicipio(j.municipio || '');
-      setDepto(j.depto || '');
-      setCodMunicipio(j.codMunicipio || '');
-      setMunTexto(
-        j.municipio && j.depto ? `${j.municipio} - ${j.depto}` : j.municipio || '',
-      );
-      setDireccion(j.direccion || '');
-      setSupervisor(j.supervisor || '');
-      setLatTxt(j.lat != null && Number.isFinite(j.lat) ? String(j.lat) : '');
-      setLngTxt(j.lng != null && Number.isFinite(j.lng) ? String(j.lng) : '');
-      setDeteGeorefe(j.deteGeorefe || '');
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo cargar la jornada');
-    } finally {
-      setLoading(false);
-    }
-  }, [jornadaId]);
 
   useFocusEffect(
     useCallback(() => {
       if (!esAdmin) {
-        Alert.alert('Sin permiso', 'Solo administradores pueden editar jornadas.');
+        Alert.alert('Sin permiso', 'Solo administradores pueden crear jornadas.');
         nav.goBack();
         return;
       }
-      void cargar();
-    }, [cargar, esAdmin, nav]),
+      void (async () => {
+        setLoadingOpts(true);
+        try {
+          const list = await listarContratos();
+          const opts = (list || [])
+            .filter((x) => x._id && String(x.estado || '').toLowerCase() !== 'ejecutado')
+            .map((x) => ({
+              value: x._id,
+              label: `${x.codContrato || '—'} — ${x.nombreComercial || x.razoSocial || 'Contrato'}`,
+            }));
+          setContratosOpts(opts);
+          if (!idContrato && opts.length === 1) setIdContrato(opts[0].value);
+          const sel = (list || []).find((x) => x._id === (idContrato || opts[0]?.value));
+          if (sel?.supervisor && !supervisor) setSupervisor(sel.supervisor);
+        } catch (e) {
+          Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar contratos');
+        } finally {
+          setLoadingOpts(false);
+        }
+      })();
+    }, [esAdmin, nav]),
   );
 
   function onMunSel(m: MunicipioDivipola) {
@@ -146,55 +128,35 @@ export default function EditarJornadaScreen() {
     try {
       const perm = await Location.requestForegroundPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('GPS', 'Permita el acceso a la ubicación para cargar coordenadas.');
+        Alert.alert('GPS', 'Permita el acceso a la ubicación.');
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const geo = await aplicarCoords(
-        pos.coords.latitude,
-        pos.coords.longitude,
-        'DISPOSITIVO_MOVIL',
-      );
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const geo = await aplicarCoords(pos.coords.latitude, pos.coords.longitude, 'DISPOSITIVO_MOVIL');
       Alert.alert(
         'GPS listo',
         geo?.municipio
-          ? `Coordenadas y municipio cargados:\n${geo.municipio} — ${geo.depto}`
-          : 'Coordenadas cargadas. Revise municipio y guarde.',
+          ? `Coordenadas y municipio:\n${geo.municipio} — ${geo.depto}`
+          : 'Coordenadas cargadas.',
       );
     } catch (e) {
-      Alert.alert('GPS', e instanceof Error ? e.message : 'No se pudo obtener la ubicación');
-    } finally {
-      setGpsBusy(false);
-    }
-  }
-
-  async function onResolverDesdeCoords() {
-    const la = parseCoordInput(latTxt);
-    const ln = parseCoordInput(lngTxt);
-    if (la == null || ln == null) {
-      Alert.alert('Coordenadas', 'Indique latitud y longitud válidas.');
-      return;
-    }
-    setGpsBusy(true);
-    try {
-      const geo = await aplicarCoords(la, ln, 'MANUAL');
-      if (!geo?.municipio) {
-        Alert.alert('Georef', 'No se pudo resolver municipio con esas coordenadas.');
-        return;
-      }
-      Alert.alert('Listo', `${geo.municipio} — ${geo.depto}`);
-    } catch (e) {
-      Alert.alert('Georef', e instanceof Error ? e.message : 'No se pudo resolver');
+      Alert.alert('GPS', e instanceof Error ? e.message : 'No se pudo obtener ubicación');
     } finally {
       setGpsBusy(false);
     }
   }
 
   async function onGuardar() {
+    if (!idContrato) {
+      Alert.alert('Contrato', 'Seleccione un contrato.');
+      return;
+    }
     if (!fechaProgramacion.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(fechaProgramacion.trim())) {
       Alert.alert('Fecha', 'Use fecha AAAA-MM-DD.');
+      return;
+    }
+    if (!direccion.trim()) {
+      Alert.alert('Dirección', 'La dirección / sitio es obligatoria.');
       return;
     }
     if (!municipio.trim() || !depto.trim()) {
@@ -204,46 +166,49 @@ export default function EditarJornadaScreen() {
     const la = parseCoordInput(latTxt);
     const ln = parseCoordInput(lngTxt);
     if ((latTxt.trim() || lngTxt.trim()) && (la == null || ln == null)) {
-      Alert.alert('Coordenadas', 'Latitud/longitud inválidas. Déjelas vacías o corrija ambas.');
+      Alert.alert('Coordenadas', 'Latitud/longitud inválidas.');
       return;
     }
 
     setBusy(true);
     try {
-      await actualizarJornada(jornadaId, {
+      const r = await crearJornadaContrato(idContrato, {
         fechaProgramacion: fechaProgramacion.trim(),
+        direccion: direccion.trim(),
         municipio: municipio.trim(),
         depto: depto.trim(),
         codMunicipio: codMunicipio.trim() || undefined,
-        direccion: direccion.trim(),
-        supervisor: supervisor.trim(),
+        supervisor: supervisor.trim() || undefined,
         lat: la,
         lng: ln,
-        deteGeorefe:
-          la != null && ln != null
-            ? ((deteGeorefe as 'DISPOSITIVO_MOVIL' | 'MANUAL' | 'MAPA' | '') || 'MANUAL')
-            : '',
+        deteGeorefe: la != null && ln != null ? deteGeorefe || 'MANUAL' : undefined,
+        generarClases: true,
       });
-      Alert.alert('Guardado', 'Jornada actualizada.', [
-        {
-          text: 'Ver clases',
-          onPress: () =>
-            nav.replace('ClasesJornada', {
-              jornadaId,
-              jornadaLabel: `${fechaProgramacion} · ${municipio}`,
-              idContrato,
-            }),
-        },
-        { text: 'OK', onPress: () => nav.goBack() },
-      ]);
+      const j = r.jornada;
+      Alert.alert(
+        'Jornada creada',
+        `Se crearon ${r.clasesCreadas ?? 0} clase(s).`,
+        [
+          {
+            text: 'Ver clases',
+            onPress: () =>
+              nav.replace('ClasesJornada', {
+                jornadaId: j._id,
+                jornadaLabel: `${fechaProgramacion} · ${municipio}`,
+                idContrato,
+              }),
+          },
+          { text: 'OK', onPress: () => nav.navigate('JornadasGestion') },
+        ],
+      );
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar');
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear');
     } finally {
       setBusy(false);
     }
   }
 
-  if (loading) {
+  if (loadingOpts) {
     return (
       <View style={[styles.center, { backgroundColor: c.bg }]}>
         <ActivityIndicator color={c.primary} size="large" />
@@ -259,23 +224,29 @@ export default function EditarJornadaScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <SurfaceCard>
           <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800' }}>
-            {contratoLabel || 'Jornada'}
+            Nueva jornada
           </ScaledText>
           <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 4 }}>
-            Estado: {estado || '—'}
+            Se generan las clases del contrato automáticamente.
           </ScaledText>
         </SurfaceCard>
 
         <SurfaceCard style={{ marginTop: 12 }}>
-          <ScaledText baseSize={15} style={styles.sec}>
-            Datos de la jornada
-          </ScaledText>
+          <CatalogPickerField
+            label="Contrato"
+            required
+            options={contratosOpts}
+            value={idContrato}
+            onChange={setIdContrato}
+            placeholder="Seleccione contrato…"
+          />
+          <View style={{ height: 8 }} />
           <IconInput
             label="Fecha programación * (AAAA-MM-DD)"
             icon="calendar-outline"
             value={fechaProgramacion}
             onChangeText={setFechaProgramacion}
-            placeholder="2026-07-20"
+            placeholder={ymdLocal()}
             autoCapitalize="none"
           />
           <View style={{ height: 8 }} />
@@ -300,7 +271,7 @@ export default function EditarJornadaScreen() {
           />
           <View style={{ height: 8 }} />
           <IconInput
-            label="Dirección / sitio"
+            label="Dirección / sitio *"
             icon="home-outline"
             value={direccion}
             onChangeText={setDireccion}
@@ -326,7 +297,6 @@ export default function EditarJornadaScreen() {
             value={latTxt}
             onChangeText={setLatTxt}
             keyboardType="decimal-pad"
-            placeholder="2.441000"
             autoCapitalize="none"
           />
           <View style={{ height: 8 }} />
@@ -336,29 +306,17 @@ export default function EditarJornadaScreen() {
             value={lngTxt}
             onChangeText={setLngTxt}
             keyboardType="decimal-pad"
-            placeholder="-76.606000"
             autoCapitalize="none"
-          />
-          <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 6, marginBottom: 8 }}>
-            Origen: {deteGeorefe || 'sin georef'}
-          </ScaledText>
-          <PrimaryButton
-            label="Resolver municipio desde coordenadas"
-            icon="location-outline"
-            variant="ghost"
-            onPress={() => void onResolverDesdeCoords()}
-            disabled={busy || gpsBusy}
-            fullWidth
           />
         </SurfaceCard>
 
         <View style={{ height: 16 }} />
         <PrimaryButton
-          label={busy ? 'Guardando…' : 'Guardar jornada'}
+          label={busy ? 'Creando…' : 'Crear jornada'}
           onPress={() => void onGuardar()}
           disabled={busy || gpsBusy}
           fullWidth
-          icon="save-outline"
+          icon="add-circle-outline"
         />
         <View style={{ height: 8 }} />
         <PrimaryButton label="Cancelar" variant="ghost" onPress={() => nav.goBack()} fullWidth />

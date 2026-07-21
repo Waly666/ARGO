@@ -14,6 +14,7 @@ router.post('/mfa/setup/confirm', portalAuthLimiter, mfa.setupConfirm);
 router.post('/mfa/verify', portalAuthLimiter, mfa.verify);
 router.post('/mfa/recovery', portalAuthLimiter, mfa.recovery);
 router.get('/me', requireAuth, ctrl.me);
+router.post('/cambiar-password', requireAuth, ctrl.cambiarPassword);
 router.post('/verificar-admin', requireAuth, ctrl.verificarAdmin);
 
 module.exports = router;

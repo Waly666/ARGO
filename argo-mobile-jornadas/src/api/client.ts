@@ -174,6 +174,61 @@ export async function apiFetchText(
   return text;
 }
 
+/** Descarga binaria (p. ej. Excel de informes). */
+export async function apiFetchBlob(
+  path: string,
+  opts?: RequestInit & { auth?: boolean; timeoutMs?: number },
+): Promise<{ bytes: Uint8Array; contentType: string; fileName: string }> {
+  const base = getApiBaseUrl();
+  const timeoutMs = opts?.timeoutMs ?? 90_000;
+  const headers: Record<string, string> = {
+    Accept: '*/*',
+    'X-ARGO-Cliente': CLIENTE_JORNADAS,
+    ...(opts?.headers as Record<string, string>),
+  };
+  if (opts?.auth !== false) {
+    const t = tokenGetter();
+    if (t) headers.Authorization = `Bearer ${t}`;
+  }
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`${base}${path.startsWith('/') ? path : `/${path}`}`, {
+      ...opts,
+      headers,
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    throw new Error(mensajeRed(e, base));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    let msg = `${res.status}`;
+    try {
+      const j = JSON.parse(text) as { message?: string };
+      if (j.message) msg = j.message;
+    } catch {
+      if (text.trim()) msg = text.slice(0, 200);
+    }
+    throw new Error(msg);
+  }
+
+  const buf = await res.arrayBuffer();
+  const cd = res.headers.get('content-disposition') || '';
+  const m = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(cd);
+  const fileName = m ? decodeURIComponent(m[1].replace(/"/g, '')) : 'informe-jornadas.xlsx';
+  const contentType =
+    res.headers.get('content-type') ||
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  return { bytes: new Uint8Array(buf), contentType, fileName };
+}
+
 export async function pingHealth(): Promise<{ ok: boolean }> {
   return apiFetch('/health', { auth: false, timeoutMs: 8000 });
 }
@@ -209,4 +264,14 @@ export async function login(username: string, password: string): Promise<import(
 
 export async function fetchMe() {
   return apiFetch<import('./types').AuthUser>('/auth/me', { timeoutMs: 10_000 });
+}
+
+/** Cambia la contraseña del usuario de la sesión actual. */
+export async function cambiarPassword(passwordActual: string, passwordNueva: string) {
+  return apiFetch<{ ok: boolean; message?: string }>('/auth/cambiar-password', {
+    method: 'POST',
+    timeoutMs: 20_000,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ passwordActual, passwordNueva }),
+  });
 }

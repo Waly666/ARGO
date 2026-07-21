@@ -89,6 +89,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/configuracion/usuarios', permiso: 'config.usuarios' },
   { prefix: '/app/configuracion/sedes', permiso: ['sedes.gestionar', 'config.sedes'] },
   { prefix: '/app/configuracion/roles', permiso: 'config.roles' },
+  { prefix: '/app/configuracion/apps-moviles', permiso: 'config.roles' },
   { prefix: '/app/configuracion/recibos', permiso: 'config.recibos' },
   { prefix: '/app/configuracion/georef', permiso: 'config.georef' },
   { prefix: '/app/configuracion/pasarela', permiso: ['config.recibos', 'aula_virtual.gestionar'] },

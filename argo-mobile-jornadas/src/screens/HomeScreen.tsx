@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import type { AuthUser } from '../api/types';
 import { themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
+import { puedeGestionarJornadas } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 
 function nombreBienvenida(user: AuthUser | null): string {
@@ -40,15 +41,18 @@ export default function HomeScreen() {
   const c = themeColors(highContrast);
   const user = state.status === 'signedIn' ? state.user : null;
   const nombre = nombreBienvenida(user);
+  const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
 
   const tiles: MenuTile[] = [
     {
       title: 'Jornadas de hoy',
-      hint: 'Clases, asistencias y certificados del día',
+      hint: esAdmin
+        ? 'Operación del día (admin también gestiona otras fechas)'
+        : 'Solo la jornada activa del día',
       icon: 'today-outline',
-      accent: c.pastelSkyFg,
-      iconBg: c.pastelSky,
-      iconColor: c.pastelSkyFg,
+      accent: c.primary,
+      iconBg: c.accentSoft,
+      iconColor: c.primaryDark,
       onPress: () => nav.navigate('JornadasHoy'),
     },
     {
@@ -64,12 +68,53 @@ export default function HomeScreen() {
       title: 'Certificados emitidos',
       hint: 'Consulta y abre certificados de jornadas',
       icon: 'ribbon-outline',
-      accent: c.pastelLilacFg,
-      iconBg: c.pastelLilac,
-      iconColor: c.pastelLilacFg,
+      accent: c.primaryDark,
+      iconBg: c.accentSoft,
+      iconColor: c.primaryDark,
       onPress: () => nav.navigate('Certificados', {}),
     },
+    {
+      title: 'Cambiar contraseña',
+      hint: 'Actualizar la clave de su usuario',
+      icon: 'key-outline',
+      accent: c.primary,
+      iconBg: c.pastelMint,
+      iconColor: c.pastelMintFg,
+      onPress: () => nav.navigate('CambiarPassword'),
+    },
   ];
+
+  if (esAdmin) {
+    tiles.push(
+      {
+        title: 'Gestionar jornadas',
+        hint: 'Listar, editar y operar jornadas de cualquier fecha',
+        icon: 'calendar-outline',
+        accent: c.primary,
+        iconBg: c.pastelMint,
+        iconColor: c.pastelMintFg,
+        onPress: () => nav.navigate('JornadasGestion'),
+      },
+      {
+        title: 'Nueva jornada',
+        hint: 'Crear jornada en un contrato',
+        icon: 'add-circle-outline',
+        accent: c.pastelMintFg,
+        iconBg: c.accentSoft,
+        iconColor: c.primaryDark,
+        onPress: () => nav.navigate('CrearJornada', {}),
+      },
+      {
+        title: 'Informes',
+        hint: 'Dashboard del contrato y PDF formal',
+        icon: 'stats-chart-outline',
+        accent: c.primaryDark,
+        iconBg: c.pastelMint,
+        iconColor: c.pastelMintFg,
+        onPress: () => nav.navigate('InformesJornadas'),
+      },
+    );
+  }
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={styles.scroll}>

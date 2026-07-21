@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { DataChip } from '../components/DataChip';
 import { EmptyState } from '../components/EmptyState';
+import { IconInput } from '../components/IconInput';
 import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
 import { certificadosGenerados } from '../api/jornadasApi';
@@ -24,6 +25,19 @@ import type { RootStackParamList } from '../navigation/types';
 
 type Route = RouteProp<RootStackParamList, 'Certificados'>;
 
+function textoBusqueda(item: CertificadoJornada): string {
+  return [
+    item.nombreCompleto,
+    item.nombreAlumno,
+    item.numDoc,
+    item.codigoCert,
+    item.codContrato,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
 export default function CertificadosScreen() {
   const route = useRoute<Route>();
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -34,6 +48,7 @@ export default function CertificadosScreen() {
   const [rows, setRows] = useState<CertificadoJornada[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [q, setQ] = useState('');
 
   const cargar = useCallback(async () => {
     setErr(null);
@@ -55,6 +70,12 @@ export default function CertificadosScreen() {
     }, [cargar]),
   );
 
+  const filtrados = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((item) => textoBusqueda(item).includes(term));
+  }, [rows, q]);
+
   if (loading && !rows.length) {
     return (
       <View style={[styles.center, { backgroundColor: c.bg }]}>
@@ -67,8 +88,9 @@ export default function CertificadosScreen() {
     <FlatList
       style={{ flex: 1, backgroundColor: c.bg }}
       contentContainerStyle={styles.list}
-      data={rows}
+      data={filtrados}
       keyExtractor={(item) => item._id}
+      keyboardShouldPersistTaps="handled"
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={() => void cargar()} tintColor={c.primary} />
       }
@@ -83,6 +105,20 @@ export default function CertificadosScreen() {
               Todos los certificados de jornadas visibles para su usuario.
             </ScaledText>
           )}
+
+          <View style={styles.searchWrap}>
+            <IconInput
+              label="Buscar por nombre"
+              icon="search-outline"
+              value={q}
+              onChangeText={setQ}
+              placeholder="Nombre, documento o código…"
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
+          </View>
+
           {err ? (
             <ScaledText baseSize={14} style={{ color: c.danger, marginBottom: 12 }}>
               {err}
@@ -90,7 +126,9 @@ export default function CertificadosScreen() {
           ) : null}
           {rows.length > 0 ? (
             <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 10 }}>
-              Emitidos ({rows.length})
+              {q.trim()
+                ? `Resultados (${filtrados.length} de ${rows.length})`
+                : `Emitidos (${rows.length})`}
             </ScaledText>
           ) : null}
         </>
@@ -115,12 +153,12 @@ export default function CertificadosScreen() {
             })}
           >
             <SurfaceCard style={styles.certCard}>
-              <View style={[styles.cardAccent, { backgroundColor: c.pastelLilacFg }]} />
+              <View style={[styles.cardAccent, { backgroundColor: c.primary }]} />
               <View style={styles.cardBody}>
                 <View style={styles.cardTop}>
-                  <DataChip label="Emitido" icon="ribbon-outline" tone="lilac" />
+                  <DataChip label="Emitido" icon="ribbon-outline" tone="mint" />
                   {item.codigoCert ? (
-                    <DataChip label={item.codigoCert} icon="barcode-outline" tone="peach" />
+                    <DataChip label={item.codigoCert} icon="barcode-outline" tone="soft" />
                   ) : null}
                 </View>
 
@@ -134,23 +172,23 @@ export default function CertificadosScreen() {
 
                 <View style={styles.metaBlock}>
                   <View style={styles.metaLine}>
-                    <Ionicons name="card-outline" size={15} color={c.pastelPeachFg} />
-                    <ScaledText baseSize={13} style={[styles.metaText, { color: c.pastelPeachFg }]}>
+                    <Ionicons name="card-outline" size={15} color={c.primaryDark} />
+                    <ScaledText baseSize={13} style={[styles.metaText, { color: c.primaryDark }]}>
                       Doc. {item.numDoc ?? '—'}
                     </ScaledText>
                   </View>
                   <View style={styles.metaLine}>
-                    <Ionicons name="calendar-outline" size={15} color={c.pastelSkyFg} />
-                    <ScaledText baseSize={13} style={[styles.metaText, { color: c.pastelSkyFg }]}>
+                    <Ionicons name="calendar-outline" size={15} color={c.textSoft} />
+                    <ScaledText baseSize={13} style={[styles.metaText, { color: c.textSoft }]}>
                       {fecha}
                     </ScaledText>
                   </View>
                   {item.codContrato ? (
                     <View style={styles.metaLine}>
-                      <Ionicons name="document-text-outline" size={15} color={c.pastelLavenderFg} />
+                      <Ionicons name="document-text-outline" size={15} color={c.textSoft} />
                       <ScaledText
                         baseSize={13}
-                        style={[styles.metaText, { color: c.pastelLavenderFg }]}
+                        style={[styles.metaText, { color: c.textSoft }]}
                       >
                         Contrato {item.codContrato}
                       </ScaledText>
@@ -186,8 +224,12 @@ export default function CertificadosScreen() {
       }}
       ListEmptyComponent={
         <EmptyState
-          title="Sin certificados"
-          hint="Se generan al finalizar la clase con asistencias según el contrato."
+          title={q.trim() ? 'Sin resultados' : 'Sin certificados'}
+          hint={
+            q.trim()
+              ? 'Pruebe con otro nombre, documento o código.'
+              : 'Se generan al finalizar la clase con asistencias según el contrato.'
+          }
         />
       }
     />
@@ -197,6 +239,7 @@ export default function CertificadosScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 16, paddingBottom: 32 },
+  searchWrap: { marginBottom: 14 },
   certCard: {
     padding: 0,
     overflow: 'hidden',

@@ -822,6 +822,14 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Apps móviles',
+          path: '/app/configuracion/apps-moviles',
+          icon: '▣',
+          iconTone: 'teal',
+          permiso: 'config.roles',
+        },
+        {
+          kind: 'link',
           label: 'Catálogos',
           path: '/app/configuracion/catalogos',
           icon: '▦',
@@ -1656,6 +1664,7 @@ export class ShellComponent {
       u.includes('/configuracion/facturacion') ||
       u.includes('/configuracion/clientes') ||
       u.includes('/configuracion/roles') ||
+      u.includes('/configuracion/apps-moviles') ||
       u.includes('/configuracion/catalogos') ||
       u.includes('/configuracion/empresa') ||
       u.includes('/configuracion/recibos') ||
