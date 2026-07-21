@@ -104,6 +104,8 @@ export class EmpleadosAdminComponent implements OnInit {
   msg = signal<string | null>(null);
   msgError = signal(false);
   busqueda = signal('');
+  /** Por defecto se listan todos; el alta también valida contra retirados. */
+  soloActivos = signal(false);
   vista = signal<VistaLista>(readVistaLista('argo-empleados-vista'));
   editando = signal<Empleado | null>(null);
   mostrarForm = signal(false);
@@ -175,7 +177,12 @@ export class EmpleadosAdminComponent implements OnInit {
   cargar() {
     this.loading.set(true);
     const q = this.busqueda().trim();
-    this.svc.listar(q.length >= 2 ? { q } : {}).subscribe({
+    this.svc
+      .listar({
+        ...(q.length >= 2 ? { q } : {}),
+        activos: this.soloActivos(),
+      })
+      .subscribe({
       next: (r) => {
         this.empleados.set(r || []);
         this.loading.set(false);
@@ -405,9 +412,28 @@ export class EmpleadosAdminComponent implements OnInit {
         }
         this.inform(txt);
       },
-      error: (e) => {
+      error: async (e) => {
         this.saving.set(false);
-        this.inform(e?.error?.message || 'Error al guardar', true);
+        const body = e?.error;
+        const existingId = body?.existingId;
+        if (e?.status === 409 && existingId != null) {
+          this.inform(body?.message || 'Ya existe un empleado con ese documento.', true);
+          const abrir = await this.confirm.open({
+            title: 'Documento ya registrado',
+            message:
+              body?.message ||
+              'Ese número de documento ya pertenece a un empleado. ¿Abrir la ficha para editarla o reactivarla?',
+            confirmLabel: 'Abrir ficha',
+            cancelLabel: 'Cerrar',
+          });
+          if (!abrir) return;
+          this.svc.obtener(existingId).subscribe({
+            next: (emp) => this.editar(emp),
+            error: () => this.inform('No se pudo cargar el empleado existente.', true),
+          });
+          return;
+        }
+        this.inform(body?.message || 'Error al guardar', true);
       },
     });
   }

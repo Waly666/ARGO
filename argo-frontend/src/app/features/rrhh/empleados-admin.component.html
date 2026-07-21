@@ -24,6 +24,14 @@
       (keyup.enter)="cargar()"
     />
     <button type="button" class="ghost" (click)="cargar()">Buscar</button>
+    <label class="solo-activos">
+      <input
+        type="checkbox"
+        [ngModel]="soloActivos()"
+        (ngModelChange)="soloActivos.set($event); cargar()"
+      />
+      Solo activos
+    </label>
     <div class="view-toggle" role="group" aria-label="Modo de vista">
       <button type="button" class="view-btn" [class.active]="vista() === 'lista'" (click)="setVista('lista')" title="Vista tabla">☰ Lista</button>
       <button type="button" class="view-btn" [class.active]="vista() === 'cards'" (click)="setVista('cards')" title="Vista tarjetas">▦ Cards</button>

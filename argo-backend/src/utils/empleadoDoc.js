@@ -2,10 +2,14 @@
 function numeroDocumentoQuery(doc) {
   const s = String(doc ?? '').trim();
   if (!s) return null;
-  const n = Number(s.replace(/\D/g, ''));
+  const digits = s.replace(/\D/g, '');
+  const n = Number(digits);
   const or = [{ numeroDocumento: s }];
+  if (digits && digits !== s) {
+    or.push({ numeroDocumento: digits });
+  }
   if (Number.isFinite(n) && n > 0) {
-    or.push({ numDoc: n }, { numeroDocumento: String(n) });
+    or.push({ numDoc: n }, { numeroDocumento: String(n) }, { numeroDocumento: n });
   }
   return { $or: or };
 }

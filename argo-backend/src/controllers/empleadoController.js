@@ -204,11 +204,16 @@ exports.listar = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
     const soloActivos = req.query.activos !== 'false';
+    const digitsQ = q.replace(/\D/g, '');
+    /** Búsqueda por cédula: incluir retirados/inactivos (el alta también los detecta). */
+    const buscandoDocumento = digitsQ.length >= 5;
     const filter = {};
-    if (soloActivos) filter.estado = { $in: [/^activo$/i, 'activo', 'ACTIVO', null] };
+    if (soloActivos && !buscandoDocumento) {
+      filter.estado = { $in: [/^activo$/i, 'activo', 'ACTIVO', null] };
+    }
     if (q.length >= 2) {
       const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      filter.$or = [
+      const or = [
         { primerNombre: re },
         { segundoNombre: re },
         { primerApellido: re },
@@ -217,6 +222,9 @@ exports.listar = async (req, res, next) => {
         { nombre1: re },
         { apellido1: re },
       ];
+      const docQ = numeroDocumentoQuery(q);
+      if (docQ?.$or?.length) or.push(...docQ.$or);
+      filter.$or = or;
     }
     const rows = await Empleado.find(filter).sort({ primerApellido: 1, primerNombre: 1 }).lean();
     const counts = await Promise.all(
@@ -302,9 +310,15 @@ exports.crear = async (req, res, next) => {
     }
     const dup = await Empleado.findOne(numeroDocumentoQuery(dto.numeroDocumento));
     if (dup) {
+      const d = normalizarEmpleadoLegacy(dup);
+      const nombre = nombreCompletoEmpleado(d) || `id ${d.idEmpleado}`;
+      const estado = String(d.estado || 'sin estado').trim() || 'sin estado';
       return res.status(409).json({
-        message: 'Ya existe un empleado con ese número de documento',
-        existingId: dup.idEmpleado,
+        message: `Ya existe un empleado con ese número de documento: ${nombre} (estado: ${estado}). Ábralo con Editar o búsquelo incluyendo no activos.`,
+        existingId: d.idEmpleado,
+        estado: d.estado || null,
+        nombreCompleto: nombre,
+        numeroDocumento: d.numeroDocumento || null,
       });
     }
     const idEmpleado = await maxNumericId(Empleado, 'idEmpleado');

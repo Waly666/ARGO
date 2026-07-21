@@ -242,7 +242,24 @@
 .col-8 { grid-column: span 8; }
 .col-12 { grid-column: span 12; }
 .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
-.toolbar { display: flex; gap: 8px; input { flex: 1; } }
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  input[type='search'] { flex: 1; min-width: 160px; }
+}
+.solo-activos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  input { width: auto; }
+}
 .empty { text-align: center; color: var(--text-dim); padding: 1rem; }
 input, select { width: 100%; }
 
