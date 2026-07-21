@@ -82,6 +82,25 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
     }
   }
 
+  // Asistencia operativa solo con clase iniciada. Al cerrar/sincronizar se omite esta regla.
+  const estadoClase = String(clase.estado || '').trim().toUpperCase();
+  if (!opts.omitirValidacionEstadoClase) {
+    if (estadoClase === 'PROGRAMADA' || !estadoClase) {
+      const err = new Error(
+        'Debe iniciar la clase antes de registrar asistencia. Los certificados se emiten al finalizar.',
+      );
+      err.status = 400;
+      throw err;
+    }
+    if (estadoClase === 'FINALIZADO' && !opts.omitirValidacionJornada) {
+      const err = new Error(
+        'La clase ya está finalizada. Use sincronizar asistencias o reprocesar certificados desde administración.',
+      );
+      err.status = 400;
+      throw err;
+    }
+  }
+
   const idContrato = jornada?.idContrato;
   const auditor = req?.user ? auditoriaUsuario(req) : 'sistema';
 
@@ -138,19 +157,11 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
     /* ignore */
   }
 
-  // Global: intenta emitir al marcar asistencia (p. ej. al completar numSesCert).
-  // Por clase: se emite al finalizar (omitirCertificado por defecto), salvo que se force.
+  // Nunca emitir certificado al marcar asistencia (ni global ni por_clase).
+  // La emisión ocurre solo al finalizar la clase (postCierre / emitirCertificadosAsistentesClase),
+  // según tipoCertificado del contrato (sesiones globales vs por clase).
   let resultadoCert = { creado: false, motivo: null };
-  const tipoCertRaw = String(ctxCert?.contrato?.tipoCertificado || opts.jornada?.tipoCertificado || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\s-]+/g, '_');
-  const esPorClase = tipoCertRaw === 'por_clase' || tipoCertRaw === 'porclase';
-  const omitirPorDefecto = esPorClase;
-  const omitirCert =
-    opts.omitirCertificado !== undefined ? opts.omitirCertificado !== false : omitirPorDefecto;
+  const omitirCert = opts.omitirCertificado !== false;
 
   if (omitirCert) {
     resultadoCert = {
@@ -389,13 +400,16 @@ async function postCierreClaseJornada(req, claseDoc, opts = {}) {
 
   try {
     syncAsis = await registrarAsistenciasInscritosPendientes(req, clase, {
-      omitirValidacionJornada: true,
       ...opts,
+      omitirValidacionJornada: true,
+      omitirValidacionEstadoClase: true,
+      omitirCertificado: true,
     });
     jornada = opts.jornada || (await sincronizarEstadoJornada(clase.idJornada));
     const ctxCert =
       opts.ctxCert ||
       (jornada?.idContrato ? await crearContextoCertificadoContrato(jornada.idContrato) : null);
+    // Único punto de emisión automática: al cerrar la clase (global por sesiones o por_clase).
     certs = await emitirCertificadosAsistentesClase(req, clase, { jornada, ctxCert });
   } catch (e) {
     const mergedCatch = fusionarCertificadosEmitidos(
@@ -414,8 +428,7 @@ async function postCierreClaseJornada(req, claseDoc, opts = {}) {
     };
   }
 
-  // En modo global el certificado puede crearse al marcar asistencia (syncAsis)
-  // y luego «ya_certificado» en emitirCertificados — hay que unir ambas listas.
+  // Los certificados salen solo de emitirCertificadosAsistentesClase (al finalizar).
   const certificadosEmitidos = fusionarCertificadosEmitidos(
     syncAsis.certificadosEmitidos,
     certs.certificadosEmitidos,

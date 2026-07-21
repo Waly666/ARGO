@@ -37,8 +37,12 @@ export interface JornadaCap {
   fechaProgramacion: string;
   municipio?: string;
   depto?: string;
+  codMunicipio?: string;
   direccion?: string;
   supervisor?: string;
+  lat?: number | null;
+  lng?: number | null;
+  deteGeorefe?: string;
   estado: string;
   numeObjeJornada?: number;
   indiceEnDia?: number;

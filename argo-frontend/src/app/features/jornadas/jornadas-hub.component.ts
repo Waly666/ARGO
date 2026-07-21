@@ -2668,6 +2668,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
+  imprimirListadoAsistencia(): void {
+    const id = String(this.claseActiva()?._id || '').trim();
+    if (!id) {
+      this.mostrarMsg('No hay clase seleccionada.', 'warn', 'Listado');
+      return;
+    }
+    this.jornadaSvc.abrirHtmlListadoAsistenciaClase(id, (m) =>
+      this.mostrarMsg(m, 'error', 'Listado de asistencia'),
+    );
+  }
+
   async quitarAlumnoMatricula(a: AlumnoListItem) {
     const ok = await this.confirmSvc.open({
       title: 'Confirmar borrado',

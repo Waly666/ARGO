@@ -732,6 +732,53 @@ export class JornadaCapService {
     }>>(`${this.base}/clases/${idClase}/inscritos`);
   }
 
+  urlListadoAsistenciaClase(idClase: string): string {
+    return `${this.base}/clases/${idClase}/listado-asistencia/html`;
+  }
+
+  /** Abre HTML imprimible del listado de asistencia de la clase. */
+  abrirHtmlListadoAsistenciaClase(idClase: string, onError?: (msg: string) => void): boolean {
+    const id = String(idClase || '').trim();
+    if (!id) {
+      onError?.('Clase sin identificador.');
+      return false;
+    }
+    const url = `${this.urlListadoAsistenciaClase(id)}?v=${Date.now()}`;
+    const w = window.open('', '_blank', 'width=920,height=960');
+    if (!w) {
+      onError?.('El navegador bloqueó la ventana emergente. Permita ventanas emergentes para este sitio.');
+      return false;
+    }
+    try {
+      w.document.open();
+      w.document.write('<p style="font-family:sans-serif;padding:1rem">Generando listado de asistencia…</p>');
+      w.document.close();
+    } catch {
+      /* ventana en blanco */
+    }
+    this.http.get(url, { responseType: 'text' }).subscribe({
+      next: (html) => {
+        try {
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        } catch {
+          w.close();
+          onError?.('No se pudo mostrar el listado de asistencia.');
+        }
+      },
+      error: (e) => {
+        try {
+          w.close();
+        } catch {
+          /* ignore */
+        }
+        onError?.(e?.error?.message || 'No se pudo generar el listado de asistencia.');
+      },
+    });
+    return true;
+  }
+
   /** Alumnos de otra clase para copiar. Sin idClaseFuente = clase anterior auto; con id = elección manual. */
   alumnosClaseAnterior(
     idClase: string,

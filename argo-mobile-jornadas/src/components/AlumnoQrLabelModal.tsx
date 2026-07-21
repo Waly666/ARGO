@@ -19,6 +19,7 @@ type Props = {
   numDoc: string;
   nombre: string;
   empresa?: string;
+  codContrato?: string;
   fechaJornada?: string;
   onClose: () => void;
 };
@@ -33,6 +34,7 @@ export function AlumnoQrLabelModal({
   numDoc,
   nombre,
   empresa,
+  codContrato,
   fechaJornada,
   onClose,
 }: Props) {
@@ -70,6 +72,7 @@ export function AlumnoQrLabelModal({
         numDoc,
         nombre,
         empresa,
+        codContrato,
         fechaJornada,
       });
       await imprimirHtml(html);
@@ -83,6 +86,7 @@ export function AlumnoQrLabelModal({
         numDoc,
         nombre,
         empresa,
+        codContrato,
         fechaJornada,
       });
       await compartirHtmlPdf(html, `etiqueta-${numDoc}`);
@@ -126,6 +130,11 @@ export function AlumnoQrLabelModal({
           <ScaledText baseSize={13} style={{ color: c.primary, textAlign: 'center', marginTop: 6, fontWeight: '700' }}>
             {empresa?.trim() || '—'}
           </ScaledText>
+          {codContrato?.trim() ? (
+            <ScaledText baseSize={12} style={{ color: '#1e3a8a', textAlign: 'center', marginTop: 4, fontWeight: '700' }}>
+              Contrato {codContrato.trim()}
+            </ScaledText>
+          ) : null}
           <ScaledText baseSize={12} style={{ color: c.textSoft, textAlign: 'center', marginTop: 2, fontWeight: '700' }}>
             Jornada {fmtFechaEtiqueta(fechaJornada)}
           </ScaledText>

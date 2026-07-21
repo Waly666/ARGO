@@ -84,6 +84,13 @@ const config: ExpoConfig = {
           'ARGO Jornadas usa la cámara para escanear el QR de la etiqueta del alumno y para evidencia.',
       },
     ],
+    [
+      'expo-location',
+      {
+        locationWhenInUsePermission:
+          'ARGO Jornadas usa el GPS para georreferenciar la jornada de capacitación en campo.',
+      },
+    ],
     'expo-secure-store',
     [
       'expo-build-properties',

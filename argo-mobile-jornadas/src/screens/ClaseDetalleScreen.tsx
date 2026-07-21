@@ -22,7 +22,6 @@ import { ProgramaPicker, mismoProgramaId, programaId, programaLabel } from '../c
 import { QrScanModal } from '../components/QrScanModal';
 import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
-import { TimePickerField } from '../components/TimePickerField';
 import type { JornadaAlumnoQrData } from '../utils/jornadaAlumnoQr';
 import { alertarMetaAlumnosJornada } from '../utils/metaAlumnosAlert';
 import {
@@ -31,28 +30,29 @@ import {
   finalizarClase,
   inscritosClase,
   iniciarClase,
+  listadoAsistenciaClaseHtml,
   listarAsistencias,
   matricularAlumno,
   obtenerClase,
   programasJornadaCap,
   progresoCertificacion,
-  registrarAsistencia,
   subirFotoEvidencia,
 } from '../api/jornadasApi';
 import type {
   AsistenciaClase,
   ClaseJornada,
   InscritoClase,
+  MetaJornadaResp,
   ProgramaJornada,
   ProgresoCert,
 } from '../api/types';
 import { UBICACIONES_CLASE } from '../config/appBranding';
 import { getUploadsBaseUrl } from '../config/apiBase';
+import { compartirHtmlPdf, imprimirHtml } from '../services/documentoPrint';
 import {
   formatCronometro,
-  isoAHoraInput,
+  isoAHoraCompleta,
   msDuracionClase,
-  validarHoraInput,
 } from '../utils/jornadaUi';
 import { themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
@@ -79,7 +79,7 @@ export default function ClaseDetalleScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
-  const { claseId, jornadaLabel, idContrato } = route.params;
+  const { claseId, jornadaLabel, idContrato, prefillNumDoc } = route.params;
 
   const [clase, setClase] = useState<ClaseJornada | null>(null);
   const [programas, setProgramas] = useState<ProgramaJornada[]>([]);
@@ -90,8 +90,6 @@ export default function ClaseDetalleScreen() {
 
   const [progSel, setProgSel] = useState('');
   const [ubicSel, setUbicSel] = useState('Carpa');
-  const [horaIni, setHoraIni] = useState('');
-  const [horaFin, setHoraFin] = useState('');
 
   const [numDoc, setNumDoc] = useState('');
   const [nombrePreview, setNombrePreview] = useState('');
@@ -100,6 +98,11 @@ export default function ClaseDetalleScreen() {
   const [tick, setTick] = useState(() => Date.now());
   const [scanQrOpen, setScanQrOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const nd = String(prefillNumDoc || '').replace(/\D/g, '');
+    if (nd) setNumDoc(nd);
+  }, [prefillNumDoc]);
 
   const aplicarClaseEnPantalla = useCallback((cl: ClaseJornada, lista: ProgramaJornada[]) => {
     setClase(cl);
@@ -115,8 +118,6 @@ export default function ClaseDetalleScreen() {
         : undefined);
     setProgSel(match ? programaId(match) : idClaseProg);
     setUbicSel(cl.ubicacion || 'Carpa');
-    setHoraIni(isoAHoraInput(cl.horaInicio));
-    setHoraFin(isoAHoraInput(cl.horaFin));
   }, []);
 
   const cargar = useCallback(async () => {
@@ -261,43 +262,11 @@ export default function ClaseDetalleScreen() {
     }
   }
 
-  async function guardarHorario() {
-    const hi = horaIni.trim();
-    const hf = horaFin.trim();
-    if (hi && !validarHoraInput(hi)) {
-      Alert.alert('Horario', 'Hora de inicio inválida. Use HH:mm (ej. 08:30).');
-      return;
-    }
-    if (hf && !validarHoraInput(hf)) {
-      Alert.alert('Horario', 'Hora de fin inválida. Use HH:mm (ej. 08:30).');
-      return;
-    }
-    setBusy(true);
-    try {
-      // Solo horarios planificados: no cierran la clase (eso lo hace Finalizar).
-      const updated = await actualizarClase(claseId, {
-        horarioManual: true,
-        horaInicio: hi || null,
-        horaFin: hf || null,
-      });
-      setClase(updated);
-      setHoraIni(isoAHoraInput(updated.horaInicio));
-      setHoraFin(isoAHoraInput(updated.horaFin));
-      Alert.alert('Horario', 'Horario planificado guardado.');
-    } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo guardar horario');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function onReabrirClase() {
     setBusy(true);
     try {
       const updated = await actualizarClase(claseId, { reabrir: true });
       setClase(updated);
-      setHoraIni(isoAHoraInput(updated.horaInicio));
-      setHoraFin(isoAHoraInput(updated.horaFin));
       Alert.alert('Clase reabierta', 'Ya puede editar programa y registrar alumnos.');
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo reabrir la clase');
@@ -306,18 +275,14 @@ export default function ClaseDetalleScreen() {
     }
   }
 
+  /** En móvil siempre hora real (cronómetro). Ajustes manuales = frontend web. */
   async function onIniciar() {
     setBusy(true);
     try {
-      const updated = await iniciarClase(claseId, {
-        horarioManual: clase?.horarioManual === true,
-        ...(clase?.horarioManual === true && horaIni ? { horaInicio: horaIni } : {}),
-        ...(clase?.horarioManual === true && horaFin ? { horaFin } : {}),
-      });
+      const updated = await iniciarClase(claseId, { horarioManual: false });
       setClase(updated);
-      setHoraIni(isoAHoraInput(updated.horaInicio));
       setTick(Date.now());
-      Alert.alert('Clase', 'Clase iniciada. El cronómetro está en marcha.');
+      Alert.alert('Clase', 'Cronómetro iniciado con la hora real del dispositivo/servidor.');
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo iniciar');
     } finally {
@@ -326,37 +291,18 @@ export default function ClaseDetalleScreen() {
   }
 
   async function onFinalizar() {
-    const hi = horaIni.trim();
-    const hf = horaFin.trim();
-    if (hi && !validarHoraInput(hi)) {
-      Alert.alert('Horario', 'Hora de inicio inválida. Use HH:mm (ej. 08:30).');
-      return;
-    }
-    if (hf && !validarHoraInput(hf)) {
-      Alert.alert('Horario', 'Hora de fin inválida. Use HH:mm (ej. 17:00).');
-      return;
-    }
-    if (!hi && !clase?.horaInicio) {
+    if (!clase?.horaInicio && !enCurso) {
       Alert.alert(
         'Hora de inicio',
-        'Indique la hora de inicio arriba o pulse ▶ Iniciar antes de finalizar.',
+        'Pulse ▶ Iniciar cronómetro antes de finalizar, para registrar la hora real de inicio.',
       );
       return;
     }
 
     setBusy(true);
     try {
-      // Usa las horas del formulario (editables). Si no hay fin, el servidor pone la hora actual.
-      const r = await finalizarClase(claseId, {
-        horarioManual: clase?.horarioManual === true,
-        ...(hi ? { horaInicio: hi } : {}),
-        ...(hf ? { horaFin: hf } : {}),
-      });
-      if (r.clase) {
-        setClase(r.clase);
-        setHoraIni(isoAHoraInput(r.clase.horaInicio));
-        setHoraFin(isoAHoraInput(r.clase.horaFin));
-      }
+      const r = await finalizarClase(claseId, { horarioManual: false });
+      if (r.clase) setClase(r.clase);
       await cargar();
       const nCert = r.certificadosGenerados ?? 0;
       let msg =
@@ -365,6 +311,13 @@ export default function ClaseDetalleScreen() {
           : 'Clase cerrada. No se emitieron certificados nuevos (revise sesiones requeridas o si ya tenían certificado).';
       if (r.asistenciasRegistradas) {
         msg += ` Asistencias pendientes registradas: ${r.asistenciasRegistradas}.`;
+      }
+      const hi = isoAHoraCompleta(r.clase?.horaInicio);
+      const hf = isoAHoraCompleta(r.clase?.horaFin);
+      const durMs = msDuracionClase(r.clase?.horaInicio, r.clase?.horaFin);
+      if (hi && hf) {
+        msg += `\n\nHorario real: ${hi} → ${hf}`;
+        if (durMs != null) msg += ` (${formatCronometro(durMs)})`;
       }
       Alert.alert('Clase finalizada', msg);
     } catch (e) {
@@ -394,12 +347,49 @@ export default function ClaseDetalleScreen() {
     }
   }
 
-  /** Un solo paso ambulante: matricular + inscribir + asistencia. El certificado sale al finalizar. */
+  async function onListadoAsistencia() {
+    setBusy(true);
+    try {
+      const html = await listadoAsistenciaClaseHtml(claseId);
+      Alert.alert('Listado de asistencia', '¿Qué desea hacer?', [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Imprimir',
+          onPress: () => {
+            void imprimirHtml(html).catch((e) =>
+              Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo imprimir'),
+            );
+          },
+        },
+        {
+          text: 'Compartir PDF',
+          onPress: () => {
+            void compartirHtmlPdf(html, `asistencia-clase-${claseId}`).catch((e) =>
+              Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo compartir'),
+            );
+          },
+        },
+      ]);
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo generar el listado');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Matricular + inscribir. La asistencia se fuerza al finalizar la clase. */
   async function onRegistrarAlumno(opts?: { numDoc?: string; nombre?: string }) {
     const nd = (opts?.numDoc ?? numDoc).trim().replace(/\D/g, '') || (opts?.numDoc ?? numDoc).trim();
     const nombreHint = (opts?.nombre || nombrePreview || nd).trim();
     if (!nd) {
       Alert.alert('Documento', 'Escriba el documento o escanee el QR de la etiqueta.');
+      return;
+    }
+    if (finalizada) {
+      Alert.alert(
+        'Clase finalizada',
+        'No se pueden agregar alumnos a una clase ya finalizada.',
+      );
       return;
     }
     if (!progSel.trim()) {
@@ -411,30 +401,22 @@ export default function ClaseDetalleScreen() {
       return;
     }
 
-    // Ya tiene asistencia en esta clase
     const yaEnClase = inscritos.find(
       (i) => String(i.numDoc).replace(/\D/g, '') === nd || String(i.numDoc) === nd,
     );
-    if (yaEnClase?.tieneAsistencia) {
+    if (yaEnClase) {
       Alert.alert(
-        'Ya registrado',
-        `${yaEnClase.nombreCompleto || nombreHint} ya tiene asistencia en esta clase.`,
-      );
-      return;
-    }
-    if (yaEnClase?.yaCertificadoContrato) {
-      Alert.alert(
-        'Ya certificado',
-        `${yaEnClase.nombreCompleto || nombreHint} ya tiene certificado en este contrato` +
-          (yaEnClase.certificadoCodigo ? ` (${yaEnClase.certificadoCodigo})` : '') +
-          '. No se puede matricular de nuevo.',
+        'Ya en la clase',
+        `${yaEnClase.nombreCompleto || nombreHint} ya está inscrito en esta clase.` +
+          (yaEnClase.tieneAsistencia
+            ? ' Ya tiene asistencia.'
+            : ' La asistencia se registrará al finalizar.'),
       );
       return;
     }
 
     setBusy(true);
     try {
-      // Siempre consultar progreso del documento (también al escanear QR).
       const p = await progresoCertificacion(nd, idContrato);
       setProgreso(p);
       if (p?.certificado) {
@@ -442,28 +424,35 @@ export default function ClaseDetalleScreen() {
           'Ya certificado',
           `${nombreHint} ya tiene certificado en este contrato` +
             (p.certificado.codigoCert ? ` (${p.certificado.codigoCert})` : '') +
-            '. No se puede matricular ni registrar de nuevo.',
+            '. No se puede matricular de nuevo.',
         );
         return;
       }
 
       const idProg = await persistirProgramaEnClase(progSel, { silencioso: true });
-      await matricularAlumno(nd, idProg, claseId);
-      const r = await registrarAsistencia(claseId, nd);
-      const nombre = (r.nombreAlumno || nombreHint || nd).trim();
+      const r = (await matricularAlumno(nd, idProg, claseId)) as {
+        inscripcionDuplicada?: boolean;
+        metaJornada?: MetaJornadaResp | null;
+      };
+      let nombre = nombreHint;
+      try {
+        const alu = await buscarAlumnoDoc(nd);
+        const n = nombreAlumno(alu);
+        if (n) nombre = n;
+      } catch {
+        /* keep hint */
+      }
       setNumDoc('');
       setProgreso(null);
       setNombrePreview('');
       await cargar();
       const okMsg =
-        `${nombre} quedó registrado en la clase.` +
-        (r.sesiones != null
-          ? ` Progreso ${r.sesiones}/${r.numSesCert ?? '?'} sesiones.`
-          : '') +
-        (r.faltan != null && r.faltan > 0 ? ` Faltan ${r.faltan}.` : '');
+        `${nombre} quedó inscrito en la clase.` +
+        (r.inscripcionDuplicada ? ' (ya estaba inscrito).' : '') +
+        ' La asistencia se registrará al finalizar la clase.';
       const meta = r.metaJornada;
       if (meta?.metaAlcanzada && meta.mensaje) {
-        Alert.alert('Alumno matriculado', okMsg, [
+        Alert.alert('Alumno inscrito', okMsg, [
           {
             text: 'Continuar',
             onPress: () =>
@@ -473,7 +462,7 @@ export default function ClaseDetalleScreen() {
           },
         ]);
       } else {
-        Alert.alert('Alumno matriculado', okMsg);
+        Alert.alert('Alumno inscrito', okMsg);
       }
     } catch (e) {
       const err = e as Error & {
@@ -507,6 +496,28 @@ export default function ClaseDetalleScreen() {
         return;
       }
       const msg = err.body?.message || err.message || 'No se pudo registrar al alumno';
+      if (err.status === 404 || /alumno no encontrado/i.test(msg)) {
+        Alert.alert(
+          'Alumno no encontrado',
+          `No hay ficha para el documento ${nd}. Puede crearlo como alumno de jornada de capacitación.`,
+          [
+            {
+              text: 'Crear alumno',
+              onPress: () =>
+                nav.navigate('CrearAlumnoJornada', {
+                  numDoc: nd,
+                  claseId,
+                  jornadaLabel,
+                  idContrato,
+                  codContrato: clase?.codContrato || clase?.contratoLabel,
+                  fechaJornada: clase?.fechaClase || clase?.fechaJornada,
+                }),
+            },
+            { text: 'Cancelar', style: 'cancel' },
+          ],
+        );
+        return;
+      }
       if (/certificad/i.test(msg)) {
         Alert.alert('Ya certificado', msg);
         return;
@@ -569,25 +580,23 @@ export default function ClaseDetalleScreen() {
           <DataChip
             label={clase?.contratoLabel || clase?.codContrato || 'Contrato'}
             icon="briefcase-outline"
-            tone="lavender"
+            tone="neutral"
           />
           {clase?.carpaNombre ? (
-            <DataChip label={clase.carpaNombre} icon="business-outline" tone="pink" />
+            <DataChip label={clase.carpaNombre} icon="business-outline" tone="neutral" />
           ) : null}
           <DataChip
             label={ubicSel || clase?.ubicacion || '—'}
             icon="location-outline"
-            tone="sky"
+            tone="soft"
           />
-          {(horaIni || clase?.horaInicio) && (
+          {(clase?.horaInicio || clase?.horaFin) && (
             <DataChip
-              label={`${horaIni || isoAHoraInput(clase?.horaInicio)}${
-                horaFin || clase?.horaFin
-                  ? ` – ${horaFin || isoAHoraInput(clase?.horaFin)}`
-                  : ''
+              label={`${isoAHoraCompleta(clase?.horaInicio) || '—'}${
+                clase?.horaFin ? ` → ${isoAHoraCompleta(clase.horaFin)}` : enCurso ? ' → …' : ''
               }`}
               icon="time-outline"
-              tone="peach"
+              tone="soft"
             />
           )}
           <DataChip
@@ -607,9 +616,7 @@ export default function ClaseDetalleScreen() {
                   ? 'hand-left-outline'
                   : 'person-outline'
             }
-            tone={
-              clase?.instructorNombre ? 'deep' : libreParaTomar ? 'mint' : 'neutral'
-            }
+            tone="neutral"
           />
         </View>
       </SurfaceCard>
@@ -636,30 +643,8 @@ export default function ClaseDetalleScreen() {
           Ubicación
         </ScaledText>
         <View style={styles.chipsWrap}>
-          {UBICACIONES_CLASE.map((u, i) => {
+          {UBICACIONES_CLASE.map((u) => {
             const sel = ubicSel === u;
-            const palette = [
-              c.pastelSky,
-              c.pastelPeach,
-              c.pastelLavender,
-              c.pastelMint,
-              c.pastelRose,
-              c.pastelAmber,
-              c.pastelLilac,
-              c.pastelSlate,
-            ];
-            const fg = [
-              c.pastelSkyFg,
-              c.pastelPeachFg,
-              c.pastelLavenderFg,
-              c.pastelMintFg,
-              c.pastelRoseFg,
-              c.pastelAmberFg,
-              c.pastelLilacFg,
-              c.pastelSlateFg,
-            ];
-            const bg = palette[i % palette.length];
-            const color = fg[i % fg.length];
             return (
               <Pressable
                 key={u}
@@ -667,12 +652,15 @@ export default function ClaseDetalleScreen() {
                 style={[
                   styles.chip,
                   {
-                    backgroundColor: sel ? color : bg,
-                    borderColor: color,
+                    backgroundColor: sel ? c.primary : c.bgAlt,
+                    borderColor: sel ? c.primary : c.border,
                   },
                 ]}
               >
-                <ScaledText baseSize={12} style={{ color: sel ? '#fff' : color, fontWeight: '700' }}>
+                <ScaledText
+                  baseSize={12}
+                  style={{ color: sel ? '#fff' : c.textSoft, fontWeight: '700' }}
+                >
                   {u}
                 </ScaledText>
               </Pressable>
@@ -689,42 +677,13 @@ export default function ClaseDetalleScreen() {
       </SurfaceCard>
 
       <ScaledText baseSize={15} style={styles.sectionTitle}>
-        Horario de la clase
+        Operación (horario real)
       </ScaledText>
       <SurfaceCard>
-        <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
-          Toque para elegir la hora (sin digitar). Al finalizar se usan estas horas y se emiten los certificados.
+        <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 10 }}>
+          En la app móvil la hora de inicio y fin se toman al pulsar Iniciar y Finalizar. Para
+          corregir un horario use el frontend web.
         </ScaledText>
-        <View style={styles.horarioRow}>
-          <TimePickerField
-            label="Hora de inicio"
-            value={horaIni}
-            onChange={setHoraIni}
-            disabled={finalizada || busy}
-            placeholder="Elegir inicio"
-          />
-          <TimePickerField
-            label="Hora de fin"
-            value={horaFin}
-            onChange={setHoraFin}
-            disabled={finalizada || busy}
-            placeholder="Elegir fin"
-          />
-        </View>
-        <View style={{ height: 10 }} />
-        <PrimaryButton
-          label="Guardar horario"
-          onPress={() => void guardarHorario()}
-          disabled={busy || finalizada}
-          fullWidth
-          variant="ghost"
-        />
-      </SurfaceCard>
-
-      <ScaledText baseSize={15} style={styles.sectionTitle}>
-        Operación
-      </ScaledText>
-      <SurfaceCard>
         {finalizada ? (
           <View style={{ marginBottom: 12 }}>
             <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 8 }}>
@@ -755,7 +714,7 @@ export default function ClaseDetalleScreen() {
           ]}
         >
           <ScaledText baseSize={12} style={{ color: c.textSoft, fontWeight: '700', letterSpacing: 1 }}>
-            {enCurso ? 'EN CURSO' : finalizada ? 'DURACIÓN TOTAL' : 'CRONÓMETRO'}
+            {enCurso ? 'EN CURSO' : finalizada ? 'DURACIÓN REAL' : 'CRONÓMETRO'}
           </ScaledText>
           <ScaledText
             baseSize={36}
@@ -768,13 +727,31 @@ export default function ClaseDetalleScreen() {
           >
             {textoCronometro}
           </ScaledText>
-          <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
-            {horaIni || isoAHoraInput(clase?.horaInicio) || '—'}
-            {' → '}
-            {finalizada
-              ? horaFin || isoAHoraInput(clase?.horaFin) || '—'
-              : horaFin || 'en curso / al finalizar'}
-          </ScaledText>
+          <View style={styles.horaRealRow}>
+            <View style={styles.horaRealBox}>
+              <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
+                INICIO REAL
+              </ScaledText>
+              <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '800', marginTop: 2 }}>
+                {isoAHoraCompleta(clase?.horaInicio) || '—'}
+              </ScaledText>
+            </View>
+            <ScaledText baseSize={18} style={{ color: c.textSoft, fontWeight: '700' }}>
+              →
+            </ScaledText>
+            <View style={styles.horaRealBox}>
+              <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
+                FIN REAL
+              </ScaledText>
+              <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '800', marginTop: 2 }}>
+                {finalizada
+                  ? isoAHoraCompleta(clase?.horaFin) || '—'
+                  : enCurso
+                    ? 'en curso…'
+                    : '—'}
+              </ScaledText>
+            </View>
+          </View>
         </View>
         <View style={{ height: 12 }} />
         <PrimaryButton
@@ -795,7 +772,8 @@ export default function ClaseDetalleScreen() {
           icon="checkmark-done-outline"
         />
         <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 8, textAlign: 'center' }}>
-          Cierra la clase con las horas indicadas y genera certificados si el contrato lo permite.
+          Al finalizar se registra la hora real de cierre y se generan certificados si el contrato lo
+          permite.
         </ScaledText>
         <View style={{ height: 10 }} />
         <PrimaryButton
@@ -815,14 +793,41 @@ export default function ClaseDetalleScreen() {
         Alumnos en la clase
       </ScaledText>
       <SurfaceCard>
+        <PrimaryButton
+          label="Listado de asistencia"
+          icon="list-outline"
+          variant="ghost"
+          onPress={() => void onListadoAsistencia()}
+          disabled={busy}
+          fullWidth
+        />
+        <View style={{ height: 12 }} />
         <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
-          Escanee el QR de la etiqueta (impresa desde el PC) o digite el documento. Los certificados se
-          emiten al finalizar la clase.
+          Puede inscribir alumnos antes de iniciar o durante la clase. Al finalizar se registra la
+          asistencia de todos los inscritos y se emiten certificados según el contrato.
         </ScaledText>
         <PrimaryButton
           label="Escanear QR del alumno"
           icon="qr-code-outline"
           onPress={() => setScanQrOpen(true)}
+          disabled={busy || finalizada}
+          fullWidth
+        />
+        <View style={{ height: 10 }} />
+        <PrimaryButton
+          label="Crear alumno de jornada"
+          icon="person-add-outline"
+          variant="ghost"
+          onPress={() =>
+            nav.navigate('CrearAlumnoJornada', {
+              numDoc: numDoc.trim() || undefined,
+              claseId,
+              jornadaLabel,
+              idContrato,
+              codContrato: clase?.codContrato || clase?.contratoLabel,
+              fechaJornada: clase?.fechaClase || clase?.fechaJornada,
+            })
+          }
           disabled={busy || finalizada}
           fullWidth
         />
@@ -855,11 +860,11 @@ export default function ClaseDetalleScreen() {
           </ScaledText>
         ) : null}
         <PrimaryButton
-          label="Registrar alumno en la clase"
+          label="Inscribir alumno en la clase"
           onPress={() => void onRegistrarAlumno()}
           disabled={busy || finalizada}
           fullWidth
-          icon="person-add-outline"
+          icon="checkmark-circle-outline"
         />
       </SurfaceCard>
 
@@ -878,7 +883,7 @@ export default function ClaseDetalleScreen() {
                 {ins.tieneAsistencia ? (
                   <DataChip label="Asistió" icon="checkmark-circle" tone="mint" />
                 ) : (
-                  <DataChip label="Pendiente" icon="hourglass-outline" tone="amber" />
+                  <DataChip label="Inscrito" icon="person-outline" tone="amber" />
                 )}
                 {ins.yaCertificadoContrato ? (
                   <DataChip
@@ -938,7 +943,18 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  horarioRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  horaRealRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginTop: 12,
+    width: '100%',
+  },
+  horaRealBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
   opRow: { flexDirection: 'row', gap: 10, justifyContent: 'space-between' },
   cronoBox: {
     borderWidth: 1,

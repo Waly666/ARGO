@@ -21,7 +21,7 @@ import { ProgramaPicker } from '../components/ProgramaPicker';
 import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
 import { useAuth } from '../context/AuthContext';
-import { tienePermiso } from '../utils/permisos';
+import { puedeGestionarJornadas } from '../utils/permisos';
 import { crearClase, listarClases, programasJornadaCap } from '../api/jornadasApi';
 import type { ClaseJornada, ProgramaJornada } from '../api/types';
 import { UBICACIONES_CLASE } from '../config/appBranding';
@@ -39,7 +39,7 @@ export default function ClasesJornadaScreen() {
   const c = themeColors(highContrast);
   const { jornadaId, jornadaLabel, idContrato } = route.params;
   const user = state.status === 'signedIn' ? state.user : null;
-  const esAdmin = tienePermiso(user?.permisos, 'jornadas.gestionar');
+  const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
 
   const [clases, setClases] = useState<ClaseJornada[]>([]);
   const [programas, setProgramas] = useState<ProgramaJornada[]>([]);
@@ -116,7 +116,15 @@ export default function ClasesJornadaScreen() {
                 Ve clases programadas sin instructor y las que usted operó o finalizó.
               </ScaledText>
             ) : (
-              <View style={{ height: 4 }} />
+              <View style={{ marginBottom: 10 }}>
+                <PrimaryButton
+                  label="Editar ubicación / GPS de la jornada"
+                  icon="navigate-outline"
+                  variant="ghost"
+                  fullWidth
+                  onPress={() => nav.navigate('EditarJornada', { jornadaId })}
+                />
+              </View>
             )}
             <PrimaryButton
               label="Nueva clase"

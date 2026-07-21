@@ -798,6 +798,17 @@ exports.listarJornadas = async (req, res, next) => {
   }
 };
 
+exports.obtenerJornada = async (req, res, next) => {
+  try {
+    const j = await JornadaCap.findById(req.params.id).lean();
+    if (!j) return res.status(404).json({ message: 'Jornada no encontrada' });
+    const synced = await sincronizarEstadoJornada(j);
+    res.json(await enrichJornadaConContrato(synced));
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.resolverMunicipioGeoref = async (req, res, next) => {
   try {
     const lat = parseCoord(req.query.lat);
@@ -1689,6 +1700,8 @@ exports.sincronizarAsistenciasInscritos = async (req, res, next) => {
 
     const syncAsis = await registrarAsistenciasInscritosPendientes(req, clase, {
       omitirValidacionJornada: true,
+      omitirValidacionEstadoClase: true,
+      omitirCertificado: true,
     });
 
     let certificadosEmitidos = syncAsis.certificadosEmitidos || [];
@@ -1784,6 +1797,7 @@ exports.registrarAsistencia = async (req, res, next) => {
     const payload = await registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, {
       jornada,
       ctxCert,
+      omitirCertificado: true,
     });
 
     const metaJornada = await evaluarMetaAlumnosJornada(jornada);
@@ -1797,7 +1811,9 @@ exports.registrarAsistencia = async (req, res, next) => {
     }
 
     let message = `Asistencia registrada (${payload.sesiones}/${payload.numSesCert} sesiones del contrato)`;
-    if (payload.certificadoGenerado) {
+    if (payload.motivoCertificado === 'diferido_al_finalizar') {
+      message = `${message}. El certificado se evaluará al finalizar la clase.`;
+    } else if (payload.certificadoGenerado) {
       message = payload.mensajeCertificado || 'Certificado emitido automáticamente.';
     } else if (payload.cumplioSesiones && payload.motivoCertificado === 'ya_certificado') {
       message = 'Asistencia registrada. El alumno ya tiene certificado para este contrato.';
@@ -1885,6 +1901,19 @@ exports.quitarInscripcionClase = async (req, res, next) => {
 
     res.json({ ok: true, numDoc, asistenciaEliminada: !!asistenciaEliminada });
   } catch (e) {
+    next(e);
+  }
+};
+
+/** HTML imprimible del listado de asistencia de la clase. */
+exports.htmlListadoAsistenciaClase = async (req, res, next) => {
+  try {
+    const { buildHtmlListadoAsistenciaClase } = require('../services/listadoAsistenciaClaseHtml');
+    const html = await buildHtmlListadoAsistenciaClase(req.params.id, req.idSede);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };
@@ -2452,6 +2481,128 @@ exports.buscarAlumnoDoc = async (req, res, next) => {
     res.json({
       ...al,
       tipoAlumno: normalizarTipoRegularJornada(al.tipoAlumno),
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+/**
+ * Alta rápida de alumno tipo «Jornadas de Capacitación» (permiso jornadas.operar).
+ * Pensado para la app móvil en carpa: PDF417 / digitación sin exigir alumnos.gestionar.
+ */
+exports.crearAlumnoJornadaCap = async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const numDoc = parseNumDoc(body.numDoc);
+    if (numDoc == null) {
+      return res.status(400).json({ message: 'Documento inválido (6 a 14 dígitos)' });
+    }
+    const nombre1 = String(body.nombre1 || '')
+      .trim()
+      .toUpperCase();
+    const apellido1 = String(body.apellido1 || '')
+      .trim()
+      .toUpperCase();
+    if (!nombre1 || !apellido1) {
+      return res.status(400).json({ message: 'Primer nombre y primer apellido son obligatorios' });
+    }
+
+    const existe = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+    if (existe) {
+      return res.status(409).json({
+        message: 'Ya existe un alumno con ese documento',
+        codigo: 'alumno_duplicado',
+        alumno: {
+          _id: String(existe._id),
+          numDoc: existe.numDoc,
+          nombre1: existe.nombre1,
+          nombre2: existe.nombre2,
+          apellido1: existe.apellido1,
+          apellido2: existe.apellido2,
+          tipoAlumno: normalizarTipoRegularJornada(existe.tipoAlumno),
+        },
+      });
+    }
+
+    const upper = (v) => {
+      const s = String(v || '').trim();
+      return s ? s.toUpperCase() : '';
+    };
+    const now = new Date();
+    const userAdd = auditoriaUsuario(req) || 'sistema';
+    const dto = {
+      tipoAlumno: TIPO_JORNADAS_CAPACITACION,
+      tipoDoc: String(body.tipoDoc || '1').trim() || '1',
+      numDoc,
+      nombre1,
+      apellido1,
+      nombre2: upper(body.nombre2) || undefined,
+      apellido2: upper(body.apellido2) || undefined,
+      genero: (() => {
+        const g = upper(body.genero);
+        return g === 'M' || g === 'F' ? g : undefined;
+      })(),
+      tipoSangre: (() => {
+        const t = upper(body.tipoSangre).replace(/\s+/g, '');
+        return /^(AB|A|B|O)[+-]$/.test(t) ? t : undefined;
+      })(),
+      jornada: String(body.jornada || '').trim() || undefined,
+      estadoCivil: String(body.estadoCivil || '').trim() || undefined,
+      estrato: String(body.estrato || '').trim() || undefined,
+      regimenSalud: String(body.regimenSalud || '').trim() || undefined,
+      nivelFormacion: String(body.nivelFormacion || '').trim() || undefined,
+      ocupacion: String(body.ocupacion || '').trim() || undefined,
+      discapacidad: String(body.discapacidad || '9').trim() || '9',
+      multiCulturalidad: String(body.multiCulturalidad || 'NO_APLICA').trim() || 'NO_APLICA',
+      observaciones: String(body.observaciones || '').trim() || undefined,
+      expedida: String(body.expedida || '').trim() || undefined,
+      correo: String(body.correo || '').trim().toLowerCase() || undefined,
+      celular: String(body.celular || '').trim() || undefined,
+      direccion: String(body.direccion || '').trim() || undefined,
+      munOrigen: String(body.munOrigen || body.codMunicipio || '').trim() || undefined,
+      codMunicipio: String(body.codMunicipio || body.munOrigen || '').trim() || undefined,
+      fechaReg: now,
+      fechaAudi: now,
+      fechaMod: now,
+      userAddReg: userAdd,
+    };
+    if (body.fechaNac) {
+      const fn = new Date(body.fechaNac);
+      if (!Number.isNaN(fn.getTime())) dto.fechaNac = fn;
+    }
+
+    let a;
+    try {
+      a = await DatosAlumno.create(dto);
+    } catch (err) {
+      if (err?.code === 11000) {
+        const dup = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+        if (dup) {
+          return res.status(409).json({
+            message: 'Ya existe un alumno con ese documento',
+            codigo: 'alumno_duplicado',
+            alumno: {
+              _id: String(dup._id),
+              numDoc: dup.numDoc,
+              nombre1: dup.nombre1,
+              apellido1: dup.apellido1,
+              tipoAlumno: normalizarTipoRegularJornada(dup.tipoAlumno),
+            },
+          });
+        }
+      }
+      throw err;
+    }
+
+    const lean = a.toObject ? a.toObject() : a;
+    res.status(201).json({
+      ...lean,
+      _id: String(lean._id),
+      tipoAlumno: TIPO_JORNADAS_CAPACITACION,
+      nombreCompleto: [lean.nombre1, lean.nombre2, lean.apellido1, lean.apellido2]
+        .filter(Boolean)
+        .join(' '),
     });
   } catch (e) {
     next(e);

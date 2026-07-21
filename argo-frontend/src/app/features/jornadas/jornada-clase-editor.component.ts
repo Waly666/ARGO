@@ -1383,6 +1383,17 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     void this.imprimirEtiquetaQrInscritoAsync(a);
   }
 
+  imprimirListadoAsistencia(): void {
+    const id = String(this.claseActiva()?._id || '').trim();
+    if (!id) {
+      this.mostrarMsg('No hay clase seleccionada.', 'warn', 'Listado');
+      return;
+    }
+    this.jornadaSvc.abrirHtmlListadoAsistenciaClase(id, (m) =>
+      this.mostrarMsg(m, 'error', 'Listado de asistencia'),
+    );
+  }
+
   private async imprimirEtiquetaQrInscritoAsync(a: {
     numDoc: number;
     nombreCompleto?: string;

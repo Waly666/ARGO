@@ -9,3 +9,17 @@ export function tienePermiso(permisos: string[] | undefined, clave: string | str
 export function puedeOperarJornadas(permisos?: string[]): boolean {
   return tienePermiso(permisos, ['jornadas.operar', 'jornadas.gestionar']);
 }
+
+/** Admin / gestor: editar ubicación y coordenadas de la jornada. */
+export function puedeGestionarJornadas(
+  permisos?: string[],
+  rol?: string,
+  rolNombre?: string,
+): boolean {
+  if (tienePermiso(permisos, ['*', 'jornadas.gestionar'])) return true;
+  const r = String(rol || '').trim().toLowerCase();
+  if (r === 'admin' || r === 'administrador') return true;
+  const rn = String(rolNombre || '').trim().toLowerCase();
+  if (rn.includes('admin')) return true;
+  return false;
+}

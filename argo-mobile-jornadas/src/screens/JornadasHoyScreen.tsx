@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -14,11 +15,14 @@ import { formatoIdClaseCorto } from '../components/ClaseIdChip';
 import { DataChip, type ChipTone } from '../components/DataChip';
 import { EmptyState } from '../components/EmptyState';
 import { PressableCard } from '../components/PressableCard';
+import { PrimaryButton } from '../components/PrimaryButton';
 import { ScaledText } from '../components/ScaledText';
 import { jornadasDelDia } from '../api/jornadasApi';
 import type { JornadaCap } from '../api/types';
+import { useAuth } from '../context/AuthContext';
 import { fmtFecha, ymdLocal } from '../utils/jornadaUi';
 import { alertarMetaDesdeJornada } from '../utils/metaAlumnosAlert';
+import { puedeGestionarJornadas } from '../utils/permisos';
 import { colors, themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
 import type { RootStackParamList } from '../navigation/types';
@@ -50,8 +54,11 @@ function estadoJornadaChip(estado?: string): {
 
 export default function JornadasHoyScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const { state } = useAuth();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
+  const user = state.status === 'signedIn' ? state.user : null;
+  const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
   const [rows, setRows] = useState<JornadaCap[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -83,6 +90,32 @@ export default function JornadasHoyScreen() {
   const operables = rows.filter((j) => j.estado === 'EN PROCESO');
   const otras = rows.filter((j) => j.estado !== 'EN PROCESO');
 
+  function abrirClases(j: JornadaCap) {
+    nav.navigate('ClasesJornada', {
+      jornadaId: j._id,
+      jornadaLabel: labelJornada(j),
+      idContrato: j.idContrato,
+    });
+  }
+
+  function abrirEditar(j: JornadaCap) {
+    nav.navigate('EditarJornada', { jornadaId: j._id });
+  }
+
+  function onTapJornada(j: JornadaCap, operable: boolean) {
+    if (esAdmin) {
+      Alert.alert(labelJornada(j), '¿Qué desea hacer?', [
+        { text: 'Editar jornada / GPS', onPress: () => abrirEditar(j) },
+        ...(operable || esAdmin
+          ? [{ text: 'Ver / operar clases', onPress: () => abrirClases(j) }]
+          : []),
+        { text: 'Cancelar', style: 'cancel' },
+      ]);
+      return;
+    }
+    if (operable) abrirClases(j);
+  }
+
   function renderItem(j: JornadaCap, operable: boolean) {
     const est = estadoJornadaChip(j.estado);
     const lugar = [j.municipio, j.direccion].filter(Boolean).join(' · ') || 'Sin ubicación';
@@ -95,22 +128,14 @@ export default function JornadasHoyScreen() {
           ? Number(j.numeObjeJornada) || 0
           : 0;
     const metaOk = j.metaAlcanzada || (metaAlumnos > 0 && alumnosLleva >= metaAlumnos);
+    const puedeAbrir = operable || esAdmin;
 
     return (
+      <View key={j._id} style={{ marginBottom: 4 }}>
       <PressableCard
-        key={j._id}
-        disabled={!operable}
-        onPress={
-          operable
-            ? () =>
-                nav.navigate('ClasesJornada', {
-                  jornadaId: j._id,
-                  jornadaLabel: labelJornada(j),
-                  idContrato: j.idContrato,
-                })
-            : undefined
-        }
-        style={{ opacity: operable ? 1 : 0.78 }}
+        disabled={!puedeAbrir}
+        onPress={puedeAbrir ? () => onTapJornada(j, operable) : undefined}
+        style={{ opacity: puedeAbrir ? 1 : 0.78 }}
         cardStyle={styles.jornadaCard}
       >
         <View style={[styles.cardAccent, { backgroundColor: est.accent }]} />
@@ -193,7 +218,11 @@ export default function JornadasHoyScreen() {
           ) : null}
 
           <View style={[styles.cardFooter, { borderTopColor: c.border }]}>
-            {operable ? (
+            {esAdmin ? (
+              <ScaledText baseSize={12} style={{ color: c.primaryDark, fontWeight: '700' }}>
+                Toque para editar jornada o ver clases
+              </ScaledText>
+            ) : operable ? (
               <>
                 <DataChip
                   label={
@@ -229,6 +258,24 @@ export default function JornadasHoyScreen() {
           </View>
         </View>
       </PressableCard>
+          {esAdmin ? (
+            <View style={{ marginTop: 8, marginBottom: 8, gap: 8 }}>
+              <PrimaryButton
+                label="Editar jornada / GPS"
+                icon="create-outline"
+                fullWidth
+                onPress={() => abrirEditar(j)}
+              />
+              <PrimaryButton
+                label="Ver / operar clases"
+                icon="school-outline"
+                variant="ghost"
+                fullWidth
+                onPress={() => abrirClases(j)}
+              />
+            </View>
+          ) : null}
+      </View>
     );
   }
 
@@ -250,7 +297,10 @@ export default function JornadasHoyScreen() {
       ListHeaderComponent={
         <>
           <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 12 }}>
-            Hoy: {fmtFecha(new Date().toISOString())}. Toque una jornada en curso para operar clases.
+            Hoy: {fmtFecha(new Date().toISOString())}.
+            {esAdmin
+              ? ' Como administrador puede editar cualquier jornada (ubicación y GPS) o abrir sus clases.'
+              : ' Toque una jornada en curso para operar clases.'}
           </ScaledText>
           {err ? (
             <ScaledText baseSize={14} style={{ color: c.danger, marginBottom: 12 }}>

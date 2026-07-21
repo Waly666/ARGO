@@ -508,6 +508,14 @@
       <button
         type="button"
         class="ghost"
+        (click)="imprimirListadoAsistencia()"
+        [disabled]="!claseActiva()?._id"
+        title="Generar e imprimir el listado de asistencia de esta clase">
+        📋 Listado asistencia
+      </button>
+      <button
+        type="button"
+        class="ghost"
         (click)="guardarCambiosClaseModal()"
         [disabled]="!nuevaClaseProg()"
         title="Guardar cambios de programa, ubicación, instructor u horario">

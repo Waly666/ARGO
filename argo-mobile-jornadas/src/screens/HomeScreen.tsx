@@ -51,6 +51,15 @@ export default function HomeScreen() {
       onPress: () => nav.navigate('JornadasHoy'),
     },
     {
+      title: 'Nuevo alumno jornada',
+      hint: 'Alta con PDF417 de la cédula o digitación',
+      icon: 'person-add-outline',
+      accent: c.pastelMintFg,
+      iconBg: c.pastelMint,
+      iconColor: c.pastelMintFg,
+      onPress: () => nav.navigate('CrearAlumnoJornada', {}),
+    },
+    {
       title: 'Certificados emitidos',
       hint: 'Consulta y abre certificados de jornadas',
       icon: 'ribbon-outline',

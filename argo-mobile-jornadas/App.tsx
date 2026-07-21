@@ -16,6 +16,8 @@ import HomeScreen from './src/screens/HomeScreen';
 import JornadasHoyScreen from './src/screens/JornadasHoyScreen';
 import ClasesJornadaScreen from './src/screens/ClasesJornadaScreen';
 import ClaseDetalleScreen from './src/screens/ClaseDetalleScreen';
+import EditarJornadaScreen from './src/screens/EditarJornadaScreen';
+import CrearAlumnoJornadaScreen from './src/screens/CrearAlumnoJornadaScreen';
 import CertificadosScreen from './src/screens/CertificadosScreen';
 import CertificadoHtmlScreen from './src/screens/CertificadoHtmlScreen';
 
@@ -69,6 +71,16 @@ function RootNavigator() {
         options={({ route }) => ({ title: route.params.jornadaLabel.slice(0, 28) })}
       />
       <Stack.Screen name="ClaseDetalle" component={ClaseDetalleScreen} options={{ title: 'Operar clase' }} />
+      <Stack.Screen
+        name="EditarJornada"
+        component={EditarJornadaScreen}
+        options={{ title: 'Editar jornada' }}
+      />
+      <Stack.Screen
+        name="CrearAlumnoJornada"
+        component={CrearAlumnoJornadaScreen}
+        options={{ title: 'Nuevo alumno jornada' }}
+      />
       <Stack.Screen
         name="Certificados"
         component={CertificadosScreen}

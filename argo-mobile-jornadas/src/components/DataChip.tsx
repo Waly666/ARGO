@@ -24,17 +24,17 @@ export type ChipTone =
   | 'slate';
 
 const TONES: Record<ChipTone, { bg: string; fg: string; border: string }> = {
-  primary: { bg: '#eef0ff', fg: '#4f5fd6', border: '#a5b0ff' },
-  soft: { bg: '#ede9fe', fg: '#6d28d9', border: '#c4b5fd' },
-  mint: { bg: '#d1fae5', fg: '#047857', border: '#6ee7b7' },
-  deep: { bg: '#4f5fd6', fg: '#eef0ff', border: '#6d7cff' },
-  neutral: { bg: '#f1f5f9', fg: '#64748b', border: '#cbd5e1' },
-  pink: { bg: '#fce7f3', fg: '#be185d', border: '#f9a8d4' },
-  sky: { bg: '#e0f2fe', fg: '#0369a1', border: '#7dd3fc' },
-  peach: { bg: '#ffedd5', fg: '#c2410c', border: '#fdba74' },
-  amber: { bg: '#fef3c7', fg: '#b45309', border: '#fcd34d' },
-  lavender: { bg: '#ede9fe', fg: '#6d28d9', border: '#c4b5fd' },
-  lilac: { bg: '#f3e8ff', fg: '#7e22ce', border: '#d8b4fe' },
+  primary: { bg: '#ecfdf5', fg: '#0f766e', border: '#99f6e4' },
+  soft: { bg: '#f0fdfa', fg: '#0f766e', border: '#ccfbf1' },
+  mint: { bg: '#ecfdf5', fg: '#047857', border: '#a7f3d0' },
+  deep: { bg: '#0d9488', fg: '#ecfdf5', border: '#14b8a6' },
+  neutral: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
+  pink: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
+  sky: { bg: '#f0fdfa', fg: '#0f766e', border: '#ccfbf1' },
+  peach: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
+  amber: { bg: '#fffbeb', fg: '#92400e', border: '#fde68a' },
+  lavender: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
+  lilac: { bg: '#f8fafc', fg: '#64748b', border: '#e2e8f0' },
   slate: { bg: '#f1f5f9', fg: '#475569', border: '#cbd5e1' },
 };
 
@@ -68,12 +68,12 @@ export function estadoChipTone(estado?: string): { tone: ChipTone; icon: IonName
     return { tone: 'slate', icon: 'checkmark-circle', label: 'Terminada' };
   }
   if (e === 'EN PROCESO') {
-    return { tone: 'sky', icon: 'play-circle', label: 'En curso' };
+    return { tone: 'soft', icon: 'play-circle', label: 'En curso' };
   }
   if (e === 'INACTIVO') {
-    return { tone: 'amber', icon: 'pause-circle-outline', label: 'Inactiva' };
+    return { tone: 'neutral', icon: 'pause-circle-outline', label: 'Inactiva' };
   }
-  return { tone: 'lavender', icon: 'calendar-outline', label: 'Programada' };
+  return { tone: 'neutral', icon: 'calendar-outline', label: 'Programada' };
 }
 
 const styles = StyleSheet.create({

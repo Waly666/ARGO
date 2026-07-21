@@ -30,16 +30,16 @@ export function ClaseIdChip({ id, completo }: Props) {
       style={[
         styles.chip,
         {
-          backgroundColor: highContrast ? c.bgAlt : c.pastelSky,
-          borderColor: highContrast ? c.border : c.pastelSkyBorder,
+          backgroundColor: highContrast ? c.bgAlt : '#f1f5f9',
+          borderColor: highContrast ? c.border : '#cbd5e1',
         },
       ]}
     >
-      <Ionicons name="key-outline" size={13} color={c.pastelSkyFg} style={{ marginRight: 4 }} />
+      <Ionicons name="key-outline" size={13} color={c.textSoft} style={{ marginRight: 4 }} />
       <View style={{ flexShrink: 1 }}>
         <ScaledText
           baseSize={11}
-          style={{ color: c.pastelSkyFg, fontWeight: '800', letterSpacing: 0.6 }}
+          style={{ color: c.textSoft, fontWeight: '800', letterSpacing: 0.6 }}
         >
           ID {corto}
         </ScaledText>

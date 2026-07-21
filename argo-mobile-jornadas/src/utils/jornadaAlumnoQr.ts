@@ -20,12 +20,16 @@ export type JornadaAlumnoQrData = {
   nombre: string;
 };
 
+function numDocOk(digits: string): boolean {
+  return /^\d{6,14}$/.test(digits);
+}
+
 /** Interpreta un QR de jornada (o un documento numérico puro). */
 export function parseJornadaAlumnoQr(raw: string): JornadaAlumnoQrData | null {
   const t = String(raw || '').trim();
   if (!t) return null;
 
-  if (/^\d{5,15}$/.test(t)) {
+  if (numDocOk(t)) {
     return { numDoc: t, nombre: '' };
   }
 
@@ -42,7 +46,7 @@ export function parseJornadaAlumnoQr(raw: string): JornadaAlumnoQrData | null {
       const tipo = String(j.t || j.tipo || '').toLowerCase();
       if (tipo && tipo !== 'jor' && tipo !== 'jornada') return null;
       const numDoc = String(j.d || j.numDoc || '').replace(/\D/g, '');
-      if (numDoc.length < 5) return null;
+      if (!numDocOk(numDoc)) return null;
       return { numDoc, nombre: String(j.n || j.nombre || '').trim() };
     } catch {
       return null;
@@ -53,7 +57,7 @@ export function parseJornadaAlumnoQr(raw: string): JornadaAlumnoQrData | null {
   if (parts[0] !== JORNADA_QR_PREFIX) return null;
   if (parts[1] !== '1') return null;
   const numDoc = String(parts[2] || '').replace(/\D/g, '');
-  if (numDoc.length < 5) return null;
+  if (!numDocOk(numDoc)) return null;
   const nombre = parts.slice(3).join('|').trim();
   return { numDoc, nombre };
 }
@@ -79,12 +83,20 @@ export function etiquetaHtmlAlumno(opts: {
   numDoc: string;
   nombre: string;
   empresa?: string | null;
+  codContrato?: string | null;
   fechaJornada?: string | null;
 }): string {
   const nom = escapeHtml(opts.nombre || 'Alumno');
   const doc = escapeHtml(opts.numDoc);
   const empresa = escapeHtml(String(opts.empresa || '').trim() || '—');
+  const codRaw = String(opts.codContrato || '').trim();
   const fecha = escapeHtml(fmtFechaEtiqueta(opts.fechaJornada));
+  const lineaContrato = codRaw
+    ? `<div class="contrato">
+        <span class="contrato-lbl">Contrato</span>
+        <strong class="contrato-cod">${escapeHtml(codRaw)}</strong>
+      </div>`
+    : '';
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -104,7 +116,7 @@ export function etiquetaHtmlAlumno(opts: {
     }
     .qr { width: 22mm; height: 22mm; }
     .qr img { width: 100%; height: 100%; }
-    .meta { flex: 1; overflow: hidden; }
+    .meta { flex: 1; overflow: hidden; min-width: 0; }
     .nombre {
       font-size: 8.5pt;
       font-weight: 700;
@@ -122,6 +134,28 @@ export function etiquetaHtmlAlumno(opts: {
       max-height: 2.2em;
       overflow: hidden;
     }
+    .contrato {
+      margin-top: 0.5mm;
+      color: #1e3a8a;
+      line-height: 1.12;
+    }
+    .contrato-lbl {
+      display: block;
+      font-size: 5.2pt;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+    .contrato-cod {
+      display: block;
+      font-size: 6.2pt;
+      font-weight: 700;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      max-height: 2.4em;
+      overflow: hidden;
+    }
     .fecha { font-size: 6.5pt; margin-top: 0.5mm; font-weight: 700; color: #334155; }
   </style>
 </head>
@@ -132,6 +166,7 @@ export function etiquetaHtmlAlumno(opts: {
       <div class="nombre">${nom}</div>
       <div class="doc">CC ${doc}</div>
       <div class="empresa">${empresa}</div>
+      ${lineaContrato}
       <div class="fecha">Jornada ${fecha}</div>
     </div>
   </div>

@@ -48,6 +48,7 @@ router.get('/jornadas/georef/municipio', gest, ctrl.resolverMunicipioGeoref);
 router.get('/jornadas/del-dia', operar, ctrl.jornadasDelDia);
 router.get('/jornadas/en-proceso', ver, ctrl.jornadasEnProceso);
 router.get('/jornadas', ver, ctrl.listarJornadas);
+router.get('/jornadas/:id', ver, ctrl.obtenerJornada);
 router.patch('/jornadas/:id', gest, contratoMutable.jornadaPorParametro, ctrl.actualizarJornada);
 router.post('/jornadas/:id/cerrar-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.cerrarJornadaOperacion);
 router.post('/jornadas/:id/reabrir-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.reabrirJornadaOperacion);
@@ -74,6 +75,7 @@ router.post('/clases/:id/asistencia', operar, contratoMutable.clasePorParametro,
 router.delete('/clases/:id/asistencias/:numDoc', operar, contratoMutable.clasePorParametro, ctrl.eliminarAsistenciaAlumno);
 router.get('/clases/:id/asistencias', ver, ctrl.listarAsistenciasClase);
 router.get('/clases/:id/inscritos', ver, ctrl.inscritosClase);
+router.get('/clases/:id/listado-asistencia/html', ver, ctrl.htmlListadoAsistenciaClase);
 router.get('/clases/:id/inscritos-clase-anterior', ver, ctrl.alumnosClaseAnterior);
 router.delete('/clases/:id/inscritos/:numDoc', operar, contratoMutable.clasePorParametro, ctrl.quitarInscripcionClase);
 
@@ -93,6 +95,7 @@ router.get('/certificados-generados/:id/html', ver, soloCertificadoJornada, cert
 router.patch('/certificados-generados/:id', gest, soloCertificadoJornada, contratoMutable.certificadoPorParametro, ctrl.actualizarCertificadoGenerado);
 router.delete('/certificados-generados/:id', gest, soloCertificadoJornada, contratoMutable.certificadoPorParametro, ctrl.eliminarCertificadoGenerado);
 router.get('/alumnos', operar, ctrl.buscarAlumnos);
+router.post('/alumnos', operar, ctrl.crearAlumnoJornadaCap);
 router.post('/matricular', operar, contratoMutable.contratoPorBodyOpcional, ctrl.matricularAlumnoJornada);
 router.get('/alumnos/doc/:numDoc', operar, ctrl.buscarAlumnoDoc);
 router.get('/alumnos/:numDoc/progreso-cert', operar, ctrl.progresoAlumnoContrato);

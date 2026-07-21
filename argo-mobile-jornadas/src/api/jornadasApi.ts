@@ -1,4 +1,4 @@
-import { apiFetch, apiPostForm } from './client';
+import { apiFetch, apiFetchText, apiPostForm } from './client';
 import type {
   AsistenciaClase,
   AsistenciaResp,
@@ -18,6 +18,42 @@ export function jornadasDelDia(fecha: string, idContrato?: string) {
   let q = `?fecha=${encodeURIComponent(fecha)}`;
   if (idContrato) q += `&idContrato=${encodeURIComponent(idContrato)}`;
   return apiFetch<JornadaCap[]>(`${BASE}/jornadas/del-dia${q}`);
+}
+
+export function obtenerJornada(id: string) {
+  return apiFetch<JornadaCap>(`${BASE}/jornadas/${encodeURIComponent(id)}`);
+}
+
+export type ActualizarJornadaDto = {
+  municipio?: string;
+  depto?: string;
+  codMunicipio?: string;
+  direccion?: string;
+  supervisor?: string;
+  fechaProgramacion?: string;
+  lat?: number | null;
+  lng?: number | null;
+  deteGeorefe?: 'MAPA' | 'DISPOSITIVO_MOVIL' | 'MANUAL' | '';
+};
+
+export function actualizarJornada(id: string, dto: ActualizarJornadaDto) {
+  return apiFetch<JornadaCap>(`${BASE}/jornadas/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
+}
+
+export type GeorefMunicipioResp = {
+  municipio: string;
+  depto: string;
+  codMunicipio?: string | null;
+  fuente?: string;
+};
+
+export function georefMunicipioPorCoords(lat: number, lng: number) {
+  const q = `?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`;
+  return apiFetch<GeorefMunicipioResp>(`${BASE}/jornadas/georef/municipio${q}`);
 }
 
 export function listarClases(idJornada: string) {
@@ -97,6 +133,10 @@ export function inscritosClase(idClase: string) {
   return apiFetch<InscritoClase[]>(`${BASE}/clases/${idClase}/inscritos`);
 }
 
+export function listadoAsistenciaClaseHtml(idClase: string) {
+  return apiFetchText(`${BASE}/clases/${idClase}/listado-asistencia/html?v=${Date.now()}`);
+}
+
 export function matricularAlumno(numDoc: string, idPrograma: string, idClase: string) {
   return apiFetch(`${BASE}/matricular`, {
     method: 'POST',
@@ -107,6 +147,48 @@ export function matricularAlumno(numDoc: string, idPrograma: string, idClase: st
 
 export function buscarAlumnoDoc(numDoc: string) {
   return apiFetch<AlumnoDoc>(`${BASE}/alumnos/doc/${encodeURIComponent(numDoc.trim())}`);
+}
+
+export type CrearAlumnoJornadaDto = {
+  numDoc: string;
+  nombre1: string;
+  apellido1: string;
+  nombre2?: string;
+  apellido2?: string;
+  tipoDoc?: string;
+  expedida?: string;
+  genero?: string;
+  fechaNac?: string;
+  tipoSangre?: string;
+  jornada?: string;
+  estadoCivil?: string;
+  estrato?: string;
+  regimenSalud?: string;
+  nivelFormacion?: string;
+  ocupacion?: string;
+  discapacidad?: string;
+  multiCulturalidad?: string;
+  observaciones?: string;
+  celular?: string;
+  correo?: string;
+  direccion?: string;
+  munOrigen?: string;
+  codMunicipio?: string;
+};
+
+export type AlumnoJornadaCreado = AlumnoDoc & {
+  _id: string;
+  tipoAlumno?: string;
+  nombreCompleto?: string;
+};
+
+/** Alta de alumno tipo Jornadas de Capacitación (permiso jornadas.operar). */
+export function crearAlumnoJornada(dto: CrearAlumnoJornadaDto) {
+  return apiFetch<AlumnoJornadaCreado>(`${BASE}/alumnos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
 }
 
 export function progresoCertificacion(numDoc: string, idContrato: string) {

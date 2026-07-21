@@ -2428,6 +2428,15 @@
       <button type="button" class="ghost" (click)="cerrarModalCrearClase()" [disabled]="guardandoClase()">
         Cerrar
       </button>
+      @if (modalModoClase() === 'editar' && claseActiva()?._id) {
+        <button
+          type="button"
+          class="ghost"
+          (click)="imprimirListadoAsistencia()"
+          title="Generar e imprimir el listado de asistencia de esta clase">
+          📋 Listado asistencia
+        </button>
+      }
       @if (!contratoModalFinalizado() && modalModoClase() === 'nuevo') {
         <button
           type="button"
