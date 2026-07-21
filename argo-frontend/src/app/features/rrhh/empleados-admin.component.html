@@ -15,7 +15,7 @@
     </div>
   </header>
 
-  <div class="toolbar">
+  <div class="toolbar" *ngIf="!mostrarForm()">
     <input
       type="search"
       placeholder="Buscar nombre o documento…"
@@ -470,9 +470,9 @@
     />
   </div>
 
-  <div class="loading" *ngIf="loading()">Cargando…</div>
+  <div class="loading" *ngIf="loading() && !mostrarForm()">Cargando…</div>
 
-  <div class="rrhh-table-wrap emp-table-wrap" *ngIf="!loading() && vista() === 'lista'">
+  <div class="rrhh-table-wrap emp-table-wrap" *ngIf="!loading() && !mostrarForm() && vista() === 'lista'">
     <table class="argo emp-lista-table">
       <thead>
         <tr>
@@ -520,7 +520,7 @@
     </table>
   </div>
 
-  <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
+  <div class="cards-grid" *ngIf="!loading() && !mostrarForm() && vista() === 'cards'">
     <article class="list-card" *ngFor="let e of empleados()">
       <header class="card-title"><h3>{{ e.nombreCompleto }}</h3></header>
       <div class="card-body">
