@@ -137,6 +137,18 @@ export function listadoAsistenciaClaseHtml(idClase: string) {
   return apiFetchText(`${BASE}/clases/${idClase}/listado-asistencia/html?v=${Date.now()}`);
 }
 
+export type EstadoOperacionJornadas = {
+  operacionFueraDeDiaHabilitada: boolean;
+  mostrarSwitchHorarioManual: boolean;
+  puedeUsar: boolean;
+  motivo?: string | null;
+};
+
+/** Config operativa (incluye si se puede elegir horario manual). */
+export function estadoOperacionJornadas() {
+  return apiFetch<EstadoOperacionJornadas>(`${BASE}/config/operacion/estado`);
+}
+
 export function matricularAlumno(numDoc: string, idPrograma: string, idClase: string) {
   return apiFetch(`${BASE}/matricular`, {
     method: 'POST',

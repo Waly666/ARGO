@@ -27,6 +27,7 @@ import { alertarMetaAlumnosJornada } from '../utils/metaAlumnosAlert';
 import {
   actualizarClase,
   buscarAlumnoDoc,
+  estadoOperacionJornadas,
   finalizarClase,
   inscritosClase,
   iniciarClase,
@@ -52,7 +53,9 @@ import { compartirHtmlPdf, imprimirHtml } from '../services/documentoPrint';
 import {
   formatCronometro,
   isoAHoraCompleta,
+  isoAHoraInput,
   msDuracionClase,
+  validarHoraInput,
 } from '../utils/jornadaUi';
 import { themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
@@ -97,6 +100,10 @@ export default function ClaseDetalleScreen() {
   const [progresoLoading, setProgresoLoading] = useState(false);
   const [tick, setTick] = useState(() => Date.now());
   const [scanQrOpen, setScanQrOpen] = useState(false);
+  const [mostrarSwitchHorarioManual, setMostrarSwitchHorarioManual] = useState(false);
+  const [horarioManual, setHorarioManual] = useState(false);
+  const [horaInicioInp, setHoraInicioInp] = useState('');
+  const [horaFinInp, setHoraFinInp] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -118,20 +125,24 @@ export default function ClaseDetalleScreen() {
         : undefined);
     setProgSel(match ? programaId(match) : idClaseProg);
     setUbicSel(cl.ubicacion || 'Carpa');
+    setHorarioManual(cl.horarioManual === true);
+    setHoraInicioInp(isoAHoraInput(cl.horaInicio) || '');
+    setHoraFinInp(isoAHoraInput(cl.horaFin) || '');
   }, []);
 
   const cargar = useCallback(async () => {
     try {
-      const [clRaw, progs, asis, ins] = await Promise.all([
+      const [clRaw, progs, asis, ins, op] = await Promise.all([
         obtenerClase(claseId),
         programasJornadaCap(),
         listarAsistencias(claseId),
         inscritosClase(claseId),
+        estadoOperacionJornadas().catch(() => null),
       ]);
       const lista = progs || [];
       setAsistencias(asis || []);
       setInscritos(ins || []);
-      // No reabrir automáticamente: eso dejaba clases finalizadas otra vez en PROGRAMADA.
+      setMostrarSwitchHorarioManual(op?.mostrarSwitchHorarioManual === true);
       aplicarClaseEnPantalla(clRaw, lista);
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo cargar la clase');
@@ -155,6 +166,10 @@ export default function ClaseDetalleScreen() {
   const estadoClase = String(clase?.estado || '').toUpperCase();
   const enCurso = estadoClase === 'EN PROCESO';
   const finalizada = estadoClase === 'FINALIZADO';
+  /** Config ON, o clase ya marcada como manual (conserva comportamiento). */
+  const puedeUsarHorarioManual =
+    mostrarSwitchHorarioManual || clase?.horarioManual === true || horarioManual;
+  const modoManualActivo = puedeUsarHorarioManual && horarioManual;
   const libreParaTomar =
     estadoClase === 'PROGRAMADA' &&
     clase?.idEmpleadoInstructor == null &&
@@ -275,14 +290,41 @@ export default function ClaseDetalleScreen() {
     }
   }
 
-  /** En móvil siempre hora real (cronómetro). Ajustes manuales = frontend web. */
+  /** Automático = hora real. Manual = horas HH:mm según Configuración → Jornadas. */
   async function onIniciar() {
+    if (modoManualActivo) {
+      if (!validarHoraInput(horaInicioInp)) {
+        Alert.alert('Horario', 'Indique la hora de inicio en formato HH:mm (ej. 08:30).');
+        return;
+      }
+      if (horaFinInp.trim() && !validarHoraInput(horaFinInp)) {
+        Alert.alert('Horario', 'Indique la hora de fin en formato HH:mm (ej. 10:30).');
+        return;
+      }
+    }
     setBusy(true);
     try {
-      const updated = await iniciarClase(claseId, { horarioManual: false });
+      const updated = await iniciarClase(
+        claseId,
+        modoManualActivo
+          ? {
+              horarioManual: true,
+              horaInicio: horaInicioInp.trim(),
+              ...(horaFinInp.trim() ? { horaFin: horaFinInp.trim() } : {}),
+            }
+          : { horarioManual: false },
+      );
       setClase(updated);
+      setHorarioManual(updated.horarioManual === true);
+      setHoraInicioInp(isoAHoraInput(updated.horaInicio) || horaInicioInp);
+      setHoraFinInp(isoAHoraInput(updated.horaFin) || horaFinInp);
       setTick(Date.now());
-      Alert.alert('Clase', 'Cronómetro iniciado con la hora real del dispositivo/servidor.');
+      Alert.alert(
+        'Clase',
+        modoManualActivo
+          ? 'Clase iniciada con el horario manual indicado.'
+          : 'Cronómetro iniciado con la hora real.',
+      );
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo iniciar');
     } finally {
@@ -291,7 +333,16 @@ export default function ClaseDetalleScreen() {
   }
 
   async function onFinalizar() {
-    if (!clase?.horaInicio && !enCurso) {
+    if (modoManualActivo) {
+      if (!validarHoraInput(horaInicioInp) && !clase?.horaInicio) {
+        Alert.alert('Horario', 'Indique la hora de inicio en formato HH:mm.');
+        return;
+      }
+      if (!validarHoraInput(horaFinInp)) {
+        Alert.alert('Horario', 'Indique la hora de fin en formato HH:mm (ej. 10:30).');
+        return;
+      }
+    } else if (!clase?.horaInicio && !enCurso) {
       Alert.alert(
         'Hora de inicio',
         'Pulse ▶ Iniciar cronómetro antes de finalizar, para registrar la hora real de inicio.',
@@ -301,8 +352,21 @@ export default function ClaseDetalleScreen() {
 
     setBusy(true);
     try {
-      const r = await finalizarClase(claseId, { horarioManual: false });
-      if (r.clase) setClase(r.clase);
+      const r = await finalizarClase(
+        claseId,
+        modoManualActivo
+          ? {
+              horarioManual: true,
+              ...(validarHoraInput(horaInicioInp) ? { horaInicio: horaInicioInp.trim() } : {}),
+              horaFin: horaFinInp.trim(),
+            }
+          : { horarioManual: false },
+      );
+      if (r.clase) {
+        setClase(r.clase);
+        setHoraInicioInp(isoAHoraInput(r.clase.horaInicio) || '');
+        setHoraFinInp(isoAHoraInput(r.clase.horaFin) || '');
+      }
       await cargar();
       const nCert = r.certificadosGenerados ?? 0;
       let msg =
@@ -316,7 +380,7 @@ export default function ClaseDetalleScreen() {
       const hf = isoAHoraCompleta(r.clase?.horaFin);
       const durMs = msDuracionClase(r.clase?.horaInicio, r.clase?.horaFin);
       if (hi && hf) {
-        msg += `\n\nHorario real: ${hi} → ${hf}`;
+        msg += `\n\nHorario: ${hi} → ${hf}`;
         if (durMs != null) msg += ` (${formatCronometro(durMs)})`;
       }
       Alert.alert('Clase finalizada', msg);
@@ -677,13 +741,78 @@ export default function ClaseDetalleScreen() {
       </SurfaceCard>
 
       <ScaledText baseSize={15} style={styles.sectionTitle}>
-        Operación (horario real)
+        Operación {modoManualActivo ? '(horario manual)' : '(horario real)'}
       </ScaledText>
       <SurfaceCard>
-        <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 10 }}>
-          En la app móvil la hora de inicio y fin se toman al pulsar Iniciar y Finalizar. Para
-          corregir un horario use el frontend web.
-        </ScaledText>
+        {mostrarSwitchHorarioManual && !finalizada ? (
+          <Pressable
+            onPress={() => !enCurso && setHorarioManual((v) => !v)}
+            disabled={busy || enCurso}
+            style={[
+              styles.manualSwitch,
+              {
+                backgroundColor: horarioManual ? c.accentSoft : c.bgAlt,
+                borderColor: horarioManual ? c.primary : c.border,
+                opacity: enCurso ? 0.7 : 1,
+              },
+            ]}
+          >
+            <View style={{ flex: 1 }}>
+              <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '800' }}>
+                Horario manual
+              </ScaledText>
+              <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
+                {horarioManual
+                  ? 'Las horas escritas no se reemplazan al iniciar o finalizar.'
+                  : 'Inicio y fin se toman automáticamente al pulsar los botones.'}
+              </ScaledText>
+            </View>
+            <View
+              style={[
+                styles.switchKnob,
+                { backgroundColor: horarioManual ? c.primary : c.border },
+              ]}
+            >
+              <ScaledText baseSize={11} style={{ color: '#fff', fontWeight: '800' }}>
+                {horarioManual ? 'ON' : 'OFF'}
+              </ScaledText>
+            </View>
+          </Pressable>
+        ) : null}
+
+        {modoManualActivo && !finalizada ? (
+          <View style={{ marginTop: mostrarSwitchHorarioManual ? 12 : 0, marginBottom: 10 }}>
+            <IconInput
+              label="Hora inicio (HH:mm)"
+              icon="time-outline"
+              value={horaInicioInp}
+              onChangeText={setHoraInicioInp}
+              keyboardType="numbers-and-punctuation"
+              placeholder="08:30"
+              editable={!busy}
+            />
+            <IconInput
+              label="Hora fin (HH:mm)"
+              icon="time-outline"
+              value={horaFinInp}
+              onChangeText={setHoraFinInp}
+              keyboardType="numbers-and-punctuation"
+              placeholder="10:30"
+              editable={!busy}
+            />
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 4 }}>
+              Defina las horas y luego Iniciar / Finalizar. Si la clase ya era manual, se conservan
+              aunque el switch global esté apagado.
+            </ScaledText>
+          </View>
+        ) : (
+          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 10 }}>
+            {mostrarSwitchHorarioManual
+              ? 'Modo automático: la hora de inicio y fin se toman al pulsar Iniciar y Finalizar.'
+              : 'Horario manual desactivado en Configuración → Jornadas. Se usa la hora real al iniciar y finalizar.'}
+          </ScaledText>
+        )}
+
         {finalizada ? (
           <View style={{ marginBottom: 12 }}>
             <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 8 }}>
@@ -704,58 +833,71 @@ export default function ClaseDetalleScreen() {
             ) : null}
           </View>
         ) : null}
-        <View
-          style={[
-            styles.cronoBox,
-            {
-              backgroundColor: enCurso ? c.okBg : finalizada ? c.bgAlt : c.accentSoft,
-              borderColor: enCurso ? c.ok : c.border,
-            },
-          ]}
-        >
-          <ScaledText baseSize={12} style={{ color: c.textSoft, fontWeight: '700', letterSpacing: 1 }}>
-            {enCurso ? 'EN CURSO' : finalizada ? 'DURACIÓN REAL' : 'CRONÓMETRO'}
-          </ScaledText>
-          <ScaledText
-            baseSize={36}
-            style={{
-              color: enCurso ? c.ok : c.text,
-              fontWeight: '800',
-              fontVariant: ['tabular-nums'],
-              marginTop: 4,
-            }}
+
+        {!modoManualActivo ? (
+          <View
+            style={[
+              styles.cronoBox,
+              {
+                backgroundColor: enCurso ? c.okBg : finalizada ? c.bgAlt : c.accentSoft,
+                borderColor: enCurso ? c.ok : c.border,
+              },
+            ]}
           >
-            {textoCronometro}
-          </ScaledText>
-          <View style={styles.horaRealRow}>
-            <View style={styles.horaRealBox}>
-              <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
-                INICIO REAL
-              </ScaledText>
-              <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '800', marginTop: 2 }}>
-                {isoAHoraCompleta(clase?.horaInicio) || '—'}
-              </ScaledText>
-            </View>
-            <ScaledText baseSize={18} style={{ color: c.textSoft, fontWeight: '700' }}>
-              →
+            <ScaledText
+              baseSize={12}
+              style={{ color: c.textSoft, fontWeight: '700', letterSpacing: 1 }}
+            >
+              {enCurso ? 'EN CURSO' : finalizada ? 'DURACIÓN REAL' : 'CRONÓMETRO'}
             </ScaledText>
-            <View style={styles.horaRealBox}>
-              <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
-                FIN REAL
+            <ScaledText
+              baseSize={36}
+              style={{
+                color: enCurso ? c.ok : c.text,
+                fontWeight: '800',
+                fontVariant: ['tabular-nums'],
+                marginTop: 4,
+              }}
+            >
+              {textoCronometro}
+            </ScaledText>
+            <View style={styles.horaRealRow}>
+              <View style={styles.horaRealBox}>
+                <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
+                  INICIO REAL
+                </ScaledText>
+                <ScaledText
+                  baseSize={16}
+                  style={{ color: c.text, fontWeight: '800', marginTop: 2 }}
+                >
+                  {isoAHoraCompleta(clase?.horaInicio) || '—'}
+                </ScaledText>
+              </View>
+              <ScaledText baseSize={18} style={{ color: c.textSoft, fontWeight: '700' }}>
+                →
               </ScaledText>
-              <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '800', marginTop: 2 }}>
-                {finalizada
-                  ? isoAHoraCompleta(clase?.horaFin) || '—'
-                  : enCurso
-                    ? 'en curso…'
-                    : '—'}
-              </ScaledText>
+              <View style={styles.horaRealBox}>
+                <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
+                  FIN REAL
+                </ScaledText>
+                <ScaledText
+                  baseSize={16}
+                  style={{ color: c.text, fontWeight: '800', marginTop: 2 }}
+                >
+                  {finalizada
+                    ? isoAHoraCompleta(clase?.horaFin) || '—'
+                    : enCurso
+                      ? 'en curso…'
+                      : '—'}
+                </ScaledText>
+              </View>
             </View>
           </View>
-        </View>
+        ) : null}
+
         <View style={{ height: 12 }} />
         <PrimaryButton
-          label="▶ Iniciar cronómetro"
+          label={modoManualActivo ? '▶ Iniciar clase' : '▶ Iniciar cronómetro'}
           onPress={() => void onIniciar()}
           disabled={busy || finalizada || enCurso}
           fullWidth
@@ -772,8 +914,8 @@ export default function ClaseDetalleScreen() {
           icon="checkmark-done-outline"
         />
         <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 8, textAlign: 'center' }}>
-          Al finalizar se registra la hora real de cierre y se generan certificados si el contrato lo
-          permite.
+          Al finalizar se registran asistencias pendientes y se emiten certificados según el
+          contrato.
         </ScaledText>
         <View style={{ height: 10 }} />
         <PrimaryButton
@@ -961,6 +1103,23 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 14,
+    alignItems: 'center',
+  },
+  manualSwitch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 4,
+  },
+  switchKnob: {
+    minWidth: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
     alignItems: 'center',
   },
   foto: { width: '100%', height: 180, borderRadius: 12, marginTop: 12 },
