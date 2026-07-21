@@ -364,25 +364,33 @@ export function buildHojaVidaEmpleadoHtml(opts: {
 <head>
   <meta charset="utf-8"/>
   <title>Hoja de vida — ${esc(nombre)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
   <style>
     @page { size: letter portrait; margin: 12mm 11mm; }
     * { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0;
-      font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+      font-family: 'Roboto', system-ui, Arial, sans-serif;
       color: #0f172a;
       background: #fff;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
+    h1, h2, h3, h4, .hero-name, .doc-meta strong, .score, .anot-badge, .pill, .chip {
+      font-family: 'Exo 2', 'Roboto', system-ui, sans-serif;
+    }
     .toolbar {
       position: sticky; top: 0; z-index: 5;
       display: flex; gap: 10px; align-items: center;
       padding: 10px 14px; background: #0f2744; color: #fff;
+      font-family: 'Roboto', system-ui, sans-serif;
     }
     .toolbar button {
       border: 0; border-radius: 6px; padding: 8px 14px;
       background: #38bdf8; color: #0f172a; font-weight: 700; cursor: pointer;
+      font-family: 'Exo 2', 'Roboto', sans-serif;
     }
     .toolbar span { font-size: 10pt; opacity: .9; }
     .doc { max-width: 210mm; margin: 0 auto; }
@@ -397,21 +405,24 @@ export function buildHojaVidaEmpleadoHtml(opts: {
       width: 56px; height: 56px; border-radius: 10px;
       background: linear-gradient(145deg, #0f2744, #1e4976);
       color: #fff; display: flex; align-items: center; justify-content: center;
+      font-family: 'Exo 2', sans-serif;
       font-weight: 800; font-size: 14px; letter-spacing: .04em;
     }
     .brand-text h1 {
       margin: 0 0 4px; font-size: 15pt; color: #0f2744;
-      font-family: Georgia, 'Times New Roman', serif; font-weight: 700;
+      font-family: 'Exo 2', 'Roboto', sans-serif; font-weight: 700;
+      letter-spacing: 0.01em;
     }
     .brand-text p { margin: 0; font-size: 8.5pt; color: #475569; line-height: 1.35; }
     .doc-meta { text-align: right; flex-shrink: 0; }
     .doc-type {
       display: block; font-size: 8pt; text-transform: uppercase;
       letter-spacing: .12em; color: #64748b; margin-bottom: 2px;
+      font-family: 'Exo 2', sans-serif; font-weight: 600;
     }
     .doc-meta strong {
       display: block; font-size: 13pt; color: #0f2744; text-transform: uppercase;
-      letter-spacing: .04em;
+      letter-spacing: .04em; font-family: 'Exo 2', sans-serif; font-weight: 800;
     }
     .doc-date { display: block; margin-top: 4px; font-size: 8pt; color: #64748b; }
 
@@ -437,7 +448,10 @@ export function buildHojaVidaEmpleadoHtml(opts: {
       margin: 0 0 2px; font-size: 8pt; text-transform: uppercase;
       letter-spacing: .1em; opacity: .75;
     }
-    .hero-name { margin: 0 0 2px; font-size: 16pt; font-weight: 800; line-height: 1.15; }
+    .hero-name {
+      margin: 0 0 2px; font-size: 16pt; font-weight: 800; line-height: 1.15;
+      font-family: 'Exo 2', 'Roboto', sans-serif; letter-spacing: 0.01em;
+    }
     .hero-role { margin: 0 0 8px; font-size: 10.5pt; opacity: .92; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
@@ -459,6 +473,7 @@ export function buildHojaVidaEmpleadoHtml(opts: {
       margin: 0 0 8px; font-size: 9.5pt; font-weight: 800;
       text-transform: uppercase; letter-spacing: .08em; color: #0f2744;
       border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;
+      font-family: 'Exo 2', 'Roboto', sans-serif;
     }
     .sec h2 span {
       display: inline-block; padding-bottom: 4px;
@@ -587,7 +602,15 @@ export function buildHojaVidaEmpleadoHtml(opts: {
     ${anotaciones}
     ${firmas}
   </div>
-  <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 250); };</script>
+  <script>
+    window.onload = function() {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function(){ setTimeout(function(){ window.print(); }, 150); });
+      } else {
+        setTimeout(function(){ window.print(); }, 600);
+      }
+    };
+  </script>
 </body>
 </html>`;
 }
