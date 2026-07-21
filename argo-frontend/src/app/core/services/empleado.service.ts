@@ -98,6 +98,21 @@ export interface EmpleadoEvaluacionDto {
   updatedAt?: string | null;
 }
 
+export interface EmpleadoAnotacionDto {
+  _id?: string;
+  idEmpleado?: number;
+  fecha?: string | null;
+  /** positivo | negativo */
+  tipo?: 'positivo' | 'negativo' | string;
+  categoria?: string;
+  titulo?: string;
+  descripcion?: string;
+  registradoPor?: string | null;
+  registradoPorNombre?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
 export interface CompetenciaDesempenoDto {
   idCompetencia: number;
   codigo?: string;
@@ -391,6 +406,29 @@ export class EmpleadoService {
 
   eliminarEvaluacion(id: number | string, evalId: string): Observable<{ ok: boolean }> {
     return this.http.delete<{ ok: boolean }>(`${this.base}/${id}/evaluaciones/${evalId}`);
+  }
+
+  listarAnotaciones(id: number | string): Observable<EmpleadoAnotacionDto[]> {
+    return this.http.get<EmpleadoAnotacionDto[]>(`${this.base}/${id}/anotaciones`);
+  }
+
+  crearAnotacion(
+    id: number | string,
+    data: Partial<EmpleadoAnotacionDto>,
+  ): Observable<EmpleadoAnotacionDto> {
+    return this.http.post<EmpleadoAnotacionDto>(`${this.base}/${id}/anotaciones`, data);
+  }
+
+  actualizarAnotacion(
+    id: number | string,
+    anotId: string,
+    data: Partial<EmpleadoAnotacionDto>,
+  ): Observable<EmpleadoAnotacionDto> {
+    return this.http.put<EmpleadoAnotacionDto>(`${this.base}/${id}/anotaciones/${anotId}`, data);
+  }
+
+  eliminarAnotacion(id: number | string, anotId: string): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/${id}/anotaciones/${anotId}`);
   }
 
   informeDesempeno(opts?: {

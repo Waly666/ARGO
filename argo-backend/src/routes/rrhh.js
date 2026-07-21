@@ -3,6 +3,7 @@ const upload = require('../middleware/upload');
 const empleado = require('../controllers/empleadoController');
 const empleadoDoc = require('../controllers/empleadoDocumentoController');
 const empleadoEval = require('../controllers/empleadoEvaluacionController');
+const empleadoAnot = require('../controllers/empleadoAnotacionController');
 const cat = require('../controllers/rrhhCatalogoControllers');
 const contrato = require('../controllers/contratoController');
 const novedad = require('../controllers/novedadNominaController');
@@ -13,6 +14,8 @@ const router = Router();
 const rrhh = requirePermiso('rrhh');
 const evalVer = requirePermiso('rrhh.evaluaciones.ver', 'rrhh.evaluaciones.gestionar', 'rrhh');
 const evalGest = requirePermiso('rrhh.evaluaciones.gestionar');
+const anotVer = requirePermiso('rrhh.anotaciones.ver', 'rrhh.anotaciones.gestionar', 'rrhh');
+const anotGest = requirePermiso('rrhh.anotaciones.gestionar', 'rrhh');
 
 router.use(requireAuth);
 router.get('/alertas-documentos-empleados', empleadoDoc.alertasDocumentos);
@@ -51,6 +54,10 @@ router.get('/empleados/:id/evaluaciones', evalVer, empleadoEval.listarPorEmplead
 router.post('/empleados/:id/evaluaciones', evalGest, empleadoEval.crear);
 router.put('/empleados/:id/evaluaciones/:evalId', evalGest, empleadoEval.actualizar);
 router.delete('/empleados/:id/evaluaciones/:evalId', evalGest, empleadoEval.eliminar);
+router.get('/empleados/:id/anotaciones', anotVer, empleadoAnot.listarPorEmpleado);
+router.post('/empleados/:id/anotaciones', anotGest, empleadoAnot.crear);
+router.put('/empleados/:id/anotaciones/:anotId', anotGest, empleadoAnot.actualizar);
+router.delete('/empleados/:id/anotaciones/:anotId', anotGest, empleadoAnot.eliminar);
 router.get('/informes/desempeno', evalVer, empleadoEval.informeDesempeno);
 router.get('/empleados/:id', empleado.obtener);
 router.post('/empleados', empleadoFoto, empleado.crear);

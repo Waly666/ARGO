@@ -1,0 +1,166 @@
+<section class="anot-panel emp-block emp-block--anot">
+  <header class="emp-block-head anot-hero">
+    <span class="emp-block-num" aria-hidden="true">✦</span>
+    <div class="anot-hero-text">
+      <p class="anot-kicker">Historial de comportamientos</p>
+      <h3>Anotaciones / eventualidades</h3>
+      <p class="hint">
+        Registre hechos destacables a favor o en contra. Quedan en el historial para consultas futuras
+        (renovación, recontratación, seguimiento).
+      </p>
+    </div>
+    <div class="anot-hero-actions">
+      @if (rows().length) {
+        <span class="rrhh-chip rrhh-chip--sky">+{{ conteoPos() }}</span>
+        <span class="rrhh-chip rrhh-chip--rose">−{{ conteoNeg() }}</span>
+      }
+      @if (puedeGestionar()) {
+        <button type="button" class="primary" (click)="nueva()">+ Nueva anotación</button>
+      }
+    </div>
+  </header>
+
+  @if (msg(); as m) {
+    <div class="rrhh-msg" role="status">{{ m }}</div>
+  }
+  @if (err(); as e) {
+    <div class="rrhh-msg rrhh-msg--err" role="alert">{{ e }}</div>
+  }
+
+  @if (mostrarForm()) {
+    <div class="anot-form">
+      <header class="anot-form-head">
+        <div>
+          <p class="anot-kicker">{{ editando() ? 'Edición' : 'Nueva' }}</p>
+          <h4>{{ editando() ? 'Editar anotación' : 'Registrar anotación' }}</h4>
+        </div>
+      </header>
+
+      <div class="tipo-toggle" role="group" aria-label="Tipo de anotación">
+        <button
+          type="button"
+          class="tipo-btn pos"
+          [class.active]="form().tipo === 'positivo'"
+          (click)="patch('tipo', 'positivo')"
+        >
+          Destacable a favor
+        </button>
+        <button
+          type="button"
+          class="tipo-btn neg"
+          [class.active]="form().tipo === 'negativo'"
+          (click)="patch('tipo', 'negativo')"
+        >
+          Destacable en contra
+        </button>
+      </div>
+
+      <div class="anot-meta-grid">
+        <div class="field">
+          <argo-date-input
+            label="Fecha *"
+            [ngModel]="form().fecha || ''"
+            (ngModelChange)="patch('fecha', $event)"
+          />
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <select [ngModel]="form().categoria" (ngModelChange)="patch('categoria', $event)">
+            @for (c of categoriasForm(); track c.value) {
+              <option [value]="c.value">{{ c.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="field field-wide">
+          <label>Título (opcional)</label>
+          <input
+            type="text"
+            [ngModel]="form().titulo"
+            (ngModelChange)="patch('titulo', $event)"
+            placeholder="Resumen corto"
+            maxlength="160"
+          />
+        </div>
+        <div class="field field-full">
+          <label>Descripción *</label>
+          <textarea
+            rows="4"
+            [ngModel]="form().descripcion"
+            (ngModelChange)="patch('descripcion', $event)"
+            placeholder="Describa el hecho con claridad para consulta futura…"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="anot-form-actions">
+        <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
+        <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="anot-filtros" role="group" aria-label="Filtrar anotaciones">
+    <button type="button" [class.active]="filtro() === 'todas'" (click)="filtro.set('todas')">Todas</button>
+    <button type="button" [class.active]="filtro() === 'positivo'" (click)="filtro.set('positivo')">Positivas</button>
+    <button type="button" [class.active]="filtro() === 'negativo'" (click)="filtro.set('negativo')">Negativas</button>
+  </div>
+
+  @if (loading()) {
+    <p class="hint">Cargando…</p>
+  } @else if (!filtradas().length) {
+    <div class="anot-empty">
+      <h4>Sin anotaciones{{ filtro() === 'todas' ? ' aún' : ' en este filtro' }}</h4>
+      <p>
+        @if (filtro() === 'todas') {
+          Registre la primera eventualidad para construir el historial de comportamientos.
+        } @else {
+          No hay registros de este tipo.
+        }
+      </p>
+    </div>
+  } @else {
+    <ul class="anot-timeline">
+      @for (a of filtradas(); track a._id) {
+        <li class="anot-card" [attr.data-tipo]="a.tipo" [class.anot-alert]="a.tipo === 'negativo'">
+          @if (a.tipo === 'negativo') {
+            <div class="anot-waves" aria-hidden="true"></div>
+            <div class="anot-alert-strip" aria-hidden="true">
+              <span>⚠ Alerta</span>
+            </div>
+          }
+          <div class="anot-card-mark" aria-hidden="true">{{ a.tipo === 'negativo' ? '!' : '+' }}</div>
+          <div class="anot-card-body">
+            <header>
+              <div>
+                <strong>{{ a.fecha }}</strong>
+                <span class="cat">{{ labelCategoria(a.categoria) }}</span>
+              </div>
+              <span class="badge" [class.pos]="a.tipo === 'positivo'" [class.neg]="a.tipo === 'negativo'">
+                {{ a.tipo === 'negativo' ? 'Negativa' : 'Positiva' }}
+              </span>
+            </header>
+            @if (a.titulo) {
+              <h5>{{ a.titulo }}</h5>
+            }
+            <p class="desc">{{ a.descripcion }}</p>
+            <footer>
+              <span class="meta">
+                @if (a.registradoPorNombre || a.registradoPor) {
+                  Registró: {{ a.registradoPorNombre || a.registradoPor }}
+                }
+              </span>
+              @if (puedeGestionar()) {
+                <div class="acts">
+                  <button type="button" class="ghost sm" (click)="editar(a)">Editar</button>
+                  <button type="button" class="danger sm" (click)="eliminar(a)">Eliminar</button>
+                </div>
+              }
+            </footer>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

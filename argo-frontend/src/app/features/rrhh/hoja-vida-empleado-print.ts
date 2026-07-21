@@ -1,6 +1,7 @@
 import type {
   DocEmpleadoDto,
   Empleado,
+  EmpleadoAnotacionDto,
   EmpleadoEvaluacionDto,
 } from '../../core/services/empleado.service';
 import type { ConfigRecibo } from '../../core/services/config.service';
@@ -111,6 +112,19 @@ function encabezadoEmpresa(empresa: ConfigRecibo | null | undefined): string {
     </header>`;
 }
 
+function labelCategoriaAnot(c?: string): string {
+  const map: Record<string, string> = {
+    reconocimiento: 'Reconocimiento',
+    logro: 'Logro / resultado',
+    felicitacion: 'Felicitación',
+    llamado_atencion: 'Llamado de atención',
+    falta: 'Falta / incumplimiento',
+    queja: 'Queja / reclamo',
+    otro: 'Otro',
+  };
+  return map[String(c || 'otro')] || String(c || 'Otro');
+}
+
 function seccion(titulo: string, body: string): string {
   return `
     <section class="sec">
@@ -123,6 +137,7 @@ export function buildHojaVidaEmpleadoHtml(opts: {
   empleado: Empleado;
   documentos?: DocEmpleadoDto[];
   evaluaciones?: EmpleadoEvaluacionDto[];
+  anotaciones?: EmpleadoAnotacionDto[];
   empresa?: ConfigRecibo | null;
   fotoUrl?: string | null;
 }): string {
@@ -131,6 +146,11 @@ export function buildHojaVidaEmpleadoHtml(opts: {
   const evals = [...(opts.evaluaciones || [])].sort((a, b) =>
     String(b.fecha || '').localeCompare(String(a.fecha || '')),
   );
+  const anots = [...(opts.anotaciones || [])].sort((a, b) =>
+    String(b.fecha || '').localeCompare(String(a.fecha || '')),
+  );
+  const anotPos = anots.filter((a) => a.tipo === 'positivo').length;
+  const anotNeg = anots.filter((a) => a.tipo === 'negativo').length;
   const nombre = nombreCompleto(e);
   const prom = promedioEvaluaciones(evals);
   const foto = opts.fotoUrl
@@ -154,6 +174,7 @@ export function buildHojaVidaEmpleadoHtml(opts: {
           <span class="chip">${val(e.tipoDocumento)} ${val(e.numeroDocumento)}</span>
           ${e.sedeNombre ? `<span class="chip">${esc(e.sedeNombre)}</span>` : ''}
           ${e.departamentoNombre ? `<span class="chip">${esc(e.departamentoNombre)}</span>` : ''}
+          ${anots.length ? `<span class="chip">Anotaciones +${anotPos} / −${anotNeg}</span>` : ''}
         </div>
       </div>
       <div class="hero-stats">
@@ -291,6 +312,35 @@ export function buildHojaVidaEmpleadoHtml(opts: {
     : `<p class="empty">Sin evaluaciones de desempeño registradas.</p>`;
 
   const evaluaciones = seccion('6. Historial de evaluaciones', evalBody);
+
+  const anotBody = anots.length
+    ? `<div class="anot-list">
+        ${anots
+          .map((a) => {
+            const neg = a.tipo === 'negativo';
+            return `
+              <article class="anot-card ${neg ? 'neg' : 'pos'}">
+                <header>
+                  <div>
+                    <strong>${fmtFecha(a.fecha)}</strong>
+                    <span class="muted">${esc(labelCategoriaAnot(a.categoria))}</span>
+                  </div>
+                  <span class="anot-badge ${neg ? 'neg' : 'pos'}">${neg ? 'Negativa' : 'Positiva'}</span>
+                </header>
+                ${a.titulo ? `<h4>${esc(a.titulo)}</h4>` : ''}
+                <p class="obs">${esc(a.descripcion)}</p>
+                ${
+                  a.registradoPorNombre || a.registradoPor
+                    ? `<p class="muted">Registró: ${esc(a.registradoPorNombre || a.registradoPor)}</p>`
+                    : ''
+                }
+              </article>`;
+          })
+          .join('')}
+      </div>`
+    : `<p class="empty">Sin anotaciones / eventualidades registradas.</p>`;
+
+  const anotaciones = seccion('7. Anotaciones y eventualidades', anotBody);
 
   const firmas = `
     <div class="firmas">
@@ -469,6 +519,24 @@ export function buildHojaVidaEmpleadoHtml(opts: {
       background: linear-gradient(90deg, #0e7490, #38bdf8);
     }
 
+    .anot-list { display: flex; flex-direction: column; gap: 8px; }
+    .anot-card {
+      border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px;
+      background: #f8fafc; break-inside: avoid; border-left: 4px solid #0284c7;
+    }
+    .anot-card.neg { border-left-color: #ef4444; }
+    .anot-card header {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+      margin-bottom: 4px;
+    }
+    .anot-card h4 { margin: 0 0 4px; font-size: 10pt; color: #0f2744; }
+    .anot-badge {
+      font-size: 7.5pt; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .anot-badge.pos { background: #e0f2fe; color: #075985; }
+    .anot-badge.neg { background: #fee2e2; color: #991b1b; }
+
     .firmas {
       display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
       margin-top: 28px; padding-top: 8px;
@@ -516,6 +584,7 @@ export function buildHojaVidaEmpleadoHtml(opts: {
     ${seguridad}
     ${documentos}
     ${evaluaciones}
+    ${anotaciones}
     ${firmas}
   </div>
   <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 250); };</script>

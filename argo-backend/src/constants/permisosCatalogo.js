@@ -84,6 +84,11 @@ const GRUPOS = [
         key: 'rrhh.evaluaciones.gestionar',
         label: 'Registrar y editar calificaciones de empleados (1–10)',
       },
+      { key: 'rrhh.anotaciones.ver', label: 'Ver anotaciones / eventualidades del empleado' },
+      {
+        key: 'rrhh.anotaciones.gestionar',
+        label: 'Registrar y editar anotaciones positivas o negativas',
+      },
     ],
   },
   {

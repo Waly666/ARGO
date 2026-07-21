@@ -24,6 +24,7 @@ import { inicialesNombre, readVistaLista, saveVistaLista, VistaLista } from '../
 import { environment } from '../../../environments/environment';
 import { EmpleadoDocumentosPanelComponent } from './empleado-documentos-panel.component';
 import { EmpleadoEvaluacionesPanelComponent } from './empleado-evaluaciones-panel.component';
+import { EmpleadoAnotacionesPanelComponent } from './empleado-anotaciones-panel.component';
 import { CelularInputComponent } from '../../shared/celular-input/celular-input.component';
 import { mensajeErrorCelularAlmacenado } from '../../core/utils/celular.util';
 import { MunicipioBuscarComponent } from '../alumnos/municipio-buscar.component';
@@ -31,7 +32,7 @@ import { CatalogoEnumBuscarComponent, EnumBuscarOption } from '../../shared/cata
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
 import { abrirHojaVidaEmpleadoPdf, buildHojaVidaEmpleadoHtml } from './hoja-vida-empleado-print';
 
-type FormSeccion = 'datos' | 'documentos' | 'evaluaciones';
+type FormSeccion = 'datos' | 'documentos' | 'evaluaciones' | 'anotaciones';
 
 const NIVELES_EDUCATIVOS: EnumBuscarOption[] = [
   { value: 'Bachiller', label: 'Bachiller' },
@@ -47,6 +48,7 @@ const NIVELES_EDUCATIVOS: EnumBuscarOption[] = [
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, EmpleadoDocumentosPanelComponent,
     EmpleadoEvaluacionesPanelComponent,
+    EmpleadoAnotacionesPanelComponent,
     ArgoDateInputComponent,
     CelularInputComponent,
     MunicipioBuscarComponent,
@@ -262,21 +264,26 @@ export class EmpleadosAdminComponent implements OnInit {
     }
     this.exportandoHv.set(true);
     this.inform(null);
-    const puedeEval = this.auth.tienePermiso(['rrhh.evaluaciones.ver', 'rrhh.evaluaciones.gestionar', '*']);
+    const puedeEval = this.auth.tienePermiso(['rrhh.evaluaciones.ver', 'rrhh.evaluaciones.gestionar', 'rrhh', '*']);
+    const puedeAnot = this.auth.tienePermiso(['rrhh.anotaciones.ver', 'rrhh.anotaciones.gestionar', 'rrhh', '*']);
     forkJoin({
       empleado: this.svc.obtener(id),
       documentos: this.svc.listarDocumentos(id).pipe(catchError(() => of([]))),
       evaluaciones: puedeEval
         ? this.svc.listarEvaluaciones(id).pipe(catchError(() => of([])))
         : of([]),
+      anotaciones: puedeAnot
+        ? this.svc.listarAnotaciones(id).pipe(catchError(() => of([])))
+        : of([]),
       empresa: this.cfgSvc.obtenerReciboEncabezado().pipe(catchError(() => of(null))),
     }).subscribe({
-      next: ({ empleado, documentos, evaluaciones, empresa }) => {
+      next: ({ empleado, documentos, evaluaciones, anotaciones, empresa }) => {
         this.exportandoHv.set(false);
         const html = buildHojaVidaEmpleadoHtml({
           empleado,
           documentos: documentos || [],
           evaluaciones: evaluaciones || [],
+          anotaciones: anotaciones || [],
           empresa,
           fotoUrl: this.fotoUrl(empleado.urlFoto),
         });
@@ -417,7 +424,9 @@ export class EmpleadosAdminComponent implements OnInit {
         ? 'documentos'
         : seccionRaw === 'evaluaciones'
           ? 'evaluaciones'
-          : 'datos';
+          : seccionRaw === 'anotaciones'
+            ? 'anotaciones'
+            : 'datos';
     this.editar(emp, seccion);
   }
 
@@ -488,7 +497,12 @@ export class EmpleadosAdminComponent implements OnInit {
   }
 
   setFormSeccion(sec: FormSeccion): void {
-    if ((sec === 'documentos' || sec === 'evaluaciones') && !this.editando()?.idEmpleado) return;
+    if (
+      (sec === 'documentos' || sec === 'evaluaciones' || sec === 'anotaciones') &&
+      !this.editando()?.idEmpleado
+    ) {
+      return;
+    }
     this.formSeccion.set(sec);
   }
 
@@ -497,6 +511,14 @@ export class EmpleadosAdminComponent implements OnInit {
     this.auth.tienePermiso([
       'rrhh.evaluaciones.ver',
       'rrhh.evaluaciones.gestionar',
+      'rrhh',
+      '*',
+    ]),
+  );
+  puedeVerAnotaciones = computed(() =>
+    this.auth.tienePermiso([
+      'rrhh.anotaciones.ver',
+      'rrhh.anotaciones.gestionar',
       'rrhh',
       '*',
     ]),

@@ -79,6 +79,14 @@
       >
         Evaluaciones
       </button>
+      <button
+        type="button"
+        *ngIf="puedeVerAnotaciones()"
+        [class.active]="formSeccion() === 'anotaciones'"
+        (click)="setFormSeccion('anotaciones')"
+      >
+        Anotaciones
+      </button>
     </nav>
 
     <ng-container *ngIf="formSeccion() === 'datos'">
@@ -455,6 +463,10 @@
       *ngIf="formSeccion() === 'evaluaciones' && editando()?.idEmpleado as idEmpEval"
       [idEmpleado]="idEmpEval"
       [cargoId]="form().cargoId"
+    />
+    <argo-empleado-anotaciones-panel
+      *ngIf="formSeccion() === 'anotaciones' && editando()?.idEmpleado as idEmpAnot"
+      [idEmpleado]="idEmpAnot"
     />
   </div>
 
