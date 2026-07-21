@@ -125,9 +125,40 @@ export const CAJAS_CONFIG: RrhhCatalogConfig = {
   ],
 };
 
+export const COMPETENCIAS_CONFIG: RrhhCatalogConfig = {
+  titulo: 'Competencias de desempeño',
+  hint: 'Se usan al calificar empleados (escala 1–10). El ámbito define a qué cargos aplica (o a todos).',
+  apiPath: 'competencias-desempeno',
+  idKey: 'idCompetencia',
+  labelKey: 'nombre',
+  fields: [
+    { key: 'nombre', label: 'Nombre', required: true, col: 12 },
+    {
+      key: 'cargosIds',
+      label: 'Ámbito (cargos)',
+      type: 'cargos-multiselect',
+      col: 12,
+      hint: 'Sin cargos seleccionados = aplica a todos. Marque uno o más cargos del catálogo RRHH para limitar.',
+    },
+    { key: 'codigo', label: 'Código', col: 3 },
+    { key: 'orden', label: 'Orden', type: 'number', col: 3 },
+    { key: 'estado', label: 'Estado', type: 'select', options: estadoOpts, col: 3 },
+    { key: 'descripcion', label: 'Descripción', type: 'textarea', col: 12 },
+  ],
+  columns: [
+    { key: 'idCompetencia', label: 'Id' },
+    { key: 'codigo', label: 'Código' },
+    { key: 'nombre', label: 'Nombre' },
+    { key: 'cargosIds', label: 'Ámbito' },
+    { key: 'orden', label: 'Orden' },
+    { key: 'estado', label: 'Estado' },
+  ],
+};
+
 export const RRHH_CATALOG_TABS: RrhhCatalogTab[] = [
   { id: 'cargos', label: 'Cargos', grupo: 'organizacion', config: CARGOS_CONFIG },
   { id: 'departamentos', label: 'Departamentos', grupo: 'organizacion', config: DEPARTAMENTOS_CONFIG },
+  { id: 'competencias', label: 'Competencias', grupo: 'organizacion', config: COMPETENCIAS_CONFIG },
   { id: 'eps', label: 'EPS', grupo: 'seguridad', config: EPS_CONFIG },
   { id: 'afp', label: 'AFP', grupo: 'seguridad', config: AFP_CONFIG },
   { id: 'arl', label: 'ARL', grupo: 'seguridad', config: ARL_CONFIG },

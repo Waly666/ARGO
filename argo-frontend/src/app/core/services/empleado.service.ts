@@ -24,6 +24,11 @@ export interface Empleado {
   ciudad?: string;
   departamento?: string;
   estadoCivil?: string;
+  nivelEducativo?: string;
+  tituloProfesional?: string;
+  especializacion?: string;
+  maestria?: string;
+  doctorado?: string;
   fechaIngreso?: string;
   fechaRetiro?: string;
   tipoContrato?: string;
@@ -68,6 +73,70 @@ export interface DocEmpleadoDto {
   faltaFechaVence?: boolean;
   controlaVencimiento?: boolean;
   diasAvisoVencimiento?: number;
+}
+
+export interface EmpleadoEvaluacionCompetencia {
+  idCompetencia?: number | null;
+  codigo?: string;
+  nombre?: string;
+  /** null = sin calificar (no entra al promedio). */
+  puntaje?: number | null;
+}
+
+export interface EmpleadoEvaluacionDto {
+  _id?: string;
+  idEmpleado?: number;
+  fecha?: string | null;
+  periodo?: string;
+  puntaje?: number;
+  competencias?: EmpleadoEvaluacionCompetencia[];
+  tipo?: string;
+  observaciones?: string;
+  evaluadoPor?: string | null;
+  evaluadoPorNombre?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface CompetenciaDesempenoDto {
+  idCompetencia: number;
+  codigo?: string;
+  nombre: string;
+  descripcion?: string;
+  /** Vacío = todos los cargos. */
+  cargosIds?: number[];
+  ambito?: string;
+  orden?: number;
+  estado?: string;
+}
+
+export interface InformeDesempenoEmpleadoRow {
+  idEmpleado: number;
+  numeroDocumento: string;
+  nombreCompleto: string;
+  cargoNombre?: string | null;
+  estado?: string | null;
+  numEvaluaciones: number;
+  promedio: number;
+  ultimaPuntaje?: number | null;
+  ultimaFecha?: string | null;
+  evaluaciones?: EmpleadoEvaluacionDto[];
+}
+
+export interface InformeDesempenoRes {
+  filtros: {
+    desde?: string | null;
+    hasta?: string | null;
+    idEmpleado?: string | number | null;
+    cargoId?: string | number | null;
+    q?: string | null;
+  };
+  resumen: {
+    empleadosConEval: number;
+    totalEvaluaciones: number;
+    promedioGeneral: number | null;
+  };
+  porEmpleado: InformeDesempenoEmpleadoRow[];
 }
 
 export type ModoAccesoEmpleado = 'auto' | 'ninguno' | 'vincular';
@@ -166,6 +235,11 @@ export const EMPLEADO_WRITE_FIELDS = [
   'ciudad',
   'departamento',
   'estadoCivil',
+  'nivelEducativo',
+  'tituloProfesional',
+  'especializacion',
+  'maestria',
+  'doctorado',
   'fechaIngreso',
   'fechaRetiro',
   'tipoContrato',
@@ -294,6 +368,49 @@ export class EmpleadoService {
 
   eliminarDocumento(id: number | string, docId: string): Observable<{ ok: boolean }> {
     return this.http.delete<{ ok: boolean }>(`${this.base}/${id}/documentos/${docId}`);
+  }
+
+  listarEvaluaciones(id: number | string): Observable<EmpleadoEvaluacionDto[]> {
+    return this.http.get<EmpleadoEvaluacionDto[]>(`${this.base}/${id}/evaluaciones`);
+  }
+
+  crearEvaluacion(
+    id: number | string,
+    data: Partial<EmpleadoEvaluacionDto>,
+  ): Observable<EmpleadoEvaluacionDto> {
+    return this.http.post<EmpleadoEvaluacionDto>(`${this.base}/${id}/evaluaciones`, data);
+  }
+
+  actualizarEvaluacion(
+    id: number | string,
+    evalId: string,
+    data: Partial<EmpleadoEvaluacionDto>,
+  ): Observable<EmpleadoEvaluacionDto> {
+    return this.http.put<EmpleadoEvaluacionDto>(`${this.base}/${id}/evaluaciones/${evalId}`, data);
+  }
+
+  eliminarEvaluacion(id: number | string, evalId: string): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/${id}/evaluaciones/${evalId}`);
+  }
+
+  informeDesempeno(opts?: {
+    desde?: string;
+    hasta?: string;
+    idEmpleado?: number | string;
+    cargoId?: number | string;
+    q?: string;
+  }): Observable<InformeDesempenoRes> {
+    let params = new HttpParams();
+    if (opts?.desde) params = params.set('desde', opts.desde);
+    if (opts?.hasta) params = params.set('hasta', opts.hasta);
+    if (opts?.idEmpleado != null && opts.idEmpleado !== '') {
+      params = params.set('idEmpleado', String(opts.idEmpleado));
+    }
+    if (opts?.cargoId != null && opts.cargoId !== '') {
+      params = params.set('cargoId', String(opts.cargoId));
+    }
+    if (opts?.q) params = params.set('q', opts.q);
+    return this.http.get<InformeDesempenoRes>(`${this.rrhhBase}/informes/desempeno`, { params });
   }
 
   private toDocForm(data: Partial<DocEmpleadoDto>, archivo?: File): FormData {

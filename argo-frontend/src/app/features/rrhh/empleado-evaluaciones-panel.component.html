@@ -1,0 +1,201 @@
+<section class="eval-panel emp-block emp-block--eval">
+  <header class="emp-block-head eval-hero">
+    <span class="emp-block-num" aria-hidden="true">★</span>
+    <div class="eval-hero-text">
+      <p class="eval-kicker">Desempeño</p>
+      <h3>Evaluaciones</h3>
+      <p class="hint">
+        Califique competencias (1–10); el promedio se calcula solo.
+        <a routerLink="/app/rrhh/catalogos/competencias">Catálogo de competencias</a>
+      </p>
+    </div>
+    <div class="eval-hero-actions">
+      @if (rows().length) {
+        <span class="rrhh-chip rrhh-chip--amber">{{ rows().length }} registro{{ rows().length === 1 ? '' : 's' }}</span>
+      }
+      @if (puedeGestionar()) {
+        <button type="button" class="primary" (click)="nueva()">+ Nueva evaluación</button>
+      }
+    </div>
+  </header>
+
+  @if (msg(); as m) {
+    <div class="rrhh-msg" role="status">{{ m }}</div>
+  }
+  @if (err(); as e) {
+    <div class="rrhh-msg rrhh-msg--err" role="alert">{{ e }}</div>
+  }
+
+  @if (mostrarForm()) {
+    <div class="eval-form">
+      <header class="eval-form-head">
+        <div>
+          <p class="eval-kicker">{{ editando() ? 'Edición' : 'Nueva' }}</p>
+          <h4>{{ editando() ? 'Editar evaluación' : 'Registrar evaluación' }}</h4>
+        </div>
+        <div class="promedio-hero" [attr.data-tone]="tone(promedioForm())">
+          <span class="promedio-label">Promedio</span>
+          <strong class="promedio-val">
+            {{ promedioForm() != null ? promedioForm() : '—' }}
+            <small>/ 10</small>
+          </strong>
+          <span class="promedio-meta">{{ notasCalificadas() }} competencia{{ notasCalificadas() === 1 ? '' : 's' }}</span>
+        </div>
+      </header>
+
+      <div class="eval-meta-grid">
+        <div class="field">
+          <argo-date-input
+            label="Fecha *"
+            [ngModel]="form().fecha || ''"
+            (ngModelChange)="patch('fecha', $event)"
+          />
+        </div>
+        <div class="field">
+          <label>Periodo</label>
+          <input
+            type="text"
+            [ngModel]="form().periodo"
+            (ngModelChange)="patch('periodo', $event)"
+            placeholder="Ej. 2026-01 · 2026-Q1"
+          />
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <input
+            type="text"
+            [ngModel]="form().tipo"
+            (ngModelChange)="patch('tipo', $event)"
+            placeholder="desempeño, inducción…"
+          />
+        </div>
+      </div>
+
+      <div class="comp-block">
+        <header class="comp-block-head">
+          <h5>Competencias</h5>
+          <p>Deje vacío para omitir del promedio</p>
+        </header>
+        <div class="comp-grid">
+          @for (n of notas(); track n.idCompetencia ?? n.nombre; let i = $index) {
+            <label class="comp-item" [attr.data-tone]="tone(n.puntaje)" [class.has-score]="n.puntaje != null">
+              <div class="comp-top">
+                <span class="comp-name">{{ n.nombre }}</span>
+                @if (n.codigo) {
+                  <span class="comp-code">{{ n.codigo }}</span>
+                }
+              </div>
+              <div class="comp-score-row">
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="0.5"
+                  [ngModel]="n.puntaje"
+                  (ngModelChange)="setNota(i, $event)"
+                  placeholder="—"
+                />
+                <span class="comp-slash">/10</span>
+              </div>
+              <div class="comp-bar" aria-hidden="true">
+                <span [style.width.%]="barPct(n.puntaje)"></span>
+              </div>
+            </label>
+          }
+        </div>
+      </div>
+
+      <div class="field field-full">
+        <label>Observaciones</label>
+        <textarea
+          rows="3"
+          [ngModel]="form().observaciones"
+          (ngModelChange)="patch('observaciones', $event)"
+          placeholder="Comentarios del evaluador…"
+        ></textarea>
+      </div>
+
+      <div class="eval-form-actions">
+        <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
+        <button type="button" class="primary" [disabled]="saving()" (click)="guardar()">
+          {{ saving() ? 'Guardando…' : 'Guardar evaluación' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="eval-empty">
+      <p>Cargando historial…</p>
+    </div>
+  } @else if (!rows().length && !mostrarForm()) {
+    <div class="eval-empty">
+      <div class="eval-empty-ico" aria-hidden="true">★</div>
+      <h4>Sin evaluaciones aún</h4>
+      <p>Registre la primera calificación por competencias para este empleado.</p>
+      @if (puedeGestionar()) {
+        <button type="button" class="primary" (click)="nueva()">Crear primera evaluación</button>
+      }
+    </div>
+  } @else if (rows().length) {
+    <div class="eval-timeline">
+      @for (ev of rows(); track ev._id) {
+        <article class="eval-card" [class.open]="detalleId() === ev._id" [attr.data-tone]="tone(ev.puntaje)">
+          <div class="eval-card-main">
+            <div class="eval-score-badge" [attr.data-tone]="tone(ev.puntaje)">
+              <strong>{{ ev.puntaje }}</strong>
+              <span>/10</span>
+            </div>
+            <div class="eval-card-body">
+              <div class="eval-card-title">
+                <time class="mono">{{ ev.fecha || '—' }}</time>
+                @if (ev.periodo) {
+                  <span class="pill">{{ ev.periodo }}</span>
+                }
+                @if (ev.tipo) {
+                  <span class="pill pill-soft">{{ ev.tipo }}</span>
+                }
+              </div>
+              <p class="eval-card-meta">
+                {{ ev.competencias?.length || 0 }} competencia{{ (ev.competencias?.length || 0) === 1 ? '' : 's' }}
+                · {{ ev.evaluadoPorNombre || ev.evaluadoPor || 'Sin evaluador' }}
+              </p>
+            </div>
+            <div class="eval-card-actions">
+              <button type="button" class="ghost sm" (click)="toggleDetalle(ev._id)">
+                {{ detalleId() === ev._id ? 'Ocultar' : 'Ver detalle' }}
+              </button>
+              @if (puedeGestionar()) {
+                <button type="button" class="ghost sm" (click)="editar(ev)">Editar</button>
+                <button type="button" class="ghost sm danger" (click)="eliminar(ev)">Eliminar</button>
+              }
+            </div>
+          </div>
+
+          @if (detalleId() === ev._id) {
+            <div class="eval-card-detail">
+              @if (ev.competencias?.length) {
+                <div class="detail-comps">
+                  @for (c of ev.competencias; track c.idCompetencia ?? c.nombre) {
+                    <div class="detail-comp" [attr.data-tone]="tone(c.puntaje)">
+                      <div class="detail-comp-top">
+                        <span>{{ c.nombre }}</span>
+                        <strong>{{ c.puntaje }}/10</strong>
+                      </div>
+                      <div class="comp-bar" aria-hidden="true">
+                        <span [style.width.%]="barPct(c.puntaje)"></span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+              @if (ev.observaciones) {
+                <blockquote class="obs-det">{{ ev.observaciones }}</blockquote>
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -499,6 +499,11 @@ export const routes: Routes = [
               import('./features/rrhh/empleados-admin.component').then((m) => m.EmpleadosAdminComponent),
           },
           {
+            path: 'desempeno',
+            loadComponent: () =>
+              import('./features/rrhh/informe-desempeno.component').then((m) => m.InformeDesempenoComponent),
+          },
+          {
             path: 'contratos',
             loadComponent: () =>
               import('./features/rrhh/contratos-admin.component').then((m) => m.ContratosAdminComponent),

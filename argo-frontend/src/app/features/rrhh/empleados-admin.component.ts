@@ -3,6 +3,8 @@ import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-i
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import {
   Empleado,
@@ -17,23 +19,38 @@ import { loginMostrable } from '../../core/utils/usuario-login.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SedeDto, SedeService } from '../../core/services/sede.service';
+import { ConfigService } from '../../core/services/config.service';
 import { inicialesNombre, readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { environment } from '../../../environments/environment';
 import { EmpleadoDocumentosPanelComponent } from './empleado-documentos-panel.component';
+import { EmpleadoEvaluacionesPanelComponent } from './empleado-evaluaciones-panel.component';
 import { CelularInputComponent } from '../../shared/celular-input/celular-input.component';
 import { mensajeErrorCelularAlmacenado } from '../../core/utils/celular.util';
 import { MunicipioBuscarComponent } from '../alumnos/municipio-buscar.component';
+import { CatalogoEnumBuscarComponent, EnumBuscarOption } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
+import { abrirHojaVidaEmpleadoPdf, buildHojaVidaEmpleadoHtml } from './hoja-vida-empleado-print';
 
-type FormSeccion = 'datos' | 'documentos';
+type FormSeccion = 'datos' | 'documentos' | 'evaluaciones';
+
+const NIVELES_EDUCATIVOS: EnumBuscarOption[] = [
+  { value: 'Bachiller', label: 'Bachiller' },
+  { value: 'Técnico', label: 'Técnico' },
+  { value: 'Tecnólogo', label: 'Tecnólogo' },
+  { value: 'Universitario', label: 'Universitario' },
+  { value: 'Maestría', label: 'Maestría' },
+  { value: 'Doctorado', label: 'Doctorado' },
+];
 
 @Component({
   selector: 'argo-empleados-admin',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, EmpleadoDocumentosPanelComponent,
+    EmpleadoEvaluacionesPanelComponent,
     ArgoDateInputComponent,
     CelularInputComponent,
     MunicipioBuscarComponent,
+    CatalogoEnumBuscarComponent,
   ],
   templateUrl: './empleados-admin.component.html',
   styleUrls: ['./empleados-admin.component.scss', './rrhh-catalog-admin.component.scss', './rrhh-shared.scss'],
@@ -47,10 +64,12 @@ export class EmpleadosAdminComponent implements OnInit {
   private auth = inject(AuthService);
   private sedeSvc = inject(SedeService);
   private route = inject(ActivatedRoute);
+  private cfgSvc = inject(ConfigService);
 
   uploads = environment.uploadsUrl;
   fotoFile = signal<File | null>(null);
   fotoPreview = signal<string | null>(null);
+  exportandoHv = signal(false);
 
   empleados = signal<Empleado[]>([]);
   cargos = signal<any[]>([]);
@@ -116,10 +135,29 @@ export class EmpleadosAdminComponent implements OnInit {
   readonly sexos = ['Masculino', 'Femenino', 'Otro'];
   readonly estados = ['activo', 'retirado', 'suspendido'];
   readonly tiposContrato = ['indefinido', 'fijo', 'obra labor', 'aprendizaje'];
+  readonly nivelesEducativos = NIVELES_EDUCATIVOS;
 
   form = signal<EmpleadoDto>(this.formVacio());
   /** Texto visible del municipio Divipola (ciudad + depto). */
   munResidenciaTexto = signal('');
+  nivelEducativoTexto = signal('');
+
+  puedeTituloProfesional = computed(() => {
+    const n = String(this.form().nivelEducativo || '');
+    return ['Técnico', 'Tecnólogo', 'Universitario', 'Maestría', 'Doctorado'].includes(n);
+  });
+
+  puedeEspecializacion = computed(() => {
+    const n = String(this.form().nivelEducativo || '');
+    return ['Universitario', 'Maestría', 'Doctorado'].includes(n);
+  });
+
+  puedeMaestria = computed(() => {
+    const n = String(this.form().nivelEducativo || '');
+    return n === 'Maestría' || n === 'Doctorado';
+  });
+
+  puedeDoctorado = computed(() => String(this.form().nivelEducativo || '') === 'Doctorado');
 
   ngOnInit(): void {
     this.cargarCatalogos();
@@ -211,6 +249,48 @@ export class EmpleadosAdminComponent implements OnInit {
     return `${this.uploads}/${f}`;
   }
 
+  /** Genera PDF / impresión de la hoja de vida completa (datos + evaluaciones). */
+  exportarHojaVida(empleadoOrId?: Empleado | number | null): void {
+    const fromEdit = this.editando()?.idEmpleado;
+    const id =
+      typeof empleadoOrId === 'number'
+        ? empleadoOrId
+        : empleadoOrId?.idEmpleado ?? fromEdit;
+    if (id == null) {
+      this.inform('Abra la ficha de un empleado para generar la hoja de vida.', true);
+      return;
+    }
+    this.exportandoHv.set(true);
+    this.inform(null);
+    const puedeEval = this.auth.tienePermiso(['rrhh.evaluaciones.ver', 'rrhh.evaluaciones.gestionar', '*']);
+    forkJoin({
+      empleado: this.svc.obtener(id),
+      documentos: this.svc.listarDocumentos(id).pipe(catchError(() => of([]))),
+      evaluaciones: puedeEval
+        ? this.svc.listarEvaluaciones(id).pipe(catchError(() => of([])))
+        : of([]),
+      empresa: this.cfgSvc.obtenerReciboEncabezado().pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ empleado, documentos, evaluaciones, empresa }) => {
+        this.exportandoHv.set(false);
+        const html = buildHojaVidaEmpleadoHtml({
+          empleado,
+          documentos: documentos || [],
+          evaluaciones: evaluaciones || [],
+          empresa,
+          fotoUrl: this.fotoUrl(empleado.urlFoto),
+        });
+        if (!abrirHojaVidaEmpleadoPdf(html)) {
+          this.inform('El navegador bloqueó la ventana de impresión/PDF. Permita pop-ups.', true);
+        }
+      },
+      error: (e) => {
+        this.exportandoHv.set(false);
+        this.inform(e?.error?.message || 'No se pudo generar la hoja de vida.', true);
+      },
+    });
+  }
+
   onFoto(ev: Event) {
     const file = (ev.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -225,6 +305,7 @@ export class EmpleadosAdminComponent implements OnInit {
     this.formSeccion.set('datos');
     this.form.set(this.formVacio());
     this.munResidenciaTexto.set('');
+    this.nivelEducativoTexto.set('');
     this.modoAcceso.set('auto');
     this.idUsuarioVincular.set('');
     if (this.esAdmin()) this.cargarUsuarios();
@@ -255,6 +336,11 @@ export class EmpleadosAdminComponent implements OnInit {
       ciudad: e.ciudad || '',
       departamento: e.departamento || '',
       estadoCivil: e.estadoCivil || '',
+      nivelEducativo: e.nivelEducativo || '',
+      tituloProfesional: e.tituloProfesional || '',
+      especializacion: e.especializacion || '',
+      maestria: e.maestria || '',
+      doctorado: e.doctorado || '',
       fechaIngreso: e.fechaIngreso ? String(e.fechaIngreso).slice(0, 10) : '',
       fechaRetiro: e.fechaRetiro ? String(e.fechaRetiro).slice(0, 10) : '',
       tipoContrato: e.tipoContrato || '',
@@ -268,6 +354,7 @@ export class EmpleadosAdminComponent implements OnInit {
       idSede: e.idSede || undefined,
       estado: normalizarEstadoEmpleado(e.estado),
     });
+    this.nivelEducativoTexto.set(e.nivelEducativo || '');
     this.syncMunResidenciaTexto(e.ciudad, e.departamento);
     if (e.idUsuario) {
       this.modoAcceso.set('vincular');
@@ -324,7 +411,13 @@ export class EmpleadosAdminComponent implements OnInit {
     if (!idRaw) return;
     const emp = this.empleados().find((e) => String(e.idEmpleado) === idRaw);
     if (!emp) return;
-    const seccion = this.route.snapshot.queryParamMap.get('seccion') === 'documentos' ? 'documentos' : 'datos';
+    const seccionRaw = this.route.snapshot.queryParamMap.get('seccion');
+    const seccion: FormSeccion =
+      seccionRaw === 'documentos'
+        ? 'documentos'
+        : seccionRaw === 'evaluaciones'
+          ? 'evaluaciones'
+          : 'datos';
     this.editar(emp, seccion);
   }
 
@@ -358,14 +451,56 @@ export class EmpleadosAdminComponent implements OnInit {
     this.editando.set(null);
     this.formSeccion.set('datos');
     this.munResidenciaTexto.set('');
+    this.nivelEducativoTexto.set('');
+  }
+
+  onNivelEducativoSel(opt: EnumBuscarOption): void {
+    const nivel = String(opt.value || '');
+    this.nivelEducativoTexto.set(opt.label || nivel);
+    this.form.update((f) => {
+      const next: EmpleadoDto = { ...f, nivelEducativo: nivel };
+      if (!['Técnico', 'Tecnólogo', 'Universitario', 'Maestría', 'Doctorado'].includes(nivel)) {
+        next.tituloProfesional = '';
+      }
+      if (!['Universitario', 'Maestría', 'Doctorado'].includes(nivel)) {
+        next.especializacion = '';
+      }
+      if (nivel !== 'Maestría' && nivel !== 'Doctorado') {
+        next.maestria = '';
+      }
+      if (nivel !== 'Doctorado') {
+        next.doctorado = '';
+      }
+      return next;
+    });
+  }
+
+  onNivelEducativoLimpiar(): void {
+    this.nivelEducativoTexto.set('');
+    this.form.update((f) => ({
+      ...f,
+      nivelEducativo: '',
+      tituloProfesional: '',
+      especializacion: '',
+      maestria: '',
+      doctorado: '',
+    }));
   }
 
   setFormSeccion(sec: FormSeccion): void {
-    if (sec === 'documentos' && !this.editando()?.idEmpleado) return;
+    if ((sec === 'documentos' || sec === 'evaluaciones') && !this.editando()?.idEmpleado) return;
     this.formSeccion.set(sec);
   }
 
   puedeDocumentos = computed(() => !!this.editando()?.idEmpleado);
+  puedeVerEvaluaciones = computed(() =>
+    this.auth.tienePermiso([
+      'rrhh.evaluaciones.ver',
+      'rrhh.evaluaciones.gestionar',
+      'rrhh',
+      '*',
+    ]),
+  );
 
   patch<K extends keyof EmpleadoDto>(k: K, v: EmpleadoDto[K]) {
     this.form.update((f) => ({ ...f, [k]: v }));

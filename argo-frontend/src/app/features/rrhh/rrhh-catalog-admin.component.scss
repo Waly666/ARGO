@@ -31,10 +31,26 @@
   gap: 12px;
   margin-bottom: 10px;
 }
+.col-2 { grid-column: span 2; }
 .col-3 { grid-column: span 3; }
 .col-4 { grid-column: span 4; }
+.col-5 { grid-column: span 5; }
 .col-6 { grid-column: span 6; }
+.col-8 { grid-column: span 8; }
+.col-9 { grid-column: span 9; }
 .col-12 { grid-column: span 12; }
+
+@media (max-width: 720px) {
+  .col-2,
+  .col-3,
+  .col-4,
+  .col-5,
+  .col-6,
+  .col-8,
+  .col-9 {
+    grid-column: span 12;
+  }
+}
 .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
 .toolbar {
   display: flex;
@@ -55,3 +71,51 @@ textarea, input, select { width: 100%; }
   color: var(--text-dim);
   margin-left: 4px;
 }
+
+.field-hint {
+  margin: 4px 0 8px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+.ambito-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ambito-todos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  input { width: auto; }
+}
+
+.cargos-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px 12px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--border, #cbd5e1) 80%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, var(--bg, #f1f5f9));
+
+  &.is-disabled {
+    opacity: 0.55;
+  }
+}
+
+.cargo-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  input { width: auto; flex-shrink: 0; }
+}
+

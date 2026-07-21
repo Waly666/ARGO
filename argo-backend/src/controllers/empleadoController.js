@@ -37,6 +37,11 @@ const EMPLEADO_FIELDS = [
   'ciudad',
   'departamento',
   'estadoCivil',
+  'nivelEducativo',
+  'tituloProfesional',
+  'especializacion',
+  'maestria',
+  'doctorado',
   'fechaIngreso',
   'fechaRetiro',
   'tipoContrato',
@@ -89,6 +94,24 @@ function pickEmpleado(body) {
       continue;
     }
     dto[k] = String(dto[k]).trim().toLowerCase();
+  }
+  for (const k of [
+    'nivelEducativo',
+    'tituloProfesional',
+    'especializacion',
+    'maestria',
+    'doctorado',
+    'estadoCivil',
+    'tipoContrato',
+    'sexo',
+    'telefono',
+    'celular',
+    'direccion',
+    'ciudad',
+    'departamento',
+  ]) {
+    if (dto[k] == null) continue;
+    dto[k] = String(dto[k]).trim();
   }
   for (const k of DATE_FIELDS) {
     if (dto[k] === '' || dto[k] == null) {

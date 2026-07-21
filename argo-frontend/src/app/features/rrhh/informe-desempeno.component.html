@@ -1,0 +1,141 @@
+<section class="rrhh-page card informe-desempeno">
+  <header class="rrhh-head page-head">
+    <div class="rrhh-head-main">
+      <p class="breadcrumb"><a routerLink="/app/rrhh/inicio">RRHH</a> / Desempeño</p>
+      <h1>Informe de desempeño</h1>
+      <p class="hint">Promedio y última calificación (escala 1–10) por empleado en el periodo.</p>
+    </div>
+    <div class="head-actions">
+      <button type="button" class="ghost" [disabled]="!data()?.porEmpleado?.length" (click)="exportarPdf()">
+        Imprimir / PDF
+      </button>
+      <button type="button" class="primary" (click)="buscar()" [disabled]="loading()">
+        {{ loading() ? 'Cargando…' : 'Actualizar' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="toolbar filtros">
+    <div class="f">
+      <argo-date-input label="Desde" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+    </div>
+    <div class="f">
+      <argo-date-input label="Hasta" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    </div>
+    <div class="f">
+      <label>Cargo</label>
+      <select
+        [ngModel]="cargoId()"
+        (ngModelChange)="cargoId.set($event === '' || $event == null ? undefined : +$event)"
+      >
+        <option [ngValue]="undefined">Todos</option>
+        <option *ngFor="let c of cargos()" [ngValue]="c.idCargo">{{ c.nombre }}</option>
+      </select>
+    </div>
+    <div class="f grow">
+      <label>Buscar</label>
+      <input
+        type="search"
+        placeholder="Nombre o documento…"
+        [ngModel]="q()"
+        (ngModelChange)="q.set($event)"
+        (keyup.enter)="buscar()"
+      />
+    </div>
+    <button type="button" class="ghost" (click)="buscar()">Filtrar</button>
+  </div>
+
+  @if (err(); as e) {
+    <div class="rrhh-msg rrhh-msg--err" role="alert">{{ e }}</div>
+  }
+
+  @if (data(); as d) {
+    <div class="kpis">
+      <article class="kpi">
+        <span>Empleados</span>
+        <strong>{{ d.resumen.empleadosConEval }}</strong>
+      </article>
+      <article class="kpi">
+        <span>Evaluaciones</span>
+        <strong>{{ d.resumen.totalEvaluaciones }}</strong>
+      </article>
+      <article class="kpi">
+        <span>Promedio general</span>
+        <strong>{{ d.resumen.promedioGeneral ?? '—' }}</strong>
+      </article>
+    </div>
+
+    <div class="rrhh-table-wrap">
+      <table class="argo">
+        <thead>
+          <tr>
+            <th>Documento</th>
+            <th>Nombre</th>
+            <th>Cargo</th>
+            <th class="num">#</th>
+            <th class="num">Promedio</th>
+            <th class="num">Última</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of d.porEmpleado; track r.idEmpleado) {
+            <tr>
+              <td class="mono">{{ r.numeroDocumento }}</td>
+              <td>{{ r.nombreCompleto }}</td>
+              <td>{{ r.cargoNombre || '—' }}</td>
+              <td class="num">{{ r.numEvaluaciones }}</td>
+              <td class="num"><strong>{{ r.promedio }}</strong></td>
+              <td class="num">{{ r.ultimaPuntaje }} <span class="muted">({{ r.ultimaFecha }})</span></td>
+              <td>
+                <button type="button" class="ghost sm" (click)="verDetalle(r)">
+                  {{ detalle()?.idEmpleado === r.idEmpleado ? 'Ocultar' : 'Detalle' }}
+                </button>
+                <a
+                  class="link-btn"
+                  [routerLink]="['/app/rrhh/empleados']"
+                  [queryParams]="{ empleado: r.idEmpleado, seccion: 'evaluaciones' }"
+                  >Ficha</a
+                >
+              </td>
+            </tr>
+            @if (detalle()?.idEmpleado === r.idEmpleado) {
+              <tr class="detalle-row">
+                <td colspan="7">
+                  <table class="argo nested">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Periodo</th>
+                        <th>Puntaje</th>
+                        <th>Tipo</th>
+                        <th>Evaluador</th>
+                        <th>Observaciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (ev of r.evaluaciones || []; track ev._id) {
+                        <tr>
+                          <td class="mono">{{ ev.fecha }}</td>
+                          <td>{{ ev.periodo || '—' }}</td>
+                          <td class="num">{{ ev.puntaje }}/10</td>
+                          <td>{{ ev.tipo }}</td>
+                          <td>{{ ev.evaluadoPorNombre || ev.evaluadoPor || '—' }}</td>
+                          <td>{{ ev.observaciones || '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">Sin evaluaciones en el filtro actual.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

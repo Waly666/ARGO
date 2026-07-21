@@ -48,16 +48,37 @@
         <p class="emp-form-kicker">{{ editando() ? 'Ficha de personal' : 'Alta de personal' }}</p>
         <h2>{{ editando() ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
       </div>
-      @if (editando()) {
-        <span class="rrhh-chip" [class.rrhh-chip--teal]="form().estado === 'activo'" [class.rrhh-chip--rose]="form().estado !== 'activo'">
-          {{ form().estado || 'Sin estado' }}
-        </span>
-      }
+      <div class="emp-form-head-actions">
+        @if (editando()?.idEmpleado) {
+          <button
+            type="button"
+            class="ghost"
+            (click)="exportarHojaVida()"
+            [disabled]="exportandoHv()"
+            title="Imprimir o guardar PDF de la hoja de vida"
+          >
+            {{ exportandoHv() ? 'Generando…' : 'Hoja de vida PDF' }}
+          </button>
+        }
+        @if (editando()) {
+          <span class="rrhh-chip" [class.rrhh-chip--teal]="form().estado === 'activo'" [class.rrhh-chip--rose]="form().estado !== 'activo'">
+            {{ form().estado || 'Sin estado' }}
+          </span>
+        }
+      </div>
     </header>
 
     <nav class="form-tabs" *ngIf="editando()?.idEmpleado">
       <button type="button" [class.active]="formSeccion() === 'datos'" (click)="setFormSeccion('datos')">Datos</button>
       <button type="button" [class.active]="formSeccion() === 'documentos'" (click)="setFormSeccion('documentos')">Documentos</button>
+      <button
+        type="button"
+        *ngIf="puedeVerEvaluaciones()"
+        [class.active]="formSeccion() === 'evaluaciones'"
+        (click)="setFormSeccion('evaluaciones')"
+      >
+        Evaluaciones
+      </button>
     </nav>
 
     <ng-container *ngIf="formSeccion() === 'datos'">
@@ -193,9 +214,75 @@
       </div>
     </section>
 
-    <section class="emp-block emp-block--laboral">
+    <section class="emp-block emp-block--formacion">
       <header class="emp-block-head">
         <span class="emp-block-num" aria-hidden="true">02</span>
+        <div>
+          <h3>Formación académica</h3>
+          <p>Nivel educativo, título y posgrados</p>
+        </div>
+      </header>
+      <div class="row">
+        <div class="col-4">
+          <argo-catalogo-enum-buscar
+            label="Nivel educativo"
+            placeholder="Seleccione o escriba…"
+            [remoto]="false"
+            [modoCombo]="true"
+            [opcionesLocales]="nivelesEducativos"
+            [textoInicial]="nivelEducativoTexto()"
+            (seleccionado)="onNivelEducativoSel($event)"
+            (limpiado)="onNivelEducativoLimpiar()"
+          />
+        </div>
+        <div class="col-8">
+          <label>Título profesional</label>
+          <input
+            type="text"
+            [ngModel]="form().tituloProfesional"
+            (ngModelChange)="patch('tituloProfesional', $event)"
+            [disabled]="!puedeTituloProfesional()"
+            placeholder="{{ puedeTituloProfesional() ? 'Ej. Técnico en sistemas' : 'Activo desde Técnico' }}"
+          />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4">
+          <label>Especialización</label>
+          <input
+            type="text"
+            [ngModel]="form().especializacion"
+            (ngModelChange)="patch('especializacion', $event)"
+            [disabled]="!puedeEspecializacion()"
+            placeholder="{{ puedeEspecializacion() ? 'Nombre de la especialización' : 'Desde Universitario' }}"
+          />
+        </div>
+        <div class="col-4">
+          <label>Maestría</label>
+          <input
+            type="text"
+            [ngModel]="form().maestria"
+            (ngModelChange)="patch('maestria', $event)"
+            [disabled]="!puedeMaestria()"
+            placeholder="{{ puedeMaestria() ? 'Nombre de la maestría' : 'Desde Maestría' }}"
+          />
+        </div>
+        <div class="col-4">
+          <label>Doctorado</label>
+          <input
+            type="text"
+            [ngModel]="form().doctorado"
+            (ngModelChange)="patch('doctorado', $event)"
+            [disabled]="!puedeDoctorado()"
+            placeholder="{{ puedeDoctorado() ? 'Nombre del doctorado' : 'Solo Doctorado' }}"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="emp-block emp-block--laboral">
+      <header class="emp-block-head">
+        <span class="emp-block-num" aria-hidden="true">03</span>
         <div>
           <h3>Datos laborales</h3>
           <p>Cargo, sede, contrato y fechas</p>
@@ -247,7 +334,7 @@
 
     <section class="emp-block emp-block--ss">
       <header class="emp-block-head">
-        <span class="emp-block-num" aria-hidden="true">03</span>
+        <span class="emp-block-num" aria-hidden="true">04</span>
         <div>
           <h3>Seguridad social</h3>
           <p>EPS, pensión, riesgos y caja</p>
@@ -288,7 +375,7 @@
     <section class="acceso-panel emp-block emp-block--acceso">
       <div class="acceso-head">
         <div class="emp-block-head emp-block-head--inline">
-          <span class="emp-block-num" aria-hidden="true">04</span>
+          <span class="emp-block-num" aria-hidden="true">05</span>
           <div>
             <h3 class="sec acceso-sec">Acceso al sistema</h3>
             <p class="hint acceso-hint" *ngIf="cargoSugiereAcceso()">
@@ -364,6 +451,11 @@
       [idEmpleado]="idEmp"
       [cargoId]="form().cargoId"
     />
+    <argo-empleado-evaluaciones-panel
+      *ngIf="formSeccion() === 'evaluaciones' && editando()?.idEmpleado as idEmpEval"
+      [idEmpleado]="idEmpEval"
+      [cargoId]="form().cargoId"
+    />
   </div>
 
   <div class="loading" *ngIf="loading()">Cargando…</div>
@@ -405,6 +497,7 @@
               >Egresos</a
             >
             <button type="button" class="ghost sm" (click)="editar(e)">Editar</button>
+            <button type="button" class="ghost sm" (click)="exportarHojaVida(e)" [disabled]="exportandoHv()">HV PDF</button>
             <button type="button" class="danger sm" (click)="eliminar(e)">Eliminar</button>
           </td>
         </tr>
@@ -445,6 +538,7 @@
         <div class="card-actions">
           <a [routerLink]="['/app/caja']" [queryParams]="{ numeroDocumento: e.numeroDocumento }" class="act open">Egresos</a>
           <button type="button" class="act open" (click)="editar(e)">Editar</button>
+          <button type="button" class="act open" (click)="exportarHojaVida(e)" [disabled]="exportandoHv()">HV PDF</button>
           <button type="button" class="act doc" (click)="eliminar(e)">Eliminar</button>
         </div>
       </footer>

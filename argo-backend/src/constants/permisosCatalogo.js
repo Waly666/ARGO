@@ -79,6 +79,11 @@ const GRUPOS = [
       { key: 'facturacion', label: 'Facturación' },
       { key: 'vehiculos', label: 'Vehículos' },
       { key: 'rrhh', label: 'Recursos humanos y nómina' },
+      { key: 'rrhh.evaluaciones.ver', label: 'Ver evaluaciones de desempeño e informe' },
+      {
+        key: 'rrhh.evaluaciones.gestionar',
+        label: 'Registrar y editar calificaciones de empleados (1–10)',
+      },
     ],
   },
   {

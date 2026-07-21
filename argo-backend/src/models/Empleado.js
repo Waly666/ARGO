@@ -19,6 +19,13 @@ const EmpleadoSchema = new mongoose.Schema(
     ciudad: { type: String, trim: true },
     departamento: { type: String, trim: true },
     estadoCivil: { type: String, trim: true },
+    /** Bachiller | Técnico | Tecnólogo | Universitario | Maestría | Doctorado */
+    nivelEducativo: { type: String, trim: true },
+    /** Título profesional (habilitado desde Técnico en adelante). */
+    tituloProfesional: { type: String, trim: true },
+    especializacion: { type: String, trim: true },
+    maestria: { type: String, trim: true },
+    doctorado: { type: String, trim: true },
     fechaIngreso: { type: Date },
     fechaRetiro: { type: Date },
     tipoContrato: { type: String, trim: true },

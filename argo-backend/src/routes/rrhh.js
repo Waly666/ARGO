@@ -2,6 +2,7 @@ const { Router } = require('express');
 const upload = require('../middleware/upload');
 const empleado = require('../controllers/empleadoController');
 const empleadoDoc = require('../controllers/empleadoDocumentoController');
+const empleadoEval = require('../controllers/empleadoEvaluacionController');
 const cat = require('../controllers/rrhhCatalogoControllers');
 const contrato = require('../controllers/contratoController');
 const novedad = require('../controllers/novedadNominaController');
@@ -10,6 +11,8 @@ const { requireAuth, requirePermiso } = require('../middleware/auth');
 
 const router = Router();
 const rrhh = requirePermiso('rrhh');
+const evalVer = requirePermiso('rrhh.evaluaciones.ver', 'rrhh.evaluaciones.gestionar', 'rrhh');
+const evalGest = requirePermiso('rrhh.evaluaciones.gestionar');
 
 router.use(requireAuth);
 router.get('/alertas-documentos-empleados', empleadoDoc.alertasDocumentos);
@@ -44,6 +47,11 @@ router.get('/empleados/:id/documentos', empleadoDoc.listarDocumentos);
 router.post('/empleados/:id/documentos', empleadoDocUpload, empleadoDoc.crearDocumento);
 router.put('/empleados/:id/documentos/:docId', empleadoDocUpload, empleadoDoc.actualizarDocumento);
 router.delete('/empleados/:id/documentos/:docId', empleadoDoc.eliminarDocumento);
+router.get('/empleados/:id/evaluaciones', evalVer, empleadoEval.listarPorEmpleado);
+router.post('/empleados/:id/evaluaciones', evalGest, empleadoEval.crear);
+router.put('/empleados/:id/evaluaciones/:evalId', evalGest, empleadoEval.actualizar);
+router.delete('/empleados/:id/evaluaciones/:evalId', evalGest, empleadoEval.eliminar);
+router.get('/informes/desempeno', evalVer, empleadoEval.informeDesempeno);
 router.get('/empleados/:id', empleado.obtener);
 router.post('/empleados', empleadoFoto, empleado.crear);
 router.put('/empleados/:id', empleadoFoto, empleado.actualizar);
@@ -54,6 +62,7 @@ router.use('/eps', crud(cat.eps));
 router.use('/afp', crud(cat.afp));
 router.use('/arl', crud(cat.arl));
 router.use('/cajas-compensacion', crud(cat.cajaCompensacion));
+router.use('/competencias-desempeno', crud(cat.competencia));
 router.use('/contratos', crud(contrato));
 router.use('/novedades-nomina', crud(novedad));
 

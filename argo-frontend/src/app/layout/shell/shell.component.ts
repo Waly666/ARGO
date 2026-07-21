@@ -740,6 +740,7 @@ export class ShellComponent {
       children: [
         { kind: 'link', label: 'Inicio y guía', path: '/app/rrhh/inicio', icon: '⌂', iconTone: 'rose', section: 'GENERAL', permiso: 'rrhh' },
         { kind: 'link', label: 'Empleados', path: '/app/rrhh/empleados', icon: '◉', iconTone: 'cyan', section: 'PERSONAL', permiso: 'rrhh' },
+        { kind: 'link', label: 'Desempeño', path: '/app/rrhh/desempeno', icon: '★', iconTone: 'amber', permiso: 'rrhh' },
         { kind: 'link', label: 'Contratos', path: '/app/rrhh/contratos', icon: '▤', iconTone: 'indigo', permiso: 'rrhh' },
         {
           kind: 'link',
@@ -749,6 +750,14 @@ export class ShellComponent {
           iconTone: 'blue',
           section: 'CATÁLOGOS',
           catalogosMatch: true,
+          permiso: 'rrhh',
+        },
+        {
+          kind: 'link',
+          label: 'Competencias',
+          path: '/app/rrhh/catalogos/competencias',
+          icon: '✦',
+          iconTone: 'violet',
           permiso: 'rrhh',
         },
         { kind: 'link', label: 'Liquidación', path: '/app/rrhh/nomina', icon: '₱', iconTone: 'emerald', section: 'NÓMINA', permiso: 'rrhh' },
@@ -1749,7 +1758,12 @@ export class ShellComponent {
     if (link.path === '/app/caja') {
       return url === '/app/caja' || url === '/app/caja/';
     }
-    if (link.catalogosMatch) return url.includes('/rrhh/catalogos');
+    if (link.path === '/app/rrhh/catalogos/competencias') {
+      return url.includes('/rrhh/catalogos/competencias');
+    }
+    if (link.catalogosMatch) {
+      return url.includes('/rrhh/catalogos') && !url.includes('/rrhh/catalogos/competencias');
+    }
     if (link.path === '/app/rrhh/inicio') {
       return url === link.path || url === '/app/rrhh' || url === '/app/rrhh/';
     }

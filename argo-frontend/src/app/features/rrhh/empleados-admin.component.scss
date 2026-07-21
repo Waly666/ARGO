@@ -69,6 +69,14 @@
   margin-bottom: 0.35rem;
 }
 
+.emp-form-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  justify-content: flex-end;
+}
+
 .emp-form-kicker {
   margin: 0 0 0.2rem;
   font-size: 0.68rem;

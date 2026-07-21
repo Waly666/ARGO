@@ -57,25 +57,54 @@
     <div class="row">
       <div *ngFor="let field of cfg.fields" [class]="'col-' + (field.col || 4)">
         <label>{{ field.label }}<span *ngIf="field.required"> *</span></label>
-        <textarea
-          *ngIf="field.type === 'textarea'"
-          rows="2"
-          [ngModel]="form()[field.key]"
-          (ngModelChange)="patch(field.key, $event)"
-        ></textarea>
-        <select
-          *ngIf="field.type === 'select'"
-          [ngModel]="form()[field.key]"
-          (ngModelChange)="patch(field.key, $event)"
-        >
-          <option *ngFor="let o of field.options" [value]="o.value">{{ o.label }}</option>
-        </select>
-        <input
-          *ngIf="!field.type || field.type === 'text' || field.type === 'number'"
-          [type]="field.type === 'number' ? 'number' : 'text'"
-          [ngModel]="form()[field.key]"
-          (ngModelChange)="patch(field.key, field.type === 'number' ? +$event : $event)"
-        />
+
+        <ng-container *ngIf="field.type === 'cargos-multiselect'; else fieldStd">
+          <div class="ambito-box">
+            <label class="ambito-todos">
+              <input
+                type="checkbox"
+                [checked]="ambitoEsTodos()"
+                (change)="setAmbitoTodos($any($event.target).checked)"
+              />
+              Todos los cargos (transversal)
+            </label>
+            <p class="field-hint" *ngIf="field.hint">{{ field.hint }}</p>
+            <div class="cargos-checks" [class.is-disabled]="ambitoEsTodos()">
+              <label class="cargo-check" *ngFor="let c of cargos()">
+                <input
+                  type="checkbox"
+                  [checked]="cargoChecked(c.idCargo)"
+                  [disabled]="ambitoEsTodos()"
+                  (change)="toggleCargo(c.idCargo, $any($event.target).checked)"
+                />
+                {{ c.nombre }}
+              </label>
+              <p class="field-hint" *ngIf="!cargos().length">No hay cargos en el catálogo. Cree cargos en la pestaña Cargos.</p>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #fieldStd>
+          <textarea
+            *ngIf="field.type === 'textarea'"
+            rows="2"
+            [ngModel]="form()[field.key]"
+            (ngModelChange)="patch(field.key, $event)"
+          ></textarea>
+          <select
+            *ngIf="field.type === 'select'"
+            [ngModel]="form()[field.key]"
+            (ngModelChange)="patch(field.key, $event)"
+          >
+            <option *ngFor="let o of field.options" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <input
+            *ngIf="!field.type || field.type === 'text' || field.type === 'number'"
+            [type]="field.type === 'number' ? 'number' : 'text'"
+            [ngModel]="form()[field.key]"
+            (ngModelChange)="patch(field.key, field.type === 'number' ? +$event : $event)"
+          />
+        </ng-template>
       </div>
     </div>
     <div class="actions">

@@ -15,7 +15,10 @@ function serializeCatalogRow(row, fields) {
 function pickFields(body, fields) {
   const dto = {};
   for (const k of fields) {
-    if (body[k] !== undefined && body[k] !== '') dto[k] = body[k];
+    if (body[k] === undefined) continue;
+    // Permitir arrays vacíos (p. ej. cargosIds = todos) y 0 numérico.
+    if (body[k] === '' && !Array.isArray(body[k])) continue;
+    dto[k] = body[k];
   }
   return dto;
 }
