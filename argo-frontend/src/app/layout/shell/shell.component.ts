@@ -787,6 +787,7 @@ export class ShellComponent {
         'config.facturacion',
         'config.nomina',
         'config.certificados',
+        'jornadas.gestionar',
         'config.alertas',
         'config.paginas_informes',
         'config.requisitos',

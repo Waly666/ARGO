@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { finalize, timeout } from 'rxjs/operators';
 
 import {
   ConfigOperacionJornadas,
@@ -48,27 +49,32 @@ export class ConfigJornadasComponent implements OnInit {
           })),
         );
       },
+      error: () => this.serviciosGlobales.set([]),
     });
     this.recargar();
   }
 
   recargar(): void {
     this.loading.set(true);
-    this.jornadaSvc.obtenerConfigOperacionJornadas().subscribe({
-      next: (cfg) => {
-        this.config.set(cfg);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.config.set({
-          operacionFueraDeDiaHabilitada: false,
-          mostrarSwitchHorarioManual: true,
-          idServCapacitacionContrato: '53',
-        });
-        this.loading.set(false);
-        this.mostrar('No se pudo cargar la configuración.', true);
-      },
-    });
+    this.jornadaSvc
+      .obtenerConfigOperacionJornadas()
+      .pipe(
+        timeout(20_000),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe({
+        next: (cfg) => {
+          this.config.set(cfg);
+        },
+        error: () => {
+          this.config.set({
+            operacionFueraDeDiaHabilitada: false,
+            mostrarSwitchHorarioManual: true,
+            idServCapacitacionContrato: '53',
+          });
+          this.mostrar('No se pudo cargar la configuración.', true);
+        },
+      });
   }
 
   patchOperacionFueraDeDia(valor: boolean): void {
