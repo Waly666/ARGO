@@ -37,7 +37,9 @@ import {
 import type { CedulaPdf417Data } from '../utils/cedulaPdf417';
 import { isValidNumDocDigits, sanitizeNumDocInput } from '../utils/numDoc';
 import { useAccessibility } from '../context/AccessibilityContext';
+import { useAuth } from '../context/AuthContext';
 import { themeColors } from '../theme/colors';
+import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 
 type Route = RouteProp<RootStackParamList, 'CrearAlumnoJornada'>;
@@ -54,8 +56,12 @@ function celularOk(v: string): boolean {
 export default function CrearAlumnoJornadaScreen() {
   const route = useRoute<Route>();
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const { state } = useAuth();
   const { highContrast, textMultiplier } = useAccessibility();
   const c = themeColors(highContrast);
+  const puedeRegistrar = puedeRegistrarAlumnosJornada(
+    state.status === 'signedIn' ? state.user?.permisos : undefined,
+  );
   const {
     numDoc: numDocInicial,
     claseId,
@@ -240,6 +246,18 @@ export default function CrearAlumnoJornadaScreen() {
       style={{ flex: 1, backgroundColor: c.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {!puedeRegistrar ? (
+        <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
+          <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '800', marginBottom: 8 }}>
+            Sin permiso de registro
+          </ScaledText>
+          <ScaledText baseSize={14} style={{ color: c.textSoft, lineHeight: 20, marginBottom: 16 }}>
+            El alta de alumnos de jornada la realiza Registro/Recepción. Los instructores solo
+            inscriben y operan clase con alumnos ya creados.
+          </ScaledText>
+          <PrimaryButton label="Volver" variant="ghost" fullWidth onPress={() => nav.goBack()} />
+        </View>
+      ) : (
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
           Tipo fijo: Jornadas de Capacitación. Misma ficha del front: personales, contacto, origen y
@@ -484,21 +502,25 @@ export default function CrearAlumnoJornadaScreen() {
         <PrimaryButton label="Cancelar" variant="ghost" onPress={() => nav.goBack()} fullWidth />
         <View style={{ height: 32 }} />
       </ScrollView>
+      )}
 
-      <Pdf417ScanModal visible={scanOpen} onClose={() => setScanOpen(false)} onScan={aplicarPdf417} />
-
-      <AlumnoQrLabelModal
-        visible={!!qrLabel}
-        numDoc={qrLabel?.numDoc || ''}
-        nombre={qrLabel?.nombre || ''}
-        codContrato={codContrato}
-        fechaJornada={fechaJornada}
-        onClose={() => {
-          const doc = qrLabel?.numDoc;
-          setQrLabel(null);
-          volverAClase(doc);
-        }}
-      />
+      {puedeRegistrar ? (
+        <>
+          <Pdf417ScanModal visible={scanOpen} onClose={() => setScanOpen(false)} onScan={aplicarPdf417} />
+          <AlumnoQrLabelModal
+            visible={!!qrLabel}
+            numDoc={qrLabel?.numDoc || ''}
+            nombre={qrLabel?.nombre || ''}
+            codContrato={codContrato}
+            fechaJornada={fechaJornada}
+            onClose={() => {
+              const doc = qrLabel?.numDoc;
+              setQrLabel(null);
+              volverAClase(doc);
+            }}
+          />
+        </>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }

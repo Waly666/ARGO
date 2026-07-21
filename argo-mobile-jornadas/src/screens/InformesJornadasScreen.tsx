@@ -12,6 +12,11 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { CatalogPickerField } from '../components/CatalogPickerField';
 import { EmptyState } from '../components/EmptyState';
 import { IconInput } from '../components/IconInput';
+import {
+  DonutChart,
+  KPI_TONES,
+  VerticalBarsChart,
+} from '../components/InformeCharts';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
@@ -22,79 +27,13 @@ import {
   type InformeContratoAlcance,
 } from '../api/jornadasApi';
 import type { CatalogOption } from '../catalogos/alumnoCatalogos';
-import type { InformeDashboardChartItem, InformeDashboardDto } from '../api/types';
+import type { InformeDashboardDto } from '../api/types';
 import { useAuth } from '../context/AuthContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { compartirArchivoBytes } from '../services/fileShare';
 import { puedeGestionarJornadas, tienePermiso } from '../utils/permisos';
 import { themeColors } from '../theme/colors';
 import type { RootStackParamList } from '../navigation/types';
-
-function pctOf(value: number, total: number): number {
-  if (!total) return 0;
-  return Math.round((value / total) * 1000) / 10;
-}
-
-function BarList({
-  title,
-  hint,
-  items,
-  unit,
-  barColor,
-}: {
-  title: string;
-  hint: string;
-  items: InformeDashboardChartItem[];
-  unit: string;
-  barColor: string;
-}) {
-  const { highContrast } = useAccessibility();
-  const c = themeColors(highContrast);
-  const list = (items || []).filter((x) => Number(x.value) >= 0).slice(0, 10);
-  const total = list.reduce((s, x) => s + (Number(x.value) || 0), 0);
-  const max = Math.max(1, ...list.map((x) => Number(x.value) || 0));
-
-  return (
-    <SurfaceCard style={{ marginBottom: 12 }}>
-      <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800' }}>
-        {title}
-      </ScaledText>
-      <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4, marginBottom: 10 }}>
-        {hint} Total: {total} {unit}.
-      </ScaledText>
-      {list.length === 0 ? (
-        <ScaledText baseSize={13} style={{ color: c.textSoft }}>
-          Sin datos
-        </ScaledText>
-      ) : (
-        list.map((it) => {
-          const value = Number(it.value) || 0;
-          const w = Math.max(4, Math.round((value / max) * 100));
-          const pct = pctOf(value, total);
-          return (
-            <View key={it.label} style={{ marginBottom: 10 }}>
-              <View style={styles.barHead}>
-                <ScaledText
-                  baseSize={13}
-                  style={{ color: c.text, fontWeight: '700', flex: 1 }}
-                  numberOfLines={1}
-                >
-                  {it.label}
-                </ScaledText>
-                <ScaledText baseSize={12} style={{ color: c.primaryDark, fontWeight: '800' }}>
-                  {value} · {pct}%
-                </ScaledText>
-              </View>
-              <View style={[styles.barTrack, { backgroundColor: c.border }]}>
-                <View style={[styles.barFill, { width: `${w}%`, backgroundColor: barColor }]} />
-              </View>
-            </View>
-          );
-        })
-      )}
-    </SurfaceCard>
-  );
-}
 
 export default function InformesJornadasScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -493,80 +432,99 @@ export default function InformesJornadasScreen() {
 
       {kpis ? (
         <View style={styles.kpiGrid}>
-          {[
-            {
-              l: 'Jornadas',
-              v: String(kpis.jornadas),
-              s: kpis.metaJornadas > 0 ? `meta ${kpis.metaJornadas}` : undefined,
-            },
-            {
-              l: 'Clases dictadas',
-              v: `${kpis.clasesDictadas}/${kpis.clasesTotales}`,
-              s: kpis.clasesEnProceso > 0 ? `${kpis.clasesEnProceso} en proceso` : undefined,
-            },
-            {
-              l: 'Alumnos capacitados',
-              v: String(kpis.alumnosCapacitados),
-              s: kpis.metaAlumnos > 0 ? `meta ${kpis.metaAlumnos}` : undefined,
-            },
-            {
-              l: 'Alumnos certificados',
-              v: String(kpis.alumnosCertificados),
-              s: `${kpis.certificadosEmitidos} cert. emitidos`,
-            },
-          ].map((k) => (
-            <View
-              key={k.l}
-              style={[styles.kpi, { backgroundColor: c.accentSoft, borderColor: c.border }]}
-            >
-              <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
-                {k.l}
-              </ScaledText>
-              <ScaledText
-                baseSize={18}
-                style={{ color: c.primaryDark, fontWeight: '800', marginTop: 4 }}
+          {(
+            [
+              {
+                l: 'Jornadas',
+                v: String(kpis.jornadas),
+                s: kpis.metaJornadas > 0 ? `meta ${kpis.metaJornadas}` : undefined,
+                tone: 'sky' as const,
+              },
+              {
+                l: 'Clases dictadas',
+                v: `${kpis.clasesDictadas}/${kpis.clasesTotales}`,
+                s: kpis.clasesEnProceso > 0 ? `${kpis.clasesEnProceso} en proceso` : undefined,
+                tone: 'amber' as const,
+              },
+              {
+                l: 'Alumnos capacitados',
+                v: String(kpis.alumnosCapacitados),
+                s: kpis.metaAlumnos > 0 ? `meta ${kpis.metaAlumnos}` : undefined,
+                tone: 'emerald' as const,
+              },
+              {
+                l: 'Alumnos certificados',
+                v: String(kpis.alumnosCertificados),
+                s: `${kpis.certificadosEmitidos} cert. emitidos`,
+                tone: 'violet' as const,
+              },
+            ] as const
+          ).map((k) => {
+            const tone = KPI_TONES[k.tone];
+            return (
+              <View
+                key={k.l}
+                style={[
+                  styles.kpi,
+                  {
+                    backgroundColor: highContrast ? c.accentSoft : tone.bg,
+                    borderColor: highContrast ? c.border : tone.border,
+                  },
+                ]}
               >
-                {k.v}
-              </ScaledText>
-              {k.s ? (
-                <ScaledText baseSize={11} style={{ color: c.textSoft, marginTop: 2 }}>
-                  {k.s}
+                <ScaledText baseSize={11} style={{ color: c.textSoft, fontWeight: '700' }}>
+                  {k.l}
                 </ScaledText>
-              ) : null}
-            </View>
-          ))}
+                <ScaledText
+                  baseSize={18}
+                  style={{
+                    color: highContrast ? c.primaryDark : tone.fg,
+                    fontWeight: '800',
+                    marginTop: 4,
+                  }}
+                >
+                  {k.v}
+                </ScaledText>
+                {k.s ? (
+                  <ScaledText baseSize={11} style={{ color: c.textSoft, marginTop: 2 }}>
+                    {k.s}
+                  </ScaledText>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       ) : null}
 
       {data?.charts ? (
         <View style={{ marginTop: 4 }}>
-          <BarList
+          <VerticalBarsChart
             title="Alumnos por jornada"
             hint="Participación sobre el total del gráfico."
             items={data.charts.alumnosPorJornada || []}
             unit="alumnos"
-            barColor={c.primary}
+            tone="sky"
           />
-          <BarList
+          <DonutChart
             title="Clases por estado"
             hint="Distribución de clases."
             items={data.charts.clasesPorEstado || []}
             unit="clases"
-            barColor={c.primaryLight}
+            kind="estado"
           />
-          <BarList
+          <DonutChart
             title="Alumnos por programa"
             hint="Capacitados por programa."
             items={data.charts.alumnosPorPrograma || []}
             unit="alumnos"
-            barColor={c.primaryDark}
+            kind="programa"
           />
-          <BarList
+          <VerticalBarsChart
             title="Clases por instructor"
             hint="Clases finalizadas por instructor."
             items={data.charts.clasesPorInstructor || []}
             unit="clases"
-            barColor={c.primary}
+            tone="teal"
           />
         </View>
       ) : null}
@@ -740,9 +698,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
   },
-  barHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  barTrack: { height: 8, borderRadius: 999, overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 999 },
   rowCard: {
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 10,

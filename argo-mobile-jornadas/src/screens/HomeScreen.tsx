@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import type { AuthUser } from '../api/types';
 import { themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
-import { puedeGestionarJornadas } from '../utils/permisos';
+import { puedeGestionarJornadas, puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 
 function nombreBienvenida(user: AuthUser | null): string {
@@ -42,6 +42,7 @@ export default function HomeScreen() {
   const user = state.status === 'signedIn' ? state.user : null;
   const nombre = nombreBienvenida(user);
   const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
+  const puedeRegistrar = puedeRegistrarAlumnosJornada(user?.permisos);
 
   const tiles: MenuTile[] = [
     {
@@ -55,34 +56,39 @@ export default function HomeScreen() {
       iconColor: c.primaryDark,
       onPress: () => nav.navigate('JornadasHoy'),
     },
-    {
+  ];
+
+  if (puedeRegistrar) {
+    tiles.push({
       title: 'Nuevo alumno jornada',
-      hint: 'Alta con PDF417 de la cédula o digitación',
+      hint: 'Alta con PDF417 de la cédula o digitación (Registro)',
       icon: 'person-add-outline',
       accent: c.pastelMintFg,
       iconBg: c.pastelMint,
       iconColor: c.pastelMintFg,
       onPress: () => nav.navigate('CrearAlumnoJornada', {}),
-    },
-    {
-      title: 'Certificados emitidos',
-      hint: 'Consulta y abre certificados de jornadas',
-      icon: 'ribbon-outline',
-      accent: c.primaryDark,
-      iconBg: c.accentSoft,
-      iconColor: c.primaryDark,
-      onPress: () => nav.navigate('Certificados', {}),
-    },
-    {
-      title: 'Cambiar contraseña',
-      hint: 'Actualizar la clave de su usuario',
-      icon: 'key-outline',
-      accent: c.primary,
-      iconBg: c.pastelMint,
-      iconColor: c.pastelMintFg,
-      onPress: () => nav.navigate('CambiarPassword'),
-    },
-  ];
+    });
+  }
+
+  tiles.push({
+    title: 'Certificados emitidos',
+    hint: 'Consulta y abre certificados de jornadas',
+    icon: 'ribbon-outline',
+    accent: c.primaryDark,
+    iconBg: c.accentSoft,
+    iconColor: c.primaryDark,
+    onPress: () => nav.navigate('Certificados', {}),
+  });
+
+  tiles.push({
+    title: 'Cambiar contraseña',
+    hint: 'Actualizar la clave de su usuario',
+    icon: 'key-outline',
+    accent: c.primary,
+    iconBg: c.pastelMint,
+    iconColor: c.pastelMintFg,
+    onPress: () => nav.navigate('CambiarPassword'),
+  });
 
   if (esAdmin) {
     tiles.push(

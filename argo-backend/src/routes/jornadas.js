@@ -15,6 +15,11 @@ const ver = requirePermiso('jornadas.ver', 'jornadas.gestionar');
 const gest = requirePermiso('jornadas.gestionar');
 const cobro = requirePermiso('jornadas.gestionar', 'facturacion');
 const operar = requirePermiso('jornadas.operar', 'jornadas.gestionar');
+/** Alta de ficha alumno jornada: registro/recepción, no instructor de campo. */
+const registrarAlumnos = requirePermiso(
+  'jornadas.registrar_alumnos',
+  'jornadas.gestionar',
+);
 const fotoEvidenciaClase = upload.evidenciasCap.single('foto');
 const soporteIngresoContrato = upload.ingresos.single('soporte');
 
@@ -95,7 +100,7 @@ router.get('/certificados-generados/:id/html', ver, soloCertificadoJornada, cert
 router.patch('/certificados-generados/:id', gest, soloCertificadoJornada, contratoMutable.certificadoPorParametro, ctrl.actualizarCertificadoGenerado);
 router.delete('/certificados-generados/:id', gest, soloCertificadoJornada, contratoMutable.certificadoPorParametro, ctrl.eliminarCertificadoGenerado);
 router.get('/alumnos', operar, ctrl.buscarAlumnos);
-router.post('/alumnos', operar, ctrl.crearAlumnoJornadaCap);
+router.post('/alumnos', registrarAlumnos, ctrl.crearAlumnoJornadaCap);
 router.post('/matricular', operar, contratoMutable.contratoPorBodyOpcional, ctrl.matricularAlumnoJornada);
 router.get('/alumnos/doc/:numDoc', operar, ctrl.buscarAlumnoDoc);
 router.get('/alumnos/:numDoc/progreso-cert', operar, ctrl.progresoAlumnoContrato);

@@ -20,7 +20,7 @@ import { themeColors } from '../theme/colors';
 import { JORNADAS_VERDE } from '../config/appBranding';
 import type { AuthUser } from '../api/types';
 import type { RootStackParamList } from '../navigation/types';
-import { puedeGestionarJornadas } from '../utils/permisos';
+import { puedeGestionarJornadas, puedeRegistrarAlumnosJornada } from '../utils/permisos';
 
 function nombreUsuario(user: AuthUser | null): string {
   if (!user) return 'Usuario';
@@ -66,6 +66,7 @@ export function AppDrawerMenu() {
 
   const user = state.status === 'signedIn' ? state.user : null;
   const esAdmin = puedeGestionarJornadas(user?.permisos, user?.rol, user?.rolNombre);
+  const puedeRegistrar = puedeRegistrarAlumnosJornada(user?.permisos);
   const drawerWidth = Math.min(300, Math.round(width * 0.82));
 
   const go = (fn: () => void) => {
@@ -89,13 +90,19 @@ export function AppDrawerMenu() {
       icon: 'today-outline',
       onPress: () => go(() => nav.navigate('JornadasHoy')),
     },
-    {
+  ];
+
+  if (puedeRegistrar) {
+    items.push({
       key: 'alumno',
       label: 'Nuevo alumno jornada',
-      hint: 'Alta con PDF417 o digitación',
+      hint: 'Alta (Registro / Recepción)',
       icon: 'person-add-outline',
       onPress: () => go(() => nav.navigate('CrearAlumnoJornada', {})),
-    },
+    });
+  }
+
+  items.push(
     {
       key: 'certs',
       label: 'Certificados',
@@ -110,7 +117,7 @@ export function AppDrawerMenu() {
       icon: 'key-outline',
       onPress: () => go(() => nav.navigate('CambiarPassword')),
     },
-  ];
+  );
 
   if (esAdmin) {
     items.push(

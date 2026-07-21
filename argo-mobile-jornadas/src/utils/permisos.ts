@@ -10,6 +10,21 @@ export function puedeOperarJornadas(permisos?: string[]): boolean {
   return tienePermiso(permisos, ['jornadas.operar', 'jornadas.gestionar']);
 }
 
+/** Entrar a la app: operar, gestionar o solo registrar alumnos (Registro/Recepción). */
+export function puedeUsarAppJornadas(permisos?: string[]): boolean {
+  return tienePermiso(permisos, [
+    'jornadas.operar',
+    'jornadas.gestionar',
+    'jornadas.registrar_alumnos',
+    '*',
+  ]);
+}
+
+/** Alta de ficha «Nuevo alumno jornada» (Registro/Recepción), no instructor de campo. */
+export function puedeRegistrarAlumnosJornada(permisos?: string[]): boolean {
+  return tienePermiso(permisos, ['jornadas.registrar_alumnos', 'jornadas.gestionar', '*']);
+}
+
 /** Admin / gestor: editar ubicación y coordenadas de la jornada. */
 export function puedeGestionarJornadas(
   permisos?: string[],

@@ -19,7 +19,7 @@ import {
 import { storeDelete, storeGet, storeSet } from '../storage/safeStore';
 import type { AuthUser } from '../api/types';
 import { withTimeout } from '../utils/timeout';
-import { puedeOperarJornadas } from '../utils/permisos';
+import { puedeUsarAppJornadas } from '../utils/permisos';
 
 const K_TOKEN = 'argo_jor_token';
 const K_USER = 'argo_jor_user';
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        if (!puedeOperarJornadas(user.permisos)) {
+        if (!puedeUsarAppJornadas(user.permisos)) {
           setState({ status: 'denied', user });
           return;
         }
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const me = await withTimeout(fetchMe(), 8000, 'validar sesión');
           if (cancelled) return;
-          if (!puedeOperarJornadas(me.permisos)) {
+          if (!puedeUsarAppJornadas(me.permisos)) {
             await storeDelete(K_TOKEN);
             await storeDelete(K_USER);
             setState({ status: 'denied', user: me });
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       throw new Error('El servidor no devolvió datos del usuario.');
     }
-    if (!puedeOperarJornadas(user.permisos)) {
+    if (!puedeUsarAppJornadas(user.permisos)) {
       setState({ status: 'denied', user });
       throw new Error(
         'Su usuario no tiene permiso para operar jornadas. Pida «jornadas.operar» a un administrador.',

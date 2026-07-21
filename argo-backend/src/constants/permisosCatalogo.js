@@ -38,6 +38,10 @@ const GRUPOS = [
       { key: 'jornadas.ver', label: 'Consultar hub, contratos y calendario' },
       { key: 'jornadas.gestionar', label: 'Contratación, programación y edición de jornadas' },
       { key: 'jornadas.operar', label: 'Clase en carpa, clases y asistencia (instructor)' },
+      {
+        key: 'jornadas.registrar_alumnos',
+        label: 'Registrar alumnos de jornada (alta ficha; no instructor de campo)',
+      },
     ],
   },
   {

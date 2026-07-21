@@ -59,6 +59,8 @@ import {
 } from '../utils/jornadaUi';
 import { themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
+import { useAuth } from '../context/AuthContext';
+import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 
 type Route = RouteProp<RootStackParamList, 'ClaseDetalle'>;
@@ -80,9 +82,13 @@ function nombreAlumno(a: {
 export default function ClaseDetalleScreen() {
   const route = useRoute<Route>();
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const { state } = useAuth();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const { claseId, jornadaLabel, idContrato, prefillNumDoc } = route.params;
+  const puedeRegistrar = puedeRegistrarAlumnosJornada(
+    state.status === 'signedIn' ? state.user?.permisos : undefined,
+  );
 
   const [clase, setClase] = useState<ClaseJornada | null>(null);
   const [programas, setProgramas] = useState<ProgramaJornada[]>([]);
@@ -561,25 +567,32 @@ export default function ClaseDetalleScreen() {
       }
       const msg = err.body?.message || err.message || 'No se pudo registrar al alumno';
       if (err.status === 404 || /alumno no encontrado/i.test(msg)) {
-        Alert.alert(
-          'Alumno no encontrado',
-          `No hay ficha para el documento ${nd}. Puede crearlo como alumno de jornada de capacitación.`,
-          [
-            {
-              text: 'Crear alumno',
-              onPress: () =>
-                nav.navigate('CrearAlumnoJornada', {
-                  numDoc: nd,
-                  claseId,
-                  jornadaLabel,
-                  idContrato,
-                  codContrato: clase?.codContrato || clase?.contratoLabel,
-                  fechaJornada: clase?.fechaClase || clase?.fechaJornada,
-                }),
-            },
-            { text: 'Cancelar', style: 'cancel' },
-          ],
-        );
+        if (puedeRegistrar) {
+          Alert.alert(
+            'Alumno no encontrado',
+            `No hay ficha para el documento ${nd}. Puede crearlo como alumno de jornada de capacitación.`,
+            [
+              {
+                text: 'Crear alumno',
+                onPress: () =>
+                  nav.navigate('CrearAlumnoJornada', {
+                    numDoc: nd,
+                    claseId,
+                    jornadaLabel,
+                    idContrato,
+                    codContrato: clase?.codContrato || clase?.contratoLabel,
+                    fechaJornada: clase?.fechaClase || clase?.fechaJornada,
+                  }),
+              },
+              { text: 'Cancelar', style: 'cancel' },
+            ],
+          );
+        } else {
+          Alert.alert(
+            'Alumno no encontrado',
+            `No hay ficha para el documento ${nd}. Solicite el alta en Registro/Recepción; el instructor solo inscribe alumnos ya creados.`,
+          );
+        }
         return;
       }
       if (/certificad/i.test(msg)) {
@@ -956,23 +969,25 @@ export default function ClaseDetalleScreen() {
           fullWidth
         />
         <View style={{ height: 10 }} />
-        <PrimaryButton
-          label="Crear alumno de jornada"
-          icon="person-add-outline"
-          variant="ghost"
-          onPress={() =>
-            nav.navigate('CrearAlumnoJornada', {
-              numDoc: numDoc.trim() || undefined,
-              claseId,
-              jornadaLabel,
-              idContrato,
-              codContrato: clase?.codContrato || clase?.contratoLabel,
-              fechaJornada: clase?.fechaClase || clase?.fechaJornada,
-            })
-          }
-          disabled={busy || finalizada}
-          fullWidth
-        />
+        {puedeRegistrar ? (
+          <PrimaryButton
+            label="Crear alumno de jornada"
+            icon="person-add-outline"
+            variant="ghost"
+            onPress={() =>
+              nav.navigate('CrearAlumnoJornada', {
+                numDoc: numDoc.trim() || undefined,
+                claseId,
+                jornadaLabel,
+                idContrato,
+                codContrato: clase?.codContrato || clase?.contratoLabel,
+                fechaJornada: clase?.fechaClase || clase?.fechaJornada,
+              })
+            }
+            disabled={busy || finalizada}
+            fullWidth
+          />
+        ) : null}
         <View style={{ height: 12 }} />
         <IconInput
           label="Documento del alumno"

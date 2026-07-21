@@ -42,6 +42,11 @@ export const APPS_MOVILES: AppMovilDef[] = [
         hint: 'Entrar a la app, ver jornada del día y operar clases/asistencia',
       },
       {
+        key: 'jornadas.registrar_alumnos',
+        label: 'Registrar alumnos (alta ficha)',
+        hint: 'Nuevo alumno jornada — lo hace Registro/Recepción, no el instructor de campo',
+      },
+      {
         key: 'jornadas.gestionar',
         label: 'Gestionar (admin móvil)',
         hint: 'Crear/editar jornadas de cualquier fecha, GPS e informes PDF del contrato',
