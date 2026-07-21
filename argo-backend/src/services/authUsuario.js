@@ -41,6 +41,11 @@ async function enriquecerUsuarioDoc(u) {
           ['instructores.mi_portal', 'jornadas.operar', 'programacion_cea.operar'].includes(p),
         ));
   } else {
+    // No inventar idEmpleado desde un vínculo RRHH inconsistente.
+    if (json.idEmpleado != null) {
+      delete json.idEmpleado;
+    }
+    json.empleado = undefined;
     json.puedeUsarPortalInstructor = false;
   }
   return json;

@@ -26,12 +26,25 @@ async function esEmpleadoInstructor(emp) {
 
 async function empleadoPorUsuarioId(userId) {
   if (!userId) return null;
+  const uid = String(userId);
   const u = await Usuario.findById(userId).lean();
-  if (u?.idEmpleado) {
-    const emp = await Empleado.findOne({ idEmpleado: u.idEmpleado }).lean();
-    if (emp) return emp;
+
+  // 1) Empleado que declara este usuario (fuente de verdad del vínculo).
+  const porUsuario = await Empleado.findOne({ idUsuario: userId }).lean();
+  if (porUsuario) return porUsuario;
+  // idUsuario a veces se guardó como string
+  const porUsuarioStr = await Empleado.findOne({ idUsuario: uid }).lean();
+  if (porUsuarioStr) return porUsuarioStr;
+
+  // 2) Usuario.idEmpleado solo si la ficha no pertenece a otro login.
+  if (u?.idEmpleado != null && Number.isFinite(Number(u.idEmpleado))) {
+    const emp = await Empleado.findOne({ idEmpleado: Number(u.idEmpleado) }).lean();
+    if (emp) {
+      const empUid = emp.idUsuario != null ? String(emp.idUsuario).trim() : '';
+      if (!empUid || empUid === uid) return emp;
+    }
   }
-  return Empleado.findOne({ idUsuario: userId }).lean();
+  return null;
 }
 
 async function resolverInstructorParaClase(req, body = {}) {

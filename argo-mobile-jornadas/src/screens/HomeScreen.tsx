@@ -15,10 +15,11 @@ import type { RootStackParamList } from '../navigation/types';
 
 function nombreBienvenida(user: AuthUser | null): string {
   if (!user) return 'Instructor';
-  const desdeEmpleado = String(user.empleado?.nombreCompleto || '').trim();
-  if (desdeEmpleado) return desdeEmpleado;
+  // Preferir nombres de la cuenta de login (admin/staff), no una ficha RRHH ajena.
   const completo = [user.nombres, user.apellidos].filter(Boolean).join(' ').trim();
   if (completo) return completo;
+  const desdeEmpleado = String(user.empleado?.nombreCompleto || '').trim();
+  if (desdeEmpleado) return desdeEmpleado;
   return user.username || 'Instructor';
 }
 
