@@ -352,7 +352,7 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado, opts = {}) 
     if (!String(u.apellidos || '').trim() && apellidosUsuario(e)) u.apellidos = apellidosUsuario(e);
     if (email && !String(u.email || '').trim()) u.email = email;
     u.idEmpleado = e.idEmpleado;
-    if (String(e.estado || '').toLowerCase() === 'retirado') u.activo = false;
+    u.activo = String(e.estado || 'activo').toLowerCase() === 'activo';
     if (!esAdmin(normalizarRol(u.rol))) {
       u.sedesPermitidas = await sedesPermitidasDesdeEmpleado(e);
     }
@@ -386,7 +386,8 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado, opts = {}) 
     }
   }
 
-  if (String(e.estado || '').toLowerCase() === 'retirado') u.activo = false;
+  if (String(e.estado || 'activo').toLowerCase() === 'activo') u.activo = true;
+  else u.activo = false;
 
   if (!esAdmin(normalizarRol(u.rol))) {
     u.sedesPermitidas = await sedesPermitidasDesdeEmpleado(e);

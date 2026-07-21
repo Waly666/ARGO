@@ -9,6 +9,7 @@ import {
   EmpleadoDto,
   EmpleadoService,
   ModoAccesoEmpleado,
+  normalizarEstadoEmpleado,
 } from '../../core/services/empleado.service';
 import { RrhhCatalogService } from '../../core/services/rrhh-catalog.service';
 import { Usuario, UsuarioService } from '../../core/services/usuario.service';
@@ -238,17 +239,41 @@ export class EmpleadosAdminComponent implements OnInit {
     this.formSeccion.set(seccion);
     if (this.esAdmin()) this.cargarUsuarios();
     this.form.set({
-      ...e,
+      tipoDocumento: e.tipoDocumento || 'CC',
+      numeroDocumento: e.numeroDocumento || '',
+      primerNombre: e.primerNombre || '',
+      segundoNombre: e.segundoNombre || '',
+      primerApellido: e.primerApellido || '',
+      segundoApellido: e.segundoApellido || '',
       fechaNacimiento: e.fechaNacimiento ? String(e.fechaNacimiento).slice(0, 10) : '',
+      sexo: e.sexo || '',
+      correoPersonal: e.correoPersonal || '',
+      correoCorporativo: e.correoCorporativo || '',
+      telefono: e.telefono || '',
+      celular: e.celular || '',
+      direccion: e.direccion || '',
+      ciudad: e.ciudad || '',
+      departamento: e.departamento || '',
+      estadoCivil: e.estadoCivil || '',
       fechaIngreso: e.fechaIngreso ? String(e.fechaIngreso).slice(0, 10) : '',
       fechaRetiro: e.fechaRetiro ? String(e.fechaRetiro).slice(0, 10) : '',
+      tipoContrato: e.tipoContrato || '',
+      salario: e.salario,
+      epsId: e.epsId,
+      afpId: e.afpId,
+      arlId: e.arlId,
+      cajaCompensacionId: e.cajaCompensacionId,
+      cargoId: e.cargoId,
+      departamentoId: e.departamentoId,
+      idSede: e.idSede || undefined,
+      estado: normalizarEstadoEmpleado(e.estado),
     });
     this.syncMunResidenciaTexto(e.ciudad, e.departamento);
     if (e.idUsuario) {
       this.modoAcceso.set('vincular');
       this.idUsuarioVincular.set(String(e.idUsuario));
     } else {
-      this.modoAcceso.set(this.cargoSugiereAccesoDesde(e) ? 'auto' : 'ninguno');
+      this.modoAcceso.set('ninguno');
       this.idUsuarioVincular.set('');
     }
     this.fotoFile.set(null);
@@ -301,14 +326,6 @@ export class EmpleadosAdminComponent implements OnInit {
     if (!emp) return;
     const seccion = this.route.snapshot.queryParamMap.get('seccion') === 'documentos' ? 'documentos' : 'datos';
     this.editar(emp, seccion);
-  }
-
-  private cargoSugiereAccesoDesde(e: Empleado): boolean {
-    const desdeNombre = String(e.cargoNombre || '').toLowerCase();
-    if (desdeNombre) return /\bcajer/i.test(desdeNombre) || /\binstructor/i.test(desdeNombre);
-    const c = this.cargos().find((x) => Number(x.idCargo) === Number(e.cargoId));
-    const n = String(c?.nombre || '').toLowerCase();
-    return /\bcajer/i.test(n) || /\binstructor/i.test(n);
   }
 
   onCargoChange(raw: number | null | undefined) {
@@ -368,8 +385,16 @@ export class EmpleadosAdminComponent implements OnInit {
       this.inform('Seleccione la sede del empleado.', true);
       return;
     }
-    const modo = this.modoAcceso();
-    if (modo === 'vincular' && !this.idUsuarioVincular().trim()) {
+    let modo = this.modoAcceso();
+    const ed = this.editando();
+    let idUsuarioExistente =
+      modo === 'vincular' ? this.idUsuarioVincular().trim() : undefined;
+    // Si el select de vínculo se vació pero la ficha ya tenía usuario, conservar el enlace.
+    if (modo === 'vincular' && !idUsuarioExistente && ed?.idUsuario) {
+      idUsuarioExistente = String(ed.idUsuario);
+      this.idUsuarioVincular.set(idUsuarioExistente);
+    }
+    if (modo === 'vincular' && !idUsuarioExistente) {
       this.inform('Seleccione el usuario existente a vincular.', true);
       return;
     }
@@ -379,12 +404,12 @@ export class EmpleadosAdminComponent implements OnInit {
       return;
     }
     this.saving.set(true);
-    const ed = this.editando();
     const files = this.fotoFile() ? { foto: this.fotoFile()! } : undefined;
     const payload: EmpleadoDto = {
       ...f,
+      estado: normalizarEstadoEmpleado(f.estado),
       modoAcceso: modo,
-      idUsuarioExistente: modo === 'vincular' ? this.idUsuarioVincular().trim() : undefined,
+      idUsuarioExistente,
     };
     const req = ed ? this.svc.actualizar(ed.idEmpleado, payload, files) : this.svc.crear(payload, files);
     req.subscribe({
@@ -392,6 +417,7 @@ export class EmpleadosAdminComponent implements OnInit {
         this.saving.set(false);
         this.fotoFile.set(null);
         this.mostrarForm.set(false);
+        this.editando.set(null);
         this.cargar();
         this.cargarUsuarios();
         let txt = ed ? 'Empleado actualizado.' : 'Empleado creado.';
@@ -410,7 +436,10 @@ export class EmpleadosAdminComponent implements OnInit {
         } else if (modo === 'ninguno') {
           txt += ' Sin usuario de acceso vinculado.';
         }
-        this.inform(txt);
+        if (res?.avisoUsuario) {
+          txt += ` Aviso acceso: ${res.avisoUsuario}`;
+        }
+        this.inform(txt, !!res?.avisoUsuario);
       },
       error: async (e) => {
         this.saving.set(false);

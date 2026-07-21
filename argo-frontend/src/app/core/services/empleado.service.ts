@@ -50,6 +50,8 @@ export interface Empleado {
   usuarioLogin?: string | null;
   usuarioRol?: string | null;
   usuarioGenerado?: UsuarioGeneradoEmpleado | null;
+  /** Si la ficha se guardó pero falló la sync de usuario. */
+  avisoUsuario?: string | null;
 }
 
 export interface DocEmpleadoDto {
@@ -143,7 +145,71 @@ const EMPLEADO_SKIP_FORM = new Set([
   'usuarioLogin',
   'usuarioRol',
   'usuarioGenerado',
+  'avisoUsuario',
 ]);
+
+/** Campos que se envían al crear/actualizar (evita basura del objeto de lista). */
+export const EMPLEADO_WRITE_FIELDS = [
+  'tipoDocumento',
+  'numeroDocumento',
+  'primerNombre',
+  'segundoNombre',
+  'primerApellido',
+  'segundoApellido',
+  'fechaNacimiento',
+  'sexo',
+  'correoPersonal',
+  'correoCorporativo',
+  'telefono',
+  'celular',
+  'direccion',
+  'ciudad',
+  'departamento',
+  'estadoCivil',
+  'fechaIngreso',
+  'fechaRetiro',
+  'tipoContrato',
+  'salario',
+  'epsId',
+  'afpId',
+  'arlId',
+  'cajaCompensacionId',
+  'cargoId',
+  'departamentoId',
+  'idSede',
+  'estado',
+  'modoAcceso',
+  'idUsuarioExistente',
+] as const;
+
+export function normalizarEstadoEmpleado(raw?: string | null): string {
+  const v = String(raw || 'activo').trim().toLowerCase();
+  if (v === 'activo' || v === 'retirado' || v === 'suspendido') return v;
+  if (/activ/.test(v)) return 'activo';
+  if (/retir/.test(v)) return 'retirado';
+  if (/suspen/.test(v)) return 'suspendido';
+  return 'activo';
+}
+
+/** Payload limpio para POST/PUT de empleado. */
+export function buildEmpleadoWritePayload(
+  data: EmpleadoDto,
+  extras?: EmpleadoFormExtras,
+): EmpleadoDto {
+  const out: Record<string, unknown> = {};
+  for (const k of EMPLEADO_WRITE_FIELDS) {
+    if (k === 'modoAcceso' || k === 'idUsuarioExistente') continue;
+    const v = (data as Record<string, unknown>)[k];
+    if (v === undefined) continue;
+    out[k] = v;
+  }
+  if (out['estado'] != null) out['estado'] = normalizarEstadoEmpleado(String(out['estado']));
+  if (extras?.modoAcceso) out['modoAcceso'] = extras.modoAcceso;
+  else if (data.modoAcceso) out['modoAcceso'] = data.modoAcceso;
+  if (extras?.idUsuarioExistente) out['idUsuarioExistente'] = extras.idUsuarioExistente;
+  else if (data.idUsuarioExistente) out['idUsuarioExistente'] = data.idUsuarioExistente;
+  return out as EmpleadoDto;
+}
 
 @Injectable({ providedIn: 'root' })
 export class EmpleadoService {
@@ -184,11 +250,17 @@ export class EmpleadoService {
   }
 
   crear(dto: EmpleadoDto, files?: EmpleadoArchivosUpload): Observable<Empleado> {
-    return this.http.post<Empleado>(this.base, this.toForm(dto, files));
+    const payload = buildEmpleadoWritePayload(dto);
+    if (files?.foto) return this.http.post<Empleado>(this.base, this.toForm(payload, files));
+    return this.http.post<Empleado>(this.base, payload);
   }
 
   actualizar(id: number | string, dto: EmpleadoDto, files?: EmpleadoArchivosUpload): Observable<Empleado> {
-    return this.http.put<Empleado>(`${this.base}/${id}`, this.toForm(dto, files));
+    const payload = buildEmpleadoWritePayload(dto);
+    if (files?.foto) {
+      return this.http.put<Empleado>(`${this.base}/${id}`, this.toForm(payload, files));
+    }
+    return this.http.put<Empleado>(`${this.base}/${id}`, payload);
   }
 
   eliminar(id: number | string): Observable<{ ok: boolean }> {
@@ -236,8 +308,13 @@ export class EmpleadoService {
 
   private toForm(data: EmpleadoDto, files?: EmpleadoArchivosUpload): FormData {
     const form = new FormData();
-    Object.entries(data || {}).forEach(([k, v]) => {
-      if (v === undefined || v === null || EMPLEADO_SKIP_FORM.has(k)) return;
+    const payload = buildEmpleadoWritePayload(data);
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v === undefined || EMPLEADO_SKIP_FORM.has(k)) return;
+      if (v === null) {
+        form.append(k, '');
+        return;
+      }
       form.append(k, String(v));
     });
     if (files?.foto) form.append('foto', files.foto);

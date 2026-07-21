@@ -10,7 +10,7 @@ const CajaCompensacion = require('../models/CajaCompensacion');
 const Usuario = require('../models/Usuario');
 const Sede = require('../models/Sede');
 const { maxNumericId, insertarCatalogo } = require('../services/programaServicio');
-const { pickFields, num } = require('../services/rrhhCatalogo');
+const { num } = require('../services/rrhhCatalogo');
 const {
   numeroDocumentoQuery,
   normalizarEmpleadoLegacy,
@@ -65,27 +65,70 @@ function aplicarFoto(dto, files) {
 }
 
 function pickEmpleado(body) {
-  const dto = pickFields(body, EMPLEADO_FIELDS);
+  const src = body || {};
+  const dto = {};
+  for (const k of EMPLEADO_FIELDS) {
+    if (src[k] === undefined) continue;
+    dto[k] = src[k];
+  }
   if (dto.numeroDocumento != null) dto.numeroDocumento = String(dto.numeroDocumento).trim();
   if (dto.tipoDocumento) dto.tipoDocumento = String(dto.tipoDocumento).trim().toUpperCase();
+  if (dto.estado != null && dto.estado !== '') {
+    dto.estado = String(dto.estado).trim().toLowerCase();
+  }
   for (const k of UPPER_FIELDS) {
-    if (dto[k]) dto[k] = String(dto[k]).trim().toUpperCase();
+    if (dto[k] == null || dto[k] === '') {
+      if (dto[k] === '') dto[k] = '';
+      continue;
+    }
+    dto[k] = String(dto[k]).trim().toUpperCase();
   }
   for (const k of ['correoPersonal', 'correoCorporativo']) {
-    if (dto[k]) dto[k] = String(dto[k]).trim().toLowerCase();
+    if (dto[k] == null || dto[k] === '') {
+      if (dto[k] === '') dto[k] = '';
+      continue;
+    }
+    dto[k] = String(dto[k]).trim().toLowerCase();
   }
   for (const k of DATE_FIELDS) {
-    if (dto[k]) dto[k] = new Date(dto[k]);
+    if (dto[k] === '' || dto[k] == null) {
+      dto[k] = null;
+      continue;
+    }
+    const d = new Date(dto[k]);
+    if (Number.isNaN(d.getTime())) delete dto[k];
+    else dto[k] = d;
   }
-  if (dto.salario != null) dto.salario = toDec(dto.salario);
+  if (dto.salario === '' || dto.salario == null) {
+    if (dto.salario === '') dto.salario = null;
+  } else if (dto.salario != null) {
+    dto.salario = toDec(dto.salario);
+  }
   for (const k of ['epsId', 'afpId', 'arlId', 'cajaCompensacionId', 'cargoId', 'departamentoId']) {
-    if (dto[k] != null && dto[k] !== '') dto[k] = Number(dto[k]);
+    if (dto[k] === '' || dto[k] == null) {
+      dto[k] = null;
+    } else {
+      const n = Number(dto[k]);
+      dto[k] = Number.isFinite(n) ? n : null;
+    }
   }
   return dto;
 }
 
+function filtroPorIdEmpleado(id) {
+  const q = String(id ?? '').trim();
+  const n = Number(q);
+  const or = [{ idEmpleado: q }];
+  if (Number.isFinite(n)) or.push({ idEmpleado: n });
+  return { $or: or };
+}
+
 async function normalizarIdSedeEmpleado(dto) {
   if (dto.idSede === undefined) return;
+  if (dto.idSede === '' || dto.idSede == null) {
+    dto.idSede = null;
+    return;
+  }
   const id = normalizarIdSede(dto.idSede);
   if (!id) {
     dto.idSede = null;
@@ -100,11 +143,7 @@ async function normalizarIdSedeEmpleado(dto) {
 }
 
 async function buscarEmpleado(id) {
-  const q = String(id);
-  const n = Number(q);
-  return Empleado.findOne({
-    $or: [{ idEmpleado: q }, ...(Number.isFinite(n) ? [{ idEmpleado: n }] : [])],
-  }).lean();
+  return Empleado.findOne(filtroPorIdEmpleado(id)).lean();
 }
 
 async function cargoPorId(cargoId) {
@@ -150,10 +189,9 @@ async function resolverFk(emp) {
 
 async function vincularUsuarioEmpleado(idEmpleado, idUsuario) {
   if (!idUsuario) return;
-  await Empleado.updateOne(
-    { idEmpleado },
-    { $set: { idUsuario, updatedAt: new Date() } },
-  );
+  await Empleado.updateOne(filtroPorIdEmpleado(idEmpleado), {
+    $set: { idUsuario, updatedAt: new Date() },
+  });
 }
 
 exports.listarInstructores = async (req, res, next) => {
@@ -378,26 +416,38 @@ exports.actualizar = async (req, res, next) => {
     const prev = normalizarEmpleadoLegacy(emp);
     if (dto.numeroDocumento) {
       const dup = await Empleado.findOne({
-        $and: [numeroDocumentoQuery(dto.numeroDocumento), { idEmpleado: { $ne: emp.idEmpleado } }],
+        $and: [
+          numeroDocumentoQuery(dto.numeroDocumento),
+          { idEmpleado: { $nin: [emp.idEmpleado, Number(emp.idEmpleado), String(emp.idEmpleado)] } },
+        ],
       });
       if (dup) return res.status(409).json({ message: 'Otro empleado ya usa ese documento' });
       const egresos = await Egreso.countDocuments(
         numeroDocumentoQuery(prev.numeroDocumento) || { numeroDocumento: prev.numeroDocumento },
       );
-      if (egresos > 0 && dto.numeroDocumento !== prev.numeroDocumento) {
+      if (
+        egresos > 0 &&
+        String(dto.numeroDocumento).trim() !== String(prev.numeroDocumento || '').trim()
+      ) {
         return res.status(409).json({
           message: 'No puede cambiar numeroDocumento: hay egresos vinculados.',
         });
       }
     }
     const user = req.user?.username || 'sistema';
-    await Empleado.updateOne(
-      { idEmpleado: emp.idEmpleado },
-      { $set: { ...dto, updatedAt: new Date(), userChangeRecord: user } },
-    );
-    const actualizado = await Empleado.findOne({ idEmpleado: emp.idEmpleado }).lean();
+    const upd = await Empleado.updateOne(filtroPorIdEmpleado(emp.idEmpleado), {
+      $set: { ...dto, updatedAt: new Date(), userChangeRecord: user },
+    });
+    if (!upd.matchedCount) {
+      return res.status(404).json({ message: 'Empleado no encontrado al guardar' });
+    }
+    const actualizado = await Empleado.findOne(filtroPorIdEmpleado(emp.idEmpleado)).lean();
+    if (!actualizado) {
+      return res.status(404).json({ message: 'Empleado no encontrado tras guardar' });
+    }
     const cargo = await cargoPorId(actualizado.cargoId ?? dto.cargoId);
     let usuarioGenerado = null;
+    let avisoUsuario = null;
     try {
       usuarioGenerado = await aplicarUsuarioEmpleado(actualizado, req.body, cargo, user);
       if (usuarioGenerado?.idUsuario) {
@@ -407,13 +457,14 @@ exports.actualizar = async (req, res, next) => {
         await vincularUsuarioEmpleado(actualizado.idEmpleado, usuarioGenerado.usuario._id);
       }
     } catch (err) {
-      const status = err.status || 500;
-      return res.status(status).json({ message: err.message });
+      // La ficha RRHH ya se guardó; no revertir por un fallo de usuario/login.
+      avisoUsuario = err.message || 'No se pudo sincronizar el usuario de acceso';
     }
     const out = await resolverFk(actualizado);
     res.json({
       ...out,
       usuarioGenerado: respuestaUsuarioGenerado(usuarioGenerado),
+      avisoUsuario: avisoUsuario || undefined,
     });
   } catch (e) {
     next(e);
