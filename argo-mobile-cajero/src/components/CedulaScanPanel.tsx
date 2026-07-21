@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { CedulaCameraModal, type CedulaCaptura } from './CedulaCameraModal';
 import { FormSection } from './FormSection';
+import { Pdf417ScanModal } from './Pdf417ScanModal';
 import { PrimaryButton } from './PrimaryButton';
 import { ScaledText } from './ScaledText';
 import { SurfaceCard } from './SurfaceCard';
@@ -11,15 +12,17 @@ import { escanearCedulaAlumno } from '../api/alumnosApi';
 import type { AlumnoCrearDto } from '../api/domain';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import type { CedulaPdf417Data } from '../utils/cedulaPdf417';
 import { capturarImagenCedula } from '../utils/imageCapture';
 import { mayusculasNombre } from '../utils/format';
 import type { SoportePago } from '../utils/pago';
 import { mensajeErrorApi } from '../utils/pago';
 
 type OcrAplicado = {
-  patch: Partial<AlumnoCrearDto>;
+  patch: Partial<AlumnoCrearDto & { genero?: string; tipoSangre?: string }>;
   warnings?: string[];
-  imagen: SoportePago;
+  /** Solo si se escaneó foto (OCR). PDF417 no adjunta imagen. */
+  imagen?: SoportePago;
 };
 
 type Props = {
@@ -27,6 +30,20 @@ type Props = {
   onOmitir: () => void;
   onAplicado: (r: OcrAplicado) => void;
 };
+
+function patchDesdePdf417(data: CedulaPdf417Data): OcrAplicado['patch'] {
+  return {
+    tipoDoc: data.tipoDoc || '1',
+    numDoc: data.numDoc,
+    apellido1: mayusculasNombre(data.apellido1 || ''),
+    apellido2: mayusculasNombre(data.apellido2 || ''),
+    nombre1: mayusculasNombre(data.nombre1 || ''),
+    nombre2: mayusculasNombre(data.nombre2 || ''),
+    fechaNac: data.fechaNac || undefined,
+    genero: data.genero,
+    tipoSangre: data.tipoSangre,
+  };
+}
 
 export function CedulaScanPanel({ visible, onOmitir, onAplicado }: Props) {
   const { highContrast } = useAccessibility();
@@ -36,6 +53,7 @@ export function CedulaScanPanel({ visible, onOmitir, onAplicado }: Props) {
   const [scanning, setScanning] = useState(false);
   const [capturando, setCapturando] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [pdf417Open, setPdf417Open] = useState(false);
 
   function aplicarCaptura(img: CedulaCaptura) {
     setScanFile(img);
@@ -54,6 +72,14 @@ export function CedulaScanPanel({ visible, onOmitir, onAplicado }: Props) {
     }
   }
 
+  function onPdf417(data: CedulaPdf417Data) {
+    onAplicado({ patch: patchDesdePdf417(data) });
+    Alert.alert(
+      'Cédula leída (PDF417)',
+      'Documento, nombres, fecha, género y tipo de sangre sugeridos. Revise y complete expedición y contacto.',
+    );
+  }
+
   async function leerCedula() {
     if (!scanFile) {
       Alert.alert('Escanear cédula', 'Fotografíe o elija una imagen del frente de la cédula.');
@@ -63,7 +89,7 @@ export function CedulaScanPanel({ visible, onOmitir, onAplicado }: Props) {
     try {
       const r = await escanearCedulaAlumno(scanFile);
       const s = r.sugerido;
-      const patch: Partial<AlumnoCrearDto> = {
+      const patch: OcrAplicado['patch'] = {
         tipoDoc: s.tipoDoc || '1',
         numDoc: s.numDoc != null ? String(s.numDoc).replace(/\D/g, '') : undefined,
         apellido1: mayusculasNombre(s.apellido1 || ''),
@@ -104,22 +130,39 @@ export function CedulaScanPanel({ visible, onOmitir, onAplicado }: Props) {
         onClose={() => setCameraOpen(false)}
         onCaptura={aplicarCaptura}
       />
+      <Pdf417ScanModal
+        visible={pdf417Open}
+        onClose={() => setPdf417Open(false)}
+        onScan={onPdf417}
+      />
 
       <FormSection
         title="Escanear cédula"
-        subtitle="Solo frente · documento y nombres"
+        subtitle="PDF417 (reverso) o foto del frente"
         icon="scan-outline"
         tone="accent"
       >
         <SurfaceCard elevated={false} style={{ padding: 12, backgroundColor: c.accentSoft, gap: 6 }}>
           <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700' }}>
-            Solo el frente
+            Dos formas de leer
           </ScaledText>
           <ScaledText baseSize={12} style={{ color: c.textSoft, lineHeight: 18 }}>
-            Se leen número de documento, nombres, apellidos y fecha de nacimiento.{'\n'}
-            Género, tipo de sangre, expedición y demás datos los digita usted.
+            • PDF417: código de bandas en el reverso (rápido; incluye género y sangre).{'\n'}
+            • Foto OCR: solo el frente (documento y nombres; puede tardar ~1 min).
           </ScaledText>
         </SurfaceCard>
+
+        <PrimaryButton
+          label="Escanear código PDF417 (reverso)"
+          icon="barcode-outline"
+          onPress={() => setPdf417Open(true)}
+          disabled={scanning || capturando}
+          fullWidth
+        />
+
+        <ScaledText baseSize={12} style={{ color: c.textSoft, fontWeight: '700', marginTop: 4 }}>
+          O leer el frente con foto
+        </ScaledText>
 
         {scanPreview ? (
           <Image source={{ uri: scanPreview }} style={styles.scanImg} resizeMode="contain" />

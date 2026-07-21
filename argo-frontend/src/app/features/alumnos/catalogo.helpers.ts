@@ -164,6 +164,13 @@ export function normalizarTipoAlumno(val?: string | null): TipoAlumno {
   return TIPO_ALUMNO_DEFAULT;
 }
 
+/** Emisión fuera de jornadas: Regular o Virtual; no hereda «Jornadas…» del alumno. */
+export function tipoCertificadoEmisionNoJornada(val?: string | null): TipoAlumno {
+  const t = normalizarTipoAlumno(val);
+  if (t === TIPO_JORNADAS_CAPACITACION) return TIPO_ALUMNO_DEFAULT;
+  return t;
+}
+
 /** Tarifa 4 — matrícula aula virtual (portal en línea). */
 export const TARIFA_VIRTUAL = 4;
 

@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { apiFetchText } from '../../api/client';
 import { getServerPublicOrigin, rewriteDocumentHtmlForMobile } from '../../utils/documentHtml';
@@ -16,6 +17,7 @@ import type { RootStackParamList } from '../../navigation/types';
 export default function DocumentoViewerScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'DocumentoViewer'>>();
   const { title, htmlPath } = route.params;
+  const insets = useSafeAreaInsets();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const [html, setHtml] = useState<string | null>(null);
@@ -99,7 +101,16 @@ export default function DocumentoViewerScreen() {
       ) : null}
 
       {html && !loading ? (
-        <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border }]}>
+        <View
+          style={[
+            styles.footer,
+            {
+              backgroundColor: c.card,
+              borderTopColor: c.border,
+              paddingBottom: Math.max(insets.bottom, 12) + 8,
+            },
+          ]}
+        >
           <PrimaryButton
             label="Imprimir"
             icon="print-outline"
@@ -128,7 +139,8 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     gap: 10,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
   },
 });

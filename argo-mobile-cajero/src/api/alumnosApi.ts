@@ -31,7 +31,11 @@ function toFormData(dto: AlumnoCrearDto, files?: AlumnoArchivos): FormData {
   const payload: Record<string, unknown> = {
     ...dto,
     numDoc,
-    tipoAlumno: normalizarTipoAlumno(dto.tipoAlumno),
+    tipoAlumno: (() => {
+      const t = normalizarTipoAlumno(dto.tipoAlumno);
+      // Cajero no emite altas/ediciones de jornadas: forzar Regular.
+      return t === 'Jornadas de Capacitación' ? 'Regular' : t;
+    })(),
     tipoDoc: dto.tipoDoc || '1',
     munOrigen: dto.munOrigen || dto.codMunicipio || '',
     codMunicipio: dto.codMunicipio || dto.munOrigen || '',
@@ -41,11 +45,7 @@ function toFormData(dto: AlumnoCrearDto, files?: AlumnoArchivos): FormData {
     alertaPago: dto.alertaPago || '',
     empresaId: dto.empresaId ?? '',
   };
-  if (payload.tipoAlumno === 'Jornadas de Capacitación') {
-    payload.esJornadaCap = 'true';
-  }
   for (const [k, v] of Object.entries(payload)) {
-    if (k === 'esJornadaCap' && !v) continue;
     appendFormField(fd, k, v);
   }
   if (files?.foto) {

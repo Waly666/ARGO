@@ -12,16 +12,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SearchField } from '../../components/SearchField';
 import { ScaledText } from '../../components/ScaledText';
-import { MoneyText } from '../../components/MoneyText';
 import { EmptyState } from '../../components/EmptyState';
-import { SurfaceCard } from '../../components/SurfaceCard';
 import { AlumnoCard } from '../../components/AlumnoCard';
+import { ModuleScreenHero } from '../../components/ModuleScreenHero';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { buscarAlumnos, listarAlumnosRecientes } from '../../api/alumnosApi';
 import type { AlumnoListItem } from '../../api/domain';
 import { useDebounced } from '../../hooks/useDebounced';
 import { nombreCompleto } from '../../utils/format';
 import { useAccessibility } from '../../context/AccessibilityContext';
+import { CAJERO_AZUL_REY } from '../../config/appBranding';
 import { themeColors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -76,40 +76,34 @@ export default function AlumnosScreen() {
 
   const listHeader = (
     <View style={styles.headerBlock}>
-      <SurfaceCard style={styles.hero} elevated>
-        <View style={styles.heroTop}>
-          <View style={[styles.heroBadge, { backgroundColor: c.accentSoft }]}>
-            <Ionicons name="school" size={22} color={c.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800' }}>
-              Alumnos
-            </ScaledText>
-            <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 2 }}>
-              Busque, cree y gestione matrículas y pagos
-            </ScaledText>
-          </View>
-        </View>
+      <ModuleScreenHero
+        title="Alumnos"
+        subtitle="Busque, cree y gestione matrículas y pagos"
+        icon="people"
+      >
         <PrimaryButton
           label="Crear nuevo alumno"
-          icon="person-add-outline"
+          icon="person-add"
           onPress={() => nav.navigate('AlumnoCrear')}
           fullWidth
         />
-      </SurfaceCard>
+      </ModuleScreenHero>
 
       <SearchField
         value={q}
         onChangeText={setQ}
         placeholder="Documento, nombre, celular o correo…"
       />
-      <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 8, marginBottom: 4 }}>
-        {modoBusqueda
-          ? `${total} resultado${total === 1 ? '' : 's'} para «${debounced.trim()}»`
-          : total > 0
-            ? `${total} alumno${total === 1 ? '' : 's'} recientes — escriba para filtrar`
-            : 'Escriba al menos 2 caracteres para buscar en todo el registro'}
-      </ScaledText>
+      <View style={[styles.metaRow, { backgroundColor: highContrast ? c.bgAlt : '#eff6ff' }]}>
+        <Ionicons name="information-circle-outline" size={16} color={c.primary} />
+        <ScaledText baseSize={12} style={{ color: c.textSoft, flex: 1 }}>
+          {modoBusqueda
+            ? `${total} resultado${total === 1 ? '' : 's'} para «${debounced.trim()}»`
+            : total > 0
+              ? `${total} alumno${total === 1 ? '' : 's'} recientes — escriba para filtrar`
+              : 'Escriba al menos 2 caracteres para buscar en todo el registro'}
+        </ScaledText>
+      </View>
     </View>
   );
 
@@ -172,14 +166,13 @@ export default function AlumnosScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   headerBlock: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
-  hero: { gap: 14 },
-  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  heroBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+  metaRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   list: { paddingHorizontal: 16, paddingTop: 4 },
   listEmpty: { flexGrow: 1 },
@@ -193,7 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fabShadow: {
-    shadowColor: '#4f46e5',
+    shadowColor: CAJERO_AZUL_REY,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 12,

@@ -14,6 +14,7 @@ import { CajaResumenPanel } from '../../components/CajaResumenPanel';
 import { abrirCaja, cerrarCaja, fetchCajaActivaFull } from '../../api/cajaApi';
 import type { CajaActivaFull } from '../../api/domain';
 import { useAccessibility } from '../../context/AccessibilityContext';
+import { CAJERO_AZUL_REY, CAJERO_AZUL_REY_CLARO } from '../../config/appBranding';
 import { themeColors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -98,10 +99,10 @@ export default function CajaScreen() {
   const heroColors: [string, string] = abierta
     ? highContrast
       ? [c.card, c.bgAlt]
-      : ['#059669', '#10b981']
+      : [CAJERO_AZUL_REY, '#1d4ed8']
     : highContrast
       ? [c.card, c.bgAlt]
-      : ['#d97706', '#f59e0b'];
+      : ['#1e40af', CAJERO_AZUL_REY_CLARO];
 
   return (
     <ScreenBody refreshing={loading} onRefresh={() => { setLoading(true); void load(); }}>
@@ -116,7 +117,7 @@ export default function CajaScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <View style={styles.heroStatusRow}>
-              <View style={[styles.statusDot, { backgroundColor: abierta ? '#bbf7d0' : '#fde68a' }]} />
+              <View style={[styles.statusDot, { backgroundColor: abierta ? '#93c5fd' : '#fde68a' }]} />
               <ScaledText
                 baseSize={12}
                 style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.9)', fontWeight: '700' }}
@@ -188,18 +189,18 @@ export default function CajaScreen() {
         <>
           <View style={styles.actionsGrid}>
             <AccionTile
-              icon="wallet-outline"
+              icon="wallet"
               title="Cobros pendientes"
               subtitle="Liquidaciones con saldo"
-              colors={highContrast ? [c.bgAlt, c.card] : ['#4f46e5', '#6366f1']}
+              colors={highContrast ? [c.bgAlt, c.card] : [CAJERO_AZUL_REY, '#60a5fa']}
               highContrast={highContrast}
               onPress={() => nav.navigate('CajaCobros')}
             />
             <AccionTile
-              icon="swap-vertical-outline"
+              icon="swap-vertical"
               title="Movimientos"
               subtitle="Ingresos y egresos"
-              colors={highContrast ? [c.bgAlt, c.card] : ['#0891b2', '#06b6d4']}
+              colors={highContrast ? [c.bgAlt, c.card] : ['#1d4ed8', '#38bdf8']}
               highContrast={highContrast}
               onPress={() => nav.navigate('CajaMovimientos')}
             />

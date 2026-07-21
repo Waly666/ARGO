@@ -21,11 +21,29 @@ export function FormSection({ title, subtitle, icon, tone = 'primary', children 
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const toneBg =
-    tone === 'accent' ? c.accentSoft : tone === 'neutral' ? (highContrast ? c.bgAlt : '#f8fafc') : '#eef2ff';
+    tone === 'accent'
+      ? highContrast
+        ? c.bgAlt
+        : '#ecfeff'
+      : tone === 'neutral'
+        ? highContrast
+          ? c.bgAlt
+          : '#f8fafc'
+        : highContrast
+          ? c.bgAlt
+          : '#eff6ff';
   const toneIcon = tone === 'accent' ? c.accent : c.primary;
 
   return (
-    <View style={[styles.wrap, { borderColor: c.border, backgroundColor: c.card }]}>
+    <View
+      style={[
+        styles.wrap,
+        {
+          borderColor: highContrast ? c.border : 'rgba(53, 120, 240, 0.16)',
+          backgroundColor: c.card,
+        },
+      ]}
+    >
       <View style={styles.head}>
         <View style={[styles.iconBox, { backgroundColor: toneBg }]}>
           <Ionicons name={icon} size={20} color={toneIcon} />

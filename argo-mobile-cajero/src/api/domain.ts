@@ -296,6 +296,7 @@ export interface CertificadoItem {
   encabezado?: string;
   tipoFormatoCert?: string;
   tipoFormatoCertLabel?: string;
+  tipoCertificado?: string | null;
   programaDescr?: string | null;
   nomCert?: string | null;
   fechaEmision?: string;

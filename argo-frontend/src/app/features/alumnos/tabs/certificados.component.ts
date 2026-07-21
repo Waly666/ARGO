@@ -17,6 +17,7 @@ import {
   TIPO_JORNADAS_CAPACITACION,
   fechaInput,
   normalizarTipoAlumno,
+  tipoCertificadoEmisionNoJornada,
 } from '../catalogo.helpers';
 import {
   ConfigCertificadoService,
@@ -88,11 +89,11 @@ export class CertificadosComponent {
   labelTipo = labelTipoCert;
   labelOrientacion = labelOrientacion;
 
-  /** Al emitir: Jornada si el programa es Cap Jornada Capacitacion; si no, tipo del alumno */
+  /** Al emitir: Jornada solo si el formato es jornada; si no, Regular/Virtual (nunca hereda jornadas del alumno). */
   tipoCertNuevo = computed(() => {
     const es = this.elegibleSel();
     if (es?.tipoFormatoCert === 'jornada_capacitacion') return TIPO_JORNADAS_CAPACITACION;
-    return normalizarTipoAlumno(this.store.alumno()?.tipoAlumno);
+    return tipoCertificadoEmisionNoJornada(this.store.alumno()?.tipoAlumno);
   });
 
   constructor() {

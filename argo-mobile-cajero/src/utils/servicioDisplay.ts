@@ -103,15 +103,15 @@ export function gradienteServicio(cat: CategoriaServicio, highContrast: boolean)
   if (highContrast) return ['#1e293b', '#334155'];
   switch (cat) {
     case 'matricula':
-      return ['#4f46e5', '#6366f1'];
+      return ['#1d4ed8', '#3578F0'];
     case 'hora_practica':
-      return ['#0891b2', '#06b6d4'];
+      return ['#2563eb', '#38bdf8'];
     case 'derechos_grado':
-      return ['#7c3aed', '#a78bfa'];
+      return ['#1e40af', '#60a5fa'];
     case 'programa_otro':
-      return ['#0d9488', '#14b8a6'];
+      return ['#0284c7', '#38bdf8'];
     default:
-      return ['#e11d48', '#f43f5e'];
+      return ['#3578F0', '#6B9AF5'];
   }
 }
 

@@ -5,7 +5,10 @@ const PlantillaCertificado = require('../models/PlantillaCertificado');
 const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const Cliente = require('../models/Cliente');
-const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
+const {
+  normalizarTipoRegularJornada,
+  tipoCertificadoEmisionNoJornada,
+} = require('../constants/tipoRegularJornada');
 const { models: cat } = require('../models/catalogos');
 const { obtenerConfigCertificado, siguienteCodigoCertificado, normalizeDiasAvisoCert, DEFAULT_DIAS_AVISO_POR_VENCER, DEFAULT_DIAS_AVISO_VENCIDO } = require('../services/configCertificado');
 const { reglaPorClave } = require('../services/configAlertas');
@@ -33,7 +36,7 @@ const { registrarEliminacion } = require('../services/auditoria');
 
 function tipoCertCategoria(tipoFormato, alumno) {
   if (tipoFormato === TIPOS.JORNADA_CAPACITACION) return TIPO_JORNADAS_CAPACITACION;
-  return normalizarTipoRegularJornada(alumno?.tipoAlumno);
+  return tipoCertificadoEmisionNoJornada(alumno?.tipoAlumno);
 }
 
 /** Certificados emitidos por jornadas de capacitación (gestión aparte). */

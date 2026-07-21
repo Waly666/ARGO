@@ -12,6 +12,7 @@ import { MoneyText } from '../../components/MoneyText';
 import { EmptyState } from '../../components/EmptyState';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { ModuleScreenHero } from '../../components/ModuleScreenHero';
 import { CobroPendienteCard } from '../../components/CobroPendienteCard';
 import {
   PagoCobroFields,
@@ -155,35 +156,26 @@ export default function CajaCobrosScreen() {
 
   const listHeader = (
     <View style={styles.headerBlock}>
-      <LinearGradient
-        colors={highContrast ? [c.card, c.bgAlt] : ['#ea580c', '#f97316']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.hero}
+      <ModuleScreenHero
+        title="Cobros pendientes"
+        subtitle={`${items.length} liquidación${items.length === 1 ? '' : 'es'} con saldo`}
+        icon="wallet"
       >
-        <View style={styles.heroRow}>
-          <View style={[styles.heroIcon, { backgroundColor: highContrast ? c.bgAlt : 'rgba(255,255,255,0.2)' }]}>
-            <Ionicons name="wallet" size={24} color={highContrast ? c.warn : '#fff'} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <ScaledText baseSize={12} style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.85)', fontWeight: '700' }}>
-              COBROS PENDIENTES
-            </ScaledText>
-            <ScaledText baseSize={18} style={{ color: highContrast ? c.text : '#fff', fontWeight: '800', marginTop: 2 }}>
-              Por recaudar
-            </ScaledText>
-          </View>
-        </View>
-        <View style={[styles.heroTotal, { backgroundColor: highContrast ? c.bgAlt : 'rgba(255,255,255,0.15)' }]}>
-          <ScaledText baseSize={12} style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.85)' }}>
+        <View style={[styles.heroTotal, { backgroundColor: highContrast ? c.bgAlt : 'rgba(255,255,255,0.16)' }]}>
+          <ScaledText
+            baseSize={12}
+            style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.85)' }}
+          >
             Saldo total en lista
           </ScaledText>
-          <MoneyText value={totales.saldo} baseSize={26} style={{ color: highContrast ? c.warn : '#fff' }} bold />
-          <ScaledText baseSize={11} style={{ color: highContrast ? c.textSoft : 'rgba(255,255,255,0.8)', marginTop: 4 }}>
-            {items.length} liquidación{items.length === 1 ? '' : 'es'} con saldo
-          </ScaledText>
+          <MoneyText
+            value={totales.saldo}
+            baseSize={26}
+            style={{ color: highContrast ? c.primary : '#fff' }}
+            bold
+          />
         </View>
-      </LinearGradient>
+      </ModuleScreenHero>
 
       <SearchField value={q} onChangeText={setQ} placeholder="Alumno, documento o servicio…" />
     </View>
@@ -227,7 +219,7 @@ export default function CajaCobrosScreen() {
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 <View style={styles.modalHeader}>
                   <LinearGradient
-                    colors={highContrast ? [c.bgAlt, c.card] : ['#4f46e5', '#6366f1']}
+                    colors={highContrast ? [c.bgAlt, c.card] : ['#3578F0', '#60a5fa']}
                     style={styles.modalIcon}
                   >
                     <Ionicons name="cash-outline" size={22} color={highContrast ? c.primary : '#fff'} />
@@ -293,6 +285,7 @@ export default function CajaCobrosScreen() {
                   subtotalItems={cobroVirtual ? Number(cobroItem.saldo) || 0 : parseMonto()}
                   value={pagoCobro}
                   onChange={patchPagoCobro}
+                  onTiposLoaded={setTiposPago}
                 />
                 <View style={styles.modalActions}>
                   <PrimaryButton label="Cancelar" variant="ghost" onPress={cerrarCobro} style={{ flex: 1 }} />
@@ -316,15 +309,6 @@ export default function CajaCobrosScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   headerBlock: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
-  hero: { borderRadius: 18, padding: 16, gap: 12 },
-  heroRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   heroTotal: { borderRadius: 14, padding: 14, gap: 2 },
   list: { paddingHorizontal: 16, paddingTop: 4 },
   listEmpty: { flexGrow: 1 },

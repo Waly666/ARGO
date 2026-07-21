@@ -17,8 +17,16 @@ export function SearchField({ value, onChangeText, placeholder = 'Buscar…', au
   const c = themeColors(highContrast);
 
   return (
-    <View style={[styles.wrap, { borderColor: c.border, backgroundColor: c.card }]}>
-      <Ionicons name="search-outline" size={20} color={c.textSoft} />
+    <View
+      style={[
+        styles.wrap,
+        {
+          borderColor: highContrast ? c.border : 'rgba(53, 120, 240, 0.22)',
+          backgroundColor: c.card,
+        },
+      ]}
+    >
+      <Ionicons name="search" size={20} color={c.primary} />
       <TextInput
         value={value}
         onChangeText={onChangeText}

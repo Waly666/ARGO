@@ -3,7 +3,7 @@ const Liquidacion = require('../models/Liquidacion');
 const DatosAlumno = require('../models/DatosAlumno');
 const Cliente     = require('../models/Cliente');
 const { models: cat } = require('../models/catalogos');
-const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
+const { tipoCertificadoEmisionNoJornada } = require('../constants/tipoRegularJornada');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { buscarPrograma } = require('./programaServicio');
 const { obtenerConfigCertificado, siguienteCodigoCertificado } = require('./configCertificado');
@@ -109,7 +109,7 @@ async function intentarCertificadoVirtualAprobar({ numDoc: numDocRaw, idPrograma
   }
 
   const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
-  const tipoCert = normalizarTipoRegularJornada(alumno?.tipoAlumno);
+  const tipoCert = tipoCertificadoEmisionNoJornada(alumno?.tipoAlumno);
 
   const fechaEm = new Date();
   let fechaVe = null;

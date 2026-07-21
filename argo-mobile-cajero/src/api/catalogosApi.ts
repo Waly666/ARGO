@@ -104,12 +104,30 @@ export const TIPOS_PAGO_DEF: CatalogoItem[] = [
   { idTipoPago: '6', codigo: 'NE', descripcion: 'Nequi / Daviplata' },
 ];
 
+/** Une catálogo API + defaults para no perder formas de pago. */
+export function mergeTiposPago(api: CatalogoItem[]): CatalogoItem[] {
+  const byId = new Map<string, CatalogoItem>();
+  for (const t of TIPOS_PAGO_DEF) {
+    const id = String(t.idTipoPago ?? '').trim();
+    if (id) byId.set(id, { ...t });
+  }
+  for (const t of api || []) {
+    const id = String(t.idTipoPago ?? t.codigo ?? t.id ?? t._id ?? '').trim();
+    if (!id) continue;
+    const prev = byId.get(id);
+    byId.set(id, prev ? { ...prev, ...t, idTipoPago: id } : { ...t, idTipoPago: id });
+  }
+  return [...byId.values()].sort((a, b) =>
+    String(a.idTipoPago).localeCompare(String(b.idTipoPago), undefined, { numeric: true }),
+  );
+}
+
 export async function fetchTiposPago(): Promise<CatalogoItem[]> {
   try {
     const rows = await listarCatalogo('catTipoPago');
-    return rows.length ? rows : TIPOS_PAGO_DEF;
+    return mergeTiposPago(rows);
   } catch {
-    return TIPOS_PAGO_DEF;
+    return [...TIPOS_PAGO_DEF];
   }
 }
 

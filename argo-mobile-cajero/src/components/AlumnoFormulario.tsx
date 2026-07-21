@@ -28,8 +28,9 @@ import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 import { mayusculasNombre, nombreCompleto } from '../utils/format';
 import {
-  TIPOS_ALUMNO,
+  TIPOS_ALUMNO_CAJERO,
   TIPO_ALUMNO_DEFAULT,
+  TIPO_JORNADAS_CAPACITACION,
   mapCatalogoOpciones,
   normalizarGenero,
   normalizarTipoAlumno,
@@ -283,7 +284,7 @@ export function AlumnoFormulario({
           onAplicado={({ patch, warnings, imagen }) => {
             aplicarOcr(patch);
             setScanWarnings(warnings || []);
-            setCedulaArchivo(imagen);
+            if (imagen) setCedulaArchivo(imagen);
             setScanVisible(false);
           }}
         />
@@ -302,7 +303,7 @@ export function AlumnoFormulario({
       <FormSection title="Identificación" subtitle="Documento, nombres, fecha de nacimiento y foto" icon="card-outline">
         <ScaledText baseSize={13} style={{ color: c.textSoft, fontWeight: '600' }}>Tipo de alumno</ScaledText>
         <View style={styles.chips}>
-          {TIPOS_ALUMNO.map((t) => {
+          {TIPOS_ALUMNO_CAJERO.map((t) => {
             const on = normalizarTipoAlumno(form.tipoAlumno) === t;
             return (
               <Pressable
@@ -315,6 +316,11 @@ export function AlumnoFormulario({
             );
           })}
         </View>
+        {normalizarTipoAlumno(form.tipoAlumno) === TIPO_JORNADAS_CAPACITACION ? (
+          <ScaledText baseSize={12} style={{ color: c.warn, fontWeight: '600' }}>
+            Este alumno está marcado como jornadas. En cajero solo puede pasar a Regular o Virtual; las jornadas se gestionan en su módulo.
+          </ScaledText>
+        ) : null}
         {normalizarTipoAlumno(form.tipoAlumno) === 'Virtual' ? (
           <ScaledText baseSize={12} style={{ color: c.accent, fontWeight: '600' }}>Alumno del aula virtual (portal en línea)</ScaledText>
         ) : null}

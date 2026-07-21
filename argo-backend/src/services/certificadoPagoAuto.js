@@ -2,7 +2,7 @@ const Certificado = require('../models/Certificado');
 const DatosAlumno = require('../models/DatosAlumno');
 const Cliente     = require('../models/Cliente');
 const { models: cat } = require('../models/catalogos');
-const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
+const { tipoCertificadoEmisionNoJornada } = require('../constants/tipoRegularJornada');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { buscarPrograma, esCapacitacionVirtualServicio } = require('./programaServicio');
 const { configPorPrograma, servicioMatriculaPrograma } = require('./aulaVirtualCatalogo');
@@ -109,7 +109,8 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
   }
 
   const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
-  const tipoCert = normalizarTipoRegularJornada(alumno?.tipoAlumno);
+  // Pago en caja / cajero: siempre Regular o Virtual, nunca «Jornadas…».
+  const tipoCert = tipoCertificadoEmisionNoJornada(alumno?.tipoAlumno);
 
   const fechaEm = new Date();
   let fechaVe = null;

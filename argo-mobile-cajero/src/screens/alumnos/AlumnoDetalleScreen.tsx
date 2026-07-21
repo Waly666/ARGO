@@ -101,11 +101,11 @@ function esAbonoParcial(it: ItemPagoSel): boolean {
   return it.valor > 0 && it.valor < it.saldo - 0.0001;
 }
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'pagos', label: 'Pagos' },
-  { id: 'servicios', label: 'Servicios' },
-  { id: 'comprobantes', label: 'Recibos y FE' },
-  { id: 'certificados', label: 'Certificados' },
+const TABS: { id: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'pagos', label: 'Pagos', icon: 'cash' },
+  { id: 'servicios', label: 'Servicios', icon: 'layers' },
+  { id: 'comprobantes', label: 'Recibos y FE', icon: 'receipt' },
+  { id: 'certificados', label: 'Certificados', icon: 'ribbon' },
 ];
 
 export default function AlumnoDetalleScreen() {
@@ -839,17 +839,27 @@ export default function AlumnoDetalleScreen() {
       />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {TABS.map((t) => (
-          <Pressable
-            key={t.id}
-            onPress={() => setTab(t.id)}
-            style={[styles.tab, tab === t.id && { backgroundColor: c.primary }]}
-          >
-            <ScaledText baseSize={13} style={{ color: tab === t.id ? '#fff' : c.text, fontWeight: '700' }}>
-              {t.label}
-            </ScaledText>
-          </Pressable>
-        ))}
+        {TABS.map((t) => {
+          const on = tab === t.id;
+          return (
+            <Pressable
+              key={t.id}
+              onPress={() => setTab(t.id)}
+              style={[
+                styles.tab,
+                {
+                  backgroundColor: on ? c.primary : highContrast ? c.bgAlt : '#eff6ff',
+                  borderColor: on ? c.primary : highContrast ? c.border : '#bfdbfe',
+                },
+              ]}
+            >
+              <Ionicons name={t.icon} size={16} color={on ? '#fff' : c.primary} />
+              <ScaledText baseSize={13} style={{ color: on ? '#fff' : c.primary, fontWeight: '700' }}>
+                {t.label}
+              </ScaledText>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {tab === 'pagos' ? (
@@ -943,6 +953,7 @@ export default function AlumnoDetalleScreen() {
                 subtotalItems={subtotalPago}
                 value={pagoCobro}
                 onChange={patchPagoCobro}
+                onTiposLoaded={setTiposPago}
               />
               <PrimaryButton
                 label="Registrar cobro"
@@ -1378,7 +1389,15 @@ export default function AlumnoDetalleScreen() {
 const styles = StyleSheet.create({
   saldoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   tabs: { flexDirection: 'row', gap: 8, marginBottom: 14, paddingRight: 8 },
-  tab: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, backgroundColor: '#e2e8f0' },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',

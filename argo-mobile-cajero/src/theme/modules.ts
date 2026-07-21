@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
+import { CAJERO_AZUL_REY } from '../config/appBranding';
 import type { RootStackParamList } from '../navigation/types';
 
 export type IonName = ComponentProps<typeof Ionicons>['name'];
@@ -9,8 +10,8 @@ export type ModuleMeta = {
   key: keyof RootStackParamList;
   label: string;
   icon: IonName;
-  color: string;
-  tint: string;
+  /** Gradiente del icono (inicio → fin), familia azul. */
+  gradient: [string, string];
   permiso?: string | string[];
 };
 
@@ -18,57 +19,50 @@ export const APP_MODULES: ModuleMeta[] = [
   {
     key: 'Caja',
     label: 'Caja',
-    icon: 'cash-outline',
-    color: '#059669',
-    tint: '#ecfdf5',
+    icon: 'wallet',
+    gradient: ['#1d4ed8', CAJERO_AZUL_REY],
     permiso: ['caja.turno', 'caja.cobros', 'caja.admin'],
   },
   {
     key: 'Alumnos',
     label: 'Alumnos',
-    icon: 'school-outline',
-    color: '#2563eb',
-    tint: '#eff6ff',
+    icon: 'people',
+    gradient: [CAJERO_AZUL_REY, '#60a5fa'],
     permiso: ['alumnos.ver', 'alumnos.gestionar'],
   },
   {
     key: 'Certificados',
     label: 'Certificados',
-    icon: 'ribbon-outline',
-    color: '#0d9488',
-    tint: '#ecfdf5',
+    icon: 'ribbon',
+    gradient: ['#2563eb', '#38bdf8'],
     permiso: 'alumnos.certificados',
   },
   {
     key: 'Facturacion',
     label: 'Facturación',
-    icon: 'receipt-outline',
-    color: '#d97706',
-    tint: '#fffbeb',
+    icon: 'document-text',
+    gradient: ['#1e40af', '#3b82f6'],
     permiso: 'facturacion',
   },
   {
     key: 'Programas',
     label: 'Programas',
-    icon: 'library-outline',
-    color: '#7c3aed',
-    tint: '#f5f3ff',
+    icon: 'book',
+    gradient: ['#1d4ed8', '#0ea5e9'],
     permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'],
   },
   {
     key: 'Servicios',
     label: 'Servicios',
-    icon: 'construct-outline',
-    color: '#db2777',
-    tint: '#fdf2f8',
+    icon: 'layers',
+    gradient: ['#2563eb', '#6366f1'],
     permiso: ['servicios.ver', 'servicios.gestionar'],
   },
   {
     key: 'Ajustes',
     label: 'Lectura y alertas',
-    icon: 'accessibility-outline',
-    color: '#475569',
-    tint: '#f1f5f9',
+    icon: 'options',
+    gradient: ['#334155', '#64748b'],
   },
 ];
 

@@ -16,23 +16,29 @@ export function esLiquidacionVirtual(it?: {
   return !!it?.esVirtual || esTarifaVirtualMatricula(it?.tarifaMatricula ?? null);
 }
 
-export function esEfectivoTipoPago(idTipoPago: string, tipos: CatalogoItem[]): boolean {
-  const id = String(idTipoPago || '').trim();
-  if (!id || id === TIPO_PAGO_EFECTIVO) return true;
-  const t = tipos.find(
-    (x) =>
-      String(x.idTipoPago ?? x.codigo ?? x._id ?? '') === id
-      || String(x.codigo ?? '').toUpperCase() === 'EF',
-  );
-  const cod = String(t?.codigo ?? id).toUpperCase();
-  return cod === 'EF' || cod === '1';
+export function idTipoPagoItem(t: CatalogoItem): string {
+  return String(t.idTipoPago ?? t.codigo ?? t.id ?? t._id ?? '').trim();
 }
 
 export function etiquetaTipoPago(t: CatalogoItem): string {
   const d = String(t.descripcion ?? t.nombre ?? '').trim();
-  const id = String(t.idTipoPago ?? t.codigo ?? '').trim();
+  const id = idTipoPagoItem(t);
   if (d) return /^\d+\)/.test(d) ? d : id ? `${id}) ${d}` : d;
   return id || 'Pago';
+}
+
+/** Misma regla que el frontend: efectivo por etiqueta / código EF / id 1. */
+export function esEfectivoTipoPago(idTipoPago: string, tipos: CatalogoItem[]): boolean {
+  const id = String(idTipoPago || '').trim();
+  if (!id) return true;
+  const t = tipos.find((x) => idTipoPagoItem(x) === id);
+  const label = (t ? etiquetaTipoPago(t) : id).toLowerCase();
+  const cod = String(t?.codigo ?? '').trim().toUpperCase();
+  if (cod === 'EF' || id === TIPO_PAGO_EFECTIVO) return true;
+  if (label.includes('efect') || /\bef\b/.test(label) || label === 'ef') return true;
+  if (t) return false;
+  // Sin catálogo: solo id 1 se trata como efectivo.
+  return id === TIPO_PAGO_EFECTIVO;
 }
 
 export function etiquetaCuenta(c: CatalogoItem): string {
@@ -41,6 +47,10 @@ export function etiquetaCuenta(c: CatalogoItem): string {
   const id = String(c.idCuentaBancaria ?? c.codigo ?? c._id ?? '').trim();
   if (nom && banco) return `${nom} · ${banco}`;
   return nom || banco || id || 'Cuenta';
+}
+
+export function idCuentaItem(c: CatalogoItem): string {
+  return String(c.idCuentaBancaria ?? c.codigo ?? c._id ?? '').trim();
 }
 
 export function validarPagoIntangible(input: {
@@ -58,10 +68,17 @@ export function validarPagoIntangible(input: {
     return { ok: false, message: 'Seleccione la cuenta bancaria donde ingresa el pago.' };
   }
   if (!String(input.numComprobante || '').trim()) {
-    return { ok: false, message: 'Indique el número de comprobante o referencia.' };
+    return {
+      ok: false,
+      message: 'No se puede procesar el pago: indique el número de comprobante o referencia.',
+    };
   }
   if (!input.soporteUri) {
-    return { ok: false, message: 'Adjunte la imagen del soporte de pago.' };
+    return {
+      ok: false,
+      message:
+        'No se puede procesar el pago: adjunte el pantallazo o imagen del movimiento (voucher, transferencia, cheque, etc.).',
+    };
   }
   return { ok: true };
 }

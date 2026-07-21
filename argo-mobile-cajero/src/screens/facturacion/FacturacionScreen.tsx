@@ -7,6 +7,7 @@ import { SurfaceCard } from '../../components/SurfaceCard';
 import { ScaledText } from '../../components/ScaledText';
 import { MoneyText } from '../../components/MoneyText';
 import { EmptyState } from '../../components/EmptyState';
+import { ModuleScreenHero } from '../../components/ModuleScreenHero';
 import { facturaHtmlPath, fetchFacturacionResumen, listarFacturas } from '../../api/facturacionApi';
 import { VerDocumentoButton } from '../../components/VerDocumentoButton';
 import type { FacturaElectronicaItem, FacturacionResumen } from '../../api/domain';
@@ -48,16 +49,21 @@ export default function FacturacionScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
-      <View style={styles.searchWrap}>
+      <View style={styles.header}>
+        <ModuleScreenHero
+          title="Facturación"
+          subtitle="Facturas electrónicas emitidas"
+          icon="document-text"
+        />
         <SearchField value={q} onChangeText={setQ} placeholder="Número factura o documento…" />
+        {resumen ? (
+          <View style={styles.stats}>
+            <StatCard label="Emitidas" value={resumen.emitidas} color={c.primary} />
+            <StatCard label="Validadas" value={resumen.validadas} color={c.ok} />
+            <StatCard label="Rechazadas" value={resumen.rechazadas} color={c.danger} />
+          </View>
+        ) : null}
       </View>
-      {resumen ? (
-        <View style={styles.stats}>
-          <StatCard label="Emitidas" value={resumen.emitidas} color={c.primary} />
-          <StatCard label="Validadas" value={resumen.validadas} color={c.ok} />
-          <StatCard label="Rechazadas" value={resumen.rechazadas} color={c.danger} />
-        </View>
-      ) : null}
       <FlatList
         data={items}
         keyExtractor={(it) => it._id}
@@ -103,17 +109,25 @@ function StatCard({ label, value, color }: { label: string; value: number; color
   return (
     <SurfaceCard style={styles.stat} elevated={false}>
       <ScaledText baseSize={12} style={{ color: c.textSoft }}>{label}</ScaledText>
-      <ScaledText baseSize={22} style={{ color, fontWeight: '800', marginTop: 4 }}>{value}</ScaledText>
+      <ScaledText baseSize={20} style={{ color, fontWeight: '800', marginTop: 4 }}>
+        {value}
+      </ScaledText>
     </SurfaceCard>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  searchWrap: { padding: 16, paddingBottom: 8 },
-  stats: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
-  stat: { flex: 1, paddingVertical: 12 },
+  header: { paddingHorizontal: 16, paddingTop: 12, gap: 12, marginBottom: 4 },
+  stats: { flexDirection: 'row', gap: 8 },
+  stat: { flex: 1, paddingVertical: 10, paddingHorizontal: 10 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   listEmpty: { flexGrow: 1, paddingHorizontal: 16 },
-  row: { marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 10,
+    padding: 14,
+  },
 });

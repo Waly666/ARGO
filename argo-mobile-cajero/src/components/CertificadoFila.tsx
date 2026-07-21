@@ -104,6 +104,7 @@ export function CertificadoFila({ cert, onPressAlumno }: Props) {
 
       <View style={styles.chipsRow}>
         {codigo ? <MetaChip label={`# ${codigo}`} c={c} /> : null}
+        {cert.tipoCertificado ? <MetaChip label={cert.tipoCertificado} c={c} /> : null}
         {cert.tipoFormatoCertLabel ? <MetaChip label={cert.tipoFormatoCertLabel} c={c} /> : null}
         {cert.codVerificacion ? <MetaChip label={`Verif. ${cert.codVerificacion}`} c={c} /> : null}
       </View>

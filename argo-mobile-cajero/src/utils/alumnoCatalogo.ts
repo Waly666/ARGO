@@ -1,7 +1,10 @@
 import type { CatalogoItem } from '../api/domain';
 
 export const TIPOS_ALUMNO = ['Regular', 'Jornadas de Capacitación', 'Virtual'] as const;
+/** En cajero no se gestionan alumnos de jornadas (módulo aparte). */
+export const TIPOS_ALUMNO_CAJERO = ['Regular', 'Virtual'] as const;
 export const TIPO_ALUMNO_DEFAULT = 'Regular';
+export const TIPO_JORNADAS_CAPACITACION = 'Jornadas de Capacitación';
 
 export const TIPOS_DOC_DEF: CatalogoItem[] = [
   { idTipoDoc: '1', descripcion: '1) CEDULA DE CIUDADANÍA' },

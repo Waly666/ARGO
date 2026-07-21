@@ -61,7 +61,7 @@ function RootNavigator() {
 
   return (
     <Stack.Navigator key="nav-app" initialRouteName="Home" detachInactiveScreens={false} screenOptions={headerOptions}>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'ARGO' }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Caja" component={CajaScreen} options={{ title: 'Caja' }} />
       <Stack.Screen name="CajaCobros" component={CajaCobrosScreen} options={{ title: 'Cobros pendientes' }} />
       <Stack.Screen name="CajaMovimientos" component={CajaMovimientosScreen} options={{ title: 'Movimientos' }} />

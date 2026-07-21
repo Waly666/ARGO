@@ -129,10 +129,10 @@ export function gradientePrograma(
   highContrast: boolean,
 ): [string, string] {
   if (highContrast) return ['#1e293b', '#334155'];
-  if (esProgramaJornadasCap(prog)) return ['#d97706', '#f59e0b'];
-  if (esProgramaCea(prog)) return ['#0891b2', '#06b6d4'];
-  if (esProgramaTecnicoLaboral(prog)) return ['#7c3aed', '#a78bfa'];
-  return ['#4f46e5', '#6366f1'];
+  if (esProgramaJornadasCap(prog)) return ['#1e40af', '#3b82f6'];
+  if (esProgramaCea(prog)) return ['#0284c7', '#38bdf8'];
+  if (esProgramaTecnicoLaboral(prog)) return ['#2563eb', '#60a5fa'];
+  return ['#3578F0', '#6B9AF5'];
 }
 
 export function textoHorasPrograma(prog: ProgramaItem): string {

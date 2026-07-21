@@ -8,6 +8,7 @@ import { SurfaceCard } from '../../components/SurfaceCard';
 import { ScaledText } from '../../components/ScaledText';
 import { EmptyState } from '../../components/EmptyState';
 import { CertificadoFila } from '../../components/CertificadoFila';
+import { ModuleScreenHero } from '../../components/ModuleScreenHero';
 import { listarCertificadosGlobal } from '../../api/certificadosApi';
 import type { CertificadoItem } from '../../api/domain';
 import { useDebounced } from '../../hooks/useDebounced';
@@ -58,26 +59,31 @@ export default function CertificadosScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
-      <View style={styles.searchWrap}>
+      <View style={styles.header}>
+        <ModuleScreenHero
+          title="Certificados"
+          subtitle="Consulta e impresión de certificados emitidos"
+          icon="ribbon"
+        />
         <SearchField
           value={q}
           onChangeText={setQ}
           placeholder="Código, alumno, documento o programa…"
         />
-      </View>
-      <View style={styles.stats}>
-        <SurfaceCard style={styles.stat} elevated={false}>
-          <ScaledText baseSize={12} style={{ color: c.textSoft }}>Total</ScaledText>
-          <ScaledText baseSize={22} style={{ color: c.primary, fontWeight: '800', marginTop: 4 }}>
-            {total}
-          </ScaledText>
-        </SurfaceCard>
-        <SurfaceCard style={styles.stat} elevated={false}>
-          <ScaledText baseSize={12} style={{ color: c.textSoft }}>Hoy</ScaledText>
-          <ScaledText baseSize={22} style={{ color: c.ok, fontWeight: '800', marginTop: 4 }}>
-            {emitidosHoy}
-          </ScaledText>
-        </SurfaceCard>
+        <View style={styles.stats}>
+          <SurfaceCard style={styles.stat} elevated={false}>
+            <ScaledText baseSize={12} style={{ color: c.textSoft }}>Total</ScaledText>
+            <ScaledText baseSize={22} style={{ color: c.primary, fontWeight: '800', marginTop: 4 }}>
+              {total}
+            </ScaledText>
+          </SurfaceCard>
+          <SurfaceCard style={styles.stat} elevated={false}>
+            <ScaledText baseSize={12} style={{ color: c.textSoft }}>Hoy</ScaledText>
+            <ScaledText baseSize={22} style={{ color: c.primary, fontWeight: '800', marginTop: 4 }}>
+              {emitidosHoy}
+            </ScaledText>
+          </SurfaceCard>
+        </View>
       </View>
       {err ? (
         <ScaledText baseSize={14} style={{ color: c.danger, marginHorizontal: 16, marginBottom: 8 }}>
@@ -109,8 +115,8 @@ export default function CertificadosScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  searchWrap: { padding: 16, paddingBottom: 8 },
-  stats: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 },
+  header: { paddingHorizontal: 16, paddingTop: 12, gap: 12, marginBottom: 4 },
+  stats: { flexDirection: 'row', gap: 8 },
   stat: { flex: 1, paddingVertical: 12 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   listEmpty: { flexGrow: 1 },

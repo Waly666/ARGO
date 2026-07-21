@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, View, StyleSheet } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
 
 import { ScreenBody } from '../../components/ScreenBody';
 import { AlumnoFormulario, type AlumnoFormGuardado } from '../../components/AlumnoFormulario';
+import { ModuleScreenHero } from '../../components/ModuleScreenHero';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { ScaledText } from '../../components/ScaledText';
 import { fetchAlumnoPorDoc, fetchAlumnoPorId } from '../../api/alumnosApi';
@@ -58,17 +58,12 @@ export default function AlumnoEditarScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScreenBody>
-        <SurfaceCard style={styles.hero} elevated>
-          <View style={[styles.heroIcon, { backgroundColor: c.accentSoft }]}>
-            <Ionicons name="create-outline" size={28} color={c.primary} />
-          </View>
-          <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '800' }}>
-            Editar alumno
-          </ScaledText>
-          <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 6, lineHeight: 20 }}>
-            {titulo} · Doc. {numDoc}
-          </ScaledText>
-        </SurfaceCard>
+        <ModuleScreenHero
+          compact
+          title="Editar alumno"
+          subtitle={`${titulo || 'Alumno'} · Doc. ${numDoc}`}
+          icon="create"
+        />
 
         {loading ? (
           <SurfaceCard>
@@ -95,15 +90,3 @@ export default function AlumnoEditarScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  hero: { marginBottom: 16, alignItems: 'flex-start' },
-  heroIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-});

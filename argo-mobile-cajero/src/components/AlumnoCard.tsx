@@ -56,7 +56,7 @@ export function AlumnoCard({ alumno, saldo = 0, pendientes = 0, onPress, compact
     <>
       <View style={styles.topRow}>
         <LinearGradient
-          colors={highContrast ? [c.bgAlt, c.card] : ['#3578F0', '#6366f1']}
+          colors={highContrast ? [c.bgAlt, c.card] : ['#3578F0', '#60a5fa']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.avatar}

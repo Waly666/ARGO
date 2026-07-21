@@ -18,10 +18,23 @@ function normalizarTipoRegularJornada(val) {
   return TIPO_REGULAR_JORNADA_DEFAULT;
 }
 
+/**
+ * Categoría para certificados emitidos fuera del módulo Jornadas
+ * (pago en caja, ficha alumno, aula virtual).
+ * Nunca hereda «Jornadas de Capacitación» del alumno: eso solo aplica
+ * a certificados generados por asistencia a jornadas.
+ */
+function tipoCertificadoEmisionNoJornada(alumnoTipoAlumno) {
+  const t = normalizarTipoRegularJornada(alumnoTipoAlumno);
+  if (t === TIPO_JORNADAS_CAPACITACION) return TIPO_REGULAR_JORNADA_DEFAULT;
+  return t;
+}
+
 module.exports = {
   TIPOS_REGULAR_JORNADA,
   TIPO_REGULAR_JORNADA_DEFAULT,
   TIPO_JORNADAS_CAPACITACION,
   TIPO_VIRTUAL,
   normalizarTipoRegularJornada,
+  tipoCertificadoEmisionNoJornada,
 };
