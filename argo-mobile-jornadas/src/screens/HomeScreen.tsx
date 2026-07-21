@@ -35,7 +35,7 @@ type MenuTile = {
 
 export default function HomeScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const { state, signOut } = useAuth();
+  const { state } = useAuth();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const user = state.status === 'signedIn' ? state.user : null;
@@ -131,12 +131,9 @@ export default function HomeScreen() {
       ))}
 
       <View style={{ height: 16 }} />
-      <Pressable onPress={() => void signOut()} style={styles.logout}>
-        <Ionicons name="log-out-outline" size={18} color={c.danger} />
-        <ScaledText baseSize={15} style={{ color: c.danger, marginLeft: 8, fontWeight: '600' }}>
-          Cerrar sesión
-        </ScaledText>
-      </Pressable>
+      <ScaledText baseSize={12} style={{ color: c.textSoft, textAlign: 'center' }}>
+        Use el menú ☰ arriba para navegar o cerrar sesión.
+      </ScaledText>
     </ScrollView>
   );
 }

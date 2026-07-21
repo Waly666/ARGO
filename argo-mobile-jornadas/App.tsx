@@ -8,6 +8,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AppBootGate } from './src/bootstrap/splash';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { DrawerProvider } from './src/context/DrawerContext';
+import { AppDrawerMenu, HamburgerHeaderButton } from './src/components/AppDrawerMenu';
 import { JORNADAS_VERDE } from './src/config/appBranding';
 import type { RootStackParamList } from './src/navigation/types';
 import LoginScreen from './src/screens/LoginScreen';
@@ -40,6 +42,7 @@ const headerOptions = {
   headerStyle: { backgroundColor: JORNADAS_VERDE, elevation: 0, shadowOpacity: 0 },
   headerTitleStyle: { fontWeight: '700' as const },
   cardStyle: { backgroundColor: '#f0fdfa' },
+  headerRight: () => <HamburgerHeaderButton />,
 };
 
 function RootNavigator() {
@@ -47,51 +50,77 @@ function RootNavigator() {
 
   if (state.status === 'denied') {
     return (
-      <Stack.Navigator key="nav-denied" detachInactiveScreens={false} screenOptions={headerOptions}>
-        <Stack.Screen name="Denied" component={DeniedScreen} options={{ title: 'Sin acceso' }} />
-      </Stack.Navigator>
+      <DrawerProvider>
+        <Stack.Navigator
+          key="nav-denied"
+          detachInactiveScreens={false}
+          screenOptions={{ ...headerOptions, headerRight: undefined, headerLeft: () => <HamburgerHeaderButton /> }}
+        >
+          <Stack.Screen name="Denied" component={DeniedScreen} options={{ title: 'Sin acceso' }} />
+        </Stack.Navigator>
+        <AppDrawerMenu />
+      </DrawerProvider>
     );
   }
 
   if (state.status === 'signedOut') {
     return (
-      <Stack.Navigator key="nav-auth" detachInactiveScreens={false} screenOptions={headerOptions}>
+      <Stack.Navigator
+        key="nav-auth"
+        detachInactiveScreens={false}
+        screenOptions={{ ...headerOptions, headerRight: undefined }}
+      >
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     );
   }
 
   return (
-    <Stack.Navigator initialRouteName="Home" detachInactiveScreens={false} screenOptions={headerOptions}>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'ARGO Jornadas' }} />
-      <Stack.Screen name="JornadasHoy" component={JornadasHoyScreen} options={{ title: 'Jornadas de hoy' }} />
-      <Stack.Screen
-        name="ClasesJornada"
-        component={ClasesJornadaScreen}
-        options={({ route }) => ({ title: route.params.jornadaLabel.slice(0, 28) })}
-      />
-      <Stack.Screen name="ClaseDetalle" component={ClaseDetalleScreen} options={{ title: 'Operar clase' }} />
-      <Stack.Screen
-        name="EditarJornada"
-        component={EditarJornadaScreen}
-        options={{ title: 'Editar jornada' }}
-      />
-      <Stack.Screen
-        name="CrearAlumnoJornada"
-        component={CrearAlumnoJornadaScreen}
-        options={{ title: 'Nuevo alumno jornada' }}
-      />
-      <Stack.Screen
-        name="Certificados"
-        component={CertificadosScreen}
-        options={{ title: 'Certificados' }}
-      />
-      <Stack.Screen
-        name="CertificadoHtml"
-        component={CertificadoHtmlScreen}
-        options={({ route }) => ({ title: route.params.titulo })}
-      />
-    </Stack.Navigator>
+    <DrawerProvider>
+      <Stack.Navigator
+        initialRouteName="Home"
+        detachInactiveScreens={false}
+        screenOptions={headerOptions}
+      >
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            title: 'ARGO Jornadas',
+            headerLeft: () => <HamburgerHeaderButton />,
+            headerRight: undefined,
+          }}
+        />
+        <Stack.Screen name="JornadasHoy" component={JornadasHoyScreen} options={{ title: 'Jornadas de hoy' }} />
+        <Stack.Screen
+          name="ClasesJornada"
+          component={ClasesJornadaScreen}
+          options={({ route }) => ({ title: route.params.jornadaLabel.slice(0, 28) })}
+        />
+        <Stack.Screen name="ClaseDetalle" component={ClaseDetalleScreen} options={{ title: 'Operar clase' }} />
+        <Stack.Screen
+          name="EditarJornada"
+          component={EditarJornadaScreen}
+          options={{ title: 'Editar jornada' }}
+        />
+        <Stack.Screen
+          name="CrearAlumnoJornada"
+          component={CrearAlumnoJornadaScreen}
+          options={{ title: 'Nuevo alumno jornada' }}
+        />
+        <Stack.Screen
+          name="Certificados"
+          component={CertificadosScreen}
+          options={{ title: 'Certificados' }}
+        />
+        <Stack.Screen
+          name="CertificadoHtml"
+          component={CertificadoHtmlScreen}
+          options={({ route }) => ({ title: route.params.titulo })}
+        />
+      </Stack.Navigator>
+      <AppDrawerMenu />
+    </DrawerProvider>
   );
 }
 
