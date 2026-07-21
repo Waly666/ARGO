@@ -31,6 +31,7 @@ const splashPlugin = {
 const config: ExpoConfig = {
   name: 'ARGO Jornadas',
   slug: 'argo-jornadas',
+  owner: 'nis00227',
   version: '0.1.0',
   orientation: 'portrait',
   icon: ICON,
@@ -105,6 +106,9 @@ const config: ExpoConfig = {
   ],
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://app.finstruvial.edu.co/api',
+    eas: {
+      projectId: 'b6d9895e-f0c7-4abc-a781-6046c5d33d9a',
+    },
   },
 };
 
