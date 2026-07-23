@@ -1268,6 +1268,49 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
   }
 
+  async reactivarContratoActual() {
+    const f = this.formContrato();
+    if (!f._id) return;
+    if (!this.contratoFormEjecutado()) return;
+    const cod = (f.codContrato || '').trim() || 'este contrato';
+    const ok = await this.confirmSvc.open({
+      title: 'Reactivar contrato',
+      message:
+        `¿Volver «${cod}» a En Ejecución?\n\n` +
+        'Podrá matricular alumnos faltantes, ajustar clases y emitir certificados. ' +
+        'Si la jornada es de una fecha pasada, active el modo operación especial en Configuración → Jornadas. ' +
+        'Cuando termine, finalice el contrato de nuevo.',
+      confirmLabel: 'Reactivar contrato',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    this.loading.set(true);
+    this.jornadaSvc.reactivarContrato(f._id).subscribe({
+      next: (r) => {
+        this.loading.set(false);
+        const c = r.contrato;
+        this.formContrato.set({
+          ...c,
+          objetoContrato: c.objetoContrato || c.objeto || '',
+          fechaInicJornadas: c.fechaInicJornadas ? ymdCalendario(c.fechaInicJornadas) : '',
+          fechaFinalizacion: c.fechaFinalizacion ? ymdCalendario(c.fechaFinalizacion) : '',
+        });
+        this.recargarContratos();
+        if (this.contratoSel() === c._id) this.recargarVistaJornadas();
+        this.cargarAvanceContrato(c._id);
+        this.mostrarMsg(
+          r.message || 'Contrato reactivado correctamente.',
+          'ok',
+          'Contrato en ejecución',
+        );
+      },
+      error: (e) => {
+        this.loading.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo reactivar el contrato.', 'error', 'Error');
+      },
+    });
+  }
+
   setTab(t: Tab) {
     this.tab.set(t);
     if (t === 'contratos') {
@@ -3547,7 +3590,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   guardarContrato() {
     if (this.contratoFormEjecutado()) {
       this.mostrarMsg(
-        'El contrato está Ejecutado. No se pueden guardar cambios. Si necesita ajustar datos, reabra el contrato o cree uno nuevo.',
+        'El contrato está Ejecutado. No se pueden guardar cambios. Use «Reactivar contrato» para volver a habilitarlo, o cree uno nuevo.',
         'warn',
         'Contrato ejecutado',
       );

@@ -547,6 +547,20 @@ export class JornadaCapService {
     }>(`${this.base}/contratos/${id}/finalizar`, { fechaFinalizacion: fechaFinalizacion || undefined });
   }
 
+  reactivarContrato(id: string): Observable<{
+    ok: boolean;
+    contrato: ContratacionDto;
+    jornadasResincronizadas?: number;
+    message?: string;
+  }> {
+    return this.http.post<{
+      ok: boolean;
+      contrato: ContratacionDto;
+      jornadasResincronizadas?: number;
+      message?: string;
+    }>(`${this.base}/contratos/${id}/reactivar`, {});
+  }
+
   eliminarJornada(id: string) {
     return this.http.delete<{
       ok: boolean;

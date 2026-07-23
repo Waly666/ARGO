@@ -92,6 +92,7 @@ const {
   contratoEstaEnEjecucion,
   cerrarJornadasActivasContrato,
   finalizarContratoCap,
+  reactivarContratoCap,
 } = require('../services/contratoFinalizacionCap');
 const {
   resolverInstructorParaClase,
@@ -524,6 +525,35 @@ exports.finalizarContrato = async (req, res, next) => {
       contrato: { ...contrato, estado: normalizarEstadoContrato(contrato.estado) },
       jornadasCerradas,
       message: `Contrato finalizado el ${fechaTxt}. ${jornadasCerradas} jornada(s) cerrada(s).`,
+    });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.reactivarContrato = async (req, res, next) => {
+  try {
+    const c = await Contratacion.findById(req.params.id);
+    if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
+    const { contrato, jornadasResincronizadas } = await reactivarContratoCap(c, {
+      userChangeRecord: auditoriaUsuario(req),
+    });
+    registrarAuditoria({
+      req,
+      accion: 'contrato_reactivar',
+      entidad: 'contratacion',
+      idEntidad: String(contrato._id),
+      resumen: `Contrato reactivado (${contrato.codContrato || contrato._id}): vuelve a En Ejecución`,
+    }).catch(() => {});
+    res.json({
+      ok: true,
+      contrato: { ...contrato, estado: normalizarEstadoContrato(contrato.estado) },
+      jornadasResincronizadas,
+      message:
+        `Contrato reactivado: vuelve a «En Ejecución». ${jornadasResincronizadas} jornada(s) sincronizada(s). ` +
+        'Puede matricular alumnos faltantes y reprocesar certificados. ' +
+        'Si la jornada es de una fecha pasada, active el modo operación especial.',
     });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

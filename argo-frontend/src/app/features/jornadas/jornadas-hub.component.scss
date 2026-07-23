@@ -2,6 +2,33 @@
 @use './jornadas-shared' as *;
 @use './clase-modal';
 
+/* Fondo sólido + texto blanco: evita botón “blanco sobre blanco” */
+button.btn-reactivar-contrato,
+.contrato-form .btn-reactivar-contrato,
+.actions .btn-reactivar-contrato {
+  background: #0369a1 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border: 1px solid #075985 !important;
+  border-radius: var(--btn-radius);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(3, 105, 161, 0.45);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    filter: none;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
 .panel-head-row {
   display: flex;
   align-items: flex-start;
@@ -121,10 +148,23 @@
     overflow: visible;
 
     &.contrato-finalizado {
-      > :not(.contrato-form-banner):not(.contrato-finalizado-aviso) {
+      > :not(.contrato-form-banner):not(.contrato-finalizado-aviso):not(.actions) {
         pointer-events: none;
         opacity: 0.72;
         filter: saturate(0.68);
+      }
+
+      /* Reactivar debe poder hacerse clic aunque el resto del formulario esté congelado */
+      .contrato-reactivar-block {
+        pointer-events: auto;
+        opacity: 1;
+        filter: none;
+      }
+
+      > .actions {
+        pointer-events: auto;
+        opacity: 1;
+        filter: none;
       }
     }
 
@@ -899,6 +939,7 @@
         cursor: not-allowed;
       }
     }
+
 
     .block-hint {
       margin: 0.25rem 0 0;

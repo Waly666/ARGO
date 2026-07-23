@@ -72,10 +72,55 @@ async function finalizarContratoCap(contratoDoc, { fechaFinalizacion, userChange
   return { contrato: contratoDoc.toObject(), jornadasCerradas };
 }
 
+/**
+ * Vuelve un contrato Ejecutado a «En Ejecución» para permitir matricular alumnos,
+ * ajustar clases y emitir certificados pendientes. Las jornadas se re-sincronizan
+ * por fecha (pasadas quedan FINALIZADO; la de hoy EN PROCESO).
+ */
+async function reactivarContratoCap(contratoDoc, { userChangeRecord } = {}) {
+  if (!contratoDoc) {
+    const err = new Error('Contrato no encontrado');
+    err.status = 404;
+    throw err;
+  }
+  if (contratoEstaEnEjecucion(contratoDoc.estado)) {
+    const err = new Error('El contrato ya está en ejecución.');
+    err.status = 409;
+    throw err;
+  }
+  if (normalizarEstadoContrato(contratoDoc.estado) !== 'Ejecutado') {
+    const err = new Error('Solo se pueden reactivar contratos finalizados (Ejecutado).');
+    err.status = 409;
+    throw err;
+  }
+
+  contratoDoc.estado = 'En Ejecución';
+  contratoDoc.fechaFinalizacion = null;
+  if (userChangeRecord) contratoDoc.userChangeRecord = userChangeRecord;
+  await contratoDoc.save();
+
+  const jornadas = await JornadaCap.find({ idContrato: contratoDoc._id }).select('_id').lean();
+  let jornadasResincronizadas = 0;
+  if (jornadas.length) {
+    await JornadaCap.updateMany(
+      { idContrato: contratoDoc._id },
+      { $set: { estadoOperacionManual: false } },
+    );
+    const { sincronizarEstadoJornada } = require('./estadoJornadaCap');
+    for (const j of jornadas) {
+      await sincronizarEstadoJornada(j._id);
+      jornadasResincronizadas += 1;
+    }
+  }
+
+  return { contrato: contratoDoc.toObject(), jornadasResincronizadas };
+}
+
 module.exports = {
   ESTADOS_CONTRATO,
   normalizarEstadoContrato,
   contratoEstaEnEjecucion,
   cerrarJornadasActivasContrato,
   finalizarContratoCap,
+  reactivarContratoCap,
 };

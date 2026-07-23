@@ -38,6 +38,7 @@ router.delete('/contratos/:id', gest, contratoMutable.contratoPorParametro, ctrl
 router.post('/contratos/:id/generar-jornadas', gest, contratoMutable.contratoPorParametro, ctrl.generarJornadas);
 router.post('/contratos/:id/jornadas', gest, contratoMutable.contratoPorParametro, ctrl.crearJornadaContrato);
 router.post('/contratos/:id/finalizar', gest, ctrl.finalizarContrato);
+router.post('/contratos/:id/reactivar', gest, ctrl.reactivarContrato);
 router.get('/contratos/:id/cobro', ver, ctrl.estadoCobroContrato);
 router.post('/contratos/:id/cuenta-cobro/generar', cobro, contratoMutable.contratoPorParametro, ctrl.generarCuentaCobroContrato);
 router.get('/contratos/:id/cuenta-cobro/html', ver, ctrl.htmlCuentaCobroContrato);

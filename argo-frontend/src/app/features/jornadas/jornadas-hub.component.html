@@ -106,7 +106,10 @@
             <span class="jor-banner-icon" aria-hidden="true">🔒</span>
             <div class="jor-banner-body">
               <strong class="jor-banner-title">Contrato finalizado</strong>
-              <span>La información está congelada y disponible únicamente para consulta.</span>
+              <span>
+                Congelado para consulta. Si faltan alumnos o certificados, use
+                <strong>Reactivar contrato</strong> para volver a operar (p. ej. modo especial en fechas pasadas).
+              </span>
             </div>
           </div>
         }
@@ -504,10 +507,28 @@
           </section>
         }
 
+        @if (formContrato()._id && contratoFormEjecutado()) {
+          <section class="form-block form-block-inline contrato-finalizar-block contrato-reactivar-block">
+            <p class="hint block-hint">
+              Use <strong>Reactivar contrato</strong> abajo para desbloquear jornadas, clases, matrícula y certificados.
+              Cuando termine, vuelva a finalizar el contrato.
+            </p>
+          </section>
+        }
+
       </div>
 
       <div class="actions">
         <button type="button" class="ghost" (click)="nuevoContratoForm()">Nuevo</button>
+        @if (formContrato()._id && contratoFormEjecutado()) {
+          <button
+            type="button"
+            class="primary btn-reactivar-contrato"
+            (click)="reactivarContratoActual()"
+            [disabled]="loading()">
+            Reactivar contrato
+          </button>
+        }
         <button type="button" class="primary" (click)="guardarContrato()" [disabled]="loading() || contratoFormEjecutado()">Guardar</button>
         <button type="button" class="primary" (click)="generarJornadas()" [disabled]="loading() || contratoFormEjecutado()">
           Generar faltantes
