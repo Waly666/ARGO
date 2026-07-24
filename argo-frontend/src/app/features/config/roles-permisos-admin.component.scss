@@ -645,6 +645,17 @@
     color: #a7f3d0;
   }
 
+  &--destacado {
+    border-color: rgba(45, 212, 191, 0.35);
+    background: rgba(13, 148, 136, 0.08);
+  }
+
+  &--destacado.rol-perm-item--on {
+    border-color: rgba(45, 212, 191, 0.55);
+    background: rgba(13, 148, 136, 0.18);
+    color: #99f6e4;
+  }
+
   input[type='checkbox'] {
     flex-shrink: 0;
     margin: 0.1rem 0 0;

@@ -159,7 +159,10 @@
                   <div>
                     <h3 class="rol-section-title">Permisos de acceso</h3>
                     <p class="rol-section-desc">
-                      Módulos y acciones permitidas. El bloque <strong>Jornadas</strong> incluye contratación, calendario y clases en carpa.
+                      Módulos y acciones permitidas. El bloque <strong>Jornadas</strong> incluye contratación,
+                      calendario y clases en carpa. Para el
+                      <strong>portal de instructores</strong>, active en Académico:
+                      «Usar portal de instructores» (el usuario debe tener ficha de empleado vinculada).
                     </p>
                   </div>
                 </header>
@@ -179,7 +182,10 @@
                         </div>
                         <div class="rol-perm-list">
                           @for (p of g.permisos; track p.key) {
-                            <label class="rol-perm-item" [class.rol-perm-item--on]="tienePermiso(p.key)">
+                            <label
+                              class="rol-perm-item"
+                              [class.rol-perm-item--on]="tienePermiso(p.key)"
+                              [class.rol-perm-item--destacado]="p.key === 'instructores.mi_portal'">
                               <input type="checkbox" [checked]="tienePermiso(p.key)" (change)="togglePermiso(p.key)" />
                               <span class="rol-perm-label">{{ p.label }}</span>
                             </label>

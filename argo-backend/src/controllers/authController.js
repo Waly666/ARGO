@@ -154,7 +154,10 @@ exports.cambiarPassword = async (req, res, next) => {
         ok: false,
         motivo: 'cambio_password_actual_invalida',
       });
-      return res.status(401).json({ message: 'La contraseña actual no es correcta.' });
+      return res.status(403).json({
+        message: 'La contraseña actual no es correcta.',
+        code: 'REAUTH_FAILED',
+      });
     }
 
     u.passwordHash = await Usuario.hashPassword(passwordNueva);

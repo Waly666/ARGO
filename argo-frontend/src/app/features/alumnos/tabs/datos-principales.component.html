@@ -187,6 +187,15 @@
               </p>
             </div>
             <div class="col-3">
+              <label>Origen inscripción</label>
+              <input
+                type="text"
+                [value]="etiquetaOrigenAlumno(form().origen)"
+                readonly
+                class="readonly"
+              />
+            </div>
+            <div class="col-3">
               <argo-catalogo-enum-buscar
                 [class.campo-obligatorio-error]="campoObligatorioInvalido('tipoDoc')"
                 label="Tipo documento *"

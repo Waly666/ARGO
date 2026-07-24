@@ -242,6 +242,28 @@ export class UsuariosAdminComponent implements OnInit {
     return !!me && String(me) === String(u._id);
   }
 
+  async resetearMfa(u: Usuario) {
+    if (this.esUsuarioActual(u)) return;
+    const ok = await this.confirm.open({
+      title: '¿Resetear 2FA?',
+      message: `Se desactivará el Authenticator de «${loginMostrable(u)}». En el próximo acceso web deberá configurar el 2FA de nuevo. La contraseña no cambia.`,
+      variant: 'danger',
+      confirmLabel: 'Resetear 2FA',
+    });
+    if (!ok) return;
+    this.svc.resetearMfa(u._id).subscribe({
+      next: (r) => {
+        this.msgError.set(false);
+        this.msg.set(r.message || '2FA reseteado.');
+        this.cargar();
+      },
+      error: (e) => {
+        this.msgError.set(true);
+        this.msg.set(e?.error?.message || 'No se pudo resetear el 2FA.');
+      },
+    });
+  }
+
   async desactivar(u: Usuario) {
     const ok = await this.confirm.open({
       title: '¿Desactivar usuario?',

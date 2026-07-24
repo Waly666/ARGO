@@ -164,6 +164,15 @@
         <span class="user" *ngIf="user() as u">
           <span [ngClass]="capRol(u.rol)">{{ u.rol || 'usuario' }}</span>
         </span>
+        @if (user() && !esSoporteMaestro()) {
+          <button
+            type="button"
+            class="btn-tool btn-cambiar-clave"
+            title="Cambiar mi contraseña"
+            (click)="abrirCambiarPassword()">
+            Clave
+          </button>
+        }
         <button
           type="button"
           class="btn-icon btn-chat"
@@ -187,4 +196,5 @@
   </div>
 </div>
 
+<argo-cambiar-password-modal />
 <argo-chat-panel />

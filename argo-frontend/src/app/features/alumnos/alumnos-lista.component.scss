@@ -585,3 +585,36 @@ table.alumnos-grid .col-alertas {
   color: var(--text-dim);
   font-size: 0.85rem;
 }
+
+.col-origen {
+  min-width: 88px;
+  white-space: nowrap;
+}
+
+.origen-chip {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.origen-sistema {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.origen-web {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+}
+
+.card-doc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}

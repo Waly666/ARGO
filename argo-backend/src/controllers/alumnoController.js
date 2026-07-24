@@ -36,6 +36,7 @@ const {
   TIPO_JORNADAS_CAPACITACION,
   normalizarTipoAlumno,
 } = require('../constants/tipoAlumno');
+const { ORIGEN_SISTEMA, normalizarOrigenAlumno } = require('../constants/origenAlumno');
 
 const GENEROS_VALIDOS = new Set(['M', 'F']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
@@ -192,6 +193,8 @@ function mapListaItem(doc) {
     _id: doc._id,
     numDoc: doc.numDoc,
     tipoDoc: doc.tipoDoc,
+    tipoAlumno: doc.tipoAlumno,
+    origen: normalizarOrigenAlumno(doc.origen),
     expedida: doc.expedida,
     nombre1: doc.nombre1,
     nombre2: doc.nombre2,
@@ -690,6 +693,8 @@ exports.crear = async (req, res, next) => {
         : esJornadaCap
           ? TIPO_JORNADAS_CAPACITACION
           : TIPO_ALUMNO_DEFAULT;
+    // Canal de inscripción: altas ERP/cajero/recepción = SISTEMA (no spoofear WEB desde el cliente).
+    dto.origen = ORIGEN_SISTEMA;
 
     let a;
     try {

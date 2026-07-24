@@ -5,6 +5,7 @@ const DatosAlumno = require('../models/DatosAlumno');
 const UsuarioPortal = require('../models/UsuarioPortal');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { TIPO_VIRTUAL } = require('../constants/tipoAlumno');
+const { ORIGEN_WEB } = require('../constants/origenAlumno');
 
 const PORTAL_TIPO = 'portal';
 
@@ -191,6 +192,7 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
   if (!da) {
     da = await DatosAlumno.create({
       tipoAlumno: TIPO_VIRTUAL,
+      origen: ORIGEN_WEB,
       tipoDoc: alumno.tipoDoc || '1',
       numDoc,
       expedida: alumno.expedida || '',

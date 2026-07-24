@@ -2,6 +2,7 @@ const DatosAlumno = require('../models/DatosAlumno');
 const UsuarioPortal = require('../models/UsuarioPortal');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { TIPO_VIRTUAL } = require('../constants/tipoAlumno');
+const { ORIGEN_WEB } = require('../constants/origenAlumno');
 const { crearUsuarioPortalAlumno } = require('./aulaVirtualMatricula');
 
 function nombreCompleto(a) {
@@ -47,6 +48,7 @@ async function asegurarAlumnoVirtual({ alumno, email, usuarioErp }) {
     }
     const creado = await DatosAlumno.create({
       tipoAlumno: TIPO_VIRTUAL,
+      origen: ORIGEN_WEB,
       tipoDoc: alumno?.tipoDoc || '1',
       numDoc,
       expedida: alumno?.expedida || '',

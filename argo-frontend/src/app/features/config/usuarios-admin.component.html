@@ -2,7 +2,7 @@
   <header class="usr-head">
     <div class="usr-head-main">
       <h1>Gestión de usuarios</h1>
-      <p>Cuentas de acceso al sistema: login, rol, sede asignada y estado activo/inactivo.</p>
+      <p>Cuentas de acceso al sistema: login, rol, sede, 2FA y estado activo/inactivo.</p>
     </div>
     <div class="usr-head-actions">
       @if (!loading() && !mostrarForm()) {
@@ -191,6 +191,7 @@
               <th>Rol</th>
               <th>Sede</th>
               <th>Estado</th>
+              <th>2FA</th>
               <th></th>
             </tr>
           </thead>
@@ -209,8 +210,16 @@
                     {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
                   </span>
                 </td>
+                <td>
+                  <span class="usr-estado" [class.usr-estado--on]="u.totpEnabled === true" [class.usr-estado--off]="u.totpEnabled !== true">
+                    {{ u.totpEnabled === true ? 'Activo' : 'No' }}
+                  </span>
+                </td>
                 <td class="usr-row-actions">
                   <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
+                  @if (u.totpEnabled === true && !esUsuarioActual(u)) {
+                    <button type="button" class="ghost mini" (click)="resetearMfa(u)">Reset 2FA</button>
+                  }
                   @if (u.activo !== false && !esUsuarioActual(u)) {
                     <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
                   }
@@ -244,6 +253,9 @@
               <div class="usr-card-tags">
                 <span class="usr-rol-badge" [ngClass]="rolBadgeClass(u.rol)">{{ labelRol(u.rol) }}</span>
                 <span class="usr-sede-tag">{{ labelSedes(u) }}</span>
+                <span class="usr-estado" [class.usr-estado--on]="u.totpEnabled === true" [class.usr-estado--off]="u.totpEnabled !== true">
+                  2FA {{ u.totpEnabled === true ? 'activo' : 'no' }}
+                </span>
               </div>
               @if (u.email) {
                 <span class="usr-card-email">{{ u.email }}</span>
@@ -251,6 +263,9 @@
             </div>
             <footer class="usr-card-foot">
               <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
+              @if (u.totpEnabled === true && !esUsuarioActual(u)) {
+                <button type="button" class="ghost mini" (click)="resetearMfa(u)">Reset 2FA</button>
+              }
               @if (u.activo !== false && !esUsuarioActual(u)) {
                 <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
               }

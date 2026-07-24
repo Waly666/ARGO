@@ -34,12 +34,16 @@ async function enriquecerUsuarioDoc(u) {
       idUsuario: emp.idUsuario ? String(emp.idUsuario) : json._id,
       esInstructor,
     };
-    json.puedeUsarPortalInstructor =
+    /** Portal: permiso explícito en Roles, o instructor con operar (compatibilidad). */
+    const permisos = datos.permisos || [];
+    const porRolPortal =
+      permisos.includes('*') || permisos.includes('instructores.mi_portal');
+    const porOperarInstructor =
       esInstructor &&
-      (datos.permisos.includes('*') ||
-        datos.permisos.some((p) =>
-          ['instructores.mi_portal', 'jornadas.operar', 'programacion_cea.operar'].includes(p),
-        ));
+      permisos.some((p) =>
+        ['jornadas.operar', 'programacion_cea.operar'].includes(p),
+      );
+    json.puedeUsarPortalInstructor = porRolPortal || porOperarInstructor;
   } else {
     // No inventar idEmpleado desde un vínculo RRHH inconsistente.
     if (json.idEmpleado != null) {

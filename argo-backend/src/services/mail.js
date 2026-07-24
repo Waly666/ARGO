@@ -33,7 +33,7 @@ function mailFrom() {
   );
 }
 
-async function sendMail({ to, subject, text, html, replyTo, from }) {
+async function sendMail({ to, subject, text, html, replyTo, from, attachments }) {
   const tx = getTransporter();
   if (!tx) {
     const err = new Error('Servicio de correo no configurado');
@@ -48,6 +48,7 @@ async function sendMail({ to, subject, text, html, replyTo, from }) {
     subject,
     text,
     html,
+    attachments: Array.isArray(attachments) && attachments.length ? attachments : undefined,
   });
 }
 

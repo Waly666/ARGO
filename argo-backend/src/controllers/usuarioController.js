@@ -13,6 +13,11 @@ function limpiar(doc) {
   if (!doc) return null;
   const o = doc.toJSON ? doc.toJSON() : { ...doc };
   delete o.passwordHash;
+  delete o.totpSecretEnc;
+  delete o.totpPendingEnc;
+  delete o.totpPendingAt;
+  delete o.mfaRecoveryHashes;
+  o.totpEnabled = doc.totpEnabled === true && !!String(doc.totpSecretEnc || '').trim();
   return o;
 }
 
@@ -40,11 +45,7 @@ async function resolverSedesPermitidas(raw, rol) {
 exports.listar = async (_req, res, next) => {
   try {
     const rows = await Usuario.find().sort({ username: 1 }).lean();
-    res.json(rows.map((r) => {
-      const o = { ...r };
-      delete o.passwordHash;
-      return o;
-    }));
+    res.json(rows.map((r) => limpiar(r)));
   } catch (e) {
     next(e);
   }
@@ -256,6 +257,49 @@ exports.roles = async (_req, res, next) => {
         label: r.nombre,
       })),
     );
+  } catch (e) {
+    next(e);
+  }
+};
+
+/**
+ * Admin: desactiva 2FA del usuario. En el próximo login deberá volver a escanear el QR.
+ */
+exports.resetearMfa = async (req, res, next) => {
+  try {
+    if (String(req.params.id) === String(req.user.sub)) {
+      return res.status(400).json({
+        message: 'No puede resetear su propio 2FA desde aquí. Use códigos de recuperación o pida a otro admin.',
+      });
+    }
+    const u = await Usuario.findById(req.params.id);
+    if (!u) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    const teniaMfa = u.totpEnabled === true && !!String(u.totpSecretEnc || '').trim();
+    u.totpEnabled = false;
+    u.totpSecretEnc = null;
+    u.totpPendingEnc = null;
+    u.totpPendingAt = null;
+    u.totpEnrolledAt = null;
+    u.mfaRecoveryHashes = [];
+    await u.save();
+
+    const { registrarAuditoria } = require('../services/auditoria');
+    registrarAuditoria({
+      req,
+      accion: 'usuario_reset_mfa',
+      entidad: 'usuario',
+      idEntidad: String(u._id),
+      resumen: `2FA reseteado para «${u.username}»${teniaMfa ? '' : ' (ya estaba inactivo)'}`,
+    }).catch(() => {});
+
+    res.json({
+      ok: true,
+      message: teniaMfa
+        ? `2FA de «${u.username}» reseteado. En el próximo acceso web deberá configurar el Authenticator de nuevo.`
+        : `«${u.username}» no tenía 2FA activo.`,
+      usuario: limpiar(u),
+    });
   } catch (e) {
     next(e);
   }

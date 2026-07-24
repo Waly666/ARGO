@@ -10,6 +10,7 @@ router.get('/', ctrl.listar);
 router.get('/:id', ctrl.obtener);
 router.post('/', ctrl.crear);
 router.put('/:id', ctrl.actualizar);
+router.post('/:id/reset-mfa', ctrl.resetearMfa);
 router.delete('/:id/permanente', ctrl.borrar);
 router.delete('/:id', ctrl.eliminar);
 

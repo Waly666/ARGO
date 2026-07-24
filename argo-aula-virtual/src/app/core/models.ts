@@ -340,6 +340,23 @@ export interface RegistroVerificacionRes {
   message: string;
 }
 
+export interface RegistroJornadaRes {
+  step: 'verify_email' | 'done';
+  pendingId?: string;
+  email?: string | null;
+  expiresInMinutes?: number;
+  message?: string;
+  mensaje?: string;
+  alumno?: {
+    _id: string;
+    numDoc: number | string;
+    tipoAlumno?: string;
+    origen?: string;
+    nombreCompleto?: string;
+    correo?: string;
+  };
+}
+
 export interface CertificadoConsultaItem {
   idCertificado: string;
   codVerificacion?: string;

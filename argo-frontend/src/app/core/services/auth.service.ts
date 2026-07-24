@@ -174,6 +174,17 @@ export class AuthService {
     });
   }
 
+  /** Usuario autenticado: cambia su propia contraseña (no afecta 2FA). */
+  cambiarPassword(
+    passwordActual: string,
+    passwordNueva: string,
+  ): Observable<{ ok: boolean; message?: string }> {
+    return this.http.post<{ ok: boolean; message?: string }>(
+      `${environment.apiUrl}/auth/cambiar-password`,
+      { passwordActual, passwordNueva },
+    );
+  }
+
   finalizeLogin(res: StaffLoginResponse): void {
     if (!res.token || !res.user) return;
     localStorage.setItem(TOKEN_KEY, res.token);

@@ -8,7 +8,7 @@
           Si ya está en ARGO (presencial), ingrese su documento y el sistema cargará sus datos.
           Solo definirá <strong>correo y contraseña</strong> para entrar al portal.
           @if (emailVerificacion()) {
-            Deberá confirmar su correo con un código antes de activar la cuenta.
+            Deberá confirmar su correo con un <strong>enlace o código</strong> antes de activar la cuenta.
           }
         </p>
       </header>
@@ -193,16 +193,17 @@
       }
 
       <button type="button" class="btn btn-primary registro-submit" [disabled]="loading() || !registroAbierto()" (click)="enviar()">
-        {{ loading() ? 'Enviando…' : emailVerificacion() ? 'Enviar código al correo' : 'Crear cuenta' }}
+        {{ loading() ? 'Enviando…' : emailVerificacion() ? 'Enviar enlace y código al correo' : 'Crear cuenta' }}
       </button>
     } @else {
       <header class="registro-head registro-head--verify">
         <p class="registro-kicker">Verificación</p>
         <h1>Confirmar correo</h1>
         <p class="registro-lead">
-          Enviamos un código de 6 dígitos a
+          Enviamos un <strong>enlace</strong> y un código de 6 dígitos a
           <strong>{{ emailEnmascarado() || 'su correo' }}</strong>.
-          Revise la bandeja de entrada y la carpeta de spam.
+          Puede abrir el enlace del mensaje o digitar el código aquí.
+          Revise también la carpeta de spam.
         </p>
       </header>
 
@@ -234,7 +235,7 @@
 
       <div class="verify-actions">
         <button type="button" class="btn btn-outline" [disabled]="reenviando()" (click)="reenviarCodigo()">
-          {{ reenviando() ? 'Reenviando…' : 'Reenviar código' }}
+          {{ reenviando() ? 'Reenviando…' : 'Reenviar código y enlace' }}
         </button>
         <button type="button" class="btn btn-outline" (click)="volverAlFormulario()">Volver al formulario</button>
       </div>

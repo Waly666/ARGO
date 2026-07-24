@@ -72,6 +72,12 @@ import {
 
   TIPO_SANGRE_DEF,
 
+  ORIGEN_SISTEMA,
+
+  etiquetaOrigenAlumno,
+
+  normalizarOrigenAlumno,
+
   normalizarTipoAlumno,
 
   catEtiqueta,
@@ -181,6 +187,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   readonly tiposAlumno = TIPOS_ALUMNO_DEF;
   readonly normalizarTipoAlumno = normalizarTipoAlumno;
+  readonly etiquetaOrigenAlumno = etiquetaOrigenAlumno;
 
   tiposDoc = signal<Record<string, unknown>[]>(TIPOS_DOC_DEF);
 
@@ -1293,6 +1300,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       tipoAlumno: normalizarTipoAlumno(String(raw.tipoAlumno || '')),
 
+      origen: normalizarOrigenAlumno(String(raw.origen || '')),
+
       tipoDoc: normalizarEnum(String(raw.tipoDoc || '1')),
 
       numDoc: formatNumDoc(raw.numDoc),
@@ -1368,6 +1377,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     return {
 
       tipoAlumno: esJornada ? TIPO_JORNADAS_CAPACITACION : normalizarTipoAlumno(undefined),
+
+      origen: ORIGEN_SISTEMA,
 
       tipoDoc: '1',
 

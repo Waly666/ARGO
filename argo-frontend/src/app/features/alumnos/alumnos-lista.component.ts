@@ -16,6 +16,9 @@ import {
   JORNADAS_DEF,
   buildCatalogoLabelMap,
   catalogoLabel,
+  etiquetaOrigenAlumno,
+  etiquetaOrigenAlumnoCorta,
+  normalizarOrigenAlumno,
   TIPO_JORNADAS_CAPACITACION,
 } from './catalogo.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
@@ -743,5 +746,17 @@ export class AlumnosListaComponent implements OnInit {
     if (r.estadoCivilLabel) return r.estadoCivilLabel;
     const t = catalogoLabel(this.estadoCivilLabels, r.estadoCivil);
     return t || '—';
+  }
+
+  etiquetaOrigen(r: AlumnoListItem): string {
+    return etiquetaOrigenAlumno(r.origen);
+  }
+
+  etiquetaOrigenCorta(r: AlumnoListItem): string {
+    return etiquetaOrigenAlumnoCorta(r.origen);
+  }
+
+  claseOrigen(r: AlumnoListItem): string {
+    return normalizarOrigenAlumno(r.origen) === 'WEB' ? 'origen-chip origen-web' : 'origen-chip origen-sistema';
   }
 }

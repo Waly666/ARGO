@@ -11,8 +11,10 @@ import type { AlertaPagoAlumnoItem } from './alerta-pago-alumno.service';
 export interface AlumnoDto {
   _id?: string;
   fechaReg?: string | Date;
-  /** Regular | Jornada Capacitacion */
+  /** Regular | Jornada Capacitacion | Virtual */
   tipoAlumno?: string;
+  /** SISTEMA (ARGO) | WEB (portal / página) */
+  origen?: string;
   tipoDoc?: string;
   /** En BD/API es número; en formulario de edición suele mostrarse como string */
   numDoc: number | string;
@@ -81,6 +83,9 @@ export interface AlumnoListItem {
   /** En BD/API es número; en formulario de edición suele mostrarse como string */
   numDoc: number | string;
   tipoDoc?: string;
+  tipoAlumno?: string;
+  /** SISTEMA | WEB */
+  origen?: string;
   expedida?: string;
   nombre1?: string;
   nombre2?: string;

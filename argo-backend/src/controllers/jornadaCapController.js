@@ -43,6 +43,7 @@ const {
   esProgramaJornadasCap,
   TIPO_JORNADAS_CAPACITACION,
 } = require('../services/jornadaCapacitacion');
+const { ORIGEN_SISTEMA } = require('../constants/origenAlumno');
 const {
   registrarAsistenciaAlumnoEnClase,
   registrarAsistenciasInscritosPendientes,
@@ -2563,6 +2564,7 @@ exports.crearAlumnoJornadaCap = async (req, res, next) => {
     const userAdd = auditoriaUsuario(req) || 'sistema';
     const dto = {
       tipoAlumno: TIPO_JORNADAS_CAPACITACION,
+      origen: ORIGEN_SISTEMA,
       tipoDoc: String(body.tipoDoc || '1').trim() || '1',
       numDoc,
       nombre1,

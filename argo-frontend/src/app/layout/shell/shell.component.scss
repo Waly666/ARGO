@@ -455,6 +455,17 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
+.btn-cambiar-clave {
+  background: #0369a1;
+  border: 1px solid #075985;
+  color: #ffffff;
+
+  &:hover:not(:disabled) {
+    background: #0284c7;
+    filter: none;
+  }
+}
+
 .btn-dash-red {
   background: linear-gradient(180deg, var(--btn-red), var(--btn-red-d));
 }

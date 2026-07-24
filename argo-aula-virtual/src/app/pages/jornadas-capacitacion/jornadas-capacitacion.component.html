@@ -1,0 +1,367 @@
+<div class="jor-page">
+  <section class="jor-hero" aria-labelledby="jor-title">
+    <div class="jor-hero__glow" aria-hidden="true"></div>
+    <div class="jor-hero__grid" aria-hidden="true"></div>
+    <div class="container jor-hero__inner">
+      <div class="jor-hero__copy">
+        <p class="jor-kicker hero-in hero-in--1">Formación presencial</p>
+        <h1 id="jor-title" class="hero-in hero-in--2">Jornadas de Capacitación</h1>
+        <p class="jor-hero__lead hero-in hero-in--3">
+          Actividades experienciales en seguridad vial, en espacios tipo carpa.
+          Inscríbase en línea y reciba su código QR de asistencia.
+        </p>
+        <div class="jor-hero__actions hero-in hero-in--4">
+          <a class="btn btn-primary jor-cta" href="#inscripcion">Inscribirme ahora</a>
+          <a class="jor-cta-ghost" routerLink="/registro">Prefiero el aula virtual</a>
+        </div>
+      </div>
+
+      <aside class="jor-hero__aside hero-in hero-in--5" aria-hidden="true">
+        <div class="jor-orb jor-orb--a"></div>
+        <div class="jor-orb jor-orb--b"></div>
+        <div class="jor-badge">
+          <span class="jor-badge__mark" aria-hidden="true">▣</span>
+          <div>
+            <strong>Asistencia digital</strong>
+            <span>Compatible con la app ARGO</span>
+          </div>
+        </div>
+        <div class="jor-badge jor-badge--delay">
+          <span class="jor-badge__mark jor-badge__mark--alt" aria-hidden="true">✓</span>
+          <div>
+            <strong>Sin cuenta portal</strong>
+            <span>Solo ficha de jornadas</span>
+          </div>
+        </div>
+        <div class="jor-badge jor-badge--third">
+          <span class="jor-badge__mark jor-badge__mark--warm" aria-hidden="true">⛺</span>
+          <div>
+            <strong>Estaciones tipo carpa</strong>
+            <span>Aprendizaje lúdico y práctico</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="jor-features" aria-label="Beneficios">
+    <div class="container jor-features__grid">
+      <article class="jor-feature jor-feature--sky feat-in feat-in--1">
+        <span class="jor-feature__icon" aria-hidden="true">📱</span>
+        <h2>Registro ágil</h2>
+        <p>Los mismos datos de recepción, desde cualquier dispositivo.</p>
+      </article>
+      <article class="jor-feature jor-feature--amber feat-in feat-in--2">
+        <span class="jor-feature__icon" aria-hidden="true">✉️</span>
+        <h2>Activación segura</h2>
+        <p>Confirme con un enlace o un código enviado a su correo.</p>
+      </article>
+      <article class="jor-feature jor-feature--emerald feat-in feat-in--3">
+        <span class="jor-feature__icon" aria-hidden="true">▣</span>
+        <h2>QR de jornada</h2>
+        <p>Reciba su etiqueta digital para escanear en asistencia.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="jor-story" aria-labelledby="jor-story-title">
+    <div class="container jor-story__inner">
+      <div class="jor-story__accent" aria-hidden="true"></div>
+      <header class="jor-story__head">
+        <span class="jor-story__emoji" aria-hidden="true">⛺</span>
+        <div>
+          <p class="jor-story__kicker">Experiencia en campo</p>
+          <h2 id="jor-story-title">Actividades experienciales en seguridad vial</h2>
+        </div>
+      </header>
+      <div class="jor-story__body">
+        <p>
+          Nuestras <strong>actividades experienciales en seguridad vial</strong> se desarrollan en
+          espacios interactivos tipo carpa, diseñados como estaciones temáticas donde, de manera
+          lúdica y práctica, los participantes aprenden y aplican principios fundamentales de
+          seguridad vial.
+        </p>
+        <p>
+          Cada carpa aborda un tema clave —como el alistamiento vehicular, la visibilidad del
+          conductor, la concentración en la vía, el uso correcto del casco o del cinturón de
+          seguridad— mediante dinámicas participativas que conectan el conocimiento con la
+          experiencia real.
+        </p>
+        <p>
+          Estas actividades están orientadas a crear conciencia, cambiar comportamientos de riesgo y
+          promover una cultura vial más responsable, adaptándose a todo tipo de público, desde
+          conductores y peatones hasta ciclistas y motociclistas.
+        </p>
+      </div>
+      <ul class="jor-topics" aria-label="Temas de las estaciones">
+        <li class="jor-topic jor-topic--blue"><span aria-hidden="true">🔧</span> Alistamiento vehicular</li>
+        <li class="jor-topic jor-topic--cyan"><span aria-hidden="true">👁️</span> Visibilidad del conductor</li>
+        <li class="jor-topic jor-topic--violet"><span aria-hidden="true">🧠</span> Concentración en la vía</li>
+        <li class="jor-topic jor-topic--orange"><span aria-hidden="true">🪖</span> Uso del casco</li>
+        <li class="jor-topic jor-topic--rose"><span aria-hidden="true">🦺</span> Cinturón de seguridad</li>
+      </ul>
+      <div class="jor-audience" aria-label="Público">
+        <span class="jor-audience__item"><span aria-hidden="true">🚗</span> Conductores</span>
+        <span class="jor-audience__item"><span aria-hidden="true">🚶</span> Peatones</span>
+        <span class="jor-audience__item"><span aria-hidden="true">🚲</span> Ciclistas</span>
+        <span class="jor-audience__item"><span aria-hidden="true">🏍️</span> Motociclistas</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="container jor-form-section" id="inscripcion">
+    <div class="jor-form-shell">
+      @if (paso() === 'exito') {
+        <header class="jor-form-head jor-form-head--ok">
+          <p class="jor-form-kicker">Inscripción confirmada</p>
+          <h2>Te has registrado en Jornadas de Capacitación</h2>
+          <p class="jor-form-lead">{{ mensajeExito() }}</p>
+          @if (nombreExito()) {
+            <p class="jor-form-name">{{ nombreExito() }}</p>
+          }
+        </header>
+        <p class="info">Revise su correo: le enviamos el código QR de asistencia.</p>
+        <a routerLink="/" class="btn btn-primary registro-submit">Ir al inicio</a>
+      } @else if (paso() === 'formulario') {
+        <header class="jor-form-head">
+          <p class="jor-form-kicker">Paso 1 · Datos</p>
+          <h2>Formulario de inscripción</h2>
+        <p class="jor-form-lead">
+          Complete sus datos. Al enviar, <strong>no queda registrado todavía</strong>:
+          recibirá un correo y deberá abrir el <strong>enlace de activación</strong>
+          para crear su ficha en el sistema. Después le enviaremos el QR de asistencia.
+        </p>
+        </header>
+
+        <div class="grid">
+          <div class="field field--accent">
+            <label>Correo *</label>
+            <input type="email" [(ngModel)]="form.email" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label>Tipo documento *</label>
+            <select [(ngModel)]="form.tipoDoc">
+              @for (t of tiposDoc(); track catValor(t)) {
+                <option [value]="catValor(t)">{{ catEtiqueta(t) }}</option>
+              }
+            </select>
+          </div>
+          <div class="doc-row">
+            <div class="field">
+              <label>Número documento *</label>
+              <input type="text" [(ngModel)]="form.numDoc" (blur)="buscarDocumento()" inputmode="numeric" />
+            </div>
+            <button type="button" class="btn-verify" [disabled]="buscando()" (click)="buscarDocumento()">
+              {{ buscando() ? 'Buscando…' : 'Verificar en ARGO' }}
+            </button>
+          </div>
+
+          <div class="grid-section grid-section--exp">
+            <p class="grid-section__title">Expedida en</p>
+            <div class="grid grid--nested">
+              <div class="field">
+                <label>Departamento</label>
+                <select [(ngModel)]="deptoExp" (ngModelChange)="onDeptoExpChange()">
+                  <option value="">Seleccione…</option>
+                  @for (d of departamentos(); track d.codDepto) {
+                    <option [value]="d.codDepto">{{ d.nombreDepto }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>Ciudad / municipio</label>
+                <select
+                  [(ngModel)]="codMunicipioExp"
+                  (ngModelChange)="onMunicipioExpChange()"
+                  [disabled]="!deptoExp"
+                >
+                  <option value="">Seleccione…</option>
+                  @for (m of municipiosExp(); track m.codMunicipio) {
+                    <option [value]="m.codMunicipio">{{ m.nombreMunicipio }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Primer apellido *</label>
+            <input type="text" [(ngModel)]="form.apellido1" />
+          </div>
+          <div class="field">
+            <label>Segundo apellido</label>
+            <input type="text" [(ngModel)]="form.apellido2" />
+          </div>
+          <div class="field">
+            <label>Primer nombre *</label>
+            <input type="text" [(ngModel)]="form.nombre1" />
+          </div>
+          <div class="field">
+            <label>Segundo nombre</label>
+            <input type="text" [(ngModel)]="form.nombre2" />
+          </div>
+          <div class="field">
+            <label>Género</label>
+            <select [(ngModel)]="form.genero">
+              <option value="">Seleccione…</option>
+              @for (g of generos(); track catValor(g)) {
+                <option [value]="catValor(g)">{{ etiquetaGenero(g) }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Fecha nacimiento</label>
+            <input type="date" [(ngModel)]="form.fechaNac" />
+          </div>
+          <div class="field">
+            <label>Celular</label>
+            <input type="tel" [(ngModel)]="form.celular" />
+          </div>
+          <div class="field">
+            <label>Dirección</label>
+            <input type="text" [(ngModel)]="form.direccion" />
+          </div>
+
+          <div class="grid-section grid-section--res">
+            <p class="grid-section__title">Ciudad de residencia</p>
+            <div class="grid grid--nested">
+              <div class="field">
+                <label>Departamento</label>
+                <select [(ngModel)]="deptoOrigen" (ngModelChange)="onDeptoOrigenChange()">
+                  <option value="">Seleccione…</option>
+                  @for (d of departamentos(); track d.codDepto) {
+                    <option [value]="d.codDepto">{{ d.nombreDepto }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>Municipio</label>
+                <select
+                  [(ngModel)]="codMunicipioOrigen"
+                  (ngModelChange)="onMunicipioOrigenChange()"
+                  [disabled]="!deptoOrigen"
+                >
+                  <option value="">Seleccione…</option>
+                  @for (m of municipiosOrigen(); track m.codMunicipio) {
+                    <option [value]="m.codMunicipio">{{ m.nombreMunicipio }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-section grid-section--empresa">
+            <p class="grid-section__title">Empresa (opcional)</p>
+            <p class="empresa-reg-hint">Si pertenece a una empresa de transporte, puede vincularla aquí.</p>
+            <div class="empresa-reg-wrap" style="position:relative">
+              @if (form.empresaNombre) {
+                <div class="empresa-reg-seleccionada">
+                  <span class="empresa-reg-chip">{{ form.empresaNombre }}</span>
+                  <button type="button" class="empresa-reg-quitar" (click)="quitarEmpresaReg()">Quitar</button>
+                </div>
+              } @else {
+                <input
+                  type="search"
+                  class="empresa-reg-input"
+                  placeholder="Buscar empresa por nombre o NIT…"
+                  [value]="empresaBusqReg()"
+                  (input)="buscarEmpresaReg($any($event.target).value)"
+                  (blur)="onEmpresaBlurReg()"
+                  autocomplete="off"
+                />
+                @if (empresaCargReg()) {
+                  <span class="empresa-reg-loading">…</span>
+                }
+                @if (empresaDropReg() && empresaSugsReg().length > 0) {
+                  <ul class="empresa-reg-dropdown">
+                    @for (e of empresaSugsReg(); track e._id) {
+                      <li (mousedown)="seleccionarEmpresaReg(e)">
+                        <span class="emp-nombre">{{ e.nombre }}</span>
+                        <span class="emp-nit">{{ e.identificacion }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+            </div>
+          </div>
+        </div>
+
+        @if (info()) {
+          <p class="info">{{ info() }}</p>
+        }
+        @if (alumnoEnArgo()) {
+          <p class="info info--argo">Datos cargados desde ARGO. No se crea cuenta del portal.</p>
+        }
+        @if (error()) {
+          <p class="err">{{ error() }}</p>
+        }
+        @if (!registroAbierto()) {
+          <p class="err">El registro en línea está cerrado. Contacte al CEA.</p>
+        }
+        @if (turnstileSiteKey()) {
+          <av-turnstile [siteKey]="turnstileSiteKey()" (tokenChange)="turnstileToken.set($event)" />
+        }
+
+        <button
+          type="button"
+          class="btn btn-primary registro-submit"
+          [disabled]="loading() || !registroAbierto()"
+          (click)="enviar()"
+        >
+          {{ loading() ? 'Enviando…' : 'Enviar enlace de activación al correo' }}
+        </button>
+      } @else {
+        <header class="jor-form-head jor-form-head--verify">
+          <p class="jor-form-kicker">Paso 2 · Verificación</p>
+          <h2>Confirme su correo</h2>
+          <p class="jor-form-lead">
+          Enviamos un <strong>enlace de activación</strong> a
+          <strong>{{ emailEnmascarado() || 'su correo' }}</strong>.
+          Abra el mensaje y pulse el enlace para completar el registro
+          (también puede digitar el código de 6 dígitos).
+          Hasta entonces <strong>no aparece en el sistema</strong>.
+        </p>
+        </header>
+
+        @if (info()) {
+          <p class="info">{{ info() }}</p>
+        }
+        @if (error()) {
+          <p class="err">{{ error() }}</p>
+        }
+
+        <div class="verify-row">
+          <div class="field">
+            <label>Código de verificación *</label>
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="one-time-code"
+              placeholder="000000"
+              [ngModel]="codigoVerificacion()"
+              (ngModelChange)="codigoVerificacion.set($event)"
+            />
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary registro-submit" [disabled]="loading()" (click)="confirmarCodigo()">
+          {{ loading() ? 'Confirmando…' : 'Confirmar inscripción' }}
+        </button>
+
+        <div class="verify-actions">
+          <button type="button" class="btn btn-outline" [disabled]="reenviando()" (click)="reenviarCodigo()">
+            {{ reenviando() ? 'Reenviando…' : 'Reenviar código y enlace' }}
+          </button>
+          <button type="button" class="btn btn-outline" (click)="volverAlFormulario()">Volver al formulario</button>
+        </div>
+      }
+
+      <p class="registro-foot">
+        ¿Busca el aula virtual?
+        <a routerLink="/registro">Registro del portal</a>
+      </p>
+    </div>
+  </section>
+</div>

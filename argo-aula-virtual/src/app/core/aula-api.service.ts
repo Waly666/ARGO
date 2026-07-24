@@ -20,6 +20,7 @@ import {
   PortalAuthRes,
   PortalConfig,
   ProgresoVirtualResp,
+  RegistroJornadaRes,
   RegistroVerificacionRes,
   ResultadoIntentoCohorte,
 } from './models';
@@ -93,16 +94,56 @@ export class AulaApiService {
     return this.http.post<RegistroVerificacionRes>(`${this.base}/auth/registro/solicitar`, {
       ...body,
       turnstileToken: turnstileToken || undefined,
+      portalBaseUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
     });
   }
 
-  registroConfirmar(pendingId: string, codigo: string): Observable<PortalAuthRes> {
-    return this.http.post<PortalAuthRes>(`${this.base}/auth/registro/confirmar`, { pendingId, codigo });
+  registroConfirmar(
+    pendingId: string,
+    codigo: string,
+    linkToken?: string,
+  ): Observable<PortalAuthRes> {
+    return this.http.post<PortalAuthRes>(`${this.base}/auth/registro/confirmar`, {
+      pendingId,
+      codigo: codigo || undefined,
+      linkToken: linkToken || undefined,
+    });
   }
 
   registroReenviarCodigo(pendingId: string): Observable<RegistroVerificacionRes> {
     return this.http.post<RegistroVerificacionRes>(`${this.base}/auth/registro/reenviar-codigo`, {
       pendingId,
+      portalBaseUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
+    });
+  }
+
+  registroJornadaSolicitar(
+    body: Record<string, unknown>,
+    turnstileToken?: string,
+  ): Observable<RegistroJornadaRes> {
+    return this.http.post<RegistroJornadaRes>(`${this.base}/auth/registro-jornada/solicitar`, {
+      ...body,
+      turnstileToken: turnstileToken || undefined,
+      portalBaseUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
+    });
+  }
+
+  registroJornadaConfirmar(
+    pendingId: string,
+    codigo?: string,
+    linkToken?: string,
+  ): Observable<RegistroJornadaRes> {
+    return this.http.post<RegistroJornadaRes>(`${this.base}/auth/registro-jornada/confirmar`, {
+      pendingId,
+      codigo: codigo || undefined,
+      linkToken: linkToken || undefined,
+    });
+  }
+
+  registroJornadaReenviarCodigo(pendingId: string): Observable<RegistroVerificacionRes> {
+    return this.http.post<RegistroVerificacionRes>(`${this.base}/auth/registro-jornada/reenviar-codigo`, {
+      pendingId,
+      portalBaseUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
     });
   }
 

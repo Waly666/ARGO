@@ -171,6 +171,53 @@ export function tipoCertificadoEmisionNoJornada(val?: string | null): TipoAlumno
   return t;
 }
 
+/** Canal de inscripción del alumno */
+export const ORIGENES_ALUMNO_DEF = ['SISTEMA', 'WEB'] as const;
+export type OrigenAlumno = (typeof ORIGENES_ALUMNO_DEF)[number];
+export const ORIGEN_SISTEMA: OrigenAlumno = 'SISTEMA';
+export const ORIGEN_WEB: OrigenAlumno = 'WEB';
+export const ORIGEN_ALUMNO_DEFAULT: OrigenAlumno = ORIGEN_SISTEMA;
+
+const ETIQUETAS_ORIGEN_ALUMNO: Record<OrigenAlumno, string> = {
+  SISTEMA: 'Inscrito por sistema',
+  WEB: 'Inscrito por página web',
+};
+
+export function normalizarOrigenAlumno(val?: string | null): OrigenAlumno {
+  const t = String(val ?? '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+  if (!t) return ORIGEN_ALUMNO_DEFAULT;
+  if (t === 'SISTEMA' || t === 'SISTEMA_ARGO' || t === 'APP' || t === 'MOVIL' || t === 'ERP') {
+    return ORIGEN_SISTEMA;
+  }
+  if (
+    t === 'WEB' ||
+    t === 'PORTAL' ||
+    t === 'PAGINA_WEB' ||
+    t === 'SITIO' ||
+    t.includes('WEB') ||
+    t.includes('PORTAL')
+  ) {
+    return ORIGEN_WEB;
+  }
+  return (ORIGENES_ALUMNO_DEF as readonly string[]).includes(t)
+    ? (t as OrigenAlumno)
+    : ORIGEN_ALUMNO_DEFAULT;
+}
+
+export function etiquetaOrigenAlumno(val?: string | null): string {
+  return ETIQUETAS_ORIGEN_ALUMNO[normalizarOrigenAlumno(val)];
+}
+
+/** Etiqueta corta para listados / chips. */
+export function etiquetaOrigenAlumnoCorta(val?: string | null): string {
+  return normalizarOrigenAlumno(val) === ORIGEN_WEB ? 'Web' : 'Sistema';
+}
+
 /** Tarifa 4 — matrícula aula virtual (portal en línea). */
 export const TARIFA_VIRTUAL = 4;
 

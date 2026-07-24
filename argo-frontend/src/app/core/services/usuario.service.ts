@@ -16,6 +16,8 @@ export interface Usuario {
   idEmpleado?: number | null;
   numero?: number | null;
   numeroDocumento?: string;
+  /** 2FA TOTP activo (sin exponer secretos). */
+  totpEnabled?: boolean;
   sedesPermitidas?: string[];
 }
 
@@ -59,6 +61,13 @@ export class UsuarioService {
 
   borrar(id: string): Observable<{ ok: boolean; message?: string }> {
     return this.http.delete<{ ok: boolean; message?: string }>(`${this.base}/${id}/permanente`);
+  }
+
+  resetearMfa(id: string): Observable<{ ok: boolean; message?: string; usuario?: Usuario }> {
+    return this.http.post<{ ok: boolean; message?: string; usuario?: Usuario }>(
+      `${this.base}/${id}/reset-mfa`,
+      {},
+    );
   }
 
   roles(): Observable<{ id: string; label: string }[]> {

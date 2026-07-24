@@ -26,8 +26,11 @@ const GRUPOS = [
       { key: 'servicios.ver', label: 'Consultar servicios' },
       { key: 'servicios.gestionar', label: 'Administrar servicios' },
       { key: 'informes.ver', label: 'Informes académicos (listados parametrizables)' },
-      { key: 'instructores', label: 'Módulo instructores (legacy)' },
-      { key: 'instructores.mi_portal', label: 'Portal del instructor (mi perfil y mis clases)' },
+      { key: 'instructores', label: 'Módulo instructores (directorio / legacy)' },
+      {
+        key: 'instructores.mi_portal',
+        label: 'Usar portal de instructores (mi perfil, clases y operación)',
+      },
       { key: 'instructores.inspeccion', label: 'Inspección preoperacional de vehículos (instructor)' },
     ],
   },

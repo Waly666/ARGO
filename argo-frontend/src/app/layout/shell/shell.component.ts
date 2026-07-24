@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -58,6 +58,7 @@ import { ChatService } from '../../core/services/chat.service';
 import { ChatMensajeAlertService } from '../../core/services/chat-mensaje-alert.service';
 import { ChatPanelComponent } from '../../features/chat/chat-panel.component';
 import { ChatMensajeBannerComponent } from '../../features/chat/chat-mensaje-banner.component';
+import { CambiarPasswordModalComponent } from '../../shared/cambiar-password-modal/cambiar-password-modal.component';
 import {
   ComprobanteHoyAlertService,
   ComprobanteHoyTipo,
@@ -102,11 +103,12 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, CambiarPasswordModalComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
 export class ShellComponent {
+  @ViewChild(CambiarPasswordModalComponent) cambiarPasswordModal?: CambiarPasswordModalComponent;
   private destroyRef = inject(DestroyRef);
   private pollsAlertasIniciados = false;
   private readonly syncPermisosOnFocus = () => {
@@ -154,6 +156,7 @@ export class ShellComponent {
   groupAbierto = signal<Record<string, boolean>>({});
 
   user = computed(() => this.auth.user());
+  esSoporteMaestro = computed(() => this.auth.isSoporteMaestro());
   sedes = computed((): SedeDto[] => {
     const u = this.auth.user();
     return (u?.sedes as SedeDto[] | undefined) || [];
@@ -1847,6 +1850,12 @@ export class ShellComponent {
     this.chatSvc.desconectar();
     this.auth.logout();
   }
+
+  abrirCambiarPassword(): void {
+    if (this.auth.isSoporteMaestro()) return;
+    this.cambiarPasswordModal?.abrir();
+  }
+
   iconClass(tone?: string): string {
     return tone ? `icon-cap tone-${tone}` : 'icon-cap tone-slate';
   }

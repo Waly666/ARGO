@@ -12,6 +12,12 @@ const {
   reenviarCodigoRegistro,
 } = require('../services/portalRegistroVerificacion');
 const {
+  solicitarRegistroJornada,
+  confirmarRegistroJornada,
+  reenviarCodigoRegistroJornada,
+} = require('../services/portalRegistroJornada');
+const { resolverBasePortal } = require('../utils/portalPublicUrl');
+const {
   listarMisCursos,
   reportarProgreso,
   evaluarAprobacion,
@@ -142,12 +148,16 @@ exports.registroSolicitar = async (req, res, next) => {
       });
     }
     const cfg = await obtenerConfigPortalPublica();
-    const { email, password, turnstileToken: _t, ...alumno } = req.body || {};
+    const { email, password, turnstileToken: _t, portalBaseUrl, ...alumno } = req.body || {};
     const out = await solicitarRegistroPortal({
       email,
       password,
       alumno,
       nombreCea: cfg.nombreCea,
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
     });
     res.status(202).json(out);
   } catch (e) {
@@ -161,8 +171,12 @@ exports.registroConfirmar = async (req, res, next) => {
     if (!portalRegistroAbierto()) {
       return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
     }
-    const { pendingId, codigo } = req.body || {};
-    const out = await confirmarRegistroPortal({ pendingId, codigo });
+    const { pendingId, codigo, linkToken, t } = req.body || {};
+    const out = await confirmarRegistroPortal({
+      pendingId,
+      codigo,
+      linkToken: linkToken || t,
+    });
     res.status(201).json(out);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
@@ -176,8 +190,82 @@ exports.registroReenviarCodigo = async (req, res, next) => {
       return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
     }
     const cfg = await obtenerConfigPortalPublica();
-    const { pendingId } = req.body || {};
-    const out = await reenviarCodigoRegistro({ pendingId, nombreCea: cfg.nombreCea });
+    const { pendingId, portalBaseUrl } = req.body || {};
+    const out = await reenviarCodigoRegistro({
+      pendingId,
+      nombreCea: cfg.nombreCea,
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
+    });
+    res.json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+/** Inscripción web a Jornadas de Capacitación (sin cuenta portal). */
+exports.registroJornadaSolicitar = async (req, res, next) => {
+  try {
+    if (!portalRegistroAbierto()) {
+      return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
+    }
+    const cfg = await obtenerConfigPortalPublica();
+    const { email, turnstileToken: _t, portalBaseUrl, password: _p, ...alumno } = req.body || {};
+    const out = await solicitarRegistroJornada({
+      email,
+      alumno,
+      nombreCea: cfg.nombreCea,
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
+    });
+    const status = out.step === 'done' ? 201 : 202;
+    res.status(status).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.registroJornadaConfirmar = async (req, res, next) => {
+  try {
+    if (!portalRegistroAbierto()) {
+      return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
+    }
+    const cfg = await obtenerConfigPortalPublica();
+    const { pendingId, codigo, linkToken, t } = req.body || {};
+    const out = await confirmarRegistroJornada({
+      pendingId,
+      codigo,
+      linkToken: linkToken || t,
+      nombreCea: cfg.nombreCea,
+    });
+    res.status(201).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.registroJornadaReenviarCodigo = async (req, res, next) => {
+  try {
+    if (!portalRegistroAbierto()) {
+      return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
+    }
+    const cfg = await obtenerConfigPortalPublica();
+    const { pendingId, portalBaseUrl } = req.body || {};
+    const out = await reenviarCodigoRegistroJornada({
+      pendingId,
+      nombreCea: cfg.nombreCea,
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
+    });
     res.json(out);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

@@ -73,6 +73,25 @@ export const routes: Routes = [
           import('./pages/registro/registro.component').then((m) => m.RegistroComponent),
       },
       {
+        path: 'registro/activar',
+        loadComponent: () =>
+          import('./pages/registro/activar-registro.component').then((m) => m.ActivarRegistroComponent),
+      },
+      {
+        path: 'jornadas-capacitacion',
+        loadComponent: () =>
+          import('./pages/jornadas-capacitacion/jornadas-capacitacion.component').then(
+            (m) => m.JornadasCapacitacionComponent,
+          ),
+      },
+      {
+        path: 'jornadas-capacitacion/activar',
+        loadComponent: () =>
+          import('./pages/jornadas-capacitacion/activar-jornada.component').then(
+            (m) => m.ActivarJornadaComponent,
+          ),
+      },
+      {
         path: 'pqr',
         canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/pqr/pqr.component').then((m) => m.PqrComponent),

@@ -50,6 +50,9 @@ router.post('/auth/registro', portalAuthLimiter, turnstilePortal, ctrl.registro)
 router.post('/auth/registro/solicitar', portalAuthLimiter, turnstilePortal, ctrl.registroSolicitar);
 router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirmar);
 router.post('/auth/registro/reenviar-codigo', portalAuthLimiter, ctrl.registroReenviarCodigo);
+router.post('/auth/registro-jornada/solicitar', portalAuthLimiter, turnstilePortal, ctrl.registroJornadaSolicitar);
+router.post('/auth/registro-jornada/confirmar', portalAuthLimiter, ctrl.registroJornadaConfirmar);
+router.post('/auth/registro-jornada/reenviar-codigo', portalAuthLimiter, ctrl.registroJornadaReenviarCodigo);
 router.post('/auth/login', portalAuthLimiter, turnstilePortal, ctrl.login);
 router.post('/contacto', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarContacto);
 router.post('/pqr', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarPqr);

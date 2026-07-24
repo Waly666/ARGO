@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const { parseNumDoc, numDocInvalidMessage } = require('../utils/numDoc');
 const { TIPOS_ALUMNO, TIPO_ALUMNO_DEFAULT } = require('../constants/tipoAlumno');
+const {
+  ORIGENES_ALUMNO,
+  ORIGEN_ALUMNO_DEFAULT,
+} = require('../constants/origenAlumno');
 
 function normalizarNumDocEnDoc(doc) {
   if (!doc || doc.numDoc == null || doc.numDoc === '') return;
@@ -15,6 +19,13 @@ const DatosAlumnoSchema = new mongoose.Schema(
       type: String,
       enum: TIPOS_ALUMNO,
       default: TIPO_ALUMNO_DEFAULT,
+      index: true,
+    },
+    /** Canal de inscripción: SISTEMA (ARGO) | WEB (portal / página). */
+    origen: {
+      type: String,
+      enum: ORIGENES_ALUMNO,
+      default: ORIGEN_ALUMNO_DEFAULT,
       index: true,
     },
     tipoDoc: { type: String, trim: true },
