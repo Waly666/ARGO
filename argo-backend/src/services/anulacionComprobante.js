@@ -1,6 +1,7 @@
 const { esAdmin } = require('../utils/roles');
 const { exigirAdminOSupervisor, verificarAdminCredenciales } = require('./authVerify');
 const { requiereAutorizacionAnularMovimiento } = require('./cajaSesion');
+const { tieneAlguno } = require('./rolesPermisos');
 
 /**
  * Gate unificado para anular comprobantes (ingresos, egresos, certificados, etc.).
@@ -9,6 +10,7 @@ const { requiereAutorizacionAnularMovimiento } = require('./cajaSesion');
  * - Administrador en su sesión de caja abierta: autoriza directo.
  * - Administrador fuera de su sesión / sin caja abierta: re-autenticación admin
  *   (usuario + contraseña en el body), igual que antes.
+ * - Contabilidad / caja.admin: puede anular directamente (revisión contable).
  * - Usuario NO administrador (cajero): SIEMPRE requiere credenciales de un
  *   administrador. La autorización del admin habilita la anulación aunque el
  *   comprobante pertenezca a otra sesión de caja: por eso ya NO se bloquea por
@@ -18,6 +20,10 @@ const { requiereAutorizacionAnularMovimiento } = require('./cajaSesion');
  * Devuelve `{ ok: true, supervisor }` o `{ ok:false, status, message, code }`.
  */
 async function autorizarAnulacionComprobante(req, idSesion, mensaje) {
+  if (tieneAlguno(req.permisos, ['caja.admin', 'contabilidad'])) {
+    return { ok: true, supervisor: null };
+  }
+
   if (!esAdmin(req.user?.rol)) {
     const auth = await exigirAdminOSupervisor(
       req,

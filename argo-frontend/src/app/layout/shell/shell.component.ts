@@ -647,6 +647,71 @@ export class ShellComponent {
     },
     {
       kind: 'group',
+      label: 'Contabilidad',
+      icon: '∑',
+      iconTone: 'teal',
+      permiso: ['contabilidad', 'caja.admin'],
+      children: [
+        {
+          kind: 'link',
+          label: 'Inicio',
+          path: '/app/contabilidad/inicio',
+          icon: '⌂',
+          iconTone: 'teal',
+          permiso: ['contabilidad', 'caja.admin'],
+        },
+        {
+          kind: 'link',
+          label: 'Ingresos',
+          path: '/app/contabilidad/ingresos',
+          icon: '↑',
+          iconTone: 'emerald',
+          permiso: ['contabilidad', 'caja.admin'],
+        },
+        {
+          kind: 'link',
+          label: 'Egresos',
+          path: '/app/contabilidad/egresos',
+          icon: '↓',
+          iconTone: 'rose',
+          permiso: ['contabilidad', 'caja.admin'],
+        },
+        {
+          kind: 'link',
+          label: 'Cuadres de caja',
+          path: '/app/contabilidad/cuadres',
+          icon: '▣',
+          iconTone: 'indigo',
+          permiso: ['contabilidad', 'caja.admin'],
+        },
+        {
+          kind: 'link',
+          label: 'Cierre general',
+          path: '/app/contabilidad/cierre-general',
+          icon: '⊞',
+          iconTone: 'amber',
+          permiso: ['contabilidad', 'caja.admin'],
+        },
+        {
+          kind: 'link',
+          label: 'Descuadres',
+          path: '/app/contabilidad/descuadres',
+          icon: '⚠',
+          iconTone: 'amber',
+          permiso: ['contabilidad', 'caja.admin'],
+        },
+        {
+          kind: 'link',
+          label: 'Facturación',
+          path: '/app/contabilidad/facturacion',
+          icon: '$',
+          iconTone: 'emerald',
+          permiso: ['contabilidad', 'facturacion'],
+        },
+      ],
+    },
+    {
+      kind: 'group',
       label: 'Flujo de Caja',
       icon: '⇅',
       iconTone: 'amber',
@@ -1643,13 +1708,17 @@ export class ShellComponent {
       RRHH: false,
       Configuración: false,
       'Flujo de Caja': false,
+      Contabilidad: false,
       'Jornadas Cap.': false,
     };
 
     if (u.includes('/aula-virtual')) {
       patch['Aula Virtual'] = true;
     }
-    if (u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/combos')) {
+    if (u.includes('/contabilidad')) {
+      patch['Contabilidad'] = true;
+    }
+    if (u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/combos') || u.includes('/cierres') || u.includes('/cierre-general')) {
       patch['Flujo de Caja'] = true;
     }
 

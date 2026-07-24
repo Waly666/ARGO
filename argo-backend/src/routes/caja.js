@@ -6,7 +6,7 @@ const router = Router();
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const turno = requirePermiso('caja.turno');
-const admin = requirePermiso('caja.admin');
+const admin = requirePermiso('caja.admin', 'contabilidad');
 
 router.get('/sesiones/activa', turno, ctrl.activa);
 router.get('/sesiones/activa/ingresos', turno, ctrl.ingresosSesionActiva);

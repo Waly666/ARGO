@@ -1,11 +1,12 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { Egreso, EgresoService } from '../../core/services/egreso.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
+import { PermisoService } from '../../core/services/permiso.service';
 import {
   capBeneficiario,
   capPlaca,
@@ -21,17 +22,23 @@ import {
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
-import { abrirUrlSoporte } from '../../core/utils/pago-soporte.helpers';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { SoporteViewerModalComponent } from '../../shared/soporte-viewer-modal/soporte-viewer-modal.component';
 import { ReciboService } from '../../core/services/recibo.service';
 
 @Component({
   selector: 'argo-caja-egresos-todos',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, CajaDescuadresBannerComponent,
+  imports: [
+    CommonModule,
+    FormsModule,
+    CurrencyPipe,
+    DatePipe,
+    CajaDescuadresBannerComponent,
     ArgoDateInputComponent,
+    SoporteViewerModalComponent,
   ],
   templateUrl: './caja-egresos-todos.component.html',
   styleUrls: ['./caja-listados-admin.scss'],
@@ -43,6 +50,9 @@ export class CajaEgresosTodosComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private confirm = inject(ConfirmDialogService);
   private reciboSvc = inject(ReciboService);
+  private permisos = inject(PermisoService);
+
+  @ViewChild(SoporteViewerModalComponent) soporteModal?: SoporteViewerModalComponent;
 
   private readonly vistaKey = 'argo-caja-egresos-todos-vista';
 
@@ -170,7 +180,12 @@ export class CajaEgresosTodosComponent implements OnInit {
   }
 
   abrirSoporte(e: Egreso): void {
-    abrirUrlSoporte(this.urlSoporte(e), (m) => this.inform(m));
+    const url = this.urlSoporte(e);
+    if (!url) {
+      this.inform('Este egreso no tiene soporte adjunto.');
+      return;
+    }
+    this.soporteModal?.abrir(url, 'Soporte de egreso');
   }
 
   puedeEditarEgreso(e: Egreso): boolean {
@@ -203,6 +218,7 @@ export class CajaEgresosTodosComponent implements OnInit {
   }
 
   requiereAuthSupervisor(e: Egreso): boolean {
+    if (this.permisos.tiene(['caja.admin', 'contabilidad'])) return false;
     const abierta = this.sesionAbiertaId();
     if (abierta == null) return true;
     if (e.idSesion == null) return true;

@@ -33,6 +33,21 @@ const ROLES_SISTEMA = {
     alarmas: alarmasDefaultRol('cajero'),
     esSistema: true,
   },
+  contador: {
+    nombre: 'Contador',
+    descripcion:
+      'Revisión contable: ingresos, egresos, cuadres, cierre general, anulación de comprobantes y facturación (notas crédito)',
+    permisos: [
+      'dashboard',
+      'contabilidad',
+      'caja.admin',
+      'facturacion',
+      'sedes.ver',
+      'sedes.ver_todas',
+    ],
+    alarmas: alarmasDefaultRol('contador'),
+    esSistema: true,
+  },
   instructor: {
     nombre: 'Instructor',
     descripcion: 'Dashboard, jornadas en carpa, consulta y alta de programas',
@@ -148,6 +163,19 @@ async function fusionarAlarmasSistema(codigo, defAlarmas) {
   await RolApp.updateOne({ codigo }, { $set: { alarmas: [...actuales, ...faltantes] } });
 }
 
+/** Incorpora permisos nuevos del rol sistema (p. ej. Contador) a roles ya insertados. */
+async function fusionarPermisosSistema(codigo, defPermisos) {
+  if (!defPermisos?.length || defPermisos.includes('*')) return;
+  const doc = await RolApp.findOne({ codigo, esSistema: true }).lean();
+  if (!doc?.codigo) return;
+  if (doc.permisos?.includes('*')) return;
+  const actuales = [...(doc.permisos || [])];
+  const esperadas = clavesValidas(defPermisos);
+  const faltantes = esperadas.filter((k) => !actuales.includes(k));
+  if (!faltantes.length) return;
+  await RolApp.updateOne({ codigo }, { $set: { permisos: [...actuales, ...faltantes] } });
+}
+
 async function initRolesSistema(opts = {}) {
   const force = opts.force === true;
   const codigoForzado = opts.codigo ? normalizarRol(opts.codigo) : null;
@@ -176,6 +204,7 @@ async function initRolesSistema(opts = {}) {
       { upsert: true },
     );
     await fusionarAlarmasSistema(codigo, def.alarmas || []);
+    await fusionarPermisosSistema(codigo, def.permisos || []);
   }
   await fusionarPermisosAdminCatalogo();
   limpiarCache();

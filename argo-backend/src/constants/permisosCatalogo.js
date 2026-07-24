@@ -73,6 +73,16 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'contabilidad',
+    label: 'Contabilidad',
+    permisos: [
+      {
+        key: 'contabilidad',
+        label: 'Módulo contabilidad (ingresos, egresos, cuadres, cierre general y facturación)',
+      },
+    ],
+  },
+  {
     id: 'otros',
     label: 'Otros módulos',
     permisos: [

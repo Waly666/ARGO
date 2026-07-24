@@ -145,6 +145,13 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.empleados.docs_vencidos',
     'alarmas.empleados.docs_faltantes',
   ],
+  contador: [
+    'alarmas.caja.descuadres',
+    'alarmas.caja.alerta_pago',
+    'alarmas.alumnos.comprobante_ingreso',
+    'alarmas.alumnos.comprobante_egreso',
+    'alarmas.alumnos.factura',
+  ],
   instructor: [
     'alarmas.jornadas.certificado_nuevo',
     'alarmas.certificados.vencimiento',

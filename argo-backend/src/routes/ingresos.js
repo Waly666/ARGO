@@ -8,8 +8,8 @@ const contratoMutable = require('../middleware/contratoJornadaMutable');
 const router = Router();
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
-const pagos = requirePermiso('alumnos.pagos', 'caja.turno', 'caja.cobros');
-const admin = requirePermiso('caja.admin');
+const pagos = requirePermiso('alumnos.pagos', 'caja.turno', 'caja.cobros', 'caja.admin', 'contabilidad');
+const admin = requirePermiso('caja.admin', 'contabilidad');
 const soporte = upload.ingresos.single('soporte');
 
 router.get('/admin/todos', admin, ctrl.listarTodos);

@@ -481,6 +481,88 @@ export const routes: Routes = [
       { path: 'caja/cobros', redirectTo: 'cobros-pendientes', pathMatch: 'full' },
       { path: 'caja/empleados', redirectTo: 'rrhh/empleados', pathMatch: 'full' },
       {
+        path: 'contabilidad',
+        canActivate: [permisoGuard],
+        data: { permiso: ['contabilidad', 'caja.admin'], title: 'Contabilidad' },
+        loadComponent: () =>
+          import('./features/contabilidad/contabilidad-layout.component').then(
+            (m) => m.ContabilidadLayoutComponent,
+          ),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+          {
+            path: 'inicio',
+            loadComponent: () =>
+              import('./features/contabilidad/contabilidad-hub.component').then(
+                (m) => m.ContabilidadHubComponent,
+              ),
+          },
+          {
+            path: 'ingresos',
+            canActivate: [permisoGuard],
+            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Ingresos' },
+            loadComponent: () =>
+              import('./features/caja/caja-ingresos-todos.component').then(
+                (m) => m.CajaIngresosTodosComponent,
+              ),
+          },
+          {
+            path: 'egresos',
+            canActivate: [permisoGuard],
+            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Egresos' },
+            loadComponent: () =>
+              import('./features/caja/caja-egresos-todos.component').then(
+                (m) => m.CajaEgresosTodosComponent,
+              ),
+          },
+          {
+            path: 'cuadres',
+            canActivate: [permisoGuard],
+            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Cuadres de caja' },
+            loadComponent: () =>
+              import('./features/caja/caja-cierres-admin.component').then(
+                (m) => m.CajaCierresAdminComponent,
+              ),
+          },
+          {
+            path: 'cuadres/:idSesion',
+            canActivate: [permisoGuard],
+            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Detalle de cuadre' },
+            loadComponent: () =>
+              import('./features/caja/caja-cierre-detalle.component').then(
+                (m) => m.CajaCierreDetalleComponent,
+              ),
+          },
+          {
+            path: 'cierre-general',
+            canActivate: [permisoGuard],
+            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Cierre general' },
+            loadComponent: () =>
+              import('./features/caja/caja-cierre-general.component').then(
+                (m) => m.CajaCierreGeneralComponent,
+              ),
+          },
+          {
+            path: 'descuadres',
+            canActivate: [permisoGuard],
+            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Descuadres' },
+            loadComponent: () =>
+              import('./features/caja/caja-descuadres-admin.component').then(
+                (m) => m.CajaDescuadresAdminComponent,
+              ),
+          },
+          {
+            path: 'facturacion',
+            canActivate: [permisoGuard],
+            data: { permiso: ['contabilidad', 'facturacion'], title: 'Facturación' },
+            loadComponent: () =>
+              import('./features/facturacion/facturacion-hub.component').then(
+                (m) => m.FacturacionHubComponent,
+              ),
+          },
+        ],
+      },
+      {
         path: 'rrhh',
         canActivate: [permisoGuard],
         data: { permiso: 'rrhh' },

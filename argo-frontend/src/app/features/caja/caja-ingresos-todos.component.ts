@@ -1,6 +1,6 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -8,6 +8,7 @@ import { ConfigService } from '../../core/services/config.service';
 import { IngresoService } from '../../core/services/ingreso.service';
 import { ReciboService, idIngreso } from '../../core/services/recibo.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
+import { PermisoService } from '../../core/services/permiso.service';
 import {
   capConceptoCaja,
   capCuentaBancaria,
@@ -25,13 +26,20 @@ import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vis
 import { resolverFormaPagoIngreso } from '../../core/utils/caja-forma-pago.util';
 import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
-import { abrirUrlSoporte, tieneSoporteAdjunto } from '../../core/utils/pago-soporte.helpers';
+import { SoporteViewerModalComponent } from '../../shared/soporte-viewer-modal/soporte-viewer-modal.component';
+import { tieneSoporteAdjunto } from '../../core/utils/pago-soporte.helpers';
 
 @Component({
   selector: 'argo-caja-ingresos-todos',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, CajaDescuadresBannerComponent,
+  imports: [
+    CommonModule,
+    FormsModule,
+    CurrencyPipe,
+    DatePipe,
+    CajaDescuadresBannerComponent,
     ArgoDateInputComponent,
+    SoporteViewerModalComponent,
   ],
   templateUrl: './caja-ingresos-todos.component.html',
   styleUrls: ['./caja-listados-admin.scss'],
@@ -44,6 +52,9 @@ export class CajaIngresosTodosComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private confirm = inject(ConfirmDialogService);
+  private permisos = inject(PermisoService);
+
+  @ViewChild(SoporteViewerModalComponent) soporteModal?: SoporteViewerModalComponent;
 
   private readonly vistaKey = 'argo-caja-ingresos-todos-vista';
 
@@ -179,7 +190,12 @@ export class CajaIngresosTodosComponent implements OnInit {
   }
 
   abrirSoporte(i: { urlSoporte?: string | null }): void {
-    abrirUrlSoporte(this.urlSoporte(i), (m) => this.inform(m));
+    const url = this.urlSoporte(i);
+    if (!url) {
+      this.inform('Este movimiento no tiene soporte adjunto.');
+      return;
+    }
+    this.soporteModal?.abrir(url, 'Soporte de ingreso');
   }
 
   irAlCierre(idSesion: number | null | undefined): void {
@@ -211,6 +227,7 @@ export class CajaIngresosTodosComponent implements OnInit {
   }
 
   requiereAuthSupervisor(ing: { idSesion?: number | null }): boolean {
+    if (this.permisos.tiene(['caja.admin', 'contabilidad'])) return false;
     const abierta = this.sesionAbiertaId();
     if (abierta == null) return true;
     if (ing.idSesion == null) return true;

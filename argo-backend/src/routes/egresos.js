@@ -9,8 +9,8 @@ const soporte = upload.egresos.single('soporte');
 
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
-const turno = requirePermiso('caja.turno');
-const admin = requirePermiso('caja.admin');
+const turno = requirePermiso('caja.turno', 'caja.admin', 'contabilidad');
+const admin = requirePermiso('caja.admin', 'contabilidad');
 
 router.get('/admin/todos', admin, ctrl.listarTodos);
 router.get('/vehiculos-opciones', turno, ctrl.opcionesVehiculos);
