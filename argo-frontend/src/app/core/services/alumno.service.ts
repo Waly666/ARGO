@@ -15,6 +15,19 @@ export interface AlumnoDto {
   tipoAlumno?: string;
   /** SISTEMA (ARGO) | WEB (portal / página) */
   origen?: string;
+  /** Respuesta al guardar como Virtual: credenciales del portal (si se crearon). */
+  portalAcceso?: {
+    creado: boolean;
+    yaExiste?: boolean;
+    pendienteCorreo?: boolean;
+    conflicto?: boolean;
+    email?: string;
+    password?: string;
+    numDoc?: number | string;
+    correoEnviado?: boolean;
+    correoError?: string | null;
+    message?: string;
+  };
   tipoDoc?: string;
   /** En BD/API es número; en formulario de edición suele mostrarse como string */
   numDoc: number | string;

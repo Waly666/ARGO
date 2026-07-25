@@ -37,6 +37,9 @@ const {
   normalizarTipoAlumno,
 } = require('../constants/tipoAlumno');
 const { ORIGEN_SISTEMA, normalizarOrigenAlumno } = require('../constants/origenAlumno');
+const { publicOriginFromReq } = require('../utils/publicOrigin');
+const { resolverBasePortal } = require('../utils/portalPublicUrl');
+const { provisionarAccesoPortalSiVirtual } = require('../services/portalAccesoAlumno');
 
 const GENEROS_VALIDOS = new Set(['M', 'F']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
@@ -706,7 +709,15 @@ exports.crear = async (req, res, next) => {
       }
       throw err;
     }
-    res.status(201).json(a);
+    const lean = a.toObject ? a.toObject() : a;
+    const portalAcceso = await provisionarAccesoPortalSiVirtual(lean, {
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl: body.portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
+      origin: req.get('origin') || publicOriginFromReq(req),
+    });
+    res.status(201).json(portalAcceso ? { ...lean, portalAcceso } : lean);
   } catch (e) {
     next(e);
   }
@@ -747,8 +758,15 @@ exports.actualizar = async (req, res, next) => {
     const op = { $set: dto };
     if (Object.keys(unset).length) op.$unset = unset;
 
-    const a = await DatosAlumno.findByIdAndUpdate(prev._id, op, { new: true });
-    res.json(a);
+    const a = await DatosAlumno.findByIdAndUpdate(prev._id, op, { new: true }).lean();
+    const portalAcceso = await provisionarAccesoPortalSiVirtual(a, {
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl: body.portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
+      origin: req.get('origin') || publicOriginFromReq(req),
+    });
+    res.json(portalAcceso ? { ...a, portalAcceso } : a);
   } catch (e) {
     next(e);
   }

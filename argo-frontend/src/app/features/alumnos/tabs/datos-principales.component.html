@@ -183,7 +183,8 @@
                 Si asiste a una jornada, cambie el tipo a <strong>Jornadas de Capacitación</strong>, guarde e imprima el QR.
               </p>
               <p class="hint virtual-hint" *ngIf="normalizarTipoAlumno(form().tipoAlumno) === 'Virtual'">
-                Alumno del <strong>aula virtual</strong> (portal en línea).
+                Al marcar <strong>Virtual</strong> y guardar, ARGO crea el usuario del portal,
+                genera una contraseña y la muestra aquí; si hay SMTP, también la envía al correo del alumno.
               </p>
             </div>
             <div class="col-3">

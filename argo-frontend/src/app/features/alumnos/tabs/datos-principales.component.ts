@@ -1016,6 +1016,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         this.store.setAlumno(saved);
         if (creando) {
           void this.confirmarCreacionAlumno(saved).then(() => {
+            void this.mostrarPortalAccesoSiAplica(saved);
             if (saved._id) {
               void this.router.navigate([this.rutasAlumno().ficha(String(saved._id))], {
                 replaceUrl: true,
@@ -1031,6 +1032,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         this.fotoFile.set(null);
         this.store.setDatosSinGuardar(false);
         this.message.set('Datos guardados correctamente.');
+        void this.mostrarPortalAccesoSiAplica(saved);
       },
       error: (err) => {
         this.saving.set(false);
@@ -1046,6 +1048,42 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         this.message.set(body?.message || 'Error al guardar.');
       },
     });
+  }
+
+  private async mostrarPortalAccesoSiAplica(saved: AlumnoDto) {
+    const pa = saved.portalAcceso;
+    if (!pa) return;
+
+    if (pa.creado && pa.password && pa.email) {
+      const correoLinea = pa.correoEnviado
+        ? `También se envió un correo a ${pa.email} con estos datos.`
+        : pa.correoError
+          ? `No se pudo enviar el correo (${pa.correoError}). Anote la clave.`
+          : `No hay SMTP configurado: anote la clave y entréguesela al alumno.`;
+      await this.confirm.open({
+        title: 'Acceso al aula virtual creado',
+        message:
+          `Usuario (correo): ${pa.email}\n` +
+          `Contraseña temporal: ${pa.password}\n\n` +
+          `${correoLinea}`,
+        variant: 'success',
+        confirmLabel: 'Entendido',
+        cancelLabel: 'Cerrar',
+      });
+      this.message.set(pa.message || 'Acceso al aula virtual creado.');
+      return;
+    }
+
+    if (pa.pendienteCorreo || pa.conflicto) {
+      await this.confirm.open({
+        title: 'Acceso al portal',
+        message: pa.message || 'Revise el correo del alumno o Usuarios portal.',
+        variant: 'warn',
+        confirmLabel: 'Entendido',
+        cancelLabel: 'Cerrar',
+      });
+      this.message.set(pa.message || null);
+    }
   }
 
   private dispararAlertaGuardar(texto: string) {
