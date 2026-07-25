@@ -105,7 +105,9 @@ export const routes: Routes = [
       {
         path: 'informes/matriculas-virtuales',
         canActivate: [permisoGuard],
-        data: { permiso: ['informes.ver', 'aula_virtual.gestionar', 'alumnos.ver'] },
+        data: {
+          permiso: ['aula_virtual.informes', 'aula_virtual.gestionar', 'informes.ver', 'alumnos.ver'],
+        },
         loadComponent: () =>
           import('./features/informes/informes-virtuales.component').then((m) => m.InformesVirtualesComponent),
       },
@@ -144,7 +146,10 @@ export const routes: Routes = [
       {
         path: 'aula-virtual/cursos/:id',
         canActivate: [permisoGuard],
-        data: { permiso: ['aula_virtual.gestionar', 'programas.gestionar'], title: 'Ficha curso virtual' },
+        data: {
+          permiso: ['aula_virtual.ver', 'aula_virtual.gestionar'],
+          title: 'Ficha curso virtual',
+        },
         loadComponent: () =>
           import('./features/aula-virtual/aula-virtual-curso-detalle.component').then(
             (m) => m.AulaVirtualCursoDetalleComponent,
@@ -153,7 +158,7 @@ export const routes: Routes = [
       {
         path: 'aula-virtual/sitio',
         canActivate: [permisoGuard],
-        data: { permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'], title: 'Editor sitio portal' },
+        data: { permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar'], title: 'Editor sitio portal' },
         loadComponent: () =>
           import('./features/aula-virtual/aula-virtual-sitio.component').then(
             (m) => m.AulaVirtualSitioComponent,
@@ -163,7 +168,7 @@ export const routes: Routes = [
         path: 'aula-virtual/blog',
         canActivate: [permisoGuard],
         data: {
-          permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar'],
+          permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar'],
           title: 'Blog del portal',
         },
         loadComponent: () =>
@@ -173,7 +178,7 @@ export const routes: Routes = [
         path: 'aula-virtual/foro',
         canActivate: [permisoGuard],
         data: {
-          permiso: ['aula_virtual.foro', 'aula_virtual.gestionar', 'programas.gestionar', 'instructores'],
+          permiso: ['aula_virtual.foro', 'aula_virtual.gestionar'],
           title: 'Foro de cursos virtuales',
         },
         loadComponent: () =>
@@ -184,7 +189,10 @@ export const routes: Routes = [
       {
         path: 'aula-virtual',
         canActivate: [permisoGuard],
-        data: { permiso: ['aula_virtual.gestionar', 'programas.gestionar'], title: 'Aula virtual' },
+        data: {
+          permiso: ['aula_virtual.ver', 'aula_virtual.gestionar'],
+          title: 'Aula virtual',
+        },
         loadComponent: () =>
           import('./features/aula-virtual/aula-virtual-admin.component').then(
             (m) => m.AulaVirtualAdminComponent,

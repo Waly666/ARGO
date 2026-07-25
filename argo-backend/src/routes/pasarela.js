@@ -6,7 +6,12 @@ const { requireAuth, requirePermiso } = require('../middleware/auth');
 const router = Router();
 
 const configPerm = requirePermiso('config.recibos', 'aula_virtual.gestionar', 'config.facturacion');
-const informesPerm = requirePermiso('informes.ver', 'aula_virtual.gestionar', 'alumnos.ver');
+const informesPerm = requirePermiso(
+  'aula_virtual.informes',
+  'aula_virtual.gestionar',
+  'informes.ver',
+  'alumnos.ver',
+);
 
 router.get('/config', requireAuth, configPerm, cfgCtrl.obtener);
 router.put('/config', requireAuth, configPerm, cfgCtrl.actualizar);

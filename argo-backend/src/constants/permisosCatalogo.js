@@ -108,9 +108,26 @@ const GRUPOS = [
     id: 'aula_virtual',
     label: 'Aula virtual',
     permisos: [
-      { key: 'aula_virtual.gestionar', label: 'Cursos virtuales, matrículas y usuarios del portal' },
-      { key: 'aula_virtual.sitio', label: 'Editor del sitio portal (landing, menús, páginas)' },
-      { key: 'aula_virtual.foro', label: 'Foro de cursos (moderar preguntas y respuestas)' },
+      {
+        key: 'aula_virtual.ver',
+        label: 'Consultar cursos virtuales, progreso y usuarios del portal',
+      },
+      {
+        key: 'aula_virtual.gestionar',
+        label: 'Administrar cursos, matrículas, paquetes y usuarios del portal',
+      },
+      {
+        key: 'aula_virtual.sitio',
+        label: 'Editor del sitio portal (landing, menús, páginas y blog)',
+      },
+      {
+        key: 'aula_virtual.foro',
+        label: 'Foro de cursos (moderar preguntas y respuestas)',
+      },
+      {
+        key: 'aula_virtual.informes',
+        label: 'Informes de matrículas virtuales',
+      },
     ],
   },
   {

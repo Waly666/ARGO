@@ -6,7 +6,6 @@ const ClaseProgramadaCea = require('../models/ClaseProgramadaCea');
 const ClaseJornadaCap = require('../models/ClaseJornadaCap');
 const {
   empleadoPorUsuarioId,
-  esEmpleadoInstructor,
   nombreEmpleado,
   enriquecerClases,
   filtroInstructorQuery,
@@ -78,9 +77,8 @@ async function requireInstructor(req) {
   if (!emp) {
     return { error: 'Su usuario no está vinculado a un empleado en RRHH.', status: 403 };
   }
-  if (!(await esEmpleadoInstructor(emp))) {
-    return { error: 'Su cargo no corresponde a instructor.', status: 403 };
-  }
+  // La ruta ya exige instructores.mi_portal / operar. El cargo RRHH no tiene que
+  // llamarse «Instructor» (p. ej. contador que también imparte clases).
   return { emp };
 }
 

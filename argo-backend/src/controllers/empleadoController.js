@@ -350,18 +350,19 @@ async function aplicarUsuarioEmpleado(emp, body, cargo, user) {
   const cargoNombre = cargo?.nombre;
   const rolCargo = rolDesdeCargoNombre(cargoNombre);
 
-  if (modoAcceso === 'auto' && !rolCargo) {
-    return null;
-  }
   if (modoAcceso === 'vincular' && !idUsuarioExistente) {
     throw Object.assign(new Error('Seleccione el usuario a vincular'), { status: 400 });
   }
+
+  // "Crear automático" siempre crea cuenta: rol por cargo (cajero/instructor/recepción) o "usuario".
+  const rol = modoAcceso === 'auto' ? rolCargo || 'usuario' : undefined;
 
   return procesarUsuarioEmpleado(emp, {
     cargoNombre,
     creadoPor: user,
     modoAcceso,
     idUsuarioExistente,
+    rol,
   });
 }
 

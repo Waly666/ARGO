@@ -24,6 +24,23 @@ async function esEmpleadoInstructor(emp) {
   return /\binstructor/i.test(nom);
 }
 
+/** Permisos que habilitan operar el portal / clases como instructor (sin exigir cargo). */
+function permisosOperarComoInstructor(permisos) {
+  return tieneAlguno(permisos || [], [
+    '*',
+    'instructores.mi_portal',
+    'jornadas.operar',
+    'programacion_cea.operar',
+    'jornadas.gestionar',
+  ]);
+}
+
+async function empleadoPuedeActuarComoInstructor(emp, permisos) {
+  if (!emp) return false;
+  if (await esEmpleadoInstructor(emp)) return true;
+  return permisosOperarComoInstructor(permisos);
+}
+
 async function empleadoPorUsuarioId(userId) {
   if (!userId) return null;
   const uid = String(userId);
@@ -91,9 +108,10 @@ async function resolverInstructorParaClase(req, body = {}) {
     err.status = 400;
     throw err;
   }
-  const instructor = await esEmpleadoInstructor(emp);
-  if (!instructor && !puedeAsignar) {
-    const err = new Error('Su cargo en RRHH no es de instructor. Solo instructores pueden crear clases.');
+  if (!(await empleadoPuedeActuarComoInstructor(emp, permisos)) && !puedeAsignar) {
+    const err = new Error(
+      'No tiene permiso para operar como instructor. Solicite el permiso del portal de instructores o vincule un cargo de instructor en RRHH.',
+    );
     err.status = 403;
     throw err;
   }
@@ -115,13 +133,26 @@ async function listarInstructoresConUsuario() {
   const out = [];
   for (const e of empleados) {
     const cargo = await cargoNombre(e.cargoId);
-    if (!/\binstructor/i.test(cargo)) continue;
+    const porCargo = /\binstructor/i.test(cargo);
+    let porPermiso = false;
+    if (!porCargo && e.idUsuario) {
+      try {
+        const u = await Usuario.findById(e.idUsuario).lean();
+        if (u) {
+          const perms = await permisosParaRol(u.rol);
+          porPermiso = permisosOperarComoInstructor(perms);
+        }
+      } catch {
+        porPermiso = false;
+      }
+    }
+    if (!porCargo && !porPermiso) continue;
     out.push({
       idEmpleado: e.idEmpleado,
       idUsuario: String(e.idUsuario),
       nombreCompleto: nombreEmpleado(e),
       numeroDocumento: e.numeroDocumento,
-      cargo,
+      cargo: cargo || (porPermiso ? 'Instructor (por permiso)' : ''),
     });
   }
   return out.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto, 'es'));
@@ -358,6 +389,8 @@ module.exports = {
   filtroInstructorQuery,
   enriquecerClases,
   esEmpleadoInstructor,
+  empleadoPuedeActuarComoInstructor,
+  permisosOperarComoInstructor,
   asegurarInstructorOperandoClase,
   esClaseSinInstructor,
   esClaseDelInstructor,

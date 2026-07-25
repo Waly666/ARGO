@@ -510,8 +510,12 @@ export class EmpleadosAdminComponent implements OnInit {
   onCargoChange(raw: number | null | undefined) {
     const id = raw == null || Number.isNaN(Number(raw)) ? undefined : Number(raw);
     this.patch('cargoId', id);
-    if (!this.editando()?.idUsuario && this.modoAcceso() !== 'vincular') {
-      this.modoAcceso.set(this.cargoSugiereAcceso() ? 'auto' : 'ninguno');
+    if (this.editando()?.idUsuario || this.modoAcceso() === 'vincular') return;
+    // Solo sugerir "auto" en cargos típicos; no anular si el usuario ya eligió crear automático.
+    if (this.cargoSugiereAcceso()) {
+      this.modoAcceso.set('auto');
+    } else if (this.modoAcceso() !== 'auto') {
+      this.modoAcceso.set('ninguno');
     }
   }
 
@@ -693,26 +697,7 @@ export class EmpleadosAdminComponent implements OnInit {
         this.editando.set(null);
         this.cargar();
         this.cargarUsuarios();
-        let txt = ed ? 'Empleado actualizado.' : 'Empleado creado.';
-        const ug = res?.usuarioGenerado;
-        if (ug?.username) {
-          if (ug.vinculado) {
-            txt += ` Usuario vinculado — login: ${ug.username} (${ug.rol}).`;
-          } else if (ug.existente) {
-            txt += ` Usuario ya existía — login: ${ug.username} (${ug.rol}).`;
-          } else {
-            txt += ` Usuario creado — login: ${ug.username} (mismo número de documento, ${ug.rol}).`;
-            if (ug.passwordInicial) {
-              txt += ` Contraseña inicial: ${ug.passwordInicial}.`;
-            }
-          }
-        } else if (modo === 'ninguno') {
-          txt += ' Sin usuario de acceso vinculado.';
-        }
-        if (res?.avisoUsuario) {
-          txt += ` Aviso acceso: ${res.avisoUsuario}`;
-        }
-        this.inform(txt, !!res?.avisoUsuario);
+        void this.mostrarResultadoGuardado(ed != null, res, modo);
       },
       error: async (e) => {
         this.saving.set(false);
@@ -738,6 +723,70 @@ export class EmpleadosAdminComponent implements OnInit {
         this.inform(body?.message || 'Error al guardar', true);
       },
     });
+  }
+
+  /** Modal con usuario/contraseña cuando se crea acceso automático. */
+  private async mostrarResultadoGuardado(
+    eraEdicion: boolean,
+    res: Empleado,
+    modo: ModoAccesoEmpleado,
+  ): Promise<void> {
+    const ug = res?.usuarioGenerado;
+    const aviso = res?.avisoUsuario;
+
+    if (ug?.username && ug.passwordInicial && !ug.existente && !ug.vinculado) {
+      await this.confirm.open({
+        title: 'Usuario de acceso creado',
+        message:
+          `Empleado ${eraEdicion ? 'actualizado' : 'creado'} correctamente.\n\n` +
+          `Usuario: ${ug.username}\n` +
+          `Contraseña inicial: ${ug.passwordInicial}\n` +
+          `Rol: ${ug.rol}\n\n` +
+          `Anote estos datos y entrégueselos al empleado. ` +
+          `La contraseña inicial son los últimos 4 dígitos del documento.`,
+        variant: 'success',
+        confirmLabel: 'Entendido',
+        hideCancel: true,
+      });
+      this.inform(
+        `Empleado ${eraEdicion ? 'actualizado' : 'creado'}. Usuario: ${ug.username} · Contraseña: ${ug.passwordInicial}`,
+        false,
+      );
+      return;
+    }
+
+    if (ug?.username) {
+      const detalle = ug.vinculado
+        ? `Usuario vinculado — login: ${ug.username} (${ug.rol}).`
+        : `Usuario ya existía — login: ${ug.username} (${ug.rol}).`;
+      await this.confirm.open({
+        title: 'Acceso al sistema',
+        message: `Empleado ${eraEdicion ? 'actualizado' : 'creado'}.\n\n${detalle}`,
+        variant: 'success',
+        confirmLabel: 'Entendido',
+        hideCancel: true,
+      });
+      this.inform(`Empleado ${eraEdicion ? 'actualizado' : 'creado'}. ${detalle}`, false);
+      return;
+    }
+
+    let txt = eraEdicion ? 'Empleado actualizado.' : 'Empleado creado.';
+    if (modo === 'ninguno') {
+      txt += ' Sin usuario de acceso vinculado.';
+    } else if (modo === 'auto') {
+      txt += ' No se generó usuario de acceso.';
+    }
+    if (aviso) {
+      txt += ` Aviso acceso: ${aviso}`;
+      await this.confirm.open({
+        title: 'Empleado guardado con aviso',
+        message: txt,
+        variant: 'warn',
+        confirmLabel: 'Entendido',
+        hideCancel: true,
+      });
+    }
+    this.inform(txt, !!aviso);
   }
 
   async eliminar(e: Empleado) {

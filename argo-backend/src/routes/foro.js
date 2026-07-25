@@ -8,8 +8,6 @@ const router = Router();
 const moderarForo = requirePermiso(
   'aula_virtual.foro',
   'aula_virtual.gestionar',
-  'programas.gestionar',
-  'instructores',
 );
 
 // ─── Alumno: historial paginado del foro de un curso ─────────────────────────

@@ -14,7 +14,7 @@ export interface AuthEmpleadoResumen {
   nombreCompleto: string;
   numeroDocumento?: string;
   idUsuario?: string;
-  /** Cargo RRHH corresponde a instructor (requerido para portal API). */
+  /** Cargo RRHH de instructor, o acceso al portal por permiso (doble rol). */
   esInstructor?: boolean;
 }
 
@@ -32,7 +32,7 @@ export interface AuthUser {
   email?: string;
   idEmpleado?: number;
   empleado?: AuthEmpleadoResumen;
-  /** true si puede llamar /api/instructor-portal (permisos + cargo instructor). */
+  /** true si puede llamar /api/instructor-portal (permiso + empleado vinculado). */
   puedeUsarPortalInstructor?: boolean;
   /** Cuenta de soporte maestro (break-glass), no está en la BD. */
   soporteMaestro?: boolean;

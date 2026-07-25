@@ -80,20 +80,21 @@ router.get('/cursos/:id/inscripcion', requirePortalAuth, ctrl.estadoInscripcion)
 router.post('/cursos/:id/matricular', requirePortalAuth, ctrl.matricularCurso);
 router.post('/cursos/:id/pagar-linea', requirePortalAuth, ctrl.iniciarPagoEnLinea);
 
-/** Admin — app ARGO (staff) */
-const gestionar = requirePermiso('aula_virtual.gestionar', 'programas.gestionar');
-const configPortal = requirePermiso('aula_virtual.sitio', 'aula_virtual.gestionar', 'programas.gestionar');
+/** Admin — app ARGO (staff): solo permisos explícitos de aula virtual */
+const ver = requirePermiso('aula_virtual.ver', 'aula_virtual.gestionar');
+const gestionar = requirePermiso('aula_virtual.gestionar');
+const configPortal = requirePermiso('aula_virtual.sitio', 'aula_virtual.gestionar');
 
-router.get('/admin/usuarios', requireAuth, gestionar, admin.listarUsuariosPortal);
+router.get('/admin/usuarios', requireAuth, ver, admin.listarUsuariosPortal);
 router.post('/admin/usuarios', requireAuth, gestionar, admin.crearUsuarioPortal);
 router.delete('/admin/usuarios/:id', requireAuth, gestionar, admin.eliminarUsuarioPortal);
-router.get('/admin/categorias', requireAuth, gestionar, admin.listarCategoriasAdmin);
+router.get('/admin/categorias', requireAuth, ver, admin.listarCategoriasAdmin);
 router.post('/admin/categorias', requireAuth, gestionar, admin.crearCategoria);
 router.put('/admin/categorias/:id', requireAuth, gestionar, admin.actualizarCategoria);
 router.delete('/admin/categorias/:id', requireAuth, gestionar, admin.eliminarCategoria);
 
-router.get('/admin/cursos', requireAuth, gestionar, admin.listarCursosAdmin);
-router.get('/admin/cursos/:id', requireAuth, gestionar, admin.obtenerCursoAdmin);
+router.get('/admin/cursos', requireAuth, ver, admin.listarCursosAdmin);
+router.get('/admin/cursos/:id', requireAuth, ver, admin.obtenerCursoAdmin);
 router.put('/admin/cursos/:id', requireAuth, gestionar, admin.guardarConfigCurso);
 router.post(
   '/admin/cursos/:id/paquete',
@@ -119,7 +120,7 @@ router.post(
 );
 router.delete('/admin/cursos/:id/materiales/:materialId', requireAuth, gestionar, admin.eliminarMaterial);
 router.post('/admin/cursos/:id/matricular', requireAuth, gestionar, admin.matricularAlumnoCurso);
-router.get('/admin/cursos/:id/progreso-alumnos', requireAuth, gestionar, admin.listarProgresoAlumnos);
+router.get('/admin/cursos/:id/progreso-alumnos', requireAuth, ver, admin.listarProgresoAlumnos);
 router.post('/admin/cursos/:id/reintegrar-bridge', requireAuth, gestionar, admin.reintegrarBridge);
 
 router.get('/admin/portal', requireAuth, configPortal, admin.obtenerConfigPortal);

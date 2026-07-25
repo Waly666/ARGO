@@ -25,8 +25,20 @@ async function enriquecerUsuarioDoc(u) {
 
   const emp = await empleadoPorUsuarioId(json._id);
   if (emp) {
-    const esInstructor = await esEmpleadoInstructor(emp);
+    const porCargo = await esEmpleadoInstructor(emp);
     json.idEmpleado = emp.idEmpleado;
+    /** Portal: permiso explícito en Roles, o instructor con operar (compatibilidad). */
+    const permisos = datos.permisos || [];
+    const porRolPortal =
+      permisos.includes('*') || permisos.includes('instructores.mi_portal');
+    const porOperarInstructor =
+      porCargo &&
+      permisos.some((p) =>
+        ['jornadas.operar', 'programacion_cea.operar'].includes(p),
+      );
+    const puedePortal = porRolPortal || porOperarInstructor;
+    // Puede actuar como instructor por cargo o por permiso del portal (doble rol real).
+    const esInstructor = porCargo || puedePortal;
     json.empleado = {
       idEmpleado: emp.idEmpleado,
       nombreCompleto: nombreEmpleado(emp),
@@ -34,16 +46,7 @@ async function enriquecerUsuarioDoc(u) {
       idUsuario: emp.idUsuario ? String(emp.idUsuario) : json._id,
       esInstructor,
     };
-    /** Portal: permiso explícito en Roles, o instructor con operar (compatibilidad). */
-    const permisos = datos.permisos || [];
-    const porRolPortal =
-      permisos.includes('*') || permisos.includes('instructores.mi_portal');
-    const porOperarInstructor =
-      esInstructor &&
-      permisos.some((p) =>
-        ['jornadas.operar', 'programacion_cea.operar'].includes(p),
-      );
-    json.puedeUsarPortalInstructor = porRolPortal || porOperarInstructor;
+    json.puedeUsarPortalInstructor = puedePortal;
   } else {
     // No inventar idEmpleado desde un vínculo RRHH inconsistente.
     if (json.idEmpleado != null) {

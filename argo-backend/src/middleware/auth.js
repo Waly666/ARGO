@@ -94,7 +94,7 @@ function requireRole(...roles) {
     if (!req.user) return res.status(401).json({ message: 'No autenticado' });
     const rol = normalizarRol(req.user.rol);
     if (permitidos.length && !permitidos.includes(rol)) {
-      return res.status(403).json({ message: 'Sin permisos' });
+      return res.status(403).json({ message: 'Sin permisos', code: 'SIN_PERMISO' });
     }
     next();
   };
@@ -107,7 +107,10 @@ function requirePermiso(...claves) {
       const permisos = req.permisos || (await permisosParaRol(req.user.rol));
       req.permisos = permisos;
       if (tieneAlguno(permisos, claves)) return next();
-      return res.status(403).json({ message: 'Sin permisos para esta acción' });
+      return res.status(403).json({
+        message: 'Sin permisos para esta acción',
+        code: 'SIN_PERMISO',
+      });
     } catch (e) {
       next(e);
     }
@@ -119,6 +122,7 @@ function requireGestionProgramas(req, res, next) {
   if (!puedeGestionarProgramas(req.user.rol)) {
     return res.status(403).json({
       message: 'Sin permisos para gestionar programas.',
+      code: 'SIN_PERMISO',
     });
   }
   next();
@@ -127,7 +131,10 @@ function requireGestionProgramas(req, res, next) {
 function requireAdmin(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'No autenticado' });
   if (!esAdmin(req.user.rol)) {
-    return res.status(403).json({ message: 'Solo administradores pueden acceder a este recurso' });
+    return res.status(403).json({
+      message: 'Solo administradores pueden acceder a este recurso',
+      code: 'SIN_PERMISO',
+    });
   }
   next();
 }

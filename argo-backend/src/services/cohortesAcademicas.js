@@ -60,13 +60,31 @@ async function listarInstructores() {
   const cargos = cargoIds.length ? await Cargo.find({ idCargo: { $in: cargoIds } }).lean() : [];
   const cargoMap = new Map(cargos.map((c) => [c.idCargo, String(c.nombre || '')]));
 
-  const instructores = empleados
-    .filter((e) => /\binstructor/i.test(cargoMap.get(e.cargoId) || ''))
-    .map((e) => ({
+  const { permisosParaRol, tieneAlguno } = require('./rolesPermisos');
+  const Usuario = require('../models/Usuario');
+
+  const instructores = [];
+  for (const e of empleados) {
+    const cargo = cargoMap.get(e.cargoId) || '';
+    let ok = /\binstructor/i.test(cargo);
+    if (!ok && e.idUsuario) {
+      try {
+        const u = await Usuario.findById(e.idUsuario).lean();
+        if (u) {
+          const perms = await permisosParaRol(u.rol);
+          ok = tieneAlguno(perms || [], ['*', 'instructores.mi_portal', 'jornadas.operar', 'programacion_cea.operar']);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!ok) continue;
+    instructores.push({
       idEmpleado: e.idEmpleado,
       nombreCompleto: nombreEmpleado(e) || `Empleado ${e.idEmpleado}`,
-      cargo: cargoMap.get(e.cargoId) || '',
-    }));
+      cargo: cargo || 'Instructor (por permiso)',
+    });
+  }
 
   instructores.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto, 'es'));
   return instructores;

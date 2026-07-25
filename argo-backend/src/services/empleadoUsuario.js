@@ -9,7 +9,11 @@ const { normalizarIdSede, asegurarSedePrincipal } = require('../services/sedeCon
 const CARGO_ROL = [
   { test: (n) => /\bcajer/i.test(n), rol: 'cajero' },
   { test: (n) => /\binstructor/i.test(n), rol: 'instructor' },
+  { test: (n) => /\brecepcion/i.test(n), rol: 'recepcion' },
 ];
+
+/** Rol por defecto cuando se pide crear acceso automático sin cargo mapeado. */
+const ROL_AUTO_DEFAULT = 'usuario';
 
 function slugAscii(s) {
   return String(s || '')
@@ -250,13 +254,13 @@ async function vincularUsuarioExistente(emp, usuarioId, { cargoNombre } = {}) {
 
 /**
  * modoAcceso: 'auto' | 'ninguno' | 'vincular'
- * - auto: crea o sincroniza usuario según cargo (Cajero/Instructor)
+ * - auto: crea o sincroniza usuario (rol por cargo o 'usuario')
  * - ninguno: empleado sin cuenta de login
  * - vincular: enlaza idUsuarioExistente
  */
 async function procesarUsuarioEmpleado(
   emp,
-  { cargoNombre, creadoPor, modoAcceso = 'auto', idUsuarioExistente } = {},
+  { cargoNombre, creadoPor, modoAcceso = 'auto', idUsuarioExistente, rol } = {},
 ) {
   const modo = String(modoAcceso || 'auto').toLowerCase();
   if (modo === 'ninguno') {
@@ -266,18 +270,18 @@ async function procesarUsuarioEmpleado(
   if (modo === 'vincular') {
     return vincularUsuarioExistente(emp, idUsuarioExistente, { cargoNombre });
   }
-  return asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor });
+  return asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor, rol });
 }
 
-async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {}) {
+async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor, rol } = {}) {
   const e = normalizarEmpleadoLegacy(emp);
-  const rol = rolDesdeCargoNombre(cargoNombre);
-  if (!rol) return null;
+  const rolFinal = normalizarRol(rol || rolDesdeCargoNombre(cargoNombre) || ROL_AUTO_DEFAULT);
+  if (!rolFinal) return null;
 
   if (e.idUsuario) {
     const prev = await cargarUsuarioPorId(e.idUsuario);
     if (prev) {
-      await sincronizarDatosUsuario(prev, e, rol);
+      await sincronizarDatosUsuario(prev, e, rolFinal);
       return {
         existente: true,
         usuario: limpiarUsuario(prev),
@@ -290,7 +294,7 @@ async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {})
 
   const porEmpleado = await Usuario.findOne({ idEmpleado: e.idEmpleado });
   if (porEmpleado) {
-    await sincronizarDatosUsuario(porEmpleado, e, rol);
+    await sincronizarDatosUsuario(porEmpleado, e, rolFinal);
     return {
       existente: true,
       usuario: limpiarUsuario(porEmpleado),
@@ -321,7 +325,7 @@ async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {})
     nombres: nombresUsuario(e),
     apellidos: apellidosUsuario(e),
     email: email || undefined,
-    rol: normalizarRol(rol),
+    rol: rolFinal,
     activo: String(e.estado || 'activo').toLowerCase() !== 'retirado',
     passwordHash: await Usuario.hashPassword(passwordInicial),
     idEmpleado: e.idEmpleado,
@@ -336,7 +340,7 @@ async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor } = {})
     usuario: limpiarUsuario(doc),
     username: doc.username,
     passwordInicial,
-    rol: normalizarRol(rol),
+    rol: rolFinal,
     idUsuario: doc._id,
   };
 }

@@ -524,10 +524,10 @@
           <div>
             <h3 class="sec acceso-sec">Acceso al sistema</h3>
             <p class="hint acceso-hint" *ngIf="cargoSugiereAcceso()">
-              Cargo Cajero/Instructor: elija cómo asociar la cuenta de login. La sede del empleado se hereda al usuario automático.
+              Cargo Cajero/Instructor: al crear automático se asigna el rol correspondiente. La sede del empleado se hereda al usuario.
             </p>
             <p class="hint acceso-hint" *ngIf="!cargoSugiereAcceso()">
-              Opcional: solo si este empleado debe ingresar al sistema.
+              Crear automático genera una cuenta de login (rol usuario). Cajero/Instructor/Recepción usan su rol propio.
             </p>
           </div>
         </div>
@@ -544,7 +544,7 @@
           [class.active]="modoAcceso() === 'auto'"
           (click)="setModoAcceso('auto')">
           <span class="acceso-opcion-title">Crear automático</span>
-          <span class="acceso-opcion-desc">Login = documento. Solo aplica a Cajero o Instructor.</span>
+          <span class="acceso-opcion-desc">Crea usuario y muestra usuario/contraseña al guardar.</span>
         </button>
         <button
           type="button"

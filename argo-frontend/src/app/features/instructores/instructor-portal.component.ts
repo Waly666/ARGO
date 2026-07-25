@@ -66,7 +66,7 @@ export class InstructorPortalComponent implements OnInit {
     if (!this.auth.puedeUsarPortalInstructor()) {
       this.loading.set(false);
       this.error.set(
-        'No puede usar el portal del instructor. Verifique permisos del rol y que su usuario esté vinculado a un empleado con cargo de instructor en RRHH.',
+        'No puede usar el portal del instructor. Verifique que su rol tenga el permiso «Portal de instructores» y que su usuario esté vinculado a un empleado en RRHH.',
       );
       return;
     }
