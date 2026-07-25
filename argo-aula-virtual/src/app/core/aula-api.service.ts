@@ -153,6 +153,14 @@ export class AulaApiService {
     });
   }
 
+  cambiarPassword(passwordActual: string, passwordNueva: string): Observable<{ ok: boolean; message: string }> {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.base}/auth/cambiar-password`,
+      { passwordActual, passwordNueva },
+      { headers: this.auth.authHeader() },
+    );
+  }
+
   buscarEmpresas(q: string): Observable<{ _id: string; nombre: string; identificacion: string }[]> {
     return this.http.get<{ _id: string; nombre: string; identificacion: string }[]>(
       `${this.base}/empresas/buscar?q=${encodeURIComponent(q)}`,

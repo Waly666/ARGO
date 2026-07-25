@@ -1382,6 +1382,50 @@
   margin-bottom: 1.25rem;
 }
 
+.perfil-password-section {
+  background: color-mix(in srgb, #0ea5e9 6%, transparent);
+  border: 1px solid color-mix(in srgb, #0ea5e9 20%, transparent);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.perfil-password-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.perfil-password-field {
+  display: grid;
+  gap: 0.3rem;
+
+  span {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--dash-muted, #64748b);
+  }
+
+  input {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--av-primary-a18, #dbeafe);
+    background: #fff;
+    padding: 0.55rem 0.75rem;
+    font: inherit;
+
+    &:focus {
+      outline: none;
+      border-color: var(--dash-primary, #2563eb);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-primary, #2563eb) 18%, transparent);
+    }
+  }
+}
+
+.perfil-password-btn {
+  width: 100%;
+}
+
 .perfil-empresa-title {
   margin: 0 0 0.35rem;
   font-size: 0.95rem;

@@ -5,7 +5,7 @@ const {
 const { listarCategorias } = require('../services/aulaVirtualCategorias');
 const { listarPublicos, obtenerPublicoPorSlug } = require('../services/aulaVirtualBlog');
 const { obtenerConfigPortalPublica } = require('../services/aulaVirtualPortal');
-const { registrarPortal, loginPortal, buscarAlumnoRegistro } = require('../services/aulaVirtualAuth');
+const { registrarPortal, loginPortal, buscarAlumnoRegistro, cambiarPasswordPortal } = require('../services/aulaVirtualAuth');
 const {
   solicitarRegistroPortal,
   confirmarRegistroPortal,
@@ -309,6 +309,26 @@ exports.miPerfil = async (req, res, next) => {
     }
     res.json({ usuario: { ...req.portalUser, empresaId, empresaNombre } });
   } catch (e) {
+    next(e);
+  }
+};
+
+exports.cambiarPassword = async (req, res, next) => {
+  try {
+    const { passwordActual, passwordNueva } = req.body || {};
+    const out = await cambiarPasswordPortal({
+      email: req.portalUser?.email,
+      passwordActual,
+      passwordNueva,
+    });
+    res.json(out);
+  } catch (e) {
+    if (e.status) {
+      return res.status(e.status).json({
+        message: e.message,
+        codigo: e.code || undefined,
+      });
+    }
     next(e);
   }
 };

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, computed, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 
@@ -29,7 +30,7 @@ export type PanelAula = 'tablero' | 'cursos' | 'presenciales' | 'puntajes' | 'ce
 @Component({
   selector: 'av-aula',
   standalone: true,
-  imports: [CommonModule, RouterLink, ForoChatComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ForoChatComponent],
   templateUrl: './aula.component.html',
   styleUrl: './aula.component.scss',
 })
@@ -622,6 +623,14 @@ export class AulaComponent implements OnInit, OnDestroy {
   empresaMsgOk      = signal<string | null>(null);
   empresaMsgErr     = signal<string | null>(null);
 
+  // ── Cambiar contraseña ──
+  passwordActual = signal('');
+  passwordNueva = signal('');
+  passwordConfirm = signal('');
+  passwordSaving = signal(false);
+  passwordMsg = signal('');
+  passwordMsgError = signal(false);
+
   iniciarCambioEmpresa() {
     this.empresaEditando.set(true);
     this.empresaBusqueda.set('');
@@ -674,6 +683,47 @@ export class AulaComponent implements OnInit, OnDestroy {
     this.api.actualizarEmpresa(null).subscribe({
       next: () => { this.auth.updateEmpresa(null, null); },
       error: () => {},
+    });
+  }
+
+  guardarNuevaPassword() {
+    const actual = String(this.passwordActual() || '');
+    const nueva = String(this.passwordNueva() || '');
+    const confirm = String(this.passwordConfirm() || '');
+    this.passwordMsg.set('');
+    this.passwordMsgError.set(false);
+
+    if (!actual || !nueva || !confirm) {
+      this.passwordMsgError.set(true);
+      this.passwordMsg.set('Complete todos los campos.');
+      return;
+    }
+    if (nueva.length < 6) {
+      this.passwordMsgError.set(true);
+      this.passwordMsg.set('La nueva contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (nueva !== confirm) {
+      this.passwordMsgError.set(true);
+      this.passwordMsg.set('La confirmación no coincide con la nueva contraseña.');
+      return;
+    }
+
+    this.passwordSaving.set(true);
+    this.api.cambiarPassword(actual, nueva).subscribe({
+      next: (res) => {
+        this.passwordSaving.set(false);
+        this.passwordMsgError.set(false);
+        this.passwordMsg.set(res.message || 'Contraseña actualizada.');
+        this.passwordActual.set('');
+        this.passwordNueva.set('');
+        this.passwordConfirm.set('');
+      },
+      error: (err) => {
+        this.passwordSaving.set(false);
+        this.passwordMsgError.set(true);
+        this.passwordMsg.set(err?.error?.message || 'No se pudo cambiar la contraseña.');
+      },
     });
   }
 

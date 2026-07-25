@@ -319,6 +319,57 @@ async function loginPortal({ email, password }) {
   };
 }
 
+/** Cambio de contraseña del alumno en el portal (requiere contraseña actual). */
+async function cambiarPasswordPortal({ email, passwordActual, passwordNueva }) {
+  const mail = String(email || '').trim().toLowerCase();
+  const actual = String(passwordActual || '');
+  const nueva = String(passwordNueva || '');
+
+  if (!mail) {
+    const err = new Error('Sesión inválida');
+    err.status = 401;
+    throw err;
+  }
+  if (!actual || !nueva) {
+    const err = new Error('Indique la contraseña actual y la nueva');
+    err.status = 400;
+    throw err;
+  }
+  if (nueva.length < 6) {
+    const err = new Error('La nueva contraseña debe tener al menos 6 caracteres');
+    err.status = 400;
+    throw err;
+  }
+  if (actual === nueva) {
+    const err = new Error('La nueva contraseña debe ser distinta a la actual');
+    err.status = 400;
+    throw err;
+  }
+
+  const portal = await UsuarioPortal.findOne({ email: mail });
+  if (!portal || !portal.activo) {
+    const err = new Error('Usuario no encontrado');
+    err.status = 404;
+    throw err;
+  }
+
+  const ok = await bcrypt.compare(actual, portal.passwordHash);
+  if (!ok) {
+    const err = new Error('La contraseña actual no es correcta');
+    err.status = 403;
+    err.code = 'REAUTH_FAILED';
+    throw err;
+  }
+
+  portal.passwordHash = await bcrypt.hash(nueva, 10);
+  await portal.save();
+
+  return {
+    ok: true,
+    message: 'Contraseña actualizada correctamente.',
+  };
+}
+
 module.exports = {
   PORTAL_TIPO,
   signPortalToken,
@@ -329,4 +380,5 @@ module.exports = {
   crearCuentaPortal,
   registrarPortal,
   loginPortal,
+  cambiarPasswordPortal,
 };

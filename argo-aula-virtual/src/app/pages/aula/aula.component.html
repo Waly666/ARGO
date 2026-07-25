@@ -920,6 +920,62 @@
                 }
               </div>
 
+              <div class="perfil-password-section">
+                <h3 class="perfil-empresa-title">Cambiar contraseña</h3>
+                <p class="perfil-empresa-hint">
+                  Indique su contraseña actual y la nueva para actualizar el acceso al aula virtual.
+                </p>
+                @if (passwordMsg()) {
+                  <p
+                    class="empresa-msg"
+                    [class.empresa-msg-ok]="!passwordMsgError()"
+                    [class.empresa-msg-err]="passwordMsgError()"
+                  >
+                    {{ passwordMsg() }}
+                  </p>
+                }
+                <div class="perfil-password-grid">
+                  <label class="perfil-password-field">
+                    <span>Contraseña actual</span>
+                    <input
+                      type="password"
+                      autocomplete="current-password"
+                      [ngModel]="passwordActual()"
+                      (ngModelChange)="passwordActual.set($event)"
+                      [disabled]="passwordSaving()"
+                    />
+                  </label>
+                  <label class="perfil-password-field">
+                    <span>Contraseña nueva</span>
+                    <input
+                      type="password"
+                      autocomplete="new-password"
+                      [ngModel]="passwordNueva()"
+                      (ngModelChange)="passwordNueva.set($event)"
+                      [disabled]="passwordSaving()"
+                    />
+                  </label>
+                  <label class="perfil-password-field">
+                    <span>Confirmar nueva</span>
+                    <input
+                      type="password"
+                      autocomplete="new-password"
+                      [ngModel]="passwordConfirm()"
+                      (ngModelChange)="passwordConfirm.set($event)"
+                      [disabled]="passwordSaving()"
+                    />
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  class="dash-btn dash-btn-primary perfil-password-btn"
+                  (click)="guardarNuevaPassword()"
+                  [disabled]="passwordSaving()"
+                >
+                  {{ passwordSaving() ? 'Guardando…' : 'Actualizar contraseña' }}
+                </button>
+              </div>
+
               <button type="button" class="dash-btn dash-btn-outline" (click)="logout()">Cerrar sesión</button>
             </article>
           }

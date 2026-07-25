@@ -57,6 +57,7 @@ router.post('/auth/login', portalAuthLimiter, turnstilePortal, ctrl.login);
 router.post('/contacto', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarContacto);
 router.post('/pqr', buscarAlumnoLimiter, turnstilePortal, ctrl.enviarPqr);
 router.get('/auth/perfil', requirePortalAuth, ctrl.miPerfil);
+router.post('/auth/cambiar-password', requirePortalAuth, portalAuthLimiter, ctrl.cambiarPassword);
 router.patch('/auth/empresa', requirePortalAuth, ctrl.actualizarEmpresa);
 router.get('/empresas/buscar', requirePortalAuth, ctrl.buscarEmpresasPortal);
 router.get('/empresas/buscar-publico', buscarAlumnoLimiter, ctrl.buscarEmpresasPortal);
