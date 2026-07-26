@@ -235,7 +235,7 @@ table.argo.data-table.ingresos-todos-table {
     white-space: nowrap;
     font-weight: 700;
     position: sticky;
-    right: 9.5rem;
+    right: 12.5rem;
     z-index: 2;
     background: var(--bg-1, #061029);
     box-shadow: -6px 0 10px -8px rgba(0, 0, 0, 0.55);
@@ -248,8 +248,8 @@ table.argo.data-table.ingresos-todos-table {
 
   th.col-actions,
   td.col-actions {
-    min-width: 9.5rem;
-    width: 9.5rem;
+    min-width: 12.5rem;
+    width: 12.5rem;
     position: sticky;
     right: 0;
     z-index: 2;
@@ -355,13 +355,13 @@ table.argo.data-table.ingresos-todos-table {
   table.argo.data-table.ingresos-todos-table {
     th.col-valor,
     td.col-valor {
-      right: 8.2rem;
+      right: 11.5rem;
     }
 
     th.col-actions,
     td.col-actions {
-      min-width: 8.2rem;
-      width: 8.2rem;
+      min-width: 11.5rem;
+      width: 11.5rem;
     }
   }
 }
