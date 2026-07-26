@@ -28,6 +28,41 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 import { SoporteViewerModalComponent } from '../../shared/soporte-viewer-modal/soporte-viewer-modal.component';
 import { ReciboService } from '../../core/services/recibo.service';
 
+import {
+  SortDir,
+  cmpDate,
+  cmpNum,
+  cmpText,
+  readSortPrefs,
+  saveSortPrefs,
+} from './caja-listados-sort.helpers';
+
+type SortColEgreso =
+  | 'fecha'
+  | 'recibo'
+  | 'sesion'
+  | 'beneficiario'
+  | 'documento'
+  | 'concepto'
+  | 'tipo'
+  | 'placa'
+  | 'formaPago'
+  | 'valor';
+
+const SORT_KEY = 'argo-caja-egresos-todos-sort';
+const SORT_COLS: SortColEgreso[] = [
+  'fecha',
+  'recibo',
+  'sesion',
+  'beneficiario',
+  'documento',
+  'concepto',
+  'tipo',
+  'placa',
+  'formaPago',
+  'valor',
+];
+
 @Component({
   selector: 'argo-caja-egresos-todos',
   standalone: true,
@@ -76,6 +111,42 @@ export class CajaEgresosTodosComponent implements OnInit {
   authAdminPass = signal('');
   egresoPendienteAnular = signal<Egreso | null>(null);
 
+  sortCol = signal<SortColEgreso>('fecha');
+  sortDir = signal<SortDir>('desc');
+
+  itemsOrdenados = computed(() => {
+    const list = [...this.items()];
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    list.sort((a, b) => {
+      switch (col) {
+        case 'fecha':
+          return cmpDate(a.fechaEgreso, b.fechaEgreso, dir);
+        case 'recibo':
+          return cmpText(a.numRecibo, b.numRecibo, dir);
+        case 'sesion':
+          return cmpNum(a.idSesion, b.idSesion, dir);
+        case 'beneficiario':
+          return cmpText(a.pagueA, b.pagueA, dir);
+        case 'documento':
+          return cmpText(a.numeroDocumento, b.numeroDocumento, dir);
+        case 'concepto':
+          return cmpText(a.concepto, b.concepto, dir);
+        case 'tipo':
+          return cmpText(a.tipoEgresoDescr, b.tipoEgresoDescr, dir);
+        case 'placa':
+          return cmpText(a.placa, b.placa, dir);
+        case 'formaPago':
+          return cmpText(a.formaPago, b.formaPago, dir);
+        case 'valor':
+          return cmpNum(a.valorEgreso, b.valorEgreso, dir);
+        default:
+          return 0;
+      }
+    });
+    return list;
+  });
+
   capFecha = capFecha;
   capRecibo = capRecibo;
   capDoc = capDoc;
@@ -92,6 +163,11 @@ export class CajaEgresosTodosComponent implements OnInit {
   tituloSoporte = tituloSoporteEgreso;
 
   ngOnInit(): void {
+    const prefs = readSortPrefs<SortColEgreso>(SORT_KEY, 'fecha', 'desc');
+    if (SORT_COLS.includes(prefs.col)) {
+      this.sortCol.set(prefs.col);
+      this.sortDir.set(prefs.dir);
+    }
     this.cajaSvc.activa().subscribe({
       next: (r) => this.sesionAbiertaId.set(r.sesion?.idSesion ?? null),
       error: () => this.sesionAbiertaId.set(null),
@@ -106,6 +182,26 @@ export class CajaEgresosTodosComponent implements OnInit {
   setVista(v: VistaLista): void {
     this.vista.set(v);
     saveVistaLista(this.vistaKey, v);
+  }
+
+  toggleSort(col: SortColEgreso): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set(col === 'fecha' || col === 'valor' ? 'desc' : 'asc');
+    }
+    saveSortPrefs(SORT_KEY, this.sortCol(), this.sortDir());
+  }
+
+  sortIcon(col: SortColEgreso): string {
+    if (this.sortCol() !== col) return '↕';
+    return this.sortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  sortAria(col: SortColEgreso): string | null {
+    if (this.sortCol() !== col) return null;
+    return this.sortDir() === 'asc' ? 'ascending' : 'descending';
   }
 
   cargar(): void {

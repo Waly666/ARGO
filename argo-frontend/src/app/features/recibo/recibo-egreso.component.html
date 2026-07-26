@@ -28,6 +28,7 @@
 
     <table class="detalle">
       <tr><td>Comprobante N°</td><td>{{ d.numeroRecibo }}</td></tr>
+      <tr *ngIf="d.egreso.idEgreso"><td></td><td class="mono-id">{{ d.egreso.idEgreso }}</td></tr>
       <tr><td>Fecha pago</td><td>{{ fmtFecha(d.egreso.fechaEgreso) }}</td></tr>
       <tr><td>Beneficiario</td><td>{{ d.egreso.pagueA || '—' }}</td></tr>
       <tr><td>Documento</td><td>{{ d.egreso.numeroDocumento || '—' }}</td></tr>

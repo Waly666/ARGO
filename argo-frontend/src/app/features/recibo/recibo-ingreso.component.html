@@ -33,6 +33,7 @@
 
     <table class="detalle">
       <tr><td>Comprobante N°</td><td>{{ d.numeroRecibo }}</td></tr>
+      <tr *ngIf="idMongoIngreso(d)"><td></td><td class="mono-id">{{ idMongoIngreso(d) }}</td></tr>
       <tr><td>Fecha</td><td>{{ fmtFecha(d.ingreso['fecha'] || d.ingreso['createdAt']) }}</td></tr>
       <ng-container *ngIf="d.esIngresoCaja; else reciboAlumno">
         <tr><td>Tipo ingreso</td><td>{{ d.ingreso['tipoIngresoDescr'] || 'Ingreso de caja' }}</td></tr>

@@ -55,19 +55,51 @@
       <table class="argo data-table ingresos-todos-table">
         <thead>
           <tr>
-            <th class="col-fecha">Fecha</th>
-            <th class="col-recibo">Recibo</th>
-            <th class="col-sesion">Sesión</th>
-            <th class="col-pagador">Alumno / Pagador</th>
-            <th class="col-tipo">Tipo</th>
-            <th class="col-concepto">Concepto</th>
-            <th class="col-pago">Pago</th>
-            <th class="col-valor r">Valor</th>
+            <th class="col-fecha">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'fecha'" [attr.aria-sort]="sortAria('fecha')" (click)="toggleSort('fecha')">
+                Fecha <span class="sort-icon">{{ sortIcon('fecha') }}</span>
+              </button>
+            </th>
+            <th class="col-recibo">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'recibo'" [attr.aria-sort]="sortAria('recibo')" (click)="toggleSort('recibo')">
+                Recibo <span class="sort-icon">{{ sortIcon('recibo') }}</span>
+              </button>
+            </th>
+            <th class="col-sesion">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'sesion'" [attr.aria-sort]="sortAria('sesion')" (click)="toggleSort('sesion')">
+                Sesión <span class="sort-icon">{{ sortIcon('sesion') }}</span>
+              </button>
+            </th>
+            <th class="col-pagador">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'pagador'" [attr.aria-sort]="sortAria('pagador')" (click)="toggleSort('pagador')">
+                Alumno / Pagador <span class="sort-icon">{{ sortIcon('pagador') }}</span>
+              </button>
+            </th>
+            <th class="col-tipo">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'tipo'" [attr.aria-sort]="sortAria('tipo')" (click)="toggleSort('tipo')">
+                Tipo <span class="sort-icon">{{ sortIcon('tipo') }}</span>
+              </button>
+            </th>
+            <th class="col-concepto">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'concepto'" [attr.aria-sort]="sortAria('concepto')" (click)="toggleSort('concepto')">
+                Concepto <span class="sort-icon">{{ sortIcon('concepto') }}</span>
+              </button>
+            </th>
+            <th class="col-pago">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'formaPago'" [attr.aria-sort]="sortAria('formaPago')" (click)="toggleSort('formaPago')">
+                Pago <span class="sort-icon">{{ sortIcon('formaPago') }}</span>
+              </button>
+            </th>
+            <th class="col-valor r">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'valor'" [attr.aria-sort]="sortAria('valor')" (click)="toggleSort('valor')">
+                Valor <span class="sort-icon">{{ sortIcon('valor') }}</span>
+              </button>
+            </th>
             <th class="col-actions"></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let i of items()" [class.row-cuadre]="i.cuadreDescuadre">
+          <tr *ngFor="let i of itemsOrdenados()" [class.row-cuadre]="i.cuadreDescuadre">
             <td class="col-fecha">
               <span class="cell-plain" [ngClass]="capFecha(i.fecha || i.createdAt)">
                 {{ (i.fecha || i.createdAt) | date: 'dd/MM/yy HH:mm' }}
@@ -122,7 +154,7 @@
     </div>
 
     <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
-      <article class="list-card" *ngFor="let i of items()" [class.row-cuadre]="i.cuadreDescuadre">
+      <article class="list-card" *ngFor="let i of itemsOrdenados()" [class.row-cuadre]="i.cuadreDescuadre">
         <div class="card-title">
           <h3>{{ i.numRecibo || 'Ingreso' }}</h3>
           <p class="card-sub">

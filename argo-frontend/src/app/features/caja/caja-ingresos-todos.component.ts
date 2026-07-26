@@ -1,6 +1,6 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
-import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -28,6 +28,36 @@ import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.componen
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { SoporteViewerModalComponent } from '../../shared/soporte-viewer-modal/soporte-viewer-modal.component';
 import { tieneSoporteAdjunto } from '../../core/utils/pago-soporte.helpers';
+import {
+  SortDir,
+  cmpDate,
+  cmpNum,
+  cmpText,
+  readSortPrefs,
+  saveSortPrefs,
+} from './caja-listados-sort.helpers';
+
+type SortColIngreso =
+  | 'fecha'
+  | 'recibo'
+  | 'sesion'
+  | 'pagador'
+  | 'tipo'
+  | 'concepto'
+  | 'formaPago'
+  | 'valor';
+
+const SORT_KEY = 'argo-caja-ingresos-todos-sort';
+const SORT_COLS: SortColIngreso[] = [
+  'fecha',
+  'recibo',
+  'sesion',
+  'pagador',
+  'tipo',
+  'concepto',
+  'formaPago',
+  'valor',
+];
 
 @Component({
   selector: 'argo-caja-ingresos-todos',
@@ -78,6 +108,38 @@ export class CajaIngresosTodosComponent implements OnInit {
   authAdminPass = signal('');
   ingresoPendienteAnular = signal<any | null>(null);
 
+  sortCol = signal<SortColIngreso>('fecha');
+  sortDir = signal<SortDir>('desc');
+
+  itemsOrdenados = computed(() => {
+    const list = [...this.items()];
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    list.sort((a, b) => {
+      switch (col) {
+        case 'fecha':
+          return cmpDate(a.fecha || a.createdAt, b.fecha || b.createdAt, dir);
+        case 'recibo':
+          return cmpText(a.numRecibo, b.numRecibo, dir);
+        case 'sesion':
+          return cmpNum(a.idSesion, b.idSesion, dir);
+        case 'pagador':
+          return cmpText(this.pagadorLabel(a), this.pagadorLabel(b), dir);
+        case 'tipo':
+          return cmpText(a.tipoIngresoDescr, b.tipoIngresoDescr, dir);
+        case 'concepto':
+          return cmpText(this.conceptoLabel(a), this.conceptoLabel(b), dir);
+        case 'formaPago':
+          return cmpText(this.formaPagoLabel(a), this.formaPagoLabel(b), dir);
+        case 'valor':
+          return cmpNum(a.valor, b.valor, dir);
+        default:
+          return 0;
+      }
+    });
+    return list;
+  });
+
   capFecha = capFecha;
   capRecibo = capRecibo;
   capDoc = capDoc;
@@ -91,6 +153,11 @@ export class CajaIngresosTodosComponent implements OnInit {
   capRefComprobante = capRefComprobante;
 
   ngOnInit(): void {
+    const prefs = readSortPrefs<SortColIngreso>(SORT_KEY, 'fecha', 'desc');
+    if (SORT_COLS.includes(prefs.col)) {
+      this.sortCol.set(prefs.col);
+      this.sortDir.set(prefs.dir);
+    }
     this.configSvc.obtenerReciboEncabezado().subscribe({
       next: (c) => this.reciboSvc.registrarFormatoIngreso(c.formatoComprobanteIngreso),
       error: () => undefined,
@@ -109,6 +176,26 @@ export class CajaIngresosTodosComponent implements OnInit {
   setVista(v: VistaLista): void {
     this.vista.set(v);
     saveVistaLista(this.vistaKey, v);
+  }
+
+  toggleSort(col: SortColIngreso): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set(col === 'fecha' || col === 'valor' ? 'desc' : 'asc');
+    }
+    saveSortPrefs(SORT_KEY, this.sortCol(), this.sortDir());
+  }
+
+  sortIcon(col: SortColIngreso): string {
+    if (this.sortCol() !== col) return '↕';
+    return this.sortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  sortAria(col: SortColIngreso): string | null {
+    if (this.sortCol() !== col) return null;
+    return this.sortDir() === 'asc' ? 'ascending' : 'descending';
   }
 
   cargar(): void {

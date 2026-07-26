@@ -172,6 +172,7 @@ async function armarRecibo(id) {
         : null,
     detalle: detalleItems,
     numeroRecibo,
+    ingresoId: String(ing._id),
     qrDataUrl,
     qrTexto,
   };

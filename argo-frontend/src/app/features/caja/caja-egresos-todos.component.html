@@ -67,22 +67,62 @@
       <table class="argo data-table">
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Recibo</th>
-            <th>Sesión</th>
-            <th>Beneficiario</th>
-            <th>Documento</th>
-            <th>Concepto</th>
-            <th>Tipo</th>
-            <th>Placa</th>
-            <th>Forma pago</th>
-            <th class="r">Valor</th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'fecha'" [attr.aria-sort]="sortAria('fecha')" (click)="toggleSort('fecha')">
+                Fecha <span class="sort-icon">{{ sortIcon('fecha') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'recibo'" [attr.aria-sort]="sortAria('recibo')" (click)="toggleSort('recibo')">
+                Recibo <span class="sort-icon">{{ sortIcon('recibo') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'sesion'" [attr.aria-sort]="sortAria('sesion')" (click)="toggleSort('sesion')">
+                Sesión <span class="sort-icon">{{ sortIcon('sesion') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'beneficiario'" [attr.aria-sort]="sortAria('beneficiario')" (click)="toggleSort('beneficiario')">
+                Beneficiario <span class="sort-icon">{{ sortIcon('beneficiario') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'documento'" [attr.aria-sort]="sortAria('documento')" (click)="toggleSort('documento')">
+                Documento <span class="sort-icon">{{ sortIcon('documento') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'concepto'" [attr.aria-sort]="sortAria('concepto')" (click)="toggleSort('concepto')">
+                Concepto <span class="sort-icon">{{ sortIcon('concepto') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'tipo'" [attr.aria-sort]="sortAria('tipo')" (click)="toggleSort('tipo')">
+                Tipo <span class="sort-icon">{{ sortIcon('tipo') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'placa'" [attr.aria-sort]="sortAria('placa')" (click)="toggleSort('placa')">
+                Placa <span class="sort-icon">{{ sortIcon('placa') }}</span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'formaPago'" [attr.aria-sort]="sortAria('formaPago')" (click)="toggleSort('formaPago')">
+                Forma pago <span class="sort-icon">{{ sortIcon('formaPago') }}</span>
+              </button>
+            </th>
+            <th class="r">
+              <button type="button" class="th-sort" [class.active]="sortCol() === 'valor'" [attr.aria-sort]="sortAria('valor')" (click)="toggleSort('valor')">
+                Valor <span class="sort-icon">{{ sortIcon('valor') }}</span>
+              </button>
+            </th>
             <th class="col-alertas">Alertas</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let e of items()" [class.fila-sin-soporte]="!tieneSoporte(e)">
+          <tr *ngFor="let e of itemsOrdenados()" [class.fila-sin-soporte]="!tieneSoporte(e)">
             <td><span [ngClass]="capFecha(e.fechaEgreso)">{{ e.fechaEgreso | date: 'dd/MM/yyyy HH:mm' }}</span></td>
             <td><span [ngClass]="capRecibo(e.numRecibo)">{{ e.numRecibo || '—' }}</span></td>
             <td class="sesion-cell">
@@ -136,7 +176,7 @@
     </div>
 
     <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
-      <article class="list-card" *ngFor="let e of items()" [class.list-card-sin-soporte]="!tieneSoporte(e)">
+      <article class="list-card" *ngFor="let e of itemsOrdenados()" [class.list-card-sin-soporte]="!tieneSoporte(e)">
         <div class="card-title">
           <h3>{{ e.numRecibo || 'Egreso' }}</h3>
           <p class="card-sub">

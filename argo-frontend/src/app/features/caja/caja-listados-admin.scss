@@ -380,4 +380,42 @@ table.argo.data-table.ingresos-todos-table {
   }
 }
 
+th .th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-weight: 600;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    filter: none;
+    box-shadow: none;
+    color: var(--text);
+  }
+
+  &.active {
+    color: var(--accent-2);
+  }
+
+  .sort-icon {
+    font-size: 0.72rem;
+    opacity: 0.55;
+    line-height: 1;
+  }
+
+  &.active .sort-icon {
+    opacity: 1;
+  }
+}
+
 @import './caja-egreso-soporte-alerts.scss';

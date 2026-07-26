@@ -71,6 +71,15 @@ async function estilosMediaCarta() {
     .doc-badge .num { font-size: 11px; font-weight: 700; }
     .doc-badge .fecha { font-size: 9px; color: #555; margin-top: 2px; }
     .doc-badge .sede { font-size: 9px; color: #333; margin-top: 3px; font-weight: 600; }
+    .doc-badge .mongo-id {
+      font-size: 8px;
+      color: #555;
+      margin-top: 4px;
+      word-break: break-all;
+      font-family: "Courier New", Consolas, monospace;
+      max-width: 160px;
+      margin-left: auto;
+    }
     .meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -200,15 +209,22 @@ function bloqueEmpresaMediaCarta(config) {
   return textoLineas.join('\n');
 }
 
-function badgeComprobante(titulo, numeroRecibo, fecha, sede) {
+function badgeComprobante(titulo, numeroRecibo, fecha, sede, idMongo) {
   const sedeTxt = String(sede || '').trim();
+  const idTxt = String(idMongo || '').trim();
   return `
   <div class="doc-badge">
     <div class="tipo">${esc(titulo)}</div>
     <div class="num">N° ${esc(numeroRecibo)}</div>
     <div class="fecha">${esc(fmtFecha(fecha))}</div>
     ${sedeTxt ? `<div class="sede">Sede: ${esc(sedeTxt)}</div>` : ''}
+    ${idTxt ? `<div class="mongo-id">${esc(idTxt)}</div>` : ''}
   </div>`;
+}
+
+function idMongoMovimiento(doc) {
+  if (!doc) return '';
+  return String(doc._id || doc.id || doc.idIngreso || doc.idEgreso || doc.ingresoId || doc.egresoId || '').trim();
 }
 
 function botonImprimir() {
@@ -411,11 +427,12 @@ async function htmlIngresoValidadora(data) {
 
   const filasConMeta = [
     ['Comprobante N°', numeroRecibo],
+    ['', idMongoMovimiento(ingreso) || data.ingresoId || ''],
     ['Fecha', fmtFecha(ingreso.fecha || ingreso.createdAt)],
     ...filas,
     ...filasAnulacionComprobante(ingreso),
     ['Valor pagado', fmtMoney(ingreso.valor)],
-  ];
+  ].filter(([, v]) => String(v ?? '').trim());
 
   const bodyRows = filasConMeta
     .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`)
@@ -551,7 +568,13 @@ async function htmlIngresoMediaCarta(data) {
   ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
-    ${badgeComprobante(titulo, numeroRecibo, fecha, sedeNombre)}
+    ${badgeComprobante(
+      titulo,
+      numeroRecibo,
+      fecha,
+      sedeNombre,
+      idMongoMovimiento(ingreso) || data.ingresoId,
+    )}
   </header>
   <div class="meta-grid">
     <div class="meta-box">
@@ -589,11 +612,12 @@ async function htmlEgresoValidadora(data) {
 
   const filas = [
     ['Comprobante N°', numeroRecibo],
+    ['', idMongoMovimiento(egreso)],
     ['Fecha pago', fmtFecha(egreso.fechaEgreso)],
     ...buildFilasEgreso(data),
     ...filasAnulacionComprobante(egreso),
     ['Valor pagado', fmtMoney(egreso.valorEgreso)],
-  ];
+  ].filter(([, v]) => String(v ?? '').trim());
 
   const bodyRows = filas
     .map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`)
@@ -689,7 +713,7 @@ async function htmlEgresoMediaCarta(data) {
   ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
-    ${badgeComprobante(titulo, numeroRecibo, egreso.fechaEgreso, sedeNombre)}
+    ${badgeComprobante(titulo, numeroRecibo, egreso.fechaEgreso, sedeNombre, idMongoMovimiento(egreso))}
   </header>
   <div class="meta-grid">
     <div class="meta-box">

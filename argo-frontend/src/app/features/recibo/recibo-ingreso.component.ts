@@ -71,6 +71,12 @@ export class ReciboIngresoComponent implements OnInit {
     return d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
   }
 
+  idMongoIngreso(d: ReciboIngresoData): string {
+    const ing = d.ingreso || {};
+    const raw = d.ingresoId ?? ing['_id'] ?? ing['id'];
+    return raw != null ? String(raw).trim() : '';
+  }
+
   linea(): string {
     return '────────────────────────────────';
   }

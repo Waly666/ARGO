@@ -64,6 +64,7 @@ export interface ReciboIngresoData {
     estado?: string;
   } | null;
   numeroRecibo: string;
+  ingresoId?: string;
   qrDataUrl: string | null;
   qrTexto?: string;
 }
