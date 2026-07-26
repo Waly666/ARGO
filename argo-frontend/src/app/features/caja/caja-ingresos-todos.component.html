@@ -99,7 +99,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let i of itemsOrdenados()" [class.row-cuadre]="i.cuadreDescuadre">
+          <tr *ngFor="let i of itemsOrdenados()" [class.row-cuadre]="i.cuadreDescuadre" [class.row-anulado]="esAnulado(i)">
             <td class="col-fecha">
               <span class="cell-plain" [ngClass]="capFecha(i.fecha || i.createdAt)">
                 {{ (i.fecha || i.createdAt) | date: 'dd/MM/yy HH:mm' }}
@@ -107,6 +107,7 @@
             </td>
             <td class="col-recibo">
               <span class="cell-plain mono" [ngClass]="capRecibo(i.numRecibo)">{{ i.numRecibo || '—' }}</span>
+              <span class="badge err mini-badge" *ngIf="esAnulado(i)" [attr.title]="tituloAnulado(i)">ANULADO</span>
             </td>
             <td class="col-sesion sesion-cell">
               <ng-container *ngIf="i.idSesion; else sinSesion">
@@ -145,7 +146,8 @@
                 title="Abrir imagen del soporte de pago">
                 Sop.
               </button>
-              <button type="button" class="danger mini" (click)="anularIngreso(i)" title="Anular">Anular</button>
+              <button type="button" class="danger mini" *ngIf="!esAnulado(i)" (click)="anularIngreso(i)" title="Anular">Anular</button>
+              <span class="anulado-tag" *ngIf="esAnulado(i)" [attr.title]="tituloAnulado(i)">Anulado</span>
             </td>
           </tr>
           <tr *ngIf="items().length === 0"><td colspan="9" class="empty">Sin resultados.</td></tr>
@@ -154,9 +156,16 @@
     </div>
 
     <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
-      <article class="list-card" *ngFor="let i of itemsOrdenados()" [class.row-cuadre]="i.cuadreDescuadre">
+      <article
+        class="list-card"
+        *ngFor="let i of itemsOrdenados()"
+        [class.row-cuadre]="i.cuadreDescuadre"
+        [class.list-card-anulado]="esAnulado(i)">
         <div class="card-title">
-          <h3>{{ i.numRecibo || 'Ingreso' }}</h3>
+          <h3>
+            {{ i.numRecibo || 'Ingreso' }}
+            <span class="badge err mini-badge" *ngIf="esAnulado(i)" [attr.title]="tituloAnulado(i)">ANULADO</span>
+          </h3>
           <p class="card-sub">
             {{ pagadorLabel(i) }} · Doc. {{ docLabel(i) }} · {{ (i.fecha || i.createdAt) | date: 'dd/MM/yyyy HH:mm' }}
             <span *ngIf="i.idSesion"> · Sesión #{{ i.idSesion }}</span>
@@ -174,7 +183,8 @@
           <button type="button" class="ghost sm" *ngIf="i.idSesion" (click)="irAlCierre(i.idSesion)">Cierre #{{ i.idSesion }}</button>
           <button type="button" class="ghost sm" (click)="verRecibo(i)">Ver recibo</button>
           <button type="button" class="primary sm" *ngIf="tieneSoporte(i)" (click)="abrirSoporte(i)">Ver soporte</button>
-          <button type="button" class="danger sm" (click)="anularIngreso(i)">Anular</button>
+          <button type="button" class="danger sm" *ngIf="!esAnulado(i)" (click)="anularIngreso(i)">Anular</button>
+          <span class="anulado-tag" *ngIf="esAnulado(i)" [attr.title]="tituloAnulado(i)">Anulado</span>
         </div>
       </article>
       <p class="cards-empty empty" *ngIf="items().length === 0">Sin resultados.</p>

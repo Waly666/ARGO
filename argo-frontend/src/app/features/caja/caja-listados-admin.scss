@@ -418,4 +418,21 @@ th .th-sort {
   }
 }
 
+.list-card-anulado {
+  opacity: 0.72;
+
+  .card-title h3,
+  .card-sub,
+  .card-body {
+    text-decoration: line-through;
+    text-decoration-color: rgba(248, 114, 114, 0.55);
+  }
+
+  .badge,
+  .anulado-tag,
+  .card-foot {
+    text-decoration: none;
+  }
+}
+
 @import './caja-egreso-soporte-alerts.scss';

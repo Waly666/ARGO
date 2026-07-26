@@ -396,9 +396,22 @@ tr.row-anulado > td {
   text-decoration-color: rgba(248, 114, 114, 0.6);
 }
 tr.row-anulado > td .badge,
+tr.row-anulado > td .anulado-tag,
+tr.row-anulado > td .cap,
 tr.row-anulado > td button {
   text-decoration: none;
   opacity: 1;
+}
+
+.anulado-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--alert-danger, #f87171);
+  white-space: nowrap;
 }
 
 /* —— Cápsulas de color (estilo dashboard) —— */

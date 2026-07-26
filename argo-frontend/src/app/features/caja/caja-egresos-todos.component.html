@@ -122,9 +122,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let e of itemsOrdenados()" [class.fila-sin-soporte]="!tieneSoporte(e)">
+          <tr *ngFor="let e of itemsOrdenados()" [class.fila-sin-soporte]="!esAnulado(e) && !tieneSoporte(e)" [class.row-anulado]="esAnulado(e)">
             <td><span [ngClass]="capFecha(e.fechaEgreso)">{{ e.fechaEgreso | date: 'dd/MM/yyyy HH:mm' }}</span></td>
-            <td><span [ngClass]="capRecibo(e.numRecibo)">{{ e.numRecibo || '—' }}</span></td>
+            <td>
+              <span [ngClass]="capRecibo(e.numRecibo)">{{ e.numRecibo || '—' }}</span>
+              <span class="badge err mini-badge" *ngIf="esAnulado(e)" [attr.title]="tituloAnulado(e)">ANULADO</span>
+            </td>
             <td class="sesion-cell">
               <ng-container *ngIf="e.idSesion; else sinSesion">
                 <button type="button" class="linkish" (click)="filtrarPorSesion(e.idSesion)">#{{ e.idSesion }}</button>
@@ -143,18 +146,21 @@
             <td><span [ngClass]="capFormaPago(e.formaPago)">{{ e.formaPago || '—' }}</span></td>
             <td class="num"><span [ngClass]="capValorEgreso()">{{ e.valorEgreso | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></td>
             <td class="col-alertas">
-              <button
-                type="button"
-                class="row-alarm doc-alarm"
-                *ngIf="!tieneSoporte(e)"
-                (click)="onAlarmaSoporte(e, $event)"
-                [attr.title]="tituloSoporte(e)"
-                [attr.aria-label]="tituloSoporte(e)">
-                <span class="row-alarm-pulse" aria-hidden="true"></span>
-                <span class="row-alarm-icon">!</span>
-                <span class="row-alarm-label">Sop.</span>
-              </button>
-              <span *ngIf="tieneSoporte(e)" class="dim">OK</span>
+              <ng-container *ngIf="!esAnulado(e)">
+                <button
+                  type="button"
+                  class="row-alarm doc-alarm"
+                  *ngIf="!tieneSoporte(e)"
+                  (click)="onAlarmaSoporte(e, $event)"
+                  [attr.title]="tituloSoporte(e)"
+                  [attr.aria-label]="tituloSoporte(e)">
+                  <span class="row-alarm-pulse" aria-hidden="true"></span>
+                  <span class="row-alarm-icon">!</span>
+                  <span class="row-alarm-label">Sop.</span>
+                </button>
+                <span *ngIf="tieneSoporte(e)" class="dim">OK</span>
+              </ng-container>
+              <span *ngIf="esAnulado(e)" class="dim" [attr.title]="tituloAnulado(e)">—</span>
             </td>
             <td class="actions-cell">
               <button type="button" class="ghost mini" (click)="verRecibo(e)">Ver</button>
@@ -167,7 +173,8 @@
                 Soporte
               </button>
               <button type="button" class="primary mini" *ngIf="puedeEditarEgreso(e)" (click)="editarEgreso(e)">Editar</button>
-              <button type="button" class="danger mini" (click)="anularEgreso(e)">Anular</button>
+              <button type="button" class="danger mini" *ngIf="!esAnulado(e)" (click)="anularEgreso(e)">Anular</button>
+              <span class="anulado-tag" *ngIf="esAnulado(e)" [attr.title]="tituloAnulado(e)">Anulado</span>
             </td>
           </tr>
           <tr *ngIf="items().length === 0"><td colspan="12" class="empty">Sin resultados.</td></tr>
@@ -176,9 +183,16 @@
     </div>
 
     <div class="cards-grid" *ngIf="!loading() && vista() === 'cards'">
-      <article class="list-card" *ngFor="let e of itemsOrdenados()" [class.list-card-sin-soporte]="!tieneSoporte(e)">
+      <article
+        class="list-card"
+        *ngFor="let e of itemsOrdenados()"
+        [class.list-card-sin-soporte]="!esAnulado(e) && !tieneSoporte(e)"
+        [class.list-card-anulado]="esAnulado(e)">
         <div class="card-title">
-          <h3>{{ e.numRecibo || 'Egreso' }}</h3>
+          <h3>
+            {{ e.numRecibo || 'Egreso' }}
+            <span class="badge err mini-badge" *ngIf="esAnulado(e)" [attr.title]="tituloAnulado(e)">ANULADO</span>
+          </h3>
           <p class="card-sub">
             {{ e.pagueA || '—' }} · {{ e.fechaEgreso | date: 'dd/MM/yyyy HH:mm' }}
             <span *ngIf="e.idSesion"> · Sesión #{{ e.idSesion }}</span>
@@ -186,7 +200,7 @@
           <button
             type="button"
             class="row-alarm doc-alarm card-soporte-alarm"
-            *ngIf="!tieneSoporte(e)"
+            *ngIf="!esAnulado(e) && !tieneSoporte(e)"
             (click)="onAlarmaSoporte(e, $event)"
             [attr.title]="tituloSoporte(e)"
             [attr.aria-label]="tituloSoporte(e)">
@@ -206,7 +220,8 @@
           <button type="button" class="ghost sm" (click)="verRecibo(e)">Ver recibo</button>
           <button type="button" class="primary sm" *ngIf="tieneSoporte(e)" (click)="abrirSoporte(e)">Ver soporte</button>
           <button type="button" class="primary sm" *ngIf="puedeEditarEgreso(e)" (click)="editarEgreso(e)">Editar</button>
-          <button type="button" class="danger sm" (click)="anularEgreso(e)">Anular</button>
+          <button type="button" class="danger sm" *ngIf="!esAnulado(e)" (click)="anularEgreso(e)">Anular</button>
+          <span class="anulado-tag" *ngIf="esAnulado(e)" [attr.title]="tituloAnulado(e)">Anulado</span>
         </div>
       </article>
       <p class="cards-empty empty" *ngIf="items().length === 0">Sin resultados.</p>

@@ -198,6 +198,28 @@ export class CajaIngresosTodosComponent implements OnInit {
     return this.sortDir() === 'asc' ? 'ascending' : 'descending';
   }
 
+  esAnulado(i: { estado?: string; anulado?: boolean }): boolean {
+    if (i?.anulado === true) return true;
+    return String(i?.estado || '').trim().toUpperCase() === 'ANULADO';
+  }
+
+  tituloAnulado(i: { anuladoPor?: string; autorizadoPor?: string; anuladoEn?: string }): string {
+    const partes: string[] = [];
+    if (i?.anuladoPor) partes.push(`Anuló: ${i.anuladoPor}`);
+    if (i?.autorizadoPor) partes.push(`Autorizó: ${i.autorizadoPor}`);
+    if (i?.anuladoEn) {
+      try {
+        const d = new Date(i.anuladoEn);
+        if (!Number.isNaN(d.getTime())) {
+          partes.push(d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }));
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return partes.join(' · ') || 'Ingreso anulado';
+  }
+
   cargar(): void {
     this.loading.set(true);
     this.inform(null);

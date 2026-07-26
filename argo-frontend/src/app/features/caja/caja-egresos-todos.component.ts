@@ -157,7 +157,9 @@ export class CajaEgresosTodosComponent implements OnInit {
   capFormaPago = capFormaPago;
   capValorEgreso = capValorEgreso;
 
-  egresosSinSoporte = computed(() => this.items().filter((e) => !tieneSoporteEgreso(e)));
+  egresosSinSoporte = computed(() =>
+    this.items().filter((e) => !this.esAnulado(e) && !tieneSoporteEgreso(e)),
+  );
   cantSinSoporte = computed(() => this.egresosSinSoporte().length);
   tieneSoporte = tieneSoporteEgreso;
   tituloSoporte = tituloSoporteEgreso;
@@ -202,6 +204,28 @@ export class CajaEgresosTodosComponent implements OnInit {
   sortAria(col: SortColEgreso): string | null {
     if (this.sortCol() !== col) return null;
     return this.sortDir() === 'asc' ? 'ascending' : 'descending';
+  }
+
+  esAnulado(e: Egreso): boolean {
+    if (e?.anulado === true) return true;
+    return String(e?.estado || '').trim().toUpperCase() === 'ANULADO';
+  }
+
+  tituloAnulado(e: Egreso): string {
+    const partes: string[] = [];
+    if (e?.anuladoPor) partes.push(`Anuló: ${e.anuladoPor}`);
+    if (e?.autorizadoPor) partes.push(`Autorizó: ${e.autorizadoPor}`);
+    if (e?.anuladoEn) {
+      try {
+        const d = new Date(e.anuladoEn);
+        if (!Number.isNaN(d.getTime())) {
+          partes.push(d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }));
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return partes.join(' · ') || 'Egreso anulado';
   }
 
   cargar(): void {
@@ -285,6 +309,7 @@ export class CajaEgresosTodosComponent implements OnInit {
   }
 
   puedeEditarEgreso(e: Egreso): boolean {
+    if (this.esAnulado(e)) return false;
     if (e.anticipoNomina || e.idNovedadGenerada) return false;
     return !!e.idEgreso;
   }
