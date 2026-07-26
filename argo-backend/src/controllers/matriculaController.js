@@ -32,7 +32,18 @@ exports.previewRevalidacion = async (req, res, next) => {
 
 exports.crear = async (req, res, next) => {
   try {
-    const result = await crearMatriculaDesdeBody(req.body, req.idSede, { usuario: req.user, desdePortal: false });
+    const { publicOriginFromReq } = require('../utils/publicOrigin');
+    const { resolverBasePortal } = require('../utils/portalPublicUrl');
+    const origin = req.get('origin') || publicOriginFromReq(req);
+    const body = {
+      ...(req.body || {}),
+      origin,
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl: req.body?.portalBaseUrl,
+        origin,
+      }),
+    };
+    const result = await crearMatriculaDesdeBody(body, req.idSede, { usuario: req.user, desdePortal: false });
     res.status(201).json(result);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

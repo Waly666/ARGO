@@ -66,6 +66,71 @@ async function resolverEmpleadoPorDocumento(numeroDocumento) {
   return q ? Empleado.findOne(q).lean() : null;
 }
 
+/** Contacto denormalizado para el comprobante (empleado RRHH o tercero catálogo). */
+async function resolverContactoBeneficiarioEgreso(dto = {}, empleadoYa = null) {
+  const Tercero = require('../models/Tercero');
+  let idTercero = dto.idTercero ? String(dto.idTercero).trim() : null;
+  if (idTercero && !require('mongoose').Types.ObjectId.isValid(idTercero)) idTercero = null;
+
+  let emp = empleadoYa || null;
+  if (!emp && dto.numeroDocumento) {
+    emp = await resolverEmpleadoPorDocumento(dto.numeroDocumento);
+  }
+  if (emp) emp = normalizarEmpleadoLegacy(emp);
+
+  let ter = null;
+  if (idTercero) {
+    ter = await Tercero.findById(idTercero).lean();
+    if (!ter || ter.activo === false) {
+      const err = new Error('Tercero no encontrado');
+      err.status = 404;
+      throw err;
+    }
+  } else if (!emp && dto.numeroDocumento) {
+    ter = await Tercero.findOne({
+      identificacion: String(dto.numeroDocumento).trim(),
+      activo: { $ne: false },
+    }).lean();
+    if (ter) idTercero = String(ter._id);
+  }
+
+  if (emp) {
+    return {
+      idTercero: null,
+      idEmpleado: emp.idEmpleado ?? null,
+      pagueA: String(dto.pagueA || '').trim() || nombreCompletoEmpleado(emp),
+      numeroDocumento: String(emp.numeroDocumento || dto.numeroDocumento || '').trim(),
+      correoBeneficiario: String(emp.correoCorporativo || emp.correoPersonal || '').trim().toLowerCase() || null,
+      direccionBeneficiario: String(emp.direccion || '').trim() || null,
+      telefonoBeneficiario: String(emp.celular || emp.telefono || '').trim() || null,
+    };
+  }
+
+  if (ter) {
+    return {
+      idTercero,
+      idEmpleado: null,
+      pagueA:
+        String(dto.pagueA || '').trim() ||
+        String(ter.razonSocial || ter.nombres || ter.nombreComercial || '').trim(),
+      numeroDocumento: String(ter.identificacion || dto.numeroDocumento || '').trim(),
+      correoBeneficiario: String(ter.correo || '').trim().toLowerCase() || null,
+      direccionBeneficiario: String(ter.direccion || '').trim() || null,
+      telefonoBeneficiario: String(ter.telefono || '').trim() || null,
+    };
+  }
+
+  return {
+    idTercero: null,
+    idEmpleado: null,
+    pagueA: String(dto.pagueA || '').trim() || null,
+    numeroDocumento: String(dto.numeroDocumento || '').trim() || null,
+    correoBeneficiario: String(dto.correoBeneficiario || '').trim().toLowerCase() || null,
+    direccionBeneficiario: String(dto.direccionBeneficiario || '').trim() || null,
+    telefonoBeneficiario: String(dto.telefonoBeneficiario || '').trim() || null,
+  };
+}
+
 async function validarBeneficiarioEgreso(dto) {
   const tipoDoc = dto.tipoEgreso ? await resolverTipoEgresoDoc(dto.tipoEgreso) : null;
   const cfg = configDesdeTipoDoc(tipoDoc);
@@ -144,12 +209,26 @@ function pickBody(body) {
     'bancoDestino',
     'idPeriodo',
     'idEmpleado',
+    'idTercero',
+    'correoBeneficiario',
+    'direccionBeneficiario',
+    'telefonoBeneficiario',
     'placa',
   ]) {
     if (body[k] !== undefined && body[k] !== '') dto[k] = body[k];
   }
   if (dto.idPeriodo != null && dto.idPeriodo !== '') dto.idPeriodo = Number(dto.idPeriodo);
   if (dto.idEmpleado != null && dto.idEmpleado !== '') dto.idEmpleado = Number(dto.idEmpleado);
+  if (dto.idTercero != null && dto.idTercero !== '') dto.idTercero = String(dto.idTercero).trim();
+  if (dto.correoBeneficiario != null) {
+    dto.correoBeneficiario = String(dto.correoBeneficiario || '').trim().toLowerCase();
+  }
+  if (dto.direccionBeneficiario != null) {
+    dto.direccionBeneficiario = String(dto.direccionBeneficiario || '').trim();
+  }
+  if (dto.telefonoBeneficiario != null) {
+    dto.telefonoBeneficiario = String(dto.telefonoBeneficiario || '').trim();
+  }
   if (dto.numeroDocumento != null) dto.numeroDocumento = String(dto.numeroDocumento).trim();
   if (dto.pagueA) dto.pagueA = String(dto.pagueA).trim();
   if (dto.placa != null && dto.placa !== '') dto.placa = normalizarPlaca(dto.placa);
@@ -234,8 +313,12 @@ async function enriquecer(raw) {
     pagueA: e.pagueA || (emp ? nombreCompletoEmpleado(emp) : null) || null,
     numeroDocumento: e.numeroDocumento ?? null,
     idEmpleado: emp?.idEmpleado ?? null,
+    idTercero: e.idTercero ? String(e.idTercero) : null,
     empleadoNombre: emp ? nombreCompletoEmpleado(emp) : null,
     empleadoCargo: empN?.cargoNombre || null,
+    correoBeneficiario: e.correoBeneficiario || null,
+    direccionBeneficiario: e.direccionBeneficiario || null,
+    telefonoBeneficiario: e.telefonoBeneficiario || null,
     anticipoNomina: anticipo,
     idPeriodo: e.idPeriodo ?? null,
     idNovedadGenerada: e.idNovedadGenerada ?? null,
@@ -467,6 +550,15 @@ exports.crear = async (req, res, next) => {
     }
     const vinc = await validarBeneficiarioEgreso(dto);
     if (!vinc.ok) return res.status(vinc.status).json({ message: vinc.message });
+    const contacto = await resolverContactoBeneficiarioEgreso(dto, vinc.empleado);
+    Object.assign(dto, {
+      pagueA: contacto.pagueA || dto.pagueA,
+      numeroDocumento: contacto.numeroDocumento || dto.numeroDocumento,
+      idTercero: contacto.idTercero,
+      correoBeneficiario: contacto.correoBeneficiario,
+      direccionBeneficiario: contacto.direccionBeneficiario,
+      telefonoBeneficiario: contacto.telefonoBeneficiario,
+    });
     let urlSoporte = null;
     if (req.file?.filename) urlSoporte = upload.publicUrl('egresos', req.file.filename);
     const intangibleVal = validarPagoIntangibleEgreso(dto, urlSoporte);
@@ -512,7 +604,11 @@ exports.crear = async (req, res, next) => {
       ...doc,
       ...(authRet.datos || {}),
       numeroDocumento: dto.numeroDocumento || null,
-      idEmpleado: vinc.empleado?.idEmpleado ?? null,
+      idEmpleado: contacto.idEmpleado ?? vinc.empleado?.idEmpleado ?? null,
+      idTercero: contacto.idTercero || null,
+      correoBeneficiario: contacto.correoBeneficiario,
+      direccionBeneficiario: contacto.direccionBeneficiario,
+      telefonoBeneficiario: contacto.telefonoBeneficiario,
       anticipoNomina,
       idPeriodo: anticipoNomina ? dto.idPeriodo || null : null,
       idSesion: sesion.idSesion,
@@ -586,12 +682,21 @@ exports.actualizar = async (req, res, next) => {
       tipoEgreso: eg.tipoEgreso,
       numeroDocumento: eg.numeroDocumento,
       pagueA: eg.pagueA,
+      idTercero: eg.idTercero,
       formaPago: dto.formaPago ?? eg.formaPago,
       placa: dto.placa !== undefined ? dto.placa : eg.placa,
       ...dto,
     };
     const vinc = await validarBeneficiarioEgreso(merged);
     if (!vinc.ok) return res.status(vinc.status).json({ message: vinc.message });
+    const contacto = await resolverContactoBeneficiarioEgreso(merged, vinc.empleado);
+    dto.pagueA = contacto.pagueA || merged.pagueA;
+    dto.numeroDocumento = contacto.numeroDocumento || merged.numeroDocumento || null;
+    dto.idTercero = contacto.idTercero;
+    dto.idEmpleado = contacto.idEmpleado;
+    dto.correoBeneficiario = contacto.correoBeneficiario;
+    dto.direccionBeneficiario = contacto.direccionBeneficiario;
+    dto.telefonoBeneficiario = contacto.telefonoBeneficiario;
     if (req.file?.filename) dto.urlSoporte = upload.publicUrl('egresos', req.file.filename);
     const urlSoporteFinal = dto.urlSoporte || eg.urlSoporte;
     const intangibleVal = validarPagoIntangibleEgreso(
@@ -599,14 +704,6 @@ exports.actualizar = async (req, res, next) => {
       urlSoporteFinal,
     );
     if (!intangibleVal.ok) return res.status(intangibleVal.status).json({ message: intangibleVal.message });
-    if (vinc.empleado) {
-      dto.idEmpleado = vinc.empleado.idEmpleado;
-      dto.numeroDocumento = merged.numeroDocumento;
-      dto.pagueA = merged.pagueA;
-    } else {
-      dto.numeroDocumento = merged.numeroDocumento || null;
-      dto.idEmpleado = null;
-    }
     dto.placa = merged.placa ?? null;
     if (eg.anticipoNomina || eg.idNovedadGenerada) {
       return res.status(409).json({

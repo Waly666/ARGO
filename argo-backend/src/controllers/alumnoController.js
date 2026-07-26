@@ -39,7 +39,7 @@ const {
 const { ORIGEN_SISTEMA, normalizarOrigenAlumno } = require('../constants/origenAlumno');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
-const { provisionarAccesoPortalSiVirtual } = require('../services/portalAccesoAlumno');
+const { provisionarAccesoPortalSiVirtual, enviarAccesoPortalAlumno } = require('../services/portalAccesoAlumno');
 
 const GENEROS_VALIDOS = new Set(['M', 'F']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
@@ -783,6 +783,28 @@ exports.eliminar = async (req, res, next) => {
     if (!r) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json({ ok: true });
   } catch (e) {
+    next(e);
+  }
+};
+
+/** Crea/actualiza acceso portal y envía correo con usuario y contraseña. */
+exports.enviarAccesoPortal = async (req, res, next) => {
+  try {
+    const alumno = await buscarAlumnoPorIdParam(req.params.id);
+    if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+    const body = req.body || {};
+    const out = await enviarAccesoPortalAlumno(alumno, {
+      email: body.email,
+      password: body.password,
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl: body.portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
+      origin: req.get('origin') || publicOriginFromReq(req),
+    });
+    res.json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

@@ -32,7 +32,7 @@ import {
 } from '../../core/services/egreso.service';
 
 import { Empleado, EmpleadoService } from '../../core/services/empleado.service';
-
+import { Tercero, TerceroService } from '../../core/services/tercero.service';
 import { NominaService, PeriodoNomina } from '../../core/services/nomina.service';
 import { ReciboService } from '../../core/services/recibo.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
@@ -85,6 +85,7 @@ export class EgresosAdminComponent implements OnInit {
   private nominaSvc = inject(NominaService);
 
   private empSvc = inject(EmpleadoService);
+  private terSvc = inject(TerceroService);
 
   private catSvc = inject(CatalogoService);
 
@@ -111,6 +112,9 @@ export class EgresosAdminComponent implements OnInit {
   egresos = signal<Egreso[]>([]);
 
   empleados = signal<Empleado[]>([]);
+  terceros = signal<Tercero[]>([]);
+  terceroSelId = signal<string | null>(null);
+  terceroTexto = signal('');
 
   periodosNomina = signal<PeriodoNomina[]>([]);
 
@@ -282,6 +286,11 @@ export class EgresosAdminComponent implements OnInit {
 
       next: (e) => this.empleados.set((e || []).filter((x) => x.numeroDocumento)),
 
+    });
+
+    this.terSvc.listar().subscribe({
+      next: (t) => this.terceros.set(t || []),
+      error: () => this.terceros.set([]),
     });
 
     this.catSvc.list('tipoEgreso', { refresh: true }).subscribe({
@@ -549,6 +558,12 @@ export class EgresosAdminComponent implements OnInit {
 
       placa: '',
 
+      idTercero: null,
+
+      correoBeneficiario: '',
+      direccionBeneficiario: '',
+      telefonoBeneficiario: '',
+
     };
 
   }
@@ -671,9 +686,23 @@ export class EgresosAdminComponent implements OnInit {
 
       : null;
 
-    this.beneficiarioEmpleado.set(!!e.numeroDocumento);
+    const idTer = (e as Egreso & { idTercero?: string }).idTercero
+      ? String((e as Egreso & { idTercero?: string }).idTercero)
+      : null;
+    const ter =
+      (idTer ? this.terceros().find((t) => String(t._id) === idTer) : null) ||
+      (e.numeroDocumento && !emp
+        ? this.terceros().find((t) => t.identificacion === e.numeroDocumento)
+        : null);
 
+    this.beneficiarioEmpleado.set(!!emp || this.obligaEmpleado());
     this.empleadoSelId.set(emp?.idEmpleado ?? null);
+    this.terceroSelId.set(ter?._id ? String(ter._id) : idTer);
+    this.terceroTexto.set(
+      ter
+        ? `${ter.nombre || ter.razonSocial || ter.nombres || ''} — ${ter.identificacion || ''}`.trim()
+        : '',
+    );
 
     this.form.set({
 
@@ -704,6 +733,8 @@ export class EgresosAdminComponent implements OnInit {
       idPeriodo: e.idPeriodo ?? '',
 
       placa: e.placa || '',
+
+      idTercero: ter?._id ? String(ter._id) : idTer,
 
     });
 
@@ -923,15 +954,18 @@ export class EgresosAdminComponent implements OnInit {
 
     this.beneficiarioEmpleado.set(esEmpleado);
 
+    this.terceroSelId.set(null);
+    this.terceroTexto.set('');
+
     if (!esEmpleado) {
 
       this.empleadoSelId.set(null);
 
-      this.form.update((f) => ({ ...f, numeroDocumento: '' }));
+      this.form.update((f) => ({ ...f, numeroDocumento: '', pagueA: '', idTercero: null }));
 
     } else {
 
-      this.form.update((f) => ({ ...f, pagueA: f.pagueA || '' }));
+      this.form.update((f) => ({ ...f, pagueA: f.pagueA || '', idTercero: null }));
 
     }
 
@@ -945,7 +979,14 @@ export class EgresosAdminComponent implements OnInit {
 
     if (idEmpleado == null) {
 
-      this.form.update((f) => ({ ...f, numeroDocumento: '' }));
+      this.form.update((f) => ({
+        ...f,
+        numeroDocumento: '',
+        idTercero: null,
+        correoBeneficiario: '',
+        direccionBeneficiario: '',
+        telefonoBeneficiario: '',
+      }));
 
       return;
 
@@ -963,8 +1004,52 @@ export class EgresosAdminComponent implements OnInit {
 
       numeroDocumento: emp.numeroDocumento,
 
+      idTercero: null,
+
+      correoBeneficiario: String(emp.correoCorporativo || emp.correoPersonal || '').trim(),
+      direccionBeneficiario: String(emp.direccion || '').trim(),
+      telefonoBeneficiario: String(emp.celular || emp.telefono || '').trim(),
+
     }));
 
+  }
+
+  onTerceroChange(idTercero: string | null) {
+    this.terceroSelId.set(idTercero);
+    this.terceroTexto.set('');
+    if (!idTercero) {
+      this.form.update((f) => ({
+        ...f,
+        pagueA: '',
+        numeroDocumento: '',
+        idTercero: null,
+        correoBeneficiario: '',
+        direccionBeneficiario: '',
+        telefonoBeneficiario: '',
+      }));
+      return;
+    }
+    const ter = this.terceros().find((t) => String(t._id) === String(idTercero));
+    if (!ter) return;
+    this.terceroTexto.set(this.labelTercero(ter));
+    this.form.update((f) => ({
+      ...f,
+      pagueA: ter.nombre || ter.razonSocial || ter.nombres || '',
+      numeroDocumento: ter.identificacion || '',
+      idTercero: String(ter._id),
+      correoBeneficiario: String(ter.correo || '').trim(),
+      direccionBeneficiario: String(ter.direccion || '').trim(),
+      telefonoBeneficiario: String(ter.telefono || '').trim(),
+    }));
+  }
+
+  idTerceroOpt(t: Tercero): string | null {
+    return t._id ? String(t._id) : null;
+  }
+
+  labelTercero(t: Tercero): string {
+    const nom = t.nombre || t.razonSocial || t.nombres || 'Sin nombre';
+    return `${nom} — ${t.identificacion || ''}`.trim();
   }
 
 
@@ -1048,16 +1133,11 @@ export class EgresosAdminComponent implements OnInit {
 
     }
 
-    if (this.esAnticipoNomina() && !ed) {
-
-      if (!f.idPeriodo) {
-
-        this.inform('Seleccione el período de nómina donde se descontará.');
-
+    if (!this.esRetiroCaja() && !this.obligaEmpleado() && !this.beneficiarioEmpleado()) {
+      if (!this.terceroSelId() || !f.idTercero) {
+        this.inform('Seleccione el tercero del catálogo para este egreso.');
         return;
-
       }
-
     }
 
     if (this.obligaVehiculo()) {
@@ -1152,6 +1232,10 @@ export class EgresosAdminComponent implements OnInit {
 
     const payload: EgresoDto = { ...f };
 
+    if (this.beneficiarioEmpleado() || this.obligaEmpleado()) {
+      payload.idTercero = null;
+    }
+
     if (!this.esAnticipoNomina()) {
 
       delete payload.idPeriodo;
@@ -1180,13 +1264,6 @@ export class EgresosAdminComponent implements OnInit {
 
         this.mostrarForm.set(false);
 
-        if (this.modoSoloForm()) {
-          this.volverTrasSoloForm();
-          return;
-        }
-
-        this.cargar();
-
         let txt = ed ? 'Egreso actualizado.' : 'Egreso registrado.';
 
         const eg = res as Egreso & { novedadAnticipo?: { idNovedad: number; idPeriodo: number; periodoNombre?: string } };
@@ -1207,10 +1284,24 @@ export class EgresosAdminComponent implements OnInit {
 
         this.inform(txt);
 
-        if (!ed && eg.idEgreso) {
-          this.comprobanteAlertSvc.notificarDesdeEgreso(eg as unknown as Record<string, unknown>);
-          void this.preguntarImprimirRecibo(eg.idEgreso, eg.numRecibo);
+        const idRecibo = eg.idEgreso || ed?.idEgreso;
+        if (idRecibo) {
+          if (!ed) {
+            this.comprobanteAlertSvc.notificarDesdeEgreso(eg as unknown as Record<string, unknown>);
+          }
+          // Abrir comprobante de inmediato para imprimir (firma del beneficiario).
+          const abierto = this.reciboSvc.abrirHtmlEgreso(idRecibo, (m) => this.inform(m));
+          if (!abierto) {
+            this.inform('Permita ventanas emergentes para imprimir el comprobante de egreso.', true);
+          }
         }
+
+        if (this.modoSoloForm()) {
+          this.volverTrasSoloForm();
+          return;
+        }
+
+        this.cargar();
 
       },
 
@@ -1411,30 +1502,6 @@ export class EgresosAdminComponent implements OnInit {
   abrirReciboPantalla(e: Egreso) {
     this.reciboSvc.abrirHtmlEgreso(e.idEgreso, (m) => this.inform(m));
   }
-
-  private async preguntarImprimirRecibo(idEgreso: string, numRecibo?: string | null) {
-
-    const ref = numRecibo ? ` (${numRecibo})` : '';
-
-    const ok = await this.confirm.open({
-
-      title: 'Imprimir comprobante de egreso',
-
-      message: `¿Desea imprimir el comprobante de egreso${ref}? Incluye espacio para firma del beneficiario.`,
-
-      confirmLabel: 'Imprimir',
-
-      cancelLabel: 'Después',
-
-      variant: 'primary',
-
-    });
-
-    if (ok) this.reciboSvc.abrirHtmlEgreso(idEgreso, (m) => this.inform(m));
-
-  }
-
-
 
   labelTipoEgreso(row: TipoEgresoCat): string {
 

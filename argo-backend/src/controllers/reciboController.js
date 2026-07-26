@@ -129,6 +129,10 @@ async function armarRecibo(id) {
         numDoc: ing.documentoTercero || '—',
         nombreCompleto: ing.recibidoDe || ing.concepto || 'Tercero',
         tipoPersona: ing.tipoPersona || null,
+        correo: ing.correoPagador || null,
+        direccion: ing.direccionPagador || null,
+        celular: ing.telefonoPagador || null,
+        telefono: ing.telefonoPagador || null,
       }
     : alumno
       ? {
@@ -137,6 +141,7 @@ async function armarRecibo(id) {
           nombreCompleto: nombreAlumno(alumno),
           celular: alumno.celular,
           correo: alumno.correo,
+          direccion: alumno.direccion || null,
         }
       : {
           numDoc: numDocToString(ing.numDoc) || '—',

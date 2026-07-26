@@ -29,6 +29,11 @@ router.put('/:id/documentos/:idDoc', gestionar, upload.alumnos.single('archivo')
 router.get('/:id', ver, ctrl.porId);
 router.post('/', gestionar, files, ctrl.crear);
 router.put('/:id', gestionar, files, ctrl.actualizar);
+router.post(
+  '/:id/portal/enviar-acceso',
+  requirePermiso('alumnos.gestionar', 'aula_virtual.gestionar'),
+  ctrl.enviarAccesoPortal,
+);
 router.delete('/:id', gestionar, ctrl.eliminar);
 
 module.exports = router;

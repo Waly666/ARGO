@@ -546,6 +546,28 @@ table.nested { font-size: .88rem; }
   color: #f87171;
 }
 
+@keyframes alumno-campo-obligatorio-blink {
+  0%,
+  100% {
+    border-color: #ef4444;
+    box-shadow:
+      0 0 0 2px rgba(239, 68, 68, 0.72),
+      0 0 12px rgba(239, 68, 68, 0.24);
+  }
+  50% {
+    border-color: #fb7185;
+    box-shadow:
+      0 0 0 4px rgba(248, 113, 113, 0.18),
+      0 0 20px rgba(239, 68, 68, 0.52);
+  }
+}
+
+.portal-matricula input.campo-obligatorio-error {
+  border: 1px solid #ef4444 !important;
+  border-radius: 8px;
+  animation: alumno-campo-obligatorio-blink 0.68s ease-in-out infinite;
+}
+
 .portal-matricula-lead {
   margin: 0 0 10px;
 }

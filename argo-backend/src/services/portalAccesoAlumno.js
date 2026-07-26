@@ -149,6 +149,73 @@ async function enviarCredencialesPortal({ email, password, alumno, portalBaseUrl
   await sendMail({ to: email, subject, text, html, from: fromHeader });
 }
 
+/**
+ * Crea/actualiza UsuarioPortal (clave indicada o nueva) y envía correo con credenciales.
+ * Requiere SMTP. Destino = email indicado o correo de la ficha del alumno.
+ */
+async function enviarAccesoPortalAlumno(alumno, { email, password, portalBaseUrl, origin } = {}) {
+  if (!alumno) {
+    const err = new Error('Alumno no encontrado');
+    err.status = 404;
+    throw err;
+  }
+  if (!smtpConfigured()) {
+    const err = new Error(
+      'No hay SMTP configurado en el servidor. No se puede enviar el correo de acceso al portal.',
+    );
+    err.status = 503;
+    throw err;
+  }
+
+  const { crearUsuarioPortalAlumno } = require('./aulaVirtualMatricula');
+  const mail = String(email || alumno.correo || '').trim().toLowerCase();
+  if (!mail || !mail.includes('@')) {
+    const err = new Error('Indique un correo válido del alumno (usuario del portal).');
+    err.status = 400;
+    throw err;
+  }
+
+  const passIn = String(password || '').trim();
+  if (passIn && passIn.length < 6) {
+    const err = new Error('La contraseña del portal debe tener al menos 6 caracteres');
+    err.status = 400;
+    throw err;
+  }
+
+  const out = await crearUsuarioPortalAlumno({
+    numDoc: alumno.numDoc,
+    email: mail,
+    password: passIn || undefined,
+  });
+
+  const passEnviar = passIn || out.passwordTemporal;
+  if (!passEnviar) {
+    const err = new Error('No se pudo determinar la contraseña para el correo');
+    err.status = 500;
+    throw err;
+  }
+
+  await enviarCredencialesPortal({
+    email: out.email,
+    password: passEnviar,
+    alumno,
+    portalBaseUrl,
+    origin,
+  });
+
+  return {
+    ok: true,
+    creado: !!out.creado,
+    actualizado: !!out.actualizado,
+    email: out.email,
+    password: passEnviar,
+    correoEnviado: true,
+    message: `Correo de acceso enviado a ${out.email}.`,
+  };
+}
+
 module.exports = {
   provisionarAccesoPortalSiVirtual,
+  enviarCredencialesPortal,
+  enviarAccesoPortalAlumno,
 };

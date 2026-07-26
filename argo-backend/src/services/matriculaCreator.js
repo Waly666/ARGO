@@ -513,17 +513,52 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     usuarioPortal: null,
   };
 
-  const crearPortal =
-    !modoMigracion &&
-    esTarifaVirtual(t) &&
-    (body.crearUsuarioPortal === true || body.crearUsuarioPortal === 'true');
+  const crearPortal = !modoMigracion && esTarifaVirtual(t);
   if (crearPortal) {
+    const email = String(body.email || alumno?.correo || '').trim();
+    const password = String(body.password || '').trim();
+    if (!email || !email.includes('@')) {
+      const err = new Error('Correo portal es obligatorio para matrícula con tarifa virtual');
+      err.status = 400;
+      throw err;
+    }
+    if (!password || password.length < 6) {
+      const err = new Error('Contraseña portal es obligatoria (mínimo 6 caracteres) para matrícula virtual');
+      err.status = 400;
+      throw err;
+    }
     const { crearUsuarioPortalAlumno } = require('./aulaVirtualMatricula');
-    result.usuarioPortal = await crearUsuarioPortalAlumno({
+    const { enviarCredencialesPortal } = require('./portalAccesoAlumno');
+    const { smtpConfigured } = require('./mail');
+    const portal = await crearUsuarioPortalAlumno({
       numDoc,
-      email: body.email || alumno?.correo,
-      password: body.password,
+      email,
+      password,
     });
+    let correoEnviado = false;
+    let correoError = null;
+    if (smtpConfigured()) {
+      try {
+        await enviarCredencialesPortal({
+          email: portal.email,
+          password,
+          alumno,
+          portalBaseUrl: body.portalBaseUrl,
+          origin: body.origin,
+        });
+        correoEnviado = true;
+      } catch (e) {
+        correoError = e?.message || 'No se pudo enviar el correo';
+      }
+    } else {
+      correoError = 'SMTP no configurado';
+    }
+    result.usuarioPortal = {
+      ...portal,
+      passwordTemporal: password,
+      correoEnviado,
+      correoError,
+    };
   }
 
   return result;

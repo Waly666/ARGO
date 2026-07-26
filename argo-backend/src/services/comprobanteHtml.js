@@ -70,6 +70,7 @@ async function estilosMediaCarta() {
     }
     .doc-badge .num { font-size: 11px; font-weight: 700; }
     .doc-badge .fecha { font-size: 9px; color: #555; margin-top: 2px; }
+    .doc-badge .sede { font-size: 9px; color: #333; margin-top: 3px; font-weight: 600; }
     .meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -199,12 +200,14 @@ function bloqueEmpresaMediaCarta(config) {
   return textoLineas.join('\n');
 }
 
-function badgeComprobante(titulo, numeroRecibo, fecha) {
+function badgeComprobante(titulo, numeroRecibo, fecha, sede) {
+  const sedeTxt = String(sede || '').trim();
   return `
   <div class="doc-badge">
     <div class="tipo">${esc(titulo)}</div>
     <div class="num">N° ${esc(numeroRecibo)}</div>
     <div class="fecha">${esc(fmtFecha(fecha))}</div>
+    ${sedeTxt ? `<div class="sede">Sede: ${esc(sedeTxt)}</div>` : ''}
   </div>`;
 }
 
@@ -216,6 +219,23 @@ function metaRowHtml(label, value) {
   const v = String(value ?? '').trim();
   if (!v || v === '—') return '';
   return `<div class="meta-row"><span class="lbl">${esc(label)}</span><span class="val">${esc(v)}</span></div>`;
+}
+
+/** Espacio de firma: prueba de que el pagador entregó el dinero / recibió el comprobante. */
+function bloqueFirmaPagadorIngreso({ nombre, documento }) {
+  const nom = esc(nombre || 'Pagador');
+  const doc = esc(documento || '________________');
+  return `
+  <div class="nota-legal">
+    La firma del pagador en este recibo constituye prueba del pago realizado.
+  </div>
+  <div class="firma">
+    <div class="linea-firma"></div>
+    <p><strong>Pagué conforme el valor indicado</strong></p>
+    <p>${nom}</p>
+    <p>CC / NIT: ${doc}</p>
+    <p>Fecha: _________________________</p>
+  </div>`;
 }
 
 /** Filas adicionales en media carta (sin duplicar lo del bloque superior). */
@@ -265,6 +285,11 @@ function buildFilasIngreso(data) {
             ['Documento', alumno.numDoc],
             ...(alumno.tipoPersona
               ? [['Persona', alumno.tipoPersona === 'juridica' ? 'Jurídica' : 'Natural']]
+              : []),
+            ...(alumno.correo ? [['Correo', alumno.correo]] : []),
+            ...(alumno.direccion ? [['Dirección', alumno.direccion]] : []),
+            ...(alumno.celular || alumno.telefono
+              ? [['Teléfono', alumno.celular || alumno.telefono]]
               : []),
             ['Concepto', liquidacion?.descripcion || ingreso.concepto || '—'],
           ]
@@ -327,9 +352,12 @@ function buildFilasEgreso(data) {
   const { config, egreso } = data;
   return filasConSede(
     [
-      ['Pagado a', egreso.pagueA || '—'],
-      ...(egreso.numeroDocumento ? [['Documento', egreso.numeroDocumento]] : []),
+      ['Beneficiario', egreso.pagueA || '—'],
+      ['Documento', egreso.numeroDocumento || '—'],
       ...(egreso.empleadoCargo ? [['Cargo', egreso.empleadoCargo]] : []),
+      ['Correo', egreso.correoBeneficiario || '—'],
+      ['Dirección', egreso.direccionBeneficiario || '—'],
+      ['Teléfono', egreso.telefonoBeneficiario || '—'],
       ...(egreso.tipoEgresoDescr ? [['Tipo egreso', egreso.tipoEgresoDescr]] : []),
       ...(egreso.placa ? [['Placa vehículo', egreso.placa]] : []),
       ...(egreso.vehiculoMarca || egreso.vehiculoLinea
@@ -409,6 +437,11 @@ async function htmlIngresoValidadora(data) {
     : '';
 
   const titulo = (config.mensajeEncabezado || 'COMPROBANTE DE INGRESO').trim();
+  const alumno = data.alumno || {};
+  const firmaHtml = bloqueFirmaPagadorIngreso({
+    nombre: alumno.nombreCompleto,
+    documento: alumno.numDoc,
+  });
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -427,6 +460,7 @@ async function htmlIngresoValidadora(data) {
   ${detalleHtml}
   ${lineaHtml(32)}
   <div class="total">RECIBIDO: ${esc(fmtMoney(ingreso.valor))}</div>
+  ${firmaHtml}
   ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
   <div class="pie">${esc(config.mensajePie)}</div>
   ${botonImprimir()}
@@ -481,14 +515,17 @@ async function htmlIngresoMediaCarta(data) {
     ? `
       <p class="destacado">${esc(clienteNombre)}</p>
       ${metaRowHtml('Documento', clienteDoc)}
-      ${metaRowHtml('Sede', sedeNombre)}
       ${alumno.tipoPersona ? metaRowHtml('Persona', alumno.tipoPersona === 'juridica' ? 'Jurídica' : 'Natural') : ''}
+      ${alumno.correo ? metaRowHtml('Correo', alumno.correo) : ''}
+      ${alumno.direccion ? metaRowHtml('Dirección', alumno.direccion) : ''}
+      ${alumno.celular || alumno.telefono ? metaRowHtml('Teléfono', alumno.celular || alumno.telefono) : ''}
     `
     : `
       <p class="destacado">${esc(clienteNombre)}</p>
       ${metaRowHtml('Documento', clienteDoc)}
-      ${metaRowHtml('Sede', sedeNombre)}
       ${alumno.celular ? metaRowHtml('Teléfono', alumno.celular) : ''}
+      ${alumno.correo ? metaRowHtml('Correo', alumno.correo) : ''}
+      ${alumno.direccion ? metaRowHtml('Dirección', alumno.direccion) : ''}
     `;
 
   const metaPago = `
@@ -514,7 +551,7 @@ async function htmlIngresoMediaCarta(data) {
   ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
-    ${badgeComprobante(titulo, numeroRecibo, fecha)}
+    ${badgeComprobante(titulo, numeroRecibo, fecha, sedeNombre)}
   </header>
   <div class="meta-grid">
     <div class="meta-box">
@@ -532,6 +569,7 @@ async function htmlIngresoMediaCarta(data) {
     <div class="label">Total recibido</div>
     <div class="valor">${esc(fmtMoney(ingreso.valor))}</div>
   </div>
+  ${bloqueFirmaPagadorIngreso({ nombre: clienteNombre, documento: clienteDoc })}
   ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
   <div class="pie">${esc(config.mensajePie || '')}</div>
   ${botonImprimir()}
@@ -563,6 +601,9 @@ async function htmlEgresoValidadora(data) {
 
   const beneficiario = esc(egreso.pagueA || 'Beneficiario');
   const docBenef = esc(egreso.numeroDocumento || '________________');
+  const correoBenef = esc(egreso.correoBeneficiario || '—');
+  const dirBenef = esc(egreso.direccionBeneficiario || '—');
+  const telBenef = esc(egreso.telefonoBeneficiario || '—');
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -589,6 +630,9 @@ async function htmlEgresoValidadora(data) {
     <p><strong>Recibí conforme el valor indicado</strong></p>
     <p>${beneficiario}</p>
     <p>CC / NIT: ${docBenef}</p>
+    <p>Correo: ${correoBenef}</p>
+    <p>Dir: ${dirBenef}</p>
+    <p>Tel: ${telBenef}</p>
     <p>Fecha: _________________________</p>
   </div>
   ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
@@ -616,9 +660,11 @@ async function htmlEgresoMediaCarta(data) {
 
   const metaBeneficiario = `
       <p class="destacado">${esc(beneficiario)}</p>
-      ${metaRowHtml('Documento', docBenef !== '________________' ? docBenef : null)}
+      <div class="meta-row"><span class="lbl">Documento</span><span class="val">${esc(docBenef)}</span></div>
       ${egreso.empleadoCargo ? metaRowHtml('Cargo', egreso.empleadoCargo) : ''}
-      ${metaRowHtml('Sede', sedeNombre)}
+      <div class="meta-row"><span class="lbl">Correo</span><span class="val">${esc(egreso.correoBeneficiario || '—')}</span></div>
+      <div class="meta-row"><span class="lbl">Dirección</span><span class="val">${esc(egreso.direccionBeneficiario || '—')}</span></div>
+      <div class="meta-row"><span class="lbl">Teléfono</span><span class="val">${esc(egreso.telefonoBeneficiario || '—')}</span></div>
     `;
 
   const metaPago = `
@@ -643,7 +689,7 @@ async function htmlEgresoMediaCarta(data) {
   ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
-    ${badgeComprobante(titulo, numeroRecibo, egreso.fechaEgreso)}
+    ${badgeComprobante(titulo, numeroRecibo, egreso.fechaEgreso, sedeNombre)}
   </header>
   <div class="meta-grid">
     <div class="meta-box">

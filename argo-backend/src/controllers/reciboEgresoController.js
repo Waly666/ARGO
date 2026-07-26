@@ -2,8 +2,13 @@ const QRCode = require('qrcode');
 const Egreso = require('../models/Egreso');
 const Empleado = require('../models/Empleado');
 const Vehiculo = require('../models/Vehiculo');
+const Tercero = require('../models/Tercero');
 const { obtenerConfigRecibo, siguienteNumComprobanteEgreso } = require('../services/configRecibo');
-const { numeroDocumentoQuery, nombreCompletoEmpleado } = require('../utils/empleadoDoc');
+const {
+  numeroDocumentoQuery,
+  nombreCompletoEmpleado,
+  normalizarEmpleadoLegacy,
+} = require('../utils/empleadoDoc');
 const { normalizarPlaca } = require('../constants/vehiculo');
 const { models: cat } = require('../models/catalogos');
 const { generarHtmlEgreso } = require('../services/comprobanteHtml');
@@ -51,6 +56,7 @@ async function resolverBancoDestino(bancoDestino) {
         { idBanco: bancoDestino },
         { idbanco: bancoDestino },
         ...(Number.isFinite(n) ? [{ idBanco: n }, { idbanco: n }] : []),
+        { banco: new RegExp(String(bancoDestino).trim(), 'i') },
       ],
     })
     .lean();
@@ -61,21 +67,63 @@ async function enriquecerEgreso(raw) {
   const tipo = await resolverTipoEgreso(e.tipoEgreso);
   const cuenta = await resolverCuentaOrigen(e.cuentaOrigen);
   const banco = await resolverBancoDestino(e.bancoDestino);
+
   let emp = null;
-  if (e.numeroDocumento) {
+  if (e.idEmpleado != null && Number.isFinite(Number(e.idEmpleado))) {
+    emp = await Empleado.findOne({ idEmpleado: Number(e.idEmpleado) }).lean();
+  }
+  if (!emp && e.numeroDocumento) {
     const q = numeroDocumentoQuery(e.numeroDocumento);
     emp = q ? await Empleado.findOne(q).lean() : null;
   }
+  if (emp) emp = normalizarEmpleadoLegacy(emp);
+
+  let ter = null;
+  if (e.idTercero) {
+    ter = await Tercero.findById(e.idTercero).lean();
+  } else if (!emp && e.numeroDocumento) {
+    ter = await Tercero.findOne({
+      identificacion: String(e.numeroDocumento).trim(),
+      activo: { $ne: false },
+    }).lean();
+  }
+
+  const nombreTer = ter
+    ? String(ter.razonSocial || ter.nombres || ter.nombreComercial || '').trim()
+    : '';
+  const correo =
+    String(e.correoBeneficiario || '').trim() ||
+    (emp ? String(emp.correoCorporativo || emp.correoPersonal || '').trim() : '') ||
+    (ter ? String(ter.correo || '').trim() : '') ||
+    null;
+  const direccion =
+    String(e.direccionBeneficiario || '').trim() ||
+    (emp ? String(emp.direccion || '').trim() : '') ||
+    (ter ? String(ter.direccion || '').trim() : '') ||
+    null;
+  const telefono =
+    String(e.telefonoBeneficiario || '').trim() ||
+    (emp ? String(emp.celular || emp.telefono || '').trim() : '') ||
+    (ter ? String(ter.telefono || '').trim() : '') ||
+    null;
+
   const veh = e.placa ? await Vehiculo.findOne({ placa: normalizarPlaca(e.placa) }).lean() : null;
   return {
     idEgreso: String(e._id),
     numRecibo: e.numRecibo || null,
     fechaEgreso: e.fechaEgreso,
     valorEgreso: num(e.valorEgreso),
-    pagueA: e.pagueA || nombreCompletoEmpleado(emp) || null,
-    numeroDocumento: e.numeroDocumento ?? null,
+    pagueA: e.pagueA || nombreCompletoEmpleado(emp) || nombreTer || null,
+    numeroDocumento:
+      e.numeroDocumento ||
+      (emp ? emp.numeroDocumento : null) ||
+      (ter ? ter.identificacion : null) ||
+      null,
     empleadoNombre: nombreCompletoEmpleado(emp),
     empleadoCargo: emp?.cargoNombre || null,
+    correoBeneficiario: correo ? String(correo).toLowerCase() : null,
+    direccionBeneficiario: direccion || null,
+    telefonoBeneficiario: telefono || null,
     concepto: e.concepto,
     tipoEgresoDescr: tipo?.tipo || null,
     placa: e.placa || null,
@@ -142,20 +190,7 @@ async function armarReciboEgreso(id) {
     }
   }
 
-  const tituloEgreso =
-    (config.mensajeEncabezadoEgreso || 'COMPROBANTE DE EGRESO').trim() || 'COMPROBANTE DE EGRESO';
-  const pieEgreso =
-    config.mensajePieEgreso ||
-    config.mensajePie ||
-    'Constancia de pago. El beneficiario debe firmar o adjuntar factura/voucher como soporte.';
-
-  return {
-    config: { ...config, mensajeEncabezadoEgreso: tituloEgreso, mensajePieEgreso: pieEgreso },
-    egreso,
-    numeroRecibo: numeroComprobante,
-    qrDataUrl,
-    qrTexto,
-  };
+  return { config, egreso, numeroRecibo: numeroComprobante, qrDataUrl, qrTexto };
 }
 
 exports.datos = async (req, res, next) => {
@@ -171,12 +206,9 @@ exports.datos = async (req, res, next) => {
 exports.html = async (req, res, next) => {
   try {
     const data = await armarReciboEgreso(req.params.id);
-    if (!data) return res.status(404).send('Egreso no encontrado');
-
+    if (!data) return res.status(404).json({ message: 'Egreso no encontrado' });
     const html = await generarHtmlEgreso(data);
-
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
+    res.type('html').send(html);
   } catch (e) {
     next(e);
   }

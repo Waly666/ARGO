@@ -1,0 +1,224 @@
+<section class="cli-page admin-list-page card">
+  <nav class="caja-nav-link" style="margin-bottom: 0.5rem; display: flex; gap: 1rem; flex-wrap: wrap">
+    <a routerLink="/app/caja">← Resumen del día</a>
+  </nav>
+
+  <header #pageHead class="cli-head page-head">
+    <div class="cli-head-main">
+      <h1>Terceros (flujo de caja)</h1>
+      <p>
+        Personas o empresas que pagan o reciben dinero en caja sin ser alumnos. Se usan al registrar ingresos y
+        egresos; el comprobante puede mostrar correo, dirección y teléfono.
+      </p>
+    </div>
+    <div class="cli-head-actions head-actions">
+      @if (!loading() && !formAbierto()) {
+        <span class="cli-count">{{ terceros().length }} tercero{{ terceros().length === 1 ? '' : 's' }}</span>
+      }
+      @if (!formAbierto()) {
+        <button type="button" class="primary cli-btn-new" (click)="nuevo()">+ Nuevo tercero</button>
+      }
+    </div>
+  </header>
+
+  @if (msg() && !formAbierto()) {
+    <p class="cli-banner" [class.cli-banner--err]="msgError()" role="status">{{ msg() }}</p>
+  }
+
+  @if (formAbierto()) {
+    <div #formPanel class="cli-form-panel">
+      <header class="cli-form-head">
+        <div>
+          <span class="cli-form-kicker">{{ editId() ? 'Edición' : 'Alta' }}</span>
+          <h2>{{ editId() ? 'Editar tercero' : 'Nuevo tercero' }}</h2>
+          <p class="cli-form-sub">Datos de identidad y contacto para comprobantes de caja.</p>
+        </div>
+        <button type="button" class="ghost cli-form-close" (click)="cerrar()" aria-label="Cerrar">×</button>
+      </header>
+
+      @if (msg()) {
+        <p class="cli-banner cli-banner--in-form" [class.cli-banner--err]="msgError()" role="alert">{{ msg() }}</p>
+      }
+
+      <div class="cli-form cli-form-body argo-form-shell">
+        <section class="cli-section cli-section--sky">
+          <header class="cli-section-head">
+            <span class="cli-section-badge">1</span>
+            <h3>Identificación</h3>
+          </header>
+          <div class="cli-section-body">
+            <div class="cli-grid cli-grid--id">
+              <label class="cli-field">
+                <span class="cli-label">Tipo identificación</span>
+                <select [ngModel]="form().identificationDocumentCode" (ngModelChange)="onTipoIdentificacion($event)">
+                  @for (t of catalogos()?.tiposIdentificacion || []; track t.code) {
+                    <option [value]="t.code">{{ t.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="cli-field">
+                <span class="cli-label">Identificación *</span>
+                <input type="text" [ngModel]="form().identificacion" (ngModelChange)="patch({ identificacion: $event })" />
+              </label>
+              <label class="cli-field cli-field--dv">
+                <span class="cli-label">DV</span>
+                <input
+                  type="text"
+                  maxlength="1"
+                  [disabled]="!esNit()"
+                  [ngModel]="form().dv"
+                  (ngModelChange)="patch({ dv: $event })" />
+              </label>
+            </div>
+            <div class="cli-grid cli-grid--2" style="margin-top: 0.75rem">
+              <label class="cli-field">
+                <span class="cli-label">Organización legal</span>
+                <select [ngModel]="form().legalOrganizationCode" (ngModelChange)="onOrganizacion($event)">
+                  @for (o of catalogos()?.organizacionesLegales || []; track o.code) {
+                    <option [value]="o.code">{{ o.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="cli-field">
+                <span class="cli-label">Responsabilidad fiscal</span>
+                <select [ngModel]="form().responsabilidadFiscal" (ngModelChange)="patch({ responsabilidadFiscal: $event })">
+                  @for (r of catalogos()?.responsabilidadesFiscales || []; track r.code) {
+                    <option [value]="r.code">{{ r.code }} — {{ r.label }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="cli-section cli-section--amber">
+          <header class="cli-section-head">
+            <span class="cli-section-badge">2</span>
+            <h3>{{ esJuridica() ? 'Empresa' : 'Persona natural' }}</h3>
+          </header>
+          <div class="cli-section-body">
+            @if (esJuridica()) {
+              <div class="cli-grid cli-grid--razon">
+                <label class="cli-field cli-field--grow">
+                  <span class="cli-label">Razón social *</span>
+                  <input type="text" [ngModel]="form().razonSocial" (ngModelChange)="patch({ razonSocial: $event })" />
+                </label>
+                <label class="cli-field">
+                  <span class="cli-label">Nombre comercial</span>
+                  <input type="text" [ngModel]="form().nombreComercial" (ngModelChange)="patch({ nombreComercial: $event })" />
+                </label>
+              </div>
+            } @else {
+              <label class="cli-field">
+                <span class="cli-label">Nombres y apellidos *</span>
+                <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch({ nombres: $event })" />
+              </label>
+            }
+          </div>
+        </section>
+
+        <section class="cli-section cli-section--teal">
+          <header class="cli-section-head">
+            <span class="cli-section-badge">3</span>
+            <h3>Contacto y ubicación</h3>
+          </header>
+          <div class="cli-section-body cli-stack">
+            <div class="cli-grid cli-grid--contact">
+              <label class="cli-field">
+                <span class="cli-label">Correo</span>
+                <input type="email" [ngModel]="form().correo" (ngModelChange)="patch({ correo: $event })" />
+              </label>
+              <div class="cli-field cli-field--telefono">
+                <span class="cli-label">Teléfono</span>
+                <argo-celular-input
+                  modo="telefono"
+                  placeholder="601 234 5678"
+                  [value]="form().telefono || ''"
+                  (valueChange)="patch({ telefono: $event })" />
+              </div>
+            </div>
+            <div class="cli-municipio-row">
+              <div class="cli-field cli-field--municipio">
+                <argo-municipio-buscar
+                  label="Municipio"
+                  placeholder="Escriba municipio o departamento…"
+                  [modoCombo]="true"
+                  [textoInicial]="municipioTexto()"
+                  (seleccionado)="onMunicipio($event)"
+                  (limpiado)="onMunicipioLimpiado()"
+                  (textoChange)="onMunicipioTexto($event)" />
+              </div>
+              <label class="cli-field cli-field--mun-code">
+                <span class="cli-label">Cód. Divipola</span>
+                <input type="text" class="mono" readonly [ngModel]="form().municipioCodigo || ''" placeholder="—" />
+              </label>
+            </div>
+            <label class="cli-field">
+              <span class="cli-label">Dirección</span>
+              <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch({ direccion: $event })" />
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <footer class="cli-form-actions">
+        <button type="button" class="ghost" (click)="cerrar()">Cancelar</button>
+        <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar tercero' }}
+        </button>
+      </footer>
+    </div>
+  } @else {
+    <div class="toolbar cli-toolbar">
+      <span class="cli-search-icon" aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        class="cli-search"
+        placeholder="Buscar por nombre o identificación…"
+        [ngModel]="filtro()"
+        (ngModelChange)="filtro.set($event)"
+        (keyup.enter)="recargar()" />
+      <button type="button" class="ghost" (click)="recargar()">Buscar</button>
+    </div>
+
+    @if (loading()) {
+      <p class="cli-empty">Cargando terceros…</p>
+    } @else if (!terceros().length) {
+      <div class="cli-empty cli-empty--card">
+        <span class="cli-empty-icon" aria-hidden="true">◎</span>
+        <p>No hay terceros registrados.</p>
+        <button type="button" class="ghost" (click)="nuevo()">Crear el primero</button>
+      </div>
+    } @else {
+      <div class="table-wrap cli-table-wrap">
+        <table class="argo data-table cli-table">
+          <thead>
+            <tr>
+              <th>Identificación</th>
+              <th>Nombre / Razón social</th>
+              <th>Correo</th>
+              <th>Teléfono</th>
+              <th>Municipio</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of terceros(); track t._id) {
+              <tr>
+                <td class="cli-id">{{ t.identificacion }}{{ t.dv ? '-' + t.dv : '' }}</td>
+                <td class="cli-name">{{ t.nombre || t.razonSocial || t.nombres }}</td>
+                <td>{{ t.correo || '—' }}</td>
+                <td>{{ t.telefono || '—' }}</td>
+                <td class="cli-mun">{{ t.municipioNombre || '—' }}</td>
+                <td class="cli-actions">
+                  <button type="button" class="ghost sm" (click)="editar(t)">Editar</button>
+                  <button type="button" class="ghost sm danger" (click)="eliminar(t)">Desactivar</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

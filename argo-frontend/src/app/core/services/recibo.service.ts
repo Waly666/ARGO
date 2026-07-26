@@ -18,6 +18,9 @@ export interface ReciboEgresoData {
     numeroDocumento?: string | null;
     empleadoNombre?: string | null;
     empleadoCargo?: string | null;
+    correoBeneficiario?: string | null;
+    direccionBeneficiario?: string | null;
+    telefonoBeneficiario?: string | null;
     concepto: string;
     tipoEgresoDescr?: string | null;
     formaPago?: string | null;
@@ -48,7 +51,9 @@ export interface ReciboIngresoData {
     tipoDoc?: string;
     nombreCompleto: string;
     celular?: string;
+    telefono?: string;
     correo?: string;
+    direccion?: string;
     tipoPersona?: 'natural' | 'juridica' | null;
   };
   liquidacion: {

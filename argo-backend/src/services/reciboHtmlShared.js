@@ -29,7 +29,7 @@ function filasConSede(filas, config) {
   const nombre = nombreSedeVisible(config);
   if (!nombre) return filas;
   const row = ['Sede', nombre];
-  const idx = filas.findIndex(([k]) => k === 'Fecha');
+  const idx = filas.findIndex(([k]) => k === 'Fecha' || k === 'Fecha pago');
   if (idx >= 0) return [...filas.slice(0, idx + 1), row, ...filas.slice(idx + 1)];
   return [row, ...filas];
 }

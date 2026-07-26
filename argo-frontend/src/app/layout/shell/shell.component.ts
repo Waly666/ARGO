@@ -779,6 +779,15 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Terceros',
+          path: '/app/caja/terceros',
+          icon: '◎',
+          iconTone: 'teal',
+          section: 'TURNO',
+          permiso: ['caja.turno', 'caja.admin'],
+        },
+        {
+          kind: 'link',
           label: 'Clases CEA pendientes',
           path: '/app/programacion-cea/clases-hoy',
           icon: '◷',

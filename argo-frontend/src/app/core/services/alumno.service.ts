@@ -330,6 +330,30 @@ export class AlumnoService {
     return this.http.delete<{ ok: boolean }>(`${this.base}/${id}`);
   }
 
+  /** Crea/actualiza acceso al portal y envía correo con usuario y contraseña. */
+  enviarAccesoPortal(
+    id: string,
+    body?: { email?: string; password?: string },
+  ): Observable<{
+    ok: boolean;
+    creado?: boolean;
+    actualizado?: boolean;
+    email: string;
+    password: string;
+    correoEnviado: boolean;
+    message: string;
+  }> {
+    return this.http.post<{
+      ok: boolean;
+      creado?: boolean;
+      actualizado?: boolean;
+      email: string;
+      password: string;
+      correoEnviado: boolean;
+      message: string;
+    }>(`${this.base}/${encodeURIComponent(id)}/portal/enviar-acceso`, body || {});
+  }
+
   documentosRequeridos(id: string): Observable<DocumentosRequeridosRes> {
     return this.http.get<DocumentosRequeridosRes>(`${this.base}/${id}/documentos-requeridos`);
   }

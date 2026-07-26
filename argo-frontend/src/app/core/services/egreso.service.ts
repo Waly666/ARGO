@@ -93,6 +93,8 @@ export interface Egreso {
 
   idEmpleado?: number | null;
 
+  idTercero?: string | null;
+
   empleadoNombre?: string | null;
 
   empleadoCargo?: string | null;
@@ -204,6 +206,13 @@ export interface EgresoDto {
   idPeriodo?: number | '';
 
   placa?: string;
+
+  /** FK catálogo terceros caja (beneficiario no empleado). */
+  idTercero?: string | null;
+
+  correoBeneficiario?: string | null;
+  direccionBeneficiario?: string | null;
+  telefonoBeneficiario?: string | null;
 
 }
 

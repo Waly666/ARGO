@@ -29,9 +29,12 @@
     <table class="detalle">
       <tr><td>Comprobante N°</td><td>{{ d.numeroRecibo }}</td></tr>
       <tr><td>Fecha pago</td><td>{{ fmtFecha(d.egreso.fechaEgreso) }}</td></tr>
-      <tr><td>Pagado a</td><td>{{ d.egreso.pagueA }}</td></tr>
-      <tr *ngIf="d.egreso.numeroDocumento"><td>Documento</td><td>{{ d.egreso.numeroDocumento }}</td></tr>
+      <tr><td>Beneficiario</td><td>{{ d.egreso.pagueA || '—' }}</td></tr>
+      <tr><td>Documento</td><td>{{ d.egreso.numeroDocumento || '—' }}</td></tr>
       <tr *ngIf="d.egreso.empleadoCargo"><td>Cargo</td><td>{{ d.egreso.empleadoCargo }}</td></tr>
+      <tr><td>Correo</td><td>{{ d.egreso.correoBeneficiario || '—' }}</td></tr>
+      <tr><td>Dirección</td><td>{{ d.egreso.direccionBeneficiario || '—' }}</td></tr>
+      <tr><td>Teléfono</td><td>{{ d.egreso.telefonoBeneficiario || '—' }}</td></tr>
       <tr *ngIf="d.egreso.tipoEgresoDescr"><td>Tipo egreso</td><td>{{ d.egreso.tipoEgresoDescr }}</td></tr>
       <tr *ngIf="d.egreso.nombreAutoriza || d.egreso.autorizadoPor">
         <td>Autorizó</td>
@@ -63,6 +66,9 @@
       <p><strong>Recibí conforme el valor indicado</strong></p>
       <p>{{ d.egreso.pagueA }}</p>
       <p>CC / NIT: {{ d.egreso.numeroDocumento || '________________' }}</p>
+      <p>Correo: {{ d.egreso.correoBeneficiario || '—' }}</p>
+      <p>Dir: {{ d.egreso.direccionBeneficiario || '—' }}</p>
+      <p>Tel: {{ d.egreso.telefonoBeneficiario || '—' }}</p>
       <p>Fecha: _________________________</p>
     </div>
 

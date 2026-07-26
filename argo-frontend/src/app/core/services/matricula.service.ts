@@ -61,6 +61,8 @@ export interface MatriculaCrearRes {
     email: string;
     numDoc: number;
     passwordTemporal: string | null;
+    correoEnviado?: boolean;
+    correoError?: string | null;
   } | null;
   ajuste?: {
     valorCatalogo: number;

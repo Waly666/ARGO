@@ -470,6 +470,13 @@ export const routes: Routes = [
               import('./features/caja/ingresos-caja-form.component').then((m) => m.IngresosCajaFormComponent),
           },
           {
+            path: 'terceros',
+            canActivate: [permisoGuard],
+            data: { permiso: ['caja.turno', 'caja.admin'] },
+            loadComponent: () =>
+              import('./features/caja/caja-terceros.component').then((m) => m.CajaTercerosComponent),
+          },
+          {
             path: 'egresos',
             loadComponent: () =>
               import('./features/caja/caja-egresos-sesion.component').then((m) => m.CajaEgresosSesionComponent),

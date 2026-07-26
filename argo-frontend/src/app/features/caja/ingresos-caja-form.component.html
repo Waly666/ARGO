@@ -2,6 +2,7 @@
   <nav class="caja-nav-link">
     <a routerLink="/app/caja">← Resumen del día</a>
     <a routerLink="/app/caja/ingresos">← Lista ingresos de mi caja</a>
+    <a routerLink="/app/caja/terceros">Terceros</a>
     <span class="caja-mini" [class.ok]="cajaAbierta()" [class.warn]="!cajaAbierta()">
       {{ cajaAbierta() ? 'Caja #' + sesionId() + ' abierta' : 'Caja cerrada — abra en Resumen' }}
     </span>
@@ -48,7 +49,67 @@
         placeholder="Ej. Contrato capacitación empresa XYZ, aporte propietario…" />
     </label>
 
+    <h3 class="sec" *ngIf="idTipoIngreso()">2. Quién entrega el dinero</h3>
     <div class="row" *ngIf="idTipoIngreso()">
+      <div class="col-12">
+        <div class="toggle-row">
+          <label class="radio-chip">
+            <input type="radio" name="tipoPag" [checked]="tipoPagador() === 'tercero'" (change)="setTipoPagador('tercero')" />
+            Tercero (catálogo)
+          </label>
+          <label class="radio-chip">
+            <input type="radio" name="tipoPag" [checked]="tipoPagador() === 'empleado'" (change)="setTipoPagador('empleado')" />
+            Empleado
+          </label>
+          <label class="radio-chip">
+            <input type="radio" name="tipoPag" [checked]="tipoPagador() === 'libre'" (change)="setTipoPagador('libre')" />
+            Texto libre
+          </label>
+        </div>
+        <p class="hint">
+          Preferible usar el catálogo de
+          <a routerLink="/app/caja/terceros">Terceros</a>
+          o un empleado de RRHH para que el recibo muestre correo, dirección y teléfono.
+        </p>
+      </div>
+    </div>
+
+    <div class="row" *ngIf="idTipoIngreso() && tipoPagador() === 'empleado'">
+      <div class="col-12">
+        <argo-catalogo-enum-buscar
+          label="Empleado *"
+          placeholder="Seleccione o escriba empleado…"
+          [textoInicial]="empleadoTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesEmpleado()"
+          (seleccionado)="onEmpleadoPick($event)"
+          (limpiado)="onEmpleadoLimpiar()"
+        />
+      </div>
+    </div>
+
+    <div class="row" *ngIf="idTipoIngreso() && tipoPagador() === 'tercero'">
+      <div class="col-12">
+        <argo-catalogo-enum-buscar
+          label="Tercero *"
+          placeholder="Seleccione o escriba tercero…"
+          [textoInicial]="terceroTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesTercero()"
+          (seleccionado)="onTerceroPick($event)"
+          (limpiado)="onTerceroLimpiar()"
+        />
+        <p class="hint" *ngIf="!terceros().length">
+          No hay terceros. <a routerLink="/app/caja/terceros">Crear tercero</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="row" *ngIf="idTipoIngreso() && tipoPagador() === 'libre'">
       <label class="col-4" *ngIf="esContrato()">
         Persona
         <select [ngModel]="tipoPersona()" (ngModelChange)="tipoPersona.set($event)" name="tipoPersona">
@@ -69,6 +130,22 @@
       </label>
     </div>
 
+    <div class="row contact-preview" *ngIf="contactoVisible()">
+      <label class="col-4">
+        Correo
+        <input type="text" [ngModel]="correoPagador()" name="correoPrev" readonly class="readonly" />
+      </label>
+      <label class="col-4">
+        Teléfono
+        <input type="text" [ngModel]="telefonoPagador()" name="telPrev" readonly class="readonly" />
+      </label>
+      <label class="col-4">
+        Dirección
+        <input type="text" [ngModel]="direccionPagador()" name="dirPrev" readonly class="readonly" />
+      </label>
+    </div>
+
+    <h3 class="sec">3. Valor y pago</h3>
     <div class="row">
       <label class="col-4">
         Valor *

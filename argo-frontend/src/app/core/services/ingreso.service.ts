@@ -34,6 +34,10 @@ export interface IngresoCajaCrearDto {
   recibidoDe?: string;
   documentoTercero?: string;
   tipoPersona?: 'natural' | 'juridica';
+  /** Empleado RRHH (pagador). */
+  idEmpleado?: number | null;
+  /** Tercero del catálogo de caja. */
+  idTercero?: string | null;
   idBanco?: string;
   idCuentaBancaria?: string;
   numComprobante?: string;

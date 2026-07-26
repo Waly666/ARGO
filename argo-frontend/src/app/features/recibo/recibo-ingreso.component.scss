@@ -75,30 +75,35 @@
   margin-top: 6px;
 }
 
-@media print {
-  @page {
-    size: 80mm auto;
-    margin: 3mm;
-  }
 .firma-block {
   margin-top: 12px;
   font-size: 10px;
   text-align: center;
+
   .nota-legal {
     color: #444;
     margin-bottom: 8px;
     line-height: 1.4;
+    font-style: italic;
   }
+
   .linea-firma {
     border-top: 1px solid #000;
     margin: 24px 12px 6px;
   }
+
   p {
     margin: 2px 0;
   }
 }
 
-.recibo-page {
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 3mm;
+  }
+
+  .recibo-page {
     background: #fff;
     padding: 0;
   }

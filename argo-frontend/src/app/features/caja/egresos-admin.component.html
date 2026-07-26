@@ -454,13 +454,17 @@
 
             />
 
-            Tercero (proveedor, tienda, servicio…)
+            Tercero (catálogo)
 
           </label>
 
         </div>
 
         <p class="hint" *ngIf="obligaEmpleado()">Este tipo solo permite pago a empleado registrado en RRHH.</p>
+
+        <p class="hint" *ngIf="!obligaEmpleado() && !esRetiroCaja() && !beneficiarioEmpleado()">
+          Elija el tercero en el listado (igual que con empleados).
+        </p>
 
       </div>
 
@@ -474,7 +478,7 @@
 
         <label>Empleado {{ obligaEmpleado() ? '*' : '' }}</label>
 
-        <select [ngModel]="empleadoSelId()" (ngModelChange)="onEmpleadoChange($event)">
+        <select [ngModel]="empleadoSelId()" (ngModelChange)="onEmpleadoChange($event)" name="empleadoSel">
 
           <option [ngValue]="null">— Seleccione —</option>
 
@@ -485,6 +489,40 @@
           </option>
 
         </select>
+
+      </div>
+
+    </div>
+
+    <div class="row" *ngIf="!beneficiarioEmpleado() && !obligaEmpleado() && !esRetiroCaja()">
+
+      <div class="col-12">
+
+        <label>Tercero *</label>
+
+        <select [ngModel]="terceroSelId()" (ngModelChange)="onTerceroChange($event)" name="terceroSel">
+
+          <option [ngValue]="null">— Seleccione —</option>
+
+          <option *ngFor="let t of terceros()" [ngValue]="idTerceroOpt(t)">
+
+            {{ labelTercero(t) }}
+
+          </option>
+
+        </select>
+
+        <p class="hint" *ngIf="!terceros().length">
+
+          No hay terceros. Créelos en <a routerLink="/app/caja/terceros">Flujo de caja → Terceros</a>.
+
+        </p>
+
+        <p class="hint" *ngIf="terceros().length">
+
+          Catálogo: <a routerLink="/app/caja/terceros">Flujo de caja → Terceros</a>.
+
+        </p>
 
       </div>
 
@@ -506,9 +544,9 @@
 
           (ngModelChange)="patch('numeroDocumento', $event)"
 
-          [readonly]="(beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()"
+          [readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
 
-          [class.readonly]="(beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()"
+          [class.readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
 
           placeholder="CC, NIT, CE…"
 
@@ -528,9 +566,9 @@
 
           (ngModelChange)="patch('pagueA', $event)"
 
-          [readonly]="(beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()"
+          [readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
 
-          [class.readonly]="(beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()"
+          [class.readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
 
           placeholder="Nombre de quien recibe el pago"
 
@@ -538,12 +576,27 @@
 
         <p class="hint" *ngIf="!beneficiarioEmpleado() && !obligaEmpleado()">
 
-          Tercero: digite documento y nombre. No tiene que estar en RRHH.
+          Al elegir un tercero del listado se completan documento, nombre, correo, dirección y teléfono.
 
         </p>
 
       </div>
 
+    </div>
+
+    <div class="row" *ngIf="form().correoBeneficiario || form().direccionBeneficiario || form().telefonoBeneficiario">
+      <label class="col-4">
+        Correo (recibo)
+        <input type="text" [ngModel]="form().correoBeneficiario" readonly class="readonly" />
+      </label>
+      <label class="col-4">
+        Teléfono (recibo)
+        <input type="text" [ngModel]="form().telefonoBeneficiario" readonly class="readonly" />
+      </label>
+      <label class="col-4">
+        Dirección (recibo)
+        <input type="text" [ngModel]="form().direccionBeneficiario" readonly class="readonly" />
+      </label>
     </div>
 
 
@@ -552,11 +605,11 @@
 
       <div class="col-6">
 
-        <label>Período de nómina (descuento) *</label>
+        <label>Período de nómina (descuento)</label>
 
         <select [ngModel]="form().idPeriodo" (ngModelChange)="patch('idPeriodo', +$event || '')">
 
-          <option value="">— Seleccione —</option>
+          <option value="">— Automático (período abierto) —</option>
 
           <option *ngFor="let p of periodosAbiertos()" [ngValue]="p.idPeriodo">
 
@@ -565,6 +618,8 @@
           </option>
 
         </select>
+
+        <p class="hint">Opcional. Si no elige, se usa el período de nómina abierto.</p>
 
         <p class="hint" *ngIf="periodosAbiertos().length === 0">
 

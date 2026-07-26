@@ -88,6 +88,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/caja/ingresos-todos', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/caja/egresos-todos', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/caja/descuadres', permiso: ['caja.admin', 'contabilidad'] },
+  { prefix: '/app/caja/terceros', permiso: ['caja.turno', 'caja.admin', 'contabilidad'] },
   { prefix: '/app/cierres', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/cierre-general', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin'] },

@@ -88,10 +88,11 @@ export class ServiciosComponent implements OnInit {
   tarifa = signal<1 | 2 | 3 | 4>(1);
   tarifaManual = signal(false);
   revalidacionPreview = signal<RevalidacionPreview | null>(null);
-  matriculaCrearPortal = true;
   matriculaEmailPortal = '';
   matriculaPasswordPortal = '';
   matriculaCredenciales = signal<{ email: string; password: string } | null>(null);
+  /** Campos portal resaltados en rojo tras intento de guardar sin completar. */
+  camposPortalInvalidos = signal<string[]>([]);
   ajustarValorMat = false;
   valorAcordadoMat: number | null = null;
   motivoAjusteMat = '';
@@ -912,7 +913,26 @@ export class ServiciosComponent implements OnInit {
     this.servCantidad.set(1);
   }
 
-  crearMatricula() {
+  private async avisarCampoObligatorio(mensaje: string): Promise<void> {
+    this.setMsg(mensaje, true);
+    await this.confirmSvc.open({
+      title: 'Campos obligatorios',
+      message: mensaje,
+      variant: 'warn',
+      confirmLabel: 'Entendido',
+      hideCancel: true,
+    });
+  }
+
+  campoPortalObligatorioInvalido(campo: string): boolean {
+    return this.camposPortalInvalidos().includes(campo);
+  }
+
+  limpiarCampoPortalObligatorio(campo: string): void {
+    this.camposPortalInvalidos.update((campos) => campos.filter((x) => x !== campo));
+  }
+
+  async crearMatricula() {
     const nd = this.store.numDoc();
     if (!nd) { this.setMsg('Selecciona o crea un alumno primero.', true); return; }
     if (!this.idProg()) { this.setMsg('Selecciona un programa.', true); return; }
@@ -928,15 +948,32 @@ export class ServiciosComponent implements OnInit {
     const emailPortal = this.matriculaEmailPortal.trim() || String(this.store.alumno()?.correo || '').trim();
     const passwordPortal = this.matriculaPasswordPortal.trim();
 
-    if (esVirtual && this.matriculaCrearPortal) {
-      if (!emailPortal) {
-        this.setMsg('Indique el correo del portal (usuario de acceso).', true);
+    if (esVirtual) {
+      const invalidos: string[] = [];
+      if (!emailPortal) invalidos.push('email');
+      if (!passwordPortal || passwordPortal.length < 6) invalidos.push('password');
+      if (invalidos.length) {
+        this.camposPortalInvalidos.set(invalidos);
+        if (!emailPortal && !passwordPortal) {
+          await this.avisarCampoObligatorio(
+            'Complete todos los campos obligatorios. Faltan: Correo portal y Contraseña portal.',
+          );
+        } else if (!emailPortal) {
+          await this.avisarCampoObligatorio(
+            'Complete todos los campos obligatorios. Falta: Correo portal (usuario).',
+          );
+        } else if (!passwordPortal) {
+          await this.avisarCampoObligatorio(
+            'Complete todos los campos obligatorios. Falta: Contraseña portal.',
+          );
+        } else {
+          await this.avisarCampoObligatorio(
+            'La contraseña del portal debe tener al menos 6 caracteres.',
+          );
+        }
         return;
       }
-      if (passwordPortal && passwordPortal.length < 6) {
-        this.setMsg('La contraseña del portal debe tener al menos 6 caracteres.', true);
-        return;
-      }
+      this.camposPortalInvalidos.set([]);
     }
 
     const cuotasCustom = this.ajustarCuotasSemestre && this.puedeAjustarCuotasSemestre();
@@ -998,12 +1035,12 @@ export class ServiciosComponent implements OnInit {
               motivoAjusteCuotas: this.motivoAjusteCuotas.trim() || undefined,
             }
           : {}),
-        crearUsuarioPortal: esVirtual && this.matriculaCrearPortal,
-        email: esVirtual && this.matriculaCrearPortal ? emailPortal : undefined,
-        password: esVirtual && this.matriculaCrearPortal && passwordPortal ? passwordPortal : undefined,
+        crearUsuarioPortal: esVirtual,
+        email: esVirtual ? emailPortal : undefined,
+        password: esVirtual ? passwordPortal : undefined,
       })
       .subscribe({
-      next: (res) => {
+      next: async (res) => {
         this.idProg.set('');
         this.textoProgramaLabel.set('');
         this.programaDetalle.set(null);
@@ -1015,6 +1052,7 @@ export class ServiciosComponent implements OnInit {
         this.revalidacionPreview.set(null);
         this.matriculaEmailPortal = '';
         this.matriculaPasswordPortal = '';
+        this.camposPortalInvalidos.set([]);
         this.docsPendientesMat.set([]);
         this.recargar(nd, { notificar: true });
         const avisoCea = this.esProgramaCea(prog)
@@ -1038,8 +1076,29 @@ export class ServiciosComponent implements OnInit {
             this.matriculaCredenciales.set({ email: res.usuarioPortal.email, password: pass });
             msg += ` Acceso portal: ${res.usuarioPortal.email}.`;
           }
+          if (res.usuarioPortal.correoEnviado) {
+            msg += ` Correo enviado a ${res.usuarioPortal.email}.`;
+          } else if (res.usuarioPortal.correoError) {
+            msg += ` No se pudo enviar el correo (${res.usuarioPortal.correoError}).`;
+          }
         }
         this.setMsg(msg, false);
+        if (res.usuarioPortal?.email) {
+          const pass = passwordPortal || res.usuarioPortal.passwordTemporal || '';
+          await this.confirmSvc.open({
+            title: 'Matrícula virtual creada',
+            message:
+              `Matrícula creada correctamente.\n\n` +
+              `Usuario (correo): ${res.usuarioPortal.email}\n` +
+              (pass ? `Contraseña: ${pass}\n\n` : '\n') +
+              (res.usuarioPortal.correoEnviado
+                ? `También se envió un correo a ${res.usuarioPortal.email}.`
+                : `No se pudo enviar el correo${res.usuarioPortal.correoError ? ` (${res.usuarioPortal.correoError})` : ''}. Anote la clave.`),
+            variant: 'success',
+            confirmLabel: 'Entendido',
+            hideCancel: true,
+          });
+        }
       },
       error: (e) => this.setMsg(e?.error?.message || 'Error creando matrícula.', true),
     });

@@ -50,6 +50,14 @@ const IngresoSchema = new mongoose.Schema(
     recibidoDe: { type: String, trim: true },
     documentoTercero: { type: String, trim: true, index: true },
     tipoPersona: { type: String, enum: ['natural', 'juridica'], trim: true },
+    /** FK catálogo terceros caja */
+    idTercero: { type: mongoose.Schema.Types.ObjectId, ref: 'Tercero', default: null, index: true },
+    /** FK empleado RRHH cuando el pagador es empleado */
+    idEmpleado: { type: Number, default: null, index: true },
+    /** Contacto denormalizado para el recibo (tercero o empleado) */
+    correoPagador: { type: String, trim: true, lowercase: true },
+    direccionPagador: { type: String, trim: true },
+    telefonoPagador: { type: String, trim: true },
 
     formaPago: { type: String, trim: true, enum: FORMAS_PAGO },
     numTransferencia: { type: String, trim: true },

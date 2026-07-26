@@ -43,6 +43,67 @@ function idUsuarioObjectIdDesdeReq(req) {
   return null;
 }
 
+/** Resuelve contacto (correo/dirección/teléfono) desde empleado RRHH o tercero catálogo. */
+async function resolverContactoPagadorCaja(body = {}) {
+  const Empleado = require('../models/Empleado');
+  const Tercero = require('../models/Tercero');
+  const { normalizarEmpleadoLegacy, nombreCompletoEmpleado } = require('../utils/empleadoDoc');
+
+  let idEmpleado = body.idEmpleado != null && body.idEmpleado !== '' ? Number(body.idEmpleado) : null;
+  if (!Number.isFinite(idEmpleado)) idEmpleado = null;
+  let idTercero = body.idTercero ? String(body.idTercero).trim() : null;
+  if (idTercero && !mongoose.Types.ObjectId.isValid(idTercero)) idTercero = null;
+
+  let recibidoDe = String(body.recibiDe || body.recibidoDe || '').trim();
+  let documentoTercero = String(body.documentoTercero || '').trim();
+  let tipoPersona = String(body.tipoPersona || '').trim().toLowerCase();
+  let correoPagador = String(body.correoPagador || '').trim().toLowerCase() || null;
+  let direccionPagador = String(body.direccionPagador || '').trim() || null;
+  let telefonoPagador = String(body.telefonoPagador || '').trim() || null;
+
+  if (idEmpleado) {
+    const empRaw = await Empleado.findOne({ idEmpleado }).lean();
+    if (!empRaw) {
+      const err = new Error('Empleado no encontrado');
+      err.status = 404;
+      throw err;
+    }
+    const emp = normalizarEmpleadoLegacy(empRaw);
+    recibidoDe = nombreCompletoEmpleado(emp) || recibidoDe;
+    documentoTercero = String(emp.numeroDocumento || documentoTercero || '').trim();
+    tipoPersona = 'natural';
+    correoPagador = String(emp.correoCorporativo || emp.correoPersonal || '').trim().toLowerCase() || null;
+    direccionPagador = String(emp.direccion || '').trim() || null;
+    telefonoPagador = String(emp.celular || emp.telefono || '').trim() || null;
+    idTercero = null;
+  } else if (idTercero) {
+    const ter = await Tercero.findById(idTercero).lean();
+    if (!ter || ter.activo === false) {
+      const err = new Error('Tercero no encontrado');
+      err.status = 404;
+      throw err;
+    }
+    recibidoDe = String(ter.razonSocial || ter.nombres || ter.nombreComercial || recibidoDe).trim();
+    documentoTercero = String(ter.identificacion || documentoTercero).trim();
+    tipoPersona = String(ter.legalOrganizationCode) === '1' ? 'juridica' : 'natural';
+    correoPagador = String(ter.correo || '').trim().toLowerCase() || null;
+    direccionPagador = String(ter.direccion || '').trim() || null;
+    telefonoPagador = String(ter.telefono || '').trim() || null;
+    idEmpleado = null;
+  }
+
+  return {
+    idEmpleado,
+    idTercero,
+    recibidoDe,
+    documentoTercero,
+    tipoPersona,
+    correoPagador,
+    direccionPagador,
+    telefonoPagador,
+  };
+}
+
 function parseBodyIngreso(raw) {
   const body = { ...(raw || {}) };
   if (typeof body.items === 'string' && body.items.trim()) {
@@ -544,10 +605,6 @@ exports.crearCaja = async (req, res, next) => {
       observaciones,
       fecha,
       concepto,
-      recibidoDe,
-      recibiDe,
-      documentoTercero,
-      tipoPersona,
     } = body;
 
     if (!idTipoIngreso || valor == null || !idTipoPago) {
@@ -563,9 +620,10 @@ exports.crearCaja = async (req, res, next) => {
     const conceptoTxt = String(concepto || '').trim();
     if (!conceptoTxt) return res.status(400).json({ message: 'El concepto es obligatorio' });
 
-    const recibidoTxt = String(recibiDe || recibidoDe || '').trim();
-    const docTercero = String(documentoTercero || '').trim();
-    const tipoPers = String(tipoPersona || '').trim().toLowerCase();
+    const contacto = await resolverContactoPagadorCaja(body);
+    const recibidoTxt = contacto.recibidoDe;
+    const docTercero = contacto.documentoTercero;
+    const tipoPers = contacto.tipoPersona;
 
     if (esIngresoContrato(valTipo.tipo)) {
       if (!recibidoTxt) return res.status(400).json({ message: 'Indique el nombre del contratante (recibido de)' });
@@ -609,6 +667,11 @@ exports.crearCaja = async (req, res, next) => {
       recibidoDe: recibidoTxt || 'Aportante caja',
       documentoTercero: docTercero || null,
       tipoPersona: ['natural', 'juridica'].includes(tipoPers) ? tipoPers : null,
+      idEmpleado: contacto.idEmpleado,
+      idTercero: contacto.idTercero,
+      correoPagador: contacto.correoPagador,
+      direccionPagador: contacto.direccionPagador,
+      telefonoPagador: contacto.telefonoPagador,
       idTipoPago,
       formaPago: pago.formaPago,
       numTransferencia: pago.numTransferencia,
