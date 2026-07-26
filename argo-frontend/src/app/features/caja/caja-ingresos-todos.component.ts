@@ -165,6 +165,11 @@ export class CajaIngresosTodosComponent implements OnInit {
     return i.alumnoNombre || i.pagadorDescr || (i.numDoc != null ? String(i.numDoc) : '—');
   }
 
+  docLabel(i: any): string {
+    const d = i?.numDoc ?? i?.documentoTercero;
+    return d != null && String(d).trim() ? String(d).trim() : '—';
+  }
+
   conceptoLabel(i: any): string {
     return i.conceptoLabel || i.liquidacionDescr || i.concepto || '—';
   }

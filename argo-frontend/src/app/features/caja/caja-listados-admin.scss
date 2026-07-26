@@ -175,55 +175,193 @@
 }
 
 table.argo.data-table.ingresos-todos-table {
-  table-layout: fixed;
-  width: 100%;
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
 
-  col.col-concepto {
-    width: 7rem;
+  th,
+  td {
+    vertical-align: middle;
+  }
+
+  th.col-fecha,
+  td.col-fecha {
+    min-width: 7.2rem;
+    white-space: nowrap;
+  }
+
+  th.col-recibo,
+  td.col-recibo {
+    min-width: 7.5rem;
+    white-space: nowrap;
+  }
+
+  th.col-sesion,
+  td.col-sesion {
+    min-width: 4.2rem;
+    white-space: nowrap;
+  }
+
+  th.col-pagador,
+  td.col-pagador {
+    min-width: 11rem;
+    max-width: 15rem;
+  }
+
+  th.col-tipo,
+  td.col-tipo {
+    min-width: 5.5rem;
+    max-width: 8rem;
   }
 
   th.col-concepto,
   td.col-concepto {
-    width: 7rem;
-    max-width: 7rem;
-    overflow: hidden;
+    min-width: 8rem;
+    max-width: 12rem;
   }
 
-  td.col-concepto .concepto-cell-text {
+  th.col-pago,
+  td.col-pago {
+    min-width: 5.5rem;
+    white-space: nowrap;
+  }
+
+  th.col-valor,
+  td.col-valor {
+    min-width: 6.5rem;
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 700;
+    position: sticky;
+    right: 9.5rem;
+    z-index: 2;
+    background: var(--bg-1, #061029);
+    box-shadow: -6px 0 10px -8px rgba(0, 0, 0, 0.55);
+  }
+
+  thead th.col-valor {
+    z-index: 3;
+    background: var(--bg-2, #0a1a3a);
+  }
+
+  th.col-actions,
+  td.col-actions {
+    min-width: 9.5rem;
+    width: 9.5rem;
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: var(--bg-1, #061029);
+    box-shadow: -8px 0 12px -8px rgba(0, 0, 0, 0.65);
+  }
+
+  thead th.col-actions {
+    z-index: 3;
+    background: var(--bg-2, #0a1a3a);
+  }
+
+  tbody tr:hover td.col-valor,
+  tbody tr:hover td.col-actions {
+    background: var(--bg-2, #0a1a3a);
+  }
+
+  .pagador-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+    max-width: 15rem;
+  }
+
+  .pagador-nombre {
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 7rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-main, #e2e8f0);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .pagador-doc {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--text-dim, #94a3b8);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .concepto-cell-text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 12rem;
     font-size: 0.82rem;
     line-height: 1.35;
     color: var(--text-main, #e2e8f0);
   }
-}
 
-.data-table.ingresos-todos-table {
-  table-layout: fixed;
-  width: 100%;
-
-  th.col-concepto,
-  td.col-concepto {
-    width: 8.5rem;
-    max-width: 8.5rem;
+  .tipo-pill,
+  .pago-pill {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  td.col-concepto {
-    overflow: hidden;
-    vertical-align: middle;
+  .valor-monto {
+    font-size: 0.9rem !important;
+    font-weight: 700;
+    white-space: nowrap;
+  }
 
-    .concepto-cell-text {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 100%;
-      font-size: 0.82rem;
-      line-height: 1.35;
-      color: var(--text-main, #e2e8f0);
+  .cell-plain {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mono {
+    font-variant-numeric: tabular-nums;
+    font-family: Consolas, 'Courier New', monospace;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  td.actions-cell {
+    display: table-cell;
+  }
+
+  .actions-cell {
+    white-space: nowrap;
+
+    .mini {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.68rem;
+    }
+  }
+}
+
+.listado-admin .table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+  table.argo.data-table.ingresos-todos-table {
+    th.col-valor,
+    td.col-valor {
+      right: 8.2rem;
+    }
+
+    th.col-actions,
+    td.col-actions {
+      min-width: 8.2rem;
+      width: 8.2rem;
     }
   }
 }

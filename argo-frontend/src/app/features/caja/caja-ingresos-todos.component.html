@@ -53,67 +53,70 @@
 
     <div class="table-scroll" *ngIf="!loading() && vista() === 'lista'">
       <table class="argo data-table ingresos-todos-table">
-        <colgroup>
-          <col class="col-fecha" />
-          <col class="col-recibo" />
-          <col class="col-sesion" />
-          <col class="col-pagador" />
-          <col class="col-doc" />
-          <col class="col-tipo" />
-          <col class="col-concepto" />
-          <col class="col-pago" />
-          <col class="col-valor" />
-          <col class="col-actions" />
-        </colgroup>
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Recibo</th>
-            <th>Sesión</th>
-            <th>Alumno / Pagador</th>
-            <th>Documento</th>
-            <th>Tipo ingreso</th>
-            <th class="col-concepto">Concepto / Servicio</th>
-            <th>Forma pago</th>
-            <th class="r">Valor</th>
-            <th></th>
+            <th class="col-fecha">Fecha</th>
+            <th class="col-recibo">Recibo</th>
+            <th class="col-sesion">Sesión</th>
+            <th class="col-pagador">Alumno / Pagador</th>
+            <th class="col-tipo">Tipo</th>
+            <th class="col-concepto">Concepto</th>
+            <th class="col-pago">Pago</th>
+            <th class="col-valor r">Valor</th>
+            <th class="col-actions"></th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let i of items()" [class.row-cuadre]="i.cuadreDescuadre">
-            <td><span [ngClass]="capFecha(i.fecha || i.createdAt)">{{ (i.fecha || i.createdAt) | date: 'dd/MM/yyyy HH:mm' }}</span></td>
-            <td><span [ngClass]="capRecibo(i.numRecibo)">{{ i.numRecibo || '—' }}</span></td>
-            <td class="sesion-cell">
+            <td class="col-fecha">
+              <span class="cell-plain" [ngClass]="capFecha(i.fecha || i.createdAt)">
+                {{ (i.fecha || i.createdAt) | date: 'dd/MM/yy HH:mm' }}
+              </span>
+            </td>
+            <td class="col-recibo">
+              <span class="cell-plain mono" [ngClass]="capRecibo(i.numRecibo)">{{ i.numRecibo || '—' }}</span>
+            </td>
+            <td class="col-sesion sesion-cell">
               <ng-container *ngIf="i.idSesion; else sinSesion">
                 <button type="button" class="linkish" (click)="filtrarPorSesion(i.idSesion)">#{{ i.idSesion }}</button>
                 <button type="button" class="ghost mini" (click)="irAlCierre(i.idSesion)" title="Detalle cierre">📋</button>
               </ng-container>
               <ng-template #sinSesion>—</ng-template>
             </td>
-            <td><span [ngClass]="capBeneficiario(pagadorLabel(i))">{{ pagadorLabel(i) }}</span></td>
-            <td><span [ngClass]="capDoc(i.numDoc)">{{ i.numDoc ?? '—' }}</span></td>
-            <td><span [ngClass]="capTipoIngreso(i.tipoIngresoDescr)">{{ i.tipoIngresoDescr || '—' }}</span></td>
+            <td class="col-pagador">
+              <div class="pagador-stack">
+                <span class="pagador-nombre" [title]="pagadorLabel(i)">{{ pagadorLabel(i) }}</span>
+                <span class="pagador-doc mono" [title]="docLabel(i)">{{ docLabel(i) }}</span>
+              </div>
+            </td>
+            <td class="col-tipo">
+              <span class="tipo-pill" [ngClass]="capTipoIngreso(i.tipoIngresoDescr)">{{ i.tipoIngresoDescr || '—' }}</span>
+            </td>
             <td class="col-concepto" [title]="conceptoLabel(i)">
               <span class="concepto-cell-text">{{ conceptoCorto(i) }}</span>
               <span class="tag-cuadre" *ngIf="i.cuadreDescuadre">Cuadre</span>
             </td>
-            <td><span [ngClass]="capFormaPago(formaPagoLabel(i))">{{ formaPagoLabel(i) }}</span></td>
-            <td class="num"><span [ngClass]="capValorIngreso()">{{ i.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</span></td>
-            <td class="actions-cell">
-              <button type="button" class="ghost mini" (click)="verRecibo(i)">Ver</button>
-              <button type="button" class="ghost mini" (click)="imprimirRecibo(i)">Imprimir</button>
+            <td class="col-pago">
+              <span class="pago-pill" [ngClass]="capFormaPago(formaPagoLabel(i))">{{ formaPagoLabel(i) }}</span>
+            </td>
+            <td class="col-valor num">
+              <span class="valor-monto" [ngClass]="capValorIngreso()">{{ i.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+            </td>
+            <td class="col-actions actions-cell">
+              <button type="button" class="ghost mini" (click)="verRecibo(i)" title="Ver recibo">Ver</button>
+              <button type="button" class="ghost mini" (click)="imprimirRecibo(i)" title="Imprimir">Imp.</button>
               <button
                 type="button"
                 class="primary mini"
                 *ngIf="tieneSoporte(i)"
                 (click)="abrirSoporte(i)"
                 title="Abrir imagen del soporte de pago">
-                Soporte
+                Sop.
               </button>
-              <button type="button" class="danger mini" (click)="anularIngreso(i)">Anular</button>
+              <button type="button" class="danger mini" (click)="anularIngreso(i)" title="Anular">Anular</button>
             </td>
           </tr>
-          <tr *ngIf="items().length === 0"><td colspan="10" class="empty">Sin resultados.</td></tr>
+          <tr *ngIf="items().length === 0"><td colspan="9" class="empty">Sin resultados.</td></tr>
         </tbody>
       </table>
     </div>
@@ -123,7 +126,7 @@
         <div class="card-title">
           <h3>{{ i.numRecibo || 'Ingreso' }}</h3>
           <p class="card-sub">
-            {{ pagadorLabel(i) }} · {{ (i.fecha || i.createdAt) | date: 'dd/MM/yyyy HH:mm' }}
+            {{ pagadorLabel(i) }} · Doc. {{ docLabel(i) }} · {{ (i.fecha || i.createdAt) | date: 'dd/MM/yyyy HH:mm' }}
             <span *ngIf="i.idSesion"> · Sesión #{{ i.idSesion }}</span>
           </p>
         </div>
