@@ -27,10 +27,9 @@ async function enriquecerUsuarioDoc(u) {
   if (emp) {
     const porCargo = await esEmpleadoInstructor(emp);
     json.idEmpleado = emp.idEmpleado;
-    /** Portal: permiso explícito en Roles, o instructor con operar (compatibilidad). */
+    /** Portal: permiso explícito o instructor con operar (no basta ser admin *). */
     const permisos = datos.permisos || [];
-    const porRolPortal =
-      permisos.includes('*') || permisos.includes('instructores.mi_portal');
+    const porRolPortal = permisos.includes('instructores.mi_portal');
     const porOperarInstructor =
       porCargo &&
       permisos.some((p) =>

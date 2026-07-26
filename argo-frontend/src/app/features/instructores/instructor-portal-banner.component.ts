@@ -69,6 +69,6 @@ export class InstructorPortalBannerComponent {
   }
 
   private irPortal() {
-    void this.router.navigate(['/app/instructores']);
+    void this.router.navigate(['/app/instructores'], { queryParams: { vista: 'portal' } });
   }
 }
