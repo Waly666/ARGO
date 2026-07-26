@@ -93,6 +93,8 @@ export class ServiciosComponent implements OnInit {
   matriculaCredenciales = signal<{ email: string; password: string } | null>(null);
   /** Campos portal resaltados en rojo tras intento de guardar sin completar. */
   camposPortalInvalidos = signal<string[]>([]);
+  /** Acceso aula virtual ya existente para el alumno actual. */
+  portalAcceso = signal<{ tieneAcceso: boolean; email: string | null } | null>(null);
   ajustarValorMat = false;
   valorAcordadoMat: number | null = null;
   motivoAjusteMat = '';
@@ -199,6 +201,10 @@ export class ServiciosComponent implements OnInit {
   );
 
   esTarifaVirtualSeleccionada = computed(() => esTarifaVirtualMatricula(this.tarifa()));
+  yaTienePortal = computed(() => this.portalAcceso()?.tieneAcceso === true);
+  requiereCredencialesPortal = computed(
+    () => this.esTarifaVirtualSeleccionada() && !this.yaTienePortal(),
+  );
 
   puedeAjustarValorMat = computed(() => {
     if (!this.permitirAjusteValorMatricula()) return false;
@@ -428,13 +434,27 @@ export class ServiciosComponent implements OnInit {
         this.lastRecargaNumDoc = null;
         this.liquidacion.set({ items: [], totales: { valor: 0, abonado: 0, saldo: 0 } });
         this.comprobantes.set([]);
+        this.portalAcceso.set(null);
       } else {
         const soloSync = this.lastRecargaNumDoc === nd && _liq > 0;
         this.lastRecargaNumDoc = nd;
         this.recargar(nd, { silencioso: soloSync });
       }
+      if (id) this.cargarPortalAcceso(String(id));
+      else this.portalAcceso.set(null);
       if (id && prog) this.revisarDocsMatricula(id, prog);
       else this.docsPendientesMat.set([]);
+    });
+  }
+
+  private cargarPortalAcceso(alumnoId: string): void {
+    this.alumnoSvc.estadoPortal(alumnoId).subscribe({
+      next: (r) =>
+        this.portalAcceso.set({
+          tieneAcceso: !!r?.tieneAcceso,
+          email: r?.email || null,
+        }),
+      error: () => this.portalAcceso.set({ tieneAcceso: false, email: null }),
     });
   }
 
@@ -945,10 +965,11 @@ export class ServiciosComponent implements OnInit {
     }
     const prog = this.programaSel();
     const esVirtual = this.esTarifaVirtualSeleccionada();
+    const yaTienePortal = this.yaTienePortal();
     const emailPortal = this.matriculaEmailPortal.trim() || String(this.store.alumno()?.correo || '').trim();
     const passwordPortal = this.matriculaPasswordPortal.trim();
 
-    if (esVirtual) {
+    if (esVirtual && !yaTienePortal) {
       const invalidos: string[] = [];
       if (!emailPortal) invalidos.push('email');
       if (!passwordPortal || passwordPortal.length < 6) invalidos.push('password');
@@ -1035,9 +1056,9 @@ export class ServiciosComponent implements OnInit {
               motivoAjusteCuotas: this.motivoAjusteCuotas.trim() || undefined,
             }
           : {}),
-        crearUsuarioPortal: esVirtual,
-        email: esVirtual ? emailPortal : undefined,
-        password: esVirtual ? passwordPortal : undefined,
+        crearUsuarioPortal: esVirtual && !yaTienePortal,
+        email: esVirtual && !yaTienePortal ? emailPortal : undefined,
+        password: esVirtual && !yaTienePortal ? passwordPortal : undefined,
       })
       .subscribe({
       next: async (res) => {
@@ -1070,7 +1091,9 @@ export class ServiciosComponent implements OnInit {
         } else if (res.revalidacion?.mensaje) {
           msg += ` ${res.revalidacion.mensaje}`;
         }
-        if (res.usuarioPortal) {
+        if (res.usuarioPortal?.yaExiste) {
+          msg += ` El alumno ya tenía acceso al aula virtual (${res.usuarioPortal.email}).`;
+        } else if (res.usuarioPortal) {
           const pass = passwordPortal || res.usuarioPortal.passwordTemporal || '';
           if (pass) {
             this.matriculaCredenciales.set({ email: res.usuarioPortal.email, password: pass });
@@ -1083,7 +1106,19 @@ export class ServiciosComponent implements OnInit {
           }
         }
         this.setMsg(msg, false);
-        if (res.usuarioPortal?.email) {
+        if (res.usuarioPortal?.yaExiste) {
+          await this.confirmSvc.open({
+            title: 'Matrícula virtual creada',
+            message:
+              `Matrícula creada correctamente.\n\n` +
+              `El alumno ya tenía acceso al aula virtual.\n` +
+              `Usuario: ${res.usuarioPortal.email || '—'}\n\n` +
+              `No se generó ni envió una contraseña nueva.`,
+            variant: 'success',
+            confirmLabel: 'Entendido',
+            hideCancel: true,
+          });
+        } else if (res.usuarioPortal?.email) {
           const pass = passwordPortal || res.usuarioPortal.passwordTemporal || '';
           await this.confirmSvc.open({
             title: 'Matrícula virtual creada',

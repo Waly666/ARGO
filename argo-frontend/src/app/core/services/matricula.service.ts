@@ -58,6 +58,7 @@ export interface MatriculaCrearRes {
   usuarioPortal?: {
     creado: boolean;
     actualizado: boolean;
+    yaExiste?: boolean;
     email: string;
     numDoc: number;
     passwordTemporal: string | null;

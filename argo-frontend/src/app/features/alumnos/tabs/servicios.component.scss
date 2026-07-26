@@ -572,6 +572,14 @@ table.nested { font-size: .88rem; }
   margin: 0 0 10px;
 }
 
+.portal-ya-existe {
+  color: var(--ok, #6ee7b7);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(16, 185, 129, 0.08);
+}
+
 .portal-check {
   display: flex;
   align-items: center;

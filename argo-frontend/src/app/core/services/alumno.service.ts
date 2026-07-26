@@ -354,6 +354,21 @@ export class AlumnoService {
     }>(`${this.base}/${encodeURIComponent(id)}/portal/enviar-acceso`, body || {});
   }
 
+  /** ¿El alumno ya tiene UsuarioPortal (aula virtual)? */
+  estadoPortal(id: string): Observable<{
+    tieneAcceso: boolean;
+    email: string | null;
+    numDoc: number | null;
+    activo: boolean;
+  }> {
+    return this.http.get<{
+      tieneAcceso: boolean;
+      email: string | null;
+      numDoc: number | null;
+      activo: boolean;
+    }>(`${this.base}/${encodeURIComponent(id)}/portal`);
+  }
+
   documentosRequeridos(id: string): Observable<DocumentosRequeridosRes> {
     return this.http.get<DocumentosRequeridosRes>(`${this.base}/${id}/documentos-requeridos`);
   }

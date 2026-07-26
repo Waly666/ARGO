@@ -208,34 +208,43 @@
       </div>
 
       <div class="portal-matricula" *ngIf="esTarifaVirtualSeleccionada()">
-        <p class="hint portal-matricula-lead">
-          Matrícula <strong>aula virtual</strong>: se crea el acceso al portal y se envía el correo con usuario y contraseña.
-        </p>
-        <div class="row">
-          <div class="col-6">
-            <label>Correo portal (usuario) <span class="req">*</span></label>
-            <input
-              type="email"
-              [(ngModel)]="matriculaEmailPortal"
-              (ngModelChange)="limpiarCampoPortalObligatorio('email')"
-              [placeholder]="store.alumno()?.correo || 'alumno@correo.com'"
-              [class.campo-obligatorio-error]="campoPortalObligatorioInvalido('email')"
-              required
-            />
+        <ng-container *ngIf="yaTienePortal(); else portalCredencialesNuevas">
+          <p class="hint portal-matricula-lead portal-ya-existe">
+            El alumno <strong>ya tiene acceso</strong> al aula virtual
+            <ng-container *ngIf="portalAcceso()?.email as mail"> ({{ mail }})</ng-container>.
+            No se pide correo ni contraseña: al crear la matrícula solo se vincula el curso.
+          </p>
+        </ng-container>
+        <ng-template #portalCredencialesNuevas>
+          <p class="hint portal-matricula-lead">
+            Matrícula <strong>aula virtual</strong>: se crea el acceso al portal y se envía el correo con usuario y contraseña.
+          </p>
+          <div class="row">
+            <div class="col-6">
+              <label>Correo portal (usuario) <span class="req">*</span></label>
+              <input
+                type="email"
+                [(ngModel)]="matriculaEmailPortal"
+                (ngModelChange)="limpiarCampoPortalObligatorio('email')"
+                [placeholder]="store.alumno()?.correo || 'alumno@correo.com'"
+                [class.campo-obligatorio-error]="campoPortalObligatorioInvalido('email')"
+                required
+              />
+            </div>
+            <div class="col-6">
+              <label>Contraseña portal <span class="req">*</span></label>
+              <input
+                type="text"
+                [(ngModel)]="matriculaPasswordPortal"
+                (ngModelChange)="limpiarCampoPortalObligatorio('password')"
+                placeholder="Mínimo 6 caracteres"
+                autocomplete="new-password"
+                [class.campo-obligatorio-error]="campoPortalObligatorioInvalido('password')"
+                required
+              />
+            </div>
           </div>
-          <div class="col-6">
-            <label>Contraseña portal <span class="req">*</span></label>
-            <input
-              type="text"
-              [(ngModel)]="matriculaPasswordPortal"
-              (ngModelChange)="limpiarCampoPortalObligatorio('password')"
-              placeholder="Mínimo 6 caracteres"
-              autocomplete="new-password"
-              [class.campo-obligatorio-error]="campoPortalObligatorioInvalido('password')"
-              required
-            />
-          </div>
-        </div>
+        </ng-template>
       </div>
 
       <p class="msg ok portal-credenciales" *ngIf="matriculaCredenciales() as cred">

@@ -39,7 +39,7 @@ const {
 const { ORIGEN_SISTEMA, normalizarOrigenAlumno } = require('../constants/origenAlumno');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
-const { provisionarAccesoPortalSiVirtual, enviarAccesoPortalAlumno } = require('../services/portalAccesoAlumno');
+const { provisionarAccesoPortalSiVirtual, enviarAccesoPortalAlumno, estadoAccesoPortalPorNumDoc } = require('../services/portalAccesoAlumno');
 
 const GENEROS_VALIDOS = new Set(['M', 'F']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
@@ -805,6 +805,18 @@ exports.enviarAccesoPortal = async (req, res, next) => {
     res.json(out);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+/** Estado de acceso al aula virtual (UsuarioPortal) del alumno. */
+exports.estadoPortal = async (req, res, next) => {
+  try {
+    const alumno = await buscarAlumnoPorIdParam(req.params.id);
+    if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+    const out = await estadoAccesoPortalPorNumDoc(alumno.numDoc);
+    res.json(out);
+  } catch (e) {
     next(e);
   }
 };

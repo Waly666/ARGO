@@ -25,6 +25,7 @@ router.post('/escanear-cedula-mrz', gestionar, upload.memory.single('imagen'), c
 router.get('/:id/documentos-requeridos', ver, ctrl.documentosRequeridos);
 router.get('/:id/indicadores-hoy', ver, ctrl.indicadoresHoy);
 router.get('/:id/documentos-validacion', ver, ctrl.validarDocumentos);
+router.get('/:id/portal', ver, ctrl.estadoPortal);
 router.put('/:id/documentos/:idDoc', gestionar, upload.alumnos.single('archivo'), ctrl.subirDocumento);
 router.get('/:id', ver, ctrl.porId);
 router.post('/', gestionar, files, ctrl.crear);

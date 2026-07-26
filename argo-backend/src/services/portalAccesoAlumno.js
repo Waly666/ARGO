@@ -214,8 +214,29 @@ async function enviarAccesoPortalAlumno(alumno, { email, password, portalBaseUrl
   };
 }
 
+/**
+ * Indica si el alumno ya tiene UsuarioPortal (acceso aula virtual).
+ */
+async function estadoAccesoPortalPorNumDoc(numDocRaw) {
+  const numDoc = parseNumDoc(numDocRaw);
+  if (numDoc == null) {
+    return { tieneAcceso: false, email: null, numDoc: null, activo: false };
+  }
+  const u = await UsuarioPortal.findOne({ numDoc }).lean();
+  if (!u) {
+    return { tieneAcceso: false, email: null, numDoc, activo: false };
+  }
+  return {
+    tieneAcceso: true,
+    email: u.email || null,
+    numDoc,
+    activo: u.activo !== false,
+  };
+}
+
 module.exports = {
   provisionarAccesoPortalSiVirtual,
   enviarCredencialesPortal,
   enviarAccesoPortalAlumno,
+  estadoAccesoPortalPorNumDoc,
 };
