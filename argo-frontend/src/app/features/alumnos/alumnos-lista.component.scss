@@ -34,7 +34,8 @@
   flex-wrap: wrap;
   overflow: visible;
 
-  &.toolbar-jornadas {
+  &.toolbar-jornadas,
+  &.toolbar-con-filtros {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
@@ -82,6 +83,7 @@
   .count { color: var(--text-soft); font-size: .85rem; white-space: nowrap; }
 }
 
+.lista-filters,
 .jornada-filters {
   display: flex;
   flex-wrap: wrap;
@@ -107,11 +109,16 @@
     }
   }
 
+  .field-filtro,
   .field-jornada,
-  .field-cert {
+  .field-cert,
+  .field-empresa,
+  .field-origen,
+  .field-jornada-cat,
+  .field-jornada-cap {
     flex: 1;
-    min-width: 220px;
-    max-width: 360px;
+    min-width: 200px;
+    max-width: 320px;
     position: relative;
     z-index: 30;
   }
@@ -124,7 +131,8 @@
     z-index: 5001;
   }
 
-  .btn-limpiar-jornada {
+  .btn-limpiar-jornada,
+  .btn-limpiar-filtros {
     align-self: flex-end;
     margin-bottom: 2px;
   }

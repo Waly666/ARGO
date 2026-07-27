@@ -37,6 +37,8 @@ export interface AlumnoDto {
   nombre1: string;
   nombre2?: string;
   fechaNac?: string | null;
+  /** Edad en años (calculada en servidor desde fechaNac). */
+  edad?: number | null;
   observaciones?: string;
   genero?: string;
   tipoSangre?: string;
@@ -108,6 +110,8 @@ export interface AlumnoListItem {
   apellidos?: string;
   nombreCompleto?: string;
   fechaNac?: string | Date | null;
+  /** Edad en años (servidor). */
+  edad?: number | null;
   genero?: string;
   tipoSangre?: string;
   jornada?: string;
@@ -218,6 +222,9 @@ export class AlumnoService {
       idJornada?: string;
       fechaJornada?: string;
       certJornada?: '' | 'con' | 'sin';
+      empresaId?: string;
+      origen?: string;
+      jornada?: string;
     } = {},
   ): Observable<AlumnoListResponse> {
     let params = new HttpParams();
@@ -232,6 +239,9 @@ export class AlumnoService {
     if (opts.idJornada) params = params.set('idJornada', opts.idJornada);
     if (opts.fechaJornada) params = params.set('fechaJornada', opts.fechaJornada);
     if (opts.certJornada) params = params.set('certJornada', opts.certJornada);
+    if (opts.empresaId) params = params.set('empresaId', opts.empresaId);
+    if (opts.origen) params = params.set('origen', opts.origen);
+    if (opts.jornada) params = params.set('jornada', opts.jornada);
     return this.http.get<AlumnoListResponse>(this.base, { params });
   }
 

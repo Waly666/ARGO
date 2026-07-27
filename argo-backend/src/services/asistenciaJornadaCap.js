@@ -445,6 +445,67 @@ async function postCierreClaseJornada(req, claseDoc, opts = {}) {
   };
 }
 
+/** Resultados de post-cierre async (para no bloquear el HTTP de finalizar). */
+const postCierrePorClase = new Map();
+const POST_CIERRE_TTL_MS = 15 * 60 * 1000;
+
+function limpiarPostCierreViejos() {
+  const ahora = Date.now();
+  for (const [id, row] of postCierrePorClase.entries()) {
+    if (!row?.at || ahora - row.at > POST_CIERRE_TTL_MS) postCierrePorClase.delete(id);
+  }
+}
+
+function marcarPostCierrePendiente(idClase) {
+  const id = String(idClase || '');
+  if (!id) return;
+  limpiarPostCierreViejos();
+  postCierrePorClase.set(id, { status: 'pending', at: Date.now() });
+}
+
+function guardarResultadoPostCierre(idClase, post) {
+  const id = String(idClase || '');
+  if (!id) return;
+  postCierrePorClase.set(id, {
+    status: post?.ok === false ? 'error' : 'done',
+    at: Date.now(),
+    ok: post?.ok !== false,
+    error: post?.error,
+    asistenciasRegistradas: post?.asistenciasRegistradas || 0,
+    certificadosNuevos: post?.certificadosNuevos || 0,
+    certificadosEmitidos: post?.certificadosEmitidos || [],
+    idContrato: post?.jornada?.idContrato || null,
+  });
+}
+
+function obtenerResultadoPostCierre(idClase) {
+  limpiarPostCierreViejos();
+  return postCierrePorClase.get(String(idClase || '')) || null;
+}
+
+/**
+ * Ejecuta post-cierre sin bloquear la respuesta HTTP de finalizar.
+ * El cliente consulta GET /clases/:id/post-cierre.
+ */
+function ejecutarPostCierreEnBackground(req, claseDoc) {
+  const id = String(claseDoc?._id || '');
+  if (!id) return;
+  marcarPostCierrePendiente(id);
+  setImmediate(() => {
+    postCierreClaseJornada(req, claseDoc)
+      .then((post) => guardarResultadoPostCierre(id, post))
+      .catch((e) =>
+        guardarResultadoPostCierre(id, {
+          ok: false,
+          error: e?.message || String(e),
+          asistenciasRegistradas: 0,
+          certificadosNuevos: 0,
+          certificadosEmitidos: [],
+        }),
+      );
+  });
+}
+
 function fusionarCertificadosEmitidos(...listas) {
   const map = new Map();
   for (const lista of listas) {
@@ -464,4 +525,8 @@ module.exports = {
   emitirCertificadosAsistentesClase,
   postCierreClaseJornada,
   fusionarCertificadosEmitidos,
+  marcarPostCierrePendiente,
+  guardarResultadoPostCierre,
+  obtenerResultadoPostCierre,
+  ejecutarPostCierreEnBackground,
 };

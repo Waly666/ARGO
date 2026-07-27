@@ -73,6 +73,7 @@
           <th>Municipio</th>
           <th>Instructor</th>
           <th>Carpa</th>
+          <th class="r">Alumnos</th>
           <th>Estado</th>
           <th class="col-actions"></th>
         </tr>
@@ -92,6 +93,11 @@
           <td>
             <span *ngIf="labelCarpaClase(c)" [ngClass]="capCarpa(labelCarpaClase(c))">{{ labelCarpaClase(c) }}</span>
             <span *ngIf="!labelCarpaClase(c)" class="cap cap-slate cap-sm">—</span>
+          </td>
+          <td class="r num">
+            <span class="cap cap-sky cap-sm cap-text" [title]="(c.alumnosInscritos || 0) + ' alumno(s) matriculado(s)'">
+              {{ c.alumnosInscritos || 0 }}
+            </span>
           </td>
           <td>
             <span [ngClass]="estadoClaseLiveClass(c.estado)">{{ c.estado || '—' }}</span>
@@ -113,7 +119,7 @@
           </td>
         </tr>
         <tr *ngIf="filtradas().length === 0">
-          <td colspan="9" class="empty">
+          <td colspan="10" class="empty">
             @if (total() === 0) {
               @if (esInstructorSolo()) {
                 <p>No tiene clases asignadas para hoy.</p>

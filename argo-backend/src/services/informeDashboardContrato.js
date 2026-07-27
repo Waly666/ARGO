@@ -11,6 +11,7 @@ const { obtenerConfigRecibo } = require('./configRecibo');
 const { fmtFechaSolo } = require('../utils/timezoneColombia');
 const { parseFechaCalendario } = require('../utils/fechaCalendario');
 const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
+const { caracterizarDesdeDocs } = require('./caracterizacionPoblacion');
 
 function toObjectId(raw) {
   if (!raw) return null;
@@ -444,6 +445,11 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
 
   const config = await obtenerConfigRecibo(contrato.idSede || null).catch(() => ({}));
 
+  const docsCapacitados = [...alumnosUnicos]
+    .map((nd) => alumnoMap.get(nd))
+    .filter(Boolean);
+  const caracterizacionPoblacion = await caracterizarDesdeDocs(docsCapacitados);
+
   return {
     contrato: {
       _id: String(contrato._id),
@@ -511,7 +517,17 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
         label: i.instructorNombre,
         value: i.clasesDictadas,
       })),
+      porEdad: caracterizacionPoblacion.porEdad,
+      porGenero: caracterizacionPoblacion.porGenero,
+      porEstadoCivil: caracterizacionPoblacion.porEstadoCivil,
+      porEstrato: caracterizacionPoblacion.porEstrato,
+      porRegimenSalud: caracterizacionPoblacion.porRegimenSalud,
+      porNivelFormacion: caracterizacionPoblacion.porNivelFormacion,
+      porOcupacion: caracterizacionPoblacion.porOcupacion,
+      porDiscapacidad: caracterizacionPoblacion.porDiscapacidad,
+      porMultiCulturalidad: caracterizacionPoblacion.porMultiCulturalidad,
     },
+    caracterizacionPoblacion,
     porJornada,
     porClase,
     porPrograma,
@@ -881,6 +897,45 @@ function htmlChartsDashboard(charts, titulo = 'Resumen gráfico general del cont
       <h3 class="sec">Clases dictadas por instructor</h3>
       <p class="chart-hint">Participación sobre el total de clases dictadas del gráfico.</p>
       ${htmlBarChart(c.clasesPorInstructor || [], { colLabel: 'Instructor', colValue: 'Clases', colorOffset: 4 })}
+    </section>
+  </div>
+  <h3 class="chart-section-title">Caracterización de población</h3>
+  <div class="charts-grid charts-grid--compact">
+    <section class="chart-card">
+      <h3 class="sec">Por edad</h3>
+      ${htmlBarChart(c.porEdad || [], { colLabel: 'Rango', colValue: 'Alumnos', colorOffset: 0 })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Por género</h3>
+      ${htmlPieChart(c.porGenero || [], { kind: 'programa', colLabel: 'Género', colValue: 'Alumnos', unit: 'alumnos' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Estado civil</h3>
+      ${htmlPieChart(c.porEstadoCivil || [], { kind: 'programa', colLabel: 'Estado civil', colValue: 'Alumnos', unit: 'alumnos' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Estrato socioeconómico</h3>
+      ${htmlBarChart(c.porEstrato || [], { colLabel: 'Estrato', colValue: 'Alumnos', colorOffset: 2 })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Régimen de salud</h3>
+      ${htmlPieChart(c.porRegimenSalud || [], { kind: 'programa', colLabel: 'Régimen', colValue: 'Alumnos', unit: 'alumnos' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Nivel de formación</h3>
+      ${htmlBarChart(c.porNivelFormacion || [], { colLabel: 'Nivel', colValue: 'Alumnos', colorOffset: 3 })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Ocupación</h3>
+      ${htmlBarChart(c.porOcupacion || [], { colLabel: 'Ocupación', colValue: 'Alumnos', colorOffset: 5 })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Discapacidad</h3>
+      ${htmlPieChart(c.porDiscapacidad || [], { kind: 'programa', colLabel: 'Discapacidad', colValue: 'Alumnos', unit: 'alumnos' })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Multiculturalidad</h3>
+      ${htmlPieChart(c.porMultiCulturalidad || [], { kind: 'programa', colLabel: 'Grupo', colValue: 'Alumnos', unit: 'alumnos' })}
     </section>
   </div>`;
 }

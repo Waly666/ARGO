@@ -36,7 +36,8 @@ const {
   TIPO_JORNADAS_CAPACITACION,
   normalizarTipoAlumno,
 } = require('../constants/tipoAlumno');
-const { ORIGEN_SISTEMA, normalizarOrigenAlumno } = require('../constants/origenAlumno');
+const { calcularEdad } = require('../utils/edad');
+const { ORIGEN_SISTEMA, ORIGEN_WEB, normalizarOrigenAlumno } = require('../constants/origenAlumno');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const { provisionarAccesoPortalSiVirtual, enviarAccesoPortalAlumno, estadoAccesoPortalPorNumDoc } = require('../services/portalAccesoAlumno');
@@ -208,6 +209,7 @@ function mapListaItem(doc) {
     nombreCompleto: extra.nombreCompleto,
     genero: doc.genero,
     fechaNac: doc.fechaNac,
+    edad: calcularEdad(doc.fechaNac),
     tipoSangre: doc.tipoSangre,
     jornada: doc.jornada,
     estadoCivil: doc.estadoCivil,
@@ -289,6 +291,9 @@ exports.listar = async (req, res, next) => {
     const idJornada = (req.query.idJornada || '').toString().trim();
     const fechaJornada = (req.query.fechaJornada || '').toString().trim();
     const certJornada = (req.query.certJornada || '').toString().trim().toLowerCase();
+    const empresaId = (req.query.empresaId || '').toString().trim();
+    const origenQ = (req.query.origen || '').toString().trim();
+    const jornadaCat = (req.query.jornada || '').toString().trim();
     const limit = Math.min(parseInt(req.query.limit, 10) || 25, 100);
     const skip = Math.max(parseInt(req.query.skip, 10) || 0, 0);
     const condiciones = [];
@@ -297,6 +302,33 @@ exports.listar = async (req, res, next) => {
     }
     if (q) {
       condiciones.push(filtroBusquedaAlumno(q));
+    }
+    if (empresaId && mongoose.Types.ObjectId.isValid(empresaId)) {
+      condiciones.push({ empresaId: new mongoose.Types.ObjectId(empresaId) });
+    }
+    if (origenQ) {
+      const origen = normalizarOrigenAlumno(origenQ);
+      if (origen === ORIGEN_WEB) {
+        condiciones.push({ origen: ORIGEN_WEB });
+      } else {
+        condiciones.push({
+          $or: [
+            { origen: { $exists: false } },
+            { origen: null },
+            { origen: '' },
+            { origen: ORIGEN_SISTEMA },
+          ],
+        });
+      }
+    }
+    if (jornadaCat) {
+      const esc = jornadaCat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      condiciones.push({
+        $or: [
+          { jornada: jornadaCat },
+          { jornada: new RegExp(`^${esc}(\\D|$)`, 'i') },
+        ],
+      });
     }
 
     let jornadaIds = [];

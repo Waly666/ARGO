@@ -71,6 +71,24 @@ export interface DashboardFiltroFechas {
   hasta: string | null;
 }
 
+export interface DashboardChartItem {
+  label: string;
+  value: number;
+}
+
+export interface DashboardCaracterizacion {
+  total: number;
+  porEdad: DashboardChartItem[];
+  porGenero: DashboardChartItem[];
+  porEstadoCivil: DashboardChartItem[];
+  porEstrato: DashboardChartItem[];
+  porRegimenSalud: DashboardChartItem[];
+  porNivelFormacion: DashboardChartItem[];
+  porOcupacion: DashboardChartItem[];
+  porDiscapacidad: DashboardChartItem[];
+  porMultiCulturalidad: DashboardChartItem[];
+}
+
 export interface DashboardStats {
   actualizadoEn: string;
   filtroFechas?: DashboardFiltroFechas;
@@ -89,6 +107,7 @@ export interface DashboardStats {
   programasTop: { programa: string; matriculas: number; pct: number }[];
   cajaMes: { ingresos: number; egresos: number; neto: number; recibosMes: number };
   resumenFinanciero?: DashboardResumenFinanciero;
+  caracterizacionPoblacion?: DashboardCaracterizacion;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -14,6 +14,7 @@ const {
   agregarIngresoAMetodos,
   ingresosPorMetodoPagoLista,
 } = require('../utils/metodoPagoCanonico');
+const { caracterizarPoblacion } = require('./caracterizacionPoblacion');
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -529,6 +530,8 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
     recibosParaTicket > 0 ? roundMoney(totalIngresosHistorico / recibosParaTicket) : 0;
   const promedioLiq = totalLiquidaciones > 0 ? roundMoney(valorLiquidado / totalLiquidaciones) : 0;
 
+  const caracterizacionPoblacion = await caracterizarPoblacion();
+
   const CHART_COLORS = [
     '#14b8a6',
     '#3b82f6',
@@ -601,6 +604,7 @@ async function obtenerEstadisticasDashboard(filtro = parseFiltroFechas()) {
       neto: ingresosMes - egresosEnPeriodo,
       recibosMes: recibosEnPeriodo,
     },
+    caracterizacionPoblacion,
   };
 }
 

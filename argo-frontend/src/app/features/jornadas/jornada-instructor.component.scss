@@ -1,100 +1,100 @@
-@use './jornadas-ui.scss';
+@use './jornada-live-estado.scss';
 @use './jornadas-shared' as *;
 
 .instructor-page {
-  .clase-horario-switch {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.7rem;
-    margin: 0 0 0.8rem;
-    padding: 0.7rem 0.85rem;
-    border: 1px solid rgba(88, 166, 255, 0.28);
-    border-radius: 0.7rem;
-    background: rgba(30, 85, 145, 0.12);
-    cursor: pointer;
-
-    input {
-      width: 2.4rem;
-      height: 1.25rem;
-      margin-top: 0.1rem;
-      accent-color: var(--primary, #2088ff);
-    }
-
-    span {
-      display: grid;
-      gap: 0.2rem;
-    }
-
-    small {
-      color: var(--text-muted, #9db0c7);
-    }
-  }
-
-  .horario-automatico-hint {
-    padding: 0.65rem 0.8rem;
-    border-left: 3px solid #3b98ff;
-  }
-
-  .row {
-    overflow: visible;
-  }
-
-  .col-3,
-  .col-5 {
-    position: relative;
-    z-index: 0;
-
-    &:has(argo-catalogo-enum-buscar.dropdown-open) {
-      z-index: 5001;
-    }
-  }
-
-  .hint-col {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: 0.35rem;
-    padding-bottom: 0.25rem;
-  }
-
-  .chips {
+  .head-badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 1rem 0;
+    gap: 8px;
     align-items: center;
   }
 
-  .chips-empty {
-    margin: 0;
-    width: 100%;
-  }
-
-  .chip .cap {
-    vertical-align: middle;
-  }
-
-  .clase-horas {
+  .banner {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem;
-    margin: 0 0 0.75rem;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+
+    &.error {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.32);
+      color: #fecaca;
+    }
+
+    .close {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: inherit;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  }
+
+  .filtros {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 12px;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+
+      input[type='time'] {
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: rgba(6, 16, 41, 0.45);
+      }
+    }
+
+    .filtro-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .count {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+  }
+
+  .content-wrap {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .loading {
+    padding: 1rem;
     color: var(--text-dim);
   }
 
-  .clase-ops {
-    margin-top: 1rem;
-    padding-top: 1rem;
-  }
-
-  .asis {
-    align-items: flex-end;
-    margin-top: 1rem;
-  }
-
-  .progreso-preview {
-    font-size: 0.95rem;
-    margin: 0.35rem 0 0.75rem;
+  .actions-cell {
+    white-space: nowrap;
   }
 }

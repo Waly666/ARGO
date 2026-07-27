@@ -499,6 +499,99 @@
       </article>
     </div>
 
+    <section class="caract-block" *ngIf="caract() as cp">
+      <h2 class="dash-section-title">Caracterización de población</h2>
+      <p class="panel-hint">Distribución demográfica de {{ cp.total }} alumno(s) registrados.</p>
+      <div class="charts-grid caract-grid">
+        <ng-container
+          *ngTemplateOutlet="caractDonut; context: { title: 'Edad', slices: slicesEdad(), paths: pathsEdad() }"
+        />
+        <ng-container
+          *ngTemplateOutlet="caractDonut; context: { title: 'Género', slices: slicesGenero(), paths: pathsGenero() }"
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            caractDonut;
+            context: { title: 'Estado civil', slices: slicesEstadoCivil(), paths: pathsEstadoCivil() }
+          "
+        />
+        <ng-container
+          *ngTemplateOutlet="caractDonut; context: { title: 'Estrato', slices: slicesEstrato(), paths: pathsEstrato() }"
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            caractDonut;
+            context: { title: 'Régimen de salud', slices: slicesRegimen(), paths: pathsRegimen() }
+          "
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            caractDonut;
+            context: { title: 'Nivel de formación', slices: slicesNivel(), paths: pathsNivel() }
+          "
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            caractDonut;
+            context: { title: 'Ocupación', slices: slicesOcupacion(), paths: pathsOcupacion() }
+          "
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            caractDonut;
+            context: { title: 'Discapacidad', slices: slicesDiscapacidad(), paths: pathsDiscapacidad() }
+          "
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            caractDonut;
+            context: { title: 'Multiculturalidad', slices: slicesMulti(), paths: pathsMulti() }
+          "
+        />
+      </div>
+    </section>
+
+    <ng-template #caractDonut let-title="title" let-slices="slices" let-paths="paths">
+      <article class="panel">
+        <h2>{{ title }}</h2>
+        <div class="donut-row compact" *ngIf="paths?.length; else sinCaract">
+          <div class="donut-wrap sm">
+            <svg
+              class="donut-svg"
+              [attr.width]="donutSizeSm"
+              [attr.height]="donutSizeSm"
+              [attr.viewBox]="'0 0 ' + donutSizeSm + ' ' + donutSizeSm"
+            >
+              <path
+                *ngFor="let seg of paths; trackBy: trackPath"
+                [attr.d]="seg.d"
+                [attr.fill]="seg.color"
+                stroke="rgba(0,0,0,0.12)"
+                stroke-width="0.5"
+              />
+            </svg>
+          </div>
+          <table class="tbl-mini">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th class="num">Cant.</th>
+                <th class="num">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of slices; trackBy: trackSlice">
+                <td><span class="dot-inline" [style.background-color]="s.color"></span>{{ s.label }}</td>
+                <td class="num">{{ s.value }}</td>
+                <td class="num">{{ s.pct }}%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #sinCaract><p class="panel-hint">Sin datos</p></ng-template>
+      </article>
+    </ng-template>
+
     <article class="panel full">
       <h2>Detalle liquidaciones por estado</h2>
       <div class="status-cards">

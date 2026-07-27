@@ -1309,7 +1309,7 @@
               [title]="contratoActivoFinalizado() ? 'Contrato finalizado: no se pueden crear clases' : 'Crear clase'">
               + Crear clase
             </button>
-            <button type="button" class="ghost mini" (click)="irInstructor()">Vista instructor</button>
+            <button type="button" class="ghost mini" (click)="irInstructor()">Clases en ejecución</button>
           </div>
         </div>
 
@@ -1330,6 +1330,7 @@
             <th>Programa</th>
             <th>Carpa</th>
             <th>Instructor</th>
+            <th class="r">Alumnos</th>
             <th>Estado</th>
             <th>Inicio</th>
             <th>Fin</th>
@@ -1346,6 +1347,11 @@
               <span *ngIf="!labelCarpaClase(c)" class="cap cap-slate cap-sm">Sin carpa</span>
             </td>
             <td><span [ngClass]="capInstructor(labelInstructorClase(c))">{{ labelInstructorClase(c) }}</span></td>
+            <td class="r num">
+              <span class="cap cap-sky cap-sm cap-text" [title]="(c.alumnosInscritos || 0) + ' alumno(s) matriculado(s)'">
+                {{ c.alumnosInscritos || 0 }}
+              </span>
+            </td>
             <td><span [ngClass]="estadoClaseLiveClass(c.estado)">{{ labelEstadoClaseAmigable(c.estado) }}</span></td>
             <td><span [ngClass]="capHoraJor(c.horaInicio)">{{ fmtHora(c.horaInicio) }}</span></td>
             <td><span [ngClass]="capHoraJor(c.horaFin)">{{ fmtHora(c.horaFin) }}</span></td>
@@ -1359,7 +1365,7 @@
             </td>
           </tr>
           <tr *ngIf="clasesListaFiltradas().length === 0">
-            <td colspan="9" class="empty jor-empty">
+            <td colspan="10" class="empty jor-empty">
               <span class="jor-empty-icon">🎓</span>
               <p>Sin clases registradas. Pulse <strong>+ Crear clase</strong> para añadir una.</p>
             </td>
@@ -1458,9 +1464,9 @@
                           [style.width.%]="lay.widthPct"
                           [title]="chipClaseCal(c) + ' — ' + fmtHora(c.horaInicio) + (c.horaFin ? ' – ' + fmtHora(c.horaFin) : '')"
                           (click)="seleccionarClaseCalendario(c)">
-                          <span class="cal-clase-hora">{{ fmtHora(c.horaInicio) }}@if (c.horaFin) { – {{ fmtHora(c.horaFin) }} }</span>
+          <span class="cal-clase-hora">{{ fmtHora(c.horaInicio) }}@if (c.horaFin) { – {{ fmtHora(c.horaFin) }} }</span>
                           <span class="cal-clase-tit">{{ chipClaseCalCorto(c) }}</span>
-                          <span class="cal-clase-inst">{{ labelInstructorClase(c) }}</span>
+                          <span class="cal-clase-inst">{{ labelInstructorClase(c) }} · {{ c.alumnosInscritos || 0 }} alum.</span>
                           <span class="cal-clase-est">{{ c.estado }}</span>
                         </button>
                       }

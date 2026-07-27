@@ -577,7 +577,7 @@ export class ShellComponent {
         },
         {
           kind: 'link',
-          label: 'Clase en carpa',
+          label: 'Clases en ejecución',
           path: '/app/jornadas/instructor',
           icon: '◈',
           iconTone: 'amber',
@@ -1722,6 +1722,9 @@ export class ShellComponent {
             this.liveSync.marcarClasesConocidas(clases.map((c) => c._id));
             this.liveSync.marcarJornadasConocidas(jornadas.map((j) => j._id));
             this.liveSync.sincronizarEstadosClases(clases);
+            if (this.mostrarToastJornadaLive()) {
+              this.liveSync.restaurarClasesEnCurso(clasesRaw);
+            }
             this.liveSync.marcarPollInicializado();
             return;
           }

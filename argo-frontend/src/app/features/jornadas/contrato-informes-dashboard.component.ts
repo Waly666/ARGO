@@ -88,6 +88,32 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     this.buildBarras(this.charts()?.clasesPorInstructor || [], 'teal'),
   );
 
+  chartEdad = computed(() => this.buildTortaCaract(this.charts()?.porEdad));
+  chartGenero = computed(() => this.buildTortaCaract(this.charts()?.porGenero));
+  chartEstadoCivil = computed(() => this.buildTortaCaract(this.charts()?.porEstadoCivil));
+  chartEstrato = computed(() => this.buildTortaCaract(this.charts()?.porEstrato));
+  chartRegimen = computed(() => this.buildTortaCaract(this.charts()?.porRegimenSalud));
+  chartNivel = computed(() => this.buildTortaCaract(this.charts()?.porNivelFormacion));
+  chartOcupacion = computed(() => this.buildTortaCaract(this.charts()?.porOcupacion));
+  chartDiscapacidad = computed(() => this.buildTortaCaract(this.charts()?.porDiscapacidad));
+  chartMulti = computed(() => this.buildTortaCaract(this.charts()?.porMultiCulturalidad));
+
+  private buildTortaCaract(items?: InformeDashboardChartItem[]) {
+    return this.buildTorta((items || []).filter((x) => Number(x.value) > 0), 'programa');
+  }
+
+  caractCharts = computed(() => [
+    { title: 'Edad', chart: this.chartEdad() },
+    { title: 'Género', chart: this.chartGenero() },
+    { title: 'Estado civil', chart: this.chartEstadoCivil() },
+    { title: 'Estrato socioeconómico', chart: this.chartEstrato() },
+    { title: 'Régimen de salud', chart: this.chartRegimen() },
+    { title: 'Nivel de formación', chart: this.chartNivel() },
+    { title: 'Ocupación', chart: this.chartOcupacion() },
+    { title: 'Discapacidad', chart: this.chartDiscapacidad() },
+    { title: 'Multiculturalidad', chart: this.chartMulti() },
+  ]);
+
   private readonly palette = [
     '#38bdf8',
     '#34d399',

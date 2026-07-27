@@ -204,6 +204,8 @@ export interface ClaseJornada {
   direccionJornada?: string;
   urlforo?: string;
   indiceClaseEnJornada?: number;
+  /** Cantidad de alumnos inscritos en la clase. */
+  alumnosInscritos?: number;
 }
 
 export interface ProgramaJornada {

@@ -62,12 +62,14 @@ router.delete('/jornadas/:id', gest, contratoMutable.jornadaPorParametro, ctrl.e
 
 router.get('/clases', ver, ctrl.listarClases);
 router.get('/clases/del-dia', ver, ctrl.clasesDelDia);
+router.get('/clases/contratos-en-ejecucion', requirePermiso('jornadas.ver', 'jornadas.operar', 'jornadas.gestionar'), ctrl.clasesContratosEnEjecucion);
 router.get('/clases/:id', ver, ctrl.obtenerClase);
 router.post('/clases', operar, contratoMutable.jornadaPorBody, ctrl.crearClase);
 router.patch('/clases/:id', operar, contratoMutable.clasePorParametro, ctrl.actualizarClase);
 router.delete('/clases/:id', gest, contratoMutable.clasePorParametro, ctrl.eliminarClase);
 router.post('/clases/:id/iniciar', operar, contratoMutable.clasePorParametro, ctrl.iniciarClase);
 router.post('/clases/:id/finalizar', operar, contratoMutable.clasePorParametro, ctrl.finalizarClase);
+router.get('/clases/:id/post-cierre', ver, ctrl.obtenerPostCierreClase);
 router.post('/clases/:id/sincronizar-asistencias', operar, contratoMutable.clasePorParametro, ctrl.sincronizarAsistenciasInscritos);
 router.post(
   '/clases/:id/foto-evidencia',

@@ -1,4 +1,5 @@
 const Empleado = require('../models/Empleado');
+const InscripcionClase = require('../models/InscripcionClase');
 const { buscarPrograma } = require('./programaServicio');
 const Usuario = require('../models/Usuario');
 const Cargo = require('../models/Cargo');
@@ -342,6 +343,18 @@ async function enriquecerClases(rows) {
   const progCache = new Map();
   const carpaIds = [];
 
+  const claseIds = rows.map((r) => r._id).filter(Boolean);
+  const conteoInscritos = new Map();
+  if (claseIds.length) {
+    const agg = await InscripcionClase.aggregate([
+      { $match: { idClase: { $in: claseIds } } },
+      { $group: { _id: '$idClase', n: { $sum: 1 } } },
+    ]);
+    for (const row of agg) {
+      conteoInscritos.set(String(row._id), row.n || 0);
+    }
+  }
+
   for (const c of rows) {
     const idClase = normalizarIdCarpa(c.idCarpa);
     if (idClase != null) carpaIds.push(idClase);
@@ -367,6 +380,10 @@ async function enriquecerClases(rows) {
     let idCarpa = normalizarIdCarpa(c.idCarpa);
     if (idCarpa == null) idCarpa = progInfo.idCarpa;
     const carpaNombre = idCarpa != null ? carpaNombres.get(idCarpa) || `Carpa ${idCarpa}` : '';
+    const alumnosInscritos =
+      c.alumnosInscritos != null
+        ? Number(c.alumnosInscritos) || 0
+        : conteoInscritos.get(String(c._id)) || 0;
     out.push({
       ...c,
       instructorNombre,
@@ -375,6 +392,7 @@ async function enriquecerClases(rows) {
       carpaNombre,
       idEmpleadoInstructor: c.idEmpleadoInstructor ?? null,
       idUsuarioInstructor: c.idUsuarioInstructor || '',
+      alumnosInscritos,
     });
   }
   return out;

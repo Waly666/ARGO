@@ -552,3 +552,18 @@
     color: var(--inf-muted);
   }
 }
+
+.inf-section-title {
+  margin: 18px 0 6px;
+  font-size: 1.05rem;
+}
+
+.inf-caract-lead {
+  margin: 0 0 10px;
+}
+
+.inf-charts--caract {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}

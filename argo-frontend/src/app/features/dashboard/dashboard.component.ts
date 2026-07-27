@@ -254,6 +254,43 @@ export class DashboardComponent implements OnInit {
   pathsPago = computed(() => donutSegmentPaths(this.slicesPago(), this.donutSizeSm, this.donutThicknessSm));
   pathsForma = computed(() => donutSegmentPaths(this.slicesFormaPago(), this.donutSize, this.donutThickness));
 
+  private slicesCaract(
+    rows: Array<{ label: string; value: number }> | undefined,
+  ): ChartSlice[] {
+    const s = this.stats();
+    if (!s || !rows?.length) return [];
+    const conDatos = rows.filter((r) => r.value > 0);
+    if (!conDatos.length) return [];
+    return slicesFromRows(conDatos, (r) => r.label, (r) => r.value, s.colores);
+  }
+
+  caract = computed(() => this.stats()?.caracterizacionPoblacion || null);
+  slicesEdad = computed(() => this.slicesCaract(this.caract()?.porEdad));
+  slicesGenero = computed(() => this.slicesCaract(this.caract()?.porGenero));
+  slicesEstadoCivil = computed(() => this.slicesCaract(this.caract()?.porEstadoCivil));
+  slicesEstrato = computed(() => this.slicesCaract(this.caract()?.porEstrato));
+  slicesRegimen = computed(() => this.slicesCaract(this.caract()?.porRegimenSalud));
+  slicesNivel = computed(() => this.slicesCaract(this.caract()?.porNivelFormacion));
+  slicesOcupacion = computed(() => this.slicesCaract(this.caract()?.porOcupacion));
+  slicesDiscapacidad = computed(() => this.slicesCaract(this.caract()?.porDiscapacidad));
+  slicesMulti = computed(() => this.slicesCaract(this.caract()?.porMultiCulturalidad));
+
+  pathsEdad = computed(() => donutSegmentPaths(this.slicesEdad(), this.donutSizeSm, this.donutThicknessSm));
+  pathsGenero = computed(() => donutSegmentPaths(this.slicesGenero(), this.donutSizeSm, this.donutThicknessSm));
+  pathsEstadoCivil = computed(() =>
+    donutSegmentPaths(this.slicesEstadoCivil(), this.donutSizeSm, this.donutThicknessSm),
+  );
+  pathsEstrato = computed(() => donutSegmentPaths(this.slicesEstrato(), this.donutSizeSm, this.donutThicknessSm));
+  pathsRegimen = computed(() => donutSegmentPaths(this.slicesRegimen(), this.donutSizeSm, this.donutThicknessSm));
+  pathsNivel = computed(() => donutSegmentPaths(this.slicesNivel(), this.donutSizeSm, this.donutThicknessSm));
+  pathsOcupacion = computed(() =>
+    donutSegmentPaths(this.slicesOcupacion(), this.donutSizeSm, this.donutThicknessSm),
+  );
+  pathsDiscapacidad = computed(() =>
+    donutSegmentPaths(this.slicesDiscapacidad(), this.donutSizeSm, this.donutThicknessSm),
+  );
+  pathsMulti = computed(() => donutSegmentPaths(this.slicesMulti(), this.donutSizeSm, this.donutThicknessSm));
+
   maxIngresosMes = computed(() =>
     maxEnSerie((this.stats()?.ingresosPorMes ?? []).map((m) => m.total ?? 0)),
   );

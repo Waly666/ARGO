@@ -3,10 +3,11 @@ import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-i
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, debounceTime, forkJoin, switchMap } from 'rxjs';
+import { Subject, debounceTime, forkJoin, map, switchMap } from 'rxjs';
 
 import { AlumnoListItem, AlumnoService } from '../../core/services/alumno.service';
 import { AuthService } from '../../core/services/auth.service';
+import { Cliente, ClienteService } from '../../core/services/cliente.service';
 import { JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { AlarmaService } from '../../core/services/alarma.service';
@@ -14,8 +15,12 @@ import { CatalogoService } from '../../core/services/catalogo.service';
 import {
   ESTADOS_CIVIL_DEF,
   JORNADAS_DEF,
+  ORIGEN_SISTEMA,
+  ORIGEN_WEB,
   buildCatalogoLabelMap,
   catalogoLabel,
+  catEtiqueta,
+  catValor,
   etiquetaOrigenAlumno,
   etiquetaOrigenAlumnoCorta,
   normalizarOrigenAlumno,
@@ -45,7 +50,7 @@ import {
   tituloComprobanteAlarma,
 } from '../../core/utils/comprobante-alarma.helpers';
 import { ymdLocal } from '../jornadas/jornada-calendario.util';
-
+import { etiquetaEdad } from '../../core/utils/edad.helpers';
 type VistaAlumnos = VistaLista;
 type SortColAlumnos =
   | 'fechaReg'
@@ -120,6 +125,7 @@ function saveSortPrefs(storageKey: string, col: SortColAlumnos, dir: SortDir): v
 })
 export class AlumnosListaComponent implements OnInit {
   private alumnoSvc = inject(AlumnoService);
+  private clienteSvc = inject(ClienteService);
   private jornadaCapSvc = inject(JornadaCapService);
   private catSvc = inject(CatalogoService);
   private router = inject(Router);
@@ -167,6 +173,18 @@ export class AlumnosListaComponent implements OnInit {
   cargandoJornadasCap = signal(false);
   jornadaFiltroMsg = signal('');
 
+  /** Filtros comunes (ambos listados): empresa, origen, jornada catálogo */
+  empresaFiltroId = signal('');
+  empresaFiltroNombre = signal('');
+  origenFiltro = signal('');
+  jornadaCatFiltro = signal('');
+  opcionesJornadaCat = signal<EnumBuscarOption[]>([]);
+
+  readonly opcionesOrigen: EnumBuscarOption[] = [
+    { value: ORIGEN_SISTEMA, label: 'Inscrito por sistema' },
+    { value: ORIGEN_WEB, label: 'Inscrito por página web' },
+  ];
+
   readonly opcionesCertJornada = CERT_JORNADA_OPTS;
 
   opcionesJornadasCap = computed<EnumBuscarOption[]>(() =>
@@ -189,7 +207,40 @@ export class AlumnosListaComponent implements OnInit {
     return CERT_JORNADA_OPTS.find((o) => o.value === v)?.label || '';
   });
 
+  textoOrigenSel = computed(() => {
+    const v = this.origenFiltro();
+    return this.opcionesOrigen.find((o) => o.value === v)?.label || '';
+  });
+
+  textoJornadaCatSel = computed(() => {
+    const v = this.jornadaCatFiltro();
+    if (!v) return '';
+    return this.opcionesJornadaCat().find((o) => String(o.value) === v)?.label || v;
+  });
+
   filtroJornadaActivo = computed(() => !!(this.fechaJornadaCap().trim() || this.idJornadaCap().trim()));
+
+  filtroListaActivo = computed(
+    () =>
+      !!(
+        this.empresaFiltroId().trim() ||
+        this.origenFiltro().trim() ||
+        this.jornadaCatFiltro().trim() ||
+        this.filtroJornadaActivo() ||
+        this.certJornadaFiltro()
+      ),
+  );
+
+  buscarEmpresaRemoto = (q: string) =>
+    this.clienteSvc.listar(q.trim()).pipe(
+      map((rows) =>
+        (rows || []).slice(0, 20).map((c) => ({
+          value: String(c._id || ''),
+          label: this.labelEmpresaCliente(c),
+          hint: c.identificacion || undefined,
+        })),
+      ),
+    );
 
   totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
   pageLabel = computed(() => {
@@ -208,6 +259,9 @@ export class AlumnosListaComponent implements OnInit {
     fechaJornada: string;
     idJornada: string;
     certJornada: '' | 'con' | 'sin';
+    empresaId: string;
+    origen: string;
+    jornada: string;
   }>();
 
   ngOnInit(): void {
@@ -232,11 +286,27 @@ export class AlumnosListaComponent implements OnInit {
           'id',
           'codigo',
         ]);
+        const pool = jornada?.length ? jornada : (JORNADAS_DEF as unknown as Record<string, unknown>[]);
+        const opts: EnumBuscarOption[] = [];
+        const seen = new Set<string>();
+        for (const raw of pool) {
+          const value = catValor(raw);
+          if (!value || seen.has(value)) continue;
+          seen.add(value);
+          opts.push({ value, label: catEtiqueta(raw) });
+        }
+        this.opcionesJornadaCat.set(opts);
         this.catalogosReady.update((n) => n + 1);
       },
       error: () => {
         this.jornadaLabels = buildCatalogoLabelMap([], JORNADAS_DEF, ['idJornada', 'id', 'codigo']);
         this.estadoCivilLabels = buildCatalogoLabelMap([], ESTADOS_CIVIL_DEF, ['idEstadoCivil', 'id', 'codigo']);
+        this.opcionesJornadaCat.set(
+          (JORNADAS_DEF as unknown as Record<string, unknown>[]).map((raw) => ({
+            value: catValor(raw),
+            label: catEtiqueta(raw),
+          })),
+        );
         this.catalogosReady.update((n) => n + 1);
       },
     });
@@ -244,7 +314,7 @@ export class AlumnosListaComponent implements OnInit {
     this.load$
       .pipe(
         debounceTime(280),
-        switchMap(({ q, page, sort, dir, fechaJornada, idJornada, certJornada }) => {
+        switchMap(({ q, page, sort, dir, fechaJornada, idJornada, certJornada, empresaId, origen, jornada }) => {
           this.loading.set(true);
           const opts: {
             q: string;
@@ -256,6 +326,9 @@ export class AlumnosListaComponent implements OnInit {
             idJornada?: string;
             fechaJornada?: string;
             certJornada?: '' | 'con' | 'sin';
+            empresaId?: string;
+            origen?: string;
+            jornada?: string;
           } = {
             q,
             limit: this.pageSize,
@@ -269,6 +342,9 @@ export class AlumnosListaComponent implements OnInit {
             else if (fechaJornada) opts.fechaJornada = fechaJornada;
             if (certJornada) opts.certJornada = certJornada;
           }
+          if (empresaId) opts.empresaId = empresaId;
+          if (origen) opts.origen = origen;
+          if (jornada) opts.jornada = jornada;
           return this.alumnoSvc.listar(opts);
         }),
       )
@@ -364,6 +440,49 @@ export class AlumnosListaComponent implements OnInit {
     this.cargar();
   }
 
+  onEmpresaPick(opt: EnumBuscarOption) {
+    const id = String(opt?.value || '').trim();
+    if (!id) return;
+    this.empresaFiltroId.set(id);
+    this.empresaFiltroNombre.set(String(opt.label || '').trim());
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onEmpresaLimpiar() {
+    this.empresaFiltroId.set('');
+    this.empresaFiltroNombre.set('');
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onOrigenPick(opt: EnumBuscarOption) {
+    const v = String(opt?.value || '').trim();
+    this.origenFiltro.set(v === ORIGEN_WEB || v === ORIGEN_SISTEMA ? v : '');
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onOrigenLimpiar() {
+    this.origenFiltro.set('');
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onJornadaCatPick(opt: EnumBuscarOption) {
+    const v = String(opt?.value || '').trim();
+    if (!v) return;
+    this.jornadaCatFiltro.set(v);
+    this.page.set(0);
+    this.cargar();
+  }
+
+  onJornadaCatLimpiar() {
+    this.jornadaCatFiltro.set('');
+    this.page.set(0);
+    this.cargar();
+  }
+
   limpiarFiltrosJornada() {
     this.fechaJornadaCap.set('');
     this.idJornadaCap.set('');
@@ -371,6 +490,44 @@ export class AlumnosListaComponent implements OnInit {
     this.page.set(0);
     this.cargarJornadasCapOpciones();
     this.cargar();
+  }
+
+  limpiarFiltrosLista() {
+    this.empresaFiltroId.set('');
+    this.empresaFiltroNombre.set('');
+    this.origenFiltro.set('');
+    this.jornadaCatFiltro.set('');
+    this.fechaJornadaCap.set('');
+    this.idJornadaCap.set('');
+    this.certJornadaFiltro.set('');
+    this.page.set(0);
+    if (this.esJornadas()) this.cargarJornadasCapOpciones();
+    this.cargar();
+  }
+
+  private labelEmpresaCliente(c: Cliente): string {
+    return (
+      c.razonSocial?.trim() ||
+      c.nombreComercial?.trim() ||
+      c.nombres?.trim() ||
+      c.identificacion ||
+      'Empresa'
+    );
+  }
+
+  cargar() {
+    this.load$.next({
+      q: this.query().trim(),
+      page: this.page(),
+      sort: this.sortCol(),
+      dir: this.sortDir(),
+      fechaJornada: this.fechaJornadaCap().trim(),
+      idJornada: this.idJornadaCap().trim(),
+      certJornada: this.certJornadaFiltro(),
+      empresaId: this.empresaFiltroId().trim(),
+      origen: this.origenFiltro().trim(),
+      jornada: this.jornadaCatFiltro().trim(),
+    });
   }
 
   labelJornadaCap(j: JornadaCapDto): string {
@@ -402,18 +559,6 @@ export class AlumnosListaComponent implements OnInit {
     const c = r.certificadoJornada;
     if (!c?.generado) return 'cap cap-slate cap-sm cap-text';
     return 'cap cap-emerald cap-sm cap-text';
-  }
-
-  cargar() {
-    this.load$.next({
-      q: this.query().trim(),
-      page: this.page(),
-      sort: this.sortCol(),
-      dir: this.sortDir(),
-      fechaJornada: this.fechaJornadaCap().trim(),
-      idJornada: this.idJornadaCap().trim(),
-      certJornada: this.certJornadaFiltro(),
-    });
   }
 
   toggleSort(col: SortColAlumnos) {
@@ -726,6 +871,11 @@ export class AlumnosListaComponent implements OnInit {
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return String(v);
     return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  formatEdad(r: AlumnoListItem): string {
+    if (r.edad != null && Number.isFinite(Number(r.edad))) return `${r.edad} a.`;
+    return etiquetaEdad(r.fechaNac);
   }
 
   textoMunicipio(r: AlumnoListItem): string {

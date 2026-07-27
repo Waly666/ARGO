@@ -2081,6 +2081,14 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     const id = this.claseSel();
     if (!id || !this.claseModalIniciable()) return;
+
+    const preview = {
+      ...(this.claseActiva() || {}),
+      _id: id,
+      estado: 'EN PROCESO',
+    } as unknown as Record<string, unknown>;
+    this.liveSync.notificarClaseIniciada(preview);
+
     this.jornadaSvc.iniciarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
@@ -2105,6 +2113,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!id) return;
     const yaFinalizada = this.claseActiva()?.estado === 'FINALIZADO';
     if (!yaFinalizada && !this.validarHorarioAntesFinalizarEspecial()) return;
+
+    // Alarma inmediata (no esperar post-cierre ni poll de 45–60s).
+    const preview = {
+      ...(this.claseActiva() || {}),
+      _id: id,
+      estado: 'FINALIZADO',
+    } as unknown as Record<string, unknown>;
+    this.liveSync.notificarClaseFinalizada(preview);
+
     this.jornadaSvc.finalizarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
@@ -2132,8 +2149,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         if (nCert > 0) {
           msg += ` Certificados emitidos: ${nCert}.`;
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            certificadosEmitidos: r?.certificadosEmitidos,
+            certificadosYaNotificados: true,
+          });
+        } else if (r?.postCierrePendiente) {
+          msg += ' Generando certificados…';
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            esperarPostCierre: true,
+          });
+        } else {
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         }
-        this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         this.mostrarMsgModal(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
         this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
@@ -2225,6 +2252,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         const nCert = this.contarCertificadosEmitidos(r);
         if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+        } else if (r?.postCierrePendiente && String(c?.estado || '').toUpperCase() === 'FINALIZADO') {
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            esperarPostCierre: true,
+          });
         }
         const msg = r?.message || 'Cambios guardados.';
         this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase actualizada');
@@ -3999,8 +4030,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const prog = this.nombrePrograma(c.idPrograma);
     const inst = this.labelInstructorClase(c);
     const carpa = labelCarpaClase(c);
+    const n = Number(c.alumnosInscritos) || 0;
     const base = carpa ? `${prog} · ${carpa}` : prog;
-    return inst && inst !== '—' ? `${base} · ${inst}` : base;
+    const conInst = inst && inst !== '—' ? `${base} · ${inst}` : base;
+    return `${conInst} · ${n} alumno(s)`;
   }
 
   chipClaseCalCorto(c: any): string {
@@ -4981,19 +5014,38 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const id = this.claseSel();
     if (!id) return;
     if (!this.validarHorarioAntesFinalizarEspecial()) return;
+
+    const preview = {
+      ...(this.claseActiva() || {}),
+      _id: id,
+      estado: 'FINALIZADO',
+    } as unknown as Record<string, unknown>;
+    this.liveSync.notificarClaseFinalizada(preview);
+
     this.jornadaSvc.finalizarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
         this.claseActiva.set(c);
         this.recargarClases();
-        this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         const nCert = this.contarCertificadosEmitidos(r);
         if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            certificadosEmitidos: r?.certificadosEmitidos,
+            certificadosYaNotificados: true,
+          });
+        } else if (r?.postCierrePendiente) {
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            esperarPostCierre: true,
+          });
+        } else {
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         }
         let msg = 'La clase quedó cerrada. Ya no admite nuevas asistencias.';
         if (nCert > 0) {
           msg += ` Certificados emitidos: ${nCert}.`;
+        } else if (r?.postCierrePendiente) {
+          msg += ' Generando certificados…';
         }
         this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
       },
@@ -5090,11 +5142,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   irInstructor() {
-    const q: Record<string, string> = {};
-    if (this.jornadaSel()) q['jornada'] = this.jornadaSel();
-    const j = this.jornadas().find((x) => x._id === this.jornadaSel());
-    if (j?.fechaProgramacion) q['fecha'] = String(j.fechaProgramacion).slice(0, 10);
-    void this.router.navigate(['/app/jornadas/instructor'], { queryParams: q });
+    void this.router.navigate(['/app/jornadas/instructor']);
   }
 
   recargarCerts() {

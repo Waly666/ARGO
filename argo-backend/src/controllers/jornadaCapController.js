@@ -50,6 +50,8 @@ const {
   emitirCertificadosAsistentesClase,
   postCierreClaseJornada,
   fusionarCertificadosEmitidos,
+  ejecutarPostCierreEnBackground,
+  obtenerResultadoPostCierre,
 } = require('../services/asistenciaJornadaCap');
 const {
   MOTIVOS_CERT,
@@ -1156,6 +1158,76 @@ exports.clasesDelDia = async (req, res, next) => {
   }
 };
 
+/** Todas las clases de contratos en ejecución (En Ejecución). */
+exports.clasesContratosEnEjecucion = async (req, res, next) => {
+  try {
+    const contratos = await Contratacion.find({})
+      .select('_id estado codContrato nombreComercial razoSocial')
+      .lean();
+    const enEjecucion = contratos.filter((c) => contratoEstaEnEjecucion(c.estado));
+    if (!enEjecucion.length) return res.json([]);
+
+    const mapaContrato = new Map(enEjecucion.map((c) => [String(c._id), c]));
+    const contratoIds = enEjecucion.map((c) => c._id);
+    const jornadas = await JornadaCap.find({ idContrato: { $in: contratoIds } })
+      .select('_id idContrato fechaProgramacion estado municipio')
+      .lean();
+    if (!jornadas.length) return res.json([]);
+
+    const synced = await sincronizarEstadosJornadas(jornadas);
+    const mapaJornada = new Map();
+    for (const j of synced) {
+      if (j?._id) mapaJornada.set(String(j._id), j);
+    }
+    const jornadaIds = synced.filter((j) => j?._id).map((j) => j._id);
+    if (!jornadaIds.length) return res.json([]);
+
+    const q = { idJornada: { $in: jornadaIds } };
+    const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
+    if (vacio) return res.json([]);
+
+    const rows = await ClaseJornadaCap.find(q)
+      .sort({ fechaClase: 1, horaInicio: 1, createdAt: 1 })
+      .lean();
+
+    const raw = [];
+    for (const c of rows) {
+      const j = mapaJornada.get(String(c.idJornada));
+      if (!j) continue;
+      const contrato = mapaContrato.get(String(j.idContrato));
+      if (!contrato) continue;
+      const cliente = String(contrato.nombreComercial || contrato.razoSocial || '').trim();
+      raw.push({
+        ...c,
+        fechaJornada: j.fechaProgramacion,
+        jornadaEstado: j.estado,
+        idContrato: j.idContrato,
+        municipioJornada: j.municipio,
+        codContrato: contrato.codContrato || '',
+        contratoLabel: contrato.codContrato
+          ? `${contrato.codContrato} — ${cliente || 'Contrato'}`
+          : cliente || String(contrato.codContrato || ''),
+        clienteNombre: cliente,
+      });
+    }
+
+    const enriched = await enriquecerClases(raw);
+    enriched.sort((a, b) => {
+      const fa = a.fechaJornada || a.fechaClase;
+      const fb = b.fechaJornada || b.fechaClase;
+      const ta = fa ? new Date(fa).getTime() : 0;
+      const tb = fb ? new Date(fb).getTime() : 0;
+      if (ta !== tb) return ta - tb;
+      const ha = a.horaInicio ? new Date(a.horaInicio).getTime() : 0;
+      const hb = b.horaInicio ? new Date(b.horaInicio).getTime() : 0;
+      return ha - hb;
+    });
+    res.json(enriched);
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.listarInstructores = async (req, res, next) => {
   try {
     res.json(await listarInstructoresConUsuario());
@@ -1433,24 +1505,15 @@ exports.actualizarClase = async (req, res, next) => {
     const dtoResp = await dtoClaseConJornada(clase);
 
     if (estadoDespues === 'FINALIZADO' && estadoAntes !== 'FINALIZADO') {
-      const post = await postCierreClaseJornada(req, clase);
+      // Respuesta inmediata; certificados/asistencias en background (evita lag de 45s–1min).
+      ejecutarPostCierreEnBackground(req, clase);
       return res.json({
         ...dtoResp,
-        idContrato: post.jornada?.idContrato,
-        asistenciasRegistradas: post.asistenciasRegistradas || 0,
-        certificadosGenerados: post.certificadosNuevos || 0,
-        certificadosEmitidos: post.certificadosEmitidos || [],
-        mensajeAsistencias:
-          post.asistenciasRegistradas > 0
-            ? `Se registró asistencia de ${post.asistenciasRegistradas} alumno(s) al cerrar la clase.`
-            : null,
-        message:
-          post.certificadosNuevos > 0
-            ? `Clase finalizada. Certificados emitidos: ${post.certificadosNuevos}.`
-            : post.ok
-              ? 'Clase finalizada.'
-              : 'Clase finalizada. Hubo un aviso al emitir certificados o asistencias pendientes; revise la lista.',
-        advertenciaPostCierre: post.ok ? undefined : post.error,
+        postCierrePendiente: true,
+        asistenciasRegistradas: 0,
+        certificadosGenerados: 0,
+        certificadosEmitidos: [],
+        message: 'Clase finalizada. Generando certificados…',
       });
     }
 
@@ -1590,21 +1653,16 @@ exports.finalizarClase = async (req, res, next) => {
     const clase = await ClaseJornadaCap.findById(req.params.id);
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
     if (clase.estado === 'FINALIZADO') {
-      const post = await postCierreClaseJornada(req, clase);
+      // Reproceso: no bloquear HTTP; el cliente consulta /post-cierre.
+      ejecutarPostCierreEnBackground(req, clase);
       return res.json({
         clase: await dtoClaseConJornada(clase),
-        idContrato: post.jornada?.idContrato,
-        asistenciasRegistradas: post.asistenciasRegistradas || 0,
-        certificadosGenerados: post.certificadosNuevos || 0,
-        certificadosEmitidos: post.certificadosEmitidos || [],
+        postCierrePendiente: true,
+        asistenciasRegistradas: 0,
+        certificadosGenerados: 0,
+        certificadosEmitidos: [],
         reproceso: true,
-        message:
-          post.certificadosNuevos > 0
-            ? `Certificados emitidos: ${post.certificadosNuevos}.`
-            : post.ok
-              ? 'La clase ya estaba finalizada. No había certificados pendientes.'
-              : 'La clase ya estaba finalizada. Hubo un aviso al emitir certificados; revise la lista.',
-        advertenciaPostCierre: post.ok ? undefined : post.error,
+        message: 'Reprocesando certificados pendientes…',
       });
     }
 
@@ -1687,38 +1745,49 @@ exports.finalizarClase = async (req, res, next) => {
     const claseFinal = await ClaseJornadaCap.findById(clase._id);
     if (!claseFinal) return res.status(404).json({ message: 'Clase no encontrada' });
 
-    const post = await postCierreClaseJornada(req, claseFinal);
-    if (post.ok) {
-      res.json({
-        clase: await dtoClaseConJornada(claseFinal),
-        idContrato: post.jornada?.idContrato,
-        asistenciasRegistradas: post.asistenciasRegistradas || 0,
-        certificadosGenerados: post.certificadosNuevos || 0,
-        certificadosEmitidos: post.certificadosEmitidos || [],
-        mensajeAsistencias:
-          post.asistenciasRegistradas > 0
-            ? `Se registró asistencia de ${post.asistenciasRegistradas} alumno(s) al finalizar la clase.`
-            : null,
-        message:
-          post.certificadosNuevos > 0
-            ? `Clase finalizada. Certificados emitidos: ${post.certificadosNuevos}.`
-            : 'Clase finalizada.',
-      });
-    } else {
-      console.error('[finalizarClase] post-cierre:', post.error);
-      res.json({
-        clase: await dtoClaseConJornada(claseFinal),
-        idContrato: post.jornada?.idContrato,
-        asistenciasRegistradas: post.asistenciasRegistradas || 0,
-        certificadosGenerados: post.certificadosNuevos || 0,
-        certificadosEmitidos: post.certificadosEmitidos || [],
-        message:
-          'Clase finalizada. Hubo un aviso al emitir certificados o asistencias pendientes; revise la lista.',
-        advertenciaPostCierre: post.error,
-      });
-    }
+    // Responder al instante; asistencias + certificados corren en background.
+    ejecutarPostCierreEnBackground(req, claseFinal);
+    res.json({
+      clase: await dtoClaseConJornada(claseFinal),
+      postCierrePendiente: true,
+      asistenciasRegistradas: 0,
+      certificadosGenerados: 0,
+      certificadosEmitidos: [],
+      message: 'Clase finalizada. Generando certificados…',
+    });
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+/** Estado del post-cierre async (asistencias + certificados tras finalizar). */
+exports.obtenerPostCierreClase = async (req, res, next) => {
+  try {
+    const row = obtenerResultadoPostCierre(req.params.id);
+    if (!row) {
+      return res.json({ status: 'unknown', postCierrePendiente: false });
+    }
+    if (row.status === 'pending') {
+      return res.json({ status: 'pending', postCierrePendiente: true });
+    }
+    return res.json({
+      status: row.status,
+      postCierrePendiente: false,
+      ok: row.ok !== false,
+      error: row.error,
+      idContrato: row.idContrato || undefined,
+      asistenciasRegistradas: row.asistenciasRegistradas || 0,
+      certificadosGenerados: row.certificadosNuevos || 0,
+      certificadosEmitidos: row.certificadosEmitidos || [],
+      message:
+        (row.certificadosNuevos || 0) > 0
+          ? `Certificados emitidos: ${row.certificadosNuevos}.`
+          : row.ok === false
+            ? row.error || 'Aviso al emitir certificados; revise la lista.'
+            : 'Post-cierre completado.',
+    });
+  } catch (e) {
     next(e);
   }
 };

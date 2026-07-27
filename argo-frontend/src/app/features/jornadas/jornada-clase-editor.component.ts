@@ -1014,6 +1014,10 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
         const nCert = this.contarCertificadosEmitidos(r);
         if (nCert > 0) {
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+        } else if (r?.postCierrePendiente && String(c?.estado || '').toUpperCase() === 'FINALIZADO') {
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            esperarPostCierre: true,
+          });
         }
         let msg = r?.message || 'Cambios guardados.';
         this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase actualizada');
@@ -1027,6 +1031,14 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   iniciarClaseModal(): void {
     const id = this.claseSel();
     if (!id || !this.claseModalIniciable()) return;
+
+    const preview = {
+      ...(this.claseActiva() || {}),
+      _id: id,
+      estado: 'EN PROCESO',
+    } as unknown as Record<string, unknown>;
+    this.liveSync.notificarClaseIniciada(preview);
+
     this.jornadaSvc.iniciarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (c) => {
         this.claseActiva.set(c);
@@ -1048,6 +1060,14 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     if (!id) return;
     const yaFinalizada = this.claseActiva()?.estado === 'FINALIZADO';
     if (!yaFinalizada && !this.validarHorarioAntesFinalizarEspecial()) return;
+
+    const preview = {
+      ...(this.claseActiva() || {}),
+      _id: id,
+      estado: 'FINALIZADO',
+    } as unknown as Record<string, unknown>;
+    this.liveSync.notificarClaseFinalizada(preview);
+
     this.jornadaSvc.finalizarClase(id, this.horarioPayloadFinalizarClase()).subscribe({
       next: (r: any) => {
         const c = r?.clase || { ...this.claseActiva(), estado: 'FINALIZADO' };
@@ -1073,8 +1093,18 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
         if (nCert > 0) {
           msg += ` Certificados emitidos: ${nCert}.`;
           this.certAlertSvc.notificarVariosDesdeRespuesta(r?.certificadosEmitidos);
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            certificadosEmitidos: r?.certificadosEmitidos,
+            certificadosYaNotificados: true,
+          });
+        } else if (r?.postCierrePendiente) {
+          msg += ' Generando certificados…';
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>, {
+            esperarPostCierre: true,
+          });
+        } else {
+          this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         }
-        this.liveSync.notificarClaseFinalizada(c as unknown as Record<string, unknown>);
         this.mostrarMsgModal(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
         this.mostrarMsg(msg, nCert > 0 ? 'ok' : 'info', 'Clase finalizada');
         this.emitClaseGuardada();

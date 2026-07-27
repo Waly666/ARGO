@@ -458,6 +458,64 @@
             }
           </section>
         </div>
+
+        <h3 class="inf-section-title">Caracterización de población</h3>
+        <p class="inf-muted inf-caract-lead">
+          Perfil demográfico de los alumnos capacitados
+          @if (data()?.caracterizacionPoblacion?.total; as n) {
+            ({{ n }} alumno(s))
+          }
+          .
+        </p>
+        <div class="inf-charts inf-charts--caract">
+          @for (block of caractCharts(); track block.title) {
+            <section class="inf-card inf-chart-card">
+              <h3>{{ block.title }}</h3>
+              @if (block.chart.slices.length) {
+                <div class="inf-pie" role="img" [attr.aria-label]="block.title">
+                  <div class="inf-pie-visual">
+                    <svg viewBox="0 0 100 100" class="inf-pie-svg">
+                      @for (s of block.chart.slices; track s.label) {
+                        <path [attr.d]="s.path" [attr.fill]="s.color">
+                          <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
+                        </path>
+                      }
+                      @for (s of block.chart.slices; track s.label + '-lbl') {
+                        @if (s.showLabel) {
+                          <text
+                            class="inf-pie-slice-lbl"
+                            [attr.x]="s.labelX"
+                            [attr.y]="s.labelY"
+                            text-anchor="middle"
+                            dominant-baseline="middle"
+                          >
+                            {{ formatPct(s.pct) }}
+                          </text>
+                        }
+                      }
+                    </svg>
+                    <div class="inf-pie-center">
+                      <strong>{{ block.chart.total }}</strong>
+                      <span>alumnos</span>
+                    </div>
+                  </div>
+                  <ul class="inf-pie-legend">
+                    @for (s of block.chart.slices; track s.label) {
+                      <li>
+                        <span class="inf-pie-swatch" [style.background]="s.color"></span>
+                        <span class="inf-pie-leg-lbl">{{ s.label }}</span>
+                        <strong>{{ s.value }}</strong>
+                        <em>{{ formatPct(s.pct) }}</em>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              } @else {
+                <p class="inf-muted">Sin datos</p>
+              }
+            </section>
+          }
+        </div>
       }
 
       <!-- Jornadas -->

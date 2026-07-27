@@ -183,9 +183,7 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   }
 
   operarClase(c: ClaseJornadaDto) {
-    void this.router.navigate(['/app/jornadas/instructor'], {
-      queryParams: { clase: c._id, jornada: c.idJornada, fecha: ymdLocal(new Date()) },
-    });
+    this.editarClase(c);
   }
 
   iniciarYOperar(c: ClaseJornadaDto) {

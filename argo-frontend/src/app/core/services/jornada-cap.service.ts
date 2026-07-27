@@ -223,6 +223,27 @@ export interface InformeDashboardDto {
     alumnosPorJornada: InformeDashboardChartItem[];
     alumnosPorPrograma: InformeDashboardChartItem[];
     clasesPorInstructor: InformeDashboardChartItem[];
+    porEdad?: InformeDashboardChartItem[];
+    porGenero?: InformeDashboardChartItem[];
+    porEstadoCivil?: InformeDashboardChartItem[];
+    porEstrato?: InformeDashboardChartItem[];
+    porRegimenSalud?: InformeDashboardChartItem[];
+    porNivelFormacion?: InformeDashboardChartItem[];
+    porOcupacion?: InformeDashboardChartItem[];
+    porDiscapacidad?: InformeDashboardChartItem[];
+    porMultiCulturalidad?: InformeDashboardChartItem[];
+  };
+  caracterizacionPoblacion?: {
+    total: number;
+    porEdad: InformeDashboardChartItem[];
+    porGenero: InformeDashboardChartItem[];
+    porEstadoCivil: InformeDashboardChartItem[];
+    porEstrato: InformeDashboardChartItem[];
+    porRegimenSalud: InformeDashboardChartItem[];
+    porNivelFormacion: InformeDashboardChartItem[];
+    porOcupacion: InformeDashboardChartItem[];
+    porDiscapacidad: InformeDashboardChartItem[];
+    porMultiCulturalidad: InformeDashboardChartItem[];
   };
   porJornada: Array<{
     _id: string;
@@ -355,6 +376,8 @@ export interface ClaseJornadaDto {
   codContrato?: string;
   contratoLabel?: string;
   clienteNombre?: string;
+  /** Cantidad de alumnos inscritos (matriculados) en la clase. */
+  alumnosInscritos?: number;
   /** Ruta relativa bajo uploads/ (evidenciascap/{codContrato}/fotos/...). */
   urlforo?: string;
 }
@@ -643,6 +666,11 @@ export class JornadaCapService {
     return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases/del-dia`, { params: p });
   }
 
+  /** Clases de todos los contratos en ejecución. */
+  listarClasesContratosEnEjecucion(): Observable<ClaseJornadaDto[]> {
+    return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases/contratos-en-ejecucion`);
+  }
+
   crearClase(dto: {
     idJornada: string;
     idPrograma: string;
@@ -689,7 +717,38 @@ export class JornadaCapService {
     id: string,
     horario?: { horarioManual?: boolean; horaInicio?: string; horaFin?: string },
   ) {
-    return this.http.post(`${this.base}/clases/${id}/finalizar`, horario ?? {});
+    return this.http.post<{
+      clase?: ClaseJornadaDto;
+      postCierrePendiente?: boolean;
+      asistenciasRegistradas?: number;
+      certificadosGenerados?: number;
+      certificadosEmitidos?: Array<{
+        certificado: Record<string, unknown>;
+        nombreAlumno?: string;
+        numDoc?: number;
+      }>;
+      reproceso?: boolean;
+      message?: string;
+      advertenciaPostCierre?: string;
+    }>(`${this.base}/clases/${id}/finalizar`, horario ?? {});
+  }
+
+  /** Resultado del post-cierre async (asistencias + certificados tras finalizar). */
+  obtenerPostCierreClase(id: string) {
+    return this.http.get<{
+      status: 'pending' | 'done' | 'error' | 'unknown';
+      postCierrePendiente?: boolean;
+      ok?: boolean;
+      error?: string;
+      asistenciasRegistradas?: number;
+      certificadosGenerados?: number;
+      certificadosEmitidos?: Array<{
+        certificado: Record<string, unknown>;
+        nombreAlumno?: string;
+        numDoc?: number;
+      }>;
+      message?: string;
+    }>(`${this.base}/clases/${id}/post-cierre`);
   }
 
   sincronizarAsistenciasInscritos(idClase: string) {

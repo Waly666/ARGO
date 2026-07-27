@@ -252,6 +252,12 @@ export default function ClasesJornadaScreen() {
                         </ScaledText>
                       </View>
                     ) : null}
+                    <View style={styles.metaLine}>
+                      <Ionicons name="people-outline" size={15} color={metaColor} />
+                      <ScaledText baseSize={13} style={[styles.metaText, { color: metaColor }]}>
+                        {item.alumnosInscritos ?? 0} alumno(s)
+                      </ScaledText>
+                    </View>
                   </View>
 
                   <View

@@ -149,8 +149,10 @@ export class InstructorPortalComponent implements OnInit {
 
   irOperarClase(c: ClaseInstructorPortalDto) {
     if (c.origen === 'jornada') {
-      void this.router.navigate(['/app/jornadas/instructor'], {
-        queryParams: c.idJornada ? { jornada: c.idJornada, clase: c._id } : { clase: c._id },
+      void this.router.navigate(['/app/jornadas'], {
+        queryParams: c.idJornada
+          ? { jornada: c.idJornada, tab: 'clases', clase: c._id }
+          : { tab: 'clases', clase: c._id },
       });
       return;
     }

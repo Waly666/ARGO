@@ -18,7 +18,7 @@
     </div>
   }
 
-  <div class="card toolbar" [class.toolbar-jornadas]="esJornadas()">
+  <div class="card toolbar" [class.toolbar-jornadas]="esJornadas()" [class.toolbar-con-filtros]="true">
     <div class="search-box">
       <span class="ic">◎</span>
       <input
@@ -49,51 +49,94 @@
     </div>
     <span class="count">{{ pageLabel() }}</span>
 
-    <div class="jornada-filters" *ngIf="esJornadas()">
-      <div class="field-fecha">
-        <argo-date-input label="Fecha jornada" inputId="filtro-fecha-jornada" [ngModel]="fechaJornadaCap()"
-          (ngModelChange)="onFechaJornadaCap($event)"
-        ></argo-date-input>
-      </div>
-      <div class="field-jornada">
+    <div class="lista-filters">
+      <div class="field-filtro field-empresa">
         <argo-catalogo-enum-buscar
-          label="Jornada de capacitación"
-          placeholder="Seleccione jornada…"
-          [textoInicial]="textoJornadaCapSel()"
+          label="Empresa"
+          placeholder="Todas las empresas…"
+          [textoInicial]="empresaFiltroNombre()"
           [modoCombo]="true"
-          [remoto]="false"
-          [minLength]="1"
-          [disabled]="cargandoJornadasCap()"
-          [opcionesLocales]="opcionesJornadasCap()"
-          (seleccionado)="onJornadaCapPick($event)"
-          (limpiado)="onJornadaCapLimpiar()"
+          [remoto]="true"
+          [minLength]="0"
+          [buscarRemoto]="buscarEmpresaRemoto"
+          (seleccionado)="onEmpresaPick($event)"
+          (limpiado)="onEmpresaLimpiar()"
         />
       </div>
-      <div class="field-cert">
+      <div class="field-filtro field-origen">
         <argo-catalogo-enum-buscar
-          label="Certificado jornada"
-          placeholder="Todos"
-          [textoInicial]="textoCertJornadaSel()"
+          label="Origen"
+          placeholder="Todos los orígenes…"
+          [textoInicial]="textoOrigenSel()"
           [modoCombo]="true"
           [remoto]="false"
-          [minLength]="1"
-          [disabled]="!filtroJornadaActivo()"
-          [opcionesLocales]="opcionesCertJornada"
-          (seleccionado)="onCertJornadaPick($event)"
-          (limpiado)="onCertJornadaLimpiar()"
+          [minLength]="0"
+          [opcionesLocales]="opcionesOrigen"
+          (seleccionado)="onOrigenPick($event)"
+          (limpiado)="onOrigenLimpiar()"
         />
       </div>
+      <div class="field-filtro field-jornada-cat">
+        <argo-catalogo-enum-buscar
+          label="Jornada"
+          placeholder="Todas las jornadas…"
+          [textoInicial]="textoJornadaCatSel()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="0"
+          [opcionesLocales]="opcionesJornadaCat()"
+          (seleccionado)="onJornadaCatPick($event)"
+          (limpiado)="onJornadaCatLimpiar()"
+        />
+      </div>
+
+      <ng-container *ngIf="esJornadas()">
+        <div class="field-fecha">
+          <argo-date-input label="Fecha jornada" inputId="filtro-fecha-jornada" [ngModel]="fechaJornadaCap()"
+            (ngModelChange)="onFechaJornadaCap($event)"
+          ></argo-date-input>
+        </div>
+        <div class="field-filtro field-jornada-cap">
+          <argo-catalogo-enum-buscar
+            label="Jornada de capacitación"
+            placeholder="Seleccione jornada…"
+            [textoInicial]="textoJornadaCapSel()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [disabled]="cargandoJornadasCap()"
+            [opcionesLocales]="opcionesJornadasCap()"
+            (seleccionado)="onJornadaCapPick($event)"
+            (limpiado)="onJornadaCapLimpiar()"
+          />
+        </div>
+        <div class="field-filtro field-cert">
+          <argo-catalogo-enum-buscar
+            label="Certificado jornada"
+            placeholder="Todos"
+            [textoInicial]="textoCertJornadaSel()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [disabled]="!filtroJornadaActivo()"
+            [opcionesLocales]="opcionesCertJornada"
+            (seleccionado)="onCertJornadaPick($event)"
+            (limpiado)="onCertJornadaLimpiar()"
+          />
+        </div>
+      </ng-container>
+
       <button
         type="button"
-        class="ghost mini btn-limpiar-jornada"
-        *ngIf="filtroJornadaActivo() || certJornadaFiltro()"
-        (click)="limpiarFiltrosJornada()">
+        class="ghost mini btn-limpiar-filtros"
+        *ngIf="filtroListaActivo()"
+        (click)="limpiarFiltrosLista()">
         Limpiar filtros
       </button>
     </div>
     <p class="jornada-filter-hint" *ngIf="esJornadas() && jornadaFiltroMsg()">{{ jornadaFiltroMsg() }}</p>
     <p class="jornada-filter-hint dim" *ngIf="esJornadas() && !filtroJornadaActivo()">
-      Use fecha o jornada para listar participantes y ver si ya tienen certificado generado.
+      Use fecha o jornada de capacitación para listar participantes y ver si ya tienen certificado generado.
     </p>
   </div>
 
@@ -146,6 +189,7 @@
                 Fecha nac. <span class="sort-icon">{{ sortIcon('fechaNac') }}</span>
               </button>
             </th>
+            <th>Edad</th>
             <th class="col-empresa">Empresa</th>
             <th class="col-alertas">Alertas</th>
             <th *ngIf="esJornadas()" class="col-cert-jornada">Cert. jornada</th>
@@ -203,6 +247,9 @@
             <td>
               <span *ngIf="r.fechaNac; else vacio" [ngClass]="capFecha(formatFecha(r.fechaNac))">{{ formatFecha(r.fechaNac) }}</span>
             </td>
+            <td>
+              <span class="cap cap-slate cap-sm cap-text">{{ formatEdad(r) }}</span>
+            </td>
             <td class="col-empresa">
               @if (r.empresaNombre) {
                 <span class="empresa-chip">{{ r.empresaNombre }}</span>
@@ -245,7 +292,7 @@
             </td>
           </tr>
           <tr *ngIf="items().length === 0">
-            <td [attr.colspan]="esJornadas() ? 12 : 11" class="empty">
+            <td [attr.colspan]="esJornadas() ? 13 : 12" class="empty">
               <ng-container *ngTemplateOutlet="emptyTpl"></ng-container>
             </td>
           </tr>
@@ -307,6 +354,10 @@
               <div *ngIf="r.fechaNac">
                 <dt>Nacimiento</dt>
                 <dd [ngClass]="capFecha(formatFecha(r.fechaNac))">{{ formatFecha(r.fechaNac) }}</dd>
+              </div>
+              <div>
+                <dt>Edad</dt>
+                <dd>{{ formatEdad(r) }}</dd>
               </div>
               <div *ngIf="r.correo">
                 <dt>Correo</dt>
