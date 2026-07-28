@@ -505,7 +505,7 @@ export const routes: Routes = [
       {
         path: 'contabilidad',
         canActivate: [permisoGuard],
-        data: { permiso: ['contabilidad', 'caja.admin'], title: 'Contabilidad' },
+        data: { permiso: 'contabilidad', title: 'Contabilidad' },
         loadComponent: () =>
           import('./features/contabilidad/contabilidad-layout.component').then(
             (m) => m.ContabilidadLayoutComponent,
@@ -522,7 +522,7 @@ export const routes: Routes = [
           {
             path: 'ingresos',
             canActivate: [permisoGuard],
-            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Ingresos' },
+            data: { permiso: 'contabilidad', title: 'Ingresos' },
             loadComponent: () =>
               import('./features/caja/caja-ingresos-todos.component').then(
                 (m) => m.CajaIngresosTodosComponent,
@@ -531,7 +531,7 @@ export const routes: Routes = [
           {
             path: 'egresos',
             canActivate: [permisoGuard],
-            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Egresos' },
+            data: { permiso: 'contabilidad', title: 'Egresos' },
             loadComponent: () =>
               import('./features/caja/caja-egresos-todos.component').then(
                 (m) => m.CajaEgresosTodosComponent,
@@ -540,7 +540,7 @@ export const routes: Routes = [
           {
             path: 'cuadres',
             canActivate: [permisoGuard],
-            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Cuadres de caja' },
+            data: { permiso: 'contabilidad', title: 'Cuadres de caja' },
             loadComponent: () =>
               import('./features/caja/caja-cierres-admin.component').then(
                 (m) => m.CajaCierresAdminComponent,
@@ -549,7 +549,7 @@ export const routes: Routes = [
           {
             path: 'cuadres/:idSesion',
             canActivate: [permisoGuard],
-            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Detalle de cuadre' },
+            data: { permiso: 'contabilidad', title: 'Detalle de cuadre' },
             loadComponent: () =>
               import('./features/caja/caja-cierre-detalle.component').then(
                 (m) => m.CajaCierreDetalleComponent,
@@ -558,7 +558,7 @@ export const routes: Routes = [
           {
             path: 'cierre-general',
             canActivate: [permisoGuard],
-            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Cierre general' },
+            data: { permiso: 'contabilidad', title: 'Cierre general' },
             loadComponent: () =>
               import('./features/caja/caja-cierre-general.component').then(
                 (m) => m.CajaCierreGeneralComponent,
@@ -567,7 +567,7 @@ export const routes: Routes = [
           {
             path: 'descuadres',
             canActivate: [permisoGuard],
-            data: { permiso: ['contabilidad', 'caja.admin'], title: 'Descuadres' },
+            data: { permiso: 'contabilidad', title: 'Descuadres' },
             loadComponent: () =>
               import('./features/caja/caja-descuadres-admin.component').then(
                 (m) => m.CajaDescuadresAdminComponent,

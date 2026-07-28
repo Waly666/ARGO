@@ -71,7 +71,7 @@ const GRUPOS = [
     permisos: [
       { key: 'caja.turno', label: 'Caja del turno (apertura, cuadre, movimientos del día)' },
       { key: 'caja.cobros', label: 'Cobros pendientes' },
-      { key: 'caja.admin', label: 'Cierres, descuadres y movimientos globales' },
+      { key: 'caja.admin', label: 'Cierres, descuadres y movimientos globales (Flujo de caja; no abre Contabilidad)' },
       { key: 'combos.gestionar', label: 'Combos de cursos presenciales (configurar y aplicar)' },
     ],
   },
@@ -81,7 +81,7 @@ const GRUPOS = [
     permisos: [
       {
         key: 'contabilidad',
-        label: 'Módulo contabilidad (ingresos, egresos, cuadres, cierre general y facturación)',
+        label: 'Menú Contabilidad (ingresos/egresos globales, cuadres, cierre general y descuadres)',
       },
     ],
   },

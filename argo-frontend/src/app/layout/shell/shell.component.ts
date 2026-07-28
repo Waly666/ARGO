@@ -686,7 +686,7 @@ export class ShellComponent {
       label: 'Contabilidad',
       icon: '∑',
       iconTone: 'teal',
-      permiso: ['contabilidad', 'caja.admin'],
+      permiso: 'contabilidad',
       children: [
         {
           kind: 'link',
@@ -694,7 +694,7 @@ export class ShellComponent {
           path: '/app/contabilidad/inicio',
           icon: '⌂',
           iconTone: 'teal',
-          permiso: ['contabilidad', 'caja.admin'],
+          permiso: 'contabilidad',
         },
         {
           kind: 'link',
@@ -702,7 +702,7 @@ export class ShellComponent {
           path: '/app/contabilidad/ingresos',
           icon: '↑',
           iconTone: 'emerald',
-          permiso: ['contabilidad', 'caja.admin'],
+          permiso: 'contabilidad',
         },
         {
           kind: 'link',
@@ -710,7 +710,7 @@ export class ShellComponent {
           path: '/app/contabilidad/egresos',
           icon: '↓',
           iconTone: 'rose',
-          permiso: ['contabilidad', 'caja.admin'],
+          permiso: 'contabilidad',
         },
         {
           kind: 'link',
@@ -718,7 +718,7 @@ export class ShellComponent {
           path: '/app/contabilidad/cuadres',
           icon: '▣',
           iconTone: 'indigo',
-          permiso: ['contabilidad', 'caja.admin'],
+          permiso: 'contabilidad',
         },
         {
           kind: 'link',
@@ -726,7 +726,7 @@ export class ShellComponent {
           path: '/app/contabilidad/cierre-general',
           icon: '⊞',
           iconTone: 'amber',
-          permiso: ['contabilidad', 'caja.admin'],
+          permiso: 'contabilidad',
         },
         {
           kind: 'link',
@@ -734,7 +734,7 @@ export class ShellComponent {
           path: '/app/contabilidad/descuadres',
           icon: '⚠',
           iconTone: 'amber',
-          permiso: ['contabilidad', 'caja.admin'],
+          permiso: 'contabilidad',
         },
         {
           kind: 'link',
