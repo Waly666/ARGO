@@ -10,7 +10,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 
 import { AuthService } from '../../core/services/auth.service';
-
+import { PermisoService } from '../../core/services/permiso.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 
 import {
@@ -39,10 +39,6 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
 import { ComprobanteHoyAlertService } from '../../core/services/comprobante-hoy-alert.service';
-import {
-  pagoIntangibleCompleto,
-  validarPagoIntangible,
-} from '../../core/utils/pago-intangible.validators';
 import {
   tieneSoporteEgreso,
   tituloSoporteEgreso,
@@ -94,6 +90,7 @@ export class EgresosAdminComponent implements OnInit {
   private router = inject(Router);
 
   private auth = inject(AuthService);
+  private permisos = inject(PermisoService);
 
   private reciboSvc = inject(ReciboService);
 
@@ -182,6 +179,9 @@ export class EgresosAdminComponent implements OnInit {
 
 
 
+  /** Cajero editando: solo forma de pago, consignación y soporte (sin auth admin). */
+  modoComplementoCajero = computed(() => !!this.editando() && !this.isAdmin());
+
   requiereRefBancaria = computed(() => {
 
     const f = this.form().formaPago || '';
@@ -190,24 +190,25 @@ export class EgresosAdminComponent implements OnInit {
 
   });
 
-  inputPagoIntangible = computed(() => ({
-    esIntangible: this.requiereRefBancaria(),
-    referencia: this.form().numTransferencia,
-    archivo: this.archivoSoporte(),
-    urlSoporteExistente: this.editando()?.urlSoporte,
-  }));
-
+  /** En egresos el pantallazo puede ir después; solo se exige el Nº de consignación. */
   mensajePagoIntangible = computed(() => {
-    const v = validarPagoIntangible(this.inputPagoIntangible());
-    return v.ok ? null : v.message;
+    if (!this.requiereRefBancaria()) return null;
+    if (String(this.form().numTransferencia || '').trim()) return null;
+    return 'Indique el número de comprobante o consignación (el soporte puede adjuntarlo después).';
   });
 
   puedeGuardarEgreso = computed(() => {
     const f = this.form();
+    if (this.requiereRefBancaria() && !String(f.numTransferencia || '').trim()) {
+      return false;
+    }
+    if (this.modoComplementoCajero()) {
+      return !!String(f.formaPago || '').trim();
+    }
     if (!f.concepto?.trim() || !(Number(f.valorEgreso) > 0) || !f.pagueA?.trim() || !f.numeroDocumento?.trim() || !f.tipoEgreso) {
       return false;
     }
-    return pagoIntangibleCompleto(this.inputPagoIntangible());
+    return true;
   });
 
 
@@ -238,7 +239,8 @@ export class EgresosAdminComponent implements OnInit {
 
   requiereAutorizacionSupervisor = computed(() => {
     if (this.auth.isAdmin()) return false;
-    if (this.editando()) return true;
+    // Complemento pago/soporte del cajero: sin autorización de admin.
+    if (this.modoComplementoCajero()) return false;
     return this.esRetiroCaja() && !this.editando();
   });
 
@@ -282,11 +284,17 @@ export class EgresosAdminComponent implements OnInit {
 
     this.isAdmin.set(r.includes('admin'));
 
-    this.empSvc.listar({ activos: true }).subscribe({
-
-      next: (e) => this.empleados.set((e || []).filter((x) => x.numeroDocumento)),
-
-    });
+    // Empleados / nómina exigen permiso rrhh. El cajero no lo tiene → 403 «Sin permiso».
+    if (this.permisos.tiene('rrhh') || this.isAdmin()) {
+      this.empSvc.listar({ activos: true }).subscribe({
+        next: (e) => this.empleados.set((e || []).filter((x) => x.numeroDocumento)),
+        error: () => this.empleados.set([]),
+      });
+      this.nominaSvc.listarPeriodos().subscribe({
+        next: (p) => this.periodosNomina.set(p || []),
+        error: () => this.periodosNomina.set([]),
+      });
+    }
 
     this.terSvc.listar().subscribe({
       next: (t) => this.terceros.set(t || []),
@@ -294,57 +302,64 @@ export class EgresosAdminComponent implements OnInit {
     });
 
     this.catSvc.list('tipoEgreso', { refresh: true }).subscribe({
-
-      next: (r) => this.tiposEgreso.set((r || []) as TipoEgresoCat[]),
-
+      next: (rows) => this.tiposEgreso.set((rows || []) as TipoEgresoCat[]),
     });
 
     this.catSvc.list('cuentasBancarias', { refresh: true }).subscribe({
-
-      next: (r) => this.cuentasBancarias.set(r || []),
-
+      next: (rows) => this.cuentasBancarias.set(rows || []),
     });
 
-    this.catSvc.list('bancos', { refresh: true }).subscribe({ next: (r) => this.bancos.set(r || []) });
+    this.catSvc.list('bancos', { refresh: true }).subscribe({ next: (rows) => this.bancos.set(rows || []) });
 
-    this.nominaSvc.listarPeriodos().subscribe({
-
-      next: (p) => this.periodosNomina.set(p || []),
-
-    });
-
-
+    const enNuevo = this.router.url.includes('/egresos/nuevo');
+    const editId = this.route.snapshot.paramMap.get('id');
+    const enEditar = !!(editId && this.router.url.includes('/egresos/editar/'));
+    if (enNuevo || enEditar) {
+      this.modoSoloForm.set(true);
+    }
 
     this.route.queryParamMap.subscribe((qp) => {
-
       const nd = qp.get('numeroDocumento') || qp.get('numDoc');
-
       this.filtroNumeroDocumento.set(nd ? String(nd) : null);
-
       this.returnUrl.set(qp.get('returnUrl'));
-
-      this.cargar();
-
+      if (!this.modoSoloForm()) {
+        this.cargar();
+      }
     });
 
-    this.cargarEstadoCaja();
-    if (this.router.url.includes('/egresos/nuevo')) {
-      this.modoSoloForm.set(true);
+    if (enNuevo) {
+      this.cargarEstadoCaja();
       this.mostrarForm.set(true);
       this.nuevo();
       return;
     }
-    const editId = this.route.snapshot.paramMap.get('id');
-    if (editId && this.router.url.includes('/egresos/editar/')) {
-      this.modoSoloForm.set(true);
-      this.svc.obtener(editId).subscribe({
-        next: (e) => this.editar(e),
-        error: (err) => {
-          this.inform(err?.error?.message || 'No se pudo cargar el egreso');
+
+    if (enEditar && editId) {
+      // Esperar estado de caja antes de editar (si no, puedeGestionar falla en falso).
+      this.cajaSvc.activa().subscribe({
+        next: (act) => {
+          this.cajaAbierta.set(!!act.abierta);
+          this.sesionCaja.set(act.sesion);
+          this.resumenParcial.set(act.resumenParcial ?? null);
+          this.svc.obtener(editId).subscribe({
+            next: (e) => this.editar(e),
+            error: (err) => {
+              this.inform(err?.error?.message || 'No se pudo cargar el egreso');
+              this.volverTrasSoloForm();
+            },
+          });
+        },
+        error: () => {
+          this.cajaAbierta.set(false);
+          this.sesionCaja.set(null);
+          this.inform('Debe tener su caja abierta para editar egresos.');
           this.volverTrasSoloForm();
         },
       });
+      return;
     }
+
+    this.cargarEstadoCaja();
   }
 
   cambiarPanelCaja(p: 'mi' | 'todas' | 'general'): void {
@@ -1184,13 +1199,8 @@ export class EgresosAdminComponent implements OnInit {
 
     }
 
-    const intangible = validarPagoIntangible(this.inputPagoIntangible());
-    if (!intangible.ok) {
-      this.inform(intangible.message);
-      return;
-    }
     if (!this.puedeGuardarEgreso()) {
-      this.inform(this.mensajePagoIntangible() || 'Complete referencia y pantallazo del movimiento.');
+      this.inform(this.mensajePagoIntangible() || 'Complete los datos del egreso.');
       return;
     }
 
@@ -1230,16 +1240,28 @@ export class EgresosAdminComponent implements OnInit {
 
     const ed = this.editando();
 
-    const payload: EgresoDto = { ...f };
+    let payload: EgresoDto = { ...f };
 
-    if (this.beneficiarioEmpleado() || this.obligaEmpleado()) {
-      payload.idTercero = null;
-    }
-
-    if (!this.esAnticipoNomina()) {
-
-      delete payload.idPeriodo;
-
+    // Cajero: solo sección de pago (forma, cuentas, consignación, fechas) + soporte.
+    if (ed && this.modoComplementoCajero()) {
+      payload = {
+        fechaEgreso: f.fechaEgreso,
+        valorEgreso: f.valorEgreso,
+        concepto: f.concepto,
+        formaPago: f.formaPago,
+        numTransferencia: f.numTransferencia,
+        fechaTransferencia: f.fechaTransferencia,
+        cuentaOrigen: f.cuentaOrigen,
+        cuentaDestino: f.cuentaDestino,
+        bancoDestino: f.bancoDestino,
+      };
+    } else {
+      if (this.beneficiarioEmpleado() || this.obligaEmpleado()) {
+        payload.idTercero = null;
+      }
+      if (!this.esAnticipoNomina()) {
+        delete payload.idPeriodo;
+      }
     }
 
     this.saving.set(true);
@@ -1427,7 +1449,8 @@ export class EgresosAdminComponent implements OnInit {
 
     if (!this.cajaAbierta() || this.sesionCaja()?.idSesion == null) return false;
 
-    if (e.idSesion == null) return false;
+    // Complemento pago/soporte: si el egreso no tiene idSesion (legado), permitir con caja abierta.
+    if (e.idSesion == null) return true;
 
     return Number(e.idSesion) === Number(this.sesionCaja()?.idSesion);
 

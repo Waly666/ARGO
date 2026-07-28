@@ -324,15 +324,26 @@
 
   <div class="form-card card argo-form-shell" *ngIf="mostrarForm()">
 
-    <h2>{{ editando() ? 'Editar egreso' : 'Nuevo egreso' }}</h2>
+    <h2>{{ editando() ? (modoComplementoCajero() ? 'Completar soporte y pago' : 'Editar egreso') : 'Nuevo egreso' }}</h2>
+
+    <p class="hint" *ngIf="modoComplementoCajero()">
+      Puede actualizar la sección de pago: forma de pago, cuentas, consignación, fechas y soporte escaneado.
+      Valor, beneficiario, concepto y tipo de egreso no se modifican.
+    </p>
 
 
+
+    <fieldset class="egreso-campos-fijos" [disabled]="modoComplementoCajero()">
 
     <div class="row">
 
       <div class="col-4">
 
-        <argo-date-input label="Fecha egreso *" [ngModel]="form().fechaEgreso" (ngModelChange)="patch('fechaEgreso', $event)" ></argo-date-input>
+        <argo-date-input
+          label="Fecha egreso *"
+          [ngModel]="form().fechaEgreso"
+          (ngModelChange)="patch('fechaEgreso', $event)"
+        ></argo-date-input>
 
       </div>
 
@@ -655,6 +666,8 @@
 
     </div>
 
+    </fieldset>
+
 
 
     <div class="row">
@@ -748,7 +761,7 @@
 
 
     <div class="warn-docs card err" *ngIf="requiereRefBancaria() && mensajePagoIntangible() as aviso">
-      <strong>No se puede procesar el pago</strong>
+      <strong>Falta número de consignación</strong>
       <p class="hint">{{ aviso }}</p>
     </div>
 
@@ -757,11 +770,11 @@
       <div class="col-12">
 
         <argo-pago-soporte-field
-          [obligatorio]="requiereRefBancaria()"
+          [obligatorio]="false"
           [previewUrl]="previewSoporte()"
           [nombreArchivo]="archivoSoporte()?.name ?? null"
           [hint]="requiereRefBancaria()
-            ? 'Obligatorio para transferencia, cheque, tarjeta, etc.'
+            ? 'Puede registrar el egreso sin el pantallazo y adjuntarlo después (Editar).'
             : 'Opcional en pagos en efectivo.'"
           (seleccionado)="onSoporteArchivo($event)"
           (quitado)="quitarSoporte()"
@@ -808,7 +821,7 @@
 
       <button type="button" class="primary" (click)="guardar()" [disabled]="saving() || !puedeGuardarEgreso()">
 
-        {{ saving() ? 'Guardando…' : 'Guardar' }}
+        {{ saving() ? 'Guardando…' : (modoComplementoCajero() ? 'Guardar soporte y pago' : 'Guardar') }}
 
       </button>
 

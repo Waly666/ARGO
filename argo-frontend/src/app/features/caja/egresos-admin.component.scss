@@ -5,6 +5,17 @@
   width: 100%;
 }
 
+fieldset.egreso-campos-fijos {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+
+  &:disabled {
+    opacity: 0.72;
+  }
+}
+
 .caja-nav-link {
   display: flex;
   flex-wrap: wrap;

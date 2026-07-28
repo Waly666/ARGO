@@ -84,19 +84,16 @@ function validarPagoIntangibleIngreso(pago, urlSoporte) {
   };
 }
 
-function validarPagoIntangibleEgreso(dto, urlSoporte) {
+/**
+ * Egresos: referencia obligatoria si no es efectivo.
+ * El soporte (imagen) es opcional al registrar — el cajero puede adjuntarlo después.
+ */
+function validarPagoIntangibleEgreso(dto, urlSoporte, opts = {}) {
   if (!dto?.formaPago || esFormaPagoEfectivo(dto.formaPago)) return { ok: true };
-  const ref = referenciaPagoTexto(dto.numTransferencia, dto.numComprobante);
-  const sop = String(urlSoporte || '').trim();
-  const faltan = [];
-  if (!ref) faltan.push('número de referencia');
-  if (!sop) faltan.push('pantallazo o imagen del movimiento');
-  if (!faltan.length) return { ok: true };
-  return {
-    ok: false,
-    status: 400,
-    message: `No se puede procesar el pago: falta ${faltan.join(' y ')}.`,
-  };
+  const refVal = validarReferenciaPagoEgreso(dto);
+  if (!refVal.ok) return refVal;
+  if (opts.soporteOpcional !== false && opts.exigirSoporte !== true) return { ok: true };
+  return validarSoportePagoIntangible(dto.formaPago, urlSoporte);
 }
 
 module.exports = {

@@ -99,7 +99,8 @@ export class CajaEgresosSesionComponent implements OnInit {
   puedeGestionar(e: CajaEgresoItem): boolean {
     if (this.auth.isAdmin()) return true;
     if (!this.cajaAbierta() || this.sesionId() == null) return false;
-    if (e.idSesion == null) return false;
+    // Lista de sesión activa: si no trae idSesion, igual es de este turno.
+    if (e.idSesion == null) return true;
     return Number(e.idSesion) === Number(this.sesionId());
   }
 

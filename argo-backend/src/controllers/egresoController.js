@@ -652,21 +652,66 @@ exports.actualizar = async (req, res, next) => {
   try {
     const eg = await Egreso.findById(req.params.id);
     if (!eg) return res.status(404).json({ message: 'Egreso no encontrado' });
+    if (esComprobanteAnulado(eg)) {
+      return res.status(409).json({ message: 'No se puede modificar un egreso anulado.' });
+    }
     const antes = eg.toObject();
 
-    let supervisor = null;
-    if (!esAdmin(req.user?.rol)) {
-      const sesOk = await verificarMovimientoSesionCajero(req, eg.idSesion);
-      if (!sesOk.ok) return res.status(sesOk.status).json({ message: sesOk.message, code: sesOk.code });
-      const auth = await exigirAdminOSupervisor(
-        req,
-        'Modificar egresos requiere autorización de un administrador.',
-      );
-      if (!auth.ok) return res.status(auth.status).json({ message: auth.message });
-      supervisor = auth.supervisor;
+    if (eg.anticipoNomina || eg.idNovedadGenerada) {
+      return res.status(409).json({
+        message: 'No se puede modificar un egreso de préstamo/adelanto vinculado a nómina',
+      });
     }
 
-    const dto = pickBody(req.body || {});
+    const body = pickBody(req.body || {});
+    const esCajero = !esAdmin(req.user?.rol);
+
+    // Cajero: solo complemento de forma de pago, referencia y soporte (sin auth admin).
+    if (esCajero) {
+      const sesOk = await verificarMovimientoSesionCajero(req, eg.idSesion);
+      if (!sesOk.ok) return res.status(sesOk.status).json({ message: sesOk.message, code: sesOk.code });
+
+      const dto = {};
+      if (body.formaPago !== undefined) {
+        if (!FORMAS_PAGO.includes(body.formaPago)) {
+          return res.status(400).json({ message: 'formaPago no válida', formasPago: FORMAS_PAGO });
+        }
+        dto.formaPago = body.formaPago;
+      }
+      if (body.numTransferencia !== undefined) dto.numTransferencia = body.numTransferencia;
+      if (body.fechaTransferencia !== undefined) dto.fechaTransferencia = body.fechaTransferencia;
+      if (body.cuentaOrigen !== undefined) dto.cuentaOrigen = body.cuentaOrigen;
+      if (body.cuentaDestino !== undefined) dto.cuentaDestino = body.cuentaDestino;
+      if (body.bancoDestino !== undefined) dto.bancoDestino = body.bancoDestino;
+      if (req.file?.filename) dto.urlSoporte = upload.publicUrl('egresos', req.file.filename);
+
+      const mergedPago = {
+        formaPago: dto.formaPago ?? eg.formaPago,
+        numTransferencia:
+          dto.numTransferencia !== undefined ? dto.numTransferencia : eg.numTransferencia,
+      };
+      const intangibleVal = validarPagoIntangibleEgreso(mergedPago, dto.urlSoporte || eg.urlSoporte);
+      if (!intangibleVal.ok) {
+        return res.status(intangibleVal.status).json({ message: intangibleVal.message });
+      }
+
+      const user = req.user?.username || 'sistema';
+      Object.assign(eg, dto, { fechaMod: new Date(), userChangeRecord: user });
+      await eg.save();
+      if (eg.idSesion) {
+        const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
+        await sincronizarDescuadreSesion(eg.idSesion).catch(() => null);
+      }
+      const out = await enriquecer(eg.toObject());
+      registrarModificacion(req, 'egreso', antes, eg.toObject(), {
+        resumen: `Complemento pago/soporte egreso ${eg._id}`,
+      });
+      return res.json(out);
+    }
+
+    // Admin: edición completa
+    let supervisor = null;
+    const dto = body;
     if (dto.concepto !== undefined && !dto.concepto) {
       return res.status(400).json({ message: 'El concepto no puede quedar vacío' });
     }
@@ -705,11 +750,6 @@ exports.actualizar = async (req, res, next) => {
     );
     if (!intangibleVal.ok) return res.status(intangibleVal.status).json({ message: intangibleVal.message });
     dto.placa = merged.placa ?? null;
-    if (eg.anticipoNomina || eg.idNovedadGenerada) {
-      return res.status(409).json({
-        message: 'No se puede modificar un egreso de préstamo/adelanto vinculado a nómina',
-      });
-    }
     delete dto.idPeriodo;
     delete dto.idEmpleado;
     delete dto.idNovedadGenerada;
