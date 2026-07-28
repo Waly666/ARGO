@@ -426,7 +426,16 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     });
 
     this.cargarCatalogo('catTipoDoc', this.tiposDoc, TIPOS_DOC_DEF);
+    this.cargarCatalogo('genero', this.generos, GENEROS_DEF);
+    this.cargarCatalogo('tipoSangre', this.tiposSangre, TIPO_SANGRE_DEF);
+    this.cargarCatalogo('jornada', this.jornadas, JORNADAS_DEF);
+    this.cargarCatalogo('estadoCivil', this.estadosCiviles, ESTADOS_CIVIL_DEF);
+    this.cargarCatalogo('estrato', this.estratos, ESTRATOS_DEF);
     this.cargarCatalogo('catRegimenSalud', this.regimenesSalud, REGIMEN_SALUD_DEF);
+    this.cargarCatalogo('nivelFormacion', this.nivelesFormacion, NIVEL_FORMACION_DEF);
+    this.cargarCatalogo('ocupacion', this.ocupaciones, OCUPACIONES_DEF);
+    this.cargarCatalogo('discapacidad', this.discapacidades, DISCAPACIDADES_DEF);
+    this.cargarCatalogo('multiCulturalidad', this.multiCulturalidades, MULTICULTURALIDAD_DEF);
 
     this.configSvc.obtenerRecibo().subscribe({
       next: (c) => this.configRecibo.set(c),

@@ -30,7 +30,7 @@ export function catEtiqueta(item: Record<string, unknown>): string {
   return v;
 }
 
-/** Aplica etiquetas indexadas a ítems traídos del API */
+/** Aplica etiquetas a ítems del API; si no hay datos, usa el fallback embebido. */
 export function catalogoConEtiquetas(
   items: Record<string, unknown>[],
   fallback: Record<string, unknown>[],
@@ -38,9 +38,13 @@ export function catalogoConEtiquetas(
   if (!items?.length) return fallback;
   return items.map((item) => {
     const valor = catValor(item);
+    const rawDesc = item['descripcion'] ?? item['nombre'] ?? item['tipo'] ?? item['tipoCap'];
+    // Preferir descripción del catálogo en BD (incluye ítems nuevos o editados).
+    if (rawDesc != null && String(rawDesc).trim()) {
+      return { ...item, descripcion: catEtiqueta(item) };
+    }
     const fb = fallback.find((f) => catValor(f) === valor);
-    const descripcion = fb ? catEtiqueta(fb) : catEtiqueta(item);
-    return { ...item, descripcion };
+    return { ...item, descripcion: fb ? catEtiqueta(fb) : catEtiqueta(item) };
   });
 }
 

@@ -43,6 +43,7 @@ import {
   MULTICULTURALIDAD_DEF,
   catValor,
   catEtiqueta,
+  catalogoConEtiquetas,
   normalizarEnum,
   normalizarGenero,
 } from '../alumnos/catalogo.helpers';
@@ -175,25 +176,27 @@ export class EmpleadosAdminComponent implements OnInit {
   readonly tiposContrato = ['indefinido', 'fijo', 'obra labor', 'aprendizaje'];
   readonly nivelesEducativos = NIVELES_EDUCATIVOS;
 
-  readonly generosDef = GENEROS_DEF as unknown as Record<string, unknown>[];
-  readonly tiposSangreDef = TIPO_SANGRE_DEF as unknown as Record<string, unknown>[];
-  readonly estadosCivilDef = ESTADOS_CIVIL_DEF as unknown as Record<string, unknown>[];
-  readonly estratosDef = ESTRATOS_DEF as unknown as Record<string, unknown>[];
-  readonly regimenesSaludDef = REGIMEN_SALUD_DEF as unknown as Record<string, unknown>[];
-  readonly nivelesFormacionDef = NIVEL_FORMACION_DEF as unknown as Record<string, unknown>[];
-  readonly ocupacionesDef = OCUPACIONES_DEF as unknown as Record<string, unknown>[];
-  readonly discapacidadesDef = DISCAPACIDADES_DEF as unknown as Record<string, unknown>[];
-  readonly multiCulturalidadesDef = MULTICULTURALIDAD_DEF as unknown as Record<string, unknown>[];
+  generos = signal<Record<string, unknown>[]>(GENEROS_DEF as unknown as Record<string, unknown>[]);
+  tiposSangre = signal<Record<string, unknown>[]>(TIPO_SANGRE_DEF as unknown as Record<string, unknown>[]);
+  estadosCiviles = signal<Record<string, unknown>[]>(ESTADOS_CIVIL_DEF as unknown as Record<string, unknown>[]);
+  estratos = signal<Record<string, unknown>[]>(ESTRATOS_DEF as unknown as Record<string, unknown>[]);
+  regimenesSalud = signal<Record<string, unknown>[]>(REGIMEN_SALUD_DEF as unknown as Record<string, unknown>[]);
+  nivelesFormacion = signal<Record<string, unknown>[]>(NIVEL_FORMACION_DEF as unknown as Record<string, unknown>[]);
+  ocupaciones = signal<Record<string, unknown>[]>(OCUPACIONES_DEF as unknown as Record<string, unknown>[]);
+  discapacidades = signal<Record<string, unknown>[]>(DISCAPACIDADES_DEF as unknown as Record<string, unknown>[]);
+  multiCulturalidades = signal<Record<string, unknown>[]>(
+    MULTICULTURALIDAD_DEF as unknown as Record<string, unknown>[],
+  );
 
-  opcionesGenero = mapOpcionesCatalogo(this.generosDef);
-  opcionesTipoSangre = mapOpcionesCatalogo(this.tiposSangreDef);
-  opcionesEstadoCivil = mapOpcionesCatalogo(this.estadosCivilDef);
-  opcionesEstrato = mapOpcionesCatalogo(this.estratosDef);
-  opcionesRegimenSalud = mapOpcionesCatalogo(this.regimenesSaludDef);
-  opcionesNivelFormacion = mapOpcionesCatalogo(this.nivelesFormacionDef);
-  opcionesOcupacion = mapOpcionesCatalogo(this.ocupacionesDef);
-  opcionesDiscapacidad = mapOpcionesCatalogo(this.discapacidadesDef);
-  opcionesMultiCulturalidad = mapOpcionesCatalogo(this.multiCulturalidadesDef);
+  opcionesGenero = computed(() => mapOpcionesCatalogo(this.generos()));
+  opcionesTipoSangre = computed(() => mapOpcionesCatalogo(this.tiposSangre()));
+  opcionesEstadoCivil = computed(() => mapOpcionesCatalogo(this.estadosCiviles()));
+  opcionesEstrato = computed(() => mapOpcionesCatalogo(this.estratos()));
+  opcionesRegimenSalud = computed(() => mapOpcionesCatalogo(this.regimenesSalud()));
+  opcionesNivelFormacion = computed(() => mapOpcionesCatalogo(this.nivelesFormacion()));
+  opcionesOcupacion = computed(() => mapOpcionesCatalogo(this.ocupaciones()));
+  opcionesDiscapacidad = computed(() => mapOpcionesCatalogo(this.discapacidades()));
+  opcionesMultiCulturalidad = computed(() => mapOpcionesCatalogo(this.multiCulturalidades()));
 
   form = signal<EmpleadoDto>(this.formVacio());
   /** Texto visible del municipio Divipola (ciudad + depto). */
@@ -281,6 +284,47 @@ export class EmpleadosAdminComponent implements OnInit {
     this.cat.listar('afp').subscribe({ next: (r) => this.afp.set(r || []) });
     this.cat.listar('arl').subscribe({ next: (r) => this.arl.set(r || []) });
     this.cat.listar('cajas-compensacion').subscribe({ next: (r) => this.cajas.set(r || []) });
+
+    this.cargarCatalogoEnum('genero', this.generos, GENEROS_DEF as unknown as Record<string, unknown>[]);
+    this.cargarCatalogoEnum('tipoSangre', this.tiposSangre, TIPO_SANGRE_DEF as unknown as Record<string, unknown>[]);
+    this.cargarCatalogoEnum(
+      'estadoCivil',
+      this.estadosCiviles,
+      ESTADOS_CIVIL_DEF as unknown as Record<string, unknown>[],
+    );
+    this.cargarCatalogoEnum('estrato', this.estratos, ESTRATOS_DEF as unknown as Record<string, unknown>[]);
+    this.cargarCatalogoEnum(
+      'catRegimenSalud',
+      this.regimenesSalud,
+      REGIMEN_SALUD_DEF as unknown as Record<string, unknown>[],
+    );
+    this.cargarCatalogoEnum(
+      'nivelFormacion',
+      this.nivelesFormacion,
+      NIVEL_FORMACION_DEF as unknown as Record<string, unknown>[],
+    );
+    this.cargarCatalogoEnum('ocupacion', this.ocupaciones, OCUPACIONES_DEF as unknown as Record<string, unknown>[]);
+    this.cargarCatalogoEnum(
+      'discapacidad',
+      this.discapacidades,
+      DISCAPACIDADES_DEF as unknown as Record<string, unknown>[],
+    );
+    this.cargarCatalogoEnum(
+      'multiCulturalidad',
+      this.multiCulturalidades,
+      MULTICULTURALIDAD_DEF as unknown as Record<string, unknown>[],
+    );
+  }
+
+  private cargarCatalogoEnum(
+    nombre: string,
+    target: ReturnType<typeof signal<Record<string, unknown>[]>>,
+    fallback: Record<string, unknown>[],
+  ): void {
+    this.catDivipola.list(nombre, { refresh: true }).subscribe({
+      next: (d) => target.set(catalogoConEtiquetas((d || []) as Record<string, unknown>[], fallback)),
+      error: () => target.set(fallback),
+    });
   }
 
   cargar() {
