@@ -247,6 +247,16 @@
   color: #e2e8f0;
   padding: 0.55rem 0.7rem;
   font: inherit;
+  text-transform: uppercase;
+}
+
+.emp-form input,
+.emp-form textarea,
+.emp-form select,
+.emp-form argo-catalogo-enum-buscar input,
+.emp-form argo-municipio-buscar input,
+.emp-form argo-celular-input input {
+  text-transform: uppercase;
 }
 
 .emp-form-actions {

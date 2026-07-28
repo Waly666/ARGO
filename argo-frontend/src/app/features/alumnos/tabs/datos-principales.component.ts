@@ -92,6 +92,8 @@ import {
   normalizarGenero,
   normalizarTipoSangre,
   nombreEnMayusculas,
+  aMayusculas,
+  CAMPOS_FORMULARIO_SIN_MAYUSCULAS,
 
 } from '../catalogo.helpers';
 
@@ -513,7 +515,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   onExpedidaSel(m: { nombreMunicipio: string; label: string }) {
 
-    this.expedidaTexto.set(m.label);
+    this.expedidaTexto.set(aMayusculas(m.label));
 
     this.patch('expedida', m.nombreMunicipio);
 
@@ -525,17 +527,19 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   }
 
   onExpedidaTexto(v: string): void {
-    this.expedidaTexto.set(v);
-    this.patch('expedida', v);
+    const up = aMayusculas(v);
+    this.expedidaTexto.set(up);
+    this.patch('expedida', up);
   }
 
 
 
   onMunOrigenSel(m: { codMunicipio: string; label: string }) {
     this.limpiarCampoObligatorio('munOrigen');
-    this.munOrigenTexto.set(m.label);
+    this.munOrigenTexto.set(aMayusculas(m.label));
     const cod = m.codMunicipio;
     this.form.update((f) => ({ ...f, munOrigen: cod, codMunicipio: cod }));
+    this.formDirty.set(true);
   }
 
   onMunOrigenLimpiar(): void {
@@ -617,7 +621,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.limpiarCampoObligatorio(String(k));
     let valor = v;
     if (k === 'apellido1' || k === 'apellido2' || k === 'nombre1' || k === 'nombre2') {
-      valor = nombreEnMayusculas(String(v ?? '')) as AlumnoDto[K];
+      valor = aMayusculas(String(v ?? '')) as AlumnoDto[K];
+    } else if (typeof v === 'string' && !CAMPOS_FORMULARIO_SIN_MAYUSCULAS.has(String(k))) {
+      valor = aMayusculas(v) as AlumnoDto[K];
     }
     if (k === 'numDoc') {
       valor = sanitizeNumDocInput(v) as AlumnoDto[K];
@@ -1197,7 +1203,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       numDoc: parseNumDocForApi(f.numDoc) ?? f.numDoc,
 
-      expedida: f.expedida,
+      expedida: nombreEnMayusculas(f.expedida),
 
       apellido1: nombreEnMayusculas(f.apellido1),
 
@@ -1209,7 +1215,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       fechaNac: f.fechaNac,
 
-      observaciones: f.observaciones,
+      observaciones: nombreEnMayusculas(f.observaciones),
 
       genero: f.genero,
 
@@ -1230,8 +1236,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       discapacidad: f.discapacidad,
       munOrigen: f.munOrigen || f.codMunicipio,
       codMunicipio: f.codMunicipio || f.munOrigen,
-      correo: f.correo,
-      direccion: f.direccion,
+      correo: nombreEnMayusculas(f.correo),
+      direccion: nombreEnMayusculas(f.direccion),
       celular: f.celular,
       multiCulturalidad: f.multiCulturalidad,
 
@@ -1353,7 +1359,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       numDoc: formatNumDoc(raw.numDoc),
 
-      expedida: String(raw.expedida || ''),
+      expedida: nombreEnMayusculas(String(raw.expedida || '')),
 
       apellido1: nombreEnMayusculas(apellido1),
 
@@ -1365,11 +1371,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       fechaNac: fechaInput(raw.fechaNac as string),
 
-      observaciones: String(raw.observaciones || ''),
+      observaciones: nombreEnMayusculas(String(raw.observaciones || '')),
 
       genero: String(raw.genero || '').toUpperCase(),
 
-      tipoSangre: String(raw.tipoSangre || ''),
+      tipoSangre: String(raw.tipoSangre || '').toUpperCase(),
 
       jornada: normalizarEnum(String(raw.jornada || '')),
 
@@ -1386,10 +1392,10 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       discapacidad: normalizarEnum(String(raw.discapacidad || '9')),
       munOrigen: String(raw.munOrigen || raw.codMunicipio || ''),
       codMunicipio: String(raw.codMunicipio || raw.munOrigen || ''),
-      correo: String(raw.correo || ''),
-      direccion: String(raw.direccion || ''),
+      correo: nombreEnMayusculas(String(raw.correo || '')),
+      direccion: nombreEnMayusculas(String(raw.direccion || '')),
       celular: String(raw.celular || ''),
-      multiCulturalidad: String(raw.multiCulturalidad || 'NO_APLICA'),
+      multiCulturalidad: String(raw.multiCulturalidad || 'NO_APLICA').toUpperCase(),
 
       urlFoto: String(raw.urlFoto || (raw['foto'] as string) || ''),
 

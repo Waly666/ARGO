@@ -107,6 +107,43 @@ export function nombreEnMayusculas(val?: string | null): string {
   return String(val).trim().toUpperCase().replace(/\s+/g, ' ');
 }
 
+/** Mayúsculas al escribir (sin trim, para no cortar espacios a mitad de frase). */
+export function aMayusculas(val?: string | null): string {
+  if (val == null || val === '') return '';
+  return String(val).toUpperCase();
+}
+
+/** Campos de ficha alumno/empleado que no se fuerzan a mayúsculas. */
+export const CAMPOS_FORMULARIO_SIN_MAYUSCULAS = new Set([
+  'fechaNac',
+  'fechaNacimiento',
+  'fechaIngreso',
+  'fechaRetiro',
+  'urlFoto',
+  'urlCedula',
+  'urlLicencia',
+  'alertaPagoFrecuencia',
+  'alertaPago',
+  'modoAcceso',
+  'idUsuarioExistente',
+  'idSede',
+  'empresaId',
+  'estado',
+  'tipoContrato',
+  'nivelEducativo',
+  'numDoc',
+  'salario',
+  'epsId',
+  'afpId',
+  'arlId',
+  'cajaCompensacionId',
+  'cargoId',
+  'departamentoId',
+  'idEmpleado',
+  'duracionSesionPracticaCea',
+  'edad',
+]);
+
 /** Normaliza valores legacy tipo "1) SOLTERO" → "1" */
 export function normalizarEnum(val?: string): string {
   if (!val) return '';

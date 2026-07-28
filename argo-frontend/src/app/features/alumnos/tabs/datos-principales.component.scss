@@ -524,7 +524,11 @@ argo-celular-input.campo-obligatorio-error {
 
 .form-cols input,
 .form-cols select,
-.form-cols textarea {
+.form-cols textarea,
+.form-cols argo-catalogo-enum-buscar input,
+.form-cols argo-municipio-buscar input,
+.form-cols argo-celular-input input {
+  text-transform: uppercase;
   transition: border-color 0.15s, box-shadow 0.15s;
 
   &:focus {

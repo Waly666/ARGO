@@ -46,6 +46,9 @@ import {
   catalogoConEtiquetas,
   normalizarEnum,
   normalizarGenero,
+  nombreEnMayusculas,
+  aMayusculas,
+  CAMPOS_FORMULARIO_SIN_MAYUSCULAS,
 } from '../alumnos/catalogo.helpers';
 
 type FormSeccion = 'datos' | 'documentos' | 'evaluaciones' | 'anotaciones';
@@ -439,36 +442,36 @@ export class EmpleadosAdminComponent implements OnInit {
     this.formSeccion.set(seccion);
     if (this.esAdmin()) this.cargarUsuarios();
     this.form.set({
-      tipoDocumento: e.tipoDocumento || 'CC',
-      numeroDocumento: e.numeroDocumento || '',
-      primerNombre: e.primerNombre || '',
-      segundoNombre: e.segundoNombre || '',
-      primerApellido: e.primerApellido || '',
-      segundoApellido: e.segundoApellido || '',
+      tipoDocumento: aMayusculas(e.tipoDocumento || 'CC'),
+      numeroDocumento: aMayusculas(e.numeroDocumento || ''),
+      primerNombre: nombreEnMayusculas(e.primerNombre),
+      segundoNombre: nombreEnMayusculas(e.segundoNombre),
+      primerApellido: nombreEnMayusculas(e.primerApellido),
+      segundoApellido: nombreEnMayusculas(e.segundoApellido),
       fechaNacimiento: e.fechaNacimiento ? String(e.fechaNacimiento).slice(0, 10) : '',
-      sexo: e.sexo || '',
-      genero: e.genero || normalizarGenero(e.sexo) || '',
-      tipoSangre: e.tipoSangre || '',
-      correoPersonal: e.correoPersonal || '',
-      correoCorporativo: e.correoCorporativo || '',
-      telefono: e.telefono || '',
-      celular: e.celular || '',
-      direccion: e.direccion || '',
-      ciudad: e.ciudad || '',
-      departamento: e.departamento || '',
+      sexo: aMayusculas(e.sexo || ''),
+      genero: aMayusculas(e.genero || normalizarGenero(e.sexo) || ''),
+      tipoSangre: aMayusculas(e.tipoSangre || ''),
+      correoPersonal: nombreEnMayusculas(e.correoPersonal),
+      correoCorporativo: nombreEnMayusculas(e.correoCorporativo),
+      telefono: aMayusculas(e.telefono || ''),
+      celular: aMayusculas(e.celular || ''),
+      direccion: nombreEnMayusculas(e.direccion),
+      ciudad: nombreEnMayusculas(e.ciudad),
+      departamento: nombreEnMayusculas(e.departamento),
       estadoCivil: e.estadoCivil || '',
       estrato: e.estrato || '',
       regimenSalud: e.regimenSalud || '',
       nivelFormacion: e.nivelFormacion || '',
       ocupacion: e.ocupacion || '',
       discapacidad: e.discapacidad || '9',
-      multiCulturalidad: e.multiCulturalidad || 'NO_APLICA',
-      observaciones: e.observaciones || '',
+      multiCulturalidad: aMayusculas(e.multiCulturalidad || 'NO_APLICA'),
+      observaciones: nombreEnMayusculas(e.observaciones),
       nivelEducativo: e.nivelEducativo || '',
-      tituloProfesional: e.tituloProfesional || '',
-      especializacion: e.especializacion || '',
-      maestria: e.maestria || '',
-      doctorado: e.doctorado || '',
+      tituloProfesional: nombreEnMayusculas(e.tituloProfesional),
+      especializacion: nombreEnMayusculas(e.especializacion),
+      maestria: nombreEnMayusculas(e.maestria),
+      doctorado: nombreEnMayusculas(e.doctorado),
       fechaIngreso: e.fechaIngreso ? String(e.fechaIngreso).slice(0, 10) : '',
       fechaRetiro: e.fechaRetiro ? String(e.fechaRetiro).slice(0, 10) : '',
       tipoContrato: e.tipoContrato || '',
@@ -498,11 +501,11 @@ export class EmpleadosAdminComponent implements OnInit {
   }
 
   onMunResidenciaSel(m: MunicipioDivipola): void {
-    this.munResidenciaTexto.set(m.label);
+    this.munResidenciaTexto.set(aMayusculas(m.label));
     this.form.update((f) => ({
       ...f,
-      ciudad: m.nombreMunicipio,
-      departamento: m.nombreDepto,
+      ciudad: nombreEnMayusculas(m.nombreMunicipio),
+      departamento: nombreEnMayusculas(m.nombreDepto),
     }));
   }
 
@@ -650,16 +653,20 @@ export class EmpleadosAdminComponent implements OnInit {
   );
 
   patch<K extends keyof EmpleadoDto>(k: K, v: EmpleadoDto[K]) {
-    this.form.update((f) => ({ ...f, [k]: v }));
+    let valor = v;
+    if (typeof v === 'string' && !CAMPOS_FORMULARIO_SIN_MAYUSCULAS.has(String(k))) {
+      valor = aMayusculas(v) as EmpleadoDto[K];
+    }
+    this.form.update((f) => ({ ...f, [k]: valor }));
   }
 
   onCatalogoPick<K extends keyof EmpleadoDto>(campo: K, opt: EnumBuscarOption): void {
-    const valor = String(opt.value) as EmpleadoDto[K];
+    const valor = aMayusculas(String(opt.value)) as EmpleadoDto[K];
     if (campo === 'genero') {
       this.form.update((f) => ({
         ...f,
-        genero: String(opt.value),
-        sexo: sexoDesdeGenero(String(opt.value)) || f.sexo,
+        genero: String(valor),
+        sexo: sexoDesdeGenero(String(valor)) || f.sexo,
       }));
       return;
     }
@@ -728,6 +735,28 @@ export class EmpleadosAdminComponent implements OnInit {
     const files = this.fotoFile() ? { foto: this.fotoFile()! } : undefined;
     const payload: EmpleadoDto = {
       ...f,
+      primerNombre: nombreEnMayusculas(f.primerNombre),
+      segundoNombre: nombreEnMayusculas(f.segundoNombre),
+      primerApellido: nombreEnMayusculas(f.primerApellido),
+      segundoApellido: nombreEnMayusculas(f.segundoApellido),
+      tipoDocumento: aMayusculas(f.tipoDocumento),
+      numeroDocumento: aMayusculas(f.numeroDocumento),
+      sexo: aMayusculas(f.sexo),
+      genero: aMayusculas(f.genero),
+      tipoSangre: aMayusculas(f.tipoSangre),
+      correoPersonal: nombreEnMayusculas(f.correoPersonal),
+      correoCorporativo: nombreEnMayusculas(f.correoCorporativo),
+      telefono: aMayusculas(f.telefono),
+      celular: aMayusculas(f.celular),
+      direccion: nombreEnMayusculas(f.direccion),
+      ciudad: nombreEnMayusculas(f.ciudad),
+      departamento: nombreEnMayusculas(f.departamento),
+      observaciones: nombreEnMayusculas(f.observaciones),
+      nivelEducativo: f.nivelEducativo,
+      tituloProfesional: nombreEnMayusculas(f.tituloProfesional),
+      especializacion: nombreEnMayusculas(f.especializacion),
+      maestria: nombreEnMayusculas(f.maestria),
+      doctorado: nombreEnMayusculas(f.doctorado),
       estado: normalizarEstadoEmpleado(f.estado),
       modoAcceso: modo,
       idUsuarioExistente,
