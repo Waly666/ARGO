@@ -1,7 +1,7 @@
 <section class="instructor-page card admin-list-page">
   <header class="jor-head jor-page-header">
     <div class="jor-head-main jor-page-title">
-      <p class="breadcrumb"><a routerLink="/app/jornadas">Jornadas</a> / Clases en ejecución</p>
+      <p class="breadcrumb"><a [routerLink]="hubJornadasLink()">Jornadas</a> / Clases en ejecución</p>
       <h1>Clases — contratos en ejecución</h1>
       <p class="hint-block">
         Listado de todas las clases de contratos en ejecución. Use los filtros para acotar por fecha, programa, contrato, instructor, estado u horario.
@@ -183,4 +183,6 @@
       </table>
     </div>
   </div>
+
+  <argo-jornada-clase-editor #jornadaEditor (claseEditada)="onClaseEditada()" />
 </section>

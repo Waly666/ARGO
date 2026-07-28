@@ -3,11 +3,23 @@ import { getSedeActivaSync } from '../storage/sedeStore';
 import type { AuthUser, CajaActivaResponse, ComprobanteRecienteRow, LoginResponse, ReglaAlerta } from './types';
 
 type TokenGetter = () => string | null;
+type UnauthorizedHandler = (message?: string) => void;
 
 let tokenGetter: TokenGetter = () => null;
+let onUnauthorized: UnauthorizedHandler | null = null;
 
 export function setTokenGetter(fn: TokenGetter): void {
   tokenGetter = fn;
+}
+
+export function setUnauthorizedHandler(fn: UnauthorizedHandler | null): void {
+  onUnauthorized = fn;
+}
+
+function notifyUnauthorized(json: unknown, status: number, authUsed: boolean): void {
+  if (status !== 401 || !onUnauthorized || !authUsed) return;
+  const body = json as { message?: string; code?: string } | null;
+  onUnauthorized(body?.message);
 }
 
 function mensajeRed(err: unknown, base: string): string {
@@ -65,6 +77,7 @@ export async function apiFetch<T>(
     }
   }
   if (!res.ok) {
+    notifyUnauthorized(json, res.status, opts?.auth !== false);
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
@@ -115,6 +128,7 @@ export async function apiPostForm<T>(
     }
   }
   if (!res.ok) {
+    notifyUnauthorized(json, res.status, opts?.auth !== false);
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
@@ -165,6 +179,7 @@ export async function apiPutForm<T>(
     }
   }
   if (!res.ok) {
+    notifyUnauthorized(json, res.status, opts?.auth !== false);
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
@@ -208,12 +223,14 @@ export async function apiFetchText(
   const text = await res.text();
   if (!res.ok) {
     let msg = `${res.status} ${res.statusText}`;
+    let parsed: unknown = null;
     try {
-      const j = JSON.parse(text) as { message?: string };
-      if (j.message) msg = j.message;
+      parsed = JSON.parse(text) as { message?: string };
+      if ((parsed as { message?: string }).message) msg = (parsed as { message?: string }).message!;
     } catch {
       if (text.trim()) msg = text.slice(0, 200);
     }
+    notifyUnauthorized(parsed, res.status, opts?.auth !== false);
     throw new Error(msg);
   }
   return text;

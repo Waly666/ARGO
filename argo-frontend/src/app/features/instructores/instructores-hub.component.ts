@@ -95,8 +95,14 @@ export class InstructoresHubComponent {
     this.permisos.tiene(['instructores', 'rrhh', 'jornadas.gestionar']),
   );
 
-  /** Usuario vinculado a empleado con permiso de portal. */
-  mostrarPortal = computed(() => this.auth.puedeUsarPortalInstructor());
+  /**
+   * Portal personal: flag de sesión (empleado vinculado) o permiso explícito
+   * `instructores.mi_portal` (coincidencia exacta; no usar tiene() por el `*` de admin).
+   */
+  mostrarPortal = computed(() => {
+    if (this.auth.puedeUsarPortalInstructor()) return true;
+    return this.permisos.permisos().includes('instructores.mi_portal');
+  });
 
   mostrarTabs = computed(() => this.mostrarDirectorio() && this.mostrarPortal());
 
@@ -106,7 +112,9 @@ export class InstructoresHubComponent {
     const q = String(this.route.snapshot.queryParamMap.get('vista') || '').toLowerCase();
     if (q === 'portal' && this.mostrarPortal()) return 'portal';
     if (q === 'directorio' && this.mostrarDirectorio()) return 'directorio';
-    // Admin / directorio tiene prioridad sobre el portal personal.
+    // Instructor: portal primero (aunque el rol aún tenga el permiso legacy «instructores»).
+    // Admin/RRHH sin portal personal: directorio. Con ambos: pestañas y portal por defecto.
+    if (this.mostrarPortal()) return 'portal';
     if (this.mostrarDirectorio()) return 'directorio';
     return 'portal';
   });
@@ -115,8 +123,8 @@ export class InstructoresHubComponent {
     const v = this.vista();
     if (v === 'directorio' && this.mostrarDirectorio()) return 'directorio';
     if (v === 'portal' && this.mostrarPortal()) return 'portal';
-    if (this.mostrarDirectorio()) return 'directorio';
     if (this.mostrarPortal()) return 'portal';
+    if (this.mostrarDirectorio()) return 'directorio';
     return null;
   });
 

@@ -5,13 +5,13 @@ const upload = require('../middleware/upload');
 const { loadClaseParaEvidencia } = require('../middleware/jornadaEvidenciaCap');
 const { soloCertificadoJornada } = require('../middleware/certificadoJornada');
 const certRender = require('../controllers/certificadoRenderController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requirePermiso, requireAdminTotal } = require('../middleware/auth');
 const contratoMutable = require('../middleware/contratoJornadaMutable');
 
 const router = Router();
 router.use(requireAuth);
 
-const ver = requirePermiso('jornadas.ver', 'jornadas.gestionar');
+const ver = requirePermiso('jornadas.ver', 'jornadas.gestionar', 'jornadas.operar');
 const gest = requirePermiso('jornadas.gestionar');
 const cobro = requirePermiso('jornadas.gestionar', 'facturacion');
 const operar = requirePermiso('jornadas.operar', 'jornadas.gestionar');
@@ -34,7 +34,7 @@ router.get('/contratos/:id/informe-pdf', ver, ctrl.informeContratoPdf);
 router.get('/contratos/:id', ver, ctrl.obtenerContrato);
 router.post('/contratos', gest, ctrl.crearContrato);
 router.put('/contratos/:id', gest, contratoMutable.contratoPorParametro, ctrl.actualizarContrato);
-router.delete('/contratos/:id', gest, contratoMutable.contratoPorParametro, ctrl.eliminarContrato);
+router.delete('/contratos/:id', requireAdminTotal, contratoMutable.contratoPorParametro, ctrl.eliminarContrato);
 router.post('/contratos/:id/generar-jornadas', gest, contratoMutable.contratoPorParametro, ctrl.generarJornadas);
 router.post('/contratos/:id/jornadas', gest, contratoMutable.contratoPorParametro, ctrl.crearJornadaContrato);
 router.post('/contratos/:id/finalizar', gest, ctrl.finalizarContrato);
@@ -58,7 +58,7 @@ router.get('/jornadas/:id', ver, ctrl.obtenerJornada);
 router.patch('/jornadas/:id', gest, contratoMutable.jornadaPorParametro, ctrl.actualizarJornada);
 router.post('/jornadas/:id/cerrar-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.cerrarJornadaOperacion);
 router.post('/jornadas/:id/reabrir-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.reabrirJornadaOperacion);
-router.delete('/jornadas/:id', gest, contratoMutable.jornadaPorParametro, ctrl.eliminarJornada);
+router.delete('/jornadas/:id', requireAdminTotal, contratoMutable.jornadaPorParametro, ctrl.eliminarJornada);
 
 router.get('/clases', ver, ctrl.listarClases);
 router.get('/clases/del-dia', ver, ctrl.clasesDelDia);
@@ -66,7 +66,7 @@ router.get('/clases/contratos-en-ejecucion', requirePermiso('jornadas.ver', 'jor
 router.get('/clases/:id', ver, ctrl.obtenerClase);
 router.post('/clases', operar, contratoMutable.jornadaPorBody, ctrl.crearClase);
 router.patch('/clases/:id', operar, contratoMutable.clasePorParametro, ctrl.actualizarClase);
-router.delete('/clases/:id', gest, contratoMutable.clasePorParametro, ctrl.eliminarClase);
+router.delete('/clases/:id', requireAdminTotal, contratoMutable.clasePorParametro, ctrl.eliminarClase);
 router.post('/clases/:id/iniciar', operar, contratoMutable.clasePorParametro, ctrl.iniciarClase);
 router.post('/clases/:id/finalizar', operar, contratoMutable.clasePorParametro, ctrl.finalizarClase);
 router.get('/clases/:id/post-cierre', ver, ctrl.obtenerPostCierreClase);

@@ -34,27 +34,28 @@ function filasConSede(filas, config) {
   return [row, ...filas];
 }
 
-function bloqueEmpresaHtml(config) {
+function bloqueEmpresaHtml(config, opts = {}) {
+  const align = opts.align === 'left' ? 'left' : 'center';
   const v = (x) => esc((x || '').toString().trim());
   const ciudadLine = [config.ciudad, config.departamento].filter((x) => String(x || '').trim()).join(', ');
   const lineas = [];
   const logoSrc = config.urlLogoDataUrl || null;
   if (logoSrc) {
-    lineas.push(`<div class="center logo"><img src="${esc(logoSrc)}" alt="Logo" /></div>`);
+    lineas.push(`<div class="${align} logo"><img src="${esc(logoSrc)}" alt="Logo" /></div>`);
   }
   if (v(config.nombreEmpresa)) {
-    lineas.push(`<div class="center empresa">${v(config.nombreEmpresa)}</div>`);
+    lineas.push(`<div class="${align} empresa">${v(config.nombreEmpresa)}</div>`);
   }
   if (v(config.nombreSede)) {
-    lineas.push(`<div class="center sede-nombre">${v(config.nombreSede)}</div>`);
+    lineas.push(`<div class="${align} sede-nombre">${v(config.nombreSede)}</div>`);
   }
-  if (v(config.nit)) lineas.push(`<div class="center dato">NIT: ${v(config.nit)}</div>`);
-  if (v(config.telefono)) lineas.push(`<div class="center dato">Tel: ${v(config.telefono)}</div>`);
-  if (v(config.direccion)) lineas.push(`<div class="center dato">Dir: ${v(config.direccion)}</div>`);
-  if (ciudadLine) lineas.push(`<div class="center dato">${esc(ciudadLine)}</div>`);
-  if (v(config.email)) lineas.push(`<div class="center dato">${v(config.email)}</div>`);
+  if (v(config.nit)) lineas.push(`<div class="${align} dato">NIT: ${v(config.nit)}</div>`);
+  if (v(config.telefono)) lineas.push(`<div class="${align} dato">Tel: ${v(config.telefono)}</div>`);
+  if (v(config.direccion)) lineas.push(`<div class="${align} dato">Dir: ${v(config.direccion)}</div>`);
+  if (ciudadLine) lineas.push(`<div class="${align} dato">${esc(ciudadLine)}</div>`);
+  if (v(config.email)) lineas.push(`<div class="${align} dato">${v(config.email)}</div>`);
   if (!lineas.length) {
-    lineas.push(`<div class="center empresa">${v('ARGO')}</div>`);
+    lineas.push(`<div class="${align} empresa">${v('ARGO')}</div>`);
   }
   return lineas.join('\n');
 }
@@ -98,10 +99,9 @@ function estilosRecibo(mm, w, atPageCss) {
     .nota-legal { font-size: 9px; margin-top: 8px; text-align: center; color: #444; }
     .qr { text-align: center; margin: 8px 0; }
     .qr img { width: 100px; height: 100px; }
-    .no-print { margin-top: 12px; text-align: center; }
+    ${require('./informePrintToolbar').informePrintToolbarCss()}
     ${estilosMarcaAguaAnulado()}
     @media print {
-      .no-print { display: none !important; }
       body { width: ${w}px; }
     }
   `;

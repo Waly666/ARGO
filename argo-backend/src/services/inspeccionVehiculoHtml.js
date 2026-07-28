@@ -1,6 +1,7 @@
 const { obtenerConfigRecibo } = require('./configRecibo');
 const QRCode = require('qrcode');
 const { normSi } = require('../utils/inspeccionClaseVehiculo');
+const { informePrintToolbar } = require('./informePrintToolbar');
 
 function payloadQrInspeccion(inspeccion, vehiculo, empresa, marcaLinea, quienRecibe) {
   return {
@@ -161,6 +162,11 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
     inspeccion.documentosInstructor,
   );
 
+  const toolbar = informePrintToolbar({
+    label: 'Acciones de la inspección',
+    pdfName: `inspeccion-${inspeccion.placa || 'vehiculo'}-${inspeccion.fecha || ''}`,
+  });
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -168,6 +174,7 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
   <title>Inspección vehículo ${esc(inspeccion.placa)} — ${esc(inspeccion.fecha)}</title>
   <style>
     ${(await require('./configPaginasInformes').atPageCssPara('inspeccion_vehiculo'))}
+    ${toolbar.css}
     * { box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 16px; }
     h1 { text-align: center; font-size: 15px; margin: 0; letter-spacing: 0.4px; text-transform: uppercase; }
@@ -328,11 +335,10 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
     .firmas { display: flex; gap: 24px; margin-top: 28px; }
     .firma { flex: 1; text-align: center; }
     .firma .linea { border-top: 1px solid #000; margin: 40px 12px 6px; }
-    .no-print { margin: 16px 0; text-align: center; }
-    @media print { .no-print { display: none !important; } }
   </style>
 </head>
 <body>
+  ${toolbar.html}
   <header class="report-header">
     <div class="header-top">
       <div class="header-brand">
@@ -410,9 +416,7 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
     </div>
   </div>
 
-  <div class="no-print">
-    <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
-  </div>
+  ${toolbar.script}
 </body>
 </html>`;
 }

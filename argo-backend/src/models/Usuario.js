@@ -24,6 +24,11 @@ const UsuarioSchema = new mongoose.Schema(
     totpPendingAt: { type: Date, default: null },
     totpEnrolledAt: { type: Date, default: null },
     mfaRecoveryHashes: { type: [String], default: [] },
+    /**
+     * Versión de sesión staff (web/app). Cada login exitoso la incrementa;
+     * el JWT lleva `sv` y el middleware rechaza tokens de sesiones anteriores.
+     */
+    sessionVersion: { type: Number, default: 0 },
   },
   { collection: 'usuarios', timestamps: true, strict: false },
 );

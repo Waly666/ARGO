@@ -1162,6 +1162,12 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
         </section>`
       : '';
 
+  const { informePrintToolbar } = require('./informePrintToolbar');
+  const toolbar = informePrintToolbar({
+    label: 'Acciones del informe',
+    pdfName: `informe-contrato-${c.codContrato || 'jornadas'}`,
+  });
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1169,8 +1175,9 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
 <title>${esc(titulo)}</title>
 <style>
   ${atPage}
+  ${toolbar.css}
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; font-size: 10pt; }
+  body { margin: 0; padding: 12px 14px; font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; font-size: 10pt; }
   .hdr { display: flex; gap: 12px; align-items: center; border-bottom: 3px solid #1e3a5f; padding-bottom: 8px; margin-bottom: 8px; }
   .logo { max-height: 52px; max-width: 140px; object-fit: contain; }
   .logo-ph { width: 48px; height: 48px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; background: linear-gradient(135deg, #1e3a5f, #2d5580); }
@@ -1256,7 +1263,6 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
   .ftr { margin-top: 18px; font-size: 8pt; color: #64748b; border-top: 2px solid #1e3a5f; padding-top: 8px; }
   @media print {
-    .no-print { display: none !important; }
     .charts-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 700px) {
@@ -1265,6 +1271,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
 </style>
 </head>
 <body>
+  ${toolbar.html}
   <header class="hdr">
     ${logo}
     <div>
@@ -1293,6 +1300,7 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     Generado el ${esc(fmtFechaSolo(data.generadoAt) || new Date().toLocaleDateString('es-CO'))}.
     Documento de seguimiento de capacitación — uso empresarial.
   </div>
+  ${toolbar.script}
 </body>
 </html>`;
 }

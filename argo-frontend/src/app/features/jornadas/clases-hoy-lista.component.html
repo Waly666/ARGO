@@ -1,7 +1,7 @@
 <section class="clases-hoy-page card admin-list-page">
   <header class="jor-head page-head">
     <div class="jor-head-main title">
-      <p class="breadcrumb"><a routerLink="/app/jornadas">Jornadas</a> / Clases de hoy</p>
+      <p class="breadcrumb"><a [routerLink]="hubJornadasLink()">Jornadas</a> / Clases de hoy</p>
       <h1>Clases de hoy</h1>
       @if (esInstructorSolo()) {
         <p class="hint">
@@ -81,7 +81,11 @@
       <tbody>
         <tr *ngFor="let c of filtradas()" [ngClass]="rowClaseClass(c.estado)">
           <td class="hora-cell">{{ fmtHora(c.horaInicio) }}</td>
-          <td><span [ngClass]="capCodContrato(c.codContrato)">{{ c.codContrato || '—' }}</span></td>
+          <td>
+            <span [ngClass]="capCodContrato(c.codContrato || c.contratoLabel || c.clienteNombre)">
+              {{ labelContratoClase(c) }}
+            </span>
+          </td>
           <td>{{ c.programaNombre || c.idPrograma || '—' }}</td>
           <td><span [ngClass]="capUbicacionClase(c.ubicacion)">{{ c.ubicacion || '—' }}</span></td>
           <td><span [ngClass]="capMunicipioJor(c.municipioJornada)">{{ c.municipioJornada || '—' }}</span></td>
@@ -204,4 +208,11 @@
       </button>
     </div>
   </argo-form-modal>
+}
+
+@if (puedeOperar()) {
+  <argo-jornada-clase-editor
+    #jornadaEditor
+    [editorHost]="true"
+    (claseGuardada)="onClaseEditada()" />
 }

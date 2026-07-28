@@ -7,6 +7,7 @@ const { fmtFechaSolo: fmtFecha } = require('../utils/timezoneColombia');
 const { cssFontFamily, googleFontsHeadHtml } = require('../constants/certificadoFuentes');
 const { bloqueComprobanteAnulado, estilosMarcaAguaAnulado } = require('./reciboHtmlShared');
 const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
+const { informePrintToolbar } = require('./informePrintToolbar');
 
 function esc(s) {
   return String(s ?? '')
@@ -274,6 +275,10 @@ async function generarHtmlCertificado(data, options = {}) {
   const atPage = await atPageCssPara('certificados', {
     sizeOverride: `${L.pageW} ${L.pageH}`,
   });
+  const toolbar = informePrintToolbar({
+    label: 'Acciones del certificado',
+    pdfName: `certificado-${codigo || 'argo'}`,
+  });
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -336,13 +341,7 @@ async function generarHtmlCertificado(data, options = {}) {
     .dato.tipoDoc, .dato.doc, .dato.expedida, .dato.fecha, .dato.vence, .dato.ciudad, .dato.obs { text-transform: none; }
     .cert-id { font-family: Consolas, monospace; line-height: 1.2; }
     .qr-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; }
-    .no-print {
-      position: fixed;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 99;
-    }
+    ${toolbar.css}
     ${estilosMarcaAguaAnulado()}
     body.doc-anulado .anulado-banner {
       position: absolute;
@@ -356,7 +355,6 @@ async function generarHtmlCertificado(data, options = {}) {
       font-size: 88px;
     }
     @media print {
-      .no-print { display: none !important; }
       .sheet { page-break-after: avoid; }
       html, body {
         width: ${L.pageW} !important;
@@ -368,6 +366,10 @@ async function generarHtmlCertificado(data, options = {}) {
   </style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
+  ${toolbar.html}
+  <p class="no-print" style="font:13px/1.4 sans-serif;color:#334155;margin:0 0 10px;text-align:left;padding:0 4px">
+    En el diálogo de impresión use escala <strong>100%</strong> (sin «Ajustar a página»).
+  </p>
   ${anulado.html}
   <div class="sheet">
     ${fondoImg}
@@ -381,12 +383,7 @@ async function generarHtmlCertificado(data, options = {}) {
       }
     </div>
   </div>
-  <div class="no-print">
-    <p style="font:14px/1.4 sans-serif;color:#333;margin-bottom:8px;text-align:center">
-      En el diálogo de impresión use escala <strong>100%</strong> (sin «Ajustar a página»).
-    </p>
-    <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
-  </div>
+  ${toolbar.script}
 </body>
 </html>`;
 }

@@ -29,6 +29,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       const code = err?.error?.code;
       const esReauthFallida = code === 'REAUTH_FAILED' || err?.status === 403;
       if (err?.status === 401 && auth.isAuth() && !esReauthFallida) {
+        if (code === 'SESION_REEMPLAZADA') {
+          try {
+            sessionStorage.setItem(
+              'argo_login_aviso',
+              err?.error?.message ||
+                'Su sesión se cerró porque inició sesión en otro dispositivo o aplicación.',
+            );
+          } catch {
+            /* ignore */
+          }
+        }
         auth.logout();
       }
       return throwError(() => err);

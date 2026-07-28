@@ -149,10 +149,9 @@ export class InstructorPortalComponent implements OnInit {
 
   irOperarClase(c: ClaseInstructorPortalDto) {
     if (c.origen === 'jornada') {
-      void this.router.navigate(['/app/jornadas'], {
-        queryParams: c.idJornada
-          ? { jornada: c.idJornada, tab: 'clases', clase: c._id }
-          : { tab: 'clases', clase: c._id },
+      // No abrir el hub admin: clases de hoy con editor embebido.
+      void this.router.navigate(['/app/jornadas/clases-hoy'], {
+        queryParams: { clase: c._id },
       });
       return;
     }

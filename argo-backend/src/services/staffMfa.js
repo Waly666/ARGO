@@ -23,10 +23,25 @@ function jwtSecret() {
 function signAccessToken(u) {
   const rol = normalizarRol(u.rol);
   return jwt.sign(
-    { sub: u._id.toString(), username: u.username, rol },
+    {
+      sub: u._id.toString(),
+      username: u.username,
+      rol,
+      sv: Number(u.sessionVersion) || 0,
+    },
     jwtSecret(),
     { expiresIn: process.env.JWT_EXPIRES || '12h' },
   );
+}
+
+/**
+ * Invalida sesiones previas (web u otras apps) e emite JWT con la nueva versión.
+ */
+async function emitirSesionStaff(usuarioDoc) {
+  const next = (Number(usuarioDoc.sessionVersion) || 0) + 1;
+  await Usuario.updateOne({ _id: usuarioDoc._id }, { $set: { sessionVersion: next } });
+  usuarioDoc.sessionVersion = next;
+  return signAccessToken(usuarioDoc);
 }
 
 function signMfaToken(userId, purpose) {
@@ -184,7 +199,7 @@ async function confirmMfaSetup(req, setupToken, code) {
 
   logAuthIntento({ req, canal: 'staff', identificador: u.username, ok: true, motivo: 'mfa_enroll_ok' });
 
-  const token = signAccessToken(u);
+  const token = await emitirSesionStaff(u);
   const user = await enriquecerUsuarioDoc(u);
   return { token, user, recoveryCodes: recoveryPlain };
 }
@@ -207,7 +222,7 @@ async function verifyMfaLogin(req, mfaToken, code) {
   }
 
   logAuthIntento({ req, canal: 'staff', identificador: u.username, ok: true, motivo: 'mfa_ok' });
-  const token = signAccessToken(u);
+  const token = await emitirSesionStaff(u);
   const user = await enriquecerUsuarioDoc(u);
   return { token, user };
 }
@@ -242,7 +257,7 @@ async function verifyMfaRecovery(req, mfaToken, recoveryCode) {
   await u.save();
 
   logAuthIntento({ req, canal: 'staff', identificador: u.username, ok: true, motivo: 'mfa_recovery_ok' });
-  const token = signAccessToken(u);
+  const token = await emitirSesionStaff(u);
   const user = await enriquecerUsuarioDoc(u);
   return { token, user, recoveryRemaining: hashes.length };
 }
@@ -256,5 +271,6 @@ module.exports = {
   verifyMfaLogin,
   verifyMfaRecovery,
   signAccessToken,
+  emitirSesionStaff,
   verifyTotpCode,
 };

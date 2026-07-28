@@ -846,7 +846,19 @@ export class JornadaCapService {
         } catch {
           /* ignore */
         }
-        onError?.(e?.error?.message || 'No se pudo generar el listado de asistencia.');
+        let msg = 'No se pudo generar el listado de asistencia.';
+        const body = e?.error;
+        if (typeof body === 'string') {
+          try {
+            const parsed = JSON.parse(body) as { message?: string };
+            if (parsed?.message) msg = parsed.message;
+          } catch {
+            if (body.trim()) msg = body.slice(0, 200);
+          }
+        } else if (body?.message) {
+          msg = String(body.message);
+        }
+        onError?.(msg);
       },
     });
     return true;

@@ -53,6 +53,15 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   private drops: number[] = [];
 
   constructor() {
+    try {
+      const aviso = sessionStorage.getItem('argo_login_aviso');
+      if (aviso) {
+        sessionStorage.removeItem('argo_login_aviso');
+        this.error.set(aviso);
+      }
+    } catch {
+      /* ignore */
+    }
     this.http
       .get<{ turnstileSiteKey?: string; nombreEmpresa?: string; urlLogo?: string | null }>(
         `${environment.apiUrl}/auth/config`,

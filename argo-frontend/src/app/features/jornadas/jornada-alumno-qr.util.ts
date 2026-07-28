@@ -1,3 +1,9 @@
+import {
+  informePrintToolbarCss,
+  informePrintToolbarHtml,
+  informePrintToolbarScript,
+} from '../../core/utils/informe-print-toolbar.util';
+
 export interface JornadaAlumnoQrData {
   numDoc: string;
   nombre: string;
@@ -136,8 +142,9 @@ export function paginaEtiquetasHtml(etiquetas: string[], atPageCss?: string): st
   <title>Etiquetas QR — Jornadas</title>
   <style>
     ${pageRule}
+    ${informePrintToolbarCss()}
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #fff; padding: 12px; }
     .sheet {
       display: flex;
       flex-wrap: wrap;
@@ -205,23 +212,27 @@ export function paginaEtiquetasHtml(etiquetas: string[], atPageCss?: string): st
       font-weight: 700;
       color: #334155;
     }
-    .no-print { margin: 12px; }
+    .hint-etiquetas {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.4;
+    }
     @media print {
-      .no-print { display: none !important; }
+      body { padding: 0; }
       .label { border-color: transparent; }
     }
   </style>
 </head>
 <body>
-  <div class="no-print">
-    <p><strong>Etiquetas QR de jornadas</strong> — use una impresora de etiquetas o «Imprimir» del navegador.</p>
-    <p>El instructor escanea este QR en la app móvil para registrar al alumno sin digitar el documento.</p>
-    <button type="button" onclick="window.print()">Imprimir etiquetas</button>
-  </div>
+  ${informePrintToolbarHtml({ label: 'Acciones de etiquetas', pdfName: 'etiquetas-qr-jornadas' })}
+  <p class="no-print hint-etiquetas">
+    <strong>Etiquetas QR de jornadas</strong> — el instructor escanea este QR en la app móvil para registrar al alumno.
+  </p>
   <div class="sheet">
     ${etiquetas.join('\n')}
   </div>
-  <script>window.onload = function () { setTimeout(function () { window.print(); }, 300); };</script>
+  ${informePrintToolbarScript('etiquetas-qr-jornadas')}
 </body>
 </html>`;
 }

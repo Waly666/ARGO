@@ -56,6 +56,7 @@ import { JornadaCapDto } from '../../core/services/jornada-cap.service';
 import { JornadaMapaPickerComponent } from './jornada-mapa-picker.component';
 import { JornadaQrScanModalComponent } from './jornada-qr-scan-modal.component';
 import { JornadaAlumnoQrData } from './jornada-alumno-qr.util';
+import { esInstructorJornadasRestringido } from './jornadas-acceso.util';
 import { ContratoInformesDashboardComponent } from './contrato-informes-dashboard.component';
 import {
   ProgresoCertResp,
@@ -435,8 +436,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   puedeEditarHorarioClase = computed(() =>
     this.permisoSvc.tiene(['jornadas.gestionar', 'jornadas.operar']),
   );
-  /** Solo administrador (jornadas.gestionar) puede eliminar clases (cualquier estado). */
-  puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
+  /** Solo administrador puede eliminar clases / jornadas / contratos. */
+  puedeEliminarClase = computed(() => this.auth.isAdmin());
   puedeEliminarClaseActiva = computed(
     () =>
       !this.contratoModalFinalizado() &&
@@ -444,9 +445,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
   );
   inscritosConAsistencia = computed(() => this.inscritos().filter((i) => i.tieneAsistencia).length);
-  /** Inscritos que aún requieren asistencia (excluye certificados vigentes en el contrato). */
+  /** Inscritos que aún requieren asistencia (incluye ya certificados: el cert no bloquea marcar). */
   inscritosPendientesAsistencia = computed(() =>
-    this.inscritos().filter((i) => !i.tieneAsistencia && !i.yaCertificadoContrato),
+    this.inscritos().filter((i) => !i.tieneAsistencia),
   );
   inscritosSinAsistencia = computed(() => this.inscritosPendientesAsistencia().length);
   inscritosCertificadosContrato = computed(() =>
@@ -845,6 +846,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       const t = this.tab();
       if (t === 'jornadas') this.recargarVistaJornadas();
       else if (t === 'clases') this.recargarClases();
+      const idClase = this.claseSel();
+      if (this.modalCrearClase() && this.modalModoClase() === 'editar' && idClase) {
+        this.cargarInscritos(idClase);
+      }
     });
     effect(() => {
       if (this.modalCrearClase()) {
@@ -895,6 +900,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Defensa: instructor con operar/ver no debe ver el hub (contratos, cobros, etc.).
+    if (
+      esInstructorJornadasRestringido((k) => this.permisoSvc.tiene(k), this.auth.user()?.rol)
+    ) {
+      void this.router.navigate(['/app/jornadas/clases-hoy'], { replaceUrl: true });
+      return;
+    }
     this.operacionCfg.cargar();
     this.cargarSupervisores();
     this.cargarInstructores();
@@ -2002,18 +2014,20 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.claseActiva()?.estado === 'EN PROCESO';
   }
 
-  /** Admin: también en clases finalizadas (correcciones). */
+  /** Admin: también en clases finalizadas (correcciones). Instructor: EN PROCESO. */
   puedeMarcarAsistenciaInscrito(): boolean {
+    if (!this.permisoSvc.tiene(['jornadas.operar', 'jornadas.gestionar'])) return false;
     if (this.claseModalEnProceso()) return true;
     if (this.operacionEspecialActiva() && this.claseActiva()?.estado !== 'FINALIZADO') return true;
-    return this.puedeEliminarClase() && this.claseActiva()?.estado === 'FINALIZADO';
+    return this.auth.isAdmin() && this.claseActiva()?.estado === 'FINALIZADO';
   }
 
   puedeMarcarAsistenciaAlumno(a: {
     yaCertificadoContrato?: boolean;
     tieneAsistencia?: boolean;
   }): boolean {
-    if (a.yaCertificadoContrato && !a.tieneAsistencia) return false;
+    // Certificado del contrato no bloquea asistencia en esta clase (solo evita 2.º certificado).
+    if (a.tieneAsistencia) return false;
     return this.puedeMarcarAsistenciaInscrito();
   }
 
@@ -2062,15 +2076,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     input.value = '';
   }
 
-  /** Instructor: solo EN PROCESO. Administrador: en cualquier estado de la clase. */
+  /** Admin/gestor: siempre. Instructor (operar): EN PROCESO o FINALIZADO (corrección). */
   puedeBorrarAsistenciaDeClase(): boolean {
-    if (this.puedeEliminarClase()) return true;
-    return this.claseModalEnProceso();
+    if (this.auth.isAdmin() || this.permisoSvc.tiene('jornadas.gestionar')) return true;
+    if (!this.permisoSvc.tiene('jornadas.operar')) return false;
+    const est = String(this.claseActiva()?.estado || '').toUpperCase();
+    return est === 'EN PROCESO' || est === 'FINALIZADO';
   }
 
   /** Instructor: mientras la clase no esté finalizada. Administrador: siempre. */
   puedeQuitarInscritoDeClase(): boolean {
-    if (this.puedeEliminarClase()) return true;
+    if (this.auth.isAdmin()) return true;
     return this.claseActiva()?.estado !== 'FINALIZADO';
   }
 
@@ -2177,7 +2193,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!id) return;
     if (this.inscritosSinAsistencia() === 0) {
       this.mostrarMsgModal(
-        'Todos los inscritos ya tienen asistencia o certificado vigente en el contrato.',
+        'Todos los inscritos ya tienen asistencia en esta clase.',
         'info',
         'Asistencia al día',
       );
@@ -2642,7 +2658,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
           }
           this.ejecutarAgregarAlumnoMatricula(a);
         },
-        error: () => this.ejecutarAgregarAlumnoMatricula(a),
+        error: (e) => {
+          this.mostrarMsg(
+            e?.error?.message || 'No se pudo verificar el certificado del alumno en el contrato.',
+            'error',
+            'Validación',
+          );
+        },
       });
       return;
     }
@@ -4750,6 +4772,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   async eliminarJornada(j: JornadaCapDto, ev?: Event) {
     ev?.stopPropagation();
     ev?.preventDefault();
+    if (!this.auth.isAdmin()) {
+      this.mostrarMsg('Solo el administrador puede eliminar jornadas.', 'warn', 'Sin permiso');
+      return;
+    }
     if (this.contratoDeJornadaFinalizado(j)) {
       this.avisarContratoFinalizado();
       return;
@@ -4913,7 +4939,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     if (!this.puedeEliminarClase()) {
-      this.mostrarMsg('Solo un administrador puede eliminar clases.', 'warn', 'Sin permiso');
+      this.mostrarMsg('Solo el administrador puede eliminar clases.', 'warn', 'Sin permiso');
       return;
     }
     const finalizada = String(c.estado || '').toUpperCase() === 'FINALIZADO';

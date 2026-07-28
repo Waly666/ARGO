@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { ClaseJornadaDto, JornadaCapService } from '../../core/services/jornada-cap.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import {
@@ -11,6 +12,8 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { fmtFechaCalendario, ymdLocal } from './jornada-calendario.util';
+import { esInstructorJornadasRestringido } from './jornadas-acceso.util';
+import { JornadaClaseEditorComponent } from './jornada-clase-editor.component';
 import {
   capCarpa,
   capCodContrato,
@@ -35,6 +38,7 @@ import {
     RouterLink,
     ArgoDateInputComponent,
     CatalogoEnumBuscarComponent,
+    JornadaClaseEditorComponent,
   ],
   templateUrl: './jornada-instructor.component.html',
   styleUrls: ['./jornada-instructor.component.scss'],
@@ -42,7 +46,10 @@ import {
 export class JornadaInstructorComponent implements OnInit {
   private jornadaSvc = inject(JornadaCapService);
   private permisoSvc = inject(PermisoService);
+  private auth = inject(AuthService);
   private router = inject(Router);
+
+  @ViewChild('jornadaEditor') jornadaEditor?: JornadaClaseEditorComponent;
 
   loading = signal(false);
   msg = signal<string | null>(null);
@@ -71,6 +78,12 @@ export class JornadaInstructorComponent implements OnInit {
   puedeGestionar = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
   puedeOperar = computed(
     () => this.permisoSvc.tiene('jornadas.operar') || this.puedeGestionar(),
+  );
+  esInstructorSolo = computed(() =>
+    esInstructorJornadasRestringido((k) => this.permisoSvc.tiene(k), this.auth.user()?.rol),
+  );
+  hubJornadasLink = computed(() =>
+    this.esInstructorSolo() ? '/app/jornadas/clases-hoy' : '/app/jornadas',
   );
 
   opcionesPrograma = computed<EnumBuscarOption[]>(() => {
@@ -258,7 +271,11 @@ export class JornadaInstructorComponent implements OnInit {
   }
 
   abrirClase(c: ClaseJornadaDto): void {
-    if (!c.idContrato || !c._id) return;
+    if (!c._id) return;
+    if (this.esInstructorSolo() || !c.idContrato) {
+      this.jornadaEditor?.abrirClaseDesdeHost(c, c.idJornada);
+      return;
+    }
     void this.router.navigate(['/app/jornadas'], {
       queryParams: {
         contrato: c.idContrato,
@@ -267,6 +284,10 @@ export class JornadaInstructorComponent implements OnInit {
         clase: c._id,
       },
     });
+  }
+
+  onClaseEditada(): void {
+    this.cargar();
   }
 
   cerrarMsg(): void {

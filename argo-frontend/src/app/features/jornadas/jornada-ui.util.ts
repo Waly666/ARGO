@@ -91,6 +91,21 @@ export function capCodContrato(v?: string | null): string {
   return v?.trim() ? 'cap cap-indigo cap-mono cap-sm' : 'cap cap-slate cap-sm';
 }
 
+/** Código o etiqueta de contrato para listados de clase (evita «—» si solo hay cliente). */
+export function labelContratoClase(c?: {
+  codContrato?: string | null;
+  contratoLabel?: string | null;
+  clienteNombre?: string | null;
+} | null): string {
+  if (!c) return '—';
+  const cod = String(c.codContrato || '').trim();
+  if (cod) return cod;
+  const label = String(c.contratoLabel || '').trim();
+  if (label) return label;
+  const cliente = String(c.clienteNombre || '').trim();
+  return cliente || '—';
+}
+
 export function capCliente(_v?: string | null): string {
   return 'cap cap-text cap-sm';
 }
@@ -286,7 +301,7 @@ export function claseJornadaEsFinalizada(estado?: string | null): boolean {
   return claseJornadaEstadoNorm(estado) === 'FINALIZADO';
 }
 
-/** Con permiso jornadas.gestionar se puede eliminar en cualquier estado (validación en UI). */
+/** Solo el administrador puede eliminar la clase (validación en UI/API). */
 export function claseJornadaSePuedeEliminar(_estado?: string | null): boolean {
   return true;
 }

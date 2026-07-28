@@ -4,6 +4,7 @@ const { buscarPrograma } = require('./programaServicio');
 const Usuario = require('../models/Usuario');
 const Cargo = require('../models/Cargo');
 const { tieneAlguno, permisosParaRol } = require('./rolesPermisos');
+const { normalizarRol } = require('../utils/roles');
 
 function nombreEmpleado(emp) {
   if (!emp) return '';
@@ -159,27 +160,6 @@ async function listarInstructoresConUsuario() {
   return out.sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto, 'es'));
 }
 
-function sinInstructorAsignadoQuery() {
-  return {
-    $and: [
-      {
-        $or: [
-          { idEmpleadoInstructor: null },
-          { idEmpleadoInstructor: { $exists: false } },
-          { idEmpleadoInstructor: '' },
-        ],
-      },
-      {
-        $or: [
-          { idUsuarioInstructor: null },
-          { idUsuarioInstructor: { $exists: false } },
-          { idUsuarioInstructor: '' },
-        ],
-      },
-    ],
-  };
-}
-
 function esClaseSinInstructor(clase) {
   const emp =
     clase?.idEmpleadoInstructor == null ||
@@ -199,38 +179,62 @@ function esClaseDelInstructor(clase, emp, userId) {
 }
 
 /**
- * Admin/gestor: sin filtro.
- * Instructor (jornadas.operar):
- *  - clases PROGRAMADA sin instructor (disponibles para tomar), y
- *  - clases propias (asignadas a su empleado/usuario), en cualquier estado.
- * No ve clases de otros instructores.
+ * Rol instructor (sistema o personalizado): siempre solo sus clases,
+ * aunque en BD le hayan dejado gestionar/registrar por error.
+ */
+function esRolInstructorSoloClasesPropias(req) {
+  const rol = normalizarRol(req.user?.rol);
+  if (rol === 'instructor') return true;
+  const raw = String(req.user?.rol || '')
+    .trim()
+    .toLowerCase();
+  return /(^|[_-])instructor(es)?($|[_-])/.test(raw);
+}
+
+/**
+ * Quién puede ver el listado completo de clases (todas las de la empresa).
+ * Instructores: nunca (ver filtroClasesQueryPorRol).
+ */
+function puedeVerTodasLasClasesJornada(req, permisos) {
+  if (esRolInstructorSoloClasesPropias(req)) return false;
+  if (tieneAlguno(permisos, ['*', 'jornadas.gestionar', 'jornadas.registrar_alumnos'])) {
+    return true;
+  }
+  const rol = normalizarRol(req.user?.rol);
+  if (['admin', 'recepcion', 'registro', 'cajero', 'supervisor'].includes(rol)) {
+    return true;
+  }
+  // Roles personalizados: p. ej. registro_sede, supervisor_ops
+  const rolRaw = String(req.user?.rol || '')
+    .trim()
+    .toLowerCase();
+  if (/(^|[_-])(admin|recepcion|registro|cajero|supervisor)($|[_-])/.test(rolRaw)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Admin / registro / cajero / supervisor: sin filtro (todas las clases).
+ * Instructor: solo clases propias (empleado / usuario / nombre legacy).
  */
 async function filtroClasesQueryPorRol(req) {
   const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
-  if (tieneAlguno(permisos, ['jornadas.gestionar'])) {
+  const restringir =
+    esRolInstructorSoloClasesPropias(req) ||
+    (!puedeVerTodasLasClasesJornada(req, permisos) &&
+      tieneAlguno(permisos, ['jornadas.operar', 'instructores.mi_portal']));
+
+  if (!restringir) {
     return { aplicar: false };
   }
+
   const emp = await empleadoPorUsuarioId(req.user?.sub);
-  const propias = [];
-  if (emp?.idEmpleado != null) {
-    const idNum = Number(emp.idEmpleado);
-    propias.push({ idEmpleadoInstructor: idNum });
-    propias.push({ idEmpleadoInstructor: String(idNum) });
+  const filtroInst = filtroInstructorQuery(emp, req.user?.sub);
+  if (filtroInst._id === null) {
+    return { aplicar: true, vacio: true };
   }
-  const userId = req.user?.sub ? String(req.user.sub) : '';
-  if (userId) propias.push({ idUsuarioInstructor: userId });
-
-  const disponibles = {
-    estado: 'PROGRAMADA',
-    ...sinInstructorAsignadoQuery(),
-  };
-
-  const condiciones = [disponibles, ...propias];
-  if (!propias.length) {
-    // Sin vínculo RRHH solo ve programadas libres (si las hay).
-    return { aplicar: true, $or: [disponibles] };
-  }
-  return { aplicar: true, $or: condiciones };
+  return { aplicar: true, $or: filtroInst.$or };
 }
 
 /**
@@ -404,6 +408,7 @@ module.exports = {
   resolverInstructorParaClase,
   listarInstructoresConUsuario,
   aplicarFiltroClasesQueryPorRol,
+  puedeVerTodasLasClasesJornada,
   filtroInstructorQuery,
   enriquecerClases,
   esEmpleadoInstructor,

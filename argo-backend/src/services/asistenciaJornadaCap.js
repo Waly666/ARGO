@@ -2,7 +2,6 @@ const AsisClasJorCap = require('../models/AsisClasJorCap');
 const InscripcionClase = require('../models/InscripcionClase');
 const DatosAlumno = require('../models/DatosAlumno');
 const Matricula = require('../models/Matricula');
-const Certificado = require('../models/Certificado');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { asegurarTipoAlumnoJornada, auditoriaUsuario, asignarEmpresaContratoAlumno } = require('./jornadaCapacitacion');
 const { sincronizarEstadoJornada } = require('./estadoJornadaCap');
@@ -12,9 +11,45 @@ const {
   progresoCertificacion,
   crearContextoCertificadoContrato,
 } = require('./certificadoJornadaAuto');
-const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
+const { buscarPrograma } = require('./programaServicio');
+const { crearMatriculaDesdeBody } = require('./matriculaCreator');
 
 const QUERY_MATRICULA_ACTIVA = { estado: { $regex: /^activo?a?$/i } };
+
+/** Busca matrícula activa del alumno tolerando idProg numérico vs ObjectId. */
+async function encontrarMatriculaActivaPrograma(numDoc, idProgramaClase) {
+  const progIdRaw = String(idProgramaClase || '').trim();
+  if (!progIdRaw) return null;
+  const prog = await buscarPrograma(progIdRaw);
+  const candidatos = new Set([progIdRaw]);
+  if (prog) {
+    for (const v of [prog.idPrograma, prog.idProg, prog._id, prog.codigoProg]) {
+      const s = String(v ?? '').trim();
+      if (s) candidatos.add(s);
+    }
+  }
+  const ids = [...candidatos];
+  return Matricula.findOne({
+    numDoc,
+    idProg: { $in: ids },
+    ...QUERY_MATRICULA_ACTIVA,
+  }).lean();
+}
+
+/** Garantiza matrícula activa en el programa de la clase (asistencia no debe fallar por idProg). */
+async function asegurarMatriculaProgramaClase(numDoc, idProgramaClase) {
+  let mat = await encontrarMatriculaActivaPrograma(numDoc, idProgramaClase);
+  if (mat) return mat;
+  const prog = await buscarPrograma(idProgramaClase);
+  if (!prog) {
+    const err = new Error('Programa de la clase no encontrado');
+    err.status = 404;
+    throw err;
+  }
+  const idProgramaVal = String(prog.idPrograma ?? prog._id);
+  const created = await crearMatriculaDesdeBody({ numDoc, idPrograma: idProgramaVal });
+  return created?.matricula || (await encontrarMatriculaActivaPrograma(numDoc, idProgramaVal));
+}
 
 function progresoDesdeResultadoCert(resultadoCert, idContrato, numDoc, ctxCert) {
   if (resultadoCert?.sesiones != null) {
@@ -66,7 +101,7 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
     err.status = 400;
     throw err;
   }
-  const mat = await Matricula.findOne({ numDoc, idProg: progId, ...QUERY_MATRICULA_ACTIVA }).lean();
+  const mat = await asegurarMatriculaProgramaClase(numDoc, progId);
   if (!mat) {
     const err = new Error('El alumno no está matriculado en el programa de esta clase');
     err.status = 400;
@@ -212,12 +247,21 @@ async function registrarAsistenciaAlumnoEnClase(req, clase, numDocRaw, opts = {}
 async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {}) {
   const clase = claseDoc?.toObject ? claseDoc.toObject() : { ...claseDoc };
   const inscripciones = await InscripcionClase.find({ idClase: clase._id }).lean();
-  const asistenciasExistentes = await AsisClasJorCap.find({ idclaseJornada: clase._id })
+  const asistenciasExistentes = await AsisClasJorCap.find({
+    $or: [{ idclaseJornada: clase._id }, { idclaseJornada: String(clase._id) }],
+  })
     .select('numDocAlumno')
     .lean();
-  const yaAsistio = new Set(asistenciasExistentes.map((a) => Number(a.numDocAlumno)));
+  const yaAsistio = new Set(
+    asistenciasExistentes
+      .map((a) => Number(a.numDocAlumno))
+      .filter((n) => Number.isFinite(n)),
+  );
 
-  const pendientes = inscripciones.filter((ins) => !yaAsistio.has(Number(ins.numDoc)));
+  const pendientes = inscripciones.filter((ins) => {
+    const nd = Number(ins.numDoc);
+    return Number.isFinite(nd) && !yaAsistio.has(nd);
+  });
   const resultados = [];
   let certificadosNuevos = 0;
   const certificadosEmitidos = [];
@@ -230,6 +274,7 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
       omitidosCertificados: 0,
       certificadosNuevos: 0,
       certificadosEmitidos: [],
+      errores: [],
       resultados: [],
     };
   }
@@ -241,31 +286,8 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
 
   let aProcesar = pendientes;
   let omitidosCertificados = 0;
-  if (jornada?.idContrato) {
-    const docsPend = pendientes.map((i) => Number(i.numDoc)).filter((n) => Number.isFinite(n));
-    const esPorClase = ctxCert?.contrato?.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
-    const certs = docsPend.length
-      ? await Certificado.find(
-          esPorClase
-            ? {
-                numDoc: { $in: docsPend },
-                idClaseJornada: clase._id,
-                estado: { $ne: 'anulado' },
-              }
-            : {
-                numDoc: { $in: docsPend },
-                idContrato: jornada.idContrato,
-                estado: { $ne: 'anulado' },
-                $or: [{ idClaseJornada: null }, { idClaseJornada: { $exists: false } }],
-              },
-        )
-          .select('numDoc')
-          .lean()
-      : [];
-    const certificados = new Set(certs.map((c) => Number(c.numDoc)));
-    aProcesar = pendientes.filter((ins) => !certificados.has(Number(ins.numDoc)));
-    omitidosCertificados = pendientes.length - aProcesar.length;
-  }
+  // El certificado vigente del contrato NO debe impedir registrar asistencia en esta clase
+  // (solo evita emitir un segundo certificado; omitirCertificado ya lo garantiza).
 
   if (!aProcesar.length) {
     return {
@@ -275,6 +297,7 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
       omitidosCertificados,
       certificadosNuevos: 0,
       certificadosEmitidos: [],
+      errores: [],
       resultados: [],
     };
   }
@@ -306,13 +329,18 @@ async function registrarAsistenciasInscritosPendientes(req, claseDoc, opts = {})
     }
   }
 
+  const errores = resultados
+    .filter((r) => r.error)
+    .map((r) => ({ numDoc: r.numDoc, error: r.error }));
+
   return {
-    ok: true,
+    ok: errores.length === 0,
     registradas: resultados.filter((r) => !r.error && !r.duplicada).length,
     omitidas: inscripciones.length - pendientes.length + omitidosCertificados,
     omitidosCertificados,
     certificadosNuevos,
     certificadosEmitidos,
+    errores,
     resultados,
   };
 }

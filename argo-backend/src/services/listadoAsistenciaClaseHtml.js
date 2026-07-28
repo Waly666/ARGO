@@ -8,6 +8,7 @@ const { enriquecerClases } = require('./instructorJornada');
 const { obtenerConfigRecibo } = require('./configRecibo');
 const { bloqueEmpresaHtml, esc } = require('./reciboHtmlShared');
 const { fmtFecha, fmtFechaSolo } = require('../utils/timezoneColombia');
+const { informePrintToolbar } = require('./informePrintToolbar');
 
 function fmtHoraCorta(d) {
   if (!d) return '';
@@ -28,9 +29,23 @@ function nombreAlumno(al) {
   return [al.nombre1, al.nombre2, al.apellido1, al.apellido2].filter(Boolean).join(' ').trim();
 }
 
+function docKey(n) {
+  const num = Number(n);
+  return Number.isFinite(num) ? num : String(n ?? '').trim();
+}
+
+/** Asistencias de la clase (ObjectId o string legacy). */
+async function asistenciasDeClase(idClase) {
+  const sid = String(idClase);
+  return AsisClasJorCap.find({
+    $or: [{ idclaseJornada: idClase }, { idclaseJornada: sid }],
+  }).lean();
+}
+
 /**
  * HTML imprimible: listado de asistencia de una clase de jornada.
  * Incluye columna de firma en blanco para uso en campo.
+ * La columna «Asistió» muestra Sí + hora cuando hay registro digital (admin e instructor).
  */
 async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
   const claseRaw = await ClaseJornadaCap.findById(idClase).lean();
@@ -65,31 +80,63 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     },
   ]);
 
-  const inscripciones = await InscripcionClase.find({ idClase: claseRaw._id })
+  const idClaseStr = String(claseRaw._id);
+  const inscripciones = await InscripcionClase.find({
+    $or: [{ idClase: claseRaw._id }, { idClase: idClaseStr }],
+  })
     .sort({ createdAt: 1 })
     .lean();
-  const docs = inscripciones.map((i) => Number(i.numDoc)).filter((n) => Number.isFinite(n));
-  const alumnos = docs.length ? await DatosAlumno.find({ numDoc: { $in: docs } }).lean() : [];
-  const mapAlu = new Map(alumnos.map((a) => [Number(a.numDoc), a]));
-  const asistencias = await AsisClasJorCap.find({ idclaseJornada: claseRaw._id }).lean();
-  const mapAsis = new Map(asistencias.map((a) => [Number(a.numDocAlumno), a]));
+  const docs = [
+    ...new Set(
+      inscripciones.map((i) => docKey(i.numDoc)).filter((n) => n !== '' && n != null),
+    ),
+  ];
+  const alumnos = docs.length
+    ? await DatosAlumno.find({ numDoc: { $in: docs } }).lean()
+    : [];
+  const mapAlu = new Map(alumnos.map((a) => [docKey(a.numDoc), a]));
+  const asistencias = await asistenciasDeClase(claseRaw._id);
+  const mapAsis = new Map();
+  for (const a of asistencias) {
+    mapAsis.set(docKey(a.numDocAlumno), a);
+  }
 
-  const filas = inscripciones.map((ins, idx) => {
-    const nd = Number(ins.numDoc);
+  const filas = [];
+  const vistos = new Set();
+  for (let idx = 0; idx < inscripciones.length; idx++) {
+    const ins = inscripciones[idx];
+    const nd = docKey(ins.numDoc);
+    vistos.add(nd);
     const al = mapAlu.get(nd);
     const asis = mapAsis.get(nd);
-    return {
-      n: idx + 1,
+    filas.push({
+      n: filas.length + 1,
       numDoc: nd,
       nombre: nombreAlumno(al) || '—',
       asistio: !!asis,
       horaAsis: asis?.createdAt ? fmtHoraCorta(asis.createdAt) : '',
-    };
-  });
+    });
+  }
+  // Alumnos con asistencia pero sin fila de inscripción (datos legacy / sync).
+  for (const [nd, asis] of mapAsis) {
+    if (vistos.has(nd)) continue;
+    let al = mapAlu.get(nd);
+    if (!al) {
+      al = await DatosAlumno.findOne({ numDoc: nd }).lean();
+    }
+    filas.push({
+      n: filas.length + 1,
+      numDoc: nd,
+      nombre: nombreAlumno(al) || '—',
+      asistio: true,
+      horaAsis: asis?.createdAt ? fmtHoraCorta(asis.createdAt) : '',
+    });
+  }
 
   const config = await obtenerConfigRecibo(idSede);
   const { atPageCssPara } = require('./configPaginasInformes');
-  const atPage = await atPageCssPara('informe_jornadas_listado');
+  // Carta (letter) vertical — independiente del A4 apaisado de otros listados de jornadas.
+  const atPage = await atPageCssPara('listado_asistencia_clase');
 
   const fechaClase = clase.fechaClase || jornada?.fechaProgramacion;
   const horaInicio = fmtHoraCorta(clase.horaInicio);
@@ -101,18 +148,25 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
 
   const conAsistencia = filas.filter((f) => f.asistio).length;
   const generacion = fmtFecha(new Date());
+  const toolbar = informePrintToolbar({
+    label: 'Acciones del listado',
+    pdfName: `listado-asistencia-${codContrato || 'clase'}`,
+  });
 
   const filasHtml = filas.length
     ? filas
-        .map(
-          (f) => `<tr>
+        .map((f) => {
+          const asisTxt = f.asistio
+            ? `Sí${f.horaAsis ? ` ${esc(f.horaAsis)}` : ''}`
+            : 'Pendiente';
+          return `<tr>
       <td class="n">${f.n}</td>
       <td class="doc">${esc(String(f.numDoc))}</td>
       <td class="nom">${esc(f.nombre)}</td>
-      <td class="asis">${f.asistio ? `✓ ${esc(f.horaAsis || '')}` : ''}</td>
+      <td class="asis ${f.asistio ? 'asis-si' : 'asis-no'}">${asisTxt}</td>
       <td class="firma"></td>
-    </tr>`,
-        )
+    </tr>`;
+        })
         .join('\n')
     : `<tr><td colspan="5" class="empty">Sin alumnos inscritos en esta clase.</td></tr>`;
 
@@ -123,6 +177,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
   <title>Listado de asistencia — ${esc(contratoLabel)}</title>
   <style>
     ${atPage}
+    ${toolbar.css}
     * { box-sizing: border-box; }
     body {
       font-family: "Segoe UI", system-ui, sans-serif;
@@ -130,15 +185,38 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
       line-height: 1.35;
       color: #111;
       margin: 0;
-      padding: 12mm 14mm;
+      padding: 12px 14px 18px;
+      width: 100%;
+      max-width: 216mm;
     }
-    .center { text-align: center; }
-    .logo img { max-height: 48px; max-width: 160px; }
-    .empresa { font-size: 13pt; font-weight: 700; margin-top: 4px; }
-    .dato { font-size: 9pt; color: #333; }
+    .cabecera-empresa {
+      text-align: left;
+      margin: 0 0 10px;
+    }
+    .cabecera-empresa .logo img {
+      max-height: 48px;
+      max-width: 160px;
+      display: block;
+      object-fit: contain;
+    }
+    .cabecera-empresa .empresa {
+      font-size: 13pt;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .cabecera-empresa .sede-nombre {
+      font-size: 10.5pt;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .cabecera-empresa .dato {
+      font-size: 9pt;
+      color: #333;
+      line-height: 1.3;
+    }
     h1 {
       font-size: 14pt;
-      margin: 16px 0 8px;
+      margin: 14px 0 8px;
       text-align: center;
       letter-spacing: 0.02em;
     }
@@ -173,7 +251,14 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     }
     td.n { width: 28px; text-align: center; }
     td.doc { width: 90px; white-space: nowrap; }
-    td.asis { width: 72px; text-align: center; white-space: nowrap; }
+    td.asis {
+      width: 88px;
+      text-align: center;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+    td.asis-si { color: #047857; background: #ecfdf5; }
+    td.asis-no { color: #64748b; font-weight: 500; }
     td.firma { height: 28px; min-width: 120px; }
     td.empty { text-align: center; color: #666; padding: 16px; }
     .firmas-pie {
@@ -197,13 +282,16 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
       text-align: right;
     }
     @media print {
-      body { padding: 0; }
-      .no-print { display: none !important; }
+      body { padding: 0; max-width: none; }
+      td.asis-si { background: #ecfdf5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 </head>
 <body>
-  ${bloqueEmpresaHtml(config)}
+  ${toolbar.html}
+  <div class="cabecera-empresa">
+    ${bloqueEmpresaHtml(config, { align: 'left' })}
+  </div>
   <h1>LISTADO DE ASISTENCIA</h1>
   <div class="meta">
     <div class="full"><span class="k">Contrato:</span> <span class="v">${esc(contratoLabel)}</span></div>
@@ -247,10 +335,12 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
     </div>
   </div>
   <p class="pie">Generado ${esc(generacion)} · ARGO</p>
+  ${toolbar.script}
 </body>
 </html>`;
 }
 
 module.exports = {
   buildHtmlListadoAsistenciaClase,
+  asistenciasDeClase,
 };

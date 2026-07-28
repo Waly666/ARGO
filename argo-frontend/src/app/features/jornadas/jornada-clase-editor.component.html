@@ -39,6 +39,21 @@
         </div>
       }
 
+      @if (claseActiva()?._id) {
+        <div class="clase-listado-asistencia-bar">
+          <button
+            type="button"
+            class="ghost clase-listado-asistencia-btn"
+            (click)="imprimirListadoAsistencia()"
+            title="Mismo listado imprimible que en la app móvil de jornadas">
+            📋 Listado de asistencia
+          </button>
+          <p class="hint hint-compact">
+            Abre el listado imprimible de inscritos (igual que en la app Android de jornadas).
+          </p>
+        </div>
+      }
+
       @if (modalMsg(); as modalTexto) {
         <div
           class="jor-banner modal-inline-banner"
@@ -240,6 +255,17 @@
 
         <aside class="clase-modal-edit-side" aria-label="Alumnos inscritos">
       <h3 class="clase-modal-section clase-modal-section--side">Alumnos</h3>
+      @if (claseActiva()?._id) {
+        <div class="clase-listado-asistencia-bar clase-listado-asistencia-bar--en-alumnos">
+          <button
+            type="button"
+            class="ghost clase-listado-asistencia-btn"
+            (click)="imprimirListadoAsistencia()"
+            title="Mismo listado imprimible que en la app móvil de jornadas">
+            📋 Listado de asistencia
+          </button>
+        </div>
+      }
       @if (totalAlumnosMatriculadosModal() > 0) {
         <p class="hint hint-compact clase-matriculados-resumen">
           <strong>{{ totalAlumnosMatriculadosModal() }}</strong> inscrito(s)
@@ -315,7 +341,7 @@
                     <span class="buscar-meta">{{ a.numDoc }}</span>
                   </label>
                   @if (a.yaCertificadoContrato) {
-                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado en este contrato; puede seguir matriculándose en otras clases">
+                    <span class="cap cap-violet cap-sm cap-text" title="Ya tiene certificado en este contrato; no puede matricularse en más clases del mismo contrato">
                       Ya certificado
                     </span>
                   }
@@ -335,7 +361,8 @@
       }
 
       <p class="hint">
-        Busque por <strong>nombre</strong> o <strong>número de cédula</strong> en la base de datos y agréguelos.
+        Busque por <strong>nombre</strong> o <strong>número de cédula</strong>, o use
+        <strong>Escanear QR</strong> con la etiqueta del alumno.
         Un alumno <strong>ya certificado en el contrato</strong> no puede inscribirse en más clases del mismo contrato.
         @if (claseActiva()?.estado === 'FINALIZADO' && puedeEliminarClase()) {
           Puede agregar alumnos y registrar asistencia aunque la clase esté <strong>FINALIZADA</strong>.
@@ -354,6 +381,13 @@
             (ngModelChange)="onAlumnoBusquedaInput($event)"
             (focus)="focusAlumnoBusqueda()"
             autocomplete="off" />
+          <button
+            type="button"
+            class="mini primary clase-qr-scan-btn"
+            (click)="abrirEscanerQrAlumno()"
+            [disabled]="guardandoInscripcion() || qrAlumnoBuscando()">
+            {{ qrAlumnoBuscando() ? 'Buscando alumno…' : '▣ Escanear QR' }}
+          </button>
           <button type="button" class="ghost mini" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
         </div>
 
@@ -402,16 +436,7 @@
               <td><span [ngClass]="capDocAsis(a.numDoc)">{{ a.numDoc }}</span></td>
               <td><span [ngClass]="capAlumnoNombre(a.nombreCompleto)">{{ a.nombreCompleto || '—' }}</span></td>
               <td>
-                @if (a.yaCertificadoContrato && !a.tieneAsistencia) {
-                  <div class="asis-cell">
-                    <span class="cap cap-violet cap-sm cap-text" title="Certificado vigente en este contrato">
-                      ✓ Certificado{{ a.certificadoCodigo ? ' (' + a.certificadoCodigo + ')' : '' }}
-                    </span>
-                    <button type="button" class="mini ghost" (click)="imprimirCertificadoInscrito(a)">
-                      Imprimir certificado
-                    </button>
-                  </div>
-                } @else if (a.tieneAsistencia) {
+                @if (a.tieneAsistencia) {
                   <div class="asis-cell">
                     <span class="cap cap-emerald cap-sm cap-text">✓ Asistió {{ fmtHora(a.asistenciaAt || undefined) }}</span>
                     @if (puedeBorrarAsistenciaDeClase()) {
@@ -426,16 +451,31 @@
                     }
                   </div>
                 } @else if (puedeMarcarAsistenciaAlumno(a)) {
-                  <button
-                    type="button"
-                    class="mini primary"
-                    [disabled]="guardandoAsistencia() === a.numDoc"
-                    (click)="marcarAsistenciaInscrito(a.numDoc)">
-                    {{ guardandoAsistencia() === a.numDoc ? '…' : 'Marcar' }}
-                  </button>
+                  <div class="asis-cell">
+                    @if (a.yaCertificadoContrato) {
+                      <span
+                        class="cap cap-violet cap-sm cap-text"
+                        title="Ya tiene certificado en el contrato; igual puede marcar asistencia en esta clase">
+                        Certificado{{ a.certificadoCodigo ? ' (' + a.certificadoCodigo + ')' : '' }}
+                      </span>
+                      <button type="button" class="mini ghost" (click)="imprimirCertificadoInscrito(a)">
+                        Imprimir certificado
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="mini primary"
+                      [disabled]="guardandoAsistencia() === a.numDoc"
+                      (click)="marcarAsistenciaInscrito(a.numDoc)"
+                      title="Registrar asistencia en esta clase">
+                      {{ guardandoAsistencia() === a.numDoc ? '…' : 'Marcar' }}
+                    </button>
+                  </div>
                 } @else if (a.yaCertificadoContrato) {
                   <div class="asis-cell">
-                    <span class="cap cap-violet cap-sm cap-text">Certificado en contrato</span>
+                    <span class="cap cap-violet cap-sm cap-text" title="Certificado vigente en este contrato">
+                      ✓ Certificado{{ a.certificadoCodigo ? ' (' + a.certificadoCodigo + ')' : '' }}
+                    </span>
                     <button type="button" class="mini ghost" (click)="imprimirCertificadoInscrito(a)">
                       Imprimir certificado
                     </button>
@@ -467,7 +507,9 @@
           }
           @if (inscritos().length === 0) {
             <tr>
-              <td colspan="4" class="empty jor-empty-mini">Ningún alumno inscrito aún.</td>
+              <td colspan="4" class="empty jor-empty-mini">
+                Ningún alumno inscrito aún. Puede buscarlo o escanear su QR.
+              </td>
             </tr>
           }
         </tbody>
@@ -480,7 +522,13 @@
         </p>
       }
 
-      @if (claseActiva()?.estado === 'FINALIZADO' && inscritosSinAsistencia() > 0) {
+      @if (
+        inscritosSinAsistencia() > 0 &&
+        (
+          (claseActiva()?.estado === 'EN PROCESO' && puedeMarcarAsistenciaInscrito()) ||
+          claseActiva()?.estado === 'FINALIZADO'
+        )
+      ) {
         <p class="hint hint-compact hint-warn">
           <strong>{{ inscritosSinAsistencia() }}</strong> pendiente(s) de asistencia.
         </p>
@@ -510,8 +558,8 @@
         class="ghost"
         (click)="imprimirListadoAsistencia()"
         [disabled]="!claseActiva()?._id"
-        title="Generar e imprimir el listado de asistencia de esta clase">
-        📋 Listado asistencia
+        title="Mismo listado imprimible que en la app móvil de jornadas">
+        📋 Listado de asistencia
       </button>
       <button
         type="button"
@@ -547,3 +595,9 @@
     </div>
   </argo-form-modal>
 </ng-template>
+
+@if (qrAlumnoOpen()) {
+  <argo-jornada-qr-scan-modal
+    (closed)="cerrarEscanerQrAlumno()"
+    (scanned)="onQrAlumnoEscaneado($event)" />
+}

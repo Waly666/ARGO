@@ -1,4 +1,9 @@
 import { ColumnaInformeDef } from '../../core/services/informes.service';
+import {
+  informePrintToolbarCss,
+  informePrintToolbarHtml,
+  informePrintToolbarScript,
+} from '../../core/utils/informe-print-toolbar.util';
 
 export function imprimirInformeTabla(opts: {
   titulo: string;
@@ -34,6 +39,7 @@ export function imprimirInformeTabla(opts: {
   <title>${esc(titulo)}</title>
   <style>
     ${pageRule}
+    ${informePrintToolbarCss()}
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
@@ -90,13 +96,14 @@ export function imprimirInformeTabla(opts: {
   </style>
 </head>
 <body>
+  ${informePrintToolbarHtml({ label: 'Acciones del informe', pdfName: titulo })}
   <h1>${esc(titulo)}</h1>
   ${subtitulo ? `<div class="sub">${esc(subtitulo)}</div>` : ''}
   <table>
     <thead><tr>${th}</tr></thead>
     <tbody>${body || '<tr><td colspan="' + columnas.length + '">Sin datos</td></tr>'}</tbody>
   </table>
-  <script>window.onload = function(){ window.print(); };</script>
+  ${informePrintToolbarScript(titulo)}
 </body>
 </html>`;
 

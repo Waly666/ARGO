@@ -208,7 +208,10 @@ export const routes: Routes = [
       {
         path: 'jornadas/alumnos/:id',
         canActivate: [permisoGuard],
-        data: { permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.ver'], modoAlumnos: 'jornadas' },
+        data: {
+          permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.gestionar', 'jornadas.registrar_alumnos'],
+          modoAlumnos: 'jornadas',
+        },
         loadComponent: () =>
           import('./features/alumnos/alumno-detalle.component').then((m) => m.AlumnoDetalleComponent),
       },
@@ -216,7 +219,10 @@ export const routes: Routes = [
         path: 'jornadas/alumnos',
         pathMatch: 'full',
         canActivate: [permisoGuard],
-        data: { permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.ver'], modoAlumnos: 'jornadas' },
+        data: {
+          permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.gestionar', 'jornadas.registrar_alumnos'],
+          modoAlumnos: 'jornadas',
+        },
         loadComponent: () =>
           import('./features/alumnos/alumnos-lista.component').then((m) => m.AlumnosListaComponent),
       },
@@ -230,7 +236,7 @@ export const routes: Routes = [
       {
         path: 'jornadas/certificados',
         canActivate: [permisoGuard],
-        data: { permiso: ['jornadas.ver', 'jornadas.gestionar'] },
+        data: { permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
         loadComponent: () =>
           import('./features/jornadas/certificados-jornada-lista.component').then(
             (m) => m.CertificadosJornadaListaComponent,
@@ -239,7 +245,7 @@ export const routes: Routes = [
       {
         path: 'jornadas/informes',
         canActivate: [permisoGuard],
-        data: { permiso: ['jornadas.ver', 'jornadas.gestionar'] },
+        data: { permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
         loadComponent: () =>
           import('./features/jornadas/jornadas-informes.component').then(
             (m) => m.JornadasInformesComponent,
@@ -248,7 +254,7 @@ export const routes: Routes = [
       {
         path: 'jornadas/en-proceso',
         canActivate: [permisoGuard],
-        data: { permiso: ['jornadas.ver', 'jornadas.gestionar'] },
+        data: { permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
         loadComponent: () =>
           import('./features/jornadas/jornadas-en-proceso-lista.component').then(
             (m) => m.JornadasEnProcesoListaComponent,
@@ -267,14 +273,15 @@ export const routes: Routes = [
         path: 'jornadas',
         pathMatch: 'full',
         canActivate: [permisoGuard],
-        data: { permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
+        // Hub de contratación: no basta jornadas.operar / ver (instructores).
+        data: { permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
         loadComponent: () =>
           import('./features/jornadas/jornadas-hub.component').then((m) => m.JornadasHubComponent),
       },
       {
         path: 'contratos',
         canActivate: [permisoGuard],
-        data: { permiso: ['jornadas.ver', 'jornadas.gestionar'] },
+        data: { permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
         loadComponent: () =>
           import('./features/jornadas/contratos-lista.component').then((m) => m.ContratosListaComponent),
       },

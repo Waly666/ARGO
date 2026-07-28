@@ -1,4 +1,9 @@
 import { ConfigRecibo } from '../../core/services/config.service';
+import {
+  informePrintToolbarCss,
+  informePrintToolbarHtml,
+  informePrintToolbarScript,
+} from '../../core/utils/informe-print-toolbar.util';
 
 export type ColumnaInformeJornada = { k: string; l: string };
 
@@ -8,6 +13,7 @@ const DEFAULT_JORNADAS_AT_PAGE = '@page { size: A4 landscape; margin: 10mm; }';
 export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): string {
   return `
   ${atPageCss}
+  ${informePrintToolbarCss()}
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
@@ -108,22 +114,11 @@ export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): str
   .firmas .linea {
     border-top: 1px solid #333; margin-bottom: 6px; padding-top: 4px;
   }
-  .toolbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 99;
-    background: #1e3a5f; color: #fff; padding: 10px 16px;
-    display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.2);
-  }
-  .toolbar button {
-    background: #fff; color: #1e3a5f; border: none; padding: 8px 16px;
-    border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 10pt;
-  }
-  .toolbar span { font-size: 10pt; opacity: .9; }
   @media print {
-    .toolbar { display: none !important; }
     body { padding: 0 !important; }
   }
   @media screen {
-    body { padding: 56px 16px 24px; background: #e5e7eb !important; }
+    body { padding: 12px 16px 24px; background: #e5e7eb !important; }
     .doc {
       background: #fff; padding: 14mm 12mm;
       box-shadow: 0 4px 24px rgba(0,0,0,.15);
@@ -302,11 +297,7 @@ export function buildJornadasInformeHtml(opts: {
   <style>${jornadasInformeDocCss(atPageCss)}</style>
 </head>
 <body>
-  <div class="toolbar no-print">
-    <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
-    <button type="button" onclick="window.close()">Cerrar</button>
-    <span>${esc(opts.titulo)}</span>
-  </div>
+  ${informePrintToolbarHtml({ label: 'Acciones del informe', pdfName: opts.titulo })}
   <div class="doc">
     ${encabezadoEmpresa(opts.empresa)}
     <div class="doc-titulo-block">
@@ -319,6 +310,7 @@ export function buildJornadasInformeHtml(opts: {
     ${secciones}
     ${pieDocumento(opts.empresa)}
   </div>
+  ${informePrintToolbarScript(opts.titulo)}
 </body>
 </html>`;
 }

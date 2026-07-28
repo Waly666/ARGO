@@ -16,7 +16,7 @@ const ROLES_SISTEMA = {
   },
   cajero: {
     nombre: 'Cajero',
-    descripcion: 'Gestión de alumnos, pagos y caja del turno',
+    descripcion: 'Gestión de alumnos, pagos, caja del turno y consulta de clases/jornadas',
     permisos: [
       'dashboard',
       'alumnos.ver',
@@ -29,6 +29,7 @@ const ROLES_SISTEMA = {
       'servicios.ver',
       'caja.turno',
       'caja.cobros',
+      'jornadas.ver',
     ],
     alarmas: alarmasDefaultRol('cajero'),
     esSistema: true,
@@ -174,8 +175,25 @@ async function fusionarPermisosSistema(codigo, defPermisos) {
   const actuales = [...(doc.permisos || [])];
   const esperadas = clavesValidas(defPermisos);
   const faltantes = esperadas.filter((k) => !actuales.includes(k));
-  if (!faltantes.length) return;
-  await RolApp.updateOne({ codigo }, { $set: { permisos: [...actuales, ...faltantes] } });
+  // Instructor: quitar permisos que abren listados admin / todas las clases.
+  // Conservar siempre jornadas.operar / jornadas.ver (asistencia y operación de clase).
+  const obsoletosInstructor =
+    codigo === 'instructor'
+      ? [
+          'instructores',
+          'jornadas.gestionar',
+          'jornadas.registrar_alumnos',
+          'programacion_cea.gestionar',
+        ]
+      : [];
+  const sinObsoletos = actuales.filter((k) => !obsoletosInstructor.includes(k));
+  const garantizadosInstructor =
+    codigo === 'instructor' ? ['jornadas.operar', 'jornadas.ver'] : [];
+  const nuevos = [...new Set([...sinObsoletos, ...faltantes, ...garantizadosInstructor])];
+  const sinCambio =
+    nuevos.length === actuales.length && nuevos.every((k) => actuales.includes(k));
+  if (sinCambio) return;
+  await RolApp.updateOne({ codigo }, { $set: { permisos: nuevos } });
 }
 
 async function initRolesSistema(opts = {}) {

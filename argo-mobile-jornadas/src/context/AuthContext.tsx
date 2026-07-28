@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 
-import { fetchMe, login as apiLogin, setTokenGetter } from '../api/client';
+import { fetchMe, login as apiLogin, setTokenGetter, setUnauthorizedHandler } from '../api/client';
 import {
   DEFAULT_API_BASE,
   isLegacyDefaultServer,
@@ -137,6 +137,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void storeDelete(K_TOKEN);
     void storeDelete(K_USER);
   }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      void signOut();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [signOut]);
 
   const setServidor = useCallback(async (apiBase: string) => {
     const norm = normalizeApiBaseUrl(apiBase.trim());

@@ -2117,6 +2117,33 @@ button.btn-reactivar-contrato,
     }
   }
 
+  .clase-listado-asistencia-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem 1rem;
+    margin: 0.65rem 0 0.85rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 10px;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(14, 165, 233, 0.1);
+
+    .hint {
+      margin: 0;
+      flex: 1 1 12rem;
+    }
+  }
+
+  .clase-listado-asistencia-bar--en-alumnos {
+    margin-top: 0.35rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .clase-listado-asistencia-btn {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
   .clase-modal-section-head {
     display: flex;
     align-items: center;

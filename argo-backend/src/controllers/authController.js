@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 const { normalizarRol } = require('../utils/roles');
 const { findUsuarioPorLogin, passwordSugeridoParaUsuario } = require('../utils/usuarioLogin');
@@ -32,19 +31,10 @@ const { verificarAdminCredenciales } = require('../services/authVerify');
 const { enriquecerUsuarioDoc, enriquecerUsuarioPorId } = require('../services/authUsuario');
 const { logAuthIntento } = require('../services/authSecurityLog');
 const { turnstileEnabled, turnstileSiteKey, mfaStaffRequired, mfaStaffWebOnly } = require('../config/security');
-const { resolvePostPasswordLogin, signAccessToken } = require('../services/staffMfa');
+const { resolvePostPasswordLogin, emitirSesionStaff } = require('../services/staffMfa');
 const soporteMaestro = require('../services/soporteMaestro');
 const { obtenerConfigRecibo } = require('../services/configRecibo');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
-
-function sign(u) {
-  const rol = normalizarRol(u.rol);
-  return jwt.sign(
-    { sub: u._id.toString(), username: u.username, rol },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES || '12h' },
-  );
-}
 
 exports.configPublica = async (_req, res, next) => {
   try {
@@ -92,7 +82,7 @@ exports.login = async (req, res, next) => {
     const mfa = await resolvePostPasswordLogin(req, u);
     if (mfa.step === 'complete') {
       u.rol = normalizarRol(u.rol);
-      const token = signAccessToken(u);
+      const token = await emitirSesionStaff(u);
       const userJson = await enriquecerUsuarioDoc(u);
       return res.json({ step: 'complete', token, user: userJson });
     }

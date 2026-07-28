@@ -58,6 +58,7 @@ const {
   progresoCertificacion,
   crearContextoCertificadoContrato,
   certificadoExistenteClase,
+  validarAlumnoSinCertificadoContrato,
 } = require('../services/certificadoJornadaAuto');
 const { buscarPrograma } = require('../services/programaServicio');
 const { normalizarTipoRegularJornada } = require('../constants/tipoRegularJornada');
@@ -103,6 +104,9 @@ const {
   enriquecerClases,
   aplicarFiltroClasesQueryPorRol,
   asegurarInstructorOperandoClase,
+  empleadoPorUsuarioId,
+  esClaseDelInstructor,
+  esClaseSinInstructor,
 } = require('../services/instructorJornada');
 const { tieneAlguno, permisosParaRol } = require('../services/rolesPermisos');
 
@@ -1086,7 +1090,8 @@ exports.obtenerClase = async (req, res, next) => {
   }
 };
 
-/** Clases del día calendario (por defecto hoy): PROGRAMADA, EN PROCESO y FINALIZADO. Admin/ver: todas; instructor: solo las suyas. */
+/** Clases del día calendario (por defecto hoy): PROGRAMADA, EN PROCESO y FINALIZADO.
+ * Admin/registro/cajero/supervisor: todas; instructor: solo las suyas. */
 exports.clasesDelDia = async (req, res, next) => {
   try {
     const base = req.query.fecha ? parseFechaCalendario(req.query.fecha) : parseFechaCalendario(new Date());
@@ -1100,14 +1105,8 @@ exports.clasesDelDia = async (req, res, next) => {
       estado: { $in: ['PROGRAMADA', 'EN PROCESO', 'FINALIZADO'] },
     };
 
-    const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
-    const esAdminJornadas = tieneAlguno(permisos, ['jornadas.gestionar']);
-    const esInstructorOperar =
-      !esAdminJornadas && tieneAlguno(permisos, ['jornadas.operar']);
-    if (esInstructorOperar) {
-      const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
-      if (vacio) return res.json([]);
-    }
+    const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
+    if (vacio) return res.json([]);
 
     const rows = await ClaseJornadaCap.find(q).sort({ horaInicio: 1, createdAt: 1 }).lean();
     const raw = [];
@@ -1817,19 +1816,26 @@ exports.sincronizarAsistenciasInscritos = async (req, res, next) => {
       );
     }
     const certificadosNuevos = certificadosEmitidos.length;
+    const nErr = Array.isArray(syncAsis.errores) ? syncAsis.errores.length : 0;
+    let message =
+      syncAsis.registradas > 0 || certificadosNuevos > 0
+        ? `Asistencia registrada para ${syncAsis.registradas} alumno(s). Certificados nuevos: ${certificadosNuevos}.`
+        : String(clase.estado || '').toUpperCase() === 'FINALIZADO'
+          ? 'No había certificados pendientes por emitir (las asistencias ya estaban registradas).'
+          : 'No había inscritos pendientes de asistencia.';
+    if (nErr > 0) {
+      const detalle = syncAsis.errores
+        .slice(0, 3)
+        .map((e) => `${e.numDoc}: ${e.error}`)
+        .join(' · ');
+      message += ` ${nErr} no se pudo(ieron) registrar (${detalle}${nErr > 3 ? '…' : ''}).`;
+    }
 
     res.json({
       ...syncAsis,
       certificadosNuevos,
       certificadosEmitidos,
-      message:
-        syncAsis.registradas > 0 || certificadosNuevos > 0
-          ? `Asistencia registrada para ${syncAsis.registradas} alumno(s). Certificados nuevos: ${certificadosNuevos}.`
-          : syncAsis.omitidosCertificados > 0
-            ? 'Todos los inscritos pendientes ya tienen certificado vigente en el contrato o asistencia registrada.'
-            : String(clase.estado || '').toUpperCase() === 'FINALIZADO'
-              ? 'No había certificados pendientes por emitir.'
-              : 'No había inscritos pendientes de asistencia.',
+      message,
     });
   } catch (e) {
     next(e);
@@ -1931,7 +1937,9 @@ exports.registrarAsistencia = async (req, res, next) => {
   }
 };
 
-/** Borra la asistencia de un alumno en una clase. Instructor: solo EN PROCESO. Admin: siempre. */
+/** Borra la asistencia de un alumno en una clase.
+ * Admin/gestionar: siempre.
+ * Instructor (operar): en sus clases, mientras esté EN PROCESO o FINALIZADO (corrección). */
 exports.eliminarAsistenciaAlumno = async (req, res, next) => {
   try {
     const numDoc = parseNumDoc(req.params.numDoc);
@@ -1941,16 +1949,27 @@ exports.eliminarAsistenciaAlumno = async (req, res, next) => {
     if (!clase) return res.status(404).json({ message: 'Clase no encontrada' });
 
     const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
-    const esAdminJornadas = tieneAlguno(permisos, ['jornadas.gestionar']);
+    const esAdminJornadas = tieneAlguno(permisos, ['*', 'jornadas.gestionar']);
     if (!esAdminJornadas) {
-      if (clase.estado === 'FINALIZADO') {
-        return res.status(400).json({
-          message: 'La clase ya está finalizada. Solo un administrador puede borrar asistencias.',
+      if (!tieneAlguno(permisos, ['jornadas.operar'])) {
+        return res.status(403).json({ message: 'Sin permisos para borrar asistencias.' });
+      }
+      const emp = await empleadoPorUsuarioId(req.user?.sub);
+      const propia = esClaseDelInstructor(clase, emp, req.user?.sub);
+      if (!propia && !esClaseSinInstructor(clase)) {
+        return res.status(403).json({
+          message: 'Solo puede borrar asistencias de clases asignadas a usted.',
         });
       }
-      if (clase.estado !== 'EN PROCESO') {
+      const est = String(clase.estado || '').toUpperCase();
+      if (est === 'PROGRAMADA') {
         return res.status(400).json({
-          message: 'Solo puede borrar asistencias cuando la clase está EN PROCESO.',
+          message: 'Inicie la clase antes de registrar o borrar asistencias.',
+        });
+      }
+      if (est !== 'EN PROCESO' && est !== 'FINALIZADO') {
+        return res.status(400).json({
+          message: 'Solo puede borrar asistencias cuando la clase está EN PROCESO o FINALIZADO.',
         });
       }
     }
@@ -2008,9 +2027,17 @@ exports.quitarInscripcionClase = async (req, res, next) => {
 /** HTML imprimible del listado de asistencia de la clase. */
 exports.htmlListadoAsistenciaClase = async (req, res, next) => {
   try {
+    const q = { _id: req.params.id };
+    const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
+    if (vacio) return res.status(404).json({ message: 'Clase no encontrada' });
+    const existe = await ClaseJornadaCap.findOne(q).select('_id').lean();
+    if (!existe) return res.status(404).json({ message: 'Clase no encontrada' });
+
     const { buildHtmlListadoAsistenciaClase } = require('../services/listadoAsistenciaClaseHtml');
     const html = await buildHtmlListadoAsistenciaClase(req.params.id, req.idSede);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
     res.send(html);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
@@ -2035,8 +2062,15 @@ exports.inscritosClase = async (req, res, next) => {
       ? await DatosAlumno.find({ numDoc: { $in: docs } }).lean()
       : [];
     const mapAlu = new Map(alumnos.map((a) => [Number(a.numDoc), a]));
-    const asistencias = await AsisClasJorCap.find({ idclaseJornada: clase._id }).lean();
-    const mapAsis = new Map(asistencias.map((a) => [Number(a.numDocAlumno), a]));
+    const asistencias = await AsisClasJorCap.find({
+      $or: [{ idclaseJornada: clase._id }, { idclaseJornada: String(clase._id) }],
+    }).lean();
+    const mapAsis = new Map(
+      asistencias.map((a) => {
+        const k = Number(a.numDocAlumno);
+        return [Number.isFinite(k) ? k : String(a.numDocAlumno), a];
+      }),
+    );
     let mapCert = new Map();
     if (jornada?.idContrato && docs.length) {
       const certs = await Certificado.find({
@@ -2047,12 +2081,13 @@ exports.inscritosClase = async (req, res, next) => {
       mapCert = new Map(certs.map((c) => [Number(c.numDoc), c]));
     }
     const out = inscripciones.map((ins) => {
-      const nd = Number(ins.numDoc);
-      const al = mapAlu.get(nd);
-      const asis = mapAsis.get(nd);
-      const cert = mapCert.get(nd);
+      const ndNum = Number(ins.numDoc);
+      const nd = Number.isFinite(ndNum) ? ndNum : String(ins.numDoc);
+      const al = mapAlu.get(Number(ins.numDoc)) || mapAlu.get(nd);
+      const asis = mapAsis.get(nd) || mapAsis.get(Number(ins.numDoc));
+      const cert = mapCert.get(Number(ins.numDoc)) || mapCert.get(nd);
       return {
-        numDoc: nd,
+        numDoc: Number.isFinite(ndNum) ? ndNum : nd,
         nombreCompleto: al
           ? [al.nombre1, al.nombre2, al.apellido1, al.apellido2].filter(Boolean).join(' ')
           : '',
@@ -2155,12 +2190,16 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
       const nd = Number(ins.numDoc);
       const al = mapAlu.get(nd);
       const cert = mapCert.get(nd);
-      // Certificado global del contrato no impide matricular en otras clases.
-      // En por_clase solo se bloquea si ya tiene certificado de ESTA clase destino.
+      // Certificado global (numSesCert): no más clases del mismo contrato.
+      // por_clase: solo se bloquea si ya tiene certificado de ESTA clase destino.
       let puedeMatricular = !yaEnEstaClase.has(nd);
-      if (puedeMatricular && esPorClase && jornadaDestino?.idContrato) {
-        const certEstaClase = await certificadoExistenteClase(nd, claseDestino._id);
-        if (certEstaClase) puedeMatricular = false;
+      if (puedeMatricular && jornadaDestino?.idContrato) {
+        if (esPorClase) {
+          const certEstaClase = await certificadoExistenteClase(nd, claseDestino._id);
+          if (certEstaClase) puedeMatricular = false;
+        } else if (cert) {
+          puedeMatricular = false;
+        }
       }
       return {
         numDoc: nd,
@@ -2819,6 +2858,14 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
       const bloqueoMat = await bloqueoOperacionJornada(req, jornada);
       if (bloqueoMat) return res.status(400).json({ message: bloqueoMat });
       if (jornada?.idContrato) {
+        const bloqueoCert = await validarAlumnoSinCertificadoContrato(nd, jornada.idContrato);
+        if (bloqueoCert) {
+          return res.status(409).json({
+            message: bloqueoCert.message,
+            codigo: 'ya_certificado_contrato',
+            certificado: bloqueoCert.certificado,
+          });
+        }
         empresaAsignada = await asignarEmpresaContratoAlumno(
           nd,
           jornada.idContrato,

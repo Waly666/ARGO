@@ -27,6 +27,7 @@ export const permisoGuard: CanActivateFn = (route) => {
 
   if (path === 'instructores') {
     if (ctx.puedeUsarPortalInstructor) return true;
+    if (list.includes('instructores.mi_portal')) return true;
     if (tienePermisoRuta(list, [...PERMISOS_INSTRUCTORES_DIRECTORIO])) return true;
   } else {
     const clave = route.data['permiso'] as string | string[] | undefined;

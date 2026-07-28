@@ -2,8 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { AuthService } from '../../core/services/auth.service';
 import { JornadaLiveSyncService } from '../../core/services/jornada-live-sync.service';
 import { JornadaCapService } from '../../core/services/jornada-cap.service';
+import { PermisoService } from '../../core/services/permiso.service';
+import { esInstructorJornadasRestringido } from './jornadas-acceso.util';
 
 @Component({
   selector: 'argo-jornada-live-toast',
@@ -16,6 +19,8 @@ export class JornadaLiveToastComponent {
   private liveSync = inject(JornadaLiveSyncService);
   private jornadaSvc = inject(JornadaCapService);
   private router = inject(Router);
+  private auth = inject(AuthService);
+  private permisoSvc = inject(PermisoService);
 
   toast = this.liveSync.toast;
   clasesEnCurso = this.liveSync.clasesEnCurso;
@@ -26,6 +31,16 @@ export class JornadaLiveToastComponent {
 
   irClase(claseId: string): void {
     if (!claseId) return;
+    const instructorSolo = esInstructorJornadasRestringido(
+      (k) => this.permisoSvc.tiene(k),
+      this.auth.user()?.rol,
+    );
+    if (instructorSolo) {
+      void this.router.navigate(['/app/jornadas/clases-hoy'], {
+        queryParams: { clase: claseId },
+      });
+      return;
+    }
     void this.router.navigate(['/app/jornadas'], {
       queryParams: { tab: 'clases', clase: claseId },
     });

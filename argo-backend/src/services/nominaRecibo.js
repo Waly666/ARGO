@@ -55,6 +55,11 @@ async function generarReciboHtml(idPeriodo, empleadoId) {
       : '';
 
   const atPage = await require('./configPaginasInformes').atPageCssPara('colilla_nomina');
+  const { informePrintToolbar } = require('./informePrintToolbar');
+  const toolbar = informePrintToolbar({
+    label: 'Acciones de la colilla',
+    pdfName: `colilla-${periodo.nombre || 'nomina'}`,
+  });
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -63,6 +68,7 @@ async function generarReciboHtml(idPeriodo, empleadoId) {
 <title>Colilla de pago ${esc(periodo.nombre)}</title>
 <style>
   ${atPage}
+  ${toolbar.css}
   body { font-family: system-ui, sans-serif; margin: 0; padding: 12mm; color: #111; font-size: 13px; }
   h1 { font-size: 1.2rem; margin: 0 0 4px; }
   .empresa { color: #444; margin-bottom: 16px; }
@@ -78,6 +84,7 @@ async function generarReciboHtml(idPeriodo, empleadoId) {
 </style>
 </head>
 <body>
+  ${toolbar.html}
   <h1>${esc(config.nombreEmpresa || 'ARGO')}</h1>
   <p class="empresa">NIT ${esc(config.nit || '')} · Colilla de pago</p>
   <div class="meta">
@@ -112,6 +119,7 @@ async function generarReciboHtml(idPeriodo, empleadoId) {
     <tr class="totals"><td>Total provisiones</td><td class="num">${fmtMoney(det.totalProvisiones)}</td></tr>
   </tbody></table>
   <p><strong>Costo total empresa (mes):</strong> ${fmtMoney(det.totalCostoEmpresa)}</p>
+  ${toolbar.script}
 </body>
 </html>`;
 }

@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 
-import { fetchMe, login as apiLogin, setTokenGetter } from '../api/client';
+import { fetchMe, login as apiLogin, setTokenGetter, setUnauthorizedHandler } from '../api/client';
 import { setRuntimeApiBase, normalizeApiBaseUrl, SERVIDOR_API_STORAGE_KEY } from '../config/apiBase';
 import { startAlertPoller, stopAlertPoller } from '../services/alertPoller';
 import { unloadAlertSound } from '../services/alertSound';
@@ -154,6 +154,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void storeDelete(K_TOKEN);
     void storeDelete(K_USER);
   }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      void signOut();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [signOut]);
 
   const refreshUser = useCallback(async () => {
     if (state.status !== 'signedIn') return;

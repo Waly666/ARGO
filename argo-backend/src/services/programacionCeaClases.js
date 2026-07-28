@@ -17,7 +17,12 @@ const {
   horasClase,
 } = require('./programacionCeaRastreo');
 const { idProgDePrograma } = require('./programaServicio');
-const { empleadoPorUsuarioId, nombreEmpleado, listarInstructoresConUsuario } = require('./instructorJornada');
+const {
+  empleadoPorUsuarioId,
+  nombreEmpleado,
+  listarInstructoresConUsuario,
+  puedeVerTodasLasClasesJornada,
+} = require('./instructorJornada');
 const { tieneAlguno, permisosParaRol } = require('./rolesPermisos');
 const { coincideBusquedaAlumno, concatNombreAlumno } = require('../utils/busquedaAlumnoNombre');
 const { parseNumDoc } = require('../utils/numDoc');
@@ -275,14 +280,18 @@ async function resolverInstructorCea(req, body = {}) {
 
 async function filtroClasesPorRol(req) {
   const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
-  if (tieneAlguno(permisos, ['programacion_cea.gestionar'])) return null;
-  const emp = await empleadoPorUsuarioId(req.user?.sub);
-  const or = [];
-  if (emp?.idEmpleado != null) or.push({ idEmpleadoInstructor: emp.idEmpleado });
-  const uid = req.user?.sub ? String(req.user.sub) : '';
-  if (uid) or.push({ idUsuarioInstructor: uid });
-  if (!or.length) return { _id: null };
-  return { $or: or };
+  // Instructor: solo propias aunque tenga programacion_cea.gestionar por error en BD.
+  if (!puedeVerTodasLasClasesJornada(req, permisos)) {
+    const emp = await empleadoPorUsuarioId(req.user?.sub);
+    const or = [];
+    if (emp?.idEmpleado != null) or.push({ idEmpleadoInstructor: emp.idEmpleado });
+    const uid = req.user?.sub ? String(req.user.sub) : '';
+    if (uid) or.push({ idUsuarioInstructor: uid });
+    if (!or.length) return { _id: null };
+    return { $or: or };
+  }
+  if (tieneAlguno(permisos, ['*', 'programacion_cea.gestionar'])) return null;
+  return null;
 }
 
 async function dtoClase(clase) {

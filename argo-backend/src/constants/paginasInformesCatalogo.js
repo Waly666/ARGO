@@ -58,6 +58,14 @@ const GRUPOS = [
         defaultMargins: { top: 10, right: 10, bottom: 10, left: 10 },
       },
       {
+        key: 'listado_asistencia_clase',
+        label: 'Listado de asistencia de clase',
+        size: 'letter',
+        orientation: 'portrait',
+        defaultMargins: { top: 12, right: 12, bottom: 12, left: 12 },
+        hint: 'Hoja carta (letter) vertical para imprimir el listado de inscritos / firmas.',
+      },
+      {
         key: 'etiqueta_qr_jornada',
         label: 'Etiquetas QR de alumnos',
         size: 'etiqueta_qr',

@@ -14,6 +14,7 @@ const {
   generarQrDataUrl,
 } = require('./facturaQrDian');
 const { atPageCssPara } = require('./configPaginasInformes');
+const { informePrintToolbar, informePrintToolbarCss } = require('./informePrintToolbar');
 
 function num(v) {
   if (v == null) return 0;
@@ -218,32 +219,17 @@ function estilosDocumento(atPageCss) {
       color: #6b7280;
       text-align: center;
     }
-    .no-print { margin-top: 20px; text-align: center; }
-    .no-print button {
-      background: #059669;
-      color: #fff;
-      border: none;
-      padding: 10px 22px;
-      border-radius: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      margin: 0 6px;
-    }
-    .no-print button.sec { background: #374151; }
-    @media print {
-      .no-print { display: none !important; }
-      body { padding: 0; }
-    }
+    ${informePrintToolbarCss()}
     ${estilosMarcaAguaAnulado()}
   `;
 }
 
-function botonesImpresion(titulo) {
-  return `
-    <div class="no-print">
-      <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
-      <button type="button" class="sec" onclick="window.close()">Cerrar</button>
-    </div>`;
+function botonesImpresion(pdfName = 'factura-electronica') {
+  const t = informePrintToolbar({
+    label: 'Acciones de la factura',
+    pdfName,
+  });
+  return `${t.html}${t.script}`;
 }
 
 async function bloqueQrCufe(doc, em, tipo = 'factura') {
@@ -298,9 +284,9 @@ async function wrapHtml(titulo, bodyInner, { anuladoDoc = null } = {}) {
   <style>${estilosDocumento(atPage)}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
+${botonesImpresion(titulo)}
 ${anulado.html}
 ${bodyInner}
-${botonesImpresion(titulo)}
 </body>
 </html>`;
 }

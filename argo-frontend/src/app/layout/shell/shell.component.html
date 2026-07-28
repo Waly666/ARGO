@@ -9,6 +9,7 @@
         @if (m.kind === 'link') {
           <a
             [routerLink]="m.path"
+            [queryParams]="m.queryParams || null"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: true }"
             class="menu-item"

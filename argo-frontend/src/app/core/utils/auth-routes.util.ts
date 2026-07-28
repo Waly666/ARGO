@@ -25,7 +25,7 @@ const RUTAS_INICIO: { path: string; permiso: string | string[] }[] = [
   { path: '/app/instructores', permiso: ['instructores.mi_portal', ...PERMISOS_INSTRUCTORES_DIRECTORIO] },
   { path: '/app/jornadas/clases-hoy', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
   { path: '/app/programacion-cea/clases-grupales', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
-  { path: '/app/jornadas', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
+  { path: '/app/jornadas', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
   { path: '/app/programacion-cea', permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'] },
   { path: '/app/alumnos', permiso: ['alumnos.ver', 'alumnos.gestionar'] },
   { path: '/app/certificados', permiso: 'alumnos.certificados' },
@@ -66,13 +66,13 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
     permiso: ['aula_virtual.ver', 'aula_virtual.gestionar'],
   },
   { prefix: '/app/jornadas/alumnos/nuevo', permiso: ['alumnos.gestionar', 'jornadas.gestionar'] },
-  { prefix: '/app/jornadas/alumnos', permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.ver'] },
+  { prefix: '/app/jornadas/alumnos', permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.gestionar', 'jornadas.registrar_alumnos'] },
   { prefix: '/app/jornadas/instructor', permiso: ['jornadas.operar', 'jornadas.gestionar'] },
-  { prefix: '/app/jornadas/certificados', permiso: ['jornadas.ver', 'jornadas.gestionar'] },
-  { prefix: '/app/jornadas/en-proceso', permiso: ['jornadas.ver', 'jornadas.gestionar'] },
+  { prefix: '/app/jornadas/certificados', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
+  { prefix: '/app/jornadas/en-proceso', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
   { prefix: '/app/jornadas/clases-hoy', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
-  { prefix: '/app/jornadas', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
-  { prefix: '/app/contratos', permiso: ['jornadas.ver', 'jornadas.gestionar'] },
+  { prefix: '/app/jornadas', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
+  { prefix: '/app/contratos', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
   { prefix: '/app/servicios', permiso: ['servicios.ver', 'servicios.gestionar'] },
   { prefix: '/app/combos', permiso: ['combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar'] },
   { prefix: '/app/facturacion', permiso: 'facturacion' },
@@ -153,12 +153,18 @@ export function permisoRequeridoRuta(url: string): string | string[] | null {
 
 function accesoInstructoresHub(permisos: string[], ctx?: AccesoRutaCtx): boolean {
   if (ctx?.puedeUsarPortalInstructor) return true;
+  // Exacto: no usar tieneUno con * (admin no debe entrar solo por *).
+  if (permisos.includes('instructores.mi_portal')) return true;
   return tienePermisoRuta(permisos, [...PERMISOS_INSTRUCTORES_DIRECTORIO]);
 }
 
 export function rutaInicioApp(permisos: string[] | undefined | null, ctx?: AccesoRutaCtx): string {
   const p = permisos?.length ? permisos : [];
   if (!p.length) return '/app/sin-acceso';
+  // Instructor con portal habilitado (empleado vinculado): entrar a «Mi portal».
+  if (ctx?.puedeUsarPortalInstructor) {
+    return '/app/instructores?vista=portal';
+  }
   for (const r of RUTAS_INICIO) {
     if (r.path === '/app/instructores') {
       if (accesoInstructoresHub(p, ctx)) return r.path;

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { ContratacionDto, JornadaCapService } from '../../core/services/jornada-cap.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import {
@@ -31,6 +32,7 @@ const ESTADOS: ReadonlyArray<'En Ejecución' | 'Ejecutado'> = ['En Ejecución', 
 })
 export class ContratosListaComponent implements OnInit {
   private jornadaSvc = inject(JornadaCapService);
+  private auth = inject(AuthService);
   private permisoSvc = inject(PermisoService);
   private confirmSvc = inject(ConfirmDialogService);
   private router = inject(Router);
@@ -45,6 +47,8 @@ export class ContratosListaComponent implements OnInit {
   msgEsError = signal(false);
 
   puedeGestionar = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
+  /** Solo administrador puede borrar contratos. */
+  puedeEliminar = computed(() => this.auth.isAdmin());
 
   contratosFiltrados = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -128,8 +132,8 @@ export class ContratosListaComponent implements OnInit {
 
   async eliminar(c: ContratacionDto) {
     if (!c._id) return;
-    if (!this.puedeGestionar()) {
-      this.mostrarMsg('No tiene permiso para eliminar contratos.', true);
+    if (!this.puedeEliminar()) {
+      this.mostrarMsg('Solo el administrador puede eliminar contratos.', true);
       return;
     }
     const ok = await this.confirmSvc.open({

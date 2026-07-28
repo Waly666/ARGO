@@ -13,10 +13,12 @@ const {
 const { FORMATOS, MEDIA_CARTA_ANCHO_MM, MEDIA_CARTA_ALTO_MM, formatoIngreso, formatoEgreso } =
   require('./comprobanteFormato');
 const { atPageCssPara } = require('./configPaginasInformes');
+const { informePrintToolbar, informePrintToolbarCss } = require('./informePrintToolbar');
 
 async function estilosValidadoraIngreso(mm, w) {
   const atPage = await atPageCssPara('comprobante_validadora');
   return `${estilosRecibo(mm, w, atPage)}
+    ${informePrintToolbarCss()}
     .detalle-titulo { font-weight: bold; font-size: 11px; margin: 4px 0 2px; }
     table.detalle td.k { width: 62%; font-weight: normal; }
     table.detalle td.v { width: 38%; font-weight: bold; }
@@ -179,9 +181,8 @@ async function estilosMediaCarta() {
     }
     .qr { text-align: center; margin: 8px 0; }
     .qr img { width: 72px; height: 72px; }
-    .no-print { margin-top: 12px; text-align: center; }
+    ${informePrintToolbarCss()}
     @media print {
-      .no-print { display: none !important; }
       body { max-width: ${MEDIA_CARTA_ANCHO_MM}mm; }
     }
     ${estilosMarcaAguaAnulado()}
@@ -227,8 +228,12 @@ function idMongoMovimiento(doc) {
   return String(doc._id || doc.id || doc.idIngreso || doc.idEgreso || doc.ingresoId || doc.egresoId || '').trim();
 }
 
-function botonImprimir() {
-  return `<div class="no-print"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>`;
+function botonImprimir(pdfName = 'comprobante-argo') {
+  const t = informePrintToolbar({
+    label: 'Acciones del comprobante',
+    pdfName,
+  });
+  return `${t.html}${t.script}`;
 }
 
 function metaRowHtml(label, value) {
@@ -468,6 +473,7 @@ async function htmlIngresoValidadora(data) {
   <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
+  ${botonImprimir()}
   ${anulado.html}
   ${bloqueEmpresaHtml(config)}
   ${lineaHtml(32)}
@@ -480,7 +486,6 @@ async function htmlIngresoValidadora(data) {
   ${firmaHtml}
   ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
   <div class="pie">${esc(config.mensajePie)}</div>
-  ${botonImprimir()}
 </body>
 </html>`;
 }
@@ -565,6 +570,7 @@ async function htmlIngresoMediaCarta(data) {
   <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
+  ${botonImprimir()}
   ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
@@ -595,7 +601,6 @@ async function htmlIngresoMediaCarta(data) {
   ${bloqueFirmaPagadorIngreso({ nombre: clienteNombre, documento: clienteDoc })}
   ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
   <div class="pie">${esc(config.mensajePie || '')}</div>
-  ${botonImprimir()}
 </body>
 </html>`;
 }
@@ -637,6 +642,7 @@ async function htmlEgresoValidadora(data) {
   <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
+  ${botonImprimir()}
   ${anulado.html}
   ${bloqueEmpresaHtml(config)}
   ${lineaHtml(32)}
@@ -661,7 +667,6 @@ async function htmlEgresoValidadora(data) {
   </div>
   ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
   <div class="pie">${esc(config.mensajePieEgreso)}</div>
-  ${botonImprimir()}
 </body>
 </html>`;
 }
@@ -710,6 +715,7 @@ async function htmlEgresoMediaCarta(data) {
   <style>${estilos}</style>
 </head>
 <body class="${anulado.bodyClass.trim()}">
+  ${botonImprimir()}
   ${anulado.html}
   <header class="doc-header">
     <div class="doc-emisor">${bloqueEmpresaMediaCarta(config)}</div>
@@ -742,7 +748,6 @@ async function htmlEgresoMediaCarta(data) {
   </div>
   ${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" alt="QR"/></div>` : ''}
   <div class="pie">${esc(config.mensajePieEgreso || '')}</div>
-  ${botonImprimir()}
 </body>
 </html>`;
 }

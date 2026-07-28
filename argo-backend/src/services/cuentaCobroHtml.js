@@ -2,6 +2,7 @@ const { models: cat } = require('../models/catalogos');
 const { obtenerConfigRecibo } = require('./configRecibo');
 const { num, roundMoney } = require('../utils/coerceTypes');
 const { esc, fmtMoney, fmtFecha } = require('./reciboHtmlShared');
+const { informePrintToolbar } = require('./informePrintToolbar');
 
 function bloqueEmpresaCuentaCobro(config) {
   const v = (x) => esc(String(x || '').trim());
@@ -61,6 +62,10 @@ async function generarHtmlCuentaCobro({ contrato, cliente, idSede }) {
   const valorLetras = `${fmtMoney(valor)} M/CTE`;
   const { atPageCssPara } = require('./configPaginasInformes');
   const atPage = await atPageCssPara('cuenta_cobro');
+  const toolbar = informePrintToolbar({
+    label: 'Acciones de la cuenta de cobro',
+    pdfName: `cuenta-cobro-${numero}`,
+  });
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -69,6 +74,7 @@ async function generarHtmlCuentaCobro({ contrato, cliente, idSede }) {
   <title>Cuenta de cobro ${esc(numero)}</title>
   <style>
     ${atPage}
+    ${toolbar.css}
     * { box-sizing: border-box; }
     body {
       font-family: "Segoe UI", system-ui, sans-serif;
@@ -76,7 +82,7 @@ async function generarHtmlCuentaCobro({ contrato, cliente, idSede }) {
       line-height: 1.45;
       color: #111;
       margin: 0;
-      padding: 0;
+      padding: 12px 14px;
     }
     .header {
       text-align: center;
@@ -140,11 +146,10 @@ async function generarHtmlCuentaCobro({ contrato, cliente, idSede }) {
     .firma { margin-top: 48px; }
     .firma .linea { border-top: 1px solid #000; width: 240px; margin: 40px auto 6px; }
     .firma p { text-align: center; margin: 2px 0; font-size: 10pt; }
-    .no-print { margin-top: 24px; text-align: center; }
-    @media print { .no-print { display: none; } }
   </style>
 </head>
 <body>
+  ${toolbar.html}
   <div class="header">
     ${bloqueEmpresaCuentaCobro(config)}
   </div>
@@ -197,10 +202,7 @@ async function generarHtmlCuentaCobro({ contrato, cliente, idSede }) {
     <p><strong>${esc(config.nombreEmpresa || 'ARGO')}</strong></p>
     <p>NIT: ${esc(config.nit || '—')}</p>
   </div>
-
-  <div class="no-print">
-    <button type="button" onclick="window.print()">Imprimir</button>
-  </div>
+  ${toolbar.script}
 </body>
 </html>`;
 }

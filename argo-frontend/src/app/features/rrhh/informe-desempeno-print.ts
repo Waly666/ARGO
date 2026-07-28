@@ -1,4 +1,9 @@
 import type { InformeDesempenoRes } from '../../core/services/empleado.service';
+import {
+  informePrintToolbarCss,
+  informePrintToolbarHtml,
+  informePrintToolbarScript,
+} from '../../core/utils/informe-print-toolbar.util';
 
 function esc(v: unknown): string {
   return String(v ?? '')
@@ -42,6 +47,7 @@ export function buildInformeDesempenoHtml(opts: {
   <title>${esc(titulo)}</title>
   <style>
     @page { size: letter portrait; margin: 12mm 10mm; }
+    ${informePrintToolbarCss()}
     * { box-sizing: border-box; }
     body { margin: 0; padding: 12mm 10mm; font-family: 'Segoe UI', Arial, sans-serif; color: #111; }
     h1 { font-size: 13pt; margin: 0 0 4px; text-transform: uppercase; }
@@ -53,12 +59,10 @@ export function buildInformeDesempenoHtml(opts: {
     .mono { font-family: ui-monospace, Consolas, monospace; }
     .muted { color: #666; font-size: 8pt; }
     tr.det td { background: #f8fafc; font-size: 8pt; color: #334155; }
-    .actions { margin-bottom: 10px; }
-    @media print { .actions { display: none; } }
   </style>
 </head>
 <body>
-  <div class="actions"><button type="button" onclick="window.print()">Imprimir / Guardar PDF</button></div>
+  ${informePrintToolbarHtml({ label: 'Acciones del informe', pdfName: titulo })}
   <h1>${esc(titulo)}</h1>
   ${subtitulo ? `<p class="sub">${esc(subtitulo)}</p>` : ''}
   <table>
@@ -76,7 +80,7 @@ export function buildInformeDesempenoHtml(opts: {
       ${rows || '<tr><td colspan="6">Sin datos</td></tr>'}
     </tbody>
   </table>
-  <script>window.onload = function(){ window.print(); };</script>
+  ${informePrintToolbarScript(titulo)}
 </body>
 </html>`;
 }

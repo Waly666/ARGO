@@ -609,6 +609,7 @@ export class ShellComponent {
       label: 'Instructores',
       icon: '◈',
       path: '/app/instructores',
+      queryParams: { vista: 'portal' },
       iconTone: 'rose',
       permiso: [
         'instructores.mi_portal',

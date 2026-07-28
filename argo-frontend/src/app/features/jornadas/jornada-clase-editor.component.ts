@@ -47,6 +47,8 @@ import { tipFormulario } from '../../core/utils/asistente-formulario.util';
 import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
 import { duracionSegundosDesdeHHmm, esFechaHoy, fmtFechaCalendario } from './jornada-calendario.util';
 import { JornadaEtiquetaQrService } from './jornada-etiqueta-qr.service';
+import { JornadaAlumnoQrData } from './jornada-alumno-qr.util';
+import { JornadaQrScanModalComponent } from './jornada-qr-scan-modal.component';
 import {
   JorMsgTipo,
   capAlumnoNombre,
@@ -89,6 +91,7 @@ type AlumnoNombrable = {
     FormModalComponent,
     CatalogoEnumBuscarComponent,
     Hora12InputComponent,
+    JornadaQrScanModalComponent,
   ],
   templateUrl: './jornada-clase-editor.component.html',
   styleUrls: ['./jornada-clase-editor.component.scss'],
@@ -110,6 +113,8 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
   mostrarSwitchHorarioManual = this.operacionCfg.mostrarSwitchHorarioManual;
 
+  private ultimoLiveTick = 0;
+
   constructor() {
     effect(() => {
       if (this.modalOpen()) {
@@ -120,6 +125,22 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
       } else {
         this.asistente.clearTipsPrepend();
       }
+    });
+    // Tras finalizar, el post-cierre registra asistencias en background:
+    // refrescar inscritos cuando termine (si no, quedan «pendientes» hasta otro clic).
+    effect(() => {
+      const tick = this.liveSync.refreshTick();
+      if (tick <= this.ultimoLiveTick) return;
+      this.ultimoLiveTick = tick;
+      const id = this.claseSel();
+      if (!this.modalOpen() || !id) return;
+      this.cargarInscritos(id);
+      this.jornadaSvc.obtenerClase(id).subscribe({
+        next: (c) => {
+          if (c) this.claseActiva.set(c);
+        },
+        error: () => undefined,
+      });
     });
   }
 
@@ -149,6 +170,8 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   alumnoBusquedaResults = signal<AlumnoListItem[]>([]);
   guardandoAsistencia = signal<number | null>(null);
   guardandoInscripcion = signal(false);
+  qrAlumnoOpen = signal(false);
+  qrAlumnoBuscando = signal(false);
   cronometroDisplay = signal('00:00:00');
 
   /** Utilidad «Copiar alumnos de la clase anterior de la misma jornada». */
@@ -203,7 +226,8 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   puedeEditarHorarioClase = computed(() =>
     this.permisoSvc.tiene(['jornadas.gestionar', 'jornadas.operar']),
   );
-  puedeEliminarClase = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
+  /** Solo administrador puede eliminar la clase completa. */
+  puedeEliminarClase = computed(() => this.auth.isAdmin());
   puedeEliminarClaseActiva = computed(
     () => this.puedeEliminarClase() && claseJornadaSePuedeEliminar(this.claseActiva()?.estado),
   );
@@ -213,8 +237,9 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   );
 
   inscritosConAsistencia = computed(() => this.inscritos().filter((i) => i.tieneAsistencia).length);
+  /** Pendientes de asistencia en esta clase (el certificado del contrato no los excluye). */
   inscritosPendientesAsistencia = computed(() =>
-    this.inscritos().filter((i) => !i.tieneAsistencia && !i.yaCertificadoContrato),
+    this.inscritos().filter((i) => !i.tieneAsistencia),
   );
   inscritosSinAsistencia = computed(() => this.inscritosPendientesAsistencia().length);
   inscritosCertificadosContrato = computed(() =>
@@ -675,6 +700,8 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   cerrarModal(): void {
     if (this.guardandoClase()) return;
     this.detenerCronometro();
+    this.qrAlumnoOpen.set(false);
+    this.qrAlumnoBuscando.set(false);
     this.modalOpen.set(false);
     this.alumnoBusquedaOpen.set(false);
     this.limpiarMsgModal();
@@ -822,24 +849,30 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     return this.claseActiva()?.estado === 'EN PROCESO';
   }
 
+  /** Admin: también en clases finalizadas (correcciones). Instructor: EN PROCESO. */
   puedeMarcarAsistenciaInscrito(): boolean {
+    if (!this.permisoSvc.tiene(['jornadas.operar', 'jornadas.gestionar'])) return false;
     if (this.claseModalEnProceso()) return true;
     if (this.operacionEspecialActiva() && this.claseActiva()?.estado !== 'FINALIZADO') return true;
-    return this.puedeEliminarClase() && this.claseActiva()?.estado === 'FINALIZADO';
+    return this.auth.isAdmin() && this.claseActiva()?.estado === 'FINALIZADO';
   }
 
   puedeMarcarAsistenciaAlumno(a: { yaCertificadoContrato?: boolean; tieneAsistencia?: boolean }): boolean {
-    if (a.yaCertificadoContrato && !a.tieneAsistencia) return false;
+    // Certificado del contrato no bloquea asistencia en esta clase (solo evita 2.º certificado).
+    if (a.tieneAsistencia) return false;
     return this.puedeMarcarAsistenciaInscrito();
   }
 
+  /** Admin/gestor: siempre. Instructor (operar): EN PROCESO o FINALIZADO (corrección). */
   puedeBorrarAsistenciaDeClase(): boolean {
-    if (this.puedeEliminarClase()) return true;
-    return this.claseModalEnProceso();
+    if (this.auth.isAdmin() || this.permisoSvc.tiene('jornadas.gestionar')) return true;
+    if (!this.permisoSvc.tiene('jornadas.operar')) return false;
+    const est = String(this.claseActiva()?.estado || '').toUpperCase();
+    return est === 'EN PROCESO' || est === 'FINALIZADO';
   }
 
   puedeQuitarInscritoDeClase(): boolean {
-    if (this.puedeEliminarClase()) return true;
+    if (this.auth.isAdmin()) return true;
     return this.claseActiva()?.estado !== 'FINALIZADO';
   }
 
@@ -1115,7 +1148,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
 
   async eliminarClase(c: { _id: string; estado?: string }): Promise<void> {
     if (!this.puedeEliminarClase()) {
-      this.mostrarMsg('Solo un administrador puede eliminar clases.', 'warn', 'Sin permiso');
+      this.mostrarMsg('Solo el administrador puede eliminar clases.', 'warn', 'Sin permiso');
       return;
     }
     const finalizada = String(c.estado || '').toUpperCase() === 'FINALIZADO';
@@ -1152,7 +1185,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     if (!id) return;
     if (this.inscritosSinAsistencia() === 0) {
       this.mostrarMsgModal(
-        'Todos los inscritos ya tienen asistencia o certificado vigente en el contrato.',
+        'Todos los inscritos ya tienen asistencia en esta clase.',
         'info',
         'Asistencia al día',
       );
@@ -1221,6 +1254,60 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
     return this.inscritos().some((x) => formatNumDoc(x.numDoc) === doc);
   }
 
+  abrirEscanerQrAlumno(): void {
+    if (!this.claseSel()) {
+      this.mostrarMsg(
+        'No se identificó la clase que recibirá al alumno.',
+        'info',
+        'Escanear alumno',
+      );
+      return;
+    }
+    this.qrAlumnoOpen.set(true);
+  }
+
+  cerrarEscanerQrAlumno(): void {
+    this.qrAlumnoOpen.set(false);
+  }
+
+  onQrAlumnoEscaneado(data: JornadaAlumnoQrData): void {
+    this.qrAlumnoOpen.set(false);
+    const numDoc = String(data.numDoc || '').replace(/\D/g, '');
+    if (!numDoc) {
+      this.mostrarMsgModal('El QR no contiene un documento válido.', 'error', 'QR no válido');
+      return;
+    }
+
+    const duplicado = this.inscritos().some(
+      (x) => formatNumDoc(x.numDoc) === formatNumDoc(numDoc),
+    );
+    if (duplicado) {
+      this.mostrarMsgModal(
+        `${data.nombre || `Documento ${numDoc}`} ya está inscrito en esta clase.`,
+        'info',
+        'Alumno duplicado',
+      );
+      return;
+    }
+
+    this.qrAlumnoBuscando.set(true);
+    this.jornadaSvc.buscarAlumnoDoc(numDoc).subscribe({
+      next: (alumno: AlumnoListItem) => {
+        this.qrAlumnoBuscando.set(false);
+        this.agregarAlumnoMatricula(alumno);
+      },
+      error: (e) => {
+        this.qrAlumnoBuscando.set(false);
+        const msg =
+          e?.status === 404
+            ? `El alumno con documento ${numDoc} no está registrado en la base de datos.`
+            : e?.error?.message || 'No fue posible consultar el alumno del código QR.';
+        this.mostrarMsgModal(msg, 'error', 'Alumno no encontrado');
+        this.mostrarMsg(msg, 'error', 'Escáner QR');
+      },
+    });
+  }
+
   agregarAlumnoMatricula(a: AlumnoListItem): void {
     const idContrato = this.idContratoParaClaseModal();
     if (idContrato) {
@@ -1235,7 +1322,13 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
           }
           this.ejecutarAgregarAlumnoMatricula(a);
         },
-        error: () => this.ejecutarAgregarAlumnoMatricula(a),
+        error: (e) => {
+          this.mostrarMsg(
+            e?.error?.message || 'No se pudo verificar el certificado del alumno en el contrato.',
+            'error',
+            'Validación',
+          );
+        },
       });
       return;
     }

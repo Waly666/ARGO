@@ -111,18 +111,5 @@ export class CajaInformePrintService {
     ventana.document.close();
     ventana.document.title = titulo;
     ventana.focus();
-    const imprimir = () => {
-      try {
-        ventana.focus();
-        ventana.print();
-      } catch {
-        /* usuario puede usar botón Imprimir de la ventana */
-      }
-    };
-    if (ventana.document.readyState === 'complete') {
-      setTimeout(imprimir, 300);
-    } else {
-      ventana.onload = () => setTimeout(imprimir, 300);
-    }
   }
 }

@@ -34,7 +34,7 @@ const MOTIVOS_CERT = {
   sin_contrato_jornada: 'La jornada no está vinculada a un contrato.',
   ya_certificado: 'El alumno ya tiene certificado vigente para este contrato.',
   ya_certificado_contrato:
-    'El alumno ya tiene certificado vigente para este contrato (no se emite otro; puede seguir en otras clases).',
+    'El alumno ya tiene certificado vigente para este contrato; no puede inscribirse en más clases del mismo contrato.',
   ya_certificado_clase: 'El alumno ya tiene certificado vigente para esta clase.',
   sin_clase: 'Falta la clase para emitir certificado por asistencia.',
   contrato_no_encontrado: 'Contrato no encontrado.',

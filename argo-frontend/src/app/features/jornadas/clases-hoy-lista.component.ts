@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ClaseJornadaDto, JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import {
   CatalogoEnumBuscarComponent,
@@ -12,6 +13,8 @@ import {
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import { JornadasOperacionConfigService } from '../../core/services/jornadas-operacion-config.service';
 import { fmtFechaCalendario, ymdLocal } from './jornada-calendario.util';
+import { esInstructorJornadasRestringido } from './jornadas-acceso.util';
+import { JornadaClaseEditorComponent } from './jornada-clase-editor.component';
 import {
   capCarpa,
   capCodContrato,
@@ -21,23 +24,34 @@ import {
   estadoClaseLiveClass,
   isoAHoraInput,
   labelCarpaClase,
+  labelContratoClase,
   rowClaseClass,
   labelInstructorClase,
 } from './jornada-ui.util';
-
 @Component({
   selector: 'argo-clases-hoy-lista',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, FormModalComponent, CatalogoEnumBuscarComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    FormModalComponent,
+    CatalogoEnumBuscarComponent,
+    JornadaClaseEditorComponent,
+  ],
   templateUrl: './clases-hoy-lista.component.html',
   styleUrls: ['./clases-hoy-lista.component.scss'],
 })
 export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   private jornadaSvc = inject(JornadaCapService);
   private permisoSvc = inject(PermisoService);
+  private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   operacionCfg = inject(JornadasOperacionConfigService);
   operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
+
+  @ViewChild('jornadaEditor') jornadaEditor?: JornadaClaseEditorComponent;
 
   loading = signal(false);
   clases = signal<ClaseJornadaDto[]>([]);
@@ -87,11 +101,15 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   finalizadasCount = computed(() => this.clases().filter((c) => c.estado === 'FINALIZADO').length);
 
   puedeGestionar = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
-  /** Instructor (operar sin gestionar): ve solo sus clases en esta pantalla. */
-  esInstructorSolo = computed(
-    () => this.permisoSvc.tiene('jornadas.operar') && !this.puedeGestionar(),
+  /** Instructor: solo sus clases; no entra al hub de contratación. */
+  esInstructorSolo = computed(() =>
+    esInstructorJornadasRestringido((k) => this.permisoSvc.tiene(k), this.auth.user()?.rol),
   );
   puedeOperar = computed(() => this.permisoSvc.tiene('jornadas.operar') || this.puedeGestionar());
+  /** Breadcrumb: instructores no enlazan al hub admin. */
+  hubJornadasLink = computed(() =>
+    this.esInstructorSolo() ? '/app/jornadas/clases-hoy' : '/app/jornadas',
+  );
 
   filtradas = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -115,6 +133,7 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   total = computed(() => this.clases().length);
 
   capCodContrato = capCodContrato;
+  labelContratoClase = labelContratoClase;
   capInstructor = capInstructor;
   capMunicipioJor = capMunicipioJor;
   capUbicacionClase = capUbicacionClase;
@@ -130,6 +149,19 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
     this.operacionCfg.cargar();
     this.cargar();
     this.refreshTimer = setInterval(() => this.cargar(true), 15_000);
+    const claseQp = this.route.snapshot.queryParamMap.get('clase');
+    if (claseQp) {
+      // Esperar ViewChild del editor embebido.
+      setTimeout(() => {
+        this.jornadaEditor?.abrirClaseDesdeHost(claseQp);
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { clase: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      }, 0);
+    }
   }
 
   ngOnDestroy(): void {
@@ -160,6 +192,11 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   }
 
   gestionarJornada(c: ClaseJornadaDto) {
+    if (this.esInstructorSolo()) {
+      // Instructor no entra al hub; abre la clase embebida si hay id.
+      if (c._id) this.operarClase(c);
+      return;
+    }
     if (!c.idContrato || !c.idJornada) return;
     void this.router.navigate(['/app/jornadas'], {
       queryParams: {
@@ -171,7 +208,12 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   }
 
   editarClase(c: ClaseJornadaDto) {
-    if (!c.idContrato || !c.idJornada || !c._id) return;
+    if (!c._id) return;
+    if (this.esInstructorSolo()) {
+      this.operarClase(c);
+      return;
+    }
+    if (!c.idContrato || !c.idJornada) return;
     void this.router.navigate(['/app/jornadas'], {
       queryParams: {
         contrato: c.idContrato,
@@ -183,7 +225,12 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
   }
 
   operarClase(c: ClaseJornadaDto) {
-    this.editarClase(c);
+    if (!c._id) return;
+    this.jornadaEditor?.abrirClaseDesdeHost(c, c.idJornada);
+  }
+
+  onClaseEditada(): void {
+    this.cargar(true);
   }
 
   iniciarYOperar(c: ClaseJornadaDto) {
@@ -268,11 +315,7 @@ export class ClasesHoyListaComponent implements OnInit, OnDestroy {
           this.modalCrearOpen.set(false);
           this.cargar(true);
           this.msg.set('Clase creada correctamente.');
-          if (this.esInstructorSolo()) {
-            this.operarClase(c);
-          } else {
-            this.editarClase(c);
-          }
+          this.operarClase(c);
         },
         error: (e) => {
           this.guardandoClase.set(false);

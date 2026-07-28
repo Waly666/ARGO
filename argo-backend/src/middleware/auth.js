@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 const soporteMaestro = require('../services/soporteMaestro');
 const { normalizarRol, puedeGestionarProgramas, esAdmin } = require('../utils/roles');
-const { permisosParaRol, tieneAlguno } = require('../services/rolesPermisos');const {
+const { permisosParaRol, tieneAlguno } = require('../services/rolesPermisos');
+const {
   resolverSedeActiva,
   normalizarIdSede,
   sedesPermitidasUsuario,
@@ -30,11 +31,28 @@ function requireAuth(req, res, next) {
   }
 
   Usuario.findById(payload.sub)
-    .select('rol activo username')
+    .select('rol activo username sessionVersion')
     .lean()
     .then((u) => {
       if (!u || u.activo === false) {
         return res.status(401).json({ message: 'Usuario inactivo o no encontrado' });
+      }
+      const svDb = Number(u.sessionVersion) || 0;
+      // Tokens previos al control de sesión (sin `sv`): solo válidos si aún no hubo un login nuevo.
+      if (payload.sv == null) {
+        if (svDb > 0) {
+          return res.status(401).json({
+            message:
+              'Su sesión se cerró porque inició sesión en otro dispositivo o aplicación.',
+            code: 'SESION_REEMPLAZADA',
+          });
+        }
+      } else if (Number(payload.sv) !== svDb) {
+        return res.status(401).json({
+          message:
+            'Su sesión se cerró porque inició sesión en otro dispositivo o aplicación.',
+          code: 'SESION_REEMPLAZADA',
+        });
       }
       req.user = {
         ...payload,
@@ -139,6 +157,27 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+/**
+ * Solo administrador del sistema (permiso `*` o rol admin).
+ * Para borrar contratos / jornadas / clases: ningún otro perfil.
+ */
+function requireAdminTotal(req, res, next) {
+  if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+  return (async () => {
+    try {
+      const permisos = req.permisos || (await permisosParaRol(req.user.rol));
+      req.permisos = permisos;
+      if (permisos.includes('*') || esAdmin(req.user.rol)) return next();
+      return res.status(403).json({
+        message: 'Solo el administrador puede eliminar este registro.',
+        code: 'SIN_PERMISO',
+      });
+    } catch (e) {
+      next(e);
+    }
+  })();
+}
+
 module.exports = {
   requireAuth,
   loadSedeActiva,
@@ -148,4 +187,5 @@ module.exports = {
   requirePermiso,
   requireGestionProgramas,
   requireAdmin,
+  requireAdminTotal,
 };

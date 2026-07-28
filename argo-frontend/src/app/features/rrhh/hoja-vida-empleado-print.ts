@@ -5,6 +5,11 @@ import type {
   EmpleadoEvaluacionDto,
 } from '../../core/services/empleado.service';
 import type { ConfigRecibo } from '../../core/services/config.service';
+import {
+  informePrintToolbarCss,
+  informePrintToolbarHtml,
+  informePrintToolbarScript,
+} from '../../core/utils/informe-print-toolbar.util';
 
 function esc(v: unknown): string {
   return String(v ?? '')
@@ -381,18 +386,7 @@ export function buildHojaVidaEmpleadoHtml(opts: {
     h1, h2, h3, h4, .hero-name, .doc-meta strong, .score, .anot-badge, .pill, .chip {
       font-family: 'Exo 2', 'Roboto', system-ui, sans-serif;
     }
-    .toolbar {
-      position: sticky; top: 0; z-index: 5;
-      display: flex; gap: 10px; align-items: center;
-      padding: 10px 14px; background: #0f2744; color: #fff;
-      font-family: 'Roboto', system-ui, sans-serif;
-    }
-    .toolbar button {
-      border: 0; border-radius: 6px; padding: 8px 14px;
-      background: #38bdf8; color: #0f172a; font-weight: 700; cursor: pointer;
-      font-family: 'Exo 2', 'Roboto', sans-serif;
-    }
-    .toolbar span { font-size: 10pt; opacity: .9; }
+    ${informePrintToolbarCss()}
     .doc { max-width: 210mm; margin: 0 auto; }
     .top {
       display: flex; justify-content: space-between; gap: 16px;
@@ -566,12 +560,11 @@ export function buildHojaVidaEmpleadoHtml(opts: {
     }
 
     @media print {
-      .toolbar { display: none !important; }
       body { padding: 0 !important; background: #fff !important; }
       .doc { box-shadow: none; padding: 0; }
     }
     @media screen {
-      body { padding: 56px 16px 28px; background: #e2e8f0 !important; }
+      body { padding: 12px 16px 28px; background: #e2e8f0 !important; }
       .doc {
         background: #fff; padding: 14mm 12mm;
         box-shadow: 0 8px 30px rgba(15, 39, 68, .18);
@@ -586,10 +579,7 @@ export function buildHojaVidaEmpleadoHtml(opts: {
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <button type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
-    <span>Hoja de vida · ${esc(nombre)}</span>
-  </div>
+  ${informePrintToolbarHtml({ label: 'Acciones de la hoja de vida', pdfName: `hoja-vida-${nombre}` })}
   <div class="doc">
     ${encabezadoEmpresa(opts.empresa)}
     ${hero}
@@ -602,15 +592,7 @@ export function buildHojaVidaEmpleadoHtml(opts: {
     ${anotaciones}
     ${firmas}
   </div>
-  <script>
-    window.onload = function() {
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(function(){ setTimeout(function(){ window.print(); }, 150); });
-      } else {
-        setTimeout(function(){ window.print(); }, 600);
-      }
-    };
-  </script>
+  ${informePrintToolbarScript(`hoja-vida-${nombre}`)}
 </body>
 </html>`;
 }
