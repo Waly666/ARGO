@@ -18,7 +18,15 @@ import { ArgoDateInputComponent } from '../../../shared/argo-date-input/argo-dat
 import { esTarifaVirtualMatricula, esLiquidacionVirtual } from '../catalogo.helpers';
 import { etiquetaSaldoCorta, tituloSaldoItem } from '../../../core/utils/saldo-alerta.helpers';
 
-const FORMAS_PAGO = ['Efectivo', 'Transferencia', 'Cheque', 'Tarjeta debito', 'Tarjeta de Credito'];
+const FORMAS_PAGO = [
+  'Efectivo',
+  'Transferencia',
+  'Cheque',
+  'Tarjeta debito',
+  'Tarjeta de Credito',
+  'Nequi / Daviplata',
+  'Pago en línea',
+];
 
 interface ItemPagoMigracion {
   idLiquidacion: string;

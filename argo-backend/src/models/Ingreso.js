@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 
-const FORMAS_PAGO = ['Efectivo', 'Transferencia', 'Cheque', 'Tarjeta debito', 'Tarjeta de Credito'];
+const FORMAS_PAGO = [
+  'Efectivo',
+  'Transferencia',
+  'Cheque',
+  'Tarjeta debito',
+  'Tarjeta de Credito',
+  'Nequi / Daviplata',
+  'Pago en línea',
+];
 
 /** Detalle de un comprobante que paga varios ítems de liquidación a la vez. */
 const DetalleIngresoSchema = new mongoose.Schema(

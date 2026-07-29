@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 
-const FORMAS_PAGO = ['Efectivo', 'Transferencia', 'Cheque', 'Tarjeta debito', 'Tarjeta de Credito'];
+const FORMAS_PAGO = [
+  'Efectivo',
+  'Transferencia',
+  'Cheque',
+  'Tarjeta debito',
+  'Tarjeta de Credito',
+  'Nequi / Daviplata',
+  'Pago en línea',
+];
 
 const EgresoSchema = new mongoose.Schema(
   {

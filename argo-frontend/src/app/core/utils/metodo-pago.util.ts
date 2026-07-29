@@ -13,6 +13,7 @@ export const METODOS_PAGO_DEF: MetodoPagoDef[] = [
   { id: 'td', label: 'Tarjeta débito', icon: '💳', tone: 'indigo' },
   { id: 'cheque', label: 'Cheque', icon: '◎', tone: 'amber' },
   { id: 'nequi', label: 'Nequi / Daviplata', icon: '📱', tone: 'pink' },
+  { id: 'linea', label: 'Pago en línea', icon: '🌐', tone: 'cyan' },
 ];
 
 export interface MetodoPagoRow {
@@ -41,6 +42,7 @@ export function canonicoMetodoPago(texto: string): string {
   const t = normalizar(texto);
   if (!t) return 'Efectivo';
   if (/nequi|daviplata|\bdavi\b/.test(t)) return 'Nequi / Daviplata';
+  if (/pago en linea|en linea|\bpl\b/.test(t)) return 'Pago en línea';
   if (/efect|\bef\b/.test(t)) return 'Efectivo';
   if (/cheq/.test(t)) return 'Cheque';
   if (/debit|tarjeta debito/.test(t)) return 'Tarjeta débito';

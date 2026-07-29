@@ -6,6 +6,7 @@ const METODOS_PAGO_ORDEN = [
   'Tarjeta débito',
   'Cheque',
   'Nequi / Daviplata',
+  'Pago en línea',
 ];
 
 function normalizar(txt) {
@@ -21,6 +22,7 @@ function canonicoMetodoPago(texto) {
   const t = normalizar(texto);
   if (!t) return 'Efectivo';
   if (/nequi|daviplata|\bdavi\b/.test(t)) return 'Nequi / Daviplata';
+  if (/pago en linea|en linea|\bpl\b/.test(t)) return 'Pago en línea';
   if (/efect|\bef\b/.test(t)) return 'Efectivo';
   if (/cheq/.test(t)) return 'Cheque';
   if (/debit|tarjeta debito/.test(t)) return 'Tarjeta débito';

@@ -36,6 +36,7 @@ const TIPOS_PAGO_DEF = [
   { idTipoPago: '4', codigo: 'TD', descripcion: 'Tarjeta débito' },
   { idTipoPago: '5', codigo: 'CH', descripcion: 'Cheque' },
   { idTipoPago: '6', codigo: 'NE', descripcion: 'Nequi / Daviplata' },
+  { idTipoPago: '7', codigo: 'PL', descripcion: 'Pago en línea' },
 ];
 
 @Component({

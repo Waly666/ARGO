@@ -69,6 +69,10 @@ export const FORMAS_PAGO_EGRESO = [
 
   'Tarjeta de Credito',
 
+  'Nequi / Daviplata',
+
+  'Pago en línea',
+
 ] as const;
 
 
