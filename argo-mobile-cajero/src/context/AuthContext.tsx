@@ -101,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // Token listo para apiFetch antes del re-render (evita 401 → logout en bootstrap).
+        setTokenGetter(() => token);
         setState({ status: 'signedIn', token, user });
         void ensureSedeForUser(user);
 
@@ -113,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           startPollsRef.current(me);
         } catch {
           if (cancelled) return;
+          setTokenGetter(() => null);
           await storeDelete(K_TOKEN);
           await storeDelete(K_USER);
           setState({ status: 'signedOut' });
@@ -141,6 +144,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useCallback(async (username: string, password: string) => {
     const res = await apiLogin(username, password);
     await ensureSedeForUser(res.user);
+    // Antes de polls / re-render: sin esto el poller pega /config/alertas sin Bearer → 401 → logout.
+    setTokenGetter(() => res.token);
     setState({ status: 'signedIn', token: res.token, user: res.user });
     void storeSet(K_TOKEN, res.token);
     void storeSet(K_USER, JSON.stringify(res.user));
@@ -149,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     stopAlertPoller();
+    setTokenGetter(() => null);
     setState({ status: 'signedOut' });
     void unloadAlertSound();
     void storeDelete(K_TOKEN);

@@ -111,6 +111,38 @@
     gap: 0.65rem;
   }
 
+  .jornadas-contador {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    font-size: 0.88rem;
+    color: var(--text-dim, #94a3b8);
+    margin-right: 0.15rem;
+
+    strong {
+      color: var(--text, #e8eefc);
+      font-size: 1.05rem;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .jornadas-contador-filtro {
+    color: var(--accent, #38bdf8);
+    font-size: 0.84rem;
+  }
+
+  .jornadas-filtros {
+    margin: 0.55rem 0 0.9rem;
+    align-items: flex-end;
+    gap: 0.65rem 0.85rem;
+
+    .field-limpiar-filtros {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+  }
+
   .jornada-gen-clases {
     display: block;
     margin: 0.35rem 0 0.75rem;

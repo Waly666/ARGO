@@ -119,9 +119,12 @@ async function dtoClaseConJornada(claseDoc) {
   let codContrato = '';
   let contratoLabel = '';
   let clienteNombre = '';
+  let origenesAlumnos = null;
+  let certificacionOrigen = null;
+  let idClienteFacturacion = null;
   if (j?.idContrato) {
     const contrato = await Contratacion.findById(j.idContrato)
-      .select('codContrato nombreComercial razoSocial')
+      .select('codContrato nombreComercial razoSocial origenesAlumnos idClienteFacturacion certificacionOrigen numSesCert tipoCertificado')
       .lean();
     if (contrato) {
       codContrato = String(contrato.codContrato || '').trim();
@@ -130,6 +133,15 @@ async function dtoClaseConJornada(claseDoc) {
       contratoLabel = codContrato
         ? `${codContrato} — ${cliente || 'Contrato'}`
         : cliente || '';
+      const {
+        normalizarOrigenesContrato,
+        normalizarCertificacionOrigen,
+      } = require('../constants/origenJornadaCap');
+      origenesAlumnos = normalizarOrigenesContrato(contrato.origenesAlumnos);
+      certificacionOrigen = normalizarCertificacionOrigen(contrato.certificacionOrigen, contrato);
+      if (contrato.idClienteFacturacion) {
+        idClienteFacturacion = String(contrato.idClienteFacturacion);
+      }
     }
   }
   const [enriched] = await enriquecerClases([
@@ -139,10 +151,16 @@ async function dtoClaseConJornada(claseDoc) {
       jornadaEstado: j?.estado,
       idContrato: j?.idContrato,
       municipioJornada: j?.municipio,
+      deptoJornada: j?.depto,
+      codMunicipioJornada: j?.codMunicipio || '',
+      direccionJornada: j?.direccion,
       indiceEnDia: j?.indiceEnDia,
       codContrato,
       contratoLabel,
       clienteNombre,
+      origenesAlumnos,
+      certificacionOrigen,
+      idClienteFacturacion,
     },
   ]);
   return enriched;
@@ -225,12 +243,26 @@ async function syncContratoDesdeCliente(dto) {
 
 function enrichContratoRespuesta(c, clienteMap) {
   const cli = c.idClienteFacturacion ? clienteMap.get(String(c.idClienteFacturacion)) : null;
+  const {
+    normalizarOrigenesContrato,
+    normalizarCertificacionOrigen,
+  } = require('../constants/origenJornadaCap');
+  const {
+    normalizarMunicipiosPlan,
+    totalJornadasDesdePlan,
+  } = require('../constants/municipiosPlanContrato');
+  const plan = normalizarMunicipiosPlan(c.municipiosPlan);
+  const totalPlan = totalJornadasDesdePlan(plan);
   const base = {
     ...c,
     estado: normalizarEstadoContrato(c.estado),
     valorContrato: roundMoney(numMoney(c.valorContrato)),
     planCobro: serializarPlanCobro(c.planCobro),
     comprobantesIngresoCaja: !!c.comprobantesIngresoCaja,
+    origenesAlumnos: normalizarOrigenesContrato(c.origenesAlumnos),
+    certificacionOrigen: normalizarCertificacionOrigen(c.certificacionOrigen, c),
+    municipiosPlan: plan,
+    numerojornadas: totalPlan > 0 ? totalPlan : c.numerojornadas,
   };
   if (!cli) return base;
   const nombre = String(cli.nombreComercial || cli.razonSocial || cli.nombres || '').trim();
@@ -296,10 +328,51 @@ function pickContrato(body) {
     'valorContrato',
     'comprobantesIngresoCaja',
     'planCobro',
+    'origenesAlumnos',
+    'certificacionOrigen',
+    'municipiosPlan',
   ];
   const dto = {};
   for (const k of fields) {
     if (body[k] !== undefined) dto[k] = body[k];
+  }
+  if (dto.origenesAlumnos !== undefined) {
+    const {
+      normalizarOrigenesContrato,
+    } = require('../constants/origenJornadaCap');
+    dto.origenesAlumnos = normalizarOrigenesContrato(dto.origenesAlumnos);
+  }
+  if (dto.certificacionOrigen !== undefined) {
+    const {
+      normalizarCertificacionOrigen,
+    } = require('../constants/origenJornadaCap');
+    dto.certificacionOrigen = normalizarCertificacionOrigen(dto.certificacionOrigen, {
+      numSesCert: dto.numSesCert !== undefined ? dto.numSesCert : body.numSesCert,
+      tipoCertificado:
+        dto.tipoCertificado !== undefined ? dto.tipoCertificado : body.tipoCertificado,
+      idProgramaCertificacion:
+        dto.idProgramaCertificacion !== undefined
+          ? dto.idProgramaCertificacion
+          : body.idProgramaCertificacion,
+    });
+    // Mantener top-level alineado con operativo (compat / listados).
+    const op = dto.certificacionOrigen.operativo;
+    if (op) {
+      dto.numSesCert = op.numSesCert;
+      dto.tipoCertificado = op.tipoCertificado;
+      if (op.idProgramaCertificacion !== undefined) {
+        dto.idProgramaCertificacion = String(op.idProgramaCertificacion || '').trim();
+      }
+    }
+  }
+  if (dto.municipiosPlan !== undefined) {
+    const {
+      normalizarMunicipiosPlan,
+      totalJornadasDesdePlan,
+    } = require('../constants/municipiosPlanContrato');
+    dto.municipiosPlan = normalizarMunicipiosPlan(dto.municipiosPlan);
+    const totalPlan = totalJornadasDesdePlan(dto.municipiosPlan);
+    if (totalPlan > 0) dto.numerojornadas = totalPlan;
   }
   if (dto.codContrato != null) dto.codContrato = String(dto.codContrato).trim();
   if (dto.estado != null) dto.estado = normalizarEstadoContrato(dto.estado);
@@ -2175,29 +2248,31 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
   const jornadaFuente = await JornadaCap.findById(claseFuente.idJornada).lean();
 
   const contrato = jornadaDestino?.idContrato
-    ? await Contratacion.findById(jornadaDestino.idContrato).select('tipoCertificado').lean()
+    ? await Contratacion.findById(jornadaDestino.idContrato).lean()
     : null;
-  const tipoNorm = String(contrato?.tipoCertificado || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\s-]+/g, '_');
-  const esPorClase = tipoNorm === TIPO_CERTIFICADO_POR_CLASE || tipoNorm === 'porclase';
+  const {
+    configCertificacionParaOrigen,
+  } = require('../constants/origenJornadaCap');
 
   const alumnosOut = await Promise.all(
     inscripcionesFuente.map(async (ins) => {
       const nd = Number(ins.numDoc);
       const al = mapAlu.get(nd);
       const cert = mapCert.get(nd);
-      // Certificado global (numSesCert): no más clases del mismo contrato.
-      // por_clase: solo se bloquea si ya tiene certificado de ESTA clase destino.
+      const cfgOrig = contrato
+        ? configCertificacionParaOrigen(contrato, al?.origenJornadaCap)
+        : { tipoCertificado: 'global' };
+      const esPorClase = cfgOrig.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
+      // Certificado global del origen: no más clases del mismo contrato.
+      // por_clase del origen: solo se bloquea si ya tiene certificado de ESTA clase destino.
       let puedeMatricular = !yaEnEstaClase.has(nd);
       if (puedeMatricular && jornadaDestino?.idContrato) {
         if (esPorClase) {
           const certEstaClase = await certificadoExistenteClase(nd, claseDestino._id);
           if (certEstaClase) puedeMatricular = false;
-        } else if (cert) {
+        } else if (cert && !cert.idClaseJornada) {
+          puedeMatricular = false;
+        } else if (cert && !esPorClase) {
           puedeMatricular = false;
         }
       }
@@ -2210,6 +2285,8 @@ async function construirAlumnosDesdeClaseFuente(claseDestino, claseFuente) {
         yaCertificadoContrato: !!cert,
         puedeMatricular,
         certificadoCodigo: cert?.codigoCert || null,
+        origenJornadaCap: cfgOrig.origen || al?.origenJornadaCap || null,
+        tipoCertificadoOrigen: cfgOrig.tipoCertificado,
       };
     }),
   );
@@ -2707,6 +2784,39 @@ exports.crearAlumnoJornadaCap = async (req, res, next) => {
       fechaMod: now,
       userAddReg: userAdd,
     };
+
+    const {
+      normalizarOrigenJornadaCap,
+      normalizarTipoInstitucionEducativa,
+    } = require('../constants/origenJornadaCap');
+    const origenJ = normalizarOrigenJornadaCap(body.origenJornadaCap || body.origenJornada);
+    if (origenJ) {
+      dto.origenJornadaCap = origenJ;
+      if (origenJ === 'colegio') {
+        const tipoInst =
+          normalizarTipoInstitucionEducativa(body.tipoInstitucionEducativa) || 'colegio';
+        dto.tipoInstitucionEducativa = tipoInst;
+        dto.colegioCodigo = String(body.colegioCodigo || '').trim() || undefined;
+        dto.colegioNombre = upper(body.colegioNombre) || undefined;
+        if (tipoInst === 'colegio') {
+          const grado = parseInt(body.gradoColegio, 10);
+          if (Number.isFinite(grado) && grado >= 1 && grado <= 11) dto.gradoColegio = grado;
+        } else {
+          dto.programaInstitucion = upper(body.programaInstitucion) || undefined;
+        }
+      } else if (origenJ === 'estamento') {
+        dto.estamentoId = String(body.estamentoId || '').trim() || undefined;
+        dto.estamentoNombre = upper(body.estamentoNombre) || undefined;
+        dto.cargoEstamento = upper(body.cargoEstamento) || undefined;
+        dto.dependenciaEstamento = upper(body.dependenciaEstamento) || undefined;
+      } else if (origenJ === 'empresa') {
+        if (body.empresaId) {
+          const mongoose = require('mongoose');
+          if (mongoose.isValidObjectId(body.empresaId)) dto.empresaId = body.empresaId;
+        }
+      }
+    }
+
     if (body.fechaNac) {
       const fn = new Date(body.fechaNac);
       if (!Number.isNaN(fn.getTime())) dto.fechaNac = fn;
@@ -2754,9 +2864,16 @@ exports.buscarAlumnos = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
     const limit = Math.min(parseInt(req.query.limit, 10) || 12, 30);
+    const {
+      normalizarOrigenJornadaCap,
+    } = require('../constants/origenJornadaCap');
+    const origenJ = normalizarOrigenJornadaCap(req.query.origenJornadaCap || req.query.origen);
     const filter = {};
     if (q) {
       Object.assign(filter, filtroBusquedaAlumno(q));
+    }
+    if (origenJ) {
+      filter.origenJornadaCap = origenJ;
     }
     const docs = await DatosAlumno.find(filter)
       .sort({ apellido1: 1, nombre1: 1 })
@@ -2771,6 +2888,11 @@ exports.buscarAlumnos = async (req, res, next) => {
         nombre2: al.nombre2,
         apellido1: al.apellido1,
         apellido2: al.apellido2,
+        origenJornadaCap: al.origenJornadaCap || null,
+        colegioNombre: al.colegioNombre || null,
+        gradoColegio: al.gradoColegio ?? null,
+        estamentoNombre: al.estamentoNombre || null,
+        empresaId: al.empresaId ? String(al.empresaId) : null,
         nombreCompleto: [al.nombre1, al.nombre2, al.apellido1, al.apellido2].filter(Boolean).join(' '),
       })),
     );

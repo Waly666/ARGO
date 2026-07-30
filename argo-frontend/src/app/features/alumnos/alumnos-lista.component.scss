@@ -262,11 +262,12 @@ table.alumnos-grid tbody tr:hover td.col-foto {
 }
 
 table.alumnos-grid .col-alertas {
-  width: 420px;
-  min-width: 380px;
-  max-width: 520px;
+  width: 280px;
+  min-width: 220px;
+  max-width: 320px;
   white-space: normal !important;
   vertical-align: middle;
+  overflow: hidden;
 }
 
 .row-alarms {
@@ -276,6 +277,7 @@ table.alumnos-grid .col-alertas {
   align-items: center;
   gap: 4px;
   max-width: 100%;
+  min-width: 0;
 }
 
 @keyframes row-alarm-blink-warn {
@@ -320,6 +322,8 @@ table.alumnos-grid .col-alertas {
 .row-alarm {
   position: relative;
   min-height: 28px;
+  max-width: 100%;
+  min-width: 0;
   padding: 4px 8px 4px 4px;
   border-radius: 999px;
   border: 1px solid transparent;
@@ -329,6 +333,7 @@ table.alumnos-grid .col-alertas {
   gap: 5px;
   box-shadow: none;
   filter: none;
+  overflow: hidden;
 
   &:hover {
     filter: none;
@@ -362,6 +367,10 @@ table.alumnos-grid .col-alertas {
   font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;
+  min-width: 0;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .row-alarm.doc-alarm .row-alarm-icon {
@@ -625,4 +634,137 @@ table.alumnos-grid .col-alertas {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
+}
+
+/* ——— Shell alineado a Contratos / Jornadas ——— */
+.alum-shell {
+  --alum-sky: #38bdf8;
+  --alum-teal: #2dd4bf;
+  --alum-border: rgba(125, 185, 255, 0.16);
+  position: relative;
+  isolation: isolate;
+  animation: alum-fade-in 0.4s ease both;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -0.4rem -0.2rem auto;
+    height: 11rem;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 65% 80% at 8% 0%, rgba(56, 189, 248, 0.14), transparent 55%),
+      radial-gradient(ellipse 50% 70% at 92% 8%, rgba(45, 212, 191, 0.08), transparent 50%);
+  }
+}
+
+.alum-shell--jornadas::before {
+  background:
+    radial-gradient(ellipse 65% 80% at 8% 0%, rgba(99, 102, 241, 0.16), transparent 55%),
+    radial-gradient(ellipse 50% 70% at 92% 8%, rgba(56, 189, 248, 0.1), transparent 50%);
+}
+
+@keyframes alum-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.alum-kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--alum-sky);
+  font-weight: 700;
+}
+
+.alum-shell--jornadas .alum-kicker {
+  color: #a5b4fc;
+}
+
+.alum-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px !important;
+  border: 1px solid rgba(125, 185, 255, 0.28) !important;
+  background:
+    linear-gradient(135deg, rgba(14, 36, 68, 0.96), rgba(10, 28, 54, 0.9)),
+    rgba(12, 28, 52, 0.88) !important;
+  box-shadow: 0 16px 36px rgba(2, 10, 28, 0.32);
+  padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.alum-hero-glow {
+  position: absolute;
+  inset: -45% -8% auto 40%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 62%);
+  pointer-events: none;
+}
+
+.alum-hero-copy {
+  position: relative;
+  z-index: 1;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.3rem, 2.2vw, 1.65rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f8fbff;
+  }
+
+  p:not(.alum-kicker) {
+    margin: 0.4rem 0 0;
+    color: #9bb0c9;
+    font-size: 0.88rem;
+    max-width: 40rem;
+  }
+}
+
+.alum-btn-primary {
+  position: relative;
+  z-index: 1;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 8px 18px rgba(14, 165, 233, 0.28);
+}
+
+.alum-toolbar {
+  border-radius: 16px !important;
+  border: 1px solid var(--alum-border) !important;
+  background:
+    linear-gradient(120deg, rgba(56, 189, 248, 0.06), transparent 45%),
+    rgba(10, 24, 46, 0.55) !important;
+  padding: 0.95rem 1.05rem !important;
+}
+
+.alum-toolbar-kicker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.alum-count-pill {
+  display: inline-flex !important;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0.15rem 0.7rem !important;
+  border-radius: 999px !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #bae6fd !important;
+  font-size: 0.78rem !important;
+}
+
+.lista-jornadas .page-head {
+  border-left: none;
 }

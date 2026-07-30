@@ -76,13 +76,13 @@ export interface ContratacionDto {
   supervisor?: string;
   idSupervisor?: string | null;
   numerojornadas?: number;
-  /** Cuántas jornadas se generan el mismo día calendario. */
+  /** @deprecated Preferir municipiosPlan[].jornadasPorDia. Solo legado sin plan. */
   jornadasPorDia?: number;
   /** Clases autogeneradas por jornada. */
   clasesPorJornada?: number;
   /** Intensidad horaria impresa en certificado; preferir horas del programa. @deprecated */
   horasPorClase?: number;
-  /** global | por_clase */
+  /** global | por_clase — fallback legado; preferir certificacionOrigen por origen. */
   tipoCertificado?: string;
   /** Programa de Jornadas de Capacitación para certificado global (encabezado/horas). */
   idProgramaCertificacion?: string;
@@ -98,9 +98,34 @@ export interface ContratacionDto {
   fechaInicJornadas?: string;
   /** Último día para programar jornadas (planificación). */
   fechaFinJornadas?: string;
+  /** Fallback legado; preferir certificacionOrigen. */
   numSesCert?: number;
   /** Programas del contrato para reparto equitativo al autogenerar clases. */
   idProgramas?: string[];
+  /** Orígenes habilitados: colegio, estamento, empresa, operativo. */
+  origenesAlumnos?: {
+    colegio?: boolean;
+    estamento?: boolean;
+    empresa?: boolean;
+    operativo?: boolean;
+  };
+  /** Certificación independiente por origen. */
+  certificacionOrigen?: {
+    colegio?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
+    estamento?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
+    empresa?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
+    operativo?: { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string };
+  };
+  /** Plan ordenado de municipios + jornadas (empresa u otros: 1 o varios). */
+  municipiosPlan?: Array<{
+    orden?: number;
+    codMunicipio?: string;
+    municipio?: string;
+    depto?: string;
+    numJornadas?: number;
+    /** Jornadas de este municipio el mismo día al generar. */
+    jornadasPorDia?: number;
+  }>;
   jornadasGeneradas?: boolean;
   /** Jornadas ya creadas en BD (informativo). */
   jornadasExistentes?: number;
@@ -139,12 +164,15 @@ export interface AvanceContratoResumenDto {
 export interface AvanceContratoAlumnoDto {
   numDoc: number;
   nombreCompleto: string;
+  origenJornadaCap?: string;
   clasesAsistidas: number;
   certificado: boolean;
   certificadosEmitidos: number;
   codigosCertificado: string[];
   cumplioSesiones: boolean;
   faltanSesiones: number;
+  numSesCert?: number;
+  tipoCertificado?: string;
 }
 
 export interface AvanceContratoDto {
@@ -232,6 +260,14 @@ export interface InformeDashboardDto {
     porOcupacion?: InformeDashboardChartItem[];
     porDiscapacidad?: InformeDashboardChartItem[];
     porMultiCulturalidad?: InformeDashboardChartItem[];
+    porOrigenJornada?: InformeDashboardChartItem[];
+    porTipoInstitucion?: InformeDashboardChartItem[];
+    porColegio?: InformeDashboardChartItem[];
+    porGradoColegio?: InformeDashboardChartItem[];
+    porEstamento?: InformeDashboardChartItem[];
+    porCargoEstamento?: InformeDashboardChartItem[];
+    porDependenciaEstamento?: InformeDashboardChartItem[];
+    porEmpresa?: InformeDashboardChartItem[];
   };
   caracterizacionPoblacion?: {
     total: number;
@@ -244,6 +280,14 @@ export interface InformeDashboardDto {
     porOcupacion: InformeDashboardChartItem[];
     porDiscapacidad: InformeDashboardChartItem[];
     porMultiCulturalidad: InformeDashboardChartItem[];
+    porOrigenJornada?: InformeDashboardChartItem[];
+    porTipoInstitucion?: InformeDashboardChartItem[];
+    porColegio?: InformeDashboardChartItem[];
+    porGradoColegio?: InformeDashboardChartItem[];
+    porEstamento?: InformeDashboardChartItem[];
+    porCargoEstamento?: InformeDashboardChartItem[];
+    porDependenciaEstamento?: InformeDashboardChartItem[];
+    porEmpresa?: InformeDashboardChartItem[];
   };
   porJornada: Array<{
     _id: string;
@@ -255,6 +299,32 @@ export interface InformeDashboardDto {
     alumnosCertificados: number;
     numProgramas?: number;
     programas?: string[];
+    charts?: {
+      clasesPorEstado?: InformeDashboardChartItem[];
+      certificacionAlumnos?: InformeDashboardChartItem[];
+      alumnosPorPrograma?: InformeDashboardChartItem[];
+      clasesPorInstructor?: InformeDashboardChartItem[];
+      porEdad?: InformeDashboardChartItem[];
+      porGenero?: InformeDashboardChartItem[];
+      porEstadoCivil?: InformeDashboardChartItem[];
+      porEstrato?: InformeDashboardChartItem[];
+      porRegimenSalud?: InformeDashboardChartItem[];
+      porNivelFormacion?: InformeDashboardChartItem[];
+      porOcupacion?: InformeDashboardChartItem[];
+      porDiscapacidad?: InformeDashboardChartItem[];
+      porMultiCulturalidad?: InformeDashboardChartItem[];
+      porOrigenJornada?: InformeDashboardChartItem[];
+      porTipoInstitucion?: InformeDashboardChartItem[];
+      porColegio?: InformeDashboardChartItem[];
+      porGradoColegio?: InformeDashboardChartItem[];
+      porEstamento?: InformeDashboardChartItem[];
+      porCargoEstamento?: InformeDashboardChartItem[];
+      porDependenciaEstamento?: InformeDashboardChartItem[];
+      porEmpresa?: InformeDashboardChartItem[];
+    };
+    caracterizacionPoblacion?: {
+      total: number;
+    };
     clases: InformeDashboardClase[];
   }>;
   porClase: InformeDashboardClase[];
@@ -1071,9 +1141,10 @@ export class JornadaCapService {
     return this.http.get<any>(`${this.base}/alumnos/doc/${encodeURIComponent(formatNumDoc(numDoc))}`);
   }
 
-  buscarAlumnos(q: string, limit = 12) {
+  buscarAlumnos(q: string, limit = 12, origenJornadaCap?: string) {
     let params = new HttpParams().set('limit', String(limit));
     if (q) params = params.set('q', q);
+    if (origenJornadaCap) params = params.set('origenJornadaCap', origenJornadaCap);
     return this.http.get<AlumnoListItem[]>(`${this.base}/alumnos`, { params });
   }
 

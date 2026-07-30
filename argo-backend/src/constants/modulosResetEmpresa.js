@@ -23,7 +23,7 @@ const MODULOS_RESET = [
   {
     id: 'contable',
     etiqueta: 'Contable y caja',
-    descripcion: 'Ingresos, egresos, sesiones y cierres de caja, clientes de facturación y documentos electrónicos.',
+    descripcion: 'Ingresos, egresos, sesiones y cierres de caja, clientes/terceros de facturación, FE y pagos en línea.',
     colecciones: [
       'ingresos',
       'egresos',
@@ -31,8 +31,10 @@ const MODULOS_RESET = [
       'cajaCierresGenerales',
       'cajaDescuadres',
       'clientesFacturacion',
+      'tercerosCaja',
       'facturasElectronicas',
       'notasCreditoElectronicas',
+      'pagosEnLineaIntents',
     ],
     advertencias: [
       'Si conserva Académico, las matrículas pueden mostrar saldos desactualizados hasta registrar pagos de nuevo.',
@@ -42,7 +44,7 @@ const MODULOS_RESET = [
     id: 'programacion_cea',
     etiqueta: 'Programación CEA y jornadas',
     descripcion:
-      'Clases CEA, jornadas de capacitación con empresas, contratos de contratación, supervisores y temarios por programa.',
+      'Clases CEA, jornadas de capacitación con empresas, contratos de contratación, supervisores, temarios y registros web pendientes.',
     colecciones: [
       'clasesProgramadasCea',
       'inscripcionesClaseCea',
@@ -52,6 +54,7 @@ const MODULOS_RESET = [
       'asisClasJorCap',
       'supervisores',
       'temasProgramaCea',
+      'registroJornadaPendiente',
     ],
   },
   {
@@ -91,7 +94,7 @@ const MODULOS_RESET = [
   {
     id: 'rrhh',
     etiqueta: 'RRHH y nómina',
-    descripcion: 'Empleados, contratos laborales, documentos del personal y liquidaciones de nómina.',
+    descripcion: 'Empleados, contratos laborales, documentos del personal, liquidaciones de nómina y evaluaciones de desempeño.',
     colecciones: [
       'empleados',
       'contratos',
@@ -99,6 +102,9 @@ const MODULOS_RESET = [
       'periodosNomina',
       'novedadesNomina',
       'liquidacionesNomina',
+      'competencias_desempeno',
+      'empleado_anotaciones',
+      'empleado_evaluaciones',
     ],
     advertencias: [
       'Los usuarios del ERP conservan su vínculo con empleados eliminados hasta que resetee Usuarios del personal.',
@@ -119,17 +125,25 @@ const MODULOS_RESET = [
   {
     id: 'aula_virtual',
     etiqueta: 'Aula virtual',
-    descripcion: 'Configuración de cursos virtuales, progreso de alumnos, inscripciones a clases y cuentas del portal.',
+    descripcion: 'Configuración de cursos virtuales, progreso, portal, foro y chat.',
     colecciones: [
       'capacitacionVirtualConfig',
       'progresoVirtualCurso',
       'inscripcionClase',
       'usuariosPortal',
       'registroPortalPendiente',
+      'mensajeforos',
+      'mensajechats',
     ],
     advertencias: [
       'Las categorías del catálogo virtual (Configuración → Catálogos) se conservan.',
     ],
+  },
+  {
+    id: 'sitio_web',
+    etiqueta: 'Sitio web',
+    descripcion: 'Entradas del blog del sitio público.',
+    colecciones: ['blogPosts'],
   },
   {
     id: 'usuarios_personal',

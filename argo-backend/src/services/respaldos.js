@@ -22,7 +22,7 @@ const { EJSON } = mongoose.mongo.BSON;
 const BACKUP_DIR = path.join(__dirname, '..', '..', process.env.BACKUP_DIR || 'backups');
 const CLAVE_CONFIG = 'respaldos';
 const FORMATO = 'argo-backup';
-const VERSION = 1;
+const VERSION = 2;
 const BATCH_INSERT = 500;
 /** Sufijo de colecciones temporales durante restauración (no pisan datos hasta el swap final). */
 const STAGING_SUFFIX = '__argo_restore_staging';
@@ -89,8 +89,21 @@ async function sha256Archivo(ruta) {
   return hash.digest('hex');
 }
 
+/**
+ * Asegura que todos los modelos estén registrados antes de recrear índices
+ * (algunos solo se cargan al usar una ruta concreta).
+ */
+function cargarTodosLosModelos() {
+  const modelsDir = path.join(__dirname, '..', 'models');
+  for (const file of fs.readdirSync(modelsDir)) {
+    if (!file.endsWith('.js')) continue;
+    require(path.join(modelsDir, file));
+  }
+}
+
 /** Recrea los índices de todos los modelos (se pierden al eliminar colecciones). */
 async function recrearIndices() {
+  cargarTodosLosModelos();
   for (const nombre of mongoose.modelNames()) {
     await mongoose
       .model(nombre)
@@ -99,12 +112,33 @@ async function recrearIndices() {
   }
 }
 
+function esColeccionSistemaOTemporal(nombre) {
+  const n = String(nombre || '');
+  return (
+    n.startsWith('system.') ||
+    n.endsWith(STAGING_SUFFIX) ||
+    n.includes('__argo_restore') ||
+    n.includes('__staging')
+  );
+}
+
+/** Inventario de colecciones conocidas por modelos (incluye vacías aún no creadas en Mongo). */
+function inventarioColeccionesModelos() {
+  cargarTodosLosModelos();
+  const set = new Set();
+  for (const nombre of mongoose.modelNames()) {
+    const col = mongoose.model(nombre)?.collection?.name;
+    if (col && !esColeccionSistemaOTemporal(col)) set.add(col);
+  }
+  return [...set].sort();
+}
+
 async function coleccionesApp() {
   const db = mongoose.connection.db;
   const cols = await db.listCollections().toArray();
   return cols
     .map((c) => c.name)
-    .filter((n) => !n.startsWith('system.'))
+    .filter((n) => !esColeccionSistemaOTemporal(n))
     .sort();
 }
 
@@ -201,6 +235,18 @@ async function crearRespaldo({
         }
       : null;
     const colecciones = await exportarColecciones(path.join(dirTrabajo, 'db'), reportar);
+    const modelosConocidos = inventarioColeccionesModelos();
+    const exportadas = new Set(colecciones.map((c) => c.nombre));
+    // Colecciones de modelo aún sin documentos en Mongo: se incluyen vacías para restauración íntegra.
+    for (const nombre of modelosConocidos) {
+      if (exportadas.has(nombre)) continue;
+      const rutaArchivo = path.join(dirTrabajo, 'db', `${nombre}.jsonl`);
+      await fs.promises.writeFile(rutaArchivo, '', 'utf8');
+      colecciones.push({ nombre, docs: 0 });
+      exportadas.add(nombre);
+    }
+    colecciones.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
     if (reportarProgreso) progreso.fase(etiqueta('comprimiendo el archivo…'), { total: 0 });
     const manifest = {
       formato: FORMATO,
@@ -212,6 +258,7 @@ async function crearRespaldo({
       baseDatos: mongoose.connection.name,
       colecciones,
       totalDocs: colecciones.reduce((s, c) => s + c.docs, 0),
+      modelosConocidos: modelosConocidos.length,
     };
     await fs.promises.writeFile(
       path.join(dirTrabajo, 'manifest.json'),
@@ -529,6 +576,13 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
     await initRolesSistema();
     limpiarCache();
 
+    // Verifica que todas las colecciones del manifiesto quedaron presentes.
+    const actuales = new Set(await coleccionesApp());
+    const faltantes = colecciones.map((c) => c.nombre).filter((n) => !actuales.has(n));
+    if (faltantes.length) {
+      console.warn(`[ARGO respaldos] Tras restaurar faltan colecciones: ${faltantes.join(', ')}`);
+    }
+
     const docsRestaurados = colecciones.reduce((s, c) => s + c.docs, 0);
     progreso.finalizar('ok', `Restauración completada: ${docsRestaurados} documentos y ${archivosRestaurados} archivos.`);
     return {
@@ -542,6 +596,7 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
       docsRestaurados,
       archivosRestaurados,
       respaldoSeguridad: respaldoSeguridad?.archivo || null,
+      coleccionesFaltantes: faltantes,
     };
   } catch (err) {
     progreso.finalizar('error', err.message || 'La restauración falló');
@@ -586,6 +641,8 @@ async function actualizarConfigRespaldos(payload = {}) {
 module.exports = {
   BACKUP_DIR,
   recrearIndices,
+  cargarTodosLosModelos,
+  inventarioColeccionesModelos,
   crearRespaldo,
   listarRespaldos,
   eliminarRespaldo,

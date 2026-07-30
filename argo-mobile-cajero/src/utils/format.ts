@@ -46,3 +46,22 @@ export function inicialesAlumno(parts: {
 export function mayusculasNombre(v: string): string {
   return v.trim().toUpperCase().replace(/\s+/g, ' ');
 }
+
+/** Mayúsculas al escribir (sin trim, para no cortar espacios a mitad de frase). */
+export function aMayusculas(val?: string | null): string {
+  if (val == null || val === '') return '';
+  return String(val).toUpperCase();
+}
+
+/** Campos de ficha alumno que no se fuerzan a mayúsculas (códigos, fechas, dígitos). */
+export const CAMPOS_FORMULARIO_SIN_MAYUSCULAS = new Set([
+  'fechaNac',
+  'numDoc',
+  'celular',
+  'alertaPagoFrecuencia',
+  'alertaPago',
+  'empresaId',
+  'urlFoto',
+  'urlCedula',
+]);
+

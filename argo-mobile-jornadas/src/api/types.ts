@@ -201,11 +201,21 @@ export interface ClaseJornada {
   codContrato?: string;
   contratoLabel?: string;
   municipioJornada?: string;
+  deptoJornada?: string;
+  codMunicipioJornada?: string;
   direccionJornada?: string;
   urlforo?: string;
   indiceClaseEnJornada?: number;
   /** Cantidad de alumnos inscritos en la clase. */
   alumnosInscritos?: number;
+  clienteNombre?: string;
+  idClienteFacturacion?: string | null;
+  origenesAlumnos?: {
+    colegio?: boolean;
+    estamento?: boolean;
+    empresa?: boolean;
+    operativo?: boolean;
+  } | null;
 }
 
 export interface ProgramaJornada {
@@ -237,6 +247,8 @@ export interface ProgresoCert {
   numSesCert: number;
   cumplio: boolean;
   faltan: number;
+  origen?: string;
+  tipoCertificado?: string;
   certificado?: { _id?: string; codigoCert?: string } | null;
 }
 

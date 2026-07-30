@@ -14,8 +14,9 @@ export function setUnauthorizedHandler(fn: UnauthorizedHandler | null): void {
   onUnauthorized = fn;
 }
 
-function notifyUnauthorized(json: unknown, status: number, authUsed: boolean): void {
-  if (status !== 401 || !onUnauthorized || !authUsed) return;
+function notifyUnauthorized(json: unknown, status: number, hadBearerToken: boolean): void {
+  // Solo cerrar sesión si realmente se envió JWT (evita carrera post-login sin Bearer).
+  if (status !== 401 || !onUnauthorized || !hadBearerToken) return;
   const body = json as { message?: string; code?: string } | null;
   onUnauthorized(body?.message);
 }
@@ -48,9 +49,11 @@ export async function apiFetch<T>(
     'X-ARGO-Cliente': CLIENTE_JORNADAS,
     ...(opts?.headers as Record<string, string>),
   };
-  if (opts?.auth !== false) {
-    const t = tokenGetter();
-    if (t) headers.Authorization = `Bearer ${t}`;
+  const wantsAuth = opts?.auth !== false;
+  let bearer: string | null = null;
+  if (wantsAuth) {
+    bearer = tokenGetter();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
   }
 
   const ctrl = new AbortController();
@@ -80,7 +83,7 @@ export async function apiFetch<T>(
     }
   }
   if (!res.ok) {
-    notifyUnauthorized(json, res.status, opts?.auth !== false);
+    notifyUnauthorized(json, res.status, !!bearer);
     const body = json as { message?: string; codigo?: string; sesiones?: number; numSesCert?: number; faltan?: number; nombreAlumno?: string };
     const err = new Error(body?.message ?? `${res.status} ${res.statusText}`) as Error & {
       status?: number;
@@ -104,9 +107,11 @@ export async function apiPostForm<T>(
     Accept: 'application/json',
     'X-ARGO-Cliente': CLIENTE_JORNADAS,
   };
-  if (opts?.auth !== false) {
-    const t = tokenGetter();
-    if (t) headers.Authorization = `Bearer ${t}`;
+  const wantsAuth = opts?.auth !== false;
+  let bearer: string | null = null;
+  if (wantsAuth) {
+    bearer = tokenGetter();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
   }
 
   const ctrl = new AbortController();
@@ -136,7 +141,7 @@ export async function apiPostForm<T>(
     }
   }
   if (!res.ok) {
-    notifyUnauthorized(json, res.status, opts?.auth !== false);
+    notifyUnauthorized(json, res.status, !!bearer);
     throw new Error((json as { message?: string })?.message ?? `${res.status}`);
   }
   return json as T;
@@ -153,9 +158,11 @@ export async function apiFetchText(
     'X-ARGO-Cliente': CLIENTE_JORNADAS,
     ...(opts?.headers as Record<string, string>),
   };
-  if (opts?.auth !== false) {
-    const t = tokenGetter();
-    if (t) headers.Authorization = `Bearer ${t}`;
+  const wantsAuth = opts?.auth !== false;
+  let bearer: string | null = null;
+  if (wantsAuth) {
+    bearer = tokenGetter();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
   }
 
   const ctrl = new AbortController();
@@ -184,7 +191,7 @@ export async function apiFetchText(
     } catch {
       if (text.trim()) msg = text.slice(0, 200);
     }
-    notifyUnauthorized(parsed, res.status, opts?.auth !== false);
+    notifyUnauthorized(parsed, res.status, !!bearer);
     throw new Error(msg);
   }
   return text;

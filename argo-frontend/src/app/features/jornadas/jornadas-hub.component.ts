@@ -209,6 +209,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   tab = signal<Tab>('contratos');
   vistaJornadas = signal<VistaAgenda>('lista');
   vistaClases = signal<VistaAgenda>('lista');
+  /** Filtros de la ficha Jornadas (lista y calendario). */
+  filtroJornadaMunicipio = signal('');
+  filtroJornadaFecha = signal('');
+  filtroJornadaEstado = signal('');
   calMes = signal(new Date().getMonth());
   calAnio = signal(new Date().getFullYear());
   semanaInicio = signal(inicioSemana(new Date()));
@@ -492,7 +496,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   tituloMesCal = computed(() => fmtMesAnio(this.calAnio(), this.calMes()));
   calCeldas = computed((): CeldaMes[] => celdasMes(this.calAnio(), this.calMes()));
   jornadasPorDia = computed(() =>
-    agruparPorFecha(this.jornadasCalendario(), (j) => ymdCalendario(j.fechaProgramacion)),
+    agruparPorFecha(this.jornadasCalendarioFiltradas(), (j) => ymdCalendario(j.fechaProgramacion)),
   );
   tituloSemanaCal = computed(() => fmtRangoSemana(this.semanaInicio()));
   diasSemanaClases = computed((): DiaSemana[] => diasSemana(this.semanaInicio()));
@@ -543,7 +547,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const keysMes = new Set(
       this.calCeldas().filter((c) => !c.otroMes && c.key).map((c) => c.key),
     );
-    return this.jornadasCalendario().filter((j) => keysMes.has(ymdCalendario(j.fechaProgramacion)));
+    return this.jornadasCalendarioFiltradas().filter((j) =>
+      keysMes.has(ymdCalendario(j.fechaProgramacion)),
+    );
   });
   jornadasMesResumen = computed(() => {
     const items = this.jornadasMesActual();
@@ -558,6 +564,62 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     return { total: items.length, inactivo, proceso, finalizado };
   });
+
+  /** Coincide municipio / fecha / estado de la ficha Jornadas. */
+  private jornadaPasaFiltrosFicha(j: JornadaCapDto): boolean {
+    const muni = this.filtroJornadaMunicipio().trim().toLowerCase();
+    if (muni && String(j.municipio || '').trim().toLowerCase() !== muni) return false;
+    const fecha = this.filtroJornadaFecha().trim();
+    if (fecha && ymdCalendario(j.fechaProgramacion) !== fecha) return false;
+    const est = this.filtroJornadaEstado().trim().toUpperCase();
+    if (est && String(j.estado || '').trim().toUpperCase() !== est) return false;
+    return true;
+  }
+
+  jornadasCalendarioFiltradas = computed(() =>
+    this.jornadasCalendario().filter((j) => this.jornadaPasaFiltrosFicha(j)),
+  );
+
+  jornadasListaFiltradas = computed(() =>
+    this.jornadas().filter((j) => this.jornadaPasaFiltrosFicha(j)),
+  );
+
+  /** Total de jornadas cargadas (sin filtro de municipio/fecha/estado). */
+  totalJornadasExistentes = computed(() =>
+    this.vistaJornadas() === 'calendario'
+      ? this.jornadasCalendario().length
+      : this.jornadas().length,
+  );
+
+  totalJornadasFiltradas = computed(() =>
+    this.vistaJornadas() === 'calendario'
+      ? this.jornadasCalendarioFiltradas().length
+      : this.jornadasListaFiltradas().length,
+  );
+
+  municipiosFiltroJornadas = computed(() => {
+    const src =
+      this.vistaJornadas() === 'calendario' ? this.jornadasCalendario() : this.jornadas();
+    const set = new Set<string>();
+    for (const j of src) {
+      const m = String(j.municipio || '').trim();
+      if (m) set.add(m);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  });
+
+  limpiarFiltrosJornadas(): void {
+    this.filtroJornadaMunicipio.set('');
+    this.filtroJornadaFecha.set('');
+    this.filtroJornadaEstado.set('');
+  }
+
+  hayFiltrosJornadasActivos = computed(
+    () =>
+      !!this.filtroJornadaMunicipio().trim() ||
+      !!this.filtroJornadaFecha().trim() ||
+      !!this.filtroJornadaEstado().trim(),
+  );
   ahoraCalTopPct = computed(() => {
     this.diasSemanaClases();
     return ahoraLineaTopPct(new Date());
@@ -796,6 +858,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   alumnoBusquedaOpen = signal(false);
   alumnoBusquedaLoading = signal(false);
   alumnoBusquedaResults = signal<AlumnoListItem[]>([]);
+  /** Filtro de origen al buscar/inscribir (según contrato). */
+  origenFiltroAlumno = signal<'colegio' | 'estamento' | 'empresa' | 'operativo'>('operativo');
   alumnosMatricular = signal<AlumnoListItem[]>([]);
   /** Alumnos ya matriculados al programa (modo editar) con flag de asistencia */
   inscritos = signal<
@@ -941,7 +1005,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         distinctUntilChanged(),
         switchMap((q) => {
           this.alumnoBusquedaLoading.set(true);
-          return this.jornadaSvc.buscarAlumnos(q, 12);
+          return this.jornadaSvc.buscarAlumnos(q, 12, this.origenFiltroAlumno());
         }),
       )
       .subscribe({
@@ -1077,6 +1141,19 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       incluiDom: false,
       incluiFest: false,
       idProgramas: [],
+      origenesAlumnos: {
+        colegio: false,
+        estamento: false,
+        empresa: false,
+        operativo: true,
+      },
+      certificacionOrigen: {
+        colegio: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
+        estamento: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
+        empresa: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
+        operativo: { numSesCert: 1, tipoCertificado: 'global', idProgramaCertificacion: '' },
+      },
+      municipiosPlan: [],
     };
   }
 
@@ -1189,17 +1266,139 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return this.normalizarTipoCertificadoContrato(this.formContrato().tipoCertificado);
   }
 
+  /** Algún origen activo usa por_clase. */
   esCertPorClase(): boolean {
-    return this.contratoTipoCertificado() === 'por_clase';
+    return this.origenesActivosConCert().some((o) => this.certOrigenTipo(o.key) === 'por_clase');
   }
 
+  /** Algún origen activo usa global. */
   esCertGlobal(): boolean {
-    return this.contratoTipoCertificado() === 'global';
+    return this.origenesActivosConCert().some((o) => this.certOrigenTipo(o.key) === 'global');
   }
 
-  /** Campos de Programas del contrato: solo editables en modo por_clase. */
+  readonly origenesContratoUi: Array<{
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo';
+    label: string;
+  }> = [
+    { key: 'colegio', label: 'Institución educativa' },
+    { key: 'estamento', label: 'Estamento público' },
+    { key: 'empresa', label: 'Empresa' },
+    { key: 'operativo', label: 'Operativo / calle' },
+  ];
+
+  origenAlumnoActivo(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): boolean {
+    const o = this.formContrato().origenesAlumnos || {};
+    if (key === 'operativo') return o.operativo !== false;
+    return !!o[key];
+  }
+
+  origenesActivosConCert() {
+    return this.origenesContratoUi.filter((o) => this.origenAlumnoActivo(o.key));
+  }
+
+  private certOrigenRow(key: 'colegio' | 'estamento' | 'empresa' | 'operativo') {
+    const map = this.formContrato().certificacionOrigen || {};
+    const row =
+      (map as Record<
+        string,
+        { numSesCert?: number; tipoCertificado?: string; idProgramaCertificacion?: string }
+      >)[key] || {};
+    const fb = this.formContrato();
+    return {
+      numSesCert: Math.max(1, parseInt(String(row.numSesCert ?? fb.numSesCert ?? 1), 10) || 1),
+      tipoCertificado: this.normalizarTipoCertificadoContrato(
+        row.tipoCertificado ?? fb.tipoCertificado ?? 'global',
+      ),
+      idProgramaCertificacion: String(
+        row.idProgramaCertificacion !== undefined && row.idProgramaCertificacion !== null
+          ? row.idProgramaCertificacion
+          : fb.idProgramaCertificacion || '',
+      ).trim(),
+    };
+  }
+
+  certOrigenNumSes(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): number {
+    return this.certOrigenRow(key).numSesCert;
+  }
+
+  certOrigenTipo(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): 'global' | 'por_clase' {
+    return this.certOrigenRow(key).tipoCertificado;
+  }
+
+  certOrigenProgramaId(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): string {
+    return this.certOrigenRow(key).idProgramaCertificacion;
+  }
+
+  textoProgramaCertOrigen(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): string {
+    const v = this.certOrigenProgramaId(key);
+    if (!v) return '';
+    const opt = this.opcionesProgramaCertificacion().find((o) => String(o.value) === v);
+    return opt?.label || this.programaContratoLabel(v);
+  }
+
+  previewCertOrigen(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+  ): { encabezado: string; horas: string } | null {
+    if (this.certOrigenTipo(key) !== 'global') return null;
+    const id = this.certOrigenProgramaId(key);
+    if (!id) return null;
+    const p = this.buscarProgramaEnLista(id);
+    if (!p) {
+      return { encabezado: '(programa no encontrado en catálogo)', horas: '—' };
+    }
+    const encabezado = String(p.nomCert || p.descripcion || p.nombreProg || '').trim() || '—';
+    const h = p.horas != null && Number(p.horas) > 0 ? String(p.horas) : '—';
+    return { encabezado, horas: h };
+  }
+
+  patchCertOrigen(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+    field: 'numSesCert' | 'tipoCertificado' | 'idProgramaCertificacion',
+    value: unknown,
+  ): void {
+    this.formContrato.update((f) => {
+      const cur = {
+        colegio: { ...this.certOrigenRow('colegio') },
+        estamento: { ...this.certOrigenRow('estamento') },
+        empresa: { ...this.certOrigenRow('empresa') },
+        operativo: { ...this.certOrigenRow('operativo') },
+        ...(f.certificacionOrigen || {}),
+      };
+      const row = { ...cur[key] };
+      if (field === 'numSesCert') {
+        row.numSesCert = Math.max(1, parseInt(String(value), 10) || 1);
+      } else if (field === 'tipoCertificado') {
+        row.tipoCertificado = this.normalizarTipoCertificadoContrato(value);
+        if (row.tipoCertificado === 'por_clase') {
+          row.numSesCert = 1;
+          row.idProgramaCertificacion = '';
+        }
+      } else {
+        row.idProgramaCertificacion = String(value ?? '').trim();
+      }
+      cur[key] = row;
+      const next: ContratacionDto = { ...f, certificacionOrigen: cur };
+      next.numSesCert = cur.operativo.numSesCert;
+      next.tipoCertificado = cur.operativo.tipoCertificado;
+      next.idProgramaCertificacion = cur.operativo.idProgramaCertificacion || '';
+      return next;
+    });
+  }
+
+  onProgramaCertOrigenPick(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+    opt: EnumBuscarOption,
+  ): void {
+    this.patchCertOrigen(key, 'idProgramaCertificacion', String(opt?.value ?? '').trim());
+  }
+
+  onProgramaCertOrigenLimpiar(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): void {
+    this.patchCertOrigen(key, 'idProgramaCertificacion', '');
+  }
+
+  /** Campos de Programas del contrato: editables si algún origen activo es por_clase. */
   programasContratoDeshabilitados(): boolean {
-    return this.esCertGlobal();
+    return !this.esCertPorClase();
   }
 
   /** Programas editables (atajo positivo para la plantilla). */
@@ -1209,11 +1408,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   /** Atenúa la sección que no aplica al tipo actual. */
   programasSeccionInactiva(): boolean {
-    return this.esCertGlobal();
+    return !this.esCertPorClase();
   }
 
   certificadoSeccionInactiva(): boolean {
-    return this.esCertPorClase();
+    return !this.esCertGlobal();
   }
 
   /** Vista previa de encabezado/horas según el programa de certificación global. */
@@ -2559,6 +2758,23 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.alumnoBusqueda$.next((value ?? '').trim());
   }
 
+  origenesActivosContrato(): Array<{ key: 'colegio' | 'estamento' | 'empresa' | 'operativo'; label: string }> {
+    const o = this.contratoActivo()?.origenesAlumnos || this.formContrato().origenesAlumnos || {};
+    const all: Array<{ key: 'colegio' | 'estamento' | 'empresa' | 'operativo'; label: string }> = [
+      { key: 'colegio', label: 'Institución educativa' },
+      { key: 'estamento', label: 'Estamento' },
+      { key: 'empresa', label: 'Empresa' },
+      { key: 'operativo', label: 'Operativo' },
+    ];
+    const act = all.filter((x) => !!(o as any)?.[x.key]);
+    return act.length ? act : [{ key: 'operativo', label: 'Operativo' }];
+  }
+
+  setOrigenFiltroAlumno(key: 'colegio' | 'estamento' | 'empresa' | 'operativo') {
+    this.origenFiltroAlumno.set(key);
+    this.alumnoBusqueda$.next(this.alumnoBusqueda().trim());
+  }
+
   focusAlumnoBusqueda() {
     this.alumnoBusquedaOpen.set(true);
     if (!this.alumnoBusqueda().trim()) this.alumnoBusqueda$.next('');
@@ -2895,6 +3111,134 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       ciudad: m.nombreMunicipio,
       departamento: m.nombreDepto,
     }));
+  }
+
+  totalJornadasPlanContrato = computed(() => {
+    const plan = this.formContrato().municipiosPlan || [];
+    return plan.reduce((s, r) => s + Math.max(0, parseInt(String(r.numJornadas ?? 0), 10) || 0), 0);
+  });
+
+  tienePlanMunicipios = computed(() => (this.formContrato().municipiosPlan || []).length > 0);
+
+  /** Borrador para agregar fila al plan. */
+  planMuniTexto = signal('');
+  planMuniCod = signal('');
+  planMuniNombre = signal('');
+  planMuniDepto = signal('');
+  planMuniJornadas = signal(1);
+  planMuniPorDia = signal(1);
+
+  onMunicipioPlanPick(m: MunicipioDivipola): void {
+    this.planMuniTexto.set(m.label);
+    this.planMuniCod.set(m.codMunicipio);
+    this.planMuniNombre.set(m.nombreMunicipio);
+    this.planMuniDepto.set(m.nombreDepto);
+  }
+
+  onMunicipioPlanLimpiar(): void {
+    this.planMuniTexto.set('');
+    this.planMuniCod.set('');
+    this.planMuniNombre.set('');
+    this.planMuniDepto.set('');
+  }
+
+  private syncNumeroJornadasDesdePlan(
+    plan: NonNullable<ContratacionDto['municipiosPlan']>,
+  ): number {
+    const total = plan.reduce(
+      (s, r) => s + Math.max(0, parseInt(String(r.numJornadas ?? 0), 10) || 0),
+      0,
+    );
+    return total > 0 ? total : 1;
+  }
+
+  agregarMunicipioPlan(): void {
+    const cod = this.planMuniCod().trim();
+    const municipio = this.planMuniNombre().trim().toUpperCase();
+    if (!cod && !municipio) {
+      this.mostrarMsg('Seleccione un municipio del plan.', 'warn', 'Municipio');
+      return;
+    }
+    const planActual = this.formContrato().municipiosPlan || [];
+    if (cod && planActual.some((p) => String(p.codMunicipio || '') === cod)) {
+      this.mostrarMsg('Ese municipio ya está en el plan.', 'warn', 'Municipio duplicado');
+      return;
+    }
+    const num = Math.max(1, parseInt(String(this.planMuniJornadas()), 10) || 1);
+    const porDia = Math.max(1, Math.min(20, parseInt(String(this.planMuniPorDia()), 10) || 1));
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      plan.push({
+        orden: plan.length + 1,
+        codMunicipio: cod,
+        municipio,
+        depto: this.planMuniDepto().trim().toUpperCase(),
+        numJornadas: num,
+        jornadasPorDia: porDia,
+      });
+      const renum = plan.map((p, i) => ({ ...p, orden: i + 1 }));
+      return {
+        ...f,
+        municipiosPlan: renum,
+        numerojornadas: this.syncNumeroJornadasDesdePlan(renum),
+      };
+    });
+    this.onMunicipioPlanLimpiar();
+    this.planMuniJornadas.set(1);
+    this.planMuniPorDia.set(1);
+  }
+
+  quitarMunicipioPlan(idx: number): void {
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      if (idx < 0 || idx >= plan.length) return f;
+      plan.splice(idx, 1);
+      const renum = plan.map((p, i) => ({ ...p, orden: i + 1 }));
+      return {
+        ...f,
+        municipiosPlan: renum,
+        numerojornadas: renum.length ? this.syncNumeroJornadasDesdePlan(renum) : f.numerojornadas || 1,
+      };
+    });
+  }
+
+  moverMunicipioPlan(idx: number, dir: -1 | 1): void {
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      const j = idx + dir;
+      if (idx < 0 || j < 0 || idx >= plan.length || j >= plan.length) return f;
+      const tmp = plan[idx];
+      plan[idx] = plan[j];
+      plan[j] = tmp;
+      return {
+        ...f,
+        municipiosPlan: plan.map((p, i) => ({ ...p, orden: i + 1 })),
+      };
+    });
+  }
+
+  patchNumJornadasPlan(idx: number, raw: unknown): void {
+    const num = Math.max(1, parseInt(String(raw), 10) || 1);
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      if (!plan[idx]) return f;
+      plan[idx] = { ...plan[idx], numJornadas: num };
+      return {
+        ...f,
+        municipiosPlan: plan,
+        numerojornadas: this.syncNumeroJornadasDesdePlan(plan),
+      };
+    });
+  }
+
+  patchJornadasPorDiaPlan(idx: number, raw: unknown): void {
+    const porDia = Math.max(1, Math.min(20, parseInt(String(raw), 10) || 1));
+    this.formContrato.update((f) => {
+      const plan = [...(f.municipiosPlan || [])];
+      if (!plan[idx]) return f;
+      plan[idx] = { ...plan[idx], jornadasPorDia: porDia };
+      return { ...f, municipiosPlan: plan };
+    });
   }
 
   onMunicipioJornada(m: MunicipioDivipola) {
@@ -3870,9 +4214,18 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   labelTipoCertificado(tipo?: string): string {
-    return this.normalizarTipoCertificadoContrato(tipo) === 'por_clase'
-      ? 'Por clase'
-      : 'Global (contrato)';
+    return this.normalizarTipoCertificadoContrato(tipo) === 'por_clase' ? 'Por clase' : 'Global';
+  }
+
+  labelOrigenAlumno(origen?: string): string {
+    const t = String(origen || '')
+      .trim()
+      .toLowerCase();
+    if (t === 'colegio') return 'Inst. educativa';
+    if (t === 'estamento') return 'Estamento';
+    if (t === 'empresa') return 'Empresa';
+    if (t === 'operativo') return 'Operativo';
+    return origen || '—';
   }
 
   setVistaJornadas(v: VistaAgenda) {
@@ -4155,6 +4508,33 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const valor =
       k === 'tipoCertificado' ? this.normalizarTipoCertificadoContrato(v) : v;
     this.formContrato.update((f) => ({ ...f, [k]: valor }));
+  }
+
+  patchOrigenAlumnoContrato(
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo',
+    on: boolean,
+  ): void {
+    this.formContrato.update((f) => {
+      const cur = {
+        colegio: false,
+        estamento: false,
+        empresa: false,
+        operativo: true,
+        ...(f.origenesAlumnos || {}),
+        [key]: !!on,
+      };
+      if (!cur.colegio && !cur.estamento && !cur.empresa && !cur.operativo) {
+        cur.operativo = true;
+      }
+      const cert = {
+        colegio: { ...this.certOrigenRow('colegio') },
+        estamento: { ...this.certOrigenRow('estamento') },
+        empresa: { ...this.certOrigenRow('empresa') },
+        operativo: { ...this.certOrigenRow('operativo') },
+        ...(f.certificacionOrigen || {}),
+      };
+      return { ...f, origenesAlumnos: cur, certificacionOrigen: cert };
+    });
   }
 
   jornadaSeleccionadaOperable(): boolean {
@@ -5337,7 +5717,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   }
 
   nuevoAlumnoJornada() {
-    void this.router.navigate(['/app/jornadas/alumnos/nuevo']);
+    void this.router.navigate(['/app/jornadas/alumnos/nuevo'], {
+      queryParams: {
+        esJornadaCap: 'true',
+        origenJornadaCap: this.origenFiltroAlumno(),
+      },
+    });
   }
 
   listaAlumnosJornada() {

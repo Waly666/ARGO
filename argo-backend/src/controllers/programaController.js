@@ -86,6 +86,21 @@ function escRegexPrograma(s) {
   return String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** Siguiente codigoProg consecutivo para un idTipCap (CUR001, LIC003, …). */
+exports.siguienteCodigo = async (req, res, next) => {
+  try {
+    const raw = req.query.idTipCap;
+    if (raw == null || String(raw).trim() === '') {
+      return res.status(400).json({ message: 'idTipCap es obligatorio' });
+    }
+    const idTipCap = await idTipCapCanonico(raw);
+    const codigoProg = await generarCodigoProg(idTipCap || raw);
+    res.json({ codigoProg });
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.listar = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
@@ -173,7 +188,8 @@ exports.crear = async (req, res, next) => {
         esCapJornadaCapacitacion(String(body.idTipCap ?? '')) ||
         normalizarTipoCertificado(body.tipoCertificado) === 'jornada_capacitacion',
     });
-    if (!codigoProg) codigoProg = await generarCodigoProg(idTipCap);
+    // Consecutivo automático según tipo de capacitación (CUR/LIC/NCL/TEC/DIP/JOR).
+    codigoProg = await generarCodigoProg(idTipCap);
     const dup = await cat.programas.findOne({ codigoProg }).lean();
     if (dup) return res.status(409).json({ message: `Ya existe el código ${codigoProg}` });
 

@@ -10,7 +10,8 @@
     <button type="button" class="ghost mini" (click)="irDocumentos()">Ir a Documentos</button>
   </div>
 
-  <div class="card">
+  <div class="card alum-tab-card">
+    <p class="alum-kicker">Emisión · Elegibles</p>
     <h2>Elegibles para certificar</h2>
     <p class="hint">Solo programas educativos pagados y sin certificado. Las jornadas de capacitación se certifican automáticamente al cerrar la jornada.</p>
 
@@ -44,7 +45,8 @@
     </table>
   </div>
 
-  <div class="card" *ngIf="idLiquidacion()">
+  <div class="card alum-tab-card" *ngIf="idLiquidacion()">
+    <p class="alum-kicker">Emisión · Datos</p>
     <h2>Datos del Certificado</h2>
     <div class="elegible-info" *ngIf="elegibleSel() as es">
       <span class="badge info">{{ es.tipoFormatoCertLabel || labelTipo(es.tipoFormatoCert) }}</span>
@@ -107,7 +109,8 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card alum-tab-card">
+    <p class="alum-kicker">Histórico · Emitidos</p>
     <h2>Certificados Emitidos</h2>
     <div class="loading" *ngIf="loading()">Cargando…</div>
 

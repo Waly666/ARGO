@@ -4,13 +4,107 @@
   gap: 14px;
 }
 
+.alum-shell {
+  --alum-sky: #38bdf8;
+  --alum-border: rgba(125, 185, 255, 0.16);
+  position: relative;
+  isolation: isolate;
+  animation: alum-fade-in 0.4s ease both;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -0.4rem -0.2rem auto;
+    height: 12rem;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 65% 80% at 8% 0%, rgba(56, 189, 248, 0.14), transparent 55%),
+      radial-gradient(ellipse 50% 70% at 92% 8%, rgba(45, 212, 191, 0.08), transparent 50%);
+  }
+}
+
+.alum-shell--jornadas::before {
+  background:
+    radial-gradient(ellipse 65% 80% at 8% 0%, rgba(99, 102, 241, 0.16), transparent 55%),
+    radial-gradient(ellipse 50% 70% at 92% 8%, rgba(56, 189, 248, 0.1), transparent 50%);
+}
+
+@keyframes alum-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.alum-kicker {
+  margin: 0 0 0.15rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--alum-sky);
+  font-weight: 700;
+}
+
+.alum-shell--jornadas .alum-kicker {
+  color: #a5b4fc;
+}
+
+.alum-meta-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  align-items: center;
+}
+
+.alum-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 650;
+  color: #dbeafe;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+
+  &--code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: rgba(14, 165, 233, 0.18);
+    border-color: rgba(56, 189, 248, 0.4);
+  }
+}
+
 .page-head {
   display: flex;
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, rgba(10, 26, 58, 0.95), rgba(6, 16, 41, 0.95));
-  border: 1px solid var(--line);
+}
+
+.alum-hero.page-head {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(125, 185, 255, 0.28);
+  background:
+    linear-gradient(135deg, rgba(14, 36, 68, 0.96), rgba(10, 28, 54, 0.9)),
+    rgba(12, 28, 52, 0.88);
+  box-shadow: 0 16px 36px rgba(2, 10, 28, 0.32);
+  padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.alum-hero-glow {
+  position: absolute;
+  inset: -45% -8% auto 35%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 62%);
+  pointer-events: none;
 }
 
 .head-left {
@@ -20,6 +114,8 @@
   flex: 1;
   min-width: 0;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .back {
@@ -27,13 +123,22 @@
 }
 
 .title-block {
-  h1 { margin: 0; font-size: 1.35rem; }
-  p { color: var(--text-dim); margin: 4px 0 0; font-size: 0.88rem; }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.3rem, 2.2vw, 1.55rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f8fbff;
+  }
+  p {
+    color: #9bb0c9;
+    margin: 4px 0 0;
+    font-size: 0.88rem;
+  }
 }
 
 .meta .tipo-alumno-badge {
   display: inline-block;
-  margin-top: 4px;
   font-size: 0.68rem;
 }
 
@@ -61,30 +166,48 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 14px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1));
-  border: 1px solid rgba(78, 163, 255, 0.3);
-  border-radius: var(--btn-radius);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  padding: 0.75rem 1rem;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(45, 212, 191, 0.08)),
+    rgba(8, 18, 36, 0.45);
+  border: 1px solid rgba(125, 185, 255, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(2, 10, 28, 0.25);
 
   .avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #38bdf8, #0ea5e9 50%, #14b8a6);
     display: grid;
     place-items: center;
     color: #fff;
-    font-weight: 700;
+    font-weight: 800;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 8px 18px rgba(14, 165, 233, 0.35);
 
-    img { width: 100%; height: 100%; object-fit: cover; }
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 
-  .meta { display: flex; flex-direction: column; line-height: 1.25; }
-  .meta strong { color: var(--text); font-size: 0.95rem; }
-  .meta span { color: var(--text-soft); font-size: 0.8rem; }
+  .meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+  .meta strong {
+    color: #f8fbff;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .meta span {
+    color: var(--text-soft);
+    font-size: 0.8rem;
+  }
 }
 
 .empresa-badge-ficha {
@@ -98,8 +221,7 @@
   background: rgba(56, 189, 248, 0.12);
   color: #38bdf8;
   border: 1px solid rgba(56, 189, 248, 0.3);
-  margin-top: 3px;
-  max-width: 200px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -354,34 +476,39 @@
 
 .tabs {
   display: flex;
-  gap: 8px;
-  padding: 4px;
-  background: rgba(6, 16, 41, 0.6);
-  border: 1px solid var(--line-soft);
-  border-radius: 10px;
+  gap: 6px;
+  padding: 6px;
+  background:
+    linear-gradient(120deg, rgba(56, 189, 248, 0.07), transparent 50%),
+    rgba(8, 18, 36, 0.72);
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  border-radius: 14px;
   overflow-x: auto;
+  box-shadow: 0 10px 24px rgba(2, 10, 28, 0.2);
 
   .tab {
     background: transparent;
-    border: none;
-    border-radius: var(--btn-radius);
-    padding: 9px 16px;
-    color: var(--text-dim);
-    font-size: 0.84rem;
-    font-weight: 600;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    color: #9bb0c9;
+    font-size: 0.82rem;
+    font-weight: 700;
     white-space: nowrap;
     box-shadow: none;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 
     &:hover:not(:disabled) {
-      color: var(--text);
-      background: rgba(78, 163, 255, 0.1);
+      color: #eef6ff;
+      background: rgba(56, 189, 248, 0.1);
       filter: none;
     }
 
     &.active {
-      color: #fff;
-      background: linear-gradient(180deg, var(--btn-blue), var(--btn-blue-d));
-      box-shadow: 0 3px 12px rgba(59, 130, 246, 0.35);
+      color: #04111f;
+      background: linear-gradient(135deg, #7dd3fc, #38bdf8 55%, #22d3ee);
+      box-shadow: 0 6px 16px rgba(14, 165, 233, 0.32);
+      border-color: transparent;
     }
 
     &.disabled,
@@ -410,12 +537,30 @@
   }
 }
 
+.alum-shell--jornadas .tabs {
+  background:
+    linear-gradient(120deg, rgba(99, 102, 241, 0.1), transparent 50%),
+    rgba(8, 18, 36, 0.72);
+  border-color: rgba(165, 180, 252, 0.22);
+
+  .tab.active {
+    background: linear-gradient(135deg, #a5b4fc, #818cf8 55%, #6366f1);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+  }
+}
+
 .tab-body {
   min-height: 200px;
   position: relative;
+  border-radius: 16px;
 
   &.is-loading {
     min-height: 120px;
+  }
+
+  /* Aire visual común en todas las fichas hijas */
+  > *:first-child {
+    animation: alum-fade-in 0.35s ease both;
   }
 }
 

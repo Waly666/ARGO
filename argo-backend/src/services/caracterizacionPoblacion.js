@@ -1,6 +1,13 @@
 const DatosAlumno = require('../models/DatosAlumno');
 const { models } = require('../models/catalogos');
 const { calcularEdad, rangoEdadLabel, RANGOS_EDAD } = require('../utils/edad');
+const {
+  normalizarOrigenJornadaCap,
+  normalizarTipoInstitucionEducativa,
+  ORIGEN_JORNADA_LABELS,
+  TIPO_INSTITUCION_LABELS,
+  ORIGENES_JORNADA_CAP,
+} = require('../constants/origenJornadaCap');
 
 const CAMPOS_CATALOGO = [
   { key: 'estadoCivil', out: 'porEstadoCivil', model: models.estadoCivil, codeFields: ['idEstadoCivil', 'id', 'codigo'] },
@@ -92,8 +99,55 @@ function aLista(map, ordenFijo) {
   return rows;
 }
 
+function labelOrigenAlumno(a) {
+  const o = normalizarOrigenJornadaCap(a?.origenJornadaCap) || 'operativo';
+  return ORIGEN_JORNADA_LABELS[o] || o;
+}
+
+function labelTipoInstitucion(a) {
+  const t = normalizarTipoInstitucionEducativa(a?.tipoInstitucionEducativa);
+  if (!t) return 'Sin tipo';
+  return TIPO_INSTITUCION_LABELS[t] || t;
+}
+
+function labelColegio(a) {
+  const nom = String(a?.colegioNombre || '').trim();
+  if (!nom) return 'Sin institución';
+  const grado = parseInt(a?.gradoColegio, 10);
+  if (Number.isFinite(grado) && grado >= 1 && grado <= 11) {
+    return `${nom} · Grado ${grado}`;
+  }
+  const prog = String(a?.programaInstitucion || '').trim();
+  if (prog) return `${nom} · ${prog}`;
+  return nom;
+}
+
+function labelGrado(a) {
+  const grado = parseInt(a?.gradoColegio, 10);
+  if (Number.isFinite(grado) && grado >= 1 && grado <= 11) return `Grado ${grado}`;
+  const prog = String(a?.programaInstitucion || '').trim();
+  if (prog) return prog;
+  return 'Sin grado / programa';
+}
+
+function labelEstamento(a) {
+  return String(a?.estamentoNombre || '').trim() || 'Sin estamento';
+}
+
+function labelCargo(a) {
+  return String(a?.cargoEstamento || '').trim() || 'Sin cargo';
+}
+
+function labelDependencia(a) {
+  return String(a?.dependenciaEstamento || '').trim() || 'Sin dependencia';
+}
+
+function labelEmpresa(a) {
+  return String(a?.empresaNombre || '').trim() || 'Sin empresa';
+}
+
 /**
- * Agrega demografía a partir de documentos DatosAlumno ya cargados.
+ * Agrega demografía + origen de jornada a partir de documentos DatosAlumno ya cargados.
  * @param {Array<object>} docs
  * @returns {Promise<object>}
  */
@@ -112,6 +166,17 @@ async function caracterizarDesdeDocs(docs) {
   const buckets = {};
   for (const c of CAMPOS_CATALOGO) buckets[c.out] = new Map();
 
+  const porOrigenJornada = new Map(
+    ORIGENES_JORNADA_CAP.map((k) => [ORIGEN_JORNADA_LABELS[k], 0]),
+  );
+  const porTipoInstitucion = new Map();
+  const porColegio = new Map();
+  const porGradoColegio = new Map();
+  const porEstamento = new Map();
+  const porCargoEstamento = new Map();
+  const porDependenciaEstamento = new Map();
+  const porEmpresa = new Map();
+
   for (const a of list) {
     const edad = calcularEdad(a.fechaNac);
     contar(porEdad, rangoEdadLabel(edad));
@@ -119,7 +184,24 @@ async function caracterizarDesdeDocs(docs) {
     for (const c of CAMPOS_CATALOGO) {
       contar(buckets[c.out], labelDe(mapas[c.key], a[c.key]));
     }
+
+    const origen = normalizarOrigenJornadaCap(a.origenJornadaCap) || 'operativo';
+    contar(porOrigenJornada, labelOrigenAlumno(a));
+
+    if (origen === 'colegio') {
+      contar(porTipoInstitucion, labelTipoInstitucion(a));
+      contar(porColegio, labelColegio(a));
+      contar(porGradoColegio, labelGrado(a));
+    } else if (origen === 'estamento') {
+      contar(porEstamento, labelEstamento(a));
+      contar(porCargoEstamento, labelCargo(a));
+      contar(porDependenciaEstamento, labelDependencia(a));
+    } else if (origen === 'empresa') {
+      contar(porEmpresa, labelEmpresa(a));
+    }
   }
+
+  const ordenOrigen = ORIGENES_JORNADA_CAP.map((k) => ORIGEN_JORNADA_LABELS[k]);
 
   return {
     total: list.length,
@@ -132,6 +214,14 @@ async function caracterizarDesdeDocs(docs) {
     porOcupacion: aLista(buckets.porOcupacion),
     porDiscapacidad: aLista(buckets.porDiscapacidad),
     porMultiCulturalidad: aLista(buckets.porMultiCulturalidad),
+    porOrigenJornada: aLista(porOrigenJornada, ordenOrigen),
+    porTipoInstitucion: aLista(porTipoInstitucion),
+    porColegio: aLista(porColegio),
+    porGradoColegio: aLista(porGradoColegio),
+    porEstamento: aLista(porEstamento),
+    porCargoEstamento: aLista(porCargoEstamento),
+    porDependenciaEstamento: aLista(porDependenciaEstamento),
+    porEmpresa: aLista(porEmpresa),
   };
 }
 
@@ -147,7 +237,29 @@ async function caracterizarPoblacion(opts = {}) {
   }
   const docs = await DatosAlumno.find(filter)
     .select(
-      'fechaNac genero estadoCivil estrato regimenSalud nivelFormacion ocupacion discapacidad multiCulturalidad',
+      [
+        'fechaNac',
+        'genero',
+        'estadoCivil',
+        'estrato',
+        'regimenSalud',
+        'nivelFormacion',
+        'ocupacion',
+        'discapacidad',
+        'multiCulturalidad',
+        'origenJornadaCap',
+        'tipoInstitucionEducativa',
+        'colegioCodigo',
+        'colegioNombre',
+        'gradoColegio',
+        'programaInstitucion',
+        'estamentoId',
+        'estamentoNombre',
+        'cargoEstamento',
+        'dependenciaEstamento',
+        'empresaId',
+        'empresaNombre',
+      ].join(' '),
     )
     .lean();
   return caracterizarDesdeDocs(docs);

@@ -46,7 +46,7 @@ import {
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
 import {
-  partesEtiquetaComprobanteAlarma,
+  etiquetaCortaComprobanteAlarma,
   tituloComprobanteAlarma,
 } from '../../core/utils/comprobante-alarma.helpers';
 import { ymdLocal } from '../jornadas/jornada-calendario.util';
@@ -745,7 +745,7 @@ export class AlumnosListaComponent implements OnInit {
   etiquetaComprobanteIngreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteIngresoHoy;
     if (!m) return 'Ingreso';
-    return partesEtiquetaComprobanteAlarma(m, 'ingreso', (n) => this.fmtSaldo(n)).join(' · ');
+    return etiquetaCortaComprobanteAlarma(m, 'ingreso', (n) => this.fmtSaldo(n));
   }
 
   tituloComprobanteEgreso(r: AlumnoListItem): string {
@@ -757,7 +757,7 @@ export class AlumnosListaComponent implements OnInit {
   etiquetaComprobanteEgreso(r: AlumnoListItem): string {
     const m = r.indicadores?.comprobanteEgresoHoy;
     if (!m) return 'Egreso';
-    return partesEtiquetaComprobanteAlarma(m, 'egreso', (n) => this.fmtSaldo(n)).join(' · ');
+    return etiquetaCortaComprobanteAlarma(m, 'egreso', (n) => this.fmtSaldo(n));
   }
 
   tituloFacturaHoy(r: AlumnoListItem): string {

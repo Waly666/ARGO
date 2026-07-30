@@ -1,8 +1,9 @@
 <section class="datos card">
-  <header class="form-head">
+  <header class="form-head alum-form-hero">
     <div class="form-head-text">
-      <h2>{{ isEdit() ? 'Editar Alumno' : 'Nuevo Alumno' }}</h2>
-      <p>Complete identificación, datos personales, contacto y observaciones del alumno.</p>
+      <p class="alum-kicker">{{ isEdit() ? 'Edición' : 'Registro' }} · Datos principales</p>
+      <h2>{{ isEdit() ? 'Editar alumno' : 'Nuevo alumno' }}</h2>
+      <p>Identificación, datos personales, contacto, origen y observaciones.</p>
     </div>
     <div class="actions save-actions">
       <div
@@ -195,6 +196,7 @@
                 readonly
                 class="readonly"
               />
+              <p class="hint">Canal de alta (SISTEMA/WEB). No es el origen del participante en jornada.</p>
             </div>
             <div class="col-3">
               <argo-catalogo-enum-buscar
@@ -573,8 +575,213 @@
         </div>
       </div>
 
-      <!-- ── EMPRESA ── -->
-      <div class="form-section tone-amber">
+      <!-- ── ORIGEN EN JORNADA (≠ origen inscripción SISTEMA|WEB) ── -->
+      @if (esAlumnoJornada()) {
+        <div
+          class="form-section tone-indigo"
+          [class.campo-obligatorio-error]="campoObligatorioInvalido('origenJornadaCap')">
+          <div class="section-head">
+            <span class="section-icon ic-indigo">◎</span>
+            <div>
+              <h3>Origen del alumno en jornada *</h3>
+              <p>
+                Estudiante, estamento, empresa u operativo/calle. Distinto del origen de inscripción
+                (SISTEMA/WEB).
+              </p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="origen-jornada-chips" role="group" aria-label="Origen en jornada">
+              @for (o of origenesJornadaUi; track o.key) {
+                <button
+                  type="button"
+                  class="origen-jornada-chip"
+                  [class.active]="form().origenJornadaCap === o.key"
+                  (click)="setOrigenJornadaCap(o.key)">
+                  {{ o.label }}
+                </button>
+              }
+            </div>
+
+            @if (form().origenJornadaCap === 'colegio') {
+              <div class="row origen-jornada-campos">
+                <div class="col-2 col-tipo-institucion">
+                  <argo-catalogo-enum-buscar
+                    [class.campo-obligatorio-error]="campoObligatorioInvalido('tipoInstitucionEducativa')"
+                    label="Tipo *"
+                    placeholder="Tipo…"
+                    [textoInicial]="textoTipoInstitucion()"
+                    [modoCombo]="true"
+                    [remoto]="false"
+                    [minLength]="1"
+                    [opcionesLocales]="opcionesTipoInstitucion()"
+                    (seleccionado)="onTipoInstitucionPick($event)"
+                    (limpiado)="onTipoInstitucionLimpiar()"
+                  />
+                </div>
+                @if ((form().tipoInstitucionEducativa || 'colegio') === 'colegio') {
+                  <div class="col-8 col-colegio-buscar">
+                    <argo-catalogo-enum-buscar
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('colegioNombre')"
+                      label="Colegio *"
+                      placeholder="Escriba para buscar colegio (aparece municipio y departamento)…"
+                      [textoInicial]="form().colegioNombre || ''"
+                      [modoCombo]="true"
+                      [minLength]="1"
+                      [buscarRemoto]="buscarColegiosRemoto"
+                      (seleccionado)="onColegioPick($event)"
+                      (limpiado)="onColegioLimpiar()"
+                    />
+                    <p class="hint">
+                      @if (form().codMunicipio || form().munOrigen) {
+                        Filtra por el municipio de origen del alumno; escriba para refinar. Cada opción muestra municipio y departamento.
+                      } @else {
+                        Escriba al menos 2 letras del nombre del colegio. En el listado verá municipio y departamento.
+                      }
+                    </p>
+                  </div>
+                  <div class="col-2 col-grado-colegio">
+                    <argo-catalogo-enum-buscar
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('gradoColegio')"
+                      label="Grado *"
+                      placeholder="1–11…"
+                      [textoInicial]="textoGradoColegio()"
+                      [modoCombo]="true"
+                      [remoto]="false"
+                      [minLength]="1"
+                      [opcionesLocales]="opcionesGradoColegio()"
+                      (seleccionado)="onGradoColegioPick($event)"
+                      (limpiado)="onGradoColegioLimpiar()"
+                    />
+                  </div>
+                } @else {
+                  <div class="col-4">
+                    <argo-catalogo-enum-buscar
+                      label="Buscar en catálogo"
+                      placeholder="Opcional: buscar IES…"
+                      [textoInicial]="form().colegioNombre || ''"
+                      [modoCombo]="true"
+                      [minLength]="1"
+                      [buscarRemoto]="buscarColegiosRemoto"
+                      (seleccionado)="onColegioPick($event)"
+                      (limpiado)="onColegioLimpiar()"
+                    />
+                  </div>
+                  <div class="col-3">
+                    <label>Nombre de la institución *</label>
+                    <input
+                      type="text"
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('colegioNombre')"
+                      [ngModel]="form().colegioNombre"
+                      (ngModelChange)="patch('colegioNombre', $event)"
+                      placeholder="Nombre completo…"
+                    />
+                  </div>
+                  <div class="col-3">
+                    <label>Programa / carrera / semestre *</label>
+                    <input
+                      type="text"
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('programaInstitucion')"
+                      [ngModel]="form().programaInstitucion"
+                      (ngModelChange)="patch('programaInstitucion', $event)"
+                    />
+                  </div>
+                }
+              </div>
+            }
+
+            @if (form().origenJornadaCap === 'estamento') {
+              <div class="row origen-jornada-campos">
+                <div class="col-6">
+                  <argo-catalogo-enum-buscar
+                    [class.campo-obligatorio-error]="campoObligatorioInvalido('estamentoId')"
+                    label="Estamento público *"
+                    placeholder="Seleccione o escriba…"
+                    [textoInicial]="form().estamentoNombre || ''"
+                    [modoCombo]="true"
+                    [minLength]="1"
+                    [buscarRemoto]="buscarEstamentosRemoto"
+                    (seleccionado)="onEstamentoPick($event)"
+                    (limpiado)="onEstamentoLimpiar()"
+                  />
+                </div>
+                <div class="col-3">
+                  <label>Cargo *</label>
+                  <input
+                    type="text"
+                    [class.campo-obligatorio-error]="campoObligatorioInvalido('cargoEstamento')"
+                    [ngModel]="form().cargoEstamento"
+                    (ngModelChange)="patch('cargoEstamento', $event)"
+                  />
+                </div>
+                <div class="col-3">
+                  <label>Dependencia *</label>
+                  <input
+                    type="text"
+                    [class.campo-obligatorio-error]="campoObligatorioInvalido('dependenciaEstamento')"
+                    [ngModel]="form().dependenciaEstamento"
+                    (ngModelChange)="patch('dependenciaEstamento', $event)"
+                  />
+                </div>
+              </div>
+            }
+
+            @if (form().origenJornadaCap === 'empresa') {
+              <div class="row origen-jornada-campos">
+                <div class="col-12">
+                  <div
+                    class="empresa-field"
+                    [class.campo-obligatorio-error]="campoObligatorioInvalido('empresaId')">
+                    <label>Empresa del alumno *</label>
+                    <div class="empresa-input-wrap">
+                      <input
+                        type="text"
+                        class="empresa-input"
+                        placeholder="Escriba el nombre de la empresa para buscar…"
+                        [value]="empresaBusqueda()"
+                        (input)="buscarEmpresa($any($event.target).value)"
+                        (blur)="onEmpresaBlur()"
+                        autocomplete="off" />
+                      @if (empresaCargando()) {
+                        <span class="empresa-spinner">⏳</span>
+                      }
+                      @if (empresaBusqueda() && !empresaCargando()) {
+                        <button type="button" class="empresa-clear" (click)="limpiarEmpresa()" title="Limpiar empresa">✕</button>
+                      }
+                      @if (empresaDropdownOpen() && empresaSugerencias().length > 0) {
+                        <ul class="empresa-dropdown">
+                          @for (c of empresaSugerencias(); track c._id) {
+                            <li (mousedown)="seleccionarEmpresa(c)" tabindex="0" role="option">
+                              <span class="emp-nombre">{{ c.razonSocial || c.nombres || c.nombreComercial || '—' }}</span>
+                              <span class="emp-nit">{{ c.identificacion }}</span>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                    @if (form().empresaId) {
+                      <p class="empresa-seleccionada">
+                        <span class="emp-chip">🏢 {{ form().empresaNombre || empresaBusqueda() }}</span>
+                      </p>
+                    } @else {
+                      <p class="empresa-hint">Busque y elija la empresa a la que pertenece el alumno.</p>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (form().origenJornadaCap === 'operativo') {
+              <p class="hint origen-jornada-hint">
+                Operativo / calle: no requiere institución, estamento ni empresa.
+              </p>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── EMPRESA (solo alumnos regulares; en jornada va en origen empresa) ── -->
+      <div class="form-section tone-amber" *ngIf="!esAlumnoJornada()">
         <div class="section-head">
           <span class="section-icon ic-amber">🏢</span>
           <div>

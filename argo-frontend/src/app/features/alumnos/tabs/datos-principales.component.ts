@@ -17,7 +17,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, catchError, map, of } from 'rxjs';
 
 
 
@@ -25,7 +25,11 @@ import { AlumnoDto, AlumnoService } from '../../../core/services/alumno.service'
 
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
 
-import { CatalogoService } from '../../../core/services/catalogo.service';
+import {
+  CatalogoService,
+  ColegioDivipola,
+  EstamentoPublico,
+} from '../../../core/services/catalogo.service';
 
 import { ConfigRecibo, ConfigService } from '../../../core/services/config.service';
 
@@ -356,16 +360,87 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   fechaJornadaParaQr = computed(() => this.qpFechaJornada());
 
   /** Alta desde Jornadas Cap. (query esJornadaCap / tipoAlumno). */
-  private origenJornadaCap = signal(
+  private altaJornadaCap = signal(
     DatosPrincipalesComponent.esJornadaDesdeQuery(inject(ActivatedRoute).snapshot.queryParamMap),
   );
 
   esAlumnoJornada = computed(
     () =>
       this.modo() === 'jornadas' ||
-      this.origenJornadaCap() ||
+      this.altaJornadaCap() ||
       normalizarTipoAlumno(this.form().tipoAlumno) === TIPO_JORNADAS_CAPACITACION,
   );
+
+  /** Opciones de origen del participante (≠ origen inscripción SISTEMA|WEB). */
+  readonly origenesJornadaUi: Array<{
+    key: 'colegio' | 'estamento' | 'empresa' | 'operativo';
+    label: string;
+  }> = [
+    { key: 'colegio', label: 'Estudiante / institución educativa' },
+    { key: 'estamento', label: 'Estamento público' },
+    { key: 'empresa', label: 'Empresa' },
+    { key: 'operativo', label: 'Operativo / calle' },
+  ];
+
+  opcionesTipoInstitucion = (): EnumBuscarOption[] => [
+    { value: 'colegio', label: 'Colegio' },
+    { value: 'instituto', label: 'Instituto técnico' },
+    { value: 'universidad', label: 'Universidad' },
+  ];
+
+  opcionesGradoColegio = (): EnumBuscarOption[] =>
+    Array.from({ length: 11 }, (_, i) => {
+      const n = i + 1;
+      return { value: String(n), label: `Grado ${n}` };
+    });
+
+  textoOrigenJornadaCap = computed(() => {
+    const k = String(this.form().origenJornadaCap || '').trim();
+    return this.origenesJornadaUi.find((o) => o.key === k)?.label || '';
+  });
+
+  textoTipoInstitucion = computed(() => {
+    const k = String(this.form().tipoInstitucionEducativa || '').trim();
+    return this.opcionesTipoInstitucion().find((o) => o.value === k)?.label || '';
+  });
+
+  textoGradoColegio = computed(() => {
+    const g = this.form().gradoColegio;
+    if (g == null || !Number.isFinite(Number(g))) return '';
+    return `Grado ${g}`;
+  });
+
+  buscarColegiosRemoto = (q: string) => {
+    const cod = String(this.form().codMunicipio || this.form().munOrigen || '').trim();
+    return this.catSvc.buscarColegios(cod, q, 50).pipe(
+      map((rows: ColegioDivipola[]) =>
+        rows.map((r) => {
+          const nombre = String(r.nombreEstablecimiento || r.label || '').trim();
+          const muni = String(r.nombreMunicipio || '').trim();
+          const depto = String(r.nombreDepartamento || '').trim();
+          const ubi = r.hint || [muni, depto].filter(Boolean).join(' · ');
+          return {
+            value: r.codigoEstablecimiento,
+            label: nombre,
+            hint: ubi || undefined,
+          };
+        }),
+      ),
+      catchError(() => of([])),
+    );
+  };
+
+  buscarEstamentosRemoto = (q: string) => {
+    const cod = String(this.form().codMunicipio || this.form().munOrigen || '').trim();
+    return this.catSvc.buscarEstamentosPublicos(cod, q, 40).pipe(
+      map((rows: EstamentoPublico[]) =>
+        rows.map((r) => ({
+          value: r.idEstamento,
+          label: r.label || r.nombre,
+        })),
+      ),
+    );
+  };
 
   catValor = catValor;
 
@@ -379,6 +454,22 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     const flag = q.get('esJornadaCap');
     if (flag === 'true' || flag === '1') return true;
     return normalizarTipoAlumno(q.get('tipoAlumno')) === TIPO_JORNADAS_CAPACITACION;
+  }
+
+  /** Query `origen` / `origenJornadaCap` = participante jornada (no SISTEMA|WEB). */
+  private static normalizarOrigenJornadaQuery(raw: string | null): string {
+    const v = String(raw || '')
+      .trim()
+      .toLowerCase();
+    if (v === 'colegio' || v === 'estudiante' || v === 'institucion' || v === 'institución') {
+      return 'colegio';
+    }
+    if (v === 'estamento' || v === 'estamento_publico' || v === 'estamento-publico') {
+      return 'estamento';
+    }
+    if (v === 'empresa') return 'empresa';
+    if (v === 'operativo' || v === 'calle' || v === 'operativo_calle') return 'operativo';
+    return '';
   }
 
   constructor() {
@@ -415,14 +506,26 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((q) => {
       const esJ = DatosPrincipalesComponent.esJornadaDesdeQuery(q);
-      this.origenJornadaCap.set(esJ);
+      this.altaJornadaCap.set(esJ);
       this.qpCodContrato.set((q.get('codContrato') || q.get('contratoCod') || '').trim());
       this.qpIdContrato.set((q.get('contrato') || q.get('idContrato') || '').trim());
       this.qpFechaJornada.set((q.get('fechaJornada') || q.get('fecha') || '').trim());
       if (esJ && !this.isEdit()) {
-        this.form.update((f) => ({ ...f, tipoAlumno: TIPO_JORNADAS_CAPACITACION }));
+        const origenJ =
+          DatosPrincipalesComponent.normalizarOrigenJornadaQuery(
+            q.get('origenJornadaCap') || q.get('origen'),
+          ) || 'operativo';
+        this.form.update((f) => ({
+          ...f,
+          tipoAlumno: TIPO_JORNADAS_CAPACITACION,
+          origenJornadaCap: origenJ,
+        }));
         this.lineaBase.set(
-          this.firmaEstadoActual({ ...this.form(), tipoAlumno: TIPO_JORNADAS_CAPACITACION }),
+          this.firmaEstadoActual({
+            ...this.form(),
+            tipoAlumno: TIPO_JORNADAS_CAPACITACION,
+            origenJornadaCap: origenJ,
+          }),
         );
       }
     });
@@ -586,6 +689,102 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     // En ruta de jornadas el tipo queda fijo; en /app/alumnos se puede cambiar.
     if (this.modo() === 'jornadas') return;
     this.patch('tipoAlumno', normalizarTipoAlumno(undefined));
+    this.formDirty.set(true);
+  }
+
+  setOrigenJornadaCap(key: 'colegio' | 'estamento' | 'empresa' | 'operativo'): void {
+    this.limpiarCampoObligatorio('origenJornadaCap');
+    this.form.update((f) => ({
+      ...f,
+      origenJornadaCap: key,
+      ...(key !== 'colegio'
+        ? {
+            tipoInstitucionEducativa: null,
+            colegioCodigo: null,
+            colegioNombre: null,
+            gradoColegio: null,
+            programaInstitucion: null,
+          }
+        : {
+            tipoInstitucionEducativa: f.tipoInstitucionEducativa || 'colegio',
+          }),
+      ...(key !== 'estamento'
+        ? {
+            estamentoId: null,
+            estamentoNombre: null,
+            cargoEstamento: null,
+            dependenciaEstamento: null,
+          }
+        : {}),
+      ...(key !== 'empresa' ? { empresaId: null, empresaNombre: null } : {}),
+    }));
+    if (key !== 'empresa') {
+      this.empresaBusqueda.set('');
+      this.empresaSugerencias.set([]);
+      this.empresaDropdownOpen.set(false);
+    }
+    this.formDirty.set(true);
+  }
+
+  onTipoInstitucionPick(opt: EnumBuscarOption): void {
+    const tipo = String(opt.value || 'colegio');
+    this.form.update((f) => ({
+      ...f,
+      tipoInstitucionEducativa: tipo,
+      colegioCodigo: null,
+      colegioNombre: null,
+      gradoColegio: null,
+      programaInstitucion: null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onTipoInstitucionLimpiar(): void {
+    this.form.update((f) => ({
+      ...f,
+      tipoInstitucionEducativa: null,
+      colegioCodigo: null,
+      colegioNombre: null,
+      gradoColegio: null,
+      programaInstitucion: null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onColegioPick(opt: EnumBuscarOption): void {
+    this.form.update((f) => ({
+      ...f,
+      colegioCodigo: String(opt.value || '').trim() || null,
+      colegioNombre: String(opt.label || '').trim() || null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onColegioLimpiar(): void {
+    this.form.update((f) => ({ ...f, colegioCodigo: null, colegioNombre: null }));
+    this.formDirty.set(true);
+  }
+
+  onGradoColegioPick(opt: EnumBuscarOption): void {
+    const n = parseInt(String(opt.value), 10);
+    this.patch('gradoColegio', Number.isFinite(n) ? n : null);
+  }
+
+  onGradoColegioLimpiar(): void {
+    this.patch('gradoColegio', null);
+  }
+
+  onEstamentoPick(opt: EnumBuscarOption): void {
+    this.form.update((f) => ({
+      ...f,
+      estamentoId: String(opt.value || '').trim() || null,
+      estamentoNombre: String(opt.label || '').trim() || null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onEstamentoLimpiar(): void {
+    this.form.update((f) => ({ ...f, estamentoId: null, estamentoNombre: null }));
     this.formDirty.set(true);
   }
 
@@ -940,9 +1139,40 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       contacto,
     );
 
+    const jornadaOrigen: string[] = [];
+    if (this.esAlumnoJornada()) {
+      const oj = String(f.origenJornadaCap || '').trim();
+      falta(!oj, 'origenJornadaCap', 'origen en jornada', jornadaOrigen);
+      if (oj === 'colegio') {
+        const tipoInst = String(f.tipoInstitucionEducativa || '').trim() || 'colegio';
+        falta(!tipoInst, 'tipoInstitucionEducativa', 'tipo de institución', jornadaOrigen);
+        falta(vacio(f.colegioNombre), 'colegioNombre', 'institución educativa', jornadaOrigen);
+        if (tipoInst === 'colegio') {
+          const g = Number(f.gradoColegio);
+          falta(
+            !Number.isFinite(g) || g < 1 || g > 11,
+            'gradoColegio',
+            'grado (1–11)',
+            jornadaOrigen,
+          );
+        } else {
+          falta(vacio(f.programaInstitucion), 'programaInstitucion', 'programa / carrera', jornadaOrigen);
+        }
+      } else if (oj === 'estamento') {
+        falta(vacio(f.estamentoId) && vacio(f.estamentoNombre), 'estamentoId', 'estamento público', jornadaOrigen);
+        falta(vacio(f.cargoEstamento), 'cargoEstamento', 'cargo', jornadaOrigen);
+        falta(vacio(f.dependenciaEstamento), 'dependenciaEstamento', 'dependencia', jornadaOrigen);
+      } else if (oj === 'empresa') {
+        falta(vacio(f.empresaId), 'empresaId', 'empresa', jornadaOrigen);
+      }
+    }
+
     if (identificacion.length) faltantes.push({ seccion: 'Identificación', campos: identificacion });
     if (personales.length) faltantes.push({ seccion: 'Datos personales', campos: personales });
     if (contacto.length) faltantes.push({ seccion: 'Contacto y ubicación', campos: contacto });
+    if (jornadaOrigen.length) {
+      faltantes.push({ seccion: 'Origen en jornada', campos: jornadaOrigen });
+    }
     if (faltantes.length) {
       this.camposObligatoriosInvalidos.set(invalidos);
       return `Complete todos los campos obligatorios. ${faltantes
@@ -1248,6 +1478,30 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       alertaPagoFrecuencia: f.alertaPagoFrecuencia || '',
       alertaPago: f.alertaPago || '',
 
+      ...(esJornada
+        ? {
+            origenJornadaCap: f.origenJornadaCap || 'operativo',
+            ...(f.origenJornadaCap === 'colegio'
+              ? {
+                  tipoInstitucionEducativa: f.tipoInstitucionEducativa || 'colegio',
+                  colegioCodigo: f.colegioCodigo || null,
+                  colegioNombre: f.colegioNombre || null,
+                  ...(String(f.tipoInstitucionEducativa || 'colegio') === 'colegio'
+                    ? { gradoColegio: f.gradoColegio ?? null }
+                    : { programaInstitucion: f.programaInstitucion || null }),
+                }
+              : {}),
+            ...(f.origenJornadaCap === 'estamento'
+              ? {
+                  estamentoId: f.estamentoId || null,
+                  estamentoNombre: f.estamentoNombre || null,
+                  cargoEstamento: f.cargoEstamento || null,
+                  dependenciaEstamento: f.dependenciaEstamento || null,
+                }
+              : {}),
+          }
+        : {}),
+
     };
 
   }
@@ -1410,6 +1664,26 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       empresaId: raw['empresaId'] ? String(raw['empresaId']) : null,
       empresaNombre: raw['empresaNombre'] ? String(raw['empresaNombre']) : null,
 
+      origenJornadaCap: raw['origenJornadaCap']
+        ? String(raw['origenJornadaCap']).trim().toLowerCase()
+        : null,
+      tipoInstitucionEducativa: raw['tipoInstitucionEducativa']
+        ? String(raw['tipoInstitucionEducativa']).trim().toLowerCase()
+        : null,
+      colegioCodigo: raw['colegioCodigo'] ? String(raw['colegioCodigo']) : null,
+      colegioNombre: raw['colegioNombre'] ? String(raw['colegioNombre']) : null,
+      gradoColegio:
+        raw['gradoColegio'] != null && String(raw['gradoColegio']).trim() !== ''
+          ? Number(raw['gradoColegio'])
+          : null,
+      programaInstitucion: raw['programaInstitucion'] ? String(raw['programaInstitucion']) : null,
+      estamentoId: raw['estamentoId'] ? String(raw['estamentoId']) : null,
+      estamentoNombre: raw['estamentoNombre'] ? String(raw['estamentoNombre']) : null,
+      cargoEstamento: raw['cargoEstamento'] ? String(raw['cargoEstamento']) : null,
+      dependenciaEstamento: raw['dependenciaEstamento']
+        ? String(raw['dependenciaEstamento'])
+        : null,
+
       alertaPagoFrecuencia:
         raw['alertaPagoFrecuencia'] === 'quincenal' || raw['alertaPagoFrecuencia'] === 'mensual'
           ? raw['alertaPagoFrecuencia']
@@ -1426,12 +1700,30 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     const esJornada =
       this.modo() === 'jornadas' ||
       DatosPrincipalesComponent.esJornadaDesdeQuery(this.route.snapshot.queryParamMap);
+    const origenJ = esJornada
+      ? DatosPrincipalesComponent.normalizarOrigenJornadaQuery(
+          this.route.snapshot.queryParamMap.get('origenJornadaCap') ||
+            this.route.snapshot.queryParamMap.get('origen'),
+        ) || 'operativo'
+      : null;
 
     return {
 
       tipoAlumno: esJornada ? TIPO_JORNADAS_CAPACITACION : normalizarTipoAlumno(undefined),
 
       origen: ORIGEN_SISTEMA,
+
+      origenJornadaCap: origenJ,
+
+      tipoInstitucionEducativa: origenJ === 'colegio' ? 'colegio' : null,
+      colegioCodigo: null,
+      colegioNombre: null,
+      gradoColegio: null,
+      programaInstitucion: null,
+      estamentoId: null,
+      estamentoNombre: null,
+      cargoEstamento: null,
+      dependenciaEstamento: null,
 
       tipoDoc: '1',
 

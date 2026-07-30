@@ -141,9 +141,16 @@ async function crearContextoCertificadoContrato(idContratoRaw) {
     : [];
   const cfg = await obtenerConfigCertificado();
   const plantilla = await resolverPlantillaImpresion(cfg, tipoFormatoJornada);
+  const {
+    normalizarCertificacionOrigen,
+  } = require('../constants/origenJornadaCap');
   return {
     idContrato,
-    contrato,
+    contrato: {
+      ...contrato,
+      certificacionOrigen: normalizarCertificacionOrigen(contrato.certificacionOrigen, contrato),
+    },
+    /** Fallback legado; preferir configCertificacionParaOrigen por alumno. */
     numSesCert: Math.max(1, parseInt(contrato.numSesCert, 10) || 1),
     claseIds,
     cfg,
@@ -151,9 +158,21 @@ async function crearContextoCertificadoContrato(idContratoRaw) {
   };
 }
 
-async function obtenerNumSesCert(idContrato) {
+async function obtenerNumSesCert(idContrato, origenRaw = null) {
   const contrato = await Contratacion.findById(idContrato).lean();
+  if (!contrato) return 1;
+  if (origenRaw != null) {
+    const {
+      configCertificacionParaOrigen,
+    } = require('../constants/origenJornadaCap');
+    return configCertificacionParaOrigen(contrato, origenRaw).numSesCert;
+  }
   return Math.max(1, parseInt(contrato?.numSesCert, 10) || 1);
+}
+
+async function origenAlumnoJornada(numDoc) {
+  const a = await DatosAlumno.findOne(numDocQuery(numDoc), { origenJornadaCap: 1 }).lean();
+  return a?.origenJornadaCap || 'operativo';
 }
 
 /** Certificado vigente del alumno en el contrato (automático o manual, modo global). */
@@ -186,8 +205,14 @@ async function validarAlumnoSinCertificadoContrato(numDocRaw, idContratoRaw) {
     idContratoRaw instanceof mongoose.Types.ObjectId
       ? idContratoRaw
       : new mongoose.Types.ObjectId(String(idContratoRaw));
-  const contrato = await Contratacion.findById(idContrato).select('tipoCertificado').lean();
-  if (contrato?.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE) return null;
+  const contrato = await Contratacion.findById(idContrato).lean();
+  if (!contrato) return null;
+  const origen = await origenAlumnoJornada(numDoc);
+  const {
+    configCertificacionParaOrigen,
+  } = require('../constants/origenJornadaCap');
+  const cfgOrig = configCertificacionParaOrigen(contrato, origen);
+  if (cfgOrig.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE) return null;
   const certificado = await certificadoExistenteContrato(numDoc, idContrato);
   if (!certificado) return null;
   const cod = certificado.codigoCert ? ` (${certificado.codigoCert})` : '';
@@ -198,26 +223,39 @@ async function validarAlumnoSinCertificadoContrato(numDocRaw, idContratoRaw) {
 }
 
 /**
- * Progreso del alumno frente a numSesCert del contrato.
+ * Progreso del alumno frente a numSesCert del origen del alumno en el contrato.
  */
 async function progresoCertificacion(numDocRaw, idContratoRaw, ctx = null) {
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null || !idContratoRaw) {
-    return { sesiones: 0, numSesCert: 1, cumplio: false, certificado: null };
+    return { sesiones: 0, numSesCert: 1, cumplio: false, certificado: null, origen: 'operativo' };
   }
   const idContrato =
     idContratoRaw instanceof mongoose.Types.ObjectId
       ? idContratoRaw
       : new mongoose.Types.ObjectId(String(idContratoRaw));
-  const numSesCert = ctx?.numSesCert ?? (await obtenerNumSesCert(idContrato));
+  const origen = ctx?.origenAlumno || (await origenAlumnoJornada(numDoc));
+  const contrato = ctx?.contrato || (await Contratacion.findById(idContrato).lean());
+  const {
+    configCertificacionParaOrigen,
+  } = require('../constants/origenJornadaCap');
+  const cfgOrig = contrato
+    ? configCertificacionParaOrigen(contrato, origen)
+    : { origen, numSesCert: 1, tipoCertificado: TIPO_CERTIFICADO_GLOBAL };
+  const numSesCert = ctx?.numSesCertPorOrigen?.[cfgOrig.origen] ?? cfgOrig.numSesCert;
   const sesiones = await contarAsistenciasContrato(numDoc, idContrato, ctx?.claseIds);
-  const certificado = await certificadoExistenteContrato(numDoc, idContrato);
+  const certificado =
+    cfgOrig.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE
+      ? null
+      : await certificadoExistenteContrato(numDoc, idContrato);
   return {
     sesiones,
     numSesCert,
     cumplio: sesiones >= numSesCert,
     certificado,
     faltan: Math.max(0, numSesCert - sesiones),
+    origen: cfgOrig.origen,
+    tipoCertificado: cfgOrig.tipoCertificado,
   };
 }
 
@@ -273,8 +311,15 @@ function horasCertificadoGlobal(contrato, prog = null) {
   return String(contrato?.numeroHorascert || '').trim();
 }
 
-/** Programa elegido en el contrato para certificación global. */
-function idProgramaCertificacionContrato(contrato) {
+/** Programa de certificación global: por origen del alumno → top-level contrato. */
+function idProgramaCertificacionContrato(contrato, origenRaw = null) {
+  if (origenRaw != null || contrato?.certificacionOrigen) {
+    const {
+      configCertificacionParaOrigen,
+    } = require('../constants/origenJornadaCap');
+    const cfg = configCertificacionParaOrigen(contrato, origenRaw);
+    if (cfg.idProgramaCertificacion) return cfg.idProgramaCertificacion;
+  }
   return String(contrato?.idProgramaCertificacion || '').trim();
 }
 
@@ -510,7 +555,8 @@ async function intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornada
 }
 
 /**
- * Si asistencias >= contrato.numSesCert, emite certificado automático (sin intervención del usuario).
+ * Si asistencias >= numSesCert del origen del alumno, emite certificado automático.
+ * Modo por_clase del origen: un certificado por clase.
  */
 async function intentarCertificadoJornadaAuto(
   numDocRaw,
@@ -531,12 +577,18 @@ async function intentarCertificadoJornadaAuto(
   const contrato = ctx?.contrato || (await Contratacion.findById(idContrato).lean());
   if (!contrato) return { creado: false, motivo: 'contrato_no_encontrado' };
 
-  const tipoCert = normalizarTipoCertificado(contrato.tipoCertificado);
+  const origen = await origenAlumnoJornada(numDoc);
+  const {
+    configCertificacionParaOrigen,
+  } = require('../constants/origenJornadaCap');
+  const cfgOrig = configCertificacionParaOrigen(contrato, origen);
+  const tipoCert = cfgOrig.tipoCertificado;
+
   if (tipoCert === TIPO_CERTIFICADO_POR_CLASE) {
     return intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornadaRaw, clase, ctx, contrato);
   }
 
-  const numSesCert = ctx?.numSesCert ?? Math.max(1, parseInt(contrato.numSesCert, 10) || 1);
+  const numSesCert = cfgOrig.numSesCert;
   const sesiones = await contarAsistenciasContrato(numDoc, idContrato, ctx?.claseIds);
 
   const progreso = {
@@ -544,6 +596,8 @@ async function intentarCertificadoJornadaAuto(
     numSesCert,
     cumplio: sesiones >= numSesCert,
     faltan: Math.max(0, numSesCert - sesiones),
+    origen: cfgOrig.origen,
+    tipoCertificado: tipoCert,
   };
 
   if (sesiones < numSesCert) {
@@ -566,8 +620,8 @@ async function intentarCertificadoJornadaAuto(
     };
   }
 
-  // Programa para encabezado/horas: certificación del contrato → programa de la clase.
-  const progIdContrato = idProgramaCertificacionContrato(contrato);
+  // Programa para encabezado/horas: certificación del origen → clase.
+  const progIdContrato = idProgramaCertificacionContrato(contrato, origen);
   const progIdClase = String(clase?.idPrograma || idProg || '').trim();
   const progIdPreferido = progIdContrato || progIdClase;
   if (!progIdPreferido) {
@@ -575,7 +629,7 @@ async function intentarCertificadoJornadaAuto(
       creado: false,
       motivo: 'sin_programa',
       mensaje:
-        'Configure el programa de certificación en el contrato (tipo global) o asigne un programa a la clase.',
+        `Configure el programa de certificación para el origen «${cfgOrig.origen}» (tipo global) o asigne un programa a la clase.`,
       ...progreso,
     };
   }
@@ -585,7 +639,7 @@ async function intentarCertificadoJornadaAuto(
     return {
       creado: false,
       motivo: 'sin_programa',
-      mensaje: 'El programa de certificación del contrato no existe o fue eliminado.',
+      mensaje: `El programa de certificación del origen «${cfgOrig.origen}» no existe o fue eliminado.`,
       ...progreso,
     };
   }
@@ -593,7 +647,7 @@ async function intentarCertificadoJornadaAuto(
     return {
       creado: false,
       motivo: 'sin_programa',
-      mensaje: 'Configure un programa de certificación con nombre para el certificado (contrato global).',
+      mensaje: `Configure un programa de certificación con nombre para el origen «${cfgOrig.origen}» (global).`,
       ...progreso,
     };
   }
@@ -659,7 +713,7 @@ async function intentarCertificadoJornadaAuto(
       cfg,
       plantilla,
       horasCert,
-      observaciones: `Certificado automático al completar ${numSesCert} sesión(es) en el contrato`,
+      observaciones: `Certificado automático al completar ${numSesCert} sesión(es) (origen ${cfgOrig.origen})`,
       fechaEmision,
       encabezado: encabezadoCertificadoGlobal(contrato, progEncabezado),
     },
@@ -672,7 +726,7 @@ async function intentarCertificadoJornadaAuto(
     creado: true,
     certificado,
     ...progreso,
-    mensaje: `Certificado emitido automáticamente (${sesiones}/${numSesCert} sesiones)`,
+    mensaje: `Certificado emitido automáticamente (${sesiones}/${numSesCert} sesiones, origen ${cfgOrig.origen})`,
   };
 }
 

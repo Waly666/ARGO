@@ -4,7 +4,21 @@
   gap: 16px;
   padding: 0;
   overflow: visible;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 20%),
+    rgba(10, 24, 46, 0.55);
+  box-shadow: 0 14px 32px rgba(2, 10, 28, 0.22);
+}
+
+.alum-kicker {
+  margin: 0 0 0.15rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  font-weight: 700;
 }
 
 .input-nombre-alumno {
@@ -66,23 +80,31 @@ argo-celular-input.campo-obligatorio-error {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 18px 20px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(139, 92, 246, 0.12));
-  border-bottom: 1px solid var(--line);
+  padding: 1.15rem 1.25rem;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(45, 212, 191, 0.08)),
+    rgba(8, 18, 36, 0.45);
+  border-bottom: 1px solid rgba(125, 185, 255, 0.16);
 
   h2 {
     margin: 0;
-    font-size: 1.25rem;
-    color: var(--text);
+    font-size: clamp(1.15rem, 2vw, 1.35rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f8fbff;
   }
 
-  p {
-    margin: 4px 0 0;
+  p:not(.alum-kicker) {
+    margin: 0.35rem 0 0;
     font-size: 0.86rem;
-    color: var(--text-dim);
+    color: #9bb0c9;
   }
 
-  .actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
 }
 
 .save-actions {
@@ -405,38 +427,47 @@ argo-celular-input.campo-obligatorio-error {
 }
 
 .form-section {
-  border-radius: 10px;
-  border: 1px solid var(--line-soft);
-  background: rgba(6, 16, 41, 0.55);
+  border-radius: 14px;
+  border: 1px solid rgba(125, 185, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%),
+    rgba(8, 18, 36, 0.55);
   overflow: visible;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 24px rgba(2, 10, 28, 0.18);
+  transition: transform 0.18s ease, border-color 0.18s ease;
 
-  &.tone-blue   { border-left: 4px solid #3b82f6; }
-  &.tone-purple { border-left: 4px solid #8b5cf6; }
-  &.tone-teal   { border-left: 4px solid #14b8a6; }
-  &.tone-orange { border-left: 4px solid #f97316; }
-  &.tone-slate  { border-left: 4px solid #64748b; }
+  &:hover {
+    border-color: rgba(125, 185, 255, 0.26);
+  }
+
+  &.tone-blue   { border-left: 4px solid #38bdf8; }
+  &.tone-purple { border-left: 4px solid #a78bfa; }
+  &.tone-teal   { border-left: 4px solid #2dd4bf; }
+  &.tone-orange { border-left: 4px solid #fb923c; }
+  &.tone-amber  { border-left: 4px solid #fbbf24; }
+  &.tone-indigo { border-left: 4px solid #818cf8; }
+  &.tone-slate  { border-left: 4px solid #94a3b8; }
 }
 
 .section-head {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--line-soft);
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(125, 185, 255, 0.12);
 
   h3 {
     margin: 0;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: 0.2px;
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #f8fbff;
+    letter-spacing: -0.01em;
   }
 
   p {
     margin: 2px 0 0;
-    font-size: 0.78rem;
-    color: var(--text-soft);
+    font-size: 0.76rem;
+    color: #9bb0c9;
   }
 }
 
@@ -444,6 +475,8 @@ argo-celular-input.campo-obligatorio-error {
 .tone-purple .section-head { background: linear-gradient(90deg, rgba(139, 92, 246, 0.2), transparent); }
 .tone-teal   .section-head { background: linear-gradient(90deg, rgba(20, 184, 166, 0.2), transparent); }
 .tone-orange .section-head { background: linear-gradient(90deg, rgba(249, 115, 22, 0.2), transparent); }
+.tone-amber  .section-head { background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), transparent); }
+.tone-indigo .section-head { background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), transparent); }
 .tone-slate  .section-head { background: linear-gradient(90deg, rgba(100, 116, 139, 0.2), transparent); }
 
 .section-icon {
@@ -459,11 +492,13 @@ argo-celular-input.campo-obligatorio-error {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
 }
 
-.ic-blue   { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.ic-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-.ic-teal   { background: linear-gradient(135deg, #14b8a6, #0d9488); }
-.ic-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
-.ic-slate  { background: linear-gradient(135deg, #64748b, #475569); }
+.ic-blue   { background: linear-gradient(145deg, #38bdf8, #0284c7); }
+.ic-purple { background: linear-gradient(145deg, #a78bfa, #7c3aed); }
+.ic-teal   { background: linear-gradient(145deg, #2dd4bf, #0d9488); }
+.ic-orange { background: linear-gradient(145deg, #fb923c, #ea580c); }
+.ic-amber  { background: linear-gradient(145deg, #fbbf24, #d97706); }
+.ic-indigo { background: linear-gradient(145deg, #818cf8, #4f46e5); }
+.ic-slate  { background: linear-gradient(145deg, #94a3b8, #475569); }
 
 .section-body {
   padding: 14px 16px 6px;
@@ -769,4 +804,65 @@ textarea.observaciones-field {
   color: var(--text-dim);
   margin: 0;
   opacity: 0.7;
+}
+
+.origen-jornada-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.origen-jornada-chip {
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 160, 255, 0.28);
+  background: linear-gradient(180deg, rgba(55, 70, 115, 0.98), rgba(32, 48, 88, 0.98));
+  color: var(--text, #e8eefc);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+
+  &:hover:not(:disabled) {
+    border-color: rgba(129, 140, 248, 0.55);
+    color: #fff;
+    filter: none;
+  }
+
+  &.active {
+    border-color: transparent;
+    background: linear-gradient(180deg, #6366f1, #4f46e5);
+    color: #fff;
+  }
+}
+
+.origen-jornada-campos {
+  margin-top: 0.25rem;
+
+  .col-tipo-institucion {
+    min-width: 0;
+  }
+
+  .col-colegio-buscar {
+    min-width: 0;
+  }
+
+  .col-grado-colegio {
+    min-width: 0;
+  }
+}
+
+.origen-jornada-hint {
+  margin: 0 0 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .origen-jornada-campos {
+    .col-tipo-institucion,
+    .col-colegio-buscar,
+    .col-grado-colegio {
+      grid-column: span 12;
+    }
+  }
 }

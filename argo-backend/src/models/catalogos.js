@@ -39,6 +39,8 @@ const CATALOGOS = {
   aulas: 'aulas',
   talleres: 'talleres',
   carpas: 'carpas',
+  colegios: 'colegios',
+  estamentosPublicos: 'estamentosPublicos',
   itemDocumentosVehiculo: 'itemDocumentosVehiculo',
   itemDocumentosInstructores: 'itemDocumentosInstructores',
   itemsEstGral: 'itemsEstGral',

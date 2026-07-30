@@ -77,42 +77,203 @@ export class ContratoInformesDashboardComponent implements OnChanges {
 
   /** Barras: alumnos por jornada */
   chartBarrasJornada = computed(() => this.buildBarras(this.charts()?.alumnosPorJornada || [], 'sky'));
-  /** Torta: clases por estado */
+  /** Torta: clases por estado (pocas categorías) */
   chartTortaEstado = computed(() => this.buildTorta(this.charts()?.clasesPorEstado || [], 'estado'));
-  /** Torta: alumnos por programa */
-  chartTortaPrograma = computed(() =>
-    this.buildTorta(this.charts()?.alumnosPorPrograma || [], 'programa'),
+  /** Barras horizontales: alumnos por programa */
+  chartBarrasPrograma = computed(() =>
+    this.buildSeries(this.charts()?.alumnosPorPrograma || [], 'sky', 10),
   );
   /** Barras: clases por instructor */
   chartBarrasInstructor = computed(() =>
     this.buildBarras(this.charts()?.clasesPorInstructor || [], 'teal'),
   );
 
-  chartEdad = computed(() => this.buildTortaCaract(this.charts()?.porEdad));
-  chartGenero = computed(() => this.buildTortaCaract(this.charts()?.porGenero));
-  chartEstadoCivil = computed(() => this.buildTortaCaract(this.charts()?.porEstadoCivil));
-  chartEstrato = computed(() => this.buildTortaCaract(this.charts()?.porEstrato));
-  chartRegimen = computed(() => this.buildTortaCaract(this.charts()?.porRegimenSalud));
-  chartNivel = computed(() => this.buildTortaCaract(this.charts()?.porNivelFormacion));
-  chartOcupacion = computed(() => this.buildTortaCaract(this.charts()?.porOcupacion));
-  chartDiscapacidad = computed(() => this.buildTortaCaract(this.charts()?.porDiscapacidad));
-  chartMulti = computed(() => this.buildTortaCaract(this.charts()?.porMultiCulturalidad));
+  /**
+   * Origen: mezcla pie / stack / hbar / vbar / rank para evitar monotonía.
+   * Pie solo cuando hay pocas categorías claras.
+   */
+  bloquesOrigenDesde(c?: {
+    porOrigenJornada?: InformeDashboardChartItem[];
+    porTipoInstitucion?: InformeDashboardChartItem[];
+    porColegio?: InformeDashboardChartItem[];
+    porGradoColegio?: InformeDashboardChartItem[];
+    porEstamento?: InformeDashboardChartItem[];
+    porCargoEstamento?: InformeDashboardChartItem[];
+    porDependenciaEstamento?: InformeDashboardChartItem[];
+    porEmpresa?: InformeDashboardChartItem[];
+  } | null) {
+    return [
+      {
+        title: 'Por origen en jornada',
+        kind: 'stack' as const,
+        series: this.buildSeries(c?.porOrigenJornada, 'sky', 6),
+      },
+      {
+        title: 'Tipo de institución',
+        kind: 'pie' as const,
+        pie: this.buildTortaCaract(c?.porTipoInstitucion),
+      },
+      {
+        title: 'Institución educativa / colegio',
+        kind: 'rank' as const,
+        series: this.buildSeries(c?.porColegio, 'sky', 8),
+      },
+      {
+        title: 'Grado / programa',
+        kind: 'vbar' as const,
+        series: this.buildSeries(c?.porGradoColegio, 'teal', 11),
+      },
+      {
+        title: 'Estamento público',
+        kind: 'hbar' as const,
+        series: this.buildSeries(c?.porEstamento, 'sky', 8),
+      },
+      {
+        title: 'Cargo (estamento)',
+        kind: 'hbar' as const,
+        series: this.buildSeries(c?.porCargoEstamento, 'teal', 8),
+      },
+      {
+        title: 'Dependencia (estamento)',
+        kind: 'rank' as const,
+        series: this.buildSeries(c?.porDependenciaEstamento, 'sky', 8),
+      },
+      {
+        title: 'Empresa',
+        kind: 'hbar' as const,
+        series: this.buildSeries(c?.porEmpresa, 'teal', 8),
+      },
+    ];
+  }
+
+  /** Demografía: barras y ranking predominan; pie solo en género. */
+  bloquesCaractDesde(c?: {
+    porEdad?: InformeDashboardChartItem[];
+    porGenero?: InformeDashboardChartItem[];
+    porEstadoCivil?: InformeDashboardChartItem[];
+    porEstrato?: InformeDashboardChartItem[];
+    porRegimenSalud?: InformeDashboardChartItem[];
+    porNivelFormacion?: InformeDashboardChartItem[];
+    porOcupacion?: InformeDashboardChartItem[];
+    porDiscapacidad?: InformeDashboardChartItem[];
+    porMultiCulturalidad?: InformeDashboardChartItem[];
+  } | null) {
+    return [
+      {
+        title: 'Edad',
+        kind: 'vbar' as const,
+        series: this.buildSeries(c?.porEdad, 'sky', 10),
+      },
+      {
+        title: 'Género',
+        kind: 'pie' as const,
+        pie: this.buildTortaCaract(c?.porGenero),
+      },
+      {
+        title: 'Estado civil',
+        kind: 'hbar' as const,
+        series: this.buildSeries(c?.porEstadoCivil, 'teal', 8),
+      },
+      {
+        title: 'Estrato socioeconómico',
+        kind: 'vbar' as const,
+        series: this.buildSeries(c?.porEstrato, 'sky', 8),
+      },
+      {
+        title: 'Régimen de salud',
+        kind: 'stack' as const,
+        series: this.buildSeries(c?.porRegimenSalud, 'teal', 6),
+      },
+      {
+        title: 'Nivel de formación',
+        kind: 'hbar' as const,
+        series: this.buildSeries(c?.porNivelFormacion, 'sky', 8),
+      },
+      {
+        title: 'Ocupación',
+        kind: 'rank' as const,
+        series: this.buildSeries(c?.porOcupacion, 'teal', 8),
+      },
+      {
+        title: 'Discapacidad',
+        kind: 'hbar' as const,
+        series: this.buildSeries(c?.porDiscapacidad, 'sky', 8),
+      },
+      {
+        title: 'Multiculturalidad',
+        kind: 'rank' as const,
+        series: this.buildSeries(c?.porMultiCulturalidad, 'teal', 8),
+      },
+    ];
+  }
 
   private buildTortaCaract(items?: InformeDashboardChartItem[]) {
     return this.buildTorta((items || []).filter((x) => Number(x.value) > 0), 'programa');
   }
 
-  caractCharts = computed(() => [
-    { title: 'Edad', chart: this.chartEdad() },
-    { title: 'Género', chart: this.chartGenero() },
-    { title: 'Estado civil', chart: this.chartEstadoCivil() },
-    { title: 'Estrato socioeconómico', chart: this.chartEstrato() },
-    { title: 'Régimen de salud', chart: this.chartRegimen() },
-    { title: 'Nivel de formación', chart: this.chartNivel() },
-    { title: 'Ocupación', chart: this.chartOcupacion() },
-    { title: 'Discapacidad', chart: this.chartDiscapacidad() },
-    { title: 'Multiculturalidad', chart: this.chartMulti() },
-  ]);
+  /** Serie unificada para hbar / vbar / stack / rank. */
+  buildSeries(
+    items?: InformeDashboardChartItem[],
+    tone: 'sky' | 'teal' = 'sky',
+    limit = 10,
+  ): {
+    total: number;
+    max: number;
+    items: Array<{
+      label: string;
+      value: number;
+      pctTotal: number;
+      pctBar: number;
+      color: string;
+      rank: number;
+    }>;
+  } {
+    const list = (items || [])
+      .filter((x) => Number(x.value) > 0)
+      .slice(0, Math.max(1, limit));
+    const values = list.map((x) => Number(x.value) || 0);
+    const total = values.reduce((s, n) => s + n, 0);
+    const max = Math.max(1, ...values, 0);
+    return {
+      total,
+      max,
+      items: list.map((it, i) => {
+        const value = Number(it.value) || 0;
+        return {
+          label: it.label,
+          value,
+          pctTotal: total > 0 ? Math.round((value / total) * 1000) / 10 : 0,
+          pctBar: Math.max(4, Math.round((value / max) * 100)),
+          color:
+            tone === 'teal'
+              ? this.palette[(i + 4) % this.palette.length]
+              : this.palette[i % this.palette.length],
+          rank: i + 1,
+        };
+      }),
+    };
+  }
+
+  blockHasData(block: {
+    kind: string;
+    pie?: { slices: unknown[] };
+    series?: { items: unknown[] };
+  }): boolean {
+    if (block.kind === 'pie') return !!(block.pie?.slices?.length);
+    return !!(block.series?.items?.length);
+  }
+
+  origenCharts = computed(() => this.bloquesOrigenDesde(this.charts()));
+  caractCharts = computed(() => this.bloquesCaractDesde(this.charts()));
+
+  /** Cada jornada con sus gráficos de origen y caracterización. */
+  jornadasConGraficos = computed(() =>
+    this.porJornada().map((j) => ({
+      ...j,
+      origenCharts: this.bloquesOrigenDesde(j.charts),
+      caractCharts: this.bloquesCaractDesde(j.charts),
+    })),
+  );
 
   private readonly palette = [
     '#38bdf8',

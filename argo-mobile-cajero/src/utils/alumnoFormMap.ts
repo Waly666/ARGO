@@ -1,5 +1,6 @@
 import type { AlumnoCrearDto, AlumnoDetalleItem } from '../api/domain';
 import { TIPO_ALUMNO_DEFAULT } from './alumnoCatalogo';
+import { aMayusculas, mayusculasNombre } from './format';
 
 function fechaAString(v?: string | Date | null): string {
   if (!v) return '';
@@ -26,13 +27,13 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       tipoAlumno: a.tipoAlumno || TIPO_ALUMNO_DEFAULT,
       tipoDoc: a.tipoDoc || '1',
       numDoc: a.numDoc != null ? String(a.numDoc).replace(/\D/g, '') : '',
-      expedida: a.expedida || '',
-      apellido1: a.apellido1 || '',
-      apellido2: a.apellido2 || '',
-      nombre1: a.nombre1 || '',
-      nombre2: a.nombre2 || '',
+      expedida: aMayusculas(a.expedida || ''),
+      apellido1: mayusculasNombre(a.apellido1 || ''),
+      apellido2: mayusculasNombre(a.apellido2 || '') || undefined,
+      nombre1: mayusculasNombre(a.nombre1 || ''),
+      nombre2: mayusculasNombre(a.nombre2 || '') || undefined,
       fechaNac: fechaAString(a.fechaNac),
-      observaciones: a.observaciones || '',
+      observaciones: aMayusculas(a.observaciones || ''),
       genero: a.genero || '',
       tipoSangre: a.tipoSangre || '',
       jornada: a.jornada || '',
@@ -44,16 +45,16 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       discapacidad: a.discapacidad || '9',
       munOrigen: a.munOrigen || a.codMunicipio || '',
       codMunicipio: a.codMunicipio || a.munOrigen || '',
-      correo: a.correo || '',
-      direccion: a.direccion || '',
+      correo: aMayusculas(a.correo || ''),
+      direccion: aMayusculas(a.direccion || ''),
       celular: a.celular || '',
       multiCulturalidad: a.multiCulturalidad || 'NO_APLICA',
       empresaId: a.empresaId ?? null,
       alertaPagoFrecuencia: freq === 'mensual' || freq === 'quincenal' ? freq : '',
       alertaPago: fechaAString(a.alertaPago),
     },
-    expedidaTexto: a.expedida?.trim() || '',
-    munOrigenTexto: a.munOrigen || a.codMunicipio || '',
-    empresaNombre: a.empresaNombre?.trim() || '',
+    expedidaTexto: aMayusculas(a.expedida?.trim() || ''),
+    munOrigenTexto: aMayusculas(a.munOrigen || a.codMunicipio || ''),
+    empresaNombre: aMayusculas(a.empresaNombre?.trim() || ''),
   };
 }

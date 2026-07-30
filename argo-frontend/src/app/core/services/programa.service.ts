@@ -139,6 +139,12 @@ export class ProgramaService {
     return this.http.get<Programa[]>(this.base, { params });
   }
 
+  /** Siguiente código automático según tipo de capacitación. */
+  siguienteCodigo(idTipCap: string | number): Observable<{ codigoProg: string }> {
+    const params = new HttpParams().set('idTipCap', String(idTipCap));
+    return this.http.get<{ codigoProg: string }>(`${this.base}/siguiente-codigo`, { params });
+  }
+
   obtener(id: string | number): Observable<ProgramaDetalle> {
     return this.http.get<ProgramaDetalle>(`${this.base}/${id}`);
   }

@@ -16,8 +16,10 @@ export function setUnauthorizedHandler(fn: UnauthorizedHandler | null): void {
   onUnauthorized = fn;
 }
 
-function notifyUnauthorized(json: unknown, status: number, authUsed: boolean): void {
-  if (status !== 401 || !onUnauthorized || !authUsed) return;
+function notifyUnauthorized(json: unknown, status: number, hadBearerToken: boolean): void {
+  // Solo cerrar sesión si realmente se envió JWT. Sin token (carrera post-login) el 401
+  // "Token requerido" no debe echar al usuario que acaba de autenticarse.
+  if (status !== 401 || !onUnauthorized || !hadBearerToken) return;
   const body = json as { message?: string; code?: string } | null;
   onUnauthorized(body?.message);
 }
@@ -43,9 +45,11 @@ export async function apiFetch<T>(
     Accept: 'application/json',
     ...(opts?.headers as Record<string, string>),
   };
-  if (opts?.auth !== false) {
-    const t = tokenGetter();
-    if (t) headers.Authorization = `Bearer ${t}`;
+  const wantsAuth = opts?.auth !== false;
+  let bearer: string | null = null;
+  if (wantsAuth) {
+    bearer = tokenGetter();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
   }
   const idSede = getSedeActivaSync();
   if (idSede) headers['X-ARGO-Sede'] = idSede;
@@ -77,7 +81,7 @@ export async function apiFetch<T>(
     }
   }
   if (!res.ok) {
-    notifyUnauthorized(json, res.status, opts?.auth !== false);
+    notifyUnauthorized(json, res.status, !!bearer);
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
@@ -93,9 +97,11 @@ export async function apiPostForm<T>(
   const base = getApiBaseUrl();
   const timeoutMs = opts?.timeoutMs ?? 30_000;
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (opts?.auth !== false) {
-    const t = tokenGetter();
-    if (t) headers.Authorization = `Bearer ${t}`;
+  const wantsAuth = opts?.auth !== false;
+  let bearer: string | null = null;
+  if (wantsAuth) {
+    bearer = tokenGetter();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
   }
   const idSede = getSedeActivaSync();
   if (idSede) headers['X-ARGO-Sede'] = idSede;
@@ -128,7 +134,7 @@ export async function apiPostForm<T>(
     }
   }
   if (!res.ok) {
-    notifyUnauthorized(json, res.status, opts?.auth !== false);
+    notifyUnauthorized(json, res.status, !!bearer);
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }

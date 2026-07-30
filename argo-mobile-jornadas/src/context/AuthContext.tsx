@@ -86,12 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        setTokenGetter(() => token);
         setState({ status: 'signedIn', token, user });
 
         try {
           const me = await withTimeout(fetchMe(), 8000, 'validar sesión');
           if (cancelled) return;
           if (!puedeUsarAppJornadas(me.permisos)) {
+            setTokenGetter(() => null);
             await storeDelete(K_TOKEN);
             await storeDelete(K_USER);
             setState({ status: 'denied', user: me });
@@ -101,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setState({ status: 'signedIn', token, user: me });
         } catch {
           if (cancelled) return;
+          setTokenGetter(() => null);
           await storeDelete(K_TOKEN);
           await storeDelete(K_USER);
           setState({ status: 'signedOut' });
@@ -127,12 +130,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         'Su usuario no tiene permiso para operar jornadas. Pida «jornadas.operar» a un administrador.',
       );
     }
+    setTokenGetter(() => res.token);
     setState({ status: 'signedIn', token: res.token, user });
     void storeSet(K_TOKEN, res.token);
     void storeSet(K_USER, JSON.stringify(user));
   }, []);
 
   const signOut = useCallback(async () => {
+    setTokenGetter(() => null);
     setState({ status: 'signedOut' });
     void storeDelete(K_TOKEN);
     void storeDelete(K_USER);

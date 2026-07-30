@@ -859,6 +859,33 @@
   position: relative;
 }
 
+.origen-filtro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+
+  /* mini sin fondo global = botón nativo claro + color:#fff → ilegible */
+  button.mini {
+    background: linear-gradient(180deg, rgba(55, 70, 115, 0.98), rgba(32, 48, 88, 0.98));
+    border: 1px solid var(--line, rgba(120, 160, 255, 0.28));
+    color: var(--text, #e8eefc);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+
+    &:hover:not(:disabled) {
+      border-color: var(--accent, #4ea3ff);
+      color: #fff;
+      filter: none;
+    }
+
+    &.primary {
+      background: linear-gradient(180deg, var(--btn-blue, #3b82f6), var(--btn-blue-d, #2563eb));
+      border-color: transparent;
+      color: #fff;
+    }
+  }
+}
+
 .buscar-wrap {
   display: flex;
   align-items: center;

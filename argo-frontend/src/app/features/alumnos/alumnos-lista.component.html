@@ -1,11 +1,20 @@
-<section class="lista-page" [class.lista-jornadas]="esJornadas()">
-  <header class="page-head card">
+<section class="lista-page alum-shell" [class.lista-jornadas]="esJornadas()" [class.alum-shell--jornadas]="esJornadas()">
+  <header class="page-head card alum-hero">
+    <div class="alum-hero-glow" aria-hidden="true"></div>
     <div class="head-row">
       <button type="button" class="ghost back" *ngIf="esJornadas()" (click)="irHubJornadas()">← Jornadas</button>
-      <div class="title">
-        <h1>{{ esJornadas() ? 'Alumnos — Jornadas de Capacitación' : 'Alumnos' }}</h1>
+      <div class="title alum-hero-copy">
+        <p class="alum-kicker">{{ esJornadas() ? 'Capacitación · Participantes' : 'Gestión · Matrículas' }}</p>
+        <h1>{{ esJornadas() ? 'Alumnos de jornadas' : 'Alumnos' }}</h1>
+        <p>
+          {{
+            esJornadas()
+              ? 'Participantes de jornadas de capacitación: búsqueda, filtros y alta rápida.'
+              : 'Gestión integral de alumnos: matrículas, pagos, documentos y certificados.'
+          }}
+        </p>
       </div>
-      <button type="button" class="primary" (click)="nuevo()">
+      <button type="button" class="primary alum-btn-primary" (click)="nuevo()">
         {{ esJornadas() ? '+ Nuevo alumno jornada' : '+ Crear alumno' }}
       </button>
     </div>
@@ -18,7 +27,11 @@
     </div>
   }
 
-  <div class="card toolbar" [class.toolbar-jornadas]="esJornadas()" [class.toolbar-con-filtros]="true">
+  <div class="card toolbar alum-toolbar" [class.toolbar-jornadas]="esJornadas()" [class.toolbar-con-filtros]="true">
+    <div class="alum-toolbar-kicker-row">
+      <p class="alum-kicker">Exploración</p>
+      <span class="count alum-count-pill">{{ pageLabel() }}</span>
+    </div>
     <div class="search-box">
       <span class="ic">◎</span>
       <input
@@ -36,7 +49,7 @@
         [class.active]="vista() === 'lista'"
         (click)="setVista('lista')"
         title="Vista tabla">
-        ☰ Lista
+        Lista
       </button>
       <button
         type="button"
@@ -44,10 +57,9 @@
         [class.active]="vista() === 'cards'"
         (click)="setVista('cards')"
         title="Vista tarjetas">
-        ▦ Cards
+        Cards
       </button>
     </div>
-    <span class="count">{{ pageLabel() }}</span>
 
     <div class="lista-filters">
       <div class="field-filtro field-empresa">

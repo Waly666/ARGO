@@ -209,3 +209,101 @@ exports.municipioPorCodigo = async (req, res, next) => {
     next(e);
   }
 };
+
+function padMunicipio(cod) {
+  const s = String(cod || '').replace(/\D/g, '');
+  if (!s) return '';
+  return s.padStart(5, '0');
+}
+
+/** Colegios: por municipio y/o búsqueda incremental (catálogo nacional ~22k). */
+exports.buscarColegios = async (req, res, next) => {
+  try {
+    const codMunicipio = padMunicipio(req.query.codMunicipio);
+    const q = String(req.query.q || '').trim();
+    const limit = Math.min(parseInt(req.query.limit, 10) || 40, 100);
+
+    // Sin municipio: exigir texto (evitar listar todo el país al abrir).
+    if (!codMunicipio && q.length < 2) {
+      return res.json([]);
+    }
+
+    const filter = { activo: { $ne: false } };
+    if (codMunicipio) {
+      filter.$or = [
+        { codMunicipio },
+        { codMunicipio: Number(codMunicipio) },
+        { codMunicipio: String(Number(codMunicipio)) },
+      ];
+    }
+    if (q.length >= 1) {
+      filter.nombreEstablecimiento = regexSinTildes(q);
+    }
+
+    const rows = await models.colegios
+      .find(filter)
+      .sort({ nombreEstablecimiento: 1 })
+      .limit(limit)
+      .lean();
+
+    res.json(
+      rows.map((r) => {
+        const nombre = String(r.nombreEstablecimiento || '').trim();
+        const muni = String(r.nombreMunicipio || '').trim();
+        const depto = String(r.nombreDepartamento || r.nombreDepto || '').trim();
+        const ubi = [muni, depto].filter(Boolean).join(' · ');
+        return {
+          codigoEstablecimiento: String(r.codigoEstablecimiento || ''),
+          nombreEstablecimiento: nombre,
+          codMunicipio: String(r.codMunicipio || ''),
+          nombreMunicipio: muni,
+          nombreDepartamento: depto,
+          label: nombre || String(r.codigoEstablecimiento || ''),
+          hint: ubi || undefined,
+        };
+      }),
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Estamentos públicos por municipio + búsqueda. */
+exports.buscarEstamentos = async (req, res, next) => {
+  try {
+    const codMunicipio = padMunicipio(req.query.codMunicipio);
+    const q = String(req.query.q || '').trim();
+    const limit = Math.min(parseInt(req.query.limit, 10) || 40, 100);
+    const filter = { activo: { $ne: false } };
+    if (codMunicipio) {
+      filter.$or = [
+        { codMunicipio },
+        { codMunicipio: Number(codMunicipio) },
+        { codMunicipio: String(Number(codMunicipio)) },
+        { codMunicipio: '' },
+        { codMunicipio: null },
+        { nacional: true },
+      ];
+    }
+    if (q.length >= 1) {
+      filter.nombre = regexSinTildes(q);
+    }
+    const rows = await models.estamentosPublicos
+      .find(filter)
+      .sort({ nombre: 1 })
+      .limit(limit)
+      .lean();
+    res.json(
+      rows.map((r) => ({
+        idEstamento: String(r.idEstamento || r._id || ''),
+        nombre: r.nombre || '',
+        tipo: r.tipo || '',
+        codMunicipio: String(r.codMunicipio || ''),
+        nombreMunicipio: r.nombreMunicipio || '',
+        label: r.nombre || String(r.idEstamento || ''),
+      })),
+    );
+  } catch (e) {
+    next(e);
+  }
+};

@@ -13,8 +13,23 @@ export interface AlumnoDto {
   fechaReg?: string | Date;
   /** Regular | Jornada Capacitacion | Virtual */
   tipoAlumno?: string;
-  /** SISTEMA (ARGO) | WEB (portal / página) */
+  /** Canal de inscripción: SISTEMA (ARGO) | WEB (portal / página). No confundir con origenJornadaCap. */
   origen?: string;
+  /**
+   * Origen del participante en jornadas Cap.: colegio | estamento | empresa | operativo.
+   * Independiente de `origen` (canal de inscripción).
+   */
+  origenJornadaCap?: string | null;
+  /** colegio | instituto | universidad */
+  tipoInstitucionEducativa?: string | null;
+  colegioCodigo?: string | null;
+  colegioNombre?: string | null;
+  gradoColegio?: number | null;
+  programaInstitucion?: string | null;
+  estamentoId?: string | null;
+  estamentoNombre?: string | null;
+  cargoEstamento?: string | null;
+  dependenciaEstamento?: string | null;
   /** Respuesta al guardar como Virtual: credenciales del portal (si se crearon). */
   portalAcceso?: {
     creado: boolean;

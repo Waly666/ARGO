@@ -183,11 +183,16 @@ export function normalizarTipoAlumno(val?: string | null): string {
   return TIPO_ALUMNO_DEFAULT;
 }
 
+/** Une respuesta API + fallback local. Prefiere descripción de BD (ítems nuevos o editados). */
 export function catalogoConFallback(api: CatalogoItem[], fallback: CatalogoItem[]): CatalogoItem[] {
   if (!api?.length) return fallback;
   return api.map((item) => {
     const valor = catValor(item);
+    const rawDesc = item.descripcion ?? item.nombre;
+    if (rawDesc != null && String(rawDesc).trim()) {
+      return { ...item, descripcion: catEtiqueta(item) };
+    }
     const fb = fallback.find((f) => catValor(f) === valor);
-    return fb ? { ...item, descripcion: catEtiqueta(fb) } : item;
+    return { ...item, descripcion: fb ? catEtiqueta(fb) : catEtiqueta(item) };
   });
 }

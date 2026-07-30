@@ -13,6 +13,46 @@
     </div>
   </header>
 
+  @if (tipCapPickerAbierto()) {
+    <div class="tipcap-picker-backdrop" role="presentation" (click)="cancelarTipCapPicker()"></div>
+    <div
+      class="tipcap-picker tipcap-picker--under-head"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tipcap-picker-title"
+      (click)="$event.stopPropagation()">
+      <h2 id="tipcap-picker-title">Nuevo programa</h2>
+      <p class="tipcap-picker-msg">¿Qué tipo de capacitación será este programa?</p>
+      <ul class="tipcap-picker-list" role="listbox" [attr.aria-label]="'Tipos de capacitación'">
+        @for (t of tiposCap(); track t.id) {
+          <li>
+            <button
+              type="button"
+              class="tipcap-picker-opt"
+              role="option"
+              [class.active]="idsTipCapCoinciden(tipCapPickerId(), t.id)"
+              [attr.aria-selected]="idsTipCapCoinciden(tipCapPickerId(), t.id)"
+              (click)="elegirTipCapPicker(t.id)">
+              <span class="tipcap-picker-pref">{{ prefijoCodigoTipCap(t.label) }}</span>
+              <span class="tipcap-picker-sep" aria-hidden="true"></span>
+              <span class="tipcap-picker-label">{{ t.label }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+      <div class="tipcap-picker-actions">
+        <button type="button" class="ghost" (click)="cancelarTipCapPicker()">Cancelar</button>
+        <button
+          type="button"
+          class="primary"
+          [disabled]="tipCapPickerId() === '' || tipCapPickerId() == null"
+          (click)="confirmarTipCapPicker()">
+          Continuar
+        </button>
+      </div>
+    </div>
+  }
+
   @if (msg()) {
     <p class="prog-msg" [class.prog-msg--err]="msgError()">{{ msg() }}</p>
   }
@@ -81,19 +121,44 @@
           </div>
         </div>
         <div class="row row-compact">
+          <div class="col-4">
+            <argo-catalogo-enum-buscar
+              #tipoCapBuscar
+              label="Tipo capacitación *"
+              placeholder="Tipo…"
+              [textoInicial]="textoTipoCap()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [disabled]="!tiposCap().length"
+              [opcionesLocales]="opcionesTipoCap()"
+              (seleccionado)="onTipoCapPick($event)"
+              (limpiado)="onTipoCapLimpiar()"
+            />
+          </div>
           <div class="col-2">
             <label>Código</label>
-            <input type="text" [ngModel]="form().codigoProg" (ngModelChange)="patch('codigoProg', $event)" />
+            <input
+              type="text"
+              [ngModel]="form().codigoProg"
+              (ngModelChange)="patch('codigoProg', $event)"
+              [readonly]="!editando()"
+              [class.readonly]="!editando()"
+              [attr.title]="!editando() ? 'Se asigna automáticamente según el tipo de capacitación' : null"
+            />
           </div>
-          <div class="col-5">
+          <div class="col-3">
             <label>Nombre del programa *</label>
             <input type="text" [ngModel]="form().nombreProg" (ngModelChange)="patch('nombreProg', $event)" />
           </div>
-          <div class="col-5">
+          <div class="col-3">
             <label>Nombre certificado (nomCert) *</label>
             <input type="text" [ngModel]="form().nomCert" (ngModelChange)="patch('nomCert', $event)" />
           </div>
         </div>
+        <p class="hint-inline hint-inline--block" *ngIf="!editando() && form().codigoProg">
+          Código automático ({{ form().codigoProg }}): consecutivo según el tipo de capacitación.
+        </p>
         <div class="row row-compact">
           <div class="col-4">
             <argo-catalogo-enum-buscar
@@ -143,54 +208,39 @@
           <p class="modalidades-programa-aviso" *ngIf="esSoloVirtualForm()">Solo virtual: matrícula en portal.</p>
         </div>
         <div class="row row-align-fields row-align-fields--dense">
-          <div class="col-4 field-cell">
-            <argo-catalogo-enum-buscar
-              #tipoCapBuscar
-              label="Tipo capacitación *"
-              placeholder="Tipo…"
-              [textoInicial]="textoTipoCap()"
-              [modoCombo]="true"
-              [remoto]="false"
-              [minLength]="1"
-              [disabled]="!tiposCap().length"
-              [opcionesLocales]="opcionesTipoCap()"
-              (seleccionado)="onTipoCapPick($event)"
-              (limpiado)="onTipoCapLimpiar()"
-            />
-          </div>
-          <div class="col-1 field-cell field-cell--num">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().semestres">
             <label>Semestres</label>
             <input type="number" min="0" [ngModel]="form().semestres" (ngModelChange)="patch('semestres', $event)" />
           </div>
-          <div class="col-1 field-cell field-cell--num">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().horasTotal">
             <label>Horas total</label>
             <input type="number" min="0" [ngModel]="form().horas" (ngModelChange)="patch('horas', $event)" />
           </div>
-          <div class="col-1 field-cell field-cell--num">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().horasDesglose">
             <label>Horas teoría</label>
             <input type="number" min="0" [ngModel]="form().horasTeoria" (ngModelChange)="patch('horasTeoria', $event)" />
           </div>
-          <div class="col-1 field-cell field-cell--num">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().horasDesglose">
             <label>Horas práct.</label>
             <input type="number" min="0" [ngModel]="form().horasPractica" (ngModelChange)="patch('horasPractica', $event)" />
           </div>
-          <div class="col-1 field-cell field-cell--num">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().horasDesglose">
             <label>Horas taller</label>
             <input type="number" min="0" [ngModel]="form().horasTaller" (ngModelChange)="patch('horasTaller', $event)" />
           </div>
-          <div class="col-1 field-cell field-cell--num" *ngIf="!esProgramaJornadasCapForm() && !esSoloVirtualForm()">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().matricula && !esProgramaJornadasCapForm() && !esSoloVirtualForm()">
             <label>Matrícula</label>
             <input type="number" min="0" [ngModel]="form().valorMatricula" (ngModelChange)="patch('valorMatricula', $event)" />
           </div>
-          <div class="col-1 field-cell field-cell--num" *ngIf="!esProgramaJornadasCapForm() && esSoloVirtualForm()">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().matricula && !esProgramaJornadasCapForm() && esSoloVirtualForm()">
             <label>Matr. virt.</label>
             <input type="number" min="0" [ngModel]="form().tarifaVirtual" (ngModelChange)="patch('tarifaVirtual', $event)" />
           </div>
-          <div class="col-1 field-cell field-cell--num" *ngIf="esProgramaJornadasCapForm()">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().matricula && esProgramaJornadasCapForm()">
             <label>Matrícula</label>
             <input type="text" value="N/A" readonly class="readonly" />
           </div>
-          <div class="col-1 field-cell field-cell--num">
+          <div class="col-1 field-cell field-cell--num" *ngIf="camposTipCapForm().vigencia">
             <label>Vigencia</label>
             <input
               type="number"

@@ -10,7 +10,7 @@ const JornadaCapSchema = new mongoose.Schema(
     /** Código Divipola del municipio (si se conoce). */
     codMunicipio: { type: String, trim: true, default: '' },
     direccion: { type: String, trim: true, default: '' },
-    /** 1..N cuando hay varias jornadas el mismo día (contrato.jornadasPorDia). */
+    /** 1..N cuando hay varias jornadas el mismo día (plan municipio.jornadasPorDia o legado contrato). */
     indiceEnDia: { type: Number, default: 1 },
     lat: { type: Number, default: null },
     lng: { type: Number, default: null },

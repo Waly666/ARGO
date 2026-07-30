@@ -23,6 +23,11 @@ export type RootStackParamList = {
     idContrato?: string;
     codContrato?: string;
     fechaJornada?: string;
+    /** colegio | estamento | empresa | operativo */
+    origenJornadaCap?: string;
+    codMunicipio?: string;
+    empresaId?: string;
+    empresaNombre?: string;
   };
   Certificados: { idContrato?: string; contratoLabel?: string };
   CertificadoHtml: { id: string; titulo: string };

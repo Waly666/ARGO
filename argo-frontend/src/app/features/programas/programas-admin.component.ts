@@ -306,6 +306,9 @@ export class ProgramasAdminComponent implements OnInit {
   vista = signal<VistaLista>(readVistaLista('argo-programas-vista'));
 
   modalAbierto = signal(false);
+  /** Diálogo previo a «Nuevo programa»: elegir tipo de capacitación. */
+  tipCapPickerAbierto = signal(false);
+  tipCapPickerId = signal<string | number | ''>('');
   formTab = signal<FormTabPrograma>('general');
 
   readonly formTabsNav: { id: FormTabPrograma; label: string; icon: string }[] = [
@@ -718,6 +721,15 @@ export class ProgramasAdminComponent implements OnInit {
       if (k === 'tarifaVirtual' && this.esSoloVirtualForm()) {
         next.valorMatricula = Number(coerced) || 0;
       }
+      // Al crear: nombre del programa → descripción del servicio de matrícula.
+      if (k === 'nombreProg' && !this.editando()) {
+        const nombre = String(coerced ?? '');
+        const desc = String(f.descrServicio ?? '').trim();
+        const prevNombre = String(f.nombreProg ?? '').trim();
+        if (!desc || desc === prevNombre) {
+          next.descrServicio = nombre;
+        }
+      }
       return next;
     });
   }
@@ -763,43 +775,61 @@ export class ProgramasAdminComponent implements OnInit {
 
 
   nuevo() {
-
     if (this.tiposCargando()) {
-
       this.inform('Espere a que carguen los tipos de capacitación.');
-
       return;
-
     }
-
     if (!this.tiposCap().length) {
-
       this.inform('Faltan tipos de capacitación. Contacte al administrador del sistema.');
-
       return;
-
     }
+    this.tipCapPickerId.set('');
+    this.tipCapPickerAbierto.set(true);
+    this.inform(null);
+    queueMicrotask(() => {
+      this.pageHead?.nativeElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 
+  cancelarTipCapPicker(): void {
+    this.tipCapPickerAbierto.set(false);
+    this.tipCapPickerId.set('');
+  }
+
+  elegirTipCapPicker(id: string | number): void {
+    this.tipCapPickerId.set(id);
+  }
+
+  confirmarTipCapPicker(): void {
+    const t = this.tipCapPickerId();
+    if (t === '' || t == null) {
+      this.inform('Seleccione el tipo de capacitación del programa.', true);
+      return;
+    }
+    this.tipCapPickerAbierto.set(false);
+    this.abrirFormularioNuevo(t);
+  }
+
+  /** Abre el formulario de alta con el tipo de capacitación ya elegido. */
+  private abrirFormularioNuevo(idTipCap: string | number): void {
     this.editando.set(null);
-
     this.servicioVinculado.set(null);
     this.serviciosVinculados.set([]);
     this.servicioHoraPractica.set(null);
-
     this.auditPrograma.set(null);
-
     this.auditServicio.set(null);
 
-    const t = this.tiposCap()[0]?.id ?? '';
-
+    const t = canonTipCapId(idTipCap) || String(idTipCap).trim();
     this.form.set({ ...this.formVacio(), idTipCap: t, tipoServ: this.inferirTipoServ(t) });
+    this.aplicarReglasCamposTipCap();
+    // Aplica reglas de jornadas / certificado / código consecutivo.
+    this.onTipoCapChange(t);
 
     this.resetPortadaLocal();
     this.formTab.set('general');
     this.modalAbierto.set(true);
     this.scrollAlFormulario();
     this.inform(null);
-
   }
 
 
@@ -839,6 +869,7 @@ export class ProgramasAdminComponent implements OnInit {
         this.auditPrograma.set(this.auditDe(prog as unknown as Record<string, unknown>));
         this.auditServicio.set(this.auditDe(s as unknown as Record<string, unknown>));
         this.form.set(this.formDesdeDetalle(prog, s, horaP));
+        this.aplicarReglasCamposTipCap();
         this.resetPortadaLocal();
         this.formTab.set('general');
         this.modalAbierto.set(true);
@@ -1355,7 +1386,7 @@ export class ProgramasAdminComponent implements OnInit {
     return this.resolverIdTipCap(fallback || texto);
   }
 
-  private idsTipCapCoinciden(a: string | number, b: string | number): boolean {
+  idsTipCapCoinciden(a: string | number, b: string | number): boolean {
     const sa = String(a).trim();
     const sb = String(b).trim();
     if (!sa || !sb) return false;
@@ -1417,8 +1448,55 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   esLicenciaConduccionForm(): boolean {
-    const label = this.labelTipo(this.form().idTipCap).toLowerCase();
-    return label.includes('licencia') && label.includes('conduccion');
+    return this.esTipCapLicenciaLabel(this.labelTipo(this.form().idTipCap));
+  }
+
+  /** Técnico laboral por competencias (único con semestres). */
+  esTecnicoLaboralForm(): boolean {
+    return this.esTipCapTecnicoLaboralLabel(this.labelTipo(this.form().idTipCap));
+  }
+
+  /**
+   * Matriz de negocio: qué campos aplicar según tipo de capacitación.
+   * Horas total / matrícula / vigencia: siempre.
+   * Semestres: solo técnico laboral.
+   * Horas teoría/práctica/taller: solo licencia de conducción.
+   */
+  camposTipCapForm(): {
+    semestres: boolean;
+    horasTotal: boolean;
+    horasDesglose: boolean;
+    matricula: boolean;
+    vigencia: boolean;
+  } {
+    const label = this.labelTipo(this.form().idTipCap);
+    if (!String(label || '').trim()) {
+      return {
+        semestres: false,
+        horasTotal: true,
+        horasDesglose: false,
+        matricula: true,
+        vigencia: true,
+      };
+    }
+    return {
+      semestres: this.esTipCapTecnicoLaboralLabel(label),
+      horasTotal: true,
+      horasDesglose: this.esTipCapLicenciaLabel(label),
+      matricula: true,
+      vigencia: true,
+    };
+  }
+
+  private esTipCapLicenciaLabel(text: string): boolean {
+    const t = this.normTipoCap(text);
+    return t.includes('licencia') && t.includes('conduccion');
+  }
+
+  private esTipCapTecnicoLaboralLabel(text: string): boolean {
+    const t = this.normTipoCap(text);
+    // «Técnico Laboral…» — no confundir con «Normas Competencias Laborales».
+    return t.includes('tecnico') && (t.includes('laboral') || t.includes('competenc'));
   }
 
   previewDescrHoraPractica(): string {
@@ -1442,6 +1520,7 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   usaSemestresEnForm(): boolean {
+    if (!this.camposTipCapForm().semestres) return false;
     const s = Number(this.form().semestres);
     return Number.isFinite(s) && s >= 1;
   }
@@ -1527,12 +1606,79 @@ export class ProgramasAdminComponent implements OnInit {
       this.patch('tarifa2', 0);
       this.patch('tarifa3', 0);
       this.patch('tarifaVirtual', 0);
-      this.patch('semestres', null);
       if (!this.esTipoCertJornada(this.form().tipoCertificado)) {
         this.patch('tipoCertificado', 'jornada_capacitacion');
       }
     }
+    this.aplicarReglasCamposTipCap();
+    this.refrescarCodigoProgAuto(canon);
     this.ensureFormTabVisible();
+  }
+
+  /** Limpia campos que la matriz de negocio no aplica al tipo actual. */
+  private aplicarReglasCamposTipCap(): void {
+    const c = this.camposTipCapForm();
+    if (!c.semestres) this.patch('semestres', null);
+    if (!c.horasDesglose) {
+      this.patch('horasTeoria', null);
+      this.patch('horasPractica', null);
+      this.patch('horasTaller', null);
+    }
+  }
+
+  private codigoAutoSeq = 0;
+
+  /** Al crear: pide el siguiente consecutivo CUR/LIC/NCL/TEC/DIP/JOR al backend. */
+  private refrescarCodigoProgAuto(idTipCap?: string | number | null): void {
+    if (this.editando()) return;
+    const id = idTipCap ?? this.form().idTipCap;
+    if (id === '' || id == null) {
+      this.patch('codigoProg', '');
+      return;
+    }
+    const seq = ++this.codigoAutoSeq;
+    this.progSvc.siguienteCodigo(id).subscribe({
+      next: (r) => {
+        if (seq !== this.codigoAutoSeq || this.editando()) return;
+        this.patch('codigoProg', String(r.codigoProg || '').trim());
+      },
+      error: () => {
+        if (seq !== this.codigoAutoSeq || this.editando()) return;
+        this.patch('codigoProg', this.siguienteCodigoLocal(id));
+      },
+    });
+  }
+
+  /** Prefijos de negocio (alineados con backend). */
+  prefijoCodigoTipCap(label: string): string {
+    const t = this.normTipoCap(label);
+    if (!t) return 'CUR';
+    if (
+      /jornadas? de capacitacion/.test(t) ||
+      /jornada capacitacion/.test(t) ||
+      (t.includes('jornada') && t.includes('capacitacion'))
+    ) {
+      return 'DIP';
+    }
+    if (t.includes('licencia') && t.includes('conduccion')) return 'LIC';
+    if ((/norma/.test(t) && /competenc/.test(t)) || /competencias laborales/.test(t)) {
+      if (!t.includes('tecnico')) return 'NCL';
+    }
+    if (t.includes('diplomado')) return 'TEC';
+    if (t.includes('tecnico') && (t.includes('laboral') || t.includes('competenc'))) return 'JOR';
+    if (/curso|no formal/.test(t)) return 'CUR';
+    return 'CUR';
+  }
+
+  private siguienteCodigoLocal(idTipCap: string | number): string {
+    const pref = this.prefijoCodigoTipCap(this.labelTipo(idTipCap));
+    let max = 0;
+    const re = new RegExp(`^${pref}(\\d+)$`, 'i');
+    for (const p of this.programas()) {
+      const m = String(p.codigoProg || '').match(re);
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    }
+    return `${pref}${String(max + 1).padStart(3, '0')}`;
   }
 
   onTipoCertPick(opt: EnumBuscarOption): void {
@@ -1572,6 +1718,8 @@ export class ProgramasAdminComponent implements OnInit {
 
   onTipoCapLimpiar(): void {
     this.patch('idTipCap', '');
+    this.aplicarReglasCamposTipCap();
+    this.refrescarCodigoProgAuto('');
   }
 
   onEstadoPick(opt: EnumBuscarOption): void {

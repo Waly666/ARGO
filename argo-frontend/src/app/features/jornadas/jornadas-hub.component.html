@@ -66,22 +66,6 @@
     <button type="button" class="ghost" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
   </nav>
 
-  <div class="row filter filter-compact">
-    <div class="col-w-filter">
-      <argo-catalogo-enum-buscar
-        label="Contratación"
-        placeholder="Seleccione o escriba contrato…"
-        [textoInicial]="textoContratoSel()"
-        [modoCombo]="true"
-        [remoto]="false"
-        [minLength]="1"
-        [opcionesLocales]="opcionesContratosToolbar()"
-        (seleccionado)="onContratoToolbarPick($event)"
-        (limpiado)="onContratoToolbarLimpiar()"
-      />
-    </div>
-  </div>
-
   @if (tab() === 'contratos') {
     <div class="panel contrato-panel">
       <h2>Contratación con empresas</h2>
@@ -91,11 +75,17 @@
         [class.contrato-finalizado]="contratoFormEjecutado()">
         @if (formContrato()._id) {
           <div class="contrato-form-banner">
+            <div class="contrato-form-banner-icon" aria-hidden="true"></div>
             <div class="contrato-form-banner-main">
               <span class="contrato-form-banner-label">Editando contrato</span>
               <span class="contrato-form-banner-cod mono">{{ formContrato().codContrato || 'Sin código' }}</span>
+              @if (clienteFeSeleccionado(); as cliBanner) {
+                <span class="contrato-form-banner-empresa">{{ nombreMostrarCliente(cliBanner) }}</span>
+              }
             </div>
-            <span [ngClass]="estadoContratoLiveClass(formContrato().estado)">
+            <span
+              class="contrato-form-banner-estado"
+              [ngClass]="estadoContratoLiveClass(formContrato().estado)">
               {{ labelEstadoContrato(formContrato().estado) }}
             </span>
           </div>
@@ -157,7 +147,7 @@
                     @if (cli.nombreComercial && cli.nombreComercial !== nombreMostrarCliente(cli)) {
                       <span class="empresa-nombre-comercial">{{ cli.nombreComercial }}</span>
                     }
-                    <span class="empresa-nit mono">{{ cli.identificacion }}</span>
+                    <span class="empresa-nit mono">NIT {{ cli.identificacion }}</span>
                   </div>
                   <button type="button" class="ghost sm linkish empresa-editar" (click)="abrirCrearClienteFe()">
                     Editar en Clientes
@@ -165,21 +155,21 @@
                 </div>
 
                 <dl class="empresa-datos-grid">
-                  <div class="empresa-dato">
-                    <dt>Razón social</dt>
+                  <div class="empresa-dato empresa-dato--razon">
+                    <dt><span class="empresa-dato-ico" aria-hidden="true"></span> Razón social</dt>
                     <dd>{{ cli.razonSocial || cli.nombres || '—' }}</dd>
                   </div>
-                  <div class="empresa-dato">
-                    <dt>Nombre comercial</dt>
+                  <div class="empresa-dato empresa-dato--comercial">
+                    <dt><span class="empresa-dato-ico" aria-hidden="true"></span> Nombre comercial</dt>
                     <dd>{{ cli.nombreComercial || '—' }}</dd>
                   </div>
-                  <div class="empresa-dato">
-                    <dt>Identificación</dt>
+                  <div class="empresa-dato empresa-dato--id">
+                    <dt><span class="empresa-dato-ico" aria-hidden="true"></span> Identificación</dt>
                     <dd class="mono">{{ cli.identificacion || '—' }}</dd>
                   </div>
                   @if (cli.correo || cli.telefono) {
-                    <div class="empresa-dato empresa-dato--wide">
-                      <dt>Contacto</dt>
+                    <div class="empresa-dato empresa-dato--wide empresa-dato--contacto">
+                      <dt><span class="empresa-dato-ico" aria-hidden="true"></span> Contacto</dt>
                       <dd>
                         @if (cli.correo) { <span>{{ cli.correo }}</span> }
                         @if (cli.correo && cli.telefono) { <span class="sep">·</span> }
@@ -190,6 +180,7 @@
                 </dl>
 
                 <div class="cliente-fe-fiscal empresa-fiscal">
+                  <span class="empresa-fiscal-label">Perfil fiscal</span>
                   <span class="fiscal-tag fiscal-tag--tipo" [class.on]="!!cli.tipoContratoCap" [class.off]="!cli.tipoContratoCap">
                     {{ cli.tipoContratoCapLabel || labelTipoContratoCap(cli.tipoContratoCap) || 'Sin tipo fiscal' }}
                   </span>
@@ -206,6 +197,7 @@
               </div>
             } @else {
               <div class="empresa-empty-state">
+                <span class="empresa-empty-ico" aria-hidden="true"></span>
                 <p><strong>Sin empresa seleccionada</strong></p>
                 <p>Busque y elija la empresa contratante. Si no existe, créela en Clientes y vuelva aquí.</p>
               </div>
@@ -245,8 +237,14 @@
           </section>
         </div>
 
-        <section class="form-block">
-          <h3 class="form-block-title">Ubicación sede / cliente</h3>
+        <section class="form-block contrato-card-block contrato-ubicacion-block">
+          <header class="contrato-block-head">
+            <span class="contrato-block-icon contrato-block-icon--pin" aria-hidden="true"></span>
+            <div>
+              <h3 class="form-block-title">Ubicación sede / cliente</h3>
+              <p class="contrato-block-sub">Ciudad de referencia del contrato (DIVIPOLA).</p>
+            </div>
+          </header>
           <div class="row row-fields">
             <div class="field col-w-lg field-muni">
               <argo-municipio-buscar
@@ -267,8 +265,14 @@
           </div>
         </section>
 
-        <section class="form-block">
-          <h3 class="form-block-title">Programación</h3>
+        <section class="form-block contrato-card-block contrato-programacion-block">
+          <header class="contrato-block-head">
+            <span class="contrato-block-icon contrato-block-icon--cal" aria-hidden="true"></span>
+            <div>
+              <h3 class="form-block-title">Programación</h3>
+              <p class="contrato-block-sub">Supervisor, fechas, cupos y plan de municipios para generar jornadas.</p>
+            </div>
+          </header>
           <div class="row row-fields">
             <div class="field col-w-sup">
               <argo-catalogo-enum-buscar
@@ -297,52 +301,264 @@
               <argo-date-input label="Fin jornadas" [ngModel]="formContrato().fechaFinJornadas" (ngModelChange)="patchContrato('fechaFinJornadas', $event)" title="Último día calendario para programar jornadas"></argo-date-input>
             </div>
           </div>
-          <div class="row row-fields">
-            <div class="field col-w-num">
-              <label>Nº jornadas</label>
-              <input type="number" min="1" [ngModel]="formContrato().numerojornadas" (ngModelChange)="patchContrato('numerojornadas', $event)" />
+
+          <div class="contrato-kpi-strip" role="group" aria-label="Cupos de programación">
+            <div class="contrato-kpi">
+              <span class="contrato-kpi-label">Nº jornadas</span>
+              <input
+                type="number"
+                min="1"
+                class="contrato-kpi-input"
+                [ngModel]="tienePlanMunicipios() ? totalJornadasPlanContrato() : formContrato().numerojornadas"
+                (ngModelChange)="patchContrato('numerojornadas', $event)"
+                [readonly]="tienePlanMunicipios()"
+                [class.readonly]="tienePlanMunicipios()"
+                [title]="tienePlanMunicipios() ? 'Suma del plan de municipios' : ''"
+              />
             </div>
-            <div class="field col-w-num">
-              <label>Por día</label>
-              <input type="number" min="1" max="20" [ngModel]="formContrato().jornadasPorDia" (ngModelChange)="patchContrato('jornadasPorDia', $event)" />
+            <div class="contrato-kpi">
+              <span class="contrato-kpi-label">Clases / jornada</span>
+              <input type="number" min="0" max="20" class="contrato-kpi-input" [ngModel]="formContrato().clasesPorJornada" (ngModelChange)="patchContrato('clasesPorJornada', $event)" />
             </div>
-            <div class="field col-w-num">
-              <label>Clases / jornada</label>
-              <input type="number" min="0" max="20" [ngModel]="formContrato().clasesPorJornada" (ngModelChange)="patchContrato('clasesPorJornada', $event)" />
-            </div>
-            <div class="field col-w-num">
-              <label>Nº alumnos</label>
-              <input type="number" min="0" [ngModel]="formContrato().numeroAlumnos" (ngModelChange)="patchContrato('numeroAlumnos', $event)" />
-            </div>
-          </div>
-          <div class="row row-fields">
-            <div class="field col-w-num">
-              <label>Sesiones cert.</label>
-              <input type="number" min="1" [ngModel]="formContrato().numSesCert" (ngModelChange)="patchContrato('numSesCert', $event)" [disabled]="formContrato().tipoCertificado === 'por_clase'" />
-            </div>
-            <div class="field col-w-md">
-              <label>Tipo certificado</label>
-              <select
-                [ngModel]="contratoTipoCertificado()"
-                (ngModelChange)="patchContrato('tipoCertificado', $event)">
-                <option value="global">Global (al completar sesiones)</option>
-                <option value="por_clase">Por clase (cada asistencia)</option>
-              </select>
+            <div class="contrato-kpi">
+              <span class="contrato-kpi-label">Nº alumnos</span>
+              <input type="number" min="0" class="contrato-kpi-input" [ngModel]="formContrato().numeroAlumnos" (ngModelChange)="patchContrato('numeroAlumnos', $event)" />
             </div>
           </div>
+
+          <div class="contrato-municipios-plan">
+            <header class="contrato-plan-head">
+              <span class="contrato-block-icon contrato-block-icon--map" aria-hidden="true"></span>
+              <div>
+                <label class="contrato-origenes-label">Plan de municipios</label>
+                <p class="hint block-hint">
+                  Uno o varios municipios, en orden. Por cada uno: total de jornadas y cuántas el mismo día.
+                </p>
+              </div>
+            </header>
+            <div class="plan-muni-add row row-fields">
+              <div class="field col-w-md">
+                <argo-municipio-buscar
+                  label="Municipio"
+                  placeholder="Seleccione o escriba municipio…"
+                  [modoCombo]="true"
+                  [textoInicial]="planMuniTexto()"
+                  (seleccionado)="onMunicipioPlanPick($event)"
+                  (limpiado)="onMunicipioPlanLimpiar()"
+                />
+              </div>
+              <div class="field col-w-num">
+                <label>Jornadas</label>
+                <input
+                  type="number"
+                  min="1"
+                  [ngModel]="planMuniJornadas()"
+                  (ngModelChange)="planMuniJornadas.set(+$event || 1)"
+                  [disabled]="contratoFormEjecutado()"
+                />
+              </div>
+              <div class="field col-w-num">
+                <label>Por día</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  [ngModel]="planMuniPorDia()"
+                  (ngModelChange)="planMuniPorDia.set(+$event || 1)"
+                  [disabled]="contratoFormEjecutado()"
+                  title="Cuántas jornadas de este municipio el mismo día"
+                />
+              </div>
+              <div class="field field-plan-add-btn">
+                <label>&nbsp;</label>
+                <button
+                  type="button"
+                  class="mini primary"
+                  (click)="agregarMunicipioPlan()"
+                  [disabled]="contratoFormEjecutado()"
+                >
+                  + Agregar
+                </button>
+              </div>
+            </div>
+            @if ((formContrato().municipiosPlan || []).length) {
+              <ul class="plan-muni-lista" role="list">
+                @for (row of formContrato().municipiosPlan || []; track $index; let i = $index) {
+                  <li class="plan-muni-item">
+                    <span class="plan-muni-orden" aria-hidden="true">{{ row.orden || i + 1 }}</span>
+                    <div class="plan-muni-info">
+                      <strong class="plan-muni-nombre">{{ row.municipio || row.codMunicipio }}</strong>
+                      <span class="plan-muni-meta">
+                        @if (row.depto) {
+                          <span class="plan-muni-depto">{{ row.depto }}</span>
+                        }
+                        @if (row.codMunicipio) {
+                          <span class="plan-muni-cod mono">{{ row.codMunicipio }}</span>
+                        }
+                      </span>
+                    </div>
+                    <div class="plan-muni-metrics">
+                      <label class="plan-muni-metric">
+                        <span class="plan-muni-metric-lbl">Jornadas</span>
+                        <input
+                          type="number"
+                          min="1"
+                          class="plan-muni-num"
+                          [ngModel]="row.numJornadas"
+                          (ngModelChange)="patchNumJornadasPlan(i, $event)"
+                          [disabled]="contratoFormEjecutado()"
+                        />
+                      </label>
+                      <label class="plan-muni-metric">
+                        <span class="plan-muni-metric-lbl">Por día</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="20"
+                          class="plan-muni-num"
+                          [ngModel]="row.jornadasPorDia ?? 1"
+                          (ngModelChange)="patchJornadasPorDiaPlan(i, $event)"
+                          [disabled]="contratoFormEjecutado()"
+                          title="Jornadas de este municipio el mismo día"
+                        />
+                      </label>
+                    </div>
+                    <div class="plan-muni-acciones">
+                      <button
+                        type="button"
+                        class="plan-muni-btn"
+                        (click)="moverMunicipioPlan(i, -1)"
+                        [disabled]="i === 0 || contratoFormEjecutado()"
+                        title="Subir">
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        class="plan-muni-btn"
+                        (click)="moverMunicipioPlan(i, 1)"
+                        [disabled]="i >= (formContrato().municipiosPlan || []).length - 1 || contratoFormEjecutado()"
+                        title="Bajar">
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        class="plan-muni-btn plan-muni-btn--danger"
+                        (click)="quitarMunicipioPlan(i)"
+                        [disabled]="contratoFormEjecutado()"
+                        title="Quitar">
+                        ✕
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+              <p class="plan-muni-total">
+                Total plan: <strong>{{ totalJornadasPlanContrato() }}</strong> jornada(s)
+              </p>
+            } @else {
+              <div class="plan-muni-empty">
+                <span class="plan-muni-empty-ico" aria-hidden="true"></span>
+                <p>Sin municipios en el plan. Agregue al menos uno para generar jornadas con ubicación.</p>
+              </div>
+            }
+          </div>
+
           <div class="row row-fields form-block-inline contrato-dias-semana">
             <label><input type="checkbox" [ngModel]="formContrato().incluiSab" (ngModelChange)="patchContrato('incluiSab', $event)" /> Sábados</label>
             <label><input type="checkbox" [ngModel]="formContrato().incluiDom" (ngModelChange)="patchContrato('incluiDom', $event)" /> Domingos</label>
             <label><input type="checkbox" [ngModel]="formContrato().incluiFest" (ngModelChange)="patchContrato('incluiFest', $event)" /> Festivos</label>
           </div>
-          <p class="hint block-hint">
-            Por día: varias jornadas el mismo calendario.
-            @if (contratoTipoCertificado() === 'por_clase') {
-              Certificado automático al marcar asistencia en cada clase (horas del programa de la clase).
-            } @else {
-              Certificado automático al completar las sesiones indicadas (horas del programa de certificación).
+
+          <div class="contrato-origenes">
+            <header class="contrato-plan-head">
+              <span class="contrato-block-icon contrato-block-icon--people" aria-hidden="true"></span>
+              <div>
+                <label class="contrato-origenes-label">Orígenes de alumnos y certificación</label>
+                <p class="hint block-hint">
+                  Active los tipos de participantes. Cada origen tiene sesiones, tipo de certificado y, si es
+                  global, su propio programa.
+                </p>
+              </div>
+            </header>
+
+            @for (o of origenesContratoUi; track o.key) {
+              <div
+                class="origen-cert-block"
+                [class.origen-cert-block--off]="!origenAlumnoActivo(o.key)"
+                [class.origen-cert-block--on]="origenAlumnoActivo(o.key)"
+                [attr.data-origen]="o.key">
+                <label class="origen-switch origen-switch--head">
+                  <span class="origen-tipo-ico" [attr.data-origen]="o.key" aria-hidden="true"></span>
+                  <input
+                    type="checkbox"
+                    [ngModel]="origenAlumnoActivo(o.key)"
+                    (ngModelChange)="patchOrigenAlumnoContrato(o.key, $event)"
+                  />
+                  <span>{{ o.label }}</span>
+                </label>
+                @if (origenAlumnoActivo(o.key)) {
+                  <div class="origen-cert-fields">
+                    <div class="field">
+                      <label>Sesiones a certificar</label>
+                      <input
+                        type="number"
+                        min="1"
+                        [ngModel]="certOrigenNumSes(o.key)"
+                        (ngModelChange)="patchCertOrigen(o.key, 'numSesCert', $event)"
+                        [disabled]="certOrigenTipo(o.key) === 'por_clase' || contratoFormEjecutado()"
+                      />
+                    </div>
+                    <div class="field">
+                      <label>Tipo certificado</label>
+                      <select
+                        [ngModel]="certOrigenTipo(o.key)"
+                        (ngModelChange)="patchCertOrigen(o.key, 'tipoCertificado', $event)"
+                        [disabled]="contratoFormEjecutado()"
+                      >
+                        <option value="global">Global (al completar sesiones)</option>
+                        <option value="por_clase">Por clase (cada asistencia)</option>
+                      </select>
+                    </div>
+                  </div>
+                  @if (certOrigenTipo(o.key) === 'global') {
+                    <div class="origen-cert-programa">
+                      <argo-catalogo-enum-buscar
+                        label="Programa de certificación *"
+                        placeholder="Seleccione o escriba programa…"
+                        [textoInicial]="textoProgramaCertOrigen(o.key)"
+                        [modoCombo]="true"
+                        [remoto]="false"
+                        [minLength]="1"
+                        [disabled]="contratoFormEjecutado()"
+                        [opcionesLocales]="opcionesProgramaCertificacion()"
+                        (seleccionado)="onProgramaCertOrigenPick(o.key, $event)"
+                        (limpiado)="onProgramaCertOrigenLimpiar(o.key)"
+                      />
+                      @if (previewCertOrigen(o.key); as prev) {
+                        <div class="origen-cert-preview">
+                          <span class="hint">Encabezado: {{ prev.encabezado }}</span>
+                          <span class="hint"> · Horas: {{ prev.horas }}</span>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <p class="hint block-hint origen-cert-hint">
+                      Por clase: encabezado y horas salen del programa de cada clase.
+                    </p>
+                  }
+                }
+              </div>
             }
-            «Generar faltantes» crea jornadas pendientes y autogenera clases (franjas 8:00–17:00; sin instructor).
+            <p class="hint block-hint">
+              Institución educativa incluye colegios, institutos técnicos y universidades.
+            </p>
+          </div>
+
+          <p class="hint block-hint">
+            En el plan, «Por día» define cuántas jornadas de ese municipio van el mismo calendario.
+            La certificación se aplica según el origen de cada alumno (sesiones y tipo configurados arriba).
+            «Generar faltantes» crea jornadas pendientes según el plan de municipios (orden y cupos) y
+            autogenera clases (franjas 8:00–17:00; sin instructor).
             Programa desde <strong>inicio jornadas</strong> hasta <strong>fin jornadas</strong> (puede ser meses adelante), respetando sábados, domingos y festivos.
             @if (esCertPorClase() && cantidadProgramasContrato() > 0) {
               Con los {{ cantidadProgramasContrato() }} programa(s) del contrato, cada clase nueva recibe uno en reparto equitativo.
@@ -353,18 +569,33 @@
         </section>
 
         <section
-          class="form-block contrato-programas-block"
+          class="form-block contrato-card-block contrato-programas-block"
           [class.form-block--muted]="programasSeccionInactiva()">
-          <h3 class="form-block-title">Programas del contrato</h3>
+          <header class="contrato-block-head">
+            <span class="contrato-block-icon contrato-block-icon--book" aria-hidden="true"></span>
+            <div>
+              <h3 class="form-block-title">Programas del contrato</h3>
+              <p class="contrato-block-sub">
+                Programas que se reparten entre clases al generar faltantes (certificación por clase).
+              </p>
+            </div>
+          </header>
           <p class="hint block-hint">
             Elija los programas que aplican a este contrato. Al usar «Generar faltantes» o crear jornadas con
             autogeneración de clases, el sistema reparte los programas de forma equitativa entre las clases nuevas.
             Cada clase sigue siendo editable: instructor o administrador pueden cambiar el programa después.
           </p>
-          @if (esCertGlobal()) {
+          @if (esCertGlobal() && esCertPorClase()) {
             <p class="hint block-hint">
-              Certificación global: esta lista no aplica. Elija un solo programa en la sección Certificado; de ahí
-              salen el encabezado y las horas del certificado.
+              Este contrato combina orígenes globales y por clase: el programa de certificación de cada
+              origen global se configura arriba; la lista de programas aplica a las clases (por clase).
+            </p>
+          }
+          @if (esCertGlobal() && !esCertPorClase()) {
+            <p class="hint block-hint">
+              Todos los orígenes activos son globales: el programa de certificación de cada uno se
+              configura en el bloque de orígenes (arriba). Esta lista de programas no aplica a la
+              emisión global.
             </p>
           }
           @if (contratoFormEjecutado()) {
@@ -425,56 +656,41 @@
           }
         </section>
 
-        <section class="form-block" [class.form-block--muted]="certificadoSeccionInactiva()">
-          <h3 class="form-block-title">Certificado</h3>
-          @if (esCertPorClase()) {
+        <section
+          class="form-block contrato-card-block"
+          [class.form-block--muted]="certificadoSeccionInactiva()">
+          <header class="contrato-block-head">
+            <span class="contrato-block-icon contrato-block-icon--cert" aria-hidden="true"></span>
+            <div>
+              <h3 class="form-block-title">Certificado (resumen por origen)</h3>
+              <p class="contrato-block-sub">Vista rápida de certificación global activa.</p>
+            </div>
+          </header>
+          @if (!esCertGlobal()) {
             <p class="hint block-hint">
-              Certificación por clase: el encabezado y las horas salen del programa de cada clase. Esta
-              sección solo aplica en modo global.
+              Ningún origen activo usa certificación global. Encabezado y horas salen del programa de cada
+              clase.
             </p>
           } @else {
             <p class="hint block-hint">
-              Certificación global: elija el programa de Jornadas de Capacitación. Su nombre de certificado (o
-              descripción / nombre) y las horas del programa se imprimen al completar las sesiones indicadas.
+              Para cada origen en modo global, el programa (encabezado/horas) se elige en el bloque de
+              orígenes arriba.
             </p>
-            <div class="row row-fields">
-              <div class="field col-w-full field-certificado-programa">
-                <argo-catalogo-enum-buscar
-                  label="Programa de certificación *"
-                  placeholder="Seleccione o escriba programa…"
-                  [textoInicial]="textoProgramaCertificacion()"
-                  [modoCombo]="true"
-                  [remoto]="false"
-                  [minLength]="1"
-                  [disabled]="contratoFormEjecutado()"
-                  [opcionesLocales]="opcionesProgramaCertificacion()"
-                  (seleccionado)="onProgramaCertificacionPick($event)"
-                  (limpiado)="onProgramaCertificacionLimpiar()"
-                />
-              </div>
-            </div>
-            @if (programasJornadaLoading()) {
-              <p class="field-hint">Cargando programas…</p>
-            } @else if (programasJornada().length === 0) {
-              <p class="field-hint">
-                No hay programas de «Jornadas de Capacitación». Créelos en
-                <a routerLink="/app/programas" target="_blank">Programas</a>.
-              </p>
-            }
-            @if (previewCertificadoGlobal(); as prev) {
-              <div class="row row-fields">
-                <div class="field col-w-full">
-                  <label>Encabezado (del programa)</label>
-                  <input type="text" [value]="prev.encabezado" readonly class="readonly" />
-                </div>
-              </div>
-              <div class="row row-fields">
-                <div class="field col-w-sm">
-                  <label>Horas (del programa)</label>
-                  <input type="text" [value]="prev.horas" readonly class="readonly" />
-                </div>
-              </div>
-            }
+            <ul class="origen-cert-resumen">
+              @for (o of origenesActivosConCert(); track o.key) {
+                @if (certOrigenTipo(o.key) === 'global') {
+                  <li>
+                    <strong>{{ o.label }}</strong>:
+                    {{ certOrigenNumSes(o.key) }} sesión(es) ·
+                    @if (certOrigenProgramaId(o.key); as pid) {
+                      {{ textoProgramaCertOrigen(o.key) || pid }}
+                    } @else {
+                      <span class="hint warn-text">sin programa</span>
+                    }
+                  </li>
+                }
+              }
+            </ul>
           }
         </section>
 
@@ -704,48 +920,59 @@
   }
 
   @if (tab() === 'avance') {
-    <div class="panel contrato-avance-panel">
+    <div class="panel contrato-avance-panel ficha-shell ficha-shell--avance">
       @if (!contratoAvanceId()) {
-        <div class="jor-empty">
-          <span class="jor-empty-icon">📊</span>
+        <div class="jor-empty ficha-empty">
+          <span class="ficha-empty-mark" aria-hidden="true"></span>
+          <p class="ficha-empty-title">Sin contrato seleccionado</p>
           <p>Seleccione un contrato arriba para ver el avance de capacitación y certificación.</p>
         </div>
       } @else {
-        <div class="panel-head-row">
-          <div class="panel-head-title">
-            <h2>Avance del contrato</h2>
-            <p class="hint">
-              @if (contratoAvanceMeta(); as cm) {
-                <span class="mono">{{ cm.codContrato || 'Sin código' }}</span>
-                · {{ labelClienteContrato(cm) }}
-                · {{ labelTipoCertificado(cm.tipoCertificado) }}
-              } @else {
-                Seguimiento de clases dictadas y alumnos con asistencia registrada.
-              }
-            </p>
+        <header class="ficha-hero">
+          <div class="ficha-hero-glow" aria-hidden="true"></div>
+          <div class="ficha-hero-copy">
+            <div class="ficha-hero-brand">
+              <span class="ficha-hero-mark ficha-hero-mark--avance" aria-hidden="true"></span>
+              <div>
+                <p class="ficha-kicker">Seguimiento · Avance</p>
+                <h2>Avance del contrato</h2>
+              </div>
+            </div>
+            @if (contratoAvanceMeta(); as cm) {
+              <div class="ficha-meta">
+                <span class="ficha-chip ficha-chip--code">{{ cm.codContrato || 'Sin código' }}</span>
+                <span class="ficha-chip">{{ labelClienteContrato(cm) }}</span>
+                <span class="ficha-chip ficha-chip--muted">{{ labelTipoCertificado(cm.tipoCertificado) }}</span>
+              </div>
+            } @else {
+              <p class="hint">Seguimiento de clases dictadas y alumnos con asistencia registrada.</p>
+            }
           </div>
-          <div class="panel-head-actions">
+          <div class="ficha-hero-actions">
             <button
               type="button"
-              class="mini ghost"
+              class="ficha-btn ficha-btn--ghost"
               (click)="cargarAvanceContrato()"
               [disabled]="avanceContratoLoading()">
               {{ avanceContratoLoading() ? 'Actualizando…' : 'Actualizar' }}
             </button>
           </div>
-        </div>
+        </header>
 
         @if (avanceContratoLoading() && !avanceContrato()) {
-          <p class="hint">Cargando avance…</p>
+          <div class="ficha-loading" aria-live="polite">
+            <span class="ficha-loading-spin" aria-hidden="true"></span>
+            <p>Cargando avance…</p>
+          </div>
         } @else if (avanceContratoResumen()) {
           <div class="contrato-avance-cuerpo">
             <div class="contrato-avance-kpis">
-              <article class="avance-kpi">
+              <article class="avance-kpi avance-kpi--sky">
                 <span class="avance-kpi-label">Clases dictadas</span>
                 <strong class="avance-kpi-val">{{ avanceContratoResumen()!.clasesDictadas }}</strong>
                 <span class="avance-kpi-sub">de {{ avanceContratoResumen()!.clasesTotales }} programadas</span>
               </article>
-              <article class="avance-kpi">
+              <article class="avance-kpi avance-kpi--coral">
                 <span class="avance-kpi-label">Faltan por dictar</span>
                 <strong class="avance-kpi-val">{{ avanceContratoResumen()!.clasesFaltanDictar }}</strong>
                 @if (avanceContratoResumen()!.clasesEnProceso > 0) {
@@ -753,29 +980,29 @@
                 }
               </article>
               @if (avanceContratoResumen()!.metaClasesContrato > 0) {
-                <article class="avance-kpi">
+                <article class="avance-kpi avance-kpi--gold">
                   <span class="avance-kpi-label">Meta contractual</span>
                   <strong class="avance-kpi-val">{{ avanceContratoResumen()!.clasesDictadas }}/{{ avanceContratoResumen()!.metaClasesContrato }}</strong>
                   <span class="avance-kpi-sub">clases del contrato</span>
                 </article>
               }
-              <article class="avance-kpi">
+              <article class="avance-kpi avance-kpi--emerald">
                 <span class="avance-kpi-label">Alumnos capacitados</span>
                 <strong class="avance-kpi-val">{{ avanceContratoResumen()!.alumnosCapacitados }}</strong>
                 @if (avanceContratoResumen()!.numeroAlumnosMeta > 0) {
                   <span class="avance-kpi-sub">meta {{ avanceContratoResumen()!.numeroAlumnosMeta }}</span>
                 }
               </article>
-              <article class="avance-kpi">
+              <article class="avance-kpi avance-kpi--teal">
                 <span class="avance-kpi-label">Alumnos certificados</span>
                 <strong class="avance-kpi-val">{{ avanceContratoResumen()!.alumnosCertificados }}</strong>
                 @if (contratoAvanceMeta()?.tipoCertificado === 'por_clase') {
                   <span class="avance-kpi-sub">con al menos un certificado</span>
                 } @else {
-                  <span class="avance-kpi-sub">{{ avanceContratoResumen()!.numSesCert }} sesión(es) requerida(s)</span>
+                  <span class="avance-kpi-sub">según origen de cada alumno</span>
                 }
               </article>
-              <article class="avance-kpi">
+              <article class="avance-kpi avance-kpi--sky">
                 <span class="avance-kpi-label">Jornadas</span>
                 <strong class="avance-kpi-val">{{ avanceContratoResumen()!.jornadasProgramadas }}</strong>
                 @if (avanceContratoResumen()!.jornadasMeta > 0) {
@@ -784,16 +1011,22 @@
               </article>
             </div>
 
-            <h3 class="contrato-avance-subtitle">Alumnos con clase dictada</h3>
+            <div class="ficha-band">
+              <div>
+                <p class="ficha-kicker">Detalle</p>
+                <h3 class="contrato-avance-subtitle">Alumnos con clase dictada</h3>
+              </div>
+            </div>
             @if (avanceContratoAlumnos().length === 0) {
               <p class="hint jor-empty-inline">Aún no hay alumnos con asistencia registrada en este contrato.</p>
             } @else {
-              <div class="table-wrap contrato-avance-tabla-wrap">
+              <div class="table-wrap contrato-avance-tabla-wrap ficha-table-wrap">
                 <table class="argo contrato-avance-tabla">
                   <thead>
                     <tr>
                       <th>Documento</th>
                       <th>Alumno</th>
+                      <th>Origen</th>
                       <th>Clases asistidas</th>
                       <th>Certificado</th>
                     </tr>
@@ -804,15 +1037,22 @@
                         <td><span class="mono">{{ formatNumDoc(a.numDoc) }}</span></td>
                         <td>{{ a.nombreCompleto }}</td>
                         <td>
+                          <span class="hint">{{ labelOrigenAlumno(a.origenJornadaCap) }}</span>
+                          <span class="hint"> · {{ labelTipoCertificado(a.tipoCertificado) }}</span>
+                        </td>
+                        <td>
                           <span [ngClass]="capMetaNum(a.clasesAsistidas)">{{ a.clasesAsistidas }}</span>
-                          @if (contratoAvanceMeta()?.tipoCertificado !== 'por_clase' && !a.cumplioSesiones) {
-                            <span class="hint"> · faltan {{ a.faltanSesiones }}</span>
+                          @if (a.tipoCertificado !== 'por_clase' && !a.cumplioSesiones) {
+                            <span class="hint"> · {{ a.clasesAsistidas }}/{{ a.numSesCert }} · faltan {{ a.faltanSesiones }}</span>
+                          }
+                          @if (a.tipoCertificado !== 'por_clase' && a.cumplioSesiones) {
+                            <span class="hint"> · {{ a.clasesAsistidas }}/{{ a.numSesCert }}</span>
                           }
                         </td>
                         <td>
                           @if (a.certificado) {
                             <span class="cap cap-ok cap-sm">Sí</span>
-                            @if (contratoAvanceMeta()?.tipoCertificado === 'por_clase' && a.certificadosEmitidos > 1) {
+                            @if (a.tipoCertificado === 'por_clase' && a.certificadosEmitidos > 1) {
                               <span class="hint"> ({{ a.certificadosEmitidos }})</span>
                             }
                             @if (a.codigosCertificado.length) {
@@ -837,7 +1077,7 @@
   }
 
   @if (tab() === 'jornadas') {
-    <div class="panel">
+    <div class="panel ficha-shell ficha-shell--jornadas">
       @if (jornadasEnProcesoAhora().length > 0) {
         <div class="jornada-alerta-proceso" role="alert">
           <span class="ja-dot" aria-hidden="true"></span>
@@ -851,11 +1091,29 @@
           </span>
         </div>
       }
-      <div class="vista-toolbar">
-        <h2>Jornadas de la contratación</h2>
-        <div class="vista-toolbar-actions">
+      <header class="ficha-hero ficha-hero--compact">
+        <div class="ficha-hero-glow" aria-hidden="true"></div>
+        <div class="ficha-hero-copy">
+          <div class="ficha-hero-brand">
+            <span class="ficha-hero-mark ficha-hero-mark--jornadas" aria-hidden="true"></span>
+            <div>
+              <p class="ficha-kicker">Programación · Campo</p>
+              <h2>Jornadas de la contratación</h2>
+            </div>
+          </div>
+        </div>
+        <div class="ficha-hero-actions vista-toolbar-actions">
+          <span class="jornadas-contador" title="Registros de jornadas cargados">
+            <strong>{{ totalJornadasExistentes() }}</strong>
+            jornada{{ totalJornadasExistentes() === 1 ? '' : 's' }}
+            @if (hayFiltrosJornadasActivos()) {
+              <span class="jornadas-contador-filtro">
+                · mostrando {{ totalJornadasFiltradas() }}
+              </span>
+            }
+          </span>
           @if (puedeAgregarJornadaExtra()) {
-            <button type="button" class="primary mini" (click)="abrirNuevaJornada($event)">
+            <button type="button" class="ficha-btn ficha-btn--primary" (click)="abrirNuevaJornada($event)">
               + Agregar jornada extra
             </button>
           }
@@ -868,18 +1126,49 @@
             </button>
           </div>
         </div>
-      </div>
-      <p class="hint">
-        El estado se actualiza solo: <strong>INACTIVO</strong> (antes del día),
-        <strong>EN PROCESO</strong> (solo el día programado),
-        <strong>FINALIZADO</strong> (después).
-        Puede <strong>agregar jornadas extra</strong> (actualiza el número de jornadas del contrato),
-        <strong>eliminar</strong> jornadas o usar «Generar faltantes» en Contratación.
-        Las clases extra al crear/borrar actualizan <strong>clases por jornada</strong> en el contrato.
-        @if (vistaJornadas() === 'calendario' && !contratoSel()) {
-          <span class="cal-hint-all"> Calendario: <strong>todos los contratos</strong> (filtre arriba para uno solo).</span>
+      </header>
+
+      <div class="jornadas-filtros row filter filter-compact ficha-filtros">
+        <div class="field col-w-md">
+          <label>Municipio</label>
+          <select
+            [ngModel]="filtroJornadaMunicipio()"
+            (ngModelChange)="filtroJornadaMunicipio.set($event)"
+          >
+            <option value="">Todos</option>
+            @for (m of municipiosFiltroJornadas(); track m) {
+              <option [value]="m">{{ m }}</option>
+            }
+          </select>
+        </div>
+        <div class="field col-w-sm">
+          <argo-date-input
+            label="Fecha"
+            [ngModel]="filtroJornadaFecha()"
+            (ngModelChange)="filtroJornadaFecha.set($event)"
+          />
+        </div>
+        <div class="field col-w-sm">
+          <label>Estado</label>
+          <select
+            [ngModel]="filtroJornadaEstado()"
+            (ngModelChange)="filtroJornadaEstado.set($event)"
+          >
+            <option value="">Todos</option>
+            <option value="INACTIVO">INACTIVO</option>
+            <option value="EN PROCESO">EN PROCESO</option>
+            <option value="FINALIZADO">FINALIZADO</option>
+          </select>
+        </div>
+        @if (hayFiltrosJornadasActivos()) {
+          <div class="field field-limpiar-filtros">
+            <label>&nbsp;</label>
+            <button type="button" class="ghost mini" (click)="limpiarFiltrosJornadas()">
+              Limpiar filtros
+            </button>
+          </div>
         }
-      </p>
+      </div>
 
       <div class="jornada-modal-backdrop" *ngIf="jornadaEdit() as je">
         <section
@@ -1175,7 +1464,7 @@
           }
         </div>
       } @else {
-      <div class="table-wrap">
+      <div class="table-wrap ficha-table-wrap">
       <table id="jornadas-listado" class="argo">
         <thead>
           <tr>
@@ -1191,7 +1480,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let j of jornadas()" [class.sel]="jornadaEnEdicion(j._id)" [ngClass]="rowJornadaClass(j.estado)">
+          <tr *ngFor="let j of jornadasListaFiltradas()" [class.sel]="jornadaEnEdicion(j._id)" [ngClass]="rowJornadaClass(j.estado)">
             <td><span [ngClass]="capFechaJor(j.fechaProgramacion)">{{ fmtFecha(j.fechaProgramacion) }}</span></td>
             <td><span [ngClass]="capMunicipioJor(j.municipio)">{{ j.municipio || '—' }}</span></td>
             <td class="direccion-cell" [title]="j.direccion || ''">
@@ -1242,10 +1531,14 @@
               }
             </td>
           </tr>
-          <tr *ngIf="jornadas().length === 0">
+          <tr *ngIf="jornadasListaFiltradas().length === 0">
             <td colspan="10" class="empty jor-empty">
               <span class="jor-empty-icon">📅</span>
-              <p>Seleccione una contratación o genere jornadas desde el paso <strong>1. Contratación</strong>.</p>
+              @if (totalJornadasExistentes() === 0) {
+                <p>Seleccione una contratación o genere jornadas desde el paso <strong>1. Contratación</strong>.</p>
+              } @else {
+                <p>No hay jornadas con los filtros actuales. <button type="button" class="ghost mini" (click)="limpiarFiltrosJornadas()">Limpiar filtros</button></p>
+              }
             </td>
           </tr>
         </tbody>
@@ -1256,11 +1549,18 @@
   }
 
   @if (tab() === 'clases') {
-    <div class="panel clases-panel">
-      <header class="clases-panel-head">
+    <div class="panel clases-panel ficha-shell ficha-shell--clases">
+      <header class="clases-panel-head ficha-hero ficha-hero--clases">
+        <div class="ficha-hero-glow" aria-hidden="true"></div>
         <div class="clases-panel-head-top">
-          <div>
-            <h2>Clases de jornada</h2>
+          <div class="ficha-hero-copy">
+            <div class="ficha-hero-brand">
+              <span class="ficha-hero-mark ficha-hero-mark--clases" aria-hidden="true"></span>
+              <div>
+                <p class="ficha-kicker">Operación · Campo</p>
+                <h2>Clases de jornada</h2>
+              </div>
+            </div>
             @if (contratoSel(); as idC) {
               <p class="hint clases-panel-sub">
                 Contrato: <strong>{{ labelContratoCorto(idC) }}</strong>
@@ -1281,7 +1581,7 @@
           </div>
         </div>
 
-        <div class="clases-filtros-grid">
+        <div class="clases-filtros-grid ficha-filtros">
           <argo-catalogo-enum-buscar
             label="Jornada del contrato"
             placeholder="Todas las jornadas…"
@@ -1305,13 +1605,13 @@
           <div class="clases-panel-actions">
             <button
               type="button"
-              class="primary clases-btn-crear"
+              class="ficha-btn ficha-btn--primary clases-btn-crear"
               (click)="abrirModalCrearClase()"
               [disabled]="contratoActivoFinalizado()"
               [title]="contratoActivoFinalizado() ? 'Contrato finalizado: no se pueden crear clases' : 'Crear clase'">
               + Crear clase
             </button>
-            <button type="button" class="ghost mini" (click)="irInstructor()">Clases en ejecución</button>
+            <button type="button" class="ficha-btn ficha-btn--ghost" (click)="irInstructor()">Clases en ejecución</button>
           </div>
         </div>
 
@@ -1323,7 +1623,7 @@
         }
       </header>
 
-      <div class="table-wrap" *ngIf="vistaClases() === 'lista'">
+      <div class="table-wrap ficha-table-wrap" *ngIf="vistaClases() === 'lista'">
       <table class="argo">
         <thead>
           <tr>
@@ -1724,6 +2024,20 @@
           <aside class="clase-modal-crear-side" aria-label="Alumnos opcionales">
             <h3 class="clase-modal-section clase-modal-section--side">Alumnos (opcional)</h3>
             <p class="hint hint-compact">Puede inscribirlos ahora o después de crear la clase.</p>
+            @if (origenesActivosContrato().length) {
+              <div class="origen-filtro-chips">
+                @for (o of origenesActivosContrato(); track o.key) {
+                  <button
+                    type="button"
+                    class="mini"
+                    [class.primary]="origenFiltroAlumno() === o.key"
+                    (click)="setOrigenFiltroAlumno(o.key)"
+                  >
+                    {{ o.label }}
+                  </button>
+                }
+              </div>
+            }
             <div class="clase-alumno-buscar">
               <div class="buscar-wrap">
                 <span class="buscar-ic" aria-hidden="true">🔍</span>
@@ -2151,6 +2465,21 @@
 
 
               <div class="clase-alumno-buscar">
+
+                @if (origenesActivosContrato().length) {
+                  <div class="origen-filtro-chips">
+                    @for (o of origenesActivosContrato(); track o.key) {
+                      <button
+                        type="button"
+                        class="mini"
+                        [class.primary]="origenFiltroAlumno() === o.key"
+                        (click)="setOrigenFiltroAlumno(o.key)"
+                      >
+                        {{ o.label }}
+                      </button>
+                    }
+                  </div>
+                }
 
                 <div class="buscar-wrap">
 
@@ -2645,39 +2974,50 @@
   </argo-form-modal>
 
   @if (tab() === 'certificados') {
-    <div class="panel">
-      <div class="panel-head-row">
-        <div class="panel-head-title">
-          <h2>Certificados del contrato</h2>
+    <div class="panel ficha-shell ficha-shell--certs">
+      <header class="ficha-hero">
+        <div class="ficha-hero-glow" aria-hidden="true"></div>
+        <div class="ficha-hero-copy">
+          <div class="ficha-hero-brand">
+            <span class="ficha-hero-mark ficha-hero-mark--certs" aria-hidden="true"></span>
+            <div>
+              <p class="ficha-kicker">Emisión · Certificar</p>
+              <h2>Certificados del contrato</h2>
+            </div>
+          </div>
           <p class="hint">
             Filtre por jornada, clase o fechas y descargue un ZIP con PDFs.
             Los generados <strong>hoy</strong> se resaltan en verde.
           </p>
         </div>
-        <div class="panel-head-actions">
+        <div class="ficha-hero-actions">
           @if (certsHoyCount() > 0) {
             <span class="jor-live-badge">{{ certsHoyCount() }} emitido(s) hoy</span>
           }
           <button
             type="button"
-            class="mini primary"
+            class="ficha-btn ficha-btn--primary"
             (click)="descargarZipCertificadosContrato()"
             [disabled]="!contratoSel() || !certsGenerados().length || descargandoZipCerts()">
-            {{ descargandoZipCerts() ? 'Generando ZIP…' : '⬇ ZIP PDFs' }}
+            {{ descargandoZipCerts() ? 'Generando ZIP…' : 'ZIP PDFs' }}
           </button>
           <a
             [routerLink]="['/app/jornadas/certificados']"
             [queryParams]="contratoSel() ? { contrato: contratoSel() } : {}"
-            class="mini ghost link-btn">
+            class="ficha-btn ficha-btn--ghost link-btn">
             Ver listado completo →
           </a>
         </div>
-      </div>
+      </header>
 
       @if (!contratoSel()) {
-        <p class="hint">Seleccione un contrato para ver y exportar certificados.</p>
+        <div class="ficha-empty ficha-empty--inline">
+          <span class="ficha-empty-mark" aria-hidden="true"></span>
+          <p class="ficha-empty-title">Sin contrato seleccionado</p>
+          <p>Seleccione un contrato para ver y exportar certificados.</p>
+        </div>
       } @else {
-        <div class="cert-hub-filtros">
+        <div class="cert-hub-filtros ficha-filtros">
           <div class="cert-hub-filtros-row">
             <argo-catalogo-enum-buscar
               label="Jornada"
@@ -2721,8 +3061,10 @@
                 (ngModelChange)="certFiltroTexto.set($event)"
                 autocomplete="off" />
             </div>
-            <button type="button" class="ghost mini" (click)="limpiarFiltrosCerts()">Limpiar filtros</button>
-            <span class="hint">
+            <button type="button" class="ficha-btn ficha-btn--ghost ficha-btn--sm" (click)="limpiarFiltrosCerts()">
+              Limpiar filtros
+            </button>
+            <span class="hint ficha-count-pill">
               {{ certsFiltradosVista().length }} de {{ certsGenerados().length }} certificado(s)
             </span>
           </div>
@@ -2731,7 +3073,7 @@
           </p>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap ficha-table-wrap">
         <table class="argo">
           <thead>
             <tr>
@@ -2818,19 +3160,46 @@
   }
 
   @if (tab() === 'finanzas' && puedeVerFinanzasContrato()) {
-    <div class="panel finanzas-panel">
-      <div class="panel-head-row">
-        <div class="panel-head-title">
-          <h2>Finanzas del contrato</h2>
-          <p class="hint">
-            Tres procesos distintos: <strong>solicitar el pago</strong> (cuenta de cobro),
-            <strong>registrar lo recibido</strong> (comprobantes) y <strong>facturar ante la DIAN</strong>.
-          </p>
+    <div class="panel finanzas-panel ficha-shell ficha-shell--finanzas">
+      <header class="ficha-hero">
+        <div class="ficha-hero-glow" aria-hidden="true"></div>
+        <div class="ficha-hero-copy">
+          <div class="ficha-hero-brand">
+            <span class="ficha-hero-mark ficha-hero-mark--finanzas" aria-hidden="true"></span>
+            <div>
+              <p class="ficha-kicker">Cobro · Facturación</p>
+              <h2>Finanzas del contrato</h2>
+            </div>
+          </div>
+          @if (formContrato()._id || contratoSel()) {
+            <div class="ficha-meta">
+              @if (formContrato().codContrato) {
+                <span class="ficha-chip ficha-chip--code">{{ formContrato().codContrato }}</span>
+              }
+              @if (labelClienteContrato(formContrato()); as cliente) {
+                @if (cliente !== '—') {
+                  <span class="ficha-chip">{{ cliente }}</span>
+                }
+              }
+              @if (formContrato().valorContrato) {
+                <span class="ficha-chip ficha-chip--money">{{ fmtMoney(formContrato().valorContrato) }}</span>
+              }
+            </div>
+          } @else {
+            <p class="hint">
+              Tres procesos: <strong>solicitar el pago</strong> (cuenta de cobro),
+              <strong>registrar lo recibido</strong> (comprobantes) y <strong>facturar ante la DIAN</strong>.
+            </p>
+          }
         </div>
-      </div>
+      </header>
 
       @if (!contratoSel() && !formContrato()._id) {
-        <p class="hint finanzas-sin-contrato">Seleccione un contrato arriba para ver valor, cobros y facturación.</p>
+        <div class="ficha-empty ficha-empty--inline finanzas-sin-contrato">
+          <span class="ficha-empty-mark" aria-hidden="true"></span>
+          <p class="ficha-empty-title">Sin contrato seleccionado</p>
+          <p>Seleccione un contrato arriba para ver valor, cobros y facturación.</p>
+        </div>
       } @else {
         <div class="contrato-form argo-form-shell">
           <section class="finanzas-contrato">
@@ -2878,6 +3247,13 @@
             }
 
             @if (formContrato()._id) {
+              <div class="ficha-band finanzas-pasos-band">
+                <div>
+                  <p class="ficha-kicker">Proceso</p>
+                  <h3 class="finanzas-pasos-title">Pasos de cobro y facturación</h3>
+                </div>
+                <p class="ficha-band-lead">Cuenta de cobro → ingresos → factura DIAN</p>
+              </div>
               <div class="finanzas-pasos">
                 @if (puedeGestionarCobroContrato()) {
                   <article class="finanza-card finanza-card--cuenta">

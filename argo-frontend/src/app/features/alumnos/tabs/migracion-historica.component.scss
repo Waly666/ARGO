@@ -777,3 +777,44 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+.alum-kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.mig-head.alum-form-hero {
+  padding: 1.1rem 1.2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(45, 212, 191, 0.07)),
+    rgba(8, 18, 36, 0.5);
+  box-shadow: 0 12px 28px rgba(2, 10, 28, 0.2);
+
+  h2 {
+    margin: 0;
+    font-size: clamp(1.1rem, 2vw, 1.3rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f8fbff;
+  }
+
+  .intro {
+    margin: 0.4rem 0 0;
+    color: #9bb0c9;
+  }
+}
+
+.header-row .stat.card {
+  border-radius: 14px;
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(45, 212, 191, 0.06)),
+    rgba(8, 18, 36, 0.55);
+  box-shadow: 0 10px 22px rgba(2, 10, 28, 0.18);
+}

@@ -58,6 +58,25 @@ const DatosAlumnoSchema = new mongoose.Schema(
     urlLicencia: { type: String, trim: true },
     /** Empresa de transporte u organización a la que pertenece el alumno (ref a clientesFacturacion). */
     empresaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
+    /**
+     * Origen en jornadas de capacitación: colegio (institución educativa) | estamento | empresa | operativo.
+     * Distinto de `origen` (SISTEMA|WEB).
+     */
+    origenJornadaCap: { type: String, trim: true, default: null, index: true },
+    /** colegio | instituto | universidad — subtipo del origen institución educativa. */
+    tipoInstitucionEducativa: { type: String, trim: true, default: null, index: true },
+    /** Institución educativa (catálogo colegios MEN u otro) — código establecimiento. */
+    colegioCodigo: { type: String, trim: true, default: null, index: true },
+    colegioNombre: { type: String, trim: true, default: null },
+    /** Grado 1–11 (solo colegio básica/media). */
+    gradoColegio: { type: Number, default: null, min: 1, max: 11 },
+    /** Programa / semestre / carrera (instituto o universidad). */
+    programaInstitucion: { type: String, trim: true, default: null },
+    /** Estamento público (catálogo estamentosPublicos). */
+    estamentoId: { type: String, trim: true, default: null, index: true },
+    estamentoNombre: { type: String, trim: true, default: null },
+    cargoEstamento: { type: String, trim: true, default: null },
+    dependenciaEstamento: { type: String, trim: true, default: null },
     /** Horas por sesión de práctica CEA al auto-generar clases (1–4). null = automático según config global. */
     duracionSesionPracticaCea: { type: Number, default: null, min: 1, max: 8 },
     /** Día de referencia acordado con el alumno para recordatorio de cobro (técnicos / cuotas). */

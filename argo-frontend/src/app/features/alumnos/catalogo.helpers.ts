@@ -142,6 +142,11 @@ export const CAMPOS_FORMULARIO_SIN_MAYUSCULAS = new Set([
   'idEmpleado',
   'duracionSesionPracticaCea',
   'edad',
+  'origenJornadaCap',
+  'tipoInstitucionEducativa',
+  'colegioCodigo',
+  'estamentoId',
+  'gradoColegio',
 ]);
 
 /** Normaliza valores legacy tipo "1) SOLTERO" → "1" */

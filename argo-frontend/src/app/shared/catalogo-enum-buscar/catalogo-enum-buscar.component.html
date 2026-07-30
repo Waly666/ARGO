@@ -45,6 +45,8 @@
       <div class="dropdown empty">
         {{ query().trim() ? 'No hay coincidencias.' : 'No hay opciones disponibles.' }}
       </div>
+    } @else if (modoCombo) {
+      <div class="dropdown empty">Escriba para buscar en el catálogo…</div>
     }
   }
 </div>

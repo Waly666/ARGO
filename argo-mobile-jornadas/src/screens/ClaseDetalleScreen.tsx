@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -65,6 +65,13 @@ import type { RootStackParamList } from '../navigation/types';
 
 type Route = RouteProp<RootStackParamList, 'ClaseDetalle'>;
 
+const ORIGEN_OPTS: { key: 'colegio' | 'estamento' | 'empresa' | 'operativo'; label: string }[] = [
+  { key: 'colegio', label: 'Inst. educativa' },
+  { key: 'estamento', label: 'Estamento' },
+  { key: 'empresa', label: 'Empresa' },
+  { key: 'operativo', label: 'Operativo' },
+];
+
 function nombreAlumno(a: {
   nombre1?: string;
   nombre2?: string;
@@ -110,6 +117,8 @@ export default function ClaseDetalleScreen() {
   const [horarioManual, setHorarioManual] = useState(false);
   const [horaInicioInp, setHoraInicioInp] = useState('');
   const [horaFinInp, setHoraFinInp] = useState('');
+  /** Filtro de origen al operar (no al crear la clase). */
+  const [origenFiltro, setOrigenFiltro] = useState<string>('operativo');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -134,6 +143,16 @@ export default function ClaseDetalleScreen() {
     setHorarioManual(cl.horarioManual === true);
     setHoraInicioInp(isoAHoraInput(cl.horaInicio) || '');
     setHoraFinInp(isoAHoraInput(cl.horaFin) || '');
+    const o = cl.origenesAlumnos || { operativo: true };
+    const activos = ORIGEN_OPTS.filter((x) => !!o[x.key]).map((x) => x.key);
+    const listaActivos = activos.length ? activos : (['operativo'] as const);
+    setOrigenFiltro((prev) =>
+      listaActivos.includes(prev as (typeof ORIGEN_OPTS)[number]['key'])
+        ? prev
+        : listaActivos.includes('operativo')
+          ? 'operativo'
+          : String(listaActivos[0]),
+    );
   }, []);
 
   const cargar = useCallback(async () => {
@@ -172,6 +191,11 @@ export default function ClaseDetalleScreen() {
   const estadoClase = String(clase?.estado || '').toUpperCase();
   const enCurso = estadoClase === 'EN PROCESO';
   const finalizada = estadoClase === 'FINALIZADO';
+  const origenesActivos = useMemo(() => {
+    const o = clase?.origenesAlumnos || { operativo: true };
+    const act = ORIGEN_OPTS.filter((x) => !!o[x.key]);
+    return act.length ? act : ORIGEN_OPTS.filter((x) => x.key === 'operativo');
+  }, [clase?.origenesAlumnos]);
   /** Config ON, o clase ya marcada como manual (conserva comportamiento). */
   const puedeUsarHorarioManual =
     mostrarSwitchHorarioManual || clase?.horarioManual === true || horarioManual;
@@ -948,6 +972,43 @@ export default function ClaseDetalleScreen() {
         Alumnos en la clase
       </ScaledText>
       <SurfaceCard>
+        {origenesActivos.length > 1 ? (
+          <>
+            <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 8 }}>
+              Filtrar / registrar por origen
+            </ScaledText>
+            <View style={styles.chipsRow}>
+              {origenesActivos.map((o) => {
+                const sel = origenFiltro === o.key;
+                return (
+                  <Pressable
+                    key={o.key}
+                    onPress={() => setOrigenFiltro(o.key)}
+                    style={[
+                      styles.origenChip,
+                      {
+                        borderColor: sel ? c.primary : c.border,
+                        backgroundColor: sel ? c.accentSoft : c.card,
+                      },
+                    ]}
+                  >
+                    <ScaledText
+                      baseSize={13}
+                      style={{ color: sel ? c.primary : c.text, fontWeight: sel ? '800' : '600' }}
+                    >
+                      {o.label}
+                    </ScaledText>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={{ height: 12 }} />
+          </>
+        ) : origenesActivos.length === 1 ? (
+          <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
+            Origen del contrato: {origenesActivos[0].label}
+          </ScaledText>
+        ) : null}
         <PrimaryButton
           label="Listado de asistencia"
           icon="list-outline"
@@ -982,6 +1043,10 @@ export default function ClaseDetalleScreen() {
                 idContrato,
                 codContrato: clase?.codContrato || clase?.contratoLabel,
                 fechaJornada: clase?.fechaClase || clase?.fechaJornada,
+                origenJornadaCap: origenFiltro,
+                codMunicipio: clase?.codMunicipioJornada || undefined,
+                empresaId: clase?.idClienteFacturacion || undefined,
+                empresaNombre: clase?.clienteNombre || undefined,
               })
             }
             disabled={busy || finalizada}
@@ -1006,6 +1071,7 @@ export default function ClaseDetalleScreen() {
         {progreso ? (
           <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
             Progreso: {progreso.sesiones}/{progreso.numSesCert} sesiones
+            {progreso.tipoCertificado === 'por_clase' ? ' · por clase' : ''}
             {progreso.certificado
               ? ` · Certificado: ${progreso.certificado.codigoCert || 'OK'}`
               : ` · Faltan ${progreso.faltan}`}
@@ -1089,6 +1155,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
     marginTop: 10,
+  },
+  origenChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
   },
   chip: {
     paddingHorizontal: 12,

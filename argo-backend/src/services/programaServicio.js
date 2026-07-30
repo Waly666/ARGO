@@ -58,22 +58,70 @@ function etiquetaSemestre(tipoServ) {
   return 'CURSO';
 }
 
-function prefijoCodigo(tipoServ) {
-  if (tipoServ === 'DIP') return 'DIP';
-  if (tipoServ === 'TEC') return 'TEC';
+/**
+ * Prefijo de codigoProg según tipo de capacitación (matriz de negocio).
+ * CUR / LIC / NCL / TEC (diplomados) / DIP (jornadas) / JOR (técnico laboral).
+ */
+function prefijoCodigoPorEtiquetaTipCap(labelOrId) {
+  const t = normalizarTextoCapLocal(labelOrId);
+  if (!t) return 'CUR';
+  if (
+    /jornadas? de capacitacion/.test(t) ||
+    /jornada capacitacion/.test(t) ||
+    (t.includes('jornada') && t.includes('capacitacion'))
+  ) {
+    return 'DIP';
+  }
+  if (t.includes('licencia') && t.includes('conduccion')) return 'LIC';
+  // Normas competencias laborales (antes que técnico, que también menciona «competenc»).
+  if (
+    (/norma/.test(t) && /competenc/.test(t)) ||
+    /competencias laborales/.test(t)
+  ) {
+    if (!t.includes('tecnico')) return 'NCL';
+  }
+  if (t.includes('diplomado')) return 'TEC';
+  if (t.includes('tecnico') && (t.includes('laboral') || t.includes('competenc'))) return 'JOR';
+  if (/curso|no formal/.test(t)) return 'CUR';
   return 'CUR';
 }
 
+function normalizarTextoCapLocal(s) {
+  return String(s ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+async function etiquetaTipCap(idTipCap) {
+  const raw = String(idTipCap ?? '').trim();
+  if (!raw) return '';
+  const indice = await cargarIndiceTipCap();
+  const canon = resolverIdTipCapCanonico(raw, indice);
+  for (const r of indice.rows) {
+    const idRaw = r.idTipCap ?? r.id;
+    if (idRaw == null || idRaw === '') continue;
+    const idStr = String(idRaw).trim();
+    const idCanon = idStr.match(/^(\d+)/) ? idStr.match(/^(\d+)/)[1] : idStr;
+    if (idStr === raw || idCanon === canon || idStr === canon) {
+      return String(r.tipoCap || r.descripcion || r.nombre || '').trim() || raw;
+    }
+  }
+  return raw;
+}
+
 async function generarCodigoProg(idTipCap) {
-  const tipoServ = inferirTipoServ(idTipCap);
-  const pref = prefijoCodigo(tipoServ);
+  const label = await etiquetaTipCap(idTipCap);
+  const pref = prefijoCodigoPorEtiquetaTipCap(label || idTipCap);
   const rows = await cat.programas
-    .find({ codigoProg: new RegExp(`^${pref}`, 'i') })
+    .find({ codigoProg: new RegExp(`^${pref}\\d`, 'i') })
     .select('codigoProg')
     .lean();
   let max = 0;
   for (const r of rows) {
-    const m = String(r.codigoProg || '').match(/(\d+)\s*$/);
+    const m = String(r.codigoProg || '').match(new RegExp(`^${pref}(\\d+)\\s*$`, 'i'));
     if (m) max = Math.max(max, parseInt(m[1], 10));
   }
   return `${pref}${String(max + 1).padStart(3, '0')}`;
@@ -584,6 +632,7 @@ module.exports = {
   insertarCatalogo,
   inferirTipoServ,
   etiquetaSemestre,
+  prefijoCodigoPorEtiquetaTipCap,
   generarCodigoProg,
   buscarPrograma,
   idProgDePrograma,

@@ -1,5 +1,6 @@
-<section class="detalle-page">
-  <header class="page-head card">
+<section class="detalle-page alum-shell" [class.alum-shell--jornadas]="esJornadas()">
+  <header class="page-head card alum-hero">
+    <div class="alum-hero-glow" aria-hidden="true"></div>
     <div class="head-left">
       <button type="button" class="ghost back" (click)="volver()">{{ etiquetaVolver() }}</button>
       <button type="button" class="ghost back" *ngIf="esJornadas()" (click)="irHubJornadas()">← Jornadas</button>
@@ -11,12 +12,15 @@
             <span *ngIf="!fotoUrl()">{{ ((a.nombre1 || '?').charAt(0)) + ((a.apellido1 || '').charAt(0)) }}</span>
           </div>
           <div class="meta">
+            <p class="alum-kicker">{{ esJornadas() ? 'Ficha · Jornada' : 'Ficha · Alumno' }}</p>
             <strong>{{ nombreCompleto() }}</strong>
-            <span>{{ a.numDoc }}</span>
-            <span class="badge virtual tipo-alumno-badge" *ngIf="esAlumnoVirtual()">Virtual</span>
-            @if (a.empresaNombre) {
-              <span class="empresa-badge-ficha">🏢 {{ a.empresaNombre }}</span>
-            }
+            <div class="alum-meta-chips">
+              <span class="alum-chip alum-chip--code">{{ a.numDoc }}</span>
+              <span class="badge virtual tipo-alumno-badge" *ngIf="esAlumnoVirtual()">Virtual</span>
+              @if (a.empresaNombre) {
+                <span class="empresa-badge-ficha">{{ a.empresaNombre }}</span>
+              }
+            </div>
           </div>
         </div>
 
@@ -129,6 +133,7 @@
       </div>
 
       <div class="title-block" *ngIf="esNuevo()">
+        <p class="alum-kicker">{{ esJornadas() ? 'Alta · Jornada' : 'Alta · Alumno' }}</p>
         <h1>{{ tituloPagina() }}</h1>
         <p *ngIf="!esJornadas()">Complete los datos principales y guarde para habilitar matrículas y pagos.</p>
         <p *ngIf="esJornadas()">Alta de alumno para jornadas de capacitación. Al guardar volverá a la lista de alumnos jornada.</p>

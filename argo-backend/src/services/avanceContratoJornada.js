@@ -7,13 +7,16 @@ const Certificado = require('../models/Certificado');
 const DatosAlumno = require('../models/DatosAlumno');
 const { parseNumDoc } = require('../utils/numDoc');
 const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
+const {
+  configCertificacionParaOrigen,
+  normalizarOrigenJornadaCap,
+} = require('../constants/origenJornadaCap');
 
 function toObjectId(raw) {
   if (!raw) return null;
   try {
     return raw instanceof mongoose.Types.ObjectId ? raw : new mongoose.Types.ObjectId(String(raw));
-  }
-  catch {
+  } catch {
     return null;
   }
 }
@@ -25,6 +28,7 @@ function nombreAlumno(a) {
 
 /**
  * Avance operativo del contrato: clases dictadas/faltantes y alumnos capacitados/certificados.
+ * Sesiones/tipo de certificado se evalúan por origen del alumno.
  */
 async function obtenerAvanceContratoJornada(idContratoRaw) {
   const idContrato = toObjectId(idContratoRaw);
@@ -57,8 +61,7 @@ async function obtenerAvanceContratoJornada(idContratoRaw) {
   const clasesPorJornada = Math.max(0, parseInt(contrato.clasesPorJornada, 10) || 0);
   const metaClasesContrato =
     metaJornadas > 0 && clasesPorJornada > 0 ? metaJornadas * clasesPorJornada : 0;
-  const numSesCert = Math.max(1, parseInt(contrato.numSesCert, 10) || 1);
-  const esPorClase = contrato.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
+  const numSesCertFallback = Math.max(1, parseInt(contrato.numSesCert, 10) || 1);
 
   const asistPorAlumno = claseIds.length
     ? await AsisClasJorCap.aggregate([
@@ -95,14 +98,6 @@ async function obtenerAvanceContratoJornada(idContratoRaw) {
   const numDocsCapacitados = asistPorAlumno
     .map((r) => parseNumDoc(r._id))
     .filter((n) => n != null);
-  const alumnosCertificadosSet = new Set(
-    [...certPorAlumno.keys()].filter((nd) => {
-      const info = certPorAlumno.get(nd);
-      if (esPorClase) return info.certificados > 0;
-      return info.tieneGlobal || info.certificados > 0;
-    }),
-  );
-
   const alumnosDocs = numDocsCapacitados.length
     ? await DatosAlumno.find({ numDoc: { $in: numDocsCapacitados } }).lean()
     : [];
@@ -112,28 +107,40 @@ async function obtenerAvanceContratoJornada(idContratoRaw) {
     if (nd != null) alumnoMap.set(nd, a);
   }
 
+  const alumnosCertificadosSet = new Set();
+
   const alumnos = asistPorAlumno
     .map((r) => {
       const numDoc = parseNumDoc(r._id);
       if (numDoc == null) return null;
+      const alumno = alumnoMap.get(numDoc);
+      const origen = normalizarOrigenJornadaCap(alumno?.origenJornadaCap) || 'operativo';
+      const cfgOrig = configCertificacionParaOrigen(contrato, origen);
+      const esPorClase = cfgOrig.tipoCertificado === TIPO_CERTIFICADO_POR_CLASE;
+      const numSesCert = cfgOrig.numSesCert;
       const clasesAsistidas = r.clasesAsistidas || 0;
       const certInfo = certPorAlumno.get(numDoc) || {
         certificados: 0,
         codigos: [],
         tieneGlobal: false,
       };
-      const certificado =
-        esPorClase ? certInfo.certificados > 0 : certInfo.tieneGlobal || certInfo.certificados > 0;
-      const cumplioSesiones = clasesAsistidas >= numSesCert;
+      const certificado = esPorClase
+        ? certInfo.certificados > 0
+        : certInfo.tieneGlobal || certInfo.certificados > 0;
+      if (certificado) alumnosCertificadosSet.add(numDoc);
+      const cumplioSesiones = esPorClase ? certificado : clasesAsistidas >= numSesCert;
       return {
         numDoc,
-        nombreCompleto: nombreAlumno(alumnoMap.get(numDoc)) || `Doc. ${numDoc}`,
+        nombreCompleto: nombreAlumno(alumno) || `Doc. ${numDoc}`,
+        origenJornadaCap: origen,
         clasesAsistidas,
         certificado,
         certificadosEmitidos: certInfo.certificados,
         codigosCertificado: certInfo.codigos.slice(0, 5),
         cumplioSesiones,
-        faltanSesiones: Math.max(0, numSesCert - clasesAsistidas),
+        faltanSesiones: esPorClase ? 0 : Math.max(0, numSesCert - clasesAsistidas),
+        numSesCert,
+        tipoCertificado: cfgOrig.tipoCertificado,
       };
     })
     .filter(Boolean)
@@ -155,8 +162,9 @@ async function obtenerAvanceContratoJornada(idContratoRaw) {
       alumnosCapacitados: numDocsCapacitados.length,
       alumnosCertificados: alumnosCertificadosSet.size,
       numeroAlumnosMeta: Math.max(0, parseInt(contrato.numeroAlumnos, 10) || 0),
-      numSesCert,
+      numSesCert: numSesCertFallback,
       tipoCertificado: contrato.tipoCertificado || 'global',
+      certificacionOrigen: contrato.certificacionOrigen || null,
     },
     alumnos,
   };

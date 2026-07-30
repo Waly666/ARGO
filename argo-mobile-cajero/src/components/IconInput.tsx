@@ -15,10 +15,12 @@ type Props = TextInputProps & {
   iconColor?: string;
 };
 
-export function IconInput({ label, icon, iconColor, style, ...rest }: Props) {
+export function IconInput({ label, icon, iconColor, style, autoCapitalize, ...rest }: Props) {
   const { textMultiplier, buttonMultiplier, highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const inputH = 52 * buttonMultiplier;
+  const cap = autoCapitalize ?? 'characters';
+  const fuerzaMayus = cap === 'characters';
 
   return (
     <View style={styles.wrap}>
@@ -40,11 +42,13 @@ export function IconInput({ label, icon, iconColor, style, ...rest }: Props) {
         </View>
         <TextInput
           placeholderTextColor="#94a3b8"
+          autoCapitalize={cap}
           style={[
             styles.input,
             {
               fontSize: 16 * textMultiplier,
               color: c.text,
+              ...(fuerzaMayus ? { textTransform: 'uppercase' as const } : null),
             },
             style,
           ]}

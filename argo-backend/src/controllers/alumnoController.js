@@ -612,6 +612,10 @@ const CAMPOS_ALUMNO = [
   'regimenSalud', 'nivelFormacion', 'ocupacion', 'discapacidad', 'munOrigen', 'codMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
   'duracionSesionPracticaCea', 'empresaId', 'alertaPago', 'alertaPagoFrecuencia',
+  /* Origen en jornada Cap. (≠ canal inscripción SISTEMA|WEB en `origen`) */
+  'origenJornadaCap', 'tipoInstitucionEducativa', 'colegioCodigo', 'colegioNombre',
+  'gradoColegio', 'programaInstitucion', 'estamentoId', 'estamentoNombre',
+  'cargoEstamento', 'dependenciaEstamento',
 ];
 
 function nombreMayusculas(v) {
@@ -679,6 +683,15 @@ function pickAlumno(body) {
   for (const k of ['apellido1', 'apellido2', 'nombre1', 'nombre2']) {
     if (dto[k]) dto[k] = nombreMayusculas(dto[k]);
   }
+  for (const k of [
+    'colegioNombre',
+    'programaInstitucion',
+    'estamentoNombre',
+    'cargoEstamento',
+    'dependenciaEstamento',
+  ]) {
+    if (dto[k]) dto[k] = nombreMayusculas(dto[k]);
+  }
   // codMunicipio debe coincidir con munOrigen (código divipola)
   if (dto.munOrigen) dto.codMunicipio = String(dto.munOrigen).trim();
   else if (dto.codMunicipio) dto.munOrigen = String(dto.codMunicipio).trim();
@@ -692,6 +705,48 @@ function pickAlumno(body) {
   if (body.alertaPagoFrecuencia) dto.alertaPagoFrecuencia = body.alertaPagoFrecuencia;
   if (body.alertaPago) dto.alertaPago = body.alertaPago;
   if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
+
+  // Distinto de `origen` (SISTEMA|WEB): participante de jornada.
+  const {
+    normalizarOrigenJornadaCap,
+    normalizarTipoInstitucionEducativa,
+  } = require('../constants/origenJornadaCap');
+  const origenJ = normalizarOrigenJornadaCap(
+    body.origenJornadaCap || body.origenJornada || dto.origenJornadaCap,
+  );
+  if (origenJ) {
+    dto.origenJornadaCap = origenJ;
+    if (origenJ === 'colegio') {
+      const tipoInst =
+        normalizarTipoInstitucionEducativa(body.tipoInstitucionEducativa || dto.tipoInstitucionEducativa) ||
+        'colegio';
+      dto.tipoInstitucionEducativa = tipoInst;
+      if (tipoInst === 'colegio') {
+        const grado = parseInt(body.gradoColegio ?? dto.gradoColegio, 10);
+        if (Number.isFinite(grado) && grado >= 1 && grado <= 11) dto.gradoColegio = grado;
+        else delete dto.gradoColegio;
+        delete dto.programaInstitucion;
+      } else {
+        delete dto.gradoColegio;
+      }
+    } else {
+      delete dto.tipoInstitucionEducativa;
+      delete dto.colegioCodigo;
+      delete dto.colegioNombre;
+      delete dto.gradoColegio;
+      delete dto.programaInstitucion;
+    }
+    if (origenJ !== 'estamento') {
+      delete dto.estamentoId;
+      delete dto.estamentoNombre;
+      delete dto.cargoEstamento;
+      delete dto.dependenciaEstamento;
+    }
+    if (origenJ !== 'empresa') {
+      // No borrar empresaId: también se usa en alumnos regulares.
+    }
+  }
+
   normalizarAlertaPagoEnDto(dto);
   return dto;
 }

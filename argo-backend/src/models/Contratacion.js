@@ -79,6 +79,39 @@ const ContratacionSchema = new mongoose.Schema(
     facturadoAt: { type: Date, default: null },
     /** Programas del contrato para reparto equitativo al autogenerar clases. */
     idProgramas: { type: [String], default: [] },
+    /**
+     * Orígenes de alumnos habilitados en el contrato (switches).
+     * colegio | estamento | empresa | operativo
+     */
+    origenesAlumnos: {
+      colegio: { type: Boolean, default: false },
+      estamento: { type: Boolean, default: false },
+      empresa: { type: Boolean, default: false },
+      operativo: { type: Boolean, default: true },
+    },
+    /**
+     * Certificación por origen (numSesCert + tipoCertificado independientes).
+     * Los campos top-level tipoCertificado/numSesCert quedan como fallback legado.
+     */
+    certificacionOrigen: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined,
+    },
+    /** Plan ordenado de municipios + jornadas por municipio (generación de jornadas). */
+    municipiosPlan: {
+      type: [
+        {
+          orden: { type: Number, default: 1 },
+          codMunicipio: { type: String, trim: true, default: '' },
+          municipio: { type: String, trim: true, default: '' },
+          depto: { type: String, trim: true, default: '' },
+          numJornadas: { type: Number, default: 1 },
+          /** Cuántas jornadas de este municipio el mismo día al generar. */
+          jornadasPorDia: { type: Number, default: 1, min: 1, max: 20 },
+        },
+      ],
+      default: [],
+    },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
   },

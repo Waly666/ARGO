@@ -12,6 +12,7 @@ export function partesEtiquetaComprobanteAlarma(
   m: MovimientoAlarmaHoy,
   tipo: 'ingreso' | 'egreso',
   fmtSaldo: (n: number) => string,
+  opts?: { incluirDetalle?: boolean },
 ): string[] {
   const refRecibo = m.numRecibo || (tipo === 'ingreso' ? 'Ingreso' : 'Egreso');
   const tipoPago = etiquetaTipoPagoComprobante(m);
@@ -21,8 +22,17 @@ export function partesEtiquetaComprobanteAlarma(
   if (refPago && requiereReferenciaPago(tipoPago || m.formaPago)) {
     partes.push(`Ref ${refPago}`);
   }
-  if (m.detalle) partes.push(m.detalle);
+  if (opts?.incluirDetalle !== false && m.detalle) partes.push(m.detalle);
   return partes.filter(Boolean);
+}
+
+/** Etiqueta corta para chips de listado (sin concepto/detalle largo). */
+export function etiquetaCortaComprobanteAlarma(
+  m: MovimientoAlarmaHoy,
+  tipo: 'ingreso' | 'egreso',
+  fmtSaldo: (n: number) => string,
+): string {
+  return partesEtiquetaComprobanteAlarma(m, tipo, fmtSaldo, { incluirDetalle: false }).join(' · ');
 }
 
 export function tituloComprobanteAlarma(

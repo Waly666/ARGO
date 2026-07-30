@@ -818,3 +818,36 @@ table.nested { font-size: .88rem; }
     li { color: var(--err); }
   }
 }
+
+.alum-kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.alum-tab-card {
+  border-radius: 16px !important;
+  border: 1px solid rgba(125, 185, 255, 0.16) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 22%),
+    rgba(10, 24, 46, 0.55) !important;
+  box-shadow: 0 12px 28px rgba(2, 10, 28, 0.2);
+
+  > h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    color: #f8fbff;
+  }
+}
+
+.cuotas-matriculas-head h2 {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #f8fbff;
+}

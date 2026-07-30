@@ -20,25 +20,39 @@
   }
 }
 
+.alum-kicker {
+  margin: 0 0 0.15rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
 .doc-head.form-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 18px 20px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(139, 92, 246, 0.12));
-  border: 1px solid var(--line);
-  border-radius: var(--btn-radius);
+  padding: 1.15rem 1.25rem;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(45, 212, 191, 0.08)),
+    rgba(8, 18, 36, 0.45);
+  border: 1px solid rgba(125, 185, 255, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(2, 10, 28, 0.2);
 
   h2 {
     margin: 0;
-    font-size: 1.25rem;
-    color: var(--text);
+    font-size: clamp(1.15rem, 2vw, 1.35rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f8fbff;
   }
 
-  p {
-    margin: 4px 0 0;
-    color: var(--text-dim);
+  p:not(.alum-kicker) {
+    margin: 0.35rem 0 0;
+    color: #9bb0c9;
     font-size: 0.86rem;
     max-width: 720px;
   }
@@ -123,16 +137,24 @@
 }
 
 .doc-card {
-  border-radius: 10px;
-  border: 1px solid var(--line-soft);
-  background: rgba(6, 16, 41, 0.55);
+  border-radius: 14px;
+  border: 1px solid rgba(125, 185, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%),
+    rgba(8, 18, 36, 0.55);
   padding: 14px 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 0 10px 24px rgba(2, 10, 28, 0.18);
+  transition: border-color 0.18s ease;
 
-  &.tone-blue { border-left: 4px solid #3b82f6; }
-  &.tone-teal { border-left: 4px solid #14b8a6; }
+  &:hover {
+    border-color: rgba(125, 185, 255, 0.28);
+  }
+
+  &.tone-blue { border-left: 4px solid #38bdf8; }
+  &.tone-teal { border-left: 4px solid #2dd4bf; }
 }
 
 .doc-card-head {

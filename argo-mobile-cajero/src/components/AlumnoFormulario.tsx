@@ -26,7 +26,7 @@ import {
 import { fetchCatalogosAlumno } from '../api/catalogosApi';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
-import { mayusculasNombre, nombreCompleto } from '../utils/format';
+import { aMayusculas, CAMPOS_FORMULARIO_SIN_MAYUSCULAS, mayusculasNombre, nombreCompleto } from '../utils/format';
 import {
   TIPOS_ALUMNO_CAJERO,
   TIPO_ALUMNO_DEFAULT,
@@ -137,12 +137,16 @@ export function AlumnoFormulario({
   }, []);
 
   const patch = useCallback(<K extends keyof AlumnoCrearDto>(k: K, v: AlumnoCrearDto[K]) => {
-    setForm((f) => ({ ...f, [k]: v }));
+    let valor = v;
+    if (typeof v === 'string' && !CAMPOS_FORMULARIO_SIN_MAYUSCULAS.has(String(k))) {
+      valor = aMayusculas(v) as AlumnoCrearDto[K];
+    }
+    setForm((f) => ({ ...f, [k]: valor }));
   }, []);
 
   const patchNombre = useCallback(
     (k: 'nombre1' | 'nombre2' | 'apellido1' | 'apellido2', v: string) => {
-      patch(k, mayusculasNombre(v) as AlumnoCrearDto[typeof k]);
+      patch(k, aMayusculas(v) as AlumnoCrearDto[typeof k]);
     },
     [patch],
   );
@@ -200,7 +204,7 @@ export function AlumnoFormulario({
       ...f,
       tipoDoc: s.tipoDoc || f.tipoDoc || '1',
       numDoc: s.numDoc != null ? String(s.numDoc).replace(/\D/g, '') : f.numDoc,
-      expedida: s.expedida?.trim() || f.expedida,
+      expedida: aMayusculas(s.expedida?.trim() || f.expedida || ''),
       apellido1: mayusculasNombre(s.apellido1 || f.apellido1 || ''),
       apellido2: mayusculasNombre(s.apellido2 || f.apellido2 || ''),
       nombre1: mayusculasNombre(s.nombre1 || f.nombre1 || ''),
@@ -209,7 +213,7 @@ export function AlumnoFormulario({
       genero: normalizarGenero(s.genero) || f.genero,
       tipoSangre: normalizarTipoSangre(s.tipoSangre) || f.tipoSangre,
     }));
-    if (s.expedida?.trim()) setExpedidaTexto(s.expedida.trim());
+    if (s.expedida?.trim()) setExpedidaTexto(aMayusculas(s.expedida.trim()));
   }
 
   async function elegirFoto(desdeCamara: boolean) {
@@ -243,9 +247,11 @@ export function AlumnoFormulario({
       nombre2: mayusculasNombre(form.nombre2 || '') || undefined,
       apellido1: a1,
       apellido2: mayusculasNombre(form.apellido2 || '') || undefined,
-      expedida: form.expedida?.trim() || expedidaTexto.trim() || undefined,
+      expedida: aMayusculas(form.expedida?.trim() || expedidaTexto.trim()) || undefined,
+      direccion: aMayusculas(form.direccion?.trim()) || undefined,
+      observaciones: aMayusculas(form.observaciones?.trim()) || undefined,
       tipoAlumno: normalizarTipoAlumno(form.tipoAlumno),
-      correo: form.correo?.trim().toLowerCase() || undefined,
+      correo: aMayusculas(form.correo?.trim()) || undefined,
       celular: form.celular?.replace(/\D/g, '') || undefined,
       fechaNac: form.fechaNac?.trim() || undefined,
       alertaPagoFrecuencia: (form.alertaPagoFrecuencia || '') as AlumnoCrearDto['alertaPagoFrecuencia'],
@@ -327,7 +333,7 @@ export function AlumnoFormulario({
 
         <CatalogoSelectField label="Tipo documento" value={form.tipoDoc || '1'} options={opts.tiposDoc} onChange={(v) => patch('tipoDoc', v)} required />
 
-        <IconInput label="Número documento *" icon="finger-print-outline" value={String(form.numDoc)} onChangeText={(t) => patch('numDoc', t.replace(/[^\d]/g, ''))} keyboardType="number-pad" placeholder="Solo dígitos" />
+        <IconInput label="Número documento *" icon="finger-print-outline" value={String(form.numDoc)} onChangeText={(t) => patch('numDoc', t.replace(/[^\d]/g, ''))} keyboardType="number-pad" placeholder="Solo dígitos" autoCapitalize="none" />
         {verificando ? <ScaledText baseSize={12} style={{ color: c.textSoft }}>Verificando…</ScaledText> : null}
         {duplicado?.existe ? (
           <View style={[styles.dup, { backgroundColor: c.warnBg, borderColor: c.warn }]}>
@@ -338,18 +344,22 @@ export function AlumnoFormulario({
         <MunicipioBuscarField
           label="Expedida en"
           texto={expedidaTexto}
-          onTextoChange={setExpedidaTexto}
-          onSeleccion={(m) => patch('expedida', m.nombreMunicipio)}
+          onTextoChange={(t) => setExpedidaTexto(aMayusculas(t))}
+          onSeleccion={(m) => {
+            const nom = aMayusculas(m.nombreMunicipio);
+            patch('expedida', nom);
+            setExpedidaTexto(aMayusculas(m.label));
+          }}
           onLimpiar={() => patch('expedida', '')}
           placeholder="Municipio de expedición…"
         />
 
-        <IconInput label="Primer apellido *" icon="text-outline" value={form.apellido1} onChangeText={(t) => patchNombre('apellido1', t)} autoCapitalize="characters" />
-        <IconInput label="Segundo apellido" icon="text-outline" value={form.apellido2 || ''} onChangeText={(t) => patchNombre('apellido2', t)} autoCapitalize="characters" />
-        <IconInput label="Primer nombre *" icon="text-outline" value={form.nombre1} onChangeText={(t) => patchNombre('nombre1', t)} autoCapitalize="characters" />
-        <IconInput label="Segundo nombre" icon="text-outline" value={form.nombre2 || ''} onChangeText={(t) => patchNombre('nombre2', t)} autoCapitalize="characters" />
+        <IconInput label="Primer apellido *" icon="text-outline" value={form.apellido1} onChangeText={(t) => patchNombre('apellido1', t)} />
+        <IconInput label="Segundo apellido" icon="text-outline" value={form.apellido2 || ''} onChangeText={(t) => patchNombre('apellido2', t)} />
+        <IconInput label="Primer nombre *" icon="text-outline" value={form.nombre1} onChangeText={(t) => patchNombre('nombre1', t)} />
+        <IconInput label="Segundo nombre" icon="text-outline" value={form.nombre2 || ''} onChangeText={(t) => patchNombre('nombre2', t)} />
 
-        <IconInput label="Fecha nacimiento" icon="calendar-outline" value={form.fechaNac || ''} onChangeText={(t) => patch('fechaNac', t.replace(/[^\d-]/g, '').slice(0, 10))} placeholder="AAAA-MM-DD" keyboardType="numbers-and-punctuation" />
+        <IconInput label="Fecha nacimiento" icon="calendar-outline" value={form.fechaNac || ''} onChangeText={(t) => patch('fechaNac', t.replace(/[^\d-]/g, '').slice(0, 10))} placeholder="AAAA-MM-DD" keyboardType="numbers-and-punctuation" autoCapitalize="none" />
 
         <ScaledText baseSize={13} style={{ color: c.textSoft, fontWeight: '600', marginTop: 4 }}>Foto del alumno</ScaledText>
         <View style={styles.fotoRow}>
@@ -379,17 +389,17 @@ export function AlumnoFormulario({
       </FormSection>
 
       <FormSection title="Contacto y ubicación" subtitle="Correo, celular, dirección y municipio de origen" icon="call-outline" tone="accent">
-        <IconInput label="Correo" icon="mail-outline" value={form.correo || ''} onChangeText={(t) => patch('correo', t)} autoCapitalize="none" keyboardType="email-address" placeholder="correo@ejemplo.com" />
-        <IconInput label="Celular" icon="phone-portrait-outline" value={form.celular || ''} onChangeText={(t) => patch('celular', t.replace(/[^\d]/g, ''))} keyboardType="phone-pad" placeholder="3001234567" />
+        <IconInput label="Correo" icon="mail-outline" value={form.correo || ''} onChangeText={(t) => patch('correo', t)} keyboardType="email-address" placeholder="CORREO@EJEMPLO.COM" />
+        <IconInput label="Celular" icon="phone-portrait-outline" value={form.celular || ''} onChangeText={(t) => patch('celular', t.replace(/[^\d]/g, ''))} keyboardType="phone-pad" placeholder="3001234567" autoCapitalize="none" />
         <IconInput label="Dirección" icon="home-outline" value={form.direccion || ''} onChangeText={(t) => patch('direccion', t)} placeholder="Dirección de residencia" />
         <MunicipioBuscarField
           label="Municipio de origen"
           texto={munOrigenTexto}
-          onTextoChange={setMunOrigenTexto}
+          onTextoChange={(t) => setMunOrigenTexto(aMayusculas(t))}
           onSeleccion={(m) => {
             patch('munOrigen', m.codMunicipio);
             patch('codMunicipio', m.codMunicipio);
-            setMunOrigenTexto(m.label);
+            setMunOrigenTexto(aMayusculas(m.label));
           }}
           onLimpiar={() => {
             patch('munOrigen', '');
@@ -410,7 +420,7 @@ export function AlumnoFormulario({
         />
         {form.alertaPagoFrecuencia ? (
           <>
-            <IconInput label="Día de referencia" icon="calendar-outline" value={form.alertaPago || ''} onChangeText={(t) => patch('alertaPago', t.replace(/[^\d-]/g, '').slice(0, 10))} placeholder="AAAA-MM-DD" />
+            <IconInput label="Día de referencia" icon="calendar-outline" value={form.alertaPago || ''} onChangeText={(t) => patch('alertaPago', t.replace(/[^\d-]/g, '').slice(0, 10))} placeholder="AAAA-MM-DD" autoCapitalize="none" />
             <ScaledText baseSize={11} style={{ color: c.textSoft, lineHeight: 16 }}>
               Mensual: mismo día cada mes. Quincenal: cada 15 días desde esta fecha.
             </ScaledText>
@@ -430,7 +440,7 @@ export function AlumnoFormulario({
           empresaNombre={empresaNombre}
           onChange={(id, nom) => {
             patch('empresaId', id);
-            setEmpresaNombre(nom);
+            setEmpresaNombre(aMayusculas(nom));
           }}
         />
       </FormSection>

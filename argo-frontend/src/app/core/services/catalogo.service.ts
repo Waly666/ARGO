@@ -47,6 +47,27 @@ export class CatalogoService {
       `${environment.apiUrl}/catalogos/divipola/municipio/${encodeURIComponent(codMunicipio)}`,
     );
   }
+
+  buscarColegios(codMunicipio: string, q = '', limit = 40): Observable<ColegioDivipola[]> {
+    const params = new URLSearchParams({
+      limit: String(limit),
+    });
+    const mun = String(codMunicipio || '').trim();
+    if (mun) params.set('codMunicipio', mun);
+    if (q.trim()) params.set('q', q.trim());
+    return this.http.get<ColegioDivipola[]>(
+      `${environment.apiUrl}/catalogos/colegios/buscar?${params}`,
+    );
+  }
+
+  buscarEstamentosPublicos(codMunicipio = '', q = '', limit = 40): Observable<EstamentoPublico[]> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (codMunicipio.trim()) params.set('codMunicipio', codMunicipio.trim());
+    if (q.trim()) params.set('q', q.trim());
+    return this.http.get<EstamentoPublico[]>(
+      `${environment.apiUrl}/catalogos/estamentos-publicos/buscar?${params}`,
+    );
+  }
 }
 
 export interface MunicipioDivipola {
@@ -54,5 +75,24 @@ export interface MunicipioDivipola {
   nombreMunicipio: string;
   codDepto: string;
   nombreDepto: string;
+  label: string;
+}
+
+export interface ColegioDivipola {
+  codigoEstablecimiento: string;
+  nombreEstablecimiento: string;
+  codMunicipio: string;
+  nombreMunicipio: string;
+  nombreDepartamento?: string;
+  label: string;
+  hint?: string;
+}
+
+export interface EstamentoPublico {
+  idEstamento: string;
+  nombre: string;
+  tipo?: string;
+  codMunicipio: string;
+  nombreMunicipio?: string;
   label: string;
 }

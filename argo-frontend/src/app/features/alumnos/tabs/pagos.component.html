@@ -20,9 +20,10 @@
     <button type="button" class="ghost" (click)="abrirFactura()">Emitir factura electrónica</button>
   </div>
 
-  <div class="card card-facturas">
+  <div class="card card-facturas alum-tab-card">
     <header class="facturas-header">
       <div>
+        <p class="alum-kicker">Facturación · FE</p>
         <h2>Facturas emitidas</h2>
         <p class="facturas-sub">
           Documentos electrónicos de este alumno, incluidas las facturadas a una empresa o tercero.
@@ -105,9 +106,10 @@
     </table>
   </div>
 
-  <div class="card card-registrar-pago">
+  <div class="card card-registrar-pago alum-tab-card">
     <header class="registro-header">
       <div>
+        <p class="alum-kicker">Caja · Abonos</p>
         <h2>Registrar pago</h2>
         <p class="registro-sub">
           Elija uno o varios servicios, indique el valor de cada uno y registre un solo comprobante.
@@ -338,7 +340,8 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card alum-tab-card">
+    <p class="alum-kicker">Movimientos · Historial</p>
     <h2>Historial de Pagos</h2>
     <div class="loading" *ngIf="loading()">Cargando…</div>
 

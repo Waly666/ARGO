@@ -1,65 +1,74 @@
 <div class="inf-dash">
   @if (!idContrato) {
     <div class="inf-empty">
-      <span class="inf-empty-icon" aria-hidden="true">📊</span>
-      <p>Seleccione un contrato para ver el dashboard de informes y exportar PDF.</p>
+      <span class="inf-empty-mark" aria-hidden="true"></span>
+      <p class="inf-empty-title">Sin contrato seleccionado</p>
+      <p>Elija un contrato para ver el dashboard de informes y exportar PDF.</p>
     </div>
   } @else {
     <header class="inf-hero">
+      <div class="inf-hero-glow" aria-hidden="true"></div>
       <div class="inf-hero-copy">
-        <p class="inf-hero-eyebrow">Capacitación · reportes</p>
-        <h2>Informes del contrato</h2>
+        <div class="inf-hero-brand">
+          <span class="inf-hero-mark" aria-hidden="true"></span>
+          <div>
+            <p class="inf-hero-eyebrow">Capacitación · Informes</p>
+            <h2>Panel de informes</h2>
+          </div>
+        </div>
         @if (contrato(); as c) {
-          <p class="inf-hero-sub">
-            <span class="mono">{{ c.codContrato || '—' }}</span>
-            · {{ c.cliente || 'Empresa contratante' }}
-          </p>
+          <div class="inf-hero-meta">
+            <span class="inf-meta-chip inf-meta-chip--code">{{ c.codContrato || 'Sin código' }}</span>
+            <span class="inf-meta-chip">{{ c.cliente || 'Empresa contratante' }}</span>
+            @if (c.ciudad) {
+              <span class="inf-meta-chip inf-meta-chip--muted">{{ c.ciudad }}</span>
+            }
+            @if (c.estado) {
+              <span class="inf-meta-chip inf-meta-chip--status">{{ c.estado }}</span>
+            }
+          </div>
         } @else {
-          <p class="inf-hero-sub">
-            Cifras, gráficos y PDF formal para la empresa contratante.
-          </p>
+          <p class="inf-hero-sub">Cifras, gráficos y PDF formal para la empresa contratante.</p>
         }
       </div>
       <div class="inf-hero-actions">
-        <button type="button" class="mini ghost" (click)="cargar()" [disabled]="loading()">
-          {{ loading() ? 'Actualizando…' : '↻ Actualizar' }}
+        <button type="button" class="inf-btn inf-btn--ghost" (click)="cargar()" [disabled]="loading()">
+          {{ loading() ? 'Actualizando…' : 'Actualizar' }}
         </button>
-        <button
-          type="button"
-          class="mini primary"
-          (click)="exportarPdf('contrato')"
-          [disabled]="loading() || exportando() || !data()">
-          {{ exportandoEsta('contrato::::') ? 'Generando…' : '⬇ PDF del contrato' }}
-        </button>
-        <button
-          type="button"
-          class="mini primary"
-          (click)="exportarPdf('desarrollo-general', { idInstructor: null })"
-          [disabled]="loading() || exportando() || !data()">
-          {{
-            exportandoEsta('desarrollo-general::::')
-              ? 'Generando…'
-              : '⬇ Desarrollo general'
-          }}
-        </button>
-        <button
-          type="button"
-          class="mini primary"
-          (click)="exportarPdf('instructor')"
-          [disabled]="loading() || exportando() || !data()"
-          [title]="
-            filtroInstructorId()
-              ? 'Generar informe del instructor seleccionado'
-              : 'Generar informe agrupado de todos los instructores'
-          ">
-          {{
-            exportandoEsta('instructor::::' + filtroInstructorId())
-              ? 'Generando…'
-              : filtroInstructorId()
-                ? '⬇ Desarrollo del instructor'
-                : '⬇ Desarrollo por instructores'
-          }}
-        </button>
+        <div class="inf-hero-exports">
+          <button
+            type="button"
+            class="inf-btn inf-btn--primary"
+            (click)="exportarPdf('contrato')"
+            [disabled]="loading() || exportando() || !data()">
+            {{ exportandoEsta('contrato::::') ? 'Generando…' : 'PDF del contrato' }}
+          </button>
+          <button
+            type="button"
+            class="inf-btn inf-btn--soft"
+            (click)="exportarPdf('desarrollo-general', { idInstructor: null })"
+            [disabled]="loading() || exportando() || !data()">
+            {{ exportandoEsta('desarrollo-general::::') ? 'Generando…' : 'Desarrollo general' }}
+          </button>
+          <button
+            type="button"
+            class="inf-btn inf-btn--soft"
+            (click)="exportarPdf('instructor')"
+            [disabled]="loading() || exportando() || !data()"
+            [title]="
+              filtroInstructorId()
+                ? 'Generar informe del instructor seleccionado'
+                : 'Generar informe agrupado de todos los instructores'
+            ">
+            {{
+              exportandoEsta('instructor::::' + filtroInstructorId())
+                ? 'Generando…'
+                : filtroInstructorId()
+                  ? 'Desarrollo del instructor'
+                  : 'Por instructores'
+            }}
+          </button>
+        </div>
       </div>
     </header>
 
@@ -72,8 +81,13 @@
 
     <section class="inf-card inf-card--filters">
       <div class="inf-card-head">
-        <h3>Filtros del dashboard</h3>
-        <button type="button" class="ghost mini" (click)="limpiarFiltros()">Limpiar</button>
+        <div>
+          <p class="inf-card-kicker">Exploración</p>
+          <h3>Filtros del dashboard</h3>
+        </div>
+        <button type="button" class="inf-btn inf-btn--ghost inf-btn--sm" (click)="limpiarFiltros()">
+          Limpiar
+        </button>
       </div>
       <div class="inf-filtros">
         <argo-catalogo-enum-buscar
@@ -136,26 +150,29 @@
             (ngModelChange)="filtroHasta.set($event)"
           />
         </label>
-        <button type="button" class="mini primary inf-aplicar-fechas" (click)="aplicarFechas()">
+        <button type="button" class="inf-btn inf-btn--primary inf-aplicar-fechas" (click)="aplicarFechas()">
           Aplicar fechas
         </button>
       </div>
     </section>
 
     @if (loading() && !data()) {
-      <p class="inf-loading">Cargando dashboard…</p>
+      <div class="inf-loading-panel" aria-live="polite">
+        <span class="inf-loading-spin" aria-hidden="true"></span>
+        <p>Cargando dashboard…</p>
+      </div>
     } @else if (data()) {
       <div class="inf-kpis">
         <article class="inf-kpi inf-kpi--sky">
-          <span class="inf-kpi-ico" aria-hidden="true">⛺</span>
+          <span class="inf-kpi-ico" aria-hidden="true"></span>
           <span class="inf-kpi-label">Jornadas</span>
           <strong class="inf-kpi-val">{{ kpis()!.jornadas }}</strong>
           @if (kpis()!.metaJornadas > 0) {
             <span class="inf-kpi-sub">meta {{ kpis()!.metaJornadas }}</span>
           }
         </article>
-        <article class="inf-kpi inf-kpi--amber">
-          <span class="inf-kpi-ico" aria-hidden="true">▣</span>
+        <article class="inf-kpi inf-kpi--coral">
+          <span class="inf-kpi-ico" aria-hidden="true"></span>
           <span class="inf-kpi-label">Clases dictadas</span>
           <strong class="inf-kpi-val">{{ kpis()!.clasesDictadas }}/{{ kpis()!.clasesTotales }}</strong>
           @if (kpis()!.clasesEnProceso > 0) {
@@ -163,15 +180,15 @@
           }
         </article>
         <article class="inf-kpi inf-kpi--emerald">
-          <span class="inf-kpi-ico" aria-hidden="true">◉</span>
+          <span class="inf-kpi-ico" aria-hidden="true"></span>
           <span class="inf-kpi-label">Alumnos capacitados</span>
           <strong class="inf-kpi-val">{{ kpis()!.alumnosCapacitados }}</strong>
           @if (kpis()!.metaAlumnos > 0) {
             <span class="inf-kpi-sub">meta {{ kpis()!.metaAlumnos }}</span>
           }
         </article>
-        <article class="inf-kpi inf-kpi--violet">
-          <span class="inf-kpi-ico" aria-hidden="true">✦</span>
+        <article class="inf-kpi inf-kpi--gold">
+          <span class="inf-kpi-ico" aria-hidden="true"></span>
           <span class="inf-kpi-label">Alumnos certificados</span>
           <strong class="inf-kpi-val">{{ kpis()!.alumnosCertificados }}</strong>
           <span class="inf-kpi-sub">{{ kpis()!.certificadosEmitidos }} cert. emitidos</span>
@@ -179,6 +196,13 @@
       </div>
 
       @if (charts()) {
+        <header class="inf-band">
+          <div>
+            <p class="inf-band-kicker">Resumen visual</p>
+            <h3 class="inf-band-title">Gráficos operativos</h3>
+          </div>
+          <p class="inf-band-lead">Participación y avance según los filtros activos.</p>
+        </header>
         <div class="inf-charts">
           <section class="inf-card inf-chart-card">
             <h3>Alumnos por jornada</h3>
@@ -323,75 +347,27 @@
             <h3>Alumnos por programa</h3>
             <p class="inf-chart-hint">
               Alumnos capacitados agrupados por programa. El % es la participación sobre el total de
-              alumnos del gráfico ({{ chartTortaPrograma().total }}).
+              alumnos del gráfico ({{ chartBarrasPrograma().total }}).
             </p>
-            @if (chartTortaPrograma().slices.length) {
-              <div class="inf-pie" role="img" aria-label="Alumnos por programa">
-                <div class="inf-pie-visual">
-                  <svg viewBox="0 0 100 100" class="inf-pie-svg">
-                    @for (s of chartTortaPrograma().slices; track s.label) {
-                      <path [attr.d]="s.path" [attr.fill]="s.color">
-                        <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
-                      </path>
-                    }
-                    @for (s of chartTortaPrograma().slices; track s.label + '-lbl') {
-                      @if (s.showLabel) {
-                        <text
-                          class="inf-pie-slice-lbl"
-                          [attr.x]="s.labelX"
-                          [attr.y]="s.labelY"
-                          text-anchor="middle"
-                          dominant-baseline="middle"
-                        >
-                          {{ formatPct(s.pct) }}
-                        </text>
-                      }
-                    }
-                  </svg>
-                  <div class="inf-pie-center">
-                    <strong>{{ chartTortaPrograma().total }}</strong>
-                    <span>alumnos</span>
+            @if (chartBarrasPrograma().items.length) {
+              <div class="inf-hbars" role="img" aria-label="Alumnos por programa">
+                @for (it of chartBarrasPrograma().items; track it.label) {
+                  <div class="inf-hbar-row" [title]="it.label + ': ' + it.value">
+                    <span class="inf-hbar-lbl" [title]="it.label">{{ it.label }}</span>
+                    <div class="inf-hbar-track">
+                      <div
+                        class="inf-hbar-fill"
+                        [style.width.%]="it.pctBar"
+                        [style.background]="it.color"
+                      ></div>
+                    </div>
+                    <span class="inf-hbar-meta">
+                      <strong>{{ it.value }}</strong>
+                      <em>{{ formatPct(it.pctTotal) }}</em>
+                    </span>
                   </div>
-                </div>
-                <ul class="inf-pie-legend">
-                  @for (s of chartTortaPrograma().slices; track s.label) {
-                    <li>
-                      <span class="inf-pie-swatch" [style.background]="s.color"></span>
-                      <span class="inf-pie-leg-lbl" [title]="s.label">{{ s.label }}</span>
-                      <strong>{{ s.value }}</strong>
-                      <em>{{ formatPct(s.pct) }}</em>
-                    </li>
-                  }
-                </ul>
+                }
               </div>
-              <table class="inf-chart-table">
-                <thead>
-                  <tr>
-                    <th>Programa</th>
-                    <th>Alumnos</th>
-                    <th>% del total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (s of chartTortaPrograma().slices; track s.label) {
-                    <tr>
-                      <td>
-                        <span class="inf-chart-dot" [style.background]="s.color"></span>
-                        {{ s.label }}
-                      </td>
-                      <td>{{ s.value }}</td>
-                      <td>{{ formatPct(s.pct) }}</td>
-                    </tr>
-                  }
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td>Total</td>
-                    <td>{{ chartTortaPrograma().total }}</td>
-                    <td>100%</td>
-                  </tr>
-                </tfoot>
-              </table>
             } @else {
               <p class="inf-muted">Sin datos</p>
             }
@@ -459,110 +435,110 @@
           </section>
         </div>
 
-        <h3 class="inf-section-title">Caracterización de población</h3>
-        <p class="inf-muted inf-caract-lead">
-          Perfil demográfico de los alumnos capacitados
-          @if (data()?.caracterizacionPoblacion?.total; as n) {
-            ({{ n }} alumno(s))
+        <header class="inf-band inf-band--origen">
+          <div>
+            <p class="inf-band-kicker">Clasificación</p>
+            <h3 class="inf-band-title">Origen de alumnos en jornada</h3>
+          </div>
+          <p class="inf-band-lead">
+            Institución educativa, estamento, empresa u operativo / calle, con detalle asociado.
+          </p>
+        </header>
+        <div class="inf-charts inf-charts--caract">
+          @for (block of origenCharts(); track block.title) {
+            <section class="inf-card inf-chart-card">
+              <h3>{{ block.title }}</h3>
+              <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
+            </section>
           }
-          .
-        </p>
+        </div>
+
+        <header class="inf-band inf-band--demo">
+          <div>
+            <p class="inf-band-kicker">Perfil</p>
+            <h3 class="inf-band-title">Caracterización de población</h3>
+          </div>
+          <p class="inf-band-lead">
+            Perfil demográfico de los alumnos capacitados
+            @if (data()?.caracterizacionPoblacion?.total; as n) {
+              ({{ n }} alumno(s))
+            }.
+          </p>
+        </header>
         <div class="inf-charts inf-charts--caract">
           @for (block of caractCharts(); track block.title) {
             <section class="inf-card inf-chart-card">
               <h3>{{ block.title }}</h3>
-              @if (block.chart.slices.length) {
-                <div class="inf-pie" role="img" [attr.aria-label]="block.title">
-                  <div class="inf-pie-visual">
-                    <svg viewBox="0 0 100 100" class="inf-pie-svg">
-                      @for (s of block.chart.slices; track s.label) {
-                        <path [attr.d]="s.path" [attr.fill]="s.color">
-                          <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
-                        </path>
-                      }
-                      @for (s of block.chart.slices; track s.label + '-lbl') {
-                        @if (s.showLabel) {
-                          <text
-                            class="inf-pie-slice-lbl"
-                            [attr.x]="s.labelX"
-                            [attr.y]="s.labelY"
-                            text-anchor="middle"
-                            dominant-baseline="middle"
-                          >
-                            {{ formatPct(s.pct) }}
-                          </text>
-                        }
-                      }
-                    </svg>
-                    <div class="inf-pie-center">
-                      <strong>{{ block.chart.total }}</strong>
-                      <span>alumnos</span>
-                    </div>
-                  </div>
-                  <ul class="inf-pie-legend">
-                    @for (s of block.chart.slices; track s.label) {
-                      <li>
-                        <span class="inf-pie-swatch" [style.background]="s.color"></span>
-                        <span class="inf-pie-leg-lbl">{{ s.label }}</span>
-                        <strong>{{ s.value }}</strong>
-                        <em>{{ formatPct(s.pct) }}</em>
-                      </li>
-                    }
-                  </ul>
-                </div>
-              } @else {
-                <p class="inf-muted">Sin datos</p>
-              }
+              <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
             </section>
           }
         </div>
       }
 
       <!-- Jornadas -->
-      <section class="inf-card inf-section">
+      <section class="inf-card inf-section inf-section--jornadas">
         <div class="inf-card-head">
           <div>
+            <p class="inf-card-kicker">Detalle por jornada</p>
             <h3>Por jornada</h3>
-            <p class="inf-muted">Capacitados y certificados en cada jornada del contrato.</p>
+            <p class="inf-muted">
+              Capacitados, certificados, origen y caracterización en cada jornada.
+            </p>
           </div>
         </div>
-        <div class="table-wrap">
-          <table class="argo inf-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Municipio</th>
-                <th>Estado</th>
-                <th>Clases</th>
-                <th>Capacitados</th>
-                <th>Certificados</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (j of porJornada(); track j._id) {
-                <tr>
-                  <td>{{ j.fechaLabel }}</td>
-                  <td>{{ j.municipio || '—' }}</td>
-                  <td><span class="inf-chip">{{ j.estado || '—' }}</span></td>
-                  <td>{{ j.numClases }}</td>
-                  <td>{{ j.alumnosCapacitados }}</td>
-                  <td>{{ j.alumnosCertificados }}</td>
-                  <td class="inf-actions">
-                    <button
-                      type="button"
-                      class="mini primary"
-                      (click)="exportarPdf('jornada', { idJornada: j._id })"
-                      [disabled]="exportando()">
-                      {{ exportandoEsta('jornada:' + j._id + ':::') ? '…' : '⬇ PDF' }}
-                    </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr><td colspan="7" class="empty">Sin jornadas con el filtro actual.</td></tr>
-              }
-            </tbody>
-          </table>
+        <div class="inf-jornada-list">
+          @for (j of jornadasConGraficos(); track j._id) {
+            <article class="inf-jornada-panel">
+              <div class="inf-jornada-panel-head">
+                <div class="inf-jornada-panel-copy">
+                  <h4>{{ j.fechaLabel }}</h4>
+                  <div class="inf-jornada-panel-meta">
+                    <span class="inf-meta-chip inf-meta-chip--muted">{{ j.municipio || 'Sin municipio' }}</span>
+                    <span class="inf-chip">{{ j.estado || '—' }}</span>
+                  </div>
+                </div>
+                <div class="inf-jornada-panel-stats">
+                  <div><em>Clases</em><strong>{{ j.numClases }}</strong></div>
+                  <div><em>Capacitados</em><strong>{{ j.alumnosCapacitados }}</strong></div>
+                  <div><em>Certificados</em><strong>{{ j.alumnosCertificados }}</strong></div>
+                  <button
+                    type="button"
+                    class="inf-btn inf-btn--primary inf-btn--sm"
+                    (click)="exportarPdf('jornada', { idJornada: j._id })"
+                    [disabled]="exportando()">
+                    {{ exportandoEsta('jornada:' + j._id + ':::') ? '…' : 'PDF' }}
+                  </button>
+                </div>
+              </div>
+              <div class="inf-jornada-charts">
+                <h5 class="inf-jornada-charts-title">Origen de alumnos</h5>
+                <div class="inf-charts inf-charts--caract">
+                  @for (block of j.origenCharts; track block.title) {
+                    <section class="inf-card inf-chart-card">
+                      <h3>{{ block.title }}</h3>
+                      <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
+                    </section>
+                  }
+                </div>
+                <h5 class="inf-jornada-charts-title">
+                  Caracterización de población
+                  @if (j.caracterizacionPoblacion?.total; as n) {
+                    ({{ n }} alumno(s))
+                  }
+                </h5>
+                <div class="inf-charts inf-charts--caract">
+                  @for (block of j.caractCharts; track block.title) {
+                    <section class="inf-card inf-chart-card">
+                      <h3>{{ block.title }}</h3>
+                      <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
+                    </section>
+                  }
+                </div>
+              </div>
+            </article>
+          } @empty {
+            <p class="inf-muted inf-empty-inline">Sin jornadas con el filtro actual.</p>
+          }
         </div>
       </section>
 
@@ -570,8 +546,9 @@
       <section class="inf-card inf-section">
         <div class="inf-card-head">
           <div>
+            <p class="inf-card-kicker">Detalle</p>
             <h3>Por clase</h3>
-            <p class="inf-muted">Detalle de cada clase: programa, instructor y alumnos.</p>
+            <p class="inf-muted">Programa, instructor y alumnos de cada clase.</p>
           </div>
         </div>
         <div class="table-wrap">
@@ -599,10 +576,10 @@
                   <td class="inf-actions">
                     <button
                       type="button"
-                      class="mini primary"
+                      class="inf-btn inf-btn--primary inf-btn--sm"
                       (click)="exportarPdf('clase', { idClase: c._id, idJornada: c.idJornada })"
                       [disabled]="exportando()">
-                      {{ exportandoEsta('clase:' + c.idJornada + ':' + c._id + '::') ? '…' : '⬇ PDF' }}
+                      {{ exportandoEsta('clase:' + c.idJornada + ':' + c._id + '::') ? '…' : 'PDF' }}
                     </button>
                   </td>
                 </tr>
@@ -618,6 +595,7 @@
       <section class="inf-card inf-section">
         <div class="inf-card-head">
           <div>
+            <p class="inf-card-kicker">Detalle</p>
             <h3>Por programa</h3>
             <p class="inf-muted">Resumen de capacitación por programa en el contrato.</p>
           </div>
@@ -645,10 +623,10 @@
                   <td class="inf-actions">
                     <button
                       type="button"
-                      class="mini primary"
+                      class="inf-btn inf-btn--primary inf-btn--sm"
                       (click)="exportarPdf('programa', { idPrograma: p.idPrograma })"
                       [disabled]="exportando() || !p.idPrograma">
-                      {{ exportandoEsta('programa:::' + p.idPrograma + ':') ? '…' : '⬇ PDF' }}
+                      {{ exportandoEsta('programa:::' + p.idPrograma + ':') ? '…' : 'PDF' }}
                     </button>
                   </td>
                 </tr>
@@ -664,6 +642,7 @@
       <section class="inf-card inf-section">
         <div class="inf-card-head">
           <div>
+            <p class="inf-card-kicker">Detalle</p>
             <h3>Por instructor</h3>
             <p class="inf-muted">Clases dictadas y alumnos capacitados por instructor.</p>
           </div>
@@ -689,13 +668,13 @@
                   <td class="inf-actions">
                     <button
                       type="button"
-                      class="mini primary"
+                      class="inf-btn inf-btn--primary inf-btn--sm"
                       (click)="exportarPdf('instructor', { idInstructor: i.idEmpleadoInstructor })"
                       [disabled]="exportando() || i.idEmpleadoInstructor == null">
                       {{
                         exportandoEsta('instructor::::' + (i.idEmpleadoInstructor ?? ''))
                           ? '…'
-                          : '⬇ PDF'
+                          : 'PDF'
                       }}
                     </button>
                   </td>
@@ -710,3 +689,137 @@
     }
   }
 </div>
+
+<!-- Visualizaciones reutilizables (pie / barras H-V / stack / ranking) -->
+<ng-template #infViz let-block>
+  @if (!blockHasData(block)) {
+    <p class="inf-muted">Sin datos</p>
+  } @else if (block.kind === 'pie' && block.pie) {
+    <div class="inf-pie" role="img" [attr.aria-label]="block.title">
+      <div class="inf-pie-visual">
+        <svg viewBox="0 0 100 100" class="inf-pie-svg">
+          @for (s of block.pie.slices; track s.label) {
+            <path [attr.d]="s.path" [attr.fill]="s.color">
+              <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
+            </path>
+          }
+          @for (s of block.pie.slices; track s.label + '-lbl') {
+            @if (s.showLabel) {
+              <text
+                class="inf-pie-slice-lbl"
+                [attr.x]="s.labelX"
+                [attr.y]="s.labelY"
+                text-anchor="middle"
+                dominant-baseline="middle"
+              >
+                {{ formatPct(s.pct) }}
+              </text>
+            }
+          }
+        </svg>
+        <div class="inf-pie-center">
+          <strong>{{ block.pie.total }}</strong>
+          <span>alumnos</span>
+        </div>
+      </div>
+      <ul class="inf-pie-legend">
+        @for (s of block.pie.slices; track s.label) {
+          <li>
+            <span class="inf-pie-swatch" [style.background]="s.color"></span>
+            <span class="inf-pie-leg-lbl" [title]="s.label">{{ s.label }}</span>
+            <strong>{{ s.value }}</strong>
+            <em>{{ formatPct(s.pct) }}</em>
+          </li>
+        }
+      </ul>
+    </div>
+  } @else if (block.kind === 'hbar' && block.series) {
+    <div class="inf-hbars" role="img" [attr.aria-label]="block.title">
+      @for (it of block.series.items; track it.label) {
+        <div class="inf-hbar-row" [title]="it.label + ': ' + it.value">
+          <span class="inf-hbar-lbl" [title]="it.label">{{ it.label }}</span>
+          <div class="inf-hbar-track">
+            <div
+              class="inf-hbar-fill"
+              [style.width.%]="it.pctBar"
+              [style.background]="it.color"
+            ></div>
+          </div>
+          <span class="inf-hbar-meta">
+            <strong>{{ it.value }}</strong>
+            <em>{{ formatPct(it.pctTotal) }}</em>
+          </span>
+        </div>
+      }
+    </div>
+  } @else if (block.kind === 'vbar' && block.series) {
+    <div class="inf-vbars inf-vbars--compact" role="img" [attr.aria-label]="block.title">
+      @for (it of block.series.items; track it.label) {
+        <div class="inf-vbar-col" [title]="it.label + ': ' + it.value">
+          <span class="inf-vbar-val">
+            <strong>{{ it.value }}</strong>
+            <em>{{ formatPct(it.pctTotal) }}</em>
+          </span>
+          <div class="inf-vbar-track">
+            <div
+              class="inf-vbar-fill"
+              [style.height.%]="it.pctBar"
+              [style.background]="it.color"
+            ></div>
+          </div>
+          <span class="inf-vbar-lbl" [title]="it.label">{{ it.label }}</span>
+        </div>
+      }
+    </div>
+  } @else if (block.kind === 'stack' && block.series) {
+    <div class="inf-stack" role="img" [attr.aria-label]="block.title">
+      <div class="inf-stack-bar">
+        @for (it of block.series.items; track it.label) {
+          <div
+            class="inf-stack-seg"
+            [style.flex-grow]="it.pctTotal || 0.1"
+            [style.background]="it.color"
+            [title]="it.label + ': ' + it.value + ' (' + formatPct(it.pctTotal) + ')'"
+          ></div>
+        }
+      </div>
+      <ul class="inf-stack-legend">
+        @for (it of block.series.items; track it.label) {
+          <li>
+            <span class="inf-pie-swatch" [style.background]="it.color"></span>
+            <span class="inf-pie-leg-lbl" [title]="it.label">{{ it.label }}</span>
+            <strong>{{ it.value }}</strong>
+            <em>{{ formatPct(it.pctTotal) }}</em>
+          </li>
+        }
+      </ul>
+      <p class="inf-stack-total">Total {{ block.series.total }} alumnos</p>
+    </div>
+  } @else if (block.kind === 'rank' && block.series) {
+    <ol class="inf-rank" role="img" [attr.aria-label]="block.title">
+      @for (it of block.series.items; track it.label) {
+        <li>
+          <span class="inf-rank-n">{{ it.rank }}</span>
+          <div class="inf-rank-body">
+            <div class="inf-rank-top">
+              <span class="inf-rank-lbl" [title]="it.label">{{ it.label }}</span>
+              <span class="inf-rank-meta">
+                <strong>{{ it.value }}</strong>
+                <em>{{ formatPct(it.pctTotal) }}</em>
+              </span>
+            </div>
+            <div class="inf-rank-track">
+              <div
+                class="inf-rank-fill"
+                [style.width.%]="it.pctBar"
+                [style.background]="it.color"
+              ></div>
+            </div>
+          </div>
+        </li>
+      }
+    </ol>
+  } @else {
+    <p class="inf-muted">Sin datos</p>
+  }
+</ng-template>

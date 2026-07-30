@@ -57,22 +57,44 @@ export async function fetchCatalogosAlumno(): Promise<{
   discapacidades: CatalogoItem[];
   multiCulturalidades: CatalogoItem[];
 }> {
-  const [tiposDoc, regimenesSalud] = await Promise.all([
-    fetchTiposDoc(),
-    fetchRegimenesSalud(),
+  // Mismos nombres que argo-frontend (datos-principales): catálogos en BD, no listas fijas.
+  const [
+    tiposDoc,
+    generos,
+    tiposSangre,
+    jornadas,
+    estadosCivil,
+    estratos,
+    regimenesSalud,
+    nivelesFormacion,
+    ocupaciones,
+    discapacidades,
+    multiCulturalidades,
+  ] = await Promise.all([
+    catalogo('catTipoDoc', TIPOS_DOC_DEF),
+    catalogo('genero', GENEROS_DEF),
+    catalogo('tipoSangre', TIPO_SANGRE_DEF),
+    catalogo('jornada', JORNADAS_DEF),
+    catalogo('estadoCivil', ESTADOS_CIVIL_DEF),
+    catalogo('estrato', ESTRATOS_DEF),
+    catalogo('catRegimenSalud', REGIMEN_SALUD_DEF),
+    catalogo('nivelFormacion', NIVEL_FORMACION_DEF),
+    catalogo('ocupacion', OCUPACIONES_DEF),
+    catalogo('discapacidad', DISCAPACIDADES_DEF),
+    catalogo('multiCulturalidad', MULTICULTURALIDAD_DEF),
   ]);
   return {
     tiposDoc,
-    generos: GENEROS_DEF,
-    tiposSangre: TIPO_SANGRE_DEF,
-    jornadas: JORNADAS_DEF,
-    estadosCivil: ESTADOS_CIVIL_DEF,
-    estratos: ESTRATOS_DEF,
+    generos,
+    tiposSangre,
+    jornadas,
+    estadosCivil,
+    estratos,
     regimenesSalud,
-    nivelesFormacion: NIVEL_FORMACION_DEF,
-    ocupaciones: OCUPACIONES_DEF,
-    discapacidades: DISCAPACIDADES_DEF,
-    multiCulturalidades: MULTICULTURALIDAD_DEF,
+    nivelesFormacion,
+    ocupaciones,
+    discapacidades,
+    multiCulturalidades,
   };
 }
 
@@ -102,6 +124,7 @@ export const TIPOS_PAGO_DEF: CatalogoItem[] = [
   { idTipoPago: '4', codigo: 'TD', descripcion: 'Tarjeta débito' },
   { idTipoPago: '5', codigo: 'CH', descripcion: 'Cheque' },
   { idTipoPago: '6', codigo: 'NE', descripcion: 'Nequi / Daviplata' },
+  { idTipoPago: '7', codigo: 'PL', descripcion: 'Pago en línea' },
 ];
 
 /** Une catálogo API + defaults para no perder formas de pago. */
