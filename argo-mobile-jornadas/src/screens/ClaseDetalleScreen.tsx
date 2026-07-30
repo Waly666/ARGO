@@ -145,13 +145,13 @@ export default function ClaseDetalleScreen() {
     setHoraFinInp(isoAHoraInput(cl.horaFin) || '');
     const o = cl.origenesAlumnos || { operativo: true };
     const activos = ORIGEN_OPTS.filter((x) => !!o[x.key]).map((x) => x.key);
-    const listaActivos = activos.length ? activos : (['operativo'] as const);
+    const listaActivos = (activos.length ? activos : ['operativo']) as string[];
     setOrigenFiltro((prev) =>
-      listaActivos.includes(prev as (typeof ORIGEN_OPTS)[number]['key'])
+      listaActivos.includes(prev)
         ? prev
         : listaActivos.includes('operativo')
           ? 'operativo'
-          : String(listaActivos[0]),
+          : String(listaActivos[0] || 'operativo'),
     );
   }, []);
 
@@ -606,6 +606,11 @@ export default function ClaseDetalleScreen() {
                     idContrato,
                     codContrato: clase?.codContrato || clase?.contratoLabel,
                     fechaJornada: clase?.fechaClase || clase?.fechaJornada,
+                    origenJornadaCap: origenFiltro,
+                    codMunicipio: clase?.codMunicipioJornada || undefined,
+                    empresaId: clase?.idClienteFacturacion || undefined,
+                    empresaNombre: clase?.clienteNombre || undefined,
+                    origenesPermitidos: origenesActivos.map((o) => o.key),
                   }),
               },
               { text: 'Cancelar', style: 'cancel' },
@@ -1047,6 +1052,7 @@ export default function ClaseDetalleScreen() {
                 codMunicipio: clase?.codMunicipioJornada || undefined,
                 empresaId: clase?.idClienteFacturacion || undefined,
                 empresaNombre: clase?.clienteNombre || undefined,
+                origenesPermitidos: origenesActivos.map((o) => o.key),
               })
             }
             disabled={busy || finalizada}

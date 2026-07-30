@@ -15,7 +15,7 @@ import { ScaledText } from './ScaledText';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 
-export type AsyncSearchItem = { id: string; label: string };
+export type AsyncSearchItem = { id: string; label: string; hint?: string };
 
 type Props = {
   label: string;
@@ -161,9 +161,14 @@ export function AsyncSearchField({
                 }}
                 style={[styles.rowItem, { borderBottomColor: c.border }]}
               >
-                <ScaledText baseSize={15} style={{ color: c.text }}>
+                <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '600' }}>
                   {item.label}
                 </ScaledText>
+                {item.hint ? (
+                  <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
+                    {item.hint}
+                  </ScaledText>
+                ) : null}
               </Pressable>
             )}
           />

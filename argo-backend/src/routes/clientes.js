@@ -5,7 +5,13 @@ const { requireAuth, requirePermiso } = require('../middleware/auth');
 const router = Router();
 router.use(requireAuth);
 
-const ver = requirePermiso('facturacion', 'config.facturacion', 'alumnos.pagos');
+const ver = requirePermiso(
+  'facturacion',
+  'config.facturacion',
+  'alumnos.pagos',
+  'jornadas.registrar_alumnos',
+  'jornadas.gestionar',
+);
 const gestionar = requirePermiso('facturacion', 'config.facturacion');
 
 router.get('/catalogos', ver, ctrl.catalogos);

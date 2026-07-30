@@ -3,6 +3,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -22,6 +23,7 @@ import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
 import { crearAlumnoJornada } from '../api/jornadasApi';
 import {
+  buscarClientesFacturacion,
   buscarColegios,
   buscarEstamentosPublicos,
   type MunicipioDivipola,
@@ -48,6 +50,8 @@ import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 
 type Route = RouteProp<RootStackParamList, 'CrearAlumnoJornada'>;
+
+const ORIGEN_KEYS = ['colegio', 'estamento', 'empresa', 'operativo'] as const;
 
 const ORIGEN_LABELS: Record<string, string> = {
   colegio: 'Institución educativa',
@@ -93,13 +97,33 @@ export default function CrearAlumnoJornadaScreen() {
     codContrato,
     fechaJornada,
     origenJornadaCap: origenParam,
+    origenesPermitidos: origenesPermitidosParam,
     codMunicipio: codMunParam,
     empresaId: empresaIdParam,
     empresaNombre: empresaNombreParam,
   } = route.params;
 
-  const origenJornadaCap = String(origenParam || 'operativo').trim() || 'operativo';
+  const origenesDisponibles = useMemo(() => {
+    const raw = Array.isArray(origenesPermitidosParam)
+      ? origenesPermitidosParam.map((x) => String(x || '').trim()).filter(Boolean)
+      : [];
+    const set = new Set(raw.length ? raw : ORIGEN_KEYS);
+    return ORIGEN_KEYS.filter((k) => set.has(k)).map((key) => ({
+      key,
+      label: ORIGEN_LABELS[key],
+    }));
+  }, [origenesPermitidosParam]);
+
+  const origenInicial = (() => {
+    const p = String(origenParam || '').trim();
+    if (p && origenesDisponibles.some((o) => o.key === p)) return p;
+    return origenesDisponibles[0]?.key || 'operativo';
+  })();
+
   const codMunicipioJornada = String(codMunParam || '').trim();
+  const bloqueaOrigen = Boolean(origenParam && claseId);
+
+  const [origenJornadaCap, setOrigenJornadaCap] = useState(origenInicial);
 
   const [tipoDoc, setTipoDoc] = useState('1');
   const [numDoc, setNumDoc] = useState(sanitizeNumDocInput(numDocInicial || ''));
@@ -139,8 +163,9 @@ export default function CrearAlumnoJornadaScreen() {
   const [estamentoNombre, setEstamentoNombre] = useState('');
   const [cargoEstamento, setCargoEstamento] = useState('');
   const [dependenciaEstamento, setDependenciaEstamento] = useState('');
-  const [empresaId] = useState(String(empresaIdParam || '').trim());
-  const [empresaNombre] = useState(String(empresaNombreParam || '').trim());
+  const [empresaId, setEmpresaId] = useState(String(empresaIdParam || '').trim());
+  const [empresaNombre, setEmpresaNombre] = useState(String(empresaNombreParam || '').trim());
+  const empresaFijaContrato = Boolean(String(empresaIdParam || '').trim());
 
   const [busy, setBusy] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
@@ -151,28 +176,47 @@ export default function CrearAlumnoJornadaScreen() {
     [nombre1, nombre2, apellido1, apellido2],
   );
 
+  const codColegioFiltro = String(munOrigen || codMunicipioJornada || '').trim();
+
   const buscarColegioCb = useCallback(
     async (q: string) => {
-      if (!codMunicipioJornada) return [];
-      const rows = await buscarColegios(codMunicipioJornada, q, 40);
+      const term = q.trim();
+      // Sin municipio: solo búsqueda nacional con texto (evita listar todo el país).
+      if (!codColegioFiltro && term.length < 2) return [];
+      const rows = await buscarColegios(codColegioFiltro, term, 40);
       return rows.map((r) => ({
         id: r.codigoEstablecimiento,
         label: r.label || r.nombreEstablecimiento,
+        hint: [r.nombreMunicipio, r.codMunicipio].filter(Boolean).join(' · ') || undefined,
       }));
     },
-    [codMunicipioJornada],
+    [codColegioFiltro],
   );
 
   const buscarEstamentoCb = useCallback(
     async (q: string) => {
-      const rows = await buscarEstamentosPublicos(codMunicipioJornada, q, 40);
+      const rows = await buscarEstamentosPublicos(codColegioFiltro, q, 40);
       return rows.map((r) => ({
         id: r.idEstamento,
         label: r.label || r.nombre,
+        hint: [r.tipo, r.nombreMunicipio].filter(Boolean).join(' · ') || undefined,
       }));
     },
-    [codMunicipioJornada],
+    [codColegioFiltro],
   );
+
+  const buscarEmpresaCb = useCallback(async (q: string) => {
+    try {
+      const rows = await buscarClientesFacturacion(q, 40);
+      return rows.map((r) => ({
+        id: r._id,
+        label: r.nombre,
+        hint: r.identificacion || undefined,
+      }));
+    } catch {
+      return [];
+    }
+  }, []);
 
   function aplicarPdf417(data: CedulaPdf417Data) {
     setTipoDoc(data.tipoDoc || '1');
@@ -234,7 +278,7 @@ export default function CrearAlumnoJornadaScreen() {
       if (!dependenciaEstamento.trim()) return 'Indique la dependencia.';
     }
     if (origenJornadaCap === 'empresa' && !empresaId) {
-      return 'El contrato no tiene cliente/empresa asignado.';
+      return 'Seleccione la empresa (cliente de facturación).';
     }
     return null;
   }
@@ -368,9 +412,69 @@ export default function CrearAlumnoJornadaScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
-            Tipo fijo: Jornadas de Capacitación. Origen:{' '}
-            {ORIGEN_LABELS[origenJornadaCap] || origenJornadaCap}. Escanee PDF417 o digite.
+            Tipo fijo: Jornadas de Capacitación. Escanee PDF417 o digite los datos.
+            {jornadaLabel ? ` · ${jornadaLabel}` : ''}
           </ScaledText>
+
+          {origenesDisponibles.length > 0 ? (
+            <SurfaceCard style={{ marginBottom: 12 }}>
+              <ScaledText baseSize={15} style={styles.secTitle}>
+                Origen del participante
+              </ScaledText>
+              {bloqueaOrigen ? (
+                <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 8 }}>
+                  Definido desde la clase: {ORIGEN_LABELS[origenJornadaCap] || origenJornadaCap}
+                </ScaledText>
+              ) : null}
+              <View style={styles.chipsRow}>
+                {origenesDisponibles.map((o) => {
+                  const sel = origenJornadaCap === o.key;
+                  const disabled = bloqueaOrigen && !sel;
+                  return (
+                    <Pressable
+                      key={o.key}
+                      disabled={disabled}
+                      onPress={() => {
+                        if (bloqueaOrigen) return;
+                        setOrigenJornadaCap(o.key);
+                        if (o.key !== 'colegio') {
+                          setColegioCodigo('');
+                          setColegioNombre('');
+                          setGradoColegio('');
+                          setProgramaInstitucion('');
+                        }
+                        if (o.key !== 'estamento') {
+                          setEstamentoId('');
+                          setEstamentoNombre('');
+                          setCargoEstamento('');
+                          setDependenciaEstamento('');
+                        }
+                        if (o.key !== 'empresa' && !empresaFijaContrato) {
+                          setEmpresaId('');
+                          setEmpresaNombre('');
+                        }
+                      }}
+                      style={[
+                        styles.origenChip,
+                        {
+                          borderColor: sel ? c.primary : c.border,
+                          backgroundColor: sel ? c.accentSoft : c.card,
+                          opacity: disabled ? 0.45 : 1,
+                        },
+                      ]}
+                    >
+                      <ScaledText
+                        baseSize={13}
+                        style={{ color: sel ? c.primary : c.text, fontWeight: sel ? '800' : '600' }}
+                      >
+                        {o.label}
+                      </ScaledText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </SurfaceCard>
+          ) : null}
 
           <PrimaryButton
             label="Escanear PDF417 de la cédula"
@@ -380,6 +484,25 @@ export default function CrearAlumnoJornadaScreen() {
             fullWidth
           />
           <View style={{ height: 12 }} />
+
+          <SurfaceCard style={{ marginBottom: 12 }}>
+            <ScaledText baseSize={15} style={styles.secTitle}>
+              Municipio del alumno
+            </ScaledText>
+            <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8, lineHeight: 18 }}>
+              Se usa para filtrar colegios y estamentos (además del municipio de la jornada).
+            </ScaledText>
+            <MunicipioBuscarField
+              label="Municipio de origen / residencia"
+              required
+              texto={munOrigenTexto}
+              onSeleccionado={onMunOrigenSel}
+              onLimpiar={() => {
+                setMunOrigen('');
+                setMunOrigenTexto('');
+              }}
+            />
+          </SurfaceCard>
 
           {(origenJornadaCap === 'colegio' ||
             origenJornadaCap === 'estamento' ||
@@ -406,18 +529,28 @@ export default function CrearAlumnoJornadaScreen() {
                   <View style={{ height: 8 }} />
                   {tipoInstitucion === 'colegio' ? (
                     <>
-                      {!codMunicipioJornada ? (
+                      {!codColegioFiltro ? (
                         <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 8 }}>
-                          La jornada no tiene municipio; no se pueden filtrar colegios del catálogo.
+                          Elija primero el municipio de origen (más abajo) o cree desde una clase con
+                          municipio. Sin municipio, escriba al menos 2 letras para buscar a nivel
+                          nacional.
                         </ScaledText>
-                      ) : null}
+                      ) : (
+                        <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+                          Filtra colegios por municipio:{' '}
+                          {munOrigenTexto || codColegioFiltro}
+                          {codMunicipioJornada && munOrigen && munOrigen !== codMunicipioJornada
+                            ? ' (ficha alumno)'
+                            : ''}
+                        </ScaledText>
+                      )}
                       <AsyncSearchField
                         label="Colegio"
                         required
                         texto={colegioNombre}
-                        placeholder="Buscar colegio del municipio…"
-                        loadOnOpen
-                        minChars={0}
+                        placeholder="Buscar colegio…"
+                        loadOnOpen={Boolean(codColegioFiltro)}
+                        minChars={codColegioFiltro ? 0 : 2}
                         onBuscar={buscarColegioCb}
                         onSeleccionado={(item) => {
                           setColegioCodigo(item.id);
@@ -451,8 +584,8 @@ export default function CrearAlumnoJornadaScreen() {
                         }
                         texto={colegioNombre}
                         placeholder="Buscar en catálogo…"
-                        loadOnOpen
-                        minChars={0}
+                        loadOnOpen={Boolean(codColegioFiltro)}
+                        minChars={codColegioFiltro ? 0 : 2}
                         onBuscar={buscarColegioCb}
                         onSeleccionado={(item) => {
                           setColegioCodigo(item.id);
@@ -522,10 +655,34 @@ export default function CrearAlumnoJornadaScreen() {
                 </>
               ) : null}
               {origenJornadaCap === 'empresa' ? (
-                <ScaledText baseSize={14} style={{ color: c.text, lineHeight: 20 }}>
-                  Empresa del contrato:{' '}
-                  {empresaNombre || empresaId || '— (asigne cliente al contrato)'}
-                </ScaledText>
+                empresaFijaContrato ? (
+                  <ScaledText baseSize={14} style={{ color: c.text, lineHeight: 20 }}>
+                    Empresa del contrato: {empresaNombre || empresaId || '—'}
+                  </ScaledText>
+                ) : (
+                  <>
+                    <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+                      Busque el cliente de facturación. Requiere permiso de facturación o pagos.
+                    </ScaledText>
+                    <AsyncSearchField
+                      label="Empresa / cliente"
+                      required
+                      texto={empresaNombre}
+                      placeholder="Buscar por razón social o NIT…"
+                      loadOnOpen
+                      minChars={0}
+                      onBuscar={buscarEmpresaCb}
+                      onSeleccionado={(item) => {
+                        setEmpresaId(item.id);
+                        setEmpresaNombre(item.label);
+                      }}
+                      onLimpiar={() => {
+                        setEmpresaId('');
+                        setEmpresaNombre('');
+                      }}
+                    />
+                  </>
+                )
               ) : null}
             </SurfaceCard>
           )}
@@ -698,17 +855,15 @@ export default function CrearAlumnoJornadaScreen() {
               value={direccion}
               onChangeText={setDireccion}
             />
-            <View style={{ height: 8 }} />
-            <MunicipioBuscarField
-              label="Municipio de origen"
-              required
-              texto={munOrigenTexto}
-              onSeleccionado={onMunOrigenSel}
-              onLimpiar={() => {
-                setMunOrigen('');
-                setMunOrigenTexto('');
-              }}
-            />
+            {munOrigenTexto ? (
+              <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 8 }}>
+                Municipio de origen: {munOrigenTexto}
+              </ScaledText>
+            ) : (
+              <ScaledText baseSize={13} style={{ color: c.warn, marginTop: 8 }}>
+                Falta municipio de origen (bloque superior).
+              </ScaledText>
+            )}
           </SurfaceCard>
 
           <SurfaceCard style={{ marginTop: 12 }}>
@@ -778,7 +933,7 @@ export default function CrearAlumnoJornadaScreen() {
       <Pdf417ScanModal
         visible={scanOpen}
         onClose={() => setScanOpen(false)}
-        onResult={(data) => {
+        onScan={(data) => {
           setScanOpen(false);
           aplicarPdf417(data);
         }}
@@ -796,6 +951,17 @@ export default function CrearAlumnoJornadaScreen() {
 const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40 },
   secTitle: { fontWeight: '800', marginBottom: 10, color: '#134e4a' },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  origenChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   obs: {
     borderWidth: 1,
     borderRadius: 12,

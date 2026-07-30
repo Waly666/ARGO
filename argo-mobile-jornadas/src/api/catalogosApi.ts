@@ -51,3 +51,26 @@ export function buscarEstamentosPublicos(codMunicipio = '', q = '', limit = 40) 
     `/catalogos/estamentos-publicos/buscar?${params.toString()}`,
   );
 }
+
+export type ClienteFacturacionLite = {
+  _id: string;
+  nombre: string;
+  identificacion?: string;
+  razonSocial?: string;
+  nombres?: string;
+};
+
+/** Busca clientes FE (requiere permiso facturacion / alumnos.pagos / config.facturacion). */
+export function buscarClientesFacturacion(q = '', limit = 40) {
+  const params = new URLSearchParams({ q: q.trim() });
+  return apiFetch<ClienteFacturacionLite[]>(`/clientes?${params.toString()}`).then((rows) =>
+    (Array.isArray(rows) ? rows : [])
+      .slice(0, limit)
+      .map((r) => ({
+        ...r,
+        _id: String(r._id),
+        nombre: String(r.nombre || r.razonSocial || r.nombres || '').trim(),
+      }))
+      .filter((r) => r._id && r.nombre),
+  );
+}

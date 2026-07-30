@@ -25,6 +25,8 @@ export type RootStackParamList = {
     fechaJornada?: string;
     /** colegio | estamento | empresa | operativo */
     origenJornadaCap?: string;
+    /** Orígenes habilitados en el contrato (si viene de clase). */
+    origenesPermitidos?: string[];
     codMunicipio?: string;
     empresaId?: string;
     empresaNombre?: string;
