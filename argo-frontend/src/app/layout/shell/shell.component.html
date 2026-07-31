@@ -80,6 +80,9 @@
           @if (mostrarBannerCajaCerrada()) {
             <argo-caja-cerrada-banner class="head-caja-alarm head-alerta-pago-wrap" [blink]="true" />
           }
+          @if (mostrarBannerCajaAbiertaDias()) {
+            <argo-caja-abierta-dias-banner class="head-caja-alarm head-alerta-pago-wrap" />
+          }
           @if (mostrarBannerCertificado()) {
             <argo-certificado-jornada-banner class="head-alerta-pago-wrap" />
           }

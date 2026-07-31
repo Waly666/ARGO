@@ -274,7 +274,8 @@
 .hal-theme-cea-creado,
 .hal-theme-cert-vence-hoy,
 .hal-theme-cert-vence-critico,
-.hal-theme-meta-jornada {
+.hal-theme-meta-jornada,
+.hal-theme-caja-dias {
   @include hali-level(
     var(--alert-danger-text),
     rgba(248, 114, 114, 0.42),

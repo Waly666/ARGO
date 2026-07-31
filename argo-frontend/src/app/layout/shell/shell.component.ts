@@ -36,6 +36,7 @@ import { ProgramacionCeaService } from '../../core/services/programacion-cea.ser
 import { InstructorPortalAlertService } from '../../core/services/instructor-portal-alert.service';
 import { InstructorPortalService } from '../../core/services/instructor-portal.service';
 import { CajaCerradaBannerComponent } from '../../features/caja/caja-cerrada-banner.component';
+import { CajaAbiertaDiasBannerComponent } from '../../features/caja/caja-abierta-dias-banner.component';
 import { CertificadoJornadaBannerComponent } from '../../features/jornadas/certificado-jornada-banner.component';
 import { MetaAlumnosJornadaBannerComponent } from '../../features/jornadas/meta-alumnos-jornada-banner.component';
 import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos-jornada-alert.service';
@@ -109,7 +110,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, CambiarPasswordModalComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, CambiarPasswordModalComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -236,6 +237,14 @@ export class ShellComponent {
 
   /** Usuarios con permiso de caja del turno deben abrir caja personal. */
   mostrarAlertaCaja = computed(() => this.alarmaHabilitada('alarmas.caja.cerrada'));
+
+  /** Caja abierta varios días sin cerrar (fallback a claves legacy de cajero). */
+  mostrarAlertaCajaAbiertaDias = computed(
+    () =>
+      this.alarmaHabilitada('alarmas.caja.abierta_dias') ||
+      this.alarmaHabilitada('alarmas.caja.cerrada') ||
+      this.alarmaHabilitada('alarmas.caja.sin_abrir'),
+  );
 
   /** Usuarios que emiten o gestionan certificados: aviso parpadeante al generarse uno nuevo. */
   mostrarAlertaCertificado = computed(() => this.alarmaHabilitada('alarmas.jornadas.certificado_nuevo'));
@@ -369,6 +378,15 @@ export class ShellComponent {
       this.cajaEstado.mostrarBannerCerrada(),
   );
 
+  mostrarBannerCajaAbiertaDias = computed(
+    () =>
+      this.mostrarAlertaCajaAbiertaDias() &&
+      !this.cajaEstado.loading() &&
+      this.cajaEstado.abierta() === true &&
+      this.cajaEstado.diasSinCerrar() >= 1 &&
+      this.cajaEstado.mostrarBannerAbiertaDias(),
+  );
+
   mostrarBannerJornadaProceso = computed(
     () => this.mostrarAlarmaJornadaProceso() && this.jornadaProcesoAlert.visible(),
   );
@@ -419,6 +437,7 @@ export class ShellComponent {
   mostrarAlarmasCabecera = computed(
     () =>
       this.mostrarBannerCajaCerrada() ||
+      this.mostrarBannerCajaAbiertaDias() ||
       this.mostrarBannerCertificado() ||
       this.mostrarBannerMetaAlumnosJornada() ||
       this.mostrarBannerComprobantesHoy() ||
@@ -1322,7 +1341,11 @@ export class ShellComponent {
   }
 
   private refrescarCajaSiAplica(): void {
-    if (this.mostrarAlertaCaja() || this.debeRevisarCajaPostLogin()) {
+    if (
+      this.mostrarAlertaCaja() ||
+      this.mostrarAlertaCajaAbiertaDias() ||
+      this.debeRevisarCajaPostLogin()
+    ) {
       void this.cajaEstado.refrescar();
     }
   }

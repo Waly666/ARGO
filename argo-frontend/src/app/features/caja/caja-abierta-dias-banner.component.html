@@ -1,0 +1,10 @@
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-caja-dias"
+  icon="⚠"
+  [title]="titulo()"
+  [hint]="hint()"
+  [items]="rows()"
+  (closed)="cerrar()"
+  (itemClick)="onItemClick($event)"
+/>

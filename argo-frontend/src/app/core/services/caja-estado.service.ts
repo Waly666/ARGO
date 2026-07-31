@@ -16,8 +16,15 @@ export class CajaEstadoService {
   private ocultaBannerCerrada = signal(false);
   readonly mostrarBannerCerrada = computed(() => !this.ocultaBannerCerrada());
 
+  private ocultaBannerAbiertaDias = signal(false);
+  readonly mostrarBannerAbiertaDias = computed(() => !this.ocultaBannerAbiertaDias());
+
   cerrarBannerCerrada(): void {
     this.ocultaBannerCerrada.set(true);
+  }
+
+  cerrarBannerAbiertaDias(): void {
+    this.ocultaBannerAbiertaDias.set(true);
   }
 
   async refrescar(): Promise<boolean> {
@@ -33,8 +40,14 @@ export class CajaEstadoService {
         dias = diasCalendarioColombiaDesde(r.sesion.fechaApertura);
       }
       this.diasSinCerrar.set(dias);
-      if (ok) this.ocultaBannerCerrada.set(false);
-      else if (prev === true) this.ocultaBannerCerrada.set(false);
+      if (ok) {
+        this.ocultaBannerCerrada.set(false);
+        // Persistente: si sigue abierta con días, la alarma vuelve a mostrarse.
+        if (dias >= 1) this.ocultaBannerAbiertaDias.set(false);
+      } else {
+        this.ocultaBannerAbiertaDias.set(false);
+        if (prev === true) this.ocultaBannerCerrada.set(false);
+      }
       return ok;
     } catch {
       this.abierta.set(false);
@@ -56,5 +69,6 @@ export class CajaEstadoService {
     this.sesion.set(null);
     this.diasSinCerrar.set(0);
     this.ocultaBannerCerrada.set(false);
+    this.ocultaBannerAbiertaDias.set(false);
   }
 }

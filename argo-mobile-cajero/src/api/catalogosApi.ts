@@ -124,10 +124,21 @@ export const TIPOS_PAGO_DEF: CatalogoItem[] = [
   { idTipoPago: '4', codigo: 'TD', descripcion: 'Tarjeta débito' },
   { idTipoPago: '5', codigo: 'CH', descripcion: 'Cheque' },
   { idTipoPago: '6', codigo: 'NE', descripcion: 'Nequi / Daviplata' },
-  { idTipoPago: '7', codigo: 'PL', descripcion: 'Pago en línea' },
 ];
 
-/** Une catálogo API + defaults para no perder formas de pago. */
+function esTipoPagoEnLineaItem(t: CatalogoItem): boolean {
+  const id = String(t.idTipoPago ?? t.codigo ?? t.id ?? t._id ?? '')
+    .trim()
+    .toUpperCase();
+  if (id === 'PL' || id === '7') return true;
+  const desc = String(t.descripcion ?? t.nombre ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  return /pago en linea/.test(desc);
+}
+
+/** Une catálogo API + defaults para no perder formas de pago (sin pasarela). */
 export function mergeTiposPago(api: CatalogoItem[]): CatalogoItem[] {
   const byId = new Map<string, CatalogoItem>();
   for (const t of TIPOS_PAGO_DEF) {
@@ -135,6 +146,7 @@ export function mergeTiposPago(api: CatalogoItem[]): CatalogoItem[] {
     if (id) byId.set(id, { ...t });
   }
   for (const t of api || []) {
+    if (esTipoPagoEnLineaItem(t)) continue;
     const id = String(t.idTipoPago ?? t.codigo ?? t.id ?? t._id ?? '').trim();
     if (!id) continue;
     const prev = byId.get(id);
