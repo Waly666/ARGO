@@ -39,6 +39,11 @@ import {
   progresoCertificacion,
   subirFotoEvidencia,
 } from '../api/jornadasApi';
+import {
+  labelOrigenJornada,
+  mensajeOrigenNoCoincide,
+  origenAlumnoEfectivo,
+} from '../utils/origenJornada';
 import type {
   AsistenciaClase,
   ClaseJornada,
@@ -119,6 +124,7 @@ export default function ClaseDetalleScreen() {
   const [horaFinInp, setHoraFinInp] = useState('');
   /** Filtro de origen al operar (no al crear la clase). */
   const [origenFiltro, setOrigenFiltro] = useState<string>('operativo');
+  const [origenPreviewMismatch, setOrigenPreviewMismatch] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -227,6 +233,7 @@ export default function ClaseDetalleScreen() {
     if (nd.length < 5) {
       setProgreso(null);
       setNombrePreview('');
+      setOrigenPreviewMismatch(null);
       return;
     }
     setProgresoLoading(true);
@@ -236,13 +243,25 @@ export default function ClaseDetalleScreen() {
         .catch(() => setProgreso(null))
         .finally(() => setProgresoLoading(false));
       void buscarAlumnoDoc(nd)
-        .then((a) => setNombrePreview(nombreAlumno(a)))
-        .catch(() => setNombrePreview(''));
+        .then((a) => {
+          setNombrePreview(nombreAlumno(a));
+          const origenAlu = origenAlumnoEfectivo(a.origenJornadaCap);
+          const filtro = origenAlumnoEfectivo(origenFiltro);
+          if (origenAlu !== filtro) {
+            setOrigenPreviewMismatch(mensajeOrigenNoCoincide(origenAlu, filtro));
+          } else {
+            setOrigenPreviewMismatch(null);
+          }
+        })
+        .catch(() => {
+          setNombrePreview('');
+          setOrigenPreviewMismatch(null);
+        });
     }, 400);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [numDoc, idContrato]);
+  }, [numDoc, idContrato, origenFiltro]);
 
   /**
    * Persiste el programa en la clase (BD). Matricular/asistencia exigen que la clase
@@ -474,7 +493,7 @@ export default function ClaseDetalleScreen() {
   /** Matricular + inscribir. La asistencia se fuerza al finalizar la clase. */
   async function onRegistrarAlumno(opts?: { numDoc?: string; nombre?: string }) {
     const nd = (opts?.numDoc ?? numDoc).trim().replace(/\D/g, '') || (opts?.numDoc ?? numDoc).trim();
-    const nombreHint = (opts?.nombre || nombrePreview || nd).trim();
+    let nombreHint = (opts?.nombre || nombrePreview || nd).trim();
     if (!nd) {
       Alert.alert('Documento', 'Escriba el documento o escanee el QR de la etiqueta.');
       return;
@@ -493,6 +512,26 @@ export default function ClaseDetalleScreen() {
     if (!idContrato) {
       Alert.alert('Contrato', 'No se identificó el contrato de la jornada.');
       return;
+    }
+
+    const filtro = origenAlumnoEfectivo(origenFiltro);
+    try {
+      const alu = await buscarAlumnoDoc(nd);
+      const n = nombreAlumno(alu);
+      if (n) nombreHint = n;
+      const origenAlu = origenAlumnoEfectivo(alu.origenJornadaCap);
+      if (origenAlu !== filtro) {
+        Alert.alert('Origen distinto', mensajeOrigenNoCoincide(origenAlu, filtro));
+        return;
+      }
+    } catch (e) {
+      const err = e as Error & { status?: number };
+      if (err.status === 404 || /alumno no encontrado/i.test(err.message || '')) {
+        // Dejar que el flujo de abajo ofrezca crear alumno con el origen del filtro.
+      } else {
+        Alert.alert('Error', err.message || 'No se pudo consultar el alumno');
+        return;
+      }
     }
 
     const yaEnClase = inscritos.find(
@@ -524,7 +563,7 @@ export default function ClaseDetalleScreen() {
       }
 
       const idProg = await persistirProgramaEnClase(progSel, { silencioso: true });
-      const r = (await matricularAlumno(nd, idProg, claseId)) as {
+      const r = (await matricularAlumno(nd, idProg, claseId, filtro)) as {
         inscripcionDuplicada?: boolean;
         metaJornada?: MetaJornadaResp | null;
       };
@@ -539,6 +578,7 @@ export default function ClaseDetalleScreen() {
       setNumDoc('');
       setProgreso(null);
       setNombrePreview('');
+      setOrigenPreviewMismatch(null);
       await cargar();
       const okMsg =
         `${nombre} quedó inscrito en la clase.` +
@@ -568,9 +608,22 @@ export default function ClaseDetalleScreen() {
           numSesCert?: number;
           faltan?: number;
           nombreAlumno?: string;
+          origenAlumno?: string;
+          origenFiltro?: string;
           certificado?: { codigoCert?: string };
         };
       };
+      if (err.status === 400 && err.body?.codigo === 'origen_no_coincide') {
+        Alert.alert(
+          'Origen distinto',
+          err.body.message ||
+            mensajeOrigenNoCoincide(
+              String(err.body.origenAlumno || ''),
+              String(err.body.origenFiltro || filtro),
+            ),
+        );
+        return;
+      }
       if (err.status === 409 && err.body?.codigo === 'ya_certificado_contrato') {
         const cod = err.body.certificado?.codigoCert;
         Alert.alert(
@@ -980,7 +1033,7 @@ export default function ClaseDetalleScreen() {
         {origenesActivos.length > 1 ? (
           <>
             <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 8 }}>
-              Filtrar / registrar por origen
+              Solo se inscriben alumnos del origen seleccionado
             </ScaledText>
             <View style={styles.chipsRow}>
               {origenesActivos.map((o) => {
@@ -988,7 +1041,10 @@ export default function ClaseDetalleScreen() {
                 return (
                   <Pressable
                     key={o.key}
-                    onPress={() => setOrigenFiltro(o.key)}
+                    onPress={() => {
+                      setOrigenFiltro(o.key);
+                      setOrigenPreviewMismatch(null);
+                    }}
                     style={[
                       styles.origenChip,
                       {
@@ -1011,7 +1067,7 @@ export default function ClaseDetalleScreen() {
           </>
         ) : origenesActivos.length === 1 ? (
           <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
-            Origen del contrato: {origenesActivos[0].label}
+            Origen del contrato: {origenesActivos[0].label} (solo se inscriben alumnos de este origen)
           </ScaledText>
         ) : null}
         <PrimaryButton
@@ -1073,6 +1129,15 @@ export default function ClaseDetalleScreen() {
             {nombrePreview}
           </ScaledText>
         ) : null}
+        {origenPreviewMismatch ? (
+          <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 10, lineHeight: 18 }}>
+            {origenPreviewMismatch}
+          </ScaledText>
+        ) : numDoc.trim().length >= 5 && nombrePreview ? (
+          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+            Origen OK · {labelOrigenJornada(origenFiltro)}
+          </ScaledText>
+        ) : null}
         {progresoLoading ? <ActivityIndicator color={c.primary} style={{ marginBottom: 8 }} /> : null}
         {progreso ? (
           <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
@@ -1091,7 +1156,7 @@ export default function ClaseDetalleScreen() {
         <PrimaryButton
           label="Inscribir alumno en la clase"
           onPress={() => void onRegistrarAlumno()}
-          disabled={busy || finalizada}
+          disabled={busy || finalizada || !!origenPreviewMismatch}
           fullWidth
           icon="checkmark-circle-outline"
         />

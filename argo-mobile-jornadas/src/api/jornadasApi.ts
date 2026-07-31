@@ -239,16 +239,31 @@ export function estadoOperacionJornadas() {
   return apiFetch<EstadoOperacionJornadas>(`${BASE}/config/operacion/estado`);
 }
 
-export function matricularAlumno(numDoc: string, idPrograma: string, idClase: string) {
+export function matricularAlumno(
+  numDoc: string,
+  idPrograma: string,
+  idClase: string,
+  origenJornadaCap?: string,
+) {
+  const body: Record<string, string> = { numDoc, idPrograma, idClase };
+  if (origenJornadaCap) body.origenJornadaCap = origenJornadaCap;
   return apiFetch(`${BASE}/matricular`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ numDoc, idPrograma, idClase }),
+    body: JSON.stringify(body),
   });
 }
 
 export function buscarAlumnoDoc(numDoc: string) {
   return apiFetch<AlumnoDoc>(`${BASE}/alumnos/doc/${encodeURIComponent(numDoc.trim())}`);
+}
+
+/** Búsqueda por nombre/cédula; si pasa origen, solo alumnos de ese origen. */
+export function buscarAlumnos(q: string, limit = 12, origenJornadaCap?: string) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (q.trim()) params.set('q', q.trim());
+  if (origenJornadaCap) params.set('origenJornadaCap', origenJornadaCap);
+  return apiFetch<AlumnoDoc[]>(`${BASE}/alumnos?${params.toString()}`);
 }
 
 export type CrearAlumnoJornadaDto = {
