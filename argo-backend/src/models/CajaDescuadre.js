@@ -14,7 +14,7 @@ const CajaDescuadreSchema = new mongoose.Schema(
     montoDebe: { type: mongoose.Schema.Types.Decimal128, default: 0 },
     estado: {
       type: String,
-      enum: ['pendiente', 'resuelto', 'en_nomina', 'descontado_nomina'],
+      enum: ['pendiente', 'resuelto', 'en_nomina', 'descontado_nomina', 'tolerado'],
       default: 'pendiente',
       index: true,
     },

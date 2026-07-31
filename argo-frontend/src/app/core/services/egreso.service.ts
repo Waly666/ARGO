@@ -58,21 +58,12 @@ export interface NovedadAnticipoCreada {
 
 
 export const FORMAS_PAGO_EGRESO = [
-
   'Efectivo',
-
   'Transferencia',
-
   'Cheque',
-
   'Tarjeta debito',
-
   'Tarjeta de Credito',
-
   'Nequi / Daviplata',
-
-  'Pago en línea',
-
 ] as const;
 
 

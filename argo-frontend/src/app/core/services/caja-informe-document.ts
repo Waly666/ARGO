@@ -11,6 +11,9 @@ import {
 } from './caja-sesion.service';
 import { ArqueoLinea } from '../constants/caja-arqueo.constants';
 import { resolverFormaPagoIngreso } from '../utils/caja-forma-pago.util';
+import { tieneSoporteAdjunto } from '../utils/pago-soporte.helpers';
+import { tieneSoporteEgreso } from '../utils/egreso-soporte.helpers';
+import { esFormaPagoEfectivo } from '../utils/referencia-pago.util';
 import {
   informePrintToolbarCss,
   informePrintToolbarHtml,
@@ -115,6 +118,25 @@ function cajaInformeDocCss(atPageCss = DEFAULT_CAJA_AT_PAGE): string {
     margin: 10px 0 14px; font-size: 9pt; border-radius: 2px;
   }
   .alerta strong { color: #7a5d00; display: block; margin-bottom: 4px; }
+  .alerta-soporte {
+    border: 1px solid #c53030; background: #fff5f5; padding: 8px 10px;
+    margin: 10px 0 14px; font-size: 9pt; border-radius: 2px;
+  }
+  .alerta-soporte strong { color: #9b2c2c; display: block; margin-bottom: 4px; }
+  .alerta-soporte ul { margin: 4px 0 0; padding-left: 18px; }
+  .alerta-soporte li { margin: 2px 0; }
+  .alerta-soporte .tag-tipo {
+    display: inline-block; font-size: 8pt; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 1px 5px; border-radius: 2px; margin-right: 4px;
+    background: #fed7d7; color: #9b2c2c;
+  }
+  .badge-sin-soporte {
+    display: inline-block; font-size: 7.5pt; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 1px 5px; border-radius: 2px; margin-left: 4px;
+    background: #feb2b2; color: #742a2a; white-space: nowrap;
+  }
   .doc-footer {
     margin-top: 24px; padding-top: 12px; border-top: 1px solid #ccc;
     font-size: 8.5pt; color: #666; text-align: center;
@@ -175,7 +197,79 @@ function fmtEstadoDescuadre(estado?: string | null): string {
   if (estado === 'resuelto') return 'Resuelto';
   if (estado === 'en_nomina') return 'En nómina';
   if (estado === 'descontado_nomina') return 'Descontado en nómina';
+  if (estado === 'tolerado') return 'Tolerado (anotado)';
   return estado || '—';
+}
+
+function esMovimientoAnulado(row?: { anulado?: boolean; estado?: string | null } | null): boolean {
+  if (!row) return false;
+  if (row.anulado === true) return true;
+  return String(row.estado || '').toUpperCase() === 'ANULADO';
+}
+
+/**
+ * Ingresos: efectivo NO exige soporte; el resto de formas de pago sí.
+ * Egresos: todos exigen soporte (factura/voucher), sin importar la forma de pago.
+ */
+function ingresoEsEfectivo(i: CajaIngresoItem): boolean {
+  if (String(i.idTipoPago ?? '').trim() === '1') return true;
+  const forma = resolverFormaPagoIngreso(i);
+  if (esFormaPagoEfectivo(forma)) return true;
+  if (esFormaPagoEfectivo(i.formaPago)) return true;
+  if (esFormaPagoEfectivo(i.tipoPagoDescr)) return true;
+  return false;
+}
+
+function ingresoSinSoporteRequerido(i: CajaIngresoItem): boolean {
+  if (esMovimientoAnulado(i)) return false;
+  if (ingresoEsEfectivo(i)) return false;
+  return !tieneSoporteAdjunto(i);
+}
+
+/** Todos los egresos vigentes deben llevar soporte. */
+function egresoSinSoporte(e: CajaEgresoItem): boolean {
+  if (esMovimientoAnulado(e)) return false;
+  return !tieneSoporteEgreso(e);
+}
+
+function htmlAlertaSinSoporte(ingresos: CajaIngresoItem[], egresos: CajaEgresoItem[]): string {
+  const ingSin = ingresos.filter(ingresoSinSoporteRequerido);
+  const egSin = egresos.filter(egresoSinSoporte);
+  if (!ingSin.length && !egSin.length) return '';
+
+  const items: string[] = [];
+  for (const i of ingSin) {
+    const ref = i.numRecibo || '—';
+    const forma = resolverFormaPagoIngreso(i);
+    const quien = i.pagadorDescr || i.recibidoDe || i.recibiDe || '—';
+    items.push(
+      `<li><span class="tag-tipo">Ingreso</span> ${esc(ref)} · ${esc(forma)} · ${esc(quien)} · ${money(i.valor)} — <em>sin soporte</em></li>`,
+    );
+  }
+  for (const e of egSin) {
+    const ref = e.numRecibo || e.idEgreso || '—';
+    const concepto = e.concepto || e.tipoEgresoDescr || 'Egreso';
+    items.push(
+      `<li><span class="tag-tipo">Egreso</span> ${esc(ref)} · ${esc(concepto)} · ${esc(e.formaPago || 'Efectivo')} · ${money(e.valorEgreso)} — <em>sin soporte</em></li>`,
+    );
+  }
+
+  const total = ingSin.length + egSin.length;
+  const detalleIng = ingSin.length
+    ? `${ingSin.length} ingreso(s) (formas distintas de efectivo)`
+    : '';
+  const detalleEg = egSin.length ? `${egSin.length} egreso(s)` : '';
+  const detalle = [detalleIng, detalleEg].filter(Boolean).join(' · ');
+
+  return `<div class="alerta-soporte">
+    <strong>⚠ ALERTA: comprobantes sin soporte adjunto (${total})</strong>
+    <p style="margin:0 0 4px">
+      Regla: ingresos en efectivo no requieren soporte; las demás formas de pago de ingreso sí.
+      Todos los egresos deben llevar soporte (factura, voucher o comprobante).
+      ${detalle ? `Faltan: ${esc(detalle)}.` : ''}
+    </p>
+    <ul>${items.join('')}</ul>
+  </div>`;
 }
 
 function egresosPorForma(res: ResumenCaja): ResumenTipoMovimiento[] {
@@ -597,29 +691,31 @@ export function buildInformeIndividualHtml(opts: {
   const totalSalida = egresosTipo.reduce((a, t) => a + (t.total ?? 0), 0);
 
   const ingDet = ingresos
-    .map(
-      (i) => `<tr>
-        <td>${esc(i.numRecibo)}</td>
+    .map((i) => {
+      const sinSop = ingresoSinSoporteRequerido(i);
+      return `<tr class="${sinSop ? 'warn' : ''}">
+        <td>${esc(i.numRecibo)}${sinSop ? '<span class="badge-sin-soporte">Sin soporte</span>' : ''}</td>
         <td>${fmtFecha(i.fecha)}</td>
         <td>${esc(servicioIngresoLabel(i))}</td>
         <td>${esc(resolverFormaPagoIngreso(i))}</td>
         <td>${esc(i.pagadorDescr || i.recibidoDe || '—')}</td>
         <td class="num">${money(i.valor)}</td>
-      </tr>`,
-    )
+      </tr>`;
+    })
     .join('');
 
   const egDet = egresos
-    .map(
-      (e) => `<tr>
-        <td>${esc(e.numRecibo || e.idEgreso)}</td>
+    .map((e) => {
+      const sinSop = egresoSinSoporte(e);
+      return `<tr class="${sinSop ? 'warn' : ''}">
+        <td>${esc(e.numRecibo || e.idEgreso)}${sinSop ? '<span class="badge-sin-soporte">Sin soporte</span>' : ''}</td>
         <td>${fmtFecha(e.fechaEgreso)}</td>
         <td>${esc(e.concepto)}</td>
         <td>${esc(e.tipoEgresoDescr || '—')}</td>
         <td>${esc(e.formaPago || 'Efectivo')}</td>
         <td class="num">${money(e.valorEgreso)}</td>
-      </tr>`,
-    )
+      </tr>`;
+    })
     .join('');
 
   const alertaDesc = hayDescuadre
@@ -629,6 +725,8 @@ export function buildInformeIndividualHtml(opts: {
         ${(descuadre?.montoDebe ?? 0) > 0 ? ` · Faltante: ${money(descuadre?.montoDebe)}` : ''}
       </div>`
     : '';
+
+  const alertaSoporte = htmlAlertaSinSoporte(ingresos, egresos);
 
   const cuerpo = `
     <div class="doc-titulo-block">
@@ -658,6 +756,7 @@ export function buildInformeIndividualHtml(opts: {
       <tr class="${hayDescuadre ? 'warn' : 'total'}"><td colspan="4"><strong>CUADRE — DIFERENCIA (Contado − Esperado)</strong></td><td class="num"><strong>${money(r.diferencia)}</strong></td></tr>
     </table>
     ${alertaDesc}
+    ${alertaSoporte}
     <div class="sec-detalle">Detalle de ingresos (${ingresos.length})</div>
     <table class="tbl detalle">
       <thead><tr><th>Recibo</th><th>Fecha</th><th>Servicio</th><th>Pago</th><th>Recibido de</th><th class="num">Valor</th></tr></thead>

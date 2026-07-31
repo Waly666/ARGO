@@ -1,1 +1,58 @@
 @use './caja-shared' as *;
+
+/* Ficha 1 — misma vibra que el dashboard principal */
+.caja-shell--dash {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+
+  .dash-like-head {
+    .eyebrow {
+      margin: 0 0 4px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-2);
+      background: none;
+      -webkit-background-clip: unset;
+      background-clip: unset;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 2.05rem;
+      background: none !important;
+      -webkit-background-clip: unset !important;
+      background-clip: unset !important;
+      color: var(--text) !important;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    .sub,
+    .hint {
+      margin: 0;
+      color: var(--text-dim) !important;
+      font-size: 1.02rem;
+    }
+  }
+
+  .caja-page-header {
+    border-bottom: none !important;
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .pill-like {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+  }
+
+  .caja-tabs {
+    margin-top: 0.85rem;
+    margin-bottom: 1.15rem;
+  }
+}

@@ -3,7 +3,6 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from '../services/auth.service';
 import { PermisoService } from '../services/permiso.service';
-import { PermisoAvisoService } from '../services/permiso-aviso.service';
 import {
   PERMISOS_INSTRUCTORES_DIRECTORIO,
   destinoTrasRevocar,
@@ -13,7 +12,6 @@ import {
 export const permisoGuard: CanActivateFn = (route) => {
   const auth = inject(AuthService);
   const permisos = inject(PermisoService);
-  const aviso = inject(PermisoAvisoService);
   const router = inject(Router);
 
   if (!auth.isAuth()) {
@@ -34,8 +32,7 @@ export const permisoGuard: CanActivateFn = (route) => {
     if (!clave || tienePermisoRuta(list, clave)) return true;
   }
 
-  aviso.avisarRuta();
-
+  // Sin diálogo: redirigir en silencio (el modal al navegar molestaba al cajero).
   const actual = router.url.split('?')[0];
   const destino = destinoTrasRevocar(actual, list, ctx) ?? '/app/sin-acceso';
 

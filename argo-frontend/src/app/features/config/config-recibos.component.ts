@@ -36,6 +36,10 @@ export class ConfigRecibosComponent implements OnInit {
           ...c,
           permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
           permitirAjusteCuotasSemestre: c.permitirAjusteCuotasSemestre === true,
+          toleranciaCierreCajaCop:
+            c.toleranciaCierreCajaCop != null && Number.isFinite(Number(c.toleranciaCierreCajaCop))
+              ? Math.round(Number(c.toleranciaCierreCajaCop))
+              : 1000,
           segundoPrefijoComprobanteIngreso:
             c.segundoPrefijoComprobanteIngreso?.trim() || this.anioActual,
           segundoPrefijoComprobanteEgreso:
@@ -111,6 +115,10 @@ export class ConfigRecibosComponent implements OnInit {
           ...c,
           permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
           permitirAjusteCuotasSemestre: c.permitirAjusteCuotasSemestre === true,
+          toleranciaCierreCajaCop:
+            c.toleranciaCierreCajaCop != null && Number.isFinite(Number(c.toleranciaCierreCajaCop))
+              ? Math.round(Number(c.toleranciaCierreCajaCop))
+              : 1000,
           segundoPrefijoComprobanteIngreso:
             c.segundoPrefijoComprobanteIngreso?.trim() || this.anioActual,
           segundoPrefijoComprobanteEgreso:

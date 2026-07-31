@@ -4,6 +4,7 @@ const { esAdmin } = require('../utils/roles');
 const { num } = require('../utils/coerceTypes');
 const { exigirAdminOSupervisor } = require('../services/authVerify');
 const descuadreSvc = require('../services/descuadreCaja');
+const { obtenerConfigRecibo } = require('../services/configRecibo');
 const ingresoCtrl = require('./ingresoController');
 const egresoCtrl = require('./egresoController');
 const CajaSesion = require('../models/CajaSesion');
@@ -49,9 +50,10 @@ exports.activa = async (req, res, next) => {
   try {
     const { idUsuario } = userCtx(req);
     const sesion = await caja.obtenerSesionActiva(idUsuario, req.idSede);
-    if (!sesion) return res.json({ abierta: false, sesion: null });
+    if (!sesion) return res.json({ abierta: false, sesion: null, diasSinCerrar: 0 });
     const resumen = await caja.calcularResumenSesion(sesion);
-    res.json({ abierta: true, sesion, resumenParcial: resumen });
+    const diasSinCerrar = caja.diasSinCerrarDesdeApertura(sesion.fechaApertura);
+    res.json({ abierta: true, sesion, resumenParcial: resumen, diasSinCerrar });
   } catch (e) {
     next(e);
   }
@@ -174,11 +176,14 @@ exports.cerrar = async (req, res, next) => {
     const resumenPrevio = await caja.calcularResumenSesion(sesionAbierta);
     const diferencia = contado - resumenPrevio.efectivoEsperado;
 
+    const cfgRecibo = await obtenerConfigRecibo();
+    const tolerancia = descuadreSvc.normalizarTolerancia(cfgRecibo.toleranciaCierreCajaCop);
+
     let supervisor = null;
-    if (descuadreSvc.tieneDescuadreSignificativo(diferencia)) {
+    if (descuadreSvc.requiereAutorizacionDescuadre(diferencia, tolerancia)) {
       const auth = await exigirAdminOSupervisor(
         req,
-        'Cierre con descuadre requiere autorización de un administrador (usuario y contraseña).',
+        'Cierre con descuadre fuera de tolerancia requiere autorización de un administrador (usuario y contraseña).',
       );
       if (!auth.ok) {
         return res.status(auth.status).json({
@@ -186,6 +191,7 @@ exports.cerrar = async (req, res, next) => {
           code: auth.code || 'DESCUADRE_AUTH_REQUIRED',
           diferencia,
           efectivoEsperado: resumenPrevio.efectivoEsperado,
+          toleranciaCierreCajaCop: tolerancia,
         });
       }
       supervisor = auth.supervisor;
@@ -199,6 +205,7 @@ exports.cerrar = async (req, res, next) => {
       idUsuario: ctx.idUsuario,
       rol: ctx.rol,
       supervisor,
+      toleranciaCierreCajaCop: tolerancia,
     });
     await registrarAuditoria({
       req,
@@ -231,6 +238,9 @@ exports.cerrarMultiples = async (req, res, next) => {
     }
 
     let supervisor = null;
+    const cfgRecibo = await obtenerConfigRecibo();
+    const tolerancia = descuadreSvc.normalizarTolerancia(cfgRecibo.toleranciaCierreCajaCop);
+
     for (const item of lista) {
       const idSesion = Number(item.idSesion);
       const sesionAbierta = await CajaSesion.findOne({ idSesion, estado: 'abierta' });
@@ -243,13 +253,13 @@ exports.cerrarMultiples = async (req, res, next) => {
       }
       const resumenPrevio = await caja.calcularResumenSesion(sesionAbierta);
       const diferencia = contado - resumenPrevio.efectivoEsperado;
-      if (descuadreSvc.tieneDescuadreSignificativo(diferencia)) {
+      if (descuadreSvc.requiereAutorizacionDescuadre(diferencia, tolerancia)) {
         const auth = await exigirAdminOSupervisor(
           {
             ...req,
             body: { autorizadoUsername, autorizadoPassword },
           },
-          'Cierre con descuadre requiere autorización de un administrador (usuario y contraseña).',
+          'Cierre con descuadre fuera de tolerancia requiere autorización de un administrador (usuario y contraseña).',
         );
         if (!auth.ok) {
           return res.status(auth.status).json({
@@ -258,6 +268,7 @@ exports.cerrarMultiples = async (req, res, next) => {
             idSesion,
             diferencia,
             efectivoEsperado: resumenPrevio.efectivoEsperado,
+            toleranciaCierreCajaCop: tolerancia,
           });
         }
         supervisor = auth.supervisor;
@@ -265,7 +276,11 @@ exports.cerrarMultiples = async (req, res, next) => {
       }
     }
 
-    const resultados = await caja.cerrarSesionesMultiples(lista, { ...ctx, supervisor });
+    const resultados = await caja.cerrarSesionesMultiples(lista, {
+      ...ctx,
+      supervisor,
+      toleranciaCierreCajaCop: tolerancia,
+    });
     for (const r of resultados) {
       await registrarAuditoria({
         req,

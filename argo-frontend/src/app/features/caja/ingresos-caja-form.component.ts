@@ -12,12 +12,13 @@ import { IngresoService } from '../../core/services/ingreso.service';
 import { Tercero, TerceroService } from '../../core/services/tercero.service';
 import { requiereReferenciaPago, requiereSoportePago } from '../../core/utils/referencia-pago.util';
 import { leerImagenSoporte } from '../../core/utils/pago-soporte.helpers';
-import { pagoIntangibleCompleto, validarPagoIntangible } from '../../core/utils/pago-intangible.validators';
+import { validarPagoIntangible } from '../../core/utils/pago-intangible.validators';
 import { PagoSoporteFieldComponent } from '../../shared/pago-soporte-field/pago-soporte-field.component';
 import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import { filtrarTiposPagoCaja } from '../../core/utils/metodo-pago.util';
 import {
   TipoIngresoCat,
   esAprovisionamientoCaja,
@@ -27,15 +28,14 @@ import {
   labelTipoIngreso,
 } from '../../core/utils/tipo-ingreso-caja.helpers';
 
-const TIPOS_PAGO_DEF = [
+const TIPOS_PAGO_DEF = filtrarTiposPagoCaja([
   { idTipoPago: '1', codigo: 'EF', descripcion: 'Efectivo' },
   { idTipoPago: '2', codigo: 'TR', descripcion: 'Transferencia' },
   { idTipoPago: '3', codigo: 'TC', descripcion: 'Tarjeta crédito' },
   { idTipoPago: '4', codigo: 'TD', descripcion: 'Tarjeta débito' },
   { idTipoPago: '5', codigo: 'CH', descripcion: 'Cheque' },
   { idTipoPago: '6', codigo: 'NE', descripcion: 'Nequi / Daviplata' },
-  { idTipoPago: '7', codigo: 'PL', descripcion: 'Pago en línea' },
-];
+]);
 
 @Component({
   selector: 'argo-ingresos-caja-form',
@@ -76,6 +76,8 @@ export class IngresosCajaFormComponent implements OnInit {
   idTercero = signal<string | null>(null);
   empleadoTexto = signal('');
   terceroTexto = signal('');
+  tipoPagoTexto = signal('');
+  cuentaTexto = signal('');
   recibidoDe = signal('');
   documentoTercero = signal('');
   tipoPersona = signal<'natural' | 'juridica' | ''>('');
@@ -94,6 +96,7 @@ export class IngresosCajaFormComponent implements OnInit {
   saving = signal(false);
   msg = signal<string | null>(null);
   msgError = signal(false);
+  intentoGuardar = signal(false);
 
   tipoSel = computed(() =>
     this.tiposIngreso().find((t) => String(t.idTipoIngreso) === String(this.idTipoIngreso())) ?? null,
@@ -118,6 +121,32 @@ export class IngresosCajaFormComponent implements OnInit {
       hint: t.correo || t.telefono || undefined,
     })),
   );
+
+  opcionesTipoPago = computed<EnumBuscarOption[]>(() =>
+    this.tiposPago().map((t) => ({
+      value: this.tipoPagoValor(t),
+      label: this.tipoPagoLabel(t),
+    })),
+  );
+
+  opcionesCuenta = computed<EnumBuscarOption[]>(() =>
+    this.cuentasBancarias().map((c) => ({
+      value: this.cuentaValor(c),
+      label: this.labelCuenta(c),
+    })),
+  );
+
+  opcionesTipoPersona = computed<EnumBuscarOption[]>(() => [
+    { value: 'natural', label: 'Persona natural' },
+    { value: 'juridica', label: 'Persona jurídica' },
+  ]);
+
+  tipoPersonaTexto = computed(() => {
+    const v = this.tipoPersona();
+    if (v === 'natural') return 'Persona natural';
+    if (v === 'juridica') return 'Persona jurídica';
+    return '';
+  });
 
   contactoVisible = computed(() => {
     const tipo = this.tipoPagador();
@@ -149,6 +178,34 @@ export class IngresosCajaFormComponent implements OnInit {
     return requiereSoportePago(d ? String(d) : '');
   });
 
+  hintTipo = computed(() => {
+    if (this.esContrato()) {
+      return 'Contrato de capacitación u otro acuerdo con persona natural o jurídica (no alumno).';
+    }
+    if (this.esAprovision()) {
+      return 'Dinero que el propietario o responsable aporta a la caja para cubrir pagos del turno.';
+    }
+    if (this.esOtros()) {
+      return 'Ingresos que no encajan en contrato ni aprovisionamiento.';
+    }
+    return 'Elija el tipo según el origen del dinero.';
+  });
+
+  iconoTipo(t: TipoIngresoCat): string {
+    if (esIngresoContrato(t)) return '📋';
+    if (esAprovisionamientoCaja(t)) return '💵';
+    if (esOtrosIngresos(t)) return '➕';
+    return '◉';
+  }
+
+  tipoActivo(t: TipoIngresoCat): boolean {
+    return String(this.idTipoIngreso()) === String(t.idTipoIngreso);
+  }
+
+  idTipoStr(t: TipoIngresoCat): string {
+    return String(t.idTipoIngreso ?? '');
+  }
+
   onSoporteArchivo(file: File) {
     const ok = leerImagenSoporte(
       file,
@@ -177,26 +234,68 @@ export class IngresosCajaFormComponent implements OnInit {
     return v.ok ? null : v.message;
   });
 
-  puedeGuardar = computed(() => {
-    if (!this.idTipoIngreso() || !this.concepto().trim() || !(this.valor() > 0) || !this.idTipoPago()) {
-      return false;
+  erroresFormulario = computed(() => {
+    const err: Record<string, string> = {};
+    if (!this.idTipoIngreso()) err['tipoIngreso'] = 'Seleccione el tipo de ingreso.';
+    if (!this.concepto().trim()) err['concepto'] = 'El concepto es obligatorio.';
+    if (!(this.valor() > 0)) err['valor'] = 'Indique un valor mayor a cero.';
+    if (!this.idTipoPago()) err['tipoPago'] = 'Seleccione la forma de pago.';
+    if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) {
+      err['cuenta'] = 'Seleccione la cuenta bancaria de la empresa.';
     }
-    if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) return false;
-    return pagoIntangibleCompleto(this.inputPagoIntangible());
+    const intangible = validarPagoIntangible(this.inputPagoIntangible());
+    if (!intangible.ok) {
+      if (!String(this.numComprobante() || '').trim()) {
+        err['comprobante'] = intangible.message || 'Indique la referencia del comprobante.';
+      } else if (!this.archivoSoporte()) {
+        err['soporte'] = intangible.message || 'Adjunte el pantallazo del movimiento.';
+      }
+    }
+    const pagador = this.tipoPagador();
+    if (pagador === 'empleado' && !this.idEmpleado()) {
+      err['empleado'] = 'Seleccione el empleado que entrega el dinero.';
+    }
+    if (pagador === 'tercero' && !this.idTercero()) {
+      err['tercero'] = 'Seleccione el tercero del catálogo.';
+    }
+    if (pagador === 'libre') {
+      if (this.esContrato()) {
+        if (!this.recibidoDe().trim()) err['recibidoDe'] = 'Indique el nombre del contratante.';
+        if (!this.documentoTercero().trim()) err['documento'] = 'Indique NIT o documento del contratante.';
+        if (!this.tipoPersona()) err['tipoPersona'] = 'Indique si es persona natural o jurídica.';
+      } else if (this.esAprovision() || this.esOtros()) {
+        if (!this.recibidoDe().trim()) err['recibidoDe'] = 'Indique quién entrega el dinero.';
+      }
+    }
+    return err;
   });
+
+  listaErrores = computed(() => Object.values(this.erroresFormulario()));
+
+  invalido(campo: string): boolean {
+    return this.intentoGuardar() && !!this.erroresFormulario()[campo];
+  }
+
+  msgCampo(campo: string): string | null {
+    if (!this.intentoGuardar()) return null;
+    return this.erroresFormulario()[campo] || null;
+  }
+
+  puedeGuardar = computed(() => Object.keys(this.erroresFormulario()).length === 0);
 
   ngOnInit(): void {
     this.catSvc.list('tipoIngreso', { refresh: true }).subscribe({
       next: (rows) => this.tiposIngreso.set(filtrarTiposIngresoCaja((rows || []) as TipoIngresoCat[])),
     });
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
-      next: (d) => this.tiposPago.set(d?.length ? d : TIPOS_PAGO_DEF),
+      next: (d) => this.tiposPago.set(filtrarTiposPagoCaja((d?.length ? d : TIPOS_PAGO_DEF) as Record<string, unknown>[])),
     });
     this.catSvc.list('cuentasBancarias', { refresh: true }).subscribe({
       next: (d) => this.cuentasBancarias.set(d || []),
     });
     this.empSvc.listar({ activos: true }).subscribe({
       next: (e) => this.empleados.set((e || []).filter((x) => x.numeroDocumento)),
+      error: () => this.empleados.set([]),
     });
     this.terSvc.listar().subscribe({
       next: (t) => this.terceros.set(t || []),
@@ -211,6 +310,10 @@ export class IngresosCajaFormComponent implements OnInit {
   }
 
   labelTipo = labelTipoIngreso;
+
+  seleccionarTipo(id: string): void {
+    this.onTipoIngresoChange(id);
+  }
 
   onTipoIngresoChange(id: string): void {
     this.idTipoIngreso.set(id);
@@ -287,6 +390,34 @@ export class IngresosCajaFormComponent implements OnInit {
     this.telefonoPagador.set('');
   }
 
+  onTipoPagoPick(opt: EnumBuscarOption): void {
+    this.tipoPagoTexto.set(opt.label);
+    this.onTipoPagoChange(String(opt.value));
+  }
+
+  onTipoPagoLimpiar(): void {
+    this.tipoPagoTexto.set('');
+    this.onTipoPagoChange('');
+  }
+
+  onCuentaPick(opt: EnumBuscarOption): void {
+    this.cuentaTexto.set(opt.label);
+    this.idCuentaBancaria.set(String(opt.value));
+  }
+
+  onCuentaLimpiar(): void {
+    this.cuentaTexto.set('');
+    this.idCuentaBancaria.set('');
+  }
+
+  onTipoPersonaPick(opt: EnumBuscarOption): void {
+    this.tipoPersona.set(opt.value === 'juridica' ? 'juridica' : 'natural');
+  }
+
+  onTipoPersonaLimpiar(): void {
+    this.tipoPersona.set('');
+  }
+
   tipoPagoValor(t: Record<string, unknown>): string {
     const v = t['idTipoPago'] ?? t['codigo'] ?? t['_id'];
     return v != null ? String(v) : '';
@@ -313,9 +444,12 @@ export class IngresosCajaFormComponent implements OnInit {
     this.idTipoPago.set(id);
     if (!id) {
       this.idCuentaBancaria.set('');
+      this.cuentaTexto.set('');
+      this.tipoPagoTexto.set('');
       return;
     }
     const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
+    if (t) this.tipoPagoTexto.set(this.tipoPagoLabel(t));
     const txt = t ? this.tipoPagoLabel(t).toLowerCase() : '';
     const cuentas = this.cuentasBancarias();
     if (!cuentas.length) return;
@@ -325,7 +459,10 @@ export class IngresosCajaFormComponent implements OnInit {
     } else if (txt.includes('daviplata')) {
       match = cuentas.find((c) => String(c['banco'] || '').toLowerCase().includes('daviplata'));
     }
-    if (match) this.idCuentaBancaria.set(this.cuentaValor(match));
+    if (match) {
+      this.idCuentaBancaria.set(this.cuentaValor(match));
+      this.cuentaTexto.set(this.labelCuenta(match));
+    }
   }
 
   tipoPagoSel(): Record<string, unknown> | undefined {
@@ -338,68 +475,18 @@ export class IngresosCajaFormComponent implements OnInit {
   }
 
   async guardar(): Promise<void> {
+    this.intentoGuardar.set(true);
     if (!(await this.cajaAlert.ensureAbierta('registrar ingresos'))) return;
-    if (!this.idTipoIngreso()) {
-      this.inform('Seleccione el tipo de ingreso.');
-      return;
-    }
-    if (!this.concepto().trim()) {
-      this.inform('El concepto es obligatorio.');
-      return;
-    }
-    if (!(this.valor() > 0)) {
-      this.inform('Indique un valor válido.');
-      return;
-    }
-    if (!this.idTipoPago()) {
-      this.inform('Seleccione la forma de pago.');
-      return;
-    }
-    if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) {
-      this.inform('Indique la cuenta bancaria de la empresa.');
-      return;
-    }
-    const intangible = validarPagoIntangible(this.inputPagoIntangible());
-    if (!intangible.ok) {
-      this.inform(intangible.message, true);
-      return;
-    }
-    if (!this.puedeGuardar()) {
-      this.inform(this.mensajePagoIntangible() || 'Complete referencia y pantallazo del movimiento.', true);
+
+    const errores = this.erroresFormulario();
+    if (Object.keys(errores).length) {
+      const primero = Object.values(errores)[0];
+      const n = Object.keys(errores).length;
+      this.inform(n > 1 ? `${primero} Revise los ${n} campos marcados en rojo.` : primero, true);
       return;
     }
 
     const pagador = this.tipoPagador();
-    if (pagador === 'empleado' && !this.idEmpleado()) {
-      this.inform('Seleccione el empleado que entrega el dinero.');
-      return;
-    }
-    if (pagador === 'tercero' && !this.idTercero()) {
-      this.inform('Seleccione el tercero del catálogo (o créelo en Flujo de caja → Terceros).');
-      return;
-    }
-    if (pagador === 'libre' || !pagador) {
-      if (this.esContrato()) {
-        if (!this.recibidoDe().trim()) {
-          this.inform('Indique el nombre del contratante.');
-          return;
-        }
-        if (!this.documentoTercero().trim()) {
-          this.inform('Indique NIT o documento del contratante.');
-          return;
-        }
-        if (!this.tipoPersona()) {
-          this.inform('Indique si es persona natural o jurídica.');
-          return;
-        }
-      } else if (this.esAprovision() || this.esOtros()) {
-        if (!this.recibidoDe().trim()) {
-          this.inform('Indique quién entrega el dinero.');
-          return;
-        }
-      }
-    }
-
     this.saving.set(true);
     this.inform(null);
     this.ingSvc
@@ -430,7 +517,7 @@ export class IngresosCajaFormComponent implements OnInit {
         },
         error: (e) => {
           this.saving.set(false);
-          this.inform(e?.error?.message || 'No se pudo registrar el ingreso.');
+          this.inform(e?.error?.message || 'No se pudo registrar el ingreso.', true);
         },
       });
   }
@@ -450,7 +537,8 @@ export class IngresosCajaFormComponent implements OnInit {
         t.includes('ingrese') ||
         t.includes('solo puede') ||
         t.includes('adjunte') ||
-        t.includes('verifique');
+        t.includes('verifique') ||
+        t.includes('revise');
     }
     this.msgError.set(err);
   }

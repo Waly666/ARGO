@@ -1,31 +1,46 @@
 <section class="mov-page">
-  <header class="caja-head mov-head">
+  <header class="caja-head mov-head caja-page-header">
     <div class="caja-head-main">
       <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Egresos</p>
       <h1>Egresos de mi caja</h1>
       <p class="hint" *ngIf="cajaAbierta() && sesionId()">
         Sesión #{{ sesionId() }} — solo egresos de este turno.
       </p>
-      <p class="hint warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar egresos.</p>
+      <p class="hint warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen para registrar egresos.</p>
     </div>
     <div class="caja-badges mov-actions">
       <span class="caja-chip caja-chip--amber" *ngIf="cantSinSoporte() > 0">{{ cantSinSoporte() }} sin soporte</span>
+      <span class="caja-chip caja-chip--sky" *ngIf="items().length">{{ items().length }} egreso(s)</span>
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
       <button type="button" class="primary sm" (click)="nuevoEgreso()">Nuevo egreso</button>
       <span class="total-badge egreso">{{ total() | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
     </div>
   </header>
 
-  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
+  <div
+    class="caja-banner"
+    *ngIf="msg()"
+    [class.caja-banner--error]="msgError()"
+    [class.caja-banner--ok]="!msgError()"
+    role="status"
+  >
+    <span class="caja-banner-icon" aria-hidden="true">{{ msgError() ? '!' : '✓' }}</span>
+    <div class="caja-banner-body">
+      <span>{{ msg() }}</span>
+    </div>
+  </div>
 
-  <div class="warn-docs card" *ngIf="cantSinSoporte() > 0">
-    <strong>Aviso: egresos sin soporte adjunto ({{ cantSinSoporte() }})</strong>
-    <p class="hint">Falta imagen de factura, voucher o comprobante en estos movimientos de la sesión.</p>
-    <ul>
-      <li *ngFor="let e of sinSoporte() | slice: 0 : 5">
-        {{ e.numRecibo || '—' }} — {{ e.concepto }}
-      </li>
-    </ul>
+  <div class="caja-banner caja-banner--warn" *ngIf="cantSinSoporte() > 0" role="status">
+    <span class="caja-banner-icon" aria-hidden="true">⚠</span>
+    <div class="caja-banner-body">
+      <strong class="caja-banner-title">Egresos sin soporte adjunto ({{ cantSinSoporte() }})</strong>
+      <span>Falta imagen de factura, voucher o comprobante en estos movimientos de la sesión.</span>
+      <ul>
+        <li *ngFor="let e of sinSoporte() | slice: 0 : 5">
+          {{ e.numRecibo || '—' }} — {{ e.concepto }}
+        </li>
+      </ul>
+    </div>
   </div>
 
   <div class="table-wrap panel" *ngIf="!loading(); else cargando">

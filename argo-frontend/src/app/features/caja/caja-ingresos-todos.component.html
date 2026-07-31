@@ -14,7 +14,16 @@
 
   <argo-caja-descuadres-banner />
 
-  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
+  <div
+    class="caja-banner"
+    *ngIf="msg()"
+    [class.caja-banner--error]="msgError()"
+    [class.caja-banner--ok]="!msgError()"
+    role="status"
+  >
+    <span class="caja-banner-icon" aria-hidden="true">{{ msgError() ? '!' : '✓' }}</span>
+    <div class="caja-banner-body"><span>{{ msg() }}</span></div>
+  </div>
 
   <p class="filtro-sesion-activo" *ngIf="idSesion()">
     Filtrando sesión #{{ idSesion() }}

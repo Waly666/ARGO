@@ -18,7 +18,11 @@ const {
 const { formaPagoDesdeCatalogo } = require('./tipoIngresoResolver');
 const { esAdmin } = require('../utils/roles');
 
-const UMBRAL_COP = 1;
+const UMBRAL_MINIMO_COP = 1;
+/** Default si la config de recibo no trae tolerancia. */
+const TOLERANCIA_DEFAULT_COP = 1000;
+/** @deprecated usar UMBRAL_MINIMO_COP / tolerancia de config */
+const UMBRAL_COP = UMBRAL_MINIMO_COP;
 
 function planoDescuadre(doc) {
   if (!doc) return null;
@@ -32,14 +36,37 @@ function planoDescuadre(doc) {
   };
 }
 
+/** Hay pesos de diferencia a anotar (|dif| ≥ $1). */
 function tieneDescuadreSignificativo(diferencia) {
-  return diferencia != null && Number.isFinite(diferencia) && Math.abs(diferencia) >= UMBRAL_COP;
+  return (
+    diferencia != null &&
+    Number.isFinite(diferencia) &&
+    Math.abs(diferencia) >= UMBRAL_MINIMO_COP
+  );
 }
 
-/** Faltante: contado menor que esperado → cajero debe */
-function montoDebeCajero(diferencia) {
+function normalizarTolerancia(toleranciaCop) {
+  const t = Number(toleranciaCop);
+  return Number.isFinite(t) && t >= 0 ? Math.round(t) : TOLERANCIA_DEFAULT_COP;
+}
+
+/**
+ * Fuera de tolerancia → requiere autorización de admin para cerrar.
+ * Dentro (incluido el límite) se anota como tolerado sin auth.
+ */
+function requiereAutorizacionDescuadre(diferencia, toleranciaCop = TOLERANCIA_DEFAULT_COP) {
+  if (!tieneDescuadreSignificativo(diferencia)) return false;
+  return Math.abs(Number(diferencia)) > normalizarTolerancia(toleranciaCop);
+}
+
+/**
+ * Faltante que genera deuda a nómina: solo si supera la tolerancia.
+ * Sobrante nunca genera montoDebe.
+ */
+function montoDebeCajero(diferencia, toleranciaCop = TOLERANCIA_DEFAULT_COP) {
   const d = Number(diferencia) || 0;
-  return d < -UMBRAL_COP ? Math.round(Math.abs(d)) : 0;
+  const umbral = normalizarTolerancia(toleranciaCop);
+  return d < -umbral ? Math.round(Math.abs(d)) : 0;
 }
 
 async function buscarEmpleadoPorUsuario(idUsuario) {
@@ -79,11 +106,21 @@ async function crearRegistroDescuadre({
   diferencia,
   efectivoContado,
   supervisor,
+  toleranciaCierreCajaCop,
 }) {
-  const montoDebe = montoDebeCajero(diferencia);
+  const tolerancia = normalizarTolerancia(toleranciaCierreCajaCop);
+  const fueraTolerancia = requiereAutorizacionDescuadre(diferencia, tolerancia);
+  const montoDebe = fueraTolerancia ? montoDebeCajero(diferencia, tolerancia) : 0;
   const empleado = await buscarEmpleadoPorUsuario(sesion.idUsuario);
   const sid = Number(sesion.idSesion);
   const now = new Date();
+  const d = Number(diferencia) || 0;
+  const tipoLabel = d > 0 ? 'Sobrante' : 'Faltante';
+
+  const estadoNuevo = fueraTolerancia ? 'pendiente' : 'tolerado';
+  const notaTolerado = fueraTolerancia
+    ? null
+    : `${tipoLabel} de ${Math.round(Math.abs(d))} COP anotado dentro de tolerancia de cierre (${tolerancia} COP).`;
 
   const campos = {
     idUsuarioCajero: String(sesion.idUsuario || ''),
@@ -95,9 +132,14 @@ async function crearRegistroDescuadre({
     montoDebe: toDec(montoDebe),
     autorizadoPor: supervisor?.autorizadoPor || null,
     nombreAutoriza: supervisor?.nombreAutoriza || null,
-    autorizadoEn: supervisor?.autorizadoEn || now,
+    autorizadoEn: supervisor?.autorizadoEn || (fueraTolerancia ? now : null),
     fechaCierre: sesion.fechaCierre || now,
   };
+  if (!fueraTolerancia) {
+    campos.fechaResolucion = now;
+    campos.resueltoPor = 'tolerancia';
+    campos.notaResolucion = notaTolerado;
+  }
 
   const existente = await CajaDescuadre.findOne({ idSesion: sid }).lean();
   let idDescuadre;
@@ -107,7 +149,7 @@ async function crearRegistroDescuadre({
     const estadoFinal =
       existente.estado === 'resuelto' || existente.estado === 'descontado_nomina'
         ? existente.estado
-        : 'pendiente';
+        : estadoNuevo;
     await CajaDescuadre.updateOne(
       { idSesion: sid },
       {
@@ -123,12 +165,13 @@ async function crearRegistroDescuadre({
       idDescuadre,
       idSesion: sid,
       ...campos,
-      estado: 'pendiente',
+      estado: estadoNuevo,
     });
   }
 
   const descuadreDoc = await CajaDescuadre.findOne({ idDescuadre }).lean();
-  const estadoSesion = descuadreDoc?.estado === 'pendiente' ? 'pendiente' : descuadreDoc?.estado || 'pendiente';
+  const estadoSesion =
+    descuadreDoc?.estado === 'pendiente' ? 'pendiente' : descuadreDoc?.estado || estadoNuevo;
 
   await CajaSesion.updateOne(
     { idSesion: sid },
@@ -558,7 +601,11 @@ async function resumenMensual(mes) {
 
 module.exports = {
   UMBRAL_COP,
+  UMBRAL_MINIMO_COP,
+  TOLERANCIA_DEFAULT_COP,
   tieneDescuadreSignificativo,
+  requiereAutorizacionDescuadre,
+  normalizarTolerancia,
   montoDebeCajero,
   crearRegistroDescuadre,
   registrarIngresoCuadreDescuadre,

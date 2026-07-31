@@ -9,7 +9,9 @@ function normalizar(txt: string): string {
 export function esFormaPagoEfectivo(texto?: string | null): boolean {
   const t = normalizar(String(texto ?? ''));
   if (!t) return true;
-  return t === 'efectivo' || /\befect\b/.test(t) || t === 'ef';
+  if (t === 'ef' || t === '1') return true;
+  // "efectivo", "pago en efectivo", "efectivo en caja", etc.
+  return t.includes('efect');
 }
 
 /** Transferencia, cheque, tarjeta, Nequi, etc. */

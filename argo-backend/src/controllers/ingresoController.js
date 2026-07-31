@@ -28,6 +28,7 @@ const {
 } = require('../services/tipoIngresoResolver');
 const { registrarCreacion, registrarEliminacion } = require('../services/auditoria');
 const { esIngresoCaja } = require('../utils/ingresoClasificacion');
+const { esIdTipoPagoEnLinea, esIngresoPagoEnLinea } = require('../constants/pasarela');
 const { resolverServiciosAdicionalesPago } = require('../services/serviciosAdicionalesResolver');
 const { crearLiquidacionesServiciosAdicionales } = require('../services/serviciosAdicionalesLiquidacion');
 const { num: numProg } = require('../services/programaServicio');
@@ -362,6 +363,17 @@ exports.crearAlumno = async (req, res, next) => {
       return res.status(400).json({ message: 'numDoc e idTipoPago son obligatorios' });
     }
 
+    const tipoPagoPrev = await cat.catTipoPago
+      .findOne({ $or: [{ idTipoPago }, { codigo: idTipoPago }] })
+      .lean();
+    if (esIdTipoPagoEnLinea(idTipoPago, tipoPagoPrev)) {
+      return res.status(400).json({
+        message:
+          'El pago en línea solo lo registra la pasarela del aula virtual. En caja use transferencia, tarjeta u otro medio gestionado por el cajero.',
+        code: 'PAGO_EN_LINEA_SOLO_PASARELA',
+      });
+    }
+
     // Soporta pago de varios ítems (`items:[{idLiquidacion,valor}]`) o el clásico de un solo ítem.
     const itemsRaw =
       Array.isArray(body.items) && body.items.length
@@ -611,6 +623,17 @@ exports.crearCaja = async (req, res, next) => {
       return res.status(400).json({ message: 'idTipoIngreso, valor e idTipoPago son obligatorios' });
     }
 
+    const tipoPagoCajaPrev = await cat.catTipoPago
+      .findOne({ $or: [{ idTipoPago }, { codigo: idTipoPago }] })
+      .lean();
+    if (esIdTipoPagoEnLinea(idTipoPago, tipoPagoCajaPrev)) {
+      return res.status(400).json({
+        message:
+          'El pago en línea solo lo registra la pasarela del aula virtual. En caja use transferencia, tarjeta u otro medio gestionado por el cajero.',
+        code: 'PAGO_EN_LINEA_SOLO_PASARELA',
+      });
+    }
+
     const valTipo = await validarTipoIngresoCaja(idTipoIngreso);
     if (!valTipo.ok) return res.status(valTipo.status).json({ message: valTipo.message });
 
@@ -824,7 +847,8 @@ exports.listarPorSesion = async (req, res, next) => {
   try {
     const idSesion = Number(req.params.idSesion);
     if (!Number.isFinite(idSesion)) return res.status(400).json({ message: 'idSesion inválido' });
-    const rows = await Ingreso.find({ idSesion }).sort({ fecha: -1, createdAt: -1 }).lean();
+    const rowsRaw = await Ingreso.find({ idSesion }).sort({ fecha: -1, createdAt: -1 }).lean();
+    const rows = (rowsRaw || []).filter((i) => !esIngresoPagoEnLinea(i));
     res.json(await listarIngresosEnriquecidos(rows));
   } catch (e) {
     next(e);

@@ -6,8 +6,10 @@ const METODOS_PAGO_ORDEN = [
   'Tarjeta débito',
   'Cheque',
   'Nequi / Daviplata',
-  'Pago en línea',
 ];
+
+/** Solo para agregados globales (dashboard). No usar en cuadre de caja. */
+const METODOS_PAGO_ORDEN_CON_LINEA = [...METODOS_PAGO_ORDEN, 'Pago en línea'];
 
 function normalizar(txt) {
   return String(txt ?? '')
@@ -31,9 +33,10 @@ function canonicoMetodoPago(texto) {
   return 'Otro';
 }
 
-function crearMapaMetodos() {
+function crearMapaMetodos(incluirPagoEnLinea = true) {
   const map = new Map();
-  for (const label of METODOS_PAGO_ORDEN) {
+  const orden = incluirPagoEnLinea ? METODOS_PAGO_ORDEN_CON_LINEA : METODOS_PAGO_ORDEN;
+  for (const label of orden) {
     map.set(label, { forma: label, total: 0, cantidad: 0 });
   }
   map.set('Otro', { forma: 'Otro', total: 0, cantidad: 0 });
@@ -61,8 +64,9 @@ function agregarIngresoAMetodos(map, ing, valor, porTipoPago) {
   map.set(key, prev);
 }
 
-function ingresosPorMetodoPagoLista(map, totalBase, roundMoney, pct) {
-  const rows = METODOS_PAGO_ORDEN.map((label) => {
+function ingresosPorMetodoPagoLista(map, totalBase, roundMoney, pct, incluirPagoEnLinea = true) {
+  const orden = incluirPagoEnLinea ? METODOS_PAGO_ORDEN_CON_LINEA : METODOS_PAGO_ORDEN;
+  const rows = orden.map((label) => {
     const r = map.get(label) || { forma: label, total: 0, cantidad: 0 };
     return {
       forma: label,
@@ -85,6 +89,7 @@ function ingresosPorMetodoPagoLista(map, totalBase, roundMoney, pct) {
 
 module.exports = {
   METODOS_PAGO_ORDEN,
+  METODOS_PAGO_ORDEN_CON_LINEA,
   canonicoMetodoPago,
   crearMapaMetodos,
   etiquetaIngresoMetodoPago,

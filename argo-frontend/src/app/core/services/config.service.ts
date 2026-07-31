@@ -83,6 +83,11 @@ export interface ConfigRecibo {
   permitirAjusteValorMatricula?: boolean;
   /** Cuotas personalizadas por semestre (presencial/mixta). */
   permitirAjusteCuotasSemestre?: boolean;
+  /**
+   * Diferencia de cierre (|contado − esperado|) sin pedir admin.
+   * Default 1000 COP; dentro del rango se anota sobrante/faltante.
+   */
+  toleranciaCierreCajaCop?: number;
 }
 
 export interface ReciboOpcionesMatricula {

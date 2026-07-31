@@ -7,7 +7,10 @@ const CLAVE = 'alertasGlobal';
 const DEFAULTS_POR_CLAVE = {
   'alarmas.caja.cerrada': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 30 },
   'alarmas.caja.sin_abrir': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 0 },
+  'alarmas.caja.aviso_login': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 0 },
+  'alarmas.caja.abierta_dias': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 0 },
   'alarmas.caja.descuadres': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 0, intervaloPollSegundos: 60 },
+  'alarmas.caja.alerta_pago': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 0, intervaloPollSegundos: 60 },
   'alarmas.jornadas.en_proceso': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 0, intervaloPollSegundos: 12 },
   'alarmas.jornadas.certificado_nuevo': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 30, intervaloPollSegundos: 15 },
   'alarmas.jornadas.live_toast': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 8, intervaloPollSegundos: 12 },

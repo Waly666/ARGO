@@ -18,7 +18,7 @@
     </div>
   </header>
 
-  <nav class="fichas-nav" role="tablist">
+  <nav class="fichas-nav tabs-flow" role="tablist">
     <button
       type="button"
       role="tab"
@@ -26,7 +26,7 @@
       [class.active]="ficha() === 'abiertas'"
       [attr.aria-selected]="ficha() === 'abiertas'"
       (click)="setFicha('abiertas')">
-      Cajas abiertas
+      1. Cajas abiertas
       <span class="badge-count" *ngIf="hayCajasAbiertas()">{{ cajasAbiertas().length }}</span>
     </button>
     <button
@@ -36,7 +36,7 @@
       [class.active]="ficha() === 'consolidado'"
       [attr.aria-selected]="ficha() === 'consolidado'"
       (click)="setFicha('consolidado')">
-      Cierre del día
+      2. Cierre del día
     </button>
   </nav>
 

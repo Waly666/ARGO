@@ -2,7 +2,7 @@ const Matricula = require('../models/Matricula');
 const Ingreso = require('../models/Ingreso');
 const Liquidacion = require('../models/Liquidacion');
 const { esTarifaVirtual } = require('../constants/tarifa');
-const { TIPO_PAGO_EN_LINEA } = require('../constants/pasarela');
+const { filtroMongoIngresosEnLinea } = require('../constants/pasarela');
 const { ymdCalendario } = require('./cajaVirtualDiaria');
 
 function num(v) {
@@ -70,17 +70,53 @@ async function informeMatriculasVirtuales({ desde, hasta } = {}) {
   return { resumen, filas, desde: desde || null, hasta: hasta || null };
 }
 
-async function informeIngresosEnLinea({ desde, hasta } = {}) {
+async function informeIngresosEnLinea({
+  desde,
+  hasta,
+  q,
+  numDoc,
+  numRecibo,
+  referencia,
+} = {}) {
   const { d0, d1 } = parseRango(desde, hasta);
-  const filtro = {
-    $or: [{ origenPasarela: true }, { idTipoPago: TIPO_PAGO_EN_LINEA }],
-  };
+  const and = [filtroMongoIngresosEnLinea()];
   if (d0 || d1) {
-    filtro.fecha = {};
-    if (d0) filtro.fecha.$gte = d0;
-    if (d1) filtro.fecha.$lte = d1;
+    const fecha = {};
+    if (d0) fecha.$gte = d0;
+    if (d1) fecha.$lte = d1;
+    and.push({ fecha });
+  }
+  const docTxt = String(numDoc || '').trim();
+  if (docTxt) {
+    const n = Number(docTxt);
+    and.push(Number.isFinite(n) ? { numDoc: n } : { numDoc: docTxt });
+  }
+  const reciboTxt = String(numRecibo || '').trim();
+  if (reciboTxt) {
+    and.push({ numRecibo: { $regex: reciboTxt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } });
+  }
+  const refTxt = String(referencia || '').trim();
+  if (refTxt) {
+    const rx = { $regex: refTxt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+    and.push({
+      $or: [
+        { pagoEnLineaReference: rx },
+        { wompiTransactionId: rx },
+        { numTransferencia: rx },
+        { numComprobante: rx },
+      ],
+    });
+  }
+  const qTxt = String(q || '').trim();
+  if (qTxt) {
+    const rx = { $regex: qTxt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+    const qOr = [{ concepto: rx }, { recibiDe: rx }, { recibidoDe: rx }, { numRecibo: rx }];
+    const qNum = Number(qTxt);
+    if (Number.isFinite(qNum)) qOr.push({ numDoc: qNum });
+    and.push({ $or: qOr });
   }
 
+  const filtro = and.length === 1 ? and[0] : { $and: and };
   const rows = await Ingreso.find(filtro).sort({ fecha: -1 }).lean();
   const filas = rows.map((r) => ({
     idIngreso: String(r._id),
@@ -89,11 +125,13 @@ async function informeIngresosEnLinea({ desde, hasta } = {}) {
     valor: num(r.valor),
     fecha: r.fecha || r.createdAt,
     concepto: r.concepto,
+    recibiDe: r.recibiDe || r.recibidoDe || null,
     idTipoPago: r.idTipoPago,
     formaPago: r.formaPago,
     idSesion: r.idSesion,
     wompiTransactionId: r.wompiTransactionId || null,
     pagoEnLineaReference: r.pagoEnLineaReference || null,
+    origenPasarela: !!r.origenPasarela,
   }));
 
   const porDia = new Map();
@@ -134,7 +172,7 @@ function filasMatriculasCsv(filas) {
 }
 
 function filasIngresosCsv(filas) {
-  const header = ['Fecha', 'Recibo', 'Documento', 'Valor', 'Concepto', 'Ref Wompi'];
+  const header = ['Fecha', 'Recibo', 'Documento', 'Pagador', 'Valor', 'Concepto', 'Ref Wompi'];
   const lines = [header.join(';')];
   for (const f of filas) {
     lines.push(
@@ -142,6 +180,7 @@ function filasIngresosCsv(filas) {
         f.fecha ? new Date(f.fecha).toISOString().slice(0, 10) : '',
         f.numRecibo,
         f.numDoc,
+        String(f.recibiDe || '').replace(/;/g, ','),
         Math.round(f.valor),
         String(f.concepto || '').replace(/;/g, ','),
         f.pagoEnLineaReference || f.wompiTransactionId || '',

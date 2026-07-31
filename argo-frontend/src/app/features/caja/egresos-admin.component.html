@@ -3,7 +3,7 @@
   <nav class="caja-nav-link">
     <a routerLink="/app/caja">← Resumen del día</a>
     <a routerLink="/app/caja/egresos">← Lista egresos de mi caja</a>
-    <a routerLink="/app/caja/ingresos">Cobros / Ingresos</a>
+    <a routerLink="/app/caja/terceros">Terceros</a>
     <span class="caja-mini" [class.ok]="cajaAbierta()" [class.warn]="!cajaAbierta()">
       {{ cajaAbierta() ? 'Caja #' + sesionCaja()?.idSesion + ' abierta' : 'Caja cerrada — abra en Resumen' }}
     </span>
@@ -178,11 +178,11 @@
     </ul>
   </section>
 
-  <header class="caja-head page-head" *ngIf="modoSoloForm()">
-    <div class="caja-head-main">
-      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / <a routerLink="/app/caja/egresos">Egresos</a> / Formulario</p>
-      <h1>{{ editando() ? 'Editar egreso' : 'Nuevo egreso' }}{{ returnUrl()?.includes('egresos-todos') ? ' — historial' : ' — mi caja' }}</h1>
-      <p class="hint">
+  <header class="egreso-form-head" *ngIf="modoSoloForm()">
+    <div>
+      <p class="eyebrow">Flujo de caja</p>
+      <h1>{{ editando() ? (modoComplementoCajero() ? 'Completar egreso' : 'Editar egreso') : 'Nuevo egreso' }}</h1>
+      <p class="sub">
         {{ editando() && returnUrl()?.includes('egresos-todos')
           ? 'Como administrador puede modificar egresos de cualquier sesión. Los préstamos/adelantos de nómina no se editan.'
           : editando()
@@ -190,6 +190,7 @@
             : 'El egreso quedará vinculado a su sesión de caja abierta.' }}
       </p>
     </div>
+    <span class="pill" *ngIf="cajaAbierta()">Caja #{{ sesionCaja()?.idSesion }} abierta</span>
   </header>
 
   <header class="caja-head page-head" *ngIf="!modoSoloForm()">
@@ -322,469 +323,320 @@
 
 
 
-  <div class="form-card card argo-form-shell" *ngIf="mostrarForm()">
+  <div class="form-card argo-form-shell egreso-form-modern" *ngIf="mostrarForm()">
+    <div class="form-errors-banner" *ngIf="intentoGuardar() && listaErroresFormulario().length" role="alert">
+      <strong>Complete los campos obligatorios</strong>
+      <ul>
+        <li *ngFor="let e of listaErroresFormulario()">{{ e }}</li>
+      </ul>
+    </div>
 
-    <h2>{{ editando() ? (modoComplementoCajero() ? 'Completar soporte y pago' : 'Editar egreso') : 'Nuevo egreso' }}</h2>
-
-    <p class="hint" *ngIf="modoComplementoCajero()">
+    <p class="hint modo-hint" *ngIf="modoComplementoCajero()">
       Puede actualizar la sección de pago: forma de pago, cuentas, consignación, fechas y soporte escaneado.
       Valor, beneficiario, concepto y tipo de egreso no se modifican.
     </p>
 
-
-
     <fieldset class="egreso-campos-fijos" [disabled]="modoComplementoCajero()">
+      <section class="form-section" [class.field-invalid-section]="invalido('tipoEgreso')">
+        <h3>Tipo, fecha y valor</h3>
+        <p class="section-hint">{{ hintTipoSeleccionado() }}</p>
 
-    <div class="row">
-
-      <div class="col-4">
-
-        <argo-date-input
-          label="Fecha egreso *"
-          [ngModel]="form().fechaEgreso"
-          (ngModelChange)="patch('fechaEgreso', $event)"
-        ></argo-date-input>
-
-      </div>
-
-      <div class="col-4">
-
-        <label>Valor egreso *</label>
-
-        <input
-
-          type="number"
-
-          min="0"
-
-          step="0.01"
-
-          [ngModel]="form().valorEgreso"
-
-          (ngModelChange)="patch('valorEgreso', +$event)"
-
-        />
-
-      </div>
-
-      <div class="col-4">
-
-        <label>Tipo de egreso *</label>
-
-        <select [ngModel]="form().tipoEgreso" (ngModelChange)="onTipoEgresoChange($event)">
-
-          <option value="">—</option>
-
-          <option *ngFor="let t of tiposEgreso()" [value]="t.idTipoEgreso">{{ labelTipoEgreso(t) }}</option>
-
-        </select>
-
-        <p class="hint tipo-hint">{{ hintTipoSeleccionado() }}</p>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="row" *ngIf="obligaVehiculo()">
-
-      <div class="col-4">
-
-        <label>Placa vehículo *</label>
-
-        <input
-          type="text"
-          [ngModel]="form().placa"
-          (ngModelChange)="onPlacaChange($event)"
-          (blur)="onPlacaBlur()"
-          placeholder="Ej. ABC123"
-          style="text-transform: uppercase"
-          autocomplete="off"
-          [class.input-invalid]="!!placaVehiculoError()"
-          [class.input-valid]="!!placaVehiculoInfo()"
-        />
-
-        <p class="hint" *ngIf="placaVerificando()">Verificando placa…</p>
-
-        <p class="hint err" *ngIf="placaVehiculoError()">{{ placaVehiculoError() }}</p>
-
-        <p class="hint ok" *ngIf="placaVehiculoInfo() as v">
-
-          {{ v.nombreMarca || '' }} {{ v.nombreLinea || '' }}
-
-          <span *ngIf="v.claseVehiculo"> · {{ v.claseVehiculo }}</span>
-
-        </p>
-
-        <p class="hint">Solo se aceptan placas registradas en <strong>Vehículos</strong>.</p>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="row beneficiario-row">
-
-      <div class="col-12">
-
-        <label>Beneficiario</label>
-
-        <div class="radio-inline" *ngIf="!obligaEmpleado() && !esRetiroCaja()">
-
-          <label>
-
-            <input
-
-              type="radio"
-
-              name="benef"
-
-              [checked]="beneficiarioEmpleado()"
-
-              (change)="setBeneficiarioEmpleado(true)"
-
+        <div class="row">
+          <div class="col-6" [class.field-invalid]="invalido('tipoEgreso')">
+            <argo-catalogo-enum-buscar
+              label="Tipo de egreso *"
+              placeholder="Seleccione o escriba tipo…"
+              [textoInicial]="tipoEgresoTexto()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesTipoEgreso()"
+              (seleccionado)="onTipoEgresoPick($event)"
+              (limpiado)="onTipoEgresoLimpiar()"
             />
-
-            Empleado (RRHH)
-
-          </label>
-
-          <label>
-
-            <input
-
-              type="radio"
-
-              name="benef"
-
-              [checked]="!beneficiarioEmpleado()"
-
-              (change)="setBeneficiarioEmpleado(false)"
-
+            <p class="field-error" *ngIf="msgCampo('tipoEgreso') as m">{{ m }}</p>
+          </div>
+          <div class="col-3" [class.field-invalid]="invalido('fechaEgreso')">
+            <argo-date-input
+              label="Fecha *"
+              [ngModel]="form().fechaEgreso"
+              (ngModelChange)="patch('fechaEgreso', $event)"
             />
-
-            Tercero (catálogo)
-
-          </label>
-
+            <p class="field-error" *ngIf="msgCampo('fechaEgreso') as m">{{ m }}</p>
+          </div>
+          <div class="col-3" [class.field-invalid]="invalido('valorEgreso')">
+            <label>Valor <span class="req">*</span></label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              class="valor-input"
+              [ngModel]="form().valorEgreso"
+              (ngModelChange)="patch('valorEgreso', +$event)"
+            />
+            <p class="field-error" *ngIf="msgCampo('valorEgreso') as m">{{ m }}</p>
+          </div>
         </div>
 
-        <p class="hint" *ngIf="obligaEmpleado()">Este tipo solo permite pago a empleado registrado en RRHH.</p>
+        <div class="row" *ngIf="obligaVehiculo()">
+          <div class="col-4" [class.field-invalid]="invalido('placa')">
+            <label>Placa vehículo <span class="req">*</span></label>
+            <input
+              type="text"
+              [ngModel]="form().placa"
+              (ngModelChange)="onPlacaChange($event)"
+              (blur)="onPlacaBlur()"
+              placeholder="Ej. ABC123"
+              style="text-transform: uppercase"
+              autocomplete="off"
+              [class.input-invalid]="invalido('placa') || !!placaVehiculoError()"
+              [class.input-valid]="!!placaVehiculoInfo() && !invalido('placa')"
+            />
+            <p class="hint" *ngIf="placaVerificando()">Verificando placa…</p>
+            <p class="field-error" *ngIf="msgCampo('placa') as m">{{ m }}</p>
+            <p class="hint err" *ngIf="!msgCampo('placa') && placaVehiculoError()">{{ placaVehiculoError() }}</p>
+            <p class="hint ok" *ngIf="placaVehiculoInfo() as v">
+              {{ v.nombreMarca || '' }} {{ v.nombreLinea || '' }}
+              <span *ngIf="v.claseVehiculo"> · {{ v.claseVehiculo }}</span>
+            </p>
+          </div>
+        </div>
+      </section>
 
-        <p class="hint" *ngIf="!obligaEmpleado() && !esRetiroCaja() && !beneficiarioEmpleado()">
-          Elija el tercero en el listado (igual que con empleados).
+      <section class="form-section">
+        <h3>Beneficiario</h3>
+        <p class="section-hint" *ngIf="obligaEmpleado()">Este tipo solo permite pago a empleado registrado en RRHH.</p>
+        <p class="section-hint" *ngIf="esRetiroCaja()">Retiro de caja: indique a quién se entrega el efectivo.</p>
+        <p class="section-hint" *ngIf="!obligaEmpleado() && !esRetiroCaja()">
+          Elija si paga a un empleado RRHH o a un
+          <a routerLink="/app/caja/terceros">tercero</a>
+          del catálogo.
         </p>
 
-      </div>
-
-    </div>
-
-
-
-    <div class="row" *ngIf="(beneficiarioEmpleado() || obligaEmpleado()) && !esRetiroCaja()">
-
-      <div class="col-12">
-
-        <label>Empleado {{ obligaEmpleado() ? '*' : '' }}</label>
-
-        <select [ngModel]="empleadoSelId()" (ngModelChange)="onEmpleadoChange($event)" name="empleadoSel">
-
-          <option [ngValue]="null">— Seleccione —</option>
-
-          <option *ngFor="let e of empleados()" [ngValue]="e.idEmpleado">
-
-            {{ e.nombreCompleto }} — {{ e.numeroDocumento }}
-
-          </option>
-
-        </select>
-
-      </div>
-
-    </div>
-
-    <div class="row" *ngIf="!beneficiarioEmpleado() && !obligaEmpleado() && !esRetiroCaja()">
-
-      <div class="col-12">
-
-        <label>Tercero *</label>
-
-        <select [ngModel]="terceroSelId()" (ngModelChange)="onTerceroChange($event)" name="terceroSel">
-
-          <option [ngValue]="null">— Seleccione —</option>
-
-          <option *ngFor="let t of terceros()" [ngValue]="idTerceroOpt(t)">
-
-            {{ labelTercero(t) }}
-
-          </option>
-
-        </select>
-
-        <p class="hint" *ngIf="!terceros().length">
-
-          No hay terceros. Créelos en <a routerLink="/app/caja/terceros">Flujo de caja → Terceros</a>.
-
-        </p>
-
-        <p class="hint" *ngIf="terceros().length">
-
-          Catálogo: <a routerLink="/app/caja/terceros">Flujo de caja → Terceros</a>.
-
-        </p>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="row">
-
-      <div class="col-4">
-
-        <label>Nº identificación beneficiario *</label>
-
-        <input
-
-          type="text"
-
-          [ngModel]="form().numeroDocumento"
-
-          (ngModelChange)="patch('numeroDocumento', $event)"
-
-          [readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
-
-          [class.readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
-
-          placeholder="CC, NIT, CE…"
-
-        />
-
-      </div>
-
-      <div class="col-8">
-
-        <label>Pagado a (nombre beneficiario) *</label>
-
-        <input
-
-          type="text"
-
-          [ngModel]="form().pagueA"
-
-          (ngModelChange)="patch('pagueA', $event)"
-
-          [readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
-
-          [class.readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
-
-          placeholder="Nombre de quien recibe el pago"
-
-        />
-
-        <p class="hint" *ngIf="!beneficiarioEmpleado() && !obligaEmpleado()">
-
-          Al elegir un tercero del listado se completan documento, nombre, correo, dirección y teléfono.
-
-        </p>
-
-      </div>
-
-    </div>
-
-    <div class="row" *ngIf="form().correoBeneficiario || form().direccionBeneficiario || form().telefonoBeneficiario">
-      <label class="col-4">
-        Correo (recibo)
-        <input type="text" [ngModel]="form().correoBeneficiario" readonly class="readonly" />
-      </label>
-      <label class="col-4">
-        Teléfono (recibo)
-        <input type="text" [ngModel]="form().telefonoBeneficiario" readonly class="readonly" />
-      </label>
-      <label class="col-4">
-        Dirección (recibo)
-        <input type="text" [ngModel]="form().direccionBeneficiario" readonly class="readonly" />
-      </label>
-    </div>
-
-
-
-    <div class="row" *ngIf="esAnticipoNomina() && !editando()">
-
-      <div class="col-6">
-
-        <label>Período de nómina (descuento)</label>
-
-        <select [ngModel]="form().idPeriodo" (ngModelChange)="patch('idPeriodo', +$event || '')">
-
-          <option value="">— Automático (período abierto) —</option>
-
-          <option *ngFor="let p of periodosAbiertos()" [ngValue]="p.idPeriodo">
-
-            {{ p.nombre }} ({{ p.estado }})
-
-          </option>
-
-        </select>
-
-        <p class="hint">Opcional. Si no elige, se usa el período de nómina abierto.</p>
-
-        <p class="hint" *ngIf="periodosAbiertos().length === 0">
-
-          No hay período abierto. Cree uno en <a routerLink="/app/rrhh/nomina">RRHH → Nómina</a>.
-
-        </p>
-
-      </div>
-
-    </div>
-
-    <div class="row" *ngIf="editando()?.idNovedadGenerada as idNov">
-
-      <div class="col-12">
-
-        <p class="hint">Vinculado a novedad de deducción #{{ idNov }} — no editable.</p>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="row">
-
-      <div class="col-12">
-
-        <label>Concepto *</label>
-
-        <input type="text" [ngModel]="form().concepto" (ngModelChange)="patch('concepto', $event)" />
-
-      </div>
-
-    </div>
-
+        <div class="seg-control" *ngIf="!obligaEmpleado() && !esRetiroCaja()" role="tablist" aria-label="Tipo de beneficiario">
+          <button
+            type="button"
+            class="seg-btn"
+            [class.active]="!beneficiarioEmpleado()"
+            (click)="setBeneficiarioEmpleado(false)"
+          >
+            Tercero
+          </button>
+          <button
+            type="button"
+            class="seg-btn"
+            [class.active]="beneficiarioEmpleado()"
+            (click)="setBeneficiarioEmpleado(true)"
+          >
+            Empleado
+          </button>
+        </div>
+
+        <div class="row" *ngIf="(beneficiarioEmpleado() || obligaEmpleado()) && !esRetiroCaja()">
+          <div class="col-12" [class.field-invalid]="invalido('empleado')">
+            <argo-catalogo-enum-buscar
+              label="Empleado *"
+              placeholder="Seleccione o escriba empleado…"
+              [textoInicial]="empleadoTexto()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesEmpleado()"
+              (seleccionado)="onEmpleadoPick($event)"
+              (limpiado)="onEmpleadoLimpiar()"
+            />
+            <p class="field-error" *ngIf="msgCampo('empleado') as m">{{ m }}</p>
+          </div>
+        </div>
+
+        <div class="row" *ngIf="!beneficiarioEmpleado() && !obligaEmpleado() && !esRetiroCaja()">
+          <div class="col-12" [class.field-invalid]="invalido('tercero')">
+            <argo-catalogo-enum-buscar
+              label="Tercero *"
+              placeholder="Seleccione o escriba tercero…"
+              [textoInicial]="terceroTexto()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesTercero()"
+              (seleccionado)="onTerceroPick($event)"
+              (limpiado)="onTerceroLimpiarPick()"
+            />
+            <p class="field-error" *ngIf="msgCampo('tercero') as m">{{ m }}</p>
+            <p class="hint" *ngIf="!terceros().length">
+              No hay terceros. <a routerLink="/app/caja/terceros">Crear tercero</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-4" [class.field-invalid]="invalido('numeroDocumento')">
+            <label>Nº identificación <span class="req">*</span></label>
+            <input
+              type="text"
+              [ngModel]="form().numeroDocumento"
+              (ngModelChange)="patch('numeroDocumento', $event)"
+              [readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
+              [class.readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
+              placeholder="CC, NIT, CE…"
+            />
+            <p class="field-error" *ngIf="msgCampo('numeroDocumento') as m">{{ m }}</p>
+          </div>
+          <div class="col-8" [class.field-invalid]="invalido('pagueA')">
+            <label>Pagado a <span class="req">*</span></label>
+            <input
+              type="text"
+              [ngModel]="form().pagueA"
+              (ngModelChange)="patch('pagueA', $event)"
+              [readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
+              [class.readonly]="((beneficiarioEmpleado() || obligaEmpleado()) && !!empleadoSelId()) || (!!terceroSelId() && !beneficiarioEmpleado())"
+              placeholder="Nombre de quien recibe el pago"
+            />
+            <p class="field-error" *ngIf="msgCampo('pagueA') as m">{{ m }}</p>
+          </div>
+        </div>
+
+        <div class="contact-cards" *ngIf="contactoVisible()">
+          <article class="contact-card" *ngIf="form().correoBeneficiario">
+            <span>Correo</span>
+            <strong>{{ form().correoBeneficiario }}</strong>
+          </article>
+          <article class="contact-card" *ngIf="form().telefonoBeneficiario">
+            <span>Teléfono</span>
+            <strong>{{ form().telefonoBeneficiario }}</strong>
+          </article>
+          <article class="contact-card" *ngIf="form().direccionBeneficiario">
+            <span>Dirección</span>
+            <strong>{{ form().direccionBeneficiario }}</strong>
+          </article>
+        </div>
+
+        <div class="row" *ngIf="esAnticipoNomina() && !editando()">
+          <div class="col-6">
+            <argo-catalogo-enum-buscar
+              label="Período de nómina (opcional)"
+              placeholder="Automático o elija período…"
+              [textoInicial]="periodoTexto()"
+              [modoCombo]="true"
+              [remoto]="false"
+              [minLength]="1"
+              [opcionesLocales]="opcionesPeriodo()"
+              (seleccionado)="onPeriodoPick($event)"
+              (limpiado)="onPeriodoLimpiar()"
+            />
+            <p class="hint">Si no elige, se usa el período de nómina abierto.</p>
+          </div>
+        </div>
+
+        <div class="row" *ngIf="editando()?.idNovedadGenerada as idNov">
+          <div class="col-12">
+            <p class="hint">Vinculado a novedad de deducción #{{ idNov }} — no editable.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12" [class.field-invalid]="invalido('concepto')">
+            <label>Concepto <span class="req">*</span></label>
+            <input
+              type="text"
+              [ngModel]="form().concepto"
+              (ngModelChange)="patch('concepto', $event)"
+              placeholder="Describa el egreso"
+            />
+            <p class="field-error" *ngIf="msgCampo('concepto') as m">{{ m }}</p>
+          </div>
+        </div>
+      </section>
     </fieldset>
 
+    <section class="form-section">
+      <h3>Forma de pago</h3>
+      <p class="section-hint">
+        Si no es efectivo, indique el Nº de consignación. El soporte puede adjuntarlo después.
+      </p>
 
-
-    <div class="row">
-
-      <div class="col-4">
-
-        <label>Forma de pago</label>
-
-        <select [ngModel]="form().formaPago" (ngModelChange)="patch('formaPago', $event)">
-
-          <option *ngFor="let fp of formasPago" [value]="fp">{{ fp }}</option>
-
-        </select>
-
+      <div class="row">
+        <div class="col-4" [class.field-invalid]="invalido('formaPago')">
+          <argo-catalogo-enum-buscar
+            label="Forma de pago *"
+            placeholder="Seleccione o escriba…"
+            [textoInicial]="formaPagoTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesFormaPago()"
+            (seleccionado)="onFormaPagoPick($event)"
+            (limpiado)="onFormaPagoLimpiar()"
+          />
+          <p class="field-error" *ngIf="msgCampo('formaPago') as m">{{ m }}</p>
+        </div>
+        <div class="col-4">
+          <argo-catalogo-enum-buscar
+            label="Cuenta origen"
+            placeholder="Opcional…"
+            [textoInicial]="cuentaOrigenTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesCuentaOrigen()"
+            (seleccionado)="onCuentaOrigenPick($event)"
+            (limpiado)="onCuentaOrigenLimpiar()"
+          />
+        </div>
+        <div class="col-4" *ngIf="requiereRefBancaria()" [class.field-invalid]="invalido('numTransferencia')">
+          <label>Nº comprobante / referencia <span class="req">*</span></label>
+          <input
+            type="text"
+            [ngModel]="form().numTransferencia"
+            (ngModelChange)="patch('numTransferencia', $event)"
+            placeholder="Número de consignación"
+          />
+          <p class="field-error" *ngIf="msgCampo('numTransferencia') as m">{{ m }}</p>
+        </div>
       </div>
 
-      <div class="col-4">
-
-        <label>Cuenta origen</label>
-
-        <select [ngModel]="form().cuentaOrigen" (ngModelChange)="patch('cuentaOrigen', $event)">
-
-          <option value="">—</option>
-
-          <option *ngFor="let c of cuentasBancarias()" [value]="c.idCuentaBancaria">
-
-            {{ labelCuenta(c) }}
-
-          </option>
-
-        </select>
-
+      <div class="row" *ngIf="requiereRefBancaria()">
+        <div class="col-4">
+          <argo-date-input
+            label="Fecha transferencia"
+            [ngModel]="form().fechaTransferencia"
+            (ngModelChange)="patch('fechaTransferencia', $event)"
+          />
+        </div>
+        <div class="col-4">
+          <label>Cuenta destino</label>
+          <input type="text" [ngModel]="form().cuentaDestino" (ngModelChange)="patch('cuentaDestino', $event)" />
+        </div>
+        <div class="col-4">
+          <argo-catalogo-enum-buscar
+            label="Banco destino"
+            placeholder="Opcional…"
+            [textoInicial]="bancoDestinoTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesBanco()"
+            (seleccionado)="onBancoPick($event)"
+            (limpiado)="onBancoLimpiar()"
+          />
+        </div>
       </div>
 
-      <div class="col-4" *ngIf="requiereRefBancaria()">
-
-        <label>Nº comprobante / referencia *</label>
-
-        <input
-
-          type="text"
-
-          [ngModel]="form().numTransferencia"
-
-          (ngModelChange)="patch('numTransferencia', $event)"
-
-        />
-
+      <div class="row soporte-row">
+        <div class="col-12">
+          <argo-pago-soporte-field
+            [obligatorio]="false"
+            [previewUrl]="previewSoporte()"
+            [nombreArchivo]="archivoSoporte()?.name ?? null"
+            [hint]="requiereRefBancaria()
+              ? 'Puede registrar el egreso sin el pantallazo y adjuntarlo después (Editar).'
+              : 'Opcional en pagos en efectivo.'"
+            (seleccionado)="onSoporteArchivo($event)"
+            (quitado)="quitarSoporte()"
+          />
+        </div>
       </div>
-
-    </div>
-
-
-
-    <div class="row" *ngIf="requiereRefBancaria()">
-
-      <div class="col-4">
-
-        <argo-date-input label="Fecha transferencia" [ngModel]="form().fechaTransferencia"
-
-          (ngModelChange)="patch('fechaTransferencia', $event)"
-
-        ></argo-date-input>
-
-      </div>
-
-      <div class="col-4">
-
-        <label>Cuenta destino</label>
-
-        <input type="text" [ngModel]="form().cuentaDestino" (ngModelChange)="patch('cuentaDestino', $event)" />
-
-      </div>
-
-      <div class="col-4">
-
-        <label>Banco destino</label>
-
-        <select [ngModel]="form().bancoDestino" (ngModelChange)="patch('bancoDestino', $event)">
-
-          <option value="">—</option>
-
-          <option *ngFor="let b of bancos()" [value]="b.idBanco || b.idbanco">{{ labelBanco(b) }}</option>
-
-        </select>
-
-      </div>
-
-    </div>
-
-
-
-    <div class="warn-docs card err" *ngIf="requiereRefBancaria() && mensajePagoIntangible() as aviso">
-      <strong>Falta número de consignación</strong>
-      <p class="hint">{{ aviso }}</p>
-    </div>
-
-    <div class="row soporte-row">
-
-      <div class="col-12">
-
-        <argo-pago-soporte-field
-          [obligatorio]="false"
-          [previewUrl]="previewSoporte()"
-          [nombreArchivo]="archivoSoporte()?.name ?? null"
-          [hint]="requiereRefBancaria()
-            ? 'Puede registrar el egreso sin el pantallazo y adjuntarlo después (Editar).'
-            : 'Opcional en pagos en efectivo.'"
-          (seleccionado)="onSoporteArchivo($event)"
-          (quitado)="quitarSoporte()"
-        />
-
-      </div>
-
-    </div>
-
-
+    </section>
 
     <div class="auth-retiro-panel card" *ngIf="requiereAutorizacionSupervisor() && !mostrarAuthAnular()">
       <h3>{{ tituloAutorizacionSupervisor() }}</h3>
@@ -792,41 +644,35 @@
         Un administrador debe autorizar esta operación. Ingrese sus credenciales (su sesión de cajero no se cierra).
       </p>
       <div class="row">
-        <div class="col-6">
-          <label>Usuario administrador *</label>
+        <div class="col-6" [class.field-invalid]="invalido('authAdminUser')">
+          <label>Usuario administrador <span class="req">*</span></label>
           <input
             type="text"
             autocomplete="username"
             [ngModel]="authAdminUser()"
             (ngModelChange)="authAdminUser.set($event)"
           />
+          <p class="field-error" *ngIf="msgCampo('authAdminUser') as m">{{ m }}</p>
         </div>
-        <div class="col-6">
-          <label>Contraseña *</label>
+        <div class="col-6" [class.field-invalid]="invalido('authAdminPass')">
+          <label>Contraseña <span class="req">*</span></label>
           <input
             type="password"
             autocomplete="current-password"
             [ngModel]="authAdminPass()"
             (ngModelChange)="authAdminPass.set($event)"
           />
+          <p class="field-error" *ngIf="msgCampo('authAdminPass') as m">{{ m }}</p>
         </div>
       </div>
     </div>
 
-
-
-    <div class="actions">
-
+    <div class="egreso-actions">
       <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
-
-      <button type="button" class="primary" (click)="guardar()" [disabled]="saving() || !puedeGuardarEgreso()">
-
-        {{ saving() ? 'Guardando…' : (modoComplementoCajero() ? 'Guardar soporte y pago' : 'Guardar') }}
-
+      <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : (modoComplementoCajero() ? 'Guardar soporte y pago' : 'Guardar egreso') }}
       </button>
-
     </div>
-
   </div>
 
 

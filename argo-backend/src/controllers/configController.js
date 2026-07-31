@@ -37,6 +37,7 @@ const CAMPOS = [
   'formatoComprobanteEgreso',
   'permitirAjusteValorMatricula',
   'permitirAjusteCuotasSemestre',
+  'toleranciaCierreCajaCop',
 ];
 
 exports.obtenerReciboEncabezado = async (req, res, next) => {
@@ -96,6 +97,11 @@ exports.actualizarRecibo = async (req, res, next) => {
     }
     if (dto.anchoReciboMm != null) {
       dto.anchoReciboMm = Math.min(120, Math.max(58, parseInt(dto.anchoReciboMm, 10) || 80));
+    }
+    if (dto.toleranciaCierreCajaCop != null) {
+      const tol = parseInt(dto.toleranciaCierreCajaCop, 10);
+      dto.toleranciaCierreCajaCop =
+        Number.isFinite(tol) && tol >= 0 ? tol : DEFAULTS.toleranciaCierreCajaCop;
     }
     for (const k of ['formatoComprobanteIngreso', 'formatoComprobanteEgreso']) {
       if (dto[k] !== undefined) {

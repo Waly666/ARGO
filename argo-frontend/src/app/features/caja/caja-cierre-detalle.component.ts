@@ -322,6 +322,7 @@ export class CajaCierreDetalleComponent implements OnInit {
     if (e === 'en_nomina') return 'Incluido en nómina (pendiente de pago)';
     if (e === 'descontado_nomina') return 'Descontado en nómina';
     if (e === 'resuelto') return 'Resuelto';
+    if (e === 'tolerado') return 'Tolerado — anotado dentro de tolerancia';
     return '';
   }
 

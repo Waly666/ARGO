@@ -282,9 +282,9 @@
         <header class="rec-section-head">
           <span class="rec-section-badge">4</span>
           <div>
-            <h2 class="rec-section-title">Matrícula en caja</h2>
+            <h2 class="rec-section-title">Caja: matrícula y cierre</h2>
             <p class="rec-section-desc">
-              Controla si el cajero puede rebajar el valor de matrícula al crear una matrícula en la ficha del alumno.
+              Ajustes de matrícula en ficha del alumno y tolerancia de sobrante/faltante al cerrar caja.
             </p>
           </div>
         </header>
@@ -315,6 +315,20 @@
               </span>
             </span>
           </div>
+          <label class="rec-field rec-field--tol">
+            <span class="rec-label">Tolerancia de cierre de caja (COP)</span>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              [ngModel]="form().toleranciaCierreCajaCop ?? 1000"
+              (ngModelChange)="patch('toleranciaCierreCajaCop', +$event)"
+            />
+            <span class="rec-field-hint">
+              Si el sobrante o faltante es menor o igual a este valor, el cajero puede cerrar sin autorización
+              de administrador y la diferencia queda anotada. Por defecto 1.000 COP. Por encima, se exige admin.
+            </span>
+          </label>
         </div>
       </section>
 

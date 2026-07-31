@@ -1,0 +1,111 @@
+<div class="listado-admin pel-page">
+  <header class="mov-block-head">
+    <div>
+      <h2 class="mov-block-title">Pagos en línea</h2>
+      <p class="hint">
+        Cobros automáticos de aula virtual (pasarela). No entran al cuadre ni al arqueo del cajero.
+        Si el cajero cobra una tarifa virtual en ventanilla, use transferencia u otro medio en Cobros.
+      </p>
+    </div>
+    <div class="head-actions">
+      <button type="button" class="ghost" (click)="exportarCsv()" [disabled]="loading() || !data()">
+        Exportar CSV
+      </button>
+      <button type="button" class="ghost" (click)="imprimir()" [disabled]="loading() || !data()">
+        Imprimir informe
+      </button>
+    </div>
+  </header>
+
+  @if (msg()) {
+    <div class="caja-banner" [class.caja-banner--error]="msgError()" [class.caja-banner--ok]="!msgError()" role="status">
+      <div class="caja-banner-body">{{ msg() }}</div>
+    </div>
+  }
+
+  <div class="filtros panel">
+    <argo-date-input label="Desde" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+    <argo-date-input label="Hasta" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    <label>
+      <span>Documento</span>
+      <input type="text" [ngModel]="numDoc()" (ngModelChange)="numDoc.set($event)" placeholder="Cédula / NIT" />
+    </label>
+    <label>
+      <span>Recibo</span>
+      <input type="text" [ngModel]="numRecibo()" (ngModelChange)="numRecibo.set($event)" />
+    </label>
+    <label>
+      <span>Referencia Wompi</span>
+      <input type="text" [ngModel]="referencia()" (ngModelChange)="referencia.set($event)" />
+    </label>
+    <label>
+      <span>Buscar</span>
+      <input
+        type="search"
+        [ngModel]="q()"
+        (ngModelChange)="q.set($event)"
+        placeholder="Concepto, pagador…"
+        (keyup.enter)="cargar()"
+      />
+    </label>
+    <div class="filtro-actions">
+      <button type="button" class="primary" (click)="cargar()" [disabled]="loading()">Consultar</button>
+      <button type="button" class="ghost" (click)="limpiar()" [disabled]="loading()">Limpiar</button>
+      @if (data(); as d) {
+        <span class="count">{{ d.resumen.cantidad }} pago(s)</span>
+      }
+    </div>
+  </div>
+
+  @if (data(); as d) {
+    <div class="kpi-row pel-kpis">
+      <article class="kpi-card">
+        <span class="kpi-lbl">Recibos</span>
+        <strong class="kpi-val">{{ d.resumen.cantidad }}</strong>
+      </article>
+      <article class="kpi-card highlight">
+        <span class="kpi-lbl">Total en línea</span>
+        <strong class="kpi-val">{{ d.resumen.total | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </article>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="hint">Cargando pagos en línea…</p>
+  } @else {
+    @if (data(); as d) {
+      <div class="table-wrap panel">
+        <table class="tabla-cierres">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Recibo</th>
+              <th>Documento</th>
+              <th>Pagador</th>
+              <th>Concepto</th>
+              <th>Referencia</th>
+              <th class="num">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of d.filas; track f.idIngreso) {
+              <tr>
+                <td>{{ f.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <td>{{ f.numRecibo || '—' }}</td>
+                <td>{{ f.numDoc }}</td>
+                <td>{{ f.recibiDe || '—' }}</td>
+                <td>{{ f.concepto || '—' }}</td>
+                <td class="ref">{{ f.pagoEnLineaReference || f.wompiTransactionId || '—' }}</td>
+                <td class="num">{{ f.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty">Sin pagos en línea en el periodo / filtros.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

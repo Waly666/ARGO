@@ -74,6 +74,8 @@ export class CajaCierresAdminComponent implements OnInit {
         return 'cap cap-amber cap-sm';
       case 'resuelto':
         return 'cap cap-emerald cap-sm';
+      case 'tolerado':
+        return 'cap cap-sky cap-sm';
       case 'en_nomina':
         return 'cap cap-violet cap-sm';
       case 'descontado_nomina':
@@ -156,6 +158,8 @@ export class CajaCierresAdminComponent implements OnInit {
         return 'Descuadre pendiente';
       case 'resuelto':
         return 'Cuadrado';
+      case 'tolerado':
+        return 'Tolerado (anotado)';
       case 'en_nomina':
         return 'En nómina';
       case 'descontado_nomina':

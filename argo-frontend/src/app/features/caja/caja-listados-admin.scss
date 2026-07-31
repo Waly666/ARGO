@@ -435,4 +435,88 @@ th .th-sort {
   }
 }
 
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 0.9rem;
+  padding: 0.9rem;
+}
+
+.list-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-left: 4px solid #10b981;
+  background:
+    radial-gradient(ellipse at top right, rgba(16, 185, 129, 0.1), transparent 55%),
+    linear-gradient(165deg, rgba(10, 32, 48, 0.95), rgba(5, 14, 30, 0.98));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.26);
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(52, 211, 153, 0.45);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  }
+
+  .card-title {
+    padding: 0.9rem 1rem 0.35rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 750;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  .card-sub {
+    margin: 0.25rem 0 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    line-height: 1.4;
+  }
+
+  .card-body {
+    padding: 0.55rem 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.86rem;
+    padding: 0.35rem 0.55rem;
+    border-radius: 8px;
+    background: rgba(3, 12, 28, 0.45);
+
+    .lbl {
+      color: #94a3b8;
+      font-size: 0.78rem;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+  }
+
+  .card-foot {
+    padding: 0.75rem 1rem 0.9rem;
+    border-top: 1px solid rgba(16, 185, 129, 0.14);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    background: rgba(0, 0, 0, 0.15);
+  }
+}
+
 @import './caja-egreso-soporte-alerts.scss';

@@ -37,7 +37,7 @@ const ROLES_SISTEMA = {
   contador: {
     nombre: 'Contador',
     descripcion:
-      'Revisión contable: ingresos, egresos, cuadres, cierre general, anulación de comprobantes y facturación (notas crédito)',
+      'Revisión contable: ingresos, egresos, cuadres, pagos en línea, cierre general, anulación de comprobantes y facturación (notas crédito)',
     permisos: [
       'dashboard',
       'contabilidad',
@@ -186,7 +186,11 @@ async function fusionarPermisosSistema(codigo, defPermisos) {
           'programacion_cea.gestionar',
         ]
       : [];
-  const sinObsoletos = actuales.filter((k) => !obsoletosInstructor.includes(k));
+  // Cajero: nunca debe ver cierres globales / todos los movimientos / descuadres (solo admin y contador).
+  const obsoletosCajero =
+    codigo === 'cajero' ? ['caja.admin', 'contabilidad'] : [];
+  const obsoletos = [...obsoletosInstructor, ...obsoletosCajero];
+  const sinObsoletos = actuales.filter((k) => !obsoletos.includes(k));
   const garantizadosInstructor =
     codigo === 'instructor' ? ['jornadas.operar', 'jornadas.ver'] : [];
   const nuevos = [...new Set([...sinObsoletos, ...faltantes, ...garantizadosInstructor])];

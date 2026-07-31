@@ -10,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { rutaAccesible } from '../../core/utils/auth-routes.util';
 import { SedeService, SedeDto } from '../../core/services/sede.service';
 import { CajaEstadoService } from '../../core/services/caja-estado.service';
+import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
 import { CertificadoVencimientoAlertService } from '../../core/services/certificado-vencimiento-alert.service';
 import { CertificadoVencidoAlertService } from '../../core/services/certificado-vencido-alert.service';
@@ -83,6 +84,11 @@ interface MenuLink {
   /** Título de sección dentro de un grupo (solo en children) */
   section?: string;
   adminOnly?: boolean;
+  /**
+   * Si se define, el rol del usuario debe coincidir con uno de estos códigos
+   * (p. ej. admin | contador). Complementa permiso/permisoMenu.
+   */
+  rolesMenu?: string[];
   /** Activo en cualquier /rrhh/catalogos/… */
   catalogosMatch?: boolean;
 }
@@ -150,6 +156,7 @@ export class ShellComponent {
   private vehiculoSvc = inject(VehiculoService);
   private inspeccionSvc = inject(InspeccionVehiculoService);
   readonly cajaEstado = inject(CajaEstadoService);
+  private cajaAperturaAlert = inject(CajaAperturaAlertService);
 
   collapsed = signal(false);
   /** Acordeón: solo abierto si el usuario lo abre o está en esa sección de la ruta */
@@ -187,6 +194,11 @@ export class ShellComponent {
   isAdmin = computed(() => {
     const r = String(this.auth.user()?.rol || '').toLowerCase();
     return r === 'admin' || r.includes('admin');
+  });
+
+  isContador = computed(() => {
+    const r = String(this.auth.user()?.rol || '').toLowerCase();
+    return r === 'contador' || r.includes('contador') || r.includes('contab');
   });
 
   puedeGestion = computed(() => {
@@ -746,6 +758,15 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Pagos en línea',
+          path: '/app/contabilidad/pagos-en-linea',
+          icon: '🌐',
+          iconTone: 'cyan',
+          permiso: 'contabilidad',
+          rolesMenu: ['admin', 'contador'],
+        },
+        {
+          kind: 'link',
           label: 'Facturación',
           path: '/app/contabilidad/facturacion',
           icon: '$',
@@ -810,7 +831,9 @@ export class ShellComponent {
           icon: '▣',
           iconTone: 'indigo',
           section: 'ADMIN',
-          permiso: 'caja.admin',
+          permiso: ['caja.admin', 'contabilidad'],
+          permisoMenu: ['caja.admin', 'contabilidad'],
+          rolesMenu: ['admin', 'contador'],
         },
         {
           kind: 'link',
@@ -819,7 +842,9 @@ export class ShellComponent {
           icon: '⊞',
           iconTone: 'amber',
           section: 'ADMIN',
-          permiso: 'caja.admin',
+          permiso: ['caja.admin', 'contabilidad'],
+          permisoMenu: ['caja.admin', 'contabilidad'],
+          rolesMenu: ['admin', 'contador'],
         },
         {
           kind: 'link',
@@ -828,7 +853,9 @@ export class ShellComponent {
           icon: '$',
           iconTone: 'emerald',
           section: 'ADMIN',
-          permiso: 'caja.admin',
+          permiso: ['caja.admin', 'contabilidad'],
+          permisoMenu: ['caja.admin', 'contabilidad'],
+          rolesMenu: ['admin', 'contador'],
         },
         {
           kind: 'link',
@@ -836,7 +863,10 @@ export class ShellComponent {
           path: '/app/caja/egresos-todos',
           icon: '⇣',
           iconTone: 'rose',
-          permiso: 'caja.admin',
+          section: 'ADMIN',
+          permiso: ['caja.admin', 'contabilidad'],
+          permisoMenu: ['caja.admin', 'contabilidad'],
+          rolesMenu: ['admin', 'contador'],
         },
         {
           kind: 'link',
@@ -845,7 +875,9 @@ export class ShellComponent {
           icon: '⚠',
           iconTone: 'amber',
           section: 'ADMIN',
-          permiso: 'caja.admin',
+          permiso: ['caja.admin', 'contabilidad'],
+          permisoMenu: ['caja.admin', 'contabilidad'],
+          rolesMenu: ['admin', 'contador'],
         },
       ],
     },
@@ -1183,6 +1215,9 @@ export class ShellComponent {
     if (item.permisoMenu === '__instructores_hub__') {
       return this.puedeVerInstructoresMenu();
     }
+    if (item.rolesMenu?.length && !this.rolPermitidoEnMenu(item.rolesMenu)) {
+      return false;
+    }
     const claveMenu = item.permisoMenu ?? item.permiso;
     if (claveMenu && !this.permisos.tiene(claveMenu)) return false;
     if (item.path) {
@@ -1192,6 +1227,16 @@ export class ShellComponent {
     if (item.adminOnly && !this.isAdmin()) return false;
     if (item.gestionOnly && !this.puedeGestion()) return false;
     return true;
+  }
+
+  /** Coincide rol de sesión con rolesMenu (admin / contador, etc.). */
+  private rolPermitidoEnMenu(roles: string[]): boolean {
+    const allowed = roles.map((r) => String(r || '').toLowerCase().trim()).filter(Boolean);
+    if (!allowed.length) return true;
+    if (allowed.includes('admin') && this.isAdmin()) return true;
+    if (allowed.includes('contador') && this.isContador()) return true;
+    const rol = String(this.auth.user()?.rol || '').toLowerCase().trim();
+    return allowed.some((a) => rol === a || rol.includes(a));
   }
 
   /** Portal instructor o directorio admin (no enlace “fantasma”). */
@@ -1240,13 +1285,19 @@ export class ShellComponent {
     });
 
     this.auth.refreshMe().subscribe({
-      next: () => this.syncSedeDesdeUsuario(),
+      next: () => {
+        this.syncSedeDesdeUsuario();
+        void this.revisarCajaPostLogin();
+      },
       error: () => undefined,
     });
     this.syncMenuGroupsFromUrl(this.router.url);
     void this.refrescarCajaSiAplica();
     this.alertasRuntime.cargar().subscribe({
-      next: () => this.sincronizarAlertasConConfig(),
+      next: () => {
+        this.sincronizarAlertasConConfig();
+        void this.revisarCajaPostLogin();
+      },
       error: () => this.sincronizarAlertasConConfig(),
     });
     this.iniciarAlertasPollsOnce();
@@ -1271,9 +1322,27 @@ export class ShellComponent {
   }
 
   private refrescarCajaSiAplica(): void {
-    if (this.mostrarAlertaCaja()) {
+    if (this.mostrarAlertaCaja() || this.debeRevisarCajaPostLogin()) {
       void this.cajaEstado.refrescar();
     }
+  }
+
+  private debeRevisarCajaPostLogin(): boolean {
+    if (!this.auth.isAuth()) return false;
+    if (!this.cajaAperturaAlert.usuarioConAccesoCaja()) return false;
+    // No exigir solo las claves nuevas: muchos roles aún tienen cerrada/sin_abrir.
+    return (
+      this.cajaAperturaAlert.puedeAvisarLoginCerrada() ||
+      this.cajaAperturaAlert.puedeAvisarDiasAbiertos()
+    );
+  }
+
+  private async revisarCajaPostLogin(): Promise<void> {
+    if (!this.debeRevisarCajaPostLogin()) return;
+    // Esperar un tick de pintura del shell para que el modal no quede detrás del layout.
+    await new Promise((r) => setTimeout(r, 400));
+    if (!this.auth.isAuth()) return;
+    await this.cajaAperturaAlert.revisarAlEntrar();
   }
 
   private iniciarAlertasPollsOnce(): void {

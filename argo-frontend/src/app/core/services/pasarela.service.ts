@@ -52,6 +52,10 @@ export interface InformeIngresosEnLinea {
     valor: number;
     fecha?: string;
     concepto?: string;
+    recibiDe?: string | null;
+    wompiTransactionId?: string | null;
+    pagoEnLineaReference?: string | null;
+    idSesion?: number | null;
   }>;
   desde?: string | null;
   hasta?: string | null;
@@ -80,10 +84,18 @@ export class PasarelaService {
     );
   }
 
-  informeIngresos(desde?: string, hasta?: string): Observable<InformeIngresosEnLinea> {
+  informeIngresos(
+    desde?: string,
+    hasta?: string,
+    extra?: { q?: string; numDoc?: string; numRecibo?: string; referencia?: string },
+  ): Observable<InformeIngresosEnLinea> {
     const p = new URLSearchParams();
     if (desde) p.set('desde', desde);
     if (hasta) p.set('hasta', hasta);
+    if (extra?.q) p.set('q', extra.q);
+    if (extra?.numDoc) p.set('numDoc', extra.numDoc);
+    if (extra?.numRecibo) p.set('numRecibo', extra.numRecibo);
+    if (extra?.referencia) p.set('referencia', extra.referencia);
     const q = p.toString();
     return this.http.get<InformeIngresosEnLinea>(`${this.base}/informes/ingresos${q ? `?${q}` : ''}`);
   }
@@ -98,10 +110,18 @@ export class PasarelaService {
     });
   }
 
-  exportIngresos(desde?: string, hasta?: string): Observable<Blob> {
+  exportIngresos(
+    desde?: string,
+    hasta?: string,
+    extra?: { q?: string; numDoc?: string; numRecibo?: string; referencia?: string },
+  ): Observable<Blob> {
     const p = new URLSearchParams();
     if (desde) p.set('desde', desde);
     if (hasta) p.set('hasta', hasta);
+    if (extra?.q) p.set('q', extra.q);
+    if (extra?.numDoc) p.set('numDoc', extra.numDoc);
+    if (extra?.numRecibo) p.set('numRecibo', extra.numRecibo);
+    if (extra?.referencia) p.set('referencia', extra.referencia);
     const q = p.toString();
     return this.http.get(`${this.base}/informes/ingresos/export${q ? `?${q}` : ''}`, {
       responseType: 'blob',

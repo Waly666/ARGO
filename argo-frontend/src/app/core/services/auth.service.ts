@@ -206,6 +206,15 @@ export class AuthService {
       if (enApp) this.irLogin();
       return;
     }
+    try {
+      // Evita que el flag de “ya avisé caja” sobreviva al cerrar sesión en la misma pestaña.
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k?.startsWith('argo_caja_post_login_alert')) sessionStorage.removeItem(k);
+      }
+    } catch {
+      /* ignore */
+    }
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this._token.set(null);

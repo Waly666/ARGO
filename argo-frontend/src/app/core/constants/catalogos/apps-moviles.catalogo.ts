@@ -146,6 +146,16 @@ export const APPS_MOVILES: AppMovilDef[] = [
         hint: 'Banner / aviso de caja cerrada',
       },
       {
+        key: 'alarmas.caja.aviso_login',
+        label: 'Aviso al iniciar sesión (caja cerrada)',
+        hint: 'Modal al validarse si no hay caja abierta',
+      },
+      {
+        key: 'alarmas.caja.abierta_dias',
+        label: 'Caja abierta varios días',
+        hint: 'Alarma si lleva 1+ días sin cerrar desde la apertura',
+      },
+      {
         key: 'alarmas.caja.descuadres',
         label: 'Descuadres pendientes',
         hint: 'Requiere permiso caja.admin en la app',

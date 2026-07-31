@@ -1,15 +1,16 @@
 <section class="mov-page">
-  <header class="caja-head mov-head">
+  <header class="caja-head mov-head caja-page-header">
     <div class="caja-head-main">
       <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Cobros e ingresos</p>
       <h1>Cobros / Ingresos de mi caja</h1>
       <p class="hint" *ngIf="cajaAbierta() && sesionId()">
         Sesión #{{ sesionId() }} — solo los cobros registrados en este turno.
       </p>
-      <p class="hint warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar cobros.</p>
+      <p class="hint warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen para registrar cobros.</p>
     </div>
     <div class="caja-badges mov-actions">
       <span class="caja-chip caja-chip--emerald" *ngIf="cajaAbierta()">Sesión activa</span>
+      <span class="caja-chip caja-chip--sky" *ngIf="items().length">{{ items().length }} movimiento(s)</span>
       <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
       <button type="button" class="primary sm" (click)="nuevoIngresoCaja()">
         Ingreso sin alumno
@@ -18,15 +19,31 @@
     </div>
   </header>
 
-  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
+  <div
+    class="caja-banner"
+    *ngIf="msg()"
+    [class.caja-banner--error]="msgError()"
+    [class.caja-banner--ok]="!msgError()"
+    role="status"
+  >
+    <span class="caja-banner-icon" aria-hidden="true">{{ msgError() ? '!' : '✓' }}</span>
+    <div class="caja-banner-body">
+      <span>{{ msg() }}</span>
+    </div>
+  </div>
 
   <div class="buscar-alumno panel" *ngIf="cajaAbierta()">
-    <h3>Registrar cobro de alumno</h3>
-    <p class="hint">
-      Busque aquí o abra
-      <a routerLink="/app/cobros-pendientes" class="inline-link">Cobros pendientes</a>
-      para ver servicios con saldo, historial y cobro rápido. Para ingresos sin alumno use «Ingreso sin alumno».
-    </p>
+    <header class="mov-block-head">
+      <span class="mov-block-icon" aria-hidden="true">🔎</span>
+      <div>
+        <h3 class="mov-block-title">Registrar cobro de alumno</h3>
+        <p class="hint">
+          Busque aquí o abra
+          <a routerLink="/app/cobros-pendientes" class="inline-link">Cobros pendientes</a>
+          para ver servicios con saldo. Para ingresos sin alumno use «Ingreso sin alumno».
+        </p>
+      </div>
+    </header>
     <div class="buscar-row">
       <input
         type="search"
@@ -40,7 +57,8 @@
     <ul class="resultados" *ngIf="resultados().length">
       <li *ngFor="let a of resultados()">
         <button type="button" class="ghost link-row" (click)="cobrarAlumno(a)">
-          {{ a.nombres }} {{ a.apellidos }} · {{ a.numDoc }}
+          <span class="res-nombre">{{ a.nombres }} {{ a.apellidos }}</span>
+          <span class="res-doc">{{ a.numDoc }}</span>
         </button>
       </li>
     </ul>

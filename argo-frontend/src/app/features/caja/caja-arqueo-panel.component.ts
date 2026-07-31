@@ -8,6 +8,8 @@ import {
   totalArqueo,
 } from '../../core/utils/caja-arqueo.helpers';
 
+type FilaArqueo = ArqueoLinea & { idx: number; subtotal: number };
+
 @Component({
   selector: 'argo-caja-arqueo-panel',
   standalone: true,
@@ -28,6 +30,50 @@ export class CajaArqueoPanelComponent {
     return this.total() - esp;
   });
 
+  billetes = computed<FilaArqueo[]>(() =>
+    this.filas()
+      .map((l, idx) => ({ ...l, idx, subtotal: l.subtotal ?? 0 }))
+      .filter((l) => l.tipo === 'billete'),
+  );
+
+  monedas = computed<FilaArqueo[]>(() =>
+    this.filas()
+      .map((l, idx) => ({ ...l, idx, subtotal: l.subtotal ?? 0 }))
+      .filter((l) => l.tipo === 'moneda'),
+  );
+
+  piezasContadas = computed(() =>
+    this.filas().reduce((s, l) => s + (Number(l.cantidad) || 0), 0),
+  );
+
+  hayConteo = computed(() => this.piezasContadas() > 0);
+
+  estadoCuadre = computed<'sin_conteo' | 'cuadrado' | 'sobrante' | 'faltante' | 'sin_esperado'>(() => {
+    if (!this.hayConteo()) return 'sin_conteo';
+    const d = this.diferencia();
+    if (d == null) return 'sin_esperado';
+    if (d === 0) return 'cuadrado';
+    return d > 0 ? 'sobrante' : 'faltante';
+  });
+
+  mensajeEstado = computed(() => {
+    const est = this.estadoCuadre();
+    const d = this.diferencia();
+    if (est === 'sin_conteo') {
+      return 'Empiece por los billetes de mayor valor. Escriba cuántos tiene de cada uno (deje en 0 los que no tenga).';
+    }
+    if (est === 'cuadrado') {
+      return 'El efectivo contado coincide con el esperado. Puede cerrar la caja.';
+    }
+    if (est === 'sobrante' && d != null) {
+      return `Hay más efectivo del esperado (sobrante). Revise el conteo o anote la diferencia al cerrar.`;
+    }
+    if (est === 'faltante' && d != null) {
+      return `Falta efectivo respecto a lo esperado. Vuelva a contar o revise ingresos/egresos del turno.`;
+    }
+    return 'Total contado listo. Compárelo con el efectivo esperado del sistema.';
+  });
+
   actualizarCantidad(idx: number, raw: string | number): void {
     const cantidad = Math.max(0, Math.round(Number(raw) || 0));
     const next = this.filas().map((l, i) =>
@@ -36,9 +82,19 @@ export class CajaArqueoPanelComponent {
     this.lineasChange.emit(next);
   }
 
+  ajustar(idx: number, delta: number): void {
+    const actual = Number(this.filas()[idx]?.cantidad) || 0;
+    this.actualizarCantidad(idx, actual + delta);
+  }
+
   limpiar(): void {
     this.lineasChange.emit(
       this.filas().map((l) => ({ ...l, cantidad: 0, subtotal: 0 })),
     );
+  }
+
+  onFocusCantidad(ev: FocusEvent): void {
+    const el = ev.target as HTMLInputElement | null;
+    el?.select();
   }
 }

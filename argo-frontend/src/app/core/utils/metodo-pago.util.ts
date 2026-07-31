@@ -5,14 +5,19 @@ export interface MetodoPagoDef {
   tone: string;
 }
 
-/** Mismos medios que en caja (cuadre / cierre). */
-export const METODOS_PAGO_DEF: MetodoPagoDef[] = [
+/** Medios del cajero (sin pago en línea / pasarela). */
+export const METODOS_PAGO_CAJA: MetodoPagoDef[] = [
   { id: 'efectivo', label: 'Efectivo', icon: '💵', tone: 'emerald' },
   { id: 'transferencia', label: 'Transferencia', icon: '🏦', tone: 'blue' },
   { id: 'tc', label: 'Tarjeta de crédito', icon: '💳', tone: 'purple' },
   { id: 'td', label: 'Tarjeta débito', icon: '💳', tone: 'indigo' },
   { id: 'cheque', label: 'Cheque', icon: '◎', tone: 'amber' },
   { id: 'nequi', label: 'Nequi / Daviplata', icon: '📱', tone: 'pink' },
+];
+
+/** Incluye pasarela — solo dashboard / informes globales. */
+export const METODOS_PAGO_DEF: MetodoPagoDef[] = [
+  ...METODOS_PAGO_CAJA,
   { id: 'linea', label: 'Pago en línea', icon: '🌐', tone: 'cyan' },
 ];
 
@@ -58,18 +63,49 @@ export function tonoMetodoPago(label: string): { tone: string; icon: string } {
   return { tone: 'cyan', icon: '◎' };
 }
 
-/** Siempre devuelve las 6 tarjetas fijas; suma filas del API por medio canónico. */
-export function buildMetodosPagoCards(rows: MetodoPagoRow[]): MetodoPagoCard[] {
+export function esTipoPagoEnLineaCatalogo(t: Record<string, unknown> | null | undefined): boolean {
+  if (!t) return false;
+  const id = String(t['idTipoPago'] ?? t['codigo'] ?? t['id'] ?? '')
+    .trim()
+    .toUpperCase();
+  if (id === 'PL' || id === '7') return true;
+  const label = normalizar(String(t['descripcion'] ?? t['nombre'] ?? ''));
+  return /pago en linea/.test(label) || label === 'pl';
+}
+
+/** Catálogo de medios para formularios de caja (sin pasarela). */
+export function filtrarTiposPagoCaja<T extends Record<string, unknown>>(tipos: T[]): T[] {
+  return (tipos || []).filter((t) => !esTipoPagoEnLineaCatalogo(t));
+}
+
+export interface BuildMetodosOpts {
+  /** Si true (default en caja), omite la tarjeta «Pago en línea». */
+  excluirPagoEnLinea?: boolean;
+}
+
+/**
+ * Tarjetas de medios de pago.
+ * En caja: sin «Pago en línea» (eso va a su propia ficha).
+ * En dashboard: incluir con `excluirPagoEnLinea: false`.
+ */
+export function buildMetodosPagoCards(
+  rows: MetodoPagoRow[],
+  opts: BuildMetodosOpts = {},
+): MetodoPagoCard[] {
+  const excluir = opts.excluirPagoEnLinea !== false;
+  const defs = excluir ? METODOS_PAGO_CAJA : METODOS_PAGO_DEF;
+
   const porCanon = new Map<string, { total: number; cantidad: number }>();
   for (const r of rows) {
     const canon = canonicoMetodoPago(r.forma);
+    if (excluir && canon === 'Pago en línea') continue;
     const prev = porCanon.get(canon) || { total: 0, cantidad: 0 };
     prev.total += r.total ?? 0;
     prev.cantidad += r.cantidad ?? 0;
     porCanon.set(canon, prev);
   }
 
-  const cards: MetodoPagoCard[] = METODOS_PAGO_DEF.map((def) => {
+  const cards: MetodoPagoCard[] = defs.map((def) => {
     const agg = porCanon.get(def.label) || { total: 0, cantidad: 0 };
     return {
       ...def,

@@ -6,8 +6,8 @@ const MSG_DEFAULT =
   'No tiene permisos para realizar esta acción.\n\nSolicite acceso a un administrador o revise Configuración → Roles y permisos.';
 
 /**
- * Diálogo global cuando el usuario intenta algo sin permiso (ruta o API).
- * Evita apilar varios cuadros si hay varias peticiones 403 a la vez.
+ * Diálogo cuando el usuario intenta una acción (POST/PUT/…) sin permiso.
+ * No se usa al navegar ni ante GET 403 de datos opcionales.
  */
 @Injectable({ providedIn: 'root' })
 export class PermisoAvisoService {
@@ -34,14 +34,5 @@ export class PermisoAvisoService {
     } finally {
       this.abierto = false;
     }
-  }
-
-  /** Aviso al bloquear una ruta del menú / URL. */
-  avisarRuta(): void {
-    void this.avisar({
-      title: 'Sin permiso',
-      message:
-        'No tiene permiso para acceder a esta sección.\n\nSolicite acceso a un administrador o revise Configuración → Roles y permisos.',
-    });
   }
 }

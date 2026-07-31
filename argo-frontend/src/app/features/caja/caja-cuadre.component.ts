@@ -102,9 +102,36 @@ export class CajaCuadreComponent implements OnInit {
     return c - this.efectivoEsperado();
   });
 
-  hayDescuadreCierre = computed(() => {
+  toleranciaCierre = computed(() => {
+    const t = Number(this.empresaConfig()?.toleranciaCierreCajaCop);
+    return Number.isFinite(t) && t >= 0 ? Math.round(t) : 1000;
+  });
+
+  /** Diferencia |d| ≥ 1 COP (se anota siempre). */
+  hayDiferenciaCierre = computed(() => {
     const d = this.diferenciaCierre();
     return d != null && Math.abs(d) >= 1;
+  });
+
+  /** Fuera de tolerancia → requiere autorización de admin. */
+  requiereAuthDescuadre = computed(() => {
+    const d = this.diferenciaCierre();
+    if (d == null || Math.abs(d) < 1) return false;
+    return Math.abs(d) > this.toleranciaCierre();
+  });
+
+  /** Dentro de tolerancia (incluido el límite): se anota sin admin. */
+  hayDiferenciaTolerada = computed(() => {
+    return this.hayDiferenciaCierre() && !this.requiereAuthDescuadre();
+  });
+
+  /** @deprecated alias de requiereAuthDescuadre para plantillas antiguas */
+  hayDescuadreCierre = computed(() => this.requiereAuthDescuadre());
+
+  tipoDiferenciaLabel = computed(() => {
+    const d = this.diferenciaCierre();
+    if (d == null || Math.abs(d) < 1) return '';
+    return d > 0 ? 'sobrante' : 'faltante';
   });
 
   descuadresPendientesHistorial = computed(
@@ -222,7 +249,7 @@ export class CajaCuadreComponent implements OnInit {
       this.inform('Realice el arqueo de efectivo (billetes y monedas) antes de cerrar');
       return;
     }
-    if (this.hayDescuadreCierre() && !this.isAdmin()) {
+    if (this.requiereAuthDescuadre() && !this.isAdmin()) {
       this.authError.set(null);
       this.mostrarAuthCierre.set(true);
       return;
@@ -284,9 +311,15 @@ export class CajaCuadreComponent implements OnInit {
             this.authAdminPass.set('');
             this.authError.set(null);
             this.loading.set(false);
-            if (r.descuadre) {
+            if (r.descuadre?.estado === 'pendiente') {
               this.inform(
                 `Caja cerrada con descuadre de ${r.descuadre.diferencia?.toLocaleString('es-CO')} COP. Tiene el mes para cuadrarlo antes de la nómina.`,
+              );
+            } else if (r.descuadre?.estado === 'tolerado') {
+              const d = r.descuadre.diferencia ?? 0;
+              const tipo = d > 0 ? 'sobrante' : 'faltante';
+              this.inform(
+                `Caja cerrada. ${tipo === 'sobrante' ? 'Sobrante' : 'Faltante'} de ${Math.abs(d).toLocaleString('es-CO')} COP anotado (dentro de tolerancia).`,
               );
             } else {
               this.inform('Caja cerrada correctamente');

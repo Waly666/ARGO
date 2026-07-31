@@ -45,6 +45,10 @@ import {
 } from '../../core/utils/egreso-soporte.helpers';
 import { PagoSoporteFieldComponent } from '../../shared/pago-soporte-field/pago-soporte-field.component';
 import {
+  CatalogoEnumBuscarComponent,
+  EnumBuscarOption,
+} from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import {
   CajaActivaResponse,
   CajaAbiertaItem,
   CajaCierreGeneral,
@@ -66,6 +70,7 @@ import {
   imports: [CommonModule, FormsModule, RouterLink,
     ArgoDateInputComponent,
     PagoSoporteFieldComponent,
+    CatalogoEnumBuscarComponent,
   ],
 
   templateUrl: './egresos-admin.component.html',
@@ -112,6 +117,12 @@ export class EgresosAdminComponent implements OnInit {
   terceros = signal<Tercero[]>([]);
   terceroSelId = signal<string | null>(null);
   terceroTexto = signal('');
+  empleadoTexto = signal('');
+  tipoEgresoTexto = signal('');
+  formaPagoTexto = signal('');
+  cuentaOrigenTexto = signal('');
+  bancoDestinoTexto = signal('');
+  periodoTexto = signal('');
 
   periodosNomina = signal<PeriodoNomina[]>([]);
 
@@ -138,7 +149,7 @@ export class EgresosAdminComponent implements OnInit {
 
   /** true = empleado RRHH; false = tercero (tienda, proveedor, etc.) */
 
-  beneficiarioEmpleado = signal(true);
+  beneficiarioEmpleado = signal(false);
 
   editando = signal<Egreso | null>(null);
 
@@ -197,33 +208,147 @@ export class EgresosAdminComponent implements OnInit {
     return 'Indique el número de comprobante o consignación (el soporte puede adjuntarlo después).';
   });
 
-  puedeGuardarEgreso = computed(() => {
+  /** Tras pulsar Guardar: se marcan en rojo los obligatorios vacíos. */
+  intentoGuardar = signal(false);
+
+  /** Mapa campo → mensaje de error (solo campos aplicables al modo actual). */
+  erroresFormulario = computed(() => {
     const f = this.form();
-    if (this.requiereRefBancaria() && !String(f.numTransferencia || '').trim()) {
-      return false;
-    }
+    const err: Record<string, string> = {};
+
     if (this.modoComplementoCajero()) {
-      return !!String(f.formaPago || '').trim();
+      if (!String(f.formaPago || '').trim()) {
+        err['formaPago'] = 'Seleccione la forma de pago.';
+      }
+      if (this.requiereRefBancaria() && !String(f.numTransferencia || '').trim()) {
+        err['numTransferencia'] = 'Indique el número de comprobante o consignación.';
+      }
+      return err;
     }
-    if (!f.concepto?.trim() || !(Number(f.valorEgreso) > 0) || !f.pagueA?.trim() || !f.numeroDocumento?.trim() || !f.tipoEgreso) {
-      return false;
+
+    if (!String(f.fechaEgreso || '').trim()) {
+      err['fechaEgreso'] = 'La fecha del egreso es obligatoria.';
     }
-    return true;
+    if (!(Number(f.valorEgreso) > 0)) {
+      err['valorEgreso'] = 'Indique un valor mayor a cero.';
+    }
+    if (!f.tipoEgreso) {
+      err['tipoEgreso'] = 'Seleccione el tipo de egreso.';
+    }
+    if (this.obligaVehiculo()) {
+      if (!String(f.placa || '').trim()) {
+        err['placa'] = 'Indique la placa del vehículo.';
+      } else if (this.placaVehiculoError()) {
+        err['placa'] = this.placaVehiculoError() || 'Placa no válida.';
+      } else if (!this.placaVehiculoInfo()) {
+        err['placa'] = 'Verifique la placa: debe existir en Vehículos.';
+      }
+    }
+    if (!this.esRetiroCaja() && (this.obligaEmpleado() || this.beneficiarioEmpleado())) {
+      if (!this.empleadoSelId()) {
+        err['empleado'] = 'Seleccione el empleado de RRHH.';
+      }
+    }
+    if (!this.esRetiroCaja() && !this.obligaEmpleado() && !this.beneficiarioEmpleado()) {
+      if (!this.terceroSelId() || !f.idTercero) {
+        err['tercero'] = 'Seleccione el tercero del catálogo.';
+      }
+    }
+    if (!String(f.numeroDocumento || '').trim()) {
+      err['numeroDocumento'] = 'Indique el número de identificación del beneficiario.';
+    }
+    if (!String(f.pagueA || '').trim()) {
+      err['pagueA'] = 'Indique el nombre del beneficiario.';
+    }
+    if (!String(f.concepto || '').trim()) {
+      err['concepto'] = 'El concepto es obligatorio.';
+    }
+    if (this.requiereRefBancaria() && !String(f.numTransferencia || '').trim()) {
+      err['numTransferencia'] = 'Indique el número de comprobante o consignación.';
+    }
+    if (this.requiereAutorizacionSupervisor()) {
+      if (!this.authAdminUser().trim()) {
+        err['authAdminUser'] = 'Usuario administrador obligatorio.';
+      }
+      if (!this.authAdminPass()) {
+        err['authAdminPass'] = 'Contraseña de administrador obligatoria.';
+      }
+    }
+    return err;
   });
 
+  listaErroresFormulario = computed(() => Object.values(this.erroresFormulario()));
 
+  invalido(campo: string): boolean {
+    return this.intentoGuardar() && !!this.erroresFormulario()[campo];
+  }
+
+  msgCampo(campo: string): string | null {
+    if (!this.intentoGuardar()) return null;
+    return this.erroresFormulario()[campo] || null;
+  }
+
+  puedeGuardarEgreso = computed(() => Object.keys(this.erroresFormulario()).length === 0);
+
+  opcionesTipoEgreso = computed<EnumBuscarOption[]>(() =>
+    this.tiposEgreso().map((t) => ({
+      value: String(t.idTipoEgreso),
+      label: this.labelTipoEgreso(t),
+    })),
+  );
+
+  opcionesEmpleado = computed<EnumBuscarOption[]>(() =>
+    this.empleados().map((e) => ({
+      value: e.idEmpleado,
+      label: `${e.nombreCompleto || ''} — ${e.numeroDocumento || ''}`.trim(),
+      hint: e.cargoNombre || undefined,
+    })),
+  );
+
+  opcionesTercero = computed<EnumBuscarOption[]>(() =>
+    this.terceros().map((t) => ({
+      value: String(t._id),
+      label: this.labelTercero(t),
+      hint: t.correo || t.telefono || undefined,
+    })),
+  );
+
+  opcionesFormaPago = computed<EnumBuscarOption[]>(() =>
+    this.formasPago.map((fp) => ({ value: fp, label: fp })),
+  );
+
+  opcionesCuentaOrigen = computed<EnumBuscarOption[]>(() =>
+    this.cuentasBancarias().map((c) => ({
+      value: String(c.idCuentaBancaria ?? ''),
+      label: this.labelCuenta(c),
+    })),
+  );
+
+  opcionesBanco = computed<EnumBuscarOption[]>(() =>
+    this.bancos().map((b) => ({
+      value: String(b.idBanco || b.idbanco || ''),
+      label: this.labelBanco(b),
+    })),
+  );
+
+  opcionesPeriodo = computed<EnumBuscarOption[]>(() => [
+    { value: '', label: '— Automático (período abierto) —' },
+    ...this.periodosAbiertos().map((p) => ({
+      value: p.idPeriodo,
+      label: `${p.nombre} (${p.estado})`,
+    })),
+  ]);
+
+  contactoVisible = computed(() => {
+    const f = this.form();
+    return !!(f.correoBeneficiario || f.direccionBeneficiario || f.telefonoBeneficiario);
+  });
 
   tipoSeleccionado = computed(() => {
-
     const id = this.form().tipoEgreso;
-
     if (!id) return null;
-
     return this.tiposEgreso().find((t) => String(t.idTipoEgreso) === String(id)) ?? null;
-
   });
-
-
 
   cfgTipoSel = computed(() => configTipoEgreso(this.tipoSeleccionado()));
 
@@ -650,6 +775,15 @@ export class EgresosAdminComponent implements OnInit {
     this.beneficiarioEmpleado.set(!!emp);
 
     this.empleadoSelId.set(emp?.idEmpleado ?? null);
+    this.empleadoTexto.set(emp ? `${emp.nombreCompleto || ''} — ${emp.numeroDocumento || ''}`.trim() : '');
+    this.terceroSelId.set(null);
+    this.terceroTexto.set('');
+    this.tipoEgresoTexto.set('');
+    this.formaPagoTexto.set('Efectivo');
+    this.cuentaOrigenTexto.set('');
+    this.bancoDestinoTexto.set('');
+    const abiertosTxt = abiertos[0] ? `${abiertos[0].nombre} (${abiertos[0].estado})` : '';
+    this.periodoTexto.set(abiertosTxt);
 
     this.form.set({
 
@@ -672,6 +806,8 @@ export class EgresosAdminComponent implements OnInit {
     this.placaVehiculoInfo.set(null);
 
     this.placaVehiculoError.set(null);
+
+    this.intentoGuardar.set(false);
 
     this.mostrarForm.set(true);
 
@@ -712,12 +848,31 @@ export class EgresosAdminComponent implements OnInit {
 
     this.beneficiarioEmpleado.set(!!emp || this.obligaEmpleado());
     this.empleadoSelId.set(emp?.idEmpleado ?? null);
+    this.empleadoTexto.set(emp ? `${emp.nombreCompleto || ''} — ${emp.numeroDocumento || ''}`.trim() : '');
     this.terceroSelId.set(ter?._id ? String(ter._id) : idTer);
     this.terceroTexto.set(
       ter
         ? `${ter.nombre || ter.razonSocial || ter.nombres || ''} — ${ter.identificacion || ''}`.trim()
         : '',
     );
+
+    const tipoRow = e.tipoEgreso
+      ? this.tiposEgreso().find((t) => String(t.idTipoEgreso) === String(e.tipoEgreso))
+      : null;
+    this.tipoEgresoTexto.set(tipoRow ? this.labelTipoEgreso(tipoRow) : (e.tipoEgresoDescr || ''));
+    this.formaPagoTexto.set(e.formaPago || 'Efectivo');
+    const cuenta = e.cuentaOrigen
+      ? this.cuentasBancarias().find((c) => String(c.idCuentaBancaria) === String(e.cuentaOrigen))
+      : null;
+    this.cuentaOrigenTexto.set(cuenta ? this.labelCuenta(cuenta) : '');
+    const banco = e.bancoDestino
+      ? this.bancos().find((b) => String(b.idBanco || b.idbanco) === String(e.bancoDestino))
+      : null;
+    this.bancoDestinoTexto.set(banco ? this.labelBanco(banco) : '');
+    const periodo = e.idPeriodo
+      ? this.periodosNomina().find((p) => Number(p.idPeriodo) === Number(e.idPeriodo))
+      : null;
+    this.periodoTexto.set(periodo ? `${periodo.nombre} (${periodo.estado})` : '');
 
     this.form.set({
 
@@ -774,6 +929,8 @@ export class EgresosAdminComponent implements OnInit {
 
     this.previewSoporte.set(this.svc.urlArchivo(e.urlSoporte));
 
+    this.intentoGuardar.set(false);
+
     this.mostrarForm.set(true);
 
     this.inform(null);
@@ -789,6 +946,8 @@ export class EgresosAdminComponent implements OnInit {
     this.editando.set(null);
 
     this.archivoSoporte.set(null);
+
+    this.intentoGuardar.set(false);
 
     this.limpiarAutorizacionRetiro();
 
@@ -831,36 +990,103 @@ export class EgresosAdminComponent implements OnInit {
 
     this.patch('tipoEgreso', id);
 
-    this.limpiarAutorizacionRetiro();
-
     const tipo = this.tiposEgreso().find((t) => String(t.idTipoEgreso) === String(id)) ?? null;
+    this.tipoEgresoTexto.set(tipo ? this.labelTipoEgreso(tipo) : '');
+
+    this.limpiarAutorizacionRetiro();
 
     const cfg = configTipoEgreso(tipo);
 
     if (esRetiroCajaTipo(tipo)) {
-
       this.beneficiarioEmpleado.set(false);
-
-      return;
-
-    }
-
-    if (cfg.requiereEmpleado) {
-
+      this.empleadoSelId.set(null);
+      this.empleadoTexto.set('');
+    } else if (cfg.requiereEmpleado) {
       this.beneficiarioEmpleado.set(true);
-
+      this.terceroSelId.set(null);
+      this.terceroTexto.set('');
+      this.form.update((f) => ({ ...f, idTercero: null }));
+    } else if (this.beneficiarioEmpleado() && !this.empleadoSelId()) {
+      // Tipo libre: por defecto tercero (igual que ingresos)
+      this.beneficiarioEmpleado.set(false);
     }
 
     if (!cfg.requiereVehiculo) {
-
       this.patch('placa', '');
-
       this.placaVehiculoInfo.set(null);
-
       this.placaVehiculoError.set(null);
-
     }
 
+  }
+
+  onTipoEgresoPick(opt: EnumBuscarOption): void {
+    this.onTipoEgresoChange(String(opt.value));
+  }
+
+  onTipoEgresoLimpiar(): void {
+    this.onTipoEgresoChange('');
+  }
+
+  onEmpleadoPick(opt: EnumBuscarOption): void {
+    const id = Number(opt.value);
+    this.empleadoTexto.set(opt.label);
+    this.onEmpleadoChange(Number.isFinite(id) ? id : null);
+  }
+
+  onEmpleadoLimpiar(): void {
+    this.empleadoTexto.set('');
+    this.onEmpleadoChange(null);
+  }
+
+  onTerceroPick(opt: EnumBuscarOption): void {
+    this.terceroTexto.set(opt.label);
+    this.onTerceroChange(String(opt.value));
+  }
+
+  onTerceroLimpiarPick(): void {
+    this.terceroTexto.set('');
+    this.onTerceroChange(null);
+  }
+
+  onFormaPagoPick(opt: EnumBuscarOption): void {
+    this.formaPagoTexto.set(opt.label);
+    this.patch('formaPago', String(opt.value));
+  }
+
+  onFormaPagoLimpiar(): void {
+    this.formaPagoTexto.set('Efectivo');
+    this.patch('formaPago', 'Efectivo');
+  }
+
+  onCuentaOrigenPick(opt: EnumBuscarOption): void {
+    this.cuentaOrigenTexto.set(opt.label);
+    this.patch('cuentaOrigen', String(opt.value));
+  }
+
+  onCuentaOrigenLimpiar(): void {
+    this.cuentaOrigenTexto.set('');
+    this.patch('cuentaOrigen', '');
+  }
+
+  onBancoPick(opt: EnumBuscarOption): void {
+    this.bancoDestinoTexto.set(opt.label);
+    this.patch('bancoDestino', String(opt.value));
+  }
+
+  onBancoLimpiar(): void {
+    this.bancoDestinoTexto.set('');
+    this.patch('bancoDestino', '');
+  }
+
+  onPeriodoPick(opt: EnumBuscarOption): void {
+    this.periodoTexto.set(opt.label);
+    const v = opt.value;
+    this.patch('idPeriodo', v === '' || v == null ? '' : (Number(v) || ''));
+  }
+
+  onPeriodoLimpiar(): void {
+    this.periodoTexto.set('');
+    this.patch('idPeriodo', '');
   }
 
 
@@ -969,20 +1195,36 @@ export class EgresosAdminComponent implements OnInit {
 
     this.beneficiarioEmpleado.set(esEmpleado);
 
+    if (esEmpleado) {
+      this.terceroSelId.set(null);
+      this.terceroTexto.set('');
+      this.form.update((f) => ({
+        ...f,
+        idTercero: null,
+        numeroDocumento: '',
+        pagueA: '',
+        correoBeneficiario: '',
+        direccionBeneficiario: '',
+        telefonoBeneficiario: '',
+      }));
+      this.empleadoSelId.set(null);
+      this.empleadoTexto.set('');
+      return;
+    }
+
+    this.empleadoSelId.set(null);
+    this.empleadoTexto.set('');
     this.terceroSelId.set(null);
     this.terceroTexto.set('');
-
-    if (!esEmpleado) {
-
-      this.empleadoSelId.set(null);
-
-      this.form.update((f) => ({ ...f, numeroDocumento: '', pagueA: '', idTercero: null }));
-
-    } else {
-
-      this.form.update((f) => ({ ...f, pagueA: f.pagueA || '', idTercero: null }));
-
-    }
+    this.form.update((f) => ({
+      ...f,
+      numeroDocumento: '',
+      pagueA: '',
+      idTercero: null,
+      correoBeneficiario: '',
+      direccionBeneficiario: '',
+      telefonoBeneficiario: '',
+    }));
 
   }
 
@@ -993,7 +1235,7 @@ export class EgresosAdminComponent implements OnInit {
     this.empleadoSelId.set(idEmpleado);
 
     if (idEmpleado == null) {
-
+      this.empleadoTexto.set('');
       this.form.update((f) => ({
         ...f,
         numeroDocumento: '',
@@ -1010,6 +1252,8 @@ export class EgresosAdminComponent implements OnInit {
     const emp = this.empleados().find((e) => e.idEmpleado === idEmpleado);
 
     if (!emp?.numeroDocumento) return;
+
+    this.empleadoTexto.set(`${emp.nombreCompleto || ''} — ${emp.numeroDocumento || ''}`.trim());
 
     this.form.update((f) => ({
 
@@ -1092,95 +1336,20 @@ export class EgresosAdminComponent implements OnInit {
 
   async guardar(): Promise<void> {
 
-    const f = this.form();
+    this.intentoGuardar.set(true);
 
     const ed = this.editando();
 
-    if (!f.concepto?.trim()) {
-
-      this.inform('El concepto es obligatorio.');
-
+    const errores = this.erroresFormulario();
+    if (Object.keys(errores).length) {
+      const primero = Object.values(errores)[0];
+      const n = Object.keys(errores).length;
+      this.inform(
+        n > 1
+          ? `${primero} Revise los ${n} campos marcados en rojo.`
+          : primero,
+      );
       return;
-
-    }
-
-    if (!(Number(f.valorEgreso) > 0)) {
-
-      this.inform('Indique un valor mayor a cero.');
-
-      return;
-
-    }
-
-    if (!f.pagueA?.trim()) {
-
-      this.inform('Indique el beneficiario (a quién se pagó).');
-
-      return;
-
-    }
-
-    if (!f.numeroDocumento?.trim()) {
-
-      this.inform('Indique el número de identificación del beneficiario (CC, NIT, etc.).');
-
-      return;
-
-    }
-
-    if (!f.tipoEgreso) {
-
-      this.inform('Seleccione el tipo de egreso.');
-
-      return;
-
-    }
-
-    if (!this.esRetiroCaja() && (this.obligaEmpleado() || this.beneficiarioEmpleado())) {
-
-      if (!this.empleados().some((e) => e.numeroDocumento === f.numeroDocumento?.trim())) {
-
-        this.inform('Seleccione el empleado de RRHH para este egreso.');
-
-        return;
-
-      }
-
-    }
-
-    if (!this.esRetiroCaja() && !this.obligaEmpleado() && !this.beneficiarioEmpleado()) {
-      if (!this.terceroSelId() || !f.idTercero) {
-        this.inform('Seleccione el tercero del catálogo para este egreso.');
-        return;
-      }
-    }
-
-    if (this.obligaVehiculo()) {
-
-      if (!f.placa?.trim()) {
-
-        this.inform('Indique la placa del vehículo para este tipo de egreso.');
-
-        return;
-
-      }
-
-      if (this.placaVehiculoError()) {
-
-        this.inform(this.placaVehiculoError() || 'Placa de vehículo no válida.');
-
-        return;
-
-      }
-
-      if (!this.placaVehiculoInfo()) {
-
-        this.inform('Verifique la placa: debe existir en el módulo Vehículos.');
-
-        return;
-
-      }
-
     }
 
     if (ed && (ed.anticipoNomina || ed.idNovedadGenerada)) {
@@ -1199,33 +1368,16 @@ export class EgresosAdminComponent implements OnInit {
 
     }
 
-    if (!this.puedeGuardarEgreso()) {
-      this.inform(this.mensajePagoIntangible() || 'Complete los datos del egreso.');
-      return;
-    }
-
     if (!ed) {
       if (!(await this.cajaAlert.ensureAbierta('registrar egresos'))) return;
     }
 
     if (this.requiereAutorizacionSupervisor()) {
-
-      const u = this.authAdminUser().trim();
-
-      const p = this.authAdminPass();
-
-      if (!u || !p) {
-
-        this.inform('Ingrese usuario y contraseña de un administrador en el panel de autorización.');
-
-        return;
-
-      }
-
-      this.ejecutarGuardar({ autorizadoUsername: u, autorizadoPassword: p });
-
+      this.ejecutarGuardar({
+        autorizadoUsername: this.authAdminUser().trim(),
+        autorizadoPassword: this.authAdminPass(),
+      });
       return;
-
     }
 
     this.ejecutarGuardar();

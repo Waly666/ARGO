@@ -1,19 +1,49 @@
-<section class="caja-shell">
-  <header class="caja-head caja-page-head">
+<section
+  class="caja-shell card admin-list-page"
+  [class.caja-shell--dash]="esResumen()"
+>
+  <header class="caja-head caja-page-head caja-page-header" [class.dash-like-head]="esResumen()">
     <div class="caja-head-main">
-      <p class="breadcrumb"><a routerLink="/app">Inicio</a> / Caja</p>
-      <h1>Mi caja — Resumen del día</h1>
-      <p class="hint">Cuadre, cobros, egresos y cierre de su turno de caja.</p>
+      @if (esResumen()) {
+        <p class="eyebrow">Flujo de caja</p>
+        <h1>Resumen del día</h1>
+        <p class="hint sub">Cuadre de su turno: ventas, efectivo esperado, métodos de pago y cierre.</p>
+      } @else {
+        <p class="breadcrumb"><a routerLink="/app">Inicio</a> / Caja</p>
+        <h1>Mi caja</h1>
+        <p class="hint">Cuadre, cobros, egresos y cierre de su turno.</p>
+      }
+    </div>
+    <div class="caja-badges caja-flow-chips head-meta" aria-label="Estado de caja">
+      @if (cajaAbierta() === true) {
+        <span class="caja-chip caja-chip--emerald pill-like">Caja abierta</span>
+        @if (sesionId(); as id) {
+          <span class="caja-chip caja-chip--sky pill-like">Sesión #{{ id }}</span>
+        }
+      } @else if (cajaAbierta() === false) {
+        <span class="caja-chip caja-chip--rose pill-like">Caja cerrada</span>
+      }
     </div>
   </header>
 
-  <nav class="caja-nav" aria-label="Secciones de caja">
-    <a routerLink="/app/caja" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-      Resumen del día
+  <nav class="tabs tabs-flow caja-tabs" aria-label="Secciones de caja">
+    <a
+      routerLink="/app/caja"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="caja-tab"
+    >
+      1. Resumen
     </a>
-    <a routerLink="/app/caja/ingresos" routerLinkActive="active">Cobros / Ingresos</a>
-    <a routerLink="/app/caja/egresos" routerLinkActive="active">Egresos</a>
-    <a routerLink="/app/caja/terceros" routerLinkActive="active">Terceros</a>
+    <a routerLink="/app/caja/ingresos" routerLinkActive="active" class="caja-tab">
+      2. Cobros / Ingresos
+    </a>
+    <a routerLink="/app/caja/egresos" routerLinkActive="active" class="caja-tab">
+      3. Egresos
+    </a>
+    <a routerLink="/app/caja/terceros" routerLinkActive="active" class="caja-tab">
+      4. Terceros
+    </a>
   </nav>
 
   <router-outlet />

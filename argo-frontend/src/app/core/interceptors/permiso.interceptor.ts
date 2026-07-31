@@ -21,12 +21,22 @@ function esErrorSinPermiso(err: unknown): boolean {
   );
 }
 
-/** Muestra diálogo global ante 403 de permiso (sin cerrar la sesión). */
+/** Métodos donde el usuario intentó una acción (no carga de pantalla). */
+function esAccionUsuario(method: string): boolean {
+  const m = method.toUpperCase();
+  return m === 'POST' || m === 'PUT' || m === 'PATCH' || m === 'DELETE';
+}
+
+/**
+ * Diálogo global solo si el usuario intenta mutar sin permiso.
+ * Los GET 403 (datos opcionales al entrar a caja/alumnos) no muestran modal:
+ * la pantalla sigue y el error se maneja en el componente.
+ */
 export const permisoInterceptor: HttpInterceptorFn = (req, next) => {
   const aviso = inject(PermisoAvisoService);
   return next(req).pipe(
     catchError((err) => {
-      if (esErrorSinPermiso(err)) {
+      if (esAccionUsuario(req.method) && esErrorSinPermiso(err)) {
         const message = String(err?.error?.message || '').trim();
         void aviso.avisar({
           message:

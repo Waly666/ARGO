@@ -1,70 +1,149 @@
-<div class="arqueo-panel">
-  <div class="arqueo-head">
-    <h3>Arqueo de efectivo</h3>
-    <p class="hint">Cuente billetes y monedas por denominación. El total se usa como efectivo contado.</p>
-    <button type="button" class="ghost sm" (click)="limpiar()">Limpiar conteo</button>
+<div class="arqueo-panel" [class.arqueo-panel--activo]="hayConteo()">
+  <header class="arqueo-head">
+    <div class="arqueo-head-text">
+      <p class="eyebrow">Paso al cerrar</p>
+      <h3>Cuente el efectivo de la caja</h3>
+      <p class="hint">
+        Separe billetes y monedas. En cada fila indique <strong>cuántos</strong> tiene de ese valor.
+        El sistema suma solo; usted no necesita calcular a mano.
+      </p>
+    </div>
+    <button type="button" class="ghost sm" (click)="limpiar()" [disabled]="!hayConteo()">
+      Borrar conteo
+    </button>
+  </header>
+
+  <ol class="arqueo-pasos" aria-label="Cómo contar">
+    <li><span>1</span> Agrupe el dinero por valor (ej. todos los de $50.000 juntos).</li>
+    <li><span>2</span> Escriba la cantidad de cada valor (use + / − si le resulta más fácil).</li>
+    <li><span>3</span> Revise abajo si cuadra con lo que el sistema espera.</li>
+  </ol>
+
+  <div
+    class="arqueo-estado"
+    [class.arqueo-estado--idle]="estadoCuadre() === 'sin_conteo'"
+    [class.arqueo-estado--ok]="estadoCuadre() === 'cuadrado'"
+    [class.arqueo-estado--warn]="estadoCuadre() === 'sobrante'"
+    [class.arqueo-estado--err]="estadoCuadre() === 'faltante'"
+    [class.arqueo-estado--info]="estadoCuadre() === 'sin_esperado'"
+    role="status"
+  >
+    <strong>
+      @switch (estadoCuadre()) {
+        @case ('sin_conteo') { Sin conteo aún }
+        @case ('cuadrado') { Caja cuadrada }
+        @case ('sobrante') { Sobrante }
+        @case ('faltante') { Faltante }
+        @default { Conteo en curso }
+      }
+    </strong>
+    <span>{{ mensajeEstado() }}</span>
   </div>
 
   <div class="arqueo-grid">
-    <section>
-      <h4>Billetes</h4>
-      <table class="arqueo-tabla">
-        <thead>
-          <tr><th>Denominación</th><th>Cantidad</th><th>Subtotal</th></tr>
-        </thead>
-        <tbody>
-          @for (l of filas(); track l.denominacion + l.tipo; let i = $index) {
-            @if (l.tipo === 'billete') {
-              <tr>
-                <td>{{ l.etiqueta }}</td>
-                <td>
-                  <input type="number" min="0" step="1" [ngModel]="l.cantidad" (ngModelChange)="actualizarCantidad(i, $event)" />
-                </td>
-                <td class="num">{{ l.subtotal | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-              </tr>
-            }
-          }
-        </tbody>
-      </table>
+    <section class="arqueo-bloque" aria-labelledby="arqueo-billetes-titulo">
+      <div class="arqueo-bloque-head">
+        <h4 id="arqueo-billetes-titulo">Billetes</h4>
+        <span class="arqueo-bloque-hint">De mayor a menor</span>
+      </div>
+      <div class="arqueo-filas">
+        @for (l of billetes(); track l.denominacion + l.tipo) {
+          <div class="arqueo-fila" [class.arqueo-fila--llena]="l.cantidad > 0">
+            <div class="arqueo-deno">
+              <span class="arqueo-deno-label">{{ l.etiqueta }}</span>
+              <span class="arqueo-deno-ask">¿Cuántos?</span>
+            </div>
+            <div class="arqueo-qty">
+              <button type="button" class="qty-btn" (click)="ajustar(l.idx, -1)" [disabled]="l.cantidad <= 0" aria-label="Restar">−</button>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                [ngModel]="l.cantidad"
+                (ngModelChange)="actualizarCantidad(l.idx, $event)"
+                (focus)="onFocusCantidad($event)"
+                [attr.aria-label]="'Cantidad de ' + l.etiqueta"
+              />
+              <button type="button" class="qty-btn" (click)="ajustar(l.idx, 1)" aria-label="Sumar">+</button>
+            </div>
+            <div class="arqueo-sub">
+              <span class="arqueo-sub-label">Suma</span>
+              <strong>{{ l.subtotal | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+          </div>
+        }
+      </div>
     </section>
-    <section>
-      <h4>Monedas</h4>
-      <table class="arqueo-tabla">
-        <thead>
-          <tr><th>Denominación</th><th>Cantidad</th><th>Subtotal</th></tr>
-        </thead>
-        <tbody>
-          @for (l of filas(); track l.denominacion + l.tipo; let i = $index) {
-            @if (l.tipo === 'moneda') {
-              <tr>
-                <td>{{ l.etiqueta }}</td>
-                <td>
-                  <input type="number" min="0" step="1" [ngModel]="l.cantidad" (ngModelChange)="actualizarCantidad(i, $event)" />
-                </td>
-                <td class="num">{{ l.subtotal | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-              </tr>
-            }
-          }
-        </tbody>
-      </table>
+
+    <section class="arqueo-bloque" aria-labelledby="arqueo-monedas-titulo">
+      <div class="arqueo-bloque-head">
+        <h4 id="arqueo-monedas-titulo">Monedas</h4>
+        <span class="arqueo-bloque-hint">Incluya monedas de $1.000 si las hay</span>
+      </div>
+      <div class="arqueo-filas">
+        @for (l of monedas(); track l.denominacion + l.tipo) {
+          <div class="arqueo-fila" [class.arqueo-fila--llena]="l.cantidad > 0">
+            <div class="arqueo-deno">
+              <span class="arqueo-deno-label">{{ l.etiqueta }}</span>
+              <span class="arqueo-deno-ask">¿Cuántas?</span>
+            </div>
+            <div class="arqueo-qty">
+              <button type="button" class="qty-btn" (click)="ajustar(l.idx, -1)" [disabled]="l.cantidad <= 0" aria-label="Restar">−</button>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                [ngModel]="l.cantidad"
+                (ngModelChange)="actualizarCantidad(l.idx, $event)"
+                (focus)="onFocusCantidad($event)"
+                [attr.aria-label]="'Cantidad de ' + l.etiqueta"
+              />
+              <button type="button" class="qty-btn" (click)="ajustar(l.idx, 1)" aria-label="Sumar">+</button>
+            </div>
+            <div class="arqueo-sub">
+              <span class="arqueo-sub-label">Suma</span>
+              <strong>{{ l.subtotal | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+            </div>
+          </div>
+        }
+      </div>
     </section>
   </div>
 
   <div class="arqueo-totales">
-    <article>
-      <span>Total arqueo</span>
+    <article class="tot-contado">
+      <span>Usted contó</span>
       <strong>{{ total() | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+      <em *ngIf="hayConteo()">{{ piezasContadas() }} pieza(s)</em>
+      <em *ngIf="!hayConteo()">Aún no ha ingresado cantidades</em>
     </article>
     @if (esperado() != null) {
-      <article>
-        <span>Efectivo esperado</span>
+      <article class="tot-esperado">
+        <span>El sistema espera</span>
         <strong>{{ esperado()! | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+        <em>Según base + cobros − egresos en efectivo</em>
       </article>
     }
-    @if (diferencia() != null) {
-      <article [class.ok]="diferencia()! >= 0" [class.bad]="diferencia()! < 0">
-        <span>Diferencia</span>
+    @if (diferencia() != null && hayConteo()) {
+      <article
+        class="tot-diff"
+        [class.ok]="diferencia()! === 0"
+        [class.warn]="diferencia()! > 0"
+        [class.bad]="diferencia()! < 0"
+      >
+        <span>
+          @if (diferencia()! === 0) { Diferencia }
+          @else if (diferencia()! > 0) { Sobrante }
+          @else { Faltante }
+        </span>
         <strong>{{ diferencia()! | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+        <em>
+          @if (diferencia()! === 0) { Contado = esperado }
+          @else if (diferencia()! > 0) { Contado − esperado }
+          @else { Esperado − contado: {{ (-diferencia()!) | currency: 'COP':'symbol-narrow':'1.0-0' }} }
+        </em>
       </article>
     }
   </div>

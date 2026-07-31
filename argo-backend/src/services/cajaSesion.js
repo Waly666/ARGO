@@ -12,6 +12,17 @@ const { esRetiroCajaTipo } = require('./tipoEgresoNomina');
 const { formaPagoDesdeCatalogo } = require('./tipoIngresoResolver');
 const { normalizarIdSede } = require('./sedeContext');
 const { esSesionCajaVirtual } = require('./cajaVirtualDiaria');
+const { esIngresoPagoEnLinea } = require('../constants/pasarela');
+const { partesCalendarioColombia, diffDiasCalendario } = require('../utils/timezoneColombia');
+
+/** Días calendario (Colombia) desde fechaApertura hasta hoy. 0 = abierta hoy. */
+function diasSinCerrarDesdeApertura(fechaApertura) {
+  if (!fechaApertura) return 0;
+  const desde = partesCalendarioColombia(fechaApertura);
+  const hoy = partesCalendarioColombia(new Date());
+  if (!desde || !hoy) return 0;
+  return Math.max(0, diffDiasCalendario(desde, hoy));
+}
 
 function filtroIdSede(idSede) {
   const sid = normalizarIdSede(idSede);
@@ -185,10 +196,12 @@ async function abrirSesion({ saldoInicial, observaciones, usuario, idUsuario, us
 
 async function agregarMovimientosSesion(idSesion) {
   const sid = Number(idSesion);
-  const [ingresos, egresos] = await Promise.all([
+  const [ingresosRaw, egresos] = await Promise.all([
     Ingreso.find({ idSesion: sid }).lean(),
     Egreso.find({ idSesion: sid }).lean(),
   ]);
+  // Pagos en línea (pasarela) no forman parte del cuadre/arqueo del cajero.
+  const ingresos = (ingresosRaw || []).filter((i) => !esIngresoPagoEnLinea(i));
   return { ingresos, egresos };
 }
 
@@ -452,7 +465,7 @@ async function calcularResumenSesion(sesion) {
 
 async function cerrarSesion(
   idSesion,
-  { observaciones, efectivoContado, arqueo, user, idUsuario, rol, supervisor },
+  { observaciones, efectivoContado, arqueo, user, idUsuario, rol, supervisor, toleranciaCierreCajaCop },
 ) {
   const sesion = await CajaSesion.findOne({ idSesion: Number(idSesion), estado: 'abierta' });
   if (!sesion) {
@@ -489,7 +502,9 @@ async function cerrarSesion(
   const {
     tieneDescuadreSignificativo,
     crearRegistroDescuadre,
+    normalizarTolerancia,
   } = require('./descuadreCaja');
+  const tolerancia = normalizarTolerancia(toleranciaCierreCajaCop);
 
   const sesionParaDescuadre = {
     ...planoSesion(sesion),
@@ -504,9 +519,17 @@ async function cerrarSesion(
       diferencia,
       efectivoContado: contado,
       supervisor,
+      toleranciaCierreCajaCop: tolerancia,
     });
     resumen.descuadre = descuadre;
-    resumen.alertaDescuadre = true;
+    resumen.alertaDescuadre = descuadre.estado === 'pendiente';
+  }
+
+  let obsCierre = observaciones || null;
+  if (descuadre?.estado === 'tolerado' && descuadre.notaResolucion) {
+    obsCierre = obsCierre
+      ? `${obsCierre}\n${descuadre.notaResolucion}`
+      : descuadre.notaResolucion;
   }
 
   sesion.estado = 'cerrada';
@@ -514,7 +537,7 @@ async function cerrarSesion(
   sesion.saldoFinal = toDec(resumen.efectivoEsperado);
   sesion.efectivoContado = contado != null && Number.isFinite(contado) ? toDec(contado) : null;
   sesion.diferencia = diferencia != null ? toDec(diferencia) : null;
-  sesion.observacionesCierre = observaciones || null;
+  sesion.observacionesCierre = obsCierre;
   sesion.resumen = resumen;
   sesion.fechaMod = now;
   sesion.userChangeRecord = user || 'sistema';
@@ -1007,6 +1030,7 @@ async function cerrarSesionesMultiples(cierres, ctx) {
       idUsuario: ctx.idUsuario,
       rol: ctx.rol,
       supervisor: ctx.supervisor,
+      toleranciaCierreCajaCop: ctx.toleranciaCierreCajaCop,
     });
     resultados.push(r);
   }
@@ -1223,4 +1247,5 @@ module.exports = {
   normalizarFechaDia,
   etiquetaTurno,
   planoSesion,
+  diasSinCerrarDesdeApertura,
 };

@@ -57,6 +57,11 @@ const DEFAULTS = {
   permitirAjusteValorMatricula: true,
   /** Cuotas personalizadas por semestre (presencial/mixta; no virtual). */
   permitirAjusteCuotasSemestre: false,
+  /**
+   * Diferencia de cierre (|contado − esperado|) permitida sin autorización de admin.
+   * Dentro del rango se anota sobrante/faltante como tolerado (sin deuda a nómina).
+   */
+  toleranciaCierreCajaCop: 1000,
 };
 
 /** Clave legado por sede (solo scripts/migración; ya no se usa en runtime). */
@@ -98,6 +103,9 @@ function normalizar(doc, claveOverride) {
   }
   raw.permitirAjusteValorMatricula = raw.permitirAjusteValorMatricula !== false;
   raw.permitirAjusteCuotasSemestre = raw.permitirAjusteCuotasSemestre === true;
+  const tol = Number(raw.toleranciaCierreCajaCop);
+  raw.toleranciaCierreCajaCop =
+    Number.isFinite(tol) && tol >= 0 ? Math.round(tol) : DEFAULTS.toleranciaCierreCajaCop;
   return raw;
 }
 

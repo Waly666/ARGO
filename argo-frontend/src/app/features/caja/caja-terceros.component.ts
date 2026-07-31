@@ -15,7 +15,7 @@ import { mensajeErrorCelularAlmacenado } from '../../core/utils/celular.util';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, MunicipioBuscarComponent, CelularInputComponent],
   templateUrl: './caja-terceros.component.html',
-  styleUrls: ['../config/config-clientes.component.scss'],
+  styleUrls: ['./caja-terceros.component.scss', '../config/config-clientes.component.scss'],
 })
 export class CajaTercerosComponent implements OnInit {
   private svc = inject(TerceroService);

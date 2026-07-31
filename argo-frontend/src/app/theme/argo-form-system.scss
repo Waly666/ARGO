@@ -282,10 +282,13 @@
 .argo-form-section:has(argo-catalogo-enum-buscar.dropdown-open),
 .clase-form-section:has(argo-catalogo-enum-buscar.dropdown-open),
 .argo-form-section:has(argo-date-input.dropdown-open),
-.clase-form-section:has(argo-date-input.dropdown-open) {
+.clase-form-section:has(argo-date-input.dropdown-open),
+.form-section:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-section:has(argo-municipio-buscar.dropdown-open),
+.form-section:has(argo-date-input.dropdown-open) {
   overflow: visible;
   position: relative;
-  z-index: 30;
+  z-index: 5000;
 }
 
 .section-body:has(argo-catalogo-enum-buscar.dropdown-open),
@@ -294,10 +297,19 @@
 }
 
 .modal-edit-form:has(argo-catalogo-enum-buscar.dropdown-open),
-.modal-edit-form:has(argo-date-input.dropdown-open) {
+.modal-edit-form:has(argo-date-input.dropdown-open),
+.argo-form-shell:has(argo-catalogo-enum-buscar.dropdown-open),
+.argo-form-shell:has(argo-municipio-buscar.dropdown-open),
+.argo-form-shell:has(argo-date-input.dropdown-open),
+.form-card:has(argo-catalogo-enum-buscar.dropdown-open),
+.form-card:has(argo-date-input.dropdown-open),
+fieldset:has(argo-catalogo-enum-buscar.dropdown-open),
+fieldset:has(argo-date-input.dropdown-open) {
   overflow: visible;
 }
 
+.form-cols [class*='col-']:has(argo-catalogo-enum-buscar.dropdown-open),
+.row [class*='col-']:has(argo-catalogo-enum-buscar.dropdown-open),
 .form-cols [class*='col-']:has(argo-date-input.dropdown-open),
 .row [class*='col-']:has(argo-date-input.dropdown-open),
 .field-date:has(argo-date-input.dropdown-open),

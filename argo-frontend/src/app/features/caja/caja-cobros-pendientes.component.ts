@@ -28,16 +28,16 @@ import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog
 import { AlertaPagoAlumnoBannerComponent } from '../alumnos/alerta-pago-alumno-banner.component';
 import { AlertaPagoAlumnoService } from '../../core/services/alerta-pago-alumno.service';
 import { PagoSoporteFieldComponent } from '../../shared/pago-soporte-field/pago-soporte-field.component';
+import { filtrarTiposPagoCaja } from '../../core/utils/metodo-pago.util';
 
-const TIPOS_PAGO_DEF = [
+const TIPOS_PAGO_DEF = filtrarTiposPagoCaja([
   { idTipoPago: '1', codigo: 'EF', descripcion: 'Efectivo' },
   { idTipoPago: '2', codigo: 'TR', descripcion: 'Transferencia' },
   { idTipoPago: '3', codigo: 'TC', descripcion: 'Tarjeta crédito' },
   { idTipoPago: '4', codigo: 'TD', descripcion: 'Tarjeta débito' },
   { idTipoPago: '5', codigo: 'CH', descripcion: 'Cheque' },
   { idTipoPago: '6', codigo: 'NE', descripcion: 'Nequi / Daviplata' },
-  { idTipoPago: '7', codigo: 'PL', descripcion: 'Pago en línea' },
-];
+]);
 
 @Component({
   selector: 'argo-caja-cobros-pendientes',
@@ -100,7 +100,8 @@ export class CajaCobrosPendientesComponent implements OnInit {
   ngOnInit(): void {
     this.alertaPagoSvc.cargar().subscribe();
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
-      next: (d) => this.tiposPago.set(d?.length ? d : TIPOS_PAGO_DEF),
+      next: (d) =>
+        this.tiposPago.set(filtrarTiposPagoCaja((d?.length ? d : TIPOS_PAGO_DEF) as Record<string, unknown>[])),
       error: () => this.tiposPago.set(TIPOS_PAGO_DEF),
     });
     this.catSvc.list('cuentasBancarias', { refresh: true }).subscribe({

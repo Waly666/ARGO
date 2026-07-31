@@ -243,7 +243,7 @@ export class DashboardComponent implements OnInit {
   });
 
   metodosPago = computed((): MetodoPagoCard[] =>
-    buildMetodosPagoCards(this.stats()?.ingresosPorFormaPago ?? []),
+    buildMetodosPagoCards(this.stats()?.ingresosPorFormaPago ?? [], { excluirPagoEnLinea: false }),
   );
 
   totalFormaPago = computed(() =>

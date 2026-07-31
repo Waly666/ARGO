@@ -1,204 +1,333 @@
-<section class="ing-caja-page card">
+<section class="ing-caja-page">
   <nav class="caja-nav-link">
     <a routerLink="/app/caja">← Resumen del día</a>
-    <a routerLink="/app/caja/ingresos">← Lista ingresos de mi caja</a>
+    <a routerLink="/app/caja/ingresos">← Lista de ingresos</a>
     <a routerLink="/app/caja/terceros">Terceros</a>
     <span class="caja-mini" [class.ok]="cajaAbierta()" [class.warn]="!cajaAbierta()">
       {{ cajaAbierta() ? 'Caja #' + sesionId() + ' abierta' : 'Caja cerrada — abra en Resumen' }}
     </span>
   </nav>
 
-  <header class="caja-head page-head">
-    <div class="caja-head-main">
-      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / <a routerLink="/app/caja/ingresos">Ingresos</a> / Sin alumno</p>
-      <h1>Ingreso de caja (sin alumno)</h1>
-      <p class="hint">Contratos, aprovisiones u otros ingresos que no provienen de un alumno.</p>
+  <header class="ing-head">
+    <div>
+      <p class="eyebrow">Flujo de caja</p>
+      <h1>Nuevo ingreso</h1>
+      <p class="sub">Sin alumno: contratos, aprovisiones u otros ingresos del turno.</p>
     </div>
-    <span class="caja-chip caja-chip--emerald" *ngIf="cajaAbierta()">Caja #{{ sesionId() }} abierta</span>
+    <span class="pill" *ngIf="cajaAbierta()">Caja #{{ sesionId() }} abierta</span>
   </header>
 
-  <p class="caja-msg caja-msg--warn" *ngIf="!cajaAbierta()">Abra su caja en Resumen del día para registrar ingresos.</p>
-  <p class="caja-msg" *ngIf="msg()" [class.caja-msg--err]="msgError()">{{ msg() }}</p>
+  <div class="caja-banner caja-banner--warn" *ngIf="!cajaAbierta()" role="status">
+    <span class="caja-banner-icon" aria-hidden="true">!</span>
+    <div class="caja-banner-body">
+      <strong class="caja-banner-title">Caja cerrada</strong>
+      <span>Abra su caja en Resumen del día para registrar ingresos.</span>
+    </div>
+  </div>
 
-  <form class="form-panel panel argo-form-shell" (ngSubmit)="$event.preventDefault(); guardar()">
-    <h3 class="sec">1. Tipo y fecha</h3>
-    <div class="row">
-      <label class="col-6">
-        Tipo de ingreso *
-        <select [ngModel]="idTipoIngreso()" (ngModelChange)="onTipoIngresoChange($event)" name="tipoIng">
-          <option value="">— Seleccione —</option>
-          <option *ngFor="let t of tiposIngreso()" [value]="t.idTipoIngreso">{{ labelTipo(t) }}</option>
-        </select>
-      </label>
-      <argo-date-input label="Fecha" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" name="fecha" ></argo-date-input>
+  <div
+    class="caja-banner"
+    *ngIf="msg()"
+    [class.caja-banner--error]="msgError()"
+    [class.caja-banner--ok]="!msgError()"
+    role="status"
+  >
+    <span class="caja-banner-icon" aria-hidden="true">{{ msgError() ? '!' : '✓' }}</span>
+    <div class="caja-banner-body">
+      <strong class="caja-banner-title">{{ msgError() ? 'Atención' : 'Listo' }}</strong>
+      <span>{{ msg() }}</span>
+    </div>
+  </div>
+
+  <form class="ing-form argo-form-shell" (ngSubmit)="$event.preventDefault(); guardar()">
+    <div class="form-errors-banner" *ngIf="intentoGuardar() && listaErrores().length" role="alert">
+      <strong>Complete los campos obligatorios</strong>
+      <ul>
+        <li *ngFor="let e of listaErrores()">{{ e }}</li>
+      </ul>
     </div>
 
-    <p class="hint tipo-hint" *ngIf="esContrato()">
-      Contrato de capacitación u otro acuerdo con persona natural o jurídica (no alumno).
-    </p>
-    <p class="hint tipo-hint" *ngIf="esAprovision()">
-      Dinero que el propietario o responsable aporta a la caja para cubrir pagos del turno.
-    </p>
-    <p class="hint tipo-hint" *ngIf="esOtros()">
-      Ingresos que no encajan en contrato ni aprovisionamiento.
-    </p>
+    <!-- 1. Tipo -->
+    <section class="form-section" [class.field-invalid-section]="invalido('tipoIngreso')">
+      <h3>Tipo de ingreso</h3>
+      <p class="section-hint">{{ hintTipo() }}</p>
 
-    <label>
-      Concepto / detalle *
-      <input type="text" [ngModel]="concepto()" (ngModelChange)="concepto.set($event)" name="concepto"
-        placeholder="Ej. Contrato capacitación empresa XYZ, aporte propietario…" />
-    </label>
+      <div class="tipo-cards" role="listbox" aria-label="Tipo de ingreso">
+        <button
+          type="button"
+          class="tipo-card"
+          *ngFor="let t of tiposIngreso()"
+          [class.active]="tipoActivo(t)"
+          (click)="seleccionarTipo(idTipoStr(t))"
+          role="option"
+          [attr.aria-selected]="tipoActivo(t)"
+        >
+          <span class="tipo-card-icon" aria-hidden="true">{{ iconoTipo(t) }}</span>
+          <strong>{{ labelTipo(t) }}</strong>
+        </button>
+      </div>
+      <p class="field-error" *ngIf="msgCampo('tipoIngreso') as m">{{ m }}</p>
 
-    <h3 class="sec" *ngIf="idTipoIngreso()">2. Quién entrega el dinero</h3>
-    <div class="row" *ngIf="idTipoIngreso()">
-      <div class="col-12">
-        <div class="toggle-row">
-          <label class="radio-chip">
-            <input type="radio" name="tipoPag" [checked]="tipoPagador() === 'tercero'" (change)="setTipoPagador('tercero')" />
-            Tercero (catálogo)
-          </label>
-          <label class="radio-chip">
-            <input type="radio" name="tipoPag" [checked]="tipoPagador() === 'empleado'" (change)="setTipoPagador('empleado')" />
-            Empleado
-          </label>
-          <label class="radio-chip">
-            <input type="radio" name="tipoPag" [checked]="tipoPagador() === 'libre'" (change)="setTipoPagador('libre')" />
-            Texto libre
-          </label>
+      <div class="row tipo-meta" *ngIf="idTipoIngreso()">
+        <div class="col-8" [class.field-invalid]="invalido('concepto')">
+          <label>Concepto / detalle <span class="req">*</span></label>
+          <input
+            type="text"
+            [ngModel]="concepto()"
+            (ngModelChange)="concepto.set($event)"
+            name="concepto"
+            placeholder="Ej. Contrato capacitación empresa XYZ, aporte propietario…"
+            [attr.aria-invalid]="invalido('concepto')"
+          />
+          <p class="field-error" *ngIf="msgCampo('concepto') as m">{{ m }}</p>
         </div>
-        <p class="hint">
-          Preferible usar el catálogo de
-          <a routerLink="/app/caja/terceros">Terceros</a>
-          o un empleado de RRHH para que el recibo muestre correo, dirección y teléfono.
-        </p>
+        <div class="col-4">
+          <argo-date-input label="Fecha" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" name="fecha" />
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="row" *ngIf="idTipoIngreso() && tipoPagador() === 'empleado'">
-      <div class="col-12">
-        <argo-catalogo-enum-buscar
-          label="Empleado *"
-          placeholder="Seleccione o escriba empleado…"
-          [textoInicial]="empleadoTexto()"
-          [modoCombo]="true"
-          [remoto]="false"
-          [minLength]="1"
-          [opcionesLocales]="opcionesEmpleado()"
-          (seleccionado)="onEmpleadoPick($event)"
-          (limpiado)="onEmpleadoLimpiar()"
-        />
+    <!-- 2. Quién paga -->
+    <section class="form-section" *ngIf="idTipoIngreso()">
+      <h3>Quién entrega el dinero</h3>
+      <p class="section-hint">
+        Preferible catálogo de
+        <a routerLink="/app/caja/terceros">Terceros</a>
+        o empleado RRHH para completar correo, teléfono y dirección en el recibo.
+      </p>
+
+      <div class="seg-control" role="tablist" aria-label="Tipo de pagador">
+        <button
+          type="button"
+          class="seg-btn"
+          [class.active]="tipoPagador() === 'tercero'"
+          (click)="setTipoPagador('tercero')"
+        >
+          Tercero
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          [class.active]="tipoPagador() === 'empleado'"
+          (click)="setTipoPagador('empleado')"
+        >
+          Empleado
+        </button>
+        <button
+          type="button"
+          class="seg-btn"
+          [class.active]="tipoPagador() === 'libre'"
+          (click)="setTipoPagador('libre')"
+        >
+          Texto libre
+        </button>
       </div>
-    </div>
 
-    <div class="row" *ngIf="idTipoIngreso() && tipoPagador() === 'tercero'">
-      <div class="col-12">
-        <argo-catalogo-enum-buscar
-          label="Tercero *"
-          placeholder="Seleccione o escriba tercero…"
-          [textoInicial]="terceroTexto()"
-          [modoCombo]="true"
-          [remoto]="false"
-          [minLength]="1"
-          [opcionesLocales]="opcionesTercero()"
-          (seleccionado)="onTerceroPick($event)"
-          (limpiado)="onTerceroLimpiar()"
-        />
-        <p class="hint" *ngIf="!terceros().length">
-          No hay terceros. <a routerLink="/app/caja/terceros">Crear tercero</a>
-        </p>
+      <div class="row" *ngIf="tipoPagador() === 'empleado'">
+        <div class="col-12" [class.field-invalid]="invalido('empleado')">
+          <argo-catalogo-enum-buscar
+            label="Empleado *"
+            placeholder="Seleccione o escriba empleado…"
+            [textoInicial]="empleadoTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesEmpleado()"
+            (seleccionado)="onEmpleadoPick($event)"
+            (limpiado)="onEmpleadoLimpiar()"
+          />
+          <p class="field-error" *ngIf="msgCampo('empleado') as m">{{ m }}</p>
+        </div>
       </div>
-    </div>
 
-    <div class="row" *ngIf="idTipoIngreso() && tipoPagador() === 'libre'">
-      <label class="col-4" *ngIf="esContrato()">
-        Persona
-        <select [ngModel]="tipoPersona()" (ngModelChange)="tipoPersona.set($event)" name="tipoPersona">
-          <option value="">—</option>
-          <option value="natural">Natural</option>
-          <option value="juridica">Jurídica</option>
-        </select>
-      </label>
-      <label [class.col-4]="esContrato()" [class.col-6]="!esContrato()">
-        Documento / NIT {{ esContrato() ? '*' : '' }}
-        <input type="text" [ngModel]="documentoTercero()" (ngModelChange)="documentoTercero.set($event)"
-          name="docTercero" placeholder="CC, NIT, CE…" />
-      </label>
-      <label [class.col-4]="esContrato()" [class.col-6]="!esContrato()">
-        Recibido de (nombre) *
-        <input type="text" [ngModel]="recibidoDe()" (ngModelChange)="recibidoDe.set($event)" name="recibidoDe"
-          placeholder="Nombre del contratante o aportante" />
-      </label>
-    </div>
-
-    <div class="row contact-preview" *ngIf="contactoVisible()">
-      <label class="col-4">
-        Correo
-        <input type="text" [ngModel]="correoPagador()" name="correoPrev" readonly class="readonly" />
-      </label>
-      <label class="col-4">
-        Teléfono
-        <input type="text" [ngModel]="telefonoPagador()" name="telPrev" readonly class="readonly" />
-      </label>
-      <label class="col-4">
-        Dirección
-        <input type="text" [ngModel]="direccionPagador()" name="dirPrev" readonly class="readonly" />
-      </label>
-    </div>
-
-    <h3 class="sec">3. Valor y pago</h3>
-    <div class="row">
-      <label class="col-4">
-        Valor *
-        <input type="number" min="1" [ngModel]="valor()" (ngModelChange)="valor.set(+$event || 0)" name="valor" />
-      </label>
-      <label class="col-4">
-        Forma de pago *
-        <select [ngModel]="idTipoPago()" (ngModelChange)="onTipoPagoChange($event)" name="tipoPago">
-          <option value="">—</option>
-          <option *ngFor="let t of tiposPago()" [value]="tipoPagoValor(t)">{{ tipoPagoLabel(t) }}</option>
-        </select>
-      </label>
-      <label class="col-4" *ngIf="requiereCuentaEmpresa()">
-        Cuenta empresa *
-        <select [ngModel]="idCuentaBancaria()" (ngModelChange)="idCuentaBancaria.set($event)" name="cuenta">
-          <option value="">—</option>
-          <option *ngFor="let c of cuentasBancarias()" [value]="cuentaValor(c)">{{ labelCuenta(c) }}</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="row" *ngIf="requiereCuentaEmpresa()">
-      <label class="col-6">
-        Ref. comprobante / transferencia *
-        <input type="text" [ngModel]="numComprobante()" (ngModelChange)="numComprobante.set($event)" name="ref" />
-      </label>
-    </div>
-
-    <div class="row" *ngIf="requiereCuentaEmpresa()">
-      <div class="col-12">
-        <argo-pago-soporte-field
-          [obligatorio]="true"
-          [previewUrl]="previewSoporte()"
-          [nombreArchivo]="archivoSoporte()?.name ?? null"
-          (seleccionado)="onSoporteArchivo($event)"
-          (quitado)="quitarSoporte()"
-        />
+      <div class="row" *ngIf="tipoPagador() === 'tercero'">
+        <div class="col-12" [class.field-invalid]="invalido('tercero')">
+          <argo-catalogo-enum-buscar
+            label="Tercero *"
+            placeholder="Seleccione o escriba tercero…"
+            [textoInicial]="terceroTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesTercero()"
+            (seleccionado)="onTerceroPick($event)"
+            (limpiado)="onTerceroLimpiar()"
+          />
+          <p class="field-error" *ngIf="msgCampo('tercero') as m">{{ m }}</p>
+          <p class="hint" *ngIf="!terceros().length">
+            No hay terceros. <a routerLink="/app/caja/terceros">Crear tercero</a>
+          </p>
+        </div>
       </div>
-    </div>
 
-    <div class="row" *ngIf="!requiereCuentaEmpresa()">
-      <label class="col-12">
-        Observaciones
-        <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" name="obs" />
-      </label>
-    </div>
+      <div class="row" *ngIf="tipoPagador() === 'libre'">
+        <div class="col-4" *ngIf="esContrato()" [class.field-invalid]="invalido('tipoPersona')">
+          <argo-catalogo-enum-buscar
+            label="Persona *"
+            placeholder="Natural o jurídica…"
+            [textoInicial]="tipoPersonaTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesTipoPersona()"
+            (seleccionado)="onTipoPersonaPick($event)"
+            (limpiado)="onTipoPersonaLimpiar()"
+          />
+          <p class="field-error" *ngIf="msgCampo('tipoPersona') as m">{{ m }}</p>
+        </div>
+        <div
+          [class.col-4]="esContrato()"
+          [class.col-6]="!esContrato()"
+          [class.field-invalid]="invalido('documento')"
+        >
+          <label>Documento / NIT <span class="req" *ngIf="esContrato()">*</span></label>
+          <input
+            type="text"
+            [ngModel]="documentoTercero()"
+            (ngModelChange)="documentoTercero.set($event)"
+            name="docTercero"
+            placeholder="CC, NIT, CE…"
+          />
+          <p class="field-error" *ngIf="msgCampo('documento') as m">{{ m }}</p>
+        </div>
+        <div
+          [class.col-4]="esContrato()"
+          [class.col-6]="!esContrato()"
+          [class.field-invalid]="invalido('recibidoDe')"
+        >
+          <label>Recibido de (nombre) <span class="req">*</span></label>
+          <input
+            type="text"
+            [ngModel]="recibidoDe()"
+            (ngModelChange)="recibidoDe.set($event)"
+            name="recibidoDe"
+            placeholder="Nombre del contratante o aportante"
+          />
+          <p class="field-error" *ngIf="msgCampo('recibidoDe') as m">{{ m }}</p>
+        </div>
+      </div>
 
-    <div class="actions">
+      <div class="contact-cards" *ngIf="contactoVisible()">
+        <article class="contact-card" *ngIf="correoPagador()">
+          <span>Correo</span>
+          <strong>{{ correoPagador() }}</strong>
+        </article>
+        <article class="contact-card" *ngIf="telefonoPagador()">
+          <span>Teléfono</span>
+          <strong>{{ telefonoPagador() }}</strong>
+        </article>
+        <article class="contact-card" *ngIf="direccionPagador()">
+          <span>Dirección</span>
+          <strong>{{ direccionPagador() }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <!-- 3. Valor y pago -->
+    <section class="form-section">
+      <h3>Valor y forma de pago</h3>
+      <p class="section-hint">Indique el monto y cómo le pagaron. Si no es efectivo, adjunte el soporte.</p>
+
+      <div class="row">
+        <div class="col-4" [class.field-invalid]="invalido('valor')">
+          <label>Valor <span class="req">*</span></label>
+          <input
+            type="number"
+            min="1"
+            class="valor-input"
+            [ngModel]="valor()"
+            (ngModelChange)="valor.set(+$event || 0)"
+            name="valor"
+            placeholder="0"
+          />
+          <p class="field-error" *ngIf="msgCampo('valor') as m">{{ m }}</p>
+        </div>
+        <div class="col-4" [class.field-invalid]="invalido('tipoPago')">
+          <argo-catalogo-enum-buscar
+            label="Forma de pago *"
+            placeholder="Seleccione o escriba…"
+            [textoInicial]="tipoPagoTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesTipoPago()"
+            (seleccionado)="onTipoPagoPick($event)"
+            (limpiado)="onTipoPagoLimpiar()"
+          />
+          <p class="field-error" *ngIf="msgCampo('tipoPago') as m">{{ m }}</p>
+        </div>
+        <div class="col-4" *ngIf="requiereCuentaEmpresa()" [class.field-invalid]="invalido('cuenta')">
+          <argo-catalogo-enum-buscar
+            label="Cuenta empresa *"
+            placeholder="Seleccione cuenta…"
+            [textoInicial]="cuentaTexto()"
+            [modoCombo]="true"
+            [remoto]="false"
+            [minLength]="1"
+            [opcionesLocales]="opcionesCuenta()"
+            (seleccionado)="onCuentaPick($event)"
+            (limpiado)="onCuentaLimpiar()"
+          />
+          <p class="field-error" *ngIf="msgCampo('cuenta') as m">{{ m }}</p>
+        </div>
+      </div>
+
+      <div class="row" *ngIf="requiereCuentaEmpresa()">
+        <div class="col-6" [class.field-invalid]="invalido('comprobante')">
+          <label>Ref. comprobante / transferencia <span class="req">*</span></label>
+          <input
+            type="text"
+            [ngModel]="numComprobante()"
+            (ngModelChange)="numComprobante.set($event)"
+            name="ref"
+            placeholder="Número de consignación o voucher"
+          />
+          <p class="field-error" *ngIf="msgCampo('comprobante') as m">{{ m }}</p>
+        </div>
+        <div class="col-6">
+          <label>Observaciones</label>
+          <input
+            type="text"
+            [ngModel]="observaciones()"
+            (ngModelChange)="observaciones.set($event)"
+            name="obs"
+            placeholder="Opcional"
+          />
+        </div>
+      </div>
+
+      <div class="row" *ngIf="requiereCuentaEmpresa()" [class.field-invalid]="invalido('soporte')">
+        <div class="col-12">
+          <argo-pago-soporte-field
+            [obligatorio]="true"
+            [previewUrl]="previewSoporte()"
+            [nombreArchivo]="archivoSoporte()?.name ?? null"
+            (seleccionado)="onSoporteArchivo($event)"
+            (quitado)="quitarSoporte()"
+          />
+          <p class="field-error" *ngIf="msgCampo('soporte') as m">{{ m }}</p>
+        </div>
+      </div>
+
+      <div class="row" *ngIf="!requiereCuentaEmpresa()">
+        <div class="col-12">
+          <label>Observaciones</label>
+          <input
+            type="text"
+            [ngModel]="observaciones()"
+            (ngModelChange)="observaciones.set($event)"
+            name="obs2"
+            placeholder="Opcional"
+          />
+        </div>
+      </div>
+    </section>
+
+    <div class="ing-actions">
       <button type="button" class="ghost" (click)="cancelar()">Cancelar</button>
-      <button type="submit" class="primary" [disabled]="saving() || !puedeGuardar()">
+      <button type="submit" class="primary" [disabled]="saving()">
         {{ saving() ? 'Guardando…' : 'Registrar ingreso' }}
       </button>
-      <p class="hint err" *ngIf="mensajePagoIntangible() as aviso">{{ aviso }}</p>
     </div>
   </form>
 </section>

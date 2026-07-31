@@ -419,42 +419,42 @@ export const routes: Routes = [
       {
         path: 'caja/ingresos-todos',
         canActivate: [permisoGuard],
-        data: { permiso: 'caja.admin' },
+        data: { permiso: ['caja.admin', 'contabilidad'] },
         loadComponent: () =>
           import('./features/caja/caja-ingresos-todos.component').then((m) => m.CajaIngresosTodosComponent),
       },
       {
         path: 'caja/egresos-todos',
         canActivate: [permisoGuard],
-        data: { permiso: 'caja.admin' },
+        data: { permiso: ['caja.admin', 'contabilidad'] },
         loadComponent: () =>
           import('./features/caja/caja-egresos-todos.component').then((m) => m.CajaEgresosTodosComponent),
       },
       {
         path: 'caja/descuadres',
         canActivate: [permisoGuard],
-        data: { permiso: 'caja.admin' },
+        data: { permiso: ['caja.admin', 'contabilidad'] },
         loadComponent: () =>
           import('./features/caja/caja-descuadres-admin.component').then((m) => m.CajaDescuadresAdminComponent),
       },
       {
         path: 'cierres',
         canActivate: [permisoGuard],
-        data: { permiso: 'caja.admin' },
+        data: { permiso: ['caja.admin', 'contabilidad'] },
         loadComponent: () =>
           import('./features/caja/caja-cierres-admin.component').then((m) => m.CajaCierresAdminComponent),
       },
       {
         path: 'cierres/:idSesion',
         canActivate: [permisoGuard],
-        data: { permiso: 'caja.admin' },
+        data: { permiso: ['caja.admin', 'contabilidad'] },
         loadComponent: () =>
           import('./features/caja/caja-cierre-detalle.component').then((m) => m.CajaCierreDetalleComponent),
       },
       {
         path: 'cierre-general',
         canActivate: [permisoGuard],
-        data: { permiso: 'caja.admin' },
+        data: { permiso: ['caja.admin', 'contabilidad'] },
         loadComponent: () =>
           import('./features/caja/caja-cierre-general.component').then((m) => m.CajaCierreGeneralComponent),
       },
@@ -470,7 +470,7 @@ export const routes: Routes = [
           {
             path: 'cierres/:idSesion',
             canActivate: [permisoGuard],
-            data: { permiso: 'caja.admin' },
+            data: { permiso: ['caja.admin', 'contabilidad'] },
             loadComponent: () =>
               import('./features/caja/caja-cierre-detalle.component').then((m) => m.CajaCierreDetalleComponent),
           },
@@ -511,6 +511,7 @@ export const routes: Routes = [
       },
       { path: 'caja/cobros', redirectTo: 'cobros-pendientes', pathMatch: 'full' },
       { path: 'caja/empleados', redirectTo: 'rrhh/empleados', pathMatch: 'full' },
+      { path: 'caja/pagos-en-linea', redirectTo: 'contabilidad/pagos-en-linea', pathMatch: 'full' },
       {
         path: 'contabilidad',
         canActivate: [permisoGuard],
@@ -580,6 +581,15 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/caja/caja-descuadres-admin.component').then(
                 (m) => m.CajaDescuadresAdminComponent,
+              ),
+          },
+          {
+            path: 'pagos-en-linea',
+            canActivate: [permisoGuard],
+            data: { permiso: 'contabilidad', title: 'Pagos en línea' },
+            loadComponent: () =>
+              import('./features/caja/caja-pagos-en-linea.component').then(
+                (m) => m.CajaPagosEnLineaComponent,
               ),
           },
           {

@@ -92,7 +92,7 @@ export interface CajaDescuadre {
   efectivoContado: number;
   diferencia: number;
   montoDebe: number;
-  estado: 'pendiente' | 'resuelto' | 'en_nomina' | 'descontado_nomina';
+  estado: 'pendiente' | 'resuelto' | 'en_nomina' | 'descontado_nomina' | 'tolerado';
   autorizadoPor?: string;
   nombreAutoriza?: string;
   idNovedadNomina?: number;
@@ -131,7 +131,7 @@ export interface CajaSesion {
   saldoFinal?: number | null;
   efectivoContado?: number | null;
   diferencia?: number | null;
-  descuadreEstado?: 'pendiente' | 'resuelto' | 'en_nomina' | 'descontado_nomina' | null;
+  descuadreEstado?: 'pendiente' | 'resuelto' | 'en_nomina' | 'descontado_nomina' | 'tolerado' | null;
   descuadreMontoDebe?: number | null;
   descuadreDiferencia?: number | null;
   idDescuadre?: number | null;
@@ -145,6 +145,8 @@ export interface CajaActivaResponse {
   abierta: boolean;
   sesion: CajaSesion | null;
   resumenParcial?: ResumenCaja;
+  /** Días calendario desde fechaApertura (Colombia). 0 = abierta hoy. */
+  diasSinCerrar?: number;
 }
 
 export interface CajaAbiertaItem {
@@ -426,6 +428,9 @@ export interface CajaIngresoItem {
   numTransferencia?: string;
   cuentaRecibe?: string;
   cuadreDescuadre?: boolean;
+  urlSoporte?: string | null;
+  anulado?: boolean;
+  estado?: string | null;
 }
 
 export interface CajaEgresoItem {
@@ -440,4 +445,6 @@ export interface CajaEgresoItem {
   urlSoporte?: string | null;
   idSesion?: number;
   cuadreDescuadre?: boolean;
+  anulado?: boolean;
+  estado?: string | null;
 }

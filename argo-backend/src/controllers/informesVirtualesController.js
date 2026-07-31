@@ -16,8 +16,8 @@ exports.matriculasVirtuales = async (req, res, next) => {
 
 exports.ingresosEnLinea = async (req, res, next) => {
   try {
-    const { desde, hasta } = req.query || {};
-    res.json(await informeIngresosEnLinea({ desde, hasta }));
+    const { desde, hasta, q, numDoc, numRecibo, referencia } = req.query || {};
+    res.json(await informeIngresosEnLinea({ desde, hasta, q, numDoc, numRecibo, referencia }));
   } catch (e) {
     next(e);
   }
@@ -38,8 +38,8 @@ exports.exportarMatriculas = async (req, res, next) => {
 
 exports.exportarIngresos = async (req, res, next) => {
   try {
-    const { desde, hasta } = req.query || {};
-    const data = await informeIngresosEnLinea({ desde, hasta });
+    const { desde, hasta, q, numDoc, numRecibo, referencia } = req.query || {};
+    const data = await informeIngresosEnLinea({ desde, hasta, q, numDoc, numRecibo, referencia });
     const csv = filasIngresosCsv(data.filas);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="ingresos-en-linea.csv"');
