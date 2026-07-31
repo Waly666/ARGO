@@ -2915,29 +2915,6 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
     if (nd == null) return res.status(400).json({ message: 'numDoc inválido' });
     const alumno = await DatosAlumno.findOne(numDocQuery(nd)).lean();
     if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
-
-    const {
-      normalizarOrigenJornadaCap,
-      ORIGEN_JORNADA_LABELS,
-    } = require('../constants/origenJornadaCap');
-    const origenFiltro = normalizarOrigenJornadaCap(
-      req.body?.origenJornadaCap || req.body?.origenFiltro || req.body?.origen,
-    );
-    if (origenFiltro) {
-      const origenAlumno = normalizarOrigenJornadaCap(alumno.origenJornadaCap) || 'operativo';
-      if (origenAlumno !== origenFiltro) {
-        return res.status(400).json({
-          message:
-            `Este alumno es de «${ORIGEN_JORNADA_LABELS[origenAlumno] || origenAlumno}». ` +
-            `El filtro activo es «${ORIGEN_JORNADA_LABELS[origenFiltro] || origenFiltro}». ` +
-            'Cambie el origen seleccionado o use un alumno de ese origen.',
-          codigo: 'origen_no_coincide',
-          origenAlumno,
-          origenFiltro,
-        });
-      }
-    }
-
     const userLogin = auditoriaUsuario(req);
     await asegurarTipoAlumnoJornada(nd);
     const idProgramaVal = String(prog.idPrograma ?? prog._id);

@@ -1148,18 +1148,12 @@ export class JornadaCapService {
     return this.http.get<AlumnoListItem[]>(`${this.base}/alumnos`, { params });
   }
 
-  matricularAlumno(dto: {
-    numDoc: number | string;
-    idPrograma: string;
-    idClase?: string;
-    origenJornadaCap?: string;
-  }) {
+  matricularAlumno(dto: { numDoc: number | string; idPrograma: string; idClase?: string }) {
     const numDoc = parseNumDocForApi(dto.numDoc);
     return this.http.post(`${this.base}/matricular`, {
       numDoc: numDoc ?? dto.numDoc,
       idPrograma: dto.idPrograma,
       ...(dto.idClase ? { idClase: dto.idClase } : {}),
-      ...(dto.origenJornadaCap ? { origenJornadaCap: dto.origenJornadaCap } : {}),
     });
   }
 

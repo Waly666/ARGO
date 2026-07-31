@@ -277,8 +277,6 @@ export interface AlumnoDoc {
   nombres?: string;
   apellidos?: string;
   nombreCompleto?: string;
-  /** colegio | estamento | empresa | operativo */
-  origenJornadaCap?: string | null;
 }
 
 export interface MetaJornadaResp {
