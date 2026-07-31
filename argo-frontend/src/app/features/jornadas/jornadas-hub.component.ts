@@ -4770,7 +4770,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
             idPrograma,
             idClase,
             origenJornadaCap:
-              String((a as { origenJornadaCap?: string }).origenJornadaCap || '').trim() || undefined,
+              String((a as { origenJornadaCap?: string }).origenJornadaCap || '').trim() ||
+              this.origenFiltroAlumno(),
           })
           .pipe(
           map((r: any) => {
