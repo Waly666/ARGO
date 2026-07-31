@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -26,6 +27,7 @@ import type { JornadaAlumnoQrData } from '../utils/jornadaAlumnoQr';
 import { alertarMetaAlumnosJornada } from '../utils/metaAlumnosAlert';
 import {
   actualizarClase,
+  alumnosClaseAnterior,
   buscarAlumnoDoc,
   estadoOperacionJornadas,
   finalizarClase,
@@ -37,10 +39,18 @@ import {
   obtenerClase,
   programasJornadaCap,
   progresoCertificacion,
+  quitarInscripcionClase,
   subirFotoEvidencia,
 } from '../api/jornadasApi';
+import {
+  labelOrigenJornada,
+  mensajeOrigenNoCoincide,
+  origenAlumnoEfectivo,
+} from '../utils/origenJornada';
 import type {
+  AlumnoClaseAnterior,
   AsistenciaClase,
+  ClaseAnteriorResumen,
   ClaseJornada,
   InscritoClase,
   MetaJornadaResp,
@@ -60,8 +70,10 @@ import {
 import { themeColors } from '../theme/colors';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { useAuth } from '../context/AuthContext';
-import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
+import { puedeGestionarJornadas, puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
+import { VOICE_PHRASES, type VoiceCommandDef } from '../voice/commands';
+import { useVoiceScreen } from '../voice/VoiceContext';
 
 type Route = RouteProp<RootStackParamList, 'ClaseDetalle'>;
 
@@ -96,6 +108,11 @@ export default function ClaseDetalleScreen() {
   const puedeRegistrar = puedeRegistrarAlumnosJornada(
     state.status === 'signedIn' ? state.user?.permisos : undefined,
   );
+  const puedeGestionar = puedeGestionarJornadas(
+    state.status === 'signedIn' ? state.user?.permisos : undefined,
+    state.status === 'signedIn' ? state.user?.rol : undefined,
+    state.status === 'signedIn' ? state.user?.rolNombre : undefined,
+  );
 
   const [clase, setClase] = useState<ClaseJornada | null>(null);
   const [programas, setProgramas] = useState<ProgramaJornada[]>([]);
@@ -119,7 +136,15 @@ export default function ClaseDetalleScreen() {
   const [horaFinInp, setHoraFinInp] = useState('');
   /** Filtro de origen al operar (no al crear la clase). */
   const [origenFiltro, setOrigenFiltro] = useState<string>('operativo');
+  const [origenPreviewMismatch, setOrigenPreviewMismatch] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [modalClaseAnterior, setModalClaseAnterior] = useState(false);
+  const [cargandoAnterior, setCargandoAnterior] = useState(false);
+  const [claseAnteriorInfo, setClaseAnteriorInfo] = useState<ClaseAnteriorResumen | null>(null);
+  const [alumnosAnterior, setAlumnosAnterior] = useState<AlumnoClaseAnterior[]>([]);
+  const [selAnterior, setSelAnterior] = useState<Set<number>>(new Set());
+  const [matriculandoAnterior, setMatriculandoAnterior] = useState(false);
 
   useEffect(() => {
     const nd = String(prefillNumDoc || '').replace(/\D/g, '');
@@ -146,13 +171,14 @@ export default function ClaseDetalleScreen() {
     const o = cl.origenesAlumnos || { operativo: true };
     const activos = ORIGEN_OPTS.filter((x) => !!o[x.key]).map((x) => x.key);
     const listaActivos = (activos.length ? activos : ['operativo']) as string[];
-    setOrigenFiltro((prev) =>
-      listaActivos.includes(prev)
-        ? prev
-        : listaActivos.includes('operativo')
-          ? 'operativo'
-          : String(listaActivos[0] || 'operativo'),
-    );
+    const origenClase = String(cl.origenOperacion || '').trim().toLowerCase();
+    setOrigenFiltro((prev) => {
+      if (origenClase && listaActivos.includes(origenClase)) return origenClase;
+      if (listaActivos.includes(prev)) return prev;
+      return listaActivos.includes('operativo')
+        ? 'operativo'
+        : String(listaActivos[0] || 'operativo');
+    });
   }, []);
 
   const cargar = useCallback(async () => {
@@ -227,6 +253,7 @@ export default function ClaseDetalleScreen() {
     if (nd.length < 5) {
       setProgreso(null);
       setNombrePreview('');
+      setOrigenPreviewMismatch(null);
       return;
     }
     setProgresoLoading(true);
@@ -236,13 +263,25 @@ export default function ClaseDetalleScreen() {
         .catch(() => setProgreso(null))
         .finally(() => setProgresoLoading(false));
       void buscarAlumnoDoc(nd)
-        .then((a) => setNombrePreview(nombreAlumno(a)))
-        .catch(() => setNombrePreview(''));
+        .then((a) => {
+          setNombrePreview(nombreAlumno(a));
+          const origenAlu = origenAlumnoEfectivo(a.origenJornadaCap);
+          const filtro = origenAlumnoEfectivo(origenFiltro);
+          if (origenAlu !== filtro) {
+            setOrigenPreviewMismatch(mensajeOrigenNoCoincide(origenAlu, filtro));
+          } else {
+            setOrigenPreviewMismatch(null);
+          }
+        })
+        .catch(() => {
+          setNombrePreview('');
+          setOrigenPreviewMismatch(null);
+        });
     }, 400);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [numDoc, idContrato]);
+  }, [numDoc, idContrato, origenFiltro]);
 
   /**
    * Persiste el programa en la clase (BD). Matricular/asistencia exigen que la clase
@@ -474,7 +513,7 @@ export default function ClaseDetalleScreen() {
   /** Matricular + inscribir. La asistencia se fuerza al finalizar la clase. */
   async function onRegistrarAlumno(opts?: { numDoc?: string; nombre?: string }) {
     const nd = (opts?.numDoc ?? numDoc).trim().replace(/\D/g, '') || (opts?.numDoc ?? numDoc).trim();
-    const nombreHint = (opts?.nombre || nombrePreview || nd).trim();
+    let nombreHint = (opts?.nombre || nombrePreview || nd).trim();
     if (!nd) {
       Alert.alert('Documento', 'Escriba el documento o escanee el QR de la etiqueta.');
       return;
@@ -493,6 +532,26 @@ export default function ClaseDetalleScreen() {
     if (!idContrato) {
       Alert.alert('Contrato', 'No se identificó el contrato de la jornada.');
       return;
+    }
+
+    const filtro = origenAlumnoEfectivo(origenFiltro);
+    try {
+      const alu = await buscarAlumnoDoc(nd);
+      const n = nombreAlumno(alu);
+      if (n) nombreHint = n;
+      const origenAlu = origenAlumnoEfectivo(alu.origenJornadaCap);
+      if (origenAlu !== filtro) {
+        Alert.alert('Origen distinto', mensajeOrigenNoCoincide(origenAlu, filtro));
+        return;
+      }
+    } catch (e) {
+      const err = e as Error & { status?: number };
+      if (err.status === 404 || /alumno no encontrado/i.test(err.message || '')) {
+        // Dejar que el flujo de abajo ofrezca crear alumno con el origen del filtro.
+      } else {
+        Alert.alert('Error', err.message || 'No se pudo consultar el alumno');
+        return;
+      }
     }
 
     const yaEnClase = inscritos.find(
@@ -524,7 +583,7 @@ export default function ClaseDetalleScreen() {
       }
 
       const idProg = await persistirProgramaEnClase(progSel, { silencioso: true });
-      const r = (await matricularAlumno(nd, idProg, claseId)) as {
+      const r = (await matricularAlumno(nd, idProg, claseId, filtro)) as {
         inscripcionDuplicada?: boolean;
         metaJornada?: MetaJornadaResp | null;
       };
@@ -539,6 +598,7 @@ export default function ClaseDetalleScreen() {
       setNumDoc('');
       setProgreso(null);
       setNombrePreview('');
+      setOrigenPreviewMismatch(null);
       await cargar();
       const okMsg =
         `${nombre} quedó inscrito en la clase.` +
@@ -568,9 +628,22 @@ export default function ClaseDetalleScreen() {
           numSesCert?: number;
           faltan?: number;
           nombreAlumno?: string;
+          origenAlumno?: string;
+          origenFiltro?: string;
           certificado?: { codigoCert?: string };
         };
       };
+      if (err.status === 400 && err.body?.codigo === 'origen_no_coincide') {
+        Alert.alert(
+          'Origen distinto',
+          err.body.message ||
+            mensajeOrigenNoCoincide(
+              String(err.body.origenAlumno || ''),
+              String(err.body.origenFiltro || filtro),
+            ),
+        );
+        return;
+      }
       if (err.status === 409 && err.body?.codigo === 'ya_certificado_contrato') {
         const cod = err.body.certificado?.codigoCert;
         Alert.alert(
@@ -639,6 +712,249 @@ export default function ClaseDetalleScreen() {
     if (data.nombre) setNombrePreview(data.nombre);
     void onRegistrarAlumno({ numDoc: data.numDoc, nombre: data.nombre });
   }
+
+  const filtroOrigenActivo = origenAlumnoEfectivo(origenFiltro);
+
+  const alumnosAnteriorDisponibles = useMemo(() => {
+    const ya = new Set(inscritos.map((i) => Number(i.numDoc)));
+    return alumnosAnterior.filter((a) => {
+      if (ya.has(Number(a.numDoc))) return false;
+      if (a.puedeMatricular === false) return false;
+      if (a.yaInscritoEnEstaClase) return false;
+      // Solo los del mismo origen que opera esta clase (evita equivocaciones entre carpas).
+      return origenAlumnoEfectivo(a.origenJornadaCap) === filtroOrigenActivo;
+    });
+  }, [alumnosAnterior, inscritos, filtroOrigenActivo]);
+
+  const alumnosAnteriorOmitidos = useMemo(() => {
+    const ya = new Set(inscritos.map((i) => Number(i.numDoc)));
+    return alumnosAnterior.filter((a) => {
+      if (ya.has(Number(a.numDoc)) || a.yaInscritoEnEstaClase) return false;
+      if (a.puedeMatricular === false) return true;
+      return origenAlumnoEfectivo(a.origenJornadaCap) !== filtroOrigenActivo;
+    });
+  }, [alumnosAnterior, inscritos, filtroOrigenActivo]);
+
+  async function abrirModalClaseAnterior() {
+    if (finalizada) {
+      Alert.alert('Clase finalizada', 'No se pueden agregar alumnos a una clase ya finalizada.');
+      return;
+    }
+    if (!progSel.trim() && !String(clase?.idPrograma || '').trim()) {
+      Alert.alert('Programa', 'Elija y guarde el programa de la clase antes de copiar alumnos.');
+      return;
+    }
+    setModalClaseAnterior(true);
+    setCargandoAnterior(true);
+    setClaseAnteriorInfo(null);
+    setAlumnosAnterior([]);
+    setSelAnterior(new Set());
+    try {
+      const r = await alumnosClaseAnterior(claseId);
+      setClaseAnteriorInfo(r.clase);
+      setAlumnosAnterior(r.alumnos || []);
+      const ya = new Set(inscritos.map((i) => Number(i.numDoc)));
+      const pre = new Set<number>();
+      for (const a of r.alumnos || []) {
+        if (ya.has(Number(a.numDoc)) || a.yaInscritoEnEstaClase) continue;
+        if (a.puedeMatricular === false) continue;
+        if (origenAlumnoEfectivo(a.origenJornadaCap) !== origenAlumnoEfectivo(origenFiltro)) {
+          continue;
+        }
+        pre.add(Number(a.numDoc));
+      }
+      setSelAnterior(pre);
+    } catch (e) {
+      Alert.alert(
+        'Clase anterior',
+        e instanceof Error ? e.message : 'No se pudo cargar la clase anterior.',
+      );
+      setModalClaseAnterior(false);
+    } finally {
+      setCargandoAnterior(false);
+    }
+  }
+
+  function toggleSelAnterior(numDoc: number) {
+    setSelAnterior((prev) => {
+      const next = new Set(prev);
+      if (next.has(numDoc)) next.delete(numDoc);
+      else next.add(numDoc);
+      return next;
+    });
+  }
+
+  function seleccionarTodosAnterior() {
+    setSelAnterior(new Set(alumnosAnteriorDisponibles.map((a) => Number(a.numDoc))));
+  }
+
+  function limpiarSelAnterior() {
+    setSelAnterior(new Set());
+  }
+
+  function confirmarMatricularAnterior() {
+    const seleccion = alumnosAnteriorDisponibles.filter((a) => selAnterior.has(Number(a.numDoc)));
+    if (!seleccion.length) {
+      Alert.alert('Selección', 'Marque al menos un alumno para inscribir.');
+      return;
+    }
+    const fuente = claseAnteriorInfo
+      ? [
+          claseAnteriorInfo.carpaNombre,
+          claseAnteriorInfo.programaNombre,
+          claseAnteriorInfo.indiceClaseEnJornada != null
+            ? `clase #${claseAnteriorInfo.indiceClaseEnJornada}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : 'clase anterior';
+    Alert.alert(
+      'Inscribir desde clase anterior',
+      `¿Inscribir ${seleccion.length} alumno(s) de «${fuente}» en ESTA clase?\n\nOrigen activo: ${labelOrigenJornada(origenFiltro)}.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sí, inscribir',
+          onPress: () => void matricularSeleccionAnterior(seleccion),
+        },
+      ],
+    );
+  }
+
+  async function matricularSeleccionAnterior(seleccion: AlumnoClaseAnterior[]) {
+    setMatriculandoAnterior(true);
+    setBusy(true);
+    let ok = 0;
+    const errores: string[] = [];
+    try {
+      const idProg = await persistirProgramaEnClase(progSel || String(clase?.idPrograma || ''), {
+        silencioso: true,
+      });
+      for (const a of seleccion) {
+        try {
+          const origenAlu = origenAlumnoEfectivo(a.origenJornadaCap);
+          await matricularAlumno(String(a.numDoc), idProg, claseId, origenAlu);
+          ok += 1;
+        } catch (e) {
+          const msg =
+            (e as Error & { body?: { message?: string } })?.body?.message ||
+            (e instanceof Error ? e.message : 'Error');
+          errores.push(`${a.nombreCompleto || a.numDoc}: ${msg}`);
+        }
+      }
+      await cargar();
+      setModalClaseAnterior(false);
+      const base = `Inscritos ${ok} de ${seleccion.length} desde la clase anterior.`;
+      if (errores.length) {
+        Alert.alert('Resultado parcial', `${base}\n\n${errores.slice(0, 5).join('\n')}`);
+      } else {
+        Alert.alert('Listo', base);
+      }
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo completar la inscripción.');
+    } finally {
+      setMatriculandoAnterior(false);
+      setBusy(false);
+    }
+  }
+
+  function onQuitarInscrito(ins: InscritoClase) {
+    if (finalizada && !puedeGestionar) {
+      Alert.alert(
+        'Clase finalizada',
+        'Solo un administrador puede quitar alumnos de una clase ya finalizada.',
+      );
+      return;
+    }
+    const nombre = ins.nombreCompleto || `doc. ${ins.numDoc}`;
+    const extraAsist = ins.tieneAsistencia
+      ? ' También se eliminará su asistencia en esta clase.'
+      : '';
+    Alert.alert(
+      'Quitar de la clase',
+      `¿Quitar a ${nombre} de esta clase?\n\nLa matrícula al programa se conserva.${extraAsist}`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sí, quitar',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setBusy(true);
+              try {
+                await quitarInscripcionClase(claseId, ins.numDoc);
+                await cargar();
+                Alert.alert('Listo', `${nombre} fue retirado de la clase.`);
+              } catch (e) {
+                Alert.alert(
+                  'Error',
+                  e instanceof Error ? e.message : 'No se pudo quitar al alumno.',
+                );
+              } finally {
+                setBusy(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  }
+
+  const claseVoiceCommands = useMemo<VoiceCommandDef[]>(
+    () => [
+      { id: 'siguiente', phrases: VOICE_PHRASES.siguiente },
+      { id: 'anterior', phrases: VOICE_PHRASES.anterior },
+      { id: 'limpiar', phrases: VOICE_PHRASES.limpiar },
+      {
+        id: 'iniciar',
+        phrases: VOICE_PHRASES.iniciar,
+        requireConfirm: true,
+        confirmTitle: 'Iniciar clase',
+        confirmMessage: '¿Confirma iniciar el cronómetro / la clase por comando de voz?',
+      },
+      {
+        id: 'finalizar',
+        phrases: VOICE_PHRASES.finalizar,
+        requireConfirm: true,
+        confirmTitle: 'Finalizar clase',
+        confirmMessage:
+          '¿Confirma finalizar la clase? Se registrarán asistencias y se emitirán certificados según el contrato.',
+      },
+      { id: 'inscribir', phrases: VOICE_PHRASES.inscribir },
+    ],
+    [],
+  );
+
+  const claseFieldOrder = useMemo(() => {
+    const fields = ['numDoc'];
+    if (modoManualActivo) {
+      fields.unshift('horaInicio', 'horaFin');
+    }
+    return fields;
+  }, [modoManualActivo]);
+
+  useVoiceScreen({
+    screenId: 'ClaseDetalle',
+    fieldOrder: claseFieldOrder,
+    commands: claseVoiceCommands,
+    runCommand: async (commandId) => {
+      if (commandId === 'iniciar') {
+        if (busy || finalizada || enCurso) return;
+        await onIniciar();
+        return;
+      }
+      if (commandId === 'finalizar') {
+        if (busy || finalizada) return;
+        await onFinalizar();
+        return;
+      }
+      if (commandId === 'inscribir') {
+        if (busy || finalizada || origenPreviewMismatch) return;
+        await onRegistrarAlumno();
+      }
+    },
+  });
 
   const fotoUrl =
     clase?.urlforo && !clase.urlforo.startsWith('http')
@@ -827,6 +1143,7 @@ export default function ClaseDetalleScreen() {
             <IconInput
               label="Hora inicio (HH:mm)"
               icon="time-outline"
+              voiceFieldId="horaInicio"
               value={horaInicioInp}
               onChangeText={setHoraInicioInp}
               keyboardType="numbers-and-punctuation"
@@ -836,6 +1153,7 @@ export default function ClaseDetalleScreen() {
             <IconInput
               label="Hora fin (HH:mm)"
               icon="time-outline"
+              voiceFieldId="horaFin"
               value={horaFinInp}
               onChangeText={setHoraFinInp}
               keyboardType="numbers-and-punctuation"
@@ -980,7 +1298,7 @@ export default function ClaseDetalleScreen() {
         {origenesActivos.length > 1 ? (
           <>
             <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 8 }}>
-              Filtrar / registrar por origen
+              Solo se inscriben alumnos del origen seleccionado
             </ScaledText>
             <View style={styles.chipsRow}>
               {origenesActivos.map((o) => {
@@ -988,7 +1306,10 @@ export default function ClaseDetalleScreen() {
                 return (
                   <Pressable
                     key={o.key}
-                    onPress={() => setOrigenFiltro(o.key)}
+                    onPress={() => {
+                      setOrigenFiltro(o.key);
+                      setOrigenPreviewMismatch(null);
+                    }}
                     style={[
                       styles.origenChip,
                       {
@@ -1011,7 +1332,8 @@ export default function ClaseDetalleScreen() {
           </>
         ) : origenesActivos.length === 1 ? (
           <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
-            Origen del contrato: {origenesActivos[0].label}
+            Origen del contrato: {origenesActivos[0].label} (solo se inscriben alumnos de este
+            origen)
           </ScaledText>
         ) : null}
         <PrimaryButton
@@ -1026,6 +1348,18 @@ export default function ClaseDetalleScreen() {
         <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10 }}>
           Puede inscribir alumnos antes de iniciar o durante la clase. Al finalizar se registra la
           asistencia de todos los inscritos y se emiten certificados según el contrato.
+        </ScaledText>
+        <PrimaryButton
+          label="Desde clase anterior"
+          icon="people-circle-outline"
+          variant="ghost"
+          onPress={() => void abrirModalClaseAnterior()}
+          disabled={busy || finalizada}
+          fullWidth
+        />
+        <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 6, marginBottom: 10 }}>
+          Copia alumnos de la carpa/clase previa de esta jornada (todos o seleccionados), del origen
+          activo.
         </ScaledText>
         <PrimaryButton
           label="Escanear QR del alumno"
@@ -1063,6 +1397,7 @@ export default function ClaseDetalleScreen() {
         <IconInput
           label="Documento del alumno"
           icon="card-outline"
+          voiceFieldId="numDoc"
           value={numDoc}
           onChangeText={setNumDoc}
           keyboardType="number-pad"
@@ -1071,6 +1406,15 @@ export default function ClaseDetalleScreen() {
         {nombrePreview ? (
           <ScaledText baseSize={14} style={{ color: c.text, marginBottom: 6 }}>
             {nombrePreview}
+          </ScaledText>
+        ) : null}
+        {origenPreviewMismatch ? (
+          <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 10, lineHeight: 18 }}>
+            {origenPreviewMismatch}
+          </ScaledText>
+        ) : numDoc.trim().length >= 5 && nombrePreview ? (
+          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+            Origen OK · {labelOrigenJornada(origenFiltro)}
           </ScaledText>
         ) : null}
         {progresoLoading ? <ActivityIndicator color={c.primary} style={{ marginBottom: 8 }} /> : null}
@@ -1091,7 +1435,7 @@ export default function ClaseDetalleScreen() {
         <PrimaryButton
           label="Inscribir alumno en la clase"
           onPress={() => void onRegistrarAlumno()}
-          disabled={busy || finalizada}
+          disabled={busy || finalizada || !!origenPreviewMismatch}
           fullWidth
           icon="checkmark-circle-outline"
         />
@@ -1104,22 +1448,46 @@ export default function ClaseDetalleScreen() {
           </ScaledText>
           {inscritos.map((ins) => (
             <SurfaceCard key={String(ins.numDoc)} style={{ marginBottom: 8 }}>
-              <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '700' }}>
-                {ins.nombreCompleto || 'Alumno'}
-              </ScaledText>
-              <View style={styles.chipsRow}>
-                <DataChip label={`Doc. ${ins.numDoc}`} icon="card-outline" tone="peach" />
-                {ins.tieneAsistencia ? (
-                  <DataChip label="Asistió" icon="checkmark-circle" tone="mint" />
-                ) : (
-                  <DataChip label="Inscrito" icon="person-outline" tone="amber" />
-                )}
-                {ins.yaCertificadoContrato ? (
-                  <DataChip
-                    label={ins.certificadoCodigo ? `Cert. ${ins.certificadoCodigo}` : 'Certificado'}
-                    icon="ribbon-outline"
-                    tone="lilac"
-                  />
+              <View style={styles.inscritoHead}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '700' }}>
+                    {ins.nombreCompleto || 'Alumno'}
+                  </ScaledText>
+                  <View style={styles.chipsRow}>
+                    <DataChip label={`Doc. ${ins.numDoc}`} icon="card-outline" tone="peach" />
+                    {ins.tieneAsistencia ? (
+                      <DataChip label="Asistió" icon="checkmark-circle" tone="mint" />
+                    ) : (
+                      <DataChip label="Inscrito" icon="person-outline" tone="amber" />
+                    )}
+                    {ins.yaCertificadoContrato ? (
+                      <DataChip
+                        label={
+                          ins.certificadoCodigo ? `Cert. ${ins.certificadoCodigo}` : 'Certificado'
+                        }
+                        icon="ribbon-outline"
+                        tone="lilac"
+                      />
+                    ) : null}
+                  </View>
+                </View>
+                {(!finalizada || puedeGestionar) && !ins.yaCertificadoContrato ? (
+                  <Pressable
+                    onPress={() => onQuitarInscrito(ins)}
+                    disabled={busy}
+                    hitSlop={8}
+                    style={[
+                      styles.quitarBtn,
+                      {
+                        borderColor: '#fca5a5',
+                        backgroundColor: c.dangerBg,
+                        opacity: busy ? 0.5 : 1,
+                      },
+                    ]}
+                    accessibilityLabel={`Quitar a ${ins.nombreCompleto || ins.numDoc} de la clase`}
+                  >
+                    <Ionicons name="trash-outline" size={18} color={c.danger} />
+                  </Pressable>
                 ) : null}
               </View>
             </SurfaceCard>
@@ -1133,6 +1501,155 @@ export default function ClaseDetalleScreen() {
         onScan={onQrEscaneado}
       />
 
+      <Modal
+        visible={modalClaseAnterior}
+        animationType="slide"
+        transparent
+        onRequestClose={() => !matriculandoAnterior && setModalClaseAnterior(false)}
+      >
+        <View style={styles.modalBg}>
+          <View style={[styles.modalSheet, { backgroundColor: c.card }]}>
+            <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800', marginBottom: 6 }}>
+              Desde clase anterior
+            </ScaledText>
+            <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 10, lineHeight: 18 }}>
+              Inscribe en ESTA clase alumnos que ya estaban en la carpa/clase previa de la misma
+              jornada. Origen activo: {labelOrigenJornada(origenFiltro)}.
+            </ScaledText>
+
+            {cargandoAnterior ? (
+              <ActivityIndicator color={c.primary} style={{ marginVertical: 24 }} />
+            ) : !claseAnteriorInfo ? (
+              <ScaledText baseSize={14} style={{ color: c.textSoft, marginVertical: 16 }}>
+                No hay clase anterior en esta jornada (esta es la primera).
+              </ScaledText>
+            ) : (
+              <>
+                <View
+                  style={[
+                    styles.fuenteBox,
+                    { borderColor: c.border, backgroundColor: c.accentSoft },
+                  ]}
+                >
+                  <ScaledText baseSize={12} style={{ color: c.textSoft, fontWeight: '700' }}>
+                    CLASE FUENTE
+                  </ScaledText>
+                  <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700', marginTop: 4 }}>
+                    {[
+                      claseAnteriorInfo.carpaNombre,
+                      claseAnteriorInfo.programaNombre,
+                      claseAnteriorInfo.indiceClaseEnJornada != null
+                        ? `#${claseAnteriorInfo.indiceClaseEnJornada}`
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'Clase anterior'}
+                  </ScaledText>
+                </View>
+
+                {alumnosAnteriorDisponibles.length === 0 ? (
+                  <ScaledText baseSize={14} style={{ color: c.warn, marginVertical: 12, lineHeight: 20 }}>
+                    No hay alumnos nuevos que coincidan con el origen «
+                    {labelOrigenJornada(origenFiltro)}»
+                    {alumnosAnteriorOmitidos.length
+                      ? ` (${alumnosAnteriorOmitidos.length} omitido(s): otro origen, ya inscritos o certificados).`
+                      : '.'}
+                  </ScaledText>
+                ) : (
+                  <>
+                    <View style={styles.selActions}>
+                      <Pressable onPress={seleccionarTodosAnterior} hitSlop={8}>
+                        <ScaledText baseSize={13} style={{ color: c.primary, fontWeight: '800' }}>
+                          Todos ({alumnosAnteriorDisponibles.length})
+                        </ScaledText>
+                      </Pressable>
+                      <Pressable onPress={limpiarSelAnterior} hitSlop={8}>
+                        <ScaledText baseSize={13} style={{ color: c.textSoft, fontWeight: '700' }}>
+                          Ninguno
+                        </ScaledText>
+                      </Pressable>
+                      <ScaledText baseSize={12} style={{ color: c.textSoft }}>
+                        {selAnterior.size} sel.
+                      </ScaledText>
+                    </View>
+                    <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
+                      {alumnosAnteriorDisponibles.map((a) => {
+                        const checked = selAnterior.has(Number(a.numDoc));
+                        return (
+                          <Pressable
+                            key={String(a.numDoc)}
+                            onPress={() => toggleSelAnterior(Number(a.numDoc))}
+                            style={[
+                              styles.selRow,
+                              {
+                                borderColor: checked ? c.primary : c.border,
+                                backgroundColor: checked ? c.accentSoft : c.bg,
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name={checked ? 'checkbox' : 'square-outline'}
+                              size={22}
+                              color={checked ? c.primary : c.textSoft}
+                            />
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <ScaledText
+                                baseSize={14}
+                                style={{ color: c.text, fontWeight: '700' }}
+                                numberOfLines={1}
+                              >
+                                {a.nombreCompleto || `Doc. ${a.numDoc}`}
+                              </ScaledText>
+                              <ScaledText baseSize={12} style={{ color: c.textSoft }}>
+                                Doc. {a.numDoc} · {labelOrigenJornada(a.origenJornadaCap)}
+                              </ScaledText>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                    {alumnosAnteriorOmitidos.length > 0 ? (
+                      <ScaledText
+                        baseSize={12}
+                        style={{ color: c.textSoft, marginTop: 8, lineHeight: 16 }}
+                      >
+                        {alumnosAnteriorOmitidos.length} no listado(s): otro origen, ya en esta clase
+                        o con certificado.
+                      </ScaledText>
+                    ) : null}
+                  </>
+                )}
+              </>
+            )}
+
+            <View style={{ height: 14 }} />
+            <PrimaryButton
+              label={
+                matriculandoAnterior
+                  ? 'Inscribiendo…'
+                  : `Inscribir seleccionados (${selAnterior.size})`
+              }
+              onPress={confirmarMatricularAnterior}
+              disabled={
+                cargandoAnterior ||
+                matriculandoAnterior ||
+                selAnterior.size === 0 ||
+                !claseAnteriorInfo
+              }
+              fullWidth
+              icon="checkmark-done-outline"
+            />
+            <View style={{ height: 8 }} />
+            <PrimaryButton
+              label="Cerrar"
+              variant="ghost"
+              onPress={() => setModalClaseAnterior(false)}
+              disabled={matriculandoAnterior}
+              fullWidth
+            />
+          </View>
+        </View>
+      </Modal>
 
       <PrimaryButton
         label="Ver certificados del contrato"
@@ -1162,6 +1679,20 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 10,
   },
+  inscritoHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  quitarBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
   origenChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1178,6 +1709,39 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
+  modalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '88%',
+  },
+  fuenteBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  selActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 10,
+  },
+  selRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
   horaRealRow: {
     flexDirection: 'row',
     alignItems: 'center',

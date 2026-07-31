@@ -154,6 +154,19 @@ async function generarJornadasContrato(contrato, userLogin = '') {
   }
 
   const inserted = await JornadaCap.insertMany(docs);
+  const { buildCodigoJornada } = require('../utils/codigoJornada');
+  const codContrato = String(contrato.codContrato || '').trim();
+  if (inserted.length) {
+    await JornadaCap.bulkWrite(
+      inserted.map((j) => ({
+        updateOne: {
+          filter: { _id: j._id },
+          update: { $set: { codigoJornada: buildCodigoJornada(codContrato, j._id) } },
+        },
+      })),
+      { ordered: false },
+    );
+  }
   if (numeObje > 0) {
     await JornadaCap.updateMany({ idContrato: contrato._id }, { $set: { numeObjeJornada: numeObje } });
   }

@@ -41,6 +41,7 @@
     <table class="argo data-table" *ngIf="!loading()">
       <thead>
         <tr>
+          <th>Código jornada</th>
           <th>Fecha</th>
           <th>Contrato</th>
           <th>Municipio</th>
@@ -53,6 +54,9 @@
       </thead>
       <tbody>
         <tr *ngFor="let j of filtradas()" class="row-jornada-proceso">
+          <td>
+            <span class="cap cap-amber cap-sm cap-mono" [title]="j._id">{{ j.codigoJornada || '—' }}</span>
+          </td>
           <td><span [ngClass]="capFechaJor(j.fechaProgramacion)">{{ fmtFecha(j.fechaProgramacion) }}</span></td>
           <td><span [ngClass]="capCodContrato(j.codContrato)">{{ j.codContrato || '—' }}</span></td>
           <td><span [ngClass]="capMunicipioJor(j.municipio)">{{ j.municipio || '—' }}</span></td>
@@ -74,7 +78,7 @@
           </td>
         </tr>
         <tr *ngIf="filtradas().length === 0">
-          <td colspan="9" class="empty">
+          <td colspan="10" class="empty">
             @if (total() === 0) {
               <p>No hay jornadas <strong>EN PROCESO</strong> en este momento.</p>
             } @else {

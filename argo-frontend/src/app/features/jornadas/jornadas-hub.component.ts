@@ -157,6 +157,7 @@ type AlumnoNombrable = {
   apellido1?: string;
   apellido2?: string;
   apellidos?: string;
+  origenJornadaCap?: string | null;
 };
 
 @Component({
@@ -2861,6 +2862,19 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.avisarContratoFinalizado();
       return;
     }
+    const origenAlu =
+      String(a.origenJornadaCap || '')
+        .trim()
+        .toLowerCase() || 'operativo';
+    const filtro = this.origenFiltroAlumno();
+    if (origenAlu !== filtro) {
+      this.mostrarMsg(
+        `Este alumno es de origen «${this.labelOrigenAlumno(origenAlu)}»; el filtro activo es «${this.labelOrigenAlumno(filtro)}».`,
+        'error',
+        'Origen distinto',
+      );
+      return;
+    }
     const idContrato = this.idContratoParaClaseModal();
     if (idContrato) {
       this.jornadaSvc.progresoCertificacion(a.numDoc, idContrato).subscribe({
@@ -2906,7 +2920,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       const idC = this.claseSel();
       this.guardandoInscripcion.set(true);
       this.jornadaSvc
-        .matricularAlumno({ numDoc: a.numDoc, idPrograma: idP, idClase: idC })
+        .matricularAlumno({
+          numDoc: a.numDoc,
+          idPrograma: idP,
+          idClase: idC,
+          origenJornadaCap: this.origenFiltroAlumno(),
+        })
         .subscribe({
           next: (r: any) => {
             this.guardandoInscripcion.set(false);
@@ -4747,7 +4766,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!alumnos.length) return of([]);
     return forkJoin(
       alumnos.map((a) =>
-        this.jornadaSvc.matricularAlumno({ numDoc: a.numDoc, idPrograma, idClase }).pipe(
+        this.jornadaSvc
+          .matricularAlumno({
+            numDoc: a.numDoc,
+            idPrograma,
+            idClase,
+            // Matrícula masiva (clase anterior): validar con el origen del alumno, no forzar el filtro UI.
+            origenJornadaCap: String(a.origenJornadaCap || '').trim() || undefined,
+          })
+          .pipe(
           map((r: any) => {
             if (!r?.inscripcionDuplicada) {
               this.metaAlumnosAlertSvc.notificarDesdeRespuesta(r?.metaJornada, {
@@ -4838,10 +4865,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     return cod || nom || '—';
   }
 
-  labelJornada(j: { fechaProgramacion?: string; municipio?: string }) {
+  labelJornada(j: {
+    fechaProgramacion?: string;
+    municipio?: string;
+    codigoJornada?: string;
+  }) {
+    const cod = String(j.codigoJornada || '').trim();
     const f = this.fmtFecha(j.fechaProgramacion);
     const m = j.municipio ? ` · ${j.municipio}` : '';
-    return `${f}${m}`;
+    return cod ? `${cod} · ${f}${m}` : `${f}${m}`;
   }
 
   subtituloModalClase(): string {

@@ -339,6 +339,8 @@ function filtroInstructorQuery(emp, userId) {
 
 async function enriquecerClases(rows) {
   const { mapaNombresCarpas, normalizarIdCarpa } = require('./carpaJornada');
+  const { normalizarOrigenJornadaCap } = require('../constants/origenJornadaCap');
+  const DatosAlumno = require('../models/DatosAlumno');
   const ids = [...new Set(rows.map((r) => r.idEmpleadoInstructor).filter((x) => x != null))];
   const empleados = ids.length
     ? await Empleado.find({ idEmpleado: { $in: ids } }).lean()
@@ -349,6 +351,8 @@ async function enriquecerClases(rows) {
 
   const claseIds = rows.map((r) => r._id).filter(Boolean);
   const conteoInscritos = new Map();
+  /** idClase → origen mayoritario de alumnos inscritos */
+  const origenPorClase = new Map();
   if (claseIds.length) {
     const agg = await InscripcionClase.aggregate([
       { $match: { idClase: { $in: claseIds } } },
@@ -356,6 +360,44 @@ async function enriquecerClases(rows) {
     ]);
     for (const row of agg) {
       conteoInscritos.set(String(row._id), row.n || 0);
+    }
+
+    const inscritos = await InscripcionClase.find({ idClase: { $in: claseIds } })
+      .select('idClase numDoc')
+      .lean();
+    const numDocs = [...new Set(inscritos.map((i) => i.numDoc).filter((n) => n != null))];
+    const origenAlumno = new Map();
+    if (numDocs.length) {
+      const alumnos = await DatosAlumno.find({ numDoc: { $in: numDocs } })
+        .select('numDoc origenJornadaCap')
+        .lean();
+      for (const a of alumnos) {
+        const o = normalizarOrigenJornadaCap(a.origenJornadaCap) || 'operativo';
+        origenAlumno.set(Number(a.numDoc), o);
+        origenAlumno.set(String(a.numDoc), o);
+      }
+    }
+    const counts = new Map();
+    for (const ins of inscritos) {
+      const id = String(ins.idClase);
+      const o =
+        origenAlumno.get(Number(ins.numDoc)) ||
+        origenAlumno.get(String(ins.numDoc)) ||
+        'operativo';
+      if (!counts.has(id)) counts.set(id, new Map());
+      const m = counts.get(id);
+      m.set(o, (m.get(o) || 0) + 1);
+    }
+    for (const [id, m] of counts) {
+      let best = '';
+      let bestN = -1;
+      for (const [o, n] of m) {
+        if (n > bestN) {
+          best = o;
+          bestN = n;
+        }
+      }
+      if (best) origenPorClase.set(id, best);
     }
   }
 
@@ -388,6 +430,9 @@ async function enriquecerClases(rows) {
       c.alumnosInscritos != null
         ? Number(c.alumnosInscritos) || 0
         : conteoInscritos.get(String(c._id)) || 0;
+    const origenGuardado = normalizarOrigenJornadaCap(c.origenOperacion);
+    const origenInscritos = origenPorClase.get(String(c._id)) || '';
+    const origenOperacion = origenGuardado || origenInscritos || null;
     out.push({
       ...c,
       instructorNombre,
@@ -397,6 +442,7 @@ async function enriquecerClases(rows) {
       idEmpleadoInstructor: c.idEmpleadoInstructor ?? null,
       idUsuarioInstructor: c.idUsuarioInstructor || '',
       alumnosInscritos,
+      origenOperacion,
     });
   }
   return out;

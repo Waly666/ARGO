@@ -116,6 +116,11 @@ export interface AlumnoListItem {
   tipoAlumno?: string;
   /** SISTEMA | WEB */
   origen?: string;
+  /** colegio | estamento | empresa | operativo (jornadas de capacitación) */
+  origenJornadaCap?: string | null;
+  colegioNombre?: string | null;
+  gradoColegio?: number | null;
+  estamentoNombre?: string | null;
   expedida?: string;
   nombre1?: string;
   nombre2?: string;

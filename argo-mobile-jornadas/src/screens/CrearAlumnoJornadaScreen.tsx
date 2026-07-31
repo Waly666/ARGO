@@ -48,6 +48,8 @@ import { useAuth } from '../context/AuthContext';
 import { themeColors } from '../theme/colors';
 import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
+import { VOICE_PHRASES, type VoiceCommandDef } from '../voice/commands';
+import { useVoiceScreen } from '../voice/VoiceContext';
 
 type Route = RouteProp<RootStackParamList, 'CrearAlumnoJornada'>;
 
@@ -393,6 +395,56 @@ export default function CrearAlumnoJornadaScreen() {
     }
   }
 
+  const alumnoFieldOrder = useMemo(() => {
+    const base = [
+      'numDoc',
+      'apellido1',
+      'apellido2',
+      'nombre1',
+      'nombre2',
+      'fechaNac',
+      'correo',
+      'celular',
+      'direccion',
+    ];
+    if (origenJornadaCap === 'colegio') {
+      return [...base, 'colegioNombre', 'programaInstitucion'];
+    }
+    if (origenJornadaCap === 'estamento') {
+      return [...base, 'cargoEstamento', 'dependenciaEstamento'];
+    }
+    return base;
+  }, [origenJornadaCap]);
+
+  const alumnoVoiceCommands = useMemo<VoiceCommandDef[]>(
+    () => [
+      { id: 'siguiente', phrases: VOICE_PHRASES.siguiente },
+      { id: 'anterior', phrases: VOICE_PHRASES.anterior },
+      { id: 'limpiar', phrases: VOICE_PHRASES.limpiar },
+      {
+        id: 'guardar',
+        phrases: VOICE_PHRASES.guardar,
+        requireConfirm: true,
+        confirmTitle: 'Guardar alumno',
+        confirmMessage: '¿Confirma crear el alumno de jornada con los datos dictados?',
+      },
+    ],
+    [],
+  );
+
+  useVoiceScreen({
+    screenId: 'CrearAlumnoJornada',
+    enabled: puedeRegistrar,
+    fieldOrder: alumnoFieldOrder,
+    commands: alumnoVoiceCommands,
+    runCommand: async (commandId) => {
+      if (commandId === 'guardar') {
+        if (busy) return;
+        await onGuardar();
+      }
+    },
+  });
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: c.bg }}
@@ -599,6 +651,7 @@ export default function CrearAlumnoJornadaScreen() {
                       <IconInput
                         label="Nombre de la institución *"
                         icon="school-outline"
+                        voiceFieldId="colegioNombre"
                         value={colegioNombre}
                         onChangeText={(t) => {
                           setColegioNombre(t);
@@ -610,6 +663,7 @@ export default function CrearAlumnoJornadaScreen() {
                       <IconInput
                         label="Programa / carrera / semestre *"
                         icon="book-outline"
+                        voiceFieldId="programaInstitucion"
                         value={programaInstitucion}
                         onChangeText={setProgramaInstitucion}
                         autoCapitalize="characters"
@@ -640,6 +694,7 @@ export default function CrearAlumnoJornadaScreen() {
                   <IconInput
                     label="Cargo *"
                     icon="briefcase-outline"
+                    voiceFieldId="cargoEstamento"
                     value={cargoEstamento}
                     onChangeText={setCargoEstamento}
                     autoCapitalize="characters"
@@ -648,6 +703,7 @@ export default function CrearAlumnoJornadaScreen() {
                   <IconInput
                     label="Dependencia *"
                     icon="business-outline"
+                    voiceFieldId="dependenciaEstamento"
                     value={dependenciaEstamento}
                     onChangeText={setDependenciaEstamento}
                     autoCapitalize="characters"
@@ -702,6 +758,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Número documento *"
               icon="card-outline"
+              voiceFieldId="numDoc"
               value={numDoc}
               onChangeText={(t) => setNumDoc(sanitizeNumDocInput(t))}
               keyboardType="number-pad"
@@ -721,6 +778,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Primer apellido *"
               icon="person-outline"
+              voiceFieldId="apellido1"
               value={apellido1}
               onChangeText={setApellido1}
               autoCapitalize="characters"
@@ -729,6 +787,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Segundo apellido *"
               icon="person-outline"
+              voiceFieldId="apellido2"
               value={apellido2}
               onChangeText={setApellido2}
               autoCapitalize="characters"
@@ -737,6 +796,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Primer nombre *"
               icon="person-outline"
+              voiceFieldId="nombre1"
               value={nombre1}
               onChangeText={setNombre1}
               autoCapitalize="characters"
@@ -745,6 +805,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Segundo nombre *"
               icon="person-outline"
+              voiceFieldId="nombre2"
               value={nombre2}
               onChangeText={setNombre2}
               autoCapitalize="characters"
@@ -753,6 +814,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Fecha nacimiento * (AAAA-MM-DD)"
               icon="calendar-outline"
+              voiceFieldId="fechaNac"
               value={fechaNac}
               onChangeText={setFechaNac}
               placeholder="1990-01-15"
@@ -835,6 +897,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Correo *"
               icon="mail-outline"
+              voiceFieldId="correo"
               value={correo}
               onChangeText={setCorreo}
               keyboardType="email-address"
@@ -844,6 +907,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Celular * (10 dígitos, inicia en 3)"
               icon="call-outline"
+              voiceFieldId="celular"
               value={celular}
               onChangeText={(t) => setCelular(t.replace(/\D/g, '').slice(0, 10))}
               keyboardType="phone-pad"
@@ -852,6 +916,7 @@ export default function CrearAlumnoJornadaScreen() {
             <IconInput
               label="Dirección *"
               icon="home-outline"
+              voiceFieldId="direccion"
               value={direccion}
               onChangeText={setDireccion}
             />

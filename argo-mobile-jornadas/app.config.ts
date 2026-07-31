@@ -92,6 +92,16 @@ const config: ExpoConfig = {
           'ARGO Jornadas usa el GPS para georreferenciar la jornada de capacitación en campo.',
       },
     ],
+    [
+      'expo-speech-recognition',
+      {
+        microphonePermission:
+          'ARGO Jornadas usa el micrófono para dictar datos y ejecutar comandos de voz en carpa.',
+        speechRecognitionPermission:
+          'ARGO Jornadas usa reconocimiento de voz para dictado y comandos sin teclear.',
+        androidSpeechServicePackages: ['com.google.android.googlequicksearchbox'],
+      },
+    ],
     'expo-secure-store',
     [
       'expo-build-properties',

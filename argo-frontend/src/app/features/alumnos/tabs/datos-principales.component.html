@@ -3,7 +3,7 @@
     <div class="form-head-text">
       <p class="alum-kicker">{{ isEdit() ? 'Edición' : 'Registro' }} · Datos principales</p>
       <h2>{{ isEdit() ? 'Editar alumno' : 'Nuevo alumno' }}</h2>
-      <p>Identificación, datos personales, contacto, origen y observaciones.</p>
+      <p>Identificación, datos personales, contacto y origen · todos obligatorios excepto observaciones.</p>
     </div>
     <div class="actions save-actions">
       <div
@@ -282,8 +282,10 @@
           </div>
           </div>
           <aside class="foto-col" aria-label="Foto y QR del alumno">
-            <div class="foto-block">
-              <label class="field-label">Foto del alumno</label>
+            <div
+              class="foto-block"
+              [class.campo-obligatorio-error]="campoObligatorioInvalido('foto')">
+              <label class="field-label">Foto del alumno *</label>
               <div class="foto">
                 <img *ngIf="fotoPreview() as p" [src]="p" alt="Foto" />
                 <span *ngIf="!fotoPreview()">Sin foto</span>
@@ -529,14 +531,15 @@
           <span class="section-icon ic-orange">◐</span>
           <div>
             <h3>Origen y diversidad</h3>
-            <p>Discapacidad, multiculturalidad y observaciones</p>
+            <p>Discapacidad y multiculturalidad · obligatorios · observaciones opcional</p>
           </div>
         </div>
         <div class="section-body">
           <div class="row">
             <div class="col-4">
               <argo-catalogo-enum-buscar
-                label="Discapacidad"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('discapacidad')"
+                label="Discapacidad *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(discapacidades(), form().discapacidad)"
                 [modoCombo]="true"
@@ -544,12 +547,13 @@
                 [minLength]="1"
                 [opcionesLocales]="opcionesDiscapacidades()"
                 (seleccionado)="onCatalogoPick('discapacidad', $event)"
-                (limpiado)="onCatalogoLimpiar('discapacidad', '9')"
+                (limpiado)="onCatalogoLimpiar('discapacidad')"
               />
             </div>
             <div class="col-4">
               <argo-catalogo-enum-buscar
-                label="Multiculturalidad"
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('multiCulturalidad')"
+                label="Multiculturalidad *"
                 placeholder="Seleccione o escriba…"
                 [textoInicial]="etiquetaCatalogo(multiCulturalidades(), form().multiCulturalidad)"
                 [modoCombo]="true"
@@ -557,18 +561,19 @@
                 [minLength]="1"
                 [opcionesLocales]="opcionesMultiCulturalidad()"
                 (seleccionado)="onCatalogoPick('multiCulturalidad', $event)"
-                (limpiado)="onCatalogoLimpiar('multiCulturalidad', 'NO_APLICA')"
+                (limpiado)="onCatalogoLimpiar('multiCulturalidad')"
               />
             </div>
           </div>
           <div class="row">
             <div class="col-12">
-              <label>Observaciones</label>
+              <label>Observaciones <span class="hint-inline">(opcional)</span></label>
               <textarea
                 class="observaciones-field"
                 rows="6"
                 [ngModel]="form().observaciones"
                 (ngModelChange)="patch('observaciones', $event)"
+                placeholder="Opcional"
               ></textarea>
             </div>
           </div>

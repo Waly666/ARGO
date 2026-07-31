@@ -42,11 +42,19 @@ export interface ContratoJornada {
   jornadasPorDia?: number;
   clasesPorJornada?: number;
   numeObjeJornada?: number;
+  origenesAlumnos?: {
+    colegio?: boolean;
+    estamento?: boolean;
+    empresa?: boolean;
+    operativo?: boolean;
+  } | null;
 }
 
 export interface JornadaCap {
   _id: string;
   idContrato: string;
+  /** Código legible: {codContrato}-{últimas 6 del _id}. */
+  codigoJornada?: string;
   fechaProgramacion: string;
   municipio?: string;
   depto?: string;
@@ -208,6 +216,8 @@ export interface ClaseJornada {
   indiceClaseEnJornada?: number;
   /** Cantidad de alumnos inscritos en la clase. */
   alumnosInscritos?: number;
+  /** Origen con el que se opera la clase (uno solo). */
+  origenOperacion?: string | null;
   clienteNombre?: string;
   idClienteFacturacion?: string | null;
   origenesAlumnos?: {
@@ -240,6 +250,31 @@ export interface InscritoClase {
   tieneAsistencia: boolean;
   yaCertificadoContrato?: boolean;
   certificadoCodigo?: string | null;
+}
+
+export interface AlumnoClaseAnterior {
+  numDoc: number;
+  nombreCompleto?: string;
+  yaInscritoEnEstaClase?: boolean;
+  yaCertificadoContrato?: boolean;
+  puedeMatricular?: boolean;
+  certificadoCodigo?: string | null;
+  origenJornadaCap?: string | null;
+}
+
+export interface ClaseAnteriorResumen {
+  _id: string;
+  indiceClaseEnJornada?: number | null;
+  programaNombre?: string;
+  carpaNombre?: string;
+  estado?: string;
+  fechaClase?: string | null;
+  fechaJornada?: string | null;
+}
+
+export interface AlumnosClaseAnteriorResp {
+  clase: ClaseAnteriorResumen | null;
+  alumnos: AlumnoClaseAnterior[];
 }
 
 export interface ProgresoCert {
@@ -277,6 +312,8 @@ export interface AlumnoDoc {
   nombres?: string;
   apellidos?: string;
   nombreCompleto?: string;
+  /** colegio | estamento | empresa | operativo */
+  origenJornadaCap?: string | null;
 }
 
 export interface MetaJornadaResp {

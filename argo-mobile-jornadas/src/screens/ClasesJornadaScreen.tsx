@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
@@ -22,7 +23,8 @@ import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
 import { useAuth } from '../context/AuthContext';
 import { puedeGestionarJornadas } from '../utils/permisos';
-import { crearClase, listarClases, programasJornadaCap } from '../api/jornadasApi';
+import { ORIGEN_JORNADA_LABELS, type OrigenJornadaKey } from '../utils/origenJornada';
+import { crearClase, listarClases, listarContratos, programasJornadaCap } from '../api/jornadasApi';
 import type { ClaseJornada, ProgramaJornada } from '../api/types';
 import { UBICACIONES_CLASE } from '../config/appBranding';
 import { themeColors } from '../theme/colors';
@@ -30,6 +32,13 @@ import { useAccessibility } from '../context/AccessibilityContext';
 import type { RootStackParamList } from '../navigation/types';
 
 type Route = RouteProp<RootStackParamList, 'ClasesJornada'>;
+
+const ORIGEN_OPTS: { key: OrigenJornadaKey; label: string }[] = [
+  { key: 'colegio', label: ORIGEN_JORNADA_LABELS.colegio },
+  { key: 'estamento', label: ORIGEN_JORNADA_LABELS.estamento },
+  { key: 'empresa', label: ORIGEN_JORNADA_LABELS.empresa },
+  { key: 'operativo', label: ORIGEN_JORNADA_LABELS.operativo },
+];
 
 export default function ClasesJornadaScreen() {
   const route = useRoute<Route>();
@@ -43,27 +52,45 @@ export default function ClasesJornadaScreen() {
 
   const [clases, setClases] = useState<ClaseJornada[]>([]);
   const [programas, setProgramas] = useState<ProgramaJornada[]>([]);
+  const [origenesContrato, setOrigenesContrato] = useState<Record<string, boolean>>({
+    operativo: true,
+  });
   const [loading, setLoading] = useState(true);
   const [modalNueva, setModalNueva] = useState(false);
   const [progSel, setProgSel] = useState('');
   const [ubicSel, setUbicSel] = useState('Carpa');
+  const [origenSel, setOrigenSel] = useState<OrigenJornadaKey>('operativo');
   const [guardando, setGuardando] = useState(false);
+
+  const origenesActivos = useMemo(() => {
+    const act = ORIGEN_OPTS.filter((o) => !!origenesContrato[o.key]);
+    return act.length ? act : ORIGEN_OPTS.filter((o) => o.key === 'operativo');
+  }, [origenesContrato]);
 
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const [cls, progs] = await Promise.all([
+      const [cls, progs, contratos] = await Promise.all([
         listarClases(jornadaId),
         programasJornadaCap(),
+        listarContratos().catch(() => []),
       ]);
       setClases(cls || []);
       setProgramas(progs || []);
+      const contrato = (contratos || []).find((x) => String(x._id) === String(idContrato));
+      const o = contrato?.origenesAlumnos || { operativo: true };
+      setOrigenesContrato({
+        colegio: !!o.colegio,
+        estamento: !!o.estamento,
+        empresa: !!o.empresa,
+        operativo: o.operativo !== false || (!o.colegio && !o.estamento && !o.empresa),
+      });
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudieron cargar las clases');
     } finally {
       setLoading(false);
     }
-  }, [jornadaId]);
+  }, [jornadaId, idContrato]);
 
   // Recargar al entrar y al volver del detalle (p. ej. tras finalizar).
   useFocusEffect(
@@ -72,17 +99,36 @@ export default function ClasesJornadaScreen() {
     }, [cargar]),
   );
 
+  function abrirModalNueva() {
+    const activos = ORIGEN_OPTS.filter((o) => !!origenesContrato[o.key]);
+    const lista = activos.length ? activos : ORIGEN_OPTS.filter((o) => o.key === 'operativo');
+    setOrigenSel(lista[0]?.key || 'operativo');
+    setProgSel('');
+    setUbicSel('Carpa');
+    setModalNueva(true);
+  }
+
   async function onCrearClase() {
     if (!progSel) {
       Alert.alert('Programa', 'Seleccione el programa de capacitación');
       return;
     }
+    if (!origenSel) {
+      Alert.alert('Origen', 'Seleccione el origen de los alumnos de esta clase');
+      return;
+    }
     setGuardando(true);
     try {
-      await crearClase({ idJornada: jornadaId, idPrograma: progSel, ubicacion: ubicSel });
+      await crearClase({
+        idJornada: jornadaId,
+        idPrograma: progSel,
+        ubicacion: ubicSel,
+        origenOperacion: origenSel,
+      });
       setModalNueva(false);
       setProgSel('');
       setUbicSel('Carpa');
+      setOrigenSel('operativo');
       await cargar();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'No se pudo crear la clase');
@@ -129,7 +175,7 @@ export default function ClasesJornadaScreen() {
             <PrimaryButton
               label="Nueva clase"
               icon="add-circle-outline"
-              onPress={() => setModalNueva(true)}
+              onPress={abrirModalNueva}
               fullWidth
             />
             <View style={{ height: 16 }} />
@@ -341,41 +387,83 @@ export default function ClasesJornadaScreen() {
       <Modal visible={!!modalNueva} animationType="slide" transparent={true} onRequestClose={() => setModalNueva(false)}>
         <View style={styles.modalBg}>
           <View style={[styles.modal, { backgroundColor: c.card }]}>
-            <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800', marginBottom: 12 }}>
-              Nueva clase
-            </ScaledText>
-            <ProgramaPicker
-              programas={programas}
-              value={progSel}
-              onChange={setProgSel}
-              disabled={guardando}
-            />
-            <ScaledText
-              baseSize={14}
-              style={{ color: c.textSoft, marginTop: 14, marginBottom: 8, fontWeight: '600' }}
-            >
-              Ubicación
-            </ScaledText>
-            <View style={styles.chipsWrap}>
-              {UBICACIONES_CLASE.map((u) => {
-                const sel = ubicSel === u;
-                return (
-                  <Pressable
-                    key={u}
-                    onPress={() => setUbicSel(u)}
-                    style={[styles.chip, sel && { backgroundColor: c.primary, borderColor: c.primary }]}
-                  >
-                    <ScaledText baseSize={13} style={{ color: sel ? '#fff' : c.text }}>
-                      {u}
-                    </ScaledText>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <View style={{ height: 16 }} />
-            <PrimaryButton label="Crear clase" onPress={() => void onCrearClase()} disabled={guardando} fullWidth />
-            <View style={{ height: 8 }} />
-            <PrimaryButton label="Cancelar" variant="ghost" onPress={() => setModalNueva(false)} fullWidth />
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <ScaledText baseSize={18} style={{ color: c.text, fontWeight: '800', marginBottom: 12 }}>
+                Nueva clase
+              </ScaledText>
+              <ProgramaPicker
+                programas={programas}
+                value={progSel}
+                onChange={setProgSel}
+                disabled={guardando}
+              />
+              <ScaledText
+                baseSize={14}
+                style={{ color: c.textSoft, marginTop: 14, marginBottom: 8, fontWeight: '600' }}
+              >
+                Ubicación
+              </ScaledText>
+              <View style={styles.chipsWrap}>
+                {UBICACIONES_CLASE.map((u) => {
+                  const sel = ubicSel === u;
+                  return (
+                    <Pressable
+                      key={u}
+                      onPress={() => setUbicSel(u)}
+                      style={[styles.chip, sel && { backgroundColor: c.primary, borderColor: c.primary }]}
+                    >
+                      <ScaledText baseSize={13} style={{ color: sel ? '#fff' : c.text }}>
+                        {u}
+                      </ScaledText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <ScaledText
+                baseSize={14}
+                style={{ color: c.textSoft, marginTop: 14, marginBottom: 8, fontWeight: '600' }}
+              >
+                Origen de alumnos
+              </ScaledText>
+              <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+                Solo se podrán inscribir alumnos de este origen en la clase.
+              </ScaledText>
+              <View style={styles.chipsWrap}>
+                {origenesActivos.map((o) => {
+                  const sel = origenSel === o.key;
+                  return (
+                    <Pressable
+                      key={o.key}
+                      onPress={() => setOrigenSel(o.key)}
+                      style={[
+                        styles.chip,
+                        sel && { backgroundColor: c.primary, borderColor: c.primary },
+                      ]}
+                    >
+                      <ScaledText baseSize={13} style={{ color: sel ? '#fff' : c.text }}>
+                        {o.label}
+                      </ScaledText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={{ height: 16 }} />
+              <PrimaryButton
+                label="Crear clase"
+                onPress={() => void onCrearClase()}
+                disabled={guardando}
+                fullWidth
+              />
+              <View style={{ height: 8 }} />
+              <PrimaryButton
+                label="Cancelar"
+                variant="ghost"
+                onPress={() => setModalNueva(false)}
+                fullWidth
+              />
+            </ScrollView>
           </View>
         </View>
       </Modal>

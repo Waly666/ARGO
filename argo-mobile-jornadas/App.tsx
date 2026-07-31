@@ -12,6 +12,8 @@ import { DrawerProvider } from './src/context/DrawerContext';
 import { AppDrawerMenu, HamburgerHeaderButton } from './src/components/AppDrawerMenu';
 import { JORNADAS_VERDE } from './src/config/appBranding';
 import type { RootStackParamList } from './src/navigation/types';
+import { VoiceProvider } from './src/voice/VoiceContext';
+import { VoiceMicOverlay } from './src/voice/VoiceMicOverlay';
 import LoginScreen from './src/screens/LoginScreen';
 import DeniedScreen from './src/screens/DeniedScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -154,12 +156,15 @@ export default function App() {
       <SafeAreaProvider>
         <AccessibilityProvider>
           <AuthProvider>
-            <AppBootGate>
-              <NavigationContainer theme={navTheme}>
-                <RootNavigator />
-              </NavigationContainer>
-            </AppBootGate>
-            <StatusBar style="light" />
+            <VoiceProvider>
+              <AppBootGate>
+                <NavigationContainer theme={navTheme}>
+                  <RootNavigator />
+                </NavigationContainer>
+              </AppBootGate>
+              <VoiceMicOverlay />
+              <StatusBar style="light" />
+            </VoiceProvider>
           </AuthProvider>
         </AccessibilityProvider>
       </SafeAreaProvider>

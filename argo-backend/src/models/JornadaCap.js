@@ -4,6 +4,11 @@ const { ESTADOS_JORNADA, ESTADO_JORNADA_INACTIVO, DETE_GEOREFE_VALORES } = requi
 const JornadaCapSchema = new mongoose.Schema(
   {
     idContrato: { type: mongoose.Schema.Types.ObjectId, ref: 'Contratacion', required: true, index: true },
+    /**
+     * Código legible: {codContrato}-{últimas 6 del _id Mongo}.
+     * Ej. JOR-2026-059-A1B2C3
+     */
+    codigoJornada: { type: String, trim: true, default: '', index: true },
     fechaProgramacion: { type: Date, required: true, index: true },
     municipio: { type: String, trim: true, default: '' },
     depto: { type: String, trim: true, default: '' },

@@ -41,6 +41,7 @@ export class JornadasEnProcesoListaComponent implements OnInit, OnDestroy {
     if (!q) return this.jornadas();
     return this.jornadas().filter((j) => {
       const campos = [
+        j.codigoJornada,
         j.codContrato,
         j.contratoLabel,
         j.clienteNombre,

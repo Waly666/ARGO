@@ -568,6 +568,14 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Clases en desarrollo',
+          path: '/app/jornadas/clases-en-desarrollo',
+          icon: '◎',
+          iconTone: 'emerald',
+          permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
+        },
+        {
+          kind: 'link',
           label: 'Alumnos jornada',
           path: '/app/jornadas/alumnos',
           icon: '◉',

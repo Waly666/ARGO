@@ -392,6 +392,8 @@ export interface ContratoSyncDto {
 export interface JornadaCapDto {
   _id: string;
   idContrato: string;
+  /** Código legible: {codContrato}-{últimas 6 del _id}. */
+  codigoJornada?: string;
   fechaProgramacion: string;
   municipio?: string;
   depto?: string;
@@ -448,6 +450,18 @@ export interface ClaseJornadaDto {
   clienteNombre?: string;
   /** Cantidad de alumnos inscritos (matriculados) en la clase. */
   alumnosInscritos?: number;
+  /**
+   * Origen con el que se opera la clase (uno solo: colegio|estamento|empresa|operativo).
+   * No es el mapa de orígenes permitidos del contrato.
+   */
+  origenOperacion?: string | null;
+  /** Orígenes activos del contrato (colegio/estamento/empresa/operativo). */
+  origenesAlumnos?: {
+    colegio?: boolean;
+    estamento?: boolean;
+    empresa?: boolean;
+    operativo?: boolean;
+  } | null;
   /** Ruta relativa bajo uploads/ (evidenciascap/{codContrato}/fotos/...). */
   urlforo?: string;
 }
@@ -736,9 +750,14 @@ export class JornadaCapService {
     return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases/del-dia`, { params: p });
   }
 
-  /** Clases de todos los contratos en ejecución. */
-  listarClasesContratosEnEjecucion(): Observable<ClaseJornadaDto[]> {
-    return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases/contratos-en-ejecucion`);
+  /** Clases de todos los contratos en ejecución. Opcional: filtrar por estado en servidor. */
+  listarClasesContratosEnEjecucion(opts?: { estado?: string }): Observable<ClaseJornadaDto[]> {
+    let p = new HttpParams();
+    const est = String(opts?.estado || '').trim();
+    if (est) p = p.set('estado', est);
+    return this.http.get<ClaseJornadaDto[]>(`${this.base}/clases/contratos-en-ejecucion`, {
+      params: p,
+    });
   }
 
   crearClase(dto: {
@@ -1148,12 +1167,18 @@ export class JornadaCapService {
     return this.http.get<AlumnoListItem[]>(`${this.base}/alumnos`, { params });
   }
 
-  matricularAlumno(dto: { numDoc: number | string; idPrograma: string; idClase?: string }) {
+  matricularAlumno(dto: {
+    numDoc: number | string;
+    idPrograma: string;
+    idClase?: string;
+    origenJornadaCap?: string;
+  }) {
     const numDoc = parseNumDocForApi(dto.numDoc);
     return this.http.post(`${this.base}/matricular`, {
       numDoc: numDoc ?? dto.numDoc,
       idPrograma: dto.idPrograma,
       ...(dto.idClase ? { idClase: dto.idClase } : {}),
+      ...(dto.origenJornadaCap ? { origenJornadaCap: dto.origenJornadaCap } : {}),
     });
   }
 

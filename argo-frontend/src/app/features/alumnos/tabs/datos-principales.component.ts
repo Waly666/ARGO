@@ -1119,6 +1119,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     falta(vacio(f.nombre1), 'nombre1', 'primer nombre', identificacion);
     falta(vacio(f.nombre2), 'nombre2', 'segundo nombre', identificacion);
     falta(vacio(f.fechaNac), 'fechaNac', 'fecha de nacimiento', identificacion);
+    const tieneFoto = !!(this.fotoFile() || this.fotoPreview() || String(f.urlFoto || '').trim());
+    falta(!tieneFoto, 'foto', 'foto del alumno', identificacion);
 
     falta(vacio(f.genero), 'genero', 'género', personales);
     falta(vacio(f.tipoSangre), 'tipoSangre', 'tipo de sangre', personales);
@@ -1138,6 +1140,10 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       'municipio de origen',
       contacto,
     );
+
+    const diversidad: string[] = [];
+    falta(vacio(f.discapacidad), 'discapacidad', 'discapacidad', diversidad);
+    falta(vacio(f.multiCulturalidad), 'multiCulturalidad', 'multiculturalidad', diversidad);
 
     const jornadaOrigen: string[] = [];
     if (this.esAlumnoJornada()) {
@@ -1170,6 +1176,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     if (identificacion.length) faltantes.push({ seccion: 'Identificación', campos: identificacion });
     if (personales.length) faltantes.push({ seccion: 'Datos personales', campos: personales });
     if (contacto.length) faltantes.push({ seccion: 'Contacto y ubicación', campos: contacto });
+    if (diversidad.length) faltantes.push({ seccion: 'Origen y diversidad', campos: diversidad });
     if (jornadaOrigen.length) {
       faltantes.push({ seccion: 'Origen en jornada', campos: jornadaOrigen });
     }
@@ -1759,13 +1766,13 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       ocupacion: '',
 
-      discapacidad: '9',
+      discapacidad: '',
       munOrigen: '',
       codMunicipio: '',
       correo: '',
       direccion: '',
       celular: '',
-      multiCulturalidad: 'NO_APLICA',
+      multiCulturalidad: '',
 
       urlFoto: '',
 

@@ -8,6 +8,7 @@ import type {
   FinalizarClaseResp,
   InformesJornadaResp,
   InscritoClase,
+  AlumnosClaseAnteriorResp,
   JornadaCap,
   ProgramaJornada,
   ProgresoCert,
@@ -158,7 +159,13 @@ export function programasJornadaCap() {
   return apiFetch<ProgramaJornada[]>(`${BASE}/programas-jornada`);
 }
 
-export function crearClase(dto: { idJornada: string; idPrograma: string; ubicacion?: string }) {
+export function crearClase(dto: {
+  idJornada: string;
+  idPrograma: string;
+  ubicacion?: string;
+  /** colegio | estamento | empresa | operativo */
+  origenOperacion?: string;
+}) {
   return apiFetch<ClaseJornada>(`${BASE}/clases`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -223,6 +230,24 @@ export function inscritosClase(idClase: string) {
   return apiFetch<InscritoClase[]>(`${BASE}/clases/${idClase}/inscritos`);
 }
 
+/** Alumnos de la clase anterior (misma jornada) para copiar a esta clase. */
+export function alumnosClaseAnterior(idClase: string, idClaseFuente?: string) {
+  const q = idClaseFuente
+    ? `?idClaseFuente=${encodeURIComponent(idClaseFuente)}`
+    : '';
+  return apiFetch<AlumnosClaseAnteriorResp>(
+    `${BASE}/clases/${encodeURIComponent(idClase)}/inscritos-clase-anterior${q}`,
+  );
+}
+
+/** Quita inscripción (y asistencia si la había). No borra la matrícula al programa. */
+export function quitarInscripcionClase(idClase: string, numDoc: number | string) {
+  return apiFetch<{ ok: boolean; numDoc: number; asistenciaEliminada?: boolean }>(
+    `${BASE}/clases/${encodeURIComponent(idClase)}/inscritos/${encodeURIComponent(String(numDoc))}`,
+    { method: 'DELETE' },
+  );
+}
+
 export function listadoAsistenciaClaseHtml(idClase: string) {
   return apiFetchText(`${BASE}/clases/${idClase}/listado-asistencia/html?v=${Date.now()}`);
 }
@@ -239,11 +264,18 @@ export function estadoOperacionJornadas() {
   return apiFetch<EstadoOperacionJornadas>(`${BASE}/config/operacion/estado`);
 }
 
-export function matricularAlumno(numDoc: string, idPrograma: string, idClase: string) {
+export function matricularAlumno(
+  numDoc: string,
+  idPrograma: string,
+  idClase: string,
+  origenJornadaCap?: string,
+) {
+  const body: Record<string, string> = { numDoc, idPrograma, idClase };
+  if (origenJornadaCap) body.origenJornadaCap = origenJornadaCap;
   return apiFetch(`${BASE}/matricular`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ numDoc, idPrograma, idClase }),
+    body: JSON.stringify(body),
   });
 }
 

@@ -270,6 +270,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'jornadas/clases-en-desarrollo',
+        canActivate: [permisoGuard],
+        data: { permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
+        loadComponent: () =>
+          import('./features/jornadas/clases-en-desarrollo-lista.component').then(
+            (m) => m.ClasesEnDesarrolloListaComponent,
+          ),
+      },
+      {
         path: 'jornadas',
         pathMatch: 'full',
         canActivate: [permisoGuard],

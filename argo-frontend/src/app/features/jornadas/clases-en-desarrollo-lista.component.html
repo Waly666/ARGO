@@ -1,0 +1,187 @@
+<section class="clases-desarrollo-page card admin-list-page">
+  <header class="jor-head page-head">
+    <div class="jor-head-main title">
+      <p class="breadcrumb">
+        <a [routerLink]="hubJornadasLink()">Jornadas</a> / En desarrollo
+      </p>
+      <h1>Clases en desarrollo</h1>
+      <p class="hint">
+        Vista en vivo de clases con estado <strong>EN PROCESO</strong>. Actualización automática ·
+        {{ hoyLabel() }}
+      </p>
+    </div>
+    <div class="jor-badges head-actions">
+      <span class="live-pill" *ngIf="total() > 0">
+        <span class="live-radar" aria-hidden="true">
+          <span class="ripple"></span>
+          <span class="ripple"></span>
+          <span class="ripple"></span>
+          <span class="core"></span>
+        </span>
+        {{ total() }} en vivo
+      </span>
+      <span class="jor-chip jor-chip--sky" *ngIf="totalAlumnos() > 0"
+        >{{ totalAlumnos() }} alumno(s)</span
+      >
+      <button type="button" class="ghost sm" (click)="cargar()">Actualizar</button>
+    </div>
+  </header>
+
+  @if (msg(); as t) {
+    <p class="jor-banner jor-banner--error" role="alert">
+      <span>{{ t }}</span>
+      <button type="button" class="jor-banner-close" (click)="cerrarMsg()" aria-label="Cerrar">×</button>
+    </p>
+  }
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="ic">◎</span>
+      <input
+        type="text"
+        placeholder="Buscar contrato, programa, instructor, origen…"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+        autocomplete="off"
+      />
+    </div>
+    <div class="vista-toggle" role="group" aria-label="Modo de vista">
+      <button
+        type="button"
+        class="vista-btn"
+        [class.active]="vista() === 'cards'"
+        (click)="setVista('cards')"
+      >
+        Cards
+      </button>
+      <button
+        type="button"
+        class="vista-btn"
+        [class.active]="vista() === 'lista'"
+        (click)="setVista('lista')"
+      >
+        Lista
+      </button>
+    </div>
+    <span class="count">{{ filtradas().length }} de {{ total() }}</span>
+  </div>
+
+  <p class="loading" *ngIf="loading() && !clases().length">Cargando clases en desarrollo…</p>
+
+  @if (!loading() && !filtradas().length) {
+    <div class="empty-live">
+      <span class="live-radar big" aria-hidden="true">
+        <span class="ripple"></span>
+        <span class="ripple"></span>
+        <span class="ripple"></span>
+        <span class="core"></span>
+      </span>
+      <p>No hay clases en desarrollo en este momento.</p>
+      <p class="hint">Cuando un instructor inicie una clase, aparecerá aquí en tiempo real.</p>
+    </div>
+  }
+
+  @if (vista() === 'cards' && filtradas().length) {
+    <div class="cards-grid">
+      @for (c of filtradas(); track c._id) {
+        <div class="live-card-wrap">
+          <span class="live-alarm-ring" aria-hidden="true"></span>
+          <span class="live-alarm-ring live-alarm-ring--2" aria-hidden="true"></span>
+          <span class="live-alarm-ring live-alarm-ring--3" aria-hidden="true"></span>
+          <article class="live-card" (click)="abrirClase(c)" role="button" tabindex="0"
+            (keydown.enter)="abrirClase(c)">
+          <header class="live-card-head">
+            <p class="live-card-id" [title]="c._id">
+              <span class="live-card-id-label">Clase ID</span>
+              <span class="live-card-id-value">{{ c._id }}</span>
+            </p>
+            <div class="live-card-head-top">
+              <span class="live-card-radar" aria-hidden="true">
+                <span class="ripple"></span>
+                <span class="ripple"></span>
+                <span class="ripple"></span>
+                <span class="core"></span>
+              </span>
+              <span class="estado-clase-proceso">EN PROCESO</span>
+              <span class="crono">{{ cronometro(c) }}</span>
+            </div>
+          </header>
+          <h2 class="live-card-title">{{ c.programaNombre || 'Programa' }}</h2>
+          <dl class="live-meta">
+            <div class="meta-full">
+              <dt>Instructor</dt>
+              <dd>{{ labelInstructorClase(c) }}</dd>
+            </div>
+            <div class="meta-full">
+              <dt>Origen</dt>
+              <dd>{{ labelOrigenes(c) }}</dd>
+            </div>
+            <div class="meta-full">
+              <dt>Jornada</dt>
+              <dd>{{ labelJornada(c) }}</dd>
+            </div>
+            <div class="meta-half">
+              <dt>Alumnos</dt>
+              <dd class="alumnos-n">{{ c.alumnosInscritos ?? 0 }}</dd>
+            </div>
+            <div class="meta-half">
+              <dt>Inicio</dt>
+              <dd>{{ isoAHoraInput(c.horaInicio) || '—' }}</dd>
+            </div>
+          </dl>
+          <footer class="live-card-foot">
+            <span class="ubic">{{ c.ubicacion || c.municipioJornada || '—' }}</span>
+            <span class="open-hint">Abrir →</span>
+          </footer>
+        </article>
+        </div>
+      }
+    </div>
+  }
+
+  @if (vista() === 'lista' && filtradas().length) {
+    <div class="content-wrap table-wrap">
+      <table class="argo data-table">
+        <thead>
+          <tr>
+            <th>Tiempo</th>
+            <th>ID clase</th>
+            <th>Programa</th>
+            <th>Instructor</th>
+            <th>Origen</th>
+            <th>Alumnos</th>
+            <th>Jornada</th>
+            <th>Contrato</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of filtradas(); track c._id) {
+            <tr class="row-clase-proceso">
+              <td>
+                <div class="lista-live">
+                  <span class="live-radar mini" aria-hidden="true">
+                    <span class="ripple"></span>
+                    <span class="ripple"></span>
+                    <span class="core"></span>
+                  </span>
+                  <strong class="crono">{{ cronometro(c) }}</strong>
+                </div>
+              </td>
+              <td class="mono-id">{{ c._id }}</td>
+              <td>{{ c.programaNombre || '—' }}</td>
+              <td>{{ labelInstructorClase(c) }}</td>
+              <td>{{ labelOrigenes(c) }}</td>
+              <td>{{ c.alumnosInscritos ?? 0 }}</td>
+              <td>{{ labelJornada(c) }}</td>
+              <td>{{ c.codContrato || c.contratoLabel || '—' }}</td>
+              <td>
+                <button type="button" class="ghost mini" (click)="abrirClase(c)">Abrir</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

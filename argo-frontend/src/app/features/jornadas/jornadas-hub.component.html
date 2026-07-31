@@ -1468,6 +1468,7 @@
       <table id="jornadas-listado" class="argo">
         <thead>
           <tr>
+            <th>Código jornada</th>
             <th>Fecha</th>
             <th>Municipio</th>
             <th>Dirección</th>
@@ -1481,6 +1482,9 @@
         </thead>
         <tbody>
           <tr *ngFor="let j of jornadasListaFiltradas()" [class.sel]="jornadaEnEdicion(j._id)" [ngClass]="rowJornadaClass(j.estado)">
+            <td>
+              <span class="cap cap-amber cap-sm cap-mono" [title]="j._id">{{ j.codigoJornada || '—' }}</span>
+            </td>
             <td><span [ngClass]="capFechaJor(j.fechaProgramacion)">{{ fmtFecha(j.fechaProgramacion) }}</span></td>
             <td><span [ngClass]="capMunicipioJor(j.municipio)">{{ j.municipio || '—' }}</span></td>
             <td class="direccion-cell" [title]="j.direccion || ''">

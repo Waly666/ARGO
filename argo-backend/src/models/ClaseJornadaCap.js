@@ -27,6 +27,11 @@ const ClaseJornadaCapSchema = new mongoose.Schema(
     idEmpleadoInstructor: { type: Number, index: true, default: null },
     idUsuarioInstructor: { type: String, trim: true, default: '' },
     estado: { type: String, enum: ESTADOS_CLASE, default: 'PROGRAMADA' },
+    /**
+     * Origen con el que se está operando la clase (colegio|estamento|empresa|operativo).
+     * No confundir con origenesAlumnos del contrato (varios pueden estar activos).
+     */
+    origenOperacion: { type: String, trim: true, default: null, index: true },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
   },

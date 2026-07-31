@@ -762,6 +762,13 @@ exports.crearJornadaContrato = async (req, res, next) => {
       userAddReg: userLogin,
     });
 
+    const { buildCodigoJornada } = require('../utils/codigoJornada');
+    const codigoJornada = buildCodigoJornada(contrato.codContrato, jornada._id);
+    if (codigoJornada) {
+      jornada.codigoJornada = codigoJornada;
+      await JornadaCap.updateOne({ _id: jornada._id }, { $set: { codigoJornada } });
+    }
+
     let clasesCreadas = 0;
     const generarClases = body.generarClases !== false;
     if (generarClases) {
@@ -819,8 +826,17 @@ exports.jornadasDelDia = async (req, res, next) => {
       const metaAlumnos = Math.max(0, parseInt(j.numeObjeJornada, 10) || 0);
       const metaAlcanzada = metaAlumnos > 0 && alumnosLleva >= metaAlumnos;
       const metaSuperada = metaAlumnos > 0 && alumnosLleva > metaAlumnos;
+      const { buildCodigoJornada } = require('../utils/codigoJornada');
+      let codigoJornada = String(j.codigoJornada || '').trim();
+      if (!codigoJornada) {
+        codigoJornada = buildCodigoJornada(c?.codContrato, j._id);
+        if (codigoJornada) {
+          JornadaCap.updateOne({ _id: j._id }, { $set: { codigoJornada } }).catch(() => {});
+        }
+      }
       out.push({
         ...j,
+        codigoJornada,
         contratoLabel: c?.codContrato
           ? `${c.codContrato} — ${c?.nombreComercial || c?.razoSocial || ''}`
           : c?.nombreComercial || c?.razoSocial || '',
@@ -842,8 +858,17 @@ exports.jornadasDelDia = async (req, res, next) => {
 async function enrichJornadaConContrato(j) {
   const c = await Contratacion.findById(j.idContrato).lean();
   const cliente = String(c?.nombreComercial || c?.razoSocial || '').trim();
+  const { buildCodigoJornada } = require('../utils/codigoJornada');
+  let codigoJornada = String(j.codigoJornada || '').trim();
+  if (!codigoJornada && j._id) {
+    codigoJornada = buildCodigoJornada(c?.codContrato, j._id);
+    if (codigoJornada) {
+      JornadaCap.updateOne({ _id: j._id }, { $set: { codigoJornada } }).catch(() => {});
+    }
+  }
   return {
     ...j,
+    codigoJornada: codigoJornada || j.codigoJornada || '',
     contratoLabel: c?.codContrato
       ? `${c.codContrato} — ${cliente || 'Contrato'}`
       : cliente || '',
@@ -1233,8 +1258,11 @@ exports.clasesDelDia = async (req, res, next) => {
 /** Todas las clases de contratos en ejecución (En Ejecución). */
 exports.clasesContratosEnEjecucion = async (req, res, next) => {
   try {
+    const {
+      normalizarOrigenesContrato,
+    } = require('../constants/origenJornadaCap');
     const contratos = await Contratacion.find({})
-      .select('_id estado codContrato nombreComercial razoSocial')
+      .select('_id estado codContrato nombreComercial razoSocial origenesAlumnos')
       .lean();
     const enEjecucion = contratos.filter((c) => contratoEstaEnEjecucion(c.estado));
     if (!enEjecucion.length) return res.json([]);
@@ -1255,6 +1283,10 @@ exports.clasesContratosEnEjecucion = async (req, res, next) => {
     if (!jornadaIds.length) return res.json([]);
 
     const q = { idJornada: { $in: jornadaIds } };
+    const estadoQ = String(req.query.estado || '').trim().toUpperCase();
+    if (estadoQ === 'EN PROCESO' || estadoQ === 'PROGRAMADA' || estadoQ === 'FINALIZADO') {
+      q.estado = estadoQ;
+    }
     const { vacio } = await aplicarFiltroClasesQueryPorRol(q, req);
     if (vacio) return res.json([]);
 
@@ -1280,6 +1312,7 @@ exports.clasesContratosEnEjecucion = async (req, res, next) => {
           ? `${contrato.codContrato} — ${cliente || 'Contrato'}`
           : cliente || String(contrato.codContrato || ''),
         clienteNombre: cliente,
+        origenesAlumnos: normalizarOrigenesContrato(contrato.origenesAlumnos),
       });
     }
 
@@ -1369,6 +1402,39 @@ exports.crearClase = async (req, res, next) => {
     if (inicioManual && finManual && finManual.getTime() <= inicioManual.getTime()) {
       return res.status(400).json({ message: 'La hora de fin debe ser posterior a la de inicio.' });
     }
+    const {
+      normalizarOrigenJornadaCap,
+      normalizarOrigenesContrato,
+      ORIGEN_JORNADA_LABELS,
+    } = require('../constants/origenJornadaCap');
+    const origenRaw =
+      req.body?.origenOperacion || req.body?.origenJornadaCap || req.body?.origen;
+    let origenOperacion = normalizarOrigenJornadaCap(origenRaw);
+    if (origenOperacion && jornada.idContrato) {
+      const contratoOrigen = await Contratacion.findById(jornada.idContrato)
+        .select('origenesAlumnos')
+        .lean();
+      const permitidos = normalizarOrigenesContrato(contratoOrigen?.origenesAlumnos);
+      if (!permitidos[origenOperacion]) {
+        return res.status(400).json({
+          message:
+            `El origen «${ORIGEN_JORNADA_LABELS[origenOperacion] || origenOperacion}» no está habilitado en este contrato.`,
+          codigo: 'origen_no_permitido',
+        });
+      }
+    }
+    if (!origenOperacion) {
+      // Si el contrato tiene un solo origen activo, usarlo por defecto.
+      if (jornada.idContrato) {
+        const contratoOrigen = await Contratacion.findById(jornada.idContrato)
+          .select('origenesAlumnos')
+          .lean();
+        const permitidos = normalizarOrigenesContrato(contratoOrigen?.origenesAlumnos);
+        const activos = ['colegio', 'estamento', 'empresa', 'operativo'].filter((k) => !!permitidos[k]);
+        if (activos.length === 1) origenOperacion = activos[0];
+      }
+    }
+
     const clase = await ClaseJornadaCap.create({
       idJornada,
       fechaClase: inicioDia(jornada.fechaProgramacion),
@@ -1384,6 +1450,7 @@ exports.crearClase = async (req, res, next) => {
         inicioManual && finManual
           ? Math.max(0, Math.round((finManual.getTime() - inicioManual.getTime()) / 1000))
           : null,
+      origenOperacion: origenOperacion || null,
       idinstructor: instructor.idinstructor,
       idEmpleadoInstructor: instructor.idEmpleadoInstructor,
       idUsuarioInstructor: instructor.idUsuarioInstructor,
@@ -2915,6 +2982,29 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
     if (nd == null) return res.status(400).json({ message: 'numDoc inválido' });
     const alumno = await DatosAlumno.findOne(numDocQuery(nd)).lean();
     if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+
+    const {
+      normalizarOrigenJornadaCap,
+      ORIGEN_JORNADA_LABELS,
+    } = require('../constants/origenJornadaCap');
+    const origenFiltro = normalizarOrigenJornadaCap(
+      req.body?.origenJornadaCap || req.body?.origenFiltro || req.body?.origen,
+    );
+    if (origenFiltro) {
+      const origenAlumno = normalizarOrigenJornadaCap(alumno.origenJornadaCap) || 'operativo';
+      if (origenAlumno !== origenFiltro) {
+        return res.status(400).json({
+          message:
+            `Este alumno es de «${ORIGEN_JORNADA_LABELS[origenAlumno] || origenAlumno}». ` +
+            `El filtro activo es «${ORIGEN_JORNADA_LABELS[origenFiltro] || origenFiltro}». ` +
+            'Cambie el origen seleccionado o use un alumno de ese origen.',
+          codigo: 'origen_no_coincide',
+          origenAlumno,
+          origenFiltro,
+        });
+      }
+    }
+
     const userLogin = auditoriaUsuario(req);
     await asegurarTipoAlumnoJornada(nd);
     const idProgramaVal = String(prog.idPrograma ?? prog._id);
@@ -3010,6 +3100,16 @@ exports.matricularAlumnoJornada = async (req, res, next) => {
         } else {
           throw e;
         }
+      }
+      const origenClase =
+        origenFiltro ||
+        normalizarOrigenJornadaCap(alumno.origenJornadaCap) ||
+        'operativo';
+      if (origenClase) {
+        await ClaseJornadaCap.updateOne(
+          { _id: clase._id },
+          { $set: { origenOperacion: origenClase } },
+        );
       }
       metaJornada = await evaluarMetaAlumnosJornada(jornada || clase.idJornada);
     } else if (idContrato) {
