@@ -89,6 +89,8 @@ export class CajaCuadreComponent implements OnInit {
   efectivoEsperado = computed(
     () => this.resumen()?.efectivoEsperado ?? 0,
   );
+  /** Sin efectivo esperado: se puede cerrar sin contar billetes/monedas. */
+  cajaEnCeros = computed(() => Math.round(Number(this.efectivoEsperado()) || 0) === 0);
   ingresosEfectivo = computed(() => this.resumen()?.totalIngresosEfectivo ?? 0);
   egresosEfectivo = computed(() => this.resumen()?.totalEgresosEfectivo ?? 0);
   totalGastos = computed(() => this.resumen()?.totalGastos ?? this.resumen()?.totalEgresos ?? 0);
@@ -245,7 +247,8 @@ export class CajaCuadreComponent implements OnInit {
     const id = this.sesion()?.idSesion;
     if (!id) return;
     const contado = this.arqueoTotal();
-    if (!(contado > 0)) {
+    // Si hay efectivo esperado, hay que hacer arqueo. En ceros no hace falta.
+    if (!this.cajaEnCeros() && !(contado > 0)) {
       this.inform('Realice el arqueo de efectivo (billetes y monedas) antes de cerrar');
       return;
     }
@@ -285,14 +288,14 @@ export class CajaCuadreComponent implements OnInit {
     const id = this.sesion()?.idSesion;
     if (!id) return;
     const contado = this.arqueoTotal();
-    if (!(contado > 0)) return;
+    if (!this.cajaEnCeros() && !(contado > 0)) return;
 
     this.loading.set(true);
     this.authError.set(null);
     this.cajaSvc
       .cerrar(id, {
         efectivoContado: contado,
-        arqueo: this.arqueoLineas(),
+        arqueo: this.cajaEnCeros() && contado === 0 ? [] : this.arqueoLineas(),
         observaciones: this.obsCierre() || undefined,
         ...auth,
       })

@@ -138,7 +138,17 @@
       Al cerrar la caja se guardará el resumen y ya no podrá registrar movimientos en esta sesión.
       Puede imprimir el cuadre desde el historial.
     </p>
+    <div class="caja-banner caja-banner--info" *ngIf="cajaEnCeros()" role="status">
+      <span class="caja-banner-icon" aria-hidden="true">✓</span>
+      <div class="caja-banner-body">
+        <strong class="caja-banner-title">Caja en ceros</strong>
+        <span>
+          No hay efectivo esperado. Puede cerrar sin hacer arqueo de billetes y monedas.
+        </span>
+      </div>
+    </div>
     <argo-caja-arqueo-panel
+      *ngIf="!cajaEnCeros()"
       [lineas]="arqueoLineas()"
       [esperado]="efectivoEsperado()"
       (lineasChange)="onArqueoChange($event)"
@@ -149,7 +159,7 @@
         <textarea rows="3" [ngModel]="obsCierre()" (ngModelChange)="obsCierre.set($event)"></textarea>
       </label>
       <button type="button" class="btn-cerrar" [disabled]="loading()" (click)="cerrarCaja()">
-        Cerrar caja e imprimir informe
+        {{ cajaEnCeros() ? 'Cerrar caja (en ceros)' : 'Cerrar caja e imprimir informe' }}
       </button>
     </div>
   </section>
