@@ -34,7 +34,7 @@ const RUTAS_INICIO: { path: string; permiso: string | string[] }[] = [
   { path: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin'] },
   { path: '/app/contabilidad/inicio', permiso: 'contabilidad' },
   { path: '/app/rrhh/inicio', permiso: 'rrhh' },
-  { path: '/app/vehiculos', permiso: ['vehiculos', 'instructores.inspeccion'] },
+  { path: '/app/vehiculos', permiso: 'vehiculos' },
 ];
 
 /** Prefijos URL → permiso requerido (más específico primero). */
@@ -95,7 +95,10 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/cierre-general', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin'] },
   { prefix: '/app/rrhh', permiso: 'rrhh' },
-  { prefix: '/app/vehiculos', permiso: ['vehiculos', 'instructores.inspeccion'] },
+  // Listado y alta solo con «vehiculos»; ficha/detalle también para inspección instructor.
+  { prefix: '/app/vehiculos/nuevo', permiso: 'vehiculos' },
+  { prefix: '/app/vehiculos/', permiso: ['vehiculos', 'instructores.inspeccion'] },
+  { prefix: '/app/vehiculos', permiso: 'vehiculos' },
   { prefix: '/app/configuracion/usuarios', permiso: 'config.usuarios' },
   { prefix: '/app/configuracion/sedes', permiso: ['sedes.gestionar', 'config.sedes'] },
   { prefix: '/app/configuracion/roles', permiso: 'config.roles' },
@@ -140,8 +143,15 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   },
 ];
 
+function pathCoincidePrefix(path: string, prefix: string): boolean {
+  if (path === prefix) return true;
+  // Prefijo con / final: solo hijos (ej. /app/vehiculos/ → detalle, no el listado).
+  if (prefix.endsWith('/')) return path.startsWith(prefix);
+  return path.startsWith(`${prefix}/`);
+}
+
 function reglaParaPath(path: string) {
-  return REGLAS_RUTA.filter((r) => path === r.prefix || path.startsWith(`${r.prefix}/`)).sort(
+  return REGLAS_RUTA.filter((r) => pathCoincidePrefix(path, r.prefix)).sort(
     (a, b) => b.prefix.length - a.prefix.length,
   )[0];
 }

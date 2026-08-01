@@ -573,6 +573,15 @@ export class ShellComponent {
       children: [
         {
           kind: 'link',
+          label: 'Gestión (hub)',
+          path: '/app/jornadas',
+          icon: '⌂',
+          iconTone: 'orange',
+          permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'],
+          permisoMenu: ['jornadas.gestionar', 'jornadas.registrar_alumnos'],
+        },
+        {
+          kind: 'link',
           label: 'Contratos',
           path: '/app/contratos',
           icon: '▦',
@@ -950,7 +959,8 @@ export class ShellComponent {
         },
       ],
     },
-    { kind: 'link', label: 'Vehículos', icon: '◐', path: '/app/vehiculos', iconTone: 'pink', permiso: ['vehiculos', 'instructores.inspeccion'] },
+    // Solo permiso «vehiculos»: instructores.inspeccion entra por el portal, no al listado.
+    { kind: 'link', label: 'Vehículos', icon: '◐', path: '/app/vehiculos', iconTone: 'pink', permiso: 'vehiculos' },
     {
       kind: 'group',
       label: 'Configuración',

@@ -31,7 +31,10 @@ const GRUPOS = [
         key: 'instructores.mi_portal',
         label: 'Usar portal de instructores (mi perfil, clases y operación)',
       },
-      { key: 'instructores.inspeccion', label: 'Inspección preoperacional de vehículos (instructor)' },
+      {
+        key: 'instructores.inspeccion',
+        label: 'Inspección preoperacional (desde portal instructor; no abre el menú Vehículos)',
+      },
     ],
   },
   {
@@ -39,8 +42,14 @@ const GRUPOS = [
     label: 'Jornadas Cap.',
     permisos: [
       { key: 'jornadas.ver', label: 'Consultar hub, contratos y calendario' },
-      { key: 'jornadas.gestionar', label: 'Contratación, programación y edición de jornadas' },
-      { key: 'jornadas.operar', label: 'Clase en carpa, clases y asistencia (instructor)' },
+      {
+        key: 'jornadas.gestionar',
+        label: 'Crear/editar contratos, programar jornadas y clases (gestión completa)',
+      },
+      {
+        key: 'jornadas.operar',
+        label: 'Clase en carpa, clases y asistencia (campo; no basta solo para contratos)',
+      },
       {
         key: 'jornadas.registrar_alumnos',
         label: 'Registrar alumnos de jornada (alta ficha; no instructor de campo)',
@@ -90,7 +99,7 @@ const GRUPOS = [
     label: 'Otros módulos',
     permisos: [
       { key: 'facturacion', label: 'Facturación' },
-      { key: 'vehiculos', label: 'Vehículos' },
+      { key: 'vehiculos', label: 'Vehículos (menú / listado y gestión de flota)' },
       { key: 'rrhh', label: 'Recursos humanos y nómina' },
       { key: 'rrhh.evaluaciones.ver', label: 'Ver evaluaciones de desempeño e informe' },
       {

@@ -40,7 +40,8 @@ router.put(
 );
 router.delete('/:id/documentos/:docId', permiso, ctrl.eliminarDocumento);
 
-router.get('/:id', permiso, ctrl.porId);
+// Detalle: flota (vehiculos) o inspección desde portal instructor.
+router.get('/:id', permisoInspeccion, ctrl.porId);
 router.post('/', permiso, upload.vehiculos.single('foto'), ctrl.crear);
 router.put('/:id', permiso, upload.vehiculos.single('foto'), ctrl.actualizar);
 router.delete('/:id', permiso, ctrl.eliminar);

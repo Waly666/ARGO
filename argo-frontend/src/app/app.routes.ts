@@ -673,7 +673,8 @@ export const routes: Routes = [
       {
         path: 'vehiculos/:id',
         canActivate: [permisoGuard],
-        data: { title: 'Vehículo', permiso: 'vehiculos' },
+        // Listado/gestión = vehiculos; detalle también para inspección desde portal instructor.
+        data: { title: 'Vehículo', permiso: ['vehiculos', 'instructores.inspeccion'] },
         loadComponent: () =>
           import('./features/vehiculos/vehiculo-detalle.component').then((m) => m.VehiculoDetalleComponent),
       },
