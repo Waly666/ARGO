@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -52,8 +52,9 @@ export class ServiciosAdminComponent implements OnInit {
   constructor() {
     effect(() => {
       if (this.modalAbierto()) {
-        this.asistente.setTipsPrepend(this.tipsMiaFormulario());
-        this.posicionarModal();
+        const tips = untracked(() => this.tipsMiaFormulario());
+        this.asistente.setTipsPrepend(tips);
+        untracked(() => this.posicionarModal());
       } else {
         this.asistente.clearTipsPrepend();
       }

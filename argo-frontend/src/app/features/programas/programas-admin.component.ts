@@ -9,6 +9,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -215,9 +216,12 @@ export class ProgramasAdminComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      if (this.modalAbierto()) {
-        this.asistente.setTipsPrepend([tipFormulario('Este formulario', this.modalSubtitulo(), 'prog-form-ctx')]);
-        this.scrollAlFormulario();
+      const abierto = this.modalAbierto();
+      if (abierto) {
+        // No leer form() aquí: cada tecla reejecutaba el effect (sonido + scroll).
+        const sub = untracked(() => this.modalSubtitulo());
+        this.asistente.setTipsPrepend([tipFormulario('Este formulario', sub, 'prog-form-ctx')]);
+        untracked(() => this.scrollAlFormulario());
       } else {
         this.asistente.clearTipsPrepend();
       }

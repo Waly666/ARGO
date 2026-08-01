@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ArgoDateInputComponent } from '../../../shared/argo-date-input/argo-date-input.component';
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, forkJoin } from 'rxjs';
 
@@ -117,7 +117,8 @@ export class AlumnoProgramacionCeaComponent implements OnInit {
   constructor() {
     effect(() => {
       if (this.modalAbierto()) {
-        this.asistente.setTipsPrepend(this.tipsMiaFormulario());
+        const tips = untracked(() => this.tipsMiaFormulario());
+        this.asistente.setTipsPrepend(tips);
       } else {
         this.asistente.clearTipsPrepend();
       }

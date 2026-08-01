@@ -17,6 +17,11 @@ export class AsistenteContextoService {
   /** Tips de formulario activo — se muestran primero en Mia (contexto del modal). */
   private tipsPrepend = signal<AsistenteTip[]>([]);
 
+  /** Un solo AudioContext: crear uno por tecla/efecto agota la memoria del navegador. */
+  private audioCtx: AudioContext | null = null;
+  private lastSoundAt = 0;
+  private static readonly SOUND_THROTTLE_MS = 450;
+
   activo = signal(this.readBool(LS_ACTIVO, true));
   sonido = signal(this.readBool(LS_SONIDO, true));
   /** Panel de tips abierto (false = solo avatar). */
@@ -50,6 +55,7 @@ export class AsistenteContextoService {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         this.overrideId.set(null);
+        this.tipsPrepend.set([]);
         const prev = this.contextoId();
         this.resolverDesdeUrl(e.urlAfterRedirects);
         const next = this.contextoId();
@@ -73,15 +79,20 @@ export class AsistenteContextoService {
 
   /** Antepone tips al contexto actual (p. ej. ayuda de un formulario modal abierto). */
   setTipsPrepend(tips: AsistenteTip[]): void {
+    const prev = this.tipsPrepend();
+    if (this.tipsIguales(prev, tips)) return;
+    const prevLen = prev.length;
     this.tipsPrepend.set(tips);
     this.indiceTip.set(0);
     if (tips.length && this.activo()) {
-      this.expandido.set(true);
-      if (this.sonido()) this.reproducirSonido('aparece');
+      if (!this.expandido()) this.expandido.set(true);
+      // Solo al abrir ayuda (0 → N). Si un effect relee el form al tipear, no volver a sonar.
+      if (this.sonido() && prevLen === 0) this.reproducirSonido('aparece');
     }
   }
 
   clearTipsPrepend(): void {
+    if (!this.tipsPrepend().length) return;
     this.tipsPrepend.set([]);
   }
 
@@ -126,10 +137,12 @@ export class AsistenteContextoService {
   /** Sonido suave generado con Web Audio (sin archivos externos). */
   reproducirSonido(tipo: 'aparece' | 'contexto' | 'tip' | 'toggle'): void {
     if (!this.sonido()) return;
+    const t = Date.now();
+    if (t - this.lastSoundAt < AsistenteContextoService.SOUND_THROTTLE_MS) return;
+    this.lastSoundAt = t;
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!Ctx) return;
-      const ctx = new Ctx();
+      const ctx = this.obtenerAudioCtx();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -162,10 +175,41 @@ export class AsistenteContextoService {
         osc.start(now);
         osc.stop(now + 0.15);
       }
-      osc.onended = () => void ctx.close();
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch {
+          /* ignore */
+        }
+      };
     } catch {
       /* sin audio en este navegador */
     }
+  }
+
+  private obtenerAudioCtx(): AudioContext | null {
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return null;
+    if (!this.audioCtx || this.audioCtx.state === 'closed') {
+      this.audioCtx = new Ctx();
+    }
+    if (this.audioCtx.state === 'suspended') {
+      void this.audioCtx.resume();
+    }
+    return this.audioCtx;
+  }
+
+  private tipsIguales(a: AsistenteTip[], b: AsistenteTip[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i].id !== b[i].id || a[i].titulo !== b[i].titulo || a[i].cuerpo !== b[i].cuerpo) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private resolverDesdeUrl(url: string): void {

@@ -12,6 +12,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -118,7 +119,7 @@ export class JornadaClaseEditorComponent implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       if (this.modalOpen()) {
-        const sub = this.subtituloModalClase();
+        const sub = untracked(() => this.subtituloModalClase());
         if (sub) {
           this.asistente.setTipsPrepend([tipFormulario('Esta clase', sub, 'jor-ed-clase-ctx')]);
         }

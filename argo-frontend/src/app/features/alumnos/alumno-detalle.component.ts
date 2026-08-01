@@ -15,6 +15,7 @@ import type { DocumentoPendienteRes } from '../../core/services/config-requisito
 import { DatosPrincipalesComponent } from './tabs/datos-principales.component';
 import { ServiciosComponent } from './tabs/servicios.component';
 import { PagosComponent } from './tabs/pagos.component';
+import { AlumnoFacturacionComponent } from './tabs/facturacion.component';
 import { CertificadosComponent } from './tabs/certificados.component';
 import { DocumentosComponent } from './tabs/documentos.component';
 import { AlumnoProgramacionCeaComponent } from './tabs/programacion-cea.component';
@@ -32,7 +33,15 @@ import {
   tituloComprobanteAlarma,
 } from '../../core/utils/comprobante-alarma.helpers';
 
-type TabKey = 'datos' | 'servicios' | 'pagos' | 'certificados' | 'documentos' | 'programacion' | 'migracion';
+type TabKey =
+  | 'datos'
+  | 'servicios'
+  | 'pagos'
+  | 'facturacion'
+  | 'certificados'
+  | 'documentos'
+  | 'programacion'
+  | 'migracion';
 
 interface AlertaClaseCeaCreada {
   programaLabel: string;
@@ -47,6 +56,7 @@ interface AlertaClaseCeaCreada {
     DatosPrincipalesComponent,
     ServiciosComponent,
     PagosComponent,
+    AlumnoFacturacionComponent,
     CertificadosComponent,
     DocumentosComponent,
     AlumnoProgramacionCeaComponent,
@@ -95,6 +105,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     { key: 'datos',        label: 'Datos Principales' },
     { key: 'servicios',    label: 'Servicios' },
     { key: 'pagos',        label: 'Pagos' },
+    { key: 'facturacion',  label: 'Facturación electrónica' },
     { key: 'certificados', label: 'Certificados' },
     { key: 'documentos',   label: 'Documentos' },
     { key: 'migracion',    label: 'Migración histórica' },

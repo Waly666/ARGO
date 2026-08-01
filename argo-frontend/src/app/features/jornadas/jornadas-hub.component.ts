@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
-import { Component, DestroyRef, HostListener, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, ParamMap, Router, RouterModule } from '@angular/router';
@@ -918,8 +918,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     });
     effect(() => {
       if (this.modalCrearClase()) {
+        const sub = untracked(() => this.subtituloModalClase());
         this.asistente.setTipsPrepend([
-          tipFormulario('Esta clase', this.subtituloModalClase(), 'jor-clase-ctx'),
+          tipFormulario('Esta clase', sub, 'jor-clase-ctx'),
         ]);
       } else {
         this.asistente.clearTipsPrepend();

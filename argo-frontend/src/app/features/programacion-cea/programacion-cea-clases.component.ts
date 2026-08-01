@@ -14,6 +14,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -488,7 +489,8 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
     });
     effect(() => {
       if (this.formModalOpen()) {
-        this.asistente.setTipsPrepend(this.tipsMiaFormClase());
+        const tips = untracked(() => this.tipsMiaFormClase());
+        this.asistente.setTipsPrepend(tips);
         return;
       }
       if (this.detalleOperarOpen() && this.claseSel()) {
@@ -503,13 +505,13 @@ export class ProgramacionCeaClasesComponent implements OnInit, OnDestroy, OnChan
         return;
       }
       if (this.inspeccionBloqueoOpen()) {
-        this.asistente.setTipsPrepend([
-          tipFormulario(
-            'Inspección requerida',
+        const msg = untracked(
+          () =>
             this.inspeccionBloqueoMsg() ||
-              'Debe completar la revisión de hoy antes de iniciar la clase práctica.',
-            'cea-insp-ctx',
-          ),
+            'Debe completar la revisión de hoy antes de iniciar la clase práctica.',
+        );
+        this.asistente.setTipsPrepend([
+          tipFormulario('Inspección requerida', msg, 'cea-insp-ctx'),
         ]);
         return;
       }
