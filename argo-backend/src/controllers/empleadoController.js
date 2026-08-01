@@ -322,6 +322,59 @@ exports.listar = async (req, res, next) => {
   }
 };
 
+/**
+ * Listado liviano para combobox de egresos de caja (sin datos sensibles de nómina).
+ * Accesible a cajero / caja.admin / contabilidad / rrhh.
+ */
+exports.listarLookupCaja = async (req, res, next) => {
+  try {
+    const q = (req.query.q || '').toString().trim();
+    const soloActivos = req.query.activos !== 'false';
+    const filter = {};
+    if (soloActivos) {
+      filter.estado = { $in: [/^activo$/i, 'activo', 'ACTIVO', null] };
+    }
+    if (q.length >= 1) {
+      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const or = [
+        { primerNombre: re },
+        { segundoNombre: re },
+        { primerApellido: re },
+        { segundoApellido: re },
+        { numeroDocumento: re },
+        { nombre1: re },
+        { apellido1: re },
+      ];
+      const docQ = numeroDocumentoQuery(q);
+      if (docQ?.$or?.length) or.push(...docQ.$or);
+      filter.$or = or;
+    }
+    const rows = await Empleado.find(filter)
+      .select(
+        'idEmpleado primerNombre segundoNombre primerApellido segundoApellido nombre1 apellido1 numeroDocumento cargoId estado',
+      )
+      .sort({ primerApellido: 1, primerNombre: 1 })
+      .limit(200)
+      .lean();
+    const out = await Promise.all(
+      rows.map(async (r) => {
+        const e = normalizarEmpleadoLegacy(r);
+        const cargo = e.cargoId ? await Cargo.findOne({ idCargo: e.cargoId }).select('nombre').lean() : null;
+        return {
+          idEmpleado: e.idEmpleado,
+          numeroDocumento: e.numeroDocumento || null,
+          nombreCompleto: nombreCompletoEmpleado(e),
+          cargoNombre: cargo?.nombre || null,
+          estado: e.estado || null,
+        };
+      }),
+    );
+    res.json(out.filter((x) => x.numeroDocumento));
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.obtener = async (req, res, next) => {
   try {
     const emp = await buscarEmpleado(req.params.id);

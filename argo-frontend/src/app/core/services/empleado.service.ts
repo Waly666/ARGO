@@ -340,6 +340,17 @@ export class EmpleadoService {
     return this.http.get<Empleado[]>(this.base, { params });
   }
 
+  /**
+   * Lookup liviano para egresos de caja (cajero sin permiso rrhh).
+   * Campos: idEmpleado, nombreCompleto, numeroDocumento, cargoNombre.
+   */
+  listarLookupCaja(opts?: { q?: string; activos?: boolean }): Observable<Empleado[]> {
+    let params = new HttpParams();
+    if (opts?.q) params = params.set('q', opts.q);
+    if (opts?.activos === false) params = params.set('activos', 'false');
+    return this.http.get<Empleado[]>(`${this.rrhhBase}/empleados-lookup`, { params });
+  }
+
   /** Empleados con cargo instructor (módulo Instructores). */
   listarInstructores(opts?: { q?: string; activos?: boolean }): Observable<Empleado[]> {
     let params = new HttpParams();

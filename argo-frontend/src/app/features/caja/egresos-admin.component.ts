@@ -409,12 +409,18 @@ export class EgresosAdminComponent implements OnInit {
 
     this.isAdmin.set(r.includes('admin'));
 
-    // Empleados / nómina exigen permiso rrhh. El cajero no lo tiene → 403 «Sin permiso».
-    if (this.permisos.tiene('rrhh') || this.isAdmin()) {
-      this.empSvc.listar({ activos: true }).subscribe({
+    // Cajero necesita empleados para egresos (sin permiso rrhh completo → lookup liviano).
+    if (
+      this.permisos.tiene(['rrhh', 'caja.turno', 'caja.admin', 'contabilidad']) ||
+      this.isAdmin()
+    ) {
+      this.empSvc.listarLookupCaja({ activos: true }).subscribe({
         next: (e) => this.empleados.set((e || []).filter((x) => x.numeroDocumento)),
         error: () => this.empleados.set([]),
       });
+    }
+
+    if (this.permisos.tiene('rrhh') || this.isAdmin()) {
       this.nominaSvc.listarPeriodos().subscribe({
         next: (p) => this.periodosNomina.set(p || []),
         error: () => this.periodosNomina.set([]),

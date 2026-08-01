@@ -58,6 +58,8 @@ export class CajaCuadreComponent implements OnInit {
   historial = signal<CajaSesion[]>([]);
   tiposPagoCat = signal<Record<string, unknown>[]>([]);
   loading = signal(false);
+  /** Evita que el refresh de la página deshabilite el botón Abrir del modal. */
+  loadingApertura = signal(false);
   msg = signal<string | null>(null);
   msgError = signal(false);
 
@@ -220,23 +222,54 @@ export class CajaCuadreComponent implements OnInit {
     this.saldoInicialApertura.set(0);
     this.obsApertura.set('');
     this.mostrarApertura.set(true);
+    // Montar en body: el .card de caja mueve position:fixed y el modal queda fuera de vista.
+    setTimeout(() => this.montarModalEnBody('caja-modal-apertura', true), 0);
+  }
+
+  cerrarModalApertura(): void {
+    this.mostrarApertura.set(false);
   }
 
   confirmarApertura(): void {
-    this.loading.set(true);
+    this.loadingApertura.set(true);
     this.cajaSvc.abrir(this.saldoInicialApertura(), this.obsApertura() || undefined).subscribe({
       next: () => {
         this.mostrarApertura.set(false);
-        this.loading.set(false);
+        this.loadingApertura.set(false);
         this.inform('Caja abierta');
         void this.cajaEstado.refrescar();
         this.refrescar();
       },
       error: (e) => {
-        this.loading.set(false);
+        this.loadingApertura.set(false);
         this.inform(e?.error?.message || 'No se pudo abrir la caja');
+        // Re-anclar por si el error dejó el modal en estado raro.
+        setTimeout(() => this.montarModalEnBody('caja-modal-apertura', false), 0);
       },
     });
+  }
+
+  /** Autorización de cierre: mismo portal al body. */
+  private mostrarAuthCierrePortal(): void {
+    this.mostrarAuthCierre.set(true);
+    setTimeout(() => this.montarModalEnBody('caja-modal-auth-cierre', false), 0);
+  }
+
+  private montarModalEnBody(id: string, focusSaldo: boolean): void {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.parentElement !== document.body) {
+      document.body.appendChild(el);
+    }
+    if (!focusSaldo) return;
+    const input = el.querySelector<HTMLInputElement>('input[type="number"]');
+    input?.focus();
+    input?.select();
+  }
+
+  onFocusSeleccionar(ev: FocusEvent): void {
+    const el = ev.target as HTMLInputElement | null;
+    el?.select();
   }
 
   onArqueoChange(lineas: ArqueoLinea[]): void {
@@ -254,7 +287,7 @@ export class CajaCuadreComponent implements OnInit {
     }
     if (this.requiereAuthDescuadre() && !this.isAdmin()) {
       this.authError.set(null);
-      this.mostrarAuthCierre.set(true);
+      this.mostrarAuthCierrePortal();
       return;
     }
     this.ejecutarCierre();
@@ -345,8 +378,8 @@ export class CajaCuadreComponent implements OnInit {
           const errMsg = e?.error?.message || 'No se pudo cerrar la caja';
 
           if (code === 'AUTH_INVALID' || code === 'AUTH_REQUIRED' || code === 'DESCUADRE_AUTH_REQUIRED') {
-            this.mostrarAuthCierre.set(true);
             this.authError.set(errMsg);
+            this.mostrarAuthCierrePortal();
             return;
           }
 

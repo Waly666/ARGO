@@ -446,6 +446,9 @@
               (limpiado)="onEmpleadoLimpiar()"
             />
             <p class="field-error" *ngIf="msgCampo('empleado') as m">{{ m }}</p>
+            <p class="hint" *ngIf="!empleados().length">
+              No hay empleados activos con documento para seleccionar. Verifique en RRHH o con un administrador.
+            </p>
           </div>
         </div>
 

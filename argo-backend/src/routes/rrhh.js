@@ -30,6 +30,12 @@ router.get(
   requirePermiso('instructores', 'rrhh', 'jornadas.ver', 'jornadas.gestionar'),
   empleado.obtenerInstructor,
 );
+/** Combobox egresos de caja: cajero puede buscar empleados sin permiso RRHH completo. */
+router.get(
+  '/empleados-lookup',
+  requirePermiso('rrhh', 'caja.turno', 'caja.admin', 'contabilidad'),
+  empleado.listarLookupCaja,
+);
 router.use(rrhh);
 
 function crud(ctrl) {

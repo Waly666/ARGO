@@ -246,7 +246,12 @@
 </div>
 
 <!-- Modal autorización cierre con descuadre -->
-<div class="modal-backdrop" *ngIf="mostrarAuthCierre()" (click)="cancelarAuthCierre()">
+<div
+  id="caja-modal-auth-cierre"
+  class="modal-backdrop modal-backdrop--top"
+  *ngIf="mostrarAuthCierre()"
+  (click)="cancelarAuthCierre()"
+>
   <div class="modal card auth-modal" (click)="$event.stopPropagation()">
     <h2>Autorizar cierre con descuadre</h2>
     <p class="modal-hint">
@@ -279,10 +284,16 @@
   </div>
 </div>
 
-<!-- Modal apertura -->
-<div class="modal-backdrop" *ngIf="mostrarApertura()" (click)="mostrarApertura.set(false)">
+<!-- Modal apertura: portal a body + anclado bajo el header -->
+<div
+  id="caja-modal-apertura"
+  class="modal-backdrop modal-backdrop--top"
+  *ngIf="mostrarApertura()"
+  (click)="cerrarModalApertura()"
+>
   <div class="modal card" (click)="$event.stopPropagation()">
     <h2>Apertura de caja</h2>
+    <p class="modal-hint">Indique la base en efectivo con la que inicia el turno.</p>
     <label>
       Base / saldo inicial en efectivo
       <input
@@ -290,6 +301,7 @@
         min="0"
         [ngModel]="saldoInicialApertura()"
         (ngModelChange)="saldoInicialApertura.set(+$event || 0)"
+        (focus)="onFocusSeleccionar($event)"
       />
     </label>
     <label>
@@ -297,8 +309,8 @@
       <textarea rows="2" [ngModel]="obsApertura()" (ngModelChange)="obsApertura.set($event)"></textarea>
     </label>
     <div class="modal-actions">
-      <button type="button" class="ghost" (click)="mostrarApertura.set(false)">Cancelar</button>
-      <button type="button" class="primary" [disabled]="loading()" (click)="confirmarApertura()">Abrir</button>
+      <button type="button" class="ghost" (click)="cerrarModalApertura()">Cancelar</button>
+      <button type="button" class="primary" [disabled]="loadingApertura()" (click)="confirmarApertura()">Abrir</button>
     </div>
   </div>
 </div>

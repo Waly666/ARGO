@@ -221,9 +221,9 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
 
   private coincideBusqueda(nq: string, label: string, hint?: string): boolean {
     const nl = this.normalizar(label);
-    if (nl.startsWith(nq)) return true;
-    if (hint && this.normalizar(hint).startsWith(nq)) return true;
-    return nl.split(/[\s(/\-]+/).some((w) => w.startsWith(nq));
+    if (nl.includes(nq)) return true;
+    if (hint && this.normalizar(hint).includes(nq)) return true;
+    return nl.split(/[\s(/\-—–]+/).some((w) => w.startsWith(nq));
   }
 
   @HostListener('document:click', ['$event'])
