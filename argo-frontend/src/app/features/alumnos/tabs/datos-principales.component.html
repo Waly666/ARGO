@@ -153,7 +153,7 @@
           <span class="section-icon ic-blue">◉</span>
           <div>
             <h3>Identificación</h3>
-            <p>Documento, nombres, fecha de nacimiento y foto · todos obligatorios</p>
+            <p>Documento, nombres y fecha de nacimiento · obligatorios · la foto es opcional</p>
           </div>
         </div>
         <div class="section-body section-body-split">
@@ -282,10 +282,8 @@
           </div>
           </div>
           <aside class="foto-col" aria-label="Foto y QR del alumno">
-            <div
-              class="foto-block"
-              [class.campo-obligatorio-error]="campoObligatorioInvalido('foto')">
-              <label class="field-label">Foto del alumno *</label>
+            <div class="foto-block">
+              <label class="field-label">Foto del alumno</label>
               <div class="foto">
                 <img *ngIf="fotoPreview() as p" [src]="p" alt="Foto" />
                 <span *ngIf="!fotoPreview()">Sin foto</span>

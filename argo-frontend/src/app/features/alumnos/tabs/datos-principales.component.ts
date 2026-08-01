@@ -1119,8 +1119,6 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     falta(vacio(f.nombre1), 'nombre1', 'primer nombre', identificacion);
     falta(vacio(f.nombre2), 'nombre2', 'segundo nombre', identificacion);
     falta(vacio(f.fechaNac), 'fechaNac', 'fecha de nacimiento', identificacion);
-    const tieneFoto = !!(this.fotoFile() || this.fotoPreview() || String(f.urlFoto || '').trim());
-    falta(!tieneFoto, 'foto', 'foto del alumno', identificacion);
 
     falta(vacio(f.genero), 'genero', 'género', personales);
     falta(vacio(f.tipoSangre), 'tipoSangre', 'tipo de sangre', personales);
