@@ -179,10 +179,14 @@ function esClaseDelInstructor(clase, emp, userId) {
 }
 
 /**
- * Rol instructor (sistema o personalizado): siempre solo sus clases,
- * aunque en BD le hayan dejado gestionar/registrar por error.
+ * Rol instructor (sistema o personalizado) sin permisos de gestión:
+ * solo sus clases. Si tiene jornadas.gestionar / registrar_alumnos / *,
+ * no se restringe aunque el código del rol diga «instructor».
  */
-function esRolInstructorSoloClasesPropias(req) {
+function esRolInstructorSoloClasesPropias(req, permisos = []) {
+  if (tieneAlguno(permisos, ['*', 'jornadas.gestionar', 'jornadas.registrar_alumnos'])) {
+    return false;
+  }
   const rol = normalizarRol(req.user?.rol);
   if (rol === 'instructor') return true;
   const raw = String(req.user?.rol || '')
@@ -193,13 +197,13 @@ function esRolInstructorSoloClasesPropias(req) {
 
 /**
  * Quién puede ver el listado completo de clases (todas las de la empresa).
- * Instructores: nunca (ver filtroClasesQueryPorRol).
+ * Instructores de campo (solo operar): no. Gestores sí, aunque el rol se llame instructor.
  */
 function puedeVerTodasLasClasesJornada(req, permisos) {
-  if (esRolInstructorSoloClasesPropias(req)) return false;
   if (tieneAlguno(permisos, ['*', 'jornadas.gestionar', 'jornadas.registrar_alumnos'])) {
     return true;
   }
+  if (esRolInstructorSoloClasesPropias(req, permisos)) return false;
   const rol = normalizarRol(req.user?.rol);
   if (['admin', 'recepcion', 'registro', 'cajero', 'supervisor'].includes(rol)) {
     return true;
@@ -215,13 +219,13 @@ function puedeVerTodasLasClasesJornada(req, permisos) {
 }
 
 /**
- * Admin / registro / cajero / supervisor: sin filtro (todas las clases).
- * Instructor: solo clases propias (empleado / usuario / nombre legacy).
+ * Admin / gestión / registro / cajero / supervisor: sin filtro (todas las clases).
+ * Instructor de campo (solo operar): solo clases propias.
  */
 async function filtroClasesQueryPorRol(req) {
   const permisos = req.permisos || (await permisosParaRol(req.user?.rol));
   const restringir =
-    esRolInstructorSoloClasesPropias(req) ||
+    esRolInstructorSoloClasesPropias(req, permisos) ||
     (!puedeVerTodasLasClasesJornada(req, permisos) &&
       tieneAlguno(permisos, ['jornadas.operar', 'instructores.mi_portal']));
 
