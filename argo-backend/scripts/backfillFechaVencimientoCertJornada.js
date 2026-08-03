@@ -58,7 +58,10 @@ async function backfill({ dryRun = false } = {}) {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/argo';
+  const uri =
+    process.env.MONGO_URI ||
+    process.env.MONGODB_URI ||
+    'mongodb://127.0.0.1:27017/argo';
   await mongoose.connect(uri);
   const r = await backfill({ dryRun });
   console.log(
