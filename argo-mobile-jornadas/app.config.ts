@@ -99,7 +99,11 @@ const config: ExpoConfig = {
           'ARGO Jornadas usa el micrófono para dictar datos y ejecutar comandos de voz en carpa.',
         speechRecognitionPermission:
           'ARGO Jornadas usa reconocimiento de voz para dictado y comandos sin teclear.',
-        androidSpeechServicePackages: ['com.google.android.googlequicksearchbox'],
+        androidSpeechServicePackages: [
+          'com.google.android.googlequicksearchbox',
+          'com.google.android.tts',
+          'com.google.android.as',
+        ],
       },
     ],
     'expo-secure-store',

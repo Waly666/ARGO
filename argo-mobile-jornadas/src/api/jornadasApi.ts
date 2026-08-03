@@ -313,13 +313,16 @@ export type CrearAlumnoJornadaDto = {
   nombreMunicipio?: string;
   /** colegio | estamento | empresa | operativo */
   origenJornadaCap?: string;
-  /** colegio | instituto | universidad */
+  /** primaria | secundaria | tecnica | tecnologica | universidad */
   tipoInstitucionEducativa?: string;
+  perfilInstitucionEducativa?: 'estudiante' | 'profesor';
   colegioCodigo?: string;
   colegioNombre?: string;
   gradoColegio?: number;
-  /** Programa / semestre (instituto o universidad). */
+  semestreInstitucion?: number;
+  titulacionCodigo?: string;
   programaInstitucion?: string;
+  areaImparteColegio?: string;
   estamentoId?: string;
   estamentoNombre?: string;
   cargoEstamento?: string;

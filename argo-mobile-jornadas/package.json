@@ -4,7 +4,8 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "start": "expo start --go",
+    "start": "expo start",
+    "start:go": "expo start --go",
     "start:tunnel": "expo start --go --tunnel",
     "start:lan": "expo start --go --lan",
     "android": "expo run:android",

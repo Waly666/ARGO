@@ -294,14 +294,23 @@ async function asegurarUsuarioParaEmpleado(emp, { cargoNombre, creadoPor, rol } 
 
   const porEmpleado = await Usuario.findOne({ idEmpleado: e.idEmpleado });
   if (porEmpleado) {
-    await sincronizarDatosUsuario(porEmpleado, e, rolFinal);
-    return {
-      existente: true,
-      usuario: limpiarUsuario(porEmpleado),
-      username: porEmpleado.username,
-      rol: normalizarRol(porEmpleado.rol),
-      idUsuario: porEmpleado._id,
-    };
+    const uidEmp = e.idUsuario ? String(e.idUsuario).trim() : '';
+    const uidUser = String(porEmpleado._id);
+    // idEmpleado en un login ajeno (p. ej. admin waly → empleado Ana): no reutilizar.
+    if (uidEmp && uidEmp !== uidUser) {
+      await Usuario.updateOne({ _id: porEmpleado._id }, { $unset: { idEmpleado: '' } });
+    } else if (!uidEmp && esAdmin(normalizarRol(porEmpleado.rol))) {
+      await Usuario.updateOne({ _id: porEmpleado._id }, { $unset: { idEmpleado: '' } });
+    } else {
+      await sincronizarDatosUsuario(porEmpleado, e, rolFinal);
+      return {
+        existente: true,
+        usuario: limpiarUsuario(porEmpleado),
+        username: porEmpleado.username,
+        rol: normalizarRol(porEmpleado.rol),
+        idUsuario: porEmpleado._id,
+      };
+    }
   }
 
   const email = emailUsuario(e);
@@ -355,7 +364,9 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado, opts = {}) 
     if (!String(u.nombres || '').trim() && nombresUsuario(e)) u.nombres = nombresUsuario(e);
     if (!String(u.apellidos || '').trim() && apellidosUsuario(e)) u.apellidos = apellidosUsuario(e);
     if (email && !String(u.email || '').trim()) u.email = email;
-    u.idEmpleado = e.idEmpleado;
+    if (!esAdmin(normalizarRol(u.rol))) {
+      u.idEmpleado = e.idEmpleado;
+    }
     u.activo = String(e.estado || 'activo').toLowerCase() === 'activo';
     if (!esAdmin(normalizarRol(u.rol))) {
       u.sedesPermitidas = await sedesPermitidasDesdeEmpleado(e);
@@ -368,7 +379,9 @@ async function sincronizarDatosUsuario(usuarioDoc, emp, rolEsperado, opts = {}) 
   u.apellidos = apellidosUsuario(e);
   if (email) u.email = email;
   if (rolEsperado) u.rol = normalizarRol(rolEsperado);
-  u.idEmpleado = e.idEmpleado;
+  if (!esAdmin(normalizarRol(u.rol))) {
+    u.idEmpleado = e.idEmpleado;
+  }
   u.numeroDocumento = String(e.numeroDocumento || '').trim();
 
   const loginActual = String(u.username || '').trim();

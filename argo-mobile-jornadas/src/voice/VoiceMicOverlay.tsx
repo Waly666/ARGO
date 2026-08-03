@@ -22,6 +22,8 @@ export function VoiceMicOverlay() {
 
   if (!voice || !voice.activeScreenId) return null;
 
+  if (!voice.nativeAvailable) return null;
+
   const size = 56 * buttonMultiplier;
   const pending = voice.pendingConfirm;
 

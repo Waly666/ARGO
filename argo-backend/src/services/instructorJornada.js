@@ -55,12 +55,12 @@ async function empleadoPorUsuarioId(userId) {
   const porUsuarioStr = await Empleado.findOne({ idUsuario: uid }).lean();
   if (porUsuarioStr) return porUsuarioStr;
 
-  // 2) Usuario.idEmpleado solo si la ficha no pertenece a otro login.
+  // 2) Usuario.idEmpleado solo con vínculo bidireccional (evita admin → empleado ajeno).
   if (u?.idEmpleado != null && Number.isFinite(Number(u.idEmpleado))) {
     const emp = await Empleado.findOne({ idEmpleado: Number(u.idEmpleado) }).lean();
     if (emp) {
       const empUid = emp.idUsuario != null ? String(emp.idUsuario).trim() : '';
-      if (!empUid || empUid === uid) return emp;
+      if (empUid && empUid === uid) return emp;
     }
   }
   return null;
@@ -254,9 +254,12 @@ async function asegurarInstructorOperandoClase(claseDoc, req) {
   const esAdmin = tieneAlguno(permisos, ['jornadas.gestionar']);
   const emp = await empleadoPorUsuarioId(req.user?.sub);
   const userId = req.user?.sub ? String(req.user.sub) : '';
+  /** Empleado usable solo si el login coincide con idUsuario en RRHH. */
+  const empOperador =
+    emp && emp.idUsuario != null && String(emp.idUsuario).trim() === userId ? emp : null;
 
   if (!esClaseSinInstructor(claseDoc)) {
-    if (!esClaseDelInstructor(claseDoc, emp, userId) && !esAdmin) {
+    if (!esClaseDelInstructor(claseDoc, empOperador, userId) && !esAdmin) {
       const err = new Error('Esta clase está asignada a otro instructor.');
       err.status = 403;
       throw err;
@@ -264,12 +267,12 @@ async function asegurarInstructorOperandoClase(claseDoc, req) {
     return claseDoc;
   }
 
-  // Clase libre: asignar siempre a quien está operando.
-  let idEmpleadoInstructor = emp?.idEmpleado ?? null;
+  // Clase libre: asignar a quien está operando.
+  let idEmpleadoInstructor = empOperador?.idEmpleado ?? null;
   let idUsuarioInstructor = userId;
-  let idinstructor = emp ? nombreEmpleado(emp) : '';
+  let idinstructor = empOperador ? nombreEmpleado(empOperador) : '';
 
-  if (emp) {
+  if (empOperador) {
     try {
       const instructor = await resolverInstructorParaClase(req, {});
       idEmpleadoInstructor = instructor.idEmpleadoInstructor;
@@ -277,7 +280,7 @@ async function asegurarInstructorOperandoClase(claseDoc, req) {
       idinstructor = instructor.idinstructor || idinstructor;
     } catch (e) {
       // Admin u operador con empleado pero sin cargo instructor: usar datos RRHH / sesión.
-      if (!esAdmin && !emp) throw e;
+      if (!esAdmin && !empOperador) throw e;
       idinstructor =
         idinstructor ||
         String(req.user?.nombres || req.user?.username || req.user?.rolNombre || 'Operador').trim();

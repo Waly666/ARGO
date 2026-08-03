@@ -89,3 +89,18 @@ export function buscarClientesFacturacion(q = '', limit = 40) {
       .filter((r) => r._id && r.nombre),
   );
 }
+
+export type TitulacionColombia = {
+  codigo: string;
+  nivel: string;
+  nombre: string;
+  label: string;
+  hint?: string;
+};
+
+export function buscarTitulaciones(nivel: string, q = '', limit = 80) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (String(nivel || '').trim()) params.set('nivel', String(nivel).trim());
+  if (q.trim()) params.set('q', q.trim());
+  return apiFetch<TitulacionColombia[]>(`/catalogos/titulaciones/buscar?${params.toString()}`);
+}

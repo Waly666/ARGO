@@ -15,7 +15,14 @@ import {
   matchVoiceCommand,
   type VoiceCommandDef,
 } from './commands';
-import { isOfflineLanguageError, isSpeechNativeAvailable, shouldUseOnDeviceRecognition, speechLang } from './speechAvailability';
+import {
+  isOfflineLanguageError,
+  isSpeechNativeAvailable,
+  resolveAndroidSpeechService,
+  shouldUseOnDeviceRecognition,
+  speechLang,
+  speechStartOptions,
+} from './speechAvailability';
 
 export type VoiceFieldHandlers = {
   focus: () => void;
@@ -229,30 +236,19 @@ export function VoiceProvider({ children }: Props) {
 
         if (isOfflineLanguageError(event.message, event.error) && !forceNetworkRef.current) {
           forceNetworkRef.current = true;
-          // Reintento inmediato por red (sin modelo offline).
-          try {
-            ExpoSpeechRecognitionModule.start({
-              lang: speechLang(),
-              interimResults: false,
-              continuous: false,
-              requiresOnDeviceRecognition: false,
-              contextualStrings: [
-                'siguiente',
-                'anterior',
-                'iniciar',
-                'finalizar',
-                'inscribir',
-                'matricular',
-                'guardar',
-                'limpiar',
-              ],
-            });
-          } catch {
-            Alert.alert(
-              'Voz',
-              'El español offline no está descargado. Conéctese a internet o descargue el idioma en Ajustes → Google → Reconocimiento de voz offline.',
-            );
-          }
+          void (async () => {
+            try {
+              const androidPkg = await resolveAndroidSpeechService();
+              ExpoSpeechRecognitionModule.start(
+                speechStartOptions(speechLang(), false, androidPkg),
+              );
+            } catch {
+              Alert.alert(
+                'Voz',
+                'El español offline no está descargado. Conéctese a internet o descargue el idioma en Ajustes → Google → Reconocimiento de voz offline.',
+              );
+            }
+          })();
           return;
         }
 
@@ -298,24 +294,9 @@ export function VoiceProvider({ children }: Props) {
     const lang = speechLang();
     const onDevice =
       !forceNetworkRef.current && (await shouldUseOnDeviceRecognition(lang));
+    const androidPkg = await resolveAndroidSpeechService();
 
-    ExpoSpeechRecognitionModule.start({
-      lang,
-      interimResults: false,
-      continuous: false,
-      // Solo on-device si el modelo ES ya está instalado; si no, red.
-      requiresOnDeviceRecognition: onDevice,
-      contextualStrings: [
-        'siguiente',
-        'anterior',
-        'iniciar',
-        'finalizar',
-        'inscribir',
-        'matricular',
-        'guardar',
-        'limpiar',
-      ],
-    });
+    ExpoSpeechRecognitionModule.start(speechStartOptions(lang, onDevice, androidPkg));
   }, [nativeAvailable]);
 
   const stopListening = useCallback(() => {

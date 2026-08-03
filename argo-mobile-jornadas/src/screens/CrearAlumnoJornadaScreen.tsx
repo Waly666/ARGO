@@ -26,6 +26,7 @@ import {
   buscarClientesFacturacion,
   buscarColegios,
   buscarEstamentosPublicos,
+  buscarTitulaciones,
   listarDepartamentos,
   type MunicipioDivipola,
 } from '../api/catalogosApi';
@@ -51,6 +52,20 @@ import { puedeRegistrarAlumnosJornada } from '../utils/permisos';
 import type { RootStackParamList } from '../navigation/types';
 import { VOICE_PHRASES, type VoiceCommandDef } from '../voice/commands';
 import { useVoiceScreen } from '../voice/VoiceContext';
+import {
+  OPCIONES_AREA_IMPARTE,
+  OPCIONES_PERFIL_INSTITUCION,
+  OPCIONES_TIPO_INSTITUCION,
+  esNivelBasicaMedia,
+  esNivelSuperior,
+  labelInstitucionPorNivel,
+  limiteBusquedaColegios,
+  normalizarNivelInstitucion,
+  opcionesGradoColegio,
+  opcionesSemestreInstitucion,
+  type NivelInstitucion,
+  type PerfilInstitucion,
+} from '../utils/institucionEducativa';
 
 type Route = RouteProp<RootStackParamList, 'CrearAlumnoJornada'>;
 
@@ -62,17 +77,6 @@ const ORIGEN_LABELS: Record<string, string> = {
   empresa: 'Empresa',
   operativo: 'Operativo / calle',
 };
-
-const TIPOS_INSTITUCION = [
-  { value: 'colegio', label: 'Colegio' },
-  { value: 'instituto', label: 'Instituto técnico' },
-  { value: 'universidad', label: 'Universidad' },
-];
-
-const GRADOS = Array.from({ length: 11 }, (_, i) => ({
-  value: String(i + 1),
-  label: `Grado ${i + 1}`,
-}));
 
 function emailOk(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
@@ -163,7 +167,12 @@ export default function CrearAlumnoJornadaScreen() {
   const [colegioCodigo, setColegioCodigo] = useState('');
   const [colegioNombre, setColegioNombre] = useState('');
   const [gradoColegio, setGradoColegio] = useState('');
-  const [tipoInstitucion, setTipoInstitucion] = useState('colegio');
+  const [tipoInstitucion, setTipoInstitucion] = useState<NivelInstitucion>('secundaria');
+  const [perfilInstitucion, setPerfilInstitucion] = useState<PerfilInstitucion>('estudiante');
+  const [areaImparteColegio, setAreaImparteColegio] = useState('');
+  const [semestreInstitucion, setSemestreInstitucion] = useState('');
+  const [titulacionCodigo, setTitulacionCodigo] = useState('');
+  const [titulacionTexto, setTitulacionTexto] = useState('');
   const [programaInstitucion, setProgramaInstitucion] = useState('');
   const [estamentoId, setEstamentoId] = useState('');
   const [estamentoNombre, setEstamentoNombre] = useState('');
@@ -184,18 +193,21 @@ export default function CrearAlumnoJornadaScreen() {
 
   const codColegioFiltro = String(munOrigen || codMunicipioJornada || '').trim();
 
-  const esNivelSuperior = tipoInstitucion === 'instituto' || tipoInstitucion === 'universidad';
+  const nivelInst = normalizarNivelInstitucion(tipoInstitucion);
+  const esSuperior = esNivelSuperior(nivelInst);
+  const esBasicaMedia = esNivelBasicaMedia(nivelInst);
+  const esProfesor = perfilInstitucion === 'profesor';
+  const opcionesGrado = useMemo(() => opcionesGradoColegio(nivelInst), [nivelInst]);
 
   const buscarColegioCb = useCallback(
     async (q: string) => {
       const term = q.trim();
-      // Sin municipio: en básica hace falta texto; en superior se lista todo el nivel.
-      if (!codColegioFiltro && term.length < 2 && !esNivelSuperior) return [];
+      if (!codColegioFiltro && term.length < 2 && !esSuperior) return [];
       const rows = await buscarColegios(
         codColegioFiltro,
         term,
-        esNivelSuperior ? 400 : 40,
-        tipoInstitucion,
+        limiteBusquedaColegios(nivelInst),
+        nivelInst,
       );
       return rows.map((r) => ({
         id: r.codigoEstablecimiento,
@@ -203,7 +215,19 @@ export default function CrearAlumnoJornadaScreen() {
         hint: r.hint || [r.nombreMunicipio, r.codMunicipio].filter(Boolean).join(' · ') || undefined,
       }));
     },
-    [codColegioFiltro, tipoInstitucion, esNivelSuperior],
+    [codColegioFiltro, nivelInst, esSuperior],
+  );
+
+  const buscarTitulacionCb = useCallback(
+    async (q: string) => {
+      const rows = await buscarTitulaciones(nivelInst, q, 80);
+      return (rows || []).map((r) => ({
+        id: r.codigo,
+        label: r.label || r.nombre,
+        hint: r.hint,
+      }));
+    },
+    [nivelInst],
   );
 
   const buscarEstamentoCb = useCallback(
@@ -256,8 +280,9 @@ export default function CrearAlumnoJornadaScreen() {
   }
 
   function onExpedidaSel(m: MunicipioDivipola) {
-    setExpedida(m.codMunicipio);
-    setExpedidaTexto(m.label);
+    const nombre = String(m.nombreMunicipio || m.label || '').trim().toUpperCase();
+    setExpedida(nombre);
+    setExpedidaTexto(nombre);
   }
 
   function onMunOrigenSel(m: MunicipioDivipola) {
@@ -290,17 +315,26 @@ export default function CrearAlumnoJornadaScreen() {
     if (!codDepartamento.trim()) return 'Indique el departamento de origen.';
     if (!munOrigen.trim()) return 'Indique el municipio de origen.';
     if (origenJornadaCap === 'colegio') {
-      if (!tipoInstitucion) return 'Seleccione el tipo de institución.';
-      if (!colegioNombre.trim()) {
-        return tipoInstitucion === 'colegio'
-          ? 'Seleccione o indique el colegio.'
-          : 'Indique el nombre de la institución.';
-      }
-      if (tipoInstitucion === 'colegio') {
+      if (!nivelInst) return 'Seleccione el nivel de la institución.';
+      if (!colegioNombre.trim()) return 'Seleccione o indique la institución educativa.';
+      if (!perfilInstitucion) return 'Seleccione el perfil (estudiante o profesor).';
+      if (esProfesor) {
+        if (!areaImparteColegio.trim()) return 'Indique el área que imparte.';
+      } else if (esBasicaMedia) {
         const g = parseInt(gradoColegio, 10);
-        if (!Number.isFinite(g) || g < 1 || g > 11) return 'Seleccione el grado (1–11).';
-      } else if (!programaInstitucion.trim()) {
-        return 'Indique el programa, carrera o semestre.';
+        const minG = nivelInst === 'primaria' ? 1 : 6;
+        const maxG = nivelInst === 'primaria' ? 5 : 11;
+        if (!Number.isFinite(g) || g < minG || g > maxG) {
+          return nivelInst === 'primaria'
+            ? 'Seleccione el curso (1–5).'
+            : 'Seleccione el grado (6–11).';
+        }
+      } else {
+        const s = parseInt(semestreInstitucion, 10);
+        if (!Number.isFinite(s) || s < 1 || s > 12) return 'Seleccione el semestre (1–12).';
+        if (!titulacionCodigo.trim() && !programaInstitucion.trim()) {
+          return 'Indique la titulación o el programa.';
+        }
       }
     }
     if (origenJornadaCap === 'estamento') {
@@ -367,12 +401,19 @@ export default function CrearAlumnoJornadaScreen() {
         origenJornadaCap,
         ...(origenJornadaCap === 'colegio'
           ? {
-              tipoInstitucionEducativa: tipoInstitucion,
+              tipoInstitucionEducativa: nivelInst,
+              perfilInstitucionEducativa: perfilInstitucion,
               colegioCodigo: colegioCodigo || undefined,
-              colegioNombre,
-              ...(tipoInstitucion === 'colegio'
-                ? { gradoColegio: parseInt(gradoColegio, 10) }
-                : { programaInstitucion: programaInstitucion.trim().toUpperCase() }),
+              colegioNombre: colegioNombre.trim().toUpperCase(),
+              ...(esProfesor
+                ? { areaImparteColegio: areaImparteColegio.trim().toLowerCase() }
+                : esBasicaMedia
+                  ? { gradoColegio: parseInt(gradoColegio, 10) }
+                  : {
+                      semestreInstitucion: parseInt(semestreInstitucion, 10),
+                      titulacionCodigo: titulacionCodigo.trim() || undefined,
+                      programaInstitucion: programaInstitucion.trim().toUpperCase() || undefined,
+                    }),
             }
           : {}),
         ...(origenJornadaCap === 'estamento'
@@ -439,7 +480,7 @@ export default function CrearAlumnoJornadaScreen() {
       'direccion',
     ];
     if (origenJornadaCap === 'colegio') {
-      return [...base, 'colegioNombre', 'programaInstitucion'];
+      return [...base, 'colegioNombre', 'programaInstitucion', 'titulacionTexto'];
     }
     if (origenJornadaCap === 'estamento') {
       return [...base, 'cargoEstamento', 'dependenciaEstamento'];
@@ -525,6 +566,11 @@ export default function CrearAlumnoJornadaScreen() {
                           setColegioNombre('');
                           setGradoColegio('');
                           setProgramaInstitucion('');
+                          setPerfilInstitucion('estudiante');
+                          setAreaImparteColegio('');
+                          setSemestreInstitucion('');
+                          setTitulacionCodigo('');
+                          setTitulacionTexto('');
                         }
                         if (o.key !== 'estamento') {
                           setEstamentoId('');
@@ -613,88 +659,73 @@ export default function CrearAlumnoJornadaScreen() {
               {origenJornadaCap === 'colegio' ? (
                 <>
                   <CatalogPickerField
-                    label="Tipo de institución"
+                    label="Nivel educativo"
                     required
-                    options={TIPOS_INSTITUCION}
+                    options={OPCIONES_TIPO_INSTITUCION}
                     value={tipoInstitucion}
                     onChange={(v) => {
-                      setTipoInstitucion(v);
+                      setTipoInstitucion(normalizarNivelInstitucion(v));
                       setColegioCodigo('');
                       setColegioNombre('');
                       setGradoColegio('');
                       setProgramaInstitucion('');
+                      setSemestreInstitucion('');
+                      setTitulacionCodigo('');
+                      setTitulacionTexto('');
                     }}
                   />
                   <View style={{ height: 8 }} />
-                  {tipoInstitucion === 'colegio' ? (
-                    <>
-                      {!codColegioFiltro ? (
-                        <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 8 }}>
-                          Elija primero el municipio de origen (más abajo) o cree desde una clase con
-                          municipio. Sin municipio, escriba al menos 2 letras para buscar a nivel
-                          nacional.
-                        </ScaledText>
-                      ) : (
-                        <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
-                          Filtra colegios por municipio:{' '}
-                          {munOrigenTexto || codColegioFiltro}
-                          {codMunicipioJornada && munOrigen && munOrigen !== codMunicipioJornada
-                            ? ' (ficha alumno)'
-                            : ''}
-                        </ScaledText>
-                      )}
-                      <AsyncSearchField
-                        label="Colegio"
-                        required
-                        texto={colegioNombre}
-                        placeholder="Buscar colegio…"
-                        loadOnOpen={Boolean(codColegioFiltro)}
-                        minChars={codColegioFiltro ? 0 : 2}
-                        onBuscar={buscarColegioCb}
-                        onSeleccionado={(item) => {
-                          setColegioCodigo(item.id);
-                          setColegioNombre(item.label);
-                        }}
-                        onLimpiar={() => {
-                          setColegioCodigo('');
-                          setColegioNombre('');
-                        }}
-                      />
-                      <CatalogPickerField
-                        label="Grado"
-                        required
-                        options={GRADOS}
-                        value={gradoColegio}
-                        onChange={setGradoColegio}
-                      />
-                    </>
+                  <CatalogPickerField
+                    label="Perfil"
+                    required
+                    options={OPCIONES_PERFIL_INSTITUCION}
+                    value={perfilInstitucion}
+                    onChange={(v) => {
+                      setPerfilInstitucion(v as PerfilInstitucion);
+                      setGradoColegio('');
+                      setSemestreInstitucion('');
+                      setTitulacionCodigo('');
+                      setTitulacionTexto('');
+                      setProgramaInstitucion('');
+                      setAreaImparteColegio('');
+                    }}
+                  />
+                  <View style={{ height: 8 }} />
+                  {!codColegioFiltro && !esSuperior ? (
+                    <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 8 }}>
+                      Elija primero el municipio de origen (arriba) o cree desde una clase con
+                      municipio. Sin municipio, escriba al menos 2 letras para buscar a nivel
+                      nacional.
+                    </ScaledText>
+                  ) : codColegioFiltro ? (
+                    <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+                      Filtra instituciones por municipio: {munOrigenTexto || codColegioFiltro}
+                    </ScaledText>
                   ) : (
+                    <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8 }}>
+                      Lista todas las del nivel: primero las del municipio, luego el resto del país.
+                    </ScaledText>
+                  )}
+                  <AsyncSearchField
+                    label={labelInstitucionPorNivel(nivelInst)}
+                    required
+                    texto={colegioNombre}
+                    placeholder="Buscar institución…"
+                    loadOnOpen={Boolean(codColegioFiltro || esSuperior)}
+                    minChars={codColegioFiltro || esSuperior ? 0 : 2}
+                    onBuscar={buscarColegioCb}
+                    onSeleccionado={(item) => {
+                      setColegioCodigo(item.id);
+                      setColegioNombre(item.label);
+                    }}
+                    onLimpiar={() => {
+                      setColegioCodigo('');
+                      setColegioNombre('');
+                    }}
+                  />
+                  {!colegioCodigo && colegioNombre.trim() ? (
                     <>
-                      <ScaledText
-                        baseSize={12}
-                        style={{ color: c.textSoft, marginBottom: 8, lineHeight: 18 }}
-                      >
-                        Lista todas las del nivel: primero las del municipio, luego el resto del
-                        país. También puede escribir el nombre a mano.
-                      </ScaledText>
-                      <AsyncSearchField
-                        label={
-                          tipoInstitucion === 'universidad' ? 'Universidad' : 'Instituto técnico'
-                        }
-                        texto={colegioNombre}
-                        placeholder="Buscar en catálogo…"
-                        loadOnOpen
-                        minChars={0}
-                        onBuscar={buscarColegioCb}
-                        onSeleccionado={(item) => {
-                          setColegioCodigo(item.id);
-                          setColegioNombre(item.label);
-                        }}
-                        onLimpiar={() => {
-                          setColegioCodigo('');
-                          setColegioNombre('');
-                        }}
-                      />
+                      <View style={{ height: 8 }} />
                       <IconInput
                         label="Nombre de la institución *"
                         icon="school-outline"
@@ -706,9 +737,62 @@ export default function CrearAlumnoJornadaScreen() {
                         }}
                         autoCapitalize="characters"
                       />
+                    </>
+                  ) : null}
+                  {esProfesor ? (
+                    <>
+                      <View style={{ height: 8 }} />
+                      <CatalogPickerField
+                        label="Área que imparte"
+                        required
+                        options={OPCIONES_AREA_IMPARTE}
+                        value={areaImparteColegio}
+                        onChange={setAreaImparteColegio}
+                      />
+                    </>
+                  ) : esBasicaMedia ? (
+                    <>
+                      <View style={{ height: 8 }} />
+                      <CatalogPickerField
+                        label={nivelInst === 'primaria' ? 'Curso' : 'Grado'}
+                        required
+                        options={opcionesGrado}
+                        value={gradoColegio}
+                        onChange={setGradoColegio}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <View style={{ height: 8 }} />
+                      <CatalogPickerField
+                        label="Semestre"
+                        required
+                        options={opcionesSemestreInstitucion()}
+                        value={semestreInstitucion}
+                        onChange={setSemestreInstitucion}
+                      />
+                      <View style={{ height: 8 }} />
+                      <AsyncSearchField
+                        label="Titulación / programa"
+                        required={!programaInstitucion.trim()}
+                        texto={titulacionTexto || programaInstitucion}
+                        placeholder="Buscar titulación SNIES…"
+                        loadOnOpen
+                        minChars={0}
+                        onBuscar={buscarTitulacionCb}
+                        onSeleccionado={(item) => {
+                          setTitulacionCodigo(item.id);
+                          setTitulacionTexto(item.label);
+                          setProgramaInstitucion(item.label);
+                        }}
+                        onLimpiar={() => {
+                          setTitulacionCodigo('');
+                          setTitulacionTexto('');
+                        }}
+                      />
                       <View style={{ height: 8 }} />
                       <IconInput
-                        label="Programa / carrera / semestre *"
+                        label="Programa (texto libre si no está en catálogo)"
                         icon="book-outline"
                         voiceFieldId="programaInstitucion"
                         value={programaInstitucion}
