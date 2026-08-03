@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -26,6 +26,7 @@ import {
   buscarClientesFacturacion,
   buscarColegios,
   buscarEstamentosPublicos,
+  listarDepartamentos,
   type MunicipioDivipola,
 } from '../api/catalogosApi';
 import {
@@ -149,8 +150,11 @@ export default function CrearAlumnoJornadaScreen() {
   const [correo, setCorreo] = useState('');
   const [celular, setCelular] = useState('');
   const [direccion, setDireccion] = useState('');
+  const [codDepartamento, setCodDepartamento] = useState('');
+  const [nombreDepartamento, setNombreDepartamento] = useState('');
   const [munOrigen, setMunOrigen] = useState('');
   const [munOrigenTexto, setMunOrigenTexto] = useState('');
+  const [opcionesDepto, setOpcionesDepto] = useState<{ value: string; label: string }[]>([]);
 
   const [discapacidad, setDiscapacidad] = useState('9');
   const [multiCulturalidad, setMultiCulturalidad] = useState('NO_APLICA');
@@ -180,19 +184,26 @@ export default function CrearAlumnoJornadaScreen() {
 
   const codColegioFiltro = String(munOrigen || codMunicipioJornada || '').trim();
 
+  const esNivelSuperior = tipoInstitucion === 'instituto' || tipoInstitucion === 'universidad';
+
   const buscarColegioCb = useCallback(
     async (q: string) => {
       const term = q.trim();
-      // Sin municipio: solo búsqueda nacional con texto (evita listar todo el país).
-      if (!codColegioFiltro && term.length < 2) return [];
-      const rows = await buscarColegios(codColegioFiltro, term, 40);
+      // Sin municipio: en básica hace falta texto; en superior se lista todo el nivel.
+      if (!codColegioFiltro && term.length < 2 && !esNivelSuperior) return [];
+      const rows = await buscarColegios(
+        codColegioFiltro,
+        term,
+        esNivelSuperior ? 400 : 40,
+        tipoInstitucion,
+      );
       return rows.map((r) => ({
         id: r.codigoEstablecimiento,
         label: r.label || r.nombreEstablecimiento,
-        hint: [r.nombreMunicipio, r.codMunicipio].filter(Boolean).join(' · ') || undefined,
+        hint: r.hint || [r.nombreMunicipio, r.codMunicipio].filter(Boolean).join(' · ') || undefined,
       }));
     },
-    [codColegioFiltro],
+    [codColegioFiltro, tipoInstitucion, esNivelSuperior],
   );
 
   const buscarEstamentoCb = useCallback(
@@ -220,6 +231,19 @@ export default function CrearAlumnoJornadaScreen() {
     }
   }, []);
 
+  useEffect(() => {
+    void listarDepartamentos()
+      .then((rows) =>
+        setOpcionesDepto(
+          (rows || []).map((d) => ({
+            value: String(d.codDepto || '').padStart(2, '0'),
+            label: String(d.nombreDepto || '').trim(),
+          })),
+        ),
+      )
+      .catch(() => setOpcionesDepto([]));
+  }, []);
+
   function aplicarPdf417(data: CedulaPdf417Data) {
     setTipoDoc(data.tipoDoc || '1');
     setNumDoc(sanitizeNumDocInput(data.numDoc));
@@ -238,7 +262,11 @@ export default function CrearAlumnoJornadaScreen() {
 
   function onMunOrigenSel(m: MunicipioDivipola) {
     setMunOrigen(m.codMunicipio);
-    setMunOrigenTexto(m.label);
+    setMunOrigenTexto(m.nombreMunicipio || m.label);
+    if (m.codDepto) {
+      setCodDepartamento(String(m.codDepto).padStart(2, '0'));
+      setNombreDepartamento(m.nombreDepto || nombreDepartamento);
+    }
   }
 
   function validar(): string | null {
@@ -259,6 +287,7 @@ export default function CrearAlumnoJornadaScreen() {
     if (!emailOk(correo)) return 'Correo inválido.';
     if (!celularOk(celular)) return 'Celular: 10 dígitos que empiecen por 3.';
     if (!direccion.trim()) return 'Indique la dirección.';
+    if (!codDepartamento.trim()) return 'Indique el departamento de origen.';
     if (!munOrigen.trim()) return 'Indique el municipio de origen.';
     if (origenJornadaCap === 'colegio') {
       if (!tipoInstitucion) return 'Seleccione el tipo de institución.';
@@ -330,6 +359,8 @@ export default function CrearAlumnoJornadaScreen() {
         direccion: direccion.trim(),
         munOrigen,
         codMunicipio: munOrigen,
+        codDepartamento,
+        nombreDepartamento: nombreDepartamento || undefined,
         discapacidad,
         multiCulturalidad,
         observaciones: observaciones.trim() || undefined,
@@ -539,15 +570,31 @@ export default function CrearAlumnoJornadaScreen() {
 
           <SurfaceCard style={{ marginBottom: 12 }}>
             <ScaledText baseSize={15} style={styles.secTitle}>
-              Municipio del alumno
+              Origen geográfico del alumno
             </ScaledText>
             <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8, lineHeight: 18 }}>
-              Se usa para filtrar colegios y estamentos (además del municipio de la jornada).
+              Elija departamento y luego municipio. Se usa para filtrar colegios y estamentos.
             </ScaledText>
+            <CatalogPickerField
+              label="Departamento de origen"
+              required
+              options={opcionesDepto}
+              value={codDepartamento}
+              onChange={(v) => {
+                const opt = opcionesDepto.find((d) => d.value === v);
+                setCodDepartamento(v);
+                setNombreDepartamento(opt?.label || '');
+                setMunOrigen('');
+                setMunOrigenTexto('');
+              }}
+            />
+            <View style={{ height: 8 }} />
             <MunicipioBuscarField
               label="Municipio de origen / residencia"
               required
               texto={munOrigenTexto}
+              codDepto={codDepartamento}
+              disabled={!codDepartamento}
               onSeleccionado={onMunOrigenSel}
               onLimpiar={() => {
                 setMunOrigen('');
@@ -627,8 +674,8 @@ export default function CrearAlumnoJornadaScreen() {
                         baseSize={12}
                         style={{ color: c.textSoft, marginBottom: 8, lineHeight: 18 }}
                       >
-                        Puede buscar en el catálogo (si ya cargó IES) o escribir el nombre de la
-                        institución.
+                        Lista todas las del nivel: primero las del municipio, luego el resto del
+                        país. También puede escribir el nombre a mano.
                       </ScaledText>
                       <AsyncSearchField
                         label={
@@ -636,8 +683,8 @@ export default function CrearAlumnoJornadaScreen() {
                         }
                         texto={colegioNombre}
                         placeholder="Buscar en catálogo…"
-                        loadOnOpen={Boolean(codColegioFiltro)}
-                        minChars={codColegioFiltro ? 0 : 2}
+                        loadOnOpen
+                        minChars={0}
                         onBuscar={buscarColegioCb}
                         onSeleccionado={(item) => {
                           setColegioCodigo(item.id);
@@ -920,13 +967,13 @@ export default function CrearAlumnoJornadaScreen() {
               value={direccion}
               onChangeText={setDireccion}
             />
-            {munOrigenTexto ? (
+            {codDepartamento && munOrigenTexto ? (
               <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 8 }}>
-                Municipio de origen: {munOrigenTexto}
+                Origen: {nombreDepartamento || codDepartamento} / {munOrigenTexto}
               </ScaledText>
             ) : (
               <ScaledText baseSize={13} style={{ color: c.warn, marginTop: 8 }}>
-                Falta municipio de origen (bloque superior).
+                Falta departamento y municipio de origen (bloque superior).
               </ScaledText>
             )}
           </SurfaceCard>

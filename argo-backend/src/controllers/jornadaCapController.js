@@ -1825,7 +1825,8 @@ exports.finalizarClase = async (req, res, next) => {
     }
     const horarioManualNormal = !modoEspecial && clase.horarioManual === true;
 
-    // Horas manuales (HH:mm). En modo manual o especial no se reemplazan por "ahora".
+    // Horas manuales (HH:mm). En modo manual o especial no se reemplazan por "ahora",
+    // salvo clase EN PROCESO sin hora de fin (p. ej. abierta desde otro día).
     if (
       (modoEspecial || horarioManualNormal) &&
       body.horaInicio != null &&
@@ -1839,8 +1840,22 @@ exports.finalizarClase = async (req, res, next) => {
       String(body.horaFin).trim() !== ''
     ) {
       clase.horaFin = parseHoraClase(fechaRef, body.horaFin);
+      // Cruce de medianoche: HH:mm del día de la clase puede quedar antes del inicio real.
+      if (clase.horaInicio && clase.horaFin.getTime() <= clase.horaInicio.getTime()) {
+        const finMasUnDia = new Date(clase.horaFin.getTime());
+        finMasUnDia.setDate(finMasUnDia.getDate() + 1);
+        if (finMasUnDia.getTime() > clase.horaInicio.getTime()) {
+          clase.horaFin = finMasUnDia;
+        }
+      }
     } else if ((modoEspecial || horarioManualNormal) && clase.horaFin) {
       // Conservar hora de fin planificada o guardada.
+    } else if (
+      (modoEspecial || horarioManualNormal) &&
+      clase.estado === 'EN PROCESO' &&
+      clase.horaInicio
+    ) {
+      clase.horaFin = new Date();
     } else if (modoEspecial || horarioManualNormal) {
       return res.status(400).json({
         message: 'Indique y guarde la hora de fin antes de finalizar la clase.',
@@ -2846,6 +2861,9 @@ exports.crearAlumnoJornadaCap = async (req, res, next) => {
       direccion: String(body.direccion || '').trim() || undefined,
       munOrigen: String(body.munOrigen || body.codMunicipio || '').trim() || undefined,
       codMunicipio: String(body.codMunicipio || body.munOrigen || '').trim() || undefined,
+      codDepartamento: String(body.codDepartamento || '').trim() || undefined,
+      nombreDepartamento: String(body.nombreDepartamento || '').trim() || undefined,
+      nombreMunicipio: String(body.nombreMunicipio || '').trim() || undefined,
       fechaReg: now,
       fechaAudi: now,
       fechaMod: now,
@@ -2855,20 +2873,41 @@ exports.crearAlumnoJornadaCap = async (req, res, next) => {
     const {
       normalizarOrigenJornadaCap,
       normalizarTipoInstitucionEducativa,
+      normalizarPerfilInstitucionEducativa,
+      normalizarAreaImparteColegio,
+      esNivelBasicaMedia,
+      esNivelSuperior,
     } = require('../constants/origenJornadaCap');
     const origenJ = normalizarOrigenJornadaCap(body.origenJornadaCap || body.origenJornada);
     if (origenJ) {
       dto.origenJornadaCap = origenJ;
       if (origenJ === 'colegio') {
         const tipoInst =
-          normalizarTipoInstitucionEducativa(body.tipoInstitucionEducativa) || 'colegio';
+          normalizarTipoInstitucionEducativa(body.tipoInstitucionEducativa) || 'secundaria';
         dto.tipoInstitucionEducativa = tipoInst;
+        const perfil =
+          normalizarPerfilInstitucionEducativa(body.perfilInstitucionEducativa) || 'estudiante';
+        dto.perfilInstitucionEducativa = perfil;
         dto.colegioCodigo = String(body.colegioCodigo || '').trim() || undefined;
         dto.colegioNombre = upper(body.colegioNombre) || undefined;
-        if (tipoInst === 'colegio') {
+        if (perfil === 'profesor') {
+          const area =
+            normalizarAreaImparteColegio(body.areaImparteColegio) ||
+            String(body.areaImparteColegio || '')
+              .trim()
+              .toLowerCase() ||
+            undefined;
+          if (area) dto.areaImparteColegio = area;
+        } else if (esNivelBasicaMedia(tipoInst)) {
           const grado = parseInt(body.gradoColegio, 10);
-          if (Number.isFinite(grado) && grado >= 1 && grado <= 11) dto.gradoColegio = grado;
-        } else {
+          const minG = tipoInst === 'primaria' ? 1 : 6;
+          const maxG = tipoInst === 'primaria' ? 5 : 11;
+          if (Number.isFinite(grado) && grado >= minG && grado <= maxG) dto.gradoColegio = grado;
+        } else if (esNivelSuperior(tipoInst)) {
+          const sem = parseInt(body.semestreInstitucion, 10);
+          if (Number.isFinite(sem) && sem >= 1 && sem <= 12) dto.semestreInstitucion = sem;
+          const titCod = String(body.titulacionCodigo || '').trim();
+          if (titCod) dto.titulacionCodigo = titCod;
           dto.programaInstitucion = upper(body.programaInstitucion) || undefined;
         }
       } else if (origenJ === 'estamento') {
@@ -2882,11 +2921,35 @@ exports.crearAlumnoJornadaCap = async (req, res, next) => {
           if (mongoose.isValidObjectId(body.empresaId)) dto.empresaId = body.empresaId;
         }
       }
+      // Otros orígenes: no tocar empresaId (campo compartido con regular/virtual).
     }
 
     if (body.fechaNac) {
       const fn = new Date(body.fechaNac);
       if (!Number.isNaN(fn.getTime())) dto.fechaNac = fn;
+    }
+
+    // Completar nombres de depto/municipio desde DIVIPOLA (misma lógica ficha alumno).
+    const codMunGeo = String(dto.codMunicipio || dto.munOrigen || '').trim();
+    if (codMunGeo) {
+      try {
+        const { models: cat } = require('../models/catalogos');
+        const pad = String(codMunGeo).replace(/\D/g, '').padStart(5, '0');
+        const geo = await cat.divipola
+          .findOne({
+            $or: [{ codMunicipio: codMunGeo }, { codMunicipio: pad }, { codMunicipio: Number(pad) }],
+          })
+          .lean();
+        if (geo) {
+          dto.codMunicipio = String(geo.codMunicipio);
+          dto.munOrigen = String(geo.codMunicipio);
+          dto.nombreMunicipio = geo.nombreMunicipio;
+          dto.codDepartamento = String(geo.codDepto || '').padStart(2, '0');
+          dto.nombreDepartamento = geo.nombreDepto;
+        }
+      } catch {
+        /* sin geo no bloquea el alta */
+      }
     }
 
     let a;

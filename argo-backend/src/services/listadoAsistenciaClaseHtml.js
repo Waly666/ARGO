@@ -6,7 +6,8 @@ const InscripcionClase = require('../models/InscripcionClase');
 const DatosAlumno = require('../models/DatosAlumno');
 const { enriquecerClases } = require('./instructorJornada');
 const { obtenerConfigRecibo } = require('./configRecibo');
-const { bloqueEmpresaHtml, esc } = require('./reciboHtmlShared');
+const { esc } = require('./reciboHtmlShared');
+const { informeGoogleFontsLinkHtml, informeDocumentoBaseCss, htmlEncabezadoEmpresa } = require('./informeEncabezadoEmpresa');
 const { fmtFecha, fmtFechaSolo } = require('../utils/timezoneColombia');
 const { informePrintToolbar } = require('./informePrintToolbar');
 
@@ -174,13 +175,14 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
 <html lang="es">
 <head>
   <meta charset="utf-8" />
+  ${informeGoogleFontsLinkHtml()}
   <title>Listado de asistencia — ${esc(contratoLabel)}</title>
   <style>
     ${atPage}
     ${toolbar.css}
+    ${informeDocumentoBaseCss()}
     * { box-sizing: border-box; }
     body {
-      font-family: "Segoe UI", system-ui, sans-serif;
       font-size: 10pt;
       line-height: 1.35;
       color: #111;
@@ -189,32 +191,8 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
       width: 100%;
       max-width: 216mm;
     }
-    .cabecera-empresa {
-      text-align: left;
-      margin: 0 0 10px;
-    }
-    .cabecera-empresa .logo img {
-      max-height: 48px;
-      max-width: 160px;
-      display: block;
-      object-fit: contain;
-    }
-    .cabecera-empresa .empresa {
-      font-size: 13pt;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-    .cabecera-empresa .sede-nombre {
-      font-size: 10.5pt;
-      font-weight: 600;
-      margin-top: 2px;
-    }
-    .cabecera-empresa .dato {
-      font-size: 9pt;
-      color: #333;
-      line-height: 1.3;
-    }
     h1 {
+      font-family: 'Exo', 'Roboto', sans-serif;
       font-size: 14pt;
       margin: 14px 0 8px;
       text-align: center;
@@ -289,9 +267,7 @@ async function buildHtmlListadoAsistenciaClase(idClase, idSede) {
 </head>
 <body>
   ${toolbar.html}
-  <div class="cabecera-empresa">
-    ${bloqueEmpresaHtml(config, { align: 'left' })}
-  </div>
+  ${htmlEncabezadoEmpresa(config, esc)}
   <h1>LISTADO DE ASISTENCIA</h1>
   <div class="meta">
     <div class="full"><span class="k">Contrato:</span> <span class="v">${esc(contratoLabel)}</span></div>

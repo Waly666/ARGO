@@ -147,6 +147,8 @@ export const CAMPOS_FORMULARIO_SIN_MAYUSCULAS = new Set([
   'colegioCodigo',
   'estamentoId',
   'gradoColegio',
+  'semestreInstitucion',
+  'titulacionCodigo',
 ]);
 
 /** Normaliza valores legacy tipo "1) SOLTERO" → "1" */

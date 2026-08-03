@@ -157,7 +157,7 @@ exports.municipios = async (req, res, next) => {
         nombreMunicipio: r.nombreMunicipio,
         codDepto: r.codDepto,
         nombreDepto: r.nombreDepto,
-        label: `${r.nombreMunicipio} - ${r.nombreDepto}`,
+        label: String(r.nombreMunicipio || '').trim(),
       })),
     );
   } catch (e) {
@@ -165,26 +165,52 @@ exports.municipios = async (req, res, next) => {
   }
 };
 
-/** Búsqueda incremental de municipios (nombre, departamento o código) */
+/** Búsqueda incremental de municipios (nombre, departamento o código).
+ * Con `codDepto`: lista/filtra solo municipios de ese departamento (cascada ficha alumno).
+ */
 exports.buscarMunicipios = async (req, res, next) => {
   try {
     const q = (req.query.q || '').toString().trim();
-    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
-    if (!q || q.length < 1) return res.json([]);
-    const re = regexSinTildes(q);
+    const rawDepto = String(req.query.codDepto || '').replace(/\D/g, '');
+    const codDepto = rawDepto ? rawDepto.padStart(2, '0') : '';
+    const limit = Math.min(parseInt(req.query.limit, 10) || (codDepto && !q ? 200 : 20), 300);
+
+    // Sin depto: exigir texto (catálogo nacional grande). Con depto: permitir lista completa.
+    if (!codDepto && q.length < 1) return res.json([]);
+
+    const filter = {};
+    if (codDepto) {
+      filter.$or = [
+        { codDepto },
+        { codDepto: Number(codDepto) },
+        { codDepto: String(Number(codDepto)) },
+      ];
+    }
+    if (q.length >= 1) {
+      const re = regexSinTildes(q);
+      const textoOr = [{ nombreMunicipio: re }, { codMunicipio: re }];
+      // Solo buscar por nombre depto si no hay filtro de departamento (búsqueda nacional).
+      if (!codDepto) textoOr.push({ nombreDepto: re });
+      filter.$and = [...(filter.$and || []), { $or: textoOr }];
+    }
+
     const data = await models.divipola
-      .find({ $or: [{ nombreMunicipio: re }, { nombreDepto: re }, { codMunicipio: re }] })
+      .find(filter)
       .sort({ nombreMunicipio: 1 })
       .limit(limit)
       .lean();
 
+    const conDepto = !!codDepto;
     res.json(
       data.map((r) => ({
         codMunicipio: r.codMunicipio,
         nombreMunicipio: r.nombreMunicipio,
         codDepto: r.codDepto,
         nombreDepto: r.nombreDepto,
-        label: `${r.nombreMunicipio} - ${r.nombreDepto}`,
+        // Cascada: solo nombre del municipio; nacional: municipio - departamento.
+        label: conDepto
+          ? String(r.nombreMunicipio || '').trim()
+          : `${r.nombreMunicipio} - ${r.nombreDepto}`,
       })),
     );
   } catch (e) {
@@ -203,7 +229,8 @@ exports.municipioPorCodigo = async (req, res, next) => {
       nombreMunicipio: r.nombreMunicipio,
       codDepto: r.codDepto,
       nombreDepto: r.nombreDepto,
-      label: `${r.nombreMunicipio} - ${r.nombreDepto}`,
+      label: String(r.nombreMunicipio || '').trim(),
+      labelCompleto: `${r.nombreMunicipio} - ${r.nombreDepto}`,
     });
   } catch (e) {
     next(e);
@@ -216,35 +243,122 @@ function padMunicipio(cod) {
   return s.padStart(5, '0');
 }
 
-/** Colegios: por municipio y/o búsqueda incremental (catálogo nacional ~22k). */
+/** Colegios e IES comparten la colección `colegios`. */
 exports.buscarColegios = async (req, res, next) => {
   try {
+    const {
+      esNivelBasicaMedia,
+      esNivelSuperior,
+      normalizarTipoInstitucionEducativa,
+    } = require('../constants/origenJornadaCap');
     const codMunicipio = padMunicipio(req.query.codMunicipio);
     const q = String(req.query.q || '').trim();
-    const limit = Math.min(parseInt(req.query.limit, 10) || 40, 100);
+    const nivel = normalizarTipoInstitucionEducativa(req.query.nivel || req.query.tipo);
+    const superior = !!(nivel && esNivelSuperior(nivel));
+    const basica = !nivel || esNivelBasicaMedia(nivel);
+    const limit = Math.min(
+      parseInt(req.query.limit, 10) || (superior ? 400 : 40),
+      superior ? 500 : 120,
+    );
 
-    // Sin municipio: exigir texto (evitar listar todo el país al abrir).
-    if (!codMunicipio && q.length < 2) {
+    // Sin municipio válido: en básica hace falta texto; en superior se puede listar el nivel.
+    if (!codMunicipio && q.length < 2 && !superior) {
       return res.json([]);
     }
 
-    const filter = { activo: { $ne: false } };
-    if (codMunicipio) {
-      filter.$or = [
-        { codMunicipio },
-        { codMunicipio: Number(codMunicipio) },
-        { codMunicipio: String(Number(codMunicipio)) },
-      ];
+    let nombreMun = String(req.query.nombreMunicipio || '').trim();
+    let nombreDep = String(req.query.nombreDepartamento || req.query.nombreDepto || '').trim();
+    if (codMunicipio && (!nombreMun || !nombreDep)) {
+      const munRef = await models.divipola
+        .findOne({
+          $or: [
+            { codMunicipio },
+            { codMunicipio: Number(codMunicipio) },
+            { codMunicipio: String(Number(codMunicipio)) },
+          ],
+        })
+        .select('nombreMunicipio nombreDepto')
+        .lean();
+      if (munRef) {
+        if (!nombreMun) nombreMun = String(munRef.nombreMunicipio || '').trim();
+        if (!nombreDep) nombreDep = String(munRef.nombreDepto || '').trim();
+      }
     }
+    const nucleoMun = nombreMun ? nombreMun.split(/[,(]/)[0].trim() : '';
+    const nucleoDep = nombreDep ? nombreDep.split(/[,(]/)[0].trim() : '';
+
+    const filtroBase = { activo: { $ne: false } };
     if (q.length >= 1) {
-      filter.nombreEstablecimiento = regexSinTildes(q);
+      filtroBase.nombreEstablecimiento = regexSinTildes(q);
+    }
+    if (superior) {
+      // Una IES ofrece varios niveles (p. ej. institución universitaria = pregrado
+      // profesional + tecnologías); `nivelEducativo` es el legado de un solo nivel.
+      filtroBase.$and = [
+        ...(filtroBase.$and || []),
+        { $or: [{ nivelesEducativos: nivel }, { nivelEducativo: nivel }] },
+      ];
+    } else if (basica && nivel) {
+      filtroBase.codigoEstablecimiento = { $not: /^IES-/i };
     }
 
-    const rows = await models.colegios
-      .find(filter)
-      .sort({ nombreEstablecimiento: 1 })
-      .limit(limit)
-      .lean();
+    const filtroLugarMunicipio = () => {
+      const lugarOr = [];
+      if (codMunicipio) {
+        lugarOr.push(
+          { codMunicipio },
+          { codMunicipio: Number(codMunicipio) },
+          { codMunicipio: String(Number(codMunicipio)) },
+        );
+      }
+      if (nucleoMun) {
+        lugarOr.push({ nombreMunicipio: regexSinTildes(nucleoMun) });
+      }
+      return lugarOr.length ? { $or: lugarOr } : null;
+    };
+
+    const filtroLugarDepartamento = () =>
+      nucleoDep
+        ? {
+            $or: [
+              { nombreDepartamento: regexSinTildes(nucleoDep) },
+              { nombreDepto: regexSinTildes(nucleoDep) },
+            ],
+          }
+        : null;
+
+    async function consultar(extra = {}) {
+      return models.colegios
+        .find({ ...filtroBase, ...extra })
+        .sort({ nombreEstablecimiento: 1 })
+        .limit(limit)
+        .lean();
+    }
+
+    let rows = [];
+    const lugarMun = filtroLugarMunicipio();
+    if (superior) {
+      // El catálogo SNIES solo registra el domicilio principal de cada IES, así que
+      // filtrar por municipio esconde universidades con sede o convenios allí.
+      // Se listan todas las del nivel, primero las del municipio y del departamento.
+      const [locales, delDepto, todas] = await Promise.all([
+        lugarMun ? consultar(lugarMun) : Promise.resolve([]),
+        filtroLugarDepartamento() ? consultar(filtroLugarDepartamento()) : Promise.resolve([]),
+        consultar(),
+      ]);
+      const vistos = new Set();
+      for (const r of [...locales, ...delDepto, ...todas]) {
+        const k = String(r.codigoEstablecimiento || r._id);
+        if (vistos.has(k)) continue;
+        vistos.add(k);
+        rows.push(r);
+        if (rows.length >= limit) break;
+      }
+    } else if (lugarMun) {
+      rows = await consultar(lugarMun);
+    } else if (q.length >= 2) {
+      rows = await consultar();
+    }
 
     res.json(
       rows.map((r) => {
@@ -252,17 +366,39 @@ exports.buscarColegios = async (req, res, next) => {
         const muni = String(r.nombreMunicipio || '').trim();
         const depto = String(r.nombreDepartamento || r.nombreDepto || '').trim();
         const ubi = [muni, depto].filter(Boolean).join(' · ');
+        const niv = String(r.nivelEducativo || '').trim();
+        const hintParts = [ubi];
+        // Carácter académico SNIES: más claro que el nivel interno.
+        const caracter = String(r.tipoEstablecimiento || '').trim();
+        if (caracter && caracter !== 'IES') hintParts.push(caracter);
+        if (r.seccional) hintParts.push(String(r.seccional));
         return {
           codigoEstablecimiento: String(r.codigoEstablecimiento || ''),
           nombreEstablecimiento: nombre,
           codMunicipio: String(r.codMunicipio || ''),
           nombreMunicipio: muni,
           nombreDepartamento: depto,
+          nivelEducativo: niv || null,
           label: nombre || String(r.codigoEstablecimiento || ''),
-          hint: ubi || undefined,
+          hint: hintParts.filter(Boolean).join(' · ') || undefined,
         };
       }),
     );
+  } catch (e) {
+    next(e);
+  }
+};
+
+/** Titulaciones técnica / tecnológica / universitaria (catálogo fijo). */
+exports.buscarTitulaciones = async (req, res, next) => {
+  try {
+    const { listarTitulaciones } = require('../constants/titulacionesColombia');
+    const rows = listarTitulaciones({
+      nivel: req.query.nivel || req.query.tipo || '',
+      q: req.query.q || '',
+      limit: req.query.limit || 80,
+    });
+    res.json(rows);
   } catch (e) {
     next(e);
   }

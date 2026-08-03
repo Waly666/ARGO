@@ -53,6 +53,9 @@ export class JornadasCapacitacionComponent implements OnInit {
     fechaNac: '',
     codMunicipio: '',
     munOrigen: '',
+    codDepartamento: '',
+    nombreDepartamento: '',
+    nombreMunicipio: '',
     empresaId: null as string | null,
     empresaNombre: null as string | null,
   };
@@ -119,12 +122,21 @@ export class JornadasCapacitacionComponent implements OnInit {
     this.codMunicipioOrigen = '';
     this.form.codMunicipio = '';
     this.form.munOrigen = '';
+    this.form.codDepartamento = this.deptoOrigen || '';
+    const dep = this.departamentos().find((d) => d.codDepto === this.deptoOrigen);
+    this.form.nombreDepartamento = dep?.nombreDepto || '';
+    this.form.nombreMunicipio = '';
     this.cargarMunicipiosOrigen();
   }
 
   onMunicipioOrigenChange() {
     this.form.codMunicipio = this.codMunicipioOrigen;
     this.form.munOrigen = this.codMunicipioOrigen;
+    this.form.codDepartamento = this.deptoOrigen || '';
+    const dep = this.departamentos().find((d) => d.codDepto === this.deptoOrigen);
+    this.form.nombreDepartamento = dep?.nombreDepto || '';
+    const m = this.municipiosOrigen().find((x) => x.codMunicipio === this.codMunicipioOrigen);
+    this.form.nombreMunicipio = m?.nombreMunicipio || '';
   }
 
   private cargarMunicipiosExp() {

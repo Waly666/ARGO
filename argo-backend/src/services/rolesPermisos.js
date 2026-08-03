@@ -81,6 +81,8 @@ const ROLES_SISTEMA = {
       'servicios.ver',
       'jornadas.ver',
       'jornadas.registrar_alumnos',
+      'jornadas.evaluaciones.ver',
+      'jornadas.evaluaciones.gestionar',
       'programacion_cea.ver',
       'programacion_cea.gestionar',
       'cohortes_academicas.ver',

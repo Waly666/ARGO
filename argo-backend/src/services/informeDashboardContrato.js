@@ -506,6 +506,7 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
       ciudad: config?.ciudad || '',
       direccion: config?.direccion || '',
       telefono: config?.telefono || '',
+      email: config?.email || '',
       /** Preferir data URL embebida para PDF/Chromium (ruta relativa no carga en page.setContent). */
       logoUrl: config?.urlLogoDataUrl || '',
       urlLogo: config?.urlLogo || '',
@@ -649,6 +650,75 @@ function alcanceDetalleTitulo(alcance) {
   }
 }
 
+function subtituloInformeContrato(alcance) {
+  switch (alcance) {
+    case 'jornada':
+      return 'Resultados de la jornada de capacitación';
+    case 'clase':
+      return 'Detalle de clase y participantes';
+    case 'programa':
+      return 'Seguimiento del programa de capacitación';
+    case 'instructor':
+    case 'desarrollo-general':
+      return 'Desarrollo de clases por instructor';
+    default:
+      return 'Seguimiento de jornadas de capacitación';
+  }
+}
+
+const {
+  informeGoogleFontsLinkHtml,
+  informeDocumentoBaseCss,
+  htmlEncabezadoEmpresa,
+} = require('./informeEncabezadoEmpresa');
+
+function htmlEncabezadoInformeFormal({
+  emp,
+  contrato,
+  titulo,
+  subtitulo,
+  generado,
+  resumenTitulo,
+  kpis,
+  valorDestacado,
+  etiquetaDestacado = 'Alumnos certificados',
+}) {
+  const c = contrato || {};
+  const k = kpis || {};
+
+  return `${htmlEncabezadoEmpresa(emp, esc)}
+
+  <div class="doc-titulo-block">
+    <h2>${esc(titulo)}</h2>
+    <p>${esc(subtitulo)}</p>
+  </div>
+
+  <div class="destacado-contrato">
+    <div class="item">
+      <span class="lbl">Contrato</span>
+      <span class="val">${esc(c.codContrato || c._id || '—')}</span>
+    </div>
+    <div class="item">
+      <span class="lbl">${esc(etiquetaDestacado)}</span>
+      <span class="val">${esc(valorDestacado)}</span>
+    </div>
+  </div>
+
+  <table class="doc-meta">
+    <tr><td>Presentado a</td><td><strong>${esc(c.cliente || 'Empresa contratante')}</strong>${c.nit ? ` · NIT ${esc(c.nit)}` : ''}</td></tr>
+    <tr><td>Alcance</td><td>${esc(resumenTitulo)}</td></tr>
+    <tr><td>Generado</td><td>${esc(generado)}</td></tr>
+    ${c.ciudad ? `<tr><td>Ciudad</td><td>${esc(c.ciudad)}</td></tr>` : ''}
+  </table>
+
+  <div class="stats">
+    <div class="stat"><span>Jornadas</span><strong>${k.jornadas || 0}</strong></div>
+    <div class="stat"><span>Clases dictadas</span><strong>${k.clasesDictadas || 0}/${k.clasesTotales || 0}</strong></div>
+    <div class="stat"><span>Alumnos capacitados</span><strong>${k.alumnosCapacitados || 0}</strong></div>
+    <div class="stat"><span>Alumnos certificados</span><strong>${k.alumnosCertificados || 0}</strong></div>
+  </div>`;
+}
+
 function formatPct(n) {
   if (!Number.isFinite(n)) return '0%';
   const rounded = Math.round(n * 10) / 10;
@@ -659,7 +729,7 @@ const CHART_PALETTE = [
   '#0ea5e9',
   '#10b981',
   '#8b5cf6',
-  '#6366f1',
+  '#fbbf24',
   '#f43f5e',
   '#14b8a6',
   '#3b82f6',
@@ -1076,9 +1146,13 @@ function htmlChartsOrigenYCaracterizacion(charts) {
   </div>`;
 }
 
-function htmlChartsDashboard(charts, titulo = 'Resumen gráfico general del contrato') {
+function htmlChartsDashboard(charts, titulo = 'Resumen gráfico general del contrato', opts = {}) {
+  const { tituloGrande = false } = opts;
   const c = charts || {};
-  return `<h3 class="chart-section-title">${esc(titulo)}</h3>
+  const tituloHtml = tituloGrande
+    ? `<div class="sec-grande">${esc(titulo)}</div>`
+    : `<h3 class="chart-section-title">${esc(titulo)}</h3>`;
+  return `${tituloHtml}
   <div class="charts-grid charts-grid--compact">
     <section class="chart-card">
       <h3 class="sec">Alumnos por jornada</h3>
@@ -1102,6 +1176,45 @@ function htmlChartsDashboard(charts, titulo = 'Resumen gráfico general del cont
     </section>
   </div>
   ${htmlChartsOrigenYCaracterizacion(c)}`;
+}
+
+const TITULO_GRAFICO_GENERAL = 'Resumen gráfico general del contrato';
+
+/** Gráficos principales: siempre primero tras cabecera y KPIs. */
+function buildChartsBlock(data, alcance) {
+  const parts = [];
+  const muestraGeneral = [
+    'contrato',
+    'desarrollo-general',
+    'instructor',
+    'programa',
+    'clase',
+    'jornada',
+  ].includes(alcance);
+
+  if (muestraGeneral) {
+    parts.push(
+      htmlChartsDashboard(data.charts, TITULO_GRAFICO_GENERAL, { tituloGrande: true }),
+    );
+  }
+  if (alcance === 'jornada' && data.porJornada?.[0]) {
+    parts.push(
+      htmlChartsJornada(data.porJornada[0], alcanceResumenTitulo(alcance), true),
+    );
+  }
+  return parts.join('\n');
+}
+
+function htmlResumenFinalContrato(data, kpis, duracionTotalSegundos) {
+  const k = kpis || {};
+  return `<div class="sec-grande">Resumen numérico complementario</div>
+  <div class="stats stats--cinco">
+    <div class="stat"><span>Instructores</span><strong>${esc((data.porInstructor || []).length)}</strong></div>
+    <div class="stat"><span>Clases dictadas</span><strong>${esc(k.clasesDictadas || 0)}/${esc(k.clasesTotales || 0)}</strong></div>
+    <div class="stat"><span>Duración total</span><strong>${esc(fmtDuracionInforme(duracionTotalSegundos))}</strong></div>
+    <div class="stat"><span>Capacitados únicos</span><strong>${esc(k.alumnosCapacitados || 0)}</strong></div>
+    <div class="stat"><span>Certificados únicos</span><strong>${esc(k.alumnosCertificados || 0)}</strong></div>
+  </div>`;
 }
 
 function htmlChartsJornada(jornada, titulo = 'Resumen gráfico', compact = false) {
@@ -1242,10 +1355,6 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   const titulo = alcanceTitulo(alcance, data);
   const { atPageCssPara } = require('./configPaginasInformes');
   const atPage = await atPageCssPara('informe_contrato_jornadas');
-  const logoSrc = emp.logoUrl || emp.urlLogoDataUrl || '';
-  const logo = logoSrc
-    ? `<img class="logo" src="${esc(logoSrc)}" alt="${esc(emp.nombre || 'Logo')}" />`
-    : `<div class="logo-ph">${esc((emp.nombre || 'ARGO').slice(0, 2).toUpperCase())}</div>`;
 
   let cuerpo = '';
 
@@ -1301,31 +1410,43 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
     }
   }
 
-  const chartsBlock =
-    alcance === 'jornada'
-      ? htmlChartsJornada(data.porJornada?.[0], alcanceResumenTitulo(alcance), true)
-      : htmlChartsDashboard(data.charts, alcanceResumenTitulo(alcance));
+  const chartsBlock = buildChartsBlock(data, alcance);
   const cruceJornadasBlock =
     alcance === 'contrato' || alcance === 'jornada' ? htmlCruceJornadas(data.porJornada) : '';
   const resumenNumericoTitulo = alcanceResumenNumericoTitulo(alcance);
+  const generado = new Date(data.generadoAt || Date.now()).toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+  });
+  const valorDestacado =
+    alcance === 'instructor' || alcance === 'desarrollo-general'
+      ? String(k.clasesDictadas || 0)
+      : String(k.alumnosCertificados || 0);
+  const etiquetaDestacado =
+    alcance === 'instructor' || alcance === 'desarrollo-general'
+      ? 'Clases dictadas'
+      : 'Alumnos certificados';
+  const encabezadoFormal = htmlEncabezadoInformeFormal({
+    emp,
+    contrato: c,
+    titulo,
+    subtitulo: subtituloInformeContrato(alcance),
+    generado,
+    resumenTitulo: resumenNumericoTitulo,
+    kpis: k,
+    valorDestacado,
+    etiquetaDestacado,
+  });
   const duracionTotalInforme = (data.porClase || []).reduce(
     (total, cl) =>
       total + (Number.isFinite(Number(cl.duracionSegundos)) ? Number(cl.duracionSegundos) : 0),
     0,
   );
-  const resumenFinal =
+  const resumenComplementario =
     alcance === 'instructor' || alcance === 'desarrollo-general'
-      ? `<section class="resumen-final">
-          <h3>Resumen general del contrato</h3>
-          <div class="kpis">
-            <div class="kpi"><span>Instructores</span><strong>${esc((data.porInstructor || []).length)}</strong></div>
-            <div class="kpi"><span>Clases dictadas</span><strong>${esc(k.clasesDictadas || 0)}/${esc(k.clasesTotales || 0)}</strong></div>
-            <div class="kpi"><span>Duración total</span><strong>${esc(fmtDuracionInforme(duracionTotalInforme))}</strong></div>
-            <div class="kpi"><span>Capacitados únicos</span><strong>${esc(k.alumnosCapacitados || 0)}</strong></div>
-            <div class="kpi"><span>Certificados únicos</span><strong>${esc(k.alumnosCertificados || 0)}</strong></div>
-          </div>
-        </section>`
+      ? htmlResumenFinalContrato(data, k, duracionTotalInforme)
       : '';
+  const detalleTieneContenido = Boolean(String(cuerpo || '').trim());
+  const saltoAntesDetalle = detalleTieneContenido ? '<div class="page-break" aria-hidden="true"></div>' : '';
 
   const { informePrintToolbar } = require('./informePrintToolbar');
   const toolbar = informePrintToolbar({
@@ -1337,25 +1458,64 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
+${informeGoogleFontsLinkHtml()}
 <title>${esc(titulo)}</title>
 <style>
   ${atPage}
   ${toolbar.css}
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { margin: 0; padding: 12px 14px; font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; font-size: 10pt; }
-  .hdr { display: flex; gap: 12px; align-items: center; border-bottom: 3px solid #1e3a5f; padding-bottom: 8px; margin-bottom: 8px; }
-  .logo { max-height: 52px; max-width: 140px; object-fit: contain; }
-  .logo-ph { width: 48px; height: 48px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; background: linear-gradient(135deg, #1e3a5f, #2d5580); }
-  h1 { margin: 0 0 3px; font-size: 13pt; color: #1e3a5f; letter-spacing: .01em; }
+  ${informeDocumentoBaseCss()}
+  html, body {
+    margin: 0; padding: 0;
+    background: #fff !important; color: #1a1a1a !important;
+    font-size: 9.5pt; line-height: 1.35;
+  }
+  .doc { max-width: 100%; margin: 0 auto; }
+  .doc-titulo-block {
+    text-align: center; margin: 12px 0 14px;
+    border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;
+    padding: 10px 0; background: #f8f9fb;
+  }
+  .doc-titulo-block h2 {
+    margin: 0; font-size: 12pt; text-transform: uppercase; letter-spacing: 1px;
+    color: #1e3a5f; font-weight: 700;
+  }
+  .doc-titulo-block p { margin: 4px 0 0; font-size: 9pt; color: #444; }
+  .doc-meta { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9pt; }
+  .doc-meta td { padding: 2px 0; vertical-align: top; }
+  .doc-meta td:first-child { width: 130px; font-weight: 600; color: #555; }
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+  }
+  .stat {
+    border: 1px solid #94a3b8; background: #edf2f7; padding: 8px; text-align: center;
+  }
+  .stat span { display: block; font-size: 8pt; text-transform: uppercase; color: #1e3a5f; }
+  .stat strong { font-size: 12pt; color: #1a1a1a; }
+  .destacado-contrato {
+    text-align: center; margin: 8px 0 12px;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 16px 28px;
+  }
+  .destacado-contrato .item { text-align: center; }
+  .destacado-contrato .lbl {
+    display: block; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #1e3a5f; font-weight: 700; margin-bottom: 2px;
+  }
+  .destacado-contrato .val {
+    display: block; font-size: 18pt; font-weight: 800; color: #1a365d;
+  }
+  .sec-grande {
+    margin: 16px 0 8px; padding: 10px 12px;
+    background: #1a365d; color: #fff; border-radius: 2px;
+    font-size: 12pt; font-weight: 800;
+    break-after: avoid; page-break-after: avoid;
+  }
   .muted, .sub { color: #64748b; font-size: 9pt; }
-  .titulo { text-align: center; margin: 8px 0; padding: 9px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #2d5580); color: #fff; box-shadow: 0 2px 5px rgba(15,23,42,.18); }
-  .titulo h2 { margin: 0 0 3px; font-size: 12pt; text-transform: uppercase; color: #fff; letter-spacing: .06em; }
-  .titulo .muted { color: #dbeafe; }
-  .titulo .muted strong { color: #fff; }
+  .stats--cinco { grid-template-columns: repeat(5, 1fr); }
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
-  .kpi { border: 1px solid #dbe3ee; border-top: 3px solid #1e3a5f; border-radius: 8px; background: linear-gradient(180deg, #ffffff, #f1f5fb); padding: 7px 5px; text-align: center; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
-  .kpi span { display:block; font-size: 7.5pt; text-transform: uppercase; color: #64748b; letter-spacing: .03em; margin-bottom: 2px; }
-  .kpi strong { font-size: 13pt; color: #1e3a5f; }
+  .kpi { border: 1px solid #94a3b8; background: #edf2f7; padding: 8px; text-align: center; }
+  .kpi span { display:block; font-size: 8pt; text-transform: uppercase; color: #1e3a5f; margin-bottom: 2px; }
+  .kpi strong { font-size: 12pt; color: #1a1a1a; }
   .sec { margin: 14px 0 6px; color: #1e3a5f; border-bottom: 1px solid #bbb; padding-bottom: 3px; text-transform: uppercase; font-size: 10pt; }
   h4 { margin: 10px 0 4px; font-size: 10pt; }
   .t { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt; }
@@ -1446,44 +1606,32 @@ async function buildHtmlInformeContratoPdf(data, alcance = 'contrato') {
   .rank-top em { font-style: normal; color: #0369a1; font-weight: 700; font-size: 6.5pt; }
   .rank-track { height: 5px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
   .rank-track i { display: block; height: 100%; border-radius: 999px; min-width: 2px; }
-  .ftr { margin-top: 18px; font-size: 8pt; color: #64748b; border-top: 2px solid #1e3a5f; padding-top: 8px; }
-  @media print {
-    .charts-grid { grid-template-columns: 1fr 1fr; }
+  @media print { .charts-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+  .doc-footer {
+    margin-top: 18px; padding-top: 10px; border-top: 1px solid #ccc;
+    font-size: 8pt; color: #666; text-align: center;
   }
-  @media (max-width: 700px) {
-    .charts-grid { grid-template-columns: 1fr; }
+  @media print { body { padding: 0 !important; } .no-print { display: none !important; } }
+  @media screen {
+    body { padding: 12px 16px 24px; background: #e5e7eb !important; }
+    .doc { background: #fff; padding: 14mm 12mm; box-shadow: 0 4px 24px rgba(0,0,0,.15); }
   }
 </style>
 </head>
 <body>
   ${toolbar.html}
-  <header class="hdr">
-    ${logo}
-    <div>
-      <h1>${esc(emp.nombre || 'Centro de Capacitación')}</h1>
-      <p class="muted">${[emp.nit && `NIT ${emp.nit}`, emp.ciudad, emp.direccion, emp.telefono].filter(Boolean).map(esc).join(' · ')}</p>
-    </div>
-  </header>
-  <div class="titulo">
-    <h2>${esc(titulo)}</h2>
-    <p class="muted">Presentado a: <strong>${esc(c.cliente || 'Empresa contratante')}</strong>${c.nit ? ` · NIT ${esc(c.nit)}` : ''}</p>
-    <p class="muted">Contrato <strong>${esc(c.codContrato || c._id)}</strong>${c.ciudad ? ` · ${esc(c.ciudad)}` : ''}</p>
-  </div>
-  <h3 class="chart-section-title">${esc(resumenNumericoTitulo)}</h3>
-  <div class="kpis">
-    <div class="kpi"><span>Jornadas</span><strong>${k.jornadas || 0}</strong></div>
-    <div class="kpi"><span>Clases dictadas</span><strong>${k.clasesDictadas || 0}/${k.clasesTotales || 0}</strong></div>
-    <div class="kpi"><span>Alumnos capacitados</span><strong>${k.alumnosCapacitados || 0}</strong></div>
-    <div class="kpi"><span>Alumnos certificados</span><strong>${k.alumnosCertificados || 0}</strong></div>
-  </div>
-  ${cruceJornadasBlock}
+  <div class="doc">
+  ${encabezadoFormal}
   ${chartsBlock}
-  <div class="page-break" aria-hidden="true"></div>
+  ${resumenComplementario}
+  ${cruceJornadasBlock}
+  ${saltoAntesDetalle}
   ${cuerpo || '<p class="muted">No hay datos para el alcance seleccionado.</p>'}
-  ${resumenFinal}
-  <div class="ftr">
-    Generado el ${esc(fmtFechaSolo(data.generadoAt) || new Date().toLocaleDateString('es-CO'))}.
+  <div class="doc-footer">
+    Generado el ${esc(generado)}.
     Documento de seguimiento de capacitación — uso empresarial.
+  </div>
   </div>
   ${toolbar.script}
 </body>

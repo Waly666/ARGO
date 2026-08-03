@@ -439,7 +439,10 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (a) => {
           this.store.setAlumno(a);
-          this.tab.set('datos');
+          const qpTab = this.route.snapshot.queryParamMap.get('tab') as TabKey | null;
+          if (qpTab && this.tabs().some((x) => x.key === qpTab)) {
+            this.tab.set(qpTab);
+          }
         },
         error: (err) => {
           this.store.clear();

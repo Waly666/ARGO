@@ -252,6 +252,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'jornadas/evaluaciones',
+        canActivate: [permisoGuard],
+        data: { permiso: ['jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar'] },
+        loadComponent: () =>
+          import('./features/jornadas/jornadas-evaluaciones.component').then(
+            (m) => m.JornadasEvaluacionesComponent,
+          ),
+      },
+      {
         path: 'jornadas/en-proceso',
         canActivate: [permisoGuard],
         data: { permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },

@@ -219,6 +219,9 @@ function mapListaItem(doc) {
     direccion: doc.direccion,
     munOrigen: doc.munOrigen,
     codMunicipio: codMun || undefined,
+    codDepartamento: doc.codDepartamento || undefined,
+    nombreDepartamento: doc.nombreDepartamento || undefined,
+    nombreMunicipio: doc.nombreMunicipio || undefined,
     urlFoto: doc.urlFoto,
     urlCedula: doc.urlCedula,
     urlLicencia: doc.urlLicencia,
@@ -269,11 +272,13 @@ async function enriquecerMunicipios(items) {
   const munis = await divipola.find({ codMunicipio: { $in: codes } }).lean();
   const map = Object.fromEntries(
     munis.map((r) => [
-      r.codMunicipio,
+      String(r.codMunicipio),
       {
-        munOrigenLabel: `${r.nombreMunicipio} - ${r.nombreDepto}`,
+        munOrigenLabel: String(r.nombreMunicipio || '').trim(),
         nombreMunicipio: r.nombreMunicipio,
+        nombreDepartamento: r.nombreDepto,
         nombreDepto: r.nombreDepto,
+        codDepartamento: r.codDepto,
       },
     ]),
   );
@@ -610,11 +615,14 @@ const CAMPOS_ALUMNO = [
   'tipoAlumno', 'tipoDoc', 'numDoc', 'expedida', 'apellido1', 'apellido2', 'nombre1', 'nombre2',
   'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
   'regimenSalud', 'nivelFormacion', 'ocupacion', 'discapacidad', 'munOrigen', 'codMunicipio',
+  'codDepartamento', 'nombreDepartamento', 'nombreMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
   'duracionSesionPracticaCea', 'empresaId', 'alertaPago', 'alertaPagoFrecuencia',
   /* Origen en jornada Cap. (≠ canal inscripción SISTEMA|WEB en `origen`) */
-  'origenJornadaCap', 'tipoInstitucionEducativa', 'colegioCodigo', 'colegioNombre',
-  'gradoColegio', 'programaInstitucion', 'estamentoId', 'estamentoNombre',
+  'origenJornadaCap', 'tipoInstitucionEducativa', 'perfilInstitucionEducativa',
+  'colegioCodigo', 'colegioNombre', 'gradoColegio', 'semestreInstitucion',
+  'titulacionCodigo', 'areaImparteColegio',
+  'programaInstitucion', 'estamentoId', 'estamentoNombre',
   'cargoEstamento', 'dependenciaEstamento',
 ];
 
@@ -692,9 +700,100 @@ function pickAlumno(body) {
   ]) {
     if (dto[k]) dto[k] = nombreMayusculas(dto[k]);
   }
+  // Distinto de `origen` (SISTEMA|WEB): participante de jornada.
+  const {
+    normalizarOrigenJornadaCap,
+    normalizarTipoInstitucionEducativa,
+    normalizarPerfilInstitucionEducativa,
+    normalizarAreaImparteColegio,
+    esNivelBasicaMedia,
+    esNivelSuperior,
+  } = require('../constants/origenJornadaCap');
+  const origenJ = normalizarOrigenJornadaCap(
+    body.origenJornadaCap || body.origenJornada || dto.origenJornadaCap,
+  );
+  if (origenJ) {
+    dto.origenJornadaCap = origenJ;
+    if (origenJ === 'colegio') {
+      const tipoInst =
+        normalizarTipoInstitucionEducativa(body.tipoInstitucionEducativa || dto.tipoInstitucionEducativa) ||
+        'secundaria';
+      dto.tipoInstitucionEducativa = tipoInst;
+      const perfil =
+        normalizarPerfilInstitucionEducativa(
+          body.perfilInstitucionEducativa || dto.perfilInstitucionEducativa,
+        ) || 'estudiante';
+      dto.perfilInstitucionEducativa = perfil;
+      if (perfil === 'profesor') {
+        const area =
+          normalizarAreaImparteColegio(body.areaImparteColegio || dto.areaImparteColegio) ||
+          String(body.areaImparteColegio || dto.areaImparteColegio || '')
+            .trim()
+            .toLowerCase();
+        if (area) dto.areaImparteColegio = area;
+        else delete dto.areaImparteColegio;
+        delete dto.gradoColegio;
+        delete dto.semestreInstitucion;
+        delete dto.titulacionCodigo;
+        delete dto.programaInstitucion;
+      } else {
+        delete dto.areaImparteColegio;
+        if (esNivelBasicaMedia(tipoInst)) {
+          const grado = parseInt(body.gradoColegio ?? dto.gradoColegio, 10);
+          const minG = tipoInst === 'primaria' ? 1 : 6;
+          const maxG = tipoInst === 'primaria' ? 5 : 11;
+          if (Number.isFinite(grado) && grado >= minG && grado <= maxG) dto.gradoColegio = grado;
+          else delete dto.gradoColegio;
+          delete dto.semestreInstitucion;
+          delete dto.titulacionCodigo;
+          delete dto.programaInstitucion;
+        } else if (esNivelSuperior(tipoInst)) {
+          delete dto.gradoColegio;
+          const sem = parseInt(body.semestreInstitucion ?? dto.semestreInstitucion, 10);
+          if (Number.isFinite(sem) && sem >= 1 && sem <= 12) dto.semestreInstitucion = sem;
+          else delete dto.semestreInstitucion;
+          const titCod = String(body.titulacionCodigo ?? dto.titulacionCodigo ?? '').trim();
+          if (titCod) dto.titulacionCodigo = titCod;
+          else delete dto.titulacionCodigo;
+          // programaInstitucion = nombre de titulación
+        } else {
+          delete dto.gradoColegio;
+          delete dto.semestreInstitucion;
+          delete dto.titulacionCodigo;
+        }
+      }
+    } else {
+      delete dto.tipoInstitucionEducativa;
+      delete dto.perfilInstitucionEducativa;
+      delete dto.colegioCodigo;
+      delete dto.colegioNombre;
+      delete dto.gradoColegio;
+      delete dto.semestreInstitucion;
+      delete dto.titulacionCodigo;
+      delete dto.areaImparteColegio;
+      delete dto.programaInstitucion;
+    }
+    if (origenJ !== 'estamento') {
+      delete dto.estamentoId;
+      delete dto.estamentoNombre;
+      delete dto.cargoEstamento;
+      delete dto.dependenciaEstamento;
+    }
+    if (origenJ !== 'empresa') {
+      // No borrar empresaId: es el mismo campo de alumnos regulares y virtuales.
+      // En jornadas solo se asigna si origen = empresa y el usuario la elige.
+    }
+  }
+
   // codMunicipio debe coincidir con munOrigen (código divipola)
   if (dto.munOrigen) dto.codMunicipio = String(dto.munOrigen).trim();
   else if (dto.codMunicipio) dto.munOrigen = String(dto.codMunicipio).trim();
+  if (dto.codDepartamento != null) {
+    dto.codDepartamento = String(dto.codDepartamento || '')
+      .replace(/\D/g, '')
+      .padStart(2, '0');
+    if (dto.codDepartamento === '00') delete dto.codDepartamento;
+  }
   if (dto.numDoc != null && dto.numDoc !== '') {
     const nd = parseNumDoc(dto.numDoc);
     if (nd != null) dto.numDoc = nd;
@@ -706,48 +805,28 @@ function pickAlumno(body) {
   if (body.alertaPago) dto.alertaPago = body.alertaPago;
   if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
 
-  // Distinto de `origen` (SISTEMA|WEB): participante de jornada.
-  const {
-    normalizarOrigenJornadaCap,
-    normalizarTipoInstitucionEducativa,
-  } = require('../constants/origenJornadaCap');
-  const origenJ = normalizarOrigenJornadaCap(
-    body.origenJornadaCap || body.origenJornada || dto.origenJornadaCap,
-  );
-  if (origenJ) {
-    dto.origenJornadaCap = origenJ;
-    if (origenJ === 'colegio') {
-      const tipoInst =
-        normalizarTipoInstitucionEducativa(body.tipoInstitucionEducativa || dto.tipoInstitucionEducativa) ||
-        'colegio';
-      dto.tipoInstitucionEducativa = tipoInst;
-      if (tipoInst === 'colegio') {
-        const grado = parseInt(body.gradoColegio ?? dto.gradoColegio, 10);
-        if (Number.isFinite(grado) && grado >= 1 && grado <= 11) dto.gradoColegio = grado;
-        else delete dto.gradoColegio;
-        delete dto.programaInstitucion;
-      } else {
-        delete dto.gradoColegio;
-      }
-    } else {
-      delete dto.tipoInstitucionEducativa;
-      delete dto.colegioCodigo;
-      delete dto.colegioNombre;
-      delete dto.gradoColegio;
-      delete dto.programaInstitucion;
-    }
-    if (origenJ !== 'estamento') {
-      delete dto.estamentoId;
-      delete dto.estamentoNombre;
-      delete dto.cargoEstamento;
-      delete dto.dependenciaEstamento;
-    }
-    if (origenJ !== 'empresa') {
-      // No borrar empresaId: también se usa en alumnos regulares.
-    }
-  }
-
   normalizarAlertaPagoEnDto(dto);
+  return dto;
+}
+
+/** Completa cod/nombre de departamento y municipio desde DIVIPOLA. */
+async function completarGeoOrigenAlumno(dto) {
+  if (!dto || typeof dto !== 'object') return dto;
+  const codMun = String(dto.codMunicipio || dto.munOrigen || '').trim();
+  if (!codMun) return dto;
+  const { models: cat } = require('../models/catalogos');
+  const pad = String(codMun).replace(/\D/g, '').padStart(5, '0');
+  const geo = await cat.divipola
+    .findOne({
+      $or: [{ codMunicipio: codMun }, { codMunicipio: pad }, { codMunicipio: Number(pad) }],
+    })
+    .lean();
+  if (!geo) return dto;
+  dto.codMunicipio = String(geo.codMunicipio);
+  dto.munOrigen = String(geo.codMunicipio);
+  dto.nombreMunicipio = geo.nombreMunicipio;
+  dto.codDepartamento = String(geo.codDepto || '').padStart(2, '0');
+  dto.nombreDepartamento = geo.nombreDepto;
   return dto;
 }
 
@@ -785,6 +864,7 @@ exports.crear = async (req, res, next) => {
           : TIPO_ALUMNO_DEFAULT;
     // Canal de inscripción: altas ERP/cajero/recepción = SISTEMA (no spoofear WEB desde el cliente).
     dto.origen = ORIGEN_SISTEMA;
+    await completarGeoOrigenAlumno(dto);
 
     let a;
     try {
@@ -828,6 +908,7 @@ exports.actualizar = async (req, res, next) => {
     dto.fechaMod = new Date();
     dto.userChangeRecord = dto.userChangeRecord || req.user?.username || req.user?.sub || 'sistema';
     if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
+    await completarGeoOrigenAlumno(dto);
 
     const unset = {};
     if (

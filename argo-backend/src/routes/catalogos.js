@@ -16,6 +16,7 @@ router.get('/divipola/municipio/:codMunicipio', ctrl.municipioPorCodigo);
 router.get('/divipola/municipios/:codDepto', ctrl.municipios);
 
 router.get('/colegios/buscar', ctrl.buscarColegios);
+router.get('/titulaciones/buscar', ctrl.buscarTitulaciones);
 router.get('/estamentos-publicos/buscar', ctrl.buscarEstamentos);
 
 router.post('/:nombre/importar', admin, ctrl.importar);

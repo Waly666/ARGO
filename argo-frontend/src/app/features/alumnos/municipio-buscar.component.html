@@ -1,12 +1,13 @@
-<div class="muni-buscar-host">
+<div class="muni-buscar-host" [class.disabled]="disabled">
   <label>{{ label }}</label>
   <div class="input-wrap" [class.combo]="modoCombo">
     <input
       type="text"
-      [placeholder]="placeholder"
+      [placeholder]="disabled ? 'Primero seleccione el departamento…' : placeholder"
       [ngModel]="query()"
       (ngModelChange)="onInput($event)"
       (focus)="focus()"
+      [disabled]="disabled"
       autocomplete="off"
     />
     <button
@@ -14,6 +15,7 @@
       type="button"
       class="combo-toggle"
       tabindex="-1"
+      [disabled]="disabled"
       [attr.aria-expanded]="open()"
       (mousedown)="$event.preventDefault()"
       (click)="toggleOpen()">
@@ -25,25 +27,33 @@
   <ul class="dropdown" *ngIf="open() && resultados().length > 0">
     <li *ngFor="let m of resultados()" (mousedown)="pick(m)">
       <strong>{{ m.nombreMunicipio }}</strong>
-      <span>{{ m.nombreDepto }} · {{ m.codMunicipio }}</span>
+      <span *ngIf="!codDepto">{{ m.nombreDepto }} · {{ m.codMunicipio }}</span>
+      <span *ngIf="codDepto">{{ m.codMunicipio }}</span>
     </li>
   </ul>
 
   <div
     class="dropdown empty"
-    *ngIf="open() && !loading() && query().trim().length >= minBusqueda() && resultados().length === 0"
+    *ngIf="open() && !loading() && !disabled && (codDepto || query().trim().length >= minBusqueda()) && resultados().length === 0"
   >
     No hay municipios con ese texto.
   </div>
 
   <div
     class="dropdown empty"
-    *ngIf="open() && query().trim().length > 0 && query().trim().length < minBusqueda()"
+    *ngIf="open() && !codDepto && query().trim().length > 0 && query().trim().length < minBusqueda()"
   >
     Escriba al menos {{ minBusqueda() }} caracteres…
   </div>
 
-  <div class="dropdown empty" *ngIf="open() && modoCombo && !query().trim() && !loading()">
+  <div class="dropdown empty" *ngIf="open() && disabled">
+    Seleccione primero el departamento de origen.
+  </div>
+
+  <div
+    class="dropdown empty"
+    *ngIf="open() && modoCombo && !codDepto && !query().trim() && !loading() && !disabled"
+  >
     Escriba municipio o departamento para buscar.
   </div>
 </div>

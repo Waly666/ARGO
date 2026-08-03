@@ -14,6 +14,7 @@ const { FORMATOS, MEDIA_CARTA_ANCHO_MM, MEDIA_CARTA_ALTO_MM, formatoIngreso, for
   require('./comprobanteFormato');
 const { atPageCssPara } = require('./configPaginasInformes');
 const { informePrintToolbar, informePrintToolbarCss } = require('./informePrintToolbar');
+const { informeGoogleFontsLinkHtml, informeTipografiaCss } = require('./informeEncabezadoEmpresa');
 
 async function estilosValidadoraIngreso(mm, w) {
   const atPage = await atPageCssPara('comprobante_validadora');
@@ -29,9 +30,10 @@ async function estilosMediaCarta() {
   const atPage = await atPageCssPara('comprobante_media_carta');
   return `
     ${atPage}
+    ${informeTipografiaCss()}
     * { box-sizing: border-box; }
     body {
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Roboto", system-ui, -apple-system, sans-serif;
       font-size: 10px;
       line-height: 1.4;
       margin: 0;
@@ -53,8 +55,8 @@ async function estilosMediaCarta() {
     .doc-emisor-logo { flex-shrink: 0; }
     .doc-logo { max-height: 64px; max-width: 160px; object-fit: contain; display: block; }
     .doc-emisor-texto { flex: 1; min-width: 0; }
-    .doc-razon { font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 2px; }
-    .doc-sede { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+    .doc-razon { font-size: 13px; font-weight: 700; color: #1e3a5f; margin-bottom: 2px; font-family: "Exo", "Roboto", sans-serif; }
+    .doc-sede { font-size: 11px; font-weight: 600; margin-bottom: 4px; font-family: "Exo", "Roboto", sans-serif; }
     .doc-emisor div, .doc-emisor-texto div { font-size: 9px; color: #444; margin: 1px 0; }
     .doc-badge {
       text-align: right;
@@ -469,6 +471,7 @@ async function htmlIngresoValidadora(data) {
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
+  ${informeGoogleFontsLinkHtml()}
   <title>Recibo ${esc(numeroRecibo)}</title>
   <style>${estilos}</style>
 </head>
@@ -566,6 +569,7 @@ async function htmlIngresoMediaCarta(data) {
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
+  ${informeGoogleFontsLinkHtml()}
   <title>Recibo ${esc(numeroRecibo)}</title>
   <style>${estilos}</style>
 </head>

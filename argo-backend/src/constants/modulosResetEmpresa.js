@@ -44,7 +44,7 @@ const MODULOS_RESET = [
     id: 'programacion_cea',
     etiqueta: 'Programación CEA y jornadas',
     descripcion:
-      'Clases CEA, jornadas de capacitación con empresas, contratos de contratación, supervisores, temarios y registros web pendientes.',
+      'Clases CEA, jornadas de capacitación con empresas, contratos de contratación, encuestas de satisfacción, supervisores, temarios y registros web pendientes.',
     colecciones: [
       'clasesProgramadasCea',
       'inscripcionesClaseCea',
@@ -52,6 +52,8 @@ const MODULOS_RESET = [
       'jornadasCap',
       'clasesJornadaCap',
       'asisClasJorCap',
+      'encuestasJornadaCap',
+      'respuestasEncuestaJornada',
       'supervisores',
       'temasProgramaCea',
       'registroJornadaPendiente',

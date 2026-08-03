@@ -10,6 +10,8 @@ import {
   CohorteAlumno,
   CursoVirtual,
   CertificadoConsultaRes,
+  EncuestaJornadaDetalleRes,
+  EncuestasJornadaPendientesRes,
   CertificadoPortal,
   BlogPost,
   EstadoInscripcionVirtual,
@@ -283,6 +285,47 @@ export class AulaApiService {
     const q = new URLSearchParams({ numDoc: String(numDoc) });
     if (turnstileToken) q.set('turnstileToken', turnstileToken);
     return this.http.get<CertificadoConsultaRes>(`${this.base}/certificados/consulta?${q.toString()}`);
+  }
+
+  encuestasJornadaPendientes(
+    numDoc: string | number,
+    turnstileToken?: string,
+  ): Observable<EncuestasJornadaPendientesRes> {
+    const q = new URLSearchParams({ numDoc: String(numDoc) });
+    if (turnstileToken) q.set('turnstileToken', turnstileToken);
+    return this.http.get<EncuestasJornadaPendientesRes>(
+      `${this.base}/encuestas-jornada/pendientes?${q.toString()}`,
+    );
+  }
+
+  encuestaJornadaDetalle(
+    id: string,
+    numDoc: string | number,
+    turnstileToken?: string,
+  ): Observable<EncuestaJornadaDetalleRes> {
+    const q = new URLSearchParams({ numDoc: String(numDoc) });
+    if (turnstileToken) q.set('turnstileToken', turnstileToken);
+    return this.http.get<EncuestaJornadaDetalleRes>(
+      `${this.base}/encuestas-jornada/${encodeURIComponent(id)}?${q.toString()}`,
+    );
+  }
+
+  responderEncuestaJornada(
+    id: string,
+    body: {
+      numDoc: string | number;
+      calificacionesCarpa: Array<{
+        idCarpa: number;
+        aspectos: Record<string, number>;
+      }>;
+      comentario?: string;
+    },
+    turnstileToken?: string,
+  ): Observable<{ ok: boolean; mensaje?: string }> {
+    return this.http.post<{ ok: boolean; mensaje?: string }>(
+      `${this.base}/encuestas-jornada/${encodeURIComponent(id)}/responder`,
+      { ...body, turnstileToken: turnstileToken || undefined },
+    );
   }
 
   enviarContacto(

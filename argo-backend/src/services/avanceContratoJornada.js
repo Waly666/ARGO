@@ -10,6 +10,7 @@ const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion
 const {
   configCertificacionParaOrigen,
   normalizarOrigenJornadaCap,
+  normalizarPerfilInstitucionEducativa,
 } = require('../constants/origenJornadaCap');
 
 function toObjectId(raw) {
@@ -133,6 +134,13 @@ async function obtenerAvanceContratoJornada(idContratoRaw) {
         numDoc,
         nombreCompleto: nombreAlumno(alumno) || `Doc. ${numDoc}`,
         origenJornadaCap: origen,
+        perfilInstitucionEducativa:
+          origen === 'colegio'
+            ? normalizarPerfilInstitucionEducativa(alumno?.perfilInstitucionEducativa) || 'estudiante'
+            : null,
+        areaImparteColegio: origen === 'colegio' ? alumno?.areaImparteColegio || null : null,
+        gradoColegio: origen === 'colegio' ? alumno?.gradoColegio ?? null : null,
+        colegioNombre: origen === 'colegio' ? alumno?.colegioNombre || null : null,
         clasesAsistidas,
         certificado,
         certificadosEmitidos: certInfo.certificados,

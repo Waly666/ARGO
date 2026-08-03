@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Observable, Subject, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
+import { Observable, Subject, debounceTime, of, switchMap } from 'rxjs';
 
 export interface EnumBuscarOption {
   value: string | number;
@@ -42,6 +42,11 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   @Input() modoCombo = false;
   @Input() opcionesLocales: EnumBuscarOption[] = [];
   @Input() buscarRemoto?: (q: string) => Observable<EnumBuscarOption[]>;
+  /**
+   * Cuando `buscarRemoto` depende de otros campos (nivel, municipio…), pasar aquí
+   * su valor: al cambiar se descarta el listado anterior y se vuelve a consultar.
+   */
+  @Input() recargarClave = '';
 
   seleccionado = output<EnumBuscarOption>();
   limpiado = output<void>();
@@ -56,10 +61,11 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   private q$ = new Subject<string>();
 
   constructor() {
+    // Sin distinctUntilChanged: `buscarRemoto` depende de otros campos del formulario
+    // (nivel, municipio…), así que el mismo texto debe poder relanzar la consulta.
     this.q$
       .pipe(
         debounceTime(220),
-        distinctUntilChanged(),
         switchMap((q) => {
           this.loading.set(true);
           if (this.remoto) {
@@ -106,6 +112,10 @@ export class CatalogoEnumBuscarComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['textoInicial'] && !this.filtrandoActivo() && !this.open()) {
       this.query.set(this.textoInicial || '');
+    }
+    if (changes['recargarClave'] && !changes['recargarClave'].firstChange) {
+      this.resultados.set([]);
+      if (this.open()) this.refrescarOpciones(this.query().trim());
     }
     if (changes['opcionesLocales']) {
       const q = this.filtrandoActivo() ? this.query().trim() : '';

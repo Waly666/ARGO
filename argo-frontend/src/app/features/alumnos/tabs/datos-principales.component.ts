@@ -33,7 +33,7 @@ import {
 
 import { ConfigRecibo, ConfigService } from '../../../core/services/config.service';
 
-import { ClienteService, Cliente } from '../../../core/services/cliente.service';
+import { ClienteService } from '../../../core/services/cliente.service';
 
 import { JornadaCapService } from '../../../core/services/jornada-cap.service';
 
@@ -239,8 +239,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   expedidaTexto = signal('');
 
   munOrigenTexto = signal('');
-
-
+  /** Texto visible del departamento de origen (campo separado). */
+  deptoOrigenTexto = signal('');
+  opcionesDepartamentos = signal<EnumBuscarOption[]>([]);
 
   saving = signal(false);
 
@@ -263,52 +264,44 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   private numDocScannerRapidKeys = 0;
   private numDocScannerActivo = false;
 
-  /** Empresa — combobox de búsqueda incremental */
-  private clienteSvc    = inject(ClienteService);
+  /** Empresa — mismo campo para regular, virtual y jornadas (catálogo clientes). */
+  private clienteSvc = inject(ClienteService);
   private jornadaCapSvc = inject(JornadaCapService);
-  empresaBusqueda       = signal('');
-  empresaSugerencias    = signal<Cliente[]>([]);
-  empresaCargando       = signal(false);
-  empresaDropdownOpen   = signal(false);
 
-  buscarEmpresa(q: string) {
-    this.empresaBusqueda.set(q);
-    if (!q.trim()) {
-      this.empresaSugerencias.set([]);
-      this.empresaDropdownOpen.set(false);
-      if (!q) {
-        this.form.update((f) => ({ ...f, empresaId: null, empresaNombre: null }));
-      }
-      return;
-    }
-    this.empresaCargando.set(true);
-    this.clienteSvc.listar(q.trim()).subscribe({
-      next: (rows) => {
-        this.empresaSugerencias.set(rows.slice(0, 10));
-        this.empresaDropdownOpen.set(rows.length > 0);
-        this.empresaCargando.set(false);
-      },
-      error: () => this.empresaCargando.set(false),
-    });
+  buscarEmpresasRemoto = (q: string) =>
+    this.clienteSvc.listar(q.trim()).pipe(
+      map((rows) =>
+        rows.map((c) => {
+          const label =
+            c.razonSocial?.trim() ||
+            c.nombreComercial?.trim() ||
+            c.nombres?.trim() ||
+            c.identificacion ||
+            '—';
+          return {
+            value: String(c._id || ''),
+            label,
+            hint: c.identificacion ? `NIT ${c.identificacion}` : undefined,
+          } satisfies EnumBuscarOption;
+        }),
+      ),
+    );
+
+  onEmpresaPick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('empresaId');
+    this.form.update((f) => ({
+      ...f,
+      empresaId: String(opt.value || '').trim() || null,
+      empresaNombre: String(opt.label || '').trim() || null,
+    }));
+    this.formDirty.set(true);
+    this.lastContratoResolverKey = '';
   }
 
-  seleccionarEmpresa(c: Cliente) {
-    const nombre = c.razonSocial?.trim() || c.nombreComercial?.trim() || c.nombres?.trim() || c.identificacion || '';
-    this.empresaBusqueda.set(nombre);
-    this.form.update((f) => ({ ...f, empresaId: c._id || null, empresaNombre: nombre || null }));
-    this.empresaDropdownOpen.set(false);
-    this.empresaSugerencias.set([]);
-  }
-
-  limpiarEmpresa() {
-    this.empresaBusqueda.set('');
-    this.empresaSugerencias.set([]);
-    this.empresaDropdownOpen.set(false);
+  onEmpresaLimpiar(): void {
     this.form.update((f) => ({ ...f, empresaId: null, empresaNombre: null }));
-  }
-
-  onEmpresaBlur() {
-    setTimeout(() => this.empresaDropdownOpen.set(false), 200);
+    this.formDirty.set(true);
+    this.lastContratoResolverKey = '';
   }
 
   /** Firma del último estado guardado (o vacío en alumno nuevo) */
@@ -318,6 +311,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   /** Evita que el effect de sincronización pise ediciones locales (p. ej. tipo de alumno). */
   private formDirty = signal(false);
+
+  /** Evita re-sincronizar / re-consultar API con el mismo alumno o contrato. */
+  private lastAlumnoSyncKey = '';
+  private lastContratoResolverKey = '';
+  private munOrigenCodResuelto = '';
 
   formSinGuardar = computed(() => {
     if (this.formDirty()) return true;
@@ -376,23 +374,106 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     key: 'colegio' | 'estamento' | 'empresa' | 'operativo';
     label: string;
   }> = [
-    { key: 'colegio', label: 'Estudiante / institución educativa' },
+    { key: 'colegio', label: 'Institución educativa' },
     { key: 'estamento', label: 'Estamento público' },
     { key: 'empresa', label: 'Empresa' },
     { key: 'operativo', label: 'Operativo / calle' },
   ];
 
+  readonly perfilesInstitucionUi: Array<{ key: 'estudiante' | 'profesor'; label: string }> = [
+    { key: 'estudiante', label: 'Estudiante' },
+    { key: 'profesor', label: 'Profesor' },
+  ];
+
   opcionesTipoInstitucion = (): EnumBuscarOption[] => [
-    { value: 'colegio', label: 'Colegio' },
-    { value: 'instituto', label: 'Instituto técnico' },
+    { value: 'primaria', label: 'Primaria' },
+    { value: 'secundaria', label: 'Secundaria' },
+    { value: 'tecnica', label: 'Técnica' },
+    { value: 'tecnologica', label: 'Tecnológica' },
     { value: 'universidad', label: 'Universidad' },
   ];
 
-  opcionesGradoColegio = (): EnumBuscarOption[] =>
-    Array.from({ length: 11 }, (_, i) => {
-      const n = i + 1;
+  normalizarNivelInstitucionUi(raw: string | null | undefined): string {
+    const t = String(raw || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    if (['primaria', 'secundaria', 'tecnica', 'tecnologica', 'universidad'].includes(t)) return t;
+    if (t === 'colegio') return 'secundaria';
+    if (t === 'instituto') return 'tecnica';
+    return t || 'secundaria';
+  }
+
+  labelCursoGrado = computed(() =>
+    this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa) === 'primaria'
+      ? 'Curso *'
+      : 'Grado *',
+  );
+
+  esNivelBasicaMediaUi = computed(() => {
+    const t = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
+    return t === 'primaria' || t === 'secundaria';
+  });
+
+  esNivelSuperiorUi = computed(() => {
+    const t = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
+    return t === 'tecnica' || t === 'tecnologica' || t === 'universidad';
+  });
+
+  nivelInstitucionUi = computed(() =>
+    this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa),
+  );
+
+  /** Cambia con el nivel o el municipio: obliga a recargar el listado de instituciones. */
+  claveBusquedaInstitucion = computed(
+    () =>
+      `${this.nivelInstitucionUi()}|${String(
+        this.form().codMunicipio || this.form().munOrigen || '',
+      )}`,
+  );
+
+  opcionesGradoColegio = (): EnumBuscarOption[] => {
+    const t = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
+    if (t === 'primaria') {
+      return Array.from({ length: 5 }, (_, i) => {
+        const n = i + 1;
+        return { value: String(n), label: `Curso ${n}` };
+      });
+    }
+    // secundaria (default)
+    return Array.from({ length: 6 }, (_, i) => {
+      const n = i + 6;
       return { value: String(n), label: `Grado ${n}` };
     });
+  };
+
+  opcionesSemestreInstitucion = (): EnumBuscarOption[] =>
+    Array.from({ length: 12 }, (_, i) => {
+      const n = i + 1;
+      return { value: String(n), label: `Semestre ${n}` };
+    });
+
+  opcionesAreaImparte = (): EnumBuscarOption[] => [
+    { value: 'matematicas', label: 'Matemáticas' },
+    { value: 'lengua_castellana', label: 'Lengua castellana' },
+    { value: 'ingles', label: 'Inglés' },
+    { value: 'ciencias_naturales', label: 'Ciencias naturales' },
+    { value: 'ciencias_sociales', label: 'Ciencias sociales' },
+    { value: 'educacion_fisica', label: 'Educación física' },
+    { value: 'educacion_artistica', label: 'Educación artística' },
+    { value: 'tecnologia_informatica', label: 'Tecnología e informática' },
+    { value: 'etica_valores', label: 'Ética y valores' },
+    { value: 'religion', label: 'Religión' },
+    { value: 'filosofia', label: 'Filosofía' },
+    { value: 'quimica', label: 'Química' },
+    { value: 'fisica', label: 'Física' },
+    { value: 'biologia', label: 'Biología' },
+    { value: 'orientacion_escolar', label: 'Orientación escolar' },
+    { value: 'coordinacion', label: 'Coordinación académica' },
+    { value: 'directivo', label: 'Directivo / rectoría' },
+    { value: 'otra', label: 'Otra área' },
+  ];
 
   textoOrigenJornadaCap = computed(() => {
     const k = String(this.form().origenJornadaCap || '').trim();
@@ -400,19 +481,54 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   });
 
   textoTipoInstitucion = computed(() => {
-    const k = String(this.form().tipoInstitucionEducativa || '').trim();
+    const k = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
     return this.opcionesTipoInstitucion().find((o) => o.value === k)?.label || '';
   });
 
   textoGradoColegio = computed(() => {
     const g = this.form().gradoColegio;
     if (g == null || !Number.isFinite(Number(g))) return '';
+    const t = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
+    if (t === 'primaria') return `Curso ${g}`;
     return `Grado ${g}`;
+  });
+
+  textoSemestreInstitucion = computed(() => {
+    const s = this.form().semestreInstitucion;
+    if (s == null || !Number.isFinite(Number(s))) return '';
+    return `Semestre ${s}`;
+  });
+
+  textoAreaImparte = computed(() => {
+    const k = String(this.form().areaImparteColegio || '').trim();
+    return this.opcionesAreaImparte().find((o) => o.value === k)?.label || '';
+  });
+
+  esProfesorInstitucion = computed(() => {
+    if (String(this.form().origenJornadaCap || '') !== 'colegio') return false;
+    return String(this.form().perfilInstitucionEducativa || 'estudiante') === 'profesor';
+  });
+
+  perfilInstitucionActivo = computed((): 'estudiante' | 'profesor' => {
+    const p = String(this.form().perfilInstitucionEducativa || '').trim();
+    return p === 'profesor' ? 'profesor' : 'estudiante';
+  });
+
+  labelInstitucionBuscar = computed(() => {
+    const t = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
+    if (t === 'primaria' || t === 'secundaria') return 'Institución *';
+    if (t === 'tecnica') return 'Institución técnica *';
+    if (t === 'tecnologica') return 'Institución tecnológica *';
+    return 'Universidad / IES *';
   });
 
   buscarColegiosRemoto = (q: string) => {
     const cod = String(this.form().codMunicipio || this.form().munOrigen || '').trim();
-    return this.catSvc.buscarColegios(cod, q, 50).pipe(
+    const nivel = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
+    const superior = ['tecnica', 'tecnologica', 'universidad'].includes(nivel);
+    // IES: listar el catálogo completo (~300+); colegios MEN: tope menor.
+    const limit = superior ? 500 : 60;
+    return this.catSvc.buscarColegios(cod, q, limit, nivel).pipe(
       map((rows: ColegioDivipola[]) =>
         rows.map((r) => {
           const nombre = String(r.nombreEstablecimiento || r.label || '').trim();
@@ -425,6 +541,20 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
             hint: ubi || undefined,
           };
         }),
+      ),
+      catchError(() => of([])),
+    );
+  };
+
+  buscarTitulacionesRemoto = (q: string) => {
+    const nivel = this.normalizarNivelInstitucionUi(this.form().tipoInstitucionEducativa);
+    return this.catSvc.buscarTitulaciones(nivel, q, 80).pipe(
+      map((rows) =>
+        rows.map((r) => ({
+          value: r.codigo,
+          label: r.nombre || r.label,
+          hint: r.hint,
+        })),
       ),
       catchError(() => of([])),
     );
@@ -476,7 +606,15 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     afterNextRender(() => this.sincronizarDesdeAlumno());
 
     effect(() => {
+      if (this.formDirty()) return;
       const a = this.alumno() ?? this.store.alumno();
+      const key = a?._id
+        ? `${String(a._id)}|${String(a.fechaMod ?? '')}`
+        : a?.numDoc != null
+          ? `doc:${String(a.numDoc)}`
+          : 'vacío';
+      if (key === this.lastAlumnoSyncKey) return;
+      this.lastAlumnoSyncKey = key;
       this.sincronizarDesdeAlumno(a);
     });
 
@@ -496,6 +634,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       const qpCod = this.qpCodContrato();
       const idContrato = this.qpIdContrato();
       const empresaId = String(this.form().empresaId || '').trim();
+      const key = `${qpCod}|${idContrato}|${empresaId}`;
+      if (key === this.lastContratoResolverKey) return;
+      this.lastContratoResolverKey = key;
       void this.resolverCodContratoEtiqueta(qpCod, idContrato, empresaId);
     });
 
@@ -510,6 +651,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       this.qpCodContrato.set((q.get('codContrato') || q.get('contratoCod') || '').trim());
       this.qpIdContrato.set((q.get('contrato') || q.get('idContrato') || '').trim());
       this.qpFechaJornada.set((q.get('fechaJornada') || q.get('fecha') || '').trim());
+      this.lastContratoResolverKey = '';
       if (esJ && !this.isEdit()) {
         const origenJ =
           DatosPrincipalesComponent.normalizarOrigenJornadaQuery(
@@ -542,6 +684,19 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.cargarCatalogo('discapacidad', this.discapacidades, DISCAPACIDADES_DEF);
     this.cargarCatalogo('multiCulturalidad', this.multiCulturalidades, MULTICULTURALIDAD_DEF);
 
+    this.catSvc.departamentos().subscribe({
+      next: (rows) => {
+        this.opcionesDepartamentos.set(
+          (rows || []).map((d: { codDepto?: string; nombreDepto?: string }) => ({
+            value: String(d.codDepto || '').padStart(2, '0'),
+            label: String(d.nombreDepto || '').trim(),
+          })),
+        );
+        this.sincronizarTextoDeptoOrigen();
+      },
+      error: () => this.opcionesDepartamentos.set([]),
+    });
+
     this.configSvc.obtenerRecibo().subscribe({
       next: (c) => this.configRecibo.set(c),
       error: () => this.configRecibo.set(null),
@@ -551,6 +706,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.numDocScannerTimer) clearTimeout(this.numDocScannerTimer);
+    if (!this.formDirty()) {
+      this.store.setDatosSinGuardar(false);
+    }
   }
 
   /** Prefiere query; si no, contrato por id; si no, contrato de la empresa del alumno. */
@@ -594,27 +752,88 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
 
 
-  private resolverTextoMunOrigen(cod?: string) {
-
-    if (!cod) {
-
-      this.munOrigenTexto.set('');
-
-      return;
-
-    }
-
-    this.catSvc.municipioPorCodigo(cod).subscribe({
-
-      next: (m) => this.munOrigenTexto.set(m.label),
-
-      error: () => this.munOrigenTexto.set(cod),
-
-    });
-
+  private actualizarLineaBaseTrasEnriquecimientoAsync(): void {
+    if (this.formDirty()) return;
+    this.lineaBase.set(this.firmaEstadoActual(undefined, false));
+    this.store.setDatosSinGuardar(false);
   }
 
+  private resolverTextoMunOrigen(cod?: string) {
+    const c = String(cod || '').trim();
+    if (!c) {
+      this.munOrigenTexto.set('');
+      this.munOrigenCodResuelto = '';
+      return;
+    }
+    if (c === this.munOrigenCodResuelto) return;
 
+    this.munOrigenCodResuelto = c;
+    this.catSvc.municipioPorCodigo(c).subscribe({
+      next: (m) => {
+        if (this.munOrigenCodResuelto !== c) return;
+        this.munOrigenTexto.set(aMayusculas(m.nombreMunicipio || m.label));
+        if (this.formDirty()) return;
+        const codDep = String(m.codDepto || '').padStart(2, '0');
+        if (codDep && codDep !== '00') {
+          this.form.update((f) => ({
+            ...f,
+            codDepartamento: f.codDepartamento || codDep,
+            nombreDepartamento: f.nombreDepartamento || m.nombreDepto || '',
+            nombreMunicipio: m.nombreMunicipio || f.nombreMunicipio || '',
+          }));
+          this.sincronizarTextoDeptoOrigen();
+        }
+        this.actualizarLineaBaseTrasEnriquecimientoAsync();
+      },
+
+      error: () => {
+        if (this.munOrigenCodResuelto === c) this.munOrigenTexto.set(c);
+      },
+
+    });
+  }
+
+  private sincronizarTextoDeptoOrigen(): void {
+    const cod = String(this.form().codDepartamento || '').padStart(2, '0');
+    if (!cod || cod === '00') {
+      this.deptoOrigenTexto.set(String(this.form().nombreDepartamento || '').trim());
+      return;
+    }
+    const hit = this.opcionesDepartamentos().find((d) => d.value === cod);
+    this.deptoOrigenTexto.set(
+      hit?.label || String(this.form().nombreDepartamento || '').trim() || cod,
+    );
+  }
+
+  onDeptoOrigenPick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('codDepartamento');
+    const cod = String(opt.value || '').padStart(2, '0');
+    this.deptoOrigenTexto.set(opt.label || '');
+    this.munOrigenTexto.set('');
+    this.form.update((f) => ({
+      ...f,
+      codDepartamento: cod,
+      nombreDepartamento: opt.label || '',
+      munOrigen: '',
+      codMunicipio: '',
+      nombreMunicipio: '',
+    }));
+    this.formDirty.set(true);
+  }
+
+  onDeptoOrigenLimpiar(): void {
+    this.deptoOrigenTexto.set('');
+    this.munOrigenTexto.set('');
+    this.form.update((f) => ({
+      ...f,
+      codDepartamento: '',
+      nombreDepartamento: '',
+      munOrigen: '',
+      codMunicipio: '',
+      nombreMunicipio: '',
+    }));
+    this.formDirty.set(true);
+  }
 
   onExpedidaSel(m: { nombreMunicipio: string; label: string }) {
 
@@ -637,17 +856,38 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
 
 
-  onMunOrigenSel(m: { codMunicipio: string; label: string }) {
+  onMunOrigenSel(m: {
+    codMunicipio: string;
+    label: string;
+    nombreMunicipio?: string;
+    codDepto?: string;
+    nombreDepto?: string;
+  }) {
     this.limpiarCampoObligatorio('munOrigen');
-    this.munOrigenTexto.set(aMayusculas(m.label));
+    this.munOrigenTexto.set(aMayusculas(m.nombreMunicipio || m.label));
     const cod = m.codMunicipio;
-    this.form.update((f) => ({ ...f, munOrigen: cod, codMunicipio: cod }));
+    this.munOrigenCodResuelto = cod;
+    const codDep = String(m.codDepto || this.form().codDepartamento || '').padStart(2, '0');
+    this.form.update((f) => ({
+      ...f,
+      munOrigen: cod,
+      codMunicipio: cod,
+      nombreMunicipio: m.nombreMunicipio || '',
+      codDepartamento: codDep !== '00' ? codDep : f.codDepartamento,
+      nombreDepartamento: m.nombreDepto || f.nombreDepartamento || '',
+    }));
     this.formDirty.set(true);
   }
 
   onMunOrigenLimpiar(): void {
     this.munOrigenTexto.set('');
-    this.form.update((f) => ({ ...f, munOrigen: '', codMunicipio: '' }));
+    this.form.update((f) => ({
+      ...f,
+      munOrigen: '',
+      codMunicipio: '',
+      nombreMunicipio: '',
+    }));
+    this.formDirty.set(true);
   }
 
   mapOpcionesCatalogo(items: Record<string, unknown>[]): EnumBuscarOption[] {
@@ -700,13 +940,19 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       ...(key !== 'colegio'
         ? {
             tipoInstitucionEducativa: null,
+            perfilInstitucionEducativa: null,
             colegioCodigo: null,
             colegioNombre: null,
             gradoColegio: null,
+            semestreInstitucion: null,
+            titulacionCodigo: null,
+            areaImparteColegio: null,
             programaInstitucion: null,
           }
         : {
-            tipoInstitucionEducativa: f.tipoInstitucionEducativa || 'colegio',
+            tipoInstitucionEducativa:
+              this.normalizarNivelInstitucionUi(f.tipoInstitucionEducativa) || 'secundaria',
+            perfilInstitucionEducativa: f.perfilInstitucionEducativa || 'estudiante',
           }),
       ...(key !== 'estamento'
         ? {
@@ -718,22 +964,42 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         : {}),
       ...(key !== 'empresa' ? { empresaId: null, empresaNombre: null } : {}),
     }));
-    if (key !== 'empresa') {
-      this.empresaBusqueda.set('');
-      this.empresaSugerencias.set([]);
-      this.empresaDropdownOpen.set(false);
-    }
+    this.formDirty.set(true);
+  }
+
+  setPerfilInstitucion(perfil: 'estudiante' | 'profesor'): void {
+    this.limpiarCampoObligatorio('perfilInstitucionEducativa');
+    this.limpiarCampoObligatorio('gradoColegio');
+    this.limpiarCampoObligatorio('semestreInstitucion');
+    this.limpiarCampoObligatorio('titulacionCodigo');
+    this.limpiarCampoObligatorio('areaImparteColegio');
+    this.limpiarCampoObligatorio('programaInstitucion');
+    this.form.update((f) => ({
+      ...f,
+      perfilInstitucionEducativa: perfil,
+      ...(perfil === 'profesor'
+        ? {
+            gradoColegio: null,
+            semestreInstitucion: null,
+            titulacionCodigo: null,
+            programaInstitucion: null,
+          }
+        : { areaImparteColegio: null }),
+    }));
     this.formDirty.set(true);
   }
 
   onTipoInstitucionPick(opt: EnumBuscarOption): void {
-    const tipo = String(opt.value || 'colegio');
+    const tipo = this.normalizarNivelInstitucionUi(String(opt.value || 'secundaria'));
+    this.limpiarCampoObligatorio('tipoInstitucionEducativa');
     this.form.update((f) => ({
       ...f,
       tipoInstitucionEducativa: tipo,
       colegioCodigo: null,
       colegioNombre: null,
       gradoColegio: null,
+      semestreInstitucion: null,
+      titulacionCodigo: null,
       programaInstitucion: null,
     }));
     this.formDirty.set(true);
@@ -746,7 +1012,10 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       colegioCodigo: null,
       colegioNombre: null,
       gradoColegio: null,
+      semestreInstitucion: null,
+      titulacionCodigo: null,
       programaInstitucion: null,
+      areaImparteColegio: null,
     }));
     this.formDirty.set(true);
   }
@@ -766,12 +1035,52 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   }
 
   onGradoColegioPick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('gradoColegio');
     const n = parseInt(String(opt.value), 10);
     this.patch('gradoColegio', Number.isFinite(n) ? n : null);
   }
 
   onGradoColegioLimpiar(): void {
     this.patch('gradoColegio', null);
+  }
+
+  onSemestreInstitucionPick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('semestreInstitucion');
+    const n = parseInt(String(opt.value), 10);
+    this.patch('semestreInstitucion', Number.isFinite(n) ? n : null);
+  }
+
+  onSemestreInstitucionLimpiar(): void {
+    this.patch('semestreInstitucion', null);
+  }
+
+  onTitulacionPick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('titulacionCodigo');
+    this.limpiarCampoObligatorio('programaInstitucion');
+    this.form.update((f) => ({
+      ...f,
+      titulacionCodigo: String(opt.value || '').trim() || null,
+      programaInstitucion: String(opt.label || '').trim() || null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onTitulacionLimpiar(): void {
+    this.form.update((f) => ({
+      ...f,
+      titulacionCodigo: null,
+      programaInstitucion: null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onAreaImpartePick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('areaImparteColegio');
+    this.patch('areaImparteColegio', String(opt.value || '').trim() || null);
+  }
+
+  onAreaImparteLimpiar(): void {
+    this.patch('areaImparteColegio', null);
   }
 
   onEstamentoPick(opt: EnumBuscarOption): void {
@@ -837,6 +1146,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     }
     this.form.update((f) => ({ ...f, [k]: valor }));
     this.formDirty.set(true);
+    if (k === 'empresaId') {
+      this.lastContratoResolverKey = '';
+    }
 
     if (k === 'numDoc' && !this.numDocScannerActivo) this.verificarDoc();
   }
@@ -1132,6 +1444,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     falta(vacio(f.correo), 'correo', 'correo', contacto);
     falta(vacio(f.celular), 'celular', 'celular', contacto);
     falta(vacio(f.direccion), 'direccion', 'dirección', contacto);
+    falta(vacio(f.codDepartamento), 'codDepartamento', 'departamento de origen', contacto);
     falta(
       vacio(f.codMunicipio) && vacio(f.munOrigen),
       'munOrigen',
@@ -1148,19 +1461,40 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       const oj = String(f.origenJornadaCap || '').trim();
       falta(!oj, 'origenJornadaCap', 'origen en jornada', jornadaOrigen);
       if (oj === 'colegio') {
-        const tipoInst = String(f.tipoInstitucionEducativa || '').trim() || 'colegio';
-        falta(!tipoInst, 'tipoInstitucionEducativa', 'tipo de institución', jornadaOrigen);
+        const tipoInst = this.normalizarNivelInstitucionUi(f.tipoInstitucionEducativa);
+        const perfil =
+          String(f.perfilInstitucionEducativa || '').trim() === 'profesor'
+            ? 'profesor'
+            : 'estudiante';
+        falta(!tipoInst, 'tipoInstitucionEducativa', 'nivel (primaria…universidad)', jornadaOrigen);
         falta(vacio(f.colegioNombre), 'colegioNombre', 'institución educativa', jornadaOrigen);
-        if (tipoInst === 'colegio') {
+        falta(!perfil, 'perfilInstitucionEducativa', 'perfil (estudiante o profesor)', jornadaOrigen);
+        if (perfil === 'profesor') {
+          falta(vacio(f.areaImparteColegio), 'areaImparteColegio', 'área que imparte', jornadaOrigen);
+        } else if (tipoInst === 'primaria' || tipoInst === 'secundaria') {
           const g = Number(f.gradoColegio);
+          const minG = tipoInst === 'primaria' ? 1 : 6;
+          const maxG = tipoInst === 'primaria' ? 5 : 11;
           falta(
-            !Number.isFinite(g) || g < 1 || g > 11,
+            !Number.isFinite(g) || g < minG || g > maxG,
             'gradoColegio',
-            'grado (1–11)',
+            tipoInst === 'primaria' ? 'curso (1–5)' : 'grado (6–11)',
             jornadaOrigen,
           );
         } else {
-          falta(vacio(f.programaInstitucion), 'programaInstitucion', 'programa / carrera', jornadaOrigen);
+          const s = Number(f.semestreInstitucion);
+          falta(
+            !Number.isFinite(s) || s < 1 || s > 12,
+            'semestreInstitucion',
+            'semestre (1–12)',
+            jornadaOrigen,
+          );
+          falta(
+            vacio(f.programaInstitucion) && vacio(f.titulacionCodigo),
+            'programaInstitucion',
+            'titulación / programa',
+            jornadaOrigen,
+          );
         }
       } else if (oj === 'estamento') {
         falta(vacio(f.estamentoId) && vacio(f.estamentoNombre), 'estamentoId', 'estamento público', jornadaOrigen);
@@ -1278,6 +1612,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         const mapped = this.mapDesdeBd(saved as AlumnoDto & Record<string, unknown>);
         this.form.set(mapped);
         this.formDirty.set(false);
+        this.lastAlumnoSyncKey = `${String(saved._id)}|${String(saved.fechaMod ?? '')}`;
+        this.munOrigenCodResuelto = String(mapped.codMunicipio || mapped.munOrigen || '').trim();
         this.lineaBase.set(this.firmaEstadoActual(mapped, false));
         this.fotoFile.set(null);
         this.store.setDatosSinGuardar(false);
@@ -1349,6 +1685,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       expedida: src.expedida?.trim() || this.expedidaTexto().trim() || '',
       munOrigen: src.munOrigen || src.codMunicipio || '',
       codMunicipio: src.codMunicipio || src.munOrigen || '',
+      codDepartamento: src.codDepartamento || '',
+      nombreDepartamento: src.nombreDepartamento || '',
+      nombreMunicipio: src.nombreMunicipio || '',
     });
     return JSON.stringify({ ...payload, fotoNueva });
   }
@@ -1471,6 +1810,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       discapacidad: f.discapacidad,
       munOrigen: f.munOrigen || f.codMunicipio,
       codMunicipio: f.codMunicipio || f.munOrigen,
+      codDepartamento: f.codDepartamento || '',
+      nombreDepartamento: f.nombreDepartamento || '',
+      nombreMunicipio: f.nombreMunicipio || '',
       correo: nombreEnMayusculas(f.correo),
       direccion: nombreEnMayusculas(f.direccion),
       celular: f.celular,
@@ -1488,12 +1830,21 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
             origenJornadaCap: f.origenJornadaCap || 'operativo',
             ...(f.origenJornadaCap === 'colegio'
               ? {
-                  tipoInstitucionEducativa: f.tipoInstitucionEducativa || 'colegio',
+                  tipoInstitucionEducativa:
+                    this.normalizarNivelInstitucionUi(f.tipoInstitucionEducativa) || 'secundaria',
+                  perfilInstitucionEducativa:
+                    f.perfilInstitucionEducativa === 'profesor' ? 'profesor' : 'estudiante',
                   colegioCodigo: f.colegioCodigo || null,
                   colegioNombre: f.colegioNombre || null,
-                  ...(String(f.tipoInstitucionEducativa || 'colegio') === 'colegio'
-                    ? { gradoColegio: f.gradoColegio ?? null }
-                    : { programaInstitucion: f.programaInstitucion || null }),
+                  ...(f.perfilInstitucionEducativa === 'profesor'
+                    ? { areaImparteColegio: f.areaImparteColegio || null }
+                    : this.esNivelBasicaMediaUi()
+                      ? { gradoColegio: f.gradoColegio ?? null }
+                      : {
+                          semestreInstitucion: f.semestreInstitucion ?? null,
+                          titulacionCodigo: f.titulacionCodigo || null,
+                          programaInstitucion: f.programaInstitucion || null,
+                        }),
                 }
               : {}),
             ...(f.origenJornadaCap === 'estamento'
@@ -1536,15 +1887,13 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       this.form.set(this.emptyForm());
       this.expedidaTexto.set('');
       this.munOrigenTexto.set('');
+      this.deptoOrigenTexto.set('');
       this.fotoPreview.set(null);
       this.scanVisible.set(true);
       this.scanApplied.set(false);
       this.scanPreview.set(null);
       this.scanFile.set(null);
       this.scanWarnings.set([]);
-      this.empresaBusqueda.set('');
-      this.empresaSugerencias.set([]);
-      this.empresaDropdownOpen.set(false);
       this.lineaBase.set('');
       this.formDirty.set(false);
     }
@@ -1555,6 +1904,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     const mapped = this.mapDesdeBd(raw);
     this.form.set(mapped);
     this.expedidaTexto.set(mapped.expedida || '');
+    this.sincronizarTextoDeptoOrigen();
     this.resolverTextoMunOrigen(mapped.codMunicipio || mapped.munOrigen);
     this.fotoPreview.set(mapped.urlFoto ? this.toUrl(mapped.urlFoto) : null);
     this.fotoFile.set(null);
@@ -1564,9 +1914,6 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.scanPreview.set(null);
     this.scanFile.set(null);
     this.scanWarnings.set([]);
-    this.empresaBusqueda.set(mapped.empresaNombre || '');
-    this.empresaDropdownOpen.set(false);
-    this.empresaSugerencias.set([]);
     this.formDirty.set(false);
     this.lineaBase.set(this.firmaEstadoActual(mapped, false));
   }
@@ -1651,6 +1998,14 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       discapacidad: normalizarEnum(String(raw.discapacidad || '9')),
       munOrigen: String(raw.munOrigen || raw.codMunicipio || ''),
       codMunicipio: String(raw.codMunicipio || raw.munOrigen || ''),
+      codDepartamento: String(raw.codDepartamento || raw['codDepto'] || '')
+        .replace(/\D/g, '')
+        .padStart(2, '0')
+        .replace(/^00$/, ''),
+      nombreDepartamento: String(
+        raw.nombreDepartamento || raw['nombreDepto'] || '',
+      ).trim(),
+      nombreMunicipio: String(raw.nombreMunicipio || '').trim(),
       correo: nombreEnMayusculas(String(raw.correo || '')),
       direccion: nombreEnMayusculas(String(raw.direccion || '')),
       celular: String(raw.celular || ''),
@@ -1673,14 +2028,30 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         ? String(raw['origenJornadaCap']).trim().toLowerCase()
         : null,
       tipoInstitucionEducativa: raw['tipoInstitucionEducativa']
-        ? String(raw['tipoInstitucionEducativa']).trim().toLowerCase()
+        ? this.normalizarNivelInstitucionUi(String(raw['tipoInstitucionEducativa']))
         : null,
+      perfilInstitucionEducativa:
+        String(raw['perfilInstitucionEducativa'] || '')
+          .trim()
+          .toLowerCase() === 'profesor'
+          ? 'profesor'
+          : raw['origenJornadaCap']
+            ? 'estudiante'
+            : null,
       colegioCodigo: raw['colegioCodigo'] ? String(raw['colegioCodigo']) : null,
       colegioNombre: raw['colegioNombre'] ? String(raw['colegioNombre']) : null,
       gradoColegio:
         raw['gradoColegio'] != null && String(raw['gradoColegio']).trim() !== ''
           ? Number(raw['gradoColegio'])
           : null,
+      semestreInstitucion:
+        raw['semestreInstitucion'] != null && String(raw['semestreInstitucion']).trim() !== ''
+          ? Number(raw['semestreInstitucion'])
+          : null,
+      titulacionCodigo: raw['titulacionCodigo'] ? String(raw['titulacionCodigo']) : null,
+      areaImparteColegio: raw['areaImparteColegio']
+        ? String(raw['areaImparteColegio']).trim().toLowerCase()
+        : null,
       programaInstitucion: raw['programaInstitucion'] ? String(raw['programaInstitucion']) : null,
       estamentoId: raw['estamentoId'] ? String(raw['estamentoId']) : null,
       estamentoNombre: raw['estamentoNombre'] ? String(raw['estamentoNombre']) : null,
@@ -1720,10 +2091,14 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       origenJornadaCap: origenJ,
 
-      tipoInstitucionEducativa: origenJ === 'colegio' ? 'colegio' : null,
+      tipoInstitucionEducativa: origenJ === 'colegio' ? 'secundaria' : null,
+      perfilInstitucionEducativa: origenJ === 'colegio' ? 'estudiante' : null,
       colegioCodigo: null,
       colegioNombre: null,
       gradoColegio: null,
+      semestreInstitucion: null,
+      titulacionCodigo: null,
+      areaImparteColegio: null,
       programaInstitucion: null,
       estamentoId: null,
       estamentoNombre: null,
@@ -1767,6 +2142,9 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       discapacidad: '',
       munOrigen: '',
       codMunicipio: '',
+      codDepartamento: '',
+      nombreDepartamento: '',
+      nombreMunicipio: '',
       correo: '',
       direccion: '',
       celular: '',

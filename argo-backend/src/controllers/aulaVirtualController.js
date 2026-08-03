@@ -16,6 +16,11 @@ const {
   confirmarRegistroJornada,
   reenviarCodigoRegistroJornada,
 } = require('../services/portalRegistroJornada');
+const {
+  encuestasPendientesPortal,
+  detalleEncuestaPortal,
+  responderEncuestaPortal,
+} = require('../services/encuestasJornadaCap');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
 const {
   listarMisCursos,
@@ -484,6 +489,35 @@ exports.iniciarPagoEnLinea = async (req, res, next) => {
 exports.consultarCertificados = async (req, res, next) => {
   try {
     res.json(await consultarCertificadosPublico(req.query.numDoc));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.encuestasJornadaPendientes = async (req, res, next) => {
+  try {
+    res.json(await encuestasPendientesPortal(req.query.numDoc));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.encuestaJornadaDetalle = async (req, res, next) => {
+  try {
+    res.json(await detalleEncuestaPortal(req.params.id, req.query.numDoc));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.encuestaJornadaResponder = async (req, res, next) => {
+  try {
+    res.json(
+      await responderEncuestaPortal(req.params.id, req.body?.numDoc, req.body || {}),
+    );
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);

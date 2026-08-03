@@ -1,0 +1,212 @@
+<section class="consulta eval-page">
+  <header class="consulta-hero eval-hero">
+    <div class="container consulta-hero__inner">
+      <span class="consulta-hero__icon eval-hero__icon" aria-hidden="true">★</span>
+      <div>
+        <p class="consulta-kicker">Jornadas de capacitación</p>
+        <h1>Evaluación de satisfacción</h1>
+        <p class="consulta-lead">
+          Califique con estrellas su experiencia en cada programa al que asistió. Una sola respuesta por encuesta.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <div class="container consulta-body">
+    <div class="consulta-card eval-card">
+      @if (paso() === 'documento') {
+        <form class="consulta-form eval-doc-form" (ngSubmit)="buscar()">
+          <label for="numDoc">Número de documento</label>
+          <div class="consulta-form-row">
+            <input
+              id="numDoc"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              [(ngModel)]="numDoc"
+              name="numDoc"
+              placeholder="Ingrese su cédula"
+            />
+            <button type="submit" class="consulta-btn" [disabled]="loading()">
+              {{ loading() ? 'Verificando…' : 'Continuar' }}
+            </button>
+          </div>
+          @if (turnstileSiteKey()) {
+            <av-turnstile [siteKey]="turnstileSiteKey()" (tokenChange)="turnstileToken.set($event)" />
+          }
+        </form>
+      }
+
+      @if (paso() === 'lista') {
+        <div class="eval-panel eval-panel--intro">
+          <div class="consulta-alumno eval-alumno-badge">
+            <span class="eval-alumno-badge__avatar" aria-hidden="true">{{ (nombreCompleto() || '?').charAt(0) }}</span>
+            <div>
+              <strong>{{ nombreCompleto() }}</strong>
+              <span class="consulta-alumno__doc">Doc. {{ numDoc }}</span>
+            </div>
+          </div>
+          <p class="eval-hint">Seleccione la encuesta que desea completar</p>
+        </div>
+        <div class="eval-lista">
+          @for (item of pendientes(); track item._id) {
+            <button type="button" class="eval-lista__item" (click)="abrirEncuesta(item)">
+              <span class="eval-lista__icon" aria-hidden="true">📋</span>
+              <span class="eval-lista__body">
+                <strong>{{ item.titulo }}</strong>
+                <span>{{ item.contratoLabel }}</span>
+                <span class="eval-lista__meta">{{ item.carpas.length }} programa(s) por calificar</span>
+              </span>
+              <span class="eval-lista__arrow" aria-hidden="true">→</span>
+            </button>
+          }
+        </div>
+        <button type="button" class="eval-link" (click)="volverDocumento()">Cambiar documento</button>
+      }
+
+      @if (paso() === 'formulario' && encuesta(); as det) {
+        <div class="eval-form-head">
+          <div class="eval-alumno-badge eval-alumno-badge--compact">
+            <span class="eval-alumno-badge__avatar" aria-hidden="true">{{ (det.nombreCompleto || '?').charAt(0) }}</span>
+            <div>
+              <strong>{{ det.nombreCompleto }}</strong>
+              <span class="consulta-alumno__doc">Doc. {{ det.numDoc }}</span>
+            </div>
+          </div>
+
+          <div class="eval-encuesta-meta">
+            <h2 class="eval-titulo">{{ det.titulo }}</h2>
+            @if (det.instrucciones) {
+              <p class="eval-instrucciones">{{ det.instrucciones }}</p>
+            }
+            <span class="eval-chip">{{ det.contratoLabel }}</span>
+          </div>
+
+          @if (progresoEncuesta().total > 0) {
+            <div class="eval-progress" role="progressbar" [attr.aria-valuenow]="progresoEncuesta().pct" aria-valuemin="0" aria-valuemax="100">
+              <div class="eval-progress__track">
+                <div class="eval-progress__bar" [style.width.%]="progresoEncuesta().pct"></div>
+              </div>
+              <span class="eval-progress__label">
+                {{ progresoEncuesta().done }} de {{ progresoEncuesta().total }} calificaciones
+                <strong>{{ progresoEncuesta().pct }}%</strong>
+              </span>
+            </div>
+          }
+        </div>
+
+        <div class="eval-programas">
+          @for (carpa of det.carpas; track claveCarpa(carpa); let i = $index) {
+            <section class="eval-programa" [style.--delay]="i * 60 + 'ms'">
+              <header class="eval-programa__head">
+                <span class="eval-programa__index">{{ i + 1 }}</span>
+                <div class="eval-programa__meta">
+                  <h3 class="eval-programa__titulo">{{ carpa.titulo || carpa.programaNombre || carpa.nombre }}</h3>
+                  @if (carpa.instructorNombre) {
+                    <p class="eval-programa__instructor">
+                      Instructor: <strong>{{ carpa.instructorNombre }}</strong>
+                    </p>
+                  }
+                </div>
+              </header>
+
+              <div class="eval-aspectos">
+                @for (asp of aspectosEncuesta(); track asp.key) {
+                  <div
+                    class="eval-aspecto"
+                    [class.eval-aspecto--done]="notaAspecto(claveCarpa(carpa), asp.key) > 0"
+                  >
+                    <p class="eval-aspecto__label">{{ asp.label }}</p>
+                    <div
+                      class="eval-stars"
+                      role="radiogroup"
+                      [attr.aria-label]="asp.label"
+                      (mouseleave)="limpiarHoverEstrellas(claveCarpa(carpa), asp.key)"
+                    >
+                      @for (n of escala; track n) {
+                        <button
+                          type="button"
+                          class="eval-star"
+                          [class.eval-star--on]="estrellaMarcada(claveCarpa(carpa), asp.key, n)"
+                          [class.eval-star--selected]="notaAspecto(claveCarpa(carpa), asp.key) === n"
+                          [attr.aria-label]="n + ' estrella' + (n > 1 ? 's' : '')"
+                          [attr.aria-checked]="notaAspecto(claveCarpa(carpa), asp.key) === n"
+                          (mouseenter)="hoverEstrella(claveCarpa(carpa), asp.key, n)"
+                          (click)="setNota(claveCarpa(carpa), asp.key, n)"
+                        >
+                          <span class="eval-star__glyph" aria-hidden="true">★</span>
+                        </button>
+                      }
+                      @if (notaAspecto(claveCarpa(carpa), asp.key); as nota) {
+                        @if (nota > 0) {
+                          <span class="eval-stars__badge">{{ nota }}/5</span>
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              @if (promedioPrograma(claveCarpa(carpa)); as prom) {
+                <footer class="eval-promedio" [ngClass]="clasePromedio(prom)">
+                  <span class="eval-promedio__label">Promedio de la capacitación</span>
+                  <span class="eval-promedio__valor">{{ prom }}<small>/5</small></span>
+                  <span class="eval-promedio__badge">{{ etiquetaPromedio(prom) }}</span>
+                </footer>
+              } @else {
+                @if (promedioProgramaParcial(claveCarpa(carpa)); as parcial) {
+                  <footer class="eval-promedio eval-promedio--parcial">
+                    <span class="eval-promedio__label">Promedio parcial</span>
+                    <span class="eval-promedio__valor">{{ parcial }}<small>/5</small></span>
+                    <span class="eval-promedio__hint">Complete todos los aspectos</span>
+                  </footer>
+                }
+              }
+            </section>
+          }
+        </div>
+
+        <section class="eval-comentario-box">
+          <label class="eval-comentario" for="comentario">
+            <span class="eval-comentario__icon" aria-hidden="true">💬</span>
+            Comentario general (opcional)
+          </label>
+          <textarea
+            id="comentario"
+            class="eval-textarea"
+            rows="4"
+            [ngModel]="comentario()"
+            (ngModelChange)="comentario.set($event)"
+            name="comentario"
+            placeholder="Cuéntenos qué podemos mejorar…"
+          ></textarea>
+        </section>
+
+        <div class="eval-actions">
+          <button type="button" class="eval-btn-ghost" (click)="volverDocumento()">Cancelar</button>
+          <button type="button" class="consulta-btn eval-btn-send" [disabled]="enviando()" (click)="enviar()">
+            {{ enviando() ? 'Enviando…' : 'Enviar evaluación' }}
+          </button>
+        </div>
+      }
+
+      @if (paso() === 'exito') {
+        <div class="eval-success">
+          <div class="eval-success__ring" aria-hidden="true">✓</div>
+          <h2 class="eval-success__title">¡Gracias por su opinión!</h2>
+          <p class="eval-success__text">Su evaluación fue registrada correctamente.</p>
+          <button type="button" class="consulta-btn" (click)="volverDocumento()">Finalizar</button>
+        </div>
+      }
+
+      @if (error()) {
+        <p class="consulta-err eval-err" role="alert">{{ error() }}</p>
+        @if (error().includes('registr')) {
+          <p class="eval-registro">
+            <a routerLink="/jornadas-capacitacion">Ir a inscripción en jornadas de capacitación</a>
+          </p>
+        }
+      }
+    </div>
+  </div>
+</section>

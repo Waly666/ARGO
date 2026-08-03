@@ -2,7 +2,6 @@ const { models: cat } = require('../models/catalogos');
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('./tipoCapacitacionMatch');
 const { esCapJornadaCapacitacion } = require('./clasificacionCertificado');
 const DatosAlumno = require('../models/DatosAlumno');
-const Contratacion = require('../models/Contratacion');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
 const { normalizarTipoAlumno, TIPO_ALUMNO_DEFAULT } = require('../constants/tipoAlumno');
@@ -51,36 +50,17 @@ async function asegurarTipoAlumnoJornada(numDoc) {
 }
 
 /**
- * Asigna al alumno la empresa del contrato (idClienteFacturacion → empresaId).
- * Se aplica al matricular/inscribir en jornadas para trazabilidad por cliente contratante.
+ * Antes copiaba idClienteFacturacion del contrato → empresaId del alumno.
+ * Ya no: `empresaId` es el mismo campo de regulares, virtuales y jornadas;
+ * solo se llena cuando el usuario elige la empresa (p. ej. origen «empresa» en jornada).
+ * Se conserva la firma por compatibilidad con matrícula/asistencia.
  */
-async function asignarEmpresaContratoAlumno(numDoc, idContrato, userLogin = 'sistema') {
-  if (!idContrato) return { empresaId: null, actualizado: false };
+async function asignarEmpresaContratoAlumno(numDoc, _idContrato, _userLogin = 'sistema') {
   const nd = typeof numDoc === 'number' ? numDoc : parseNumDoc(numDoc);
   if (nd == null) return { empresaId: null, actualizado: false };
-
-  const contrato = await Contratacion.findById(idContrato).select('idClienteFacturacion').lean();
-  if (!contrato?.idClienteFacturacion) return { empresaId: null, actualizado: false };
-
-  const empresaId = contrato.idClienteFacturacion;
-  const al = await DatosAlumno.findOne(numDocQuery(nd));
-  if (!al) return { empresaId: String(empresaId), actualizado: false };
-
-  const actual = al.empresaId ? String(al.empresaId) : '';
-  const nuevo = String(empresaId);
-  if (actual === nuevo) return { empresaId: nuevo, actualizado: false };
-
-  await DatosAlumno.updateOne(
-    { _id: al._id },
-    {
-      $set: {
-        empresaId,
-        userChangeRecord: userLogin,
-        fechaMod: new Date(),
-      },
-    },
-  );
-  return { empresaId: nuevo, actualizado: true };
+  const al = await DatosAlumno.findOne(numDocQuery(nd)).select('empresaId').lean();
+  if (!al) return { empresaId: null, actualizado: false };
+  return { empresaId: al.empresaId ? String(al.empresaId) : null, actualizado: false };
 }
 
 /** Matrículas/liquidaciones de jornada van siempre a la sede principal (operación móvil, sin sede física). */

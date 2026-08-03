@@ -95,8 +95,10 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   bloquesOrigenDesde(c?: {
     porOrigenJornada?: InformeDashboardChartItem[];
     porTipoInstitucion?: InformeDashboardChartItem[];
+    porPerfilInstitucion?: InformeDashboardChartItem[];
     porColegio?: InformeDashboardChartItem[];
     porGradoColegio?: InformeDashboardChartItem[];
+    porAreaProfesor?: InformeDashboardChartItem[];
     porEstamento?: InformeDashboardChartItem[];
     porCargoEstamento?: InformeDashboardChartItem[];
     porDependenciaEstamento?: InformeDashboardChartItem[];
@@ -114,14 +116,24 @@ export class ContratoInformesDashboardComponent implements OnChanges {
         pie: this.buildTortaCaract(c?.porTipoInstitucion),
       },
       {
+        title: 'Perfil (estudiante / profesor)',
+        kind: 'pie' as const,
+        pie: this.buildTortaCaract(c?.porPerfilInstitucion),
+      },
+      {
         title: 'Institución educativa / colegio',
         kind: 'rank' as const,
         series: this.buildSeries(c?.porColegio, 'sky', 8),
       },
       {
-        title: 'Grado / programa',
+        title: 'Grado / programa / perfil',
         kind: 'vbar' as const,
         series: this.buildSeries(c?.porGradoColegio, 'teal', 11),
+      },
+      {
+        title: 'Área que imparte (profesores)',
+        kind: 'hbar' as const,
+        series: this.buildSeries(c?.porAreaProfesor, 'sky', 10),
       },
       {
         title: 'Estamento público',
@@ -279,7 +291,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     '#38bdf8',
     '#34d399',
     '#a78bfa',
-    '#818cf8',
+    '#fbbf24',
     '#fb7185',
     '#2dd4bf',
     '#60a5fa',

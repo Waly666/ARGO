@@ -98,12 +98,26 @@ export async function fetchCatalogosAlumno(): Promise<{
   };
 }
 
-export async function buscarMunicipios(q: string, limit = 20): Promise<MunicipioItem[]> {
-  const term = q.trim();
-  if (!term) return [];
-  return apiFetch<MunicipioItem[]>(
-    `/catalogos/divipola/buscar?q=${encodeURIComponent(term)}&limit=${limit}`,
-  );
+export async function buscarMunicipios(
+  q: string,
+  limit = 20,
+  codDepto = '',
+): Promise<MunicipioItem[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (q.trim()) params.set('q', q.trim());
+  if (String(codDepto || '').trim()) params.set('codDepto', String(codDepto).trim());
+  // Cascada: q vacío lista municipios del departamento.
+  if (!q.trim() && !String(codDepto || '').trim()) return [];
+  return apiFetch<MunicipioItem[]>(`/catalogos/divipola/buscar?${params.toString()}`);
+}
+
+export type DepartamentoItem = {
+  codDepto: string;
+  nombreDepto: string;
+};
+
+export async function listarDepartamentos(): Promise<DepartamentoItem[]> {
+  return apiFetch<DepartamentoItem[]>(`/catalogos/divipola/departamentos`);
 }
 
 export async function municipioPorCodigo(cod: string): Promise<MunicipioItem | null> {

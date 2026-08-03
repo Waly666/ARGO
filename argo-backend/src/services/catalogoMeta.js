@@ -111,8 +111,14 @@ const CAMPOS_ESQUEMA = {
     'telefono',
     'sector',
     'tipoEstablecimiento',
-    /** colegio | instituto | universidad — para IES cargadas a mano */
+    /** colegio | instituto | universidad | primaria… — y campos IES (SNIES) */
     'nivelEducativo',
+    /** Niveles que ofrece la IES (una institución universitaria dicta varios). */
+    'nivelesEducativos',
+    'nit',
+    'iesPadre',
+    'seccional',
+    'fuente',
     'activo',
   ],
   estamentosPublicos: [

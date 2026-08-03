@@ -35,8 +35,10 @@ export class CatalogoService {
     );
   }
 
-  buscarMunicipios(q: string, limit = 20): Observable<MunicipioDivipola[]> {
-    const params = new URLSearchParams({ q, limit: String(limit) });
+  buscarMunicipios(q: string, limit = 20, codDepto = ''): Observable<MunicipioDivipola[]> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (q.trim()) params.set('q', q.trim());
+    if (codDepto.trim()) params.set('codDepto', codDepto.trim());
     return this.http.get<MunicipioDivipola[]>(
       `${environment.apiUrl}/catalogos/divipola/buscar?${params}`,
     );
@@ -48,15 +50,30 @@ export class CatalogoService {
     );
   }
 
-  buscarColegios(codMunicipio: string, q = '', limit = 40): Observable<ColegioDivipola[]> {
+  buscarColegios(
+    codMunicipio: string,
+    q = '',
+    limit = 40,
+    nivel = '',
+  ): Observable<ColegioDivipola[]> {
     const params = new URLSearchParams({
       limit: String(limit),
     });
     const mun = String(codMunicipio || '').trim();
     if (mun) params.set('codMunicipio', mun);
     if (q.trim()) params.set('q', q.trim());
+    if (nivel.trim()) params.set('nivel', nivel.trim());
     return this.http.get<ColegioDivipola[]>(
       `${environment.apiUrl}/catalogos/colegios/buscar?${params}`,
+    );
+  }
+
+  buscarTitulaciones(nivel = '', q = '', limit = 80): Observable<TitulacionCatalogo[]> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (nivel.trim()) params.set('nivel', nivel.trim());
+    if (q.trim()) params.set('q', q.trim());
+    return this.http.get<TitulacionCatalogo[]>(
+      `${environment.apiUrl}/catalogos/titulaciones/buscar?${params}`,
     );
   }
 
@@ -76,6 +93,7 @@ export interface MunicipioDivipola {
   codDepto: string;
   nombreDepto: string;
   label: string;
+  labelCompleto?: string;
 }
 
 export interface ColegioDivipola {
@@ -84,6 +102,15 @@ export interface ColegioDivipola {
   codMunicipio: string;
   nombreMunicipio: string;
   nombreDepartamento?: string;
+  nivelEducativo?: string | null;
+  label: string;
+  hint?: string;
+}
+
+export interface TitulacionCatalogo {
+  codigo: string;
+  nivel: string;
+  nombre: string;
   label: string;
   hint?: string;
 }

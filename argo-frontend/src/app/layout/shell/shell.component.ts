@@ -569,7 +569,13 @@ export class ShellComponent {
       label: 'Jornadas Cap.',
       icon: '⛺',
       iconTone: 'orange',
-      permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
+      permiso: [
+        'jornadas.ver',
+        'jornadas.gestionar',
+        'jornadas.operar',
+        'jornadas.evaluaciones.ver',
+        'jornadas.evaluaciones.gestionar',
+      ],
       children: [
         {
           kind: 'link',
@@ -648,6 +654,14 @@ export class ShellComponent {
           iconTone: 'teal',
           permiso: ['jornadas.ver', 'jornadas.gestionar'],
           permisoMenu: 'jornadas.gestionar',
+        },
+        {
+          kind: 'link',
+          label: 'Evaluaciones',
+          path: '/app/jornadas/evaluaciones',
+          icon: '★',
+          iconTone: 'amber',
+          permiso: ['jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar'],
         },
       ],
     },

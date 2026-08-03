@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/jornadaCapController');
+const encCtrl = require('../controllers/encuestaJornadaCapController');
 const sup = require('../controllers/supervisorController');
 const upload = require('../middleware/upload');
 const { loadClaseParaEvidencia } = require('../middleware/jornadaEvidenciaCap');
@@ -22,6 +23,9 @@ const registrarAlumnos = requirePermiso(
 );
 const fotoEvidenciaClase = upload.evidenciasCap.single('foto');
 const soporteIngresoContrato = upload.ingresos.single('soporte');
+
+const evalVer = requirePermiso('jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar');
+const evalGest = requirePermiso('jornadas.evaluaciones.gestionar');
 
 router.get('/supervisores', ver, sup.listar);
 router.post('/supervisores', gest, sup.crear);
@@ -107,5 +111,16 @@ router.post('/alumnos', registrarAlumnos, ctrl.crearAlumnoJornadaCap);
 router.post('/matricular', operar, contratoMutable.contratoPorBodyOpcional, ctrl.matricularAlumnoJornada);
 router.get('/alumnos/doc/:numDoc', operar, ctrl.buscarAlumnoDoc);
 router.get('/alumnos/:numDoc/progreso-cert', operar, ctrl.progresoAlumnoContrato);
+
+router.get('/encuestas', evalVer, encCtrl.listarEncuestas);
+router.get('/contratos/:id/encuestas', evalVer, encCtrl.listarEncuestasContrato);
+router.post('/contratos/:id/encuestas', evalGest, encCtrl.crearEncuesta);
+router.get('/encuestas/:id', evalVer, encCtrl.obtenerEncuesta);
+router.put('/encuestas/:id', evalGest, encCtrl.actualizarEncuesta);
+router.post('/encuestas/:id/publicar', evalGest, encCtrl.publicarEncuesta);
+router.post('/encuestas/:id/cerrar', evalGest, encCtrl.cerrarEncuesta);
+router.delete('/encuestas/:id', evalGest, encCtrl.eliminarEncuesta);
+router.get('/encuestas/:id/resultados', evalVer, encCtrl.resultadosEncuesta);
+router.get('/encuestas/:id/informe-pdf', evalVer, encCtrl.informeEncuestaPdf);
 
 module.exports = router;

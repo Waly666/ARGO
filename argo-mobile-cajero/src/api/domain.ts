@@ -78,6 +78,10 @@ export interface AlumnoDetalleItem extends AlumnoListItem {
   discapacidad?: string;
   munOrigen?: string;
   codMunicipio?: string;
+  codDepartamento?: string;
+  nombreDepartamento?: string;
+  nombreMunicipio?: string;
+  munOrigenLabel?: string;
   direccion?: string;
   multiCulturalidad?: string;
   empresaId?: string | null;
@@ -111,6 +115,9 @@ export interface AlumnoCrearDto {
   discapacidad?: string;
   munOrigen?: string;
   codMunicipio?: string;
+  codDepartamento?: string;
+  nombreDepartamento?: string;
+  nombreMunicipio?: string;
   celular?: string;
   correo?: string;
   direccion?: string;

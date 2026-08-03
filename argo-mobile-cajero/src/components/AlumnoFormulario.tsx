@@ -23,7 +23,8 @@ import {
   verificarDocumentoAlumno,
   type AlumnoArchivos,
 } from '../api/alumnosApi';
-import { fetchCatalogosAlumno } from '../api/catalogosApi';
+import { fetchCatalogosAlumno, listarDepartamentos } from '../api/catalogosApi';
+import type { CatalogoOption } from '../utils/alumnoCatalogo';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 import { aMayusculas, CAMPOS_FORMULARIO_SIN_MAYUSCULAS, mayusculasNombre, nombreCompleto } from '../utils/format';
@@ -78,6 +79,9 @@ function emptyForm(): AlumnoCrearDto {
     discapacidad: '9',
     munOrigen: '',
     codMunicipio: '',
+    codDepartamento: '',
+    nombreDepartamento: '',
+    nombreMunicipio: '',
     correo: '',
     direccion: '',
     celular: '',
@@ -108,6 +112,10 @@ export function AlumnoFormulario({
   const [munOrigenTexto, setMunOrigenTexto] = useState(() =>
     initial ? alumnoDetalleToForm(initial).munOrigenTexto : '',
   );
+  const [deptoOrigenTexto, setDeptoOrigenTexto] = useState(() =>
+    initial ? alumnoDetalleToForm(initial).deptoOrigenTexto : '',
+  );
+  const [opcionesDepto, setOpcionesDepto] = useState<CatalogoOption[]>([]);
   const [empresaNombre, setEmpresaNombre] = useState(() =>
     initial ? alumnoDetalleToForm(initial).empresaNombre : '',
   );
@@ -127,6 +135,7 @@ export function AlumnoFormulario({
     setForm(mapped.form);
     setExpedidaTexto(mapped.expedidaTexto);
     setMunOrigenTexto(mapped.munOrigenTexto);
+    setDeptoOrigenTexto(mapped.deptoOrigenTexto);
     setEmpresaNombre(mapped.empresaNombre);
     const fotoUrl = urlArchivoAlumno(initial.urlFoto);
     if (fotoUrl) setFotoPreview(fotoUrl);
@@ -134,6 +143,19 @@ export function AlumnoFormulario({
 
   useEffect(() => {
     void fetchCatalogosAlumno().then(setCatalogos);
+  }, []);
+
+  useEffect(() => {
+    void listarDepartamentos()
+      .then((rows) =>
+        setOpcionesDepto(
+          (rows || []).map((d) => ({
+            value: String(d.codDepto || '').padStart(2, '0'),
+            label: String(d.nombreDepto || '').trim(),
+          })),
+        ),
+      )
+      .catch(() => setOpcionesDepto([]));
   }, []);
 
   const patch = useCallback(<K extends keyof AlumnoCrearDto>(k: K, v: AlumnoCrearDto[K]) => {
@@ -388,22 +410,49 @@ export function AlumnoFormulario({
         <CatalogoSelectField label="Ocupación" value={form.ocupacion || ''} options={opts.ocupaciones} onChange={(v) => patch('ocupacion', v)} />
       </FormSection>
 
-      <FormSection title="Contacto y ubicación" subtitle="Correo, celular, dirección y municipio de origen" icon="call-outline" tone="accent">
+      <FormSection title="Contacto y ubicación" subtitle="Correo, celular, dirección, departamento y municipio de origen" icon="call-outline" tone="accent">
         <IconInput label="Correo" icon="mail-outline" value={form.correo || ''} onChangeText={(t) => patch('correo', t)} keyboardType="email-address" placeholder="CORREO@EJEMPLO.COM" />
         <IconInput label="Celular" icon="phone-portrait-outline" value={form.celular || ''} onChangeText={(t) => patch('celular', t.replace(/[^\d]/g, ''))} keyboardType="phone-pad" placeholder="3001234567" autoCapitalize="none" />
         <IconInput label="Dirección" icon="home-outline" value={form.direccion || ''} onChangeText={(t) => patch('direccion', t)} placeholder="Dirección de residencia" />
+        <CatalogoSelectField
+          label="Departamento de origen"
+          value={form.codDepartamento || ''}
+          options={opcionesDepto}
+          required
+          onChange={(v) => {
+            const opt = opcionesDepto.find((d) => d.value === v);
+            patch('codDepartamento', v);
+            patch('nombreDepartamento', opt?.label || '');
+            setDeptoOrigenTexto(opt?.label || '');
+            patch('munOrigen', '');
+            patch('codMunicipio', '');
+            patch('nombreMunicipio', '');
+            setMunOrigenTexto('');
+          }}
+        />
         <MunicipioBuscarField
           label="Municipio de origen"
           texto={munOrigenTexto}
+          codDepto={form.codDepartamento || ''}
+          disabled={!form.codDepartamento}
           onTextoChange={(t) => setMunOrigenTexto(aMayusculas(t))}
           onSeleccion={(m) => {
             patch('munOrigen', m.codMunicipio);
             patch('codMunicipio', m.codMunicipio);
-            setMunOrigenTexto(aMayusculas(m.label));
+            patch('nombreMunicipio', m.nombreMunicipio || '');
+            if (m.codDepto) {
+              const codDep = String(m.codDepto).padStart(2, '0');
+              patch('codDepartamento', codDep);
+              patch('nombreDepartamento', m.nombreDepto || form.nombreDepartamento || '');
+              setDeptoOrigenTexto(m.nombreDepto || deptoOrigenTexto);
+            }
+            setMunOrigenTexto(aMayusculas(m.nombreMunicipio || m.label));
           }}
           onLimpiar={() => {
             patch('munOrigen', '');
             patch('codMunicipio', '');
+            patch('nombreMunicipio', '');
+            setMunOrigenTexto('');
           }}
         />
       </FormSection>

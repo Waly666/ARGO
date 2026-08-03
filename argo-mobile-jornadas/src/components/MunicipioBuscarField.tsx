@@ -23,6 +23,9 @@ type Props = {
   onSeleccionado: (m: MunicipioDivipola) => void;
   onLimpiar: () => void;
   placeholder?: string;
+  /** Cascada: solo municipios de este departamento. */
+  codDepto?: string;
+  disabled?: boolean;
 };
 
 export function MunicipioBuscarField({
@@ -32,6 +35,8 @@ export function MunicipioBuscarField({
   onSeleccionado,
   onLimpiar,
   placeholder = 'Buscar municipio…',
+  codDepto = '',
+  disabled = false,
 }: Props) {
   const insets = useSafeAreaInsets();
   const { highContrast, buttonMultiplier, textMultiplier } = useAccessibility();
@@ -41,19 +46,21 @@ export function MunicipioBuscarField({
   const [rows, setRows] = useState<MunicipioDivipola[]>([]);
   const [loading, setLoading] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const depto = String(codDepto || '').trim();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || disabled) return;
     if (debounce.current) clearTimeout(debounce.current);
     const term = q.trim();
-    if (term.length < 2) {
+    // Nacional: exige 2 letras. Cascada: q vacío lista todo el depto.
+    if (!depto && term.length < 2) {
       setRows([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     debounce.current = setTimeout(() => {
-      void buscarMunicipiosDivipola(term)
+      void buscarMunicipiosDivipola(term, depto ? 200 : 20, depto)
         .then(setRows)
         .catch(() => setRows([]))
         .finally(() => setLoading(false));
@@ -61,7 +68,13 @@ export function MunicipioBuscarField({
     return () => {
       if (debounce.current) clearTimeout(debounce.current);
     };
-  }, [q, open]);
+  }, [q, open, depto, disabled]);
+
+  const hintEmpty = depto
+    ? termHint(q)
+    : q.trim().length < 2
+      ? 'Escriba al menos 2 letras'
+      : 'Sin resultados';
 
   return (
     <View style={styles.wrap}>
@@ -71,55 +84,63 @@ export function MunicipioBuscarField({
       </ScaledText>
       <View style={styles.row}>
         <Pressable
+          disabled={disabled}
           onPress={() => {
+            if (disabled) return;
             setQ(texto || '');
             setOpen(true);
           }}
           style={[
             styles.field,
             {
-              flex: 1,
-              height: 52 * buttonMultiplier,
               borderColor: c.border,
-              backgroundColor: c.card,
+              backgroundColor: disabled ? c.bg : c.card,
+              opacity: disabled ? 0.55 : 1,
             },
           ]}
         >
-          <Ionicons name="location-outline" size={18} color={c.primary} style={{ marginRight: 8 }} />
           <ScaledText
             baseSize={15}
-            style={{ flex: 1, color: texto ? c.text : '#94a3b8', fontSize: 15 * textMultiplier }}
+            style={{
+              color: texto ? c.text : c.textSoft,
+              flex: 1,
+              fontSize: 15 * textMultiplier,
+            }}
             numberOfLines={1}
           >
-            {texto || placeholder}
+            {texto || (disabled ? 'Elija primero el departamento' : placeholder)}
           </ScaledText>
-          <Ionicons name="search" size={18} color={c.textSoft} />
+          <Ionicons name="chevron-down" size={18 * buttonMultiplier} color={c.textSoft} />
         </Pressable>
         {texto ? (
           <Pressable
-            onPress={onLimpiar}
-            style={[styles.clearBtn, { borderColor: c.border, backgroundColor: c.card }]}
+            disabled={disabled}
+            onPress={() => {
+              if (disabled) return;
+              onLimpiar();
+            }}
+            style={[styles.clear, { borderColor: c.border }]}
             hitSlop={8}
           >
-            <Ionicons name="close" size={18} color={c.textSoft} />
+            <Ionicons name="close" size={18 * buttonMultiplier} color={c.textSoft} />
           </Pressable>
         ) : null}
       </View>
 
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
-        <View style={[styles.modal, { paddingTop: insets.top, backgroundColor: c.bg }]}>
+        <View style={[styles.modal, { backgroundColor: c.bg, paddingTop: insets.top + 8 }]}>
           <View style={styles.modalHead}>
             <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800', flex: 1 }}>
               {label}
             </ScaledText>
-            <Pressable onPress={() => setOpen(false)} hitSlop={12}>
-              <Ionicons name="close" size={26} color={c.textSoft} />
+            <Pressable onPress={() => setOpen(false)} hitSlop={10}>
+              <Ionicons name="close" size={24} color={c.text} />
             </Pressable>
           </View>
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Escriba municipio o departamento…"
+            placeholder={depto ? 'Filtrar municipio…' : 'Escriba municipio o departamento…'}
             placeholderTextColor="#94a3b8"
             style={[
               styles.search,
@@ -147,13 +168,18 @@ export function MunicipioBuscarField({
                 style={[styles.opt, { backgroundColor: c.card, borderColor: c.border }]}
               >
                 <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '700' }}>
-                  {item.label}
+                  {item.nombreMunicipio || item.label}
                 </ScaledText>
+                {!depto && item.nombreDepto ? (
+                  <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
+                    {item.nombreDepto}
+                  </ScaledText>
+                ) : null}
               </Pressable>
             )}
             ListEmptyComponent={
               <ScaledText baseSize={14} style={{ color: c.textSoft, textAlign: 'center', marginTop: 24 }}>
-                {q.trim().length < 2 ? 'Escriba al menos 2 letras' : 'Sin resultados'}
+                {loading ? '' : hintEmpty}
               </ScaledText>
             }
           />
@@ -163,42 +189,41 @@ export function MunicipioBuscarField({
   );
 }
 
+function termHint(q: string): string {
+  return q.trim() ? 'Sin resultados en este departamento' : 'Sin municipios';
+}
+
 const styles = StyleSheet.create({
-  wrap: { marginBottom: 4 },
+  wrap: { marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   field: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 10,
     paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 8,
   },
-  clearBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  clear: {
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 10,
+    padding: 10,
   },
   modal: { flex: 1, paddingHorizontal: 16 },
-  modalHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
+  modalHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
   search: {
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
   },
   opt: {
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 10,
+    padding: 12,
     marginBottom: 8,
   },
 });

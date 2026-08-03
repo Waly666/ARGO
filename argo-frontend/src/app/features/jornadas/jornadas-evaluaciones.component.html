@@ -1,0 +1,511 @@
+<section
+  class="eval-page jornadas-page admin-list-page"
+  [class.card]="!embedded"
+  [class.eval-page--embedded]="embedded"
+>
+  @if (!embedded) {
+    <header class="jor-page-header eval-page__header">
+      <div class="jor-page-title">
+        <h1>Evaluaciones de satisfacción</h1>
+        <p class="hint eval-page__sub">
+          Encuestas por contrato: el alumno califica cada carpa a la que asistió (5 aspectos del 1 al 5) y puede dejar
+          un comentario.
+        </p>
+      </div>
+      @if (puedeGestionar) {
+        <button type="button" class="primary" (click)="abrirNueva()">Nueva encuesta</button>
+      }
+    </header>
+  } @else {
+    <header class="eval-page__header eval-page__header--embedded">
+      <div class="jor-page-title">
+        <h2>Encuesta de satisfacción</h2>
+        <p class="hint eval-page__sub">
+          Gestione encuestas del contrato, consulte resultados y exporte informes.
+        </p>
+      </div>
+      @if (puedeGestionar && idContrato) {
+        <button type="button" class="primary" (click)="abrirNueva()">Nueva encuesta</button>
+      }
+    </header>
+  }
+
+  @if (embedded && !idContrato) {
+    <p class="eval-muted eval-empty-contrato">Seleccione un contrato en la barra superior para ver las encuestas.</p>
+  }
+  @if (msg()) {
+    <div class="jor-banner" [class.jor-banner--error]="msgError()" [class.jor-banner--ok]="!msgError()" role="status">
+      <span class="jor-banner-icon">{{ msgError() ? '✕' : '✓' }}</span>
+      <span>{{ msg() }}</span>
+    </div>
+  }
+
+  @if (!embedded || idContrato) {
+  <div class="toolbar eval-filtros">
+    @if (!embedded) {
+      <argo-catalogo-enum-buscar
+        label="Contrato"
+        placeholder="Todos los contratos…"
+        [textoInicial]="filtroContratoTexto()"
+        [modoCombo]="true"
+        [remoto]="false"
+        [minLength]="1"
+        [opcionesLocales]="contratos()"
+        (seleccionado)="onContratoFiltroPick($event)"
+        (limpiado)="onContratoFiltroLimpiar()"
+      />
+    }
+    <label class="eval-field">
+      Estado
+      <select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+        <option value="">Todos</option>
+        <option value="BORRADOR">Borrador</option>
+        <option value="PUBLICADA">Publicada</option>
+        <option value="CERRADA">Cerrada</option>
+      </select>
+    </label>
+    <button type="button" class="ghost mini" (click)="recargar()" [disabled]="loading()">
+      {{ loading() ? 'Cargando…' : 'Actualizar' }}
+    </button>
+  </div>
+
+  <div class="table-wrap eval-table-wrap">
+    <table class="argo data-table eval-table">
+      <thead>
+        <tr>
+          <th>Título</th>
+          @if (!embedded) {
+            <th>Contrato</th>
+          }
+          <th>Estado</th>
+          <th>Respuestas</th>
+          <th>Vigencia</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td [attr.colspan]="embedded ? 5 : 6" class="empty">Cargando…</td></tr>
+        } @else if (!filtradas().length) {
+          <tr><td [attr.colspan]="embedded ? 5 : 6" class="empty">No hay encuestas con los filtros actuales.</td></tr>
+        } @else {
+          @for (e of filtradas(); track e._id) {
+            <tr>
+              <td>
+                <strong>{{ e.titulo }}</strong>
+                @if (e.instrucciones) {
+                  <div class="eval-muted">{{ e.instrucciones }}</div>
+                }
+              </td>
+              @if (!embedded) {
+                <td>{{ e.contratoLabel || e.codContrato || e.idContrato }}</td>
+              }
+              <td><span class="estado" [ngClass]="estadoClass(e.estado)">{{ e.estado }}</span></td>
+              <td>{{ e.totalRespuestas ?? 0 }}</td>
+              <td class="eval-muted">
+                @if (e.fechaApertura || e.fechaCierre) {
+                  {{ e.fechaApertura ? (e.fechaApertura | date:'yyyy-MM-dd') : '—' }}
+                  →
+                  {{ e.fechaCierre ? (e.fechaCierre | date:'yyyy-MM-dd') : '—' }}
+                } @else {
+                  Sin límite
+                }
+                @if (e.vigente) {
+                  <span class="eval-badge">Activa</span>
+                }
+              </td>
+              <td class="actions-cell eval-actions">
+                <button type="button" class="ghost mini" (click)="verResultados(e)">Resultados</button>
+                @if (puedeGestionar && e.estado !== 'CERRADA') {
+                  <button type="button" class="ghost mini" (click)="abrirEditar(e)">Editar</button>
+                }
+                @if (puedeGestionar && e.estado === 'BORRADOR') {
+                  <button type="button" class="primary mini" (click)="publicar(e)">Publicar</button>
+                  <button type="button" class="danger mini" (click)="eliminar(e)">Eliminar</button>
+                }
+                @if (puedeGestionar && e.estado === 'PUBLICADA') {
+                  <button type="button" class="eval-warn mini" (click)="cerrar(e)">Cerrar</button>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</section>
+
+<argo-form-modal
+  [open]="modalForm()"
+  [title]="editId() ? 'Editar encuesta' : 'Nueva encuesta'"
+  (closed)="modalForm.set(false)"
+>
+  @if (!editId() && !embedded) {
+    <argo-catalogo-enum-buscar
+      label="Contrato *"
+      placeholder="Seleccione contrato…"
+      [textoInicial]="form.contratoTexto"
+      [modoCombo]="true"
+      [remoto]="false"
+      [minLength]="1"
+      [opcionesLocales]="contratos()"
+      (seleccionado)="onContratoFormPick($event)"
+      (limpiado)="onContratoFormLimpiar()"
+    />
+  }
+  <label class="eval-field">
+    Título *
+    <input type="text" [(ngModel)]="form.titulo" name="titulo" maxlength="200" />
+  </label>
+  <label class="eval-field">
+    Instrucciones
+    <textarea [(ngModel)]="form.instrucciones" name="instrucciones" rows="3"></textarea>
+  </label>
+  <div class="eval-form-row">
+    <argo-date-input label="Apertura" [(ngModel)]="form.fechaApertura" name="fechaApertura" />
+    <argo-date-input label="Cierre" [(ngModel)]="form.fechaCierre" name="fechaCierre" />
+  </div>
+  <div modal-actions class="eval-modal-actions">
+    <button type="button" class="ghost" (click)="modalForm.set(false)">Cancelar</button>
+    <button type="button" class="primary" [disabled]="guardando()" (click)="guardar()">
+      {{ guardando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</argo-form-modal>
+
+<argo-form-modal
+  [open]="modalResultados()"
+  title="Resultados de la encuesta"
+  [sheet]="true"
+  [tall]="true"
+  (closed)="modalResultados.set(false)"
+>
+  @if (cargandoResultados()) {
+    <p class="eval-muted">Cargando resultados…</p>
+  } @else {
+    @if (resultados(); as res) {
+    <div class="eval-resultados eval-resultados-modal">
+      <div class="eval-resultados__head">
+        <div>
+          <h3>{{ res.encuesta.titulo }}</h3>
+          <p class="eval-muted">{{ res.encuesta.contratoLabel }} · {{ res.totalRespuestas }} respuesta(s)</p>
+        </div>
+        <div class="eval-resultados__actions">
+          <button
+            type="button"
+            class="primary mini"
+            (click)="exportarInformePdf()"
+            [disabled]="exportandoInforme() || !res.totalRespuestas"
+          >
+            {{ exportandoInforme() ? 'Generando PDF…' : 'Informe PDF' }}
+          </button>
+          <button type="button" class="ghost mini" (click)="exportarCsv()">Exportar CSV</button>
+        </div>
+      </div>
+
+      <nav class="eval-dash-tabs" role="tablist" aria-label="Vistas de resultados">
+        <button
+          type="button"
+          role="tab"
+          class="eval-dash-tab"
+          [class.eval-dash-tab--active]="vistaResultados() === 'dashboard'"
+          [attr.aria-selected]="vistaResultados() === 'dashboard'"
+          (click)="vistaResultados.set('dashboard')"
+        >
+          Dashboard
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="eval-dash-tab"
+          [class.eval-dash-tab--active]="vistaResultados() === 'tablas'"
+          [attr.aria-selected]="vistaResultados() === 'tablas'"
+          (click)="vistaResultados.set('tablas')"
+        >
+          Tablas
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="eval-dash-tab"
+          [class.eval-dash-tab--active]="vistaResultados() === 'alumnos'"
+          [attr.aria-selected]="vistaResultados() === 'alumnos'"
+          (click)="vistaResultados.set('alumnos')"
+        >
+          Por alumno
+        </button>
+      </nav>
+
+      @if (vistaResultados() === 'dashboard') {
+        <section class="eval-dash" aria-label="Dashboard de satisfacción">
+          <div class="eval-dash-kpis">
+            <article class="eval-dash-kpi eval-dash-kpi--sky">
+              <span class="eval-dash-kpi__label">Respuestas</span>
+              <strong class="eval-dash-kpi__val">{{ dashKpis().respuestas }}</strong>
+              <span class="eval-dash-kpi__sub">Alumnos que evaluaron</span>
+            </article>
+            <article class="eval-dash-kpi eval-dash-kpi--emerald">
+              <span class="eval-dash-kpi__label">Promedio global</span>
+              <strong class="eval-dash-kpi__val">
+                {{ formatEvalNota(dashKpis().promedioGlobal) }}<small>/5</small>
+              </strong>
+              <span class="eval-dash-kpi__sub">Todas las capacitaciones</span>
+            </article>
+            <article class="eval-dash-kpi eval-dash-kpi--gold">
+              <span class="eval-dash-kpi__label">Capacitaciones</span>
+              <strong class="eval-dash-kpi__val">{{ dashKpis().capacitaciones }}</strong>
+              <span class="eval-dash-kpi__sub">Programa + instructor</span>
+            </article>
+            <article class="eval-dash-kpi eval-dash-kpi--violet">
+              <span class="eval-dash-kpi__label">Instructores</span>
+              <strong class="eval-dash-kpi__val">{{ dashKpis().instructores }}</strong>
+              <span class="eval-dash-kpi__sub">Evaluados en el contrato</span>
+            </article>
+          </div>
+
+          @if (res.totalRespuestas > 0) {
+            <div class="eval-dash-grid">
+              <section class="eval-dash-card eval-dash-card--wide">
+                <h4>Promedio por aspecto</h4>
+                <p class="eval-dash-hint">Escala 1–5 · promedio de todas las calificaciones</p>
+                @if (dashAspectos().items.length) {
+                  <div class="eval-dash-hbars" role="img" aria-label="Promedio por aspecto">
+                    @for (it of dashAspectos().items; track it.label) {
+                      <div class="eval-dash-hbar" [title]="it.label + ': ' + it.value + '/5'">
+                        <span class="eval-dash-hbar__lbl">{{ it.label }}</span>
+                        <div class="eval-dash-hbar__track">
+                          <div
+                            class="eval-dash-hbar__fill"
+                            [style.width.%]="it.pctBar"
+                            [style.background]="it.color"
+                          ></div>
+                        </div>
+                        <span class="eval-dash-hbar__meta"><strong>{{ it.value }}</strong>/5</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </section>
+
+              <section class="eval-dash-card">
+                <h4>Radar de aspectos</h4>
+                <p class="eval-dash-hint">Perfil global de la encuesta</p>
+                <div class="eval-dash-radar-wrap" role="img" aria-label="Radar de aspectos">
+                  <svg viewBox="0 0 100 100" class="eval-dash-radar">
+                    @for (ring of dashRadar().grid; track $index) {
+                      <polygon [attr.points]="ring" class="eval-dash-radar__grid" />
+                    }
+                    @for (p of dashRadar().points; track p.key) {
+                      <line x1="50" y1="50" [attr.x2]="p.axisX" [attr.y2]="p.axisY" class="eval-dash-radar__axis" />
+                    }
+                    <polygon [attr.points]="dashRadar().polygon" class="eval-dash-radar__area" />
+                    @for (p of dashRadar().points; track p.key) {
+                      <circle [attr.cx]="p.x" [attr.cy]="p.y" r="2.2" class="eval-dash-radar__dot">
+                        <title>{{ p.label }}: {{ p.value }}/5</title>
+                      </circle>
+                    }
+                  </svg>
+                  <ul class="eval-dash-radar-legend">
+                    @for (p of dashRadar().points; track p.key) {
+                      <li><strong>{{ formatEvalNota(p.value) }}</strong> {{ p.label }}</li>
+                    }
+                  </ul>
+                </div>
+              </section>
+
+              <section class="eval-dash-card">
+                <h4>Nivel de satisfacción</h4>
+                <p class="eval-dash-hint">Distribución por calificación global de cada capacitación</p>
+                @if (dashSatisfaccion().slices.length) {
+                  <div class="eval-dash-pie" role="img" aria-label="Nivel de satisfacción">
+                    <div class="eval-dash-pie__visual">
+                      <svg viewBox="0 0 100 100" class="eval-dash-pie__svg">
+                        @for (s of dashSatisfaccion().slices; track s.label) {
+                          <path [attr.d]="s.path" [attr.fill]="s.color">
+                            <title>{{ s.label }}: {{ s.value }} ({{ formatEvalPct(s.pct) }})</title>
+                          </path>
+                          @if (s.showLabel) {
+                            <text
+                              class="eval-dash-pie__lbl"
+                              [attr.x]="s.labelX"
+                              [attr.y]="s.labelY"
+                              text-anchor="middle"
+                              dominant-baseline="middle"
+                            >
+                              {{ formatEvalPct(s.pct) }}
+                            </text>
+                          }
+                        }
+                      </svg>
+                      <div class="eval-dash-pie__center">
+                        <strong>{{ dashSatisfaccion().total }}</strong>
+                        <span>eval.</span>
+                      </div>
+                    </div>
+                    <ul class="eval-dash-pie__legend">
+                      @for (s of dashSatisfaccion().slices; track s.label) {
+                        <li>
+                          <span class="eval-dash-pie__swatch" [style.background]="s.color"></span>
+                          <span>{{ s.label }}</span>
+                          <strong>{{ s.value }}</strong>
+                          <em>{{ formatEvalPct(s.pct) }}</em>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                } @else {
+                  <p class="eval-muted">Sin datos de satisfacción</p>
+                }
+              </section>
+
+              <section class="eval-dash-card eval-dash-card--wide">
+                <h4>Ranking programa e instructor</h4>
+                <p class="eval-dash-hint">Promedio general por capacitación (máx. 12)</p>
+                @if (dashRanking().items.length) {
+                  <div class="eval-dash-ranking" role="img" aria-label="Ranking por programa e instructor">
+                    @for (it of dashRanking().items; track it.label + (it.sublabel || '')) {
+                      <div class="eval-dash-rank-row" [title]="it.label + ' · ' + (it.sublabel || '')">
+                        <div class="eval-dash-rank-row__head">
+                          <span class="eval-dash-rank-row__prog">{{ it.label }}</span>
+                          @if (it.sublabel) {
+                            <span class="eval-dash-rank-row__inst">{{ it.sublabel }}</span>
+                          }
+                        </div>
+                        <div class="eval-dash-rank-row__bar">
+                          <div
+                            class="eval-dash-rank-row__fill"
+                            [style.width.%]="it.pctBar"
+                            [style.background]="it.color"
+                          ></div>
+                        </div>
+                        <span class="eval-dash-rank-row__val">{{ it.value }}/5</span>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p class="eval-muted">Sin promedios por capacitación</p>
+                }
+              </section>
+            </div>
+          } @else {
+            <p class="eval-muted eval-dash-empty">Aún no hay respuestas para graficar.</p>
+          }
+        </section>
+      }
+
+      @if (vistaResultados() === 'tablas') {
+        <h4>Promedio por programa e instructor</h4>
+        <div class="table-wrap eval-table-wrap eval-table-wrap--scroll">
+          <table class="argo data-table eval-table eval-table--compact">
+            <thead>
+              <tr>
+                <th>Programa</th>
+                <th>Instructor</th>
+                <th>Promedio</th>
+                @for (asp of res.aspectos || aspectosDefault; track asp.key) {
+                  <th>{{ asp.label }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of res.promediosCarpa; track c.clave || c.idCarpa) {
+                <tr>
+                  <td><strong>{{ c.programaNombre || c.nombre }}</strong></td>
+                  <td>{{ c.instructorNombre || '—' }}</td>
+                  <td>{{ c.promedioGeneral ?? '—' }}</td>
+                  @for (asp of res.aspectos || aspectosDefault; track asp.key) {
+                    <td>{{ promedioAspectoCarpa(c, asp.key) }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+      @if (res.promediosPrograma.length) {
+        <h4>Promedio por programa (formato anterior)</h4>
+        <table class="argo data-table eval-table eval-table--compact">
+          <thead>
+            <tr>
+              <th>Programa</th>
+              <th>Promedio</th>
+              <th>Respuestas</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of res.promediosPrograma; track p.idProg) {
+              <tr>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.promedio ?? '—' }}</td>
+                <td>{{ p.respuestas }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      @if (!res.promediosCarpa.length && !res.promediosPrograma.length) {
+        <p class="eval-muted">Sin datos tabulares.</p>
+      }
+      }
+
+      @if (vistaResultados() === 'alumnos') {
+      @if (res.filas.length) {
+        <h4>Detalle por alumno</h4>
+        <div class="eval-table-wrap eval-table-wrap--scroll">
+          @for (f of res.filas; track f.numDoc) {
+            <div class="eval-alumno-block">
+              <p class="eval-alumno-block__head">
+                <strong>{{ f.nombreCompleto }}</strong>
+                <span class="eval-muted">{{ f.numDoc }}</span>
+              </p>
+              @if (f.calificacionesCarpa?.length) {
+                @for (c of f.calificacionesCarpa; track c.clave || c.idCarpa) {
+                  <div class="eval-alumno-carpa">
+                    <strong>{{ c.programaNombre || c.nombre }}</strong>
+                    @if (c.instructorNombre) {
+                      <span class="eval-muted"> · Instructor: {{ c.instructorNombre }}</span>
+                    }
+                    @if (c.promedio != null) {
+                      <span class="eval-muted"> · Promedio {{ c.promedio }}/5</span>
+                    }
+                    <table class="argo data-table eval-table eval-table--compact">
+                      <tbody>
+                        @for (asp of res.aspectos || aspectosDefault; track asp.key) {
+                          <tr>
+                            <td>{{ asp.label }}</td>
+                            <td>{{ notaAspectoAlumno(f, c, asp.key) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              }
+              @if (f.calificaciones.length) {
+                <table class="argo data-table eval-table eval-table--compact">
+                  <tbody>
+                    @for (c of f.calificaciones; track c.idProg) {
+                      <tr>
+                        <td>{{ c.nombre }} (legado)</td>
+                        <td>{{ c.nota }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+              <p class="eval-muted">Comentario: {{ f.comentario || '—' }}</p>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="eval-muted">Aún no hay respuestas.</p>
+      }
+      }
+    </div>
+    }
+  }
+  <div modal-actions class="eval-modal-actions">
+    <button type="button" class="ghost" (click)="modalResultados.set(false)">Cerrar</button>
+  </div>
+</argo-form-modal>

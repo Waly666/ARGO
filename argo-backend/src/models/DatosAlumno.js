@@ -49,6 +49,10 @@ const DatosAlumnoSchema = new mongoose.Schema(
     discapacidad: { type: String, trim: true },
     munOrigen: { type: String, trim: true },
     codMunicipio: { type: String, trim: true },
+    /** Departamento de origen (DIVIPOLA) — campo separado del municipio. */
+    codDepartamento: { type: String, trim: true, index: true },
+    nombreDepartamento: { type: String, trim: true },
+    nombreMunicipio: { type: String, trim: true },
     correo: { type: String, trim: true },
     direccion: { type: String, trim: true },
     celular: { type: String, trim: true },
@@ -63,14 +67,22 @@ const DatosAlumnoSchema = new mongoose.Schema(
      * Distinto de `origen` (SISTEMA|WEB).
      */
     origenJornadaCap: { type: String, trim: true, default: null, index: true },
-    /** colegio | instituto | universidad — subtipo del origen institución educativa. */
+    /** primaria | secundaria | tecnica | tecnologica | universidad (legado: colegio→secundaria, instituto→tecnica). */
     tipoInstitucionEducativa: { type: String, trim: true, default: null, index: true },
-    /** Institución educativa (catálogo colegios MEN u otro) — código establecimiento. */
+    /** estudiante | profesor — perfil dentro de institución educativa. */
+    perfilInstitucionEducativa: { type: String, trim: true, default: null, index: true },
+    /** Institución educativa (catálogo colegios MEN / IES) — código establecimiento. */
     colegioCodigo: { type: String, trim: true, default: null, index: true },
     colegioNombre: { type: String, trim: true, default: null },
-    /** Grado 1–11 (solo colegio básica/media). */
+    /** Curso/grado 1–11 (primaria 1–5 · secundaria 6–11 · perfil estudiante). */
     gradoColegio: { type: Number, default: null, min: 1, max: 11 },
-    /** Programa / semestre / carrera (instituto o universidad). */
+    /** Semestre 1–12 (técnica / tecnológica / universidad · perfil estudiante). */
+    semestreInstitucion: { type: Number, default: null, min: 1, max: 12 },
+    /** Código de titulación del catálogo (técnica/tecnológica/universitaria). */
+    titulacionCodigo: { type: String, trim: true, default: null, index: true },
+    /** Área que imparte (perfil profesor en institución educativa). */
+    areaImparteColegio: { type: String, trim: true, default: null, index: true },
+    /** Titulación / programa / carrera (nombre visible · perfil estudiante superior). */
     programaInstitucion: { type: String, trim: true, default: null },
     /** Estamento público (catálogo estamentosPublicos). */
     estamentoId: { type: String, trim: true, default: null, index: true },

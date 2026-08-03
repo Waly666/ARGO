@@ -73,6 +73,10 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/jornadas/clases-hoy', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
   { prefix: '/app/jornadas/clases-en-desarrollo', permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'] },
   { prefix: '/app/jornadas/en-proceso', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
+  {
+    prefix: '/app/jornadas/evaluaciones',
+    permiso: ['jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar'],
+  },
   { prefix: '/app/jornadas', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
   { prefix: '/app/contratos', permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'] },
   { prefix: '/app/servicios', permiso: ['servicios.ver', 'servicios.gestionar'] },

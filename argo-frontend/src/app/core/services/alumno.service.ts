@@ -20,11 +20,17 @@ export interface AlumnoDto {
    * Independiente de `origen` (canal de inscripción).
    */
   origenJornadaCap?: string | null;
-  /** colegio | instituto | universidad */
+  /** primaria | secundaria | tecnica | tecnologica | universidad */
   tipoInstitucionEducativa?: string | null;
+  /** estudiante | profesor */
+  perfilInstitucionEducativa?: string | null;
   colegioCodigo?: string | null;
   colegioNombre?: string | null;
   gradoColegio?: number | null;
+  semestreInstitucion?: number | null;
+  titulacionCodigo?: string | null;
+  /** Área que imparte (profesor). */
+  areaImparteColegio?: string | null;
   programaInstitucion?: string | null;
   estamentoId?: string | null;
   estamentoNombre?: string | null;
@@ -67,6 +73,10 @@ export interface AlumnoDto {
   munOrigen?: string;
   /** Código divipola; debe coincidir con munOrigen */
   codMunicipio?: string;
+  /** Departamento de origen (DIVIPOLA), campo separado del municipio. */
+  codDepartamento?: string;
+  nombreDepartamento?: string;
+  nombreMunicipio?: string;
   correo?: string;
   direccion?: string;
   celular?: string;
@@ -120,6 +130,8 @@ export interface AlumnoListItem {
   origenJornadaCap?: string | null;
   colegioNombre?: string | null;
   gradoColegio?: number | null;
+  perfilInstitucionEducativa?: string | null;
+  areaImparteColegio?: string | null;
   estamentoNombre?: string | null;
   expedida?: string;
   nombre1?: string;
@@ -147,6 +159,8 @@ export interface AlumnoListItem {
   munOrigenLabel?: string;
   nombreMunicipio?: string;
   nombreDepto?: string;
+  codDepartamento?: string;
+  nombreDepartamento?: string;
   urlFoto?: string;
   urlCedula?: string;
   urlLicencia?: string;

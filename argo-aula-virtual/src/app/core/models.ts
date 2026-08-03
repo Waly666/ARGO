@@ -357,6 +357,55 @@ export interface RegistroJornadaRes {
   };
 }
 
+export interface EncuestaJornadaAspecto {
+  key: string;
+  label: string;
+}
+
+export interface EncuestaJornadaCarpa {
+  idCarpa: number;
+  nombre: string;
+  idProg?: string;
+  programaNombre?: string;
+  idEmpleadoInstructor?: number | null;
+  instructorNombre?: string;
+  /** Clave única programa|instructor. */
+  clave?: string;
+  /** Título visible: nombre del programa de capacitación. */
+  titulo: string;
+}
+
+export interface EncuestaJornadaPendiente {
+  _id: string;
+  titulo: string;
+  instrucciones?: string;
+  idContrato: string;
+  contratoLabel?: string;
+  carpas: EncuestaJornadaCarpa[];
+  aspectos: EncuestaJornadaAspecto[];
+  fechaCierre?: string | null;
+}
+
+export type EncuestaJornadaMotivoSinPendientes =
+  | 'sin_encuestas'
+  | 'encuestas_no_publicadas'
+  | 'encuestas_fuera_vigencia'
+  | 'no_elegible'
+  | 'sin_encuesta_su_contrato'
+  | 'ya_respondio';
+
+export interface EncuestasJornadaPendientesRes {
+  numDoc: number;
+  nombreCompleto: string;
+  items: EncuestaJornadaPendiente[];
+  motivo?: EncuestaJornadaMotivoSinPendientes;
+}
+
+export interface EncuestaJornadaDetalleRes extends EncuestaJornadaPendiente {
+  numDoc: number;
+  nombreCompleto: string;
+}
+
 export interface CertificadoConsultaItem {
   idCertificado: string;
   codVerificacion?: string;

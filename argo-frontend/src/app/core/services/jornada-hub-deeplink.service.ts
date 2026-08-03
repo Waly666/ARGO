@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
-export type JornadaHubTab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas';
+export type JornadaHubTab =
+  | 'contratos'
+  | 'avance'
+  | 'jornadas'
+  | 'clases'
+  | 'certificados'
+  | 'finanzas'
+  | 'informes'
+  | 'evaluaciones';
 
 export interface JornadaHubDeepLink {
   contrato: string;

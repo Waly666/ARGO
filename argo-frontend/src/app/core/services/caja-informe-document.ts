@@ -19,6 +19,11 @@ import {
   informePrintToolbarHtml,
   informePrintToolbarScript,
 } from '../utils/informe-print-toolbar.util';
+import {
+  htmlEncabezadoEmpresa,
+  informeDocumentoBaseCss,
+  informeGoogleFontsLinkHtml,
+} from '../utils/informe-encabezado-empresa.util';
 
 const DEFAULT_CAJA_AT_PAGE = '@page { size: A4 landscape; margin: 10mm; }';
 
@@ -26,38 +31,18 @@ function cajaInformeDocCss(atPageCss = DEFAULT_CAJA_AT_PAGE): string {
   return `
   ${atPageCss}
   ${informePrintToolbarCss()}
+  ${informeDocumentoBaseCss()}
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
     background: #fff !important;
     color: #1a1a1a !important;
-    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
     font-size: 10.5pt;
     line-height: 1.4;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .doc { max-width: 100%; margin: 0 auto; }
-  .doc-header {
-    display: flex; gap: 14px; align-items: flex-start;
-    border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 12px;
-  }
-  .doc-logo-img {
-    max-height: 72px; max-width: 180px; object-fit: contain; flex-shrink: 0; display: block;
-  }
-  .doc-logo-placeholder {
-    width: 56px; height: 56px; border: 2px solid #1e3a5f; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 13px; color: #1e3a5f; flex-shrink: 0;
-  }
-  .doc-empresa h1 {
-    margin: 0 0 4px; font-size: 17pt; font-weight: 700; color: #1e3a5f;
-    font-family: Georgia, 'Times New Roman', serif;
-  }
-  .doc-empresa .doc-sede {
-    margin: 0 0 6px; font-size: 12pt; font-weight: 600; color: #2d4a6f;
-  }
-  .doc-empresa p { margin: 0; font-size: 9pt; color: #333; }
   .doc-titulo-block {
     text-align: center; margin: 14px 0 16px;
     border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;
@@ -294,37 +279,9 @@ function filaMetaSede(empresa: ConfigRecibo | null | undefined, idSede?: string 
   return `<tr><td>Sede</td><td colspan="3"><strong>${esc(label)}</strong></td></tr>`;
 }
 
-function encabezadoEmpresa(empresa: ConfigRecibo | null | undefined, idSede?: string | null): string {
-  const institucion = esc(empresa?.nombreEmpresa || 'ARGO');
-  const sede = esc(sedeDocumentoLabel(empresa, idSede));
-  const ciudadLine = [empresa?.ciudad, empresa?.departamento]
-    .filter((x) => String(x || '').trim())
-    .map((x) => esc(String(x)))
-    .join(', ');
-  const lineas = [
-    empresa?.nit ? `NIT: ${esc(empresa.nit)}` : '',
-    empresa?.telefono ? `Tel: ${esc(empresa.telefono)}` : '',
-    empresa?.direccion ? `Dir: ${esc(empresa.direccion)}` : '',
-    ciudadLine ? ciudadLine : '',
-    empresa?.email ? `Email: ${esc(empresa.email)}` : '',
-  ]
-    .filter(Boolean)
-    .map((l) => `<p>${l}</p>`)
-    .join('');
-
-  const logoHtml = empresa?.urlLogoDataUrl
-    ? `<img class="doc-logo-img" src="${esc(empresa.urlLogoDataUrl)}" alt="${institucion}" />`
-    : `<div class="doc-logo-placeholder">ARGO</div>`;
-
-  return `
-    <header class="doc-header">
-      ${logoHtml}
-      <div class="doc-empresa">
-        <h1>${institucion}</h1>
-        ${sede ? `<h2 class="doc-sede">${sede}</h2>` : ''}
-        ${lineas}
-      </div>
-    </header>`;
+function encabezadoCaja(empresa: ConfigRecibo | null | undefined, idSede?: string | null): string {
+  const sede = sedeDocumentoLabel(empresa, idSede);
+  return htmlEncabezadoEmpresa(empresa, sede ? { sedeLabel: sede } : undefined);
 }
 
 function esFormaEfectivo(forma: unknown): boolean {
@@ -524,13 +481,14 @@ function wrapDocumento(
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  ${informeGoogleFontsLinkHtml()}
   <title>${esc(titulo)}</title>
   <style>${cajaInformeDocCss(atPageCss)}</style>
 </head>
 <body>
   ${informePrintToolbarHtml({ label: 'Acciones del informe', pdfName: titulo })}
   <div class="doc">
-    ${encabezadoEmpresa(empresa, idSede)}
+    ${encabezadoCaja(empresa, idSede)}
     ${cuerpo}
     ${pieDocumento(empresa)}
   </div>

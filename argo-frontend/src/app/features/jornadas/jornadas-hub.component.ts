@@ -58,6 +58,7 @@ import { JornadaQrScanModalComponent } from './jornada-qr-scan-modal.component';
 import { JornadaAlumnoQrData } from './jornada-alumno-qr.util';
 import { esInstructorJornadasRestringido } from './jornadas-acceso.util';
 import { ContratoInformesDashboardComponent } from './contrato-informes-dashboard.component';
+import { JornadasEvaluacionesComponent } from './jornadas-evaluaciones.component';
 import {
   ProgresoCertResp,
   etiquetaProgresoCert,
@@ -142,9 +143,9 @@ import {
 } from './certificados-zip-progreso-modal.component';
 import { ejecutarExportZipCertificados } from './certificados-zip-export.helper';
 
-type Tab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas' | 'informes';
+type Tab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas' | 'informes' | 'evaluaciones';
 
-const TABS_CON_CONTRATO: Tab[] = ['avance', 'jornadas', 'clases', 'certificados', 'informes'];
+const TABS_CON_CONTRATO: Tab[] = ['avance', 'jornadas', 'clases', 'certificados', 'informes', 'evaluaciones'];
 type VistaAgenda = 'lista' | 'calendario';
 
 /** Alumno con datos mínimos para mostrar nombre y matricular (búsqueda, clase anterior, etc.). */
@@ -176,6 +177,7 @@ type AlumnoNombrable = {
     PagoSoporteFieldComponent,
     NotaCreditoModalComponent,
     ContratoInformesDashboardComponent,
+    JornadasEvaluacionesComponent,
     CertificadosZipProgresoModalComponent,
     JornadaQrScanModalComponent,
   ],
@@ -1050,6 +1052,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         tabQp === 'clases' ||
         tabQp === 'certificados' ||
         tabQp === 'informes' ||
+        tabQp === 'evaluaciones' ||
         tabQp === 'finanzas' ||
         tabQp === 'contratos' ||
         tabQp === 'avance'
@@ -1068,6 +1071,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       tabDest === 'clases' ||
       tabDest === 'certificados' ||
       tabDest === 'informes' ||
+      tabDest === 'evaluaciones' ||
       tabDest === 'finanzas' ||
       tabDest === 'contratos' ||
       tabDest === 'avance'
@@ -1095,6 +1099,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.recargarCerts();
       } else if (tab === 'informes') {
         this.tab.set('informes');
+      } else if (tab === 'evaluaciones') {
+        this.tab.set('evaluaciones');
       } else if (tab === 'finanzas') {
         this.tab.set('finanzas');
         this.cargarFinanzasContrato();
@@ -4246,6 +4252,49 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (t === 'empresa') return 'Empresa';
     if (t === 'operativo') return 'Operativo';
     return origen || '—';
+  }
+
+  labelDetalleOrigenAlumno(a: {
+    origenJornadaCap?: string | null;
+    perfilInstitucionEducativa?: string | null;
+    areaImparteColegio?: string | null;
+    gradoColegio?: number | null;
+  }): string {
+    const base = this.labelOrigenAlumno(a?.origenJornadaCap || undefined);
+    if (String(a?.origenJornadaCap || '') !== 'colegio') return base;
+    const perfil = String(a?.perfilInstitucionEducativa || 'estudiante').toLowerCase();
+    if (perfil === 'profesor') {
+      const areaKey = String(a?.areaImparteColegio || '').trim();
+      const areaLabel =
+        this.opcionesAreaImparteHub().find((o) => o.value === areaKey)?.label || areaKey || 'Sin área';
+      return `${base} · Profesor · ${areaLabel}`;
+    }
+    const g = Number(a?.gradoColegio);
+    if (Number.isFinite(g) && g >= 1 && g <= 11) return `${base} · Grado ${g}`;
+    return `${base} · Estudiante`;
+  }
+
+  private opcionesAreaImparteHub(): { value: string; label: string }[] {
+    return [
+      { value: 'matematicas', label: 'Matemáticas' },
+      { value: 'lengua_castellana', label: 'Lengua castellana' },
+      { value: 'ingles', label: 'Inglés' },
+      { value: 'ciencias_naturales', label: 'Ciencias naturales' },
+      { value: 'ciencias_sociales', label: 'Ciencias sociales' },
+      { value: 'educacion_fisica', label: 'Educación física' },
+      { value: 'educacion_artistica', label: 'Educación artística' },
+      { value: 'tecnologia_informatica', label: 'Tecnología e informática' },
+      { value: 'etica_valores', label: 'Ética y valores' },
+      { value: 'religion', label: 'Religión' },
+      { value: 'filosofia', label: 'Filosofía' },
+      { value: 'quimica', label: 'Química' },
+      { value: 'fisica', label: 'Física' },
+      { value: 'biologia', label: 'Biología' },
+      { value: 'orientacion_escolar', label: 'Orientación escolar' },
+      { value: 'coordinacion', label: 'Coordinación académica' },
+      { value: 'directivo', label: 'Directivo / rectoría' },
+      { value: 'otra', label: 'Otra área' },
+    ];
   }
 
   setVistaJornadas(v: VistaAgenda) {

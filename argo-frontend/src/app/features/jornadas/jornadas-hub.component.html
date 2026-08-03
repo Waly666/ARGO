@@ -62,6 +62,7 @@
     <button type="button" [class.active]="tab() === 'clases'" (click)="setTab('clases')">5. Clases</button>
     <button type="button" [class.active]="tab() === 'certificados'" (click)="setTab('certificados')">6. Certificados</button>
     <button type="button" [class.active]="tab() === 'informes'" (click)="setTab('informes')">7. Informes</button>
+    <button type="button" [class.active]="tab() === 'evaluaciones'" (click)="setTab('evaluaciones')">8. Encuesta</button>
     <button type="button" class="ghost" (click)="listaAlumnosJornada()">Alumnos jornada</button>
     <button type="button" class="ghost" (click)="nuevoAlumnoJornada()">+ Nuevo alumno</button>
   </nav>
@@ -1037,7 +1038,7 @@
                         <td><span class="mono">{{ formatNumDoc(a.numDoc) }}</span></td>
                         <td>{{ a.nombreCompleto }}</td>
                         <td>
-                          <span class="hint">{{ labelOrigenAlumno(a.origenJornadaCap) }}</span>
+                          <span class="hint">{{ labelDetalleOrigenAlumno(a) }}</span>
                           <span class="hint"> · {{ labelTipoCertificado(a.tipoCertificado) }}</span>
                         </td>
                         <td>
@@ -3160,6 +3161,15 @@
   @if (tab() === 'informes') {
     <div class="panel">
       <argo-contrato-informes-dashboard [idContrato]="contratoSel()" />
+    </div>
+  }
+
+  @if (tab() === 'evaluaciones') {
+    <div class="panel ficha-shell ficha-shell--evaluaciones">
+      <app-jornadas-evaluaciones
+        [idContrato]="contratoSel() || formContrato()._id || ''"
+        [embedded]="true"
+      />
     </div>
   }
 

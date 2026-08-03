@@ -19,9 +19,14 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
   form: AlumnoCrearDto;
   expedidaTexto: string;
   munOrigenTexto: string;
+  deptoOrigenTexto: string;
   empresaNombre: string;
 } {
   const freq = a.alertaPagoFrecuencia;
+  const codDep = String(a.codDepartamento || '')
+    .replace(/\D/g, '')
+    .padStart(2, '0')
+    .replace(/^00$/, '');
   return {
     form: {
       tipoAlumno: a.tipoAlumno || TIPO_ALUMNO_DEFAULT,
@@ -45,6 +50,9 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       discapacidad: a.discapacidad || '9',
       munOrigen: a.munOrigen || a.codMunicipio || '',
       codMunicipio: a.codMunicipio || a.munOrigen || '',
+      codDepartamento: codDep,
+      nombreDepartamento: aMayusculas(a.nombreDepartamento || ''),
+      nombreMunicipio: aMayusculas(a.nombreMunicipio || ''),
       correo: aMayusculas(a.correo || ''),
       direccion: aMayusculas(a.direccion || ''),
       celular: a.celular || '',
@@ -54,7 +62,8 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       alertaPago: fechaAString(a.alertaPago),
     },
     expedidaTexto: aMayusculas(a.expedida?.trim() || ''),
-    munOrigenTexto: aMayusculas(a.munOrigen || a.codMunicipio || ''),
+    munOrigenTexto: aMayusculas(a.nombreMunicipio || a.munOrigenLabel || a.munOrigen || a.codMunicipio || ''),
+    deptoOrigenTexto: aMayusculas(a.nombreDepartamento || ''),
     empresaNombre: aMayusculas(a.empresaNombre?.trim() || ''),
   };
 }

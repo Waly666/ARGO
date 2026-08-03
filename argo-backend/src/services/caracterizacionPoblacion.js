@@ -4,6 +4,9 @@ const { calcularEdad, rangoEdadLabel, RANGOS_EDAD } = require('../utils/edad');
 const {
   normalizarOrigenJornadaCap,
   normalizarTipoInstitucionEducativa,
+  normalizarPerfilInstitucionEducativa,
+  labelPerfilInstitucionEducativa,
+  labelAreaImparteColegio,
   ORIGEN_JORNADA_LABELS,
   TIPO_INSTITUCION_LABELS,
   ORIGENES_JORNADA_CAP,
@@ -113,6 +116,11 @@ function labelTipoInstitucion(a) {
 function labelColegio(a) {
   const nom = String(a?.colegioNombre || '').trim();
   if (!nom) return 'Sin institución';
+  const perfil = normalizarPerfilInstitucionEducativa(a?.perfilInstitucionEducativa) || 'estudiante';
+  if (perfil === 'profesor') {
+    const area = labelAreaImparteColegio(a?.areaImparteColegio) || 'Sin área';
+    return `${nom} · Profesor · ${area}`;
+  }
   const grado = parseInt(a?.gradoColegio, 10);
   if (Number.isFinite(grado) && grado >= 1 && grado <= 11) {
     return `${nom} · Grado ${grado}`;
@@ -123,11 +131,23 @@ function labelColegio(a) {
 }
 
 function labelGrado(a) {
+  const perfil = normalizarPerfilInstitucionEducativa(a?.perfilInstitucionEducativa) || 'estudiante';
+  if (perfil === 'profesor') {
+    return `Profesor · ${labelAreaImparteColegio(a?.areaImparteColegio) || 'Sin área'}`;
+  }
   const grado = parseInt(a?.gradoColegio, 10);
   if (Number.isFinite(grado) && grado >= 1 && grado <= 11) return `Grado ${grado}`;
   const prog = String(a?.programaInstitucion || '').trim();
   if (prog) return prog;
   return 'Sin grado / programa';
+}
+
+function labelPerfilInstitucion(a) {
+  return labelPerfilInstitucionEducativa(a?.perfilInstitucionEducativa || 'estudiante');
+}
+
+function labelAreaProfesor(a) {
+  return labelAreaImparteColegio(a?.areaImparteColegio) || 'Sin área';
 }
 
 function labelEstamento(a) {
@@ -170,8 +190,10 @@ async function caracterizarDesdeDocs(docs) {
     ORIGENES_JORNADA_CAP.map((k) => [ORIGEN_JORNADA_LABELS[k], 0]),
   );
   const porTipoInstitucion = new Map();
+  const porPerfilInstitucion = new Map();
   const porColegio = new Map();
   const porGradoColegio = new Map();
+  const porAreaProfesor = new Map();
   const porEstamento = new Map();
   const porCargoEstamento = new Map();
   const porDependenciaEstamento = new Map();
@@ -190,8 +212,11 @@ async function caracterizarDesdeDocs(docs) {
 
     if (origen === 'colegio') {
       contar(porTipoInstitucion, labelTipoInstitucion(a));
+      contar(porPerfilInstitucion, labelPerfilInstitucion(a));
       contar(porColegio, labelColegio(a));
       contar(porGradoColegio, labelGrado(a));
+      const perfil = normalizarPerfilInstitucionEducativa(a.perfilInstitucionEducativa) || 'estudiante';
+      if (perfil === 'profesor') contar(porAreaProfesor, labelAreaProfesor(a));
     } else if (origen === 'estamento') {
       contar(porEstamento, labelEstamento(a));
       contar(porCargoEstamento, labelCargo(a));
@@ -216,8 +241,10 @@ async function caracterizarDesdeDocs(docs) {
     porMultiCulturalidad: aLista(buckets.porMultiCulturalidad),
     porOrigenJornada: aLista(porOrigenJornada, ordenOrigen),
     porTipoInstitucion: aLista(porTipoInstitucion),
+    porPerfilInstitucion: aLista(porPerfilInstitucion),
     porColegio: aLista(porColegio),
     porGradoColegio: aLista(porGradoColegio),
+    porAreaProfesor: aLista(porAreaProfesor),
     porEstamento: aLista(porEstamento),
     porCargoEstamento: aLista(porCargoEstamento),
     porDependenciaEstamento: aLista(porDependenciaEstamento),
@@ -249,9 +276,11 @@ async function caracterizarPoblacion(opts = {}) {
         'multiCulturalidad',
         'origenJornadaCap',
         'tipoInstitucionEducativa',
+        'perfilInstitucionEducativa',
         'colegioCodigo',
         'colegioNombre',
         'gradoColegio',
+        'areaImparteColegio',
         'programaInstitucion',
         'estamentoId',
         'estamentoNombre',

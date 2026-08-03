@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
+import { Subject, debounceTime, of, switchMap } from 'rxjs';
 
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
 
@@ -30,8 +30,15 @@ export class MunicipioBuscarComponent implements OnChanges {
   @Input() label = 'Municipio';
   @Input() placeholder = 'Escriba para buscar municipio...';
   @Input() textoInicial = '';
-  /** Combobox: flecha ▾ y búsqueda desde 1 carácter (catálogo divipola es muy grande para listar todo). */
+  /** Combobox: flecha ▾ y búsqueda desde 1 carácter. */
   @Input() modoCombo = false;
+  /**
+   * Si se indica, solo lista/filtra municipios de ese departamento (cascada).
+   * Vacío = búsqueda nacional.
+   */
+  @Input() codDepto = '';
+  /** Deshabilitar hasta elegir departamento. */
+  @Input() disabled = false;
 
   seleccionado = output<MunicipioDivipola>();
   limpiado = output<void>();
@@ -46,13 +53,20 @@ export class MunicipioBuscarComponent implements OnChanges {
   private q$ = new Subject<string>();
 
   constructor() {
+    // Sin distinctUntilChanged: al cambiar de departamento el mismo texto (a menudo
+    // vacío) debe volver a consultar con el nuevo filtro.
     this.q$
       .pipe(
         debounceTime(280),
-        distinctUntilChanged(),
         switchMap((q) => {
           this.loading.set(true);
-          return this.catSvc.buscarMunicipios(q, 18);
+          const depto = String(this.codDepto || '').trim();
+          // Cascada: q vacío → lista del departamento; nacional: exige texto.
+          if (!depto && !String(q || '').trim()) {
+            return of([] as MunicipioDivipola[]);
+          }
+          const limit = depto ? 200 : 18;
+          return this.catSvc.buscarMunicipios(q, limit, depto);
         }),
       )
       .subscribe({
@@ -74,42 +88,60 @@ export class MunicipioBuscarComponent implements OnChanges {
     } else if (changes['textoInicial']?.firstChange) {
       this.query.set(this.textoInicial || '');
     }
+    if (changes['codDepto'] && !changes['codDepto'].firstChange) {
+      // Al cambiar departamento, limpiar resultados; el padre limpia la selección.
+      this.resultados.set([]);
+      if (this.open() && this.codDepto) this.q$.next(this.query().trim());
+    }
   }
 
-  minBusqueda = (): number => (this.modoCombo ? 1 : 2);
+  minBusqueda = (): number => (this.modoCombo || !!String(this.codDepto || '').trim() ? 1 : 2);
 
   onInput(v: string) {
+    if (this.disabled) return;
     this.query.set(v);
     this.open.set(true);
     const q = (v || '').trim();
     if (!q) {
       this.limpiado.emit();
-      this.resultados.set([]);
+      // Con departamento: volver a listar todos los del depto.
+      if (String(this.codDepto || '').trim()) this.q$.next('');
+      else this.resultados.set([]);
       return;
     }
     this.textoChange.emit(q);
-    if (q.length >= this.minBusqueda()) this.q$.next(q);
-    else this.resultados.set([]);
+    if (q.length >= this.minBusqueda() || String(this.codDepto || '').trim()) {
+      this.q$.next(q);
+    } else {
+      this.resultados.set([]);
+    }
   }
 
   focus() {
+    if (this.disabled) return;
     this.open.set(true);
     const q = this.query().trim();
-    if (q.length >= this.minBusqueda()) this.q$.next(q);
+    const depto = String(this.codDepto || '').trim();
+    if (depto) this.q$.next(q);
+    else if (q.length >= this.minBusqueda()) this.q$.next(q);
   }
 
   toggleOpen(): void {
+    if (this.disabled) return;
     if (this.open()) {
       this.open.set(false);
       return;
     }
     this.open.set(true);
     const q = this.query().trim();
-    if (q.length >= this.minBusqueda()) this.q$.next(q);
+    const depto = String(this.codDepto || '').trim();
+    if (depto) this.q$.next(q);
+    else if (q.length >= this.minBusqueda()) this.q$.next(q);
   }
 
   pick(m: MunicipioDivipola) {
-    this.query.set(m.label);
+    const texto = String(m.nombreMunicipio || m.label || '').trim();
+    this.query.set(texto);
     this.open.set(false);
     this.resultados.set([]);
     this.seleccionado.emit(m);

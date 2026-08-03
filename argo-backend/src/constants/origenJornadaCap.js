@@ -8,7 +8,16 @@ const {
 const ORIGENES_JORNADA_CAP = ['colegio', 'estamento', 'empresa', 'operativo'];
 
 /** Subtipos del origen institución educativa (clave API sigue siendo `colegio`). */
-const TIPOS_INSTITUCION_EDUCATIVA = ['colegio', 'instituto', 'universidad'];
+const TIPOS_INSTITUCION_EDUCATIVA = [
+  'primaria',
+  'secundaria',
+  'tecnica',
+  'tecnologica',
+  'universidad',
+];
+
+/** Perfil dentro de institución educativa: estudiante (legado) o profesor. */
+const PERFILES_INSTITUCION_EDUCATIVA = ['estudiante', 'profesor'];
 
 const ORIGEN_JORNADA_LABELS = {
   colegio: 'Institución educativa',
@@ -18,10 +27,78 @@ const ORIGEN_JORNADA_LABELS = {
 };
 
 const TIPO_INSTITUCION_LABELS = {
-  colegio: 'Colegio',
-  instituto: 'Instituto técnico',
+  primaria: 'Primaria',
+  secundaria: 'Secundaria',
+  tecnica: 'Técnica',
+  tecnologica: 'Tecnológica',
   universidad: 'Universidad',
+  /** Legado */
+  colegio: 'Secundaria',
+  instituto: 'Técnica',
 };
+
+/** Semestres típicos en educación superior (1–12). */
+const SEMESTRES_INSTITUCION = Array.from({ length: 12 }, (_, i) => i + 1);
+
+function esNivelBasicaMedia(tipo) {
+  const t = normalizarTipoInstitucionEducativa(tipo);
+  return t === 'primaria' || t === 'secundaria';
+}
+
+function esNivelSuperior(tipo) {
+  const t = normalizarTipoInstitucionEducativa(tipo);
+  return t === 'tecnica' || t === 'tecnologica' || t === 'universidad';
+}
+
+/** Cursos/grados permitidos según nivel. */
+function cursosParaNivel(tipo) {
+  const t = normalizarTipoInstitucionEducativa(tipo);
+  if (t === 'primaria') {
+    return Array.from({ length: 5 }, (_, i) => ({
+      value: i + 1,
+      label: `Curso ${i + 1}`,
+    }));
+  }
+  if (t === 'secundaria') {
+    return Array.from({ length: 6 }, (_, i) => ({
+      value: i + 6,
+      label: `Grado ${i + 6}`,
+    }));
+  }
+  return [];
+}
+
+const PERFIL_INSTITUCION_LABELS = {
+  estudiante: 'Estudiante',
+  profesor: 'Profesor',
+};
+
+/** Áreas que imparte un profesor en institución educativa (catálogo fijo). */
+const AREAS_IMPARTIDAS_COLEGIO = [
+  { key: 'matematicas', label: 'Matemáticas' },
+  { key: 'lengua_castellana', label: 'Lengua castellana' },
+  { key: 'ingles', label: 'Inglés' },
+  { key: 'ciencias_naturales', label: 'Ciencias naturales' },
+  { key: 'ciencias_sociales', label: 'Ciencias sociales' },
+  { key: 'educacion_fisica', label: 'Educación física' },
+  { key: 'educacion_artistica', label: 'Educación artística' },
+  { key: 'tecnologia_informatica', label: 'Tecnología e informática' },
+  { key: 'etica_valores', label: 'Ética y valores' },
+  { key: 'religion', label: 'Religión' },
+  { key: 'filosofia', label: 'Filosofía' },
+  { key: 'quimica', label: 'Química' },
+  { key: 'fisica', label: 'Física' },
+  { key: 'biologia', label: 'Biología' },
+  { key: 'orientacion_escolar', label: 'Orientación escolar' },
+  { key: 'coordinacion', label: 'Coordinación académica' },
+  { key: 'directivo', label: 'Directivo / rectoría' },
+  { key: 'otra', label: 'Otra área' },
+];
+
+const AREA_IMPARTIDA_KEYS = AREAS_IMPARTIDAS_COLEGIO.map((a) => a.key);
+const AREA_IMPARTIDA_LABELS = Object.fromEntries(
+  AREAS_IMPARTIDAS_COLEGIO.map((a) => [a.key, a.label]),
+);
 
 function origenesContratoDefault() {
   return {
@@ -97,12 +174,63 @@ function normalizarTipoInstitucionEducativa(raw) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
   if (TIPOS_INSTITUCION_EDUCATIVA.includes(t)) return t;
+  // Legado UI/API
+  if (t === 'colegio' || t.includes('secund')) return 'secundaria';
+  if (t === 'instituto' || (t.includes('tecnic') && !t.includes('tecnolog'))) return 'tecnica';
+  if (t.includes('tecnolog')) return 'tecnologica';
   if (t.includes('univers')) return 'universidad';
-  if (t.includes('instit') || t.includes('tecnico') || t.includes('sena')) return 'instituto';
-  if (t.includes('coleg') || t.includes('escuela') || t.includes('basica') || t.includes('media')) {
-    return 'colegio';
+  if (t.includes('primar') || t.includes('escuela') || t.includes('basica primaria')) {
+    return 'primaria';
   }
+  if (t.includes('coleg') || t.includes('basica') || t.includes('media')) return 'secundaria';
+  if (t.includes('instit') || t.includes('sena')) return 'tecnica';
   return '';
+}
+
+function normalizarPerfilInstitucionEducativa(raw) {
+  const t = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  if (PERFILES_INSTITUCION_EDUCATIVA.includes(t)) return t;
+  if (t.includes('profesor') || t.includes('docente') || t.includes('maestro') || t === 'teacher') {
+    return 'profesor';
+  }
+  if (t.includes('estudi') || t.includes('alumno') || t.includes('student')) return 'estudiante';
+  return '';
+}
+
+function normalizarAreaImparteColegio(raw) {
+  const t = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s/-]+/g, '_');
+  if (!t) return '';
+  if (AREA_IMPARTIDA_KEYS.includes(t)) return t;
+  const byLabel = AREAS_IMPARTIDAS_COLEGIO.find((a) => {
+    const lab = a.label
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\s/-]+/g, '_');
+    return lab === t || lab.includes(t) || t.includes(a.key);
+  });
+  return byLabel?.key || '';
+}
+
+function labelAreaImparteColegio(raw) {
+  const k = normalizarAreaImparteColegio(raw);
+  if (k) return AREA_IMPARTIDA_LABELS[k] || k;
+  const s = String(raw || '').trim();
+  return s || '';
+}
+
+function labelPerfilInstitucionEducativa(raw) {
+  const p = normalizarPerfilInstitucionEducativa(raw) || 'estudiante';
+  return PERFIL_INSTITUCION_LABELS[p] || p;
 }
 
 function normalizarOrigenesContrato(raw) {
@@ -178,11 +306,24 @@ module.exports = {
   ORIGEN_JORNADA_LABELS,
   TIPOS_INSTITUCION_EDUCATIVA,
   TIPO_INSTITUCION_LABELS,
+  PERFILES_INSTITUCION_EDUCATIVA,
+  PERFIL_INSTITUCION_LABELS,
+  AREAS_IMPARTIDAS_COLEGIO,
+  AREA_IMPARTIDA_KEYS,
+  AREA_IMPARTIDA_LABELS,
+  SEMESTRES_INSTITUCION,
+  esNivelBasicaMedia,
+  esNivelSuperior,
+  cursosParaNivel,
   origenesContratoDefault,
   certificacionOrigenDefault,
   configCertOrigenDefault,
   normalizarOrigenJornadaCap,
   normalizarTipoInstitucionEducativa,
+  normalizarPerfilInstitucionEducativa,
+  normalizarAreaImparteColegio,
+  labelAreaImparteColegio,
+  labelPerfilInstitucionEducativa,
   normalizarOrigenesContrato,
   normalizarCertificacionOrigen,
   normalizarTipoCertContrato,

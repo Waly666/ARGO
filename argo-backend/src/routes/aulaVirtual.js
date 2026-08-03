@@ -46,6 +46,24 @@ router.get(
   turnstilePortal,
   ctrl.consultarCertificados,
 );
+router.get(
+  '/encuestas-jornada/pendientes',
+  buscarAlumnoLimiter,
+  turnstilePortal,
+  ctrl.encuestasJornadaPendientes,
+);
+router.get(
+  '/encuestas-jornada/:id',
+  buscarAlumnoLimiter,
+  turnstilePortal,
+  ctrl.encuestaJornadaDetalle,
+);
+router.post(
+  '/encuestas-jornada/:id/responder',
+  buscarAlumnoLimiter,
+  turnstilePortal,
+  ctrl.encuestaJornadaResponder,
+);
 router.post('/auth/registro', portalAuthLimiter, turnstilePortal, ctrl.registro);
 router.post('/auth/registro/solicitar', portalAuthLimiter, turnstilePortal, ctrl.registroSolicitar);
 router.post('/auth/registro/confirmar', portalAuthLimiter, ctrl.registroConfirmar);

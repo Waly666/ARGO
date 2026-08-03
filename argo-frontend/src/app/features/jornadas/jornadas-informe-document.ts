@@ -4,6 +4,11 @@ import {
   informePrintToolbarHtml,
   informePrintToolbarScript,
 } from '../../core/utils/informe-print-toolbar.util';
+import {
+  htmlEncabezadoEmpresa,
+  informeDocumentoBaseCss,
+  informeGoogleFontsLinkHtml,
+} from '../../core/utils/informe-encabezado-empresa.util';
 
 export type ColumnaInformeJornada = { k: string; l: string };
 
@@ -14,35 +19,18 @@ export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): str
   return `
   ${atPageCss}
   ${informePrintToolbarCss()}
+  ${informeDocumentoBaseCss()}
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
     background: #fff !important;
     color: #1a1a1a !important;
-    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
     font-size: 9.5pt;
     line-height: 1.35;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .doc { max-width: 100%; margin: 0 auto; }
-  .doc-header {
-    display: flex; gap: 14px; align-items: flex-start;
-    border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; margin-bottom: 12px;
-  }
-  .doc-logo-img {
-    max-height: 72px; max-width: 180px; object-fit: contain; flex-shrink: 0; display: block;
-  }
-  .doc-logo-placeholder {
-    width: 56px; height: 56px; border: 2px solid #1e3a5f; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 13px; color: #1e3a5f; flex-shrink: 0;
-  }
-  .doc-empresa h1 {
-    margin: 0 0 4px; font-size: 16pt; font-weight: 700; color: #1e3a5f;
-    font-family: Georgia, 'Times New Roman', serif;
-  }
-  .doc-empresa p { margin: 0; font-size: 9pt; color: #333; }
   .doc-titulo-block {
     text-align: center; margin: 12px 0 14px;
     border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;
@@ -57,9 +45,9 @@ export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): str
     width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9pt;
   }
   .doc-meta td { padding: 2px 0; vertical-align: top; }
-  .doc-meta td:first-child { width: 120px; font-weight: 600; color: #555; }
+  .doc-meta td:first-child { width: 130px; font-weight: 600; color: #555; }
   .stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
     margin-bottom: 12px;
   }
   .stat {
@@ -67,6 +55,7 @@ export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): str
   }
   .stat span { display: block; font-size: 8pt; text-transform: uppercase; color: #1e3a5f; }
   .stat strong { font-size: 12pt; color: #1a1a1a; }
+  .stats--cinco { grid-template-columns: repeat(5, 1fr); }
   .sec {
     margin: 14px 0 6px; font-size: 10pt; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.4px; color: #1e3a5f; border-bottom: 1px solid #bbb; padding-bottom: 3px;
@@ -74,7 +63,7 @@ export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): str
   .sec-grande {
     margin: 16px 0 8px; padding: 10px 12px;
     background: #1a365d; color: #fff; border-radius: 2px;
-    font-size: 13pt; font-weight: 800; letter-spacing: 0.03em;
+    font-size: 12pt; font-weight: 800; letter-spacing: 0.03em;
   }
   .destacado-contrato {
     text-align: center; margin: 8px 0 12px;
@@ -86,7 +75,7 @@ export function jornadasInformeDocCss(atPageCss = DEFAULT_JORNADAS_AT_PAGE): str
     color: #1e3a5f; font-weight: 700; margin-bottom: 2px;
   }
   .destacado-contrato .val {
-    display: block; font-size: 22pt; font-weight: 800; color: #1a365d; letter-spacing: 0.04em;
+    display: block; font-size: 18pt; font-weight: 800; color: #1a365d; letter-spacing: 0.04em;
   }
   .destacado-contrato .extra {
     display: block; font-size: 9pt; color: #555; margin-top: 2px;
@@ -139,34 +128,6 @@ function celda(v: unknown): string {
   if (typeof v === 'boolean') return v ? 'Sí' : 'No';
   if (v == null || v === '') return '—';
   return esc(v);
-}
-
-function encabezadoEmpresa(empresa: ConfigRecibo | null | undefined): string {
-  const institucion = esc(empresa?.nombreEmpresa || 'ARGO');
-  const lineas = [
-    empresa?.nit ? `NIT: ${esc(empresa.nit)}` : '',
-    empresa?.telefono ? `Tel: ${esc(empresa.telefono)}` : '',
-    empresa?.direccion ? `Dir: ${esc(empresa.direccion)}` : '',
-    [empresa?.ciudad, empresa?.departamento].filter(Boolean).map((x) => esc(String(x))).join(', '),
-    empresa?.email ? `Email: ${esc(empresa.email)}` : '',
-  ]
-    .filter(Boolean)
-    .map((l) => `<p>${l}</p>`)
-    .join('');
-
-  const logoSrc = empresa?.urlLogoDataUrl || empresa?.urlLogo || '';
-  const logoHtml = logoSrc
-    ? `<img class="doc-logo-img" src="${esc(logoSrc)}" alt="${institucion}" />`
-    : `<div class="doc-logo-placeholder">ARGO</div>`;
-
-  return `
-    <header class="doc-header">
-      ${logoHtml}
-      <div class="doc-empresa">
-        <h1>${institucion}</h1>
-        ${lineas}
-      </div>
-    </header>`;
 }
 
 function pieDocumento(empresa: ConfigRecibo | null | undefined): string {
@@ -270,7 +231,7 @@ export function buildJornadasInformeHtml(opts: {
     : '';
 
   const resumen = opts.resumen
-    ? `<div class="stats">
+    ? `<div class="stats${Object.keys(opts.resumen).length > 4 ? ' stats--cinco' : ''}">
         <div class="stat"><span>Alumnos únicos</span><strong>${esc(opts.resumen.alumnosUnicos ?? 0)}</strong></div>
         <div class="stat"><span>Por clase</span><strong>${esc(opts.resumen.totalFilasClase ?? 0)}</strong></div>
         <div class="stat"><span>Asistencias</span><strong>${esc(opts.resumen.registrosAsistencia ?? 0)}</strong></div>
@@ -293,13 +254,14 @@ export function buildJornadasInformeHtml(opts: {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  ${informeGoogleFontsLinkHtml()}
   <title>${esc(opts.titulo)}</title>
   <style>${jornadasInformeDocCss(atPageCss)}</style>
 </head>
 <body>
   ${informePrintToolbarHtml({ label: 'Acciones del informe', pdfName: opts.titulo })}
   <div class="doc">
-    ${encabezadoEmpresa(opts.empresa)}
+    ${htmlEncabezadoEmpresa(opts.empresa)}
     <div class="doc-titulo-block">
       <h2>${esc(opts.titulo)}</h2>
       ${opts.subtitulo ? `<p>${esc(opts.subtitulo)}</p>` : ''}

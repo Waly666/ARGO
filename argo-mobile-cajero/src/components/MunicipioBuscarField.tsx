@@ -22,6 +22,9 @@ type Props = {
   onSeleccion?: (m: MunicipioItem) => void;
   onLimpiar?: () => void;
   placeholder?: string;
+  /** Cascada: solo municipios de este departamento. */
+  codDepto?: string;
+  disabled?: boolean;
 };
 
 export function MunicipioBuscarField({
@@ -31,6 +34,8 @@ export function MunicipioBuscarField({
   onSeleccion,
   onLimpiar,
   placeholder = 'Buscar municipio…',
+  codDepto = '',
+  disabled = false,
 }: Props) {
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
@@ -39,102 +44,124 @@ export function MunicipioBuscarField({
   const debounced = useDebounced(q, 300);
   const [items, setItems] = useState<MunicipioItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const depto = String(codDepto || '').trim();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || disabled) return;
     const term = debounced.trim();
-    if (term.length < 2) {
+    if (!depto && term.length < 2) {
       setItems([]);
       return;
     }
     setLoading(true);
-    void buscarMunicipios(term, 25)
+    void buscarMunicipios(term, depto ? 200 : 25, depto)
       .then(setItems)
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [debounced, open]);
+  }, [debounced, open, depto, disabled]);
 
   function seleccionar(m: MunicipioItem) {
-    onTextoChange(m.label);
+    onTextoChange(m.nombreMunicipio || m.label);
     onSeleccion?.(m);
     setOpen(false);
-    setQ('');
   }
 
   return (
     <View style={styles.wrap}>
-      <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 6, fontWeight: '600' }}>
+      <ScaledText baseSize={13} style={{ color: c.textSoft, fontWeight: '600', marginBottom: 6 }}>
         {label}
       </ScaledText>
       <Pressable
-        onPress={() => setOpen(true)}
-        style={[styles.field, { borderColor: c.border, backgroundColor: c.card }]}
+        disabled={disabled}
+        onPress={() => {
+          if (disabled) return;
+          setQ(texto || '');
+          setOpen(true);
+        }}
+        style={[
+          styles.field,
+          {
+            borderColor: c.border,
+            backgroundColor: disabled ? c.bg : c.card,
+            opacity: disabled ? 0.55 : 1,
+          },
+        ]}
       >
-        <Ionicons name="location-outline" size={18} color={c.primary} />
         <ScaledText
           baseSize={15}
-          style={{ color: texto ? c.text : '#94a3b8', flex: 1 }}
-          numberOfLines={2}
+          style={{ color: texto ? c.text : c.textSoft, flex: 1 }}
+          numberOfLines={1}
         >
-          {texto || placeholder}
+          {texto || (disabled ? 'Elija primero el departamento' : placeholder)}
         </ScaledText>
-        {texto ? (
+        {texto && !disabled ? (
           <Pressable
-            onPress={(e) => {
-              e.stopPropagation?.();
-              onLimpiar?.();
+            onPress={() => {
               onTextoChange('');
+              onLimpiar?.();
             }}
             hitSlop={8}
           >
             <Ionicons name="close-circle" size={20} color={c.textSoft} />
           </Pressable>
         ) : (
-          <Ionicons name="search" size={18} color={c.textSoft} />
+          <Ionicons name="chevron-down" size={18} color={c.textSoft} />
         )}
       </Pressable>
 
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <View style={[styles.modal, { backgroundColor: c.bg }]}>
-          <View style={[styles.modalHead, { borderBottomColor: c.border }]}>
+          <View style={styles.head}>
             <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800', flex: 1 }}>
               {label}
             </ScaledText>
-            <Pressable onPress={() => setOpen(false)}>
-              <Ionicons name="close" size={26} color={c.text} />
+            <Pressable onPress={() => setOpen(false)} hitSlop={10}>
+              <Ionicons name="close" size={24} color={c.text} />
             </Pressable>
           </View>
-          <View style={{ padding: 16 }}>
-            <SearchField value={q} onChangeText={setQ} placeholder="Nombre, departamento o código…" />
-            <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 8 }}>
-              Escriba al menos 2 caracteres
+          <SearchField
+            value={q}
+            onChangeText={setQ}
+            placeholder={depto ? 'Filtrar municipio…' : 'Buscar municipio…'}
+            autoFocus
+          />
+          {loading ? (
+            <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 12 }}>
+              Buscando…
             </ScaledText>
-          </View>
+          ) : null}
           <FlatList
             data={items}
-            keyExtractor={(m) => m.codMunicipio}
+            keyExtractor={(item) => item.codMunicipio}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-            ListEmptyComponent={
-              !loading ? (
-                <ScaledText baseSize={14} style={{ color: c.textSoft, textAlign: 'center', marginTop: 20 }}>
-                  {debounced.trim().length < 2 ? 'Empiece a escribir…' : 'Sin municipios'}
-                </ScaledText>
-              ) : null
-            }
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => seleccionar(item)}
                 style={[styles.opt, { borderColor: c.border, backgroundColor: c.card }]}
               >
-                <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>
-                  {item.label}
+                <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '700' }}>
+                  {item.nombreMunicipio || item.label}
                 </ScaledText>
-                <ScaledText baseSize={11} style={{ color: c.textSoft, marginTop: 2 }}>
-                  Cód. {item.codMunicipio}
-                </ScaledText>
+                {!depto && item.nombreDepto ? (
+                  <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 2 }}>
+                    {item.nombreDepto}
+                  </ScaledText>
+                ) : null}
               </Pressable>
             )}
+            ListEmptyComponent={
+              !loading ? (
+                <ScaledText baseSize={14} style={{ color: c.textSoft, textAlign: 'center', marginTop: 24 }}>
+                  {depto
+                    ? debounced.trim()
+                      ? 'Sin resultados en este departamento'
+                      : 'Sin municipios'
+                    : debounced.trim().length < 2
+                      ? 'Escriba al menos 2 letras'
+                      : 'Sin resultados'}
+                </ScaledText>
+              ) : null
+            }
           />
         </View>
       </Modal>
@@ -143,29 +170,22 @@ export function MunicipioBuscarField({
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: 8 },
+  wrap: { marginBottom: 10 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    minHeight: 50,
+    paddingVertical: 12,
     gap: 8,
   },
-  modal: { flex: 1 },
-  modalHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
+  modal: { flex: 1, padding: 16, paddingTop: 48 },
+  head: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 12 },
   opt: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
   },
 });

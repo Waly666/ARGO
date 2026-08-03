@@ -402,6 +402,17 @@ async function resolverFechaEmisionCertificadoJornada(clase, idJornadaRaw) {
   return new Date();
 }
 
+/** Vencimiento según vigencia del programa (diasVencimiento), igual que certificados normales. */
+function calcularFechaVencimientoDesdePrograma(fechaEmision, prog) {
+  const fechaEm =
+    fechaEmision instanceof Date && !Number.isNaN(fechaEmision.getTime())
+      ? fechaEmision
+      : new Date();
+  const dias = Number(prog?.diasVencimiento ?? prog?.vigenciaDias ?? 0);
+  if (!Number.isFinite(dias) || dias <= 0) return null;
+  return new Date(fechaEm.getTime() + dias * 24 * 60 * 60 * 1000);
+}
+
 async function crearCertificadoJornadaBase({
   numDoc,
   progId,
@@ -416,6 +427,7 @@ async function crearCertificadoJornadaBase({
   observaciones,
   fechaEmision,
   encabezado: encabezadoExplicito,
+  prog: progParam,
 }) {
   const encabezado =
     String(encabezadoExplicito || '').trim() || encabezadoCertificadoGlobal(contrato);
@@ -423,6 +435,8 @@ async function crearCertificadoJornadaBase({
   const fechaEm = fechaEmision instanceof Date && !Number.isNaN(fechaEmision.getTime())
     ? fechaEmision
     : new Date();
+  const prog = progParam || (progId ? await buscarPrograma(progId) : null);
+  const fechaVe = calcularFechaVencimientoDesdePrograma(fechaEm, prog);
   const { empresaId, empresaNombre } = await resolverEmpresaAlumno(numDoc);
 
   const cert = await Certificado.create({
@@ -442,6 +456,7 @@ async function crearCertificadoJornadaBase({
     generadoAutoJornada: true,
     observaciones,
     fechaEmision: fechaEm,
+    fechaVencimiento: fechaVe,
     empresaId,
     empresaNombre,
   });
@@ -541,6 +556,7 @@ async function intentarCertificadoPorClase(numDoc, idProg, idContrato, idJornada
       observaciones: 'Certificado automático por asistencia a la clase',
       fechaEmision,
       encabezado,
+      prog,
     },
     numDoc,
     progIdLiq,
@@ -716,6 +732,7 @@ async function intentarCertificadoJornadaAuto(
       observaciones: `Certificado automático al completar ${numSesCert} sesión(es) (origen ${cfgOrig.origen})`,
       fechaEmision,
       encabezado: encabezadoCertificadoGlobal(contrato, progEncabezado),
+      prog: progEncabezado,
     },
     numDoc,
     progIdLiq,

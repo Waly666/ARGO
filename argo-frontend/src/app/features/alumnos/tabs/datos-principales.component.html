@@ -477,12 +477,28 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-8">
+            <div class="col-6">
+              <argo-catalogo-enum-buscar
+                [class.campo-obligatorio-error]="campoObligatorioInvalido('codDepartamento')"
+                label="Departamento de origen *"
+                placeholder="Seleccione o escriba departamento…"
+                [textoInicial]="deptoOrigenTexto()"
+                [modoCombo]="true"
+                [remoto]="false"
+                [minLength]="1"
+                [opcionesLocales]="opcionesDepartamentos()"
+                (seleccionado)="onDeptoOrigenPick($event)"
+                (limpiado)="onDeptoOrigenLimpiar()"
+              />
+            </div>
+            <div class="col-6">
               <argo-municipio-buscar
                 [class.campo-obligatorio-error]="campoObligatorioInvalido('munOrigen')"
                 label="Municipio de origen *"
                 placeholder="Seleccione o escriba municipio…"
                 [modoCombo]="true"
+                [codDepto]="form().codDepartamento || ''"
+                [disabled]="!form().codDepartamento"
                 [textoInicial]="munOrigenTexto()"
                 (seleccionado)="onMunOrigenSel($event)"
                 (limpiado)="onMunOrigenLimpiar()"
@@ -588,8 +604,8 @@
             <div>
               <h3>Origen del alumno en jornada *</h3>
               <p>
-                Estudiante, estamento, empresa u operativo/calle. Distinto del origen de inscripción
-                (SISTEMA/WEB).
+                Institución educativa (estudiante o profesor), estamento, empresa u operativo/calle.
+                Distinto del origen de inscripción (SISTEMA/WEB).
               </p>
             </div>
           </div>
@@ -607,12 +623,23 @@
             </div>
 
             @if (form().origenJornadaCap === 'colegio') {
-              <div class="row origen-jornada-campos">
+              <div class="origen-jornada-chips perfil-institucion-chips" role="group" aria-label="Perfil en institución">
+                @for (p of perfilesInstitucionUi; track p.key) {
+                  <button
+                    type="button"
+                    class="origen-jornada-chip"
+                    [class.active]="perfilInstitucionActivo() === p.key"
+                    (click)="setPerfilInstitucion(p.key)">
+                    {{ p.label }}
+                  </button>
+                }
+              </div>
+              <div class="row origen-jornada-campos origen-jornada-campos--alineados">
                 <div class="col-2 col-tipo-institucion">
                   <argo-catalogo-enum-buscar
                     [class.campo-obligatorio-error]="campoObligatorioInvalido('tipoInstitucionEducativa')"
-                    label="Tipo *"
-                    placeholder="Tipo…"
+                    label="Nivel *"
+                    placeholder="Primaria, secundaria…"
                     [textoInicial]="textoTipoInstitucion()"
                     [modoCombo]="true"
                     [remoto]="false"
@@ -622,32 +649,41 @@
                     (limpiado)="onTipoInstitucionLimpiar()"
                   />
                 </div>
-                @if ((form().tipoInstitucionEducativa || 'colegio') === 'colegio') {
-                  <div class="col-8 col-colegio-buscar">
+                <div class="col-7 col-colegio-buscar">
+                  <argo-catalogo-enum-buscar
+                    [class.campo-obligatorio-error]="campoObligatorioInvalido('colegioNombre')"
+                    [label]="labelInstitucionBuscar()"
+                    placeholder="Seleccione o escriba…"
+                    [textoInicial]="form().colegioNombre || ''"
+                    [modoCombo]="true"
+                    [minLength]="1"
+                    [recargarClave]="claveBusquedaInstitucion()"
+                    [buscarRemoto]="buscarColegiosRemoto"
+                    (seleccionado)="onColegioPick($event)"
+                    (limpiado)="onColegioLimpiar()"
+                  />
+                </div>
+                @if (esProfesorInstitucion()) {
+                  <div class="col-3 col-area-imparte">
                     <argo-catalogo-enum-buscar
-                      [class.campo-obligatorio-error]="campoObligatorioInvalido('colegioNombre')"
-                      label="Colegio *"
-                      placeholder="Escriba para buscar colegio (aparece municipio y departamento)…"
-                      [textoInicial]="form().colegioNombre || ''"
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('areaImparteColegio')"
+                      label="Área que imparte *"
+                      placeholder="Seleccione área…"
+                      [textoInicial]="textoAreaImparte()"
                       [modoCombo]="true"
+                      [remoto]="false"
                       [minLength]="1"
-                      [buscarRemoto]="buscarColegiosRemoto"
-                      (seleccionado)="onColegioPick($event)"
-                      (limpiado)="onColegioLimpiar()"
+                      [opcionesLocales]="opcionesAreaImparte()"
+                      (seleccionado)="onAreaImpartePick($event)"
+                      (limpiado)="onAreaImparteLimpiar()"
                     />
-                    <p class="hint">
-                      @if (form().codMunicipio || form().munOrigen) {
-                        Filtra por el municipio de origen del alumno; escriba para refinar. Cada opción muestra municipio y departamento.
-                      } @else {
-                        Escriba al menos 2 letras del nombre del colegio. En el listado verá municipio y departamento.
-                      }
-                    </p>
                   </div>
-                  <div class="col-2 col-grado-colegio">
+                } @else if (esNivelBasicaMediaUi()) {
+                  <div class="col-3 col-grado-colegio">
                     <argo-catalogo-enum-buscar
                       [class.campo-obligatorio-error]="campoObligatorioInvalido('gradoColegio')"
-                      label="Grado *"
-                      placeholder="1–11…"
+                      [label]="labelCursoGrado()"
+                      placeholder="Seleccione…"
                       [textoInicial]="textoGradoColegio()"
                       [modoCombo]="true"
                       [remoto]="false"
@@ -657,40 +693,50 @@
                       (limpiado)="onGradoColegioLimpiar()"
                     />
                   </div>
-                } @else {
-                  <div class="col-4">
+                } @else if (esNivelSuperiorUi()) {
+                  <div class="col-3 col-grado-colegio">
                     <argo-catalogo-enum-buscar
-                      label="Buscar en catálogo"
-                      placeholder="Opcional: buscar IES…"
-                      [textoInicial]="form().colegioNombre || ''"
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('semestreInstitucion')"
+                      label="Semestre *"
+                      placeholder="1–12…"
+                      [textoInicial]="textoSemestreInstitucion()"
                       [modoCombo]="true"
+                      [remoto]="false"
                       [minLength]="1"
-                      [buscarRemoto]="buscarColegiosRemoto"
-                      (seleccionado)="onColegioPick($event)"
-                      (limpiado)="onColegioLimpiar()"
-                    />
-                  </div>
-                  <div class="col-3">
-                    <label>Nombre de la institución *</label>
-                    <input
-                      type="text"
-                      [class.campo-obligatorio-error]="campoObligatorioInvalido('colegioNombre')"
-                      [ngModel]="form().colegioNombre"
-                      (ngModelChange)="patch('colegioNombre', $event)"
-                      placeholder="Nombre completo…"
-                    />
-                  </div>
-                  <div class="col-3">
-                    <label>Programa / carrera / semestre *</label>
-                    <input
-                      type="text"
-                      [class.campo-obligatorio-error]="campoObligatorioInvalido('programaInstitucion')"
-                      [ngModel]="form().programaInstitucion"
-                      (ngModelChange)="patch('programaInstitucion', $event)"
+                      [opcionesLocales]="opcionesSemestreInstitucion()"
+                      (seleccionado)="onSemestreInstitucionPick($event)"
+                      (limpiado)="onSemestreInstitucionLimpiar()"
                     />
                   </div>
                 }
               </div>
+              <p class="hint origen-jornada-hint">
+                  @if (esNivelSuperiorUi()) {
+                      Lista todas las IES del nivel: primero las del municipio, luego las del departamento y después el resto del país (el registro oficial solo guarda la sede principal).
+                    } @else if (form().codMunicipio || form().munOrigen) {
+                      Filtra por municipio de origen; escriba para refinar. Cada opción muestra municipio y departamento.
+                    } @else {
+                      Escriba al menos 2 letras del nombre. En el listado verá municipio y departamento.
+                    }
+              </p>
+              @if (!esProfesorInstitucion() && esNivelSuperiorUi()) {
+                <div class="row origen-jornada-campos">
+                  <div class="col-12">
+                    <argo-catalogo-enum-buscar
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('programaInstitucion')"
+                      label="Titulación / programa *"
+                      placeholder="Seleccione o escriba la titulación…"
+                      [textoInicial]="form().programaInstitucion || ''"
+                      [modoCombo]="true"
+                      [minLength]="1"
+                      [recargarClave]="nivelInstitucionUi()"
+                      [buscarRemoto]="buscarTitulacionesRemoto"
+                      (seleccionado)="onTitulacionPick($event)"
+                      (limpiado)="onTitulacionLimpiar()"
+                    />
+                  </div>
+                </div>
+              }
             }
 
             @if (form().origenJornadaCap === 'estamento') {
@@ -732,44 +778,20 @@
             @if (form().origenJornadaCap === 'empresa') {
               <div class="row origen-jornada-campos">
                 <div class="col-12">
-                  <div
-                    class="empresa-field"
-                    [class.campo-obligatorio-error]="campoObligatorioInvalido('empresaId')">
-                    <label>Empresa del alumno *</label>
-                    <div class="empresa-input-wrap">
-                      <input
-                        type="text"
-                        class="empresa-input"
-                        placeholder="Escriba el nombre de la empresa para buscar…"
-                        [value]="empresaBusqueda()"
-                        (input)="buscarEmpresa($any($event.target).value)"
-                        (blur)="onEmpresaBlur()"
-                        autocomplete="off" />
-                      @if (empresaCargando()) {
-                        <span class="empresa-spinner">⏳</span>
-                      }
-                      @if (empresaBusqueda() && !empresaCargando()) {
-                        <button type="button" class="empresa-clear" (click)="limpiarEmpresa()" title="Limpiar empresa">✕</button>
-                      }
-                      @if (empresaDropdownOpen() && empresaSugerencias().length > 0) {
-                        <ul class="empresa-dropdown">
-                          @for (c of empresaSugerencias(); track c._id) {
-                            <li (mousedown)="seleccionarEmpresa(c)" tabindex="0" role="option">
-                              <span class="emp-nombre">{{ c.razonSocial || c.nombres || c.nombreComercial || '—' }}</span>
-                              <span class="emp-nit">{{ c.identificacion }}</span>
-                            </li>
-                          }
-                        </ul>
-                      }
-                    </div>
-                    @if (form().empresaId) {
-                      <p class="empresa-seleccionada">
-                        <span class="emp-chip">🏢 {{ form().empresaNombre || empresaBusqueda() }}</span>
-                      </p>
-                    } @else {
-                      <p class="empresa-hint">Busque y elija la empresa a la que pertenece el alumno.</p>
-                    }
-                  </div>
+                  <argo-catalogo-enum-buscar
+                    [class.campo-obligatorio-error]="campoObligatorioInvalido('empresaId')"
+                    label="Empresa del alumno *"
+                    placeholder="Seleccione o escriba…"
+                    [textoInicial]="form().empresaNombre || ''"
+                    [modoCombo]="true"
+                    [minLength]="1"
+                    [buscarRemoto]="buscarEmpresasRemoto"
+                    (seleccionado)="onEmpresaPick($event)"
+                    (limpiado)="onEmpresaLimpiar()"
+                  />
+                  @if (!form().empresaId) {
+                    <p class="empresa-hint">Elija la empresa del catálogo de clientes.</p>
+                  }
                 </div>
               </div>
             }
@@ -795,43 +817,21 @@
         <div class="section-body">
           <div class="row">
             <div class="col-12">
-              <div class="empresa-field">
-                <label>Empresa / Organización</label>
-                <div class="empresa-input-wrap">
-                  <input
-                    type="text"
-                    class="empresa-input"
-                    placeholder="Escriba el nombre de la empresa para buscar…"
-                    [value]="empresaBusqueda()"
-                    (input)="buscarEmpresa($any($event.target).value)"
-                    (blur)="onEmpresaBlur()"
-                    autocomplete="off" />
-                  @if (empresaCargando()) {
-                    <span class="empresa-spinner">⏳</span>
-                  }
-                  @if (empresaBusqueda() && !empresaCargando()) {
-                    <button type="button" class="empresa-clear" (click)="limpiarEmpresa()" title="Limpiar empresa">✕</button>
-                  }
-                  @if (empresaDropdownOpen() && empresaSugerencias().length > 0) {
-                    <ul class="empresa-dropdown">
-                      @for (c of empresaSugerencias(); track c._id) {
-                        <li (mousedown)="seleccionarEmpresa(c)" tabindex="0" role="option">
-                          <span class="emp-nombre">{{ c.razonSocial || c.nombres || c.nombreComercial || '—' }}</span>
-                          <span class="emp-nit">{{ c.identificacion }}</span>
-                        </li>
-                      }
-                    </ul>
-                  }
-                </div>
-                @if (form().empresaId) {
-                  <p class="empresa-seleccionada">
-                    <span class="emp-chip">🏢 {{ form().empresaNombre || empresaBusqueda() }}</span>
-                    <span class="emp-chip-id">NIT/ID vinculado</span>
-                  </p>
-                } @else {
-                  <p class="empresa-hint">Sin empresa asignada — el alumno es independiente</p>
-                }
-              </div>
+              <argo-catalogo-enum-buscar
+                label="Empresa / Organización"
+                placeholder="Seleccione o escriba…"
+                [textoInicial]="form().empresaNombre || ''"
+                [modoCombo]="true"
+                [minLength]="1"
+                [buscarRemoto]="buscarEmpresasRemoto"
+                (seleccionado)="onEmpresaPick($event)"
+                (limpiado)="onEmpresaLimpiar()"
+              />
+              @if (form().empresaId) {
+                <p class="empresa-hint">Empresa vinculada al alumno.</p>
+              } @else {
+                <p class="empresa-hint">Sin empresa asignada — el alumno es independiente</p>
+              }
             </div>
           </div>
         </div>

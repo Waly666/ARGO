@@ -58,6 +58,13 @@ const GRUPOS = [
         defaultMargins: { top: 10, right: 10, bottom: 10, left: 10 },
       },
       {
+        key: 'informe_encuesta_jornadas',
+        label: 'Informe PDF encuesta de satisfacción',
+        size: 'A4',
+        orientation: 'portrait',
+        defaultMargins: { top: 12, right: 12, bottom: 12, left: 12 },
+      },
+      {
         key: 'listado_asistencia_clase',
         label: 'Listado de asistencia de clase',
         size: 'letter',

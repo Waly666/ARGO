@@ -165,6 +165,10 @@ export interface AvanceContratoAlumnoDto {
   numDoc: number;
   nombreCompleto: string;
   origenJornadaCap?: string;
+  perfilInstitucionEducativa?: string | null;
+  areaImparteColegio?: string | null;
+  gradoColegio?: number | null;
+  colegioNombre?: string | null;
   clasesAsistidas: number;
   certificado: boolean;
   certificadosEmitidos: number;
@@ -262,8 +266,10 @@ export interface InformeDashboardDto {
     porMultiCulturalidad?: InformeDashboardChartItem[];
     porOrigenJornada?: InformeDashboardChartItem[];
     porTipoInstitucion?: InformeDashboardChartItem[];
+    porPerfilInstitucion?: InformeDashboardChartItem[];
     porColegio?: InformeDashboardChartItem[];
     porGradoColegio?: InformeDashboardChartItem[];
+    porAreaProfesor?: InformeDashboardChartItem[];
     porEstamento?: InformeDashboardChartItem[];
     porCargoEstamento?: InformeDashboardChartItem[];
     porDependenciaEstamento?: InformeDashboardChartItem[];
@@ -282,8 +288,10 @@ export interface InformeDashboardDto {
     porMultiCulturalidad: InformeDashboardChartItem[];
     porOrigenJornada?: InformeDashboardChartItem[];
     porTipoInstitucion?: InformeDashboardChartItem[];
+    porPerfilInstitucion?: InformeDashboardChartItem[];
     porColegio?: InformeDashboardChartItem[];
     porGradoColegio?: InformeDashboardChartItem[];
+    porAreaProfesor?: InformeDashboardChartItem[];
     porEstamento?: InformeDashboardChartItem[];
     porCargoEstamento?: InformeDashboardChartItem[];
     porDependenciaEstamento?: InformeDashboardChartItem[];
@@ -315,8 +323,10 @@ export interface InformeDashboardDto {
       porMultiCulturalidad?: InformeDashboardChartItem[];
       porOrigenJornada?: InformeDashboardChartItem[];
       porTipoInstitucion?: InformeDashboardChartItem[];
+      porPerfilInstitucion?: InformeDashboardChartItem[];
       porColegio?: InformeDashboardChartItem[];
       porGradoColegio?: InformeDashboardChartItem[];
+      porAreaProfesor?: InformeDashboardChartItem[];
       porEstamento?: InformeDashboardChartItem[];
       porCargoEstamento?: InformeDashboardChartItem[];
       porDependenciaEstamento?: InformeDashboardChartItem[];
@@ -483,6 +493,68 @@ export interface InformesJornadaResumen {
   contratos?: number;
   jornadas?: number;
   instructores?: number;
+}
+
+export interface EncuestaJornadaItem {
+  _id: string;
+  idContrato: string;
+  contratoLabel?: string;
+  codContrato?: string;
+  titulo: string;
+  instrucciones?: string;
+  estado: 'BORRADOR' | 'PUBLICADA' | 'CERRADA';
+  fechaApertura?: string | null;
+  fechaCierre?: string | null;
+  totalRespuestas?: number;
+  vigente?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EncuestaJornadaAspecto {
+  key: string;
+  label: string;
+}
+
+export interface EncuestaJornadaResultados {
+  encuesta: EncuestaJornadaItem;
+  totalRespuestas: number;
+  aspectos?: EncuestaJornadaAspecto[];
+  promediosCarpa: Array<{
+    clave?: string;
+    idCarpa: number;
+    nombre: string;
+    programaNombre?: string;
+    instructorNombre?: string;
+    idEmpleadoInstructor?: number | null;
+    promedioGeneral?: number | null;
+    aspectos: Record<string, { promedio: number | null; respuestas: number }>;
+  }>;
+  /** Formato legado (respuestas antiguas por programa). */
+  promediosPrograma: Array<{
+    idProg: string;
+    nombre: string;
+    promedio: number | null;
+    respuestas: number;
+  }>;
+  filas: Array<{
+    numDoc: number;
+    nombreCompleto: string;
+    calificacionesCarpa: Array<{
+      clave?: string;
+      idCarpa: number;
+      nombre: string;
+      programaNombre?: string;
+      instructorNombre?: string;
+      idEmpleadoInstructor?: number | null;
+      idProg?: string;
+      aspectos: Record<string, number>;
+      promedio?: number | null;
+    }>;
+    calificaciones: Array<{ idProg: string; nombre: string; nota: number }>;
+    comentario: string;
+    fechaEnvio?: string;
+  }>;
 }
 
 export interface InformesJornadaResp {
@@ -1295,5 +1367,61 @@ export class JornadaCapService {
       },
     });
     return true;
+  }
+
+  listarEncuestasJornada(params?: {
+    idContrato?: string;
+    estado?: string;
+  }): Observable<EncuestaJornadaItem[]> {
+    let p = new HttpParams();
+    if (params?.idContrato) p = p.set('idContrato', params.idContrato);
+    if (params?.estado) p = p.set('estado', params.estado);
+    return this.http.get<EncuestaJornadaItem[]>(`${this.base}/encuestas`, { params: p });
+  }
+
+  crearEncuestaJornada(
+    idContrato: string,
+    body: {
+      titulo: string;
+      instrucciones?: string;
+      fechaApertura?: string | null;
+      fechaCierre?: string | null;
+    },
+  ): Observable<EncuestaJornadaItem> {
+    return this.http.post<EncuestaJornadaItem>(`${this.base}/contratos/${idContrato}/encuestas`, body);
+  }
+
+  actualizarEncuestaJornada(
+    id: string,
+    body: Partial<{
+      titulo: string;
+      instrucciones: string;
+      fechaApertura: string | null;
+      fechaCierre: string | null;
+    }>,
+  ): Observable<EncuestaJornadaItem> {
+    return this.http.put<EncuestaJornadaItem>(`${this.base}/encuestas/${id}`, body);
+  }
+
+  publicarEncuestaJornada(id: string): Observable<EncuestaJornadaItem> {
+    return this.http.post<EncuestaJornadaItem>(`${this.base}/encuestas/${id}/publicar`, {});
+  }
+
+  cerrarEncuestaJornada(id: string): Observable<EncuestaJornadaItem> {
+    return this.http.post<EncuestaJornadaItem>(`${this.base}/encuestas/${id}/cerrar`, {});
+  }
+
+  eliminarEncuestaJornada(id: string): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(`${this.base}/encuestas/${id}`);
+  }
+
+  resultadosEncuestaJornada(id: string): Observable<EncuestaJornadaResultados> {
+    return this.http.get<EncuestaJornadaResultados>(`${this.base}/encuestas/${id}/resultados`);
+  }
+
+  descargarInformeEncuestaPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}/encuestas/${id}/informe-pdf`, {
+      responseType: 'blob',
+    });
   }
 }

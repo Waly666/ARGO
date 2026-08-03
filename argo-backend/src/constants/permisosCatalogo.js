@@ -54,6 +54,14 @@ const GRUPOS = [
         key: 'jornadas.registrar_alumnos',
         label: 'Registrar alumnos de jornada (alta ficha; no instructor de campo)',
       },
+      {
+        key: 'jornadas.evaluaciones.ver',
+        label: 'Consultar resultados de evaluaciones de satisfacción por contrato',
+      },
+      {
+        key: 'jornadas.evaluaciones.gestionar',
+        label: 'Publicar, cerrar y administrar evaluaciones de satisfacción por contrato',
+      },
     ],
   },
   {

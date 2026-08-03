@@ -85,6 +85,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'evaluacion-jornadas',
+        loadComponent: () =>
+          import('./pages/evaluacion-jornadas/evaluacion-jornadas.component').then(
+            (m) => m.EvaluacionJornadasComponent,
+          ),
+      },
+      {
         path: 'jornadas-capacitacion/activar',
         loadComponent: () =>
           import('./pages/jornadas-capacitacion/activar-jornada.component').then(

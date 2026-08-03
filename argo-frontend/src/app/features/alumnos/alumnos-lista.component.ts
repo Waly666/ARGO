@@ -879,6 +879,11 @@ export class AlumnosListaComponent implements OnInit {
   }
 
   textoMunicipio(r: AlumnoListItem): string {
+    if (r.nombreMunicipio) {
+      return r.nombreDepartamento
+        ? `${r.nombreMunicipio} (${r.nombreDepartamento})`
+        : r.nombreMunicipio;
+    }
     if (r.munOrigenLabel) return r.munOrigenLabel;
     const cod = r.codMunicipio || r.munOrigen;
     return cod ? String(cod) : '—';
