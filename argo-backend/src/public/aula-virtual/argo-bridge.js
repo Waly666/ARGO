@@ -133,6 +133,7 @@
   var FINAL_MAX_PTS = 45;
   var SYNC_MS = 8000;
   var lastFingerprint = '';
+  var lastSyncedFinalKey = '';
   var syncing = false;
 
   function getConfig() {
@@ -360,14 +361,20 @@
       promedioClases: st.promedioClases,
     };
     if (st.finalPts != null && st.finalPts > 0) {
-      body.notaEval = st.notaEval;
-      body.evaluacionFinal = true;
+      var finalKey = st.prefix + '|' + String(st.finalPts);
+      if (finalKey !== lastSyncedFinalKey) {
+        body.notaEval = st.notaEval;
+        body.evaluacionFinal = true;
+      }
     }
 
     syncing = true;
     window.ARGO.reportProgress(body)
       .then(function () {
         lastFingerprint = st.fingerprint;
+        if (st.finalPts != null && st.finalPts > 0) {
+          lastSyncedFinalKey = st.prefix + '|' + String(st.finalPts);
+        }
       })
       .finally(function () {
         syncing = false;
@@ -382,6 +389,7 @@
 
   function resetCourse() {
     lastFingerprint = '';
+    lastSyncedFinalKey = '';
   }
 
   function hookStorage(store) {

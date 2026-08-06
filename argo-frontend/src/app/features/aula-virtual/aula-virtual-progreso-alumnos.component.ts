@@ -258,6 +258,23 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
     return 'low';
   }
 
+  labelResultadoIntento(it: ProgresoAlumnoVirtualIntento): string {
+    if (it.aprobado) return 'Aprobó';
+    if (it.motivoNoAprobado === 'avance_insuficiente') return 'Avance insuficiente';
+    if (it.motivoNoAprobado === 'nota_insuficiente') return 'Nota insuficiente';
+    if (it.motivoNoAprobado === 'nota_y_avance') return 'Nota y avance bajos';
+    if (it.nota >= this.notaMinima() && it.pctCompletitud < this.pctMinCompletitud()) {
+      return 'Avance insuficiente';
+    }
+    return 'No aprobó';
+  }
+
+  tonoResultadoIntento(it: ProgresoAlumnoVirtualIntento): 'ok' | 'warn' | 'bad' {
+    if (it.aprobado) return 'ok';
+    if (this.labelResultadoIntento(it) === 'Avance insuficiente') return 'warn';
+    return 'bad';
+  }
+
   alumnoInactivo(row: ProgresoAlumnoVirtualItem): boolean {
     return !!(row.progreso?.sinIniciar && this.pct(row) <= 0);
   }

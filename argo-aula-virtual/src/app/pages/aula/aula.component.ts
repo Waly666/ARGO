@@ -349,6 +349,25 @@ export class AulaComponent implements OnInit, OnDestroy {
     return 'low';
   }
 
+  labelResultadoIntento(c: CursoVirtual, it: IntentoEvalVirtual): string {
+    if (it.aprobado) return 'Aprobó';
+    if (it.motivoNoAprobado === 'avance_insuficiente') return 'Avance insuficiente';
+    if (it.motivoNoAprobado === 'nota_insuficiente') return 'Nota insuficiente';
+    if (it.motivoNoAprobado === 'nota_y_avance') return 'Nota y avance bajos';
+    const minNota = this.notaMinima(c);
+    const minAvance = this.pctMinCompletitud(c);
+    const pct = it.pctCompletitud ?? 0;
+    if (it.nota >= minNota && pct < minAvance) return 'Avance insuficiente';
+    return 'No aprobó';
+  }
+
+  tonoResultadoIntento(c: CursoVirtual, it: IntentoEvalVirtual): 'green' | 'amber' | 'rose' {
+    if (it.aprobado) return 'green';
+    const label = this.labelResultadoIntento(c, it);
+    if (label === 'Avance insuficiente') return 'amber';
+    return 'rose';
+  }
+
   cargarCursos() {
     this.api.misCursos().subscribe({
       next: (rows) => this.cursos.set(rows),

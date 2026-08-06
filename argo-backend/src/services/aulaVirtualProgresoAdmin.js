@@ -146,7 +146,10 @@ async function listarProgresoAlumnosAdmin(idPrograma, query = {}, ctx = {}) {
         ultimaNotaEval: estado.ultimaNotaEval,
         intentosEval: estado.intentosEval,
         intentosRestantes: estado.intentosRestantes,
-        intentos: mapIntentosPublicos(prog?.intentos),
+        intentos: mapIntentosPublicos(prog?.intentos, {
+          pctMinCompletitud: estado.pctMinCompletitud,
+          pctMinEvaluaciones: estado.pctMinEvaluaciones,
+        }),
         aprobado: estado.aprobado,
         cumpleCompletitud: estado.cumpleCompletitud,
         cumpleNota: estado.cumpleNota,

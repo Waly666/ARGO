@@ -770,13 +770,13 @@
                                       <span class="dash-capsule dash-capsule--soft-sm">—</span>
                                     }
                                   </td>
-                                  <td>
-                                    @if (it.aprobado) {
-                                      <span class="dash-capsule dash-capsule--green dash-capsule--sm">Aprobó</span>
-                                    } @else {
-                                      <span class="dash-capsule dash-capsule--rose dash-capsule--sm">No aprobó</span>
-                                    }
-                                  </td>
+                                <td>
+                                  @if (it.aprobado) {
+                                    <span class="dash-capsule dash-capsule--green dash-capsule--sm">Aprobó</span>
+                                  } @else {
+                                    <span class="dash-capsule dash-capsule--sm" [class.dash-capsule--amber]="tonoResultadoIntento(c, it) === 'amber'" [class.dash-capsule--rose]="tonoResultadoIntento(c, it) === 'rose'">{{ labelResultadoIntento(c, it) }}</span>
+                                  }
+                                </td>
                                   <td><span class="dash-capsule dash-capsule--soft-sm">{{ fechaIntento(it.fecha) }}</span></td>
                                 </tr>
                               }

@@ -191,6 +191,7 @@ export interface IntentoEvalVirtual {
   pctCompletitud?: number;
   aprobado: boolean;
   fecha?: string | null;
+  motivoNoAprobado?: 'avance_insuficiente' | 'nota_insuficiente' | 'nota_y_avance' | 'requisitos' | null;
 }
 
 export interface ProgresoVirtual {

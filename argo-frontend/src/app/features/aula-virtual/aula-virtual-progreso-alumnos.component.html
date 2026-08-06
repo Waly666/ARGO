@@ -397,7 +397,7 @@
                               @if (it.aprobado) {
                                 <span class="av-dash-chip av-dash-chip--green av-dash-chip--sm">Aprobó</span>
                               } @else {
-                                <span class="av-dash-chip av-dash-chip--rose av-dash-chip--sm">No aprobó</span>
+                                <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--amber]="tonoResultadoIntento(it) === 'warn'" [class.av-dash-chip--low]="tonoResultadoIntento(it) === 'bad'">{{ labelResultadoIntento(it) }}</span>
                               }
                             </td>
                             <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">{{ fmtFecha(it.fecha) }}</span></td>
