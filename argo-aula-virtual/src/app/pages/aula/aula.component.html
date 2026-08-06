@@ -670,8 +670,12 @@
                         <li>
                           <span class="dash-capsule dash-capsule--soft">Intentos restantes</span>
                           <span class="dash-capsule dash-capsule--violet">{{ intentosRestantes(c) }}</span>
-                          @if (c.reglas?.puedeReintentar) {
+                          @if (cumpleRequisitosCurso(c)) {
+                            <span class="dash-capsule dash-capsule--green dash-capsule--inline">Cumple requisitos</span>
+                          } @else if (c.reglas?.puedeReintentar) {
                             <span class="dash-capsule dash-capsule--cyan dash-capsule--inline">Puede reintentar</span>
+                          } @else if (intentosRestantes(c) <= 0) {
+                            <span class="dash-capsule dash-capsule--rose dash-capsule--inline">Agotados</span>
                           }
                         </li>
                       </ul>

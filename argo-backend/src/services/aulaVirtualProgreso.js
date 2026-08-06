@@ -88,6 +88,13 @@ function dedupeIntentosRaw(intentos) {
   return out;
 }
 
+function intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones) {
+  return (
+    clampPct(it.nota) >= pctMinEvaluaciones &&
+    clampPct(it.pctCompletitud) >= pctMinCompletitud
+  );
+}
+
 function esIntentoDuplicado(intentos, nota, pctAlIntento) {
   if (!Array.isArray(intentos) || !intentos.length) return false;
   const ultimo = intentos[intentos.length - 1];
@@ -97,7 +104,7 @@ function esIntentoDuplicado(intentos, nota, pctAlIntento) {
 }
 
 function motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones) {
-  if (it.aprobado) return null;
+  if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones)) return null;
   const nota = clampPct(it.nota);
   const pct = clampPct(it.pctCompletitud);
   const cumpleNota = nota >= pctMinEvaluaciones;
@@ -112,14 +119,19 @@ function mapIntentosPublicos(intentos, reglas = {}) {
   const pctMinCompletitud = clampPct(reglas.pctMinCompletitud, 80);
   const pctMinEvaluaciones = clampPct(reglas.pctMinEvaluaciones, 60);
   const deduped = dedupeIntentosRaw(intentos);
-  return deduped.map((it, idx) => ({
-    numero: idx + 1,
-    nota: clampPct(it.nota),
-    pctCompletitud: clampPct(it.pctCompletitud),
-    aprobado: !!it.aprobado,
-    fecha: it.fecha ? new Date(it.fecha).toISOString() : null,
-    motivoNoAprobado: motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones),
-  }));
+  return deduped.map((it, idx) => {
+    const aprobado = intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones);
+    return {
+      numero: idx + 1,
+      nota: clampPct(it.nota),
+      pctCompletitud: clampPct(it.pctCompletitud),
+      aprobado,
+      fecha: it.fecha ? new Date(it.fecha).toISOString() : null,
+      motivoNoAprobado: aprobado
+        ? null
+        : motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones),
+    };
+  });
 }
 
 function mapProgresoPublico(progreso, estadoExtra = {}) {
@@ -139,7 +151,7 @@ function mapProgresoPublico(progreso, estadoExtra = {}) {
     totalClases: estadoExtra.totalClases ?? (clases.length || null),
     mejorNotaEval: progreso?.mejorNotaEval != null ? clampPct(progreso.mejorNotaEval) : null,
     ultimaNotaEval: progreso?.ultimaNotaEval,
-    intentosEval: progreso?.intentosEval || 0,
+    intentosEval: estadoExtra.intentosEval ?? dedupeIntentosRaw(progreso?.intentos || []).length,
     intentos: mapIntentosPublicos(progreso?.intentos, {
       pctMinCompletitud: estadoExtra.pctMinCompletitud,
       pctMinEvaluaciones: estadoExtra.pctMinEvaluaciones,
@@ -228,9 +240,44 @@ async function obtenerProgresoDoc(numDoc, idPrograma) {
   return doc;
 }
 
+async function sincronizarAprobacionEnDoc(numDoc, idPrograma, progreso, cfg) {
+  const idProg = String(idPrograma);
+  const pctMinCompletitud = clampPct(cfg.pctMinCompletitud, 80);
+  const pctMinEvaluaciones = clampPct(cfg.pctMinEvaluaciones, 60);
+  const cumpleCompletitud = clampPct(progreso.pctCompletitud) >= pctMinCompletitud;
+  const mejorNota = progreso.mejorNotaEval != null ? clampPct(progreso.mejorNotaEval) : null;
+  const cumpleNota = mejorNota != null && mejorNota >= pctMinEvaluaciones;
+
+  const intentos = Array.isArray(progreso.intentos) ? progreso.intentos.map((it) => ({ ...it })) : [];
+  let intentosChanged = false;
+  for (let i = 0; i < intentos.length; i++) {
+    const it = intentos[i];
+    if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones) && !it.aprobado) {
+      intentos[i] = { ...it, aprobado: true };
+      intentosChanged = true;
+    }
+  }
+
+  const marcarCursoAprobado = cumpleCompletitud && cumpleNota && !progreso.aprobado;
+  if (!marcarCursoAprobado && !intentosChanged) return progreso;
+
+  const $set = {};
+  if (marcarCursoAprobado) $set.aprobado = true;
+  if (intentosChanged) $set.intentos = intentos;
+
+  await ProgresoVirtualCurso.updateOne({ ...numDocQuery(numDoc), idPrograma: idProg }, { $set });
+
+  return {
+    ...progreso,
+    aprobado: progreso.aprobado || !!marcarCursoAprobado,
+    intentos: intentosChanged ? intentos : progreso.intentos,
+  };
+}
+
 async function evaluarAprobacion(numDoc, idPrograma) {
   const cfg = (await configPorPrograma(idPrograma)) || {};
-  const progreso = await obtenerProgresoDoc(numDoc, idPrograma);
+  let progreso = await obtenerProgresoDoc(numDoc, idPrograma);
+  progreso = await sincronizarAprobacionEnDoc(numDoc, idPrograma, progreso, cfg);
 
   const pctMinCompletitud = clampPct(cfg.pctMinCompletitud, 80);
   const pctMinEvaluaciones = clampPct(cfg.pctMinEvaluaciones, 60);
@@ -392,6 +439,23 @@ async function reportarProgreso(numDoc, idPrograma, body = {}) {
 
   doc.fechaUltimaActividad = new Date();
   doc.contadorSyncs = (doc.contadorSyncs || 0) + 1;
+
+  const pctMinCompletitud = clampPct(cfg.pctMinCompletitud, 80);
+  const pctMinEvaluaciones = clampPct(cfg.pctMinEvaluaciones, 60);
+  if (!doc.aprobado) {
+    const mejor = doc.mejorNotaEval != null ? clampPct(doc.mejorNotaEval) : null;
+    if (clampPct(doc.pctCompletitud) >= pctMinCompletitud && mejor != null && mejor >= pctMinEvaluaciones) {
+      doc.aprobado = true;
+    }
+  }
+  if (Array.isArray(doc.intentos)) {
+    for (const it of doc.intentos) {
+      if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones)) {
+        it.aprobado = true;
+      }
+    }
+  }
+
   await doc.save();
 
   const estado = await evaluarAprobacion(numDoc, idProg);
@@ -512,4 +576,6 @@ module.exports = {
   mapProgresoRespuesta,
   mapIntentosPublicos,
   dedupeIntentosRaw,
+  intentoCumpleRequisitos,
+  sincronizarAprobacionEnDoc,
 };

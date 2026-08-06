@@ -279,6 +279,11 @@ export class AulaComponent implements OnInit, OnDestroy {
     return mn != null && mn >= this.notaMinima(c);
   }
 
+  cumpleRequisitosCurso(c: CursoVirtual): boolean {
+    if (c.progreso?.aprobado) return true;
+    return this.cumpleCompletitud(c) && this.cumpleNotaEval(c);
+  }
+
   ultimaNotaEval(c: CursoVirtual): number | null {
     const p = c.progreso;
     if (p?.ultimaNotaEval != null && p.ultimaNotaEval > 0) return p.ultimaNotaEval;

@@ -243,15 +243,17 @@
                         {{ cumpleNotaEval(row) ? 'Cumple' : (mejorNota(row) != null ? 'Pendiente' : 'Sin intentos') }}
                       </span>
                     </li>
-                    <li class="av-dash-check" [class.av-dash-check--done]="!puedeReintentar(row) && cumpleNotaEval(row)">
+                    <li class="av-dash-check" [class.av-dash-check--done]="cumpleRequisitosCurso(row) || (!puedeReintentar(row) && intentosRestantes(row) <= 0)">
                       <span class="av-dash-check__mark" aria-hidden="true"></span>
                       <div class="av-dash-check__body">
                         <strong>Intentos restantes</strong>
                         <span>{{ intentosRestantes(row) }} disponible(s)</span>
                       </div>
-                      @if (puedeReintentar(row)) {
+                      @if (cumpleRequisitosCurso(row)) {
+                        <span class="av-dash-tag av-dash-tag--ok">Cumple requisitos</span>
+                      } @else if (puedeReintentar(row)) {
                         <span class="av-dash-tag av-dash-tag--blue">Puede reintentar</span>
-                      } @else {
+                      } @else if (intentosRestantes(row) <= 0) {
                         <span class="av-dash-tag av-dash-tag--neutral">Agotados</span>
                       }
                     </li>

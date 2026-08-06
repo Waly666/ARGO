@@ -194,7 +194,12 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   }
 
   puedeReintentar(row: ProgresoAlumnoVirtualItem): boolean {
-    return this.intentosRestantes(row) > 0 && !row.progreso?.aprobado;
+    return this.intentosRestantes(row) > 0 && !this.cumpleRequisitosCurso(row);
+  }
+
+  cumpleRequisitosCurso(row: ProgresoAlumnoVirtualItem): boolean {
+    if (row.progreso?.aprobado) return true;
+    return this.cumpleCompletitud(row) && this.cumpleNotaEval(row);
   }
 
   mejorNota(row: ProgresoAlumnoVirtualItem): number | null {
