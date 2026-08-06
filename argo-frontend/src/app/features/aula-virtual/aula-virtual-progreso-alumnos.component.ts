@@ -129,7 +129,7 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   }
 
   trackRow(row: ProgresoAlumnoVirtualItem): string {
-    return String(row.idMatricula);
+    return String(row.numDoc);
   }
 
   toggleExpand(row: ProgresoAlumnoVirtualItem): void {

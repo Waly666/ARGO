@@ -2,7 +2,7 @@ const Matricula = require('../models/Matricula');
 const UsuarioPortal = require('../models/UsuarioPortal');
 const Certificado = require('../models/Certificado');
 const ProgresoVirtualCurso = require('../models/ProgresoVirtualCurso');
-const { listarMatriculasPrograma } = require('./programaMatriculas');
+const { listarMatriculasProgramaUnicas } = require('./programaMatriculas');
 const { configPorPrograma } = require('./aulaVirtualCatalogo');
 const {
   evaluarAprobacion,
@@ -84,7 +84,7 @@ async function listarProgresoAlumnosAdmin(idPrograma, query = {}, ctx = {}) {
     skip: usaFiltroProgreso ? 0 : skip,
   };
 
-  const { items: mats, total: totalMats } = await listarMatriculasPrograma(idProg, matParams, ctx);
+  const { items: mats, total: totalMats } = await listarMatriculasProgramaUnicas(idProg, matParams, ctx);
 
   if (!mats.length) {
     return { items: [], total: usaFiltroProgreso ? 0 : totalMats, skip, limit, reglas };

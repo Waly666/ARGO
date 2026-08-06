@@ -43,7 +43,7 @@
     <p class="av-muted">No hay alumnos matriculados en este curso (o no coinciden con el filtro).</p>
   } @else {
     <div class="av-alum-list">
-      @for (row of items(); track row.idMatricula; let i = $index) {
+      @for (row of items(); track row.numDoc; let i = $index) {
         <article
           class="av-alum-item av-score-card"
           [ngClass]="'av-score-card--' + (i % 4)"
