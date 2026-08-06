@@ -64,6 +64,16 @@
             }
             @if (auth.isLoggedIn()) {
               @if (inscripcion(); as ins) {
+                @if (mostrarAvisoPlazo(ins)) {
+                  <p class="detail-buy-hint detail-buy-hint--warn detail-buy-hint--plazo">
+                    ⏳ {{ textoAvisoPlazo(ins) }}
+                  </p>
+                }
+                @if (ins.accesoExpirado) {
+                  <p class="detail-buy-hint detail-buy-hint--warn">
+                    Su acceso gratuito expiró. Debe matricularse de nuevo para retomar el curso.
+                  </p>
+                }
                 @if (ins.matriculado) {
                   @if (ins.puedeCursar) {
                     <button type="button" class="detail-buy-btn" (click)="irAlCurso()">Entrar al curso</button>

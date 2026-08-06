@@ -173,6 +173,21 @@
               </div>
             </div>
           }
+
+          @if (!cfg.requierePagoParaCursar) {
+            <div class="av-curso-grid av-curso-grid--2 av-curso-grid--spaced">
+              <div class="av-field">
+                <label>Días de acceso sin pagar</label>
+                <input type="number" min="0" step="1" [(ngModel)]="cfg.diasAccesoSinPago" />
+                <p class="av-muted av-field-hint">0 = acceso ilimitado. Al vencer sin pago se anula matrícula, liquidación y progreso.</p>
+              </div>
+              <div class="av-field">
+                <label>Avisar al alumno (días antes)</label>
+                <input type="number" min="0" step="1" [(ngModel)]="cfg.diasAvisoAlumno" [disabled]="!((cfg.diasAccesoSinPago ?? 0) > 0)" />
+                <p class="av-muted av-field-hint">Portal y correo. Por defecto 8 días antes del vencimiento.</p>
+              </div>
+            </div>
+          }
         </section>
       }
 

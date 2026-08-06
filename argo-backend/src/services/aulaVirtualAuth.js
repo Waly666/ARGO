@@ -230,6 +230,18 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
     numDoc,
   });
 
+  try {
+    const { registrarRegistroPortal } = require('./aulaVirtualAlertasEventos');
+    await registrarRegistroPortal({
+      numDoc,
+      nombreAlumno: nombreCompletoAlumno(da),
+      email: mail,
+      alumnoNuevo: !alumnoExistente,
+    });
+  } catch (e) {
+    console.warn('[AulaVirtual] alerta registro portal:', e.message);
+  }
+
   const token = signPortalToken(portal);
 
   let regEmpresaId = null;

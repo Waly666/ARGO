@@ -445,6 +445,7 @@ exports.matricularCurso = async (req, res, next) => {
     const out = await matricularVirtual({
       numDoc: req.portalUser.numDoc,
       idPrograma: req.params.id,
+      notificarStaff: true,
     });
     res.status(out.yaMatriculado ? 200 : 201).json(out);
   } catch (e) {

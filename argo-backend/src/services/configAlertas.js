@@ -33,6 +33,9 @@ const DEFAULTS_POR_CLAVE = {
   'alarmas.alumnos.comprobante_egreso': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 60, intervaloPollSegundos: 12 },
   'alarmas.alumnos.factura': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 45, intervaloPollSegundos: 12 },
   'alarmas.aula_virtual.foro_mensaje': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 0 },
+  'alarmas.aula_virtual.registro_nuevo': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 120, intervaloPollSegundos: 15 },
+  'alarmas.aula_virtual.matricula_nueva': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 120, intervaloPollSegundos: 15 },
+  'alarmas.aula_virtual.acceso_por_vencer': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 0, intervaloPollSegundos: 60, diasAntelacion: 1 },
 };
 
 function reglaVacia(meta) {

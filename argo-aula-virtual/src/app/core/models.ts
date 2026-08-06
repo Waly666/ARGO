@@ -275,8 +275,17 @@ export interface EstadoInscripcionVirtual {
   matriculado: boolean;
   matricula: { fechaMat?: string; pagada?: string; tarifa?: number } | null;
   pago: EstadoPagoVirtual | null;
+  accesoPlazo?: {
+    diasRestantes: number | null;
+    fechaVencimiento?: string;
+    enVentanaAviso?: boolean;
+    vencido?: boolean;
+    diasAccesoSinPago?: number;
+    diasAvisoAlumno?: number;
+  } | null;
   puedeCursar: boolean;
   accesoBloqueadoPago?: boolean;
+  accesoExpirado?: boolean;
   puedeCertificarse: boolean;
   certificadoPendientePago: boolean;
   curso: {
@@ -285,6 +294,8 @@ export interface EstadoInscripcionVirtual {
     tarifaVirtual: number;
     modoCertificado?: string;
     requierePagoParaCursar?: boolean;
+    diasAccesoSinPago?: number;
+    diasAvisoAlumno?: number;
     tienePaquete?: boolean;
   };
 }

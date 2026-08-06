@@ -3,8 +3,7 @@
     <div>
       <h3>Seguimiento de alumnos</h3>
       <p class="av-muted">
-        Avance del curso, evaluaciones, certificado y actividad en el portal.
-        «En línea» = actividad en los últimos 10 minutos.
+        Tarjetas por alumno con el mismo detalle que «Mis puntajes». Pulse una fila para expandir estadísticas.
       </p>
     </div>
     <button type="button" class="av-btn av-btn--ghost" [disabled]="loading()" (click)="cargar()">
@@ -43,154 +42,351 @@
   } @else if (!items().length) {
     <p class="av-muted">No hay alumnos matriculados en este curso (o no coinciden con el filtro).</p>
   } @else {
-    <div class="av-prog-table-wrap">
-      <table class="av-prog-table">
-        <thead>
-          <tr>
-            <th>Alumno</th>
-            <th>Estado</th>
-            <th>Avance</th>
-            <th>Evaluación</th>
-            <th>Certificado</th>
-            <th>Syncs</th>
-            <th>Última actividad</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of items(); track row.idMatricula) {
-            <tr [class.expanded]="estaExpandido(row)">
-              <td>
-                <strong>{{ row.nombreCompleto || '—' }}</strong>
-                <div class="av-prog-sub">CC {{ fmtDoc(row.numDoc) }}</div>
+    <div class="av-alum-list">
+      @for (row of items(); track row.idMatricula; let i = $index) {
+        <article
+          class="av-alum-item av-score-card"
+          [ngClass]="'av-score-card--' + (i % 4)"
+          [class.av-alum-item--open]="estaExpandido(row)">
+          <button
+            type="button"
+            class="av-alum-row av-score-card__head"
+            [attr.aria-expanded]="estaExpandido(row)"
+            (click)="toggleExpand(row)">
+            <div class="av-score-card__title-wrap">
+              <span
+                class="av-alum-avatar"
+                [class.av-alum-avatar--idle]="alumnoInactivo(row)"
+                aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path
+                    d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.33 0-8 1.34-8 4v1.5a1.5 1.5 0 0 0 1.5 1.5h13a1.5 1.5 0 0 0 1.5-1.5V18c0-2.66-4.67-4-8-4Z"
+                    fill="currentColor" />
+                </svg>
+              </span>
+              <div class="av-alum-head-text">
+                <h4>{{ row.nombreCompleto || '—' }}</h4>
+                <span class="av-pill av-pill--soft">
+                  CC {{ fmtDoc(row.numDoc) }} · Matriculado {{ fmtFechaMat(row.fechaMat) }}
+                </span>
                 @if (row.emailPortal || row.correo) {
-                  <div class="av-prog-sub">{{ row.emailPortal || row.correo }}</div>
+                  <span class="av-score-card__email">{{ row.emailPortal || row.correo }}</span>
                 }
-              </td>
-              <td>
-                <span class="av-prog-conn" [ngClass]="claseConexion(row.conexion.codigo)">
+              </div>
+            </div>
+
+            <div class="av-alum-row-side">
+              <div class="av-alum-row-side__pct">
+                <span class="av-alum-pct-val">{{ pct(row) | number:'1.0-0' }}%</span>
+                <span class="av-alum-pct-track">
+                  <span class="av-alum-pct-fill" [style.width.%]="pct(row)"></span>
+                </span>
+              </div>
+              <div class="av-score-card__badges">
+                <span class="av-pill av-pill--{{ tonoEstado(row) }}">{{ estadoAlumno(row) }}</span>
+                <span class="av-score-conn av-score-conn--sm" [ngClass]="claseConexion(row.conexion.codigo)">
                   {{ row.conexion.label }}
                 </span>
-                @if (row.progreso.aprobado) {
-                  <span class="av-prog-badge av-prog-badge--ok">Aprobado</span>
-                } @else if (row.progreso.sinIniciar) {
-                  <span class="av-prog-badge">Sin iniciar</span>
-                }
-              </td>
-              <td>
-                <div class="av-prog-bar-wrap">
-                  <div class="av-prog-bar" [style.width.%]="row.progreso.pctCompletitud"></div>
-                </div>
-                <span class="av-prog-sub">{{ row.progreso.pctCompletitud }}%</span>
-                @if (row.progreso.totalClases) {
-                  <span class="av-prog-sub">
-                    · {{ row.progreso.clasesAprobadas }}/{{ row.progreso.totalClases }} lecciones
-                  </span>
-                }
-                @if (row.progreso.promedioClases != null) {
-                  <span class="av-prog-sub"> · Prom. lecciones {{ row.progreso.promedioClases }}%</span>
-                }
-              </td>
-              <td>
-                @if (row.progreso.mejorNotaEval != null) {
-                  <strong>{{ row.progreso.mejorNotaEval }}%</strong>
-                  <span class="av-prog-sub"> mejor nota</span>
-                } @else {
-                  <span class="av-prog-sub">Sin eval. final</span>
-                }
-                <div class="av-prog-sub">
-                  Intentos: {{ row.progreso.intentosEval }}
-                  @if (row.progreso.intentosRestantes > 0) {
-                    · quedan {{ row.progreso.intentosRestantes }}
+              </div>
+              <span class="av-alum-chev" [class.av-alum-chev--open]="estaExpandido(row)" aria-hidden="true"></span>
+            </div>
+          </button>
+
+          @if (estaExpandido(row)) {
+            <div class="av-alum-detail av-dash">
+              @if (row.progreso.aprobado || row.progreso.certificadoEmitido || row.pago.pagado || row.pago.saldo > 0) {
+                <div class="av-dash__chips">
+                  @if (row.progreso.aprobado) {
+                    <span class="av-dash-chip av-dash-chip--green">Aprobado</span>
+                  }
+                  @if (row.progreso.certificadoEmitido) {
+                    <span class="av-dash-chip av-dash-chip--blue">Certificado</span>
+                  }
+                  @if (row.pago.pagado) {
+                    <span class="av-dash-chip av-dash-chip--green">Pago al día</span>
+                  } @else if (row.pago.saldo > 0) {
+                    <span class="av-dash-chip av-dash-chip--amber">Saldo ${{ row.pago.saldo | number:'1.0-0' }}</span>
                   }
                 </div>
-              </td>
-              <td>
-                @if (row.progreso.certificadoEmitido) {
-                  <span class="av-prog-badge av-prog-badge--ok">Emitido</span>
-                  @if (row.certificado?.codigoCert) {
-                    <div class="av-prog-sub">{{ row.certificado!.codigoCert }}</div>
+              }
+
+              <section class="av-dash-hero av-dash-hero--blue">
+                <div class="av-dash-hero__copy">
+                  <p class="av-dash-eyebrow">Progreso del curso</p>
+                  <h5 class="av-dash__title av-dash__title--blue">Avance general</h5>
+                  <p class="av-dash__subtitle">
+                    Mínimo exigido: <strong>{{ pctMinCompletitud() | number:'1.0-0' }}%</strong>
+                  </p>
+                </div>
+                <div class="av-dash-hero__stat">
+                  <span class="av-dash-hero__value">{{ pct(row) | number:'1.0-0' }}%</span>
+                  @if (cumpleCompletitud(row)) {
+                    <span class="av-dash-tag av-dash-tag--ok">Cumple avance</span>
+                  } @else {
+                    <span class="av-dash-tag av-dash-tag--warn">Falta avance</span>
                   }
-                } @else if (row.progreso.aprobado && !row.pago.pagado) {
-                  <span class="av-prog-badge av-prog-badge--warn">Pendiente pago</span>
-                } @else {
-                  <span class="av-prog-sub">—</span>
-                }
-              </td>
-              <td>{{ row.progreso.contadorSyncs }}</td>
-              <td>
-                <div>{{ fmtFecha(row.progreso.fechaUltimaActividad) }}</div>
-                @if (row.portal.ultimoAcceso) {
-                  <div class="av-prog-sub">Login: {{ fmtFecha(row.portal.ultimoAcceso) }}</div>
-                }
-              </td>
-              <td class="av-prog-actions">
-                <button type="button" class="av-link" (click)="toggleExpand(row)">
-                  {{ estaExpandido(row) ? 'Ocultar' : 'Detalle' }}
-                </button>
-                @if (fichaLink(row); as link) {
-                  <a [routerLink]="link" class="av-link">Ficha</a>
-                }
-              </td>
-            </tr>
-            @if (estaExpandido(row)) {
-              <tr class="av-prog-detail-row">
-                <td colspan="8">
-                  <div class="av-prog-detail">
-                    <div class="av-prog-detail-col">
-                      <h4>Lecciones</h4>
-                      @if (!row.progreso.clases.length) {
-                        <p class="av-muted">Sin datos de lecciones aún.</p>
-                      } @else {
-                        <ul class="av-prog-lessons">
-                          @for (c of row.progreso.clases; track c.numero) {
-                            <li [class.ok]="c.aprobada">
-                              Clase {{ c.numero }}: {{ c.pct }}%
-                              @if (c.aprobada) {
-                                <span>✓</span>
-                              }
-                            </li>
+                </div>
+                <div class="av-dash-bar av-dash-bar--lg">
+                  <div class="av-dash-bar__fill av-dash-bar__fill--blue" [style.width.%]="pct(row)"></div>
+                </div>
+              </section>
+
+              <section class="av-dash-kpis" aria-label="Indicadores de rendimiento">
+                <article class="av-dash-kpi av-dash-kpi--green">
+                  <span class="av-dash-kpi__label">Lecciones aprobadas</span>
+                  <strong class="av-dash-kpi__value">{{ row.progreso.clasesAprobadas ?? 0 }}/{{ row.progreso.totalClases ?? clasesDetalle(row).length }}</strong>
+                </article>
+                <article class="av-dash-kpi av-dash-kpi--cyan">
+                  <span class="av-dash-kpi__label">Con puntaje</span>
+                  <strong class="av-dash-kpi__value">{{ leccionesConNotaCount(row) }}</strong>
+                </article>
+                <article class="av-dash-kpi av-dash-kpi--violet">
+                  <span class="av-dash-kpi__label">Promedio lecciones</span>
+                  <strong class="av-dash-kpi__value">
+                    @if (promedioLecciones(row); as prom) {
+                      {{ prom | number:'1.0-0' }}%
+                    } @else {
+                      —
+                    }
+                  </strong>
+                </article>
+                <article class="av-dash-kpi av-dash-kpi--amber">
+                  <span class="av-dash-kpi__label">Suma lecciones</span>
+                  <strong class="av-dash-kpi__value">{{ sumaPuntajesLecciones(row) | number:'1.0-0' }} pts</strong>
+                </article>
+                <article class="av-dash-kpi av-dash-kpi--rose">
+                  <span class="av-dash-kpi__label">Mejor evaluación</span>
+                  <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'low'">
+                    @if (mejorNota(row); as mn) {
+                      {{ mn | number:'1.0-0' }}%
+                    } @else {
+                      —
+                    }
+                  </strong>
+                </article>
+                <article class="av-dash-kpi av-dash-kpi--orange">
+                  <span class="av-dash-kpi__label">Última evaluación</span>
+                  <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'low'">
+                    @if (ultimaNotaEval(row); as un) {
+                      {{ un | number:'1.0-0' }}%
+                    } @else {
+                      —
+                    }
+                  </strong>
+                </article>
+                <article class="av-dash-kpi av-dash-kpi--indigo">
+                  <span class="av-dash-kpi__label">Intentos evaluación</span>
+                  <strong class="av-dash-kpi__value">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval() }}</strong>
+                </article>
+                <article class="av-dash-kpi av-dash-kpi--teal">
+                  <span class="av-dash-kpi__label">Nota mínima</span>
+                  <strong class="av-dash-kpi__value">{{ notaMinima() | number:'1.0-0' }}%</strong>
+                </article>
+              </section>
+
+              <div class="av-dash-split">
+                <section class="av-dash-panel av-dash-panel--violet">
+                  <h5 class="av-dash__title av-dash__title--violet">Requisitos para aprobar</h5>
+                  <ul class="av-dash-checklist">
+                    <li class="av-dash-check" [class.av-dash-check--done]="cumpleCompletitud(row)">
+                      <span class="av-dash-check__mark" aria-hidden="true"></span>
+                      <div class="av-dash-check__body">
+                        <strong>Avance del curso</strong>
+                        <span>≥ {{ pctMinCompletitud() | number:'1.0-0' }}% · Actual {{ pct(row) | number:'1.0-0' }}%</span>
+                      </div>
+                      <span class="av-dash-tag" [class.av-dash-tag--ok]="cumpleCompletitud(row)" [class.av-dash-tag--warn]="!cumpleCompletitud(row)">
+                        {{ cumpleCompletitud(row) ? 'Cumple' : 'Pendiente' }}
+                      </span>
+                    </li>
+                    <li class="av-dash-check" [class.av-dash-check--done]="cumpleNotaEval(row)">
+                      <span class="av-dash-check__mark" aria-hidden="true"></span>
+                      <div class="av-dash-check__body">
+                        <strong>Evaluación final</strong>
+                        <span>
+                          ≥ {{ notaMinima() | number:'1.0-0' }}%
+                          @if (mejorNota(row) != null) {
+                            · Mejor {{ mejorNota(row)! | number:'1.0-0' }}%
+                          } @else {
+                            · Sin intentos
                           }
-                        </ul>
-                      }
-                    </div>
-                    <div class="av-prog-detail-col">
-                      <h4>Evaluaciones finales</h4>
-                      @if (!row.progreso.intentos.length) {
-                        <p class="av-muted">Sin intentos registrados.</p>
+                        </span>
+                      </div>
+                      <span class="av-dash-tag" [class.av-dash-tag--ok]="cumpleNotaEval(row)" [class.av-dash-tag--warn]="!cumpleNotaEval(row) && mejorNota(row) != null" [class.av-dash-tag--bad]="mejorNota(row) == null">
+                        {{ cumpleNotaEval(row) ? 'Cumple' : (mejorNota(row) != null ? 'Pendiente' : 'Sin intentos') }}
+                      </span>
+                    </li>
+                    <li class="av-dash-check" [class.av-dash-check--done]="!puedeReintentar(row) && cumpleNotaEval(row)">
+                      <span class="av-dash-check__mark" aria-hidden="true"></span>
+                      <div class="av-dash-check__body">
+                        <strong>Intentos restantes</strong>
+                        <span>{{ intentosRestantes(row) }} disponible(s)</span>
+                      </div>
+                      @if (puedeReintentar(row)) {
+                        <span class="av-dash-tag av-dash-tag--blue">Puede reintentar</span>
                       } @else {
-                        <ul class="av-prog-lessons">
-                          @for (it of row.progreso.intentos; track it.numero) {
-                            <li [class.ok]="it.aprobado">
-                              #{{ it.numero }} · Nota {{ it.nota }}% · {{ fmtFecha(it.fecha) }}
-                              @if (it.aprobado) {
-                                <span>· Aprobó</span>
-                              }
-                            </li>
-                          }
-                        </ul>
+                        <span class="av-dash-tag av-dash-tag--neutral">Agotados</span>
                       }
+                    </li>
+                  </ul>
+                </section>
+
+                <section class="av-dash-panel av-dash-panel--meta av-dash-panel--cyan">
+                  <h5 class="av-dash__title av-dash__title--cyan">Actividad y portal</h5>
+                  <dl class="av-dash-meta">
+                    <div class="av-dash-meta__item av-dash-meta__item--blue">
+                      <dt>Última actividad</dt>
+                      <dd>{{ fmtFecha(row.progreso.fechaUltimaActividad) }}</dd>
                     </div>
-                    <div class="av-prog-detail-col">
-                      <h4>Pago y portal</h4>
-                      <p>
-                        Pago:
-                        @if (row.pago.pagado) {
-                          <strong class="ok-text">Al día</strong>
-                        } @else {
-                          Saldo ${{ row.pago.saldo | number:'1.0-0' }}
+                    <div class="av-dash-meta__item av-dash-meta__item--violet">
+                      <dt>Syncs paquete</dt>
+                      <dd>{{ row.progreso.contadorSyncs }}</dd>
+                    </div>
+                    <div class="av-dash-meta__item" [class.av-dash-meta__item--green]="row.portal.activo" [class.av-dash-meta__item--amber]="!row.portal.activo">
+                      <dt>Portal</dt>
+                      <dd>
+                        {{ row.portal.activo ? 'Activo' : 'Inactivo' }}
+                        @if (row.portal.ultimoAcceso) {
+                          <span class="av-dash-meta__sub">Último acceso {{ fmtFecha(row.portal.ultimoAcceso) }}</span>
                         }
-                      </p>
-                      <p>Portal: {{ row.portal.activo ? 'Activo' : 'Inactivo' }}</p>
-                      <p>Conexiones (sync): {{ row.progreso.contadorSyncs }}</p>
+                      </dd>
+                    </div>
+                    @if (row.certificado?.codigoCert) {
+                      <div class="av-dash-meta__item av-dash-meta__item--green">
+                        <dt>Certificado</dt>
+                        <dd>{{ row.certificado!.codigoCert }}</dd>
+                      </div>
+                    }
+                  </dl>
+                  @if (fichaLink(row); as link) {
+                    <a [routerLink]="link" class="av-dash-link" (click)="$event.stopPropagation()">Ver ficha del alumno →</a>
+                  }
+                </section>
+              </div>
+
+              <section class="av-dash-panel av-dash-panel--green">
+                <div class="av-dash-panel__head">
+                  <h5 class="av-dash__title av-dash__title--green">Detalle por lección</h5>
+                  <div class="av-dash-panel__summary">
+                    <span class="av-dash-chip av-dash-chip--green">{{ row.progreso.clasesAprobadas ?? 0 }} aprobadas</span>
+                    <span class="av-dash-chip av-dash-chip--blue">{{ leccionesConNotaCount(row) }} con nota</span>
+                    <span class="av-dash-chip av-dash-chip--violet">{{ sumaPuntajesLecciones(row) | number:'1.0-0' }} pts</span>
+                  </div>
+                </div>
+                <div class="av-dash-table-wrap av-dash-table-wrap--green">
+                  <table class="av-dash-table av-dash-table--lessons">
+                    <thead>
+                      <tr>
+                        <th>Lección</th>
+                        <th>Puntaje</th>
+                        <th>Avance</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (cl of clasesDetalle(row); track cl.numero) {
+                        <tr [class.av-dash-table__muted]="cl.pct <= 0">
+                          <td><span class="av-dash-lesson-num">Lección {{ cl.numero }}</span></td>
+                          <td>
+                            @if (cl.pct > 0) {
+                              <span class="av-dash-badge" [class.av-dash-badge--ok]="claseNotaTone(cl.pct) === 'ok'" [class.av-dash-badge--warn]="claseNotaTone(cl.pct) === 'mid'" [class.av-dash-badge--bad]="claseNotaTone(cl.pct) === 'low'">{{ cl.pct | number:'1.0-0' }}%</span>
+                            } @else {
+                              <span class="av-dash-badge av-dash-badge--neutral">—</span>
+                            }
+                          </td>
+                          <td>
+                            <div class="av-dash-bar">
+                              <div class="av-dash-bar__fill" [class.av-dash-bar__fill--ok]="claseNotaTone(cl.pct) === 'ok'" [class.av-dash-bar__fill--warn]="claseNotaTone(cl.pct) === 'mid'" [class.av-dash-bar__fill--bad]="claseNotaTone(cl.pct) === 'low'" [style.width.%]="cl.pct"></div>
+                            </div>
+                          </td>
+                          <td>
+                            @if (cl.aprobada) {
+                              <span class="av-dash-badge av-dash-badge--ok">Aprobada</span>
+                            } @else if (cl.pct > 0) {
+                              <span class="av-dash-badge av-dash-badge--warn">En proceso</span>
+                            } @else {
+                              <span class="av-dash-badge av-dash-badge--neutral">Sin intentar</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td><strong>Total</strong></td>
+                        <td>
+                          @if (promedioLecciones(row); as prom) {
+                            Prom. {{ prom | number:'1.0-0' }}%
+                          } @else {
+                            —
+                          }
+                        </td>
+                        <td colspan="2"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </section>
+
+              @if (intentosDe(row).length) {
+                <section class="av-dash-panel av-dash-panel--rose">
+                  <div class="av-dash-panel__head">
+                    <h5 class="av-dash__title av-dash__title--rose">Evaluación final — historial</h5>
+                    <div class="av-dash-panel__summary">
+                      <span class="av-dash-chip av-dash-chip--violet">Mejor {{ (mejorNota(row) ?? 0) | number:'1.0-0' }}%</span>
+                      <span class="av-dash-chip av-dash-chip--amber">Última {{ (ultimaNotaEval(row) ?? 0) | number:'1.0-0' }}%</span>
                     </div>
                   </div>
-                </td>
-              </tr>
-            }
+                  <div class="av-dash-table-wrap av-dash-table-wrap--rose">
+                    <table class="av-dash-table av-dash-table--eval">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Nota</th>
+                          <th>Avance al intento</th>
+                          <th>Resultado</th>
+                          <th>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (it of intentosDe(row); track it.numero) {
+                          <tr>
+                            <td>#{{ it.numero }}</td>
+                            <td>
+                              <span class="av-dash-badge" [class.av-dash-badge--ok]="notaTone(it.nota) === 'ok'" [class.av-dash-badge--warn]="notaTone(it.nota) === 'mid'" [class.av-dash-badge--bad]="notaTone(it.nota) === 'low'">{{ it.nota | number:'1.0-0' }}%</span>
+                            </td>
+                            <td>
+                              @if (it.pctCompletitud != null) {
+                                {{ it.pctCompletitud | number:'1.0-0' }}%
+                              } @else {
+                                —
+                              }
+                            </td>
+                            <td>
+                              @if (it.aprobado) {
+                                <span class="av-dash-badge av-dash-badge--ok">Aprobó</span>
+                              } @else {
+                                <span class="av-dash-badge av-dash-badge--bad">No aprobó</span>
+                              }
+                            </td>
+                            <td>{{ fmtFecha(it.fecha) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              } @else {
+                <section class="av-dash-empty av-dash-empty--amber">
+                  <p>Sin evaluación final registrada.</p>
+                  @if (intentosRestantes(row) > 0) {
+                    <span class="av-dash-tag av-dash-tag--blue">{{ intentosRestantes(row) }} intento(s) disponible(s)</span>
+                  }
+                </section>
+              }
+            </div>
           }
-        </tbody>
-      </table>
+        </article>
+      }
     </div>
 
     <div class="av-prog-pager">

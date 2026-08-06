@@ -14,6 +14,7 @@ const {
 const { intentarCertificadoVirtualAprobar } = require('./certificadoVirtualAuto');
 const { puedeCursarVirtual, requierePagoParaCursar } = require('./aulaVirtualConfig');
 const { estadoPagoVirtual, buscarMatriculaVirtual } = require('./aulaVirtualMatricula');
+const { asegurarAccesoVigente, calcularEstadoPlazoAcceso } = require('./aulaVirtualAccesoPlazo');
 
 const QUERY_MATRICULA_ACTIVA = { estado: { $regex: /^activo?a?$/i } };
 const UMBRAL_CLASE_APROBADA = 70;
@@ -108,7 +109,7 @@ function mapProgresoPublico(progreso, estadoExtra = {}) {
 }
 
 async function verificarAccesoCurso(numDoc, idPrograma) {
-  const mat = await buscarMatriculaVirtual(numDoc, idPrograma);
+  let mat = await buscarMatriculaVirtual(numDoc, idPrograma);
   if (!mat && !relaxarMatricula()) {
     const err = new Error('Debe matricularse en este curso para acceder al contenido');
     err.status = 403;
@@ -128,12 +129,36 @@ async function verificarAccesoCurso(numDoc, idPrograma) {
   }
 
   const cfg = (await configPorPrograma(idPrograma)) || {};
+  if (mat) {
+    const vig = await asegurarAccesoVigente(numDoc, idPrograma, { matricula: mat, cfg });
+    if (vig.expirado) {
+      const err = new Error(
+        'Su periodo de acceso gratuito a este curso ha expirado. Debe matricularse de nuevo.',
+      );
+      err.status = 403;
+      err.code = 'ACCESO_PLAZO_EXPIRADO';
+      throw err;
+    }
+    mat = (await buscarMatriculaVirtual(numDoc, idPrograma)) || mat;
+  }
+
   if (requierePagoParaCursar(cfg)) {
     const pago = await estadoPagoVirtual(numDoc, idPrograma);
     if (!pago.pagado) {
       const err = new Error('Debe completar el pago para acceder al contenido del curso');
       err.status = 403;
       err.code = 'PAGO_REQUERIDO_CURSO';
+      throw err;
+    }
+  } else if (mat) {
+    const pago = await estadoPagoVirtual(numDoc, idPrograma);
+    const plazo = calcularEstadoPlazoAcceso({ cfg, matricula: mat, pago });
+    if (plazo.vencido) {
+      const err = new Error(
+        'Su periodo de acceso gratuito a este curso ha expirado. Debe matricularse de nuevo.',
+      );
+      err.status = 403;
+      err.code = 'ACCESO_PLAZO_EXPIRADO';
       throw err;
     }
   }

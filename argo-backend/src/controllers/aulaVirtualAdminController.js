@@ -490,6 +490,54 @@ exports.listarProgresoAlumnos = async (req, res, next) => {
   }
 };
 
+exports.listarAlertasEventosPortal = async (req, res, next) => {
+  try {
+    const { listarEventosRecientes } = require('../services/aulaVirtualAlertasEventos');
+    const { reglaPorClave } = require('../services/configAlertas');
+    const minReg = Number(req.query?.minutosRegistro);
+    const minMat = Number(req.query?.minutosMatricula);
+    const reglaReg = await reglaPorClave('alarmas.aula_virtual.registro_nuevo');
+    const reglaMat = await reglaPorClave('alarmas.aula_virtual.matricula_nueva');
+    const ventanaReg =
+      Number.isFinite(minReg) && minReg > 0
+        ? minReg
+        : Math.max(5, Number(reglaReg?.duracionMinutos) || 120);
+    const ventanaMat =
+      Number.isFinite(minMat) && minMat > 0
+        ? minMat
+        : Math.max(5, Number(reglaMat?.duracionMinutos) || 120);
+    const ahora = Date.now();
+    const desdeReg = new Date(ahora - ventanaReg * 60 * 1000);
+    const desdeMat = new Date(ahora - ventanaMat * 60 * 1000);
+    const [registro, matricula] = await Promise.all([
+      listarEventosRecientes({ desde: desdeReg, tipos: ['registro'], limit: 30 }),
+      listarEventosRecientes({ desde: desdeMat, tipos: ['matricula'], limit: 40 }),
+    ]);
+    res.json({
+      registro: registro.registro,
+      matricula: matricula.matricula,
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.listarAlertasAccesoPorVencer = async (req, res, next) => {
+  try {
+    const { listarAccesosPorVencer } = require('../services/aulaVirtualAccesoPlazo');
+    const { reglaPorClave } = require('../services/configAlertas');
+    const qDias = Number(req.query?.dias);
+    const regla = await reglaPorClave('alarmas.aula_virtual.acceso_por_vencer');
+    const dias =
+      Number.isFinite(qDias) && qDias > 0
+        ? Math.floor(qDias)
+        : Math.max(1, Number(regla?.diasAntelacion) || 1);
+    res.json(await listarAccesosPorVencer({ diasAntelacion: dias }));
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.listarBlogAdmin = async (_req, res, next) => {
   try {
     res.json(await listarBlogAdmin());

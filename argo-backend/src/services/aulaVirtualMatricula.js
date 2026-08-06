@@ -8,6 +8,11 @@ const { TARIFA_VIRTUAL } = require('../constants/tarifa');
 const { crearMatriculaDesdeBody } = require('./matriculaCreator');
 const { asegurarSedePrincipal } = require('./sedeContext');
 const { asegurarProgramaVirtual, puedeCursarVirtual, requierePagoParaCursar } = require('./aulaVirtualConfig');
+const {
+  calcularEstadoPlazoAcceso,
+  asegurarAccesoVigente,
+  enviarAvisoSiCorresponde,
+} = require('./aulaVirtualAccesoPlazo');
 const { obtenerCursoVirtual, configPorPrograma } = require('./aulaVirtualCatalogo');
 const Matricula = require('../models/Matricula');
 const {
@@ -179,6 +184,7 @@ async function matricularVirtual({
   crearUsuarioPortal = false,
   email,
   password,
+  notificarStaff = false,
 }) {
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null) {
@@ -241,6 +247,24 @@ async function matricularVirtual({
   const cfg = (await configPorPrograma(idPrograma)) || {};
   const exigePago = requierePagoParaCursar(cfg);
 
+  if (notificarStaff) {
+    try {
+      const { registrarMatriculaPortal } = require('./aulaVirtualAlertasEventos');
+      await registrarMatriculaPortal({
+        numDoc,
+        nombreAlumno: [alumno.nombre1, alumno.nombre2, alumno.apellido1, alumno.apellido2]
+          .filter(Boolean)
+          .join(' ')
+          .trim(),
+        email: alumno.correo || email,
+        idPrograma: curso.idPrograma || idPrograma,
+        nombrePrograma: curso.nombreProg || curso.nombrePrograma || idPrograma,
+      });
+    } catch (e) {
+      console.warn('[AulaVirtual] alerta matrícula portal:', e.message);
+    }
+  }
+
   return {
     yaMatriculado: false,
     matricula: result.matricula,
@@ -267,15 +291,36 @@ async function estadoInscripcionVirtual(numDoc, idPrograma) {
     throw err;
   }
 
-  const matricula = await buscarMatriculaVirtual(numDoc, idPrograma);
-  const pago = matricula ? await estadoPagoVirtual(numDoc, idPrograma) : null;
+  let matricula = await buscarMatriculaVirtual(numDoc, idPrograma);
   const cfg = (await configPorPrograma(idPrograma)) || {};
+  if (matricula) {
+    const vig = await asegurarAccesoVigente(numDoc, idPrograma, { matricula, cfg });
+    if (vig.expirado) matricula = null;
+  }
+
+  const pago = matricula ? await estadoPagoVirtual(numDoc, idPrograma) : null;
   const exigePago = requierePagoParaCursar(cfg);
+  const accesoPlazo = matricula ? calcularEstadoPlazoAcceso({ cfg, matricula, pago }) : null;
+
+  if (matricula && accesoPlazo?.enVentanaAviso) {
+    const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+    enviarAvisoSiCorresponde({
+      numDoc,
+      idPrograma,
+      matricula,
+      cfg,
+      pago,
+      alumno,
+      nombreCurso: curso.nombreProg,
+    }).catch(() => {});
+  }
+
   const puedeCursar = puedeCursarVirtual({
     cfg,
     tienePaquete: !!curso.tienePaquete,
     matriculado: !!matricula,
     pago,
+    accesoPlazo,
   });
 
   return {
@@ -288,8 +333,19 @@ async function estadoInscripcionVirtual(numDoc, idPrograma) {
         }
       : null,
     pago,
+    accesoPlazo: accesoPlazo?.aplica
+      ? {
+          diasRestantes: accesoPlazo.diasRestantes,
+          fechaVencimiento: accesoPlazo.fechaVencimiento,
+          enVentanaAviso: accesoPlazo.enVentanaAviso,
+          vencido: accesoPlazo.vencido,
+          diasAccesoSinPago: accesoPlazo.diasAccesoSinPago,
+          diasAvisoAlumno: accesoPlazo.diasAvisoAlumno,
+        }
+      : null,
     puedeCursar,
     accesoBloqueadoPago: !!(matricula && exigePago && pago && !pago.pagado),
+    accesoExpirado: accesoPlazo?.vencido === true,
     puedeCertificarse: !!(matricula && pago?.pagado),
     certificadoPendientePago: !!(matricula && pago && !pago.pagado),
     curso: {
@@ -298,6 +354,8 @@ async function estadoInscripcionVirtual(numDoc, idPrograma) {
       tarifaVirtual: curso.tarifaVirtual,
       modoCertificado: curso.modoCertificado,
       requierePagoParaCursar: exigePago,
+      diasAccesoSinPago: cfg.diasAccesoSinPago ?? 0,
+      diasAvisoAlumno: cfg.diasAvisoAlumno ?? 8,
       tienePaquete: curso.tienePaquete,
     },
   };

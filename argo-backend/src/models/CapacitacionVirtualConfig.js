@@ -31,6 +31,13 @@ const CapacitacionVirtualConfigSchema = new mongoose.Schema(
     },
     /** Si true, el alumno debe pagar (saldo en cero) antes de abrir el contenido del curso. */
     requierePagoParaCursar: { type: Boolean, default: false },
+    /**
+     * Días de acceso sin pagar (solo si requierePagoParaCursar=false).
+     * 0 = acceso ilimitado hasta pagar o certificarse.
+     */
+    diasAccesoSinPago: { type: Number, default: 0, min: 0 },
+    /** Días antes del vencimiento para avisar al alumno en portal y correo. */
+    diasAvisoAlumno: { type: Number, default: 8, min: 0 },
     pctMinCompletitud: { type: Number, default: 80, min: 0, max: 100 },
     pctMinEvaluaciones: { type: Number, default: 60, min: 0, max: 100 },
     intentosMaxEval: { type: Number, default: 3, min: 1 },

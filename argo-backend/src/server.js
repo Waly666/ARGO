@@ -48,6 +48,8 @@ const HOST = process.env.HOST || '0.0.0.0';
     initRespaldosAuto();
     const { iniciarCronCertificadoVencimiento } = require('./services/certificadoVencimientoCron');
     iniciarCronCertificadoVencimiento();
+    const { iniciarCronAulaVirtualAccesoPlazo } = require('./services/aulaVirtualAccesoPlazoCron');
+    iniciarCronAulaVirtualAccesoPlazo();
     const { sincronizarDefaultsTipoEgreso } = require('./services/tipoEgresoNomina');
     sincronizarDefaultsTipoEgreso()
       .then((n) => {

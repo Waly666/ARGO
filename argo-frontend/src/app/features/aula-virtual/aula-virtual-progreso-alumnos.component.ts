@@ -5,9 +5,18 @@ import { RouterLink } from '@angular/router';
 
 import {
   AulaVirtualAdminService,
+  ProgresoAlumnoVirtualClase,
+  ProgresoAlumnoVirtualIntento,
   ProgresoAlumnoVirtualItem,
 } from '../../core/services/aula-virtual-admin.service';
 import { formatNumDoc } from '../../core/utils/num-doc.helpers';
+
+type ReglasCurso = {
+  modoCertificado: string;
+  pctMinCompletitud: number;
+  pctMinEvaluaciones: number;
+  intentosMaxEval: number;
+};
 
 @Component({
   selector: 'argo-aula-virtual-progreso-alumnos',
@@ -25,9 +34,10 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   loading = signal(false);
   error = signal<string | null>(null);
   items = signal<ProgresoAlumnoVirtualItem[]>([]);
+  reglas = signal<ReglasCurso | null>(null);
   total = signal(0);
   skip = signal(0);
-  readonly limit = 30;
+  readonly limit = 20;
 
   buscar = '';
   filtro = '';
@@ -55,6 +65,7 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
         next: (r) => {
           this.items.set(r.items || []);
           this.total.set(r.total || 0);
+          this.reglas.set(r.reglas);
           this.loading.set(false);
         },
         error: (e) => {
@@ -88,15 +99,6 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
     this.cargar();
   }
 
-  toggleExpand(row: ProgresoAlumnoVirtualItem): void {
-    const key = String(row.numDoc);
-    this.expandido.update((v) => (v === key ? null : key));
-  }
-
-  estaExpandido(row: ProgresoAlumnoVirtualItem): boolean {
-    return this.expandido() === String(row.numDoc);
-  }
-
   fmtDoc(n: number | string): string {
     return formatNumDoc(n);
   }
@@ -108,14 +110,155 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
     return d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
   }
 
+  fmtFechaMat(iso?: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('es-CO', { dateStyle: 'medium' });
+  }
+
   claseConexion(codigo: string): string {
-    if (codigo === 'en_linea') return 'av-prog-conn--live';
-    if (codigo === 'reciente') return 'av-prog-conn--recent';
-    if (codigo === 'desconectado') return 'av-prog-conn--off';
-    return 'av-prog-conn--none';
+    if (codigo === 'en_linea') return 'av-score-conn--live';
+    if (codigo === 'reciente') return 'av-score-conn--recent';
+    if (codigo === 'desconectado') return 'av-score-conn--off';
+    return 'av-score-conn--none';
   }
 
   fichaLink(row: ProgresoAlumnoVirtualItem): string[] | null {
     return row.alumnoId ? ['/app/alumnos', row.alumnoId] : null;
+  }
+
+  trackRow(row: ProgresoAlumnoVirtualItem): string {
+    return String(row.idMatricula);
+  }
+
+  toggleExpand(row: ProgresoAlumnoVirtualItem): void {
+    const key = this.trackRow(row);
+    this.expandido.update((v) => (v === key ? null : key));
+  }
+
+  estaExpandido(row: ProgresoAlumnoVirtualItem): boolean {
+    return this.expandido() === this.trackRow(row);
+  }
+
+  pctMinCompletitud(): number {
+    return this.reglas()?.pctMinCompletitud ?? 80;
+  }
+
+  notaMinima(): number {
+    return this.reglas()?.pctMinEvaluaciones ?? 60;
+  }
+
+  intentosMaxEval(): number {
+    return this.reglas()?.intentosMaxEval ?? 3;
+  }
+
+  pct(row: ProgresoAlumnoVirtualItem): number {
+    return row.progreso?.pctCompletitud ?? 0;
+  }
+
+  clasesDetalle(row: ProgresoAlumnoVirtualItem): ProgresoAlumnoVirtualClase[] {
+    const clases = row.progreso?.clases || [];
+    const total = Math.max(
+      row.progreso?.totalClases ?? 0,
+      ...clases.map((c) => c.numero),
+      clases.length ? 0 : 7,
+    );
+    const map = new Map(clases.map((c) => [c.numero, c]));
+    const out: ProgresoAlumnoVirtualClase[] = [];
+    for (let i = 1; i <= total; i++) {
+      out.push(map.get(i) ?? { numero: i, pct: 0, aprobada: false });
+    }
+    return out;
+  }
+
+  leccionesConNotaCount(row: ProgresoAlumnoVirtualItem): number {
+    return this.clasesDetalle(row).filter((c) => c.pct > 0).length;
+  }
+
+  promedioLecciones(row: ProgresoAlumnoVirtualItem): number | null {
+    const p = row.progreso?.promedioClases;
+    return p != null ? p : null;
+  }
+
+  sumaPuntajesLecciones(row: ProgresoAlumnoVirtualItem): number {
+    return this.clasesDetalle(row).reduce((acc, c) => acc + c.pct, 0);
+  }
+
+  intentosDe(row: ProgresoAlumnoVirtualItem): ProgresoAlumnoVirtualIntento[] {
+    return row.progreso?.intentos || [];
+  }
+
+  intentosRestantes(row: ProgresoAlumnoVirtualItem): number {
+    return row.progreso?.intentosRestantes ?? Math.max(0, this.intentosMaxEval() - (row.progreso?.intentosEval ?? 0));
+  }
+
+  puedeReintentar(row: ProgresoAlumnoVirtualItem): boolean {
+    return this.intentosRestantes(row) > 0 && !row.progreso?.aprobado;
+  }
+
+  mejorNota(row: ProgresoAlumnoVirtualItem): number | null {
+    const p = row.progreso;
+    if (p?.mejorNotaEval != null) return p.mejorNotaEval;
+    const intentos = this.intentosDe(row);
+    if (!intentos.length) return null;
+    return Math.max(...intentos.map((i) => i.nota));
+  }
+
+  ultimaNotaEval(row: ProgresoAlumnoVirtualItem): number | null {
+    const p = row.progreso;
+    if (p?.ultimaNotaEval != null && p.ultimaNotaEval > 0) return p.ultimaNotaEval;
+    const intentos = this.intentosDe(row);
+    if (!intentos.length) return null;
+    return intentos[intentos.length - 1].nota;
+  }
+
+  cumpleCompletitud(row: ProgresoAlumnoVirtualItem): boolean {
+    if (row.progreso?.cumpleCompletitud != null) return row.progreso.cumpleCompletitud;
+    return this.pct(row) >= this.pctMinCompletitud();
+  }
+
+  cumpleNotaEval(row: ProgresoAlumnoVirtualItem): boolean {
+    if (row.progreso?.cumpleNota != null) return row.progreso.cumpleNota;
+    const mn = this.mejorNota(row);
+    return mn != null && mn >= this.notaMinima();
+  }
+
+  estadoAlumno(row: ProgresoAlumnoVirtualItem): string {
+    if (row.progreso?.certificadoEmitido) return 'Certificado emitido';
+    if (row.progreso?.aprobado) return 'Aprobado';
+    if (row.progreso?.sinIniciar) return 'Sin iniciar';
+    if (this.pct(row) > 0 || this.leccionesConNotaCount(row) > 0 || this.intentosDe(row).length) {
+      return 'En progreso';
+    }
+    return 'Sin iniciar';
+  }
+
+  tonoEstado(row: ProgresoAlumnoVirtualItem): string {
+    if (row.progreso?.certificadoEmitido) return 'cyan';
+    if (row.progreso?.aprobado) return 'green';
+    if (row.progreso?.sinIniciar && this.pct(row) <= 0) return 'soft';
+    return 'amber';
+  }
+
+  notaClaseAprobada(): number {
+    return 70;
+  }
+
+  claseNotaTone(pct: number): 'ok' | 'mid' | 'low' {
+    if (pct >= this.notaClaseAprobada()) return 'ok';
+    if (pct >= 50) return 'mid';
+    return 'low';
+  }
+
+  notaTone(nota: number, min?: number): 'ok' | 'mid' | 'low' {
+    const m = min ?? this.notaMinima();
+    if (nota >= m) return 'ok';
+    if (nota >= m - 15) return 'mid';
+    return 'low';
+  }
+
+  alumnoInactivo(row: ProgresoAlumnoVirtualItem): boolean {
+    return !!(row.progreso?.sinIniciar && this.pct(row) <= 0);
   }
 }

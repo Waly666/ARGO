@@ -103,6 +103,8 @@ const ver = requirePermiso('aula_virtual.ver', 'aula_virtual.gestionar');
 const gestionar = requirePermiso('aula_virtual.gestionar');
 const configPortal = requirePermiso('aula_virtual.sitio', 'aula_virtual.gestionar');
 
+router.get('/admin/alertas-eventos', requireAuth, ver, admin.listarAlertasEventosPortal);
+router.get('/admin/alertas-acceso-por-vencer', requireAuth, ver, admin.listarAlertasAccesoPorVencer);
 router.get('/admin/usuarios', requireAuth, ver, admin.listarUsuariosPortal);
 router.post('/admin/usuarios', requireAuth, gestionar, admin.crearUsuarioPortal);
 router.delete('/admin/usuarios/:id', requireAuth, gestionar, admin.eliminarUsuarioPortal);

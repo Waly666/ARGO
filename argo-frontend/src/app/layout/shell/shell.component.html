@@ -134,6 +134,15 @@
           @if (mostrarBannerForoMensaje()) {
             <argo-foro-mensaje-banner class="head-alerta-pago-wrap" />
           }
+          @if (mostrarBannerRegistroPortal()) {
+            <argo-aula-virtual-registro-banner class="head-alerta-pago-wrap" />
+          }
+          @if (mostrarBannerMatriculaPortal()) {
+            <argo-aula-virtual-matricula-banner class="head-alerta-pago-wrap" />
+          }
+          @if (mostrarBannerAccesoPorVencer()) {
+            <argo-aula-virtual-acceso-por-vencer-banner class="head-alerta-pago-wrap" />
+          }
           @if (mostrarBannerChatMensaje()) {
             <argo-chat-mensaje-banner class="head-alerta-pago-wrap" />
           }

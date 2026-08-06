@@ -54,8 +54,14 @@ import { ProgramacionCeaClaseCreadoBannerComponent } from '../../features/progra
 import { ProgramacionCeaClaseProximaBannerComponent } from '../../features/programacion-cea/programacion-cea-clase-proxima-banner.component';
 import { InstructorPortalBannerComponent } from '../../features/instructores/instructor-portal-banner.component';
 import { ForoMensajeBannerComponent } from '../../features/aula-virtual/foro-mensaje-banner.component';
+import { AulaVirtualRegistroBannerComponent } from '../../features/aula-virtual/aula-virtual-registro-banner.component';
+import { AulaVirtualMatriculaBannerComponent } from '../../features/aula-virtual/aula-virtual-matricula-banner.component';
+import { AulaVirtualAccesoPorVencerBannerComponent } from '../../features/aula-virtual/aula-virtual-acceso-por-vencer-banner.component';
 import { ComprobanteHoyBannerComponent } from '../../features/alumnos/comprobante-hoy-banner.component';
+import { AulaVirtualAccesoPorVencerAlertService } from '../../core/services/aula-virtual-acceso-por-vencer-alert.service';
 import { ForoMensajeAlertService } from '../../core/services/foro-mensaje-alert.service';
+import { AulaVirtualPortalAlertService } from '../../core/services/aula-virtual-portal-alert.service';
+import { AulaVirtualAdminService } from '../../core/services/aula-virtual-admin.service';
 import { ChatService } from '../../core/services/chat.service';
 import { ChatMensajeAlertService } from '../../core/services/chat-mensaje-alert.service';
 import { ChatPanelComponent } from '../../features/chat/chat-panel.component';
@@ -110,7 +116,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, CambiarPasswordModalComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AulaVirtualRegistroBannerComponent, AulaVirtualMatriculaBannerComponent, AulaVirtualAccesoPorVencerBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, CambiarPasswordModalComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -151,6 +157,9 @@ export class ShellComponent {
   private instructorPortalSvc = inject(InstructorPortalService);
   private instructorPortalAlert = inject(InstructorPortalAlertService);
   private foroMensajeAlert = inject(ForoMensajeAlertService);
+  private aulaVirtualPortalAlert = inject(AulaVirtualPortalAlertService);
+  private aulaVirtualAdminSvc = inject(AulaVirtualAdminService);
+  private aulaVirtualAccesoPorVencerAlert = inject(AulaVirtualAccesoPorVencerAlertService);
   readonly chatSvc = inject(ChatService);
   private chatMensajeAlert = inject(ChatMensajeAlertService);
   private alertaPagoSvc = inject(AlertaPagoAlumnoService);
@@ -318,6 +327,43 @@ export class ShellComponent {
 
   mostrarAlertaForoMensaje = computed(() => this.alarmaHabilitada('alarmas.aula_virtual.foro_mensaje'));
 
+  puedeVerAulaVirtual = computed(() =>
+    this.permisos.tiene(['aula_virtual.ver', 'aula_virtual.gestionar']),
+  );
+
+  mostrarAlertaRegistroPortal = computed(() =>
+    this.alarmaHabilitada('alarmas.aula_virtual.registro_nuevo'),
+  );
+
+  mostrarAlertaMatriculaPortal = computed(() =>
+    this.alarmaHabilitada('alarmas.aula_virtual.matricula_nueva'),
+  );
+
+  mostrarAlertaAccesoPorVencer = computed(() =>
+    this.alarmaHabilitada('alarmas.aula_virtual.acceso_por_vencer'),
+  );
+
+  mostrarBannerAccesoPorVencer = computed(
+    () =>
+      this.mostrarAlertaAccesoPorVencer() &&
+      this.puedeVerAulaVirtual() &&
+      this.aulaVirtualAccesoPorVencerAlert.visible(),
+  );
+
+  mostrarBannerRegistroPortal = computed(
+    () =>
+      this.mostrarAlertaRegistroPortal() &&
+      this.puedeVerAulaVirtual() &&
+      this.aulaVirtualPortalAlert.registroAlertas().length > 0,
+  );
+
+  mostrarBannerMatriculaPortal = computed(
+    () =>
+      this.mostrarAlertaMatriculaPortal() &&
+      this.puedeVerAulaVirtual() &&
+      this.aulaVirtualPortalAlert.matriculaAlertas().length > 0,
+  );
+
   mostrarAlertaPagoAlumno = computed(() => this.alarmaHabilitada('alarmas.caja.alerta_pago'));
 
   mostrarBannerAlertaPagoAlumno = computed(
@@ -455,6 +501,9 @@ export class ShellComponent {
       this.mostrarBannerClaseProximaCea() ||
       this.mostrarBannerInstructorPortal() ||
       this.mostrarBannerForoMensaje() ||
+      this.mostrarBannerRegistroPortal() ||
+      this.mostrarBannerMatriculaPortal() ||
+      this.mostrarBannerAccesoPorVencer() ||
       this.mostrarBannerChatMensaje(),
   );
 
@@ -1411,6 +1460,8 @@ export class ShellComponent {
     this.iniciarPollAlertasClasesCeaCreado();
     this.iniciarPollAlertasClaseProximaCea();
     this.iniciarPollInstructorPortal();
+    this.iniciarPollAulaVirtualPortalEventos();
+    this.iniciarPollAulaVirtualAccesoPorVencer();
     this.iniciarForoMensajeAlert();
     this.iniciarChatInterno();
     this.iniciarPollPermisosSesion();
@@ -1492,6 +1543,15 @@ export class ShellComponent {
       this.foroMensajeAlert.desconectar();
     } else if (this.puedeModerarForo()) {
       this.foroMensajeAlert.conectar();
+    }
+    if (!this.alarmaHabilitada('alarmas.aula_virtual.registro_nuevo')) {
+      this.aulaVirtualPortalAlert.descartarTodasRegistro();
+    }
+    if (!this.alarmaHabilitada('alarmas.aula_virtual.matricula_nueva')) {
+      this.aulaVirtualPortalAlert.descartarTodasMatricula();
+    }
+    if (!this.alarmaHabilitada('alarmas.aula_virtual.acceso_por_vencer')) {
+      this.aulaVirtualAccesoPorVencerAlert.actualizar(null);
     }
   }
 
@@ -1662,6 +1722,66 @@ export class ShellComponent {
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollInstructorPortal());
+  }
+
+  /** Registro y matrícula de alumnos en el portal aula virtual. */
+  private pollAulaVirtualPortalEventos(): void {
+    const registro = this.mostrarAlertaRegistroPortal() && this.puedeVerAulaVirtual();
+    const matricula = this.mostrarAlertaMatriculaPortal() && this.puedeVerAulaVirtual();
+    if (!registro && !matricula) {
+      this.aulaVirtualPortalAlert.actualizar(null, { registro: false, matricula: false });
+      return;
+    }
+    const minReg = Math.max(
+      5,
+      this.alertasRuntime.regla('alarmas.aula_virtual.registro_nuevo').duracionMinutos || 120,
+    );
+    const minMat = Math.max(
+      5,
+      this.alertasRuntime.regla('alarmas.aula_virtual.matricula_nueva').duracionMinutos || 120,
+    );
+    this.aulaVirtualAdminSvc
+      .listarAlertasEventosPortal({
+        minutosRegistro: registro ? minReg : undefined,
+        minutosMatricula: matricula ? minMat : undefined,
+      })
+      .subscribe({
+        next: (data) =>
+          this.aulaVirtualPortalAlert.actualizar(data, { registro, matricula }),
+        error: () =>
+          this.aulaVirtualPortalAlert.actualizar(null, { registro, matricula }),
+      });
+  }
+
+  private iniciarPollAulaVirtualPortalEventos(): void {
+    this.pollAulaVirtualPortalEventos();
+    interval(
+      this.pollIntervalMs(
+        'alarmas.aula_virtual.registro_nuevo',
+        'alarmas.aula_virtual.matricula_nueva',
+      ),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.pollAulaVirtualPortalEventos());
+  }
+
+  private iniciarPollAulaVirtualAccesoPorVencer(): void {
+    this.pollAulaVirtualAccesoPorVencer();
+    interval(this.pollIntervalMs('alarmas.aula_virtual.acceso_por_vencer'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.pollAulaVirtualAccesoPorVencer());
+  }
+
+  private pollAulaVirtualAccesoPorVencer(): void {
+    if (!this.mostrarAlertaAccesoPorVencer() || !this.puedeVerAulaVirtual()) {
+      this.aulaVirtualAccesoPorVencerAlert.actualizar(null);
+      return;
+    }
+    const dias = this.alertasRuntime.diasAntelacion('alarmas.aula_virtual.acceso_por_vencer') ?? 1;
+    this.aulaVirtualAdminSvc.alertasAccesoPorVencer(dias).subscribe({
+      next: (data) => this.aulaVirtualAccesoPorVencerAlert.actualizar(data),
+      error: () => this.aulaVirtualAccesoPorVencerAlert.actualizar(null),
+    });
   }
 
   /** Sincroniza permisos del rol desde el servidor (cambios hechos en Configuración → Roles). */

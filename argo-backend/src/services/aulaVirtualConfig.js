@@ -13,6 +13,8 @@ const DEFAULTS = {
   publicadoPortal: false,
   modoCertificado: 'al_pagar',
   requierePagoParaCursar: false,
+  diasAccesoSinPago: 0,
+  diasAvisoAlumno: 8,
   pctMinCompletitud: 80,
   pctMinEvaluaciones: 60,
   intentosMaxEval: 3,
@@ -112,6 +114,8 @@ async function guardarConfig(idPrograma, body, usuario) {
     modoCertificado: body.modoCertificado === 'al_aprobar' ? 'al_aprobar' : 'al_pagar',
     requierePagoParaCursar:
       body.requierePagoParaCursar === true || body.requierePagoParaCursar === 'true',
+    diasAccesoSinPago: Math.max(0, Math.floor(Number(body.diasAccesoSinPago ?? 0))),
+    diasAvisoAlumno: Math.max(0, Math.floor(Number(body.diasAvisoAlumno ?? 8))),
     pctMinCompletitud: Math.min(100, Math.max(0, Number(body.pctMinCompletitud ?? 80))),
     pctMinEvaluaciones: Math.min(100, Math.max(0, Number(body.pctMinEvaluaciones ?? 60))),
     intentosMaxEval: Math.max(1, Number(body.intentosMaxEval ?? 3)),
@@ -195,8 +199,9 @@ function requierePagoParaCursar(cfg) {
 }
 
 /** Matriculado + paquete instalado; si el curso exige pago, saldo debe estar en cero. */
-function puedeCursarVirtual({ cfg, tienePaquete, matriculado, pago }) {
+function puedeCursarVirtual({ cfg, tienePaquete, matriculado, pago, accesoPlazo }) {
   if (!matriculado || !tienePaquete) return false;
+  if (accesoPlazo?.vencido) return false;
   if (!requierePagoParaCursar(cfg)) return true;
   return !!pago?.pagado;
 }

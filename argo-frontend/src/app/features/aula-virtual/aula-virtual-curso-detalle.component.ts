@@ -105,6 +105,8 @@ export class AulaVirtualCursoDetalleComponent implements OnInit {
       publicadoPortal: false,
       modoCertificado: 'al_pagar' as const,
       requierePagoParaCursar: false,
+      diasAccesoSinPago: 0,
+      diasAvisoAlumno: 8,
       pctMinCompletitud: 80,
       pctMinEvaluaciones: 60,
       intentosMaxEval: 3,

@@ -1,0 +1,9 @@
+<argo-head-alarm-list-banner
+  [visible]="visible()"
+  theme="hal-theme-aula"
+  icon="⏳"
+  [title]="titulo()"
+  [hint]="'Acceso gratuito a curso virtual por vencer — ventana ' + (alertSvc.data()?.diasVentana ?? 1) + ' día(s)'"
+  [items]="rows()"
+  (closed)="cerrar()"
+/>

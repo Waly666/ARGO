@@ -83,6 +83,18 @@ const GRUPOS = [
         key: 'alarmas.aula_virtual.foro_mensaje',
         label: 'Nuevo mensaje de alumno en foro de curso (banner superior)',
       },
+      {
+        key: 'alarmas.aula_virtual.registro_nuevo',
+        label: 'Nuevo usuario registrado en el portal aula virtual (banner superior)',
+      },
+      {
+        key: 'alarmas.aula_virtual.matricula_nueva',
+        label: 'Alumno matriculado en curso virtual desde el portal (banner superior)',
+      },
+      {
+        key: 'alarmas.aula_virtual.acceso_por_vencer',
+        label: 'Acceso sin pago a curso virtual por vencer (banner superior)',
+      },
     ],
   },
   {
@@ -149,6 +161,9 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.comprobante_egreso',
     'alarmas.alumnos.factura',
     'alarmas.aula_virtual.foro_mensaje',
+    'alarmas.aula_virtual.registro_nuevo',
+    'alarmas.aula_virtual.matricula_nueva',
+    'alarmas.aula_virtual.acceso_por_vencer',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -175,6 +190,9 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.instructores.inspeccion_requerida',
     'alarmas.alumnos.clases_cea_creado',
     'alarmas.aula_virtual.foro_mensaje',
+    'alarmas.aula_virtual.registro_nuevo',
+    'alarmas.aula_virtual.matricula_nueva',
+    'alarmas.aula_virtual.acceso_por_vencer',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -201,6 +219,9 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.programacion_cea.pendiente',
     'alarmas.programacion_cea.clase_proxima',
     'alarmas.aula_virtual.foro_mensaje',
+    'alarmas.aula_virtual.registro_nuevo',
+    'alarmas.aula_virtual.matricula_nueva',
+    'alarmas.aula_virtual.acceso_por_vencer',
   ],
   usuario: [
     'alarmas.vehiculos.docs_vencidos',

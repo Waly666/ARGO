@@ -65,6 +65,8 @@ function mapCursoPublico(prog, serv, cfg, opts = {}) {
     publicadoPortal: publicado,
     modoCertificado: cfg?.modoCertificado || 'al_pagar',
     requierePagoParaCursar: cfg?.requierePagoParaCursar === true,
+    diasAccesoSinPago: Number(cfg?.diasAccesoSinPago) > 0 ? Math.floor(Number(cfg.diasAccesoSinPago)) : 0,
+    diasAvisoAlumno: Number(cfg?.diasAvisoAlumno) >= 0 ? Math.floor(Number(cfg?.diasAvisoAlumno ?? 8)) : 8,
     tienePaquete: paqueteInstalado(cfg),
     rutaPaquete: cfg?.rutaPaquete || null,
     playerUrl: cfg?.rutaPaquete

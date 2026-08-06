@@ -14,6 +14,10 @@ export interface VirtualConfig {
   publicadoPortal: boolean;
   modoCertificado: 'al_pagar' | 'al_aprobar';
   requierePagoParaCursar?: boolean;
+  /** 0 = acceso ilimitado sin pago */
+  diasAccesoSinPago?: number;
+  /** Días antes del vencimiento para avisar al alumno */
+  diasAvisoAlumno?: number;
   pctMinCompletitud: number;
   pctMinEvaluaciones: number;
   intentosMaxEval: number;
@@ -450,4 +454,51 @@ export class AulaVirtualAdminService {
     fd.append('imagen', file);
     return this.http.post<{ url: string; message: string }>(`${this.base}/blog/imagen`, fd);
   }
+
+  listarAlertasEventosPortal(params?: {
+    minutosRegistro?: number;
+    minutosMatricula?: number;
+  }): Observable<{ registro: AulaVirtualEventoAlertaDto[]; matricula: AulaVirtualEventoAlertaDto[] }> {
+    return this.http.get<{ registro: AulaVirtualEventoAlertaDto[]; matricula: AulaVirtualEventoAlertaDto[] }>(
+      `${this.base}/alertas-eventos`,
+      { params: params as Record<string, number> },
+    );
+  }
+
+  alertasAccesoPorVencer(dias?: number): Observable<AulaVirtualAccesoPorVencerRes> {
+    const params = dias != null && dias > 0 ? { dias } : undefined;
+    return this.http.get<AulaVirtualAccesoPorVencerRes>(`${this.base}/alertas-acceso-por-vencer`, { params });
+  }
+}
+
+export interface AulaVirtualEventoAlertaDto {
+  id: string;
+  numDoc: number;
+  nombreAlumno: string;
+  email?: string;
+  idPrograma?: string;
+  nombrePrograma?: string;
+  alumnoNuevo?: boolean;
+  createdAt?: string;
+}
+
+export interface AulaVirtualAccesoPorVencerItem {
+  id: string;
+  numDoc: number;
+  nombreAlumno?: string;
+  email?: string | null;
+  idPrograma: string;
+  nombrePrograma: string;
+  fechaMat?: string;
+  fechaVencimiento?: string;
+  diasRestantes: number;
+  diasAccesoSinPago?: number;
+}
+
+export interface AulaVirtualAccesoPorVencerRes {
+  total: number;
+  diasVentana: number;
+  venceHoy: number;
+  venceManana: number;
+  items: AulaVirtualAccesoPorVencerItem[];
 }

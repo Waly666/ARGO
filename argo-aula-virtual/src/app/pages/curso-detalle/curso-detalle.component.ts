@@ -215,5 +215,24 @@ export class CursoDetalleComponent implements OnInit {
     return resolveUploadUrl(c.urlPortadaAbsoluta || c.urlPortadaVirtual);
   }
 
+  mostrarAvisoPlazo(ins: EstadoInscripcionVirtual): boolean {
+    return !!(
+      ins.accesoPlazo?.enVentanaAviso &&
+      !ins.pago?.pagado &&
+      (ins.accesoPlazo.diasRestantes ?? 0) > 0
+    );
+  }
+
+  textoAvisoPlazo(ins: EstadoInscripcionVirtual): string {
+    const d = ins.accesoPlazo?.diasRestantes ?? 0;
+    const fv = ins.accesoPlazo?.fechaVencimiento;
+    const fecha = fv
+      ? new Date(fv).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+      : '';
+    if (d <= 1) {
+      return `Su acceso gratuito vence ${d === 1 ? 'mañana' : 'hoy'}${fecha ? ` (${fecha})` : ''}. Pague antes de perder su progreso.`;
+    }
+    return `Le quedan ${d} días de acceso gratuito (vence ${fecha}). Pague antes de esa fecha para conservar su avance.`;
+  }
 }
 
