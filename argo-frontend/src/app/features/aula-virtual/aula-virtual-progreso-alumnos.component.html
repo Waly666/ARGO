@@ -361,19 +361,15 @@
               </section>
 
               @if (intentosDe(row).length) {
-                <section class="av-dash-panel av-dash-panel--rose">
+                <section class="av-dash-panel av-dash-panel--lessons-warm">
                   <div class="av-dash-panel__head">
-                    <h5 class="av-dash__title av-dash__title--rose">
+                    <h5 class="av-dash__title av-dash__title--lessons">
                       <span class="av-dash__title-icon" aria-hidden="true">🏁</span>
                       Evaluación final — historial
                     </h5>
-                    <div class="av-dash-panel__summary">
-                      <span class="av-dash-chip av-dash-chip--violet">Mejor {{ (mejorNota(row) ?? 0) | number:'1.0-0' }}%</span>
-                      <span class="av-dash-chip av-dash-chip--amber">Última {{ (ultimaNotaEval(row) ?? 0) | number:'1.0-0' }}%</span>
-                    </div>
                   </div>
-                  <div class="av-dash-table-wrap av-dash-table-wrap--rose">
-                    <table class="av-dash-table av-dash-table--eval">
+                  <div class="av-dash-table-wrap av-dash-table-wrap--warm">
+                    <table class="av-dash-table av-dash-table--eval av-dash-table--warm">
                       <thead>
                         <tr>
                           <th>#</th>
@@ -386,28 +382,37 @@
                       <tbody>
                         @for (it of intentosDe(row); track it.numero) {
                           <tr>
-                            <td>#{{ it.numero }}</td>
+                            <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">#{{ it.numero }}</span></td>
                             <td>
-                              <span class="av-dash-badge" [class.av-dash-badge--ok]="notaTone(it.nota) === 'ok'" [class.av-dash-badge--warn]="notaTone(it.nota) === 'mid'" [class.av-dash-badge--bad]="notaTone(it.nota) === 'low'">{{ it.nota | number:'1.0-0' }}%</span>
+                              <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--ok]="notaTone(it.nota) === 'ok'" [class.av-dash-chip--mid]="notaTone(it.nota) === 'mid'" [class.av-dash-chip--low]="notaTone(it.nota) === 'low'">{{ it.nota | number:'1.0-0' }}%</span>
                             </td>
                             <td>
                               @if (it.pctCompletitud != null) {
-                                {{ it.pctCompletitud | number:'1.0-0' }}%
+                                <span class="av-dash-chip av-dash-chip--cyan av-dash-chip--sm">{{ it.pctCompletitud | number:'1.0-0' }}%</span>
                               } @else {
-                                —
+                                <span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">—</span>
                               }
                             </td>
                             <td>
                               @if (it.aprobado) {
-                                <span class="av-dash-badge av-dash-badge--ok">Aprobó</span>
+                                <span class="av-dash-chip av-dash-chip--green av-dash-chip--sm">Aprobó</span>
                               } @else {
-                                <span class="av-dash-badge av-dash-badge--bad">No aprobó</span>
+                                <span class="av-dash-chip av-dash-chip--rose av-dash-chip--sm">No aprobó</span>
                               }
                             </td>
-                            <td>{{ fmtFecha(it.fecha) }}</td>
+                            <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">{{ fmtFecha(it.fecha) }}</span></td>
                           </tr>
                         }
                       </tbody>
+                      <tfoot>
+                        <tr>
+                          <td colspan="5">
+                            <span class="av-dash-chip av-dash-chip--violet av-dash-chip--inline">Mejor {{ (mejorNota(row) ?? 0) | number:'1.0-0' }}%</span>
+                            <span class="av-dash-chip av-dash-chip--amber av-dash-chip--inline">Última {{ (ultimaNotaEval(row) ?? 0) | number:'1.0-0' }}%</span>
+                            <span class="av-dash-chip av-dash-chip--cyan av-dash-chip--inline">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval() }} intentos</span>
+                          </td>
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                 </section>

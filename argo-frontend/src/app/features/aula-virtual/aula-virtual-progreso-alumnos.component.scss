@@ -1090,6 +1090,11 @@
     background: linear-gradient(90deg, #ede9fe, #ffedd5);
   }
 
+  &--eval.av-dash-table--warm th {
+    color: #881337;
+    background: linear-gradient(90deg, #ffe4e6, #ffedd5);
+  }
+
   &--eval th {
     color: #be123c;
     background: #fff1f2;
