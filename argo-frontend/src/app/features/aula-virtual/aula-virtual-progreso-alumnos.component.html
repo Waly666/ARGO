@@ -1,7 +1,7 @@
 <div class="av-prog">
   <div class="av-prog-head">
     <div>
-      <h3>Seguimiento de alumnos</h3>
+      <h3><span class="av-prog-head__icon" aria-hidden="true">👥</span> Seguimiento de alumnos</h3>
       <p class="av-muted">
         Tarjetas por alumno con el mismo detalle que «Mis puntajes». Pulse una fila para expandir estadísticas.
       </p>
@@ -97,20 +97,21 @@
               @if (row.progreso.aprobado || row.progreso.certificadoEmitido || row.pago.pagado || row.pago.saldo > 0) {
                 <div class="av-dash__chips">
                   @if (row.progreso.aprobado) {
-                    <span class="av-dash-chip av-dash-chip--green">Aprobado</span>
+                    <span class="av-dash-chip av-dash-chip--green">✅ Aprobado</span>
                   }
                   @if (row.progreso.certificadoEmitido) {
-                    <span class="av-dash-chip av-dash-chip--blue">Certificado</span>
+                    <span class="av-dash-chip av-dash-chip--blue">🎖️ Certificado</span>
                   }
                   @if (row.pago.pagado) {
-                    <span class="av-dash-chip av-dash-chip--green">Pago al día</span>
+                    <span class="av-dash-chip av-dash-chip--green">💳 Pago al día</span>
                   } @else if (row.pago.saldo > 0) {
-                    <span class="av-dash-chip av-dash-chip--amber">Saldo ${{ row.pago.saldo | number:'1.0-0' }}</span>
+                    <span class="av-dash-chip av-dash-chip--amber">💰 Saldo ${{ row.pago.saldo | number:'1.0-0' }}</span>
                   }
                 </div>
               }
 
               <section class="av-dash-hero av-dash-hero--blue">
+                <span class="av-dash-hero__icon" aria-hidden="true">📊</span>
                 <div class="av-dash-hero__copy">
                   <p class="av-dash-eyebrow">Progreso del curso</p>
                   <h5 class="av-dash__title av-dash__title--blue">Avance general</h5>
@@ -133,60 +134,87 @@
 
               <section class="av-dash-kpis" aria-label="Indicadores de rendimiento">
                 <article class="av-dash-kpi av-dash-kpi--green">
-                  <span class="av-dash-kpi__label">Lecciones aprobadas</span>
-                  <strong class="av-dash-kpi__value">{{ row.progreso.clasesAprobadas ?? 0 }}/{{ row.progreso.totalClases ?? clasesDetalle(row).length }}</strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">✅</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Lecciones aprobadas</span>
+                    <strong class="av-dash-kpi__value">{{ row.progreso.clasesAprobadas ?? 0 }}/{{ row.progreso.totalClases ?? clasesDetalle(row).length }}</strong>
+                  </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--cyan">
-                  <span class="av-dash-kpi__label">Con puntaje</span>
-                  <strong class="av-dash-kpi__value">{{ leccionesConNotaCount(row) }}</strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">🎯</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Con puntaje</span>
+                    <strong class="av-dash-kpi__value">{{ leccionesConNotaCount(row) }}</strong>
+                  </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--violet">
-                  <span class="av-dash-kpi__label">Promedio lecciones</span>
-                  <strong class="av-dash-kpi__value">
-                    @if (promedioLecciones(row); as prom) {
-                      {{ prom | number:'1.0-0' }}%
-                    } @else {
-                      —
-                    }
-                  </strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">📈</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Promedio lecciones</span>
+                    <strong class="av-dash-kpi__value">
+                      @if (promedioLecciones(row); as prom) {
+                        {{ prom | number:'1.0-0' }}%
+                      } @else {
+                        —
+                      }
+                    </strong>
+                  </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--amber">
-                  <span class="av-dash-kpi__label">Suma lecciones</span>
-                  <strong class="av-dash-kpi__value">{{ sumaPuntajesLecciones(row) | number:'1.0-0' }} pts</strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">⭐</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Suma lecciones</span>
+                    <strong class="av-dash-kpi__value">{{ sumaPuntajesLecciones(row) | number:'1.0-0' }} pts</strong>
+                  </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--rose">
-                  <span class="av-dash-kpi__label">Mejor evaluación</span>
-                  <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'low'">
-                    @if (mejorNota(row); as mn) {
-                      {{ mn | number:'1.0-0' }}%
-                    } @else {
-                      —
-                    }
-                  </strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">🏆</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Mejor evaluación</span>
+                    <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'low'">
+                      @if (mejorNota(row); as mn) {
+                        {{ mn | number:'1.0-0' }}%
+                      } @else {
+                        —
+                      }
+                    </strong>
+                  </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--orange">
-                  <span class="av-dash-kpi__label">Última evaluación</span>
-                  <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'low'">
-                    @if (ultimaNotaEval(row); as un) {
-                      {{ un | number:'1.0-0' }}%
-                    } @else {
-                      —
-                    }
-                  </strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">📝</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Última evaluación</span>
+                    <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'low'">
+                      @if (ultimaNotaEval(row); as un) {
+                        {{ un | number:'1.0-0' }}%
+                      } @else {
+                        —
+                      }
+                    </strong>
+                  </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--indigo">
-                  <span class="av-dash-kpi__label">Intentos evaluación</span>
-                  <strong class="av-dash-kpi__value">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval() }}</strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">🔁</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Intentos evaluación</span>
+                    <strong class="av-dash-kpi__value">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval() }}</strong>
+                  </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--teal">
-                  <span class="av-dash-kpi__label">Nota mínima</span>
-                  <strong class="av-dash-kpi__value">{{ notaMinima() | number:'1.0-0' }}%</strong>
+                  <span class="av-dash-kpi__icon" aria-hidden="true">🎓</span>
+                  <div class="av-dash-kpi__body">
+                    <span class="av-dash-kpi__label">Nota mínima</span>
+                    <strong class="av-dash-kpi__value">{{ notaMinima() | number:'1.0-0' }}%</strong>
+                  </div>
                 </article>
               </section>
 
               <div class="av-dash-split">
                 <section class="av-dash-panel av-dash-panel--violet">
-                  <h5 class="av-dash__title av-dash__title--violet">Requisitos para aprobar</h5>
+                  <h5 class="av-dash__title av-dash__title--violet">
+                    <span class="av-dash__title-icon" aria-hidden="true">✔️</span>
+                    Requisitos para aprobar
+                  </h5>
                   <ul class="av-dash-checklist">
                     <li class="av-dash-check" [class.av-dash-check--done]="cumpleCompletitud(row)">
                       <span class="av-dash-check__mark" aria-hidden="true"></span>
@@ -231,18 +259,21 @@
                 </section>
 
                 <section class="av-dash-panel av-dash-panel--meta av-dash-panel--cyan">
-                  <h5 class="av-dash__title av-dash__title--cyan">Actividad y portal</h5>
+                  <h5 class="av-dash__title av-dash__title--cyan">
+                    <span class="av-dash__title-icon" aria-hidden="true">🌐</span>
+                    Actividad y portal
+                  </h5>
                   <dl class="av-dash-meta">
                     <div class="av-dash-meta__item av-dash-meta__item--blue">
-                      <dt>Última actividad</dt>
+                      <dt><span class="av-dash-meta__icon" aria-hidden="true">🕐</span> Última actividad</dt>
                       <dd>{{ fmtFecha(row.progreso.fechaUltimaActividad) }}</dd>
                     </div>
                     <div class="av-dash-meta__item av-dash-meta__item--violet">
-                      <dt>Syncs paquete</dt>
+                      <dt><span class="av-dash-meta__icon" aria-hidden="true">🔄</span> Syncs paquete</dt>
                       <dd>{{ row.progreso.contadorSyncs }}</dd>
                     </div>
                     <div class="av-dash-meta__item" [class.av-dash-meta__item--green]="row.portal.activo" [class.av-dash-meta__item--amber]="!row.portal.activo">
-                      <dt>Portal</dt>
+                      <dt><span class="av-dash-meta__icon" aria-hidden="true">💻</span> Portal</dt>
                       <dd>
                         {{ row.portal.activo ? 'Activo' : 'Inactivo' }}
                         @if (row.portal.ultimoAcceso) {
@@ -252,7 +283,7 @@
                     </div>
                     @if (row.certificado?.codigoCert) {
                       <div class="av-dash-meta__item av-dash-meta__item--green">
-                        <dt>Certificado</dt>
+                        <dt><span class="av-dash-meta__icon" aria-hidden="true">🎖️</span> Certificado</dt>
                         <dd>{{ row.certificado!.codigoCert }}</dd>
                       </div>
                     }
@@ -265,7 +296,10 @@
 
               <section class="av-dash-panel av-dash-panel--lessons-warm">
                 <div class="av-dash-panel__head">
-                  <h5 class="av-dash__title av-dash__title--lessons">Detalle por lección</h5>
+                  <h5 class="av-dash__title av-dash__title--lessons">
+                    <span class="av-dash__title-icon" aria-hidden="true">📚</span>
+                    Detalle por lección
+                  </h5>
                 </div>
                 <div class="av-dash-table-wrap av-dash-table-wrap--warm">
                   <table class="av-dash-table av-dash-table--lessons av-dash-table--warm">
@@ -329,7 +363,10 @@
               @if (intentosDe(row).length) {
                 <section class="av-dash-panel av-dash-panel--rose">
                   <div class="av-dash-panel__head">
-                    <h5 class="av-dash__title av-dash__title--rose">Evaluación final — historial</h5>
+                    <h5 class="av-dash__title av-dash__title--rose">
+                      <span class="av-dash__title-icon" aria-hidden="true">🏁</span>
+                      Evaluación final — historial
+                    </h5>
                     <div class="av-dash-panel__summary">
                       <span class="av-dash-chip av-dash-chip--violet">Mejor {{ (mejorNota(row) ?? 0) | number:'1.0-0' }}%</span>
                       <span class="av-dash-chip av-dash-chip--amber">Última {{ (ultimaNotaEval(row) ?? 0) | number:'1.0-0' }}%</span>
@@ -376,6 +413,7 @@
                 </section>
               } @else {
                 <section class="av-dash-empty av-dash-empty--amber">
+                  <span class="av-dash-empty__icon" aria-hidden="true">📋</span>
                   <p>Sin evaluación final registrada.</p>
                   @if (intentosRestantes(row) > 0) {
                     <span class="av-dash-tag av-dash-tag--blue">{{ intentosRestantes(row) }} intento(s) disponible(s)</span>
