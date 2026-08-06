@@ -558,7 +558,7 @@
                     <section class="dash-score-summary">
                       <div class="dash-score-summary__progress">
                         <div class="dash-score-summary__progress-head">
-                          <span>Avance general del curso</span>
+                          <span><span class="dash-score-summary__icon" aria-hidden="true">📊</span> Avance general del curso</span>
                           <span class="dash-capsule dash-capsule--violet-lg">{{ pct(c) | number: '1.0-0' }}%</span>
                         </div>
                         <div class="dash-progress-track dash-progress-track--lg dash-progress-track--warm">
@@ -576,54 +576,78 @@
 
                       <div class="dash-score-metrics">
                         <article class="dash-score-metric dash-score-metric--green">
-                          <span class="dash-score-metric__label">Lecciones aprobadas</span>
-                          <span class="dash-capsule dash-capsule--green">{{ c.progreso?.clasesAprobadas ?? 0 }}/{{ c.progreso?.totalClases ?? clasesDetalle(c).length }}</span>
+                          <span class="dash-score-metric__icon" aria-hidden="true">✅</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Lecciones aprobadas</span>
+                            <span class="dash-capsule dash-capsule--green">{{ c.progreso?.clasesAprobadas ?? 0 }}/{{ c.progreso?.totalClases ?? clasesDetalle(c).length }}</span>
+                          </div>
                         </article>
                         <article class="dash-score-metric dash-score-metric--cyan">
-                          <span class="dash-score-metric__label">Con puntaje</span>
-                          <span class="dash-capsule dash-capsule--cyan">{{ leccionesConNotaCount(c) }}</span>
+                          <span class="dash-score-metric__icon" aria-hidden="true">🎯</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Con puntaje</span>
+                            <span class="dash-capsule dash-capsule--cyan">{{ leccionesConNotaCount(c) }}</span>
+                          </div>
                         </article>
                         <article class="dash-score-metric dash-score-metric--violet">
-                          <span class="dash-score-metric__label">Promedio lecciones</span>
-                          @if (promedioLecciones(c); as prom) {
-                            <span class="dash-capsule dash-capsule--violet">{{ prom | number: '1.0-0' }}%</span>
-                          } @else {
-                            <span class="dash-capsule dash-capsule--soft">—</span>
-                          }
+                          <span class="dash-score-metric__icon" aria-hidden="true">📈</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Promedio lecciones</span>
+                            @if (promedioLecciones(c); as prom) {
+                              <span class="dash-capsule dash-capsule--violet">{{ prom | number: '1.0-0' }}%</span>
+                            } @else {
+                              <span class="dash-capsule dash-capsule--soft">—</span>
+                            }
+                          </div>
                         </article>
                         <article class="dash-score-metric dash-score-metric--amber">
-                          <span class="dash-score-metric__label">Suma lecciones</span>
-                          <span class="dash-capsule dash-capsule--amber">{{ sumaPuntajesLecciones(c) | number: '1.0-0' }} pts</span>
+                          <span class="dash-score-metric__icon" aria-hidden="true">⭐</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Suma lecciones</span>
+                            <span class="dash-capsule dash-capsule--amber">{{ sumaPuntajesLecciones(c) | number: '1.0-0' }} pts</span>
+                          </div>
                         </article>
                         <article class="dash-score-metric dash-score-metric--rose">
-                          <span class="dash-score-metric__label">Mejor evaluación</span>
-                          @if (mejorNota(c); as mn) {
-                            <span class="dash-capsule" [class]="'dash-capsule--' + notaTone(mn, notaMinima(c))">{{ mn | number: '1.0-0' }}%</span>
-                          } @else {
-                            <span class="dash-capsule dash-capsule--soft">—</span>
-                          }
+                          <span class="dash-score-metric__icon" aria-hidden="true">🏆</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Mejor evaluación</span>
+                            @if (mejorNota(c); as mn) {
+                              <span class="dash-capsule" [class]="'dash-capsule--' + notaTone(mn, notaMinima(c))">{{ mn | number: '1.0-0' }}%</span>
+                            } @else {
+                              <span class="dash-capsule dash-capsule--soft">—</span>
+                            }
+                          </div>
                         </article>
                         <article class="dash-score-metric dash-score-metric--orange">
-                          <span class="dash-score-metric__label">Última evaluación</span>
-                          @if (ultimaNotaEval(c); as un) {
-                            <span class="dash-capsule" [class]="'dash-capsule--' + notaTone(un, notaMinima(c))">{{ un | number: '1.0-0' }}%</span>
-                          } @else {
-                            <span class="dash-capsule dash-capsule--soft">—</span>
-                          }
+                          <span class="dash-score-metric__icon" aria-hidden="true">📝</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Última evaluación</span>
+                            @if (ultimaNotaEval(c); as un) {
+                              <span class="dash-capsule" [class]="'dash-capsule--' + notaTone(un, notaMinima(c))">{{ un | number: '1.0-0' }}%</span>
+                            } @else {
+                              <span class="dash-capsule dash-capsule--soft">—</span>
+                            }
+                          </div>
                         </article>
                         <article class="dash-score-metric dash-score-metric--indigo">
-                          <span class="dash-score-metric__label">Intentos evaluación</span>
-                          <span class="dash-capsule dash-capsule--indigo">{{ c.progreso?.intentosEval ?? intentosDe(c).length }}/{{ intentosMaxEval(c) }}</span>
+                          <span class="dash-score-metric__icon" aria-hidden="true">🔁</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Intentos evaluación</span>
+                            <span class="dash-capsule dash-capsule--indigo">{{ c.progreso?.intentosEval ?? intentosDe(c).length }}/{{ intentosMaxEval(c) }}</span>
+                          </div>
                         </article>
                         <article class="dash-score-metric dash-score-metric--teal">
-                          <span class="dash-score-metric__label">Nota mínima</span>
-                          <span class="dash-capsule dash-capsule--teal">{{ notaMinima(c) | number: '1.0-0' }}%</span>
+                          <span class="dash-score-metric__icon" aria-hidden="true">🎓</span>
+                          <div class="dash-score-metric__body">
+                            <span class="dash-score-metric__label">Nota mínima</span>
+                            <span class="dash-capsule dash-capsule--teal">{{ notaMinima(c) | number: '1.0-0' }}%</span>
+                          </div>
                         </article>
                       </div>
                     </section>
 
                     <section class="dash-score-block dash-score-block--warm">
-                      <h4>Requisitos para aprobar</h4>
+                      <h4><span class="dash-score-block__icon" aria-hidden="true">✔️</span> Requisitos para aprobar</h4>
                       <ul class="dash-score-checklist">
                         <li>
                           <span class="dash-capsule dash-capsule--soft">Avance ≥ {{ pctMinCompletitud(c) | number: '1.0-0' }}%</span>
@@ -654,7 +678,7 @@
                     </section>
 
                     <section class="dash-score-block dash-score-block--warm">
-                      <h4>Detalle por lección</h4>
+                      <h4><span class="dash-score-block__icon" aria-hidden="true">📚</span> Detalle por lección</h4>
                       <div class="dash-table-wrap dash-table-wrap--warm">
                         <table class="dash-table dash-table--lessons dash-table--warm">
                           <thead>
@@ -718,7 +742,7 @@
 
                     @if (intentosDe(c).length) {
                       <section class="dash-score-block dash-score-block--warm">
-                        <h4>Evaluación final — historial de intentos</h4>
+                        <h4><span class="dash-score-block__icon" aria-hidden="true">🏁</span> Evaluación final — historial de intentos</h4>
                         <div class="dash-table-wrap dash-table-wrap--warm">
                           <table class="dash-table dash-table--warm">
                             <thead>
@@ -771,6 +795,7 @@
                       </section>
                     } @else {
                       <p class="dash-score-empty-eval">
+                        <span class="dash-score-empty-eval__icon" aria-hidden="true">📋</span>
                         <span class="dash-capsule dash-capsule--amber">Sin evaluación final aún</span>
                         @if (intentosRestantes(c) > 0) {
                           <span class="dash-capsule dash-capsule--cyan dash-capsule--inline">{{ intentosRestantes(c) }} intento(s) disponible(s)</span>
