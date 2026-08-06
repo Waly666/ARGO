@@ -369,7 +369,7 @@
   --dash-surface: #f8fafc;
   --dash-border: #e2e8f0;
   --dash-text: #0f172a;
-  --dash-muted: #64748b;
+  --dash-muted: #475569;
   --dash-blue: #2563eb;
   --dash-green: #16a34a;
   --dash-amber: #d97706;
@@ -389,6 +389,20 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+
+  /* Evitar herencia del tema oscuro del shell (--text / --text-dim son claros) */
+  h4 {
+    color: var(--dash-text);
+  }
+
+  .av-dash__title {
+    color: var(--dash-text);
+  }
+
+  .av-muted,
+  .av-muted-sm {
+    color: var(--dash-muted);
+  }
 }
 
 .av-dash__chips {
@@ -401,39 +415,81 @@
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.65rem;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 800;
   border: 1px solid transparent;
+  white-space: nowrap;
+
+  &--inline {
+    margin: 0.12rem 0.25rem 0.12rem 0;
+  }
+
+  &--sm {
+    font-size: 0.68rem;
+    padding: 0.15rem 0.5rem;
+    font-weight: 700;
+  }
 
   &--green {
-    color: #15803d;
-    background: #dcfce7;
-    border-color: #86efac;
+    color: #047857;
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border-color: #6ee7b7;
   }
 
   &--blue {
     color: #1d4ed8;
-    background: #dbeafe;
+    background: linear-gradient(135deg, #dbeafe, #e0e7ff);
     border-color: #93c5fd;
   }
 
   &--amber {
     color: #b45309;
-    background: #fef3c7;
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
     border-color: #fcd34d;
   }
 
   &--violet {
-    color: #6d28d9;
-    background: #ede9fe;
+    color: #5b21b6;
+    background: linear-gradient(135deg, #ede9fe, #e0e7ff);
     border-color: #c4b5fd;
   }
 
-  &--neutral {
+  &--cyan {
+    color: #0e7490;
+    background: linear-gradient(135deg, #ecfeff, #cffafe);
+    border-color: #67e8f9;
+  }
+
+  &--rose {
+    color: #be123c;
+    background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+    border-color: #fda4af;
+  }
+
+  &--neutral,
+  &--soft {
     color: #475569;
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+  }
+
+  &--ok {
+    color: #047857;
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border-color: #6ee7b7;
+  }
+
+  &--mid {
+    color: #b45309;
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border-color: #fcd34d;
+  }
+
+  &--low {
+    color: #b91c1c;
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border-color: #fca5a5;
   }
 }
 
@@ -729,6 +785,26 @@
   &--meta {
     background: #ecfeff;
   }
+
+  &--lessons-warm {
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-top: 3px solid #8b5cf6;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #fffbeb 0%, #fff 45%, #faf5ff 100%);
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.08);
+
+    .av-dash__title--lessons {
+      margin: 0;
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: linear-gradient(90deg, #7c3aed, #ea580c);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
 }
 
 .av-dash-checklist {
@@ -915,6 +991,11 @@
   &--rose {
     border-color: #fecdd3;
   }
+
+  &--warm {
+    border-color: rgba(139, 92, 246, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+  }
 }
 
 .av-dash-table {
@@ -944,9 +1025,18 @@
     background: #ecfdf5;
   }
 
+  &--lessons.av-dash-table--warm th {
+    color: #7c2d12;
+    background: linear-gradient(90deg, #ede9fe, #ffedd5);
+  }
+
   &--eval th {
     color: #be123c;
     background: #fff1f2;
+  }
+
+  &--warm tbody tr:hover td {
+    background: #fffbeb;
   }
 
   tbody td {
@@ -970,20 +1060,40 @@
     color: #1e293b;
   }
 
+  &--warm tfoot td {
+    background: linear-gradient(90deg, #f5f3ff, #ecfeff) !important;
+    border-top-color: rgba(139, 92, 246, 0.2);
+  }
+
   &__muted td {
-    color: #94a3b8;
+    color: #64748b;
   }
 }
 
-.av-dash-lesson-num {
-  display: inline-flex;
-  padding: 0.12rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #15803d;
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
+.av-dash-lesson-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  min-width: 80px;
+
+  &__fill {
+    height: 100%;
+    border-radius: inherit;
+    transition: width 0.25s ease;
+
+    &--ok {
+      background: linear-gradient(90deg, #10b981, #34d399);
+    }
+
+    &--mid {
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+
+    &--low {
+      background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+  }
 }
 
 .av-dash-badge {

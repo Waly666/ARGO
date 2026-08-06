@@ -263,17 +263,12 @@
                 </section>
               </div>
 
-              <section class="av-dash-panel av-dash-panel--green">
+              <section class="av-dash-panel av-dash-panel--lessons-warm">
                 <div class="av-dash-panel__head">
-                  <h5 class="av-dash__title av-dash__title--green">Detalle por lección</h5>
-                  <div class="av-dash-panel__summary">
-                    <span class="av-dash-chip av-dash-chip--green">{{ row.progreso.clasesAprobadas ?? 0 }} aprobadas</span>
-                    <span class="av-dash-chip av-dash-chip--blue">{{ leccionesConNotaCount(row) }} con nota</span>
-                    <span class="av-dash-chip av-dash-chip--violet">{{ sumaPuntajesLecciones(row) | number:'1.0-0' }} pts</span>
-                  </div>
+                  <h5 class="av-dash__title av-dash__title--lessons">Detalle por lección</h5>
                 </div>
-                <div class="av-dash-table-wrap av-dash-table-wrap--green">
-                  <table class="av-dash-table av-dash-table--lessons">
+                <div class="av-dash-table-wrap av-dash-table-wrap--warm">
+                  <table class="av-dash-table av-dash-table--lessons av-dash-table--warm">
                     <thead>
                       <tr>
                         <th>Lección</th>
@@ -285,26 +280,26 @@
                     <tbody>
                       @for (cl of clasesDetalle(row); track cl.numero) {
                         <tr [class.av-dash-table__muted]="cl.pct <= 0">
-                          <td><span class="av-dash-lesson-num">Lección {{ cl.numero }}</span></td>
+                          <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">Lección {{ cl.numero }}</span></td>
                           <td>
                             @if (cl.pct > 0) {
-                              <span class="av-dash-badge" [class.av-dash-badge--ok]="claseNotaTone(cl.pct) === 'ok'" [class.av-dash-badge--warn]="claseNotaTone(cl.pct) === 'mid'" [class.av-dash-badge--bad]="claseNotaTone(cl.pct) === 'low'">{{ cl.pct | number:'1.0-0' }}%</span>
+                              <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--ok]="claseNotaTone(cl.pct) === 'ok'" [class.av-dash-chip--mid]="claseNotaTone(cl.pct) === 'mid'" [class.av-dash-chip--low]="claseNotaTone(cl.pct) === 'low'">{{ cl.pct | number:'1.0-0' }}%</span>
                             } @else {
-                              <span class="av-dash-badge av-dash-badge--neutral">—</span>
+                              <span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">—</span>
                             }
                           </td>
                           <td>
-                            <div class="av-dash-bar">
-                              <div class="av-dash-bar__fill" [class.av-dash-bar__fill--ok]="claseNotaTone(cl.pct) === 'ok'" [class.av-dash-bar__fill--warn]="claseNotaTone(cl.pct) === 'mid'" [class.av-dash-bar__fill--bad]="claseNotaTone(cl.pct) === 'low'" [style.width.%]="cl.pct"></div>
+                            <div class="av-dash-lesson-bar">
+                              <div class="av-dash-lesson-bar__fill" [class.av-dash-lesson-bar__fill--ok]="claseNotaTone(cl.pct) === 'ok'" [class.av-dash-lesson-bar__fill--mid]="claseNotaTone(cl.pct) === 'mid'" [class.av-dash-lesson-bar__fill--low]="claseNotaTone(cl.pct) === 'low'" [style.width.%]="cl.pct"></div>
                             </div>
                           </td>
                           <td>
                             @if (cl.aprobada) {
-                              <span class="av-dash-badge av-dash-badge--ok">Aprobada</span>
+                              <span class="av-dash-chip av-dash-chip--green av-dash-chip--sm">Aprobada</span>
                             } @else if (cl.pct > 0) {
-                              <span class="av-dash-badge av-dash-badge--warn">En proceso</span>
+                              <span class="av-dash-chip av-dash-chip--amber av-dash-chip--sm">En proceso</span>
                             } @else {
-                              <span class="av-dash-badge av-dash-badge--neutral">Sin intentar</span>
+                              <span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">Sin intentar</span>
                             }
                           </td>
                         </tr>
@@ -312,15 +307,19 @@
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td><strong>Total</strong></td>
+                        <td><span class="av-dash-chip av-dash-chip--violet">Total</span></td>
                         <td>
                           @if (promedioLecciones(row); as prom) {
-                            Prom. {{ prom | number:'1.0-0' }}%
+                            <span class="av-dash-chip av-dash-chip--cyan">Prom. {{ prom | number:'1.0-0' }}%</span>
                           } @else {
-                            —
+                            <span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">—</span>
                           }
                         </td>
-                        <td colspan="2"></td>
+                        <td colspan="2">
+                          <span class="av-dash-chip av-dash-chip--green av-dash-chip--inline">{{ row.progreso.clasesAprobadas ?? 0 }} aprobadas</span>
+                          <span class="av-dash-chip av-dash-chip--amber av-dash-chip--inline">{{ leccionesConNotaCount(row) }} con nota</span>
+                          <span class="av-dash-chip av-dash-chip--rose av-dash-chip--inline">{{ sumaPuntajesLecciones(row) | number:'1.0-0' }} pts</span>
+                        </td>
                       </tr>
                     </tfoot>
                   </table>
