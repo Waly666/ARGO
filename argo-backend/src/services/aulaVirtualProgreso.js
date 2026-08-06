@@ -88,11 +88,15 @@ function dedupeIntentosRaw(intentos) {
   return out;
 }
 
-function intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones) {
-  return (
-    clampPct(it.nota) >= pctMinEvaluaciones &&
-    clampPct(it.pctCompletitud) >= pctMinCompletitud
-  );
+function avanceIntentoEfectivo(it, pctCompletitudCurso) {
+  const stored = clampPct(it.pctCompletitud);
+  if (pctCompletitudCurso == null) return stored;
+  return Math.max(stored, clampPct(pctCompletitudCurso));
+}
+
+function intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones, pctCompletitudCurso = null) {
+  const pct = avanceIntentoEfectivo(it, pctCompletitudCurso);
+  return clampPct(it.nota) >= pctMinEvaluaciones && pct >= pctMinCompletitud;
 }
 
 function esIntentoDuplicado(intentos, nota, pctAlIntento) {
@@ -103,10 +107,10 @@ function esIntentoDuplicado(intentos, nota, pctAlIntento) {
   return Date.now() - tUlt < 5 * 60 * 1000;
 }
 
-function motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones) {
-  if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones)) return null;
+function motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones, pctCompletitudCurso = null) {
+  if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones, pctCompletitudCurso)) return null;
   const nota = clampPct(it.nota);
-  const pct = clampPct(it.pctCompletitud);
+  const pct = avanceIntentoEfectivo(it, pctCompletitudCurso);
   const cumpleNota = nota >= pctMinEvaluaciones;
   const cumpleAvance = pct >= pctMinCompletitud;
   if (cumpleNota && !cumpleAvance) return 'avance_insuficiente';
@@ -118,18 +122,26 @@ function motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones) {
 function mapIntentosPublicos(intentos, reglas = {}) {
   const pctMinCompletitud = clampPct(reglas.pctMinCompletitud, 80);
   const pctMinEvaluaciones = clampPct(reglas.pctMinEvaluaciones, 60);
+  const pctCurso =
+    reglas.pctCompletitudCurso != null ? clampPct(reglas.pctCompletitudCurso) : null;
   const deduped = dedupeIntentosRaw(intentos);
   return deduped.map((it, idx) => {
-    const aprobado = intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones);
+    const pctAvance = avanceIntentoEfectivo(it, pctCurso);
+    const aprobado = intentoCumpleRequisitos(
+      it,
+      pctMinCompletitud,
+      pctMinEvaluaciones,
+      pctCurso,
+    );
     return {
       numero: idx + 1,
       nota: clampPct(it.nota),
-      pctCompletitud: clampPct(it.pctCompletitud),
+      pctCompletitud: pctAvance,
       aprobado,
       fecha: it.fecha ? new Date(it.fecha).toISOString() : null,
       motivoNoAprobado: aprobado
         ? null
-        : motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones),
+        : motivoNoAprobadoIntento(it, pctMinCompletitud, pctMinEvaluaciones, pctCurso),
     };
   });
 }
@@ -155,6 +167,7 @@ function mapProgresoPublico(progreso, estadoExtra = {}) {
     intentos: mapIntentosPublicos(progreso?.intentos, {
       pctMinCompletitud: estadoExtra.pctMinCompletitud,
       pctMinEvaluaciones: estadoExtra.pctMinEvaluaciones,
+      pctCompletitudCurso: estadoExtra.pctCompletitud ?? progreso?.pctCompletitud,
     }),
     aprobado: !!(estadoExtra.aprobado ?? progreso?.aprobado),
     certificadoEmitido: !!(estadoExtra.certificadoEmitido ?? progreso?.certificadoEmitido),
@@ -244,7 +257,8 @@ async function sincronizarAprobacionEnDoc(numDoc, idPrograma, progreso, cfg) {
   const idProg = String(idPrograma);
   const pctMinCompletitud = clampPct(cfg.pctMinCompletitud, 80);
   const pctMinEvaluaciones = clampPct(cfg.pctMinEvaluaciones, 60);
-  const cumpleCompletitud = clampPct(progreso.pctCompletitud) >= pctMinCompletitud;
+  const pctCurso = clampPct(progreso.pctCompletitud);
+  const cumpleCompletitud = pctCurso >= pctMinCompletitud;
   const mejorNota = progreso.mejorNotaEval != null ? clampPct(progreso.mejorNotaEval) : null;
   const cumpleNota = mejorNota != null && mejorNota >= pctMinEvaluaciones;
 
@@ -252,8 +266,21 @@ async function sincronizarAprobacionEnDoc(numDoc, idPrograma, progreso, cfg) {
   let intentosChanged = false;
   for (let i = 0; i < intentos.length; i++) {
     const it = intentos[i];
-    if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones) && !it.aprobado) {
-      intentos[i] = { ...it, aprobado: true };
+    const pctEfectivo = avanceIntentoEfectivo(it, pctCurso);
+    const cumpleIntento = intentoCumpleRequisitos(
+      it,
+      pctMinCompletitud,
+      pctMinEvaluaciones,
+      pctCurso,
+    );
+    const pctDistinto = pctEfectivo !== clampPct(it.pctCompletitud);
+    const aprobadoDistinto = cumpleIntento && !it.aprobado;
+    if (pctDistinto || aprobadoDistinto) {
+      intentos[i] = {
+        ...it,
+        pctCompletitud: pctEfectivo,
+        aprobado: cumpleIntento || !!it.aprobado,
+      };
       intentosChanged = true;
     }
   }
@@ -345,6 +372,7 @@ function mapProgresoRespuesta(progreso, estado, certResult = null) {
       intentos: mapIntentosPublicos(progreso?.intentos, {
         pctMinCompletitud: estado.pctMinCompletitud,
         pctMinEvaluaciones: estado.pctMinEvaluaciones,
+        pctCompletitudCurso: estado.pctCompletitud,
       }),
       aprobado: estado.aprobado,
       certificadoEmitido: estado.certificadoEmitido || !!certResult?.creado,
@@ -409,7 +437,10 @@ async function reportarProgreso(numDoc, idPrograma, body = {}) {
   let bloqueadoIntento = false;
   if (esEvaluacionFinal && notaRaw != null) {
     const nota = clampPct(notaRaw);
-    const pctAlIntento = pctCompletitud != null ? pctCompletitud : doc.pctCompletitud || 0;
+    const pctAlIntento = Math.max(
+      clampPct(doc.pctCompletitud || 0),
+      pctCompletitud != null ? clampPct(pctCompletitud) : 0,
+    );
     const intentosUsados = dedupeIntentosRaw(doc.intentos || []).length;
     if (doc.aprobado) {
       bloqueadoIntento = true;
@@ -449,8 +480,11 @@ async function reportarProgreso(numDoc, idPrograma, body = {}) {
     }
   }
   if (Array.isArray(doc.intentos)) {
+    const pctCurso = clampPct(doc.pctCompletitud);
     for (const it of doc.intentos) {
-      if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones)) {
+      const pctEfectivo = avanceIntentoEfectivo(it, pctCurso);
+      it.pctCompletitud = pctEfectivo;
+      if (intentoCumpleRequisitos(it, pctMinCompletitud, pctMinEvaluaciones, pctCurso)) {
         it.aprobado = true;
       }
     }
@@ -576,6 +610,7 @@ module.exports = {
   mapProgresoRespuesta,
   mapIntentosPublicos,
   dedupeIntentosRaw,
+  avanceIntentoEfectivo,
   intentoCumpleRequisitos,
   sincronizarAprobacionEnDoc,
 };

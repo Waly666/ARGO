@@ -149,6 +149,7 @@ async function listarProgresoAlumnosAdmin(idPrograma, query = {}, ctx = {}) {
         intentos: mapIntentosPublicos(prog?.intentos, {
           pctMinCompletitud: estado.pctMinCompletitud,
           pctMinEvaluaciones: estado.pctMinEvaluaciones,
+          pctCompletitudCurso: pctCompletitud,
         }),
         aprobado: estado.aprobado,
         cumpleCompletitud: estado.cumpleCompletitud,
