@@ -59,7 +59,7 @@
 
     <footer class="catalog-card__foot">
       <p class="catalog-card__price">{{ fmtPrecio(c.tarifaVirtual) }}</p>
-      <a [routerLink]="['/cursos', c.idPrograma]" class="catalog-card__btn">
+      <a [routerLink]="['/cursos', c.idPrograma]" class="catalog-card__btn btn btn-primary btn-sm">
         {{ btnLabel() }}
       </a>
     </footer>

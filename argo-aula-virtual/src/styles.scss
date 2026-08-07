@@ -176,6 +176,19 @@ textarea {
   }
 }
 
+/* Tarjetas de curso — texto legible sobre fondo del tema (evita heredar --av-text oscuro) */
+a.catalog-card__btn,
+.catalog-card__btn.btn-primary {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+
+  &:hover,
+  &:focus-visible {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+  }
+}
+
 /* Botones en fondos claros (formularios, secciones light) */
 .section--light .btn-outline,
 .registro-card .btn-outline,
