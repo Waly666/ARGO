@@ -1,18 +1,70 @@
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
-/** Expo Go no incluye el módulo nativo; hace falta build de desarrollo / APK. */
-export function isSpeechNativeAvailable(): boolean {
-  if (Constants.appOwnership === 'expo') return false;
+type SpeechModule = typeof import('expo-speech-recognition');
+
+/** Solo APK / dev build nativo. En Expo Go nunca cargar el módulo de voz. */
+export function isNativeAppBuild(): boolean {
+  const env = Constants.executionEnvironment;
+  if (env === ExecutionEnvironment.Standalone || env === ExecutionEnvironment.Bare) {
+    return true;
+  }
+  if (env === ExecutionEnvironment.StoreClient) return false;
+  return Constants.appOwnership === 'standalone';
+}
+
+export function isExpoGoClient(): boolean {
+  return !isNativeAppBuild();
+}
+
+function loadSpeechModuleUnsafe(): SpeechModule {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('expo-speech-recognition') as SpeechModule;
+}
+
+/**
+ * Carga el módulo solo en build nativo. Retorna null en Expo Go o si falta el nativo.
+ */
+export function tryLoadSpeechModule(): SpeechModule | null {
+  if (Platform.OS === 'web') return null;
+  if (!isNativeAppBuild()) return null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require('expo-speech-recognition') as {
-      ExpoSpeechRecognitionModule?: { isRecognitionAvailable?: () => boolean };
-    };
-    return Boolean(mod.ExpoSpeechRecognitionModule?.isRecognitionAvailable?.() ?? true);
+    const mod = loadSpeechModuleUnsafe();
+    if (!mod?.ExpoSpeechRecognitionModule) return null;
+    return mod;
+  } catch {
+    return null;
+  }
+}
+
+export function isSpeechModulePresent(): boolean {
+  return tryLoadSpeechModule() != null;
+}
+
+/** Micrófono habilitado (APK con módulo compilado). */
+export function canShowVoiceMic(): boolean {
+  return isSpeechModulePresent();
+}
+
+/** Reconocimiento usable al pulsar el micrófono. */
+export function isSpeechNativeAvailable(): boolean {
+  const mod = tryLoadSpeechModule();
+  if (!mod) return false;
+  try {
+    return mod.ExpoSpeechRecognitionModule.isRecognitionAvailable?.() !== false;
   } catch {
     return false;
   }
+}
+
+export function voiceUnavailableMessage(): string {
+  if (isExpoGoClient()) {
+    return 'El reconocimiento de voz requiere la APK de ARGO Jornadas (no funciona en Expo Go).';
+  }
+  if (!isSpeechModulePresent()) {
+    return 'Esta versión de la app no incluye el módulo de voz. Instale la APK actualizada de ARGO Jornadas.';
+  }
+  return 'El dispositivo no tiene servicio de reconocimiento de voz. Instale/actualice la app de Google o active el reconocimiento en Ajustes del teléfono.';
 }
 
 export function speechLang(): string {
@@ -24,23 +76,19 @@ function localeMatchesSpanish(code: string): boolean {
   return n === 'es' || n.startsWith('es-');
 }
 
-/** Paquetes Android habituales (Android 13+ usa com.google.android.tts). */
 const ANDROID_SPEECH_PACKAGES = [
   'com.google.android.tts',
   'com.google.android.googlequicksearchbox',
   'com.google.android.as',
 ];
 
-function loadSpeechModule() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('expo-speech-recognition') as typeof import('expo-speech-recognition');
-}
-
 /** Resuelve el servicio de reconocimiento en Android (crítico para APK vs Expo Go). */
 export async function resolveAndroidSpeechService(): Promise<string | undefined> {
   if (Platform.OS !== 'android') return undefined;
   try {
-    const { ExpoSpeechRecognitionModule } = loadSpeechModule();
+    const mod = tryLoadSpeechModule();
+    if (!mod) return 'com.google.android.tts';
+    const { ExpoSpeechRecognitionModule } = mod;
     const def = ExpoSpeechRecognitionModule.getDefaultRecognitionService?.();
     if (def?.packageName) return def.packageName;
 
@@ -54,13 +102,11 @@ export async function resolveAndroidSpeechService(): Promise<string | undefined>
   }
 }
 
-/**
- * Solo usar on-device si el modelo del idioma ya está instalado.
- * Si no → false (red), evita "language supported but not yet downloaded".
- */
 export async function shouldUseOnDeviceRecognition(lang: string): Promise<boolean> {
   try {
-    const { ExpoSpeechRecognitionModule } = loadSpeechModule();
+    const mod = tryLoadSpeechModule();
+    if (!mod) return false;
+    const { ExpoSpeechRecognitionModule } = mod;
 
     if (ExpoSpeechRecognitionModule.supportsOnDeviceRecognition?.() !== true) {
       return false;

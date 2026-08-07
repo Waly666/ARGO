@@ -22,7 +22,8 @@ export function VoiceMicOverlay() {
 
   if (!voice || !voice.activeScreenId) return null;
 
-  if (!voice.nativeAvailable) return null;
+  const micReady = voice.voiceMicVisible;
+  const micUsable = voice.nativeAvailable;
 
   const size = 56 * buttonMultiplier;
   const pending = voice.pendingConfirm;
@@ -52,7 +53,12 @@ export function VoiceMicOverlay() {
               width: size,
               height: size,
               borderRadius: size / 2,
-              backgroundColor: voice.recognizing ? c.danger : c.primary,
+              backgroundColor: voice.recognizing
+                ? c.danger
+                : micUsable
+                  ? c.primary
+                  : c.textSoft,
+              opacity: micReady ? 1 : 0.72,
             },
           ]}
         >
@@ -65,6 +71,10 @@ export function VoiceMicOverlay() {
         {voice.recognizing ? (
           <ScaledText baseSize={11} style={[styles.listeningHint, { color: c.primary }]}>
             Escuchando…
+          </ScaledText>
+        ) : !micUsable ? (
+          <ScaledText baseSize={10} style={[styles.listeningHint, { color: c.textSoft, maxWidth: 180, textAlign: 'right' }]}>
+            {micReady ? 'Voz no lista en el dispositivo' : 'Requiere APK de Jornadas'}
           </ScaledText>
         ) : null}
       </View>

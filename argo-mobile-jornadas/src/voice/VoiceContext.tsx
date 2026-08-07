@@ -16,12 +16,17 @@ import {
   type VoiceCommandDef,
 } from './commands';
 import {
+  canShowVoiceMic,
+  isExpoGoClient,
+  isNativeAppBuild,
   isOfflineLanguageError,
   isSpeechNativeAvailable,
   resolveAndroidSpeechService,
   shouldUseOnDeviceRecognition,
   speechLang,
   speechStartOptions,
+  tryLoadSpeechModule,
+  voiceUnavailableMessage,
 } from './speechAvailability';
 
 export type VoiceFieldHandlers = {
@@ -59,6 +64,7 @@ type VoiceContextValue = {
   confirmPending: () => void;
   cancelPending: () => void;
   nativeAvailable: boolean;
+  voiceMicVisible: boolean;
   activeScreenId: string | null;
 };
 
@@ -77,7 +83,9 @@ export function useVoiceOptional(): VoiceContextValue | null {
 type Props = { children: React.ReactNode };
 
 export function VoiceProvider({ children }: Props) {
-  const nativeAvailable = isSpeechNativeAvailable();
+  const [speechReady, setSpeechReady] = useState(false);
+  const voiceMicVisible = speechReady && canShowVoiceMic();
+  const nativeAvailable = speechReady && isSpeechNativeAvailable();
   const [recognizing, setRecognizing] = useState(false);
   const [lastHeard, setLastHeard] = useState('');
   const [focusedFieldId, setFocusedFieldId] = useState<string | null>(null);
@@ -209,55 +217,66 @@ export function VoiceProvider({ children }: Props) {
   handleFinalTranscriptRef.current = handleFinalTranscript;
 
   useEffect(() => {
-    if (!nativeAvailable) return;
+    if (!isNativeAppBuild()) return;
+    setSpeechReady(true);
+  }, []);
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { ExpoSpeechRecognitionModule } =
-      require('expo-speech-recognition') as typeof import('expo-speech-recognition');
+  useEffect(() => {
+    if (!isNativeAppBuild()) return;
 
-    const subs = [
-      ExpoSpeechRecognitionModule.addListener('start', () => {
-        setRecognizing(true);
-        listeningRef.current = true;
-      }),
-      ExpoSpeechRecognitionModule.addListener('end', () => {
-        setRecognizing(false);
-        listeningRef.current = false;
-      }),
-      ExpoSpeechRecognitionModule.addListener('result', (event) => {
-        if (!event.isFinal) return;
-        const t = event.results?.[0]?.transcript;
-        if (t) handleFinalTranscriptRef.current(t);
-      }),
-      ExpoSpeechRecognitionModule.addListener('error', (event) => {
-        setRecognizing(false);
-        listeningRef.current = false;
-        if (event.error === 'aborted' || event.error === 'no-speech') return;
+    const mod = tryLoadSpeechModule();
+    if (!mod) return;
 
-        if (isOfflineLanguageError(event.message, event.error) && !forceNetworkRef.current) {
-          forceNetworkRef.current = true;
-          void (async () => {
-            try {
-              const androidPkg = await resolveAndroidSpeechService();
-              ExpoSpeechRecognitionModule.start(
-                speechStartOptions(speechLang(), false, androidPkg),
-              );
-            } catch {
-              Alert.alert(
-                'Voz',
-                'El español offline no está descargado. Conéctese a internet o descargue el idioma en Ajustes → Google → Reconocimiento de voz offline.',
-              );
-            }
-          })();
-          return;
-        }
+    const { ExpoSpeechRecognitionModule } = mod;
+    let subs: ReturnType<typeof ExpoSpeechRecognitionModule.addListener>[] = [];
 
-        Alert.alert(
-          'Voz',
-          event.message || `Error de reconocimiento (${event.error || 'desconocido'}).`,
-        );
-      }),
-    ];
+    try {
+      subs = [
+        ExpoSpeechRecognitionModule.addListener('start', () => {
+          setRecognizing(true);
+          listeningRef.current = true;
+        }),
+        ExpoSpeechRecognitionModule.addListener('end', () => {
+          setRecognizing(false);
+          listeningRef.current = false;
+        }),
+        ExpoSpeechRecognitionModule.addListener('result', (event) => {
+          if (!event.isFinal) return;
+          const t = event.results?.[0]?.transcript;
+          if (t) handleFinalTranscriptRef.current(t);
+        }),
+        ExpoSpeechRecognitionModule.addListener('error', (event) => {
+          setRecognizing(false);
+          listeningRef.current = false;
+          if (event.error === 'aborted' || event.error === 'no-speech') return;
+
+          if (isOfflineLanguageError(event.message, event.error) && !forceNetworkRef.current) {
+            forceNetworkRef.current = true;
+            void (async () => {
+              try {
+                const androidPkg = await resolveAndroidSpeechService();
+                ExpoSpeechRecognitionModule.start(
+                  speechStartOptions(speechLang(), false, androidPkg),
+                );
+              } catch {
+                Alert.alert(
+                  'Voz',
+                  'El español offline no está descargado. Conéctese a internet o descargue el idioma en Ajustes → Google → Reconocimiento de voz offline.',
+                );
+              }
+            })();
+            return;
+          }
+
+          Alert.alert(
+            'Voz',
+            event.message || `Error de reconocimiento (${event.error || 'desconocido'}).`,
+          );
+        }),
+      ];
+    } catch {
+      return;
+    }
 
     return () => {
       subs.forEach((s) => s.remove());
@@ -267,18 +286,26 @@ export function VoiceProvider({ children }: Props) {
         /* ignore */
       }
     };
-  }, [nativeAvailable]);
+  }, []);
 
   const startListening = useCallback(async () => {
-    if (!nativeAvailable) {
-      Alert.alert(
-        'Voz no disponible',
-        'El reconocimiento de voz requiere la APK / build nativo de ARGO Jornadas (no funciona en Expo Go).',
-      );
+    if (isExpoGoClient()) {
+      Alert.alert('Voz no disponible', voiceUnavailableMessage());
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition') as typeof import('expo-speech-recognition');
+
+    const mod = tryLoadSpeechModule();
+    if (!mod) {
+      Alert.alert('Voz no disponible', voiceUnavailableMessage());
+      return;
+    }
+
+    const { ExpoSpeechRecognitionModule } = mod;
+
+    if (ExpoSpeechRecognitionModule.isRecognitionAvailable?.() === false) {
+      Alert.alert('Voz no disponible', voiceUnavailableMessage());
+      return;
+    }
 
     const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!perm.granted) {
@@ -297,18 +324,17 @@ export function VoiceProvider({ children }: Props) {
     const androidPkg = await resolveAndroidSpeechService();
 
     ExpoSpeechRecognitionModule.start(speechStartOptions(lang, onDevice, androidPkg));
-  }, [nativeAvailable]);
+  }, []);
 
   const stopListening = useCallback(() => {
-    if (!nativeAvailable) return;
+    const mod = tryLoadSpeechModule();
+    if (!mod) return;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition') as typeof import('expo-speech-recognition');
-      ExpoSpeechRecognitionModule.stop();
+      mod.ExpoSpeechRecognitionModule.stop();
     } catch {
       /* ignore */
     }
-  }, [nativeAvailable]);
+  }, []);
 
   const confirmPending = useCallback(() => {
     const p = pendingConfirm;
@@ -337,6 +363,7 @@ export function VoiceProvider({ children }: Props) {
       confirmPending,
       cancelPending,
       nativeAvailable,
+      voiceMicVisible,
       activeScreenId,
     }),
     [
@@ -354,6 +381,7 @@ export function VoiceProvider({ children }: Props) {
       confirmPending,
       cancelPending,
       nativeAvailable,
+      voiceMicVisible,
       activeScreenId,
     ],
   );
