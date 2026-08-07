@@ -404,13 +404,37 @@ export class AlumnoService {
     email: string | null;
     numDoc: number | null;
     activo: boolean;
+    ultimoAcceso: string | null;
   }> {
     return this.http.get<{
       tieneAcceso: boolean;
       email: string | null;
       numDoc: number | null;
       activo: boolean;
+      ultimoAcceso: string | null;
     }>(`${this.base}/${encodeURIComponent(id)}/portal`);
+  }
+
+  /** Restablece contraseña del portal (no modifica el correo). */
+  resetearPasswordPortal(
+    id: string,
+    body?: { password?: string; generarPassword?: boolean; enviarCorreo?: boolean },
+  ): Observable<{
+    ok: boolean;
+    email: string;
+    password: string;
+    correoEnviado: boolean;
+    correoError?: string | null;
+    message: string;
+  }> {
+    return this.http.put<{
+      ok: boolean;
+      email: string;
+      password: string;
+      correoEnviado: boolean;
+      correoError?: string | null;
+      message: string;
+    }>(`${this.base}/${encodeURIComponent(id)}/portal/password`, body || {});
   }
 
   documentosRequeridos(id: string): Observable<DocumentosRequeridosRes> {

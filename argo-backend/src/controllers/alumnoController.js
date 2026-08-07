@@ -40,7 +40,12 @@ const { calcularEdad } = require('../utils/edad');
 const { ORIGEN_SISTEMA, ORIGEN_WEB, normalizarOrigenAlumno } = require('../constants/origenAlumno');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { resolverBasePortal } = require('../utils/portalPublicUrl');
-const { provisionarAccesoPortalSiVirtual, enviarAccesoPortalAlumno, estadoAccesoPortalPorNumDoc } = require('../services/portalAccesoAlumno');
+const {
+  provisionarAccesoPortalSiVirtual,
+  enviarAccesoPortalAlumno,
+  estadoAccesoPortalPorNumDoc,
+  resetearPasswordPortalAlumno,
+} = require('../services/portalAccesoAlumno');
 
 const GENEROS_VALIDOS = new Set(['M', 'F']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
@@ -985,6 +990,29 @@ exports.estadoPortal = async (req, res, next) => {
     const out = await estadoAccesoPortalPorNumDoc(alumno.numDoc);
     res.json(out);
   } catch (e) {
+    next(e);
+  }
+};
+
+/** Restablece contraseña del portal (no modifica el correo). */
+exports.resetearPasswordPortal = async (req, res, next) => {
+  try {
+    const alumno = await buscarAlumnoPorIdParam(req.params.id);
+    if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+    const body = req.body || {};
+    const out = await resetearPasswordPortalAlumno(alumno, {
+      password: body.password,
+      generarPassword: body.generarPassword,
+      enviarCorreo: body.enviarCorreo,
+      portalBaseUrl: resolverBasePortal({
+        portalBaseUrl: body.portalBaseUrl,
+        origin: req.get('origin') || publicOriginFromReq(req),
+      }),
+      origin: req.get('origin') || publicOriginFromReq(req),
+    });
+    res.json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
   }
 };

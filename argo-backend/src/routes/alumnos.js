@@ -35,6 +35,11 @@ router.post(
   requirePermiso('alumnos.gestionar', 'aula_virtual.gestionar'),
   ctrl.enviarAccesoPortal,
 );
+router.put(
+  '/:id/portal/password',
+  requirePermiso('alumnos.gestionar', 'aula_virtual.gestionar'),
+  ctrl.resetearPasswordPortal,
+);
 router.delete('/:id', gestionar, ctrl.eliminar);
 
 module.exports = router;

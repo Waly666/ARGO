@@ -1,0 +1,109 @@
+<section class="av-portal-acceso" [class.av-portal-acceso--open]="expandido()">
+  <button
+    type="button"
+    class="av-portal-acceso__toggle"
+    [attr.aria-expanded]="expandido()"
+    (click)="toggleExpand()">
+    <span class="av-portal-acceso__toggle-main">
+      <span class="av-portal-acceso__icon" aria-hidden="true">🔐</span>
+      <span class="av-portal-acceso__toggle-text">
+        <span class="av-portal-acceso__title">Acceso al portal</span>
+        @if (!expandido()) {
+          <span class="av-portal-acceso__summary">{{ resumenColapsado() }}</span>
+        }
+      </span>
+    </span>
+    <span class="av-portal-acceso__toggle-side">
+      @if (!cargando() && estado()?.tieneAcceso) {
+        <span
+          class="av-portal-acceso__pill"
+          [class.av-portal-acceso__pill--off]="estado()?.activo === false">
+          {{ estado()?.activo === false ? 'Inactiva' : 'Activa' }}
+        </span>
+      }
+      <span class="av-portal-acceso__chev" [class.av-portal-acceso__chev--open]="expandido()" aria-hidden="true"></span>
+    </span>
+  </button>
+
+  @if (expandido()) {
+    <div class="av-portal-acceso__body">
+      <p class="av-portal-acceso__lead">
+        Usuario de login del aula virtual. El correo no se modifica desde aquí; solo puede restablecer la contraseña.
+      </p>
+
+      @if (cargando()) {
+        <p class="av-portal-acceso__muted">Consultando acceso al aula virtual…</p>
+      } @else if (!estado()?.tieneAcceso) {
+        <p class="av-portal-acceso__muted">
+          Este alumno aún no tiene usuario del portal. Al crear una matrícula con tarifa virtual se genera el acceso automáticamente.
+        </p>
+      } @else {
+        <div class="av-portal-acceso__panel">
+          @if (estado()?.ultimoAcceso; as ua) {
+            <p class="av-portal-acceso__meta">Último acceso: {{ ua | date: 'dd/MM/yyyy HH:mm' }}</p>
+          }
+
+          <div class="av-portal-acceso__grid">
+            <div class="av-portal-acceso__field">
+              <label>Usuario (correo)</label>
+              <div class="av-portal-acceso__readonly">{{ estado()?.email || '—' }}</div>
+            </div>
+
+            @if (puedeGestionar()) {
+              <div class="av-portal-acceso__field">
+                <label for="portal-pass-nueva">Nueva contraseña</label>
+                <input
+                  id="portal-pass-nueva"
+                  type="text"
+                  class="av-portal-acceso__input"
+                  [(ngModel)]="passwordNueva"
+                  [disabled]="generarAleatoria || guardando()"
+                  placeholder="Mínimo 6 caracteres"
+                  autocomplete="new-password"
+                  [class.av-portal-acceso__input--error]="campoInvalido()"
+                />
+              </div>
+            }
+          </div>
+
+          @if (puedeGestionar()) {
+            <label class="av-portal-acceso__check">
+              <input
+                type="checkbox"
+                [(ngModel)]="generarAleatoria"
+                [disabled]="guardando()"
+                (ngModelChange)="onGenerarChange()"
+              />
+              Generar contraseña aleatoria
+            </label>
+
+            @if (error()) {
+              <p class="av-portal-acceso__error">{{ error() }}</p>
+            }
+
+            <div class="av-portal-acceso__actions">
+              <button
+                type="button"
+                class="av-portal-acceso__btn av-portal-acceso__btn--primary"
+                [disabled]="guardando()"
+                (click)="restablecer(false)">
+                {{ guardando() ? 'Guardando…' : 'Restablecer contraseña' }}
+              </button>
+              <button
+                type="button"
+                class="av-portal-acceso__btn av-portal-acceso__btn--ghost"
+                [disabled]="guardando()"
+                (click)="restablecer(true)">
+                Restablecer y enviar por correo
+              </button>
+            </div>
+          } @else {
+            <p class="av-portal-acceso__muted av-portal-acceso__muted--inline">
+              Solo lectura: no tiene permiso para restablecer la contraseña.
+            </p>
+          }
+        </div>
+      }
+    </div>
+  }
+</section>

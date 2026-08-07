@@ -3,13 +3,15 @@ import { Component, computed, inject } from '@angular/core';
 
 import { AlumnoStore } from '../../../core/services/alumno-store.service';
 import { AulaVirtualProgresoAlumnosComponent } from '../../aula-virtual/aula-virtual-progreso-alumnos.component';
+import { AlumnoPortalAccesoComponent } from './alumno-portal-acceso.component';
 
 @Component({
   selector: 'argo-alumno-aula-virtual',
   standalone: true,
-  imports: [CommonModule, AulaVirtualProgresoAlumnosComponent],
+  imports: [CommonModule, AlumnoPortalAccesoComponent, AulaVirtualProgresoAlumnosComponent],
   template: `
     @if (numDoc(); as nd) {
+      <argo-alumno-portal-acceso />
       <argo-aula-virtual-progreso-alumnos [numDoc]="nd" [modoAlumno]="true" />
     } @else {
       <p class="alum-av-empty">No hay documento de alumno para consultar el progreso virtual.</p>
@@ -17,10 +19,14 @@ import { AulaVirtualProgresoAlumnosComponent } from '../../aula-virtual/aula-vir
   `,
   styles: [
     `
+      :host {
+        display: block;
+      }
+
       .alum-av-empty {
         margin: 0;
         padding: 1.25rem;
-        color: var(--text-muted, #64748b);
+        color: var(--text-dim);
       }
     `,
   ],

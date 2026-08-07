@@ -220,17 +220,105 @@ async function enviarAccesoPortalAlumno(alumno, { email, password, portalBaseUrl
 async function estadoAccesoPortalPorNumDoc(numDocRaw) {
   const numDoc = parseNumDoc(numDocRaw);
   if (numDoc == null) {
-    return { tieneAcceso: false, email: null, numDoc: null, activo: false };
+    return { tieneAcceso: false, email: null, numDoc: null, activo: false, ultimoAcceso: null };
   }
   const u = await UsuarioPortal.findOne({ numDoc }).lean();
   if (!u) {
-    return { tieneAcceso: false, email: null, numDoc, activo: false };
+    return { tieneAcceso: false, email: null, numDoc, activo: false, ultimoAcceso: null };
   }
   return {
     tieneAcceso: true,
     email: u.email || null,
     numDoc,
     activo: u.activo !== false,
+    ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso).toISOString() : null,
+  };
+}
+
+/**
+ * Restablece la contraseña del portal sin modificar el correo (usuario de login).
+ */
+async function resetearPasswordPortalAlumno(alumno, { password, generarPassword, enviarCorreo, portalBaseUrl, origin } = {}) {
+  if (!alumno) {
+    const err = new Error('Alumno no encontrado');
+    err.status = 404;
+    throw err;
+  }
+
+  const numDoc = parseNumDoc(alumno.numDoc);
+  if (numDoc == null) {
+    const err = new Error('Documento inválido');
+    err.status = 400;
+    throw err;
+  }
+
+  const portal = await UsuarioPortal.findOne({ numDoc });
+  if (!portal) {
+    const err = new Error('El alumno no tiene acceso al portal del aula virtual');
+    err.status = 404;
+    throw err;
+  }
+  if (portal.activo === false) {
+    const err = new Error('La cuenta del portal está inactiva');
+    err.status = 403;
+    throw err;
+  }
+
+  let pass;
+  if (generarPassword === true || generarPassword === 'true') {
+    pass = generarPasswordPortal();
+  } else {
+    pass = String(password || '').trim();
+    if (!pass) {
+      const err = new Error('Indique la nueva contraseña o use la opción de generar contraseña');
+      err.status = 400;
+      throw err;
+    }
+    if (pass.length < 6) {
+      const err = new Error('La contraseña debe tener al menos 6 caracteres');
+      err.status = 400;
+      throw err;
+    }
+  }
+
+  portal.passwordHash = await bcrypt.hash(pass, 10);
+  await portal.save();
+
+  let correoEnviado = false;
+  let correoError = null;
+  if (enviarCorreo === true || enviarCorreo === 'true') {
+    if (!smtpConfigured()) {
+      correoError = 'SMTP no configurado';
+    } else {
+      try {
+        await enviarCredencialesPortal({
+          email: portal.email,
+          password: pass,
+          alumno,
+          portalBaseUrl,
+          origin,
+        });
+        correoEnviado = true;
+      } catch (e) {
+        correoError = e?.message || 'No se pudo enviar el correo';
+      }
+    }
+  }
+
+  let message = 'Contraseña del portal actualizada.';
+  if (correoEnviado) {
+    message = `Contraseña actualizada y enviada a ${portal.email}.`;
+  } else if (correoError) {
+    message = `Contraseña actualizada. No se pudo enviar el correo (${correoError}).`;
+  }
+
+  return {
+    ok: true,
+    email: portal.email,
+    password: pass,
+    correoEnviado,
+    correoError,
+    message,
   };
 }
 
@@ -239,4 +327,5 @@ module.exports = {
   enviarCredencialesPortal,
   enviarAccesoPortalAlumno,
   estadoAccesoPortalPorNumDoc,
+  resetearPasswordPortalAlumno,
 };
