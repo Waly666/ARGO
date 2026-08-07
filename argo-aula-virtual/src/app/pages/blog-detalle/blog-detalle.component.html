@@ -31,7 +31,7 @@
         }
       </div>
 
-      @if (article.imagenes?.length) {
+      @if (article.imagenes.length) {
         <div class="blog-post-gallery">
           @for (img of article.imagenes; track img.url) {
             <figure class="blog-post-figure">

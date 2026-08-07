@@ -177,6 +177,14 @@ export interface ProgresoAlumnoVirtualIntento {
 
 export interface ProgresoAlumnoVirtualItem {
   idMatricula: string;
+  idPrograma?: string;
+  nombrePrograma?: string | null;
+  reglas?: {
+    modoCertificado: string;
+    pctMinCompletitud: number;
+    pctMinEvaluaciones: number;
+    intentosMaxEval: number;
+  };
   alumnoId: string | null;
   numDoc: number | string;
   nombreCompleto: string;
@@ -424,6 +432,20 @@ export class AulaVirtualAdminService {
     const qs = sp.toString();
     return this.http.get<ProgresoAlumnosVirtualRes>(
       `${this.base}/cursos/${idPrograma}/progreso-alumnos${qs ? `?${qs}` : ''}`,
+    );
+  }
+
+  listarProgresoAlumno(
+    numDoc: string | number,
+    params?: { filtro?: string; skip?: number; limit?: number },
+  ): Observable<ProgresoAlumnosVirtualRes> {
+    const sp = new URLSearchParams();
+    if (params?.filtro) sp.set('filtro', params.filtro);
+    if (params?.skip != null) sp.set('skip', String(params.skip));
+    if (params?.limit != null) sp.set('limit', String(params.limit));
+    const qs = sp.toString();
+    return this.http.get<ProgresoAlumnosVirtualRes>(
+      `${this.base}/alumnos/${encodeURIComponent(String(numDoc))}/progreso-cursos${qs ? `?${qs}` : ''}`,
     );
   }
 

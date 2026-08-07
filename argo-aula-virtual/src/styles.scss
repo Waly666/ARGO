@@ -1,6 +1,6 @@
-@import 'styles/tokens.scss';
-@import 'styles/card-wave.scss';
-@import 'styles/starfield.scss';
+@use 'styles/tokens';
+@use 'styles/card-wave';
+@use 'styles/starfield';
 
 :root {
   --av-font-sans:

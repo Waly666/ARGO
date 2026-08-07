@@ -26,6 +26,7 @@ import { etiquetaSaldoCorta, tituloSaldoItem } from '../../core/utils/saldo-aler
 import { esLiquidacionVirtual, normalizarTipoAlumno, TIPO_VIRTUAL } from './catalogo.helpers';
 import { ModoAlumnos, rutasAlumnos } from './alumnos-rutas.helpers';
 import { MigracionHistoricaComponent } from './tabs/migracion-historica.component';
+import { AlumnoAulaVirtualComponent } from './tabs/aula-virtual.component';
 import { MigracionMovimientosService } from '../../core/services/migracion-movimientos.service';
 import { ComprobanteHoyImpresionService } from '../../core/services/comprobante-hoy-impresion.service';
 import {
@@ -41,7 +42,8 @@ type TabKey =
   | 'certificados'
   | 'documentos'
   | 'programacion'
-  | 'migracion';
+  | 'migracion'
+  | 'aula_virtual';
 
 interface AlertaClaseCeaCreada {
   programaLabel: string;
@@ -61,6 +63,7 @@ interface AlertaClaseCeaCreada {
     DocumentosComponent,
     AlumnoProgramacionCeaComponent,
     MigracionHistoricaComponent,
+    AlumnoAulaVirtualComponent,
   ],
   templateUrl: './alumno-detalle.component.html',
   styleUrls: ['./alumno-detalle.component.scss'],
@@ -109,6 +112,7 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     { key: 'certificados', label: 'Certificados' },
     { key: 'documentos',   label: 'Documentos' },
     { key: 'migracion',    label: 'Migración histórica' },
+    { key: 'aula_virtual', label: 'Aula virtual' },
     { key: 'programacion', label: 'Programación CEA' },
   ];
 
@@ -119,6 +123,9 @@ export class AlumnoDetalleComponent implements OnInit, OnDestroy {
     }
     if (!this.permisos.tiene(['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'])) {
       list = list.filter((t) => t.key !== 'programacion');
+    }
+    if (!this.permisos.tiene(['aula_virtual.ver', 'aula_virtual.gestionar'])) {
+      list = list.filter((t) => t.key !== 'aula_virtual');
     }
     return list;
   });

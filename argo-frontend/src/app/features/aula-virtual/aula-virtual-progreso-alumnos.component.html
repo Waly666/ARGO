@@ -1,37 +1,61 @@
 <div class="av-prog">
   <div class="av-prog-head">
     <div>
-      <h3><span class="av-prog-head__icon" aria-hidden="true">👥</span> Seguimiento de alumnos</h3>
-      <p class="av-muted">
-        Tarjetas por alumno con el mismo detalle que «Mis puntajes». Pulse una fila para expandir estadísticas.
-      </p>
+      @if (modoAlumno) {
+        <h3><span class="av-prog-head__icon" aria-hidden="true">🎓</span> Progreso en aula virtual</h3>
+        <p class="av-muted">
+          Un panel por curso matriculado, con el mismo detalle que el seguimiento del curso. Pulse una fila para expandir estadísticas.
+        </p>
+      } @else {
+        <h3><span class="av-prog-head__icon" aria-hidden="true">👥</span> Seguimiento de alumnos</h3>
+        <p class="av-muted">
+          Tarjetas por alumno con el mismo detalle que «Mis puntajes». Pulse una fila para expandir estadísticas.
+        </p>
+      }
     </div>
     <button type="button" class="av-btn av-btn--ghost" [disabled]="loading()" (click)="cargar()">
       {{ loading() ? 'Actualizando…' : 'Actualizar' }}
     </button>
   </div>
 
-  <div class="av-prog-toolbar">
-    <input
-      type="search"
-      class="av-prog-search"
-      placeholder="Buscar por nombre o documento…"
-      [(ngModel)]="buscar"
-      (keyup.enter)="buscarAlumnos()" />
-    <button type="button" class="av-btn av-btn--secondary" (click)="buscarAlumnos()">Buscar</button>
-    <div class="av-prog-filters">
-      <button type="button" class="av-filter" [class.active]="!filtro" (click)="cambiarFiltro('')">Todos</button>
-      <button type="button" class="av-filter" [class.active]="filtro === 'sin_iniciar'" (click)="cambiarFiltro('sin_iniciar')">
-        Sin iniciar
-      </button>
-      <button type="button" class="av-filter" [class.active]="filtro === 'aprobado'" (click)="cambiarFiltro('aprobado')">
-        Aprobados
-      </button>
-      <button type="button" class="av-filter" [class.active]="filtro === 'certificado'" (click)="cambiarFiltro('certificado')">
-        Certificados
-      </button>
+  @if (!modoAlumno) {
+    <div class="av-prog-toolbar">
+      <input
+        type="search"
+        class="av-prog-search"
+        placeholder="Buscar por nombre o documento…"
+        [(ngModel)]="buscar"
+        (keyup.enter)="buscarAlumnos()" />
+      <button type="button" class="av-btn av-btn--secondary" (click)="buscarAlumnos()">Buscar</button>
+      <div class="av-prog-filters">
+        <button type="button" class="av-filter" [class.active]="!filtro" (click)="cambiarFiltro('')">Todos</button>
+        <button type="button" class="av-filter" [class.active]="filtro === 'sin_iniciar'" (click)="cambiarFiltro('sin_iniciar')">
+          Sin iniciar
+        </button>
+        <button type="button" class="av-filter" [class.active]="filtro === 'aprobado'" (click)="cambiarFiltro('aprobado')">
+          Aprobados
+        </button>
+        <button type="button" class="av-filter" [class.active]="filtro === 'certificado'" (click)="cambiarFiltro('certificado')">
+          Certificados
+        </button>
+      </div>
     </div>
-  </div>
+  } @else {
+    <div class="av-prog-toolbar av-prog-toolbar--solo-filtros">
+      <div class="av-prog-filters">
+        <button type="button" class="av-filter" [class.active]="!filtro" (click)="cambiarFiltro('')">Todos</button>
+        <button type="button" class="av-filter" [class.active]="filtro === 'sin_iniciar'" (click)="cambiarFiltro('sin_iniciar')">
+          Sin iniciar
+        </button>
+        <button type="button" class="av-filter" [class.active]="filtro === 'aprobado'" (click)="cambiarFiltro('aprobado')">
+          Aprobados
+        </button>
+        <button type="button" class="av-filter" [class.active]="filtro === 'certificado'" (click)="cambiarFiltro('certificado')">
+          Certificados
+        </button>
+      </div>
+    </div>
+  }
 
   @if (error()) {
     <p class="av-banner av-banner--err">{{ error() }}</p>
@@ -40,10 +64,16 @@
   @if (loading() && !items().length) {
     <p class="av-muted">Cargando progreso…</p>
   } @else if (!items().length) {
-    <p class="av-muted">No hay alumnos matriculados en este curso (o no coinciden con el filtro).</p>
+    <p class="av-muted">
+      @if (modoAlumno) {
+        Este alumno no tiene matrículas activas en cursos virtuales (o no coinciden con el filtro).
+      } @else {
+        No hay alumnos matriculados en este curso (o no coinciden con el filtro).
+      }
+    </p>
   } @else {
     <div class="av-alum-list">
-      @for (row of items(); track row.numDoc; let i = $index) {
+      @for (row of items(); track trackRow(row); let i = $index) {
         <article
           class="av-alum-item av-score-card"
           [ngClass]="'av-score-card--' + (i % 4)"
@@ -65,11 +95,9 @@
                 </svg>
               </span>
               <div class="av-alum-head-text">
-                <h4>{{ row.nombreCompleto || '—' }}</h4>
-                <span class="av-pill av-pill--soft">
-                  CC {{ fmtDoc(row.numDoc) }} · Matriculado {{ fmtFechaMat(row.fechaMat) }}
-                </span>
-                @if (row.emailPortal || row.correo) {
+                <h4>{{ tituloTarjeta(row) }}</h4>
+                <span class="av-pill av-pill--soft">{{ subtituloTarjeta(row) }}</span>
+                @if (!modoAlumno && (row.emailPortal || row.correo)) {
                   <span class="av-score-card__email">{{ row.emailPortal || row.correo }}</span>
                 }
               </div>
@@ -116,7 +144,7 @@
                   <p class="av-dash-eyebrow">Progreso del curso</p>
                   <h5 class="av-dash__title av-dash__title--blue">Avance general</h5>
                   <p class="av-dash__subtitle">
-                    Mínimo exigido: <strong>{{ pctMinCompletitud() | number:'1.0-0' }}%</strong>
+                    Mínimo exigido: <strong>{{ pctMinCompletitud(row) | number:'1.0-0' }}%</strong>
                   </p>
                 </div>
                 <div class="av-dash-hero__stat">
@@ -171,7 +199,7 @@
                   <span class="av-dash-kpi__icon" aria-hidden="true">🏆</span>
                   <div class="av-dash-kpi__body">
                     <span class="av-dash-kpi__label">Mejor evaluación</span>
-                    <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="mejorNota(row) != null && notaTone(mejorNota(row)!) === 'low'">
+                    <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="mejorNota(row) != null && notaTone(mejorNota(row)!, notaMinima(row)) === 'ok'" [class.av-dash-kpi__value--warn]="mejorNota(row) != null && notaTone(mejorNota(row)!, notaMinima(row)) === 'mid'" [class.av-dash-kpi__value--bad]="mejorNota(row) != null && notaTone(mejorNota(row)!, notaMinima(row)) === 'low'">
                       @if (mejorNota(row); as mn) {
                         {{ mn | number:'1.0-0' }}%
                       } @else {
@@ -184,7 +212,7 @@
                   <span class="av-dash-kpi__icon" aria-hidden="true">📝</span>
                   <div class="av-dash-kpi__body">
                     <span class="av-dash-kpi__label">Última evaluación</span>
-                    <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'ok'" [class.av-dash-kpi__value--warn]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'mid'" [class.av-dash-kpi__value--bad]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!) === 'low'">
+                    <strong class="av-dash-kpi__value" [class.av-dash-kpi__value--ok]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!, notaMinima(row)) === 'ok'" [class.av-dash-kpi__value--warn]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!, notaMinima(row)) === 'mid'" [class.av-dash-kpi__value--bad]="ultimaNotaEval(row) != null && notaTone(ultimaNotaEval(row)!, notaMinima(row)) === 'low'">
                       @if (ultimaNotaEval(row); as un) {
                         {{ un | number:'1.0-0' }}%
                       } @else {
@@ -197,14 +225,14 @@
                   <span class="av-dash-kpi__icon" aria-hidden="true">🔁</span>
                   <div class="av-dash-kpi__body">
                     <span class="av-dash-kpi__label">Intentos evaluación</span>
-                    <strong class="av-dash-kpi__value">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval() }}</strong>
+                    <strong class="av-dash-kpi__value">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval(row) }}</strong>
                   </div>
                 </article>
                 <article class="av-dash-kpi av-dash-kpi--teal">
                   <span class="av-dash-kpi__icon" aria-hidden="true">🎓</span>
                   <div class="av-dash-kpi__body">
                     <span class="av-dash-kpi__label">Nota mínima</span>
-                    <strong class="av-dash-kpi__value">{{ notaMinima() | number:'1.0-0' }}%</strong>
+                    <strong class="av-dash-kpi__value">{{ notaMinima(row) | number:'1.0-0' }}%</strong>
                   </div>
                 </article>
               </section>
@@ -220,7 +248,7 @@
                       <span class="av-dash-check__mark" aria-hidden="true"></span>
                       <div class="av-dash-check__body">
                         <strong>Avance del curso</strong>
-                        <span>≥ {{ pctMinCompletitud() | number:'1.0-0' }}% · Actual {{ pct(row) | number:'1.0-0' }}%</span>
+                        <span>≥ {{ pctMinCompletitud(row) | number:'1.0-0' }}% · Actual {{ pct(row) | number:'1.0-0' }}%</span>
                       </div>
                       <span class="av-dash-tag" [class.av-dash-tag--ok]="cumpleCompletitud(row)" [class.av-dash-tag--warn]="!cumpleCompletitud(row)">
                         {{ cumpleCompletitud(row) ? 'Cumple' : 'Pendiente' }}
@@ -231,7 +259,7 @@
                       <div class="av-dash-check__body">
                         <strong>Evaluación final</strong>
                         <span>
-                          ≥ {{ notaMinima() | number:'1.0-0' }}%
+                          ≥ {{ notaMinima(row) | number:'1.0-0' }}%
                           @if (mejorNota(row) != null) {
                             · Mejor {{ mejorNota(row)! | number:'1.0-0' }}%
                           } @else {
@@ -292,6 +320,9 @@
                   </dl>
                   @if (fichaLink(row); as link) {
                     <a [routerLink]="link" class="av-dash-link" (click)="$event.stopPropagation()">Ver ficha del alumno →</a>
+                  }
+                  @if (cursoLink(row); as clink) {
+                    <a [routerLink]="clink" [queryParams]="cursoQuery(row)" class="av-dash-link" (click)="$event.stopPropagation()">Ver curso en aula virtual →</a>
                   }
                 </section>
               </div>
@@ -386,7 +417,7 @@
                           <tr>
                             <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">#{{ it.numero }}</span></td>
                             <td>
-                              <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--ok]="notaTone(it.nota) === 'ok'" [class.av-dash-chip--mid]="notaTone(it.nota) === 'mid'" [class.av-dash-chip--low]="notaTone(it.nota) === 'low'">{{ it.nota | number:'1.0-0' }}%</span>
+                              <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--ok]="notaTone(it.nota, notaMinima(row)) === 'ok'" [class.av-dash-chip--mid]="notaTone(it.nota, notaMinima(row)) === 'mid'" [class.av-dash-chip--low]="notaTone(it.nota, notaMinima(row)) === 'low'">{{ it.nota | number:'1.0-0' }}%</span>
                             </td>
                             <td>
                               @if (it.pctCompletitud != null) {
@@ -399,7 +430,7 @@
                               @if (it.aprobado) {
                                 <span class="av-dash-chip av-dash-chip--green av-dash-chip--sm">Aprobó</span>
                               } @else {
-                                <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--amber]="tonoResultadoIntento(it) === 'warn'" [class.av-dash-chip--low]="tonoResultadoIntento(it) === 'bad'">{{ labelResultadoIntento(it) }}</span>
+                                <span class="av-dash-chip av-dash-chip--sm" [class.av-dash-chip--amber]="tonoResultadoIntento(it, row) === 'warn'" [class.av-dash-chip--low]="tonoResultadoIntento(it, row) === 'bad'">{{ labelResultadoIntento(it, row) }}</span>
                               }
                             </td>
                             <td><span class="av-dash-chip av-dash-chip--soft av-dash-chip--sm">{{ fmtFecha(it.fecha) }}</span></td>
@@ -411,7 +442,7 @@
                           <td colspan="5">
                             <span class="av-dash-chip av-dash-chip--violet av-dash-chip--inline">Mejor {{ (mejorNota(row) ?? 0) | number:'1.0-0' }}%</span>
                             <span class="av-dash-chip av-dash-chip--amber av-dash-chip--inline">Última {{ (ultimaNotaEval(row) ?? 0) | number:'1.0-0' }}%</span>
-                            <span class="av-dash-chip av-dash-chip--cyan av-dash-chip--inline">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval() }} intentos</span>
+                            <span class="av-dash-chip av-dash-chip--cyan av-dash-chip--inline">{{ row.progreso.intentosEval ?? intentosDe(row).length }}/{{ intentosMaxEval(row) }} intentos</span>
                           </td>
                         </tr>
                       </tfoot>
@@ -434,7 +465,7 @@
     </div>
 
     <div class="av-prog-pager">
-      <span>{{ total() }} alumno(s)</span>
+      <span>{{ total() }} {{ modoAlumno ? 'curso(s)' : 'alumno(s)' }}</span>
       <div>
         <button type="button" class="av-btn av-btn--ghost" [disabled]="skip() === 0" (click)="paginaAnterior()">
           Anterior

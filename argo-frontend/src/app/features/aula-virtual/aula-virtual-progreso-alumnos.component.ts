@@ -28,7 +28,12 @@ type ReglasCurso = {
 export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   private svc = inject(AulaVirtualAdminService);
 
-  @Input({ required: true }) idPrograma!: string;
+  /** Curso concreto (vista desde ficha del curso). */
+  @Input() idPrograma?: string;
+  /** Alumno concreto (vista desde ficha del alumno). */
+  @Input() numDoc?: number | string | null;
+  /** true = listar cursos del alumno en lugar de alumnos del curso. */
+  @Input() modoAlumno = false;
   @Input() reloadTick = 0;
 
   loading = signal(false);
@@ -44,16 +49,49 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   expandido = signal<string | null>(null);
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['idPrograma'] || changes['reloadTick']) {
+    if (changes['idPrograma'] || changes['numDoc'] || changes['modoAlumno'] || changes['reloadTick']) {
       this.skip.set(0);
       this.cargar();
     }
   }
 
   cargar(): void {
-    if (!this.idPrograma) return;
     this.loading.set(true);
     this.error.set(null);
+
+    if (this.modoAlumno || this.numDoc != null) {
+      const nd = this.numDoc;
+      if (nd == null || nd === '') {
+        this.items.set([]);
+        this.total.set(0);
+        this.loading.set(false);
+        return;
+      }
+      this.svc
+        .listarProgresoAlumno(nd, {
+          filtro: this.filtro || undefined,
+          skip: this.skip(),
+          limit: this.limit,
+        })
+        .subscribe({
+          next: (r) => {
+            this.items.set(r.items || []);
+            this.total.set(r.total || 0);
+            this.reglas.set(null);
+            this.loading.set(false);
+          },
+          error: (e) => {
+            this.error.set(e?.error?.message || 'No se pudo cargar el progreso virtual');
+            this.loading.set(false);
+          },
+        });
+      return;
+    }
+
+    if (!this.idPrograma) {
+      this.loading.set(false);
+      return;
+    }
     this.svc
       .listarProgresoAlumnos(this.idPrograma, {
         q: this.buscar.trim() || undefined,
@@ -125,11 +163,45 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   }
 
   fichaLink(row: ProgresoAlumnoVirtualItem): string[] | null {
+    if (this.modoAlumno) return null;
     return row.alumnoId ? ['/app/alumnos', row.alumnoId] : null;
   }
 
+  cursoLink(row: ProgresoAlumnoVirtualItem): string[] | null {
+    if (!this.modoAlumno || !row.idPrograma) return null;
+    return ['/app/aula-virtual/cursos', String(row.idPrograma)];
+  }
+
+  cursoQuery(row: ProgresoAlumnoVirtualItem): { tab: string } {
+    return { tab: 'alumnos' };
+  }
+
   trackRow(row: ProgresoAlumnoVirtualItem): string {
+    if (this.modoAlumno && row.idPrograma) return String(row.idPrograma);
     return String(row.numDoc);
+  }
+
+  tituloTarjeta(row: ProgresoAlumnoVirtualItem): string {
+    if (this.modoAlumno) return row.nombrePrograma || 'Curso virtual';
+    return row.nombreCompleto || '—';
+  }
+
+  subtituloTarjeta(row: ProgresoAlumnoVirtualItem): string {
+    if (this.modoAlumno) {
+      return `Matriculado ${this.fmtFechaMat(row.fechaMat)}`;
+    }
+    return `CC ${this.fmtDoc(row.numDoc)} · Matriculado ${this.fmtFechaMat(row.fechaMat)}`;
+  }
+
+  private reglasItem(row?: ProgresoAlumnoVirtualItem | null): ReglasCurso {
+    if (row?.reglas) return row.reglas;
+    if (this.reglas()) return this.reglas()!;
+    return {
+      modoCertificado: 'al_pagar',
+      pctMinCompletitud: 80,
+      pctMinEvaluaciones: 60,
+      intentosMaxEval: 3,
+    };
   }
 
   toggleExpand(row: ProgresoAlumnoVirtualItem): void {
@@ -141,16 +213,16 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
     return this.expandido() === this.trackRow(row);
   }
 
-  pctMinCompletitud(): number {
-    return this.reglas()?.pctMinCompletitud ?? 80;
+  pctMinCompletitud(row?: ProgresoAlumnoVirtualItem): number {
+    return this.reglasItem(row).pctMinCompletitud;
   }
 
-  notaMinima(): number {
-    return this.reglas()?.pctMinEvaluaciones ?? 60;
+  notaMinima(row?: ProgresoAlumnoVirtualItem): number {
+    return this.reglasItem(row).pctMinEvaluaciones;
   }
 
-  intentosMaxEval(): number {
-    return this.reglas()?.intentosMaxEval ?? 3;
+  intentosMaxEval(row?: ProgresoAlumnoVirtualItem): number {
+    return this.reglasItem(row).intentosMaxEval;
   }
 
   pct(row: ProgresoAlumnoVirtualItem): number {
@@ -190,7 +262,10 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   }
 
   intentosRestantes(row: ProgresoAlumnoVirtualItem): number {
-    return row.progreso?.intentosRestantes ?? Math.max(0, this.intentosMaxEval() - (row.progreso?.intentosEval ?? 0));
+    return (
+      row.progreso?.intentosRestantes ??
+      Math.max(0, this.intentosMaxEval(row) - (row.progreso?.intentosEval ?? 0))
+    );
   }
 
   puedeReintentar(row: ProgresoAlumnoVirtualItem): boolean {
@@ -220,13 +295,13 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
 
   cumpleCompletitud(row: ProgresoAlumnoVirtualItem): boolean {
     if (row.progreso?.cumpleCompletitud != null) return row.progreso.cumpleCompletitud;
-    return this.pct(row) >= this.pctMinCompletitud();
+    return this.pct(row) >= this.pctMinCompletitud(row);
   }
 
   cumpleNotaEval(row: ProgresoAlumnoVirtualItem): boolean {
     if (row.progreso?.cumpleNota != null) return row.progreso.cumpleNota;
     const mn = this.mejorNota(row);
-    return mn != null && mn >= this.notaMinima();
+    return mn != null && mn >= this.notaMinima(row);
   }
 
   estadoAlumno(row: ProgresoAlumnoVirtualItem): string {
@@ -263,20 +338,21 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
     return 'low';
   }
 
-  labelResultadoIntento(it: ProgresoAlumnoVirtualIntento): string {
+  labelResultadoIntento(it: ProgresoAlumnoVirtualIntento, row: ProgresoAlumnoVirtualItem): string {
     if (it.aprobado) return 'Aprobó';
     if (it.motivoNoAprobado === 'avance_insuficiente') return 'Avance insuficiente';
     if (it.motivoNoAprobado === 'nota_insuficiente') return 'Nota insuficiente';
     if (it.motivoNoAprobado === 'nota_y_avance') return 'Nota y avance bajos';
-    if (it.nota >= this.notaMinima() && it.pctCompletitud < this.pctMinCompletitud()) {
-      return 'Avance insuficiente';
-    }
+    const minNota = this.notaMinima(row);
+    const minAvance = this.pctMinCompletitud(row);
+    const pctAvance = it.pctCompletitud ?? 0;
+    if (it.nota >= minNota && pctAvance < minAvance) return 'Avance insuficiente';
     return 'No aprobó';
   }
 
-  tonoResultadoIntento(it: ProgresoAlumnoVirtualIntento): 'ok' | 'warn' | 'bad' {
+  tonoResultadoIntento(it: ProgresoAlumnoVirtualIntento, row: ProgresoAlumnoVirtualItem): 'ok' | 'warn' | 'bad' {
     if (it.aprobado) return 'ok';
-    if (this.labelResultadoIntento(it) === 'Avance insuficiente') return 'warn';
+    if (this.labelResultadoIntento(it, row) === 'Avance insuficiente') return 'warn';
     return 'bad';
   }
 
