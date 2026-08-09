@@ -1196,6 +1196,27 @@
               [disabled]="loading()"
               aria-label="Cerrar editor de jornada">×</button>
           </header>
+          @if (jornadaEditModo() === 'edit' && je._id) {
+            <nav class="jornada-modal-nav" aria-label="Secciones del formulario de jornada">
+              <button
+                type="button"
+                class="jornada-modal-nav-btn"
+                [class.active]="jornadaEditPanel() === 'datos'"
+                (click)="irPanelJornadaEdit('datos')">
+                Datos de jornada
+              </button>
+              <button
+                type="button"
+                class="jornada-modal-nav-btn"
+                [class.active]="jornadaEditPanel() === 'evidencias'"
+                (click)="irPanelJornadaEdit('evidencias')">
+                Evidencias
+                @if (je.urlEvidenciaConsolidada) {
+                  <span class="jornada-modal-nav-dot" aria-hidden="true"></span>
+                }
+              </button>
+            </nav>
+          }
           <div class="jornada-modal-body">
         <p
           class="msg error panel-msg alerta-direccion"
@@ -1204,6 +1225,7 @@
           role="alert">
           {{ jornadaEditError() }}
         </p>
+        @if (jornadaEditModo() === 'nueva' || jornadaEditPanel() === 'datos') {
         <p class="hint jornada-modal-intro">
           @if (jornadaEditModo() === 'nueva') {
             Programe una jornada adicional. Al guardar, el contrato reflejará el nuevo total de jornadas y la meta de alumnos por jornada.
@@ -1356,63 +1378,141 @@
           Elija municipio en Divipola (el departamento se asigna solo) o fije coordenadas en el mapa/GPS para actualizar ambos.
         </p>
         </section>
-        @if (jornadaEditModo() === 'edit' && je._id) {
-          <section class="jornada-form-section jornada-form-section--evidencia">
-            <header class="jornada-form-section-head">
-              <span class="jornada-form-section-icon" aria-hidden="true">03</span>
+        }
+        @if (jornadaEditModo() === 'edit' && je._id && jornadaEditPanel() === 'evidencias') {
+          <div class="jornada-evidencias-ficha">
+            <header class="jornada-evidencias-ficha-head">
               <div>
-                <h4>Evidencia de la jornada</h4>
-                <p>Seleccione imágenes PNG/JPG y/o PDF; se consolidarán en un solo archivo PDF.</p>
+                <p class="jornada-evidencias-kicker">Ficha · Evidencias</p>
+                <h4>{{ labelJornada(je) }}</h4>
+                <p class="hint">
+                  Evidencia documental, alumnos certificados en esta jornada e informes de respaldo.
+                </p>
               </div>
             </header>
-            <div class="jornada-evidencia-panel">
-              @if (je.urlEvidenciaConsolidada) {
-                <div class="jornada-evidencia-actual">
-                  <span class="hint">Evidencia consolidada disponible.</span>
-                  <button type="button" class="mini primary" (click)="abrirEvidenciaJornada(je, $event)">
-                    Ver evidencia PDF
+
+            <section class="jornada-evidencias-bloque">
+              <header class="jornada-evidencias-bloque-head">
+                <h5>Documento de evidencia (PDF)</h5>
+                <p>Varios PNG/JPG o PDF se consolidan en un solo archivo.</p>
+              </header>
+              <div class="jornada-evidencia-panel">
+                @if (je.urlEvidenciaConsolidada) {
+                  <div class="jornada-evidencia-actual">
+                    <span class="jornada-evidencia-badge">PDF cargado</span>
+                    <button type="button" class="primary" (click)="abrirEvidenciaJornada(je, $event)">
+                      Ver evidencia PDF
+                    </button>
+                  </div>
+                } @else {
+                  <p class="hint">Sin evidencia consolidada todavía.</p>
+                }
+                @if (jornadaEvidenciaArchivos().length) {
+                  <ul class="jornada-evidencia-lista">
+                    @for (f of jornadaEvidenciaArchivos(); track f.name + f.size + $index; let i = $index) {
+                      <li>
+                        <span>{{ f.name }}</span>
+                        <button type="button" class="mini ghost" (click)="quitarEvidenciaJornadaPendiente(i)">Quitar</button>
+                      </li>
+                    }
+                  </ul>
+                }
+                <div class="jornada-evidencia-actions">
+                  <label class="evidencia-upload jornada-evidencia-upload">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf,.png,.jpg,.jpeg,.pdf"
+                      multiple
+                      (change)="onEvidenciaJornadaSelected($event)"
+                      [disabled]="subiendoEvidenciaJornada()" />
+                    <span>Agregar archivos (PNG / PDF)</span>
+                  </label>
+                  <button
+                    type="button"
+                    class="primary"
+                    (click)="subirEvidenciaConsolidadaJornada($event)"
+                    [disabled]="subiendoEvidenciaJornada() || !jornadaEvidenciaArchivos().length">
+                    {{ subiendoEvidenciaJornada() ? 'Consolidando…' : 'Consolidar y cargar' }}
                   </button>
                 </div>
+              </div>
+            </section>
+
+            <section class="jornada-evidencias-bloque">
+              <header class="jornada-evidencias-bloque-head">
+                <h5>Alumnos certificados en esta jornada</h5>
+                <p>Solo certificados emitidos en las clases de esta jornada.</p>
+              </header>
+              @if (cargandoJornadaEvidenciaCerts()) {
+                <p class="hint">Cargando alumnos certificados…</p>
               } @else {
-                <p class="hint">Aún no hay evidencia consolidada para esta jornada.</p>
+                <div class="table-wrap jornada-evidencias-tabla-wrap">
+                  <table class="argo jornada-evidencias-tabla">
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Alumno</th>
+                        <th>Documento</th>
+                        <th>Encabezado</th>
+                        <th>Emisión</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (c of jornadaEvidenciaCerts(); track c._id) {
+                        <tr>
+                          <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert || '—' }}</span></td>
+                          <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto || '—' }}</span></td>
+                          <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc ?? '—' }}</span></td>
+                          <td><span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span></td>
+                          <td><span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span></td>
+                          <td class="actions-cell">
+                            <button type="button" class="mini ghost" (click)="imprimirCert(c)">Imprimir</button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="6" class="empty">No hay certificados emitidos en esta jornada.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               }
-              @if (jornadaEvidenciaArchivos().length) {
-                <ul class="jornada-evidencia-lista">
-                  @for (f of jornadaEvidenciaArchivos(); track f.name + f.size + $index; let i = $index) {
-                    <li>
-                      <span>{{ f.name }}</span>
-                      <button type="button" class="mini ghost" (click)="quitarEvidenciaJornadaPendiente(i)">Quitar</button>
-                    </li>
-                  }
-                </ul>
-              }
-              <div class="jornada-evidencia-actions">
-                <label class="evidencia-upload jornada-evidencia-upload">
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf,.png,.jpg,.jpeg,.pdf"
-                    multiple
-                    (change)="onEvidenciaJornadaSelected($event)"
-                    [disabled]="subiendoEvidenciaJornada()" />
-                  <span>📎 Agregar archivos (PNG / PDF)</span>
-                </label>
+            </section>
+
+            <section class="jornada-evidencias-bloque jornada-evidencias-bloque--export">
+              <header class="jornada-evidencias-bloque-head">
+                <h5>Informes y certificados</h5>
+                <p>Descargue el informe de jornada o el ZIP resumido de certificados.</p>
+              </header>
+              <div class="jornada-evidencias-export-actions">
+                <button
+                  type="button"
+                  class="ghost"
+                  (click)="exportarInformeJornadaEvidencia($event)"
+                  [disabled]="exportandoInformeJornadaEvidencia()">
+                  {{ exportandoInformeJornadaEvidencia() ? 'Generando informe…' : 'Informe de jornada (PDF)' }}
+                </button>
                 <button
                   type="button"
                   class="primary"
-                  (click)="subirEvidenciaConsolidadaJornada($event)"
-                  [disabled]="subiendoEvidenciaJornada() || !jornadaEvidenciaArchivos().length">
-                  {{ subiendoEvidenciaJornada() ? 'Consolidando…' : 'Consolidar y cargar evidencia' }}
+                  (click)="descargarZipCertificadosJornadaEvidencia($event)"
+                  [disabled]="descargandoZipJornadaEvidencia() || !jornadaEvidenciaCerts().length">
+                  {{ descargandoZipJornadaEvidencia() ? 'Generando ZIP…' : 'Certificados resumidos (ZIP)' }}
                 </button>
               </div>
-            </div>
-          </section>
+            </section>
+          </div>
         }
           </div>
 
         <div class="actions jornada-modal-actions">
+          @if (jornadaEditPanel() === 'datos' || jornadaEditModo() === 'nueva') {
           <button type="button" class="primary" (click)="guardarEdicionJornada($event)" [disabled]="loading()">
             {{ jornadaEditModo() === 'nueva' ? 'Crear jornada extra' : 'Guardar jornada' }}
           </button>
+          }
           @if (operacionEspecialActiva() && jornadaEditModo() === 'edit' && je._id) {
             @if (je.estado !== 'FINALIZADO') {
               <button type="button" class="ghost" (click)="cerrarJornadaOperacion(je, $event)">Cerrar jornada</button>
@@ -1561,15 +1661,6 @@
                 [title]="contratoDeJornadaFinalizado(j) ? 'Contrato finalizado: solo consulta' : 'Editar jornada'">
                 Editar
               </button>
-              @if (j.urlEvidenciaConsolidada) {
-                <button
-                  type="button"
-                  class="mini ghost"
-                  (click)="abrirEvidenciaJornada(j, $event)"
-                  title="Ver evidencia consolidada (PDF)">
-                  Evidencia
-                </button>
-              }
               @if (puedeEliminarClase()) {
                 <button
                   type="button"

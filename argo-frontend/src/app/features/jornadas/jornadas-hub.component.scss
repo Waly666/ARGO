@@ -2334,6 +2334,130 @@ button.btn-reactivar-contrato,
     }
   }
 
+  .jornada-modal-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding: 0.65rem 1.2rem 0;
+    border-bottom: 1px solid rgba(120, 170, 255, 0.14);
+    background: rgba(6, 16, 36, 0.72);
+  }
+
+  .jornada-modal-nav-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid rgba(120, 170, 255, 0.22);
+    border-radius: 999px;
+    background: rgba(15, 30, 58, 0.55);
+    color: rgba(226, 236, 255, 0.82);
+    padding: 0.42rem 0.95rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      border-color: rgba(125, 211, 252, 0.55);
+      color: #f8fafc;
+    }
+
+    &.active {
+      border-color: rgba(56, 189, 248, 0.75);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(14, 116, 144, 0.28));
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.18);
+    }
+  }
+
+  .jornada-modal-nav-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.25);
+  }
+
+  .jornada-evidencias-ficha {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .jornada-evidencias-ficha-head {
+    h4 {
+      margin: 0.15rem 0 0.35rem;
+      color: var(--text);
+      font-size: 1.05rem;
+    }
+  }
+
+  .jornada-evidencias-kicker {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #67e8f9;
+  }
+
+  .jornada-evidencias-bloque {
+    border: 1px solid rgba(120, 170, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(8, 18, 40, 0.55);
+    overflow: hidden;
+  }
+
+  .jornada-evidencias-bloque-head {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(120, 170, 255, 0.12);
+    background: rgba(15, 30, 58, 0.45);
+
+    h5 {
+      margin: 0 0 0.2rem;
+      color: #e2e8f0;
+      font-size: 0.92rem;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.78rem;
+      color: rgba(191, 219, 254, 0.72);
+    }
+  }
+
+  .jornada-evidencias-bloque .jornada-evidencia-panel {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .jornada-evidencias-tabla-wrap {
+    max-height: 280px;
+    overflow: auto;
+  }
+
+  .jornada-evidencias-export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem 1rem;
+  }
+
+  .jornada-evidencia-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(52, 211, 153, 0.14);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    color: #6ee7b7;
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+
   .jornada-modal-eyebrow {
     display: block;
     color: #7dd3fc;

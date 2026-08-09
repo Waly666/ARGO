@@ -692,6 +692,22 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   /** Archivos locales pendientes de consolidar y subir (evidencia jornada). */
   jornadaEvidenciaArchivos = signal<File[]>([]);
   subiendoEvidenciaJornada = signal(false);
+  /** Panel interno del modal editar jornada. */
+  jornadaEditPanel = signal<'datos' | 'evidencias'>('datos');
+  jornadaEvidenciaCerts = signal<
+    Array<{
+      _id: string;
+      codigoCert?: string;
+      nombreCompleto?: string;
+      numDoc?: number;
+      encabezado?: string;
+      horasCert?: number;
+      fechaEmision?: string;
+    }>
+  >([]);
+  cargandoJornadaEvidenciaCerts = signal(false);
+  exportandoInformeJornadaEvidencia = signal(false);
+  descargandoZipJornadaEvidencia = signal(false);
 
   opcionesSupervisores = computed<EnumBuscarOption[]>(() =>
     this.supervisores().map((s) => ({ value: s._id, label: s.nombre })),
@@ -2273,6 +2289,99 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  irPanelJornadaEdit(panel: 'datos' | 'evidencias') {
+    this.jornadaEditPanel.set(panel);
+    if (panel === 'evidencias') this.cargarCertificadosJornadaEvidencia();
+  }
+
+  cargarCertificadosJornadaEvidencia() {
+    const je = this.jornadaEdit();
+    const idJornada = String(je?._id || '').trim();
+    const idContrato = String(je?.idContrato || this.contratoSel() || '').trim();
+    if (!idJornada) return;
+    this.cargandoJornadaEvidenciaCerts.set(true);
+    this.jornadaSvc
+      .listarCertificadosJornada({ idContrato: idContrato || undefined, idJornada })
+      .subscribe({
+        next: (rows) => {
+          this.jornadaEvidenciaCerts.set(rows || []);
+          this.cargandoJornadaEvidenciaCerts.set(false);
+        },
+        error: () => {
+          this.jornadaEvidenciaCerts.set([]);
+          this.cargandoJornadaEvidenciaCerts.set(false);
+        },
+      });
+  }
+
+  exportarInformeJornadaEvidencia(ev?: Event) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    const je = this.jornadaEdit();
+    const idContrato = String(je?.idContrato || this.contratoSel() || '').trim();
+    const idJornada = String(je?._id || '').trim();
+    if (!idContrato || !idJornada) return;
+    this.exportandoInformeJornadaEvidencia.set(true);
+    this.jornadaSvc.descargarInformeContratoPdf(idContrato, { alcance: 'jornada', idJornada }).subscribe({
+      next: (blob) => {
+        this.exportandoInformeJornadaEvidencia.set(false);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `informe_jornada_${new Date().toISOString().slice(0, 10)}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.mostrarMsg('Informe de jornada descargado.', 'ok', 'Informe');
+      },
+      error: (e) => {
+        this.exportandoInformeJornadaEvidencia.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo generar el informe.', 'error', 'Error');
+      },
+    });
+  }
+
+  async descargarZipCertificadosJornadaEvidencia(ev?: Event) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    const je = this.jornadaEdit();
+    const idContrato = String(je?.idContrato || this.contratoSel() || '').trim();
+    const idJornada = String(je?._id || '').trim();
+    if (!idJornada) return;
+    if (!this.jornadaEvidenciaCerts().length) {
+      this.mostrarMsg('No hay certificados emitidos en esta jornada.', 'warn', 'Certificados');
+      return;
+    }
+    this.descargandoZipJornadaEvidencia.set(true);
+    this.zipProgresoOpen.set(true);
+    this.zipProgreso.set({
+      status: 'running',
+      fase: 'Iniciando…',
+      hecho: 0,
+      total: this.jornadaEvidenciaCerts().length,
+      porcentaje: 1,
+    });
+    try {
+      await ejecutarExportZipCertificados(
+        this.jornadaSvc,
+        { idContrato: idContrato || undefined, idJornada },
+        (p) => this.zipProgreso.set(p),
+        `certificados-jornada_${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+      this.zipProgresoOpen.set(false);
+      this.mostrarMsg(
+        `ZIP descargado (${this.jornadaEvidenciaCerts().length} certificado(s)). Abra 00-todos-imprimir.pdf para imprimir todos.`,
+        'ok',
+        'Certificados',
+      );
+    } catch (e: unknown) {
+      const texto = e instanceof Error ? e.message : 'No se pudo generar el ZIP.';
+      this.zipProgreso.update((p) => ({ ...p, status: 'error', fase: 'Error', message: texto }));
+      this.mostrarMsg(texto, 'error', 'Certificados');
+    } finally {
+      this.descargandoZipJornadaEvidencia.set(false);
+    }
+  }
+
   onEvidenciaJornadaSelected(ev: Event) {
     const input = ev.target as HTMLInputElement;
     const picked = Array.from(input.files || []);
@@ -2313,6 +2422,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
         this.jornadaEvidenciaArchivos.set([]);
         this.jornadaEdit.set({ ...je!, ...j });
         this.jornadas.update((rows) => rows.map((r) => (r._id === j._id ? { ...r, ...j } : r)));
+        if (this.jornadaEditPanel() === 'evidencias') this.cargarCertificadosJornadaEvidencia();
         this.mostrarMsg('Evidencia consolidada en un PDF y guardada.', 'ok', 'Evidencia');
       },
       error: (e) => {
@@ -5010,8 +5120,10 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     this.jornadaEditModo.set('edit');
+    this.jornadaEditPanel.set('datos');
     this.jornadaEditError.set(null);
     this.jornadaEvidenciaArchivos.set([]);
+    this.jornadaEvidenciaCerts.set([]);
     this.direccionAlertaActiva.set(false);
     this.jornadaEdit.set({ ...j });
     this.jornadaEditLat.set(j.lat != null ? String(j.lat) : '');
@@ -5050,9 +5162,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     this.jornadaEditModo.set('nueva');
+    this.jornadaEditPanel.set('datos');
     this.jornadaEditGenerarClases.set((c.clasesPorJornada ?? 0) > 0);
     this.jornadaEditError.set(null);
     this.jornadaEvidenciaArchivos.set([]);
+    this.jornadaEvidenciaCerts.set([]);
     this.direccionAlertaActiva.set(false);
     this.jornadaEdit.set({ _id: '', idContrato: id, estado: 'INACTIVO' } as JornadaCapDto);
     this.jornadaEditDireccion.set(c.direccion || '');
@@ -5097,7 +5211,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     this.georefLoading.set(false);
     this.jornadaEdit.set(null);
+    this.jornadaEditPanel.set('datos');
     this.jornadaEvidenciaArchivos.set([]);
+    this.jornadaEvidenciaCerts.set([]);
     this.subiendoEvidenciaJornada.set(false);
     this.jornadaEditLat.set('');
     this.jornadaEditLng.set('');
