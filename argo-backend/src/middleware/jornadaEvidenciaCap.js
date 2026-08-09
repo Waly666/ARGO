@@ -28,4 +28,24 @@ async function loadClaseParaEvidencia(req, res, next) {
   }
 }
 
-module.exports = { loadClaseParaEvidencia, sanitizeCodContrato };
+/** Carga la jornada y el código de contrato para evidencia consolidada. */
+async function loadJornadaParaEvidencia(req, res, next) {
+  try {
+    const jornada = await JornadaCap.findById(req.params.id);
+    if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
+
+    let codContrato = 'sin-contrato';
+    if (jornada.idContrato) {
+      const contrato = await Contratacion.findById(jornada.idContrato).select('codContrato').lean();
+      codContrato = contrato?.codContrato || String(jornada.idContrato);
+    }
+
+    req.jornadaEvidencia = jornada;
+    req.evidenciaCapCodContrato = sanitizeCodContrato(codContrato);
+    next();
+  } catch (e) {
+    next(e);
+  }
+}
+
+module.exports = { loadClaseParaEvidencia, loadJornadaParaEvidencia, sanitizeCodContrato };

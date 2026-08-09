@@ -304,8 +304,8 @@ button.btn-reactivar-contrato,
 
     .contrato-form-layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-      gap: 1rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1.25rem;
       margin-bottom: 0.5rem;
 
       @media (max-width: 960px) {
@@ -1897,34 +1897,35 @@ button.btn-reactivar-contrato,
     }
 
     /* +25% respecto a tamaños compactos anteriores */
+    /* Formulario contrato más ancho */
     .col-w-cod {
-      flex: 0 1 163px;
-      min-width: 125px;
-      max-width: 188px;
+      flex: 0 1 200px;
+      min-width: 150px;
+      max-width: 250px;
     }
 
     .col-w-sm {
-      flex: 0 1 188px;
-      min-width: 150px;
-      max-width: 225px;
+      flex: 0 1 240px;
+      min-width: 180px;
+      max-width: 320px;
     }
 
     .col-w-md {
-      flex: 0 1 250px;
-      min-width: 175px;
-      max-width: 300px;
+      flex: 1 1 320px;
+      min-width: 220px;
+      max-width: none;
     }
 
     .col-w-lg {
-      flex: 1 1 325px;
-      min-width: 225px;
-      max-width: 400px;
+      flex: 1 1 420px;
+      min-width: 280px;
+      max-width: none;
     }
 
     .col-w-sup {
-      flex: 1 1 375px;
-      min-width: 280px;
-      max-width: 475px;
+      flex: 1 1 480px;
+      min-width: 320px;
+      max-width: none;
     }
 
     .col-w-cert {
@@ -2303,7 +2304,7 @@ button.btn-reactivar-contrato,
   }
 
   .edit-panel.jornada-modal {
-    width: min(1180px, 96vw);
+    width: min(1280px, 98vw);
     max-height: 95vh;
     margin: 0;
     padding: 0;
@@ -2475,6 +2476,79 @@ button.btn-reactivar-contrato,
       border-color: rgba(45, 212, 191, 0.3);
       color: #99f6e4;
       background: rgba(13, 148, 136, 0.1);
+    }
+  }
+
+  .jornada-form-section--evidencia {
+    margin-top: 0.35rem;
+  }
+
+  .jornada-evidencia-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(120, 170, 255, 0.22);
+    background: rgba(15, 30, 58, 0.55);
+  }
+
+  .jornada-evidencia-actual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .jornada-evidencia-lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.35rem 0.55rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.82rem;
+      color: var(--text-soft);
+    }
+  }
+
+  .jornada-evidencia-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+  }
+
+  .jornada-evidencia-upload {
+    cursor: pointer;
+
+    input {
+      display: none;
+    }
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      border: 1px dashed rgba(125, 211, 252, 0.45);
+      background: rgba(14, 116, 144, 0.12);
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    &:hover span {
+      border-color: rgba(125, 211, 252, 0.75);
+      background: rgba(14, 116, 144, 0.2);
     }
   }
 

@@ -124,6 +124,28 @@ const memory = multer({
   limits: { fileSize: 12 * 1024 * 1024 },
 });
 
+/** Evidencia consolidada jornada: memoria, varios PNG/PDF (máx. 25 MB c/u, 20 archivos). */
+function buildEvidenciaJornadaMemoria() {
+  return multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 25 * 1024 * 1024, files: 20 },
+    fileFilter: (_req, file, cb) => {
+      const mime = String(file.mimetype || '').toLowerCase();
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const okPdf = mime === 'application/pdf' || ext === '.pdf';
+      const okImg =
+        /^image\/(png|jpe?g|webp|gif)$/i.test(mime) ||
+        ['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(ext);
+      if (!okPdf && !okImg) {
+        const err = new Error('Solo PNG, JPG, WEBP, GIF o PDF');
+        err.status = 400;
+        return cb(err);
+      }
+      cb(null, true);
+    },
+  });
+}
+
 module.exports = {
   alumnos: build('alumnos'),
   vehiculos: build('vehiculos'),
@@ -141,6 +163,7 @@ module.exports = {
   aulaVirtualFundacionHero: buildImagen('aula-virtual-fundacion-hero', 8),
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   evidenciasCap: buildEvidenciaCap(),
+  evidenciaJornadaMemoria: buildEvidenciaJornadaMemoria(),
   memory,
   baseDir: BASE,
   formatTsInicio,

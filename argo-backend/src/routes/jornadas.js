@@ -3,7 +3,7 @@ const ctrl = require('../controllers/jornadaCapController');
 const encCtrl = require('../controllers/encuestaJornadaCapController');
 const sup = require('../controllers/supervisorController');
 const upload = require('../middleware/upload');
-const { loadClaseParaEvidencia } = require('../middleware/jornadaEvidenciaCap');
+const { loadClaseParaEvidencia, loadJornadaParaEvidencia } = require('../middleware/jornadaEvidenciaCap');
 const { soloCertificadoJornada } = require('../middleware/certificadoJornada');
 const certRender = require('../controllers/certificadoRenderController');
 const { requireAuth, requirePermiso, requireAdminTotal } = require('../middleware/auth');
@@ -22,6 +22,7 @@ const registrarAlumnos = requirePermiso(
   'jornadas.gestionar',
 );
 const fotoEvidenciaClase = upload.evidenciasCap.single('foto');
+const evidenciaJornadaFiles = upload.evidenciaJornadaMemoria.array('evidencias', 20);
 const soporteIngresoContrato = upload.ingresos.single('soporte');
 
 const evalVer = requirePermiso('jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar');
@@ -60,6 +61,14 @@ router.get('/jornadas/en-proceso', ver, ctrl.jornadasEnProceso);
 router.get('/jornadas', ver, ctrl.listarJornadas);
 router.get('/jornadas/:id', ver, ctrl.obtenerJornada);
 router.patch('/jornadas/:id', gest, contratoMutable.jornadaPorParametro, ctrl.actualizarJornada);
+router.post(
+  '/jornadas/:id/evidencia-consolidada',
+  gest,
+  contratoMutable.jornadaPorParametro,
+  loadJornadaParaEvidencia,
+  evidenciaJornadaFiles,
+  ctrl.subirEvidenciaConsolidadaJornada,
+);
 router.post('/jornadas/:id/cerrar-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.cerrarJornadaOperacion);
 router.post('/jornadas/:id/reabrir-operacion', gest, contratoMutable.jornadaPorParametro, ctrl.reabrirJornadaOperacion);
 router.delete('/jornadas/:id', requireAdminTotal, contratoMutable.jornadaPorParametro, ctrl.eliminarJornada);

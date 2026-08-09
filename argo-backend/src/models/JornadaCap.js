@@ -27,6 +27,8 @@ const JornadaCapSchema = new mongoose.Schema(
     estado: { type: String, enum: ESTADOS_JORNADA, default: ESTADO_JORNADA_INACTIVO },
     /** Si true, no recalcula estado por fecha (cierre manual en modo operación especial). */
     estadoOperacionManual: { type: Boolean, default: false },
+    /** PDF único con evidencias consolidadas (imágenes + PDFs). */
+    urlEvidenciaConsolidada: { type: String, trim: true, default: '' },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
   },

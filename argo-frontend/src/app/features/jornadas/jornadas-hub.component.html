@@ -1356,6 +1356,57 @@
           Elija municipio en Divipola (el departamento se asigna solo) o fije coordenadas en el mapa/GPS para actualizar ambos.
         </p>
         </section>
+        @if (jornadaEditModo() === 'edit' && je._id) {
+          <section class="jornada-form-section jornada-form-section--evidencia">
+            <header class="jornada-form-section-head">
+              <span class="jornada-form-section-icon" aria-hidden="true">03</span>
+              <div>
+                <h4>Evidencia de la jornada</h4>
+                <p>Seleccione imágenes PNG/JPG y/o PDF; se consolidarán en un solo archivo PDF.</p>
+              </div>
+            </header>
+            <div class="jornada-evidencia-panel">
+              @if (je.urlEvidenciaConsolidada) {
+                <div class="jornada-evidencia-actual">
+                  <span class="hint">Evidencia consolidada disponible.</span>
+                  <button type="button" class="mini primary" (click)="abrirEvidenciaJornada(je, $event)">
+                    Ver evidencia PDF
+                  </button>
+                </div>
+              } @else {
+                <p class="hint">Aún no hay evidencia consolidada para esta jornada.</p>
+              }
+              @if (jornadaEvidenciaArchivos().length) {
+                <ul class="jornada-evidencia-lista">
+                  @for (f of jornadaEvidenciaArchivos(); track f.name + f.size + $index; let i = $index) {
+                    <li>
+                      <span>{{ f.name }}</span>
+                      <button type="button" class="mini ghost" (click)="quitarEvidenciaJornadaPendiente(i)">Quitar</button>
+                    </li>
+                  }
+                </ul>
+              }
+              <div class="jornada-evidencia-actions">
+                <label class="evidencia-upload jornada-evidencia-upload">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf,.png,.jpg,.jpeg,.pdf"
+                    multiple
+                    (change)="onEvidenciaJornadaSelected($event)"
+                    [disabled]="subiendoEvidenciaJornada()" />
+                  <span>📎 Agregar archivos (PNG / PDF)</span>
+                </label>
+                <button
+                  type="button"
+                  class="primary"
+                  (click)="subirEvidenciaConsolidadaJornada($event)"
+                  [disabled]="subiendoEvidenciaJornada() || !jornadaEvidenciaArchivos().length">
+                  {{ subiendoEvidenciaJornada() ? 'Consolidando…' : 'Consolidar y cargar evidencia' }}
+                </button>
+              </div>
+            </div>
+          </section>
+        }
           </div>
 
         <div class="actions jornada-modal-actions">
@@ -1510,6 +1561,15 @@
                 [title]="contratoDeJornadaFinalizado(j) ? 'Contrato finalizado: solo consulta' : 'Editar jornada'">
                 Editar
               </button>
+              @if (j.urlEvidenciaConsolidada) {
+                <button
+                  type="button"
+                  class="mini ghost"
+                  (click)="abrirEvidenciaJornada(j, $event)"
+                  title="Ver evidencia consolidada (PDF)">
+                  Evidencia
+                </button>
+              }
               @if (puedeEliminarClase()) {
                 <button
                   type="button"

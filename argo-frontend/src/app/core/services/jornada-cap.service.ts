@@ -428,6 +428,8 @@ export interface JornadaCapDto {
   /** Certificados vigentes atribuidos a esta jornada. */
   certificadosJornada?: number;
   cumplidoJornada?: boolean;
+  /** PDF único con evidencias consolidadas (PNG/PDF). */
+  urlEvidenciaConsolidada?: string;
 }
 
 export interface ClaseJornadaDto {
@@ -930,6 +932,12 @@ export class JornadaCapService {
     const fd = new FormData();
     fd.append('foto', file);
     return this.http.post<ClaseJornadaDto>(`${this.base}/clases/${id}/foto-evidencia`, fd);
+  }
+
+  subirEvidenciaConsolidadaJornada(id: string, files: File[]): Observable<JornadaCapDto> {
+    const fd = new FormData();
+    for (const f of files) fd.append('evidencias', f, f.name);
+    return this.http.post<JornadaCapDto>(`${this.base}/jornadas/${id}/evidencia-consolidada`, fd);
   }
 
   registrarAsistencia(idClase: string, numDoc: number | string) {

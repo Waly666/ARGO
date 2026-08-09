@@ -3,6 +3,7 @@ const Cliente = require('../models/Cliente');
 const fs = require('fs');
 const path = require('path');
 const upload = require('../middleware/upload');
+const { consolidarEvidenciasEnPdf } = require('../services/evidenciaJornadaConsolidada');
 const Supervisor = require('../models/Supervisor');
 const JornadaCap = require('../models/JornadaCap');
 const ClaseJornadaCap = require('../models/ClaseJornadaCap');
@@ -2029,6 +2030,52 @@ exports.subirFotoEvidenciaClase = async (req, res, next) => {
         /* ignore */
       }
     }
+    next(e);
+  }
+};
+
+/** Consolida PNG/PDF en un solo PDF por jornada. */
+exports.subirEvidenciaConsolidadaJornada = async (req, res, next) => {
+  try {
+    const files = req.files?.length ? req.files : req.file ? [req.file] : [];
+    if (!files.length) {
+      return res.status(400).json({ message: 'Debe enviar al menos un archivo (campo evidencias)' });
+    }
+
+    const jornada = req.jornadaEvidencia;
+    if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
+
+    const pdfBuf = await consolidarEvidenciasEnPdf(files);
+
+    const cod = req.evidenciaCapCodContrato || 'sin-contrato';
+    const id = String(jornada._id);
+    const ts = upload.formatTsInicio(jornada.fechaProgramacion || new Date());
+    const dir = path.join(upload.baseDir, 'evidenciascap', cod, 'jornadas');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const filename = `${id}_${ts}.pdf`;
+    const abs = path.join(dir, filename);
+    fs.writeFileSync(abs, pdfBuf);
+
+    const rel = upload.publicUrlPath('evidenciascap', cod, 'jornadas', filename);
+    const prev = jornada.urlEvidenciaConsolidada;
+    if (prev && prev !== rel) {
+      const prevPath = upload.resolvePath(prev);
+      if (prevPath && fs.existsSync(prevPath)) {
+        try {
+          fs.unlinkSync(prevPath);
+        } catch (_) {
+          /* ignore */
+        }
+      }
+    }
+
+    jornada.urlEvidenciaConsolidada = rel;
+    jornada.userChangeRecord = auditoriaUsuario(req);
+    await jornada.save();
+
+    const synced = await sincronizarEstadoJornada(jornada.toObject());
+    res.json(await enrichJornadaConContrato(synced));
+  } catch (e) {
     next(e);
   }
 };

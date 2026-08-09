@@ -689,6 +689,9 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   /** Autogenerar clases al crear jornada extra (según clasesPorJornada del contrato). */
   jornadaEditGenerarClases = signal(true);
   supNuevoNombreJornada = signal('');
+  /** Archivos locales pendientes de consolidar y subir (evidencia jornada). */
+  jornadaEvidenciaArchivos = signal<File[]>([]);
+  subiendoEvidenciaJornada = signal(false);
 
   opcionesSupervisores = computed<EnumBuscarOption[]>(() =>
     this.supervisores().map((s) => ({ value: s._id, label: s.nombre })),
@@ -2253,6 +2256,70 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!path) return '';
     if (/^https?:\/\//i.test(path)) return path;
     return `${environment.uploadsUrl}/${path.replace(/^\/+/, '')}`;
+  }
+
+  urlEvidenciaJornada(path?: string | null): string {
+    return this.urlFotoEvidencia(path);
+  }
+
+  abrirEvidenciaJornada(j: JornadaCapDto, ev?: Event) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    const url = this.urlEvidenciaJornada(j.urlEvidenciaConsolidada);
+    if (!url) {
+      this.mostrarMsg('Esta jornada no tiene evidencia consolidada.', 'warn', 'Evidencia');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  onEvidenciaJornadaSelected(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const picked = Array.from(input.files || []);
+    input.value = '';
+    if (!picked.length) return;
+    const actuales = this.jornadaEvidenciaArchivos();
+    this.jornadaEvidenciaArchivos.set([...actuales, ...picked]);
+  }
+
+  quitarEvidenciaJornadaPendiente(idx: number) {
+    const list = [...this.jornadaEvidenciaArchivos()];
+    list.splice(idx, 1);
+    this.jornadaEvidenciaArchivos.set(list);
+  }
+
+  subirEvidenciaConsolidadaJornada(ev?: Event) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    if (this.contratoDeJornadaFinalizado(this.jornadaEdit() || ({} as JornadaCapDto))) {
+      this.avisarContratoFinalizado();
+      return;
+    }
+    const je = this.jornadaEdit();
+    const id = String(je?._id || '').trim();
+    const files = this.jornadaEvidenciaArchivos();
+    if (!id) {
+      this.mostrarMsg('Guarde la jornada antes de cargar evidencia.', 'warn', 'Evidencia');
+      return;
+    }
+    if (!files.length) {
+      this.mostrarMsg('Seleccione al menos un PNG o PDF.', 'warn', 'Evidencia');
+      return;
+    }
+    this.subiendoEvidenciaJornada.set(true);
+    this.jornadaSvc.subirEvidenciaConsolidadaJornada(id, files).subscribe({
+      next: (j) => {
+        this.subiendoEvidenciaJornada.set(false);
+        this.jornadaEvidenciaArchivos.set([]);
+        this.jornadaEdit.set({ ...je!, ...j });
+        this.jornadas.update((rows) => rows.map((r) => (r._id === j._id ? { ...r, ...j } : r)));
+        this.mostrarMsg('Evidencia consolidada en un PDF y guardada.', 'ok', 'Evidencia');
+      },
+      error: (e) => {
+        this.subiendoEvidenciaJornada.set(false);
+        this.mostrarMsg(e?.error?.message || 'No se pudo consolidar la evidencia.', 'error', 'Error');
+      },
+    });
   }
 
   onFotoEvidenciaSelected(ev: Event) {
@@ -4944,6 +5011,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     this.jornadaEditModo.set('edit');
     this.jornadaEditError.set(null);
+    this.jornadaEvidenciaArchivos.set([]);
     this.direccionAlertaActiva.set(false);
     this.jornadaEdit.set({ ...j });
     this.jornadaEditLat.set(j.lat != null ? String(j.lat) : '');
@@ -4984,6 +5052,7 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditModo.set('nueva');
     this.jornadaEditGenerarClases.set((c.clasesPorJornada ?? 0) > 0);
     this.jornadaEditError.set(null);
+    this.jornadaEvidenciaArchivos.set([]);
     this.direccionAlertaActiva.set(false);
     this.jornadaEdit.set({ _id: '', idContrato: id, estado: 'INACTIVO' } as JornadaCapDto);
     this.jornadaEditDireccion.set(c.direccion || '');
@@ -5028,6 +5097,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }
     this.georefLoading.set(false);
     this.jornadaEdit.set(null);
+    this.jornadaEvidenciaArchivos.set([]);
+    this.subiendoEvidenciaJornada.set(false);
     this.jornadaEditLat.set('');
     this.jornadaEditLng.set('');
     this.jornadaEditDeteGeorefe.set('');
