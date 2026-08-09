@@ -1118,8 +1118,10 @@ blockquote {
   line-height: 1.55;
 }
 
-#testimonios .dark-card__titulo {
+#testimonios .testimonio-card .dark-card__titulo {
   font-size: 0.95rem;
+  color: #f1f5ff;
+  -webkit-text-fill-color: #f1f5ff;
 }
 
 .testimonio-texto {
