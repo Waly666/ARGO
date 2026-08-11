@@ -38,6 +38,18 @@
         <div class="inf-hero-exports">
           <button
             type="button"
+            class="inf-btn inf-btn--danger"
+            (click)="descargarPaqueteEntregaContrato()"
+            [disabled]="loading() || descargandoPaqueteEntregaContrato() || !data()"
+            title="Informes generales + encuesta de satisfacción + por jornada (informe, certificados, evidencia e imágenes) en un ZIP">
+            {{
+              descargandoPaqueteEntregaContrato()
+                ? 'Generando paquete…'
+                : 'Paquete de entrega (ZIP completo)'
+            }}
+          </button>
+          <button
+            type="button"
             class="inf-btn inf-btn--primary"
             (click)="exportarPdf('contrato')"
             [disabled]="loading() || exportando() || !data()">
@@ -212,7 +224,7 @@
             </p>
             @if (chartBarrasJornada().items.length) {
               <div class="inf-vbars" role="img" aria-label="Alumnos por jornada">
-                @for (it of chartBarrasJornada().items; track it.label) {
+                @for (it of chartBarrasJornada().items; track it.trackKey) {
                   <div
                     class="inf-vbar-col"
                     [title]="it.label + ': ' + it.value + ' (' + formatPct(it.pctTotal) + ')'"
@@ -241,7 +253,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (it of chartBarrasJornada().items; track it.label) {
+                  @for (it of chartBarrasJornada().items; track it.trackKey) {
                     <tr>
                       <td>
                         <span class="inf-chart-dot" [style.background]="it.color"></span>
@@ -275,12 +287,12 @@
               <div class="inf-pie" role="img" aria-label="Clases por estado">
                 <div class="inf-pie-visual">
                   <svg viewBox="0 0 100 100" class="inf-pie-svg">
-                    @for (s of chartTortaEstado().slices; track s.label) {
+                    @for (s of chartTortaEstado().slices; track s.trackKey) {
                       <path [attr.d]="s.path" [attr.fill]="s.color">
                         <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
                       </path>
                     }
-                    @for (s of chartTortaEstado().slices; track s.label + '-lbl') {
+                    @for (s of chartTortaEstado().slices; track s.trackKey + '-lbl') {
                       @if (s.showLabel) {
                         <text
                           class="inf-pie-slice-lbl"
@@ -300,7 +312,7 @@
                   </div>
                 </div>
                 <ul class="inf-pie-legend">
-                  @for (s of chartTortaEstado().slices; track s.label) {
+                  @for (s of chartTortaEstado().slices; track s.trackKey) {
                     <li>
                       <span class="inf-pie-swatch" [style.background]="s.color"></span>
                       <span class="inf-pie-leg-lbl">{{ s.label }}</span>
@@ -319,7 +331,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (s of chartTortaEstado().slices; track s.label) {
+                  @for (s of chartTortaEstado().slices; track s.trackKey) {
                     <tr>
                       <td>
                         <span class="inf-chart-dot" [style.background]="s.color"></span>
@@ -351,7 +363,7 @@
             </p>
             @if (chartBarrasPrograma().items.length) {
               <div class="inf-hbars" role="img" aria-label="Alumnos por programa">
-                @for (it of chartBarrasPrograma().items; track it.label) {
+                @for (it of chartBarrasPrograma().items; track it.trackKey) {
                   <div class="inf-hbar-row" [title]="it.label + ': ' + it.value">
                     <span class="inf-hbar-lbl" [title]="it.label">{{ it.label }}</span>
                     <div class="inf-hbar-track">
@@ -381,7 +393,7 @@
             </p>
             @if (chartBarrasInstructor().items.length) {
               <div class="inf-vbars" role="img" aria-label="Clases por instructor">
-                @for (it of chartBarrasInstructor().items; track it.label) {
+                @for (it of chartBarrasInstructor().items; track it.trackKey) {
                   <div
                     class="inf-vbar-col"
                     [title]="it.label + ': ' + it.value + ' (' + formatPct(it.pctTotal) + ')'"
@@ -410,7 +422,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (it of chartBarrasInstructor().items; track it.label) {
+                  @for (it of chartBarrasInstructor().items; track it.trackKey) {
                     <tr>
                       <td>
                         <span class="inf-chart-dot" [style.background]="it.color"></span>
@@ -477,26 +489,51 @@
 
       <!-- Jornadas -->
       <section class="inf-card inf-section inf-section--jornadas">
-        <div class="inf-card-head">
+        <div class="inf-card-head inf-card-head--split">
           <div>
             <p class="inf-card-kicker">Detalle por jornada</p>
             <h3>Por jornada</h3>
             <p class="inf-muted">
               Capacitados, certificados, origen y caracterización en cada jornada.
+              Pulse una jornada para ver su dashboard.
             </p>
           </div>
+          @if (jornadasConGraficos().length > 0) {
+            <div class="inf-jornada-list-actions">
+              <button
+                type="button"
+                class="inf-btn inf-btn--ghost inf-btn--sm"
+                (click)="expandirTodasJornadas()">
+                Expandir todas
+              </button>
+              <button
+                type="button"
+                class="inf-btn inf-btn--ghost inf-btn--sm"
+                (click)="colapsarTodasJornadas()">
+                Colapsar todas
+              </button>
+            </div>
+          }
         </div>
         <div class="inf-jornada-list">
           @for (j of jornadasConGraficos(); track j._id) {
-            <article class="inf-jornada-panel">
+            <article class="inf-jornada-panel" [class.is-open]="jornadaPanelAbierta(j._id)">
               <div class="inf-jornada-panel-head">
-                <div class="inf-jornada-panel-copy">
-                  <h4>{{ j.fechaLabel }}</h4>
-                  <div class="inf-jornada-panel-meta">
-                    <span class="inf-meta-chip inf-meta-chip--muted">{{ j.municipio || 'Sin municipio' }}</span>
-                    <span class="inf-chip">{{ j.estado || '—' }}</span>
+                <button
+                  type="button"
+                  class="inf-jornada-panel-toggle"
+                  (click)="toggleJornadaPanel(j._id)"
+                  [attr.aria-expanded]="jornadaPanelAbierta(j._id)"
+                  [attr.aria-controls]="'inf-jornada-body-' + j._id">
+                  <div class="inf-jornada-panel-copy">
+                    <h4>{{ j.fechaLabel }}</h4>
+                    <div class="inf-jornada-panel-meta">
+                      <span class="inf-meta-chip inf-meta-chip--muted">{{ j.municipio || 'Sin municipio' }}</span>
+                      <span class="inf-chip">{{ j.estado || '—' }}</span>
+                    </div>
                   </div>
-                </div>
+                  <span class="inf-jornada-panel-chevron" aria-hidden="true"></span>
+                </button>
                 <div class="inf-jornada-panel-stats">
                   <div><em>Clases</em><strong>{{ j.numClases }}</strong></div>
                   <div><em>Capacitados</em><strong>{{ j.alumnosCapacitados }}</strong></div>
@@ -510,31 +547,33 @@
                   </button>
                 </div>
               </div>
-              <div class="inf-jornada-charts">
-                <h5 class="inf-jornada-charts-title">Origen de alumnos</h5>
-                <div class="inf-charts inf-charts--caract">
-                  @for (block of j.origenCharts; track block.title) {
-                    <section class="inf-card inf-chart-card">
-                      <h3>{{ block.title }}</h3>
-                      <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
-                    </section>
-                  }
+              @if (jornadaPanelAbierta(j._id)) {
+                <div class="inf-jornada-charts" [id]="'inf-jornada-body-' + j._id">
+                  <h5 class="inf-jornada-charts-title">Origen de alumnos</h5>
+                  <div class="inf-charts inf-charts--caract">
+                    @for (block of j.origenCharts; track block.title) {
+                      <section class="inf-card inf-chart-card">
+                        <h3>{{ block.title }}</h3>
+                        <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
+                      </section>
+                    }
+                  </div>
+                  <h5 class="inf-jornada-charts-title">
+                    Caracterización de población
+                    @if (j.caracterizacionPoblacion?.total; as n) {
+                      ({{ n }} alumno(s))
+                    }
+                  </h5>
+                  <div class="inf-charts inf-charts--caract">
+                    @for (block of j.caractCharts; track block.title) {
+                      <section class="inf-card inf-chart-card">
+                        <h3>{{ block.title }}</h3>
+                        <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
+                      </section>
+                    }
+                  </div>
                 </div>
-                <h5 class="inf-jornada-charts-title">
-                  Caracterización de población
-                  @if (j.caracterizacionPoblacion?.total; as n) {
-                    ({{ n }} alumno(s))
-                  }
-                </h5>
-                <div class="inf-charts inf-charts--caract">
-                  @for (block of j.caractCharts; track block.title) {
-                    <section class="inf-card inf-chart-card">
-                      <h3>{{ block.title }}</h3>
-                      <ng-container *ngTemplateOutlet="infViz; context: { $implicit: block }" />
-                    </section>
-                  }
-                </div>
-              </div>
+              }
             </article>
           } @empty {
             <p class="inf-muted inf-empty-inline">Sin jornadas con el filtro actual.</p>
@@ -698,12 +737,12 @@
     <div class="inf-pie" role="img" [attr.aria-label]="block.title">
       <div class="inf-pie-visual">
         <svg viewBox="0 0 100 100" class="inf-pie-svg">
-          @for (s of block.pie.slices; track s.label) {
+          @for (s of block.pie.slices; track s.trackKey) {
             <path [attr.d]="s.path" [attr.fill]="s.color">
               <title>{{ s.label }}: {{ s.value }} ({{ formatPct(s.pct) }})</title>
             </path>
           }
-          @for (s of block.pie.slices; track s.label + '-lbl') {
+          @for (s of block.pie.slices; track s.trackKey + '-lbl') {
             @if (s.showLabel) {
               <text
                 class="inf-pie-slice-lbl"
@@ -723,7 +762,7 @@
         </div>
       </div>
       <ul class="inf-pie-legend">
-        @for (s of block.pie.slices; track s.label) {
+        @for (s of block.pie.slices; track s.trackKey) {
           <li>
             <span class="inf-pie-swatch" [style.background]="s.color"></span>
             <span class="inf-pie-leg-lbl" [title]="s.label">{{ s.label }}</span>
@@ -735,7 +774,7 @@
     </div>
   } @else if (block.kind === 'hbar' && block.series) {
     <div class="inf-hbars" role="img" [attr.aria-label]="block.title">
-      @for (it of block.series.items; track it.label) {
+      @for (it of block.series.items; track it.trackKey) {
         <div class="inf-hbar-row" [title]="it.label + ': ' + it.value">
           <span class="inf-hbar-lbl" [title]="it.label">{{ it.label }}</span>
           <div class="inf-hbar-track">
@@ -754,7 +793,7 @@
     </div>
   } @else if (block.kind === 'vbar' && block.series) {
     <div class="inf-vbars inf-vbars--compact" role="img" [attr.aria-label]="block.title">
-      @for (it of block.series.items; track it.label) {
+      @for (it of block.series.items; track it.trackKey) {
         <div class="inf-vbar-col" [title]="it.label + ': ' + it.value">
           <span class="inf-vbar-val">
             <strong>{{ it.value }}</strong>
@@ -774,7 +813,7 @@
   } @else if (block.kind === 'stack' && block.series) {
     <div class="inf-stack" role="img" [attr.aria-label]="block.title">
       <div class="inf-stack-bar">
-        @for (it of block.series.items; track it.label) {
+        @for (it of block.series.items; track it.trackKey) {
           <div
             class="inf-stack-seg"
             [style.flex-grow]="it.pctTotal || 0.1"
@@ -784,7 +823,7 @@
         }
       </div>
       <ul class="inf-stack-legend">
-        @for (it of block.series.items; track it.label) {
+        @for (it of block.series.items; track it.trackKey) {
           <li>
             <span class="inf-pie-swatch" [style.background]="it.color"></span>
             <span class="inf-pie-leg-lbl" [title]="it.label">{{ it.label }}</span>
@@ -797,7 +836,7 @@
     </div>
   } @else if (block.kind === 'rank' && block.series) {
     <ol class="inf-rank" role="img" [attr.aria-label]="block.title">
-      @for (it of block.series.items; track it.label) {
+      @for (it of block.series.items; track it.trackKey) {
         <li>
           <span class="inf-rank-n">{{ it.rank }}</span>
           <div class="inf-rank-body">

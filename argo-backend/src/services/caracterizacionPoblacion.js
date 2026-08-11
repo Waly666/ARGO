@@ -166,6 +166,65 @@ function labelEmpresa(a) {
   return String(a?.empresaNombre || '').trim() || 'Sin empresa';
 }
 
+/** Estudiante / Profesor (solo origen institución educativa). */
+function textoPerfilAlumnoInforme(a) {
+  const origen = normalizarOrigenJornadaCap(a?.origenJornadaCap) || 'operativo';
+  if (origen !== 'colegio') return '—';
+  return labelPerfilInstitucionEducativa(
+    normalizarPerfilInstitucionEducativa(a?.perfilInstitucionEducativa) || 'estudiante',
+  );
+}
+
+/**
+ * Detalle de caracterización por origen para tablas de informes PDF.
+ * Operativo y empresa no llevan detalle adicional (solo la etiqueta de origen).
+ */
+function textoCaracterizacionAlumnoInforme(a) {
+  const origen = normalizarOrigenJornadaCap(a?.origenJornadaCap) || 'operativo';
+  if (origen === 'operativo' || origen === 'empresa') return '—';
+
+  if (origen === 'colegio') {
+    const parts = [];
+    const inst = String(a?.colegioNombre || '').trim();
+    if (inst) parts.push(inst);
+    const tipo = normalizarTipoInstitucionEducativa(a?.tipoInstitucionEducativa);
+    if (tipo) parts.push(TIPO_INSTITUCION_LABELS[tipo] || tipo);
+    const perfil = normalizarPerfilInstitucionEducativa(a?.perfilInstitucionEducativa) || 'estudiante';
+    if (perfil === 'profesor') {
+      const area = labelAreaImparteColegio(a?.areaImparteColegio);
+      if (area && area !== 'Sin área') parts.push(area);
+    } else {
+      const grado = parseInt(a?.gradoColegio, 10);
+      if (Number.isFinite(grado) && grado >= 1 && grado <= 11) {
+        parts.push(`Grado ${grado}`);
+      }
+      const sem = parseInt(a?.semestreInstitucion, 10);
+      if (Number.isFinite(sem) && sem >= 1) parts.push(`Semestre ${sem}`);
+      const prog = String(a?.programaInstitucion || '').trim();
+      if (prog) parts.push(prog);
+    }
+    return parts.length ? parts.join(' · ') : '—';
+  }
+
+  if (origen === 'estamento') {
+    const parts = [];
+    const est = String(a?.estamentoNombre || '').trim();
+    if (est) parts.push(est);
+    const cargo = String(a?.cargoEstamento || '').trim();
+    if (cargo) parts.push(`Cargo: ${cargo}`);
+    const dep = String(a?.dependenciaEstamento || '').trim();
+    if (dep) parts.push(`Dependencia: ${dep}`);
+    return parts.length ? parts.join(' · ') : '—';
+  }
+
+  return '—';
+}
+
+/** Etiqueta de origen para tablas de informes PDF. */
+function textoOrigenAlumnoInforme(a) {
+  return labelOrigenAlumno(a);
+}
+
 /**
  * Agrega demografía + origen de jornada a partir de documentos DatosAlumno ya cargados.
  * @param {Array<object>} docs
@@ -299,4 +358,7 @@ module.exports = {
   rangoEdadLabel,
   caracterizarDesdeDocs,
   caracterizarPoblacion,
+  textoOrigenAlumnoInforme,
+  textoPerfilAlumnoInforme,
+  textoCaracterizacionAlumnoInforme,
 };

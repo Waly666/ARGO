@@ -2676,6 +2676,96 @@ exports.descargarExportZipCertificadosJob = async (req, res, next) => {
   }
 };
 
+/** Inicia paquete de entrega (informe + certificados + evidencia) de una jornada. */
+exports.iniciarPaqueteEntregaJornadaJob = async (req, res, next) => {
+  try {
+    const {
+      startPaqueteEntregaJob,
+      getPaqueteEntregaJob,
+      progressSnapshot,
+    } = require('../services/paqueteEntregaJornadaCap');
+    const { publicOriginFromReq } = require('../utils/publicOrigin');
+    const jornada = await JornadaCap.findById(req.params.id).select('_id').lean();
+    if (!jornada) return res.status(404).json({ message: 'Jornada no encontrada' });
+    const { jobId } = startPaqueteEntregaJob({
+      tipo: 'jornada',
+      params: { jornadaId: String(jornada._id) },
+      publicOrigin: publicOriginFromReq(req),
+      ownerSub: req.user?.sub || null,
+    });
+    const job = getPaqueteEntregaJob(jobId, req.user?.sub);
+    res.status(202).json(progressSnapshot(job));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+/** Inicia paquete de entrega completo de un contrato. */
+exports.iniciarPaqueteEntregaContratoJob = async (req, res, next) => {
+  try {
+    const {
+      startPaqueteEntregaJob,
+      getPaqueteEntregaJob,
+      progressSnapshot,
+    } = require('../services/paqueteEntregaJornadaCap');
+    const { publicOriginFromReq } = require('../utils/publicOrigin');
+    const c = await Contratacion.findById(req.params.id).select('_id').lean();
+    if (!c) return res.status(404).json({ message: 'Contrato no encontrado' });
+    const { jobId } = startPaqueteEntregaJob({
+      tipo: 'contrato',
+      params: { idContrato: String(c._id) },
+      publicOrigin: publicOriginFromReq(req),
+      ownerSub: req.user?.sub || null,
+    });
+    const job = getPaqueteEntregaJob(jobId, req.user?.sub);
+    res.status(202).json(progressSnapshot(job));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.progresoPaqueteEntregaJob = async (req, res, next) => {
+  try {
+    const { getPaqueteEntregaJob, progressSnapshot } = require('../services/paqueteEntregaJornadaCap');
+    const job = getPaqueteEntregaJob(req.params.jobId, req.user?.sub);
+    if (!job) return res.status(404).json({ message: 'Job no encontrado o expirado' });
+    res.json(progressSnapshot(job));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.descargarPaqueteEntregaJob = async (req, res, next) => {
+  try {
+    const { takePaqueteEntregaDownload } = require('../services/paqueteEntregaJornadaCap');
+    const meta = takePaqueteEntregaDownload(req.params.jobId, req.user?.sub);
+    if (!meta) return res.status(404).json({ message: 'Job no encontrado o expirado' });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${meta.filename}"`);
+    const stream = fs.createReadStream(meta.filePath);
+    stream.on('close', () => {
+      fs.promises.unlink(meta.filePath).catch(() => {});
+    });
+    stream.on('error', (e) => {
+      fs.promises.unlink(meta.filePath).catch(() => {});
+      if (!res.headersSent) {
+        res.status(500).json({ message: e.message || 'Error al enviar ZIP' });
+      } else {
+        res.destroy(e);
+      }
+    });
+    stream.pipe(res);
+  } catch (e) {
+    if (e.status && !res.headersSent) {
+      return res.status(e.status).json({ message: e.message });
+    }
+    next(e);
+  }
+};
+
 const CAMPOS_CERT_JORNADA_EDIT = [
   'tipoCertificado',
   'numActa',

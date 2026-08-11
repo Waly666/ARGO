@@ -96,15 +96,10 @@ function setProgress(job, patch) {
 }
 
 /**
- * Genera ZIP en disco y reporta progreso.
- * @returns {Promise<{ filePath: string, filename: string, total: number }>}
+ * Genera buffers PDF de certificados (individuales + merge).
+ * @returns {Promise<{ pdfs: { name: string, pdf: Buffer }[], todosPdf: Buffer, total: number }>}
  */
-async function buildZipCertificadosToFile({
-  rows,
-  publicOrigin,
-  filtros = {},
-  onProgress,
-}) {
+async function generarPdfsCertificados({ rows, publicOrigin, onProgress }) {
   if (!rows.length) {
     const err = new Error('No hay certificados con los filtros indicados.');
     err.status = 404;
@@ -130,9 +125,6 @@ async function buildZipCertificadosToFile({
     total,
     porcentaje: 2,
   });
-
-  const stamp = new Date().toISOString().slice(0, 10);
-  const filename = `certificados-jornadas_${stamp}.zip`;
 
   report({
     fase: 'Iniciando generador de PDF…',
@@ -194,10 +186,34 @@ async function buildZipCertificadosToFile({
   });
   const todosPdf = await mergePdfBuffers(pdfs.map((p) => p.pdf));
 
-  report({
-    fase: 'Empaquetando ZIP…',
-    porcentaje: 95,
+  return { pdfs, todosPdf, total: pdfs.length };
+}
+
+/**
+ * Genera ZIP en disco y reporta progreso.
+ * @returns {Promise<{ filePath: string, filename: string, total: number }>}
+ */
+async function buildZipCertificadosToFile({
+  rows,
+  publicOrigin,
+  filtros = {},
+  onProgress,
+}) {
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filename = `certificados-jornadas_${stamp}.zip`;
+
+  const { pdfs, todosPdf, total } = await generarPdfsCertificados({
+    rows,
+    publicOrigin,
+    onProgress,
   });
+
+  if (typeof onProgress === 'function') {
+    onProgress({
+      fase: 'Empaquetando ZIP…',
+      porcentaje: 95,
+    });
+  }
 
   const filePath = path.join(
     os.tmpdir(),
@@ -238,14 +254,16 @@ async function buildZipCertificadosToFile({
     archive.finalize();
   });
 
-  report({
-    fase: 'ZIP listo',
-    hecho: pdfs.length,
-    total,
-    porcentaje: 100,
-  });
+  if (typeof onProgress === 'function') {
+    onProgress({
+      fase: 'ZIP listo',
+      hecho: total,
+      total,
+      porcentaje: 100,
+    });
+  }
 
-  return { filePath, filename, total: pdfs.length };
+  return { filePath, filename, total };
 }
 
 /**
@@ -371,6 +389,8 @@ module.exports = {
   buildQueryCertificadosJornada,
   streamZipCertificadosJornada,
   buildZipCertificadosToFile,
+  generarPdfsCertificados,
+  sanitizarNombreArchivo,
   startZipJob,
   getZipJob,
   takeZipDownload,

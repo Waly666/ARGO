@@ -11,7 +11,12 @@ const { obtenerConfigRecibo } = require('./configRecibo');
 const { fmtFechaSolo } = require('../utils/timezoneColombia');
 const { parseFechaCalendario } = require('../utils/fechaCalendario');
 const { TIPO_CERTIFICADO_POR_CLASE } = require('../constants/jornadaCapacitacion');
-const { caracterizarDesdeDocs } = require('./caracterizacionPoblacion');
+const {
+  caracterizarDesdeDocs,
+  textoOrigenAlumnoInforme,
+  textoPerfilAlumnoInforme,
+  textoCaracterizacionAlumnoInforme,
+} = require('./caracterizacionPoblacion');
 
 function toObjectId(raw) {
   if (!raw) return null;
@@ -141,8 +146,10 @@ function chartsDesdeCaracterizacion(caract) {
     porMultiCulturalidad: c.porMultiCulturalidad || [],
     porOrigenJornada: c.porOrigenJornada || [],
     porTipoInstitucion: c.porTipoInstitucion || [],
+    porPerfilInstitucion: c.porPerfilInstitucion || [],
     porColegio: c.porColegio || [],
     porGradoColegio: c.porGradoColegio || [],
+    porAreaProfesor: c.porAreaProfesor || [],
     porEstamento: c.porEstamento || [],
     porCargoEstamento: c.porCargoEstamento || [],
     porDependenciaEstamento: c.porDependenciaEstamento || [],
@@ -246,9 +253,13 @@ async function obtenerDashboardInformeContrato(idContratoRaw, filtros = {}) {
     if (!asistPorClase.has(cid)) asistPorClase.set(cid, []);
     const nd = parseNumDoc(a.numDocAlumno);
     if (nd == null) continue;
+    const doc = alumnoMap.get(nd);
     asistPorClase.get(cid).push({
       numDoc: nd,
-      nombreCompleto: nombreAlumno(alumnoMap.get(nd)) || `Doc. ${nd}`,
+      nombreCompleto: nombreAlumno(doc) || `Doc. ${nd}`,
+      origenLabel: textoOrigenAlumnoInforme(doc),
+      perfilLabel: textoPerfilAlumnoInforme(doc),
+      caracterizacion: textoCaracterizacionAlumnoInforme(doc),
     });
   }
 
@@ -1081,12 +1092,20 @@ function htmlChartsOrigenYCaracterizacion(charts) {
       ${htmlPieChart(c.porTipoInstitucion || [], { kind: 'programa', colLabel: 'Tipo', colValue: 'Alumnos', unit: 'alumnos' })}
     </section>
     <section class="chart-card">
+      <h3 class="sec">Estudiante / profesor</h3>
+      ${htmlPieChart(c.porPerfilInstitucion || [], { kind: 'programa', colLabel: 'Perfil', colValue: 'Alumnos', unit: 'alumnos' })}
+    </section>
+    <section class="chart-card">
       <h3 class="sec">Institución educativa / colegio</h3>
       ${htmlRankChart(c.porColegio || [], { colLabel: 'Institución', colValue: 'Alumnos', colorOffset: 1 })}
     </section>
     <section class="chart-card">
       <h3 class="sec">Grado / programa</h3>
       ${htmlBarChart(c.porGradoColegio || [], { colLabel: 'Grado o programa', colValue: 'Alumnos', colorOffset: 2 })}
+    </section>
+    <section class="chart-card">
+      <h3 class="sec">Área que imparte (profesores)</h3>
+      ${htmlBarChart(c.porAreaProfesor || [], { colLabel: 'Área', colValue: 'Profesores', colorOffset: 6 })}
     </section>
     <section class="chart-card">
       <h3 class="sec">Estamento público</h3>
@@ -1250,10 +1269,19 @@ function htmlTablaAlumnos(alumnos) {
   const rows = alumnos
     .map(
       (a) =>
-        `<tr><td>${esc(a.numDoc)}</td><td>${esc(a.nombreCompleto)}</td><td>${a.certificado ? 'Sí' : 'No'}</td></tr>`,
+        `<tr>
+          <td>${esc(a.numDoc)}</td>
+          <td>${esc(a.nombreCompleto)}</td>
+          <td class="col-origen">${esc(a.origenLabel || '—')}</td>
+          <td class="col-perfil">${esc(a.perfilLabel || '—')}</td>
+          <td class="col-car">${esc(a.caracterizacion || '—')}</td>
+          <td class="num">${a.certificado ? 'Sí' : 'No'}</td>
+        </tr>`,
     )
     .join('');
-  return `<table class="t"><thead><tr><th>Documento</th><th>Alumno</th><th>Certificado</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="t t-alumnos"><thead><tr>
+    <th>Documento</th><th>Alumno</th><th>Origen</th><th>Perfil</th><th>Caracterización</th><th>Certificado</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function referenciaJornada(j) {
@@ -1521,6 +1549,10 @@ ${informeGoogleFontsLinkHtml()}
   .t { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt; }
   .t th, .t td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
   .t th { background: #e2e8f0; }
+  .t-alumnos { font-size: 8pt; }
+  .t-alumnos .col-origen,
+  .t-alumnos .col-perfil { white-space: nowrap; }
+  .t-alumnos .col-car { word-break: break-word; }
   .t .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .desarrollo-inst { font-size: 7.5pt; }
   .desarrollo-inst th, .desarrollo-inst td { padding: 3px 4px; }

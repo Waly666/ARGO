@@ -131,6 +131,7 @@ async function obtenerAvanceContratoJornada(idContratoRaw) {
       if (certificado) alumnosCertificadosSet.add(numDoc);
       const cumplioSesiones = esPorClase ? certificado : clasesAsistidas >= numSesCert;
       return {
+        idAlumno: alumno?._id ? String(alumno._id) : null,
         numDoc,
         nombreCompleto: nombreAlumno(alumno) || `Doc. ${numDoc}`,
         origenJornadaCap: origen,

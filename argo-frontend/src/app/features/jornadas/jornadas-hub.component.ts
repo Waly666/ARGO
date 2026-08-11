@@ -19,6 +19,7 @@ import {
   AlumnoClaseAnteriorItem,
   AvanceContratoDto,
   ClaseAnteriorResumenDto,
+  ClaseJornadaDto,
   ContratacionDto,
   ContratoSyncDto,
   CuotaPlanCobroDto,
@@ -142,6 +143,8 @@ import {
   CertificadosZipProgresoModalComponent,
 } from './certificados-zip-progreso-modal.component';
 import { ejecutarExportZipCertificados } from './certificados-zip-export.helper';
+import { ejecutarPaqueteEntrega } from './paquete-entrega-export.helper';
+import type { ProgresoEntregaEmit } from './paquete-entrega-progreso.emit';
 
 type Tab = 'contratos' | 'avance' | 'jornadas' | 'clases' | 'certificados' | 'finanzas' | 'informes' | 'evaluaciones';
 
@@ -308,7 +311,21 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   );
   descargandoZipCerts = signal(false);
   zipProgresoOpen = signal(false);
+  zipProgresoTitulo = signal('Generando ZIP de certificados');
+  zipProgresoSubtitulo = signal('PDFs individuales + archivo para imprimir todos');
   zipProgreso = signal<CertZipProgreso>({
+    status: 'idle',
+    fase: '',
+    hecho: 0,
+    total: 0,
+    porcentaje: 0,
+  });
+  paqueteContratoProgresoOpen = signal(false);
+  paqueteContratoProgresoTitulo = signal('Generando paquete de entrega del contrato');
+  paqueteContratoProgresoSubtitulo = signal(
+    'Informes generales + encuesta de satisfacción + carpetas por jornada (informe, certificados, evidencia, imágenes)',
+  );
+  paqueteContratoProgreso = signal<CertZipProgreso>({
     status: 'idle',
     fase: '',
     hecho: 0,
@@ -706,8 +723,13 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     }>
   >([]);
   cargandoJornadaEvidenciaCerts = signal(false);
+  jornadaEvidenciaClases = signal<ClaseJornadaDto[]>([]);
+  cargandoJornadaEvidenciaClases = signal(false);
+  /** Acordeón en ficha Evidencias: solo una sección abierta a la vez. */
+  jornadaEvidenciaSeccionAbierta = signal<'clases' | 'alumnos' | null>(null);
   exportandoInformeJornadaEvidencia = signal(false);
   descargandoZipJornadaEvidencia = signal(false);
+  descargandoPaqueteEntregaJornada = signal(false);
 
   opcionesSupervisores = computed<EnumBuscarOption[]>(() =>
     this.supervisores().map((s) => ({ value: s._id, label: s.nombre })),
@@ -2291,7 +2313,54 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   irPanelJornadaEdit(panel: 'datos' | 'evidencias') {
     this.jornadaEditPanel.set(panel);
-    if (panel === 'evidencias') this.cargarCertificadosJornadaEvidencia();
+    if (panel === 'evidencias') {
+      this.jornadaEvidenciaSeccionAbierta.set(null);
+      this.cargarClasesJornadaEvidencia();
+      this.cargarCertificadosJornadaEvidencia();
+    }
+  }
+
+  toggleJornadaEvidenciaSeccion(seccion: 'clases' | 'alumnos', ev?: Event) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    this.jornadaEvidenciaSeccionAbierta.update((actual) => (actual === seccion ? null : seccion));
+  }
+
+  evidenciaSeccionAbierta(seccion: 'clases' | 'alumnos'): boolean {
+    return this.jornadaEvidenciaSeccionAbierta() === seccion;
+  }
+
+  cargarClasesJornadaEvidencia() {
+    const je = this.jornadaEdit();
+    const idJornada = String(je?._id || '').trim();
+    if (!idJornada) return;
+    this.cargandoJornadaEvidenciaClases.set(true);
+    this.jornadaSvc.listarClases({ idJornada }).subscribe({
+      next: (rows) => {
+        const sorted = [...(rows || [])].sort((a, b) =>
+          String(a.horaInicio || '').localeCompare(String(b.horaInicio || '')),
+        );
+        this.jornadaEvidenciaClases.set(sorted);
+        this.cargandoJornadaEvidenciaClases.set(false);
+      },
+      error: () => {
+        this.jornadaEvidenciaClases.set([]);
+        this.cargandoJornadaEvidenciaClases.set(false);
+      },
+    });
+  }
+
+  duracionClaseEvidencia(c: ClaseJornadaDto): string {
+    if (c.duracionSegundos != null) return this.formatDuracion(c.duracionSegundos);
+    if (c.horaInicio && c.horaFin) {
+      const secs = duracionSegundosDesdeHHmm(c.horaInicio, c.horaFin);
+      if (secs != null) return this.formatDuracion(secs);
+    }
+    return '—';
+  }
+
+  programaClaseEvidencia(c: ClaseJornadaDto): string {
+    return c.programaNombre || (c.idPrograma ? this.nombrePrograma(c.idPrograma) : '') || '—';
   }
 
   cargarCertificadosJornadaEvidencia() {
@@ -2352,6 +2421,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     this.descargandoZipJornadaEvidencia.set(true);
+    this.zipProgresoTitulo.set('Generando ZIP de certificados');
+    this.zipProgresoSubtitulo.set('PDFs individuales + archivo para imprimir todos');
     this.zipProgresoOpen.set(true);
     this.zipProgreso.set({
       status: 'running',
@@ -2379,6 +2450,47 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       this.mostrarMsg(texto, 'error', 'Certificados');
     } finally {
       this.descargandoZipJornadaEvidencia.set(false);
+    }
+  }
+
+  async descargarPaqueteEntregaJornada(ev?: Event) {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    const je = this.jornadaEdit();
+    const idJornada = String(je?._id || '').trim();
+    if (!idJornada) return;
+    const cod = String(je?.codigoJornada || 'jornada').trim();
+    this.descargandoPaqueteEntregaJornada.set(true);
+    this.zipProgresoTitulo.set('Generando paquete de entrega');
+    this.zipProgresoSubtitulo.set('Informe PDF + certificados ZIP + evidencia consolidada');
+    this.zipProgresoOpen.set(true);
+    this.zipProgreso.set({
+      status: 'running',
+      fase: 'Iniciando…',
+      hecho: 0,
+      total: 0,
+      porcentaje: 1,
+    });
+    try {
+      await ejecutarPaqueteEntrega(
+        this.jornadaSvc,
+        'jornada',
+        idJornada,
+        (p) => this.zipProgreso.set(p),
+        `paquete-entrega_${cod}_${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+      this.zipProgresoOpen.set(false);
+      this.mostrarMsg(
+        'Paquete de entrega descargado. Revise las carpetas informe/, certificados/ y evidencia/.',
+        'ok',
+        'Paquete de entrega',
+      );
+    } catch (e: unknown) {
+      const texto = e instanceof Error ? e.message : 'No se pudo generar el paquete de entrega.';
+      this.zipProgreso.update((p) => ({ ...p, status: 'error', fase: 'Error', message: texto }));
+      this.mostrarMsg(texto, 'error', 'Paquete de entrega');
+    } finally {
+      this.descargandoPaqueteEntregaJornada.set(false);
     }
   }
 
@@ -5124,6 +5236,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditError.set(null);
     this.jornadaEvidenciaArchivos.set([]);
     this.jornadaEvidenciaCerts.set([]);
+    this.jornadaEvidenciaClases.set([]);
+    this.jornadaEvidenciaSeccionAbierta.set(null);
     this.direccionAlertaActiva.set(false);
     this.jornadaEdit.set({ ...j });
     this.jornadaEditLat.set(j.lat != null ? String(j.lat) : '');
@@ -5167,6 +5281,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditError.set(null);
     this.jornadaEvidenciaArchivos.set([]);
     this.jornadaEvidenciaCerts.set([]);
+    this.jornadaEvidenciaClases.set([]);
+    this.jornadaEvidenciaSeccionAbierta.set(null);
     this.direccionAlertaActiva.set(false);
     this.jornadaEdit.set({ _id: '', idContrato: id, estado: 'INACTIVO' } as JornadaCapDto);
     this.jornadaEditDireccion.set(c.direccion || '');
@@ -5214,6 +5330,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEditPanel.set('datos');
     this.jornadaEvidenciaArchivos.set([]);
     this.jornadaEvidenciaCerts.set([]);
+    this.jornadaEvidenciaClases.set([]);
+    this.jornadaEvidenciaSeccionAbierta.set(null);
     this.subiendoEvidenciaJornada.set(false);
     this.jornadaEditLat.set('');
     this.jornadaEditLng.set('');
@@ -5946,6 +6064,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
       return;
     }
     this.descargandoZipCerts.set(true);
+    this.zipProgresoTitulo.set('Generando ZIP de certificados');
+    this.zipProgresoSubtitulo.set('PDFs individuales + archivo para imprimir todos');
     this.zipProgresoOpen.set(true);
     this.zipProgreso.set({
       status: 'running',
@@ -5985,6 +6105,17 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.zipProgresoOpen.set(false);
   }
 
+  onProgresoEntregaContrato(ev: ProgresoEntregaEmit): void {
+    this.paqueteContratoProgresoOpen.set(ev.open);
+    this.paqueteContratoProgreso.set(ev.progreso);
+    this.paqueteContratoProgresoTitulo.set(ev.titulo);
+    this.paqueteContratoProgresoSubtitulo.set(ev.subtitulo);
+  }
+
+  cerrarPaqueteContratoProgreso(): void {
+    this.paqueteContratoProgresoOpen.set(false);
+  }
+
   nuevoAlumnoJornada() {
     void this.router.navigate(['/app/jornadas/alumnos/nuevo'], {
       queryParams: {
@@ -5996,6 +6127,15 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
 
   listaAlumnosJornada() {
     void this.router.navigate(['/app/jornadas/alumnos']);
+  }
+
+  abrirFichaAlumnoAvance(a: { idAlumno?: string | null; numDoc?: number }): void {
+    const id = String(a?.idAlumno || '').trim();
+    if (!id) return;
+    const cod = String(this.contratoActivo()?.codContrato || '').trim();
+    void this.router.navigate(['/app/jornadas/alumnos', id], {
+      queryParams: cod ? { codContrato: cod } : undefined,
+    });
   }
 
   fmtFecha(f?: string | Date) {

@@ -349,6 +349,17 @@
       border-color: rgba(148, 163, 184, 0.45);
     }
   }
+
+  &--danger {
+    color: #fff;
+    background: linear-gradient(135deg, #f87171, #dc2626 55%, #b91c1c);
+    border-color: rgba(248, 113, 113, 0.45);
+    box-shadow: 0 8px 18px rgba(185, 28, 28, 0.28);
+
+    &:not(:disabled):hover {
+      box-shadow: 0 10px 22px rgba(185, 28, 28, 0.42);
+    }
+  }
 }
 
 /* ——— Toast / loading ——— */
@@ -1262,6 +1273,29 @@
     var(--inf-surface-lift);
   overflow: hidden;
   box-shadow: 0 12px 28px rgba(2, 10, 28, 0.22);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &.is-open {
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow:
+      0 12px 28px rgba(2, 10, 28, 0.22),
+      0 0 0 1px rgba(56, 189, 248, 0.08);
+  }
+}
+
+.inf-card-head--split {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.inf-jornada-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  flex-shrink: 0;
 }
 
 .inf-jornada-panel-head {
@@ -1270,9 +1304,53 @@
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  padding: 1rem 1.1rem;
+  padding: 0.65rem 0.85rem 0.65rem 0.65rem;
   border-bottom: 1px solid rgba(125, 185, 255, 0.12);
   background: rgba(8, 18, 36, 0.28);
+}
+
+.inf-jornada-panel:not(.is-open) .inf-jornada-panel-head {
+  border-bottom: 0;
+}
+
+.inf-jornada-panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(15, 30, 58, 0.45);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(56, 189, 248, 0.55);
+    outline-offset: 2px;
+  }
+}
+
+.inf-jornada-panel-chevron {
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.15rem;
+  border-right: 2px solid #94a3b8;
+  border-bottom: 2px solid #94a3b8;
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease;
+}
+
+.inf-jornada-panel.is-open .inf-jornada-panel-chevron {
+  transform: rotate(45deg);
 }
 
 .inf-jornada-panel-copy {

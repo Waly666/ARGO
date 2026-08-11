@@ -26,13 +26,14 @@ function mostrarBotonGuardar(url: string, filename: string, label?: string): Pro
     bar.setAttribute('role', 'status');
     bar.style.cssText = [
       'position:fixed',
-      'bottom:1.25rem',
-      'right:1.25rem',
+      'top:5.25rem',
+      'left:50%',
+      'transform:translateX(-50%)',
       'z-index:99999',
       'display:flex',
       'flex-direction:column',
       'gap:0.5rem',
-      'max-width:min(22rem,calc(100vw - 2rem))',
+      'width:min(34rem,calc(100vw - 2rem))',
       'padding:0.85rem 1rem',
       'border-radius:10px',
       'background:#0f172a',

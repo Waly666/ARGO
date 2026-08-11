@@ -21,6 +21,17 @@
     </div>
   </header>
 
+  <div class="jor-progreso-anchor">
+    <argo-certificados-zip-progreso-modal
+      [open]="paqueteContratoProgresoOpen()"
+      ubicacion="anchor"
+      [titulo]="paqueteContratoProgresoTitulo()"
+      [subtitulo]="paqueteContratoProgresoSubtitulo()"
+      [progreso]="paqueteContratoProgreso()"
+      (closed)="cerrarPaqueteContratoProgreso()"
+    />
+  </div>
+
   @if (operacionEspecialActiva()) {
     <div class="jor-banner jor-banner--operacion-especial" role="status">
       <span class="jor-banner-icon" aria-hidden="true">⚠</span>
@@ -1030,6 +1041,7 @@
                       <th>Origen</th>
                       <th>Clases asistidas</th>
                       <th>Certificado</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1062,6 +1074,16 @@
                           } @else {
                             <span class="cap cap-warn cap-sm">Pendiente</span>
                           }
+                        </td>
+                        <td class="contrato-avance-actions">
+                          <button
+                            type="button"
+                            class="ficha-btn ficha-btn--ghost ficha-btn--sm"
+                            (click)="abrirFichaAlumnoAvance(a)"
+                            [disabled]="!a.idAlumno"
+                            title="Abrir ficha del alumno">
+                            Abrir ficha
+                          </button>
                         </td>
                       </tr>
                     }
@@ -1386,14 +1408,14 @@
                 <p class="jornada-evidencias-kicker">Ficha · Evidencias</p>
                 <h4>{{ labelJornada(je) }}</h4>
                 <p class="hint">
-                  Evidencia documental, alumnos certificados en esta jornada e informes de respaldo.
+                  Evidencia documental, clases de la jornada, alumnos certificados e informes de respaldo.
                 </p>
               </div>
             </header>
 
             <section class="jornada-evidencias-bloque">
               <header class="jornada-evidencias-bloque-head">
-                <h5>Documento de evidencia (PDF)</h5>
+                <h5>Planillas firmadas de evidencia PDF</h5>
                 <p>Varios PNG/JPG o PDF se consolidan en un solo archivo.</p>
               </header>
               <div class="jornada-evidencia-panel">
@@ -1438,45 +1460,118 @@
               </div>
             </section>
 
-            <section class="jornada-evidencias-bloque">
-              <header class="jornada-evidencias-bloque-head">
-                <h5>Alumnos certificados en esta jornada</h5>
-                <p>Solo certificados emitidos en las clases de esta jornada.</p>
-              </header>
-              @if (cargandoJornadaEvidenciaCerts()) {
-                <p class="hint">Cargando alumnos certificados…</p>
-              } @else {
-                <div class="table-wrap jornada-evidencias-tabla-wrap">
-                  <table class="argo jornada-evidencias-tabla">
-                    <thead>
-                      <tr>
-                        <th>Código</th>
-                        <th>Alumno</th>
-                        <th>Documento</th>
-                        <th>Encabezado</th>
-                        <th>Emisión</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (c of jornadaEvidenciaCerts(); track c._id) {
-                        <tr>
-                          <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert || '—' }}</span></td>
-                          <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto || '—' }}</span></td>
-                          <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc ?? '—' }}</span></td>
-                          <td><span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span></td>
-                          <td><span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span></td>
-                          <td class="actions-cell">
-                            <button type="button" class="mini ghost" (click)="imprimirCert(c)">Imprimir</button>
-                          </td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="6" class="empty">No hay certificados emitidos en esta jornada.</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+            <section
+              class="jornada-evidencias-bloque jornada-evidencias-bloque--accordion"
+              [class.is-open]="evidenciaSeccionAbierta('clases')">
+              <button
+                type="button"
+                class="jornada-evidencias-accordion-head"
+                (click)="toggleJornadaEvidenciaSeccion('clases', $event)"
+                [attr.aria-expanded]="evidenciaSeccionAbierta('clases')">
+                <span class="jornada-evidencias-accordion-copy">
+                  <h5>Clases de la jornada</h5>
+                  <p>Programa, instructor, horario y duración de cada clase.</p>
+                </span>
+                <span class="jornada-evidencias-accordion-meta">
+                  <span class="jornada-evidencias-accordion-count">{{ jornadaEvidenciaClases().length }}</span>
+                  <span class="jornada-evidencias-accordion-chevron" aria-hidden="true"></span>
+                </span>
+              </button>
+              @if (evidenciaSeccionAbierta('clases')) {
+                <div class="jornada-evidencias-accordion-body">
+                  @if (cargandoJornadaEvidenciaClases()) {
+                    <p class="hint">Cargando clases…</p>
+                  } @else {
+                    <div class="table-wrap jornada-evidencias-tabla-wrap">
+                      <table class="argo jornada-evidencias-tabla">
+                        <thead>
+                          <tr>
+                            <th>Programa</th>
+                            <th>Instructor</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Duración</th>
+                            <th>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (c of jornadaEvidenciaClases(); track c._id) {
+                            <tr>
+                              <td><span [ngClass]="capPrograma(c.idPrograma)">{{ programaClaseEvidencia(c) }}</span></td>
+                              <td><span [ngClass]="capInstructor(labelInstructorClase(c))">{{ labelInstructorClase(c) }}</span></td>
+                              <td><span [ngClass]="capHoraJor(c.horaInicio)">{{ fmtHora(c.horaInicio) }}</span></td>
+                              <td><span [ngClass]="capHoraJor(c.horaFin)">{{ fmtHora(c.horaFin) }}</span></td>
+                              <td><span class="cap cap-slate cap-sm cap-mono">{{ duracionClaseEvidencia(c) }}</span></td>
+                              <td><span [ngClass]="estadoClaseLiveClass(c.estado)">{{ labelEstadoClaseAmigable(c.estado) }}</span></td>
+                            </tr>
+                          } @empty {
+                            <tr>
+                              <td colspan="6" class="empty">No hay clases registradas en esta jornada.</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </div>
+              }
+            </section>
+
+            <section
+              class="jornada-evidencias-bloque jornada-evidencias-bloque--accordion"
+              [class.is-open]="evidenciaSeccionAbierta('alumnos')">
+              <button
+                type="button"
+                class="jornada-evidencias-accordion-head"
+                (click)="toggleJornadaEvidenciaSeccion('alumnos', $event)"
+                [attr.aria-expanded]="evidenciaSeccionAbierta('alumnos')">
+                <span class="jornada-evidencias-accordion-copy">
+                  <h5>Alumnos certificados en esta jornada</h5>
+                  <p>Solo certificados emitidos en las clases de esta jornada.</p>
+                </span>
+                <span class="jornada-evidencias-accordion-meta">
+                  <span class="jornada-evidencias-accordion-count">{{ jornadaEvidenciaCerts().length }}</span>
+                  <span class="jornada-evidencias-accordion-chevron" aria-hidden="true"></span>
+                </span>
+              </button>
+              @if (evidenciaSeccionAbierta('alumnos')) {
+                <div class="jornada-evidencias-accordion-body">
+                  @if (cargandoJornadaEvidenciaCerts()) {
+                    <p class="hint">Cargando alumnos certificados…</p>
+                  } @else {
+                    <div class="table-wrap jornada-evidencias-tabla-wrap">
+                      <table class="argo jornada-evidencias-tabla">
+                        <thead>
+                          <tr>
+                            <th>Código</th>
+                            <th>Alumno</th>
+                            <th>Documento</th>
+                            <th>Encabezado</th>
+                            <th>Emisión</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (c of jornadaEvidenciaCerts(); track c._id) {
+                            <tr>
+                              <td><span [ngClass]="capCertCodigo(c.codigoCert)">{{ c.codigoCert || '—' }}</span></td>
+                              <td><span [ngClass]="capAlumnoNombre(c.nombreCompleto)">{{ c.nombreCompleto || '—' }}</span></td>
+                              <td><span [ngClass]="capDocAsis(c.numDoc)">{{ c.numDoc ?? '—' }}</span></td>
+                              <td><span [ngClass]="capCliente(c.encabezado)">{{ c.encabezado || '—' }}</span></td>
+                              <td><span [ngClass]="capFechaJor(c.fechaEmision)">{{ fmtFecha(c.fechaEmision) }}</span></td>
+                              <td class="actions-cell">
+                                <button type="button" class="mini ghost" (click)="imprimirCert(c)">Imprimir</button>
+                              </td>
+                            </tr>
+                          } @empty {
+                            <tr>
+                              <td colspan="6" class="empty">No hay certificados emitidos en esta jornada.</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
                 </div>
               }
             </section>
@@ -1484,7 +1579,7 @@
             <section class="jornada-evidencias-bloque jornada-evidencias-bloque--export">
               <header class="jornada-evidencias-bloque-head">
                 <h5>Informes y certificados</h5>
-                <p>Descargue el informe de jornada o el ZIP resumido de certificados.</p>
+                <p>Descargue el informe de jornada, certificados o el paquete completo de entrega.</p>
               </header>
               <div class="jornada-evidencias-export-actions">
                 <button
@@ -1500,6 +1595,18 @@
                   (click)="descargarZipCertificadosJornadaEvidencia($event)"
                   [disabled]="descargandoZipJornadaEvidencia() || !jornadaEvidenciaCerts().length">
                   {{ descargandoZipJornadaEvidencia() ? 'Generando ZIP…' : 'Certificados resumidos (ZIP)' }}
+                </button>
+                <button
+                  type="button"
+                  class="danger"
+                  (click)="descargarPaqueteEntregaJornada($event)"
+                  [disabled]="descargandoPaqueteEntregaJornada()"
+                  title="Informe PDF + certificados ZIP + evidencia consolidada en un solo archivo">
+                  {{
+                    descargandoPaqueteEntregaJornada()
+                      ? 'Generando paquete…'
+                      : 'Paquete de entrega (ZIP completo)'
+                  }}
                 </button>
               </div>
             </section>
@@ -3311,7 +3418,9 @@
 
   @if (tab() === 'informes') {
     <div class="panel">
-      <argo-contrato-informes-dashboard [idContrato]="contratoSel()" />
+      <argo-contrato-informes-dashboard
+        [idContrato]="contratoSel()"
+        (progresoEntrega)="onProgresoEntregaContrato($event)" />
     </div>
   }
 
@@ -3659,6 +3768,9 @@
 
 <argo-certificados-zip-progreso-modal
   [open]="zipProgresoOpen()"
+  ubicacion="modal"
+  [titulo]="zipProgresoTitulo()"
+  [subtitulo]="zipProgresoSubtitulo()"
   [progreso]="zipProgreso()"
   (closed)="cerrarZipProgreso()"
 />

@@ -162,6 +162,7 @@ export interface AvanceContratoResumenDto {
 }
 
 export interface AvanceContratoAlumnoDto {
+  idAlumno?: string | null;
   numDoc: number;
   nombreCompleto: string;
   origenJornadaCap?: string;
@@ -1113,6 +1114,35 @@ export class JornadaCapService {
   descargarCertificadosJornadaZipJob(jobId: string): Observable<Blob> {
     return this.http.get(
       `${this.base}/certificados-generados/export-zip/jobs/${encodeURIComponent(jobId)}/download`,
+      { responseType: 'blob' },
+    );
+  }
+
+  /** Job asíncrono: paquete de entrega (informe + certificados + evidencia) por jornada. */
+  iniciarPaqueteEntregaJornadaJob(idJornada: string) {
+    return this.http.post<CertificadosZipJobProgreso>(
+      `${this.base}/jornadas/${encodeURIComponent(idJornada)}/paquete-entrega/jobs`,
+      {},
+    );
+  }
+
+  /** Job asíncrono: paquete de entrega completo del contrato. */
+  iniciarPaqueteEntregaContratoJob(idContrato: string) {
+    return this.http.post<CertificadosZipJobProgreso>(
+      `${this.base}/contratos/${encodeURIComponent(idContrato)}/paquete-entrega/jobs`,
+      {},
+    );
+  }
+
+  progresoPaqueteEntregaJob(jobId: string) {
+    return this.http.get<CertificadosZipJobProgreso>(
+      `${this.base}/paquete-entrega/jobs/${encodeURIComponent(jobId)}`,
+    );
+  }
+
+  descargarPaqueteEntregaJob(jobId: string): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/paquete-entrega/jobs/${encodeURIComponent(jobId)}/download`,
       { responseType: 'blob' },
     );
   }

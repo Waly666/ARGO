@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  EventEmitter,
   Input,
   OnChanges,
+  Output,
   SimpleChanges,
   computed,
   inject,
@@ -20,6 +22,13 @@ import {
   CatalogoEnumBuscarComponent,
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
+import { CertZipProgreso } from './certificados-zip-progreso-modal.component';
+import { ejecutarPaqueteEntrega } from './paquete-entrega-export.helper';
+import {
+  ProgresoEntregaEmit,
+  SUBTITULO_PROGRESO_PAQUETE_CONTRATO,
+  TITULO_PROGRESO_PAQUETE_CONTRATO,
+} from './paquete-entrega-progreso.emit';
 
 @Component({
   selector: 'argo-contrato-informes-dashboard',
@@ -32,9 +41,18 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   private jornadaSvc = inject(JornadaCapService);
 
   @Input() idContrato = '';
+  @Output() progresoEntrega = new EventEmitter<ProgresoEntregaEmit>();
 
   loading = signal(false);
   exportando = signal(false);
+  descargandoPaqueteEntregaContrato = signal(false);
+  private paqueteProgreso = signal<CertZipProgreso>({
+    status: 'idle',
+    fase: '',
+    hecho: 0,
+    total: 0,
+    porcentaje: 0,
+  });
   exportandoAlcance = signal<string | null>(null);
   error = signal<string | null>(null);
   msg = signal<string | null>(null);
@@ -234,6 +252,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     items: Array<{
       label: string;
       value: number;
+      trackKey: string;
       pctTotal: number;
       pctBar: number;
       color: string;
@@ -254,6 +273,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
         return {
           label: it.label,
           value,
+          trackKey: `${it.label || 'item'}::${i}`,
           pctTotal: total > 0 ? Math.round((value / total) * 1000) / 10 : 0,
           pctBar: Math.max(4, Math.round((value / max) * 100)),
           color:
@@ -287,6 +307,32 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     })),
   );
 
+  /** Paneles de detalle por jornada expandidos (colapsados por defecto). */
+  jornadasPanelAbiertas = signal<Set<string>>(new Set());
+
+  jornadaPanelAbierta(id: string): boolean {
+    return this.jornadasPanelAbiertas().has(id);
+  }
+
+  toggleJornadaPanel(id: string): void {
+    const next = new Set(this.jornadasPanelAbiertas());
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    this.jornadasPanelAbiertas.set(next);
+  }
+
+  expandirTodasJornadas(): void {
+    this.jornadasPanelAbiertas.set(new Set(this.porJornada().map((j) => j._id)));
+  }
+
+  colapsarTodasJornadas(): void {
+    this.jornadasPanelAbiertas.set(new Set());
+  }
+
+  private resetJornadasPanelAbiertas(): void {
+    this.jornadasPanelAbiertas.set(new Set());
+  }
+
   private readonly palette = [
     '#38bdf8',
     '#34d399',
@@ -309,6 +355,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['idContrato']) {
       this.limpiarFiltros(false);
+      this.resetJornadasPanelAbiertas();
       this.cargar();
     }
   }
@@ -419,6 +466,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     items: Array<
       InformeDashboardChartItem & {
         value: number;
+        trackKey: string;
         /** Altura visual vs. la barra más alta (no es % del total). */
         pctAltura: number;
         /** Participación: value / suma del gráfico. */
@@ -439,6 +487,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
         return {
           ...it,
           value,
+          trackKey: `${it.label || 'item'}::${i}`,
           pctAltura: Math.max(4, Math.round((value / max) * 100)),
           pctTotal: total > 0 ? Math.round((value / total) * 1000) / 10 : 0,
           color:
@@ -458,6 +507,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
     slices: Array<{
       label: string;
       value: number;
+      trackKey: string;
       pct: number;
       color: string;
       path: string;
@@ -490,6 +540,7 @@ export class ContratoInformesDashboardComponent implements OnChanges {
       return {
         label: it.label,
         value,
+        trackKey: `${it.label || 'slice'}::${i}`,
         pct,
         color,
         path: this.donutSlicePath(cx, cy, r, rInner, a0, a1),
@@ -633,5 +684,76 @@ export class ContratoInformesDashboardComponent implements OnChanges {
 
   exportandoEsta(key: string): boolean {
     return this.exportando() && this.exportandoAlcance() === key;
+  }
+
+  private slugNombreArchivo(texto: string, max = 48): string {
+    const t = String(texto || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\w.\-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
+    if (!t) return '';
+    return t.length <= max ? t : t.slice(0, max).replace(/_+$/, '');
+  }
+
+  private nombreFallbackPaqueteContrato(): string {
+    const c = this.contrato();
+    const cod = this.slugNombreArchivo(c?.codContrato || 'sin-codigo', 32);
+    const empresa = this.slugNombreArchivo(c?.cliente || 'empresa-contratante', 48);
+    const stamp = new Date().toISOString().slice(0, 10);
+    return `paquete-entrega-contrato_${cod}_${empresa}_${stamp}.zip`;
+  }
+
+  private emitirProgresoEntrega(open: boolean, progreso?: CertZipProgreso): void {
+    const p = progreso ?? this.paqueteProgreso();
+    this.progresoEntrega.emit({
+      open,
+      progreso: p,
+      titulo: TITULO_PROGRESO_PAQUETE_CONTRATO,
+      subtitulo: SUBTITULO_PROGRESO_PAQUETE_CONTRATO,
+    });
+  }
+
+  async descargarPaqueteEntregaContrato(): Promise<void> {
+    const id = (this.idContrato || '').trim();
+    if (!id) return;
+    this.descargandoPaqueteEntregaContrato.set(true);
+    const inicio: CertZipProgreso = {
+      status: 'running',
+      fase: 'Iniciando…',
+      hecho: 0,
+      total: 0,
+      porcentaje: 1,
+    };
+    this.paqueteProgreso.set(inicio);
+    this.emitirProgresoEntrega(true, inicio);
+    try {
+      await ejecutarPaqueteEntrega(
+        this.jornadaSvc,
+        'contrato',
+        id,
+        (p) => {
+          this.paqueteProgreso.set(p);
+          this.emitirProgresoEntrega(true, p);
+        },
+        this.nombreFallbackPaqueteContrato(),
+      );
+      this.emitirProgresoEntrega(false);
+      this.msg.set('Paquete de entrega del contrato descargado.');
+    } catch (e: unknown) {
+      const texto = e instanceof Error ? e.message : 'No se pudo generar el paquete de entrega.';
+      const err: CertZipProgreso = {
+        ...this.paqueteProgreso(),
+        status: 'error',
+        fase: 'Error',
+        message: texto,
+      };
+      this.paqueteProgreso.set(err);
+      this.emitirProgresoEntrega(true, err);
+      this.msg.set(texto);
+    } finally {
+      this.descargandoPaqueteEntregaContrato.set(false);
+    }
   }
 }

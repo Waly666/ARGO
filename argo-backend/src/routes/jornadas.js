@@ -34,6 +34,10 @@ router.put('/supervisores/:id', gest, sup.actualizar);
 
 router.get('/contratos', ver, ctrl.listarContratos);
 router.get('/contratos/:id/avance', ver, ctrl.avanceContrato);
+router.post('/contratos/:id/paquete-entrega/jobs', gest, contratoMutable.contratoPorParametro, ctrl.iniciarPaqueteEntregaContratoJob);
+router.get('/paquete-entrega/jobs/:jobId', ver, ctrl.progresoPaqueteEntregaJob);
+router.get('/paquete-entrega/jobs/:jobId/download', ver, ctrl.descargarPaqueteEntregaJob);
+
 router.get('/contratos/:id/informe-dashboard', ver, ctrl.informeDashboardContrato);
 router.get('/contratos/:id/informe-pdf', ver, ctrl.informeContratoPdf);
 router.get('/contratos/:id', ver, ctrl.obtenerContrato);
@@ -61,6 +65,7 @@ router.get('/jornadas/en-proceso', ver, ctrl.jornadasEnProceso);
 router.get('/jornadas', ver, ctrl.listarJornadas);
 router.get('/jornadas/:id', ver, ctrl.obtenerJornada);
 router.patch('/jornadas/:id', gest, contratoMutable.jornadaPorParametro, ctrl.actualizarJornada);
+router.post('/jornadas/:id/paquete-entrega/jobs', gest, contratoMutable.jornadaPorParametro, ctrl.iniciarPaqueteEntregaJornadaJob);
 router.post(
   '/jornadas/:id/evidencia-consolidada',
   gest,

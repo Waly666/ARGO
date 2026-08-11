@@ -1,4 +1,6 @@
 const Contratacion = require('../models/Contratacion');
+const EncuestaJornadaCap = require('../models/EncuestaJornadaCap');
+const RespuestaEncuestaJornada = require('../models/RespuestaEncuestaJornada');
 const { resultadosEncuesta } = require('./encuestasJornadaCap');
 const { obtenerConfigRecibo } = require('./configRecibo');
 const { atPageCssPara } = require('./configPaginasInformes');
@@ -640,7 +642,55 @@ async function generarInformeEncuestaPdf(idEncuesta) {
   return { html, res, contrato };
 }
 
+/** Encuesta PUBLICADA/CERRADA más relevante del contrato (prioriza cerrada y con respuestas). */
+async function resolverEncuestaParaInformeContrato(idContrato) {
+  const encuestas = await EncuestaJornadaCap.find({
+    idContrato,
+    estado: { $in: ['PUBLICADA', 'CERRADA'] },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+  if (!encuestas.length) return null;
+
+  const ids = encuestas.map((e) => e._id);
+  const counts = await RespuestaEncuestaJornada.aggregate([
+    { $match: { idEncuesta: { $in: ids } } },
+    { $group: { _id: '$idEncuesta', total: { $sum: 1 } } },
+  ]);
+  const countMap = new Map(counts.map((c) => [String(c._id), c.total]));
+
+  const score = (e) => {
+    const resp = countMap.get(String(e._id)) || 0;
+    const estadoScore = e.estado === 'CERRADA' ? 2 : 1;
+    return estadoScore * 10000 + resp;
+  };
+
+  encuestas.sort((a, b) => score(b) - score(a));
+  return encuestas[0];
+}
+
+async function bufferInformeEncuestaPdf(idEncuesta) {
+  const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
+  const { html } = await generarInformeEncuestaPdf(idEncuesta);
+  const browser = await launchBrowser();
+  try {
+    return await htmlToPdfBuffer(browser, html);
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
+/** PDF del informe de encuesta del contrato, o null si no hay encuesta aplicable. */
+async function bufferInformeEncuestaContratoPdf(idContrato) {
+  const encuesta = await resolverEncuestaParaInformeContrato(idContrato);
+  if (!encuesta) return null;
+  return bufferInformeEncuestaPdf(encuesta._id);
+}
+
 module.exports = {
   buildHtmlInformeEncuestaPdf,
   generarInformeEncuestaPdf,
+  resolverEncuestaParaInformeContrato,
+  bufferInformeEncuestaPdf,
+  bufferInformeEncuestaContratoPdf,
 };
