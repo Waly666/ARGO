@@ -191,9 +191,11 @@ export class EvaluacionJornadasComponent implements OnInit {
 
         }
 
+        this.prepararCaptchaEnvio();
+
         if (res.items.length === 1) {
 
-          void this.abrirEncuesta(res.items[0]);
+          this.abrirEncuesta(res.items[0]);
 
           return;
 
@@ -235,55 +237,77 @@ export class EvaluacionJornadasComponent implements OnInit {
 
   abrirEncuesta(item: EncuestaJornadaPendiente) {
 
-    const doc = this.numDoc.trim();
-
-    const token = this.captchaToken();
-
-    this.loading.set(true);
-
     this.error.set('');
 
+    this.iniciarFormularioEncuesta(
+
+      item,
+
+      this.numDoc.trim(),
+
+      this.nombreCompleto(),
+
+    );
+
+  }
 
 
-    this.api.encuestaJornadaDetalle(item._id, doc, token || undefined).subscribe({
 
-      next: (det) => {
+  /** Los datos de pendientes ya incluyen carpas y aspectos; evita un segundo GET que reutilizaría el token Turnstile. */
 
-        this.loading.set(false);
+  private iniciarFormularioEncuesta(
 
-        this.encuesta.set(det);
+    item: EncuestaJornadaPendiente,
 
-        const map: NotasCarpa = {};
+    doc: string,
 
-        for (const c of det.carpas || []) {
+    nombreCompleto: string,
 
-          const id = c.clave || String(c.idCarpa);
+  ) {
 
-          map[id] = {};
+    const numDoc = Number(String(doc).replace(/\D/g, '')) || 0;
 
-          for (const a of det.aspectos || []) map[id][a.key] = 0;
+    this.encuesta.set({
 
-        }
+      ...item,
 
-        this.notas.set(map);
-        this.hoverNotas.set({});
-        this.comentario.set('');
+      numDoc,
 
-        this.paso.set('formulario');
-
-      },
-
-      error: (e) => {
-
-        this.loading.set(false);
-
-        this.turnstile()?.reset();
-
-        this.error.set(e?.error?.message || 'No se pudo cargar la encuesta.');
-
-      },
+      nombreCompleto,
 
     });
+
+    const map: NotasCarpa = {};
+
+    for (const c of item.carpas || []) {
+
+      const id = c.clave || String(c.idCarpa);
+
+      map[id] = {};
+
+      for (const a of item.aspectos || []) map[id][a.key] = 0;
+
+    }
+
+    this.notas.set(map);
+
+    this.hoverNotas.set({});
+
+    this.comentario.set('');
+
+    this.paso.set('formulario');
+
+  }
+
+
+
+  /** Turnstile es de un solo uso: tras consultar pendientes hay que obtener token nuevo para enviar. */
+
+  private prepararCaptchaEnvio() {
+
+    this.turnstileToken.set('');
+
+    this.turnstile()?.reset();
 
   }
 

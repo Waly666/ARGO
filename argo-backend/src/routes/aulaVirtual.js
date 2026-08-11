@@ -55,7 +55,6 @@ router.get(
 router.get(
   '/encuestas-jornada/:id',
   buscarAlumnoLimiter,
-  turnstilePortal,
   ctrl.encuestaJornadaDetalle,
 );
 router.post(

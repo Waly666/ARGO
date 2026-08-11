@@ -182,6 +182,10 @@
           ></textarea>
         </section>
 
+        @if (turnstileSiteKey()) {
+          <av-turnstile [siteKey]="turnstileSiteKey()" (tokenChange)="turnstileToken.set($event)" />
+        }
+
         <div class="eval-actions">
           <button type="button" class="eval-btn-ghost" (click)="volverDocumento()">Cancelar</button>
           <button type="button" class="consulta-btn eval-btn-send" [disabled]="enviando()" (click)="enviar()">
