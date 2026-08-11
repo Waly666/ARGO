@@ -511,7 +511,9 @@ async function resolverMotivoSinPendientes(numDoc, vigentes) {
     const carpas = await carpasElegiblesAlumno(numDoc, idC);
     if (carpas.length) contratosElegibles.push(String(idC));
   }
-  if (!contratosElegibles.length) return 'no_elegible';
+  if (!contratosElegibles.length) {
+    return contratoIdsAlumno.length ? 'asistencia_sin_carpa' : 'no_elegible';
+  }
 
   const contratosConEncuesta = new Set(vigentes.map((e) => String(e.idContrato)));
   if (!contratosElegibles.some((idC) => contratosConEncuesta.has(idC))) {

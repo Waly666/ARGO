@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { parseNumDoc } = require('../utils/numDoc');
 const JornadaCap = require('../models/JornadaCap');
 const ClaseJornadaCap = require('../models/ClaseJornadaCap');
 const AsisClasJorCap = require('../models/AsisClasJorCap');
@@ -17,6 +18,18 @@ function claveProgramaInstructor(idProg, idEmpleadoInstructor, idinstructor) {
   return `${prog}|${inst}`;
 }
 
+function filtroNumDocAsistencia(numDoc) {
+  const n = parseNumDoc(numDoc);
+  if (n == null) return null;
+  return { numDocAlumno: { $in: [n, String(n)] } };
+}
+
+function nombreCapacitacionDesdePrograma(prog, progId) {
+  const nom = String(prog?.nombreProg || prog?.descripcion || prog?.nomCert || '').trim();
+  if (nom) return nom;
+  const id = String(progId || prog?.idProg || '').trim();
+  return id ? `Programa ${id}` : 'Capacitación';
+}
 function normalizarIdContrato(idContratoRaw) {
   if (!idContratoRaw) return null;
   if (idContratoRaw instanceof mongoose.Types.ObjectId) return idContratoRaw;
@@ -43,8 +56,11 @@ async function carpasAsistidasAlumnoContrato(numDoc, idContratoRaw) {
   if (!clases.length) return [];
 
   const claseMap = new Map(clases.map((c) => [String(c._id), c]));
+  const filtroDoc = filtroNumDocAsistencia(numDoc);
+  if (!filtroDoc) return [];
+
   const asistencias = await AsisClasJorCap.find({
-    numDocAlumno: numDoc,
+    ...filtroDoc,
     idclaseJornada: { $in: clases.map((c) => c._id) },
   })
     .select('idclaseJornada')
@@ -71,13 +87,20 @@ async function carpasAsistidasAlumnoContrato(numDoc, idContratoRaw) {
     }
 
     const carpa = await resolverCarpaDesdePrograma(prog, cl.idCarpa);
-    if (carpa.idCarpa == null) continue;
+    let key = claveProgramaInstructor(progId, cl.idEmpleadoInstructor, cl.idinstructor);
+    if (!key || key === '|') {
+      const idCarpaFb = carpa.idCarpa ?? cl.idCarpa;
+      if (idCarpaFb != null) key = `carpa:${idCarpaFb}`;
+      else key = `clase:${String(cl._id)}`;
+    }
 
-    const key = claveProgramaInstructor(progId, cl.idEmpleadoInstructor, cl.idinstructor);
+    const nombreCapacitacion =
+      carpa.carpaNombre || nombreCapacitacionDesdePrograma(prog, progId);
+
     const prev = carpasMap.get(key);
     const entry = {
       idCarpa: carpa.idCarpa,
-      nombre: carpa.carpaNombre,
+      nombre: nombreCapacitacion,
       idProg: progId || String(prog?.idProg || '').trim(),
       programaNombre: prog?.nombreProg || prog?.descripcion || prog?.nomCert || '',
       idEmpleadoInstructor: cl.idEmpleadoInstructor ?? null,
@@ -119,9 +142,12 @@ async function carpasAsistidasAlumnoContrato(numDoc, idContratoRaw) {
   return out.sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), 'es'));
 }
 
-/** Ids de contrato donde el alumno tiene al menos una asistencia en alguna carpa. */
+/** Ids de contrato donde el alumno tiene al menos una asistencia en alguna clase. */
 async function contratosConCarpasAsistidas(numDoc) {
-  const asistencias = await AsisClasJorCap.find({ numDocAlumno: numDoc })
+  const filtroDoc = filtroNumDocAsistencia(numDoc);
+  if (!filtroDoc) return [];
+
+  const asistencias = await AsisClasJorCap.find(filtroDoc)
     .select('idclaseJornada')
     .lean();
   if (!asistencias.length) return [];

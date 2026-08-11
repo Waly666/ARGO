@@ -513,6 +513,10 @@ export class EvaluacionJornadasComponent implements OnInit {
 
         return 'Ya registró su respuesta para las evaluaciones disponibles. Gracias por su participación.';
 
+      case 'asistencia_sin_carpa':
+
+        return 'Tiene asistencias registradas, pero las clases no tienen programa o carpa configurados. Contacte a la institución para completar la programación.';
+
       case 'no_elegible':
 
       default:

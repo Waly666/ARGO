@@ -403,6 +403,7 @@ export type EncuestaJornadaMotivoSinPendientes =
   | 'encuestas_no_publicadas'
   | 'encuestas_fuera_vigencia'
   | 'no_elegible'
+  | 'asistencia_sin_carpa'
   | 'sin_encuesta_su_contrato'
   | 'ya_respondio';
 
