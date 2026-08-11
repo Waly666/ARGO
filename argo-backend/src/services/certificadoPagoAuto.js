@@ -146,6 +146,9 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
     empresaNombre,
   });
 
+  const { programarEnvioCertificadoPorCorreo } = require('./certificadoEmail');
+  programarEnvioCertificadoPorCorreo(cert._id);
+
   return {
     creado: true,
     certificado: {

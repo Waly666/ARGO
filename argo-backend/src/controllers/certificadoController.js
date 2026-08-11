@@ -239,6 +239,8 @@ exports.crear = async (req, res, next) => {
       empresaId,
       empresaNombre,
     });
+    const { programarEnvioCertificadoPorCorreo } = require('../services/certificadoEmail');
+    programarEnvioCertificadoPorCorreo(cert._id, { req });
     const descr = await descrPrograma(cert.idProg);
     res.status(201).json({
       ...cert.toObject(),

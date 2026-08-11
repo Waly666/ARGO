@@ -461,6 +461,9 @@ async function crearCertificadoJornadaBase({
     empresaNombre,
   });
 
+  const { programarEnvioCertificadoPorCorreo } = require('./certificadoEmail');
+  programarEnvioCertificadoPorCorreo(cert._id);
+
   return {
     ...cert.toObject(),
     tipoFormatoCertLabel: TIPOS_LABEL[tipoFormatoJornada],

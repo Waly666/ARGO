@@ -145,6 +145,9 @@ async function intentarCertificadoVirtualAprobar({ numDoc: numDocRaw, idPrograma
     empresaNombre,
   });
 
+  const { programarEnvioCertificadoPorCorreo } = require('./certificadoEmail');
+  programarEnvioCertificadoPorCorreo(cert._id);
+
   const ProgresoVirtualCurso = require('../models/ProgresoVirtualCurso');
   await ProgresoVirtualCurso.updateOne(
     { numDoc, idPrograma: idProg },
