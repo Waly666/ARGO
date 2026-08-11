@@ -407,18 +407,17 @@ export class EvaluacionJornadasComponent implements OnInit {
 
     const aspectos = det.aspectos || [];
 
-    const calificacionesCarpa = (det.carpas || []).map((c) => ({
-
-      idCarpa: c.idCarpa,
-      clave: this.claveCarpa(c),
-
-      aspectos: Object.fromEntries(
-
-        aspectos.map((a) => [a.key, this.notaAspecto(this.claveCarpa(c), a.key)]),
-
-      ),
-
-    }));
+    const calificacionesCarpa = (det.carpas || []).map((c) => {
+      const clave = this.claveCarpa(c);
+      const idCarpa = Number(c.idCarpa);
+      return {
+        ...(Number.isFinite(idCarpa) ? { idCarpa } : {}),
+        clave,
+        aspectos: Object.fromEntries(
+          aspectos.map((a) => [a.key, this.notaAspecto(clave, a.key)]),
+        ),
+      };
+    });
 
 
 

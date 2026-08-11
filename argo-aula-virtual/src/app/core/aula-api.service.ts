@@ -315,7 +315,8 @@ export class AulaApiService {
     body: {
       numDoc: string | number;
       calificacionesCarpa: Array<{
-        idCarpa: number;
+        idCarpa?: number;
+        clave?: string;
         aspectos: Record<string, number>;
       }>;
       comentario?: string;

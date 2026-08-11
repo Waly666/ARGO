@@ -22,7 +22,8 @@ const AspectosCarpaSchema = new mongoose.Schema(
 
 const CalificacionCarpaSchema = new mongoose.Schema(
   {
-    idCarpa: { type: Number, required: true },
+    /** Opcional si la capacitación se identifica solo por clave programa|instructor. */
+    idCarpa: { type: Number, default: null },
     idProg: { type: String, trim: true, default: '' },
     idEmpleadoInstructor: { type: Number, default: null },
     instructorNombre: { type: String, trim: true, default: '' },

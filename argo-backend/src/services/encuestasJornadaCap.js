@@ -636,18 +636,23 @@ async function responderEncuestaPortal(idEncuesta, numDocRaw, body) {
   const normalizadas = [];
   const vistos = new Set();
   for (const c of calificacionesCarpa) {
-    const idCarpa = Number(c?.idCarpa);
+    const idCarpaRaw = c?.idCarpa;
+    const idCarpa =
+      idCarpaRaw != null && idCarpaRaw !== '' ? Number(idCarpaRaw) : NaN;
     const ref =
       (c?.clave && esperados.get(String(c.clave).trim())) ||
-      [...esperados.values()].find((x) => Number(x.idCarpa) === idCarpa);
+      (Number.isFinite(idCarpa)
+        ? [...esperados.values()].find((x) => Number(x.idCarpa) === idCarpa)
+        : null);
     const clave = ref ? ref.clave || claveEvaluacion(ref) : '';
     if (!ref || !clave || vistos.has(clave)) {
       throw httpError('Calificaciones inválidas para las capacitaciones del contrato', 400);
     }
     vistos.add(clave);
     const aspectos = normalizarAspectos(c?.aspectos);
+    const idCarpaRef = Number(ref.idCarpa);
     normalizadas.push({
-      idCarpa: ref.idCarpa,
+      ...(Number.isFinite(idCarpaRef) ? { idCarpa: idCarpaRef } : {}),
       idProg: ref.idProg || '',
       idEmpleadoInstructor: ref.idEmpleadoInstructor ?? null,
       instructorNombre: ref.instructorNombre || '',
