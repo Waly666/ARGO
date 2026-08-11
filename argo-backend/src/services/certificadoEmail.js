@@ -36,14 +36,34 @@ function sanitizarNombreArchivo(s) {
     .slice(0, 80);
 }
 
-function resolverPublicOrigin(opts = {}) {
+/** Origen para assets del PDF (API / uploads). */
+function resolverOrigenPdf(opts = {}) {
+  const envPublic = String(process.env.PUBLIC_URL || '').trim();
+  if (envPublic) return envPublic.replace(/\/+$/, '');
   const fromReq = opts.req ? publicOriginFromReq(opts.req) : null;
+  if (fromReq) return fromReq.replace(/\/+$/, '');
   const portal = resolverBasePortal({
     portalBaseUrl: opts.portalBaseUrl,
     origin: opts.origin || opts.req?.get?.('origin'),
   });
-  const env = String(process.env.PUBLIC_URL || process.env.AULA_VIRTUAL_PUBLIC_URL || '').trim();
-  return (fromReq || portal || env || 'http://localhost:3000').replace(/\/+$/, '');
+  if (portal) return portal;
+  return 'http://localhost:3000';
+}
+
+/** URL pública del portal aula (consulta certificados, registro, etc.). */
+function resolverUrlConsultaCertificados(opts = {}) {
+  const base = resolverBasePortal({
+    portalBaseUrl: opts.portalBaseUrl,
+    origin: opts.origin || opts.req?.get?.('origin'),
+  });
+  if (base) return urlConsultaCertificados(base);
+  if (process.env.NODE_ENV !== 'production') {
+    return urlConsultaCertificados('http://localhost:4200');
+  }
+  console.warn(
+    '[certificadoEmail] Sin URL de portal (configure PORTAL_SITE_URL o AULA_VIRTUAL_PUBLIC_URL)',
+  );
+  return '';
 }
 
 async function mailFromHeader(nombreCea) {
@@ -160,8 +180,8 @@ async function enviarCertificadoPorCorreo(certId, opts = {}) {
 
   const portal = await obtenerConfigPortalPublica().catch(() => ({}));
   const nombreCea = String(portal?.nombreCea || 'Finstruvial').trim() || 'Finstruvial';
-  const publicOrigin = resolverPublicOrigin(opts);
-  const linkVerificacion = urlConsultaCertificados(publicOrigin);
+  const publicOrigin = resolverOrigenPdf(opts);
+  const linkVerificacion = resolverUrlConsultaCertificados(opts);
   const codigoRef = codigoVerificacionCert(cert);
   const nombre = nombreCompleto(alumno);
   const curso = String(cert.encabezado || '').trim();

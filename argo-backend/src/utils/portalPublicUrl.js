@@ -5,7 +5,10 @@
 function resolverBasePortal({ portalBaseUrl, origin } = {}) {
   const candidates = [
     portalBaseUrl,
+    process.env.PORTAL_SITE_URL,
     process.env.AULA_VIRTUAL_PUBLIC_URL,
+    process.env.AULA_VIRTUAL_PORTAL_URL,
+    process.env.PORTAL_AULA_URL,
     process.env.PORTAL_PUBLIC_URL,
     origin,
   ];
