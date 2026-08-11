@@ -34,6 +34,8 @@ import {
   PreviewServicioAdicionalItem,
 } from '../../../core/services/config-servicios-adicionales.service';
 
+export type TipoAltaServicio = 'programa' | 'combo' | 'servicio';
+
 @Component({
   selector: 'argo-servicios',
   standalone: true,
@@ -62,6 +64,11 @@ export class ServiciosComponent implements OnInit {
   permitirAjusteCuotasSemestre = signal(false);
   /** Preview servicios adicionales al matricular (desde Config). */
   extrasMatriculaPreview = signal<PreviewServicioAdicionalItem[]>([]);
+
+  // --- Alta unificada ---
+  tipoAlta = signal<TipoAltaServicio>('programa');
+  guardandoAlta = signal(false);
+  textoComboLabel = signal('');
 
   // --- Combos ---
   combos = signal<Combo[]>([]);
@@ -358,6 +365,33 @@ export class ServiciosComponent implements OnInit {
   });
 
   textoPrograma = computed(() => this.textoProgramaLabel());
+  textoCombo = computed(() => this.textoComboLabel());
+
+  confirmarAltaDeshabilitado = computed(() => {
+    if (this.guardandoAlta() || this.aplicandoCombo()) return true;
+    switch (this.tipoAlta()) {
+      case 'programa':
+        return !this.idProg() || this.programaSoloVirtual();
+      case 'combo':
+        return !this.comboIdSeleccionado();
+      case 'servicio':
+        return !this.idServ() || this.servValorTotal() <= 0;
+      default:
+        return true;
+    }
+  });
+
+  etiquetaBotonConfirmar = computed(() => {
+    if (this.guardandoAlta() || this.aplicandoCombo()) return 'Registrando…';
+    switch (this.tipoAlta()) {
+      case 'programa':
+        return 'Crear matrícula';
+      case 'combo':
+        return 'Aplicar combo';
+      case 'servicio':
+        return 'Agregar servicio';
+    }
+  });
 
   buscarProgramasRemoto = (q: string): Observable<EnumBuscarOption[]> => {
     const t = q.trim();
@@ -869,8 +903,33 @@ export class ServiciosComponent implements OnInit {
     this.tarifaManual.set(true);
   }
 
+  onTipoAltaChange(tipo: TipoAltaServicio): void {
+    if (this.tipoAlta() === tipo) return;
+    this.tipoAlta.set(tipo);
+    this.onProgramaLimpiar();
+    this.onComboLimpiar();
+    this.onServicioAdicionalLimpiar();
+    this.comboResultado.set(null);
+    this.matriculaCredenciales.set(null);
+  }
+
+  confirmarAlta(): void {
+    switch (this.tipoAlta()) {
+      case 'programa':
+        void this.crearMatricula();
+        break;
+      case 'combo':
+        this.aplicarCombo();
+        break;
+      case 'servicio':
+        this.crearServicioAdicional();
+        break;
+    }
+  }
+
   onComboPick(opt: EnumBuscarOption): void {
     const id = String(opt.value);
+    this.textoComboLabel.set(opt.label);
     this.comboIdSeleccionado.set(id);
     this.comboPrevista.set(null);
     this.comboResultado.set(null);
@@ -882,6 +941,7 @@ export class ServiciosComponent implements OnInit {
 
   onComboLimpiar(): void {
     this.comboIdSeleccionado.set('');
+    this.textoComboLabel.set('');
     this.comboPrevista.set(null);
     this.comboResultado.set(null);
   }
@@ -899,6 +959,7 @@ export class ServiciosComponent implements OnInit {
       next: (res) => {
         this.aplicandoCombo.set(false);
         this.comboResultado.set(res);
+        this.onComboLimpiar();
         this.recargar(nd, { notificar: true });
         this.setMsg(res.message, !res.ok);
       },
@@ -1036,6 +1097,7 @@ export class ServiciosComponent implements OnInit {
 
     this.setMsg(null, false);
     this.matriculaCredenciales.set(null);
+    this.guardandoAlta.set(true);
     this.matSvc
       .crear({
         numDoc: nd,
@@ -1062,6 +1124,7 @@ export class ServiciosComponent implements OnInit {
       })
       .subscribe({
       next: async (res) => {
+        this.guardandoAlta.set(false);
         this.idProg.set('');
         this.textoProgramaLabel.set('');
         this.programaDetalle.set(null);
@@ -1135,7 +1198,10 @@ export class ServiciosComponent implements OnInit {
           });
         }
       },
-      error: (e) => this.setMsg(e?.error?.message || 'Error creando matrícula.', true),
+      error: (e) => {
+        this.guardandoAlta.set(false);
+        this.setMsg(e?.error?.message || 'Error creando matrícula.', true);
+      },
     });
   }
 
@@ -1192,6 +1258,7 @@ export class ServiciosComponent implements OnInit {
     }
     const servicio = this.servicioSel();
     this.msg.set(null);
+    this.guardandoAlta.set(true);
     this.liqSvc
       .crear({
         numDoc: nd,
@@ -1203,6 +1270,7 @@ export class ServiciosComponent implements OnInit {
       })
       .subscribe({
         next: () => {
+          this.guardandoAlta.set(false);
           this.idServ.set('');
           this.textoServicioLabel.set('');
           this.servicioAdicionalDetalle.set(null);
@@ -1215,7 +1283,10 @@ export class ServiciosComponent implements OnInit {
             : '';
           this.msg.set(`Servicio adicional agregado.${avisoPractica}`);
         },
-        error: (e) => this.msg.set(e?.error?.message || 'Error agregando servicio.'),
+        error: (e) => {
+          this.guardandoAlta.set(false);
+          this.msg.set(e?.error?.message || 'Error agregando servicio.');
+        },
       });
   }
 

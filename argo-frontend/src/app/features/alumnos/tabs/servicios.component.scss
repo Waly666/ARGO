@@ -75,6 +75,68 @@ table.nested { font-size: .88rem; }
   }
 }
 
+.alta-unificada-wrap {
+  position: relative;
+  z-index: 1;
+
+  &:has(argo-catalogo-enum-buscar.dropdown-open) {
+    z-index: 5000;
+  }
+}
+
+.alta-unificada-card {
+  overflow: visible;
+}
+
+.tipo-alta-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.tipo-alta-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.25);
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.84rem;
+  line-height: 1.25;
+  color: var(--text-soft);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &--active {
+    border-color: rgba(56, 189, 248, 0.55);
+    background: rgba(14, 116, 144, 0.18);
+    color: #e2e8f0;
+    font-weight: 600;
+  }
+}
+
+.actions--unificada {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 860px) {
+  .tipo-alta-selector {
+    grid-template-columns: 1fr;
+  }
+}
+
 .servicios > .card {
   position: relative;
   z-index: 0;
