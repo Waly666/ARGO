@@ -6,6 +6,7 @@ const { validarDatosRegistroPortal, crearCuentaPortal, maskEmail } = require('./
 const { portalEmailVerifyEnabled } = require('../config/security');
 const { obtenerConfigAula } = require('./aulaVirtualPortal');
 const { resolverBasePortal, buildActivacionUrl } = require('../utils/portalPublicUrl');
+const { CANAL_CONSENTIMIENTO } = require('../constants/autorizacionTratamientoDatos');
 
 const CODE_TTL_MS = 15 * 60 * 1000;
 const MAX_INTENTOS = 5;
@@ -85,7 +86,7 @@ async function enviarCodigoRegistro({ email, codigo, linkToken, pendingId, nombr
   });
 }
 
-async function solicitarRegistroPortal({ email, password, alumno, nombreCea, portalBaseUrl }) {
+async function solicitarRegistroPortal({ email, password, alumno, nombreCea, portalBaseUrl, consentimiento }) {
   if (!portalEmailVerifyEnabled()) {
     const err = new Error('Verificación de correo desactivada');
     err.status = 400;
@@ -113,6 +114,7 @@ async function solicitarRegistroPortal({ email, password, alumno, nombreCea, por
     codeHash,
     linkTokenHash: hashLinkToken(linkToken),
     expiresAt,
+    consentimiento,
   });
 
   await enviarCodigoRegistro({
@@ -199,6 +201,7 @@ async function confirmarRegistroPortal({ pendingId, codigo, linkToken }) {
     email: pending.email,
     passwordHash: pending.passwordHash,
     alumno: pending.alumno,
+    consentimiento: pending.consentimiento,
   });
 
   await RegistroPortalPendiente.deleteOne({ _id: pending._id });

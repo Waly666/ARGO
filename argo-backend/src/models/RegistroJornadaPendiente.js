@@ -12,6 +12,8 @@ const RegistroJornadaPendienteSchema = new mongoose.Schema(
     linkTokenHash: { type: String, required: true, index: true },
     expiresAt: { type: Date, required: true },
     intentosConfirmacion: { type: Number, default: 0 },
+    /** Snapshot de aceptación Ley 1581 al solicitar inscripción. */
+    consentimiento: { type: mongoose.Schema.Types.Mixed, default: null },
   },
   { collection: 'registroJornadaPendiente', timestamps: true },
 );

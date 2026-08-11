@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
+import { AutorizacionDatosComponent } from '../../shared/autorizacion-datos/autorizacion-datos.component';
+import { payloadAutorizacionDatos } from '../../core/autorizacion-datos.constants';
 import { AulaApiService } from '../../core/aula-api.service';
 import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
 import { PortalCatalogService } from '../../core/portal-catalog.service';
@@ -12,7 +14,7 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 @Component({
   selector: 'av-jornadas-capacitacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, AutorizacionDatosComponent],
   templateUrl: './jornadas-capacitacion.component.html',
   styleUrl: './jornadas-capacitacion.component.scss',
 })
@@ -79,6 +81,7 @@ export class JornadasCapacitacionComponent implements OnInit {
   reenviando = signal(false);
   turnstileSiteKey = signal('');
   turnstileToken = signal('');
+  aceptaAutorizacion = signal(false);
   mensajeExito = signal('');
   nombreExito = signal('');
 
@@ -332,11 +335,19 @@ export class JornadasCapacitacionComponent implements OnInit {
       this.error.set('Complete la verificación anti-bot.');
       return;
     }
+    if (!this.aceptaAutorizacion()) {
+      this.error.set('Debe aceptar la autorización de tratamiento de datos personales.');
+      return;
+    }
     this.loading.set(true);
     this.error.set('');
     this.info.set('');
 
-    this.api.registroJornadaSolicitar({ ...this.form }, token || undefined).subscribe({
+    this.api
+      .registroJornadaSolicitar(
+        { ...this.form, ...payloadAutorizacionDatos(true) },
+        token || undefined,
+      ).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.turnstile()?.reset();

@@ -12,6 +12,8 @@ const RegistroPortalPendienteSchema = new mongoose.Schema(
     linkTokenHash: { type: String, default: '', index: true },
     expiresAt: { type: Date, required: true },
     intentosConfirmacion: { type: Number, default: 0 },
+    /** Snapshot de aceptación Ley 1581 al solicitar registro. */
+    consentimiento: { type: mongoose.Schema.Types.Mixed, default: null },
   },
   { collection: 'registroPortalPendiente', timestamps: true },
 );

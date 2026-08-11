@@ -99,6 +99,11 @@ const DatosAlumnoSchema = new mongoose.Schema(
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },
     fechaMod: { type: Date },
+    /** Autorización Ley 1581 — registro web. */
+    autorizacionDatos: { type: Boolean, default: null },
+    autorizacionDatosFecha: { type: Date, default: null },
+    autorizacionDatosVersion: { type: String, trim: true, default: null },
+    autorizacionDatosCanal: { type: String, trim: true, default: null },
   },
   { collection: 'datosAlumnos', timestamps: false, strict: false },
 );

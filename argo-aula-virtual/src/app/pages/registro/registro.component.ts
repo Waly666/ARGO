@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
+import { AutorizacionDatosComponent } from '../../shared/autorizacion-datos/autorizacion-datos.component';
+import { payloadAutorizacionDatos } from '../../core/autorizacion-datos.constants';
 import { AulaApiService } from '../../core/aula-api.service';
 import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
 import { PortalCatalogService } from '../../core/portal-catalog.service';
@@ -13,7 +15,7 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 @Component({
   selector: 'av-registro',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, AutorizacionDatosComponent],
   templateUrl: './registro.component.html',
   styleUrl: './registro.component.scss',
 })
@@ -84,6 +86,7 @@ export class RegistroComponent implements OnInit {
   reenviando = signal(false);
   turnstileSiteKey = signal('');
   turnstileToken = signal('');
+  aceptaAutorizacion = signal(false);
 
   ngOnInit() {
     this.catalogs.tiposDoc().subscribe({
@@ -321,12 +324,18 @@ export class RegistroComponent implements OnInit {
       this.error.set('Complete la verificación anti-bot.');
       return;
     }
+    if (!this.aceptaAutorizacion()) {
+      this.error.set('Debe aceptar la autorización de tratamiento de datos personales.');
+      return;
+    }
     this.loading.set(true);
     this.error.set('');
     this.info.set('');
 
+    const payload = { ...this.form, ...payloadAutorizacionDatos(true) };
+
     if (this.emailVerificacion()) {
-      this.api.registroSolicitar({ ...this.form }, token || undefined).subscribe({
+      this.api.registroSolicitar(payload, token || undefined).subscribe({
         next: (res) => {
           this.loading.set(false);
           this.turnstile()?.reset();
@@ -344,7 +353,7 @@ export class RegistroComponent implements OnInit {
       return;
     }
 
-    this.api.registro({ ...this.form }, token || undefined).subscribe({
+    this.api.registro(payload, token || undefined).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.auth.setSession(res.token, res.usuario, res.alumno);

@@ -53,6 +53,17 @@ const { enviarPqrPortal } = require('../services/aulaVirtualPqr');
 const { generarSitemapXml } = require('../services/aulaVirtualSitemap');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { portalRegistroAbierto, turnstileSiteKey, turnstileEnabled, portalEmailVerifyEnabled } = require('../config/security');
+const { CANAL_CONSENTIMIENTO } = require('../constants/autorizacionTratamientoDatos');
+const {
+  exigirAutorizacionDatos,
+  snapshotConsentimiento,
+  textoLegalPublico,
+} = require('../services/autorizacionTratamientoDatos');
+
+function consentimientoDesdeBody(body, canal) {
+  exigirAutorizacionDatos(body);
+  return snapshotConsentimiento(canal);
+}
 const { logAuthIntento } = require('../services/authSecurityLog');
 const path = require('path');
 const { models } = require('../models/catalogos');
@@ -128,13 +139,29 @@ exports.buscarAlumnoRegistro = async (req, res, next) => {
   }
 };
 
+exports.autorizacionDatosLegal = async (_req, res, next) => {
+  try {
+    res.json(textoLegalPublico());
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.registro = async (req, res, next) => {
   try {
     if (!portalRegistroAbierto()) {
       return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
     }
-    const { email, password, turnstileToken: _t, ...alumno } = req.body || {};
-    const out = await registrarPortal({ email, password, alumno });
+    const {
+      email,
+      password,
+      turnstileToken: _t,
+      autorizacionDatos: _ad,
+      autorizacionDatosVersion: _adv,
+      ...alumno
+    } = req.body || {};
+    const consentimiento = consentimientoDesdeBody(req.body, CANAL_CONSENTIMIENTO.AULA_VIRTUAL);
+    const out = await registrarPortal({ email, password, alumno, consentimiento });
     res.status(201).json(out);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
@@ -153,7 +180,16 @@ exports.registroSolicitar = async (req, res, next) => {
       });
     }
     const cfg = await obtenerConfigPortalPublica();
-    const { email, password, turnstileToken: _t, portalBaseUrl, ...alumno } = req.body || {};
+    const {
+      email,
+      password,
+      turnstileToken: _t,
+      portalBaseUrl,
+      autorizacionDatos: _ad,
+      autorizacionDatosVersion: _adv,
+      ...alumno
+    } = req.body || {};
+    const consentimiento = consentimientoDesdeBody(req.body, CANAL_CONSENTIMIENTO.AULA_VIRTUAL);
     const out = await solicitarRegistroPortal({
       email,
       password,
@@ -163,6 +199,7 @@ exports.registroSolicitar = async (req, res, next) => {
         portalBaseUrl,
         origin: req.get('origin') || publicOriginFromReq(req),
       }),
+      consentimiento,
     });
     res.status(202).json(out);
   } catch (e) {
@@ -218,7 +255,16 @@ exports.registroJornadaSolicitar = async (req, res, next) => {
       return res.status(403).json({ message: 'El registro en línea está temporalmente cerrado.' });
     }
     const cfg = await obtenerConfigPortalPublica();
-    const { email, turnstileToken: _t, portalBaseUrl, password: _p, ...alumno } = req.body || {};
+    const {
+      email,
+      turnstileToken: _t,
+      portalBaseUrl,
+      password: _p,
+      autorizacionDatos: _ad,
+      autorizacionDatosVersion: _adv,
+      ...alumno
+    } = req.body || {};
+    const consentimiento = consentimientoDesdeBody(req.body, CANAL_CONSENTIMIENTO.JORNADAS);
     const out = await solicitarRegistroJornada({
       email,
       alumno,
@@ -227,6 +273,7 @@ exports.registroJornadaSolicitar = async (req, res, next) => {
         portalBaseUrl,
         origin: req.get('origin') || publicOriginFromReq(req),
       }),
+      consentimiento,
     });
     const status = out.step === 'done' ? 201 : 202;
     res.status(status).json(out);

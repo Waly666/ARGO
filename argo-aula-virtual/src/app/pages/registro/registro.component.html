@@ -192,7 +192,12 @@
         <av-turnstile [siteKey]="turnstileSiteKey()" (tokenChange)="turnstileToken.set($event)" />
       }
 
-      <button type="button" class="btn btn-primary registro-submit" [disabled]="loading() || !registroAbierto()" (click)="enviar()">
+      <av-autorizacion-datos
+        [aceptado]="aceptaAutorizacion()"
+        (aceptadoChange)="aceptaAutorizacion.set($event)"
+      />
+
+      <button type="button" class="btn btn-primary registro-submit" [disabled]="loading() || !registroAbierto() || !aceptaAutorizacion()" (click)="enviar()">
         {{ loading() ? 'Enviando…' : emailVerificacion() ? 'Enviar enlace y código al correo' : 'Crear cuenta' }}
       </button>
     } @else {

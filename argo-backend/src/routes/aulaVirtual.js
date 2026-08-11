@@ -23,6 +23,7 @@ const router = Router();
 /** Público — portal estudiante */
 router.get('/sitemap.xml', ctrl.sitemapXml);
 router.get('/config', ctrl.configPublica);
+router.get('/legal/autorizacion-datos', ctrl.autorizacionDatosLegal);
 router.get('/catalogos/tipos-doc', ctrl.catalogosTiposDoc);
 router.get('/catalogos/generos', ctrl.catalogosGeneros);
 router.get('/catalogos/departamentos', ctrl.catalogosDepartamentos);

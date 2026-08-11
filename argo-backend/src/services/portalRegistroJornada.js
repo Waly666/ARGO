@@ -14,7 +14,11 @@ const {
   nombreDesdeAlumno,
   generarQrJornadaPngBuffer,
 } = require('./jornadaAlumnoQr');
-const { maskEmail } = require('./aulaVirtualAuth');
+const { CANAL_CONSENTIMIENTO } = require('../constants/autorizacionTratamientoDatos');
+const {
+  exigirAutorizacionDatos,
+  camposConsentimientoAlumno,
+} = require('./autorizacionTratamientoDatos');
 
 const CODE_TTL_MS = 15 * 60 * 1000;
 const MAX_INTENTOS = 5;
@@ -125,7 +129,7 @@ async function validarDatosRegistroJornada({ email, alumno }) {
  * Crea o actualiza ficha como alumno de Jornadas de Capacitación (origen WEB).
  * No crea UsuarioPortal ni matrícula.
  */
-async function crearOActualizarAlumnoJornada({ email, alumno }) {
+async function crearOActualizarAlumnoJornada({ email, alumno, consentimiento }) {
   const mail = String(email || '').trim().toLowerCase();
   const numDoc = parseNumDoc(alumno?.numDoc);
   if (numDoc == null) {
@@ -137,6 +141,10 @@ async function crearOActualizarAlumnoJornada({ email, alumno }) {
   let da = await DatosAlumno.findOne(numDocQuery(numDoc));
   const empresaIdValido =
     alumno.empresaId && mongoose.isValidObjectId(alumno.empresaId) ? alumno.empresaId : null;
+
+  const consentFields = consentimiento
+    ? camposConsentimientoAlumno(consentimiento.canal || CANAL_CONSENTIMIENTO.JORNADAS)
+    : {};
 
   if (!da) {
     da = await DatosAlumno.create({
@@ -158,6 +166,7 @@ async function crearOActualizarAlumnoJornada({ email, alumno }) {
       codMunicipio: alumno.codMunicipio || '',
       empresaId: empresaIdValido,
       userAddReg: 'portal-jornadas',
+      ...consentFields,
     });
   } else {
     da.tipoAlumno = TIPO_JORNADAS_CAPACITACION;
@@ -170,6 +179,9 @@ async function crearOActualizarAlumnoJornada({ email, alumno }) {
     if (alumno.codMunicipio || alumno.munOrigen) {
       da.codMunicipio = alumno.codMunicipio || alumno.munOrigen;
       da.munOrigen = alumno.munOrigen || alumno.codMunicipio;
+    }
+    if (Object.keys(consentFields).length) {
+      Object.assign(da, consentFields);
     }
     da.userChangeRecord = 'portal-jornadas';
     da.fechaMod = new Date();
@@ -296,7 +308,7 @@ async function enviarCodigoRegistroJornada({
   });
 }
 
-async function solicitarRegistroJornada({ email, alumno, nombreCea, portalBaseUrl }) {
+async function solicitarRegistroJornada({ email, alumno, nombreCea, portalBaseUrl, consentimiento }) {
   const datos = await validarDatosRegistroJornada({ email, alumno });
 
   // Anti-bots: NUNCA crear ficha aquí. Solo pendiente + correo con enlace/código.
@@ -325,6 +337,7 @@ async function solicitarRegistroJornada({ email, alumno, nombreCea, portalBaseUr
     codeHash: await bcrypt.hash(codigo, 10),
     linkTokenHash: hashLinkToken(linkToken),
     expiresAt: new Date(Date.now() + CODE_TTL_MS),
+    consentimiento,
   });
 
   await enviarCodigoRegistroJornada({
@@ -410,6 +423,7 @@ async function confirmarRegistroJornada({ pendingId, codigo, linkToken, nombreCe
   const created = await crearOActualizarAlumnoJornada({
     email: pending.email,
     alumno: pending.alumno,
+    consentimiento: pending.consentimiento,
   });
 
   await RegistroJornadaPendiente.deleteOne({ _id: pending._id });

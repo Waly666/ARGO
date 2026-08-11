@@ -303,10 +303,15 @@
           <av-turnstile [siteKey]="turnstileSiteKey()" (tokenChange)="turnstileToken.set($event)" />
         }
 
+        <av-autorizacion-datos
+          [aceptado]="aceptaAutorizacion()"
+          (aceptadoChange)="aceptaAutorizacion.set($event)"
+        />
+
         <button
           type="button"
           class="btn btn-primary registro-submit"
-          [disabled]="loading() || !registroAbierto()"
+          [disabled]="loading() || !registroAbierto() || !aceptaAutorizacion()"
           (click)="enviar()"
         >
           {{ loading() ? 'Enviando…' : 'Enviar enlace de activación al correo' }}

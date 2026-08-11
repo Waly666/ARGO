@@ -1,0 +1,37 @@
+<div class="auth-datos">
+  <label class="auth-datos__check">
+    <input
+      type="checkbox"
+      [checked]="aceptado()"
+      (change)="onCheckChange($any($event.target).checked)"
+    />
+    <span>
+      Acepto los términos del servicio *
+      <button type="button" class="auth-datos__link" (click)="abrirModal($event)">
+        Ver autorización de tratamiento de datos
+      </button>
+    </span>
+  </label>
+</div>
+
+@if (modalAbierto()) {
+  <div class="auth-datos-modal" role="dialog" aria-modal="true" [attr.aria-label]="titulo">
+    <div class="auth-datos-modal__backdrop" (click)="cerrarModal()"></div>
+    <div class="auth-datos-modal__panel">
+      <header class="auth-datos-modal__head">
+        <h2>{{ titulo }}</h2>
+        <button type="button" class="auth-datos-modal__close" (click)="cerrarModal()" aria-label="Cerrar">
+          ×
+        </button>
+      </header>
+      <div class="auth-datos-modal__body">
+        @for (parrafo of texto.split('\n\n'); track $index) {
+          <p>{{ parrafo }}</p>
+        }
+      </div>
+      <footer class="auth-datos-modal__foot">
+        <button type="button" class="btn btn-primary" (click)="cerrarModal()">Cerrar</button>
+      </footer>
+    </div>
+  </div>
+}

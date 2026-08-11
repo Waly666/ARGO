@@ -6,6 +6,8 @@ const UsuarioPortal = require('../models/UsuarioPortal');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const { TIPO_VIRTUAL } = require('../constants/tipoAlumno');
 const { ORIGEN_WEB } = require('../constants/origenAlumno');
+const { CANAL_CONSENTIMIENTO } = require('../constants/autorizacionTratamientoDatos');
+const { camposConsentimientoAlumno } = require('./autorizacionTratamientoDatos');
 
 const PORTAL_TIPO = 'portal';
 
@@ -173,7 +175,7 @@ async function validarDatosRegistroPortal({ email, password, alumno }) {
 }
 
 /** Crea ficha alumno (si aplica) y cuenta portal. passwordHash ya hasheado. */
-async function crearCuentaPortal({ email, passwordHash, alumno }) {
+async function crearCuentaPortal({ email, passwordHash, alumno, consentimiento }) {
   const mail = String(email || '').trim().toLowerCase();
   const numDoc = parseNumDoc(alumno?.numDoc);
   if (numDoc == null) {
@@ -188,6 +190,10 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
   const empresaIdValido = alumno.empresaId && mongoose.isValidObjectId(alumno.empresaId)
     ? alumno.empresaId
     : null;
+
+  const consentFields = consentimiento
+    ? camposConsentimientoAlumno(consentimiento.canal || CANAL_CONSENTIMIENTO.AULA_VIRTUAL)
+    : {};
 
   if (!da) {
     da = await DatosAlumno.create({
@@ -209,6 +215,7 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
       codMunicipio: alumno.codMunicipio || '',
       empresaId: empresaIdValido,
       userAddReg: 'portal',
+      ...consentFields,
     });
     da = da.toObject();
     alumnoExistente = false;
@@ -221,6 +228,10 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
     if (Object.keys(patch).length) {
       await DatosAlumno.updateOne({ _id: da._id }, { $set: patch });
       da = { ...da, ...patch };
+    }
+    if (Object.keys(consentFields).length) {
+      await DatosAlumno.updateOne({ _id: da._id }, { $set: consentFields });
+      da = { ...da, ...consentFields };
     }
   }
 
@@ -269,13 +280,14 @@ async function crearCuentaPortal({ email, passwordHash, alumno }) {
   };
 }
 
-async function registrarPortal({ email, password, alumno }) {
+async function registrarPortal({ email, password, alumno, consentimiento }) {
   const datos = await validarDatosRegistroPortal({ email, password, alumno });
   const passwordHash = await bcrypt.hash(datos.pass, 10);
   return crearCuentaPortal({
     email: datos.mail,
     passwordHash,
     alumno: datos.alumnoPayload,
+    consentimiento,
   });
 }
 
