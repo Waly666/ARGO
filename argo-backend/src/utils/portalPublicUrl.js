@@ -1,7 +1,28 @@
 /**
  * Base URL pública del portal aula (sin barra final).
- * Prioridad: body.portalBaseUrl → env → Origin del request.
+ * Prioridad: body.portalBaseUrl → env → CORS_ORIGIN (sin app.*) → Origin del request.
  */
+function normalizarUrlBase(raw) {
+  const s = String(raw || '')
+    .trim()
+    .replace(/\/+$/, '');
+  if (!s || !/^https?:\/\//i.test(s)) return '';
+  return s;
+}
+
+/** Portal aula desde CORS_ORIGIN: excluye subdominio app.* (ERP). */
+function portalDesdeCorsOrigin() {
+  const raw = String(process.env.CORS_ORIGIN || '').trim();
+  if (!raw) return '';
+  const origins = raw.split(',').map((s) => normalizarUrlBase(s)).filter(Boolean);
+  if (!origins.length) return '';
+
+  const sinErp = origins.filter((o) => !/^https?:\/\/app\./i.test(o));
+  const pool = sinErp.length ? sinErp : origins;
+  const sinWww = pool.find((o) => !/^https?:\/\/www\./i.test(o));
+  return sinWww || pool[0];
+}
+
 function resolverBasePortal({ portalBaseUrl, origin } = {}) {
   const candidates = [
     portalBaseUrl,
@@ -10,15 +31,12 @@ function resolverBasePortal({ portalBaseUrl, origin } = {}) {
     process.env.AULA_VIRTUAL_PORTAL_URL,
     process.env.PORTAL_AULA_URL,
     process.env.PORTAL_PUBLIC_URL,
+    portalDesdeCorsOrigin(),
     origin,
   ];
   for (const raw of candidates) {
-    const s = String(raw || '')
-      .trim()
-      .replace(/\/+$/, '');
-    if (!s) continue;
-    if (!/^https?:\/\//i.test(s)) continue;
-    return s;
+    const s = normalizarUrlBase(raw);
+    if (s) return s;
   }
   return '';
 }
