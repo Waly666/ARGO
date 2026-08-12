@@ -9,4 +9,13 @@ function esIngresoCaja(doc) {
   return !!doc.idTipoIngreso;
 }
 
-module.exports = { esIngresoCaja };
+/** Cobro a alumno (liquidación o multi-ítem), no caja ni contrato empresa. */
+function esIngresoAlumno(doc) {
+  if (!doc) return false;
+  if (doc.ingresoCaja) return false;
+  if (doc.origenContratoCap) return false;
+  if (doc.numDoc == null) return false;
+  return true;
+}
+
+module.exports = { esIngresoCaja, esIngresoAlumno };

@@ -268,6 +268,9 @@ async function registrarIngresoPasarela({ intent, wompiTransaction, cfg }) {
     /* noop */
   }
 
+  const { programarEnvioReciboPorCorreo } = require('./reciboEmail');
+  programarEnvioReciboPorCorreo(ing._id);
+
   try {
     const { intentarCertificadoPagoAuto } = require('./certificadoPagoAuto');
     let rc = await intentarCertificadoPagoAuto({ numDoc: intent.numDoc, liq, saldo: num(liq.saldo) });

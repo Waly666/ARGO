@@ -588,6 +588,9 @@ exports.crearAlumno = async (req, res, next) => {
       }
     }
 
+    const { programarEnvioReciboPorCorreo } = require('../services/reciboEmail');
+    programarEnvioReciboPorCorreo(ing._id, { req });
+
     const enriquecido = await enriquecer(ing.toObject());
     registrarCreacion(req, 'ingreso', ing, {
       resumen: `Ingreso ${tipoIng.tipoIngreso || 'alumno'} recibo #${numRecibo} por ${total}${
