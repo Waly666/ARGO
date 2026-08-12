@@ -609,6 +609,21 @@
   gap: 0.65rem;
 }
 
+/* Iniciar / Finalizar clase junto al cronómetro e inicio/fin */
+.clase-estado-actions {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-left: auto;
+
+  .clase-fbtn {
+    min-height: 3.1rem;
+    padding: 0.55rem 1rem;
+    white-space: nowrap;
+  }
+}
+
 .clase-estado-chip {
   display: flex;
   flex-direction: column;
@@ -676,6 +691,15 @@
     flex: 1 1 0;
     align-items: center;
     text-align: center;
+  }
+
+  .clase-estado-actions {
+    margin-left: 0;
+    width: 100%;
+
+    .clase-fbtn {
+      flex: 1 1 auto;
+    }
   }
 }
 

@@ -2123,6 +2123,29 @@
               }
             </div>
           }
+
+          @if (!contratoModalFinalizado()) {
+            <div class="clase-estado-actions">
+              @if (cl.estado !== 'FINALIZADO') {
+                <button
+                  type="button"
+                  class="primary clase-fbtn clase-fbtn--iniciar"
+                  (click)="iniciarClaseModal()"
+                  [disabled]="!claseModalIniciable()"
+                  [title]="tituloBotonIniciarClase()">
+                  <span class="clase-fbtn-ic" aria-hidden="true">▶</span> Iniciar clase
+                </button>
+              }
+              <button
+                type="button"
+                class="danger clase-fbtn clase-fbtn--finalizar"
+                (click)="finalizarClaseModal()"
+                [disabled]="!claseModalFinalizable()"
+                [title]="tituloBotonFinalizarClase()">
+                {{ textoBotonFinalizarClase() }}
+              </button>
+            </div>
+          }
         </div>
       </div>
 
@@ -2929,24 +2952,6 @@
           (click)="guardarCambiosClaseModal()"
           title="Guardar cambios de programa, ubicación, instructor u horario">
           <span class="clase-fbtn-ic" aria-hidden="true">💾</span> Guardar clase
-        </button>
-        @if (claseActiva()?.estado !== 'FINALIZADO') {
-          <button
-            type="button"
-            class="primary clase-fbtn clase-fbtn--iniciar"
-            (click)="iniciarClaseModal()"
-            [disabled]="!claseModalIniciable()"
-            [title]="tituloBotonIniciarClase()">
-            <span class="clase-fbtn-ic" aria-hidden="true">▶</span> Iniciar clase
-          </button>
-        }
-        <button
-          type="button"
-          class="danger clase-fbtn clase-fbtn--finalizar"
-          (click)="finalizarClaseModal()"
-          [disabled]="!claseModalFinalizable()"
-          [title]="tituloBotonFinalizarClase()">
-          {{ textoBotonFinalizarClase() }}
         </button>
         @if (puedeEliminarClase() && claseActiva(); as clDel) {
           <button
