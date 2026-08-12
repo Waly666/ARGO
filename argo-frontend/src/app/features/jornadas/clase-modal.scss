@@ -518,46 +518,248 @@
 
 .clase-estado-bar {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  width: 100%;
+  max-width: 920px;
+  padding: 1rem 1.25rem;
   background:
-    linear-gradient(180deg, rgba(20, 38, 82, 0.7), rgba(10, 22, 50, 0.55));
-  border: 1px solid rgba(120, 160, 255, 0.22);
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(4, 10, 28, 0.28);
-  flex-wrap: wrap;
+    linear-gradient(180deg, rgba(20, 38, 82, 0.78), rgba(10, 22, 50, 0.62));
+  border: 1px solid rgba(120, 160, 255, 0.28);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 22px rgba(4, 10, 28, 0.32);
   font-size: 0.88rem;
+}
 
-  .estado-label {
-    font-weight: 600;
-    color: var(--text-muted, #c8d6f5);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-size: 0.78rem;
+/* Fila superior: Estado + Fecha (texto simple, sin recuadro) a la izquierda */
+.clase-estado-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem 0.85rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.clase-estado-fecha {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--text, #e8eefc);
+
+  strong {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #dbeafe;
+  }
+}
+
+.clase-estado-fecha-k {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted, #9db0c7);
+}
+
+.clase-estado-bar .estado-label {
+  font-weight: 700;
+  color: var(--text-muted, #9db0c7);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+}
+
+.clase-estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Cronómetro + horas en la misma fila, alineados a la izquierda */
+.clase-estado-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.1rem;
+  width: 100%;
+}
+
+.clase-estado-hero {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0.1rem 0;
+}
+
+/* Inicio + Fin al lado del cronómetro */
+.clase-estado-times {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.65rem;
+}
+
+.clase-estado-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.5rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  background: linear-gradient(180deg, rgba(8, 47, 73, 0.55), rgba(12, 74, 110, 0.35));
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.12),
+    inset 0 0 10px rgba(56, 189, 248, 0.06);
+}
+
+.clase-estado-chip-k {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.85);
+}
+
+.clase-estado-chip-v {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #e0f7ff;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.clase-estado-chip--inicio {
+  border-color: rgba(52, 211, 153, 0.35);
+  background: linear-gradient(180deg, rgba(6, 78, 59, 0.45), rgba(4, 47, 46, 0.35));
+
+  .clase-estado-chip-k {
+    color: rgba(110, 231, 183, 0.9);
   }
 
-  .hint strong {
-    color: var(--text);
-    font-weight: 600;
+  .clase-estado-chip-v {
+    color: #d1fae5;
+  }
+}
+
+.clase-estado-chip--fin {
+  border-color: rgba(129, 140, 248, 0.4);
+  background: linear-gradient(180deg, rgba(49, 46, 129, 0.45), rgba(30, 41, 89, 0.35));
+
+  .clase-estado-chip-k {
+    color: rgba(165, 180, 252, 0.95);
+  }
+
+  .clase-estado-chip-v {
+    color: #e0e7ff;
+  }
+}
+
+@media (max-width: 640px) {
+  .clase-estado-times {
+    flex-wrap: wrap;
+  }
+
+  .clase-estado-times .clase-estado-chip {
+    flex: 1 1 0;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@keyframes clase-cronometro-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(56, 189, 248, 0.35),
+      0 0 18px rgba(56, 189, 248, 0.35),
+      inset 0 0 12px rgba(56, 189, 248, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(56, 189, 248, 0.6),
+      0 0 30px rgba(56, 189, 248, 0.6),
+      inset 0 0 16px rgba(56, 189, 248, 0.2);
   }
 }
 
 .clase-cronometro {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: 'Consolas', 'Courier New', monospace;
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #7dd3fc;
-  padding: 2px 10px;
-  border-radius: 6px;
-  background: rgba(14, 116, 144, 0.25);
-  border: 1px solid rgba(56, 189, 248, 0.45);
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: #e0f7ff;
+  padding: 0.35rem 0.95rem;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(8, 47, 73, 0.85), rgba(12, 74, 110, 0.6));
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  text-shadow: 0 0 14px rgba(56, 189, 248, 0.85), 0 0 4px rgba(125, 211, 252, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.35),
+    0 0 18px rgba(56, 189, 248, 0.35),
+    inset 0 0 12px rgba(56, 189, 248, 0.12);
+  animation: clase-cronometro-pulse 1.8s ease-in-out infinite;
+
+  /* Puntito «en vivo» antes del tiempo. */
+  &::before {
+    content: '';
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.9);
+    animation: clase-cronometro-pulse 1.2s ease-in-out infinite;
+  }
 
   &.final {
-    color: #c7d2fe;
-    border-color: rgba(56, 189, 248, 0.45);
-    background: rgba(30, 41, 89, 0.22);
+    color: #e0e7ff;
+    border-color: rgba(129, 140, 248, 0.5);
+    background: linear-gradient(180deg, rgba(30, 41, 89, 0.6), rgba(49, 46, 129, 0.45));
+    text-shadow: 0 0 12px rgba(129, 140, 248, 0.7);
+    box-shadow:
+      0 0 0 1px rgba(129, 140, 248, 0.35),
+      0 0 16px rgba(129, 140, 248, 0.3);
+    animation: none;
+
+    &::before {
+      content: '⏹';
+      width: auto;
+      height: auto;
+      background: none;
+      box-shadow: none;
+      animation: none;
+      font-size: 1.4rem;
+      color: #a5b4fc;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clase-cronometro,
+  .clase-cronometro::before {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .clase-cronometro {
+    font-size: 1.9rem;
   }
 }
 
@@ -859,6 +1061,27 @@
   position: relative;
 }
 
+/* Filtro «Origen del alumno» dentro de la tarjeta Datos de la clase. */
+.cm-origen-filtro {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(120, 160, 255, 0.2);
+}
+
+.cm-origen-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim, #9db0c7);
+}
+
+.cm-origen-filtro .origen-filtro-chips {
+  margin-bottom: 0;
+}
+
 .origen-filtro-chips {
   display: flex;
   flex-wrap: wrap;
@@ -1060,5 +1283,323 @@
 
   .jor-picker-cards {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   Mejoras visuales + táctiles (escritorio y tablet)
+   ============================================================ */
+
+/* Pestañas de la ficha: control segmentado más ancho y legible. */
+.clase-modal-fichas-toggle {
+  gap: 0.3rem;
+  padding: 0.25rem;
+
+  > button,
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 1.15rem;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+}
+
+/* Los comboboxes/inputs del modal cómodos al tacto. */
+.clase-modal-ficha--datos {
+  .cm-field ::ng-deep .cenum-input,
+  .cm-field ::ng-deep input,
+  select,
+  input[type='text'] {
+    min-height: 2.6rem;
+  }
+}
+
+/* Título de sección un poco más aireado dentro de cada tarjeta. */
+.cm-panel,
+.cm-block.cm-datos {
+  > .clase-modal-section {
+    margin-bottom: 0.7rem;
+  }
+}
+
+/* ---------- Tablet (≤ 1024px): prioriza claridad y toque ---------- */
+@media (max-width: 1024px) {
+  .clase-modal-form {
+    font-size: 0.94rem;
+  }
+
+  /* Pestañas ocupan todo el ancho y se reparten equitativamente. */
+  .clase-modal-fichas-toggle {
+    display: flex;
+    width: 100%;
+
+    > button,
+    button {
+      flex: 1 1 0;
+      min-height: 2.85rem;
+      font-size: 0.92rem;
+    }
+  }
+
+  /* Jornada + Ubicación e Instructor + Programa: una columna, más legible. */
+  .clase-modal-datos-grid--jor-ubic,
+  .clase-modal-datos-grid--instructor-programa {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  /* Campos con altura de toque cómoda (WCAG ~44px). */
+  .clase-modal-ficha--datos {
+    .cm-field ::ng-deep .cenum-input,
+    .cm-field ::ng-deep input,
+    select,
+    input[type='text'] {
+      min-height: 2.9rem;
+      font-size: 1rem;
+    }
+  }
+
+  /* Horario en dos columnas (Inicio / Fin) aprovechando el ancho de tablet. */
+  .clase-horario-admin.horario-manual {
+    grid-template-columns: 1fr 1fr;
+
+    .horario-manual-col--duracion {
+      grid-column: 1 / -1;
+      max-width: none;
+    }
+  }
+
+  /* Buscador de alumnos: el input toma toda una fila; botones debajo. */
+  .clase-alumno-buscar .buscar-wrap {
+    flex-wrap: wrap;
+    row-gap: 8px;
+
+    input {
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+
+    .clase-qr-scan-btn,
+    .ghost.mini {
+      flex: 1 1 auto;
+      min-height: 2.75rem;
+    }
+  }
+
+  .ubicacion-chip {
+    padding: 0.55rem 0.9rem;
+  }
+
+  /* Tabla de matrícula: filas más altas para tocar «Quitar/Asistió». */
+  .clase-matricula-list {
+    th,
+    td {
+      padding: 0.7rem 0.65rem;
+    }
+
+    .actions-cell .mini {
+      min-height: 2.5rem;
+    }
+  }
+
+  /* Más altura visible de la lista de alumnos en tablet. */
+  .clase-modal-edit-side--ficha .clase-modal-alumnos-scroll {
+    max-height: min(52vh, 560px);
+  }
+}
+
+/* ---------- Móvil (≤ 640px): compacto y en una columna ---------- */
+@media (max-width: 640px) {
+  .clase-horario-admin.horario-manual {
+    grid-template-columns: 1fr;
+  }
+
+  .clase-modal-datos-stack {
+    gap: 0.75rem;
+  }
+
+  .cm-panel,
+  .cm-block.cm-datos {
+    padding: 0.75rem 0.8rem 0.8rem;
+  }
+}
+
+/* ============================================================
+   Botones del pie del modal de clase (Cerrar / Listado /
+   Guardar / Iniciar / Finalizar / Borrar / Crear)
+   ============================================================ */
+.clase-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.clase-fbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.6rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(125, 211, 252, 0.7);
+    outline-offset: 2px;
+  }
+}
+
+.clase-fbtn-ic {
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+/* Cerrar: neutro y anclado a la izquierda; el resto se agrupa a la derecha. */
+.clase-fbtn.clase-fbtn--cerrar {
+  margin-right: auto;
+  color: #c7d3ea;
+  background: rgba(30, 41, 66, 0.6);
+  border-color: rgba(120, 150, 200, 0.3);
+
+  &:hover:not(:disabled) {
+    background: rgba(45, 58, 92, 0.85);
+    border-color: rgba(140, 170, 220, 0.5);
+    color: #fff;
+  }
+}
+
+/* Listado de asistencia: informativo (cian). */
+.clase-fbtn.clase-fbtn--listado {
+  color: #a5f3fc;
+  background: rgba(8, 51, 68, 0.5);
+  border-color: rgba(34, 211, 238, 0.4);
+
+  &:hover:not(:disabled) {
+    background: rgba(14, 80, 104, 0.7);
+    border-color: rgba(103, 232, 249, 0.7);
+    color: #ecfeff;
+  }
+}
+
+/* Guardar clase: azul suave (acción secundaria). */
+.clase-fbtn.clase-fbtn--guardar {
+  color: #dbeafe;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.28), rgba(29, 78, 216, 0.28));
+  border-color: rgba(96, 165, 250, 0.5);
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+    border-color: rgba(147, 197, 253, 0.75);
+  }
+}
+
+/* Crear clase: CTA principal (azul sólido). */
+.clase-fbtn.clase-fbtn--crear {
+  min-width: 12rem;
+  color: #fff;
+  background: linear-gradient(180deg, #4f6ef7, #3b52d4);
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(79, 110, 247, 0.35);
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px rgba(79, 110, 247, 0.45);
+  }
+}
+
+/* Iniciar clase: verde (comenzar). */
+.clase-fbtn.clase-fbtn--iniciar {
+  color: #dcfce7;
+  background: linear-gradient(180deg, rgba(22, 163, 74, 0.92), rgba(21, 128, 61, 0.94));
+  border-color: rgba(74, 222, 128, 0.5);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.42);
+  }
+}
+
+/* Finalizar clase: ámbar (cierre de la sesión, distinto de borrar). */
+.clase-fbtn.clase-fbtn--finalizar {
+  color: #fff7ed;
+  background: linear-gradient(180deg, rgba(217, 119, 6, 0.92), rgba(180, 83, 9, 0.94));
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.28);
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 6px 18px rgba(217, 119, 6, 0.42);
+  }
+}
+
+/* Borrar clase: rojo de contorno, menos prominente (acción destructiva). */
+.clase-fbtn.clase-fbtn--borrar {
+  color: #fecaca;
+  background: rgba(80, 20, 25, 0.4);
+  border-color: rgba(248, 113, 113, 0.45);
+
+  &:hover:not(:disabled) {
+    background: rgba(120, 28, 34, 0.6);
+    border-color: rgba(252, 165, 165, 0.75);
+    color: #fff;
+  }
+}
+
+@media (max-width: 640px) {
+  .clase-modal-actions {
+    gap: 0.4rem;
+  }
+
+  .clase-fbtn {
+    flex: 1 1 auto;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .clase-fbtn.clase-fbtn--cerrar {
+    margin-right: 0;
+    flex-basis: 100%;
+  }
+
+  .clase-fbtn.clase-fbtn--crear {
+    min-width: 0;
+    flex-basis: 100%;
   }
 }

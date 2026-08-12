@@ -2080,25 +2080,50 @@
       class="clase-modal-form argo-form-shell"
       [class.contrato-finalizado]="contratoModalFinalizado()">
       <div class="clase-estado-bar" *ngIf="modalModoClase() === 'editar' && claseActiva() as cl">
-        <span class="estado-label">Estado</span>
-        <span [ngClass]="estadoClaseLiveClass(cl.estado)">{{ labelEstadoClaseAmigable(cl.estado) }}</span>
-        <span class="hint">
-          Fecha:
-          <strong [ngClass]="capFechaJor(cl.fechaClase || cl.fechaJornada || modalFechaClase())">
-            {{ fmtFecha(cl.fechaClase || cl.fechaJornada || modalFechaClase()) || '—' }}
-          </strong>
-        </span>
-        @if (claseModalEnProceso() && cl.horaInicio) {
-          <span class="clase-cronometro" aria-live="polite">{{ cronometroDisplay() }}</span>
-        }
-        @if (cl.estado === 'FINALIZADO' && cl.duracionSegundos != null) {
-          <span class="clase-cronometro final">⏳ {{ formatDuracion(cl.duracionSegundos) }}</span>
-        }
-        <span class="hint" *ngIf="cl.horaInicio">⏱ Inicio: <strong>{{ fmtHora(cl.horaInicio) }}</strong></span>
-        <span class="hint" *ngIf="cl.horaFin">⏹ Fin: <strong>{{ fmtHora(cl.horaFin) }}</strong></span>
-        @if (cl.estado === 'FINALIZADO' && cl.duracionSegundos != null) {
-          <span class="hint">Duración: <strong>{{ formatDuracion(cl.duracionSegundos) }}</strong></span>
-        }
+        <div class="clase-estado-head">
+          <span class="estado-label">Estado</span>
+          <span class="clase-estado-badge" [ngClass]="estadoClaseLiveClass(cl.estado)">
+            {{ labelEstadoClaseAmigable(cl.estado) }}
+          </span>
+          <span class="clase-estado-fecha">
+            <span class="clase-estado-fecha-k">Fecha:</span>
+            <strong [ngClass]="capFechaJor(cl.fechaClase || cl.fechaJornada || modalFechaClase())">
+              {{ fmtFecha(cl.fechaClase || cl.fechaJornada || modalFechaClase()) || '—' }}
+            </strong>
+          </span>
+        </div>
+
+        <div class="clase-estado-main">
+          @if (claseModalEnProceso() && cl.horaInicio) {
+            <div class="clase-estado-hero">
+              <span class="clase-cronometro" aria-live="polite">{{ cronometroDisplay() }}</span>
+            </div>
+          }
+          @if (cl.estado === 'FINALIZADO' && cl.duracionSegundos != null) {
+            <div class="clase-estado-hero">
+              <span class="clase-cronometro final" aria-label="Duración total de la clase">
+                {{ formatDuracion(cl.duracionSegundos) }}
+              </span>
+            </div>
+          }
+
+          @if (cl.horaInicio || cl.horaFin) {
+            <div class="clase-estado-times">
+              @if (cl.horaInicio) {
+                <div class="clase-estado-chip clase-estado-chip--inicio">
+                  <span class="clase-estado-chip-k">Inicio</span>
+                  <strong class="clase-estado-chip-v">{{ fmtHora(cl.horaInicio) }}</strong>
+                </div>
+              }
+              @if (cl.horaFin) {
+                <div class="clase-estado-chip clase-estado-chip--fin">
+                  <span class="clase-estado-chip-k">Fin</span>
+                  <strong class="clase-estado-chip-v">{{ fmtHora(cl.horaFin) }}</strong>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
 
       @if (modalModoClase() === 'editar' && claseActiva()?._id) {
@@ -2155,223 +2180,7 @@
         }
       }
 
-      @if (false) {
-        <div class="clase-modal-crear-layout">
-          <div class="clase-modal-crear-main">
-        <div class="clase-guia-pasos" aria-label="Pasos para crear clase">
-          <div class="clase-guia-paso" [class.clase-guia-paso--ok]="!!modalCrearJornadaId()">
-            <span class="clase-guia-num">1</span>
-            <span>Día</span>
-          </div>
-          <div class="clase-guia-paso" [class.clase-guia-paso--ok]="!!nuevaClaseProg()">
-            <span class="clase-guia-num">2</span>
-            <span>Curso</span>
-          </div>
-          <div class="clase-guia-paso" [class.clase-guia-paso--ok]="alumnosMatricular().length > 0">
-            <span class="clase-guia-num">3</span>
-            <span>Alumnos</span>
-          </div>
-        </div>
-
-        @if (jornadasParaCrear().length === 0) {
-          <div class="clase-alerta-vacia">
-            @if (operacionEspecialActiva()) {
-              @if (!contratoSel()) {
-                <strong>Seleccione un contrato</strong>
-                <p>En modo operación especial elija arriba el contrato cuyas jornadas va a operar.</p>
-              } @else {
-                <strong>No hay jornadas en este contrato</strong>
-                <p>Programe jornadas en la pestaña «Jornadas» antes de crear clases.</p>
-                <button type="button" class="primary sm" (click)="cerrarModalCrearClase(); setTab('jornadas')">
-                  Ir a Jornadas
-                </button>
-              }
-            } @else {
-              <strong>No hay jornada disponible para hoy</strong>
-              <p>Primero programe o active una jornada en la pestaña «Jornadas».</p>
-              <button type="button" class="primary sm" (click)="cerrarModalCrearClase(); setTab('jornadas')">
-                Ir a Jornadas
-              </button>
-            }
-          </div>
-        } @else {
-          <section class="clase-paso-block">
-            <h3 class="clase-modal-section">
-              @if (operacionEspecialActiva()) {
-                ① ¿En qué jornada del contrato?
-              } @else {
-                ① ¿Qué día es la clase?
-              }
-            </h3>
-            @if (usarTarjetasJornadaCrear()) {
-              <div class="jor-picker-cards">
-                @for (j of jornadasParaCrear(); track j._id) {
-                  <button
-                    type="button"
-                    class="jor-picker-card"
-                    [class.active]="modalCrearJornadaId() === j._id"
-                    (click)="onModalCrearJornadaChange(j._id)">
-                    <strong>{{ fmtFecha(j.fechaProgramacion) }}</strong>
-                    <span class="jor-picker-card-sub">{{ j.municipio || 'Sin municipio' }}</span>
-                    <span [ngClass]="estadoJornadaLiveClass(j.estado)">{{ labelEstadoJornadaAmigable(j.estado) }}</span>
-                  </button>
-                }
-              </div>
-            } @else {
-              <argo-catalogo-enum-buscar
-                [label]="operacionEspecialActiva() ? 'Jornada del contrato' : 'Jornada del día'"
-                placeholder="Toque para elegir…"
-                [textoInicial]="textoJornadaModal()"
-                [modoCombo]="true"
-                [remoto]="false"
-                [minLength]="1"
-                [opcionesLocales]="opcionesJornadasCrear()"
-                (seleccionado)="onJornadaModalPick($event)"
-                (limpiado)="onJornadaModalLimpiar()"
-              />
-            }
-          </section>
-
-          <section class="clase-paso-block">
-            <h3 class="clase-modal-section">② ¿Dónde es?</h3>
-            <div class="ubicacion-chips" role="group" aria-label="Ubicación de la clase">
-              @for (u of ubicaciones; track u) {
-                <button
-                  type="button"
-                  class="ubicacion-chip"
-                  [class.active]="nuevaClaseUbic() === u"
-                  (click)="seleccionarUbicacionClase(u)">
-                  {{ u }}
-                </button>
-              }
-            </div>
-          </section>
-
-          <section class="clase-paso-block clase-paso-block--programa">
-            <h3 class="clase-modal-section">③ ¿Qué curso enseña?</h3>
-            <argo-catalogo-enum-buscar
-              label="Programa"
-              placeholder="Toque y elija el curso…"
-              [textoInicial]="textoProgramaModalCombo()"
-              [modoCombo]="true"
-              [remoto]="false"
-              [minLength]="1"
-              [opcionesLocales]="opcionesProgramasModal()"
-              (seleccionado)="onProgramaModalPick($event)"
-              (limpiado)="onProgramaModalLimpiar()"
-            />
-            @if (programasJornada().length === 0) {
-              <p class="hint hint-compact hint-warn">No hay programas cargados. Recargue la página.</p>
-            }
-          </section>
-
-          @if (puedeAsignarInstructor()) {
-            <section class="clase-paso-block clase-paso-block--opcional">
-              <h3 class="clase-modal-section">Instructor (opcional)</h3>
-              <argo-catalogo-enum-buscar
-                label="Instructor"
-                placeholder="Dejar vacío = usted"
-                [textoInicial]="textoInstructorModal()"
-                [modoCombo]="true"
-                [remoto]="false"
-                [minLength]="1"
-                [opcionesLocales]="opcionesInstructoresModal()"
-                (seleccionado)="onInstructorModalPick($event)"
-                (limpiado)="onInstructorModalLimpiar()"
-              />
-            </section>
-          }
-        }
-          </div>
-
-          <aside class="clase-modal-crear-side" aria-label="Alumnos opcionales">
-            <h3 class="clase-modal-section clase-modal-section--side">Alumnos (opcional)</h3>
-            <p class="hint hint-compact">Puede inscribirlos ahora o después de crear la clase.</p>
-            @if (origenesActivosContrato().length) {
-              <div class="origen-filtro-chips">
-                @for (o of origenesActivosContrato(); track o.key) {
-                  <button
-                    type="button"
-                    class="mini"
-                    [class.primary]="origenFiltroAlumno() === o.key"
-                    (click)="setOrigenFiltroAlumno(o.key)"
-                  >
-                    {{ o.label }}
-                  </button>
-                }
-              </div>
-            }
-            <div class="clase-alumno-buscar">
-              <div class="buscar-wrap">
-                <span class="buscar-ic" aria-hidden="true">🔍</span>
-                <input
-                  type="text"
-                  placeholder="Cédula o nombre…"
-                  [ngModel]="alumnoBusqueda()"
-                  (ngModelChange)="onAlumnoBusquedaInput($event)"
-                  (focus)="focusAlumnoBusqueda()"
-                  autocomplete="off" />
-                <button type="button" class="ghost mini" (click)="nuevoAlumnoJornada()">+ Nuevo</button>
-              </div>
-              @if (alumnoBusquedaOpen()) {
-                <div class="buscar-dropdown">
-                  @if (alumnoBusquedaLoading()) {
-                    <p class="buscar-msg">Buscando…</p>
-                  } @else if (alumnoBusquedaResults().length === 0) {
-                    <p class="buscar-msg">No encontrado. Cree un alumno nuevo.</p>
-                  } @else {
-                    <ul class="buscar-list">
-                      @for (r of alumnoBusquedaResults(); track r._id) {
-                        <li>
-                          <div class="buscar-info">
-                            <span class="buscar-name">{{ nombreAlumnoItem(r) }}</span>
-                            <span class="buscar-meta">{{ r.tipoDoc || 'CC' }} {{ r.numDoc }}</span>
-                          </div>
-                          <button
-                            type="button"
-                            class="mini primary"
-                            (click)="agregarAlumnoMatricula(r)"
-                            [disabled]="alumnoYaEnLista(r) || guardandoInscripcion()">
-                            {{ alumnoYaEnLista(r) ? '✓' : guardandoInscripcion() ? '…' : '+ Agregar' }}
-                          </button>
-                        </li>
-                      }
-                    </ul>
-                  }
-                </div>
-              }
-            </div>
-            <div class="clase-modal-alumnos-scroll">
-              <table class="argo mini clase-matricula-list">
-                <thead>
-                  <tr>
-                    <th>Documento</th>
-                    <th>Nombre</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (a of alumnosMatricular(); track a._id) {
-                    <tr>
-                      <td><span [ngClass]="capDocAsis(a.numDoc)">{{ a.numDoc }}</span></td>
-                      <td><span [ngClass]="capAlumnoNombre(nombreAlumnoItem(a))">{{ nombreAlumnoItem(a) }}</span></td>
-                      <td class="actions-cell">
-                        <button type="button" class="mini danger" (click)="quitarAlumnoMatricula(a)">Quitar</button>
-                      </td>
-                    </tr>
-                  }
-                  @if (alumnosMatricular().length === 0) {
-                    <tr>
-                      <td colspan="3" class="empty jor-empty-mini">Sin alumnos — puede agregarlos luego.</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </aside>
-        </div>
-      } @else {
-        <div class="clase-modal-edit-fichas">
+      <div class="clase-modal-edit-fichas">
           <div class="vista-toggle clase-modal-fichas-toggle" role="tablist" aria-label="Secciones de la clase">
             <button
               type="button"
@@ -2428,6 +2237,67 @@
                       />
                     </div>
                   </div>
+
+                  @if (origenesActivosContrato().length) {
+                    <div class="cm-origen-filtro">
+                      <span class="cm-origen-label">Origen del alumno</span>
+                      <div class="origen-filtro-chips">
+                        @for (o of origenesActivosContrato(); track o.key) {
+                          <button
+                            type="button"
+                            class="mini"
+                            [class.primary]="origenFiltroAlumno() === o.key"
+                            (click)="setOrigenFiltroAlumno(o.key)"
+                          >
+                            {{ o.label }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <div class="cm-panel cm-instructor-programa">
+                  <h3 class="clase-modal-section">Instructor y programa</h3>
+                  <div class="clase-modal-datos-grid clase-modal-datos-grid--instructor-programa">
+                    <div class="cm-field cm-programa">
+                      <argo-catalogo-enum-buscar
+                        label="Programa"
+                        placeholder="Seleccione o escriba programa…"
+                        [textoInicial]="textoProgramaModalCombo()"
+                        [modoCombo]="true"
+                        [remoto]="false"
+                        [minLength]="1"
+                        [opcionesLocales]="opcionesProgramasModal()"
+                        (seleccionado)="onProgramaModalPick($event)"
+                        (limpiado)="onProgramaModalLimpiar()"
+                      />
+                    </div>
+                    <div class="cm-field cm-instructor cm-instructor--destacado">
+                      @if (puedeAsignarInstructor()) {
+                        <argo-catalogo-enum-buscar
+                          label="Instructor"
+                          placeholder="Sin asignar — seleccione para programar"
+                          [textoInicial]="textoInstructorModal()"
+                          [modoCombo]="true"
+                          [remoto]="false"
+                          [minLength]="1"
+                          [opcionesLocales]="opcionesInstructoresModal()"
+                          (seleccionado)="onInstructorModalPick($event)"
+                          (limpiado)="onInstructorModalLimpiar()"
+                        />
+                      } @else {
+                        <label>Instructor</label>
+                        <p class="instructor-readonly compact">
+                          @if (modalModoClase() === 'nuevo') {
+                            <span [ngClass]="capInstructor(instructorSesionNombre())">{{ instructorSesionNombre() }}</span>
+                          } @else {
+                            <span [ngClass]="capInstructor(labelInstructorClase(claseActiva()))">{{ labelInstructorClase(claseActiva()) }}</span>
+                          }
+                        </p>
+                      }
+                    </div>
+                  </div>
                 </div>
 
                 @if (puedeEditarHorarioClase()) {
@@ -2481,49 +2351,6 @@
                     }
                   </div>
                 }
-
-                <div class="cm-panel cm-instructor-programa">
-                  <h3 class="clase-modal-section">Instructor y programa</h3>
-                  <div class="clase-modal-datos-grid clase-modal-datos-grid--instructor-programa">
-                    <div class="cm-field cm-instructor cm-instructor--destacado">
-                      @if (puedeAsignarInstructor()) {
-                        <argo-catalogo-enum-buscar
-                          label="Instructor"
-                          placeholder="Sin asignar — seleccione para programar"
-                          [textoInicial]="textoInstructorModal()"
-                          [modoCombo]="true"
-                          [remoto]="false"
-                          [minLength]="1"
-                          [opcionesLocales]="opcionesInstructoresModal()"
-                          (seleccionado)="onInstructorModalPick($event)"
-                          (limpiado)="onInstructorModalLimpiar()"
-                        />
-                      } @else {
-                        <label>Instructor</label>
-                        <p class="instructor-readonly compact">
-                          @if (modalModoClase() === 'nuevo') {
-                            <span [ngClass]="capInstructor(instructorSesionNombre())">{{ instructorSesionNombre() }}</span>
-                          } @else {
-                            <span [ngClass]="capInstructor(labelInstructorClase(claseActiva()))">{{ labelInstructorClase(claseActiva()) }}</span>
-                          }
-                        </p>
-                      }
-                    </div>
-                    <div class="cm-field cm-programa">
-                      <argo-catalogo-enum-buscar
-                        label="Programa"
-                        placeholder="Seleccione o escriba programa…"
-                        [textoInicial]="textoProgramaModalCombo()"
-                        [modoCombo]="true"
-                        [remoto]="false"
-                        [minLength]="1"
-                        [opcionesLocales]="opcionesProgramasModal()"
-                        (seleccionado)="onProgramaModalPick($event)"
-                        (limpiado)="onProgramaModalLimpiar()"
-                      />
-                    </div>
-                  </div>
-                </div>
 
                 <div class="cm-panel cm-evidencia cm-evidencia--under-datos">
                   <h3 class="clase-modal-section">Evidencia fotográfica</h3>
@@ -2728,21 +2555,6 @@
 
 
               <div class="clase-alumno-buscar">
-
-                @if (origenesActivosContrato().length) {
-                  <div class="origen-filtro-chips">
-                    @for (o of origenesActivosContrato(); track o.key) {
-                      <button
-                        type="button"
-                        class="mini"
-                        [class.primary]="origenFiltroAlumno() === o.key"
-                        (click)="setOrigenFiltroAlumno(o.key)"
-                      >
-                        {{ o.label }}
-                      </button>
-                    }
-                  </div>
-                }
 
                 <div class="buscar-wrap">
 
@@ -3082,27 +2894,30 @@
             </div>
           }
         </div>
-      }
 
     </section>
 
-    <div modal-actions>
-      <button type="button" class="ghost" (click)="cerrarModalCrearClase()" [disabled]="guardandoClase()">
+    <div modal-actions class="clase-modal-actions">
+      <button
+        type="button"
+        class="ghost clase-fbtn clase-fbtn--cerrar"
+        (click)="cerrarModalCrearClase()"
+        [disabled]="guardandoClase()">
         Cerrar
       </button>
       @if (modalModoClase() === 'editar' && claseActiva()?._id) {
         <button
           type="button"
-          class="ghost"
+          class="ghost clase-fbtn clase-fbtn--listado"
           (click)="imprimirListadoAsistencia()"
           title="Mismo listado imprimible que en la app móvil de jornadas">
-          📋 Listado de asistencia
+          <span class="clase-fbtn-ic" aria-hidden="true">📋</span> Listado de asistencia
         </button>
       }
       @if (!contratoModalFinalizado() && modalModoClase() === 'nuevo') {
         <button
           type="button"
-          class="primary clase-btn-guardar"
+          class="primary clase-btn-guardar clase-fbtn clase-fbtn--crear"
           (click)="guardarClaseConMatriculas()"
           [disabled]="guardandoClase() || !crearClaseListo()">
           {{ textoBotonCrearClase() }}
@@ -3110,24 +2925,24 @@
       } @else if (!contratoModalFinalizado()) {
         <button
           type="button"
-          class="ghost"
+          class="ghost clase-fbtn clase-fbtn--guardar"
           (click)="guardarCambiosClaseModal()"
           title="Guardar cambios de programa, ubicación, instructor u horario">
-          💾 Guardar clase
+          <span class="clase-fbtn-ic" aria-hidden="true">💾</span> Guardar clase
         </button>
         @if (claseActiva()?.estado !== 'FINALIZADO') {
           <button
             type="button"
-            class="primary"
+            class="primary clase-fbtn clase-fbtn--iniciar"
             (click)="iniciarClaseModal()"
             [disabled]="!claseModalIniciable()"
             [title]="tituloBotonIniciarClase()">
-            ▶ Iniciar clase
+            <span class="clase-fbtn-ic" aria-hidden="true">▶</span> Iniciar clase
           </button>
         }
         <button
           type="button"
-          class="danger"
+          class="danger clase-fbtn clase-fbtn--finalizar"
           (click)="finalizarClaseModal()"
           [disabled]="!claseModalFinalizable()"
           [title]="tituloBotonFinalizarClase()">
@@ -3136,9 +2951,9 @@
         @if (puedeEliminarClase() && claseActiva(); as clDel) {
           <button
             type="button"
-            class="danger ghost"
+            class="danger ghost clase-fbtn clase-fbtn--borrar"
             (click)="eliminarClase(clDel)">
-            🗑 Borrar clase
+            <span class="clase-fbtn-ic" aria-hidden="true">🗑</span> Borrar clase
           </button>
         }
       }
