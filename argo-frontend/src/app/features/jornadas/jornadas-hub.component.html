@@ -2129,7 +2129,7 @@
               @if (cl.estado !== 'FINALIZADO') {
                 <button
                   type="button"
-                  class="primary clase-fbtn clase-fbtn--iniciar"
+                  class="clase-fbtn clase-fbtn--iniciar clase-fbtn--glass"
                   (click)="iniciarClaseModal()"
                   [disabled]="!claseModalIniciable()"
                   [title]="tituloBotonIniciarClase()">
@@ -2138,7 +2138,7 @@
               }
               <button
                 type="button"
-                class="danger clase-fbtn clase-fbtn--finalizar"
+                class="clase-fbtn clase-fbtn--finalizar clase-fbtn--glass"
                 (click)="finalizarClaseModal()"
                 [disabled]="!claseModalFinalizable()"
                 [title]="tituloBotonFinalizarClase()">

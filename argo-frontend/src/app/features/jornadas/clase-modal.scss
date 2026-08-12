@@ -622,6 +622,53 @@
     padding: 0.55rem 1rem;
     white-space: nowrap;
   }
+
+  /* Cristal: mismo lenguaje visual que chips y cronómetro */
+  .clase-fbtn--glass.clase-fbtn--iniciar {
+    color: #d1fae5;
+    background: linear-gradient(180deg, rgba(6, 78, 59, 0.55), rgba(4, 47, 46, 0.38));
+    border-color: rgba(52, 211, 153, 0.45);
+    backdrop-filter: blur(8px);
+    box-shadow:
+      0 0 0 1px rgba(52, 211, 153, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 0 12px rgba(52, 211, 153, 0.08),
+      0 4px 14px rgba(6, 78, 59, 0.28);
+    text-shadow: 0 0 10px rgba(52, 211, 153, 0.45);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.1);
+      border-color: rgba(74, 222, 128, 0.7);
+      box-shadow:
+        0 0 0 1px rgba(52, 211, 153, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 0 22px rgba(52, 211, 153, 0.38),
+        0 6px 18px rgba(6, 78, 59, 0.38);
+    }
+  }
+
+  .clase-fbtn--glass.clase-fbtn--finalizar {
+    color: #fff7ed;
+    background: linear-gradient(180deg, rgba(120, 53, 15, 0.55), rgba(69, 26, 3, 0.38));
+    border-color: rgba(251, 191, 36, 0.48);
+    backdrop-filter: blur(8px);
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 0 12px rgba(251, 191, 36, 0.08),
+      0 4px 14px rgba(120, 53, 15, 0.28);
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.1);
+      border-color: rgba(253, 224, 71, 0.72);
+      box-shadow:
+        0 0 0 1px rgba(251, 191, 36, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 0 22px rgba(251, 191, 36, 0.38),
+        0 6px 18px rgba(120, 53, 15, 0.38);
+    }
+  }
 }
 
 .clase-estado-chip {
