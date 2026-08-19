@@ -2,7 +2,10 @@ import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 
-import { CursoVirtual, PortalConfig } from './models';
+import {
+  DEFAULT_CEA_CORTO,
+  DEFAULT_CEA_NOMBRE,
+} from './portal-brand-defaults';
 import {
   ACERCA_SEO_DESCRIPTION,
   ACERCA_SEO_TITLE,
@@ -27,6 +30,7 @@ import {
   TIENDA_SEO_DESCRIPTION,
   TIENDA_SEO_TITLE,
 } from './portal-seo-defaults';
+import { CursoVirtual, PortalConfig } from './models';
 
 type PageMetaOpts = {
   pageTitle: string;
@@ -93,7 +97,7 @@ export class PortalSeoService {
     const rawDesc =
       curso.descripcionVirtual?.trim() ||
       curso.descripcion?.trim() ||
-      `Programa virtual de ${nombre} en seguridad vial. Matricúlese en FINSTRUVIAL, Villavicencio, Meta.`;
+      `Programa virtual de ${nombre} en seguridad vial. Matricúlese en ${DEFAULT_CEA_CORTO}, Villavicencio, Meta.`;
     const url = this.pageUrl(`/cursos/${curso.idPrograma}`);
     const image = curso.urlPortadaAbsoluta || curso.urlPortadaVirtual || this.defaultImage(config);
     const keywords = [nombre, SEO_BRAND, `curso virtual ${SEO_LOCALITY}`, PORTAL_SEO_KEYWORDS]
@@ -254,7 +258,7 @@ export class PortalSeoService {
       jsonLd: [
         ...this.breadcrumbJsonLd(url, [
           { name: 'Inicio', path: '/' },
-          { name: 'Fundación', path: '/fundacion' },
+          { name: DEFAULT_CEA_CORTO, path: '/fundacion' },
         ]),
         {
           '@type': 'NGO',
@@ -279,7 +283,7 @@ export class PortalSeoService {
   applyRegistro(config: PortalConfig | null) {
     this.applyPrivatePage(
       REGISTRO_SEO_TITLE,
-      'Cree su cuenta en el portal estudiantil de FINSTRUVIAL para cursar programas virtuales.',
+      `Cree su cuenta en el portal estudiantil de su ${DEFAULT_CEA_NOMBRE} para cursar programas virtuales.`,
       '/registro',
       config,
     );
@@ -288,7 +292,7 @@ export class PortalSeoService {
   applyAula(config: PortalConfig | null) {
     this.applyPrivatePage(
       AULA_SEO_TITLE,
-      'Panel del estudiante: cursos, progreso y certificados del aula virtual FINSTRUVIAL.',
+      `Panel del estudiante: cursos, progreso y certificados del aula virtual ${DEFAULT_CEA_CORTO}.`,
       '/aula',
       config,
     );
@@ -350,7 +354,7 @@ export class PortalSeoService {
   }
 
   private orgName(config: PortalConfig | null): string {
-    return config?.nombreCea?.trim() || 'Fundación Finstruvial';
+    return config?.nombreCea?.trim() || DEFAULT_CEA_NOMBRE;
   }
 
   private themeColor(config: PortalConfig | null): string {

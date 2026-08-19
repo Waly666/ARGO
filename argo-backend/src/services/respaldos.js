@@ -22,7 +22,8 @@ const { EJSON } = mongoose.mongo.BSON;
 const BACKUP_DIR = path.join(__dirname, '..', '..', process.env.BACKUP_DIR || 'backups');
 const CLAVE_CONFIG = 'respaldos';
 const FORMATO = 'argo-backup';
-const VERSION = 2;
+const VERSION = 3;
+const ESQUEMA_REFERIDOR = 1;
 const BATCH_INSERT = 500;
 /** Sufijo de colecciones temporales durante restauración (no pisan datos hasta el swap final). */
 const STAGING_SUFFIX = '__argo_restore_staging';
@@ -251,6 +252,7 @@ async function crearRespaldo({
     const manifest = {
       formato: FORMATO,
       version: VERSION,
+      esquemaReferidor: ESQUEMA_REFERIDOR,
       fecha: fecha.toISOString(),
       tipo,
       usuario,
@@ -576,6 +578,13 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
     await initRolesSistema();
     limpiarCache();
 
+    progreso.fase('Aplicando parches de esquema (gestores/empresas)…', { total: 0 });
+    const { aplicarParchesReferidorComercial } = require('./migrarReferidorComercial');
+    const parchesReferidor = await aplicarParchesReferidorComercial().catch((err) => {
+      console.warn('[ARGO respaldos] parches referidor comercial:', err.message);
+      return null;
+    });
+
     // Verifica que todas las colecciones del manifiesto quedaron presentes.
     const actuales = new Set(await coleccionesApp());
     const faltantes = colecciones.map((c) => c.nombre).filter((n) => !actuales.has(n));
@@ -591,12 +600,15 @@ async function restaurarRespaldo(rutaArchivo, { usuario = 'sistema', crearSeguri
         tipo: manifest.tipo,
         usuario: manifest.usuario,
         totalDocs: manifest.totalDocs,
+        version: manifest.version,
+        esquemaReferidor: manifest.esquemaReferidor,
       },
       colecciones: colecciones.length,
       docsRestaurados,
       archivosRestaurados,
       respaldoSeguridad: respaldoSeguridad?.archivo || null,
       coleccionesFaltantes: faltantes,
+      parchesReferidor,
     };
   } catch (err) {
     progreso.finalizar('error', err.message || 'La restauración falló');

@@ -1,6 +1,6 @@
 const { listarCursosVirtuales } = require('./aulaVirtualCatalogo');
 
-const DEFAULT_SITE_URL = 'https://finstruvial.edu.co';
+const DEFAULT_SITE_URL = String(process.env.PORTAL_PUBLIC_URL || '').replace(/\/$/, '');
 
 const STATIC_PAGES = [
   { path: '/', changefreq: 'weekly', priority: '1.0' },

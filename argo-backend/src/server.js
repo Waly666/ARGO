@@ -40,6 +40,10 @@ const HOST = process.env.HOST || '0.0.0.0';
     migrarIdJornadaCertificados().catch((err) =>
       console.warn('[ARGO] migrar idJornada certificados:', err.message),
     );
+    const { aplicarParchesReferidorComercial } = require('./services/migrarReferidorComercial');
+    aplicarParchesReferidorComercial().catch((err) =>
+      console.warn('[ARGO] parches referidor comercial:', err.message),
+    );
     const { initContadorActividad } = require('./services/actividadHttp');
     initContadorActividad().catch((err) =>
       console.warn('[ARGO] init contador actividad:', err.message),

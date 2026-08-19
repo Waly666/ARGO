@@ -37,6 +37,7 @@ const {
   urlImagenSubida,
 } = require('../services/aulaVirtualBlog');
 const { publicUrl, publicUrlPath, resolvePath } = require('../middleware/upload');
+const { optimizarImagenArchivo } = require('../utils/optimizarImagen');
 const { listarUsuariosPortalAdmin, eliminarUsuarioPortal, crearUsuarioPortalAdmin } = require('../services/aulaVirtualUsuarios');
 const { inyectarBridgeEnPaquete, detectarStoragePrefix } = require('../services/aulaVirtualBridge');
 const { detectarIndexHtml, paqueteListo, listarEntradasPaquete } = require('../services/aulaVirtualPaquete');
@@ -212,8 +213,12 @@ exports.subirLogoPortal = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
     }
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 256, maxHeight: 256 });
     const urlLogo = publicUrl('aula-virtual-logo', req.file.filename);
     await guardarConfigAula({ urlLogo }, req.user);
+    const { sincronizarLogoRecibo } = require('../services/configRecibo');
+    await sincronizarLogoRecibo(urlLogo);
     res.json({ config: await obtenerConfigPortalAdmin(), message: 'Logo del portal actualizado' });
   } catch (e) {
     next(e);
@@ -223,7 +228,9 @@ exports.subirLogoPortal = async (req, res, next) => {
 exports.quitarLogoPortal = async (_req, res, next) => {
   try {
     await guardarConfigAula({ urlLogo: '' }, _req.user);
-    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Logo del portal eliminado; se usará el de Recibos si existe' });
+    const { sincronizarLogoRecibo } = require('../services/configRecibo');
+    await sincronizarLogoRecibo('');
+    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Logo del portal eliminado' });
   } catch (e) {
     next(e);
   }
@@ -244,6 +251,8 @@ exports.subirImagenHeroPortal = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
     }
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1200 });
     const urlHero = publicUrl('aula-virtual-hero', req.file.filename);
     await guardarUrlHeroPortal(urlHero, req.user);
     res.json({ config: await obtenerConfigPortalAdmin(), message: 'Imagen del banner actualizada en el sitio' });

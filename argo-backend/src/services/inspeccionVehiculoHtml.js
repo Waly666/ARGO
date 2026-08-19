@@ -124,7 +124,7 @@ async function renderInspeccionVehiculoHtml(inspeccion, vehiculo) {
   const marcaLinea = [vehiculo?.nombreMarca, vehiculo?.nombreLinea, vehiculo?.modelo]
     .filter(Boolean)
     .join(' ');
-  const logoUrl = String(empresa.urlLogo || '').trim();
+  const logoUrl = String(empresa.urlLogoDataUrl || empresa.urlLogo || '').trim();
   const logoHtml = logoUrl
     ? `<img class="logo" src="${esc(logoUrl)}" alt="Logo" />`
     : '';

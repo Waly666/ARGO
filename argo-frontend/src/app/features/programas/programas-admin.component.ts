@@ -587,6 +587,10 @@ export class ProgramasAdminComponent implements OnInit {
 
       tarifa3: 0,
 
+      tarifaGestor: 0,
+
+      tarifaEmpresa: 0,
+
       tarifaVirtual: 0,
 
       descripcionVirtual: '',
@@ -926,6 +930,8 @@ export class ProgramasAdminComponent implements OnInit {
       tarifa1: this.num(s?.tarifa1 ?? prog.valorMatricula),
       tarifa2: this.num(s?.tarifa2),
       tarifa3: this.num(s?.tarifa3),
+      tarifaGestor: this.num(s?.tarifaGestor),
+      tarifaEmpresa: this.num(s?.tarifaEmpresa),
       tarifaVirtual: this.num(s?.tarifaVirtual),
       descripcionVirtual: prog.descripcionVirtual ?? '',
       urlPortadaVirtual: prog.urlPortadaVirtual ?? '',

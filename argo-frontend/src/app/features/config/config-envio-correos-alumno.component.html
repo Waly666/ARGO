@@ -1,0 +1,53 @@
+<section class="eca-page card">
+  <header class="eca-head">
+    <div>
+      <h1>Correos automáticos a alumnos</h1>
+      <p>
+        Controla si ARGO envía por correo electrónico los <strong>certificados</strong> al emitirlos y los
+        <strong>comprobantes de ingreso</strong> al registrar un pago. Requiere SMTP configurado en el servidor.
+      </p>
+    </div>
+    <div class="eca-links">
+      <a routerLink="/app/configuracion/certificados">Config. certificados</a>
+      <a routerLink="/app/configuracion/recibos">Comprobantes de caja</a>
+      <a routerLink="/app/configuracion/alertas">Alertas</a>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="eca-hint">Cargando…</p>
+  } @else {
+    @if (msg(); as texto) {
+      <p class="eca-msg" [class.eca-msg--err]="msgError()" role="status">{{ texto }}</p>
+    }
+
+    <div class="eca-panel card-inner">
+      <argo-switch
+        label="Enviar certificados por correo al emitirlos"
+        [checked]="cfg().enviarCertificados"
+        (checkedChange)="onCertificados($event)" />
+      <p class="eca-hint">
+        Al generar un certificado (manual, por pago, aula virtual o jornada), se envía el PDF al correo registrado
+        del alumno, si tiene dirección válida.
+      </p>
+
+      <argo-switch
+        label="Enviar comprobantes de ingreso por correo al registrar pagos"
+        [checked]="cfg().enviarComprobantesIngreso"
+        (checkedChange)="onComprobantes($event)" />
+      <p class="eca-hint">
+        Al registrar un ingreso de alumno (caja, pagos en línea, etc.), se envía el comprobante en PDF al correo
+        del alumno.
+      </p>
+
+      <p class="eca-note">
+        Si desactiva una opción, el certificado o el comprobante se genera igual en ARGO; solo se omite el envío
+        automático por correo.
+      </p>
+
+      <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  }
+</section>

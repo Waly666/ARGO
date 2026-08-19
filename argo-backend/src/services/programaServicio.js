@@ -1,7 +1,7 @@
 const { models: cat } = require('../models/catalogos');
 const mongoose = require('mongoose');
 const Liquidacion = require('../models/Liquidacion');
-const { TARIFA_VIRTUAL } = require('../constants/tarifa');
+const { TARIFA_VIRTUAL, TARIFA_GESTOR, TARIFA_EMPRESA } = require('../constants/tarifa');
 const { actualizarSaldosLiquidacionesPorServicio } = require('./liquidacionMatricula');
 const { cargarIndiceTipCap, resolverIdTipCapCanonico } = require('./tipoCapacitacionMatch');
 
@@ -12,11 +12,17 @@ function num(v) {
   return Number(v) || 0;
 }
 
-/** Valor a liquidar según tarifa (1–3 presencial; 4 = tarifaVirtual del servicio). */
+/** Valor a liquidar según tarifa (1–3 presencial; 4 = virtual; 5 = gestor; 6 = empresa). */
 function valorTarifaServicio(serv, tarifa, prog) {
   const t = Number(tarifa);
   if (t === TARIFA_VIRTUAL) {
     return num(serv?.tarifaVirtual);
+  }
+  if (t === TARIFA_GESTOR) {
+    return num(serv?.tarifaGestor);
+  }
+  if (t === TARIFA_EMPRESA) {
+    return num(serv?.tarifaEmpresa);
   }
   if (serv && serv[`tarifa${t}`] != null && serv[`tarifa${t}`] !== '') {
     return num(serv[`tarifa${t}`]);
@@ -305,6 +311,8 @@ function docServicioDesdePrograma(prog, servicioBody, usuario, extras = {}) {
   const valor = num(servicioBody?.tarifa1 ?? servicioBody?.valorMatricula ?? prog.valorMatricula);
   const t2 = num(servicioBody?.tarifa2);
   const t3 = num(servicioBody?.tarifa3);
+  const tGestor = num(servicioBody?.tarifaGestor);
+  const tEmpresa = num(servicioBody?.tarifaEmpresa);
   const tVirtual = num(servicioBody?.tarifaVirtual);
   const now = new Date();
   const user = usuario?.username || 'sistema';
@@ -330,6 +338,8 @@ function docServicioDesdePrograma(prog, servicioBody, usuario, extras = {}) {
   };
   if (t2 > 0) doc.tarifa2 = t2;
   if (t3 > 0) doc.tarifa3 = t3;
+  if (tGestor > 0) doc.tarifaGestor = tGestor;
+  if (tEmpresa > 0) doc.tarifaEmpresa = tEmpresa;
   if (servicioBody?.tarifaVirtual != null && servicioBody?.tarifaVirtual !== '') {
     doc.tarifaVirtual = tVirtual;
   } else if (tVirtual > 0) {
@@ -416,6 +426,8 @@ async function sincronizarServicioUnico(prog, servicioBody, usuario) {
     const unset = { numSemestre: '' };
     if (base.tarifa2 == null) unset.tarifa2 = '';
     if (base.tarifa3 == null) unset.tarifa3 = '';
+    if (base.tarifaGestor == null) unset.tarifaGestor = '';
+    if (base.tarifaEmpresa == null) unset.tarifaEmpresa = '';
     await cat.servicios.updateOne(
       { idServ: serv.idServ },
       { $set: { ...base, idProg }, $unset: unset },

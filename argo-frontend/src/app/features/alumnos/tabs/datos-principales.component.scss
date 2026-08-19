@@ -446,6 +446,7 @@ argo-celular-input.campo-obligatorio-error {
   &.tone-orange { border-left: 4px solid #fb923c; }
   &.tone-amber  { border-left: 4px solid #fbbf24; }
   &.tone-indigo { border-left: 4px solid #818cf8; }
+  &.tone-violet { border-left: 4px solid #a78bfa; }
   &.tone-slate  { border-left: 4px solid #94a3b8; }
 }
 
@@ -477,6 +478,7 @@ argo-celular-input.campo-obligatorio-error {
 .tone-orange .section-head { background: linear-gradient(90deg, rgba(249, 115, 22, 0.2), transparent); }
 .tone-amber  .section-head { background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), transparent); }
 .tone-indigo .section-head { background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), transparent); }
+.tone-violet .section-head { background: linear-gradient(90deg, rgba(139, 92, 246, 0.2), transparent); }
 .tone-slate  .section-head { background: linear-gradient(90deg, rgba(100, 116, 139, 0.2), transparent); }
 
 .section-icon {
@@ -844,6 +846,10 @@ textarea.observaciones-field {
     background: linear-gradient(180deg, #6366f1, #4f46e5);
     color: #fff;
   }
+}
+
+.origen-jornada-opciones {
+  margin-top: 0.75rem;
 }
 
 .origen-jornada-campos {

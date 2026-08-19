@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
 import { Cliente, ClienteCatalogos, ClienteService } from '../../core/services/cliente.service';
@@ -13,7 +14,7 @@ import { mensajeErrorCelularAlmacenado } from '../../core/utils/celular.util';
 @Component({
   selector: 'argo-config-clientes',
   standalone: true,
-  imports: [CommonModule, FormsModule, MunicipioBuscarComponent, CelularInputComponent],
+  imports: [CommonModule, FormsModule, RouterLink, MunicipioBuscarComponent, CelularInputComponent],
   templateUrl: './config-clientes.component.html',
   styleUrls: ['./config-clientes.component.scss'],
 })
@@ -22,6 +23,10 @@ export class ConfigClientesComponent implements OnInit {
   private catSvc = inject(CatalogoService);
   private asistente = inject(AsistenteContextoService);
   private confirm = inject(ConfirmDialogService);
+  private route = inject(ActivatedRoute);
+
+  /** Vista embebida en Caja (misma tabla que facturación / jornadas). */
+  contextoCaja = signal(false);
 
   @ViewChild('formPanel') formPanel?: ElementRef<HTMLElement>;
   @ViewChild('pageHead') pageHead?: ElementRef<HTMLElement>;
@@ -68,6 +73,7 @@ export class ConfigClientesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.contextoCaja.set(this.route.snapshot.data['contextoClientes'] === 'caja');
     this.svc.catalogos().subscribe({
       next: (c) => this.catalogos.set(c),
       error: () => this.catalogos.set(null),
@@ -220,7 +226,7 @@ export class ConfigClientesComponent implements OnInit {
         this.saving.set(false);
         this.formAbierto.set(false);
         this.msgError.set(false);
-        this.msg.set('Cliente guardado');
+        this.msg.set(this.contextoCaja() ? 'Empresa guardada' : 'Cliente guardado');
         this.recargar();
       },
       error: (e) => {
@@ -234,8 +240,8 @@ export class ConfigClientesComponent implements OnInit {
   async eliminar(c: Cliente): Promise<void> {
     if (!c._id) return;
     const ok = await this.confirm.open({
-      title: 'Desactivar cliente',
-      message: `¿Desactivar el cliente «${c.nombre || c.identificacion}»?`,
+      title: this.contextoCaja() ? 'Desactivar empresa' : 'Desactivar cliente',
+      message: `¿Desactivar ${this.contextoCaja() ? 'la empresa' : 'el cliente'} «${c.nombre || c.identificacion}»?`,
       confirmLabel: 'Desactivar',
       variant: 'danger',
     });

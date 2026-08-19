@@ -7,6 +7,7 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
+import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 import { ACERCA_DEFAULT, VALORES } from '../home/home-content';
 
 @Component({
@@ -50,7 +51,7 @@ export class AcercaComponent implements OnInit {
   }
 
   nombreCea() {
-    return this.config()?.nombreCea || 'Fundación Finstruvial';
+    return this.config()?.nombreCea || DEFAULT_CEA_NOMBRE;
   }
 
   logoUrl() {

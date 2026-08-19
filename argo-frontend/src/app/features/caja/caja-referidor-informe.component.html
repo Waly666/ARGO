@@ -1,0 +1,339 @@
+<section class="ref-inf-page card admin-list-page">
+  <header class="ref-inf-head page-head caja-page-header">
+    <div>
+      <p class="breadcrumb">
+        <a routerLink="/app/caja">Caja</a> /
+        <a [routerLink]="catalogoLink()">{{ tipo() === 'gestor' ? 'Gestores' : 'Empresas' }}</a> /
+        Informe
+      </p>
+      <h1>{{ titulo() }}</h1>
+      <p class="hint">
+        Solo matrículas con tarifa gestor o empresa (5/6). Cada matrícula guarda quién trajo al alumno en ese momento.
+      </p>
+    </div>
+    <div class="head-actions no-print">
+      <button
+        type="button"
+        class="primary"
+        (click)="imprimirInforme()"
+        [disabled]="loading() || !data()"
+        title="Imprimir o guardar PDF con dashboard y filtros aplicados">
+        🖨 Imprimir informe
+      </button>
+      <a [routerLink]="catalogoLink()" class="ghost">← Catálogo</a>
+    </div>
+  </header>
+
+  @if (printMsg(); as pm) {
+    <p class="ref-inf-banner ref-inf-banner--err no-print" role="status">{{ pm }}</p>
+  }
+
+  <form class="ref-inf-filters no-print" (ngSubmit)="cargar()">
+    <div class="ref-inf-filter-grid">
+      <label>
+        <span>Desde</span>
+        <argo-date-input [ngModel]="desde()" (ngModelChange)="desde.set($event)" name="desde"></argo-date-input>
+      </label>
+      <label>
+        <span>Hasta</span>
+        <argo-date-input [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" name="hasta"></argo-date-input>
+      </label>
+      <label>
+        <span>Programa</span>
+        <argo-catalogo-enum-buscar
+          placeholder="Todos"
+          [textoInicial]="programaTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesPrograma()"
+          (seleccionado)="onPrograma($event)"
+          (limpiado)="idPrograma.set(''); programaTexto.set('')"
+        />
+      </label>
+      <label>
+        <span>Tipo capacitación</span>
+        <argo-catalogo-enum-buscar
+          placeholder="Todos"
+          [textoInicial]="tipCapTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesTipCap()"
+          (seleccionado)="onTipCap($event)"
+          (limpiado)="idTipCap.set(''); tipCapTexto.set('')"
+        />
+      </label>
+      <label>
+        <span>Tipo certificado</span>
+        <select [ngModel]="tipoFormatoCert()" (ngModelChange)="tipoFormatoCert.set($event)" name="tipoCert">
+          <option value="">Todos</option>
+          @for (t of tiposCert; track t.id) {
+            <option [value]="t.id">{{ t.label }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>{{ tipo() === 'gestor' ? 'Gestor' : 'Empresa' }}</span>
+        <argo-catalogo-enum-buscar
+          [placeholder]="tipo() === 'gestor' ? 'Todos los gestores' : 'Todas las empresas'"
+          [textoInicial]="referidorTexto()"
+          [modoCombo]="true"
+          [remoto]="false"
+          [minLength]="1"
+          [opcionesLocales]="opcionesReferidor()"
+          (seleccionado)="onReferidor($event)"
+          (limpiado)="referidorId.set(''); referidorTexto.set('')"
+        />
+      </label>
+    </div>
+    <div class="ref-inf-filter-actions">
+      <button type="submit" class="primary" [disabled]="loading()">Generar informe</button>
+      <button
+        type="button"
+        class="ghost"
+        (click)="imprimirInforme()"
+        [disabled]="loading() || !data()"
+        title="Abre vista de impresión con los datos y filtros actuales">
+        Imprimir / PDF
+      </button>
+      <button type="button" class="ghost" (click)="presetMesActual(); cargar()" [disabled]="loading()">Mes actual</button>
+      <button type="button" class="ghost" (click)="presetUltimos30()" [disabled]="loading()">Últimos 30 días</button>
+    </div>
+  </form>
+
+  @if (error()) {
+    <p class="ref-inf-banner ref-inf-banner--err">{{ error() }}</p>
+  }
+  @if (loading()) {
+    <p class="ref-inf-loading">Cargando informe…</p>
+  }
+
+  @if (kpis(); as k) {
+    <section class="ref-inf-kpis">
+      <article class="ref-kpi tone-emerald">
+        <span class="ref-kpi-label">Pagos cobrados</span>
+        <strong>{{ k.totalPagado | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </article>
+      <article class="ref-kpi tone-sky">
+        <span class="ref-kpi-label">Certificados</span>
+        <strong>{{ k.totalCertificados }}</strong>
+      </article>
+      <article class="ref-kpi tone-violet">
+        <span class="ref-kpi-label">Matrículas comerciales</span>
+        <strong>{{ k.matriculasComerciales }}</strong>
+      </article>
+      <article class="ref-kpi tone-amber">
+        <span class="ref-kpi-label">{{ tipo() === 'gestor' ? 'Gestores' : 'Empresas' }} con movimiento</span>
+        <strong>{{ k.referidoresActivos }}</strong>
+      </article>
+    </section>
+
+    <section class="ref-inf-charts">
+      <article class="ref-chart-card">
+        <h3>Pagos por mes</h3>
+        @if (pagosPorMesItems().length) {
+          <div class="ref-bars">
+            @for (item of pagosPorMesItems(); track item.label) {
+              <div class="ref-bar-row">
+                <span class="ref-bar-label">{{ item.label }}</span>
+                <div class="ref-bar-track"><div class="ref-bar-fill sky" [style.width.%]="barWidth(item.value, pagosPorMesItems())"></div></div>
+                <span class="ref-bar-val">{{ item.value | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="ref-empty">Sin pagos en el período.</p>
+        }
+      </article>
+
+      <article class="ref-chart-card">
+        <h3>Certificados por mes</h3>
+        @if (certificadosPorMesItems().length) {
+          <div class="ref-bars">
+            @for (item of certificadosPorMesItems(); track item.label) {
+              <div class="ref-bar-row">
+                <span class="ref-bar-label">{{ item.label }}</span>
+                <div class="ref-bar-track"><div class="ref-bar-fill violet" [style.width.%]="barWidth(item.value, certificadosPorMesItems())"></div></div>
+                <span class="ref-bar-val">{{ item.value }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="ref-empty">Sin certificados en el período.</p>
+        }
+      </article>
+
+      <article class="ref-chart-card">
+        <h3>Pagos por programa</h3>
+        @if (chartPagosProg().length) {
+          <div class="ref-donut-wrap">
+            <svg viewBox="0 0 140 140" class="ref-donut">
+              @for (seg of donutPagosProg(); track $index) {
+                <path [attr.d]="seg.d" [attr.fill]="seg.color"></path>
+              }
+            </svg>
+            <ul class="ref-legend">
+              @for (s of chartPagosProg(); track s.label) {
+                <li><span class="dot" [style.background]="s.color"></span>{{ s.label }} ({{ s.pct }}%)</li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <p class="ref-empty">Sin datos.</p>
+        }
+      </article>
+
+      <article class="ref-chart-card">
+        <h3>Certificados por programa</h3>
+        @if (chartCertsProg().length) {
+          <div class="ref-donut-wrap">
+            <svg viewBox="0 0 140 140" class="ref-donut">
+              @for (seg of donutCertsProg(); track $index) {
+                <path [attr.d]="seg.d" [attr.fill]="seg.color"></path>
+              }
+            </svg>
+            <ul class="ref-legend">
+              @for (s of chartCertsProg(); track s.label) {
+                <li><span class="dot" [style.background]="s.color"></span>{{ s.label }} ({{ s.pct }}%)</li>
+              }
+            </ul>
+          </div>
+        } @else {
+          <p class="ref-empty">Sin datos.</p>
+        }
+      </article>
+    </section>
+
+    <nav class="ref-inf-tabs">
+      <button type="button" [class.active]="tab() === 'resumen'" (click)="setTab('resumen')">Resumen</button>
+      <button type="button" [class.active]="tab() === 'pagos'" (click)="setTab('pagos')">Pagos ({{ detallePagos().length }})</button>
+      <button type="button" [class.active]="tab() === 'certificados'" (click)="setTab('certificados')">Certificados ({{ detalleCerts().length }})</button>
+      <button type="button" [class.active]="tab() === 'matriculas'" (click)="setTab('matriculas')">Matrículas ({{ detalleMats().length }})</button>
+    </nav>
+
+    @if (tab() === 'resumen') {
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>{{ tipo() === 'gestor' ? 'Gestor' : 'Empresa' }}</th>
+              <th>Matrículas</th>
+              <th>Pagado</th>
+              <th>Certificados</th>
+              <th>Pendiente</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of resumen(); track r.referidorId) {
+              <tr>
+                <td>{{ r.nombre }}</td>
+                <td>{{ r.matriculas }}</td>
+                <td>{{ r.totalPagado | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ r.certificados }}</td>
+                <td>{{ r.pendienteCobro | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="ref-empty-row">Sin movimientos comerciales en el período.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (tab() === 'pagos') {
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Recibo</th>
+              <th>Doc.</th>
+              <th>Programa</th>
+              <th>{{ tipo() === 'gestor' ? 'Gestor' : 'Empresa' }}</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of detallePagos(); track $index) {
+              <tr>
+                <td>{{ p.fecha | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ p.numRecibo || '—' }}</td>
+                <td>{{ p.numDoc }}</td>
+                <td>{{ p.programa }}</td>
+                <td>{{ p.referidor }}</td>
+                <td>{{ p.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="ref-empty-row">Sin pagos.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (tab() === 'certificados') {
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>Emisión</th>
+              <th>Código</th>
+              <th>Alumno</th>
+              <th>Programa</th>
+              <th>Tipo</th>
+              <th>{{ tipo() === 'gestor' ? 'Gestor' : 'Empresa' }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of detalleCerts(); track $index) {
+              <tr>
+                <td>{{ c.fechaEmision | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ c.codigoCert || '—' }}</td>
+                <td>{{ c.nombre }} ({{ c.numDoc }})</td>
+                <td>{{ c.programa }}</td>
+                <td>{{ c.tipoCertificado }}</td>
+                <td>{{ c.referidor }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="ref-empty-row">Sin certificados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (tab() === 'matriculas') {
+      <div class="ref-table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Doc.</th>
+              <th>Programa</th>
+              <th>{{ tipo() === 'gestor' ? 'Gestor' : 'Empresa' }}</th>
+              <th>Valor</th>
+              <th>Abonado</th>
+              <th>Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of detalleMats(); track $index) {
+              <tr>
+                <td>{{ m.fechaMat | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ m.numDoc }}</td>
+                <td>{{ m.programa }}</td>
+                <td>{{ m.referidor }}</td>
+                <td>{{ m.valorMat | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.abonado | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td>{{ m.saldo | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="ref-empty-row">Sin matrículas comerciales.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

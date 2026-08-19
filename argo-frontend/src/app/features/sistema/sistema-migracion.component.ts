@@ -35,14 +35,18 @@ export class SistemaMigracionComponent implements OnInit, OnDestroy {
 
   /** Qué migrar: dinámico según lo que entregue cada cliente. */
   readonly opcionesHojas: OpcionHoja[] = [
-    { clave: 'programas', etiqueta: 'Programas y servicios', detalle: 'Catálogo de programas con sus tarifas (se crean si no existen)' },
-    { clave: 'alumnos', etiqueta: 'Alumnos', detalle: 'Datos personales y de contacto' },
-    { clave: 'matriculas', etiqueta: 'Matrículas y saldos', detalle: 'Ligados al programa y su servicio: valor, pagado y saldo pendiente' },
+    { clave: 'programas', etiqueta: 'Programas y servicios', detalle: 'Catálogo con tarifas 1–6 (incluye gestor y empresa)' },
+    { clave: 'gestores', etiqueta: 'Gestores', detalle: 'Tramitadores que traen alumnos (tarifa 5)' },
+    { clave: 'empresas', etiqueta: 'Empresas / clientes', detalle: 'Catálogo de clientes referidores (tarifa 6)' },
+    { clave: 'alumnos', etiqueta: 'Alumnos', detalle: 'Datos personales y referidor comercial opcional' },
+    { clave: 'matriculas', etiqueta: 'Matrículas y saldos', detalle: 'Tarifa 5/6 con gestor o empresa; valor y saldo' },
     { clave: 'pagos', etiqueta: 'Pagos históricos', detalle: 'Recibos del sistema anterior' },
-    { clave: 'certificados', etiqueta: 'Certificados', detalle: 'Certificados ya emitidos' },
+    { clave: 'certificados', etiqueta: 'Certificados', detalle: 'Certificados emitidos (heredan referidor de la matrícula)' },
   ];
   seleccion = signal<Record<HojaMigracion, boolean>>({
     programas: true,
+    gestores: true,
+    empresas: true,
     alumnos: true,
     matriculas: true,
     pagos: true,

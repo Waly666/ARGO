@@ -235,6 +235,12 @@ function mapListaItem(doc) {
     fechaMod: doc.fechaMod || doc.fechaAudi,
     empresaId: doc.empresaId || null,
     empresaNombre: null,
+    manejoGestorEmpresa: doc.manejoGestorEmpresa === true,
+    tipoReferidorComercial: doc.tipoReferidorComercial || null,
+    gestorId: doc.gestorId || null,
+    gestorNombre: doc.gestorNombre || null,
+    referidorEmpresaId: doc.referidorEmpresaId || null,
+    referidorEmpresaNombre: doc.referidorEmpresaNombre || null,
   };
 }
 
@@ -460,7 +466,41 @@ exports.porId = async (req, res, next) => {
         empresaNombre = cli.razonSocial?.trim() || cli.nombreComercial?.trim() || cli.nombres?.trim() || cli.identificacion || null;
       }
     }
-    res.json({ ...a, empresaNombre });
+    let gestorNombre = a.gestorNombre || null;
+    if (!gestorNombre && a.gestorId) {
+      const Gestor = require('../models/Gestor');
+      const g = await Gestor.findById(a.gestorId, { nombres: 1, apellidos: 1, seudonimo: 1, numero: 1 }).lean();
+      if (g) {
+        gestorNombre =
+          String(g.seudonimo || '').trim() ||
+          [g.nombres, g.apellidos].filter(Boolean).join(' ').trim() ||
+          String(g.numero || '');
+      }
+    }
+    let referidorEmpresaNombre = a.referidorEmpresaNombre || null;
+    if (!referidorEmpresaNombre && a.referidorEmpresaId) {
+      const cli = await Cliente.findById(a.referidorEmpresaId, {
+        razonSocial: 1,
+        nombres: 1,
+        nombreComercial: 1,
+        identificacion: 1,
+      }).lean();
+      if (cli) {
+        referidorEmpresaNombre =
+          cli.razonSocial?.trim() ||
+          cli.nombreComercial?.trim() ||
+          cli.nombres?.trim() ||
+          cli.identificacion ||
+          null;
+      }
+    }
+    res.json({
+      ...a,
+      empresaNombre,
+      gestorNombre,
+      referidorEmpresaNombre,
+      manejoGestorEmpresa: a.manejoGestorEmpresa === true,
+    });
   } catch (e) {
     next(e);
   }
@@ -616,6 +656,8 @@ exports.verificarDocumento = async (req, res, next) => {
   }
 };
 
+const { validarGestorEmpresaAlumno } = require('../services/gestorEmpresaMatricula');
+
 const CAMPOS_ALUMNO = [
   'tipoAlumno', 'tipoDoc', 'numDoc', 'expedida', 'apellido1', 'apellido2', 'nombre1', 'nombre2',
   'fechaNac', 'observaciones', 'genero', 'tipoSangre', 'jornada', 'estadoCivil', 'estrato',
@@ -623,6 +665,8 @@ const CAMPOS_ALUMNO = [
   'codDepartamento', 'nombreDepartamento', 'nombreMunicipio',
   'correo', 'direccion', 'celular', 'multiCulturalidad', 'urlFoto', 'urlCedula', 'urlLicencia',
   'duracionSesionPracticaCea', 'empresaId', 'alertaPago', 'alertaPagoFrecuencia',
+  'manejoGestorEmpresa', 'tipoReferidorComercial', 'gestorId', 'gestorNombre',
+  'referidorEmpresaId', 'referidorEmpresaNombre',
   /* Origen en jornada Cap. (≠ canal inscripción SISTEMA|WEB en `origen`) */
   'origenJornadaCap', 'tipoInstitucionEducativa', 'perfilInstitucionEducativa',
   'colegioCodigo', 'colegioNombre', 'gradoColegio', 'semestreInstitucion',
@@ -808,6 +852,9 @@ function pickAlumno(body) {
   }
   if (body.alertaPagoFrecuencia) dto.alertaPagoFrecuencia = body.alertaPagoFrecuencia;
   if (body.alertaPago) dto.alertaPago = body.alertaPago;
+  if (body.manejoGestorEmpresa !== undefined) {
+    dto.manejoGestorEmpresa = body.manejoGestorEmpresa === true || body.manejoGestorEmpresa === 'true';
+  }
   if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
 
   normalizarAlertaPagoEnDto(dto);
@@ -870,6 +917,7 @@ exports.crear = async (req, res, next) => {
     // Canal de inscripción: altas ERP/cajero/recepción = SISTEMA (no spoofear WEB desde el cliente).
     dto.origen = ORIGEN_SISTEMA;
     await completarGeoOrigenAlumno(dto);
+    await validarGestorEmpresaAlumno(dto);
 
     let a;
     try {
@@ -901,6 +949,14 @@ exports.actualizar = async (req, res, next) => {
     if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
     const body = req.body;
     const dto = pickAlumno(body);
+    if (dto.manejoGestorEmpresa === undefined) {
+      dto.manejoGestorEmpresa = prev.manejoGestorEmpresa === true;
+      if (dto.tipoReferidorComercial === undefined) dto.tipoReferidorComercial = prev.tipoReferidorComercial;
+      if (dto.gestorId === undefined) dto.gestorId = prev.gestorId;
+      if (dto.gestorNombre === undefined) dto.gestorNombre = prev.gestorNombre;
+      if (dto.referidorEmpresaId === undefined) dto.referidorEmpresaId = prev.referidorEmpresaId;
+      if (dto.referidorEmpresaNombre === undefined) dto.referidorEmpresaNombre = prev.referidorEmpresaNombre;
+    }
     if (dto.numDoc != null) {
       dto.numDoc = parseNumDoc(dto.numDoc);
       if (dto.numDoc == null) {
@@ -914,6 +970,7 @@ exports.actualizar = async (req, res, next) => {
     dto.userChangeRecord = dto.userChangeRecord || req.user?.username || req.user?.sub || 'sistema';
     if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
     await completarGeoOrigenAlumno(dto);
+    await validarGestorEmpresaAlumno(dto);
 
     const unset = {};
     if (

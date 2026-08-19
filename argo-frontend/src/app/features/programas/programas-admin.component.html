@@ -350,6 +350,14 @@
             <label>Tarifa virtual *</label>
             <input type="number" min="0" [ngModel]="form().tarifaVirtual" (ngModelChange)="patch('tarifaVirtual', $event)" />
           </div>
+          <div class="field-cell" *ngIf="admiteModalidadPresencialForm()">
+            <label>Tarifa gestor</label>
+            <input type="number" min="0" [ngModel]="form().tarifaGestor" (ngModelChange)="patch('tarifaGestor', $event)" />
+          </div>
+          <div class="field-cell" *ngIf="admiteModalidadPresencialForm()">
+            <label>Tarifa empresa</label>
+            <input type="number" min="0" [ngModel]="form().tarifaEmpresa" (ngModelChange)="patch('tarifaEmpresa', $event)" />
+          </div>
         </div>
         <p class="form-note form-note--compact" *ngIf="esSoloVirtualForm()">
           Precio en <strong>General → Matr. virt.</strong> (tarifa 4 en portal).

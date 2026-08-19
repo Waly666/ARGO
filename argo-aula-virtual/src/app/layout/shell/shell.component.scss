@@ -7,9 +7,9 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(11, 18, 36, 0.92);
+  background: var(--av-topbar-bg, rgba(11, 18, 36, 0.92));
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--av-border);
+  border-bottom: 1px solid var(--av-topbar-border, var(--av-border));
 }
 
 .topbar .container {
@@ -116,7 +116,7 @@
 
   a {
     position: relative;
-    color: var(--av-dim);
+    color: var(--av-nav-link, var(--av-dim));
     font-size: clamp(0.72rem, 0.95vw, 0.84rem);
     font-weight: 600;
     white-space: nowrap;

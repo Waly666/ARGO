@@ -41,4 +41,6 @@ export type PortalTemaPreset = Pick<
   | 'colorTexto'
   | 'colorTextoSecundario'
   | 'fuente'
+  | 'fuenteTitulos'
+  | 'heroEstilo'
 >;

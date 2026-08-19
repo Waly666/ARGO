@@ -130,8 +130,11 @@ export interface PortalTemaConfig {
   colorTexto: string;
   colorTextoSecundario: string;
   fuente: string;
+  /** Fuente para títulos. Vacío = misma que `fuente`. */
+  fuenteTitulos?: string;
   urlHero?: string;
   urlHeroAbsoluta?: string;
+  heroEstilo?: 'starfield' | 'servial-mesh';
 }
 
 export interface PortalSiteConfig {

@@ -805,6 +805,79 @@
         </div>
       }
 
+      <!-- ── GESTOR / EMPRESA (tarifas especiales al matricular) ── -->
+      @if (gestoresEmpresasActivo() && !esAlumnoJornada()) {
+        <div class="form-section tone-violet">
+          <div class="section-head">
+            <span class="section-icon ic-violet">◉</span>
+            <div>
+              <h3>Gestor / empresa</h3>
+              <p>Tramitador o empresa que trajo al alumno — aplica tarifa gestor o empresa al matricular</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="row">
+              <div class="col-12">
+                <argo-switch
+                  label="Activar manejo de gestor o empresa para este alumno"
+                  [checked]="!!form().manejoGestorEmpresa"
+                  (checkedChange)="onManejoGestorEmpresaChange($event)" />
+              </div>
+            </div>
+            @if (form().manejoGestorEmpresa) {
+              <div class="filter-pills origen-jornada-opciones" role="group" aria-label="Tipo de referidor" style="margin-top: 0.75rem">
+                <button
+                  type="button"
+                  class="filter-pill tone-purple"
+                  [class.active]="form().tipoReferidorComercial === 'gestor'"
+                  (click)="setTipoReferidorComercial('gestor')">
+                  Gestor
+                </button>
+                <button
+                  type="button"
+                  class="filter-pill tone-purple"
+                  [class.active]="form().tipoReferidorComercial === 'empresa'"
+                  (click)="setTipoReferidorComercial('empresa')">
+                  Empresa
+                </button>
+              </div>
+              @if (form().tipoReferidorComercial === 'gestor') {
+                <div class="row" style="margin-top: 0.75rem">
+                  <div class="col-12">
+                    <argo-catalogo-enum-buscar
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('gestorId')"
+                      label="Gestor *"
+                      placeholder="Buscar gestor…"
+                      [textoInicial]="form().gestorNombre || ''"
+                      [modoCombo]="true"
+                      [minLength]="1"
+                      [buscarRemoto]="buscarGestoresRemoto"
+                      (seleccionado)="onGestorPick($event)"
+                      (limpiado)="onGestorLimpiar()" />
+                  </div>
+                </div>
+              }
+              @if (form().tipoReferidorComercial === 'empresa') {
+                <div class="row" style="margin-top: 0.75rem">
+                  <div class="col-12">
+                    <argo-catalogo-enum-buscar
+                      [class.campo-obligatorio-error]="campoObligatorioInvalido('referidorEmpresaId')"
+                      label="Empresa *"
+                      placeholder="Buscar empresa…"
+                      [textoInicial]="form().referidorEmpresaNombre || ''"
+                      [modoCombo]="true"
+                      [minLength]="1"
+                      [buscarRemoto]="buscarReferidorEmpresasRemoto"
+                      (seleccionado)="onReferidorEmpresaPick($event)"
+                      (limpiado)="onReferidorEmpresaLimpiar()" />
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+
       <!-- ── EMPRESA (solo alumnos regulares; en jornada va en origen empresa) ── -->
       <div class="form-section tone-amber" *ngIf="!esAlumnoJornada()">
         <div class="section-head">

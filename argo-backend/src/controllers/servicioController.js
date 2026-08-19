@@ -52,6 +52,8 @@ exports.listar = async (req, res, next) => {
         tarifa1: num(s.tarifa1),
         tarifa2: num(s.tarifa2),
         tarifa3: num(s.tarifa3),
+        tarifaGestor: num(s.tarifaGestor),
+        tarifaEmpresa: num(s.tarifaEmpresa),
         tarifaVirtual: num(s.tarifaVirtual),
         programaNombre: programa?.nombreProg || null,
         programaCodigo: programa?.codigoProg || null,
@@ -104,6 +106,8 @@ exports.actualizar = async (req, res, next) => {
     if (body.tarifa1 != null) patch.tarifa1 = num(body.tarifa1);
     if (body.tarifa2 != null) patch.tarifa2 = num(body.tarifa2);
     if (body.tarifa3 != null) patch.tarifa3 = num(body.tarifa3);
+    if (body.tarifaGestor != null) patch.tarifaGestor = num(body.tarifaGestor);
+    if (body.tarifaEmpresa != null) patch.tarifaEmpresa = num(body.tarifaEmpresa);
     if (body.tarifaVirtual != null) patch.tarifaVirtual = num(body.tarifaVirtual);
     if (body.facturar != null) patch.facturar = body.facturar;
     if (body.iva != null) patch.iva = num(body.iva);
@@ -187,6 +191,8 @@ exports.crear = async (req, res, next) => {
       tarifa1: valorVariable ? 0 : tarifa1,
       tarifa2: valorVariable ? null : num(body.tarifa2) > 0 ? num(body.tarifa2) : null,
       tarifa3: valorVariable ? null : num(body.tarifa3) > 0 ? num(body.tarifa3) : null,
+      tarifaGestor: valorVariable ? null : num(body.tarifaGestor) > 0 ? num(body.tarifaGestor) : null,
+      tarifaEmpresa: valorVariable ? null : num(body.tarifaEmpresa) > 0 ? num(body.tarifaEmpresa) : null,
       tarifaVirtual: valorVariable ? null : num(body.tarifaVirtual) || 0,
       valorVariable: valorVariable || undefined,
       usaCantidad: !valorVariable && body.usaCantidad === true,

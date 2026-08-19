@@ -62,6 +62,10 @@ export interface ServicioPrograma {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  /** Tarifa para matrícula de gestor. */
+  tarifaGestor?: number;
+  /** Tarifa para matrícula de empresa. */
+  tarifaEmpresa?: number;
   /** Precio educación virtual (matrícula con tarifa 4). */
   tarifaVirtual?: number;
   rolServicio?: string;
@@ -97,6 +101,8 @@ export interface ProgramaDto {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  tarifaGestor?: number;
+  tarifaEmpresa?: number;
   tarifaVirtual?: number;
   descripcionVirtual?: string | null;
   urlPortadaVirtual?: string | null;

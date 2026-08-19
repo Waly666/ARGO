@@ -1,0 +1,16 @@
+<div class="correo-input" [class.correo-input--invalid]="esInvalido">
+  <input
+    type="email"
+    inputmode="email"
+    autocomplete="email"
+    class="correo-field"
+    [class.invalid]="esInvalido"
+    [placeholder]="placeholder"
+    [ngModel]="localValue"
+    (ngModelChange)="onInput($event)"
+    (blur)="onBlur()"
+    aria-label="Correo electrónico" />
+  @if (errorMensaje) {
+    <p class="correo-error" role="alert">{{ errorMensaje }}</p>
+  }
+</div>

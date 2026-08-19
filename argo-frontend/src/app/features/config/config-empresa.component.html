@@ -102,7 +102,7 @@
           <div>
             <h2 class="emp-section-title">Logo institucional</h2>
             <p class="emp-section-desc">
-              Imagen que aparece en el portal del aula virtual y en documentos que incluyen logotipo.
+              Imagen institucional única: login del ERP, comprobantes de caja, facturas, informes y portal del aula virtual.
             </p>
           </div>
         </header>
@@ -216,7 +216,10 @@
                 type="text"
                 [ngModel]="facturacion().emisorMunicipioCodigo"
                 (ngModelChange)="patchFiscal('emisorMunicipioCodigo', $event)"
-                placeholder="11001" />
+                placeholder="50001" />
+              <span class="emp-hint emp-hint--field">
+                Define ciudad y departamento en comprobantes, facturas e informes (según Divipola).
+              </span>
             </label>
             <label class="emp-field">
               <span class="emp-label">Actividad económica (CIIU)</span>

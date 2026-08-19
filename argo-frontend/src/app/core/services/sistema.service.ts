@@ -85,7 +85,7 @@ export interface ErrorMigracion {
   mensaje: string;
 }
 
-export type HojaMigracion = 'programas' | 'alumnos' | 'matriculas' | 'pagos' | 'certificados';
+export type HojaMigracion = 'programas' | 'gestores' | 'empresas' | 'alumnos' | 'matriculas' | 'pagos' | 'certificados';
 
 export interface OpcionesIntegridadMigracion {
   /** Certificados sin exigir alumno ni programa en catálogo. */
@@ -107,6 +107,8 @@ export interface ResultadoImportacion {
   hojas: HojaMigracion[];
   ignoradas?: string[];
   programas: { creados: number; omitidos: number };
+  gestores?: { creados: number; omitidos: number };
+  empresas?: { creadas: number; omitidas: number };
   alumnos: { creados: number; actualizados: number; omitidos: number };
   matriculas: { creadas: number; omitidas: number };
   pagos: { creados: number; omitidos: number };

@@ -1,4 +1,5 @@
 import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaults';
+import { DEFAULT_CEA_NOMBRE } from './portal-brand-defaults';
 import { FUNDACION_LANDING_DEFAULTS } from '../pages/fundacion/fundacion-content';
 import {
   APP_MOBILE,
@@ -198,7 +199,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     cursos: 'Cursos',
     aula: 'Aula virtual',
     acerca: 'Acerca de',
-    fundacion: 'Fundación',
+    fundacion: 'CEA',
     consultaCertificados: 'Certificados',
     blog: 'Blog',
     acceder: 'Acceder',
@@ -207,8 +208,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   },
   footer: {
     founded: 'Est. 1997',
-    copyright:
-      'Copyright © 2026 All Rights Reserved INSTITUTO TECNICO FINSTRUVIAL Designed by WALTER AGUILAR',
+    copyright: `Copyright © ${new Date().getFullYear()} ${DEFAULT_CEA_NOMBRE}. Todos los derechos reservados.`,
     tituloEnlaces: 'Enlaces rápidos',
     tituloServicios: 'Servicios',
     tituloContacto: 'Contáctanos',

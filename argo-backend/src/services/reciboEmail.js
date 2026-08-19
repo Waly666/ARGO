@@ -5,6 +5,7 @@ const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
 const { esIngresoAlumno } = require('../utils/ingresoClasificacion');
 const { sendMail, smtpConfigured } = require('./mail');
 const { obtenerConfigPortalPublica, obtenerConfigAula } = require('./aulaVirtualPortal');
+const { obtenerConfigEnvioCorreosAlumno } = require('./configEnvioCorreosAlumno');
 const { armarRecibo } = require('../controllers/reciboController');
 const { generarHtmlIngreso } = require('./comprobanteHtml');
 const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
@@ -37,7 +38,7 @@ function sanitizarNombreArchivo(s) {
 }
 
 async function mailFromHeader(nombreCea) {
-  const cea = nombreCea || 'Finstruvial';
+  const cea = nombreCea || 'CEA';
   const aula = await obtenerConfigAula().catch(() => null);
   const fromCustom = aula?.emailConfirmacion?.trim() || null;
   return fromCustom ? `"${cea}" <${fromCustom}>` : undefined;
@@ -146,6 +147,11 @@ function armarContenidoCorreo({
  * No lanza errores: devuelve { enviado, motivo?, email? }.
  */
 async function enviarReciboPorCorreo(ingresoId, opts = {}) {
+  const cfgEnvio = await obtenerConfigEnvioCorreosAlumno();
+  if (!cfgEnvio.enviarComprobantesIngreso) {
+    return { enviado: false, motivo: 'envio_desactivado' };
+  }
+
   if (!smtpConfigured()) {
     return { enviado: false, motivo: 'smtp_no_configurado' };
   }
@@ -166,7 +172,7 @@ async function enviarReciboPorCorreo(ingresoId, opts = {}) {
   }
 
   const portal = await obtenerConfigPortalPublica().catch(() => ({}));
-  const nombreCea = String(portal?.nombreCea || 'Finstruvial').trim() || 'Finstruvial';
+  const nombreCea = String(portal?.nombreCea || 'CEA').trim() || 'CEA';
   const nombre = nombreCompleto(alumno) || data.alumno?.nombreCompleto || '';
   const numeroRecibo = data.numeroRecibo || ing.numRecibo || '';
   const concepto =

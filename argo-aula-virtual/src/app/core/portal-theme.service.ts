@@ -2,7 +2,8 @@ import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
 
 import { PortalConfig } from './models';
-import { buildPortalThemeCssVars } from './portal-theme-css.util';
+import { loadPortalGoogleFonts } from './portal-fonts.util';
+import { buildPortalThemeCssVars, resolvePortalHeroEstilo } from './portal-theme-css.util';
 import { resolveUploadUrl } from './upload-url.util';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +19,8 @@ export class PortalThemeService {
     for (const [key, val] of Object.entries(vars)) {
       if (val) root.style.setProperty(key, val);
     }
+    loadPortalGoogleFonts(this.doc, tema);
+    root.dataset['heroEstilo'] = resolvePortalHeroEstilo(tema);
 
     const themeColor = vars['--av-bg'];
     if (themeColor) {

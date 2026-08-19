@@ -204,14 +204,31 @@
             </div>
           }
 
-          <label class="psb-field psb-field--plain">
-            <span>Tipo de letra</span>
-            <select class="psb-input" [(ngModel)]="site.tema.fuente">
-              @for (f of fuentes; track f) {
-                <option [value]="f">{{ f }}</option>
-              }
-            </select>
-          </label>
+          <div class="psb-typography">
+            <span class="psb-field-label">Tipografía del sitio</span>
+            <p class="psb-hint">
+              Fuentes del aula virtual. Los cambios se aplican al publicar (o al guardar la configuración del sitio).
+            </p>
+
+            <label class="psb-field psb-field--plain">
+              <span>Texto general (menú, párrafos, botones)</span>
+              <select class="psb-input" [(ngModel)]="site.tema.fuente" (ngModelChange)="onFuentesChange()">
+                @for (f of fuentes; track f) {
+                  <option [value]="f">{{ f }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="psb-field psb-field--plain">
+              <span>Títulos (hero, secciones, tarjetas)</span>
+              <select class="psb-input" [(ngModel)]="site.tema.fuenteTitulos" (ngModelChange)="onFuentesChange()">
+                <option value="">Igual que texto general</option>
+                @for (f of fuentes; track f) {
+                  <option [value]="f">{{ f }}</option>
+                }
+              </select>
+            </label>
+          </div>
 
           <div class="psb-hero-image">
             <span class="psb-field-label">Imagen grande del inicio (banner)</span>
@@ -256,6 +273,10 @@
 
           <div class="psb-preview-theme" [ngStyle]="themePreviewVars()">
             <span class="psb-preview-theme__label">Vista previa del tema:</span>
+            <div class="psb-preview-theme__fonts">
+              <p class="psb-preview-theme__font-display">Título del hero</p>
+              <p class="psb-preview-theme__font-body">Texto de párrafo y menú del portal.</p>
+            </div>
             <div class="psb-preview-theme__samples">
               <span class="psb-preview-theme__btn">Botón principal</span>
               <span class="psb-preview-theme__chip">Detalle / acento</span>
@@ -299,7 +320,7 @@
 
       @case ('institucional') {
         <p class="psb-note">
-          Esta es la página que muchos llaman «Fundación», «Empresa» o «Quiénes somos». El nombre en el menú se cambia en
+          Esta es la página institucional del CEA (antes «Fundación» / «Empresa»). El nombre en el menú se cambia en
           <button type="button" class="psb-link" (click)="setPanel('paginas')">Páginas visibles</button>.
         </p>
         <argo-portal-fundacion-editor

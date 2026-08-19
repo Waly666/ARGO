@@ -14,9 +14,17 @@
 </div>
     }
     @case ('hero') {
-<section class="hero section-starfield">
+<section
+  class="hero section-starfield"
+  [class.hero--servial-mesh]="heroEstilo() === 'servial-mesh'"
+  [style.--av-hero-photo]="heroEstilo() === 'servial-mesh' ? 'url(' + heroImg() + ')' : null">
 
   <div class="starfield-bg" aria-hidden="true"></div>
+
+  @if (heroEstilo() === 'servial-mesh') {
+    <div class="hero-photo-shade" aria-hidden="true"></div>
+    <av-hero-particle-mesh />
+  }
 
   <div class="container hero-container">
 
@@ -24,7 +32,17 @@
 
       <div class="hero-copy">
 
-        <p class="eyebrow hero-in hero-in--1">{{ nombreCea() }}</p>
+        <p class="eyebrow hero-in hero-in--1">
+          @if (heroEstilo() === 'servial-mesh') {
+            — Bienvenid&#64; a {{ nombreCea() }} —
+          } @else {
+            {{ nombreCea() }}
+          }
+        </p>
+
+        @if (heroEstilo() === 'servial-mesh') {
+          <p class="hero-cea hero-in hero-in--2">Centro de Enseñanza Automovilística</p>
+        }
 
         <h1 #heroH1 class="hero-title hero-title--typing"></h1>
 

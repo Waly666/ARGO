@@ -879,7 +879,7 @@ export class ShellComponent {
           path: '/app/caja',
           icon: '⌂',
           iconTone: 'amber',
-          section: 'TURNO',
+          section: 'Mi turno',
           permiso: 'caja.turno',
         },
         {
@@ -904,7 +904,6 @@ export class ShellComponent {
           path: '/app/caja/terceros',
           icon: '◎',
           iconTone: 'teal',
-          section: 'TURNO',
           permiso: ['caja.turno', 'caja.admin'],
         },
         {
@@ -917,11 +916,28 @@ export class ShellComponent {
         },
         {
           kind: 'link',
+          label: 'Gestores',
+          path: '/app/caja/gestores',
+          icon: '◉',
+          iconTone: 'cyan',
+          section: 'Gestores y empresas',
+          permiso: ['caja.turno', 'caja.admin'],
+        },
+        {
+          kind: 'link',
+          label: 'Empresas',
+          path: '/app/caja/empresa',
+          icon: '▣',
+          iconTone: 'indigo',
+          permiso: ['caja.turno', 'caja.admin'],
+        },
+        {
+          kind: 'link',
           label: 'Cierres',
           path: '/app/cierres',
           icon: '▣',
           iconTone: 'indigo',
-          section: 'ADMIN',
+          section: 'Administración',
           permiso: ['caja.admin', 'contabilidad'],
           permisoMenu: ['caja.admin', 'contabilidad'],
           rolesMenu: ['admin', 'contador'],
@@ -932,7 +948,6 @@ export class ShellComponent {
           path: '/app/cierre-general',
           icon: '⊞',
           iconTone: 'amber',
-          section: 'ADMIN',
           permiso: ['caja.admin', 'contabilidad'],
           permisoMenu: ['caja.admin', 'contabilidad'],
           rolesMenu: ['admin', 'contador'],
@@ -943,7 +958,6 @@ export class ShellComponent {
           path: '/app/caja/ingresos-todos',
           icon: '$',
           iconTone: 'emerald',
-          section: 'ADMIN',
           permiso: ['caja.admin', 'contabilidad'],
           permisoMenu: ['caja.admin', 'contabilidad'],
           rolesMenu: ['admin', 'contador'],
@@ -954,7 +968,6 @@ export class ShellComponent {
           path: '/app/caja/egresos-todos',
           icon: '⇣',
           iconTone: 'rose',
-          section: 'ADMIN',
           permiso: ['caja.admin', 'contabilidad'],
           permisoMenu: ['caja.admin', 'contabilidad'],
           rolesMenu: ['admin', 'contador'],
@@ -965,7 +978,6 @@ export class ShellComponent {
           path: '/app/caja/descuadres',
           icon: '⚠',
           iconTone: 'amber',
-          section: 'ADMIN',
           permiso: ['caja.admin', 'contabilidad'],
           permisoMenu: ['caja.admin', 'contabilidad'],
           rolesMenu: ['admin', 'contador'],
@@ -1150,6 +1162,22 @@ export class ShellComponent {
           icon: '⊕',
           iconTone: 'teal',
           permiso: 'config.recibos',
+        },
+        {
+          kind: 'link',
+          label: 'Gestores y empresas',
+          path: '/app/configuracion/gestores-empresas',
+          icon: '◉',
+          iconTone: 'cyan',
+          permiso: 'config.recibos',
+        },
+        {
+          kind: 'link',
+          label: 'Correos a alumnos',
+          path: '/app/configuracion/envio-correos-alumno',
+          icon: '✉',
+          iconTone: 'sky',
+          permiso: ['config.recibos', 'config.certificados', 'config.alertas'],
         },
         {
           kind: 'link',
@@ -2102,6 +2130,15 @@ export class ShellComponent {
 
   trackMenuChild(c: MenuLink): string {
     return `${c.path}|${c.label}`;
+  }
+
+  /** Encabezado de sección solo cuando cambia respecto al ítem visible anterior. */
+  showSubmenuSection(children: MenuLink[], index: number): boolean {
+    const visible = this.visibleChildren(children);
+    const current = visible[index];
+    if (!current?.section) return false;
+    const prev = index > 0 ? visible[index - 1] : null;
+    return current.section !== prev?.section;
   }
 
   subLinkActive(link: MenuLink): boolean {

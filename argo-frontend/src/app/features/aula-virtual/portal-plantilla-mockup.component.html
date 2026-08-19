@@ -21,7 +21,7 @@
     </span>
     <span class="ppm-nav-cta">Acceder</span>
   </header>
-  <section class="ppm-hero">
+  <section class="ppm-hero" [class.ppm-hero--servial]="tema.heroEstilo === 'servial-mesh'">
     <div class="ppm-hero__copy">
       <h3>{{ heroTitulo }}</h3>
       <p>{{ heroSubtitulo }}</p>
@@ -30,7 +30,11 @@
         <span class="ppm-btn ppm-btn--ghost">Contacto</span>
       </div>
     </div>
-    <div class="ppm-hero__art" aria-hidden="true"></div>
+    <div class="ppm-hero__art" aria-hidden="true">
+      @if (tema.heroEstilo === 'servial-mesh') {
+        <span class="ppm-hero__mesh"></span>
+      }
+    </div>
   </section>
   <div class="ppm-cards">
     <span></span><span></span><span></span>

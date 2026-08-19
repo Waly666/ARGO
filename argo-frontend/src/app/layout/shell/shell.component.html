@@ -34,8 +34,8 @@
               [class.submenu-rrhh]="isRrhhGroup(m.label)"
               [class.submenu-caja]="isCajaGroup(m.label)"
               *ngIf="isGroupOpen(m.label) && !collapsed()">
-              @for (c of visibleChildren(m.children); track trackMenuChild(c)) {
-                @if (c.section) {
+              @for (c of visibleChildren(m.children); track trackMenuChild(c); let i = $index) {
+                @if (showSubmenuSection(m.children, i)) {
                   <div class="submenu-section">{{ c.section }}</div>
                 }
                 <a

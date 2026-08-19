@@ -16,6 +16,8 @@ export interface PortalPaginaConfig {
   ruta: string;
 }
 
+export type PortalHeroEstilo = 'starfield' | 'servial-mesh';
+
 export interface PortalTemaConfig {
   colorPrimario: string;
   colorPrimarioOscuro: string;
@@ -25,8 +27,12 @@ export interface PortalTemaConfig {
   colorTexto: string;
   colorTextoSecundario: string;
   fuente: string;
+  /** Fuente para títulos (hero, secciones). Vacío = misma que texto general. */
+  fuenteTitulos?: string;
   urlHero: string;
   urlHeroAbsoluta?: string;
+  /** Variante visual del banner principal. */
+  heroEstilo?: PortalHeroEstilo;
 }
 
 export interface PortalMarcaConfig {
@@ -49,14 +55,7 @@ export interface PortalSiteConfig {
   homeSeccionesOrden?: string[];
 }
 
-export const PORTAL_FUENTES = [
-  'Plus Jakarta Sans',
-  'Poppins',
-  'Inter',
-  'Roboto',
-  'Open Sans',
-  'Source Sans 3',
-] as const;
+export { PORTAL_FUENTES } from '../utils/portal-fonts.util';
 
 export const PORTAL_HOME_SECCIONES_ORDEN = [
   'instBar',
@@ -127,7 +126,9 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
       colorTexto: '#eef3ff',
       colorTextoSecundario: '#9fb0d0',
       fuente: 'Plus Jakarta Sans',
+      fuenteTitulos: '',
       urlHero: '',
+      heroEstilo: 'starfield',
       ...raw?.tema,
     },
     marca: {

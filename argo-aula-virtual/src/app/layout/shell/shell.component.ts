@@ -15,19 +15,20 @@ import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { ACERCA_DEFAULT } from '../../pages/home/home-content';
 
-import { FUNDACION_SITIO_URL } from '../../pages/fundacion/fundacion-content';
+import { DEFAULT_CEA_CORTO, DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 
 const FOOTER_ABOUT_DEFAULT =
   'promueve la seguridad vial mediante capacitación, estudios técnicos, campañas preventivas y asesoría a empresas, fomentando una movilidad segura y responsable.';
 
 const FOOTER_SERVICIO_HREF: Record<string, string> = {
   capacitación: '/cursos',
-  pesv: 'https://finstruvial.com.co/planes-estrategicos-de-seguridad-vial/',
+  pesv: '/fundacion',
   'campañas de seguridad vial': '/fundacion',
   'carreras técnicas': '/#carreras-tecnicas',
-  'estudios de tránsito': 'https://finstruvial.com.co/nuestros-servicios/mapas/',
-  'planes de movilidad sostenible y segura':
-    'https://finstruvial.com.co/planes-de-movilidad-sostenible-y-segura/',
+  'estudios de tránsito': '/fundacion',
+  'planes de movilidad sostenible y segura': '/fundacion',
+  conducción: '/cursos',
+  licencia: '/cursos',
 };
 
 export interface FooterEnlace {
@@ -131,9 +132,9 @@ export class ShellComponent implements OnInit, AfterViewInit {
     }),
   );
 
-  sitioInstitucionalUrl = FUNDACION_SITIO_URL;
+  sitioInstitucionalUrl = '/';
 
-  nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
+  nombreCea = computed(() => this.config()?.nombreCea || DEFAULT_CEA_NOMBRE);
 
   paginaActivaConsulta = computed(() => paginaActiva(this.config(), 'consultaCertificados'));
 
@@ -144,9 +145,10 @@ export class ShellComponent implements OnInit, AfterViewInit {
   /** Texto junto al logo en el header (marca corta). */
   brandMarca = computed(() => {
     const name = this.config()?.nombreCea?.trim() || '';
-    if (/finstruvial/i.test(name)) return 'FINSTRUVIAL';
-    const corto = name.replace(/^fundaci[oó]n\s+/i, '').trim();
-    return corto ? corto.toUpperCase() : 'FINSTRUVIAL';
+    if (/^cea$/i.test(name) || /centro de enseñanza automovil/i.test(name)) return DEFAULT_CEA_CORTO;
+    const corto = name.replace(/^centro de enseñanza automovil[ií]stica\s*/i, '').trim();
+    if (corto.length <= 12) return corto ? corto.toUpperCase() : DEFAULT_CEA_CORTO;
+    return DEFAULT_CEA_CORTO;
   });
 
   whatsappTelefono = computed(() => this.config()?.telefono?.trim() || '');
@@ -199,7 +201,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
       },
       error: () => {
         const fallback = {
-          nombreCea: 'Fundación Finstruvial',
+          nombreCea: DEFAULT_CEA_NOMBRE,
           heroTitulo: 'Educación virtual',
           heroSubtitulo: 'Capacitación en línea',
           acercaDeHtml: ACERCA_DEFAULT,

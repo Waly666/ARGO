@@ -18,7 +18,9 @@ const {
   resolverIdSedeMatriculaJornada,
 } = require('./jornadaCapacitacion');
 const { normalizarIdSede } = require('./sedeContext');
-const { esTarifaVirtual } = require('../constants/tarifa');
+const { esTarifaVirtual, esTarifaComercial, TARIFA_GESTOR, TARIFA_EMPRESA } = require('../constants/tarifa');
+const { resolverTarifaComercialAlumno, snapshotReferidorComercial } = require('./gestorEmpresaMatricula');
+const { obtenerConfigGestoresEmpresas } = require('./configGestoresEmpresas');
 const {
   resolverTarifaMatricula,
   descripcionConRevalidacion,
@@ -171,12 +173,36 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
 
   const tarifaManualFlag =
     tarifaManual === true || tarifaManual === 'true' || body?.forzarTarifa === true;
-  const resTarifa = await resolverTarifaMatricula({
-    numDoc,
+
+  const tarifaComercial = await resolverTarifaComercialAlumno({
+    alumno,
     prog,
-    tarifa: tarifaBody,
     tarifaManual: tarifaManualFlag,
   });
+
+  let resTarifa;
+  if (tarifaComercial) {
+    resTarifa = {
+      tarifa: tarifaComercial.tarifa,
+      revalidacion: false,
+      aplicadaAuto: true,
+      califica: false,
+      admiteRevalidacion: false,
+      aplicarAuto: false,
+      certificado: null,
+      motivo: `referidor_${tarifaComercial.tipoReferidor}`,
+      mensaje: null,
+      tarifaRevalidacion: 3,
+      tarifa3Disponible: false,
+    };
+  } else {
+    resTarifa = await resolverTarifaMatricula({
+      numDoc,
+      prog,
+      tarifa: tarifaBody,
+      tarifaManual: tarifaManualFlag,
+    });
+  }
   const t = resTarifa.tarifa;
   const esRevalidacion = resTarifa.revalidacion === true;
 
@@ -200,12 +226,20 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
   }
 
   if (!modInfo.tarifasPermitidas.includes(t)) {
-    const err = new Error(
-      `Tarifa ${t} no permitida. Modalidades del programa: ${modInfo.modalidadLabels.join(', ')}. Tarifas permitidas: ${modInfo.tarifasPermitidas.join(', ')}.`,
-    );
-    err.status = 400;
-    err.code = 'TARIFA_NO_PERMITIDA_MODALIDAD';
-    throw err;
+    const cfgGE = await obtenerConfigGestoresEmpresas();
+    const comercialOk =
+      cfgGE.activo &&
+      modInfo.admitePresencial &&
+      esTarifaComercial(t) &&
+      (t === TARIFA_GESTOR || t === TARIFA_EMPRESA);
+    if (!comercialOk) {
+      const err = new Error(
+        `Tarifa ${t} no permitida. Modalidades del programa: ${modInfo.modalidadLabels.join(', ')}. Tarifas permitidas: ${modInfo.tarifasPermitidas.join(', ')}.`,
+      );
+      err.status = 400;
+      err.code = 'TARIFA_NO_PERMITIDA_MODALIDAD';
+      throw err;
+    }
   }
 
   const valorHistoricoMigracion = modoMigracion && tieneValorHistoricoMigracion(body);
@@ -314,6 +348,8 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
       }
     : {};
 
+  const referidorSnap = snapshotReferidorComercial(alumno, t);
+
   const m = await Matricula.create({
     numDoc,
     idSede,
@@ -326,6 +362,7 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     estado: 'Activo',
     observaciones: obsRevalidacion,
     esRevalidacion,
+    ...referidorSnap,
     ...camposAjuste,
     ...marcaMigracion,
   });

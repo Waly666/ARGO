@@ -46,6 +46,14 @@ const CertificadoSchema = new mongoose.Schema(
     /** Nombre del curso / capacitación impreso en el certificado */
     encabezado: { type: String, trim: true, default: '' },
     idUsuario:     { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null },
+    /** Matrícula comercial que originó el certificado (tarifa gestor/empresa). */
+    idMatricula: { type: mongoose.Schema.Types.ObjectId, ref: 'Matricula', default: null, index: true },
+    referidorComercial: { type: Boolean, default: false, index: true },
+    tipoReferidorComercial: { type: String, trim: true, default: null },
+    gestorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gestor', default: null, index: true },
+    gestorNombre: { type: String, trim: true, default: null },
+    referidorEmpresaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
+    referidorEmpresaNombre: { type: String, trim: true, default: null },
     /** Empresa del alumno al momento de emitir (ref a clientesFacturacion). */
     empresaId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
     /** Nombre de la empresa copiado al momento de emitir (para búsqueda y filtro). */

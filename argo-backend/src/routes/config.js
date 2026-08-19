@@ -12,6 +12,8 @@ const contratoCapCfgCtrl = require('../controllers/configContratoCapController')
 const alertasCfgCtrl = require('../controllers/configAlertasController');
 const paginasInfCtrl = require('../controllers/configPaginasInformesController');
 const servAdicCtrl = require('../controllers/configServiciosAdicionalesController');
+const gestEmpCtrl = require('../controllers/configGestoresEmpresasController');
+const envioCorreosAlumnoCtrl = require('../controllers/configEnvioCorreosAlumnoController');
 const upload = require('../middleware/upload');
 const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
 
@@ -87,6 +89,16 @@ router.put('/recibo', requirePermiso('config.recibos'), ctrl.actualizarRecibo);
 
 router.get('/servicios-adicionales', requirePermiso('config.recibos'), servAdicCtrl.obtener);
 router.put('/servicios-adicionales', requirePermiso('config.recibos'), servAdicCtrl.actualizar);
+
+router.get('/gestores-empresas', requireAuth, gestEmpCtrl.obtener);
+router.put('/gestores-empresas', requirePermiso('config.recibos', 'config.facturacion'), gestEmpCtrl.actualizar);
+
+router.get('/envio-correos-alumno', requireAuth, envioCorreosAlumnoCtrl.obtener);
+router.put(
+  '/envio-correos-alumno',
+  requirePermiso('config.recibos', 'config.certificados', 'config.alertas'),
+  envioCorreosAlumnoCtrl.actualizar,
+);
 router.get(
   '/servicios-adicionales/preview-matricula',
   requireAuth,

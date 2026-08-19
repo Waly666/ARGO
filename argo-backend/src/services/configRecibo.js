@@ -1,17 +1,49 @@
 const Config = require('../models/Config');
 const Sede = require('../models/Sede');
+const { models: cat } = require('../models/catalogos');
 const { normalizarFormatoComprobante, FORMATOS } = require('./comprobanteFormato');
 const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
 
-/** Resuelve urlLogo (ruta relativa): primero el doc recibo, si no el aula_virtual. */
+/** Resuelve urlLogo (ruta relativa): Config Empresa / aula virtual tiene prioridad sobre recibo legado. */
 async function resolverUrlLogoRelativa(urlLogoRecibo) {
-  if (String(urlLogoRecibo || '').trim()) return String(urlLogoRecibo).trim();
   try {
     const aula = await Config.findOne({ clave: 'aula_virtual' }).lean();
-    return String(aula?.urlLogo || '').trim() || '';
+    const logoAula = String(aula?.urlLogo || '').trim();
+    if (logoAula) return logoAula;
   } catch {
-    return '';
+    /* ignore */
   }
+  return String(urlLogoRecibo || '').trim() || '';
+}
+
+function padMunicipioDian(cod) {
+  const s = String(cod || '').replace(/\D/g, '');
+  if (!s) return '';
+  return s.padStart(5, '0');
+}
+
+/** Ciudad y departamento oficiales desde el código municipio DIAN (Config → Empresa → datos fiscales). */
+async function resolverUbicacionDesdeMunicipioDian() {
+  try {
+    const fact = await Config.findOne({ clave: 'facturacion' }).lean();
+    const cod = padMunicipioDian(fact?.emisorMunicipioCodigo);
+    if (!cod) return null;
+    const row = await cat.divipola.findOne({ codMunicipio: cod }).lean();
+    if (!row) return null;
+    return {
+      ciudad: String(row.nombreMunicipio || '').trim(),
+      departamento: String(row.nombreDepto || '').trim(),
+      codMunicipio: cod,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Mantiene recibo.urlLogo alineado al logo institucional (subida desde Config → Empresa). */
+async function sincronizarLogoRecibo(urlLogo) {
+  const rel = String(urlLogo ?? '').trim();
+  await Config.updateOne({ clave: CLAVE }, { $set: { urlLogo: rel } }, { upsert: false });
 }
 
 const CLAVE = 'recibo';
@@ -171,15 +203,28 @@ async function cargarGlobalRecibo() {
  * Dirección, ciudad, teléfono y departamento: primero la config global;
  * solo si están vacíos allí se toman de la sede.
  */
+async function aplicarUbicacionDian(config) {
+  const ubic = await resolverUbicacionDesdeMunicipioDian();
+  if (!ubic?.ciudad) return config;
+  return {
+    ...config,
+    ciudad: ubic.ciudad,
+    departamento: ubic.departamento || config.departamento || '',
+    municipioDianCodigo: ubic.codMunicipio,
+  };
+}
+
 async function obtenerConfigRecibo(idSede = null) {
   const global = await asegurarGlobalRecibo();
   const urlLogoRel = await resolverUrlLogoRelativa(global.urlLogo);
   const urlLogoDataUrl = urlLogoRel ? uploadFileToDataUrl(urlLogoRel) : null;
-  const conLogo = { ...global, urlLogo: urlLogoRel, urlLogoDataUrl: urlLogoDataUrl || null };
+  let conLogo = { ...global, urlLogo: urlLogoRel, urlLogoDataUrl: urlLogoDataUrl || null };
   const sid = String(idSede || '').trim();
-  if (!sid) return conLogo;
-  const sede = await Sede.findOne({ idSede: sid }).lean();
-  return aplicarEncabezadoSede(conLogo, sede);
+  if (sid) {
+    const sede = await Sede.findOne({ idSede: sid }).lean();
+    conLogo = aplicarEncabezadoSede(conLogo, sede);
+  }
+  return aplicarUbicacionDian(conLogo);
 }
 
 /** Compatibilidad: encabezados de sede se leen del catálogo Sede, no de config por sede. */
@@ -247,6 +292,8 @@ module.exports = {
   claveRecibo,
   normalizar,
   aplicarEncabezadoSede,
+  resolverUbicacionDesdeMunicipioDian,
+  sincronizarLogoRecibo,
   obtenerConfigRecibo,
   sincronizarEncabezadoReciboDesdeSede,
   armarCodigoComprobante,

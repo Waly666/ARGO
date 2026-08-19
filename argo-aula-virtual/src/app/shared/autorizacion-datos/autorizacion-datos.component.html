@@ -25,7 +25,7 @@
         </button>
       </header>
       <div class="auth-datos-modal__body">
-        @for (parrafo of texto.split('\n\n'); track $index) {
+        @for (parrafo of texto().split('\n\n'); track $index) {
           <p>{{ parrafo }}</p>
         }
       </div>

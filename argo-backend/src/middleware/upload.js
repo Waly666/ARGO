@@ -154,6 +154,7 @@ module.exports = {
   egresos: build('egresos'),
   ingresos: build('ingresos'),
   empleados: build('empleados'),
+  gestores: build('gestores', 5),
   programasVirtual: build('programas-virtual'),
   aulaVirtualMateriales: build('aula-virtual-materiales'),
   aulaVirtualZip: buildZip('aula-virtual-zip'),

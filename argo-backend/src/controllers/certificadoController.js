@@ -23,6 +23,7 @@ const {
   TIPOS_LABEL,
 } = require('../services/clasificacionCertificado');
 const { resolverPlantillaImpresion } = require('../services/plantillaCertificado');
+const { referidorCertificadoDesdeLiquidacion } = require('../services/referidorCertificado');
 
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
 const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
@@ -208,6 +209,7 @@ exports.crear = async (req, res, next) => {
 
     const codigoCert = await siguienteCodigoCertificado();
     const encabezado = encabezadoCurso(prog);
+    const referidorSnap = await referidorCertificadoDesdeLiquidacion(liq);
 
     // Empresa del alumno al momento de emitir
     let empresaId   = null;
@@ -238,6 +240,7 @@ exports.crear = async (req, res, next) => {
       fechaVencimiento: fechaVe,
       empresaId,
       empresaNombre,
+      ...referidorSnap,
     });
     const { programarEnvioCertificadoPorCorreo } = require('../services/certificadoEmail');
     programarEnvioCertificadoPorCorreo(cert._id, { req });

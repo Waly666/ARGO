@@ -97,6 +97,13 @@ export interface AlumnoDto {
   alertaPago?: string | null;
   alertaPagoFrecuencia?: 'quincenal' | 'mensual' | '' | null;
   empresaNombre?: string | null;
+  /** Manejo gestor/empresa que trae al alumno (tarifas especiales al matricular). */
+  manejoGestorEmpresa?: boolean;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | '' | null;
+  gestorId?: string | null;
+  gestorNombre?: string | null;
+  referidorEmpresaId?: string | null;
+  referidorEmpresaNombre?: string | null;
 }
 
 export interface MovimientoAlarmaHoy {
@@ -466,6 +473,10 @@ export class AlumnoService {
       if (v === undefined || v === null || k === '_id') return;
       if (k === 'alertaPago' || k === 'alertaPagoFrecuencia') {
         form.append(k, String(v ?? ''));
+        return;
+      }
+      if (k === 'manejoGestorEmpresa') {
+        form.append(k, v === true ? 'true' : 'false');
         return;
       }
       if (k === 'numDoc') {

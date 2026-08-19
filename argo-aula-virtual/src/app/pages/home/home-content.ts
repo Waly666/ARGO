@@ -1,4 +1,11 @@
-/** Textos base inspirados en finstruvial.edu.co — personalizables vía API (nombre CEA, teléfono, dirección). */
+/** Textos base del portal — personalizables vía API (nombre CEA, teléfono, dirección). */
+
+import {
+  DEFAULT_APK_NOMBRE,
+  DEFAULT_APK_URL,
+  DEFAULT_CEA_CORTO,
+  DEFAULT_CEA_NOMBRE,
+} from '../../core/portal-brand-defaults';
 
 export const OFERTAS = [
   {
@@ -106,61 +113,17 @@ export const FAQ_CURSOS = [
 ];
 
 export const SERVICIOS_EMPRESA = [
-  {
-    icon: '🛣️',
-    title: 'Planes de manejo de tránsito',
-    url: 'https://finstruvial.com.co/planes-de-manejo-de-transito/',
-  },
-  {
-    icon: '📋',
-    title: 'Planes estratégicos de seguridad vial',
-    url: 'https://finstruvial.com.co/planes-estrategicos-de-seguridad-vial/',
-  },
-  {
-    icon: '🏙️',
-    title: 'Planes locales de seguridad vial',
-    url: 'https://finstruvial.com.co/plan-local-de-seguridad-vial/',
-  },
-  {
-    icon: '🚲',
-    title: 'Planes de movilidad sostenible y segura',
-    url: 'https://finstruvial.com.co/planes-de-movilidad-sostenible-y-segura/',
-  },
-  {
-    icon: '👷',
-    title: 'Competencias laborales',
-    url: 'https://finstruvial.com.co/competencias-laborales/',
-  },
-  {
-    icon: '🚗',
-    title: 'Sensibilización a conductores',
-    url: 'https://finstruvial.com.co/sensibilizacion-a-conductores/',
-  },
-  {
-    icon: '📖',
-    title: 'Actualización normativa',
-    url: 'https://finstruvial.com.co/actualizacion-normativa/',
-  },
-  {
-    icon: '🎯',
-    title: 'Actividades experienciales',
-    url: 'https://finstruvial.com.co/actividades-experienciales/',
-  },
-  {
-    icon: '📈',
-    title: 'Análisis de accidentalidad vial — PERIDATA',
-    url: 'https://finstruvial.com.co/nuestros-servicios/mapas/',
-  },
-  {
-    icon: '📚',
-    title: 'Publicaciones',
-    url: 'https://finstruvial.com.co/publicaciones/',
-  },
-  {
-    icon: '🧰',
-    title: 'Herramientas educativas',
-    url: 'https://finstruvial.com.co/herramientas-educativas-y-tecnologicas/',
-  },
+  { icon: '🏍️', title: 'Licencia categoría A2 (motos)', url: '/cursos' },
+  { icon: '🚗', title: 'Licencia categoría B1 (particular)', url: '/cursos' },
+  { icon: '🚌', title: 'Licencias C1, C2 y C3', url: '/cursos' },
+  { icon: '🛡️', title: 'Manejo defensivo', url: '/cursos' },
+  { icon: '🔧', title: 'Mecánica básica', url: '/cursos' },
+  { icon: '⛑️', title: 'Primeros auxilios en conducción', url: '/cursos' },
+  { icon: '📋', title: 'Refrendar licencia de conducción', url: '/fundacion' },
+  { icon: '💻', title: 'Cursos virtuales de seguridad vial', url: '/cursos' },
+  { icon: '🎓', title: 'Programas de capacitación', url: '/cursos' },
+  { icon: '📜', title: 'Consulta de certificados', url: '/consulta-certificados' },
+  { icon: '📱', title: 'Aula virtual móvil', url: '/aula' },
 ];
 
 export const VALORES = [
@@ -265,19 +228,19 @@ export const APP_MOBILE = {
   ],
   btnDescargar: 'Descargar APK para Android',
   notaInstalacion: 'Android 8.0 o superior · Instalación manual del archivo APK',
-  apkUrl: '/apk/aula-virtual-finstruvial.apk',
-  apkNombre: 'aula-virtual-finstruvial.apk',
+  apkUrl: DEFAULT_APK_URL,
+  apkNombre: DEFAULT_APK_NOMBRE,
 };
 
 export const HERO_DEFAULT = {
-  eyebrow: 'Fundación Finstruvial',
-  titulo: 'Cursos y programas virtuales para formar conductores y equipos más seguros.',
+  eyebrow: DEFAULT_CEA_NOMBRE,
+  titulo: 'Cursos de conducción y licencias para conductores más seguros.',
   subtitulo:
-    'Matricúlese en el aula virtual, avance a su ritmo y certifique su capacitación en seguridad vial con programas diseñados para usted.',
+    'Matricúlese en el aula virtual, avance a su ritmo y certifique su capacitación en conducción y seguridad vial con programas diseñados para usted.',
 };
 
-export const ACERCA_DEFAULT = `La FUNDACIÓN FINSTRUVIAL lleva la seguridad vial en el alma.
+export const ACERCA_DEFAULT = `Nuestro ${DEFAULT_CEA_NOMBRE} lleva la formación vial en el corazón de su servicio.
 
-Somos tu mejor opción en formación, consultoría y campañas de seguridad vial para empresas, instituciones educativas y el sector público.
+Somos su mejor opción en cursos de conducción, licencias y capacitación en seguridad vial para conductores, empresas e instituciones.
 
-Más de 28 años de experiencia práctica respaldan nuestro compromiso: educar para salvar vidas.`;
+Formamos conductores responsables con calidad certificada y acompañamiento profesional.`;

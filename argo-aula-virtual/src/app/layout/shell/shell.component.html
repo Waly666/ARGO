@@ -2,7 +2,7 @@
   <div class="container topbar-inner">
     <a class="brand" routerLink="/" (click)="cerrarMenu()">
       @if (logoUrl(); as logo) {
-        <img [src]="logo" [alt]="config()?.nombreCea || 'CEA'" class="brand-logo" />
+        <img [src]="logo" [alt]="config()?.nombreCea || 'CEA'" class="brand-logo" width="40" height="40" decoding="async" />
       }
       <span class="brand-name">{{ brandMarca() }}</span>
     </a>
@@ -99,7 +99,7 @@
     <div class="site-footer__brand">
       <a class="site-footer__logo-link" routerLink="/">
         @if (logoUrl(); as logo) {
-          <img [src]="logo" [alt]="nombreCea()" class="site-footer__logo" />
+          <img [src]="logo" [alt]="nombreCea()" class="site-footer__logo" width="40" height="40" decoding="async" />
         }
         <span class="site-footer__brand-line">
           <span class="site-footer__brand-name">{{ brandMarca() }}</span>

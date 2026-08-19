@@ -30,11 +30,32 @@ function normalizarPaginas(raw, navFallback = {}) {
   return out;
 }
 
+function normalizarHeroEstilo(src, tema) {
+  const raw = str(src?.heroEstilo);
+  if (raw === 'servial-mesh' || raw === 'starfield') return raw;
+  // Migración: plantillas Servial / PICO publicadas antes de persistir heroEstilo
+  if (
+    tema.colorAcento.toLowerCase() === '#ffd200' ||
+    tema.colorAcento.toLowerCase() === '#aee929' ||
+    tema.colorAcento.toLowerCase() === '#d9d314'
+  ) {
+    const fuente = tema.fuente.toLowerCase();
+    const oscuro = tema.colorPrimarioOscuro.toLowerCase();
+    if (
+      (fuente.includes('poppins') || fuente.includes('figtree')) &&
+      (oscuro === '#000000' || oscuro === '#04060c' || oscuro === '#0a0a0a')
+    ) {
+      return 'servial-mesh';
+    }
+  }
+  return SITE_DEFAULTS.tema.heroEstilo;
+}
+
 function normalizarTema(raw) {
   const d = SITE_DEFAULTS.tema;
   const src = raw && typeof raw === 'object' ? raw : {};
   const urlHero = str(src.urlHero);
-  return {
+  const tema = {
     colorPrimario: hexColor(src.colorPrimario, d.colorPrimario),
     colorPrimarioOscuro: hexColor(src.colorPrimarioOscuro, d.colorPrimarioOscuro),
     colorAcento: hexColor(src.colorAcento, d.colorAcento),
@@ -43,8 +64,13 @@ function normalizarTema(raw) {
     colorTexto: hexColor(src.colorTexto, d.colorTexto),
     colorTextoSecundario: hexColor(src.colorTextoSecundario, d.colorTextoSecundario),
     fuente: str(src.fuente, d.fuente) || d.fuente,
+    fuenteTitulos: str(src.fuenteTitulos, d.fuenteTitulos),
     urlHero: urlHero,
     urlHeroAbsoluta: urlHero ? publicUploadUrl(urlHero) || urlHero : '',
+  };
+  return {
+    ...tema,
+    heroEstilo: normalizarHeroEstilo(src, tema),
   };
 }
 

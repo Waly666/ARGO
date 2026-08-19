@@ -35,6 +35,12 @@ import { ConfigRecibo, ConfigService } from '../../../core/services/config.servi
 
 import { ClienteService } from '../../../core/services/cliente.service';
 
+import { GestorService } from '../../../core/services/gestor.service';
+
+import { ConfigGestoresEmpresasService } from '../../../core/services/config-gestores-empresas.service';
+
+import { ArgoSwitchComponent } from '../../../shared/argo-switch/argo-switch.component';
+
 import { JornadaCapService } from '../../../core/services/jornada-cap.service';
 
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
@@ -139,6 +145,7 @@ import type { CedulaMrzData } from '../cedula-mrz.util';
     ArgoDateInputComponent,
     AlumnoJornadaQrPanelComponent,
     CelularInputComponent,
+    ArgoSwitchComponent,
     CedulaPdf417ScannerComponent,
     CedulaMrzScannerComponent,
   ],
@@ -266,7 +273,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   /** Empresa — mismo campo para regular, virtual y jornadas (catálogo clientes). */
   private clienteSvc = inject(ClienteService);
+  private gestorSvc = inject(GestorService);
+  private configGestoresEmpresasSvc = inject(ConfigGestoresEmpresasService);
   private jornadaCapSvc = inject(JornadaCapService);
+
+  gestoresEmpresasActivo = signal(false);
 
   buscarEmpresasRemoto = (q: string) =>
     this.clienteSvc.listar(q.trim()).pipe(
@@ -302,6 +313,84 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.form.update((f) => ({ ...f, empresaId: null, empresaNombre: null }));
     this.formDirty.set(true);
     this.lastContratoResolverKey = '';
+  }
+
+  buscarGestoresRemoto = (q: string) =>
+    this.gestorSvc.listar(q.trim()).pipe(
+      map((rows) =>
+        (rows || []).map((g) => {
+          const nombre = [g.nombres, g.apellidos].filter(Boolean).join(' ').trim();
+          const label = g.seudonimo || nombre || g.numero || '—';
+          return {
+            value: String(g._id || ''),
+            label,
+            hint: g.numero ? `Doc: ${g.numero}` : undefined,
+          } satisfies EnumBuscarOption;
+        }),
+      ),
+    );
+
+  buscarReferidorEmpresasRemoto = (q: string) => this.buscarEmpresasRemoto(q);
+
+  onManejoGestorEmpresaChange(activo: boolean): void {
+    this.form.update((f) => ({
+      ...f,
+      manejoGestorEmpresa: activo,
+      ...(activo
+        ? {}
+        : {
+            tipoReferidorComercial: null,
+            gestorId: null,
+            gestorNombre: null,
+            referidorEmpresaId: null,
+            referidorEmpresaNombre: null,
+          }),
+    }));
+    this.formDirty.set(true);
+  }
+
+  setTipoReferidorComercial(tipo: 'gestor' | 'empresa'): void {
+    this.form.update((f) => ({
+      ...f,
+      tipoReferidorComercial: tipo,
+      ...(tipo === 'gestor'
+        ? { referidorEmpresaId: null, referidorEmpresaNombre: null }
+        : { gestorId: null, gestorNombre: null }),
+    }));
+    this.limpiarCampoObligatorio('tipoReferidorComercial');
+    this.limpiarCampoObligatorio('gestorId');
+    this.limpiarCampoObligatorio('referidorEmpresaId');
+    this.formDirty.set(true);
+  }
+
+  onGestorPick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('gestorId');
+    this.form.update((f) => ({
+      ...f,
+      gestorId: String(opt.value || '').trim() || null,
+      gestorNombre: String(opt.label || '').trim() || null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onGestorLimpiar(): void {
+    this.form.update((f) => ({ ...f, gestorId: null, gestorNombre: null }));
+    this.formDirty.set(true);
+  }
+
+  onReferidorEmpresaPick(opt: EnumBuscarOption): void {
+    this.limpiarCampoObligatorio('referidorEmpresaId');
+    this.form.update((f) => ({
+      ...f,
+      referidorEmpresaId: String(opt.value || '').trim() || null,
+      referidorEmpresaNombre: String(opt.label || '').trim() || null,
+    }));
+    this.formDirty.set(true);
+  }
+
+  onReferidorEmpresaLimpiar(): void {
+    this.form.update((f) => ({ ...f, referidorEmpresaId: null, referidorEmpresaNombre: null }));
+    this.formDirty.set(true);
   }
 
   /** Firma del último estado guardado (o vacío en alumno nuevo) */
@@ -700,6 +789,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.configSvc.obtenerRecibo().subscribe({
       next: (c) => this.configRecibo.set(c),
       error: () => this.configRecibo.set(null),
+    });
+
+    this.configGestoresEmpresasSvc.obtener().subscribe({
+      next: (c) => this.gestoresEmpresasActivo.set(!!c?.activo),
+      error: () => this.gestoresEmpresasActivo.set(false),
     });
 
   }
@@ -1505,6 +1599,20 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       }
     }
 
+    if (this.gestoresEmpresasActivo() && !this.esAlumnoJornada() && f.manejoGestorEmpresa) {
+      const ref: string[] = [];
+      const tipo = String(f.tipoReferidorComercial || '').trim();
+      falta(tipo !== 'gestor' && tipo !== 'empresa', 'tipoReferidorComercial', 'tipo (gestor o empresa)', ref);
+      if (tipo === 'gestor') {
+        falta(vacio(f.gestorId), 'gestorId', 'gestor', ref);
+      } else if (tipo === 'empresa') {
+        falta(vacio(f.referidorEmpresaId), 'referidorEmpresaId', 'empresa referidora', ref);
+      }
+      if (ref.length) {
+        faltantes.push({ seccion: 'Gestor / empresa', campos: ref });
+      }
+    }
+
     if (identificacion.length) faltantes.push({ seccion: 'Identificación', campos: identificacion });
     if (personales.length) faltantes.push({ seccion: 'Datos personales', campos: personales });
     if (contacto.length) faltantes.push({ seccion: 'Contacto y ubicación', campos: contacto });
@@ -1822,6 +1930,28 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       empresaId: f.empresaId ?? null,
 
+      ...(!esJornada
+        ? {
+            manejoGestorEmpresa: f.manejoGestorEmpresa === true,
+            tipoReferidorComercial:
+              f.manejoGestorEmpresa && f.tipoReferidorComercial ? f.tipoReferidorComercial : null,
+            gestorId:
+              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'gestor' ? f.gestorId ?? null : null,
+            gestorNombre:
+              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'gestor'
+                ? f.gestorNombre ?? null
+                : null,
+            referidorEmpresaId:
+              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'empresa'
+                ? f.referidorEmpresaId ?? null
+                : null,
+            referidorEmpresaNombre:
+              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'empresa'
+                ? f.referidorEmpresaNombre ?? null
+                : null,
+          }
+        : {}),
+
       alertaPagoFrecuencia: f.alertaPagoFrecuencia || '',
       alertaPago: f.alertaPago || '',
 
@@ -2023,6 +2153,17 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       empresaId: raw['empresaId'] ? String(raw['empresaId']) : null,
       empresaNombre: raw['empresaNombre'] ? String(raw['empresaNombre']) : null,
+      manejoGestorEmpresa: raw['manejoGestorEmpresa'] === true,
+      tipoReferidorComercial:
+        raw['tipoReferidorComercial'] === 'gestor' || raw['tipoReferidorComercial'] === 'empresa'
+          ? raw['tipoReferidorComercial']
+          : null,
+      gestorId: raw['gestorId'] ? String(raw['gestorId']) : null,
+      gestorNombre: raw['gestorNombre'] ? String(raw['gestorNombre']) : null,
+      referidorEmpresaId: raw['referidorEmpresaId'] ? String(raw['referidorEmpresaId']) : null,
+      referidorEmpresaNombre: raw['referidorEmpresaNombre']
+        ? String(raw['referidorEmpresaNombre'])
+        : null,
 
       origenJornadaCap: raw['origenJornadaCap']
         ? String(raw['origenJornadaCap']).trim().toLowerCase()
@@ -2154,6 +2295,13 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
       alertaPagoFrecuencia: '',
       alertaPago: null,
+
+      manejoGestorEmpresa: false,
+      tipoReferidorComercial: null,
+      gestorId: null,
+      gestorNombre: null,
+      referidorEmpresaId: null,
+      referidorEmpresaNombre: null,
 
     };
 

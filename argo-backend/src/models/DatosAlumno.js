@@ -62,6 +62,15 @@ const DatosAlumnoSchema = new mongoose.Schema(
     urlLicencia: { type: String, trim: true },
     /** Empresa de transporte u organización a la que pertenece el alumno (ref a clientesFacturacion). */
     empresaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
+    /** Activa tarifas gestor/empresa al matricular (requiere config global). */
+    manejoGestorEmpresa: { type: Boolean, default: false, index: true },
+    /** gestor | empresa — quién trajo al alumno a la escuela. */
+    tipoReferidorComercial: { type: String, trim: true, default: null },
+    gestorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gestor', default: null, index: true },
+    gestorNombre: { type: String, trim: true, default: null },
+    /** Empresa que trae alumnos (distinto de empresaId de transporte/jornada). */
+    referidorEmpresaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente', default: null, index: true },
+    referidorEmpresaNombre: { type: String, trim: true, default: null },
     /**
      * Origen en jornadas de capacitación: colegio (institución educativa) | estamento | empresa | operativo.
      * Distinto de `origen` (SISTEMA|WEB).

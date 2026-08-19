@@ -23,7 +23,7 @@ const MODULOS_RESET = [
   {
     id: 'contable',
     etiqueta: 'Contable y caja',
-    descripcion: 'Ingresos, egresos, sesiones y cierres de caja, clientes/terceros de facturación, FE y pagos en línea.',
+    descripcion: 'Ingresos, egresos, sesiones y cierres de caja, clientes/terceros de facturación, gestores comerciales, FE y pagos en línea.',
     colecciones: [
       'ingresos',
       'egresos',
@@ -31,6 +31,7 @@ const MODULOS_RESET = [
       'cajaCierresGenerales',
       'cajaDescuadres',
       'clientesFacturacion',
+      'gestores',
       'tercerosCaja',
       'facturasElectronicas',
       'notasCreditoElectronicas',

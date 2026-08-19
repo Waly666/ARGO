@@ -715,6 +715,13 @@
   color: var(--text);
 }
 
+.psb-typography {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
 .psb-preview-theme {
   display: flex;
   flex-direction: column;
@@ -728,6 +735,30 @@
 
   &__label {
     font-size: 0.78rem;
+    color: var(--av-dim, rgba(255, 255, 255, 0.85));
+  }
+
+  &__fonts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--av-dim, #9fb0d0) 25%, transparent);
+  }
+
+  &__font-display {
+    margin: 0;
+    font-family: var(--av-font-display);
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--av-text);
+  }
+
+  &__font-body {
+    margin: 0;
+    font-family: var(--av-font-sans);
+    font-size: 0.88rem;
     color: var(--av-dim, rgba(255, 255, 255, 0.85));
   }
 

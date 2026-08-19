@@ -15,6 +15,7 @@ const {
 } = require('./clasificacionCertificado');
 const { resolverPlantillaImpresion } = require('./plantillaCertificado');
 const { esProgramaJornadasCap } = require('./jornadaCapacitacion');
+const { referidorCertificadoDesdeLiquidacion } = require('./referidorCertificado');
 
 function num(v) {
   if (v == null) return 0;
@@ -127,6 +128,7 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
 
   const codigoCert = await siguienteCodigoCertificado();
   const encabezado = encabezadoCurso(prog);
+  const referidorSnap = await referidorCertificadoDesdeLiquidacion(liq);
 
   const cert = await Certificado.create({
     numDoc,
@@ -144,6 +146,7 @@ async function intentarCertificadoPagoAuto({ numDoc: numDocRaw, liq, saldo } = {
     fechaVencimiento: fechaVe,
     empresaId,
     empresaNombre,
+    ...referidorSnap,
   });
 
   const { programarEnvioCertificadoPorCorreo } = require('./certificadoEmail');

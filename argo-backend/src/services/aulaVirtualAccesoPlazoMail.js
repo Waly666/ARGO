@@ -9,7 +9,7 @@ function resolverBasePortal() {
 
 async function mailFromHeader() {
   const aula = await obtenerConfigAula().catch(() => null);
-  const cea = String(aula?.nombreEmpresa || 'Finstruvial').trim() || 'Finstruvial';
+  const cea = String(aula?.nombreEmpresa || 'CEA').trim() || 'CEA';
   const fromCustom = aula?.emailConfirmacion?.trim() || null;
   return fromCustom ? `"${cea}" <${fromCustom}>` : undefined;
 }
@@ -29,7 +29,7 @@ async function enviarAvisoVencimientoAcceso({
   fechaVencimiento,
 }) {
   if (!email || !smtpConfigured()) return { enviado: false, motivo: 'smtp_no_configurado' };
-  const cea = String((await obtenerConfigAula().catch(() => null))?.nombreEmpresa || 'Finstruvial').trim();
+  const cea = String((await obtenerConfigAula().catch(() => null))?.nombreEmpresa || 'CEA').trim();
   const base = resolverBasePortal();
   const loginUrl = base ? `${base}/login` : '';
   const dias = Math.max(0, Number(diasRestantes) || 0);
@@ -67,7 +67,7 @@ async function enviarAvisoVencimientoAcceso({
 
 async function enviarAccesoExpirado({ email, nombreAlumno, nombreCurso }) {
   if (!email || !smtpConfigured()) return { enviado: false, motivo: 'smtp_no_configurado' };
-  const cea = String((await obtenerConfigAula().catch(() => null))?.nombreEmpresa || 'Finstruvial').trim();
+  const cea = String((await obtenerConfigAula().catch(() => null))?.nombreEmpresa || 'CEA').trim();
   const base = resolverBasePortal();
   const loginUrl = base ? `${base}/cursos` : '';
   const subject = `${cea} — Acceso expirado al curso «${nombreCurso}»`;

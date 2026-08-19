@@ -127,6 +127,14 @@
   background: transparent;
   box-shadow: none;
 
+  > .caja-tabs-sep {
+    width: 1px;
+    height: 1.35rem;
+    margin: 0 0.15rem;
+    background: rgba(120, 170, 255, 0.28);
+    flex-shrink: 0;
+  }
+
   > a.caja-tab,
   > a,
   > .ficha-btn,

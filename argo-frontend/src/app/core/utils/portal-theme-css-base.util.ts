@@ -1,3 +1,5 @@
+import { portalFontBody, portalFontDisplay } from './portal-fonts.util';
+
 /** Variables CSS derivadas del tema del portal (sitio público). */
 
 export interface PortalTemaLike {
@@ -9,9 +11,14 @@ export interface PortalTemaLike {
   colorTexto?: string;
   colorTextoSecundario?: string;
   fuente?: string;
+  fuenteTitulos?: string;
+  heroEstilo?: 'starfield' | 'servial-mesh';
 }
 
-export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente'>> & { fuente: string } = {
+export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | 'fuenteTitulos'>> & {
+  fuente: string;
+  fuenteTitulos?: string;
+} = {
   colorPrimario: '#3b82f6',
   colorPrimarioOscuro: '#1d4ed8',
   colorAcento: '#22d3ee',
@@ -20,6 +27,8 @@ export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente'>> &
   colorTexto: '#eef3ff',
   colorTextoSecundario: '#9fb0d0',
   fuente: 'Plus Jakarta Sans',
+  fuenteTitulos: '',
+  heroEstilo: 'starfield',
 };
 
 /** Derivados idénticos al CSS publicado en https://finstruvial.edu.co/ */
@@ -138,7 +147,10 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
   const text = t.colorTexto;
   const dim = t.colorTextoSecundario;
   const light = isLightColor(bg);
-  const fontStack = `'${t.fuente}', system-ui, sans-serif`;
+  const fontBody = portalFontBody(t);
+  const fontDisplay = portalFontDisplay(t);
+  const fontStack = `'${fontBody}', system-ui, sans-serif`;
+  const displayStack = `'${fontDisplay}', system-ui, sans-serif`;
   const surface2 = mixHex(surface, primaryDark, 0.28);
   const pageHeroStart = darkenHex(bg, 0.35);
   const footerEnd = darkenHex(bg, 0.55);
@@ -169,7 +181,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     '--av-border': withAlpha(dim, 0.35),
     '--av-border-strong': withAlpha(accent, 0.35),
     '--av-font-sans': fontStack,
-    '--av-font-display': fontStack,
+    '--av-font-display': displayStack,
 
     '--av-starfield-top': starfieldTop,
     '--av-starfield-mid': light ? bg : starfieldMid,
@@ -291,6 +303,21 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     `radial-gradient(circle, ${withAlpha(accent, 0.16)} 0%, ${withAlpha(accent, 0.05)} 38%, transparent 68%)`;
   vars['--av-hero-bg'] =
     `radial-gradient(ellipse 85% 65% at 18% 42%, ${vars['--av-starfield-glow']}, transparent 68%), linear-gradient(135deg, ${vars['--av-hero-grad-start']} 0%, ${vars['--av-hero-grad-end']} 78%)`;
+
+  if (t.heroEstilo === 'servial-mesh') {
+    const picoGreen = '#AEE929';
+    const picoYellow = accent;
+    vars['--av-nav-link'] = picoGreen;
+    vars['--av-nav-link-hover'] = '#ffffff';
+    vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
+    vars['--av-topbar-border'] = 'rgba(174, 233, 41, 0.16)';
+    vars['--av-inst-bar-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${surface} 100%)`;
+    vars['--av-hero-bg'] = 'transparent';
+    vars['--av-hero-title-shimmer'] = picoGreen;
+    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
+    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
+    vars['--av-starfield-glow'] = withAlpha(picoGreen, 0.2);
+  }
 
   if (isFinstruvialTema(t)) {
     return { ...vars, ...FINSTRUVIAL_DERIVED_CSS_VARS };

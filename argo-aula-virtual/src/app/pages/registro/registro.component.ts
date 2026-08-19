@@ -87,6 +87,8 @@ export class RegistroComponent implements OnInit {
   turnstileSiteKey = signal('');
   turnstileToken = signal('');
   aceptaAutorizacion = signal(false);
+  nombreEmpresa = signal('');
+  correoEmpresa = signal('');
 
   ngOnInit() {
     this.catalogs.tiposDoc().subscribe({
@@ -107,6 +109,8 @@ export class RegistroComponent implements OnInit {
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
         this.registroAbierto.set(c.registroAbierto !== false);
         this.emailVerificacion.set(!!c.emailVerificacionRegistro);
+        this.nombreEmpresa.set(c.nombreCea || '');
+        this.correoEmpresa.set(c.email || '');
         this.seo.applyRegistro(c);
       },
       error: () => this.seo.applyRegistro(null),

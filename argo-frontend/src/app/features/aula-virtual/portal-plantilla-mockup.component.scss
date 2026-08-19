@@ -151,6 +151,44 @@
   color: color-mix(in srgb, var(--ppm-bg) 15%, #fff);
 }
 
+.ppm-hero--servial {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(105deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.25)),
+    linear-gradient(135deg, #333, #111);
+
+  .ppm-hero__copy h3 {
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+
+  .ppm-hero__copy p {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .ppm-hero__art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-height: 100%;
+    opacity: 1;
+  }
+
+  .ppm-hero__mesh {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(255, 255, 255, 0.9) 1px, transparent 1.2px),
+      linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    background-size: 18px 18px, 36px 36px, 36px 36px;
+    opacity: 0.45;
+    mix-blend-mode: screen;
+  }
+}
+
 .ppm-hero {
   display: flex;
   align-items: stretch;

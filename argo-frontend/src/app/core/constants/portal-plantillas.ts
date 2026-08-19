@@ -1,5 +1,6 @@
 import { PortalDisenoPack } from '../utils/portal-diseno.helpers';
 import { PORTAL_HOME_SECCIONES_ORDEN, PortalSiteConfig } from './portal-site-defaults';
+import { PORTAL_LANDING_DEFAULTS, PortalLandingConfig } from './portal-landing-defaults';
 import { PORTAL_TEMA_FINSTRUVIAL } from '../utils/portal-theme-css-base.util';
 import {
   PortalPlantilla,
@@ -36,6 +37,151 @@ interface PlantillaOpts {
   tema: PortalTemaPreset;
   secciones?: readonly string[];
   sinTiendaBlog?: boolean;
+  landing?: Partial<PortalLandingConfig>;
+  acercaDeHtml?: string;
+}
+
+function landingServial(): Partial<PortalLandingConfig> {
+  return {
+    instBarTag: 'Tránsito, transporte, movilidad y seguridad vial — Villavicencio, Meta',
+    quoteText:
+      'Prestamos servicios especializados en tránsito, transporte, movilidad y seguridad vial con calidad, amabilidad y eficiencia.',
+    quoteLabel: 'Contáctenos',
+    metaDescription:
+      'Servial Colombia: licencias de conducción, CEA, cursos libres y aula virtual con calidad certificada en Villavicencio, Meta.',
+    metaKeywords:
+      'Servial Colombia, licencia conducción, CEA, aula virtual, seguridad vial, Villavicencio, Meta',
+    hero: {
+      ctaPrincipal: 'Ingresar al aula virtual',
+      ctaSecundario: 'Consultar certificado',
+      mostrarBotonLlamar: true,
+      imagenAlt: 'Aprenda a conducir con seguridad y confianza — Servial Colombia',
+    },
+    infoCards: [
+      { icon: '📞', title: 'Llámenos', text: '321 303 9595', fuente: 'telefono' },
+      { icon: '📍', title: 'Visítenos', text: 'Calle 37B # 19A-65 B. Jordan', fuente: 'direccion' },
+      { icon: '🎓', title: 'CEA habilitado', text: 'Categorías A2, B1, C1, C2 y C3', fuente: 'texto' },
+    ],
+    ofertas: {
+      titulo: 'Capacitación integral en conducción y seguridad vial',
+      lead: 'Centro de Enseñanza Automovilística e Instituto de Educación para el Trabajo y el Desarrollo Humano.',
+      items: [
+        {
+          icon: '🚗',
+          title: 'Centro de Enseñanza Automovilística',
+          text: 'Licencias A2, B1, C1, C2 y C3 con instructores certificados y calidad TÜV Rheinland.',
+        },
+        {
+          icon: '🛣️',
+          title: 'Cursos libres',
+          text: 'Manejo defensivo, primeros auxilios, mercancías peligrosas y normas de tránsito.',
+        },
+        {
+          icon: '💼',
+          title: 'Consultoría y asesoría',
+          text: 'Tránsito, transporte, planes de seguridad vial y campañas educativas para empresas.',
+        },
+      ],
+    },
+    beneficios: {
+      kicker: 'Tu formación vial, más cerca',
+      titulo: 'Aprende a conducir con seguridad y confianza',
+      lead: 'Clases personalizadas, ruta paso a paso y acompañamiento hasta su licencia o certificación.',
+      items: [
+        { icon: '✓', title: 'Calidad certificada', text: 'Únicos con calidad certificada en formación vial.' },
+        { icon: '⏱', title: 'A tu ritmo', text: 'Cursos virtuales interactivos y horarios flexibles.' },
+        { icon: '👨‍🏫', title: 'Instructores expertos', text: 'Acompañamiento profesional en teoría y práctica.' },
+      ],
+    },
+    pasos: {
+      kicker: 'Cómo enseñamos',
+      titulo: 'Su ruta hacia la licencia y la certificación',
+      lead: 'Programas que combinan teoría, práctica y evaluación con enfoque en seguridad vial.',
+      items: [
+        {
+          paso: '1',
+          title: 'Elija su capacitación',
+          text: 'Explore licencias, cursos libres o programas técnicos para conductores profesionales.',
+        },
+        {
+          paso: '2',
+          title: 'Aprenda a su ritmo',
+          text: 'Videolecciones, documentación y acompañamiento en aula virtual o presencial.',
+        },
+        {
+          paso: '3',
+          title: 'Certifíquese',
+          text: 'Evalúe sus conocimientos y obtenga su certificado o avance en el trámite de licencia.',
+        },
+      ],
+    },
+    testimonios: {
+      kicker: 'Testimonios',
+      titulo: 'Conductores que confían en nosotros',
+      lead: 'Más de 2000 reseñas positivas de estudiantes y empresas del sector transportador.',
+      items: [
+        {
+          nombre: 'Sarah López',
+          rol: 'Conductora',
+          texto:
+            'El aula virtual me permitió aprender normas de tránsito y seguridad vial de forma clara. Hoy conduzco con más responsabilidad.',
+        },
+        {
+          nombre: 'José Parrado',
+          rol: 'Conductor de carga',
+          texto:
+            'La capacitación en manejo defensivo y mercancías peligrosas superó mis expectativas. Contenidos prácticos y muy profesionales.',
+        },
+      ],
+    },
+    faq: {
+      kicker: 'Preguntas frecuentes',
+      titulo: 'Resolvemos sus dudas',
+      lead: 'Información sobre licencias, cursos y el aula virtual.',
+      contactoTexto: '¿Necesita más información? Escríbanos o llámenos.',
+      items: [
+        {
+          pregunta: '¿Qué categorías de licencia puedo obtener?',
+          respuesta:
+            'En nuestro CEA puede tramitar las categorías A2 (moto), B1 (particular), C1, C2 y C3 (servicio público), según los requisitos del RUNT.',
+        },
+        {
+          pregunta: '¿Cómo accedo al aula virtual?',
+          respuesta:
+            'Regístrese en el portal, elija su curso y pulse «Matricularme». Con su usuario podrá ingresar al aula virtual desde cualquier dispositivo.',
+        },
+        {
+          pregunta: '¿Ofrecen cursos para transporte de carga?',
+          respuesta:
+            'Sí. Contamos con manejo defensivo, primeros auxilios, mercancías peligrosas, normas de tránsito y más, orientados al sector transportador.',
+        },
+      ],
+    },
+    cursos: {
+      kicker: 'Catálogo en línea',
+      titulo: 'Explore nuestros cursos y programas virtuales',
+      emptyTitulo: 'Próximamente más cursos',
+      emptyTexto: 'Estamos publicando nuevos programas de capacitación. Vuelva pronto.',
+    },
+    catalogo: {
+      tituloCursos: 'Cursos y programas — Servial Colombia',
+      tituloTienda: 'Inscripción a cursos',
+      leadCursos: 'Licencias, cursos libres y capacitación en seguridad vial para conductores y empresas.',
+      leadTienda: 'Matricúlese en línea y comience su formación hoy.',
+      placeholderBuscar: 'Buscar curso o programa…',
+    },
+    footer: {
+      ...PORTAL_LANDING_DEFAULTS.footer,
+      founded: 'Servial Colombia',
+    },
+    footerServicios: [
+      'Licencias de conducción',
+      'Cursos libres',
+      'Capacitación en seguridad vial',
+      'Consultoría en tránsito',
+      'Aula virtual',
+    ],
+  };
 }
 
 function crearPlantilla(
@@ -62,6 +208,8 @@ function crearPlantilla(
   const diseno: PortalDisenoPack = {
     heroTitulo: opts.heroTitulo,
     heroSubtitulo: opts.heroSubtitulo,
+    acercaDeHtml: opts.acercaDeHtml,
+    landing: opts.landing,
     site,
   };
   return { id, nombre, descripcion, familia, diseno };
@@ -71,8 +219,8 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
   // —— Clientes de referencia ——
   crearPlantilla(
     'finstruvial',
-    'Plantilla Finstruvial',
-    'Réplica del sitio oficial finstruvial.edu.co: azul profundo (#101b3c), acento cian y home completo.',
+    'Plantilla azul profundo',
+    'Tema oscuro con acento cian y home completo (plantilla legacy).',
     'cliente',
     {
       heroTitulo: 'Formación virtual en seguridad vial y conducción profesional.',
@@ -100,6 +248,36 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
         colorTexto: '#FFFFFF',
         colorTextoSecundario: '#269BD1',
         fuente: 'Poppins',
+      },
+    },
+  ),
+  crearPlantilla(
+    'servial',
+    'Plantilla Servial',
+    'Inspirada en servial.com.co con paleta PICO: fondo azul noche, acento verde lima y CTAs naranja. Hero con malla geométrica interactiva.',
+    'cliente',
+    {
+      heroTitulo: 'Obtenga su licencia de conducción',
+      heroSubtitulo:
+        'Únicos con calidad certificada. Aprenda a su ritmo con cursos interactivos, capacitación certificada y acompañamiento profesional.',
+      secciones: SECCIONES_ESTANDAR,
+      landing: landingServial(),
+      acercaDeHtml:
+        'Servial Colombia presta servicios especializados en tránsito, transporte, movilidad y seguridad vial.\n\n' +
+        'Somos Centro de Enseñanza Automovilística e Instituto de Educación para el Trabajo y el Desarrollo Humano, ' +
+        'con capacitación en licencias A2, B1, C1, C2 y C3, cursos libres y programas técnicos para el sector transportador.\n\n' +
+        'Calle 37B # 19A-65 Barrio Jordan, Villavicencio, Meta — Colombia.',
+      tema: {
+        colorPrimario: '#2CE97A',
+        colorPrimarioOscuro: '#0A0A0A',
+        colorAcento: '#D9D314',
+        colorFondo: '#0A0A0A',
+        colorSuperficie: '#111218',
+        colorTexto: '#FFFFFF',
+        colorTextoSecundario: '#B0B0B0',
+        fuente: 'Figtree',
+        fuenteTitulos: 'Space Grotesk',
+        heroEstilo: 'servial-mesh',
       },
     },
   ),

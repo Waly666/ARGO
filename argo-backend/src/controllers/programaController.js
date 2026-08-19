@@ -76,6 +76,8 @@ function bodyServicio(body) {
     tarifa1: body.tarifa1,
     tarifa2: body.tarifa2,
     tarifa3: body.tarifa3,
+    tarifaGestor: body.tarifaGestor,
+    tarifaEmpresa: body.tarifaEmpresa,
     tarifaVirtual: body.tarifaVirtual,
     valorMatricula: body.valorMatricula,
     tarifaHoraPractica: body.tarifaHoraPractica,

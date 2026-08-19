@@ -1,0 +1,200 @@
+<section class="cli-page admin-list-page card">
+  <header #pageHead class="caja-head page-head caja-page-header">
+    <div class="caja-head-main">
+      <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Gestores</p>
+      <h1>Gestores</h1>
+      <p class="hint">
+        Catálogo de gestores. Registre nombres, documento, contacto y seudónimo para identificarlos en el flujo de caja.
+      </p>
+    </div>
+    <div class="caja-badges head-actions">
+      @if (!loading() && !formAbierto()) {
+        <span class="caja-chip caja-chip--sky">{{ gestores().length }} gestor{{ gestores().length === 1 ? '' : 'es' }}</span>
+      }
+      @if (!formAbierto()) {
+        <a routerLink="/app/caja/gestores/informe" class="ghost">📊 Informe</a>
+        <button type="button" class="primary" (click)="nuevo()">+ Nuevo gestor</button>
+      }
+    </div>
+  </header>
+
+  @if (msg() && !formAbierto()) {
+    <p class="cli-banner" [class.cli-banner--err]="msgError()" role="status">{{ msg() }}</p>
+  }
+
+  @if (formAbierto()) {
+    <div #formPanel class="cli-form-panel">
+      <header class="cli-form-head">
+        <div>
+          <span class="cli-form-kicker">{{ editId() ? 'Edición' : 'Alta' }}</span>
+          <h2>{{ editId() ? 'Editar gestor' : 'Nuevo gestor' }}</h2>
+          <p class="cli-form-sub">Datos personales y de contacto del gestor.</p>
+        </div>
+        <button type="button" class="ghost cli-form-close" (click)="cerrar()" aria-label="Cerrar">×</button>
+      </header>
+
+      @if (msg()) {
+        <p class="cli-banner cli-banner--in-form" [class.cli-banner--err]="msgError()" role="alert">{{ msg() }}</p>
+      }
+
+      <div class="cli-form cli-form-body argo-form-shell">
+        <section class="cli-section cli-section--sky">
+          <header class="cli-section-head">
+            <span class="cli-section-badge">1</span>
+            <h3>Identificación</h3>
+          </header>
+          <div class="cli-section-body">
+            <div class="cli-grid cli-grid--id">
+              <label class="cli-field">
+                <span class="cli-label">Tipo documento</span>
+                <select [ngModel]="form().tipoDoc" (ngModelChange)="patch({ tipoDoc: $event })">
+                  @for (t of catalogos()?.tiposDoc || []; track t.code) {
+                    <option [value]="t.code">{{ t.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="cli-field">
+                <span class="cli-label">Número *</span>
+                <input type="text" [ngModel]="form().numero" (ngModelChange)="patch({ numero: $event })" />
+              </label>
+            </div>
+            <div class="cli-grid cli-grid--2" style="margin-top: 0.75rem">
+              <label class="cli-field">
+                <span class="cli-label">Nombres *</span>
+                <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch({ nombres: $event })" />
+              </label>
+              <label class="cli-field">
+                <span class="cli-label">Apellidos *</span>
+                <input type="text" [ngModel]="form().apellidos" (ngModelChange)="patch({ apellidos: $event })" />
+              </label>
+            </div>
+            <label class="cli-field" style="margin-top: 0.75rem">
+              <span class="cli-label">Seudónimo</span>
+              <input type="text" [ngModel]="form().seudonimo" (ngModelChange)="patch({ seudonimo: $event })" />
+            </label>
+          </div>
+        </section>
+
+        <section class="cli-section cli-section--teal">
+          <header class="cli-section-head">
+            <span class="cli-section-badge">2</span>
+            <h3>Contacto</h3>
+          </header>
+          <div class="cli-section-body cli-stack">
+            <div class="cli-grid cli-grid--contact">
+              <div class="cli-field">
+                <span class="cli-label">Correo</span>
+                <argo-correo-input
+                  placeholder="correo@ejemplo.com"
+                  [value]="form().correo || ''"
+                  (valueChange)="patch({ correo: $event })" />
+              </div>
+              <div class="cli-field cli-field--telefono">
+                <span class="cli-label">Celular</span>
+                <argo-celular-input
+                  modo="celular"
+                  placeholder="300 123 4567"
+                  [value]="form().celular || ''"
+                  (valueChange)="patch({ celular: $event })" />
+              </div>
+            </div>
+            <label class="cli-field">
+              <span class="cli-label">Dirección</span>
+              <input type="text" [ngModel]="form().direccion" (ngModelChange)="patch({ direccion: $event })" />
+            </label>
+          </div>
+        </section>
+
+        <section class="cli-section cli-section--amber">
+          <header class="cli-section-head">
+            <span class="cli-section-badge">3</span>
+            <h3>Foto</h3>
+          </header>
+          <div class="cli-section-body gestor-foto-row">
+            <div class="gestor-foto-preview" aria-hidden="true">
+              @if (fotoPreview(); as p) {
+                <img [src]="p" alt="Foto del gestor" />
+              } @else {
+                <span class="gestor-foto-iniciales">{{ iniciales(form()) }}</span>
+              }
+            </div>
+            <label class="cli-field gestor-foto-upload">
+              <span class="cli-label">Cargar imagen</span>
+              <input type="file" accept="image/*" (change)="onFotoChange($event)" />
+              <p class="hint-inline">PNG, JPG o WEBP. Máx. 5 MB.</p>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <footer class="cli-form-actions">
+        <button type="button" class="ghost" (click)="cerrar()">Cancelar</button>
+        <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar gestor' }}
+        </button>
+      </footer>
+    </div>
+  } @else {
+    <div class="toolbar cli-toolbar">
+      <span class="cli-search-icon" aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        class="cli-search"
+        placeholder="Buscar por nombre, documento o seudónimo…"
+        [ngModel]="filtro()"
+        (ngModelChange)="filtro.set($event)"
+        (keyup.enter)="recargar()" />
+      <button type="button" class="ghost" (click)="recargar()">Buscar</button>
+    </div>
+
+    @if (loading()) {
+      <p class="cli-empty">Cargando gestores…</p>
+    } @else if (!gestores().length) {
+      <div class="cli-empty cli-empty--card">
+        <span class="cli-empty-icon" aria-hidden="true">◎</span>
+        <p>No hay gestores registrados.</p>
+        <button type="button" class="ghost" (click)="nuevo()">Crear el primero</button>
+      </div>
+    } @else {
+      <div class="table-wrap cli-table-wrap">
+        <table class="argo data-table cli-table">
+          <thead>
+            <tr>
+              <th class="th-foto"></th>
+              <th>Documento</th>
+              <th>Nombre</th>
+              <th>Seudónimo</th>
+              <th>Correo</th>
+              <th>Celular</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of gestores(); track g._id) {
+              <tr>
+                <td class="td-foto">
+                  <div class="list-foto" aria-hidden="true">
+                    @if (fotoUrl(g.foto); as f) {
+                      <img [src]="f" alt="" />
+                    } @else {
+                      <span class="gestor-foto-iniciales sm">{{ iniciales(g) }}</span>
+                    }
+                  </div>
+                </td>
+                <td class="cli-id">{{ g.tipoDoc || 'CC' }} {{ g.numero }}</td>
+                <td class="cli-name">{{ nombreCompleto(g) }}</td>
+                <td>{{ g.seudonimo || '—' }}</td>
+                <td>{{ g.correo || '—' }}</td>
+                <td>{{ g.celular || '—' }}</td>
+                <td class="cli-actions">
+                  <button type="button" class="ghost sm" (click)="editar(g)">Editar</button>
+                  <button type="button" class="ghost sm danger" (click)="eliminar(g)">Eliminar</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

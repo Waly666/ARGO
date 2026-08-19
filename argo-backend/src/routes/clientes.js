@@ -11,8 +11,17 @@ const ver = requirePermiso(
   'alumnos.pagos',
   'jornadas.registrar_alumnos',
   'jornadas.gestionar',
+  'caja.turno',
+  'caja.admin',
+  'contabilidad',
 );
-const gestionar = requirePermiso('facturacion', 'config.facturacion');
+const gestionar = requirePermiso(
+  'facturacion',
+  'config.facturacion',
+  'caja.turno',
+  'caja.admin',
+  'contabilidad',
+);
 
 router.get('/catalogos', ver, ctrl.catalogos);
 router.get('/', ver, ctrl.listar);

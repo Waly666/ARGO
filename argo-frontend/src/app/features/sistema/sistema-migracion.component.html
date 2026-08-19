@@ -99,6 +99,18 @@
           Obligatorios en certificados: <strong>numDoc</strong> y <strong>fechaEmision</strong>.
         </p>
       }
+      @if (haySeleccion() && !estaSeleccionada('gestores') && (estaSeleccionada('matriculas') || estaSeleccionada('alumnos'))) {
+        <p class="sys-hint">
+          ⚠ Sin la hoja Gestores, los gestorNumero referenciados deben existir ya en ARGO
+          (Configuración → Gestores).
+        </p>
+      }
+      @if (haySeleccion() && !estaSeleccionada('empresas') && (estaSeleccionada('matriculas') || estaSeleccionada('alumnos'))) {
+        <p class="sys-hint">
+          ⚠ Sin la hoja Empresas, los empresaReferidorIdentificacion referenciados deben existir ya en ARGO
+          (Configuración → Clientes).
+        </p>
+      }
       @if (haySeleccion() && !estaSeleccionada('alumnos') && !certificadosHistoricos) {
         <p class="sys-hint">
           ⚠ Sin la hoja Alumnos, los documentos referenciados (matrículas, pagos o certificados)
@@ -131,7 +143,8 @@
           } @else {
             Obligatorios: Programas (codigoPrograma, nombrePrograma, tipoCapacitacion, tarifa1) ·
             Alumnos (numDoc, nombre1, apellido1) · Matriculas (numDoc, codigoPrograma) ·
-            Pagos (numDoc, valor) · Certificados (numDoc, codigoPrograma, fechaEmision).
+            Pagos (numDoc, valor; si hay varios cursos use codigoPrograma o refMatricula) ·
+            Certificados (numDoc, codigoPrograma, fechaEmision).
           }
         </p>
       </div>
@@ -250,6 +263,18 @@
               <div class="lbl">Programas creados</div>
             </div>
           }
+          @if (r.hojas.includes('gestores')) {
+            <div class="sys-resumen-item">
+              <div class="num">{{ r.gestores?.creados || 0 }}</div>
+              <div class="lbl">Gestores creados</div>
+            </div>
+          }
+          @if (r.hojas.includes('empresas')) {
+            <div class="sys-resumen-item">
+              <div class="num">{{ r.empresas?.creadas || 0 }}</div>
+              <div class="lbl">Empresas creadas</div>
+            </div>
+          }
           @if (r.hojas.includes('alumnos')) {
             <div class="sys-resumen-item">
               <div class="num">{{ r.alumnos.creados }}</div>
@@ -277,6 +302,12 @@
         </div>
         <p class="sys-hint">
           Omitidos por duplicado: {{ r.programas.omitidos }} programas (ya existían),
+          @if (r.hojas.includes('gestores')) {
+            {{ r.gestores?.omitidos || 0 }} gestores,
+          }
+          @if (r.hojas.includes('empresas')) {
+            {{ r.empresas?.omitidas || 0 }} empresas,
+          }
           {{ r.alumnos.omitidos }} alumnos, {{ r.matriculas.omitidas }} matrículas,
           {{ r.pagos.omitidos }} pagos, {{ r.certificados.omitidos }} certificados.
           @if (r.alumnos.actualizados) {

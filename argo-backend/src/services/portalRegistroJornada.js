@@ -66,7 +66,7 @@ function buildAlumnoPayload(alumno, numDoc) {
 }
 
 async function mailFromHeader(nombreCea) {
-  const cea = nombreCea || 'Finstruvial';
+  const cea = nombreCea || 'CEA';
   const aula = await obtenerConfigAula().catch(() => null);
   const fromCustom = aula?.emailConfirmacion?.trim() || null;
   return fromCustom ? `"${cea}" <${fromCustom}>` : undefined;
@@ -206,7 +206,7 @@ async function crearOActualizarAlumnoJornada({ email, alumno, consentimiento }) 
 
 async function enviarQrJornadaPorCorreo({ email, alumno, nombreCea }) {
   if (!smtpConfigured()) return { enviado: false };
-  const cea = nombreCea || 'Finstruvial';
+  const cea = nombreCea || 'CEA';
   const nombre = nombreDesdeAlumno(alumno);
   const payload = buildJornadaAlumnoQrPayload(alumno.numDoc, nombre);
   const png = await generarQrJornadaPngBuffer(alumno.numDoc, nombre);
@@ -258,7 +258,7 @@ async function enviarCodigoRegistroJornada({
   nombreCea,
   portalBaseUrl,
 }) {
-  const cea = nombreCea || 'Finstruvial';
+  const cea = nombreCea || 'CEA';
   const base = resolverBasePortal({ portalBaseUrl });
   const link = buildActivacionUrl(base, '/jornadas-capacitacion/activar', {
     pendingId,

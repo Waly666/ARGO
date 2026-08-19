@@ -502,6 +502,34 @@ export const routes: Routes = [
               import('./features/caja/caja-terceros.component').then((m) => m.CajaTercerosComponent),
           },
           {
+            path: 'gestores',
+            canActivate: [permisoGuard],
+            data: { permiso: ['caja.turno', 'caja.admin'] },
+            loadComponent: () =>
+              import('./features/caja/caja-gestores.component').then((m) => m.CajaGestoresComponent),
+          },
+          {
+            path: 'gestores/informe',
+            canActivate: [permisoGuard],
+            data: { permiso: ['caja.turno', 'caja.admin'], tipoReferidor: 'gestor' },
+            loadComponent: () =>
+              import('./features/caja/caja-referidor-informe.component').then((m) => m.CajaReferidorInformeComponent),
+          },
+          {
+            path: 'empresa',
+            canActivate: [permisoGuard],
+            data: { permiso: ['caja.turno', 'caja.admin'], contextoClientes: 'caja' },
+            loadComponent: () =>
+              import('./features/config/config-clientes.component').then((m) => m.ConfigClientesComponent),
+          },
+          {
+            path: 'empresa/informe',
+            canActivate: [permisoGuard],
+            data: { permiso: ['caja.turno', 'caja.admin'], tipoReferidor: 'empresa' },
+            loadComponent: () =>
+              import('./features/caja/caja-referidor-informe.component').then((m) => m.CajaReferidorInformeComponent),
+          },
+          {
             path: 'egresos',
             loadComponent: () =>
               import('./features/caja/caja-egresos-sesion.component').then((m) => m.CajaEgresosSesionComponent),
@@ -745,6 +773,24 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/config/config-servicios-adicionales.component').then(
             (m) => m.ConfigServiciosAdicionalesComponent,
+          ),
+      },
+      {
+        path: 'configuracion/gestores-empresas',
+        canActivate: [permisoGuard],
+        data: { permiso: 'config.recibos' },
+        loadComponent: () =>
+          import('./features/config/config-gestores-empresas.component').then(
+            (m) => m.ConfigGestoresEmpresasComponent,
+          ),
+      },
+      {
+        path: 'configuracion/envio-correos-alumno',
+        canActivate: [permisoGuard],
+        data: { permiso: ['config.recibos', 'config.certificados', 'config.alertas'] },
+        loadComponent: () =>
+          import('./features/config/config-envio-correos-alumno.component').then(
+            (m) => m.ConfigEnvioCorreosAlumnoComponent,
           ),
       },
       {

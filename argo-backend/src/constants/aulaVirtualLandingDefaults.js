@@ -1,4 +1,5 @@
 const { FUNDACION_LANDING_DEFAULTS } = require('./aulaVirtualFundacionDefaults');
+const { DEFAULT_CEA_NOMBRE, DEFAULT_CEA_CORTO } = require('./portalBrandDefaults');
 
 /** Contenido editable del landing del portal aula virtual (valores por defecto). */
 const LANDING_DEFAULTS = {
@@ -7,9 +8,9 @@ const LANDING_DEFAULTS = {
     'Cursos y programas virtuales que transforman la seguridad vial: estudie hoy, certifique mañana.',
   quoteLabel: 'O llámanos',
   metaDescription:
-    'Cursos y programas de capacitación virtual en seguridad vial para Colombia, el departamento del Meta y Villavicencio. Matricúlese en el aula virtual de Fundación Finstruvial: formación técnica, certificación y programas en línea.',
+    `Cursos de conducción, licencias y programas virtuales en seguridad vial para Colombia, el Meta y Villavicencio. Matricúlese en el aula virtual de su ${DEFAULT_CEA_NOMBRE}: formación técnica, certificación y programas en línea.`,
   metaKeywords:
-    'cursos virtuales Colombia, programas de capacitación en línea Colombia, aula virtual seguridad vial, cursos seguridad vial Colombia, capacitación tránsito Villavicencio, cursos tránsito Meta, programas certificados Villavicencio, formación técnica Meta Colombia, PESV Villavicencio, PESV Meta, Fundación Finstruvial, instituto técnico Villavicencio, cursos en línea Villavicencio, capacitación conductores Meta, seguridad vial Villavicencio, consultoría seguridad vial Colombia, carreras técnicas tránsito Villavicencio, matrícula cursos virtuales Meta',
+    `CEA, ${DEFAULT_CEA_NOMBRE}, centro de enseñanza automovilística Villavicencio, cursos de conducción Villavicencio, licencia de conducción Meta, cursos virtuales Colombia, aula virtual seguridad vial, capacitación tránsito Villavicencio, cursos tránsito Meta, programas certificados Villavicencio, formación técnica Meta Colombia, cursos en línea Villavicencio, capacitación conductores Meta, seguridad vial Villavicencio, matrícula cursos virtuales Meta`,
   hero: {
     ctaPrincipal: 'Ver cursos y programas',
     ctaSecundario: 'Crear cuenta gratis',
@@ -27,7 +28,7 @@ const LANDING_DEFAULTS = {
     cursos: 'Cursos',
     aula: 'Aula virtual',
     acerca: 'Acerca de',
-    fundacion: 'Fundación',
+    fundacion: 'CEA',
     consultaCertificados: 'Certificados',
     blog: 'Blog',
     acceder: 'Acceder',
@@ -36,8 +37,7 @@ const LANDING_DEFAULTS = {
   },
   footer: {
     founded: 'Est. 1997',
-    copyright:
-      'Copyright © 2026 All Rights Reserved INSTITUTO TECNICO FINSTRUVIAL Designed by WALTER AGUILAR',
+    copyright: `Copyright © ${new Date().getFullYear()} ${DEFAULT_CEA_NOMBRE}. Todos los derechos reservados.`,
     tituloEnlaces: 'Enlaces rápidos',
     tituloServicios: 'Servicios',
     tituloContacto: 'Contáctanos',
@@ -98,57 +98,57 @@ const LANDING_DEFAULTS = {
       {
         icon: '🛣️',
         title: 'Planes de manejo de tránsito',
-        url: 'https://finstruvial.com.co/planes-de-manejo-de-transito/',
+        url: '/cursos',
       },
       {
         icon: '📋',
         title: 'Planes estratégicos de seguridad vial',
-        url: 'https://finstruvial.com.co/planes-estrategicos-de-seguridad-vial/',
+        url: '/cursos',
       },
       {
         icon: '🏙️',
         title: 'Planes locales de seguridad vial',
-        url: 'https://finstruvial.com.co/plan-local-de-seguridad-vial/',
+        url: '/cursos',
       },
       {
         icon: '🚲',
         title: 'Planes de movilidad sostenible y segura',
-        url: 'https://finstruvial.com.co/planes-de-movilidad-sostenible-y-segura/',
+        url: '/cursos',
       },
       {
         icon: '👷',
         title: 'Competencias laborales',
-        url: 'https://finstruvial.com.co/competencias-laborales/',
+        url: '/cursos',
       },
       {
         icon: '🚗',
         title: 'Sensibilización a conductores',
-        url: 'https://finstruvial.com.co/sensibilizacion-a-conductores/',
+        url: '/cursos',
       },
       {
         icon: '📖',
         title: 'Actualización normativa',
-        url: 'https://finstruvial.com.co/actualizacion-normativa/',
+        url: '/cursos',
       },
       {
         icon: '🎯',
         title: 'Actividades experienciales',
-        url: 'https://finstruvial.com.co/actividades-experienciales/',
+        url: '/cursos',
       },
       {
         icon: '📈',
         title: 'Análisis de accidentalidad vial — PERIDATA',
-        url: 'https://finstruvial.com.co/nuestros-servicios/mapas/',
+        url: '/cursos',
       },
       {
         icon: '📚',
         title: 'Publicaciones',
-        url: 'https://finstruvial.com.co/publicaciones/',
+        url: '/cursos',
       },
       {
         icon: '🧰',
         title: 'Herramientas educativas',
-        url: 'https://finstruvial.com.co/herramientas-educativas-y-tecnologicas/',
+        url: '/cursos',
       },
     ],
   },
@@ -334,8 +334,8 @@ const LANDING_DEFAULTS = {
     ],
     btnDescargar: 'Descargar APK para Android',
     notaInstalacion: 'Android 8.0 o superior · Instalación manual del archivo APK',
-    apkUrl: '/apk/aula-virtual-finstruvial.apk',
-    apkNombre: 'aula-virtual-finstruvial.apk',
+    apkUrl: '/apk/aula-virtual.apk',
+    apkNombre: 'aula-virtual.apk',
   },
   blog: {
     kicker: 'Blog',

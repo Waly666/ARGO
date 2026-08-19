@@ -109,7 +109,7 @@ async function provisionarAccesoPortalSiVirtual(alumno, { portalBaseUrl, origin 
 
 async function enviarCredencialesPortal({ email, password, alumno, portalBaseUrl, origin }) {
   const aula = await obtenerConfigAula().catch(() => null);
-  const cea = String(aula?.nombreEmpresa || 'Finstruvial').trim() || 'Finstruvial';
+  const cea = String(aula?.nombreEmpresa || 'CEA').trim() || 'CEA';
   const fromCustom = aula?.emailConfirmacion?.trim() || null;
   const fromHeader = fromCustom ? `"${cea}" <${fromCustom}>` : undefined;
   const base = resolverBasePortal({ portalBaseUrl, origin });

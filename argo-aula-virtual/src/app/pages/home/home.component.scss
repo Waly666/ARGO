@@ -4,7 +4,7 @@
 }
 
 .inst-bar {
-  background: var(--av-brand);
+  background: var(--av-inst-bar-bg, var(--av-brand));
   color: #fff;
   font-size: 0.78rem;
   letter-spacing: 0.04em;
@@ -240,6 +240,130 @@
   color: var(--av-text);
   background: var(--av-hero-bg);
 
+  &.hero--servial-mesh {
+    min-height: clamp(520px, 82vh, 860px);
+    padding: clamp(5rem, 12vh, 7rem) 0 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background:
+      linear-gradient(105deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.42) 48%, rgba(0, 0, 0, 0.28) 100%),
+      var(--av-hero-photo, url('/images/hero-estudiante.png')) center center / cover no-repeat;
+
+    .starfield-bg {
+      display: none;
+    }
+
+    .hero-inner {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 760px;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+    }
+
+    // Baja el bloque de título/texto/botones un poco más
+    .hero-container {
+      margin-top: clamp(2rem, 9vh, 6rem);
+    }
+
+    .hero-visual {
+      display: none;
+    }
+
+    // Tarjetas info acaballadas sobre el borde inferior del hero (escritorio)
+    @media (min-width: 961px) {
+      .hero-info-cards {
+        margin-top: auto;
+      }
+    }
+
+    .eyebrow {
+      color: #aee929;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+    }
+
+    .hero-cea {
+      margin: 0.15rem 0 0;
+      color: rgba(255, 255, 255, 0.92);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: clamp(0.82rem, 1.6vw, 1rem);
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+    }
+
+    .hero-title,
+    .hero-title--typing,
+    .hero-title--done {
+      color: #fff;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      line-height: 1.02;
+      font-size: clamp(1.5rem, 4.05vw, 2.74rem);
+      text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+      border-right-color: #aee929;
+    }
+
+    .hero-title--done {
+      background: linear-gradient(90deg, #aee929 0%, #d9d314 55%, #ffffff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-title--done::after {
+      background: linear-gradient(90deg, #2ce97a, #d9d314, transparent);
+      box-shadow: 0 0 22px color-mix(in srgb, var(--av-accent) 55%, transparent);
+    }
+
+    .lead {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(1rem, 2.1vw, 1.2rem);
+      max-width: 46ch;
+    }
+
+    .hero-actions {
+      .btn-primary {
+        background: var(--av-btn-primary-bg, linear-gradient(90deg, #2ce97a 0%, #d9d314 100%));
+        color: #0a0a0a;
+        border-color: transparent;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+
+        &:hover {
+          filter: brightness(1.06);
+          color: #0a0a0a;
+        }
+      }
+
+      .btn-outline {
+        background: transparent;
+        color: #aee929;
+        border-color: color-mix(in srgb, #aee929 65%, #d9d314);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+
+        &:hover {
+          background: color-mix(in srgb, var(--av-accent) 12%, transparent);
+          color: #fff;
+        }
+      }
+
+      .btn-ghost {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+    }
+  }
+
   &.section-starfield {
     padding: 4.2rem 0 3.25rem;
     overflow: visible;
@@ -256,7 +380,17 @@
 
 .hero-container {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+}
+
+.hero-photo-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 72% 38%, color-mix(in srgb, var(--av-accent) 18%, transparent), transparent 42%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.55) 100%);
 }
 
 .hero-inner {
@@ -1713,5 +1847,454 @@ blockquote {
 
   .app-mobile-visual {
     min-height: 360px;
+  }
+}
+
+/* PICO / Servial: solo testimonios y FAQ (no otras secciones) */
+:host.home--servial-mesh {
+  #testimonios {
+    background: #111218;
+    color: #fff;
+
+    .section-head {
+      h2,
+      .title-reveal--h2 {
+        color: #fff;
+      }
+    }
+
+    .section-lead {
+      color: #b0b0b0;
+    }
+
+    .kicker {
+      color: #aee929;
+    }
+
+    .dark-card {
+      background: linear-gradient(165deg, rgba(17, 18, 24, 0.98) 0%, rgba(10, 10, 10, 0.98) 100%);
+      border-color: rgba(174, 233, 41, 0.22);
+
+      &:hover {
+        border-color: rgba(217, 211, 20, 0.55);
+        box-shadow:
+          0 0 26px rgba(174, 233, 41, 0.2),
+          0 18px 40px rgba(2, 6, 23, 0.55);
+      }
+
+      &__plus {
+        color: rgba(174, 233, 41, 0.5);
+      }
+
+      &:hover &__plus {
+        color: #d9d314;
+      }
+
+      &__icono {
+        background: linear-gradient(150deg, #2ce97a, #d9d314);
+        box-shadow: 0 6px 16px rgba(174, 233, 41, 0.35);
+
+        svg {
+          color: #0a0a0a;
+        }
+      }
+
+      &__titulo {
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+      }
+
+      &__meta {
+        color: #b0b0b0;
+      }
+    }
+
+    .testimonio-rol {
+      color: #aee929;
+    }
+  }
+
+  #somos-mejor-opcion {
+    background: #f8fafc;
+    color: #0f172a;
+
+    .starfield-bg {
+      display: none;
+    }
+
+    .starfield-head {
+      h2,
+      .title-reveal--h2 {
+        color: #0f172a;
+      }
+
+      .section-lead {
+        color: #475569;
+      }
+    }
+
+    .dark-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+
+      &:hover {
+        border-color: rgba(44, 233, 122, 0.45);
+        box-shadow:
+          0 0 0 1px rgba(174, 233, 41, 0.12),
+          0 18px 40px rgba(15, 23, 42, 0.1);
+      }
+
+      &__plus {
+        color: rgba(44, 233, 122, 0.45);
+      }
+
+      &:hover &__plus {
+        color: #2ce97a;
+      }
+
+      &__icono {
+        background: linear-gradient(150deg, #2ce97a, #d9d314);
+        box-shadow: 0 6px 16px rgba(44, 233, 122, 0.28);
+
+        svg {
+          color: #0a0a0a;
+        }
+      }
+
+      &__titulo {
+        color: #0f172a;
+        -webkit-text-fill-color: #0f172a;
+      }
+
+      &__meta {
+        color: #475569;
+      }
+    }
+  }
+
+  #carreras-tecnicas {
+    .carreras-orbita__lineas line {
+      stroke: rgba(174, 233, 41, 0.62);
+      stroke-width: 1.5px;
+      stroke-dasharray: 5 4;
+      filter: drop-shadow(0 0 3px rgba(174, 233, 41, 0.35));
+    }
+
+    .carreras-orbita__halo {
+      background: radial-gradient(
+        circle,
+        rgba(174, 233, 41, 0.38) 0%,
+        rgba(217, 211, 20, 0.14) 45%,
+        transparent 70%
+      );
+    }
+
+    .carreras-orbita__nucleo {
+      background: linear-gradient(160deg, rgba(17, 18, 24, 0.96), rgba(10, 10, 10, 0.96));
+      border-color: rgba(174, 233, 41, 0.5);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 0 32px rgba(174, 233, 41, 0.32),
+        0 18px 40px rgba(0, 0, 0, 0.45);
+
+      svg {
+        color: #aee929;
+        filter: drop-shadow(0 0 10px rgba(174, 233, 41, 0.55));
+      }
+    }
+
+    .carrera-nodo.dark-card {
+      background: linear-gradient(165deg, rgba(17, 18, 24, 0.98) 0%, rgba(10, 10, 10, 0.98) 100%);
+      border-color: rgba(174, 233, 41, 0.24);
+
+      &:hover {
+        border-color: rgba(217, 211, 20, 0.58);
+        box-shadow:
+          0 0 26px rgba(174, 233, 41, 0.22),
+          0 18px 40px rgba(2, 6, 23, 0.55);
+      }
+
+      .dark-card__plus {
+        color: rgba(174, 233, 41, 0.5);
+      }
+
+      &:hover .dark-card__plus {
+        color: #d9d314;
+      }
+
+      .dark-card__icono {
+        background: linear-gradient(150deg, #2ce97a, #d9d314);
+        box-shadow: 0 6px 16px rgba(174, 233, 41, 0.35);
+
+        svg {
+          color: #0a0a0a;
+        }
+      }
+
+      .dark-card__titulo {
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+      }
+
+      .dark-card__meta {
+        color: #b0b0b0;
+      }
+    }
+  }
+
+  #preguntas-frecuentes.section-faq {
+    background:
+      radial-gradient(ellipse 85% 65% at 50% 20%, rgba(174, 233, 41, 0.14), transparent 70%),
+      linear-gradient(180deg, #111218 0%, #0a0a0a 62%, #0a0a0a 100%);
+
+    .faq-bg::after {
+      background: radial-gradient(circle, rgba(174, 233, 41, 0.16) 0%, transparent 68%);
+    }
+
+    .section-faq__head {
+      .section-lead {
+        color: #b0b0b0;
+      }
+
+      .kicker {
+        color: #aee929;
+      }
+    }
+
+    .dark-card {
+      background: linear-gradient(165deg, rgba(17, 18, 24, 0.98) 0%, rgba(10, 10, 10, 0.98) 100%);
+      border-color: rgba(174, 233, 41, 0.22);
+      box-shadow: 0 16px 36px rgba(2, 6, 23, 0.5);
+
+      &:hover {
+        border-color: rgba(217, 211, 20, 0.55);
+        box-shadow:
+          0 0 26px rgba(174, 233, 41, 0.2),
+          0 18px 40px rgba(2, 6, 23, 0.55);
+      }
+    }
+
+    .faq-pregunta--open {
+      color: #aee929;
+    }
+
+    .faq-icon {
+      color: #0a0a0a;
+      background: linear-gradient(150deg, #2ce97a, #d9d314);
+      box-shadow: 0 4px 12px rgba(174, 233, 41, 0.35);
+    }
+
+    .faq-respuesta {
+      border-top-color: rgba(174, 233, 41, 0.18);
+
+      p {
+        color: #c8c8c8;
+      }
+    }
+
+    .faq-contacto {
+      background: rgba(17, 18, 24, 0.85);
+      border-color: rgba(174, 233, 41, 0.2);
+
+      p {
+        color: #b0b0b0;
+      }
+    }
+  }
+
+  /* —— Pulido PICO global de la home —— */
+
+  // Kickers y acentos con verde lima de marca
+  .kicker {
+    color: #2ce97a;
+  }
+
+  // Separador decorativo bajo los encabezados centrados
+  .section-head.center::after {
+    content: '';
+    display: block;
+    width: 54px;
+    height: 3px;
+    margin: 1rem auto 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2ce97a, #d9d314);
+  }
+
+  // Botones sólidos con degradado de marca (ofertas, pasos, CTA, FAQ…)
+  .btn-primary,
+  .btn-accent {
+    background: linear-gradient(90deg, #2ce97a 0%, #d9d314 100%);
+    color: #0a0a0a;
+    border-color: transparent;
+    font-weight: 700;
+    box-shadow: 0 8px 22px rgba(44, 233, 122, 0.22);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+      color: #0a0a0a;
+      box-shadow: 0 12px 30px rgba(174, 233, 41, 0.38);
+    }
+  }
+
+  // Botones de borde con acento verde (funciona en fondo claro u oscuro)
+  .btn-outline {
+    border-color: rgba(44, 233, 122, 0.55);
+    transition:
+      transform 0.2s ease,
+      background 0.2s ease,
+      border-color 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: #2ce97a;
+      background: rgba(44, 233, 122, 0.1);
+    }
+  }
+
+  .link-more {
+    color: #0a9d54;
+  }
+
+  // Realce de los botones del hero
+  .hero--servial-mesh .hero-actions .btn-primary {
+    box-shadow: 0 10px 26px rgba(174, 233, 41, 0.32);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 34px rgba(174, 233, 41, 0.5);
+    }
+  }
+
+  // Tarjetas de oferta / beneficios: cinta superior y hover verde
+  .oferta-card {
+    position: relative;
+    overflow: hidden;
+    transition:
+      transform 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, #2ce97a, #d9d314);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      border-color: rgba(44, 233, 122, 0.5);
+      box-shadow:
+        0 0 0 1px rgba(174, 233, 41, 0.12),
+        0 20px 44px rgba(15, 23, 42, 0.14);
+
+      &::before {
+        transform: scaleX(1);
+      }
+    }
+  }
+
+  // Chips de servicios: acento verde
+  .servicio-chip {
+    &:hover {
+      border-color: #2ce97a;
+      background: rgba(44, 233, 122, 0.07);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+    }
+
+    &--link:hover {
+      border-color: #2ce97a;
+      background: rgba(44, 233, 122, 0.07);
+    }
+  }
+
+  // Cursos: badge, precio y hover en tonos PICO
+  .curso-card:hover {
+    border-color: rgba(44, 233, 122, 0.5);
+    box-shadow: 0 22px 48px rgba(15, 23, 42, 0.14);
+  }
+
+  .curso-badge {
+    color: #0a7d3f;
+    background: rgba(44, 233, 122, 0.14);
+  }
+
+  // Pasos: número con degradado de marca y hover verde
+  .paso-num {
+    background: linear-gradient(150deg, #2ce97a, #d9d314);
+    color: #0a0a0a;
+    box-shadow: 0 6px 16px rgba(44, 233, 122, 0.3);
+  }
+
+  .paso-card {
+    transition:
+      transform 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+      border-color: rgba(44, 233, 122, 0.5);
+      box-shadow: 0 20px 44px rgba(15, 23, 42, 0.12);
+    }
+  }
+
+  // Pilares: pestaña activa e ítems en verde de marca
+  .pilares-tabs button.active {
+    color: #0f172a;
+    border-bottom-color: #2ce97a;
+  }
+
+  .pilar-item::marker {
+    color: #2ce97a;
+  }
+
+  // Tarjetas del hero (Llámenos, Visítenos, CE habilitado): claras con acento verde
+  .hero--servial-mesh .info-card {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(44, 233, 122, 0.35);
+    box-shadow:
+      0 14px 32px rgba(2, 6, 23, 0.28),
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset,
+      0 0 26px rgba(44, 233, 122, 0.16);
+
+    &:hover {
+      border-color: rgba(44, 233, 122, 0.65);
+      box-shadow:
+        0 0 30px rgba(174, 233, 41, 0.28),
+        0 20px 44px rgba(2, 6, 23, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+    }
+
+    h3 {
+      background: linear-gradient(90deg, #0a9d54 0%, #2ce97a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    p {
+      color: #334155;
+    }
+
+    a {
+      color: #0a9d54;
+
+      &:hover {
+        color: #2ce97a;
+      }
+    }
   }
 }

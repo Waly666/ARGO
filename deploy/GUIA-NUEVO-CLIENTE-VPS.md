@@ -2,7 +2,9 @@
 
 Guía para instalar ARGO en un **servidor nuevo** cuando vendes el producto a otro cliente (CEA, centro de formación, etc.).
 
-> **Resumen:** normalmente **NO** necesitas un repositorio Git por cliente. Usas **un solo repo del producto** y **un VPS (o stack Docker) por cliente**, con datos, dominios y secretos independientes.
+> **Resumen:** normalmente **NO** necesitas un repositorio Git por cliente. Usas **un solo repo del producto** y **una instalación independiente por cliente** (carpeta + `.env` + Mongo + dominios), en el mismo VPS o en VPS distintos.
+>
+> **Plan paso a paso (cliente nuevo + VPS compartido + regla configurable):** [PLAN-CLIENTE-NUEVO.md](./PLAN-CLIENTE-NUEVO.md)
 
 ---
 
@@ -21,8 +23,9 @@ Guía para instalar ARGO en un **servidor nuevo** cuando vendes el producto a ot
 3. La **base de datos MongoDB** vive solo en ese VPS (volumen Docker `argo_mongo_data`).
 4. Los **archivos** (uploads, respaldos) van en `./data/` de ese servidor, no en Git.
 5. Crea repo/rama aparte **solo si** ese cliente paga desarrollo exclusivo que no debe ir al producto base.
+6. Reglas de negocio que solo algunos clientes usan → **toggle en Configuración ERP** (colección `config` en Mongo), no variable en `.env` ni rama Git. Ver [PLAN-CLIENTE-NUEVO.md § Regla de negocio](./PLAN-CLIENTE-NUEVO.md#11-regla-de-negocio-toggle-en-configuración).
 
-**No copies el repo solo para “tenerlo separado”.** La separación real es: servidor + `.env` + dominio + datos.
+**No copies el repo solo para “tenerlo separado”.** La separación real es: carpeta en el servidor + `.env` + dominio + datos.
 
 ---
 
@@ -359,15 +362,91 @@ Detalle: [SEGURIDAD-FASE2.md](./SEGURIDAD-FASE2.md)
 
 ## 6. Servicios Docker por cliente
 
-| Contenedor | Puerto interno host | Uso |
-|------------|---------------------|-----|
+| Contenedor | Puerto host (1.ª instalación) | Uso |
+|------------|-------------------------------|-----|
 | `argo-mongo` | (solo red Docker) | Base de datos |
 | `argo-backend` | 5002 → API | Node.js |
 | `argo-frontend` | 8083 → ERP Angular | Staff |
-| `argo-sitio` | 8084 → sitio marketing | Opcional |
 | `argo-aula-virtual` | 8085 → portal alumnos | Matrículas virtuales |
+| `argo-sitio` | 8084 → sitio marketing | **Opcional** — muchos clientes no lo usan |
 
 En producción el usuario **solo** entra por **443** (nginx); los puertos 808x y 5002 quedan en localhost.
+
+Si el cliente solo usa **ERP + aula virtual + apps móviles**, no levantes `argo-sitio`:
+
+```bash
+docker compose up -d argo-mongo argo-backend argo-frontend argo-aula-virtual
+```
+
+---
+
+## 6.1 Dos instalaciones en un mismo VPS
+
+Cuando **dos clientes comparten el mismo servidor** (dos carpetas, dos dominios, dos bases de datos), cada instalación es un stack Docker **independiente**.
+
+### Estructura recomendada
+
+```
+/opt/
+├── argo-cliente-a/     ← ya existente
+└── argo-cliente-b/     ← cliente nuevo (clone del mismo repo)
+```
+
+### Reglas obligatorias
+
+| Regla | Detalle |
+|-------|---------|
+| **Carpeta propia** | `git clone` en `/opt/argo-<slug>/` |
+| **`.env` propio** | Nunca reutilizar `JWT_SECRET`, `BACKUP_CLAVE_CIFRADO`, etc. |
+| **Mongo propio** | Volumen Docker distinto (`COMPOSE_PROJECT_NAME` distinto) |
+| **Puertos host distintos** | La 2.ª instalación **no** puede usar 5002/8083/8085 |
+| **Nginx** | Cada dominio → puerto local de **su** instalación |
+| **Mismo código** | `git pull origin main` en cada carpeta por separado |
+
+### Puertos sugeridos para la 2.ª instalación
+
+| Servicio | 1.ª instalación | 2.ª instalación |
+|----------|-----------------|-----------------|
+| API | `5002:3000` | `5012:3000` |
+| ERP | `8083:80` | `8093:80` |
+| Portal | `8085:80` | `8095:80` |
+
+### Ejemplo `docker-compose.yml` (2.ª instalación)
+
+Solo cambia el mapeo de puertos en `ports:` (el resto igual que la 1.ª):
+
+```yaml
+services:
+  argo-backend:
+    ports:
+      - "5012:3000"
+  argo-frontend:
+    ports:
+      - "8093:80"
+  argo-aula-virtual:
+    ports:
+      - "8095:80"
+```
+
+Levantar con nombre de proyecto único:
+
+```bash
+cd /opt/argo-cliente-b
+export COMPOSE_PROJECT_NAME=argo-clienteb
+docker compose up -d argo-mongo argo-backend argo-frontend argo-aula-virtual
+```
+
+### Nginx (cliente B)
+
+Duplicar las plantillas de `deploy/nginx/` con los `server_name` del cliente B y `proxy_pass` a **8093 / 8095 / 5012** (no a los puertos del cliente A).
+
+Health check de la 2.ª API:
+
+```bash
+curl -sf http://127.0.0.1:5012/api/health && echo OK
+```
+
+> Plan completo con fases local → producción: [PLAN-CLIENTE-NUEVO.md](./PLAN-CLIENTE-NUEVO.md)
 
 ---
 
@@ -403,9 +482,15 @@ Guía detallada: [GUIA-GIT-DESPLIEGUE.md](./GUIA-GIT-DESPLIEGUE.md)
 
 ## 9. Reutilizar un VPS para otro cliente
 
-**No recomendado** en producción sin proceso formal.
+Hay **dos escenarios distintos**:
 
-Si debes hacerlo:
+### A — Dos clientes a la vez en el mismo VPS (recomendado si comparten servidor)
+
+Usar **dos carpetas** y dos stacks Docker (sección [6.1](#61-dos-instalaciones-en-un-mismo-vps)). **No** mezclar datos ni `.env`.
+
+### B — Reemplazar un cliente por otro en la misma carpeta (no recomendado)
+
+Solo si el cliente anterior deja de operar en ese servidor:
 
 1. Descargar y archivar último respaldo del cliente anterior (cifrado).
 2. ERP → **Sistema → Puesta en cero** (copia previa automática + auditoría).
@@ -448,6 +533,7 @@ Si debes hacerlo:
 
 | Archivo | Contenido |
 |---------|-----------|
+| [PLAN-CLIENTE-NUEVO.md](./PLAN-CLIENTE-NUEVO.md) | **Plan completo:** local → VPS compartido, portal, toggle de reglas |
 | [GUIA-GIT-DESPLIEGUE.md](./GUIA-GIT-DESPLIEGUE.md) | Commit, push y deploy día a día |
 | [SEGURIDAD-FASE1.md](./SEGURIDAD-FASE1.md) | HTTPS, rate limit, Turnstile portal |
 | [SEGURIDAD-FASE2.md](./SEGURIDAD-FASE2.md) | Turnstile ERP, firewall, Cloudflare |

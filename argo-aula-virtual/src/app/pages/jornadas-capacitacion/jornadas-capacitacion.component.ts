@@ -84,6 +84,8 @@ export class JornadasCapacitacionComponent implements OnInit {
   aceptaAutorizacion = signal(false);
   mensajeExito = signal('');
   nombreExito = signal('');
+  nombreEmpresa = signal('');
+  correoEmpresa = signal('');
 
   ngOnInit() {
     this.catalogs.tiposDoc().subscribe({
@@ -104,6 +106,8 @@ export class JornadasCapacitacionComponent implements OnInit {
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
         this.registroAbierto.set(c.registroAbierto !== false);
         this.emailVerificacion.set(!!c.emailVerificacionRegistro);
+        this.nombreEmpresa.set(c.nombreCea || '');
+        this.correoEmpresa.set(c.email || '');
         this.seo.applyRegistro(c);
       },
       error: () => undefined,

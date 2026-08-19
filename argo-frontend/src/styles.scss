@@ -604,6 +604,42 @@ table.argo th.num {
 .filter-pill.active.tone-cyan   { background: linear-gradient(180deg, var(--btn-cyan), var(--btn-cyan-d)); }
 .filter-pill.active.tone-orange { background: linear-gradient(180deg, var(--btn-orange), var(--btn-orange-d)); }
 
+/* Toggles tipo chip en formularios — usar en lugar de <button> sin clase (evita texto blanco ilegible) */
+.origen-pill,
+.argo-chip {
+  padding: 8px 16px;
+  border-radius: var(--btn-radius);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--line-soft);
+  background: rgba(6, 16, 41, 0.65);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.08s, box-shadow 0.15s, border-color 0.15s, color 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.origen-pill:hover,
+.argo-chip:hover {
+  color: var(--text);
+  border-color: var(--line);
+  filter: none;
+}
+.origen-pill.active,
+.argo-chip.active {
+  border: none;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(180deg, var(--btn-blue), var(--btn-blue-d));
+}
+.origen-pill.active.tone-purple,
+.argo-chip.active.tone-purple { background: linear-gradient(180deg, var(--btn-purple), var(--btn-purple-d)); }
+.origen-pill.active.tone-violet,
+.argo-chip.active.tone-violet { background: linear-gradient(180deg, var(--btn-purple), var(--btn-purple-d)); }
+.origen-pill.active.tone-teal,
+.argo-chip.active.tone-teal { background: linear-gradient(180deg, var(--btn-teal), var(--btn-teal-d)); }
+.origen-pill.active.tone-blue,
+.argo-chip.active.tone-blue { background: linear-gradient(180deg, var(--btn-blue), var(--btn-blue-d)); }
+
 /* Tablas admin unificadas */
 table.data-table,
 table.argo {

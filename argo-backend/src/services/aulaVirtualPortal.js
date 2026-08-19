@@ -82,20 +82,23 @@ async function obtenerConfigAula() {
 }
 
 async function guardarConfigAula(body, usuario) {
+  // Base = configuración actual (no DEFAULTS) para que los guardados parciales
+  // (subir imagen hero/logo, etc.) NO reinicien campos no enviados como los textos del hero.
+  const actual = await obtenerConfigAula();
   const dto = {
-    ...DEFAULTS_AULA,
+    ...actual,
     ...body,
     clave: CLAVE_AULA,
-    nombreEmpresa: String(body.nombreEmpresa ?? body.nombreCea ?? '').trim(),
-    nit: String(body.nit ?? '').trim(),
-    direccion: String(body.direccion ?? '').trim(),
-    ciudad: String(body.ciudad ?? '').trim(),
-    telefono: String(body.telefono ?? '').trim(),
-    email: String(body.email ?? '').trim(),
-    emailContacto:      String(body.emailContacto ?? '').trim().toLowerCase(),
-    emailConfirmacion:  String(body.emailConfirmacion ?? '').trim().toLowerCase(),
-    emailPqr:           String(body.emailPqr ?? '').trim().toLowerCase(),
-    telefonoWhatsapp: String(body.telefonoWhatsapp ?? '').trim(),
+    nombreEmpresa: String(body.nombreEmpresa ?? body.nombreCea ?? actual.nombreEmpresa ?? '').trim(),
+    nit: String(body.nit ?? actual.nit ?? '').trim(),
+    direccion: String(body.direccion ?? actual.direccion ?? '').trim(),
+    ciudad: String(body.ciudad ?? actual.ciudad ?? '').trim(),
+    telefono: String(body.telefono ?? actual.telefono ?? '').trim(),
+    email: String(body.email ?? actual.email ?? '').trim(),
+    emailContacto:      String(body.emailContacto ?? actual.emailContacto ?? '').trim().toLowerCase(),
+    emailConfirmacion:  String(body.emailConfirmacion ?? actual.emailConfirmacion ?? '').trim().toLowerCase(),
+    emailPqr:           String(body.emailPqr ?? actual.emailPqr ?? '').trim().toLowerCase(),
+    telefonoWhatsapp: String(body.telefonoWhatsapp ?? actual.telefonoWhatsapp ?? '').trim(),
     urlLogo: body.urlLogo !== undefined ? String(body.urlLogo ?? '').trim() : undefined,
     userChangeRecord: usuario?.username || 'sistema',
   };
@@ -104,12 +107,14 @@ async function guardarConfigAula(body, usuario) {
   if (dto.urlLogo === undefined) delete dto.urlLogo;
   if (body.landing !== undefined) {
     dto.landing = normalizarLanding(body.landing);
+  } else {
+    dto.landing = mergeLanding(actual.landing);
   }
   if (body.site !== undefined) {
-    const navBase = dto.landing?.nav || mergeLanding((await obtenerConfigAula()).landing).nav;
-    const footerBase = dto.landing?.footer || mergeLanding((await obtenerConfigAula()).landing).footer;
+    const navBase = dto.landing?.nav || mergeLanding(actual.landing).nav;
+    const footerBase = dto.landing?.footer || mergeLanding(actual.landing).footer;
     dto.site = mergePortalSite(body.site, { nav: navBase, footer: footerBase });
-    dto.landing = sincronizarNavLanding(dto.landing || mergeLanding((await obtenerConfigAula()).landing), dto.site);
+    dto.landing = sincronizarNavLanding(dto.landing || mergeLanding(actual.landing), dto.site);
   }
   await Config.updateOne({ clave: CLAVE_AULA }, { $set: dto }, { upsert: true });
   return obtenerConfigAula();

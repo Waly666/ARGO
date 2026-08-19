@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   ElementRef,
+  HostBinding,
   inject,
   OnDestroy,
   OnInit,
@@ -17,22 +18,30 @@ import { AnimateTitleDirective } from '../../core/animate-title.directive';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
+import { HeroParticleMeshComponent } from '../../shared/hero-particle-mesh/hero-particle-mesh.component';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalThemeService } from '../../core/portal-theme.service';
+import { resolvePortalHeroEstilo } from '../../core/portal-theme-css.util';
+import { DEFAULT_CEA_NOMBRE, DEFAULT_APK_NOMBRE, DEFAULT_APK_URL } from '../../core/portal-brand-defaults';
 import { HERO_DEFAULT } from './home-content';
 
 @Component({
   selector: 'av-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent],
+  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, HeroParticleMeshComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('heroH1') heroH1?: ElementRef<HTMLElement>;
+
+  @HostBinding('class.home--servial-mesh')
+  get servialMeshHome(): boolean {
+    return this.heroEstilo() === 'servial-mesh';
+  }
 
   private api = inject(AulaApiService);
   private seo = inject(PortalSeoService);
@@ -47,7 +56,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   landing = computed(() => mergePortalLanding(this.config()?.landing));
 
-  nombreCea = computed(() => this.config()?.nombreCea || 'Fundación Finstruvial');
+  nombreCea = computed(() => this.config()?.nombreCea || DEFAULT_CEA_NOMBRE);
   telefono = computed(() => this.config()?.telefono?.trim() || '');
   direccion = computed(
     () =>
@@ -56,6 +65,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   heroTitulo = computed(() => this.config()?.heroTitulo || HERO_DEFAULT.titulo);
   heroSubtitulo = computed(() => this.config()?.heroSubtitulo || HERO_DEFAULT.subtitulo);
+  heroEstilo = computed(() => resolvePortalHeroEstilo(this.config()?.site?.tema));
   logoUrl = computed(() => {
     const cfg = this.config();
     return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
@@ -71,9 +81,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   heroImg = computed(() => this.theme.heroImageUrl(this.config()) || '/images/hero-estudiante.png');
 
-  apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || '/apk/aula-virtual-finstruvial.apk');
+  apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || DEFAULT_APK_URL);
 
-  apkDownloadName = computed(() => this.landing().appMobile.apkNombre || 'aula-virtual-finstruvial.apk');
+  apkDownloadName = computed(() => this.landing().appMobile.apkNombre || DEFAULT_APK_NOMBRE);
 
   ngOnInit() {
     this.api.config().subscribe({

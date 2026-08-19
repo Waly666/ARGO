@@ -34,12 +34,12 @@ const { turnstileEnabled, turnstileSiteKey, mfaStaffRequired, mfaStaffWebOnly } 
 const { resolvePostPasswordLogin, emitirSesionStaff } = require('../services/staffMfa');
 const soporteMaestro = require('../services/soporteMaestro');
 const { obtenerConfigRecibo } = require('../services/configRecibo');
-const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+const { publicUploadUrlVersioned } = require('../utils/uploadPublicUrl');
 
 exports.configPublica = async (_req, res, next) => {
   try {
     const recibo = await obtenerConfigRecibo();
-    const urlLogo = publicUploadUrl(recibo.urlLogo);
+    const urlLogo = publicUploadUrlVersioned(recibo.urlLogo);
     res.json({
       turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
       mfaRequired: mfaStaffRequired() && mfaStaffWebOnly(),

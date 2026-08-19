@@ -193,6 +193,8 @@
       }
 
       <av-autorizacion-datos
+        [nombreEmpresa]="nombreEmpresa()"
+        [correo]="correoEmpresa()"
         [aceptado]="aceptaAutorizacion()"
         (aceptadoChange)="aceptaAutorizacion.set($event)"
       />

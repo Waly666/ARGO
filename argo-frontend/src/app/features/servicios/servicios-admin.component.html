@@ -258,6 +258,22 @@
 
         <div class="col-3">
 
+          <label>Tarifa gestor</label>
+
+          <input type="number" min="0" [ngModel]="form().tarifaGestor" (ngModelChange)="patchForm({ tarifaGestor: $event })" />
+
+        </div>
+
+        <div class="col-3">
+
+          <label>Tarifa empresa</label>
+
+          <input type="number" min="0" [ngModel]="form().tarifaEmpresa" (ngModelChange)="patchForm({ tarifaEmpresa: $event })" />
+
+        </div>
+
+        <div class="col-3">
+
           <label>IVA %</label>
 
           <input type="number" min="0" [ngModel]="form().iva" (ngModelChange)="patchForm({ iva: $event })" />
@@ -342,6 +358,10 @@
 
           <th>T3</th>
 
+          <th>T.Gest.</th>
+
+          <th>T.Emp.</th>
+
           <th>T.V.</th>
 
           <th class="th-actions">Acciones</th>
@@ -372,6 +392,10 @@
 
           <td><span class="cap cap-slate cap-money">${{ num(s.tarifa3) | number }}</span></td>
 
+          <td><span class="cap cap-amber cap-money">${{ num(s.tarifaGestor) | number }}</span></td>
+
+          <td><span class="cap cap-teal cap-money">${{ num(s.tarifaEmpresa) | number }}</span></td>
+
           <td><span class="cap cap-violet cap-money">${{ num(s.tarifaVirtual) | number }}</span></td>
 
           <td class="acciones actions-cell">
@@ -398,7 +422,7 @@
 
         <tr *ngIf="!servicios().length">
 
-          <td colspan="8" class="empty">No hay servicios. Use «Nuevo servicio» para agregar trámites u otros cobros.</td>
+          <td colspan="11" class="empty">No hay servicios. Use «Nuevo servicio» para agregar trámites u otros cobros.</td>
 
         </tr>
 
@@ -445,6 +469,10 @@
             <div><dt>Tarifa 2</dt><dd class="cap cap-cyan cap-money">${{ num(s.tarifa2) | number }}</dd></div>
 
             <div><dt>Tarifa 3</dt><dd class="cap cap-slate cap-money">${{ num(s.tarifa3) | number }}</dd></div>
+
+            <div><dt>Tarifa gestor</dt><dd class="cap cap-amber cap-money">${{ num(s.tarifaGestor) | number }}</dd></div>
+
+            <div><dt>Tarifa empresa</dt><dd class="cap cap-teal cap-money">${{ num(s.tarifaEmpresa) | number }}</dd></div>
 
             <div><dt>Tarifa virtual</dt><dd class="cap cap-violet cap-money">${{ num(s.tarifaVirtual) | number }}</dd></div>
 

@@ -126,6 +126,9 @@ async function ejecutarResetEmpresa(req, adminDoc) {
   }
 
   const tipoReset = plan.completo ? 'completo' : 'parcial';
+  const { aplicarParchesReferidorComercial } = require('./migrarReferidorComercial');
+  await aplicarParchesReferidorComercial().catch(() => {});
+
   await registrarAuditoria({
     req,
     accion: 'reset_empresa',

@@ -1,4 +1,4 @@
-/** Variables CSS derivadas del tema del portal (sitio público). */
+import { portalFontBody, portalFontDisplay } from './portal-fonts.util';
 
 export interface PortalTemaLike {
   colorPrimario?: string;
@@ -9,9 +9,14 @@ export interface PortalTemaLike {
   colorTexto?: string;
   colorTextoSecundario?: string;
   fuente?: string;
+  fuenteTitulos?: string;
+  heroEstilo?: 'starfield' | 'servial-mesh';
 }
 
-export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente'>> & { fuente: string } = {
+export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | 'fuenteTitulos'>> & {
+  fuente: string;
+  fuenteTitulos?: string;
+} = {
   colorPrimario: '#3b82f6',
   colorPrimarioOscuro: '#1d4ed8',
   colorAcento: '#22d3ee',
@@ -20,6 +25,8 @@ export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente'>> &
   colorTexto: '#eef3ff',
   colorTextoSecundario: '#9fb0d0',
   fuente: 'Plus Jakarta Sans',
+  fuenteTitulos: '',
+  heroEstilo: 'starfield',
 };
 
 /** Derivados idénticos al CSS publicado en https://finstruvial.edu.co/ */
@@ -128,6 +135,27 @@ function resolveTema(tema: PortalTemaLike | null | undefined) {
   return { ...PORTAL_TEMA_FINSTRUVIAL, ...tema };
 }
 
+/** Misma heurística que el home: detecta Servial/PICO aunque falte heroEstilo en la config publicada. */
+export function resolvePortalHeroEstilo(
+  tema: PortalTemaLike | null | undefined,
+): 'starfield' | 'servial-mesh' {
+  const explicit = tema?.heroEstilo;
+  if (explicit === 'servial-mesh' || explicit === 'starfield') return explicit;
+
+  const accent = tema?.colorAcento?.toLowerCase();
+  const fuente = tema?.fuente?.toLowerCase() ?? '';
+  const primOscuro = tema?.colorPrimarioOscuro?.toLowerCase();
+
+  if (
+    (accent === '#ffd200' || accent === '#aee929' || accent === '#d9d314') &&
+    (fuente.includes('poppins') || fuente.includes('figtree')) &&
+    (primOscuro === '#000000' || primOscuro === '#04060c' || primOscuro === '#0a0a0a')
+  ) {
+    return 'servial-mesh';
+  }
+  return 'starfield';
+}
+
 /** Genera todas las variables --av-* aplicadas en :root al cargar el portal. */
 export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined): Record<string, string> {
   const t = resolveTema(tema);
@@ -139,7 +167,10 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
   const text = t.colorTexto;
   const dim = t.colorTextoSecundario;
   const light = isLightColor(bg);
-  const fontStack = `'${t.fuente}', system-ui, sans-serif`;
+  const fontBody = portalFontBody(t);
+  const fontDisplay = portalFontDisplay(t);
+  const fontStack = `'${fontBody}', system-ui, sans-serif`;
+  const displayStack = `'${fontDisplay}', system-ui, sans-serif`;
   const surface2 = mixHex(surface, primaryDark, 0.28);
   const pageHeroStart = darkenHex(bg, 0.35);
   const footerEnd = darkenHex(bg, 0.55);
@@ -170,7 +201,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     '--av-border': withAlpha(dim, 0.35),
     '--av-border-strong': withAlpha(accent, 0.35),
     '--av-font-sans': fontStack,
-    '--av-font-display': fontStack,
+    '--av-font-display': displayStack,
 
     '--av-starfield-top': starfieldTop,
     '--av-starfield-mid': light ? bg : starfieldMid,
@@ -283,6 +314,32 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     '--dash-primary-hover': primaryDark,
     '--dash-accent': accent,
 
+    '--dash-bg': mixHex('#f8fafc', primary, 0.04),
+    '--dash-bg-glow-a': withAlpha(primary, 0.12),
+    '--dash-bg-glow-b': withAlpha(accent, 0.1),
+    '--dash-sidebar-bg': `linear-gradient(180deg, ${primaryDark} 0%, ${mixHex(surface, primaryDark, 0.35)} 55%, ${mixHex(surface, primary, 0.14)} 100%)`,
+    '--dash-sidebar-text': text,
+    '--dash-sidebar-text-muted': withAlpha(text, 0.72),
+    '--dash-sidebar-border': withAlpha(text, 0.12),
+    '--dash-sidebar-shadow': withAlpha(primaryDark, 0.25),
+    '--dash-nav-active-bg': `linear-gradient(90deg, ${primary}, ${mixHex(primary, accent, 0.65)})`,
+    '--dash-nav-active-text': isLightColor(mixHex(primary, accent, 0.45))
+      ? mixHex(primaryDark, '#0f172a', 0.9)
+      : '#ffffff',
+    '--dash-nav-active-shadow': withAlpha(primary, 0.38),
+    '--dash-nav-hover-bg': withAlpha(text, 0.1),
+    '--dash-user-chip-bg': `linear-gradient(90deg, ${primary}, ${accent})`,
+    '--dash-user-chip-text': isLightColor(mixHex(primary, accent, 0.5))
+      ? mixHex(primaryDark, '#0f172a', 0.85)
+      : '#ffffff',
+    '--dash-user-chip-shadow': withAlpha(primary, 0.35),
+    '--dash-logo-fallback-bg': `linear-gradient(135deg, ${primary}, ${accent})`,
+    '--dash-sidebar-toggle-bg': '#ffffff',
+    '--dash-sidebar-toggle-border': withAlpha(primary, 0.35),
+    '--dash-sidebar-toggle-color': isLightColor(primary) ? mixHex(primaryDark, '#0f172a', 0.9) : primary,
+    '--dash-mobile-topbar-bg': `linear-gradient(90deg, ${primaryDark}, ${mixHex(surface, primaryDark, 0.35)})`,
+    '--dash-back-hover': accent,
+
     '--av-fundacion-cta-bg': `linear-gradient(120deg, ${primary} 0%, ${mixHex(primaryDark, accent, 0.5)} 50%, ${mixHex(accent, '#ea580c', 0.35)} 100%)`,
   };
 
@@ -292,6 +349,38 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     `radial-gradient(circle, ${withAlpha(accent, 0.16)} 0%, ${withAlpha(accent, 0.05)} 38%, transparent 68%)`;
   vars['--av-hero-bg'] =
     `radial-gradient(ellipse 85% 65% at 18% 42%, ${vars['--av-starfield-glow']}, transparent 68%), linear-gradient(135deg, ${vars['--av-hero-grad-start']} 0%, ${vars['--av-hero-grad-end']} 78%)`;
+
+  if (resolvePortalHeroEstilo(t) === 'servial-mesh') {
+    const picoGreen = '#AEE929';
+    const picoYellow = accent;
+    vars['--av-nav-link'] = picoGreen;
+    vars['--av-nav-link-hover'] = '#ffffff';
+    vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
+    vars['--av-topbar-border'] = 'rgba(174, 233, 41, 0.16)';
+    vars['--av-inst-bar-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${surface} 100%)`;
+    vars['--av-hero-bg'] = 'transparent';
+    vars['--av-hero-title-shimmer'] = picoGreen;
+    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
+    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
+    vars['--av-starfield-glow'] = withAlpha(picoGreen, 0.2);
+
+    vars['--dash-bg'] = mixHex('#f4f7ef', primary, 0.06);
+    vars['--dash-bg-glow-a'] = withAlpha(picoGreen, 0.14);
+    vars['--dash-bg-glow-b'] = withAlpha(picoYellow, 0.1);
+    vars['--dash-sidebar-bg'] =
+      `linear-gradient(180deg, ${bg} 0%, ${surface} 62%, ${mixHex(surface, picoGreen, 0.1)} 100%)`;
+    vars['--dash-sidebar-border'] = withAlpha(picoGreen, 0.16);
+    vars['--dash-nav-active-bg'] = `linear-gradient(90deg, ${mixHex(primary, picoGreen, 0.35)}, ${picoGreen})`;
+    vars['--dash-nav-active-text'] = mixHex(primaryDark, '#052e16', 0.65);
+    vars['--dash-nav-active-shadow'] = withAlpha(picoGreen, 0.35);
+    vars['--dash-user-chip-bg'] = `linear-gradient(90deg, ${primary}, ${picoGreen})`;
+    vars['--dash-user-chip-text'] = mixHex(primaryDark, '#052e16', 0.65);
+    vars['--dash-user-chip-shadow'] = withAlpha(picoGreen, 0.35);
+    vars['--dash-mobile-topbar-bg'] = `linear-gradient(90deg, ${bg}, ${surface})`;
+    vars['--dash-sidebar-toggle-color'] = mixHex(primaryDark, picoGreen, 0.25);
+    vars['--dash-sidebar-toggle-border'] = withAlpha(picoGreen, 0.35);
+    vars['--dash-back-hover'] = picoGreen;
+  }
 
   if (isFinstruvialTema(t)) {
     return { ...vars, ...FINSTRUVIAL_DERIVED_CSS_VARS };

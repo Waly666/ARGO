@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Ingreso = require('../models/Ingreso');
 const Liquidacion = require('../models/Liquidacion');
+const Matricula = require('../models/Matricula');
 const DatosAlumno = require('../models/DatosAlumno');
 const { parseNumDoc, numDocQuery, numDocEquals } = require('../utils/numDoc');
 const { crearMatriculaDesdeBody } = require('./matriculaCreator');
@@ -285,10 +286,11 @@ async function registrarPagoMigracion(body, idSede, ctx = {}) {
 }
 
 /**
- * Aplica un ingreso migrado (Excel) a liquidaciones pendientes del alumno (FIFO).
+ * Aplica un ingreso migrado (Excel) a liquidaciones pendientes del alumno.
+ * Por defecto FIFO; con opts.codigoPrograma o opts.refMatricula solo aplica a esa matrícula.
  * Devuelve el ingreso actualizado con idLiquidacion/detalle.
  */
-async function vincularPagoMigradoALiquidaciones(ingresoId) {
+async function vincularPagoMigradoALiquidaciones(ingresoId, opts = {}) {
   const ing = await Ingreso.findById(ingresoId);
   if (!ing || ing.idLiquidacion || (Array.isArray(ing.detalle) && ing.detalle.length)) {
     return ing;
@@ -299,10 +301,29 @@ async function vincularPagoMigradoALiquidaciones(ingresoId) {
   let restante = num(ing.valor);
   if (!(restante > 0)) return ing;
 
-  const liqs = await Liquidacion.find({
+  const { buscarPrograma } = require('./programaServicio');
+
+  const query = {
     ...numDocQuery(numDoc),
     saldo: { $gt: 0 },
-  })
+  };
+
+  const refMatricula = String(opts.refMatricula || '').trim();
+  if (refMatricula) {
+    const mat = await Matricula.findOne({ numDoc, refMigracion: refMatricula }).lean();
+    if (!mat) return ing;
+    query.$or = [{ idMat: mat._id }, { idMatricula: mat._id }];
+  } else {
+    const codigoPrograma = String(opts.codigoPrograma || '').trim();
+    if (codigoPrograma) {
+      const prog = await buscarPrograma(codigoPrograma);
+      if (prog) {
+        query.idProg = String(prog.idPrograma ?? prog._id);
+      }
+    }
+  }
+
+  const liqs = await Liquidacion.find(query)
     .sort({ fechaCreacion: 1, createdAt: 1 })
     .lean();
 

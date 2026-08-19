@@ -325,7 +325,8 @@ Con la práctica, los pasos 2 y 3 te toman menos de 5 minutos.
 
 | Archivo | Contenido |
 |---------|-----------|
-| [GUIA-NUEVO-CLIENTE-VPS.md](./GUIA-NUEVO-CLIENTE-VPS.md) | **Nuevo cliente:** VPS, dominios, repo vs servidor, seguridad completa |
+| [PLAN-CLIENTE-NUEVO.md](./PLAN-CLIENTE-NUEVO.md) | **Plan cliente nuevo:** fases local → producción, VPS compartido, reglas configurables |
+| [GUIA-NUEVO-CLIENTE-VPS.md](./GUIA-NUEVO-CLIENTE-VPS.md) | **Nuevo cliente:** VPS, dominios, dos carpetas en un servidor, seguridad |
 | [SOPORTE-MAESTRO-GUIA.md](./SOPORTE-MAESTRO-GUIA.md) | Cuenta break-glass de soporte |
 | [GUIA-PASARELA-WOMPI.md](./GUIA-PASARELA-WOMPI.md) | Pasarela Wompi — pagos en línea matrículas virtuales |
 | [SEGURIDAD-RESPALDOS-ISO27001.md](./SEGURIDAD-RESPALDOS-ISO27001.md) | Respaldos y puesta en cero |

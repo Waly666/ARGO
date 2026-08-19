@@ -28,14 +28,14 @@ function ttlMinutos() {
 }
 
 async function mailFromHeader(nombreCea) {
-  const cea = nombreCea || 'Finstruvial';
+  const cea = nombreCea || 'CEA';
   const aula = await obtenerConfigAula().catch(() => null);
   const fromCustom = aula?.emailConfirmacion?.trim() || null;
   return fromCustom ? `"${cea}" <${fromCustom}>` : undefined;
 }
 
 async function enviarCodigoRegistro({ email, codigo, linkToken, pendingId, nombreCea, portalBaseUrl }) {
-  const cea = nombreCea || 'Finstruvial';
+  const cea = nombreCea || 'CEA';
   const base = resolverBasePortal({ portalBaseUrl });
   const link = buildActivacionUrl(base, '/registro/activar', {
     pendingId,

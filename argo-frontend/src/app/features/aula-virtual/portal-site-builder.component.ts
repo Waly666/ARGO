@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,6 +17,7 @@ import { PortalLandingEditorComponent } from './portal-landing-editor.component'
 import { PortalFundacionEditorComponent } from './portal-fundacion-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
+import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
 import { environment } from '../../../environments/environment';
 
 export type BuilderPanel =
@@ -70,6 +71,7 @@ interface GuiaPaso {
 })
 export class PortalSiteBuilderComponent {
   private svc = inject(AulaVirtualAdminService);
+  private doc = inject(DOCUMENT);
 
   @Input({ required: true }) portalForm!: PortalAulaConfig;
   @Input({ required: true }) portalUrl!: string;
@@ -132,6 +134,9 @@ export class PortalSiteBuilderComponent {
     if (!this.portalForm.site) {
       this.portalForm.site = mergePortalSiteDefaults();
     }
+    if (this.portalForm.site.tema.fuenteTitulos === undefined) {
+      this.portalForm.site.tema.fuenteTitulos = '';
+    }
     return this.portalForm.site;
   }
 
@@ -147,7 +152,7 @@ export class PortalSiteBuilderComponent {
       },
       paginas: {
         title: 'Páginas del menú',
-        help: 'Active o desactive páginas y cambie cómo se llaman en el menú superior (por ejemplo «Fundación» → «Nuestra empresa»).',
+        help: 'Active o desactive páginas y cambie cómo se llaman en el menú superior (por ejemplo «CEA» → «Institucional»).',
       },
       inicio: {
         title: 'Bloques de la página principal',
@@ -159,7 +164,7 @@ export class PortalSiteBuilderComponent {
       },
       institucional: {
         title: 'Página «Quiénes somos»',
-        help: 'Misión, visión, quiénes somos y servicios. Ideal si renombró «Fundación» por «Empresa» o «Institución».',
+        help: 'Misión, visión, quiénes somos y servicios del CEA. Ideal si renombró «CEA» por «Institucional» o «Nosotros».',
       },
       blog: {
         title: 'Página Blog',
@@ -277,6 +282,13 @@ export class PortalSiteBuilderComponent {
     return buildPortalThemeCssVars(this.site.tema);
   }
 
+  onFuentesChange() {
+    if (this.site.tema.fuenteTitulos === undefined) {
+      this.site.tema.fuenteTitulos = '';
+    }
+    loadPortalGoogleFonts(this.doc, this.site.tema);
+  }
+
   tieneImagenHero(): boolean {
     return !!this.site.tema?.urlHero?.trim();
   }
@@ -342,5 +354,9 @@ export class PortalSiteBuilderComponent {
     Object.assign(this.portalForm, config);
     this.portalForm.landing = mergePortalLanding(config.landing);
     this.portalForm.site = mergePortalSiteDefaults(config.site);
+    if (this.portalForm.site.tema.fuenteTitulos === undefined) {
+      this.portalForm.site.tema.fuenteTitulos = '';
+    }
+    loadPortalGoogleFonts(this.doc, this.portalForm.site.tema);
   }
 }

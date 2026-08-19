@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PermisoService } from '../../core/services/permiso.service';
 import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
 import { mergePortalSiteDefaults } from '../../core/constants/portal-site-defaults';
 import { PORTAL_PLANTILLAS, PortalPlantilla } from '../../core/constants/portal-plantillas';
@@ -30,10 +31,17 @@ import { environment } from '../../../environments/environment';
 export class AulaVirtualSitioComponent implements OnInit {
   private svc = inject(AulaVirtualAdminService);
   private auth = inject(AuthService);
+  private permisos = inject(PermisoService);
   private confirm = inject(ConfirmDialogService);
 
-  /** Exportar / importar / galería: solo usuario soporte maestro (break-glass). */
-  readonly puedeDisenoPortal = computed(() => this.auth.isSoporteMaestro());
+  /** Galería de plantillas: quien edita el sitio del portal. */
+  readonly puedeUsarPlantillas = computed(() =>
+    this.auth.isSoporteMaestro() ||
+    this.permisos.tiene(['aula_virtual.sitio', 'aula_virtual.gestionar']),
+  );
+
+  /** Exportar / importar JSON entre clientes: solo soporte maestro. */
+  readonly puedeHerramientasSoporte = computed(() => this.auth.isSoporteMaestro());
 
   readonly plantillas = PORTAL_PLANTILLAS;
   galeriaAbierta = signal(false);

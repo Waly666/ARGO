@@ -66,4 +66,47 @@ function uploadFileToDataUrl(relative) {
   }
 }
 
-module.exports = { publicUploadUrl, uploadFileToDataUrl };
+function uploadRelativePath(relative) {
+  let rel = String(relative || '').trim();
+  if (!rel) return null;
+  if (/^https?:\/\//i.test(rel)) {
+    try {
+      const pathname = new URL(rel).pathname;
+      const idx = pathname.indexOf('/uploads/');
+      if (idx >= 0) rel = pathname.slice(idx + '/uploads/'.length);
+      else return null;
+    } catch {
+      return null;
+    }
+  }
+  rel = rel.replace(/^\/+/, '');
+  if (rel.startsWith('uploads/')) rel = rel.slice('uploads/'.length);
+  return rel;
+}
+
+function uploadFileMtimeMs(relative) {
+  try {
+    const rel = uploadRelativePath(relative);
+    if (!rel) return null;
+    const filePath = path.join(UPLOAD_BASE, rel);
+    if (!fs.existsSync(filePath)) return null;
+    return fs.statSync(filePath).mtimeMs;
+  } catch {
+    return null;
+  }
+}
+
+/** URL pública con versión por fecha de archivo (evita logo viejo en caché del navegador). */
+function publicUploadUrlVersioned(relative) {
+  const url = publicUploadUrl(relative);
+  if (!url) return null;
+  const mtime = uploadFileMtimeMs(relative);
+  return mtime ? `${url}?v=${Math.floor(mtime)}` : url;
+}
+
+module.exports = {
+  publicUploadUrl,
+  publicUploadUrlVersioned,
+  uploadFileToDataUrl,
+  uploadFileMtimeMs,
+};

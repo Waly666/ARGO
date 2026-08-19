@@ -42,7 +42,7 @@ function paginasDefault(nav = {}) {
     tienda: { activa: true, etiquetaMenu: nav.tienda || 'Tienda', ruta: '/tienda' },
     cursos: { activa: true, etiquetaMenu: nav.cursos || 'Cursos', ruta: '/cursos' },
     aula: { activa: true, etiquetaMenu: nav.aula || 'Aula virtual', ruta: '/aula' },
-    fundacion: { activa: true, etiquetaMenu: nav.fundacion || 'Fundación', ruta: '/fundacion' },
+    fundacion: { activa: true, etiquetaMenu: nav.fundacion || 'CEA', ruta: '/fundacion' },
     consultaCertificados: {
       activa: true,
       etiquetaMenu: nav.consultaCertificados || 'Certificados',
@@ -63,7 +63,9 @@ const SITE_DEFAULTS = {
     colorTexto: '#eef3ff',
     colorTextoSecundario: '#9fb0d0',
     fuente: 'Plus Jakarta Sans',
+    fuenteTitulos: '',
     urlHero: '',
+    heroEstilo: 'starfield',
   },
   marca: {
     textoCopyright: '',

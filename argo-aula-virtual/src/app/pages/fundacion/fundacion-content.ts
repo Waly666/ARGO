@@ -1,22 +1,24 @@
-/** Contenido institucional de la Fundación Finstruvial — referencia: https://finstruvial.com.co/ */
+/** Contenido institucional del CEA — editable vía ERP (landing.fundacion). */
 
-export const FUNDACION_SITIO_URL = 'https://finstruvial.com.co/';
+import { DEFAULT_CEA_CORTO, DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
+
+export const FUNDACION_SITIO_URL = '/';
 
 export const FUNDACION_CONTACTO = {
-  telefono: '313 3921011',
-  email: 'finstruvial1@gmail.com',
-  direccion: 'Carrera 19c #38-22, Villavicencio, Meta',
-  sedeNota: 'Frente al Acueducto Municipal',
+  telefono: '',
+  email: '',
+  direccion: 'Villavicencio, Meta',
+  sedeNota: '',
 };
 
 export const FUNDACION_QUIENES_LEAD =
-  'Somos la Fundación Finstruvial: educamos, acompañamos y asesoramos en seguridad vial para que más personas lleguen bien a casa.';
+  `Somos un ${DEFAULT_CEA_NOMBRE}: formamos conductores responsables con cursos de conducción, licencias y capacitación en seguridad vial para que más personas lleguen bien a casa.`;
 
 export const FUNDACION_QUIENES_DESTACADOS = [
   { icon: '📍', label: 'Sede', text: 'Villavicencio, Meta' },
   { icon: '🇨🇴', label: 'Cobertura', text: 'Colombia' },
-  { icon: '🎓', label: 'Formación', text: 'Aula virtual + campo' },
-  { icon: '🛣️', label: 'Enfoque', text: 'Tránsito y transporte' },
+  { icon: '🎓', label: 'Formación', text: 'Aula virtual + práctica' },
+  { icon: '🛣️', label: 'Enfoque', text: 'Conducción y seguridad vial' },
 ];
 
 export const FUNDACION_QUIENES_BLOQUES = [
@@ -24,68 +26,68 @@ export const FUNDACION_QUIENES_BLOQUES = [
     icon: '💛',
     titulo: 'Salvar vidas en la vía',
     texto:
-      'Promovemos una movilidad responsable, humana y sostenible. Con capacitación, campañas y acompañamiento técnico buscamos que cada actor vial —conductor, peatón, ciclista o empresa— transite con más conciencia.',
+      'Promovemos una conducción responsable y segura. Con capacitación teórica, práctica y acompañamiento buscamos que cada conductor transite con más conciencia.',
   },
   {
     icon: '📚',
-    titulo: 'Experiencia con respaldo legal',
+    titulo: 'Formación con respaldo legal',
     texto:
-      'Nuestro trabajo se apoya en la Ley 769 de 2002, la Ley 1503 de 2011 y el Plan Nacional de Seguridad Vial 2022–2031, en línea con las políticas de la ONU y la OMS para reducir la siniestralidad.',
+      'Nuestros cursos cumplen con la Ley 769 de 2002 y el Decreto 1500: certificados expedidos por un Centro de Enseñanza Automovilística legalmente autorizado.',
   },
   {
     icon: '🏫',
     titulo: 'Un solo ecosistema educativo',
     texto:
-      'El instituto técnico y el aula virtual hacen parte de la misma familia Finstruvial: formación en sitio, consultoría para empresas e instituciones, y herramientas como PERIDATA para decisiones con datos.',
+      'Clases presenciales, prácticas en vía y aula virtual integrados para que obtenga o refrende su licencia de conducción con acompañamiento profesional.',
   },
 ];
 
-export const FUNDACION_MISION = `La Fundación Finstruvial es una organización sin ánimo de lucro que promueve y dinamiza procesos educativos mediante la formación en normas de tránsito, transporte y seguridad vial de forma ágil y eficaz.
+export const FUNDACION_MISION = `Nuestro ${DEFAULT_CEA_NOMBRE} promueve la formación en normas de tránsito, conducción segura y seguridad vial de forma ágil y eficaz.
 
-Garantiza servicios de calidad para el sector transporte y organismos de tránsito, con un equipo humano y logístico altamente calificado para responder a las necesidades del contexto y aportar al desarrollo de competencias básicas y laborales de nuestros usuarios.`;
+Garantizamos servicios de calidad para conductores y empresas, con instructores calificados y procesos alineados a la normativa nacional.`;
 
-export const FUNDACION_VISION = `La Fundación Finstruvial será reconocida nacional e internacionalmente, en el año 2030, por ser una entidad pionera en la promoción de la seguridad vial y el fortalecimiento de las competencias laborales en cada uno de los procesos relacionados con la conducción segura, la prevención de accidentes y la apropiación de las normas de tránsito.`;
+export const FUNDACION_VISION = `Ser reconocidos en Villavicencio, el Meta y Colombia como referente en formación para conductores, prevención de accidentes y apropiación de las normas de tránsito.`;
 
-export const FUNDACION_COMPROMISO = `En la Fundación Finstruvial creemos en el poder de la innovación para salvar vidas. Trabajamos en soluciones concretas que mejoran la movilidad, reducen los siniestros y promueven una cultura vial más segura en las carreteras de Colombia.
+export const FUNDACION_COMPROMISO = `En nuestro ${DEFAULT_CEA_CORTO} creemos que una buena formación salva vidas. Trabajamos para que cada alumno obtenga su licencia con confianza, responsabilidad y respeto por la norma.
 
-Acompañamos a entidades públicas y privadas en el diseño de soluciones efectivas: planes locales y estratégicos de seguridad vial, movilidad sostenible, capacitación, campañas de sensibilización, estudios técnicos y herramientas como PERIDATA.`;
+Acompañamos a conductores y empresas con cursos de conducción, manejo defensivo, mecánica básica, primeros auxilios y programas virtuales de seguridad vial.`;
 
 export const FUNDACION_SERVICIOS_DESTACADOS = [
   {
-    icon: '🎓',
-    title: 'Capacitación y aula virtual',
-    text: 'Cursos presenciales y virtuales que fortalecen competencias en seguridad vial y transporte.',
+    icon: '🏍️',
+    title: 'Licencia categoría A2',
+    text: 'Curso de conducción de motocicletas de cualquier cilindraje.',
   },
   {
-    icon: '📋',
-    title: 'Consultoría en seguridad vial',
-    text: 'PESV, PLSV, planes de movilidad, manejo de tránsito y asesoría normativa.',
+    icon: '🚗',
+    title: 'Licencia categoría B1',
+    text: 'Vehículos de servicio particular: teoría, práctica y taller.',
   },
   {
-    icon: '📊',
-    title: 'PERIDATA y estudios técnicos',
-    text: 'Análisis de accidentalidad, inventarios viales y diagnósticos para la toma de decisiones.',
+    icon: '🚌',
+    title: 'Licencias C1, C2 y C3',
+    text: 'Servicio público, vehículos pesados y articulados.',
   },
   {
-    icon: '🚦',
-    title: 'Campañas y sensibilización',
-    text: 'Educación vial en campo, actividades experienciales y cultura de prevención.',
+    icon: '💻',
+    title: 'Aula virtual',
+    text: 'Cursos y programas en línea con certificación en seguridad vial.',
   },
 ];
 
 /** Contenido editable vía ERP (landing.fundacion). */
 export const FUNDACION_LANDING_DEFAULTS = {
   hero: {
-    kicker: '🛣️ Seguridad vial con calidez humana',
+    kicker: '🚗 Centro de Enseñanza Automovilística',
     titulo: '',
     lead:
-      'Llevamos la educación vial al campo y al aula virtual. En Villavicencio, el Meta y Colombia trabajamos para que más personas circulen con seguridad.',
+      'Cursos de conducción, licencias y aula virtual en Villavicencio, Meta. Formación certificada para obtener o refrendar su licencia de conducción.',
     imagenUrl: '/images/fundacion-equipo.png',
-    imagenAlt: 'Equipo institucional en campo',
-    imagenCaption: 'Nuestro equipo en acción',
+    imagenAlt: 'Equipo del centro de enseñanza automovilística',
+    imagenCaption: 'Nuestro equipo en formación',
     btnSitioUrl: FUNDACION_SITIO_URL,
-    btnSitioLabel: 'Sitio institucional ↗',
-    btnCursosLabel: 'Ver cursos virtuales',
+    btnSitioLabel: 'Ver inicio',
+    btnCursosLabel: 'Ver cursos',
   },
   quienes: {
     kicker: 'Conócenos',
@@ -94,7 +96,7 @@ export const FUNDACION_LANDING_DEFAULTS = {
     destacados: [...FUNDACION_QUIENES_DESTACADOS],
     bloques: FUNDACION_QUIENES_BLOQUES.map((b) => ({ ...b })),
     enlaceUrl: FUNDACION_SITIO_URL,
-    enlaceLabel: 'Más en nuestro sitio web ↗',
+    enlaceLabel: 'Volver al inicio',
   },
   mision: FUNDACION_MISION,
   vision: FUNDACION_VISION,
@@ -105,22 +107,22 @@ export const FUNDACION_LANDING_DEFAULTS = {
   },
   lineas: {
     kicker: 'Lo que ofrecemos',
-    titulo: 'Líneas de trabajo',
-    lead: 'Capacitación, consultoría y herramientas para empresas, entidades y comunidad.',
+    titulo: 'Servicios del CEA',
+    lead: 'Cursos de conducción, licencias y capacitación para conductores y empresas.',
     items: [...FUNDACION_SERVICIOS_DESTACADOS],
   },
   cta: {
-    kicker: '🎓 Aprende con nosotros',
-    titulo: '¡Empieza tu capacitación!',
+    kicker: '🎓 Empiece hoy',
+    titulo: '¡Obtenga su licencia de conducción!',
     texto:
-      'Cursos virtuales, programas técnicos y certificación en seguridad vial — estudia a tu ritmo desde donde estés.',
+      'Cursos presenciales, prácticas en vía y programas virtuales — estudie a su ritmo y certifique su formación.',
     btnRegistro: 'Crear cuenta',
-    btnServicios: 'Servicios para empresas',
+    btnServicios: 'Ver servicios',
   },
   contacto: {
     kicker: '📍 Escríbenos',
     titulo: 'Hablemos',
-    lead: 'Con gusto te atendemos.',
+    lead: 'Con gusto le atendemos.',
     sedeNota: FUNDACION_CONTACTO.sedeNota,
   },
 };
