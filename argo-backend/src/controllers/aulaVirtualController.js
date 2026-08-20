@@ -37,6 +37,7 @@ const {
   listarMisCertificados,
   consultarCertificadosPublico,
   htmlCertificadoPortal,
+  pdfCertificadoConsultaPublico,
 } = require('../services/aulaVirtualCertificados');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
 const {
@@ -537,6 +538,36 @@ exports.iniciarPagoEnLinea = async (req, res, next) => {
 exports.consultarCertificados = async (req, res, next) => {
   try {
     res.json(await consultarCertificadosPublico(req.query.numDoc));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.certificadoConsultaPdf = async (req, res, next) => {
+  try {
+    const cfg = await obtenerConfigPortalPublica();
+    const consultaCfg = cfg.landing?.consultaCertificados || {};
+    if (!consultaCfg.mostrarBotonDescargar) {
+      return res.status(403).json({ message: 'La descarga de certificados no está habilitada.' });
+    }
+    const numDoc = req.query.numDoc;
+    if (!numDoc) {
+      return res.status(400).json({ message: 'Ingrese el número de documento.' });
+    }
+    const marcaAguaCopia = consultaCfg.marcaAguaCopia !== false;
+    const { buffer, codigo } = await pdfCertificadoConsultaPublico(
+      numDoc,
+      req.params.id,
+      publicOriginFromReq(req),
+      { marcaAguaCopia },
+    );
+    const safe = String(codigo || 'certificado')
+      .replace(/[^\w.-]+/g, '_')
+      .slice(0, 80);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="certificado-${safe}.pdf"`);
+    res.send(buffer);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);

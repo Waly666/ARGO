@@ -97,6 +97,35 @@ function buildEvidenciaCap() {
   });
 }
 
+function buildVideo(subdir, maxMb = 50) {
+  const dest = path.join(BASE, subdir);
+  ensureDir(dest);
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dest),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^\w.\-]+/g, '_');
+      cb(null, `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}`);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: maxMb * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
+      const ok =
+        ext === '.mp4' ||
+        ext === '.webm' ||
+        mime === 'video/mp4' ||
+        mime === 'video/webm';
+      if (!ok) {
+        return cb(new Error('Solo se permiten videos MP4 o WEBM'));
+      }
+      cb(null, true);
+    },
+  });
+}
+
 function buildImagen(subdir, maxMb = 5) {
   const dest = path.join(BASE, subdir);
   ensureDir(dest);
@@ -162,6 +191,8 @@ module.exports = {
   aulaVirtualLogo: buildImagen('aula-virtual-logo', 3),
   aulaVirtualHero: buildImagen('aula-virtual-hero', 8),
   aulaVirtualFundacionHero: buildImagen('aula-virtual-fundacion-hero', 8),
+  aulaVirtualPopup: buildImagen('aula-virtual-popup', 8),
+  aulaVirtualConsultaAsistente: buildVideo('aula-virtual-consulta-asistente', 50),
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   evidenciasCap: buildEvidenciaCap(),
   evidenciaJornadaMemoria: buildEvidenciaJornadaMemoria(),

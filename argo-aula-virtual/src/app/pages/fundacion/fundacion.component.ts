@@ -30,10 +30,15 @@ export class FundacionComponent implements OnInit {
   heroTitulo = computed(() => this.fund().hero.titulo?.trim() || this.nombreCea());
 
   heroImagen = computed(() => {
-    const url = this.fund().hero.imagenUrl?.trim();
+    const hero = this.fund().hero;
+    const url = hero.imagenUrl?.trim();
     if (!url) return '/images/fundacion-equipo.png';
-    if (url.startsWith('http') || url.startsWith('//')) return url;
-    return url.startsWith('/') ? url : `/${url}`;
+    if (url.startsWith('/images/') || url.startsWith('/apk/')) return url;
+    if (/^https?:\/\//i.test(url) || url.startsWith('//')) return url;
+    const resolved = resolveUploadUrl(hero.imagenUrlAbsoluta || url);
+    if (resolved) return resolved;
+    if (url.startsWith('/uploads/')) return url;
+    return '/images/fundacion-equipo.png';
   });
 
   telefono = computed(() => this.config()?.telefono?.trim() || FUNDACION_CONTACTO.telefono);

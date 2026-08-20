@@ -139,12 +139,13 @@ textarea {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--av-primary), var(--av-primary-dark));
-  color: #fff;
+  background: var(--av-btn-primary-bg, linear-gradient(135deg, var(--av-primary), var(--av-primary-dark)));
+  color: var(--av-btn-primary-text, #fff);
   box-shadow: 0 4px 16px var(--av-btn-primary-shadow);
 
   &:hover:not(:disabled) {
     box-shadow: 0 6px 22px var(--av-btn-primary-shadow-hover);
+    color: var(--av-btn-primary-text, #fff);
   }
 }
 
@@ -179,13 +180,13 @@ textarea {
 /* Tarjetas de curso — texto legible sobre fondo del tema (evita heredar --av-text oscuro) */
 a.catalog-card__btn,
 .catalog-card__btn.btn-primary {
-  color: #fff !important;
-  -webkit-text-fill-color: #fff;
+  color: var(--av-btn-primary-text, #fff) !important;
+  -webkit-text-fill-color: var(--av-btn-primary-text, #fff);
 
   &:hover,
   &:focus-visible {
-    color: #fff !important;
-    -webkit-text-fill-color: #fff;
+    color: var(--av-btn-primary-text, #fff) !important;
+    -webkit-text-fill-color: var(--av-btn-primary-text, #fff);
   }
 }
 
@@ -193,7 +194,7 @@ a.catalog-card__btn,
 .section--light .btn-outline,
 .registro-card .btn-outline,
 .catalog-page .btn-outline {
-  background: #fff;
+  background: transparent;
   border-color: var(--av-section-light-border);
   color: var(--av-section-light-link);
 

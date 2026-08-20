@@ -1,4 +1,5 @@
 const { LANDING_DEFAULTS } = require('../constants/aulaVirtualLandingDefaults');
+const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 
 function str(v, fallback = '') {
   return String(v ?? fallback).trim();
@@ -35,6 +36,92 @@ function normalizarSeccionKicker(raw, fallback, itemFields, itemKey = 'items') {
   };
 }
 
+function normalizarPopup(raw) {
+  const d = LANDING_DEFAULTS.popup;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const imagenUrl = str(src.imagenUrl, d.imagenUrl);
+  const freq = str(src.frecuencia);
+  return {
+    activo: src.activo === true,
+    imagenUrl,
+    imagenUrlAbsoluta: imagenUrl ? publicUploadUrl(imagenUrl) || imagenUrl : '',
+    imagenAlt: str(src.imagenAlt, d.imagenAlt),
+    mostrarBotonContinuar: src.mostrarBotonContinuar !== false,
+    textoBotonContinuar: str(src.textoBotonContinuar, d.textoBotonContinuar) || d.textoBotonContinuar,
+    mostrarBotonCerrar: src.mostrarBotonCerrar !== false,
+    duracionSegundos: Math.max(0, Math.min(120, Math.round(num(src.duracionSegundos, d.duracionSegundos)))),
+    frecuencia: freq === 'cada_recarga_sesion' ? 'cada_recarga_sesion' : 'primera_vez',
+  };
+}
+
+function normalizarConsultaCertificados(raw) {
+  const d = LANDING_DEFAULTS.consultaCertificados;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  return {
+    mostrarBotonDescargar: src.mostrarBotonDescargar === true,
+    marcaAguaCopia: src.marcaAguaCopia !== false,
+    textoBotonDescargar: str(src.textoBotonDescargar, d.textoBotonDescargar) || d.textoBotonDescargar,
+  };
+}
+
+const ASISTENTE_PAGINA_KEYS = [
+  'home',
+  'tienda',
+  'cursos',
+  'aula',
+  'fundacion',
+  'consultaCertificados',
+  'blog',
+  'acerca',
+];
+
+function buildDefaultAsistentePaginas() {
+  const d = LANDING_DEFAULTS.asistente.paginas;
+  const paginas = {};
+  for (const key of ASISTENTE_PAGINA_KEYS) {
+    paginas[key] = {
+      activo: false,
+      texto: d[key]?.texto || '',
+    };
+  }
+  return paginas;
+}
+
+function normalizarAsistente(raw, legacyConsulta) {
+  const d = LANDING_DEFAULTS.asistente;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const legacy = legacyConsulta && typeof legacyConsulta === 'object' ? legacyConsulta : {};
+  const paginas = buildDefaultAsistentePaginas();
+  const srcPaginas = src.paginas && typeof src.paginas === 'object' ? src.paginas : {};
+
+  for (const key of ASISTENTE_PAGINA_KEYS) {
+    const pageSrc = srcPaginas[key] && typeof srcPaginas[key] === 'object' ? srcPaginas[key] : {};
+    paginas[key] = {
+      activo: pageSrc.activo === true,
+      texto: str(pageSrc.texto, paginas[key].texto) || paginas[key].texto,
+    };
+  }
+
+  if (!srcPaginas.consultaCertificados && legacy.asistenteActivo === true) {
+    paginas.consultaCertificados = {
+      activo: true,
+      texto: str(legacy.asistenteTexto, paginas.consultaCertificados.texto) || paginas.consultaCertificados.texto,
+    };
+  }
+
+  const videoUrl =
+    str(src.videoUrl, legacy.asistenteVideoUrl, d.videoUrl) || d.videoUrl;
+  const esSubida =
+    videoUrl.includes('aula-virtual-consulta-asistente/') ||
+    videoUrl.startsWith('aula-virtual-consulta-asistente/');
+
+  return {
+    videoUrl,
+    videoUrlAbsoluta: esSubida ? publicUploadUrl(videoUrl) || videoUrl : '',
+    paginas,
+  };
+}
+
 function normalizarLanding(input) {
   const d = LANDING_DEFAULTS;
   const src = input && typeof input === 'object' ? input : {};
@@ -54,6 +141,11 @@ function normalizarLanding(input) {
   const blogSrc = src.blog && typeof src.blog === 'object' ? src.blog : {};
   const fundSrc = src.fundacion && typeof src.fundacion === 'object' ? src.fundacion : {};
   const fundD = d.fundacion || {};
+  const popupSrc = src.popup && typeof src.popup === 'object' ? src.popup : {};
+  const consultaCertSrc =
+    src.consultaCertificados && typeof src.consultaCertificados === 'object'
+      ? src.consultaCertificados
+      : {};
 
   const carrerasRaw = Array.isArray(carrerasSrc.items) ? carrerasSrc.items : [];
   const carrerasItems = carrerasRaw.length
@@ -223,6 +315,9 @@ function normalizarLanding(input) {
     },
     footerServicios: footer.length ? footer : [...d.footerServicios],
     fundacion: normalizarFundacion(fundSrc, fundD),
+    popup: normalizarPopup(popupSrc),
+    consultaCertificados: normalizarConsultaCertificados(consultaCertSrc),
+    asistente: normalizarAsistente(src.asistente, consultaCertSrc),
   };
 }
 
@@ -240,6 +335,11 @@ function normalizarFundacion(src, d) {
       titulo: str(heroSrc.titulo, d.hero?.titulo),
       lead: str(heroSrc.lead, d.hero?.lead),
       imagenUrl: str(heroSrc.imagenUrl, d.hero?.imagenUrl),
+      imagenUrlAbsoluta: (() => {
+        const rel = str(heroSrc.imagenUrl, d.hero?.imagenUrl);
+        if (!rel || rel.startsWith('/images/')) return '';
+        return publicUploadUrl(rel) || rel;
+      })(),
       imagenAlt: str(heroSrc.imagenAlt, d.hero?.imagenAlt),
       imagenCaption: str(heroSrc.imagenCaption, d.hero?.imagenCaption),
       btnSitioUrl: str(heroSrc.btnSitioUrl, d.hero?.btnSitioUrl),

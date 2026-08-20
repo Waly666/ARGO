@@ -104,6 +104,24 @@ export const PORTAL_PAGINA_META: { key: PortalPaginaKey; titulo: string; descrip
   { key: 'blog', titulo: 'Blog', descripcion: 'Noticias y artículos del portal' },
 ];
 
+/** Orden canónico de bloques del inicio (editor + vista previa). */
+export function ordenSeccionesHomePortal(site?: Partial<PortalSiteConfig> | null): string[] {
+  const ordenRaw = site?.home?.orden?.length ? site.home.orden : site?.homeSeccionesOrden;
+  const base = ordenRaw?.length ? [...ordenRaw] : [...PORTAL_HOME_SECCIONES_ORDEN];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of base) {
+    if (PORTAL_HOME_SECCIONES_LABELS[id] && !seen.has(id)) {
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  for (const id of PORTAL_HOME_SECCIONES_ORDEN) {
+    if (!seen.has(id)) out.push(id);
+  }
+  return out;
+}
+
 export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null): PortalSiteConfig {
   const paginas = { ...(raw?.paginas as Record<PortalPaginaKey, PortalPaginaConfig>) };
   for (const m of PORTAL_PAGINA_META) {

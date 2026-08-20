@@ -5,7 +5,12 @@ const { resolverLayout, resolverQr, CAMPOS_IDS } = require('./certificadoLayout'
 const { fsToPrintSizes } = require('../utils/certificadoTipografia');
 const { fmtFechaSolo: fmtFecha } = require('../utils/timezoneColombia');
 const { cssFontFamily, googleFontsHeadHtml } = require('../constants/certificadoFuentes');
-const { bloqueComprobanteAnulado, estilosMarcaAguaAnulado } = require('./reciboHtmlShared');
+const {
+  bloqueComprobanteAnulado,
+  bloqueMarcaAguaCopia,
+  estilosMarcaAguaAnulado,
+  estilosMarcaAguaCopia,
+} = require('./reciboHtmlShared');
 const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
 const { informePrintToolbar } = require('./informePrintToolbar');
 
@@ -271,6 +276,7 @@ async function generarHtmlCertificado(data, options = {}) {
   const tipografiaCss = reglasTipografia(L, oriKey);
   const googleFonts = googleFontsHeadHtml();
   const anulado = bloqueComprobanteAnulado(certificado);
+  const marcaCopia = options.marcaAguaCopia === true;
   const { atPageCssPara } = require('./configPaginasInformes');
   const atPage = await atPageCssPara('certificados', {
     sizeOverride: `${L.pageW} ${L.pageH}`,
@@ -343,6 +349,7 @@ async function generarHtmlCertificado(data, options = {}) {
     .qr-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; }
     ${toolbar.css}
     ${estilosMarcaAguaAnulado()}
+    ${marcaCopia ? estilosMarcaAguaCopia() : ''}
     body.doc-anulado .anulado-banner {
       position: absolute;
       top: 8mm;
@@ -373,6 +380,7 @@ async function generarHtmlCertificado(data, options = {}) {
   ${anulado.html}
   <div class="sheet">
     ${fondoImg}
+    ${marcaCopia ? bloqueMarcaAguaCopia() : ''}
     <div class="content">
       ${datosHtml}
       ${certIdHtml(L.certId, codigo, color, oriKey)}

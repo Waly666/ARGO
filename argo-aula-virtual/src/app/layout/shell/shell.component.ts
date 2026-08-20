@@ -8,11 +8,14 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { CardWaveService } from '../../core/card-wave.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalBrandingService } from '../../core/portal-branding.service';
-import { etiquetaPagina, paginaActiva, type PortalPaginaKey } from '../../core/portal-site';
+import { etiquetaPagina, paginaActiva, clavePaginaPorRuta, type PortalPaginaKey } from '../../core/portal-site';
 import { PortalThemeService } from '../../core/portal-theme.service';
 import { PortalConfig } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
+import { asistenteVistaParaPagina } from '../../core/portal-asistente.util';
+import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.component';
+import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
 import { ACERCA_DEFAULT } from '../../pages/home/home-content';
 
 import { DEFAULT_CEA_CORTO, DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
@@ -48,7 +51,7 @@ export interface FooterServicioEnlace {
 @Component({
   selector: 'av-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, PortalPopupComponent, ConsultaCertificadosAsistenteComponent],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
@@ -65,6 +68,16 @@ export class ShellComponent implements OnInit, AfterViewInit {
 
   config = signal<PortalConfig | null>(null);
   menuAbierto = signal(false);
+  popupOpenTick = signal(0);
+  rutaActual = signal('/');
+
+  popupConfig = computed(() => this.landing().popup);
+
+  asistenteConfig = computed(() => {
+    const landing = this.landing();
+    const key = clavePaginaPorRuta(this.rutaActual());
+    return asistenteVistaParaPagina(landing.asistente, key);
+  });
 
   logoUrl = computed(() => resolveUploadUrl(this.config()?.urlLogoAbsoluta || this.config()?.urlLogo));
 
@@ -191,13 +204,18 @@ export class ShellComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
-    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => this.cerrarMenu());
+    this.rutaActual.set(this.router.url);
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe((e) => {
+      this.cerrarMenu();
+      if (e instanceof NavigationEnd) this.rutaActual.set(e.urlAfterRedirects || e.url);
+    });
 
     this.api.config().subscribe({
       next: (c) => {
         this.config.set(c);
         this.branding.apply(c);
         this.theme.apply(c);
+        this.popupOpenTick.update((n) => n + 1);
       },
       error: () => {
         const fallback = {

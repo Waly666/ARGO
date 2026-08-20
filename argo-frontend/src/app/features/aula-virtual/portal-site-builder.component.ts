@@ -6,15 +6,20 @@ import { finalize } from 'rxjs';
 
 import {
   mergePortalSiteDefaults,
+  ordenSeccionesHomePortal,
   PORTAL_FUENTES,
   PORTAL_HOME_SECCIONES_LABELS,
   PORTAL_PAGINA_META,
+  PortalHomeConfig,
   PortalSiteConfig,
 } from '../../core/constants/portal-site-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
-import { mergePortalLanding } from '../../core/constants/portal-landing-defaults';
+import { mergePortalLanding, PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT } from '../../core/constants/portal-landing-defaults';
+import { PORTAL_ASISTENTE_PAGINAS } from '../../core/utils/portal-asistente.util';
+import { PortalPaginaKey } from '../../core/constants/portal-site-defaults';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 import { PortalFundacionEditorComponent } from './portal-fundacion-editor.component';
+import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
@@ -28,6 +33,9 @@ export type BuilderPanel =
   | 'contenido'
   | 'institucional'
   | 'blog'
+  | 'popup'
+  | 'asistente'
+  | 'consultaCertificados'
   | 'empresa'
   | 'marca';
 
@@ -64,6 +72,7 @@ interface GuiaPaso {
     RouterLink,
     PortalLandingEditorComponent,
     PortalFundacionEditorComponent,
+    PortalPopupEditorComponent,
     PortalSitePreviewComponent,
   ],
   templateUrl: './portal-site-builder.component.html',
@@ -78,6 +87,7 @@ export class PortalSiteBuilderComponent {
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   heroUploading = signal(false);
+  asistenteVideoUploading = signal(false);
 
   readonly paginaMeta = PORTAL_PAGINA_META;
   readonly fuentes = PORTAL_FUENTES;
@@ -106,12 +116,15 @@ export class PortalSiteBuilderComponent {
       items: [
         { id: 'institucional', icon: '🏛️', label: 'Quiénes somos' },
         { id: 'blog', icon: '📰', label: 'Blog' },
+        { id: 'asistente', icon: '🤖', label: 'Asistente' },
+        { id: 'consultaCertificados', icon: '📜', label: 'Consulta certificados' },
       ],
     },
     {
       title: 'Diseño',
       items: [
         { id: 'apariencia', icon: '🎨', label: 'Colores y estilo' },
+        { id: 'popup', icon: '💬', label: 'Popup de bienvenida' },
         { id: 'marca', icon: '©', label: 'Pie de página' },
       ],
     },
@@ -120,14 +133,39 @@ export class PortalSiteBuilderComponent {
   panel = signal<BuilderPanel>('panel');
   previewVisible = signal(true);
   aparienciaAvanzada = signal(false);
+  /** Fuerza refresco de la lista de bloques del inicio tras reordenar o activar/desactivar. */
+  private homeSeccionesTick = signal(0);
 
   get landing() {
     if (!this.portalForm.landing) {
       this.portalForm.landing = mergePortalLanding();
-    } else if (!this.portalForm.landing.blog) {
+    } else     if (!this.portalForm.landing.blog) {
       this.portalForm.landing.blog = { ...mergePortalLanding().blog };
     }
+    if (!this.portalForm.landing.popup) {
+      this.portalForm.landing.popup = { ...mergePortalLanding().popup };
+    }
+    if (!this.portalForm.landing.consultaCertificados) {
+      this.portalForm.landing.consultaCertificados = { ...mergePortalLanding().consultaCertificados };
+    }
+    if (!this.portalForm.landing.asistente) {
+      this.portalForm.landing.asistente = { ...mergePortalLanding().asistente };
+    }
     return this.portalForm.landing;
+  }
+
+  get consultaCertificados() {
+    return this.landing.consultaCertificados;
+  }
+
+  get asistente() {
+    return this.landing.asistente;
+  }
+
+  readonly asistentePaginas = PORTAL_ASISTENTE_PAGINAS;
+
+  get popup() {
+    return this.landing.popup;
   }
 
   get site(): PortalSiteConfig {
@@ -173,6 +211,19 @@ export class PortalSiteBuilderComponent {
       apariencia: {
         title: 'Colores y estilo',
         help: 'Elija los colores de su marca. No necesita saber diseño: pruebe y mire el resultado en la vista previa.',
+      },
+      popup: {
+        title: 'Popup de bienvenida',
+        help: 'Ventana emergente al entrar al portal: imagen, botones, duración y frecuencia de visualización.',
+      },
+      consultaCertificados: {
+        title: 'Consulta de certificados',
+        help: 'Opciones de la página pública /consulta-certificados: descarga PDF y marca de agua.',
+      },
+      asistente: {
+        title: 'Asistente virtual',
+        help:
+          'Active el asistente con avatar en cada página del portal y escriba el mensaje que leerá en voz alta.',
       },
       marca: {
         title: 'Pie de página',
@@ -227,11 +278,10 @@ export class PortalSiteBuilderComponent {
   }
 
   seccionesInicio(): { id: string; label: string; activa: boolean }[] {
+    this.homeSeccionesTick();
     const s = this.site;
     const labels = { ...PORTAL_HOME_SECCIONES_LABELS, ...s.homeSeccionesLabels };
-    const orden =
-      s.home.orden?.length ? s.home.orden : s.homeSeccionesOrden || Object.keys(s.home.secciones || {});
-    return orden.map((id) => ({
+    return ordenSeccionesHomePortal(s).map((id) => ({
       id,
       label: labels[id] || id,
       activa: s.home.secciones[id] !== false,
@@ -252,18 +302,25 @@ export class PortalSiteBuilderComponent {
   }
 
   toggleSeccion(id: string, activa: boolean) {
-    if (!this.site.home.secciones) this.site.home.secciones = {};
-    this.site.home.secciones[id] = activa;
+    this.patchHome({
+      secciones: { ...this.site.home.secciones, [id]: activa },
+    });
   }
 
   moverSeccion(id: string, dir: -1 | 1) {
-    const orden = [...(this.site.home.orden || this.seccionesInicio().map((x) => x.id))];
+    const orden = [...ordenSeccionesHomePortal(this.site)];
     const i = orden.indexOf(id);
     if (i < 0) return;
     const j = i + dir;
     if (j < 0 || j >= orden.length) return;
     [orden[i], orden[j]] = [orden[j], orden[i]];
-    this.site.home.orden = orden;
+    this.patchHome({ orden });
+  }
+
+  private patchHome(partial: Partial<PortalHomeConfig>) {
+    const site = this.site;
+    site.home = { ...site.home, ...partial };
+    this.homeSeccionesTick.update((n) => n + 1);
   }
 
   paginasActivas(): number {
@@ -358,5 +415,90 @@ export class PortalSiteBuilderComponent {
       this.portalForm.site.tema.fuenteTitulos = '';
     }
     loadPortalGoogleFonts(this.doc, this.portalForm.site.tema);
+  }
+
+  asistenteVideoPreviewUrl(): string | null {
+    const asistente = this.asistente;
+    const abs = asistente.videoUrlAbsoluta?.trim();
+    if (abs) {
+      if (/^https?:\/\//i.test(abs)) return abs;
+      if (abs.startsWith('/uploads/')) {
+        const base = environment.uploadsUrl.replace(/\/+$/, '');
+        return `${base}/${abs.replace(/^\/uploads\//, '')}`;
+      }
+      return abs;
+    }
+    const rel = asistente.videoUrl?.trim();
+    if (!rel) return null;
+    if (/^https?:\/\//i.test(rel)) return rel;
+    if (rel.includes('aula-virtual-consulta-asistente/')) {
+      const base = environment.uploadsUrl.replace(/\/+$/, '');
+      return `${base}/${rel.replace(/^\/+/, '')}`;
+    }
+    const portal = this.portalUrl.replace(/\/?$/, '');
+    return `${portal}/${rel.replace(/^\/+/, '')}`;
+  }
+
+  tieneVideoAsistentePersonalizado(): boolean {
+    const rel = this.asistente.videoUrl?.trim() || '';
+    return rel.includes('aula-virtual-consulta-asistente/');
+  }
+
+  asistentePagina(key: PortalPaginaKey) {
+    if (!this.asistente.paginas[key]) {
+      this.asistente.paginas[key] = { activo: false, texto: '' };
+    }
+    return this.asistente.paginas[key];
+  }
+
+  restaurarTextoAsistentePagina(key: PortalPaginaKey) {
+    this.asistentePagina(key).texto =
+      key === 'consultaCertificados' ? PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT : '';
+  }
+
+  onAsistenteVideo(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.asistenteVideoUploading.set(true);
+    this.svc
+      .subirVideoAsistenteCertificadosPortal(file)
+      .pipe(
+        finalize(() => {
+          this.asistenteVideoUploading.set(false);
+          input.value = '';
+        }),
+      )
+      .subscribe({
+        next: (res) => {
+          this.applyPortalConfig(res.config);
+          this.avNotice.emit({ message: res.message || 'Video del asistente actualizado' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo subir el video del asistente',
+            error: true,
+          });
+        },
+      });
+  }
+
+  quitarAsistenteVideo() {
+    this.asistenteVideoUploading.set(true);
+    this.svc
+      .quitarVideoAsistenteCertificadosPortal()
+      .pipe(finalize(() => this.asistenteVideoUploading.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.applyPortalConfig(res.config);
+          this.avNotice.emit({ message: res.message || 'Video del asistente restaurado al predeterminado' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo quitar el video personalizado',
+            error: true,
+          });
+        },
+      });
   }
 }

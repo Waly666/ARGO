@@ -18,11 +18,11 @@
             <span class="label" *ngIf="!collapsed()">{{ m.label }}</span>
           </a>
         } @else {
-          <div class="menu-group" [class.menu-group-rrhh]="isRrhhGroup(m.label)" [class.menu-group-caja]="isCajaGroup(m.label)">
+          <div class="menu-group" [class.menu-group-rrhh]="isRrhhGroup(m.label)" [class.menu-group-caja]="isCajaGroup(m.label)" [class.menu-group-config]="isConfigGroup(m.label)">
             <button
               type="button"
               class="menu-item group-head"
-              [class.active]="(isRrhhGroup(m.label) && rrhhGroupActive()) || (isCajaGroup(m.label) && cajaGroupActive())"
+              [class.active]="(isRrhhGroup(m.label) && rrhhGroupActive()) || (isCajaGroup(m.label) && cajaGroupActive()) || (isConfigGroup(m.label) && configGroupActive())"
               (click)="toggleGroup(m.label, m.children, $event)"
               [title]="m.label">
               <span class="icon" [ngClass]="iconClass(m.iconTone)">{{ m.icon }}</span>
@@ -33,20 +33,59 @@
               class="submenu"
               [class.submenu-rrhh]="isRrhhGroup(m.label)"
               [class.submenu-caja]="isCajaGroup(m.label)"
+              [class.submenu-config]="isConfigGroup(m.label)"
               *ngIf="isGroupOpen(m.label) && !collapsed()">
-              @for (c of visibleChildren(m.children); track trackMenuChild(c); let i = $index) {
-                @if (showSubmenuSection(m.children, i)) {
-                  <div class="submenu-section">{{ c.section }}</div>
+              @if (hasSubgroups(m.children)) {
+                @for (c of visibleMenuChildren(m.children); track trackMenuChild(c)) {
+                  @if (c.kind === 'subgroup') {
+                    <div class="submenu-nested">
+                      <button
+                        type="button"
+                        class="menu-item sub subgroup-head"
+                        [class.active]="subgroupActive(c)"
+                        (click)="toggleSubgroup(m.label, c, $event)"
+                        [title]="c.label">
+                        @if (c.icon) {
+                          <span class="icon" [ngClass]="iconClass(c.iconTone)">{{ c.icon }}</span>
+                        }
+                        <span class="label">{{ c.label }}</span>
+                        <span class="chev">{{ isSubgroupOpen(m.label, c.label) ? '▾' : '▸' }}</span>
+                      </button>
+                      @if (isSubgroupOpen(m.label, c.label)) {
+                        <div class="submenu-nested-items">
+                          @for (link of visibleSubgroupChildren(c); track trackMenuChild(link)) {
+                            <a
+                              [routerLink]="link.path"
+                              [queryParams]="link.queryParams || null"
+                              class="menu-item sub sub-nested"
+                              [class.active]="subLinkActive(link)"
+                              [title]="link.label">
+                              <span class="icon" [ngClass]="iconClass(link.iconTone)">{{ link.icon }}</span>
+                              <span class="label">{{ link.label }}</span>
+                            </a>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
                 }
-                <a
-                  [routerLink]="c.path"
-                  [queryParams]="c.queryParams || null"
-                  class="menu-item sub"
-                  [class.active]="subLinkActive(c)"
-                  [title]="c.label">
-                  <span class="icon" [ngClass]="iconClass(c.iconTone)">{{ c.icon }}</span>
-                  <span class="label">{{ c.label }}</span>
-                </a>
+              } @else {
+                @for (c of visibleMenuChildren(m.children); track trackMenuChild(c); let i = $index) {
+                  @if (c.kind === 'link') {
+                    @if (showSubmenuSection(m.children, i)) {
+                      <div class="submenu-section">{{ c.section }}</div>
+                    }
+                    <a
+                      [routerLink]="c.path"
+                      [queryParams]="c.queryParams || null"
+                      class="menu-item sub"
+                      [class.active]="subLinkActive(c)"
+                      [title]="c.label">
+                      <span class="icon" [ngClass]="iconClass(c.iconTone)">{{ c.icon }}</span>
+                      <span class="label">{{ c.label }}</span>
+                    </a>
+                  }
+                }
               }
             </div>
           </div>

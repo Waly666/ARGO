@@ -7,6 +7,7 @@ const { configPorPrograma } = require('./aulaVirtualCatalogo');
 const { generarHtmlCertificado } = require('./certificadoRender');
 const { armarDatosCertificado } = require('./certificadoRenderData');
 const { reciboResumenPorLiquidacion } = require('./aulaVirtualRecibos');
+const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
 
 function nombreCompletoAlumno(da) {
   if (!da) return '';
@@ -107,6 +108,7 @@ async function consultarCertificadosPublico(numDocRaw) {
   const nombreTitularCert = (c) => String(c.nombreTitular || '').trim();
 
   const items = certs.map((c) => ({
+    _id: String(c._id),
     idCertificado: String(c.codVerificacion || c.codigoCert || c._id || '').trim(),
     codVerificacion: String(c.codVerificacion || '').trim(),
     nombreApellidos: nombreAlumno || nombreTitularCert(c),
@@ -139,9 +141,33 @@ async function htmlCertificadoPortal(numDoc, certId, publicOrigin) {
   return generarHtmlCertificado(data, { publicOrigin });
 }
 
+async function pdfCertificadoConsultaPublico(numDoc, certId, publicOrigin, { marcaAguaCopia = false } = {}) {
+  const cert = await verificarCertificadoAlumno(numDoc, certId);
+  const data = await armarDatosCertificado(certId);
+  if (!data) {
+    const err = new Error('Certificado no encontrado');
+    err.status = 404;
+    throw err;
+  }
+  const html = await generarHtmlCertificado(data, {
+    publicOrigin,
+    embedLocalAssets: true,
+    marcaAguaCopia: !!marcaAguaCopia,
+  });
+  const browser = await launchBrowser();
+  try {
+    const buffer = await htmlToPdfBuffer(browser, html);
+    const codigo = String(cert.codigoCert || cert.codVerificacion || cert._id || 'argo').trim();
+    return { buffer, codigo };
+  } finally {
+    await browser.close().catch(() => {});
+  }
+}
+
 module.exports = {
   listarMisCertificados,
   consultarCertificadosPublico,
   verificarCertificadoAlumno,
   htmlCertificadoPortal,
+  pdfCertificadoConsultaPublico,
 };

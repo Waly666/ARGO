@@ -1,0 +1,20 @@
+@if (visible() && config) {
+  <div class="av-popup" role="dialog" aria-modal="true" [attr.aria-label]="config.imagenAlt || 'Aviso'">
+    <button type="button" class="av-popup__backdrop" aria-label="Cerrar aviso" (click)="onBackdropClick()"></button>
+    <div class="av-popup__panel">
+      @if (config.mostrarBotonCerrar !== false) {
+        <button type="button" class="av-popup__close" aria-label="Cerrar" (click)="cerrar(true)">✕</button>
+      }
+      <figure class="av-popup__figure">
+        <img [src]="imagenSrc()" [alt]="config.imagenAlt || 'Aviso del portal'" class="av-popup__img" />
+      </figure>
+      @if (config.mostrarBotonContinuar !== false) {
+        <div class="av-popup__actions">
+          <button type="button" class="av-popup__btn" (click)="cerrar(true)">
+            {{ config.textoBotonContinuar || 'Continuar' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

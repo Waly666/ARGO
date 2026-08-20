@@ -218,6 +218,12 @@
   </div>
 </footer>
 
+<av-portal-popup [config]="popupConfig()" [openTick]="popupOpenTick()" />
+
+@if (asistenteConfig(); as asistente) {
+  <av-consulta-certificados-asistente [config]="asistente" />
+}
+
 @if (whatsappHref(); as waUrl) {
   <a
     class="wa-float"

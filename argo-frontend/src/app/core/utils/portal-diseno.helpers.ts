@@ -64,19 +64,32 @@ export function aplicarDisenoPortal(form: PortalAulaConfig, diseno: PortalDiseno
     form.landing = mergePortalLanding({ ...form.landing, ...diseno.landing });
   }
   if (diseno.site) {
-    const defaults = mergePortalSiteDefaults();
+    const prev = form.site;
+    const incoming = diseno.site;
     form.site = mergePortalSiteDefaults({
-      ...form.site,
-      ...diseno.site,
-      tema: diseno.site.tema ? { ...defaults.tema, ...diseno.site.tema } : form.site?.tema,
-      home: diseno.site.home
+      ...prev,
+      ...incoming,
+      tema: incoming.tema
         ? {
-            orden: diseno.site.home.orden?.length
-              ? [...diseno.site.home.orden]
-              : form.site?.home?.orden || defaults.home.orden,
-            secciones: { ...(diseno.site.home.secciones || {}) },
+            ...(prev?.tema || mergePortalSiteDefaults().tema),
+            ...incoming.tema,
+            urlHero: incoming.tema.urlHero?.trim()
+              ? incoming.tema.urlHero
+              : prev?.tema?.urlHero || '',
           }
-        : form.site?.home,
+        : prev?.tema,
+      paginas: incoming.paginas
+        ? ({ ...(prev?.paginas || {}), ...incoming.paginas } as PortalSiteConfig['paginas'])
+        : prev?.paginas,
+      marca: incoming.marca ? { ...(prev?.marca || {}), ...incoming.marca } : prev?.marca,
+      home: incoming.home
+        ? {
+            orden: incoming.home.orden?.length ? [...incoming.home.orden] : prev?.home?.orden || [],
+            secciones: incoming.home.secciones
+              ? { ...incoming.home.secciones }
+              : { ...(prev?.home?.secciones || {}) },
+          }
+        : prev?.home,
     });
   }
   return form;

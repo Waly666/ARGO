@@ -1,0 +1,87 @@
+<div class="ppe-stack">
+  <p class="ppe-note">
+    El popup aparece al entrar al sitio público del aula virtual (no dentro del panel del alumno).
+    Después de cambiar opciones, pulse <strong>Publicar cambios en el sitio</strong>.
+  </p>
+
+  <label class="psb-check">
+    <input type="checkbox" [(ngModel)]="popup.activo" [disabled]="!popup.imagenUrl?.trim()" />
+    Mostrar popup en el portal
+  </label>
+  @if (!popup.imagenUrl?.trim()) {
+    <p class="ppe-hint">Suba una imagen para poder activar el popup.</p>
+  }
+
+  <div class="ppe-image">
+    <span class="psb-field__label">Imagen del popup</span>
+    <div class="ppe-image__row">
+      @if (popupPreviewUrl(); as imgUrl) {
+        <figure class="ppe-image__preview">
+          <img [src]="imgUrl" alt="Vista previa del popup" />
+        </figure>
+      } @else {
+        <div class="ppe-image__preview ppe-image__preview--empty">Sin imagen</div>
+      }
+      <div class="ppe-image__actions">
+        <label class="ppe-btn ppe-btn--file" [class.ppe-btn--disabled]="imagenUploading()">
+          {{ imagenUploading() ? 'Subiendo…' : 'Elegir imagen' }}
+          <input type="file" accept="image/png,image/jpeg,image/webp" (change)="onImagenSelected($event)" [disabled]="imagenUploading()" />
+        </label>
+        @if (popup.imagenUrl?.trim()) {
+          <button type="button" class="ppe-btn ppe-btn--remove" [disabled]="imagenUploading()" (click)="quitarImagen()">
+            Quitar imagen
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <label class="psb-field psb-field--plain">
+    <span>Texto alternativo (accesibilidad)</span>
+    <input type="text" class="psb-input" [(ngModel)]="popup.imagenAlt" placeholder="Aviso promocional" />
+  </label>
+
+  <div class="ppe-grid">
+    <label class="psb-check">
+      <input type="checkbox" [(ngModel)]="popup.mostrarBotonContinuar" />
+      Botón «Continuar»
+    </label>
+    <label class="psb-check">
+      <input type="checkbox" [(ngModel)]="popup.mostrarBotonCerrar" />
+      Botón cerrar (✕)
+    </label>
+  </div>
+
+  @if (popup.mostrarBotonContinuar) {
+    <label class="psb-field psb-field--plain">
+      <span>Texto del botón continuar</span>
+      <input type="text" class="psb-input" [(ngModel)]="popup.textoBotonContinuar" placeholder="Continuar" />
+    </label>
+  }
+
+  <label class="psb-field psb-field--plain">
+    <span>Duración automática (segundos)</span>
+    <input
+      type="number"
+      class="psb-input"
+      min="0"
+      max="120"
+      step="1"
+      [(ngModel)]="popup.duracionSegundos"
+      placeholder="0 = hasta que el usuario cierre"
+    />
+    <span class="ppe-hint">0 = no se cierra solo; el visitante debe pulsar continuar o cerrar.</span>
+  </label>
+
+  <fieldset class="ppe-fieldset">
+    <legend>¿Cuándo mostrarlo?</legend>
+    <label class="psb-check">
+      <input type="radio" name="popup-frecuencia" [value]="'primera_vez'" [(ngModel)]="popup.frecuencia" />
+      Solo la primera vez que entra (en este navegador)
+    </label>
+    <label class="psb-check">
+      <input type="radio" name="popup-frecuencia" [value]="'cada_recarga_sesion'" [(ngModel)]="popup.frecuencia" />
+      Cada vez que recarga o abre el sitio (nueva visita / F5)
+    </label>
+  </fieldset>
+</div>

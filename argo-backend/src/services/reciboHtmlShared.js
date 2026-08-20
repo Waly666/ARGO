@@ -205,6 +205,40 @@ function filasAnulacionComprobante(doc) {
   return filas;
 }
 
+/** CSS compartido para marca de agua diagonal «COPIA» en certificados de consulta pública. */
+function estilosMarcaAguaCopia() {
+  return `
+    .sheet .marca-agua-copia {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .marca-agua-copia span {
+      transform: rotate(-32deg);
+      font-size: 72px;
+      font-weight: 900;
+      color: rgba(100, 116, 139, 0.14);
+      letter-spacing: 0.15em;
+      border: 4px solid rgba(100, 116, 139, 0.18);
+      padding: 8px 24px;
+      text-transform: uppercase;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      white-space: nowrap;
+    }
+    @media print {
+      .sheet .marca-agua-copia { position: absolute; }
+    }
+  `;
+}
+
+function bloqueMarcaAguaCopia() {
+  return `<div class="marca-agua-copia" aria-hidden="true"><span>COPIA</span></div>`;
+}
+
 module.exports = {
   esc,
   fmtMoney,
@@ -215,7 +249,9 @@ module.exports = {
   bloqueEmpresaHtml,
   estilosRecibo,
   estilosMarcaAguaAnulado,
+  estilosMarcaAguaCopia,
   bloqueComprobanteAnulado,
+  bloqueMarcaAguaCopia,
   filasAnulacionComprobante,
   metaAnulacionComprobante,
 };

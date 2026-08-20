@@ -12,6 +12,7 @@ const {
   mergeLanding,
 } = require('../services/aulaVirtualPortal');
 const { mergePortalSite } = require('../services/portalSiteConfig');
+const { LANDING_DEFAULTS } = require('../constants/aulaVirtualLandingDefaults');
 const {
   obtenerConfig,
   guardarConfig,
@@ -322,6 +323,117 @@ exports.quitarImagenFundacionPortal = async (req, res, next) => {
     res.json({
       config: await obtenerConfigPortalAdmin(),
       message: 'Imagen institucional eliminada; se usará la del inicio o la predeterminada',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+async function guardarImagenPopupPortal(imagenUrl, usuario) {
+  const aula = await obtenerConfigAula();
+  const landing = mergeLanding(aula.landing);
+  landing.popup = {
+    ...landing.popup,
+    imagenUrl: String(imagenUrl || '').trim(),
+  };
+  if (!String(imagenUrl || '').trim()) {
+    landing.popup.activo = false;
+  }
+  await guardarConfigAula({ landing }, usuario);
+}
+
+function quitarImagenPopupAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-popup/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenPopupPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenPopupAnterior(landing.popup?.imagenUrl);
+
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1600, maxHeight: 1200 });
+    const imagenUrl = publicUrl('aula-virtual-popup', req.file.filename);
+    await guardarImagenPopupPortal(imagenUrl, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen del popup actualizada en el sitio',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenPopupPortal = async (req, res, next) => {
+  try {
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenPopupAnterior(landing.popup?.imagenUrl);
+    await guardarImagenPopupPortal('', req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen del popup eliminada',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+async function guardarVideoAsistenteCertificados(videoUrl, usuario) {
+  const aula = await obtenerConfigAula();
+  const landing = mergeLanding(aula.landing);
+  const d = LANDING_DEFAULTS.asistente;
+  landing.asistente = {
+    ...(landing.asistente || d),
+    videoUrl: String(videoUrl || '').trim() || d.videoUrl,
+    paginas: landing.asistente?.paginas || d.paginas,
+  };
+  await guardarConfigAula({ landing }, usuario);
+}
+
+function quitarVideoAsistenteAnterior(videoUrl) {
+  const rel = String(videoUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-consulta-asistente/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirVideoAsistenteCertificadosPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione un video MP4 o WEBM' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarVideoAsistenteAnterior(landing.asistente?.videoUrl);
+
+    const videoUrl = publicUrl('aula-virtual-consulta-asistente', req.file.filename);
+    await guardarVideoAsistenteCertificados(videoUrl, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Video del asistente de certificados actualizado',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarVideoAsistenteCertificadosPortal = async (req, res, next) => {
+  try {
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarVideoAsistenteAnterior(landing.asistente?.videoUrl);
+    await guardarVideoAsistenteCertificados(LANDING_DEFAULTS.asistente.videoUrl, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Video personalizado eliminado; se usará el predeterminado del portal',
     });
   } catch (e) {
     next(e);

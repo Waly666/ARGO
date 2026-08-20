@@ -156,12 +156,40 @@ export function resolvePortalHeroEstilo(
   return 'starfield';
 }
 
+export const PORTAL_BRAND_GREEN = '#33dd6f';
+export const PORTAL_BRAND_LIME = '#AEE929';
+
+const AMBER_LIKE_ACCENTS = new Set([
+  '#ffd200',
+  '#d9d314',
+  '#f5b417',
+  '#fbbf24',
+  '#f59e0b',
+  '#eab308',
+  '#facc15',
+  '#ca8a04',
+  '#ea580c',
+]);
+
+/** Sustituye acentos ámbar/naranja por verde de marca (Servial y similares). */
+export function resolvePortalUiAccent(
+  accent: string,
+  opts?: { heroEstilo?: 'starfield' | 'servial-mesh' },
+): string {
+  const key = accent.toLowerCase();
+  if (opts?.heroEstilo === 'servial-mesh' || AMBER_LIKE_ACCENTS.has(key)) {
+    return key === PORTAL_BRAND_GREEN.toLowerCase() ? accent : PORTAL_BRAND_GREEN;
+  }
+  return accent;
+}
+
 /** Genera todas las variables --av-* aplicadas en :root al cargar el portal. */
 export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined): Record<string, string> {
   const t = resolveTema(tema);
+  const heroEstilo = resolvePortalHeroEstilo(t);
   const primary = t.colorPrimario;
   const primaryDark = t.colorPrimarioOscuro;
-  const accent = t.colorAcento;
+  const accent = resolvePortalUiAccent(t.colorAcento, { heroEstilo });
   const bg = t.colorFondo;
   const surface = t.colorSuperficie;
   const text = t.colorTexto;
@@ -254,6 +282,8 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
 
     '--av-btn-primary-shadow': withAlpha(primary, 0.28),
     '--av-btn-primary-shadow-hover': withAlpha(primary, 0.38),
+    '--av-btn-primary-bg': `linear-gradient(135deg, ${primaryDark} 0%, ${accent} 100%)`,
+    '--av-btn-primary-text': '#ffffff',
     '--av-btn-outline-hover-bg': withAlpha(accent, 0.08),
     '--av-btn-outline-hover-bg-soft': withAlpha(accent, 0.06),
     '--av-btn-accent-bg': `linear-gradient(135deg, ${mixHex(accent, '#34d399', 0.35)}, ${accent})`,
@@ -340,7 +370,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     '--dash-mobile-topbar-bg': `linear-gradient(90deg, ${primaryDark}, ${mixHex(surface, primaryDark, 0.35)})`,
     '--dash-back-hover': accent,
 
-    '--av-fundacion-cta-bg': `linear-gradient(120deg, ${primary} 0%, ${mixHex(primaryDark, accent, 0.5)} 50%, ${mixHex(accent, '#ea580c', 0.35)} 100%)`,
+    '--av-fundacion-cta-bg': `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 55%, ${accent} 100%)`,
   };
 
   vars['--av-starfield-bg'] =
@@ -350,36 +380,39 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
   vars['--av-hero-bg'] =
     `radial-gradient(ellipse 85% 65% at 18% 42%, ${vars['--av-starfield-glow']}, transparent 68%), linear-gradient(135deg, ${vars['--av-hero-grad-start']} 0%, ${vars['--av-hero-grad-end']} 78%)`;
 
-  if (resolvePortalHeroEstilo(t) === 'servial-mesh') {
-    const picoGreen = '#AEE929';
-    const picoYellow = accent;
-    vars['--av-nav-link'] = picoGreen;
-    vars['--av-nav-link-hover'] = '#ffffff';
+  if (heroEstilo === 'servial-mesh') {
+    const brandGreen = PORTAL_BRAND_GREEN;
+    const brandLime = PORTAL_BRAND_LIME;
+    vars['--av-nav-link'] = '#ffffff';
+    vars['--av-nav-link-hover'] = brandGreen;
     vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
-    vars['--av-topbar-border'] = 'rgba(174, 233, 41, 0.16)';
+    vars['--av-topbar-border'] = 'rgba(51, 221, 111, 0.22)';
     vars['--av-inst-bar-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${surface} 100%)`;
     vars['--av-hero-bg'] = 'transparent';
-    vars['--av-hero-title-shimmer'] = picoGreen;
-    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
-    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
-    vars['--av-starfield-glow'] = withAlpha(picoGreen, 0.2);
+    vars['--av-hero-title-shimmer'] = brandGreen;
+    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
+    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandLime} 0%, ${brandGreen} 100%)`;
+    vars['--av-btn-primary-text'] = '#0a0a0a';
+    vars['--av-fundacion-cta-bg'] = `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
+    vars['--av-starfield-glow'] = withAlpha(brandGreen, 0.2);
+    vars['--av-page-hero-kicker-text'] = brandGreen;
 
     vars['--dash-bg'] = mixHex('#f4f7ef', primary, 0.06);
-    vars['--dash-bg-glow-a'] = withAlpha(picoGreen, 0.14);
-    vars['--dash-bg-glow-b'] = withAlpha(picoYellow, 0.1);
+    vars['--dash-bg-glow-a'] = withAlpha(brandGreen, 0.14);
+    vars['--dash-bg-glow-b'] = withAlpha(brandGreen, 0.1);
     vars['--dash-sidebar-bg'] =
-      `linear-gradient(180deg, ${bg} 0%, ${surface} 62%, ${mixHex(surface, picoGreen, 0.1)} 100%)`;
-    vars['--dash-sidebar-border'] = withAlpha(picoGreen, 0.16);
-    vars['--dash-nav-active-bg'] = `linear-gradient(90deg, ${mixHex(primary, picoGreen, 0.35)}, ${picoGreen})`;
+      `linear-gradient(180deg, ${bg} 0%, ${surface} 62%, ${mixHex(surface, brandGreen, 0.1)} 100%)`;
+    vars['--dash-sidebar-border'] = withAlpha(brandGreen, 0.16);
+    vars['--dash-nav-active-bg'] = `linear-gradient(90deg, ${mixHex(primary, brandGreen, 0.35)}, ${brandGreen})`;
     vars['--dash-nav-active-text'] = mixHex(primaryDark, '#052e16', 0.65);
-    vars['--dash-nav-active-shadow'] = withAlpha(picoGreen, 0.35);
-    vars['--dash-user-chip-bg'] = `linear-gradient(90deg, ${primary}, ${picoGreen})`;
+    vars['--dash-nav-active-shadow'] = withAlpha(brandGreen, 0.35);
+    vars['--dash-user-chip-bg'] = `linear-gradient(90deg, ${primary}, ${brandGreen})`;
     vars['--dash-user-chip-text'] = mixHex(primaryDark, '#052e16', 0.65);
-    vars['--dash-user-chip-shadow'] = withAlpha(picoGreen, 0.35);
+    vars['--dash-user-chip-shadow'] = withAlpha(brandGreen, 0.35);
     vars['--dash-mobile-topbar-bg'] = `linear-gradient(90deg, ${bg}, ${surface})`;
-    vars['--dash-sidebar-toggle-color'] = mixHex(primaryDark, picoGreen, 0.25);
-    vars['--dash-sidebar-toggle-border'] = withAlpha(picoGreen, 0.35);
-    vars['--dash-back-hover'] = picoGreen;
+    vars['--dash-sidebar-toggle-color'] = mixHex(primaryDark, brandGreen, 0.25);
+    vars['--dash-sidebar-toggle-border'] = withAlpha(brandGreen, 0.35);
+    vars['--dash-back-hover'] = brandGreen;
   }
 
   if (isFinstruvialTema(t)) {

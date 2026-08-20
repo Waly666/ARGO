@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AulaApiService } from '../../core/aula-api.service';
 import { CertificadoConsultaItem, CertificadoConsultaRes } from '../../core/models';
+import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 
 @Component({
@@ -27,11 +28,19 @@ export class ConsultaCertificadosComponent implements OnInit {
   error = signal('');
   consultado = signal(false);
   resultado = signal<CertificadoConsultaRes | null>(null);
+  mostrarBotonDescargar = signal(false);
+  textoBotonDescargar = signal('Descargar PDF');
+  descargandoId = signal<string | null>(null);
+  descargaError = signal('');
 
   ngOnInit() {
     this.api.config().subscribe({
       next: (c) => {
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
+        const landing = mergePortalLanding(c.landing);
+        const cc = landing.consultaCertificados;
+        this.mostrarBotonDescargar.set(cc?.mostrarBotonDescargar === true);
+        this.textoBotonDescargar.set(cc?.textoBotonDescargar?.trim() || 'Descargar PDF');
         this.seo.applyConsultaCertificados(c);
       },
       error: () => this.seo.applyConsultaCertificados(null),
@@ -72,5 +81,46 @@ export class ConsultaCertificadosComponent implements OnInit {
 
   filas(): CertificadoConsultaItem[] {
     return this.resultado()?.items || [];
+  }
+
+  descargarCertificado(row: CertificadoConsultaItem) {
+    const certId = row._id?.trim();
+    if (!certId) return;
+    const doc = this.numDoc.trim();
+    if (!doc) return;
+
+    const token = this.turnstileToken() || this.turnstile()?.getToken() || '';
+    this.descargaError.set('');
+    this.descargandoId.set(certId);
+
+    this.api.descargarCertificadoConsulta(certId, doc, token || undefined).subscribe({
+      next: (blob) => {
+        this.descargandoId.set(null);
+        const codigo = row.codVerificacion || row.idCertificado || certId;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificado-${codigo}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: async (e) => {
+        this.descargandoId.set(null);
+        let msg = 'No se pudo descargar el certificado.';
+        const body = e?.error;
+        if (body instanceof Blob) {
+          try {
+            const txt = await body.text();
+            const parsed = JSON.parse(txt);
+            if (parsed?.message) msg = parsed.message;
+          } catch {
+            /* ignore */
+          }
+        } else if (body?.message) {
+          msg = body.message;
+        }
+        this.descargaError.set(msg);
+      },
+    });
   }
 }

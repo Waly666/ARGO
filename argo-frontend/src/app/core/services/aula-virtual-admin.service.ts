@@ -393,6 +393,38 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenPopupPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/popup-imagen`,
+      fd,
+    );
+  }
+
+  quitarImagenPopupPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/popup-imagen`,
+    );
+  }
+
+  subirVideoAsistenteCertificadosPortal(
+    file: File,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('video', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/consulta-certificados-asistente-video`,
+      fd,
+    );
+  }
+
+  quitarVideoAsistenteCertificadosPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/consulta-certificados-asistente-video`,
+    );
+  }
+
   matricularAlumno(
     idPrograma: string | number,
     body: {

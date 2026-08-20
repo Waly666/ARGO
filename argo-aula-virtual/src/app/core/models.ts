@@ -423,6 +423,7 @@ export interface EncuestaJornadaDetalleRes extends EncuestaJornadaPendiente {
 }
 
 export interface CertificadoConsultaItem {
+  _id: string;
   idCertificado: string;
   codVerificacion?: string;
   nombreApellidos: string;

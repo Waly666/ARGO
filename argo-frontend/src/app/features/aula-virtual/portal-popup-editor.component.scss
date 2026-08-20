@@ -1,0 +1,123 @@
+.ppe-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ppe-note,
+.ppe-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-dim, #64748b);
+  line-height: 1.5;
+}
+
+.ppe-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ppe-image__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-top: 0.5rem;
+}
+
+.ppe-image__preview {
+  margin: 0;
+  width: min(100%, 280px);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #0f172a;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+    object-fit: contain;
+  }
+
+  &--empty {
+    min-height: 140px;
+    display: grid;
+    place-items: center;
+    color: #94a3b8;
+    font-size: 0.88rem;
+  }
+}
+
+.ppe-image__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.ppe-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 163, 255, 0.35);
+  background: rgba(37, 99, 235, 0.12);
+  color: #bfdbfe;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(37, 99, 235, 0.22);
+    border-color: rgba(96, 165, 250, 0.55);
+    color: #e0f2fe;
+  }
+
+  &:disabled,
+  &--disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--file {
+    position: relative;
+    cursor: pointer;
+
+    input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+  }
+
+  &--remove {
+    border-color: rgba(248, 113, 113, 0.42);
+    background: rgba(127, 29, 29, 0.28);
+    color: #fecaca;
+
+    &:hover:not(:disabled) {
+      background: rgba(153, 27, 27, 0.45);
+      border-color: rgba(248, 113, 113, 0.62);
+      color: #fff;
+    }
+  }
+}
+
+.ppe-fieldset {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+
+  legend {
+    padding: 0 0.35rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+}

@@ -287,6 +287,19 @@ export class AulaApiService {
     return this.http.get<CertificadoConsultaRes>(`${this.base}/certificados/consulta?${q.toString()}`);
   }
 
+  descargarCertificadoConsulta(
+    certId: string,
+    numDoc: string | number,
+    turnstileToken?: string,
+  ): Observable<Blob> {
+    const q = new URLSearchParams({ numDoc: String(numDoc) });
+    if (turnstileToken) q.set('turnstileToken', turnstileToken);
+    return this.http.get(
+      `${this.base}/certificados/consulta/${encodeURIComponent(certId)}/pdf?${q.toString()}`,
+      { responseType: 'blob' },
+    );
+  }
+
   encuestasJornadaPendientes(
     numDoc: string | number,
     turnstileToken?: string,

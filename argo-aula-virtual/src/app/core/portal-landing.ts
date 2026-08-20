@@ -1,5 +1,7 @@
 import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaults';
 import { DEFAULT_CEA_NOMBRE } from './portal-brand-defaults';
+import { PortalPaginaKey } from './portal-site';
+import { mergePortalAsistente, type LegacyConsultaAsistente } from './portal-asistente.util';
 import { FUNDACION_LANDING_DEFAULTS } from '../pages/fundacion/fundacion-content';
 import {
   APP_MOBILE,
@@ -32,6 +34,7 @@ export interface PortalFundacionLanding {
     titulo: string;
     lead: string;
     imagenUrl: string;
+    imagenUrlAbsoluta?: string;
     imagenAlt: string;
     imagenCaption: string;
     btnSitioUrl: string;
@@ -173,6 +176,69 @@ export interface PortalLandingConfig {
   };
   footerServicios: string[];
   fundacion: PortalFundacionLanding;
+  popup: PortalPopupConfig;
+  consultaCertificados: PortalConsultaCertificadosConfig;
+  asistente: PortalAsistenteConfig;
+}
+
+export interface PortalAsistentePaginaConfig {
+  activo: boolean;
+  texto: string;
+}
+
+export interface PortalAsistenteConfig {
+  videoUrl: string;
+  videoUrlAbsoluta?: string;
+  paginas: Record<PortalPaginaKey, PortalAsistentePaginaConfig>;
+}
+
+/** Formato que consume el componente flotante del asistente. */
+export interface PortalAsistenteViewConfig {
+  asistenteActivo: boolean;
+  asistenteTexto: string;
+  asistenteVideoUrl: string;
+  asistenteVideoUrlAbsoluta?: string;
+}
+
+export type PortalPopupFrecuencia = 'primera_vez' | 'cada_recarga_sesion';
+
+export interface PortalConsultaCertificadosConfig {
+  mostrarBotonDescargar: boolean;
+  marcaAguaCopia: boolean;
+  textoBotonDescargar: string;
+}
+
+export const PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT = `🚘 FORMACIÓN QUE ABRE CAMINOS Y GENERA CONFIANZA
+
+En nuestro Centro de Enseñanza Automovilística, trabajamos con el compromiso de brindar una formación integral, responsable y de alta calidad.
+
+Contamos con los requisitos y reconocimientos correspondientes ante las entidades competentes, incluyendo el sector de Transporte y Educación, además de certificaciones de calidad que respaldan nuestros procesos de formación.
+
+🎓 Ofrecemos cursos orientados a la formación y actualización de conductores, con programas que buscan responder a las necesidades del sector empresarial y laboral.
+
+⛽ Formación con enfoque empresarial: contamos con cursos y procesos de capacitación válidos para los requisitos aplicables en procesos relacionados con ECOPETROL, de acuerdo con las condiciones y exigencias correspondientes.
+
+Nuestro propósito es formar conductores responsables, competentes y preparados para asumir los retos de la movilidad y del sector productivo.
+
+📚 Capacítate con una institución que trabaja por tu seguridad, tu formación y tu futuro.
+
+Centro de Enseñanza Automovilística
+✅ Formación
+✅ Calidad
+✅ Seguridad vial
+✅ Capacitación para el sector empresarial
+✅ Cursos y certificaciones conforme a la normativa aplicable`;
+
+export interface PortalPopupConfig {
+  activo: boolean;
+  imagenUrl: string;
+  imagenUrlAbsoluta?: string;
+  imagenAlt: string;
+  mostrarBotonContinuar: boolean;
+  textoBotonContinuar: string;
+  mostrarBotonCerrar: boolean;
+  duracionSegundos: number;
+  frecuencia: PortalPopupFrecuencia;
 }
 
 export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
@@ -287,6 +353,34 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     'Planes de movilidad sostenible y segura',
   ],
   fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)) as PortalFundacionLanding,
+  popup: {
+    activo: false,
+    imagenUrl: '',
+    imagenAlt: 'Aviso del portal',
+    mostrarBotonContinuar: true,
+    textoBotonContinuar: 'Continuar',
+    mostrarBotonCerrar: true,
+    duracionSegundos: 0,
+    frecuencia: 'primera_vez',
+  },
+  consultaCertificados: {
+    mostrarBotonDescargar: false,
+    marcaAguaCopia: true,
+    textoBotonDescargar: 'Descargar PDF',
+  },
+  asistente: {
+    videoUrl: 'videos/asistente-educarte.mp4',
+    paginas: {
+      home: { activo: false, texto: '' },
+      tienda: { activo: false, texto: '' },
+      cursos: { activo: false, texto: '' },
+      aula: { activo: false, texto: '' },
+      fundacion: { activo: false, texto: '' },
+      consultaCertificados: { activo: false, texto: PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT },
+      blog: { activo: false, texto: '' },
+      acerca: { activo: false, texto: '' },
+    },
+  },
 };
 
 function mergeFundacionLanding(raw?: Partial<PortalFundacionLanding> | null): PortalFundacionLanding {
@@ -390,5 +484,17 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     },
     footerServicios: raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
     fundacion: mergeFundacionLanding(raw.fundacion),
+    popup: { ...d.popup, ...raw.popup },
+    consultaCertificados: {
+      mostrarBotonDescargar: raw.consultaCertificados?.mostrarBotonDescargar === true,
+      marcaAguaCopia: raw.consultaCertificados?.marcaAguaCopia !== false,
+      textoBotonDescargar:
+        raw.consultaCertificados?.textoBotonDescargar?.trim() ||
+        d.consultaCertificados.textoBotonDescargar,
+    },
+    asistente: mergePortalAsistente(
+      raw.asistente,
+      raw.consultaCertificados as LegacyConsultaAsistente | undefined,
+    ),
   };
 }

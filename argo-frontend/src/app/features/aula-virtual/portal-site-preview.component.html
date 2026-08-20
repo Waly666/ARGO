@@ -128,7 +128,7 @@
         </div>
 
         <div class="pv-blocks" [class.pv-blocks--inicio]="activePanel === 'inicio'">
-          @for (s of seccionesHome(); track s.id) {
+          @for (s of seccionesHome(); track $index) {
             <div
               class="pv-block"
               [class.pv-block--off]="!s.activa"

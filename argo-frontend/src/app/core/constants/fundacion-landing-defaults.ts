@@ -24,6 +24,7 @@ export interface PortalFundacionLanding {
     titulo: string;
     lead: string;
     imagenUrl: string;
+    imagenUrlAbsoluta?: string;
     imagenAlt: string;
     imagenCaption: string;
     btnSitioUrl: string;

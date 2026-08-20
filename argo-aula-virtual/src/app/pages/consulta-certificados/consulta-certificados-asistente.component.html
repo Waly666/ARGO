@@ -1,0 +1,90 @@
+@if (config.asistenteActivo === true && texto()) {
+  <aside
+    #root
+    class="cc-voice-assistant"
+    [class.is-enabled]="enabled()"
+    [class.is-speaking]="speaking()"
+    [class.is-paused]="paused()"
+    [class.is-dragging]="dragging()"
+    [class.has-video-avatar]="!useImageFallback()"
+    [class.has-transparent-avatar]="hasTransparentAvatar()"
+    aria-label="Asistente virtual de certificados"
+    (click)="closeVoiceMenu()"
+  >
+    <div
+      class="cc-voice-assistant__bubble"
+      [class.is-visible]="bubbleVisible()"
+      aria-live="polite"
+    >
+      {{ bubbleText() }}
+    </div>
+
+    @if (voiceMenuOpen()) {
+      <div class="cc-voice-assistant__menu" (click)="$event.stopPropagation()">
+        <p class="cc-voice-assistant__menu-title">Voz masculina en español</p>
+        <div class="cc-voice-assistant__menu-list">
+          @for (voice of availableVoices(); track voice.voiceURI) {
+            <button
+              type="button"
+              class="cc-voice-assistant__menu-item"
+              [class.is-active]="selectedVoice?.voiceURI === voice.voiceURI"
+              (click)="selectVoice(voice)"
+            >
+              {{ voice.name }} ({{ voice.lang }})
+            </button>
+          } @empty {
+            <p class="cc-voice-assistant__menu-empty">No hay voces masculinas en español en este navegador.</p>
+          }
+        </div>
+      </div>
+    }
+
+    <button
+      type="button"
+      class="cc-voice-assistant__voice-btn"
+      aria-label="Cambiar voz del asistente"
+      (click)="toggleVoiceMenu($event)"
+    >
+      {{ voiceBadge() }}
+    </button>
+
+    <button
+      type="button"
+      class="cc-voice-assistant__mascot"
+      data-cc-mascot
+      [attr.aria-pressed]="enabled()"
+      aria-label="Asistente Educarte. Arrástralo por la pantalla."
+      (click)="onMascotClick(); $event.stopPropagation()"
+      (dblclick)="onMascotDblClick($event)"
+    >
+      @if (!useImageFallback()) {
+        <video
+          #video
+          class="cc-voice-assistant__video-source"
+          [src]="videoSrc()"
+          [poster]="posterUrl"
+          muted
+          defaultMuted
+          playsinline
+          autoplay
+          loop
+          preload="auto"
+          aria-hidden="true"
+          (loadeddata)="onVideoLoaded()"
+          (error)="onVideoError()"
+        ></video>
+        <canvas
+          #canvas
+          class="cc-voice-assistant__avatar-canvas"
+          aria-label="Asistente Educarte"
+        ></canvas>
+      } @else {
+        <img
+          class="cc-voice-assistant__avatar-img"
+          [src]="posterUrl"
+          alt="Asistente Educarte"
+        />
+      }
+    </button>
+  </aside>
+}

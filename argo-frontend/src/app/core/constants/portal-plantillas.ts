@@ -270,7 +270,7 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
       tema: {
         colorPrimario: '#2CE97A',
         colorPrimarioOscuro: '#0A0A0A',
-        colorAcento: '#D9D314',
+        colorAcento: '#33dd6f',
         colorFondo: '#0A0A0A',
         colorSuperficie: '#111218',
         colorTexto: '#FFFFFF',

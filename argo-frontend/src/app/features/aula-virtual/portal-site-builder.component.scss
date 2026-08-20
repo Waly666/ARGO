@@ -1,3 +1,5 @@
+@use './portal-site-editor-shared';
+
 .psb {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
@@ -355,19 +357,23 @@
 }
 
 .psb-order-btn {
+  @include portal-site-editor-shared.portal-editor-button-reset;
+
   padding: 0.25rem 0.45rem;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(78, 163, 255, 0.35);
   border-radius: 6px;
-  background: rgba(6, 16, 41, 0.8);
-  color: var(--text-dim);
+  background: rgba(15, 23, 42, 0.85);
+  color: #93c5fd;
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 
-  &:hover {
-    color: var(--text);
-    border-color: #60a5fa;
+  &:hover:not(:disabled) {
+    color: #e0f2fe;
+    border-color: rgba(96, 165, 250, 0.55);
+    background: rgba(37, 99, 235, 0.22);
   }
 }
 
@@ -423,19 +429,7 @@
   }
 }
 
-.psb-link {
-  border: none;
-  background: none;
-  padding: 0;
-  color: #60a5fa;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
+// psb-link y psb-icon-btn → portal-site-editor-shared.scss
 
 .psb-alert {
   margin-bottom: 0.85rem;
@@ -567,6 +561,20 @@
   }
 }
 
+.psb-asistente-page {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.psb-asistente-preview {
+  display: block;
+  width: min(220px, 100%);
+  margin: 0.65rem 0;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #000;
+}
+
 .psb-highlight {
   padding: 1rem;
   border-radius: 12px;
@@ -583,6 +591,12 @@
   margin: 0;
   font-size: 0.95rem;
   color: var(--text);
+
+  &--section {
+    margin: 1.25rem 0 0.5rem;
+    font-weight: 800;
+    color: #93c5fd;
+  }
 }
 
 .psb-divider {
@@ -692,21 +706,7 @@
   flex-shrink: 0;
 }
 
-.psb-icon-btn {
-  width: 1.6rem;
-  height: 1.35rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: rgba(6, 16, 41, 0.8);
-  color: var(--text-dim);
-  font-size: 0.7rem;
-  cursor: pointer;
-
-  &:hover {
-    color: var(--text);
-    border-color: #60a5fa;
-  }
-}
+// psb-icon-btn → portal-site-editor-shared.scss
 
 .psb-sections__label {
   flex: 1;
@@ -905,16 +905,18 @@
   justify-content: center;
   padding: 0.45rem 0.85rem;
   border-radius: 8px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
+  border: 1px solid rgba(78, 163, 255, 0.35);
+  background: rgba(37, 99, 235, 0.12);
+  color: #bfdbfe;
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(37, 99, 235, 0.22);
+    border-color: rgba(96, 165, 250, 0.55);
+    color: #e0f2fe;
   }
 
   &:disabled,

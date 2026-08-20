@@ -136,12 +136,55 @@ function resolveTema(tema: PortalTemaLike | null | undefined) {
   return { ...PORTAL_TEMA_FINSTRUVIAL, ...tema };
 }
 
+export const PORTAL_BRAND_GREEN = '#33dd6f';
+export const PORTAL_BRAND_LIME = '#AEE929';
+
+const AMBER_LIKE_ACCENTS = new Set([
+  '#ffd200',
+  '#d9d314',
+  '#f5b417',
+  '#fbbf24',
+  '#f59e0b',
+  '#eab308',
+  '#facc15',
+  '#ca8a04',
+  '#ea580c',
+]);
+
+function resolvePortalHeroEstilo(tema: PortalTemaLike | null | undefined): 'starfield' | 'servial-mesh' {
+  const explicit = tema?.heroEstilo;
+  if (explicit === 'servial-mesh' || explicit === 'starfield') return explicit;
+  const accent = tema?.colorAcento?.toLowerCase();
+  const fuente = tema?.fuente?.toLowerCase() ?? '';
+  const primOscuro = tema?.colorPrimarioOscuro?.toLowerCase();
+  if (
+    (accent === '#ffd200' || accent === '#aee929' || accent === '#d9d314') &&
+    (fuente.includes('poppins') || fuente.includes('figtree')) &&
+    (primOscuro === '#000000' || primOscuro === '#04060c' || primOscuro === '#0a0a0a')
+  ) {
+    return 'servial-mesh';
+  }
+  return 'starfield';
+}
+
+function resolvePortalUiAccent(
+  accent: string,
+  opts?: { heroEstilo?: 'starfield' | 'servial-mesh' },
+): string {
+  const key = accent.toLowerCase();
+  if (opts?.heroEstilo === 'servial-mesh' || AMBER_LIKE_ACCENTS.has(key)) {
+    return key === PORTAL_BRAND_GREEN.toLowerCase() ? accent : PORTAL_BRAND_GREEN;
+  }
+  return accent;
+}
+
 /** Genera todas las variables --av-* aplicadas en :root al cargar el portal. */
 export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined): Record<string, string> {
   const t = resolveTema(tema);
+  const heroEstilo = resolvePortalHeroEstilo(t);
   const primary = t.colorPrimario;
   const primaryDark = t.colorPrimarioOscuro;
-  const accent = t.colorAcento;
+  const accent = resolvePortalUiAccent(t.colorAcento, { heroEstilo });
   const bg = t.colorFondo;
   const surface = t.colorSuperficie;
   const text = t.colorTexto;
@@ -234,6 +277,8 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
 
     '--av-btn-primary-shadow': withAlpha(primary, 0.28),
     '--av-btn-primary-shadow-hover': withAlpha(primary, 0.38),
+    '--av-btn-primary-bg': `linear-gradient(135deg, ${primaryDark} 0%, ${accent} 100%)`,
+    '--av-btn-primary-text': '#ffffff',
     '--av-btn-outline-hover-bg': withAlpha(accent, 0.08),
     '--av-btn-outline-hover-bg-soft': withAlpha(accent, 0.06),
     '--av-btn-accent-bg': `linear-gradient(135deg, ${mixHex(accent, '#34d399', 0.35)}, ${accent})`,
@@ -294,7 +339,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     '--dash-primary-hover': primaryDark,
     '--dash-accent': accent,
 
-    '--av-fundacion-cta-bg': `linear-gradient(120deg, ${primary} 0%, ${mixHex(primaryDark, accent, 0.5)} 50%, ${mixHex(accent, '#6366f1', 0.35)} 100%)`,
+    '--av-fundacion-cta-bg': `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 55%, ${accent} 100%)`,
   };
 
   vars['--av-starfield-bg'] =
@@ -304,19 +349,22 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
   vars['--av-hero-bg'] =
     `radial-gradient(ellipse 85% 65% at 18% 42%, ${vars['--av-starfield-glow']}, transparent 68%), linear-gradient(135deg, ${vars['--av-hero-grad-start']} 0%, ${vars['--av-hero-grad-end']} 78%)`;
 
-  if (t.heroEstilo === 'servial-mesh') {
-    const picoGreen = '#AEE929';
-    const picoYellow = accent;
-    vars['--av-nav-link'] = picoGreen;
-    vars['--av-nav-link-hover'] = '#ffffff';
+  if (heroEstilo === 'servial-mesh') {
+    const brandGreen = PORTAL_BRAND_GREEN;
+    const brandLime = PORTAL_BRAND_LIME;
+    vars['--av-nav-link'] = '#ffffff';
+    vars['--av-nav-link-hover'] = brandGreen;
     vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
-    vars['--av-topbar-border'] = 'rgba(174, 233, 41, 0.16)';
+    vars['--av-topbar-border'] = 'rgba(51, 221, 111, 0.22)';
     vars['--av-inst-bar-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${surface} 100%)`;
     vars['--av-hero-bg'] = 'transparent';
-    vars['--av-hero-title-shimmer'] = picoGreen;
-    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
-    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${primary} 0%, ${picoYellow} 100%)`;
-    vars['--av-starfield-glow'] = withAlpha(picoGreen, 0.2);
+    vars['--av-hero-title-shimmer'] = brandGreen;
+    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
+    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandLime} 0%, ${brandGreen} 100%)`;
+    vars['--av-btn-primary-text'] = '#0a0a0a';
+    vars['--av-fundacion-cta-bg'] = `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
+    vars['--av-starfield-glow'] = withAlpha(brandGreen, 0.2);
+    vars['--av-page-hero-kicker-text'] = brandGreen;
   }
 
   if (isFinstruvialTema(t)) {

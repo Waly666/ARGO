@@ -292,7 +292,7 @@
           ↕ Use <strong>Subir</strong> y <strong>Bajar</strong> para cambiar el orden. El interruptor enciende o apaga cada bloque.
         </p>
         <ul class="psb-sections">
-          @for (s of seccionesInicio(); track s.id) {
+          @for (s of seccionesInicio(); track $index) {
             <li class="psb-sections__row" [class.psb-sections__row--off]="!s.activa">
               <div class="psb-sections__order">
                 <button type="button" class="psb-order-btn" (click)="moverSeccion(s.id, -1)">↑ Subir</button>
@@ -436,6 +436,125 @@
             <input type="email" class="psb-input" [(ngModel)]="portalForm.emailContacto" placeholder="contacto@suempresa.com" />
             <span class="psb-hint">Si lo deja vacío, se usa el correo de arriba o el configurado en Recibos.</span>
           </label>
+        </div>
+      }
+
+      @case ('popup') {
+        <argo-portal-popup-editor
+          [popup]="popup"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
+      @case ('consultaCertificados') {
+        <div class="psb-stack">
+          <p class="psb-hint">
+            Estas opciones aplican a la consulta pública de certificados por número de documento.
+            El PDF usa el mismo diseño configurado en Configuración → Certificados.
+          </p>
+
+          <h3 class="psb-subtitle psb-subtitle--section">Descarga de certificados</h3>
+          <label class="psb-check">
+            <input type="checkbox" [(ngModel)]="consultaCertificados.mostrarBotonDescargar" />
+            Mostrar botón para descargar el certificado en PDF
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Texto del botón</span>
+            <input
+              type="text"
+              class="psb-input"
+              [(ngModel)]="consultaCertificados.textoBotonDescargar"
+              placeholder="Descargar PDF"
+              [disabled]="!consultaCertificados.mostrarBotonDescargar"
+            />
+          </label>
+          <label class="psb-check">
+            <input
+              type="checkbox"
+              [(ngModel)]="consultaCertificados.marcaAguaCopia"
+              [disabled]="!consultaCertificados.mostrarBotonDescargar"
+            />
+            Marca de agua «COPIA» en el PDF descargado
+          </label>
+        </div>
+      }
+
+      @case ('asistente') {
+        <div class="psb-stack">
+          <p class="psb-hint">
+            El mismo avatar y video se usan en todas las páginas. Active solo donde quiera mostrarlo y escriba el mensaje que leerá en voz alta.
+          </p>
+
+          <div class="psb-highlight">
+            <p class="psb-hint">
+              Video del avatar. Por defecto usa
+              <code>videos/asistente-educarte.mp4</code> en el portal público.
+            </p>
+            @if (asistenteVideoPreviewUrl(); as videoUrl) {
+              <video
+                class="psb-asistente-preview"
+                [src]="videoUrl"
+                muted
+                loop
+                playsinline
+                autoplay
+                controls
+              ></video>
+            }
+            <div class="psb-hero-image__actions">
+              <label class="psb-btn psb-btn--ghost psb-btn--file" [class.psb-btn--disabled]="asistenteVideoUploading()">
+                {{ asistenteVideoUploading() ? 'Subiendo…' : 'Subir video MP4/WEBM' }}
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,.mp4,.webm"
+                  hidden
+                  [disabled]="asistenteVideoUploading()"
+                  (change)="onAsistenteVideo($event)"
+                />
+              </label>
+              @if (tieneVideoAsistentePersonalizado()) {
+                <button
+                  type="button"
+                  class="psb-btn psb-btn--ghost"
+                  [disabled]="asistenteVideoUploading()"
+                  (click)="quitarAsistenteVideo()"
+                >
+                  Usar video predeterminado
+                </button>
+              }
+            </div>
+          </div>
+
+          @for (pagina of asistentePaginas; track pagina.key) {
+            <article class="psb-asistente-page">
+              <h3 class="psb-subtitle psb-subtitle--section">{{ pagina.titulo }}</h3>
+              <p class="psb-hint">{{ pagina.descripcion }}</p>
+              <label class="psb-check">
+                <input type="checkbox" [(ngModel)]="asistentePagina(pagina.key).activo" />
+                Mostrar asistente en esta página
+              </label>
+              <label class="psb-field psb-field--plain">
+                <span>Mensaje del asistente</span>
+                <textarea
+                  class="psb-input"
+                  rows="8"
+                  [(ngModel)]="asistentePagina(pagina.key).texto"
+                  [disabled]="!asistentePagina(pagina.key).activo"
+                ></textarea>
+                @if (pagina.key === 'consultaCertificados') {
+                  <button
+                    type="button"
+                    class="psb-link"
+                    (click)="restaurarTextoAsistentePagina(pagina.key)"
+                    [disabled]="!asistentePagina(pagina.key).activo"
+                  >
+                    Restaurar texto original
+                  </button>
+                }
+              </label>
+            </article>
+          }
         </div>
       }
 

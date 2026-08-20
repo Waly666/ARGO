@@ -3,8 +3,8 @@ import { Component, Input, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import {
+  ordenSeccionesHomePortal,
   PORTAL_HOME_SECCIONES_LABELS,
-  PORTAL_HOME_SECCIONES_ORDEN,
   PortalPaginaKey,
 } from '../../core/constants/portal-site-defaults';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
@@ -146,21 +146,7 @@ export class PortalSitePreviewComponent {
 
   seccionesHome(): { id: string; label: string; activa: boolean }[] {
     const labels = { ...PORTAL_HOME_SECCIONES_LABELS, ...this.site?.homeSeccionesLabels };
-    const orden = this.site?.home?.orden?.length
-      ? [...this.site.home.orden]
-      : [...PORTAL_HOME_SECCIONES_ORDEN];
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const id of orden) {
-      if (!seen.has(id)) {
-        seen.add(id);
-        out.push(id);
-      }
-    }
-    for (const id of PORTAL_HOME_SECCIONES_ORDEN) {
-      if (!seen.has(id)) out.push(id);
-    }
-    return out.map((id) => ({
+    return ordenSeccionesHomePortal(this.site).map((id) => ({
       id,
       label: labels[id] || id,
       activa: this.site?.home?.secciones?.[id] !== false,
@@ -185,6 +171,7 @@ export class PortalSitePreviewComponent {
       institucional: 'Quiénes somos',
       blog: 'Blog',
       apariencia: 'Colores y estilo',
+      asistente: 'Asistente virtual',
       marca: 'Pie de página',
     };
     return hints[this.activePanel] || 'Vista previa';

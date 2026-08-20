@@ -40,6 +40,10 @@
         <p class="consulta-err" role="alert">{{ error() }}</p>
       }
 
+      @if (descargaError()) {
+        <p class="consulta-err" role="alert">{{ descargaError() }}</p>
+      }
+
       @if (consultado() && !error() && resultado(); as res) {
         @if (res.total === 0) {
           <div class="consulta-empty">
@@ -68,10 +72,13 @@
                   <th>Horas</th>
                   <th>Fecha cert.</th>
                   <th>Fecha vence</th>
+                  @if (mostrarBotonDescargar()) {
+                    <th>Certificado</th>
+                  }
                 </tr>
               </thead>
               <tbody>
-                @for (row of filas(); track row.idCertificado) {
+                @for (row of filas(); track row._id || row.idCertificado) {
                   <tr>
                     <td data-label="Cód. verificación">
                       <span class="consulta-id">{{ row.codVerificacion || row.idCertificado || '—' }}</span>
@@ -92,6 +99,22 @@
                     <td data-label="Fecha vence">
                       {{ row.fechaVence ? (row.fechaVence | date: 'dd/MM/yyyy') : '—' }}
                     </td>
+                    @if (mostrarBotonDescargar()) {
+                      <td data-label="Certificado">
+                        <button
+                          type="button"
+                          class="consulta-dl-btn"
+                          [disabled]="descargandoId() === row._id"
+                          (click)="descargarCertificado(row)"
+                        >
+                          {{
+                            descargandoId() === row._id
+                              ? 'Generando…'
+                              : textoBotonDescargar()
+                          }}
+                        </button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>

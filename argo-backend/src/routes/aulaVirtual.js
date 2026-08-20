@@ -9,6 +9,8 @@ const {
   aulaVirtualLogo,
   aulaVirtualHero,
   aulaVirtualFundacionHero,
+  aulaVirtualPopup,
+  aulaVirtualConsultaAsistente,
   aulaVirtualBlog,
   programasVirtual,
 } = require('../middleware/upload');
@@ -46,6 +48,12 @@ router.get(
   buscarAlumnoLimiter,
   turnstilePortal,
   ctrl.consultarCertificados,
+);
+router.get(
+  '/certificados/consulta/:id/pdf',
+  buscarAlumnoLimiter,
+  turnstilePortal,
+  ctrl.certificadoConsultaPdf,
 );
 router.get(
   '/encuestas-jornada/pendientes',
@@ -174,6 +182,27 @@ router.delete(
   requireAuth,
   configPortal,
   admin.quitarImagenFundacionPortal,
+);
+router.post(
+  '/admin/portal/popup-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualPopup.single('imagen'),
+  admin.subirImagenPopupPortal,
+);
+router.delete('/admin/portal/popup-imagen', requireAuth, configPortal, admin.quitarImagenPopupPortal);
+router.post(
+  '/admin/portal/consulta-certificados-asistente-video',
+  requireAuth,
+  configPortal,
+  aulaVirtualConsultaAsistente.single('video'),
+  admin.subirVideoAsistenteCertificadosPortal,
+);
+router.delete(
+  '/admin/portal/consulta-certificados-asistente-video',
+  requireAuth,
+  configPortal,
+  admin.quitarVideoAsistenteCertificadosPortal,
 );
 
 router.get('/admin/blog', requireAuth, configPortal, admin.listarBlogAdmin);

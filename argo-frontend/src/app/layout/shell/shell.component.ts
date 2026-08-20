@@ -88,7 +88,7 @@ interface MenuLink {
   permiso?: string | string[];
   /** Permiso para mostrar en menú (puede ser más estricto que la ruta). */
   permisoMenu?: string | string[];
-  /** Título de sección dentro de un grupo (solo en children) */
+  /** Título de sección dentro de un grupo (solo en children planos) */
   section?: string;
   adminOnly?: boolean;
   /**
@@ -100,12 +100,22 @@ interface MenuLink {
   catalogosMatch?: boolean;
 }
 
+interface MenuSubgroup {
+  kind: 'subgroup';
+  label: string;
+  icon?: string;
+  iconTone?: string;
+  children: MenuLink[];
+}
+
+type MenuChild = MenuLink | MenuSubgroup;
+
 interface MenuGroup {
   kind: 'group';
   label: string;
   icon: string;
   iconTone?: string;
-  children: MenuLink[];
+  children: MenuChild[];
   adminOnly?: boolean;
   gestionOnly?: boolean;
   permiso?: string | string[];
@@ -1060,254 +1070,300 @@ export class ShellComponent {
       ],
       children: [
         {
-          kind: 'link',
-          label: 'Usuarios',
-          path: '/app/configuracion/usuarios',
-          icon: '◎',
-          iconTone: 'purple',
-          permiso: 'config.usuarios',
-        },
-        {
-          kind: 'link',
-          label: 'Sedes',
-          path: '/app/configuracion/sedes',
-          icon: '⌂',
-          iconTone: 'teal',
-          permiso: ['sedes.gestionar', 'config.sedes'],
-        },
-        {
-          kind: 'link',
-          label: 'Roles, permisos y alarmas',
-          path: '/app/configuracion/roles',
+          kind: 'subgroup',
+          label: 'Acceso y seguridad',
           icon: '◈',
           iconTone: 'violet',
-          permiso: 'config.roles',
+          children: [
+            {
+              kind: 'link',
+              label: 'Usuarios',
+              path: '/app/configuracion/usuarios',
+              icon: '◎',
+              iconTone: 'purple',
+              permiso: 'config.usuarios',
+            },
+            {
+              kind: 'link',
+              label: 'Sedes',
+              path: '/app/configuracion/sedes',
+              icon: '⌂',
+              iconTone: 'teal',
+              permiso: ['sedes.gestionar', 'config.sedes'],
+            },
+            {
+              kind: 'link',
+              label: 'Roles, permisos y alarmas',
+              path: '/app/configuracion/roles',
+              icon: '◈',
+              iconTone: 'violet',
+              permiso: 'config.roles',
+            },
+            {
+              kind: 'link',
+              label: 'Apps móviles',
+              path: '/app/configuracion/apps-moviles',
+              icon: '▣',
+              iconTone: 'teal',
+              permiso: 'config.roles',
+            },
+            {
+              kind: 'link',
+              label: 'Alertas y notificaciones',
+              path: '/app/configuracion/alertas',
+              icon: '◉',
+              iconTone: 'amber',
+              permiso: ['config.alertas', 'config.roles'],
+            },
+          ],
         },
         {
-          kind: 'link',
-          label: 'Apps móviles',
-          path: '/app/configuracion/apps-moviles',
-          icon: '▣',
-          iconTone: 'teal',
-          permiso: 'config.roles',
-        },
-        {
-          kind: 'link',
-          label: 'Catálogos',
-          path: '/app/configuracion/catalogos',
-          icon: '▦',
-          iconTone: 'cyan',
-          permiso: 'config.catalogos',
-        },
-        {
-          kind: 'link',
-          label: 'Geocodificación',
-          path: '/app/configuracion/georef',
-          icon: '⌖',
-          iconTone: 'lime',
-          permiso: 'config.georef',
-        },
-        {
-          kind: 'link',
-          label: 'Pasarela Wompi',
-          path: '/app/configuracion/pasarela',
-          icon: '◉',
-          iconTone: 'violet',
-          permiso: ['config.recibos', 'aula_virtual.gestionar'],
-        },
-        {
-          kind: 'link',
-          label: 'Facturación electrónica',
-          path: '/app/configuracion/facturacion',
-          icon: '$',
-          iconTone: 'emerald',
-          permiso: ['config.facturacion', 'facturacion'],
-        },
-        {
-          kind: 'link',
-          label: 'Clientes de facturación',
-          path: '/app/configuracion/clientes',
-          icon: '$',
-          iconTone: 'emerald',
-          permiso: ['config.facturacion', 'facturacion'],
-        },
-        {
-          kind: 'link',
-          label: 'Contratos capacitación (fiscal)',
-          path: '/app/configuracion/contratos-cap-fiscal',
-          icon: '$',
-          iconTone: 'emerald',
-          permiso: ['config.facturacion', 'facturacion'],
-        },
-        {
-          kind: 'link',
-          label: 'Empresa',
-          path: '/app/configuracion/empresa',
+          kind: 'subgroup',
+          label: 'Empresa y caja',
           icon: '▤',
           iconTone: 'blue',
-          permiso: 'config.recibos',
+          children: [
+            {
+              kind: 'link',
+              label: 'Empresa',
+              path: '/app/configuracion/empresa',
+              icon: '▤',
+              iconTone: 'blue',
+              permiso: 'config.recibos',
+            },
+            {
+              kind: 'link',
+              label: 'Comprobantes de caja',
+              path: '/app/configuracion/recibos',
+              icon: '▣',
+              iconTone: 'cyan',
+              permiso: 'config.recibos',
+            },
+            {
+              kind: 'link',
+              label: 'Servicios adicionales',
+              path: '/app/configuracion/servicios-adicionales',
+              icon: '⊕',
+              iconTone: 'teal',
+              permiso: 'config.recibos',
+            },
+            {
+              kind: 'link',
+              label: 'Gestores y empresas',
+              path: '/app/configuracion/gestores-empresas',
+              icon: '◉',
+              iconTone: 'cyan',
+              permiso: 'config.recibos',
+            },
+            {
+              kind: 'link',
+              label: 'Correos a alumnos',
+              path: '/app/configuracion/envio-correos-alumno',
+              icon: '✉',
+              iconTone: 'sky',
+              permiso: ['config.recibos', 'config.certificados', 'config.alertas'],
+            },
+            {
+              kind: 'link',
+              label: 'Parámetros nómina',
+              path: '/app/configuracion/nomina',
+              icon: '％',
+              iconTone: 'amber',
+              permiso: 'config.nomina',
+            },
+          ],
         },
         {
-          kind: 'link',
-          label: 'Comprobantes de caja',
-          path: '/app/configuracion/recibos',
-          icon: '▣',
-          iconTone: 'cyan',
-          permiso: 'config.recibos',
-        },
-        {
-          kind: 'link',
-          label: 'Servicios adicionales',
-          path: '/app/configuracion/servicios-adicionales',
-          icon: '⊕',
-          iconTone: 'teal',
-          permiso: 'config.recibos',
-        },
-        {
-          kind: 'link',
-          label: 'Gestores y empresas',
-          path: '/app/configuracion/gestores-empresas',
-          icon: '◉',
-          iconTone: 'cyan',
-          permiso: 'config.recibos',
-        },
-        {
-          kind: 'link',
-          label: 'Correos a alumnos',
-          path: '/app/configuracion/envio-correos-alumno',
-          icon: '✉',
-          iconTone: 'sky',
-          permiso: ['config.recibos', 'config.certificados', 'config.alertas'],
-        },
-        {
-          kind: 'link',
-          label: 'Parámetros nómina',
-          path: '/app/configuracion/nomina',
-          icon: '％',
-          iconTone: 'amber',
-          permiso: 'config.nomina',
-        },
-        {
-          kind: 'link',
-          label: 'Config. Certificados',
-          path: '/app/configuracion/certificados',
-          icon: '▣',
-          iconTone: 'violet',
-          permiso: 'config.certificados',
-        },
-        {
-          kind: 'link',
-          label: 'Jornadas',
-          path: '/app/configuracion/jornadas',
-          icon: '▦',
+          kind: 'subgroup',
+          label: 'Facturación y pagos',
+          icon: '$',
           iconTone: 'emerald',
-          permiso: 'jornadas.gestionar',
+          children: [
+            {
+              kind: 'link',
+              label: 'Pasarela Wompi',
+              path: '/app/configuracion/pasarela',
+              icon: '◉',
+              iconTone: 'violet',
+              permiso: ['config.recibos', 'aula_virtual.gestionar'],
+            },
+            {
+              kind: 'link',
+              label: 'Facturación electrónica',
+              path: '/app/configuracion/facturacion',
+              icon: '$',
+              iconTone: 'emerald',
+              permiso: ['config.facturacion', 'facturacion'],
+            },
+            {
+              kind: 'link',
+              label: 'Clientes de facturación',
+              path: '/app/configuracion/clientes',
+              icon: '$',
+              iconTone: 'emerald',
+              permiso: ['config.facturacion', 'facturacion'],
+            },
+            {
+              kind: 'link',
+              label: 'Contratos capacitación (fiscal)',
+              path: '/app/configuracion/contratos-cap-fiscal',
+              icon: '$',
+              iconTone: 'emerald',
+              permiso: ['config.facturacion', 'facturacion'],
+            },
+          ],
         },
         {
-          kind: 'link',
-          label: 'Alertas y notificaciones',
-          path: '/app/configuracion/alertas',
-          icon: '◉',
-          iconTone: 'amber',
-          permiso: ['config.alertas', 'config.roles'],
+          kind: 'subgroup',
+          label: 'Académico y portal',
+          icon: '▦',
+          iconTone: 'cyan',
+          children: [
+            {
+              kind: 'link',
+              label: 'Catálogos',
+              path: '/app/configuracion/catalogos',
+              icon: '▦',
+              iconTone: 'cyan',
+              permiso: 'config.catalogos',
+            },
+            {
+              kind: 'link',
+              label: 'Geocodificación',
+              path: '/app/configuracion/georef',
+              icon: '⌖',
+              iconTone: 'lime',
+              permiso: 'config.georef',
+            },
+            {
+              kind: 'link',
+              label: 'Config. Certificados',
+              path: '/app/configuracion/certificados',
+              icon: '▣',
+              iconTone: 'violet',
+              permiso: 'config.certificados',
+            },
+            {
+              kind: 'link',
+              label: 'Jornadas',
+              path: '/app/configuracion/jornadas',
+              icon: '▦',
+              iconTone: 'emerald',
+              permiso: 'jornadas.gestionar',
+            },
+            {
+              kind: 'link',
+              label: 'Páginas de informes',
+              path: '/app/configuracion/paginas-informes',
+              icon: '▤',
+              iconTone: 'blue',
+              permiso: ['config.paginas_informes', 'config.roles'],
+            },
+          ],
         },
         {
-          kind: 'link',
-          label: 'Páginas de informes',
-          path: '/app/configuracion/paginas-informes',
-          icon: '▤',
-          iconTone: 'blue',
-          permiso: ['config.paginas_informes', 'config.roles'],
-        },
-        {
-          kind: 'link',
-          label: 'Requisitos alumnos',
-          path: '/app/configuracion/requisitos-documentos-alumnos',
+          kind: 'subgroup',
+          label: 'Documentos y requisitos',
           icon: '▥',
           iconTone: 'teal',
-          permiso: 'config.requisitos',
+          children: [
+            {
+              kind: 'link',
+              label: 'Requisitos alumnos',
+              path: '/app/configuracion/requisitos-documentos-alumnos',
+              icon: '▥',
+              iconTone: 'teal',
+              permiso: 'config.requisitos',
+            },
+            {
+              kind: 'link',
+              label: 'Requisitos vehículos',
+              path: '/app/configuracion/requisitos-documentos-vehiculos',
+              icon: '▥',
+              iconTone: 'pink',
+              permiso: 'config.requisitos',
+            },
+            {
+              kind: 'link',
+              label: 'Requisitos empleados',
+              path: '/app/configuracion/requisitos-documentos-empleados',
+              icon: '▥',
+              iconTone: 'amber',
+              permiso: 'config.requisitos',
+            },
+            {
+              kind: 'link',
+              label: 'Formato inspección',
+              path: '/app/configuracion/formato-inspeccion-vehiculos',
+              icon: '▥',
+              iconTone: 'lime',
+              permiso: 'config.requisitos',
+            },
+          ],
         },
         {
-          kind: 'link',
-          label: 'Requisitos vehículos',
-          path: '/app/configuracion/requisitos-documentos-vehiculos',
-          icon: '▥',
-          iconTone: 'pink',
-          permiso: 'config.requisitos',
-        },
-        {
-          kind: 'link',
-          label: 'Requisitos empleados',
-          path: '/app/configuracion/requisitos-documentos-empleados',
-          icon: '▥',
-          iconTone: 'amber',
-          permiso: 'config.requisitos',
-        },
-        {
-          kind: 'link',
-          label: 'Formato inspección',
-          path: '/app/configuracion/formato-inspeccion-vehiculos',
-          icon: '▥',
-          iconTone: 'lime',
-          permiso: 'config.requisitos',
-        },
-        {
-          kind: 'link',
-          label: 'Backup',
-          path: '/app/configuracion/backup',
+          kind: 'subgroup',
+          label: 'Mantenimiento del sistema',
           icon: '⛁',
           iconTone: 'emerald',
-          section: 'Backup · Reset · Restore',
-          adminOnly: true,
-        },
-        {
-          kind: 'link',
-          label: 'Restore',
-          path: '/app/configuracion/restore',
-          icon: '↺',
-          iconTone: 'amber',
-          adminOnly: true,
-        },
-        {
-          kind: 'link',
-          label: 'Reset',
-          path: '/app/configuracion/reset',
-          icon: '⚠',
-          iconTone: 'rose',
-          adminOnly: true,
-        },
-        {
-          kind: 'link',
-          label: 'Limpieza tablas',
-          path: '/app/configuracion/limpieza-tablas',
-          icon: '⌫',
-          iconTone: 'rose',
-          adminOnly: true,
-        },
-        {
-          kind: 'link',
-          label: 'Migración',
-          path: '/app/configuracion/migracion',
-          icon: '⇄',
-          iconTone: 'cyan',
-          adminOnly: true,
-        },
-        {
-          kind: 'link',
-          label: 'Monitor de recursos',
-          path: '/app/configuracion/monitor',
-          icon: '◫',
-          iconTone: 'cyan',
-          section: 'Auditoría',
-          permiso: 'config.auditoria',
-        },
-        {
-          kind: 'link',
-          label: 'Monitoreo y auditoría',
-          path: '/app/configuracion/auditoria',
-          icon: '◉',
-          iconTone: 'rose',
-          permiso: 'config.auditoria',
+          children: [
+            {
+              kind: 'link',
+              label: 'Backup',
+              path: '/app/configuracion/backup',
+              icon: '⛁',
+              iconTone: 'emerald',
+              adminOnly: true,
+            },
+            {
+              kind: 'link',
+              label: 'Restore',
+              path: '/app/configuracion/restore',
+              icon: '↺',
+              iconTone: 'amber',
+              adminOnly: true,
+            },
+            {
+              kind: 'link',
+              label: 'Reset',
+              path: '/app/configuracion/reset',
+              icon: '⚠',
+              iconTone: 'rose',
+              adminOnly: true,
+            },
+            {
+              kind: 'link',
+              label: 'Limpieza tablas',
+              path: '/app/configuracion/limpieza-tablas',
+              icon: '⌫',
+              iconTone: 'rose',
+              adminOnly: true,
+            },
+            {
+              kind: 'link',
+              label: 'Migración',
+              path: '/app/configuracion/migracion',
+              icon: '⇄',
+              iconTone: 'cyan',
+              adminOnly: true,
+            },
+            {
+              kind: 'link',
+              label: 'Monitor de recursos',
+              path: '/app/configuracion/monitor',
+              icon: '◫',
+              iconTone: 'cyan',
+              permiso: 'config.auditoria',
+            },
+            {
+              kind: 'link',
+              label: 'Monitoreo y auditoría',
+              path: '/app/configuracion/auditoria',
+              icon: '◉',
+              iconTone: 'rose',
+              permiso: 'config.auditoria',
+            },
+          ],
         },
       ],
     },
@@ -1324,7 +1380,7 @@ export class ShellComponent {
 
   private filtrarEntrada(m: MenuEntry): MenuEntry | null {
     if (m.kind === 'group') {
-      const children = m.children.filter((c) => this.puedeVerItem(c));
+      const children = this.visibleMenuChildren(m.children);
       if (!children.length) return null;
       return { ...m, children };
     }
@@ -1365,8 +1421,84 @@ export class ShellComponent {
     return rutaAccesible('/app/instructores', this.permisos.permisos(), ctx);
   }
 
-  visibleChildren(children: MenuLink[]): MenuLink[] {
-    return children.filter((c) => this.puedeVerItem(c));
+  visibleMenuChildren(children: MenuChild[]): MenuChild[] {
+    return children
+      .map((c) => {
+        if (c.kind === 'subgroup') {
+          const links = c.children.filter((l) => this.puedeVerItem(l));
+          return links.length ? { ...c, children: links } : null;
+        }
+        return this.puedeVerItem(c) ? c : null;
+      })
+      .filter((c): c is MenuChild => c != null);
+  }
+
+  visibleChildren(children: MenuChild[]): MenuLink[] {
+    return children.flatMap((c) => {
+      if (c.kind === 'subgroup') return c.children.filter((l) => this.puedeVerItem(l));
+      return this.puedeVerItem(c) ? [c] : [];
+    });
+  }
+
+  visibleSubgroupChildren(subgroup: MenuSubgroup): MenuLink[] {
+    return subgroup.children.filter((l) => this.puedeVerItem(l));
+  }
+
+  hasSubgroups(children: MenuChild[]): boolean {
+    return children.some((c) => c.kind === 'subgroup');
+  }
+
+  subgroupKey(parentLabel: string, subgroupLabel: string): string {
+    return `${parentLabel}::${subgroupLabel}`;
+  }
+
+  isSubgroupOpen(parentLabel: string, subgroupLabel: string): boolean {
+    return this.groupAbierto()[this.subgroupKey(parentLabel, subgroupLabel)] === true;
+  }
+
+  subgroupActive(subgroup: MenuSubgroup): boolean {
+    const url = this.router.url.split('?')[0];
+    return subgroup.children.some(
+      (link) => url === link.path || url.startsWith(`${link.path}/`),
+    );
+  }
+
+  isConfigGroup(label: string): boolean {
+    return label === 'Configuración';
+  }
+
+  configGroupActive(): boolean {
+    return this.router.url.split('?')[0].includes('/configuracion/');
+  }
+
+  private firstNavigableLink(children: MenuChild[]): MenuLink | null {
+    for (const c of this.visibleMenuChildren(children)) {
+      if (c.kind === 'link') return c;
+      const links = this.visibleSubgroupChildren(c);
+      if (links[0]) return links[0];
+    }
+    return null;
+  }
+
+  private syncConfigSubgroupsFromUrl(url: string, patch: Record<string, boolean>): void {
+    const configGroup = this.menuAll.find((m) => m.kind === 'group' && m.label === 'Configuración');
+    if (!configGroup || configGroup.kind !== 'group') return;
+    for (const child of configGroup.children) {
+      if (child.kind !== 'subgroup') continue;
+      const match = child.children.some(
+        (link) => url === link.path || url.startsWith(`${link.path}/`),
+      );
+      if (match) {
+        patch[this.subgroupKey('Configuración', child.label)] = true;
+      }
+    }
+  }
+
+  toggleSubgroup(parentLabel: string, subgroup: MenuSubgroup, ev?: Event): void {
+    ev?.preventDefault();
+    ev?.stopPropagation();
+    const key = this.subgroupKey(parentLabel, subgroup.label);
+    this.groupAbierto.update((g) => ({ ...g, [key]: !this.isSubgroupOpen(parentLabel, subgroup.label) }));
   }
 
   trackMenu(m: MenuEntry): string {
@@ -2055,33 +2187,9 @@ export class ShellComponent {
       patch['RRHH'] = true;
     }
 
-    if (
-      u.includes('/configuracion/usuarios') ||
-      u.includes('/configuracion/sedes') ||
-      u.includes('/configuracion/georef') ||
-      u.includes('/configuracion/facturacion') ||
-      u.includes('/configuracion/clientes') ||
-      u.includes('/configuracion/roles') ||
-      u.includes('/configuracion/apps-moviles') ||
-      u.includes('/configuracion/catalogos') ||
-      u.includes('/configuracion/empresa') ||
-      u.includes('/configuracion/recibos') ||
-      u.includes('/configuracion/certificados') ||
-      u.includes('/configuracion/jornadas') ||
-      u.includes('/configuracion/requisitos-documentos-vehiculos') ||
-      u.includes('/configuracion/requisitos-documentos-empleados') ||
-      u.includes('/configuracion/requisitos-documentos-alumnos') ||
-      u.includes('/configuracion/formato-inspeccion-vehiculos') ||
-      u.includes('/configuracion/requisitos-documentos') ||
-      u.includes('/configuracion/monitor') ||
-      u.includes('/configuracion/auditoria') ||
-      u.includes('/configuracion/backup') ||
-      u.includes('/configuracion/restore') ||
-      u.includes('/configuracion/reset') ||
-      u.includes('/configuracion/limpieza-tablas') ||
-      u.includes('/configuracion/migracion')
-    ) {
+    if (u.includes('/configuracion/')) {
       patch['Configuración'] = true;
+      this.syncConfigSubgroupsFromUrl(u, patch);
     }
 
     this.groupAbierto.set(patch);
@@ -2093,12 +2201,11 @@ export class ShellComponent {
     return this.groupAbierto()[label] === true;
   }
 
-  toggleGroup(label: string, children: MenuLink[], ev?: Event) {
+  toggleGroup(label: string, children: MenuChild[], ev?: Event) {
     ev?.preventDefault();
     ev?.stopPropagation();
     if (this.collapsed()) {
-      const vis = this.visibleChildren(children);
-      const first = vis[0];
+      const first = this.firstNavigableLink(children);
       if (first) this.router.navigateByUrl(first.path);
       return;
     }
@@ -2128,17 +2235,19 @@ export class ShellComponent {
     return u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/cierre-general');
   }
 
-  trackMenuChild(c: MenuLink): string {
-    return `${c.path}|${c.label}`;
+  trackMenuChild(c: MenuChild): string {
+    return c.kind === 'link' ? `${c.path}|${c.label}` : `subgroup:${c.label}`;
   }
 
-  /** Encabezado de sección solo cuando cambia respecto al ítem visible anterior. */
-  showSubmenuSection(children: MenuLink[], index: number): boolean {
-    const visible = this.visibleChildren(children);
+  /** Encabezado de sección solo cuando cambia respecto al ítem visible anterior (menús planos). */
+  showSubmenuSection(children: MenuChild[], index: number): boolean {
+    if (this.hasSubgroups(children)) return false;
+    const visible = this.visibleMenuChildren(children);
     const current = visible[index];
-    if (!current?.section) return false;
+    if (!current || current.kind !== 'link' || !current.section) return false;
     const prev = index > 0 ? visible[index - 1] : null;
-    return current.section !== prev?.section;
+    const prevSection = prev?.kind === 'link' ? prev.section : undefined;
+    return current.section !== prevSection;
   }
 
   subLinkActive(link: MenuLink): boolean {

@@ -309,14 +309,14 @@
     }
 
     .hero-title--done {
-      background: linear-gradient(90deg, #aee929 0%, #d9d314 55%, #ffffff 100%);
+      background: linear-gradient(90deg, #aee929 0%, #33dd6f 55%, #ffffff 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
 
     .hero-title--done::after {
-      background: linear-gradient(90deg, #2ce97a, #d9d314, transparent);
+      background: linear-gradient(90deg, #2ce97a, #33dd6f, transparent);
       box-shadow: 0 0 22px color-mix(in srgb, var(--av-accent) 55%, transparent);
     }
 
@@ -328,7 +328,7 @@
 
     .hero-actions {
       .btn-primary {
-        background: var(--av-btn-primary-bg, linear-gradient(90deg, #2ce97a 0%, #d9d314 100%));
+        background: var(--av-btn-primary-bg, linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%));
         color: #0a0a0a;
         border-color: transparent;
         font-weight: 800;
@@ -344,16 +344,17 @@
 
       .btn-outline {
         background: transparent;
-        color: #aee929;
-        border-color: color-mix(in srgb, #aee929 65%, #d9d314);
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.72);
         font-weight: 800;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         font-size: 0.82rem;
 
         &:hover {
-          background: color-mix(in srgb, var(--av-accent) 12%, transparent);
-          color: #fff;
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+          border-color: #ffffff;
         }
       }
 
@@ -1887,11 +1888,11 @@ blockquote {
       }
 
       &:hover &__plus {
-        color: #d9d314;
+        color: #33dd6f;
       }
 
       &__icono {
-        background: linear-gradient(150deg, #2ce97a, #d9d314);
+        background: linear-gradient(150deg, #2ce97a, #33dd6f);
         box-shadow: 0 6px 16px rgba(174, 233, 41, 0.35);
 
         svg {
@@ -1954,7 +1955,7 @@ blockquote {
       }
 
       &__icono {
-        background: linear-gradient(150deg, #2ce97a, #d9d314);
+        background: linear-gradient(150deg, #2ce97a, #33dd6f);
         box-shadow: 0 6px 16px rgba(44, 233, 122, 0.28);
 
         svg {
@@ -2020,11 +2021,11 @@ blockquote {
       }
 
       &:hover .dark-card__plus {
-        color: #d9d314;
+        color: #33dd6f;
       }
 
       .dark-card__icono {
-        background: linear-gradient(150deg, #2ce97a, #d9d314);
+        background: linear-gradient(150deg, #2ce97a, #33dd6f);
         box-shadow: 0 6px 16px rgba(174, 233, 41, 0.35);
 
         svg {
@@ -2081,7 +2082,7 @@ blockquote {
 
     .faq-icon {
       color: #0a0a0a;
-      background: linear-gradient(150deg, #2ce97a, #d9d314);
+      background: linear-gradient(150deg, #2ce97a, #33dd6f);
       box-shadow: 0 4px 12px rgba(174, 233, 41, 0.35);
     }
 
@@ -2118,13 +2119,13 @@ blockquote {
     height: 3px;
     margin: 1rem auto 0;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2ce97a, #d9d314);
+    background: linear-gradient(90deg, #2ce97a, #33dd6f);
   }
 
   // Botones sólidos con degradado de marca (ofertas, pasos, CTA, FAQ…)
   .btn-primary,
   .btn-accent {
-    background: linear-gradient(90deg, #2ce97a 0%, #d9d314 100%);
+    background: linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%);
     color: #0a0a0a;
     border-color: transparent;
     font-weight: 700;
@@ -2187,7 +2188,7 @@ blockquote {
       top: 0;
       width: 100%;
       height: 3px;
-      background: linear-gradient(90deg, #2ce97a, #d9d314);
+      background: linear-gradient(90deg, #2ce97a, #33dd6f);
       transform: scaleX(0);
       transform-origin: left;
       transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
@@ -2233,7 +2234,7 @@ blockquote {
 
   // Pasos: número con degradado de marca y hover verde
   .paso-num {
-    background: linear-gradient(150deg, #2ce97a, #d9d314);
+    background: linear-gradient(150deg, #2ce97a, #33dd6f);
     color: #0a0a0a;
     box-shadow: 0 6px 16px rgba(44, 233, 122, 0.3);
   }
