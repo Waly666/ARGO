@@ -78,6 +78,7 @@ function normalizarMarca(raw, landingFooter = {}) {
   const d = SITE_DEFAULTS.marca;
   const src = raw && typeof raw === 'object' ? raw : {};
   return {
+    textoJuntoLogo: str(src.textoJuntoLogo),
     textoCopyright: str(src.textoCopyright, landingFooter.copyright || ''),
     ocultarMarcaDesarrollador: src.ocultarMarcaDesarrollador !== false,
     textoPieDesarrollador: str(src.textoPieDesarrollador),

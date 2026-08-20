@@ -141,6 +141,7 @@ export interface PortalSiteConfig {
   paginas: Record<string, PortalPaginaConfig>;
   tema: PortalTemaConfig;
   marca?: {
+    textoJuntoLogo?: string;
     textoCopyright?: string;
     ocultarMarcaDesarrollador?: boolean;
     textoPieDesarrollador?: string;

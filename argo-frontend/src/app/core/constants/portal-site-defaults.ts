@@ -36,6 +36,8 @@ export interface PortalTemaConfig {
 }
 
 export interface PortalMarcaConfig {
+  /** Texto al lado del logo en el menú superior. */
+  textoJuntoLogo: string;
   textoCopyright: string;
   ocultarMarcaDesarrollador: boolean;
   textoPieDesarrollador: string;
@@ -150,6 +152,7 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
       ...raw?.tema,
     },
     marca: {
+      textoJuntoLogo: '',
       textoCopyright: '',
       ocultarMarcaDesarrollador: true,
       textoPieDesarrollador: '',

@@ -8,6 +8,7 @@ import {
   PortalPaginaKey,
 } from '../../core/constants/portal-site-defaults';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
+import { resolverTextoJuntoLogo } from '../../core/utils/portal-marca.util';
 import { mergePortalLanding } from '../../core/constants/portal-landing-defaults';
 import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { BuilderPanel } from './portal-site-builder.component';
@@ -78,6 +79,13 @@ export class PortalSitePreviewComponent {
 
   nombreCea(): string {
     return this.portalForm.nombreEmpresa?.trim() || 'Mi institución';
+  }
+
+  textoJuntoLogo(): string {
+    return resolverTextoJuntoLogo(
+      this.site?.marca?.textoJuntoLogo,
+      this.portalForm.nombreEmpresa,
+    );
   }
 
   logoUrl(): string | null {

@@ -375,7 +375,18 @@
                 [(ngModel)]="portalForm.nombreEmpresa"
                 placeholder="Ej. Academia de Conducción El Progreso"
               />
-              <span class="psb-hint">Este nombre aparece en el menú superior, en el pie de página y en varias secciones del sitio.</span>
+              <span class="psb-hint">Nombre largo de su institución (franja naranja del inicio, pie de página, textos del sitio).</span>
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Texto junto al logo (menú superior)</span>
+              <input
+                type="text"
+                class="psb-input psb-input--lg"
+                [(ngModel)]="site.marca.textoJuntoLogo"
+                placeholder="Ej. FINSTRUVIAL"
+                maxlength="40"
+              />
+              <span class="psb-hint">Es el texto que aparece al lado del logo en la barra negra del menú. Puede ser una sigla o nombre corto, distinto de la franja naranja.</span>
             </label>
           </div>
 

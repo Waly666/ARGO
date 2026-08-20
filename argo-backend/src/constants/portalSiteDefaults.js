@@ -68,6 +68,8 @@ const SITE_DEFAULTS = {
     heroEstilo: 'starfield',
   },
   marca: {
+    /** Texto al lado del logo en el menú superior (independiente del nombre largo / franja naranja). */
+    textoJuntoLogo: '',
     textoCopyright: '',
     ocultarMarcaDesarrollador: true,
     textoPieDesarrollador: '',

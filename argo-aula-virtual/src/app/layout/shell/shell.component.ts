@@ -18,7 +18,8 @@ import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.com
 import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
 import { ACERCA_DEFAULT } from '../../pages/home/home-content';
 
-import { DEFAULT_CEA_CORTO, DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
+import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
+import { resolverTextoJuntoLogo } from '../../core/portal-marca.util';
 
 const FOOTER_ABOUT_DEFAULT =
   'promueve la seguridad vial mediante capacitación, estudios técnicos, campañas preventivas y asesoría a empresas, fomentando una movilidad segura y responsable.';
@@ -156,13 +157,12 @@ export class ShellComponent implements OnInit, AfterViewInit {
   );
 
   /** Texto junto al logo en el header (marca corta). */
-  brandMarca = computed(() => {
-    const name = this.config()?.nombreCea?.trim() || '';
-    if (/^cea$/i.test(name) || /centro de enseñanza automovil/i.test(name)) return DEFAULT_CEA_CORTO;
-    const corto = name.replace(/^centro de enseñanza automovil[ií]stica\s*/i, '').trim();
-    if (corto.length <= 12) return corto ? corto.toUpperCase() : DEFAULT_CEA_CORTO;
-    return DEFAULT_CEA_CORTO;
-  });
+  brandMarca = computed(() =>
+    resolverTextoJuntoLogo(
+      this.config()?.site?.marca?.textoJuntoLogo,
+      this.config()?.nombreCea,
+    ),
+  );
 
   whatsappTelefono = computed(() => this.config()?.telefono?.trim() || '');
 
