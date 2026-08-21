@@ -216,6 +216,7 @@ export function rutaAccesible(url: string, permisos: string[] | undefined | null
 
   // Rutas legacy /sistema y backup/reset/restore/migración: adminGuard (solo rol admin).
   if (path.startsWith('/app/sistema')) return true;
+  if (path.startsWith('/app/aula-virtual/galeria')) return true;
   if (
     path.startsWith('/app/configuracion/backup') ||
     path.startsWith('/app/configuracion/restore') ||

@@ -17,6 +17,8 @@ export const PORTAL_ASISTENTE_PAGINAS: {
   { key: 'aula', titulo: 'Aula virtual', descripcion: 'Panel del estudiante' },
   { key: 'fundacion', titulo: 'Institucional', descripcion: 'Quiénes somos / fundación' },
   { key: 'consultaCertificados', titulo: 'Certificados', descripcion: 'Consulta pública de certificados' },
+  { key: 'cursosConduccion', titulo: 'Cursos conducción', descripcion: 'Categorías de licencia y resoluciones del CEA' },
+  { key: 'galeria', titulo: 'Galería', descripcion: 'Fotos y videos de la institución' },
   { key: 'blog', titulo: 'Blog', descripcion: 'Listado y artículos del blog' },
   { key: 'acerca', titulo: 'Acerca de', descripcion: 'Contacto e información' },
 ];

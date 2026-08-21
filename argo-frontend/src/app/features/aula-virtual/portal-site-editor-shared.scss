@@ -92,3 +92,43 @@
     color: #93c5fd;
   }
 }
+
+.psb-btn {
+  @include portal-editor-button-reset;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 163, 255, 0.35);
+  background: rgba(37, 99, 235, 0.12);
+  color: #bfdbfe;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover:not(:disabled) {
+    background: rgba(37, 99, 235, 0.22);
+    border-color: rgba(96, 165, 250, 0.55);
+    color: #e0f2fe;
+  }
+
+  &:disabled,
+  &--disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &--ghost {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: var(--line, rgba(78, 163, 255, 0.35));
+    color: var(--text, #e2e8f0);
+
+    &:hover:not(:disabled) {
+      background: rgba(37, 99, 235, 0.2);
+      color: #e0f2fe;
+    }
+  }
+}

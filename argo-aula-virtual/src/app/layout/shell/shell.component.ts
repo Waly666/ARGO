@@ -15,6 +15,7 @@ import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { asistenteVistaParaPagina } from '../../core/portal-asistente.util';
 import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.component';
+import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
 import { ACERCA_DEFAULT } from '../../pages/home/home-content';
 
@@ -52,7 +53,7 @@ export interface FooterServicioEnlace {
 @Component({
   selector: 'av-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, PortalPopupComponent, ConsultaCertificadosAsistenteComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, PortalPopupComponent, ConsultaCertificadosAsistenteComponent, PortalIconComponent],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
@@ -100,6 +101,12 @@ export class ShellComponent implements OnInit, AfterViewInit {
         route: '/consulta-certificados',
         label: etiquetaPagina(cfg, 'consultaCertificados', nav.consultaCertificados),
       },
+      {
+        key: 'cursosConduccion',
+        route: '/cursos-conduccion',
+        label: etiquetaPagina(cfg, 'cursosConduccion', nav.cursosConduccion),
+      },
+      { key: 'galeria', route: '/galeria', label: etiquetaPagina(cfg, 'galeria', nav.galeria) },
       { key: 'blog', route: '/blog', label: etiquetaPagina(cfg, 'blog', nav.blog) },
       { key: 'acerca', route: '/acerca', label: etiquetaPagina(cfg, 'acerca', nav.acerca) },
     ];
@@ -114,6 +121,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
       { key: 'tienda', route: '/tienda' },
       { key: 'aula', route: '/aula' },
       { key: 'fundacion', route: '/fundacion' },
+      { key: 'galeria', route: '/galeria' },
       { key: 'blog', route: '/blog' },
       { key: 'acerca', route: '/acerca' },
     ];

@@ -14,6 +14,7 @@
       { id: 'nav', label: 'Nombres del menú' },
       { id: 'ofertas', label: 'Qué ofrecemos' },
       { id: 'beneficios', label: 'Beneficios' },
+      { id: 'licencias', label: 'Licencias' },
       { id: 'servicios', label: 'Servicios' },
       { id: 'valores', label: 'Por qué elegirnos' },
       { id: 'testimonios', label: 'Testimonios' },
@@ -160,6 +161,52 @@
         </div>
       }
       <button type="button" class="av-btn av-btn--ghost" (click)="addBeneficio()">+ Añadir beneficio</button>
+    </div>
+  }
+
+  @if (bloque() === 'licencias') {
+    <div class="ple-block">
+      <div class="av-grid3">
+        <div class="av-field"><label>Etiqueta</label><input [(ngModel)]="landing.licencias.kicker" /></div>
+        <div class="av-field av-field--span2"><label>Título</label><input [(ngModel)]="landing.licencias.titulo" /></div>
+      </div>
+      <div class="av-field"><label>Intro</label><textarea rows="2" [(ngModel)]="landing.licencias.lead"></textarea></div>
+      @for (item of landing.licencias.items; track $index; let i = $index) {
+        <div class="ple-card">
+          <div class="ple-card-head">
+            <strong>Licencia {{ i + 1 }}</strong>
+            <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeLicencia(i)">Quitar</button>
+          </div>
+          <div class="av-grid3">
+            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" maxlength="4" /></div>
+            <div class="av-field"><label>Código</label><input [(ngModel)]="item.codigo" placeholder="A2" /></div>
+            <div class="av-field"><label>Título tarjeta</label><input [(ngModel)]="item.titulo" placeholder="Categoría A2" /></div>
+          </div>
+          <div class="av-field">
+            <label>Incluye (una línea por ítem)</label>
+            @for (linea of item.incluye; track $index; let j = $index) {
+              <div class="ple-inline-row">
+                <input [(ngModel)]="item.incluye[j]" />
+                <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeLicenciaIncluye(i, j)">−</button>
+              </div>
+            }
+            <button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="addLicenciaIncluye(i)">+ Línea</button>
+          </div>
+          <div class="av-grid2">
+            <div class="av-field"><label>Etiqueta licencia</label><input [(ngModel)]="item.licenciaLabel" /></div>
+            <div class="av-field"><label>Valor / precio</label><input [(ngModel)]="item.valor" placeholder="$1.200.000 o Consulte en sede" /></div>
+          </div>
+          <div class="av-grid2">
+            <div class="av-field"><label>Texto botón</label><input [(ngModel)]="item.btnTexto" /></div>
+            <div class="av-field"><label>Enlace botón</label><input [(ngModel)]="item.btnUrl" placeholder="/registro" /></div>
+          </div>
+          <label class="av-check">
+            <input type="checkbox" [(ngModel)]="item.destacada" />
+            Destacar tarjeta (franja superior)
+          </label>
+        </div>
+      }
+      <button type="button" class="av-btn av-btn--ghost" (click)="addLicencia()">+ Añadir licencia</button>
     </div>
   }
 

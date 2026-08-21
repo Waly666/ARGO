@@ -41,7 +41,7 @@
           <ul class="fund-about__stats">
             @for (d of fund().quienes.destacados; track d.label) {
               <li class="fund-about__stat">
-                <span class="fund-about__stat-icon" aria-hidden="true">{{ d.icon }}</span>
+                <av-portal-icon [icon]="d.icon" class="fund-about__stat-icon" size="1.25rem" color="currentColor" />
                 <div>
                   <strong>{{ d.label }}</strong>
                   <span>{{ d.text }}</span>
@@ -59,7 +59,7 @@
         <div class="fund-about__bloques">
           @for (b of fund().quienes.bloques; track b.titulo) {
             <article class="fund-about__bloque">
-              <span class="fund-about__bloque-icon" aria-hidden="true">{{ b.icon }}</span>
+              <av-portal-icon [icon]="b.icon" class="fund-about__bloque-icon" size="1.35rem" color="currentColor" />
               <div>
                 <h3>{{ b.titulo }}</h3>
                 <p>{{ b.texto }}</p>
@@ -106,7 +106,7 @@
       <div class="fund-servicios">
         @for (s of fund().lineas.items; track s.title) {
           <article class="fund-servicio">
-            <span class="fund-servicio__icon" aria-hidden="true">{{ s.icon }}</span>
+            <av-portal-icon [icon]="s.icon" class="fund-servicio__icon" size="1.4rem" color="currentColor" />
             <h3>{{ s.title }}</h3>
             <p>{{ s.text }}</p>
           </article>

@@ -1,0 +1,79 @@
+@use './aula-virtual-shared' as *;
+
+.galeria-admin {
+  display: grid;
+  gap: 1rem;
+}
+
+.galeria-admin__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.galeria-admin__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  .av-btn {
+    margin-top: 0;
+  }
+}
+
+.galeria-admin__textos,
+.galeria-admin__fotos {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(6, 16, 41, 0.45);
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: var(--text);
+  }
+}
+
+.galeria-admin__grid-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  label {
+    display: grid;
+    gap: 0.35rem;
+
+    span {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+  }
+}
+
+.galeria-admin__full {
+  grid-column: 1 / -1;
+}
+
+.galeria-admin__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.85rem;
+
+  .av-btn {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .galeria-admin__grid-form {
+    grid-template-columns: 1fr;
+  }
+}

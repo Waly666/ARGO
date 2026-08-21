@@ -84,7 +84,7 @@
 
           <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
 
-            <span class="info-icon icon-pop" aria-hidden="true">{{ card.icon }}</span>
+            <av-portal-icon [icon]="card.icon" class="info-icon icon-pop" size="2rem" />
 
             <div>
 
@@ -137,7 +137,7 @@
 
         <article class="oferta-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 80">
 
-          <span class="oferta-icon icon-pop" aria-hidden="true">{{ o.icon }}</span>
+          <av-portal-icon [icon]="o.icon" class="oferta-icon icon-pop" size="1.6rem" />
 
           <h3 avAnimateTitle [titleDelay]="100">{{ o.title }}</h3>
 
@@ -174,7 +174,7 @@
 
         <article class="oferta-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 80">
 
-          <span class="oferta-icon icon-pop" aria-hidden="true">{{ b.icon }}</span>
+          <av-portal-icon [icon]="b.icon" class="oferta-icon icon-pop" size="1.6rem" />
 
           <h3 avAnimateTitle [titleDelay]="100">{{ b.title }}</h3>
 
@@ -188,6 +188,113 @@
 
   </div>
 
+</section>
+    }
+    @case ('licencias') {
+<section class="section section--light section-licencias" id="licencias-conduccion">
+  <div class="container">
+    <header class="section-head center licencias-head">
+      <p class="kicker kicker--accent reveal" avRevealOnScroll>{{ landing().licencias.kicker }}</p>
+      <h2 avAnimateTitle [titleDelay]="40">{{ landing().licencias.titulo }}</h2>
+      <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().licencias.lead }}</p>
+    </header>
+
+    <div class="licencias-grid">
+      @for (lic of landing().licencias.items; track lic.codigo + lic.titulo; let i = $index) {
+        <article
+          class="lic-card reveal-scale"
+          [class.lic-card--destacada]="lic.destacada"
+          avRevealOnScroll
+          [revealDelay]="120 + i * 70">
+          <div class="lic-card__head">
+            <span class="lic-card__head-glow" aria-hidden="true"></span>
+            <av-portal-icon [icon]="lic.icon" class="lic-card__icon" size="1.75rem" color="#fff" />
+            <h3 class="lic-card__code">{{ lic.titulo }}</h3>
+          </div>
+          <div class="lic-card__body">
+            @if (lic.destacada) {
+              <span class="lic-card__ribbon" aria-hidden="true"></span>
+            }
+            <ul class="lic-card__list">
+              @for (linea of lic.incluye; track linea) {
+                <li>
+                  <span class="lic-card__check" aria-hidden="true">✓</span>
+                  <span>{{ linea }}</span>
+                </li>
+              }
+            </ul>
+            <div class="lic-card__badge-row">
+              <av-portal-icon icon="award" class="lic-card__badge-icon" size="1.1rem" color="currentColor" />
+              <span class="lic-card__badge-label">{{ lic.licenciaLabel }}</span>
+            </div>
+            @if (lic.valor.trim()) {
+              <p class="lic-card__valor">{{ lic.valor }}</p>
+            }
+            @if (licenciaEsExterna(lic.btnUrl)) {
+              <a class="lic-card__btn" [href]="lic.btnUrl" target="_blank" rel="noopener noreferrer">
+                {{ lic.btnTexto }}
+              </a>
+            } @else {
+              <a class="lic-card__btn" [routerLink]="licenciaRuta(lic.btnUrl)">
+                {{ lic.btnTexto }}
+              </a>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+</section>
+    }
+    @case ('examenTeorico') {
+<section class="section section-examen-teorico" id="examen-teorico-licencia">
+  <div class="container">
+    <header class="exteor-head center reveal" avRevealOnScroll>
+      <p class="kicker kicker--normativa">{{ landing().examenTeorico.kicker }}</p>
+      <h2 class="exteor-title" avAnimateTitle [titleDelay]="40">
+        <span class="exteor-title__line">{{ landing().examenTeorico.titulo }}</span>
+        <span class="exteor-title__line exteor-title__line--accent">{{ landing().examenTeorico.tituloLinea2 }}</span>
+      </h2>
+    </header>
+
+    <div class="exteor-fecha reveal" avRevealOnScroll [revealDelay]="90">
+      <av-portal-icon icon="check-badge" class="exteor-fecha__icon" size="1.35rem" color="currentColor" />
+      <p class="exteor-fecha__text">
+        {{ landing().examenTeorico.fechaBannerPrefijo }}
+        <strong class="exteor-fecha__destacada">{{ landing().examenTeorico.fechaDestacada }}</strong>
+        {{ landing().examenTeorico.fechaBannerSufijo }}
+      </p>
+    </div>
+
+    <ol class="exteor-list">
+      @for (item of landing().examenTeorico.items; track item.numero; let i = $index) {
+        <li
+          class="exteor-item reveal"
+          [ngClass]="'exteor-item--' + item.acento"
+          avRevealOnScroll
+          [revealDelay]="120 + i * 60">
+          <span class="exteor-item__tab" aria-hidden="true">
+            <span class="exteor-item__num">{{ item.numero }}</span>
+          </span>
+          <span class="exteor-item__icon-wrap" aria-hidden="true">
+            <av-portal-icon [icon]="item.icon" class="exteor-item__icon" size="1.45rem" color="currentColor" />
+          </span>
+          <div class="exteor-item__body">
+            <h3>{{ item.titulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </div>
+        </li>
+      }
+    </ol>
+
+    @if (examenTeoricoCtaTexto()) {
+      <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
+        <a class="btn btn-primary exteor-cta__btn" routerLink="/examen-teorico">
+          {{ examenTeoricoCtaTexto() }}
+        </a>
+      </div>
+    }
+  </div>
 </section>
     }
     @case ('quoteBand') {
@@ -217,6 +324,44 @@
 
 </section>
     }
+    @case ('fotosInicio') {
+<section class="section home-fotos-section" id="fotos-inicio">
+  <div class="container">
+    @if (landing().fotosInicio.kicker || landing().fotosInicio.titulo || landing().fotosInicio.lead) {
+      <header class="section-head center home-fotos-section__head">
+        @if (landing().fotosInicio.kicker) {
+          <p class="kicker reveal" avRevealOnScroll>{{ landing().fotosInicio.kicker }}</p>
+        }
+        @if (landing().fotosInicio.titulo) {
+          <h2 avAnimateTitle [titleDelay]="50">{{ landing().fotosInicio.titulo }}</h2>
+        }
+        @if (landing().fotosInicio.lead) {
+          <p class="section-lead reveal" avRevealOnScroll [revealDelay]="100">{{ landing().fotosInicio.lead }}</p>
+        }
+      </header>
+    }
+
+    <div
+      class="home-fotos-grid"
+      [class.home-fotos-grid--solo]="fotosInicioLista().length === 1"
+      [class.home-fotos-grid--duo]="fotosInicioLista().length === 2">
+      @for (foto of fotosInicioLista(); track foto.url; let i = $index) {
+        <figure class="home-foto reveal-scale" avRevealOnScroll [revealDelay]="120 + i * 90">
+          <div class="home-foto__frame">
+            <img
+              [src]="fotoInicioUrl(foto)"
+              [alt]="foto.leyenda || landing().fotosInicio.titulo || 'Foto institucional'"
+              loading="lazy" />
+          </div>
+          @if (foto.leyenda) {
+            <figcaption class="home-foto__caption">{{ foto.leyenda }}</figcaption>
+          }
+        </figure>
+      }
+    </div>
+  </div>
+</section>
+    }
     @case ('serviciosEmpresa') {
 <section class="section section--light section--white" id="servicios-empresa">
 
@@ -241,12 +386,12 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            <span class="icon-pop" aria-hidden="true">{{ s.icon }}</span>
+            <av-portal-icon [icon]="s.icon" class="icon-pop" size="1.25rem" />
             <span>{{ s.title }}</span>
           </a>
         } @else {
           <article class="servicio-chip chip-lift reveal" avRevealOnScroll [revealDelay]="(i % 6) * 50">
-            <span class="icon-pop" aria-hidden="true">{{ s.icon }}</span>
+            <av-portal-icon [icon]="s.icon" class="icon-pop" size="1.25rem" />
             <span>{{ s.title }}</span>
           </article>
         }
@@ -282,26 +427,8 @@
 
           <span class="dark-card__plus" aria-hidden="true">+</span>
 
-          <span class="dark-card__icono" aria-hidden="true">
-            @switch (i % 3) {
-              @case (0) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="8" r="3.5" />
-                  <path d="M5 20c1.2-3.4 3.9-5 7-5s5.8 1.6 7 5" />
-                </svg>
-              }
-              @case (1) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
-                </svg>
-              }
-              @case (2) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                  <path d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z" />
-                </svg>
-              }
-            }
+          <span class="dark-card__icono">
+            <av-portal-icon [icon]="portalSectionIcon('testimonios', i)" size="1.35rem" color="#0a0a0a" />
           </span>
 
           <h3 class="dark-card__titulo" avAnimateTitle [titleDelay]="80">{{ t.nombre }}</h3>
@@ -347,43 +474,8 @@
 
           <span class="dark-card__plus" aria-hidden="true">+</span>
 
-          <span class="dark-card__icono" aria-hidden="true">
-            @switch (i % 6) {
-              @case (0) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 3l7 3v5c0 4.4-2.9 7.9-7 10-4.1-2.1-7-5.6-7-10V6l7-3z" />
-                </svg>
-              }
-              @case (1) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-                </svg>
-              }
-              @case (2) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              }
-              @case (3) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 3v18h18" />
-                  <path d="M7 16l4-4 4 4 5-6" />
-                </svg>
-              }
-              @case (4) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              }
-              @case (5) {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M9 12l2 2 4-4" />
-                  <circle cx="12" cy="12" r="9" />
-                </svg>
-              }
-            }
+          <span class="dark-card__icono">
+            <av-portal-icon [icon]="portalSectionIcon('valores', i)" size="1.35rem" color="#0a0a0a" />
           </span>
 
           <h3 class="dark-card__titulo" avAnimateTitle [titleDelay]="80">{{ v.title }}</h3>
@@ -469,10 +561,7 @@
       <div class="carreras-orbita__centro" aria-hidden="true">
         <span class="carreras-orbita__halo"></span>
         <span class="carreras-orbita__nucleo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3l7 3v5c0 4.4-2.9 7.9-7 10-4.1-2.1-7-5.6-7-10V6l7-3z" />
-            <path d="M9 12l2 2 4-4" />
-          </svg>
+          <av-portal-icon icon="shield-check" size="1.5rem" color="currentColor" />
         </span>
       </div>
 
@@ -480,37 +569,8 @@
         <div class="carrera-nodo-pos" [style.left.%]="c.x" [style.top.%]="c.y">
           <a routerLink="/acerca" class="carrera-nodo dark-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="140 + i * 90">
             <span class="dark-card__plus" aria-hidden="true">+</span>
-            <span class="dark-card__icono" aria-hidden="true">
-              @switch (i % 5) {
-                @case (0) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3l7 3v5c0 4.4-2.9 7.9-7 10-4.1-2.1-7-5.6-7-10V6l7-3z" />
-                  </svg>
-                }
-                @case (1) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="6" />
-                    <path d="M21 21l-5-5" />
-                  </svg>
-                }
-                @case (2) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3c3.5 4 6 7.2 6 10.2A6 6 0 0 1 6 13.2C6 10.2 8.5 7 12 3z" />
-                  </svg>
-                }
-                @case (3) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10 4h4l5 15H5L10 4z" />
-                    <path d="M8.4 9h7.2M7 13.5h10" />
-                  </svg>
-                }
-                @case (4) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="8" r="3.5" />
-                    <path d="M5 20c1.2-3.4 3.9-5 7-5s5.8 1.6 7 5" />
-                  </svg>
-                }
-              }
+            <span class="dark-card__icono">
+              <av-portal-icon [icon]="portalSectionIcon('carreras', i)" size="1.35rem" color="#0a0a0a" />
             </span>
             <h3 class="dark-card__titulo">{{ c.nombreCorto }}</h3>
             <p class="dark-card__meta">CNO {{ c.cno }} · {{ fmt(c.horas) }} horas</p>
@@ -584,7 +644,7 @@
         <ul class="app-mobile-features">
           @for (f of landing().appMobile.features; track f.title; let i = $index) {
             <li class="app-mobile-feature reveal" avRevealOnScroll [revealDelay]="140 + i * 70">
-              <span class="app-mobile-feature__icon" aria-hidden="true">{{ f.icon }}</span>
+              <av-portal-icon [icon]="f.icon" class="app-mobile-feature__icon" size="1.5rem" />
               <div>
                 <strong>{{ f.title }}</strong>
                 <p>{{ f.text }}</p>
@@ -599,9 +659,7 @@
             [href]="apkDownloadUrl()"
             [attr.download]="apkDownloadName()"
             rel="noopener">
-            <svg class="app-mobile-download__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M17.523 15.341l-1.243 1.243-3.28-3.28V2.25h-1.5v11.054l-3.28 3.28-1.243-1.243L12 19.5l5.523-4.159zM3.75 19.5a.75.75 0 0 0-.75.75v1.5c0 .414.336.75.75.75h16.5a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-.75-.75H3.75z"/>
-            </svg>
+            <av-portal-icon icon="download-tray" class="app-mobile-download__icon" size="1.25rem" color="currentColor" />
             {{ landing().appMobile.btnDescargar }}
           </a>
           <p class="app-mobile-note">{{ landing().appMobile.notaInstalacion }}</p>
@@ -622,14 +680,14 @@
                 @if (logoUrl(); as logo) {
                   <img [src]="logo" [alt]="nombreCea()" class="app-phone__logo" />
                 } @else {
-                  <span class="app-phone__logo-fallback" aria-hidden="true">📱</span>
+                  <av-portal-icon icon="device-mobile" size="1.75rem" color="currentColor" />
                 }
                 <p class="app-phone__app-name">Aula Virtual</p>
                 <p class="app-phone__app-sub">{{ nombreCea() }}</p>
               </div>
               <ul class="app-phone__menu" aria-hidden="true">
                 <li><span>📚</span> Mis cursos</li>
-                <li><span>🎓</span> Certificados</li>
+                <li><av-portal-icon icon="academic-cap" size="1rem" /> Certificados</li>
                 <li><span>👤</span> Mi perfil</li>
               </ul>
             </div>
@@ -666,7 +724,7 @@
 
             <span class="faq-pregunta__texto">{{ item.pregunta }}</span>
 
-            <span class="faq-icon" aria-hidden="true">{{ faqAbierta() === i ? '−' : '+' }}</span>
+            <av-portal-icon [icon]="faqAbierta() === i ? 'minus' : 'plus'" class="faq-icon" size="1.25rem" />
 
           </button>
 

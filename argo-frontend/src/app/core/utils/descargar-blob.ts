@@ -11,6 +11,9 @@ export type DescargaBlobOpts = {
 };
 
 function mimeFor(filename: string, esZip: boolean, esPdf: boolean, fallback: string): string {
+  if (/\.xlsx$/i.test(filename)) {
+    return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  }
   if (esZip || /\.zip$/i.test(filename)) return 'application/zip';
   if (esPdf || /\.pdf$/i.test(filename)) return 'application/pdf';
   return fallback || 'application/octet-stream';

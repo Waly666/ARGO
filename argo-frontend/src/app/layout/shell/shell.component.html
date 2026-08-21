@@ -18,11 +18,11 @@
             <span class="label" *ngIf="!collapsed()">{{ m.label }}</span>
           </a>
         } @else {
-          <div class="menu-group" [class.menu-group-rrhh]="isRrhhGroup(m.label)" [class.menu-group-caja]="isCajaGroup(m.label)" [class.menu-group-config]="isConfigGroup(m.label)">
+          <div class="menu-group" [class.menu-group-operacion]="isOperacionGroup(m.label)" [class.menu-group-academico]="isAcademicoGroup(m.label)" [class.menu-group-finanzas]="isFinanzasGroup(m.label)" [class.menu-group-talento]="isTalentoGroup(m.label)" [class.menu-group-config]="isConfigGroup(m.label)">
             <button
               type="button"
               class="menu-item group-head"
-              [class.active]="(isRrhhGroup(m.label) && rrhhGroupActive()) || (isCajaGroup(m.label) && cajaGroupActive()) || (isConfigGroup(m.label) && configGroupActive())"
+              [class.active]="(isOperacionGroup(m.label) && operacionGroupActive()) || (isAcademicoGroup(m.label) && academicoGroupActive()) || (isFinanzasGroup(m.label) && finanzasGroupActive()) || (isTalentoGroup(m.label) && talentoGroupActive()) || (isConfigGroup(m.label) && configGroupActive())"
               (click)="toggleGroup(m.label, m.children, $event)"
               [title]="m.label">
               <span class="icon" [ngClass]="iconClass(m.iconTone)">{{ m.icon }}</span>
@@ -31,12 +31,14 @@
             </button>
             <div
               class="submenu"
-              [class.submenu-rrhh]="isRrhhGroup(m.label)"
-              [class.submenu-caja]="isCajaGroup(m.label)"
+              [class.submenu-operacion]="isOperacionGroup(m.label)"
+              [class.submenu-academico]="isAcademicoGroup(m.label)"
+              [class.submenu-finanzas]="isFinanzasGroup(m.label)"
+              [class.submenu-talento]="isTalentoGroup(m.label)"
               [class.submenu-config]="isConfigGroup(m.label)"
               *ngIf="isGroupOpen(m.label) && !collapsed()">
               @if (hasSubgroups(m.children)) {
-                @for (c of visibleMenuChildren(m.children); track trackMenuChild(c)) {
+                @for (c of visibleMenuChildren(m.children); track trackMenuChild(c); let i = $index) {
                   @if (c.kind === 'subgroup') {
                     <div class="submenu-nested">
                       <button
@@ -67,6 +69,19 @@
                         </div>
                       }
                     </div>
+                  } @else if (c.kind === 'link') {
+                    @if (showSubmenuSectionMixed(m.children, i)) {
+                      <div class="submenu-section">{{ c.section }}</div>
+                    }
+                    <a
+                      [routerLink]="c.path"
+                      [queryParams]="c.queryParams || null"
+                      class="menu-item sub"
+                      [class.active]="subLinkActive(c)"
+                      [title]="c.label">
+                      <span class="icon" [ngClass]="iconClass(c.iconTone)">{{ c.icon }}</span>
+                      <span class="label">{{ c.label }}</span>
+                    </a>
                   }
                 }
               } @else {

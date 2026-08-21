@@ -1,0 +1,134 @@
+<div class="cc-page">
+  <section class="cc-hero">
+    <div class="container cc-hero__inner">
+      <div class="cc-hero__copy">
+        <p class="cc-kicker">{{ contenido().hero.kicker }}</p>
+        <h1>{{ contenido().tituloPrincipal }}</h1>
+        <p class="cc-hero__lead">{{ contenido().textoInstitucional }}</p>
+      </div>
+      <figure class="cc-hero__visual">
+        <img [src]="heroImagen()" [alt]="contenido().hero.imagenAlt" loading="eager" />
+      </figure>
+    </div>
+  </section>
+
+  @if (invitacion(); as inv) {
+    <section class="cc-section cc-section--invita">
+      <div class="container">
+        <div class="cc-invita">
+          <header class="cc-invita__head">
+            <p class="cc-kicker cc-kicker--dark">{{ inv.kicker }}</p>
+            <h2 class="cc-invita__title">{{ inv.titulo }}</h2>
+            <p class="cc-invita__lead">{{ inv.lead }}</p>
+            <p class="cc-invita__inst">{{ inv.institucion }}</p>
+          </header>
+
+          <div class="cc-invita__beneficios">
+            @for (b of inv.beneficios; track b.titulo + $index) {
+              <article class="cc-invita__card">
+                <av-portal-icon [icon]="b.icon" class="cc-invita__card-icon" size="1.5rem" color="currentColor" />
+                <h3>{{ b.titulo }}</h3>
+                <p>{{ b.texto }}</p>
+              </article>
+            }
+          </div>
+
+          <blockquote class="cc-invita__destacado">
+            <av-portal-icon icon="hand-raised" class="cc-invita__destacado-icon" size="1.25rem" color="currentColor" />
+            <p>{{ inv.destacado }}</p>
+          </blockquote>
+
+          <div class="cc-invita__pie">
+            <p class="cc-invita__cierre">{{ inv.cierre }}</p>
+            <p class="cc-invita__firma">{{ inv.firma }}</p>
+            <div class="cc-invita__actions">
+              @if (inv.btnCursos.trim()) {
+                <a routerLink="/cursos" class="btn btn-primary">{{ inv.btnCursos }}</a>
+              }
+              @if (inv.btnRegistro.trim()) {
+                <a routerLink="/registro" class="btn btn-outline cc-btn-outline">{{ inv.btnRegistro }}</a>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (contenido().resoluciones.length) {
+    <section class="cc-section cc-section--soft">
+      <div class="container">
+        <header class="cc-section__head">
+          <p class="cc-kicker cc-kicker--dark">Documentación</p>
+          <h2>Resoluciones</h2>
+          <p class="cc-section__lead">Descargue las resoluciones de habilitación ante el Ministerio de Transporte.</p>
+        </header>
+        <ul class="cc-resoluciones__list">
+          @for (res of contenido().resoluciones; track $index) {
+            <li class="cc-resolucion">
+              <span class="cc-resolucion__titulo">{{ res.titulo }}</span>
+              @if (resolucionUrl(res); as url) {
+                <a class="cc-resolucion__btn" [href]="url" target="_blank" rel="noopener noreferrer" download>
+                  Descargar {{ resolucionNombre(res) }}
+                </a>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+  }
+
+  @if (contenido().licencias.items.length) {
+    <section class="cc-section cc-section--light" id="licencias-conduccion">
+      <div class="container">
+        <header class="cc-section__head cc-section__head--center cc-licencias-head">
+          <p class="cc-kicker cc-kicker--accent">{{ contenido().licencias.kicker }}</p>
+          <h2>{{ contenido().licencias.titulo }}</h2>
+          <p class="cc-section__lead">{{ contenido().licencias.lead }}</p>
+        </header>
+
+        <div class="licencias-grid">
+          @for (lic of contenido().licencias.items; track lic.codigo + lic.titulo) {
+            <article class="lic-card" [class.lic-card--destacada]="lic.destacada">
+              <div class="lic-card__head">
+                <span class="lic-card__head-glow" aria-hidden="true"></span>
+                <av-portal-icon [icon]="lic.icon" class="lic-card__icon" size="1.75rem" color="#fff" />
+                <h3 class="lic-card__code">{{ lic.titulo }}</h3>
+              </div>
+              <div class="lic-card__body">
+                @if (lic.destacada) {
+                  <span class="lic-card__ribbon" aria-hidden="true"></span>
+                }
+                <ul class="lic-card__list">
+                  @for (linea of lic.incluye; track linea) {
+                    <li>
+                      <span class="lic-card__check" aria-hidden="true">✓</span>
+                      <span>{{ linea }}</span>
+                    </li>
+                  }
+                </ul>
+                <div class="lic-card__badge-row">
+                  <av-portal-icon icon="award" class="lic-card__badge-icon" size="1.1rem" color="currentColor" />
+                  <span class="lic-card__badge-label">{{ lic.licenciaLabel }}</span>
+                </div>
+                @if (lic.valor.trim()) {
+                  <p class="lic-card__valor">{{ lic.valor }}</p>
+                }
+                @if (licenciaEsExterna(lic.btnUrl)) {
+                  <a class="lic-card__btn" [href]="lic.btnUrl" target="_blank" rel="noopener noreferrer">
+                    {{ lic.btnTexto }}
+                  </a>
+                } @else {
+                  <a class="lic-card__btn" [routerLink]="licenciaRuta(lic.btnUrl)">
+                    {{ lic.btnTexto }}
+                  </a>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</div>

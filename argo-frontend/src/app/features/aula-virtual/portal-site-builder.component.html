@@ -318,6 +318,18 @@
         <argo-portal-landing-editor [landing]="landing" />
       }
 
+      @case ('fotosInicio') {
+        <p class="psb-note">
+          Fotos grandes en la página principal, independientes del banner hero. Puede activar o desactivar el bloque en
+          <button type="button" class="psb-link" (click)="setPanel('inicio')">Bloques del inicio</button>.
+        </p>
+        <argo-portal-home-fotos-editor
+          [fotosInicio]="landing.fotosInicio"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
       @case ('institucional') {
         <p class="psb-note">
           Esta es la página institucional del CEA (antes «Fundación» / «Empresa»). El nombre en el menú se cambia en
@@ -328,6 +340,29 @@
           [nombreEmpresa]="portalForm.nombreEmpresa || ''"
           [portalUrl]="portalUrl"
           (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
+      @case ('cursosConduccion') {
+        <p class="psb-note">
+          Página <strong>/cursos-conduccion</strong>. Active la página y el nombre del menú en
+          <button type="button" class="psb-link" (click)="setPanel('paginas')">Páginas visibles</button>.
+        </p>
+        <argo-portal-cursos-conduccion-editor
+          [cursosConduccion]="landing.cursosConduccion"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
+      @case ('examenTeorico') {
+        <p class="psb-note">
+          Esta página <strong>no aparece en el menú</strong>. Los visitantes llegan desde el botón de la sección
+          «Examen teórico» en el inicio. Cada PDF del normograma o resoluciones se guarda al subirlo (no hace falta publicar solo por el PDF).
+        </p>
+        <argo-portal-examen-teorico-editor
+          [examenTeorico]="ensureExamenTeoricoLanding()"
           (avNotice)="avNotice.emit($event)"
         />
       }
@@ -362,6 +397,48 @@
             <textarea class="psb-input" rows="2" [(ngModel)]="landing.blog.emptyTexto"></textarea>
           </label>
         </div>
+      }
+
+      @case ('galeria') {
+        <p class="psb-note">
+          Página pública: <strong>/galeria</strong>. Active la página en «Páginas visibles» del menú lateral.
+        </p>
+        <div class="psb-stack">
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Etiqueta pequeña</span>
+              <input type="text" class="psb-input" [(ngModel)]="landing.galeria.kicker" placeholder="Galería" />
+            </label>
+            <label class="psb-field psb-field--plain psb-field--span2">
+              <span>Título de la página</span>
+              <input type="text" class="psb-input" [(ngModel)]="landing.galeria.titulo" placeholder="Galería de fotos" />
+            </label>
+          </div>
+          <label class="psb-field psb-field--plain">
+            <span>Texto introductorio</span>
+            <textarea class="psb-input" rows="3" [(ngModel)]="landing.galeria.lead"></textarea>
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título cuando no hay fotos</span>
+            <input type="text" class="psb-input" [(ngModel)]="landing.galeria.emptyTitulo" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Mensaje cuando no hay fotos</span>
+            <textarea class="psb-input" rows="2" [(ngModel)]="landing.galeria.emptyTexto"></textarea>
+          </label>
+        </div>
+        @if (esAdmin()) {
+          <argo-portal-galeria-fotos-editor
+            [galeria]="landing.galeria"
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)" />
+        } @else {
+          <p class="psb-note psb-note--warn">
+            Solo el <strong>administrador del sistema</strong> puede subir o quitar fotos. Puede editar aquí los textos;
+            pida al admin que entre con su usuario o vaya a
+            <strong>Académico → Aula Virtual → Galería del portal</strong>.
+          </p>
+        }
       }
 
       @case ('empresa') {
@@ -442,6 +519,17 @@
             <span>Página «Acerca de»</span>
             <textarea class="psb-input" rows="5" [(ngModel)]="portalForm.acercaDeHtml" placeholder="Texto sobre su institución"></textarea>
           </label>
+
+          <hr class="psb-divider" />
+
+          <h3 class="psb-subtitle">Encabezado de «Acerca de»</h3>
+          <argo-portal-acerca-hero-editor
+            [acerca]="acerca"
+            [nombreEmpresa]="portalForm.nombreEmpresa || ''"
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)"
+          />
+
           <label class="psb-field psb-field--plain">
             <span>¿A qué correo llegan los mensajes del formulario de contacto?</span>
             <input type="email" class="psb-input" [(ngModel)]="portalForm.emailContacto" placeholder="contacto@suempresa.com" />

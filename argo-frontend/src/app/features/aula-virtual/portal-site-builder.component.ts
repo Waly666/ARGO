@@ -15,15 +15,23 @@ import {
 } from '../../core/constants/portal-site-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { mergePortalLanding, PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT } from '../../core/constants/portal-landing-defaults';
+import { mergeExamenTeoricoLanding, PortalExamenTeoricoLanding } from '../../core/constants/examen-teorico-landing-defaults';
 import { PORTAL_ASISTENTE_PAGINAS } from '../../core/utils/portal-asistente.util';
 import { PortalPaginaKey } from '../../core/constants/portal-site-defaults';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 import { PortalFundacionEditorComponent } from './portal-fundacion-editor.component';
+import { PortalCursosConduccionEditorComponent } from './portal-cursos-conduccion-editor.component';
+import { PortalExamenTeoricoEditorComponent } from './portal-examen-teorico-editor.component';
+import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
+import { PortalHomeFotosEditorComponent } from './portal-home-fotos-editor.component';
+import { PortalAcercaHeroEditorComponent } from './portal-acerca-hero-editor.component';
 import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
 import { environment } from '../../../environments/environment';
+import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
+import { AuthService } from '../../core/services/auth.service';
 
 export type BuilderPanel =
   | 'panel'
@@ -31,11 +39,15 @@ export type BuilderPanel =
   | 'apariencia'
   | 'inicio'
   | 'contenido'
+  | 'fotosInicio'
   | 'institucional'
   | 'blog'
+  | 'galeria'
   | 'popup'
   | 'asistente'
   | 'consultaCertificados'
+  | 'cursosConduccion'
+  | 'examenTeorico'
   | 'empresa'
   | 'marca';
 
@@ -72,6 +84,11 @@ interface GuiaPaso {
     RouterLink,
     PortalLandingEditorComponent,
     PortalFundacionEditorComponent,
+    PortalCursosConduccionEditorComponent,
+    PortalExamenTeoricoEditorComponent,
+    PortalGaleriaFotosEditorComponent,
+    PortalHomeFotosEditorComponent,
+    PortalAcercaHeroEditorComponent,
     PortalPopupEditorComponent,
     PortalSitePreviewComponent,
   ],
@@ -80,7 +97,10 @@ interface GuiaPaso {
 })
 export class PortalSiteBuilderComponent {
   private svc = inject(AulaVirtualAdminService);
+  private auth = inject(AuthService);
   private doc = inject(DOCUMENT);
+
+  readonly esAdmin = this.auth.isAdmin;
 
   @Input({ required: true }) portalForm!: PortalAulaConfig;
   @Input({ required: true }) portalUrl!: string;
@@ -108,6 +128,7 @@ export class PortalSiteBuilderComponent {
       title: 'Página principal',
       items: [
         { id: 'inicio', icon: '🏠', label: 'Bloques del inicio' },
+        { id: 'fotosInicio', icon: '🖼️', label: 'Fotos del inicio' },
         { id: 'contenido', icon: '✏️', label: 'Textos del inicio' },
       ],
     },
@@ -115,6 +136,9 @@ export class PortalSiteBuilderComponent {
       title: 'Más páginas',
       items: [
         { id: 'institucional', icon: '🏛️', label: 'Quiénes somos' },
+        { id: 'cursosConduccion', icon: '🚗', label: 'Cursos conducción' },
+        { id: 'examenTeorico', icon: '📋', label: 'Examen teórico' },
+        { id: 'galeria', icon: '📷', label: 'Galería' },
         { id: 'blog', icon: '📰', label: 'Blog' },
         { id: 'asistente', icon: '🤖', label: 'Asistente' },
         { id: 'consultaCertificados', icon: '📜', label: 'Consulta certificados' },
@@ -142,6 +166,12 @@ export class PortalSiteBuilderComponent {
     } else     if (!this.portalForm.landing.blog) {
       this.portalForm.landing.blog = { ...mergePortalLanding().blog };
     }
+    if (!this.portalForm.landing.galeria) {
+      this.portalForm.landing.galeria = mergePortalLanding().galeria;
+    }
+    if (!this.portalForm.landing.fotosInicio) {
+      this.portalForm.landing.fotosInicio = mergePortalLanding().fotosInicio;
+    }
     if (!this.portalForm.landing.popup) {
       this.portalForm.landing.popup = { ...mergePortalLanding().popup };
     }
@@ -151,7 +181,45 @@ export class PortalSiteBuilderComponent {
     if (!this.portalForm.landing.asistente) {
       this.portalForm.landing.asistente = { ...mergePortalLanding().asistente };
     }
+    if (!this.portalForm.landing.cursosConduccion) {
+      this.portalForm.landing.cursosConduccion = { ...mergePortalLanding().cursosConduccion };
+    }
+    if (!this.portalForm.landing.cursosConduccion.invitacion) {
+      this.portalForm.landing.cursosConduccion.invitacion = {
+        ...mergePortalLanding().cursosConduccion.invitacion,
+        beneficios: [...mergePortalLanding().cursosConduccion.invitacion.beneficios],
+      };
+    }
+    if (!this.portalForm.landing.cursosConduccion.hero) {
+      this.portalForm.landing.cursosConduccion.hero = { ...mergePortalLanding().cursosConduccion.hero };
+    }
+    if (!this.portalForm.landing.cursosConduccion.licencias) {
+      this.portalForm.landing.cursosConduccion.licencias = {
+        ...mergePortalLanding().cursosConduccion.licencias,
+        items: mergePortalLanding().cursosConduccion.licencias.items.map((item) => ({
+          ...item,
+          incluye: [...item.incluye],
+        })),
+      };
+    }
+    if (!this.portalForm.landing.acerca) {
+      this.portalForm.landing.acerca = mergePortalLanding().acerca;
+    }
+    this.ensureExamenTeoricoLanding();
     return this.portalForm.landing;
+  }
+
+  /** Inicializa examen teórico / normograma sin reemplazar el objeto en cada render (conserva PDFs subidos). */
+  ensureExamenTeoricoLanding(): PortalExamenTeoricoLanding {
+    if (!this.portalForm.landing) {
+      this.portalForm.landing = mergePortalLanding();
+    }
+    if (!this.portalForm.landing.examenTeorico) {
+      this.portalForm.landing.examenTeorico = mergePortalLanding().examenTeorico;
+    } else if (!this.portalForm.landing.examenTeorico.normograma?.items?.length) {
+      this.portalForm.landing.examenTeorico = mergeExamenTeoricoLanding(this.portalForm.landing.examenTeorico);
+    }
+    return this.portalForm.landing.examenTeorico;
   }
 
   get consultaCertificados() {
@@ -166,6 +234,10 @@ export class PortalSiteBuilderComponent {
 
   get popup() {
     return this.landing.popup;
+  }
+
+  get acerca() {
+    return this.landing.acerca;
   }
 
   get site(): PortalSiteConfig {
@@ -200,13 +272,30 @@ export class PortalSiteBuilderComponent {
         title: 'Textos de la página principal',
         help: 'Edite frases, preguntas frecuentes, testimonios y demás textos que aparecen en el inicio del sitio.',
       },
+      fotosInicio: {
+        title: 'Fotos destacadas del inicio',
+        help: 'Hasta 2 fotos aparte del hero. Si no hay ninguna, el bloque no se muestra en el sitio.',
+      },
       institucional: {
         title: 'Página «Quiénes somos»',
         help: 'Misión, visión, quiénes somos y servicios del CEA. Ideal si renombró «CEA» por «Institucional» o «Nosotros».',
       },
+      cursosConduccion: {
+        title: 'Cursos conducción',
+        help: 'Página con categorías de licencia (A2, B1, C1…) y resoluciones del Mintransporte descargables en PDF.',
+      },
+      examenTeorico: {
+        title: 'Examen teórico (normatividad)',
+        help:
+          'Página oculta del menú (/examen-teorico) con información del examen teórico, normograma con PDF por norma y resoluciones descargables. El botón del inicio lleva a esta página.',
+      },
       blog: {
         title: 'Página Blog',
         help: 'Encabezado y textos de la página /blog. Los artículos se publican en Aula virtual → Blog del portal.',
+      },
+      galeria: {
+        title: 'Página Galería',
+        help: 'Encabezado de /galeria. Las fotos y videos las gestiona solo el administrador en Aula virtual → Galería.',
       },
       apariencia: {
         title: 'Colores y estilo',
@@ -351,14 +440,7 @@ export class PortalSiteBuilderComponent {
   }
 
   heroPreviewUrl(): string | null {
-    const abs = this.site.tema?.urlHeroAbsoluta?.trim();
-    if (abs) return abs;
-    const rel = this.site.tema?.urlHero?.trim();
-    if (!rel) return null;
-    if (/^https?:\/\//i.test(rel)) return rel;
-    if (rel.startsWith('/')) return rel;
-    const base = environment.uploadsUrl.replace(/\/+$/, '');
-    return `${base}/${rel.replace(/^\/+/, '')}`;
+    return resolveUploadAssetUrl(this.site.tema?.urlHero, this.site.tema?.urlHeroAbsoluta);
   }
 
   onHeroImagen(ev: Event) {

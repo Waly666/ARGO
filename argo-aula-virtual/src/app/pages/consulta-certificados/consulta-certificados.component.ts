@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
+import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { AulaApiService } from '../../core/aula-api.service';
 import { CertificadoConsultaItem, CertificadoConsultaRes } from '../../core/models';
 import { mergePortalLanding } from '../../core/portal-landing';
@@ -11,7 +12,7 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 @Component({
   selector: 'av-consulta-certificados',
   standalone: true,
-  imports: [CommonModule, FormsModule, TurnstileComponent],
+  imports: [CommonModule, FormsModule, TurnstileComponent, PortalIconComponent],
   templateUrl: './consulta-certificados.component.html',
   styleUrl: './consulta-certificados.component.scss',
 })

@@ -520,219 +520,17 @@ export class ShellComponent {
   private readonly menuAll: MenuEntry[] = [
     { kind: 'link', label: 'Dashboard', icon: '◆', path: '/app/dashboard', iconTone: 'violet', permiso: 'dashboard' },
     {
-      kind: 'link',
-      label: 'Alumnos',
-      icon: '◉',
-      path: '/app/alumnos',
-      iconTone: 'cyan',
-      permiso: ['alumnos.ver', 'alumnos.gestionar'],
-    },
-    {
-      kind: 'link',
-      label: 'Certificados',
-      icon: '▣',
-      path: '/app/certificados',
-      iconTone: 'violet',
-      permiso: 'alumnos.certificados',
-    },
-    {
-      kind: 'link',
-      label: 'Certificados Vencidos',
-      icon: '⚠',
-      path: '/app/certificados/vencidos',
-      iconTone: 'red',
-      permiso: ['certificados.vencidos', 'alumnos.certificados'],
-    },
-    {
-      kind: 'link',
-      label: 'Informes académicos',
-      icon: '☰',
-      path: '/app/informes',
-      iconTone: 'sky',
+      kind: 'group',
+      label: 'Operación del día',
+      icon: '☀',
+      iconTone: 'amber',
       permiso: [
-        'informes.ver',
         'alumnos.ver',
         'alumnos.gestionar',
-        'programas.ver',
-        'programas.gestionar',
-        'programas.agregar',
-        'servicios.ver',
-        'servicios.gestionar',
-      ],
-    },
-    {
-      kind: 'link',
-      label: 'Programas',
-      icon: '▤',
-      path: '/app/programas',
-      iconTone: 'blue',
-      permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'],
-    },
-    {
-      kind: 'link',
-      label: 'Servicios',
-      icon: '◇',
-      path: '/app/servicios',
-      iconTone: 'teal',
-      permiso: ['servicios.ver', 'servicios.gestionar'],
-    },
-    {
-      kind: 'group',
-      label: 'Aula Virtual',
-      icon: '▣',
-      iconTone: 'indigo',
-      permiso: [
-        'aula_virtual.ver',
-        'aula_virtual.gestionar',
-        'aula_virtual.sitio',
-        'aula_virtual.foro',
-        'aula_virtual.informes',
-      ],
-      children: [
-        {
-          kind: 'link',
-          label: 'Cursos virtuales',
-          icon: '▣',
-          path: '/app/aula-virtual',
-          iconTone: 'indigo',
-          permiso: ['aula_virtual.ver', 'aula_virtual.gestionar'],
-        },
-        {
-          kind: 'link',
-          label: 'Editor sitio portal',
-          icon: '✎',
-          path: '/app/aula-virtual/sitio',
-          iconTone: 'indigo',
-          permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar'],
-        },
-        {
-          kind: 'link',
-          label: 'Blog del portal',
-          icon: '📰',
-          path: '/app/aula-virtual/blog',
-          iconTone: 'indigo',
-          permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar'],
-        },
-        {
-          kind: 'link',
-          label: 'Foro de cursos',
-          icon: '💬',
-          path: '/app/aula-virtual/foro',
-          iconTone: 'indigo',
-          permiso: ['aula_virtual.foro', 'aula_virtual.gestionar'],
-        },
-      ],
-    },
-    {
-      kind: 'group',
-      label: 'Jornadas Cap.',
-      icon: '⛺',
-      iconTone: 'orange',
-      permiso: [
-        'jornadas.ver',
-        'jornadas.gestionar',
-        'jornadas.operar',
-        'jornadas.evaluaciones.ver',
-        'jornadas.evaluaciones.gestionar',
-      ],
-      children: [
-        {
-          kind: 'link',
-          label: 'Gestión (hub)',
-          path: '/app/jornadas',
-          icon: '⌂',
-          iconTone: 'orange',
-          permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'],
-          permisoMenu: ['jornadas.gestionar', 'jornadas.registrar_alumnos'],
-        },
-        {
-          kind: 'link',
-          label: 'Contratos',
-          path: '/app/contratos',
-          icon: '▦',
-          iconTone: 'indigo',
-          permiso: ['jornadas.ver', 'jornadas.gestionar'],
-          permisoMenu: 'jornadas.gestionar',
-        },
-        {
-          kind: 'link',
-          label: 'Jornadas en proceso',
-          path: '/app/jornadas/en-proceso',
-          icon: '⛺',
-          iconTone: 'emerald',
-          permiso: ['jornadas.ver', 'jornadas.gestionar'],
-          permisoMenu: 'jornadas.gestionar',
-        },
-        {
-          kind: 'link',
-          label: 'Clases de hoy',
-          path: '/app/jornadas/clases-hoy',
-          icon: '◷',
-          iconTone: 'cyan',
-          permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
-        },
-        {
-          kind: 'link',
-          label: 'Clases en desarrollo',
-          path: '/app/jornadas/clases-en-desarrollo',
-          icon: '◎',
-          iconTone: 'emerald',
-          permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
-        },
-        {
-          kind: 'link',
-          label: 'Alumnos jornada',
-          path: '/app/jornadas/alumnos',
-          icon: '◉',
-          iconTone: 'cyan',
-          permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.ver'],
-          permisoMenu: ['alumnos.ver', 'jornadas.gestionar'],
-        },
-        {
-          kind: 'link',
-          label: 'Clases en ejecución',
-          path: '/app/jornadas/instructor',
-          icon: '◈',
-          iconTone: 'amber',
-          permiso: ['jornadas.operar', 'jornadas.gestionar'],
-        },
-        {
-          kind: 'link',
-          label: 'Certificados',
-          path: '/app/jornadas/certificados',
-          icon: '▣',
-          iconTone: 'violet',
-          permiso: ['jornadas.ver', 'jornadas.gestionar'],
-          permisoMenu: 'jornadas.gestionar',
-        },
-        {
-          kind: 'link',
-          label: 'Informes',
-          path: '/app/jornadas/informes',
-          icon: '▤',
-          iconTone: 'teal',
-          permiso: ['jornadas.ver', 'jornadas.gestionar'],
-          permisoMenu: 'jornadas.gestionar',
-        },
-        {
-          kind: 'link',
-          label: 'Evaluaciones',
-          path: '/app/jornadas/evaluaciones',
-          icon: '★',
-          iconTone: 'amber',
-          permiso: ['jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar'],
-        },
-      ],
-    },
-    { kind: 'link', label: 'Facturación', icon: '$', path: '/app/facturacion', iconTone: 'emerald', permiso: 'facturacion' },
-    {
-      kind: 'link',
-      label: 'Instructores',
-      icon: '◈',
-      path: '/app/instructores',
-      queryParams: { vista: 'portal' },
-      iconTone: 'rose',
-      permiso: [
+        'caja.turno',
+        'caja.cobros',
+        'caja.admin',
+        'combos.gestionar',
         'instructores.mi_portal',
         'instructores',
         'rrhh',
@@ -740,157 +538,14 @@ export class ShellComponent {
         'jornadas.operar',
         'programacion_cea.operar',
       ],
-      permisoMenu: '__instructores_hub__',
-    },
-    {
-      kind: 'group',
-      label: 'Programación CEA',
-      icon: '📅',
-      iconTone: 'blue',
-      permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
       children: [
         {
           kind: 'link',
-          label: 'Teoría y taller',
-          path: '/app/programacion-cea/clases-grupales',
-          icon: '▦',
-          iconTone: 'indigo',
-          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
-        },
-        {
-          kind: 'link',
-          label: 'Práctica en vehículo',
-          path: '/app/programacion-cea/clases-practica',
-          icon: '◐',
+          label: 'Alumnos',
+          icon: '◉',
+          path: '/app/alumnos',
           iconTone: 'cyan',
-          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
-        },
-        {
-          kind: 'link',
-          label: 'Hub CEA (config / temas)',
-          path: '/app/programacion-cea',
-          icon: '⚙',
-          iconTone: 'slate',
-          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
-          permisoMenu: 'programacion_cea.gestionar',
-        },
-        {
-          kind: 'link',
-          label: 'Clases de hoy',
-          path: '/app/programacion-cea/clases-hoy',
-          icon: '◷',
-          iconTone: 'cyan',
-          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
-        },
-        {
-          kind: 'link',
-          label: 'Pendientes',
-          path: '/app/programacion-cea',
-          queryParams: { tab: 'pendientes' },
-          icon: '⚠',
-          iconTone: 'amber',
-          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
-          permisoMenu: ['programacion_cea.gestionar', 'programacion_cea.operar'],
-        },
-      ],
-    },
-    {
-      kind: 'link',
-      label: 'Cohortes académicas',
-      icon: '🎓',
-      iconTone: 'indigo',
-      path: '/app/cohortes',
-      permiso: ['cohortes_academicas.ver', 'cohortes_academicas.gestionar', 'cohortes_academicas.operar'],
-    },
-    {
-      kind: 'group',
-      label: 'Contabilidad',
-      icon: '∑',
-      iconTone: 'teal',
-      permiso: 'contabilidad',
-      children: [
-        {
-          kind: 'link',
-          label: 'Inicio',
-          path: '/app/contabilidad/inicio',
-          icon: '⌂',
-          iconTone: 'teal',
-          permiso: 'contabilidad',
-        },
-        {
-          kind: 'link',
-          label: 'Ingresos',
-          path: '/app/contabilidad/ingresos',
-          icon: '↑',
-          iconTone: 'emerald',
-          permiso: 'contabilidad',
-        },
-        {
-          kind: 'link',
-          label: 'Egresos',
-          path: '/app/contabilidad/egresos',
-          icon: '↓',
-          iconTone: 'rose',
-          permiso: 'contabilidad',
-        },
-        {
-          kind: 'link',
-          label: 'Cuadres de caja',
-          path: '/app/contabilidad/cuadres',
-          icon: '▣',
-          iconTone: 'indigo',
-          permiso: 'contabilidad',
-        },
-        {
-          kind: 'link',
-          label: 'Cierre general',
-          path: '/app/contabilidad/cierre-general',
-          icon: '⊞',
-          iconTone: 'amber',
-          permiso: 'contabilidad',
-        },
-        {
-          kind: 'link',
-          label: 'Descuadres',
-          path: '/app/contabilidad/descuadres',
-          icon: '⚠',
-          iconTone: 'amber',
-          permiso: 'contabilidad',
-        },
-        {
-          kind: 'link',
-          label: 'Pagos en línea',
-          path: '/app/contabilidad/pagos-en-linea',
-          icon: '🌐',
-          iconTone: 'cyan',
-          permiso: 'contabilidad',
-          rolesMenu: ['admin', 'contador'],
-        },
-        {
-          kind: 'link',
-          label: 'Facturación',
-          path: '/app/contabilidad/facturacion',
-          icon: '$',
-          iconTone: 'emerald',
-          permiso: ['contabilidad', 'facturacion'],
-        },
-      ],
-    },
-    {
-      kind: 'group',
-      label: 'Flujo de Caja',
-      icon: '⇅',
-      iconTone: 'amber',
-      permiso: ['caja.turno', 'caja.cobros', 'caja.admin'],
-      children: [
-        {
-          kind: 'link',
-          label: 'Resumen del día',
-          path: '/app/caja',
-          icon: '⌂',
-          iconTone: 'amber',
-          section: 'Mi turno',
-          permiso: 'caja.turno',
+          permiso: ['alumnos.ver', 'alumnos.gestionar'],
         },
         {
           kind: 'link',
@@ -901,151 +556,622 @@ export class ShellComponent {
           permiso: ['caja.cobros', 'caja.turno'],
         },
         {
-          kind: 'link',
-          label: 'Combos de cursos',
-          icon: '⊞',
-          path: '/app/combos',
-          iconTone: 'teal',
-          permiso: ['combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar'],
+          kind: 'subgroup',
+          label: 'Mi turno',
+          icon: '⌂',
+          iconTone: 'amber',
+          children: [
+            {
+              kind: 'link',
+              label: 'Resumen del día',
+              path: '/app/caja',
+              icon: '⌂',
+              iconTone: 'amber',
+              permiso: 'caja.turno',
+            },
+            {
+              kind: 'link',
+              label: 'Combos de cursos',
+              icon: '⊞',
+              path: '/app/combos',
+              iconTone: 'teal',
+              permiso: ['combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar'],
+            },
+            {
+              kind: 'link',
+              label: 'Terceros',
+              path: '/app/caja/terceros',
+              icon: '◎',
+              iconTone: 'teal',
+              permiso: ['caja.turno', 'caja.admin'],
+            },
+            {
+              kind: 'link',
+              label: 'Clases CEA pendientes',
+              path: '/app/programacion-cea/clases-hoy',
+              icon: '◷',
+              iconTone: 'cyan',
+              permiso: ['caja.turno', 'caja.admin'],
+            },
+          ],
         },
         {
-          kind: 'link',
-          label: 'Terceros',
-          path: '/app/caja/terceros',
-          icon: '◎',
-          iconTone: 'teal',
-          permiso: ['caja.turno', 'caja.admin'],
-        },
-        {
-          kind: 'link',
-          label: 'Clases CEA pendientes',
-          path: '/app/programacion-cea/clases-hoy',
-          icon: '◷',
-          iconTone: 'cyan',
-          permiso: ['caja.turno', 'caja.admin'],
-        },
-        {
-          kind: 'link',
-          label: 'Gestores',
-          path: '/app/caja/gestores',
+          kind: 'subgroup',
+          label: 'Gestores y empresas',
           icon: '◉',
           iconTone: 'cyan',
-          section: 'Gestores y empresas',
-          permiso: ['caja.turno', 'caja.admin'],
+          children: [
+            {
+              kind: 'link',
+              label: 'Gestores',
+              path: '/app/caja/gestores',
+              icon: '◉',
+              iconTone: 'cyan',
+              permiso: ['caja.turno', 'caja.admin'],
+            },
+            {
+              kind: 'link',
+              label: 'Empresas',
+              path: '/app/caja/empresa',
+              icon: '▣',
+              iconTone: 'indigo',
+              permiso: ['caja.turno', 'caja.admin'],
+            },
+          ],
         },
         {
-          kind: 'link',
-          label: 'Empresas',
-          path: '/app/caja/empresa',
-          icon: '▣',
-          iconTone: 'indigo',
-          permiso: ['caja.turno', 'caja.admin'],
-        },
-        {
-          kind: 'link',
-          label: 'Cierres',
-          path: '/app/cierres',
-          icon: '▣',
-          iconTone: 'indigo',
-          section: 'Administración',
-          permiso: ['caja.admin', 'contabilidad'],
-          permisoMenu: ['caja.admin', 'contabilidad'],
-          rolesMenu: ['admin', 'contador'],
-        },
-        {
-          kind: 'link',
-          label: 'Cierre general',
-          path: '/app/cierre-general',
-          icon: '⊞',
-          iconTone: 'amber',
-          permiso: ['caja.admin', 'contabilidad'],
-          permisoMenu: ['caja.admin', 'contabilidad'],
-          rolesMenu: ['admin', 'contador'],
-        },
-        {
-          kind: 'link',
-          label: 'Todos los ingresos',
-          path: '/app/caja/ingresos-todos',
-          icon: '$',
-          iconTone: 'emerald',
-          permiso: ['caja.admin', 'contabilidad'],
-          permisoMenu: ['caja.admin', 'contabilidad'],
-          rolesMenu: ['admin', 'contador'],
-        },
-        {
-          kind: 'link',
-          label: 'Todos los egresos',
-          path: '/app/caja/egresos-todos',
-          icon: '⇣',
-          iconTone: 'rose',
-          permiso: ['caja.admin', 'contabilidad'],
-          permisoMenu: ['caja.admin', 'contabilidad'],
-          rolesMenu: ['admin', 'contador'],
-        },
-        {
-          kind: 'link',
-          label: 'Descuadres de caja',
-          path: '/app/caja/descuadres',
-          icon: '⚠',
-          iconTone: 'amber',
-          permiso: ['caja.admin', 'contabilidad'],
-          permisoMenu: ['caja.admin', 'contabilidad'],
-          rolesMenu: ['admin', 'contador'],
+          kind: 'subgroup',
+          label: 'Clases hoy',
+          icon: '◷',
+          iconTone: 'cyan',
+          children: [
+            {
+              kind: 'link',
+              label: 'Instructores',
+              icon: '◈',
+              path: '/app/instructores',
+              queryParams: { vista: 'portal' },
+              iconTone: 'rose',
+              permiso: [
+                'instructores.mi_portal',
+                'instructores',
+                'rrhh',
+                'jornadas.gestionar',
+                'jornadas.operar',
+                'programacion_cea.operar',
+              ],
+              permisoMenu: '__instructores_hub__',
+            },
+            {
+              kind: 'link',
+              label: 'Clases de hoy',
+              path: '/app/jornadas/clases-hoy',
+              icon: '◷',
+              iconTone: 'cyan',
+              permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
+            },
+            {
+              kind: 'link',
+              label: 'Clases en desarrollo',
+              path: '/app/jornadas/clases-en-desarrollo',
+              icon: '◎',
+              iconTone: 'emerald',
+              permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
+            },
+            {
+              kind: 'link',
+              label: 'Clases en ejecución',
+              path: '/app/jornadas/instructor',
+              icon: '◈',
+              iconTone: 'amber',
+              permiso: ['jornadas.operar', 'jornadas.gestionar'],
+            },
+          ],
         },
       ],
     },
     {
       kind: 'group',
-      label: 'RRHH',
-      icon: '👥',
-      iconTone: 'rose',
-      permiso: 'rrhh',
+      label: 'Académico',
+      icon: '▦',
+      iconTone: 'blue',
+      permiso: [
+        'programas.ver',
+        'programas.gestionar',
+        'programas.agregar',
+        'servicios.ver',
+        'servicios.gestionar',
+        'alumnos.certificados',
+        'certificados.vencidos',
+        'informes.ver',
+        'cohortes_academicas.ver',
+        'cohortes_academicas.gestionar',
+        'cohortes_academicas.operar',
+        'aula_virtual.ver',
+        'aula_virtual.gestionar',
+        'aula_virtual.sitio',
+        'aula_virtual.foro',
+        'jornadas.ver',
+        'jornadas.gestionar',
+        'jornadas.operar',
+        'jornadas.evaluaciones.ver',
+        'jornadas.evaluaciones.gestionar',
+        'programacion_cea.ver',
+        'programacion_cea.gestionar',
+        'programacion_cea.operar',
+      ],
       children: [
-        { kind: 'link', label: 'Inicio y guía', path: '/app/rrhh/inicio', icon: '⌂', iconTone: 'rose', section: 'GENERAL', permiso: 'rrhh' },
-        { kind: 'link', label: 'Empleados', path: '/app/rrhh/empleados', icon: '◉', iconTone: 'cyan', section: 'PERSONAL', permiso: 'rrhh' },
-        { kind: 'link', label: 'Desempeño', path: '/app/rrhh/desempeno', icon: '★', iconTone: 'amber', permiso: 'rrhh' },
-        { kind: 'link', label: 'Contratos', path: '/app/rrhh/contratos', icon: '▤', iconTone: 'indigo', permiso: 'rrhh' },
         {
           kind: 'link',
-          label: 'Cargos y seguridad social',
-          path: '/app/rrhh/catalogos/cargos',
-          icon: '▦',
-          iconTone: 'blue',
-          section: 'CATÁLOGOS',
-          catalogosMatch: true,
-          permiso: 'rrhh',
-        },
-        {
-          kind: 'link',
-          label: 'Competencias',
-          path: '/app/rrhh/catalogos/competencias',
-          icon: '✦',
-          iconTone: 'violet',
-          permiso: 'rrhh',
-        },
-        { kind: 'link', label: 'Liquidación', path: '/app/rrhh/nomina', icon: '₱', iconTone: 'emerald', section: 'NÓMINA', permiso: 'rrhh' },
-        { kind: 'link', label: 'Novedades', path: '/app/rrhh/novedades', icon: '▥', iconTone: 'pink', permiso: 'rrhh' },
-        {
-          kind: 'link',
-          label: 'Empresa',
-          path: '/app/configuracion/empresa',
+          label: 'Programas',
           icon: '▤',
-          iconTone: 'teal',
-          section: 'CONFIGURACIÓN',
-          permiso: 'config.recibos',
+          path: '/app/programas',
+          iconTone: 'blue',
+          permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'],
         },
         {
           kind: 'link',
-          label: 'Parámetros legales',
-          path: '/app/configuracion/nomina',
-          icon: '％',
-          iconTone: 'amber',
-          permiso: 'config.nomina',
+          label: 'Servicios',
+          icon: '◇',
+          path: '/app/servicios',
+          iconTone: 'teal',
+          permiso: ['servicios.ver', 'servicios.gestionar'],
+        },
+        {
+          kind: 'subgroup',
+          label: 'Certificados e informes',
+          icon: '▣',
+          iconTone: 'violet',
+          children: [
+            {
+              kind: 'link',
+              label: 'Certificados',
+              icon: '▣',
+              path: '/app/certificados',
+              iconTone: 'violet',
+              permiso: 'alumnos.certificados',
+            },
+            {
+              kind: 'link',
+              label: 'Certificados Vencidos',
+              icon: '⚠',
+              path: '/app/certificados/vencidos',
+              iconTone: 'red',
+              permiso: ['certificados.vencidos', 'alumnos.certificados'],
+            },
+            {
+              kind: 'link',
+              label: 'Informes académicos',
+              icon: '☰',
+              path: '/app/informes',
+              iconTone: 'sky',
+              permiso: [
+                'informes.ver',
+                'alumnos.ver',
+                'alumnos.gestionar',
+                'programas.ver',
+                'programas.gestionar',
+                'programas.agregar',
+                'servicios.ver',
+                'servicios.gestionar',
+              ],
+            },
+          ],
+        },
+        {
+          kind: 'link',
+          label: 'Cohortes académicas',
+          icon: '🎓',
+          path: '/app/cohortes',
+          iconTone: 'indigo',
+          permiso: ['cohortes_academicas.ver', 'cohortes_academicas.gestionar', 'cohortes_academicas.operar'],
+        },
+        {
+          kind: 'subgroup',
+          label: 'Aula Virtual',
+          icon: '▣',
+          iconTone: 'indigo',
+          children: [
+            {
+              kind: 'link',
+              label: 'Cursos virtuales',
+              icon: '▣',
+              path: '/app/aula-virtual',
+              iconTone: 'indigo',
+              permiso: ['aula_virtual.ver', 'aula_virtual.gestionar'],
+            },
+            {
+              kind: 'link',
+              label: 'Editor sitio portal',
+              icon: '✎',
+              path: '/app/aula-virtual/sitio',
+              iconTone: 'indigo',
+              permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar'],
+            },
+            {
+              kind: 'link',
+              label: 'Blog del portal',
+              icon: '📰',
+              path: '/app/aula-virtual/blog',
+              iconTone: 'indigo',
+              permiso: ['aula_virtual.sitio', 'aula_virtual.gestionar'],
+            },
+            {
+              kind: 'link',
+              label: 'Galería del portal',
+              icon: '📷',
+              path: '/app/aula-virtual/galeria',
+              iconTone: 'indigo',
+              adminOnly: true,
+            },
+            {
+              kind: 'link',
+              label: 'Foro de cursos',
+              icon: '💬',
+              path: '/app/aula-virtual/foro',
+              iconTone: 'indigo',
+              permiso: ['aula_virtual.foro', 'aula_virtual.gestionar'],
+            },
+          ],
+        },
+        {
+          kind: 'subgroup',
+          label: 'Jornadas Cap.',
+          icon: '⛺',
+          iconTone: 'orange',
+          children: [
+            {
+              kind: 'link',
+              label: 'Gestión de jornadas',
+              path: '/app/jornadas',
+              icon: '⌂',
+              iconTone: 'orange',
+              permiso: ['jornadas.gestionar', 'jornadas.registrar_alumnos'],
+              permisoMenu: ['jornadas.gestionar', 'jornadas.registrar_alumnos'],
+            },
+            {
+              kind: 'link',
+              label: 'Contratos',
+              path: '/app/contratos',
+              icon: '▦',
+              iconTone: 'indigo',
+              permiso: ['jornadas.ver', 'jornadas.gestionar'],
+              permisoMenu: 'jornadas.gestionar',
+            },
+            {
+              kind: 'link',
+              label: 'Jornadas en proceso',
+              path: '/app/jornadas/en-proceso',
+              icon: '⛺',
+              iconTone: 'emerald',
+              permiso: ['jornadas.ver', 'jornadas.gestionar'],
+              permisoMenu: 'jornadas.gestionar',
+            },
+            {
+              kind: 'link',
+              label: 'Clases de hoy',
+              path: '/app/jornadas/clases-hoy',
+              icon: '◷',
+              iconTone: 'cyan',
+              permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
+            },
+            {
+              kind: 'link',
+              label: 'Clases en desarrollo',
+              path: '/app/jornadas/clases-en-desarrollo',
+              icon: '◎',
+              iconTone: 'emerald',
+              permiso: ['jornadas.ver', 'jornadas.gestionar', 'jornadas.operar'],
+            },
+            {
+              kind: 'link',
+              label: 'Alumnos jornada',
+              path: '/app/jornadas/alumnos',
+              icon: '◉',
+              iconTone: 'cyan',
+              permiso: ['alumnos.ver', 'alumnos.gestionar', 'jornadas.ver'],
+              permisoMenu: ['alumnos.ver', 'jornadas.gestionar'],
+            },
+            {
+              kind: 'link',
+              label: 'Clases en ejecución',
+              path: '/app/jornadas/instructor',
+              icon: '◈',
+              iconTone: 'amber',
+              permiso: ['jornadas.operar', 'jornadas.gestionar'],
+            },
+            {
+              kind: 'link',
+              label: 'Certificados',
+              path: '/app/jornadas/certificados',
+              icon: '▣',
+              iconTone: 'violet',
+              permiso: ['jornadas.ver', 'jornadas.gestionar'],
+              permisoMenu: 'jornadas.gestionar',
+            },
+            {
+              kind: 'link',
+              label: 'Informes',
+              path: '/app/jornadas/informes',
+              icon: '▤',
+              iconTone: 'teal',
+              permiso: ['jornadas.ver', 'jornadas.gestionar'],
+              permisoMenu: 'jornadas.gestionar',
+            },
+            {
+              kind: 'link',
+              label: 'Evaluaciones',
+              path: '/app/jornadas/evaluaciones',
+              icon: '★',
+              iconTone: 'amber',
+              permiso: ['jornadas.evaluaciones.ver', 'jornadas.evaluaciones.gestionar'],
+            },
+          ],
+        },
+        {
+          kind: 'subgroup',
+          label: 'Programación CEA',
+          icon: '📅',
+          iconTone: 'blue',
+          children: [
+            {
+              kind: 'link',
+              label: 'Teoría y taller',
+              path: '/app/programacion-cea/clases-grupales',
+              icon: '▦',
+              iconTone: 'indigo',
+              permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+            },
+            {
+              kind: 'link',
+              label: 'Práctica en vehículo',
+              path: '/app/programacion-cea/clases-practica',
+              icon: '◐',
+              iconTone: 'cyan',
+              permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+            },
+            {
+              kind: 'link',
+              label: 'Hub CEA (config / temas)',
+              path: '/app/programacion-cea',
+              icon: '⚙',
+              iconTone: 'slate',
+              permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+              permisoMenu: 'programacion_cea.gestionar',
+            },
+            {
+              kind: 'link',
+              label: 'Clases de hoy',
+              path: '/app/programacion-cea/clases-hoy',
+              icon: '◷',
+              iconTone: 'cyan',
+              permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+            },
+            {
+              kind: 'link',
+              label: 'Pendientes',
+              path: '/app/programacion-cea',
+              queryParams: { tab: 'pendientes' },
+              icon: '⚠',
+              iconTone: 'amber',
+              permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
+              permisoMenu: ['programacion_cea.gestionar', 'programacion_cea.operar'],
+            },
+          ],
         },
       ],
     },
-    // Solo permiso «vehiculos»: instructores.inspeccion entra por el portal, no al listado.
-    { kind: 'link', label: 'Vehículos', icon: '◐', path: '/app/vehiculos', iconTone: 'pink', permiso: 'vehiculos' },
+    {
+      kind: 'group',
+      label: 'Finanzas',
+      icon: '∑',
+      iconTone: 'teal',
+      permiso: ['contabilidad', 'caja.admin', 'facturacion'],
+      children: [
+        {
+          kind: 'subgroup',
+          label: 'Contabilidad',
+          icon: '∑',
+          iconTone: 'teal',
+          children: [
+            {
+              kind: 'link',
+              label: 'Inicio',
+              path: '/app/contabilidad/inicio',
+              icon: '⌂',
+              iconTone: 'teal',
+              permiso: 'contabilidad',
+            },
+            {
+              kind: 'link',
+              label: 'Ingresos',
+              path: '/app/contabilidad/ingresos',
+              icon: '↑',
+              iconTone: 'emerald',
+              permiso: 'contabilidad',
+            },
+            {
+              kind: 'link',
+              label: 'Egresos',
+              path: '/app/contabilidad/egresos',
+              icon: '↓',
+              iconTone: 'rose',
+              permiso: 'contabilidad',
+            },
+            {
+              kind: 'link',
+              label: 'Cuadres de caja',
+              path: '/app/contabilidad/cuadres',
+              icon: '▣',
+              iconTone: 'indigo',
+              permiso: 'contabilidad',
+            },
+            {
+              kind: 'link',
+              label: 'Cierre general',
+              path: '/app/contabilidad/cierre-general',
+              icon: '⊞',
+              iconTone: 'amber',
+              permiso: 'contabilidad',
+            },
+            {
+              kind: 'link',
+              label: 'Descuadres',
+              path: '/app/contabilidad/descuadres',
+              icon: '⚠',
+              iconTone: 'amber',
+              permiso: 'contabilidad',
+            },
+            {
+              kind: 'link',
+              label: 'Pagos en línea',
+              path: '/app/contabilidad/pagos-en-linea',
+              icon: '🌐',
+              iconTone: 'cyan',
+              permiso: 'contabilidad',
+              rolesMenu: ['admin', 'contador'],
+            },
+            {
+              kind: 'link',
+              label: 'Facturación (contabilidad)',
+              path: '/app/contabilidad/facturacion',
+              icon: '$',
+              iconTone: 'emerald',
+              permiso: ['contabilidad', 'facturacion'],
+            },
+          ],
+        },
+        {
+          kind: 'subgroup',
+          label: 'Facturación y caja',
+          icon: '$',
+          iconTone: 'emerald',
+          children: [
+            {
+              kind: 'link',
+              label: 'Facturación',
+              path: '/app/facturacion',
+              icon: '$',
+              iconTone: 'emerald',
+              permiso: 'facturacion',
+            },
+            {
+              kind: 'link',
+              label: 'Cierres',
+              path: '/app/cierres',
+              icon: '▣',
+              iconTone: 'indigo',
+              permiso: ['caja.admin', 'contabilidad'],
+              permisoMenu: ['caja.admin', 'contabilidad'],
+              rolesMenu: ['admin', 'contador'],
+            },
+            {
+              kind: 'link',
+              label: 'Cierre general (caja)',
+              path: '/app/cierre-general',
+              icon: '⊞',
+              iconTone: 'amber',
+              permiso: ['caja.admin', 'contabilidad'],
+              permisoMenu: ['caja.admin', 'contabilidad'],
+              rolesMenu: ['admin', 'contador'],
+            },
+            {
+              kind: 'link',
+              label: 'Todos los ingresos',
+              path: '/app/caja/ingresos-todos',
+              icon: '$',
+              iconTone: 'emerald',
+              permiso: ['caja.admin', 'contabilidad'],
+              permisoMenu: ['caja.admin', 'contabilidad'],
+              rolesMenu: ['admin', 'contador'],
+            },
+            {
+              kind: 'link',
+              label: 'Todos los egresos',
+              path: '/app/caja/egresos-todos',
+              icon: '⇣',
+              iconTone: 'rose',
+              permiso: ['caja.admin', 'contabilidad'],
+              permisoMenu: ['caja.admin', 'contabilidad'],
+              rolesMenu: ['admin', 'contador'],
+            },
+            {
+              kind: 'link',
+              label: 'Descuadres de caja',
+              path: '/app/caja/descuadres',
+              icon: '⚠',
+              iconTone: 'amber',
+              permiso: ['caja.admin', 'contabilidad'],
+              permisoMenu: ['caja.admin', 'contabilidad'],
+              rolesMenu: ['admin', 'contador'],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      kind: 'group',
+      label: 'Talento y flota',
+      icon: '👥',
+      iconTone: 'rose',
+      permiso: ['rrhh', 'vehiculos'],
+      children: [
+        {
+          kind: 'subgroup',
+          label: 'RRHH',
+          icon: '👥',
+          iconTone: 'rose',
+          children: [
+            {
+              kind: 'link',
+              label: 'Inicio y guía',
+              path: '/app/rrhh/inicio',
+              icon: '⌂',
+              iconTone: 'rose',
+              permiso: 'rrhh',
+            },
+            { kind: 'link', label: 'Empleados', path: '/app/rrhh/empleados', icon: '◉', iconTone: 'cyan', permiso: 'rrhh' },
+            { kind: 'link', label: 'Desempeño', path: '/app/rrhh/desempeno', icon: '★', iconTone: 'amber', permiso: 'rrhh' },
+            { kind: 'link', label: 'Contratos', path: '/app/rrhh/contratos', icon: '▤', iconTone: 'indigo', permiso: 'rrhh' },
+            {
+              kind: 'link',
+              label: 'Cargos y seguridad social',
+              path: '/app/rrhh/catalogos/cargos',
+              icon: '▦',
+              iconTone: 'blue',
+              catalogosMatch: true,
+              permiso: 'rrhh',
+            },
+            {
+              kind: 'link',
+              label: 'Competencias',
+              path: '/app/rrhh/catalogos/competencias',
+              icon: '✦',
+              iconTone: 'violet',
+              permiso: 'rrhh',
+            },
+            { kind: 'link', label: 'Liquidación', path: '/app/rrhh/nomina', icon: '₱', iconTone: 'emerald', permiso: 'rrhh' },
+            { kind: 'link', label: 'Novedades', path: '/app/rrhh/novedades', icon: '▥', iconTone: 'pink', permiso: 'rrhh' },
+          ],
+        },
+        {
+          kind: 'subgroup',
+          label: 'Flota',
+          icon: '◐',
+          iconTone: 'pink',
+          children: [
+            {
+              kind: 'link',
+              label: 'Vehículos',
+              icon: '◐',
+              path: '/app/vehiculos',
+              iconTone: 'pink',
+              permiso: 'vehiculos',
+            },
+          ],
+        },
+      ],
+    },
     {
       kind: 'group',
       label: 'Configuración',
@@ -1368,7 +1494,6 @@ export class ShellComponent {
       ],
     },
   ];
-
   /** Menú reactivo: se recalcula cuando cambian permisos o usuario en sesión. */
   menuItems = computed((): MenuEntry[] => {
     this.permisos.permisos();
@@ -1457,10 +1582,7 @@ export class ShellComponent {
   }
 
   subgroupActive(subgroup: MenuSubgroup): boolean {
-    const url = this.router.url.split('?')[0];
-    return subgroup.children.some(
-      (link) => url === link.path || url.startsWith(`${link.path}/`),
-    );
+    return subgroup.children.some((link) => this.subLinkActive(link));
   }
 
   isConfigGroup(label: string): boolean {
@@ -1480,16 +1602,14 @@ export class ShellComponent {
     return null;
   }
 
-  private syncConfigSubgroupsFromUrl(url: string, patch: Record<string, boolean>): void {
-    const configGroup = this.menuAll.find((m) => m.kind === 'group' && m.label === 'Configuración');
-    if (!configGroup || configGroup.kind !== 'group') return;
-    for (const child of configGroup.children) {
+  private syncGroupSubgroupsFromUrl(parentLabel: string, url: string, patch: Record<string, boolean>): void {
+    const group = this.menuAll.find((m) => m.kind === 'group' && m.label === parentLabel);
+    if (!group || group.kind !== 'group') return;
+    for (const child of group.children) {
       if (child.kind !== 'subgroup') continue;
-      const match = child.children.some(
-        (link) => url === link.path || url.startsWith(`${link.path}/`),
-      );
+      const match = child.children.some((link) => this.subLinkActive(link));
       if (match) {
-        patch[this.subgroupKey('Configuración', child.label)] = true;
+        patch[this.subgroupKey(parentLabel, child.label)] = true;
       }
     }
   }
@@ -2157,39 +2277,69 @@ export class ShellComponent {
   private syncMenuGroupsFromUrl(url: string) {
     const u = url.split('?')[0];
     const patch: Record<string, boolean> = {
-      RRHH: false,
+      'Operación del día': false,
+      Académico: false,
+      Finanzas: false,
+      'Talento y flota': false,
       Configuración: false,
-      'Flujo de Caja': false,
-      Contabilidad: false,
-      'Jornadas Cap.': false,
     };
 
-    if (u.includes('/aula-virtual')) {
-      patch['Aula Virtual'] = true;
-    }
-    if (u.includes('/contabilidad')) {
-      patch['Contabilidad'] = true;
-    }
-    if (u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/combos') || u.includes('/cierres') || u.includes('/cierre-general')) {
-      patch['Flujo de Caja'] = true;
-    }
-
-    if (u.includes('/contratos') || u.includes('/jornadas')) {
-      patch['Jornadas Cap.'] = true;
+    if (
+      u.includes('/alumnos') ||
+      u.includes('/cobros-pendientes') ||
+      u === '/app/caja' ||
+      u === '/app/caja/' ||
+      u.includes('/caja/terceros') ||
+      u.includes('/caja/gestores') ||
+      u.includes('/caja/empresa') ||
+      u.includes('/combos') ||
+      u.includes('/instructores') ||
+      u.includes('/jornadas/clases-hoy') ||
+      u.includes('/jornadas/clases-en-desarrollo') ||
+      u.includes('/jornadas/instructor') ||
+      (u.includes('/programacion-cea/clases-hoy') && !u.includes('/programacion-cea/clases-grupales'))
+    ) {
+      patch['Operación del día'] = true;
+      this.syncGroupSubgroupsFromUrl('Operación del día', u, patch);
     }
 
     if (
-      u.includes('/rrhh') ||
-      u.includes('/configuracion/recibos') ||
-      u.includes('/configuracion/empresa') ||
-      u.includes('/configuracion/nomina')
+      u.includes('/programas') ||
+      u.includes('/servicios') ||
+      u.includes('/certificados') ||
+      u.includes('/informes') ||
+      u.includes('/cohortes') ||
+      u.includes('/aula-virtual') ||
+      u === '/app/contratos' ||
+      u.startsWith('/app/contratos/') ||
+      u.includes('/jornadas') ||
+      u.includes('/programacion-cea')
     ) {
-      patch['RRHH'] = true;
+      patch['Académico'] = true;
+      this.syncGroupSubgroupsFromUrl('Académico', u, patch);
+    }
+
+    if (
+      u.includes('/contabilidad') ||
+      u.includes('/facturacion') ||
+      u.includes('/cierres') ||
+      u.includes('/cierre-general') ||
+      u.includes('/caja/ingresos-todos') ||
+      u.includes('/caja/egresos-todos') ||
+      u.includes('/caja/descuadres')
+    ) {
+      patch['Finanzas'] = true;
+      this.syncGroupSubgroupsFromUrl('Finanzas', u, patch);
+    }
+
+    if (u.includes('/rrhh') || u.includes('/vehiculos')) {
+      patch['Talento y flota'] = true;
+      this.syncGroupSubgroupsFromUrl('Talento y flota', u, patch);
     }
 
     if (u.includes('/configuracion/')) {
       patch['Configuración'] = true;
-      this.syncConfigSubgroupsFromUrl(u, patch);
+      this.syncGroupSubgroupsFromUrl('Configuración', u, patch);
     }
 
     this.groupAbierto.set(patch);
@@ -2212,31 +2362,79 @@ export class ShellComponent {
     this.groupAbierto.update((g) => ({ ...g, [label]: !this.isGroupOpen(label) }));
   }
 
-  isRrhhGroup(label: string): boolean {
-    return label === 'RRHH';
+  isOperacionGroup(label: string): boolean {
+    return label === 'Operación del día';
   }
 
-  isCajaGroup(label: string): boolean {
-    return label === 'Flujo de Caja';
+  isAcademicoGroup(label: string): boolean {
+    return label === 'Académico';
   }
 
-  rrhhGroupActive(): boolean {
+  isFinanzasGroup(label: string): boolean {
+    return label === 'Finanzas';
+  }
+
+  isTalentoGroup(label: string): boolean {
+    return label === 'Talento y flota';
+  }
+
+  operacionGroupActive(): boolean {
     const u = this.router.url.split('?')[0];
     return (
-      u.includes('/rrhh') ||
-      u.includes('/configuracion/recibos') ||
-      u.includes('/configuracion/empresa') ||
-      u.includes('/configuracion/nomina')
+      u.includes('/alumnos') ||
+      u.includes('/cobros-pendientes') ||
+      u === '/app/caja' ||
+      u === '/app/caja/' ||
+      u.includes('/caja/terceros') ||
+      u.includes('/caja/gestores') ||
+      u.includes('/caja/empresa') ||
+      u.includes('/combos') ||
+      u.includes('/instructores') ||
+      u.includes('/jornadas/clases-hoy') ||
+      u.includes('/jornadas/clases-en-desarrollo') ||
+      u.includes('/jornadas/instructor')
     );
   }
 
-  cajaGroupActive(): boolean {
+  academicoGroupActive(): boolean {
     const u = this.router.url.split('?')[0];
-    return u.includes('/caja') || u.includes('/cobros-pendientes') || u.includes('/cierre-general');
+    return (
+      u.includes('/programas') ||
+      u.includes('/servicios') ||
+      u.includes('/certificados') ||
+      u.includes('/informes') ||
+      u.includes('/cohortes') ||
+      u.includes('/aula-virtual') ||
+      u.includes('/contratos') ||
+      u.includes('/jornadas') ||
+      u.includes('/programacion-cea')
+    );
+  }
+
+  finanzasGroupActive(): boolean {
+    const u = this.router.url.split('?')[0];
+    return (
+      u.includes('/contabilidad') ||
+      u.includes('/facturacion') ||
+      u.includes('/cierres') ||
+      u.includes('/cierre-general') ||
+      u.includes('/caja/ingresos-todos') ||
+      u.includes('/caja/egresos-todos') ||
+      u.includes('/caja/descuadres')
+    );
+  }
+
+  talentoGroupActive(): boolean {
+    const u = this.router.url.split('?')[0];
+    return u.includes('/rrhh') || u.includes('/vehiculos');
   }
 
   trackMenuChild(c: MenuChild): string {
-    return c.kind === 'link' ? `${c.path}|${c.label}` : `subgroup:${c.label}`;
+    if (c.kind === 'link') {
+      const tab = c.queryParams?.['tab'] ?? '';
+      return `${c.path}|${c.label}|${tab}`;
+    }
+    return `subgroup:${c.label}`;
   }
 
   /** Encabezado de sección solo cuando cambia respecto al ítem visible anterior (menús planos). */
@@ -2250,9 +2448,52 @@ export class ShellComponent {
     return current.section !== prevSection;
   }
 
+  /** Encabezado de sección en grupos con subgrupos y enlaces planos mezclados (p. ej. Académico). */
+  showSubmenuSectionMixed(children: MenuChild[], index: number): boolean {
+    const visible = this.visibleMenuChildren(children);
+    const current = visible[index];
+    if (!current || current.kind !== 'link' || !current.section) return false;
+    for (let i = index - 1; i >= 0; i--) {
+      const prev = visible[i];
+      if (prev.kind === 'link') {
+        return current.section !== prev.section;
+      }
+    }
+    return true;
+  }
+
   subLinkActive(link: MenuLink): boolean {
     const full = this.router.url;
     const url = full.split('?')[0];
+    if (link.path === '/app/cohortes' && link.queryParams?.['tab']) {
+      const tab = link.queryParams['tab'];
+      if (!(url === '/app/cohortes' || url.startsWith('/app/cohortes/'))) return false;
+      if (full.includes(`tab=${tab}`)) return true;
+      if (tab === 'plan' && !full.includes('tab=') && (url === '/app/cohortes' || url === '/app/cohortes/')) {
+        return true;
+      }
+      if (tab === 'cohortes' && url.startsWith('/app/cohortes/') && !full.includes('tab=')) {
+        return true;
+      }
+      return false;
+    }
+    if (link.path === '/app/jornadas' && link.queryParams?.['tab']) {
+      const tab = link.queryParams['tab'];
+      if (!(url === '/app/jornadas' || url === '/app/jornadas/')) return false;
+      if (full.includes(`tab=${tab}`)) return true;
+      if (tab === 'contratos' && !full.includes('tab=')) return true;
+      return false;
+    }
+    if (link.path === '/app/jornadas' && !link.queryParams?.['tab']) {
+      return (url === '/app/jornadas' || url === '/app/jornadas/') && !full.includes('tab=');
+    }
+    if (link.path === '/app/programacion-cea' && link.queryParams?.['tab']) {
+      const tab = link.queryParams['tab'];
+      if (!(url === '/app/programacion-cea' || url === '/app/programacion-cea/')) return false;
+      if (full.includes(`tab=${tab}`)) return true;
+      if (tab === 'inicio' && !full.includes('tab=')) return true;
+      return false;
+    }
     if (link.queryParams?.['tab']) {
       return (
         (url === link.path || url.startsWith(`${link.path}/`)) &&
@@ -2261,6 +2502,9 @@ export class ShellComponent {
     }
     if (link.path === '/app/programacion-cea' && full.includes('tab=')) {
       return false;
+    }
+    if (link.path === '/app/programacion-cea') {
+      return url === '/app/programacion-cea' || url === '/app/programacion-cea/';
     }
     if (link.path === '/app/caja') {
       return url === '/app/caja' || url === '/app/caja/';

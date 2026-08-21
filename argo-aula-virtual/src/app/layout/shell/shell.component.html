@@ -154,7 +154,7 @@
       <ul class="site-footer__contact-list">
         @if (config()?.telefono; as tel) {
           <li class="site-footer__contact-card">
-            <span class="site-footer__contact-icon" aria-hidden="true">📞</span>
+            <av-portal-icon icon="phone" class="site-footer__contact-icon" size="1.35rem" color="var(--av-accent, #aee929)" />
             <div class="site-footer__contact-body">
               <strong>Teléfono</strong>
               @if (telHref(); as href) {
@@ -167,7 +167,7 @@
         }
         @if (config()?.email; as mail) {
           <li class="site-footer__contact-card">
-            <span class="site-footer__contact-icon" aria-hidden="true">✉️</span>
+            <av-portal-icon icon="envelope" class="site-footer__contact-icon" size="1.35rem" color="var(--av-accent, #aee929)" />
             <div class="site-footer__contact-body">
               <strong>Correo</strong>
               <a [href]="'mailto:' + mail">{{ mail }}</a>
@@ -176,7 +176,7 @@
         }
         @if (direccionCompleta(); as dir) {
           <li class="site-footer__contact-card">
-            <span class="site-footer__contact-icon" aria-hidden="true">📍</span>
+            <av-portal-icon icon="map-pin" class="site-footer__contact-icon" size="1.35rem" color="var(--av-accent, #aee929)" />
             <div class="site-footer__contact-body">
               <strong>Dirección</strong>
               <span>{{ dir }}</span>
@@ -185,7 +185,7 @@
         }
         @if (whatsappHref(); as wa) {
           <li class="site-footer__contact-card">
-            <span class="site-footer__contact-icon" aria-hidden="true">💬</span>
+            <av-portal-icon icon="chat" class="site-footer__contact-icon" size="1.35rem" color="var(--av-accent, #aee929)" />
             <div class="site-footer__contact-body">
               <strong>WhatsApp</strong>
               <a [href]="wa" target="_blank" rel="noopener noreferrer">Escríbanos</a>

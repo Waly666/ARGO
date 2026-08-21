@@ -7,6 +7,8 @@ export type PortalPaginaKey =
   | 'aula'
   | 'fundacion'
   | 'consultaCertificados'
+  | 'cursosConduccion'
+  | 'galeria'
   | 'blog'
   | 'acerca';
 
@@ -17,6 +19,8 @@ const RUTA_PAGINA: Record<PortalPaginaKey, string> = {
   aula: '/aula',
   fundacion: '/fundacion',
   consultaCertificados: '/consulta-certificados',
+  cursosConduccion: '/cursos-conduccion',
+  galeria: '/galeria',
   blog: '/blog',
   acerca: '/acerca',
 };
@@ -27,7 +31,10 @@ const DEFAULT_HOME_ORDER = [
   'infoCards',
   'ofertas',
   'beneficios',
+  'licencias',
+  'examenTeorico',
   'quoteBand',
+  'fotosInicio',
   'serviciosEmpresa',
   'carreras',
   'cursosVirtuales',

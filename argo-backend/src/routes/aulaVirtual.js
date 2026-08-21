@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/aulaVirtualController');
 const admin = require('../controllers/aulaVirtualAdminController');
-const { requireAuth, requirePermiso } = require('../middleware/auth');
+const { requireAuth, requirePermiso, requireAdmin } = require('../middleware/auth');
 const { requirePortalAuth } = require('../middleware/authPortal');
 const {
   aulaVirtualZip,
@@ -9,9 +9,15 @@ const {
   aulaVirtualLogo,
   aulaVirtualHero,
   aulaVirtualFundacionHero,
+  aulaVirtualAcercaHero,
+  aulaVirtualCursosConduccionHero,
   aulaVirtualPopup,
   aulaVirtualConsultaAsistente,
+  aulaVirtualCursosConduccion,
+  aulaVirtualExamenTeorico,
   aulaVirtualBlog,
+  aulaVirtualGaleria,
+  aulaVirtualHomeFotos,
   programasVirtual,
 } = require('../middleware/upload');
 const { portalAuthLimiter, buscarAlumnoLimiter } = require('../middleware/security');
@@ -184,6 +190,32 @@ router.delete(
   admin.quitarImagenFundacionPortal,
 );
 router.post(
+  '/admin/portal/acerca-hero-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualAcercaHero.single('imagen'),
+  admin.subirImagenAcercaPortal,
+);
+router.delete(
+  '/admin/portal/acerca-hero-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenAcercaPortal,
+);
+router.post(
+  '/admin/portal/cursos-conduccion-hero-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualCursosConduccionHero.single('imagen'),
+  admin.subirImagenCursosConduccionPortal,
+);
+router.delete(
+  '/admin/portal/cursos-conduccion-hero-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenCursosConduccionPortal,
+);
+router.post(
   '/admin/portal/popup-imagen',
   requireAuth,
   configPortal,
@@ -204,6 +236,20 @@ router.delete(
   configPortal,
   admin.quitarVideoAsistenteCertificadosPortal,
 );
+router.post(
+  '/admin/portal/cursos-conduccion-archivo',
+  requireAuth,
+  configPortal,
+  aulaVirtualCursosConduccion.single('archivo'),
+  admin.subirArchivoCursosConduccionPortal,
+);
+router.post(
+  '/admin/portal/examen-teorico-archivo',
+  requireAuth,
+  configPortal,
+  aulaVirtualExamenTeorico.single('archivo'),
+  admin.subirArchivoExamenTeoricoPortal,
+);
 
 router.get('/admin/blog', requireAuth, configPortal, admin.listarBlogAdmin);
 router.get('/admin/blog/:id', requireAuth, configPortal, admin.obtenerBlogAdmin);
@@ -217,5 +263,23 @@ router.post(
   aulaVirtualBlog.single('imagen'),
   admin.subirImagenBlog,
 );
+
+router.post(
+  '/admin/portal/galeria',
+  requireAuth,
+  requireAdmin,
+  aulaVirtualGaleria.array('imagenes', 30),
+  admin.subirImagenesGaleriaPortal,
+);
+router.delete('/admin/portal/galeria', requireAuth, requireAdmin, admin.eliminarFotoGaleriaPortal);
+
+router.post(
+  '/admin/portal/home-fotos',
+  requireAuth,
+  requireAdmin,
+  aulaVirtualHomeFotos.single('imagen'),
+  admin.subirImagenHomeFotoPortal,
+);
+router.delete('/admin/portal/home-fotos', requireAuth, requireAdmin, admin.eliminarImagenHomeFotoPortal);
 
 module.exports = router;

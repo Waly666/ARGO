@@ -1,0 +1,195 @@
+@use './portal-site-editor-shared';
+
+.pcc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.pcc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 48rem;
+
+  // Botones del constructor (psb-btn) no heredan estilos del padre por encapsulación Angular
+  .psb-btn {
+    @include portal-site-editor-shared.portal-editor-button-reset;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid rgba(78, 163, 255, 0.35);
+    background: rgba(37, 99, 235, 0.12);
+    color: #bfdbfe;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: rgba(37, 99, 235, 0.22);
+      border-color: rgba(96, 165, 250, 0.55);
+      color: #e0f2fe;
+    }
+
+    &--ghost {
+      background: rgba(15, 23, 42, 0.55);
+      border-color: var(--line);
+      color: var(--text);
+
+      &:hover:not(:disabled) {
+        background: rgba(37, 99, 235, 0.2);
+        color: #e0f2fe;
+      }
+    }
+  }
+}
+
+.pcc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(15, 23, 42, 0.45);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+}
+
+.pcc-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .psb-input {
+    flex: 1;
+  }
+}
+
+.pcc-subcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border-radius: 8px;
+  border: 1px dashed rgba(78, 163, 255, 0.25);
+  background: rgba(6, 16, 41, 0.35);
+}
+
+.pcc-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.pcc-file-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pcc-btn-file {
+  @include portal-site-editor-shared.portal-editor-button-reset;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 163, 255, 0.35);
+  background: rgba(37, 99, 235, 0.12);
+  color: #bfdbfe;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: rgba(37, 99, 235, 0.22);
+    border-color: rgba(96, 165, 250, 0.55);
+    color: #e0f2fe;
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &--busy {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+}
+
+.pcc-remove {
+  align-self: flex-start;
+}
+
+.pcc-hero-image {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.pcc-field-label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.pcc-hero-image__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.pcc-hero-image__preview {
+  margin: 0;
+  width: min(220px, 100%);
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: rgba(15, 23, 42, 0.75);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &--empty {
+    display: grid;
+    place-items: center;
+    padding: 0.75rem;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    text-align: center;
+  }
+}
+
+.pcc-hero-image__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: flex-start;
+}

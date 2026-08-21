@@ -1,0 +1,59 @@
+<section class="phfe">
+  <p class="psb-muted">
+    Hasta {{ maxFotos }} fotos destacadas en el inicio (aparte del hero). Si no hay fotos, el bloque no aparece en el sitio.
+  </p>
+
+  <div class="psb-grid3">
+    <label class="psb-field psb-field--plain">
+      <span>Etiqueta pequeña</span>
+      <input type="text" class="psb-input" [(ngModel)]="fotosInicio.kicker" placeholder="En imágenes" />
+    </label>
+    <label class="psb-field psb-field--plain psb-field--span2">
+      <span>Título del bloque</span>
+      <input type="text" class="psb-input" [(ngModel)]="fotosInicio.titulo" placeholder="Vida en nuestro centro" />
+    </label>
+  </div>
+
+  <label class="psb-field psb-field--plain">
+    <span>Texto introductorio</span>
+    <textarea class="psb-input" rows="2" [(ngModel)]="fotosInicio.lead"></textarea>
+  </label>
+
+  <div class="phfe-grid">
+    @for (foto of fotosInicio.fotos; track foto.url; let i = $index) {
+      <article class="phfe-slot phfe-slot--filled">
+        <div class="phfe-thumb">
+          <img [src]="previewUrl(foto)" [alt]="foto.leyenda || 'Foto inicio ' + (i + 1)" loading="lazy" />
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Leyenda (opcional)</span>
+          <input type="text" class="psb-input" [(ngModel)]="foto.leyenda" placeholder="Ej.: Jornada de capacitación 2026" />
+        </label>
+        <button type="button" class="psb-btn psb-btn--ghost phfe-quitar" [disabled]="uploading()" (click)="confirmarEliminar(foto)">
+          Quitar foto
+        </button>
+      </article>
+    }
+
+    @if (puedeAgregar()) {
+      <article class="phfe-slot phfe-slot--empty">
+        <div class="phfe-placeholder">
+          <span>Foto {{ totalFotos() + 1 }}</span>
+          <p>Vista horizontal recomendada (16:9)</p>
+        </div>
+        <label class="phfe-upload">
+          {{ uploading() ? 'Subiendo…' : 'Elegir imagen' }}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            [disabled]="uploading()"
+            (change)="onArchivoSelected($event)" />
+        </label>
+      </article>
+    }
+  </div>
+
+  <p class="psb-muted phfe-hint">
+    Las leyendas y textos se guardan al publicar. «Quitar foto» elimina la imagen del servidor de inmediato.
+  </p>
+</section>

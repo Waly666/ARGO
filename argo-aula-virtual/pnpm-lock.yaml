@@ -29,6 +29,15 @@ importers:
       '@angular/router':
         specifier: ^19.2.0
         version: 19.2.25(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@19.2.25(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
+      '@ng-icons/bootstrap-icons':
+        specifier: ^31.4.0
+        version: 31.4.0
+      '@ng-icons/core':
+        specifier: ^31.4.0
+        version: 31.4.0(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
+      '@ng-icons/heroicons':
+        specifier: ^31.4.0
+        version: 31.4.0
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
@@ -1575,6 +1584,19 @@ packages:
   '@napi-rs/nice@1.1.1':
     resolution: {integrity: sha512-xJIPs+bYuc9ASBl+cvGsKbGrJmS6fAKaSZCnT0lhahT5rhA2VVy9/EcIgd2JhtEuFOJNx7UHNn/qiTPTY4nrQw==}
     engines: {node: '>= 10'}
+
+  '@ng-icons/bootstrap-icons@31.4.0':
+    resolution: {integrity: sha512-lcvCcJj+tibKbrm6GLc99LSBvLrrcPbM0Y5nmuHGmp3xV7SpqgsUNHCx2Ca40noRB4JvZh5oqaBeSdq/w32aFA==}
+
+  '@ng-icons/core@31.4.0':
+    resolution: {integrity: sha512-JfLiJGDX/ihWmawcnLGXtwyCqMi2qXz7gMJyXXWdUN5JA18EAnt3JnyuxDAGkoU/u7wRlcOI7irlXHU4spAKOg==}
+    peerDependencies:
+      '@angular/common': '>=18.0.0'
+      '@angular/core': '>=18.0.0'
+      rxjs: ^6.5.3 || ^7.4.0
+
+  '@ng-icons/heroicons@31.4.0':
+    resolution: {integrity: sha512-i3tokh/02nqqClYOVi84yJ7kTozoF44+IBBtu+C6cfn6pZxlIiz72Tbm1ydZBLQm37Ib+BwxaGf65nq+HHO0RA==}
 
   '@ngtools/webpack@19.2.27':
     resolution: {integrity: sha512-nuKxH4WaRILjlje4143T8XeDWVi5AIDlCMu/SPSKsYtyGxX7AC3sEu0UatFG7rrJkS/SB+fZngtuydoprhvYkQ==}
@@ -6158,6 +6180,21 @@ snapshots:
       '@napi-rs/nice-win32-ia32-msvc': 1.1.1
       '@napi-rs/nice-win32-x64-msvc': 1.1.1
     optional: true
+
+  '@ng-icons/bootstrap-icons@31.4.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@ng-icons/core@31.4.0(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)':
+    dependencies:
+      '@angular/common': 19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
+      '@angular/core': 19.2.25(rxjs@7.8.2)(zone.js@0.15.1)
+      rxjs: 7.8.2
+      tslib: 2.8.1
+
+  '@ng-icons/heroicons@31.4.0':
+    dependencies:
+      tslib: 2.8.1
 
   '@ngtools/webpack@19.2.27(@angular/compiler-cli@19.2.25(@angular/compiler@19.2.25)(typescript@5.7.3))(typescript@5.7.3)(webpack@5.105.0(esbuild@0.28.0)(postcss@8.5.12))':
     dependencies:

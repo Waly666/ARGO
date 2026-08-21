@@ -175,6 +175,71 @@ function buildEvidenciaJornadaMemoria() {
   });
 }
 
+function buildPdf(subdir, maxMb = 15) {
+  const dest = path.join(BASE, subdir);
+  ensureDir(dest);
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dest),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^\w.\-]+/g, '_');
+      const name = `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}`;
+      cb(null, name);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: maxMb * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
+      const ok = mime === 'application/pdf' || ext === '.pdf';
+      if (!ok) {
+        const err = new Error('Solo se permiten archivos PDF');
+        err.status = 400;
+        return cb(err);
+      }
+      cb(null, true);
+    },
+  });
+}
+
+function buildGaleriaMedia(subdir, maxMb = 25) {
+  const dest = path.join(BASE, subdir);
+  ensureDir(dest);
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dest),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^\w.\-]+/g, '_');
+      cb(null, `${Date.now()}_${Math.round(Math.random() * 1e6)}_${safe}`);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: maxMb * 1024 * 1024, files: 30 },
+    fileFilter: (_req, file, cb) => {
+      const mime = String(file.mimetype || '').toLowerCase();
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const okImg =
+        mime.startsWith('image/') ||
+        ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.heic', '.heif'].includes(ext);
+      const okVid =
+        ext === '.mp4' ||
+        ext === '.webm' ||
+        mime === 'video/mp4' ||
+        mime === 'video/webm';
+      const okOctet =
+        mime === 'application/octet-stream' &&
+        ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.heic', '.heif', '.mp4', '.webm'].includes(
+          ext,
+        );
+      if (!okImg && !okVid && !okOctet) {
+        return cb(new Error('Solo se permiten imágenes (JPG, PNG, WEBP) o videos MP4/WEBM'));
+      }
+      cb(null, true);
+    },
+  });
+}
+
 module.exports = {
   alumnos: build('alumnos'),
   vehiculos: build('vehiculos'),
@@ -191,9 +256,15 @@ module.exports = {
   aulaVirtualLogo: buildImagen('aula-virtual-logo', 3),
   aulaVirtualHero: buildImagen('aula-virtual-hero', 8),
   aulaVirtualFundacionHero: buildImagen('aula-virtual-fundacion-hero', 8),
+  aulaVirtualAcercaHero: buildImagen('aula-virtual-acerca-hero', 8),
+  aulaVirtualCursosConduccionHero: buildImagen('aula-virtual-cursos-conduccion-hero', 8),
   aulaVirtualPopup: buildImagen('aula-virtual-popup', 8),
   aulaVirtualConsultaAsistente: buildVideo('aula-virtual-consulta-asistente', 50),
+  aulaVirtualCursosConduccion: buildPdf('aula-virtual-cursos-conduccion', 15),
+  aulaVirtualExamenTeorico: buildPdf('aula-virtual-examen-teorico', 15),
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
+  aulaVirtualGaleria: buildGaleriaMedia('aula-virtual-galeria', 25),
+  aulaVirtualHomeFotos: buildImagen('aula-virtual-home-fotos', 8),
   evidenciasCap: buildEvidenciaCap(),
   evidenciaJornadaMemoria: buildEvidenciaJornadaMemoria(),
   memory,

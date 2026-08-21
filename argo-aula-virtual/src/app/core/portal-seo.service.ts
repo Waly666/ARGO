@@ -205,6 +205,78 @@ export class PortalSeoService {
     });
   }
 
+  applyGaleria(config: PortalConfig | null) {
+    const landing = config?.landing;
+    const titulo = landing?.galeria?.titulo?.trim() || 'Galería de fotos';
+    const pageTitle = `${titulo} | ${SEO_BRAND}`;
+    const description = this.truncate(
+      landing?.galeria?.lead?.trim() || 'Fotos y videos de nuestras actividades de formación y eventos.',
+    );
+    const url = this.pageUrl('/galeria');
+    this.applyPageMeta({
+      pageTitle,
+      description,
+      keywords: PORTAL_SEO_KEYWORDS,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: titulo, path: '/galeria' },
+      ]),
+    });
+  }
+
+  applyCursosConduccion(config: PortalConfig | null) {
+    const cc = config?.landing?.cursosConduccion;
+    const titulo = cc?.tituloPrincipal?.trim() || 'Cursos de conducción';
+    const pageTitle = `${titulo} | ${SEO_BRAND}`;
+    const description = this.truncate(
+      cc?.textoInstitucional?.trim() ||
+        'Categorías de licencia de conducción y resoluciones del Centro de Enseñanza Automovilística.',
+    );
+    const url = this.pageUrl('/cursos-conduccion');
+    this.applyPageMeta({
+      pageTitle,
+      description,
+      keywords: `${BLOG_SEO_KEYWORDS}, cursos conducción, licencia conducción, categorías licencia`,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'Cursos conducción', path: '/cursos-conduccion' },
+      ]),
+    });
+  }
+
+  applyExamenTeorico(config: PortalConfig | null) {
+    const et = config?.landing?.examenTeorico;
+    const titulo = [et?.titulo, et?.tituloLinea2].filter(Boolean).join(' — ') || 'Examen teórico';
+    const pageTitle = `${titulo} | ${SEO_BRAND}`;
+    const description = this.truncate(
+      et?.paginaIntro?.trim() ||
+        et?.fechaDestacada?.trim() ||
+        'Información sobre el examen teórico obligatorio para obtener o recategorizar la licencia de conducción.',
+    );
+    const url = this.pageUrl('/examen-teorico');
+    this.applyPageMeta({
+      pageTitle,
+      description,
+      keywords: `${BLOG_SEO_KEYWORDS}, examen teórico, licencia conducción, normatividad tránsito, RUNT, CALE`,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'Examen teórico', path: '/examen-teorico' },
+      ]),
+    });
+  }
+
   applyBlogPost(
     config: PortalConfig | null,
     post: { titulo: string; slug: string; contenido?: string; autorNombre?: string; publicadoAt?: string | null },

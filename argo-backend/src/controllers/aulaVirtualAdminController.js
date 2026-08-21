@@ -329,6 +329,116 @@ exports.quitarImagenFundacionPortal = async (req, res, next) => {
   }
 };
 
+async function guardarImagenAcercaPortal(imagenUrl, usuario) {
+  const aula = await obtenerConfigAula();
+  const landing = mergeLanding(aula.landing);
+  landing.acerca = {
+    ...landing.acerca,
+    hero: {
+      ...landing.acerca.hero,
+      imagenUrl: String(imagenUrl || '').trim(),
+    },
+  };
+  await guardarConfigAula({ landing }, usuario);
+}
+
+function quitarImagenAcercaAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-acerca-hero/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenAcercaPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenAcercaAnterior(landing.acerca?.hero?.imagenUrl);
+
+    const imagenUrl = publicUrl('aula-virtual-acerca-hero', req.file.filename);
+    await guardarImagenAcercaPortal(imagenUrl, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen de «Acerca de» actualizada en el sitio',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenAcercaPortal = async (req, res, next) => {
+  try {
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenAcercaAnterior(landing.acerca?.hero?.imagenUrl);
+    await guardarImagenAcercaPortal('', req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen de «Acerca de» eliminada; se mostrará el logo de la empresa',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+async function guardarImagenCursosConduccionPortal(imagenUrl, usuario) {
+  const aula = await obtenerConfigAula();
+  const landing = mergeLanding(aula.landing);
+  landing.cursosConduccion = {
+    ...landing.cursosConduccion,
+    hero: {
+      ...landing.cursosConduccion.hero,
+      imagenUrl: String(imagenUrl || '').trim(),
+    },
+  };
+  await guardarConfigAula({ landing }, usuario);
+}
+
+function quitarImagenCursosConduccionAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-cursos-conduccion-hero/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenCursosConduccionPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenCursosConduccionAnterior(landing.cursosConduccion?.hero?.imagenUrl);
+
+    const imagenUrl = publicUrl('aula-virtual-cursos-conduccion-hero', req.file.filename);
+    await guardarImagenCursosConduccionPortal(imagenUrl, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen de Cursos conducción actualizada en el sitio',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenCursosConduccionPortal = async (req, res, next) => {
+  try {
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenCursosConduccionAnterior(landing.cursosConduccion?.hero?.imagenUrl);
+    await guardarImagenCursosConduccionPortal('', req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen eliminada; se usará la predeterminada del portal',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
 async function guardarImagenPopupPortal(imagenUrl, usuario) {
   const aula = await obtenerConfigAula();
   const landing = mergeLanding(aula.landing);
@@ -723,6 +833,229 @@ exports.subirImagenBlog = async (req, res, next) => {
     }
     const url = urlImagenSubida(req.file.filename);
     res.status(201).json({ url, message: 'Imagen subida' });
+  } catch (e) {
+    next(e);
+  }
+};
+
+function urlGaleriaSubida(filename) {
+  return publicUrl('aula-virtual-galeria', filename);
+}
+
+function quitarArchivoGaleria(url) {
+  const rel = String(url || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-galeria/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+async function anexarFotosGaleria(filenames, usuario) {
+  const aula = await obtenerConfigAula();
+  const landing = mergeLanding(aula.landing);
+  const fotos = [...(landing.galeria?.fotos || [])];
+  for (const filename of filenames) {
+    const url = urlGaleriaSubida(filename);
+    const ext = path.extname(filename).toLowerCase();
+    const tipo = ext === '.mp4' || ext === '.webm' ? 'video' : 'imagen';
+    fotos.push({
+      id: `${Date.now()}_${Math.round(Math.random() * 1e6)}`,
+      url,
+      leyenda: '',
+      tipo,
+      orden: fotos.length,
+    });
+  }
+  landing.galeria = { ...landing.galeria, fotos };
+  await guardarConfigAula({ landing }, usuario);
+}
+
+exports.subirImagenesGaleriaPortal = async (req, res, next) => {
+  try {
+    const files = Array.isArray(req.files) ? req.files : req.file ? [req.file] : [];
+    if (!files.length) {
+      return res.status(400).json({ message: 'Seleccione una o más imágenes o videos' });
+    }
+    for (const file of files) {
+      if (file.mimetype?.startsWith('image/')) {
+        const filePath = path.join(file.destination, file.filename);
+        await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1920 });
+      }
+    }
+    await anexarFotosGaleria(
+      files.map((f) => f.filename),
+      req.user,
+    );
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: `${files.length} archivo(s) agregado(s) a la galería`,
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.eliminarFotoGaleriaPortal = async (req, res, next) => {
+  try {
+    const url = String(req.body?.url || req.query?.url || '').trim();
+    if (!url) {
+      return res.status(400).json({ message: 'Indique la URL del archivo a eliminar' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const antes = landing.galeria?.fotos || [];
+    const fotos = antes.filter((f) => f.url !== url);
+    if (fotos.length === antes.length) {
+      return res.status(404).json({ message: 'Archivo no encontrado en la galería' });
+    }
+    quitarArchivoGaleria(url);
+    landing.galeria = { ...landing.galeria, fotos };
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Archivo eliminado de la galería',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+const MAX_HOME_FOTOS = 2;
+
+function urlHomeFotoSubida(filename) {
+  return publicUrl('aula-virtual-home-fotos', filename);
+}
+
+function quitarArchivoHomeFoto(url) {
+  const rel = String(url || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-home-fotos/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenHomeFotoPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const fotos = [...(landing.fotosInicio?.fotos || [])];
+    if (fotos.length >= MAX_HOME_FOTOS) {
+      quitarArchivoHomeFoto(urlHomeFotoSubida(req.file.filename));
+      return res.status(400).json({
+        message: `Solo puede haber ${MAX_HOME_FOTOS} fotos destacadas en el inicio`,
+      });
+    }
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1280 });
+    fotos.push({
+      url: urlHomeFotoSubida(req.file.filename),
+      leyenda: '',
+    });
+    landing.fotosInicio = { ...landing.fotosInicio, fotos };
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Foto del inicio agregada',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.eliminarImagenHomeFotoPortal = async (req, res, next) => {
+  try {
+    const url = String(req.body?.url || req.query?.url || '').trim();
+    if (!url) {
+      return res.status(400).json({ message: 'Indique la URL de la foto a eliminar' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const antes = landing.fotosInicio?.fotos || [];
+    const fotos = antes.filter((f) => f.url !== url);
+    if (fotos.length === antes.length) {
+      return res.status(404).json({ message: 'Foto no encontrada en el inicio' });
+    }
+    quitarArchivoHomeFoto(url);
+    landing.fotosInicio = { ...landing.fotosInicio, fotos };
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Foto eliminada del inicio',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.subirArchivoCursosConduccionPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione un archivo PDF' });
+    }
+    const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+    const archivoUrl = publicUrl('aula-virtual-cursos-conduccion', req.file.filename);
+    const nombreArchivo =
+      String(req.file.originalname || 'documento.pdf')
+        .replace(/[^\w.\- ]+/g, '_')
+        .trim() || 'documento.pdf';
+    res.json({
+      archivoUrl,
+      archivoUrlAbsoluta: publicUploadUrl(archivoUrl) || archivoUrl,
+      nombreArchivo,
+      message: 'Archivo cargado. Publique los cambios del sitio para que aparezca en el portal.',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.subirArchivoExamenTeoricoPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione un archivo PDF' });
+    }
+    const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+    const archivoUrl = publicUrl('aula-virtual-examen-teorico', req.file.filename);
+    const nombreArchivo =
+      String(req.file.originalname || 'documento.pdf')
+        .replace(/[^\w.\- ]+/g, '_')
+        .trim() || 'documento.pdf';
+
+    const tipo = String(req.body?.tipo || '').trim().toLowerCase();
+    const index = Number(req.body?.index);
+    let persisted = false;
+
+    if (tipo && Number.isFinite(index) && index >= 0) {
+      const aula = await obtenerConfigAula();
+      const landing = mergeLanding(aula.landing);
+      const et = landing.examenTeorico || {};
+
+      if (tipo === 'normograma' && Array.isArray(et.normograma?.items) && et.normograma.items[index]) {
+        et.normograma.items[index].archivoUrl = archivoUrl;
+        et.normograma.items[index].nombreArchivo = nombreArchivo;
+        persisted = true;
+      } else if (tipo === 'resolucion' && Array.isArray(et.resoluciones) && et.resoluciones[index]) {
+        et.resoluciones[index].archivoUrl = archivoUrl;
+        et.resoluciones[index].nombreArchivo = nombreArchivo;
+        persisted = true;
+      }
+
+      if (persisted) {
+        landing.examenTeorico = et;
+        await guardarConfigAula({ landing }, req.user);
+      }
+    }
+
+    res.json({
+      archivoUrl,
+      archivoUrlAbsoluta: publicUploadUrl(archivoUrl) || archivoUrl,
+      nombreArchivo,
+      persisted,
+      message: persisted
+        ? 'PDF guardado. Ya está disponible en el portal.'
+        : 'Archivo cargado. Publique los cambios del sitio para que aparezca en el portal.',
+    });
   } catch (e) {
     next(e);
   }

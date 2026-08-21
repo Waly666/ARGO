@@ -53,9 +53,27 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'cursos-conduccion',
+        canActivate: [portalPageGuard],
+        loadComponent: () =>
+          import('./pages/cursos-conduccion/cursos-conduccion.component').then(
+            (m) => m.CursosConduccionComponent,
+          ),
+      },
+      {
+        path: 'examen-teorico',
+        loadComponent: () =>
+          import('./pages/examen-teorico/examen-teorico.component').then((m) => m.ExamenTeoricoComponent),
+      },
+      {
         path: 'blog',
         canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/blog/blog.component').then((m) => m.BlogComponent),
+      },
+      {
+        path: 'galeria',
+        canActivate: [portalPageGuard],
+        loadComponent: () => import('./pages/galeria/galeria.component').then((m) => m.GaleriaComponent),
       },
       {
         path: 'blog/:slug',

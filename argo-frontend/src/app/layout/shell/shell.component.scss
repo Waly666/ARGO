@@ -170,6 +170,55 @@
   color: var(--text);
 }
 
+/* Bloques reorganizados del menú lateral */
+.submenu-operacion {
+  @extend .submenu-caja;
+}
+.menu-group-operacion .group-head.active {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--text);
+}
+
+.submenu-academico {
+  margin-left: 6px;
+  padding: 8px 8px 12px;
+  border-left: none;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(10, 26, 58, 0.95), rgba(6, 16, 41, 0.98));
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+  max-height: min(80vh, 720px);
+  overflow-y: auto;
+}
+.menu-group-academico .group-head.active {
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--text);
+}
+
+.submenu-finanzas {
+  margin-left: 6px;
+  padding: 8px 8px 12px;
+  border-left: none;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(10, 26, 58, 0.95), rgba(6, 16, 41, 0.98));
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+  max-height: none;
+  overflow: visible;
+}
+.menu-group-finanzas .group-head.active {
+  background: rgba(20, 184, 166, 0.14);
+  color: var(--text);
+}
+
+.submenu-talento {
+  @extend .submenu-rrhh;
+}
+.menu-group-talento .group-head.active {
+  background: rgba(236, 72, 153, 0.12);
+  color: var(--text);
+}
+
 .submenu-nested {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,6 @@
 const Config = require('../models/Config');
 const { ensureConfigDocument } = require('./configEnsure');
+const { normalizarReglasReferidor, REGLAS_REFERIDOR_DEFAULT } = require('./envioCorreoAlumnoDestinos');
 
 const CLAVE = 'envioCorreosAlumno';
 
@@ -7,6 +8,7 @@ const DEFAULTS = {
   clave: CLAVE,
   enviarCertificados: true,
   enviarComprobantesIngreso: true,
+  referidorComercial: REGLAS_REFERIDOR_DEFAULT,
 };
 
 let cache = null;
@@ -18,6 +20,7 @@ function normalizar(body = {}) {
     enviarCertificados: body.enviarCertificados !== false && body.enviarCertificados !== 'false',
     enviarComprobantesIngreso:
       body.enviarComprobantesIngreso !== false && body.enviarComprobantesIngreso !== 'false',
+    referidorComercial: normalizarReglasReferidor(body.referidorComercial || REGLAS_REFERIDOR_DEFAULT),
   };
 }
 

@@ -175,6 +175,13 @@ export const routes: Routes = [
           import('./features/aula-virtual/blog-admin.component').then((m) => m.BlogAdminComponent),
       },
       {
+        path: 'aula-virtual/galeria',
+        canActivate: [adminGuard],
+        data: { title: 'Galería del portal' },
+        loadComponent: () =>
+          import('./features/aula-virtual/galeria-admin.component').then((m) => m.GaleriaAdminComponent),
+      },
+      {
         path: 'aula-virtual/foro',
         canActivate: [permisoGuard],
         data: {

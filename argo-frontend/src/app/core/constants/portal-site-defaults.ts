@@ -7,6 +7,8 @@ export type PortalPaginaKey =
   | 'aula'
   | 'fundacion'
   | 'consultaCertificados'
+  | 'cursosConduccion'
+  | 'galeria'
   | 'blog'
   | 'acerca';
 
@@ -65,7 +67,10 @@ export const PORTAL_HOME_SECCIONES_ORDEN = [
   'infoCards',
   'ofertas',
   'beneficios',
+  'licencias',
+  'examenTeorico',
   'quoteBand',
+  'fotosInicio',
   'serviciosEmpresa',
   'carreras',
   'cursosVirtuales',
@@ -83,7 +88,10 @@ export const PORTAL_HOME_SECCIONES_LABELS: Record<string, string> = {
   infoCards: 'Tarjetas de contacto',
   ofertas: 'Qué ofrecemos',
   beneficios: 'Beneficios',
+  licencias: 'Licencias de conducción',
+  examenTeorico: 'Examen teórico (normatividad)',
   quoteBand: 'Frase destacada',
+  fotosInicio: 'Fotos destacadas del inicio',
   serviciosEmpresa: 'Servicios para empresas',
   testimonios: 'Testimonios',
   valores: 'Valores',
@@ -103,7 +111,13 @@ export const PORTAL_PAGINA_META: { key: PortalPaginaKey; titulo: string; descrip
   { key: 'fundacion', titulo: 'Institucional', descripcion: 'Página institucional (renombrable: Empresa, Nosotros…)' },
   { key: 'acerca', titulo: 'Acerca de', descripcion: 'Contacto e información de la institución' },
   { key: 'consultaCertificados', titulo: 'Certificados', descripcion: 'Consulta pública de certificados' },
+  {
+    key: 'cursosConduccion',
+    titulo: 'Cursos conducción',
+    descripcion: 'Categorías de licencia y resoluciones del CEA',
+  },
   { key: 'blog', titulo: 'Blog', descripcion: 'Noticias y artículos del portal' },
+  { key: 'galeria', titulo: 'Galería', descripcion: 'Fotos y videos de la institución' },
 ];
 
 /** Orden canónico de bloques del inicio (editor + vista previa). */
@@ -131,7 +145,20 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
       paginas[m.key] = {
         activa: true,
         etiquetaMenu: m.titulo,
-        ruta: m.key === 'home' ? '/' : `/${m.key === 'consultaCertificados' ? 'consulta-certificados' : m.key === 'blog' ? 'blog' : m.key}`,
+        ruta:
+          m.key === 'home'
+            ? '/'
+            : `/${
+                m.key === 'consultaCertificados'
+                  ? 'consulta-certificados'
+                  : m.key === 'cursosConduccion'
+                    ? 'cursos-conduccion'
+                    : m.key === 'blog'
+                      ? 'blog'
+                      : m.key === 'galeria'
+                        ? 'galeria'
+                        : m.key
+              }`,
       };
     }
   }

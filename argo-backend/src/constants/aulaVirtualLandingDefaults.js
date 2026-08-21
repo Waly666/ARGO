@@ -1,4 +1,9 @@
 const { FUNDACION_LANDING_DEFAULTS } = require('./aulaVirtualFundacionDefaults');
+const { ACERCA_LANDING_DEFAULTS } = require('./aulaVirtualAcercaDefaults');
+const { EXAMEN_TEORICO_DEFAULTS } = require('./aulaVirtualExamenTeoricoDefaults');
+const { CURSOS_CONDUCCION_DEFAULTS } = require('./aulaVirtualCursosConduccionDefaults');
+const { GALERIA_DEFAULTS } = require('./aulaVirtualGaleriaDefaults');
+const { FOTOS_INICIO_DEFAULTS } = require('./aulaVirtualHomeFotosDefaults');
 const { DEFAULT_CEA_NOMBRE, DEFAULT_CEA_CORTO } = require('./portalBrandDefaults');
 
 /** Contenido editable del landing del portal aula virtual (valores por defecto). */
@@ -30,6 +35,8 @@ const LANDING_DEFAULTS = {
     acerca: 'Acerca de',
     fundacion: 'CEA',
     consultaCertificados: 'Certificados',
+    cursosConduccion: 'Cursos conducción',
+    galeria: 'Galería',
     blog: 'Blog',
     acceder: 'Acceder',
     registrarse: 'Registrarse',
@@ -92,6 +99,86 @@ const LANDING_DEFAULTS = {
       },
     ],
   },
+  licencias: {
+    kicker: 'Trámites y certificaciones',
+    titulo: 'Elige tu licencia',
+    lead: 'A continuación las licencias que puedes solicitar con nosotros',
+    items: [
+      {
+        icon: '🏍️',
+        codigo: 'A2',
+        titulo: 'Categoría A2',
+        incluye: [
+          '25 Horas Teoría',
+          '3 Horas Práctica en Taller',
+          '15 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia A2',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: false,
+      },
+      {
+        icon: '🚗',
+        codigo: 'B1',
+        titulo: 'Categoría B1',
+        incluye: [
+          '25 Horas Teoría',
+          '5 Horas Práctica en Taller',
+          '20 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia B1',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: false,
+      },
+      {
+        icon: '🚌',
+        codigo: 'C1',
+        titulo: 'Categoría C1',
+        incluye: [
+          '30 Horas Teoría',
+          '5 Horas Práctica en Taller',
+          '30 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia C1',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: false,
+      },
+      {
+        icon: '🚛',
+        codigo: 'C2',
+        titulo: 'Categoría C2',
+        incluye: [
+          '20 Horas Teoría',
+          '10 Horas Práctica en Taller',
+          '14 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia C2',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: true,
+      },
+    ],
+  },
+  examenTeorico: JSON.parse(JSON.stringify(EXAMEN_TEORICO_DEFAULTS)),
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [
@@ -344,6 +431,8 @@ const LANDING_DEFAULTS = {
     emptyTitulo: 'Próximamente publicaremos artículos',
     emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
   },
+  galeria: JSON.parse(JSON.stringify(GALERIA_DEFAULTS)),
+  fotosInicio: JSON.parse(JSON.stringify(FOTOS_INICIO_DEFAULTS)),
   pilares: {
     tabCapacitacion: 'Capacitación',
     tabCampanas: 'Campañas',
@@ -366,6 +455,8 @@ const LANDING_DEFAULTS = {
     'Planes de movilidad sostenible y segura',
   ],
   fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)),
+  acerca: JSON.parse(JSON.stringify(ACERCA_LANDING_DEFAULTS)),
+  cursosConduccion: JSON.parse(JSON.stringify(CURSOS_CONDUCCION_DEFAULTS)),
   popup: {
     activo: false,
     imagenUrl: '',
@@ -412,6 +503,8 @@ Centro de Enseñanza Automovilística
 ✅ Capacitación para el sector empresarial
 ✅ Cursos y certificaciones conforme a la normativa aplicable`,
       },
+      cursosConduccion: { activo: false, texto: '' },
+      galeria: { activo: false, texto: '' },
       blog: { activo: false, texto: '' },
       acerca: { activo: false, texto: '' },
     },

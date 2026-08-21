@@ -211,7 +211,11 @@ exports.plantillaMigracion = async (req, res, next) => {
     }).catch(() => {});
     res.setHeader('Content-Disposition', 'attachment; filename="plantilla-migracion-argo.xlsx"');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.send(buffer);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.status(200).send(buffer);
   } catch (e) {
     next(e);
   }

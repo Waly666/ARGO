@@ -6,6 +6,7 @@ const { esIngresoAlumno } = require('../utils/ingresoClasificacion');
 const { sendMail, smtpConfigured } = require('./mail');
 const { obtenerConfigPortalPublica, obtenerConfigAula } = require('./aulaVirtualPortal');
 const { obtenerConfigEnvioCorreosAlumno } = require('./configEnvioCorreosAlumno');
+const { resolverDestinatariosCorreoAlumno } = require('./envioCorreoAlumnoDestinos');
 const { armarRecibo } = require('../controllers/reciboController');
 const { generarHtmlIngreso } = require('./comprobanteHtml');
 const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
@@ -62,7 +63,9 @@ function etiquetaTipoAbono(tipoAbono) {
 
 function armarContenidoCorreo({
   nombreCea,
-  nombre,
+  nombreDestinatario,
+  nombreAlumno,
+  esReferidor,
   numeroRecibo,
   valor,
   formaPago,
@@ -78,16 +81,29 @@ function armarContenidoCorreo({
   const tipoTxt = etiquetaTipoAbono(tipoAbono);
   const subject = `${nombreCea} — Comprobante de pago${numeroRecibo ? ` ${numeroRecibo}` : ''}`;
 
+  const saludo = nombreDestinatario
+    ? `Estimado(a) ${nombreDestinatario},`
+    : esReferidor
+      ? 'Estimado(a),'
+      : nombreAlumno
+        ? `Estimado(a) ${nombreAlumno},`
+        : 'Estimado(a) alumno(a),';
+
+  const cuerpoPrincipal = esReferidor
+    ? `${nombreCea} registra un pago del alumno ${nombreAlumno || 'vinculado a su gestión'}. Adjunto encontrará el comprobante de ingreso en formato PDF.`
+    : `${nombreCea} confirma el registro de su pago. Adjunto encontrará el comprobante de ingreso en formato PDF.`;
+
   const detalleLineas =
     Array.isArray(detalle) && detalle.length
       ? detalle.map((d) => `  · ${d.descripcion || 'Ítem'}: ${fmtMoney(d.valor)}`).join('\n')
       : null;
 
   const textParts = [
-    nombre ? `Estimado(a) ${nombre},` : 'Estimado(a) alumno(a),',
+    saludo,
     '',
-    `${nombreCea} confirma el registro de su pago. Adjunto encontrará el comprobante de ingreso en formato PDF.`,
+    cuerpoPrincipal,
     '',
+    esReferidor && nombreAlumno ? `Alumno: ${nombreAlumno}` : null,
     numeroRecibo ? `Comprobante N°: ${numeroRecibo}` : null,
     `Valor pagado: ${valorTxt}`,
     `Tipo de pago: ${tipoTxt}`,
@@ -96,7 +112,7 @@ function armarContenidoCorreo({
     detalleLineas ? `Detalle:\n${detalleLineas}` : null,
     `Fecha del pago: ${fechaTxt}`,
     '',
-    'Conserve este comprobante como soporte de su pago.',
+    'Conserve este comprobante como soporte del pago.',
     '',
     'Si tiene alguna inquietud, comuníquese con nuestro equipo de atención.',
     contactoEmail ? `Correo: ${contactoEmail}` : null,
@@ -118,8 +134,8 @@ function armarContenidoCorreo({
 
   const html = `
     <div style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;line-height:1.55;max-width:640px">
-      <p>${nombre ? `Estimado(a) <strong>${escHtml(nombre)}</strong>,` : 'Estimado(a) alumno(a),'}</p>
-      <p><strong>${escHtml(nombreCea)}</strong> confirma el registro de su pago. Adjunto encontrará el <strong>comprobante de ingreso</strong> en formato PDF.</p>
+      <p>${escHtml(saludo)}</p>
+      <p><strong>${escHtml(nombreCea)}</strong> ${esReferidor ? `registra un pago del alumno <strong>${escHtml(nombreAlumno || 'vinculado a su gestión')}</strong>.` : 'confirma el registro de su pago.'} Adjunto encontrará el <strong>comprobante de ingreso</strong> en formato PDF.</p>
       <table style="margin:1rem 0;border-collapse:collapse;width:100%;font-size:0.95rem">
         ${numeroRecibo ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top">Comprobante N°</td><td style="padding:6px 0"><strong>${escHtml(numeroRecibo)}</strong></td></tr>` : ''}
         <tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top">Valor pagado</td><td style="padding:6px 0"><strong>${escHtml(valorTxt)}</strong></td></tr>
@@ -129,7 +145,7 @@ function armarContenidoCorreo({
         ${detalleHtml}
         <tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top">Fecha del pago</td><td style="padding:6px 0">${escHtml(fechaTxt)}</td></tr>
       </table>
-      <p>Conserve este comprobante como soporte de su pago.</p>
+      <p>Conserve este comprobante como soporte del pago.</p>
       <p style="margin-top:1.5rem;font-size:0.9rem;color:#475569">Si tiene alguna inquietud, comuníquese con nuestro equipo de atención${
         contactoEmail || contactoTelefono
           ? `: ${[contactoEmail, contactoTelefono].filter(Boolean).map(escHtml).join(' · ')}`
@@ -148,9 +164,6 @@ function armarContenidoCorreo({
  */
 async function enviarReciboPorCorreo(ingresoId, opts = {}) {
   const cfgEnvio = await obtenerConfigEnvioCorreosAlumno();
-  if (!cfgEnvio.enviarComprobantesIngreso) {
-    return { enviado: false, motivo: 'envio_desactivado' };
-  }
 
   if (!smtpConfigured()) {
     return { enviado: false, motivo: 'smtp_no_configurado' };
@@ -166,14 +179,19 @@ async function enviarReciboPorCorreo(ingresoId, opts = {}) {
   const alumno = ing.numDoc
     ? await DatosAlumno.findOne(numDocQuery(ing.numDoc)).lean()
     : null;
-  const email = String(alumno?.correo || '').trim().toLowerCase();
-  if (!email || !email.includes('@')) {
-    return { enviado: false, motivo: 'sin_correo_alumno', numDoc: ing.numDoc };
+
+  const { destinatarios, motivo } = await resolverDestinatariosCorreoAlumno({
+    alumno,
+    tipoCorreo: 'comprobanteIngreso',
+    cfg: cfgEnvio,
+  });
+  if (!destinatarios.length) {
+    return { enviado: false, motivo: motivo || 'sin_destinatarios', numDoc: ing.numDoc };
   }
 
   const portal = await obtenerConfigPortalPublica().catch(() => ({}));
   const nombreCea = String(portal?.nombreCea || 'CEA').trim() || 'CEA';
-  const nombre = nombreCompleto(alumno) || data.alumno?.nombreCompleto || '';
+  const nombreAlumno = nombreCompleto(alumno) || data.alumno?.nombreCompleto || '';
   const numeroRecibo = data.numeroRecibo || ing.numRecibo || '';
   const concepto =
     String(ing.concepto || '').trim() ||
@@ -182,57 +200,75 @@ async function enviarReciboPorCorreo(ingresoId, opts = {}) {
       ? `Varios servicios (${data.detalle.length})`
       : '');
 
-  const { subject, text, html } = armarContenidoCorreo({
-    nombreCea,
-    nombre,
-    numeroRecibo,
-    valor: ing.valor,
-    formaPago: ing.formaPago || ing.tipoPagoDescr || '',
-    concepto,
-    fechaPago: ing.fecha || ing.createdAt,
-    tipoAbono: ing.tipoAbono,
-    detalle: data.detalle,
-    contactoEmail: portal?.email || '',
-    contactoTelefono: portal?.telefono || '',
-  });
-
   let pdfBuffer;
   try {
     pdfBuffer = await generarPdfRecibo(ingresoId);
   } catch (e) {
     console.error('[reciboEmail] Error generando PDF:', e?.message || e);
-    return { enviado: false, motivo: 'error_pdf', email };
+    return { enviado: false, motivo: 'error_pdf' };
   }
   if (!pdfBuffer?.length) {
-    return { enviado: false, motivo: 'pdf_vacio', email };
+    return { enviado: false, motivo: 'pdf_vacio' };
   }
 
   const filename = `${sanitizarNombreArchivo(`recibo-${numeroRecibo || ingresoId}`)}.pdf`;
+  const from = await mailFromHeader(nombreCea);
+  const enviados = [];
+  const errores = [];
 
-  try {
-    await sendMail({
-      to: email,
-      subject,
-      text,
-      html,
-      from: await mailFromHeader(nombreCea),
-      attachments: [
-        {
-          filename,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ],
+  for (const dest of destinatarios) {
+    const esReferidor = dest.rol === 'referidor';
+    const { subject, text, html } = armarContenidoCorreo({
+      nombreCea,
+      nombreDestinatario: esReferidor ? dest.nombre : null,
+      nombreAlumno,
+      esReferidor,
+      numeroRecibo,
+      valor: ing.valor,
+      formaPago: ing.formaPago || ing.tipoPagoDescr || '',
+      concepto,
+      fechaPago: ing.fecha || ing.createdAt,
+      tipoAbono: ing.tipoAbono,
+      detalle: data.detalle,
+      contactoEmail: portal?.email || '',
+      contactoTelefono: portal?.telefono || '',
     });
-  } catch (e) {
-    console.error('[reciboEmail] Error enviando correo:', e?.message || e);
-    return { enviado: false, motivo: 'error_envio', email };
+
+    try {
+      await sendMail({
+        to: dest.email,
+        subject,
+        text,
+        html,
+        from,
+        attachments: [
+          {
+            filename,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+      enviados.push(dest.email);
+      console.info(
+        `[reciboEmail] Recibo ${numeroRecibo || ingresoId} enviado a ${dest.email} (${nombreCea})`,
+      );
+    } catch (e) {
+      console.error('[reciboEmail] Error enviando correo:', e?.message || e);
+      errores.push({ email: dest.email, error: e?.message || 'error_envio' });
+    }
   }
 
-  console.info(
-    `[reciboEmail] Recibo ${numeroRecibo || ingresoId} enviado a ${email} (${nombreCea})`,
-  );
-  return { enviado: true, email };
+  if (!enviados.length) {
+    return { enviado: false, motivo: 'error_envio', errores };
+  }
+
+  return {
+    enviado: true,
+    email: enviados.join(', '),
+    enviados,
+    errores: errores.length ? errores : undefined,
+  };
 }
 
 /** Programa el envío sin bloquear el registro del ingreso. */

@@ -1,0 +1,234 @@
+<div class="pcc">
+  <div class="pcc-toolbar">
+    <p class="psb-muted">
+      Página <strong>/cursos-conduccion</strong> con información del CEA, resoluciones descargables y tarjetas de licencias.
+      Los textos se guardan al publicar; los PDF se suben al instante (luego publique).
+    </p>
+    <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
+  </div>
+
+  <div class="pcc-stack">
+    <h3 class="psb-subtitle">Encabezado de la página</h3>
+    <label class="psb-field psb-field--plain">
+      <span>Etiqueta pequeña (kicker)</span>
+      <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.hero.kicker" placeholder="Cursos de conducción" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Título principal</span>
+      <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.tituloPrincipal" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto institucional (habilitación Mintransporte)</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="cursosConduccion.textoInstitucional"></textarea>
+    </label>
+    <div class="pcc-hero-image">
+      <span class="pcc-field-label">Foto del encabezado</span>
+      <p class="psb-hint">
+        Imagen a la derecha del título (como en la página Fundación). Se guarda al instante; no necesita publicar solo por la foto.
+        PNG, JPG o WEBP. Máx. 8 MB.
+      </p>
+      <div class="pcc-hero-image__row">
+        @if (heroPreviewUrl(); as heroUrl) {
+          <figure class="pcc-hero-image__preview">
+            <img [src]="heroUrl" alt="Vista previa" />
+          </figure>
+        } @else {
+          <div class="pcc-hero-image__preview pcc-hero-image__preview--empty">
+            Sin imagen — se usará la predeterminada del portal
+          </div>
+        }
+        <div class="pcc-hero-image__actions">
+          <label class="pcc-btn-file" [class.pcc-btn-file--busy]="heroUploading()">
+            {{ heroUploading() ? 'Subiendo…' : 'Elegir imagen' }}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              (change)="onHeroImagen($event)"
+              [disabled]="heroUploading()"
+            />
+          </label>
+          @if (tieneImagenHero()) {
+            <button type="button" class="psb-link" [disabled]="heroUploading()" (click)="quitarImagenHero()">
+              Quitar imagen
+            </button>
+          }
+        </div>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Texto alternativo de la imagen (accesibilidad)</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.hero.imagenAlt" />
+      </label>
+    </div>
+
+    <h3 class="psb-subtitle">Bloque motivacional (después del encabezado)</h3>
+    <div class="pcc-card">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta pequeña</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto principal</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.lead"></textarea>
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto de acompañamiento</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.institucion"></textarea>
+      </label>
+      <p class="psb-hint">Tarjetas de beneficios (3 columnas en el sitio)</p>
+      @for (b of cursosConduccion.invitacion.beneficios; track $index) {
+        <div class="pcc-subcard">
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Icono</span>
+              <input type="text" class="psb-input" [(ngModel)]="b.icon" maxlength="4" />
+            </label>
+            <label class="psb-field psb-field--plain psb-field--span2">
+              <span>Título</span>
+              <input type="text" class="psb-input" [(ngModel)]="b.titulo" />
+            </label>
+          </div>
+          <label class="psb-field psb-field--plain">
+            <span>Descripción</span>
+            <textarea class="psb-input" rows="2" [(ngModel)]="b.texto"></textarea>
+          </label>
+          <button type="button" class="psb-link" (click)="removeBeneficio($index)">Quitar tarjeta</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addBeneficio()">+ Agregar tarjeta</button>
+      <label class="psb-field psb-field--plain">
+        <span>Frase destacada</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.destacado" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto de cierre</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.invitacion.cierre"></textarea>
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Firma / cierre final</span>
+        <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.firma" />
+      </label>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Botón cursos</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.btnCursos" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Botón registro</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.invitacion.btnRegistro" />
+        </label>
+      </div>
+    </div>
+
+    <h3 class="psb-subtitle">Resoluciones (descargables)</h3>
+    @for (res of cursosConduccion.resoluciones; track $index) {
+      <div class="pcc-card">
+        <label class="psb-field psb-field--plain">
+          <span>Título de la resolución</span>
+          <input type="text" class="psb-input" [(ngModel)]="res.titulo" placeholder="Resolución 2267 de 06/08/2014 Mintransporte" />
+        </label>
+        <div class="pcc-file-row">
+          @if (res.archivoUrl) {
+            <span class="pcc-file-name">{{ res.nombreArchivo || res.archivoUrl }}</span>
+            @if (archivoPreviewUrl(res.archivoUrl); as url) {
+              <a class="psb-link" [href]="url" target="_blank" rel="noopener noreferrer">Ver PDF</a>
+            }
+            <button type="button" class="psb-link" (click)="quitarArchivoResolucion($index)">Quitar archivo</button>
+          } @else {
+            <span class="psb-hint">Sin archivo PDF cargado</span>
+          }
+          <label class="pcc-btn-file" [class.pcc-btn-file--busy]="uploadIndex() === $index">
+            {{ uploadIndex() === $index ? 'Subiendo…' : 'Subir PDF' }}
+            <input
+              type="file"
+              accept="application/pdf,.pdf"
+              (change)="onResolucionArchivo($event, $index)"
+              [disabled]="uploadIndex() === $index"
+            />
+          </label>
+        </div>
+        <button type="button" class="psb-link pcc-remove" (click)="removeResolucion($index)">Eliminar resolución</button>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addResolucion()">+ Agregar resolución</button>
+
+    <h3 class="psb-subtitle">Licencias de conducción</h3>
+    <div class="pcc-card">
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta pequeña</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.licencias.kicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="cursosConduccion.licencias.titulo" />
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Texto introductorio</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="cursosConduccion.licencias.lead"></textarea>
+      </label>
+    </div>
+
+    @for (item of cursosConduccion.licencias.items; track $index; let i = $index) {
+      <div class="pcc-card">
+        <div class="pcc-card__head">
+          <strong>Licencia {{ i + 1 }}</strong>
+          <button type="button" class="psb-link" (click)="removeLicencia(i)">Quitar</button>
+        </div>
+        <div class="psb-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" maxlength="4" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Código</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.codigo" placeholder="A2" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Título tarjeta</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.titulo" placeholder="Categoría A2" />
+          </label>
+        </div>
+        <p class="psb-hint">Incluye (una línea por ítem)</p>
+        @for (linea of item.incluye; track $index; let j = $index) {
+          <div class="pcc-inline-row">
+            <input type="text" class="psb-input" [(ngModel)]="item.incluye[j]" />
+            <button type="button" class="psb-link" (click)="removeLicenciaIncluye(i, j)">−</button>
+          </div>
+        }
+        <button type="button" class="psb-link" (click)="addLicenciaIncluye(i)">+ Línea</button>
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Etiqueta licencia</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.licenciaLabel" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Valor / precio</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.valor" placeholder="Consulte valor en sede" />
+          </label>
+        </div>
+        <div class="psb-grid2">
+          <label class="psb-field psb-field--plain">
+            <span>Texto botón</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.btnTexto" />
+          </label>
+          <label class="psb-field psb-field--plain">
+            <span>Enlace botón</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.btnUrl" placeholder="/registro" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>
+            <input type="checkbox" [(ngModel)]="item.destacada" />
+            Destacar tarjeta (franja superior)
+          </span>
+        </label>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addLicencia()">+ Añadir licencia</button>
+  </div>
+</div>

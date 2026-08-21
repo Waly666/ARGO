@@ -227,7 +227,7 @@ export class SistemaService {
     }
     return this.http.get(`${this.base}/migracion/plantilla`, {
       responseType: 'blob',
-      params,
+      params: { ...params, _t: String(Date.now()) },
     });
   }
 

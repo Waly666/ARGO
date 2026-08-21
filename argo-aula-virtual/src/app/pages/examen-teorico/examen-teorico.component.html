@@ -1,0 +1,165 @@
+<div class="et-page">
+  <section class="et-hero">
+    <div class="container">
+      <a routerLink="/" class="et-back">← Volver al inicio</a>
+
+      <header class="et-hero__head">
+        <p class="et-kicker">{{ contenido().kicker }}</p>
+        <h1 class="et-title">
+          <span>{{ contenido().titulo }}</span>
+          <span class="et-title__accent">{{ contenido().tituloLinea2 }}</span>
+        </h1>
+      </header>
+
+      <div class="et-fecha">
+        <av-portal-icon icon="check-badge" class="et-fecha__icon" size="1.35rem" color="currentColor" />
+        <p class="et-fecha__text">
+          {{ contenido().fechaBannerPrefijo }}
+          <strong class="et-fecha__destacada">{{ contenido().fechaDestacada }}</strong>
+          {{ contenido().fechaBannerSufijo }}
+        </p>
+      </div>
+
+      @if (contenido().paginaIntro.trim()) {
+        <p class="et-intro">{{ contenido().paginaIntro }}</p>
+      }
+    </div>
+  </section>
+
+  <section class="et-puntos">
+    <div class="container">
+      <h2 class="et-section-title">Lo que debe saber</h2>
+      <ol class="et-list">
+        @for (item of contenido().items; track item.numero; let i = $index) {
+          <li class="et-item" [ngClass]="'et-item--' + item.acento">
+            <span class="et-item__tab" aria-hidden="true">
+              <span class="et-item__num">{{ item.numero }}</span>
+            </span>
+            <span class="et-item__icon-wrap" aria-hidden="true">
+              <av-portal-icon [icon]="item.icon" class="et-item__icon" size="1.45rem" color="currentColor" />
+            </span>
+            <div class="et-item__body">
+              <h3>{{ item.titulo }}</h3>
+              <p>{{ item.texto }}</p>
+            </div>
+          </li>
+        }
+      </ol>
+    </div>
+  </section>
+
+  @if (contenido().normograma.items.length) {
+    <section class="et-normograma">
+      <div class="container">
+        <header class="et-normograma__head">
+          <p class="et-kicker">{{ contenido().normograma.kicker }}</p>
+          <h2 class="et-normograma__title">{{ contenido().normograma.titulo }}</h2>
+          @if (contenido().normograma.subtitulo.trim()) {
+            <p class="et-normograma__pill">{{ contenido().normograma.subtitulo }}</p>
+          }
+          @if (contenido().normograma.lead.trim()) {
+            <p class="et-normograma__lead">{{ contenido().normograma.lead }}</p>
+          }
+        </header>
+
+        <ol class="et-normograma__timeline">
+          @for (norma of contenido().normograma.items; track $index) {
+            <li class="et-norma" [ngClass]="'et-norma--' + norma.acento">
+              <div class="et-norma__marker" aria-hidden="true">
+                <span class="et-norma__icon-wrap">
+                  <av-portal-icon [icon]="norma.icon" class="et-norma__icon" size="1.2rem" color="currentColor" />
+                </span>
+              </div>
+              <article class="et-norma__card">
+                <header class="et-norma__header">
+                  <h3 class="et-norma__nombre">{{ norma.norma }}</h3>
+                  @if (norma.fecha.trim() && norma.fecha !== '—') {
+                    <time class="et-norma__fecha">{{ norma.fecha }}</time>
+                  }
+                </header>
+                <div class="et-norma__grid">
+                  <div class="et-norma__col">
+                    <span class="et-norma__label">¿Qué establece?</span>
+                    <p>{{ norma.queEstablece }}</p>
+                  </div>
+                  @if (norma.detalle.trim() && norma.detalle !== '—') {
+                    <div class="et-norma__col">
+                      <span class="et-norma__label">Detalle / alcance</span>
+                      <p>{{ norma.detalle }}</p>
+                    </div>
+                  }
+                </div>
+                <footer class="et-norma__footer">
+                  @if (normaUrl(norma); as url) {
+                    <a
+                      class="btn btn-primary et-norma__btn"
+                      [href]="url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download>
+                      Descargar PDF — {{ normaNombre(norma) }}
+                    </a>
+                  } @else {
+                    <span class="et-norma__pendiente">PDF de la norma pendiente de cargar</span>
+                  }
+                </footer>
+              </article>
+            </li>
+          }
+        </ol>
+      </div>
+    </section>
+  }
+
+  @if (contenido().resoluciones.length) {
+    <section class="et-resoluciones">
+      <div class="container">
+        <header class="et-resoluciones__head">
+          <p class="et-kicker et-kicker--light">{{ contenido().resolucionesKicker }}</p>
+          <h2>{{ contenido().resolucionesTitulo }}</h2>
+          <p class="et-resoluciones__lead">{{ contenido().resolucionesLead }}</p>
+        </header>
+        <ul class="et-resoluciones__list">
+          @for (res of contenido().resoluciones; track $index) {
+            @if (res.titulo.trim() || res.archivoUrl.trim()) {
+              <li class="et-resolucion">
+                <div class="et-resolucion__info">
+                  <av-portal-icon icon="document" class="et-resolucion__icon" size="1.25rem" color="currentColor" />
+                  <span class="et-resolucion__titulo">{{ res.titulo || 'Documento' }}</span>
+                </div>
+                @if (resolucionUrl(res); as url) {
+                  <a class="btn btn-primary et-resolucion__btn" [href]="url" target="_blank" rel="noopener noreferrer" download>
+                    Descargar {{ resolucionNombre(res) }}
+                  </a>
+                } @else {
+                  <span class="et-resolucion__pendiente">PDF pendiente de cargar</span>
+                }
+              </li>
+            }
+          }
+        </ul>
+      </div>
+    </section>
+  }
+
+  @if (contenido().ctaFinalTexto.trim()) {
+    <section class="et-cta">
+      <div class="container et-cta__inner">
+        <p>¿Listo para prepararse? Conozca nuestros cursos de conducción y cumpla con la normativa vigente.</p>
+        @if (enlaceEsExterno(contenido().ctaFinalUrl)) {
+          <a
+            class="btn btn-primary"
+            [href]="contenido().ctaFinalUrl"
+            target="_blank"
+            rel="noopener noreferrer">
+            {{ contenido().ctaFinalTexto }}
+          </a>
+        } @else {
+          <a class="btn btn-primary" [routerLink]="enlaceRuta(contenido().ctaFinalUrl)">
+            {{ contenido().ctaFinalTexto }}
+          </a>
+        }
+      </div>
+    </section>
+  }
+</div>

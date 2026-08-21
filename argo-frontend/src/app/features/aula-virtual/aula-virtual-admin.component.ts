@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { AuthService } from '../../core/services/auth.service';
 import {
   AulaVirtualAdminService,
   CursoVirtualAdmin,
@@ -25,10 +26,12 @@ type TabAula = 'cursos' | 'usuarios' | 'empresa' | 'portal';
 })
 export class AulaVirtualAdminComponent implements OnInit {
   private svc = inject(AulaVirtualAdminService);
+  private auth = inject(AuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   readonly portalUrl = 'http://localhost:4202/';
+  readonly esAdmin = this.auth.isAdmin;
 
   tab = signal<TabAula>('cursos');
   cursos = signal<CursoVirtualAdmin[]>([]);

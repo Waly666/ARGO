@@ -6,7 +6,25 @@ import {
 } from './fundacion-landing-defaults';
 import { PortalPaginaKey } from './portal-site-defaults';
 import { mergePortalAsistente, type LegacyConsultaAsistente } from '../utils/portal-asistente.util';
+import {
+  CURSOS_CONDUCCION_LANDING_DEFAULTS,
+  mergeCursosConduccionLanding,
+  PortalCursosConduccionLanding,
+} from './cursos-conduccion-landing-defaults';
+import {
+  ACERCA_LANDING_DEFAULTS,
+  mergeAcercaLanding,
+  PortalAcercaLanding,
+} from './acerca-landing-defaults';
+import {
+  EXAMEN_TEORICO_LANDING_DEFAULTS,
+  mergeExamenTeoricoLanding,
+  PortalExamenTeoricoLanding,
+} from './examen-teorico-landing-defaults';
 
+export type { PortalCursosConduccionLanding };
+export type { PortalAcercaLanding };
+export type { PortalExamenTeoricoLanding };
 export type { PortalFundacionLanding };
 export interface LandingItemIcon {
   icon: string;
@@ -48,6 +66,18 @@ export interface LandingCarrera {
   horas: number;
   semestres: number;
   jornadas: string;
+}
+
+export interface LandingLicenciaItem {
+  icon: string;
+  codigo: string;
+  titulo: string;
+  incluye: string[];
+  licenciaLabel: string;
+  valor: string;
+  btnTexto: string;
+  btnUrl: string;
+  destacada: boolean;
 }
 
 export interface LandingInfoCard {
@@ -116,6 +146,39 @@ Centro de Enseñanza Automovilística
 ✅ Capacitación para el sector empresarial
 ✅ Cursos y certificaciones conforme a la normativa aplicable`;
 
+export interface PortalGaleriaFoto {
+  id: string;
+  url: string;
+  urlAbsoluta?: string;
+  leyenda: string;
+  tipo: 'imagen' | 'video';
+  orden: number;
+}
+
+export interface PortalGaleriaLanding {
+  kicker: string;
+  titulo: string;
+  lead: string;
+  emptyTitulo: string;
+  emptyTexto: string;
+  fotos: PortalGaleriaFoto[];
+}
+
+export interface PortalHomeFoto {
+  url: string;
+  urlAbsoluta?: string;
+  leyenda: string;
+}
+
+export interface PortalFotosInicioLanding {
+  kicker: string;
+  titulo: string;
+  lead: string;
+  fotos: PortalHomeFoto[];
+}
+
+export const MAX_FOTOS_INICIO = 2;
+
 export interface PortalLandingConfig {
   instBarTag: string;
   quoteText: string;
@@ -137,6 +200,8 @@ export interface PortalLandingConfig {
     acerca: string;
     fundacion: string;
     consultaCertificados: string;
+    cursosConduccion: string;
+    galeria: string;
     blog: string;
     acceder: string;
     registrarse: string;
@@ -158,6 +223,8 @@ export interface PortalLandingConfig {
   };
   ofertas: { titulo: string; lead: string; items: LandingItemIcon[] };
   beneficios: { kicker: string; titulo: string; lead: string; items: LandingItemIcon[] };
+  licencias: { kicker: string; titulo: string; lead: string; items: LandingLicenciaItem[] };
+  examenTeorico: PortalExamenTeoricoLanding;
   servicios: { titulo: string; items: LandingServicioItem[] };
   valores: { titulo: string; lead: string; items: LandingItemBasico[] };
   testimonios: { kicker: string; titulo: string; lead: string; items: LandingTestimonio[] };
@@ -188,6 +255,8 @@ export interface PortalLandingConfig {
     emptyTitulo: string;
     emptyTexto: string;
   };
+  galeria: PortalGaleriaLanding;
+  fotosInicio: PortalFotosInicioLanding;
   pilares: {
     tabCapacitacion: string;
     tabCampanas: string;
@@ -196,6 +265,8 @@ export interface PortalLandingConfig {
   };
   footerServicios: string[];
   fundacion: PortalFundacionLanding;
+  acerca: PortalAcercaLanding;
+  cursosConduccion: PortalCursosConduccionLanding;
   popup: PortalPopupConfig;
   consultaCertificados: PortalConsultaCertificadosConfig;
   asistente: PortalAsistenteConfig;
@@ -229,6 +300,8 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     acerca: 'Acerca de',
     fundacion: 'CEA',
     consultaCertificados: 'Certificados',
+    cursosConduccion: 'Cursos conducción',
+    galeria: 'Galería',
     blog: 'Blog',
     acceder: 'Acceder',
     registrarse: 'Registrarse',
@@ -291,6 +364,86 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
       },
     ],
   },
+  licencias: {
+    kicker: 'Trámites y certificaciones',
+    titulo: 'Elige tu licencia',
+    lead: 'A continuación las licencias que puedes solicitar con nosotros',
+    items: [
+      {
+        icon: '🏍️',
+        codigo: 'A2',
+        titulo: 'Categoría A2',
+        incluye: [
+          '25 Horas Teoría',
+          '3 Horas Práctica en Taller',
+          '15 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia A2',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: false,
+      },
+      {
+        icon: '🚗',
+        codigo: 'B1',
+        titulo: 'Categoría B1',
+        incluye: [
+          '25 Horas Teoría',
+          '5 Horas Práctica en Taller',
+          '20 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia B1',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: false,
+      },
+      {
+        icon: '🚌',
+        codigo: 'C1',
+        titulo: 'Categoría C1',
+        incluye: [
+          '30 Horas Teoría',
+          '5 Horas Práctica en Taller',
+          '30 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia C1',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: false,
+      },
+      {
+        icon: '🚛',
+        codigo: 'C2',
+        titulo: 'Categoría C2',
+        incluye: [
+          '20 Horas Teoría',
+          '10 Horas Práctica en Taller',
+          '14 Horas Práctica en Conducción',
+          'Certificado escuela de conducción',
+          'Examen médico',
+          'Trámites y costos RUNT',
+        ],
+        licenciaLabel: 'Licencia C2',
+        valor: 'Consulte valor en sede',
+        btnTexto: 'Solicitar ahora',
+        btnUrl: '/registro',
+        destacada: true,
+      },
+    ],
+  },
+  examenTeorico: JSON.parse(JSON.stringify(EXAMEN_TEORICO_LANDING_DEFAULTS)) as PortalExamenTeoricoLanding,
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [
@@ -543,6 +696,20 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     emptyTitulo: 'Próximamente publicaremos artículos',
     emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
   },
+  galeria: {
+    kicker: 'Nuestra institución',
+    titulo: 'Galería de fotos',
+    lead: 'Momentos de formación, eventos e instalaciones de nuestro centro de enseñanza.',
+    emptyTitulo: 'Galería en preparación',
+    emptyTexto: 'Pronto publicaremos fotografías de nuestras actividades.',
+    fotos: [],
+  },
+  fotosInicio: {
+    kicker: 'En imágenes',
+    titulo: 'Vida en nuestro centro',
+    lead: 'Formación, eventos y el día a día de quienes confían en nosotros.',
+    fotos: [],
+  },
   pilares: {
     tabCapacitacion: 'Capacitación',
     tabCampanas: 'Campañas',
@@ -565,6 +732,8 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     'Planes de movilidad sostenible y segura',
   ],
   fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)) as PortalFundacionLanding,
+  acerca: JSON.parse(JSON.stringify(ACERCA_LANDING_DEFAULTS)) as PortalAcercaLanding,
+  cursosConduccion: mergeCursosConduccionLanding(CURSOS_CONDUCCION_LANDING_DEFAULTS),
   popup: {
     activo: false,
     imagenUrl: '',
@@ -589,6 +758,8 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
       aula: { activo: false, texto: '' },
       fundacion: { activo: false, texto: '' },
       consultaCertificados: { activo: false, texto: PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT },
+      cursosConduccion: { activo: false, texto: '' },
+      galeria: { activo: false, texto: '' },
       blog: { activo: false, texto: '' },
       acerca: { activo: false, texto: '' },
     },
@@ -619,6 +790,18 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       ...raw.beneficios,
       items: raw.beneficios?.items?.length ? raw.beneficios.items : d.beneficios.items,
     },
+    licencias: {
+      ...d.licencias,
+      ...raw.licencias,
+      items: raw.licencias?.items?.length
+        ? raw.licencias.items.map((item, i) => ({
+            ...d.licencias.items[i],
+            ...item,
+            incluye: item.incluye?.length ? item.incluye : d.licencias.items[i]?.incluye || [],
+          }))
+        : d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
+    },
+    examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     servicios: {
       ...d.servicios,
       ...raw.servicios,
@@ -645,6 +828,16 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       features: raw.appMobile?.features?.length ? raw.appMobile.features : d.appMobile.features,
     },
     blog: { ...d.blog, ...raw.blog },
+    galeria: {
+      ...d.galeria,
+      ...raw.galeria,
+      fotos: raw.galeria?.fotos?.length ? raw.galeria.fotos : d.galeria.fotos,
+    },
+    fotosInicio: {
+      ...d.fotosInicio,
+      ...raw.fotosInicio,
+      fotos: raw.fotosInicio?.fotos?.length ? raw.fotosInicio.fotos : d.fotosInicio.fotos,
+    },
     faq: {
       ...d.faq,
       ...raw.faq,
@@ -672,6 +865,8 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     },
     footerServicios: raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
     fundacion: mergeFundacionLanding(raw.fundacion),
+    acerca: mergeAcercaLanding(raw.acerca),
+    cursosConduccion: mergeCursosConduccionLanding(raw.cursosConduccion),
     popup: { ...d.popup, ...raw.popup },
     consultaCertificados: {
       mostrarBotonDescargar: raw.consultaCertificados?.mostrarBotonDescargar === true,

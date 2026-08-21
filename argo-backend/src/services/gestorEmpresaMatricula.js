@@ -172,9 +172,19 @@ function snapshotReferidorDesdeMatricula(mat) {
   };
 }
 
+/** Alumno gestionado por gestor (tramitador) o empresa referidora comercial. */
+function esAlumnoReferidorComercial(alumno) {
+  if (!alumno?.manejoGestorEmpresa) return false;
+  const tipo = String(alumno.tipoReferidorComercial || '').trim().toLowerCase();
+  if (tipo === 'gestor' && alumno.gestorId) return true;
+  if (tipo === 'empresa' && alumno.referidorEmpresaId) return true;
+  return false;
+}
+
 module.exports = {
   resolverTarifaComercialAlumno,
   validarGestorEmpresaAlumno,
   snapshotReferidorComercial,
   snapshotReferidorDesdeMatricula,
+  esAlumnoReferidorComercial,
 };

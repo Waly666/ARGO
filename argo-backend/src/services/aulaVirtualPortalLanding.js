@@ -1,5 +1,9 @@
 const { LANDING_DEFAULTS } = require('../constants/aulaVirtualLandingDefaults');
+const { CURSOS_CONDUCCION_DEFAULTS } = require('../constants/aulaVirtualCursosConduccionDefaults');
+const { GALERIA_DEFAULTS } = require('../constants/aulaVirtualGaleriaDefaults');
+const { FOTOS_INICIO_DEFAULTS, MAX_FOTOS_INICIO } = require('../constants/aulaVirtualHomeFotosDefaults');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+const path = require('path');
 
 function str(v, fallback = '') {
   return String(v ?? fallback).trim();
@@ -33,6 +37,127 @@ function normalizarSeccionKicker(raw, fallback, itemFields, itemKey = 'items') {
     titulo: str(src.titulo, fallback.titulo),
     lead: str(src.lead, fallback.lead),
     [itemKey]: normalizarItemsIcono(src[itemKey], fallback[itemKey], itemFields),
+  };
+}
+
+function normalizarLicencias(raw, fallback) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const defaults = Array.isArray(fallback.items) ? fallback.items : [];
+  const rawItems = Array.isArray(src.items) ? src.items : [];
+  const items = (rawItems.length ? rawItems : defaults).map((item, i) => {
+    const fb = defaults[i] || defaults[0] || {};
+    const incluyeRaw = Array.isArray(item?.incluye) ? item.incluye : fb.incluye;
+    const incluye = (incluyeRaw || [])
+      .map((x) => str(x))
+      .filter(Boolean);
+    return {
+      icon: str(item?.icon, fb.icon || '🚗'),
+      codigo: str(item?.codigo, fb.codigo),
+      titulo: str(item?.titulo, fb.titulo),
+      incluye: incluye.length ? incluye : [...(fb.incluye || [])],
+      licenciaLabel: str(item?.licenciaLabel, fb.licenciaLabel),
+      valor: str(item?.valor, fb.valor),
+      btnTexto: str(item?.btnTexto, fb.btnTexto || 'Solicitar ahora'),
+      btnUrl: str(item?.btnUrl, fb.btnUrl || '/registro'),
+      destacada: item?.destacada === true,
+    };
+  });
+  return {
+    kicker: str(src.kicker, fallback.kicker),
+    titulo: str(src.titulo, fallback.titulo),
+    lead: str(src.lead, fallback.lead),
+    items: items.length ? items : defaults.map((x) => ({ ...x, incluye: [...(x.incluye || [])] })),
+  };
+}
+
+function normalizarExamenTeorico(raw, fallback) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const defaults = Array.isArray(fallback.items) ? fallback.items : [];
+  const rawItems = Array.isArray(src.items) ? src.items : [];
+  const acentos = new Set(['blue', 'teal', 'orange', 'green', 'purple']);
+  const items = (rawItems.length ? rawItems : defaults).map((item, i) => {
+    const fb = defaults[i] || defaults[0] || {};
+    const acentoRaw = str(item?.acento, fb.acento).toLowerCase();
+    return {
+      numero: Number.isFinite(Number(item?.numero)) ? Number(item.numero) : fb.numero || i + 1,
+      icon: str(item?.icon, fb.icon || 'clipboard'),
+      acento: acentos.has(acentoRaw) ? acentoRaw : fb.acento || 'blue',
+      titulo: str(item?.titulo, fb.titulo),
+      texto: str(item?.texto, fb.texto),
+    };
+  });
+  const resolucionesSrc = Array.isArray(src.resoluciones) ? src.resoluciones : [];
+  const resolucionesDefaults = Array.isArray(fallback.resoluciones) ? fallback.resoluciones : [];
+  const resoluciones = resolucionesSrc.length
+    ? resolucionesSrc.map((item, i) => {
+        const fb = resolucionesDefaults[i] || { titulo: '', archivoUrl: '', nombreArchivo: '' };
+        const archivoUrl = str(item?.archivoUrl, fb.archivoUrl);
+        return {
+          titulo: str(item?.titulo, fb.titulo),
+          archivoUrl,
+          archivoUrlAbsoluta: archivoUrl ? publicUploadUrl(archivoUrl) || archivoUrl : '',
+          nombreArchivo: str(item?.nombreArchivo, fb.nombreArchivo),
+        };
+      })
+    : resolucionesDefaults.map((r) => ({
+        ...r,
+        archivoUrlAbsoluta: r.archivoUrl ? publicUploadUrl(r.archivoUrl) || r.archivoUrl : '',
+      }));
+
+  const normDefaults = fallback.normograma || {};
+  const normSrc = src.normograma && typeof src.normograma === 'object' ? src.normograma : {};
+  const normItemsDefaults = Array.isArray(normDefaults.items) ? normDefaults.items : [];
+  const normItemsRaw = Array.isArray(normSrc.items) ? normSrc.items : [];
+  const normItems = (normItemsRaw.length ? normItemsRaw : normItemsDefaults).map((item, i) => {
+    const fb = normItemsDefaults[i] || normItemsDefaults[0] || {};
+    const acentoRaw = str(item?.acento, fb.acento).toLowerCase();
+    const archivoUrl = str(item?.archivoUrl, fb.archivoUrl);
+    return {
+      icon: str(item?.icon, fb.icon || 'document'),
+      acento: acentos.has(acentoRaw) ? acentoRaw : fb.acento || 'blue',
+      norma: str(item?.norma, fb.norma),
+      fecha: str(item?.fecha, fb.fecha),
+      queEstablece: str(item?.queEstablece, fb.queEstablece),
+      detalle: str(item?.detalle, fb.detalle),
+      archivoUrl,
+      archivoUrlAbsoluta: archivoUrl ? publicUploadUrl(archivoUrl) || archivoUrl : '',
+      nombreArchivo: str(item?.nombreArchivo, fb.nombreArchivo),
+    };
+  });
+
+  return {
+    kicker: str(src.kicker, fallback.kicker),
+    titulo: str(src.titulo, fallback.titulo),
+    tituloLinea2: str(src.tituloLinea2, fallback.tituloLinea2),
+    fechaBannerPrefijo: str(src.fechaBannerPrefijo, fallback.fechaBannerPrefijo),
+    fechaDestacada: str(src.fechaDestacada, fallback.fechaDestacada),
+    fechaBannerSufijo: str(src.fechaBannerSufijo, fallback.fechaBannerSufijo),
+    items: items.length ? items : defaults.map((x) => ({ ...x })),
+    ctaTexto: (() => {
+      const raw = str(src.ctaTexto, fallback.ctaTexto);
+      if (/cursos de conducci/i.test(raw)) return fallback.ctaTexto || 'Ver información completa';
+      return raw;
+    })(),
+    ctaUrl: (() => {
+      const raw = str(src.ctaUrl, fallback.ctaUrl || '/examen-teorico');
+      const path = raw.split('?')[0].replace(/\/+$/, '') || '/examen-teorico';
+      if (path === '/cursos-conduccion') return '/examen-teorico';
+      return raw || '/examen-teorico';
+    })(),
+    paginaIntro: str(src.paginaIntro, fallback.paginaIntro),
+    resolucionesKicker: str(src.resolucionesKicker, fallback.resolucionesKicker),
+    resolucionesTitulo: str(src.resolucionesTitulo, fallback.resolucionesTitulo),
+    resolucionesLead: str(src.resolucionesLead, fallback.resolucionesLead),
+    resoluciones,
+    normograma: {
+      kicker: str(normSrc.kicker, normDefaults.kicker),
+      titulo: str(normSrc.titulo, normDefaults.titulo),
+      subtitulo: str(normSrc.subtitulo, normDefaults.subtitulo),
+      lead: str(normSrc.lead, normDefaults.lead),
+      items: normItems.length ? normItems : normItemsDefaults.map((x) => ({ ...x })),
+    },
+    ctaFinalTexto: str(src.ctaFinalTexto, fallback.ctaFinalTexto),
+    ctaFinalUrl: str(src.ctaFinalUrl, fallback.ctaFinalUrl || '/cursos-conduccion'),
   };
 }
 
@@ -71,6 +196,7 @@ const ASISTENTE_PAGINA_KEYS = [
   'aula',
   'fundacion',
   'consultaCertificados',
+  'cursosConduccion',
   'blog',
   'acerca',
 ];
@@ -131,6 +257,7 @@ function normalizarLanding(input) {
   const valoresSrc = src.valores && typeof src.valores === 'object' ? src.valores : {};
   const cursosSrc = src.cursos && typeof src.cursos === 'object' ? src.cursos : {};
   const carrerasSrc = src.carreras && typeof src.carreras === 'object' ? src.carreras : {};
+  const licenciasSrc = src.licencias && typeof src.licencias === 'object' ? src.licencias : {};
   const heroSrc = src.hero && typeof src.hero === 'object' ? src.hero : {};
   const navSrc = src.nav && typeof src.nav === 'object' ? src.nav : {};
   const footerSrc = src.footer && typeof src.footer === 'object' ? src.footer : {};
@@ -139,8 +266,12 @@ function normalizarLanding(input) {
   const faqSrc = src.faq && typeof src.faq === 'object' ? src.faq : {};
   const appMobileSrc = src.appMobile && typeof src.appMobile === 'object' ? src.appMobile : {};
   const blogSrc = src.blog && typeof src.blog === 'object' ? src.blog : {};
+  const galeriaSrc = src.galeria && typeof src.galeria === 'object' ? src.galeria : {};
+  const fotosInicioSrc = src.fotosInicio && typeof src.fotosInicio === 'object' ? src.fotosInicio : {};
   const fundSrc = src.fundacion && typeof src.fundacion === 'object' ? src.fundacion : {};
   const fundD = d.fundacion || {};
+  const acercaSrc = src.acerca && typeof src.acerca === 'object' ? src.acerca : {};
+  const acercaD = d.acerca || {};
   const popupSrc = src.popup && typeof src.popup === 'object' ? src.popup : {};
   const consultaCertSrc =
     src.consultaCertificados && typeof src.consultaCertificados === 'object'
@@ -221,6 +352,8 @@ function normalizarLanding(input) {
       acerca: str(navSrc.acerca, d.nav.acerca),
       fundacion: str(navSrc.fundacion, d.nav.fundacion),
       consultaCertificados: str(navSrc.consultaCertificados, d.nav.consultaCertificados),
+      cursosConduccion: str(navSrc.cursosConduccion, d.nav.cursosConduccion),
+      galeria: str(navSrc.galeria, d.nav.galeria),
       blog: str(navSrc.blog, d.nav.blog),
       acceder: str(navSrc.acceder, d.nav.acceder),
       registrarse: str(navSrc.registrarse, d.nav.registrarse),
@@ -246,6 +379,8 @@ function normalizarLanding(input) {
       items: normalizarItemsIcono(ofertasSrc.items, d.ofertas.items, ['icon', 'title', 'text']),
     },
     beneficios: normalizarSeccionKicker(src.beneficios, d.beneficios, ['icon', 'title', 'text']),
+    licencias: normalizarLicencias(licenciasSrc, d.licencias),
+    examenTeorico: normalizarExamenTeorico(src.examenTeorico, d.examenTeorico),
     servicios: {
       titulo: str(serviciosSrc.titulo, d.servicios.titulo),
       items: normalizarItemsIcono(serviciosSrc.items, d.servicios.items, ['icon', 'title', 'url']),
@@ -307,6 +442,8 @@ function normalizarLanding(input) {
       emptyTitulo: str(blogSrc.emptyTitulo, d.blog.emptyTitulo),
       emptyTexto: str(blogSrc.emptyTexto, d.blog.emptyTexto),
     },
+    galeria: normalizarGaleria(galeriaSrc),
+    fotosInicio: normalizarFotosInicio(fotosInicioSrc),
     pilares: {
       tabCapacitacion: str(pilaresSrc.tabCapacitacion, d.pilares.tabCapacitacion),
       tabCampanas: str(pilaresSrc.tabCampanas, d.pilares.tabCampanas),
@@ -315,9 +452,189 @@ function normalizarLanding(input) {
     },
     footerServicios: footer.length ? footer : [...d.footerServicios],
     fundacion: normalizarFundacion(fundSrc, fundD),
+    acerca: normalizarAcerca(acercaSrc, acercaD),
+    cursosConduccion: normalizarCursosConduccion(src.cursosConduccion),
     popup: normalizarPopup(popupSrc),
     consultaCertificados: normalizarConsultaCertificados(consultaCertSrc),
     asistente: normalizarAsistente(src.asistente, consultaCertSrc),
+  };
+}
+
+function normalizarGaleria(src) {
+  const d = GALERIA_DEFAULTS;
+  const raw = src && typeof src === 'object' ? src : {};
+  const fotosRaw = Array.isArray(raw.fotos) ? raw.fotos : [];
+  const fotos = fotosRaw
+    .map((item, i) => {
+      if (!item || typeof item !== 'object') return null;
+      const url = str(item.url);
+      if (!url) return null;
+      const ext = path.extname(url).toLowerCase();
+      const tipo =
+        item.tipo === 'video' || ext === '.mp4' || ext === '.webm' ? 'video' : 'imagen';
+      return {
+        id: str(item.id, `galeria_${i}_${Date.now()}`),
+        url,
+        urlAbsoluta: publicUploadUrl(url) || url,
+        leyenda: str(item.leyenda),
+        tipo,
+        orden: Number.isFinite(Number(item.orden)) ? Number(item.orden) : i,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.orden - b.orden);
+
+  return {
+    kicker: str(raw.kicker, d.kicker),
+    titulo: str(raw.titulo, d.titulo),
+    lead: str(raw.lead, d.lead),
+    emptyTitulo: str(raw.emptyTitulo, d.emptyTitulo),
+    emptyTexto: str(raw.emptyTexto, d.emptyTexto),
+    fotos,
+  };
+}
+
+function normalizarFotosInicio(src) {
+  const d = FOTOS_INICIO_DEFAULTS;
+  const raw = src && typeof src === 'object' ? src : {};
+  const fotosRaw = Array.isArray(raw.fotos) ? raw.fotos : [];
+  const fotos = fotosRaw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const url = str(item.url);
+      if (!url) return null;
+      return {
+        url,
+        urlAbsoluta: publicUploadUrl(url) || url,
+        leyenda: str(item.leyenda),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, MAX_FOTOS_INICIO);
+
+  return {
+    kicker: str(raw.kicker, d.kicker),
+    titulo: str(raw.titulo, d.titulo),
+    lead: str(raw.lead, d.lead),
+    fotos,
+  };
+}
+
+function normalizarInvitacion(src) {
+  const d = CURSOS_CONDUCCION_DEFAULTS.invitacion;
+  const raw = src && typeof src === 'object' ? src : {};
+  const beneficiosSrc = Array.isArray(raw.beneficios) ? raw.beneficios : [];
+  const beneficios = beneficiosSrc.length
+    ? beneficiosSrc.map((item, i) => {
+        const fb = d.beneficios[i] || { icon: '✦', titulo: '', texto: '' };
+        return {
+          icon: str(item?.icon, fb.icon),
+          titulo: str(item?.titulo, fb.titulo),
+          texto: str(item?.texto, fb.texto),
+        };
+      })
+    : d.beneficios.map((b) => ({ ...b }));
+  return {
+    kicker: str(raw.kicker, d.kicker),
+    titulo: str(raw.titulo, d.titulo),
+    lead: str(raw.lead, d.lead),
+    institucion: str(raw.institucion, d.institucion),
+    beneficios,
+    destacado: str(raw.destacado, d.destacado),
+    cierre: str(raw.cierre, d.cierre),
+    firma: str(raw.firma, d.firma),
+    btnCursos: str(raw.btnCursos, d.btnCursos),
+    btnRegistro: str(raw.btnRegistro, d.btnRegistro),
+  };
+}
+
+function normalizarCursosConduccion(src) {
+  const d = CURSOS_CONDUCCION_DEFAULTS;
+  const raw = src && typeof src === 'object' ? src : {};
+  const resolucionesSrc = Array.isArray(raw.resoluciones) ? raw.resoluciones : [];
+  const resoluciones = resolucionesSrc.length
+    ? resolucionesSrc.map((item, i) => {
+        const fb = d.resoluciones[i] || { titulo: '', archivoUrl: '', nombreArchivo: '' };
+        const archivoUrl = str(item?.archivoUrl, fb.archivoUrl);
+        return {
+          titulo: str(item?.titulo, fb.titulo),
+          archivoUrl,
+          archivoUrlAbsoluta: archivoUrl ? publicUploadUrl(archivoUrl) || archivoUrl : '',
+          nombreArchivo: str(item?.nombreArchivo, fb.nombreArchivo),
+        };
+      })
+    : d.resoluciones.map((r) => ({
+        ...r,
+        archivoUrlAbsoluta: r.archivoUrl ? publicUploadUrl(r.archivoUrl) || r.archivoUrl : '',
+      }));
+
+  let licenciasSrc = raw.licencias && typeof raw.licencias === 'object' ? raw.licencias : null;
+  if (!licenciasSrc?.items?.length) {
+    const categoriasSrc = Array.isArray(raw.categorias) ? raw.categorias : [];
+    if (categoriasSrc.length) {
+      const iconMap = { a2: '🏍️', b1: '🚗', c1: '🚌', c2: '🚛', c3: '🚛' };
+      licenciasSrc = {
+        kicker: str(raw.etiquetaCategorias, d.licencias.kicker),
+        titulo: 'Categorías de licencia',
+        lead: str(raw.textoIntroCategorias, d.licencias.lead),
+        items: categoriasSrc.map((item, i) => {
+          const fb = d.licencias.items[i] || d.licencias.items[0] || {};
+          const cod = str(item?.codigo, fb.codigo).toUpperCase();
+          const desc = str(item?.descripcion);
+          const incluye = desc ? [desc, ...(fb.incluye || []).slice(1)] : fb.incluye;
+          return {
+            icon: iconMap[str(item?.codigo).toLowerCase()] || fb.icon,
+            codigo: cod,
+            titulo: str(item?.titulo, fb.titulo),
+            incluye: incluye.length ? incluye : [...(fb.incluye || [])],
+            licenciaLabel: fb.licenciaLabel || `Licencia ${cod}`,
+            valor: fb.valor,
+            btnTexto: fb.btnTexto,
+            btnUrl: fb.btnUrl,
+            destacada: fb.destacada === true,
+          };
+        }),
+      };
+    }
+  }
+
+  return {
+    hero: (() => {
+      const heroSrc = raw.hero && typeof raw.hero === 'object' ? raw.hero : {};
+      const imagenUrl = str(heroSrc.imagenUrl, d.hero.imagenUrl);
+      return {
+        kicker: str(heroSrc.kicker, d.hero.kicker),
+        imagenUrl,
+        imagenUrlAbsoluta: (() => {
+          if (!imagenUrl || imagenUrl.startsWith('/images/')) return '';
+          return publicUploadUrl(imagenUrl) || imagenUrl;
+        })(),
+        imagenAlt: str(heroSrc.imagenAlt, d.hero.imagenAlt),
+      };
+    })(),
+    tituloPrincipal: str(raw.tituloPrincipal, d.tituloPrincipal),
+    textoInstitucional: str(raw.textoInstitucional, d.textoInstitucional),
+    invitacion: normalizarInvitacion(raw.invitacion),
+    resoluciones,
+    licencias: normalizarLicencias(licenciasSrc || {}, d.licencias),
+  };
+}
+
+function normalizarAcerca(src, d) {
+  const heroSrc = src.hero && typeof src.hero === 'object' ? src.hero : {};
+  const imagenUrl = str(heroSrc.imagenUrl, d.hero?.imagenUrl);
+  return {
+    hero: {
+      kicker: str(heroSrc.kicker, d.hero?.kicker),
+      lead: str(heroSrc.lead, d.hero?.lead),
+      imagenUrl,
+      imagenUrlAbsoluta: (() => {
+        if (!imagenUrl || imagenUrl.startsWith('/images/')) return '';
+        return publicUploadUrl(imagenUrl) || imagenUrl;
+      })(),
+      imagenAlt: str(heroSrc.imagenAlt, d.hero?.imagenAlt),
+      imagenCaption: str(heroSrc.imagenCaption, d.hero?.imagenCaption),
+    },
   };
 }
 

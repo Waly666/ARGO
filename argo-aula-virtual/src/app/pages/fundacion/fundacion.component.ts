@@ -7,12 +7,13 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
+import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { FUNDACION_CONTACTO } from './fundacion-content';
 
 @Component({
   selector: 'av-fundacion',
   standalone: true,
-  imports: [CommonModule, RouterLink, ContactoFormComponent],
+  imports: [CommonModule, RouterLink, ContactoFormComponent, PortalIconComponent],
   templateUrl: './fundacion.component.html',
   styleUrl: './fundacion.component.scss',
 })

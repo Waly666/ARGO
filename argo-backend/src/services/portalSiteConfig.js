@@ -151,6 +151,7 @@ function sincronizarNavLanding(landing, site) {
     aula: 'aula',
     fundacion: 'fundacion',
     consultaCertificados: 'consultaCertificados',
+    cursosConduccion: 'cursosConduccion',
     acerca: 'acerca',
   };
   for (const [navKey, pageKey] of Object.entries(map)) {

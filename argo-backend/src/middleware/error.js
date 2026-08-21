@@ -13,6 +13,14 @@ function errorHandler(err, req, res, _next) {
         message: `El archivo supera el tamaño máximo permitido (${maxMb} MB)`,
       });
     }
+    if (err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE') {
+      const esGaleria = String(req.originalUrl || '').includes('/portal/galeria');
+      return res.status(400).json({
+        message: esGaleria
+          ? 'Demasiados archivos en un solo envío. Suba máximo 30 fotos o videos por lote.'
+          : err.message || 'Demasiados archivos en un solo envío',
+      });
+    }
     return res.status(400).json({ message: err.message || 'Error al subir archivo' });
   }
 

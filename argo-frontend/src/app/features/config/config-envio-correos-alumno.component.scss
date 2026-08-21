@@ -1,6 +1,6 @@
 .eca-page {
   padding: 1.25rem;
-  max-width: 720px;
+  max-width: 820px;
 }
 
 .eca-head {
@@ -37,6 +37,54 @@
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+}
+
+.eca-section-title {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.eca-hint--block {
+  margin-bottom: 0.25rem;
+}
+
+.eca-rules-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line, rgba(148, 163, 184, 0.22));
+  background: rgba(15, 23, 42, 0.35);
+
+  h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+}
+
+.eca-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  span {
+    font-size: 0.86rem;
+    color: var(--text-dim, #94a3b8);
+  }
+
+  select {
+    width: 100%;
+    max-width: 28rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid var(--line, rgba(148, 163, 184, 0.28));
+    background: var(--surface, #0f172a);
+    color: inherit;
+    font: inherit;
+  }
 }
 
 .eca-hint {

@@ -7,6 +7,7 @@ const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { sendMail, smtpConfigured } = require('./mail');
 const { obtenerConfigPortalPublica, obtenerConfigAula } = require('./aulaVirtualPortal');
 const { obtenerConfigEnvioCorreosAlumno } = require('./configEnvioCorreosAlumno');
+const { resolverDestinatariosCorreoAlumno } = require('./envioCorreoAlumnoDestinos');
 const { armarDatosCertificado } = require('./certificadoRenderData');
 const { generarHtmlCertificado } = require('./certificadoRender');
 const { launchBrowser, htmlToPdfBuffer } = require('./htmlToPdf');
@@ -99,15 +100,40 @@ function urlConsultaCertificados(publicOrigin) {
   return `${base}/consulta-certificados`;
 }
 
-function armarContenidoCorreo({ nombreCea, nombre, curso, fechaEmision, codigoRef, numDoc, linkVerificacion, contactoEmail, contactoTelefono }) {
+function armarContenidoCorreo({
+  nombreCea,
+  nombreDestinatario,
+  nombreAlumno,
+  esReferidor,
+  curso,
+  fechaEmision,
+  codigoRef,
+  numDoc,
+  linkVerificacion,
+  contactoEmail,
+  contactoTelefono,
+}) {
   const fechaTxt = fmtFechaSolo(fechaEmision) || '—';
   const subject = `${nombreCea} — Certificado de formación${curso ? `: ${curso}` : ''}`;
 
+  const saludo = nombreDestinatario
+    ? `Estimado(a) ${nombreDestinatario},`
+    : esReferidor
+      ? 'Estimado(a),'
+      : nombreAlumno
+        ? `Estimado(a) ${nombreAlumno},`
+        : 'Estimado(a) alumno(a),';
+
+  const intro = esReferidor
+    ? `${nombreCea} le informa que se emitió el certificado de formación del alumno ${nombreAlumno || 'vinculado a su gestión'}.`
+    : `${nombreCea} le informa que su certificado de formación ha sido emitido exitosamente.`;
+
   const textParts = [
-    nombre ? `Estimado(a) ${nombre},` : 'Estimado(a) alumno(a),',
+    saludo,
     '',
-    `${nombreCea} le informa que su certificado de formación ha sido emitido exitosamente.`,
+    intro,
     '',
+    esReferidor && nombreAlumno ? `Alumno: ${nombreAlumno}` : null,
     curso ? `Programa / capacitación: ${curso}` : null,
     `Fecha de emisión: ${fechaTxt}`,
     codigoRef ? `Código de verificación: ${codigoRef}` : null,
@@ -115,7 +141,7 @@ function armarContenidoCorreo({ nombreCea, nombre, curso, fechaEmision, codigoRe
     '',
     'Adjunto encontrará el certificado en formato PDF.',
     linkVerificacion
-      ? `Puede verificar la autenticidad de su certificado en línea: ${linkVerificacion}`
+      ? `Puede verificar la autenticidad del certificado en línea: ${linkVerificacion}`
       : null,
     '',
     'Si tiene alguna inquietud, comuníquese con nuestro equipo de atención.',
@@ -128,15 +154,15 @@ function armarContenidoCorreo({ nombreCea, nombre, curso, fechaEmision, codigoRe
 
   const html = `
     <div style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;line-height:1.55;max-width:640px">
-      <p>${nombre ? `Estimado(a) <strong>${escHtml(nombre)}</strong>,` : 'Estimado(a) alumno(a),'}</p>
-      <p><strong>${escHtml(nombreCea)}</strong> le informa que su <strong>certificado de formación</strong> ha sido emitido exitosamente.</p>
+      <p>${escHtml(saludo)}</p>
+      <p><strong>${escHtml(nombreCea)}</strong> ${esReferidor ? `informa que se emitió el certificado del alumno <strong>${escHtml(nombreAlumno || 'vinculado a su gestión')}</strong>.` : 'le informa que su <strong>certificado de formación</strong> ha sido emitido exitosamente.'}</p>
       <table style="margin:1rem 0;border-collapse:collapse;width:100%;font-size:0.95rem">
         ${curso ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top">Programa</td><td style="padding:6px 0"><strong>${escHtml(curso)}</strong></td></tr>` : ''}
         <tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top">Fecha de emisión</td><td style="padding:6px 0">${escHtml(fechaTxt)}</td></tr>
         ${codigoRef ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top">Código de verificación</td><td style="padding:6px 0"><strong>${escHtml(codigoRef)}</strong></td></tr>` : ''}
         ${numDoc != null ? `<tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top">Documento</td><td style="padding:6px 0">${escHtml(numDoc)}</td></tr>` : ''}
       </table>
-      <p>Adjunto encontrará su certificado en formato <strong>PDF</strong>.</p>
+      <p>Adjunto encontrará el certificado en formato <strong>PDF</strong>.</p>
       ${
         linkVerificacion
           ? `<p style="margin:1.5rem 0">
@@ -145,7 +171,7 @@ function armarContenidoCorreo({ nombreCea, nombre, curso, fechaEmision, codigoRe
         </a>
       </p>
       <p style="font-size:0.85rem;color:#64748b;word-break:break-all">${escHtml(linkVerificacion)}</p>
-      <p style="font-size:0.9rem;color:#475569">En el portal podrá consultar sus certificados ingresando su número de documento.</p>`
+      <p style="font-size:0.9rem;color:#475569">En el portal podrá consultar los certificados ingresando el número de documento del titular.</p>`
           : ''
       }
       <p style="margin-top:1.5rem;font-size:0.9rem;color:#475569">Si tiene alguna inquietud, comuníquese con nuestro equipo de atención${
@@ -166,9 +192,6 @@ function armarContenidoCorreo({ nombreCea, nombre, curso, fechaEmision, codigoRe
  */
 async function enviarCertificadoPorCorreo(certId, opts = {}) {
   const cfgEnvio = await obtenerConfigEnvioCorreosAlumno();
-  if (!cfgEnvio.enviarCertificados) {
-    return { enviado: false, motivo: 'envio_desactivado' };
-  }
 
   if (!smtpConfigured()) {
     return { enviado: false, motivo: 'smtp_no_configurado' };
@@ -179,9 +202,13 @@ async function enviarCertificadoPorCorreo(certId, opts = {}) {
   if (cert.estado === 'anulado') return { enviado: false, motivo: 'certificado_anulado' };
 
   const alumno = await DatosAlumno.findOne(numDocQuery(cert.numDoc)).lean();
-  const email = String(alumno?.correo || '').trim().toLowerCase();
-  if (!email || !email.includes('@')) {
-    return { enviado: false, motivo: 'sin_correo_alumno', numDoc: cert.numDoc };
+  const { destinatarios, motivo } = await resolverDestinatariosCorreoAlumno({
+    alumno,
+    tipoCorreo: 'certificado',
+    cfg: cfgEnvio,
+  });
+  if (!destinatarios.length) {
+    return { enviado: false, motivo: motivo || 'sin_destinatarios', numDoc: cert.numDoc };
   }
 
   const portal = await obtenerConfigPortalPublica().catch(() => ({}));
@@ -189,57 +216,76 @@ async function enviarCertificadoPorCorreo(certId, opts = {}) {
   const publicOrigin = resolverOrigenPdf(opts);
   const linkVerificacion = resolverUrlConsultaCertificados(opts);
   const codigoRef = codigoVerificacionCert(cert);
-  const nombre = nombreCompleto(alumno);
+  const nombreAlumno = nombreCompleto(alumno);
   const curso = String(cert.encabezado || '').trim();
-  const { subject, text, html } = armarContenidoCorreo({
-    nombreCea,
-    nombre,
-    curso,
-    fechaEmision: cert.fechaEmision || cert.createdAt,
-    codigoRef,
-    numDoc: cert.numDoc,
-    linkVerificacion,
-    contactoEmail: portal?.email || '',
-    contactoTelefono: portal?.telefono || '',
-  });
 
   let pdfBuffer;
   try {
     pdfBuffer = await generarPdfCertificado(certId, publicOrigin);
   } catch (e) {
     console.error('[certificadoEmail] Error generando PDF:', e?.message || e);
-    return { enviado: false, motivo: 'error_pdf', email };
+    return { enviado: false, motivo: 'error_pdf' };
   }
   if (!pdfBuffer?.length) {
-    return { enviado: false, motivo: 'pdf_vacio', email };
+    return { enviado: false, motivo: 'pdf_vacio' };
   }
 
   const filename = `${sanitizarNombreArchivo(`certificado-${codigoRef || cert.numDoc}`)}.pdf`;
+  const from = await mailFromHeader(nombreCea);
+  const enviados = [];
+  const errores = [];
 
-  try {
-    await sendMail({
-      to: email,
-      subject,
-      text,
-      html,
-      from: await mailFromHeader(nombreCea),
-      attachments: [
-        {
-          filename,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ],
+  for (const dest of destinatarios) {
+    const esReferidor = dest.rol === 'referidor';
+    const { subject, text, html } = armarContenidoCorreo({
+      nombreCea,
+      nombreDestinatario: esReferidor ? dest.nombre : null,
+      nombreAlumno,
+      esReferidor,
+      curso,
+      fechaEmision: cert.fechaEmision || cert.createdAt,
+      codigoRef,
+      numDoc: cert.numDoc,
+      linkVerificacion,
+      contactoEmail: portal?.email || '',
+      contactoTelefono: portal?.telefono || '',
     });
-  } catch (e) {
-    console.error('[certificadoEmail] Error enviando correo:', e?.message || e);
-    return { enviado: false, motivo: 'error_envio', email };
+
+    try {
+      await sendMail({
+        to: dest.email,
+        subject,
+        text,
+        html,
+        from,
+        attachments: [
+          {
+            filename,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+      enviados.push(dest.email);
+      console.info(
+        `[certificadoEmail] Certificado ${codigoRef || certId} enviado a ${dest.email} (${nombreCea})`,
+      );
+    } catch (e) {
+      console.error('[certificadoEmail] Error enviando correo:', e?.message || e);
+      errores.push({ email: dest.email, error: e?.message || 'error_envio' });
+    }
   }
 
-  console.info(
-    `[certificadoEmail] Certificado ${codigoRef || certId} enviado a ${email} (${nombreCea})`,
-  );
-  return { enviado: true, email };
+  if (!enviados.length) {
+    return { enviado: false, motivo: 'error_envio', errores };
+  }
+
+  return {
+    enviado: true,
+    email: enviados.join(', '),
+    enviados,
+    errores: errores.length ? errores : undefined,
+  };
 }
 
 /** Programa el envío sin bloquear la emisión del certificado. */

@@ -1,0 +1,211 @@
+<div class="pete">
+  <div class="pete-toolbar">
+    <p class="psb-muted">
+      Página oculta del menú en <strong>/examen-teorico</strong>. Se abre desde el botón de la sección del inicio
+      «Examen teórico (normatividad)». Incluye los 5 puntos informativos, normograma con PDFs por norma y resoluciones descargables.
+    </p>
+    <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
+  </div>
+
+  <h3 class="psb-subtitle">Sección del inicio</h3>
+  <div class="pete-card">
+    <label class="psb-field psb-field--plain">
+      <span>Etiqueta (kicker)</span>
+      <input type="text" class="psb-input" [(ngModel)]="examenTeorico.kicker" />
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Título línea 1</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título línea 2</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.tituloLinea2" />
+      </label>
+    </div>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Texto antes de la fecha</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.fechaBannerPrefijo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Fecha destacada</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.fechaDestacada" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto después de la fecha</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.fechaBannerSufijo" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Texto del botón en el inicio</span>
+      <input type="text" class="psb-input" [(ngModel)]="examenTeorico.ctaTexto" placeholder="Ver información completa" />
+      <span class="psb-hint">Siempre abre la página /examen-teorico (no aparece en el menú).</span>
+    </label>
+  </div>
+
+  <h3 class="psb-subtitle">Página completa (/examen-teorico)</h3>
+  <div class="pete-card">
+    <label class="psb-field psb-field--plain">
+      <span>Introducción de la página</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="examenTeorico.paginaIntro"></textarea>
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Botón final — texto</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.ctaFinalTexto" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Botón final — enlace</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.ctaFinalUrl" placeholder="/cursos-conduccion" />
+      </label>
+    </div>
+  </div>
+
+  <h3 class="psb-subtitle">Puntos informativos (1–5)</h3>
+  @for (item of examenTeorico.items; track item.numero; let i = $index) {
+    <div class="pete-card">
+      <strong>Punto {{ item.numero }}</strong>
+      <div class="psb-grid3">
+        <label class="psb-field psb-field--plain">
+          <span>Icono (portal)</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.icon" placeholder="clipboard" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Color</span>
+          <select class="psb-input" [(ngModel)]="item.acento">
+            @for (a of acentos; track a) {
+              <option [value]="a">{{ a }}</option>
+            }
+          </select>
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título</span>
+          <input type="text" class="psb-input" [(ngModel)]="item.titulo" />
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Texto</span>
+        <textarea class="psb-input" rows="3" [(ngModel)]="item.texto"></textarea>
+      </label>
+    </div>
+  }
+
+  <h3 class="psb-subtitle">Normograma (leyes y resoluciones)</h3>
+  <div class="pete-card">
+    <p class="psb-muted">
+      Línea de tiempo del examen teórico–práctico. Cada fila puede tener un PDF descargable con el texto de la norma.
+    </p>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta sección</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.normograma.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Subtítulo</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.normograma.subtitulo" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Título</span>
+      <input type="text" class="psb-input" [(ngModel)]="examenTeorico.normograma.titulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto introductorio</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="examenTeorico.normograma.lead"></textarea>
+    </label>
+  </div>
+
+  @for (norma of examenTeorico.normograma.items; track $index) {
+    <div class="pete-card">
+      <strong>{{ norma.norma || 'Norma ' + ($index + 1) }}</strong>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Nombre de la norma</span>
+          <input type="text" class="psb-input" [(ngModel)]="norma.norma" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Fecha</span>
+          <input type="text" class="psb-input" [(ngModel)]="norma.fecha" />
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>¿Qué establece?</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="norma.queEstablece"></textarea>
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Detalle / alcance</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="norma.detalle"></textarea>
+      </label>
+      <div class="pete-file-row">
+        @if (norma.archivoUrl) {
+          <span class="pete-file-name">{{ norma.nombreArchivo || norma.archivoUrl }}</span>
+          @if (archivoPreviewUrl(norma.archivoUrl); as url) {
+            <a class="psb-link" [href]="url" target="_blank" rel="noopener noreferrer">Ver PDF</a>
+          }
+          <button type="button" class="psb-link" (click)="quitarArchivoNormograma($index)">Quitar PDF</button>
+        } @else {
+          <span class="psb-hint">Sin PDF cargado — suba el documento oficial de esta norma</span>
+        }
+        <label class="pete-btn-file" [class.pete-btn-file--busy]="uploadNormIndex() === $index">
+          {{ uploadNormIndex() === $index ? 'Subiendo…' : 'Subir PDF de la norma' }}
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            (change)="onNormogramaArchivo($event, $index)"
+            [disabled]="uploadNormIndex() === $index"
+          />
+        </label>
+      </div>
+    </div>
+  }
+
+  <h3 class="psb-subtitle">Resoluciones y documentos (PDF)</h3>
+  <div class="pete-card">
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta sección</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.resolucionesKicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título sección</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.resolucionesTitulo" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Texto introductorio</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="examenTeorico.resolucionesLead"></textarea>
+    </label>
+  </div>
+
+  @for (res of examenTeorico.resoluciones; track $index) {
+    <div class="pete-card">
+      <label class="psb-field psb-field--plain">
+        <span>Título del documento</span>
+        <input type="text" class="psb-input" [(ngModel)]="res.titulo" placeholder="Resolución Mintransporte…" />
+      </label>
+      <div class="pete-file-row">
+        @if (res.archivoUrl) {
+          <span class="pete-file-name">{{ res.nombreArchivo || res.archivoUrl }}</span>
+          @if (archivoPreviewUrl(res.archivoUrl); as url) {
+            <a class="psb-link" [href]="url" target="_blank" rel="noopener noreferrer">Ver PDF</a>
+          }
+          <button type="button" class="psb-link" (click)="quitarArchivoResolucion($index)">Quitar archivo</button>
+        } @else {
+          <span class="psb-hint">Sin PDF cargado</span>
+        }
+        <label class="pete-btn-file" [class.pete-btn-file--busy]="uploadIndex() === $index">
+          {{ uploadIndex() === $index ? 'Subiendo…' : 'Subir PDF' }}
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            (change)="onResolucionArchivo($event, $index)"
+            [disabled]="uploadIndex() === $index"
+          />
+        </label>
+      </div>
+      <button type="button" class="psb-link pete-remove" (click)="removeResolucion($index)">Eliminar documento</button>
+    </div>
+  }
+  <button type="button" class="psb-link" (click)="addResolucion()">+ Agregar resolución o documento</button>
+</div>

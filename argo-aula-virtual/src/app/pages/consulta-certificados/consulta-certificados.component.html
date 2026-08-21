@@ -1,7 +1,7 @@
 <section class="consulta">
   <header class="consulta-hero">
     <div class="container consulta-hero__inner">
-      <span class="consulta-hero__icon" aria-hidden="true">🎓</span>
+      <av-portal-icon icon="academic-cap" class="consulta-hero__icon" size="2.5rem" color="currentColor" />
       <div>
         <p class="consulta-kicker">Verificación pública</p>
         <h1>Consulta de certificados</h1>
@@ -47,7 +47,7 @@
       @if (consultado() && !error() && resultado(); as res) {
         @if (res.total === 0) {
           <div class="consulta-empty">
-            <span class="consulta-empty__icon" aria-hidden="true">🔍</span>
+            <av-portal-icon icon="magnifying-glass" class="consulta-empty__icon" size="2rem" color="currentColor" />
             <p>
               No se encontraron certificados vigentes para la cédula
               <strong>{{ res.cedula }}</strong>.

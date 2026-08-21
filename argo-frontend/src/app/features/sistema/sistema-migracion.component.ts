@@ -11,6 +11,7 @@ import {
   SistemaService,
 } from '../../core/services/sistema.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { descargarBlob, mensajeErrorBlob } from '../../core/utils/descargar-blob';
 import { MigracionMovimientosService, ConfigMigracion } from '../../core/services/migracion-movimientos.service';
 import { BackupResetRestoreNavComponent } from './backup-reset-restore-nav.component';
 
@@ -59,6 +60,7 @@ export class SistemaMigracionComponent implements OnInit, OnDestroy {
   lotes = signal<LoteMigracion[]>([]);
   validando = signal(false);
   importando = signal(false);
+  descargandoPlantilla = signal(false);
   progreso = signal<ProgresoOperacion | null>(null);
   msg = signal<string | null>(null);
   msgError = signal(false);
@@ -174,16 +176,25 @@ export class SistemaMigracionComponent implements OnInit, OnDestroy {
   }
 
   descargarPlantilla() {
+    if (this.descargandoPlantilla() || !this.haySeleccion()) return;
+    this.descargandoPlantilla.set(true);
     this.svc.descargarPlantilla(this.hojasSeleccionadas(), this.opcionesIntegridad()).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'plantilla-migracion-argo.xlsx';
-        a.click();
-        URL.revokeObjectURL(url);
+      next: async (blob) => {
+        try {
+          await descargarBlob(blob, 'plantilla-migracion-argo.xlsx', {
+            labelBoton: '⬇ Guardar plantilla-migracion-argo.xlsx',
+          });
+          this.toast('Plantilla descargada.');
+        } catch (e) {
+          this.toast(e instanceof Error ? e.message : 'No se pudo descargar la plantilla', true);
+        } finally {
+          this.descargandoPlantilla.set(false);
+        }
       },
-      error: () => this.toast('No se pudo descargar la plantilla', true),
+      error: async (e) => {
+        this.descargandoPlantilla.set(false);
+        this.toast(await mensajeErrorBlob(e, 'No se pudo descargar la plantilla'), true);
+      },
     });
   }
 

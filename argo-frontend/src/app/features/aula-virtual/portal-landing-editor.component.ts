@@ -44,6 +44,32 @@ export class PortalLandingEditorComponent {
     this.landing.beneficios.items.splice(i, 1);
   }
 
+  addLicencia() {
+    this.landing.licencias.items.push({
+      icon: '🚗',
+      codigo: '',
+      titulo: '',
+      incluye: [''],
+      licenciaLabel: '',
+      valor: '',
+      btnTexto: 'Solicitar ahora',
+      btnUrl: '/registro',
+      destacada: false,
+    });
+  }
+
+  removeLicencia(i: number) {
+    this.landing.licencias.items.splice(i, 1);
+  }
+
+  addLicenciaIncluye(licIdx: number) {
+    this.landing.licencias.items[licIdx]?.incluye.push('');
+  }
+
+  removeLicenciaIncluye(licIdx: number, lineIdx: number) {
+    this.landing.licencias.items[licIdx]?.incluye.splice(lineIdx, 1);
+  }
+
   addServicio() {
     this.landing.servicios.items.push({ icon: '📋', title: '', url: '' });
   }

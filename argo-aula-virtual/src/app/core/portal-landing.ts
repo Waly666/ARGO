@@ -2,12 +2,22 @@ import { PORTAL_SEO_DESCRIPTION, PORTAL_SEO_KEYWORDS } from './portal-seo-defaul
 import { DEFAULT_CEA_NOMBRE } from './portal-brand-defaults';
 import { PortalPaginaKey } from './portal-site';
 import { mergePortalAsistente, type LegacyConsultaAsistente } from './portal-asistente.util';
+import {
+  mergeCursosConduccionLanding,
+  type PortalCursosConduccionLanding,
+} from '../pages/cursos-conduccion/cursos-conduccion-content';
 import { FUNDACION_LANDING_DEFAULTS } from '../pages/fundacion/fundacion-content';
+import {
+  EXAMEN_TEORICO_LANDING,
+  mergeExamenTeoricoLanding,
+  type PortalExamenTeoricoLanding,
+} from '../pages/home/examen-teorico-content';
 import {
   APP_MOBILE,
   BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
   FAQ_CURSOS,
+  LICENCIAS_HOME,
   OFERTAS,
   PASOS_PROGRAMAS,
   PILARES,
@@ -69,11 +79,53 @@ export interface PortalFundacionLanding {
   contacto: { kicker: string; titulo: string; lead: string; sedeNota: string };
 }
 
+export interface PortalAcercaLanding {
+  hero: {
+    kicker: string;
+    lead: string;
+    imagenUrl: string;
+    imagenUrlAbsoluta?: string;
+    imagenAlt: string;
+    imagenCaption: string;
+  };
+}
+
 export interface LandingInfoCard {
   icon: string;
   title: string;
   text: string;
   fuente: 'texto' | 'telefono' | 'direccion';
+}
+
+export interface PortalGaleriaFoto {
+  id: string;
+  url: string;
+  urlAbsoluta?: string;
+  leyenda: string;
+  tipo: 'imagen' | 'video';
+  orden: number;
+}
+
+export interface PortalGaleriaLanding {
+  kicker: string;
+  titulo: string;
+  lead: string;
+  emptyTitulo: string;
+  emptyTexto: string;
+  fotos: PortalGaleriaFoto[];
+}
+
+export interface PortalHomeFoto {
+  url: string;
+  urlAbsoluta?: string;
+  leyenda: string;
+}
+
+export interface PortalFotosInicioLanding {
+  kicker: string;
+  titulo: string;
+  lead: string;
+  fotos: PortalHomeFoto[];
 }
 
 export interface PortalLandingConfig {
@@ -97,6 +149,8 @@ export interface PortalLandingConfig {
     acerca: string;
     fundacion: string;
     consultaCertificados: string;
+    cursosConduccion: string;
+    galeria: string;
     blog: string;
     acceder: string;
     registrarse: string;
@@ -123,6 +177,23 @@ export interface PortalLandingConfig {
     lead: string;
     items: { icon: string; title: string; text?: string }[];
   };
+  licencias: {
+    kicker: string;
+    titulo: string;
+    lead: string;
+    items: {
+      icon: string;
+      codigo: string;
+      titulo: string;
+      incluye: string[];
+      licenciaLabel: string;
+      valor: string;
+      btnTexto: string;
+      btnUrl: string;
+      destacada: boolean;
+    }[];
+  };
+  examenTeorico: PortalExamenTeoricoLanding;
   servicios: { titulo: string; items: { icon: string; title: string; url?: string }[] };
   valores: { titulo: string; lead: string; items: { title: string; text: string }[] };
   testimonios: {
@@ -162,6 +233,8 @@ export interface PortalLandingConfig {
     emptyTitulo: string;
     emptyTexto: string;
   };
+  galeria: PortalGaleriaLanding;
+  fotosInicio: PortalFotosInicioLanding;
   carreras: {
     kicker: string;
     titulo: string;
@@ -176,6 +249,8 @@ export interface PortalLandingConfig {
   };
   footerServicios: string[];
   fundacion: PortalFundacionLanding;
+  acerca: PortalAcercaLanding;
+  cursosConduccion: PortalCursosConduccionLanding;
   popup: PortalPopupConfig;
   consultaCertificados: PortalConsultaCertificadosConfig;
   asistente: PortalAsistenteConfig;
@@ -267,6 +342,8 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     acerca: 'Acerca de',
     fundacion: 'CEA',
     consultaCertificados: 'Certificados',
+    cursosConduccion: 'Cursos conducción',
+    galeria: 'Galería',
     blog: 'Blog',
     acceder: 'Acceder',
     registrarse: 'Registrarse',
@@ -297,6 +374,11 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     lead: 'Formación práctica, certificación y flexibilidad para avanzar sin frenar su día a día.',
     items: [...BENEFICIOS_CURSOS],
   },
+  licencias: {
+    ...LICENCIAS_HOME,
+    items: LICENCIAS_HOME.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
+  },
+  examenTeorico: JSON.parse(JSON.stringify(EXAMEN_TEORICO_LANDING)) as PortalExamenTeoricoLanding,
   servicios: { titulo: 'Todo lo que necesita tu empresa en seguridad vial', items: [...SERVICIOS_EMPRESA] },
   valores: { titulo: '¡Somos tu mejor opción!', lead: '', items: [...VALORES] },
   testimonios: {
@@ -332,6 +414,20 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     emptyTitulo: 'Próximamente publicaremos artículos',
     emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
   },
+  galeria: {
+    kicker: 'Nuestra institución',
+    titulo: 'Galería de fotos',
+    lead: 'Momentos de formación, eventos e instalaciones de nuestro centro de enseñanza.',
+    emptyTitulo: 'Galería en preparación',
+    emptyTexto: 'Pronto publicaremos fotografías de nuestras actividades.',
+    fotos: [],
+  },
+  fotosInicio: {
+    kicker: 'En imágenes',
+    titulo: 'Vida en nuestro centro',
+    lead: 'Formación, eventos y el día a día de quienes confían en nosotros.',
+    fotos: [],
+  },
   carreras: {
     kicker: 'Titulación',
     titulo: 'Carreras técnicas en seguridad vial',
@@ -353,6 +449,17 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     'Planes de movilidad sostenible y segura',
   ],
   fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)) as PortalFundacionLanding,
+  acerca: {
+    hero: {
+      kicker: 'Instituto técnico y seguridad vial',
+      lead:
+        'Formación, consultoría y campañas de seguridad vial con más de 28 años de experiencia en Colombia.',
+      imagenUrl: '',
+      imagenAlt: '',
+      imagenCaption: '',
+    },
+  },
+  cursosConduccion: mergeCursosConduccionLanding(),
   popup: {
     activo: false,
     imagenUrl: '',
@@ -377,11 +484,28 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
       aula: { activo: false, texto: '' },
       fundacion: { activo: false, texto: '' },
       consultaCertificados: { activo: false, texto: PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT },
+      cursosConduccion: { activo: false, texto: '' },
+      galeria: { activo: false, texto: '' },
       blog: { activo: false, texto: '' },
       acerca: { activo: false, texto: '' },
     },
   },
 };
+
+function mergeAcercaLanding(raw?: Partial<PortalAcercaLanding> | null): PortalAcercaLanding {
+  const d = PORTAL_LANDING_FALLBACK.acerca;
+  if (!raw) return JSON.parse(JSON.stringify(d)) as PortalAcercaLanding;
+  return {
+    hero: {
+      kicker: raw.hero?.kicker?.trim() || d.hero.kicker,
+      lead: raw.hero?.lead?.trim() || d.hero.lead,
+      imagenUrl: raw.hero?.imagenUrl?.trim() || d.hero.imagenUrl,
+      imagenUrlAbsoluta: raw.hero?.imagenUrlAbsoluta?.trim() || d.hero.imagenUrlAbsoluta,
+      imagenAlt: raw.hero?.imagenAlt?.trim() || d.hero.imagenAlt,
+      imagenCaption: raw.hero?.imagenCaption?.trim() || d.hero.imagenCaption,
+    },
+  };
+}
 
 function mergeFundacionLanding(raw?: Partial<PortalFundacionLanding> | null): PortalFundacionLanding {
   const d = PORTAL_LANDING_FALLBACK.fundacion;
@@ -431,6 +555,18 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       ...raw.beneficios,
       items: raw.beneficios?.items?.length ? raw.beneficios.items : d.beneficios.items,
     },
+    licencias: {
+      ...d.licencias,
+      ...raw.licencias,
+      items: raw.licencias?.items?.length
+        ? raw.licencias.items.map((item, i) => ({
+            ...d.licencias.items[i],
+            ...item,
+            incluye: item.incluye?.length ? item.incluye : d.licencias.items[i]?.incluye || [],
+          }))
+        : d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
+    },
+    examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
     servicios: {
       ...d.servicios,
       ...raw.servicios,
@@ -471,6 +607,16 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     metaKeywords: raw.metaKeywords?.trim() || d.metaKeywords,
     cursos: { ...d.cursos, ...raw.cursos },
     blog: { ...d.blog, ...raw.blog },
+    galeria: {
+      ...d.galeria,
+      ...raw.galeria,
+      fotos: raw.galeria?.fotos?.length ? raw.galeria.fotos : d.galeria.fotos,
+    },
+    fotosInicio: {
+      ...d.fotosInicio,
+      ...raw.fotosInicio,
+      fotos: raw.fotosInicio?.fotos?.length ? raw.fotosInicio.fotos : d.fotosInicio.fotos,
+    },
     carreras: {
       ...d.carreras,
       ...raw.carreras,
@@ -484,6 +630,8 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     },
     footerServicios: raw.footerServicios?.length ? raw.footerServicios : d.footerServicios,
     fundacion: mergeFundacionLanding(raw.fundacion),
+    acerca: mergeAcercaLanding(raw.acerca),
+    cursosConduccion: mergeCursosConduccionLanding(raw.cursosConduccion),
     popup: { ...d.popup, ...raw.popup },
     consultaCertificados: {
       mostrarBotonDescargar: raw.consultaCertificados?.mostrarBotonDescargar === true,

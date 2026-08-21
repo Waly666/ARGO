@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 
 import {
   CohorteService,
@@ -35,6 +35,7 @@ export class CohortesHubComponent implements OnInit {
   private svc = inject(CohorteService);
   private permisoSvc = inject(PermisoService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   tab = signal<Tab>('plan');
   loading = signal(false);
@@ -124,15 +125,42 @@ export class CohortesHubComponent implements OnInit {
       next: (rows) => this.instructores.set(rows),
       error: () => this.instructores.set([]),
     });
+    this.route.queryParamMap.subscribe((params) => {
+      const t = params.get('tab');
+      if (t && this.esTabValido(t)) {
+        this.aplicarTab(t);
+      } else if (this.esRutaHubCohortes()) {
+        this.aplicarTab('plan');
+      }
+    });
   }
 
-  setTab(t: Tab): void {
+  private esTabValido(t: string): t is Tab {
+    return ['plan', 'cohortes', 'banco', 'catalogo', 'esquema'].includes(t);
+  }
+
+  private esRutaHubCohortes(): boolean {
+    const u = this.router.url.split('?')[0];
+    return u === '/app/cohortes' || u === '/app/cohortes/';
+  }
+
+  private aplicarTab(t: Tab): void {
+    if (this.tab() === t) return;
     this.tab.set(t);
     this.msg.set(null);
     this.msgError.set(null);
     if (t === 'banco') this.cargarBanco();
     if (t === 'catalogo') this.cargarCatalogo();
     if (t === 'esquema') this.cargarEsquema();
+  }
+
+  setTab(t: Tab): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: t },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   cargarProgramas(): void {

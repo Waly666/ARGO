@@ -244,3 +244,93 @@ export const ACERCA_DEFAULT = `Nuestro ${DEFAULT_CEA_NOMBRE} lleva la formación
 Somos su mejor opción en cursos de conducción, licencias y capacitación en seguridad vial para conductores, empresas e instituciones.
 
 Formamos conductores responsables con calidad certificada y acompañamiento profesional.`;
+
+export interface LicenciaHomeItem {
+  icon: string;
+  codigo: string;
+  titulo: string;
+  incluye: string[];
+  licenciaLabel: string;
+  valor: string;
+  btnTexto: string;
+  btnUrl: string;
+  destacada: boolean;
+}
+
+const LICENCIA_INCLUYE_BASE = [
+  'Certificado escuela de conducción',
+  'Examen médico',
+  'Trámites y costos RUNT',
+];
+
+export const LICENCIAS_HOME = {
+  kicker: 'Trámites y certificaciones',
+  titulo: 'Elige tu licencia',
+  lead: 'A continuación las licencias que puedes solicitar con nosotros',
+  items: [
+    {
+      icon: '🏍️',
+      codigo: 'A2',
+      titulo: 'Categoría A2',
+      incluye: [
+        '25 Horas Teoría',
+        '3 Horas Práctica en Taller',
+        '15 Horas Práctica en Conducción',
+        ...LICENCIA_INCLUYE_BASE,
+      ],
+      licenciaLabel: 'Licencia A2',
+      valor: 'Consulte valor en sede',
+      btnTexto: 'Solicitar ahora',
+      btnUrl: '/registro',
+      destacada: false,
+    },
+    {
+      icon: '🚗',
+      codigo: 'B1',
+      titulo: 'Categoría B1',
+      incluye: [
+        '25 Horas Teoría',
+        '5 Horas Práctica en Taller',
+        '20 Horas Práctica en Conducción',
+        ...LICENCIA_INCLUYE_BASE,
+      ],
+      licenciaLabel: 'Licencia B1',
+      valor: 'Consulte valor en sede',
+      btnTexto: 'Solicitar ahora',
+      btnUrl: '/registro',
+      destacada: false,
+    },
+    {
+      icon: '🚌',
+      codigo: 'C1',
+      titulo: 'Categoría C1',
+      incluye: [
+        '30 Horas Teoría',
+        '5 Horas Práctica en Taller',
+        '30 Horas Práctica en Conducción',
+        ...LICENCIA_INCLUYE_BASE,
+      ],
+      licenciaLabel: 'Licencia C1',
+      valor: 'Consulte valor en sede',
+      btnTexto: 'Solicitar ahora',
+      btnUrl: '/registro',
+      destacada: false,
+    },
+    {
+      icon: '🚛',
+      codigo: 'C2',
+      titulo: 'Categoría C2',
+      incluye: [
+        '20 Horas Teoría',
+        '10 Horas Práctica en Taller',
+        '14 Horas Práctica en Conducción',
+        ...LICENCIA_INCLUYE_BASE,
+      ],
+      licenciaLabel: 'Licencia C2',
+      valor: 'Consulte valor en sede',
+      btnTexto: 'Solicitar ahora',
+      btnUrl: '/registro',
+      destacada: true,
+    },
+  ] satisfies LicenciaHomeItem[],
+};

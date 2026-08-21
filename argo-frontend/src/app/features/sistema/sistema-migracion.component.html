@@ -134,8 +134,8 @@
     </header>
     <div class="sys-section-body">
       <div class="sys-row">
-        <button type="button" class="primary" (click)="descargarPlantilla()" [disabled]="!haySeleccion()">
-          Descargar plantilla Excel
+        <button type="button" class="primary" (click)="descargarPlantilla()" [disabled]="!haySeleccion() || descargandoPlantilla()">
+          {{ descargandoPlantilla() ? 'Preparando plantilla…' : 'Descargar plantilla Excel' }}
         </button>
         <p class="sys-hint">
           @if (certificadosHistoricos && estaSeleccionada('certificados')) {

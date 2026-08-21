@@ -393,6 +393,36 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenAcercaPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/acerca-hero-imagen`,
+      fd,
+    );
+  }
+
+  quitarImagenAcercaPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/acerca-hero-imagen`,
+    );
+  }
+
+  subirImagenCursosConduccionPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-hero-imagen`,
+      fd,
+    );
+  }
+
+  quitarImagenCursosConduccionPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-hero-imagen`,
+    );
+  }
+
   subirImagenPopupPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
     const fd = new FormData();
     fd.append('imagen', file);
@@ -423,6 +453,47 @@ export class AulaVirtualAdminService {
     return this.http.delete<{ config: PortalAulaConfig; message: string }>(
       `${this.base}/portal/consulta-certificados-asistente-video`,
     );
+  }
+
+  subirArchivoCursosConduccionPortal(file: File): Observable<{
+    archivoUrl: string;
+    archivoUrlAbsoluta?: string;
+    nombreArchivo: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('archivo', file);
+    return this.http.post<{
+      archivoUrl: string;
+      archivoUrlAbsoluta?: string;
+      nombreArchivo: string;
+      message: string;
+    }>(`${this.base}/portal/cursos-conduccion-archivo`, fd);
+  }
+
+  subirArchivoExamenTeoricoPortal(
+    file: File,
+    destino?: { tipo: 'normograma' | 'resolucion'; index: number },
+  ): Observable<{
+    archivoUrl: string;
+    archivoUrlAbsoluta?: string;
+    nombreArchivo: string;
+    persisted?: boolean;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('archivo', file);
+    if (destino) {
+      fd.append('tipo', destino.tipo);
+      fd.append('index', String(destino.index));
+    }
+    return this.http.post<{
+      archivoUrl: string;
+      archivoUrlAbsoluta?: string;
+      nombreArchivo: string;
+      persisted?: boolean;
+      message: string;
+    }>(`${this.base}/portal/examen-teorico-archivo`, fd);
   }
 
   matricularAlumno(
@@ -508,6 +579,38 @@ export class AulaVirtualAdminService {
     const fd = new FormData();
     fd.append('imagen', file);
     return this.http.post<{ url: string; message: string }>(`${this.base}/blog/imagen`, fd);
+  }
+
+  subirImagenesGaleriaPortal(files: File[]): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    for (const file of files) fd.append('imagenes', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/galeria`,
+      fd,
+    );
+  }
+
+  eliminarFotoGaleriaPortal(url: string): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/galeria`,
+      { body: { url } },
+    );
+  }
+
+  subirImagenHomeFotoPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/home-fotos`,
+      fd,
+    );
+  }
+
+  eliminarImagenHomeFotoPortal(url: string): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/home-fotos`,
+      { body: { url } },
+    );
   }
 
   listarAlertasEventosPortal(params?: {

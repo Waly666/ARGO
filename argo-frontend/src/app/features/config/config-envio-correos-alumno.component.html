@@ -10,6 +10,7 @@
     <div class="eca-links">
       <a routerLink="/app/configuracion/certificados">Config. certificados</a>
       <a routerLink="/app/configuracion/recibos">Comprobantes de caja</a>
+      <a routerLink="/app/configuracion/gestores-empresas">Gestores y empresas</a>
       <a routerLink="/app/configuracion/alertas">Alertas</a>
     </div>
   </header>
@@ -22,13 +23,15 @@
     }
 
     <div class="eca-panel card-inner">
+      <h2 class="eca-section-title">Alumnos en general</h2>
+
       <argo-switch
         label="Enviar certificados por correo al emitirlos"
         [checked]="cfg().enviarCertificados"
         (checkedChange)="onCertificados($event)" />
       <p class="eca-hint">
-        Al generar un certificado (manual, por pago, aula virtual o jornada), se envía el PDF al correo registrado
-        del alumno, si tiene dirección válida.
+        Al generar un certificado (manual, por pago, aula virtual o jornada), se envía el PDF según las reglas
+        definidas abajo.
       </p>
 
       <argo-switch
@@ -36,13 +39,47 @@
         [checked]="cfg().enviarComprobantesIngreso"
         (checkedChange)="onComprobantes($event)" />
       <p class="eca-hint">
-        Al registrar un ingreso de alumno (caja, pagos en línea, etc.), se envía el comprobante en PDF al correo
-        del alumno.
+        Al registrar un ingreso de alumno (caja, pagos en línea, etc.), se envía el comprobante en PDF según las
+        reglas definidas abajo.
       </p>
 
+      <h2 class="eca-section-title">Alumnos con gestor o empresa referidora</h2>
+      <p class="eca-hint eca-hint--block">
+        Cuando el alumno tiene activo el manejo por <strong>gestor (tramitador)</strong> o
+        <strong>empresa</strong>, puede definir destinatarios distintos. El correo del gestor se toma del catálogo
+        de gestores; el de la empresa, del cliente en facturación. Si falta correo en el catálogo, ese destino se
+        omite.
+      </p>
+
+      @for (bloque of bloquesReferidor; track bloque.key) {
+        <div class="eca-rules-card">
+          <h3>{{ bloque.titulo }}</h3>
+          <label class="eca-field">
+            <span>Comprobante de ingreso (recibo de pago)</span>
+            <select
+              [ngModel]="cfg().referidorComercial[bloque.key].comprobanteIngreso"
+              (ngModelChange)="onRegla(bloque.key, 'comprobanteIngreso', $event)">
+              @for (d of bloque.opciones; track d.value) {
+                <option [ngValue]="d.value">{{ d.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="eca-field">
+            <span>Certificado de formación</span>
+            <select
+              [ngModel]="cfg().referidorComercial[bloque.key].certificado"
+              (ngModelChange)="onRegla(bloque.key, 'certificado', $event)">
+              @for (d of bloque.opciones; track d.value) {
+                <option [ngValue]="d.value">{{ d.label }}</option>
+              }
+            </select>
+          </label>
+        </div>
+      }
+
       <p class="eca-note">
-        Si desactiva una opción, el certificado o el comprobante se genera igual en ARGO; solo se omite el envío
-        automático por correo.
+        Los interruptores generales deben estar activos para que se envíe cualquier correo. Si desactiva uno, el
+        certificado o el comprobante se genera igual en ARGO; solo se omite el envío automático.
       </p>
 
       <button type="button" class="primary" (click)="guardar()" [disabled]="saving()">

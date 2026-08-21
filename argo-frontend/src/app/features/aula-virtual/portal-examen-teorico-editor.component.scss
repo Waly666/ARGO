@@ -1,0 +1,66 @@
+@use './portal-site-editor-shared';
+
+.pete-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.pete-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  margin-bottom: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.pete-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+}
+
+.pete-file-name {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  word-break: break-all;
+}
+
+.pete-btn-file {
+  @include portal-site-editor-shared.portal-editor-button-reset;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 163, 255, 0.35);
+  background: rgba(37, 99, 235, 0.12);
+  color: #bfdbfe;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &--busy {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+.pete-remove {
+  align-self: flex-start;
+}

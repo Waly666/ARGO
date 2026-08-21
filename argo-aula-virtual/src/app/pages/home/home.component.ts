@@ -19,6 +19,8 @@ import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
 import { HeroParticleMeshComponent } from '../../shared/hero-particle-mesh/hero-particle-mesh.component';
+import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { portalSectionIcon } from '../../shared/portal-icon/portal-icon.registry';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
@@ -31,7 +33,7 @@ import { HERO_DEFAULT } from './home-content';
 @Component({
   selector: 'av-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, HeroParticleMeshComponent],
+  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, HeroParticleMeshComponent, PortalIconComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -54,6 +56,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   tabPilar = signal<'capacitacion' | 'campanas'>('capacitacion');
   faqAbierta = signal<number | null>(null);
 
+  readonly portalSectionIcon = portalSectionIcon;
+
   landing = computed(() => mergePortalLanding(this.config()?.landing));
 
   nombreCea = computed(() => this.config()?.nombreCea || DEFAULT_CEA_NOMBRE);
@@ -73,8 +77,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ordenSecciones = computed(() => {
     const cfg = this.config();
-    return ordenSeccionesHome(cfg)
-      .filter((id) => seccionHomeVisible(cfg, id) && id !== 'infoCards');
+    const landing = mergePortalLanding(cfg?.landing);
+    return ordenSeccionesHome(cfg).filter((id) => {
+      if (id === 'infoCards') return false;
+      if (id === 'fotosInicio') {
+        return seccionHomeVisible(cfg, id) && (landing.fotosInicio?.fotos?.length ?? 0) > 0;
+      }
+      return seccionHomeVisible(cfg, id);
+    });
   });
 
   infoCardsVisibles = computed(() => seccionHomeVisible(this.config(), 'infoCards'));
@@ -84,6 +94,20 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || DEFAULT_APK_URL);
 
   apkDownloadName = computed(() => this.landing().appMobile.apkNombre || DEFAULT_APK_NOMBRE);
+
+  fotosInicioLista = computed(() => this.landing().fotosInicio?.fotos?.filter((f) => f.url?.trim()) ?? []);
+
+  examenTeoricoCtaTexto = computed(() => {
+    const raw = this.landing().examenTeorico?.ctaTexto?.trim() || '';
+    if (!raw || /cursos de conducci/i.test(raw)) {
+      return 'Ver información completa';
+    }
+    return raw;
+  });
+
+  fotoInicioUrl(foto: { url?: string; urlAbsoluta?: string }) {
+    return resolveUploadUrl(foto.urlAbsoluta || foto.url);
+  }
 
   ngOnInit() {
     this.api.config().subscribe({
@@ -118,6 +142,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   fmt(n: number) {
     return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(n || 0);
+  }
+
+  licenciaEsExterna(url: string | undefined): boolean {
+    return /^https?:\/\//i.test(String(url || '').trim());
+  }
+
+  licenciaRuta(url: string | undefined): string {
+    const u = String(url || '/registro').trim();
+    if (!u || u === '/') return '/';
+    return u.startsWith('/') ? u : `/${u}`;
   }
 
   /** Posiciona cada carrera alrededor del núcleo central (layout orbital). */

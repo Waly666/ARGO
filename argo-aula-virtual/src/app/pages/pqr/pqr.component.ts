@@ -5,11 +5,12 @@ import { RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import { PqrFormComponent } from '../../shared/pqr-form/pqr-form.component';
+import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 
 @Component({
   selector: 'av-pqr',
   standalone: true,
-  imports: [CommonModule, RouterLink, PqrFormComponent],
+  imports: [CommonModule, RouterLink, PqrFormComponent, PortalIconComponent],
   templateUrl: './pqr.component.html',
   styleUrl: './pqr.component.scss',
 })

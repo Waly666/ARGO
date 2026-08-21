@@ -9,6 +9,7 @@ import {
 } from '../../core/constants/portal-site-defaults';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { resolverTextoJuntoLogo } from '../../core/utils/portal-marca.util';
+import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { mergePortalLanding } from '../../core/constants/portal-landing-defaults';
 import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { BuilderPanel } from './portal-site-builder.component';
@@ -89,7 +90,7 @@ export class PortalSitePreviewComponent {
   }
 
   logoUrl(): string | null {
-    return this.portalForm.urlLogoAbsoluta || this.portalForm.urlLogo || null;
+    return resolveUploadAssetUrl(this.portalForm.urlLogo, this.portalForm.urlLogoAbsoluta);
   }
 
   heroTitulo(): string {
@@ -104,18 +105,13 @@ export class PortalSitePreviewComponent {
   }
 
   heroImageUrl(): string {
-    const abs = this.site?.tema?.urlHeroAbsoluta?.trim();
-    if (abs) return abs;
-    const rel = this.site?.tema?.urlHero?.trim();
-    if (rel) {
-      if (rel.startsWith('http')) return rel;
-      if (rel.startsWith('/')) return `${this.portalOrigin()}${rel}`;
-      const logoBase = this.portalForm.urlLogoAbsoluta || '';
-      if (logoBase.includes('/uploads/')) {
-        const origin = logoBase.replace(/\/uploads\/.*$/, '');
-        return `${origin}/${rel.replace(/^\//, '')}`;
-      }
-      return rel;
+    const resolved = resolveUploadAssetUrl(
+      this.site?.tema?.urlHero,
+      this.site?.tema?.urlHeroAbsoluta,
+    );
+    if (resolved) {
+      if (resolved.startsWith('/images/')) return `${this.portalOrigin()}${resolved}`;
+      return resolved;
     }
     return `${this.portalOrigin()}/images/hero-estudiante.png`;
   }
@@ -142,6 +138,10 @@ export class PortalSitePreviewComponent {
       {
         key: 'consultaCertificados',
         label: paginas?.consultaCertificados?.etiquetaMenu || nav.consultaCertificados,
+      },
+      {
+        key: 'cursosConduccion',
+        label: paginas?.cursosConduccion?.etiquetaMenu || nav.cursosConduccion,
       },
       { key: 'blog', label: paginas?.blog?.etiquetaMenu || nav.blog },
       { key: 'acerca', label: paginas?.acerca?.etiquetaMenu || nav.acerca },
@@ -192,7 +192,9 @@ export class PortalSitePreviewComponent {
       infoCards: '▦',
       ofertas: '✦',
       beneficios: '★',
+      licencias: '🪪',
       quoteBand: '❝',
+      fotosInicio: '🖼',
       serviciosEmpresa: '◎',
       testimonios: '💬',
       valores: '♥',

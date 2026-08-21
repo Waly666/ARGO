@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AutorizacionDatosComponent } from '../../shared/autorizacion-datos/autorizacion-datos.component';
+import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { payloadAutorizacionDatos } from '../../core/autorizacion-datos.constants';
 import { AulaApiService } from '../../core/aula-api.service';
 import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
@@ -14,7 +15,7 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 @Component({
   selector: 'av-jornadas-capacitacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, AutorizacionDatosComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, AutorizacionDatosComponent, PortalIconComponent],
   templateUrl: './jornadas-capacitacion.component.html',
   styleUrl: './jornadas-capacitacion.component.scss',
 })

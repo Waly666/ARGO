@@ -1,0 +1,62 @@
+<section class="av-page card galeria-admin">
+  <header class="galeria-admin__head">
+    <div>
+      <p class="av-eyebrow">Solo administrador</p>
+      <h1>Galería del portal</h1>
+      <p class="av-muted">
+        Suba, elimine y organice las fotos y videos de la página pública
+        <strong>/galeria</strong>.
+      </p>
+    </div>
+    <div class="galeria-admin__actions">
+      <a class="av-btn av-btn--ghost" routerLink="/app/aula-virtual/sitio">Editor sitio</a>
+      <a class="av-btn av-btn--ghost" routerLink="/app/aula-virtual">Aula virtual</a>
+    </div>
+  </header>
+
+  @if (msg()) {
+    <p class="av-banner" [class.av-banner--err]="err()">{{ msg() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="av-muted av-loading">Cargando galería…</p>
+  } @else {
+    <section class="galeria-admin__textos card">
+      <h2>Textos de la página</h2>
+      <div class="galeria-admin__grid-form">
+        <label>
+          <span>Etiqueta superior</span>
+          <input type="text" [(ngModel)]="galeria().kicker" />
+        </label>
+        <label>
+          <span>Título</span>
+          <input type="text" [(ngModel)]="galeria().titulo" />
+        </label>
+        <label class="galeria-admin__full">
+          <span>Descripción</span>
+          <textarea rows="2" [(ngModel)]="galeria().lead"></textarea>
+        </label>
+        <label>
+          <span>Sin fotos — título</span>
+          <input type="text" [(ngModel)]="galeria().emptyTitulo" />
+        </label>
+        <label>
+          <span>Sin fotos — texto</span>
+          <input type="text" [(ngModel)]="galeria().emptyTexto" />
+        </label>
+      </div>
+      <div class="galeria-admin__toolbar">
+        <button type="button" class="av-btn av-btn--primary" [disabled]="saving()" (click)="guardarTextos()">
+          {{ saving() ? 'Guardando…' : 'Guardar textos' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="galeria-admin__fotos card">
+      <argo-portal-galeria-fotos-editor
+        [galeria]="galeria()"
+        (portalConfigUpdated)="onConfigActualizada($event)"
+        (avNotice)="onAviso($event)" />
+    </section>
+  }
+</section>

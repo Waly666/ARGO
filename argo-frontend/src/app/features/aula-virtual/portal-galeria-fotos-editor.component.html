@@ -1,0 +1,73 @@
+<section class="pgfe">
+  <div class="pgfe-head">
+    <div>
+      <h3>Fotos y videos de la galería</h3>
+      <p class="psb-muted">
+        Puede seleccionar muchas fotos a la vez: se suben automáticamente en lotes de 30.
+      </p>
+    </div>
+    <label class="pgfe-upload">
+      {{ etiquetaSubida() }}
+      <input
+        type="file"
+        accept="image/*,video/mp4,video/webm"
+        multiple
+        [disabled]="uploading()"
+        (change)="onArchivosSelected($event)" />
+    </label>
+  </div>
+
+  <div class="pgfe-toolbar">
+    <input
+      type="search"
+      class="psb-input pgfe-search"
+      placeholder="Buscar por leyenda o nombre…"
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event)" />
+  </div>
+
+  @if (!fotosFiltradas().length) {
+    <div class="pgfe-empty">
+      @if (totalFotos()) {
+        <p>No hay resultados para la búsqueda.</p>
+      } @else {
+        <p>Aún no hay fotos ni videos.</p>
+        <label class="pgfe-upload pgfe-upload--large">
+          {{ etiquetaSubida() }}
+          <input
+            type="file"
+            accept="image/*,video/mp4,video/webm"
+            multiple
+            [disabled]="uploading()"
+            (change)="onArchivosSelected($event)" />
+        </label>
+      }
+    </div>
+  } @else {
+    <div class="pgfe-grid">
+      @for (foto of fotosFiltradas(); track foto.id) {
+        <article class="pgfe-item">
+          <div class="pgfe-thumb">
+            @if (foto.tipo === 'video') {
+              <video [src]="previewUrl(foto)" muted playsinline preload="metadata"></video>
+              <span class="pgfe-badge">Video</span>
+            } @else {
+              <img [src]="previewUrl(foto)" [alt]="foto.leyenda || 'Foto galería'" loading="lazy" />
+            }
+          </div>
+          <input
+            type="text"
+            class="psb-input pgfe-leyenda"
+            placeholder="Leyenda opcional"
+            [(ngModel)]="foto.leyenda" />
+          <button type="button" class="psb-btn psb-btn--ghost pgfe-quitar" (click)="confirmarEliminar(foto)">
+            Quitar
+          </button>
+        </article>
+      }
+    </div>
+    <p class="psb-muted pgfe-hint">
+      Las leyendas se guardan al publicar los cambios del sitio. «Quitar» elimina el archivo del servidor de inmediato.
+    </p>
+  }
+</section>
