@@ -3,6 +3,7 @@ const { CURSOS_CONDUCCION_DEFAULTS } = require('../constants/aulaVirtualCursosCo
 const { GALERIA_DEFAULTS } = require('../constants/aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS, MAX_FOTOS_INICIO } = require('../constants/aulaVirtualHomeFotosDefaults');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+const { sanearGaleriaFotos } = require('./aulaVirtualGaleriaFotos');
 const path = require('path');
 
 function str(v, fallback = '') {
@@ -484,13 +485,15 @@ function normalizarGaleria(src) {
     .filter(Boolean)
     .sort((a, b) => a.orden - b.orden);
 
+  const fotosSanas = sanearGaleriaFotos(fotos, { soloExistentes: true });
+
   return {
     kicker: str(raw.kicker, d.kicker),
     titulo: str(raw.titulo, d.titulo),
     lead: str(raw.lead, d.lead),
     emptyTitulo: str(raw.emptyTitulo, d.emptyTitulo),
     emptyTexto: str(raw.emptyTexto, d.emptyTexto),
-    fotos,
+    fotos: fotosSanas,
   };
 }
 

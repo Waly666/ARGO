@@ -19,6 +19,7 @@ const { publicUrl, baseDir } = require('../src/middleware/upload');
 const { obtenerConfigAula, guardarConfigAula } = require('../src/services/aulaVirtualPortal');
 const { mergeLanding } = require('../src/services/aulaVirtualPortalLanding');
 const { optimizarImagenArchivo } = require('../src/utils/optimizarImagen');
+const { galeriaFotoSuffix } = require('../src/services/aulaVirtualGaleriaFotos');
 
 const EXT_OK = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm']);
 
@@ -57,11 +58,14 @@ async function main() {
 
   const aula = await obtenerConfigAula();
   const landing = mergeLanding(aula.landing);
-  const existentes = new Set((landing.galeria?.fotos || []).map((f) => path.basename(f.url)));
+  const existentes = new Set(
+    (landing.galeria?.fotos || []).map((f) => galeriaFotoSuffix(f.url)),
+  );
   const nuevas = [];
 
   for (const name of archivos) {
-    if (existentes.has(name)) {
+    const suffixEsperado = name.replace(/[^\w.\-]+/g, '_');
+    if (existentes.has(suffixEsperado)) {
       console.log('Omitido (ya registrado):', name);
       continue;
     }

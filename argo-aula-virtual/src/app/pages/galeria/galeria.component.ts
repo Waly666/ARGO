@@ -50,7 +50,7 @@ export class GaleriaComponent implements OnInit {
     const rel = foto.urlAbsoluta || foto.url;
     if (!rel) return null;
     if (/^https?:\/\//i.test(rel)) return rel;
-    return resolveUploadUrl(rel) || (rel.startsWith('/uploads/') ? rel : null);
+    return resolveUploadUrl(rel) || (rel.startsWith('/') ? rel : null);
   }
 
   abrirLightbox(index: number) {
