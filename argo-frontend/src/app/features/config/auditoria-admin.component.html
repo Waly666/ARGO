@@ -1,11 +1,11 @@
-<section class="aud-page admin-list-page card">
+<section class="aud-page admin-list-page card" [class.aud-page--ops]="tab() === 'ops'" [class.aud-page--ops-full]="opsFullscreen()">
   <header class="aud-head">
     <div class="aud-head-main">
       <h1>
         Monitoreo y auditoría
         @if (
           autoRefresh() &&
-          (tab() === 'enLinea' || (tab() === 'historial' && historialPage() === 1))
+          (tab() === 'ops' || tab() === 'enLinea' || (tab() === 'historial' && historialPage() === 1))
         ) {
           <span class="aud-live" aria-live="polite">
             <span class="aud-live-dot"></span>
@@ -27,6 +27,10 @@
       }
     </div>
     <div class="aud-badges">
+      @if (tab() === 'ops') {
+        <span class="aud-chip aud-chip--neon">{{ opsEvents().length }} eventos</span>
+        <span class="aud-chip aud-chip--teal">{{ opsAgents().length }} agentes</span>
+      }
       @if (tab() === 'enLinea') {
         <span class="aud-chip aud-chip--teal">{{ activos().length }} en línea</span>
       }
@@ -40,6 +44,9 @@
   </header>
 
   <nav class="aud-tabs" role="tablist">
+    <button type="button" role="tab" class="aud-tab aud-tab--ops" [class.aud-tab--active]="tab() === 'ops'" (click)="setTab('ops')">
+      ◈ Vigilancia LIVE
+    </button>
     <button type="button" role="tab" class="aud-tab" [class.aud-tab--active]="tab() === 'enLinea'" (click)="setTab('enLinea')">
       En línea ahora
     </button>
@@ -50,6 +57,112 @@
       Cambios en datos
     </button>
   </nav>
+
+  @if (tab() === 'ops') {
+    <div class="aud-ops" [class.aud-ops--glitch]="opsGlitch()">
+      <canvas #matrixCanvas class="aud-ops-matrix" aria-hidden="true"></canvas>
+      <div class="aud-ops-scanlines" aria-hidden="true"></div>
+      <div class="aud-ops-vignette" aria-hidden="true"></div>
+
+      <header class="aud-ops-top">
+        <div class="aud-ops-brand">
+          <span class="aud-ops-classified">CLASIFICADO // NIVEL OMEGA</span>
+          <h2 class="aud-ops-title">ARGO SURVEILLANCE GRID</h2>
+          <p class="aud-ops-sub">Seguimiento en tiempo real de operadores y mutaciones en base de datos</p>
+        </div>
+        <div class="aud-ops-top-actions">
+          <span class="aud-ops-clock">{{ opsClock() }}</span>
+          <button type="button" class="aud-ops-btn" (click)="cargarOps()">↻ SYNC</button>
+          <button type="button" class="aud-ops-btn" (click)="toggleAutoRefresh()">
+            {{ autoRefresh() ? '⏸ PAUSA' : '▶ LIVE' }}
+          </button>
+          <button type="button" class="aud-ops-btn aud-ops-btn--accent" (click)="toggleOpsFullscreen()">
+            {{ opsFullscreen() ? '⊡ SALIR' : '⛶ PANTALLA' }}
+          </button>
+        </div>
+      </header>
+
+      @if (opsMonitor(); as mon) {
+        <div class="aud-ops-metrics">
+          <div class="aud-ops-metric">
+            <span class="k">CPU</span>
+            <span class="v">{{ mon.sistema.cpuProcesoPct | number: '1.0-1' }}%</span>
+            <span class="bar"><i [style.width.%]="mon.sistema.cpuProcesoPct"></i></span>
+          </div>
+          <div class="aud-ops-metric">
+            <span class="k">RAM</span>
+            <span class="v">{{ mon.sistema.memoriaSistema.usoPct | number: '1.0-1' }}%</span>
+            <span class="bar bar--cyan"><i [style.width.%]="mon.sistema.memoriaSistema.usoPct"></i></span>
+          </div>
+          <div class="aud-ops-metric">
+            <span class="k">TRÁFICO</span>
+            <span class="v">{{ mon.trafico.peticiones }} req</span>
+          </div>
+          <div class="aud-ops-metric">
+            <span class="k">AGENTES</span>
+            <span class="v">{{ mon.usuariosConectados }}</span>
+          </div>
+          <div class="aud-ops-metric">
+            <span class="k">UPTIME</span>
+            <span class="v">{{ mon.sistema.uptimeSegundos | number: '1.0-0' }}s</span>
+          </div>
+        </div>
+      }
+
+      <div class="aud-ops-grid">
+        <aside class="aud-ops-side">
+          <h3 class="aud-ops-side-title">◉ Agentes activos</h3>
+          <div class="aud-ops-agents">
+            @for (u of opsAgents(); track u.idUsuario) {
+              <article class="aud-ops-agent" [class.aud-ops-agent--pulse]="true">
+                <header>
+                  <span class="dot"></span>
+                  <strong>{{ u.nombreUsuario || u.usuario }}</strong>
+                </header>
+                <p class="act">{{ u.ultimaActividad }}</p>
+                <p class="meta">{{ u.ultimoMetodo }} · {{ u.ultimaRuta }}</p>
+                <p class="meta dim">{{ u.peticionesRecientes }} ops / ventana</p>
+              </article>
+            } @empty {
+              <p class="aud-ops-empty">Sin agentes en la malla…</p>
+            }
+          </div>
+        </aside>
+
+        <main class="aud-ops-terminal-wrap">
+          <header class="aud-ops-terminal-head">
+            <span>root&#64;argo-servial:~# tail -f /var/log/auditoria.stream</span>
+            @if (actualizando()) {
+              <span class="aud-ops-streaming">STREAMING…</span>
+            }
+          </header>
+          <div class="aud-ops-terminal" role="log" aria-live="polite">
+            @for (e of opsEvents(); track e.id) {
+              <article
+                class="aud-ops-line"
+                [class.aud-ops-line--new]="e.isNew"
+                [class.aud-ops-sev--info]="e.severity === 'info'"
+                [class.aud-ops-sev--success]="e.severity === 'success'"
+                [class.aud-ops-sev--warn]="e.severity === 'warn'"
+                [class.aud-ops-sev--critical]="e.severity === 'critical'"
+              >
+                <span class="t">[{{ formatOpsTime(e.ts) }}]</span>
+                <span class="tag">{{ opsKindLabel(e.kind) }}</span>
+                @if (e.code) {
+                  <span class="code">{{ e.code }}</span>
+                }
+                <span class="actor">{{ e.actor }}</span>
+                <span class="msg">{{ e.headline }}</span>
+                <span class="detail">// {{ e.detail }}</span>
+              </article>
+            } @empty {
+              <p class="aud-ops-empty">Escaneando red… esperando eventos.</p>
+            }
+          </div>
+        </main>
+      </div>
+    </div>
+  }
 
   @if (tab() === 'enLinea') {
     <div class="aud-panel">
