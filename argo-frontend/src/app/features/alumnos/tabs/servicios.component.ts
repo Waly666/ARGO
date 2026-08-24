@@ -218,6 +218,7 @@ export class ServiciosComponent implements OnInit {
   );
 
   puedeAjustarValorMat = computed(() => {
+    if (!this.accionPermiso.tiene('matriculas', 'editar')) return false;
     if (!this.permitirAjusteValorMatricula()) return false;
     if (!this.idProg() || this.esTarifaVirtualSeleccionada()) return false;
     if (this.ajustarCuotasSemestre) return false;
@@ -225,6 +226,7 @@ export class ServiciosComponent implements OnInit {
   });
 
   puedeAjustarCuotasSemestre = computed(() => {
+    if (!this.accionPermiso.tiene('matriculas', 'editar')) return false;
     if (!this.permitirAjusteCuotasSemestre()) return false;
     if (!this.idProg() || this.esTarifaVirtualSeleccionada()) return false;
     return this.cuotasSemestreCatalogo().length >= 2;
@@ -250,6 +252,7 @@ export class ServiciosComponent implements OnInit {
   );
 
   matriculasCuotasEditables = computed(() => {
+    if (!this.accionPermiso.tiene('matriculas', 'editar')) return [];
     if (!this.permitirAjusteCuotasSemestre()) return [];
     const mats = this.matriculasAlumno();
     const items = this.liquidacion().items;
@@ -375,11 +378,19 @@ export class ServiciosComponent implements OnInit {
     if (this.guardandoAlta() || this.aplicandoCombo()) return true;
     switch (this.tipoAlta()) {
       case 'programa':
-        return !this.idProg() || this.programaSoloVirtual();
+        return (
+          !this.idProg() ||
+          this.programaSoloVirtual() ||
+          !this.accionPermiso.tiene('matriculas', 'crear')
+        );
       case 'combo':
-        return !this.comboIdSeleccionado();
+        return !this.comboIdSeleccionado() || !this.accionPermiso.tiene('combos', 'crear');
       case 'servicio':
-        return !this.idServ() || this.servValorTotal() <= 0;
+        return (
+          !this.idServ() ||
+          this.servValorTotal() <= 0 ||
+          !this.accionPermiso.tiene('liquidaciones', 'crear')
+        );
       default:
         return true;
     }

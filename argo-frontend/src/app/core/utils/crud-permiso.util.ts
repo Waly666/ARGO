@@ -4,6 +4,7 @@ export type AccionCrud = 'ver' | 'crear' | 'editar' | 'eliminar';
 
 export type ModuloCrud =
   | 'alumnos'
+  | 'matriculas'
   | 'programas'
   | 'servicios'
   | 'certificados'
@@ -54,6 +55,18 @@ const MODULOS_CRUD: Record<
       crear: ['alumnos.gestionar', 'alumnos.crear'],
       editar: ['alumnos.gestionar', 'alumnos.editar'],
       eliminar: ['alumnos.gestionar', 'alumnos.eliminar'],
+    },
+  },
+  matriculas: {
+    label: 'Matrículas',
+    prefijo: 'matriculas',
+    categoria: 'academico',
+    orden: 15,
+    legacyPorAccion: {
+      ver: ['alumnos.ver', 'alumnos.gestionar', 'alumnos.pagos'],
+      crear: ['alumnos.pagos', 'alumnos.gestionar'],
+      editar: ['alumnos.pagos', 'alumnos.gestionar'],
+      eliminar: ['alumnos.gestionar'],
     },
   },
   programas: {

@@ -10,10 +10,11 @@ router.use(requireAuth);
 router.use(loadSedeActiva);
 
 const acc = accionesModulo('programas');
+const accMat = accionesModulo('matriculas');
 
 router.get('/', acc.ver, ctrl.listar);
 router.get('/siguiente-codigo', acc.ver, ctrl.siguienteCodigo);
-router.get('/:id/matriculas', acc.ver, ctrl.matriculas);
+router.get('/:id/matriculas', accMat.ver, ctrl.matriculas);
 router.get('/:id', acc.ver, ctrl.obtener);
 router.post('/', acc.crear, ctrl.crear);
 router.post(
