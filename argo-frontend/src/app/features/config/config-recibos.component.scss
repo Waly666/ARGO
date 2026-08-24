@@ -358,6 +358,35 @@
   line-height: 1.3;
 }
 
+.rec-tarifas-matricula {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.rec-field-hint--block {
+  display: block;
+  margin: 0.25rem 0 0.65rem;
+}
+
+.rec-tarifas-matricula-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.rec-tarifa-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.86rem;
+  cursor: pointer;
+
+  input {
+    margin-top: 0.15rem;
+  }
+}
+
 .rec-actions {
   display: flex;
   justify-content: flex-end;

@@ -17,6 +17,17 @@ const UsuarioSchema = new mongoose.Schema(
     idEmpleado: { type: Number, index: true },
     /** Sedes donde puede operar (idSede). Admin ve todas aunque no esté listado. */
     sedesPermitidas: { type: [String], default: [] },
+    /**
+     * Canal de conexión permitido: mixta (web + móvil), movil (solo apps) o escritorio (solo ERP web).
+     * Se valida en login y en cada petición autenticada según X-ARGO-Cliente.
+     */
+    canalConexion: {
+      type: String,
+      enum: ['mixta', 'movil', 'escritorio'],
+      default: 'mixta',
+      trim: true,
+      lowercase: true,
+    },
     /** 2FA TOTP (ERP web) — secreto cifrado AES-256-GCM */
     totpEnabled: { type: Boolean, default: false },
     totpSecretEnc: { type: String, default: null },

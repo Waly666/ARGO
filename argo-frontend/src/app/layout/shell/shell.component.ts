@@ -585,7 +585,7 @@ export class ShellComponent {
           path: '/app/cobros-pendientes',
           icon: '◉',
           iconTone: 'cyan',
-          permiso: ['caja.cobros', 'caja.turno'],
+          permiso: 'caja.cobros',
         },
         {
           kind: 'subgroup',
@@ -607,7 +607,7 @@ export class ShellComponent {
               icon: '⊞',
               path: '/app/combos',
               iconTone: 'teal',
-              permiso: ['combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar'],
+              permiso: 'combos.gestionar',
             },
             {
               kind: 'link',
@@ -615,7 +615,7 @@ export class ShellComponent {
               path: '/app/caja/terceros',
               icon: '◎',
               iconTone: 'teal',
-              permiso: ['caja.turno', 'caja.admin'],
+              permiso: ['caja.admin', 'contabilidad'],
             },
             {
               kind: 'link',
@@ -623,7 +623,7 @@ export class ShellComponent {
               path: '/app/programacion-cea/clases-hoy',
               icon: '◷',
               iconTone: 'cyan',
-              permiso: ['caja.turno', 'caja.admin'],
+              permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
             },
           ],
         },
@@ -639,7 +639,7 @@ export class ShellComponent {
               path: '/app/caja/gestores',
               icon: '◉',
               iconTone: 'cyan',
-              permiso: ['caja.turno', 'caja.admin'],
+              permiso: ['caja.admin', 'contabilidad'],
             },
             {
               kind: 'link',
@@ -647,7 +647,7 @@ export class ShellComponent {
               path: '/app/caja/empresa',
               icon: '▣',
               iconTone: 'indigo',
-              permiso: ['caja.turno', 'caja.admin'],
+              permiso: ['caja.admin', 'contabilidad'],
             },
           ],
         },

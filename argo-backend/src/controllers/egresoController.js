@@ -13,7 +13,6 @@ const {
 } = require('../utils/empleadoDoc');
 const {
   registrarAnticipoDesdeEgreso,
-  eliminarNovedadPorEgreso,
 } = require('../services/nominaAnticipo');
 const { siguienteNumComprobanteEgreso } = require('../services/configRecibo');
 const { configDesdeTipoDoc, resolverTipoEgresoDoc, esRetiroCajaTipo } = require('../services/tipoEgresoNomina');
@@ -23,17 +22,11 @@ const {
   verificarMovimientoSesionCajero,
 } = require('../services/cajaSesion');
 const { exigirAdminOSupervisor } = require('../services/authVerify');
-const {
-  autorizarAnulacionComprobante,
-  metadatosAnulacion,
-  sufijoAutoriza,
-} = require('../services/anulacionComprobante');
 const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
 const { validarPagoIntangibleEgreso } = require('../utils/referenciaPago');
 const {
   registrarCreacion,
   registrarModificacion,
-  registrarEliminacion,
 } = require('../services/auditoria');
 
 function num(v) {
@@ -777,42 +770,12 @@ exports.actualizar = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
-    const eg = await Egreso.findById(req.params.id);
-    if (!eg) return res.status(404).json({ message: 'Egreso no encontrado' });
-    if (esComprobanteAnulado(eg)) {
-      return res.status(409).json({ message: 'Este egreso ya está anulado.' });
+    const { anularEgreso } = require('../services/eliminacionEntidades');
+    const resultado = await anularEgreso(req, req.params.id, null);
+    if (!resultado.ok) {
+      return res.status(resultado.status || 400).json({ message: resultado.message, code: resultado.code });
     }
-    const antes = eg.toObject();
-
-    const auth = await autorizarAnulacionComprobante(
-      req,
-      eg.idSesion,
-      'Anular egresos requiere autorización de un administrador.',
-    );
-    if (!auth.ok) {
-      return res.status(auth.status).json({ message: auth.message, code: auth.code });
-    }
-    const supervisor = auth.supervisor;
-
-    // No se borra: pasa a estado ANULADO con valor en cero conservando consecutivo.
-    const motivo = String(req.body?.motivo || req.body?.motivoAnulacion || '').trim() || null;
-    eg.set(metadatosAnulacion(req, supervisor, { valorOriginal: num(eg.valorEgreso), motivo }));
-    eg.valorEgreso = toDec(0);
-    eg.userChangeRecord = req.user?.username || 'sistema';
-    eg.fechaMod = new Date();
-    await eg.save();
-
-    if (antes.idSesion) {
-      const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
-      await sincronizarDescuadreSesion(antes.idSesion).catch(() => null);
-    }
-    if (antes.anticipoNomina) {
-      await eliminarNovedadPorEgreso(antes._id);
-    }
-    registrarEliminacion(req, 'egreso', antes, {
-      resumen: `Anulación egreso ${antes.numRecibo || req.params.id}${sufijoAutoriza(supervisor)}`,
-    });
-    res.json({ ok: true, estado: 'ANULADO' });
+    res.json(resultado);
   } catch (e) {
     next(e);
   }

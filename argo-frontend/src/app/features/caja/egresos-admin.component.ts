@@ -10,6 +10,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 
 import { AuthService } from '../../core/services/auth.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { PermisoService } from '../../core/services/permiso.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 
@@ -100,6 +102,8 @@ export class EgresosAdminComponent implements OnInit {
   private reciboSvc = inject(ReciboService);
 
   private confirm = inject(ConfirmDialogService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
   private cajaSvc = inject(CajaSesionService);
   private cajaAlert = inject(CajaAperturaAlertService);
   private cajaEstado = inject(CajaEstadoService);
@@ -369,8 +373,10 @@ export class EgresosAdminComponent implements OnInit {
     return this.esRetiroCaja() && !this.editando();
   });
 
-  egresoPendienteAnular = signal<Egreso | null>(null);
-  mostrarAuthAnular = signal(false);
+  puedeAnularEgreso = computed(() => this.accionPermiso.mostrarAccionEliminar('egresos'));
+  etiquetaAnular = computed(() =>
+    this.accionPermiso.puedeEliminar('egresos') ? 'Anular' : 'Solicitar anulación',
+  );
 
   egresosSinSoporte = computed(() =>
     this.egresos().filter((e) => !this.tieneSoporte(e)),
@@ -1500,106 +1506,32 @@ export class EgresosAdminComponent implements OnInit {
 
 
   async eliminar(e: Egreso) {
-
-    const ok = await this.confirm.open({
-
-      title: 'Anular egreso',
-
-      message: `¿Anular el egreso a ${e.pagueA || e.concepto}? Pasará a estado anulado en cero y conservará su consecutivo.`,
-
-      confirmLabel: 'Anular',
-
-      variant: 'danger',
-
-    });
-
-    if (!ok) return;
-
-    if (!this.auth.isAdmin()) {
-
-      this.egresoPendienteAnular.set(e);
-
-      this.limpiarAutorizacionRetiro();
-
-      this.mostrarAuthAnular.set(true);
-
-      return;
-
-    }
-
-    this.ejecutarEliminar(e);
-
-  }
-
-
-
-  confirmarAnularConSupervisor() {
-
-    const e = this.egresoPendienteAnular();
-
-    if (!e) return;
-
-    const u = this.authAdminUser().trim();
-
-    const p = this.authAdminPass();
-
-    if (!u || !p) {
-
-      this.inform('Ingrese usuario y contraseña del administrador para anular.');
-
-      return;
-
-    }
-
-    this.ejecutarEliminar(e, { autorizadoUsername: u, autorizadoPassword: p });
-
-  }
-
-
-
-  cancelarAnularSupervisor() {
-
-    this.mostrarAuthAnular.set(false);
-
-    this.egresoPendienteAnular.set(null);
-
-    this.limpiarAutorizacionRetiro();
-
-  }
-
-
-
-  private ejecutarEliminar(
-
-    e: Egreso,
-
-    auth?: { autorizadoUsername: string; autorizadoPassword: string },
-
-  ) {
-
-    this.svc.eliminar(e.idEgreso, auth).subscribe({
-
-      next: () => {
-
-        this.mostrarAuthAnular.set(false);
-
-        this.egresoPendienteAnular.set(null);
-
-        this.limpiarAutorizacionRetiro();
-
+    if (!this.puedeAnularEgreso()) return;
+    const id = e.idEgreso;
+    if (!id) return;
+    const ref = e.numRecibo ? ` «${e.numRecibo}»` : '';
+    const resumen = `Egreso${ref || ` a ${e.pagueA || e.concepto || id}`}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'egresos',
+        idEntidad: id,
+        resumen,
+        tituloConfirm: 'Anular egreso',
+        mensajeConfirm: `¿Anular el egreso a ${e.pagueA || e.concepto}? Pasará a estado anulado en cero y conservará su consecutivo.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('egresos') ? 'Anular' : 'Enviar solicitud',
+        ejecutar: () => this.svc.eliminar(id),
+      });
+      if (resultado === 'eliminado') {
         this.cargar();
-
         this.inform('Egreso anulado.');
-
-      },
-
-      error: (err) => this.inform(err?.error?.message || 'No se pudo anular'),
-
-    });
-
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (err: unknown) {
+      const error = err as { error?: { message?: string } };
+      this.inform(error?.error?.message || 'No se pudo anular');
+    }
   }
-
-
 
   puedeGestionarEgreso(e: Egreso): boolean {
 
@@ -1629,13 +1561,8 @@ export class EgresosAdminComponent implements OnInit {
 
 
   tituloAutorizacionSupervisor(): string {
-
-    if (this.mostrarAuthAnular()) return 'Autorización para anular egreso';
-
     if (this.editando()) return 'Autorización para modificar egreso';
-
     return 'Autorización de administrador (retiro)';
-
   }
 
 

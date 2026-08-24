@@ -13,6 +13,12 @@ import {
   esLoginNumerico,
   loginMostrable,
 } from '../../core/utils/usuario-login.helpers';
+import {
+  CANAL_CONEXION_OPCIONES,
+  CanalConexionUsuario,
+  labelCanalConexion,
+  normalizarCanalConexion,
+} from '../../core/utils/canal-conexion.util';
 
 @Component({
   selector: 'argo-usuarios-admin',
@@ -92,7 +98,16 @@ export class UsuariosAdminComponent implements OnInit {
     activo: true,
     numeroDocumento: '',
     sedesPermitidas: [],
+    canalConexion: 'mixta',
   });
+
+  canalConexionOpciones = CANAL_CONEXION_OPCIONES;
+  labelCanalConexion = labelCanalConexion;
+
+  hintCanalFormulario(): string {
+    const id = normalizarCanalConexion(this.form().canalConexion);
+    return this.canalConexionOpciones.find((c) => c.id === id)?.desc || '';
+  }
 
   ngOnInit(): void {
     this.cargar();
@@ -144,6 +159,7 @@ export class UsuariosAdminComponent implements OnInit {
       activo: true,
       numeroDocumento: '',
       sedesPermitidas: principal ? [principal.idSede] : [],
+      canalConexion: 'mixta',
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
@@ -164,6 +180,7 @@ export class UsuariosAdminComponent implements OnInit {
       activo: u.activo !== false,
       numeroDocumento: documentoUsuario(u),
       sedesPermitidas: u.sedesPermitidas?.length ? [u.sedesPermitidas[0]] : [],
+      canalConexion: normalizarCanalConexion(u.canalConexion),
     });
     this.mostrarForm.set(true);
     this.msg.set(null);
@@ -232,7 +249,10 @@ export class UsuariosAdminComponent implements OnInit {
     this.saving.set(true);
     this.msg.set(null);
     this.msgError.set(false);
-    const payload: UsuarioDto = { ...f };
+    const payload: UsuarioDto = {
+      ...f,
+      canalConexion: normalizarCanalConexion(f.canalConexion) as CanalConexionUsuario,
+    };
     if (this.esRolAdmin(f.rol)) payload.sedesPermitidas = [];
     const req = ed
       ? this.svc.actualizar(ed._id, payload)

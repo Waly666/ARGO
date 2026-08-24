@@ -3,6 +3,7 @@ const { CLAVE, DEFAULTS, obtenerConfigRecibo } = require('../services/configReci
 const { FORMATOS_VALIDOS, normalizarFormatoComprobante } = require('../services/comprobanteFormato');
 const { normalizarIdSede, sedesPermitidasUsuario } = require('../services/sedeContext');
 const { esAdmin } = require('../utils/roles');
+const { normalizarTarifasMatriculaSeleccionables } = require('../services/configTarifasMatricula');
 
 const CAMPOS = [
   'nombreEmpresa',
@@ -37,6 +38,7 @@ const CAMPOS = [
   'formatoComprobanteEgreso',
   'permitirAjusteValorMatricula',
   'permitirAjusteCuotasSemestre',
+  'tarifasMatriculaSeleccionables',
   'toleranciaCierreCajaCop',
 ];
 
@@ -76,6 +78,9 @@ exports.obtenerReciboOpcionesMatricula = async (_req, res, next) => {
     res.json({
       permitirAjusteValorMatricula: doc.permitirAjusteValorMatricula !== false,
       permitirAjusteCuotasSemestre: doc.permitirAjusteCuotasSemestre === true,
+      tarifasMatriculaSeleccionables: normalizarTarifasMatriculaSeleccionables(
+        doc.tarifasMatriculaSeleccionables,
+      ),
     });
   } catch (e) {
     next(e);
@@ -132,6 +137,23 @@ exports.actualizarRecibo = async (req, res, next) => {
       'segundoPrefijoComprobanteEgreso',
     ]) {
       if (dto[k] !== undefined) dto[k] = String(dto[k] ?? '').trim();
+    }
+    if (dto.tarifasMatriculaSeleccionables !== undefined) {
+      const raw = req.body.tarifasMatriculaSeleccionables;
+      if (!Array.isArray(raw)) {
+        return res.status(400).json({ message: 'tarifasMatriculaSeleccionables debe ser un arreglo' });
+      }
+      const parsed = [
+        ...new Set(
+          raw.map((x) => Number(x)).filter((n) => n === 1 || n === 2 || n === 3 || n === 4),
+        ),
+      ].sort((a, b) => a - b);
+      if (!parsed.length) {
+        return res.status(400).json({
+          message: 'Seleccione al menos una tarifa habilitada para matrícula (1, 2, 3 o virtual).',
+        });
+      }
+      dto.tarifasMatriculaSeleccionables = parsed;
     }
     const existe = await Config.findOne({ clave: CLAVE });
     if (existe) {

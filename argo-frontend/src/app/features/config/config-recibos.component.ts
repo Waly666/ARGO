@@ -5,6 +5,11 @@ import { RouterLink } from '@angular/router';
 
 import { ConfigRecibo, ConfigService } from '../../core/services/config.service';
 import { ArgoSwitchComponent } from '../../shared/argo-switch/argo-switch.component';
+import {
+  normalizarTarifasMatriculaConfig,
+  TARIFAS_MATRICULA_CONFIG_DEFAULT,
+  TARIFAS_MATRICULA_CONFIG_OPCIONES,
+} from '../../core/utils/tarifas-matricula-config.util';
 
 @Component({
   selector: 'argo-config-recibos',
@@ -23,6 +28,8 @@ export class ConfigRecibosComponent implements OnInit {
     { id: 'media_carta', label: 'Media carta (14 × 21,6 cm)' },
   ] as const;
 
+  readonly tarifasMatriculaOpciones = TARIFAS_MATRICULA_CONFIG_OPCIONES;
+
   form = signal<ConfigRecibo>({});
   loading = signal(true);
   saving = signal(false);
@@ -36,6 +43,9 @@ export class ConfigRecibosComponent implements OnInit {
           ...c,
           permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
           permitirAjusteCuotasSemestre: c.permitirAjusteCuotasSemestre === true,
+          tarifasMatriculaSeleccionables: normalizarTarifasMatriculaConfig(
+            c.tarifasMatriculaSeleccionables,
+          ),
           toleranciaCierreCajaCop:
             c.toleranciaCierreCajaCop != null && Number.isFinite(Number(c.toleranciaCierreCajaCop))
               ? Math.round(Number(c.toleranciaCierreCajaCop))
@@ -99,6 +109,25 @@ export class ConfigRecibosComponent implements OnInit {
     this.form.update((f) => ({ ...f, [k]: v }));
   }
 
+  tarifasMatriculaForm(): number[] {
+    return normalizarTarifasMatriculaConfig(this.form().tarifasMatriculaSeleccionables);
+  }
+
+  tarifaMatriculaMarcada(id: number): boolean {
+    return this.tarifasMatriculaForm().includes(id);
+  }
+
+  toggleTarifaMatricula(id: number, activa: boolean): void {
+    const actuales = new Set(this.tarifasMatriculaForm());
+    if (activa) actuales.add(id);
+    else actuales.delete(id);
+    const next = [...actuales].sort((a, b) => a - b);
+    this.patch(
+      'tarifasMatriculaSeleccionables',
+      next.length ? next : [...TARIFAS_MATRICULA_CONFIG_DEFAULT],
+    );
+  }
+
   usaValidadora(tipo: 'ingreso' | 'egreso'): boolean {
     const f = this.form();
     const key = tipo === 'ingreso' ? 'formatoComprobanteIngreso' : 'formatoComprobanteEgreso';
@@ -106,6 +135,11 @@ export class ConfigRecibosComponent implements OnInit {
   }
 
   guardar() {
+    if (!this.tarifasMatriculaForm().length) {
+      this.msgError.set(true);
+      this.msg.set('Seleccione al menos una tarifa habilitada para matrícula.');
+      return;
+    }
     this.saving.set(true);
     this.msg.set(null);
     this.msgError.set(false);
@@ -115,6 +149,9 @@ export class ConfigRecibosComponent implements OnInit {
           ...c,
           permitirAjusteValorMatricula: c.permitirAjusteValorMatricula !== false,
           permitirAjusteCuotasSemestre: c.permitirAjusteCuotasSemestre === true,
+          tarifasMatriculaSeleccionables: normalizarTarifasMatriculaConfig(
+            c.tarifasMatriculaSeleccionables,
+          ),
           toleranciaCierreCajaCop:
             c.toleranciaCierreCajaCop != null && Number.isFinite(Number(c.toleranciaCierreCajaCop))
               ? Math.round(Number(c.toleranciaCierreCajaCop))

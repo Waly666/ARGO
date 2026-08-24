@@ -124,7 +124,7 @@
           </td>
           <td class="actions-cell">
             <button type="button" class="ghost sm" (click)="verRecibo(i._id)">Recibo</button>
-            <button type="button" class="danger sm" *ngIf="cajaAbierta()" (click)="reversar(i)">Reversar</button>
+            <button type="button" class="danger sm" *ngIf="cajaAbierta() && puedeReversarPago()" (click)="reversar(i)">{{ etiquetaReversar() }}</button>
           </td>
         </tr>
         <tr *ngIf="!items().length">
@@ -134,25 +134,4 @@
     </table>
   </div>
   <ng-template #cargando><p class="loading">Cargando…</p></ng-template>
-
-  <div class="modal-backdrop auth-anular-backdrop" *ngIf="mostrarAuthAnular()" (click)="cancelarReversarSupervisor()">
-    <div class="modal card auth-anular-modal" (click)="$event.stopPropagation()">
-      <h3>Autorización para anular ingreso</h3>
-      <p class="hint" *ngIf="ingresoPendienteAnular() as pi">
-        Comprobante {{ pi.numRecibo || '—' }} — ingrese credenciales de un administrador.
-      </p>
-      <label>
-        Usuario administrador
-        <input type="text" [ngModel]="authAdminUser()" (ngModelChange)="authAdminUser.set($event)" />
-      </label>
-      <label>
-        Contraseña
-        <input type="password" [ngModel]="authAdminPass()" (ngModelChange)="authAdminPass.set($event)" />
-      </label>
-      <div class="actions">
-        <button type="button" class="ghost mini" (click)="cancelarReversarSupervisor()">Cancelar</button>
-        <button type="button" class="danger mini" (click)="confirmarReversarConSupervisor()">Autorizar y reversar</button>
-      </div>
-    </div>
-  </div>
 </section>

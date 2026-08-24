@@ -8,6 +8,7 @@ const {
   normalizarIdSede,
   sedesPermitidasUsuario,
 } = require('../services/sedeContext');
+const { evaluarCanalConexion } = require('../utils/canalConexion');
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -31,11 +32,18 @@ function requireAuth(req, res, next) {
   }
 
   Usuario.findById(payload.sub)
-    .select('rol activo username sessionVersion')
+    .select('rol activo username sessionVersion canalConexion')
     .lean()
     .then((u) => {
       if (!u || u.activo === false) {
         return res.status(401).json({ message: 'Usuario inactivo o no encontrado' });
+      }
+      const canal = evaluarCanalConexion(req, u);
+      if (!canal.ok) {
+        return res.status(canal.status).json({
+          message: canal.message,
+          code: canal.code,
+        });
       }
       const svDb = Number(u.sessionVersion) || 0;
       // Tokens previos al control de sesión (sin `sv`): solo válidos si aún no hubo un login nuevo.

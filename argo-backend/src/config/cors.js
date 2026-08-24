@@ -66,7 +66,7 @@ function createCorsOptions() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-ARGO-Pantalla', 'X-ARGO-Sede'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-ARGO-Pantalla', 'X-ARGO-Sede', 'X-ARGO-Cliente'],
     optionsSuccessStatus: 204,
   };
 }

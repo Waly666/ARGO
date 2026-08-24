@@ -83,6 +83,8 @@ export interface ConfigRecibo {
   permitirAjusteValorMatricula?: boolean;
   /** Cuotas personalizadas por semestre (presencial/mixta). */
   permitirAjusteCuotasSemestre?: boolean;
+  /** Tarifas que el personal puede elegir al matricular. */
+  tarifasMatriculaSeleccionables?: number[];
   /**
    * Diferencia de cierre (|contado − esperado|) sin pedir admin.
    * Default 1000 COP; dentro del rango se anota sobrante/faltante.
@@ -93,6 +95,7 @@ export interface ConfigRecibo {
 export interface ReciboOpcionesMatricula {
   permitirAjusteValorMatricula?: boolean;
   permitirAjusteCuotasSemestre?: boolean;
+  tarifasMatriculaSeleccionables?: number[];
 }
 
 export interface GeorefProveedorOpcion {

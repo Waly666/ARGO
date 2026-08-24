@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { CanalConexionUsuario } from '../utils/canal-conexion.util';
 
 export interface Usuario {
   _id: string;
@@ -19,6 +20,7 @@ export interface Usuario {
   /** 2FA TOTP activo (sin exponer secretos). */
   totpEnabled?: boolean;
   sedesPermitidas?: string[];
+  canalConexion?: CanalConexionUsuario;
 }
 
 export interface UsuarioDto {
@@ -32,6 +34,7 @@ export interface UsuarioDto {
   numeroDocumento?: string;
   numero?: number;
   sedesPermitidas?: string[];
+  canalConexion?: CanalConexionUsuario;
 }
 
 @Injectable({ providedIn: 'root' })

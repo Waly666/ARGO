@@ -98,7 +98,7 @@
           <td class="actions-cell">
             <button type="button" class="ghost sm" (click)="verRecibo(e.idEgreso)">Recibo</button>
             <button type="button" class="ghost sm" *ngIf="puedeGestionar(e)" (click)="editarEgreso(e)">Editar</button>
-            <button type="button" class="danger sm" *ngIf="puedeGestionar(e)" (click)="anularEgreso(e)">Anular</button>
+            <button type="button" class="danger sm" *ngIf="puedeGestionar(e) && puedeAnularEgreso()" (click)="anularEgreso(e)">{{ etiquetaAnular() }}</button>
           </td>
         </tr>
         <tr *ngIf="!items().length">
@@ -108,25 +108,4 @@
     </table>
   </div>
   <ng-template #cargando><p class="loading">Cargando…</p></ng-template>
-
-  <div class="modal-backdrop auth-anular-backdrop" *ngIf="mostrarAuthAnular()" (click)="cancelarAnularSupervisor()">
-    <div class="modal card auth-anular-modal" (click)="$event.stopPropagation()">
-      <h3>Autorización para anular egreso</h3>
-      <p class="hint" *ngIf="egresoPendienteAnular() as pe">
-        Egreso {{ pe.numRecibo || pe.concepto }} — requiere credenciales de administrador.
-      </p>
-      <label>
-        Usuario administrador
-        <input type="text" [ngModel]="authAdminUser()" (ngModelChange)="authAdminUser.set($event)" />
-      </label>
-      <label>
-        Contraseña
-        <input type="password" [ngModel]="authAdminPass()" (ngModelChange)="authAdminPass.set($event)" />
-      </label>
-      <div class="actions">
-        <button type="button" class="ghost mini" (click)="cancelarAnularSupervisor()">Cancelar</button>
-        <button type="button" class="danger mini" (click)="confirmarAnularConSupervisor()">Autorizar y anular</button>
-      </div>
-    </div>
-  </div>
 </section>

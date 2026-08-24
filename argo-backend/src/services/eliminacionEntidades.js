@@ -1,5 +1,6 @@
 const DatosAlumno = require('../models/DatosAlumno');
 const Ingreso = require('../models/Ingreso');
+const Egreso = require('../models/Egreso');
 const Liquidacion = require('../models/Liquidacion');
 const Certificado = require('../models/Certificado');
 const Vehiculo = require('../models/Vehiculo');
@@ -15,6 +16,7 @@ const {
 } = require('./liquidacionMatricula');
 const { buscarPrograma, serviciosTienenLiquidaciones } = require('./programaServicio');
 const { eliminarCombo } = require('./combosPrograma');
+const { eliminarNovedadPorEgreso } = require('./nominaAnticipo');
 const { TIPOS } = require('./clasificacionCertificado');
 const mongoose = require('mongoose');
 
@@ -213,6 +215,36 @@ async function anularIngreso(req, idEntidad, supervisor) {
   return ok({ message: 'Ingreso anulado' });
 }
 
+async function anularEgreso(req, idEntidad, supervisor) {
+  const eg = await Egreso.findById(idEntidad);
+  if (!eg) return fail(404, 'Egreso no encontrado');
+  if (esComprobanteAnulado(eg)) {
+    return fail(409, 'Este egreso ya está anulado.');
+  }
+  const antes = eg.toObject();
+  const motivo =
+    String(req.body?.motivo || req.body?.motivoAnulacion || req.solicitudAutorizacion?.motivo || '').trim() ||
+    null;
+  eg.set(metadatosAnulacion(req, supervisor, { valorOriginal: num(eg.valorEgreso), motivo }));
+  eg.valorEgreso = toDec(0);
+  eg.userChangeRecord = req.user?.username || 'sistema';
+  eg.fechaMod = new Date();
+  await eg.save();
+
+  if (antes.idSesion) {
+    const { sincronizarDescuadreSesion } = require('./descuadreCaja');
+    await sincronizarDescuadreSesion(antes.idSesion).catch(() => null);
+  }
+  if (antes.anticipoNomina) {
+    await eliminarNovedadPorEgreso(antes._id);
+  }
+
+  registrarEliminacion(req, 'egreso', antes, {
+    resumen: `Anulación egreso ${antes.numRecibo || idEntidad}${sufijoAutoriza(supervisor)}`,
+  });
+  return ok({ estado: 'ANULADO', message: 'Egreso anulado' });
+}
+
 async function eliminarComboEntidad(idEntidad) {
   try {
     const out = await eliminarCombo(idEntidad);
@@ -236,6 +268,7 @@ const EJECUTORES = {
   liquidaciones: (req, idEntidad) => eliminarLiquidacion(idEntidad),
   certificados: (req, idEntidad, supervisor) => anularCertificado(req, idEntidad, supervisor),
   ingresos: (req, idEntidad, supervisor) => anularIngreso(req, idEntidad, supervisor),
+  egresos: (req, idEntidad, supervisor) => anularEgreso(req, idEntidad, supervisor),
   combos: (req, idEntidad) => eliminarComboEntidad(idEntidad),
   vehiculos: (req, idEntidad) => eliminarVehiculo(idEntidad),
 };
@@ -256,4 +289,5 @@ module.exports = {
   eliminarLiquidacion,
   anularCertificado,
   anularIngreso,
+  anularEgreso,
 };

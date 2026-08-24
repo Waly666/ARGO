@@ -21,6 +21,7 @@ const { normalizarIdSede } = require('./sedeContext');
 const { esTarifaVirtual, esTarifaComercial, TARIFA_GESTOR, TARIFA_EMPRESA } = require('../constants/tarifa');
 const { resolverTarifaComercialAlumno, snapshotReferidorComercial } = require('./gestorEmpresaMatricula');
 const { obtenerConfigGestoresEmpresas } = require('./configGestoresEmpresas');
+const { obtenerTarifasMatriculaSeleccionables } = require('./configTarifasMatricula');
 const {
   resolverTarifaMatricula,
   descripcionConRevalidacion,
@@ -206,16 +207,30 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
   const t = resTarifa.tarifa;
   const esRevalidacion = resTarifa.revalidacion === true;
 
-  const usaSemBase = programaUsaSemestres(prog) && serviciosProg.length > 0;
-  /** Virtual: total en una sola liquidación, sin cuotas por semestre. */
-  const usaSemCuotas = usaSemBase && !esTarifaVirtual(t);
-  const usaSem = usaSemBase;
-
   const modoMigracion = ctx.modoMigracion === true;
   const desdePortal =
     ctx.desdePortal === true ||
     body?.origenMatricula === 'portal' ||
     body?.origenMatricula === 'aula_virtual';
+
+  if (!desdePortal && !esTarifaComercial(t) && !(resTarifa.aplicadaAuto === true && t === 3)) {
+    const cfgTarifas = await obtenerTarifasMatriculaSeleccionables();
+    if (!cfgTarifas.includes(Number(t))) {
+      const labels = { 1: '1', 2: '2', 3: '3', 4: 'virtual' };
+      const err = new Error(
+        `La tarifa ${labels[t] || t} no está habilitada en Configuración → Comprobantes. Tarifas permitidas: ${cfgTarifas.map((x) => labels[x] || x).join(', ')}.`,
+      );
+      err.status = 400;
+      err.code = 'TARIFA_NO_PERMITIDA_CONFIG';
+      throw err;
+    }
+  }
+
+  const usaSemBase = programaUsaSemestres(prog) && serviciosProg.length > 0;
+  /** Virtual: total en una sola liquidación, sin cuotas por semestre. */
+  const usaSemCuotas = usaSemBase && !esTarifaVirtual(t);
+  const usaSem = usaSemBase;
+
   if (modInfo.soloVirtual && !desdePortal && !esJornada && !modoMigracion) {
     const err = new Error(
       'Este programa es solo virtual. El alumno debe matricularse desde el portal; el cajero puede cobrar la liquidación generada.',

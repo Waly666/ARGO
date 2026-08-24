@@ -219,7 +219,7 @@
             <th>Concepto</th>
             <th>Pago</th>
             <th>Valor</th>
-            <th *ngIf="isAdmin()"></th>
+            <th *ngIf="puedeAnularIngreso()"></th>
           </tr>
         </thead>
         <tbody>
@@ -229,19 +229,19 @@
             <td>{{ i.concepto || i.tipoIngresoDescr || '—' }}</td>
             <td>{{ formaPagoLabel(i) }}</td>
             <td class="num">{{ i.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-            <td *ngIf="isAdmin()">
+            <td *ngIf="puedeAnularIngreso()">
               <button
                 type="button"
                 class="danger sm"
                 *ngIf="i._id"
                 (click)="anularIngreso(i)"
               >
-                Anular
+                {{ accionPermiso.puedeEliminar('ingresos') ? 'Anular' : 'Solicitar anulación' }}
               </button>
             </td>
           </tr>
           <tr *ngIf="!ingresos().length">
-            <td [attr.colspan]="isAdmin() ? 6 : 5" class="empty">Sin ingresos</td>
+            <td [attr.colspan]="puedeAnularIngreso() ? 6 : 5" class="empty">Sin ingresos</td>
           </tr>
         </tbody>
       </table>

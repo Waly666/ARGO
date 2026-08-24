@@ -2,6 +2,7 @@ const Config = require('../models/Config');
 const Sede = require('../models/Sede');
 const { models: cat } = require('../models/catalogos');
 const { normalizarFormatoComprobante, FORMATOS } = require('./comprobanteFormato');
+const { normalizarTarifasMatriculaSeleccionables } = require('./configTarifasMatricula');
 const { uploadFileToDataUrl } = require('../utils/uploadPublicUrl');
 
 /** Resuelve urlLogo (ruta relativa): Config Empresa / aula virtual tiene prioridad sobre recibo legado. */
@@ -89,6 +90,8 @@ const DEFAULTS = {
   permitirAjusteValorMatricula: true,
   /** Cuotas personalizadas por semestre (presencial/mixta; no virtual). */
   permitirAjusteCuotasSemestre: false,
+  /** Tarifas que el personal puede elegir al matricular (1, 2, 3, virtual). */
+  tarifasMatriculaSeleccionables: [1, 2, 3, 4],
   /**
    * Diferencia de cierre (|contado − esperado|) permitida sin autorización de admin.
    * Dentro del rango se anota sobrante/faltante como tolerado (sin deuda a nómina).
@@ -135,6 +138,9 @@ function normalizar(doc, claveOverride) {
   }
   raw.permitirAjusteValorMatricula = raw.permitirAjusteValorMatricula !== false;
   raw.permitirAjusteCuotasSemestre = raw.permitirAjusteCuotasSemestre === true;
+  raw.tarifasMatriculaSeleccionables = normalizarTarifasMatriculaSeleccionables(
+    raw.tarifasMatriculaSeleccionables,
+  );
   const tol = Number(raw.toleranciaCierreCajaCop);
   raw.toleranciaCierreCajaCop =
     Number.isFinite(tol) && tol >= 0 ? Math.round(tol) : DEFAULTS.toleranciaCierreCajaCop;

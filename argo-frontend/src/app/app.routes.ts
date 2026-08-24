@@ -320,7 +320,7 @@ export const routes: Routes = [
       {
         path: 'combos',
         canActivate: [permisoGuard],
-        data: { permiso: ['combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar'], title: 'Combos de cursos' },
+        data: { permiso: 'combos.gestionar', title: 'Combos de cursos' },
         loadComponent: () =>
           import('./features/combos/combos-admin.component').then((m) => m.CombosAdminComponent),
       },
@@ -394,13 +394,7 @@ export const routes: Routes = [
         path: 'programacion-cea/clases-hoy',
         canActivate: [permisoGuard],
         data: {
-          permiso: [
-            'programacion_cea.ver',
-            'programacion_cea.gestionar',
-            'programacion_cea.operar',
-            'caja.turno',
-            'caja.admin',
-          ],
+          permiso: ['programacion_cea.ver', 'programacion_cea.gestionar', 'programacion_cea.operar'],
         },
         loadComponent: () =>
           import('./features/programacion-cea/programacion-cea-clases-hoy.component').then(
@@ -428,7 +422,7 @@ export const routes: Routes = [
       {
         path: 'cobros-pendientes',
         canActivate: [permisoGuard],
-        data: { permiso: ['caja.cobros', 'caja.turno'] },
+        data: { permiso: 'caja.cobros' },
         loadComponent: () =>
           import('./features/caja/caja-cobros-pendientes.component').then((m) => m.CajaCobrosPendientesComponent),
       },
@@ -479,7 +473,7 @@ export const routes: Routes = [
       {
         path: 'caja',
         canActivate: [permisoGuard],
-        data: { permiso: 'caja.turno' },
+        data: { permiso: ['caja.turno', 'caja.cobros', 'caja.admin', 'ingresos.crear'] },
         loadComponent: () =>
           import('./features/caja/caja-layout.component').then((m) => m.CajaLayoutComponent),
         children: [
@@ -504,35 +498,35 @@ export const routes: Routes = [
           {
             path: 'terceros',
             canActivate: [permisoGuard],
-            data: { permiso: ['caja.turno', 'caja.admin'] },
+            data: { permiso: ['caja.admin', 'contabilidad'] },
             loadComponent: () =>
               import('./features/caja/caja-terceros.component').then((m) => m.CajaTercerosComponent),
           },
           {
             path: 'gestores',
             canActivate: [permisoGuard],
-            data: { permiso: ['caja.turno', 'caja.admin'] },
+            data: { permiso: ['caja.admin', 'contabilidad'] },
             loadComponent: () =>
               import('./features/caja/caja-gestores.component').then((m) => m.CajaGestoresComponent),
           },
           {
             path: 'gestores/informe',
             canActivate: [permisoGuard],
-            data: { permiso: ['caja.turno', 'caja.admin'], tipoReferidor: 'gestor' },
+            data: { permiso: ['caja.admin', 'contabilidad'], tipoReferidor: 'gestor' },
             loadComponent: () =>
               import('./features/caja/caja-referidor-informe.component').then((m) => m.CajaReferidorInformeComponent),
           },
           {
             path: 'empresa',
             canActivate: [permisoGuard],
-            data: { permiso: ['caja.turno', 'caja.admin'], contextoClientes: 'caja' },
+            data: { permiso: ['caja.admin', 'contabilidad'], contextoClientes: 'caja' },
             loadComponent: () =>
               import('./features/config/config-clientes.component').then((m) => m.ConfigClientesComponent),
           },
           {
             path: 'empresa/informe',
             canActivate: [permisoGuard],
-            data: { permiso: ['caja.turno', 'caja.admin'], tipoReferidor: 'empresa' },
+            data: { permiso: ['caja.admin', 'contabilidad'], tipoReferidor: 'empresa' },
             loadComponent: () =>
               import('./features/caja/caja-referidor-informe.component').then((m) => m.CajaReferidorInformeComponent),
           },

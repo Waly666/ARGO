@@ -5,8 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { Egreso, EgresoService } from '../../core/services/egreso.service';
-import { CajaSesionService } from '../../core/services/caja-sesion.service';
-import { PermisoService } from '../../core/services/permiso.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import {
   capBeneficiario,
   capPlaca,
@@ -24,7 +24,6 @@ import {
 } from '../../core/utils/egreso-soporte.helpers';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { CajaDescuadresBannerComponent } from './caja-descuadres-banner.component';
-import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { SoporteViewerModalComponent } from '../../shared/soporte-viewer-modal/soporte-viewer-modal.component';
 import { ReciboService } from '../../core/services/recibo.service';
 
@@ -80,12 +79,11 @@ const SORT_COLS: SortColEgreso[] = [
 })
 export class CajaEgresosTodosComponent implements OnInit {
   private egresoSvc = inject(EgresoService);
-  private cajaSvc = inject(CajaSesionService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private confirm = inject(ConfirmDialogService);
   private reciboSvc = inject(ReciboService);
-  private permisos = inject(PermisoService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   @ViewChild(SoporteViewerModalComponent) soporteModal?: SoporteViewerModalComponent;
 
@@ -105,11 +103,10 @@ export class CajaEgresosTodosComponent implements OnInit {
   hasta = signal('');
   idSesion = signal('');
 
-  sesionAbiertaId = signal<number | null>(null);
-  mostrarAuthAnular = signal(false);
-  authAdminUser = signal('');
-  authAdminPass = signal('');
-  egresoPendienteAnular = signal<Egreso | null>(null);
+  puedeAnularEgreso = computed(() => this.accionPermiso.mostrarAccionEliminar('egresos'));
+  etiquetaAnular = computed(() =>
+    this.accionPermiso.puedeEliminar('egresos') ? 'Anular' : 'Solicitar anulación',
+  );
 
   sortCol = signal<SortColEgreso>('fecha');
   sortDir = signal<SortDir>('desc');
@@ -170,10 +167,6 @@ export class CajaEgresosTodosComponent implements OnInit {
       this.sortCol.set(prefs.col);
       this.sortDir.set(prefs.dir);
     }
-    this.cajaSvc.activa().subscribe({
-      next: (r) => this.sesionAbiertaId.set(r.sesion?.idSesion ?? null),
-      error: () => this.sesionAbiertaId.set(null),
-    });
     this.route.queryParamMap.subscribe((p) => {
       const sid = p.get('idSesion');
       if (sid) this.idSesion.set(sid);
@@ -338,73 +331,31 @@ export class CajaEgresosTodosComponent implements OnInit {
     );
   }
 
-  requiereAuthSupervisor(e: Egreso): boolean {
-    if (this.permisos.tiene(['caja.admin', 'contabilidad'])) return false;
-    const abierta = this.sesionAbiertaId();
-    if (abierta == null) return true;
-    if (e.idSesion == null) return true;
-    return Number(e.idSesion) !== Number(abierta);
-  }
-
   async anularEgreso(e: Egreso): Promise<void> {
     const id = e.idEgreso;
-    if (!id) return;
-    const ok = await this.confirm.open({
-      title: 'Anular egreso',
-      message: `¿Anular el egreso ${e.numRecibo || id}? Si pertenece a un cierre con descuadre, recalcule el cuadre desde el detalle del cierre.`,
-      confirmLabel: 'Anular',
-      variant: 'danger',
-    });
-    if (!ok) return;
-
-    if (this.requiereAuthSupervisor(e)) {
-      this.egresoPendienteAnular.set(e);
-      this.authAdminUser.set('');
-      this.authAdminPass.set('');
-      this.mostrarAuthAnular.set(true);
-      return;
-    }
-    this.ejecutarAnularEgreso(e);
-  }
-
-  confirmarAnularSupervisor(): void {
-    const e = this.egresoPendienteAnular();
-    if (!e) return;
-    const u = this.authAdminUser().trim();
-    const p = this.authAdminPass();
-    if (!u || !p) {
-      this.inform('Ingrese usuario y contraseña de un administrador');
-      return;
-    }
-    this.ejecutarAnularEgreso(e, { autorizadoUsername: u, autorizadoPassword: p });
-  }
-
-  cancelarAnularSupervisor(): void {
-    this.mostrarAuthAnular.set(false);
-    this.egresoPendienteAnular.set(null);
-    this.authAdminUser.set('');
-    this.authAdminPass.set('');
-  }
-
-  private ejecutarAnularEgreso(
-    e: Egreso,
-    auth?: { autorizadoUsername: string; autorizadoPassword: string },
-  ): void {
-    const id = e.idEgreso;
-    if (!id) return;
-    this.egresoSvc.eliminar(id, auth).subscribe({
-      next: () => {
-        this.cancelarAnularSupervisor();
+    if (!id || !this.puedeAnularEgreso()) return;
+    const ref = e.numRecibo ? ` «${e.numRecibo}»` : '';
+    const resumen = `Egreso${ref || ` ${id}`}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'egresos',
+        idEntidad: id,
+        resumen,
+        tituloConfirm: 'Anular egreso',
+        mensajeConfirm: `¿Anular el egreso${ref}? Si pertenece a un cierre con descuadre, recalcule el cuadre desde el detalle del cierre.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('egresos') ? 'Anular' : 'Enviar solicitud',
+        ejecutar: () => this.egresoSvc.eliminar(id),
+      });
+      if (resultado === 'eliminado') {
         this.inform('Egreso anulado');
         this.cargar();
-      },
-      error: (err) => {
-        if (err?.error?.code === 'SUPERVISOR_AUTH_REQUIRED') {
-          this.mostrarAuthAnular.set(true);
-        }
-        this.inform(err?.error?.message || 'No se pudo anular');
-      },
-    });
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (err: unknown) {
+      const error = err as { error?: { message?: string } };
+      this.inform(error?.error?.message || 'No se pudo anular');
+    }
   }
 
   private inform(text: string | null, isErr?: boolean): void {

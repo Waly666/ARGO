@@ -20,6 +20,8 @@ import {
 } from '../../core/utils/egreso-soporte.helpers';
 import { CajaInformePrintService } from '../../core/services/caja-informe-print.service';
 import { IngresoService } from '../../core/services/ingreso.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { CajaResumenServiciosComponent } from './caja-resumen-servicios.component';
 import { resolverFormaPagoIngreso } from '../../core/utils/caja-forma-pago.util';
 import { buildMetodosPagoCards, MetodoPagoCard } from '../../core/utils/metodo-pago.util';
@@ -42,6 +44,8 @@ export class CajaCierreDetalleComponent implements OnInit {
   private ingresoSvc = inject(IngresoService);
   private auth = inject(AuthService);
   private confirm = inject(ConfirmDialogService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   idSesion = signal<number | null>(null);
   sesion = signal<CajaSesion | null>(null);
@@ -58,6 +62,8 @@ export class CajaCierreDetalleComponent implements OnInit {
   valorCuadre = signal(0);
   obsCuadre = signal('');
   empresaConfig = signal<ConfigRecibo | null>(null);
+
+  puedeAnularIngreso = computed(() => this.accionPermiso.mostrarAccionEliminar('ingresos'));
 
   ventasBrutas = computed(() => this.resumen()?.ventasBrutas ?? this.resumen()?.totalIngresos ?? 0);
   cantidadRecibos = computed(
@@ -195,28 +201,30 @@ export class CajaCierreDetalleComponent implements OnInit {
 
   async anularIngreso(i: CajaIngresoItem): Promise<void> {
     const id = i._id;
-    if (!id) return;
+    if (!id || !this.puedeAnularIngreso()) return;
     const ref = i.numRecibo ? ` ${i.numRecibo}` : '';
-    const ok = await this.confirm.open({
-      title: 'Anular ingreso',
-      message: `¿Anular el ingreso${ref}? Se actualizará el cuadre automáticamente.`,
-      confirmLabel: 'Anular',
-      variant: 'danger',
-    });
-    if (!ok) return;
-    this.saving.set(true);
-    this.ingresoSvc.eliminar(String(id)).subscribe({
-      next: () => {
-        this.saving.set(false);
+    const resumen = `Ingreso${ref || ` ${id}`}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'ingresos',
+        idEntidad: String(id),
+        resumen,
+        tituloConfirm: 'Anular ingreso',
+        mensajeConfirm: `¿Anular el ingreso${ref}? Se actualizará el cuadre automáticamente.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('ingresos') ? 'Anular' : 'Enviar solicitud',
+        ejecutar: () => this.ingresoSvc.eliminar(String(id)),
+      });
+      if (resultado === 'eliminado') {
         this.inform('Ingreso anulado');
         const sid = this.idSesion();
         if (sid) this.cargar(sid);
-      },
-      error: (e) => {
-        this.saving.set(false);
-        this.inform(e?.error?.message || 'No se pudo anular');
-      },
-    });
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.inform(err?.error?.message || 'No se pudo anular');
+    }
   }
 
   async reabrirCaja(): Promise<void> {

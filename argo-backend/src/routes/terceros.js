@@ -5,8 +5,8 @@ const { requireAuth, requirePermiso } = require('../middleware/auth');
 const router = Router();
 router.use(requireAuth);
 
-const ver = requirePermiso('caja.turno', 'caja.admin', 'caja.cobros', 'contabilidad');
-const gestionar = requirePermiso('caja.turno', 'caja.admin', 'contabilidad');
+const ver = requirePermiso('caja.admin', 'caja.cobros', 'contabilidad');
+const gestionar = requirePermiso('caja.admin', 'contabilidad');
 
 router.get('/catalogos', ver, ctrl.catalogos);
 router.get('/', ver, ctrl.listar);

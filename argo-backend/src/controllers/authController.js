@@ -31,6 +31,7 @@ const { verificarAdminCredenciales } = require('../services/authVerify');
 const { enriquecerUsuarioDoc, enriquecerUsuarioPorId } = require('../services/authUsuario');
 const { logAuthIntento } = require('../services/authSecurityLog');
 const { turnstileEnabled, turnstileSiteKey, mfaStaffRequired, mfaStaffWebOnly } = require('../config/security');
+const { evaluarCanalConexion } = require('../utils/canalConexion');
 const { resolvePostPasswordLogin, emitirSesionStaff } = require('../services/staffMfa');
 const soporteMaestro = require('../services/soporteMaestro');
 const { obtenerConfigRecibo } = require('../services/configRecibo');
@@ -78,6 +79,18 @@ exports.login = async (req, res, next) => {
     }
 
     logAuthIntento({ req, canal: 'staff', identificador: username, ok: true, motivo: 'password_ok' });
+
+    const canal = evaluarCanalConexion(req, u);
+    if (!canal.ok) {
+      logAuthIntento({
+        req,
+        canal: 'staff',
+        identificador: username,
+        ok: false,
+        motivo: `canal_denegado:${canal.canalCliente}`,
+      });
+      return res.status(canal.status).json({ message: canal.message, code: canal.code });
+    }
 
     const mfa = await resolvePostPasswordLogin(req, u);
     if (mfa.step === 'complete') {

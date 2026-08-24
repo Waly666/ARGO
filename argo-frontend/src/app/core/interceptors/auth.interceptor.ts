@@ -14,21 +14,29 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = auth.token();
   const idSede = sedeSvc.idSede();
   const pantalla = router.url.split('?')[0].slice(0, 500);
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { 'X-ARGO-Cliente': 'escritorio' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (idSede) headers['X-ARGO-Sede'] = idSede;
   if (pantalla.startsWith('/app')) headers['X-ARGO-Pantalla'] = pantalla;
 
-  const authReq = Object.keys(headers).length
-    ? req.clone({ setHeaders: headers })
-    : req;
+  const authReq = req.clone({ setHeaders: headers });
 
   return next(authReq).pipe(
     catchError((err) => {
       // 401 por contraseña/MFA incorrectos en reset/restore: no cerrar sesión.
       const code = err?.error?.code;
       const esReauthFallida = code === 'REAUTH_FAILED' || err?.status === 403;
-      if (err?.status === 401 && auth.isAuth() && !esReauthFallida) {
+      if (code === 'CANAL_CONEXION_DENEGADO') {
+        try {
+          sessionStorage.setItem(
+            'argo_login_aviso',
+            err?.error?.message || 'Este usuario no puede conectarse desde el ERP web.',
+          );
+        } catch {
+          /* ignore */
+        }
+        auth.logout();
+      } else if (err?.status === 401 && auth.isAuth() && !esReauthFallida) {
         if (code === 'SESION_REEMPLAZADA') {
           try {
             sessionStorage.setItem(

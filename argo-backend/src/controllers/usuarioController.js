@@ -3,6 +3,7 @@ const Sede = require('../models/Sede');
 const { normalizarRol, esAdmin } = require('../utils/roles');
 const { listarRolesActivos, rolExiste } = require('../services/rolesPermisos');
 const { normalizarIdSede, asegurarSedePrincipal } = require('../services/sedeContext');
+const { normalizarCanalConexionUsuario } = require('../utils/canalConexion');
 
 function esLoginNumerico(login) {
   const s = String(login ?? '').trim();
@@ -18,6 +19,7 @@ function limpiar(doc) {
   delete o.totpPendingAt;
   delete o.mfaRecoveryHashes;
   o.totpEnabled = doc.totpEnabled === true && !!String(doc.totpSecretEnc || '').trim();
+  o.canalConexion = normalizarCanalConexionUsuario(o.canalConexion);
   return o;
 }
 
@@ -73,6 +75,7 @@ exports.crear = async (req, res, next) => {
       activo,
       numeroDocumento,
       sedesPermitidas,
+      canalConexion,
     } = req.body || {};
     const userKey = String(username || '').trim().toLowerCase();
     if (!userKey) return res.status(400).json({ message: 'Usuario (username) es obligatorio' });
@@ -104,6 +107,7 @@ exports.crear = async (req, res, next) => {
       activo: activo !== false,
       passwordHash: await Usuario.hashPassword(password),
       sedesPermitidas: sedes,
+      canalConexion: normalizarCanalConexionUsuario(canalConexion),
     };
 
     const docStr = String(numeroDocumento ?? '').trim();
@@ -149,6 +153,7 @@ exports.actualizar = async (req, res, next) => {
       activo,
       numeroDocumento,
       sedesPermitidas,
+      canalConexion,
     } = req.body || {};
     if (username != null) {
       const userKey = String(username).trim().toLowerCase();
@@ -187,6 +192,9 @@ exports.actualizar = async (req, res, next) => {
     const sedes = await resolverSedesPermitidas(sedesPermitidas, u.rol);
     if (sedes !== undefined) u.sedesPermitidas = sedes;
     if (activo != null) u.activo = activo === true || activo === 'true';
+    if (canalConexion != null) {
+      u.canalConexion = normalizarCanalConexionUsuario(canalConexion);
+    }
     if (password != null && String(password).length > 0) {
       if (String(password).length < 4) {
         return res.status(400).json({ message: 'Contraseña muy corta' });

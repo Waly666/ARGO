@@ -6,8 +6,8 @@ const upload = require('../middleware/upload');
 const router = Router();
 router.use(requireAuth);
 
-const ver = requirePermiso('caja.turno', 'caja.admin', 'caja.cobros', 'contabilidad');
-const gestionar = requirePermiso('caja.turno', 'caja.admin', 'contabilidad');
+const ver = requirePermiso('caja.admin', 'caja.cobros', 'contabilidad');
+const gestionar = requirePermiso('caja.admin', 'contabilidad');
 const gestorFoto = upload.gestores.fields([{ name: 'foto', maxCount: 1 }]);
 
 router.get('/catalogos', ver, ctrl.catalogos);

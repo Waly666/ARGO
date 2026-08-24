@@ -1,6 +1,6 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 
@@ -10,7 +10,8 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AlumnoListItem, AlumnoService } from '../../core/services/alumno.service';
 
-import { AuthService } from '../../core/services/auth.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 
 import {
 
@@ -64,10 +65,10 @@ export class CajaIngresosSesionComponent implements OnInit {
 
   private ingSvc = inject(IngresoService);
 
-  private auth = inject(AuthService);
-
   private confirmSvc = inject(ConfirmDialogService);
   private cajaAlert = inject(CajaAperturaAlertService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   private router = inject(Router);
 
@@ -88,15 +89,10 @@ export class CajaIngresosSesionComponent implements OnInit {
   msg = signal<string | null>(null);
   msgError = signal(false);
 
-
-
-  ingresoPendienteAnular = signal<CajaIngresoItem | null>(null);
-
-  mostrarAuthAnular = signal(false);
-
-  authAdminUser = signal('');
-
-  authAdminPass = signal('');
+  puedeReversarPago = computed(() => this.accionPermiso.mostrarAccionEliminar('ingresos'));
+  etiquetaReversar = computed(() =>
+    this.accionPermiso.puedeEliminar('ingresos') ? 'Reversar' : 'Solicitar reversión',
+  );
 
 
 
@@ -241,115 +237,30 @@ export class CajaIngresosSesionComponent implements OnInit {
 
 
   async reversar(i: CajaIngresoItem): Promise<void> {
-
+    if (!this.puedeReversarPago()) return;
     if (!(await this.cajaAlert.ensureAbierta('reversar cobros'))) return;
-
     const ref = i.numRecibo ? ` «${i.numRecibo}»` : '';
-
-    const ok = await this.confirmSvc.open({
-
-      title: '¿Reversar este cobro?',
-
-      message: `Se anulará el comprobante${ref} y se descontará el valor de la liquidación. Esta acción no se puede deshacer.`,
-
-      variant: 'warn',
-
-      icon: 'warning',
-
-      confirmLabel: 'Sí, reversar',
-
-    });
-
-    if (!ok) return;
-
-    if (!this.auth.isAdmin()) {
-
-      this.ingresoPendienteAnular.set(i);
-
-      this.authAdminUser.set('');
-
-      this.authAdminPass.set('');
-
-      this.mostrarAuthAnular.set(true);
-
-      return;
-
-    }
-
-    this.ejecutarReversar(i);
-
-  }
-
-
-
-  confirmarReversarConSupervisor(): void {
-
-    const i = this.ingresoPendienteAnular();
-
-    if (!i) return;
-
-    const u = this.authAdminUser().trim();
-
-    const pw = this.authAdminPass();
-
-    if (!u || !pw) {
-
-      this.inform('Ingrese usuario y contraseña del administrador para anular el ingreso.');
-
-      return;
-
-    }
-
-    this.ejecutarReversar(i, { autorizadoUsername: u, autorizadoPassword: pw });
-
-  }
-
-
-
-  cancelarReversarSupervisor(): void {
-
-    this.mostrarAuthAnular.set(false);
-
-    this.ingresoPendienteAnular.set(null);
-
-    this.authAdminUser.set('');
-
-    this.authAdminPass.set('');
-
-  }
-
-
-
-  private ejecutarReversar(
-
-    i: CajaIngresoItem,
-
-    auth?: { autorizadoUsername: string; autorizadoPassword: string },
-
-  ): void {
-
-    this.ingSvc.eliminar(i._id, auth).subscribe({
-
-      next: () => {
-
-        this.mostrarAuthAnular.set(false);
-
-        this.ingresoPendienteAnular.set(null);
-
-        this.authAdminUser.set('');
-
-        this.authAdminPass.set('');
-
+    const resumen = `Ingreso${ref || ` ${i._id}`}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'ingresos',
+        idEntidad: i._id,
+        resumen,
+        tituloConfirm: '¿Reversar este cobro?',
+        mensajeConfirm: `Se anulará el comprobante${ref} y se descontará el valor de la liquidación. Esta acción no se puede deshacer.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('ingresos') ? 'Sí, reversar' : 'Enviar solicitud',
+        ejecutar: () => this.ingSvc.eliminar(i._id),
+      });
+      if (resultado === 'eliminado') {
         this.inform('Cobro reversado.');
-
         this.cargar();
-
-      },
-
-      error: (e) => this.inform(e?.error?.message || 'Error reversando cobro.'),
-
-    });
-
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.inform(err?.error?.message || 'Error reversando cobro.', true);
+    }
   }
 
 

@@ -10,6 +10,7 @@ const { isClienteNativo } = require('../middleware/turnstile');
 const { enriquecerUsuarioDoc } = require('./authUsuario');
 const { normalizarRol } = require('../utils/roles');
 const { logAuthIntento } = require('./authSecurityLog');
+const { assertCanalConexionPermitida } = require('../utils/canalConexion');
 
 const MFA_TOKEN_TTL = '8m';
 const RECOVERY_CODE_COUNT = 10;
@@ -199,6 +200,7 @@ async function confirmMfaSetup(req, setupToken, code) {
 
   logAuthIntento({ req, canal: 'staff', identificador: u.username, ok: true, motivo: 'mfa_enroll_ok' });
 
+  assertCanalConexionPermitida(req, u);
   const token = await emitirSesionStaff(u);
   const user = await enriquecerUsuarioDoc(u);
   return { token, user, recoveryCodes: recoveryPlain };
@@ -222,6 +224,7 @@ async function verifyMfaLogin(req, mfaToken, code) {
   }
 
   logAuthIntento({ req, canal: 'staff', identificador: u.username, ok: true, motivo: 'mfa_ok' });
+  assertCanalConexionPermitida(req, u);
   const token = await emitirSesionStaff(u);
   const user = await enriquecerUsuarioDoc(u);
   return { token, user };
@@ -257,6 +260,7 @@ async function verifyMfaRecovery(req, mfaToken, recoveryCode) {
   await u.save();
 
   logAuthIntento({ req, canal: 'staff', identificador: u.username, ok: true, motivo: 'mfa_recovery_ok' });
+  assertCanalConexionPermitida(req, u);
   const token = await emitirSesionStaff(u);
   const user = await enriquecerUsuarioDoc(u);
   return { token, user, recoveryRemaining: hashes.length };

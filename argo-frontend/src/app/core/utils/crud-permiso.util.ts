@@ -191,8 +191,8 @@ const MODULOS_CRUD: Record<
     categoria: 'caja',
     orden: 95,
     legacyPorAccion: {
-      ver: ['caja.turno', 'caja.admin', 'contabilidad'],
-      crear: ['caja.turno', 'caja.admin', 'contabilidad', 'terceros.crear'],
+      ver: ['caja.admin', 'contabilidad'],
+      crear: ['caja.admin', 'contabilidad', 'terceros.crear'],
       editar: ['caja.admin', 'contabilidad', 'terceros.editar'],
       eliminar: ['caja.admin', 'contabilidad', 'terceros.eliminar'],
     },
@@ -203,8 +203,8 @@ const MODULOS_CRUD: Record<
     categoria: 'caja',
     orden: 100,
     legacyPorAccion: {
-      ver: ['caja.turno', 'caja.admin', 'contabilidad'],
-      crear: ['caja.turno', 'caja.admin', 'contabilidad', 'gestores.crear'],
+      ver: ['caja.admin', 'contabilidad'],
+      crear: ['caja.admin', 'contabilidad', 'gestores.crear'],
       editar: ['caja.admin', 'contabilidad', 'gestores.editar'],
       eliminar: ['caja.admin', 'contabilidad', 'gestores.eliminar'],
     },

@@ -641,7 +641,7 @@
       </div>
     </section>
 
-    <div class="auth-retiro-panel card" *ngIf="requiereAutorizacionSupervisor() && !mostrarAuthAnular()">
+    <div class="auth-retiro-panel card" *ngIf="requiereAutorizacionSupervisor()">
       <h3>{{ tituloAutorizacionSupervisor() }}</h3>
       <p class="hint">
         Un administrador debe autorizar esta operación. Ingrese sus credenciales (su sesión de cajero no se cierra).
@@ -777,7 +777,7 @@
 
             <button type="button" class="ghost sm" (click)="editar(e)" *ngIf="puedeGestionarEgreso(e) && !esAnulado(e)">Editar</button>
 
-            <button type="button" class="danger sm" *ngIf="!esAnulado(e)" (click)="eliminar(e)">Anular</button>
+            <button type="button" class="danger sm" *ngIf="!esAnulado(e) && puedeAnularEgreso()" (click)="eliminar(e)">{{ etiquetaAnular() }}</button>
 
             <span class="dim sm" *ngIf="esAnulado(e)" [attr.title]="tituloAnulado(e)">Anulado</span>
 
@@ -796,27 +796,6 @@
     </tbody>
 
   </table>
-  </div>
-
-  <div class="modal-backdrop" *ngIf="mostrarAuthAnular()" (click)="cancelarAnularSupervisor()">
-    <div class="modal card modal-autorizacion" (click)="$event.stopPropagation()">
-      <h2>{{ tituloAutorizacionSupervisor() }}</h2>
-      <p class="hint" *ngIf="egresoPendienteAnular() as pe">
-        Egreso {{ pe.numRecibo || pe.concepto }} — requiere credenciales de administrador.
-      </p>
-      <label>
-        Usuario administrador
-        <input type="text" autocomplete="username" [ngModel]="authAdminUser()" (ngModelChange)="authAdminUser.set($event)" />
-      </label>
-      <label>
-        Contraseña
-        <input type="password" autocomplete="current-password" [ngModel]="authAdminPass()" (ngModelChange)="authAdminPass.set($event)" />
-      </label>
-      <div class="actions">
-        <button type="button" class="ghost" (click)="cancelarAnularSupervisor()">Cancelar</button>
-        <button type="button" class="primary danger" (click)="confirmarAnularConSupervisor()">Autorizar y anular</button>
-      </div>
-    </div>
   </div>
 
 </section>

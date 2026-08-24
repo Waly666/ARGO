@@ -121,6 +121,18 @@
               </label>
             </div>
 
+            <label class="usr-field">
+              <span class="usr-label">Canal de conexión</span>
+              <select
+                [ngModel]="form().canalConexion || 'mixta'"
+                (ngModelChange)="patch('canalConexion', $event)">
+                @for (c of canalConexionOpciones; track c.id) {
+                  <option [value]="c.id">{{ c.label }}</option>
+                }
+              </select>
+              <span class="usr-field-hint">{{ hintCanalFormulario() }}</span>
+            </label>
+
             @if (sedesCatalogo().length) {
               <div class="usr-sede-block">
                 @if (esRolAdmin(form().rol)) {
@@ -195,6 +207,7 @@
               <th>Nombre</th>
               <th>Rol</th>
               <th>Sede</th>
+              <th>Canal</th>
               <th>Estado</th>
               <th>2FA</th>
               <th></th>
@@ -210,6 +223,7 @@
                   <span class="usr-rol-badge" [ngClass]="rolBadgeClass(u.rol)">{{ labelRol(u.rol) }}</span>
                 </td>
                 <td class="usr-sede">{{ labelSedes(u) }}</td>
+                <td class="usr-canal">{{ labelCanalConexion(u.canalConexion) }}</td>
                 <td>
                   <span class="usr-estado" [class.usr-estado--on]="u.activo !== false" [class.usr-estado--off]="u.activo === false">
                     {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
@@ -262,6 +276,7 @@
               <div class="usr-card-tags">
                 <span class="usr-rol-badge" [ngClass]="rolBadgeClass(u.rol)">{{ labelRol(u.rol) }}</span>
                 <span class="usr-sede-tag">{{ labelSedes(u) }}</span>
+                <span class="usr-sede-tag">{{ labelCanalConexion(u.canalConexion) }}</span>
                 <span class="usr-estado" [class.usr-estado--on]="u.totpEnabled === true" [class.usr-estado--off]="u.totpEnabled !== true">
                   2FA {{ u.totpEnabled === true ? 'activo' : 'no' }}
                 </span>

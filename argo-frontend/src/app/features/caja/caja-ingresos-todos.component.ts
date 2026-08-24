@@ -8,7 +8,8 @@ import { ConfigService } from '../../core/services/config.service';
 import { IngresoService } from '../../core/services/ingreso.service';
 import { ReciboService, idIngreso } from '../../core/services/recibo.service';
 import { CajaSesionService } from '../../core/services/caja-sesion.service';
-import { PermisoService } from '../../core/services/permiso.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import {
   capConceptoCaja,
   capCuentaBancaria,
@@ -82,7 +83,8 @@ export class CajaIngresosTodosComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private confirm = inject(ConfirmDialogService);
-  private permisos = inject(PermisoService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   @ViewChild(SoporteViewerModalComponent) soporteModal?: SoporteViewerModalComponent;
 
@@ -103,10 +105,11 @@ export class CajaIngresosTodosComponent implements OnInit {
   idSesion = signal('');
 
   sesionAbiertaId = signal<number | null>(null);
-  mostrarAuthAnular = signal(false);
-  authAdminUser = signal('');
-  authAdminPass = signal('');
-  ingresoPendienteAnular = signal<any | null>(null);
+
+  puedeAnularIngreso = computed(() => this.accionPermiso.mostrarAccionEliminar('ingresos'));
+  etiquetaAnularIngreso = computed(() =>
+    this.accionPermiso.puedeEliminar('ingresos') ? 'Anular' : 'Solicitar anulación',
+  );
 
   sortCol = signal<SortColIngreso>('fecha');
   sortDir = signal<SortDir>('desc');
@@ -340,73 +343,31 @@ export class CajaIngresosTodosComponent implements OnInit {
     }
   }
 
-  requiereAuthSupervisor(ing: { idSesion?: number | null }): boolean {
-    if (this.permisos.tiene(['caja.admin', 'contabilidad'])) return false;
-    const abierta = this.sesionAbiertaId();
-    if (abierta == null) return true;
-    if (ing.idSesion == null) return true;
-    return Number(ing.idSesion) !== Number(abierta);
-  }
-
   async anularIngreso(ing: { _id?: unknown; numRecibo?: string; idSesion?: number | null }): Promise<void> {
     const id = idIngreso(ing);
-    if (!id) return;
-    const ok = await this.confirm.open({
-      title: 'Anular ingreso',
-      message: `¿Anular el ingreso ${ing.numRecibo || id}? Si pertenece a un cierre con descuadre, recalcule el cuadre desde el detalle del cierre.`,
-      confirmLabel: 'Anular',
-      variant: 'danger',
-    });
-    if (!ok) return;
-
-    if (this.requiereAuthSupervisor(ing)) {
-      this.ingresoPendienteAnular.set(ing);
-      this.authAdminUser.set('');
-      this.authAdminPass.set('');
-      this.mostrarAuthAnular.set(true);
-      return;
-    }
-    this.ejecutarAnularIngreso(ing);
-  }
-
-  confirmarAnularSupervisor(): void {
-    const ing = this.ingresoPendienteAnular();
-    if (!ing) return;
-    const u = this.authAdminUser().trim();
-    const p = this.authAdminPass();
-    if (!u || !p) {
-      this.inform('Ingrese usuario y contraseña de un administrador');
-      return;
-    }
-    this.ejecutarAnularIngreso(ing, { autorizadoUsername: u, autorizadoPassword: p });
-  }
-
-  cancelarAnularSupervisor(): void {
-    this.mostrarAuthAnular.set(false);
-    this.ingresoPendienteAnular.set(null);
-    this.authAdminUser.set('');
-    this.authAdminPass.set('');
-  }
-
-  private ejecutarAnularIngreso(
-    ing: { _id?: unknown; numRecibo?: string },
-    auth?: { autorizadoUsername: string; autorizadoPassword: string },
-  ): void {
-    const id = idIngreso(ing);
-    if (!id) return;
-    this.ingSvc.eliminar(id, auth).subscribe({
-      next: () => {
-        this.cancelarAnularSupervisor();
+    if (!id || !this.puedeAnularIngreso()) return;
+    const ref = ing.numRecibo ? ` «${ing.numRecibo}»` : '';
+    const resumen = `Ingreso${ref || ` ${id}`}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'ingresos',
+        idEntidad: id,
+        resumen,
+        tituloConfirm: 'Anular ingreso',
+        mensajeConfirm: `¿Anular el ingreso ${ing.numRecibo || id}? Si pertenece a un cierre con descuadre, recalcule el cuadre desde el detalle del cierre.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('ingresos') ? 'Anular' : 'Enviar solicitud',
+        ejecutar: () => this.ingSvc.eliminar(id),
+      });
+      if (resultado === 'eliminado') {
         this.inform('Ingreso anulado');
         this.cargar();
-      },
-      error: (e) => {
-        if (e?.error?.code === 'SUPERVISOR_AUTH_REQUIRED') {
-          this.mostrarAuthAnular.set(true);
-        }
-        this.inform(e?.error?.message || 'No se pudo anular');
-      },
-    });
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.inform(err?.error?.message || 'No se pudo anular', true);
+    }
   }
 
   private inform(text: string | null, isErr?: boolean): void {

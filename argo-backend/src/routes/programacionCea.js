@@ -9,7 +9,6 @@ const ver = requirePermiso(
   'programacion_cea.ver',
   'programacion_cea.gestionar',
   'programacion_cea.operar',
-  'caja.turno',
   'caja.admin',
 );
 const gest = requirePermiso('programacion_cea.gestionar');

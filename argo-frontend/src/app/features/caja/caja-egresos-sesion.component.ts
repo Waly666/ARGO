@@ -1,9 +1,10 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import { AuthService } from '../../core/services/auth.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { CajaEgresoItem, CajaSesionService } from '../../core/services/caja-sesion.service';
 import { EgresoService } from '../../core/services/egreso.service';
 import {
@@ -19,7 +20,6 @@ import {
   tieneSoporteEgreso,
   tituloSoporteEgreso,
 } from '../../core/utils/egreso-soporte.helpers';
-import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { CajaAperturaAlertService } from '../../core/services/caja-apertura-alert.service';
 import { ReciboService } from '../../core/services/recibo.service';
 
@@ -33,11 +33,11 @@ import { ReciboService } from '../../core/services/recibo.service';
 export class CajaEgresosSesionComponent implements OnInit {
   private cajaSvc = inject(CajaSesionService);
   private egresoSvc = inject(EgresoService);
-  private auth = inject(AuthService);
-  private confirm = inject(ConfirmDialogService);
   private cajaAlert = inject(CajaAperturaAlertService);
   private router = inject(Router);
   private reciboSvc = inject(ReciboService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   items = signal<CajaEgresoItem[]>([]);
   sesionId = signal<number | null>(null);
@@ -46,10 +46,10 @@ export class CajaEgresosSesionComponent implements OnInit {
   msg = signal<string | null>(null);
   msgError = signal(false);
 
-  egresoPendienteAnular = signal<CajaEgresoItem | null>(null);
-  mostrarAuthAnular = signal(false);
-  authAdminUser = signal('');
-  authAdminPass = signal('');
+  puedeAnularEgreso = computed(() => this.accionPermiso.mostrarAccionEliminar('egresos'));
+  etiquetaAnular = computed(() =>
+    this.accionPermiso.puedeEliminar('egresos') ? 'Anular' : 'Solicitar anulación',
+  );
 
   capFecha = capFecha;
   capRecibo = capRecibo;
@@ -97,9 +97,7 @@ export class CajaEgresosSesionComponent implements OnInit {
   }
 
   puedeGestionar(e: CajaEgresoItem): boolean {
-    if (this.auth.isAdmin()) return true;
     if (!this.cajaAbierta() || this.sesionId() == null) return false;
-    // Lista de sesión activa: si no trae idSesion, igual es de este turno.
     if (e.idSesion == null) return true;
     return Number(e.idSesion) === Number(this.sesionId());
   }
@@ -132,61 +130,34 @@ export class CajaEgresosSesionComponent implements OnInit {
   }
 
   async anularEgreso(e: CajaEgresoItem): Promise<void> {
+    if (!this.puedeAnularEgreso()) return;
     if (!this.puedeGestionar(e)) {
       this.inform('Solo puede anular egresos de su sesión de caja actual.');
       return;
     }
-    const ok = await this.confirm.open({
-      title: 'Anular egreso',
-      message: `¿Anular el egreso a ${e.pagueA || e.concepto}?`,
-      confirmLabel: 'Anular',
-      variant: 'danger',
-    });
-    if (!ok) return;
-    if (!this.auth.isAdmin()) {
-      this.egresoPendienteAnular.set(e);
-      this.authAdminUser.set('');
-      this.authAdminPass.set('');
-      this.mostrarAuthAnular.set(true);
-      return;
-    }
-    this.ejecutarAnular(e);
-  }
-
-  confirmarAnularConSupervisor(): void {
-    const e = this.egresoPendienteAnular();
-    if (!e) return;
-    const u = this.authAdminUser().trim();
-    const p = this.authAdminPass();
-    if (!u || !p) {
-      this.inform('Ingrese usuario y contraseña del administrador para anular.');
-      return;
-    }
-    this.ejecutarAnular(e, { autorizadoUsername: u, autorizadoPassword: p });
-  }
-
-  cancelarAnularSupervisor(): void {
-    this.mostrarAuthAnular.set(false);
-    this.egresoPendienteAnular.set(null);
-    this.authAdminUser.set('');
-    this.authAdminPass.set('');
-  }
-
-  private ejecutarAnular(
-    e: CajaEgresoItem,
-    auth?: { autorizadoUsername: string; autorizadoPassword: string },
-  ): void {
-    this.egresoSvc.eliminar(e.idEgreso, auth).subscribe({
-      next: () => {
-        this.mostrarAuthAnular.set(false);
-        this.egresoPendienteAnular.set(null);
-        this.authAdminUser.set('');
-        this.authAdminPass.set('');
+    if (!(await this.cajaAlert.ensureAbierta('anular egresos'))) return;
+    const ref = e.numRecibo ? ` «${e.numRecibo}»` : '';
+    const resumen = `Egreso${ref || ` ${e.idEgreso}`}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'egresos',
+        idEntidad: e.idEgreso,
+        resumen,
+        tituloConfirm: '¿Anular este egreso?',
+        mensajeConfirm: `Se anulará el comprobante${ref} y quedará en cero. Esta acción no se puede deshacer.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('egresos') ? 'Sí, anular' : 'Enviar solicitud',
+        ejecutar: () => this.egresoSvc.eliminar(e.idEgreso),
+      });
+      if (resultado === 'eliminado') {
         this.inform('Egreso anulado.');
         this.cargar();
-      },
-      error: (err) => this.inform(err?.error?.message || 'No se pudo anular'),
-    });
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (err: unknown) {
+      const error = err as { error?: { message?: string } };
+      this.inform(error?.error?.message || 'No se pudo anular', true);
+    }
   }
 
   private inform(text: string | null, isErr?: boolean): void {
@@ -208,5 +179,4 @@ export class CajaEgresosSesionComponent implements OnInit {
     }
     this.msgError.set(err);
   }
-
 }

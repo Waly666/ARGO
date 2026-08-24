@@ -155,7 +155,7 @@
                 title="Abrir imagen del soporte de pago">
                 Sop.
               </button>
-              <button type="button" class="danger mini" *ngIf="!esAnulado(i)" (click)="anularIngreso(i)" title="Anular">Anular</button>
+              <button type="button" class="danger mini" *ngIf="!esAnulado(i) && puedeAnularIngreso()" (click)="anularIngreso(i)" [title]="etiquetaAnularIngreso()">{{ etiquetaAnularIngreso() }}</button>
               <span class="anulado-tag" *ngIf="esAnulado(i)" [attr.title]="tituloAnulado(i)">Anulado</span>
             </td>
           </tr>
@@ -192,7 +192,7 @@
           <button type="button" class="ghost sm" *ngIf="i.idSesion" (click)="irAlCierre(i.idSesion)">Cierre #{{ i.idSesion }}</button>
           <button type="button" class="ghost sm" (click)="verRecibo(i)">Ver recibo</button>
           <button type="button" class="primary sm" *ngIf="tieneSoporte(i)" (click)="abrirSoporte(i)">Ver soporte</button>
-          <button type="button" class="danger sm" *ngIf="!esAnulado(i)" (click)="anularIngreso(i)">Anular</button>
+          <button type="button" class="danger sm" *ngIf="!esAnulado(i) && puedeAnularIngreso()" (click)="anularIngreso(i)">{{ etiquetaAnularIngreso() }}</button>
           <span class="anulado-tag" *ngIf="esAnulado(i)" [attr.title]="tituloAnulado(i)">Anulado</span>
         </div>
       </article>
@@ -200,26 +200,5 @@
     </div>
   </div>
 </section>
-
-<div class="modal-backdrop auth-anular-backdrop" *ngIf="mostrarAuthAnular()" (click)="cancelarAnularSupervisor()">
-  <div class="modal card auth-anular-modal" (click)="$event.stopPropagation()">
-    <h3>Autorización para anular ingreso</h3>
-    <p class="hint" *ngIf="ingresoPendienteAnular() as pi">
-      Movimiento de sesión #{{ pi.idSesion || '—' }} (no es su caja abierta actual). Ingrese credenciales de administrador.
-    </p>
-    <label>
-      Usuario administrador
-      <input type="text" autocomplete="username" [ngModel]="authAdminUser()" (ngModelChange)="authAdminUser.set($event)" />
-    </label>
-    <label>
-      Contraseña
-      <input type="password" autocomplete="current-password" [ngModel]="authAdminPass()" (ngModelChange)="authAdminPass.set($event)" />
-    </label>
-    <div class="actions">
-      <button type="button" class="ghost mini" (click)="cancelarAnularSupervisor()">Cancelar</button>
-      <button type="button" class="danger mini" (click)="confirmarAnularSupervisor()">Autorizar y anular</button>
-    </div>
-  </div>
-</div>
 
 <argo-soporte-viewer-modal />

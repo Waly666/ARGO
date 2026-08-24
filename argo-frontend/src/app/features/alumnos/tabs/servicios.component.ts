@@ -30,6 +30,10 @@ import {
   tarifasPermitidasPrograma,
   etiquetasModalidad,
 } from '../../programas/programa-modalidad.helpers';
+import {
+  intersectarTarifasMatricula,
+  normalizarTarifasMatriculaConfig,
+} from '../../../core/utils/tarifas-matricula-config.util';
 import { ComboService, ComboPrevista, ComboAplicarRes, Combo } from '../../../core/services/combo.service';
 import {
   ConfigServiciosAdicionalesService,
@@ -66,6 +70,8 @@ export class ServiciosComponent implements OnInit {
   permitirAjusteValorMatricula = signal(true);
   /** Config global: cuotas personalizadas por semestre. */
   permitirAjusteCuotasSemestre = signal(false);
+  /** Config global: tarifas que el personal puede elegir al matricular. */
+  tarifasMatriculaConfig = signal<number[]>(normalizarTarifasMatriculaConfig(null));
   /** Preview servicios adicionales al matricular (desde Config). */
   extrasMatriculaPreview = signal<PreviewServicioAdicionalItem[]>([]);
 
@@ -208,7 +214,10 @@ export class ServiciosComponent implements OnInit {
   });
 
   tarifasPermitidasMat = computed(() =>
-    tarifasPermitidasPrograma(this.programaSel(), this.serviciosPrograma()),
+    intersectarTarifasMatricula(
+      tarifasPermitidasPrograma(this.programaSel(), this.serviciosPrograma()),
+      this.tarifasMatriculaConfig(),
+    ),
   );
 
   esTarifaVirtualSeleccionada = computed(() => esTarifaVirtualMatricula(this.tarifa()));
@@ -530,12 +539,17 @@ export class ServiciosComponent implements OnInit {
         const okCuotas = c.permitirAjusteCuotasSemestre === true;
         this.permitirAjusteValorMatricula.set(okRebaja);
         this.permitirAjusteCuotasSemestre.set(okCuotas);
+        this.tarifasMatriculaConfig.set(
+          normalizarTarifasMatriculaConfig(c.tarifasMatriculaSeleccionables),
+        );
         if (!okRebaja) this.limpiarAjusteValorMat();
         if (!okCuotas) this.limpiarAjusteCuotasSemestre();
+        this.ajustarTarifaPermitida();
       },
       error: () => {
         this.permitirAjusteValorMatricula.set(true);
         this.permitirAjusteCuotasSemestre.set(false);
+        this.tarifasMatriculaConfig.set(normalizarTarifasMatriculaConfig(null));
       },
     });
   }

@@ -3,10 +3,12 @@ const { normalizarRol } = require('../utils/roles');
 const { datosRol, nombreRol } = require('./rolesPermisos');
 const { empleadoPorUsuarioId, nombreEmpleado, esEmpleadoInstructor } = require('./instructorJornada');
 const { sedesPermitidasUsuario, asegurarSedePrincipal } = require('./sedeContext');
+const { normalizarCanalConexionUsuario } = require('../utils/canalConexion');
 
 async function enriquecerUsuarioDoc(u) {
   const json = u.toJSON ? u.toJSON() : { ...u };
   json.rol = normalizarRol(json.rol);
+  json.canalConexion = normalizarCanalConexionUsuario(json.canalConexion);
   const datos = await datosRol(json.rol);
   json.permisos = datos.permisos;
   json.alarmas = datos.alarmas;
