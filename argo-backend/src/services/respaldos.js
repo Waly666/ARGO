@@ -664,4 +664,6 @@ module.exports = {
   obtenerConfigRespaldos,
   actualizarConfigRespaldos,
   obtenerProgreso: progreso.obtener,
+  reservarOperacion: marcarOperacion,
+  liberarOperacionRespaldo: liberarOperacion,
 };

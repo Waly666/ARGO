@@ -34,6 +34,20 @@ router.delete('/respaldos/:archivo', ctrl.eliminarRespaldo);
 router.post('/respaldos/:archivo/restaurar', ctrl.restaurarRespaldo);
 router.post('/respaldos/restaurar-subido', subidaRespaldo.single('archivo'), ctrl.restaurarSubido);
 
+// Respaldos selectivos (exportar/importar tablas elegidas)
+router.get('/respaldos-selectivos/meta', ctrl.metaRespaldoSelectivo);
+router.get('/respaldos-selectivos/progreso', ctrl.progresoOperacion);
+router.get('/respaldos-selectivos', ctrl.listarRespaldosSelectivos);
+router.post('/respaldos-selectivos', ctrl.crearRespaldoSelectivo);
+router.get('/respaldos-selectivos/:archivo/descargar', ctrl.descargarRespaldoSelectivo);
+router.delete('/respaldos-selectivos/:archivo', ctrl.eliminarRespaldoSelectivo);
+router.post('/respaldos-selectivos/:archivo/restaurar', ctrl.restaurarRespaldoSelectivo);
+router.post(
+  '/respaldos-selectivos/restaurar-subido',
+  subidaRespaldo.single('archivo'),
+  ctrl.restaurarSubidoSelectivo,
+);
+
 // Puesta en cero (nueva empresa)
 router.get('/reset-empresa', ctrl.infoReset);
 router.post('/reset-empresa', ctrl.resetEmpresa);

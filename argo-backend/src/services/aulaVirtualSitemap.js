@@ -1,4 +1,5 @@
 const { listarCursosVirtuales } = require('./aulaVirtualCatalogo');
+const { listarPublicos: listarBlogPublicos } = require('./aulaVirtualBlog');
 
 const DEFAULT_SITE_URL = String(process.env.PORTAL_PUBLIC_URL || '').replace(/\/$/, '');
 
@@ -9,7 +10,10 @@ const STATIC_PAGES = [
   { path: '/consulta-certificados', changefreq: 'monthly', priority: '0.8' },
   { path: '/acerca', changefreq: 'monthly', priority: '0.75' },
   { path: '/fundacion', changefreq: 'monthly', priority: '0.75' },
+  { path: '/cursos-conduccion', changefreq: 'monthly', priority: '0.8' },
+  { path: '/examen-teorico', changefreq: 'monthly', priority: '0.8' },
   { path: '/galeria', changefreq: 'weekly', priority: '0.7' },
+  { path: '/pqr', changefreq: 'monthly', priority: '0.6' },
   { path: '/blog', changefreq: 'weekly', priority: '0.65' },
 ];
 
@@ -56,7 +60,10 @@ function urlEntry(loc, { changefreq, priority, lastmod }) {
 async function generarSitemapXml(req) {
   const base = siteBaseUrl(req);
   const today = fmtLastmod();
-  const cursos = await listarCursosVirtuales({ soloPublicados: true });
+  const [cursos, blogPosts] = await Promise.all([
+    listarCursosVirtuales({ soloPublicados: true }),
+    listarBlogPublicos(),
+  ]);
   const entries = [
     ...STATIC_PAGES.map((p) =>
       urlEntry(`${base}${p.path}`, {
@@ -72,6 +79,15 @@ async function generarSitemapXml(req) {
         lastmod: today,
       }),
     ),
+    ...blogPosts
+      .filter((p) => p?.slug)
+      .map((p) =>
+        urlEntry(`${base}/blog/${encodeURIComponent(String(p.slug))}`, {
+          changefreq: 'monthly',
+          priority: '0.6',
+          lastmod: fmtLastmod(p.updatedAt || p.publicadoAt || p.createdAt),
+        }),
+      ),
   ];
 
   return [

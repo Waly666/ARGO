@@ -8,6 +8,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   template: `
     <nav class="sys-subnav" aria-label="Backup, reset, restore y migración">
       <a routerLink="/app/configuracion/backup" routerLinkActive="active">Backup</a>
+      <a routerLink="/app/configuracion/backup-selectivo" routerLinkActive="active">Backup selectivo</a>
       <a routerLink="/app/configuracion/restore" routerLinkActive="active">Restore</a>
       <a routerLink="/app/configuracion/reset" routerLinkActive="active">Reset</a>
       <a routerLink="/app/configuracion/limpieza-tablas" routerLinkActive="active">Limpieza tablas</a>

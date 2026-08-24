@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const respaldos = require('../services/respaldos');
+const respaldoSelectivo = require('../services/respaldoSelectivo');
+const { FRASE_RESTAURAR } = require('../constants/coleccionesRespaldoSelectivo');
 const { verificarReautenticacionAdmin } = require('../services/reautenticacion');
 const { ejecutarResetEmpresa, FRASE_CONFIRMACION } = require('../services/resetEmpresa');
 const { listarModulosReset } = require('../constants/modulosResetEmpresa');
@@ -164,6 +166,126 @@ exports.actualizarConfigRespaldos = async (req, res, next) => {
     }).catch(() => {});
     res.json(cfg);
   } catch (e) {
+    next(e);
+  }
+};
+
+/* ---------- Respaldos selectivos (tablas elegibles) ---------- */
+
+exports.metaRespaldoSelectivo = async (_req, res, next) => {
+  try {
+    res.json(await respaldoSelectivo.obtenerMetaSelectivo());
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.listarRespaldosSelectivos = async (_req, res, next) => {
+  try {
+    res.json({ respaldos: await respaldoSelectivo.listarRespaldosSelectivos() });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.crearRespaldoSelectivo = async (req, res, next) => {
+  try {
+    const meta = await respaldoSelectivo.crearRespaldoSelectivo({
+      colecciones: req.body?.colecciones,
+      usuario: req.user.username,
+      nota: String(req.body?.nota || ''),
+    });
+    registrarAuditoria({
+      req,
+      accion: 'respaldo_selectivo_crear',
+      entidad: 'respaldo',
+      idEntidad: meta.archivo,
+      resumen:
+        `Respaldo selectivo ${meta.archivo} (${meta.colecciones} tablas, ${meta.totalDocs} documentos)`,
+      datosDespues: meta,
+    }).catch(() => {});
+    res.status(201).json(meta);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.descargarRespaldoSelectivo = async (req, res, next) => {
+  try {
+    const ruta = respaldoSelectivo.rutaRespaldoSelectivo(req.params.archivo);
+    if (!fs.existsSync(ruta)) return res.status(404).json({ message: 'Respaldo selectivo no encontrado' });
+    registrarAuditoria({
+      req,
+      accion: 'respaldo_selectivo_descargar',
+      entidad: 'respaldo',
+      idEntidad: path.basename(ruta),
+      resumen: `Descarga de respaldo selectivo ${path.basename(ruta)}`,
+    }).catch(() => {});
+    res.download(ruta);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.eliminarRespaldoSelectivo = async (req, res, next) => {
+  try {
+    await respaldoSelectivo.eliminarRespaldoSelectivo(req.params.archivo);
+    registrarAuditoria({
+      req,
+      accion: 'respaldo_selectivo_eliminar',
+      entidad: 'respaldo',
+      idEntidad: req.params.archivo,
+      resumen: `Respaldo selectivo eliminado: ${req.params.archivo}`,
+    }).catch(() => {});
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.restaurarRespaldoSelectivo = async (req, res, next) => {
+  try {
+    exigirFrase(req, FRASE_RESTAURAR);
+    await verificarReautenticacionAdmin(req, req.body, { omitirMfa: true });
+    const archivo = req.params.archivo;
+    const ruta = respaldoSelectivo.rutaRespaldoSelectivo(archivo);
+    const r = await respaldoSelectivo.restaurarRespaldoSelectivo(ruta, { usuario: req.user.username });
+    await registrarAuditoria({
+      req,
+      accion: 'respaldo_selectivo_restaurar',
+      entidad: 'respaldo',
+      idEntidad: archivo,
+      resumen: `Restauración selectiva de ${archivo} por ${req.user.username}`,
+      datosDespues: r,
+    });
+    res.json(r);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.restaurarSubidoSelectivo = async (req, res, next) => {
+  try {
+    exigirFrase(req, FRASE_RESTAURAR);
+    await verificarReautenticacionAdmin(req, req.body, { omitirMfa: true });
+    if (!req.file?.path) {
+      return res.status(400).json({ message: 'Adjunte el archivo de respaldo selectivo (.zip o .argobk)' });
+    }
+    const r = await respaldoSelectivo.restaurarRespaldoSelectivo(req.file.path, {
+      usuario: req.user.username,
+    });
+    await fs.promises.unlink(req.file.path).catch(() => {});
+    await registrarAuditoria({
+      req,
+      accion: 'respaldo_selectivo_restaurar',
+      entidad: 'respaldo',
+      idEntidad: req.file.originalname,
+      resumen: `Restauración selectiva desde archivo ${req.file.originalname} por ${req.user.username}`,
+      datosDespues: r,
+    });
+    res.json(r);
+  } catch (e) {
+    if (req.file?.path) await fs.promises.unlink(req.file.path).catch(() => {});
     next(e);
   }
 };

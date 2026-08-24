@@ -11,7 +11,7 @@ const OPERACION_CRITICA_TIMEOUT_MS = 30 * 60 * 1000;
 export interface RespaldoMeta {
   archivo: string;
   fecha: string;
-  tipo: 'manual' | 'auto' | 'pre-reset' | 'pre-restauracion' | string;
+  tipo: 'manual' | 'auto' | 'pre-reset' | 'pre-restauracion' | 'selectivo' | string;
   usuario?: string | null;
   nota?: string;
   tamano: number;
@@ -20,6 +20,36 @@ export interface RespaldoMeta {
   colecciones?: number;
   totalDocs?: number;
   duracionMs?: number;
+  selectivo?: boolean;
+  coleccionesSeleccionadas?: string[];
+}
+
+export interface ColeccionSelectiva {
+  nombre: string;
+  etiqueta: string;
+  total?: number;
+  existe?: boolean;
+}
+
+export interface GrupoRespaldoSelectivo {
+  id: string;
+  etiqueta: string;
+  descripcion: string;
+  advertencias: string[];
+  colecciones: ColeccionSelectiva[];
+}
+
+export interface MetaRespaldoSelectivo {
+  grupos: GrupoRespaldoSelectivo[];
+  fraseRestaurar: string;
+}
+
+export interface ResultadoRestauracionSelectiva {
+  colecciones: number;
+  docsRestaurados: number;
+  coleccionesRestauradas: string[];
+  respaldoSeguridad: string | null;
+  mensaje?: string;
 }
 
 export interface ConfigRespaldos {
@@ -205,6 +235,61 @@ export class SistemaService {
 
   progresoOperacion(): Observable<ProgresoOperacion> {
     return this.http.get<ProgresoOperacion>(`${this.base}/respaldos/progreso`);
+  }
+
+  progresoRespaldoSelectivo(): Observable<ProgresoOperacion> {
+    return this.http.get<ProgresoOperacion>(`${this.base}/respaldos-selectivos/progreso`);
+  }
+
+  // ----- Respaldos selectivos -----
+  metaRespaldoSelectivo(): Observable<MetaRespaldoSelectivo> {
+    return this.http.get<MetaRespaldoSelectivo>(`${this.base}/respaldos-selectivos/meta`);
+  }
+
+  listarRespaldosSelectivos(): Observable<{ respaldos: RespaldoMeta[] }> {
+    return this.http.get<{ respaldos: RespaldoMeta[] }>(`${this.base}/respaldos-selectivos`);
+  }
+
+  crearRespaldoSelectivo(colecciones: string[], nota = ''): Observable<RespaldoMeta> {
+    return this.http.post<RespaldoMeta>(`${this.base}/respaldos-selectivos`, { colecciones, nota });
+  }
+
+  descargarRespaldoSelectivo(archivo: string): Observable<Blob> {
+    return this.http.get(`${this.base}/respaldos-selectivos/${encodeURIComponent(archivo)}/descargar`, {
+      responseType: 'blob',
+    });
+  }
+
+  eliminarRespaldoSelectivo(archivo: string): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(
+      `${this.base}/respaldos-selectivos/${encodeURIComponent(archivo)}`,
+    );
+  }
+
+  restaurarRespaldoSelectivo(
+    archivo: string,
+    cred: CredencialesOperacion,
+  ): Observable<ResultadoRestauracionSelectiva> {
+    return this.http
+      .post<ResultadoRestauracionSelectiva>(
+        `${this.base}/respaldos-selectivos/${encodeURIComponent(archivo)}/restaurar`,
+        cred,
+      )
+      .pipe(timeout(OPERACION_CRITICA_TIMEOUT_MS));
+  }
+
+  restaurarSubidoSelectivo(
+    file: File,
+    cred: CredencialesOperacion,
+  ): Observable<ResultadoRestauracionSelectiva> {
+    const fd = new FormData();
+    fd.append('archivo', file);
+    fd.append('password', cred.password);
+    fd.append('codigoMfa', cred.codigoMfa || '');
+    fd.append('confirmacion', cred.confirmacion);
+    return this.http
+      .post<ResultadoRestauracionSelectiva>(`${this.base}/respaldos-selectivos/restaurar-subido`, fd)
+      .pipe(timeout(OPERACION_CRITICA_TIMEOUT_MS));
   }
 
   // ----- Puesta en cero -----

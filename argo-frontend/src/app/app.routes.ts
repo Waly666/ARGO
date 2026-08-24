@@ -952,6 +952,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'configuracion/backup-selectivo',
+        canActivate: [adminGuard],
+        data: { title: 'Backup selectivo' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-backup-selectivo.component').then(
+            (m) => m.SistemaBackupSelectivoComponent,
+          ),
+      },
+      {
         path: 'configuracion/restore',
         canActivate: [adminGuard],
         data: { title: 'Restore', vista: 'restore' },

@@ -1,0 +1,85 @@
+@import './sistema-shared.scss';
+
+.sys-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bss-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.bss-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.bss-grupo {
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.bss-grupo__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.bss-grupo__check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+
+.bss-tablas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+
+  label {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.5rem 0.65rem;
+    cursor: pointer;
+    font-size: 0.84rem;
+  }
+}
+
+.bss-tabla__code {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.bss-tabla__count {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.bss-export-row {
+  margin-top: 0.5rem;
+  align-items: flex-end;
+}
+
+@media (max-width: 720px) {
+  .bss-tablas label {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'check nombre'
+      '. code'
+      '. count';
+  }
+}

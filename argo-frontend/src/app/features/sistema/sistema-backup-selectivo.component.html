@@ -1,0 +1,236 @@
+<section class="sys-page card">
+  <argo-backup-reset-restore-nav />
+
+  <header class="sys-head">
+    <div>
+      <h1>Backup selectivo</h1>
+      <p>
+        Exporte o importe solo las tablas que necesite para migrar datos a otro ARGO o reutilizar
+        catálogos sin vaciar todo el sistema. El resto de la base de datos no se modifica al restaurar.
+      </p>
+    </div>
+    <div class="sys-head__actions">
+      <span class="sys-chip sys-chip--info">{{ totalSeleccionadas() }} tablas seleccionadas</span>
+    </div>
+  </header>
+
+  @if (msg(); as texto) {
+    <div class="sys-msg" [class.sys-msg--err]="msgError()" role="status">{{ texto }}</div>
+  }
+
+  @if (progreso(); as p) {
+    @if (creando() || restaurando()) {
+      <div class="sys-progress" role="status" aria-live="polite">
+        <div class="sys-progress__head">
+          <span>{{ p.fase || 'Procesando…' }}</span>
+          @if (p.porcentaje != null) {
+            <span class="pct">{{ p.porcentaje }}%</span>
+          }
+        </div>
+        <div class="sys-progress__track">
+          @if (p.porcentaje != null) {
+            <div class="sys-progress__fill" [style.width.%]="p.porcentaje"></div>
+          } @else {
+            <div class="sys-progress__fill sys-progress__fill--indeterminada"></div>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  @if (loading()) {
+    <p class="sys-hint">Cargando catálogo de tablas…</p>
+  } @else {
+    <section class="sys-section sys-section--sky">
+      <header class="sys-section-head">
+        <h2>Exportar tablas seleccionadas</h2>
+        <p>Marque los módulos o tablas a incluir en el archivo .zip / .argobk</p>
+      </header>
+      <div class="sys-section-body">
+        <div class="bss-toolbar">
+          <button type="button" class="ghost" (click)="seleccionarTodas()">Seleccionar todas</button>
+          <button type="button" class="ghost" (click)="limpiarSeleccion()">Limpiar</button>
+        </div>
+
+        <div class="bss-grupos">
+          @for (grupo of grupos(); track grupo.id) {
+            <article class="bss-grupo">
+              <header class="bss-grupo__head">
+                <label class="bss-grupo__check">
+                  <input
+                    type="checkbox"
+                    [checked]="grupoCompleto(grupo)"
+                    [indeterminate]="grupoParcial(grupo)"
+                    (change)="toggleGrupo(grupo, $any($event.target).checked)"
+                  />
+                  <strong>{{ grupo.etiqueta }}</strong>
+                </label>
+                <span class="sys-hint">{{ grupo.descripcion }}</span>
+              </header>
+              <ul class="bss-tablas">
+                @for (col of grupo.colecciones; track col.nombre) {
+                  <li>
+                    <label>
+                      <input
+                        type="checkbox"
+                        [checked]="estaSeleccionada(col.nombre)"
+                        (change)="toggleTabla(col.nombre, $any($event.target).checked)"
+                      />
+                      <span class="bss-tabla__nombre">{{ col.etiqueta }}</span>
+                      <code class="bss-tabla__code">{{ col.nombre }}</code>
+                      <span class="bss-tabla__count">{{ col.total ?? 0 | number }} reg.</span>
+                    </label>
+                  </li>
+                }
+              </ul>
+            </article>
+          }
+        </div>
+
+        <div class="sys-row bss-export-row">
+          <div class="sys-field" style="flex: 1; min-width: 16rem">
+            <label for="nota-sel">Nota (opcional)</label>
+            <input
+              id="nota-sel"
+              type="text"
+              [(ngModel)]="nota"
+              maxlength="200"
+              placeholder="Ej: catálogos para nueva sede"
+            />
+          </div>
+          <button type="button" class="primary" (click)="crear()" [disabled]="creando() || !totalSeleccionadas()">
+            {{ creando() ? 'Exportando…' : 'Crear backup selectivo' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="sys-section sys-section--amber">
+      <header class="sys-section-head">
+        <h2>Importar backup selectivo</h2>
+        <p>Restaura solo las tablas incluidas en el archivo. Antes se crea una copia completa de seguridad.</p>
+      </header>
+      <div class="sys-section-body">
+        <div class="sys-file">
+          <input type="file" accept=".zip,.argobk" (change)="onArchivoSubido($event)" />
+          @if (archivoSubido(); as f) {
+            <span class="sys-chip sys-chip--info">{{ f.name }} ({{ tamano(f.size) }})</span>
+          }
+        </div>
+      </div>
+    </section>
+
+    @if (restaurarSel() || archivoSubido()) {
+      <section class="sys-section sys-section--danger">
+        <header class="sys-section-head">
+          <h2>Confirmar importación selectiva</h2>
+        </header>
+        <div class="sys-section-body">
+          <div class="sys-danger-box">
+            <h3>⚠ Solo se reemplazan las tablas del archivo</h3>
+            <ul>
+              <li>Las demás tablas y archivos subidos del sistema actual se conservan.</li>
+              <li>Antes de importar se guarda una copia de seguridad completa del estado actual.</li>
+              <li>Si restaura usuarios o configuración, puede necesitar iniciar sesión de nuevo.</li>
+            </ul>
+          </div>
+          <div class="sys-row">
+            <div class="sys-field">
+              <label for="spass">Su contraseña de administrador</label>
+              <input id="spass" type="password" [(ngModel)]="password" autocomplete="current-password" />
+            </div>
+            <div class="sys-field">
+              <label for="smfa">Código MFA (si aplica)</label>
+              <input
+                id="smfa"
+                type="text"
+                [(ngModel)]="codigoMfa"
+                maxlength="6"
+                inputmode="numeric"
+                placeholder="000000"
+              />
+            </div>
+            <div class="sys-field">
+              <label for="sconf">Escriba {{ fraseRestaurar() }}</label>
+              <input id="sconf" type="text" [(ngModel)]="confirmacion" [placeholder]="fraseRestaurar()" />
+            </div>
+          </div>
+          <div class="sys-row">
+            <button type="button" class="primary" (click)="restaurar()" [disabled]="!puedeRestaurar()">
+              {{ restaurando() ? 'Importando…' : 'Importar backup selectivo' }}
+            </button>
+            <button
+              type="button"
+              class="ghost"
+              (click)="restaurarSel.set(null); archivoSubido.set(null)"
+              [disabled]="restaurando()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </section>
+    }
+
+    <section class="sys-section sys-section--violet">
+      <header class="sys-section-head">
+        <h2>Backups selectivos en el servidor ({{ respaldos().length }})</h2>
+      </header>
+      <div class="sys-section-body">
+        @if (!respaldos().length) {
+          <p class="sys-hint">Aún no hay backups selectivos. Cree uno arriba o importe un archivo externo.</p>
+        } @else {
+          <div style="overflow-x: auto">
+            <table class="sys-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tablas</th>
+                  <th>Documentos</th>
+                  <th>Tamaño</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of respaldos(); track r.archivo) {
+                  <tr>
+                    <td>
+                      {{ r.fecha | date: 'dd/MM/yyyy HH:mm' }}
+                      @if (r.nota) {
+                        <div class="sys-hint">{{ r.nota }}</div>
+                      }
+                    </td>
+                    <td>
+                      @if (r.coleccionesSeleccionadas?.length) {
+                        <span title="{{ r.coleccionesSeleccionadas!.join(', ') }}">
+                          {{ r.coleccionesSeleccionadas!.length }} tablas
+                        </span>
+                      } @else if (r.colecciones != null) {
+                        {{ r.colecciones }} tablas
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>{{ r.totalDocs != null ? (r.totalDocs | number) : '—' }}</td>
+                    <td>{{ tamano(r.tamano) }}</td>
+                    <td>
+                      <div class="acciones">
+                        <button type="button" class="sys-btn-sm" (click)="descargar(r)">Descargar</button>
+                        <button type="button" class="sys-btn-sm" (click)="abrirRestaurar(r)">
+                          {{ restaurarSel() === r.archivo ? 'Cerrar' : 'Importar' }}
+                        </button>
+                        <button type="button" class="sys-btn-sm sys-btn-sm--danger" (click)="eliminar(r)">
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</section>
