@@ -10,16 +10,15 @@ const router = Router();
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const accIng = accionesModulo('ingresos');
-const pagos = requirePermiso('alumnos.pagos', 'caja.turno', 'caja.cobros', 'caja.admin', 'contabilidad');
 const admin = requirePermiso('caja.admin', 'contabilidad');
 const soporte = upload.ingresos.single('soporte');
 
 router.get('/admin/todos', admin, ctrl.listarTodos);
-router.get('/alumno/:numDoc', pagos, ctrl.listarPorAlumno);
-router.get('/liquidacion/:idLiquidacion', pagos, ctrl.listarPorLiquidacion);
-router.get('/:id/recibo', pagos, recibo.datos);
-router.get('/:id/recibo/html', pagos, recibo.html);
-router.post('/', pagos, soporte, contratoMutable.contratoPorBodyOpcional, ctrl.crear);
+router.get('/alumno/:numDoc', accIng.ver, ctrl.listarPorAlumno);
+router.get('/liquidacion/:idLiquidacion', accIng.ver, ctrl.listarPorLiquidacion);
+router.get('/:id/recibo', accIng.ver, recibo.datos);
+router.get('/:id/recibo/html', accIng.ver, recibo.html);
+router.post('/', accIng.crear, soporte, contratoMutable.contratoPorBodyOpcional, ctrl.crear);
 router.delete('/:id', accIng.eliminar, contratoMutable.ingresoPorParametro, ctrl.eliminar);
 
 module.exports = router;

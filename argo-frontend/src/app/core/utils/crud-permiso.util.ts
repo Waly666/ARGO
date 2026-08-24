@@ -111,7 +111,7 @@ const MODULOS_CRUD: Record<
     categoria: 'academico',
     orden: 50,
     legacyPorAccion: {
-      ver: ['alumnos.ver', 'alumnos.gestionar', 'alumnos.pagos'],
+      ver: ['alumnos.ver', 'alumnos.gestionar', 'alumnos.pagos', 'ingresos.ver', 'ingresos.crear'],
       crear: ['alumnos.gestionar', 'liquidaciones.crear'],
       editar: ['alumnos.gestionar', 'liquidaciones.editar'],
       eliminar: ['alumnos.gestionar', 'liquidaciones.eliminar'],
@@ -147,7 +147,7 @@ const MODULOS_CRUD: Record<
     categoria: 'caja',
     orden: 70,
     legacyPorAccion: {
-      ver: ['alumnos.pagos', 'caja.turno', 'caja.cobros', 'caja.admin', 'contabilidad'],
+      ver: ['alumnos.pagos', 'caja.turno', 'caja.cobros', 'caja.admin', 'contabilidad', 'ingresos.ver', 'ingresos.crear'],
       crear: ['alumnos.pagos', 'caja.turno', 'caja.cobros', 'contabilidad', 'ingresos.crear'],
       editar: ['alumnos.pagos', 'caja.admin', 'contabilidad', 'ingresos.editar'],
       eliminar: ['caja.admin', 'contabilidad', 'ingresos.eliminar'],

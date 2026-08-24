@@ -1,5 +1,5 @@
 const { permisosParaRol } = require('../services/rolesPermisos');
-const { tieneAccionModulo } = require('../services/permisoAccion');
+const { tieneAccionModulo, tienePermisoClave } = require('../services/permisoAccion');
 const { MODULOS_CRUD } = require('../constants/crudModulos');
 
 /**
@@ -55,4 +55,29 @@ function accionesModulo(modulo) {
   };
 }
 
-module.exports = { requireAccion, accionesModulo };
+/** Turno de caja: cajero clásico o quien puede registrar pagos/ingresos en ficha de alumno. */
+function requireCajaTurno(req, res, next) {
+  if (!req.user) return res.status(401).json({ message: 'No autenticado' });
+  return (async () => {
+    try {
+      const permisos = req.permisos || (await permisosParaRol(req.user.rol));
+      req.permisos = permisos;
+      const ok =
+        tienePermisoClave(permisos, 'caja.turno')
+        || tienePermisoClave(permisos, 'caja.cobros')
+        || tienePermisoClave(permisos, 'caja.admin')
+        || tienePermisoClave(permisos, 'contabilidad')
+        || tienePermisoClave(permisos, 'alumnos.pagos')
+        || tieneAccionModulo(permisos, 'ingresos', 'crear');
+      if (ok) return next();
+      return res.status(403).json({
+        message: 'Sin permisos para operar la caja',
+        code: 'SIN_PERMISO',
+      });
+    } catch (e) {
+      next(e);
+    }
+  })();
+}
+
+module.exports = { requireAccion, accionesModulo, requireCajaTurno };

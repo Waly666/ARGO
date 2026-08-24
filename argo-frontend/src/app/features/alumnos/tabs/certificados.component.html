@@ -118,6 +118,7 @@
       <thead>
         <tr>
           <th>Encabezado</th>
+          <th>Horas</th>
           <th>Formato</th>
           <th>tipoCertificado</th>
           <th>ID</th>
@@ -135,6 +136,7 @@
             {{ c.encabezado || c.nomCert || c.programaDescr || '—' }}
             <span class="badge err mini-badge" *ngIf="esAnulado(c)">ANULADO</span>
           </td>
+          <td>{{ horasCert(c) }}</td>
           <td>{{ labelTipo(c.tipoFormatoCert) }}</td>
           <td>{{ c.tipoCertificado || 'Regular' }}</td>
           <td class="mono">{{ c.codigoCert || '—' }}</td>
@@ -144,74 +146,91 @@
           <td>{{ fecha(c.fechaEmision) }}</td>
           <td>{{ fecha(c.fechaVencimiento) || '—' }}</td>
           <td class="r actions-cell">
-            <button class="ghost mini" (click)="imprimir(c)">Imprimir</button>
-            <button class="ghost mini" (click)="abrirEditar(c)" *ngIf="!esAnulado(c)">Editar</button>
+            <button type="button" class="ghost mini" (click)="imprimir(c); $event.stopPropagation()">Imprimir</button>
+            <button
+              type="button"
+              class="ghost mini"
+              (click)="abrirEditar(c); $event.stopPropagation()"
+              *ngIf="!esAnulado(c) && puedeEditarCertificado()">
+              Editar
+            </button>
             <button class="danger mini" (click)="anular(c)" *ngIf="!esAnulado(c) && puedeAnularCertificado()">
               {{ accionPermiso.puedeEliminar('certificados') ? 'Anular' : 'Solicitar anulación' }}
             </button>
           </td>
         </tr>
         <tr *ngIf="certificados().length === 0">
-          <td colspan="10" class="empty">No hay certificados emitidos.</td>
+          <td colspan="11" class="empty">No hay certificados emitidos.</td>
         </tr>
       </tbody>
     </table>
+  </div>
+</section>
 
-    <div class="card edit-card argo-form-shell" *ngIf="editId()">
-      <h3>Editar certificado</h3>
-      <p class="hint">Modifique fechas, encabezado u otros datos. Al imprimir se usarán los valores guardados.</p>
-      <div class="row">
-        <div class="col-3">
-          <label>tipoCertificado</label>
-          <select [ngModel]="editTipoCertificado()" (ngModelChange)="editTipoCertificado.set($event)">
-            <option *ngFor="let t of tiposCertificadoCat" [value]="t">{{ t }}</option>
-          </select>
-        </div>
+<argo-form-modal
+  *ngIf="modalEditar()"
+  [open]="true"
+  title="Editar certificado"
+  subtitle="Modifique fechas, encabezado, horas u otros datos. Al imprimir se usarán los valores guardados."
+  [xwide]="true"
+  (closed)="cancelarEditar()">
+  <div class="modal-form argo-form-shell cert-edit-modal">
+    <div class="row">
+      <div class="col-3">
+        <label>tipoCertificado</label>
+        <select [ngModel]="editTipoCertificado()" (ngModelChange)="editTipoCertificado.set($event)">
+          <option *ngFor="let t of tiposCertificadoCat" [value]="t">{{ t }}</option>
+        </select>
       </div>
-      <div class="row">
-        <div class="col-12">
-          <label>Encabezado / nombre del curso</label>
-          <input type="text" [ngModel]="editEncabezado()" (ngModelChange)="editEncabezado.set($event)" />
-        </div>
+      <div class="col-3">
+        <label>Horas (intensidad horaria)</label>
+        <input type="text" [ngModel]="editHorasCert()" (ngModelChange)="editHorasCert.set($event)" placeholder="Ej. 40" />
+        <p class="hint">Se imprime en el certificado. Si queda vacío, se usa la del programa.</p>
       </div>
-      <div class="row">
-        <div class="col-6">
-          <argo-date-input label="Fecha de emisión *" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)" ></argo-date-input>
-        </div>
-        <div class="col-6">
-          <argo-date-input label="Fecha de vencimiento" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)" ></argo-date-input>
-          <p class="hint">Deje vacío si no aplica vencimiento.</p>
-        </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <label>Encabezado / nombre del curso</label>
+        <input type="text" [ngModel]="editEncabezado()" (ngModelChange)="editEncabezado.set($event)" />
       </div>
-      <div class="row">
-        <div class="col-4">
-          <label>Nº Acta</label>
-          <input type="text" [ngModel]="editNumActa()" (ngModelChange)="editNumActa.set($event)" />
-        </div>
-        <div class="col-4">
-          <label>Nº Folio</label>
-          <input type="text" [ngModel]="editNumFolio()" (ngModelChange)="editNumFolio.set($event)" />
-        </div>
-        <div class="col-4">
-          <label>Nº RUNT</label>
-          <input type="text" [ngModel]="editNumRunt()" (ngModelChange)="editNumRunt.set($event)" />
-        </div>
+    </div>
+    <div class="row">
+      <div class="col-6">
+        <argo-date-input label="Fecha de emisión *" [ngModel]="editFechaEmision()" (ngModelChange)="editFechaEmision.set($event)"></argo-date-input>
       </div>
-      <div class="row">
-        <div class="col-12">
-          <label>Observaciones</label>
-          <input type="text" [ngModel]="editObservaciones()" (ngModelChange)="editObservaciones.set($event)" />
-        </div>
+      <div class="col-6">
+        <argo-date-input label="Fecha de vencimiento" [ngModel]="editFechaVencimiento()" (ngModelChange)="editFechaVencimiento.set($event)"></argo-date-input>
+        <p class="hint">Deje vacío si no aplica vencimiento.</p>
       </div>
-      <div class="actions">
-        <button class="ghost" (click)="cancelarEditar()">Cancelar</button>
-        <button class="primary" (click)="guardarEdicion()" [disabled]="savingEdit()">
-          {{ savingEdit() ? 'Guardando…' : 'Guardar cambios' }}
-        </button>
+    </div>
+    <div class="row">
+      <div class="col-4">
+        <label>Nº Acta</label>
+        <input type="text" [ngModel]="editNumActa()" (ngModelChange)="editNumActa.set($event)" />
+      </div>
+      <div class="col-4">
+        <label>Nº Folio</label>
+        <input type="text" [ngModel]="editNumFolio()" (ngModelChange)="editNumFolio.set($event)" />
+      </div>
+      <div class="col-4">
+        <label>Nº RUNT</label>
+        <input type="text" [ngModel]="editNumRunt()" (ngModelChange)="editNumRunt.set($event)" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <label>Observaciones</label>
+        <input type="text" [ngModel]="editObservaciones()" (ngModelChange)="editObservaciones.set($event)" />
       </div>
     </div>
   </div>
-</section>
+  <div modal-actions>
+    <button type="button" class="ghost" (click)="cancelarEditar()" [disabled]="savingEdit()">Cancelar</button>
+    <button type="button" class="primary" (click)="guardarEdicion()" [disabled]="savingEdit()">
+      {{ savingEdit() ? 'Guardando…' : 'Guardar cambios' }}
+    </button>
+  </div>
+</argo-form-modal>
 
 <ng-template #noAlumno>
   <div class="card empty-card">

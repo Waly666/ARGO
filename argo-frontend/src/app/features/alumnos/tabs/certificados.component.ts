@@ -24,6 +24,7 @@ import {
   PlantillaCertificado,
 } from '../../../core/services/config-certificado.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
+import { FormModalComponent } from '../../../shared/form-modal/form-modal.component';
 import { AccionPermisoService } from '../../../core/services/accion-permiso.service';
 import { EliminacionOperacionService } from '../../../core/services/eliminacion-operacion.service';
 
@@ -32,6 +33,7 @@ import { EliminacionOperacionService } from '../../../core/services/eliminacion-
   standalone: true,
   imports: [CommonModule, FormsModule,
     ArgoDateInputComponent,
+    FormModalComponent,
   ],
   templateUrl: './certificados.component.html',
   styleUrls: ['./certificados.component.scss'],
@@ -68,8 +70,11 @@ export class CertificadosComponent {
   editNumFolio = signal<string>('');
   editNumRunt = signal<string>('');
   editObservaciones = signal<string>('');
+  editHorasCert = signal<string>('');
   editFechaEmision = signal<string>('');
   editFechaVencimiento = signal<string>('');
+
+  modalEditar = signal(false);
 
   loading = signal(false);
   saving = signal(false);
@@ -213,20 +218,31 @@ export class CertificadosComponent {
   }
 
   abrirEditar(c: any) {
-    this.editId.set(c._id);
+    const id = String(c?._id || '').trim();
+    if (!id) return;
+    this.editId.set(id);
     this.editTipoCertificado.set(normalizarTipoAlumno(c.tipoCertificado));
     this.editEncabezado.set(c.encabezado || c.nomCert || c.programaDescr || '');
     this.editNumActa.set(c.numActa || '');
     this.editNumFolio.set(c.numFolio || '');
     this.editNumRunt.set(c.numRunt || '');
     this.editObservaciones.set(c.observaciones || '');
+    this.editHorasCert.set(
+      String(c.horasCert || '').trim() || (c.horas != null && c.horas !== '' ? String(c.horas) : ''),
+    );
     this.editFechaEmision.set(fechaInput(c.fechaEmision));
     this.editFechaVencimiento.set(fechaInput(c.fechaVencimiento));
     this.msg.set(null);
+    this.modalEditar.set(true);
   }
 
   cancelarEditar() {
     this.editId.set('');
+    this.modalEditar.set(false);
+  }
+
+  puedeEditarCertificado(): boolean {
+    return this.accionPermiso.tiene('certificados', 'editar');
   }
 
   guardarEdicion() {
@@ -247,13 +263,14 @@ export class CertificadosComponent {
         numFolio: this.editNumFolio() || undefined,
         numRunt: this.editNumRunt() || undefined,
         observaciones: this.editObservaciones() || undefined,
+        horasCert: this.editHorasCert().trim() || undefined,
         fechaEmision: this.editFechaEmision(),
         fechaVencimiento: this.editFechaVencimiento() || null,
       })
       .subscribe({
         next: () => {
           this.savingEdit.set(false);
-          this.editId.set('');
+          this.cancelarEditar();
           this.recargar(nd);
           this.msg.set('Certificado actualizado.');
         },
@@ -293,6 +310,13 @@ export class CertificadosComponent {
       const err = e as { error?: { message?: string } };
       this.msg.set(err?.error?.message || 'Error anulando.');
     }
+  }
+
+  horasCert(c: { horasCert?: string; horas?: number | string | null }): string {
+    const h = String(c?.horasCert || '').trim();
+    if (h) return h;
+    if (c?.horas != null && c.horas !== '') return String(c.horas);
+    return '—';
   }
 
   esAnulado(c: { estado?: string }): boolean {

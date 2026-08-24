@@ -158,6 +158,7 @@ exports.listarPorAlumno = async (req, res, next) => {
         ...c,
         programaDescr: descr,
         nomCert: prog?.nomCert || null,
+        horas: prog?.horas != null ? Number(prog.horas) : null,
       });
     }
     res.json(out);
@@ -1043,6 +1044,7 @@ const CAMPOS_EDITABLES = [
   'observaciones',
   'encabezado',
   'codVerificacion',
+  'horasCert',
   'fechaEmision',
   'fechaVencimiento',
 ];
@@ -1057,6 +1059,7 @@ function pickCertificadoEdit(body) {
   if (dto.numRunt !== undefined) dto.numRunt = String(dto.numRunt || '').trim();
   if (dto.observaciones !== undefined) dto.observaciones = String(dto.observaciones || '').trim();
   if (dto.encabezado !== undefined) dto.encabezado = String(dto.encabezado || '').trim();
+  if (dto.horasCert !== undefined) dto.horasCert = String(dto.horasCert || '').trim();
   if (dto.codVerificacion !== undefined) {
     dto.codVerificacion = String(dto.codVerificacion || '').trim() || null;
   }

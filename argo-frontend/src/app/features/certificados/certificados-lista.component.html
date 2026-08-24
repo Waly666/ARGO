@@ -196,7 +196,7 @@
               </td>
               <td class="actions-cell">
                 <button type="button" class="mini ghost" (click)="imprimir(c)">Imprimir</button>
-                <button type="button" class="mini primary" (click)="abrirEditar(c._id)" *ngIf="!esAnulado(c)">Editar</button>
+                <button type="button" class="mini primary" (click)="abrirEditar(c._id)" *ngIf="!esAnulado(c) && puedeEditarCertificado()">Editar</button>
                 <button type="button" class="mini danger" (click)="eliminar(c)" *ngIf="!esAnulado(c) && puedeAnularCertificado()">{{ etiquetaAnularCertificado() }}</button>
               </td>
             </tr>
@@ -341,6 +341,11 @@
           </div>
           <div class="row">
             <div class="col-4">
+              <label>Horas (intensidad horaria)</label>
+              <input type="text" [ngModel]="editHorasCert()" (ngModelChange)="editHorasCert.set($event)" placeholder="Ej. 40" />
+              <p class="hint-inline">Se imprime en el certificado. Si queda vacío, se usa la del programa.</p>
+            </div>
+            <div class="col-4">
               <argo-catalogo-enum-buscar
                 label="Tipo alumno (tipoCertificado)"
                 placeholder="Seleccione o escriba tipo…"
@@ -356,6 +361,8 @@
               <label>Nº acta</label>
               <input type="text" [ngModel]="editNumActa()" (ngModelChange)="editNumActa.set($event)" />
             </div>
+          </div>
+          <div class="row">
             <div class="col-4">
               <label>Nº folio</label>
               <input type="text" [ngModel]="editNumFolio()" (ngModelChange)="editNumFolio.set($event)" />

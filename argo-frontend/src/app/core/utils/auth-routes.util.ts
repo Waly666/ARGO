@@ -32,7 +32,7 @@ const RUTAS_INICIO: { path: string; permiso: string | string[] }[] = [
   { path: '/app/alumnos', permiso: ['alumnos.ver', 'alumnos.gestionar'] },
   { path: '/app/certificados', permiso: 'alumnos.certificados' },
   { path: '/app/programas', permiso: ['programas.ver', 'programas.gestionar', 'programas.agregar'] },
-  { path: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin'] },
+  { path: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin', 'ingresos.crear'] },
   { path: '/app/contabilidad/inicio', permiso: 'contabilidad' },
   { path: '/app/rrhh/inicio', permiso: 'rrhh' },
   { path: '/app/vehiculos', permiso: 'vehiculos' },
@@ -102,7 +102,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/caja/empresa/informe', permiso: ['caja.turno', 'caja.admin', 'contabilidad'] },
   { prefix: '/app/cierres', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/cierre-general', permiso: ['caja.admin', 'contabilidad'] },
-  { prefix: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin'] },
+  { prefix: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin', 'ingresos.crear'] },
   { prefix: '/app/rrhh', permiso: 'rrhh' },
   // Listado y alta solo con «vehiculos»; ficha/detalle también para inspección instructor.
   { prefix: '/app/vehiculos/nuevo', permiso: 'vehiculos' },

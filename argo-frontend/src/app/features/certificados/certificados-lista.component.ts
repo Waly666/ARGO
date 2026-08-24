@@ -174,6 +174,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   editNumRunt = signal('');
   editObservaciones = signal('');
   editCodVerificacion = signal('');
+  editHorasCert = signal('');
   editFechaEmision = signal('');
   editFechaVencimiento = signal('');
 
@@ -431,6 +432,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
     this.editNumRunt.set(c.numRunt || '');
     this.editObservaciones.set(c.observaciones || '');
     this.editCodVerificacion.set(c.codVerificacion || '');
+    this.editHorasCert.set(c.horasCert || '');
     this.editFechaEmision.set(this.fechaInputLocal(c.fechaEmision));
     this.editFechaVencimiento.set(this.fechaInputLocal(c.fechaVencimiento || undefined));
     this.modalEditar.set(true);
@@ -479,6 +481,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
         numFolio: this.editNumFolio().trim(),
         numRunt: this.editNumRunt().trim(),
         codVerificacion: this.editCodVerificacion().trim() || null,
+        horasCert: this.editHorasCert().trim() || undefined,
         observaciones: this.editObservaciones().trim(),
         fechaEmision: this.editFechaEmision(),
         fechaVencimiento: this.editFechaVencimiento() || null,
@@ -508,6 +511,10 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
 
   puedeAnularCertificado(): boolean {
     return this.accionPermiso.mostrarAccionEliminar('certificados');
+  }
+
+  puedeEditarCertificado(): boolean {
+    return this.accionPermiso.tiene('certificados', 'editar');
   }
 
   etiquetaAnularCertificado(): string {
@@ -689,6 +696,7 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
       numFolio: c.numFolio,
       numRunt: c.numRunt,
       observaciones: c.observaciones,
+      horasCert: (c.horasCert as string | undefined) || undefined,
       programaDescr: prog?.descripcion || prog?.nombreProg || null,
       nomCert: prog?.nomCert || null,
     };

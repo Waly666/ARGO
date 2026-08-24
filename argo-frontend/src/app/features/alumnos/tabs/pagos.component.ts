@@ -504,7 +504,10 @@ export class PagosComponent {
       this.msg.set('Selecciona un alumno primero.');
       return;
     }
-    if (!(await this.cajaAlert.ensureAbierta('registrar cobros del alumno'))) return;
+    if (!(await this.cajaAlert.ensureAbierta('registrar cobros del alumno'))) {
+      this.msg.set('Debe abrir su caja antes de registrar el pago (Caja → Abrir mi caja).');
+      return;
+    }
     const items = this.itemsPago();
     if (!items.length) {
       this.msg.set('Agregue al menos un ítem a pagar.');
@@ -658,7 +661,10 @@ export class PagosComponent {
   async reversar(p: any): Promise<void> {
     const nd = this.store.numDoc();
     if (!nd || !this.puedeReversarPago()) return;
-    if (!(await this.cajaAlert.ensureAbierta('reversar pagos del alumno'))) return;
+    if (!(await this.cajaAlert.ensureAbierta('reversar pagos del alumno'))) {
+      this.msg.set('Debe abrir su caja antes de reversar el pago (Caja → Abrir mi caja).');
+      return;
+    }
     const ref = p.numRecibo ? ` «${p.numRecibo}»` : '';
     const resumen = `Ingreso${ref || ` ${p._id}`}`;
     try {

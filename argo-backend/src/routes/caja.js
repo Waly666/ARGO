@@ -1,11 +1,12 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/cajaSesionController');
 const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
+const { requireCajaTurno } = require('../middleware/gateAccion');
 
 const router = Router();
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
-const turno = requirePermiso('caja.turno');
+const turno = requireCajaTurno;
 const admin = requirePermiso('caja.admin', 'contabilidad');
 
 router.get('/sesiones/activa', turno, ctrl.activa);

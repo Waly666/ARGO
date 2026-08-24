@@ -561,6 +561,7 @@ export class ShellComponent {
         'caja.turno',
         'caja.cobros',
         'caja.admin',
+        'ingresos.crear',
         'combos.gestionar',
         'instructores.mi_portal',
         'instructores',
@@ -598,7 +599,7 @@ export class ShellComponent {
               path: '/app/caja',
               icon: '⌂',
               iconTone: 'amber',
-              permiso: 'caja.turno',
+              permiso: ['caja.turno', 'ingresos.crear'],
             },
             {
               kind: 'link',

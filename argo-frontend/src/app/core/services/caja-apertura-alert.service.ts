@@ -9,6 +9,7 @@ import { AuthService } from './auth.service';
 import { CajaEstadoService } from './caja-estado.service';
 import { CajaSesionService } from './caja-sesion.service';
 import { PermisoService } from './permiso.service';
+import { AccionPermisoService } from './accion-permiso.service';
 import { diasCalendarioColombiaDesde } from '../utils/fecha-colombia.util';
 
 const SESSION_FLAG = 'argo_caja_post_login_alert';
@@ -21,6 +22,7 @@ export class CajaAperturaAlertService {
   private router = inject(Router);
   private alarmas = inject(AlarmaService);
   private permisos = inject(PermisoService);
+  private accionPermiso = inject(AccionPermisoService);
   private auth = inject(AuthService);
 
   private enCurso = false;
@@ -29,14 +31,11 @@ export class CajaAperturaAlertService {
   async ensureAbierta(accion = 'registrar movimientos de caja'): Promise<boolean> {
     const abierta = await firstValueFrom(this.cajaSvc.activa().pipe(map((r) => !!r.abierta)));
     if (abierta) return true;
-    if (this.alarmas.tiene('alarmas.caja.sin_abrir')) {
-      await this.mostrarAviso(accion);
-    }
+    await this.mostrarAviso(accion);
     return false;
   }
 
   async mostrarAviso(accion = 'registrar movimientos de caja'): Promise<void> {
-    if (!this.alarmas.tiene('alarmas.caja.sin_abrir')) return;
     const ir = await this.confirm.open({
       title: 'Caja cerrada',
       message: `Debe abrir su caja antes de ${accion}.\n\nVaya a Resumen del día y pulse «Abrir caja» para iniciar su turno.`,
@@ -104,7 +103,10 @@ export class CajaAperturaAlertService {
 
   /** Acceso a módulos de caja (turno, admin, cobros o contabilidad). */
   usuarioConAccesoCaja(): boolean {
-    return this.permisos.tiene(['caja.turno', 'caja.admin', 'caja.cobros', 'contabilidad']);
+    return (
+      this.permisos.tiene(['caja.turno', 'caja.admin', 'caja.cobros', 'contabilidad', 'ingresos.crear'])
+      || this.accionPermiso.tiene('ingresos', 'crear')
+    );
   }
 
   /**
@@ -130,7 +132,7 @@ export class CajaAperturaAlertService {
   private puedeAbrirTurno(): boolean {
     const rol = String(this.auth.user()?.rol || '').toLowerCase();
     if (rol === 'admin' || rol === 'contador') return false;
-    return this.permisos.tiene('caja.turno');
+    return this.permisos.tiene('caja.turno') || this.accionPermiso.tiene('ingresos', 'crear');
   }
 
   private storageKey(): string {
