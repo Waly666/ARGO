@@ -16,6 +16,7 @@ const {
   assertAlumnoPorNumDocGestor,
   intersectarNumDocsConAlcanceGestor,
 } = require('../services/alcanceGestorUsuario');
+const { assertGestorSinServiciosAdicionalesMovil } = require('../services/gestorMatriculaRestricciones');
 
 function num(v) {
   if (v == null) return 0;
@@ -263,6 +264,7 @@ exports.crear = async (req, res, next) => {
     if (numDoc == null || !idServ) {
       return res.status(400).json({ message: 'numDoc e idServ son obligatorios' });
     }
+    await assertGestorSinServiciosAdicionalesMovil(req);
     await assertAlumnoPorNumDocGestor(req, numDoc);
 
     const serv = await buscarServicioCatalogo(idServ);

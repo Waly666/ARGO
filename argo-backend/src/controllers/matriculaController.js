@@ -57,7 +57,11 @@ exports.crear = async (req, res, next) => {
     };
     const numDoc = parseNumDoc(body.numDoc);
     if (numDoc != null) await assertAlumnoPorNumDocGestor(req, numDoc);
-    const result = await crearMatriculaDesdeBody(body, req.idSede, { usuario: req.user, desdePortal: false });
+    const result = await crearMatriculaDesdeBody(body, req.idSede, {
+      usuario: req.user,
+      desdePortal: false,
+      req,
+    });
     res.status(201).json(result);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });

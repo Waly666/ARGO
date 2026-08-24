@@ -10,6 +10,8 @@ const {
 const { crearMatriculaDesdeBody } = require('../services/matriculaCreator');
 const { parseNumDoc, numDocQuery } = require('../utils/numDoc');
 const DatosAlumno = require('../models/DatosAlumno');
+const { assertGestorSinServiciosAdicionalesMovil } = require('../services/gestorMatriculaRestricciones');
+const { assertAlumnoPorNumDocGestor } = require('../services/alcanceGestorUsuario');
 
 exports.listar = async (req, res, next) => {
   try {
@@ -80,6 +82,7 @@ exports.prevista = async (req, res, next) => {
  */
 exports.aplicar = async (req, res, next) => {
   try {
+    await assertGestorSinServiciosAdicionalesMovil(req);
     const numDoc = parseNumDoc(req.body?.numDoc);
     if (numDoc == null) {
       return res.status(400).json({ message: 'numDoc es obligatorio' });
@@ -89,6 +92,7 @@ exports.aplicar = async (req, res, next) => {
     if (!alumno) {
       return res.status(404).json({ message: 'Alumno no encontrado en ARGO' });
     }
+    await assertAlumnoPorNumDocGestor(req, numDoc);
 
     const vista = await previstaCombo(req.params.id);
     if (!vista.programas.length) {
@@ -108,6 +112,7 @@ exports.aplicar = async (req, res, next) => {
             observaciones: `Combo: ${vista.nombre}`,
           },
           req.idSede,
+          { usuario: req.user, req },
         );
         resultados.push({
           idPrograma: p.idPrograma,

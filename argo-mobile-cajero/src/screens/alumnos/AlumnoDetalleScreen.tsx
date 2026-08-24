@@ -57,6 +57,11 @@ import type {
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { useAuth } from '../../context/AuthContext';
 import {
+  esProgramaCursoNoFormal,
+  esUsuarioGestor,
+  programasParaMatriculaGestor,
+} from '../../utils/tipoCapacitacion';
+import {
   etiquetaBotonEliminar,
   mostrarAccionEliminar,
   puedeEliminarModulo,
@@ -151,6 +156,10 @@ export default function AlumnoDetalleScreen() {
     () => mostrarAccionEliminar(permisos, 'ingresos'),
     [permisos],
   );
+  const esGestor = useMemo(
+    () => authState.status === 'signedIn' && esUsuarioGestor(authState.user.rol),
+    [authState],
+  );
   const c = themeColors(highContrast);
   const [tab, setTab] = useState<Tab>('pagos');
   const [loading, setLoading] = useState(true);
@@ -205,7 +214,7 @@ export default function AlumnoDetalleScreen() {
         listarFacturasAlumno(numDoc).catch(() => []),
         fetchAlumnoPorDoc(numDoc).catch(() => null),
         fetchTiposPago().catch(() => []),
-        listarCombos().catch(() => []),
+        esGestor ? Promise.resolve([]) : listarCombos().catch(() => []),
         fetchOpcionesMatricula().catch(() => ({
           permitirAjusteValorMatricula: true,
           permitirAjusteCuotasSemestre: false,
@@ -260,7 +269,7 @@ export default function AlumnoDetalleScreen() {
     } finally {
       setLoading(false);
     }
-  }, [numDoc, route.params.alumnoId, alumnoId]);
+  }, [numDoc, route.params.alumnoId, alumnoId, esGestor]);
 
   useFocusEffect(
     useCallback(() => {
@@ -268,7 +277,11 @@ export default function AlumnoDetalleScreen() {
     }, [load]),
   );
 
-  const programasMat = useMemo(() => programasParaMatricula(programas), [programas]);
+  const programasMat = useMemo(() => {
+    const base = programasParaMatricula(programas);
+    if (!esGestor) return base;
+    return programasParaMatriculaGestor(base);
+  }, [programas, esGestor]);
   const opcionesProgramas = useMemo(
     () =>
       programasMat.map((p) => ({
@@ -418,7 +431,7 @@ export default function AlumnoDetalleScreen() {
 
   useEffect(() => {
     const idP = programaSel ? idPrograma(programaSel) : '';
-    if (!idP) {
+    if (!idP || esGestor) {
       setExtrasMatricula([]);
       return;
     }
@@ -433,7 +446,7 @@ export default function AlumnoDetalleScreen() {
     return () => {
       cancel = true;
     };
-  }, [programaSel, tarifa]);
+  }, [programaSel, tarifa, esGestor]);
   const opcionesCombos = useMemo(
     () =>
       combos.map((cb) => ({
@@ -698,6 +711,13 @@ export default function AlumnoDetalleScreen() {
       Alert.alert('Matrícula', 'Seleccione un programa.');
       return;
     }
+    if (esGestor && !esProgramaCursoNoFormal(programaSel)) {
+      Alert.alert(
+        'Matrícula',
+        'Como gestor solo puede matricular cursos no formales.',
+      );
+      return;
+    }
     if (referidorIncompleto) {
       Alert.alert(
         'Tramitador incompleto',
@@ -841,6 +861,10 @@ export default function AlumnoDetalleScreen() {
   }
 
   async function agregarServiciosSeleccionados() {
+    if (esGestor) {
+      Alert.alert('Servicio', 'Como gestor no puede agregar servicios adicionales.');
+      return;
+    }
     if (!servSelIds.length) {
       Alert.alert('Servicio', 'Seleccione uno o más servicios adicionales.');
       return;
@@ -1112,7 +1136,9 @@ export default function AlumnoDetalleScreen() {
               Crear matrícula
             </ScaledText>
             <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 12, lineHeight: 18 }}>
-              {programasMat.length} programas disponibles. Toque el campo, escriba para filtrar y elija uno.
+              {esGestor
+                ? `${programasMat.length} curso(s) no formal(es) disponibles para matricular.`
+                : `${programasMat.length} programas disponibles. Toque el campo, escriba para filtrar y elija uno.`}
             </ScaledText>
             {puedeCrearMatricula ? (
             <>
@@ -1288,7 +1314,7 @@ export default function AlumnoDetalleScreen() {
             ) : null}
           </SurfaceCard>
 
-          {combos.length ? (
+          {combos.length && !esGestor ? (
             <SurfaceCard style={{ marginBottom: 14 }}>
               <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 6 }}>
                 Aplicar combo de cursos
@@ -1374,6 +1400,7 @@ export default function AlumnoDetalleScreen() {
             </SurfaceCard>
           ) : null}
 
+          {!esGestor ? (
           <SurfaceCard>
             <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 6 }}>
               Servicios adicionales
@@ -1457,6 +1484,7 @@ export default function AlumnoDetalleScreen() {
               </View>
             ) : null}
           </SurfaceCard>
+          ) : null}
         </>
       ) : null}
 

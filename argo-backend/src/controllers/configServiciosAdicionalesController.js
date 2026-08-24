@@ -8,6 +8,8 @@ const {
   resolverServiciosAdicionalesMatricula,
   resolverServiciosAdicionalesPago,
 } = require('../services/serviciosAdicionalesResolver');
+const { resolverAlcanceGestorMovil } = require('../services/alcanceGestorUsuario');
+const { assertGestorMatriculaProgramaPermitido } = require('../services/gestorMatriculaRestricciones');
 const Liquidacion = require('../models/Liquidacion');
 
 async function enriquecerReglas(reglas) {
@@ -69,6 +71,11 @@ exports.previewMatricula = async (req, res, next) => {
     }
     const prog = await buscarPrograma(idPrograma);
     if (!prog) return res.status(404).json({ message: 'Programa no encontrado' });
+    await assertGestorMatriculaProgramaPermitido(req, prog);
+    const alcanceGestor = await resolverAlcanceGestorMovil(req);
+    if (alcanceGestor?.activo) {
+      return res.json({ items: [] });
+    }
     const serviciosProg = await listarServiciosMatricula(prog);
     const items = await resolverServiciosAdicionalesMatricula(prog, { tarifa, serviciosProg });
     res.json({

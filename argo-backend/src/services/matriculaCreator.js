@@ -25,6 +25,10 @@ const {
   esAlumnoReferidorComercial,
 } = require('./gestorEmpresaMatricula');
 const { aplicarReferidorGestorUsuario } = require('./gestorUsuarioReferidor');
+const { resolverAlcanceGestorMovil } = require('./alcanceGestorUsuario');
+const {
+  assertGestorMatriculaProgramaPermitido,
+} = require('./gestorMatriculaRestricciones');
 const { obtenerConfigGestoresEmpresas } = require('./configGestoresEmpresas');
 const { obtenerTarifasMatriculaSeleccionables } = require('./configTarifasMatricula');
 const {
@@ -159,6 +163,10 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     const err = new Error('Programa no encontrado');
     err.status = 404;
     throw err;
+  }
+
+  if (ctx.req) {
+    await assertGestorMatriculaProgramaPermitido(ctx.req, prog);
   }
 
   const esJornada = await esProgramaJornadasCap(prog);
@@ -328,9 +336,11 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
   // Jornadas Cap.: no liquidar servicios adicionales (ej. DEG / derechos de grado).
   // Esas reglas son para técnicos/regulares; al matricular por clase/contrato en carpa
   // cada programa nuevo crearía un cargo fantasma de $500.000 (visto en VPS).
-  const extrasMatricula = esJornada
-    ? []
-    : await resolverServiciosAdicionalesMatricula(prog, {
+  const alcanceGestorMovil = ctx.req ? await resolverAlcanceGestorMovil(ctx.req) : null;
+  const extrasMatricula =
+    esJornada || alcanceGestorMovil?.activo
+      ? []
+      : await resolverServiciosAdicionalesMatricula(prog, {
         tarifa: t,
         serviciosProg,
         modoMigracion: ctx.modoMigracion,
