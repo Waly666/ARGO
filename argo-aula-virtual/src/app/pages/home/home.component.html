@@ -17,7 +17,7 @@
 <section
   class="hero section-starfield"
   [class.hero--servial-mesh]="heroEstilo() === 'servial-mesh'"
-  [style.--av-hero-photo]="heroEstilo() === 'servial-mesh' ? 'url(' + heroImg() + ')' : null">
+  [style.--av-hero-photo]="heroEstilo() === 'servial-mesh' && heroImg() ? 'url(' + heroImg() + ')' : null">
 
   <div class="starfield-bg" aria-hidden="true"></div>
 
@@ -65,9 +65,9 @@
       </div>
 
       <figure class="hero-visual hero-in hero-in--5">
-
-        <img [src]="heroImg()" [alt]="landing().hero.imagenAlt" />
-
+        @if (heroImg(); as src) {
+          <img [src]="src" [alt]="landing().hero.imagenAlt" />
+        }
       </figure>
 
     </div>

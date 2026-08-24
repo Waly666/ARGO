@@ -440,6 +440,8 @@ export interface CertificadoConsultaRes {
   nombreApellidos: string;
   total: number;
   items: CertificadoConsultaItem[];
+  /** Token de corta duración para descargar PDF tras consulta (Turnstile ya validado). */
+  descargaToken?: string;
 }
 
 export interface CertificadoPortal {

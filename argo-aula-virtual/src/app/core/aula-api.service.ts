@@ -2,6 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { PortalConfig } from './models';
+import { PortalConfigService } from './portal-config.service';
+import { rewriteCertificadoHtmlForPreview } from './certificado-mobile-html';
 import { environment } from '../../environments/environment';
 import { PortalAuthService } from './portal-auth.service';
 import {
@@ -20,22 +23,21 @@ import {
   MaterialCohorteAlumno,
   MatriculaVirtualRes,
   PortalAuthRes,
-  PortalConfig,
   ProgresoVirtualResp,
   RegistroJornadaRes,
   RegistroVerificacionRes,
   ResultadoIntentoCohorte,
 } from './models';
-import { rewriteCertificadoHtmlForPreview } from './certificado-mobile-html';
 
 @Injectable({ providedIn: 'root' })
 export class AulaApiService {
   private http = inject(HttpClient);
+  private portalConfig = inject(PortalConfigService);
   private auth = inject(PortalAuthService);
   private base = `${environment.apiUrl}/aula-virtual`;
 
   config(): Observable<PortalConfig> {
-    return this.http.get<PortalConfig>(`${this.base}/config`);
+    return this.portalConfig.ensureLoaded();
   }
 
   listarBlog(): Observable<BlogPost[]> {
@@ -290,10 +292,10 @@ export class AulaApiService {
   descargarCertificadoConsulta(
     certId: string,
     numDoc: string | number,
-    turnstileToken?: string,
+    descargaToken?: string,
   ): Observable<Blob> {
     const q = new URLSearchParams({ numDoc: String(numDoc) });
-    if (turnstileToken) q.set('turnstileToken', turnstileToken);
+    if (descargaToken) q.set('descargaToken', descargaToken);
     return this.http.get(
       `${this.base}/certificados/consulta/${encodeURIComponent(certId)}/pdf?${q.toString()}`,
       { responseType: 'blob' },

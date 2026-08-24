@@ -22,6 +22,7 @@ const {
 } = require('../middleware/upload');
 const { portalAuthLimiter, buscarAlumnoLimiter } = require('../middleware/security');
 const { requireTurnstile } = require('../middleware/turnstile');
+const { requireConsultaDescargaToken } = require('../middleware/certificadoConsultaDescarga');
 
 /** Turnstile activo en web; apps móviles envían X-ARGO-Cliente: mobile */
 const turnstilePortal = requireTurnstile({ allowNativeClients: true });
@@ -58,7 +59,7 @@ router.get(
 router.get(
   '/certificados/consulta/:id/pdf',
   buscarAlumnoLimiter,
-  turnstilePortal,
+  requireConsultaDescargaToken,
   ctrl.certificadoConsultaPdf,
 );
 router.get(

@@ -33,6 +33,7 @@ export class ConsultaCertificadosComponent implements OnInit {
   textoBotonDescargar = signal('Descargar PDF');
   descargandoId = signal<string | null>(null);
   descargaError = signal('');
+  descargaToken = signal('');
 
   ngOnInit() {
     this.api.config().subscribe({
@@ -64,12 +65,14 @@ export class ConsultaCertificadosComponent implements OnInit {
     this.error.set('');
     this.consultado.set(false);
     this.resultado.set(null);
+    this.descargaToken.set('');
 
     this.api.consultarCertificados(doc, token || undefined).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.consultado.set(true);
         this.resultado.set(res);
+        this.descargaToken.set(res.descargaToken || '');
       },
       error: (e) => {
         this.loading.set(false);
@@ -90,7 +93,11 @@ export class ConsultaCertificadosComponent implements OnInit {
     const doc = this.numDoc.trim();
     if (!doc) return;
 
-    const token = this.turnstileToken() || this.turnstile()?.getToken() || '';
+    const token = this.descargaToken();
+    if (this.turnstileSiteKey() && !token) {
+      this.descargaError.set('Sesión de descarga expirada. Consulte de nuevo e intente descargar.');
+      return;
+    }
     this.descargaError.set('');
     this.descargandoId.set(certId);
 

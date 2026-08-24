@@ -89,7 +89,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   infoCardsVisibles = computed(() => seccionHomeVisible(this.config(), 'infoCards'));
 
-  heroImg = computed(() => this.theme.heroImageUrl(this.config()) || '/images/hero-estudiante.png');
+  heroImg = computed(() => this.theme.heroImageUrl(this.config()));
 
   apkDownloadUrl = computed(() => this.landing().appMobile.apkUrl || DEFAULT_APK_URL);
 

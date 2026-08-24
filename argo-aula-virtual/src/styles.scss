@@ -7,33 +7,30 @@
     'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto',
     'Helvetica Neue', Arial, sans-serif;
   --av-font-display: var(--av-font-sans);
-  --av-bg: #0b1224;
-  --av-surface: #121c33;
-  --av-surface-2: #1a2744;
-  --av-text: #eef3ff;
-  --av-dim: #9fb0d0;
+  /* Neutros de arranque: evitan flash de plantilla Finstruvial antes de cargar el tenant. */
+  --av-bg: #e2e8f0;
+  --av-surface: #f8fafc;
+  --av-surface-2: #f1f5f9;
+  --av-text: #0f172a;
+  --av-dim: #64748b;
   --av-ink: #0f172a;
   --av-ink-muted: #475569;
-  --av-primary: #3b82f6;
-  --av-primary-dark: #1d4ed8;
-  --av-accent: #22d3ee;
-  --av-brand: #c2410c;
-  --av-starfield-top: #101b3c;
-  --av-starfield-mid: #0a1130;
-  --av-starfield-bottom: #070d26;
-  --av-starfield-glow: rgba(37, 99, 235, 0.5);
-  --av-starfield-accent-glow: rgba(34, 211, 238, 0.16);
-  --av-starfield-bg:
-    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(37, 99, 235, 0.5), transparent 70%),
-    linear-gradient(180deg, #101b3c 0%, #0a1130 55%, #070d26 100%);
+  --av-primary: #334155;
+  --av-primary-dark: #1e293b;
+  --av-accent: #64748b;
+  --av-brand: #334155;
+  --av-starfield-top: #e2e8f0;
+  --av-starfield-mid: #f1f5f9;
+  --av-starfield-bottom: #f8fafc;
+  --av-starfield-glow: rgba(148, 163, 184, 0.35);
+  --av-starfield-accent-glow: rgba(148, 163, 184, 0.12);
+  --av-starfield-bg: linear-gradient(180deg, #e2e8f0 0%, #f1f5f9 55%, #f8fafc 100%);
   --av-starfield-accent-glow-radial:
-    radial-gradient(circle, rgba(34, 211, 238, 0.16) 0%, rgba(34, 211, 238, 0.05) 38%, transparent 68%);
-  --av-starfield-section-lead: #b6c5e8;
-  --av-hero-bg:
-    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(37, 99, 235, 0.5), transparent 70%),
-    linear-gradient(180deg, #101b3c 0%, #0a1130 55%, #070d26 100%);
-  --av-hero-grad-start: rgba(29, 78, 216, 0.92);
-  --av-hero-grad-end: #0b1224;
+    radial-gradient(circle, rgba(148, 163, 184, 0.12) 0%, rgba(148, 163, 184, 0.04) 38%, transparent 68%);
+  --av-starfield-section-lead: #475569;
+  --av-hero-bg: linear-gradient(180deg, #e2e8f0 0%, #f1f5f9 55%, #f8fafc 100%);
+  --av-hero-grad-start: rgba(51, 65, 85, 0.85);
+  --av-hero-grad-end: #e2e8f0;
   --av-border: rgba(148, 163, 184, 0.2);
   --av-radius: 14px;
   --av-max: 1180px;
@@ -105,6 +102,18 @@ a {
 img {
   max-width: 100%;
   display: block;
+}
+
+html.portal-booting body {
+  visibility: hidden;
+}
+
+html.portal-booting::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  background: var(--av-bg, #e2e8f0);
 }
 
 button,

@@ -7,17 +7,14 @@ import { filter } from 'rxjs';
 import { AulaApiService } from '../../core/aula-api.service';
 import { CardWaveService } from '../../core/card-wave.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
-import { PortalBrandingService } from '../../core/portal-branding.service';
+import { PortalConfigService } from '../../core/portal-config.service';
 import { etiquetaPagina, paginaActiva, clavePaginaPorRuta, type PortalPaginaKey } from '../../core/portal-site';
-import { PortalThemeService } from '../../core/portal-theme.service';
-import { PortalConfig } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { asistenteVistaParaPagina } from '../../core/portal-asistente.util';
 import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
-import { ACERCA_DEFAULT } from '../../pages/home/home-content';
 
 import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 import { resolverTextoJuntoLogo } from '../../core/portal-marca.util';
@@ -59,8 +56,7 @@ export interface FooterServicioEnlace {
 })
 export class ShellComponent implements OnInit, AfterViewInit {
   private api = inject(AulaApiService);
-  private branding = inject(PortalBrandingService);
-  private theme = inject(PortalThemeService);
+  private portalConfig = inject(PortalConfigService);
   private router = inject(Router);
   private cardWaves = inject(CardWaveService);
   private destroyRef = inject(DestroyRef);
@@ -68,7 +64,8 @@ export class ShellComponent implements OnInit, AfterViewInit {
   private menuToggle = viewChild<ElementRef<HTMLButtonElement>>('menuToggle');
   auth = inject(PortalAuthService);
 
-  config = signal<PortalConfig | null>(null);
+  config = this.portalConfig.config;
+  portalReady = this.portalConfig.ready;
   menuAbierto = signal(false);
   popupOpenTick = signal(0);
   rutaActual = signal('/');
@@ -219,23 +216,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
     });
 
     this.api.config().subscribe({
-      next: (c) => {
-        this.config.set(c);
-        this.branding.apply(c);
-        this.theme.apply(c);
-        this.popupOpenTick.update((n) => n + 1);
-      },
-      error: () => {
-        const fallback = {
-          nombreCea: DEFAULT_CEA_NOMBRE,
-          heroTitulo: 'Educación virtual',
-          heroSubtitulo: 'Capacitación en línea',
-          acercaDeHtml: ACERCA_DEFAULT,
-        };
-        this.config.set(fallback);
-        this.branding.apply(fallback);
-        this.theme.apply(fallback);
-      },
+      next: () => this.popupOpenTick.update((n) => n + 1),
     });
   }
 

@@ -387,7 +387,8 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     vars['--av-nav-link-hover'] = brandGreen;
     vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
     vars['--av-topbar-border'] = 'rgba(51, 221, 111, 0.22)';
-    vars['--av-inst-bar-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${surface} 100%)`;
+    vars['--av-inst-bar-bg'] = '#2ee778';
+    vars['--av-inst-bar-text'] = '#ffffff';
     vars['--av-hero-bg'] = 'transparent';
     vars['--av-hero-title-shimmer'] = brandGreen;
     vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;

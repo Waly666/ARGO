@@ -39,6 +39,7 @@ const {
   htmlCertificadoPortal,
   pdfCertificadoConsultaPublico,
 } = require('../services/aulaVirtualCertificados');
+const { emitConsultaDescargaToken } = require('../services/certificadoConsultaToken');
 const { htmlReciboPortal } = require('../services/aulaVirtualRecibos');
 const {
   misClasesPresenciales,
@@ -537,7 +538,11 @@ exports.iniciarPagoEnLinea = async (req, res, next) => {
 
 exports.consultarCertificados = async (req, res, next) => {
   try {
-    res.json(await consultarCertificadosPublico(req.query.numDoc));
+    const data = await consultarCertificadosPublico(req.query.numDoc);
+    if (turnstileEnabled()) {
+      data.descargaToken = emitConsultaDescargaToken(data.cedula);
+    }
+    res.json(data);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);
