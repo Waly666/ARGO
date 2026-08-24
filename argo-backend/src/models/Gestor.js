@@ -13,6 +13,15 @@ const GestorSchema = new mongoose.Schema(
     celular: { type: String, trim: true, default: '' },
     direccion: { type: String, trim: true, default: '' },
     seudonimo: { type: String, trim: true, default: '' },
+    /** persona_natural | empresa */
+    tipoGestor: {
+      type: String,
+      enum: ['persona_natural', 'empresa'],
+      default: 'persona_natural',
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
     foto: { type: String, trim: true, default: '' },
     activo: { type: Boolean, default: true, index: true },
     userAddReg: { type: String, trim: true },

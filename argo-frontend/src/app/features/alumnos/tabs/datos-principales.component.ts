@@ -319,18 +319,17 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.gestorSvc.listar(q.trim()).pipe(
       map((rows) =>
         (rows || []).map((g) => {
-          const nombre = [g.nombres, g.apellidos].filter(Boolean).join(' ').trim();
+          const nombre = g.nombreCompleto || [g.nombres, g.apellidos].filter(Boolean).join(' ').trim();
           const label = g.seudonimo || nombre || g.numero || '—';
+          const tipo = (g.tipoGestor || 'persona_natural') === 'empresa' ? 'Empresa' : 'Persona natural';
           return {
             value: String(g._id || ''),
             label,
-            hint: g.numero ? `Doc: ${g.numero}` : undefined,
+            hint: g.numero ? `${tipo} · Doc: ${g.numero}` : tipo,
           } satisfies EnumBuscarOption;
         }),
       ),
     );
-
-  buscarReferidorEmpresasRemoto = (q: string) => this.buscarEmpresasRemoto(q);
 
   onManejoGestorEmpresaChange(activo: boolean): void {
     this.form.update((f) => ({

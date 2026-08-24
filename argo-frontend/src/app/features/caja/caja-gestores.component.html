@@ -44,7 +44,15 @@
             <h3>Identificación</h3>
           </header>
           <div class="cli-section-body">
-            <div class="cli-grid cli-grid--id">
+            <label class="cli-field">
+              <span class="cli-label">Tipo de gestor *</span>
+              <select [ngModel]="form().tipoGestor || 'persona_natural'" (ngModelChange)="onTipoGestorChange($event)">
+                @for (t of catalogos()?.tiposGestor || []; track t.code) {
+                  <option [value]="t.code">{{ t.label }}</option>
+                }
+              </select>
+            </label>
+            <div class="cli-grid cli-grid--id" style="margin-top: 0.75rem">
               <label class="cli-field">
                 <span class="cli-label">Tipo documento</span>
                 <select [ngModel]="form().tipoDoc" (ngModelChange)="patch({ tipoDoc: $event })">
@@ -60,13 +68,15 @@
             </div>
             <div class="cli-grid cli-grid--2" style="margin-top: 0.75rem">
               <label class="cli-field">
-                <span class="cli-label">Nombres *</span>
+                <span class="cli-label">{{ esEmpresa(form()) ? 'Razón social *' : 'Nombres *' }}</span>
                 <input type="text" [ngModel]="form().nombres" (ngModelChange)="patch({ nombres: $event })" />
               </label>
-              <label class="cli-field">
-                <span class="cli-label">Apellidos *</span>
-                <input type="text" [ngModel]="form().apellidos" (ngModelChange)="patch({ apellidos: $event })" />
-              </label>
+              @if (!esEmpresa(form())) {
+                <label class="cli-field">
+                  <span class="cli-label">Apellidos *</span>
+                  <input type="text" [ngModel]="form().apellidos" (ngModelChange)="patch({ apellidos: $event })" />
+                </label>
+              }
             </div>
             <label class="cli-field" style="margin-top: 0.75rem">
               <span class="cli-label">Seudónimo</span>
@@ -161,6 +171,7 @@
           <thead>
             <tr>
               <th class="th-foto"></th>
+              <th>Tipo</th>
               <th>Documento</th>
               <th>Nombre</th>
               <th>Seudónimo</th>
@@ -181,6 +192,7 @@
                     }
                   </div>
                 </td>
+                <td>{{ labelTipoGestor(g) }}</td>
                 <td class="cli-id">{{ g.tipoDoc || 'CC' }} {{ g.numero }}</td>
                 <td class="cli-name">{{ nombreCompleto(g) }}</td>
                 <td>{{ g.seudonimo || '—' }}</td>

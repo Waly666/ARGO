@@ -2,15 +2,25 @@ const Gestor = require('../models/Gestor');
 const upload = require('../middleware/upload');
 
 const TIPOS_DOC = ['CC', 'CE', 'TI', 'PAS', 'PPT', 'NIT'];
+const TIPOS_GESTOR = ['persona_natural', 'empresa'];
+
+function normalizarTipoGestor(v) {
+  const t = String(v || 'persona_natural').trim().toLowerCase();
+  return TIPOS_GESTOR.includes(t) ? t : 'persona_natural';
+}
 
 function mapGestor(c) {
   if (!c) return null;
   const o = c.toObject ? c.toObject() : c;
+  const tipoGestor = normalizarTipoGestor(o.tipoGestor);
+  const nombres = o.nombres || '';
+  const apellidos = o.apellidos || '';
   return {
     _id: o._id,
-    nombres: o.nombres || '',
-    apellidos: o.apellidos || '',
-    tipoDoc: o.tipoDoc || 'CC',
+    nombres,
+    apellidos,
+    tipoGestor,
+    tipoDoc: o.tipoDoc || (tipoGestor === 'empresa' ? 'NIT' : 'CC'),
     numero: o.numero || '',
     correo: o.correo || '',
     celular: o.celular || '',
@@ -18,7 +28,10 @@ function mapGestor(c) {
     seudonimo: o.seudonimo || '',
     foto: o.foto || '',
     activo: o.activo !== false,
-    nombreCompleto: [o.nombres, o.apellidos].filter(Boolean).join(' ').trim(),
+    nombreCompleto:
+      tipoGestor === 'empresa'
+        ? String(nombres).trim()
+        : [nombres, apellidos].filter(Boolean).join(' ').trim(),
     fechaAudi: o.createdAt,
     fechaMod: o.updatedAt,
     userAddReg: o.userAddReg || '',
@@ -31,10 +44,16 @@ function aplicarBody(doc, body, files) {
   for (const k of campos) {
     if (body[k] != null) doc[k] = String(body[k]).trim();
   }
+  if (body.tipoGestor != null) doc.tipoGestor = normalizarTipoGestor(body.tipoGestor);
+  if (doc.tipoGestor === 'empresa' && body.apellidos == null && !String(doc.apellidos || '').trim()) {
+    doc.apellidos = '';
+  }
   if (body.correo != null) doc.correo = String(body.correo || '').trim().toLowerCase();
   if (body.tipoDoc != null) {
     const t = String(body.tipoDoc).trim().toUpperCase();
-    doc.tipoDoc = TIPOS_DOC.includes(t) ? t : 'CC';
+    doc.tipoDoc = TIPOS_DOC.includes(t) ? t : doc.tipoGestor === 'empresa' ? 'NIT' : 'CC';
+  } else if (doc.tipoGestor === 'empresa' && !doc.tipoDoc) {
+    doc.tipoDoc = 'NIT';
   }
   if (body.activo != null) doc.activo = body.activo !== false && body.activo !== 'false';
   if (files?.foto?.[0]) {
@@ -47,6 +66,10 @@ function aplicarBody(doc, body, files) {
 exports.catalogos = (_req, res) => {
   res.json({
     tiposDoc: TIPOS_DOC.map((code) => ({ code, label: code })),
+    tiposGestor: [
+      { code: 'persona_natural', label: 'Persona natural' },
+      { code: 'empresa', label: 'Empresa' },
+    ],
   });
 };
 
@@ -88,8 +111,15 @@ exports.crear = async (req, res, next) => {
     const nombres = String(body.nombres || '').trim();
     const apellidos = String(body.apellidos || '').trim();
     const numero = String(body.numero || '').trim();
-    if (!nombres) return res.status(400).json({ message: 'Los nombres son obligatorios' });
-    if (!apellidos) return res.status(400).json({ message: 'Los apellidos son obligatorios' });
+    const tipoGestor = normalizarTipoGestor(body.tipoGestor);
+    if (!nombres) {
+      return res.status(400).json({
+        message: tipoGestor === 'empresa' ? 'La razón social es obligatoria' : 'Los nombres son obligatorios',
+      });
+    }
+    if (tipoGestor === 'persona_natural' && !apellidos) {
+      return res.status(400).json({ message: 'Los apellidos son obligatorios' });
+    }
     if (!numero) return res.status(400).json({ message: 'El número de documento es obligatorio' });
     const dup = await Gestor.findOne({ numero, activo: { $ne: false } }).lean();
     if (dup) {
@@ -97,6 +127,7 @@ exports.crear = async (req, res, next) => {
     }
     const doc = new Gestor({
       activo: true,
+      tipoGestor,
       userAddReg: req.user?.username || 'sistema',
     });
     aplicarBody(doc, body, req.files);
@@ -125,9 +156,13 @@ exports.actualizar = async (req, res, next) => {
       }
     }
     if (body.nombres != null && !String(body.nombres).trim()) {
-      return res.status(400).json({ message: 'Los nombres son obligatorios' });
+      const tipo = normalizarTipoGestor(body.tipoGestor ?? doc.tipoGestor);
+      return res.status(400).json({
+        message: tipo === 'empresa' ? 'La razón social es obligatoria' : 'Los nombres son obligatorios',
+      });
     }
-    if (body.apellidos != null && !String(body.apellidos).trim()) {
+    const tipoFinal = normalizarTipoGestor(body.tipoGestor ?? doc.tipoGestor);
+    if (body.apellidos != null && tipoFinal === 'persona_natural' && !String(body.apellidos).trim()) {
       return res.status(400).json({ message: 'Los apellidos son obligatorios' });
     }
     aplicarBody(doc, body, req.files);

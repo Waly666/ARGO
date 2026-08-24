@@ -1,9 +1,12 @@
 import { apiFetch } from './client';
 
+export type TipoGestor = 'persona_natural' | 'empresa';
+
 export interface GestorItem {
   _id: string;
   nombres?: string;
   apellidos?: string;
+  tipoGestor?: TipoGestor;
   numero?: string;
   seudonimo?: string;
   correo?: string;
@@ -17,10 +20,19 @@ export async function buscarGestores(q?: string): Promise<GestorItem[]> {
   return apiFetch<GestorItem[]>(path);
 }
 
+export function labelTipoGestor(g: GestorItem): string {
+  return g.tipoGestor === 'empresa' ? 'Empresa' : 'Persona natural';
+}
+
 export function labelGestor(g: GestorItem): string {
   const pseudo = String(g.seudonimo || '').trim();
   if (pseudo) return pseudo;
-  const nom = [g.nombres, g.apellidos].map((s) => String(s || '').trim()).filter(Boolean).join(' ');
-  if (nom) return nom;
+  if (g.tipoGestor === 'empresa') {
+    const nom = String(g.nombres || '').trim();
+    if (nom) return nom;
+  } else {
+    const nom = [g.nombres, g.apellidos].map((s) => String(s || '').trim()).filter(Boolean).join(' ');
+    if (nom) return nom;
+  }
   return String(g.numero || 'Gestor');
 }

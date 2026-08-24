@@ -8,6 +8,7 @@ export interface Gestor {
   _id?: string;
   nombres: string;
   apellidos: string;
+  tipoGestor?: 'persona_natural' | 'empresa';
   tipoDoc?: string;
   numero: string;
   correo?: string;
@@ -21,6 +22,7 @@ export interface Gestor {
 
 export interface GestorCatalogos {
   tiposDoc: { code: string; label: string }[];
+  tiposGestor: { code: 'persona_natural' | 'empresa'; label: string }[];
 }
 
 export interface GestorArchivosUpload {

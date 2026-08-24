@@ -4,6 +4,7 @@ const { datosRol, nombreRol } = require('./rolesPermisos');
 const { empleadoPorUsuarioId, nombreEmpleado, esEmpleadoInstructor } = require('./instructorJornada');
 const { sedesPermitidasUsuario, asegurarSedePrincipal } = require('./sedeContext');
 const { normalizarCanalConexionUsuario } = require('../utils/canalConexion');
+const { resolverGestorComercialPorUsuario } = require('./gestorUsuarioReferidor');
 
 async function enriquecerUsuarioDoc(u) {
   const json = u.toJSON ? u.toJSON() : { ...u };
@@ -56,6 +57,11 @@ async function enriquecerUsuarioDoc(u) {
     json.empleado = undefined;
     json.puedeUsarPortalInstructor = false;
   }
+
+  const gestorComercial = await resolverGestorComercialPorUsuario(json);
+  if (gestorComercial) json.gestorComercial = gestorComercial;
+  else delete json.gestorComercial;
+
   return json;
 }
 

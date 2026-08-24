@@ -19,7 +19,12 @@ const {
 } = require('./jornadaCapacitacion');
 const { normalizarIdSede } = require('./sedeContext');
 const { esTarifaVirtual, esTarifaComercial, TARIFA_GESTOR, TARIFA_EMPRESA } = require('../constants/tarifa');
-const { resolverTarifaComercialAlumno, snapshotReferidorComercial } = require('./gestorEmpresaMatricula');
+const {
+  resolverTarifaComercialAlumno,
+  snapshotReferidorComercial,
+  esAlumnoReferidorComercial,
+} = require('./gestorEmpresaMatricula');
+const { aplicarReferidorGestorUsuario } = require('./gestorUsuarioReferidor');
 const { obtenerConfigGestoresEmpresas } = require('./configGestoresEmpresas');
 const { obtenerTarifasMatriculaSeleccionables } = require('./configTarifasMatricula');
 const {
@@ -168,7 +173,37 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     idSede = await resolverIdSedeMatriculaJornada();
   }
 
-  const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+  let alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
+  if (alumno && ctx.usuario && !esAlumnoReferidorComercial(alumno)) {
+    const patch = {
+      manejoGestorEmpresa: alumno.manejoGestorEmpresa,
+      tipoReferidorComercial: alumno.tipoReferidorComercial,
+      gestorId: alumno.gestorId,
+      gestorNombre: alumno.gestorNombre,
+      referidorEmpresaId: alumno.referidorEmpresaId,
+      referidorEmpresaNombre: alumno.referidorEmpresaNombre,
+    };
+    await aplicarReferidorGestorUsuario(patch, ctx.usuario, {
+      forzarPropioGestor: true,
+      exigirVinculo: true,
+    });
+    if (patch.gestorId && String(patch.gestorId) !== String(alumno.gestorId || '')) {
+      alumno = await DatosAlumno.findByIdAndUpdate(
+        alumno._id,
+        {
+          $set: {
+            manejoGestorEmpresa: true,
+            tipoReferidorComercial: 'gestor',
+            gestorId: patch.gestorId,
+            gestorNombre: patch.gestorNombre,
+            referidorEmpresaId: null,
+            referidorEmpresaNombre: null,
+          },
+        },
+        { new: true },
+      ).lean();
+    }
+  }
   const serviciosProg = await listarServiciosMatricula(prog);
   const modInfo = resolverModalidadPrograma(prog, serviciosProg);
 

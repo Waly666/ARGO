@@ -43,6 +43,7 @@ export class CajaGestoresComponent implements OnInit {
 
   private vacio(): Gestor {
     return {
+      tipoGestor: 'persona_natural',
       nombres: '',
       apellidos: '',
       tipoDoc: 'CC',
@@ -54,6 +55,23 @@ export class CajaGestoresComponent implements OnInit {
       foto: '',
       activo: true,
     };
+  }
+
+  esEmpresa(f: Gestor): boolean {
+    return (f.tipoGestor || 'persona_natural') === 'empresa';
+  }
+
+  labelTipoGestor(g: Gestor): string {
+    return this.esEmpresa(g) ? 'Empresa' : 'Persona natural';
+  }
+
+  onTipoGestorChange(tipo: 'persona_natural' | 'empresa'): void {
+    const f = this.form();
+    this.patch({
+      tipoGestor: tipo,
+      tipoDoc: tipo === 'empresa' ? 'NIT' : f.tipoDoc === 'NIT' ? 'CC' : f.tipoDoc || 'CC',
+      ...(tipo === 'empresa' ? { apellidos: '' } : {}),
+    });
   }
 
   ngOnInit(): void {
@@ -137,6 +155,9 @@ export class CajaGestoresComponent implements OnInit {
   }
 
   iniciales(g: Gestor): string {
+    if (this.esEmpresa(g)) {
+      return String(g.nombres || '').trim().slice(0, 2).toUpperCase() || '?';
+    }
     const n = String(g.nombres || '').trim()[0] || '';
     const a = String(g.apellidos || '').trim()[0] || '';
     return (n + a).toUpperCase() || '?';
@@ -144,12 +165,13 @@ export class CajaGestoresComponent implements OnInit {
 
   guardar(): void {
     const f = this.form();
+    const empresa = this.esEmpresa(f);
     if (!String(f.nombres || '').trim()) {
       this.msgError.set(true);
-      this.msg.set('Los nombres son obligatorios.');
+      this.msg.set(empresa ? 'La razón social es obligatoria.' : 'Los nombres son obligatorios.');
       return;
     }
-    if (!String(f.apellidos || '').trim()) {
+    if (!empresa && !String(f.apellidos || '').trim()) {
       this.msgError.set(true);
       this.msg.set('Los apellidos son obligatorios.');
       return;

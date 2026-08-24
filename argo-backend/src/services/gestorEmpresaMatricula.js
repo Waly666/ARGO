@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Gestor = require('../models/Gestor');
-const Cliente = require('../models/Cliente');
-const { TARIFA_GESTOR, TARIFA_EMPRESA, esTarifaComercial } = require('../constants/tarifa');
+const { TARIFA_GESTOR, esTarifaComercial } = require('../constants/tarifa');
 const { obtenerConfigGestoresEmpresas } = require('./configGestoresEmpresas');
 const { num, valorTarifaServicio, listarServiciosMatricula } = require('./programaServicio');
 
@@ -17,7 +16,6 @@ async function resolverTarifaComercialAlumno({ alumno, prog, tarifaManual = fals
   const tipo = String(alumno.tipoReferidorComercial || '').trim().toLowerCase();
   let tarifa = null;
   if (tipo === 'gestor' && alumno.gestorId) tarifa = TARIFA_GESTOR;
-  else if (tipo === 'empresa' && alumno.referidorEmpresaId) tarifa = TARIFA_EMPRESA;
   else return null;
 
   const servicios = await listarServiciosMatricula(prog);
@@ -28,9 +26,7 @@ async function resolverTarifaComercialAlumno({ alumno, prog, tarifaManual = fals
 
   if (valor <= 0) {
     const err = new Error(
-      tipo === 'gestor'
-        ? 'El programa no tiene tarifa gestor configurada (Programas → Matrícula)'
-        : 'El programa no tiene tarifa empresa configurada (Programas → Matrícula)',
+      'El programa no tiene tarifa gestor configurada (Programas → Matrícula)',
     );
     err.status = 400;
     err.code = 'TARIFA_COMERCIAL_NO_CONFIGURADA';
@@ -53,63 +49,35 @@ async function validarGestorEmpresaAlumno(dto) {
     return dto;
   }
   if (!cfg.activo) {
-    const err = new Error('El manejo de gestores y empresas no está habilitado en Configuración');
+    const err = new Error('El manejo de gestores no está habilitado en Configuración');
     err.status = 400;
     throw err;
   }
 
   dto.manejoGestorEmpresa = true;
-  const tipo = String(dto.tipoReferidorComercial || '').trim().toLowerCase();
-  if (tipo !== 'gestor' && tipo !== 'empresa') {
-    const err = new Error('Indique si el alumno viene por gestor o por empresa');
+  dto.tipoReferidorComercial = 'gestor';
+  dto.referidorEmpresaId = null;
+  dto.referidorEmpresaNombre = null;
+
+  const id = String(dto.gestorId || '').trim();
+  if (!id || !mongoose.isValidObjectId(id)) {
+    const err = new Error('Seleccione el gestor (tramitador) que trajo al alumno');
     err.status = 400;
     throw err;
   }
-  dto.tipoReferidorComercial = tipo;
-
-  if (tipo === 'gestor') {
-    const id = String(dto.gestorId || '').trim();
-    if (!id || !mongoose.isValidObjectId(id)) {
-      const err = new Error('Seleccione el gestor que trajo al alumno');
-      err.status = 400;
-      throw err;
-    }
-    const g = await Gestor.findOne({ _id: id, activo: { $ne: false } }).lean();
-    if (!g) {
-      const err = new Error('Gestor no encontrado o inactivo');
-      err.status = 400;
-      throw err;
-    }
-    dto.gestorId = g._id;
+  const g = await Gestor.findOne({ _id: id, activo: { $ne: false } }).lean();
+  if (!g) {
+    const err = new Error('Gestor no encontrado o inactivo');
+    err.status = 400;
+    throw err;
+  }
+  dto.gestorId = g._id;
     dto.gestorNombre =
       String(g.seudonimo || '').trim() ||
-      [g.nombres, g.apellidos].filter(Boolean).join(' ').trim() ||
+      (String(g.tipoGestor || '').toLowerCase() === 'empresa'
+        ? String(g.nombres || '').trim()
+        : [g.nombres, g.apellidos].filter(Boolean).join(' ').trim()) ||
       String(g.numero || '');
-    dto.referidorEmpresaId = null;
-    dto.referidorEmpresaNombre = null;
-    return dto;
-  }
-
-  const idEmp = String(dto.referidorEmpresaId || '').trim();
-  if (!idEmp || !mongoose.isValidObjectId(idEmp)) {
-    const err = new Error('Seleccione la empresa que trajo al alumno');
-    err.status = 400;
-    throw err;
-  }
-  const cli = await Cliente.findOne({ _id: idEmp, activo: { $ne: false } }).lean();
-  if (!cli) {
-    const err = new Error('Empresa no encontrada o inactiva');
-    err.status = 400;
-    throw err;
-  }
-  dto.referidorEmpresaId = cli._id;
-  dto.referidorEmpresaNombre =
-    cli.razonSocial?.trim() ||
-    cli.nombreComercial?.trim() ||
-    cli.nombres?.trim() ||
-    String(cli.identificacion || '');
-  dto.gestorId = null;
-  dto.gestorNombre = null;
   return dto;
 }
 
@@ -172,13 +140,11 @@ function snapshotReferidorDesdeMatricula(mat) {
   };
 }
 
-/** Alumno gestionado por gestor (tramitador) o empresa referidora comercial. */
+/** Alumno gestionado por gestor (tramitador) comercial. */
 function esAlumnoReferidorComercial(alumno) {
   if (!alumno?.manejoGestorEmpresa) return false;
   const tipo = String(alumno.tipoReferidorComercial || '').trim().toLowerCase();
-  if (tipo === 'gestor' && alumno.gestorId) return true;
-  if (tipo === 'empresa' && alumno.referidorEmpresaId) return true;
-  return false;
+  return tipo === 'gestor' && !!alumno.gestorId;
 }
 
 module.exports = {

@@ -657,6 +657,7 @@ exports.verificarDocumento = async (req, res, next) => {
 };
 
 const { validarGestorEmpresaAlumno } = require('../services/gestorEmpresaMatricula');
+const { aplicarReferidorGestorUsuario } = require('../services/gestorUsuarioReferidor');
 
 const CAMPOS_ALUMNO = [
   'tipoAlumno', 'tipoDoc', 'numDoc', 'expedida', 'apellido1', 'apellido2', 'nombre1', 'nombre2',
@@ -917,6 +918,10 @@ exports.crear = async (req, res, next) => {
     // Canal de inscripción: altas ERP/cajero/recepción = SISTEMA (no spoofear WEB desde el cliente).
     dto.origen = ORIGEN_SISTEMA;
     await completarGeoOrigenAlumno(dto);
+    await aplicarReferidorGestorUsuario(dto, req.user, {
+      forzarPropioGestor: true,
+      exigirVinculo: true,
+    });
     await validarGestorEmpresaAlumno(dto);
 
     let a;
@@ -970,6 +975,10 @@ exports.actualizar = async (req, res, next) => {
     dto.userChangeRecord = dto.userChangeRecord || req.user?.username || req.user?.sub || 'sistema';
     if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
     await completarGeoOrigenAlumno(dto);
+    await aplicarReferidorGestorUsuario(dto, req.user, {
+      forzarPropioGestor: false,
+      exigirVinculo: false,
+    });
     await validarGestorEmpresaAlumno(dto);
 
     const unset = {};

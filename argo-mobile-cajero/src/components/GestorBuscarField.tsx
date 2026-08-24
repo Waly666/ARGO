@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { SearchField } from './SearchField';
 import { ScaledText } from './ScaledText';
-import { buscarGestores, labelGestor, type GestorItem } from '../api/gestoresApi';
+import { buscarGestores, labelGestor, labelTipoGestor, type GestorItem } from '../api/gestoresApi';
 import { useDebounced } from '../hooks/useDebounced';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
@@ -127,9 +127,13 @@ export function GestorBuscarField({ gestorId, gestorNombre, onChange }: Props) {
                 </ScaledText>
                 {item.numero ? (
                   <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
-                    Doc. {item.numero}
+                    {labelTipoGestor(item)} · Doc. {item.numero}
                   </ScaledText>
-                ) : null}
+                ) : (
+                  <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
+                    {labelTipoGestor(item)}
+                  </ScaledText>
+                )}
               </Pressable>
             )}
           />
