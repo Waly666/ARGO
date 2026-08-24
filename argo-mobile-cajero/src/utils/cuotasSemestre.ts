@@ -1,5 +1,6 @@
 import type { ServicioItem } from '../api/domain';
 import { TARIFA_VIRTUAL } from './pago';
+import { TARIFA_EMPRESA, TARIFA_GESTOR, valorTarifaServicio } from './matricula';
 
 function num(v: unknown): number {
   if (v == null) return 0;
@@ -25,6 +26,9 @@ export function cuotasSemestreCatalogo(
 ): number[] {
   return servicios.map((s) => {
     if (tarifa === TARIFA_VIRTUAL) return num(s.tarifaVirtual);
+    if (tarifa === TARIFA_GESTOR || tarifa === TARIFA_EMPRESA) {
+      return valorTarifaServicio(s, tarifa as 5 | 6);
+    }
     const key = `tarifa${tarifa}` as keyof ServicioItem;
     const v = s[key];
     if (v != null && v !== '') return num(v);

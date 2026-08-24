@@ -261,6 +261,8 @@ export interface ProgramaItem {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  tarifaGestor?: number;
+  tarifaEmpresa?: number;
   tarifaVirtual?: number;
   modalidades?: string[];
   tarifasPermitidas?: number[];
@@ -281,6 +283,8 @@ export interface ServicioItem {
   tarifa1?: number;
   tarifa2?: number;
   tarifa3?: number;
+  tarifaGestor?: number;
+  tarifaEmpresa?: number;
   tarifaVirtual?: number;
   programaNombre?: string | null;
   programaCodigo?: string | null;

@@ -1,14 +1,19 @@
 const { generarHtmlCertificado } = require('../services/certificadoRender');
 const { publicOriginFromReq } = require('../utils/publicOrigin');
 const { armarDatosCertificado } = require('../services/certificadoRenderData');
+const Certificado = require('../models/Certificado');
+const { assertCertificadoAccesibleGestor } = require('../services/alcanceGestorUsuario');
 
-async function armarDatos(id) {
+async function armarDatos(id, req) {
+  const cert = await Certificado.findById(id).lean();
+  if (!cert) return null;
+  if (req) await assertCertificadoAccesibleGestor(req, cert);
   return armarDatosCertificado(id);
 }
 
 exports.html = async (req, res, next) => {
   try {
-    const data = await armarDatos(req.params.id);
+    const data = await armarDatos(req.params.id, req);
     if (!data) return res.status(404).send('Certificado no encontrado');
     const html = await generarHtmlCertificado(data, {
       publicOrigin: publicOriginFromReq(req),
@@ -22,7 +27,7 @@ exports.html = async (req, res, next) => {
 
 exports.datos = async (req, res, next) => {
   try {
-    const data = await armarDatos(req.params.id);
+    const data = await armarDatos(req.params.id, req);
     if (!data) return res.status(404).json({ message: 'Certificado no encontrado' });
     res.json(data);
   } catch (e) {

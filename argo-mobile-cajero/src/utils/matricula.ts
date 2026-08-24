@@ -6,6 +6,25 @@ export type TarifaMatricula = 1 | 2 | 3 | 4 | 5 | 6;
 
 export { TARIFA_VIRTUAL };
 
+export const TARIFA_GESTOR = 5;
+export const TARIFA_EMPRESA = 6;
+
+/** Valor a liquidar según tarifa (paridad con backend programaServicio.valorTarifaServicio). */
+export function valorTarifaServicio(
+  serv: ServicioItem | null | undefined,
+  tarifa: TarifaMatricula,
+  prog?: ProgramaItem | null,
+): number {
+  const t = Number(tarifa);
+  if (t === TARIFA_VIRTUAL) return num(serv?.tarifaVirtual);
+  if (t === TARIFA_GESTOR) return num(serv?.tarifaGestor);
+  if (t === TARIFA_EMPRESA) return num(serv?.tarifaEmpresa);
+  const key = `tarifa${t}` as keyof ServicioItem;
+  const v = serv?.[key];
+  if (v != null && v !== '') return num(v);
+  return num(prog?.valorMatricula);
+}
+
 const MODALIDAD_VIRTUAL = 'VIRTUAL';
 const MODALIDAD_PRESENCIAL = 'PRESENCIAL';
 const MODALIDAD_MIXTA = 'MIXTA';
@@ -250,6 +269,9 @@ export function calcularValorMatricula(
   const sem = Number(prog.semestres);
   if (Number.isFinite(sem) && sem >= 1 && porProg.length > 0) {
     base = porProg.reduce((acc, s) => {
+      if (tarifa === TARIFA_GESTOR || tarifa === TARIFA_EMPRESA) {
+        return acc + valorTarifaServicio(s, tarifa, prog);
+      }
       const key = `tarifa${tarifa}` as keyof ServicioItem;
       const v = s[key];
       if (v != null && v !== '') return acc + num(v);
@@ -258,9 +280,17 @@ export function calcularValorMatricula(
   } else {
     const serv = porProg[0] || servicios.find((s) => String(s.idServ) === String(prog.idServ));
     if (serv) {
-      const key = `tarifa${tarifa}` as keyof ServicioItem;
-      const v = serv[key];
-      if (v != null && v !== '') base = num(v);
+      if (tarifa === TARIFA_GESTOR || tarifa === TARIFA_EMPRESA) {
+        base = valorTarifaServicio(serv, tarifa, prog);
+      } else {
+        const key = `tarifa${tarifa}` as keyof ServicioItem;
+        const v = serv[key];
+        if (v != null && v !== '') base = num(v);
+      }
+    } else if (tarifa === TARIFA_GESTOR) {
+      base = num(prog.tarifaGestor);
+    } else if (tarifa === TARIFA_EMPRESA) {
+      base = num(prog.tarifaEmpresa);
     } else {
       const keyProg = `tarifa${tarifa}` as keyof ProgramaItem;
       const vProg = prog[keyProg];

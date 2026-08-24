@@ -13,6 +13,7 @@ const {
   metadatosAnulacion,
   sufijoAutoriza,
 } = require('../services/anulacionComprobante');
+const { assertAlumnoPorNumDocGestor } = require('../services/alcanceGestorUsuario');
 const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
 const { validarPagoIntangibleIngreso } = require('../utils/referenciaPago');
 const upload = require('../middleware/upload');
@@ -362,6 +363,7 @@ exports.crearAlumno = async (req, res, next) => {
     if (numDoc == null || !idTipoPago) {
       return res.status(400).json({ message: 'numDoc e idTipoPago son obligatorios' });
     }
+    await assertAlumnoPorNumDocGestor(req, numDoc);
 
     const tipoPagoPrev = await cat.catTipoPago
       .findOne({ $or: [{ idTipoPago }, { codigo: idTipoPago }] })
@@ -731,6 +733,7 @@ exports.listarPorAlumno = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const filtro = await filtroIngresosAlumno(numDoc);
     const rows = await Ingreso.find(filtro).sort({ fecha: -1, createdAt: -1 }).lean();
     res.json(await listarIngresosEnriquecidos(rows));

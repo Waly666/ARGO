@@ -11,6 +11,17 @@ const {
   cargarMatriculaCuotas,
   actualizarCuotasSemestreMatricula,
 } = require('../services/ajusteCuotasSemestre');
+const { assertAlumnoPorNumDocGestor } = require('../services/alcanceGestorUsuario');
+
+async function assertMatriculaAccesibleGestor(req, idMatricula) {
+  const mat = await Matricula.findById(idMatricula).select('numDoc').lean();
+  if (!mat) {
+    const err = new Error('Matrícula no encontrada');
+    err.status = 404;
+    throw err;
+  }
+  await assertAlumnoPorNumDocGestor(req, mat.numDoc);
+}
 
 exports.crearMatriculaDesdeBody = crearMatriculaDesdeBody;
 
@@ -21,6 +32,7 @@ exports.previewRevalidacion = async (req, res, next) => {
     if (numDoc == null || !idPrograma) {
       return res.status(400).json({ message: 'numDoc e idPrograma son obligatorios' });
     }
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const prog = await buscarPrograma(idPrograma);
     if (!prog) return res.status(404).json({ message: 'Programa no encontrado' });
     res.json(await previewRevalidacionMatricula(numDoc, prog));
@@ -43,6 +55,8 @@ exports.crear = async (req, res, next) => {
         origin,
       }),
     };
+    const numDoc = parseNumDoc(body.numDoc);
+    if (numDoc != null) await assertAlumnoPorNumDocGestor(req, numDoc);
     const result = await crearMatriculaDesdeBody(body, req.idSede, { usuario: req.user, desdePortal: false });
     res.status(201).json(result);
   } catch (e) {
@@ -62,6 +76,7 @@ exports.listarPorAlumno = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const filter = numDocQuery(numDoc);
     const rows = await Matricula.find(filter).sort({ createdAt: -1 }).lean();
     res.json(
@@ -78,6 +93,7 @@ exports.listarPorAlumno = async (req, res, next) => {
 
 exports.obtenerCuotasSemestre = async (req, res, next) => {
   try {
+    await assertMatriculaAccesibleGestor(req, req.params.id);
     const info = await cargarMatriculaCuotas(req.params.id);
     res.json(info);
   } catch (e) {
@@ -88,6 +104,7 @@ exports.obtenerCuotasSemestre = async (req, res, next) => {
 
 exports.actualizarCuotasSemestre = async (req, res, next) => {
   try {
+    await assertMatriculaAccesibleGestor(req, req.params.id);
     const info = await actualizarCuotasSemestreMatricula(req.params.id, req.body, req.user);
     res.json(info);
   } catch (e) {

@@ -29,7 +29,7 @@ function claveNumDocIndicador(numDoc) {
   const n = parseNumDoc(numDoc);
   return n != null ? n : numDoc;
 }
-const { esAdmin } = require('../utils/roles');
+const { esAdmin, normalizarRol } = require('../utils/roles');
 const { filtroBusquedaAlumno } = require('../utils/busquedaAlumnoNombre');
 const {
   TIPO_ALUMNO_DEFAULT,
@@ -46,6 +46,13 @@ const {
   estadoAccesoPortalPorNumDoc,
   resetearPasswordPortalAlumno,
 } = require('../services/portalAccesoAlumno');
+const {
+  resolverAlcanceGestorMovil,
+  filtroAlumnosAlcanceGestor,
+  assertAlumnoAccesibleGestor,
+  assertAlumnoPorNumDocGestor,
+  esPerfilGestor,
+} = require('../services/alcanceGestorUsuario');
 
 const GENEROS_VALIDOS = new Set(['M', 'F']);
 const TIPOS_SANGRE_VALIDOS = new Set(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']);
@@ -385,6 +392,10 @@ exports.listar = async (req, res, next) => {
       if (filtroNum) condiciones.push(filtroNum);
     }
 
+    const alcanceGestor = await resolverAlcanceGestorMovil(req);
+    const filtroGestor = filtroAlumnosAlcanceGestor(alcanceGestor);
+    if (filtroGestor) condiciones.push(filtroGestor);
+
     const filter = condiciones.length === 0 ? {} : condiciones.length === 1 ? condiciones[0] : { $and: condiciones };
     const sort = resolveSortAlumnos(req.query.sort, req.query.dir);
     const [docs, total] = await Promise.all([
@@ -459,6 +470,7 @@ exports.porId = async (req, res, next) => {
   try {
     const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, a);
     let empresaNombre = null;
     if (a.empresaId) {
       const cli = await Cliente.findById(a.empresaId, { razonSocial: 1, nombres: 1, nombreComercial: 1, identificacion: 1 }).lean();
@@ -536,6 +548,7 @@ exports.indicadoresHoy = async (req, res, next) => {
   try {
     const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, a);
     if (a.numDoc == null) {
       return res.json({
         comprobanteIngresoHoy: null,
@@ -563,6 +576,7 @@ exports.documentosRequeridos = async (req, res, next) => {
   try {
     const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, a);
     res.json(await calcularDocumentosRequeridos(a));
   } catch (e) {
     next(e);
@@ -573,6 +587,7 @@ exports.validarDocumentos = async (req, res, next) => {
   try {
     const a = await buscarAlumnoPorIdParam(req.params.id);
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, a);
     const idPrograma = req.query.idPrograma;
     if (idPrograma) {
       const val = await validarDocumentosParaPrograma(a, idPrograma);
@@ -600,6 +615,7 @@ exports.subirDocumento = async (req, res, next) => {
 
     const prev = await buscarAlumnoPorIdParam(req.params.id);
     if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, prev);
 
     const url = upload.publicUrl('alumnos', file.filename);
     const dto = {
@@ -628,6 +644,7 @@ exports.porDocumento = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const a = await buscarAlumnoPorIdParam(String(numDoc));
     if (!a) return res.status(404).json({ message: 'Alumno no encontrado' });
     res.json(a);
@@ -952,6 +969,7 @@ exports.actualizar = async (req, res, next) => {
   try {
     const prev = await buscarAlumnoPorIdParam(req.params.id);
     if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, prev);
     const body = req.body;
     const dto = pickAlumno(body);
     if (dto.manejoGestorEmpresa === undefined) {
@@ -976,7 +994,7 @@ exports.actualizar = async (req, res, next) => {
     if (dto.fechaNac) dto.fechaNac = new Date(dto.fechaNac);
     await completarGeoOrigenAlumno(dto);
     await aplicarReferidorGestorUsuario(dto, req.user, {
-      forzarPropioGestor: false,
+      forzarPropioGestor: esPerfilGestor(req.user?.rol),
       exigirVinculo: false,
     });
     await validarGestorEmpresaAlumno(dto);
@@ -1013,6 +1031,9 @@ exports.actualizar = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
+    const prev = await buscarAlumnoPorIdParam(req.params.id);
+    if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, prev);
     const { eliminarAlumno } = require('../services/eliminacionEntidades');
     const resultado = await eliminarAlumno(req.params.id);
     if (!resultado.ok) {
@@ -1029,6 +1050,7 @@ exports.enviarAccesoPortal = async (req, res, next) => {
   try {
     const alumno = await buscarAlumnoPorIdParam(req.params.id);
     if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, alumno);
     const body = req.body || {};
     const out = await enviarAccesoPortalAlumno(alumno, {
       email: body.email,
@@ -1051,6 +1073,7 @@ exports.estadoPortal = async (req, res, next) => {
   try {
     const alumno = await buscarAlumnoPorIdParam(req.params.id);
     if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, alumno);
     const out = await estadoAccesoPortalPorNumDoc(alumno.numDoc);
     res.json(out);
   } catch (e) {
@@ -1063,6 +1086,7 @@ exports.resetearPasswordPortal = async (req, res, next) => {
   try {
     const alumno = await buscarAlumnoPorIdParam(req.params.id);
     if (!alumno) return res.status(404).json({ message: 'Alumno no encontrado' });
+    await assertAlumnoAccesibleGestor(req, alumno);
     const body = req.body || {};
     const out = await resetearPasswordPortalAlumno(alumno, {
       password: body.password,

@@ -56,17 +56,21 @@ async function buscarGestorPorDocumento(doc) {
   return rows.find((g) => normalizarDoc(g.numero) === target) || null;
 }
 
-/**
- * Usuario con rol gestor vinculado al catálogo comercial (mismo documento).
- */
-async function resolverGestorComercialPorUsuario(usuario) {
-  if (!usuario || normalizarRol(usuario.rol) !== 'gestor') return null;
+async function resolverGestorCatalogoPorUsuario(usuario) {
   const cfg = await obtenerConfigGestoresEmpresas();
   if (!cfg.activo) return null;
   const doc = await obtenerDocumentoUsuario(usuario);
   if (!doc) return null;
   const g = await buscarGestorPorDocumento(doc);
   return mapGestorComercial(g);
+}
+
+/**
+ * Usuario con rol gestor vinculado al catálogo comercial (mismo documento).
+ */
+async function resolverGestorComercialPorUsuario(usuario) {
+  if (!usuario || normalizarRol(usuario.rol) !== 'gestor') return null;
+  return resolverGestorCatalogoPorUsuario(usuario);
 }
 
 /**
@@ -110,5 +114,6 @@ module.exports = {
   obtenerDocumentoUsuario,
   buscarGestorPorDocumento,
   resolverGestorComercialPorUsuario,
+  resolverGestorCatalogoPorUsuario,
   aplicarReferidorGestorUsuario,
 };

@@ -10,6 +10,12 @@ const {
   servicioPermiteCantidad,
   descripcionConCantidad,
 } = require('../services/programaServicio');
+const {
+  resolverAlcanceGestorMovil,
+  obtenerNumDocsAlcanceGestor,
+  assertAlumnoPorNumDocGestor,
+  intersectarNumDocsConAlcanceGestor,
+} = require('../services/alcanceGestorUsuario');
 
 function num(v) {
   if (v == null) return 0;
@@ -103,12 +109,20 @@ exports.listarConSaldo = async (req, res, next) => {
       filtro = { ...filtro, idSede: String(req.idSede).trim() };
     }
 
+    const alcanceGestor = await resolverAlcanceGestorMovil(req);
+
     if (q) {
       const nd = parseNumDoc(q);
       if (nd != null) {
+        if (alcanceGestor?.activo) {
+          await assertAlumnoPorNumDocGestor(req, nd);
+        }
         filtro = filtroSaldoPendiente({ numDoc: nd });
       } else {
-        const numDocs = await buscarNumDocsAlumno(DatosAlumno, q);
+        let numDocs = await buscarNumDocsAlumno(DatosAlumno, q);
+        if (alcanceGestor?.activo) {
+          numDocs = await intersectarNumDocsConAlcanceGestor(alcanceGestor, numDocs);
+        }
         if (!numDocs.length) {
           return res.json({
             items: [],
@@ -120,6 +134,18 @@ exports.listarConSaldo = async (req, res, next) => {
         }
         filtro = filtroSaldoPendiente({ numDoc: { $in: numDocs } });
       }
+    } else if (alcanceGestor?.activo) {
+      const numDocs = await obtenerNumDocsAlcanceGestor(alcanceGestor);
+      if (!numDocs.length) {
+        return res.json({
+          items: [],
+          total: 0,
+          skip,
+          limit,
+          totales: { valor: 0, abonado: 0, saldo: 0 },
+        });
+      }
+      filtro = filtroSaldoPendiente({ numDoc: { $in: numDocs } });
     }
 
     const [total, docs, agg] = await Promise.all([
@@ -197,6 +223,7 @@ exports.listarPorAlumno = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const filter = numDocQuery(numDoc);
     const docs = await Liquidacion.find(filter).sort({ createdAt: -1 });
     const items = await enriquecerItemsLiquidacion(docs);
@@ -236,6 +263,7 @@ exports.crear = async (req, res, next) => {
     if (numDoc == null || !idServ) {
       return res.status(400).json({ message: 'numDoc e idServ son obligatorios' });
     }
+    await assertAlumnoPorNumDocGestor(req, numDoc);
 
     const serv = await buscarServicioCatalogo(idServ);
     if (!serv) {

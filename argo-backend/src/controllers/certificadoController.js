@@ -24,6 +24,13 @@ const {
 } = require('../services/clasificacionCertificado');
 const { resolverPlantillaImpresion } = require('../services/plantillaCertificado');
 const { referidorCertificadoDesdeLiquidacion } = require('../services/referidorCertificado');
+const {
+  resolverAlcanceGestorMovil,
+  filtroCertificadosAlcanceGestor,
+  mergeFiltroMongo,
+  assertAlumnoPorNumDocGestor,
+  assertCertificadoAccesibleGestor,
+} = require('../services/alcanceGestorUsuario');
 
 const { TIPO_JORNADAS_CAPACITACION } = require('../constants/tipoRegularJornada');
 const { esProgramaJornadasCap } = require('../services/jornadaCapacitacion');
@@ -105,6 +112,7 @@ exports.elegibles = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const q = numDocQuery(numDoc);
     const liqs = await Liquidacion.find({ $and: [q, { idProg: { $ne: null } }] }).lean();
     const certs = await Certificado.find(q).lean();
@@ -149,6 +157,7 @@ exports.listarPorAlumno = async (req, res, next) => {
   try {
     const numDoc = numDocFromParams(req.params.numDoc);
     if (numDoc == null) return res.status(400).json({ message: 'numDoc inválido' });
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const certs = await Certificado.find(numDocQuery(numDoc)).sort({ fechaEmision: -1 }).lean();
     const out = [];
     for (const c of certs) {
@@ -175,6 +184,7 @@ exports.crear = async (req, res, next) => {
     if (numDoc == null || !idLiquidacion) {
       return res.status(400).json({ message: 'numDoc e idLiquidacion son obligatorios' });
     }
+    await assertAlumnoPorNumDocGestor(req, numDoc);
     const liq = await Liquidacion.findById(idLiquidacion);
     if (!liq) return res.status(404).json({ message: 'Item de liquidación no encontrado' });
     if (!numDocEquals(liq.numDoc, numDoc)) return res.status(400).json({ message: 'No corresponde al alumno' });
@@ -781,6 +791,9 @@ exports.alertasVencimiento = exports.alertasPorVencer;
 exports.listarGlobal = async (req, res, next) => {
   try {
     const q = { ...filtrosExcluirJornadaCapacitacion() };
+    const alcanceGestor = await resolverAlcanceGestorMovil(req);
+    const filtroGestor = await filtroCertificadosAlcanceGestor(alcanceGestor);
+    if (filtroGestor) Object.assign(q, filtroGestor);
     const tipoFmt = String(req.query.tipoFormatoCert || req.query.tipo || '').trim();
     if (tipoFmt) q.tipoFormatoCert = tipoFmt;
 
@@ -1006,7 +1019,10 @@ exports.recientes = async (req, res, next) => {
         q.$or = [{ createdAt: { $gte: d } }, { fechaEmision: { $gte: d } }];
       }
     }
-    const rows = await Certificado.find(q).sort({ createdAt: -1, fechaEmision: -1 }).limit(120).lean();
+    const alcanceGestor = await resolverAlcanceGestorMovil(req);
+    const filtroGestor = await filtroCertificadosAlcanceGestor(alcanceGestor);
+    const query = mergeFiltroMongo(q, filtroGestor);
+    const rows = await Certificado.find(query).sort({ createdAt: -1, fechaEmision: -1 }).limit(120).lean();
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     const numDocs = [...new Set(rows.map((c) => c.numDoc).filter((n) => n != null))];
     const alumnos = numDocs.length ? await DatosAlumno.find({ numDoc: { $in: numDocs } }).lean() : [];
@@ -1025,6 +1041,9 @@ exports.recientes = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
+    const cert = await Certificado.findById(req.params.id).lean();
+    if (!cert) return res.status(404).json({ message: 'Certificado no encontrado' });
+    await assertCertificadoAccesibleGestor(req, cert);
     const { anularCertificado } = require('../services/eliminacionEntidades');
     const resultado = await anularCertificado(req, req.params.id, null);
     if (!resultado.ok) {
@@ -1088,6 +1107,7 @@ exports.actualizar = async (req, res, next) => {
   try {
     const existente = await Certificado.findById(req.params.id).lean();
     if (!existente) return res.status(404).json({ message: 'Certificado no encontrado' });
+    await assertCertificadoAccesibleGestor(req, existente);
     if (esCertificadoJornadaCapacitacion(existente)) {
       return res.status(403).json({
         message: 'Los certificados de jornadas de capacitación se gestionan en el módulo Jornadas.',
