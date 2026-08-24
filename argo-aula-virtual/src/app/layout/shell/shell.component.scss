@@ -207,7 +207,7 @@
   margin-top: 0;
   background: var(--av-footer-bg);
   color: var(--av-footer-text);
-  border-top: 1px solid var(--av-border);
+  border-top: 1px solid var(--av-footer-border, var(--av-border));
 }
 
 .site-footer__glow {

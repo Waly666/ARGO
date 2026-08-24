@@ -382,17 +382,32 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
 
   if (heroEstilo === 'servial-mesh') {
     const brandGreen = PORTAL_BRAND_GREEN;
-    const brandLime = PORTAL_BRAND_LIME;
     vars['--av-nav-link'] = '#ffffff';
     vars['--av-nav-link-hover'] = brandGreen;
     vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
     vars['--av-topbar-border'] = 'rgba(51, 221, 111, 0.22)';
+    vars['--av-footer-bg'] = 'rgba(10, 10, 10, 0.82)';
+    vars['--av-footer-border'] = 'rgba(51, 221, 111, 0.22)';
+    vars['--av-footer-glow-line'] = 'rgba(51, 221, 111, 0.35)';
+    vars['--av-footer-text'] = '#e2e8f0';
+    vars['--av-footer-muted'] = '#94a3b8';
+    vars['--av-footer-link-hover'] = brandGreen;
     vars['--av-inst-bar-bg'] = '#2ee778';
     vars['--av-inst-bar-text'] = '#ffffff';
     vars['--av-hero-bg'] = 'transparent';
     vars['--av-hero-title-shimmer'] = brandGreen;
     vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
-    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandLime} 0%, ${brandGreen} 100%)`;
+    vars['--av-faq-bg'] =
+      `radial-gradient(ellipse 85% 65% at 50% 20%, ${withAlpha(brandGreen, 0.14)}, transparent 70%), linear-gradient(180deg, #111218 0%, #0a0a0a 62%, #0a0a0a 100%)`;
+    vars['--av-faq-glow'] = withAlpha(brandGreen, 0.16);
+    vars['--av-faq-open-text'] = brandGreen;
+    vars['--av-faq-icon-bg'] = `linear-gradient(150deg, ${brandGreen}, ${mixHex(brandGreen, primaryDark, 0.35)})`;
+    vars['--av-faq-icon-shadow'] = withAlpha(brandGreen, 0.35);
+    vars['--av-card-wave-a'] = withAlpha(brandGreen, 0.75);
+    vars['--av-card-wave-b'] = withAlpha(brandGreen, 0.45);
+    vars['--av-card-wave-dark-a'] = withAlpha(brandGreen, 0.88);
+    vars['--av-card-wave-dark-b'] = withAlpha(brandGreen, 0.55);
+    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandGreen} 0%, ${mixHex(brandGreen, '#2ee778', 0.35)} 100%)`;
     vars['--av-btn-primary-text'] = '#0a0a0a';
     vars['--av-fundacion-cta-bg'] = `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
     vars['--av-starfield-glow'] = withAlpha(brandGreen, 0.2);

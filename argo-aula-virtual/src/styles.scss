@@ -116,6 +116,14 @@ html.portal-booting::before {
   background: var(--av-bg, #e2e8f0);
 }
 
+/* Servial: footer plano como el header (sin franja degradada animada). */
+html[data-hero-estilo='servial-mesh'] .site-footer__glow {
+  animation: none;
+  background-size: auto;
+  height: 1px;
+  background: var(--av-footer-border, var(--av-topbar-border));
+}
+
 button,
 input,
 select,
