@@ -1,4 +1,5 @@
-const { registrarAuditoria, rutaBase } = require('../services/auditoria');
+const { registrarAuditoria, rutaBase, calcularCambios } = require('../services/auditoria');
+const { detalleOpsAuditoria } = require('../services/opsContexto');
 
 const METODOS_MUTACION = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -41,13 +42,26 @@ function auditoriaHttpMiddleware(req, res, next) {
     if (status >= 200 && status < 300 && req.user) {
       const ruta = req.originalUrl || req.url || '';
       setImmediate(() => {
+        const entidad = inferirEntidad(ruta);
+        const accion = inferirAccion(req.method, status);
+        const datosDespues =
+          body?.documento ?? body?.programa ?? body?.servicio ?? body?.egreso ?? body?.ingreso ?? body;
+        const detalle =
+          detalleOpsAuditoria({
+            accion,
+            entidad,
+            datosDespues,
+            payload: req.body,
+            cambios: calcularCambios(null, datosDespues),
+          }) || null;
         registrarAuditoria({
           req,
-          accion: inferirAccion(req.method, status),
-          entidad: inferirEntidad(ruta),
-          resumen: `${req.method} ${rutaBase(ruta)} (${status}) en ${Date.now() - inicio}ms`,
+          accion,
+          entidad,
+          resumen:
+            detalle || `${req.method} ${rutaBase(ruta)} (${status}) en ${Date.now() - inicio}ms`,
           payload: req.body,
-          datosDespues: body?.documento ?? body?.programa ?? body?.servicio ?? body?.egreso ?? body?.ingreso ?? body,
+          datosDespues,
           codigoHttp: status,
           metodo: req.method,
           ruta,

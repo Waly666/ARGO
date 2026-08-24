@@ -153,6 +153,9 @@
                 }
                 <span class="actor">{{ e.actor }}</span>
                 <span class="msg">{{ e.headline }}</span>
+                @if (e.contexto) {
+                  <span class="ctx">▸ {{ e.contexto }}</span>
+                }
                 <span class="detail">// {{ e.detail }}</span>
               </article>
             } @empty {

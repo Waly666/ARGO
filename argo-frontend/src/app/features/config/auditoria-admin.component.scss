@@ -930,6 +930,14 @@
     color: #eafff5;
     font-weight: 600;
   }
+  .ctx {
+    grid-column: 1 / -1;
+    color: #fde68a;
+    font-weight: 650;
+    font-size: 0.8rem;
+    text-shadow: 0 0 12px rgba(253, 230, 138, 0.25);
+    line-height: 1.45;
+  }
   .detail {
     grid-column: 1 / -1;
     color: rgba(160, 200, 180, 0.65);

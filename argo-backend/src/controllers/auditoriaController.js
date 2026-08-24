@@ -1,4 +1,5 @@
 const Auditoria = require('../models/Auditoria');
+const { detalleOpsAuditoria } = require('../services/opsContexto');
 
 exports.listar = async (req, res, next) => {
   try {
@@ -33,7 +34,16 @@ exports.listar = async (req, res, next) => {
       Auditoria.countDocuments(filter),
     ]);
 
-    res.json({ items, total, page, limit, pages: Math.ceil(total / limit) || 1 });
+    res.json({
+      items: items.map((row) => ({
+        ...row,
+        detalleOps: detalleOpsAuditoria(row),
+      })),
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit) || 1,
+    });
   } catch (e) {
     next(e);
   }

@@ -80,6 +80,8 @@ export interface RegistroActividadHttp {
   duracionMs?: number;
   actividad?: string;
   ip?: string;
+  contexto?: string | null;
+  detalleOps?: string | null;
 }
 
 export interface HistorialActividadResponse {

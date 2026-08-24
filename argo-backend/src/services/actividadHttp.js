@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const ActividadHttp = require('../models/ActividadHttp');
 const { rutaBase } = require('./auditoria');
 const { obtenerMetricasSistema } = require('./systemMonitor');
+const { extraerContextoBody, detalleOpsHttp } = require('./opsContexto');
 
 const ACTIVOS_MINUTOS = 10;
 const sesionesActivas = new Map();
@@ -201,6 +202,7 @@ async function registrarPeticion({
   const rutaPantalla = normalizarRutaPantalla(req.headers['x-argo-pantalla']);
   const actividadPantalla = rutaPantalla ? describirPantalla(rutaPantalla) : null;
   const actividad = actividadPantalla || describirActividad(metodo, rb, statusCode);
+  const contexto = extraerContextoBody(req, rb);
 
   const doc = {
     idActividad: allocIdActividad(),
@@ -216,6 +218,7 @@ async function registrarPeticion({
     bytesEntrada,
     bytesSalida,
     actividad,
+    contexto,
     ip: req.ip || req.headers?.['x-forwarded-for'] || null,
   };
 
@@ -358,7 +361,16 @@ async function listarHistorial(filtros = {}) {
     ActividadHttp.countDocuments(filter),
   ]);
 
-  return { items, total, page, limit, pages: Math.ceil(total / limit) || 1 };
+  return {
+    items: items.map((row) => ({
+      ...row,
+      detalleOps: detalleOpsHttp(row),
+    })),
+    total,
+    page,
+    limit,
+    pages: Math.ceil(total / limit) || 1,
+  };
 }
 
 module.exports = {

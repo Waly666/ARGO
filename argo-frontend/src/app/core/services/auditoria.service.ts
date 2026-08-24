@@ -29,6 +29,7 @@ export interface RegistroAuditoria {
   cambios?: CambioAuditoria[];
   payload?: unknown;
   archivoLog?: string;
+  detalleOps?: string | null;
 }
 
 export interface AuditoriaListResponse {

@@ -39,6 +39,7 @@ interface OpsEvent {
   severity: OpsSeverity;
   actor: string;
   headline: string;
+  contexto?: string;
   detail: string;
   code?: string;
   isNew?: boolean;
@@ -218,6 +219,7 @@ export class AuditoriaAdminComponent implements OnInit, OnDestroy, AfterViewInit
 
     for (const r of http) {
       const id = `http-${r.idActividad}`;
+      const contexto = String(r.detalleOps || r.contexto || '').trim() || undefined;
       incoming.push({
         id,
         ts: new Date(r.fecha),
@@ -225,6 +227,7 @@ export class AuditoriaAdminComponent implements OnInit, OnDestroy, AfterViewInit
         severity: this.severidadHttp(r.codigoHttp),
         actor: r.nombreUsuario || r.usuario || 'ANÓNIMO',
         headline: r.actividad || `${r.metodo} ${r.rutaBase || r.ruta}`,
+        contexto,
         detail: `${r.metodo || '—'} ${r.rutaBase || r.ruta || ''}`.trim(),
         code: r.codigoHttp ? String(r.codigoHttp) : undefined,
         isNew: !this.knownOpsIds.has(id),
@@ -233,6 +236,10 @@ export class AuditoriaAdminComponent implements OnInit, OnDestroy, AfterViewInit
 
     for (const r of db) {
       const id = `db-${r.idAuditoria}`;
+      const contexto =
+        String(r.detalleOps || '').trim() ||
+        this.contextoAuditoriaFallback(r) ||
+        undefined;
       incoming.push({
         id,
         ts: new Date(r.fecha),
@@ -240,6 +247,7 @@ export class AuditoriaAdminComponent implements OnInit, OnDestroy, AfterViewInit
         severity: this.severidadDb(r.accion),
         actor: r.usuario || 'SISTEMA',
         headline: `${String(r.accion || 'evento').toUpperCase()} · ${r.entidad || 'dato'}`,
+        contexto,
         detail: r.resumen || r.rutaBase || r.ruta || 'Cambio en base de datos',
         code: r.idEntidad ? `#${r.idEntidad}` : undefined,
         isNew: !this.knownOpsIds.has(id),
@@ -269,6 +277,36 @@ export class AuditoriaAdminComponent implements OnInit, OnDestroy, AfterViewInit
     if (a === 'modificar' || a === 'migracion_importar') return 'warn';
     if (a === 'crear' || a === 'apertura_caja') return 'success';
     return 'info';
+  }
+
+  /** Respaldo si el backend aún no envía detalleOps. */
+  private contextoAuditoriaFallback(r: RegistroAuditoria): string | undefined {
+    const data = (r.datosDespues || r.datosAntes || r.payload) as Record<string, unknown> | undefined;
+    if (!data || typeof data !== 'object') return undefined;
+    const partes: string[] = [];
+    const doc = data['numDoc'] ?? data['numeroDocumento'] ?? data['numero'];
+    if (doc != null && String(doc).trim()) partes.push(`CC ${doc}`);
+    const nom = [
+      data['nombre1'],
+      data['nombre2'],
+      data['apellido1'],
+      data['apellido2'],
+      data['nombreCompleto'],
+      data['nombres'],
+      data['apellidos'],
+    ]
+      .map((s) => String(s || '').trim())
+      .filter(Boolean)
+      .join(' ');
+    if (nom) partes.push(nom);
+    if (r.cambios?.length) {
+      const delta = r.cambios
+        .slice(0, 4)
+        .map((c) => `${c.campo}`)
+        .join(', ');
+      if (delta) partes.push(`Campos: ${delta}`);
+    }
+    return partes.length ? partes.join(' · ') : undefined;
   }
 
   opsKindLabel(kind: OpsEventKind): string {
