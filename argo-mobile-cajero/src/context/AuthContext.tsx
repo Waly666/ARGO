@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { Alert } from 'react-native';
 
 import { fetchMe, login as apiLogin, setTokenGetter, setUnauthorizedHandler } from '../api/client';
 import { setRuntimeApiBase, normalizeApiBaseUrl, SERVIDOR_API_STORAGE_KEY } from '../config/apiBase';
@@ -162,8 +163,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setUnauthorizedHandler(() => {
-      void signOut();
+    let signingOut = false;
+    setUnauthorizedHandler((message, code) => {
+      if (signingOut) return;
+      signingOut = true;
+      const defaultMsg =
+        code === 'CANAL_CONEXION_DENEGADO'
+          ? 'Su usuario no está autorizado para usar la app móvil cajero.'
+          : code === 'SESION_REEMPLAZADA'
+            ? 'Su sesión fue reemplazada en otro dispositivo.'
+            : 'Su sesión finalizó.';
+      Alert.alert('Sesión', message || defaultMsg, [
+        { text: 'Entendido', onPress: () => void signOut() },
+      ]);
     });
     return () => setUnauthorizedHandler(null);
   }, [signOut]);

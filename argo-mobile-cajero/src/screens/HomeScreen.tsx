@@ -10,8 +10,9 @@ import { ScaledText } from '../components/ScaledText';
 import { AlertBannerStack } from '../components/AlertBannerStack';
 import { ModuleTile } from '../components/ModuleTile';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../context/BrandingContext';
 import { useAccessibility } from '../context/AccessibilityContext';
-import { APP_BRANDING, CAJERO_AZUL_REY, CAJERO_AZUL_REY_CLARO } from '../config/appBranding';
+import { CAJERO_AZUL_REY, CAJERO_AZUL_REY_CLARO } from '../config/appBranding';
 import { themeColors } from '../theme/colors';
 import { APP_MODULES } from '../theme/modules';
 import { tienePermiso } from '../utils/permisos';
@@ -31,6 +32,7 @@ export default function HomeScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { state, signOut } = useAuth();
+  const { tituloApp, nombreEmpresa, logoSource } = useBranding();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const user = state.status === 'signedIn' ? state.user : null;
@@ -45,7 +47,7 @@ export default function HomeScreen() {
     .join('');
   const rolLabel = user?.rolNombre || user?.rol || 'Sin rol';
 
-  const headerColors = highContrast
+  const headerColors: [string, string, ...string[]] = highContrast
     ? [c.card, c.bgAlt]
     : [CAJERO_AZUL_REY, '#2563D4', CAJERO_AZUL_REY_CLARO];
 
@@ -60,12 +62,12 @@ export default function HomeScreen() {
           style={[styles.welcome, { paddingTop: Math.max(insets.top, 12) + 4 }]}
         >
           <View style={styles.brandBlock}>
-            <Image source={APP_BRANDING.logo} style={styles.logo} resizeMode="contain" />
+            <Image source={logoSource} style={styles.logo} resizeMode="contain" />
             <ScaledText baseSize={11} style={styles.brandApp} numberOfLines={1}>
-              {APP_BRANDING.tituloApp}
+              {tituloApp}
             </ScaledText>
             <ScaledText baseSize={15} style={styles.brandEmpresa} numberOfLines={2}>
-              {APP_BRANDING.nombreEmpresa}
+              {nombreEmpresa}
             </ScaledText>
           </View>
 

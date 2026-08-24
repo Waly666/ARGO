@@ -18,10 +18,19 @@ export async function previewMatriculaExtras(
 export type OpcionesMatriculaConfig = {
   permitirAjusteValorMatricula?: boolean;
   permitirAjusteCuotasSemestre?: boolean;
+  tarifasMatriculaSeleccionables?: number[];
 };
 
 export async function fetchOpcionesMatricula(): Promise<OpcionesMatriculaConfig> {
   return apiFetch<OpcionesMatriculaConfig>('/config/recibo/opciones-matricula');
+}
+
+export type GestoresEmpresasConfig = {
+  activo?: boolean;
+};
+
+export async function fetchGestoresEmpresasConfig(): Promise<GestoresEmpresasConfig> {
+  return apiFetch<GestoresEmpresasConfig>('/config/gestores-empresas');
 }
 
 export async function previewPagoExtras(

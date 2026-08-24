@@ -17,6 +17,20 @@ export type CedulaOcrResponse = {
 
 function appendFormField(fd: FormData, k: string, v: unknown) {
   if (v === undefined || v === null) return;
+  if (k === 'manejoGestorEmpresa') {
+    fd.append(k, v === true ? 'true' : 'false');
+    return;
+  }
+  if (
+    k === 'gestorId' ||
+    k === 'referidorEmpresaId' ||
+    k === 'tipoReferidorComercial' ||
+    k === 'gestorNombre' ||
+    k === 'referidorEmpresaNombre'
+  ) {
+    fd.append(k, String(v ?? ''));
+    return;
+  }
   if (k === 'alertaPago' || k === 'alertaPagoFrecuencia') {
     fd.append(k, String(v ?? ''));
     return;
@@ -44,6 +58,12 @@ function toFormData(dto: AlumnoCrearDto, files?: AlumnoArchivos): FormData {
     alertaPagoFrecuencia: dto.alertaPagoFrecuencia || '',
     alertaPago: dto.alertaPago || '',
     empresaId: dto.empresaId ?? '',
+    manejoGestorEmpresa: dto.manejoGestorEmpresa === true,
+    tipoReferidorComercial: dto.tipoReferidorComercial || '',
+    gestorId: dto.gestorId || '',
+    gestorNombre: dto.gestorNombre || '',
+    referidorEmpresaId: dto.referidorEmpresaId || '',
+    referidorEmpresaNombre: dto.referidorEmpresaNombre || '',
   };
   for (const [k, v] of Object.entries(payload)) {
     appendFormField(fd, k, v);

@@ -29,9 +29,9 @@ import {
   type ComboPrevista,
 } from '../../api/combosApi';
 import { crearLiquidacion, listarLiquidacionAlumno } from '../../api/liquidacionApi';
-import { crearIngreso, listarIngresosAlumno, reciboIngresoHtmlPath } from '../../api/ingresosApi';
+import { crearIngreso, eliminarIngreso, listarIngresosAlumno, reciboIngresoHtmlPath } from '../../api/ingresosApi';
 import { crearMatricula } from '../../api/matriculasApi';
-import { fetchOpcionesMatricula } from '../../api/configApi';
+import { fetchGestoresEmpresasConfig, fetchOpcionesMatricula } from '../../api/configApi';
 import { MatriculaAjustePanel } from '../../components/MatriculaAjustePanel';
 import { AlumnoCard } from '../../components/AlumnoCard';
 import {
@@ -55,6 +55,24 @@ import type {
   AlumnoDetalleItem,
 } from '../../api/domain';
 import { useAccessibility } from '../../context/AccessibilityContext';
+import { useAuth } from '../../context/AuthContext';
+import {
+  etiquetaBotonEliminar,
+  mostrarAccionEliminar,
+  puedeEliminarModulo,
+  tieneAccionModulo,
+} from '../../utils/accionPermiso';
+import { ensureCajaAbierta } from '../../utils/cajaAbierta';
+import { ejecutarEliminacionOSolicitar } from '../../utils/eliminacionOperacion';
+import { esIngresoAnulado } from '../../utils/ingreso';
+import {
+  intersectarTarifasMatricula,
+  normalizarTarifasMatriculaConfig,
+} from '../../utils/tarifasMatriculaConfig';
+import {
+  esTarifaComercial,
+  resolverTarifaComercialAlumno,
+} from '../../utils/gestorEmpresaMatricula';
 import { themeColors } from '../../theme/colors';
 import type { RootStackParamList } from '../../navigation/types';
 import {
@@ -115,6 +133,24 @@ export default function AlumnoDetalleScreen() {
   const [alumnoId, setAlumnoId] = useState(route.params.alumnoId ?? '');
   const [displayNombre, setDisplayNombre] = useState(nombreRoute);
   const { highContrast } = useAccessibility();
+  const { state: authState } = useAuth();
+  const permisos = authState.status === 'signedIn' ? (authState.user.permisos ?? []) : [];
+  const puedeCrearIngreso = useMemo(
+    () => tieneAccionModulo(permisos, 'ingresos', 'crear'),
+    [permisos],
+  );
+  const puedeCrearMatricula = useMemo(
+    () => tieneAccionModulo(permisos, 'matriculas', 'crear'),
+    [permisos],
+  );
+  const puedeEditarMatricula = useMemo(
+    () => tieneAccionModulo(permisos, 'matriculas', 'editar'),
+    [permisos],
+  );
+  const puedeReversarPago = useMemo(
+    () => mostrarAccionEliminar(permisos, 'ingresos'),
+    [permisos],
+  );
   const c = themeColors(highContrast);
   const [tab, setTab] = useState<Tab>('pagos');
   const [loading, setLoading] = useState(true);
@@ -145,6 +181,10 @@ export default function AlumnoDetalleScreen() {
   const [comboResultado, setComboResultado] = useState<ComboAplicarRes | null>(null);
   const [permitirAjusteValorMatricula, setPermitirAjusteValorMatricula] = useState(true);
   const [permitirAjusteCuotasSemestre, setPermitirAjusteCuotasSemestre] = useState(false);
+  const [tarifasMatriculaConfig, setTarifasMatriculaConfig] = useState<number[]>(
+    () => normalizarTarifasMatriculaConfig(),
+  );
+  const [gestoresEmpresasActivo, setGestoresEmpresasActivo] = useState(false);
   const [ajustarValorMat, setAjustarValorMat] = useState(false);
   const [valorAcordadoMat, setValorAcordadoMat] = useState('');
   const [motivoAjusteMat, setMotivoAjusteMat] = useState('');
@@ -156,7 +196,7 @@ export default function AlumnoDetalleScreen() {
     setLoading(true);
     setCertErr(null);
     try {
-      const [liq, ing, progs, servs, eleg, fac, alumno, tipos, combosList, opcionesMat] = await Promise.all([
+      const [liq, ing, progs, servs, eleg, fac, alumno, tipos, combosList, opcionesMat, cfgGestoresEmpresas] = await Promise.all([
         listarLiquidacionAlumno(numDoc),
         listarIngresosAlumno(numDoc),
         listarProgramas({ catalogo: true }),
@@ -169,10 +209,16 @@ export default function AlumnoDetalleScreen() {
         fetchOpcionesMatricula().catch(() => ({
           permitirAjusteValorMatricula: true,
           permitirAjusteCuotasSemestre: false,
+          tarifasMatriculaSeleccionables: normalizarTarifasMatriculaConfig(),
         })),
+        fetchGestoresEmpresasConfig().catch(() => ({ activo: false })),
       ]);
       setPermitirAjusteValorMatricula(opcionesMat.permitirAjusteValorMatricula !== false);
       setPermitirAjusteCuotasSemestre(opcionesMat.permitirAjusteCuotasSemestre === true);
+      setTarifasMatriculaConfig(
+        normalizarTarifasMatriculaConfig(opcionesMat.tarifasMatriculaSeleccionables),
+      );
+      setGestoresEmpresasActivo(cfgGestoresEmpresas.activo === true);
       setLiquidacion(liq.items);
       setTotales({ saldo: liq.totales?.saldo ?? 0 });
       setPagos(ing);
@@ -241,15 +287,40 @@ export default function AlumnoDetalleScreen() {
     () => serviciosPrograma(programaSel, servicios),
     [programaSel, servicios],
   );
-  const tarifasPermitidas = useMemo(
-    () => (programaSel ? tarifasPermitidasPrograma(programaSel, serviciosProgSel) : [1, 2, 3]),
-    [programaSel, serviciosProgSel],
+  const tarifaComercial = useMemo(
+    () => resolverTarifaComercialAlumno(alumnoInfo, gestoresEmpresasActivo),
+    [alumnoInfo, gestoresEmpresasActivo],
   );
+  const referidorIncompleto = useMemo(
+    () =>
+      gestoresEmpresasActivo &&
+      alumnoInfo?.manejoGestorEmpresa === true &&
+      !tarifaComercial,
+    [gestoresEmpresasActivo, alumnoInfo?.manejoGestorEmpresa, tarifaComercial],
+  );
+  const tarifasPermitidas = useMemo(() => {
+    if (tarifaComercial) return [tarifaComercial.tarifa];
+    if (!programaSel) return intersectarTarifasMatricula([1, 2, 3], tarifasMatriculaConfig);
+    const delPrograma = tarifasPermitidasPrograma(programaSel, serviciosProgSel);
+    return intersectarTarifasMatricula(delPrograma, tarifasMatriculaConfig);
+  }, [programaSel, serviciosProgSel, tarifasMatriculaConfig, tarifaComercial]);
+
+  useEffect(() => {
+    if (tarifaComercial) {
+      setTarifa(tarifaComercial.tarifa as TarifaMatricula);
+      return;
+    }
+    if (!tarifasPermitidas.length) return;
+    if (!tarifasPermitidas.includes(tarifa)) {
+      setTarifa(tarifasPermitidas[0] as TarifaMatricula);
+    }
+  }, [tarifasPermitidas, tarifa, tarifaComercial]);
   const programaSoloVirtual = useMemo(
     () => esProgramaSoloVirtual(programaSel, serviciosProgSel),
     [programaSel, serviciosProgSel],
   );
   const esTarifaVirtualSel = tarifa === TARIFA_VIRTUAL;
+  const esTarifaComercialSel = esTarifaComercial(tarifa);
   const valorMatricula = useMemo(
     () => calcularValorMatricula(programaSel, servicios, tarifa),
     [programaSel, servicios, tarifa],
@@ -472,6 +543,10 @@ export default function AlumnoDetalleScreen() {
   }
 
   async function registrarPago() {
+    if (!puedeCrearIngreso) {
+      Alert.alert('Pagos', 'No tiene permiso para registrar cobros.');
+      return;
+    }
     const validos = itemsPago.filter((i) => i.valor > 0);
     if (!validos.length) {
       Alert.alert('Pagos', 'Seleccione ítems e indique un valor mayor a cero.');
@@ -497,6 +572,7 @@ export default function AlumnoDetalleScreen() {
       Alert.alert('Pagos', valPago.message ?? 'Complete los datos del pago.');
       return;
     }
+    if (!(await ensureCajaAbierta('registrar cobros'))) return;
     setBusy(true);
     try {
       const ing = await crearIngreso(
@@ -530,6 +606,34 @@ export default function AlumnoDetalleScreen() {
       Alert.alert('Error', mensajeErrorApi(e));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function reversarPago(p: IngresoRow) {
+    if (!puedeReversarPago || esIngresoAnulado(p)) return;
+    if (!(await ensureCajaAbierta('reversar pagos del alumno'))) return;
+    const ref = p.numRecibo ? ` «${p.numRecibo}»` : '';
+    const resumen = `Ingreso${ref || ` ${p._id}`}`;
+    try {
+      const resultado = await ejecutarEliminacionOSolicitar({
+        modulo: 'ingresos',
+        idEntidad: p._id,
+        resumen,
+        permisos,
+        tituloConfirm: '¿Reversar este pago?',
+        mensajeConfirm: `Se anulará el comprobante${ref}. El saldo del servicio quedará disponible para volver a cobrarlo.`,
+        confirmLabel: puedeEliminarModulo(permisos, 'ingresos') ? 'Sí, reversar' : 'Enviar solicitud',
+        ejecutar: () => eliminarIngreso(p._id),
+      });
+      if (resultado === 'eliminado') {
+        Alert.alert('Pago anulado', 'El servicio quedó habilitado para volver a cobrarlo.');
+        await load();
+        setTab('pagos');
+      } else if (resultado === 'solicitado') {
+        Alert.alert('Solicitud enviada', 'La anulación quedó pendiente de autorización.');
+      }
+    } catch (e) {
+      Alert.alert('Error', mensajeErrorApi(e));
     }
   }
 
@@ -586,8 +690,19 @@ export default function AlumnoDetalleScreen() {
   }
 
   async function crearMatriculaPrograma() {
+    if (!puedeCrearMatricula) {
+      Alert.alert('Matrícula', 'No tiene permiso para crear matrículas.');
+      return;
+    }
     if (!programaSel || !progSelId) {
       Alert.alert('Matrícula', 'Seleccione un programa.');
+      return;
+    }
+    if (referidorIncompleto) {
+      Alert.alert(
+        'Tramitador incompleto',
+        'El alumno tiene activo el manejo por gestor/empresa pero falta el referidor. Edite el alumno y complete tramitador o empresa referidora.',
+      );
       return;
     }
     if (programaSoloVirtual) {
@@ -609,6 +724,7 @@ export default function AlumnoDetalleScreen() {
       ajustarCuotasSemestre &&
       permitirAjusteCuotasSemestre &&
       !esTarifaVirtualSel &&
+      !esTarifaComercialSel &&
       numCuotasSemestre >= 2;
     let cuotasNumeros: number[] | null = null;
     if (cuotasCustom) {
@@ -624,7 +740,11 @@ export default function AlumnoDetalleScreen() {
 
     const catalogoBase = valorMatricula;
     const ajuste =
-      ajustarValorMat && permitirAjusteValorMatricula && !esTarifaVirtualSel && !cuotasCustom;
+      ajustarValorMat &&
+      permitirAjusteValorMatricula &&
+      !esTarifaVirtualSel &&
+      !esTarifaComercialSel &&
+      !cuotasCustom;
     const acordado = ajuste ? valorAcordadoNum : catalogoBase;
     if (ajuste) {
       if (!Number.isFinite(acordado) || acordado < 0) {
@@ -700,8 +820,15 @@ export default function AlumnoDetalleScreen() {
     const id = idPrograma(p);
     setProgSelId(id);
     const servsProg = serviciosPrograma(p, servicios);
-    const permitidas = tarifasPermitidasPrograma(p, servsProg);
-    setTarifa((permitidas[0] ?? 1) as TarifaMatricula);
+    if (tarifaComercial) {
+      setTarifa(tarifaComercial.tarifa as TarifaMatricula);
+    } else {
+      const permitidas = intersectarTarifasMatricula(
+        tarifasPermitidasPrograma(p, servsProg),
+        tarifasMatriculaConfig,
+      );
+      setTarifa((permitidas[0] ?? 1) as TarifaMatricula);
+    }
     setMatriculaEmailPortal('');
     limpiarAjustesMatricula();
   }
@@ -864,13 +991,19 @@ export default function AlumnoDetalleScreen() {
 
       {tab === 'pagos' ? (
         <>
+          {!puedeCrearIngreso ? (
+            <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 12, lineHeight: 18 }}>
+              No tiene permiso para registrar cobros. Puede consultar saldos y comprobantes.
+            </ScaledText>
+          ) : null}
           <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 8 }}>
             Cuenta por cobrar
           </ScaledText>
           {pendientes.length ? pendientes.map((item) => (
             <Pressable
               key={item._id}
-              onPress={() => toggleItem(item)}
+              onPress={() => puedeCrearIngreso && toggleItem(item)}
+              disabled={!puedeCrearIngreso}
               style={[
                 styles.itemRow,
                 { borderColor: c.border, backgroundColor: itemSeleccionado(item._id) ? c.accentSoft : c.card },
@@ -897,7 +1030,7 @@ export default function AlumnoDetalleScreen() {
           )) : (
             <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 12 }}>Sin saldos pendientes.</ScaledText>
           )}
-          {itemsPago.length ? (
+          {itemsPago.length && puedeCrearIngreso ? (
             <View style={{ marginTop: 12, gap: 12 }}>
               <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }}>
                 Valor a pagar
@@ -969,6 +1102,11 @@ export default function AlumnoDetalleScreen() {
 
       {tab === 'servicios' ? (
         <>
+          {!puedeCrearMatricula ? (
+            <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 12, lineHeight: 18 }}>
+              No tiene permiso para crear matrículas. Puede agregar servicios adicionales si está autorizado.
+            </ScaledText>
+          ) : null}
           <SurfaceCard style={{ marginBottom: 14 }}>
             <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800', marginBottom: 6 }}>
               Crear matrícula
@@ -976,6 +1114,8 @@ export default function AlumnoDetalleScreen() {
             <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 12, lineHeight: 18 }}>
               {programasMat.length} programas disponibles. Toque el campo, escriba para filtrar y elija uno.
             </ScaledText>
+            {puedeCrearMatricula ? (
+            <>
             <BuscarPickerField
               label="Programa"
               value={progSelId}
@@ -1015,6 +1155,24 @@ export default function AlumnoDetalleScreen() {
                     Programa solo virtual: el alumno debe matricularse en el portal. Puede cobrar la liquidación en Pagos.
                   </ScaledText>
                 ) : null}
+                {referidorIncompleto ? (
+                  <ScaledText baseSize={13} style={{ color: c.danger, lineHeight: 18, marginBottom: 8 }}>
+                    Manejo gestor/empresa activo pero incompleto. Edite el alumno y asigne tramitador o empresa referidora.
+                  </ScaledText>
+                ) : null}
+                {tarifaComercial ? (
+                  <View style={[styles.referidorBox, { borderColor: c.primary, backgroundColor: c.accentSoft }]}>
+                    <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700' }}>
+                      Tarifa comercial automática
+                    </ScaledText>
+                    <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4, lineHeight: 18 }}>
+                      {tarifaComercial.tipo === 'gestor' ? 'Gestor' : 'Empresa'}: {tarifaComercial.referidorNombre}
+                    </ScaledText>
+                    <ScaledText baseSize={12} style={{ color: c.primary, marginTop: 4, fontWeight: '700' }}>
+                      {etiquetaTarifa(tarifaComercial.tarifa)}
+                    </ScaledText>
+                  </View>
+                ) : (
                 <View style={styles.tarifaRow}>
                   {tarifasPermitidas.map((t) => (
                     <Pressable
@@ -1059,6 +1217,7 @@ export default function AlumnoDetalleScreen() {
                     </Pressable>
                   ))}
                 </View>
+                )}
                 {esTarifaVirtualSel && !programaSoloVirtual ? (
                   <>
                     <ScaledText baseSize={13} style={{ color: c.textSoft }}>
@@ -1082,8 +1241,8 @@ export default function AlumnoDetalleScreen() {
                   totalExtrasMatricula={totalExtrasMatricula}
                   numCuotasSemestre={numCuotasSemestre}
                   cuotasCatalogo={cuotasCatalogo}
-                  permitirRebaja={permitirAjusteValorMatricula}
-                  permitirCuotas={permitirAjusteCuotasSemestre}
+                  permitirRebaja={permitirAjusteValorMatricula && puedeEditarMatricula && !esTarifaComercialSel}
+                  permitirCuotas={permitirAjusteCuotasSemestre && puedeEditarMatricula && !esTarifaComercialSel}
                   esTarifaVirtual={esTarifaVirtualSel}
                   ajustarValorMat={ajustarValorMat}
                   onAjustarValorMatChange={onAjustarValorMatChange}
@@ -1120,10 +1279,12 @@ export default function AlumnoDetalleScreen() {
                   label="Crear matrícula"
                   icon="school-outline"
                   onPress={() => void crearMatriculaPrograma()}
-                  disabled={busy || programaSoloVirtual}
+                  disabled={busy || programaSoloVirtual || referidorIncompleto}
                   fullWidth
                 />
               </View>
+            ) : null}
+            </>
             ) : null}
           </SurfaceCard>
 
@@ -1324,16 +1485,35 @@ export default function AlumnoDetalleScreen() {
               <View style={{ flex: 1 }}>
                 <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '600' }}>
                   Recibo #{p.numRecibo ?? '—'}
+                  {esIngresoAnulado(p) ? ' (anulado)' : ''}
                 </ScaledText>
                 <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
                   {p.fecha ? new Date(p.fecha).toLocaleString('es-CO') : ''} · {p.tipoPagoDescr ?? p.formaPago}
                 </ScaledText>
-                <MoneyText value={p.valor} baseSize={14} style={{ color: c.ok, marginTop: 4 }} bold />
+                <MoneyText
+                  value={p.valor}
+                  baseSize={14}
+                  style={{ color: esIngresoAnulado(p) ? c.textSoft : c.ok, marginTop: 4 }}
+                  bold
+                />
               </View>
-              <VerDocumentoButton
-                titulo={`Recibo ${p.numRecibo ?? p._id}`}
-                htmlPath={reciboIngresoHtmlPath(p._id)}
-              />
+              <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                <VerDocumentoButton
+                  titulo={`Recibo ${p.numRecibo ?? p._id}`}
+                  htmlPath={reciboIngresoHtmlPath(p._id)}
+                />
+                {puedeReversarPago && !esIngresoAnulado(p) ? (
+                  <Pressable
+                    onPress={() => void reversarPago(p)}
+                    style={[styles.reversarBtn, { borderColor: c.danger }]}
+                  >
+                    <Ionicons name="arrow-undo-outline" size={16} color={c.danger} />
+                    <ScaledText baseSize={12} style={{ color: c.danger, fontWeight: '700' }}>
+                      {etiquetaBotonEliminar(permisos, 'ingresos')}
+                    </ScaledText>
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
           )) : (
             <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 16 }}>Sin recibos de pago.</ScaledText>
@@ -1406,6 +1586,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
+  },
+  reversarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  referidorBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
   },
   valorRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   valorInput: {

@@ -21,6 +21,8 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
   munOrigenTexto: string;
   deptoOrigenTexto: string;
   empresaNombre: string;
+  gestorNombre: string;
+  referidorEmpresaNombre: string;
 } {
   const freq = a.alertaPagoFrecuencia;
   const codDep = String(a.codDepartamento || '')
@@ -58,6 +60,15 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       celular: a.celular || '',
       multiCulturalidad: a.multiCulturalidad || 'NO_APLICA',
       empresaId: a.empresaId ?? null,
+      manejoGestorEmpresa: a.manejoGestorEmpresa === true,
+      tipoReferidorComercial:
+        a.tipoReferidorComercial === 'gestor' || a.tipoReferidorComercial === 'empresa'
+          ? a.tipoReferidorComercial
+          : null,
+      gestorId: a.gestorId ? String(a.gestorId) : null,
+      gestorNombre: aMayusculas(a.gestorNombre?.trim() || '') || undefined,
+      referidorEmpresaId: a.referidorEmpresaId ? String(a.referidorEmpresaId) : null,
+      referidorEmpresaNombre: aMayusculas(a.referidorEmpresaNombre?.trim() || '') || undefined,
       alertaPagoFrecuencia: freq === 'mensual' || freq === 'quincenal' ? freq : '',
       alertaPago: fechaAString(a.alertaPago),
     },
@@ -65,5 +76,7 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
     munOrigenTexto: aMayusculas(a.nombreMunicipio || a.munOrigenLabel || a.munOrigen || a.codMunicipio || ''),
     deptoOrigenTexto: aMayusculas(a.nombreDepartamento || ''),
     empresaNombre: aMayusculas(a.empresaNombre?.trim() || ''),
+    gestorNombre: aMayusculas(a.gestorNombre?.trim() || ''),
+    referidorEmpresaNombre: aMayusculas(a.referidorEmpresaNombre?.trim() || ''),
   };
 }

@@ -50,3 +50,7 @@ export async function listarIngresosAlumno(numDoc: string | number): Promise<Ing
 export function reciboIngresoHtmlPath(idIngreso: string): string {
   return `/ingresos/${encodeURIComponent(idIngreso)}/recibo/html?v=${Date.now()}`;
 }
+
+export async function eliminarIngreso(idIngreso: string): Promise<void> {
+  await apiFetch(`/ingresos/${encodeURIComponent(idIngreso)}`, { method: 'DELETE' });
+}

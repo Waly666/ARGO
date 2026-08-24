@@ -55,6 +55,12 @@ export interface AlumnoListItem {
   celular?: string;
   empresaId?: string | null;
   empresaNombre?: string | null;
+  manejoGestorEmpresa?: boolean;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | string | null;
+  gestorId?: string | null;
+  gestorNombre?: string | null;
+  referidorEmpresaId?: string | null;
+  referidorEmpresaNombre?: string | null;
   indicadores?: {
     saldosPendientes?: number;
     saldoTotal?: number;
@@ -86,6 +92,12 @@ export interface AlumnoDetalleItem extends AlumnoListItem {
   multiCulturalidad?: string;
   empresaId?: string | null;
   empresaNombre?: string | null;
+  manejoGestorEmpresa?: boolean;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | string | null;
+  gestorId?: string | null;
+  gestorNombre?: string | null;
+  referidorEmpresaId?: string | null;
+  referidorEmpresaNombre?: string | null;
   alertaPago?: string | null;
   alertaPagoFrecuencia?: '' | 'mensual' | 'quincenal' | null;
   urlFoto?: string;
@@ -123,6 +135,12 @@ export interface AlumnoCrearDto {
   direccion?: string;
   multiCulturalidad?: string;
   empresaId?: string | null;
+  manejoGestorEmpresa?: boolean;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | string | null;
+  gestorId?: string | null;
+  gestorNombre?: string | null;
+  referidorEmpresaId?: string | null;
+  referidorEmpresaNombre?: string | null;
   alertaPagoFrecuencia?: '' | 'mensual' | 'quincenal';
   alertaPago?: string;
   esJornadaCap?: string;
@@ -196,6 +214,8 @@ export interface IngresoRow {
   fecha?: string;
   tipoPagoDescr?: string;
   formaPago?: string;
+  estado?: string;
+  anulado?: boolean;
   detalle?: { descripcion?: string; valor?: number }[];
 }
 

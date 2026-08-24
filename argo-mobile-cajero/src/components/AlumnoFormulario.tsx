@@ -12,6 +12,7 @@ import { FormSection } from './FormSection';
 import { CatalogoSelectField } from './CatalogoSelectField';
 import { MunicipioBuscarField } from './MunicipioBuscarField';
 import { EmpresaBuscarField } from './EmpresaBuscarField';
+import { GestorBuscarField } from './GestorBuscarField';
 import { CedulaScanLink, CedulaScanPanel } from './CedulaScanPanel';
 import { PrimaryButton } from './PrimaryButton';
 import { ScaledText } from './ScaledText';
@@ -24,6 +25,7 @@ import {
   type AlumnoArchivos,
 } from '../api/alumnosApi';
 import { fetchCatalogosAlumno, listarDepartamentos } from '../api/catalogosApi';
+import { fetchGestoresEmpresasConfig } from '../api/configApi';
 import type { CatalogoOption } from '../utils/alumnoCatalogo';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
@@ -87,6 +89,12 @@ function emptyForm(): AlumnoCrearDto {
     celular: '',
     multiCulturalidad: 'NO_APLICA',
     empresaId: null,
+    manejoGestorEmpresa: false,
+    tipoReferidorComercial: null,
+    gestorId: null,
+    gestorNombre: undefined,
+    referidorEmpresaId: null,
+    referidorEmpresaNombre: undefined,
     alertaPagoFrecuencia: '',
     alertaPago: '',
   };
@@ -119,6 +127,13 @@ export function AlumnoFormulario({
   const [empresaNombre, setEmpresaNombre] = useState(() =>
     initial ? alumnoDetalleToForm(initial).empresaNombre : '',
   );
+  const [gestorNombre, setGestorNombre] = useState(() =>
+    initial ? alumnoDetalleToForm(initial).gestorNombre : '',
+  );
+  const [referidorEmpresaNombre, setReferidorEmpresaNombre] = useState(() =>
+    initial ? alumnoDetalleToForm(initial).referidorEmpresaNombre : '',
+  );
+  const [gestoresEmpresasActivo, setGestoresEmpresasActivo] = useState(false);
   const [catalogos, setCatalogos] = useState<Awaited<ReturnType<typeof fetchCatalogosAlumno>> | null>(null);
   const [busy, setBusy] = useState(false);
   const [verificando, setVerificando] = useState(false);
@@ -137,12 +152,17 @@ export function AlumnoFormulario({
     setMunOrigenTexto(mapped.munOrigenTexto);
     setDeptoOrigenTexto(mapped.deptoOrigenTexto);
     setEmpresaNombre(mapped.empresaNombre);
+    setGestorNombre(mapped.gestorNombre);
+    setReferidorEmpresaNombre(mapped.referidorEmpresaNombre);
     const fotoUrl = urlArchivoAlumno(initial.urlFoto);
     if (fotoUrl) setFotoPreview(fotoUrl);
   }, [initial]);
 
   useEffect(() => {
     void fetchCatalogosAlumno().then(setCatalogos);
+    void fetchGestoresEmpresasConfig()
+      .then((cfg) => setGestoresEmpresasActivo(cfg.activo === true))
+      .catch(() => setGestoresEmpresasActivo(false));
   }, []);
 
   useEffect(() => {
@@ -198,6 +218,8 @@ export function AlumnoFormulario({
     const t = setTimeout(() => void verificarDoc(String(form.numDoc)), 450);
     return () => clearTimeout(t);
   }, [form.numDoc, verificarDoc]);
+
+  const tipoReferidor = String(form.tipoReferidorComercial || '').toLowerCase();
 
   const opts = useMemo(() => {
     if (!catalogos) return null;
@@ -261,6 +283,21 @@ export function AlumnoFormulario({
       Alert.alert('Documento duplicado', `Ya existe: ${duplicado.nombreCompleto}`);
       return;
     }
+    if (gestoresEmpresasActivo && form.manejoGestorEmpresa) {
+      const tipo = String(form.tipoReferidorComercial || '').toLowerCase();
+      if (tipo !== 'gestor' && tipo !== 'empresa') {
+        Alert.alert('Tramitador', 'Indique si el alumno viene por gestor o por empresa referidora.');
+        return;
+      }
+      if (tipo === 'gestor' && !form.gestorId) {
+        Alert.alert('Tramitador', 'Seleccione el gestor que trajo al alumno.');
+        return;
+      }
+      if (tipo === 'empresa' && !form.referidorEmpresaId) {
+        Alert.alert('Tramitador', 'Seleccione la empresa referidora.');
+        return;
+      }
+    }
 
     const payload: AlumnoCrearDto = {
       ...form,
@@ -278,6 +315,27 @@ export function AlumnoFormulario({
       fechaNac: form.fechaNac?.trim() || undefined,
       alertaPagoFrecuencia: (form.alertaPagoFrecuencia || '') as AlumnoCrearDto['alertaPagoFrecuencia'],
       alertaPago: form.alertaPagoFrecuencia ? form.alertaPago?.trim() || undefined : undefined,
+      manejoGestorEmpresa: gestoresEmpresasActivo ? form.manejoGestorEmpresa === true : false,
+      tipoReferidorComercial:
+        gestoresEmpresasActivo && form.manejoGestorEmpresa
+          ? (String(form.tipoReferidorComercial || '').toLowerCase() as 'gestor' | 'empresa') || null
+          : null,
+      gestorId:
+        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'gestor'
+          ? form.gestorId ?? null
+          : null,
+      gestorNombre:
+        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'gestor'
+          ? aMayusculas(gestorNombre.trim()) || undefined
+          : undefined,
+      referidorEmpresaId:
+        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'empresa'
+          ? form.referidorEmpresaId ?? null
+          : null,
+      referidorEmpresaNombre:
+        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'empresa'
+          ? aMayusculas(referidorEmpresaNombre.trim()) || undefined
+          : undefined,
     };
 
     const files: AlumnoArchivos = { foto, cedula: cedulaArchivo };
@@ -482,6 +540,116 @@ export function AlumnoFormulario({
         <CatalogoSelectField label="Multiculturalidad" value={form.multiCulturalidad || 'NO_APLICA'} options={opts.multi} onChange={(v) => patch('multiCulturalidad', v || 'NO_APLICA')} />
         <IconInput label="Observaciones" icon="document-text-outline" value={form.observaciones || ''} onChangeText={(t) => patch('observaciones', t)} multiline style={{ minHeight: 100, textAlignVertical: 'top', paddingTop: 12 }} />
       </FormSection>
+
+      {gestoresEmpresasActivo ? (
+        <FormSection
+          title="Tramitador / referidor"
+          subtitle="Gestor o empresa que trajo al alumno — aplica tarifa gestor o empresa al matricular"
+          icon="people-outline"
+          tone="accent"
+        >
+          <Pressable
+            onPress={() => {
+              const activo = !form.manejoGestorEmpresa;
+              patch('manejoGestorEmpresa', activo);
+              if (!activo) {
+                patch('tipoReferidorComercial', null);
+                patch('gestorId', null);
+                patch('gestorNombre', undefined);
+                patch('referidorEmpresaId', null);
+                patch('referidorEmpresaNombre', undefined);
+                setGestorNombre('');
+                setReferidorEmpresaNombre('');
+              }
+            }}
+            style={[
+              styles.chip,
+              {
+                borderColor: form.manejoGestorEmpresa ? c.primary : c.border,
+                backgroundColor: form.manejoGestorEmpresa ? c.accentSoft : c.card,
+                alignSelf: 'flex-start',
+              },
+            ]}
+          >
+            <ScaledText
+              baseSize={13}
+              style={{ color: form.manejoGestorEmpresa ? c.primary : c.text, fontWeight: '700' }}
+            >
+              {form.manejoGestorEmpresa ? '✓ Manejo activo' : 'Activar manejo gestor/empresa'}
+            </ScaledText>
+          </Pressable>
+          {form.manejoGestorEmpresa ? (
+            <>
+              <View style={styles.chips}>
+                <Pressable
+                  onPress={() => {
+                    patch('tipoReferidorComercial', 'gestor');
+                    patch('referidorEmpresaId', null);
+                    patch('referidorEmpresaNombre', undefined);
+                    setReferidorEmpresaNombre('');
+                  }}
+                  style={[
+                    styles.chip,
+                    {
+                      borderColor: tipoReferidor === 'gestor' ? c.primary : c.border,
+                      backgroundColor: tipoReferidor === 'gestor' ? c.accentSoft : c.card,
+                    },
+                  ]}
+                >
+                  <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700' }}>
+                    Gestor (tramitador)
+                  </ScaledText>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    patch('tipoReferidorComercial', 'empresa');
+                    patch('gestorId', null);
+                    patch('gestorNombre', undefined);
+                    setGestorNombre('');
+                  }}
+                  style={[
+                    styles.chip,
+                    {
+                      borderColor: tipoReferidor === 'empresa' ? c.primary : c.border,
+                      backgroundColor: tipoReferidor === 'empresa' ? c.accentSoft : c.card,
+                    },
+                  ]}
+                >
+                  <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700' }}>
+                    Empresa referidora
+                  </ScaledText>
+                </Pressable>
+              </View>
+              {tipoReferidor === 'gestor' ? (
+                <GestorBuscarField
+                  gestorId={form.gestorId ?? null}
+                  gestorNombre={gestorNombre}
+                  onChange={(id, nom) => {
+                    patch('gestorId', id);
+                    patch('gestorNombre', nom || undefined);
+                    setGestorNombre(aMayusculas(nom));
+                  }}
+                />
+              ) : null}
+              {tipoReferidor === 'empresa' ? (
+                <EmpresaBuscarField
+                  empresaId={form.referidorEmpresaId ?? null}
+                  empresaNombre={referidorEmpresaNombre}
+                  minSearchChars={0}
+                  placeholder="Buscar empresa referidora…"
+                  modalTitle="Empresa referidora"
+                  hintSinSeleccion="Seleccione la empresa que trajo al alumno"
+                  onChange={(id, nom) => {
+                    patch('referidorEmpresaId', id);
+                    patch('referidorEmpresaNombre', nom || undefined);
+                    setReferidorEmpresaNombre(aMayusculas(nom));
+                  }}
+                />
+              ) : null}
+            </>
+          ) : null}
+        </FormSection>
+      ) : null}
 
       <FormSection title="Empresa" subtitle="Empresa de transporte u organización del alumno" icon="business-outline">
         <EmpresaBuscarField

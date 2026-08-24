@@ -8,6 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AlertPrefsProvider } from './src/context/AlertPrefsContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { BrandingProvider } from './src/context/BrandingContext';
 import { AppBootGate } from './src/bootstrap/splash';
 import { CAJERO_AZUL_REY } from './src/config/appBranding';
 import type { RootStackParamList } from './src/navigation/types';
@@ -98,11 +99,13 @@ export default function App() {
         <AlertPrefsProvider>
           <AccessibilityProvider>
             <AuthProvider>
+              <BrandingProvider>
               <AppBootGate>
                 <NavigationContainer theme={navTheme}>
                   <RootNavigator />
                 </NavigationContainer>
               </AppBootGate>
+              </BrandingProvider>
               <StatusBar style="light" />
             </AuthProvider>
           </AccessibilityProvider>

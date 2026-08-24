@@ -2,7 +2,7 @@ import type { ProgramaItem, ServicioItem } from '../api/domain';
 import { coincideBusqueda, normalizarBlob } from './buscarTexto';
 import { TARIFA_VIRTUAL } from './pago';
 
-export type TarifaMatricula = 1 | 2 | 3 | 4;
+export type TarifaMatricula = 1 | 2 | 3 | 4 | 5 | 6;
 
 export { TARIFA_VIRTUAL };
 
@@ -183,6 +183,8 @@ export function labelPrograma(prog: ProgramaItem): string {
 
 export function etiquetaTarifa(t: number): string {
   if (t === TARIFA_VIRTUAL) return 'Virtual (aula en línea)';
+  if (t === 5) return 'Tarifa gestor (tramitador)';
+  if (t === 6) return 'Tarifa empresa referidora';
   return `Tarifa ${t}`;
 }
 

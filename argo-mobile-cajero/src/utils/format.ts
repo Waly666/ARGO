@@ -61,6 +61,9 @@ export const CAMPOS_FORMULARIO_SIN_MAYUSCULAS = new Set([
   'alertaPagoFrecuencia',
   'alertaPago',
   'empresaId',
+  'gestorId',
+  'referidorEmpresaId',
+  'tipoReferidorComercial',
   'urlFoto',
   'urlCedula',
 ]);

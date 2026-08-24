@@ -3,7 +3,10 @@ import { getSedeActivaSync } from '../storage/sedeStore';
 import type { AuthUser, CajaActivaResponse, ComprobanteRecienteRow, LoginResponse, ReglaAlerta } from './types';
 
 type TokenGetter = () => string | null;
-type UnauthorizedHandler = (message?: string) => void;
+type UnauthorizedHandler = (message?: string, code?: string) => void;
+
+/** Identifica la app móvil cajero ante el backend (canalConexion). */
+export const ARGO_CLIENTE_HEADER = 'cajero';
 
 let tokenGetter: TokenGetter = () => null;
 let onUnauthorized: UnauthorizedHandler | null = null;
@@ -16,12 +19,32 @@ export function setUnauthorizedHandler(fn: UnauthorizedHandler | null): void {
   onUnauthorized = fn;
 }
 
+function applyCommonHeaders(headers: Record<string, string>, wantsAuth: boolean): string | null {
+  headers['X-ARGO-Cliente'] = ARGO_CLIENTE_HEADER;
+  const idSede = getSedeActivaSync();
+  if (idSede) headers['X-ARGO-Sede'] = idSede;
+  if (!wantsAuth) return null;
+  const bearer = tokenGetter();
+  if (bearer) headers.Authorization = `Bearer ${bearer}`;
+  return bearer;
+}
+
 function notifyUnauthorized(json: unknown, status: number, hadBearerToken: boolean): void {
   // Solo cerrar sesión si realmente se envió JWT. Sin token (carrera post-login) el 401
   // "Token requerido" no debe echar al usuario que acaba de autenticarse.
-  if (status !== 401 || !onUnauthorized || !hadBearerToken) return;
+  if (!onUnauthorized || !hadBearerToken) return;
   const body = json as { message?: string; code?: string } | null;
-  onUnauthorized(body?.message);
+  const code = body?.code;
+  if (status === 403 && code === 'CANAL_CONEXION_DENEGADO') {
+    onUnauthorized(body?.message, code);
+    return;
+  }
+  if (status !== 401) return;
+  if (code === 'SESION_REEMPLAZADA') {
+    onUnauthorized(body?.message ?? 'Su sesión fue reemplazada en otro dispositivo.', code);
+    return;
+  }
+  onUnauthorized(body?.message, code);
 }
 
 function mensajeRed(err: unknown, base: string): string {
@@ -46,13 +69,7 @@ export async function apiFetch<T>(
     ...(opts?.headers as Record<string, string>),
   };
   const wantsAuth = opts?.auth !== false;
-  let bearer: string | null = null;
-  if (wantsAuth) {
-    bearer = tokenGetter();
-    if (bearer) headers.Authorization = `Bearer ${bearer}`;
-  }
-  const idSede = getSedeActivaSync();
-  if (idSede) headers['X-ARGO-Sede'] = idSede;
+  const bearer = applyCommonHeaders(headers, wantsAuth);
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -98,13 +115,7 @@ export async function apiPostForm<T>(
   const timeoutMs = opts?.timeoutMs ?? 30_000;
   const headers: Record<string, string> = { Accept: 'application/json' };
   const wantsAuth = opts?.auth !== false;
-  let bearer: string | null = null;
-  if (wantsAuth) {
-    bearer = tokenGetter();
-    if (bearer) headers.Authorization = `Bearer ${bearer}`;
-  }
-  const idSede = getSedeActivaSync();
-  if (idSede) headers['X-ARGO-Sede'] = idSede;
+  const bearer = applyCommonHeaders(headers, wantsAuth);
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -150,12 +161,8 @@ export async function apiPutForm<T>(
   const base = getApiBaseUrl();
   const timeoutMs = opts?.timeoutMs ?? 30_000;
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (opts?.auth !== false) {
-    const t = tokenGetter();
-    if (t) headers.Authorization = `Bearer ${t}`;
-  }
-  const idSede = getSedeActivaSync();
-  if (idSede) headers['X-ARGO-Sede'] = idSede;
+  const wantsAuth = opts?.auth !== false;
+  const bearer = applyCommonHeaders(headers, wantsAuth);
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -185,7 +192,7 @@ export async function apiPutForm<T>(
     }
   }
   if (!res.ok) {
-    notifyUnauthorized(json, res.status, opts?.auth !== false);
+    notifyUnauthorized(json, res.status, !!bearer);
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
@@ -203,12 +210,8 @@ export async function apiFetchText(
     Accept: 'text/html, text/plain, */*',
     ...(opts?.headers as Record<string, string>),
   };
-  if (opts?.auth !== false) {
-    const t = tokenGetter();
-    if (t) headers.Authorization = `Bearer ${t}`;
-  }
-  const idSede = getSedeActivaSync();
-  if (idSede) headers['X-ARGO-Sede'] = idSede;
+  const wantsAuth = opts?.auth !== false;
+  const bearer = applyCommonHeaders(headers, wantsAuth);
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -236,7 +239,7 @@ export async function apiFetchText(
     } catch {
       if (text.trim()) msg = text.slice(0, 200);
     }
-    notifyUnauthorized(parsed, res.status, opts?.auth !== false);
+    notifyUnauthorized(parsed, res.status, !!bearer);
     throw new Error(msg);
   }
   return text;
@@ -253,7 +256,7 @@ export async function login(username: string, password: string): Promise<LoginRe
     timeoutMs: 12_000,
     headers: {
       'Content-Type': 'application/json',
-      'X-ARGO-Cliente': 'cajero',
+      'X-ARGO-Cliente': ARGO_CLIENTE_HEADER,
     },
     body: JSON.stringify({ username, password }),
   });

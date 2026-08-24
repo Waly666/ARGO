@@ -9,8 +9,13 @@ const ver = requirePermiso(
   'facturacion',
   'config.facturacion',
   'alumnos.pagos',
+  'alumnos.ver',
+  'alumnos.gestionar',
+  'alumnos.editar',
   'jornadas.registrar_alumnos',
   'jornadas.gestionar',
+  'caja.turno',
+  'caja.cobros',
   'caja.admin',
   'contabilidad',
 );

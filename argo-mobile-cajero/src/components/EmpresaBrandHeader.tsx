@@ -1,7 +1,8 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
-import { APP_BRANDING, CAJERO_AZUL_REY } from '../config/appBranding';
+import { CAJERO_AZUL_REY } from '../config/appBranding';
+import { useBranding } from '../context/BrandingContext';
 import { ScaledText } from './ScaledText';
 
 type Props = {
@@ -12,13 +13,14 @@ type Props = {
   showSubtitle?: boolean;
 };
 
-/** Logo de la empresa + título ARGO Cajero (como en el aula virtual). */
+/** Logo y nombre de la empresa (desde el servidor) + título ARGO Cajero. */
 export function EmpresaBrandHeader({
   logoWidth = 168,
   logoHeight = 86,
   onDark = true,
   showSubtitle = true,
 }: Props) {
+  const { tituloApp, nombreEmpresa, logoSource } = useBranding();
   const titleColor = onDark ? '#ffffff' : CAJERO_AZUL_REY;
   const subColor = onDark ? 'rgba(255,255,255,0.92)' : '#334155';
   const empresaColor = onDark ? 'rgba(255,255,255,0.88)' : '#475569';
@@ -26,17 +28,17 @@ export function EmpresaBrandHeader({
   return (
     <View style={styles.wrap}>
       <Image
-        source={APP_BRANDING.logo}
+        source={logoSource}
         style={{ width: logoWidth, height: logoHeight }}
         resizeMode="contain"
       />
       <ScaledText baseSize={22} style={[styles.titulo, { color: titleColor }]}>
-        {APP_BRANDING.tituloApp}
+        {tituloApp}
       </ScaledText>
-      {showSubtitle ? (
+      {showSubtitle && nombreEmpresa ? (
         <>
           <ScaledText baseSize={16} style={[styles.empresa, { color: empresaColor }]}>
-            {APP_BRANDING.nombreEmpresa}
+            {nombreEmpresa}
           </ScaledText>
           <ScaledText baseSize={14} style={[styles.lead, { color: subColor }]}>
             Caja, alumnos y facturación

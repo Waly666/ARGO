@@ -3,18 +3,18 @@ import { Image, StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { ScaledText } from '../components/ScaledText';
-import { APP_BRANDING, CAJERO_AZUL_REY, SPLASH_MIN_MS } from '../config/appBranding';
+import { CAJERO_AZUL_REY, SPLASH_MIN_MS } from '../config/appBranding';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../context/BrandingContext';
 
-const splashFull = require('../../assets/branding/splash-full.png');
-
-/** Logo + título (login y pantallas internas). */
+/** Logo + título (pantallas internas). */
 export function PreLoginBrand() {
+  const { tituloApp, logoSource } = useBranding();
   return (
     <View style={styles.brand}>
-      <Image source={APP_BRANDING.logo} style={styles.logo} resizeMode="contain" />
+      <Image source={logoSource} style={styles.logo} resizeMode="contain" />
       <ScaledText baseSize={24} style={styles.titulo}>
-        ARGO Cajero
+        {tituloApp}
       </ScaledText>
     </View>
   );
@@ -26,6 +26,7 @@ export function PreLoginBrand() {
  */
 export function AppBootGate({ children }: { children: React.ReactNode }) {
   const { state } = useAuth();
+  const { logoSource } = useBranding();
   const authLoading = state.status === 'loading';
   const [minTimeDone, setMinTimeDone] = useState(false);
   const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
@@ -55,7 +56,12 @@ export function AppBootGate({ children }: { children: React.ReactNode }) {
       {children}
       {showSplash ? (
         <View style={styles.overlay} pointerEvents="auto" onLayout={revealAppSplash}>
-          <Image source={splashFull} style={styles.overlayImage} resizeMode="cover" />
+          <View style={styles.splashBrand}>
+            <Image source={logoSource} style={styles.splashLogo} resizeMode="contain" />
+            <ScaledText baseSize={22} style={styles.splashTitulo}>
+              ARGO Cajero
+            </ScaledText>
+          </View>
         </View>
       ) : null}
     </View>
@@ -72,11 +78,23 @@ const styles = StyleSheet.create({
     backgroundColor: CAJERO_AZUL_REY,
     zIndex: 9999,
     elevation: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  overlayImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
+  splashBrand: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  splashLogo: {
+    width: 220,
+    height: 110,
+  },
+  splashTitulo: {
+    color: '#ffffff',
+    fontWeight: '800',
+    marginTop: 20,
+    textAlign: 'center',
+    letterSpacing: 0.5,
   },
   brand: { alignItems: 'center', width: '100%' },
   logo: { width: 220, height: 110 },

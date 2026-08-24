@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -27,6 +27,9 @@ import type { RootStackParamList } from '../../navigation/types';
 import type { LiquidacionConSaldoItem } from '../../api/domain';
 import { useDebounced } from '../../hooks/useDebounced';
 import { useAccessibility } from '../../context/AccessibilityContext';
+import { useAuth } from '../../context/AuthContext';
+import { tieneAccionModulo } from '../../utils/accionPermiso';
+import { ensureCajaAbierta } from '../../utils/cajaAbierta';
 import { themeColors } from '../../theme/colors';
 import { esLiquidacionVirtual, mensajeErrorApi } from '../../utils/pago';
 
@@ -34,6 +37,12 @@ export default function CajaCobrosScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { highContrast } = useAccessibility();
+  const { state: authState } = useAuth();
+  const permisos = authState.status === 'signedIn' ? (authState.user.permisos ?? []) : [];
+  const puedeCrearIngreso = useMemo(
+    () => tieneAccionModulo(permisos, 'ingresos', 'crear'),
+    [permisos],
+  );
   const c = themeColors(highContrast);
   const [q, setQ] = useState('');
   const debounced = useDebounced(q);
@@ -72,6 +81,10 @@ export default function CajaCobrosScreen() {
   const cobroVirtual = cobroItem ? esLiquidacionVirtual(cobroItem) : false;
 
   function abrirCobro(item: LiquidacionConSaldoItem) {
+    if (!puedeCrearIngreso) {
+      Alert.alert('Cobro', 'No tiene permiso para registrar cobros.');
+      return;
+    }
     const saldo = Number(item.saldo) || 0;
     if (saldo <= 0) return;
     setCobroItem(item);
@@ -96,6 +109,10 @@ export default function CajaCobrosScreen() {
 
   async function confirmarCobro() {
     if (!cobroItem) return;
+    if (!puedeCrearIngreso) {
+      Alert.alert('Cobro', 'No tiene permiso para registrar cobros.');
+      return;
+    }
     const saldo = Number(cobroItem.saldo) || 0;
     const valor = cobroVirtual ? saldo : parseMonto();
     if (valor <= 0) {
@@ -118,6 +135,7 @@ export default function CajaCobrosScreen() {
       Alert.alert('Cobro', valPago.message ?? 'Complete los datos del pago.');
       return;
     }
+    if (!(await ensureCajaAbierta('registrar cobros'))) return;
     setPayingId(cobroItem._id);
     try {
       const ing = await crearIngreso(
@@ -177,6 +195,12 @@ export default function CajaCobrosScreen() {
         </View>
       </ModuleScreenHero>
 
+      {!puedeCrearIngreso ? (
+        <ScaledText baseSize={13} style={{ color: c.warn, marginBottom: 12, lineHeight: 18 }}>
+          No tiene permiso para registrar cobros. Puede consultar la lista de saldos pendientes.
+        </ScaledText>
+      ) : null}
+
       <SearchField value={q} onChangeText={setQ} placeholder="Alumno, documento o servicio…" />
     </View>
   );
@@ -207,7 +231,7 @@ export default function CajaCobrosScreen() {
           <CobroPendienteCard
             item={item}
             onPress={() => abrirCobro(item)}
-            disabled={payingId === item._id}
+            disabled={!puedeCrearIngreso || payingId === item._id}
           />
         )}
       />

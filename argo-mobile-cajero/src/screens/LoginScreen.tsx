@@ -18,6 +18,7 @@ import { IconInput } from '../components/IconInput';
 import { SurfaceCard } from '../components/SurfaceCard';
 import { CAJERO_AZUL_REY } from '../config/appBranding';
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../context/BrandingContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { pingHealth } from '../api/client';
 import { getApiBaseUrl, SERVIDOR_API_STORAGE_KEY, normalizeApiBaseUrl } from '../config/apiBase';
@@ -27,6 +28,7 @@ import { themeColors } from '../theme/colors';
 
 export default function LoginScreen() {
   const { signIn, setServidor } = useAuth();
+  const { refreshBranding } = useBranding();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const [user, setUser] = useState('');
@@ -75,6 +77,9 @@ export default function LoginScreen() {
     try {
       setStatus('Guardando servidor…');
       await setServidor(servidor);
+
+      setStatus('Cargando marca institucional…');
+      await refreshBranding();
 
       setStatus(`Probando ${getApiBaseUrl()}…`);
       await pingHealth();

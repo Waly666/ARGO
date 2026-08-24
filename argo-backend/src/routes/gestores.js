@@ -6,13 +6,13 @@ const upload = require('../middleware/upload');
 const router = Router();
 router.use(requireAuth);
 
-const ver = requirePermiso('caja.admin', 'caja.cobros', 'contabilidad');
+/** Lectura del catálogo: cualquier usuario autenticado (cajero, alumnos, matrícula). */
 const gestionar = requirePermiso('caja.admin', 'contabilidad');
 const gestorFoto = upload.gestores.fields([{ name: 'foto', maxCount: 1 }]);
 
-router.get('/catalogos', ver, ctrl.catalogos);
-router.get('/', ver, ctrl.listar);
-router.get('/:id', ver, ctrl.obtener);
+router.get('/catalogos', ctrl.catalogos);
+router.get('/', ctrl.listar);
+router.get('/:id', ctrl.obtener);
 router.post('/', gestionar, gestorFoto, ctrl.crear);
 router.put('/:id', gestionar, gestorFoto, ctrl.actualizar);
 router.delete('/:id', gestionar, ctrl.eliminar);

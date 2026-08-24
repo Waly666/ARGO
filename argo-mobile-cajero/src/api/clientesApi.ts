@@ -8,10 +8,10 @@ export interface ClienteItem {
   identificacion?: string;
 }
 
-export async function buscarClientes(q: string): Promise<ClienteItem[]> {
-  const term = q.trim();
-  if (!term) return [];
-  return apiFetch<ClienteItem[]>(`/clientes?q=${encodeURIComponent(term)}`);
+export async function buscarClientes(q?: string): Promise<ClienteItem[]> {
+  const term = String(q ?? '').trim();
+  const path = term ? `/clientes?q=${encodeURIComponent(term)}` : '/clientes';
+  return apiFetch<ClienteItem[]>(path);
 }
 
 export function labelCliente(c: ClienteItem): string {

@@ -1,80 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { SearchField } from './SearchField';
 import { ScaledText } from './ScaledText';
-import { buscarClientes, labelCliente, type ClienteItem } from '../api/clientesApi';
+import { buscarGestores, labelGestor, type GestorItem } from '../api/gestoresApi';
 import { useDebounced } from '../hooks/useDebounced';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 
 type Props = {
-  empresaId: string | null;
-  empresaNombre: string;
+  gestorId: string | null;
+  gestorNombre: string;
   onChange: (id: string | null, nombre: string) => void;
-  /** 0 = muestra catálogo al abrir; 2 = exige escribir (default). */
-  minSearchChars?: number;
-  placeholder?: string;
-  modalTitle?: string;
-  hintSinSeleccion?: string;
 };
 
-export function EmpresaBuscarField({
-  empresaId,
-  empresaNombre,
-  onChange,
-  minSearchChars = 2,
-  placeholder = 'Buscar empresa / organización…',
-  modalTitle = 'Empresa',
-  hintSinSeleccion = 'Sin empresa — alumno independiente',
-}: Props) {
+export function GestorBuscarField({ gestorId, gestorNombre, onChange }: Props) {
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const debounced = useDebounced(q, 350);
-  const [items, setItems] = useState<ClienteItem[]>([]);
+  const [items, setItems] = useState<GestorItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const term = debounced.trim();
-    setError(null);
-    if (term.length < minSearchChars) {
-      if (minSearchChars === 0) {
-        setLoading(true);
-        void buscarClientes()
-          .then((rows) => setItems(Array.isArray(rows) ? rows.slice(0, 50) : []))
-          .catch((e) => {
-            setItems([]);
-            setError(e instanceof Error ? e.message : 'No se pudo cargar empresas');
-          })
-          .finally(() => setLoading(false));
-      } else {
-        setItems([]);
-      }
-      return;
-    }
     setLoading(true);
-    void buscarClientes(term)
-      .then((rows) => setItems(Array.isArray(rows) ? rows.slice(0, 50) : []))
+    setError(null);
+    void buscarGestores(term)
+      .then((rows) => {
+        setItems(Array.isArray(rows) ? rows.slice(0, 50) : []);
+      })
       .catch((e) => {
         setItems([]);
-        setError(e instanceof Error ? e.message : 'No se pudo cargar empresas');
+        setError(e instanceof Error ? e.message : 'No se pudo cargar gestores');
       })
       .finally(() => setLoading(false));
-  }, [debounced, open, minSearchChars]);
+  }, [debounced, open]);
 
-  function seleccionar(cl: ClienteItem) {
-    onChange(cl._id, labelCliente(cl));
+  function seleccionar(g: GestorItem) {
+    onChange(g._id, labelGestor(g));
     setOpen(false);
     setQ('');
   }
@@ -89,22 +57,22 @@ export function EmpresaBuscarField({
         onPress={() => setOpen(true)}
         style={[styles.field, { borderColor: c.border, backgroundColor: c.card }]}
       >
-        <Ionicons name="business-outline" size={20} color={c.primary} />
+        <Ionicons name="person-outline" size={20} color={c.primary} />
         <View style={{ flex: 1 }}>
-          <ScaledText baseSize={14} style={{ color: empresaNombre ? c.text : '#94a3b8', fontWeight: '600' }}>
-            {empresaNombre || placeholder}
+          <ScaledText baseSize={14} style={{ color: gestorNombre ? c.text : '#94a3b8', fontWeight: '600' }}>
+            {gestorNombre || 'Buscar tramitador / gestor…'}
           </ScaledText>
-          {empresaId ? (
+          {gestorId ? (
             <ScaledText baseSize={11} style={{ color: c.ok, marginTop: 2, fontWeight: '600' }}>
-              NIT/ID vinculado
+              Gestor vinculado
             </ScaledText>
           ) : (
             <ScaledText baseSize={11} style={{ color: c.textSoft, marginTop: 2 }}>
-              {hintSinSeleccion}
+              Seleccione quién trajo al alumno
             </ScaledText>
           )}
         </View>
-        {empresaId ? (
+        {gestorId ? (
           <Pressable onPress={limpiar} hitSlop={8}>
             <Ionicons name="close-circle" size={22} color={c.textSoft} />
           </Pressable>
@@ -115,14 +83,14 @@ export function EmpresaBuscarField({
         <View style={[styles.modal, { backgroundColor: c.bg }]}>
           <View style={[styles.modalHead, { borderBottomColor: c.border }]}>
             <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800', flex: 1 }}>
-              {modalTitle}
+              Tramitador / gestor
             </ScaledText>
             <Pressable onPress={() => setOpen(false)}>
               <Ionicons name="close" size={26} color={c.text} />
             </Pressable>
           </View>
           <View style={{ padding: 16 }}>
-            <SearchField value={q} onChangeText={setQ} placeholder="Razón social, NIT o nombre…" />
+            <SearchField value={q} onChangeText={setQ} placeholder="Nombre, seudónimo o documento…" />
           </View>
           <FlatList
             data={items}
@@ -143,11 +111,9 @@ export function EmpresaBuscarField({
                 >
                   {error
                     ? error
-                    : debounced.trim().length < minSearchChars
-                      ? minSearchChars > 0
-                        ? `Escriba al menos ${minSearchChars} caracteres`
-                        : 'No hay empresas registradas'
-                      : 'Sin coincidencias'}
+                    : debounced.trim()
+                      ? 'Sin coincidencias'
+                      : 'No hay gestores registrados'}
                 </ScaledText>
               ) : null
             }
@@ -157,11 +123,11 @@ export function EmpresaBuscarField({
                 style={[styles.opt, { borderColor: c.border, backgroundColor: c.card }]}
               >
                 <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700' }}>
-                  {labelCliente(item)}
+                  {labelGestor(item)}
                 </ScaledText>
-                {item.identificacion ? (
+                {item.numero ? (
                   <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
-                    {item.identificacion}
+                    Doc. {item.numero}
                   </ScaledText>
                 ) : null}
               </Pressable>
