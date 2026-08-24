@@ -18,24 +18,58 @@
     <div class="sys-msg" [class.sys-msg--err]="msgError()" role="status">{{ texto }}</div>
   }
 
-  @if (progreso(); as p) {
-    @if (creando() || restaurando()) {
-      <div class="sys-progress" role="status" aria-live="polite">
-        <div class="sys-progress__head">
-          <span>{{ p.fase || 'Procesando…' }}</span>
-          @if (p.porcentaje != null) {
-            <span class="pct">{{ p.porcentaje }}%</span>
-          }
-        </div>
-        <div class="sys-progress__track">
-          @if (p.porcentaje != null) {
-            <div class="sys-progress__fill" [style.width.%]="p.porcentaje"></div>
-          } @else {
-            <div class="sys-progress__fill sys-progress__fill--indeterminada"></div>
-          }
-        </div>
+  @if (modalOperacionAbierto()) {
+    <div class="bss-modal-layer" role="presentation">
+      <div class="bss-modal-backdrop" aria-hidden="true"></div>
+      <div
+        class="bss-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bss-modal-title"
+        aria-describedby="bss-modal-desc"
+      >
+        <header class="bss-modal__head">
+          <h2 id="bss-modal-title">{{ tituloModalOperacion() }}</h2>
+          <p id="bss-modal-desc" class="bss-modal__sub">{{ subtituloModalOperacion() }}</p>
+        </header>
+
+        @if (progreso(); as p) {
+          <div class="sys-progress bss-modal__progress" role="status" aria-live="polite">
+            <div class="sys-progress__head">
+              <span>{{ p.fase || 'Procesando…' }}</span>
+              @if (p.porcentaje != null) {
+                <span class="pct">{{ p.porcentaje }}%</span>
+              }
+            </div>
+            <div class="sys-progress__track">
+              @if (p.porcentaje != null) {
+                <div class="sys-progress__fill" [style.width.%]="p.porcentaje"></div>
+              } @else {
+                <div class="sys-progress__fill sys-progress__fill--indeterminada"></div>
+              }
+            </div>
+            @if (p.total > 0) {
+              <div class="sys-progress__meta">{{ p.hecho | number }} / {{ p.total | number }}</div>
+            } @else if (p.estado === 'corriendo') {
+              <div class="sys-progress__meta">Operación en curso en el servidor…</div>
+            }
+          </div>
+        } @else {
+          <div class="sys-progress bss-modal__progress" role="status" aria-live="polite">
+            <div class="sys-progress__head">
+              <span>Iniciando operación…</span>
+            </div>
+            <div class="sys-progress__track">
+              <div class="sys-progress__fill sys-progress__fill--indeterminada"></div>
+            </div>
+          </div>
+        }
+
+        <p class="bss-modal__hint">
+          La operación continúa en el servidor aunque cambie de pestaña. No reinicie el backend.
+        </p>
       </div>
-    }
+    </div>
   }
 
   @if (loading()) {

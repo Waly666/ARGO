@@ -49,6 +49,18 @@ export class SistemaBackupSelectivoComponent implements OnInit, OnDestroy {
 
   totalSeleccionadas = computed(() => this.seleccionadas().length);
 
+  modalOperacionAbierto = computed(() => this.creando() || this.restaurando());
+
+  tituloModalOperacion = computed(() =>
+    this.creando() ? 'Exportando backup selectivo' : 'Importando backup selectivo',
+  );
+
+  subtituloModalOperacion = computed(() =>
+    this.creando()
+      ? 'Espere mientras se exportan las tablas seleccionadas. No cierre esta ventana.'
+      : 'Espere mientras se importan las tablas del archivo. Se creará una copia de seguridad previa.',
+  );
+
   ngOnInit(): void {
     this.cargar();
   }
