@@ -553,6 +553,20 @@
   }
 }
 
+.menu-item .nav-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #111827;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: inline-grid;
+  place-items: center;
+}
+
 .btn-tool {
   padding: 8px 14px;
   border-radius: var(--btn-radius);

@@ -329,7 +329,8 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
       {
         id: 'cfg-u-ctx',
         titulo: 'Contexto de esta pantalla',
-        cuerpo: 'Solo administradores. Crear, editar, desactivar o eliminar usuarios del sistema.',
+        cuerpo:
+          'Configure en Roles quién puede consultar, crear, editar o eliminar usuarios. El permiso legado «Gestión completa» concede las cuatro acciones.',
       },
       {
         id: 'cfg-u-1',
@@ -405,24 +406,11 @@ export const ASISTENTE_ADMIN: Record<string, AsistenteContexto> = {
         cuerpo:
           'Usuario debe cerrar sesión y entrar de nuevo para aplicar permisos nuevos.',
       },
-    ],
-  },
-  'config.apps-moviles': {
-    id: 'config.apps-moviles',
-    modulo: 'config',
-    saludo: 'Permisos y alarmas de las apps móviles.',
-    tips: [
       {
-        id: 'cfg-am-1',
-        titulo: 'App Jornadas vs Cajero',
+        id: 'cfg-r-4',
+        titulo: 'Apps móviles',
         cuerpo:
-          'Elija la pestaña de la app y el rol. Solo se tocan permisos/alarmas de esa app; el resto del rol web se conserva.',
-      },
-      {
-        id: 'cfg-am-2',
-        titulo: 'Aula no aplica',
-        cuerpo:
-          'La app de Aula es portal del alumno; no se configura aquí. Timing de alertas en Configuración → Alertas.',
+          'Jornadas y Cajero usan los mismos permisos y alarmas del rol; no hay pantalla aparte.',
       },
     ],
   },

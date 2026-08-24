@@ -64,6 +64,9 @@
                               [title]="link.label">
                               <span class="icon" [ngClass]="iconClass(link.iconTone)">{{ link.icon }}</span>
                               <span class="label">{{ link.label }}</span>
+                              @if (link.path === '/app/configuracion/autorizaciones' && autorizPendientesAlert.pendientes() > 0) {
+                                <span class="nav-badge">{{ autorizPendientesAlert.pendientes() }}</span>
+                              }
                             </a>
                           }
                         </div>
@@ -199,6 +202,12 @@
           }
           @if (mostrarBannerChatMensaje()) {
             <argo-chat-mensaje-banner class="head-alerta-pago-wrap" />
+          }
+          @if (mostrarBannerAutorizacionPendiente()) {
+            <argo-autorizacion-pendiente-banner class="head-alerta-pago-wrap" />
+          }
+          @if (mostrarBannerAutorizacionResuelta()) {
+            <argo-autorizacion-resuelta-banner class="head-alerta-pago-wrap" />
           }
         </div>
         }

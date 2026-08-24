@@ -11,6 +11,8 @@ import {
   ServicioDto,
 } from '../../core/services/servicio-catalogo.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import {
   capId,
   capMoneda,
@@ -62,6 +64,8 @@ export class ServiciosAdminComponent implements OnInit {
   }
   private auth = inject(AuthService);
   private confirm = inject(ConfirmDialogService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   servicios = signal<ServicioCatalogo[]>([]);
   tiposServ = signal<{ id: number; code: string; label: string; esCapacitacion?: boolean }[]>([]);
@@ -395,21 +399,27 @@ export class ServiciosAdminComponent implements OnInit {
       this.inform('Los servicios de matrícula de programas se eliminan desde Programas.');
       return;
     }
-    const ok = await this.confirm.open({
-      title: 'Eliminar servicio',
-      message: `¿Eliminar «${s.descrServicio}»?`,
-      confirmLabel: 'Eliminar',
-      variant: 'danger',
-    });
-    if (!ok || s.idServ == null) return;
-    this.svc.eliminar(s.idServ).subscribe({
-      next: (r) => {
+    if (!this.accionPermiso.mostrarAccionEliminar('servicios') || s.idServ == null) return;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'servicios',
+        idEntidad: String(s.idServ),
+        resumen: `Servicio «${s.descrServicio}»`,
+        tituloConfirm: 'Eliminar servicio',
+        mensajeConfirm: `¿Eliminar «${s.descrServicio}»?`,
+        ejecutar: () => this.svc.eliminar(s.idServ!),
+      });
+      if (resultado === 'eliminado') {
         this.catSvc.invalidate('servicios');
-        this.inform(r.message || 'Servicio eliminado.');
+        this.inform('Servicio eliminado.');
         this.cargar();
-      },
-      error: (e) => this.inform(e?.error?.message || 'Error al eliminar', true),
-    });
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.inform(err?.error?.message || 'Error al eliminar', true);
+    }
   }
 
   num(v: unknown): number {

@@ -146,7 +146,9 @@
           <td class="r actions-cell">
             <button class="ghost mini" (click)="imprimir(c)">Imprimir</button>
             <button class="ghost mini" (click)="abrirEditar(c)" *ngIf="!esAnulado(c)">Editar</button>
-            <button class="danger mini" (click)="anular(c)" *ngIf="!esAnulado(c)">Anular</button>
+            <button class="danger mini" (click)="anular(c)" *ngIf="!esAnulado(c) && puedeAnularCertificado()">
+              {{ accionPermiso.puedeEliminar('certificados') ? 'Anular' : 'Solicitar anulación' }}
+            </button>
           </td>
         </tr>
         <tr *ngIf="certificados().length === 0">

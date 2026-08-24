@@ -1,14 +1,15 @@
 /** Rutas de inicio y comprobación de acceso (evita bucles al revocar permisos). */
 
+import { permisoConcedeAlguno, permisoConcedido } from './permiso-legacy.util';
+
 export type AccesoRutaCtx = { puedeUsarPortalInstructor?: boolean };
 
 function tieneUno(permisos: string[], clave: string): boolean {
-  if (permisos.includes('*')) return true;
-  return permisos.includes(clave);
+  return permisoConcedido(permisos, clave);
 }
 
 function tieneAlguno(permisos: string[], claves: string[]): boolean {
-  return claves.some((k) => tieneUno(permisos, k));
+  return permisoConcedeAlguno(permisos, claves);
 }
 
 /** Permisos para directorio / detalle de instructores (no portal). */
@@ -107,10 +108,10 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/vehiculos/nuevo', permiso: 'vehiculos' },
   { prefix: '/app/vehiculos/', permiso: ['vehiculos', 'instructores.inspeccion'] },
   { prefix: '/app/vehiculos', permiso: 'vehiculos' },
-  { prefix: '/app/configuracion/usuarios', permiso: 'config.usuarios' },
+  { prefix: '/app/configuracion/usuarios', permiso: ['config.usuarios.ver', 'config.usuarios'] },
   { prefix: '/app/configuracion/sedes', permiso: ['sedes.gestionar', 'config.sedes'] },
   { prefix: '/app/configuracion/roles', permiso: 'config.roles' },
-  { prefix: '/app/configuracion/apps-moviles', permiso: 'config.roles' },
+  { prefix: '/app/configuracion/autorizaciones', permiso: ['config.autorizaciones', 'config.roles'] },
   { prefix: '/app/configuracion/recibos', permiso: 'config.recibos' },
   {
     prefix: '/app/configuracion/envio-correos-alumno',
@@ -136,6 +137,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
     prefix: '/app/configuracion',
     permiso: [
       'config.usuarios',
+      'config.usuarios.ver',
       'config.roles',
       'config.catalogos',
       'config.recibos',
@@ -149,6 +151,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
       'config.paginas_informes',
       'config.requisitos',
       'config.auditoria',
+      'config.autorizaciones',
       'sedes.gestionar',
       'config.sedes',
     ],

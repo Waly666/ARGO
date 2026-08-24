@@ -1,0 +1,180 @@
+<section class="aut-page admin-list-page card">
+  <header class="aut-head panel">
+    <div class="aut-head-main">
+      <nav class="breadcrumb" aria-label="Ubicación">
+        <a routerLink="/app">Inicio</a>
+        <span aria-hidden="true"> / </span>
+        <a routerLink="/app/configuracion/roles">Configuración</a>
+        <span aria-hidden="true"> / </span>
+        <span>Autorizaciones</span>
+      </nav>
+      <div class="title-row">
+        <h1>Autorizaciones de eliminación</h1>
+        @if (pendientes() > 0) {
+          <span class="aut-alert-pend" role="status">
+            <span class="aut-alert-pulse" aria-hidden="true"></span>
+            {{ pendientes() }} pendiente{{ pendientes() === 1 ? '' : 's' }}
+          </span>
+        }
+      </div>
+      <div class="aut-badges">
+        <span class="aut-chip aut-chip--violet">Cola de aprobación</span>
+        <span class="aut-chip aut-chip--sky">Eliminaciones sin permiso directo</span>
+      </div>
+      <p class="hint">
+        Solicitudes enviadas por usuarios que pueden ver o editar pero no eliminar. Revise cada una y
+        <strong>autorice</strong> para ejecutar el borrado o <strong>rechace</strong> con motivo.
+      </p>
+    </div>
+    <div class="head-actions">
+      @if (!cargando()) {
+        <span class="aut-chip aut-chip--count">{{ itemsFiltrados().length }} registro{{ itemsFiltrados().length === 1 ? '' : 's' }}</span>
+      }
+      <button type="button" class="ghost" (click)="cargar()" [disabled]="cargando()">↻ Actualizar</button>
+    </div>
+  </header>
+
+  @if (msg(); as texto) {
+    <p class="aut-msg" [class.aut-msg--err]="msgError()" role="status">{{ texto }}</p>
+  }
+
+  <div class="panel filtros-panel">
+    <div class="filtros-grid">
+      <div class="filtro-field filtro-buscar">
+        <label for="aut-buscar">Buscar</label>
+        <input
+          id="aut-buscar"
+          type="search"
+          placeholder="Resumen, usuario, motivo, ID…"
+          [ngModel]="filtroBusqueda()"
+          (ngModelChange)="filtroBusqueda.set($event)"
+          autocomplete="off" />
+      </div>
+      <div class="filtro-field">
+        <label for="aut-estado">Estado</label>
+        <select id="aut-estado" [ngModel]="filtroEstado()" (ngModelChange)="onFiltroEstadoChange($event)">
+          @for (e of estadosFiltro; track e.value) {
+            <option [value]="e.value">{{ e.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="filtro-field">
+        <label for="aut-modulo">Módulo / tabla</label>
+        <select id="aut-modulo" [ngModel]="filtroModulo()" (ngModelChange)="onFiltroModuloChange($event)">
+          <option value="">Todos los módulos</option>
+          @for (m of modulos; track m.id) {
+            <option [value]="m.id">{{ m.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="filtros-actions">
+      <button type="button" class="primary sm" (click)="cargar()" [disabled]="cargando()">Aplicar filtros</button>
+      <button type="button" class="ghost sm" (click)="filtrarSoloPendientes()" [disabled]="cargando()">Solo pendientes</button>
+      <button type="button" class="ghost sm" (click)="limpiarFiltros()" [disabled]="cargando()">Limpiar</button>
+      <span class="count">
+        {{ items().length }} solicitud(es) cargada(s)
+        @if (filtroBusqueda()) {
+          · {{ itemsFiltrados().length }} visible(s) con búsqueda
+        }
+      </span>
+    </div>
+  </div>
+
+  <div class="panel table-wrap">
+    @if (cargando()) {
+      <p class="hint loading">Cargando solicitudes…</p>
+    } @else {
+      <table class="argo data-table aut-table">
+        <thead>
+          <tr>
+            <th class="col-id">#</th>
+            <th class="col-fecha">Solicitud</th>
+            <th class="col-modulo">Módulo</th>
+            <th class="col-resumen">Resumen</th>
+            <th class="col-user">Solicitó</th>
+            <th class="col-motivo">Motivo</th>
+            <th class="col-estado">Estado</th>
+            <th class="col-acciones"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of itemsFiltrados(); track s.idSolicitud) {
+            <tr [class.aut-row--pendiente]="s.estado === 'pendiente'">
+              <td class="col-id">
+                <span class="aut-id">#{{ s.idSolicitud }}</span>
+              </td>
+              <td class="col-fecha">
+                <span class="aut-fecha">{{ s.fechaSolicitud | date: 'dd/MM/yyyy' }}</span>
+                <span class="aut-hora">{{ s.fechaSolicitud | date: 'shortTime' }}</span>
+              </td>
+              <td class="col-modulo">
+                <span class="aut-modulo-badge">{{ etiquetaModulo(s.modulo) }}</span>
+              </td>
+              <td class="col-resumen">
+                <span class="aut-resumen" [title]="s.resumen || s.idEntidad">{{ s.resumen || s.idEntidad }}</span>
+                <span class="aut-entidad-id">ID {{ s.idEntidad }}</span>
+              </td>
+              <td class="col-user">
+                <span class="aut-user">{{ s.nombreSolicita || s.usuarioSolicita || '—' }}</span>
+                @if (s.nombreSolicita && s.usuarioSolicita) {
+                  <span class="aut-login">{{ s.usuarioSolicita }}</span>
+                }
+              </td>
+              <td class="col-motivo">
+                <span class="aut-motivo">{{ s.motivo || '—' }}</span>
+              </td>
+              <td class="col-estado">
+                <span class="aut-estado" [ngClass]="claseEstado(s.estado)">{{ labelEstado(s.estado) }}</span>
+                @if (s.estado === 'rechazada' && s.motivoRechazo) {
+                  <span class="aut-detalle-estado">{{ s.motivoRechazo }}</span>
+                }
+                @if (s.estado === 'fallida' && s.errorEjecucion) {
+                  <span class="aut-detalle-estado aut-detalle-estado--err">{{ s.errorEjecucion }}</span>
+                }
+                @if (s.estado !== 'pendiente' && s.nombreResuelve) {
+                  <span class="aut-resuelto-por">Por {{ s.nombreResuelve }}</span>
+                }
+              </td>
+              <td class="col-acciones actions-cell">
+                @if (s.estado === 'pendiente') {
+                  <button
+                    type="button"
+                    class="mini primary"
+                    (click)="autorizar(s)"
+                    [disabled]="procesandoId() === s.idSolicitud"
+                  >
+                    Autorizar
+                  </button>
+                  <button
+                    type="button"
+                    class="mini danger"
+                    (click)="rechazar(s)"
+                    [disabled]="procesandoId() === s.idSolicitud"
+                  >
+                    Rechazar
+                  </button>
+                } @else if (s.fechaResolucion) {
+                  <span class="aut-fecha-res">{{ s.fechaResolucion | date: 'short' }}</span>
+                }
+              </td>
+            </tr>
+          }
+          @if (!itemsFiltrados().length) {
+            <tr>
+              <td colspan="8" class="empty">
+                @if (filtroBusqueda() || filtroModulo() || (filtroEstado() && filtroEstado() !== 'pendiente')) {
+                  No hay solicitudes que coincidan con los filtros seleccionados.
+                } @else if (filtroEstado() === 'pendiente') {
+                  No hay autorizaciones pendientes en este momento.
+                } @else {
+                  No hay solicitudes registradas.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>

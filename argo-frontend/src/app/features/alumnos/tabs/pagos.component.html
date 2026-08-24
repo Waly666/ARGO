@@ -293,8 +293,8 @@
             <button
               type="button"
               class="danger mini"
-              *ngIf="!esAnulado(p)"
-              (click)="reversar(p)">Reversar</button>
+              *ngIf="!esAnulado(p) && puedeReversarPago()"
+              (click)="reversar(p)">{{ etiquetaReversarPago() }}</button>
             <span class="anulado-tag" *ngIf="esAnulado(p)" [attr.title]="tituloAnulado(p)">Anulado</span>
           </td>
         </tr>
@@ -303,27 +303,6 @@
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <div class="modal-backdrop auth-anular-backdrop" *ngIf="mostrarAuthAnular()" (click)="cancelarReversarSupervisor()">
-    <div class="modal card auth-anular-modal" (click)="$event.stopPropagation()">
-      <h3>Autorización para anular ingreso</h3>
-      <p class="hint" *ngIf="ingresoPendienteAnular() as pi">
-        Comprobante {{ pi.numRecibo || '—' }} — ingrese credenciales de un administrador.
-      </p>
-      <label>
-        Usuario administrador
-        <input type="text" [ngModel]="authAdminUser()" (ngModelChange)="authAdminUser.set($event)" />
-      </label>
-      <label>
-        Contraseña
-        <input type="password" [ngModel]="authAdminPass()" (ngModelChange)="authAdminPass.set($event)" />
-      </label>
-      <div class="actions">
-        <button type="button" class="ghost mini" (click)="cancelarReversarSupervisor()">Cancelar</button>
-        <button type="button" class="danger mini" (click)="confirmarReversarConSupervisor()">Autorizar y reversar</button>
-      </div>
-    </div>
   </div>
 </section>
 

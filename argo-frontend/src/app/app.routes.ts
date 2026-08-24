@@ -730,7 +730,7 @@ export const routes: Routes = [
       {
         path: 'configuracion/usuarios',
         canActivate: [permisoGuard],
-        data: { permiso: 'config.usuarios' },
+        data: { permiso: ['config.usuarios.ver', 'config.usuarios'] },
         loadComponent: () =>
           import('./features/config/usuarios-admin.component').then((m) => m.UsuariosAdminComponent),
       },
@@ -751,12 +751,12 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'configuracion/apps-moviles',
+        path: 'configuracion/autorizaciones',
         canActivate: [permisoGuard],
-        data: { permiso: 'config.roles' },
+        data: { permiso: ['config.autorizaciones', 'config.roles'] },
         loadComponent: () =>
-          import('./features/config/config-apps-moviles.component').then(
-            (m) => m.ConfigAppsMovilesComponent,
+          import('./features/config/config-autorizaciones-pendientes.component').then(
+            (m) => m.ConfigAutorizacionesPendientesComponent,
           ),
       },
       {

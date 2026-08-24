@@ -1,5 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 
+import { permisoConcedeAlguno } from '../utils/permiso-legacy.util';
+
 const USER_KEY = 'argo_user';
 
 @Injectable({ providedIn: 'root' })
@@ -15,16 +17,9 @@ export class PermisoService {
 
   tiene(clave?: string | string[] | null): boolean {
     if (!clave) return true;
-    const keys = Array.isArray(clave) ? clave : [clave];
     const permisos = this._permisos();
     if (!permisos.length) return false;
-    if (permisos.includes('*')) return true;
-    return keys.some((k) => this.tieneUno(permisos, k));
-  }
-
-  /** Solo coincidencia exacta (o *): lo marcado en Roles = lo que aplica. */
-  private tieneUno(permisos: string[], clave: string): boolean {
-    return permisos.includes(clave);
+    return permisoConcedeAlguno(permisos, clave);
   }
 
   /** Firma estable para detectar cambios tras guardar un rol. */

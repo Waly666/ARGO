@@ -24,8 +24,8 @@ import {
   PlantillaCertificado,
 } from '../../../core/services/config-certificado.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
-import { SupervisorAuthService } from '../../../shared/supervisor-auth/supervisor-auth.service';
-import { AuthService } from '../../../core/services/auth.service';
+import { AccionPermisoService } from '../../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../../core/services/eliminacion-operacion.service';
 
 @Component({
   selector: 'argo-certificados',
@@ -44,8 +44,8 @@ export class CertificadosComponent {
   private cfgCertSvc = inject(ConfigCertificadoService);
   private confirmSvc = inject(ConfirmDialogService);
   private certAlertSvc = inject(CertificadoJornadaAlertService);
-  private supervisorAuth = inject(SupervisorAuthService);
-  private auth = inject(AuthService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   elegibles = signal<any[]>([]);
   certificados = signal<any[]>([]);
@@ -264,32 +264,35 @@ export class CertificadosComponent {
       });
   }
 
+  puedeAnularCertificado(): boolean {
+    return this.accionPermiso.mostrarAccionEliminar('certificados');
+  }
+
   async anular(c: any) {
     const nd = this.store.numDoc();
-    if (!nd) return;
+    if (!nd || !this.puedeAnularCertificado()) return;
     const prog = c.programaDescr || c.idProg || 'certificado';
-    const ok = await this.confirmSvc.open({
-      title: '¿Anular este certificado?',
-      message: `Se anulará el certificado del programa «${prog}». Esta acción no se puede deshacer.`,
-      variant: 'danger',
-      icon: 'delete',
-      confirmLabel: 'Sí, anular',
-    });
-    if (!ok) return;
-    let auth: { autorizadoUsername?: string; autorizadoPassword?: string } | undefined;
-    if (!this.auth.isAdmin()) {
-      const cred = await this.supervisorAuth.solicitar({
-        title: 'Autorización para anular certificado',
-        message: `Anular el certificado del programa «${prog}» requiere autorización de un administrador.`,
-        confirmLabel: 'Autorizar y anular',
+    const resumen = `Certificado ${c.codigoCert || prog}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'certificados',
+        idEntidad: c._id,
+        resumen,
+        tituloConfirm: '¿Anular este certificado?',
+        mensajeConfirm: `Se anulará el certificado del programa «${prog}». Esta acción no se puede deshacer.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('certificados') ? 'Sí, anular' : 'Enviar solicitud',
+        ejecutar: () => this.certSvc.eliminar(c._id),
       });
-      if (!cred) return;
-      auth = cred;
+      if (resultado === 'eliminado') {
+        this.recargar(nd);
+        this.msg.set('Certificado anulado.');
+      } else if (resultado === 'solicitado') {
+        this.msg.set('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.msg.set(err?.error?.message || 'Error anulando.');
     }
-    this.certSvc.eliminar(c._id, auth).subscribe({
-      next: () => this.recargar(nd),
-      error: (e) => this.msg.set(e?.error?.message || 'Error anulando.'),
-    });
   }
 
   esAnulado(c: { estado?: string }): boolean {

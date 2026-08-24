@@ -1,20 +1,20 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/combosController');
-const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva } = require('../middleware/auth');
+const { accionesModulo } = require('../middleware/gateAccion');
 
 const router = Router();
 router.use(requireAuth);
 
-const gestionar = requirePermiso('combos.gestionar', 'alumnos.pagos', 'alumnos.gestionar');
+const acc = accionesModulo('combos');
 
-router.get('/', gestionar, ctrl.listar);
-router.get('/:id', gestionar, ctrl.obtener);
-router.get('/:id/prevista', gestionar, ctrl.prevista);
-router.post('/', gestionar, ctrl.crear);
-router.put('/:id', gestionar, ctrl.actualizar);
-router.delete('/:id', gestionar, ctrl.eliminar);
+router.get('/', acc.ver, ctrl.listar);
+router.get('/:id', acc.ver, ctrl.obtener);
+router.get('/:id/prevista', acc.ver, ctrl.prevista);
+router.post('/', acc.crear, ctrl.crear);
+router.put('/:id', acc.editar, ctrl.actualizar);
+router.delete('/:id', acc.eliminar, ctrl.eliminar);
 
-/* Aplicar combo a un alumno — requiere sede activa */
-router.post('/:id/aplicar', gestionar, loadSedeActiva, exigirSedeActiva, ctrl.aplicar);
+router.post('/:id/aplicar', acc.crear, loadSedeActiva, exigirSedeActiva, ctrl.aplicar);
 
 module.exports = router;

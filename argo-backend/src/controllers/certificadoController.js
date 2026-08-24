@@ -1024,37 +1024,12 @@ exports.recientes = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
-    const c = await Certificado.findById(req.params.id);
-    if (!c) return res.status(404).json({ message: 'Certificado no encontrado' });
-    if (esCertificadoJornadaCapacitacion(c)) {
-      return res.status(403).json({
-        message: 'Los certificados de jornadas de capacitación se gestionan en el módulo Jornadas.',
-      });
+    const { anularCertificado } = require('../services/eliminacionEntidades');
+    const resultado = await anularCertificado(req, req.params.id, null);
+    if (!resultado.ok) {
+      return res.status(resultado.status || 400).json({ message: resultado.message, code: resultado.code });
     }
-    if (esComprobanteAnulado(c)) {
-      return res.status(409).json({ message: 'Este certificado ya está anulado.' });
-    }
-
-    const auth = await autorizarAnulacionSimple(
-      req,
-      'Anular certificados requiere autorización de un administrador.',
-    );
-    if (!auth.ok) {
-      return res.status(auth.status).json({ message: auth.message, code: auth.code });
-    }
-
-    const antes = c.toObject();
-    const motivo = String(req.body?.motivo || req.body?.motivoAnulacion || '').trim() || null;
-    // No se borra: pasa a estado 'anulado' conservando el consecutivo (codigoCert)
-    // para trazabilidad y auditoría.
-    c.set(metadatosAnulacion(req, auth.supervisor, { motivo }));
-    c.estado = 'anulado';
-    await c.save();
-
-    registrarEliminacion(req, 'certificado', antes, {
-      resumen: `Anulación certificado ${antes.codigoCert || req.params.id}${sufijoAutoriza(auth.supervisor)}`,
-    });
-    res.json({ ok: true, estado: 'anulado' });
+    res.json(resultado);
   } catch (e) {
     next(e);
   }

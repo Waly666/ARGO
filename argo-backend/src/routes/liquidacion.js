@@ -1,16 +1,17 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/liquidacionController');
-const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva, exigirSedeActiva } = require('../middleware/auth');
+const { accionesModulo } = require('../middleware/gateAccion');
 
 const router = Router();
 router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
-const pagos = requirePermiso('alumnos.pagos', 'caja.cobros', 'caja.turno');
+const acc = accionesModulo('liquidaciones');
 
-router.get('/con-saldo', pagos, ctrl.listarConSaldo);
-router.get('/alumno/:numDoc', pagos, ctrl.listarPorAlumno);
-router.get('/:id', pagos, ctrl.obtener);
-router.post('/', pagos, ctrl.crear);
-router.delete('/:id', pagos, ctrl.eliminar);
+router.get('/con-saldo', acc.ver, ctrl.listarConSaldo);
+router.get('/alumno/:numDoc', acc.ver, ctrl.listarPorAlumno);
+router.get('/:id', acc.ver, ctrl.obtener);
+router.post('/', acc.crear, ctrl.crear);
+router.delete('/:id', acc.eliminar, ctrl.eliminar);
 
 module.exports = router;

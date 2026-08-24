@@ -16,6 +16,8 @@ import { ProgramaService } from '../../../core/services/programa.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ServicioCatalogoService } from '../../../core/services/servicio-catalogo.service';
 import { ConfirmDialogService } from '../../../shared/confirm-dialog/confirm-dialog.service';
+import { AccionPermisoService } from '../../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../../core/services/eliminacion-operacion.service';
 import { ConfigService } from '../../../core/services/config.service';
 import {
   CatalogoEnumBuscarComponent,
@@ -45,6 +47,8 @@ export type TipoAltaServicio = 'programa' | 'combo' | 'servicio';
 })
 export class ServiciosComponent implements OnInit {
   store = inject(AlumnoStore);
+  accionPermiso = inject(AccionPermisoService);
+  eliminacionOps = inject(EliminacionOperacionService);
   private router = inject(Router);
   private alumnoSvc = inject(AlumnoService);
   private progSvc = inject(ProgramaService);
@@ -1292,24 +1296,31 @@ export class ServiciosComponent implements OnInit {
 
   async eliminarItem(item: LiquidacionItem) {
     const nd = this.store.numDoc();
-    if (!nd) return;
+    if (!nd || !this.accionPermiso.mostrarAccionEliminar('liquidaciones')) return;
     if (item.abonado > 0) {
       this.msg.set('No se puede eliminar un ítem con pagos.');
       return;
     }
     const descr = item.descripcion || 'este ítem';
-    const ok = await this.confirmSvc.open({
-      title: '¿Eliminar este ítem?',
-      message: `Se eliminará «${descr}» de la liquidación. Esta acción no se puede deshacer.`,
-      variant: 'danger',
-      icon: 'delete',
-      confirmLabel: 'Sí, eliminar',
-    });
-    if (!ok) return;
-    this.liqSvc.eliminar(item._id).subscribe({
-      next: () => this.recargar(nd, { notificar: true }),
-      error: (e) => this.msg.set(e?.error?.message || 'Error eliminando.'),
-    });
+    const resumen = `Ítem de liquidación «${descr}»`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'liquidaciones',
+        idEntidad: item._id,
+        resumen,
+        tituloConfirm: '¿Eliminar este ítem?',
+        mensajeConfirm: `Se eliminará «${descr}» de la liquidación. Esta acción no se puede deshacer.`,
+        ejecutar: () => this.liqSvc.eliminar(item._id),
+      });
+      if (resultado === 'eliminado') {
+        this.recargar(nd, { notificar: true });
+      } else if (resultado === 'solicitado') {
+        this.msg.set('Solicitud de eliminación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.msg.set(err?.error?.message || 'Error eliminando.');
+    }
   }
 
   num(v: any): number {

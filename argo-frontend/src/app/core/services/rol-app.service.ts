@@ -15,6 +15,26 @@ export interface PermisoGrupo {
   permisos: PermisoItem[];
 }
 
+export interface ModuloCrudCatalogo {
+  id: string;
+  label: string;
+  prefijo: string;
+  categoria: string;
+  orden: number;
+  acciones: { accion: string; key: string; label: string; labelCorta: string }[];
+}
+
+export interface AccionCrudCatalogo {
+  id: string;
+  label: string;
+  labelCorta: string;
+}
+
+export interface CategoriaCrudCatalogo {
+  id: string;
+  label: string;
+}
+
 export interface AlarmaItem {
   key: string;
   label: string;
@@ -60,10 +80,20 @@ export class RolAppService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/roles`;
 
-  catalogo(): Observable<{ grupos: PermisoGrupo[]; alarmasGrupos: AlarmaGrupo[] }> {
-    return this.http.get<{ grupos: PermisoGrupo[]; alarmasGrupos: AlarmaGrupo[] }>(
-      `${this.base}/catalogo`,
-    );
+  catalogo(): Observable<{
+    grupos: PermisoGrupo[];
+    modulosCrud: ModuloCrudCatalogo[];
+    accionesCrud: AccionCrudCatalogo[];
+    categoriasCrud: CategoriaCrudCatalogo[];
+    alarmasGrupos: AlarmaGrupo[];
+  }> {
+    return this.http.get<{
+      grupos: PermisoGrupo[];
+      modulosCrud: ModuloCrudCatalogo[];
+      accionesCrud: AccionCrudCatalogo[];
+      categoriasCrud: CategoriaCrudCatalogo[];
+      alarmasGrupos: AlarmaGrupo[];
+    }>(`${this.base}/catalogo`);
   }
 
   listar(): Observable<RolApp[]> {

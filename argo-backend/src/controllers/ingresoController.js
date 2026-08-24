@@ -870,102 +870,12 @@ exports.listarPorLiquidacion = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
-    const ing = await Ingreso.findById(req.params.id);
-    if (!ing) return res.status(404).json({ message: 'Ingreso no encontrado' });
-    if (esComprobanteAnulado(ing)) {
-      return res.status(409).json({ message: 'Este ingreso ya está anulado.' });
+    const { anularIngreso } = require('../services/eliminacionEntidades');
+    const resultado = await anularIngreso(req, req.params.id, null);
+    if (!resultado.ok) {
+      return res.status(resultado.status || 400).json({ message: resultado.message, code: resultado.code });
     }
-    const antesIngreso = ing.toObject();
-
-    const auth = await autorizarAnulacionComprobante(
-      req,
-      ing.idSesion,
-      'Anular ingresos requiere autorización de un administrador.',
-    );
-    if (!auth.ok) {
-      return res.status(auth.status).json({ message: auth.message, code: auth.code });
-    }
-    const supervisor = auth.supervisor;
-
-    const v =
-      num(antesIngreso.valor) ||
-      num(antesIngreso.valorAnulado) ||
-      (Array.isArray(antesIngreso.detalle) && antesIngreso.detalle.length
-        ? antesIngreso.detalle.reduce((a, d) => a + num(d.valor), 0)
-        : 0);
-    const liqIds = idsLiquidacionDeIngreso(antesIngreso);
-
-    // No se borra: pasa a estado ANULADO con valores en cero, conservando el
-    // consecutivo (numRecibo) y los datos de origen para auditoría.
-    const motivo = String(req.body?.motivo || req.body?.motivoAnulacion || '').trim() || null;
-    ing.set(metadatosAnulacion(req, supervisor, { valorOriginal: v, motivo }));
-    ing.valor = toDec(0);
-    if (Array.isArray(ing.detalle) && ing.detalle.length) {
-      ing.detalle = ing.detalle.map((d) => {
-        const plano = typeof d.toObject === 'function' ? d.toObject() : d;
-        return { ...plano, valor: toDec(0) };
-      });
-    }
-    ing.tipoAbono = undefined;
-    ing.userChangeRecord = req.user?.username || 'sistema';
-    ing.fechaMod = new Date();
-    await ing.save();
-
-    // Restaura saldo en cada servicio/ítem: recalcula abonado solo con ingresos
-    // vigentes (anulados aportan 0) para que el servicio quede cobrable de nuevo.
-    // En contratos de capacitación se elimina la liquidación causada (servicio configurado en jornadas-operacion).
-    const mats = new Set();
-    for (const idLiq of liqIds) {
-      const liqSnap = await Liquidacion.findById(idLiq).lean();
-      if (liqSnap?.origenContratoCap) {
-        await Liquidacion.deleteOne({ _id: idLiq });
-        continue;
-      }
-      const r = await recalcularAbonoLiquidacion(idLiq);
-      if (r?.idMat) mats.add(String(r.idMat));
-    }
-    for (const idMat of mats) {
-      await refrescarPagoMatricula(idMat);
-    }
-
-    if (antesIngreso.origenContratoCap) {
-      const { revertirComprobanteIngresoContratoCap } = require('../services/contratoCobroCap');
-      await revertirComprobanteIngresoContratoCap(ing).catch(() => null);
-    }
-
-    try {
-      const { revertirCertificadosPorAnulacionIngreso } = require('../services/certificadoPagoAuto');
-      await revertirCertificadosPorAnulacionIngreso({
-        idsLiquidacion: liqIds,
-        req,
-        supervisor,
-        numDoc: ing.numDoc,
-      });
-    } catch (errCert) {
-      console.error('[certificadoPagoAuto] revertir por anulación ingreso:', errCert?.message || errCert);
-    }
-
-    if (ing.cuadreDescuadre && ing.idSesion) {
-      const CajaSesion = require('../models/CajaSesion');
-      const { toDec } = require('../utils/coerceTypes');
-      const ses = await CajaSesion.findOne({ idSesion: Number(ing.idSesion) }).lean();
-      if (ses?.efectivoContado != null) {
-        const nuevoContado = Math.max(0, num(ses.efectivoContado) - v);
-        await CajaSesion.updateOne(
-          { idSesion: Number(ing.idSesion) },
-          { $set: { efectivoContado: toDec(nuevoContado) } },
-        );
-      }
-    }
-
-    if (ing.idSesion) {
-      const { sincronizarDescuadreSesion } = require('../services/descuadreCaja');
-      await sincronizarDescuadreSesion(ing.idSesion).catch(() => null);
-    }
-    registrarEliminacion(req, 'ingreso', antesIngreso, {
-      resumen: `Anulación ingreso ${antesIngreso.numRecibo || req.params.id}${sufijoAutoriza(supervisor)}`,
-    });
-    res.json({ ok: true, estado: 'ANULADO' });
+    res.json(resultado);
   } catch (e) {
     next(e);
   }

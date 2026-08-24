@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/programaController');
-const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva } = require('../middleware/auth');
+const { accionesModulo } = require('../middleware/gateAccion');
 const { programasVirtual } = require('../middleware/upload');
 
 const router = Router();
@@ -8,22 +9,20 @@ const router = Router();
 router.use(requireAuth);
 router.use(loadSedeActiva);
 
-const ver = requirePermiso('programas.ver', 'programas.gestionar', 'programas.agregar');
-const agregar = requirePermiso('programas.agregar', 'programas.gestionar');
-const gestionar = requirePermiso('programas.gestionar');
+const acc = accionesModulo('programas');
 
-router.get('/', ver, ctrl.listar);
-router.get('/siguiente-codigo', ver, ctrl.siguienteCodigo);
-router.get('/:id/matriculas', ver, ctrl.matriculas);
-router.get('/:id', ver, ctrl.obtener);
-router.post('/', agregar, ctrl.crear);
+router.get('/', acc.ver, ctrl.listar);
+router.get('/siguiente-codigo', acc.ver, ctrl.siguienteCodigo);
+router.get('/:id/matriculas', acc.ver, ctrl.matriculas);
+router.get('/:id', acc.ver, ctrl.obtener);
+router.post('/', acc.crear, ctrl.crear);
 router.post(
   '/:id/portada-virtual',
-  gestionar,
+  acc.editar,
   programasVirtual.single('portada'),
   ctrl.subirPortadaVirtual,
 );
-router.put('/:id', gestionar, ctrl.actualizar);
-router.delete('/:id', gestionar, ctrl.eliminar);
+router.put('/:id', acc.editar, ctrl.actualizar);
+router.delete('/:id', acc.eliminar, ctrl.eliminar);
 
 module.exports = router;

@@ -580,7 +580,7 @@
                 {{ itemRecibosAbierto() === it._id ? 'Ocultar' : 'Recibos' }}
                 ({{ comprobantesPorItem(it._id).length }})
               </button>
-              <button class="danger mini" (click)="eliminarItem(it)" [disabled]="num(it.abonado) > 0">Eliminar</button>
+              <button class="danger mini" (click)="eliminarItem(it)" [disabled]="num(it.abonado) > 0" *ngIf="accionPermiso.mostrarAccionEliminar('liquidaciones')">{{ eliminacionOps.etiquetaBotonEliminar('liquidaciones') }}</button>
             </td>
           </tr>
           <tr class="recibos-row" *ngIf="itemRecibosAbierto() === it._id && num(it.abonado) > 0">

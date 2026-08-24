@@ -37,7 +37,9 @@
       }
       @if (!esNuevo()) {
         <div class="veh-head-actions">
-          <button type="button" class="danger ghost" (click)="eliminar()">Eliminar</button>
+          <button type="button" class="danger ghost" *ngIf="accionPermiso.mostrarAccionEliminar('vehiculos')" (click)="eliminar()">
+            {{ accionPermiso.puedeEliminar('vehiculos') ? 'Eliminar' : 'Solicitar eliminación' }}
+          </button>
         </div>
       }
     </div>

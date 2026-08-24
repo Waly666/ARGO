@@ -25,8 +25,8 @@ import { nombreCompletoAlumno } from '../../core/utils/mensaje-plantilla.helpers
 import { TIPOS_CERTIFICADO, capEncabezadoCert, capTipoFormatoCert, labelTipoCert } from '../../core/constants/tipos-certificado';
 import { coincideBusquedaDocumento, coincideBusquedaTexto } from '../../core/utils/busqueda-alumno.helpers';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
-import { SupervisorAuthService } from '../../shared/supervisor-auth/supervisor-auth.service';
-import { AuthService } from '../../core/services/auth.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import {
   CatalogoEnumBuscarComponent,
@@ -64,8 +64,8 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
   private certSvc    = inject(CertificadoService);
   private clienteSvc = inject(ClienteService);
   private confirmSvc = inject(ConfirmDialogService);
-  private supervisorAuth = inject(SupervisorAuthService);
-  private auth = inject(AuthService);
+  private accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private readonly recargar$ = new Subject<void>();
@@ -506,36 +506,41 @@ export class CertificadosListaComponent implements OnInit, OnDestroy, AfterViewI
       });
   }
 
+  puedeAnularCertificado(): boolean {
+    return this.accionPermiso.mostrarAccionEliminar('certificados');
+  }
+
+  etiquetaAnularCertificado(): string {
+    return this.accionPermiso.puedeEliminar('certificados') ? 'Anular' : 'Solicitar anulación';
+  }
+
   async eliminar(c: CertificadoListItem) {
-    const ok = await this.confirmSvc.open({
-      title: 'Anular certificado',
-      message: `¿Anular el certificado ${c.codigoCert || c._id} de ${c.nombreCompleto || 'el alumno'}? Pasará a estado anulado y conservará su consecutivo.`,
-      confirmLabel: 'Anular',
-      variant: 'danger',
-    });
-    if (!ok) return;
-    let auth: { autorizadoUsername?: string; autorizadoPassword?: string } | undefined;
-    if (!this.auth.isAdmin()) {
-      const cred = await this.supervisorAuth.solicitar({
-        title: 'Autorización para anular certificado',
-        message: `Anular el certificado ${c.codigoCert || c._id} requiere autorización de un administrador.`,
-        confirmLabel: 'Autorizar y anular',
+    if (!this.puedeAnularCertificado()) return;
+    const resumen = `Certificado ${c.codigoCert || c._id} de ${c.nombreCompleto || 'alumno'}`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'certificados',
+        idEntidad: c._id,
+        resumen,
+        tituloConfirm: 'Anular certificado',
+        mensajeConfirm: `¿Anular el certificado ${c.codigoCert || c._id} de ${c.nombreCompleto || 'el alumno'}? Pasará a estado anulado y conservará su consecutivo.`,
+        confirmLabel: this.accionPermiso.puedeEliminar('certificados') ? 'Anular' : 'Enviar solicitud',
+        ejecutar: () => this.certSvc.eliminar(c._id),
       });
-      if (!cred) return;
-      auth = cred;
-    }
-    this.certSvc.eliminar(c._id, auth).subscribe({
-      next: () => {
+      if (resultado === 'eliminado') {
         this.certificados.update((list) => list.filter((x) => x._id !== c._id));
         this.msgError.set(false);
-        this.msg.set('Certificado eliminado.');
+        this.msg.set('Certificado anulado.');
         this.cargar();
-      },
-      error: (e) => {
-        this.msgError.set(true);
-        this.msg.set(e?.error?.message || 'No se pudo eliminar.');
-      },
-    });
+      } else if (resultado === 'solicitado') {
+        this.msgError.set(false);
+        this.msg.set('Solicitud de anulación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.msgError.set(true);
+      this.msg.set(err?.error?.message || 'No se pudo eliminar.');
+    }
   }
 
   imprimir(c: CertificadoListItem) {

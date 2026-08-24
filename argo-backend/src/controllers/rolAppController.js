@@ -1,6 +1,7 @@
 const RolApp = require('../models/RolApp');
 const Usuario = require('../models/Usuario');
-const { GRUPOS } = require('../constants/permisosCatalogo');
+const { GRUPOS, todasLasClaves, clavesValidas } = require('../constants/permisosCatalogo');
+const { modulosCrudList, accionesCrudCatalogo, CATEGORIAS_CRUD } = require('../constants/crudModulos');
 const { GRUPOS: ALARMAS_GRUPOS } = require('../constants/alarmasCatalogo');
 const {
   sanitizarAlarmas,
@@ -40,7 +41,14 @@ function respuestaRol(doc, meta = {}) {
 }
 
 exports.catalogo = (_req, res) => {
-  res.json({ grupos: GRUPOS, alarmasGrupos: ALARMAS_GRUPOS });
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    grupos: GRUPOS,
+    modulosCrud: modulosCrudList(),
+    accionesCrud: accionesCrudCatalogo(),
+    categoriasCrud: CATEGORIAS_CRUD,
+    alarmasGrupos: ALARMAS_GRUPOS,
+  });
 };
 
 exports.listar = async (_req, res, next) => {

@@ -4,7 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import {
+  AccionCrudCatalogo,
   AlarmaGrupo,
+  CategoriaCrudCatalogo,
+  ModuloCrudCatalogo,
   PermisoGrupo,
   RolApp,
   RolAppDto,
@@ -12,6 +15,19 @@ import {
 } from '../../core/services/rol-app.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import {
+  ACCIONES_CRUD,
+  AccionCrud,
+  ETIQUETA_ACCION_CORTA,
+  ModuloCrud,
+  aplicarAccionCrudEnPermisos,
+  aplicarFilaCrudEnPermisos,
+  contarAccionesCrudActivas,
+  filaCrudCompleta,
+  tieneAccionModulo,
+} from '../../core/utils/crud-permiso.util';
+
+type FichaRol = 'datos' | 'tablas' | 'modulos' | 'alarmas';
 
 @Component({
   selector: 'argo-roles-permisos-admin',
@@ -27,6 +43,9 @@ export class RolesPermisosAdminComponent implements OnInit {
 
   roles = signal<RolApp[]>([]);
   grupos = signal<PermisoGrupo[]>([]);
+  modulosCrud = signal<ModuloCrudCatalogo[]>([]);
+  accionesCrud = signal<AccionCrudCatalogo[]>([]);
+  categoriasCrud = signal<CategoriaCrudCatalogo[]>([]);
   alarmasGrupos = signal<AlarmaGrupo[]>([]);
   seleccionado = signal<RolApp | null>(null);
   loading = signal(false);
@@ -34,7 +53,12 @@ export class RolesPermisosAdminComponent implements OnInit {
   msg = signal<string | null>(null);
   msgError = signal(false);
   filtroRoles = signal('');
+  filtroTablas = signal('');
   mostrarNuevo = signal(false);
+  ficha = signal<FichaRol>('datos');
+
+  readonly accionesCrudCols = ACCIONES_CRUD;
+  readonly etiquetaAccionCorta = ETIQUETA_ACCION_CORTA;
 
   rolesFiltrados = computed(() => {
     const q = this.filtroRoles().trim().toLowerCase();
@@ -79,6 +103,41 @@ export class RolesPermisosAdminComponent implements OnInit {
     this.alarmasGrupos().reduce((n, g) => n + (g.alarmas?.length || 0), 0),
   );
 
+  modulosCrudFiltrados = computed(() => {
+    const q = this.filtroTablas().trim().toLowerCase();
+    const list = this.modulosCrud();
+    if (!q) return list;
+    return list.filter((m) => m.label.toLowerCase().includes(q) || m.id.toLowerCase().includes(q));
+  });
+
+  modulosCrudPorCategoria = computed(() => {
+    const cats = this.categoriasCrud();
+    const map = new Map<string, ModuloCrudCatalogo[]>();
+    for (const m of this.modulosCrudFiltrados()) {
+      const cat = m.categoria || 'otros';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(m);
+    }
+    return cats
+      .map((c) => ({ categoria: c, modulos: map.get(c.id) || [] }))
+      .filter((x) => x.modulos.length > 0);
+  });
+
+  esAdminSistema = computed(
+    () => this.seleccionado()?.codigo === 'admin' && !!this.seleccionado()?.esSistema,
+  );
+
+  permisosCrudResumen = computed(() => {
+    const p = this.form().permisos || [];
+    if (p.includes('*')) return 'Todos';
+    const total = this.modulosCrud().length * ACCIONES_CRUD.length;
+    let activos = 0;
+    for (const m of this.modulosCrud()) {
+      activos += contarAccionesCrudActivas(p, m.id as ModuloCrud);
+    }
+    return `${activos}/${total}`;
+  });
+
   ngOnInit(): void {
     this.cargar();
   }
@@ -88,10 +147,16 @@ export class RolesPermisosAdminComponent implements OnInit {
     this.svc.catalogo().subscribe({
       next: (c) => {
         this.grupos.set(c.grupos || []);
+        this.modulosCrud.set(c.modulosCrud || []);
+        this.accionesCrud.set(c.accionesCrud || []);
+        this.categoriasCrud.set(c.categoriasCrud || []);
         this.alarmasGrupos.set(c.alarmasGrupos || []);
       },
       error: () => {
         this.grupos.set([]);
+        this.modulosCrud.set([]);
+        this.accionesCrud.set([]);
+        this.categoriasCrud.set([]);
         this.alarmasGrupos.set([]);
       },
     });
@@ -115,6 +180,7 @@ export class RolesPermisosAdminComponent implements OnInit {
 
   seleccionar(rol: RolApp): void {
     this.mostrarNuevo.set(false);
+    this.ficha.set('datos');
     this.seleccionado.set(rol);
     this.form.set({
       codigo: rol.codigo,
@@ -129,6 +195,7 @@ export class RolesPermisosAdminComponent implements OnInit {
   nuevo(): void {
     this.seleccionado.set(null);
     this.mostrarNuevo.set(true);
+    this.ficha.set('datos');
     this.msg.set(null);
     this.msgError.set(false);
     this.form.set({
@@ -143,6 +210,75 @@ export class RolesPermisosAdminComponent implements OnInit {
 
   patch(campo: keyof RolAppDto, valor: unknown): void {
     this.form.update((f) => ({ ...f, [campo]: valor }));
+  }
+
+  setFicha(f: FichaRol): void {
+    this.ficha.set(f);
+  }
+
+  accionCrudActiva(moduloId: string, accion: AccionCrud): boolean {
+    const p = this.form().permisos || [];
+    return tieneAccionModulo(p, moduloId as ModuloCrud, accion);
+  }
+
+  toggleAccionCrud(moduloId: string, accion: AccionCrud, event: Event): void {
+    if (this.esAdminSistema()) return;
+    const input = event.target as HTMLInputElement;
+    const activo = !!input?.checked;
+    this.form.update((f) => ({
+      ...f,
+      permisos: aplicarAccionCrudEnPermisos(
+        (f.permisos || []).filter((p) => p !== '*'),
+        moduloId as ModuloCrud,
+        accion,
+        activo,
+      ),
+    }));
+  }
+
+  toggleFilaCrud(moduloId: string, event: Event): void {
+    if (this.esAdminSistema()) return;
+    const input = event.target as HTMLInputElement;
+    const activo = !!input?.checked;
+    this.form.update((f) => ({
+      ...f,
+      permisos: aplicarFilaCrudEnPermisos(
+        (f.permisos || []).filter((p) => p !== '*'),
+        moduloId as ModuloCrud,
+        activo,
+      ),
+    }));
+  }
+
+  toggleColumnaCrud(accion: AccionCrud, event: Event): void {
+    if (this.esAdminSistema()) return;
+    const input = event.target as HTMLInputElement;
+    const activo = !!input?.checked;
+    this.form.update((f) => {
+      let permisos = (f.permisos || []).filter((p) => p !== '*');
+      for (const m of this.modulosCrud()) {
+        permisos = aplicarAccionCrudEnPermisos(permisos, m.id as ModuloCrud, accion, activo);
+      }
+      return { ...f, permisos };
+    });
+  }
+
+  filaCrudCompleta(moduloId: string): boolean {
+    return filaCrudCompleta(this.form().permisos || [], moduloId as ModuloCrud);
+  }
+
+  contarFilaCrud(moduloId: string): number {
+    return contarAccionesCrudActivas(this.form().permisos || [], moduloId as ModuloCrud);
+  }
+
+  columnaCrudCompleta(accion: AccionCrud): boolean {
+    const mods = this.modulosCrud();
+    if (!mods.length) return false;
+    return mods.every((m) => this.accionCrudActiva(m.id, accion));
+  }
+
+  etiquetaCategoria(catId: string): string {
+    return this.categoriasCrud().find((c) => c.id === catId)?.label || catId;
   }
 
   tienePermiso(key: string): boolean {
@@ -279,6 +415,7 @@ export class RolesPermisosAdminComponent implements OnInit {
       jornadas: 'cap-orange',
       caja: 'cap-amber',
       otros: 'cap-teal',
+      config_usuarios: 'cap-purple',
       config: 'cap-purple',
     };
     return map[id] || 'cap-indigo';

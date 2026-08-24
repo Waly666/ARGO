@@ -1,19 +1,19 @@
 const { Router } = require('express');
 const ctrl = require('../controllers/servicioController');
-const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
+const { requireAuth, loadSedeActiva } = require('../middleware/auth');
+const { accionesModulo } = require('../middleware/gateAccion');
 
 const router = Router();
 
 router.use(requireAuth);
 router.use(loadSedeActiva);
 
-const ver = requirePermiso('servicios.ver', 'servicios.gestionar');
-const gestionar = requirePermiso('servicios.gestionar');
+const acc = accionesModulo('servicios');
 
-router.get('/', ver, ctrl.listar);
-router.post('/', gestionar, ctrl.crear);
-router.get('/:id', ver, ctrl.obtener);
-router.put('/:id', gestionar, ctrl.actualizar);
-router.delete('/:id', gestionar, ctrl.eliminar);
+router.get('/', acc.ver, ctrl.listar);
+router.post('/', acc.crear, ctrl.crear);
+router.get('/:id', acc.ver, ctrl.obtener);
+router.put('/:id', acc.editar, ctrl.actualizar);
+router.delete('/:id', acc.eliminar, ctrl.eliminar);
 
 module.exports = router;

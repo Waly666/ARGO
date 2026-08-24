@@ -3,11 +3,10 @@
     <div class="rol-head-main">
       <h1>Roles, permisos y alarmas</h1>
       <p>
-        Configure qué módulos puede ver y qué alarmas recibe cada rol. Al guardar, los cambios se aplican
-        de inmediato; el menú de cada usuario se actualiza en ~30 segundos.
-        Todo rol con permisos incluye <strong>Panel principal (dashboard)</strong> para poder iniciar sesión.
-        Para apps móviles (Jornadas / Cajero) use
-        <a routerLink="/app/configuracion/apps-moviles">Apps móviles</a>.
+        Configure qué módulos puede ver cada rol y qué acciones (ver, crear, editar, eliminar) tiene sobre
+        cada tabla operativa. Las <strong>apps móviles</strong> (Jornadas, Cajero) usan los mismos permisos y alarmas del rol;
+        no hay configuración aparte. Los cambios se aplican al guardar.
+        <a routerLink="/app/configuracion/autorizaciones">Autorizaciones pendientes</a>
       </p>
     </div>
     <div class="rol-head-actions">
@@ -86,156 +85,263 @@
                   @if (mostrarNuevo()) {
                     <span class="rol-cap rol-cap--new">Nuevo</span>
                   }
-                  <span class="rol-cap rol-cap--perm">{{ totalPermisosActivos() }} permisos</span>
+                  <span class="rol-cap rol-cap--perm">{{ totalPermisosActivos() }} permisos menú</span>
+                  <span class="rol-cap rol-cap--crud">Tablas: {{ permisosCrudResumen() }}</span>
                   <span class="rol-cap rol-cap--alm">{{ totalAlarmasActivas() }} alarmas</span>
                 </div>
               </div>
             </header>
 
-            <section class="rol-section rol-section--sky">
-              <header class="rol-section-head">
-                <span class="rol-section-badge">1</span>
-                <div>
-                  <h3 class="rol-section-title">Datos del rol</h3>
-                  <p class="rol-section-desc">Nombre, código y descripción visible en la administración.</p>
-                </div>
-              </header>
-              <div class="rol-section-body rol-stack">
-                @if (mostrarNuevo()) {
-                  <label class="rol-field">
-                    <span class="rol-label">Código *</span>
-                    <input
-                      type="text"
-                      placeholder="ej. supervisor, recepcion2"
-                      [ngModel]="form().codigo"
-                      (ngModelChange)="patch('codigo', $event)" />
-                    <span class="rol-field-hint">Minúsculas, sin espacios. No se puede cambiar después.</span>
-                  </label>
-                }
-                <div class="rol-grid rol-grid--datos">
-                  <label class="rol-field">
-                    <span class="rol-label">Nombre *</span>
-                    <input type="text" [ngModel]="form().nombre" (ngModelChange)="patch('nombre', $event)" />
-                  </label>
-                  @if (!mostrarNuevo()) {
-                    <label class="rol-field">
-                      <span class="rol-label">Código</span>
-                      <input type="text" class="rol-readonly" [ngModel]="form().codigo" readonly />
-                    </label>
-                  }
-                  <label class="rol-field rol-field--grow">
-                    <span class="rol-label">Descripción</span>
-                    <input
-                      type="text"
-                      placeholder="Breve descripción del rol…"
-                      [ngModel]="form().descripcion"
-                      (ngModelChange)="patch('descripcion', $event)" />
-                  </label>
-                </div>
-                @if (!mostrarNuevo()) {
-                  <label class="rol-toggle">
-                    <input type="checkbox" [ngModel]="form().activo" (ngModelChange)="patch('activo', $event)" />
-                    <span class="rol-toggle-box">
-                      <span class="rol-toggle-title">Rol activo</span>
-                      <span class="rol-toggle-desc">Los roles inactivos no se asignan a usuarios nuevos.</span>
-                    </span>
-                  </label>
-                }
-              </div>
-            </section>
+            <nav class="rol-tabs" aria-label="Secciones del rol">
+              <button type="button" class="rol-tab" [class.rol-tab--active]="ficha() === 'datos'" (click)="setFicha('datos')">
+                Datos del rol
+              </button>
+              @if (!esAdminSistema()) {
+                <button type="button" class="rol-tab" [class.rol-tab--active]="ficha() === 'tablas'" (click)="setFicha('tablas')">
+                  Permisos por tablas
+                </button>
+                <button type="button" class="rol-tab" [class.rol-tab--active]="ficha() === 'modulos'" (click)="setFicha('modulos')">
+                  Menú y módulos
+                </button>
+              }
+              <button type="button" class="rol-tab" [class.rol-tab--active]="ficha() === 'alarmas'" (click)="setFicha('alarmas')">
+                Alarmas
+              </button>
+            </nav>
 
-            @if (seleccionado()?.codigo === 'admin' && seleccionado()?.esSistema) {
-              <p class="rol-admin-note rol-admin-note--perm">
-                <span class="rol-cap rol-cap--admin">Admin</span>
-                El administrador conserva acceso total a módulos (<code>*</code>). Configure abajo qué
-                <strong>alarmas y avisos</strong> recibe en la cabecera y fichas.
-              </p>
-            }
-
-            @if (!(seleccionado()?.codigo === 'admin' && seleccionado()?.esSistema)) {
-              <section class="rol-section rol-section--amber">
-                <header class="rol-section-head">
-                  <span class="rol-section-badge">2</span>
-                  <div>
-                    <h3 class="rol-section-title">Permisos de acceso</h3>
-                    <p class="rol-section-desc">
-                      Módulos y acciones permitidas. El bloque <strong>Jornadas</strong> incluye contratación,
-                      calendario y clases en carpa. Para el
-                      <strong>portal de instructores</strong>, active en Académico:
-                      «Usar portal de instructores» (el usuario debe tener ficha de empleado vinculada).
-                    </p>
-                  </div>
-                </header>
-                <div class="rol-section-body">
-                  <div class="rol-perm-grid">
-                    @for (g of grupos(); track g.id) {
-                      <article class="rol-perm-grupo" [attr.data-tone]="g.id">
-                        <header class="rol-perm-grupo-head">
-                          <label class="rol-perm-grupo-toggle">
-                            <input type="checkbox" [checked]="grupoCompleto(g)" (change)="toggleGrupo(g)" />
-                            <span class="rol-grupo-label cap cap-sm" [ngClass]="capGrupo(g.id)">{{ g.label }}</span>
-                          </label>
-                          <span class="rol-perm-count">{{ permisosGrupoActivos(g) }}/{{ g.permisos.length }}</span>
-                        </header>
-                        <div class="rol-perm-progress" aria-hidden="true">
-                          <span class="rol-perm-progress-fill" [style.width.%]="progresoGrupo(permisosGrupoActivos(g), g.permisos.length)"></span>
-                        </div>
-                        <div class="rol-perm-list">
-                          @for (p of g.permisos; track p.key) {
-                            <label
-                              class="rol-perm-item"
-                              [class.rol-perm-item--on]="tienePermiso(p.key)"
-                              [class.rol-perm-item--destacado]="p.key === 'instructores.mi_portal'">
-                              <input type="checkbox" [checked]="tienePermiso(p.key)" (change)="togglePermiso(p.key)" />
-                              <span class="rol-perm-label">{{ p.label }}</span>
-                            </label>
-                          }
-                        </div>
-                      </article>
+            <div class="rol-tab-panel">
+              @if (ficha() === 'datos') {
+                <section class="rol-section rol-section--sky">
+                  <header class="rol-section-head">
+                    <div>
+                      <h3 class="rol-section-title">Datos del rol</h3>
+                      <p class="rol-section-desc">Nombre, código y descripción visible en la administración.</p>
+                    </div>
+                  </header>
+                  <div class="rol-section-body rol-stack">
+                    @if (mostrarNuevo()) {
+                      <label class="rol-field">
+                        <span class="rol-label">Código *</span>
+                        <input
+                          type="text"
+                          placeholder="ej. supervisor, recepcion2"
+                          [ngModel]="form().codigo"
+                          (ngModelChange)="patch('codigo', $event)" />
+                        <span class="rol-field-hint">Minúsculas, sin espacios. No se puede cambiar después.</span>
+                      </label>
+                    }
+                    <div class="rol-grid rol-grid--datos">
+                      <label class="rol-field">
+                        <span class="rol-label">Nombre *</span>
+                        <input type="text" [ngModel]="form().nombre" (ngModelChange)="patch('nombre', $event)" />
+                      </label>
+                      @if (!mostrarNuevo()) {
+                        <label class="rol-field">
+                          <span class="rol-label">Código</span>
+                          <input type="text" class="rol-readonly" [ngModel]="form().codigo" readonly />
+                        </label>
+                      }
+                      <label class="rol-field rol-field--grow">
+                        <span class="rol-label">Descripción</span>
+                        <input
+                          type="text"
+                          placeholder="Breve descripción del rol…"
+                          [ngModel]="form().descripcion"
+                          (ngModelChange)="patch('descripcion', $event)" />
+                      </label>
+                    </div>
+                    @if (!mostrarNuevo()) {
+                      <label class="rol-toggle">
+                        <input type="checkbox" [ngModel]="form().activo" (ngModelChange)="patch('activo', $event)" />
+                        <span class="rol-toggle-box">
+                          <span class="rol-toggle-title">Rol activo</span>
+                          <span class="rol-toggle-desc">Los roles inactivos no se asignan a usuarios nuevos.</span>
+                        </span>
+                      </label>
                     }
                   </div>
-                </div>
-              </section>
-            }
+                </section>
 
-            <section class="rol-section rol-section--rose">
-              <header class="rol-section-head">
-                <span class="rol-section-badge">{{ seleccionado()?.codigo === 'admin' ? '2' : '3' }}</span>
-                <div>
-                  <h3 class="rol-section-title">Alarmas y avisos</h3>
-                  <p class="rol-section-desc">
-                    Banners del encabezado, toasts y avisos en fichas. Tiempos e intervalos en
-                    <a routerLink="/app/configuracion/alertas">Configuración → Alertas</a>.
+                @if (esAdminSistema()) {
+                  <p class="rol-admin-note rol-admin-note--perm">
+                    <span class="rol-cap rol-cap--admin">Admin</span>
+                    El administrador conserva acceso total (<code>*</code>). Use las pestañas
+                    <strong>Permisos por tablas</strong> y <strong>Menú</strong> en roles personalizados (Cajero, Store, etc.).
+                    Configure aquí las <strong>alarmas</strong> en la pestaña correspondiente.
                   </p>
-                </div>
-              </header>
-              <div class="rol-section-body">
-                <div class="rol-perm-grid">
-                  @for (g of alarmasGrupos(); track g.id) {
-                    <article class="rol-perm-grupo rol-perm-grupo--alm" [attr.data-tone]="g.id">
-                      <header class="rol-perm-grupo-head">
-                        <label class="rol-perm-grupo-toggle">
-                          <input type="checkbox" [checked]="grupoAlarmasCompleto(g)" (change)="toggleGrupoAlarmas(g)" />
-                          <span class="rol-grupo-label cap cap-sm" [ngClass]="capGrupoAlarmas(g.id)">{{ g.label }}</span>
-                        </label>
-                        <span class="rol-perm-count">{{ alarmasGrupoActivas(g) }}/{{ g.alarmas.length }}</span>
-                      </header>
-                      <div class="rol-perm-progress rol-perm-progress--alm" aria-hidden="true">
-                        <span class="rol-perm-progress-fill" [style.width.%]="progresoGrupo(alarmasGrupoActivas(g), g.alarmas.length)"></span>
-                      </div>
-                      <div class="rol-perm-list">
-                        @for (a of g.alarmas; track a.key) {
-                          <label class="rol-perm-item" [class.rol-perm-item--on]="tieneAlarma(a.key)">
-                            <input type="checkbox" [checked]="tieneAlarma(a.key)" (change)="toggleAlarma(a.key)" />
-                            <span class="rol-perm-label">{{ a.label }}</span>
-                          </label>
-                        }
-                      </div>
-                    </article>
-                  }
-                </div>
-              </div>
-            </section>
+                }
+              }
+
+              @if (ficha() === 'tablas' && !esAdminSistema()) {
+                <section class="rol-section rol-section--tablas">
+                  <header class="rol-section-head">
+                    <div>
+                      <h3 class="rol-section-title">Permisos por tablas (formularios del día a día)</h3>
+                      <p class="rol-section-desc">
+                        Cada fila es una tabla o formulario operativo. Active con el interruptor qué puede hacer el rol:
+                        consultar, crear, editar o eliminar/anular. Si no tiene «Eliminar», podrá
+                        <strong>solicitar autorización</strong> en Configuración.
+                      </p>
+                    </div>
+                    <input
+                      type="search"
+                      class="rol-tablas-search"
+                      placeholder="Buscar tabla…"
+                      [ngModel]="filtroTablas()"
+                      (ngModelChange)="filtroTablas.set($event)" />
+                  </header>
+                  <div class="rol-section-body rol-tablas-wrap">
+                    <div class="rol-crud-table-scroll">
+                      <table class="rol-crud-table">
+                        <thead>
+                          <tr>
+                            <th class="col-tabla">Tabla / módulo</th>
+                            <th class="col-todo">Todo</th>
+                            @for (acc of accionesCrudCols; track acc) {
+                              <th class="col-switch">
+                                <span class="col-head-label">{{ etiquetaAccionCorta[acc] }}</span>
+                                <label class="rol-switch rol-switch--head" [title]="'Marcar columna ' + etiquetaAccionCorta[acc]">
+                                  <input
+                                    type="checkbox"
+                                    [checked]="columnaCrudCompleta(acc)"
+                                    (change)="toggleColumnaCrud(acc, $event)" />
+                                  <span class="rol-switch-ui"></span>
+                                </label>
+                              </th>
+                            }
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (bloque of modulosCrudPorCategoria(); track bloque.categoria.id) {
+                            <tr class="rol-crud-cat-row">
+                              <td [attr.colspan]="accionesCrudCols.length + 2">{{ bloque.categoria.label }}</td>
+                            </tr>
+                            @for (m of bloque.modulos; track m.id) {
+                              <tr [class.rol-crud-row--on]="contarFilaCrud(m.id) > 0">
+                                <td class="col-tabla">
+                                  <span class="rol-tabla-name">{{ m.label }}</span>
+                                  <span class="rol-tabla-id">{{ m.prefijo }}.*</span>
+                                </td>
+                                <td class="col-todo">
+                                  <label class="rol-switch" [title]="'Todas las acciones en ' + m.label">
+                                    <input
+                                      type="checkbox"
+                                      [checked]="filaCrudCompleta(m.id)"
+                                      (change)="toggleFilaCrud(m.id, $event)" />
+                                    <span class="rol-switch-ui"></span>
+                                  </label>
+                                </td>
+                                @for (acc of accionesCrudCols; track acc) {
+                                  <td class="col-switch">
+                                    <label class="rol-switch" [title]="etiquetaAccionCorta[acc] + ' en ' + m.label">
+                                      <input
+                                        type="checkbox"
+                                        [checked]="accionCrudActiva(m.id, acc)"
+                                        (change)="toggleAccionCrud(m.id, acc, $event)" />
+                                      <span class="rol-switch-ui"></span>
+                                    </label>
+                                  </td>
+                                }
+                              </tr>
+                            }
+                          }
+                          @if (!modulosCrudFiltrados().length) {
+                            <tr>
+                              <td [attr.colspan]="accionesCrudCols.length + 2" class="rol-crud-empty">
+                                No hay tablas que coincidan con la búsqueda.
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+              }
+
+              @if (ficha() === 'modulos' && !esAdminSistema()) {
+                <section class="rol-section rol-section--amber">
+                  <header class="rol-section-head">
+                    <div>
+                      <h3 class="rol-section-title">Menú y módulos especiales</h3>
+                      <p class="rol-section-desc">
+                        Acceso a secciones del menú, jornadas en carpa, portal instructor, contabilidad, configuración, etc.
+                        Los permisos granulares por tabla están en la pestaña anterior.
+                      </p>
+                    </div>
+                  </header>
+                  <div class="rol-section-body">
+                    <div class="rol-perm-grid">
+                      @for (g of grupos(); track g.id) {
+                        <article class="rol-perm-grupo" [attr.data-tone]="g.id">
+                          <header class="rol-perm-grupo-head">
+                            <label class="rol-perm-grupo-toggle">
+                              <input type="checkbox" [checked]="grupoCompleto(g)" (change)="toggleGrupo(g)" />
+                              <span class="rol-grupo-label cap cap-sm" [ngClass]="capGrupo(g.id)">{{ g.label }}</span>
+                            </label>
+                            <span class="rol-perm-count">{{ permisosGrupoActivos(g) }}/{{ g.permisos.length }}</span>
+                          </header>
+                          <div class="rol-perm-progress" aria-hidden="true">
+                            <span class="rol-perm-progress-fill" [style.width.%]="progresoGrupo(permisosGrupoActivos(g), g.permisos.length)"></span>
+                          </div>
+                          <div class="rol-perm-list">
+                            @for (p of g.permisos; track p.key) {
+                              <label
+                                class="rol-perm-item"
+                                [class.rol-perm-item--on]="tienePermiso(p.key)"
+                                [class.rol-perm-item--destacado]="p.key === 'instructores.mi_portal'">
+                                <input type="checkbox" [checked]="tienePermiso(p.key)" (change)="togglePermiso(p.key)" />
+                                <span class="rol-perm-label">{{ p.label }}</span>
+                              </label>
+                            }
+                          </div>
+                        </article>
+                      }
+                    </div>
+                  </div>
+                </section>
+              }
+
+              @if (ficha() === 'alarmas') {
+                <section class="rol-section rol-section--rose">
+                  <header class="rol-section-head">
+                    <div>
+                      <h3 class="rol-section-title">Alarmas y avisos</h3>
+                      <p class="rol-section-desc">
+                        Banners del encabezado, toasts y avisos en fichas. Tiempos en
+                        <a routerLink="/app/configuracion/alertas">Configuración → Alertas</a>.
+                      </p>
+                    </div>
+                  </header>
+                  <div class="rol-section-body">
+                    <div class="rol-perm-grid">
+                      @for (g of alarmasGrupos(); track g.id) {
+                        <article class="rol-perm-grupo rol-perm-grupo--alm" [attr.data-tone]="g.id">
+                          <header class="rol-perm-grupo-head">
+                            <label class="rol-perm-grupo-toggle">
+                              <input type="checkbox" [checked]="grupoAlarmasCompleto(g)" (change)="toggleGrupoAlarmas(g)" />
+                              <span class="rol-grupo-label cap cap-sm" [ngClass]="capGrupoAlarmas(g.id)">{{ g.label }}</span>
+                            </label>
+                            <span class="rol-perm-count">{{ alarmasGrupoActivas(g) }}/{{ g.alarmas.length }}</span>
+                          </header>
+                          <div class="rol-perm-progress rol-perm-progress--alm" aria-hidden="true">
+                            <span class="rol-perm-progress-fill" [style.width.%]="progresoGrupo(alarmasGrupoActivas(g), g.alarmas.length)"></span>
+                          </div>
+                          <div class="rol-perm-list">
+                            @for (a of g.alarmas; track a.key) {
+                              <label class="rol-perm-item" [class.rol-perm-item--on]="tieneAlarma(a.key)">
+                                <input type="checkbox" [checked]="tieneAlarma(a.key)" (change)="toggleAlarma(a.key)" />
+                                <span class="rol-perm-label">{{ a.label }}</span>
+                              </label>
+                            }
+                          </div>
+                        </article>
+                      }
+                    </div>
+                  </div>
+                </section>
+              }
+            </div>
 
             <footer class="rol-actions">
               @if (seleccionado() && !seleccionado()?.esSistema) {

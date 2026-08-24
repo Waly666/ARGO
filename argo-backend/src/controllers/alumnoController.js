@@ -1004,14 +1004,12 @@ exports.actualizar = async (req, res, next) => {
 
 exports.eliminar = async (req, res, next) => {
   try {
-    if (!esAdmin(req.user?.rol)) {
-      return res.status(403).json({ message: 'Solo un administrador puede eliminar alumnos' });
+    const { eliminarAlumno } = require('../services/eliminacionEntidades');
+    const resultado = await eliminarAlumno(req.params.id);
+    if (!resultado.ok) {
+      return res.status(resultado.status || 400).json({ message: resultado.message, code: resultado.code });
     }
-    const prev = await buscarAlumnoPorIdParam(req.params.id);
-    if (!prev) return res.status(404).json({ message: 'Alumno no encontrado' });
-    const r = await DatosAlumno.findByIdAndDelete(prev._id);
-    if (!r) return res.status(404).json({ message: 'Alumno no encontrado' });
-    res.json({ ok: true });
+    res.json(resultado);
   } catch (e) {
     next(e);
   }

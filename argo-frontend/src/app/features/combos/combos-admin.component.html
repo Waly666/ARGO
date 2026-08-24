@@ -70,7 +70,9 @@
               <button type="button" class="cb-link cb-link--muted" (click)="toggleActivo(c)">
                 {{ c.activo ? '⊗ Desactivar' : '⊕ Activar' }}
               </button>
-              <button type="button" class="cb-link cb-link--danger" (click)="eliminarCombo(c)">✕ Eliminar</button>
+              <button type="button" class="cb-link cb-link--danger" *ngIf="accionPermiso.mostrarAccionEliminar('combos')" (click)="eliminarCombo(c)">
+                ✕ {{ accionPermiso.puedeEliminar('combos') ? 'Eliminar' : 'Solicitar eliminación' }}
+              </button>
             </div>
           </div>
         }

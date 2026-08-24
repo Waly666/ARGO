@@ -408,11 +408,11 @@
 
               class="danger mini"
 
-              *ngIf="!esServicioPrograma(s)"
+              *ngIf="!esServicioPrograma(s) && accionPermiso.mostrarAccionEliminar('servicios')"
 
               (click)="eliminar(s)">
 
-              Eliminar
+              {{ accionPermiso.puedeEliminar('servicios') ? 'Eliminar' : 'Solicitar eliminación' }}
 
             </button>
 
@@ -490,7 +490,9 @@
 
           <button type="button" class="act open" (click)="editar(s)">Editar</button>
 
-          <button type="button" class="act doc" *ngIf="!esServicioPrograma(s)" (click)="eliminar(s)">Eliminar</button>
+          <button type="button" class="act doc" *ngIf="!esServicioPrograma(s) && accionPermiso.mostrarAccionEliminar('servicios')" (click)="eliminar(s)">
+            {{ accionPermiso.puedeEliminar('servicios') ? 'Eliminar' : 'Solicitar' }}
+          </button>
 
         </div>
 

@@ -169,11 +169,25 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'config_usuarios',
+    label: 'Usuarios del sistema',
+    permisos: [
+      {
+        key: 'config.usuarios',
+        label: 'Gestión completa (legado: consultar, crear, editar y eliminar)',
+      },
+      { key: 'config.usuarios.ver', label: 'Consultar usuarios (solo lectura)' },
+      { key: 'config.usuarios.crear', label: 'Crear usuarios' },
+      { key: 'config.usuarios.editar', label: 'Editar usuarios y resetear 2FA' },
+      { key: 'config.usuarios.eliminar', label: 'Desactivar o eliminar usuarios' },
+    ],
+  },
+  {
     id: 'config',
     label: 'Configuración',
     permisos: [
-      { key: 'config.usuarios', label: 'Gestión de usuarios' },
       { key: 'config.roles', label: 'Roles y permisos' },
+      { key: 'config.autorizaciones', label: 'Autorizar eliminaciones solicitadas por otros usuarios' },
       { key: 'config.catalogos', label: 'Catálogos del sistema' },
       { key: 'config.recibos', label: 'Empresa y comprobantes' },
       { key: 'config.georef', label: 'Geocodificación (mapas)' },

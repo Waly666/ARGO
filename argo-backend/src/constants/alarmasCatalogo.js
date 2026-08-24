@@ -116,6 +116,20 @@ const GRUPOS = [
     ],
   },
   {
+    id: 'config',
+    label: 'Configuración / autorizaciones',
+    alarmas: [
+      {
+        key: 'alarmas.config.autorizacion_pendiente',
+        label: 'Solicitud de eliminación pendiente de autorizar (banner superior, administradores)',
+      },
+      {
+        key: 'alarmas.config.autorizacion_resuelta',
+        label: 'Resultado de su solicitud de eliminación (autorizada, rechazada o fallida)',
+      },
+    ],
+  },
+  {
     id: 'alumnos',
     label: 'Alumnos',
     alarmas: [
@@ -169,6 +183,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.vehiculos.inspeccion_pendiente',
     'alarmas.empleados.docs_vencidos',
     'alarmas.empleados.docs_faltantes',
+    'alarmas.config.autorizacion_resuelta',
   ],
   contador: [
     'alarmas.caja.aviso_login',
@@ -178,6 +193,8 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.comprobante_ingreso',
     'alarmas.alumnos.comprobante_egreso',
     'alarmas.alumnos.factura',
+    'alarmas.config.autorizacion_pendiente',
+    'alarmas.config.autorizacion_resuelta',
   ],
   instructor: [
     'alarmas.jornadas.certificado_nuevo',
@@ -198,6 +215,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.vehiculos.inspeccion_pendiente',
     'alarmas.empleados.docs_vencidos',
     'alarmas.empleados.docs_faltantes',
+    'alarmas.config.autorizacion_resuelta',
   ],
   recepcion: [
     'alarmas.jornadas.en_proceso',
@@ -222,6 +240,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.aula_virtual.registro_nuevo',
     'alarmas.aula_virtual.matricula_nueva',
     'alarmas.aula_virtual.acceso_por_vencer',
+    'alarmas.config.autorizacion_resuelta',
   ],
   usuario: [
     'alarmas.vehiculos.docs_vencidos',
@@ -229,6 +248,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.vehiculos.inspeccion_pendiente',
     'alarmas.empleados.docs_vencidos',
     'alarmas.empleados.docs_faltantes',
+    'alarmas.config.autorizacion_resuelta',
   ],
 };
 

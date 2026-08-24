@@ -1,10 +1,13 @@
 const RolApp = require('../models/RolApp');
 const { todasLasClaves, clavesValidas } = require('../constants/permisosCatalogo');
+const { permisosCrudCatalogo } = require('../constants/crudModulos');
+const { MODULOS_CRUD, ACCIONES_CRUD } = require('../constants/crudModulos');
 const {
   clavesValidas: clavesAlarmasValidas,
   alarmasDefaultRol,
 } = require('../constants/alarmasCatalogo');
 const { normalizarRol, esAdmin } = require('../utils/roles');
+const { tienePermisoClave, tieneAccionModulo } = require('./permisoAccion');
 
 const ROLES_SISTEMA = {
   admin: {
@@ -114,10 +117,33 @@ function limpiarCache(codigo) {
   else cache.clear();
 }
 
+/** Permisos amplios que conceden acciones más específicas (compatibilidad con roles ya guardados). */
+const LEGACY_PERMISO_EXPANSION = {
+  'config.usuarios': [
+    'config.usuarios.ver',
+    'config.usuarios.crear',
+    'config.usuarios.editar',
+    'config.usuarios.eliminar',
+  ],
+};
+
+function concedidoPorPermisoLegacy(permisos, clave) {
+  for (const [legacy, concedidos] of Object.entries(LEGACY_PERMISO_EXPANSION)) {
+    if (permisos.includes(legacy) && concedidos.includes(clave)) return true;
+  }
+  return false;
+}
+
 function tienePermiso(permisos, clave) {
   if (!permisos?.length) return false;
   if (permisos.includes('*') || esAdminPorPermisos(permisos)) return true;
-  return permisos.includes(clave);
+  if (permisos.includes(clave)) return true;
+  if (concedidoPorPermisoLegacy(permisos, clave)) return true;
+  const [modulo, accion] = String(clave).split('.');
+  if (MODULOS_CRUD[modulo] && ACCIONES_CRUD.includes(accion)) {
+    return tieneAccionModulo(permisos, modulo, accion);
+  }
+  return tienePermisoClave(permisos, clave);
 }
 
 function tieneAlarma(alarmas, clave) {
@@ -317,10 +343,16 @@ async function puedeGestionarServiciosPorPermisos(rolRaw) {
   return tieneAlguno(p, ['servicios.gestionar', 'servicios.ver', '*']);
 }
 
+function todasClavesPermisoValidas() {
+  const valid = new Set(todasLasClaves());
+  for (const p of permisosCrudCatalogo()) valid.add(p.key);
+  return valid;
+}
+
 function sanitizarPermisosDetallado(list) {
   if (!Array.isArray(list)) return { permisos: [], removidos: [] };
   if (list.includes('*')) return { permisos: ['*'], removidos: [] };
-  const valid = new Set(todasLasClaves());
+  const valid = todasClavesPermisoValidas();
   const permisos = [];
   const removidos = [];
   for (const raw of list) {

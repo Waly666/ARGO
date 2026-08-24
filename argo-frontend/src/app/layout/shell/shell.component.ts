@@ -74,6 +74,12 @@ import {
 import { AlertaPagoAlumnoService } from '../../core/services/alerta-pago-alumno.service';
 import { AlertaPagoAlumnoBannerComponent } from '../../features/alumnos/alerta-pago-alumno-banner.component';
 import { AlumnoService } from '../../core/services/alumno.service';
+import { AutorizacionPendientesAlertService } from '../../core/services/autorizacion-pendientes-alert.service';
+import { AutorizacionAlertService } from '../../core/services/autorizacion-alert.service';
+import {
+  AutorizacionPendienteBannerComponent,
+  AutorizacionResueltaBannerComponent,
+} from '../../features/config/autorizacion-alert-banner.component';
 
 interface MenuLink {
   kind: 'link';
@@ -126,7 +132,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AulaVirtualRegistroBannerComponent, AulaVirtualMatriculaBannerComponent, AulaVirtualAccesoPorVencerBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, CambiarPasswordModalComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AulaVirtualRegistroBannerComponent, AulaVirtualMatriculaBannerComponent, AulaVirtualAccesoPorVencerBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, AutorizacionPendienteBannerComponent, AutorizacionResueltaBannerComponent, CambiarPasswordModalComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -177,6 +183,8 @@ export class ShellComponent {
   private inspeccionSvc = inject(InspeccionVehiculoService);
   readonly cajaEstado = inject(CajaEstadoService);
   private cajaAperturaAlert = inject(CajaAperturaAlertService);
+  readonly autorizPendientesAlert = inject(AutorizacionPendientesAlertService);
+  private autorizacionAlert = inject(AutorizacionAlertService);
 
   collapsed = signal(false);
   /** Acordeón: solo abierto si el usuario lo abre o está en esa sección de la ruta */
@@ -389,6 +397,27 @@ export class ShellComponent {
 
   mostrarBannerChatMensaje = computed(() => this.chatMensajeAlert.alertas().length > 0);
 
+  mostrarAlertaAutorizacionPendiente = computed(() =>
+    this.alarmaHabilitada('alarmas.config.autorizacion_pendiente'),
+  );
+
+  mostrarAlertaAutorizacionResuelta = computed(() =>
+    this.alarmaHabilitada('alarmas.config.autorizacion_resuelta'),
+  );
+
+  mostrarBannerAutorizacionPendiente = computed(
+    () =>
+      this.mostrarAlertaAutorizacionPendiente() &&
+      this.permisos.tiene(['config.autorizaciones', 'config.roles']) &&
+      this.autorizacionAlert.pendientesAdmin().length > 0,
+  );
+
+  mostrarBannerAutorizacionResuelta = computed(
+    () =>
+      this.mostrarAlertaAutorizacionResuelta() &&
+      this.autorizacionAlert.resueltasMias().length > 0,
+  );
+
   mostrarBannerCertificado = computed(
     () => this.mostrarAlertaCertificado() && this.certAlertSvc.alertas().length > 0,
   );
@@ -514,7 +543,9 @@ export class ShellComponent {
       this.mostrarBannerRegistroPortal() ||
       this.mostrarBannerMatriculaPortal() ||
       this.mostrarBannerAccesoPorVencer() ||
-      this.mostrarBannerChatMensaje(),
+      this.mostrarBannerChatMensaje() ||
+      this.mostrarBannerAutorizacionPendiente() ||
+      this.mostrarBannerAutorizacionResuelta(),
   );
 
   private readonly menuAll: MenuEntry[] = [
@@ -1179,6 +1210,7 @@ export class ShellComponent {
       iconTone: 'indigo',
       permiso: [
         'config.usuarios',
+        'config.usuarios.ver',
         'config.roles',
         'config.catalogos',
         'config.recibos',
@@ -1191,6 +1223,7 @@ export class ShellComponent {
         'config.paginas_informes',
         'config.requisitos',
         'config.auditoria',
+        'config.autorizaciones',
         'sedes.gestionar',
         'config.sedes',
       ],
@@ -1207,7 +1240,7 @@ export class ShellComponent {
               path: '/app/configuracion/usuarios',
               icon: '◎',
               iconTone: 'purple',
-              permiso: 'config.usuarios',
+              permiso: ['config.usuarios.ver', 'config.usuarios'],
             },
             {
               kind: 'link',
@@ -1227,11 +1260,11 @@ export class ShellComponent {
             },
             {
               kind: 'link',
-              label: 'Apps móviles',
-              path: '/app/configuracion/apps-moviles',
-              icon: '▣',
-              iconTone: 'teal',
-              permiso: 'config.roles',
+              label: 'Autorizaciones pendientes',
+              path: '/app/configuracion/autorizaciones',
+              icon: '⚠',
+              iconTone: 'amber',
+              permiso: ['config.autorizaciones', 'config.roles'],
             },
             {
               kind: 'link',
@@ -1673,6 +1706,7 @@ export class ShellComponent {
       error: () => this.sincronizarAlertasConConfig(),
     });
     this.iniciarAlertasPollsOnce();
+    this.autorizPendientesAlert.iniciarPolling();
     this.programacionCeaProximaAlert.refresh
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.pollAlertasClaseProximaCea());
@@ -1744,7 +1778,27 @@ export class ShellComponent {
     this.iniciarPollAulaVirtualAccesoPorVencer();
     this.iniciarForoMensajeAlert();
     this.iniciarChatInterno();
+    this.iniciarAutorizacionAlertas();
     this.iniciarPollPermisosSesion();
+  }
+
+  private iniciarAutorizacionAlertas(): void {
+    if (!this.auth.isAuth()) return;
+    this.autorizacionAlert.conectar();
+    const msPend = this.pollIntervalMs('alarmas.config.autorizacion_pendiente');
+    const msRes = this.pollIntervalMs('alarmas.config.autorizacion_resuelta');
+    if (this.alarmaHabilitada('alarmas.config.autorizacion_pendiente')) {
+      this.autorizacionAlert.cargarPendientesAdmin();
+      interval(msPend)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.autorizacionAlert.cargarPendientesAdmin());
+    }
+    if (this.alarmaHabilitada('alarmas.config.autorizacion_resuelta')) {
+      this.autorizacionAlert.cargarMisResueltas();
+      interval(msRes)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.autorizacionAlert.cargarMisResueltas());
+    }
   }
 
   private iniciarChatInterno(): void {
@@ -1832,6 +1886,12 @@ export class ShellComponent {
     }
     if (!this.alarmaHabilitada('alarmas.aula_virtual.acceso_por_vencer')) {
       this.aulaVirtualAccesoPorVencerAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.config.autorizacion_pendiente')) {
+      this.autorizacionAlert.descartarTodasPendientes();
+    }
+    if (!this.alarmaHabilitada('alarmas.config.autorizacion_resuelta')) {
+      this.autorizacionAlert.descartarTodasResueltas();
     }
   }
 

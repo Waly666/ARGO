@@ -35,6 +35,8 @@ import {
 
 import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import {
   ConfigCertificado,
@@ -198,6 +200,8 @@ export class ProgramasAdminComponent implements OnInit {
 
   private auth = inject(AuthService);
   private permisoSvc = inject(PermisoService);
+  private accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   private cfgCertSvc = inject(ConfigCertificadoService);
 
@@ -345,11 +349,23 @@ export class ProgramasAdminComponent implements OnInit {
   esAdmin = signal(false);
 
   puedeAgregarPrograma(): boolean {
-    return this.permisoSvc.tiene(['programas.agregar', 'programas.gestionar']);
+    return this.accionPermiso.tiene('programas', 'crear');
+  }
+
+  puedeEditarPrograma(): boolean {
+    return this.accionPermiso.tiene('programas', 'editar');
+  }
+
+  puedeEliminarPrograma(): boolean {
+    return this.accionPermiso.mostrarAccionEliminar('programas');
+  }
+
+  etiquetaEliminarPrograma(): string {
+    return this.eliminacionOps.etiquetaBotonEliminar('programas');
   }
 
   puedeGestionarPrograma(): boolean {
-    return this.permisoSvc.tiene('programas.gestionar');
+    return this.puedeEditarPrograma();
   }
 
 
@@ -1181,44 +1197,33 @@ export class ProgramasAdminComponent implements OnInit {
 
   async eliminar(p: Programa) {
 
-    if (!this.puedeGestionarPrograma()) {
-      this.inform('Solo quien administra programas puede eliminar.');
-
+    if (!this.puedeEliminarPrograma()) {
+      this.inform('No tiene permisos para eliminar programas.');
       return;
-
     }
 
-    const ok = await this.confirm.open({
-
-      title: 'Eliminar programa',
-
-      message: `¿Eliminar permanentemente «${p.nombreProg}» y su servicio de matrícula?`,
-
-      confirmLabel: 'Eliminar',
-
-      variant: 'danger',
-
-    });
-
-    if (!ok) return;
-
-    this.progSvc.eliminar(p.idPrograma).subscribe({
-
-      next: (r) => {
-
+    const resumen = `Programa «${p.nombreProg}»`;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'programas',
+        idEntidad: String(p.idPrograma),
+        resumen,
+        tituloConfirm: 'Eliminar programa',
+        mensajeConfirm: `¿Eliminar permanentemente «${p.nombreProg}» y su servicio de matrícula?`,
+        ejecutar: () => this.progSvc.eliminar(p.idPrograma),
+      });
+      if (resultado === 'eliminado') {
         this.catSvc.invalidate('programas');
-
         this.catSvc.invalidate('servicios');
-
-        this.inform(r.message || 'Programa eliminado.');
-
+        this.inform('Programa eliminado.');
         this.cargar();
-
-      },
-
-      error: (e) => this.inform(e?.error?.message || 'Error al eliminar', true),
-
-    });
+      } else if (resultado === 'solicitado') {
+        this.inform('Solicitud de eliminación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.inform(err?.error?.message || 'Error al eliminar', true);
+    }
 
   }
 

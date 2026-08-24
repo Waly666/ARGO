@@ -10,6 +10,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { Cliente, ClienteService } from '../../core/services/cliente.service';
 import { JornadaCapDto, JornadaCapService } from '../../core/services/jornada-cap.service';
 import { PermisoService } from '../../core/services/permiso.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { AlarmaService } from '../../core/services/alarma.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import {
@@ -131,6 +133,8 @@ export class AlumnosListaComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private permisos = inject(PermisoService);
+  private accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmDialogService);
   private comprobanteImpresion = inject(ComprobanteHoyImpresionService);
@@ -162,8 +166,10 @@ export class AlumnosListaComponent implements OnInit {
   eliminandoId = signal<string | null>(null);
 
   esAdmin = computed(() => this.auth.isAdmin());
-  /** Borrar alumno: solo administradores en listado general (/app/alumnos). */
-  puedeEliminar = computed(() => this.esAdmin() && !this.esJornadas());
+  puedeEliminar = computed(
+    () => this.accionPermiso.mostrarAccionEliminar('alumnos') && !this.esJornadas(),
+  );
+  etiquetaEliminar = computed(() => this.eliminacionOps.etiquetaBotonEliminar('alumnos'));
 
   /** Filtros solo en modo jornadas de capacitación */
   fechaJornadaCap = signal('');
@@ -656,33 +662,34 @@ export class AlumnosListaComponent implements OnInit {
 
   async eliminar(item: AlumnoListItem, ev?: Event) {
     ev?.stopPropagation();
-    if (!this.puedeEliminar()) {
-      this.mostrarMsg('Solo un administrador puede eliminar alumnos.', true);
-      return;
-    }
+    if (!this.puedeEliminar()) return;
     const id = item?._id ? String(item._id) : '';
     if (!id) return;
     const nombre = this.nombreCompleto(item);
     const doc = this.formatNumDoc(item.numDoc);
-    const ok = await this.confirmSvc.open({
-      title: 'Eliminar alumno',
-      message: `¿Eliminar permanentemente a ${nombre} (${doc})? Esta acción no se puede deshacer.`,
-      confirmLabel: 'Eliminar',
-      variant: 'danger',
-    });
-    if (!ok) return;
+    const resumen = `${nombre} (${doc})`;
     this.eliminandoId.set(id);
-    this.alumnoSvc.eliminar(id).subscribe({
-      next: () => {
-        this.eliminandoId.set(null);
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'alumnos',
+        idEntidad: id,
+        resumen,
+        tituloConfirm: 'Eliminar alumno',
+        mensajeConfirm: `¿Eliminar permanentemente a ${resumen}? Esta acción no se puede deshacer.`,
+        ejecutar: () => this.alumnoSvc.eliminar(id),
+      });
+      if (resultado === 'eliminado') {
         this.mostrarMsg('Alumno eliminado.');
         this.cargar();
-      },
-      error: (e) => {
-        this.eliminandoId.set(null);
-        this.mostrarMsg(e?.error?.message || 'No se pudo eliminar el alumno.', true);
-      },
-    });
+      } else if (resultado === 'solicitado') {
+        this.mostrarMsg('Solicitud de eliminación enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.mostrarMsg(err?.error?.message || 'No se pudo eliminar el alumno.', true);
+    } finally {
+      this.eliminandoId.set(null);
+    }
   }
 
   mostrarMsg(texto: string, error = false) {

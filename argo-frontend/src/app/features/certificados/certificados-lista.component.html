@@ -197,7 +197,7 @@
               <td class="actions-cell">
                 <button type="button" class="mini ghost" (click)="imprimir(c)">Imprimir</button>
                 <button type="button" class="mini primary" (click)="abrirEditar(c._id)" *ngIf="!esAnulado(c)">Editar</button>
-                <button type="button" class="mini danger" (click)="eliminar(c)" *ngIf="!esAnulado(c)">Anular</button>
+                <button type="button" class="mini danger" (click)="eliminar(c)" *ngIf="!esAnulado(c) && puedeAnularCertificado()">{{ etiquetaAnularCertificado() }}</button>
               </td>
             </tr>
           }

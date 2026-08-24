@@ -63,6 +63,7 @@ router.use('/informes', require('./informes'));
 router.use('/pasarela', require('./pasarela'));
 router.use('/webhooks', require('./webhooks'));
 router.use('/combos', require('./combos'));
+router.use('/autorizaciones', require('./autorizaciones'));
 router.use('/foro', require('./foro'));
 router.use('/chat', require('./chat'));
 

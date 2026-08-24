@@ -18,6 +18,8 @@ import {
   EnumBuscarOption,
 } from '../../shared/catalogo-enum-buscar/catalogo-enum-buscar.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 import { capId } from '../../core/utils/capsule.util';
 import type { DocumentoRequeridoVehiculo, TipoDocumentoRequisitoVehi } from '../../core/services/config-requisitos-documentos-vehiculos.service';
@@ -40,6 +42,8 @@ export class VehiculoDetalleComponent implements OnInit {
   private router = inject(Router);
   private svc = inject(VehiculoService);
   private confirm = inject(ConfirmDialogService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   uploads = environment.uploadsUrl;
   tab = signal<TabKey>('datos');
@@ -377,19 +381,24 @@ export class VehiculoDetalleComponent implements OnInit {
 
   async eliminar(): Promise<void> {
     const id = this.vehiculoId();
-    if (!id) return;
-    const ok = await this.confirm.open({
-      title: 'Eliminar vehículo',
-      message: `¿Eliminar el vehículo ${this.form().placa}? Se borrarán también sus documentos.`,
-      confirmLabel: 'Eliminar',
-      cancelLabel: 'Cancelar',
-      variant: 'danger',
-    });
-    if (!ok) return;
-    this.svc.eliminar(id).subscribe({
-      next: () => this.router.navigate(['/app/vehiculos']),
-      error: (e) => this.err.set(e?.error?.message || 'No se pudo eliminar'),
-    });
+    if (!id || !this.accionPermiso.mostrarAccionEliminar('vehiculos')) return;
+    const placa = this.form().placa;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'vehiculos',
+        idEntidad: id,
+        resumen: `Vehículo ${placa}`,
+        tituloConfirm: 'Eliminar vehículo',
+        mensajeConfirm: `¿Eliminar el vehículo ${placa}? Se borrarán también sus documentos.`,
+        ejecutar: () => this.svc.eliminar(id),
+      });
+      if (resultado === 'eliminado') {
+        void this.router.navigate(['/app/vehiculos']);
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.err.set(err?.error?.message || 'No se pudo eliminar');
+    }
   }
 
   cargarRequisitos(): void {

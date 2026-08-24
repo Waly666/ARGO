@@ -229,10 +229,9 @@ export class AsistenteContextoService {
     // —— Configuración ——
     if (path.includes('/configuracion/facturacion')) return 'facturacion.config';
     if (path.includes('/configuracion/clientes')) return 'facturacion.clientes';
-    if (path.includes('/configuracion/usuarios')) return 'config.usuarios';
+    if (path.includes('/configuracion/usuarios')) return 'config.usuarios.ver';
     if (path.includes('/configuracion/sedes')) return 'config.sedes';
     if (path.includes('/configuracion/roles')) return 'config.roles';
-    if (path.includes('/configuracion/apps-moviles')) return 'config.apps-moviles';
     if (path.includes('/configuracion/recibos')) return 'config.recibos';
     if (path.includes('/configuracion/envio-correos-alumno')) return 'config.alertas';
     if (path.includes('/configuracion/certificados')) return 'config.certificados';

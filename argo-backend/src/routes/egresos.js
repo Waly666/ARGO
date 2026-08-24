@@ -4,6 +4,8 @@ const reciboEgreso = require('../controllers/reciboEgresoController');
 const upload = require('../middleware/upload');
 const { requireAuth, loadSedeActiva, exigirSedeActiva, requirePermiso } = require('../middleware/auth');
 
+const { accionesModulo } = require('../middleware/gateAccion');
+
 const router = Router();
 const soporte = upload.egresos.single('soporte');
 
@@ -11,6 +13,7 @@ router.use(requireAuth, loadSedeActiva, exigirSedeActiva);
 
 const turno = requirePermiso('caja.turno', 'caja.admin', 'contabilidad');
 const admin = requirePermiso('caja.admin', 'contabilidad');
+const accEgr = accionesModulo('egresos');
 
 router.get('/admin/todos', admin, ctrl.listarTodos);
 router.get('/vehiculos-opciones', turno, ctrl.opcionesVehiculos);
@@ -22,6 +25,6 @@ router.get('/:id/recibo/html', turno, reciboEgreso.html);
 router.get('/:id', turno, ctrl.obtener);
 router.post('/', turno, soporte, ctrl.crear);
 router.put('/:id', turno, soporte, ctrl.actualizar);
-router.delete('/:id', turno, ctrl.eliminar);
+router.delete('/:id', accEgr.eliminar, ctrl.eliminar);
 
 module.exports = router;

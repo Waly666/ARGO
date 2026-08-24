@@ -317,7 +317,7 @@
                     [disabled]="eliminandoId() === r._id"
                     (click)="eliminar(r, $event)"
                   >
-                    {{ eliminandoId() === r._id ? '…' : 'Eliminar' }}
+                    {{ eliminandoId() === r._id ? '…' : etiquetaEliminar() }}
                   </button>
                 }
               </div>
@@ -421,7 +421,7 @@
                 (click)="eliminar(r, $event)"
                 title="Eliminar alumno"
               >
-                {{ eliminandoId() === r._id ? '…' : 'Eliminar' }}
+                {{ eliminandoId() === r._id ? '…' : etiquetaEliminar() }}
               </button>
             }
             <button

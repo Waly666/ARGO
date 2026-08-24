@@ -3,6 +3,9 @@
     <div class="usr-head-main">
       <h1>Gestión de usuarios</h1>
       <p>Cuentas de acceso al sistema: login, rol, sede, 2FA y estado activo/inactivo.</p>
+      @if (soloLectura()) {
+        <p class="usr-readonly-hint">Modo solo consulta: no puede crear, editar ni eliminar usuarios.</p>
+      }
     </div>
     <div class="usr-head-actions">
       @if (!loading() && !mostrarForm()) {
@@ -11,7 +14,7 @@
           <span class="usr-chip usr-chip--on">{{ resumen().activos }} activo{{ resumen().activos === 1 ? '' : 's' }}</span>
         }
       }
-      @if (!mostrarForm()) {
+      @if (!mostrarForm() && puedeCrear()) {
         <button type="button" class="primary usr-btn-new" (click)="nuevo()">+ Nuevo usuario</button>
       }
     </div>
@@ -177,7 +180,9 @@
           <p>No hay usuarios que coincidan con «{{ filtro() }}».</p>
         } @else {
           <p>No hay usuarios registrados.</p>
-          <button type="button" class="ghost" (click)="nuevo()">Crear el primero</button>
+          @if (puedeCrear()) {
+            <button type="button" class="ghost" (click)="nuevo()">Crear el primero</button>
+          }
         }
       </div>
     } @else if (vista() === 'lista') {
@@ -216,15 +221,19 @@
                   </span>
                 </td>
                 <td class="usr-row-actions">
-                  <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
-                  @if (u.totpEnabled === true && !esUsuarioActual(u)) {
-                    <button type="button" class="ghost mini" (click)="resetearMfa(u)">Reset 2FA</button>
+                  @if (puedeEditar()) {
+                    <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
+                    @if (u.totpEnabled === true && !esUsuarioActual(u)) {
+                      <button type="button" class="ghost mini" (click)="resetearMfa(u)">Reset 2FA</button>
+                    }
                   }
-                  @if (u.activo !== false && !esUsuarioActual(u)) {
-                    <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
-                  }
-                  @if (!esUsuarioActual(u)) {
-                    <button type="button" class="danger mini" (click)="borrar(u)">Eliminar</button>
+                  @if (puedeEliminar()) {
+                    @if (u.activo !== false && !esUsuarioActual(u)) {
+                      <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
+                    }
+                    @if (!esUsuarioActual(u)) {
+                      <button type="button" class="danger mini" (click)="borrar(u)">Eliminar</button>
+                    }
                   }
                 </td>
               </tr>
@@ -262,15 +271,19 @@
               }
             </div>
             <footer class="usr-card-foot">
-              <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
-              @if (u.totpEnabled === true && !esUsuarioActual(u)) {
-                <button type="button" class="ghost mini" (click)="resetearMfa(u)">Reset 2FA</button>
+              @if (puedeEditar()) {
+                <button type="button" class="ghost mini" (click)="editar(u)">Editar</button>
+                @if (u.totpEnabled === true && !esUsuarioActual(u)) {
+                  <button type="button" class="ghost mini" (click)="resetearMfa(u)">Reset 2FA</button>
+                }
               }
-              @if (u.activo !== false && !esUsuarioActual(u)) {
-                <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
-              }
-              @if (!esUsuarioActual(u)) {
-                <button type="button" class="danger mini" (click)="borrar(u)">Eliminar</button>
+              @if (puedeEliminar()) {
+                @if (u.activo !== false && !esUsuarioActual(u)) {
+                  <button type="button" class="ghost mini" (click)="desactivar(u)">Desactivar</button>
+                }
+                @if (!esUsuarioActual(u)) {
+                  <button type="button" class="danger mini" (click)="borrar(u)">Eliminar</button>
+                }
               }
             </footer>
           </article>

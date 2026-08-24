@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../../core/services/auth.service';
+import { PermisoService } from '../../core/services/permiso.service';
 import { SedeDto, SedeService } from '../../core/services/sede.service';
 import { Usuario, UsuarioDto, UsuarioService } from '../../core/services/usuario.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
@@ -24,7 +25,19 @@ export class UsuariosAdminComponent implements OnInit {
   private svc = inject(UsuarioService);
   private sedeSvc = inject(SedeService);
   private auth = inject(AuthService);
+  private permisos = inject(PermisoService);
   private confirm = inject(ConfirmDialogService);
+
+  puedeCrear = computed(() =>
+    this.permisos.tiene(['config.usuarios.crear', 'config.usuarios']),
+  );
+  puedeEditar = computed(() =>
+    this.permisos.tiene(['config.usuarios.editar', 'config.usuarios']),
+  );
+  puedeEliminar = computed(() =>
+    this.permisos.tiene(['config.usuarios.eliminar', 'config.usuarios']),
+  );
+  soloLectura = computed(() => !this.puedeCrear() && !this.puedeEditar() && !this.puedeEliminar());
 
   usuarios = signal<Usuario[]>([]);
   sedesCatalogo = signal<SedeDto[]>([]);
@@ -118,6 +131,7 @@ export class UsuariosAdminComponent implements OnInit {
   docLabel = documentoUsuario;
 
   nuevo() {
+    if (!this.puedeCrear()) return;
     const principal = this.sedesCatalogo().find((s) => s.esPrincipal) || this.sedesCatalogo()[0];
     this.editando.set(null);
     this.form.set({
@@ -137,6 +151,7 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   editar(u: Usuario) {
+    if (!this.puedeEditar()) return;
     this.editando.set(u);
     const login = esLoginNumerico(u.username) ? '' : u.username;
     this.form.set({
@@ -191,8 +206,9 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   guardar() {
-    const f = this.form();
     const ed = this.editando();
+    if (ed ? !this.puedeEditar() : !this.puedeCrear()) return;
+    const f = this.form();
     if (!f.username?.trim()) {
       this.msgError.set(true);
       this.msg.set('El nombre de usuario (login) es obligatorio.');
@@ -243,6 +259,7 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   async resetearMfa(u: Usuario) {
+    if (!this.puedeEditar()) return;
     if (this.esUsuarioActual(u)) return;
     const ok = await this.confirm.open({
       title: '¿Resetear 2FA?',
@@ -265,6 +282,7 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   async desactivar(u: Usuario) {
+    if (!this.puedeEliminar()) return;
     const ok = await this.confirm.open({
       title: '¿Desactivar usuario?',
       message: `El usuario «${loginMostrable(u)}» no podrá iniciar sesión.`,
@@ -282,6 +300,7 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   async borrar(u: Usuario) {
+    if (!this.puedeEliminar()) return;
     const ok = await this.confirm.open({
       title: '¿Eliminar usuario?',
       message: `Se borrará permanentemente «${loginMostrable(u)}». Esta acción no se puede deshacer.`,

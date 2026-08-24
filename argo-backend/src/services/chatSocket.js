@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 const MensajeChat = require('../models/MensajeChat');
 const { convKeyDe } = MensajeChat;
 const Usuario = require('../models/Usuario');
+const { permisosParaRol } = require('./rolesPermisos');
+const { puedeAutorizarOperaciones } = require('./permisoAccion');
+
+const ROOM_AUTORIZACION_ADMINS = 'autorizacion:admins';
 
 /** userId → Set<socketId> (presencia en memoria) */
 const conexiones = new Map();
@@ -67,6 +71,12 @@ function initChatSocket(io) {
     const uid = user.id;
 
     socket.join(roomUser(uid));
+
+    void permisosParaRol(user.rol).then((permisos) => {
+      if (puedeAutorizarOperaciones(permisos, user.rol)) {
+        socket.join(ROOM_AUTORIZACION_ADMINS);
+      }
+    });
 
     let set = conexiones.get(uid);
     const eraOffline = !set || set.size === 0;

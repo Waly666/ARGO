@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 
 import { Combo, ComboService } from '../../core/services/combo.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
+import { AccionPermisoService } from '../../core/services/accion-permiso.service';
+import { EliminacionOperacionService } from '../../core/services/eliminacion-operacion.service';
 import { ArgoSwitchComponent } from '../../shared/argo-switch/argo-switch.component';
 
 type Modo = 'lista' | 'form';
@@ -25,6 +27,8 @@ interface ProgItem {
 export class CombosAdminComponent implements OnInit {
   private svc = inject(ComboService);
   private catSvc = inject(CatalogoService);
+  accionPermiso = inject(AccionPermisoService);
+  private eliminacionOps = inject(EliminacionOperacionService);
 
   modo = signal<Modo>('lista');
   combos = signal<Combo[]>([]);
@@ -181,12 +185,25 @@ export class CombosAdminComponent implements OnInit {
     });
   }
 
-  eliminarCombo(c: Combo) {
-    if (!confirm(`¿Eliminar el combo "${c.nombre}"?\nEsta acción no se puede deshacer.`)) return;
-    this.svc.eliminar(c.id).subscribe({
-      next: (r) => { this.toast(r.message); this.cargar(); },
-      error: (e) => this.toast(e?.error?.message || 'No se pudo eliminar', true),
-    });
+  async eliminarCombo(c: Combo) {
+    if (!this.accionPermiso.mostrarAccionEliminar('combos')) return;
+    try {
+      const resultado = await this.eliminacionOps.ejecutarEliminacionOSolicitar({
+        modulo: 'combos',
+        idEntidad: c.id,
+        resumen: `Combo «${c.nombre}»`,
+        ejecutar: () => this.svc.eliminar(c.id),
+      });
+      if (resultado === 'eliminado') {
+        this.toast('Combo eliminado.');
+        this.cargar();
+      } else if (resultado === 'solicitado') {
+        this.toast('Solicitud enviada a Configuración.');
+      }
+    } catch (e: unknown) {
+      const err = e as { error?: { message?: string } };
+      this.toast(err?.error?.message || 'No se pudo eliminar', true);
+    }
   }
 
   toggleActivo(c: Combo) {

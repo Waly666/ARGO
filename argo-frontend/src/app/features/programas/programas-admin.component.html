@@ -536,7 +536,7 @@
           <td class="acciones actions-cell">
             <a [routerLink]="fichaProgramaLink(p)" [queryParams]="{ tab: 'alumnos' }" class="ghost mini linkish">Ficha</a>
             <button type="button" class="ghost mini" *ngIf="puedeGestionarPrograma()" (click)="editar(p)">Editar</button>
-            <button type="button" class="danger mini" *ngIf="puedeGestionarPrograma()" (click)="eliminar(p)">Eliminar</button>
+            <button type="button" class="danger mini" *ngIf="puedeEliminarPrograma()" (click)="eliminar(p)">{{ etiquetaEliminarPrograma() }}</button>
           </td>
         </tr>
         <tr *ngIf="!programasOrdenados().length">
@@ -575,7 +575,7 @@
         <div class="card-actions">
           <a [routerLink]="fichaProgramaLink(p)" [queryParams]="{ tab: 'alumnos' }" class="act open linkish">Ficha</a>
           <button type="button" class="act open" *ngIf="puedeGestionarPrograma()" (click)="editar(p)">Editar</button>
-          <button type="button" class="act doc" *ngIf="puedeGestionarPrograma()" (click)="eliminar(p)">Eliminar</button>
+          <button type="button" class="act doc" *ngIf="puedeEliminarPrograma()" (click)="eliminar(p)">{{ etiquetaEliminarPrograma() }}</button>
         </div>
       </footer>
     </article>
