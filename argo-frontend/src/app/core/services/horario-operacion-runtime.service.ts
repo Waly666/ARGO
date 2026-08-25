@@ -12,7 +12,7 @@ export class HorarioOperacionRuntimeService {
   readonly avisoGracia = signal<HorarioGraciaAviso | null>(null);
   private ultimoAvisoMs = 0;
 
-  procesarHeaders(headers: Headers): void {
+  procesarHeaders(headers: { get(name: string): string | null }): void {
     const tipo = headers.get('X-ARGO-Horario-Aviso');
     if (tipo !== 'gracia') return;
     const now = Date.now();
