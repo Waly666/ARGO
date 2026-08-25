@@ -67,6 +67,8 @@ import { ChatMensajeAlertService } from '../../core/services/chat-mensaje-alert.
 import { ChatPanelComponent } from '../../features/chat/chat-panel.component';
 import { ChatMensajeBannerComponent } from '../../features/chat/chat-mensaje-banner.component';
 import { CambiarPasswordModalComponent } from '../../shared/cambiar-password-modal/cambiar-password-modal.component';
+import { HorarioOperacionBannerComponent } from '../../features/sistema/horario-operacion-banner.component';
+import { HorarioOperacionRuntimeService } from '../../core/services/horario-operacion-runtime.service';
 import {
   ComprobanteHoyAlertService,
   ComprobanteHoyTipo,
@@ -132,7 +134,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AulaVirtualRegistroBannerComponent, AulaVirtualMatriculaBannerComponent, AulaVirtualAccesoPorVencerBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, AutorizacionPendienteBannerComponent, AutorizacionResueltaBannerComponent, CambiarPasswordModalComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AulaVirtualRegistroBannerComponent, AulaVirtualMatriculaBannerComponent, AulaVirtualAccesoPorVencerBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, AutorizacionPendienteBannerComponent, AutorizacionResueltaBannerComponent, HorarioOperacionBannerComponent, CambiarPasswordModalComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -145,6 +147,7 @@ export class ShellComponent {
     this.auth.refreshMe().subscribe({ error: () => undefined });
   };
   private auth = inject(AuthService);
+  private horarioRt = inject(HorarioOperacionRuntimeService);
   readonly sedeSvc = inject(SedeService);
   private permisos = inject(PermisoService);
   private alarmas = inject(AlarmaService);
@@ -472,6 +475,8 @@ export class ShellComponent {
       this.cajaEstado.mostrarBannerAbiertaDias(),
   );
 
+  mostrarBannerHorarioGracia = computed(() => !!this.horarioRt.avisoGracia());
+
   mostrarBannerJornadaProceso = computed(
     () => this.mostrarAlarmaJornadaProceso() && this.jornadaProcesoAlert.visible(),
   );
@@ -521,6 +526,7 @@ export class ShellComponent {
 
   mostrarAlarmasCabecera = computed(
     () =>
+      this.mostrarBannerHorarioGracia() ||
       this.mostrarBannerCajaCerrada() ||
       this.mostrarBannerCajaAbiertaDias() ||
       this.mostrarBannerCertificado() ||
@@ -1489,6 +1495,14 @@ export class ShellComponent {
               path: '/app/configuracion/migracion',
               icon: '⇄',
               iconTone: 'cyan',
+              adminOnly: true,
+            },
+            {
+              kind: 'link',
+              label: 'Horario de operación',
+              path: '/app/configuracion/horario-operacion',
+              icon: '⏱',
+              iconTone: 'amber',
               adminOnly: true,
             },
             {

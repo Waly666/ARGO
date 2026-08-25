@@ -171,7 +171,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (signingOut) return;
       signingOut = true;
       const defaultMsg =
-        code === 'CANAL_CONEXION_DENEGADO'
+        code === 'HORARIO_OPERACION_CERRADO'
+          ? 'El sistema no está disponible en este horario.'
+          : code === 'CANAL_CONEXION_DENEGADO'
           ? 'Su usuario no está autorizado para usar la app móvil cajero.'
           : code === 'SESION_REEMPLAZADA'
             ? 'Su sesión fue reemplazada en otro dispositivo.'

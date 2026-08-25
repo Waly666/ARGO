@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from '../config/apiBase';
 import { getSedeActivaSync } from '../storage/sedeStore';
+import { procesarHeadersHorarioOperacion } from '../services/horarioOperacion';
 import type { AuthUser, CajaActivaResponse, ComprobanteRecienteRow, ReglaAlerta, StaffLoginResponse } from './types';
 
 type TokenGetter = () => string | null;
@@ -35,6 +36,13 @@ function notifyUnauthorized(json: unknown, status: number, hadBearerToken: boole
   if (!onUnauthorized || !hadBearerToken) return;
   const body = json as { message?: string; code?: string } | null;
   const code = body?.code;
+  if (status === 403 && code === 'HORARIO_OPERACION_CERRADO') {
+    onUnauthorized(
+      body?.message || 'El sistema no está disponible en este horario.',
+      code,
+    );
+    return;
+  }
   if (status === 403 && code === 'CANAL_CONEXION_DENEGADO') {
     onUnauthorized(body?.message, code);
     return;
@@ -56,6 +64,10 @@ function mensajeRed(err: unknown, base: string): string {
     return `Sin conexión con ${base}. Celular y PC en la misma red Wi‑Fi; en Windows permita el puerto 3000 en el firewall.`;
   }
   return m;
+}
+
+function aplicarAvisoHorarioSiProcede(res: Response): void {
+  if (res.ok) procesarHeadersHorarioOperacion(res.headers);
 }
 
 export async function apiFetch<T>(
@@ -102,6 +114,7 @@ export async function apiFetch<T>(
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
+  aplicarAvisoHorarioSiProcede(res);
   return json as T;
 }
 
@@ -149,6 +162,7 @@ export async function apiPostForm<T>(
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
+  aplicarAvisoHorarioSiProcede(res);
   return json as T;
 }
 
@@ -196,6 +210,7 @@ export async function apiPutForm<T>(
     const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
+  aplicarAvisoHorarioSiProcede(res);
   return json as T;
 }
 
@@ -242,6 +257,7 @@ export async function apiFetchText(
     notifyUnauthorized(parsed, res.status, !!bearer);
     throw new Error(msg);
   }
+  aplicarAvisoHorarioSiProcede(res);
   return text;
 }
 

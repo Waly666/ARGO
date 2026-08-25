@@ -92,6 +92,26 @@ exports.login = async (req, res, next) => {
       return res.status(canal.status).json({ message: canal.message, code: canal.code });
     }
 
+    const { evaluarHorarioOperacionUsuario } = require('../services/horarioOperacion');
+    const horario = await evaluarHorarioOperacionUsuario(
+      { sub: u._id.toString(), rol: u.rol },
+      { idSede: req.headers['x-argo-sede'] || null },
+    );
+    if (horario.estado === 'bloqueado') {
+      logAuthIntento({
+        req,
+        canal: 'staff',
+        identificador: username,
+        ok: false,
+        motivo: 'horario_operacion_cerrado',
+      });
+      return res.status(403).json({
+        message: horario.mensaje,
+        code: horario.code || 'HORARIO_OPERACION_CERRADO',
+        proximaApertura: horario.proximaApertura || null,
+      });
+    }
+
     const mfa = await resolvePostPasswordLogin(req, u);
     if (mfa.step === 'complete') {
       u.rol = normalizarRol(u.rol);

@@ -13,9 +13,10 @@ const alertasCfgCtrl = require('../controllers/configAlertasController');
 const paginasInfCtrl = require('../controllers/configPaginasInformesController');
 const servAdicCtrl = require('../controllers/configServiciosAdicionalesController');
 const gestEmpCtrl = require('../controllers/configGestoresEmpresasController');
+const horarioOpCtrl = require('../controllers/configHorarioOperacionController');
 const envioCorreosAlumnoCtrl = require('../controllers/configEnvioCorreosAlumnoController');
 const upload = require('../middleware/upload');
-const { requireAuth, requirePermiso, loadSedeActiva } = require('../middleware/auth');
+const { requireAuth, requirePermiso, loadSedeActiva, requireAdmin } = require('../middleware/auth');
 
 const router = Router();
 router.use(requireAuth);
@@ -145,5 +146,10 @@ router.put(
     }
   },
 );
+
+router.get('/horario-operacion/catalogos', requireAdmin, horarioOpCtrl.catalogos);
+router.get('/horario-operacion/estado', horarioOpCtrl.estado);
+router.get('/horario-operacion', requireAdmin, horarioOpCtrl.obtener);
+router.put('/horario-operacion', requireAdmin, horarioOpCtrl.actualizar);
 
 module.exports = router;

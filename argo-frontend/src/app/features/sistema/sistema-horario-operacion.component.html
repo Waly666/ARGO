@@ -1,0 +1,141 @@
+<section class="sys-page card">
+  <argo-backup-reset-restore-nav />
+
+  <header class="sys-head">
+    <h1>Horario de operación</h1>
+    <p>
+      Restringe el uso del ERP y la app móvil cajero fuera de las ventanas definidas.
+      Los administradores siempre pueden entrar. Al llegar la hora de cierre se muestra un aviso y
+      se concede un período de gracia para terminar el trabajo (o hasta cerrar la caja).
+    </p>
+  </header>
+
+  @if (loading()) {
+    <p class="sys-hint">Cargando…</p>
+  } @else {
+    <div class="ho-grid">
+      <section class="ho-card">
+        <h2>General</h2>
+        <label class="ho-check">
+          <input type="checkbox" [ngModel]="cfg().activo" (ngModelChange)="patch({ activo: $event })" />
+          Activar restricción por horario
+        </label>
+
+        <label class="ho-field">
+          <span>Zona horaria</span>
+          <input
+            [ngModel]="cfg().zonaHoraria"
+            (ngModelChange)="patch({ zonaHoraria: $event })"
+          />
+        </label>
+
+        <label class="ho-field">
+          <span>Minutos de gracia tras el cierre</span>
+          <input
+            type="number"
+            min="5"
+            max="180"
+            [ngModel]="cfg().minutosGracia"
+            (ngModelChange)="patch({ minutosGracia: +$event })"
+          />
+        </label>
+
+        <label class="ho-check">
+          <input
+            type="checkbox"
+            [ngModel]="cfg().extenderSiCajaAbierta"
+            (ngModelChange)="patch({ extenderSiCajaAbierta: $event })"
+          />
+          Permitir terminar mientras la caja siga abierta
+        </label>
+
+        <label class="ho-field">
+          <span>Mensaje fuera de horario</span>
+          <textarea
+            rows="3"
+            [ngModel]="cfg().mensajeFueraHorario"
+            (ngModelChange)="patch({ mensajeFueraHorario: $event })"
+          ></textarea>
+        </label>
+
+        <label class="ho-field">
+          <span>Mensaje en período de gracia</span>
+          <textarea
+            rows="3"
+            [ngModel]="cfg().mensajeGracia"
+            (ngModelChange)="patch({ mensajeGracia: $event })"
+          ></textarea>
+        </label>
+      </section>
+
+      <section class="ho-card">
+        <div class="ho-card-head">
+          <h2>Horario general (todos los roles sin regla propia)</h2>
+          <button type="button" class="ghost" (click)="agregarGeneral()">+ Ventana</button>
+        </div>
+        @for (v of cfg().reglasGenerales; track v.id) {
+          <article class="ho-ventana">
+            <div class="ho-dias">
+              @for (d of catalogos()?.dias || []; track d.id) {
+                <label class="ho-dia">
+                  <input type="checkbox" [checked]="v.dias.includes(d.id)" (change)="toggleDia(v, d.id, false)" />
+                  {{ d.label.slice(0, 3) }}
+                </label>
+              }
+            </div>
+            <div class="ho-horas">
+              <label>Desde <input type="time" [(ngModel)]="v.horaInicio" (ngModelChange)="patchGeneral(v)" /></label>
+              <label>Hasta <input type="time" [(ngModel)]="v.horaFin" (ngModelChange)="patchGeneral(v)" /></label>
+            </div>
+            <button type="button" class="ghost danger" (click)="quitarGeneral(v.id)">Quitar</button>
+          </article>
+        } @empty {
+          <p class="sys-hint">Sin ventanas generales. Agregue al menos una o defina reglas por rol.</p>
+        }
+      </section>
+
+      <section class="ho-card ho-card--full">
+        <div class="ho-card-head">
+          <h2>Reglas por rol (prioridad sobre el horario general)</h2>
+          <button type="button" class="ghost" (click)="agregarPorRol()">+ Regla</button>
+        </div>
+        @for (r of cfg().reglasPorRol; track r.id) {
+          <article class="ho-ventana">
+            <label class="ho-field">
+              <span>Rol</span>
+              <select [(ngModel)]="r.rol" (ngModelChange)="patchRol(r)">
+                @for (rol of catalogos()?.roles || []; track rol.codigo) {
+                  <option [ngValue]="rol.codigo">{{ rol.nombre }} ({{ rol.codigo }})</option>
+                }
+              </select>
+            </label>
+            <div class="ho-dias">
+              @for (d of catalogos()?.dias || []; track d.id) {
+                <label class="ho-dia">
+                  <input type="checkbox" [checked]="r.dias.includes(d.id)" (change)="toggleDia(r, d.id, true)" />
+                  {{ d.label.slice(0, 3) }}
+                </label>
+              }
+            </div>
+            <div class="ho-horas">
+              <label>Desde <input type="time" [(ngModel)]="r.horaInicio" (ngModelChange)="patchRol(r)" /></label>
+              <label>Hasta <input type="time" [(ngModel)]="r.horaFin" (ngModelChange)="patchRol(r)" /></label>
+            </div>
+            <button type="button" class="ghost danger" (click)="quitarPorRol(r.id)">Quitar</button>
+          </article>
+        } @empty {
+          <p class="sys-hint">Puede definir varias ventanas por rol (ej. mañana y tarde).</p>
+        }
+      </section>
+    </div>
+
+    <footer class="ho-actions">
+      @if (msg()) {
+        <p [class.error]="error()">{{ msg() }}</p>
+      }
+      <button type="button" class="primary" [disabled]="saving()" (click)="guardar()">
+        {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+      </button>
+    </footer>
+  }
+</section>

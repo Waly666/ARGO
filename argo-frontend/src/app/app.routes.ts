@@ -991,6 +991,15 @@ export const routes: Routes = [
             (m) => m.SistemaLimpiezaTablasComponent,
           ),
       },
+      {
+        path: 'configuracion/horario-operacion',
+        canActivate: [adminGuard],
+        data: { title: 'Horario de operación' },
+        loadComponent: () =>
+          import('./features/sistema/sistema-horario-operacion.component').then(
+            (m) => m.SistemaHorarioOperacionComponent,
+          ),
+      },
       { path: 'sistema', pathMatch: 'full', redirectTo: 'configuracion/migracion' },
       { path: 'sistema/respaldos', redirectTo: 'configuracion/backup', pathMatch: 'full' },
       { path: 'sistema/puesta-en-cero', redirectTo: 'configuracion/reset', pathMatch: 'full' },

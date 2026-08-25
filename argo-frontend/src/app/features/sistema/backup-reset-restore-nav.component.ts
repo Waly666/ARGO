@@ -13,6 +13,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <a routerLink="/app/configuracion/reset" routerLinkActive="active">Reset</a>
       <a routerLink="/app/configuracion/limpieza-tablas" routerLinkActive="active">Limpieza tablas</a>
       <a routerLink="/app/configuracion/migracion" routerLinkActive="active">Migración</a>
+      <a routerLink="/app/configuracion/horario-operacion" routerLinkActive="active">Horario de operación</a>
     </nav>
   `,
   styleUrls: ['./backup-reset-restore-nav.component.scss'],

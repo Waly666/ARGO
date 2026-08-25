@@ -134,6 +134,9 @@
         </div>
         @if (mostrarAlarmasCabecera()) {
         <div class="head-alarms-stack">
+          @if (mostrarBannerHorarioGracia()) {
+            <argo-horario-operacion-banner class="head-alerta-pago-wrap" />
+          }
           @if (mostrarBannerCajaCerrada()) {
             <argo-caja-cerrada-banner class="head-caja-alarm head-alerta-pago-wrap" [blink]="true" />
           }

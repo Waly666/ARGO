@@ -9,6 +9,11 @@ const {
   sedesPermitidasUsuario,
 } = require('../services/sedeContext');
 const { evaluarCanalConexion } = require('../utils/canalConexion');
+const {
+  evaluarHorarioOperacionUsuario,
+  aplicarHeadersHorario,
+  rutaExentaHorario,
+} = require('../services/horarioOperacion');
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
@@ -67,7 +72,24 @@ function requireAuth(req, res, next) {
         rol: normalizarRol(u.rol),
         username: u.username || payload.username,
       };
-      next();
+      const path = req.originalUrl || req.url || '';
+      if (rutaExentaHorario(path)) return next();
+      void evaluarHorarioOperacionUsuario(req.user, {
+        idSede: req.headers['x-argo-sede'] || null,
+      })
+        .then((ev) => {
+          if (ev.estado === 'bloqueado') {
+            return res.status(403).json({
+              message: ev.mensaje,
+              code: ev.code || 'HORARIO_OPERACION_CERRADO',
+              proximaApertura: ev.proximaApertura || null,
+            });
+          }
+          aplicarHeadersHorario(res, ev);
+          if (ev.estado === 'gracia') req.horarioGracia = ev;
+          next();
+        })
+        .catch(next);
     })
     .catch(next);
 }
