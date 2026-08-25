@@ -325,11 +325,10 @@
 </section>
     }
     @case ('fotosInicio') {
-<section class="section section-starfield home-fotos-section" id="fotos-inicio">
-  <div class="starfield-bg" aria-hidden="true"></div>
-  <div class="container starfield-container">
+<section class="section section--light section--white home-fotos-section" id="fotos-inicio">
+  <div class="container">
     @if (landing().fotosInicio.kicker || landing().fotosInicio.titulo || landing().fotosInicio.lead) {
-      <header class="section-head center starfield-head home-fotos-section__head">
+      <header class="section-head center home-fotos-section__head">
         @if (landing().fotosInicio.kicker) {
           <p class="kicker reveal" avRevealOnScroll>{{ landing().fotosInicio.kicker }}</p>
         }
