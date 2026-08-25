@@ -19,6 +19,23 @@ function allocIdActividad() {
   return nextIdActividad++;
 }
 
+function canalClienteDeReq(req) {
+  const c = String(req?.get?.('X-ARGO-Cliente') || req?.headers?.['x-argo-cliente'] || '')
+    .trim()
+    .toLowerCase();
+  if (c === 'cajero') return 'cajero';
+  if (c === 'jornadas') return 'jornadas';
+  if (c === 'mobile') return 'aula';
+  return 'web';
+}
+
+function etiquetaCanalCliente(canal) {
+  if (canal === 'cajero') return 'App cajero';
+  if (canal === 'jornadas') return 'App jornadas';
+  if (canal === 'aula') return 'App aula';
+  return 'ERP web';
+}
+
 function usuarioDeToken(payload) {
   if (!payload) return null;
   return {
@@ -169,6 +186,8 @@ function actualizarSesionActiva(usr, doc) {
     usuario: doc.usuario,
     nombreUsuario: doc.nombreUsuario,
     rol: doc.rol,
+    canalCliente: doc.canalCliente,
+    etiquetaCanal: doc.etiquetaCanal,
     ultimaActividad: doc.actividad,
     ultimaRuta: doc.rutaPantalla || doc.rutaBase || doc.ruta,
     rutaPantalla: doc.rutaPantalla || null,
@@ -200,6 +219,7 @@ async function registrarPeticion({
   if (!usr?.idUsuario && !usr?.usuario) return null;
   const metodo = req.method || 'GET';
   const rutaPantalla = normalizarRutaPantalla(req.headers['x-argo-pantalla']);
+  const canalCliente = canalClienteDeReq(req);
   const actividadPantalla = rutaPantalla ? describirPantalla(rutaPantalla) : null;
   const actividad = actividadPantalla || describirActividad(metodo, rb, statusCode);
   const contexto = extraerContextoBody(req, rb);
@@ -219,6 +239,8 @@ async function registrarPeticion({
     bytesSalida,
     actividad,
     contexto,
+    canalCliente,
+    etiquetaCanal: etiquetaCanalCliente(canalCliente),
     ip: req.ip || req.headers?.['x-forwarded-for'] || null,
   };
 
@@ -245,6 +267,8 @@ async function listarActivos(minutos = ACTIVOS_MINUTOS) {
         usuario: { $first: '$usuario' },
         nombreUsuario: { $first: '$nombreUsuario' },
         rol: { $first: '$rol' },
+        canalCliente: { $first: '$canalCliente' },
+        etiquetaCanal: { $first: '$etiquetaCanal' },
         ultimaActividad: { $first: '$actividad' },
         ultimaRuta: { $first: { $ifNull: ['$rutaPantalla', '$rutaBase'] } },
         rutaPantalla: { $first: '$rutaPantalla' },
@@ -270,6 +294,8 @@ async function listarActivos(minutos = ACTIVOS_MINUTOS) {
       usuario: row.usuario,
       nombreUsuario: row.nombreUsuario,
       rol: row.rol,
+      canalCliente: row.canalCliente || 'web',
+      etiquetaCanal: row.etiquetaCanal || etiquetaCanalCliente(row.canalCliente),
       ultimaActividad: row.ultimaActividad,
       ultimaRuta: row.ultimaRuta,
       rutaPantalla: row.rutaPantalla || null,
@@ -381,5 +407,7 @@ module.exports = {
   obtenerMonitor,
   describirActividad,
   describirPantalla,
+  canalClienteDeReq,
+  etiquetaCanalCliente,
   ACTIVOS_MINUTOS,
 };

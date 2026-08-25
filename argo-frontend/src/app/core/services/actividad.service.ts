@@ -9,6 +9,8 @@ export interface UsuarioActivo {
   usuario?: string;
   nombreUsuario?: string;
   rol?: string;
+  canalCliente?: 'web' | 'cajero' | 'jornadas' | 'aula';
+  etiquetaCanal?: string;
   ultimaActividad?: string;
   ultimaRuta?: string;
   rutaPantalla?: string | null;

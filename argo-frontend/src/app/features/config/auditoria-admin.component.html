@@ -119,6 +119,9 @@
                   <span class="dot"></span>
                   <strong>{{ u.nombreUsuario || u.usuario }}</strong>
                 </header>
+                @if (u.etiquetaCanal) {
+                  <p class="meta canal">{{ u.etiquetaCanal }}</p>
+                }
                 <p class="act">{{ u.ultimaActividad }}</p>
                 <p class="meta">{{ u.ultimoMetodo }} · {{ u.ultimaRuta }}</p>
                 <p class="meta dim">{{ u.peticionesRecientes }} ops / ventana</p>
@@ -202,6 +205,9 @@
                 <h3>{{ u.nombreUsuario || u.usuario }}</h3>
                 <span class="aud-badge aud-badge--live">En línea</span>
               </header>
+              @if (u.etiquetaCanal) {
+                <p class="aud-meta aud-meta--canal">{{ u.etiquetaCanal }}</p>
+              }
               <dl class="aud-user-fields">
                 <div><dt>Usuario</dt><dd>{{ u.usuario }}</dd></div>
                 <div><dt>Rol</dt><dd>{{ u.rol || '—' }}</dd></div>
