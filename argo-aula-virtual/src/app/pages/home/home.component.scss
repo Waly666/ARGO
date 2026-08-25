@@ -1285,7 +1285,7 @@
 
 .quote-band {
   background: var(--av-quote-band-bg);
-  color: var(--av-text);
+  color: var(--av-quote-band-text, var(--av-text));
   padding: 2rem 0;
 }
 
@@ -1303,6 +1303,7 @@ blockquote {
   font-weight: 600;
   line-height: 1.45;
   max-width: 52ch;
+  color: inherit;
 }
 
 .quote-cta {
@@ -1315,13 +1316,14 @@ blockquote {
   opacity: 0.9;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: inherit;
 }
 
 .quote-phone {
   display: block;
   font-size: clamp(1.4rem, 3vw, 2rem);
   font-weight: 800;
-  color: #fff;
+  color: inherit;
   margin-top: 0.2rem;
 }
 
@@ -2841,5 +2843,30 @@ blockquote {
     box-shadow:
       0 20px 44px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(51, 221, 111, 0.12);
+  }
+}
+
+:host.home--finstruvial {
+  .inst-bar {
+    background: var(--av-inst-bar-bg, linear-gradient(90deg, #b45309 0%, #c2410c 38%, #ea580c 72%, #f97316 100%));
+    color: #fff;
+  }
+
+  .quote-band {
+    background: var(
+      --av-quote-band-bg,
+      linear-gradient(90deg, #9a3412 0%, #c2410c 20%, #ea580c 50%, #f97316 80%, #fb923c 100%)
+    );
+    color: #fff;
+
+    blockquote,
+    .quote-label,
+    .quote-phone {
+      color: #fff;
+    }
+
+    .quote-phone:hover {
+      color: #ffedd5;
+    }
   }
 }

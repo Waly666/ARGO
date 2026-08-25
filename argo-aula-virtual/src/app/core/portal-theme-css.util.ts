@@ -29,9 +29,19 @@ export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | '
   heroEstilo: 'starfield',
 };
 
+/** Franja superior e frase destacada — naranja institucional Finstruvial */
+export const FINSTRUVIAL_FIRE_GRADIENT_BAR =
+  'linear-gradient(90deg, #b45309 0%, #c2410c 38%, #ea580c 72%, #f97316 100%)';
+export const FINSTRUVIAL_FIRE_GRADIENT_QUOTE =
+  'linear-gradient(90deg, #9a3412 0%, #c2410c 20%, #ea580c 50%, #f97316 80%, #fb923c 100%)';
+
 /** Derivados idénticos al CSS publicado en https://finstruvial.edu.co/ */
 export const FINSTRUVIAL_DERIVED_CSS_VARS: Record<string, string> = {
   '--av-brand': '#c2410c',
+  '--av-inst-bar-bg': FINSTRUVIAL_FIRE_GRADIENT_BAR,
+  '--av-inst-bar-text': '#ffffff',
+  '--av-quote-band-bg': FINSTRUVIAL_FIRE_GRADIENT_QUOTE,
+  '--av-quote-band-text': '#ffffff',
   '--av-surface-2': '#1a2744',
   '--av-border-strong': 'rgba(148, 163, 184, 0.45)',
   '--av-dark-lead': '#b6c5e8',
