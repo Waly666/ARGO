@@ -10,7 +10,7 @@
     <div class="eca-links">
       <a routerLink="/app/configuracion/certificados">Config. certificados</a>
       <a routerLink="/app/configuracion/recibos">Comprobantes de caja</a>
-      <a routerLink="/app/configuracion/gestores-empresas">Gestores y empresas</a>
+      <a routerLink="/app/configuracion/gestores">Gestores</a>
       <a routerLink="/app/configuracion/alertas">Alertas</a>
     </div>
   </header>
@@ -43,12 +43,11 @@
         reglas definidas abajo.
       </p>
 
-      <h2 class="eca-section-title">Alumnos con gestor o empresa referidora</h2>
+      <h2 class="eca-section-title">Alumnos con gestor (tramitador)</h2>
       <p class="eca-hint eca-hint--block">
-        Cuando el alumno tiene activo el manejo por <strong>gestor (tramitador)</strong> o
-        <strong>empresa</strong>, puede definir destinatarios distintos. El correo del gestor se toma del catálogo
-        de gestores; el de la empresa, del cliente en facturación. Si falta correo en el catálogo, ese destino se
-        omite.
+        Cuando el alumno tiene activo el manejo por <strong>gestor (tramitador)</strong>, puede definir
+        destinatarios distintos. El correo del gestor se toma del catálogo de gestores. Si falta correo en el
+        catálogo, ese destino se omite.
       </p>
 
       @for (bloque of bloquesReferidor; track bloque.key) {

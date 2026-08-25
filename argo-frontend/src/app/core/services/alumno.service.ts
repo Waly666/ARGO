@@ -97,9 +97,9 @@ export interface AlumnoDto {
   alertaPago?: string | null;
   alertaPagoFrecuencia?: 'quincenal' | 'mensual' | '' | null;
   empresaNombre?: string | null;
-  /** Manejo gestor/empresa que trae al alumno (tarifas especiales al matricular). */
+  /** Manejo gestor (tramitador) que trae al alumno (tarifas especiales al matricular). */
   manejoGestorEmpresa?: boolean;
-  tipoReferidorComercial?: 'gestor' | 'empresa' | '' | null;
+  tipoReferidorComercial?: 'gestor' | '' | null;
   gestorId?: string | null;
   gestorNombre?: string | null;
   referidorEmpresaId?: string | null;

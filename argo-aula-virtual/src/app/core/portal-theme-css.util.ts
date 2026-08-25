@@ -392,7 +392,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     vars['--av-footer-text'] = '#e2e8f0';
     vars['--av-footer-muted'] = '#94a3b8';
     vars['--av-footer-link-hover'] = brandGreen;
-    vars['--av-inst-bar-bg'] = '#2ee778';
+    vars['--av-inst-bar-bg'] = '#0c7954';
     vars['--av-inst-bar-text'] = '#ffffff';
     vars['--av-hero-bg'] = 'transparent';
     vars['--av-hero-title-shimmer'] = brandGreen;

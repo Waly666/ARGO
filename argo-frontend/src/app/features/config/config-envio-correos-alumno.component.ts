@@ -12,7 +12,7 @@ import {
 } from '../../core/services/config-envio-correos-alumno.service';
 import { ArgoSwitchComponent } from '../../shared/argo-switch/argo-switch.component';
 
-type BloqueReferidor = 'gestor' | 'empresa';
+type BloqueReferidor = 'gestor';
 
 @Component({
   selector: 'argo-config-envio-correos-alumno',
@@ -39,16 +39,6 @@ export class ConfigEnvioCorreosAlumnoComponent implements OnInit {
         { value: 'alumno', label: 'Solo al alumno' },
         { value: 'referidor', label: 'Solo al gestor' },
         { value: 'ambos', label: 'Al alumno y al gestor' },
-      ],
-    },
-    {
-      key: 'empresa',
-      titulo: 'Alumnos por empresa referidora',
-      opciones: [
-        { value: 'ninguno', label: 'No enviar' },
-        { value: 'alumno', label: 'Solo al alumno' },
-        { value: 'referidor', label: 'Solo a la empresa' },
-        { value: 'ambos', label: 'Al alumno y a la empresa' },
       ],
     },
   ];
@@ -80,7 +70,6 @@ export class ConfigEnvioCorreosAlumnoComponent implements OnInit {
       enviarComprobantesIngreso: c.enviarComprobantesIngreso !== false,
       referidorComercial: {
         gestor: { ...base.referidorComercial.gestor, ...(c.referidorComercial?.gestor || {}) },
-        empresa: { ...base.referidorComercial.empresa, ...(c.referidorComercial?.empresa || {}) },
       },
     };
   }

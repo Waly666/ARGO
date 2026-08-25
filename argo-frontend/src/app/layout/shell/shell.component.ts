@@ -628,28 +628,12 @@ export class ShellComponent {
           ],
         },
         {
-          kind: 'subgroup',
-          label: 'Gestores y empresas',
+          kind: 'link',
+          label: 'Gestores',
           icon: '◉',
+          path: '/app/caja/gestores',
           iconTone: 'cyan',
-          children: [
-            {
-              kind: 'link',
-              label: 'Gestores',
-              path: '/app/caja/gestores',
-              icon: '◉',
-              iconTone: 'cyan',
-              permiso: ['caja.admin', 'contabilidad'],
-            },
-            {
-              kind: 'link',
-              label: 'Empresas',
-              path: '/app/caja/empresa',
-              icon: '▣',
-              iconTone: 'indigo',
-              permiso: ['caja.admin', 'contabilidad'],
-            },
-          ],
+          permiso: ['caja.admin', 'contabilidad'],
         },
         {
           kind: 'subgroup',
@@ -1309,8 +1293,8 @@ export class ShellComponent {
             },
             {
               kind: 'link',
-              label: 'Gestores y empresas',
-              path: '/app/configuracion/gestores-empresas',
+              label: 'Gestores',
+              path: '/app/configuracion/gestores',
               icon: '◉',
               iconTone: 'cyan',
               permiso: 'config.recibos',
@@ -2352,7 +2336,6 @@ export class ShellComponent {
       u === '/app/caja/' ||
       u.includes('/caja/terceros') ||
       u.includes('/caja/gestores') ||
-      u.includes('/caja/empresa') ||
       u.includes('/combos') ||
       u.includes('/instructores') ||
       u.includes('/jornadas/clases-hoy') ||
@@ -2448,7 +2431,6 @@ export class ShellComponent {
       u === '/app/caja/' ||
       u.includes('/caja/terceros') ||
       u.includes('/caja/gestores') ||
-      u.includes('/caja/empresa') ||
       u.includes('/combos') ||
       u.includes('/instructores') ||
       u.includes('/jornadas/clases-hoy') ||

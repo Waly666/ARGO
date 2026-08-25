@@ -104,16 +104,6 @@ function snapshotReferidorComercial(alumno, tarifa) {
       referidorEmpresaNombre: null,
     };
   }
-  if (tipo === 'empresa' && alumno?.referidorEmpresaId) {
-    return {
-      referidorComercial: true,
-      tipoReferidorComercial: 'empresa',
-      gestorId: null,
-      gestorNombre: null,
-      referidorEmpresaId: alumno.referidorEmpresaId,
-      referidorEmpresaNombre: alumno.referidorEmpresaNombre || null,
-    };
-  }
   return vacio;
 }
 

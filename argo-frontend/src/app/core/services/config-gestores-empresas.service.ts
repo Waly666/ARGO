@@ -11,7 +11,7 @@ export interface ConfigGestoresEmpresas {
 @Injectable({ providedIn: 'root' })
 export class ConfigGestoresEmpresasService {
   private http = inject(HttpClient);
-  private base = `${environment.apiUrl}/config/gestores-empresas`;
+  private base = `${environment.apiUrl}/config/gestores`;
 
   obtener(): Observable<ConfigGestoresEmpresas> {
     return this.http.get<ConfigGestoresEmpresas>(this.base);

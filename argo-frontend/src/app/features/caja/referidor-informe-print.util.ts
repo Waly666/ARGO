@@ -162,7 +162,7 @@ function barChartHtml(title: string, items: ReferidorChartItem[], clase: 'sky' |
 }
 
 function tablaResumen(tipo: TipoReferidorComercial, data: ReferidorInformeDashboard): string {
-  const col = tipo === 'gestor' ? 'Gestor' : 'Empresa';
+  const col = 'Gestor';
   const rows = (data.resumen || [])
     .map(
       (r) => `<tr>
@@ -184,7 +184,7 @@ function tablaResumen(tipo: TipoReferidorComercial, data: ReferidorInformeDashbo
 }
 
 function tablaPagos(tipo: TipoReferidorComercial, data: ReferidorInformeDashboard): string {
-  const col = tipo === 'gestor' ? 'Gestor' : 'Empresa';
+  const col = 'Gestor';
   const rows = (data.detalle?.pagos || [])
     .map(
       (p) => `<tr>
@@ -207,7 +207,7 @@ function tablaPagos(tipo: TipoReferidorComercial, data: ReferidorInformeDashboar
 }
 
 function tablaCertificados(tipo: TipoReferidorComercial, data: ReferidorInformeDashboard): string {
-  const col = tipo === 'gestor' ? 'Gestor' : 'Empresa';
+  const col = 'Gestor';
   const rows = (data.detalle?.certificados || [])
     .map(
       (c) => `<tr>
@@ -230,7 +230,7 @@ function tablaCertificados(tipo: TipoReferidorComercial, data: ReferidorInformeD
 }
 
 function tablaMatriculas(tipo: TipoReferidorComercial, data: ReferidorInformeDashboard): string {
-  const col = tipo === 'gestor' ? 'Gestor' : 'Empresa';
+  const col = 'Gestor';
   const rows = (data.detalle?.matriculas || [])
     .map(
       (m) => `<tr>
@@ -255,10 +255,10 @@ function tablaMatriculas(tipo: TipoReferidorComercial, data: ReferidorInformeDas
 
 export function imprimirReferidorInforme(opts: ReferidorInformePrintOpts): boolean {
   const { tipo, data, filtros, empresa } = opts;
-  const titulo = tipo === 'gestor' ? 'Informe de gestores comerciales' : 'Informe de empresas referidoras';
-  const pdfName = tipo === 'gestor' ? 'informe-gestores' : 'informe-empresas';
+  const titulo = 'Informe de gestores comerciales';
+  const pdfName = 'informe-gestores';
   const k = data.kpis;
-  const refLabel = tipo === 'gestor' ? 'Gestor' : 'Empresa';
+  const refLabel = 'Gestor';
 
   const periodo =
     filtros.desde && filtros.hasta
@@ -279,14 +279,14 @@ export function imprimirReferidorInforme(opts: ReferidorInformePrintOpts): boole
     ${htmlEncabezadoEmpresa(empresa)}
     <div class="doc-titulo-block">
       <h2>${esc(titulo)}</h2>
-      <p>Tarifas gestor/empresa (5 y 6) · Generado ${esc(new Date().toLocaleString('es-CO'))}</p>
+      <p>Tarifa gestor (5) · Generado ${esc(new Date().toLocaleString('es-CO'))}</p>
     </div>
     <table class="doc-meta">
       <tr><td>Período</td><td>${esc(periodo)}</td></tr>
       <tr><td>Programa</td><td>${esc(filtros.programa || 'Todos')}</td></tr>
       <tr><td>Tipo capacitación</td><td>${esc(filtros.tipoCapacitacion || 'Todos')}</td></tr>
       <tr><td>Tipo certificado</td><td>${esc(filtros.tipoCertificado || 'Todos')}</td></tr>
-      <tr><td>${esc(refLabel)}</td><td>${esc(filtros.referidor || (tipo === 'gestor' ? 'Todos los gestores' : 'Todas las empresas'))}</td></tr>
+      <tr><td>${esc(refLabel)}</td><td>${esc(filtros.referidor || 'Todos los gestores')}</td></tr>
     </table>
     <div class="stats">
       <div class="stat"><span>Pagos cobrados</span><strong>${esc(cop(k.totalPagado))}</strong></div>

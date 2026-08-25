@@ -90,6 +90,8 @@ router.put('/recibo', requirePermiso('config.recibos'), ctrl.actualizarRecibo);
 router.get('/servicios-adicionales', requirePermiso('config.recibos'), servAdicCtrl.obtener);
 router.put('/servicios-adicionales', requirePermiso('config.recibos'), servAdicCtrl.actualizar);
 
+router.get('/gestores', requireAuth, gestEmpCtrl.obtener);
+router.put('/gestores', requirePermiso('config.recibos', 'config.facturacion'), gestEmpCtrl.actualizar);
 router.get('/gestores-empresas', requireAuth, gestEmpCtrl.obtener);
 router.put('/gestores-empresas', requirePermiso('config.recibos', 'config.facturacion'), gestEmpCtrl.actualizar);
 

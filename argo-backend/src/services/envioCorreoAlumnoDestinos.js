@@ -1,5 +1,4 @@
 const Gestor = require('../models/Gestor');
-const Cliente = require('../models/Cliente');
 const { esAlumnoReferidorComercial } = require('./gestorEmpresaMatricula');
 
 const DESTINOS_VALIDOS = ['ninguno', 'alumno', 'referidor', 'ambos'];
@@ -61,20 +60,6 @@ async function emailReferidorComercial(alumno) {
       'Gestor';
     return { email, nombre, rol: 'referidor', tipoReferidor: 'gestor' };
   }
-  if (tipo === 'empresa' && alumno?.referidorEmpresaId) {
-    const c = await Cliente.findById(alumno.referidorEmpresaId)
-      .select('correo razonSocial nombreComercial nombres')
-      .lean();
-    const email = emailValido(c?.correo);
-    if (!email) return null;
-    const nombre =
-      c?.razonSocial?.trim() ||
-      c?.nombreComercial?.trim() ||
-      c?.nombres?.trim() ||
-      alumno.referidorEmpresaNombre ||
-      'Empresa';
-    return { email, nombre, rol: 'referidor', tipoReferidor: 'empresa' };
-  }
   return null;
 }
 
@@ -93,9 +78,7 @@ async function resolverDestinatariosCorreoAlumno({ alumno, tipoCorreo, cfg }) {
   let destino = 'alumno';
 
   if (esAlumnoReferidorComercial(alumno)) {
-    const tipoRef = String(alumno.tipoReferidorComercial || '').trim().toLowerCase();
-    const bloque = tipoRef === 'empresa' ? reglasRef.empresa : reglasRef.gestor;
-    destino = normalizarDestino(bloque[tipoCorreo], REGLAS_REFERIDOR_DEFAULT.gestor[tipoCorreo]);
+    destino = normalizarDestino(reglasRef.gestor[tipoCorreo], REGLAS_REFERIDOR_DEFAULT.gestor[tipoCorreo]);
   }
 
   if (destino === 'ninguno') {

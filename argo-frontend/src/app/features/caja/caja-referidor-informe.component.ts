@@ -9,9 +9,7 @@ import {
   ReferidorChartItem,
   ReferidorComercialService,
   ReferidorInformeDashboard,
-  TipoReferidorComercial,
 } from '../../core/services/referidor-comercial.service';
-import { Cliente, ClienteService } from '../../core/services/cliente.service';
 import { ProgramaService } from '../../core/services/programa.service';
 import { CatalogoService } from '../../core/services/catalogo.service';
 import { catEtiqueta } from '../alumnos/catalogo.helpers';
@@ -49,7 +47,6 @@ export class CajaReferidorInformeComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private svc = inject(ReferidorComercialService);
   private gestorSvc = inject(GestorService);
-  private clienteSvc = inject(ClienteService);
   private progSvc = inject(ProgramaService);
   private catSvc = inject(CatalogoService);
   private configSvc = inject(ConfigService);
@@ -57,7 +54,7 @@ export class CajaReferidorInformeComponent implements OnInit {
   empresaConfig = signal<ConfigRecibo | null>(null);
   printMsg = signal<string | null>(null);
 
-  tipo = signal<TipoReferidorComercial>('gestor');
+  tipo = signal<'gestor'>('gestor');
   loading = signal(false);
   error = signal<string | null>(null);
   data = signal<ReferidorInformeDashboard | null>(null);
@@ -75,10 +72,8 @@ export class CajaReferidorInformeComponent implements OnInit {
 
   readonly tiposCert = TIPOS_CERTIFICADO.filter((t) => t.id !== 'jornada_capacitacion');
 
-  titulo = computed(() => (this.tipo() === 'gestor' ? 'Informe de gestores' : 'Informe de empresas'));
-  catalogoLink = computed(() =>
-    this.tipo() === 'gestor' ? '/app/caja/gestores' : '/app/caja/empresa',
-  );
+  titulo = computed(() => 'Informe de gestores');
+  catalogoLink = computed(() => '/app/caja/gestores');
   kpis = computed(() => this.data()?.kpis || null);
   resumen = computed(() => this.data()?.resumen || []);
   detallePagos = computed(() => this.data()?.detalle?.pagos || []);
@@ -100,8 +95,7 @@ export class CajaReferidorInformeComponent implements OnInit {
   opcionesReferidor = signal<EnumBuscarOption[]>([]);
 
   ngOnInit(): void {
-    const t = this.route.snapshot.data['tipoReferidor'] as TipoReferidorComercial;
-    this.tipo.set(t === 'empresa' ? 'empresa' : 'gestor');
+    this.tipo.set('gestor');
     this.presetMesActual();
     this.cargarCatalogos();
     this.cargarEmpresa();
@@ -142,28 +136,10 @@ export class CajaReferidorInformeComponent implements OnInit {
       },
       error: () => this.opcionesTipCap.set([]),
     });
-    if (this.tipo() === 'gestor') {
-      this.gestorSvc.listar().subscribe({
-        next: (rows) => this.opcionesReferidor.set(this.mapGestores(rows)),
-        error: () => this.opcionesReferidor.set([]),
-      });
-    } else {
-      this.clienteSvc.listar().subscribe({
-        next: (rows) => {
-          this.opcionesReferidor.set(
-            (rows || []).map((c) => ({
-              value: String(c._id || ''),
-              label:
-                c.razonSocial?.trim() ||
-                c.nombreComercial?.trim() ||
-                c.nombres?.trim() ||
-                String(c.identificacion || ''),
-            })),
-          );
-        },
-        error: () => this.opcionesReferidor.set([]),
-      });
-    }
+    this.gestorSvc.listar().subscribe({
+      next: (rows) => this.opcionesReferidor.set(this.mapGestores(rows)),
+      error: () => this.opcionesReferidor.set([]),
+    });
   }
 
   private mapGestores(rows: Gestor[]): EnumBuscarOption[] {
@@ -279,9 +255,7 @@ export class CajaReferidorInformeComponent implements OnInit {
         programa: this.programaTexto() || 'Todos',
         tipoCapacitacion: this.tipCapTexto() || 'Todos',
         tipoCertificado: this.labelTipoCertificado(),
-        referidor:
-          this.referidorTexto() ||
-          (this.tipo() === 'gestor' ? 'Todos los gestores' : 'Todas las empresas'),
+        referidor: this.referidorTexto() || 'Todos los gestores',
       },
     });
     if (!ok) {

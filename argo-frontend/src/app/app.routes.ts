@@ -518,17 +518,13 @@ export const routes: Routes = [
           },
           {
             path: 'empresa',
-            canActivate: [permisoGuard],
-            data: { permiso: ['caja.admin', 'contabilidad'], contextoClientes: 'caja' },
-            loadComponent: () =>
-              import('./features/config/config-clientes.component').then((m) => m.ConfigClientesComponent),
+            redirectTo: '/app/configuracion/clientes',
+            pathMatch: 'full',
           },
           {
             path: 'empresa/informe',
-            canActivate: [permisoGuard],
-            data: { permiso: ['caja.admin', 'contabilidad'], tipoReferidor: 'empresa' },
-            loadComponent: () =>
-              import('./features/caja/caja-referidor-informe.component').then((m) => m.CajaReferidorInformeComponent),
+            redirectTo: '/app/caja/gestores/informe',
+            pathMatch: 'full',
           },
           {
             path: 'egresos',
@@ -778,6 +774,11 @@ export const routes: Routes = [
       },
       {
         path: 'configuracion/gestores-empresas',
+        redirectTo: 'configuracion/gestores',
+        pathMatch: 'full',
+      },
+      {
+        path: 'configuracion/gestores',
         canActivate: [permisoGuard],
         data: { permiso: 'config.recibos' },
         loadComponent: () =>

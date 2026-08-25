@@ -98,8 +98,6 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/caja/terceros', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/caja/gestores', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/caja/gestores/informe', permiso: ['caja.admin', 'contabilidad'] },
-  { prefix: '/app/caja/empresa', permiso: ['caja.admin', 'contabilidad'] },
-  { prefix: '/app/caja/empresa/informe', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/cierres', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/cierre-general', permiso: ['caja.admin', 'contabilidad'] },
   { prefix: '/app/caja', permiso: ['caja.turno', 'caja.cobros', 'caja.admin', 'ingresos.crear'] },
@@ -113,6 +111,7 @@ const REGLAS_RUTA: { prefix: string; permiso: string | string[] }[] = [
   { prefix: '/app/configuracion/roles', permiso: 'config.roles' },
   { prefix: '/app/configuracion/autorizaciones', permiso: ['config.autorizaciones', 'config.roles'] },
   { prefix: '/app/configuracion/recibos', permiso: 'config.recibos' },
+  { prefix: '/app/configuracion/gestores', permiso: 'config.recibos' },
   {
     prefix: '/app/configuracion/envio-correos-alumno',
     permiso: ['config.recibos', 'config.certificados', 'config.alertas'],

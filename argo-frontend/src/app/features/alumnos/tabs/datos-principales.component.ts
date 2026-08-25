@@ -277,7 +277,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
   private configGestoresEmpresasSvc = inject(ConfigGestoresEmpresasService);
   private jornadaCapSvc = inject(JornadaCapService);
 
-  gestoresEmpresasActivo = signal(false);
+  gestoresActivo = signal(false);
 
   buscarEmpresasRemoto = (q: string) =>
     this.clienteSvc.listar(q.trim()).pipe(
@@ -336,7 +336,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       ...f,
       manejoGestorEmpresa: activo,
       ...(activo
-        ? {}
+        ? { tipoReferidorComercial: 'gestor' as const }
         : {
             tipoReferidorComercial: null,
             gestorId: null,
@@ -348,24 +348,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.formDirty.set(true);
   }
 
-  setTipoReferidorComercial(tipo: 'gestor' | 'empresa'): void {
-    this.form.update((f) => ({
-      ...f,
-      tipoReferidorComercial: tipo,
-      ...(tipo === 'gestor'
-        ? { referidorEmpresaId: null, referidorEmpresaNombre: null }
-        : { gestorId: null, gestorNombre: null }),
-    }));
-    this.limpiarCampoObligatorio('tipoReferidorComercial');
-    this.limpiarCampoObligatorio('gestorId');
-    this.limpiarCampoObligatorio('referidorEmpresaId');
-    this.formDirty.set(true);
-  }
-
   onGestorPick(opt: EnumBuscarOption): void {
     this.limpiarCampoObligatorio('gestorId');
     this.form.update((f) => ({
       ...f,
+      tipoReferidorComercial: 'gestor',
       gestorId: String(opt.value || '').trim() || null,
       gestorNombre: String(opt.label || '').trim() || null,
     }));
@@ -374,21 +361,6 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
 
   onGestorLimpiar(): void {
     this.form.update((f) => ({ ...f, gestorId: null, gestorNombre: null }));
-    this.formDirty.set(true);
-  }
-
-  onReferidorEmpresaPick(opt: EnumBuscarOption): void {
-    this.limpiarCampoObligatorio('referidorEmpresaId');
-    this.form.update((f) => ({
-      ...f,
-      referidorEmpresaId: String(opt.value || '').trim() || null,
-      referidorEmpresaNombre: String(opt.label || '').trim() || null,
-    }));
-    this.formDirty.set(true);
-  }
-
-  onReferidorEmpresaLimpiar(): void {
-    this.form.update((f) => ({ ...f, referidorEmpresaId: null, referidorEmpresaNombre: null }));
     this.formDirty.set(true);
   }
 
@@ -791,8 +763,8 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     });
 
     this.configGestoresEmpresasSvc.obtener().subscribe({
-      next: (c) => this.gestoresEmpresasActivo.set(!!c?.activo),
-      error: () => this.gestoresEmpresasActivo.set(false),
+      next: (c) => this.gestoresActivo.set(!!c?.activo),
+      error: () => this.gestoresActivo.set(false),
     });
 
   }
@@ -1598,17 +1570,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       }
     }
 
-    if (this.gestoresEmpresasActivo() && !this.esAlumnoJornada() && f.manejoGestorEmpresa) {
+    if (this.gestoresActivo() && !this.esAlumnoJornada() && f.manejoGestorEmpresa) {
       const ref: string[] = [];
-      const tipo = String(f.tipoReferidorComercial || '').trim();
-      falta(tipo !== 'gestor' && tipo !== 'empresa', 'tipoReferidorComercial', 'tipo (gestor o empresa)', ref);
-      if (tipo === 'gestor') {
-        falta(vacio(f.gestorId), 'gestorId', 'gestor', ref);
-      } else if (tipo === 'empresa') {
-        falta(vacio(f.referidorEmpresaId), 'referidorEmpresaId', 'empresa referidora', ref);
-      }
+      falta(vacio(f.gestorId), 'gestorId', 'gestor (tramitador)', ref);
       if (ref.length) {
-        faltantes.push({ seccion: 'Gestor / empresa', campos: ref });
+        faltantes.push({ seccion: 'Gestor / tramitador', campos: ref });
       }
     }
 
@@ -1932,22 +1898,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       ...(!esJornada
         ? {
             manejoGestorEmpresa: f.manejoGestorEmpresa === true,
-            tipoReferidorComercial:
-              f.manejoGestorEmpresa && f.tipoReferidorComercial ? f.tipoReferidorComercial : null,
-            gestorId:
-              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'gestor' ? f.gestorId ?? null : null,
-            gestorNombre:
-              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'gestor'
-                ? f.gestorNombre ?? null
-                : null,
-            referidorEmpresaId:
-              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'empresa'
-                ? f.referidorEmpresaId ?? null
-                : null,
-            referidorEmpresaNombre:
-              f.manejoGestorEmpresa && f.tipoReferidorComercial === 'empresa'
-                ? f.referidorEmpresaNombre ?? null
-                : null,
+            tipoReferidorComercial: f.manejoGestorEmpresa ? 'gestor' : null,
+            gestorId: f.manejoGestorEmpresa ? f.gestorId ?? null : null,
+            gestorNombre: f.manejoGestorEmpresa ? f.gestorNombre ?? null : null,
+            referidorEmpresaId: null,
+            referidorEmpresaNombre: null,
           }
         : {}),
 
@@ -2153,16 +2108,11 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       empresaId: raw['empresaId'] ? String(raw['empresaId']) : null,
       empresaNombre: raw['empresaNombre'] ? String(raw['empresaNombre']) : null,
       manejoGestorEmpresa: raw['manejoGestorEmpresa'] === true,
-      tipoReferidorComercial:
-        raw['tipoReferidorComercial'] === 'gestor' || raw['tipoReferidorComercial'] === 'empresa'
-          ? raw['tipoReferidorComercial']
-          : null,
+      tipoReferidorComercial: raw['tipoReferidorComercial'] === 'gestor' ? 'gestor' : null,
       gestorId: raw['gestorId'] ? String(raw['gestorId']) : null,
       gestorNombre: raw['gestorNombre'] ? String(raw['gestorNombre']) : null,
-      referidorEmpresaId: raw['referidorEmpresaId'] ? String(raw['referidorEmpresaId']) : null,
-      referidorEmpresaNombre: raw['referidorEmpresaNombre']
-        ? String(raw['referidorEmpresaNombre'])
-        : null,
+      referidorEmpresaId: null,
+      referidorEmpresaNombre: null,
 
       origenJornadaCap: raw['origenJornadaCap']
         ? String(raw['origenJornadaCap']).trim().toLowerCase()

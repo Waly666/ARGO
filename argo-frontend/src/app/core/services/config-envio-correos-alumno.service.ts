@@ -16,15 +16,15 @@ export interface ConfigEnvioCorreosAlumno {
   enviarComprobantesIngreso: boolean;
   referidorComercial: {
     gestor: ReglasCorreoReferidor;
-    empresa: ReglasCorreoReferidor;
+    empresa?: ReglasCorreoReferidor;
   };
 }
 
 export const DESTINOS_CORREO_REFERIDOR: Array<{ value: DestinoCorreoReferidor; label: string }> = [
   { value: 'ninguno', label: 'No enviar' },
   { value: 'alumno', label: 'Solo al alumno' },
-  { value: 'referidor', label: 'Solo al gestor / empresa' },
-  { value: 'ambos', label: 'Al alumno y al gestor / empresa' },
+  { value: 'referidor', label: 'Solo al gestor' },
+  { value: 'ambos', label: 'Al alumno y al gestor' },
 ];
 
 export const CONFIG_ENVIO_CORREOS_DEFAULT: ConfigEnvioCorreosAlumno = {
@@ -32,7 +32,6 @@ export const CONFIG_ENVIO_CORREOS_DEFAULT: ConfigEnvioCorreosAlumno = {
   enviarComprobantesIngreso: true,
   referidorComercial: {
     gestor: { comprobanteIngreso: 'ninguno', certificado: 'alumno' },
-    empresa: { comprobanteIngreso: 'ninguno', certificado: 'alumno' },
   },
 };
 

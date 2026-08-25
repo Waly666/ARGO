@@ -15,9 +15,6 @@
         <span class="cli-count">{{ clientes().length }} {{ contextoCaja() ? 'empresa' : 'cliente' }}{{ clientes().length === 1 ? '' : 's' }}</span>
       }
       @if (!formAbierto()) {
-        @if (contextoCaja()) {
-          <a routerLink="/app/caja/empresa/informe" class="ghost">📊 Informe</a>
-        }
         <button type="button" class="primary cli-btn-new" (click)="nuevo()">
           + {{ contextoCaja() ? 'Nueva empresa' : 'Nuevo cliente' }}
         </button>

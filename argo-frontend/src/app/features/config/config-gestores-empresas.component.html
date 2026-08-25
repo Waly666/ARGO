@@ -1,15 +1,14 @@
 <section class="ge-page card">
   <header class="ge-head">
     <div>
-      <h1>Gestores y empresas</h1>
+      <h1>Gestores</h1>
       <p>
-        Habilita el manejo de <strong>gestores</strong> (tramitadores) y <strong>empresas</strong> que traen alumnos
-        a la escuela. Al matricular, se aplican las tarifas gestor o empresa del programa.
+        Habilita el manejo de <strong>gestores</strong> (tramitadores) que traen alumnos a la escuela.
+        Al matricular, se aplica la tarifa gestor del programa.
       </p>
     </div>
     <div class="ge-links">
       <a routerLink="/app/caja/gestores">Catálogo gestores</a>
-      <a routerLink="/app/caja/empresa">Catálogo empresas</a>
     </div>
   </header>
 
@@ -22,7 +21,7 @@
 
     <div class="ge-panel card-inner">
       <argo-switch
-        label="Activar manejo de gestores y empresas en toda la instalación"
+        label="Activar manejo de gestores en toda la instalación"
         [checked]="cfg().activo"
         (checkedChange)="onActivo($event)" />
       <p class="ge-hint">
