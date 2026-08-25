@@ -1,53 +1,57 @@
 <section class="pqr-page">
-  <div class="pqr-page__hero">
-    <div class="container">
+  <header class="pqr-page__hero">
+    <div class="starfield-bg" aria-hidden="true"></div>
+    <div class="container pqr-page__hero-inner">
       <p class="pqr-page__kicker">PQRSF</p>
       <h1 class="pqr-page__title">Peticiones, Quejas, Reclamos,<br />Sugerencias y Felicitaciones</h1>
       <p class="pqr-page__sub">
         En {{ nombreCea() }} nos comprometemos a atender y dar respuesta oportuna a todas sus solicitudes.
       </p>
     </div>
-  </div>
+  </header>
 
   <div class="container pqr-page__body">
+    <div class="pqr-page__stack">
+      <header class="pqr-page__section-head">
+        <h2>¿Qué puede radicar?</h2>
+        <p>Elija el tipo de solicitud que mejor describa su caso antes de diligenciar el formulario.</p>
+      </header>
 
-    <!-- Qué puedes radicar -->
-    <div class="pqr-tipos-grid">
-      <div class="pqr-tipo pqr-tipo--peticion">
+      <div class="pqr-tipos-grid">
+      <article class="pqr-tipo">
         <av-portal-icon icon="pqr" class="pqr-tipo__icon" size="1.75rem" color="currentColor" />
         <h3>Petición</h3>
         <p>Solicitud de información, documentos o actuaciones de la institución.</p>
-      </div>
-      <div class="pqr-tipo pqr-tipo--queja">
+      </article>
+      <article class="pqr-tipo">
         <av-portal-icon icon="complaint" class="pqr-tipo__icon" size="1.75rem" color="currentColor" />
         <h3>Queja</h3>
         <p>Manifestación de inconformidad con la prestación de un servicio.</p>
-      </div>
-      <div class="pqr-tipo pqr-tipo--reclamo">
+      </article>
+      <article class="pqr-tipo">
         <av-portal-icon icon="petition" class="pqr-tipo__icon" size="1.75rem" color="currentColor" />
         <h3>Reclamo</h3>
         <p>Exigencia de corrección de una situación irregular o incumplimiento.</p>
-      </div>
-      <div class="pqr-tipo pqr-tipo--sugerencia">
+      </article>
+      <article class="pqr-tipo">
         <av-portal-icon icon="suggestion" class="pqr-tipo__icon" size="1.75rem" color="currentColor" />
         <h3>Sugerencia</h3>
         <p>Propuesta para mejorar nuestros procesos, servicios o atención.</p>
-      </div>
-      <div class="pqr-tipo pqr-tipo--felicitacion">
+      </article>
+      <article class="pqr-tipo">
         <av-portal-icon icon="compliment" class="pqr-tipo__icon" size="1.75rem" color="currentColor" />
         <h3>Felicitación</h3>
         <p>Reconocimiento a la calidad en el servicio o desempeño.</p>
-      </div>
+      </article>
     </div>
 
-    <!-- Formulario -->
     <div class="pqr-page__form-wrap">
       <av-pqr-form />
     </div>
 
-    <!-- Volver -->
     <div class="pqr-page__back">
       <a routerLink="/" class="btn btn-outline">← Volver al inicio</a>
+    </div>
     </div>
   </div>
 </section>
