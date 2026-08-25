@@ -25,7 +25,7 @@ import {
   type AlumnoArchivos,
 } from '../api/alumnosApi';
 import { fetchCatalogosAlumno, listarDepartamentos } from '../api/catalogosApi';
-import { fetchGestoresEmpresasConfig } from '../api/configApi';
+import { fetchGestoresConfig } from '../api/configApi';
 import type { CatalogoOption } from '../utils/alumnoCatalogo';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
@@ -130,10 +130,7 @@ export function AlumnoFormulario({
   const [gestorNombre, setGestorNombre] = useState(() =>
     initial ? alumnoDetalleToForm(initial).gestorNombre : '',
   );
-  const [referidorEmpresaNombre, setReferidorEmpresaNombre] = useState(() =>
-    initial ? alumnoDetalleToForm(initial).referidorEmpresaNombre : '',
-  );
-  const [gestoresEmpresasActivo, setGestoresEmpresasActivo] = useState(false);
+  const [gestoresActivo, setGestoresActivo] = useState(false);
   const [catalogos, setCatalogos] = useState<Awaited<ReturnType<typeof fetchCatalogosAlumno>> | null>(null);
   const [busy, setBusy] = useState(false);
   const [verificando, setVerificando] = useState(false);
@@ -153,16 +150,15 @@ export function AlumnoFormulario({
     setDeptoOrigenTexto(mapped.deptoOrigenTexto);
     setEmpresaNombre(mapped.empresaNombre);
     setGestorNombre(mapped.gestorNombre);
-    setReferidorEmpresaNombre(mapped.referidorEmpresaNombre);
     const fotoUrl = urlArchivoAlumno(initial.urlFoto);
     if (fotoUrl) setFotoPreview(fotoUrl);
   }, [initial]);
 
   useEffect(() => {
     void fetchCatalogosAlumno().then(setCatalogos);
-    void fetchGestoresEmpresasConfig()
-      .then((cfg) => setGestoresEmpresasActivo(cfg.activo === true))
-      .catch(() => setGestoresEmpresasActivo(false));
+    void fetchGestoresConfig()
+      .then((cfg) => setGestoresActivo(cfg.activo === true))
+      .catch(() => setGestoresActivo(false));
   }, []);
 
   useEffect(() => {
@@ -218,8 +214,6 @@ export function AlumnoFormulario({
     const t = setTimeout(() => void verificarDoc(String(form.numDoc)), 450);
     return () => clearTimeout(t);
   }, [form.numDoc, verificarDoc]);
-
-  const tipoReferidor = String(form.tipoReferidorComercial || '').toLowerCase();
 
   const opts = useMemo(() => {
     if (!catalogos) return null;
@@ -283,20 +277,9 @@ export function AlumnoFormulario({
       Alert.alert('Documento duplicado', `Ya existe: ${duplicado.nombreCompleto}`);
       return;
     }
-    if (gestoresEmpresasActivo && form.manejoGestorEmpresa) {
-      const tipo = String(form.tipoReferidorComercial || '').toLowerCase();
-      if (tipo !== 'gestor' && tipo !== 'empresa') {
-        Alert.alert('Tramitador', 'Indique si el alumno viene por gestor o por empresa referidora.');
-        return;
-      }
-      if (tipo === 'gestor' && !form.gestorId) {
-        Alert.alert('Tramitador', 'Seleccione el gestor que trajo al alumno.');
-        return;
-      }
-      if (tipo === 'empresa' && !form.referidorEmpresaId) {
-        Alert.alert('Tramitador', 'Seleccione la empresa referidora.');
-        return;
-      }
+    if (gestoresActivo && form.manejoGestorEmpresa && !form.gestorId) {
+      Alert.alert('Tramitador', 'Seleccione el gestor que trajo al alumno.');
+      return;
     }
 
     const payload: AlumnoCrearDto = {
@@ -315,27 +298,17 @@ export function AlumnoFormulario({
       fechaNac: form.fechaNac?.trim() || undefined,
       alertaPagoFrecuencia: (form.alertaPagoFrecuencia || '') as AlumnoCrearDto['alertaPagoFrecuencia'],
       alertaPago: form.alertaPagoFrecuencia ? form.alertaPago?.trim() || undefined : undefined,
-      manejoGestorEmpresa: gestoresEmpresasActivo ? form.manejoGestorEmpresa === true : false,
+      manejoGestorEmpresa: gestoresActivo ? form.manejoGestorEmpresa === true : false,
       tipoReferidorComercial:
-        gestoresEmpresasActivo && form.manejoGestorEmpresa
-          ? (String(form.tipoReferidorComercial || '').toLowerCase() as 'gestor' | 'empresa') || null
-          : null,
+        gestoresActivo && form.manejoGestorEmpresa ? 'gestor' : null,
       gestorId:
-        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'gestor'
-          ? form.gestorId ?? null
-          : null,
+        gestoresActivo && form.manejoGestorEmpresa ? form.gestorId ?? null : null,
       gestorNombre:
-        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'gestor'
+        gestoresActivo && form.manejoGestorEmpresa
           ? aMayusculas(gestorNombre.trim()) || undefined
           : undefined,
-      referidorEmpresaId:
-        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'empresa'
-          ? form.referidorEmpresaId ?? null
-          : null,
-      referidorEmpresaNombre:
-        gestoresEmpresasActivo && form.manejoGestorEmpresa && tipoReferidor === 'empresa'
-          ? aMayusculas(referidorEmpresaNombre.trim()) || undefined
-          : undefined,
+      referidorEmpresaId: null,
+      referidorEmpresaNombre: undefined,
     };
 
     const files: AlumnoArchivos = { foto, cedula: cedulaArchivo };
@@ -541,10 +514,10 @@ export function AlumnoFormulario({
         <IconInput label="Observaciones" icon="document-text-outline" value={form.observaciones || ''} onChangeText={(t) => patch('observaciones', t)} multiline style={{ minHeight: 100, textAlignVertical: 'top', paddingTop: 12 }} />
       </FormSection>
 
-      {gestoresEmpresasActivo ? (
+      {gestoresActivo ? (
         <FormSection
-          title="Tramitador / referidor"
-          subtitle="Gestor o empresa que trajo al alumno — aplica tarifa gestor o empresa al matricular"
+          title="Gestor / tramitador"
+          subtitle="Tramitador que trajo al alumno — aplica tarifa gestor al matricular"
           icon="people-outline"
           tone="accent"
         >
@@ -552,14 +525,15 @@ export function AlumnoFormulario({
             onPress={() => {
               const activo = !form.manejoGestorEmpresa;
               patch('manejoGestorEmpresa', activo);
-              if (!activo) {
+              if (activo) {
+                patch('tipoReferidorComercial', 'gestor');
+              } else {
                 patch('tipoReferidorComercial', null);
                 patch('gestorId', null);
                 patch('gestorNombre', undefined);
                 patch('referidorEmpresaId', null);
                 patch('referidorEmpresaNombre', undefined);
                 setGestorNombre('');
-                setReferidorEmpresaNombre('');
               }
             }}
             style={[
@@ -575,78 +549,20 @@ export function AlumnoFormulario({
               baseSize={13}
               style={{ color: form.manejoGestorEmpresa ? c.primary : c.text, fontWeight: '700' }}
             >
-              {form.manejoGestorEmpresa ? '✓ Manejo activo' : 'Activar manejo gestor/empresa'}
+              {form.manejoGestorEmpresa ? '✓ Manejo activo' : 'Activar manejo por gestor'}
             </ScaledText>
           </Pressable>
           {form.manejoGestorEmpresa ? (
-            <>
-              <View style={styles.chips}>
-                <Pressable
-                  onPress={() => {
-                    patch('tipoReferidorComercial', 'gestor');
-                    patch('referidorEmpresaId', null);
-                    patch('referidorEmpresaNombre', undefined);
-                    setReferidorEmpresaNombre('');
-                  }}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: tipoReferidor === 'gestor' ? c.primary : c.border,
-                      backgroundColor: tipoReferidor === 'gestor' ? c.accentSoft : c.card,
-                    },
-                  ]}
-                >
-                  <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700' }}>
-                    Gestor (tramitador)
-                  </ScaledText>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    patch('tipoReferidorComercial', 'empresa');
-                    patch('gestorId', null);
-                    patch('gestorNombre', undefined);
-                    setGestorNombre('');
-                  }}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: tipoReferidor === 'empresa' ? c.primary : c.border,
-                      backgroundColor: tipoReferidor === 'empresa' ? c.accentSoft : c.card,
-                    },
-                  ]}
-                >
-                  <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700' }}>
-                    Empresa referidora
-                  </ScaledText>
-                </Pressable>
-              </View>
-              {tipoReferidor === 'gestor' ? (
-                <GestorBuscarField
-                  gestorId={form.gestorId ?? null}
-                  gestorNombre={gestorNombre}
-                  onChange={(id, nom) => {
-                    patch('gestorId', id);
-                    patch('gestorNombre', nom || undefined);
-                    setGestorNombre(aMayusculas(nom));
-                  }}
-                />
-              ) : null}
-              {tipoReferidor === 'empresa' ? (
-                <EmpresaBuscarField
-                  empresaId={form.referidorEmpresaId ?? null}
-                  empresaNombre={referidorEmpresaNombre}
-                  minSearchChars={0}
-                  placeholder="Buscar empresa referidora…"
-                  modalTitle="Empresa referidora"
-                  hintSinSeleccion="Seleccione la empresa que trajo al alumno"
-                  onChange={(id, nom) => {
-                    patch('referidorEmpresaId', id);
-                    patch('referidorEmpresaNombre', nom || undefined);
-                    setReferidorEmpresaNombre(aMayusculas(nom));
-                  }}
-                />
-              ) : null}
-            </>
+            <GestorBuscarField
+              gestorId={form.gestorId ?? null}
+              gestorNombre={gestorNombre}
+              onChange={(id, nom) => {
+                patch('tipoReferidorComercial', 'gestor');
+                patch('gestorId', id);
+                patch('gestorNombre', nom || undefined);
+                setGestorNombre(aMayusculas(nom));
+              }}
+            />
           ) : null}
         </FormSection>
       ) : null}

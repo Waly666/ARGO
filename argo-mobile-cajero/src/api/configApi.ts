@@ -25,13 +25,17 @@ export async function fetchOpcionesMatricula(): Promise<OpcionesMatriculaConfig>
   return apiFetch<OpcionesMatriculaConfig>('/config/recibo/opciones-matricula');
 }
 
-export type GestoresEmpresasConfig = {
+export type GestoresConfig = {
   activo?: boolean;
 };
 
-export async function fetchGestoresEmpresasConfig(): Promise<GestoresEmpresasConfig> {
-  return apiFetch<GestoresEmpresasConfig>('/config/gestores-empresas');
+export async function fetchGestoresConfig(): Promise<GestoresConfig> {
+  return apiFetch<GestoresConfig>('/config/gestores');
 }
+
+/** @deprecated Usar fetchGestoresConfig */
+export const fetchGestoresEmpresasConfig = fetchGestoresConfig;
+export type GestoresEmpresasConfig = GestoresConfig;
 
 export async function previewPagoExtras(
   idTipoPago: string,

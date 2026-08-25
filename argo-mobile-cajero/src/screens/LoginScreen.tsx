@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,17 +21,22 @@ import { CAJERO_AZUL_REY } from '../config/appBranding';
 import { useAuth } from '../context/AuthContext';
 import { useBranding } from '../context/BrandingContext';
 import { useAccessibility } from '../context/AccessibilityContext';
-import { pingHealth } from '../api/client';
+import { mfaRecovery, mfaSetupConfirm, mfaVerify, pingHealth } from '../api/client';
 import { getApiBaseUrl, SERVIDOR_API_STORAGE_KEY, normalizeApiBaseUrl } from '../config/apiBase';
 import { loadSavedLogin, persistSavedLogin } from '../storage/loginCredentials';
 import { storeGet } from '../storage/safeStore';
+import type { StaffLoginResponse } from '../api/types';
 import { themeColors } from '../theme/colors';
 
+type LoginUiStep = 'credentials' | 'mfa_verify' | 'mfa_setup' | 'mfa_recovery' | 'recovery_codes';
+
 export default function LoginScreen() {
-  const { signIn, setServidor } = useAuth();
+  const { signIn, finalizeSignIn, setServidor } = useAuth();
   const { refreshBranding } = useBranding();
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
+
+  const [uiStep, setUiStep] = useState<LoginUiStep>('credentials');
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
   const [servidor, setServidorLocal] = useState('');
@@ -38,6 +44,15 @@ export default function LoginScreen() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+
+  const [mfaCode, setMfaCode] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [mfaToken, setMfaToken] = useState('');
+  const [setupToken, setSetupToken] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [manualSecret, setManualSecret] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -55,10 +70,68 @@ export default function LoginScreen() {
     })();
   }, []);
 
+  async function prepareServer(): Promise<void> {
+    if (!servidor.trim()) {
+      throw new Error('Escriba la dirección del servidor (IP de la PC)');
+    }
+    setStatus('Guardando servidor…');
+    await setServidor(servidor);
+    setStatus('Cargando marca institucional…');
+    await refreshBranding();
+    setStatus(`Probando ${getApiBaseUrl()}…`);
+    await pingHealth();
+  }
+
+  async function handleCompleteLogin(res: StaffLoginResponse, savedUser?: string, savedPass?: string) {
+    if (res.step !== 'complete' || !res.token || !res.user) {
+      throw new Error('Respuesta de autenticación incompleta');
+    }
+    await finalizeSignIn(res.token, res.user);
+    if (savedUser != null && savedPass != null) {
+      void persistSavedLogin(remember, savedUser, savedPass);
+    }
+    if (res.recoveryCodes?.length) {
+      setRecoveryCodes(res.recoveryCodes);
+      setUiStep('recovery_codes');
+      setStatus(null);
+      return;
+    }
+    setStatus(null);
+  }
+
+  function handleLoginStep(res: StaffLoginResponse, savedUser?: string, savedPass?: string) {
+    if (res.step === 'complete' && res.token && res.user) {
+      void handleCompleteLogin(res, savedUser, savedPass).catch((e) => {
+        setErr(e instanceof Error ? e.message : 'Error al iniciar sesión');
+        setStatus(null);
+      });
+      return;
+    }
+    if (res.step === 'mfa_verify' && res.mfaToken) {
+      setMfaToken(res.mfaToken);
+      setDisplayName(res.username || '');
+      setUiStep('mfa_verify');
+      setMfaCode('');
+      setStatus(null);
+      return;
+    }
+    if (res.step === 'mfa_setup' && res.setupToken) {
+      setSetupToken(res.setupToken);
+      setDisplayName(res.username || '');
+      setQrDataUrl(res.qrDataUrl || '');
+      setManualSecret(res.manualSecret || '');
+      setUiStep('mfa_setup');
+      setMfaCode('');
+      setStatus(null);
+      return;
+    }
+    setErr('Respuesta de autenticación no reconocida');
+    setStatus(null);
+  }
+
   async function onLogin() {
     setErr(null);
     setStatus(null);
-
     const usuario = user.trim();
     if (!usuario) {
       setErr('Escriba el usuario');
@@ -68,34 +141,97 @@ export default function LoginScreen() {
       setErr('Escriba la contraseña');
       return;
     }
-    if (!servidor.trim()) {
-      setErr('Escriba la dirección del servidor (IP de la PC)');
-      return;
-    }
-
     setLoading(true);
     try {
-      setStatus('Guardando servidor…');
-      await setServidor(servidor);
-
-      setStatus('Cargando marca institucional…');
-      await refreshBranding();
-
-      setStatus(`Probando ${getApiBaseUrl()}…`);
-      await pingHealth();
-
+      await prepareServer();
       setStatus('Iniciando sesión…');
-      await signIn(usuario, pass);
-      void persistSavedLogin(remember, usuario, pass);
-      setStatus(null);
+      const res = await signIn(usuario, pass);
+      handleLoginStep(res, usuario, pass);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error de acceso';
-      setErr(msg);
+      setErr(e instanceof Error ? e.message : 'Error de acceso');
       setStatus(null);
     } finally {
       setLoading(false);
     }
   }
+
+  async function onMfaVerify() {
+    const code = mfaCode.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setErr('Ingrese el código de 6 dígitos');
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await mfaVerify(mfaToken, code);
+      handleLoginStep(res);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Código incorrecto');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onMfaSetup() {
+    const code = mfaCode.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setErr('Ingrese el código de 6 dígitos de su app');
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await mfaSetupConfirm(setupToken, code);
+      handleLoginStep(res);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'No se pudo activar 2FA');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onRecovery() {
+    const code = recoveryCode.trim();
+    if (!code) {
+      setErr('Ingrese un código de recuperación');
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await mfaRecovery(mfaToken, code);
+      handleLoginStep(res);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Código de recuperación inválido');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function onPrimaryAction() {
+    if (uiStep === 'credentials') void onLogin();
+    else if (uiStep === 'mfa_verify') void onMfaVerify();
+    else if (uiStep === 'mfa_setup') void onMfaSetup();
+    else if (uiStep === 'mfa_recovery') void onRecovery();
+    else setUiStep('credentials');
+  }
+
+  const primaryLabel =
+    uiStep === 'credentials'
+      ? 'Entrar'
+      : uiStep === 'mfa_setup'
+        ? 'Activar y entrar'
+        : uiStep === 'recovery_codes'
+          ? 'Continuar'
+          : 'Continuar';
+
+  const primaryIcon =
+    uiStep === 'credentials'
+      ? 'log-in-outline'
+      : uiStep === 'recovery_codes'
+        ? 'checkmark-circle-outline'
+        : 'shield-checkmark-outline';
 
   return (
     <KeyboardAvoidingView
@@ -109,66 +245,181 @@ export default function LoginScreen() {
       >
         <View style={styles.hero}>
           <EmpresaBrandHeader logoWidth={152} logoHeight={78} onDark />
-          <View style={styles.chips}>
-            <Chip icon="cash-outline" label="Caja" />
-            <Chip icon="school-outline" label="Alumnos" />
-            <Chip icon="notifications-outline" label="Alertas" />
-          </View>
+          {uiStep === 'credentials' ? (
+            <View style={styles.chips}>
+              <Chip icon="cash-outline" label="Caja" />
+              <Chip icon="school-outline" label="Alumnos" />
+              <Chip icon="notifications-outline" label="Alertas" />
+            </View>
+          ) : (
+            <ScaledText baseSize={14} style={styles.heroHint}>
+              Verificación de seguridad
+            </ScaledText>
+          )}
         </View>
 
         <SurfaceCard style={styles.formCard}>
-          <IconInput
-            label="Servidor API (IP de la PC + :3000)"
-            icon="server-outline"
-            iconColor={c.accent}
-            value={servidor}
-            onChangeText={setServidorLocal}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-            placeholder="http://192.168.1.45:3000"
-          />
-          <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 12 }}>
-            API: {normalizeApiBaseUrl(servidor || getApiBaseUrl())}
-          </ScaledText>
+          {uiStep === 'credentials' ? (
+            <>
+              <IconInput
+                label="Servidor API (IP de la PC + :3000)"
+                icon="server-outline"
+                iconColor={c.accent}
+                value={servidor}
+                onChangeText={setServidorLocal}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                placeholder="http://192.168.1.45:3000"
+              />
+              <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 12 }}>
+                API: {normalizeApiBaseUrl(servidor || getApiBaseUrl())}
+              </ScaledText>
 
-          <IconInput
-            label="Usuario"
-            icon="person-outline"
-            value={user}
-            onChangeText={setUser}
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="Tu usuario ARGO"
-          />
+              <IconInput
+                label="Usuario"
+                icon="person-outline"
+                value={user}
+                onChangeText={setUser}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="Tu usuario ARGO"
+              />
 
-          <IconInput
-            label="Contraseña"
-            icon="lock-closed-outline"
-            value={pass}
-            onChangeText={setPass}
-            secureTextEntry
-            returnKeyType="go"
-            onSubmitEditing={() => void onLogin()}
-            placeholder="••••••••"
-          />
+              <IconInput
+                label="Contraseña"
+                icon="lock-closed-outline"
+                value={pass}
+                onChangeText={setPass}
+                secureTextEntry
+                returnKeyType="go"
+                onSubmitEditing={() => void onLogin()}
+                placeholder="••••••••"
+              />
 
-          <Pressable
-            onPress={() => setRemember((v) => !v)}
-            style={styles.rememberRow}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: remember }}
-          >
-            <Switch
-              value={remember}
-              onValueChange={setRemember}
-              trackColor={{ false: '#cbd5e1', true: '#9fa8da' }}
-              thumbColor={remember ? CAJERO_AZUL_REY : '#f8fafc'}
-            />
-            <ScaledText baseSize={14} style={{ color: c.text, flex: 1 }}>
-              Recordar usuario y contraseña
-            </ScaledText>
-          </Pressable>
+              <Pressable
+                onPress={() => setRemember((v) => !v)}
+                style={styles.rememberRow}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: remember }}
+              >
+                <Switch
+                  value={remember}
+                  onValueChange={setRemember}
+                  trackColor={{ false: '#cbd5e1', true: '#9fa8da' }}
+                  thumbColor={remember ? CAJERO_AZUL_REY : '#f8fafc'}
+                />
+                <ScaledText baseSize={14} style={{ color: c.text, flex: 1 }}>
+                  Recordar usuario y contraseña
+                </ScaledText>
+              </Pressable>
+            </>
+          ) : null}
+
+          {uiStep === 'mfa_verify' ? (
+            <>
+              <ScaledText baseSize={18} style={[styles.stepTitle, { color: c.text }]}>
+                Verificación 2FA
+              </ScaledText>
+              <ScaledText baseSize={14} style={{ color: c.textSoft, lineHeight: 20, marginBottom: 16 }}>
+                Hola {displayName || 'usuario'}. Abra Google Authenticator (o similar) e ingrese el código de 6
+                dígitos.
+              </ScaledText>
+              <IconInput
+                label="Código de autenticación"
+                icon="keypad-outline"
+                value={mfaCode}
+                onChangeText={(t) => setMfaCode(t.replace(/\D/g, '').slice(0, 6))}
+                keyboardType="number-pad"
+                maxLength={6}
+                autoCapitalize="none"
+                placeholder="000000"
+              />
+              <Pressable onPress={() => { setUiStep('mfa_recovery'); setErr(null); setRecoveryCode(''); }}>
+                <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '600', marginTop: 4 }}>
+                  Usar código de recuperación
+                </ScaledText>
+              </Pressable>
+            </>
+          ) : null}
+
+          {uiStep === 'mfa_setup' ? (
+            <>
+              <ScaledText baseSize={18} style={[styles.stepTitle, { color: c.text }]}>
+                Activar 2FA (obligatorio)
+              </ScaledText>
+              <ScaledText baseSize={14} style={{ color: c.textSoft, lineHeight: 20, marginBottom: 12 }}>
+                Escanee el QR con Google Authenticator o Microsoft Authenticator. Luego ingrese el código de 6 dígitos.
+              </ScaledText>
+              {qrDataUrl ? (
+                <Image source={{ uri: qrDataUrl }} style={styles.qr} resizeMode="contain" />
+              ) : null}
+              {manualSecret ? (
+                <View style={[styles.secretBox, { backgroundColor: c.bgAlt, borderColor: c.border }]}>
+                  <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 4 }}>
+                    Clave manual (si no puede escanear)
+                  </ScaledText>
+                  <ScaledText baseSize={13} style={{ color: c.text, fontWeight: '700', letterSpacing: 1 }}>
+                    {manualSecret}
+                  </ScaledText>
+                </View>
+              ) : null}
+              <IconInput
+                label="Código de la app"
+                icon="keypad-outline"
+                value={mfaCode}
+                onChangeText={(t) => setMfaCode(t.replace(/\D/g, '').slice(0, 6))}
+                keyboardType="number-pad"
+                maxLength={6}
+                autoCapitalize="none"
+                placeholder="000000"
+              />
+            </>
+          ) : null}
+
+          {uiStep === 'mfa_recovery' ? (
+            <>
+              <ScaledText baseSize={18} style={[styles.stepTitle, { color: c.text }]}>
+                Código de recuperación
+              </ScaledText>
+              <ScaledText baseSize={14} style={{ color: c.textSoft, lineHeight: 20, marginBottom: 16 }}>
+                Use uno de los códigos de un solo uso que guardó al activar 2FA.
+              </ScaledText>
+              <IconInput
+                label="Código de recuperación"
+                icon="document-text-outline"
+                value={recoveryCode}
+                onChangeText={setRecoveryCode}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                placeholder="XXXXXXXXXX"
+              />
+              <Pressable onPress={() => { setUiStep('mfa_verify'); setErr(null); setMfaCode(''); }}>
+                <ScaledText baseSize={14} style={{ color: c.primary, fontWeight: '600', marginTop: 4 }}>
+                  Volver al código de la app
+                </ScaledText>
+              </Pressable>
+            </>
+          ) : null}
+
+          {uiStep === 'recovery_codes' ? (
+            <>
+              <ScaledText baseSize={18} style={[styles.stepTitle, { color: c.text }]}>
+                Guarde sus códigos de recuperación
+              </ScaledText>
+              <ScaledText baseSize={14} style={{ color: c.danger, lineHeight: 20, marginBottom: 12, fontWeight: '600' }}>
+                Guárdelos en un lugar seguro. Cada código solo sirve una vez si pierde el acceso a su app
+                Authenticator.
+              </ScaledText>
+              <View style={[styles.codesBox, { backgroundColor: c.bgAlt, borderColor: c.border }]}>
+                {recoveryCodes.map((code) => (
+                  <ScaledText key={code} baseSize={15} style={{ color: c.text, fontWeight: '700', letterSpacing: 1.2 }}>
+                    {code}
+                  </ScaledText>
+                ))}
+              </View>
+            </>
+          ) : null}
 
           {status ? (
             <View style={[styles.msgBox, { backgroundColor: c.accentSoft }]}>
@@ -198,9 +449,9 @@ export default function LoginScreen() {
               </View>
             ) : (
               <PrimaryButton
-                label="Entrar"
-                icon="log-in-outline"
-                onPress={() => void onLogin()}
+                label={primaryLabel}
+                icon={primaryIcon}
+                onPress={onPrimaryAction}
                 fullWidth
               />
             )}
@@ -234,6 +485,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 28,
     backgroundColor: CAJERO_AZUL_REY,
   },
+  heroHint: { color: 'rgba(255,255,255,0.9)', marginTop: 12, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16 },
   chip: {
     flexDirection: 'row',
@@ -248,6 +500,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: -22,
   },
+  stepTitle: { fontWeight: '800', marginBottom: 8 },
   rememberRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -264,4 +517,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   loadingBox: { alignItems: 'center', gap: 10, paddingVertical: 8 },
+  qr: { width: 220, height: 220, alignSelf: 'center', marginBottom: 12 },
+  secretBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  codesBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+  },
 });

@@ -15,7 +15,7 @@ import { startAlertPoller, stopAlertPoller } from '../services/alertPoller';
 import { unloadAlertSound } from '../services/alertSound';
 import { getSedeActivaSync, loadSedeActiva, setSedeActiva } from '../storage/sedeStore';
 import { storeDelete, storeGet, storeSet } from '../storage/safeStore';
-import type { AuthUser } from '../api/types';
+import type { AuthUser, StaffLoginResponse } from '../api/types';
 import { useAlertPrefs } from './AlertPrefsContext';
 import { withTimeout } from '../utils/timeout';
 
@@ -29,7 +29,8 @@ type AuthState =
 
 type AuthCtx = {
   state: AuthState;
-  signIn: (username: string, password: string) => Promise<void>;
+  signIn: (username: string, password: string) => Promise<StaffLoginResponse>;
+  finalizeSignIn: (token: string, user: AuthUser) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setServidor: (apiBase: string) => Promise<void>;
@@ -142,15 +143,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     startPollsRef.current(state.user);
   }, [alertPrefs.soundEnabled, alertPrefs.vibrationEnabled, state.status === 'signedIn' ? state.token : null]);
 
+  const finalizeSignIn = useCallback(async (token: string, user: AuthUser) => {
+    await ensureSedeForUser(user);
+    setTokenGetter(() => token);
+    setState({ status: 'signedIn', token, user });
+    await storeSet(K_TOKEN, token);
+    await storeSet(K_USER, JSON.stringify(user));
+    startPollsRef.current(user);
+  }, []);
+
   const signIn = useCallback(async (username: string, password: string) => {
-    const res = await apiLogin(username, password);
-    await ensureSedeForUser(res.user);
-    // Antes de polls / re-render: sin esto el poller pega /config/alertas sin Bearer → 401 → logout.
-    setTokenGetter(() => res.token);
-    setState({ status: 'signedIn', token: res.token, user: res.user });
-    void storeSet(K_TOKEN, res.token);
-    void storeSet(K_USER, JSON.stringify(res.user));
-    startPollsRef.current(res.user);
+    return apiLogin(username, password);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -197,8 +200,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ state, signIn, signOut, refreshUser, setServidor }),
-    [state, signIn, signOut, refreshUser, setServidor],
+    () => ({ state, signIn, finalizeSignIn, signOut, refreshUser, setServidor }),
+    [state, signIn, finalizeSignIn, signOut, refreshUser, setServidor],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

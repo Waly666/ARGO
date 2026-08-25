@@ -43,7 +43,7 @@ exports.configPublica = async (_req, res, next) => {
     const urlLogo = publicUploadUrlVersioned(recibo.urlLogo);
     res.json({
       turnstileSiteKey: turnstileEnabled() ? turnstileSiteKey() : '',
-      mfaRequired: mfaStaffRequired() && mfaStaffWebOnly(),
+      mfaRequired: mfaStaffRequired(),
       nombreEmpresa: String(recibo.nombreEmpresa || '').trim(),
       urlLogo: urlLogo || null,
     });

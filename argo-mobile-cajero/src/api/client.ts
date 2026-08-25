@@ -1,6 +1,6 @@
 import { getApiBaseUrl } from '../config/apiBase';
 import { getSedeActivaSync } from '../storage/sedeStore';
-import type { AuthUser, CajaActivaResponse, ComprobanteRecienteRow, LoginResponse, ReglaAlerta } from './types';
+import type { AuthUser, CajaActivaResponse, ComprobanteRecienteRow, ReglaAlerta, StaffLoginResponse } from './types';
 
 type TokenGetter = () => string | null;
 type UnauthorizedHandler = (message?: string, code?: string) => void;
@@ -249,8 +249,8 @@ export async function pingHealth(): Promise<{ ok: boolean; service?: string }> {
   return apiFetch('/health', { auth: false, timeoutMs: 8000 });
 }
 
-export async function login(username: string, password: string): Promise<LoginResponse> {
-  return apiFetch<LoginResponse>('/auth/login', {
+export async function login(username: string, password: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/login', {
     method: 'POST',
     auth: false,
     timeoutMs: 12_000,
@@ -259,6 +259,45 @@ export async function login(username: string, password: string): Promise<LoginRe
       'X-ARGO-Cliente': ARGO_CLIENTE_HEADER,
     },
     body: JSON.stringify({ username, password }),
+  });
+}
+
+export async function mfaVerify(mfaToken: string, code: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/mfa/verify', {
+    method: 'POST',
+    auth: false,
+    timeoutMs: 12_000,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-ARGO-Cliente': ARGO_CLIENTE_HEADER,
+    },
+    body: JSON.stringify({ mfaToken, code }),
+  });
+}
+
+export async function mfaSetupConfirm(setupToken: string, code: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/mfa/setup/confirm', {
+    method: 'POST',
+    auth: false,
+    timeoutMs: 12_000,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-ARGO-Cliente': ARGO_CLIENTE_HEADER,
+    },
+    body: JSON.stringify({ setupToken, code }),
+  });
+}
+
+export async function mfaRecovery(mfaToken: string, recoveryCode: string): Promise<StaffLoginResponse> {
+  return apiFetch<StaffLoginResponse>('/auth/mfa/recovery', {
+    method: 'POST',
+    auth: false,
+    timeoutMs: 12_000,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-ARGO-Cliente': ARGO_CLIENTE_HEADER,
+    },
+    body: JSON.stringify({ mfaToken, recoveryCode }),
   });
 }
 

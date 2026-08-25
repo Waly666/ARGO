@@ -23,9 +23,9 @@ export function esTarifaComercial(t: number): boolean {
 /** Vista previa en móvil (el backend aplica la tarifa real al matricular). */
 export function resolverTarifaComercialAlumno(
   alumno: ReferidorAlumno | null | undefined,
-  gestoresEmpresasActivo: boolean,
+  gestoresActivo: boolean,
 ): TarifaComercialResuelta | null {
-  if (!gestoresEmpresasActivo || !alumno?.manejoGestorEmpresa) return null;
+  if (!gestoresActivo || !alumno?.manejoGestorEmpresa) return null;
   const tipo = String(alumno.tipoReferidorComercial || '').trim().toLowerCase();
   if (tipo === 'gestor' && alumno.gestorId) {
     return {

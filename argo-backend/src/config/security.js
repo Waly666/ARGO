@@ -45,7 +45,7 @@ function mfaStaffRequired() {
   return envFlag('MFA_STAFF_REQUIRED', true);
 }
 
-/** Solo exige MFA en navegador; app móvil (X-ARGO-Cliente) queda exenta. */
+/** Si true, el ERP web y la app cajero exigen MFA; otras apps nativas quedan exentas. */
 function mfaStaffWebOnly() {
   return envFlag('MFA_STAFF_WEB_ONLY', true);
 }

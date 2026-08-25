@@ -12,6 +12,23 @@ export interface AuthUser {
   sedesPermitidas?: string[];
 }
 
+export type StaffLoginStep = 'complete' | 'mfa_verify' | 'mfa_setup';
+
+export interface StaffLoginResponse {
+  step: StaffLoginStep;
+  token?: string;
+  user?: AuthUser;
+  mfaToken?: string;
+  setupToken?: string;
+  username?: string;
+  qrDataUrl?: string;
+  manualSecret?: string;
+  issuer?: string;
+  recoveryCodes?: string[];
+  recoveryRemaining?: number;
+}
+
+/** @deprecated Use StaffLoginResponse */
 export interface LoginResponse {
   token: string;
   user: AuthUser;

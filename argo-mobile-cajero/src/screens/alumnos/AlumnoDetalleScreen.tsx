@@ -31,7 +31,7 @@ import {
 import { crearLiquidacion, listarLiquidacionAlumno } from '../../api/liquidacionApi';
 import { crearIngreso, eliminarIngreso, listarIngresosAlumno, reciboIngresoHtmlPath } from '../../api/ingresosApi';
 import { crearMatricula } from '../../api/matriculasApi';
-import { fetchGestoresEmpresasConfig, fetchOpcionesMatricula } from '../../api/configApi';
+import { fetchGestoresConfig, fetchOpcionesMatricula } from '../../api/configApi';
 import { MatriculaAjustePanel } from '../../components/MatriculaAjustePanel';
 import { AlumnoCard } from '../../components/AlumnoCard';
 import {
@@ -193,7 +193,7 @@ export default function AlumnoDetalleScreen() {
   const [tarifasMatriculaConfig, setTarifasMatriculaConfig] = useState<number[]>(
     () => normalizarTarifasMatriculaConfig(),
   );
-  const [gestoresEmpresasActivo, setGestoresEmpresasActivo] = useState(false);
+  const [gestoresActivo, setGestoresActivo] = useState(false);
   const [ajustarValorMat, setAjustarValorMat] = useState(false);
   const [valorAcordadoMat, setValorAcordadoMat] = useState('');
   const [motivoAjusteMat, setMotivoAjusteMat] = useState('');
@@ -205,7 +205,7 @@ export default function AlumnoDetalleScreen() {
     setLoading(true);
     setCertErr(null);
     try {
-      const [liq, ing, progs, servs, eleg, fac, alumno, tipos, combosList, opcionesMat, cfgGestoresEmpresas] = await Promise.all([
+      const [liq, ing, progs, servs, eleg, fac, alumno, tipos, combosList, opcionesMat, cfgGestores] = await Promise.all([
         listarLiquidacionAlumno(numDoc),
         listarIngresosAlumno(numDoc),
         listarProgramas({ catalogo: true }),
@@ -220,14 +220,14 @@ export default function AlumnoDetalleScreen() {
           permitirAjusteCuotasSemestre: false,
           tarifasMatriculaSeleccionables: normalizarTarifasMatriculaConfig(),
         })),
-        fetchGestoresEmpresasConfig().catch(() => ({ activo: false })),
+        fetchGestoresConfig().catch(() => ({ activo: false })),
       ]);
       setPermitirAjusteValorMatricula(opcionesMat.permitirAjusteValorMatricula !== false);
       setPermitirAjusteCuotasSemestre(opcionesMat.permitirAjusteCuotasSemestre === true);
       setTarifasMatriculaConfig(
         normalizarTarifasMatriculaConfig(opcionesMat.tarifasMatriculaSeleccionables),
       );
-      setGestoresEmpresasActivo(cfgGestoresEmpresas.activo === true);
+      setGestoresActivo(cfgGestores.activo === true);
       setLiquidacion(liq.items);
       setTotales({ saldo: liq.totales?.saldo ?? 0 });
       setPagos(ing);
@@ -301,15 +301,15 @@ export default function AlumnoDetalleScreen() {
     [programaSel, servicios],
   );
   const tarifaComercial = useMemo(
-    () => resolverTarifaComercialAlumno(alumnoInfo, gestoresEmpresasActivo),
-    [alumnoInfo, gestoresEmpresasActivo],
+    () => resolverTarifaComercialAlumno(alumnoInfo, gestoresActivo),
+    [alumnoInfo, gestoresActivo],
   );
   const referidorIncompleto = useMemo(
     () =>
-      gestoresEmpresasActivo &&
+      gestoresActivo &&
       alumnoInfo?.manejoGestorEmpresa === true &&
       !tarifaComercial,
-    [gestoresEmpresasActivo, alumnoInfo?.manejoGestorEmpresa, tarifaComercial],
+    [gestoresActivo, alumnoInfo?.manejoGestorEmpresa, tarifaComercial],
   );
   const tarifasPermitidas = useMemo(() => {
     if (tarifaComercial) return [tarifaComercial.tarifa];
@@ -721,7 +721,7 @@ export default function AlumnoDetalleScreen() {
     if (referidorIncompleto) {
       Alert.alert(
         'Tramitador incompleto',
-        'El alumno tiene activo el manejo por gestor/empresa pero falta el referidor. Edite el alumno y complete tramitador o empresa referidora.',
+        'El alumno tiene activo el manejo por gestor pero falta el tramitador. Edite el alumno y seleccione el gestor.',
       );
       return;
     }
@@ -1183,7 +1183,7 @@ export default function AlumnoDetalleScreen() {
                 ) : null}
                 {referidorIncompleto ? (
                   <ScaledText baseSize={13} style={{ color: c.danger, lineHeight: 18, marginBottom: 8 }}>
-                    Manejo gestor/empresa activo pero incompleto. Edite el alumno y asigne tramitador o empresa referidora.
+                    Manejo por gestor activo pero incompleto. Edite el alumno y asigne el tramitador.
                   </ScaledText>
                 ) : null}
                 {tarifaComercial ? (
@@ -1192,7 +1192,7 @@ export default function AlumnoDetalleScreen() {
                       Tarifa comercial automática
                     </ScaledText>
                     <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4, lineHeight: 18 }}>
-                      {tarifaComercial.tipo === 'gestor' ? 'Gestor' : 'Empresa'}: {tarifaComercial.referidorNombre}
+                      Gestor: {tarifaComercial.referidorNombre}
                     </ScaledText>
                     <ScaledText baseSize={12} style={{ color: c.primary, marginTop: 4, fontWeight: '700' }}>
                       {etiquetaTarifa(tarifaComercial.tarifa)}

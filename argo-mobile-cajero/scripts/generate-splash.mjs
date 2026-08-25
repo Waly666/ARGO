@@ -1,5 +1,5 @@
 /**
- * Genera assets de branding con fondo azul institucional (#3578F0).
+ * Genera assets de branding con fondo blanco (logo Servial con margen claro).
  * Ejecutar: node scripts/generate-splash.mjs
  */
 import { createRequire } from 'module';
@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url);
 
 const sharp = require(path.join(__dirname, '../../argo-backend/node_modules/sharp'));
 
-const AZUL_REY = { r: 53, g: 120, b: 240 };
+const SPLASH_BG = { r: 255, g: 255, b: 255 };
 const BRANDING = path.join(__dirname, '../assets/branding');
 const ASSETS = path.join(__dirname, '../assets');
 const LOGO = path.join(BRANDING, 'logo.png');
@@ -34,7 +34,7 @@ async function logoOnBlue(width, height, logoMax) {
       width,
       height,
       channels: 3,
-      background: AZUL_REY,
+      background: SPLASH_BG,
     },
   })
     .composite([{ input: logoBuf, left, top }])

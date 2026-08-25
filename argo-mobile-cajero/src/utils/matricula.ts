@@ -203,7 +203,7 @@ export function labelPrograma(prog: ProgramaItem): string {
 export function etiquetaTarifa(t: number): string {
   if (t === TARIFA_VIRTUAL) return 'Virtual (aula en línea)';
   if (t === 5) return 'Tarifa gestor (tramitador)';
-  if (t === 6) return 'Tarifa empresa referidora';
+  if (t === 6) return 'Tarifa comercial 6 (histórico)';
   return `Tarifa ${t}`;
 }
 

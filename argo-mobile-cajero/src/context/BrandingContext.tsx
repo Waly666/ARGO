@@ -11,10 +11,11 @@ import type { ImageSourcePropType } from 'react-native';
 import { fetchConfigPublica } from '../api/brandingApi';
 import { APP_BRANDING } from '../config/appBranding';
 import { SERVIDOR_API_STORAGE_KEY, setRuntimeApiBase } from '../config/apiBase';
-import { storeGet, storeSet } from '../storage/safeStore';
+import { storeDelete, storeGet, storeSet } from '../storage/safeStore';
 import { resolveUploadUrl } from '../utils/resolveUploadUrl';
 
-const K_BRANDING = 'argo_m_branding';
+const K_BRANDING = 'argo_m_branding_v2';
+const K_BRANDING_LEGACY = 'argo_m_branding';
 
 type BrandingCache = {
   nombreEmpresa: string;
@@ -77,6 +78,8 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     void (async () => {
       try {
+        await storeDelete(K_BRANDING_LEGACY);
+
         const api = await storeGet(SERVIDOR_API_STORAGE_KEY);
         if (api) setRuntimeApiBase(api);
 

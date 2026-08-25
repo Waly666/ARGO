@@ -5,9 +5,9 @@ import * as SystemUI from 'expo-system-ui';
 import { registerRootComponent } from 'expo';
 
 import App from './App';
-import { CAJERO_AZUL_REY } from './src/config/appBranding';
+import { SPLASH_BG } from './src/config/appBranding';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-void SystemUI.setBackgroundColorAsync(CAJERO_AZUL_REY);
+void SystemUI.setBackgroundColorAsync(SPLASH_BG);
 
 registerRootComponent(App);

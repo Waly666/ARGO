@@ -1,8 +1,10 @@
 import type { ImageSourcePropType } from 'react-native';
 
-/** Azul institucional (splash, login y cabeceras). */
+/** Azul institucional (login y cabeceras). */
 export const CAJERO_AZUL_REY = '#3578F0';
 export const CAJERO_AZUL_REY_CLARO = '#6B9AF5';
+/** Fondo del splash nativo y de arranque (logo Servial con margen blanco). */
+export const SPLASH_BG = '#FFFFFF';
 /** Tiempo mínimo del splash de arranque antes del login (ms). */
 export const SPLASH_MIN_MS = 2200;
 /**
@@ -12,6 +14,6 @@ export const SPLASH_MIN_MS = 2200;
 export const APP_BRANDING = {
   tituloApp: 'ARGO CAJERO',
   /** Texto genérico hasta cargar la marca del servidor. */
-  nombreEmpresaFallback: 'Centro de formación',
+  nombreEmpresaFallback: 'CEA SERVIAL COLOMBIA',
   logo: require('../../assets/branding/logo.png') as ImageSourcePropType,
 } as const;

@@ -3,9 +3,14 @@ import { Image, StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { ScaledText } from '../components/ScaledText';
-import { CAJERO_AZUL_REY, SPLASH_MIN_MS } from '../config/appBranding';
+import { APP_BRANDING, SPLASH_BG, SPLASH_MIN_MS } from '../config/appBranding';
 import { useAuth } from '../context/AuthContext';
 import { useBranding } from '../context/BrandingContext';
+
+const SPLASH_TITLE_COLOR = '#0A0A0A';
+
+/** Logo embebido (Servial). El splash no usa URL remota para evitar parpadeo. */
+const SPLASH_LOGO = APP_BRANDING.logo;
 
 /** Logo + título (pantallas internas). */
 export function PreLoginBrand() {
@@ -20,29 +25,31 @@ export function PreLoginBrand() {
   );
 }
 
+function BootSplash() {
+  const onLayout = useCallback(() => {
+    void SplashScreen.hideAsync();
+  }, []);
+
+  return (
+    <View style={styles.boot} onLayout={onLayout}>
+      <View style={styles.splashBrand}>
+        <Image source={SPLASH_LOGO} style={styles.splashLogo} resizeMode="contain" />
+        <ScaledText baseSize={22} style={styles.splashTitulo}>
+          {APP_BRANDING.tituloApp}
+        </ScaledText>
+      </View>
+    </View>
+  );
+}
+
 /**
- * Splash azul a pantalla completa al arrancar.
- * La auth suele terminar en ms; se mantiene visible al menos SPLASH_MIN_MS.
+ * Splash de arranque: logo Servial embebido hasta que termina auth + tiempo mínimo.
+ * No renderiza la app debajo para evitar flash del icono nativo viejo (Expo Go / APK).
  */
 export function AppBootGate({ children }: { children: React.ReactNode }) {
   const { state } = useAuth();
-  const { logoSource } = useBranding();
   const authLoading = state.status === 'loading';
   const [minTimeDone, setMinTimeDone] = useState(false);
-  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
-
-  const revealAppSplash = useCallback(() => {
-    if (nativeSplashHidden) return;
-    setNativeSplashHidden(true);
-    void SplashScreen.hideAsync();
-  }, [nativeSplashHidden]);
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      revealAppSplash();
-    });
-    return () => cancelAnimationFrame(id);
-  }, [revealAppSplash]);
 
   useEffect(() => {
     const timer = setTimeout(() => setMinTimeDone(true), SPLASH_MIN_MS);
@@ -51,33 +58,17 @@ export function AppBootGate({ children }: { children: React.ReactNode }) {
 
   const showSplash = authLoading || !minTimeDone;
 
-  return (
-    <View style={styles.root}>
-      {children}
-      {showSplash ? (
-        <View style={styles.overlay} pointerEvents="auto" onLayout={revealAppSplash}>
-          <View style={styles.splashBrand}>
-            <Image source={logoSource} style={styles.splashLogo} resizeMode="contain" />
-            <ScaledText baseSize={22} style={styles.splashTitulo}>
-              ARGO Cajero
-            </ScaledText>
-          </View>
-        </View>
-      ) : null}
-    </View>
-  );
+  if (showSplash) {
+    return <BootSplash />;
+  }
+
+  return <>{children}</>;
 }
 
 const styles = StyleSheet.create({
-  root: {
+  boot: {
     flex: 1,
-    backgroundColor: CAJERO_AZUL_REY,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: CAJERO_AZUL_REY,
-    zIndex: 9999,
-    elevation: 9999,
+    backgroundColor: SPLASH_BG,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -86,11 +77,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   splashLogo: {
-    width: 220,
-    height: 110,
+    width: 280,
+    height: 220,
   },
   splashTitulo: {
-    color: '#ffffff',
+    color: SPLASH_TITLE_COLOR,
     fontWeight: '800',
     marginTop: 20,
     textAlign: 'center',
