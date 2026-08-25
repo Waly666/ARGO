@@ -36,6 +36,9 @@ const DEFAULTS_POR_CLAVE = {
   'alarmas.aula_virtual.registro_nuevo': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 120, intervaloPollSegundos: 15 },
   'alarmas.aula_virtual.matricula_nueva': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 120, intervaloPollSegundos: 15 },
   'alarmas.aula_virtual.acceso_por_vencer': { activo: true, ventanaInicio: 'desde_inicio_dia', duracionMinutos: 0, intervaloPollSegundos: 60, diasAntelacion: 1 },
+  'alarmas.aula_virtual.consignacion_pendiente': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 30 },
+  'alarmas.config.autorizacion_pendiente': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 30 },
+  'alarmas.config.autorizacion_resuelta': { activo: true, ventanaInicio: 'desde_registro', duracionMinutos: 0, intervaloPollSegundos: 30 },
 };
 
 function reglaVacia(meta) {

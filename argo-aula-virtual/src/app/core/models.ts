@@ -476,3 +476,50 @@ export interface BlogPost {
   createdAt?: string | null;
   updatedAt?: string | null;
 }
+
+export interface MedioPagoConsignacionPublico {
+  id: string;
+  etiqueta: string;
+  urlQr: string;
+  instruccionesExtra?: string;
+  orden?: number;
+  bancoNombre?: string;
+  cuentaDescr?: string;
+  idBanco?: string | number | null;
+}
+
+export interface TextosPagoConsignacionPublico {
+  tituloElegirMedio?: string;
+  instruccionesPago?: string;
+  textoReferenciaSugerida?: string;
+  mensajeEnRevision?: string;
+  mensajeAprobado?: string;
+  mensajeRechazado?: string;
+  plazoRevision?: string;
+}
+
+export interface SolicitudConsignacionPortal {
+  id: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  referenciaBancaria: string;
+  bancoNombre?: string;
+  medioEtiqueta?: string;
+  montoCop?: number;
+  motivoRechazo?: string | null;
+  fechaCreacion?: string;
+  fechaRevision?: string | null;
+  urlComprobante?: string;
+}
+
+export interface EstadoConsignacionCurso {
+  consignacionActiva: boolean;
+  medios: MedioPagoConsignacionPublico[];
+  textos?: TextosPagoConsignacionPublico;
+  solicitud: SolicitudConsignacionPortal | null;
+  puedeEnviarSolicitud: boolean;
+}
+
+export interface EnviarSolicitudConsignacionRes {
+  message?: string;
+  solicitud?: SolicitudConsignacionPortal;
+}

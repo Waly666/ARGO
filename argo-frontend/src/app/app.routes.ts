@@ -812,9 +812,27 @@ export const routes: Routes = [
       {
         path: 'configuracion/pasarela',
         canActivate: [permisoGuard],
-        data: { permiso: ['config.recibos', 'aula_virtual.gestionar'] },
+        data: { permiso: ['config.recibos', 'aula_virtual.gestionar', 'config.facturacion'] },
         loadComponent: () =>
           import('./features/config/config-pasarela.component').then((m) => m.ConfigPasarelaComponent),
+      },
+      {
+        path: 'configuracion/pago-consignacion',
+        canActivate: [permisoGuard],
+        data: { permiso: ['config.recibos', 'aula_virtual.gestionar', 'config.facturacion'] },
+        loadComponent: () =>
+          import('./features/config/config-pago-consignacion.component').then(
+            (m) => m.ConfigPagoConsignacionComponent,
+          ),
+      },
+      {
+        path: 'configuracion/aprobacion-consignacion',
+        canActivate: [permisoGuard],
+        data: { permiso: 'caja.admin' },
+        loadComponent: () =>
+          import('./features/config/aprobacion-consignacion.component').then(
+            (m) => m.AprobacionConsignacionComponent,
+          ),
       },
       {
         path: 'configuracion/clientes',

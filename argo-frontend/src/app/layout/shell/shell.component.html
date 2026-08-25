@@ -203,6 +203,9 @@
           @if (mostrarBannerAccesoPorVencer()) {
             <argo-aula-virtual-acceso-por-vencer-banner class="head-alerta-pago-wrap" />
           }
+          @if (mostrarBannerConsignacionPendiente()) {
+            <argo-consignacion-pendiente-banner class="head-alerta-pago-wrap" />
+          }
           @if (mostrarBannerChatMensaje()) {
             <argo-chat-mensaje-banner class="head-alerta-pago-wrap" />
           }

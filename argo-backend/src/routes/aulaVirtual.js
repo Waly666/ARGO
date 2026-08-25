@@ -19,6 +19,7 @@ const {
   aulaVirtualGaleria,
   aulaVirtualHomeFotos,
   programasVirtual,
+  pagoConsignacionComprobante,
 } = require('../middleware/upload');
 const { portalAuthLimiter, buscarAlumnoLimiter } = require('../middleware/security');
 const { requireTurnstile } = require('../middleware/turnstile');
@@ -112,6 +113,13 @@ router.post('/cursos/:id/progreso', requirePortalAuth, ctrl.reportarProgreso);
 router.get('/cursos/:id/inscripcion', requirePortalAuth, ctrl.estadoInscripcion);
 router.post('/cursos/:id/matricular', requirePortalAuth, ctrl.matricularCurso);
 router.post('/cursos/:id/pagar-linea', requirePortalAuth, ctrl.iniciarPagoEnLinea);
+router.get('/cursos/:id/consignacion', requirePortalAuth, ctrl.estadoConsignacionCurso);
+router.post(
+  '/cursos/:id/consignacion',
+  requirePortalAuth,
+  pagoConsignacionComprobante.single('comprobante'),
+  ctrl.crearSolicitudConsignacionCurso,
+);
 
 /** Admin — app ARGO (staff): solo permisos explícitos de aula virtual */
 const ver = requirePermiso('aula_virtual.ver', 'aula_virtual.gestionar');

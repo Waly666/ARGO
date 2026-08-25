@@ -43,9 +43,15 @@
   } @else {
 
     @if (msg()) {
-
-      <div class="msg" [class.err]="msgError()">{{ msg() }}</div>
-
+      <div
+        class="pas-banner"
+        [class.pas-banner--error]="msgError()"
+        [class.pas-banner--ok]="!msgError()"
+        role="status"
+      >
+        <span class="pas-banner-icon" aria-hidden="true">{{ msgError() ? '✕' : '✓' }}</span>
+        <div class="pas-banner-body">{{ msg() }}</div>
+      </div>
     }
 
 

@@ -27,6 +27,7 @@ export const ALARMAS_EXCLUIDAS_MOVIL: string[] = [
   'alarmas.instructores.clase_proxima',
   'alarmas.instructores.inspeccion_requerida',
   'alarmas.jornadas.live_toast',
+  'alarmas.aula_virtual.consignacion_pendiente',
 ];
 
 export function alarmaPermitidaEnMovil(key: string): boolean {

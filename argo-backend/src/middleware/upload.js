@@ -265,6 +265,8 @@ module.exports = {
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   aulaVirtualGaleria: buildGaleriaMedia('aula-virtual-galeria', 25),
   aulaVirtualHomeFotos: buildImagen('aula-virtual-home-fotos', 8),
+  pagoConsignacionQr: buildImagen('pago-consignacion-qr', 5),
+  pagoConsignacionComprobante: buildImagen('pago-consignacion-comprobantes', 8),
   evidenciasCap: buildEvidenciaCap(),
   evidenciaJornadaMemoria: buildEvidenciaJornadaMemoria(),
   memory,

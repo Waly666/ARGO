@@ -78,10 +78,12 @@ import { AlertaPagoAlumnoBannerComponent } from '../../features/alumnos/alerta-p
 import { AlumnoService } from '../../core/services/alumno.service';
 import { AutorizacionPendientesAlertService } from '../../core/services/autorizacion-pendientes-alert.service';
 import { AutorizacionAlertService } from '../../core/services/autorizacion-alert.service';
+import { ConsignacionAlertService } from '../../core/services/consignacion-alert.service';
 import {
   AutorizacionPendienteBannerComponent,
   AutorizacionResueltaBannerComponent,
 } from '../../features/config/autorizacion-alert-banner.component';
+import { ConsignacionPendienteBannerComponent } from '../../features/config/consignacion-pendiente-banner.component';
 
 interface MenuLink {
   kind: 'link';
@@ -134,7 +136,7 @@ type MenuEntry = MenuLink | MenuGroup;
 @Component({
   selector: 'argo-shell',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AulaVirtualRegistroBannerComponent, AulaVirtualMatriculaBannerComponent, AulaVirtualAccesoPorVencerBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, AutorizacionPendienteBannerComponent, AutorizacionResueltaBannerComponent, HorarioOperacionBannerComponent, CambiarPasswordModalComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, CajaCerradaBannerComponent, CajaAbiertaDiasBannerComponent, CertificadoJornadaBannerComponent, MetaAlumnosJornadaBannerComponent, ComprobanteHoyBannerComponent, CertificadoVencimientoBannerComponent, CertificadoVencidoBannerComponent, JornadaEnProcesoBannerComponent, JornadaLiveToastComponent, VehiculoDocsVencimientoBannerComponent, VehiculoDocsFaltantesBannerComponent, VehiculoInspeccionBannerComponent, EmpleadoDocsVencimientoBannerComponent, EmpleadoDocsFaltantesBannerComponent, ProgramacionCeaPendienteBannerComponent, ProgramacionCeaClaseCreadoBannerComponent, ProgramacionCeaClaseProximaBannerComponent, InstructorPortalBannerComponent, ForoMensajeBannerComponent, AulaVirtualRegistroBannerComponent, AulaVirtualMatriculaBannerComponent, AulaVirtualAccesoPorVencerBannerComponent, AlertaPagoAlumnoBannerComponent, ChatPanelComponent, ChatMensajeBannerComponent, AutorizacionPendienteBannerComponent, AutorizacionResueltaBannerComponent, ConsignacionPendienteBannerComponent, HorarioOperacionBannerComponent, CambiarPasswordModalComponent],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss'],
 })
@@ -188,6 +190,7 @@ export class ShellComponent {
   private cajaAperturaAlert = inject(CajaAperturaAlertService);
   readonly autorizPendientesAlert = inject(AutorizacionPendientesAlertService);
   private autorizacionAlert = inject(AutorizacionAlertService);
+  private consignacionAlert = inject(ConsignacionAlertService);
 
   collapsed = signal(false);
   /** Acordeón: solo abierto si el usuario lo abre o está en esa sección de la ruta */
@@ -362,6 +365,19 @@ export class ShellComponent {
 
   mostrarAlertaAccesoPorVencer = computed(() =>
     this.alarmaHabilitada('alarmas.aula_virtual.acceso_por_vencer'),
+  );
+
+  puedeAprobarConsignacion = computed(() => this.permisos.tiene('caja.admin'));
+
+  mostrarAlertaConsignacionPendiente = computed(() =>
+    this.alarmaHabilitada('alarmas.aula_virtual.consignacion_pendiente'),
+  );
+
+  mostrarBannerConsignacionPendiente = computed(
+    () =>
+      this.mostrarAlertaConsignacionPendiente() &&
+      this.puedeAprobarConsignacion() &&
+      this.consignacionAlert.pendientes().length > 0,
   );
 
   mostrarBannerAccesoPorVencer = computed(
@@ -1335,7 +1351,23 @@ export class ShellComponent {
               path: '/app/configuracion/pasarela',
               icon: '◉',
               iconTone: 'violet',
-              permiso: ['config.recibos', 'aula_virtual.gestionar'],
+              permiso: ['config.recibos', 'aula_virtual.gestionar', 'config.facturacion'],
+            },
+            {
+              kind: 'link',
+              label: 'Pago por consignación (QR)',
+              path: '/app/configuracion/pago-consignacion',
+              icon: '▣',
+              iconTone: 'cyan',
+              permiso: ['config.recibos', 'aula_virtual.gestionar', 'config.facturacion'],
+            },
+            {
+              kind: 'link',
+              label: 'Aprobar consignaciones portal',
+              path: '/app/configuracion/aprobacion-consignacion',
+              icon: '✓',
+              iconTone: 'emerald',
+              permiso: 'caja.admin',
             },
             {
               kind: 'link',
@@ -1778,6 +1810,7 @@ export class ShellComponent {
     this.iniciarForoMensajeAlert();
     this.iniciarChatInterno();
     this.iniciarAutorizacionAlertas();
+    this.iniciarPollConsignacionPendientes();
     this.iniciarPollPermisosSesion();
   }
 
@@ -1798,6 +1831,22 @@ export class ShellComponent {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => this.autorizacionAlert.cargarMisResueltas());
     }
+  }
+
+  private iniciarPollConsignacionPendientes(): void {
+    if (!this.auth.isAuth()) return;
+    this.pollConsignacionPendientes();
+    interval(this.pollIntervalMs('alarmas.aula_virtual.consignacion_pendiente'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.pollConsignacionPendientes());
+  }
+
+  private pollConsignacionPendientes(): void {
+    if (!this.mostrarAlertaConsignacionPendiente() || !this.puedeAprobarConsignacion()) {
+      this.consignacionAlert.limpiar();
+      return;
+    }
+    this.consignacionAlert.cargar();
   }
 
   private iniciarChatInterno(): void {
@@ -1885,6 +1934,9 @@ export class ShellComponent {
     }
     if (!this.alarmaHabilitada('alarmas.aula_virtual.acceso_por_vencer')) {
       this.aulaVirtualAccesoPorVencerAlert.actualizar(null);
+    }
+    if (!this.alarmaHabilitada('alarmas.aula_virtual.consignacion_pendiente')) {
+      this.consignacionAlert.limpiar();
     }
     if (!this.alarmaHabilitada('alarmas.config.autorizacion_pendiente')) {
       this.autorizacionAlert.descartarTodasPendientes();

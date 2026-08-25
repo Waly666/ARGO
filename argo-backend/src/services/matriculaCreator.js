@@ -158,6 +158,11 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
     throw err;
   }
 
+  const desdePortal =
+    ctx.desdePortal === true ||
+    body?.origenMatricula === 'portal' ||
+    body?.origenMatricula === 'aula_virtual';
+
   const prog = await buscarPrograma(progId);
   if (!prog) {
     const err = new Error('Programa no encontrado');
@@ -218,11 +223,14 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
   const tarifaManualFlag =
     tarifaManual === true || tarifaManual === 'true' || body?.forzarTarifa === true;
 
-  const tarifaComercial = await resolverTarifaComercialAlumno({
-    alumno,
-    prog,
-    tarifaManual: tarifaManualFlag,
-  });
+  const tarifaComercial =
+    desdePortal || esTarifaVirtual(Number(tarifaBody))
+      ? null
+      : await resolverTarifaComercialAlumno({
+          alumno,
+          prog,
+          tarifaManual: tarifaManualFlag,
+        });
 
   let resTarifa;
   if (tarifaComercial) {
@@ -251,10 +259,6 @@ async function crearMatriculaDesdeBody(body, idSedeCtx, ctx = {}) {
   const esRevalidacion = resTarifa.revalidacion === true;
 
   const modoMigracion = ctx.modoMigracion === true;
-  const desdePortal =
-    ctx.desdePortal === true ||
-    body?.origenMatricula === 'portal' ||
-    body?.origenMatricula === 'aula_virtual';
 
   if (!desdePortal && !esTarifaComercial(t) && !(resTarifa.aplicadaAuto === true && t === 3)) {
     const cfgTarifas = await obtenerTarifasMatriculaSeleccionables();

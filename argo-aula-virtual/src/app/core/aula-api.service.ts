@@ -19,6 +19,9 @@ import {
   BlogPost,
   EstadoInscripcionVirtual,
   EvaluacionCohorteAlumno,
+  EstadoConsignacionCurso,
+  EnviarSolicitudConsignacionRes,
+  MedioPagoConsignacionPublico,
   IntentoEvalCohorte,
   MaterialCohorteAlumno,
   MatriculaVirtualRes,
@@ -281,6 +284,27 @@ export class AulaApiService {
       redirectUrl ? { redirectUrl } : {},
       { headers: this.auth.authHeader() },
     );
+  }
+
+  estadoConsignacionCurso(id: string | number): Observable<EstadoConsignacionCurso> {
+    return this.http.get<EstadoConsignacionCurso>(`${this.base}/cursos/${id}/consignacion`, {
+      headers: this.auth.authHeader(),
+    });
+  }
+
+  enviarSolicitudConsignacion(
+    id: string | number,
+    medioId: string,
+    referenciaBancaria: string,
+    comprobante: File,
+  ): Observable<EnviarSolicitudConsignacionRes> {
+    const fd = new FormData();
+    fd.append('medioId', medioId);
+    fd.append('referenciaBancaria', referenciaBancaria);
+    fd.append('comprobante', comprobante);
+    return this.http.post<EnviarSolicitudConsignacionRes>(`${this.base}/cursos/${id}/consignacion`, fd, {
+      headers: this.auth.authHeader(),
+    });
   }
 
   consultarCertificados(numDoc: string | number, turnstileToken?: string): Observable<CertificadoConsultaRes> {

@@ -8,7 +8,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 
-import { CursoVirtual, EstadoInscripcionVirtual, PortalConfig } from '../../core/models';
+import { CursoVirtual, EstadoConsignacionCurso, EstadoInscripcionVirtual, MedioPagoConsignacionPublico, PortalConfig } from '../../core/models';
 import { PortalAuthService } from '../../core/portal-auth.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
@@ -58,6 +58,12 @@ export class CursoDetalleComponent implements OnInit {
   matriculando = signal(false);
   pagando = signal(false);
   pasarelaActiva = signal(false);
+  consignacion = signal<EstadoConsignacionCurso | null>(null);
+  consignacionAbierta = signal(false);
+  medioConsignacion = signal<MedioPagoConsignacionPublico | null>(null);
+  referenciaConsignacion = signal('');
+  archivoConsignacion = signal<File | null>(null);
+  enviandoConsignacion = signal(false);
 
 
 
@@ -97,12 +103,109 @@ export class CursoDetalleComponent implements OnInit {
 
     this.api.inscripcion(id).subscribe({
 
-      next: (ins) => this.inscripcion.set(ins),
+      next: (ins) => {
+        this.inscripcion.set(ins);
+        if (ins.matriculado && ins.pago && !ins.pago.pagado) {
+          this.cargarConsignacion(id);
+        } else {
+          this.consignacion.set(null);
+          this.consignacionAbierta.set(false);
+        }
+      },
 
       error: () => this.inscripcion.set(null),
 
     });
 
+  }
+
+  cargarConsignacion(id: string) {
+    this.api.estadoConsignacionCurso(id).subscribe({
+      next: (st) => this.consignacion.set(st),
+      error: () => this.consignacion.set(null),
+    });
+  }
+
+  pagoPendiente(ins: EstadoInscripcionVirtual): boolean {
+    return !!(ins.matriculado && ins.pago && !ins.pago.pagado);
+  }
+
+  mostrarConsignacion(): boolean {
+    const st = this.consignacion();
+    return !!(st?.consignacionActiva && this.pagoPendiente(this.inscripcion()!));
+  }
+
+  abrirConsignacion() {
+    this.consignacionAbierta.set(true);
+    this.medioConsignacion.set(null);
+    this.referenciaConsignacion.set('');
+    this.archivoConsignacion.set(null);
+    this.msg.set('');
+  }
+
+  cerrarConsignacion() {
+    this.consignacionAbierta.set(false);
+    this.medioConsignacion.set(null);
+    this.referenciaConsignacion.set('');
+    this.archivoConsignacion.set(null);
+  }
+
+  elegirMedioConsignacion(medio: MedioPagoConsignacionPublico) {
+    this.medioConsignacion.set(medio);
+    this.msg.set('');
+  }
+
+  volverMediosConsignacion() {
+    this.medioConsignacion.set(null);
+    this.referenciaConsignacion.set('');
+    this.archivoConsignacion.set(null);
+    this.msg.set('');
+  }
+
+  onComprobanteConsignacion(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0] || null;
+    this.archivoConsignacion.set(file);
+  }
+
+  enviarSolicitudConsignacion() {
+    const c = this.curso();
+    const medio = this.medioConsignacion();
+    const ref = this.referenciaConsignacion().trim();
+    const archivo = this.archivoConsignacion();
+    if (!c || !medio || this.enviandoConsignacion()) return;
+
+    if (!ref) {
+      this.msg.set('Indique la referencia bancaria de la consignación.');
+      return;
+    }
+    if (!archivo) {
+      this.msg.set('Adjunte la foto del comprobante de pago.');
+      return;
+    }
+
+    this.enviandoConsignacion.set(true);
+    this.msg.set('');
+    this.api.enviarSolicitudConsignacion(c.idPrograma, medio.id, ref, archivo).subscribe({
+      next: (res) => {
+        this.enviandoConsignacion.set(false);
+        this.msg.set(res.message || 'Solicitud enviada. Está en revisión.');
+        this.cerrarConsignacion();
+        this.cargarConsignacion(String(c.idPrograma));
+      },
+      error: (e) => {
+        this.enviandoConsignacion.set(false);
+        this.msg.set(e?.error?.message || 'No se pudo enviar la solicitud.');
+      },
+    });
+  }
+
+  qrConsignacionUrl(url?: string | null): string | null {
+    return resolveUploadUrl(url);
+  }
+
+  textoConsignacion(clave: keyof NonNullable<EstadoConsignacionCurso['textos']>, fallback: string): string {
+    return this.consignacion()?.textos?.[clave] || fallback;
   }
 
 

@@ -20,6 +20,55 @@ export interface ConfigPasarela {
   updatedAt?: string | null;
 }
 
+export interface MedioPagoConsignacion {
+  id: string;
+  etiqueta: string;
+  idCuentaBancaria: string;
+  urlQr?: string;
+  activo?: boolean;
+  orden?: number;
+  instruccionesExtra?: string;
+}
+
+export interface TextosPagoConsignacion {
+  tituloElegirMedio?: string;
+  instruccionesPago?: string;
+  textoReferenciaSugerida?: string;
+  mensajeEnRevision?: string;
+  mensajeAprobado?: string;
+  mensajeRechazado?: string;
+  plazoRevision?: string;
+}
+
+export interface ConfigPagoConsignacion {
+  activo?: boolean;
+  idSedeVirtual?: string;
+  idTipoPago?: string;
+  /** Envía correo al alumno al aprobar/rechazar (remitente = emailConfirmacion del portal). */
+  enviarCorreosAlumno?: boolean;
+  medios?: MedioPagoConsignacion[];
+  textos?: TextosPagoConsignacion;
+  updatedAt?: string | null;
+}
+
+export interface SolicitudConsignacionAdmin {
+  id: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  numDoc: number | string;
+  nombreAlumno?: string;
+  correo?: string;
+  nombreCurso?: string;
+  referenciaBancaria?: string;
+  bancoNombre?: string;
+  medioEtiqueta?: string;
+  montoCop?: number;
+  motivoRechazo?: string | null;
+  fechaCreacion?: string;
+  fechaRevision?: string | null;
+  urlComprobante?: string;
+  idIngreso?: string | null;
+}
+
 export interface InformeMatriculasVirtuales {
   resumen: {
     totalMatriculas: number;
@@ -126,5 +175,46 @@ export class PasarelaService {
     return this.http.get(`${this.base}/informes/ingresos/export${q ? `?${q}` : ''}`, {
       responseType: 'blob',
     });
+  }
+
+  obtenerConfigConsignacion(): Observable<ConfigPagoConsignacion> {
+    return this.http.get<ConfigPagoConsignacion>(`${this.base}/consignacion/config`);
+  }
+
+  guardarConfigConsignacion(dto: ConfigPagoConsignacion): Observable<ConfigPagoConsignacion> {
+    return this.http.put<ConfigPagoConsignacion>(`${this.base}/consignacion/config`, dto);
+  }
+
+  subirQrConsignacion(medioId: string, file: File): Observable<{ config: ConfigPagoConsignacion; urlQr: string }> {
+    const fd = new FormData();
+    fd.append('qr', file);
+    return this.http.post<{ config: ConfigPagoConsignacion; urlQr: string }>(
+      `${this.base}/consignacion/medios/${encodeURIComponent(medioId)}/qr`,
+      fd,
+    );
+  }
+
+  listarSolicitudesConsignacion(estado = 'pendiente', q?: string): Observable<SolicitudConsignacionAdmin[]> {
+    const p = new URLSearchParams();
+    if (estado) p.set('estado', estado);
+    if (q) p.set('q', q);
+    const qs = p.toString();
+    return this.http.get<SolicitudConsignacionAdmin[]>(
+      `${this.base}/consignacion/solicitudes${qs ? `?${qs}` : ''}`,
+    );
+  }
+
+  aprobarSolicitudConsignacion(id: string): Observable<{ message?: string; numRecibo?: string }> {
+    return this.http.post<{ message?: string; numRecibo?: string }>(
+      `${this.base}/consignacion/solicitudes/${encodeURIComponent(id)}/aprobar`,
+      {},
+    );
+  }
+
+  rechazarSolicitudConsignacion(id: string, motivoRechazo: string): Observable<{ message?: string }> {
+    return this.http.post<{ message?: string }>(
+      `${this.base}/consignacion/solicitudes/${encodeURIComponent(id)}/rechazar`,
+      { motivoRechazo },
+    );
   }
 }

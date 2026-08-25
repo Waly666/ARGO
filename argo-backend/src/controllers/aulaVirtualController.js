@@ -536,6 +536,37 @@ exports.iniciarPagoEnLinea = async (req, res, next) => {
   }
 };
 
+exports.estadoConsignacionCurso = async (req, res, next) => {
+  try {
+    const { estadoConsignacionPublico } = require('../services/pagoConsignacionPortal');
+    res.json(await estadoConsignacionPublico(req.portalUser.numDoc, req.params.id));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
+    next(e);
+  }
+};
+
+exports.crearSolicitudConsignacionCurso = async (req, res, next) => {
+  try {
+    const { crearSolicitudConsignacion } = require('../services/pagoConsignacionPortal');
+    if (!req.file) {
+      return res.status(400).json({ message: 'Adjunte la foto del comprobante de pago.' });
+    }
+    const urlComprobante = `pago-consignacion-comprobantes/${req.file.filename}`;
+    const out = await crearSolicitudConsignacion({
+      numDoc: req.portalUser.numDoc,
+      idPrograma: req.params.id,
+      medioId: req.body?.medioId,
+      referenciaBancaria: req.body?.referenciaBancaria,
+      urlComprobante,
+    });
+    res.status(201).json(out);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
+    next(e);
+  }
+};
+
 exports.consultarCertificados = async (req, res, next) => {
   try {
     const data = await consultarCertificadosPublico(req.query.numDoc);

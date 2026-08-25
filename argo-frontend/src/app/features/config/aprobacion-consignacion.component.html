@@ -1,0 +1,308 @@
+<section class="ap-page card pas-page pas-page--wide">
+  <header class="ap-head pas-head">
+    <div>
+      <p class="ap-kicker">Portal aula virtual · Pagos</p>
+      <h1>Revisar consignaciones</h1>
+      <p class="ap-lead">
+        Los alumnos envían su comprobante desde el portal. Usted verifica la transferencia y, si todo está bien,
+        aprueba para registrar el pago en su caja.
+      </p>
+      <p class="hint">
+        <a routerLink="/app/configuracion/pago-consignacion">Configurar medios de pago (QR)</a>
+      </p>
+    </div>
+    @if (!loading()) {
+      <div class="ap-head-stat">
+        <span class="ap-head-stat-num">{{ filas().length }}</span>
+        <span class="ap-head-stat-lbl">{{ estado() === 'pendiente' ? 'por revisar' : 'en lista' }}</span>
+      </div>
+    }
+  </header>
+
+  <ol class="ap-steps" aria-label="Pasos para aprobar un pago">
+    <li class="ap-step" [class.ap-step--done]="puedeAprobar()">
+      <span class="ap-step-num">1</span>
+      <span class="ap-step-text">
+        <strong>Abra su caja</strong>
+        @if (puedeAprobar()) {
+          <span class="ap-step-sub">{{ sesionCajaLabel() }}</span>
+        } @else {
+          <a routerLink="/app/caja" class="ap-step-link">Ir a Caja →</a>
+        }
+      </span>
+    </li>
+    <li class="ap-step" [class.ap-step--active]="!!solicitudActiva()">
+      <span class="ap-step-num">2</span>
+      <span class="ap-step-text">
+        <strong>Revise el comprobante</strong>
+        <span class="ap-step-sub">Compare referencia, banco y valor</span>
+      </span>
+    </li>
+    <li class="ap-step" [class.ap-step--active]="solicitudActiva()?.estado === 'pendiente' && puedeAprobar()">
+      <span class="ap-step-num">3</span>
+      <span class="ap-step-text">
+        <strong>Apruebe o rechace</strong>
+        <span class="ap-step-sub">Se genera el CI y se avisa al alumno</span>
+      </span>
+    </li>
+  </ol>
+
+  @if (cajaEstado.loading()) {
+    <div class="pas-banner pas-banner--info" role="status">
+      <span class="pas-banner-icon" aria-hidden="true">…</span>
+      <div class="pas-banner-body">Verificando estado de su caja…</div>
+    </div>
+  } @else if (!puedeAprobar()) {
+    <div class="pas-banner pas-banner--warn" role="alert">
+      <span class="pas-banner-icon" aria-hidden="true">⚠</span>
+      <div class="pas-banner-body">
+        <strong class="pas-banner-title">Primero abra su caja</strong>
+        <span>
+          Sin caja abierta no puede aprobar pagos. El comprobante de ingreso quedará en la sesión que abra en
+          <a routerLink="/app/caja">Caja</a>.
+        </span>
+      </div>
+    </div>
+  }
+
+  @if (msg()) {
+    <div
+      class="pas-banner"
+      [class.pas-banner--error]="msgError()"
+      [class.pas-banner--ok]="!msgError()"
+      role="status"
+    >
+      <span class="pas-banner-icon" aria-hidden="true">{{ msgError() ? '✕' : '✓' }}</span>
+      <div class="pas-banner-body">{{ msg() }}</div>
+    </div>
+  }
+
+  <div class="ap-toolbar">
+    <div class="filter-pills ap-filtros-chips" role="tablist" aria-label="Filtrar solicitudes">
+      @for (f of filtros; track f.id) {
+        <button
+          type="button"
+          class="filter-pill tone-cyan"
+          [class.active]="estado() === f.id"
+          role="tab"
+          [attr.aria-selected]="estado() === f.id"
+          (click)="setFiltro(f.id)"
+        >
+          {{ f.label }}
+        </button>
+      }
+    </div>
+    <div class="ap-search">
+      <input
+        type="search"
+        [ngModel]="q()"
+        (ngModelChange)="q.set($event)"
+        (keydown.enter)="cargar()"
+        placeholder="Buscar por documento o referencia…"
+        aria-label="Buscar solicitudes"
+      />
+      <button type="button" class="pas-btn pas-btn--ghost" (click)="cargar()" [disabled]="loading()">
+        {{ loading() ? 'Buscando…' : 'Buscar' }}
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="ap-loading">
+      <span class="ap-loading-spin" aria-hidden="true"></span>
+      <p>Cargando solicitudes…</p>
+    </div>
+  } @else if (!filas().length) {
+    <div class="ap-empty">
+      <span class="ap-empty-icon" aria-hidden="true">📋</span>
+      <h2>No hay solicitudes aquí</h2>
+      <p>
+        @if (estado() === 'pendiente') {
+          Cuando un alumno envíe un comprobante desde el portal, aparecerá en esta lista.
+        } @else {
+          Pruebe otro filtro o limpie la búsqueda.
+        }
+      </p>
+      @if (estado() !== 'pendiente') {
+        <button type="button" class="pas-btn pas-btn--ghost" (click)="setFiltro('pendiente')">Ver por revisar</button>
+      }
+    </div>
+  } @else {
+    <div class="ap-workspace">
+      <aside class="ap-queue" aria-label="Lista de solicitudes">
+        @for (f of filas(); track f.id) {
+          <button
+            type="button"
+            class="ap-queue-item"
+            [class.ap-queue-item--active]="seleccionada() === f.id"
+            (click)="seleccionar(f)"
+          >
+            <span class="ap-queue-avatar" aria-hidden="true">{{ iniciales(f.nombreAlumno, f.numDoc) }}</span>
+            <span class="ap-queue-body">
+              <span class="ap-queue-top">
+                <strong>{{ f.nombreAlumno || 'Alumno ' + f.numDoc }}</strong>
+                <span class="ap-chip" [attr.data-estado]="f.estado">{{ labelEstado(f.estado) }}</span>
+              </span>
+              <span class="ap-queue-curso">{{ f.nombreCurso }}</span>
+              <span class="ap-queue-meta">
+                <span>{{ fmtMoney(f.montoCop) }}</span>
+                <span>· Ref. {{ f.referenciaBancaria }}</span>
+              </span>
+            </span>
+          </button>
+        }
+      </aside>
+
+      @if (solicitudActiva(); as f) {
+        <article class="ap-review" aria-label="Detalle de solicitud">
+          <header class="ap-review-head">
+            <div class="ap-review-person">
+              <span class="ap-review-avatar" aria-hidden="true">{{ iniciales(f.nombreAlumno, f.numDoc) }}</span>
+              <div>
+                <h2>{{ f.nombreAlumno || 'Alumno sin nombre' }}</h2>
+                <p class="ap-muted">Documento {{ f.numDoc }}@if (f.correo) { · {{ f.correo }} }</p>
+              </div>
+            </div>
+            <span class="ap-chip ap-chip--lg" [attr.data-estado]="f.estado">{{ labelEstado(f.estado) }}</span>
+          </header>
+
+          <div class="ap-review-grid">
+            <section class="ap-comprobante" aria-label="Comprobante de pago">
+              <h3 class="ap-section-title">Comprobante enviado</h3>
+              @if (f.urlComprobante) {
+                <button
+                  type="button"
+                  class="ap-comprobante-frame"
+                  (click)="comprobanteAmpliado.set(true)"
+                  title="Ampliar imagen"
+                >
+                  <img [src]="comprobanteUrl(f.urlComprobante)" alt="Comprobante de pago" />
+                  <span class="ap-comprobante-zoom">🔍 Ver grande</span>
+                </button>
+                <a
+                  class="pas-btn pas-btn--ghost ap-comprobante-dl"
+                  [href]="comprobanteUrl(f.urlComprobante)"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Abrir en pestaña nueva
+                </a>
+              } @else {
+                <p class="ap-muted">El alumno no adjuntó imagen.</p>
+              }
+            </section>
+
+            <section class="ap-datos" aria-label="Datos del pago">
+              <h3 class="ap-section-title">Datos del pago</h3>
+              <p class="ap-monto">{{ fmtMoney(f.montoCop) }}</p>
+              <dl class="ap-dl">
+                <div>
+                  <dt>Curso</dt>
+                  <dd>{{ f.nombreCurso }}</dd>
+                </div>
+                <div>
+                  <dt>Medio elegido</dt>
+                  <dd>{{ f.medioEtiqueta || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Banco</dt>
+                  <dd>{{ f.bancoNombre || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Referencia bancaria</dt>
+                  <dd class="ap-ref">{{ f.referenciaBancaria || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Enviado el</dt>
+                  <dd>{{ fmtFecha(f.fechaCreacion) }}</dd>
+                </div>
+                @if (f.fechaRevision) {
+                  <div>
+                    <dt>Revisado el</dt>
+                    <dd>{{ fmtFecha(f.fechaRevision) }}</dd>
+                  </div>
+                }
+              </dl>
+              @if (f.motivoRechazo) {
+                <div class="ap-rechazo-box">
+                  <strong>Motivo del rechazo</strong>
+                  <p>{{ f.motivoRechazo }}</p>
+                </div>
+              }
+            </section>
+          </div>
+
+          @if (f.estado === 'pendiente') {
+            @if (modoRechazo()) {
+              <div class="ap-rechazo-form">
+                <h3 class="ap-section-title">Rechazar solicitud</h3>
+                <p class="ap-muted">Explique al alumno qué está mal (referencia incorrecta, valor distinto, imagen ilegible, etc.).</p>
+                <label class="ap-field">
+                  <span>Motivo del rechazo</span>
+                  <textarea
+                    rows="4"
+                    [ngModel]="motivoRechazo()"
+                    (ngModelChange)="motivoRechazo.set($event)"
+                    placeholder="Ej.: El valor consignado no coincide con el del curso. Por favor reenvíe con el monto correcto."
+                  ></textarea>
+                </label>
+                <div class="ap-actions">
+                  <button
+                    type="button"
+                    class="pas-btn pas-btn--danger"
+                    [disabled]="procesando() === f.id"
+                    (click)="confirmarRechazo()"
+                  >
+                    {{ procesando() === f.id ? 'Enviando…' : 'Confirmar rechazo' }}
+                  </button>
+                  <button type="button" class="pas-btn pas-btn--ghost" [disabled]="!!procesando()" (click)="cancelarRechazo()">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <footer class="ap-review-actions">
+                <div class="ap-actions-hint">
+                  @if (!puedeAprobar()) {
+                    <span class="ap-muted">Abra su caja para habilitar la aprobación.</span>
+                  } @else {
+                    <span class="ap-muted">Verifique que referencia, banco y valor coincidan con el comprobante.</span>
+                  }
+                </div>
+                <div class="ap-actions">
+                  <button
+                    type="button"
+                    class="pas-btn pas-btn--primary ap-btn-approve"
+                    [disabled]="procesando() === f.id || !puedeAprobar()"
+                    (click)="aprobar(f.id)"
+                  >
+                    {{ procesando() === f.id ? 'Procesando…' : '✓ Aprobar y generar recibo' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="pas-btn pas-btn--ghost"
+                    [disabled]="procesando() === f.id"
+                    (click)="iniciarRechazo()"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </footer>
+            }
+          }
+        </article>
+      }
+    </div>
+  }
+
+  @if (comprobanteAmpliado() && solicitudActiva()?.urlComprobante) {
+    <div class="ap-lightbox" role="dialog" aria-modal="true" aria-label="Comprobante ampliado" (click)="comprobanteAmpliado.set(false)">
+      <button type="button" class="ap-lightbox-close" (click)="comprobanteAmpliado.set(false)" aria-label="Cerrar">×</button>
+      <img
+        [src]="comprobanteUrl(solicitudActiva()!.urlComprobante)"
+        alt="Comprobante ampliado"
+        (click)="$event.stopPropagation()"
+      />
+    </div>
+  }
+</section>

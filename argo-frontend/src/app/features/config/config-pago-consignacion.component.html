@@ -1,0 +1,183 @@
+<section class="card pas-page pas-page--wide">
+  <header class="pas-head">
+    <div>
+      <h1>Pago por consignación — Portal aula virtual</h1>
+      <p>
+        Active medios de pago con QR vinculados a cuentas bancarias de la empresa. El alumno elige dónde
+        consignar, envía comprobante y un administrador aprueba para generar el comprobante de ingreso.
+      </p>
+      <p class="hint">
+        <a routerLink="/app/configuracion/pasarela">Pasarela Wompi</a>
+        ·
+        <a routerLink="/app/configuracion/aprobacion-consignacion">Panel de aprobación</a>
+      </p>
+    </div>
+    <div class="pas-head-badges">
+      @if (!loading()) {
+        <span class="pas-chip" [class.pas-chip--on]="form().activo">{{ form().activo ? 'Activa' : 'Inactiva' }}</span>
+      }
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="hint">Cargando…</p>
+  } @else {
+    @if (msg()) {
+      <div
+        class="pas-banner"
+        [class.pas-banner--error]="msgError()"
+        [class.pas-banner--ok]="!msgError()"
+        role="status"
+      >
+        <span class="pas-banner-icon" aria-hidden="true">{{ msgError() ? '✕' : '✓' }}</span>
+        <div class="pas-banner-body">{{ msg() }}</div>
+      </div>
+    }
+
+    <div class="pas-form">
+      <argo-switch
+        label="Consignación por QR activa en el portal"
+        [checked]="form().activo === true"
+        (checkedChange)="patch('activo', $event)"
+      />
+
+      <fieldset class="pas-block">
+        <legend>Operación</legend>
+        <div class="pas-banner pas-banner--info" role="note">
+          <span class="pas-banner-icon" aria-hidden="true">i</span>
+          <div class="pas-banner-body">
+            Al aprobar un pago, el comprobante de ingreso queda en la <strong>caja abierta del administrador</strong>
+            que autoriza. Si no tiene caja abierta, no podrá aprobar.
+          </div>
+        </div>
+        <label>
+          Tipo de pago al aprobar (transferencia)
+          <select [ngModel]="form().idTipoPago" (ngModelChange)="patch('idTipoPago', $event)">
+            <option value="">— Seleccione —</option>
+            @for (tp of tiposPago(); track tp['idTipoPago'] || tp['codigo']) {
+              <option [value]="tp['idTipoPago'] || tp['codigo']">
+                {{ tp['descripcion'] || tp['codigo'] }}
+              </option>
+            }
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset class="pas-block">
+        <legend>Correos al alumno</legend>
+        <argo-switch
+          label="Enviar correo al aprobar o rechazar una solicitud"
+          [checked]="form().enviarCorreosAlumno !== false"
+          (checkedChange)="patch('enviarCorreosAlumno', $event)"
+        />
+        <div class="pas-banner pas-banner--info" role="note">
+          <span class="pas-banner-icon" aria-hidden="true">i</span>
+          <div class="pas-banner-body">
+            Los correos usan el mismo remitente que la confirmación de inscripción del portal
+            @if (emailConfirmacionPortal()) {
+              (<strong>{{ emailConfirmacionPortal() }}</strong>)
+            } @else {
+              (aún no configurado)
+            }.
+            Configúrelo en
+            <a routerLink="/app/aula-virtual">Aula virtual → Administración portal → Correo remitente — confirmación de registro</a>.
+            El servidor SMTP se define en las variables de entorno del backend.
+            @if (form().enviarCorreosAlumno === false) {
+              <br /><br />
+              Si desactiva los correos, ajuste también el mensaje «solicitud en revisión» para no prometer notificación por correo.
+            }
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="pas-block">
+        <legend>Medios de pago (QR + cuenta)</legend>
+        <p class="hint">Cada medio es una opción que verá el alumno al elegir dónde consignar. Suba la imagen QR desde aquí.</p>
+        <button type="button" class="pas-btn pas-btn--ghost" (click)="agregarMedio()">+ Agregar medio</button>
+
+        @for (m of form().medios || []; track m.id) {
+          <div class="medio-card">
+            <div class="medio-card__grid">
+              <label>
+                Etiqueta visible al alumno
+                <input type="text" [ngModel]="m.etiqueta" (ngModelChange)="patchMedio(m.id, { etiqueta: $event })" />
+              </label>
+              <label>
+                Cuenta bancaria empresa
+                <select
+                  [ngModel]="m.idCuentaBancaria"
+                  (ngModelChange)="patchMedio(m.id, { idCuentaBancaria: $event })"
+                >
+                  <option value="">— Seleccione —</option>
+                  @for (c of cuentas(); track cuentaValor(c)) {
+                    <option [value]="cuentaValor(c)">{{ labelCuenta(c) }}</option>
+                  }
+                </select>
+              </label>
+              <label class="medio-card__activo">
+                <input type="checkbox" [ngModel]="m.activo !== false" (ngModelChange)="patchMedio(m.id, { activo: $event })" />
+                Activo
+              </label>
+            </div>
+            <label>
+              Instrucciones extra (opcional)
+              <textarea
+                rows="2"
+                [ngModel]="m.instruccionesExtra"
+                (ngModelChange)="patchMedio(m.id, { instruccionesExtra: $event })"
+              ></textarea>
+            </label>
+            <div class="medio-card__qr">
+              @if (m.urlQr) {
+                <img [src]="qrUrl(m.urlQr)" alt="QR {{ m.etiqueta }}" class="medio-card__qr-img" />
+              }
+              <label class="medio-card__file">
+                {{ uploadingMedio() === m.id ? 'Subiendo…' : 'Cargar imagen QR' }}
+                <input type="file" accept="image/*" (change)="onQrSelected(m.id, $event)" [disabled]="uploadingMedio() === m.id" />
+              </label>
+            </div>
+            <button type="button" class="pas-btn pas-btn--danger" (click)="quitarMedio(m.id)">Quitar medio</button>
+          </div>
+        }
+      </fieldset>
+
+      <fieldset class="pas-block">
+        <legend>Textos del portal (configurables)</legend>
+        <label>
+          Título — elegir medio
+          <input type="text" [ngModel]="form().textos?.tituloElegirMedio" (ngModelChange)="patchTexto('tituloElegirMedio', $event)" />
+        </label>
+        <label>
+          Instrucciones de pago
+          <textarea rows="3" [ngModel]="form().textos?.instruccionesPago" (ngModelChange)="patchTexto('instruccionesPago', $event)"></textarea>
+        </label>
+        <label>
+          Sugerencia para referencia / concepto
+          <textarea rows="2" [ngModel]="form().textos?.textoReferenciaSugerida" (ngModelChange)="patchTexto('textoReferenciaSugerida', $event)"></textarea>
+        </label>
+        <label>
+          Mensaje — solicitud en revisión
+          <textarea rows="2" [ngModel]="form().textos?.mensajeEnRevision" (ngModelChange)="patchTexto('mensajeEnRevision', $event)"></textarea>
+        </label>
+        <label>
+          Mensaje — pago aprobado (correo / portal)
+          <textarea rows="2" [ngModel]="form().textos?.mensajeAprobado" (ngModelChange)="patchTexto('mensajeAprobado', $event)"></textarea>
+        </label>
+        <label>
+          Mensaje — pago rechazado (intro correo)
+          <textarea rows="2" [ngModel]="form().textos?.mensajeRechazado" (ngModelChange)="patchTexto('mensajeRechazado', $event)"></textarea>
+        </label>
+        <label>
+          Plazo estimado de revisión
+          <input type="text" [ngModel]="form().textos?.plazoRevision" (ngModelChange)="patchTexto('plazoRevision', $event)" />
+        </label>
+      </fieldset>
+
+      <div class="pas-actions">
+        <button type="button" class="pas-btn pas-btn--primary" [disabled]="saving()" (click)="guardar()">
+          {{ saving() ? 'Guardando…' : 'Guardar configuración' }}
+        </button>
+      </div>
+    </div>
+  }
+</section>

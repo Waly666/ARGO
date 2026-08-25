@@ -95,6 +95,10 @@ const GRUPOS = [
         key: 'alarmas.aula_virtual.acceso_por_vencer',
         label: 'Acceso sin pago a curso virtual por vencer (banner superior)',
       },
+      {
+        key: 'alarmas.aula_virtual.consignacion_pendiente',
+        label: 'Consignación QR pendiente de aprobar (banner superior)',
+      },
     ],
   },
   {
@@ -178,6 +182,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.aula_virtual.registro_nuevo',
     'alarmas.aula_virtual.matricula_nueva',
     'alarmas.aula_virtual.acceso_por_vencer',
+    'alarmas.aula_virtual.consignacion_pendiente',
     'alarmas.vehiculos.docs_vencidos',
     'alarmas.vehiculos.docs_faltantes',
     'alarmas.vehiculos.inspeccion_pendiente',
@@ -195,6 +200,7 @@ const ALARMAS_POR_ROL_SISTEMA = {
     'alarmas.alumnos.factura',
     'alarmas.config.autorizacion_pendiente',
     'alarmas.config.autorizacion_resuelta',
+    'alarmas.aula_virtual.consignacion_pendiente',
   ],
   instructor: [
     'alarmas.jornadas.certificado_nuevo',
