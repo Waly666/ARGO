@@ -1,7 +1,7 @@
 import { PortalDisenoPack } from '../utils/portal-diseno.helpers';
 import { PORTAL_HOME_SECCIONES_ORDEN, PortalSiteConfig } from './portal-site-defaults';
 import { PORTAL_LANDING_DEFAULTS, PortalLandingConfig } from './portal-landing-defaults';
-import { PORTAL_TEMA_FINSTRUVIAL } from '../utils/portal-theme-css-base.util';
+import { PORTAL_TEMA_FINSTRUVIAL, PORTAL_TEMA_EDUCARTE } from '../utils/portal-theme-css-base.util';
 import {
   PortalPlantilla,
   PortalPlantillaFamilia,
@@ -227,6 +227,18 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
       heroSubtitulo: 'Cursos en línea, avance a su ritmo y certificación al finalizar.',
       secciones: SECCIONES_COMPLETAS,
       tema: { ...PORTAL_TEMA_FINSTRUVIAL },
+    },
+  ),
+  crearPlantilla(
+    'educarte',
+    'Plantilla Educarte',
+    'Tema claro con secciones en blanco puro. Formación virtual moderna y legible.',
+    'cliente',
+    {
+      heroTitulo: 'Formación virtual con calidad y certificación.',
+      heroSubtitulo: 'Cursos en línea, avance a su ritmo y certificados verificables.',
+      secciones: SECCIONES_COMPLETAS,
+      tema: { ...PORTAL_TEMA_EDUCARTE },
     },
   ),
   crearPlantilla(

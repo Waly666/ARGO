@@ -7,9 +7,13 @@ import {
 } from './portal-theme-css-base.util';
 
 export {
+  EDUCARTE_DERIVED_CSS_VARS,
   FINSTRUVIAL_DERIVED_CSS_VARS,
+  isEducartePortalTema,
+  isEducarteTema,
   isFinstruvialTema,
   isLightColor,
+  PORTAL_TEMA_EDUCARTE,
   PORTAL_TEMA_FINSTRUVIAL,
   withAlpha,
   type PortalTemaLike,

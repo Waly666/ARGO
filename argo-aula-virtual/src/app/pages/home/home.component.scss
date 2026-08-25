@@ -729,7 +729,7 @@
 }
 
 .section--white {
-  background: #fff;
+  background: var(--av-section-light-bg);
 
   .section-head {
     h2,
@@ -2749,7 +2749,6 @@ blockquote {
 }
 
 .home-fotos-section {
-  background: var(--av-section-light-bg, #f8fafc);
   color: var(--av-section-light-text, #0f172a);
   padding: var(--av-section-y-lg, 4rem) 0 3.5rem;
 

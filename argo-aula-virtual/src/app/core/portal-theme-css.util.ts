@@ -29,6 +29,25 @@ export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | '
   heroEstilo: 'starfield',
 };
 
+/** Tema claro oficial de la plantilla Educarte (secciones claras en blanco puro). */
+export const PORTAL_TEMA_EDUCARTE: Required<Omit<PortalTemaLike, 'fuente' | 'fuenteTitulos'>> & {
+  fuente: string;
+  fuenteTitulos?: string;
+} = {
+  colorPrimario: '#0284c7',
+  colorPrimarioOscuro: '#0369a1',
+  colorAcento: '#38bdf8',
+  colorFondo: '#ffffff',
+  colorSuperficie: '#ffffff',
+  colorTexto: '#0f172a',
+  colorTextoSecundario: '#64748b',
+  fuente: 'Plus Jakarta Sans',
+  fuenteTitulos: '',
+  heroEstilo: 'starfield',
+};
+
+export const EDUCARTE_DERIVED_CSS_VARS: Record<string, string> = {};
+
 /** Franja superior e frase destacada — naranja institucional Finstruvial */
 export const FINSTRUVIAL_FIRE_GRADIENT_BAR =
   'linear-gradient(90deg, #b45309 0%, #c2410c 38%, #ea580c 72%, #f97316 100%)';
@@ -100,6 +119,32 @@ export function isFinstruvialPortalTema(tema: PortalTemaLike | null | undefined)
   if (resolvePortalHeroEstilo(tema) === 'servial-mesh') return false;
   const t = resolveTema(tema);
   return hexKey(t.colorPrimario) === hexKey(PORTAL_TEMA_FINSTRUVIAL.colorPrimario);
+}
+
+export function isEducarteTema(tema: PortalTemaLike | null | undefined): boolean {
+  const t = resolveTema(tema);
+  const e = PORTAL_TEMA_EDUCARTE;
+  return (
+    hexKey(t.colorPrimario) === hexKey(e.colorPrimario) &&
+    hexKey(t.colorPrimarioOscuro) === hexKey(e.colorPrimarioOscuro) &&
+    hexKey(t.colorAcento) === hexKey(e.colorAcento) &&
+    hexKey(t.colorFondo) === hexKey(e.colorFondo) &&
+    hexKey(t.colorSuperficie) === hexKey(e.colorSuperficie) &&
+    hexKey(t.colorTexto) === hexKey(e.colorTexto) &&
+    hexKey(t.colorTextoSecundario) === hexKey(e.colorTextoSecundario) &&
+    String(t.fuente || e.fuente).trim().toLowerCase() === e.fuente.toLowerCase()
+  );
+}
+
+/** Educarte en producción: tolera ajustes menores del tema sin exigir coincidencia exacta. */
+export function isEducartePortalTema(tema: PortalTemaLike | null | undefined): boolean {
+  if (isEducarteTema(tema)) return true;
+  if (isFinstruvialPortalTema(tema) || resolvePortalHeroEstilo(tema) === 'servial-mesh') return false;
+  const t = resolveTema(tema);
+  return (
+    hexKey(t.colorPrimario) === hexKey(PORTAL_TEMA_EDUCARTE.colorPrimario) &&
+    isLightColor(t.colorFondo)
+  );
 }
 
 function normalizeHex(hex: string): string | null {
@@ -264,7 +309,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     '--av-page-hero-kicker-border': withAlpha(accent, 0.3),
     '--av-page-hero-kicker-text': accent,
 
-    '--av-section-light-bg': `color-mix(in srgb, ${primary} 5.5%, #f8fafc)`,
+    '--av-section-light-bg': `color-mix(in srgb, ${primary} 4%, #f9fafb)`,
     '--av-section-light-text': '#0f172a',
     '--av-section-light-muted': mixHex('#475569', primaryDark, 0.12),
     '--av-section-light-link': primaryDark,
@@ -451,6 +496,9 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
 
   if (isFinstruvialPortalTema(t)) {
     return { ...vars, ...FINSTRUVIAL_DERIVED_CSS_VARS };
+  }
+  if (isEducartePortalTema(t) && Object.keys(EDUCARTE_DERIVED_CSS_VARS).length > 0) {
+    return { ...vars, ...EDUCARTE_DERIVED_CSS_VARS };
   }
   return vars;
 }
