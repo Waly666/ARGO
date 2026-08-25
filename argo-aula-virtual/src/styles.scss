@@ -2,6 +2,14 @@
 @use 'styles/card-wave';
 @use 'styles/starfield';
 
+html[data-finstruvial-portal='1'] {
+  --av-inst-bar-bg: linear-gradient(90deg, #b45309 0%, #c2410c 38%, #ea580c 72%, #f97316 100%);
+  --av-inst-bar-text: #ffffff;
+  --av-quote-band-bg: linear-gradient(90deg, #9a3412 0%, #c2410c 20%, #ea580c 50%, #f97316 80%, #fb923c 100%);
+  --av-quote-band-text: #ffffff;
+  --av-brand: #c2410c;
+}
+
 :root {
   --av-font-sans:
     'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto',

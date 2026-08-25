@@ -94,6 +94,14 @@ export function isFinstruvialTema(tema: PortalTemaLike | null | undefined): bool
   );
 }
 
+/** Finstruvial en producción: tolera ajustes menores del tema sin exigir coincidencia exacta. */
+export function isFinstruvialPortalTema(tema: PortalTemaLike | null | undefined): boolean {
+  if (isFinstruvialTema(tema)) return true;
+  if (resolvePortalHeroEstilo(tema) === 'servial-mesh') return false;
+  const t = resolveTema(tema);
+  return hexKey(t.colorPrimario) === hexKey(PORTAL_TEMA_FINSTRUVIAL.colorPrimario);
+}
+
 function normalizeHex(hex: string): string | null {
   const raw = String(hex || '').trim().replace('#', '');
   if (/^[0-9a-fA-F]{3}$/.test(raw)) {
@@ -441,7 +449,7 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     vars['--dash-back-hover'] = brandGreen;
   }
 
-  if (isFinstruvialTema(t)) {
+  if (isFinstruvialPortalTema(t)) {
     return { ...vars, ...FINSTRUVIAL_DERIVED_CSS_VARS };
   }
   return vars;

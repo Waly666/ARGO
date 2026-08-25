@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { PortalConfig } from './models';
 import { loadPortalGoogleFonts } from './portal-fonts.util';
-import { buildPortalThemeCssVars, resolvePortalHeroEstilo } from './portal-theme-css.util';
+import { buildPortalThemeCssVars, isFinstruvialPortalTema, resolvePortalHeroEstilo } from './portal-theme-css.util';
 import { resolveUploadUrl } from './upload-url.util';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,11 @@ export class PortalThemeService {
     const vars = buildPortalThemeCssVars(tema);
     for (const [key, val] of Object.entries(vars)) {
       if (val) root.style.setProperty(key, val);
+    }
+    if (isFinstruvialPortalTema(tema)) {
+      root.dataset['finstruvialPortal'] = '1';
+    } else {
+      delete root.dataset['finstruvialPortal'];
     }
     loadPortalGoogleFonts(this.doc, tema);
     root.dataset['heroEstilo'] = resolvePortalHeroEstilo(tema);

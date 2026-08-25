@@ -26,7 +26,7 @@ import { mergePortalLanding } from '../../core/portal-landing';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalThemeService } from '../../core/portal-theme.service';
-import { resolvePortalHeroEstilo, isFinstruvialTema } from '../../core/portal-theme-css.util';
+import { resolvePortalHeroEstilo, isFinstruvialPortalTema } from '../../core/portal-theme-css.util';
 import { DEFAULT_CEA_NOMBRE, DEFAULT_APK_NOMBRE, DEFAULT_APK_URL } from '../../core/portal-brand-defaults';
 import { HERO_DEFAULT } from './home-content';
 
@@ -47,7 +47,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostBinding('class.home--finstruvial')
   get finstruvialHome(): boolean {
-    return isFinstruvialTema(this.config()?.site?.tema);
+    return isFinstruvialPortalTema(this.config()?.site?.tema);
   }
 
   private api = inject(AulaApiService);
