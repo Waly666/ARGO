@@ -18,6 +18,8 @@ export interface Gestor {
   foto?: string;
   activo?: boolean;
   nombreCompleto?: string;
+  /** Tope diario en pesos para usuario gestor en app móvil. 0 = ilimitado. */
+  creditoDiario?: number;
 }
 
 export interface GestorCatalogos {

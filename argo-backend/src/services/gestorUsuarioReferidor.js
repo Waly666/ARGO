@@ -2,7 +2,10 @@ const Usuario = require('../models/Usuario');
 const Gestor = require('../models/Gestor');
 const { normalizarRol } = require('../utils/roles');
 const { obtenerConfigGestoresEmpresas } = require('./configGestoresEmpresas');
-const { esAlumnoReferidorComercial } = require('./gestorEmpresaMatricula');
+const {
+  esAlumnoReferidorComercial,
+  tipoReferidorDesdeGestor,
+} = require('./gestorEmpresaMatricula');
 
 function normalizarDoc(s) {
   return String(s || '').replace(/\D/g, '');
@@ -51,7 +54,7 @@ async function buscarGestorPorDocumento(doc) {
   const target = normalizarDoc(doc);
   if (!target) return null;
   const rows = await Gestor.find({ activo: { $ne: false } })
-    .select('nombres apellidos seudonimo numero')
+    .select('nombres apellidos seudonimo numero tipoGestor')
     .lean();
   return rows.find((g) => normalizarDoc(g.numero) === target) || null;
 }
@@ -99,7 +102,7 @@ async function aplicarReferidorGestorUsuario(dto, usuario, opts = {}) {
   }
 
   dto.manejoGestorEmpresa = true;
-  dto.tipoReferidorComercial = 'gestor';
+  dto.tipoReferidorComercial = tipoReferidorDesdeGestor(g.tipoGestor);
   dto.gestorId = g._id;
   dto.gestorNombre = g.nombre;
   dto.referidorEmpresaId = null;

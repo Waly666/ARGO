@@ -14,6 +14,7 @@ const {
   sufijoAutoriza,
 } = require('../services/anulacionComprobante');
 const { assertAlumnoPorNumDocGestor } = require('../services/alcanceGestorUsuario');
+const { assertCreditoDiarioGestorMovil } = require('../services/gestorCreditoDiario');
 const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
 const { validarPagoIntangibleIngreso } = require('../utils/referenciaPago');
 const upload = require('../middleware/upload');
@@ -470,6 +471,9 @@ exports.crearAlumno = async (req, res, next) => {
 
     const esMulti = liqDocs.length > 1;
     const total = liqDocs.reduce((a, x) => a + x.valor, 0);
+
+    await assertCreditoDiarioGestorMovil(req, total);
+
     const alumno = await DatosAlumno.findOne(numDocQuery(numDoc)).lean();
     const recibiDe = body.recibiDe || body.recibidoDe || nombreAlumno(alumno) || String(numDoc);
 
@@ -607,7 +611,15 @@ exports.crearAlumno = async (req, res, next) => {
       serviciosAdicionales: serviciosAdicionalesCreados,
     });
   } catch (e) {
-    if (e.status) return res.status(e.status).json({ message: e.message, code: e.code });
+    if (e.status) {
+      const body = { message: e.message, code: e.code };
+      if (e.code === 'GESTOR_CREDITO_DIARIO_EXCEDIDO') {
+        body.creditoDiario = e.creditoDiario;
+        body.consumidoHoy = e.consumidoHoy;
+        body.disponibleHoy = e.disponibleHoy;
+      }
+      return res.status(e.status).json(body);
+    }
     next(e);
   }
 };

@@ -12,6 +12,19 @@ function num(v) {
   return Number(v) || 0;
 }
 
+/** Tarifa 1 efectiva (servicio → programa). */
+function valorTarifa1Servicio(serv, prog) {
+  if (serv?.tarifa1 != null && serv.tarifa1 !== '') {
+    const v = num(serv.tarifa1);
+    if (v > 0) return v;
+  }
+  if (prog?.tarifa1 != null && prog.tarifa1 !== '') {
+    const v = num(prog.tarifa1);
+    if (v > 0) return v;
+  }
+  return num(prog?.valorMatricula);
+}
+
 /** Valor a liquidar según tarifa (1–3 presencial; 4 = virtual; 5 = gestor; 6 = empresa). */
 function valorTarifaServicio(serv, tarifa, prog) {
   const t = Number(tarifa);
@@ -19,15 +32,20 @@ function valorTarifaServicio(serv, tarifa, prog) {
     return num(serv?.tarifaVirtual);
   }
   if (t === TARIFA_GESTOR) {
-    return num(serv?.tarifaGestor);
+    const v = num(serv?.tarifaGestor);
+    if (v > 0) return v;
+    return valorTarifa1Servicio(serv, prog);
   }
   if (t === TARIFA_EMPRESA) {
-    return num(serv?.tarifaEmpresa);
+    const v = num(serv?.tarifaEmpresa);
+    if (v > 0) return v;
+    return valorTarifa1Servicio(serv, prog);
   }
   if (serv && serv[`tarifa${t}`] != null && serv[`tarifa${t}`] !== '') {
-    return num(serv[`tarifa${t}`]);
+    const v = num(serv[`tarifa${t}`]);
+    if (v > 0) return v;
   }
-  return num(prog?.valorMatricula);
+  return valorTarifa1Servicio(serv, prog);
 }
 
 async function maxNumericId(collection, field) {

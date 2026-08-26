@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii, shadows } from '../theme/tokens';
 
 type Props = {
   children: React.ReactNode;
@@ -19,9 +20,9 @@ export function SurfaceCard({ children, style, elevated = true }: Props) {
         styles.card,
         {
           backgroundColor: c.card,
-          borderColor: c.border,
+          borderColor: highContrast ? c.border : 'transparent',
         },
-        elevated && !highContrast && styles.elevated,
+        elevated && !highContrast && shadows.card,
         style,
       ]}
     >
@@ -32,15 +33,8 @@ export function SurfaceCard({ children, style, elevated = true }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 18,
+    borderRadius: radii.lg,
     borderWidth: 1,
     padding: 18,
-  },
-  elevated: {
-    shadowColor: '#4f46e5',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
   },
 });

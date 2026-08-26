@@ -1,8 +1,29 @@
 const mongoose = require('mongoose');
 const Gestor = require('../models/Gestor');
-const { TARIFA_GESTOR, esTarifaComercial } = require('../constants/tarifa');
+const { TARIFA_GESTOR, TARIFA_EMPRESA, esTarifaComercial } = require('../constants/tarifa');
 const { obtenerConfigGestoresEmpresas } = require('./configGestoresEmpresas');
 const { num, valorTarifaServicio, listarServiciosMatricula } = require('./programaServicio');
+
+function normalizarTipoGestor(tipo) {
+  return String(tipo || 'persona_natural').trim().toLowerCase() === 'empresa'
+    ? 'empresa'
+    : 'persona_natural';
+}
+
+/** tipoReferidorComercial según catálogo de gestores (no clientes de facturación). */
+function tipoReferidorDesdeGestor(tipoGestor) {
+  return normalizarTipoGestor(tipoGestor) === 'empresa' ? 'empresa' : 'gestor';
+}
+
+function tarifaDesdeTipoReferidor(tipoReferidor) {
+  return String(tipoReferidor || '').trim().toLowerCase() === 'empresa'
+    ? TARIFA_EMPRESA
+    : TARIFA_GESTOR;
+}
+
+function etiquetaTarifaComercial(tarifa) {
+  return Number(tarifa) === TARIFA_EMPRESA ? 'empresa' : 'gestor/tramitador';
+}
 
 /**
  * Si el alumno tiene manejo gestor/empresa activo, devuelve tarifa 5 o 6.
@@ -14,10 +35,10 @@ async function resolverTarifaComercialAlumno({ alumno, prog, tarifaManual = fals
   if (!cfg.activo || !alumno?.manejoGestorEmpresa) return null;
 
   const tipo = String(alumno.tipoReferidorComercial || '').trim().toLowerCase();
-  let tarifa = null;
-  if (tipo === 'gestor' && alumno.gestorId) tarifa = TARIFA_GESTOR;
-  else return null;
+  if (!alumno.gestorId) return null;
+  if (tipo !== 'gestor' && tipo !== 'empresa') return null;
 
+  const tarifa = tarifaDesdeTipoReferidor(tipo);
   const servicios = await listarServiciosMatricula(prog);
   const usaSem = servicios.length > 1;
   const valor = usaSem
@@ -26,7 +47,7 @@ async function resolverTarifaComercialAlumno({ alumno, prog, tarifaManual = fals
 
   if (valor <= 0) {
     const err = new Error(
-      'El programa no tiene tarifa gestor configurada (Programas → Matrícula)',
+      `El programa no tiene tarifa ${etiquetaTarifaComercial(tarifa)} configurada (Programas → Matrícula)`,
     );
     err.status = 400;
     err.code = 'TARIFA_COMERCIAL_NO_CONFIGURADA';
@@ -55,7 +76,6 @@ async function validarGestorEmpresaAlumno(dto) {
   }
 
   dto.manejoGestorEmpresa = true;
-  dto.tipoReferidorComercial = 'gestor';
   dto.referidorEmpresaId = null;
   dto.referidorEmpresaNombre = null;
 
@@ -72,12 +92,13 @@ async function validarGestorEmpresaAlumno(dto) {
     throw err;
   }
   dto.gestorId = g._id;
-    dto.gestorNombre =
-      String(g.seudonimo || '').trim() ||
-      (String(g.tipoGestor || '').toLowerCase() === 'empresa'
-        ? String(g.nombres || '').trim()
-        : [g.nombres, g.apellidos].filter(Boolean).join(' ').trim()) ||
-      String(g.numero || '');
+  dto.tipoReferidorComercial = tipoReferidorDesdeGestor(g.tipoGestor);
+  dto.gestorNombre =
+    String(g.seudonimo || '').trim() ||
+    (normalizarTipoGestor(g.tipoGestor) === 'empresa'
+      ? String(g.nombres || '').trim()
+      : [g.nombres, g.apellidos].filter(Boolean).join(' ').trim()) ||
+    String(g.numero || '');
   return dto;
 }
 
@@ -94,17 +115,17 @@ function snapshotReferidorComercial(alumno, tarifa) {
   if (!esTarifaComercial(tarifa)) return vacio;
 
   const tipo = String(alumno?.tipoReferidorComercial || '').trim().toLowerCase();
-  if (tipo === 'gestor' && alumno?.gestorId) {
-    return {
-      referidorComercial: true,
-      tipoReferidorComercial: 'gestor',
-      gestorId: alumno.gestorId,
-      gestorNombre: alumno.gestorNombre || null,
-      referidorEmpresaId: null,
-      referidorEmpresaNombre: null,
-    };
-  }
-  return vacio;
+  if (!alumno?.gestorId) return vacio;
+  if (tipo !== 'gestor' && tipo !== 'empresa') return vacio;
+
+  return {
+    referidorComercial: true,
+    tipoReferidorComercial: tipo,
+    gestorId: alumno.gestorId,
+    gestorNombre: alumno.gestorNombre || null,
+    referidorEmpresaId: null,
+    referidorEmpresaNombre: null,
+  };
 }
 
 function snapshotReferidorDesdeMatricula(mat) {
@@ -130,14 +151,17 @@ function snapshotReferidorDesdeMatricula(mat) {
   };
 }
 
-/** Alumno gestionado por gestor (tramitador) comercial. */
+/** Alumno gestionado por gestor comercial (tramitador o gestor empresa). */
 function esAlumnoReferidorComercial(alumno) {
-  if (!alumno?.manejoGestorEmpresa) return false;
+  if (!alumno?.manejoGestorEmpresa || !alumno?.gestorId) return false;
   const tipo = String(alumno.tipoReferidorComercial || '').trim().toLowerCase();
-  return tipo === 'gestor' && !!alumno.gestorId;
+  return tipo === 'gestor' || tipo === 'empresa';
 }
 
 module.exports = {
+  normalizarTipoGestor,
+  tipoReferidorDesdeGestor,
+  tarifaDesdeTipoReferidor,
   resolverTarifaComercialAlumno,
   validarGestorEmpresaAlumno,
   snapshotReferidorComercial,

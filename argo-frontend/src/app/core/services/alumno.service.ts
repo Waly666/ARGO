@@ -99,7 +99,7 @@ export interface AlumnoDto {
   empresaNombre?: string | null;
   /** Manejo gestor (tramitador) que trae al alumno (tarifas especiales al matricular). */
   manejoGestorEmpresa?: boolean;
-  tipoReferidorComercial?: 'gestor' | '' | null;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | '' | null;
   gestorId?: string | null;
   gestorNombre?: string | null;
   referidorEmpresaId?: string | null;

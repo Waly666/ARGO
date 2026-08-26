@@ -1,6 +1,6 @@
 const Gestor = require('../models/Gestor');
 const upload = require('../middleware/upload');
-
+const { normalizarCreditoDiario, obtenerResumenCreditoDiarioGestor } = require('../services/gestorCreditoDiario');
 const TIPOS_DOC = ['CC', 'CE', 'TI', 'PAS', 'PPT', 'NIT'];
 const TIPOS_GESTOR = ['persona_natural', 'empresa'];
 
@@ -27,8 +27,8 @@ function mapGestor(c) {
     direccion: o.direccion || '',
     seudonimo: o.seudonimo || '',
     foto: o.foto || '',
-    activo: o.activo !== false,
-    nombreCompleto:
+    creditoDiario: normalizarCreditoDiario(o.creditoDiario),
+    activo: o.activo !== false,    nombreCompleto:
       tipoGestor === 'empresa'
         ? String(nombres).trim()
         : [nombres, apellidos].filter(Boolean).join(' ').trim(),
@@ -45,7 +45,7 @@ function aplicarBody(doc, body, files) {
     if (body[k] != null) doc[k] = String(body[k]).trim();
   }
   if (body.tipoGestor != null) doc.tipoGestor = normalizarTipoGestor(body.tipoGestor);
-  if (doc.tipoGestor === 'empresa' && body.apellidos == null && !String(doc.apellidos || '').trim()) {
+  if (doc.tipoGestor === 'empresa') {
     doc.apellidos = '';
   }
   if (body.correo != null) doc.correo = String(body.correo || '').trim().toLowerCase();
@@ -56,15 +56,25 @@ function aplicarBody(doc, body, files) {
     doc.tipoDoc = 'NIT';
   }
   if (body.activo != null) doc.activo = body.activo !== false && body.activo !== 'false';
-  if (files?.foto?.[0]) {
+  if (body.creditoDiario != null && body.creditoDiario !== '') {
+    doc.creditoDiario = normalizarCreditoDiario(body.creditoDiario);
+  }  if (files?.foto?.[0]) {
     doc.foto = upload.publicUrl('gestores', files.foto[0].filename);
   } else if (body.foto != null && body.foto !== '') {
     doc.foto = String(body.foto).trim();
   }
 }
 
-exports.catalogos = (_req, res) => {
-  res.json({
+exports.miCreditoDiario = async (req, res, next) => {
+  try {
+    const data = await obtenerResumenCreditoDiarioGestor(req);
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.catalogos = (_req, res) => {  res.json({
     tiposDoc: TIPOS_DOC.map((code) => ({ code, label: code })),
     tiposGestor: [
       { code: 'persona_natural', label: 'Persona natural' },
@@ -128,6 +138,7 @@ exports.crear = async (req, res, next) => {
     const doc = new Gestor({
       activo: true,
       tipoGestor,
+      apellidos: tipoGestor === 'empresa' ? '' : apellidos,
       userAddReg: req.user?.username || 'sistema',
     });
     aplicarBody(doc, body, req.files);

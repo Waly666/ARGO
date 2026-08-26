@@ -4,8 +4,9 @@
       <h1>Roles, permisos y alarmas</h1>
       <p>
         Configure qué módulos puede ver cada rol y qué acciones (ver, crear, editar, eliminar) tiene sobre
-        cada tabla operativa. Las <strong>apps móviles</strong> (Jornadas, Cajero) usan los mismos permisos y alarmas del rol;
-        no hay configuración aparte. Los cambios se aplican al guardar.
+        cada tabla operativa. Las <strong>apps móviles</strong> (Jornadas, Cajero) usan los mismos permisos y alarmas del rol.
+        En la pestaña <strong>Alarmas</strong>, las etiquetadas <strong>Android</strong> también llegan a la app Cajero
+        (banner y notificación del celular). Los cambios se aplican al guardar.
         <a routerLink="/app/configuracion/autorizaciones">Autorizaciones pendientes</a>
       </p>
     </div>
@@ -55,6 +56,9 @@
                   <span class="rol-stat rol-stat--alm" [title]="'Alarmas: ' + detalleAlarmasRol(r)">
                     {{ detalleAlarmasRol(r) }}
                   </span>
+                  <span class="rol-stat rol-stat--android" [title]="'Alarmas app Android Cajero: ' + detalleAlarmasMovilRol(r)">
+                    {{ detalleAlarmasMovilRol(r) }}
+                  </span>
                 </span>
               </span>
               <span class="rol-type" [class.rol-type--sys]="r.esSistema" [class.rol-type--custom]="!r.esSistema">
@@ -88,6 +92,7 @@
                   <span class="rol-cap rol-cap--perm">{{ totalPermisosActivos() }} permisos menú</span>
                   <span class="rol-cap rol-cap--crud">Tablas: {{ permisosCrudResumen() }}</span>
                   <span class="rol-cap rol-cap--alm">{{ totalAlarmasActivas() }} alarmas</span>
+                  <span class="rol-cap rol-cap--android">{{ totalAlarmasMovilActivas() }} Android</span>
                 </div>
               </div>
             </header>
@@ -308,14 +313,60 @@
                     <div>
                       <h3 class="rol-section-title">Alarmas y avisos</h3>
                       <p class="rol-section-desc">
-                        Banners del encabezado, toasts y avisos en fichas. Tiempos en
+                        Configure qué alertas recibe cada rol en el <strong>ERP</strong> y en la app
+                        <strong>Android Cajero</strong> (banner + notificación del celular).
+                        Tiempos e intervalos en
                         <a routerLink="/app/configuracion/alertas">Configuración → Alertas</a>.
                       </p>
                     </div>
                   </header>
                   <div class="rol-section-body">
+                    <div class="rol-android-callout">
+                      <div class="rol-android-callout-main">
+                        <span class="rol-canal rol-canal--android rol-canal--lg">Android Cajero</span>
+                        <p>
+                          Este rol recibe <strong>{{ totalAlarmasMovilActivas() }}</strong> de
+                          <strong>{{ totalAlarmasMovilDisponibles() }}</strong> alarmas disponibles en el móvil.
+                          Marque o desmarque abajo; al guardar el rol, la app Android aplica los cambios al iniciar sesión.
+                        </p>
+                      </div>
+                      <div class="rol-android-callout-actions">
+                        <button
+                          type="button"
+                          class="ghost rol-android-btn"
+                          (click)="toggleTodasAlarmasAndroid(true)"
+                          [disabled]="todasAlarmasAndroidActivas()">
+                          Activar todas Android
+                        </button>
+                        <button
+                          type="button"
+                          class="ghost rol-android-btn"
+                          (click)="toggleTodasAlarmasAndroid(false)"
+                          [disabled]="totalAlarmasMovilActivas() === '0'">
+                          Quitar todas Android
+                        </button>
+                      </div>
+                    </div>
+
+                    <nav class="rol-alarmas-subtabs" aria-label="Vista de alarmas">
+                      <button
+                        type="button"
+                        class="rol-alarmas-subtab"
+                        [class.rol-alarmas-subtab--active]="vistaAlarmas() === 'android'"
+                        (click)="setVistaAlarmas('android')">
+                        Solo Android Cajero ({{ totalAlarmasMovilDisponibles() }})
+                      </button>
+                      <button
+                        type="button"
+                        class="rol-alarmas-subtab"
+                        [class.rol-alarmas-subtab--active]="vistaAlarmas() === 'todas'"
+                        (click)="setVistaAlarmas('todas')">
+                        Todas las alarmas ({{ totalTiposAlarmas() }})
+                      </button>
+                    </nav>
+
                     <div class="rol-perm-grid">
-                      @for (g of alarmasGrupos(); track g.id) {
+                      @for (g of alarmasGruposVisibles(); track g.id) {
                         <article class="rol-perm-grupo rol-perm-grupo--alm" [attr.data-tone]="g.id">
                           <header class="rol-perm-grupo-head">
                             <label class="rol-perm-grupo-toggle">
@@ -332,10 +383,16 @@
                               <label class="rol-perm-item" [class.rol-perm-item--on]="tieneAlarma(a.key)">
                                 <input type="checkbox" [checked]="tieneAlarma(a.key)" (change)="toggleAlarma(a.key)" />
                                 <span class="rol-perm-label">{{ a.label }}</span>
+                                @if (a.movilCajero) {
+                                  <span class="rol-canal rol-canal--android" title="App Android Cajero">Android</span>
+                                }
                               </label>
                             }
                           </div>
                         </article>
+                      }
+                      @if (!alarmasGruposVisibles().length) {
+                        <p class="rol-alarmas-empty">No hay alarmas Android configuradas en el catálogo del servidor.</p>
                       }
                     </div>
                   </div>

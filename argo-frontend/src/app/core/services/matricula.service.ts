@@ -5,11 +5,13 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { formatNumDoc, parseNumDocForApi } from '../utils/num-doc.helpers';
 
+export type TarifaMatricula = 1 | 2 | 3 | 4 | 5 | 6;
+
 export interface MatriculaCrearDto {
   numDoc: number | string;
   idPrograma: string;
   idProg?: string;
-  tarifa?: 1 | 2 | 3 | 4;
+  tarifa?: TarifaMatricula;
   /** Si true, no aplica tarifa 3 automática aunque califique refrendación. */
   tarifaManual?: boolean;
   /** Rebaja sobre valor catálogo (tarifas 1–3). Total del programa; en multisemestre se reparte. */

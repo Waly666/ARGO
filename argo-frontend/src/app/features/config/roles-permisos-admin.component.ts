@@ -28,6 +28,7 @@ import {
 } from '../../core/utils/crud-permiso.util';
 
 type FichaRol = 'datos' | 'tablas' | 'modulos' | 'alarmas';
+type VistaAlarmas = 'todas' | 'android';
 
 @Component({
   selector: 'argo-roles-permisos-admin',
@@ -56,6 +57,7 @@ export class RolesPermisosAdminComponent implements OnInit {
   filtroTablas = signal('');
   mostrarNuevo = signal(false);
   ficha = signal<FichaRol>('datos');
+  vistaAlarmas = signal<VistaAlarmas>('android');
 
   readonly accionesCrudCols = ACCIONES_CRUD;
   readonly etiquetaAccionCorta = ETIQUETA_ACCION_CORTA;
@@ -93,6 +95,51 @@ export class RolesPermisosAdminComponent implements OnInit {
     const a = this.form().alarmas || [];
     if (a.includes('*')) return 'Todas';
     return String(a.length);
+  });
+
+  totalAlarmasMovilActivas = computed(() => {
+    const raw = this.form().alarmas || [];
+    if (raw.includes('*')) return String(this.totalAlarmasMovilDisponibles());
+    const sel = new Set(raw);
+    let n = 0;
+    for (const g of this.alarmasGrupos()) {
+      for (const al of g.alarmas) {
+        if (al.movilCajero && sel.has(al.key)) n += 1;
+      }
+    }
+    return String(n);
+  });
+
+  totalAlarmasMovilDisponibles = computed(() => {
+    let n = 0;
+    for (const g of this.alarmasGrupos()) {
+      for (const al of g.alarmas) {
+        if (al.movilCajero) n += 1;
+      }
+    }
+    return n;
+  });
+
+  todasAlarmasAndroidActivas = computed(() => {
+    const raw = this.form().alarmas || [];
+    if (raw.includes('*')) return true;
+    const sel = new Set(raw);
+    for (const g of this.alarmasGrupos()) {
+      for (const al of g.alarmas) {
+        if (al.movilCajero && !sel.has(al.key)) return false;
+      }
+    }
+    return this.totalAlarmasMovilDisponibles() > 0;
+  });
+
+  alarmasGruposVisibles = computed(() => {
+    if (this.vistaAlarmas() !== 'android') return this.alarmasGrupos();
+    return this.alarmasGrupos()
+      .map((g) => ({
+        ...g,
+        alarmas: g.alarmas.filter((a) => a.movilCajero),
+      }))
+      .filter((g) => g.alarmas.length > 0);
   });
 
   totalTiposPermisos = computed(() =>
@@ -214,6 +261,11 @@ export class RolesPermisosAdminComponent implements OnInit {
 
   setFicha(f: FichaRol): void {
     this.ficha.set(f);
+    if (f === 'alarmas') this.vistaAlarmas.set('android');
+  }
+
+  setVistaAlarmas(v: VistaAlarmas): void {
+    this.vistaAlarmas.set(v);
   }
 
   accionCrudActiva(moduloId: string, accion: AccionCrud): boolean {
@@ -375,6 +427,43 @@ export class RolesPermisosAdminComponent implements OnInit {
 
   alarmasGrupoActivas(grupo: AlarmaGrupo): number {
     return grupo.alarmas.filter((a) => this.tieneAlarma(a.key)).length;
+  }
+
+  detalleAlarmasMovilRol(rol: RolApp): string {
+    const total = this.totalAlarmasMovilDisponibles();
+    const a = rol.alarmas || [];
+    if (a.includes('*')) return total ? `Android ${total}/${total}` : 'Android todas';
+    let n = 0;
+    for (const g of this.alarmasGrupos()) {
+      for (const al of g.alarmas) {
+        if (al.movilCajero && a.includes(al.key)) n += 1;
+      }
+    }
+    if (!total) return `Android ${n}`;
+    return `Android ${n}/${total}`;
+  }
+
+  private clavesAlarmasAndroid(): string[] {
+    return this.alarmasGrupos()
+      .flatMap((g) => g.alarmas)
+      .filter((a) => a.movilCajero)
+      .map((a) => a.key);
+  }
+
+  toggleTodasAlarmasAndroid(activar: boolean): void {
+    const keys = this.clavesAlarmasAndroid();
+    if (!keys.length) return;
+    this.form.update((f) => {
+      let alarmas = this.expandirAlarmasSiWildcard([...(f.alarmas || [])]);
+      if (activar) {
+        for (const k of keys) {
+          if (!alarmas.includes(k)) alarmas.push(k);
+        }
+      } else {
+        alarmas = alarmas.filter((k) => !keys.includes(k));
+      }
+      return { ...f, alarmas };
+    });
   }
 
   capGrupoAlarmas(id: string): string {

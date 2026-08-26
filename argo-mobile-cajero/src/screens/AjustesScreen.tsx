@@ -92,7 +92,15 @@ export default function AjustesScreen() {
           </Row>
         </Section>
 
-        <Section title="Sonido y vibración" icon="notifications-outline" color={c.text}>
+        <Section title="Sonido, vibración y notificaciones" icon="notifications-outline" color={c.text}>
+          <Row label="Notificaciones del celular" color={c.text}>
+            <Switch
+              value={alertPrefs.notificationsEnabled}
+              onValueChange={(v) => void alertPrefs.patch({ notificationsEnabled: v })}
+              trackColor={{ false: '#cbd5e1', true: '#a5b4fc' }}
+              thumbColor={alertPrefs.notificationsEnabled ? '#4f46e5' : '#f8fafc'}
+            />
+          </Row>
           <Row label="Sonido ARGO (único)" color={c.text}>
             <Switch
               value={alertPrefs.soundEnabled}
@@ -110,8 +118,9 @@ export default function AjustesScreen() {
             />
           </Row>
           <ScaledText baseSize={13} style={{ color: c.textSoft }}>
-            Las alertas nuevas reproducen un sonido distintivo y vibran. La configuración de qué
-            alertas ver se hace en la app web (Roles y Alertas).
+            Las alertas operativas (caja, comprobantes, certificados, etc.) dependen del rol asignado en
+            Configuración → Roles → pestaña Alarmas. Las marcadas Android llegan aquí con banner y
+            notificación del celular. Sonido y vibración se controlan abajo.
           </ScaledText>
         </Section>
 

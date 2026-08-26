@@ -325,6 +325,15 @@ export async function fetchConfigAlertas(): Promise<{ reglas: ReglaAlerta[] }> {
   return apiFetch<{ reglas: ReglaAlerta[] }>('/config/alertas', { timeoutMs: 10_000 });
 }
 
+export async function fetchAlertasCatalogos(): Promise<{
+  grupos: unknown[];
+  clavesMovilCajero: string[];
+}> {
+  return apiFetch<{ grupos: unknown[]; clavesMovilCajero: string[] }>('/config/alertas/catalogos', {
+    timeoutMs: 10_000,
+  });
+}
+
 export async function fetchCajaActiva(): Promise<CajaActivaResponse> {
   return apiFetch<CajaActivaResponse>('/caja/sesiones/activa');
 }
@@ -352,3 +361,80 @@ export async function fetchCertificadosVencidos(dias?: number): Promise<{ total?
 export async function fetchDescuadresCaja(): Promise<unknown[]> {
   return apiFetch<unknown[]>('/caja/descuadres?estado=pendiente&limit=15');
 }
+
+export async function fetchJornadasEnProceso(): Promise<unknown[]> {
+  return apiFetch<unknown[]>('/jornadas/jornadas/en-proceso');
+}
+
+export async function fetchAlertasPagoHoy(): Promise<unknown[]> {
+  return apiFetch<unknown[]>('/alumnos/alertas-pago-hoy');
+}
+
+export async function fetchAlertasDocsEmpleados(): Promise<{ totalAlertas?: number } | null> {
+  return apiFetch('/rrhh/alertas-documentos-empleados');
+}
+
+export async function fetchAlertasDocsEmpleadosFaltantes(): Promise<{ totalAlertas?: number } | null> {
+  return apiFetch('/rrhh/alertas-documentos-empleados-faltantes');
+}
+
+export async function fetchAlertasDocsVehiculos(): Promise<{ totalAlertas?: number } | null> {
+  return apiFetch('/vehiculos/alertas-documentos');
+}
+
+export async function fetchAlertasDocsVehiculosFaltantes(): Promise<{ totalAlertas?: number } | null> {
+  return apiFetch('/vehiculos/alertas-documentos-faltantes');
+}
+
+export async function fetchAlertasInspeccionVehiculos(): Promise<{ total?: number; items?: unknown[] } | null> {
+  return apiFetch('/vehiculos/alertas-inspeccion-pendiente');
+}
+
+export async function fetchAlertasAutorizacionAdmin(): Promise<unknown[]> {
+  return apiFetch<unknown[]>('/autorizaciones/alertas/admin');
+}
+
+export async function fetchAlertasAutorizacionMias(): Promise<unknown[]> {
+  return apiFetch<unknown[]>('/autorizaciones/alertas/mias');
+}
+
+export type AulaVirtualEventoAlerta = {
+  id: string;
+  numDoc?: number;
+  nombreAlumno?: string;
+  email?: string;
+  idPrograma?: string;
+  nombrePrograma?: string;
+  alumnoNuevo?: boolean;
+};
+
+export async function fetchAulaVirtualAlertasEventos(query = ''): Promise<{
+  registro: AulaVirtualEventoAlerta[];
+  matricula: AulaVirtualEventoAlerta[];
+}> {
+  const q = query ? `?${query}` : '';
+  return apiFetch(`/aula-virtual/admin/alertas-eventos${q}`);
+}
+
+export async function fetchAulaVirtualAccesoPorVencer(
+  dias?: number,
+): Promise<{ total?: number; items?: unknown[] } | null> {
+  const q = dias != null && dias > 0 ? `?dias=${dias}` : '';
+  return apiFetch(`/aula-virtual/admin/alertas-acceso-por-vencer${q}`);
+}
+
+export type ForoMensajeAlertaRow = {
+  id: string;
+  idPrograma?: string;
+  nombrePrograma?: string;
+  autorNombre?: string;
+  texto?: string;
+};
+
+export async function fetchForoAlertasRecientes(minutos?: number): Promise<ForoMensajeAlertaRow[]> {
+  const q = minutos != null && minutos > 0 ? `?minutos=${minutos}` : '';
+  return apiFetch<ForoMensajeAlertaRow[]>(`/foro/admin/alertas-recientes${q}`);
+}
+
+export { fetchConsignacionesPendientes } from './consignacionApi';
+export type { SolicitudConsignacion as ConsignacionPendienteRow } from './consignacionApi';

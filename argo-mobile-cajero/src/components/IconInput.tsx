@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 import { ScaledText } from './ScaledText';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii, shadows } from '../theme/tokens';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -24,7 +25,7 @@ export function IconInput({ label, icon, iconColor, style, autoCapitalize, ...re
 
   return (
     <View style={styles.wrap}>
-      <ScaledText baseSize={14} style={{ color: c.textSoft, marginBottom: 6, fontWeight: '600' }}>
+      <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: 8, fontWeight: '600' }}>
         {label}
       </ScaledText>
       <View
@@ -32,16 +33,17 @@ export function IconInput({ label, icon, iconColor, style, autoCapitalize, ...re
           styles.field,
           {
             height: inputH,
-            borderColor: c.border,
+            borderColor: highContrast ? c.border : 'transparent',
             backgroundColor: c.card,
           },
+          !highContrast && shadows.cardPressed,
         ]}
       >
-        <View style={[styles.iconWrap, { backgroundColor: highContrast ? c.bgAlt : '#f1f5f9' }]}>
+        <View style={[styles.iconWrap, { backgroundColor: highContrast ? c.bgAlt : c.chipBg }]}>
           <Ionicons name={icon} size={20} color={iconColor ?? c.primary} />
         </View>
         <TextInput
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={c.textMuted}
           autoCapitalize={cap}
           style={[
             styles.input,
@@ -65,12 +67,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: radii.pill,
     overflow: 'hidden',
+    paddingRight: 6,
   },
   iconWrap: {
-    width: 48,
-    height: '100%',
+    width: 44,
+    height: 44,
+    marginLeft: 4,
+    borderRadius: radii.icon,
     alignItems: 'center',
     justifyContent: 'center',
   },

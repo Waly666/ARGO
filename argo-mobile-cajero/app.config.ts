@@ -94,6 +94,13 @@ const config: ExpoConfig = {
     ],
     'expo-secure-store',
     [
+      'expo-notifications',
+      {
+        icon: ICON,
+        color: AZUL,
+      },
+    ],
+    [
       'expo-build-properties',
       {
         android: {

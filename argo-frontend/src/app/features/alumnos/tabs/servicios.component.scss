@@ -604,6 +604,30 @@ table.nested { font-size: .88rem; }
   }
 }
 
+.referidor-comercial-banner {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.08);
+
+  strong {
+    color: var(--text);
+  }
+
+  p {
+    margin: 6px 0 0;
+    font-size: 0.88rem;
+    color: var(--text-soft);
+  }
+
+  .hint {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    opacity: 0.9;
+  }
+}
+
 .req {
   color: #f87171;
 }

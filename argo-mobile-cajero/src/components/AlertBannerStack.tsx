@@ -6,6 +6,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { ScaledText } from './ScaledText';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii, shadows } from '../theme/tokens';
 import * as alertStore from '../services/alertStore';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -31,15 +32,19 @@ export function AlertBannerStack() {
             {
               minHeight: 72 * alertMultiplier,
               backgroundColor: a.critico ? c.dangerBg : c.warnBg,
-              borderColor: a.critico ? c.danger : c.warn,
             },
-            !reduceMotion && styles.pulse,
+            !highContrast && !reduceMotion && shadows.card,
           ]}
         >
-          <View style={styles.leadIcon}>
+          <View
+            style={[
+              styles.leadIcon,
+              { backgroundColor: a.critico ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)' },
+            ]}
+          >
             <Ionicons
               name={a.critico ? 'warning-outline' : 'notifications-outline'}
-              size={22}
+              size={20}
               color={a.critico ? c.danger : c.warn}
             />
           </View>
@@ -50,22 +55,31 @@ export function AlertBannerStack() {
                 nav.navigate('DocumentoViewer', a.documento);
                 return;
               }
-              if (a.route) nav.navigate(a.route as 'Caja' | 'Facturacion' | 'Alumnos' | 'Home');
+              if (a.route)
+                nav.navigate(
+                  a.route as
+                    | 'Caja'
+                    | 'Facturacion'
+                    | 'Alumnos'
+                    | 'Home'
+                    | 'AprobacionConsignacion'
+                    | 'Autorizaciones',
+                );
             }}
           >
-            <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800' }}>
+            <ScaledText baseSize={15} style={{ color: c.text, fontWeight: '800' }}>
               {a.titulo}
             </ScaledText>
-            <ScaledText baseSize={14} style={{ color: c.textSoft, marginTop: 4 }} numberOfLines={2}>
+            <ScaledText baseSize={13} style={{ color: c.textSoft, marginTop: 3 }} numberOfLines={2}>
               {a.detalle}
             </ScaledText>
           </Pressable>
           <Pressable
-            style={[styles.close, { minWidth: 56 * alertMultiplier, minHeight: 48 * alertMultiplier }]}
+            style={[styles.close, { minWidth: 48 * alertMultiplier, minHeight: 48 * alertMultiplier }]}
             onPress={() => alertStore.dismiss(a.id)}
             accessibilityLabel="Cerrar alerta"
           >
-            <Ionicons name="close" size={22} color={c.text} />
+            <Ionicons name="close" size={20} color={c.textMuted} />
           </Pressable>
         </View>
       ))}
@@ -74,30 +88,27 @@ export function AlertBannerStack() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 8, paddingHorizontal: 12, paddingTop: 8 },
+  wrap: { gap: 10, paddingHorizontal: 16, paddingTop: 10 },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 2,
+    borderRadius: radii.lg,
     overflow: 'hidden',
+    paddingRight: 4,
   },
   leadIcon: {
-    paddingLeft: 12,
-    paddingRight: 4,
+    width: 44,
+    height: 44,
+    borderRadius: radii.icon,
+    marginLeft: 10,
+    marginRight: 6,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  body: { flex: 1, paddingVertical: 12, paddingRight: 8 },
+  body: { flex: 1, paddingVertical: 12, paddingRight: 4 },
   close: {
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-  },
-  pulse: {
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
   },
 });

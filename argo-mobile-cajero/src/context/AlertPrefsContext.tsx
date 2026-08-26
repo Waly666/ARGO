@@ -7,12 +7,15 @@ export type AlertPrefs = {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   ignoreSilentMode: boolean;
+  /** Mostrar alertas operativas en la bandeja del sistema (Android/iOS). */
+  notificationsEnabled: boolean;
 };
 
 const DEFAULT: AlertPrefs = {
   soundEnabled: true,
   vibrationEnabled: true,
   ignoreSilentMode: false,
+  notificationsEnabled: true,
 };
 
 type Ctx = AlertPrefs & {

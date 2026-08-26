@@ -8,9 +8,20 @@ const FALLBACK: Omit<ReglaAlerta, 'key' | 'label'> = {
 };
 
 let mapa = new Map<string, ReglaAlerta>();
+let clavesMovilCajero = new Set<string>();
 
 export function aplicarReglasAlertas(reglas: ReglaAlerta[]): void {
   mapa = new Map(reglas.map((r) => [r.key, r]));
+}
+
+/** Claves de alarmas soportadas en Android Cajero (desde catálogo del servidor). */
+export function aplicarClavesMovilCajero(claves: string[]): void {
+  clavesMovilCajero = new Set(claves);
+}
+
+export function esAlarmaMovilCajero(key: string): boolean {
+  if (!clavesMovilCajero.size) return false;
+  return clavesMovilCajero.has(key);
 }
 
 export function regla(key: string): ReglaAlerta {

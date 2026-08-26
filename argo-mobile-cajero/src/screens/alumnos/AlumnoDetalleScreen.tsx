@@ -34,6 +34,7 @@ import { crearMatricula } from '../../api/matriculasApi';
 import { fetchGestoresConfig, fetchOpcionesMatricula } from '../../api/configApi';
 import { MatriculaAjustePanel } from '../../components/MatriculaAjustePanel';
 import { AlumnoCard } from '../../components/AlumnoCard';
+import { GestorCreditoDiarioCard } from '../../components/GestorCreditoDiarioCard';
 import {
   cuotasSemestreCatalogo,
   normalizarCuotaEntera,
@@ -343,8 +344,8 @@ export default function AlumnoDetalleScreen() {
     [extrasMatricula],
   );
   const cuotasCatalogo = useMemo(
-    () => cuotasSemestreCatalogo(serviciosProgSel, tarifa),
-    [serviciosProgSel, tarifa],
+    () => cuotasSemestreCatalogo(serviciosProgSel, tarifa, programaSel),
+    [serviciosProgSel, tarifa, programaSel],
   );
   const numCuotasSemestre = cuotasCatalogo.length;
   const totalCuotasSemestre = useMemo(
@@ -989,6 +990,12 @@ export default function AlumnoDetalleScreen() {
         }
       />
 
+      {esUsuarioGestor(authState.status === 'signedIn' ? authState.user.rol : undefined) ? (
+        <GestorCreditoDiarioCard
+          rol={authState.status === 'signedIn' ? authState.user.rol : undefined}
+        />
+      ) : null}
+
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {TABS.map((t) => {
           const on = tab === t.id;
@@ -1213,6 +1220,7 @@ export default function AlumnoDetalleScreen() {
                             cuotasSemestreCatalogo(
                               serviciosPrograma(programaSel, servicios),
                               t as TarifaMatricula,
+                              programaSel,
                             ).map((v) => Math.round(v)),
                           );
                         }

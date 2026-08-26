@@ -5,6 +5,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
+import { NotificationBridge } from './src/components/NotificationBridge';
+import { navigationRef } from './src/navigation/navigationRef';
+
 import { AlertPrefsProvider } from './src/context/AlertPrefsContext';
 import { AccessibilityProvider } from './src/context/AccessibilityContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -27,6 +30,8 @@ import FacturacionScreen from './src/screens/facturacion/FacturacionScreen';
 import ProgramasScreen from './src/screens/programas/ProgramasScreen';
 import ServiciosScreen from './src/screens/servicios/ServiciosScreen';
 import DocumentoViewerScreen from './src/screens/shared/DocumentoViewerScreen';
+import AprobacionConsignacionScreen from './src/screens/admin/AprobacionConsignacionScreen';
+import AutorizacionesScreen from './src/screens/admin/AutorizacionesScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -35,10 +40,10 @@ const navTheme = {
   colors: {
     ...DefaultTheme.colors,
     primary: CAJERO_AZUL_REY,
-    background: '#eef2ff',
+    background: '#F4F6FB',
     card: '#ffffff',
-    text: '#1e1b4b',
-    border: '#e2e8f0',
+    text: '#0F172A',
+    border: '#E8ECF4',
   },
 };
 
@@ -46,7 +51,7 @@ const headerOptions = {
   headerTintColor: '#fff',
   headerStyle: { backgroundColor: CAJERO_AZUL_REY, elevation: 0, shadowOpacity: 0 },
   headerTitleStyle: { fontWeight: '700' as const },
-  cardStyle: { backgroundColor: '#eef2ff' },
+  cardStyle: { backgroundColor: '#F4F6FB' },
 };
 
 function RootNavigator() {
@@ -87,6 +92,12 @@ function RootNavigator() {
       <Stack.Screen name="Facturacion" component={FacturacionScreen} options={{ title: 'Facturación' }} />
       <Stack.Screen name="Programas" component={ProgramasScreen} options={{ title: 'Programas' }} />
       <Stack.Screen name="Servicios" component={ServiciosScreen} options={{ title: 'Servicios' }} />
+      <Stack.Screen
+        name="AprobacionConsignacion"
+        component={AprobacionConsignacionScreen}
+        options={{ title: 'Consignaciones portal' }}
+      />
+      <Stack.Screen name="Autorizaciones" component={AutorizacionesScreen} options={{ title: 'Autorizaciones' }} />
       <Stack.Screen name="Ajustes" component={AjustesScreen} options={{ title: 'Lectura y alertas' }} />
     </Stack.Navigator>
   );
@@ -101,7 +112,8 @@ export default function App() {
             <AuthProvider>
               <BrandingProvider>
               <AppBootGate>
-                <NavigationContainer theme={navTheme}>
+                <NavigationContainer ref={navigationRef} theme={navTheme}>
+                  <NotificationBridge />
                   <RootNavigator />
                 </NavigationContainer>
               </AppBootGate>

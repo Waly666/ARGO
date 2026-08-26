@@ -72,19 +72,38 @@
         </div>
 
         <ng-container *ngIf="idProg() && !programaSoloVirtual()">
+          <div class="referidor-comercial-banner" *ngIf="tarifaComercial() as tc">
+            <strong>Tarifa comercial automática</strong>
+            <p>
+              Gestor: <strong>{{ tc.referidorNombre }}</strong>
+              · {{ textoTarifa() }}
+              <ng-container *ngIf="valorMatriculaBase() > 0">
+                · Valor: <strong>{{ fmt(valorMatriculaBase()) }}</strong>
+              </ng-container>
+            </p>
+            <p class="hint">
+              Si la tarifa gestor o empresa del programa está en $0, se liquida con la tarifa 1.
+            </p>
+          </div>
           <div class="row matricula-fields-row">
             <div class="col-6 field-cell field-cell--tarifa">
-              <argo-catalogo-enum-buscar
-                label="Tarifa"
-                placeholder="Seleccione tarifa…"
-                [textoInicial]="textoTarifa()"
-                [modoCombo]="true"
-                [remoto]="false"
-                [minLength]="1"
-                [opcionesLocales]="opcionesTarifas()"
-                (seleccionado)="onTarifaPick($event)"
-                (limpiado)="onTarifaLimpiar()"
-              />
+              <ng-container *ngIf="tarifaComercial(); else selectorTarifaMatricula">
+                <label>Tarifa</label>
+                <input type="text" class="input-valor-readonly" [value]="textoTarifa()" disabled />
+              </ng-container>
+              <ng-template #selectorTarifaMatricula>
+                <argo-catalogo-enum-buscar
+                  label="Tarifa"
+                  placeholder="Seleccione tarifa…"
+                  [textoInicial]="textoTarifa()"
+                  [modoCombo]="true"
+                  [remoto]="false"
+                  [minLength]="1"
+                  [opcionesLocales]="opcionesTarifas()"
+                  (seleccionado)="onTarifaPick($event)"
+                  (limpiado)="onTarifaLimpiar()"
+                />
+              </ng-template>
             </div>
             <div class="col-6 field-cell field-cell--valor">
               <label for="valor-matricula-readonly">Valor Matrícula</label>

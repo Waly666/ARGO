@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const GestorSchema = new mongoose.Schema(
   {
     nombres: { type: String, required: true, trim: true },
-    apellidos: { type: String, required: true, trim: true },
+    apellidos: { type: String, trim: true, default: '' },
     tipoDoc: { type: String, trim: true, default: 'CC' },
     numero: { type: String, required: true, trim: true, index: true },
     correo: { type: String, trim: true, default: '', lowercase: true },
@@ -23,6 +23,8 @@ const GestorSchema = new mongoose.Schema(
       index: true,
     },
     foto: { type: String, trim: true, default: '' },
+    /** Tope diario en pesos para usuario gestor en app móvil. 0 = ilimitado. */
+    creditoDiario: { type: Number, default: 0, min: 0 },
     activo: { type: Boolean, default: true, index: true },
     userAddReg: { type: String, trim: true },
     userChangeRecord: { type: String, trim: true },

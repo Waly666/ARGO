@@ -14,6 +14,21 @@ export interface GestorItem {
   activo?: boolean;
 }
 
+export interface GestorCreditoDiario {
+  aplica: boolean;
+  sinVinculo?: boolean;
+  gestorId?: string | null;
+  gestorNombre?: string | null;
+  creditoDiario: number;
+  consumidoHoy: number;
+  disponibleHoy: number | null;
+  ilimitado: boolean;
+}
+
+export async function fetchMiCreditoDiario(): Promise<GestorCreditoDiario> {
+  return apiFetch<GestorCreditoDiario>('/gestores/mi-credito-diario');
+}
+
 export async function buscarGestores(q?: string): Promise<GestorItem[]> {
   const term = String(q ?? '').trim();
   const path = term ? `/gestores?q=${encodeURIComponent(term)}` : '/gestores';

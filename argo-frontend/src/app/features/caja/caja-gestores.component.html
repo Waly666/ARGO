@@ -2,17 +2,19 @@
   <header #pageHead class="caja-head page-head caja-page-header">
     <div class="caja-head-main">
       <p class="breadcrumb"><a routerLink="/app/caja">Caja</a> / Gestores</p>
-      <h1>Gestores</h1>
-      <p class="hint">
-        Catálogo de gestores. Registre nombres, documento, contacto y seudónimo para identificarlos en el flujo de caja.
+      <h1>Gestores y tramitadores</h1>
+      <p class="hint gest-head-hint">
+        Catálogo comercial de quienes traen alumnos a la escuela. Configure documento, contacto,
+        <strong>crédito diario</strong> para la app móvil y foto. El cupo limita los comprobantes de ingreso
+        que registra el usuario gestor en Android; <strong>0 = ilimitado</strong>.
       </p>
     </div>
     <div class="caja-badges head-actions">
       @if (!loading() && !formAbierto()) {
-        <span class="caja-chip caja-chip--sky">{{ gestores().length }} gestor{{ gestores().length === 1 ? '' : 'es' }}</span>
+        <span class="caja-chip caja-chip--sky">{{ stats().total }} gestor{{ stats().total === 1 ? '' : 'es' }}</span>
       }
       @if (!formAbierto()) {
-        <a routerLink="/app/caja/gestores/informe" class="ghost">📊 Informe</a>
+        <a routerLink="/app/caja/gestores/informe" class="ghost">📊 Informe comercial</a>
         <button type="button" class="primary" (click)="nuevo()">+ Nuevo gestor</button>
       }
     </div>
@@ -28,7 +30,7 @@
         <div>
           <span class="cli-form-kicker">{{ editId() ? 'Edición' : 'Alta' }}</span>
           <h2>{{ editId() ? 'Editar gestor' : 'Nuevo gestor' }}</h2>
-          <p class="cli-form-sub">Datos personales y de contacto del gestor.</p>
+          <p class="cli-form-sub">Identificación, contacto, crédito móvil y foto del tramitador.</p>
         </div>
         <button type="button" class="ghost cli-form-close" (click)="cerrar()" aria-label="Cerrar">×</button>
       </header>
@@ -79,8 +81,12 @@
               }
             </div>
             <label class="cli-field" style="margin-top: 0.75rem">
-              <span class="cli-label">Seudónimo</span>
-              <input type="text" [ngModel]="form().seudonimo" (ngModelChange)="patch({ seudonimo: $event })" />
+              <span class="cli-label">Seudónimo / nombre comercial</span>
+              <input
+                type="text"
+                placeholder="Opcional — cómo lo conocen en campo"
+                [ngModel]="form().seudonimo"
+                (ngModelChange)="patch({ seudonimo: $event })" />
             </label>
           </div>
         </section>
@@ -115,12 +121,50 @@
           </div>
         </section>
 
-        <section class="cli-section cli-section--amber">
+        <section class="cli-section cli-section--violet">
           <header class="cli-section-head">
             <span class="cli-section-badge">3</span>
+            <h3>Crédito diario — app móvil</h3>
+          </header>
+          <div class="cli-section-body gest-credito-panel">
+            <div class="gest-credito-toggle">
+              <div>
+                <strong>Crédito ilimitado</strong>
+                <p>Si está activo, el gestor puede registrar cobros sin tope diario en la app Android.</p>
+              </div>
+              <label class="cli-field" style="margin: 0; min-width: 3rem">
+                <input
+                  type="checkbox"
+                  [ngModel]="creditoIlimitado()"
+                  (ngModelChange)="setCreditoIlimitado($event)" />
+              </label>
+            </div>
+            @if (!creditoIlimitado()) {
+              <div class="gest-credito-input-wrap">
+                <label class="cli-field">
+                  <span class="cli-label">Tope diario (COP)</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1000"
+                    [ngModel]="form().creditoDiario ?? 0"
+                    (ngModelChange)="onCreditoDiarioInput($event)" />
+                </label>
+                <p class="gest-credito-hint">
+                  Suma de comprobantes de ingreso del día. Al superarlo no podrá registrar más cobros hasta mañana.
+                  No aplica cuando un cajero asigna el gestor y cobra en caja.
+                </p>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="cli-section cli-section--amber">
+          <header class="cli-section-head">
+            <span class="cli-section-badge">4</span>
             <h3>Foto</h3>
           </header>
-          <div class="cli-section-body gestor-foto-row">
+          <div class="cli-section-body gest-foto-row">
             <div class="gestor-foto-preview" aria-hidden="true">
               @if (fotoPreview(); as p) {
                 <img [src]="p" alt="Foto del gestor" />
@@ -150,62 +194,95 @@
       <input
         type="search"
         class="cli-search"
-        placeholder="Buscar por nombre, documento o seudónimo…"
+        placeholder="Buscar por nombre, documento, seudónimo o celular…"
         [ngModel]="filtro()"
         (ngModelChange)="filtro.set($event)"
         (keyup.enter)="recargar()" />
       <button type="button" class="ghost" (click)="recargar()">Buscar</button>
     </div>
 
+    @if (!loading() && gestores().length) {
+      <div class="gest-stats" aria-label="Resumen de gestores">
+        <div class="gest-stat gest-stat--sky">
+          <strong>{{ stats().total }}</strong>
+          <span>Total</span>
+        </div>
+        <div class="gest-stat">
+          <strong>{{ stats().naturales }}</strong>
+          <span>Personas naturales</span>
+        </div>
+        <div class="gest-stat gest-stat--violet">
+          <strong>{{ stats().empresas }}</strong>
+          <span>Empresas</span>
+        </div>
+        <div class="gest-stat gest-stat--amber">
+          <strong>{{ stats().conCredito }}</strong>
+          <span>Con tope diario</span>
+        </div>
+      </div>
+    }
+
     @if (loading()) {
       <p class="cli-empty">Cargando gestores…</p>
     } @else if (!gestores().length) {
       <div class="cli-empty cli-empty--card">
         <span class="cli-empty-icon" aria-hidden="true">◎</span>
-        <p>No hay gestores registrados.</p>
-        <button type="button" class="ghost" (click)="nuevo()">Crear el primero</button>
+        <p>No hay gestores que coincidan con la búsqueda.</p>
+        <button type="button" class="primary" (click)="nuevo()">Registrar gestor</button>
       </div>
     } @else {
-      <div class="table-wrap cli-table-wrap">
-        <table class="argo data-table cli-table">
-          <thead>
-            <tr>
-              <th class="th-foto"></th>
-              <th>Tipo</th>
-              <th>Documento</th>
-              <th>Nombre</th>
-              <th>Seudónimo</th>
-              <th>Correo</th>
-              <th>Celular</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (g of gestores(); track g._id) {
-              <tr>
-                <td class="td-foto">
-                  <div class="list-foto" aria-hidden="true">
-                    @if (fotoUrl(g.foto); as f) {
-                      <img [src]="f" alt="" />
-                    } @else {
-                      <span class="gestor-foto-iniciales sm">{{ iniciales(g) }}</span>
-                    }
-                  </div>
-                </td>
-                <td>{{ labelTipoGestor(g) }}</td>
-                <td class="cli-id">{{ g.tipoDoc || 'CC' }} {{ g.numero }}</td>
-                <td class="cli-name">{{ nombreCompleto(g) }}</td>
-                <td>{{ g.seudonimo || '—' }}</td>
-                <td>{{ g.correo || '—' }}</td>
-                <td>{{ g.celular || '—' }}</td>
-                <td class="cli-actions">
-                  <button type="button" class="ghost sm" (click)="editar(g)">Editar</button>
-                  <button type="button" class="ghost sm danger" (click)="eliminar(g)">Eliminar</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <div class="gest-grid">
+        @for (g of gestores(); track g._id) {
+          <article class="gest-card">
+            <div class="gest-card-top">
+              <div class="gest-avatar" aria-hidden="true">
+                @if (fotoUrl(g.foto); as f) {
+                  <img [src]="f" alt="" />
+                } @else {
+                  <span class="gestor-foto-iniciales sm">{{ iniciales(g) }}</span>
+                }
+              </div>
+              <div class="gest-card-main">
+                <h3 class="gest-card-name">{{ nombreCompleto(g) }}</h3>
+                <p class="gest-card-doc">{{ g.tipoDoc || 'CC' }} {{ g.numero }}</p>
+                @if (g.seudonimo) {
+                  <p class="gest-card-alias">«{{ g.seudonimo }}»</p>
+                }
+                <div class="gest-badges">
+                  <span
+                    class="gest-badge"
+                    [class.gest-badge--natural]="!esEmpresa(g)"
+                    [class.gest-badge--empresa]="esEmpresa(g)">
+                    {{ labelTipoGestor(g) }}
+                  </span>
+                  <span
+                    class="gest-badge"
+                    [class.gest-badge--credit]="creditoLimitado(g)"
+                    [class.gest-badge--unlimited]="!creditoLimitado(g)">
+                    {{ creditoLimitado(g) ? 'Crédito ' + labelCredito(g) : 'Crédito ilimitado' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="gest-card-meta">
+              @if (g.correo) {
+                <div><span>✉</span><span>{{ g.correo }}</span></div>
+              }
+              @if (g.celular) {
+                <div><span>📱</span><span>{{ g.celular }}</span></div>
+              }
+              @if (g.direccion) {
+                <div><span>📍</span><span>{{ g.direccion }}</span></div>
+              }
+            </div>
+
+            <div class="gest-card-actions">
+              <button type="button" class="ghost sm" (click)="editar(g)">Editar</button>
+              <button type="button" class="ghost sm danger" (click)="eliminar(g)">Eliminar</button>
+            </div>
+          </article>
+        }
       </div>
     }
   }

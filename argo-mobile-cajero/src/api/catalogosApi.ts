@@ -112,9 +112,30 @@ export async function buscarMunicipios(
 }
 
 export type DepartamentoItem = {
-  codDepto: string;
-  nombreDepto: string;
+  codDepto?: string | number | null;
+  nombreDepto?: string | null;
+  _id?: string | number | null;
+  nombre?: string | null;
 };
+
+export function mapDepartamentosOpciones(
+  rows: DepartamentoItem[] | null | undefined,
+): Array<{ value: string; label: string }> {
+  const seen = new Set<string>();
+  const out: Array<{ value: string; label: string }> = [];
+  for (const d of rows || []) {
+    const rawCod = d.codDepto ?? d._id;
+    const cod = String(rawCod ?? '')
+      .replace(/\D/g, '')
+      .padStart(2, '0');
+    if (!cod || cod === '00' || seen.has(cod)) continue;
+    const label = String(d.nombreDepto ?? d.nombre ?? '').trim();
+    if (!label) continue;
+    seen.add(cod);
+    out.push({ value: cod, label });
+  }
+  return out.sort((a, b) => a.label.localeCompare(b.label, 'es'));
+}
 
 export async function listarDepartamentos(): Promise<DepartamentoItem[]> {
   return apiFetch<DepartamentoItem[]>(`/catalogos/divipola/departamentos`);

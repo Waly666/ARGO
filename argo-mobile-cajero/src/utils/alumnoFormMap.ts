@@ -60,7 +60,12 @@ export function alumnoDetalleToForm(a: AlumnoDetalleItem): {
       multiCulturalidad: a.multiCulturalidad || 'NO_APLICA',
       empresaId: a.empresaId ?? null,
       manejoGestorEmpresa: a.manejoGestorEmpresa === true,
-      tipoReferidorComercial: a.tipoReferidorComercial === 'gestor' ? 'gestor' : null,
+      tipoReferidorComercial:
+        a.tipoReferidorComercial === 'empresa'
+          ? 'empresa'
+          : a.tipoReferidorComercial === 'gestor'
+            ? 'gestor'
+            : null,
       gestorId: a.gestorId ? String(a.gestorId) : null,
       gestorNombre: aMayusculas(a.gestorNombre?.trim() || '') || undefined,
       referidorEmpresaId: null,

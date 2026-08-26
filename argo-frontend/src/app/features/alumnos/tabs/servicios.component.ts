@@ -11,7 +11,7 @@ import { AlumnoService } from '../../../core/services/alumno.service';
 import type { DocumentoPendienteRes } from '../../../core/services/config-requisitos-documentos.service';
 import { IngresoService } from '../../../core/services/ingreso.service';
 import { LiquidacionItem, LiquidacionResumen, LiquidacionService } from '../../../core/services/liquidacion.service';
-import { MatriculaService, RevalidacionPreview, CuotasSemestreInfo } from '../../../core/services/matricula.service';
+import { MatriculaService, RevalidacionPreview, CuotasSemestreInfo, TarifaMatricula } from '../../../core/services/matricula.service';
 import { ProgramaService } from '../../../core/services/programa.service';
 import { ReciboService, idIngreso } from '../../../core/services/recibo.service';
 import { ServicioCatalogoService } from '../../../core/services/servicio-catalogo.service';
@@ -39,6 +39,13 @@ import {
   ConfigServiciosAdicionalesService,
   PreviewServicioAdicionalItem,
 } from '../../../core/services/config-servicios-adicionales.service';
+import { ConfigGestoresEmpresasService } from '../../../core/services/config-gestores-empresas.service';
+import {
+  resolverTarifaComercialAlumno,
+  TARIFA_GESTOR,
+  TARIFA_EMPRESA,
+  valorTarifaServicio,
+} from '../../../core/utils/gestor-empresa-matricula.util';
 
 export type TipoAltaServicio = 'programa' | 'combo' | 'servicio';
 
@@ -65,6 +72,10 @@ export class ServiciosComponent implements OnInit {
   private comboSvc = inject(ComboService);
   private cfgSvc = inject(ConfigService);
   private servAdicCfgSvc = inject(ConfigServiciosAdicionalesService);
+  private configGestoresEmpresasSvc = inject(ConfigGestoresEmpresasService);
+
+  /** Config global: gestores comerciales activos. */
+  gestoresActivo = signal(false);
 
   /** Config global: rebaja de valor en matrícula (default true hasta cargar). */
   permitirAjusteValorMatricula = signal(true);
@@ -102,7 +113,7 @@ export class ServiciosComponent implements OnInit {
 
   // form matrícula
   idProg = signal<string>('');
-  tarifa = signal<1 | 2 | 3 | 4>(1);
+  tarifa = signal<TarifaMatricula>(1);
   tarifaManual = signal(false);
   revalidacionPreview = signal<RevalidacionPreview | null>(null);
   matriculaEmailPortal = '';
@@ -213,12 +224,21 @@ export class ServiciosComponent implements OnInit {
     return labels.join(' · ');
   });
 
-  tarifasPermitidasMat = computed(() =>
-    intersectarTarifasMatricula(
+  tarifaComercial = computed(() =>
+    resolverTarifaComercialAlumno(this.store.alumno(), this.gestoresActivo()),
+  );
+
+  /** Tarifa real al matricular (5/6 si el alumno tiene gestor). */
+  tarifaEfectiva = computed(() => this.tarifaComercial()?.tarifa ?? this.tarifa());
+
+  tarifasPermitidasMat = computed(() => {
+    const comercial = this.tarifaComercial();
+    if (comercial) return [comercial.tarifa];
+    return intersectarTarifasMatricula(
       tarifasPermitidasPrograma(this.programaSel(), this.serviciosPrograma()),
       this.tarifasMatriculaConfig(),
-    ),
-  );
+    );
+  });
 
   esTarifaVirtualSeleccionada = computed(() => esTarifaVirtualMatricula(this.tarifa()));
   yaTienePortal = computed(() => this.portalAcceso()?.tieneAcceso === true);
@@ -244,12 +264,9 @@ export class ServiciosComponent implements OnInit {
   numCuotasSemestre = computed(() => this.cuotasSemestreCatalogo().length);
 
   cuotasSemestreCatalogo = computed(() => {
-    const t = this.tarifa();
-    return this.serviciosPrograma().map((s) => {
-      const v = s[`tarifa${t}`];
-      if (v != null && v !== '') return this.num(v);
-      return this.num(s.tarifa1);
-    });
+    const t = this.tarifaEfectiva();
+    const p = this.programaSel();
+    return this.serviciosPrograma().map((s) => valorTarifaServicio(s, t, p));
   });
 
   totalCuotasSemestre = computed((): number =>
@@ -292,25 +309,18 @@ export class ServiciosComponent implements OnInit {
   valorMatriculaBase = computed(() => {
     const p = this.programaSel();
     if (!p) return 0;
-    const t = this.tarifa();
+    const t = this.tarifaEfectiva();
     if (esTarifaVirtualMatricula(t)) {
       return this.serviciosPrograma().reduce((acc, s) => acc + this.num(s.tarifaVirtual), 0);
     }
-    const sem = Number(p.semestres);
     const porProg = this.serviciosPrograma();
+    const sem = Number(p.semestres);
     if (Number.isFinite(sem) && sem >= 1 && porProg.length > 0) {
-      return porProg.reduce((acc, s) => {
-        const v = s[`tarifa${t}`];
-        if (v != null && v !== '') return acc + this.num(v);
-        return acc + this.num(s.tarifa1);
-      }, 0);
+      return porProg.reduce((acc, s) => acc + valorTarifaServicio(s, t, p), 0);
     }
     const serv = porProg[0];
-    if (serv) {
-      const v = serv[`tarifa${t}`];
-      if (v != null && v !== '') return this.num(v);
-    }
-    return this.num(p.valorMatricula);
+    if (serv) return valorTarifaServicio(serv, t, p);
+    return valorTarifaServicio(null, t, p);
   });
 
   programaNumSemestres = computed(() => {
@@ -447,11 +457,19 @@ export class ServiciosComponent implements OnInit {
     if (permitidas.includes(TARIFA_VIRTUAL)) {
       opts.push({ value: TARIFA_VIRTUAL, label: 'Virtual (aula en línea)' });
     }
+    if (permitidas.includes(TARIFA_GESTOR)) {
+      opts.push({ value: TARIFA_GESTOR, label: 'Tarifa tramitador (5)' });
+    }
+    if (permitidas.includes(TARIFA_EMPRESA)) {
+      opts.push({ value: TARIFA_EMPRESA, label: 'Tarifa empresa (6)' });
+    }
     return opts;
   });
 
   textoTarifa = computed(() => {
-    const t = this.tarifa();
+    const t = this.tarifaEfectiva();
+    if (t === TARIFA_GESTOR) return 'Tarifa tramitador (5)';
+    if (t === TARIFA_EMPRESA) return 'Tarifa empresa (6)';
     const opt = this.opcionesTarifas().find((o) => Number(o.value) === t);
     return opt?.label || `Tarifa ${t}`;
   });
@@ -473,6 +491,14 @@ export class ServiciosComponent implements OnInit {
   };
 
   constructor() {
+    effect(() => {
+      const comercial = this.tarifaComercial();
+      if (comercial) {
+        this.tarifa.set(comercial.tarifa);
+        this.tarifaManual.set(false);
+      }
+    });
+
     fromEvent(document, 'visibilitychange')
       .pipe(
         filter(() => document.visibilityState === 'visible'),
@@ -526,13 +552,17 @@ export class ServiciosComponent implements OnInit {
       this.extrasMatriculaPreview.set([]);
       return;
     }
-    this.servAdicCfgSvc.previewMatricula(id, this.tarifa()).subscribe({
+    this.servAdicCfgSvc.previewMatricula(id, this.tarifaEfectiva()).subscribe({
       next: (r) => this.extrasMatriculaPreview.set(r.items || []),
       error: () => this.extrasMatriculaPreview.set([]),
     });
   }
 
   private cargarOpcionesMatricula(): void {
+    this.configGestoresEmpresasSvc.obtener().subscribe({
+      next: (c) => this.gestoresActivo.set(!!c?.activo),
+      error: () => this.gestoresActivo.set(false),
+    });
     this.cfgSvc.obtenerReciboOpcionesMatricula().subscribe({
       next: (c) => {
         const okRebaja = c.permitirAjusteValorMatricula !== false;
@@ -609,10 +639,18 @@ export class ServiciosComponent implements OnInit {
   setTarifa(v: number | string) {
     const n = Number(v);
     const permitidas = this.tarifasPermitidasMat();
-    if (n === 1 || n === 2 || n === 3 || n === TARIFA_VIRTUAL) {
+    if (
+      n === 1 ||
+      n === 2 ||
+      n === 3 ||
+      n === TARIFA_VIRTUAL ||
+      n === TARIFA_GESTOR ||
+      n === TARIFA_EMPRESA
+    ) {
       if (n === TARIFA_VIRTUAL && !permitidas.includes(TARIFA_VIRTUAL)) return;
       if ((n === 1 || n === 2 || n === 3) && !permitidas.includes(n)) return;
-      this.tarifa.set(n as 1 | 2 | 3 | 4);
+      if ((n === TARIFA_GESTOR || n === TARIFA_EMPRESA) && !permitidas.includes(n)) return;
+      this.tarifa.set(n as TarifaMatricula);
       if (n === TARIFA_VIRTUAL) {
         this.limpiarAjusteValorMat();
         this.limpiarAjusteCuotasSemestre();
@@ -625,10 +663,15 @@ export class ServiciosComponent implements OnInit {
   }
 
   private ajustarTarifaPermitida(): void {
+    const comercial = this.tarifaComercial();
+    if (comercial) {
+      this.tarifa.set(comercial.tarifa);
+      return;
+    }
     const permitidas = this.tarifasPermitidasMat();
     if (!permitidas.length) return;
     if (!permitidas.includes(this.tarifa())) {
-      this.tarifa.set(permitidas[0] as 1 | 2 | 3 | 4);
+      this.tarifa.set(permitidas[0] as TarifaMatricula);
     }
   }
 
@@ -860,10 +903,13 @@ export class ServiciosComponent implements OnInit {
             ? [det.servicio]
             : [];
         this.serviciosMatriculaProg.set(servs);
-        if (this.tarifa() === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) {
+        if (this.tarifaComercial()) {
+          this.ajustarTarifaPermitida();
+        } else if (this.tarifa() === TARIFA_VIRTUAL && !this.programaTieneTarifaVirtual()) {
           this.tarifa.set(1);
+        } else {
+          this.ajustarTarifaPermitida();
         }
-        this.ajustarTarifaPermitida();
         this.syncCuotasDesdeCatalogo();
         this.cargarPreviewMatricula();
       },

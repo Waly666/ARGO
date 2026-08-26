@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii, shadows } from '../theme/tokens';
 
 type Props = {
   value: string;
@@ -21,17 +22,20 @@ export function SearchField({ value, onChangeText, placeholder = 'Buscar…', au
       style={[
         styles.wrap,
         {
-          borderColor: highContrast ? c.border : 'rgba(53, 120, 240, 0.22)',
           backgroundColor: c.card,
+          borderColor: highContrast ? c.border : 'transparent',
         },
+        !highContrast && shadows.cardPressed,
       ]}
     >
-      <Ionicons name="search" size={20} color={c.primary} />
+      <View style={[styles.iconBubble, { backgroundColor: highContrast ? c.bgAlt : c.chipBg }]}>
+        <Ionicons name="search" size={18} color={c.primary} />
+      </View>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={c.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
         autoFocus={autoFocus}
@@ -39,12 +43,8 @@ export function SearchField({ value, onChangeText, placeholder = 'Buscar…', au
         style={[styles.input, { color: c.text, fontSize: 16 * textMultiplier }]}
       />
       {value.length > 0 ? (
-        <Pressable
-          onPress={() => onChangeText('')}
-          hitSlop={8}
-          accessibilityLabel="Limpiar búsqueda"
-        >
-          <Ionicons name="close-circle" size={20} color={c.textSoft} />
+        <Pressable onPress={() => onChangeText('')} hitSlop={8} accessibilityLabel="Limpiar búsqueda">
+          <Ionicons name="close-circle" size={20} color={c.textMuted} />
         </Pressable>
       ) : null}
     </View>
@@ -55,11 +55,19 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    minHeight: 48,
+    borderRadius: radii.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    minHeight: 52,
   },
-  input: { flex: 1, paddingVertical: 8 },
+  iconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.icon,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  input: { flex: 1, paddingVertical: 6 },
 });

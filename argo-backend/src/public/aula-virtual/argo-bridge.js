@@ -1,6 +1,12 @@
 /**
- * Puente ARGO Aula Virtual — inyectado automáticamente en cada HTML del curso.
+ * Puente ARGO Aula Virtual — inyectado automaticamente en cada HTML del curso.
  * Sincroniza puntajes por clase desde localStorage/sessionStorage hacia la API.
+ *
+ * Meta opcionales en el paquete HTML:
+ *   argo-storage-prefix   — STORAGE_PREFIX de curso-app.js
+ *   argo-final-nota-mode  — "percent" si {prefix}-final guarda 0-100 (licencia SERVIAL)
+ *   argo-class-slots      — numero de clases del curso (p. ej. 20)
+ *   argo-final-max-pts    — puntos maximos de evaluacion final (p. ej. 45)
  */
 (function () {
   'use strict';
@@ -12,13 +18,19 @@
     return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null;
   }
 
-  function metaStoragePrefix() {
+  function metaContent(name) {
     try {
-      var m = document.querySelector('meta[name="argo-storage-prefix"]');
+      var m = document.querySelector('meta[name="' + name + '"]');
       if (m && m.getAttribute('content')) return String(m.getAttribute('content')).trim();
     } catch (_e) {
       /* ignore */
     }
+    return null;
+  }
+
+  function metaStoragePrefix() {
+    var fromMeta = metaContent('argo-storage-prefix');
+    if (fromMeta) return fromMeta;
     if (typeof window.ARGO_STORAGE_PREFIX === 'string' && window.ARGO_STORAGE_PREFIX.trim()) {
       return window.ARGO_STORAGE_PREFIX.trim();
     }
@@ -135,6 +147,30 @@
   var lastFingerprint = '';
   var lastSyncedFinalKey = '';
   var syncing = false;
+
+  function metaContent(name) {
+    try {
+      var m = document.querySelector('meta[name="' + name + '"]');
+      if (m && m.getAttribute('content')) return String(m.getAttribute('content')).trim();
+    } catch (_e) {
+      /* ignore */
+    }
+    return null;
+  }
+
+  function finalNotaMode() {
+    return metaContent('argo-final-nota-mode') === 'percent' ? 'percent' : 'points';
+  }
+
+  function defaultClassSlots() {
+    var n = Number(metaContent('argo-class-slots'));
+    return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 7;
+  }
+
+  function finalMaxPoints() {
+    var n = Number(metaContent('argo-final-max-pts'));
+    return Number.isFinite(n) && n >= 1 ? Math.floor(n) : FINAL_MAX_PTS;
+  }
 
   function getConfig() {
     return window.__argoCourseConfig;
@@ -289,7 +325,15 @@
     var max = 0;
     var i;
     for (i = 0; i < nums.length; i++) max = Math.max(max, nums[i]);
-    return Math.max(max, 7);
+    return Math.max(max, defaultClassSlots());
+  }
+
+  function notaEvalFromFinal(finalPts) {
+    if (finalPts == null || finalPts <= 0) return null;
+    if (finalNotaMode() === 'percent') {
+      return Math.min(100, Math.round(finalPts));
+    }
+    return Math.min(100, Math.round((finalPts / finalMaxPoints()) * 100));
   }
 
   function readState() {
@@ -303,7 +347,7 @@
 
     if (!nums.length && (finalPts == null || finalPts <= 0)) return null;
 
-    var slots = nums.length ? totalClassSlots(prefix, nums) : 7;
+    var slots = nums.length ? totalClassSlots(prefix, nums) : defaultClassSlots();
     var totalPercent = 0;
     var approved = 0;
     var scores = [];
@@ -330,10 +374,7 @@
     }
 
     var pctCompletitud = Math.round(totalPercent / slots);
-    var notaEval =
-      finalPts != null && finalPts > 0
-        ? Math.min(100, Math.round((finalPts / FINAL_MAX_PTS) * 100))
-        : null;
+    var notaEval = notaEvalFromFinal(finalPts);
 
     return {
       prefix: prefix,
@@ -439,7 +480,7 @@
       }, SYNC_MS);
     } else if (wait > 300) {
       clearInterval(boot);
-      console.warn('[ARGO] Sin token del portal — el progreso no se guardará en el aula hasta iniciar sesión.');
+      console.warn('[ARGO] Sin token del portal — el progreso no se guardara en el aula hasta iniciar sesion.');
     }
   }, 400);
 

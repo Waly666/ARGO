@@ -39,6 +39,40 @@ router.get('/cursos/:idPrograma/mensajes', requirePortalAuth, async (req, res, n
   }
 });
 
+// ─── Admin: mensajes recientes de alumnos (polling alertas móvil / ERP) ───────
+router.get('/admin/alertas-recientes', requireAuth, moderarForo, async (req, res, next) => {
+  try {
+    const { reglaPorClave } = require('../services/configAlertas');
+    const minQ = Number(req.query?.minutos);
+    const regla = await reglaPorClave('alarmas.aula_virtual.foro_mensaje');
+    const minutos =
+      Number.isFinite(minQ) && minQ > 0
+        ? minQ
+        : Math.max(5, Number(regla?.duracionMinutos) || 120);
+    const desde = new Date(Date.now() - minutos * 60 * 1000);
+    const rows = await MensajeForo.find({
+      eliminado: false,
+      autorTipo: 'alumno',
+      createdAt: { $gte: desde },
+    })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+    res.json(
+      rows.map((m) => ({
+        id: String(m._id),
+        idPrograma: m.idPrograma,
+        nombrePrograma: m.nombrePrograma || m.idPrograma,
+        autorNombre: m.autorNombre,
+        texto: m.texto,
+        createdAt: m.createdAt,
+      })),
+    );
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ─── Admin: listar cursos con actividad en foro ───────────────────────────────
 router.get('/admin/resumen', requireAuth, moderarForo, async (req, res, next) => {
   try {

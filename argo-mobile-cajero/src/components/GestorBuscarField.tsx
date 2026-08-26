@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SearchField } from './SearchField';
 import { ScaledText } from './ScaledText';
 import { buscarGestores, labelGestor, labelTipoGestor, type GestorItem } from '../api/gestoresApi';
+import { etiquetaTarifaGestor, tipoReferidorDesdeGestor } from '../utils/gestorEmpresaMatricula';
 import { useDebounced } from '../hooks/useDebounced';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
@@ -12,7 +13,7 @@ import { themeColors } from '../theme/colors';
 type Props = {
   gestorId: string | null;
   gestorNombre: string;
-  onChange: (id: string | null, nombre: string) => void;
+  onChange: (id: string | null, nombre: string, tipoReferidor: 'gestor' | 'empresa') => void;
 };
 
 export function GestorBuscarField({ gestorId, gestorNombre, onChange }: Props) {
@@ -42,13 +43,13 @@ export function GestorBuscarField({ gestorId, gestorNombre, onChange }: Props) {
   }, [debounced, open]);
 
   function seleccionar(g: GestorItem) {
-    onChange(g._id, labelGestor(g));
+    onChange(g._id, labelGestor(g), tipoReferidorDesdeGestor(g.tipoGestor));
     setOpen(false);
     setQ('');
   }
 
   function limpiar() {
-    onChange(null, '');
+    onChange(null, '', 'gestor');
   }
 
   return (
@@ -127,11 +128,11 @@ export function GestorBuscarField({ gestorId, gestorNombre, onChange }: Props) {
                 </ScaledText>
                 {item.numero ? (
                   <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
-                    {labelTipoGestor(item)} · Doc. {item.numero}
+                    {labelTipoGestor(item)} · Doc. {item.numero} · {etiquetaTarifaGestor(item.tipoGestor)}
                   </ScaledText>
                 ) : (
                   <ScaledText baseSize={12} style={{ color: c.textSoft, marginTop: 4 }}>
-                    {labelTipoGestor(item)}
+                    {labelTipoGestor(item)} · {etiquetaTarifaGestor(item.tipoGestor)}
                   </ScaledText>
                 )}
               </Pressable>

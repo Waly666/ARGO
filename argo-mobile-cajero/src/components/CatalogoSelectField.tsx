@@ -13,6 +13,7 @@ import { ScaledText } from './ScaledText';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 import type { CatalogoOption } from '../utils/alumnoCatalogo';
+import { coincideBusquedaEtiqueta } from '../utils/buscarTexto';
 
 type Props = {
   label: string;
@@ -41,11 +42,10 @@ export function CatalogoSelectField({
     return hit?.label || '';
   }, [options, value]);
 
-  const filtradas = useMemo(() => {
-    const t = filtro.trim().toLowerCase();
-    if (!t) return options;
-    return options.filter((o) => o.label.toLowerCase().includes(t));
-  }, [options, filtro]);
+  const filtradas = useMemo(
+    () => options.filter((o) => coincideBusquedaEtiqueta(o.label, filtro)),
+    [options, filtro],
+  );
 
   function elegir(v: string) {
     onChange(v);
@@ -92,7 +92,11 @@ export function CatalogoSelectField({
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
             ListEmptyComponent={
               <ScaledText baseSize={14} style={{ color: c.textSoft, textAlign: 'center', marginTop: 24 }}>
-                Sin opciones
+                {filtro.trim()
+                  ? 'Sin coincidencias'
+                  : options.length === 0
+                    ? 'Sin opciones disponibles'
+                    : 'Sin coincidencias'}
               </ScaledText>
             }
             renderItem={({ item }) => {

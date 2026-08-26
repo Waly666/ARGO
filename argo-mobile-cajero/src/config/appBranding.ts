@@ -1,8 +1,10 @@
 import type { ImageSourcePropType } from 'react-native';
 
-/** Azul institucional (login y cabeceras). */
-export const CAJERO_AZUL_REY = '#3578F0';
-export const CAJERO_AZUL_REY_CLARO = '#6B9AF5';
+/** Azul institucional fintech (login, cabeceras, iconos). */
+export const CAJERO_AZUL_REY = '#3D5CFF';
+export const CAJERO_AZUL_REY_CLARO = '#6B84FF';
+export const CAJERO_NAVY = '#0B1026';
+export const CAJERO_NAVY_SOFT = '#151B33';
 /** Fondo del splash nativo y de arranque (logo Servial con margen blanco). */
 export const SPLASH_BG = '#FFFFFF';
 /** Tiempo mínimo del splash de arranque antes del login (ms). */

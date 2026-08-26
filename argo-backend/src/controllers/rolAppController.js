@@ -2,7 +2,7 @@ const RolApp = require('../models/RolApp');
 const Usuario = require('../models/Usuario');
 const { GRUPOS, todasLasClaves, clavesValidas } = require('../constants/permisosCatalogo');
 const { modulosCrudList, accionesCrudCatalogo, CATEGORIAS_CRUD } = require('../constants/crudModulos');
-const { GRUPOS: ALARMAS_GRUPOS } = require('../constants/alarmasCatalogo');
+const { alarmasGruposApi } = require('../constants/alarmasCatalogo');
 const {
   sanitizarAlarmas,
   prepararPermisosGuardado,
@@ -47,7 +47,7 @@ exports.catalogo = (_req, res) => {
     modulosCrud: modulosCrudList(),
     accionesCrud: accionesCrudCatalogo(),
     categoriasCrud: CATEGORIAS_CRUD,
-    alarmasGrupos: ALARMAS_GRUPOS,
+    alarmasGrupos: alarmasGruposApi(),
   });
 };
 

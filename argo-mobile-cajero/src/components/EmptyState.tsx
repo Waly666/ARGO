@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 import { ScaledText } from './ScaledText';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
+import { radii } from '../theme/tokens';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -21,8 +22,10 @@ export function EmptyState({ icon = 'file-tray-outline', title, subtitle }: Prop
 
   return (
     <View style={styles.wrap}>
-      <Ionicons name={icon} size={48} color={c.textSoft} />
-      <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '700', marginTop: 12, textAlign: 'center' }}>
+      <View style={[styles.iconCircle, { backgroundColor: c.chipBg }]}>
+        <Ionicons name={icon} size={32} color={c.primary} />
+      </View>
+      <ScaledText baseSize={17} style={{ color: c.text, fontWeight: '800', marginTop: 16, textAlign: 'center' }}>
         {title}
       </ScaledText>
       {subtitle ? (
@@ -36,4 +39,11 @@ export function EmptyState({ icon = 'file-tray-outline', title, subtitle }: Prop
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24 },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radii.icon,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

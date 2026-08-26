@@ -11,8 +11,8 @@ const gestionar = requirePermiso('caja.admin', 'contabilidad');
 const gestorFoto = upload.gestores.fields([{ name: 'foto', maxCount: 1 }]);
 
 router.get('/catalogos', ctrl.catalogos);
-router.get('/', ctrl.listar);
-router.get('/:id', ctrl.obtener);
+router.get('/mi-credito-diario', ctrl.miCreditoDiario);
+router.get('/', ctrl.listar);router.get('/:id', ctrl.obtener);
 router.post('/', gestionar, gestorFoto, ctrl.crear);
 router.put('/:id', gestionar, gestorFoto, ctrl.actualizar);
 router.delete('/:id', gestionar, ctrl.eliminar);

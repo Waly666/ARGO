@@ -36,6 +36,10 @@ import { ConfigRecibo, ConfigService } from '../../../core/services/config.servi
 import { ClienteService } from '../../../core/services/cliente.service';
 
 import { GestorService } from '../../../core/services/gestor.service';
+import {
+  etiquetaTarifaGestor,
+  tipoReferidorDesdeGestor,
+} from '../../../core/utils/gestor-empresa-matricula.util';
 
 import { ConfigGestoresEmpresasService } from '../../../core/services/config-gestores-empresas.service';
 
@@ -321,12 +325,15 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
         (rows || []).map((g) => {
           const nombre = g.nombreCompleto || [g.nombres, g.apellidos].filter(Boolean).join(' ').trim();
           const label = g.seudonimo || nombre || g.numero || '—';
-          const tipo = (g.tipoGestor || 'persona_natural') === 'empresa' ? 'Empresa' : 'Persona natural';
+          const tipoGestor = (g.tipoGestor || 'persona_natural') as 'persona_natural' | 'empresa';
+          const tipo = tipoGestor === 'empresa' ? 'Empresa' : 'Persona natural';
+          const tarifa = etiquetaTarifaGestor(tipoGestor);
           return {
             value: String(g._id || ''),
             label,
-            hint: g.numero ? `${tipo} · Doc: ${g.numero}` : tipo,
-          } satisfies EnumBuscarOption;
+            hint: g.numero ? `${tipo} · Doc: ${g.numero} · ${tarifa}` : `${tipo} · ${tarifa}`,
+            tipoGestor,
+          };
         }),
       ),
     );
@@ -336,7 +343,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       ...f,
       manejoGestorEmpresa: activo,
       ...(activo
-        ? { tipoReferidorComercial: 'gestor' as const }
+        ? {}
         : {
             tipoReferidorComercial: null,
             gestorId: null,
@@ -348,11 +355,12 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
     this.formDirty.set(true);
   }
 
-  onGestorPick(opt: EnumBuscarOption): void {
+  onGestorPick(opt: EnumBuscarOption & { tipoGestor?: 'persona_natural' | 'empresa' }): void {
     this.limpiarCampoObligatorio('gestorId');
+    const tipoRef = tipoReferidorDesdeGestor(opt.tipoGestor);
     this.form.update((f) => ({
       ...f,
-      tipoReferidorComercial: 'gestor',
+      tipoReferidorComercial: tipoRef,
       gestorId: String(opt.value || '').trim() || null,
       gestorNombre: String(opt.label || '').trim() || null,
     }));
@@ -1898,7 +1906,7 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       ...(!esJornada
         ? {
             manejoGestorEmpresa: f.manejoGestorEmpresa === true,
-            tipoReferidorComercial: f.manejoGestorEmpresa ? 'gestor' : null,
+            tipoReferidorComercial: f.manejoGestorEmpresa ? f.tipoReferidorComercial ?? 'gestor' : null,
             gestorId: f.manejoGestorEmpresa ? f.gestorId ?? null : null,
             gestorNombre: f.manejoGestorEmpresa ? f.gestorNombre ?? null : null,
             referidorEmpresaId: null,
@@ -2108,7 +2116,12 @@ export class DatosPrincipalesComponent implements OnInit, OnDestroy {
       empresaId: raw['empresaId'] ? String(raw['empresaId']) : null,
       empresaNombre: raw['empresaNombre'] ? String(raw['empresaNombre']) : null,
       manejoGestorEmpresa: raw['manejoGestorEmpresa'] === true,
-      tipoReferidorComercial: raw['tipoReferidorComercial'] === 'gestor' ? 'gestor' : null,
+      tipoReferidorComercial:
+        raw['tipoReferidorComercial'] === 'empresa'
+          ? 'empresa'
+          : raw['tipoReferidorComercial'] === 'gestor'
+            ? 'gestor'
+            : null,
       gestorId: raw['gestorId'] ? String(raw['gestorId']) : null,
       gestorNombre: raw['gestorNombre'] ? String(raw['gestorNombre']) : null,
       referidorEmpresaId: null,

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -35,6 +35,20 @@ export class CajaGestoresComponent implements OnInit {
   filtro = signal('');
   catalogos = signal<GestorCatalogos | null>(null);
 
+  stats = computed(() => {
+    const rows = this.gestores();
+    const empresas = rows.filter((g) => this.esEmpresa(g)).length;
+    const conCredito = rows.filter((g) => (g.creditoDiario ?? 0) > 0).length;
+    return {
+      total: rows.length,
+      naturales: rows.length - empresas,
+      empresas,
+      conCredito,
+    };
+  });
+
+  creditoIlimitado = computed(() => (this.form().creditoDiario ?? 0) <= 0);
+
   formAbierto = signal(false);
   editId = signal<string | null>(null);
   form = signal<Gestor>(this.vacio());
@@ -54,6 +68,7 @@ export class CajaGestoresComponent implements OnInit {
       seudonimo: '',
       foto: '',
       activo: true,
+      creditoDiario: 0,
     };
   }
 
@@ -63,6 +78,32 @@ export class CajaGestoresComponent implements OnInit {
 
   labelTipoGestor(g: Gestor): string {
     return this.esEmpresa(g) ? 'Empresa' : 'Persona natural';
+  }
+
+  labelCredito(g: Gestor): string {
+    const v = g.creditoDiario ?? 0;
+    return v > 0 ? this.formatCredito(v) : 'Ilimitado';
+  }
+
+  creditoLimitado(g: Gestor): boolean {
+    return (g.creditoDiario ?? 0) > 0;
+  }
+
+  formatCredito(valor: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(valor || 0);
+  }
+
+  setCreditoIlimitado(ilimitado: boolean): void {
+    this.patch({ creditoDiario: ilimitado ? 0 : 500000 });
+  }
+
+  onCreditoDiarioInput(raw: string | number): void {
+    const n = Math.max(0, Math.round(Number(raw) || 0));
+    this.patch({ creditoDiario: n });
   }
 
   onTipoGestorChange(tipo: 'persona_natural' | 'empresa'): void {

@@ -38,6 +38,8 @@ export interface CategoriaCrudCatalogo {
 export interface AlarmaItem {
   key: string;
   label: string;
+  /** Si true, la app Android Cajero puede mostrar esta alarma (según rol). */
+  movilCajero?: boolean;
 }
 
 export interface AlarmaGrupo {

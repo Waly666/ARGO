@@ -43,6 +43,8 @@ async function main() {
       console.log(`[${cfg.idPrograma}] storagePrefix: ${storagePrefix}`);
     }
     console.log(`[${cfg.idPrograma}] bridge: ${bridge.inyectados}/${bridge.total} HTML`);
+    if (bridge.classSlots) console.log(`[${cfg.idPrograma}] classSlots: ${bridge.classSlots}`);
+    if (bridge.finalMaxPts) console.log(`[${cfg.idPrograma}] finalMaxPts: ${bridge.finalMaxPts}`);
   }
 
   await mongoose.disconnect();

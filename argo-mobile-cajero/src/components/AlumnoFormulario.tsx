@@ -10,6 +10,8 @@ import {
 import { IconInput } from './IconInput';
 import { FormSection } from './FormSection';
 import { CatalogoSelectField } from './CatalogoSelectField';
+import { DepartamentoBuscarField } from './DepartamentoBuscarField';
+import { FechaPickerField } from './FechaPickerField';
 import { MunicipioBuscarField } from './MunicipioBuscarField';
 import { EmpresaBuscarField } from './EmpresaBuscarField';
 import { GestorBuscarField } from './GestorBuscarField';
@@ -24,12 +26,12 @@ import {
   verificarDocumentoAlumno,
   type AlumnoArchivos,
 } from '../api/alumnosApi';
-import { fetchCatalogosAlumno, listarDepartamentos } from '../api/catalogosApi';
+import { fetchCatalogosAlumno } from '../api/catalogosApi';
 import { fetchGestoresConfig } from '../api/configApi';
-import type { CatalogoOption } from '../utils/alumnoCatalogo';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 import { aMayusculas, CAMPOS_FORMULARIO_SIN_MAYUSCULAS, mayusculasNombre, nombreCompleto } from '../utils/format';
+import { ymdToday } from '../utils/fechaHelpers';
 import {
   TIPOS_ALUMNO_CAJERO,
   TIPO_ALUMNO_DEFAULT,
@@ -123,7 +125,6 @@ export function AlumnoFormulario({
   const [deptoOrigenTexto, setDeptoOrigenTexto] = useState(() =>
     initial ? alumnoDetalleToForm(initial).deptoOrigenTexto : '',
   );
-  const [opcionesDepto, setOpcionesDepto] = useState<CatalogoOption[]>([]);
   const [empresaNombre, setEmpresaNombre] = useState(() =>
     initial ? alumnoDetalleToForm(initial).empresaNombre : '',
   );
@@ -159,19 +160,6 @@ export function AlumnoFormulario({
     void fetchGestoresConfig()
       .then((cfg) => setGestoresActivo(cfg.activo === true))
       .catch(() => setGestoresActivo(false));
-  }, []);
-
-  useEffect(() => {
-    void listarDepartamentos()
-      .then((rows) =>
-        setOpcionesDepto(
-          (rows || []).map((d) => ({
-            value: String(d.codDepto || '').padStart(2, '0'),
-            label: String(d.nombreDepto || '').trim(),
-          })),
-        ),
-      )
-      .catch(() => setOpcionesDepto([]));
   }, []);
 
   const patch = useCallback(<K extends keyof AlumnoCrearDto>(k: K, v: AlumnoCrearDto[K]) => {
@@ -412,13 +400,21 @@ export function AlumnoFormulario({
         <IconInput label="Primer nombre *" icon="text-outline" value={form.nombre1} onChangeText={(t) => patchNombre('nombre1', t)} />
         <IconInput label="Segundo nombre" icon="text-outline" value={form.nombre2 || ''} onChangeText={(t) => patchNombre('nombre2', t)} />
 
-        <IconInput label="Fecha nacimiento" icon="calendar-outline" value={form.fechaNac || ''} onChangeText={(t) => patch('fechaNac', t.replace(/[^\d-]/g, '').slice(0, 10))} placeholder="AAAA-MM-DD" keyboardType="numbers-and-punctuation" autoCapitalize="none" />
+        <FechaPickerField
+          label="Fecha nacimiento"
+          value={form.fechaNac || ''}
+          onChange={(v) => patch('fechaNac', v)}
+          max={ymdToday()}
+          min={`${new Date().getFullYear() - 100}-01-01`}
+          inicioEnAnio
+          required
+        />
 
         <ScaledText baseSize={13} style={{ color: c.textSoft, fontWeight: '600', marginTop: 4 }}>Foto del alumno</ScaledText>
         <View style={styles.fotoRow}>
           <View style={[styles.fotoBox, { borderColor: c.border, backgroundColor: c.bg }]}>
             {fotoPreview ? (
-              <Image source={{ uri: fotoPreview }} style={styles.fotoImg} />
+              <Image source={{ uri: fotoPreview }} style={styles.fotoImg} resizeMode="cover" />
             ) : (
               <ScaledText baseSize={12} style={{ color: c.textSoft }}>Sin foto</ScaledText>
             )}
@@ -445,16 +441,24 @@ export function AlumnoFormulario({
         <IconInput label="Correo" icon="mail-outline" value={form.correo || ''} onChangeText={(t) => patch('correo', t)} keyboardType="email-address" placeholder="CORREO@EJEMPLO.COM" />
         <IconInput label="Celular" icon="phone-portrait-outline" value={form.celular || ''} onChangeText={(t) => patch('celular', t.replace(/[^\d]/g, ''))} keyboardType="phone-pad" placeholder="3001234567" autoCapitalize="none" />
         <IconInput label="Dirección" icon="home-outline" value={form.direccion || ''} onChangeText={(t) => patch('direccion', t)} placeholder="Dirección de residencia" />
-        <CatalogoSelectField
+        <DepartamentoBuscarField
           label="Departamento de origen"
           value={form.codDepartamento || ''}
-          options={opcionesDepto}
+          texto={deptoOrigenTexto}
           required
-          onChange={(v) => {
-            const opt = opcionesDepto.find((d) => d.value === v);
-            patch('codDepartamento', v);
-            patch('nombreDepartamento', opt?.label || '');
-            setDeptoOrigenTexto(opt?.label || '');
+          onSeleccion={(d) => {
+            patch('codDepartamento', d.codDepto);
+            patch('nombreDepartamento', d.nombreDepto);
+            setDeptoOrigenTexto(aMayusculas(d.nombreDepto));
+            patch('munOrigen', '');
+            patch('codMunicipio', '');
+            patch('nombreMunicipio', '');
+            setMunOrigenTexto('');
+          }}
+          onLimpiar={() => {
+            patch('codDepartamento', '');
+            patch('nombreDepartamento', '');
+            setDeptoOrigenTexto('');
             patch('munOrigen', '');
             patch('codMunicipio', '');
             patch('nombreMunicipio', '');
@@ -517,7 +521,7 @@ export function AlumnoFormulario({
       {gestoresActivo ? (
         <FormSection
           title="Gestor / tramitador"
-          subtitle="Tramitador que trajo al alumno — aplica tarifa gestor al matricular"
+          subtitle="Tramitador que trajo al alumno — persona natural: tarifa 5; gestor empresa: tarifa 6"
           icon="people-outline"
           tone="accent"
         >
@@ -556,8 +560,8 @@ export function AlumnoFormulario({
             <GestorBuscarField
               gestorId={form.gestorId ?? null}
               gestorNombre={gestorNombre}
-              onChange={(id, nom) => {
-                patch('tipoReferidorComercial', 'gestor');
+              onChange={(id, nom, tipoRef) => {
+                patch('tipoReferidorComercial', tipoRef);
                 patch('gestorId', id);
                 patch('gestorNombre', nom || undefined);
                 setGestorNombre(aMayusculas(nom));

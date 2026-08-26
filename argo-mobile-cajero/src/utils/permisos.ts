@@ -1,3 +1,5 @@
+import { esAlarmaMovilCajero } from '../services/alertRuntime';
+
 export function tienePermiso(permisos: string[] | undefined, clave: string | string[]): boolean {
   const keys = Array.isArray(clave) ? clave : [clave];
   const p = permisos || [];
@@ -15,7 +17,7 @@ export function tieneAlarma(alarmas: string[] | undefined, clave: string): boole
   return a.includes(base);
 }
 
-/** Alertas excluidas de la app móvil cajero (CEA, vehículos, portal instructor). */
+/** Alertas excluidas de la app móvil cajero (CEA, vehículos, portal instructor). @deprecated Usar catálogo del servidor. */
 export const ALARMAS_EXCLUIDAS_MOVIL: string[] = [
   'alarmas.programacion_cea.pendiente',
   'alarmas.programacion_cea.clase_proxima',
@@ -27,9 +29,8 @@ export const ALARMAS_EXCLUIDAS_MOVIL: string[] = [
   'alarmas.instructores.clase_proxima',
   'alarmas.instructores.inspeccion_requerida',
   'alarmas.jornadas.live_toast',
-  'alarmas.aula_virtual.consignacion_pendiente',
 ];
 
 export function alarmaPermitidaEnMovil(key: string): boolean {
-  return !ALARMAS_EXCLUIDAS_MOVIL.includes(key);
+  return esAlarmaMovilCajero(key);
 }

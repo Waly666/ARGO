@@ -9,6 +9,26 @@ export { TARIFA_VIRTUAL };
 export const TARIFA_GESTOR = 5;
 export const TARIFA_EMPRESA = 6;
 
+function tieneValorTarifa(v: unknown): boolean {
+  return v != null && v !== '';
+}
+
+/** Tarifa 1 efectiva (servicio → programa). */
+function valorTarifa1Servicio(
+  serv: ServicioItem | null | undefined,
+  prog?: ProgramaItem | null,
+): number {
+  if (tieneValorTarifa(serv?.tarifa1)) {
+    const v = num(serv?.tarifa1);
+    if (v > 0) return v;
+  }
+  if (tieneValorTarifa(prog?.tarifa1)) {
+    const v = num(prog?.tarifa1);
+    if (v > 0) return v;
+  }
+  return num(prog?.valorMatricula);
+}
+
 /** Valor a liquidar según tarifa (paridad con backend programaServicio.valorTarifaServicio). */
 export function valorTarifaServicio(
   serv: ServicioItem | null | undefined,
@@ -17,12 +37,23 @@ export function valorTarifaServicio(
 ): number {
   const t = Number(tarifa);
   if (t === TARIFA_VIRTUAL) return num(serv?.tarifaVirtual);
-  if (t === TARIFA_GESTOR) return num(serv?.tarifaGestor);
-  if (t === TARIFA_EMPRESA) return num(serv?.tarifaEmpresa);
+  if (t === TARIFA_GESTOR) {
+    const v = num(serv?.tarifaGestor);
+    if (v > 0) return v;
+    return valorTarifa1Servicio(serv, prog);
+  }
+  if (t === TARIFA_EMPRESA) {
+    const v = num(serv?.tarifaEmpresa);
+    if (v > 0) return v;
+    return valorTarifa1Servicio(serv, prog);
+  }
   const key = `tarifa${t}` as keyof ServicioItem;
   const v = serv?.[key];
-  if (v != null && v !== '') return num(v);
-  return num(prog?.valorMatricula);
+  if (v != null && v !== '') {
+    const n = num(v);
+    if (n > 0) return n;
+  }
+  return valorTarifa1Servicio(serv, prog);
 }
 
 const MODALIDAD_VIRTUAL = 'VIRTUAL';
@@ -202,8 +233,8 @@ export function labelPrograma(prog: ProgramaItem): string {
 
 export function etiquetaTarifa(t: number): string {
   if (t === TARIFA_VIRTUAL) return 'Virtual (aula en línea)';
-  if (t === 5) return 'Tarifa gestor (tramitador)';
-  if (t === 6) return 'Tarifa comercial 6 (histórico)';
+  if (t === 5) return 'Tarifa tramitador (5)';
+  if (t === 6) return 'Tarifa empresa (6)';
   return `Tarifa ${t}`;
 }
 
@@ -287,10 +318,8 @@ export function calcularValorMatricula(
         const v = serv[key];
         if (v != null && v !== '') base = num(v);
       }
-    } else if (tarifa === TARIFA_GESTOR) {
-      base = num(prog.tarifaGestor);
-    } else if (tarifa === TARIFA_EMPRESA) {
-      base = num(prog.tarifaEmpresa);
+    } else if (tarifa === TARIFA_GESTOR || tarifa === TARIFA_EMPRESA) {
+      base = valorTarifaServicio(null, tarifa, prog);
     } else {
       const keyProg = `tarifa${tarifa}` as keyof ProgramaItem;
       const vProg = prog[keyProg];

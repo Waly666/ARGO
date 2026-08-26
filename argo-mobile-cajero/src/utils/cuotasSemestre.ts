@@ -1,4 +1,4 @@
-import type { ServicioItem } from '../api/domain';
+import type { ProgramaItem, ServicioItem } from '../api/domain';
 import { TARIFA_VIRTUAL } from './pago';
 import { TARIFA_EMPRESA, TARIFA_GESTOR, valorTarifaServicio } from './matricula';
 
@@ -23,11 +23,12 @@ export function normalizarCuotaEntera(raw: number | string | null | undefined): 
 export function cuotasSemestreCatalogo(
   servicios: ServicioItem[],
   tarifa: number,
+  prog?: ProgramaItem | null,
 ): number[] {
   return servicios.map((s) => {
     if (tarifa === TARIFA_VIRTUAL) return num(s.tarifaVirtual);
     if (tarifa === TARIFA_GESTOR || tarifa === TARIFA_EMPRESA) {
-      return valorTarifaServicio(s, tarifa as 5 | 6);
+      return valorTarifaServicio(s, tarifa as 5 | 6, prog ?? undefined);
     }
     const key = `tarifa${tarifa}` as keyof ServicioItem;
     const v = s[key];

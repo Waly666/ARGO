@@ -56,7 +56,7 @@ export interface AlumnoListItem {
   empresaId?: string | null;
   empresaNombre?: string | null;
   manejoGestorEmpresa?: boolean;
-  tipoReferidorComercial?: 'gestor' | '' | null;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | '' | null;
   gestorId?: string | null;
   gestorNombre?: string | null;
   referidorEmpresaId?: string | null;
@@ -93,7 +93,7 @@ export interface AlumnoDetalleItem extends AlumnoListItem {
   empresaId?: string | null;
   empresaNombre?: string | null;
   manejoGestorEmpresa?: boolean;
-  tipoReferidorComercial?: 'gestor' | '' | null;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | '' | null;
   gestorId?: string | null;
   gestorNombre?: string | null;
   referidorEmpresaId?: string | null;
@@ -136,7 +136,7 @@ export interface AlumnoCrearDto {
   multiCulturalidad?: string;
   empresaId?: string | null;
   manejoGestorEmpresa?: boolean;
-  tipoReferidorComercial?: 'gestor' | '' | null;
+  tipoReferidorComercial?: 'gestor' | 'empresa' | '' | null;
   gestorId?: string | null;
   gestorNombre?: string | null;
   referidorEmpresaId?: string | null;

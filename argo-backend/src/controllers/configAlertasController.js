@@ -1,9 +1,10 @@
-const { GRUPOS } = require('../constants/alarmasCatalogo');
+const { alarmasGruposApi, clavesMovilCajero } = require('../constants/alarmasCatalogo');
 const { obtenerConfigAlertas, actualizarConfigAlertas } = require('../services/configAlertas');
 
 exports.catalogos = (_req, res) => {
   res.json({
-    grupos: GRUPOS,
+    grupos: alarmasGruposApi(),
+    clavesMovilCajero: clavesMovilCajero(),
     ventanasInicio: [
       { id: 'desde_registro', label: 'Desde que se genera el registro' },
       { id: 'desde_inicio_dia', label: 'Desde inicio del día (medianoche)' },

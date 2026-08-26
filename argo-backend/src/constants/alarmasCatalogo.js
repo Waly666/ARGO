@@ -275,8 +275,56 @@ function alarmasDefaultRol(codigo) {
   return ALARMAS_POR_ROL_SISTEMA[codigo] ? [...ALARMAS_POR_ROL_SISTEMA[codigo]] : [];
 }
 
+/** Alarmas que la app Android Cajero puede mostrar (banner + notificación del sistema). */
+const MOVIL_CAJERO_KEYS = new Set([
+  'alarmas.caja.cerrada',
+  'alarmas.caja.descuadres',
+  'alarmas.caja.alerta_pago',
+  'alarmas.jornadas.en_proceso',
+  'alarmas.jornadas.certificado_nuevo',
+  'alarmas.certificados.vencimiento',
+  'alarmas.certificados.vencidos',
+  'alarmas.empleados.docs_vencidos',
+  'alarmas.empleados.docs_faltantes',
+  'alarmas.vehiculos.docs_vencidos',
+  'alarmas.vehiculos.docs_faltantes',
+  'alarmas.vehiculos.inspeccion_pendiente',
+  'alarmas.config.autorizacion_pendiente',
+  'alarmas.config.autorizacion_resuelta',
+  'alarmas.alumnos.comprobante_ingreso',
+  'alarmas.alumnos.comprobante_egreso',
+  'alarmas.alumnos.factura',
+  'alarmas.aula_virtual.foro_mensaje',
+  'alarmas.aula_virtual.registro_nuevo',
+  'alarmas.aula_virtual.matricula_nueva',
+  'alarmas.aula_virtual.acceso_por_vencer',
+  'alarmas.aula_virtual.consignacion_pendiente',
+]);
+
+function esAlarmaMovilCajero(key) {
+  return MOVIL_CAJERO_KEYS.has(key);
+}
+
+function alarmasGruposApi() {
+  return GRUPOS.map((g) => ({
+    ...g,
+    alarmas: g.alarmas.map((a) => ({
+      ...a,
+      movilCajero: esAlarmaMovilCajero(a.key),
+    })),
+  }));
+}
+
+function clavesMovilCajero() {
+  return [...MOVIL_CAJERO_KEYS];
+}
+
 module.exports = {
   GRUPOS,
+  alarmasGruposApi,
+  MOVIL_CAJERO_KEYS,
+  esAlarmaMovilCajero,
+  clavesMovilCajero,
   ALARMAS_POR_ROL_SISTEMA,
   todasLasClaves,
   clavesValidas,

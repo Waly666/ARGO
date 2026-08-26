@@ -1,9 +1,15 @@
+import type {
+  AulaVirtualEventoAlerta,
+  ConsignacionPendienteRow,
+  ForoMensajeAlertaRow,
+} from '../api/client';
 import { certificadoHtmlPath } from '../api/certificadosApi';
 import { reciboEgresoHtmlPath } from '../api/egresosApi';
 import { facturaHtmlPath } from '../api/facturacionApi';
 import { reciboIngresoHtmlPath } from '../api/ingresosApi';
 import type { ComprobanteHoyTipo } from '../api/types';
 import * as alertRuntime from './alertRuntime';
+import { cancelAlertNotification, showAlertNotification } from './systemNotifications';
 
 export type AlertaDocumento = {
   title: string;
@@ -47,6 +53,7 @@ export function getAlertas(): AlertaItem[] {
 
 export function dismiss(id: string): void {
   items = items.filter((a) => a.id !== id);
+  void cancelAlertNotification(id);
   bump();
 }
 
@@ -81,6 +88,9 @@ export function pushAlerta(
   const row: AlertaItem = { ...item, mostradaAt: item.mostradaAt ?? Date.now() };
   items = [row, ...items.filter((x) => x.id !== id)].slice(0, 16);
   bump();
+  if (esNueva && !opts?.silencioso) {
+    void showAlertNotification(row);
+  }
   return esNueva && !opts?.silencioso;
 }
 
@@ -215,5 +225,215 @@ export function syncDescuadres(count: number, habilitada: boolean): boolean {
     detalle: `${count} descuadre(s) pendiente(s)`,
     critico: true,
     route: 'Caja',
+  });
+}
+
+function syncAlertaConteo(opts: {
+  id: string;
+  clave: string;
+  titulo: string;
+  detalle: string;
+  total: number;
+  critico?: boolean;
+  route?: string;
+}): boolean {
+  if (opts.total <= 0) {
+    const antes = items.some((a) => a.id === opts.id);
+    items = items.filter((a) => a.id !== opts.id);
+    if (antes) bump();
+    return false;
+  }
+  return pushAlerta({
+    id: opts.id,
+    clave: opts.clave,
+    titulo: opts.titulo,
+    detalle: opts.detalle,
+    critico: opts.critico,
+    route: opts.route,
+  });
+}
+
+export function syncJornadasEnProceso(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'jornadas:en_proceso',
+    clave: 'alarmas.jornadas.en_proceso',
+    titulo: 'Jornadas en proceso',
+    detalle: total === 1 ? '1 jornada EN PROCESO hoy' : `${total} jornadas EN PROCESO hoy`,
+    total,
+    critico: true,
+    route: 'Home',
+  });
+}
+
+export function syncAlertasPagoHoy(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'caja:alerta_pago',
+    clave: 'alarmas.caja.alerta_pago',
+    titulo: 'Cobros programados hoy',
+    detalle: total === 1 ? '1 alumno con cobro programado hoy' : `${total} alumnos con cobro programado hoy`,
+    total,
+    route: 'Alumnos',
+  });
+}
+
+export function syncEmpleadosDocsVencidos(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'empleados:docs_vencidos',
+    clave: 'alarmas.empleados.docs_vencidos',
+    titulo: 'Documentos empleados por vencer',
+    detalle: total === 1 ? '1 documento de empleado vencido o por vencer' : `${total} documentos de empleados`,
+    total,
+    critico: true,
+    route: 'Home',
+  });
+}
+
+export function syncEmpleadosDocsFaltantes(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'empleados:docs_faltantes',
+    clave: 'alarmas.empleados.docs_faltantes',
+    titulo: 'Documentos empleados faltantes',
+    detalle: total === 1 ? '1 documento requerido sin registrar' : `${total} documentos requeridos sin registrar`,
+    total,
+    critico: true,
+    route: 'Home',
+  });
+}
+
+export function syncVehiculosDocsVencidos(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'vehiculos:docs_vencidos',
+    clave: 'alarmas.vehiculos.docs_vencidos',
+    titulo: 'Documentos vehículos',
+    detalle: total === 1 ? '1 documento de vehículo vencido o por vencer' : `${total} documentos de vehículos`,
+    total,
+    critico: true,
+    route: 'Home',
+  });
+}
+
+export function syncVehiculosDocsFaltantes(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'vehiculos:docs_faltantes',
+    clave: 'alarmas.vehiculos.docs_faltantes',
+    titulo: 'Documentos vehículos faltantes',
+    detalle: total === 1 ? '1 documento de vehículo sin registrar' : `${total} documentos de vehículos sin registrar`,
+    total,
+    critico: true,
+    route: 'Home',
+  });
+}
+
+export function syncVehiculosInspeccionPendiente(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'vehiculos:inspeccion',
+    clave: 'alarmas.vehiculos.inspeccion_pendiente',
+    titulo: 'Inspección vehículos pendiente',
+    detalle:
+      total === 1
+        ? '1 vehículo sin inspección preoperacional hoy'
+        : `${total} vehículos sin inspección preoperacional hoy`,
+    total,
+    critico: true,
+    route: 'Home',
+  });
+}
+
+export function syncAutorizacionesPendientes(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'config:autorizacion_pendiente',
+    clave: 'alarmas.config.autorizacion_pendiente',
+    titulo: 'Autorizaciones pendientes',
+    detalle: total === 1 ? '1 solicitud de eliminación por autorizar' : `${total} solicitudes por autorizar`,
+    total,
+    critico: true,
+    route: 'Autorizaciones',
+  });
+}
+
+export function syncAutorizacionesResueltas(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'config:autorizacion_resuelta',
+    clave: 'alarmas.config.autorizacion_resuelta',
+    titulo: 'Autorización resuelta',
+    detalle: total === 1 ? '1 resultado de su solicitud de eliminación' : `${total} resultados de solicitudes`,
+    total,
+    route: 'Autorizaciones',
+  });
+}
+
+export function syncAulaVirtualRegistro(evento: AulaVirtualEventoAlerta, habilitada: boolean): boolean {
+  if (!habilitada) return false;
+  const id = String(evento.id || '');
+  if (!id) return false;
+  const nombre = String(evento.nombreAlumno || evento.email || '').trim() || 'Nuevo usuario';
+  return pushAlerta({
+    id: `av:registro:${id}`,
+    clave: 'alarmas.aula_virtual.registro_nuevo',
+    titulo: 'Registro portal aula virtual',
+    detalle: evento.alumnoNuevo ? `${nombre} — alumno nuevo` : nombre,
+    route: 'Home',
+  });
+}
+
+export function syncAulaVirtualMatricula(evento: AulaVirtualEventoAlerta, habilitada: boolean): boolean {
+  if (!habilitada) return false;
+  const id = String(evento.id || '');
+  if (!id) return false;
+  const nombre = String(evento.nombreAlumno || evento.email || '').trim() || 'Alumno';
+  const curso = String(evento.nombrePrograma || evento.idPrograma || '').trim();
+  return pushAlerta({
+    id: `av:matricula:${id}`,
+    clave: 'alarmas.aula_virtual.matricula_nueva',
+    titulo: 'Matrícula portal aula virtual',
+    detalle: [nombre, curso].filter(Boolean).join(' · ') || 'Nueva matrícula virtual',
+    route: 'Home',
+  });
+}
+
+export function syncAulaVirtualAccesoPorVencer(total: number, habilitada: boolean): boolean {
+  return syncAlertaConteo({
+    id: 'av:acceso_por_vencer',
+    clave: 'alarmas.aula_virtual.acceso_por_vencer',
+    titulo: 'Acceso virtual por vencer',
+    detalle:
+      total === 1 ? '1 acceso sin pago por vencer' : `${total} accesos sin pago por vencer`,
+    total,
+    route: 'Home',
+  });
+}
+
+export function syncConsignacionPendiente(row: ConsignacionPendienteRow, habilitada: boolean): boolean {
+  if (!habilitada) return false;
+  const id = String(row.id || '');
+  if (!id || row.estado === 'aprobada' || row.estado === 'rechazada') return false;
+  const nombre = String(row.nombreAlumno || '').trim() || (row.numDoc ? `CC ${row.numDoc}` : 'Alumno');
+  const curso = String(row.nombreCurso || '').trim();
+  const monto = Number(row.montoCop) || 0;
+  return pushAlerta({
+    id: `av:consignacion:${id}`,
+    clave: 'alarmas.aula_virtual.consignacion_pendiente',
+    titulo: 'Consignación pendiente',
+    detalle: [nombre, curso, monto > 0 ? `$${monto.toLocaleString('es-CO')}` : '']
+      .filter(Boolean)
+      .join(' · '),
+    critico: true,
+    route: 'AprobacionConsignacion',
+  });
+}
+
+export function syncForoMensaje(msg: ForoMensajeAlertaRow, habilitada: boolean): boolean {
+  if (!habilitada) return false;
+  const id = String(msg.id || '');
+  if (!id) return false;
+  const autor = String(msg.autorNombre || 'Alumno').trim();
+  const curso = String(msg.nombrePrograma || msg.idPrograma || '').trim();
+  const texto = String(msg.texto || '').trim().slice(0, 80);
+  return pushAlerta({
+    id: `av:foro:${id}`,
+    clave: 'alarmas.aula_virtual.foro_mensaje',
+    titulo: 'Mensaje en foro',
+    detalle: [curso, autor, texto].filter(Boolean).join(' · '),
+    route: 'Home',
   });
 }

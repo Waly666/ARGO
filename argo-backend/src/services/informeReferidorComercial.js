@@ -63,28 +63,47 @@ function mesEtiqueta(fecha) {
 }
 
 function filtroMatriculaComercial(tipo, referidorId) {
-  const tarifa = tipo === 'gestor' ? TARIFA_GESTOR : TARIFA_EMPRESA;
+  if (tipo === 'gestor') {
+    const f = {
+      referidorComercial: true,
+      gestorId: { $exists: true, $ne: null },
+      tarifa: { $in: [TARIFA_GESTOR, TARIFA_EMPRESA] },
+    };
+    if (referidorId && mongoose.isValidObjectId(referidorId)) {
+      f.gestorId = new mongoose.Types.ObjectId(referidorId);
+    }
+    return f;
+  }
   const f = {
     referidorComercial: true,
-    tipoReferidorComercial: tipo,
-    tarifa,
+    tipoReferidorComercial: 'empresa',
+    tarifa: TARIFA_EMPRESA,
   };
   if (referidorId && mongoose.isValidObjectId(referidorId)) {
-    if (tipo === 'gestor') f.gestorId = new mongoose.Types.ObjectId(referidorId);
-    else f.referidorEmpresaId = new mongoose.Types.ObjectId(referidorId);
+    f.referidorEmpresaId = new mongoose.Types.ObjectId(referidorId);
   }
   return f;
 }
 
 function filtroCertificadoComercial(tipo, referidorId) {
+  if (tipo === 'gestor') {
+    const f = {
+      referidorComercial: true,
+      gestorId: { $exists: true, $ne: null },
+      estado: { $ne: 'anulado' },
+    };
+    if (referidorId && mongoose.isValidObjectId(referidorId)) {
+      f.gestorId = new mongoose.Types.ObjectId(referidorId);
+    }
+    return f;
+  }
   const f = {
     referidorComercial: true,
-    tipoReferidorComercial: tipo,
+    tipoReferidorComercial: 'empresa',
     estado: { $ne: 'anulado' },
   };
   if (referidorId && mongoose.isValidObjectId(referidorId)) {
-    if (tipo === 'gestor') f.gestorId = new mongoose.Types.ObjectId(referidorId);
-    else f.referidorEmpresaId = new mongoose.Types.ObjectId(referidorId);
+    f.referidorEmpresaId = new mongoose.Types.ObjectId(referidorId);
   }
   return f;
 }
@@ -124,12 +143,13 @@ function etiquetaPrograma(prog, idProg) {
 
 function etiquetaReferidor(tipo, row) {
   if (tipo === 'gestor') return row.gestorNombre || 'Gestor sin nombre';
-  return row.referidorEmpresaNombre || 'Empresa sin nombre';
+  return row.referidorEmpresaNombre || row.gestorNombre || 'Empresa sin nombre';
 }
 
 function idReferidor(tipo, row) {
   if (tipo === 'gestor') return row.gestorId ? String(row.gestorId) : '';
-  return row.referidorEmpresaId ? String(row.referidorEmpresaId) : '';
+  if (row.referidorEmpresaId) return String(row.referidorEmpresaId);
+  return row.gestorId ? String(row.gestorId) : '';
 }
 
 async function cargarNombresReferidores(tipo, ids) {
@@ -137,12 +157,14 @@ async function cargarNombresReferidores(tipo, ids) {
   if (!ids.length) return map;
   if (tipo === 'gestor') {
     const rows = await Gestor.find({ _id: { $in: ids } })
-      .select('nombres apellidos seudonimo numero')
+      .select('nombres apellidos seudonimo numero tipoGestor')
       .lean();
     for (const g of rows) {
       const nombre =
         String(g.seudonimo || '').trim() ||
-        [g.nombres, g.apellidos].filter(Boolean).join(' ').trim() ||
+        (String(g.tipoGestor || '').toLowerCase() === 'empresa'
+          ? String(g.nombres || '').trim()
+          : [g.nombres, g.apellidos].filter(Boolean).join(' ').trim()) ||
         String(g.numero || '');
       map.set(String(g._id), nombre);
     }

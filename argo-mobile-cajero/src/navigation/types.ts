@@ -15,4 +15,6 @@ export type RootStackParamList = {
   Programas: undefined;
   Servicios: undefined;
   Ajustes: undefined;
+  AprobacionConsignacion: undefined;
+  Autorizaciones: undefined;
 };

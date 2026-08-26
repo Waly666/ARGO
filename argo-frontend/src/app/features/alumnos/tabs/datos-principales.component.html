@@ -812,7 +812,7 @@
             <span class="section-icon ic-violet">◉</span>
             <div>
               <h3>Gestor / tramitador</h3>
-              <p>Tramitador que trajo al alumno — aplica tarifa gestor al matricular</p>
+              <p>Tramitador que trajo al alumno — persona natural: tarifa 5; gestor empresa: tarifa 6</p>
             </div>
           </div>
           <div class="section-body">
@@ -837,6 +837,15 @@
                     [buscarRemoto]="buscarGestoresRemoto"
                     (seleccionado)="onGestorPick($event)"
                     (limpiado)="onGestorLimpiar()" />
+                  @if (form().gestorId && form().tipoReferidorComercial) {
+                    <p class="hint" style="margin-top: 0.35rem">
+                      {{
+                        form().tipoReferidorComercial === 'empresa'
+                          ? 'Se aplicará tarifa empresa (6) al matricular.'
+                          : 'Se aplicará tarifa tramitador (5) al matricular.'
+                      }}
+                    </p>
+                  }
                 </div>
               </div>
             }
