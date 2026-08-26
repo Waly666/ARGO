@@ -103,6 +103,7 @@ import {
   esLiquidacionVirtual,
   mensajeErrorApi,
 } from '../../utils/pago';
+import { esUsuarioGestorComercial } from '../../utils/gestorPago';
 import { nombreCompleto } from '../../utils/format';
 
 type Tab = 'pagos' | 'servicios' | 'comprobantes' | 'certificados';
@@ -159,6 +160,10 @@ export default function AlumnoDetalleScreen() {
   );
   const esGestor = useMemo(
     () => authState.status === 'signedIn' && esUsuarioGestor(authState.user.rol),
+    [authState],
+  );
+  const soloTransferenciaGestor = useMemo(
+    () => authState.status === 'signedIn' && esUsuarioGestorComercial(authState.user),
     [authState],
   );
   const c = themeColors(highContrast);
@@ -581,7 +586,7 @@ export default function AlumnoDetalleScreen() {
       Alert.alert('Pagos', `El valor de «${excede.descripcion}» excede el saldo pendiente.`);
       return;
     }
-    const valPago = validarEstadoPago(pagoCobro, tiposPago);
+    const valPago = validarEstadoPago(pagoCobro, tiposPago, { soloTransferenciaGestor });
     if (!valPago.ok) {
       Alert.alert('Pagos', valPago.message ?? 'Complete los datos del pago.');
       return;
@@ -1118,6 +1123,7 @@ export default function AlumnoDetalleScreen() {
                 value={pagoCobro}
                 onChange={patchPagoCobro}
                 onTiposLoaded={setTiposPago}
+                soloTransferenciaGestor={soloTransferenciaGestor}
               />
               <PrimaryButton
                 label="Registrar cobro"

@@ -15,6 +15,7 @@ const {
 } = require('../services/anulacionComprobante');
 const { assertAlumnoPorNumDocGestor } = require('../services/alcanceGestorUsuario');
 const { assertCreditoDiarioGestorMovil } = require('../services/gestorCreditoDiario');
+const { assertPagoGestorSoloTransferencia } = require('../services/gestorPagoTransferencia');
 const { esComprobanteAnulado } = require('../utils/comprobanteEstado');
 const { validarPagoIntangibleIngreso } = require('../utils/referenciaPago');
 const upload = require('../middleware/upload');
@@ -443,6 +444,7 @@ exports.crearAlumno = async (req, res, next) => {
       });
     }
     const urlSoporte = urlSoporteDesdeReq(req);
+    await assertPagoGestorSoloTransferencia(req, tipoDoc, idTipoPago, pago, urlSoporte);
     const intangibleVal = validarPagoIntangibleIngreso(pago, urlSoporte);
     if (!intangibleVal.ok) return res.status(intangibleVal.status).json({ message: intangibleVal.message });
 

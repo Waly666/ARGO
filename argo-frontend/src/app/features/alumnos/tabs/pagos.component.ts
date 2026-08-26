@@ -30,6 +30,13 @@ import {
   ConfigServiciosAdicionalesService,
   PreviewServicioAdicionalItem,
 } from '../../../core/services/config-servicios-adicionales.service';
+import { AuthService } from '../../../core/services/auth.service';
+import {
+  MENSAJE_PAGO_GESTOR_TRANSFERENCIA,
+  esTipoPagoTransferenciaCatalogo,
+  filtrarTiposPagoGestor,
+  idTipoPagoTransferenciaDefault,
+} from '../../../core/utils/gestor-pago.util';
 
 interface ItemPagoSel {
   idLiquidacion: string;
@@ -72,6 +79,7 @@ export class PagosComponent {
   private confirmSvc = inject(ConfirmDialogService);
   private cajaAlert = inject(CajaAperturaAlertService);
   private cfgServAdic = inject(ConfigServiciosAdicionalesService);
+  private auth = inject(AuthService);
   private accionPermiso = inject(AccionPermisoService);
   private eliminacionOps = inject(EliminacionOperacionService);
 
@@ -117,6 +125,14 @@ export class PagosComponent {
   tituloSaldoItem = tituloSaldoItem;
 
   extrasPagoPreview = signal<PreviewServicioAdicionalItem[]>([]);
+
+  esGestorComercial = this.auth.esGestorComercial;
+  mensajePagoGestor = MENSAJE_PAGO_GESTOR_TRANSFERENCIA;
+
+  tiposPagoVisibles = computed(() => {
+    const todos = this.tiposPago();
+    return this.esGestorComercial() ? filtrarTiposPagoGestor(todos) : todos;
+  });
 
   subtotalItemsPago = computed(() =>
     this.itemsPago().reduce((a, i) => a + (Number(i.valor) || 0), 0),
@@ -168,7 +184,7 @@ export class PagosComponent {
   );
 
   opcionesTiposPago = computed<EnumBuscarOption[]>(() =>
-    this.tiposPago().map((t) => ({
+    this.tiposPagoVisibles().map((t) => ({
       value: this.tipoPagoValor(t),
       label: this.tipoPagoLabel(t),
     })),
@@ -195,8 +211,15 @@ export class PagosComponent {
 
   constructor() {
     this.catSvc.list('catTipoPago', { refresh: true }).subscribe({
-      next: (d) => this.tiposPago.set(d?.length ? d : TIPOS_PAGO_DEF),
-      error: () => this.tiposPago.set(TIPOS_PAGO_DEF),
+      next: (d) => {
+        const base = d?.length ? d : TIPOS_PAGO_DEF;
+        this.tiposPago.set(base);
+        this.aplicarTipoPagoGestor(base);
+      },
+      error: () => {
+        this.tiposPago.set(TIPOS_PAGO_DEF);
+        this.aplicarTipoPagoGestor(TIPOS_PAGO_DEF);
+      },
     });
     this.catSvc.list('cuentasBancarias', { refresh: true }).subscribe({
       next: (d) => this.cuentasBancarias.set(d || []),
@@ -273,6 +296,13 @@ export class PagosComponent {
   }
 
   onTipoPagoChange(id: string) {
+    if (this.esGestorComercial() && id) {
+      const t = this.tiposPago().find((x) => this.tipoPagoValor(x) === id);
+      if (t && !esTipoPagoTransferenciaCatalogo(t)) {
+        this.msg.set(MENSAJE_PAGO_GESTOR_TRANSFERENCIA);
+        id = idTipoPagoTransferenciaDefault(this.tiposPago());
+      }
+    }
     this.idTipoPago.set(id);
     if (!id) {
       this.idCuentaBancaria.set('');
@@ -437,7 +467,19 @@ export class PagosComponent {
   }
 
   onTipoPagoLimpiar(): void {
+    if (this.esGestorComercial()) {
+      this.aplicarTipoPagoGestor(this.tiposPago());
+      return;
+    }
     this.onTipoPagoChange('');
+  }
+
+  private aplicarTipoPagoGestor(tipos: Record<string, unknown>[]): void {
+    if (!this.esGestorComercial()) return;
+    const id = idTipoPagoTransferenciaDefault(tipos);
+    if (id && this.idTipoPago() !== id) {
+      this.onTipoPagoChange(id);
+    }
   }
 
   onCuentaBancariaPick(opt: EnumBuscarOption): void {
@@ -526,6 +568,13 @@ export class PagosComponent {
     if (!this.idTipoPago()) {
       this.msg.set('Selecciona el tipo de pago.');
       return;
+    }
+    if (this.esGestorComercial()) {
+      const t = this.tipoPagoSel();
+      if (!t || !esTipoPagoTransferenciaCatalogo(t)) {
+        this.msg.set(MENSAJE_PAGO_GESTOR_TRANSFERENCIA);
+        return;
+      }
     }
     if (this.requiereCuentaEmpresa() && !this.idCuentaBancaria()) {
       this.msg.set('Selecciona la cuenta bancaria de la empresa donde ingresa el pago.');

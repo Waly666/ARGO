@@ -127,80 +127,119 @@
         <span class="ref-kpi-label">Gestores con movimiento</span>
         <strong>{{ k.referidoresActivos }}</strong>
       </article>
+      <article class="ref-kpi tone-rose">
+        <span class="ref-kpi-label">Pendiente de cobro</span>
+        <strong>{{ k.pendienteCobro | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+      </article>
     </section>
 
-    <section class="ref-inf-charts">
-      <article class="ref-chart-card">
-        <h3>Pagos por mes</h3>
-        @if (pagosPorMesItems().length) {
-          <div class="ref-bars">
-            @for (item of pagosPorMesItems(); track item.label) {
-              <div class="ref-bar-row">
-                <span class="ref-bar-label">{{ item.label }}</span>
-                <div class="ref-bar-track"><div class="ref-bar-fill sky" [style.width.%]="barWidth(item.value, pagosPorMesItems())"></div></div>
-                <span class="ref-bar-val">{{ item.value | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+    <section class="ref-inf-dashboard">
+      <header class="ref-dash-head">
+        <h2>Dashboard comercial</h2>
+        <p>Indicadores del período filtrado</p>
+      </header>
+
+      <div class="ref-dash-grid ref-dash-grid--2">
+        <article class="ref-chart-card">
+          <h3>Pagos por mes</h3>
+          @if (pagosPorMesItems().length) {
+            <div class="ref-bars ref-bars--compact">
+              @for (item of pagosPorMesItems(); track item.label) {
+                <div class="ref-bar-row">
+                  <span class="ref-bar-label">{{ item.label }}</span>
+                  <div class="ref-bar-track"><div class="ref-bar-fill sky" [style.width.%]="barWidth(item.value, pagosPorMesItems())"></div></div>
+                  <span class="ref-bar-val">{{ item.value | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="ref-empty">Sin pagos en el período.</p>
+          }
+        </article>
+
+        <article class="ref-chart-card">
+          <h3>Certificados por mes</h3>
+          @if (certificadosPorMesItems().length) {
+            <div class="ref-bars ref-bars--compact">
+              @for (item of certificadosPorMesItems(); track item.label) {
+                <div class="ref-bar-row">
+                  <span class="ref-bar-label">{{ item.label }}</span>
+                  <div class="ref-bar-track"><div class="ref-bar-fill violet" [style.width.%]="barWidth(item.value, certificadosPorMesItems())"></div></div>
+                  <span class="ref-bar-val">{{ item.value }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="ref-empty">Sin certificados en el período.</p>
+          }
+        </article>
+      </div>
+
+      <div class="ref-dash-grid ref-dash-grid--2">
+        <article class="ref-chart-card ref-chart-card--donut">
+          <h3>Pagos por programa</h3>
+          @if (chartPagosProg().length) {
+            <div class="ref-donut-wrap ref-donut-wrap--compact">
+              <svg viewBox="0 0 140 140" class="ref-donut ref-donut--sm">
+                @for (seg of donutPagosProg(); track $index) {
+                  <path [attr.d]="seg.d" [attr.fill]="seg.color"></path>
+                }
+              </svg>
+              <ul class="ref-legend ref-legend--compact">
+                @for (s of chartPagosProg(); track s.label) {
+                  <li>
+                    <span class="dot" [style.background]="s.color"></span>
+                    <span class="lbl">{{ s.label }}</span>
+                    <span class="val">{{ s.value | currency: 'COP':'symbol-narrow':'1.0-0' }} · {{ s.pct }}%</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          } @else {
+            <p class="ref-empty">Sin datos.</p>
+          }
+        </article>
+
+        <article class="ref-chart-card ref-chart-card--donut">
+          <h3>Certificados por programa</h3>
+          @if (chartCertsProg().length) {
+            <div class="ref-donut-wrap ref-donut-wrap--compact">
+              <svg viewBox="0 0 140 140" class="ref-donut ref-donut--sm">
+                @for (seg of donutCertsProg(); track $index) {
+                  <path [attr.d]="seg.d" [attr.fill]="seg.color"></path>
+                }
+              </svg>
+              <ul class="ref-legend ref-legend--compact">
+                @for (s of chartCertsProg(); track s.label) {
+                  <li>
+                    <span class="dot" [style.background]="s.color"></span>
+                    <span class="lbl">{{ s.label }}</span>
+                    <span class="val">{{ s.value }} · {{ s.pct }}%</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          } @else {
+            <p class="ref-empty">Sin datos.</p>
+          }
+        </article>
+      </div>
+
+      <article class="ref-chart-card ref-chart-card--wide">
+        <h3>Top gestores por recaudo</h3>
+        @if (topGestoresItems().length) {
+          <div class="ref-rank-list">
+            @for (g of topGestoresItems(); track g.label; let i = $index) {
+              <div class="ref-rank-row">
+                <span class="ref-rank-pos">{{ i + 1 }}</span>
+                <span class="ref-rank-name">{{ g.label }}</span>
+                <div class="ref-bar-track"><div class="ref-bar-fill emerald" [style.width.%]="barWidth(g.value, topGestoresItems())"></div></div>
+                <span class="ref-bar-val">{{ g.value | currency: 'COP':'symbol-narrow':'1.0-0' }}</span>
               </div>
             }
           </div>
         } @else {
-          <p class="ref-empty">Sin pagos en el período.</p>
-        }
-      </article>
-
-      <article class="ref-chart-card">
-        <h3>Certificados por mes</h3>
-        @if (certificadosPorMesItems().length) {
-          <div class="ref-bars">
-            @for (item of certificadosPorMesItems(); track item.label) {
-              <div class="ref-bar-row">
-                <span class="ref-bar-label">{{ item.label }}</span>
-                <div class="ref-bar-track"><div class="ref-bar-fill violet" [style.width.%]="barWidth(item.value, certificadosPorMesItems())"></div></div>
-                <span class="ref-bar-val">{{ item.value }}</span>
-              </div>
-            }
-          </div>
-        } @else {
-          <p class="ref-empty">Sin certificados en el período.</p>
-        }
-      </article>
-
-      <article class="ref-chart-card">
-        <h3>Pagos por programa</h3>
-        @if (chartPagosProg().length) {
-          <div class="ref-donut-wrap">
-            <svg viewBox="0 0 140 140" class="ref-donut">
-              @for (seg of donutPagosProg(); track $index) {
-                <path [attr.d]="seg.d" [attr.fill]="seg.color"></path>
-              }
-            </svg>
-            <ul class="ref-legend">
-              @for (s of chartPagosProg(); track s.label) {
-                <li><span class="dot" [style.background]="s.color"></span>{{ s.label }} ({{ s.pct }}%)</li>
-              }
-            </ul>
-          </div>
-        } @else {
-          <p class="ref-empty">Sin datos.</p>
-        }
-      </article>
-
-      <article class="ref-chart-card">
-        <h3>Certificados por programa</h3>
-        @if (chartCertsProg().length) {
-          <div class="ref-donut-wrap">
-            <svg viewBox="0 0 140 140" class="ref-donut">
-              @for (seg of donutCertsProg(); track $index) {
-                <path [attr.d]="seg.d" [attr.fill]="seg.color"></path>
-              }
-            </svg>
-            <ul class="ref-legend">
-              @for (s of chartCertsProg(); track s.label) {
-                <li><span class="dot" [style.background]="s.color"></span>{{ s.label }} ({{ s.pct }}%)</li>
-              }
-            </ul>
-          </div>
-        } @else {
-          <p class="ref-empty">Sin datos.</p>
+          <p class="ref-empty">Sin movimientos comerciales.</p>
         }
       </article>
     </section>
@@ -243,7 +282,15 @@
 
     @if (tab() === 'pagos') {
       <div class="ref-table-wrap">
-        <table class="ref-table">
+        <table class="ref-table ref-table--pagos">
+          <colgroup>
+            <col class="col-fecha" />
+            <col class="col-recibo" />
+            <col class="col-doc" />
+            <col class="col-programa" />
+            <col class="col-gestor" />
+            <col class="col-valor" />
+          </colgroup>
           <thead>
             <tr>
               <th>Fecha</th>
@@ -251,7 +298,7 @@
               <th>Doc.</th>
               <th>Programa</th>
               <th>Gestor</th>
-              <th>Valor</th>
+              <th class="num">Valor</th>
             </tr>
           </thead>
           <tbody>
@@ -262,7 +309,7 @@
                 <td>{{ p.numDoc }}</td>
                 <td>{{ p.programa }}</td>
                 <td>{{ p.referidor }}</td>
-                <td>{{ p.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="num">{{ p.valor | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
               </tr>
             } @empty {
               <tr><td colspan="6" class="ref-empty-row">Sin pagos.</td></tr>
@@ -274,14 +321,20 @@
 
     @if (tab() === 'certificados') {
       <div class="ref-table-wrap">
-        <table class="ref-table">
+        <table class="ref-table ref-table--certs">
+          <colgroup>
+            <col class="col-emision" />
+            <col class="col-codigo" />
+            <col class="col-alumno" />
+            <col class="col-programa" />
+            <col class="col-gestor" />
+          </colgroup>
           <thead>
             <tr>
               <th>Emisión</th>
               <th>Código</th>
               <th>Alumno</th>
               <th>Programa</th>
-              <th>Tipo</th>
               <th>Gestor</th>
             </tr>
           </thead>
@@ -292,11 +345,10 @@
                 <td>{{ c.codigoCert || '—' }}</td>
                 <td>{{ c.nombre }} ({{ c.numDoc }})</td>
                 <td>{{ c.programa }}</td>
-                <td>{{ c.tipoCertificado }}</td>
                 <td>{{ c.referidor }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="6" class="ref-empty-row">Sin certificados.</td></tr>
+              <tr><td colspan="5" class="ref-empty-row">Sin certificados.</td></tr>
             }
           </tbody>
         </table>
@@ -305,16 +357,23 @@
 
     @if (tab() === 'matriculas') {
       <div class="ref-table-wrap">
-        <table class="ref-table">
+        <table class="ref-table ref-table--mats">
+          <colgroup>
+            <col class="col-fecha" />
+            <col class="col-doc" />
+            <col class="col-programa" />
+            <col class="col-gestor" />
+            <col class="col-valor" />
+            <col class="col-saldo" />
+          </colgroup>
           <thead>
             <tr>
               <th>Fecha</th>
               <th>Doc.</th>
               <th>Programa</th>
               <th>Gestor</th>
-              <th>Valor</th>
-              <th>Abonado</th>
-              <th>Saldo</th>
+              <th class="num">Valor</th>
+              <th class="num">Saldo</th>
             </tr>
           </thead>
           <tbody>
@@ -324,12 +383,11 @@
                 <td>{{ m.numDoc }}</td>
                 <td>{{ m.programa }}</td>
                 <td>{{ m.referidor }}</td>
-                <td>{{ m.valorMat | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-                <td>{{ m.abonado | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
-                <td>{{ m.saldo | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="num">{{ m.valorMat | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                <td class="num">{{ m.saldo | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="7" class="ref-empty-row">Sin matrículas comerciales.</td></tr>
+              <tr><td colspan="6" class="ref-empty-row">Sin matrículas comerciales.</td></tr>
             }
           </tbody>
         </table>

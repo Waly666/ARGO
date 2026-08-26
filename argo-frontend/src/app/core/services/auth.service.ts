@@ -38,6 +38,12 @@ export interface AuthUser {
   soporteMaestro?: boolean;
   sedes?: { idSede: string; nombre: string; codigo?: string; esPrincipal?: boolean }[];
   sedesPermitidas?: string[];
+  gestorComercial?: {
+    _id: string;
+    numero?: string;
+    nombre?: string;
+    tipoGestor?: string;
+  };
 }
 
 export interface LoginResponse {
@@ -112,6 +118,12 @@ export class AuthService {
 
   /** Cuenta break-glass (soporte-argo / variables SOPORTE_MASTER_*). */
   isSoporteMaestro = computed(() => this._user()?.soporteMaestro === true);
+
+  esGestorComercial = computed(() => {
+    const u = this._user();
+    if (!u) return false;
+    return String(u.rol || '').trim().toLowerCase() === 'gestor';
+  });
 
   tienePermiso(clave: string | string[]): boolean {
     return this.permisoSvc.tiene(clave);

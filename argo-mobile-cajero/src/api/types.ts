@@ -10,6 +10,12 @@ export interface AuthUser {
   permisosRev?: string | null;
   sedes?: { idSede: string; nombre: string; codigo?: string; esPrincipal?: boolean }[];
   sedesPermitidas?: string[];
+  gestorComercial?: {
+    _id: string;
+    numero?: string;
+    nombre?: string;
+    tipoGestor?: string;
+  };
 }
 
 export type StaffLoginStep = 'complete' | 'mfa_verify' | 'mfa_setup';

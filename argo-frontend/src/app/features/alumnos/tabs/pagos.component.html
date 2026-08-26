@@ -149,11 +149,13 @@
           Forma de pago
         </h3>
 
+        <p class="gestor-pago-aviso" *ngIf="esGestorComercial()">{{ mensajePagoGestor }}</p>
+
         <div class="tipos-pago-rapidos">
           <button
             type="button"
             class="chip-pago"
-            *ngFor="let t of tiposPago()"
+            *ngFor="let t of tiposPagoVisibles()"
             [class.activo]="tipoPagoActivo(tipoPagoValor(t))"
             (click)="seleccionarTipoPagoRapido(tipoPagoValor(t))">
             {{ tipoPagoLabel(t) }}
@@ -161,6 +163,7 @@
         </div>
 
         <argo-catalogo-enum-buscar
+          *ngIf="!esGestorComercial()"
           label="O busque otra forma de pago"
           placeholder="Seleccione forma de pago…"
           [textoInicial]="textoTipoPago()"

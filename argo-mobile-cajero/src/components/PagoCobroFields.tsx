@@ -26,6 +26,12 @@ import {
   validarPagoIntangible,
   type SoportePago,
 } from '../utils/pago';
+import {
+  MENSAJE_PAGO_GESTOR_TRANSFERENCIA,
+  esTipoPagoTransferencia,
+  filtrarTiposPagoGestor,
+  idTipoPagoTransferenciaDefault,
+} from '../utils/gestorPago';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { themeColors } from '../theme/colors';
 import { CAJERO_AZUL_REY } from '../config/appBranding';
@@ -49,6 +55,8 @@ type Props = {
   onChange: (patch: Partial<PagoCobroState>) => void;
   /** Sincroniza catálogo cargado con el padre (validación al cobrar). */
   onTiposLoaded?: (tipos: CatalogoItem[]) => void;
+  /** Gestor comercial: solo transferencia + soporte obligatorio. */
+  soloTransferenciaGestor?: boolean;
 };
 
 const empty: PagoCobroState = {
@@ -68,7 +76,17 @@ export function pagoCobroStateInicial(): PagoCobroState {
 export function validarEstadoPago(
   state: PagoCobroState,
   tipos: CatalogoItem[],
+  opts?: { soloTransferenciaGestor?: boolean },
 ): { ok: boolean; message?: string } {
+  if (opts?.soloTransferenciaGestor) {
+    if (!state.idTipoPago) {
+      return { ok: false, message: 'Seleccione transferencia como forma de pago.' };
+    }
+    const t = tipos.find((x) => idTipoPagoItem(x) === state.idTipoPago);
+    if (!t || !esTipoPagoTransferencia(t, state.idTipoPago)) {
+      return { ok: false, message: MENSAJE_PAGO_GESTOR_TRANSFERENCIA };
+    }
+  }
   return validarPagoIntangible({
     idTipoPago: state.idTipoPago,
     tipos,
@@ -84,6 +102,7 @@ export function PagoCobroFields({
   value,
   onChange,
   onTiposLoaded,
+  soloTransferenciaGestor = false,
 }: Props) {
   const { highContrast } = useAccessibility();
   const c = themeColors(highContrast);
@@ -94,16 +113,32 @@ export function PagoCobroFields({
     let cancel = false;
     void Promise.all([fetchTiposPago(), fetchCuentasBancarias()]).then(([t, cu]) => {
       if (cancel) return;
-      setTipos(t);
+      const visibles = soloTransferenciaGestor ? filtrarTiposPagoGestor(t) : t;
+      setTipos(visibles);
       setCuentas(cu);
-      onTiposLoaded?.(t);
-      // Si aún no hay forma de pago, no forzar efectivo: el usuario debe elegir.
+      onTiposLoaded?.(visibles);
+      if (soloTransferenciaGestor) {
+        const idTr = idTipoPagoTransferenciaDefault(t);
+        if (idTr && value.idTipoPago !== idTr) {
+          onChange({
+            idTipoPago: idTr,
+            idCuentaBancaria: '',
+            numComprobante: '',
+            soporte: null,
+          });
+        }
+      }
     });
     return () => {
       cancel = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [soloTransferenciaGestor]);
+
+  const tiposVisibles = useMemo(
+    () => (soloTransferenciaGestor ? tipos : tipos),
+    [soloTransferenciaGestor, tipos],
+  );
 
   const esEfectivo = useMemo(
     () => (value.idTipoPago ? esEfectivoTipoPago(value.idTipoPago, tipos) : true),
@@ -112,8 +147,8 @@ export function PagoCobroFields({
   const requiereDatosBanco = !!value.idTipoPago && !esEfectivo;
 
   const opcionesTipos = useMemo(
-    () => tipos.map((t) => ({ value: idTipoPagoItem(t), label: etiquetaTipoPago(t) })),
-    [tipos],
+    () => tiposVisibles.map((t) => ({ value: idTipoPagoItem(t), label: etiquetaTipoPago(t) })),
+    [tiposVisibles],
   );
   const opcionesCuentas = useMemo(
     () => cuentas.map((cu) => ({ value: idCuentaItem(cu), label: etiquetaCuenta(cu) })),
@@ -145,6 +180,13 @@ export function PagoCobroFields({
   }, [value.idTipoPago, idLiquidaciones.join('|')]);
 
   function seleccionarTipo(id: string) {
+    if (soloTransferenciaGestor) {
+      const t = tipos.find((x) => idTipoPagoItem(x) === id);
+      if (!t || !esTipoPagoTransferencia(t, id)) {
+        Alert.alert('Forma de pago', MENSAJE_PAGO_GESTOR_TRANSFERENCIA);
+        return;
+      }
+    }
     onChange({
       idTipoPago: id,
       idCuentaBancaria: '',
@@ -206,11 +248,13 @@ export function PagoCobroFields({
         Forma de pago
       </ScaledText>
       <ScaledText baseSize={12} style={{ color: c.textSoft, marginBottom: 8, lineHeight: 17 }}>
-        Elija el medio. Si no es efectivo, deberá indicar cuenta, referencia y adjuntar el soporte.
+        {soloTransferenciaGestor
+          ? MENSAJE_PAGO_GESTOR_TRANSFERENCIA
+          : 'Elija el medio. Si no es efectivo, deberá indicar cuenta, referencia y adjuntar el soporte.'}
       </ScaledText>
 
       <View style={styles.chipsWrap}>
-        {tipos.map((t) => {
+        {tiposVisibles.map((t) => {
           const id = idTipoPagoItem(t);
           const on = value.idTipoPago === id;
           return (
@@ -233,16 +277,18 @@ export function PagoCobroFields({
         })}
       </View>
 
-      <CatalogoSelectField
-        label="O busque otra forma de pago"
-        value={value.idTipoPago}
-        options={opcionesTipos}
-        onChange={seleccionarTipo}
-        placeholder="Seleccione forma de pago…"
-        required
-      />
+      {!soloTransferenciaGestor ? (
+        <CatalogoSelectField
+          label="O busque otra forma de pago"
+          value={value.idTipoPago}
+          options={opcionesTipos}
+          onChange={seleccionarTipo}
+          placeholder="Seleccione forma de pago…"
+          required
+        />
+      ) : null}
 
-      {requiereDatosBanco ? (
+      {requiereDatosBanco || soloTransferenciaGestor ? (
         <View style={[styles.bancoBox, { borderColor: 'rgba(53,120,240,0.25)', backgroundColor: highContrast ? c.bgAlt : '#eff6ff' }]}>
           <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '800', marginBottom: 4 }}>
             Datos del pago electrónico

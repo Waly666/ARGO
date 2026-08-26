@@ -1,9 +1,12 @@
 import { ConfigRecibo } from '../../core/services/config.service';
 import {
-  ReferidorChartItem,
   ReferidorInformeDashboard,
   TipoReferidorComercial,
 } from '../../core/services/referidor-comercial.service';
+import {
+  dashboardChartsHtml,
+  dashboardPrintCss,
+} from './referidor-informe-dashboard.util';
 import {
   informePrintToolbarCss,
   informePrintToolbarHtml,
@@ -31,7 +34,7 @@ export interface ReferidorInformePrintOpts {
   empresa?: ConfigRecibo | null;
 }
 
-const AT_PAGE = '@page { size: A4 landscape; margin: 10mm; }';
+const AT_PAGE = '@page { size: letter portrait; margin: 12mm 10mm; }';
 
 function esc(v: unknown): string {
   return String(v ?? '')
@@ -68,7 +71,7 @@ function docCss(): string {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .doc { max-width: 100%; margin: 0 auto; }
+  .doc { max-width: 8.5in; margin: 0 auto; }
   .doc-titulo-block {
     text-align: center; margin: 10px 0 12px;
     border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;
@@ -85,7 +88,7 @@ function docCss(): string {
   .doc-meta td { padding: 2px 6px 2px 0; vertical-align: top; }
   .doc-meta td:first-child { width: 140px; font-weight: 600; color: #555; }
   .stats {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 12px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px;
   }
   .stat {
     border: 1px solid #94a3b8; background: #edf2f7; padding: 6px 8px; text-align: center;
@@ -94,31 +97,14 @@ function docCss(): string {
     display: block; font-size: 7pt; text-transform: uppercase; color: #1e3a5f; letter-spacing: 0.04em;
   }
   .stat strong { display: block; font-size: 11pt; color: #1a1a1a; margin-top: 2px; }
-  .charts {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
-  }
-  .chart-box {
-    border: 1px solid #cbd5e1; padding: 8px; background: #fafbfc;
-  }
-  .chart-box h4 {
-    margin: 0 0 6px; font-size: 8pt; text-transform: uppercase; color: #1e3a5f;
-    border-bottom: 1px solid #ddd; padding-bottom: 3px;
-  }
-  .bar-row {
-    display: grid; grid-template-columns: 52px 1fr 72px; gap: 4px; align-items: center;
-    font-size: 7.5pt; margin-bottom: 3px;
-  }
-  .bar-track {
-    height: 7px; background: #e2e8f0; border-radius: 999px; overflow: hidden;
-  }
-  .bar-fill { height: 100%; background: #2563eb; border-radius: 999px; }
-  .bar-fill.violet { background: #7c3aed; }
+  ${dashboardPrintCss()}
   .sec {
     margin: 12px 0 5px; font-size: 9pt; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.04em; color: #1e3a5f; border-bottom: 1px solid #bbb; padding-bottom: 2px;
   }
   table.tbl {
     width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 7.5pt;
+    table-layout: fixed;
   }
   table.tbl th, table.tbl td {
     border: 1px solid #999; padding: 3px 4px; vertical-align: top; word-wrap: break-word;
@@ -137,28 +123,12 @@ function docCss(): string {
   @media print { body { padding: 0 !important; } }
   @media screen {
     body { padding: 12px 16px 24px; background: #e5e7eb !important; }
-    .doc { background: #fff; padding: 12mm 10mm; box-shadow: 0 4px 24px rgba(0,0,0,.12); }
+    .doc {
+      width: 8.5in; min-height: 11in;
+      background: #fff; padding: 12mm 10mm; box-shadow: 0 4px 24px rgba(0,0,0,.12);
+    }
   }
 `;
-}
-
-function barChartHtml(title: string, items: ReferidorChartItem[], clase: 'sky' | 'violet', moneda: boolean): string {
-  if (!items?.length) {
-    return `<div class="chart-box"><h4>${esc(title)}</h4><p>Sin datos en el período.</p></div>`;
-  }
-  const max = Math.max(...items.map((i) => i.value), 1);
-  const rows = items
-    .map((item) => {
-      const pct = Math.max(4, Math.round((item.value / max) * 100));
-      const val = moneda ? cop(item.value) : String(item.value);
-      return `<div class="bar-row">
-        <span>${esc(item.label)}</span>
-        <div class="bar-track"><div class="bar-fill ${clase}" style="width:${pct}%"></div></div>
-        <span class="num">${esc(val)}</span>
-      </div>`;
-    })
-    .join('');
-  return `<div class="chart-box"><h4>${esc(title)}</h4>${rows}</div>`;
 }
 
 function tablaResumen(tipo: TipoReferidorComercial, data: ReferidorInformeDashboard): string {
@@ -198,9 +168,17 @@ function tablaPagos(tipo: TipoReferidorComercial, data: ReferidorInformeDashboar
     )
     .join('');
   return `<h3 class="sec">Detalle de pagos (${(data.detalle?.pagos || []).length})</h3>
-  <table class="tbl">
+  <table class="tbl tbl-pagos">
+    <colgroup>
+      <col style="width:8%" />
+      <col style="width:13%" />
+      <col style="width:12%" />
+      <col style="width:35%" />
+      <col style="width:20%" />
+      <col style="width:12%" />
+    </colgroup>
     <thead><tr>
-      <th>Fecha</th><th>Recibo</th><th>Doc.</th><th>Programa</th><th>${esc(col)}</th><th>Valor</th>
+      <th>Fecha</th><th>Recibo</th><th>Doc.</th><th>Programa</th><th>${esc(col)}</th><th class="num">Valor</th>
     </tr></thead>
     <tbody>${rows || '<tr><td colspan="6">Sin pagos.</td></tr>'}</tbody>
   </table>`;
@@ -215,17 +193,23 @@ function tablaCertificados(tipo: TipoReferidorComercial, data: ReferidorInformeD
         <td>${esc(c.codigoCert || '—')}</td>
         <td>${esc(c.nombre)} (${esc(c.numDoc)})</td>
         <td>${esc(c.programa)}</td>
-        <td>${esc(c.tipoCertificado)}</td>
         <td>${esc(c.referidor)}</td>
       </tr>`,
     )
     .join('');
   return `<h3 class="sec">Detalle de certificados (${(data.detalle?.certificados || []).length})</h3>
-  <table class="tbl">
+  <table class="tbl tbl-certs">
+    <colgroup>
+      <col style="width:10%" />
+      <col style="width:13%" />
+      <col style="width:28%" />
+      <col style="width:35%" />
+      <col style="width:14%" />
+    </colgroup>
     <thead><tr>
-      <th>Emisión</th><th>Código</th><th>Alumno</th><th>Programa</th><th>Tipo</th><th>${esc(col)}</th>
+      <th>Emisión</th><th>Código</th><th>Alumno</th><th>Programa</th><th>${esc(col)}</th>
     </tr></thead>
-    <tbody>${rows || '<tr><td colspan="6">Sin certificados.</td></tr>'}</tbody>
+    <tbody>${rows || '<tr><td colspan="5">Sin certificados.</td></tr>'}</tbody>
   </table>`;
 }
 
@@ -239,17 +223,24 @@ function tablaMatriculas(tipo: TipoReferidorComercial, data: ReferidorInformeDas
         <td>${esc(m.programa)}</td>
         <td>${esc(m.referidor)}</td>
         <td class="num">${cop(m.valorMat)}</td>
-        <td class="num">${cop(m.abonado)}</td>
         <td class="num">${cop(m.saldo)}</td>
       </tr>`,
     )
     .join('');
   return `<h3 class="sec">Detalle de matrículas comerciales (${(data.detalle?.matriculas || []).length})</h3>
-  <table class="tbl">
+  <table class="tbl tbl-mats">
+    <colgroup>
+      <col style="width:9%" />
+      <col style="width:10%" />
+      <col style="width:34%" />
+      <col style="width:24%" />
+      <col style="width:11%" />
+      <col style="width:12%" />
+    </colgroup>
     <thead><tr>
-      <th>Fecha</th><th>Doc.</th><th>Programa</th><th>${esc(col)}</th><th>Valor</th><th>Abonado</th><th>Saldo</th>
+      <th>Fecha</th><th>Doc.</th><th>Programa</th><th>${esc(col)}</th><th class="num">Valor</th><th class="num">Saldo</th>
     </tr></thead>
-    <tbody>${rows || '<tr><td colspan="7">Sin matrículas.</td></tr>'}</tbody>
+    <tbody>${rows || '<tr><td colspan="6">Sin matrículas.</td></tr>'}</tbody>
   </table>`;
 }
 
@@ -295,13 +286,7 @@ export function imprimirReferidorInforme(opts: ReferidorInformePrintOpts): boole
       <div class="stat"><span>${esc(refLabel)}es activos</span><strong>${esc(k.referidoresActivos)}</strong></div>
       <div class="stat"><span>Pendiente cobro</span><strong>${esc(cop(k.pendienteCobro))}</strong></div>
     </div>
-    <h3 class="sec">Indicadores del período</h3>
-    <div class="charts">
-      ${barChartHtml('Pagos por mes', data.charts?.pagosPorMes || [], 'sky', true)}
-      ${barChartHtml('Certificados por mes', data.charts?.certificadosPorMes || [], 'violet', false)}
-      ${barChartHtml('Pagos por programa', data.charts?.pagosPorPrograma || [], 'sky', true)}
-      ${barChartHtml('Certificados por programa', data.charts?.certificadosPorPrograma || [], 'violet', false)}
-    </div>
+    ${dashboardChartsHtml(data)}
     ${tablaResumen(tipo, data)}
     ${tablaPagos(tipo, data)}
     ${tablaCertificados(tipo, data)}

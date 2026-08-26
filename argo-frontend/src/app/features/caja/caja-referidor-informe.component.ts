@@ -25,6 +25,12 @@ import {
 import { ArgoDateInputComponent } from '../../shared/argo-date-input/argo-date-input.component';
 import { ConfigRecibo, ConfigService } from '../../core/services/config.service';
 import { imprimirReferidorInforme } from './referidor-informe-print.util';
+import {
+  barWidthPct,
+  chartSlicesFromItems,
+  topGestoresItems,
+  topNChartItems,
+} from './referidor-informe-dashboard.util';
 
 type TabDetalle = 'resumen' | 'pagos' | 'certificados' | 'matriculas';
 
@@ -80,12 +86,15 @@ export class CajaReferidorInformeComponent implements OnInit {
   detalleCerts = computed(() => this.data()?.detalle?.certificados || []);
   detalleMats = computed(() => this.data()?.detalle?.matriculas || []);
 
-  chartPagosMes = computed(() => this.buildSlices(this.data()?.charts?.pagosPorMes || []));
-  chartCertsMes = computed(() => this.buildSlices(this.data()?.charts?.certificadosPorMes || []));
-  chartPagosProg = computed(() => this.buildSlices(this.data()?.charts?.pagosPorPrograma || []));
-  chartCertsProg = computed(() => this.buildSlices(this.data()?.charts?.certificadosPorPrograma || []));
+  chartPagosProg = computed(() =>
+    chartSlicesFromItems(topNChartItems(this.data()?.charts?.pagosPorPrograma || [])),
+  );
+  chartCertsProg = computed(() =>
+    chartSlicesFromItems(topNChartItems(this.data()?.charts?.certificadosPorPrograma || [])),
+  );
   pagosPorMesItems = computed(() => this.data()?.charts?.pagosPorMes ?? []);
   certificadosPorMesItems = computed(() => this.data()?.charts?.certificadosPorMes ?? []);
+  topGestoresItems = computed(() => topGestoresItems(this.resumen()));
 
   donutPagosProg = computed(() => donutSegmentPaths(this.chartPagosProg()));
   donutCertsProg = computed(() => donutSegmentPaths(this.chartCertsProg()));
@@ -206,8 +215,7 @@ export class CajaReferidorInformeComponent implements OnInit {
   }
 
   barWidth(value: number, items: ReferidorChartItem[]): number {
-    const max = Math.max(...items.map((i) => i.value), 1);
-    return Math.max(4, Math.round((value / max) * 100));
+    return barWidthPct(value, items);
   }
 
   private buildSlices(items: ReferidorChartItem[]): ChartSlice[] {

@@ -32,6 +32,7 @@ import { tieneAccionModulo } from '../../utils/accionPermiso';
 import { ensureCajaAbierta } from '../../utils/cajaAbierta';
 import { themeColors } from '../../theme/colors';
 import { esLiquidacionVirtual, mensajeErrorApi } from '../../utils/pago';
+import { esUsuarioGestorComercial } from '../../utils/gestorPago';
 
 export default function CajaCobrosScreen() {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -42,6 +43,10 @@ export default function CajaCobrosScreen() {
   const puedeCrearIngreso = useMemo(
     () => tieneAccionModulo(permisos, 'ingresos', 'crear'),
     [permisos],
+  );
+  const soloTransferenciaGestor = useMemo(
+    () => authState.status === 'signedIn' && esUsuarioGestorComercial(authState.user),
+    [authState],
   );
   const c = themeColors(highContrast);
   const [q, setQ] = useState('');
@@ -130,7 +135,7 @@ export default function CajaCobrosScreen() {
       Alert.alert('Cobro', `El valor no puede superar el saldo (${saldo.toLocaleString('es-CO')}).`);
       return;
     }
-    const valPago = validarEstadoPago(pagoCobro, tiposPago);
+    const valPago = validarEstadoPago(pagoCobro, tiposPago, { soloTransferenciaGestor });
     if (!valPago.ok) {
       Alert.alert('Cobro', valPago.message ?? 'Complete los datos del pago.');
       return;
@@ -310,6 +315,7 @@ export default function CajaCobrosScreen() {
                   value={pagoCobro}
                   onChange={patchPagoCobro}
                   onTiposLoaded={setTiposPago}
+                  soloTransferenciaGestor={soloTransferenciaGestor}
                 />
                 <View style={styles.modalActions}>
                   <PrimaryButton label="Cancelar" variant="ghost" onPress={cerrarCobro} style={{ flex: 1 }} />
