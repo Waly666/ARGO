@@ -1,18 +1,34 @@
+const mongoose = require('mongoose');
 const Usuario = require('../models/Usuario');
 const { listarActivos, listarHistorial, obtenerMonitor, ACTIVOS_MINUTOS } = require('../services/actividadHttp');
 
+const NOMBRES_USUARIO_SINTETICO = {
+  'soporte-maestro': 'Soporte ARGO',
+};
+
+function idsObjectIdValidos(ids) {
+  return [...new Set(ids.filter((id) => id && mongoose.isValidObjectId(String(id))))];
+}
+
+function nombreUsuarioSintetico(idUsuario) {
+  return NOMBRES_USUARIO_SINTETICO[String(idUsuario || '')] || null;
+}
+
 async function enriquecerNombres(activos) {
-  const ids = activos.map((a) => a.idUsuario).filter(Boolean);
-  if (!ids.length) return activos;
-  const users = await Usuario.find({ _id: { $in: ids } })
-    .select('nombres apellidos username')
-    .lean();
-  const map = new Map(users.map((u) => [String(u._id), u]));
+  const ids = idsObjectIdValidos(activos.map((a) => a.idUsuario));
+  let map = new Map();
+  if (ids.length) {
+    const users = await Usuario.find({ _id: { $in: ids } })
+      .select('nombres apellidos username')
+      .lean();
+    map = new Map(users.map((u) => [String(u._id), u]));
+  }
   return activos.map((a) => {
     const u = map.get(String(a.idUsuario));
+    const sintetico = nombreUsuarioSintetico(a.idUsuario);
     const nombre = u
       ? [u.nombres, u.apellidos].filter(Boolean).join(' ').trim()
-      : a.nombreUsuario;
+      : sintetico || a.nombreUsuario;
     return {
       ...a,
       nombreUsuario: nombre || a.usuario,
@@ -39,7 +55,7 @@ exports.historial = async (req, res, next) => {
   try {
     const { desde, hasta, usuario, idUsuario, limit, page } = req.query || {};
     const data = await listarHistorial({ desde, hasta, usuario, idUsuario, limit, page });
-    const ids = [...new Set(data.items.map((i) => i.idUsuario).filter(Boolean))];
+    const ids = idsObjectIdValidos(data.items.map((i) => i.idUsuario));
     let map = new Map();
     if (ids.length) {
       const users = await Usuario.find({ _id: { $in: ids } })
@@ -54,7 +70,11 @@ exports.historial = async (req, res, next) => {
     }
     data.items = data.items.map((i) => ({
       ...i,
-      nombreUsuario: map.get(String(i.idUsuario)) || i.nombreUsuario || i.usuario,
+      nombreUsuario:
+        map.get(String(i.idUsuario)) ||
+        nombreUsuarioSintetico(i.idUsuario) ||
+        i.nombreUsuario ||
+        i.usuario,
     }));
     res.json(data);
   } catch (e) {
