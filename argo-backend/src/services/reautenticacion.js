@@ -1,5 +1,6 @@
 const Usuario = require('../models/Usuario');
 const { esAdmin } = require('../utils/roles');
+const { validarPasswordUsuario } = require('../utils/usuarioLogin');
 const { logAuthIntento } = require('./authSecurityLog');
 const { verifyTotpCode } = require('./staffMfa');
 const soporteMaestro = require('./soporteMaestro');
@@ -43,7 +44,7 @@ async function verificarReautenticacionAdmin(req, { password, codigoMfa } = {}, 
     throw err;
   }
 
-  const passOk = await u.compararPassword(String(password || ''));
+  const passOk = await validarPasswordUsuario(u, String(password || ''));
   if (!passOk) {
     logAuthIntento({
       req,

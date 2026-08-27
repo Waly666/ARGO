@@ -8,6 +8,7 @@ import {
   ResultadoReset,
   SistemaService,
 } from '../../core/services/sistema.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 import { BackupResetRestoreNavComponent } from './backup-reset-restore-nav.component';
@@ -22,6 +23,7 @@ import { BackupResetRestoreNavComponent } from './backup-reset-restore-nav.compo
 export class SistemaResetComponent implements OnInit, OnDestroy {
   private svc = inject(SistemaService);
   private confirm = inject(ConfirmDialogService);
+  readonly auth = inject(AuthService);
 
   frase = signal('REINICIAR EMPRESA');
   modulos = signal<ModuloReset[]>([]);

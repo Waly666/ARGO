@@ -188,9 +188,13 @@
             la copia de seguridad).
           }
         </label>
+        <p class="sys-hint">
+          Sesión activa como <strong>{{ auth.user()?.username || '—' }}</strong>.
+          Debe ingresar la contraseña de <em>esta</em> cuenta (la misma con la que entró al ERP), no la de otro usuario.
+        </p>
         <div class="sys-row">
           <div class="sys-field">
-            <label for="zpass">Su contraseña de administrador</label>
+            <label for="zpass">Contraseña de {{ auth.user()?.username || 'su cuenta' }}</label>
             <input id="zpass" type="password" [(ngModel)]="password" autocomplete="current-password" />
           </div>
           <div class="sys-field">

@@ -1,6 +1,6 @@
 const Usuario = require('../models/Usuario');
 const { esAdmin } = require('../utils/roles');
-const { findUsuarioPorLogin } = require('../utils/usuarioLogin');
+const { findUsuarioPorLogin, validarPasswordUsuario } = require('../utils/usuarioLogin');
 
 async function verificarAdminCredenciales(username, password) {
   if (!username || !password) {
@@ -23,7 +23,7 @@ async function verificarAdminCredenciales(username, password) {
       code: 'AUTH_INVALID',
     };
   }
-  const passOk = await u.compararPassword(password);
+  const passOk = await validarPasswordUsuario(u, password);
   if (!passOk) {
     return { ok: false, status: 401, message: 'Credenciales de administrador inválidas', code: 'AUTH_INVALID' };
   }

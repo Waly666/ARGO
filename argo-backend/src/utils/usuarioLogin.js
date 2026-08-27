@@ -47,6 +47,36 @@ async function findUsuarioPorLogin(login) {
   return u;
 }
 
+/**
+ * Valida contraseña con las mismas reglas que el login del ERP
+ * (hash bcrypt + equivalencias documento/nick/contraseña sugerida).
+ */
+async function validarPasswordUsuario(u, password) {
+  if (await u.compararPassword(password)) return true;
+
+  const digits = String(u.numeroDocumento ?? u.numero ?? '').replace(/\D/g, '');
+  const ult4 = digits.length >= 4 ? digits.slice(-4) : '';
+  const nick = String(u.nickName ?? '').trim();
+  const user = String(u.username ?? '').trim();
+
+  if (ult4 && password === nick && nick !== ult4) {
+    if (await u.compararPassword(ult4)) return true;
+  }
+  if (ult4 && password === ult4 && nick && nick !== ult4) {
+    if (await u.compararPassword(nick)) return true;
+  }
+  if (password === user && user !== ult4 && ult4) {
+    if (await u.compararPassword(ult4)) return true;
+  }
+
+  const sugerida = passwordSugeridoParaUsuario(u);
+  if (sugerida && sugerida !== password) {
+    if (await u.compararPassword(sugerida)) return true;
+  }
+
+  return false;
+}
+
 /** Contraseña legible para entregar al usuario (últimos 4 del doc, o nick, o username). */
 function passwordSugeridoParaUsuario(u) {
   const o = u?.toObject ? u.toObject() : u || {};
@@ -59,4 +89,9 @@ function passwordSugeridoParaUsuario(u) {
   return String(o.username ?? '').trim() || 'argo1';
 }
 
-module.exports = { findUsuarioPorLogin, passwordSugeridoParaUsuario, filtroActivo };
+module.exports = {
+  findUsuarioPorLogin,
+  passwordSugeridoParaUsuario,
+  validarPasswordUsuario,
+  filtroActivo,
+};
