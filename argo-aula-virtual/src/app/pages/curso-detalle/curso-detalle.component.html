@@ -121,88 +121,9 @@
                         }
                       }
                       @if (st.puedeEnviarSolicitud) {
-                        @if (!consignacionAbierta()) {
-                          <button type="button" class="detail-buy-btn detail-buy-btn--consignacion" (click)="abrirConsignacion()">
-                            Pagar por consignación (QR)
-                          </button>
-                        } @else {
-                          <div class="detail-consignacion">
-                            <div class="detail-consignacion-head">
-                              <strong>Pago por consignación</strong>
-                              <button type="button" class="detail-consignacion-close" (click)="cerrarConsignacion()">✕</button>
-                            </div>
-                            @if (!medioConsignacion()) {
-                              <p class="detail-consignacion-lead">
-                                {{ textoConsignacion('tituloElegirMedio', '¿Dónde va a consignar?') }}
-                              </p>
-                              <p class="detail-buy-hint">
-                                {{ textoConsignacion('instruccionesPago', 'Elija la cuenta, realice la transferencia por el valor del curso y registre su comprobante.') }}
-                              </p>
-                              <p class="detail-consignacion-monto">
-                                Valor a pagar: <strong>{{ fmtPrecio(ins.pago?.saldo ?? c.tarifaVirtual) }}</strong>
-                              </p>
-                              <div class="detail-consignacion-medios">
-                                @for (medio of st.medios; track medio.id) {
-                                  <button type="button" class="detail-consignacion-medio" (click)="elegirMedioConsignacion(medio)">
-                                    <span class="detail-consignacion-medio-nom">{{ medio.etiqueta }}</span>
-                                    @if (medio.bancoNombre) {
-                                      <span class="detail-consignacion-medio-banco">{{ medio.bancoNombre }}</span>
-                                    }
-                                    @if (medio.cuentaDescr) {
-                                      <span class="detail-consignacion-medio-cuenta">{{ medio.cuentaDescr }}</span>
-                                    }
-                                  </button>
-                                }
-                              </div>
-                            } @else {
-                              @if (medioConsignacion(); as medio) {
-                                <button type="button" class="detail-consignacion-back" (click)="volverMediosConsignacion()">
-                                  ← Elegir otra cuenta
-                                </button>
-                                <p class="detail-consignacion-medio-sel">
-                                  <strong>{{ medio.etiqueta }}</strong>
-                                  @if (medio.bancoNombre) {
-                                    <span> · {{ medio.bancoNombre }}</span>
-                                  }
-                                </p>
-                                @if (qrConsignacionUrl(medio.urlQr); as qr) {
-                                  <figure class="detail-consignacion-qr">
-                                    <img [src]="qr" [alt]="'QR ' + medio.etiqueta" width="420" height="420" />
-                                    <figcaption class="detail-consignacion-qr-hint">Escanee el código con la cámara de su celular</figcaption>
-                                  </figure>
-                                }
-                                @if (medio.instruccionesExtra) {
-                                  <p class="detail-buy-hint">{{ medio.instruccionesExtra }}</p>
-                                }
-                                <p class="detail-buy-hint">
-                                  {{ textoConsignacion('textoReferenciaSugerida', 'En el concepto incluya su documento y el nombre del curso.') }}
-                                </p>
-                                <label class="detail-consignacion-field">
-                                  <span>Referencia bancaria *</span>
-                                  <input
-                                    type="text"
-                                    [value]="referenciaConsignacion()"
-                                    (input)="referenciaConsignacion.set($any($event.target).value)"
-                                    placeholder="Número de aprobación o referencia"
-                                    maxlength="120"
-                                  />
-                                </label>
-                                <label class="detail-consignacion-field">
-                                  <span>Foto del comprobante *</span>
-                                  <input type="file" accept="image/*" (change)="onComprobanteConsignacion($event)" />
-                                </label>
-                                <button
-                                  type="button"
-                                  class="detail-buy-btn"
-                                  [disabled]="enviandoConsignacion()"
-                                  (click)="enviarSolicitudConsignacion()"
-                                >
-                                  {{ enviandoConsignacion() ? 'Enviando…' : 'Enviar comprobante' }}
-                                </button>
-                              }
-                            }
-                          </div>
-                        }
+                        <button type="button" class="detail-buy-btn detail-buy-btn--consignacion" (click)="abrirConsignacion()">
+                          Pagar por consignación (QR)
+                        </button>
                       }
                     }
                   }
@@ -307,6 +228,108 @@
         }
       </div>
     </section>
+
+    @if (consignacionAbierta() && consignacion(); as st) {
+      @if (inscripcion(); as ins) {
+        <div class="consignacion-modal" role="dialog" aria-modal="true" aria-labelledby="consignacion-modal-title">
+          <div class="consignacion-modal__backdrop" (click)="cerrarConsignacion()"></div>
+          <div class="consignacion-modal__panel" (click)="$event.stopPropagation()">
+            <header class="consignacion-modal__head">
+              <div>
+                <p class="consignacion-modal__eyebrow">Pago por consignación</p>
+                <h2 id="consignacion-modal-title" class="consignacion-modal__title">{{ c.nombreProg }}</h2>
+                <p class="consignacion-modal__monto">
+                  Valor a pagar: <strong>{{ fmtPrecio(ins.pago?.saldo ?? c.tarifaVirtual) }}</strong>
+                </p>
+              </div>
+              <button type="button" class="consignacion-modal__close" (click)="cerrarConsignacion()" aria-label="Cerrar">
+                ✕
+              </button>
+            </header>
+
+            <div class="consignacion-modal__body">
+              @if (msg()) {
+                <p class="consignacion-modal__msg">{{ msg() }}</p>
+              }
+
+              @if (!medioConsignacion()) {
+                <p class="detail-consignacion-lead">
+                  {{ textoConsignacion('tituloElegirMedio', '¿Dónde va a consignar?') }}
+                </p>
+                <p class="consignacion-modal__hint">
+                  {{ textoConsignacion('instruccionesPago', 'Elija la cuenta, realice la transferencia por el valor del curso y registre su comprobante.') }}
+                </p>
+                <div class="detail-consignacion-medios">
+                  @for (medio of st.medios; track medio.id) {
+                    <button type="button" class="detail-consignacion-medio" (click)="elegirMedioConsignacion(medio)">
+                      <span class="detail-consignacion-medio-nom">{{ medio.etiqueta }}</span>
+                      @if (medio.bancoNombre) {
+                        <span class="detail-consignacion-medio-banco">{{ medio.bancoNombre }}</span>
+                      }
+                      @if (medio.cuentaDescr) {
+                        <span class="detail-consignacion-medio-cuenta">{{ medio.cuentaDescr }}</span>
+                      }
+                    </button>
+                  }
+                </div>
+              } @else {
+                @if (medioConsignacion(); as medio) {
+                  <button type="button" class="detail-consignacion-back" (click)="volverMediosConsignacion()">
+                    ← Elegir otra cuenta
+                  </button>
+                  <p class="detail-consignacion-medio-sel">
+                    <strong>{{ medio.etiqueta }}</strong>
+                    @if (medio.bancoNombre) {
+                      <span> · {{ medio.bancoNombre }}</span>
+                    }
+                  </p>
+
+                  <div class="consignacion-modal__pago">
+                    @if (qrConsignacionUrl(medio.urlQr); as qr) {
+                      <figure class="detail-consignacion-qr consignacion-modal__qr">
+                        <img [src]="qr" [alt]="'QR ' + medio.etiqueta" width="480" height="480" />
+                        <figcaption class="detail-consignacion-qr-hint">Escanee el código con la cámara de su celular</figcaption>
+                      </figure>
+                    }
+
+                    <div class="consignacion-modal__form">
+                      @if (medio.instruccionesExtra) {
+                        <p class="consignacion-modal__hint">{{ medio.instruccionesExtra }}</p>
+                      }
+                      <p class="consignacion-modal__hint">
+                        {{ textoConsignacion('textoReferenciaSugerida', 'En el concepto incluya su documento y el nombre del curso.') }}
+                      </p>
+                      <label class="detail-consignacion-field">
+                        <span>Referencia bancaria *</span>
+                        <input
+                          type="text"
+                          [value]="referenciaConsignacion()"
+                          (input)="referenciaConsignacion.set($any($event.target).value)"
+                          placeholder="Número de aprobación o referencia"
+                          maxlength="120"
+                        />
+                      </label>
+                      <label class="detail-consignacion-field">
+                        <span>Foto del comprobante *</span>
+                        <input type="file" accept="image/*" (change)="onComprobanteConsignacion($event)" />
+                      </label>
+                      <button
+                        type="button"
+                        class="detail-buy-btn consignacion-modal__submit"
+                        [disabled]="enviandoConsignacion()"
+                        (click)="enviarSolicitudConsignacion()"
+                      >
+                        {{ enviandoConsignacion() ? 'Enviando…' : 'Enviar comprobante' }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+    }
   </div>
 }
 

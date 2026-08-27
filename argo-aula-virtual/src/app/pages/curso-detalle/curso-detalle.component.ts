@@ -141,6 +141,9 @@ export class CursoDetalleComponent implements OnInit {
     this.referenciaConsignacion.set('');
     this.archivoConsignacion.set(null);
     this.msg.set('');
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'hidden';
+    }
   }
 
   cerrarConsignacion() {
@@ -148,6 +151,9 @@ export class CursoDetalleComponent implements OnInit {
     this.medioConsignacion.set(null);
     this.referenciaConsignacion.set('');
     this.archivoConsignacion.set(null);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+    }
   }
 
   elegirMedioConsignacion(medio: MedioPagoConsignacionPublico) {
