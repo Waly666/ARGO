@@ -358,16 +358,41 @@
 }
 
 .detail-consignacion-qr {
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.75rem;
+  padding: 0.65rem;
   text-align: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
 
   img {
-    max-width: 100%;
-    width: min(240px, 100%);
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
     height: auto;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    border-radius: 6px;
     background: #fff;
+  }
+}
+
+.detail-consignacion-qr-hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .detail-consignacion-qr {
+    margin-inline: -0.35rem;
+    padding: 0.75rem;
+
+    img {
+      max-width: min(100%, 420px);
+    }
   }
 }
 

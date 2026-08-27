@@ -167,7 +167,8 @@
                                 </p>
                                 @if (qrConsignacionUrl(medio.urlQr); as qr) {
                                   <figure class="detail-consignacion-qr">
-                                    <img [src]="qr" [alt]="'QR ' + medio.etiqueta" />
+                                    <img [src]="qr" [alt]="'QR ' + medio.etiqueta" width="420" height="420" />
+                                    <figcaption class="detail-consignacion-qr-hint">Escanee el código con la cámara de su celular</figcaption>
                                   </figure>
                                 }
                                 @if (medio.instruccionesExtra) {
