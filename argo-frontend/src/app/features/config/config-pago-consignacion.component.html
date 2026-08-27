@@ -92,7 +92,11 @@
 
       <fieldset class="pas-block">
         <legend>Medios de pago (QR + cuenta)</legend>
-        <p class="hint">Cada medio es una opción que verá el alumno al elegir dónde consignar. Suba la imagen QR desde aquí.</p>
+        <p class="hint">
+          Cada medio es una opción que verá el alumno al elegir dónde consignar. Suba la imagen QR desde aquí.
+          Después de cambiar la <strong>cuenta bancaria</strong>, pulse <strong>Guardar configuración</strong>
+          (o suba el QR: también guarda la cuenta seleccionada en ese medio).
+        </p>
         <button type="button" class="pas-btn pas-btn--ghost" (click)="agregarMedio()">+ Agregar medio</button>
 
         @for (m of form().medios || []; track m.id) {
@@ -107,10 +111,11 @@
                 <select
                   [ngModel]="m.idCuentaBancaria"
                   (ngModelChange)="patchMedio(m.id, { idCuentaBancaria: $event })"
+                  [compareWith]="compareCuentaId"
                 >
                   <option value="">— Seleccione —</option>
-                  @for (c of cuentas(); track cuentaValor(c)) {
-                    <option [value]="cuentaValor(c)">{{ labelCuenta(c) }}</option>
+                  @for (c of cuentasParaSelect(); track cuentaTrack(c)) {
+                    <option [ngValue]="cuentaValor(c)">{{ labelCuenta(c) }}</option>
                   }
                 </select>
               </label>

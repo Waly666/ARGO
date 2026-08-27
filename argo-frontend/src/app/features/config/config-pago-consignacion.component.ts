@@ -79,11 +79,34 @@ export class ConfigPagoConsignacionComponent implements OnInit {
     const banco = String(c['banco'] || '').trim();
     const tipo = String(c['tipo'] || '').trim();
     const num = String(c['numCuenta'] ?? c['llave'] ?? '').trim();
-    return [banco, tipo, num].filter(Boolean).join(' — ') || 'Cuenta';
+    const id = this.cuentaValor(c);
+    const sufijo = id ? ` (#${id})` : '';
+    return ([banco, tipo, num].filter(Boolean).join(' — ') || 'Cuenta') + sufijo;
   }
 
   cuentaValor(c: Record<string, unknown>): string {
-    return String(c['idCuentaBancaria'] ?? c['idCuenta'] ?? c['_id'] ?? '');
+    const v = c['idCuentaBancaria'] ?? c['idCuenta'] ?? c['_id'];
+    return v != null && String(v).trim() !== '' ? String(v) : '';
+  }
+
+  cuentaTrack(c: Record<string, unknown>): string {
+    return String(c['_id'] ?? c['idCuentaBancaria'] ?? c['idCuenta'] ?? c['numCuenta'] ?? '');
+  }
+
+  cuentasParaSelect(): Record<string, unknown>[] {
+    const seen = new Set<string>();
+    const out: Record<string, unknown>[] = [];
+    for (const c of this.cuentas()) {
+      const v = this.cuentaValor(c);
+      if (!v || seen.has(v)) continue;
+      seen.add(v);
+      out.push(c);
+    }
+    return out;
+  }
+
+  compareCuentaId(a: string | number | null | undefined, b: string | number | null | undefined): boolean {
+    return String(a ?? '') === String(b ?? '');
   }
 
   qrUrl(rel?: string | null): string {
@@ -129,13 +152,21 @@ export class ConfigPagoConsignacionComponent implements OnInit {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    const medio = (this.form().medios || []).find((m) => m.id === medioId);
     this.uploadingMedio.set(medioId);
-    this.pasSvc.subirQrConsignacion(medioId, file).subscribe({
+    this.pasSvc
+      .subirQrConsignacion(medioId, file, {
+        idCuentaBancaria: medio?.idCuentaBancaria,
+        etiqueta: medio?.etiqueta,
+        instruccionesExtra: medio?.instruccionesExtra,
+        activo: medio?.activo,
+      })
+      .subscribe({
       next: (res) => {
         this.form.set(res.config);
         this.uploadingMedio.set(null);
         this.msgError.set(false);
-        this.msg.set('Imagen QR cargada.');
+        this.msg.set('Imagen QR cargada (cuenta y datos del medio guardados).');
         input.value = '';
       },
       error: (e) => {

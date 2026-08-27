@@ -117,12 +117,36 @@ async function resolverCuentaBancaria(idCuentaBancaria) {
   const id = String(idCuentaBancaria || '').trim();
   if (!id) return null;
   const n = Number(id);
-  return cat.cuentasBancarias
+
+  let cuenta = await cat.cuentasBancarias
     .findOne({
       $or: [
         { idCuentaBancaria: id },
-        ...(Number.isFinite(n) ? [{ idCuentaBancaria: n }, { idCuenta: n }] : []),
+        ...(Number.isFinite(n) ? [{ idCuentaBancaria: n }] : []),
+      ],
+    })
+    .lean();
+  if (cuenta) return cuenta;
+
+  cuenta = await cat.cuentasBancarias
+    .findOne({
+      $or: [
         { idCuenta: id },
+        ...(Number.isFinite(n) ? [{ idCuenta: n }] : []),
+      ],
+    })
+    .lean();
+  if (cuenta) return cuenta;
+
+  if (/^[a-f0-9]{24}$/i.test(id)) {
+    cuenta = await cat.cuentasBancarias.findById(id).lean();
+    if (cuenta) return cuenta;
+  }
+
+  // Compatibilidad: configs antiguas guardaban el número de cuenta.
+  return cat.cuentasBancarias
+    .findOne({
+      $or: [
         { numCuenta: id },
         ...(Number.isFinite(n) ? [{ numCuenta: n }] : []),
       ],
@@ -215,7 +239,7 @@ async function assertConsignacionActiva() {
   return cfg;
 }
 
-async function actualizarQrMedio(medioId, urlQr) {
+async function actualizarQrMedio(medioId, urlQr, patch = {}) {
   const cfg = await obtenerConfigPagoConsignacion();
   const idx = cfg.medios.findIndex((m) => m.id === medioId);
   if (idx < 0) {
@@ -223,7 +247,15 @@ async function actualizarQrMedio(medioId, urlQr) {
     err.status = 404;
     throw err;
   }
-  cfg.medios[idx].urlQr = String(urlQr || '').trim();
+  const merged = {
+    ...cfg.medios[idx],
+    ...patch,
+    urlQr: String(urlQr || '').trim(),
+  };
+  if (patch.activo != null) {
+    merged.activo = patch.activo !== false && patch.activo !== 'false';
+  }
+  cfg.medios[idx] = normalizarMedio(merged, idx);
   return guardarConfigPagoConsignacion(cfg);
 }
 

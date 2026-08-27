@@ -185,9 +185,17 @@ export class PasarelaService {
     return this.http.put<ConfigPagoConsignacion>(`${this.base}/consignacion/config`, dto);
   }
 
-  subirQrConsignacion(medioId: string, file: File): Observable<{ config: ConfigPagoConsignacion; urlQr: string }> {
+  subirQrConsignacion(
+    medioId: string,
+    file: File,
+    medio?: Pick<MedioPagoConsignacion, 'idCuentaBancaria' | 'etiqueta' | 'instruccionesExtra' | 'activo'>,
+  ): Observable<{ config: ConfigPagoConsignacion; urlQr: string }> {
     const fd = new FormData();
     fd.append('qr', file);
+    if (medio?.idCuentaBancaria != null) fd.append('idCuentaBancaria', String(medio.idCuentaBancaria));
+    if (medio?.etiqueta != null) fd.append('etiqueta', medio.etiqueta);
+    if (medio?.instruccionesExtra != null) fd.append('instruccionesExtra', medio.instruccionesExtra);
+    if (medio?.activo != null) fd.append('activo', medio.activo ? 'true' : 'false');
     return this.http.post<{ config: ConfigPagoConsignacion; urlQr: string }>(
       `${this.base}/consignacion/medios/${encodeURIComponent(medioId)}/qr`,
       fd,
