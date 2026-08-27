@@ -45,6 +45,10 @@ const { detectarIndexHtml, paqueteListo, listarEntradasPaquete } = require('../s
 const CapacitacionVirtualConfig = require('../models/CapacitacionVirtualConfig');
 const { matricularVirtual } = require('../services/aulaVirtualMatricula');
 const { listarProgresoAlumnosAdmin, listarProgresoAlumnoAdmin } = require('../services/aulaVirtualProgresoAdmin');
+const {
+  anularMatriculaVirtualAdmin,
+  reiniciarProgresoVirtualAdmin,
+} = require('../services/aulaVirtualGestionMatricula');
 
 async function persistirStoragePrefix(idPrograma, abs, indexRel, user) {
   const storagePrefix = detectarStoragePrefix(abs, indexRel);
@@ -725,6 +729,36 @@ exports.listarProgresoAlumno = async (req, res, next) => {
   try {
     const ctx = req.sedeId ? { idSede: req.sedeId } : {};
     res.json(await listarProgresoAlumnoAdmin(req.params.numDoc, req.query, ctx));
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.reiniciarProgresoAlumnoCurso = async (req, res, next) => {
+  try {
+    const r = await reiniciarProgresoVirtualAdmin({
+      numDoc: req.params.numDoc,
+      idPrograma: req.params.idPrograma,
+    });
+    res.json(r);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.anularMatriculaAlumnoCurso = async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const r = await anularMatriculaVirtualAdmin({
+      numDoc: req.params.numDoc,
+      idPrograma: req.params.idPrograma,
+      usuario: req.user,
+      motivo: body.motivo,
+      enviarCorreo: body.enviarCorreo === true || body.enviarCorreo === 'true',
+    });
+    res.json(r);
   } catch (e) {
     if (e.status) return res.status(e.status).json({ message: e.message });
     next(e);

@@ -165,6 +165,18 @@ router.delete('/admin/cursos/:id/materiales/:materialId', requireAuth, gestionar
 router.post('/admin/cursos/:id/matricular', requireAuth, gestionar, admin.matricularAlumnoCurso);
 router.get('/admin/cursos/:id/progreso-alumnos', requireAuth, ver, admin.listarProgresoAlumnos);
 router.get('/admin/alumnos/:numDoc/progreso-cursos', requireAuth, ver, admin.listarProgresoAlumno);
+router.post(
+  '/admin/alumnos/:numDoc/cursos/:idPrograma/reiniciar-progreso',
+  requireAuth,
+  gestionar,
+  admin.reiniciarProgresoAlumnoCurso,
+);
+router.post(
+  '/admin/alumnos/:numDoc/cursos/:idPrograma/anular-matricula',
+  requireAuth,
+  gestionar,
+  admin.anularMatriculaAlumnoCurso,
+);
 router.post('/admin/cursos/:id/reintegrar-bridge', requireAuth, gestionar, admin.reintegrarBridge);
 
 router.get('/admin/portal', requireAuth, configPortal, admin.obtenerConfigPortal);

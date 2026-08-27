@@ -246,6 +246,16 @@ export interface ProgresoAlumnosVirtualRes {
   } | null;
 }
 
+export interface GestionMatriculaVirtualRes {
+  ok: boolean;
+  message: string;
+  numDoc?: number | string;
+  idPrograma?: string;
+  nombrePrograma?: string;
+  progresoEliminado?: boolean;
+  idMatricula?: string;
+}
+
 /** Payload al guardar curso: config virtual + ficha comercial editable. */
 export interface GuardarCursoVirtualBody extends Partial<VirtualConfig> {
   descripcionVirtual?: string | null;
@@ -549,6 +559,27 @@ export class AulaVirtualAdminService {
     const qs = sp.toString();
     return this.http.get<ProgresoAlumnosVirtualRes>(
       `${this.base}/alumnos/${encodeURIComponent(String(numDoc))}/progreso-cursos${qs ? `?${qs}` : ''}`,
+    );
+  }
+
+  reiniciarProgresoAlumnoCurso(
+    numDoc: string | number,
+    idPrograma: string | number,
+  ): Observable<GestionMatriculaVirtualRes> {
+    return this.http.post<GestionMatriculaVirtualRes>(
+      `${this.base}/alumnos/${encodeURIComponent(String(numDoc))}/cursos/${encodeURIComponent(String(idPrograma))}/reiniciar-progreso`,
+      {},
+    );
+  }
+
+  anularMatriculaAlumnoCurso(
+    numDoc: string | number,
+    idPrograma: string | number,
+    body?: { motivo?: string; enviarCorreo?: boolean },
+  ): Observable<GestionMatriculaVirtualRes> {
+    return this.http.post<GestionMatriculaVirtualRes>(
+      `${this.base}/alumnos/${encodeURIComponent(String(numDoc))}/cursos/${encodeURIComponent(String(idPrograma))}/anular-matricula`,
+      body || {},
     );
   }
 

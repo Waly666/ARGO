@@ -61,6 +61,10 @@
     <p class="av-banner av-banner--err">{{ error() }}</p>
   }
 
+  @if (msgAccion(); as aviso) {
+    <p class="av-banner" [class.av-banner--err]="msgAccionError()" role="status">{{ aviso }}</p>
+  }
+
   @if (loading() && !items().length) {
     <p class="av-muted">Cargando progreso…</p>
   } @else if (!items().length) {
@@ -323,6 +327,24 @@
                   }
                   @if (cursoLink(row); as clink) {
                     <a [routerLink]="clink" [queryParams]="cursoQuery(row)" class="av-dash-link" (click)="$event.stopPropagation()">Ver curso en aula virtual →</a>
+                  }
+                  @if (puedeGestionar()) {
+                    <div class="av-dash-admin-actions" (click)="$event.stopPropagation()">
+                      <button
+                        type="button"
+                        class="av-btn av-btn--ghost av-btn--sm"
+                        [disabled]="estaAccionando(row)"
+                        (click)="reiniciarProgreso(row, $event)">
+                        {{ estaAccionando(row) ? 'Procesando…' : 'Reiniciar progreso' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="av-btn av-btn--danger av-btn--sm"
+                        [disabled]="estaAccionando(row)"
+                        (click)="anularMatricula(row, $event)">
+                        Anular matrícula
+                      </button>
+                    </div>
                   }
                 </section>
               </div>

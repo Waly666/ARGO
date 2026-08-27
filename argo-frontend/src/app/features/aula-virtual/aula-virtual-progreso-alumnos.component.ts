@@ -10,6 +10,8 @@ import {
   ProgresoAlumnoVirtualItem,
 } from '../../core/services/aula-virtual-admin.service';
 import { formatNumDoc } from '../../core/utils/num-doc.helpers';
+import { PermisoService } from '../../core/services/permiso.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 type ReglasCurso = {
   modoCertificado: string;
@@ -27,6 +29,8 @@ type ReglasCurso = {
 })
 export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   private svc = inject(AulaVirtualAdminService);
+  private permisos = inject(PermisoService);
+  private confirm = inject(ConfirmDialogService);
 
   /** Curso concreto (vista desde ficha del curso). */
   @Input() idPrograma?: string;
@@ -47,6 +51,13 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
   buscar = '';
   filtro = '';
   expandido = signal<string | null>(null);
+  accionando = signal<string | null>(null);
+  msgAccion = signal<string | null>(null);
+  msgAccionError = signal(false);
+
+  puedeGestionar(): boolean {
+    return this.permisos.tiene('aula_virtual.gestionar');
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['idPrograma'] || changes['numDoc'] || changes['modoAlumno'] || changes['reloadTick']) {
@@ -358,5 +369,104 @@ export class AulaVirtualProgresoAlumnosComponent implements OnChanges {
 
   alumnoInactivo(row: ProgresoAlumnoVirtualItem): boolean {
     return !!(row.progreso?.sinIniciar && this.pct(row) <= 0);
+  }
+
+  docFila(row: ProgresoAlumnoVirtualItem): string {
+    return String(row.numDoc ?? this.numDoc ?? '');
+  }
+
+  idCursoFila(row: ProgresoAlumnoVirtualItem): string {
+    return String(row.idPrograma ?? this.idPrograma ?? '');
+  }
+
+  nombreCursoFila(row: ProgresoAlumnoVirtualItem): string {
+    return row.nombrePrograma || this.idCursoFila(row) || 'curso virtual';
+  }
+
+  estaAccionando(row: ProgresoAlumnoVirtualItem): boolean {
+    return this.accionando() === this.trackRow(row);
+  }
+
+  private avisoCertificado(row: ProgresoAlumnoVirtualItem): string {
+    if (!row.progreso?.certificadoEmitido && !row.certificado?.codigoCert) return '';
+    const cod = row.certificado?.codigoCert ? ` (${row.certificado.codigoCert})` : '';
+    return ` Este alumno ya tiene certificado emitido${cod}; el documento en archivo no se borra automáticamente.`;
+  }
+
+  async reiniciarProgreso(row: ProgresoAlumnoVirtualItem, ev?: Event): Promise<void> {
+    ev?.stopPropagation();
+    if (!this.puedeGestionar() || this.estaAccionando(row)) return;
+
+    const nd = this.docFila(row);
+    const idProg = this.idCursoFila(row);
+    if (!nd || !idProg) return;
+
+    const ok = await this.confirm.open({
+      title: 'Reiniciar progreso',
+      message:
+        `Se borrará el avance, notas e intentos de «${this.nombreCursoFila(row)}» para el documento ${this.fmtDoc(nd)}. ` +
+        'La matrícula y el saldo (si existe) se conservan.' +
+        this.avisoCertificado(row) +
+        ' ¿Continuar?',
+      variant: 'danger',
+      confirmLabel: 'Sí, reiniciar progreso',
+    });
+    if (!ok) return;
+
+    const key = this.trackRow(row);
+    this.accionando.set(key);
+    this.msgAccion.set(null);
+    this.svc.reiniciarProgresoAlumnoCurso(nd, idProg).subscribe({
+      next: (r) => {
+        this.accionando.set(null);
+        this.msgAccionError.set(false);
+        this.msgAccion.set(r.message || 'Progreso reiniciado.');
+        this.cargar();
+      },
+      error: (e) => {
+        this.accionando.set(null);
+        this.msgAccionError.set(true);
+        this.msgAccion.set(e?.error?.message || 'No se pudo reiniciar el progreso.');
+      },
+    });
+  }
+
+  async anularMatricula(row: ProgresoAlumnoVirtualItem, ev?: Event): Promise<void> {
+    ev?.stopPropagation();
+    if (!this.puedeGestionar() || this.estaAccionando(row)) return;
+
+    const nd = this.docFila(row);
+    const idProg = this.idCursoFila(row);
+    if (!nd || !idProg) return;
+
+    const ok = await this.confirm.open({
+      title: 'Anular matrícula virtual',
+      message:
+        `Se anulará la matrícula en «${this.nombreCursoFila(row)}» para el documento ${this.fmtDoc(nd)}. ` +
+        'El alumno dejará de ver el curso en el portal y se borrará su progreso.' +
+        (row.pago?.pagado ? ' El pago registrado se conserva en contabilidad.' : '') +
+        this.avisoCertificado(row) +
+        ' ¿Continuar?',
+      variant: 'danger',
+      confirmLabel: 'Sí, anular matrícula',
+    });
+    if (!ok) return;
+
+    const key = this.trackRow(row);
+    this.accionando.set(key);
+    this.msgAccion.set(null);
+    this.svc.anularMatriculaAlumnoCurso(nd, idProg).subscribe({
+      next: (r) => {
+        this.accionando.set(null);
+        this.msgAccionError.set(false);
+        this.msgAccion.set(r.message || 'Matrícula anulada.');
+        this.cargar();
+      },
+      error: (e) => {
+        this.accionando.set(null);
+        this.msgAccionError.set(true);
+        this.msgAccion.set(e?.error?.message || 'No se pudo anular la matrícula.');
+      },
+    });
   }
 }

@@ -96,7 +96,13 @@ async function resolverEmailAlumno(numDoc, alumno) {
   return mail || null;
 }
 
-async function expirarAccesoVirtual({ numDoc, idPrograma, matricula, enviarCorreo = true }) {
+async function expirarAccesoVirtual({
+  numDoc,
+  idPrograma,
+  matricula,
+  enviarCorreo = true,
+  motivo = 'Acceso sin pago expirado — aula virtual',
+}) {
   const idProg = String(idPrograma);
   const mat =
     matricula ||
@@ -117,8 +123,8 @@ async function expirarAccesoVirtual({ numDoc, idPrograma, matricula, enviarCorre
         estado: 'anulada',
         observaciones: String(mat.observaciones || '')
           .trim()
-          ? `${String(mat.observaciones).trim()} · Acceso sin pago expirado`
-          : 'Acceso sin pago expirado — aula virtual',
+          ? `${String(mat.observaciones).trim()} · ${motivo}`
+          : motivo,
       },
     },
   );
