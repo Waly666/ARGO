@@ -43,12 +43,20 @@ const MODULOS_RESET = [
   },
   {
     id: 'programacion_cea',
-    etiqueta: 'Programación CEA y jornadas',
+    etiqueta: 'Programación CEA',
     descripcion:
-      'Clases CEA, jornadas de capacitación con empresas, contratos de contratación, encuestas de satisfacción, supervisores, temarios y registros web pendientes.',
+      'Clases programadas CEA (práctica y grupo), inscripciones a esas clases y temarios por programa.',
+    colecciones: ['clasesProgramadasCea', 'inscripcionesClaseCea', 'temasProgramaCea'],
+    advertencias: [
+      'No borra alumnos ni matrículas; si conserva Académico pueden quedar referencias a clases eliminadas.',
+    ],
+  },
+  {
+    id: 'jornadas_capacitacion',
+    etiqueta: 'Jornadas de capacitación',
+    descripcion:
+      'Contratos con empresas, jornadas en campo, clases, asistencias, encuestas de satisfacción, supervisores y registros web pendientes.',
     colecciones: [
-      'clasesProgramadasCea',
-      'inscripcionesClaseCea',
       'contratacion',
       'jornadasCap',
       'clasesJornadaCap',
@@ -56,8 +64,11 @@ const MODULOS_RESET = [
       'encuestasJornadaCap',
       'respuestasEncuestaJornada',
       'supervisores',
-      'temasProgramaCea',
       'registroJornadaPendiente',
+    ],
+    advertencias: [
+      'No borra alumnos ni el catálogo de clientes/empresas; pueden quedar vínculos en fichas de alumno.',
+      'Los certificados emitidos por jornadas están en el módulo Académico; bórrelos aparte si los necesita en cero.',
     ],
   },
   {
@@ -155,9 +166,21 @@ const MODULOS_RESET = [
     especial: 'usuarios',
   },
   {
+    id: 'consecutivos',
+    etiqueta: 'Consecutivos de numeración',
+    descripcion:
+      'Reinicia a 0 los contadores de facturas, comprobantes de caja, cuentas de cobro, certificados e inspecciones de vehículos. No cambia prefijos, textos ni el resto de la configuración.',
+    especial: 'consecutivos',
+    advertencias: [
+      'Los documentos ya emitidos conservan su número; solo cambia el siguiente consecutivo.',
+      'Si necesita continuar desde un número distinto de 0, use Configuración → Comprobantes de caja o Formato inspección vehículos.',
+    ],
+  },
+  {
     id: 'config_sistema',
-    etiqueta: 'Configuración y consecutivos',
-    descripcion: 'Reinicia configuración de empresa, roles del sistema y consecutivos (recibos, facturas, certificados…) a valores de fábrica.',
+    etiqueta: 'Configuración del sistema',
+    descripcion:
+      'Reinicia configuración de empresa, roles del sistema y ajustes de fábrica (incluye consecutivos en 0). No borra alumnos ni movimientos de caja.',
     especial: 'config',
   },
   {
@@ -194,7 +217,7 @@ function planReset(modulos) {
       completo: true,
       modulos: ['completo'],
       colecciones: null,
-      flags: { usuarios: true, config: true, uploads: true, sedePrincipal: true },
+      flags: { usuarios: true, config: true, consecutivos: true, uploads: true, sedePrincipal: true },
     };
   }
 
@@ -218,6 +241,7 @@ function planReset(modulos) {
     flags: {
       usuarios: ids.includes('usuarios_personal'),
       config: ids.includes('config_sistema'),
+      consecutivos: ids.includes('consecutivos'),
       uploads: false,
       sedePrincipal: ids.includes('config_sistema') || ids.includes('catalogos_operacion'),
     },

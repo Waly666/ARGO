@@ -52,6 +52,12 @@ export class SistemaResetComponent implements OnInit, OnDestroy {
     if (!this.modoCompleto() && ids.has('academico') && !ids.has('contable')) {
       avisos.push('Académico sin Contable: las matrículas conservarán saldos históricos.');
     }
+    if (!this.modoCompleto() && ids.has('jornadas_capacitacion') && !ids.has('academico')) {
+      avisos.push('Jornadas sin Académico: los certificados de jornada emitidos se conservan.');
+    }
+    if (!this.modoCompleto() && ids.has('programacion_cea') && !ids.has('academico')) {
+      avisos.push('Programación CEA sin Académico: los alumnos y matrículas se conservan.');
+    }
     return [...new Set(avisos)];
   });
 

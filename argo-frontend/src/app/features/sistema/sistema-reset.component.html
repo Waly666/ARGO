@@ -54,6 +54,12 @@
         @if (r.tipoReset === 'parcial' && r.modulos?.length) {
           <p class="sys-hint">Módulos reseteados: <strong>{{ etiquetasModulos(r.modulos) }}</strong></p>
         }
+        @if (r.consecutivosReiniciados?.actualizados?.length) {
+          <p class="sys-hint">
+            Consecutivos reiniciados a 0 en:
+            <strong>{{ r.consecutivosReiniciados!.actualizados.join(', ') }}</strong>
+          </p>
+        }
         <div class="sys-resumen">
           <div class="sys-resumen-item">
             <div class="num">{{ r.coleccionesLimpiadas }}</div>
@@ -125,9 +131,9 @@
             <ul>
               <li>Programas, servicios, sedes, aulas, temarios y clases programadas.</li>
               <li>Alumnos, matrículas, liquidaciones, pagos, recibos y egresos.</li>
-              <li>Certificados, caja, facturación, nómina, vehículos y programación CEA.</li>
+              <li>Certificados, caja, facturación, nómina, vehículos, programación CEA y jornadas de capacitación.</li>
               <li>Usuarios del personal, portal de alumnos y archivos subidos.</li>
-              <li>Configuración y consecutivos vuelven a 0.</li>
+              <li>Configuración del sistema y consecutivos vuelven a 0.</li>
             </ul>
           </div>
         </div>
@@ -163,7 +169,7 @@
           }
           <p class="sys-hint">
             En reset parcial no se eliminan archivos subidos ni se reinician consecutivos, salvo que
-            incluya «Configuración y consecutivos».
+            marque «Consecutivos de numeración» o «Configuración del sistema».
           </p>
         </div>
       </section>

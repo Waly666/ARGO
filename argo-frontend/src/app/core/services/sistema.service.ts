@@ -95,6 +95,11 @@ export interface ResultadoReset {
   tipoReset?: 'completo' | 'parcial';
   modulos?: string[];
   mensaje?: string;
+  consecutivosReiniciados?: {
+    actualizados: string[];
+    sinDocumento?: string[];
+    campos?: string[];
+  };
 }
 
 export interface ProgresoOperacion {

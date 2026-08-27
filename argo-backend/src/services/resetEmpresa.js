@@ -105,6 +105,7 @@ async function ejecutarResetEmpresa(req, adminDoc) {
   }
 
   let usuariosEliminados = 0;
+  let consecutivosReiniciados = null;
   if (plan.flags.usuarios) {
     usuariosEliminados = await limpiarUsuariosExceptoAdmin(db, adminDoc);
   }
@@ -112,6 +113,10 @@ async function ejecutarResetEmpresa(req, adminDoc) {
   if (plan.flags.config) {
     await reinicializarConfigSistema();
     limpiadas.push('config', 'roles_app');
+  } else if (plan.flags.consecutivos) {
+    progreso.fase('Reiniciando consecutivos de numeración…', { total: 0 });
+    const { reiniciarConsecutivosEmpresa } = require('./reiniciarConsecutivos');
+    consecutivosReiniciados = await reiniciarConsecutivosEmpresa();
   }
 
   if (plan.completo || plan.flags.sedePrincipal) {
@@ -146,12 +151,15 @@ async function ejecutarResetEmpresa(req, adminDoc) {
       coleccionesConservadas: conservadas,
       usuariosEliminados,
       carpetasUploadsEliminadas,
+      consecutivosReiniciados,
     },
   });
 
   const msgFin = plan.completo
     ? `Puesta en cero completada: ${limpiadas.length} tablas en cero, ${conservadas.length} catálogos conservados.`
-    : `Reset parcial completado: ${limpiadas.length} tablas limpiadas (${plan.modulos.length} módulos).`;
+    : consecutivosReiniciados && limpiadas.length === 0
+      ? 'Consecutivos de numeración reiniciados a 0 (sin borrar tablas).'
+      : `Reset parcial completado: ${limpiadas.length} tablas limpiadas (${plan.modulos.length} módulos).`;
 
   progreso.finalizar('ok', msgFin);
 
@@ -162,6 +170,7 @@ async function ejecutarResetEmpresa(req, adminDoc) {
     coleccionesLimpiadas: limpiadas.length,
     coleccionesConservadas: conservadas.length,
     usuariosEliminados,
+    consecutivosReiniciados,
     detalle: { limpiadas, conservadas },
   };
 }
