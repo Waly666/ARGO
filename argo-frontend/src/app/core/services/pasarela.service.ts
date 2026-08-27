@@ -188,7 +188,7 @@ export class PasarelaService {
   subirQrConsignacion(
     medioId: string,
     file: File,
-    medio?: Pick<MedioPagoConsignacion, 'idCuentaBancaria' | 'etiqueta' | 'instruccionesExtra' | 'activo'>,
+    medio?: Partial<Pick<MedioPagoConsignacion, 'idCuentaBancaria' | 'etiqueta' | 'instruccionesExtra' | 'activo'>>,
   ): Observable<{ config: ConfigPagoConsignacion; urlQr: string }> {
     const fd = new FormData();
     fd.append('qr', file);
