@@ -214,6 +214,19 @@ export class CursoDetalleComponent implements OnInit {
     return this.consignacion()?.textos?.[clave] || fallback;
   }
 
+  pasoConsignacion(): 1 | 2 {
+    return this.medioConsignacion() ? 2 : 1;
+  }
+
+  iconoMedioConsignacion(etiqueta?: string | null): string {
+    const t = String(etiqueta || '').toLowerCase();
+    if (t.includes('nequi')) return 'N';
+    if (t.includes('davi')) return 'D';
+    if (t.includes('bancolombia') || t.includes('banco')) return 'B';
+    if (t.includes('pse')) return 'P';
+    return '$';
+  }
+
 
 
   matricular() {
