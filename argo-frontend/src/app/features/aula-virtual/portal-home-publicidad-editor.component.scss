@@ -1,0 +1,59 @@
+@use './portal-site-editor-shared';
+
+.phpe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.phpe-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(6, 16, 41, 0.35);
+
+  &--empty {
+    border-style: dashed;
+    justify-content: center;
+    min-height: 220px;
+  }
+}
+
+.phpe-thumb {
+  margin: 0;
+  aspect-ratio: 21 / 10;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: rgba(15, 23, 42, 0.75);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.phpe-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+
+  span {
+    font-weight: 600;
+    color: var(--text);
+  }
+}
+
+.phpe-upload {
+  @include portal-site-editor-shared.portal-editor-btn-file;
+  align-self: center;
+}

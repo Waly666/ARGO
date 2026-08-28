@@ -433,6 +433,26 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenCursosConduccionPublicidadPortal(
+    file: File,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-publicidad`,
+      fd,
+    );
+  }
+
+  eliminarImagenCursosConduccionPublicidadPortal(
+    url: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/cursos-conduccion-publicidad`,
+      { body: { url } },
+    );
+  }
+
   subirImagenPopupPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
     const fd = new FormData();
     fd.append('imagen', file);
@@ -660,6 +680,22 @@ export class AulaVirtualAdminService {
   eliminarImagenHomeFotoPortal(url: string): Observable<{ config: PortalAulaConfig; message: string }> {
     return this.http.delete<{ config: PortalAulaConfig; message: string }>(
       `${this.base}/portal/home-fotos`,
+      { body: { url } },
+    );
+  }
+
+  subirImagenHomePublicidadPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/home-publicidad`,
+      fd,
+    );
+  }
+
+  eliminarImagenHomePublicidadPortal(url: string): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/home-publicidad`,
       { body: { url } },
     );
   }

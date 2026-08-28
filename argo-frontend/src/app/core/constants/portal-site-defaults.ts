@@ -64,6 +64,7 @@ export { PORTAL_FUENTES } from '../utils/portal-fonts.util';
 export const PORTAL_HOME_SECCIONES_ORDEN = [
   'instBar',
   'hero',
+  'publicidadInicio',
   'infoCards',
   'ofertas',
   'beneficios',
@@ -85,6 +86,7 @@ export const PORTAL_HOME_SECCIONES_ORDEN = [
 export const PORTAL_HOME_SECCIONES_LABELS: Record<string, string> = {
   instBar: 'Barra institucional',
   hero: 'Banner principal (hero)',
+  publicidadInicio: 'Carrusel de publicidad',
   infoCards: 'Tarjetas de contacto',
   ofertas: 'Qué ofrecemos',
   beneficios: 'Beneficios',

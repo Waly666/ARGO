@@ -60,6 +60,76 @@
       </label>
     </div>
 
+    <h3 class="psb-subtitle">Carrusel de publicidad (debajo del encabezado)</h3>
+    <div class="pcc-card">
+      <p class="psb-hint">
+        Hasta {{ maxPublicidad }} imágenes PNG de publicidad. Aparecen en el sitio entre el encabezado y el bloque motivacional.
+        El texto y los botones van diseñados dentro del PNG. Las imágenes se suben al instante; alt, enlace y ajustes se guardan al publicar.
+      </p>
+      <label class="psb-field psb-field--plain">
+        <span>
+          <input type="checkbox" [(ngModel)]="cursosConduccion.publicidad.activo" />
+          Mostrar carrusel en el sitio
+        </span>
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Segundos entre diapositivas</span>
+        <input
+          type="number"
+          class="psb-input"
+          min="3"
+          max="30"
+          [(ngModel)]="cursosConduccion.publicidad.intervaloSegundos"
+        />
+      </label>
+
+      <div class="pcc-pub-grid">
+        @for (slide of cursosConduccion.publicidad.slides; track slide.url; let i = $index) {
+          <article class="pcc-pub-slot">
+            @if (publicidadPreviewUrl(slide); as imgUrl) {
+              <figure class="pcc-pub-thumb">
+                <img [src]="imgUrl" [alt]="slide.alt || 'Publicidad ' + (i + 1)" loading="lazy" />
+              </figure>
+            }
+            <label class="psb-field psb-field--plain">
+              <span>Texto alternativo</span>
+              <input type="text" class="psb-input" [(ngModel)]="slide.alt" placeholder="Publicidad" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Enlace al hacer clic (opcional)</span>
+              <input type="text" class="psb-input" [(ngModel)]="slide.enlace" placeholder="https://..." />
+            </label>
+            <button
+              type="button"
+              class="psb-link"
+              [disabled]="publicidadUploading()"
+              (click)="quitarPublicidadSlide(slide)"
+            >
+              Quitar imagen
+            </button>
+          </article>
+        }
+
+        @if (puedeAgregarPublicidad()) {
+          <article class="pcc-pub-slot pcc-pub-slot--empty">
+            <div class="pcc-pub-placeholder">
+              <span>Imagen {{ totalPublicidad() + 1 }}</span>
+              <p>PNG recomendado, formato horizontal (21:8)</p>
+            </div>
+            <label class="pcc-btn-file" [class.pcc-btn-file--busy]="publicidadUploading()">
+              {{ publicidadUploading() ? 'Subiendo…' : 'Elegir PNG' }}
+              <input
+                type="file"
+                accept="image/png"
+                [disabled]="publicidadUploading()"
+                (change)="onPublicidadImagen($event)"
+              />
+            </label>
+          </article>
+        }
+      </div>
+    </div>
+
     <h3 class="psb-subtitle">Bloque motivacional (después del encabezado)</h3>
     <div class="pcc-card">
       <label class="psb-field psb-field--plain">

@@ -112,6 +112,12 @@ const LICENCIAS_DEFAULTS = {
   ],
 };
 
+const PUBLICIDAD_DEFAULTS = {
+  activo: true,
+  intervaloSegundos: 5,
+  slides: [],
+};
+
 const CURSOS_CONDUCCION_DEFAULTS = {
   hero: {
     kicker: 'Cursos de conducción',
@@ -127,6 +133,7 @@ const CURSOS_CONDUCCION_DEFAULTS = {
   ],
   invitacion: JSON.parse(JSON.stringify(INVITACION_DEFAULTS)),
   licencias: JSON.parse(JSON.stringify(LICENCIAS_DEFAULTS)),
+  publicidad: JSON.parse(JSON.stringify(PUBLICIDAD_DEFAULTS)),
 };
 
-module.exports = { CURSOS_CONDUCCION_DEFAULTS, INVITACION_DEFAULTS };
+module.exports = { CURSOS_CONDUCCION_DEFAULTS, INVITACION_DEFAULTS, PUBLICIDAD_DEFAULTS };

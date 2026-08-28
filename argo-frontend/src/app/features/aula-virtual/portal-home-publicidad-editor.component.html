@@ -1,0 +1,66 @@
+<section class="phpe">
+  <p class="psb-muted">
+    Carrusel de publicidad en la página principal (debajo del banner). Hasta {{ maxSlides }} imágenes PNG.
+    Active o desactive el bloque en
+    <strong>Bloques del inicio</strong>. Las imágenes se suben al instante; alt, enlace y segundos se guardan al publicar.
+  </p>
+
+  <label class="psb-field psb-field--plain">
+    <span>
+      <input type="checkbox" [(ngModel)]="publicidadInicio.activo" />
+      Mostrar carrusel en el inicio
+    </span>
+  </label>
+
+  <label class="psb-field psb-field--plain">
+    <span>Segundos entre diapositivas</span>
+    <input
+      type="number"
+      class="psb-input"
+      min="3"
+      max="30"
+      [(ngModel)]="publicidadInicio.intervaloSegundos"
+    />
+  </label>
+
+  <div class="phpe-grid">
+    @for (slide of publicidadInicio.slides; track slide.url; let i = $index) {
+      <article class="phpe-slot">
+        @if (previewUrl(slide); as imgUrl) {
+          <figure class="phpe-thumb">
+            <img [src]="imgUrl" [alt]="slide.alt || 'Publicidad ' + (i + 1)" loading="lazy" />
+          </figure>
+        }
+        <label class="psb-field psb-field--plain">
+          <span>Texto alternativo</span>
+          <input type="text" class="psb-input" [(ngModel)]="slide.alt" placeholder="Publicidad" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Enlace al hacer clic (opcional)</span>
+          <input type="text" class="psb-input" [(ngModel)]="slide.enlace" placeholder="https://..." />
+        </label>
+        <button type="button" class="psb-link" [disabled]="uploading()" (click)="confirmarEliminar(slide)">
+          Quitar imagen
+        </button>
+      </article>
+    }
+
+    @if (puedeAgregar()) {
+      <article class="phpe-slot phpe-slot--empty">
+        <div class="phpe-placeholder">
+          <span>Imagen {{ totalSlides() + 1 }}</span>
+          <p>PNG recomendado, formato horizontal</p>
+        </div>
+        <label class="phpe-upload">
+          {{ uploading() ? 'Subiendo…' : 'Elegir PNG' }}
+          <input
+            type="file"
+            accept="image/png"
+            [disabled]="uploading()"
+            (change)="onArchivoSelected($event)"
+          />
+        </label>
+      </article>
+    }
+  </div>
+</section>

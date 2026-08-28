@@ -24,6 +24,7 @@ import { PortalCursosConduccionEditorComponent } from './portal-cursos-conduccio
 import { PortalExamenTeoricoEditorComponent } from './portal-examen-teorico-editor.component';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
 import { PortalHomeFotosEditorComponent } from './portal-home-fotos-editor.component';
+import { PortalHomePublicidadEditorComponent } from './portal-home-publicidad-editor.component';
 import { PortalAcercaHeroEditorComponent } from './portal-acerca-hero-editor.component';
 import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
@@ -41,6 +42,7 @@ export type BuilderPanel =
   | 'inicio'
   | 'contenido'
   | 'fotosInicio'
+  | 'publicidadInicio'
   | 'institucional'
   | 'blog'
   | 'galeria'
@@ -90,6 +92,7 @@ interface GuiaPaso {
     PortalExamenTeoricoEditorComponent,
     PortalGaleriaFotosEditorComponent,
     PortalHomeFotosEditorComponent,
+    PortalHomePublicidadEditorComponent,
     PortalAcercaHeroEditorComponent,
     PortalPopupEditorComponent,
     PortalAppMobileEditorComponent,
@@ -132,6 +135,7 @@ export class PortalSiteBuilderComponent {
       items: [
         { id: 'inicio', icon: '🏠', label: 'Bloques del inicio' },
         { id: 'fotosInicio', icon: '🖼️', label: 'Fotos del inicio' },
+        { id: 'publicidadInicio', icon: '📢', label: 'Publicidad inicio' },
         { id: 'contenido', icon: '✏️', label: 'Textos del inicio' },
         { id: 'appMobile', icon: '📲', label: 'App móvil Android' },
       ],
@@ -176,6 +180,12 @@ export class PortalSiteBuilderComponent {
     if (!this.portalForm.landing.fotosInicio) {
       this.portalForm.landing.fotosInicio = mergePortalLanding().fotosInicio;
     }
+    if (!this.portalForm.landing.publicidadInicio) {
+      this.portalForm.landing.publicidadInicio = {
+        ...mergePortalLanding().publicidadInicio,
+        slides: [...mergePortalLanding().publicidadInicio.slides],
+      };
+    }
     if (!this.portalForm.landing.popup) {
       this.portalForm.landing.popup = { ...mergePortalLanding().popup };
     }
@@ -204,6 +214,12 @@ export class PortalSiteBuilderComponent {
           ...item,
           incluye: [...item.incluye],
         })),
+      };
+    }
+    if (!this.portalForm.landing.cursosConduccion.publicidad) {
+      this.portalForm.landing.cursosConduccion.publicidad = {
+        ...mergePortalLanding().cursosConduccion.publicidad,
+        slides: [...mergePortalLanding().cursosConduccion.publicidad.slides],
       };
     }
     if (!this.portalForm.landing.acerca) {
@@ -284,6 +300,10 @@ export class PortalSiteBuilderComponent {
       fotosInicio: {
         title: 'Fotos destacadas del inicio',
         help: 'Hasta 2 fotos aparte del hero. Si no hay ninguna, el bloque no se muestra en el sitio.',
+      },
+      publicidadInicio: {
+        title: 'Carrusel de publicidad',
+        help: 'Banner rotativo debajo del hero en la página principal. Actívelo o desactívelo en Bloques del inicio.',
       },
       institucional: {
         title: 'Página «Quiénes somos»',

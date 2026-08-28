@@ -309,6 +309,8 @@ module.exports = {
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   aulaVirtualGaleria: buildGaleriaMedia('aula-virtual-galeria', 25),
   aulaVirtualHomeFotos: buildImagen('aula-virtual-home-fotos', 8),
+  aulaVirtualHomePublicidad: buildImagen('aula-virtual-home-publicidad', 8),
+  aulaVirtualCursosConduccionPublicidad: buildImagen('aula-virtual-cursos-conduccion-publicidad', 8),
   aulaVirtualApk: buildApkAulaVirtual(),
   apkBaseDir,
   sanitizeApkFilename,

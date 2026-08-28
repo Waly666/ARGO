@@ -195,6 +195,7 @@ export class PortalSitePreviewComponent {
       licencias: '🪪',
       quoteBand: '❝',
       fotosInicio: '🖼',
+      publicidadInicio: '📢',
       serviciosEmpresa: '◎',
       testimonios: '💬',
       valores: '♥',

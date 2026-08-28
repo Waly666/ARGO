@@ -18,6 +18,8 @@ const {
   aulaVirtualBlog,
   aulaVirtualGaleria,
   aulaVirtualHomeFotos,
+  aulaVirtualHomePublicidad,
+  aulaVirtualCursosConduccionPublicidad,
   aulaVirtualApk,
   programasVirtual,
   pagoConsignacionComprobante,
@@ -310,5 +312,33 @@ router.post(
   admin.subirImagenHomeFotoPortal,
 );
 router.delete('/admin/portal/home-fotos', requireAuth, requireAdmin, admin.eliminarImagenHomeFotoPortal);
+
+router.post(
+  '/admin/portal/home-publicidad',
+  requireAuth,
+  configPortal,
+  aulaVirtualHomePublicidad.single('imagen'),
+  admin.subirImagenHomePublicidadPortal,
+);
+router.delete(
+  '/admin/portal/home-publicidad',
+  requireAuth,
+  configPortal,
+  admin.eliminarImagenHomePublicidadPortal,
+);
+
+router.post(
+  '/admin/portal/cursos-conduccion-publicidad',
+  requireAuth,
+  configPortal,
+  aulaVirtualCursosConduccionPublicidad.single('imagen'),
+  admin.subirImagenCursosConduccionPublicidadPortal,
+);
+router.delete(
+  '/admin/portal/cursos-conduccion-publicidad',
+  requireAuth,
+  configPortal,
+  admin.eliminarImagenCursosConduccionPublicidadPortal,
+);
 
 module.exports = router;

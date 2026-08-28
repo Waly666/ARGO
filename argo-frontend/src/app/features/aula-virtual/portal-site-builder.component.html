@@ -247,7 +247,7 @@
                 </div>
               }
               <div class="psb-hero-image__actions">
-                <label class="psb-btn psb-btn--ghost psb-btn--file" [class.psb-btn--disabled]="heroUploading()">
+                <label class="psb-btn psb-btn--primary psb-btn--file" [class.psb-btn--disabled]="heroUploading()">
                   {{ heroUploading() ? 'Subiendo…' : 'Elegir imagen' }}
                   <input
                     type="file"
@@ -341,6 +341,18 @@
         </p>
         <argo-portal-home-fotos-editor
           [fotosInicio]="landing.fotosInicio"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
+      @case ('publicidadInicio') {
+        <p class="psb-note">
+          Carrusel de publicidad en la página principal. Puede activar o desactivar el bloque en
+          <button type="button" class="psb-link" (click)="setPanel('inicio')">Bloques del inicio</button>.
+        </p>
+        <argo-portal-home-publicidad-editor
+          [publicidadInicio]="landing.publicidadInicio"
           (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
@@ -618,7 +630,7 @@
               ></video>
             }
             <div class="psb-hero-image__actions">
-              <label class="psb-btn psb-btn--ghost psb-btn--file" [class.psb-btn--disabled]="asistenteVideoUploading()">
+              <label class="psb-btn psb-btn--primary psb-btn--file" [class.psb-btn--disabled]="asistenteVideoUploading()">
                 {{ asistenteVideoUploading() ? 'Subiendo…' : 'Subir video MP4/WEBM' }}
                 <input
                   type="file"

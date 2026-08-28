@@ -63,32 +63,7 @@
 }
 
 .phfe-upload {
-  @include portal-site-editor-shared.portal-editor-button-reset;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(180deg, var(--btn-emerald, #10b981), var(--btn-emerald-d, #059669));
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.88rem;
-  padding: 0.55rem 1rem;
-
-  input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  &:disabled {
-    opacity: 0.65;
-  }
+  @include portal-site-editor-shared.portal-editor-btn-file;
 }
 
 .phfe-quitar {

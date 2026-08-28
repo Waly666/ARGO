@@ -5,8 +5,10 @@ import { finalize } from 'rxjs';
 
 import {
   CURSOS_CONDUCCION_LANDING_DEFAULTS,
+  MAX_CURSOS_CONDUCCION_PUBLICIDAD,
   mergeCursosConduccionLanding,
   PortalCursosConduccionLanding,
+  PortalCursosConduccionPublicidadSlide,
 } from '../../core/constants/cursos-conduccion-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
@@ -27,9 +29,89 @@ export class PortalCursosConduccionEditorComponent {
 
   uploadIndex = signal<number | null>(null);
   heroUploading = signal(false);
+  publicidadUploading = signal(false);
+
+  readonly maxPublicidad = MAX_CURSOS_CONDUCCION_PUBLICIDAD;
 
   restaurarDefaults() {
     Object.assign(this.cursosConduccion, mergeCursosConduccionLanding(CURSOS_CONDUCCION_LANDING_DEFAULTS));
+  }
+
+  totalPublicidad(): number {
+    return this.cursosConduccion.publicidad?.slides?.length || 0;
+  }
+
+  puedeAgregarPublicidad(): boolean {
+    return this.totalPublicidad() < MAX_CURSOS_CONDUCCION_PUBLICIDAD;
+  }
+
+  publicidadPreviewUrl(slide: PortalCursosConduccionPublicidadSlide): string | null {
+    const rel = slide.urlAbsoluta || slide.url;
+    if (!rel) return null;
+    if (/^https?:\/\//i.test(rel)) return rel;
+    if (rel.startsWith('/uploads/')) return rel;
+    if (rel.startsWith('/')) return rel;
+    const base = environment.uploadsUrl.replace(/\/+$/, '');
+    return `${base}/${rel.replace(/^\/+/, '')}`;
+  }
+
+  onPublicidadImagen(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !this.puedeAgregarPublicidad()) return;
+
+    this.publicidadUploading.set(true);
+    this.svc
+      .subirImagenCursosConduccionPublicidadPortal(file)
+      .pipe(finalize(() => this.publicidadUploading.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.syncPublicidadFromConfig(res.config);
+          this.portalConfigUpdated.emit(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen de publicidad agregada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo subir la imagen',
+            error: true,
+          });
+        },
+      });
+  }
+
+  quitarPublicidadSlide(slide: PortalCursosConduccionPublicidadSlide) {
+    if (!slide.url?.trim()) return;
+    if (!confirm('¿Quitar esta imagen del carrusel de publicidad?')) return;
+
+    this.publicidadUploading.set(true);
+    this.svc
+      .eliminarImagenCursosConduccionPublicidadPortal(slide.url)
+      .pipe(finalize(() => this.publicidadUploading.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.syncPublicidadFromConfig(res.config);
+          this.portalConfigUpdated.emit(res.config);
+          this.avNotice.emit({ message: res.message || 'Imagen eliminada' });
+        },
+        error: (e) => {
+          this.avNotice.emit({
+            message: e?.error?.message || 'No se pudo eliminar la imagen',
+            error: true,
+          });
+        },
+      });
+  }
+
+  private syncPublicidadFromConfig(config: PortalAulaConfig) {
+    const pub = config.landing?.cursosConduccion?.publicidad;
+    if (!pub) return;
+    if (!this.cursosConduccion.publicidad) {
+      this.cursosConduccion.publicidad = { activo: true, intervaloSegundos: 5, slides: [] };
+    }
+    this.cursosConduccion.publicidad.activo = pub.activo !== false;
+    this.cursosConduccion.publicidad.intervaloSegundos = pub.intervaloSegundos ?? 5;
+    this.cursosConduccion.publicidad.slides = (pub.slides || []).map((s) => ({ ...s }));
   }
 
   addResolucion() {

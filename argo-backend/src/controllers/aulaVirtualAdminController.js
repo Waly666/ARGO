@@ -1053,6 +1053,171 @@ exports.eliminarImagenHomeFotoPortal = async (req, res, next) => {
   }
 };
 
+const MAX_HOME_PUBLICIDAD = 8;
+
+function urlHomePublicidad(filename) {
+  return publicUrl('aula-virtual-home-publicidad', filename);
+}
+
+function quitarArchivoHomePublicidad(url) {
+  const rel = String(url || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-home-publicidad/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+function asegurarPublicidadInicio(landing) {
+  if (!landing.publicidadInicio || typeof landing.publicidadInicio !== 'object') {
+    landing.publicidadInicio = { activo: true, intervaloSegundos: 5, slides: [] };
+  }
+  if (!Array.isArray(landing.publicidadInicio.slides)) {
+    landing.publicidadInicio.slides = [];
+  }
+  return landing.publicidadInicio;
+}
+
+exports.subirImagenHomePublicidadPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen PNG' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const publicidad = asegurarPublicidadInicio(landing);
+    const slides = [...publicidad.slides];
+    if (slides.length >= MAX_HOME_PUBLICIDAD) {
+      quitarArchivoHomePublicidad(urlHomePublicidad(req.file.filename));
+      return res.status(400).json({
+        message: `Solo puede haber ${MAX_HOME_PUBLICIDAD} imágenes de publicidad en el inicio`,
+      });
+    }
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 800 });
+    slides.push({
+      url: urlHomePublicidad(req.file.filename),
+      alt: 'Publicidad',
+      enlace: '',
+    });
+    landing.publicidadInicio = { ...publicidad, slides };
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen de publicidad agregada al inicio',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.eliminarImagenHomePublicidadPortal = async (req, res, next) => {
+  try {
+    const url = String(req.body?.url || req.query?.url || '').trim();
+    if (!url) {
+      return res.status(400).json({ message: 'Indique la URL de la imagen a eliminar' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const publicidad = asegurarPublicidadInicio(landing);
+    const antes = publicidad.slides || [];
+    const slides = antes.filter((s) => s.url !== url);
+    if (slides.length === antes.length) {
+      return res.status(404).json({ message: 'Imagen no encontrada en la publicidad del inicio' });
+    }
+    quitarArchivoHomePublicidad(url);
+    landing.publicidadInicio = { ...publicidad, slides };
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen de publicidad eliminada del inicio',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+const MAX_CURSOS_CONDUCCION_PUBLICIDAD = 8;
+
+function urlCursosConduccionPublicidad(filename) {
+  return publicUrl('aula-virtual-cursos-conduccion-publicidad', filename);
+}
+
+function quitarArchivoCursosConduccionPublicidad(url) {
+  const rel = String(url || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-cursos-conduccion-publicidad/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+function asegurarPublicidadCursosConduccion(landing) {
+  if (!landing.cursosConduccion) landing.cursosConduccion = {};
+  if (!landing.cursosConduccion.publicidad || typeof landing.cursosConduccion.publicidad !== 'object') {
+    landing.cursosConduccion.publicidad = { activo: true, intervaloSegundos: 5, slides: [] };
+  }
+  if (!Array.isArray(landing.cursosConduccion.publicidad.slides)) {
+    landing.cursosConduccion.publicidad.slides = [];
+  }
+  return landing.cursosConduccion.publicidad;
+}
+
+exports.subirImagenCursosConduccionPublicidadPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen PNG' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const publicidad = asegurarPublicidadCursosConduccion(landing);
+    const slides = [...publicidad.slides];
+    if (slides.length >= MAX_CURSOS_CONDUCCION_PUBLICIDAD) {
+      quitarArchivoCursosConduccionPublicidad(urlCursosConduccionPublicidad(req.file.filename));
+      return res.status(400).json({
+        message: `Solo puede haber ${MAX_CURSOS_CONDUCCION_PUBLICIDAD} imágenes de publicidad`,
+      });
+    }
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 800 });
+    slides.push({
+      url: urlCursosConduccionPublicidad(req.file.filename),
+      alt: 'Publicidad',
+      enlace: '',
+    });
+    landing.cursosConduccion.publicidad = { ...publicidad, slides };
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen de publicidad agregada',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.eliminarImagenCursosConduccionPublicidadPortal = async (req, res, next) => {
+  try {
+    const url = String(req.body?.url || req.query?.url || '').trim();
+    if (!url) {
+      return res.status(400).json({ message: 'Indique la URL de la imagen a eliminar' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const publicidad = asegurarPublicidadCursosConduccion(landing);
+    const antes = publicidad.slides || [];
+    const slides = antes.filter((s) => s.url !== url);
+    if (slides.length === antes.length) {
+      return res.status(404).json({ message: 'Imagen no encontrada en la publicidad' });
+    }
+    quitarArchivoCursosConduccionPublicidad(url);
+    landing.cursosConduccion.publicidad = { ...publicidad, slides };
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen de publicidad eliminada',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
 exports.subirArchivoCursosConduccionPortal = async (req, res, next) => {
   try {
     if (!req.file) {

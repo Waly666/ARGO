@@ -24,6 +24,7 @@ import { portalSectionIcon } from '../../shared/portal-icon/portal-icon.registry
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
+import { CursosConduccionPublicidadSliderComponent } from '../cursos-conduccion/cursos-conduccion-publicidad-slider.component';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalThemeService } from '../../core/portal-theme.service';
 import { resolvePortalHeroEstilo, isFinstruvialPortalTema } from '../../core/portal-theme-css.util';
@@ -33,7 +34,7 @@ import { HERO_DEFAULT } from './home-content';
 @Component({
   selector: 'av-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, HeroParticleMeshComponent, PortalIconComponent],
+  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, HeroParticleMeshComponent, PortalIconComponent, CursosConduccionPublicidadSliderComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -87,6 +88,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (id === 'infoCards') return false;
       if (id === 'fotosInicio') {
         return seccionHomeVisible(cfg, id) && (landing.fotosInicio?.fotos?.length ?? 0) > 0;
+      }
+      if (id === 'publicidadInicio') {
+        const pub = landing.publicidadInicio;
+        return (
+          seccionHomeVisible(cfg, id) &&
+          pub?.activo !== false &&
+          (pub?.slides?.length ?? 0) > 0
+        );
       }
       return seccionHomeVisible(cfg, id);
     });

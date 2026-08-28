@@ -12,11 +12,12 @@ import {
   mergeCursosConduccionLanding,
   PortalCursosConduccionResolucion,
 } from './cursos-conduccion-content';
+import { CursosConduccionPublicidadSliderComponent } from './cursos-conduccion-publicidad-slider.component';
 
 @Component({
   selector: 'av-cursos-conduccion',
   standalone: true,
-  imports: [CommonModule, RouterLink, PortalIconComponent],
+  imports: [CommonModule, RouterLink, PortalIconComponent, CursosConduccionPublicidadSliderComponent],
   templateUrl: './cursos-conduccion.component.html',
   styleUrl: './cursos-conduccion.component.scss',
 })

@@ -3,6 +3,7 @@
 const HOME_SECCIONES_ORDEN = [
   'instBar',
   'hero',
+  'publicidadInicio',
   'infoCards',
   'ofertas',
   'beneficios',
@@ -24,6 +25,7 @@ const HOME_SECCIONES_ORDEN = [
 const HOME_SECCIONES_LABELS = {
   instBar: 'Barra institucional',
   hero: 'Banner principal (hero)',
+  publicidadInicio: 'Carrusel de publicidad',
   infoCards: 'Tarjetas de contacto',
   ofertas: 'Qué ofrecemos',
   beneficios: 'Beneficios',

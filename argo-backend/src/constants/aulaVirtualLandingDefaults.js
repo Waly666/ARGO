@@ -4,6 +4,7 @@ const { EXAMEN_TEORICO_DEFAULTS } = require('./aulaVirtualExamenTeoricoDefaults'
 const { CURSOS_CONDUCCION_DEFAULTS } = require('./aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('./aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS } = require('./aulaVirtualHomeFotosDefaults');
+const { PUBLICIDAD_INICIO_DEFAULTS } = require('./aulaVirtualHomePublicidadDefaults');
 const { DEFAULT_CEA_NOMBRE, DEFAULT_CEA_CORTO } = require('./portalBrandDefaults');
 
 /** Contenido editable del landing del portal aula virtual (valores por defecto). */
@@ -433,6 +434,7 @@ const LANDING_DEFAULTS = {
   },
   galeria: JSON.parse(JSON.stringify(GALERIA_DEFAULTS)),
   fotosInicio: JSON.parse(JSON.stringify(FOTOS_INICIO_DEFAULTS)),
+  publicidadInicio: JSON.parse(JSON.stringify(PUBLICIDAD_INICIO_DEFAULTS)),
   pilares: {
     tabCapacitacion: 'Capacitación',
     tabCampanas: 'Campañas',

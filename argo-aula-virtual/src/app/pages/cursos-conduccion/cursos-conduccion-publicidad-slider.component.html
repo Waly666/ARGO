@@ -1,0 +1,50 @@
+@if (visible()) {
+  <section
+    class="cc-pub"
+    [class.cc-pub--inicio]="variante() === 'inicio'"
+    [class.cc-pub--pagina]="variante() === 'pagina'"
+    aria-label="Publicidad"
+    (mouseenter)="onEnter()"
+    (mouseleave)="onLeave()"
+  >
+    @if (variante() === 'inicio') {
+      <div class="starfield-bg" aria-hidden="true"></div>
+    }
+    <div class="cc-pub__frame">
+      <div class="cc-pub__track" [style.--cc-pub-index]="index()">
+        @for (slide of slides(); track slide.src; let i = $index) {
+          <figure class="cc-pub__slide" [class.cc-pub__slide--active]="i === index()">
+            @if (slide.enlace) {
+              <a [href]="slide.enlace" target="_blank" rel="noopener noreferrer" class="cc-pub__link">
+                <img [src]="slide.src" [alt]="slide.alt" loading="lazy" />
+              </a>
+            } @else {
+              <img [src]="slide.src" [alt]="slide.alt" loading="lazy" />
+            }
+          </figure>
+        }
+      </div>
+
+      @if (slides().length > 1) {
+        <button type="button" class="cc-pub__nav cc-pub__nav--prev" (click)="prev()" aria-label="Anterior">
+          ‹
+        </button>
+        <button type="button" class="cc-pub__nav cc-pub__nav--next" (click)="next()" aria-label="Siguiente">
+          ›
+        </button>
+        <div class="cc-pub__dots" role="tablist" aria-label="Diapositivas">
+          @for (slide of slides(); track slide.src; let i = $index) {
+            <button
+              type="button"
+              class="cc-pub__dot"
+              [class.cc-pub__dot--active]="i === index()"
+              (click)="goTo(i)"
+              [attr.aria-label]="'Ir a imagen ' + (i + 1)"
+              [attr.aria-selected]="i === index()"
+            ></button>
+          }
+        </div>
+      }
+    </div>
+  </section>
+}

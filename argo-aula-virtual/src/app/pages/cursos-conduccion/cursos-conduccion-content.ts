@@ -29,6 +29,19 @@ export interface PortalCursosConduccionBeneficio {
   texto: string;
 }
 
+export interface PortalCursosConduccionPublicidadSlide {
+  url: string;
+  urlAbsoluta?: string;
+  alt: string;
+  enlace: string;
+}
+
+export interface PortalCursosConduccionPublicidad {
+  activo: boolean;
+  intervaloSegundos: number;
+  slides: PortalCursosConduccionPublicidadSlide[];
+}
+
 export interface PortalCursosConduccionInvitacion {
   kicker: string;
   titulo: string;
@@ -54,6 +67,7 @@ export interface PortalCursosConduccionLanding {
   resoluciones: PortalCursosConduccionResolucion[];
   invitacion: PortalCursosConduccionInvitacion;
   licencias: PortalCursosConduccionLicencias;
+  publicidad: PortalCursosConduccionPublicidad;
   /** @deprecated Usar licencias */
   etiquetaCategorias?: string;
   /** @deprecated Usar licencias.lead */
@@ -100,6 +114,12 @@ const LICENCIAS_DEFAULTS: PortalCursosConduccionLicencias = {
   items: LICENCIAS_HOME.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
 };
 
+const PUBLICIDAD_DEFAULTS: PortalCursosConduccionPublicidad = {
+  activo: true,
+  intervaloSegundos: 5,
+  slides: [],
+};
+
 export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding = {
   hero: {
     kicker: 'Cursos de conducción',
@@ -118,6 +138,7 @@ export const CURSOS_CONDUCCION_LANDING_DEFAULTS: PortalCursosConduccionLanding =
     ...LICENCIAS_DEFAULTS,
     items: LICENCIAS_DEFAULTS.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
   },
+  publicidad: { ...PUBLICIDAD_DEFAULTS, slides: [] },
 };
 
 function mergeInvitacion(
@@ -214,6 +235,26 @@ function mergeLicencias(
   return JSON.parse(JSON.stringify(d)) as PortalCursosConduccionLicencias;
 }
 
+function mergePublicidad(
+  raw?: Partial<PortalCursosConduccionPublicidad> | null,
+): PortalCursosConduccionPublicidad {
+  const d = PUBLICIDAD_DEFAULTS;
+  if (!raw) return { ...d, slides: [] };
+  const slidesSrc = Array.isArray(raw.slides) ? raw.slides : [];
+  return {
+    activo: raw.activo !== false,
+    intervaloSegundos: Math.max(3, Number(raw.intervaloSegundos) || d.intervaloSegundos),
+    slides: slidesSrc
+      .map((s) => ({
+        url: s.url?.trim() || '',
+        urlAbsoluta: s.urlAbsoluta?.trim() || undefined,
+        alt: s.alt?.trim() || 'Publicidad',
+        enlace: s.enlace?.trim() || '',
+      }))
+      .filter((s) => s.url),
+  };
+}
+
 export function mergeCursosConduccionLanding(
   raw?: Partial<PortalCursosConduccionLanding> | null,
 ): PortalCursosConduccionLanding {
@@ -242,5 +283,6 @@ export function mergeCursosConduccionLanding(
           nombreArchivo: r.nombreArchivo?.trim() || '',
         }))
       : d.resoluciones.map((r) => ({ ...r })),
+    publicidad: mergePublicidad(raw.publicidad),
   };
 }

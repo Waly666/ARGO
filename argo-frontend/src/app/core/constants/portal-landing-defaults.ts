@@ -177,6 +177,21 @@ export interface PortalFotosInicioLanding {
   fotos: PortalHomeFoto[];
 }
 
+export interface PortalPublicidadSlide {
+  url: string;
+  urlAbsoluta?: string;
+  alt: string;
+  enlace: string;
+}
+
+export interface PortalPublicidadLanding {
+  activo: boolean;
+  intervaloSegundos: number;
+  slides: PortalPublicidadSlide[];
+}
+
+export const MAX_PUBLICIDAD_SLIDES = 8;
+
 export const MAX_FOTOS_INICIO = 2;
 
 export interface PortalLandingConfig {
@@ -257,6 +272,7 @@ export interface PortalLandingConfig {
   };
   galeria: PortalGaleriaLanding;
   fotosInicio: PortalFotosInicioLanding;
+  publicidadInicio: PortalPublicidadLanding;
   pilares: {
     tabCapacitacion: string;
     tabCampanas: string;
@@ -710,6 +726,11 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     lead: 'Formación, eventos y el día a día de quienes confían en nosotros.',
     fotos: [],
   },
+  publicidadInicio: {
+    activo: true,
+    intervaloSegundos: 5,
+    slides: [],
+  },
   pilares: {
     tabCapacitacion: 'Capacitación',
     tabCampanas: 'Campañas',
@@ -778,6 +799,27 @@ function mergeServiciosItems(
   }));
 }
 
+function mergePublicidad(
+  raw?: Partial<PortalPublicidadLanding> | null,
+  fallback?: PortalPublicidadLanding,
+): PortalPublicidadLanding {
+  const d = fallback || { activo: true, intervaloSegundos: 5, slides: [] };
+  if (!raw) return { ...d, slides: [...d.slides] };
+  const slidesSrc = Array.isArray(raw.slides) ? raw.slides : d.slides;
+  return {
+    activo: raw.activo !== false,
+    intervaloSegundos: Math.max(3, Number(raw.intervaloSegundos) || d.intervaloSegundos),
+    slides: slidesSrc
+      .map((s) => ({
+        url: s.url?.trim() || '',
+        urlAbsoluta: s.urlAbsoluta?.trim() || undefined,
+        alt: s.alt?.trim() || 'Publicidad',
+        enlace: s.enlace?.trim() || '',
+      }))
+      .filter((s) => s.url),
+  };
+}
+
 export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): PortalLandingConfig {
   const d = PORTAL_LANDING_DEFAULTS;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalLandingConfig;
@@ -838,6 +880,7 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       ...raw.fotosInicio,
       fotos: raw.fotosInicio?.fotos?.length ? raw.fotosInicio.fotos : d.fotosInicio.fotos,
     },
+    publicidadInicio: mergePublicidad(raw.publicidadInicio, d.publicidadInicio),
     faq: {
       ...d.faq,
       ...raw.faq,

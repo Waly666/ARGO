@@ -269,6 +269,8 @@ function normalizarLanding(input) {
   const blogSrc = src.blog && typeof src.blog === 'object' ? src.blog : {};
   const galeriaSrc = src.galeria && typeof src.galeria === 'object' ? src.galeria : {};
   const fotosInicioSrc = src.fotosInicio && typeof src.fotosInicio === 'object' ? src.fotosInicio : {};
+  const publicidadInicioSrc =
+    src.publicidadInicio && typeof src.publicidadInicio === 'object' ? src.publicidadInicio : {};
   const fundSrc = src.fundacion && typeof src.fundacion === 'object' ? src.fundacion : {};
   const fundD = d.fundacion || {};
   const acercaSrc = src.acerca && typeof src.acerca === 'object' ? src.acerca : {};
@@ -445,6 +447,7 @@ function normalizarLanding(input) {
     },
     galeria: normalizarGaleria(galeriaSrc),
     fotosInicio: normalizarFotosInicio(fotosInicioSrc),
+    publicidadInicio: normalizarPublicidad(publicidadInicioSrc),
     pilares: {
       tabCapacitacion: str(pilaresSrc.tabCapacitacion, d.pilares.tabCapacitacion),
       tabCampanas: str(pilaresSrc.tabCampanas, d.pilares.tabCampanas),
@@ -551,6 +554,29 @@ function normalizarInvitacion(src) {
   };
 }
 
+function normalizarPublicidad(raw) {
+  const d = { activo: true, intervaloSegundos: 5, slides: [] };
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const slidesSrc = Array.isArray(src.slides) ? src.slides : [];
+  const slides = slidesSrc
+    .map((item) => {
+      const url = str(item?.url);
+      if (!url) return null;
+      return {
+        url,
+        urlAbsoluta: publicUploadUrl(url) || url,
+        alt: str(item?.alt, 'Publicidad'),
+        enlace: str(item?.enlace),
+      };
+    })
+    .filter(Boolean);
+  return {
+    activo: src.activo !== false,
+    intervaloSegundos: Math.max(3, Number(src.intervaloSegundos) || d.intervaloSegundos),
+    slides,
+  };
+}
+
 function normalizarCursosConduccion(src) {
   const d = CURSOS_CONDUCCION_DEFAULTS;
   const raw = src && typeof src === 'object' ? src : {};
@@ -620,6 +646,7 @@ function normalizarCursosConduccion(src) {
     invitacion: normalizarInvitacion(raw.invitacion),
     resoluciones,
     licencias: normalizarLicencias(licenciasSrc || {}, d.licencias),
+    publicidad: normalizarPublicidad(raw.publicidad),
   };
 }
 

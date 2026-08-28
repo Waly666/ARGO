@@ -28,6 +28,7 @@ const RUTA_PAGINA: Record<PortalPaginaKey, string> = {
 const DEFAULT_HOME_ORDER = [
   'instBar',
   'hero',
+  'publicidadInicio',
   'infoCards',
   'ofertas',
   'beneficios',
