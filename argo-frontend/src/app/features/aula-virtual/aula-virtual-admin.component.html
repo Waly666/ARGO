@@ -480,7 +480,16 @@
 
       @if (portalForm.landing; as landing) {
         <h3 class="av-subtitle">Secciones del landing</h3>
-        <argo-portal-landing-editor [landing]="landing" />
+        <p class="av-muted">
+          Para subir el APK: abra la sección <strong>App Mobile</strong> abajo y use
+          <strong>Subir APK al servidor</strong>.
+        </p>
+        <argo-portal-landing-editor
+          [landing]="landing"
+          [portalUrl]="portalUrl"
+          (portalConfigUpdated)="onPortalConfigFromEditor($event)"
+          (avNotice)="onEditorNotice($event)"
+        />
       }
 
       <button type="button" class="av-btn av-btn--primary" [disabled]="saving()" (click)="guardarPortal()">

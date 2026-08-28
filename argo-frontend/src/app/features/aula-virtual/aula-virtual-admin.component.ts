@@ -12,7 +12,6 @@ import {
 } from '../../core/services/aula-virtual-admin.service';
 import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
-import { environment } from '../../../environments/environment';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 
 type TabAula = 'cursos' | 'usuarios' | 'empresa' | 'portal';
@@ -30,7 +29,12 @@ export class AulaVirtualAdminComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  readonly portalUrl = 'http://localhost:4202/';
+  get portalUrl(): string {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}/`;
+    }
+    return 'http://localhost:4202/';
+  }
   readonly esAdmin = this.auth.isAdmin;
 
   tab = signal<TabAula>('cursos');
@@ -305,6 +309,17 @@ export class AulaVirtualAdminComponent implements OnInit {
         this.toast(e?.error?.message || 'Error al guardar portal', true);
       },
     });
+  }
+
+  onPortalConfigFromEditor(config: PortalAulaConfig) {
+    Object.assign(this.portalForm, config);
+    if (config.landing) {
+      this.portalForm.landing = mergePortalLanding(config.landing);
+    }
+  }
+
+  onEditorNotice(ev: { message: string; error?: boolean }) {
+    this.toast(ev.message, !!ev.error);
   }
 
   fmtFecha(iso?: string | null) {

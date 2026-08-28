@@ -325,36 +325,12 @@
   }
 
   @if (bloque() === 'appMobile') {
-    <div class="ple-block">
-      <div class="av-grid3">
-        <div class="av-field"><label>Etiqueta</label><input [(ngModel)]="landing.appMobile.kicker" /></div>
-        <div class="av-field av-field--span2"><label>Título</label><input [(ngModel)]="landing.appMobile.titulo" /></div>
-      </div>
-      <div class="av-field"><label>Intro</label><textarea rows="2" [(ngModel)]="landing.appMobile.lead"></textarea></div>
-      <div class="av-grid2">
-        <div class="av-field"><label>Texto botón descarga</label><input [(ngModel)]="landing.appMobile.btnDescargar" /></div>
-        <div class="av-field"><label>Nota instalación</label><input [(ngModel)]="landing.appMobile.notaInstalacion" /></div>
-      </div>
-      <div class="av-grid2">
-        <div class="av-field"><label>URL APK</label><input [(ngModel)]="landing.appMobile.apkUrl" placeholder="/apk/aula-virtual.apk" /></div>
-        <div class="av-field"><label>Nombre archivo APK</label><input [(ngModel)]="landing.appMobile.apkNombre" /></div>
-      </div>
-      <p class="av-muted" style="margin: 0 0 12px">
-        Para <strong>subir el archivo APK al servidor</strong>, use
-        <strong>Aula virtual → Editor sitio web → App móvil Android</strong>.
-      </p>
-      @for (item of landing.appMobile.features; track $index; let i = $index) {
-        <div class="ple-card">
-          <div class="ple-card-head"><strong>Característica {{ i + 1 }}</strong><button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeAppMobileFeature(i)">Quitar</button></div>
-          <div class="av-grid3">
-            <div class="av-field"><label>Icono</label><input [(ngModel)]="item.icon" /></div>
-            <div class="av-field av-field--span2"><label>Título</label><input [(ngModel)]="item.title" /></div>
-          </div>
-          <div class="av-field"><label>Descripción</label><textarea rows="2" [(ngModel)]="item.text"></textarea></div>
-        </div>
-      }
-      <button type="button" class="av-btn av-btn--ghost" (click)="addAppMobileFeature()">+ Añadir característica</button>
-    </div>
+    <argo-portal-app-mobile-editor
+      [appMobile]="landing.appMobile"
+      [portalUrl]="portalUrl"
+      (portalConfigUpdated)="portalConfigUpdated.emit($event)"
+      (avNotice)="avNotice.emit($event)"
+    />
   }
 
   @if (bloque() === 'blog') {

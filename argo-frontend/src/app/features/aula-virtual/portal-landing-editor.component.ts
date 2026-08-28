@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
@@ -7,16 +7,21 @@ import {
   PORTAL_LANDING_DEFAULTS,
   PortalLandingConfig,
 } from '../../core/constants/portal-landing-defaults';
+import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
+import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 
 @Component({
   selector: 'argo-portal-landing-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalAppMobileEditorComponent],
   templateUrl: './portal-landing-editor.component.html',
   styleUrl: './portal-landing-editor.component.scss',
 })
 export class PortalLandingEditorComponent {
   @Input({ required: true }) landing!: PortalLandingConfig;
+  @Input() portalUrl = '';
+  @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
+  @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   bloque = signal<string | null>('general');
 

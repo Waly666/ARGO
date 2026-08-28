@@ -47,9 +47,12 @@ export class AulaVirtualSitioComponent implements OnInit {
   readonly plantillas = PORTAL_PLANTILLAS;
   galeriaAbierta = signal(false);
 
-  readonly portalUrl = environment.production
-    ? 'https://finstruvial.edu.co/'
-    : 'http://localhost:4202/';
+  get portalUrl(): string {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}/`;
+    }
+    return 'http://localhost:4202/';
+  }
 
   portalForm: PortalAulaConfig = {
     nombreEmpresa: '',

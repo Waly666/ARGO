@@ -317,7 +317,12 @@
           Para subir el APK use
           <button type="button" class="psb-link" (click)="setPanel('appMobile')">App móvil Android</button>.
         </p>
-        <argo-portal-landing-editor [landing]="landing" />
+        <argo-portal-landing-editor
+          [landing]="landing"
+          [portalUrl]="portalUrl"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
       }
 
       @case ('appMobile') {
