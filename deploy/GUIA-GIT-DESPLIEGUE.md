@@ -229,6 +229,8 @@ Recarga forzada: **Ctrl+F5** (evita caché del navegador).
 
 Tras un `git push` desde tu PC, en el **servidor**:
 
+**Cliente con puertos por defecto** (Educarte, Finstruvial, instalación única en `/opt/argo`):
+
 ```bash
 cd /opt/argo
 git pull origin main
@@ -236,6 +238,18 @@ docker compose build argo-aula-virtual argo-backend argo-frontend
 docker compose up -d --force-recreate argo-aula-virtual argo-backend argo-frontend
 docker compose ps
 ```
+
+**Servial** (2.ª instalación en el mismo VPS — **obligatorio** el override de puertos):
+
+```bash
+cd /opt/argo-servial
+git pull origin main
+docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml build argo-aula-virtual argo-backend argo-frontend
+docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml up -d --force-recreate argo-aula-virtual argo-backend argo-frontend
+docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml ps
+```
+
+Guía completa Servial: [DEPLOY-SERVIAL.md](./DEPLOY-SERVIAL.md).
 
 Ajusta la lista de servicios en `build` y `up` según lo que hayas tocado.
 
@@ -294,6 +308,10 @@ docker compose logs argo-backend --tail 100
 
 Revisa `deploy/.env` (Mongo, JWT, etc.).
 
+### `port is already allocated` (5002, 8083 u 8085)
+
+Dos instalaciones ARGO en el mismo VPS comparten el servidor pero **no** los puertos. Si en `/opt/argo-servial` ves este error, casi seguro se usó `docker compose` sin `deploy/docker-compose.servial.yml`. Ver [DEPLOY-SERVIAL.md](./DEPLOY-SERVIAL.md).
+
 ---
 
 ## Estructura del monorepo (referencia)
@@ -326,6 +344,7 @@ Con la práctica, los pasos 2 y 3 te toman menos de 5 minutos.
 | Archivo | Contenido |
 |---------|-----------|
 | [PLAN-CLIENTE-NUEVO.md](./PLAN-CLIENTE-NUEVO.md) | **Plan cliente nuevo:** fases local → producción, VPS compartido, reglas configurables |
+| [DEPLOY-SERVIAL.md](./DEPLOY-SERVIAL.md) | **Servial:** override Docker 5012/8093/8095, nginx, recuperación de puertos |
 | [GUIA-NUEVO-CLIENTE-VPS.md](./GUIA-NUEVO-CLIENTE-VPS.md) | **Nuevo cliente:** VPS, dominios, dos carpetas en un servidor, seguridad |
 | [SOPORTE-MAESTRO-GUIA.md](./SOPORTE-MAESTRO-GUIA.md) | Cuenta break-glass de soporte |
 | [GUIA-PASARELA-WOMPI.md](./GUIA-PASARELA-WOMPI.md) | Pasarela Wompi — pagos en línea matrículas virtuales |

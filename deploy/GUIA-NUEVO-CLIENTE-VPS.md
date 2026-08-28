@@ -411,30 +411,26 @@ Cuando **dos clientes comparten el mismo servidor** (dos carpetas, dos dominios,
 | ERP | `8083:80` | `8093:80` |
 | Portal | `8085:80` | `8095:80` |
 
-### Ejemplo `docker-compose.yml` (2.ª instalación)
+### Override de puertos (2.ª instalación)
 
-Solo cambia el mapeo de puertos en `ports:` (el resto igual que la 1.ª):
+**Recomendado:** no editar el `docker-compose.yml` raíz. Usa un archivo override en `deploy/`:
 
-```yaml
-services:
-  argo-backend:
-    ports:
-      - "5012:3000"
-  argo-frontend:
-    ports:
-      - "8093:80"
-  argo-aula-virtual:
-    ports:
-      - "8095:80"
-```
+| Cliente en producción | Carpeta | Override |
+|-----------------------|---------|----------|
+| Servial | `/opt/argo-servial` | `deploy/docker-compose.servial.yml` |
 
-Levantar con nombre de proyecto único:
+Ese override define `name: argo-servial`, puertos **5012 / 8093 / 8095** y nombres de contenedor `argo-servial-*`.
+
+Levantar y desplegar:
 
 ```bash
-cd /opt/argo-cliente-b
-export COMPOSE_PROJECT_NAME=argo-clienteb
-docker compose up -d argo-mongo argo-backend argo-frontend argo-aula-virtual
+cd /opt/argo-servial
+docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml up -d
 ```
+
+Para otro cliente B, copia `deploy/docker-compose.servial.yml` como plantilla (`docker-compose.cliente-b.yml`) y ajusta puertos y `name`.
+
+Guía operativa Servial: [DEPLOY-SERVIAL.md](./DEPLOY-SERVIAL.md).
 
 ### Nginx (cliente B)
 
@@ -534,6 +530,7 @@ Solo si el cliente anterior deja de operar en ese servidor:
 | Archivo | Contenido |
 |---------|-----------|
 | [PLAN-CLIENTE-NUEVO.md](./PLAN-CLIENTE-NUEVO.md) | **Plan completo:** local → VPS compartido, portal, toggle de reglas |
+| [DEPLOY-SERVIAL.md](./DEPLOY-SERVIAL.md) | **Servial en VPS compartido:** puertos 5012/8093/8095 y override Docker |
 | [GUIA-GIT-DESPLIEGUE.md](./GUIA-GIT-DESPLIEGUE.md) | Commit, push y deploy día a día |
 | [SEGURIDAD-FASE1.md](./SEGURIDAD-FASE1.md) | HTTPS, rate limit, Turnstile portal |
 | [SEGURIDAD-FASE2.md](./SEGURIDAD-FASE2.md) | Turnstile ERP, firewall, Cloudflare |

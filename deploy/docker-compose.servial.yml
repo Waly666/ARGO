@@ -1,0 +1,31 @@
+# Segunda instalación ARGO en el mismo VPS (Educarte u otro cliente usa 5002/8083/8085).
+# Uso en /opt/argo-servial:
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.servial.yml up -d --build
+#
+# Nginx de app.servial.edu.co debe apuntar a: API 5012, ERP 8093, portal 8095.
+
+name: argo-servial
+
+services:
+  argo-mongo:
+    container_name: argo-servial-mongo
+
+  argo-backend:
+    container_name: argo-servial-backend
+    ports:
+      - "5012:3000"
+
+  argo-frontend:
+    container_name: argo-servial-frontend
+    ports:
+      - "8093:80"
+
+  argo-sitio:
+    container_name: argo-sitio
+    ports:
+      - "8084:80"
+
+  argo-aula-virtual:
+    container_name: argo-servial-aula
+    ports:
+      - "8095:80"
