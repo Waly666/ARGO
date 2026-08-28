@@ -214,8 +214,10 @@
           [revealDelay]="120 + i * 70">
           <div class="lic-card__head">
             <span class="lic-card__head-glow" aria-hidden="true"></span>
-            <av-portal-icon [icon]="lic.icon" class="lic-card__icon" size="1.75rem" color="#fff" />
-            <h3 class="lic-card__code">{{ lic.titulo }}</h3>
+            <div class="lic-card__head-row">
+              <av-portal-icon [icon]="lic.icon" class="lic-card__icon" size="1.75rem" color="currentColor" />
+              <h3 class="lic-card__code">{{ lic.titulo }}</h3>
+            </div>
           </div>
           <div class="lic-card__body">
             @if (lic.destacada) {
@@ -234,9 +236,20 @@
               <span class="lic-card__badge-label">{{ lic.licenciaLabel }}</span>
             </div>
             @if (lic.valor.trim()) {
-              <div class="lic-card__precio" role="group" [attr.aria-label]="'Precio: ' + lic.valor">
-                <span class="lic-card__precio-label">Precio</span>
-                <p class="lic-card__precio-valor">{{ lic.valor }}</p>
+              <div
+                class="lic-card__precio"
+                role="group"
+                [attr.aria-label]="'Precio: ' + lic.valor"
+                [style.--lic-radar-delay]="i * 0.35 + 's'">
+                <span class="lic-card__precio-radar" aria-hidden="true">
+                  <span class="lic-card__precio-ring"></span>
+                  <span class="lic-card__precio-ring"></span>
+                  <span class="lic-card__precio-ring"></span>
+                </span>
+                <div class="lic-card__precio-content">
+                  <span class="lic-card__precio-label">Precio</span>
+                  <p class="lic-card__precio-valor">{{ lic.valor }}</p>
+                </div>
               </div>
             }
             @if (licenciaEsExterna(lic.btnUrl)) {

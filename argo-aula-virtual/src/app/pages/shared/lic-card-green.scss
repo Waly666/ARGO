@@ -1,0 +1,118 @@
+// Cabecera y botones de tarjetas de licencia — verde oscuro (coherente con el cuadro de precio).
+
+@mixin lic-neon-green-text {
+  color: var(--lic-precio-green-bright);
+  background: linear-gradient(
+    135deg,
+    #ecfdf5 0%,
+    var(--lic-precio-green-bright) 28%,
+    var(--lic-precio-green) 68%,
+    #15803d 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.lic-card {
+  --lic-green-dark: var(--av-primary-dark, #065f46);
+  --lic-green-deep: color-mix(in srgb, var(--av-primary-dark, #065f46) 68%, #020617);
+  --lic-precio-green: var(--av-primary, #22c55e);
+  --lic-precio-green-bright: var(--av-accent, #4ade80);
+}
+
+.lic-card__head {
+  background: linear-gradient(
+    155deg,
+    var(--lic-green-dark) 0%,
+    var(--lic-green-deep) 100%
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--av-accent, #34d399) 20%, transparent);
+  box-shadow: inset 0 -12px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  padding: 1.05rem 1rem;
+  text-align: left;
+}
+
+.lic-card__head-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.lic-card__head-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--av-accent, #4ade80) 20%, transparent),
+    transparent 68%
+  );
+}
+
+.lic-card__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  margin: 0;
+  font-size: 1.45rem;
+  color: var(--lic-precio-green-bright);
+  filter: drop-shadow(0 0 8px rgba(74, 222, 128, 0.25));
+}
+
+.lic-card__code {
+  @include lic-neon-green-text;
+  margin: 0;
+  text-align: left;
+  line-height: 1.2;
+  filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.28));
+}
+
+.lic-card__badge-icon {
+  color: var(--lic-precio-green);
+}
+
+.lic-card__badge-label {
+  @include lic-neon-green-text;
+  filter: drop-shadow(0 0 6px rgba(74, 222, 128, 0.2));
+}
+.lic-card__check {
+  border-color: color-mix(in srgb, var(--lic-green-dark) 48%, #cbd5e1);
+  color: var(--lic-green-dark);
+}
+
+.lic-card__btn {
+  background: linear-gradient(
+    135deg,
+    #ecfdf5 0%,
+    var(--lic-precio-green-bright) 22%,
+    var(--lic-precio-green) 62%,
+    #15803d 100%
+  );
+  color: #052e16;
+  -webkit-text-fill-color: #052e16;
+  border: 1px solid color-mix(in srgb, var(--lic-precio-green-bright) 55%, #15803d);
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--lic-precio-green) 38%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+  &:hover {
+    filter: brightness(1.06);
+    box-shadow:
+      0 6px 22px color-mix(in srgb, var(--lic-precio-green) 48%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+}
+.lic-card--destacada {
+  border-color: color-mix(in srgb, var(--lic-green-dark) 38%, #e2e8f0);
+}
+
+.lic-card--destacada .lic-card__ribbon {
+  background: linear-gradient(
+    90deg,
+    var(--lic-green-dark),
+    color-mix(in srgb, var(--av-accent, #34d399) 55%, var(--lic-green-dark))
+  );
+}
