@@ -32,7 +32,7 @@ export function SectionHeader({ title, subtitle, action, icon, iconColor, iconBg
           </View>
         ) : null}
         <View style={{ flex: 1 }}>
-          <ScaledText baseSize={type.h2.fontSize} style={{ color: c.text, fontWeight: '700' }}>
+          <ScaledText baseSize={type.h2.fontSize} style={{ color: c.text, fontWeight: '600' }}>
             {title}
           </ScaledText>
           {subtitle ? (

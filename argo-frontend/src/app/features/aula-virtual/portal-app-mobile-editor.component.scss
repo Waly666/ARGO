@@ -1,0 +1,131 @@
+.pame-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pame-note,
+.pame-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-dim, #64748b);
+  line-height: 1.5;
+}
+
+.pame-note code {
+  font-size: 0.82rem;
+  background: rgba(15, 23, 42, 0.06);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.pame-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.card {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.pame-upload__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.pame-upload__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 200px;
+  text-align: center;
+}
+
+.pame-apk-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  background: linear-gradient(145deg, #e0e7ff, #f8fafc);
+  border: 1px solid #c7d2fe;
+}
+
+.pame-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border: none;
+  background: var(--primary, #3d5cff);
+  color: #fff;
+}
+
+.pame-btn--file input {
+  display: none;
+}
+
+.pame-btn--disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.pame-grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.pame-grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.pame-span2 {
+  grid-column: span 2;
+}
+
+.pame-feature {
+  margin-top: 0.5rem;
+}
+
+.pame-feature__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.pame-link {
+  border: none;
+  background: none;
+  color: var(--primary, #3d5cff);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 900px) {
+  .pame-upload__row,
+  .pame-grid2,
+  .pame-grid3 {
+    grid-template-columns: 1fr;
+  }
+
+  .pame-span2 {
+    grid-column: auto;
+  }
+}

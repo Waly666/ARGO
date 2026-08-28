@@ -1,27 +1,27 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { CursoCard } from '../../components/CursoCard';
 import { EmptyState } from '../../components/EmptyState';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenBody } from '../../components/ScreenBody';
-import { SectionHeader } from '../../components/SectionHeader';
 import { ScaledText } from '../../components/ScaledText';
+import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { useTheme } from '../../context/ThemeContext';
 import { usePasarelaActiva } from '../../hooks/usePasarelaActiva';
 import { useMisCursos } from '../../hooks/useMisCursos';
-import { fetchInscripcion } from '../../api/aulaApi';
+import { fetchInscripcion, iniciarPagoEnLinea } from '../../api/aulaApi';
 import type { CursoVirtual, EstadoInscripcionVirtual } from '../../api/types';
-import { puedeCursar } from '../../utils/cursoUtils';
-import { abrirPagoEnLineaCurso, puedeMostrarPagoEnLinea } from '../../utils/pagoVirtual';
+import { cursoCompletado, cursoEnProgreso, puedeCursar } from '../../utils/cursoUtils';
+import { puedeMostrarPagoWompi } from '../../utils/pagoVirtual';
 import { resolvePlayerUrl } from '../../utils/uploadUrl';
-import type { AulaTabParamList, RootStackParamList } from '../../navigation/types';
+import type { RootStackParamList } from '../../navigation/types';
 import { space } from '../../theme/spacing';
+
+type TabKey = 'ongoing' | 'completed';
 
 function CursoMatriculadoRow({
   curso,
@@ -34,10 +34,10 @@ function CursoMatriculadoRow({
 }) {
   const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const c = useTheme();
-  const [ins, setIns] = useState<EstadoInscripcionVirtual | null>(null);
-  const [pagando, setPagando] = useState(false);
+  const [ins, setIns] = React.useState<EstadoInscripcionVirtual | null>(null);
+  const [pagando, setPagando] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false;
     void fetchInscripcion(curso.idPrograma)
       .then((row) => {
@@ -52,22 +52,27 @@ function CursoMatriculadoRow({
   }, [curso.idPrograma]);
 
   const puedeEntrar = puedeCursar(curso) && ins?.puedeCursar !== false;
-  const mostrarPago = ins ? puedeMostrarPagoEnLinea(ins, curso) : false;
+  const mostrarPago = ins ? puedeMostrarPagoWompi(ins, curso, pasarelaActiva) : false;
 
-  const irDetalle = useCallback(() => {
+  const irDetalle = () => {
     nav.navigate('CursoDetalle', { id: String(curso.idPrograma), titulo: curso.nombreProg });
-  }, [nav, curso.idPrograma, curso.nombreProg]);
+  };
 
   async function onPagar() {
     if (!pasarelaActiva) {
+      Alert.alert('Pago en línea', 'Los pagos en línea no están activos. Vea el detalle del curso para más opciones.');
       irDetalle();
       return;
     }
     setPagando(true);
     try {
-      await abrirPagoEnLineaCurso(curso.idPrograma);
-      Alert.alert('Pago en línea', 'Complete el pago en el navegador y vuelva a la app.');
-      onRefresh();
+      const res = await iniciarPagoEnLinea(curso.idPrograma);
+      if (!res.checkoutUrl?.trim()) throw new Error('No se pudo iniciar el pago.');
+      nav.navigate('PagoCheckout', {
+        url: res.checkoutUrl.trim(),
+        titulo: curso.nombreProg,
+        idPrograma: String(curso.idPrograma),
+      });
     } catch (e) {
       Alert.alert('Pago', e instanceof Error ? e.message : 'No se pudo iniciar el pago.');
     } finally {
@@ -91,7 +96,7 @@ function CursoMatriculadoRow({
 
   return (
     <View style={styles.row}>
-      <CursoCard curso={curso} layout="horizontal" onPress={irDetalle} />
+      <CursoCard curso={curso} layout="enrolled" onPress={irDetalle} />
       <View style={styles.actions}>
         {mostrarPago ? (
           <PrimaryButton
@@ -103,7 +108,13 @@ function CursoMatriculadoRow({
           />
         ) : null}
         {puedeEntrar ? (
-          <PrimaryButton label="Entrar" onPress={onEntrar} icon="play" size="md" variant={mostrarPago ? 'secondary' : 'primary'} />
+          <PrimaryButton
+            label="Continuar"
+            onPress={onEntrar}
+            icon="play"
+            size="md"
+            variant={mostrarPago ? 'secondary' : 'primary'}
+          />
         ) : (
           <PrimaryButton label="Ver curso" onPress={irDetalle} icon="open-outline" size="md" variant="secondary" />
         )}
@@ -118,23 +129,35 @@ function CursoMatriculadoRow({
 }
 
 export default function MisCursosPanel() {
-  const nav = useNavigation<
-    CompositeNavigationProp<
-      BottomTabNavigationProp<AulaTabParamList, 'MisCursos'>,
-      StackNavigationProp<RootStackParamList>
-    >
-  >();
+  const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const c = useTheme();
   const { pasarelaActiva } = usePasarelaActiva();
   const { cursos, loading, error, reload } = useMisCursos();
+  const [tab, setTab] = useState<TabKey>('ongoing');
+
+  const enCurso = useMemo(() => cursos.filter(cursoEnProgreso), [cursos]);
+  const completados = useMemo(() => cursos.filter(cursoCompletado), [cursos]);
+  const visibles = tab === 'ongoing' ? enCurso : completados;
 
   return (
     <ScreenBody onRefresh={reload} refreshing={loading}>
-      <SectionHeader
-        title="Mis cursos"
-        subtitle={`${cursos.length} matriculado(s)`}
-        icon="book-outline"
+      <ScaledText baseSize={24} style={{ color: c.text, fontWeight: '600', marginBottom: space.xs }}>
+        Mis cursos
+      </ScaledText>
+      <ScaledText baseSize={13} style={{ color: c.textSoft, marginBottom: space.lg }}>
+        {cursos.length} matriculado(s)
+      </ScaledText>
+
+      <SegmentedTabs
+        tabs={[
+          { key: 'ongoing', label: `En curso (${enCurso.length})` },
+          { key: 'completed', label: `Completados (${completados.length})` },
+        ]}
+        active={tab}
+        onChange={(k) => setTab(k as TabKey)}
+        scrollable
       />
+
       {error ? (
         <SurfaceCard style={{ marginBottom: space.md }}>
           <ScaledText baseSize={14} style={{ color: c.danger, marginBottom: space.sm }}>
@@ -143,13 +166,18 @@ export default function MisCursosPanel() {
           <PrimaryButton label="Reintentar" onPress={() => void reload()} variant="secondary" />
         </SurfaceCard>
       ) : null}
-      {!loading && cursos.length === 0 ? (
+
+      {!loading && visibles.length === 0 ? (
         <>
-          <EmptyState title="Sin cursos matriculados" subtitle="Explore la tienda y matricúlese en un programa" icon="book-outline" />
-          <PrimaryButton label="Ver todos los cursos" onPress={() => nav.navigate('Cursos')} icon="library-outline" fullWidth />
+          <EmptyState
+            title={tab === 'ongoing' ? 'Sin cursos en progreso' : 'Sin cursos completados'}
+            subtitle="Explore el catálogo y matricúlese en un programa"
+            icon="book-outline"
+          />
+          <PrimaryButton label="Ver todos los cursos" onPress={() => nav.navigate('AulaCursos')} icon="library-outline" fullWidth />
         </>
       ) : (
-        cursos.map((curso) => (
+        visibles.map((curso) => (
           <CursoMatriculadoRow
             key={String(curso.idPrograma)}
             curso={curso}

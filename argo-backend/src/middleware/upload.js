@@ -203,6 +203,50 @@ function buildPdf(subdir, maxMb = 15) {
   });
 }
 
+/** APK del aula virtual — carpeta servida por nginx en /apk/ (ver docker-compose). */
+function apkBaseDir() {
+  if (process.env.APK_DIR) return path.resolve(process.env.APK_DIR);
+  return path.resolve(__dirname, '..', '..', '..', 'apk');
+}
+
+function sanitizeApkFilename(name) {
+  let n = String(name || 'aula-virtual.apk').trim();
+  if (!/\.apk$/i.test(n)) n = `${n.replace(/\.+$/, '')}.apk`;
+  n = n.replace(/[^a-zA-Z0-9._-]/g, '_');
+  if (!n || n === '.apk') return 'aula-virtual.apk';
+  return n;
+}
+
+function buildApkAulaVirtual(maxMb = 200) {
+  const dest = apkBaseDir();
+  ensureDir(dest);
+  const storage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dest),
+    filename: (req, file, cb) => {
+      const nombre = sanitizeApkFilename(req.body?.apkNombre || file.originalname);
+      cb(null, nombre);
+    },
+  });
+  return multer({
+    storage,
+    limits: { fileSize: maxMb * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
+      const ok =
+        ext === '.apk' ||
+        mime === 'application/vnd.android.package-archive' ||
+        mime === 'application/octet-stream';
+      if (!ok) {
+        const err = new Error('Solo se permiten archivos .apk de Android');
+        err.status = 400;
+        return cb(err);
+      }
+      cb(null, true);
+    },
+  });
+}
+
 function buildGaleriaMedia(subdir, maxMb = 25) {
   const dest = path.join(BASE, subdir);
   ensureDir(dest);
@@ -265,6 +309,9 @@ module.exports = {
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   aulaVirtualGaleria: buildGaleriaMedia('aula-virtual-galeria', 25),
   aulaVirtualHomeFotos: buildImagen('aula-virtual-home-fotos', 8),
+  aulaVirtualApk: buildApkAulaVirtual(),
+  apkBaseDir,
+  sanitizeApkFilename,
   pagoConsignacionQr: buildImagen('pago-consignacion-qr', 5),
   pagoConsignacionComprobante: buildImagen('pago-consignacion-comprobantes', 8),
   evidenciasCap: buildEvidenciaCap(),

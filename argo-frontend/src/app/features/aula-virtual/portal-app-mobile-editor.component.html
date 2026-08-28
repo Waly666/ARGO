@@ -1,0 +1,108 @@
+<div class="pame-stack">
+  <p class="pame-note">
+    Publique aquí la <strong>app Android del aula virtual</strong>. El archivo se guarda en el servidor del portal
+    (<code>/apk/</code>) y el botón de descarga del inicio apunta automáticamente a esa URL.
+    Después de subir el APK, pulse <strong>Publicar cambios en el sitio</strong> si también modificó textos.
+  </p>
+
+  <section class="pame-upload card">
+    <h3 class="pame-section-title">📲 Archivo APK</h3>
+
+    <div class="pame-upload__row">
+      <div class="pame-upload__meta">
+        <label class="psb-field psb-field--plain">
+          <span>Nombre del archivo en el servidor</span>
+          <input
+            type="text"
+            class="psb-input"
+            [(ngModel)]="appMobile.apkNombre"
+            placeholder="aula-virtual.apk"
+          />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>URL pública (se actualiza al subir)</span>
+          <input type="text" class="psb-input" [(ngModel)]="appMobile.apkUrl" placeholder="/apk/aula-virtual.apk" />
+        </label>
+        @if (apkDownloadHref(); as href) {
+          <p class="pame-hint">
+            Enlace de prueba:
+            <a [href]="href" target="_blank" rel="noopener">{{ href }}</a>
+          </p>
+        }
+      </div>
+
+      <div class="pame-upload__actions">
+        <div class="pame-apk-icon" aria-hidden="true">🤖</div>
+        <label class="pame-btn pame-btn--file" [class.pame-btn--disabled]="apkUploading()">
+          {{ apkUploading() ? 'Subiendo APK…' : 'Subir APK al servidor' }}
+          <input
+            type="file"
+            accept=".apk,application/vnd.android.package-archive"
+            (change)="onApkSelected($event)"
+            [disabled]="apkUploading()"
+          />
+        </label>
+        <p class="pame-hint">Android · máx. 200 MB · reemplaza el archivo si ya existe con el mismo nombre</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pame-texts">
+    <h3 class="pame-section-title">✏️ Textos de la sección en el inicio</h3>
+    <p class="pame-hint">
+      Active el bloque <strong>App Mobile</strong> en
+      <em>Bloques del inicio</em> para que esta sección sea visible en la página principal.
+    </p>
+
+    <div class="pame-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta pequeña</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain pame-span2">
+        <span>Título</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.titulo" />
+      </label>
+    </div>
+
+    <label class="psb-field psb-field--plain">
+      <span>Introducción</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="appMobile.lead"></textarea>
+    </label>
+
+    <div class="pame-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Texto del botón descarga</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.btnDescargar" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Nota de instalación</span>
+        <input type="text" class="psb-input" [(ngModel)]="appMobile.notaInstalacion" />
+      </label>
+    </div>
+
+    @for (item of appMobile.features; track $index; let i = $index) {
+      <article class="pame-feature card">
+        <div class="pame-feature__head">
+          <strong>Característica {{ i + 1 }}</strong>
+          <button type="button" class="pame-link" (click)="removeFeature(i)">Quitar</button>
+        </div>
+        <div class="pame-grid3">
+          <label class="psb-field psb-field--plain">
+            <span>Icono</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.icon" />
+          </label>
+          <label class="psb-field psb-field--plain pame-span2">
+            <span>Título</span>
+            <input type="text" class="psb-input" [(ngModel)]="item.title" />
+          </label>
+        </div>
+        <label class="psb-field psb-field--plain">
+          <span>Descripción</span>
+          <textarea class="psb-input" rows="2" [(ngModel)]="item.text"></textarea>
+        </label>
+      </article>
+    }
+    <button type="button" class="pame-link" (click)="addFeature()">+ Añadir característica</button>
+  </section>
+</div>

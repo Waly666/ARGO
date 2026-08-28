@@ -9,7 +9,6 @@ import { FilterChip } from './FilterChip';
 import { ScaledText } from './ScaledText';
 import { SearchField } from './SearchField';
 import { SectionHeader } from './SectionHeader';
-import { SurfaceCard } from './SurfaceCard';
 import { useTheme } from '../context/ThemeContext';
 import { useDebounced } from '../hooks/useDebounced';
 import { fetchCategorias, fetchCursos } from '../api/aulaApi';
@@ -80,13 +79,14 @@ export function CatalogoContent({ intro }: Props) {
         title="Cursos"
         subtitle={loading && !refreshing ? 'Cargando…' : `${cursos.length} programa(s) disponibles`}
         icon="library-outline"
+        iconColor={c.primary}
+        iconBg={c.foroSoft}
       />
-      <SurfaceCard padding="md" style={{ marginBottom: space.md }} tint={c.accentSoft} accentLeft={c.accent}>
-        <ScaledText baseSize={13} style={{ color: c.textSoft, lineHeight: 20 }}>
-          {intro ??
-            'La mayoría de cursos son gratuitos: matricúlese y estudie sin pagar. El valor del programa aplica cuando necesita el certificado.'}
+      {intro ? (
+        <ScaledText baseSize={13} style={{ color: c.textSoft, lineHeight: 20, marginBottom: space.md }}>
+          {intro}
         </ScaledText>
-      </SurfaceCard>
+      ) : null}
       <SearchField value={q} onChangeText={setQ} placeholder="Buscar curso…" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} nestedScrollEnabled>
         <FilterChip label="Todos" active={catId == null} onPress={() => setCatId(null)} />
@@ -107,7 +107,7 @@ export function CatalogoContent({ intro }: Props) {
       ) : (
         <View style={styles.list}>
           {cursos.map((curso) => (
-            <CursoCard key={String(curso.idPrograma)} curso={curso} onPress={() => abrirCurso(curso)} />
+            <CursoCard key={String(curso.idPrograma)} curso={curso} layout="catalog" onPress={() => abrirCurso(curso)} />
           ))}
         </View>
       )}
@@ -116,7 +116,7 @@ export function CatalogoContent({ intro }: Props) {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingHorizontal: space.lg, paddingBottom: space.xxxl },
+  scrollContent: { paddingHorizontal: space.lg, paddingBottom: space.xxxl, paddingTop: space.md },
   chips: { paddingBottom: space.md },
   list: { paddingTop: space.sm },
 });

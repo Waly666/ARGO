@@ -26,6 +26,7 @@ import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor
 import { PortalHomeFotosEditorComponent } from './portal-home-fotos-editor.component';
 import { PortalAcercaHeroEditorComponent } from './portal-acerca-hero-editor.component';
 import { PortalPopupEditorComponent } from './portal-popup-editor.component';
+import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
@@ -44,6 +45,7 @@ export type BuilderPanel =
   | 'blog'
   | 'galeria'
   | 'popup'
+  | 'appMobile'
   | 'asistente'
   | 'consultaCertificados'
   | 'cursosConduccion'
@@ -90,6 +92,7 @@ interface GuiaPaso {
     PortalHomeFotosEditorComponent,
     PortalAcercaHeroEditorComponent,
     PortalPopupEditorComponent,
+    PortalAppMobileEditorComponent,
     PortalSitePreviewComponent,
   ],
   templateUrl: './portal-site-builder.component.html',
@@ -130,6 +133,7 @@ export class PortalSiteBuilderComponent {
         { id: 'inicio', icon: '🏠', label: 'Bloques del inicio' },
         { id: 'fotosInicio', icon: '🖼️', label: 'Fotos del inicio' },
         { id: 'contenido', icon: '✏️', label: 'Textos del inicio' },
+        { id: 'appMobile', icon: '📲', label: 'App móvil Android' },
       ],
     },
     {
@@ -271,6 +275,11 @@ export class PortalSiteBuilderComponent {
       contenido: {
         title: 'Textos de la página principal',
         help: 'Edite frases, preguntas frecuentes, testimonios y demás textos que aparecen en el inicio del sitio.',
+      },
+      appMobile: {
+        title: 'App móvil Android',
+        help:
+          'Suba el archivo APK al servidor y configure el botón de descarga que aparece en la sección «App Mobile» del inicio del portal.',
       },
       fotosInicio: {
         title: 'Fotos destacadas del inicio',

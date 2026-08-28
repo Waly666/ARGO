@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchText } from './client';
+import { apiFetch, apiFetchText, apiUpload } from './client';
 import type {
   CalendarioCohorte,
   CategoriaVirtual,
@@ -7,6 +7,8 @@ import type {
   CohorteAlumno,
   CursoVirtual,
   EstadoInscripcionVirtual,
+  EnviarSolicitudConsignacionRes,
+  EstadoConsignacionCurso,
   EvaluacionCohorteAlumno,
   IntentoEvalCohorte,
   MaterialCohorteAlumno,
@@ -64,6 +66,7 @@ export async function fetchPortalConfig(): Promise<PortalConfig> {
     formularioContactoActivo: cfg.formularioContactoActivo,
     formularioPqrActivo: cfg.formularioPqrActivo,
     site: cfg.site,
+    landing: cfg.landing,
     nit: cfg.nit,
     direccion: cfg.direccion,
     ciudad: cfg.ciudad,
@@ -250,6 +253,30 @@ export function iniciarPagoEnLinea(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(redirectUrl ? { redirectUrl } : {}),
   });
+}
+
+export function fetchEstadoConsignacionCurso(id: string | number): Promise<EstadoConsignacionCurso> {
+  return apiFetch<EstadoConsignacionCurso>(`${B}/cursos/${encodeURIComponent(String(id))}/consignacion`);
+}
+
+export function enviarSolicitudConsignacion(
+  id: string | number,
+  medioId: string,
+  referenciaBancaria: string,
+  comprobante: { uri: string; name: string; type: string },
+): Promise<EnviarSolicitudConsignacionRes> {
+  const fd = new FormData();
+  fd.append('medioId', medioId);
+  fd.append('referenciaBancaria', referenciaBancaria);
+  fd.append('comprobante', {
+    uri: comprobante.uri,
+    name: comprobante.name,
+    type: comprobante.type,
+  } as unknown as Blob);
+  return apiUpload<EnviarSolicitudConsignacionRes>(
+    `${B}/cursos/${encodeURIComponent(String(id))}/consignacion`,
+    fd,
+  );
 }
 
 export function consultarCertificados(numDoc: string | number): Promise<CertificadoConsultaRes> {

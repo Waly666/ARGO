@@ -20,11 +20,13 @@ services:
       - "5002:3000"
     environment:
       TZ: America/Bogota
+      APK_DIR: /app/apk
     env_file:
       - ./deploy/.env
     volumes:
       - ./data/uploads:/app/uploads
       - ./data/backups:/app/backups
+      - ./apk:/app/apk
     depends_on:
       - argo-mongo
     networks:

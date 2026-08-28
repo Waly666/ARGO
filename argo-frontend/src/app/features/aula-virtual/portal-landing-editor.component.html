@@ -336,9 +336,13 @@
         <div class="av-field"><label>Nota instalación</label><input [(ngModel)]="landing.appMobile.notaInstalacion" /></div>
       </div>
       <div class="av-grid2">
-        <div class="av-field"><label>URL APK</label><input [(ngModel)]="landing.appMobile.apkUrl" placeholder="/apk/aula-virtual-finstruvial.apk" /></div>
+        <div class="av-field"><label>URL APK</label><input [(ngModel)]="landing.appMobile.apkUrl" placeholder="/apk/aula-virtual.apk" /></div>
         <div class="av-field"><label>Nombre archivo APK</label><input [(ngModel)]="landing.appMobile.apkNombre" /></div>
       </div>
+      <p class="av-muted" style="margin: 0 0 12px">
+        Para <strong>subir el archivo APK al servidor</strong>, use
+        <strong>Aula virtual → Editor sitio web → App móvil Android</strong>.
+      </p>
       @for (item of landing.appMobile.features; track $index; let i = $index) {
         <div class="ple-card">
           <div class="ple-card-head"><strong>Característica {{ i + 1 }}</strong><button type="button" class="av-btn av-btn--ghost av-btn--sm" (click)="removeAppMobileFeature(i)">Quitar</button></div>

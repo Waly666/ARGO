@@ -18,6 +18,7 @@ const {
   aulaVirtualBlog,
   aulaVirtualGaleria,
   aulaVirtualHomeFotos,
+  aulaVirtualApk,
   programasVirtual,
   pagoConsignacionComprobante,
 } = require('../middleware/upload');
@@ -244,6 +245,13 @@ router.post(
   admin.subirImagenPopupPortal,
 );
 router.delete('/admin/portal/popup-imagen', requireAuth, configPortal, admin.quitarImagenPopupPortal);
+router.post(
+  '/admin/portal/app-mobile-apk',
+  requireAuth,
+  configPortal,
+  aulaVirtualApk.single('apk'),
+  admin.subirApkPortal,
+);
 router.post(
   '/admin/portal/consulta-certificados-asistente-video',
   requireAuth,

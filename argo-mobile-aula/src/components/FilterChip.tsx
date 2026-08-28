@@ -20,7 +20,7 @@ export function FilterChip({ label, active, onPress }: Props) {
         styles.chip,
         shadowIf(active),
         {
-          backgroundColor: active ? c.primary : c.card,
+          backgroundColor: active ? c.foroSoft : c.card,
           borderColor: active ? c.primary : c.border,
           opacity: pressed ? 0.88 : 1,
         },
@@ -28,7 +28,7 @@ export function FilterChip({ label, active, onPress }: Props) {
     >
       <ScaledText
         baseSize={13}
-        style={{ color: active ? '#fff' : c.text, fontWeight: active ? '700' : '500' }}
+        style={{ color: active ? c.primary : c.text, fontWeight: active ? '600' : '500' }}
       >
         {label}
       </ScaledText>
@@ -37,15 +37,7 @@ export function FilterChip({ label, active, onPress }: Props) {
 }
 
 function shadowIf(active?: boolean) {
-  return active
-    ? {
-        shadowColor: '#000',
-        shadowOpacity: 0.12,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
-      }
-    : {};
+  return {};
 }
 
 const styles = StyleSheet.create({

@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 
 export const SERVIDOR_API_STORAGE_KEY = 'argo_aula_servidor_api';
+export const DEFAULT_API_BASE = 'https://app.servial.edu.co/api';
 
 function trimSlash(s: string): string {
   return s.replace(/\/+$/, '');
@@ -69,7 +70,7 @@ export function getApiBaseUrl(): string {
   }
   const fromEnv = process.env.EXPO_PUBLIC_API_BASE_URL;
   if (fromEnv?.trim()) return normalizeApiBaseUrl(fromEnv);
-  return 'http://127.0.0.1:3000/api';
+  return DEFAULT_API_BASE;
 }
 
 export function getUploadsBaseUrl(): string {

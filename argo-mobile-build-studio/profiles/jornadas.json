@@ -1,0 +1,21 @@
+{
+  "appName": "ARGO Jornadas",
+  "slug": "argo-jornadas",
+  "version": "0.1.0",
+  "versionCode": 1,
+  "androidPackage": "co.argo.jornadas",
+  "scheme": "argojornadas",
+  "apiBaseUrl": "https://app.finstruvial.edu.co/api",
+  "splashBackgroundColor": "#0d9488",
+  "primaryColor": "#0d9488",
+  "tituloApp": "ARGO Jornadas",
+  "nombreEmpresaFallback": "Capacitación en campo",
+  "apkName": "argo-jornadas.apk",
+  "buildProfile": "production",
+  "easProjectId": "b6d9895e-f0c7-4abc-a781-6046c5d33d9a",
+  "uploads": {
+    "logo": null,
+    "icon": null,
+    "adaptiveIcon": null
+  }
+}

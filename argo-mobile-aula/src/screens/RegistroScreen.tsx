@@ -30,7 +30,9 @@ import {
   type MunicipioDivipola,
 } from '../api/catalogosApi';
 import { ArgoDateInput } from '../components/ArgoDateInput';
+import { AutorizacionDatos } from '../components/AutorizacionDatos';
 import { IconInput } from '../components/IconInput';
+import { Pdf417ScanModal } from '../components/Pdf417ScanModal';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScaledText } from '../components/ScaledText';
 import { SurfaceCard } from '../components/SurfaceCard';
@@ -48,6 +50,8 @@ import {
   TIPOS_DOC_FALLBACK,
 } from '../utils/catalogoHelpers';
 import { ymdToday } from '../utils/argoDateHelpers';
+import { payloadAutorizacionDatos } from '../config/autorizacionDatos';
+import type { CedulaPdf417Data } from '../utils/cedulaPdf417';
 
 type Paso = 'formulario' | 'codigo';
 
@@ -142,6 +146,8 @@ export default function RegistroScreen() {
   const [empresaBusq, setEmpresaBusq] = useState('');
   const [empresaSugs, setEmpresaSugs] = useState<{ _id: string; nombre: string; identificacion: string }[]>([]);
   const [empresaCargando, setEmpresaCargando] = useState(false);
+  const [pdf417Open, setPdf417Open] = useState(false);
+  const [aceptaAutorizacion, setAceptaAutorizacion] = useState(false);
 
   const patch = useCallback((partial: Partial<RegistroForm>) => {
     setForm((f) => ({ ...f, ...partial }));
@@ -264,11 +270,14 @@ export default function RegistroScreen() {
     [aplicarExpedidaDesdeTexto, aplicarMunicipioOrigenDesdeCodigo, form.tipoDoc, patch],
   );
 
-  async function onBuscarDocumento() {
-    const nd = form.numDoc.trim();
+  async function onBuscarDocumento(numDocOverride?: string) {
+    const nd = String(numDocOverride ?? form.numDoc).trim();
     if (!nd) {
       setError('Ingrese su número de documento.');
       return;
+    }
+    if (numDocOverride) {
+      patch({ numDoc: nd });
     }
     setBuscando(true);
     setError('');
@@ -294,6 +303,25 @@ export default function RegistroScreen() {
     } finally {
       setBuscando(false);
     }
+  }
+
+  async function onCedulaPdf417(data: CedulaPdf417Data) {
+    patch({
+      tipoDoc: data.tipoDoc || '1',
+      numDoc: data.numDoc,
+      apellido1: data.apellido1,
+      apellido2: data.apellido2 || '',
+      nombre1: data.nombre1,
+      nombre2: data.nombre2 || '',
+      genero: data.genero || '',
+      fechaNac: data.fechaNac || '',
+    });
+    setInfo('Cédula leída. Verificando en ARGO…');
+    await onBuscarDocumento(data.numDoc);
+    Alert.alert(
+      'Cédula escaneada',
+      'Documento, nombres, fecha y género sugeridos. Revise los datos y complete expedición y contacto.',
+    );
   }
 
   async function onBuscarEmpresa(q: string) {
@@ -331,12 +359,17 @@ export default function RegistroScreen() {
       codMunicipio: form.codMunicipio,
       munOrigen: form.munOrigen,
       empresaId: form.empresaId,
+      ...payloadAutorizacionDatos(aceptaAutorizacion),
     };
   }
 
   async function onEnviar() {
     if (config?.registroAbierto === false) {
       setError('El registro en línea está temporalmente cerrado.');
+      return;
+    }
+    if (!aceptaAutorizacion) {
+      setError('Debe aceptar la autorización de tratamiento de datos personales.');
       return;
     }
     if (!form.email.trim() || !form.password || form.password.length < 6) {
@@ -494,6 +527,21 @@ export default function RegistroScreen() {
             options={tiposDocOpts}
           />
 
+          <View style={[styles.scanBox, { backgroundColor: c.foroSoft, borderColor: c.borderLight }]}>
+            <ScaledText baseSize={14} style={{ color: c.text, fontWeight: '700', marginBottom: 4 }}>
+              Escanear cédula
+            </ScaledText>
+            <ScaledText baseSize={12} style={{ color: c.textSoft, lineHeight: 18, marginBottom: space.sm }}>
+              Lea el código PDF417 del reverso de la cédula amarilla para rellenar documento y nombres automáticamente.
+            </ScaledText>
+            <PrimaryButton
+              label="Escanear código de la cédula"
+              onPress={() => setPdf417Open(true)}
+              icon="scan-outline"
+              fullWidth
+            />
+          </View>
+
           <FieldLabel>Número documento *</FieldLabel>
           <IconInput
             value={form.numDoc}
@@ -504,7 +552,7 @@ export default function RegistroScreen() {
           />
           <PrimaryButton
             label={buscando ? 'Buscando…' : 'Verificar en ARGO'}
-            onPress={onBuscarDocumento}
+            onPress={() => void onBuscarDocumento()}
             loading={buscando}
             variant="ghost"
             fullWidth
@@ -695,6 +743,16 @@ export default function RegistroScreen() {
             </ScaledText>
           ) : null}
 
+          <AutorizacionDatos
+            aceptado={aceptaAutorizacion}
+            onAceptadoChange={(v) => {
+              setAceptaAutorizacion(v);
+              if (v) setError('');
+            }}
+            nombreEmpresa={config?.nombreCea}
+            correo={config?.email}
+          />
+
           <PrimaryButton
             label={
               loading
@@ -705,12 +763,18 @@ export default function RegistroScreen() {
             }
             onPress={onEnviar}
             loading={loading}
-            disabled={config?.registroAbierto === false}
+            disabled={config?.registroAbierto === false || !aceptaAutorizacion}
             fullWidth
           />
 
           <PrimaryButton label="¿Ya tienes cuenta? Acceder" variant="ghost" onPress={() => nav.navigate('Login')} fullWidth />
         </SurfaceCard>
+
+        <Pdf417ScanModal
+          visible={pdf417Open}
+          onClose={() => setPdf417Open(false)}
+          onScan={(data) => void onCedulaPdf417(data)}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -718,6 +782,12 @@ export default function RegistroScreen() {
 
 const styles = StyleSheet.create({
   pad: { padding: 16, paddingBottom: 48 },
+  scanBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: space.md,
+    marginBottom: space.lg,
+  },
   empresaChip: {
     flexDirection: 'row',
     alignItems: 'center',

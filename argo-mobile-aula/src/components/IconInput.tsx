@@ -30,7 +30,7 @@ function IconInputInner({
   return (
     <View style={[styles.wrap, { borderColor: c.border, backgroundColor: c.inputBg }]}>
       <View style={[styles.iconBox, { backgroundColor: c.accentSoft }]}>
-        <Ionicons name={icon} size={18} color={c.accent} />
+        <Ionicons name={icon} size={18} color={c.primary} />
       </View>
       <TextInput
         value={value}

@@ -1,13 +1,12 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 
 import { ScaledText } from './ScaledText';
 import { useTheme } from '../context/ThemeContext';
-import { radius, space } from '../theme/spacing';
 import { shadow } from '../theme/shadows';
+import { radius, space } from '../theme/spacing';
 
 type IonName = ComponentProps<typeof Ionicons>['name'];
 
@@ -16,6 +15,8 @@ type Props = {
   onPress: () => void;
   icon?: IonName;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'light' | 'accent';
+  /** Fuerza el color de fondo (p. ej. azul ARGO en login). */
+  color?: string;
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
@@ -27,6 +28,7 @@ export function PrimaryButton({
   onPress,
   icon,
   variant = 'primary',
+  color,
   disabled,
   loading,
   fullWidth,
@@ -35,6 +37,7 @@ export function PrimaryButton({
   const c = useTheme();
   const py = size === 'lg' ? 16 : 14;
   const fs = size === 'lg' ? 16 : 15;
+  const primaryBg = color ?? c.primary;
 
   const isGhost = variant === 'ghost';
   const isLight = variant === 'light';
@@ -43,7 +46,7 @@ export function PrimaryButton({
   const isAccent = variant === 'accent';
 
   const textColor =
-    isGhost || isSecondary ? c.primary : isLight ? '#fff' : isAccent ? '#042f2e' : '#fff';
+    isGhost || isSecondary ? primaryBg : isLight ? '#fff' : isAccent ? '#042f2e' : '#fff';
 
   const content = loading ? (
     <ActivityIndicator color={textColor} />
@@ -56,23 +59,24 @@ export function PrimaryButton({
     </View>
   );
 
-  const pressedStyle = ({ pressed }: { pressed: boolean }) => [
-    fullWidth && styles.full,
-    { opacity: pressed || disabled || loading ? 0.86 : 1 },
-  ];
-
-  if ((variant === 'primary' || variant === 'accent') && !disabled && !loading) {
-    const colors = variant === 'accent' ? c.gradientAccent : c.gradientPrimary;
+  if ((variant === 'primary' || variant === 'accent') && !disabled) {
     return (
-      <Pressable onPress={onPress} disabled={disabled || loading} style={pressedStyle}>
-        <LinearGradient
-          colors={colors}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={[styles.btn, { paddingVertical: py }, shadow.sm]}
-        >
-          {content}
-        </LinearGradient>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={({ pressed }) => [
+          styles.btn,
+          fullWidth && styles.full,
+          {
+            paddingVertical: py,
+            minHeight: 52,
+            backgroundColor: variant === 'accent' ? c.accent : primaryBg,
+            opacity: pressed || disabled || loading ? 0.88 : 1,
+          },
+          !loading && shadow.button,
+        ]}
+      >
+        {content}
       </Pressable>
     );
   }
@@ -85,9 +89,9 @@ export function PrimaryButton({
         ? 'rgba(255,255,255,0.14)'
         : isGhost
           ? 'transparent'
-          : c.primary;
+          : primaryBg;
 
-  const borderColor = isGhost ? c.primary : isLight ? 'rgba(255,255,255,0.45)' : 'transparent';
+  const borderColor = isGhost ? primaryBg : isLight ? 'rgba(255,255,255,0.45)' : 'transparent';
 
   return (
     <Pressable
@@ -96,7 +100,6 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.btn,
         fullWidth && styles.full,
-        shadow.sm,
         {
           paddingVertical: py,
           backgroundColor: bg,
@@ -106,14 +109,7 @@ export function PrimaryButton({
         },
       ]}
     >
-      {loading ? <ActivityIndicator color={textColor} /> : (
-        <View style={styles.row}>
-          {icon ? <Ionicons name={icon} size={18} color={textColor} /> : null}
-          <ScaledText baseSize={fs} style={{ color: textColor, fontWeight: '700' }}>
-            {label}
-          </ScaledText>
-        </View>
-      )}
+      {content}
     </Pressable>
   );
 }

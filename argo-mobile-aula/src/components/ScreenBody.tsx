@@ -42,6 +42,6 @@ export function ScreenBody({ children, refreshing, onRefresh, noPadding, style }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { flexGrow: 1, paddingBottom: space.xxl },
+  content: { flexGrow: 1, paddingBottom: 36 },
   inner: { paddingHorizontal: space.lg },
 });

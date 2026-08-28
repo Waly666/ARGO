@@ -1,19 +1,16 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { CompositeNavigationProp } from '@react-navigation/native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { ContinueCourseCard } from '../../components/ContinueCourseCard';
-import { PortalLogo } from '../../components/PortalLogo';
 import { EmptyState } from '../../components/EmptyState';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { PromoBanner } from '../../components/PromoBanner';
 import { ScaledText } from '../../components/ScaledText';
 import { ScreenBody } from '../../components/ScreenBody';
-import { SectionHeader } from '../../components/SectionHeader';
+import { SearchField } from '../../components/SearchField';
 import { StatTile } from '../../components/StatTile';
 import { SurfaceCard } from '../../components/SurfaceCard';
 import { useAuth } from '../../context/AuthContext';
@@ -31,17 +28,11 @@ import {
   puedeCursar,
 } from '../../utils/cursoUtils';
 import { resolvePlayerUrl } from '../../utils/uploadUrl';
-import type { AulaTabParamList, RootStackParamList } from '../../navigation/types';
-import { radius, space } from '../../theme/spacing';
-import { shadow } from '../../theme/shadows';
+import type { RootStackParamList } from '../../navigation/types';
+import { space } from '../../theme/spacing';
 
 export default function TableroPanel() {
-  const nav = useNavigation<
-    CompositeNavigationProp<
-      BottomTabNavigationProp<AulaTabParamList, 'Tablero'>,
-      StackNavigationProp<RootStackParamList>
-    >
-  >();
+  const nav = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { state } = useAuth();
   const c = useTheme();
   const { nombreEmpresa } = usePortalBranding();
@@ -49,6 +40,7 @@ export default function TableroPanel() {
   const { cursos, loading, error, reload } = useMisCursos();
   const [certs, setCerts] = useState(0);
   const [certsLoading, setCertsLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
 
   const loadCerts = useCallback(async () => {
     if (state.status !== 'signedIn') {
@@ -112,37 +104,45 @@ export default function TableroPanel() {
 
   return (
     <ScreenBody onRefresh={onRefresh} refreshing={loading || certsLoading}>
-      <LinearGradient
-        colors={c.gradientDashHero}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.dashHero, shadow.lg]}
-      >
-        <View style={styles.heroTop}>
-          <View style={styles.avatar}>
-            <ScaledText baseSize={18} style={{ color: '#fff', fontWeight: '800' }}>
+      <View style={styles.topRow}>
+        <View style={styles.userRow}>
+          <View style={[styles.avatar, { backgroundColor: c.foroSoft }]}>
+            <ScaledText baseSize={16} style={{ color: c.primary, fontWeight: '600' }}>
               {iniciales}
             </ScaledText>
           </View>
-          <View style={styles.heroCopy}>
-            <ScaledText baseSize={11} style={styles.heroKicker}>
-              MI AULA VIRTUAL
+          <View style={{ flex: 1 }}>
+            <ScaledText baseSize={12} style={{ color: c.textSoft }}>
+              Buenos días
             </ScaledText>
-            <ScaledText baseSize={20} style={styles.heroName} numberOfLines={1}>
-              Hola, {primerNombre}
-            </ScaledText>
-            <ScaledText baseSize={13} style={styles.heroSub}>
-              Sigue aprendiendo y alcanza tu certificación
+            <ScaledText baseSize={20} style={{ color: c.text, fontWeight: '600' }} numberOfLines={1}>
+              {primerNombre}
             </ScaledText>
           </View>
         </View>
-        <View style={styles.heroBrand}>
-          <PortalLogo width={96} height={44} hideLetterFallback />
-          <ScaledText baseSize={12} style={styles.heroEmpresa} numberOfLines={1}>
-            {nombreEmpresa}
-          </ScaledText>
-        </View>
-      </LinearGradient>
+        <Pressable style={[styles.bell, { backgroundColor: c.card, borderColor: c.borderLight }]}>
+          <Ionicons name="notifications-outline" size={22} color={c.text} />
+        </Pressable>
+      </View>
+
+      <SearchField
+        value={busqueda}
+        onChangeText={setBusqueda}
+        placeholder="Buscar curso…"
+        onFilterPress={() => nav.navigate('AulaCursos')}
+      />
+      <Pressable onPress={() => nav.navigate('AulaCursos')} style={{ marginTop: -space.sm, marginBottom: space.lg }}>
+        <ScaledText baseSize={12} style={{ color: c.primary, fontWeight: '700' }}>
+          Ir al catálogo →
+        </ScaledText>
+      </Pressable>
+
+      <PromoBanner
+        title="Sigue aprendiendo hoy"
+        subtitle={`${nombreEmpresa} — formación certificada en línea`}
+        ctaLabel="Explorar cursos"
+        onPress={() => nav.navigate('AulaCursos')}
+      />
 
       {loading && cursos.length === 0 ? (
         <ActivityIndicator color={c.primary} style={{ marginVertical: space.xl }} />
@@ -158,53 +158,29 @@ export default function TableroPanel() {
       ) : null}
 
       <View style={styles.stats}>
-        <StatTile label="Cursos" value={cursos.length} icon="book-outline" color={c.primary} softColor={c.accentSoft} />
-        <StatTile label="En progreso" value={enCurso.length} icon="play-circle-outline" color={c.accent} softColor={c.foroSoft} />
-        <StatTile label="Completados" value={completados.length} icon="checkmark-circle-outline" color={c.ok} softColor={c.okSoft} />
+        <StatTile label="Cursos" value={cursos.length} icon="book-outline" color={c.primary} softColor={c.foroSoft} />
+          <StatTile label="En progreso" value={enCurso.length} icon="play-circle-outline" color={c.primary} softColor={c.accentSoft} />
+          <StatTile label="Completados" value={completados.length} icon="checkmark-circle-outline" color={c.primaryDark} softColor={c.accentSoft} />
         <StatTile label="Certificados" value={certs} icon="ribbon-outline" color={c.gold} softColor={c.goldSoft} />
       </View>
 
-      <View style={{ marginBottom: space.lg }}>
-        <PrimaryButton
-          label="Explorar cursos y matricularme"
-          onPress={() => nav.navigate('Cursos')}
-          icon="library-outline"
-          fullWidth
-        />
-      </View>
-
       {continuar.length > 0 ? (
-        <SurfaceCard style={{ marginTop: space.lg }} tint={c.accentSoft} accentLeft={c.accent}>
-          <SectionHeader
-            title="Continuar aprendiendo"
-            subtitle="Retoma donde lo dejaste"
-            icon="flash-outline"
-            iconColor={c.accent}
-            iconBg={c.foroSoft}
-          />
+        <SurfaceCard style={{ marginTop: space.md }} tint={c.foroSoft} accentLeft={c.primary}>
+          <ScaledText baseSize={16} style={{ color: c.text, fontWeight: '600', marginBottom: space.md }}>
+            Continuar aprendiendo
+          </ScaledText>
           {continuar.map((curso) => (
             <ContinueCourseCard key={String(curso.idPrograma)} curso={curso} onPress={() => abrir(curso)} />
           ))}
         </SurfaceCard>
       ) : !loading && cursos.length === 0 ? (
-        <SurfaceCard style={{ marginTop: space.lg }}>
+        <SurfaceCard style={{ marginTop: space.md }}>
           <EmptyState
             title="Aún no tienes cursos"
             subtitle="Explora el catálogo y matricúlate en tu primer programa"
             icon="school-outline"
           />
-          <PrimaryButton
-            label="Explorar cursos"
-            onPress={() => nav.navigate('Cursos')}
-            icon="library-outline"
-            fullWidth
-          />
-        </SurfaceCard>
-      ) : !loading && cursos.length > 0 ? (
-        <SurfaceCard style={{ marginTop: space.lg }}>
-          <ScaledText baseSize={15} style={{ color: c.textSoft, textAlign: 'center' }}>
-            Tienes {cursos.length} curso(s) matriculado(s). Abre la pestaña Cursos para verlos todos.
-          </ScaledText>
+          <PrimaryButton label="Explorar cursos" onPress={() => nav.navigate('AulaCursos')} icon="library-outline" fullWidth />
         </SurfaceCard>
       ) : null}
     </ScreenBody>
@@ -212,34 +188,27 @@ export default function TableroPanel() {
 }
 
 const styles = StyleSheet.create({
-  dashHero: {
-    borderRadius: radius.xl,
-    padding: space.xl,
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: space.lg,
-    overflow: 'hidden',
   },
-  heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  userRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, flex: 1 },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.35)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroCopy: { flex: 1 },
-  heroKicker: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', letterSpacing: 1.4 },
-  heroName: { color: '#fff', fontWeight: '800', marginTop: 2 },
-  heroSub: { color: 'rgba(255,255,255,0.82)', marginTop: 4, lineHeight: 18 },
-  heroBrand: {
-    marginTop: space.lg,
-    paddingTop: space.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.15)',
+  bell: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  heroEmpresa: { color: 'rgba(255,255,255,0.88)', marginTop: space.xs, fontWeight: '600' },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md, justifyContent: 'space-between' },
 });

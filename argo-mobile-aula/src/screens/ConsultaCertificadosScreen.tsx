@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { IconInput } from '../components/IconInput';
+import { PortalAsistenteFlotante } from '../components/PortalAsistenteFlotante';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScaledText } from '../components/ScaledText';
 import { ScreenBody } from '../components/ScreenBody';
 import { SurfaceCard } from '../components/SurfaceCard';
+import { usePortalConfig } from '../context/PortalConfigContext';
 import { useTheme } from '../context/ThemeContext';
 import { consultarCertificados } from '../api/aulaApi';
 import type { CertificadoConsultaRes } from '../api/types';
+import { asistenteVistaParaPagina } from '../utils/asistentePortal';
 import { fmtFecha } from '../utils/cursoUtils';
 
 export default function ConsultaCertificadosScreen() {
   const c = useTheme();
+  const { config } = usePortalConfig();
+  const asistente = asistenteVistaParaPagina(config?.landing?.asistente ?? null, 'consultaCertificados');
   const [doc, setDoc] = useState('');
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState<CertificadoConsultaRes | null>(null);
@@ -35,7 +40,8 @@ export default function ConsultaCertificadosScreen() {
   }
 
   return (
-    <ScreenBody>
+    <>
+      <ScreenBody>
       <ScaledText baseSize={16} style={{ color: c.textSoft, marginBottom: 16 }}>
         Consulte certificados emitidos por documento de identidad.
       </ScaledText>
@@ -70,7 +76,9 @@ export default function ConsultaCertificadosScreen() {
           ))}
         </SurfaceCard>
       ) : null}
-    </ScreenBody>
+      </ScreenBody>
+      {asistente ? <PortalAsistenteFlotante config={asistente} /> : null}
+    </>
   );
 }
 

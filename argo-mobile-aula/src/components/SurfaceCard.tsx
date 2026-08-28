@@ -2,8 +2,7 @@ import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 
 import { useTheme } from '../context/ThemeContext';
-import { radius, space } from '../theme/spacing';
-import { shadow } from '../theme/shadows';
+import { radii, shadows, layout } from '../theme/tokens';
 
 type Props = {
   children: React.ReactNode;
@@ -27,9 +26,9 @@ export function SurfaceCard({ children, style, elevated = true, padding = 'lg', 
           borderWidth: 1,
           borderColor: accentLeft ? `${accentLeft}40` : c.borderLight,
           ...(accentLeft ? { borderLeftWidth: 4, borderLeftColor: accentLeft } : {}),
-          padding: padding === 'lg' ? space.lg : space.md,
+          padding: padding === 'lg' ? layout.screen : layout.card,
         },
-        elevated && shadow.md,
+        elevated && shadows.card,
         style,
       ]}
     >
@@ -39,5 +38,5 @@ export function SurfaceCard({ children, style, elevated = true, padding = 'lg', 
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.xl },
+  card: { borderRadius: radii.lg },
 });

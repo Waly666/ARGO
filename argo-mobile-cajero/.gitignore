@@ -10,3 +10,4 @@ dist/
 *.mobileprovision
 .env
 *.log
+build.profile.json

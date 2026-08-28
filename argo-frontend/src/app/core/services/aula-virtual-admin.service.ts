@@ -442,6 +442,26 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirApkPortal(
+    file: File,
+    apkNombre?: string,
+  ): Observable<{
+    config: PortalAulaConfig;
+    apkUrl: string;
+    apkNombre: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('apk', file);
+    if (apkNombre?.trim()) fd.append('apkNombre', apkNombre.trim());
+    return this.http.post<{
+      config: PortalAulaConfig;
+      apkUrl: string;
+      apkNombre: string;
+      message: string;
+    }>(`${this.base}/portal/app-mobile-apk`, fd);
+  }
+
   quitarImagenPopupPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
     return this.http.delete<{ config: PortalAulaConfig; message: string }>(
       `${this.base}/portal/popup-imagen`,

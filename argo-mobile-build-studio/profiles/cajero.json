@@ -1,0 +1,21 @@
+{
+  "appName": "ARGO Cajero",
+  "slug": "argo-cajero",
+  "version": "0.1.3",
+  "versionCode": 5,
+  "androidPackage": "co.argo.cajero",
+  "scheme": "argocajero",
+  "apiBaseUrl": "https://app.servial.edu.co/api",
+  "splashBackgroundColor": "#FFFFFF",
+  "primaryColor": "#3578F0",
+  "tituloApp": "ARGO CAJERO",
+  "nombreEmpresaFallback": "CEA SERVIAL COLOMBIA",
+  "apkName": "argo-cajero.apk",
+  "buildProfile": "production",
+  "easProjectId": "cff70a8f-b9ea-4d75-ac50-c9b7cd8a99c6",
+  "uploads": {
+    "logo": null,
+    "icon": null,
+    "adaptiveIcon": null
+  }
+}

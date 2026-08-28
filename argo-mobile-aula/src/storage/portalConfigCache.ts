@@ -23,6 +23,15 @@ function slimPortalConfig(config: PortalConfig): PortalConfig {
     formularioContactoActivo: config.formularioContactoActivo,
     formularioPqrActivo: config.formularioPqrActivo,
     site: config.site?.tema ? { tema: config.site.tema } : undefined,
+    landing: config.landing?.asistente
+      ? {
+          asistente: {
+            videoUrl: config.landing.asistente.videoUrl,
+            videoUrlAbsoluta: config.landing.asistente.videoUrlAbsoluta,
+            paginas: config.landing.asistente.paginas,
+          },
+        }
+      : undefined,
   };
 }
 

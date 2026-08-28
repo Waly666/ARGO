@@ -92,6 +92,7 @@ export function PortalLogo({
   }
 
   const imgSize = { width: width - imgPad, height: h - imgPad };
+  const networkUri = uri || logoUrl;
 
   function renderLogoImage(source: ImageSourcePropType, key?: string) {
     return (
@@ -101,7 +102,7 @@ export function PortalLogo({
           source={source}
           style={[styles.logoImg, imgSize, imageStyle]}
           resizeMode="contain"
-          onError={logoUrl ? onImgError : undefined}
+          onError={networkUri ? onImgError : undefined}
         />
       </View>
     );
@@ -109,14 +110,14 @@ export function PortalLogo({
 
   return (
     <View style={[styles.wrap, style]}>
-      {logoSource ? (
-        renderLogoImage(logoSource, 'embedded')
-      ) : loading ? (
+      {loading && !networkUri && !logoSource ? (
         <View style={boxStyle}>
-          <ActivityIndicator color={variant === 'onCard' ? c.primary : '#fff'} />
+          <ActivityIndicator color={variant === 'onCard' ? c.primary : c.primary} />
         </View>
-      ) : uri ? (
-        renderLogoImage({ uri }, uri)
+      ) : networkUri ? (
+        renderLogoImage({ uri: networkUri }, networkUri)
+      ) : logoSource ? (
+        renderLogoImage(logoSource, 'embedded')
       ) : hideLetterFallback ? (
         <View style={boxStyle}>
           <ActivityIndicator color={variant === 'onCard' ? c.primary : '#fff'} />

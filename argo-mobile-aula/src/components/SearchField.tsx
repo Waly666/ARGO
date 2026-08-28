@@ -10,24 +10,29 @@ type Props = {
   value: string;
   onChangeText: (t: string) => void;
   placeholder?: string;
+  onFilterPress?: () => void;
 };
 
-export function SearchField({ value, onChangeText, placeholder = 'Buscar…' }: Props) {
+export function SearchField({ value, onChangeText, placeholder = 'Buscar…', onFilterPress }: Props) {
   const c = useTheme();
   return (
-    <View style={[styles.wrap, shadow.sm, { borderColor: c.borderLight, backgroundColor: c.card }]}>
-      <Ionicons name="search" size={20} color={c.primary} />
+    <View style={[styles.wrap, shadow.sm, { borderColor: c.borderLight, backgroundColor: c.inputBg }]}>
+      <Ionicons name="search" size={20} color={c.textSoft} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={c.inputPlaceholder}
         autoCapitalize="none"
         style={[styles.input, { color: c.text }]}
       />
       {value.length > 0 ? (
         <Pressable onPress={() => onChangeText('')} hitSlop={8}>
           <Ionicons name="close-circle" size={18} color={c.textSoft} />
+        </Pressable>
+      ) : onFilterPress ? (
+        <Pressable onPress={onFilterPress} hitSlop={8} style={[styles.filterBtn, { backgroundColor: c.card }]}>
+          <Ionicons name="options-outline" size={18} color={c.primary} />
         </Pressable>
       ) : null}
     </View>
@@ -40,10 +45,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.sm,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radius.xl,
     paddingHorizontal: space.lg,
-    paddingVertical: space.md,
+    paddingVertical: space.md + 2,
     marginBottom: space.md,
   },
   input: { flex: 1, fontSize: 16, padding: 0 },
+  filterBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

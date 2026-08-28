@@ -37,7 +37,7 @@ const {
   eliminarPost,
   urlImagenSubida,
 } = require('../services/aulaVirtualBlog');
-const { publicUrl, publicUrlPath, resolvePath } = require('../middleware/upload');
+const { publicUrl, publicUrlPath, resolvePath, sanitizeApkFilename } = require('../middleware/upload');
 const { optimizarImagenArchivo } = require('../utils/optimizarImagen');
 const { listarUsuariosPortalAdmin, eliminarUsuarioPortal, crearUsuarioPortalAdmin } = require('../services/aulaVirtualUsuarios');
 const { inyectarBridgeEnPaquete, detectarStoragePrefix } = require('../services/aulaVirtualBridge');
@@ -494,6 +494,37 @@ exports.quitarImagenPopupPortal = async (req, res, next) => {
     res.json({
       config: await obtenerConfigPortalAdmin(),
       message: 'Imagen del popup eliminada',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+async function guardarAppMobileApkConfig(apkUrl, apkNombre, usuario) {
+  const aula = await obtenerConfigAula();
+  const landing = mergeLanding(aula.landing);
+  landing.appMobile = {
+    ...landing.appMobile,
+    apkUrl: String(apkUrl || '').trim(),
+    apkNombre: String(apkNombre || '').trim(),
+  };
+  await guardarConfigAula({ landing }, usuario);
+}
+
+/** Sube APK al directorio /apk del portal y actualiza landing.appMobile. */
+exports.subirApkPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione un archivo .apk de Android' });
+    }
+    const apkNombre = sanitizeApkFilename(req.file.filename);
+    const apkUrl = `/apk/${apkNombre}`;
+    await guardarAppMobileApkConfig(apkUrl, apkNombre, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      apkUrl,
+      apkNombre,
+      message: `APK publicada en el servidor (${apkNombre}). Los visitantes pueden descargarla desde el inicio del portal.`,
     });
   } catch (e) {
     next(e);

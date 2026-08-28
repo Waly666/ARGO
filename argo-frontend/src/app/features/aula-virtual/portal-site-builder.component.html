@@ -314,8 +314,19 @@
       @case ('contenido') {
         <p class="psb-note">
           Elija una sección abajo para editar sus textos. Los cambios se ven en la vista previa de la derecha.
+          Para subir el APK use
+          <button type="button" class="psb-link" (click)="setPanel('appMobile')">App móvil Android</button>.
         </p>
         <argo-portal-landing-editor [landing]="landing" />
+      }
+
+      @case ('appMobile') {
+        <argo-portal-app-mobile-editor
+          [appMobile]="landing.appMobile"
+          [portalUrl]="portalUrl"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
       }
 
       @case ('fotosInicio') {

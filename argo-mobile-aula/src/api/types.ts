@@ -39,6 +39,87 @@ export interface PagoEnLineaRes {
   reference: string;
 }
 
+export interface MedioPagoConsignacionPublico {
+  id: string;
+  etiqueta: string;
+  urlQr: string;
+  instruccionesExtra?: string;
+  orden?: number;
+  bancoNombre?: string;
+  cuentaDescr?: string;
+  idBanco?: string | number | null;
+}
+
+export interface TextosPagoConsignacionPublico {
+  tituloElegirMedio?: string;
+  instruccionesPago?: string;
+  textoReferenciaSugerida?: string;
+  mensajeEnRevision?: string;
+  mensajeAprobado?: string;
+  mensajeRechazado?: string;
+  plazoRevision?: string;
+}
+
+export interface SolicitudConsignacionPortal {
+  id: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  referenciaBancaria: string;
+  bancoNombre?: string;
+  medioEtiqueta?: string;
+  montoCop?: number;
+  motivoRechazo?: string | null;
+  fechaCreacion?: string;
+  fechaRevision?: string | null;
+  urlComprobante?: string;
+}
+
+export interface EstadoConsignacionCurso {
+  consignacionActiva: boolean;
+  medios: MedioPagoConsignacionPublico[];
+  textos?: TextosPagoConsignacionPublico;
+  solicitud: SolicitudConsignacionPortal | null;
+  puedeEnviarSolicitud: boolean;
+}
+
+export interface EnviarSolicitudConsignacionRes {
+  message?: string;
+  solicitud?: SolicitudConsignacionPortal;
+}
+
+export type PortalPaginaKey =
+  | 'home'
+  | 'cursos'
+  | 'tienda'
+  | 'aula'
+  | 'fundacion'
+  | 'consultaCertificados'
+  | 'cursosConduccion'
+  | 'galeria'
+  | 'blog'
+  | 'acerca';
+
+export interface PortalAsistentePaginaConfig {
+  activo: boolean;
+  texto: string;
+}
+
+export interface PortalAsistenteConfig {
+  videoUrl: string;
+  videoUrlAbsoluta?: string;
+  paginas: Partial<Record<PortalPaginaKey, PortalAsistentePaginaConfig>>;
+}
+
+export interface PortalAsistenteViewConfig {
+  asistenteActivo: boolean;
+  asistenteTexto: string;
+  asistenteVideoUrl: string;
+  asistenteVideoUrlAbsoluta?: string;
+}
+
+export interface PortalLandingConfig {
+  asistente?: PortalAsistenteConfig;
+}
+
 export interface PortalConfig {
   nombreCea: string;
   nit?: string;
@@ -60,6 +141,7 @@ export interface PortalConfig {
     paginas?: Record<string, { activa: boolean; etiquetaMenu: string; ruta: string }>;
     tema?: PortalTemaConfig;
   };
+  landing?: PortalLandingConfig;
 }
 
 export interface CategoriaVirtual {
@@ -73,6 +155,15 @@ export interface ClaseProgresoVirtual {
   aprobada: boolean;
 }
 
+export interface IntentoEvalVirtual {
+  numero?: number;
+  nota: number;
+  pctCompletitud?: number;
+  aprobado: boolean;
+  fecha?: string | null;
+  motivoNoAprobado?: 'avance_insuficiente' | 'nota_insuficiente' | 'nota_y_avance' | 'requisitos' | null;
+}
+
 export interface ProgresoVirtual {
   pctCompletitud: number;
   promedioClases?: number | null;
@@ -80,7 +171,9 @@ export interface ProgresoVirtual {
   clasesAprobadas?: number;
   totalClases?: number;
   mejorNotaEval: number | null;
+  ultimaNotaEval?: number | null;
   intentosEval: number;
+  intentos?: IntentoEvalVirtual[];
   aprobado: boolean;
   certificadoEmitido: boolean;
 }
@@ -117,8 +210,12 @@ export interface CursoVirtual {
   requierePagoParaCursar?: boolean;
   playerUrl?: string | null;
   storagePrefix?: string | null;
+  pctMinCompletitud?: number;
+  pctMinEvaluaciones?: number;
+  intentosMaxEval?: number;
   progreso?: ProgresoVirtual;
   reglas?: ReglasVirtual;
+  matricula?: { fechaMat?: string; pagada?: string; tarifa?: number } | null;
   pago?: EstadoPagoVirtual;
 }
 

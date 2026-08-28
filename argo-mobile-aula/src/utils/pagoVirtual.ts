@@ -1,9 +1,33 @@
-import { Linking } from 'react-native';
-
-import { iniciarPagoEnLinea } from '../api/aulaApi';
-import type { CursoVirtual, EstadoInscripcionVirtual, PagoEnLineaRes } from '../api/types';
+import type { CursoVirtual, EstadoInscripcionVirtual } from '../api/types';
 
 export type ModoPagoCurso = 'pagado' | 'bloqueado' | 'opcional' | 'sin_deuda';
+
+/** Misma regla que el portal web: matriculado con liquidación y saldo pendiente. */
+export function pagoPendiente(ins: EstadoInscripcionVirtual): boolean {
+  return !!(ins.matriculado && ins.pago && !ins.pago.pagado);
+}
+
+export function esPagoBloqueado(
+  ins: EstadoInscripcionVirtual,
+  curso: Pick<CursoVirtual, 'requierePagoParaCursar'>,
+): boolean {
+  return !!(
+    ins.accesoBloqueadoPago ||
+    ins.curso.requierePagoParaCursar ||
+    curso.requierePagoParaCursar
+  );
+}
+
+/** Botón Wompi — alineado a curso-detalle del portal web. */
+export function puedeMostrarPagoWompi(
+  ins: EstadoInscripcionVirtual,
+  curso: Pick<CursoVirtual, 'requierePagoParaCursar'>,
+  pasarelaActiva: boolean,
+): boolean {
+  if (!pasarelaActiva || !ins.matriculado || ins.pago?.pagado) return false;
+  if (esPagoBloqueado(ins, curso)) return true;
+  return pagoPendiente(ins);
+}
 
 /** ¿Hay saldo o certificado pendiente de pago? */
 export function tienePagoPendiente(
@@ -15,26 +39,22 @@ export function tienePagoPendiente(
   if (ins.accesoBloqueadoPago) return true;
   if (ins.curso.requierePagoParaCursar || curso.requierePagoParaCursar) return true;
   if (ins.pago?.tieneLiquidacion && !ins.pago.pagado) return true;
+  if (pagoPendiente(ins)) return true;
   if ((curso.tarifaVirtual ?? ins.curso.tarifaVirtual ?? 0) > 0 && ins.matriculado) return true;
   return false;
 }
 
-/** Misma lógica que curso-detalle del portal web. */
 export function modoPagoInscripcion(
   ins: EstadoInscripcionVirtual,
   curso: Pick<CursoVirtual, 'requierePagoParaCursar' | 'tarifaVirtual'>,
 ): ModoPagoCurso {
   if (ins.pago?.pagado) return 'pagado';
-  const bloqueado = !!(
-    ins.accesoBloqueadoPago ||
-    ins.curso.requierePagoParaCursar ||
-    curso.requierePagoParaCursar
-  );
-  if (bloqueado) return 'bloqueado';
+  if (esPagoBloqueado(ins, curso)) return 'bloqueado';
   if (tienePagoPendiente(ins, curso)) return 'opcional';
   return 'sin_deuda';
 }
 
+/** @deprecated use puedeMostrarPagoWompi */
 export function puedeMostrarPagoEnLinea(
   ins: EstadoInscripcionVirtual,
   curso: Pick<CursoVirtual, 'requierePagoParaCursar' | 'tarifaVirtual'>,
@@ -42,15 +62,9 @@ export function puedeMostrarPagoEnLinea(
   return tienePagoPendiente(ins, curso);
 }
 
-export async function abrirPagoEnLineaCurso(
-  idPrograma: string | number,
-  redirectUrl?: string,
-): Promise<PagoEnLineaRes> {
-  const res = await iniciarPagoEnLinea(idPrograma, redirectUrl);
-  if (!res.checkoutUrl?.trim()) {
-    throw new Error('No se pudo iniciar el pago en línea.');
-  }
-  const url = res.checkoutUrl.trim();
-  await Linking.openURL(url);
-  return res;
+export function montoPagoCurso(
+  ins: EstadoInscripcionVirtual,
+  curso: Pick<CursoVirtual, 'tarifaVirtual'>,
+): number {
+  return ins.pago?.saldo ?? curso.tarifaVirtual ?? ins.curso.tarifaVirtual ?? 0;
 }

@@ -66,6 +66,48 @@ export async function apiFetch<T>(
   return json as T;
 }
 
+/** Subida multipart (comprobantes de consignación, etc.). */
+export async function apiUpload<T>(path: string, form: FormData, timeoutMs = 60_000): Promise<T> {
+  const base = getApiBaseUrl();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'X-ARGO-Cliente': 'mobile',
+  };
+  const t = tokenGetter();
+  if (t) headers.Authorization = `Bearer ${t}`;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(`${base}${path.startsWith('/') ? path : `/${path}`}`, {
+      method: 'POST',
+      headers,
+      body: form,
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    throw new Error(mensajeRed(e, base));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const text = await res.text();
+  let json: unknown = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Respuesta no JSON (${res.status})`);
+    }
+  }
+  if (!res.ok) {
+    const msg = (json as { message?: string })?.message ?? `${res.status} ${res.statusText}`;
+    throw new Error(msg);
+  }
+  return json as T;
+}
+
 export async function apiFetchText(
   path: string,
   opts?: RequestInit & { auth?: boolean; timeoutMs?: number },
