@@ -12,6 +12,7 @@ import {
 } from '../../core/services/aula-virtual-admin.service';
 import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
+import { environment } from '../../../environments/environment';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 
 type TabAula = 'cursos' | 'usuarios' | 'empresa' | 'portal';
