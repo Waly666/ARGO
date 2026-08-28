@@ -327,29 +327,66 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding-top: 0.15rem;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
 }
 
 .lic-card__badge-icon {
-  font-size: 1rem;
-  opacity: 0.9;
-}
-
-.lic-card__badge-label {
-  font-size: 0.92rem;
-  font-weight: 800;
-  font-family: var(--av-font-display, var(--av-font-sans));
+  font-size: 1.35rem;
+  opacity: 0.95;
   color: var(--av-primary-oscuro, var(--av-primary, #1e3a5f));
 }
 
-.lic-card__valor {
-  margin: 0;
+.lic-card__badge-label {
+  font-size: clamp(1.05rem, 2.2vw, 1.22rem);
+  font-weight: 900;
+  font-family: var(--av-font-display, var(--av-font-sans));
+  letter-spacing: 0.02em;
+  color: var(--av-primary-oscuro, var(--av-primary, #1e3a5f));
+}
+
+.lic-card__precio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  margin: 0.1rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
   text-align: center;
-  font-size: clamp(1rem, 2vw, 1.15rem);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.lic-card__precio-label {
+  font-size: 0.62rem;
   font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   font-family: var(--av-font-sans);
-  color: var(--av-primary, #1e3a5f);
+  color: #94a3b8;
+}
+
+.lic-card__precio-valor {
+  margin: 0;
+  font-size: clamp(1.12rem, 2.4vw, 1.38rem);
+  font-weight: 900;
+  line-height: 1.2;
+  font-family: var(--av-font-display, var(--av-font-sans));
+  letter-spacing: -0.01em;
+  color: #ea580c;
+  background: linear-gradient(135deg, #fbbf24 0%, #f97316 42%, #ea580c 72%, #dc2626 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 8px rgba(234, 88, 12, 0.22));
+}
+
+.lic-card--destacada .lic-card__precio {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
 }
 
 .lic-card__btn {

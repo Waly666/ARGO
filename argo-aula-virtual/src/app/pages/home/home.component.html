@@ -230,11 +230,14 @@
               }
             </ul>
             <div class="lic-card__badge-row">
-              <av-portal-icon icon="award" class="lic-card__badge-icon" size="1.1rem" color="currentColor" />
+              <av-portal-icon icon="award" class="lic-card__badge-icon" size="1.4rem" color="currentColor" />
               <span class="lic-card__badge-label">{{ lic.licenciaLabel }}</span>
             </div>
             @if (lic.valor.trim()) {
-              <p class="lic-card__valor">{{ lic.valor }}</p>
+              <div class="lic-card__precio" role="group" [attr.aria-label]="'Precio: ' + lic.valor">
+                <span class="lic-card__precio-label">Precio</span>
+                <p class="lic-card__precio-valor">{{ lic.valor }}</p>
+              </div>
             }
             @if (licenciaEsExterna(lic.btnUrl)) {
               <a class="lic-card__btn" [href]="lic.btnUrl" target="_blank" rel="noopener noreferrer">
