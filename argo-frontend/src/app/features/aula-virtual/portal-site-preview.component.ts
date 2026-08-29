@@ -8,7 +8,7 @@ import {
   PortalPaginaKey,
 } from '../../core/constants/portal-site-defaults';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
-import { resolverTextoJuntoLogo } from '../../core/utils/portal-marca.util';
+import { resolverCopyrightPie, resolverTextoJuntoLogo } from '../../core/utils/portal-marca.util';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
 import { mergePortalLanding } from '../../core/constants/portal-landing-defaults';
 import { PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
@@ -117,13 +117,11 @@ export class PortalSitePreviewComponent {
   }
 
   copyrightText(): string {
-    const custom = this.site?.marca?.textoCopyright?.trim();
-    if (custom) return custom;
-    const fb = this.landing.footer.copyright?.trim();
-    if (this.site?.marca?.ocultarMarcaDesarrollador && fb) {
-      return fb.replace(/\s*[·|]\s*desarrollado.*/i, '').trim();
-    }
-    return fb || `© ${new Date().getFullYear()} ${this.nombreCea()}`;
+    return resolverCopyrightPie(
+      this.site?.marca,
+      this.landing.footer.copyright,
+      this.nombreCea(),
+    );
   }
 
   navItems(): { key: PortalPaginaKey; label: string }[] {

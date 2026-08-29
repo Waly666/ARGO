@@ -1,4 +1,5 @@
 const {
+  DESARROLLADOR_SISTEMA_DEFAULT,
   SITE_DEFAULTS,
   HOME_SECCIONES_ORDEN,
   paginasDefault,
@@ -161,16 +162,30 @@ function sincronizarNavLanding(landing, site) {
   return { ...landing, nav };
 }
 
+function quitarSufijoDesarrolladorCopyright(texto) {
+  return str(texto)
+    .replace(/\s*designed by.*$/i, '')
+    .replace(/\s*desarrollado por.*$/i, '')
+    .replace(/\s*[·|]\s*desarrollado.*/i, '');
+}
+
 function copyrightPublico(site, landing, nombreCea) {
-  const custom = str(site?.marca?.textoCopyright);
-  if (custom) return custom;
+  const marca = site?.marca || {};
+  const custom = str(marca.textoCopyright);
   const fb = str(landing?.footer?.copyright);
-  if (site?.marca?.ocultarMarcaDesarrollador && fb) {
-    return fb.replace(/\s*designed by.*$/i, '').replace(/\s*desarrollado por.*$/i, '').trim();
+  let base = custom || fb;
+  if (!base) {
+    const year = new Date().getFullYear();
+    base = `© ${year} ${nombreCea || 'Centro de formación'}. Todos los derechos reservados.`;
   }
-  if (fb) return fb;
-  const year = new Date().getFullYear();
-  return `© ${year} ${nombreCea || 'Centro de formación'}. Todos los derechos reservados.`;
+
+  if (marca.ocultarMarcaDesarrollador !== false) {
+    return quitarSufijoDesarrolladorCopyright(base);
+  }
+
+  const developer = str(marca.textoPieDesarrollador) || DESARROLLADOR_SISTEMA_DEFAULT;
+  const sinSufijo = quitarSufijoDesarrolladorCopyright(base);
+  return `${sinSufijo} · Desarrollado por ${developer}`;
 }
 
 module.exports = {

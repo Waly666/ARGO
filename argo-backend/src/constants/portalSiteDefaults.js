@@ -67,6 +67,9 @@ function paginasDefault(nav = {}) {
   };
 }
 
+/** Nombre por defecto del desarrollador del sistema (pie de página del portal). */
+const DESARROLLADOR_SISTEMA_DEFAULT = 'Walter Alexander Aguilar';
+
 const SITE_DEFAULTS = {
   tema: {
     colorPrimario: '#3b82f6',
@@ -95,6 +98,7 @@ const SITE_DEFAULTS = {
 };
 
 module.exports = {
+  DESARROLLADOR_SISTEMA_DEFAULT,
   SITE_DEFAULTS,
   HOME_SECCIONES_ORDEN,
   HOME_SECCIONES_LABELS,

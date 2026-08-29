@@ -37,6 +37,9 @@ export interface PortalTemaConfig {
   heroEstilo?: PortalHeroEstilo;
 }
 
+/** Nombre por defecto del desarrollador del sistema (pie de página del portal). */
+export const DESARROLLADOR_SISTEMA_DEFAULT = 'Walter Alexander Aguilar';
+
 export interface PortalMarcaConfig {
   /** Texto al lado del logo en el menú superior. */
   textoJuntoLogo: string;
