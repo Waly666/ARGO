@@ -9,6 +9,7 @@ import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { FUNDACION_CONTACTO } from './fundacion-content';
+import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
 
 @Component({
   selector: 'av-fundacion',
@@ -65,17 +66,7 @@ export class FundacionComponent implements OnInit {
     });
   }
 
-  telHref() {
-    const digits = this.telefono().replace(/\D/g, '');
-    if (!digits) return null;
-    const withCountry = digits.startsWith('57') ? digits : `57${digits}`;
-    return `tel:+${withCountry}`;
-  }
-
   whatsappHref() {
-    const digits = this.telefono().replace(/\D/g, '');
-    if (!digits) return null;
-    const withCountry = digits.startsWith('57') ? digits : `57${digits}`;
-    return `https://wa.me/${withCountry}`;
+    return whatsappHrefFromPhone(this.telefono());
   }
 }

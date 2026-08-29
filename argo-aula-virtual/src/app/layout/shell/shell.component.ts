@@ -16,7 +16,7 @@ import { PortalPopupComponent } from '../../shared/portal-popup/portal-popup.com
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
 
-import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
+import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
 import { resolverTextoJuntoLogo } from '../../core/portal-marca.util';
 
 const FOOTER_ABOUT_DEFAULT =
@@ -169,14 +169,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
     ),
   );
 
-  whatsappTelefono = computed(() => this.config()?.telefono?.trim() || '');
-
-  whatsappHref = computed(() => {
-    const digits = this.whatsappTelefono().replace(/\D/g, '');
-    if (!digits) return null;
-    const withCountry = digits.startsWith('57') ? digits : `57${digits}`;
-    return `https://wa.me/${withCountry}`;
-  });
+  whatsappHref = computed(() => whatsappHrefFromPhone(this.config()?.telefono));
 
   direccionCompleta = computed(() => {
     const c = this.config();
@@ -235,11 +228,10 @@ export class ShellComponent implements OnInit, AfterViewInit {
     this.destroyRef.onDestroy(() => this.cardWaves.unbind());
   }
 
+  whatsappTelefono = computed(() => this.config()?.telefono?.trim() || '');
+
   telHref() {
-    const digits = this.config()?.telefono?.replace(/\D/g, '') || '';
-    if (!digits) return null;
-    const withCountry = digits.startsWith('57') ? digits : `57${digits}`;
-    return `tel:+${withCountry}`;
+    return this.whatsappHref();
   }
 
   telDisplay() {

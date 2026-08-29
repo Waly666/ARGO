@@ -24,7 +24,7 @@ import { portalSectionIcon } from '../../shared/portal-icon/portal-icon.registry
 
 import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 
-import { ACERCA_DEFAULT, VALORES } from '../home/home-content';
+import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
 
 
 
@@ -114,6 +114,10 @@ export class AcercaComponent implements OnInit {
 
     return this.valorIcons[index % this.valorIcons.length];
 
+  }
+
+  whatsappHref(): string | null {
+    return whatsappHrefFromPhone(this.config()?.telefono);
   }
 
 

@@ -157,8 +157,8 @@
             <av-portal-icon icon="phone" class="site-footer__contact-icon" size="1.35rem" color="var(--av-accent, #aee929)" />
             <div class="site-footer__contact-body">
               <strong>Teléfono</strong>
-              @if (telHref(); as href) {
-                <a [href]="href">{{ telDisplay() }}</a>
+              @if (whatsappHref(); as href) {
+                <a [href]="href" target="_blank" rel="noopener noreferrer">{{ telDisplay() }}</a>
               } @else {
                 <span>{{ tel }}</span>
               }

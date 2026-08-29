@@ -29,6 +29,12 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalThemeService } from '../../core/portal-theme.service';
 import { resolvePortalHeroEstilo, isFinstruvialPortalTema } from '../../core/portal-theme-css.util';
 import { DEFAULT_CEA_NOMBRE, DEFAULT_APK_NOMBRE, DEFAULT_APK_URL } from '../../core/portal-brand-defaults';
+import {
+  contactHrefAbreNuevaPestana,
+  contactHrefEsExterno,
+  contactHrefFromInput,
+  whatsappHrefFromPhone,
+} from '../../core/portal-whatsapp.util';
 import { HERO_DEFAULT } from './home-content';
 
 @Component({
@@ -180,31 +186,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   heroLlamarHref(): string {
-    const custom = this.landing().hero.ctaLlamarUrl?.trim();
-    if (!custom) {
-      return this.telHref() || '#';
-    }
-    if (/^tel:/i.test(custom)) return custom;
-    if (/^https?:\/\//i.test(custom)) return custom;
-    if (/^\+?[\d\s().-]+$/.test(custom)) {
-      const digits = custom.replace(/\D/g, '');
-      if (!digits) return this.telHref() || '#';
-      if (digits.startsWith('57')) return `tel:+${digits}`;
-      return `tel:+57${digits}`;
-    }
-    return custom;
+    return contactHrefFromInput(this.landing().hero.ctaLlamarUrl, this.telefono()) || '#';
   }
 
   heroLlamarEsExterno(): boolean {
-    const custom = this.landing().hero.ctaLlamarUrl?.trim();
-    if (!custom) return true;
-    if (/^tel:/i.test(custom)) return true;
-    if (/^https?:\/\//i.test(custom)) return true;
-    return /^\+?[\d\s().-]+$/.test(custom);
+    return contactHrefEsExterno(this.landing().hero.ctaLlamarUrl, this.telefono());
   }
 
   heroLlamarAbreNuevaPestana(): boolean {
-    return /^https?:\/\//i.test(this.landing().hero.ctaLlamarUrl?.trim() || '');
+    return contactHrefAbreNuevaPestana(this.landing().hero.ctaLlamarUrl, this.telefono());
   }
 
   /** Posiciona cada carrera alrededor del núcleo central (layout orbital). */
@@ -233,10 +223,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return corto.charAt(0).toUpperCase() + corto.slice(1);
   }
 
-  telHref() {
-    const digits = this.telefono().replace(/\D/g, '');
-    if (!digits) return null;
-    return `tel:+57${digits}`;
+  whatsappHref(): string | null {
+    return whatsappHrefFromPhone(this.telefono());
   }
 
   private stopTypewriter() {

@@ -58,7 +58,7 @@
               <av-portal-icon icon="phone" class="acerca-contact-icon" size="1.35rem" />
               <div>
                 <strong>Teléfono</strong>
-                <a [href]="'tel:' + config()?.telefono">{{ config()?.telefono }}</a>
+                <a [href]="whatsappHref()" target="_blank" rel="noopener noreferrer">{{ config()?.telefono }}</a>
               </div>
             </li>
           }

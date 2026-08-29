@@ -134,8 +134,8 @@
           <div class="fund-contacto__item">
             <dt>Teléfono</dt>
             <dd>
-              @if (telHref(); as tel) {
-                <a [href]="tel">{{ telefono() }}</a>
+              @if (whatsappHref(); as wa) {
+                <a [href]="wa" target="_blank" rel="noopener noreferrer">{{ telefono() }}</a>
               } @else {
                 {{ telefono() }}
               }
