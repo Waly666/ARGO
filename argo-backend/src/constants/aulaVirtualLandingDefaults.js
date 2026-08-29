@@ -22,6 +22,7 @@ const LANDING_DEFAULTS = {
     ctaPrincipalUrl: '/cursos',
     ctaSecundario: 'Crear cuenta gratis',
     ctaSecundarioUrl: '/registro',
+    ctaLlamarUrl: '',
     mostrarBotonLlamar: true,
     imagenAlt: 'Estudiante en cursos y programas del aula virtual',
   },

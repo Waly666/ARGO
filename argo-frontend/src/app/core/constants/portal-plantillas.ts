@@ -56,6 +56,7 @@ function landingServial(): Partial<PortalLandingConfig> {
       ctaPrincipalUrl: '/aula',
       ctaSecundario: 'Consultar certificado',
       ctaSecundarioUrl: '/consulta-certificados',
+      ctaLlamarUrl: 'tel:+573213039595',
       mostrarBotonLlamar: true,
       imagenAlt: 'Aprenda a conducir con seguridad y confianza — Servial Colombia',
     },

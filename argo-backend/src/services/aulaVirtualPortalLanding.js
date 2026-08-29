@@ -345,6 +345,7 @@ function normalizarLanding(input) {
       ctaPrincipalUrl: str(heroSrc.ctaPrincipalUrl, d.hero.ctaPrincipalUrl),
       ctaSecundario: str(heroSrc.ctaSecundario, d.hero.ctaSecundario),
       ctaSecundarioUrl: str(heroSrc.ctaSecundarioUrl, d.hero.ctaSecundarioUrl),
+      ctaLlamarUrl: str(heroSrc.ctaLlamarUrl, d.hero.ctaLlamarUrl),
       mostrarBotonLlamar: heroSrc.mostrarBotonLlamar !== false && heroSrc.mostrarBotonLlamar !== 'false',
       imagenAlt: str(heroSrc.imagenAlt, d.hero.imagenAlt),
     },

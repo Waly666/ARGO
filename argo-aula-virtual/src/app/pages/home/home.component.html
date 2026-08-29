@@ -62,10 +62,18 @@
             <a [routerLink]="licenciaRuta(landing().hero.ctaSecundarioUrl || '/registro')" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
           }
 
-          @if (landing().hero.mostrarBotonLlamar && telefono(); as tel) {
-
-            <a [href]="telHref()" class="btn btn-ghost">Llamar {{ tel }}</a>
-
+          @if (heroLlamarVisible()) {
+            @if (heroLlamarEsExterno()) {
+              <a
+                [href]="heroLlamarHref()"
+                class="btn btn-ghost"
+                [attr.target]="heroLlamarAbreNuevaPestana() ? '_blank' : null"
+                [attr.rel]="heroLlamarAbreNuevaPestana() ? 'noopener noreferrer' : null">
+                {{ heroLlamarEtiqueta() }}
+              </a>
+            } @else {
+              <a [routerLink]="licenciaRuta(landing().hero.ctaLlamarUrl)" class="btn btn-ghost">{{ heroLlamarEtiqueta() }}</a>
+            }
           }
 
         </div>

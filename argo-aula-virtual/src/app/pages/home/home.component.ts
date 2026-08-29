@@ -168,6 +168,45 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return u.startsWith('/') ? u : `/${u}`;
   }
 
+  heroLlamarVisible(): boolean {
+    const hero = this.landing().hero;
+    if (!hero.mostrarBotonLlamar) return false;
+    return !!(hero.ctaLlamarUrl?.trim() || this.telefono());
+  }
+
+  heroLlamarEtiqueta(): string {
+    const tel = this.telefono();
+    return tel ? `Llamar ${tel}` : 'Llamar';
+  }
+
+  heroLlamarHref(): string {
+    const custom = this.landing().hero.ctaLlamarUrl?.trim();
+    if (!custom) {
+      return this.telHref() || '#';
+    }
+    if (/^tel:/i.test(custom)) return custom;
+    if (/^https?:\/\//i.test(custom)) return custom;
+    if (/^\+?[\d\s().-]+$/.test(custom)) {
+      const digits = custom.replace(/\D/g, '');
+      if (!digits) return this.telHref() || '#';
+      if (digits.startsWith('57')) return `tel:+${digits}`;
+      return `tel:+57${digits}`;
+    }
+    return custom;
+  }
+
+  heroLlamarEsExterno(): boolean {
+    const custom = this.landing().hero.ctaLlamarUrl?.trim();
+    if (!custom) return true;
+    if (/^tel:/i.test(custom)) return true;
+    if (/^https?:\/\//i.test(custom)) return true;
+    return /^\+?[\d\s().-]+$/.test(custom);
+  }
+
+  heroLlamarAbreNuevaPestana(): boolean {
+    return /^https?:\/\//i.test(this.landing().hero.ctaLlamarUrl?.trim() || '');
+  }
+
   /** Posiciona cada carrera alrededor del núcleo central (layout orbital). */
   carrerasOrbita = computed(() => {
     const items = this.landing().carreras.items;

@@ -70,10 +70,11 @@
         <div class="av-field"><label>Botón principal — enlace</label><input [(ngModel)]="landing.hero.ctaPrincipalUrl" placeholder="/cursos" /></div>
         <div class="av-field"><label>Botón secundario — texto</label><input [(ngModel)]="landing.hero.ctaSecundario" /></div>
         <div class="av-field"><label>Botón secundario — enlace</label><input [(ngModel)]="landing.hero.ctaSecundarioUrl" placeholder="/registro" /></div>
+        <div class="av-field"><label>Botón llamar — enlace</label><input [(ngModel)]="landing.hero.ctaLlamarUrl" placeholder="tel:+57300… o vacío = teléfono de la empresa" /></div>
       </div>
       <label class="av-check">
         <input type="checkbox" [(ngModel)]="landing.hero.mostrarBotonLlamar" />
-        Mostrar botón «Llamar» si hay teléfono
+        Mostrar botón «Llamar» (requiere teléfono de la empresa o enlace configurado)
       </label>
       <div class="av-field">
         <label>Texto alternativo imagen hero</label>

@@ -205,6 +205,7 @@ export interface PortalLandingConfig {
     ctaPrincipalUrl: string;
     ctaSecundario: string;
     ctaSecundarioUrl: string;
+    ctaLlamarUrl: string;
     mostrarBotonLlamar: boolean;
     imagenAlt: string;
   };
@@ -304,6 +305,7 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     ctaPrincipalUrl: '/cursos',
     ctaSecundario: 'Crear cuenta gratis',
     ctaSecundarioUrl: '/registro',
+    ctaLlamarUrl: '',
     mostrarBotonLlamar: true,
     imagenAlt: 'Estudiante en cursos y programas del aula virtual',
   },
