@@ -50,9 +50,17 @@
 
         <div class="hero-actions hero-in hero-in--4">
 
-          <a routerLink="/cursos" class="btn btn-primary">{{ landing().hero.ctaPrincipal }}</a>
+          @if (licenciaEsExterna(landing().hero.ctaPrincipalUrl)) {
+            <a [href]="landing().hero.ctaPrincipalUrl" class="btn btn-primary" target="_blank" rel="noopener noreferrer">{{ landing().hero.ctaPrincipal }}</a>
+          } @else {
+            <a [routerLink]="licenciaRuta(landing().hero.ctaPrincipalUrl || '/cursos')" class="btn btn-primary">{{ landing().hero.ctaPrincipal }}</a>
+          }
 
-          <a routerLink="/registro" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
+          @if (licenciaEsExterna(landing().hero.ctaSecundarioUrl)) {
+            <a [href]="landing().hero.ctaSecundarioUrl" class="btn btn-outline" target="_blank" rel="noopener noreferrer">{{ landing().hero.ctaSecundario }}</a>
+          } @else {
+            <a [routerLink]="licenciaRuta(landing().hero.ctaSecundarioUrl || '/registro')" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
+          }
 
           @if (landing().hero.mostrarBotonLlamar && telefono(); as tel) {
 

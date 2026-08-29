@@ -53,7 +53,9 @@ function landingServial(): Partial<PortalLandingConfig> {
       'Servial Colombia, licencia conducción, CEA, aula virtual, seguridad vial, Villavicencio, Meta',
     hero: {
       ctaPrincipal: 'Ingresar al aula virtual',
+      ctaPrincipalUrl: '/aula',
       ctaSecundario: 'Consultar certificado',
+      ctaSecundarioUrl: '/consulta-certificados',
       mostrarBotonLlamar: true,
       imagenAlt: 'Aprenda a conducir con seguridad y confianza — Servial Colombia',
     },

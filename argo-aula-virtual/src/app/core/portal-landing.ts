@@ -151,7 +151,9 @@ export interface PortalLandingConfig {
   metaKeywords: string;
   hero: {
     ctaPrincipal: string;
+    ctaPrincipalUrl: string;
     ctaSecundario: string;
+    ctaSecundarioUrl: string;
     mostrarBotonLlamar: boolean;
     imagenAlt: string;
   };
@@ -341,7 +343,9 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   metaKeywords: PORTAL_SEO_KEYWORDS,
   hero: {
     ctaPrincipal: 'Ver cursos y programas',
+    ctaPrincipalUrl: '/cursos',
     ctaSecundario: 'Crear cuenta gratis',
+    ctaSecundarioUrl: '/registro',
     mostrarBotonLlamar: true,
     imagenAlt: 'Estudiante en cursos y programas del aula virtual',
   },

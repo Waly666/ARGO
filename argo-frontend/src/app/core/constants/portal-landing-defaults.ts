@@ -202,7 +202,9 @@ export interface PortalLandingConfig {
   metaKeywords: string;
   hero: {
     ctaPrincipal: string;
+    ctaPrincipalUrl: string;
     ctaSecundario: string;
+    ctaSecundarioUrl: string;
     mostrarBotonLlamar: boolean;
     imagenAlt: string;
   };
@@ -299,7 +301,9 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     'CEA, centro de enseñanza automovilística, cursos de conducción Villavicencio, licencia de conducción Meta, cursos virtuales Colombia, aula virtual seguridad vial, cursos seguridad vial Colombia, capacitación tránsito Villavicencio, cursos tránsito Meta, programas certificados Villavicencio, formación técnica Meta Colombia, cursos en línea Villavicencio, capacitación conductores Meta, seguridad vial Villavicencio, matrícula cursos virtuales Meta',
   hero: {
     ctaPrincipal: 'Ver cursos y programas',
+    ctaPrincipalUrl: '/cursos',
     ctaSecundario: 'Crear cuenta gratis',
+    ctaSecundarioUrl: '/registro',
     mostrarBotonLlamar: true,
     imagenAlt: 'Estudiante en cursos y programas del aula virtual',
   },
