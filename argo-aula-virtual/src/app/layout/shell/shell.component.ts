@@ -17,6 +17,7 @@ import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.compon
 import { ConsultaCertificadosAsistenteComponent } from '../../pages/consulta-certificados/consulta-certificados-asistente.component';
 
 import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
+import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 import { resolverTextoJuntoLogo } from '../../core/portal-marca.util';
 
 const FOOTER_ABOUT_DEFAULT =

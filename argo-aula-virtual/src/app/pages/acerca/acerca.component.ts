@@ -23,8 +23,8 @@ import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.compon
 import { portalSectionIcon } from '../../shared/portal-icon/portal-icon.registry';
 
 import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
-
 import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
+import { ACERCA_DEFAULT, VALORES } from '../home/home-content';
 
 
 
@@ -102,7 +102,7 @@ export class AcercaComponent implements OnInit {
 
       .split(/\n+/)
 
-      .map((p) => p.trim())
+      .map((p: string) => p.trim())
 
       .filter(Boolean);
 
