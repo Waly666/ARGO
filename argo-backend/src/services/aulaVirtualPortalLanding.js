@@ -1,4 +1,5 @@
 const { LANDING_DEFAULTS } = require('../constants/aulaVirtualLandingDefaults');
+const { examenTeoricoContenidoAntiguo } = require('../constants/aulaVirtualExamenTeoricoDefaults');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('../constants/aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('../constants/aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS, MAX_FOTOS_INICIO } = require('../constants/aulaVirtualHomeFotosDefaults');
@@ -72,21 +73,30 @@ function normalizarLicencias(raw, fallback) {
 }
 
 function normalizarExamenTeorico(raw, fallback) {
-  const src = raw && typeof raw === 'object' ? raw : {};
+  const antiguo = examenTeoricoContenidoAntiguo(raw);
+  const srcRaw = raw && typeof raw === 'object' ? raw : {};
+  const src =
+    antiguo
+      ? { normograma: srcRaw.normograma, resoluciones: srcRaw.resoluciones }
+      : srcRaw;
   const defaults = Array.isArray(fallback.items) ? fallback.items : [];
   const rawItems = Array.isArray(src.items) ? src.items : [];
   const acentos = new Set(['blue', 'teal', 'orange', 'green', 'purple']);
-  const items = (rawItems.length ? rawItems : defaults).map((item, i) => {
-    const fb = defaults[i] || defaults[0] || {};
+  const itemCount = Math.max(rawItems.length, defaults.length);
+  const items = [];
+  for (let i = 0; i < itemCount; i++) {
+    const fb = defaults[i];
+    const item = rawItems[i];
+    if (!fb) continue;
     const acentoRaw = str(item?.acento, fb.acento).toLowerCase();
-    return {
+    items.push({
       numero: Number.isFinite(Number(item?.numero)) ? Number(item.numero) : fb.numero || i + 1,
       icon: str(item?.icon, fb.icon || 'clipboard'),
       acento: acentos.has(acentoRaw) ? acentoRaw : fb.acento || 'blue',
       titulo: str(item?.titulo, fb.titulo),
       texto: str(item?.texto, fb.texto),
-    };
-  });
+    });
+  }
   const resolucionesSrc = Array.isArray(src.resoluciones) ? src.resoluciones : [];
   const resolucionesDefaults = Array.isArray(fallback.resoluciones) ? fallback.resoluciones : [];
   const resoluciones = resolucionesSrc.length
@@ -109,11 +119,32 @@ function normalizarExamenTeorico(raw, fallback) {
   const normSrc = src.normograma && typeof src.normograma === 'object' ? src.normograma : {};
   const normItemsDefaults = Array.isArray(normDefaults.items) ? normDefaults.items : [];
   const normItemsRaw = Array.isArray(normSrc.items) ? normSrc.items : [];
-  const normItems = (normItemsRaw.length ? normItemsRaw : normItemsDefaults).map((item, i) => {
-    const fb = normItemsDefaults[i] || normItemsDefaults[0] || {};
+  const normCount = Math.max(normItemsRaw.length, normItemsDefaults.length);
+  const normItems = [];
+  for (let i = 0; i < normCount; i++) {
+    const fb = normItemsDefaults[i];
+    const item = normItemsRaw[i];
+    if (!fb) {
+      if (item?.norma) {
+        const acentoRaw = str(item?.acento, 'blue').toLowerCase();
+        const archivoUrl = str(item?.archivoUrl);
+        normItems.push({
+          icon: str(item?.icon, 'document'),
+          acento: acentos.has(acentoRaw) ? acentoRaw : 'blue',
+          norma: str(item?.norma),
+          fecha: str(item?.fecha),
+          queEstablece: str(item?.queEstablece),
+          detalle: str(item?.detalle),
+          archivoUrl,
+          archivoUrlAbsoluta: archivoUrl ? publicUploadUrl(archivoUrl) || archivoUrl : '',
+          nombreArchivo: str(item?.nombreArchivo),
+        });
+      }
+      continue;
+    }
     const acentoRaw = str(item?.acento, fb.acento).toLowerCase();
     const archivoUrl = str(item?.archivoUrl, fb.archivoUrl);
-    return {
+    normItems.push({
       icon: str(item?.icon, fb.icon || 'document'),
       acento: acentos.has(acentoRaw) ? acentoRaw : fb.acento || 'blue',
       norma: str(item?.norma, fb.norma),
@@ -123,8 +154,8 @@ function normalizarExamenTeorico(raw, fallback) {
       archivoUrl,
       archivoUrlAbsoluta: archivoUrl ? publicUploadUrl(archivoUrl) || archivoUrl : '',
       nombreArchivo: str(item?.nombreArchivo, fb.nombreArchivo),
-    };
-  });
+    });
+  }
 
   return {
     kicker: str(src.kicker, fallback.kicker),
@@ -146,6 +177,8 @@ function normalizarExamenTeorico(raw, fallback) {
       return raw || '/examen-teorico';
     })(),
     paginaIntro: str(src.paginaIntro, fallback.paginaIntro),
+    enlaceOficialUrl: str(src.enlaceOficialUrl, fallback.enlaceOficialUrl),
+    enlaceOficialEtiqueta: str(src.enlaceOficialEtiqueta, fallback.enlaceOficialEtiqueta),
     resolucionesKicker: str(src.resolucionesKicker, fallback.resolucionesKicker),
     resolucionesTitulo: str(src.resolucionesTitulo, fallback.resolucionesTitulo),
     resolucionesLead: str(src.resolucionesLead, fallback.resolucionesLead),

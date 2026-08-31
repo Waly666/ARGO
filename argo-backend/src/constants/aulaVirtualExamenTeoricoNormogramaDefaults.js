@@ -4,7 +4,7 @@ const NORMOGRAMA_DEFAULTS = {
   titulo: 'Normograma examen teórico–práctico',
   subtitulo: 'Licencia de conducción en Colombia',
   lead:
-    'Línea de tiempo de leyes, decretos y resoluciones que regulan el examen teórico y práctico para la licencia de conducción. Descargue cada norma en PDF.',
+    'Línea de tiempo de leyes, decretos, resoluciones y circulares del Ministerio de Transporte. Incluye la actualización de agosto de 2026 que suspende temporalmente la exigencia del certificado del examen teórico. Descargue cada norma en PDF.',
   items: [
     {
       icon: 'document',
@@ -117,7 +117,34 @@ const NORMOGRAMA_DEFAULTS = {
       archivoUrl: '',
       nombreArchivo: '',
     },
+    {
+      icon: 'clipboard',
+      acento: 'orange',
+      norma: 'Circular Externa 20261010000277 de 2026',
+      fecha: '4 de agosto de 2026',
+      queEstablece:
+        'Comunicó el registro de 32 Centros de Apoyo Logístico de Evaluación (CALE) de la UNAD y fijó el 14 de septiembre de 2026 como fecha para exigir el certificado de aprobación del examen teórico.',
+      detalle:
+        'Derogada en lo que le sea contrario por la Circular Externa 20261010000317 del 28 de agosto de 2026. Ya no rige la fecha del 14 de septiembre de 2026 como inicio obligatorio.',
+      archivoUrl: '',
+      nombreArchivo: '',
+    },
+    {
+      icon: 'check-badge',
+      acento: 'green',
+      norma: 'Circular Externa 20261010000317 de 2026',
+      fecha: '28 de agosto de 2026',
+      queEstablece:
+        'Difiere la exigibilidad del certificado de aprobación del examen teórico de conducción (antes prevista para el 14 de septiembre de 2026) y ordena la revisión integral del esquema CALE.',
+      detalle:
+        'Hasta que el Ministerio notifique a los organismos de tránsito —previa verificación de capacidad, cobertura y disponibilidad nacional— no se puede exigir el certificado. Los trámites siguen con los requisitos anteriores a la circular de agosto de 2026. La Ley 2251 de 2022 sigue vigente.',
+      archivoUrl: '/documents/circular-20261010000317.pdf',
+      nombreArchivo: 'Circular 20261010000317.pdf',
+    },
   ],
 };
 
-module.exports = { NORMOGRAMA_DEFAULTS };
+const ENLACE_OFICIAL_MINTRANSPORTE_CIRCULARES =
+  'https://www.mintransporte.gov.co/documentos/11/circulares/';
+
+module.exports = { NORMOGRAMA_DEFAULTS, ENLACE_OFICIAL_MINTRANSPORTE_CIRCULARES };

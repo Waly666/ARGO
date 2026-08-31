@@ -23,6 +23,25 @@
       @if (contenido().paginaIntro.trim()) {
         <p class="et-intro">{{ contenido().paginaIntro }}</p>
       }
+
+      @if (contenido().enlaceOficialUrl.trim()) {
+        <aside class="et-oficial" aria-label="Fuente oficial MinTransporte">
+          <av-portal-icon icon="document" class="et-oficial__icon" size="1.35rem" color="currentColor" />
+          <div class="et-oficial__body">
+            <p class="et-oficial__lead">
+              Consulte el documento oficial y las demás circulares del Ministerio de Transporte para verificar el texto
+              íntegro de la derogación y las medidas adoptadas.
+            </p>
+            <a
+              class="et-oficial__link"
+              [href]="contenido().enlaceOficialUrl"
+              target="_blank"
+              rel="noopener noreferrer">
+              {{ contenido().enlaceOficialEtiqueta || 'Ver en MinTransporte' }} ↗
+            </a>
+          </div>
+        </aside>
+      }
     </div>
   </section>
 

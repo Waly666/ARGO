@@ -304,6 +304,18 @@
       </p>
     </div>
 
+    @if (landing().examenTeorico.enlaceOficialUrl.trim()) {
+      <p class="exteor-oficial reveal" avRevealOnScroll [revealDelay]="105">
+        <a
+          class="exteor-oficial__link"
+          [href]="landing().examenTeorico.enlaceOficialUrl"
+          target="_blank"
+          rel="noopener noreferrer">
+          {{ landing().examenTeorico.enlaceOficialEtiqueta || 'Ver en MinTransporte' }} ↗
+        </a>
+      </p>
+    }
+
     <ol class="exteor-list">
       @for (item of landing().examenTeorico.items; track item.numero; let i = $index) {
         <li

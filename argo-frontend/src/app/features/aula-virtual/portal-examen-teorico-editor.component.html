@@ -2,7 +2,7 @@
   <div class="pete-toolbar">
     <p class="psb-muted">
       Página oculta del menú en <strong>/examen-teorico</strong>. Se abre desde el botón de la sección del inicio
-      «Examen teórico (normatividad)». Incluye los 5 puntos informativos, normograma con PDFs por norma y resoluciones descargables.
+      «Examen teórico (normatividad)». Incluye puntos informativos, enlace al MinTransporte, normograma con PDFs y resoluciones descargables.
     </p>
     <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
   </div>
@@ -50,6 +50,16 @@
       <span>Introducción de la página</span>
       <textarea class="psb-input" rows="3" [(ngModel)]="examenTeorico.paginaIntro"></textarea>
     </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Enlace oficial MinTransporte (URL)</span>
+        <input type="url" class="psb-input" [(ngModel)]="examenTeorico.enlaceOficialUrl" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto del enlace oficial</span>
+        <input type="text" class="psb-input" [(ngModel)]="examenTeorico.enlaceOficialEtiqueta" />
+      </label>
+    </div>
     <div class="psb-grid2">
       <label class="psb-field psb-field--plain">
         <span>Botón final — texto</span>

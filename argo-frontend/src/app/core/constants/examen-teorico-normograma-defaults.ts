@@ -22,12 +22,43 @@ export interface PortalExamenTeoricoNormograma {
   items: PortalExamenTeoricoNorma[];
 }
 
+/** Normas recientes al final del normograma (circulares agosto 2026). */
+export const ENLACE_OFICIAL_MINTRANSPORTE_CIRCULARES =
+  'https://www.mintransporte.gov.co/documentos/11/circulares/';
+
+export const NORMOGRAMA_ITEMS_CIRCULARES_2026: PortalExamenTeoricoNorma[] = [
+  {
+    icon: 'clipboard',
+    acento: 'orange',
+    norma: 'Circular Externa 20261010000277 de 2026',
+    fecha: '4 de agosto de 2026',
+    queEstablece:
+      'Comunicó el registro de 32 Centros de Apoyo Logístico de Evaluación (CALE) de la UNAD y fijó el 14 de septiembre de 2026 como fecha para exigir el certificado de aprobación del examen teórico.',
+    detalle:
+      'Derogada en lo que le sea contrario por la Circular Externa 20261010000317 del 28 de agosto de 2026. Ya no rige la fecha del 14 de septiembre de 2026 como inicio obligatorio.',
+    archivoUrl: '',
+    nombreArchivo: '',
+  },
+  {
+    icon: 'check-badge',
+    acento: 'green',
+    norma: 'Circular Externa 20261010000317 de 2026',
+    fecha: '28 de agosto de 2026',
+    queEstablece:
+      'Difiere la exigibilidad del certificado de aprobación del examen teórico de conducción (antes prevista para el 14 de septiembre de 2026) y ordena la revisión integral del esquema CALE.',
+    detalle:
+      'Hasta que el Ministerio notifique a los organismos de tránsito —previa verificación de capacidad, cobertura y disponibilidad nacional— no se puede exigir el certificado. Los trámites siguen con los requisitos anteriores a la circular de agosto de 2026. La Ley 2251 de 2022 sigue vigente.',
+    archivoUrl: '/documents/circular-20261010000317.pdf',
+    nombreArchivo: 'Circular 20261010000317.pdf',
+  },
+];
+
 export const NORMOGRAMA_LANDING_DEFAULTS: PortalExamenTeoricoNormograma = {
   kicker: 'Marco normativo',
   titulo: 'Normograma examen teórico–práctico',
   subtitulo: 'Licencia de conducción en Colombia',
   lead:
-    'Línea de tiempo de leyes, decretos y resoluciones que regulan el examen teórico y práctico para la licencia de conducción. Descargue cada norma en PDF.',
+    'Línea de tiempo de leyes, decretos, resoluciones y circulares del Ministerio de Transporte. Incluye la actualización de agosto de 2026 que suspende temporalmente la exigencia del certificado del examen teórico. Descargue cada norma en PDF.',
   items: [
     {
       icon: 'document',
@@ -140,10 +171,31 @@ export const NORMOGRAMA_LANDING_DEFAULTS: PortalExamenTeoricoNormograma = {
       archivoUrl: '',
       nombreArchivo: '',
     },
+    ...NORMOGRAMA_ITEMS_CIRCULARES_2026,
   ],
 };
 
 const ACENTOS: ExamenTeoricoAcento[] = ['blue', 'teal', 'orange', 'green', 'purple'];
+
+function mergeNormogramaItem(
+  item: Partial<PortalExamenTeoricoNorma> | undefined,
+  fb: PortalExamenTeoricoNorma,
+): PortalExamenTeoricoNorma {
+  const acento = ACENTOS.includes(item?.acento as ExamenTeoricoAcento)
+    ? (item!.acento as ExamenTeoricoAcento)
+    : fb.acento;
+  return {
+    icon: item?.icon?.trim() || fb.icon,
+    acento,
+    norma: item?.norma?.trim() || fb.norma,
+    fecha: item?.fecha?.trim() || fb.fecha,
+    queEstablece: item?.queEstablece?.trim() || fb.queEstablece,
+    detalle: item?.detalle?.trim() || fb.detalle,
+    archivoUrl: item?.archivoUrl?.trim() || fb.archivoUrl,
+    archivoUrlAbsoluta: item?.archivoUrlAbsoluta?.trim() || fb.archivoUrlAbsoluta,
+    nombreArchivo: item?.nombreArchivo?.trim() || fb.nombreArchivo,
+  };
+}
 
 export function mergeNormogramaLanding(
   raw?: Partial<PortalExamenTeoricoNormograma> | null,
@@ -151,23 +203,17 @@ export function mergeNormogramaLanding(
   const d = NORMOGRAMA_LANDING_DEFAULTS;
   const src = raw && typeof raw === 'object' ? raw : {};
   const rawItems = Array.isArray(src.items) ? src.items : [];
-  const items = (rawItems.length ? rawItems : d.items).map((item, i) => {
-    const fb = d.items[i] || d.items[0];
-    const acento = ACENTOS.includes(item?.acento as ExamenTeoricoAcento)
-      ? (item!.acento as ExamenTeoricoAcento)
-      : fb.acento;
-    return {
-      icon: item?.icon?.trim() || fb.icon,
-      acento,
-      norma: item?.norma?.trim() || fb.norma,
-      fecha: item?.fecha?.trim() || fb.fecha,
-      queEstablece: item?.queEstablece?.trim() || fb.queEstablece,
-      detalle: item?.detalle?.trim() || fb.detalle,
-      archivoUrl: item?.archivoUrl?.trim() || fb.archivoUrl,
-      archivoUrlAbsoluta: item?.archivoUrlAbsoluta?.trim() || fb.archivoUrlAbsoluta,
-      nombreArchivo: item?.nombreArchivo?.trim() || fb.nombreArchivo,
-    };
-  });
+  const itemCount = Math.max(rawItems.length, d.items.length);
+  const items: PortalExamenTeoricoNorma[] = [];
+  for (let i = 0; i < itemCount; i++) {
+    const fb = d.items[i];
+    const item = rawItems[i];
+    if (!fb) {
+      if (item?.norma?.trim()) items.push(mergeNormogramaItem(item, d.items[0]));
+      continue;
+    }
+    items.push(mergeNormogramaItem(item, fb));
+  }
   return {
     kicker: src.kicker?.trim() || d.kicker,
     titulo: src.titulo?.trim() || d.titulo,
