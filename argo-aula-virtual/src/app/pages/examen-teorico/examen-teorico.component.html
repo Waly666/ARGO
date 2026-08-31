@@ -1,49 +1,37 @@
 <div class="et-page">
-  <section class="et-hero">
-    <div class="container">
-      <a routerLink="/" class="et-back">← Volver al inicio</a>
+  <av-portal-promo-banner-hero
+    [kicker]="contenido().kicker"
+    [titleLine]="contenido().titulo"
+    [titleAccent]="contenido().tituloLinea2"
+    [highlight]="heroHighlight()"
+    [showVirtualBadge]="contenido().mostrarBadgeVirtual"
+    [theme]="contenido().theme"
+    titleId="et-hero-title"
+  >
+    <a ppbh-top routerLink="/" class="ppbh-back">{{ contenido().backLabel }}</a>
 
-      <header class="et-hero__head">
-        <p class="et-kicker">{{ contenido().kicker }}</p>
-        <h1 class="et-title">
-          <span>{{ contenido().titulo }}</span>
-          <span class="et-title__accent">{{ contenido().tituloLinea2 }}</span>
-        </h1>
-      </header>
+    @if (contenido().paginaIntro.trim()) {
+      <p ppbh-extra class="ppbh-text">{{ contenido().paginaIntro }}</p>
+    }
 
-      <div class="et-fecha">
-        <av-portal-icon icon="check-badge" class="et-fecha__icon" size="1.35rem" color="currentColor" />
-        <p class="et-fecha__text">
-          {{ contenido().fechaBannerPrefijo }}
-          <strong class="et-fecha__destacada">{{ contenido().fechaDestacada }}</strong>
-          {{ contenido().fechaBannerSufijo }}
-        </p>
-      </div>
-
-      @if (contenido().paginaIntro.trim()) {
-        <p class="et-intro">{{ contenido().paginaIntro }}</p>
-      }
-
-      @if (contenido().enlaceOficialUrl.trim()) {
-        <aside class="et-oficial" aria-label="Fuente oficial MinTransporte">
-          <av-portal-icon icon="document" class="et-oficial__icon" size="1.35rem" color="currentColor" />
-          <div class="et-oficial__body">
-            <p class="et-oficial__lead">
-              Consulte el documento oficial y las demás circulares del Ministerio de Transporte para verificar el texto
-              íntegro de la derogación y las medidas adoptadas.
-            </p>
-            <a
-              class="et-oficial__link"
-              [href]="contenido().enlaceOficialUrl"
-              target="_blank"
-              rel="noopener noreferrer">
-              {{ contenido().enlaceOficialEtiqueta || 'Ver en MinTransporte' }} ↗
-            </a>
-          </div>
-        </aside>
-      }
-    </div>
-  </section>
+    @if (contenido().enlaceOficialUrl.trim()) {
+      <aside ppbh-extra class="et-oficial" aria-label="Fuente oficial MinTransporte">
+        <av-portal-icon icon="document" class="et-oficial__icon" size="1.35rem" color="currentColor" />
+        <div class="et-oficial__body">
+          <p class="et-oficial__lead">
+            {{ contenido().oficialLead }}
+          </p>
+          <a
+            class="et-oficial__link"
+            [href]="contenido().enlaceOficialUrl"
+            target="_blank"
+            rel="noopener noreferrer">
+            {{ contenido().enlaceOficialEtiqueta || 'Ver en MinTransporte' }} ↗
+          </a>
+        </div>
+      </aside>
+    }
+  </av-portal-promo-banner-hero>
 
   <section class="et-puntos">
     <div class="container">

@@ -10,11 +10,12 @@ import {
 } from '../../core/constants/portal-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
+import { PortalGaleriaHeroImagenEditorComponent } from './portal-galeria-hero-imagen-editor.component';
 
 @Component({
   selector: 'app-galeria-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PortalGaleriaFotosEditorComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PortalGaleriaFotosEditorComponent, PortalGaleriaHeroImagenEditorComponent],
   templateUrl: './galeria-admin.component.html',
   styleUrl: './galeria-admin.component.scss',
 })

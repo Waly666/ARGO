@@ -1,4 +1,10 @@
 const { MERCANCIAS_PELIGROSAS_DOCUMENTOS_GRUPOS } = require('./aulaVirtualMercanciasPeligrosasDocumentos');
+const {
+  mergePromoHeroPillars,
+  mergePromoHeroStats,
+  mergePromoHeroTheme,
+  PROMO_HERO_PILARES_MP,
+} = require('./portalPromoHeroFields');
 const ENLACE_PORTAL_MINTRANSPORTE_MP =
   'https://www.mintransporte.gov.co/normatividad/proyectos-de-normatividad/mercancias-peligrosas/';
 
@@ -36,6 +42,13 @@ const MERCANCIAS_PELIGROSAS_DEFAULTS = {
     'En Colombia, el transporte terrestre de mercancías peligrosas por carretera cuenta con una regulación específica que establece requisitos técnicos y de seguridad.',
     'Nuestro objetivo: explicar esta normativa de una manera sencilla, organizada y fácil de consultar.',
   ],
+  heroPillarsLabel: 'Contenidos del curso',
+  heroPillars: PROMO_HERO_PILARES_MP,
+  heroStats: ['9 clases ONU', 'NTC técnicas'],
+  backLabel: '← Volver al inicio',
+  theme: 'green',
+  mostrarBadgeVirtual: true,
+  virtualBadgeLabel: 'VIRTUAL',
   ctaNormativaTexto: 'Conocer la normativa',
   ctaClasificacionTexto: 'Ver clasificación',
   ctaFaqTexto: 'Preguntas frecuentes',
@@ -364,6 +377,13 @@ function mergeMercanciasPeligrosasLanding(
     subtitulo: str(src.subtitulo, d.subtitulo),
     heroLead: str(src.heroLead, d.heroLead),
     heroParrafos: arr(src.heroParrafos, d.heroParrafos),
+    heroPillarsLabel: str(src.heroPillarsLabel, d.heroPillarsLabel),
+    heroPillars: mergePromoHeroPillars(src.heroPillars, d.heroPillars),
+    heroStats: mergePromoHeroStats(src.heroStats, d.heroStats),
+    backLabel: str(src.backLabel, d.backLabel),
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual !== false,
+    virtualBadgeLabel: str(src.virtualBadgeLabel, d.virtualBadgeLabel),
     enlaceCursoUrl: str(src.enlaceCursoUrl, d.enlaceCursoUrl),
     enlaceCursoEtiqueta: str(src.enlaceCursoEtiqueta, d.enlaceCursoEtiqueta),
     ctaNormativaTexto: str(src.ctaNormativaTexto, d.ctaNormativaTexto),

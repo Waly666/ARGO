@@ -8,6 +8,11 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import {
+  PROMO_BANNER_RIBBON_DEFAULT,
+  PromoBannerRibbonItem,
+} from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import {
   mergeCursosConduccionLanding,
   PortalCursosConduccionResolucion,
@@ -17,7 +22,7 @@ import { CursosConduccionPublicidadSliderComponent } from './cursos-conduccion-p
 @Component({
   selector: 'av-cursos-conduccion',
   standalone: true,
-  imports: [CommonModule, RouterLink, PortalIconComponent, CursosConduccionPublicidadSliderComponent],
+  imports: [CommonModule, RouterLink, PortalIconComponent, CursosConduccionPublicidadSliderComponent, PortalPromoBannerHeroComponent],
   templateUrl: './cursos-conduccion.component.html',
   styleUrl: './cursos-conduccion.component.scss',
 })
@@ -27,9 +32,18 @@ export class CursosConduccionComponent implements OnInit {
 
   config = signal<PortalConfig | null>(null);
 
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'car', label: 'Licencias de conducción' },
+    { icon: 'certificate', label: 'Resoluciones vigentes' },
+    { icon: 'document', label: 'Material actualizado' },
+    { icon: 'shield-check', label: 'Formación certificada' },
+  ];
+
   contenido = computed(() =>
     mergeCursosConduccionLanding(mergePortalLanding(this.config()?.landing).cursosConduccion),
   );
+
+  heroPilares = computed(() => this.contenido().hero.pillars);
 
   invitacion = computed(() => this.contenido().invitacion);
 

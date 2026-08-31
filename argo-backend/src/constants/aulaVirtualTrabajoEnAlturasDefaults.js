@@ -1,9 +1,26 @@
 const { TRABAJO_EN_ALTURAS_DOCUMENTOS_GRUPOS } = require('./aulaVirtualTrabajoEnAlturasDocumentos');
+const {
+  mergePromoHeroPillars,
+  mergePromoHeroStats,
+  mergePromoHeroTheme,
+  PROMO_HERO_PILARES_TA,
+} = require('./portalPromoHeroFields');
 
 const landingJson = require('./trabajo-en-alturas-landing.json');
 
+const TRABAJO_EN_ALTURAS_HERO_DEFAULTS = {
+  heroPillarsLabel: 'Contenidos del curso',
+  heroPillars: PROMO_HERO_PILARES_TA,
+  heroStats: ['Res. 4272 de 2021', '2,0 m'],
+  backLabel: '← Volver al inicio',
+  theme: 'violet',
+  mostrarBadgeVirtual: true,
+  virtualBadgeLabel: 'VIRTUAL',
+};
+
 const TRABAJO_EN_ALTURAS_DEFAULTS = {
   ...landingJson,
+  ...TRABAJO_EN_ALTURAS_HERO_DEFAULTS,
   documentosGrupos: JSON.parse(JSON.stringify(TRABAJO_EN_ALTURAS_DOCUMENTOS_GRUPOS)),
 };
 
@@ -35,6 +52,13 @@ function mergeTrabajoEnAlturasLanding(raw) {
     subtitulo: str(src.subtitulo, d.subtitulo),
     heroLead: str(src.heroLead, d.heroLead),
     heroParrafos: arr(src.heroParrafos, d.heroParrafos),
+    heroPillarsLabel: str(src.heroPillarsLabel, d.heroPillarsLabel),
+    heroPillars: mergePromoHeroPillars(src.heroPillars, d.heroPillars),
+    heroStats: mergePromoHeroStats(src.heroStats, d.heroStats),
+    backLabel: str(src.backLabel, d.backLabel),
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual !== false,
+    virtualBadgeLabel: str(src.virtualBadgeLabel, d.virtualBadgeLabel),
     enlaceCursoUrl: str(src.enlaceCursoUrl, d.enlaceCursoUrl),
     enlaceCursoEtiqueta: str(src.enlaceCursoEtiqueta, d.enlaceCursoEtiqueta),
     ctaNormativaTexto: str(src.ctaNormativaTexto, d.ctaNormativaTexto),

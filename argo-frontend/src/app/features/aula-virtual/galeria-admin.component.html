@@ -45,6 +45,10 @@
           <input type="text" [(ngModel)]="galeria().emptyTexto" />
         </label>
       </div>
+      <argo-portal-galeria-hero-imagen-editor
+        [galeria]="galeria()"
+        (portalConfigUpdated)="onConfigActualizada($event)"
+        (avNotice)="onAviso($event)" />
       <div class="galeria-admin__toolbar">
         <button type="button" class="av-btn av-btn--primary" [disabled]="saving()" (click)="guardarTextos()">
           {{ saving() ? 'Guardando…' : 'Guardar textos' }}

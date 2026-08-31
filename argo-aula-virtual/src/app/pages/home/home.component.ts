@@ -18,16 +18,18 @@ import { AnimateTitleDirective } from '../../core/animate-title.directive';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { CursoVirtual, PortalConfig } from '../../core/models';
 import { CursoCardComponent } from '../../shared/curso-card/curso-card.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { HeroParticleMeshComponent } from '../../shared/hero-particle-mesh/hero-particle-mesh.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { portalSectionIcon } from '../../shared/portal-icon/portal-icon.registry';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { mergePortalLanding } from '../../core/portal-landing';
+import { applyNombreCeaHeroText } from '../../core/constants/portal-promo-hero-fields.util';
 import { ordenSeccionesHome, seccionHomeVisible } from '../../core/portal-site';
 import { CursosConduccionPublicidadSliderComponent } from '../cursos-conduccion/cursos-conduccion-publicidad-slider.component';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalThemeService } from '../../core/portal-theme.service';
-import { resolvePortalHeroEstilo, isFinstruvialPortalTema } from '../../core/portal-theme-css.util';
+import { resolvePortalHeroEstilo, isFinstruvialPortalTema, isEducartePortalTema } from '../../core/portal-theme-css.util';
 import { DEFAULT_CEA_NOMBRE, DEFAULT_APK_NOMBRE, DEFAULT_APK_URL } from '../../core/portal-brand-defaults';
 import {
   contactHrefAbreNuevaPestana,
@@ -40,12 +42,14 @@ import { HERO_DEFAULT } from './home-content';
 @Component({
   selector: 'av-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, HeroParticleMeshComponent, PortalIconComponent, CursosConduccionPublicidadSliderComponent],
+  imports: [CommonModule, RouterLink, RevealOnScrollDirective, AnimateTitleDirective, CursoCardComponent, PortalIconComponent, CursosConduccionPublicidadSliderComponent, PortalPromoBannerHeroComponent, HeroParticleMeshComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('heroH1') heroH1?: ElementRef<HTMLElement>;
+  @ViewChild('heroH1Servial') heroH1Servial?: ElementRef<HTMLElement>;
+  @ViewChild('heroH1Accent') heroH1Accent?: ElementRef<HTMLElement>;
 
   @HostBinding('class.home--servial-mesh')
   get servialMeshHome(): boolean {
@@ -55,6 +59,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostBinding('class.home--finstruvial')
   get finstruvialHome(): boolean {
     return isFinstruvialPortalTema(this.config()?.site?.tema);
+  }
+
+  @HostBinding('class.home--educarte')
+  get educarteHome(): boolean {
+    return isEducartePortalTema(this.config()?.site?.tema);
   }
 
   private api = inject(AulaApiService);
@@ -73,6 +82,30 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   landing = computed(() => mergePortalLanding(this.config()?.landing));
 
   nombreCea = computed(() => this.config()?.nombreCea || DEFAULT_CEA_NOMBRE);
+
+  heroEyebrowServial = computed(() => {
+    const template = this.landing().hero.eyebrowServial?.trim() || '— Bienvenid@ a {nombreCea} —';
+    return applyNombreCeaHeroText(template, this.nombreCea());
+  });
+
+  heroEyebrow = computed(() => this.landing().hero.eyebrow?.trim() || this.nombreCea());
+
+  heroSubEyebrow = computed(
+    () => this.landing().hero.subEyebrow?.trim() || 'Centro de Enseñanza Automovilística',
+  );
+
+  /** Kicker del banner promo (mismo estilo que Acerca de). */
+  heroPromoKicker = computed(() =>
+    this.heroEyebrowServial()
+      .replace(/^[\s—–-]+|[\s—–-]+$/g, '')
+      .trim(),
+  );
+
+  /** Línea blanca del título del banner promo. */
+  heroPromoTitleLine = computed(() => this.heroSubEyebrow());
+
+  /** Línea dorada del título del banner promo. */
+  heroPromoTitleAccent = computed(() => this.heroTitulo());
   telefono = computed(() => this.config()?.telefono?.trim() || '');
   direccion = computed(
     () =>
@@ -155,9 +188,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.config.set(c);
         this.seo.applyHome(c, this.cursos());
         const titulo = (c.heroTitulo || HERO_DEFAULT.titulo).trim();
-        if (titulo !== HERO_DEFAULT.titulo.trim()) {
-          this.startTypewriter(titulo);
-        }
+        queueMicrotask(() => this.startTypewriter(titulo));
       },
     });
     this.api.cursos().subscribe({
@@ -173,7 +204,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    this.startTypewriter(this.heroTitulo());
+    queueMicrotask(() => this.startTypewriter(this.heroTitulo()));
   }
 
   ngOnDestroy() {
@@ -201,6 +232,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   heroLlamarEtiqueta(): string {
+    const custom = this.landing().hero.ctaLlamarEtiqueta?.trim();
+    if (custom) return custom;
     const tel = this.telefono();
     return tel ? `Llamar ${tel}` : 'Llamar';
   }
@@ -254,15 +287,52 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private formatHomeHeroTituloTwoLines(text: string): string {
+    const full = text.trim();
+    const licenciaMatch = full.match(/^(.+?)\s+(de\s+conducci[oó]n)\s*$/i);
+    if (licenciaMatch) {
+      return `${licenciaMatch[1].trim()}\n${licenciaMatch[2].trim()}`;
+    }
+
+    const words = full.split(/\s+/).filter(Boolean);
+    if (words.length >= 4) {
+      const half = Math.ceil(words.length / 2);
+      return `${words.slice(0, half).join(' ')}\n${words.slice(half).join(' ')}`;
+    }
+
+    return full;
+  }
+
+  private typewriterText(text: string): string {
+    const full = text.trim();
+    if (this.heroEstilo() === 'servial-mesh') {
+      return this.formatHomeHeroTituloTwoLines(full);
+    }
+    return full;
+  }
+
+  private typewriterEl(): HTMLElement | undefined {
+    if (this.heroEstilo() === 'servial-mesh') {
+      return this.heroH1Accent?.nativeElement;
+    }
+    return this.heroH1?.nativeElement;
+  }
+
   private startTypewriter(text: string) {
-    const el = this.heroH1?.nativeElement;
+    const el = this.typewriterEl();
     if (!el) return;
 
     this.stopTypewriter();
     const run = ++this.typeRun;
-    const full = text.trim();
+    const full = this.typewriterText(text.trim());
+    const ariaFull = text.trim();
 
-    el.setAttribute('aria-label', full);
+    if (this.heroEstilo() === 'servial-mesh') {
+      const label = [this.heroPromoTitleLine(), ariaFull].filter(Boolean).join(' ');
+      this.heroH1Servial?.nativeElement?.setAttribute('aria-label', label);
+    } else {
+      el.setAttribute('aria-label', ariaFull);
+    }
 
     if (!full) {
       el.textContent = '';

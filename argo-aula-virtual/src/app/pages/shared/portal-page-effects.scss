@@ -1,0 +1,391 @@
+// Efectos sutiles de movimiento — heroes y tarjetas de páginas informativas del portal.
+
+@keyframes pp-radar-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.42);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes pp-radar-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pp-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes pp-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pp-float-alt {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(8px) rotate(1.5deg);
+  }
+}
+
+@keyframes pp-scan-sweep {
+  0% {
+    transform: translateY(-130%);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 0.85;
+  }
+
+  100% {
+    transform: translateY(230%);
+    opacity: 0;
+  }
+}
+
+@keyframes pp-title-shimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.15);
+  }
+}
+
+@keyframes pp-stat-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--pp-fx-accent-rgb), 0);
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+
+  50% {
+    box-shadow: 0 0 18px rgba(var(--pp-fx-accent-rgb), 0.22);
+    border-color: rgba(var(--pp-fx-accent-rgb), 0.35);
+  }
+}
+
+@keyframes pp-orb-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  33% {
+    transform: translate(12px, -8px);
+  }
+
+  66% {
+    transform: translate(-8px, 10px);
+  }
+}
+
+.pp-hero-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.pp-hero-fx__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse 75% 70% at 45% 42%, #000 15%, transparent 72%);
+  opacity: 0.75;
+}
+
+.pp-hero-fx__glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(var(--pp-fx-accent-rgb), 0.28), transparent 68%);
+  animation: pp-glow-pulse 7s ease-in-out infinite;
+
+  &--a {
+    inset: auto -10% -38% auto;
+    width: min(380px, 48vw);
+    height: min(380px, 48vw);
+  }
+
+  &--b {
+    inset: -22% auto auto -12%;
+    width: min(300px, 40vw);
+    height: min(300px, 40vw);
+    animation-delay: 1.4s;
+    animation-duration: 8.5s;
+  }
+}
+
+.pp-hero-fx__radar {
+  position: absolute;
+  top: 18%;
+  right: 6%;
+  width: min(280px, 34vw);
+  aspect-ratio: 1;
+  opacity: 0.55;
+
+  @media (max-width: 900px) {
+    top: 8%;
+    right: -8%;
+    opacity: 0.35;
+  }
+}
+
+.pp-hero-fx__radar-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--pp-fx-accent-rgb), 0.22);
+  background:
+    radial-gradient(circle at center, rgba(var(--pp-fx-accent-rgb), 0.12) 0%, transparent 55%),
+    repeating-radial-gradient(circle at center, transparent 0 18px, rgba(var(--pp-fx-accent-rgb), 0.06) 18px 19px);
+}
+
+.pp-hero-fx__radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(var(--pp-fx-accent-rgb), 0.28) 42deg,
+    transparent 84deg
+  );
+  animation: pp-radar-sweep 5.5s linear infinite;
+  mask-image: radial-gradient(circle, #000 0%, #000 58%, transparent 59%);
+}
+
+.pp-hero-fx__radar-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(var(--pp-fx-accent-rgb), 0.45);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(var(--pp-fx-accent-rgb), 0.15);
+  transform: translate(-50%, -50%) scale(0.42);
+  opacity: 0;
+  animation: pp-radar-ring 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+
+  &:nth-child(3) {
+    animation-delay: 1.05s;
+  }
+
+  &:nth-child(4) {
+    animation-delay: 2.1s;
+  }
+}
+
+.pp-hero-fx__radar-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin: -0.225rem;
+  border-radius: 50%;
+  background: rgb(var(--pp-fx-accent-rgb));
+  box-shadow: 0 0 10px rgba(var(--pp-fx-accent-rgb), 0.75);
+}
+
+.pp-hero-fx__scan {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 38%;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      rgba(var(--pp-fx-accent-rgb), 0.07),
+      transparent
+    );
+    animation: pp-scan-sweep 7s ease-in-out infinite;
+  }
+}
+
+.pp-media-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+
+  &__ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 88%;
+    height: 88%;
+    border: 1px solid rgba(var(--pp-fx-accent-rgb), 0.35);
+    border-radius: inherit;
+    transform: translate(-50%, -50%) scale(0.55);
+    opacity: 0;
+    animation: pp-radar-ring 2.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+
+    &:nth-child(2) {
+      animation-delay: 0.95s;
+    }
+  }
+
+  &__scan {
+    position: absolute;
+    inset: 0;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 42%;
+      background: linear-gradient(
+        180deg,
+        transparent,
+        rgba(var(--pp-fx-accent-rgb), 0.14),
+        transparent
+      );
+      animation: pp-scan-sweep 4.8s ease-in-out infinite;
+    }
+  }
+}
+
+.pp-section-ambient {
+  position: relative;
+  overflow: hidden;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(40px);
+    animation: pp-orb-drift 14s ease-in-out infinite;
+  }
+
+  &::before {
+    width: 220px;
+    height: 220px;
+    top: 8%;
+    right: -4%;
+    background: rgba(var(--pp-fx-accent-rgb), 0.08);
+  }
+
+  &::after {
+    width: 180px;
+    height: 180px;
+    bottom: 10%;
+    left: -3%;
+    background: rgba(var(--pp-fx-accent-rgb), 0.06);
+    animation-delay: -5s;
+  }
+}
+
+@mixin portal-hero-motion($accent-rgb) {
+  --pp-fx-accent-rgb: #{$accent-rgb};
+
+  isolation: isolate;
+
+  &::before,
+  &::after {
+    animation: pp-orb-drift 12s ease-in-out infinite;
+  }
+
+  &::after {
+    animation-delay: -4s;
+    animation-duration: 15s;
+  }
+
+  av-hero-particle-mesh {
+    z-index: 1;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+  }
+}
+
+@mixin portal-hero-title-accent() {
+  animation: pp-title-shimmer 4.5s ease-in-out infinite;
+}
+
+@mixin portal-hero-media-float() {
+  animation: pp-float 6.2s ease-in-out infinite;
+}
+
+@mixin portal-stat-pulse() {
+  animation: pp-stat-glow 3.5s ease-in-out infinite;
+}
+
+@mixin portal-card-radar-badge() {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    border: 1px solid rgba(var(--pp-fx-accent-rgb), 0.4);
+    opacity: 0;
+    animation: pp-radar-ring 2.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-hero-fx__radar-sweep,
+  .pp-hero-fx__radar-ring,
+  .pp-hero-fx__glow,
+  .pp-hero-fx__scan::after,
+  .pp-media-fx__ring,
+  .pp-media-fx__scan::after,
+  .pp-section-ambient::before,
+  .pp-section-ambient::after {
+    animation: none !important;
+  }
+
+  av-hero-particle-mesh {
+    display: none !important;
+  }
+}

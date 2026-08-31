@@ -9,6 +9,11 @@ import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import {
+  PROMO_BANNER_RIBBON_DEFAULT,
+} from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
+import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 import {
   mergeMercanciasPeligrosasLanding,
   MpImagen,
@@ -18,7 +23,7 @@ import {
 @Component({
   selector: 'av-mercancias-peligrosas',
   standalone: true,
-  imports: [CommonModule, RouterLink, NgClass, RevealOnScrollDirective, PortalIconComponent],
+  imports: [CommonModule, RouterLink, NgClass, RevealOnScrollDirective, PortalIconComponent, PortalPromoBannerHeroComponent],
   templateUrl: './mercancias-peligrosas.component.html',
   styleUrl: './mercancias-peligrosas.component.scss',
 })
@@ -30,6 +35,10 @@ export class MercanciasPeligrosasComponent implements OnInit {
   config = signal<PortalConfig | null>(null);
   navAbierto = signal(false);
 
+  readonly heroRibbon = PROMO_BANNER_RIBBON_DEFAULT;
+
+  heroPilares = computed(() => this.contenido().heroPillars);
+
   contenido = computed(() =>
     mergeMercanciasPeligrosasLanding(
       mergePortalLanding(this.config()?.landing).mercanciasPeligrosas,
@@ -39,6 +48,13 @@ export class MercanciasPeligrosasComponent implements OnInit {
   totalDocumentos = computed(() =>
     this.contenido().documentosGrupos.reduce((sum, g) => sum + (g.documentos?.length || 0), 0),
   );
+
+  nombreCea = computed(() => this.config()?.nombreCea?.trim() || DEFAULT_CEA_NOMBRE);
+
+  logoUrl = computed(() => {
+    const cfg = this.config();
+    return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
+  });
 
   claseAcento(numero: number): string {
     const acentos = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'];

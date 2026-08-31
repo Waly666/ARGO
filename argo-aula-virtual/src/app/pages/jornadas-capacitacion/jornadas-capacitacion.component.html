@@ -1,48 +1,21 @@
 <div class="jor-page">
-  <section class="jor-hero" aria-labelledby="jor-title">
-    <div class="jor-hero__glow" aria-hidden="true"></div>
-    <div class="jor-hero__grid" aria-hidden="true"></div>
-    <div class="container jor-hero__inner">
-      <div class="jor-hero__copy">
-        <p class="jor-kicker hero-in hero-in--1">Formación presencial</p>
-        <h1 id="jor-title" class="hero-in hero-in--2">Jornadas de Capacitación</h1>
-        <p class="jor-hero__lead hero-in hero-in--3">
-          Actividades experienciales en seguridad vial, en espacios tipo carpa.
-          Inscríbase en línea y reciba su código QR de asistencia.
-        </p>
-        <div class="jor-hero__actions hero-in hero-in--4">
-          <a class="btn btn-primary jor-cta" href="#inscripcion">Inscribirme ahora</a>
-          <a class="jor-cta-ghost" routerLink="/registro">Prefiero el aula virtual</a>
-        </div>
-      </div>
-
-      <aside class="jor-hero__aside hero-in hero-in--5" aria-hidden="true">
-        <div class="jor-orb jor-orb--a"></div>
-        <div class="jor-orb jor-orb--b"></div>
-        <div class="jor-badge">
-          <span class="jor-badge__mark" aria-hidden="true">▣</span>
-          <div>
-            <strong>Asistencia digital</strong>
-            <span>Compatible con la app ARGO</span>
-          </div>
-        </div>
-        <div class="jor-badge jor-badge--delay">
-          <span class="jor-badge__mark jor-badge__mark--alt" aria-hidden="true">✓</span>
-          <div>
-            <strong>Sin cuenta portal</strong>
-            <span>Solo ficha de jornadas</span>
-          </div>
-        </div>
-        <div class="jor-badge jor-badge--third">
-          <span class="jor-badge__mark jor-badge__mark--warm" aria-hidden="true">⛺</span>
-          <div>
-            <strong>Estaciones tipo carpa</strong>
-            <span>Aprendizaje lúdico y práctico</span>
-          </div>
-        </div>
-      </aside>
+  <av-portal-promo-banner-hero
+    [kicker]="jornadas().hero.kicker"
+    [titleLine]="jornadas().hero.tituloLinea"
+    [titleAccent]="jornadas().hero.tituloAcento"
+    [lead]="jornadas().hero.lead"
+    [pillars]="heroPilares()"
+    [showVirtualBadge]="jornadas().hero.mostrarBadgeVirtual"
+    [virtualBadgeLabel]="jornadas().hero.virtualBadgeLabel"
+    [theme]="jornadas().hero.theme"
+    titleId="jor-title"
+    [pillarsLabel]="jornadas().hero.pillarsLabel"
+  >
+    <div ppbh-actions class="ppbh-ctas">
+      <a class="btn btn-primary jor-cta" [href]="jornadas().hero.ctaPrincipalUrl">{{ jornadas().hero.ctaPrincipal }}</a>
+      <a class="jor-cta-ghost" [routerLink]="jornadas().hero.ctaSecundarioUrl">{{ jornadas().hero.ctaSecundario }}</a>
     </div>
-  </section>
+  </av-portal-promo-banner-hero>
 
   <section class="jor-features" aria-label="Beneficios">
     <div class="container jor-features__grid">

@@ -59,6 +59,10 @@ function landingServial(): Partial<PortalLandingConfig> {
       ctaLlamarUrl: 'tel:+573213039595',
       mostrarBotonLlamar: true,
       imagenAlt: 'Aprenda a conducir con seguridad y confianza — Servial Colombia',
+      eyebrow: '',
+      eyebrowServial: '— Bienvenid@ a {nombreCea} —',
+      subEyebrow: 'Centro de Enseñanza Automovilística',
+      ctaLlamarEtiqueta: '',
     },
     infoCards: [
       { icon: '📞', title: 'Llámenos', text: '321 303 9595', fuente: 'telefono' },
@@ -235,11 +239,12 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
   crearPlantilla(
     'educarte',
     'Plantilla Educarte',
-    'Tema claro con secciones en blanco puro. Formación virtual moderna y legible.',
+    'Estilo verde PICO: fondo oscuro, acento lima #33dd6f, hero con malla geométrica y typewriter.',
     'cliente',
     {
-      heroTitulo: 'Formación virtual con calidad y certificación.',
-      heroSubtitulo: 'Cursos en línea, avance a su ritmo y certificados verificables.',
+      heroTitulo: 'Obtenga su licencia de conducción',
+      heroSubtitulo:
+        'Únicos con calidad certificada. Aprenda a su ritmo con cursos interactivos, capacitación certificada y acompañamiento profesional.',
       secciones: SECCIONES_COMPLETAS,
       tema: { ...PORTAL_TEMA_EDUCARTE },
     },
@@ -269,7 +274,7 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
   crearPlantilla(
     'servial',
     'Plantilla Servial',
-    'Inspirada en servial.com.co con paleta PICO: fondo azul noche, acento verde lima y CTAs naranja. Hero con malla geométrica interactiva.',
+    'Inspirada en servial.com.co: fondo azul marino, acento dorado #f5c400, títulos en rojo y hero con malla geométrica.',
     'cliente',
     {
       heroTitulo: 'Obtenga su licencia de conducción',
@@ -283,13 +288,13 @@ export const PORTAL_PLANTILLAS: PortalPlantilla[] = [
         'con capacitación en licencias A2, B1, C1, C2 y C3, cursos libres y programas técnicos para el sector transportador.\n\n' +
         'Calle 37B # 19A-65 Barrio Jordan, Villavicencio, Meta — Colombia.',
       tema: {
-        colorPrimario: '#2CE97A',
-        colorPrimarioOscuro: '#0A0A0A',
-        colorAcento: '#33dd6f',
-        colorFondo: '#0A0A0A',
-        colorSuperficie: '#111218',
+        colorPrimario: '#2A5F8F',
+        colorPrimarioOscuro: '#0B1B47',
+        colorAcento: '#f5c400',
+        colorFondo: '#0B1B47',
+        colorSuperficie: '#1C4569',
         colorTexto: '#FFFFFF',
-        colorTextoSecundario: '#B0B0B0',
+        colorTextoSecundario: '#B8C9E0',
         fuente: 'Figtree',
         fuenteTitulos: 'Space Grotesk',
         heroEstilo: 'servial-mesh',

@@ -1,3 +1,5 @@
+const { PROMO_HERO_PILARES_INSTITUCION } = require('./portalPromoHeroFields');
+
 /** Contenido por defecto de la página Cursos conducción del portal. */
 
 const INVITACION_DEFAULTS = {
@@ -123,6 +125,10 @@ const CURSOS_CONDUCCION_DEFAULTS = {
     kicker: 'Cursos de conducción',
     imagenUrl: '',
     imagenAlt: 'Formación en conducción y categorías de licencia',
+    pillarsLabel: 'Formación en conducción',
+    pillars: PROMO_HERO_PILARES_INSTITUCION,
+    mostrarBadgeVirtual: true,
+    virtualBadgeLabel: 'VIRTUAL',
   },
   tituloPrincipal: 'CENTRO DE ENSEÑANZA AUTOMOVILÍSTICA',
   textoInstitucional:

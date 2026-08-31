@@ -1,6 +1,14 @@
 /** Página /mercancias-peligrosas — contenido editable desde el ERP. */
 
 import {
+  mergePromoHeroPillars,
+  mergePromoHeroStats,
+  mergePromoHeroTheme,
+  PROMO_HERO_PILARES_MP,
+  PortalPromoHeroPillar,
+  PortalPromoHeroTheme,
+} from './portal-promo-hero-fields.util';
+import {
   MERCANCIAS_PELIGROSAS_DOCUMENTOS_GRUPOS,
   MpDocumento,
   MpDocumentoGrupo,
@@ -78,6 +86,13 @@ export interface PortalMercanciasPeligrosasLanding {
   subtitulo: string;
   heroLead: string;
   heroParrafos: string[];
+  heroPillarsLabel: string;
+  heroPillars: PortalPromoHeroPillar[];
+  heroStats: string[];
+  backLabel: string;
+  theme: PortalPromoHeroTheme;
+  mostrarBadgeVirtual: boolean;
+  virtualBadgeLabel: string;
   enlaceCursoUrl: string;
   enlaceCursoEtiqueta: string;
   ctaNormativaTexto: string;
@@ -167,6 +182,13 @@ export const MERCANCIAS_PELIGROSAS_LANDING_DEFAULTS: PortalMercanciasPeligrosasL
     'En Colombia, el transporte terrestre de mercancías peligrosas por carretera cuenta con una regulación específica que establece requisitos técnicos y de seguridad.',
     'Nuestro objetivo: explicar esta normativa de una manera sencilla, organizada y fácil de consultar.',
   ],
+  heroPillarsLabel: 'Contenidos del curso',
+  heroPillars: PROMO_HERO_PILARES_MP,
+  heroStats: ['9 clases ONU', 'NTC técnicas'],
+  backLabel: '← Volver al inicio',
+  theme: 'green',
+  mostrarBadgeVirtual: true,
+  virtualBadgeLabel: 'VIRTUAL',
   ctaNormativaTexto: 'Conocer la normativa',
   ctaClasificacionTexto: 'Ver clasificación',
   ctaFaqTexto: 'Preguntas frecuentes',
@@ -498,6 +520,13 @@ export function mergeMercanciasPeligrosasLanding(
     subtitulo: str(src.subtitulo, d.subtitulo),
     heroLead: str(src.heroLead, d.heroLead),
     heroParrafos: arr(src.heroParrafos, d.heroParrafos),
+    heroPillarsLabel: str(src.heroPillarsLabel, d.heroPillarsLabel),
+    heroPillars: mergePromoHeroPillars(src.heroPillars, d.heroPillars),
+    heroStats: mergePromoHeroStats(src.heroStats, d.heroStats),
+    backLabel: str(src.backLabel, d.backLabel),
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual !== false,
+    virtualBadgeLabel: str(src.virtualBadgeLabel, d.virtualBadgeLabel),
     enlaceCursoUrl: str(src.enlaceCursoUrl, d.enlaceCursoUrl),
     enlaceCursoEtiqueta: str(src.enlaceCursoEtiqueta, d.enlaceCursoEtiqueta),
     ctaNormativaTexto: str(src.ctaNormativaTexto, d.ctaNormativaTexto),

@@ -1,0 +1,45 @@
+<div class="pgh">
+  <span class="pgh__label">Imagen del encabezado (Galería)</span>
+  <p class="psb-hint">
+    Foto de fondo del héroe en <strong>/galeria</strong>. Se guarda al instante. Si no hay imagen, se usa la primera
+    foto de la galería. PNG, JPG o WEBP. Máx. 8 MB.
+  </p>
+
+  <div class="pgh__row">
+    @if (heroPreviewUrl(); as heroUrl) {
+      <figure class="pgh__preview">
+        <img [src]="heroUrl" alt="Vista previa héroe galería" />
+      </figure>
+    } @else {
+      <div class="pgh__preview pgh__preview--empty">
+        Sin imagen — se mostrará la primera foto de la galería
+      </div>
+    }
+
+    <div class="pgh__actions">
+      <label class="psb-btn psb-btn--file" [class.psb-btn--disabled]="heroUploading()">
+        {{ heroUploading() ? 'Subiendo…' : 'Elegir imagen' }}
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          hidden
+          (change)="onHeroImagen($event)"
+          [disabled]="heroUploading()" />
+      </label>
+      @if (tieneImagenHero()) {
+        <button type="button" class="psb-btn psb-btn--ghost" [disabled]="heroUploading()" (click)="quitarImagenHero()">
+          Quitar imagen
+        </button>
+      }
+    </div>
+  </div>
+
+  <label class="psb-field psb-field--plain">
+    <span>Texto alternativo de la imagen (accesibilidad)</span>
+    <input
+      type="text"
+      class="psb-input"
+      [(ngModel)]="galeria.heroImagenAlt"
+      placeholder="Ej. Instalaciones del centro de formación" />
+  </label>
+</div>

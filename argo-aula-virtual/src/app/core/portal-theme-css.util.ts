@@ -10,7 +10,7 @@ export interface PortalTemaLike {
   colorTextoSecundario?: string;
   fuente?: string;
   fuenteTitulos?: string;
-  heroEstilo?: 'starfield' | 'servial-mesh';
+  heroEstilo?: 'starfield' | 'servial-mesh' | 'educarte-mesh';
 }
 
 export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | 'fuenteTitulos'>> & {
@@ -29,24 +29,63 @@ export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | '
   heroEstilo: 'starfield',
 };
 
-/** Tema claro oficial de la plantilla Educarte (secciones claras en blanco puro). */
+/** Tema verde PICO legacy — plantilla Educarte (fondo oscuro + acento lima). */
 export const PORTAL_TEMA_EDUCARTE: Required<Omit<PortalTemaLike, 'fuente' | 'fuenteTitulos'>> & {
   fuente: string;
   fuenteTitulos?: string;
 } = {
-  colorPrimario: '#0284c7',
-  colorPrimarioOscuro: '#0369a1',
-  colorAcento: '#38bdf8',
-  colorFondo: '#ffffff',
-  colorSuperficie: '#ffffff',
-  colorTexto: '#0f172a',
-  colorTextoSecundario: '#64748b',
-  fuente: 'Plus Jakarta Sans',
-  fuenteTitulos: '',
-  heroEstilo: 'starfield',
+  colorPrimario: '#15803d',
+  colorPrimarioOscuro: '#0a0a0a',
+  colorAcento: '#33dd6f',
+  colorFondo: '#0a0a0a',
+  colorSuperficie: '#111218',
+  colorTexto: '#ffffff',
+  colorTextoSecundario: '#b0b0b0',
+  fuente: 'Poppins',
+  fuenteTitulos: 'Poppins',
+  heroEstilo: 'educarte-mesh',
 };
 
-export const EDUCARTE_DERIVED_CSS_VARS: Record<string, string> = {};
+export const EDUCARTE_DERIVED_CSS_VARS: Record<string, string> = {
+  '--av-inst-bar-bg': 'linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%)',
+  '--av-inst-bar-text': '#0a0a0a',
+  '--av-quote-band-bg': '#111218',
+  '--av-quote-band-text': '#ffffff',
+  '--av-starfield-glow': 'rgba(46, 231, 120, 0.2)',
+  '--av-starfield-top': '#111218',
+  '--av-starfield-mid': '#0a0a0a',
+  '--av-starfield-bottom': '#0a0a0a',
+  '--av-starfield-bg':
+    'radial-gradient(ellipse 85% 65% at 50% 18%, rgba(46, 231, 120, 0.12), transparent 68%), linear-gradient(180deg, #111218 0%, #0a0a0a 55%, #0a0a0a 100%)',
+  '--av-starfield-accent-glow-radial':
+    'radial-gradient(circle, rgba(51, 221, 111, 0.16) 0%, rgba(51, 221, 111, 0.05) 38%, transparent 68%)',
+  '--av-starfield-section-lead': '#b0b0b0',
+  '--av-hero-bg': 'transparent',
+  '--av-hero-grad-start': 'rgba(10, 10, 10, 0.92)',
+  '--av-hero-grad-end': '#0a0a0a',
+  '--av-btn-primary-bg': 'linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%)',
+  '--av-btn-primary-text': '#0a0a0a',
+  '--av-btn-on-dark-outline-border': 'rgba(51, 221, 111, 0.72)',
+  '--av-btn-on-dark-outline-bg': 'rgba(10, 10, 10, 0.45)',
+  '--av-title-underline-light': 'linear-gradient(90deg, #15803d, #33dd6f)',
+  '--av-title-glow': 'rgba(51, 221, 111, 0.35)',
+  '--av-footer-bg': 'rgba(10, 10, 10, 0.92)',
+  '--av-footer-border': 'rgba(51, 221, 111, 0.22)',
+  '--av-footer-glow-line': 'rgba(51, 221, 111, 0.35)',
+  '--av-topbar-bg': 'rgba(10, 10, 10, 0.92)',
+  '--av-topbar-border': 'rgba(51, 221, 111, 0.22)',
+  '--av-nav-link-hover': '#33dd6f',
+  '--av-section-white-kicker': '#33dd6f',
+  '--av-hero-info-card-border': 'rgba(51, 221, 111, 0.45)',
+  '--av-hero-info-card-glow': 'rgba(51, 221, 111, 0.12)',
+  '--av-hero-info-card-glow-hover': 'rgba(51, 221, 111, 0.28)',
+  '--av-hero-info-card-border-hover': 'rgba(51, 221, 111, 0.85)',
+  '--av-hero-info-card-title': 'linear-gradient(90deg, #15803d 0%, #33dd6f 100%)',
+  '--av-card-wave-a': 'rgba(51, 221, 111, 0.75)',
+  '--av-card-wave-b': 'rgba(46, 231, 120, 0.45)',
+  '--av-card-wave-dark-a': 'rgba(51, 221, 111, 0.88)',
+  '--av-card-wave-dark-b': 'rgba(46, 231, 120, 0.55)',
+};
 
 /** Franja superior e frase destacada — naranja institucional Finstruvial */
 export const FINSTRUVIAL_FIRE_GRADIENT_BAR =
@@ -140,11 +179,9 @@ export function isEducarteTema(tema: PortalTemaLike | null | undefined): boolean
 export function isEducartePortalTema(tema: PortalTemaLike | null | undefined): boolean {
   if (isEducarteTema(tema)) return true;
   if (isFinstruvialPortalTema(tema) || resolvePortalHeroEstilo(tema) === 'servial-mesh') return false;
+  if (resolvePortalHeroEstilo(tema) === 'educarte-mesh') return true;
   const t = resolveTema(tema);
-  return (
-    hexKey(t.colorPrimario) === hexKey(PORTAL_TEMA_EDUCARTE.colorPrimario) &&
-    isLightColor(t.colorFondo)
-  );
+  return hexKey(t.colorAcento) === hexKey(PORTAL_TEMA_EDUCARTE.colorAcento);
 }
 
 function normalizeHex(hex: string): string | null {
@@ -201,18 +238,27 @@ function resolveTema(tema: PortalTemaLike | null | undefined) {
 /** Misma heurística que el home: detecta Servial/PICO aunque falte heroEstilo en la config publicada. */
 export function resolvePortalHeroEstilo(
   tema: PortalTemaLike | null | undefined,
-): 'starfield' | 'servial-mesh' {
+): 'starfield' | 'servial-mesh' | 'educarte-mesh' {
   const explicit = tema?.heroEstilo;
-  if (explicit === 'servial-mesh' || explicit === 'starfield') return explicit;
+  if (explicit === 'servial-mesh' || explicit === 'starfield' || explicit === 'educarte-mesh') {
+    return explicit;
+  }
 
   const accent = tema?.colorAcento?.toLowerCase();
   const fuente = tema?.fuente?.toLowerCase() ?? '';
   const primOscuro = tema?.colorPrimarioOscuro?.toLowerCase();
 
   if (
-    (accent === '#ffd200' || accent === '#aee929' || accent === '#d9d314') &&
+    accent === '#33dd6f' &&
+    fuente.includes('poppins') &&
+    primOscuro === '#0a0a0a'
+  ) {
+    return 'educarte-mesh';
+  }
+  if (
+    (accent === '#ffd200' || accent === '#aee929' || accent === '#d9d314' || accent === '#f5c400') &&
     (fuente.includes('poppins') || fuente.includes('figtree')) &&
-    (primOscuro === '#000000' || primOscuro === '#04060c' || primOscuro === '#0a0a0a')
+    (primOscuro === '#000000' || primOscuro === '#04060c' || primOscuro === '#0a0a0a' || primOscuro === '#081a33' || primOscuro === '#112d4a' || primOscuro === '#0b1b47')
   ) {
     return 'servial-mesh';
   }
@@ -220,6 +266,16 @@ export function resolvePortalHeroEstilo(
 }
 
 export const PORTAL_BRAND_GREEN = '#33dd6f';
+/** Acento dorado Servial — ensayo visual en home servial-mesh. */
+export const SERVIAL_ACCENT_GOLD = '#f5c400';
+export const SERVIAL_ACCENT_GOLD_DARK = '#c99a00';
+export const SERVIAL_ACCENT_GOLD_LIGHT = '#ffd633';
+export const SERVIAL_NAVY_DEEP = '#0b1b47';
+export const SERVIAL_NAVY_DARK = '#163a5c';
+export const SERVIAL_NAVY_MID = '#1c4569';
+export const SERVIAL_NAVY_BLUE = '#2a5f8f';
+export const SERVIAL_RED = '#dc2626';
+export const SERVIAL_RED_DARK = '#b91c1c';
 export const PORTAL_BRAND_LIME = '#AEE929';
 
 const AMBER_LIKE_ACCENTS = new Set([
@@ -234,13 +290,27 @@ const AMBER_LIKE_ACCENTS = new Set([
   '#ea580c',
 ]);
 
-/** Sustituye acentos ámbar/naranja por verde de marca (Servial y similares). */
+/** Servial: acento dorado; elimina verdes legacy del tema PICO. */
 export function resolvePortalUiAccent(
   accent: string,
-  opts?: { heroEstilo?: 'starfield' | 'servial-mesh' },
+  opts?: { heroEstilo?: 'starfield' | 'servial-mesh' | 'educarte-mesh' },
 ): string {
   const key = accent.toLowerCase();
-  if (opts?.heroEstilo === 'servial-mesh' || AMBER_LIKE_ACCENTS.has(key)) {
+  const legacyGreens = new Set([
+    PORTAL_BRAND_GREEN.toLowerCase(),
+    '#2ce97a',
+    '#aee929',
+    '#4ade80',
+    '#22c55e',
+    '#33dd6f',
+    '#15803d',
+    '#065f46',
+  ]);
+  if (opts?.heroEstilo === 'servial-mesh') {
+    if (legacyGreens.has(key)) return SERVIAL_ACCENT_GOLD;
+    return accent || SERVIAL_ACCENT_GOLD;
+  }
+  if (AMBER_LIKE_ACCENTS.has(key)) {
     return key === PORTAL_BRAND_GREEN.toLowerCase() ? accent : PORTAL_BRAND_GREEN;
   }
   return accent;
@@ -444,57 +514,89 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     `radial-gradient(ellipse 85% 65% at 18% 42%, ${vars['--av-starfield-glow']}, transparent 68%), linear-gradient(135deg, ${vars['--av-hero-grad-start']} 0%, ${vars['--av-hero-grad-end']} 78%)`;
 
   if (heroEstilo === 'servial-mesh') {
-    const brandGreen = PORTAL_BRAND_GREEN;
+    const brandAccent = SERVIAL_ACCENT_GOLD;
+    const brandAccentDark = SERVIAL_ACCENT_GOLD_DARK;
+    const brandAccentLight = SERVIAL_ACCENT_GOLD_LIGHT;
+    const navyDeep = SERVIAL_NAVY_DEEP;
+    const navyDark = SERVIAL_NAVY_DARK;
+    const navyMid = SERVIAL_NAVY_MID;
+    const navyBlue = SERVIAL_NAVY_BLUE;
+    const servialRed = SERVIAL_RED;
+    const sectionDarkTop = mixHex(navyDeep, navyMid, 0.14);
+
+    vars['--av-primary'] = navyBlue;
+    vars['--av-primary-dark'] = navyDeep;
+    vars['--av-bg'] = navyDeep;
+    vars['--av-surface'] = navyMid;
+    vars['--av-surface-2'] = mixHex(navyMid, navyDark, 0.45);
     vars['--av-nav-link'] = '#ffffff';
-    vars['--av-nav-link-hover'] = brandGreen;
-    vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
-    vars['--av-topbar-border'] = 'rgba(51, 221, 111, 0.22)';
-    vars['--av-footer-bg'] = 'rgba(10, 10, 10, 0.82)';
-    vars['--av-footer-border'] = 'rgba(51, 221, 111, 0.22)';
-    vars['--av-footer-glow-line'] = 'rgba(51, 221, 111, 0.35)';
+    vars['--av-nav-link-hover'] = brandAccent;
+    vars['--av-topbar-bg'] = withAlpha(navyDeep, 0.92);
+    vars['--av-topbar-border'] = 'rgba(245, 196, 0, 0.28)';
+    vars['--av-footer-bg'] = withAlpha(navyDeep, 0.92);
+    vars['--av-footer-border'] = 'rgba(245, 196, 0, 0.28)';
+    vars['--av-footer-glow-line'] = 'rgba(245, 196, 0, 0.4)';
     vars['--av-footer-text'] = '#e2e8f0';
     vars['--av-footer-muted'] = '#94a3b8';
-    vars['--av-footer-link-hover'] = brandGreen;
-    vars['--av-inst-bar-bg'] = '#0c7954';
+    vars['--av-footer-link-hover'] = brandAccent;
+    vars['--av-inst-bar-bg'] = servialRed;
     vars['--av-inst-bar-text'] = '#ffffff';
     vars['--av-hero-bg'] = 'transparent';
-    vars['--av-hero-title-shimmer'] = brandGreen;
-    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
+    vars['--av-hero-title-shimmer'] = brandAccentLight;
+    vars['--av-quote-band-bg'] = navyDeep;
+    vars['--av-quote-band-text'] = '#ffffff';
     vars['--av-faq-bg'] =
-      `radial-gradient(ellipse 85% 65% at 50% 20%, ${withAlpha(brandGreen, 0.14)}, transparent 70%), linear-gradient(180deg, #111218 0%, #0a0a0a 62%, #0a0a0a 100%)`;
-    vars['--av-faq-glow'] = withAlpha(brandGreen, 0.16);
-    vars['--av-faq-open-text'] = brandGreen;
-    vars['--av-faq-icon-bg'] = `linear-gradient(150deg, ${brandGreen}, ${mixHex(brandGreen, primaryDark, 0.35)})`;
-    vars['--av-faq-icon-shadow'] = withAlpha(brandGreen, 0.35);
-    vars['--av-card-wave-a'] = withAlpha(brandGreen, 0.75);
-    vars['--av-card-wave-b'] = withAlpha(brandGreen, 0.45);
-    vars['--av-card-wave-dark-a'] = withAlpha(brandGreen, 0.88);
-    vars['--av-card-wave-dark-b'] = withAlpha(brandGreen, 0.55);
-    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandGreen} 0%, ${mixHex(brandGreen, '#2ee778', 0.35)} 100%)`;
+      `radial-gradient(ellipse 85% 65% at 50% 20%, ${withAlpha(brandAccent, 0.14)}, transparent 70%), linear-gradient(180deg, ${sectionDarkTop} 0%, ${navyDeep} 48%, ${navyDeep} 100%)`;
+    vars['--av-faq-glow'] = withAlpha(brandAccent, 0.16);
+    vars['--av-faq-open-text'] = brandAccent;
+    vars['--av-faq-icon-bg'] = `linear-gradient(150deg, ${brandAccent}, ${brandAccentDark})`;
+    vars['--av-faq-icon-shadow'] = withAlpha(brandAccent, 0.35);
+    vars['--av-card-wave-a'] = withAlpha(brandAccent, 0.75);
+    vars['--av-card-wave-b'] = withAlpha(brandAccent, 0.45);
+    vars['--av-card-wave-dark-a'] = withAlpha(brandAccent, 0.88);
+    vars['--av-card-wave-dark-b'] = withAlpha(brandAccent, 0.55);
+    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandAccent} 0%, ${brandAccentLight} 100%)`;
     vars['--av-btn-primary-text'] = '#0a0a0a';
-    vars['--av-btn-on-dark-outline-bg'] = 'rgba(10, 10, 10, 0.28)';
-    vars['--av-btn-on-dark-outline-border'] = 'rgba(44, 233, 122, 0.72)';
+    vars['--av-btn-on-dark-outline-bg'] = withAlpha(navyDeep, 0.42);
+    vars['--av-btn-on-dark-outline-border'] = 'rgba(245, 196, 0, 0.72)';
     vars['--av-btn-on-dark-outline-text'] = '#ffffff';
-    vars['--av-fundacion-cta-bg'] = `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
-    vars['--av-starfield-glow'] = withAlpha(brandGreen, 0.2);
-    vars['--av-page-hero-kicker-text'] = brandGreen;
+    vars['--av-fundacion-cta-bg'] =
+      `linear-gradient(120deg, ${navyDeep} 0%, ${navyBlue} 50%, ${brandAccent} 100%)`;
+    vars['--av-starfield-glow'] = withAlpha(brandAccent, 0.2);
+    vars['--av-starfield-top'] = sectionDarkTop;
+    vars['--av-starfield-mid'] = navyDeep;
+    vars['--av-starfield-bottom'] = navyDeep;
+    vars['--av-starfield-bg'] =
+      `radial-gradient(ellipse 85% 65% at 50% 18%, ${withAlpha(brandAccent, 0.1)}, transparent 68%), linear-gradient(180deg, ${sectionDarkTop} 0%, ${navyDeep} 42%, ${navyDeep} 100%)`;
+    vars['--av-page-hero-kicker-text'] = brandAccent;
+    vars['--av-accent'] = brandAccent;
+    vars['--av-title-underline-light'] = `linear-gradient(90deg, ${servialRed}, ${brandAccent})`;
+    vars['--av-title-glow'] = withAlpha(brandAccent, 0.35);
+    vars['--av-section-white-kicker'] = brandAccent;
+    vars['--servial-red'] = servialRed;
+    vars['--av-hero-info-card-border'] = withAlpha(brandAccent, 0.45);
+    vars['--av-hero-info-card-glow'] = withAlpha(brandAccent, 0.12);
+    vars['--av-hero-info-card-glow-hover'] = withAlpha(brandAccent, 0.28);
+    vars['--av-hero-info-card-border-hover'] = withAlpha(brandAccent, 0.85);
+    vars['--av-hero-info-card-title'] =
+      `linear-gradient(90deg, ${servialRed} 0%, ${brandAccent} 55%, ${brandAccentLight} 100%)`;
 
     vars['--dash-bg'] = mixHex('#f4f7ef', primary, 0.06);
-    vars['--dash-bg-glow-a'] = withAlpha(brandGreen, 0.14);
-    vars['--dash-bg-glow-b'] = withAlpha(brandGreen, 0.1);
+    vars['--dash-bg-glow-a'] = withAlpha(brandAccent, 0.14);
+    vars['--dash-bg-glow-b'] = withAlpha(brandAccent, 0.1);
     vars['--dash-sidebar-bg'] =
-      `linear-gradient(180deg, ${bg} 0%, ${surface} 62%, ${mixHex(surface, brandGreen, 0.1)} 100%)`;
-    vars['--dash-sidebar-border'] = withAlpha(brandGreen, 0.16);
-    vars['--dash-nav-active-bg'] = `linear-gradient(90deg, ${mixHex(primary, brandGreen, 0.35)}, ${brandGreen})`;
-    vars['--dash-nav-active-text'] = mixHex(primaryDark, '#052e16', 0.65);
-    vars['--dash-nav-active-shadow'] = withAlpha(brandGreen, 0.35);
-    vars['--dash-user-chip-bg'] = `linear-gradient(90deg, ${primary}, ${brandGreen})`;
-    vars['--dash-user-chip-text'] = mixHex(primaryDark, '#052e16', 0.65);
-    vars['--dash-user-chip-shadow'] = withAlpha(brandGreen, 0.35);
+      `linear-gradient(180deg, ${bg} 0%, ${surface} 62%, ${mixHex(surface, brandAccent, 0.1)} 100%)`;
+    vars['--dash-sidebar-border'] = withAlpha(brandAccent, 0.16);
+    vars['--dash-nav-active-bg'] = `linear-gradient(90deg, ${mixHex(primary, brandAccent, 0.35)}, ${brandAccent})`;
+    vars['--dash-nav-active-text'] = mixHex(primaryDark, '#3d2e00', 0.65);
+    vars['--dash-nav-active-shadow'] = withAlpha(brandAccent, 0.35);
+    vars['--dash-user-chip-bg'] = `linear-gradient(90deg, ${primary}, ${brandAccent})`;
+    vars['--dash-user-chip-text'] = mixHex(primaryDark, '#3d2e00', 0.65);
+    vars['--dash-user-chip-shadow'] = withAlpha(brandAccent, 0.35);
     vars['--dash-mobile-topbar-bg'] = `linear-gradient(90deg, ${bg}, ${surface})`;
-    vars['--dash-sidebar-toggle-color'] = mixHex(primaryDark, brandGreen, 0.25);
-    vars['--dash-sidebar-toggle-border'] = withAlpha(brandGreen, 0.35);
-    vars['--dash-back-hover'] = brandGreen;
+    vars['--dash-sidebar-toggle-color'] = mixHex(primaryDark, brandAccent, 0.25);
+    vars['--dash-sidebar-toggle-border'] = withAlpha(brandAccent, 0.35);
+    vars['--dash-back-hover'] = brandAccent;
   }
 
   if (isFinstruvialPortalTema(t)) {

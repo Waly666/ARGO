@@ -12,7 +12,7 @@ export interface PortalTemaLike {
   colorTextoSecundario?: string;
   fuente?: string;
   fuenteTitulos?: string;
-  heroEstilo?: 'starfield' | 'servial-mesh';
+  heroEstilo?: 'starfield' | 'servial-mesh' | 'educarte-mesh';
 }
 
 export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | 'fuenteTitulos'>> & {
@@ -31,24 +31,47 @@ export const PORTAL_TEMA_FINSTRUVIAL: Required<Omit<PortalTemaLike, 'fuente' | '
   heroEstilo: 'starfield',
 };
 
-/** Tema claro oficial de la plantilla Educarte (secciones claras en blanco puro). */
+/** Tema verde PICO legacy — plantilla Educarte (fondo oscuro + acento lima). */
 export const PORTAL_TEMA_EDUCARTE: Required<Omit<PortalTemaLike, 'fuente' | 'fuenteTitulos'>> & {
   fuente: string;
   fuenteTitulos?: string;
 } = {
-  colorPrimario: '#0284c7',
-  colorPrimarioOscuro: '#0369a1',
-  colorAcento: '#38bdf8',
-  colorFondo: '#ffffff',
-  colorSuperficie: '#ffffff',
-  colorTexto: '#0f172a',
-  colorTextoSecundario: '#64748b',
-  fuente: 'Plus Jakarta Sans',
-  fuenteTitulos: '',
-  heroEstilo: 'starfield',
+  colorPrimario: '#15803d',
+  colorPrimarioOscuro: '#0a0a0a',
+  colorAcento: '#33dd6f',
+  colorFondo: '#0a0a0a',
+  colorSuperficie: '#111218',
+  colorTexto: '#ffffff',
+  colorTextoSecundario: '#b0b0b0',
+  fuente: 'Poppins',
+  fuenteTitulos: 'Poppins',
+  heroEstilo: 'educarte-mesh',
 };
 
-export const EDUCARTE_DERIVED_CSS_VARS: Record<string, string> = {};
+export const EDUCARTE_DERIVED_CSS_VARS: Record<string, string> = {
+  '--av-inst-bar-bg': 'linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%)',
+  '--av-inst-bar-text': '#0a0a0a',
+  '--av-quote-band-bg': '#111218',
+  '--av-quote-band-text': '#ffffff',
+  '--av-starfield-glow': 'rgba(46, 231, 120, 0.2)',
+  '--av-starfield-top': '#111218',
+  '--av-starfield-mid': '#0a0a0a',
+  '--av-starfield-bottom': '#0a0a0a',
+  '--av-starfield-bg':
+    'radial-gradient(ellipse 85% 65% at 50% 18%, rgba(46, 231, 120, 0.12), transparent 68%), linear-gradient(180deg, #111218 0%, #0a0a0a 55%, #0a0a0a 100%)',
+  '--av-starfield-accent-glow-radial':
+    'radial-gradient(circle, rgba(51, 221, 111, 0.16) 0%, rgba(51, 221, 111, 0.05) 38%, transparent 68%)',
+  '--av-starfield-section-lead': '#b0b0b0',
+  '--av-hero-bg': 'transparent',
+  '--av-btn-primary-bg': 'linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%)',
+  '--av-btn-primary-text': '#0a0a0a',
+  '--av-title-underline-light': 'linear-gradient(90deg, #15803d, #33dd6f)',
+  '--av-nav-link-hover': '#33dd6f',
+  '--av-topbar-bg': 'rgba(10, 10, 10, 0.92)',
+  '--av-topbar-border': 'rgba(51, 221, 111, 0.22)',
+  '--av-footer-bg': 'rgba(10, 10, 10, 0.92)',
+  '--av-footer-border': 'rgba(51, 221, 111, 0.22)',
+};
 
 /** Derivados idénticos al CSS publicado en https://finstruvial.edu.co/ */
 export const FINSTRUVIAL_DERIVED_CSS_VARS: Record<string, string> = {
@@ -122,12 +145,10 @@ export function isEducarteTema(tema: PortalTemaLike | null | undefined): boolean
 /** Educarte en producción: tolera ajustes menores del tema sin exigir coincidencia exacta. */
 export function isEducartePortalTema(tema: PortalTemaLike | null | undefined): boolean {
   if (isEducarteTema(tema)) return true;
-  if (isFinstruvialTema(tema)) return false;
+  if (isFinstruvialTema(tema) || resolvePortalHeroEstilo(tema) === 'servial-mesh') return false;
+  if (resolvePortalHeroEstilo(tema) === 'educarte-mesh') return true;
   const t = resolveTema(tema);
-  return (
-    hexKey(t.colorPrimario) === hexKey(PORTAL_TEMA_EDUCARTE.colorPrimario) &&
-    isLightColor(t.colorFondo)
-  );
+  return hexKey(t.colorAcento) === hexKey(PORTAL_TEMA_EDUCARTE.colorAcento);
 }
 
 function normalizeHex(hex: string): string | null {
@@ -182,6 +203,14 @@ function resolveTema(tema: PortalTemaLike | null | undefined) {
 }
 
 export const PORTAL_BRAND_GREEN = '#33dd6f';
+export const SERVIAL_ACCENT_GOLD = '#f5c400';
+export const SERVIAL_ACCENT_GOLD_DARK = '#c99a00';
+export const SERVIAL_ACCENT_GOLD_LIGHT = '#ffd633';
+export const SERVIAL_NAVY_DEEP = '#0b1b47';
+export const SERVIAL_NAVY_DARK = '#163a5c';
+export const SERVIAL_NAVY_MID = '#1c4569';
+export const SERVIAL_NAVY_BLUE = '#2a5f8f';
+export const SERVIAL_RED = '#dc2626';
 export const PORTAL_BRAND_LIME = '#AEE929';
 
 const AMBER_LIKE_ACCENTS = new Set([
@@ -196,16 +225,27 @@ const AMBER_LIKE_ACCENTS = new Set([
   '#ea580c',
 ]);
 
-function resolvePortalHeroEstilo(tema: PortalTemaLike | null | undefined): 'starfield' | 'servial-mesh' {
+function resolvePortalHeroEstilo(
+  tema: PortalTemaLike | null | undefined,
+): 'starfield' | 'servial-mesh' | 'educarte-mesh' {
   const explicit = tema?.heroEstilo;
-  if (explicit === 'servial-mesh' || explicit === 'starfield') return explicit;
+  if (explicit === 'servial-mesh' || explicit === 'starfield' || explicit === 'educarte-mesh') {
+    return explicit;
+  }
   const accent = tema?.colorAcento?.toLowerCase();
   const fuente = tema?.fuente?.toLowerCase() ?? '';
   const primOscuro = tema?.colorPrimarioOscuro?.toLowerCase();
   if (
-    (accent === '#ffd200' || accent === '#aee929' || accent === '#d9d314') &&
+    accent === '#33dd6f' &&
+    fuente.includes('poppins') &&
+    primOscuro === '#0a0a0a'
+  ) {
+    return 'educarte-mesh';
+  }
+  if (
+    (accent === '#ffd200' || accent === '#aee929' || accent === '#d9d314' || accent === '#f5c400') &&
     (fuente.includes('poppins') || fuente.includes('figtree')) &&
-    (primOscuro === '#000000' || primOscuro === '#04060c' || primOscuro === '#0a0a0a')
+    (primOscuro === '#000000' || primOscuro === '#04060c' || primOscuro === '#0a0a0a' || primOscuro === '#081a33' || primOscuro === '#112d4a' || primOscuro === '#0b1b47')
   ) {
     return 'servial-mesh';
   }
@@ -214,10 +254,22 @@ function resolvePortalHeroEstilo(tema: PortalTemaLike | null | undefined): 'star
 
 function resolvePortalUiAccent(
   accent: string,
-  opts?: { heroEstilo?: 'starfield' | 'servial-mesh' },
+  opts?: { heroEstilo?: 'starfield' | 'servial-mesh' | 'educarte-mesh' },
 ): string {
   const key = accent.toLowerCase();
-  if (opts?.heroEstilo === 'servial-mesh' || AMBER_LIKE_ACCENTS.has(key)) {
+  const legacyGreens = new Set([
+    PORTAL_BRAND_GREEN.toLowerCase(),
+    '#2ce97a',
+    '#aee929',
+    '#4ade80',
+    '#22c55e',
+    '#33dd6f',
+  ]);
+  if (opts?.heroEstilo === 'servial-mesh') {
+    if (legacyGreens.has(key)) return SERVIAL_ACCENT_GOLD;
+    return accent || SERVIAL_ACCENT_GOLD;
+  }
+  if (AMBER_LIKE_ACCENTS.has(key)) {
     return key === PORTAL_BRAND_GREEN.toLowerCase() ? accent : PORTAL_BRAND_GREEN;
   }
   return accent;
@@ -395,21 +447,36 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     `radial-gradient(ellipse 85% 65% at 18% 42%, ${vars['--av-starfield-glow']}, transparent 68%), linear-gradient(135deg, ${vars['--av-hero-grad-start']} 0%, ${vars['--av-hero-grad-end']} 78%)`;
 
   if (heroEstilo === 'servial-mesh') {
-    const brandGreen = PORTAL_BRAND_GREEN;
-    const brandLime = PORTAL_BRAND_LIME;
+    const brandAccent = SERVIAL_ACCENT_GOLD;
+    const brandAccentLight = SERVIAL_ACCENT_GOLD_LIGHT;
+    const navyDeep = SERVIAL_NAVY_DEEP;
+    const navyBlue = SERVIAL_NAVY_BLUE;
+    const sectionDarkTop = mixHex(navyDeep, SERVIAL_NAVY_MID, 0.14);
+    vars['--av-primary'] = navyBlue;
+    vars['--av-primary-dark'] = navyDeep;
+    vars['--av-bg'] = navyDeep;
     vars['--av-nav-link'] = '#ffffff';
-    vars['--av-nav-link-hover'] = brandGreen;
-    vars['--av-topbar-bg'] = 'rgba(10, 10, 10, 0.82)';
-    vars['--av-topbar-border'] = 'rgba(51, 221, 111, 0.22)';
-    vars['--av-inst-bar-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${surface} 100%)`;
+    vars['--av-nav-link-hover'] = brandAccent;
+    vars['--av-topbar-bg'] = withAlpha(navyDeep, 0.92);
+    vars['--av-topbar-border'] = 'rgba(245, 196, 0, 0.28)';
+    vars['--av-footer-bg'] = withAlpha(navyDeep, 0.92);
+    vars['--av-inst-bar-bg'] = SERVIAL_RED;
+    vars['--av-inst-bar-text'] = '#ffffff';
     vars['--av-hero-bg'] = 'transparent';
-    vars['--av-hero-title-shimmer'] = brandGreen;
-    vars['--av-quote-band-bg'] = `linear-gradient(90deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
-    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandLime} 0%, ${brandGreen} 100%)`;
+    vars['--av-hero-title-shimmer'] = brandAccentLight;
+    vars['--av-quote-band-bg'] = navyDeep;
+    vars['--av-quote-band-text'] = '#ffffff';
+    vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandAccent} 0%, ${brandAccentLight} 100%)`;
     vars['--av-btn-primary-text'] = '#0a0a0a';
-    vars['--av-fundacion-cta-bg'] = `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
-    vars['--av-starfield-glow'] = withAlpha(brandGreen, 0.2);
-    vars['--av-page-hero-kicker-text'] = brandGreen;
+    vars['--av-fundacion-cta-bg'] =
+      `linear-gradient(120deg, ${navyDeep} 0%, ${navyBlue} 50%, ${brandAccent} 100%)`;
+    vars['--av-starfield-glow'] = withAlpha(brandAccent, 0.2);
+    vars['--av-starfield-bg'] =
+      `radial-gradient(ellipse 85% 65% at 50% 18%, ${withAlpha(brandAccent, 0.1)}, transparent 68%), linear-gradient(180deg, ${sectionDarkTop} 0%, ${navyDeep} 42%, ${navyDeep} 100%)`;
+    vars['--av-page-hero-kicker-text'] = brandAccent;
+    vars['--av-accent'] = brandAccent;
+    vars['--servial-red'] = SERVIAL_RED;
+    vars['--av-title-underline-light'] = `linear-gradient(90deg, ${SERVIAL_RED}, ${brandAccent})`;
   }
 
   if (isFinstruvialTema(t)) {

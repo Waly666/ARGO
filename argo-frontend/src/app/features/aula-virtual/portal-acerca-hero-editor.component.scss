@@ -61,36 +61,3 @@
   align-items: flex-start;
   gap: 0.45rem;
 }
-
-.pae-btn {
-  @include portal-site-editor-shared.portal-editor-button-reset;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
-  border: 1px solid rgba(78, 163, 255, 0.35);
-  background: rgba(37, 99, 235, 0.12);
-  color: #bfdbfe;
-  font-size: 0.84rem;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: rgba(37, 99, 235, 0.22);
-    border-color: rgba(96, 165, 250, 0.55);
-    color: #e0f2fe;
-  }
-
-  &:disabled,
-  &--disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  &--file {
-    position: relative;
-    cursor: pointer;
-  }
-}

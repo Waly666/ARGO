@@ -418,6 +418,21 @@ export class AulaVirtualAdminService {
     );
   }
 
+  subirImagenGaleriaHeroPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/galeria-hero-imagen`,
+      fd,
+    );
+  }
+
+  quitarImagenGaleriaHeroPortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/galeria-hero-imagen`,
+    );
+  }
+
   subirImagenCursosConduccionPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
     const fd = new FormData();
     fd.append('imagen', file);

@@ -1,0 +1,212 @@
+<div class="pae">
+  <div class="pae-toolbar">
+    <p class="psb-muted">
+      Edite la página <strong>/acerca</strong> completa: encabezado, texto institucional, contacto, valores y botones.
+      Los datos de teléfono, dirección y correo se toman de <strong>Nombre y contacto</strong>; aquí edita las etiquetas y textos de la página.
+    </p>
+    <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
+  </div>
+
+  <div class="pae-nav">
+    @for (b of [
+      { id: 'hero', label: 'Encabezado' },
+      { id: 'quienes', label: 'Quiénes somos' },
+      { id: 'contacto', label: 'Contacto' },
+      { id: 'valores', label: 'Valores' },
+      { id: 'cta', label: 'Botón principal' }
+    ]; track b.id) {
+      <button
+        type="button"
+        class="pfe-nav-btn"
+        [class.active]="bloque() === b.id"
+        (click)="toggleBloque($any(b.id))"
+      >
+        {{ b.label }}
+      </button>
+    }
+  </div>
+
+  @if (bloque() === 'hero') {
+    <div class="pae-block">
+      <argo-portal-promo-hero-fields-editor
+        [hero]="acerca.hero"
+        [showPillars]="true"
+        [showHighlight]="true"
+        [showVirtualBadge]="true"
+        [tituloAcentoHint]="'Opcional. Si lo deja vacío, se usará el nombre de la empresa en el portal.'"
+      />
+
+      <div class="pae-hero-image">
+        <span class="pae-field-label">Imagen del encabezado</span>
+        <p class="psb-hint">
+          Banner con foto de fondo. Se guarda al instante. PNG, JPG o WEBP. Máx. 8 MB.
+        </p>
+        <div class="pae-hero-image__row">
+          @if (acercaHeroPreviewUrl(); as heroUrl) {
+            <figure class="pae-hero-image__preview">
+              <img [src]="heroUrl" alt="Vista previa imagen Acerca de" />
+            </figure>
+          } @else {
+            <div class="pae-hero-image__preview pae-hero-image__preview--empty">
+              Sin imagen — se mostrará el logo de la empresa
+            </div>
+          }
+          <div class="pae-hero-image__actions">
+            <label class="psb-btn psb-btn--file" [class.psb-btn--disabled]="heroUploading()">
+              {{ heroUploading() ? 'Subiendo…' : 'Elegir imagen' }}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                hidden
+                (change)="onAcercaHeroImagen($event)"
+                [disabled]="heroUploading()"
+              />
+            </label>
+            @if (tieneImagenAcerca()) {
+              <button type="button" class="psb-btn" [disabled]="heroUploading()" (click)="quitarImagenAcerca()">
+                Quitar imagen
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <label class="psb-field psb-field--full">
+        <span>Texto alternativo de la imagen</span>
+        <input
+          type="text"
+          class="psb-input"
+          [(ngModel)]="acerca.hero.imagenAlt"
+          [placeholder]="'Equipo o instalaciones de ' + (nombreEmpresa || 'su institución')"
+        />
+      </label>
+      <label class="psb-field psb-field--full">
+        <span>Pie de foto (opcional)</span>
+        <input type="text" class="psb-input" [(ngModel)]="acerca.hero.imagenCaption" placeholder="Ej. Nuestro equipo" />
+      </label>
+    </div>
+  }
+
+  @if (bloque() === 'quienes') {
+    <div class="pae-block">
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta superior</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.quienes.kicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.quienes.titulo" />
+        </label>
+      </div>
+      <p class="psb-hint">Párrafos del bloque principal (cada uno aparece como un párrafo en la página).</p>
+      @for (p of acerca.quienes.parrafos; track $index; let i = $index) {
+        <div class="pae-row">
+          <textarea class="psb-input" rows="3" [(ngModel)]="acerca.quienes.parrafos[i]"></textarea>
+          <button type="button" class="psb-icon-btn" (click)="removeParrafo(i)">×</button>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addParrafo()">+ Añadir párrafo</button>
+    </div>
+  }
+
+  @if (bloque() === 'contacto') {
+    <div class="pae-block">
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta superior</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.kicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.titulo" />
+        </label>
+      </div>
+      <div class="psb-grid3">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta «Dirección»</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.etiquetaDireccion" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta «Teléfono»</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.etiquetaTelefono" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta «Correo»</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.etiquetaCorreo" />
+        </label>
+      </div>
+      <p class="psb-hint">
+        Los valores de dirección, teléfono y correo se editan en <strong>Nombre y contacto</strong>.
+      </p>
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Enlace al CEA — texto</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.enlaceFundacionTexto" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Enlace al CEA — URL</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.contacto.enlaceFundacionUrl" placeholder="/fundacion" />
+        </label>
+      </div>
+    </div>
+  }
+
+  @if (bloque() === 'valores') {
+    <div class="pae-block">
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Etiqueta superior</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.valores.kicker" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Título de la sección</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.valores.titulo" />
+        </label>
+      </div>
+      <label class="psb-field psb-field--plain">
+        <span>Texto introductorio</span>
+        <textarea class="psb-input" rows="2" [(ngModel)]="acerca.valores.lead"></textarea>
+      </label>
+      @for (v of acerca.valores.items; track $index; let i = $index) {
+        <div class="pae-card">
+          <div class="pae-card__head">
+            <strong>Tarjeta {{ i + 1 }}</strong>
+            <button type="button" class="psb-link" (click)="removeValor(i)">Eliminar</button>
+          </div>
+          <div class="psb-grid3">
+            <label class="psb-field psb-field--plain">
+              <span>Icono</span>
+              <input type="text" class="psb-input" [(ngModel)]="v.icon" placeholder="star" />
+            </label>
+            <label class="psb-field psb-field--plain">
+              <span>Título</span>
+              <input type="text" class="psb-input" [(ngModel)]="v.title" />
+            </label>
+            <label class="psb-field psb-field--plain psb-field--full">
+              <span>Texto</span>
+              <textarea class="psb-input" rows="2" [(ngModel)]="v.text"></textarea>
+            </label>
+          </div>
+        </div>
+      }
+      <button type="button" class="psb-link" (click)="addValor()">+ Añadir tarjeta de valor</button>
+    </div>
+  }
+
+  @if (bloque() === 'cta') {
+    <div class="pae-block">
+      <div class="psb-grid2">
+        <label class="psb-field psb-field--plain">
+          <span>Texto del botón</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.cta.texto" />
+        </label>
+        <label class="psb-field psb-field--plain">
+          <span>Enlace del botón</span>
+          <input type="text" class="psb-input" [(ngModel)]="acerca.cta.url" placeholder="/cursos" />
+        </label>
+      </div>
+      <p class="psb-hint">Botón debajo del texto «Quiénes somos».</p>
+    </div>
+  }
+</div>

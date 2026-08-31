@@ -14,17 +14,158 @@
 </div>
     }
     @case ('hero') {
+      @if (heroEstilo() === 'servial-mesh') {
+<av-portal-promo-banner-hero
+  class="home-promo-hero"
+  size="home"
+  sectionId="home-hero"
+  titleId="home-hero-title"
+  [photoUrl]="heroImg()"
+  [photoAlt]="landing().hero.imagenAlt"
+  [logoUrl]="logoUrl()"
+  [logoAlt]="nombreCea()"
+  [kicker]="heroPromoKicker()"
+  [lead]="heroSubtitulo()"
+  [showVirtualBadge]="false"
+  theme="gold">
+
+  <av-hero-particle-mesh ppbh-effects />
+
+  <h1 ppbh-title #heroH1Servial id="home-hero-title" class="ppbh__title">
+    <span class="ppbh__title-line">{{ heroPromoTitleLine() }}</span>
+    <span #heroH1Accent class="ppbh__title-accent home-promo-hero__title-accent hero-title--typing"></span>
+  </h1>
+
+  <div ppbh-actions class="hero-actions hero-in hero-in--4">
+    @if (licenciaEsExterna(landing().hero.ctaPrincipalUrl)) {
+      <a [href]="landing().hero.ctaPrincipalUrl" class="btn btn-primary" target="_blank" rel="noopener noreferrer">{{ landing().hero.ctaPrincipal }}</a>
+    } @else {
+      <a [routerLink]="licenciaRuta(landing().hero.ctaPrincipalUrl || '/cursos')" class="btn btn-primary">{{ landing().hero.ctaPrincipal }}</a>
+    }
+
+    @if (licenciaEsExterna(landing().hero.ctaSecundarioUrl)) {
+      <a [href]="landing().hero.ctaSecundarioUrl" class="btn btn-outline" target="_blank" rel="noopener noreferrer">{{ landing().hero.ctaSecundario }}</a>
+    } @else {
+      <a [routerLink]="licenciaRuta(landing().hero.ctaSecundarioUrl || '/registro')" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
+    }
+
+    @if (heroLlamarVisible()) {
+      @if (heroLlamarEsExterno()) {
+        <a
+          [href]="heroLlamarHref()"
+          class="btn btn-ghost"
+          [attr.target]="heroLlamarAbreNuevaPestana() ? '_blank' : null"
+          [attr.rel]="heroLlamarAbreNuevaPestana() ? 'noopener noreferrer' : null">
+          {{ heroLlamarEtiqueta() }}
+        </a>
+      } @else {
+        <a [routerLink]="licenciaRuta(landing().hero.ctaLlamarUrl)" class="btn btn-ghost">{{ heroLlamarEtiqueta() }}</a>
+      }
+    }
+  </div>
+
+  @if (infoCardsVisibles()) {
+    <div ppbh-below class="home-hero-contact" aria-label="Contacto y ubicación">
+      <div class="container home-hero-contact__inner">
+        @for (card of landing().infoCards; track card.title; let i = $index) {
+          <article class="home-hero-contact__item reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
+            <span class="home-hero-contact__icon" aria-hidden="true">
+              <av-portal-icon [icon]="card.icon" size="1.2rem" color="currentColor" />
+            </span>
+            <div class="home-hero-contact__copy">
+              <strong>{{ card.title }}</strong>
+              @if (card.fuente === 'telefono' && telefono(); as tel) {
+                <a [href]="whatsappHref()" target="_blank" rel="noopener noreferrer">{{ tel }}</a>
+              } @else if (card.fuente === 'direccion') {
+                <p>{{ direccion() }}</p>
+              } @else {
+                <p>{{ card.text }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+  }
+</av-portal-promo-banner-hero>
+      } @else if (heroEstilo() === 'educarte-mesh') {
 <section
-  class="hero section-starfield"
-  [class.hero--servial-mesh]="heroEstilo() === 'servial-mesh'"
-  [style.--av-hero-photo]="heroEstilo() === 'servial-mesh' && heroImg() ? 'url(' + heroImg() + ')' : null">
+  class="hero section-starfield hero--educarte-mesh"
+  [style.--av-hero-photo]="heroImg() ? 'url(' + heroImg() + ')' : null">
 
   <div class="starfield-bg" aria-hidden="true"></div>
+  <div class="hero-photo-shade" aria-hidden="true"></div>
+  <av-hero-particle-mesh />
 
-  @if (heroEstilo() === 'servial-mesh') {
-    <div class="hero-photo-shade" aria-hidden="true"></div>
-    <av-hero-particle-mesh />
+  <div class="container hero-container">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow hero-in hero-in--1">{{ heroEyebrowServial() }}</p>
+        <p class="hero-cea hero-in hero-in--2">{{ heroSubEyebrow() }}</p>
+        <h1 #heroH1 class="hero-title hero-title--typing"></h1>
+        <p class="lead hero-in hero-in--3">{{ heroSubtitulo() }}</p>
+        <div class="hero-actions hero-in hero-in--4">
+          @if (licenciaEsExterna(landing().hero.ctaPrincipalUrl)) {
+            <a [href]="landing().hero.ctaPrincipalUrl" class="btn btn-primary" target="_blank" rel="noopener noreferrer">{{ landing().hero.ctaPrincipal }}</a>
+          } @else {
+            <a [routerLink]="licenciaRuta(landing().hero.ctaPrincipalUrl || '/cursos')" class="btn btn-primary">{{ landing().hero.ctaPrincipal }}</a>
+          }
+          @if (licenciaEsExterna(landing().hero.ctaSecundarioUrl)) {
+            <a [href]="landing().hero.ctaSecundarioUrl" class="btn btn-outline" target="_blank" rel="noopener noreferrer">{{ landing().hero.ctaSecundario }}</a>
+          } @else {
+            <a [routerLink]="licenciaRuta(landing().hero.ctaSecundarioUrl || '/registro')" class="btn btn-outline">{{ landing().hero.ctaSecundario }}</a>
+          }
+          @if (heroLlamarVisible()) {
+            @if (heroLlamarEsExterno()) {
+              <a
+                [href]="heroLlamarHref()"
+                class="btn btn-ghost"
+                [attr.target]="heroLlamarAbreNuevaPestana() ? '_blank' : null"
+                [attr.rel]="heroLlamarAbreNuevaPestana() ? 'noopener noreferrer' : null">
+                {{ heroLlamarEtiqueta() }}
+              </a>
+            } @else {
+              <a [routerLink]="licenciaRuta(landing().hero.ctaLlamarUrl)" class="btn btn-ghost">{{ heroLlamarEtiqueta() }}</a>
+            }
+          }
+        </div>
+      </div>
+      <figure class="hero-visual hero-in hero-in--5">
+        @if (heroImg(); as src) {
+          <img [src]="src" [alt]="landing().hero.imagenAlt" />
+        }
+      </figure>
+    </div>
+  </div>
+
+  @if (infoCardsVisibles()) {
+    <div class="container hero-info-cards hero-in hero-in--6">
+      <div class="info-cards">
+        @for (card of landing().infoCards; track card.title; let i = $index) {
+          <article class="info-card card-lift reveal-scale" avRevealOnScroll [revealDelay]="i * 90">
+            <av-portal-icon [icon]="card.icon" class="info-icon icon-pop" size="2rem" />
+            <div>
+              <h3 avAnimateTitle [titleDelay]="120">{{ card.title }}</h3>
+              @if (card.fuente === 'telefono' && telefono(); as tel) {
+                <p><a [href]="whatsappHref()" target="_blank" rel="noopener noreferrer">{{ tel }}</a></p>
+              } @else if (card.fuente === 'direccion') {
+                <p>{{ direccion() }}</p>
+              } @else {
+                <p>{{ card.text }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </div>
   }
+</section>
+      } @else {
+<section
+  class="hero section-starfield"
+  [style.--av-hero-photo]="heroImg() ? 'url(' + heroImg() + ')' : null">
+
+  <div class="starfield-bg" aria-hidden="true"></div>
 
   <div class="container hero-container">
 
@@ -32,17 +173,7 @@
 
       <div class="hero-copy">
 
-        <p class="eyebrow hero-in hero-in--1">
-          @if (heroEstilo() === 'servial-mesh') {
-            — Bienvenid&#64; a {{ nombreCea() }} —
-          } @else {
-            {{ nombreCea() }}
-          }
-        </p>
-
-        @if (heroEstilo() === 'servial-mesh') {
-          <p class="hero-cea hero-in hero-in--2">Centro de Enseñanza Automovilística</p>
-        }
+        <p class="eyebrow hero-in hero-in--1">{{ heroEyebrow() }}</p>
 
         <h1 #heroH1 class="hero-title hero-title--typing"></h1>
 
@@ -133,6 +264,7 @@
   }
 
 </section>
+      }
     }
     @case ('publicidadInicio') {
       <av-cursos-conduccion-publicidad-slider

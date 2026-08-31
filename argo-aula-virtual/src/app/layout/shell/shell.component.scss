@@ -7,7 +7,7 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: var(--av-topbar-bg, rgba(11, 18, 36, 0.92));
+  background: var(--av-topbar-bg, rgba(11, 27, 71, 0.92));
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--av-topbar-border, var(--av-border));
 }
@@ -587,7 +587,7 @@
     display: block;
     position: relative;
     z-index: 51;
-    background: rgba(11, 18, 36, 0.98);
+    background: var(--av-topbar-bg, rgba(11, 27, 71, 0.98));
     border-bottom: 1px solid var(--av-border);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
     max-height: 0;

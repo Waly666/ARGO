@@ -10,11 +10,12 @@ import {
 } from '../../core/constants/acerca-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
+import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 
 @Component({
   selector: 'argo-portal-acerca-hero-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent],
   templateUrl: './portal-acerca-hero-editor.component.html',
   styleUrl: './portal-acerca-hero-editor.component.scss',
 })

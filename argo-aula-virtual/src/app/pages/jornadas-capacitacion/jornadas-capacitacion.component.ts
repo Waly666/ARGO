@@ -1,13 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { AutorizacionDatosComponent } from '../../shared/autorizacion-datos/autorizacion-datos.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import {
+  PromoBannerRibbonItem,
+} from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import { payloadAutorizacionDatos } from '../../core/autorizacion-datos.constants';
 import { AulaApiService } from '../../core/aula-api.service';
+import { PortalConfig } from '../../core/models';
+import { mergePortalLanding } from '../../core/portal-landing';
 import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
 import { PortalCatalogService } from '../../core/portal-catalog.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
@@ -15,7 +21,7 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 @Component({
   selector: 'av-jornadas-capacitacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, AutorizacionDatosComponent, PortalIconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, AutorizacionDatosComponent, PortalIconComponent, PortalPromoBannerHeroComponent],
   templateUrl: './jornadas-capacitacion.component.html',
   styleUrl: './jornadas-capacitacion.component.scss',
 })
@@ -29,6 +35,18 @@ export class JornadasCapacitacionComponent implements OnInit {
   readonly catEtiqueta = catEtiqueta;
   readonly catValor = catValor;
   readonly etiquetaGenero = etiquetaGenero;
+
+  config = signal<PortalConfig | null>(null);
+  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  jornadas = computed(() => this.landing().jornadasCapacitacion);
+  heroPilares = computed(() => this.jornadas().hero.pillars);
+
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'qr-code', label: 'Código QR de asistencia' },
+    { icon: 'user-group', label: 'Formación presencial' },
+    { icon: 'shield-check', label: 'Seguridad vial' },
+    { icon: 'heart', label: 'Experiencia práctica' },
+  ];
 
   tiposDoc = signal<Record<string, unknown>[]>([]);
   generos = signal<Record<string, unknown>[]>([]);
@@ -104,6 +122,7 @@ export class JornadasCapacitacionComponent implements OnInit {
 
     this.api.config().subscribe({
       next: (c) => {
+        this.config.set(c);
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
         this.registroAbierto.set(c.registroAbierto !== false);
         this.emailVerificacion.set(!!c.emailVerificacionRegistro);

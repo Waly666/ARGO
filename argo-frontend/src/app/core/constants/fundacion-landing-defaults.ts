@@ -1,5 +1,11 @@
 /** Página institucional del CEA — espejo de aulaVirtualFundacionDefaults.js */
 
+import {
+  mergePromoHeroPillars,
+  PROMO_HERO_PILARES_INSTITUCION,
+  PortalPromoHeroPillar,
+} from './portal-promo-hero-fields.util';
+
 export interface FundacionDestacado {
   icon: string;
   label: string;
@@ -30,6 +36,10 @@ export interface PortalFundacionLanding {
     btnSitioUrl: string;
     btnSitioLabel: string;
     btnCursosLabel: string;
+    pillarsLabel: string;
+    pillars: PortalPromoHeroPillar[];
+    mostrarBadgeVirtual: boolean;
+    virtualBadgeLabel: string;
   };
   quienes: {
     kicker: string;
@@ -73,6 +83,10 @@ export const FUNDACION_LANDING_DEFAULTS: PortalFundacionLanding = {
     btnSitioUrl: '/',
     btnSitioLabel: 'Ver inicio',
     btnCursosLabel: 'Ver cursos',
+    pillarsLabel: 'Nuestro enfoque',
+    pillars: PROMO_HERO_PILARES_INSTITUCION,
+    mostrarBadgeVirtual: true,
+    virtualBadgeLabel: 'VIRTUAL',
   },
   quienes: {
     kicker: 'Conócenos',
@@ -165,7 +179,14 @@ export function mergeFundacionLanding(
   const d = FUNDACION_LANDING_DEFAULTS;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalFundacionLanding;
   return {
-    hero: { ...d.hero, ...raw.hero },
+    hero: {
+      ...d.hero,
+      ...raw.hero,
+      pillarsLabel: raw.hero?.pillarsLabel?.trim() || d.hero.pillarsLabel,
+      pillars: mergePromoHeroPillars(raw.hero?.pillars, d.hero.pillars),
+      mostrarBadgeVirtual: raw.hero?.mostrarBadgeVirtual !== false,
+      virtualBadgeLabel: raw.hero?.virtualBadgeLabel?.trim() || d.hero.virtualBadgeLabel,
+    },
     quienes: {
       ...d.quienes,
       ...raw.quienes,

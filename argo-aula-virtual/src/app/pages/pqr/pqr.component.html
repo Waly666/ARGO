@@ -1,14 +1,14 @@
 <section class="pqr-page">
-  <header class="pqr-page__hero">
-    <div class="starfield-bg" aria-hidden="true"></div>
-    <div class="container pqr-page__hero-inner">
-      <p class="pqr-page__kicker">PQRSF</p>
-      <h1 class="pqr-page__title">Peticiones, Quejas, Reclamos,<br />Sugerencias y Felicitaciones</h1>
-      <p class="pqr-page__sub">
-        En {{ nombreCea() }} nos comprometemos a atender y dar respuesta oportuna a todas sus solicitudes.
-      </p>
-    </div>
-  </header>
+  <av-portal-promo-banner-hero
+    [kicker]="pqr().hero.kicker"
+    [titleLine]="pqr().hero.tituloLinea"
+    [titleAccent]="pqr().hero.tituloAcento"
+    [lead]="heroLead()"
+    [showVirtualBadge]="pqr().hero.mostrarBadgeVirtual"
+    [virtualBadgeLabel]="pqr().hero.virtualBadgeLabel"
+    [theme]="pqr().hero.theme"
+    titleId="pqr-hero-title"
+  />
 
   <div class="container pqr-page__body">
     <div class="pqr-page__stack">

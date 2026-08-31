@@ -1,16 +1,14 @@
 <section class="consulta eval-page">
-  <header class="consulta-hero eval-hero">
-    <div class="container consulta-hero__inner">
-      <span class="consulta-hero__icon eval-hero__icon" aria-hidden="true">★</span>
-      <div>
-        <p class="consulta-kicker">Jornadas de capacitación</p>
-        <h1>Evaluación de satisfacción</h1>
-        <p class="consulta-lead">
-          Califique con estrellas su experiencia en cada programa al que asistió. Una sola respuesta por encuesta.
-        </p>
-      </div>
-    </div>
-  </header>
+  <av-portal-promo-banner-hero
+    [kicker]="evaluacion().hero.kicker"
+    [titleLine]="evaluacion().hero.tituloLinea"
+    [titleAccent]="evaluacion().hero.tituloAcento"
+    [lead]="evaluacion().hero.lead"
+    [showVirtualBadge]="evaluacion().hero.mostrarBadgeVirtual"
+    [virtualBadgeLabel]="evaluacion().hero.virtualBadgeLabel"
+    [theme]="evaluacion().hero.theme"
+    titleId="eval-hero-title"
+  />
 
   <div class="container consulta-body">
     <div class="consulta-card eval-card">

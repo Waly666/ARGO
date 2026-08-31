@@ -358,6 +358,21 @@
         />
       }
 
+      @case ('acerca') {
+        <p class="psb-note">
+          Página pública en <strong>/acerca</strong>. El nombre en el menú se cambia en
+          <button type="button" class="psb-link" (click)="setPanel('paginas')">Páginas visibles</button>.
+          Teléfono, dirección y correo se editan en
+          <button type="button" class="psb-link" (click)="setPanel('empresa')">Nombre y contacto</button>.
+        </p>
+        <argo-portal-acerca-editor
+          [acerca]="acerca"
+          [nombreEmpresa]="portalForm.nombreEmpresa || ''"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
       @case ('institucional') {
         <p class="psb-note">
           Esta es la página institucional del CEA (antes «Fundación» / «Empresa»). El nombre en el menú se cambia en
@@ -478,6 +493,10 @@
             <span>Mensaje cuando no hay fotos</span>
             <textarea class="psb-input" rows="2" [(ngModel)]="landing.galeria.emptyTexto"></textarea>
           </label>
+          <argo-portal-galeria-hero-imagen-editor
+            [galeria]="landing.galeria"
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)" />
         </div>
         @if (esAdmin()) {
           <argo-portal-galeria-fotos-editor
@@ -567,20 +586,11 @@
             <span>Texto debajo del banner</span>
             <textarea class="psb-input" rows="2" [(ngModel)]="portalForm.heroSubtitulo" placeholder="Una oración que explique qué ofrece su institución"></textarea>
           </label>
-          <label class="psb-field psb-field--plain">
-            <span>Página «Acerca de»</span>
-            <textarea class="psb-input" rows="5" [(ngModel)]="portalForm.acercaDeHtml" placeholder="Texto sobre su institución"></textarea>
-          </label>
-
-          <hr class="psb-divider" />
-
-          <h3 class="psb-subtitle">Encabezado de «Acerca de»</h3>
-          <argo-portal-acerca-hero-editor
-            [acerca]="acerca"
-            [nombreEmpresa]="portalForm.nombreEmpresa || ''"
-            (portalConfigUpdated)="applyPortalConfig($event)"
-            (avNotice)="avNotice.emit($event)"
-          />
+          <p class="psb-hint">
+            Para editar la página <strong>Acerca de</strong> (textos, valores, encabezado), use
+            <button type="button" class="psb-link" (click)="setPanel('acerca')">Acerca de</button>
+            en el menú lateral.
+          </p>
 
           <label class="psb-field psb-field--plain">
             <span>¿A qué correo llegan los mensajes del formulario de contacto?</span>
@@ -601,9 +611,16 @@
       @case ('consultaCertificados') {
         <div class="psb-stack">
           <p class="psb-hint">
-            Estas opciones aplican a la consulta pública de certificados por número de documento.
-            El PDF usa el mismo diseño configurado en Configuración → Certificados.
+            Encabezado y opciones de la consulta pública de certificados por número de documento.
           </p>
+
+          <h3 class="psb-subtitle psb-subtitle--section">Encabezado (hero)</h3>
+          <argo-portal-promo-hero-fields-editor
+            [hero]="consultaCertificados"
+            [showTheme]="true"
+          />
+
+          <hr class="psb-divider" />
 
           <h3 class="psb-subtitle psb-subtitle--section">Descarga de certificados</h3>
           <label class="psb-check">
@@ -628,6 +645,35 @@
             />
             Marca de agua «COPIA» en el PDF descargado
           </label>
+        </div>
+      }
+
+      @case ('pqr') {
+        <div class="psb-stack">
+          <p class="psb-hint">Encabezado de la página /pqr.</p>
+          <argo-portal-promo-hero-fields-editor [hero]="pqr.hero" [showTheme]="true" />
+        </div>
+      }
+
+      @case ('jornadasCapacitacion') {
+        <div class="psb-stack">
+          <p class="psb-hint">Encabezado de /jornadas-capacitacion.</p>
+          <argo-portal-promo-hero-fields-editor
+            [hero]="jornadasCapacitacion.hero"
+            [showPillars]="true"
+            [showCtas]="true"
+            [showTheme]="true"
+          />
+        </div>
+      }
+
+      @case ('evaluacionJornadas') {
+        <div class="psb-stack">
+          <p class="psb-hint">Encabezado de /evaluacion-jornadas.</p>
+          <argo-portal-promo-hero-fields-editor
+            [hero]="evaluacionJornadas.hero"
+            [showTheme]="true"
+          />
         </div>
       }
 

@@ -1,11 +1,12 @@
 <div class="blog-page">
-  <section class="blog-hero">
-    <div class="container blog-hero__inner">
-      <p class="blog-kicker">{{ blog().kicker }}</p>
-      <h1>{{ blog().titulo }}</h1>
-      <p class="blog-hero__lead">{{ blog().lead }}</p>
-    </div>
-  </section>
+  <av-portal-promo-banner-hero
+    [kicker]="blog().kicker"
+    [titleLine]="blog().titulo"
+    [lead]="blog().lead"
+    [showVirtualBadge]="blog().mostrarBadgeVirtual"
+    [theme]="blog().theme"
+    titleId="blog-hero-title"
+  />
 
   <section class="blog-list-section">
     <div class="container">

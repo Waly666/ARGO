@@ -1,18 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import { PromoBannerRibbonItem } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import { AulaApiService } from '../../core/aula-api.service';
-import { CertificadoConsultaItem, CertificadoConsultaRes } from '../../core/models';
+import { CertificadoConsultaItem, CertificadoConsultaRes, PortalConfig } from '../../core/models';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 
 @Component({
   selector: 'av-consulta-certificados',
   standalone: true,
-  imports: [CommonModule, FormsModule, TurnstileComponent, PortalIconComponent],
+  imports: [CommonModule, FormsModule, TurnstileComponent, PortalIconComponent, PortalPromoBannerHeroComponent],
   templateUrl: './consulta-certificados.component.html',
   styleUrl: './consulta-certificados.component.scss',
 })
@@ -21,6 +23,17 @@ export class ConsultaCertificadosComponent implements OnInit {
   private seo = inject(PortalSeoService);
 
   turnstile = viewChild(TurnstileComponent);
+
+  config = signal<PortalConfig | null>(null);
+  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  consultaHero = computed(() => this.landing().consultaCertificados);
+
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'academic-cap', label: 'Certificados oficiales' },
+    { icon: 'shield-check', label: 'Verificación segura' },
+    { icon: 'document', label: 'Consulta en línea' },
+    { icon: 'check-badge', label: 'Resultado inmediato' },
+  ];
 
   numDoc = '';
   turnstileSiteKey = signal('');
@@ -38,6 +51,7 @@ export class ConsultaCertificadosComponent implements OnInit {
   ngOnInit() {
     this.api.config().subscribe({
       next: (c) => {
+        this.config.set(c);
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
         const landing = mergePortalLanding(c.landing);
         const cc = landing.consultaCertificados;

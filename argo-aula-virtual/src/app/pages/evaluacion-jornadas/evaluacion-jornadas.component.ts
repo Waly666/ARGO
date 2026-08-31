@@ -9,8 +9,12 @@ import { RouterLink } from '@angular/router';
 
 
 import { TurnstileComponent } from '../../components/turnstile/turnstile.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import { PromoBannerRibbonItem } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 
 import { AulaApiService } from '../../core/aula-api.service';
+import { PortalConfig } from '../../core/models';
+import { mergePortalLanding } from '../../core/portal-landing';
 
 import {
 
@@ -40,7 +44,7 @@ type NotasCarpa = Record<string, Record<string, number>>;
 
   standalone: true,
 
-  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent],
+  imports: [CommonModule, FormsModule, RouterLink, TurnstileComponent, PortalPromoBannerHeroComponent],
 
   templateUrl: './evaluacion-jornadas.component.html',
 
@@ -57,6 +61,17 @@ export class EvaluacionJornadasComponent implements OnInit {
 
 
   turnstile = viewChild(TurnstileComponent);
+
+  config = signal<PortalConfig | null>(null);
+  landing = computed(() => mergePortalLanding(this.config()?.landing));
+  evaluacion = computed(() => this.landing().evaluacionJornadas);
+
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'star', label: 'Calificación por estrellas' },
+    { icon: 'check-badge', label: 'Una respuesta por encuesta' },
+    { icon: 'user-group', label: 'Mejora continua' },
+    { icon: 'heart', label: 'Su opinión cuenta' },
+  ];
 
 
 
@@ -115,6 +130,7 @@ export class EvaluacionJornadasComponent implements OnInit {
 
       next: (c) => {
 
+        this.config.set(c);
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
 
         this.seo.applyConsultaCertificados(c);

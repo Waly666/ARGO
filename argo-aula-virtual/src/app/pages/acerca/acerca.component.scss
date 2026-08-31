@@ -11,42 +11,6 @@
   color: var(--a-ink);
 }
 
-/* —— Hero —— */
-.acerca-hero {
-  position: relative;
-  overflow: hidden;
-  padding: clamp(2.25rem, 5vw, 3.25rem) 0;
-  background:
-    radial-gradient(ellipse at 75% 25%, var(--av-primary-a35), transparent 55%),
-    radial-gradient(ellipse at 15% 85%, var(--av-accent-a22), transparent 50%),
-    var(--av-page-hero-bg);
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: auto -5% -45% auto;
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--av-page-hero-glow), transparent 70%);
-    pointer-events: none;
-  }
-}
-
-.acerca-hero__inner {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
-  gap: clamp(1.25rem, 3vw, 2.5rem);
-  align-items: center;
-}
-
-.acerca-hero__copy {
-  min-width: 0;
-  max-width: 42rem;
-}
-
 .acerca-kicker {
   display: inline-block;
   margin: 0 0 0.5rem;
@@ -56,82 +20,12 @@
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--av-page-hero-kicker-text);
-  background: var(--av-page-hero-kicker-bg);
-  border: 1px solid var(--av-page-hero-kicker-border);
 
   &--light {
     color: #4338ca;
     background: linear-gradient(135deg, #ede9fe, #e0e7ff);
-    border-color: #c7d2fe;
+    border: 1px solid #c7d2fe;
   }
-}
-
-.acerca-hero h1 {
-  margin: 0;
-  font-size: clamp(1.65rem, 3.8vw, 2.35rem);
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-  color: #fff;
-  text-wrap: balance;
-}
-
-.acerca-hero__lead {
-  margin: 0.85rem 0 0;
-  max-width: 36rem;
-  font-size: clamp(0.98rem, 2vw, 1.08rem);
-  line-height: 1.65;
-  color: #cbd5e1;
-}
-
-.acerca-hero__logo {
-  margin: 0;
-  padding: 1rem 1.25rem;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-
-  img {
-    max-width: min(200px, 28vw);
-    max-height: 120px;
-    object-fit: contain;
-    margin: 0 auto;
-  }
-}
-
-.acerca-hero__visual {
-  margin: 0;
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  justify-self: end;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-
-  img {
-    display: block;
-    width: 100%;
-    max-width: 420px;
-    border-radius: 16px;
-    object-fit: cover;
-    aspect-ratio: 4 / 3;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow:
-      0 24px 48px rgba(0, 0, 0, 0.35),
-      0 0 0 1px var(--av-accent-a08);
-  }
-}
-
-.acerca-hero__caption {
-  margin-top: 0.75rem;
-  width: 100%;
-  text-align: center;
-  font-size: 0.84rem;
-  color: #cbd5e1;
-  font-weight: 500;
 }
 
 /* —— Body —— */
@@ -386,34 +280,6 @@
 }
 
 @media (max-width: 960px) {
-  .acerca-hero__inner {
-    grid-template-columns: 1fr;
-  }
-
-  .acerca-hero__copy {
-    max-width: none;
-  }
-
-  .acerca-hero__logo {
-    justify-self: start;
-
-    img {
-      max-width: 180px;
-    }
-  }
-
-  .acerca-hero__visual {
-    order: -1;
-    justify-self: center;
-    max-width: min(100%, 520px);
-    margin-inline: auto;
-
-    img {
-      width: 100%;
-      max-width: 100%;
-    }
-  }
-
   .acerca-about {
     grid-template-columns: 1fr;
   }

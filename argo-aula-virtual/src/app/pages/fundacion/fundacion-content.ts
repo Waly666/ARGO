@@ -1,5 +1,6 @@
 /** Contenido institucional del CEA — editable vía ERP (landing.fundacion). */
 
+import { PROMO_HERO_PILARES_INSTITUCION } from '../../core/constants/portal-promo-hero-fields.util';
 import { DEFAULT_CEA_CORTO, DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 
 export const FUNDACION_SITIO_URL = '/';
@@ -88,6 +89,10 @@ export const FUNDACION_LANDING_DEFAULTS = {
     btnSitioUrl: FUNDACION_SITIO_URL,
     btnSitioLabel: 'Ver inicio',
     btnCursosLabel: 'Ver cursos',
+    pillarsLabel: 'Nuestro enfoque',
+    pillars: PROMO_HERO_PILARES_INSTITUCION,
+    mostrarBadgeVirtual: true,
+    virtualBadgeLabel: 'VIRTUAL',
   },
   quienes: {
     kicker: 'Conócenos',

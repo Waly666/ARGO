@@ -388,6 +388,58 @@ exports.quitarImagenAcercaPortal = async (req, res, next) => {
   }
 };
 
+async function guardarImagenGaleriaHeroPortal(imagenUrl, usuario) {
+  const aula = await obtenerConfigAula();
+  const landing = mergeLanding(aula.landing);
+  landing.galeria = {
+    ...landing.galeria,
+    heroImagenUrl: String(imagenUrl || '').trim(),
+  };
+  await guardarConfigAula({ landing }, usuario);
+}
+
+function quitarImagenGaleriaHeroAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-galeria-hero/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenGaleriaHeroPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenGaleriaHeroAnterior(landing.galeria?.heroImagenUrl);
+
+    const imagenUrl = publicUrl('aula-virtual-galeria-hero', req.file.filename);
+    await guardarImagenGaleriaHeroPortal(imagenUrl, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen del héroe de galería actualizada',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenGaleriaHeroPortal = async (req, res, next) => {
+  try {
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    quitarImagenGaleriaHeroAnterior(landing.galeria?.heroImagenUrl);
+    await guardarImagenGaleriaHeroPortal('', req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen del héroe de galería eliminada; se usará la primera foto de la galería',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
 async function guardarImagenCursosConduccionPortal(imagenUrl, usuario) {
   const aula = await obtenerConfigAula();
   const landing = mergeLanding(aula.landing);

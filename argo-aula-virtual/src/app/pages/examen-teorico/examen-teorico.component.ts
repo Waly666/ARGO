@@ -8,6 +8,11 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import {
+  PromoBannerHighlight,
+  PromoBannerRibbonItem,
+} from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import {
   mergeExamenTeoricoLanding,
   PortalExamenTeoricoNorma,
@@ -17,7 +22,7 @@ import {
 @Component({
   selector: 'av-examen-teorico',
   standalone: true,
-  imports: [CommonModule, RouterLink, PortalIconComponent],
+  imports: [CommonModule, RouterLink, PortalIconComponent, PortalPromoBannerHeroComponent],
   templateUrl: './examen-teorico.component.html',
   styleUrl: './examen-teorico.component.scss',
 })
@@ -30,6 +35,22 @@ export class ExamenTeoricoComponent implements OnInit {
   contenido = computed(() =>
     mergeExamenTeoricoLanding(mergePortalLanding(this.config()?.landing).examenTeorico),
   );
+
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'document', label: 'Normativa vigente' },
+    { icon: 'check-badge', label: 'Fuente oficial' },
+    { icon: 'car', label: 'Licencia de conducción' },
+    { icon: 'shield-check', label: 'Información verificada' },
+  ];
+
+  heroHighlight = computed((): PromoBannerHighlight => {
+    const c = this.contenido();
+    return {
+      icon: 'check-badge',
+      title: c.fechaDestacada,
+      subtitle: `${c.fechaBannerPrefijo} ${c.fechaBannerSufijo}`.trim(),
+    };
+  });
 
   ngOnInit() {
     this.api.config().subscribe({

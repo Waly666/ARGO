@@ -1,16 +1,17 @@
 <div class="cc-page">
-  <section class="cc-hero">
-    <div class="container cc-hero__inner">
-      <div class="cc-hero__copy">
-        <p class="cc-kicker">{{ contenido().hero.kicker }}</p>
-        <h1>{{ contenido().tituloPrincipal }}</h1>
-        <p class="cc-hero__lead">{{ contenido().textoInstitucional }}</p>
-      </div>
-      <figure class="cc-hero__visual">
-        <img [src]="heroImagen()" [alt]="contenido().hero.imagenAlt" loading="eager" />
-      </figure>
-    </div>
-  </section>
+  <av-portal-promo-banner-hero
+    size="page-tall"
+    [photoUrl]="heroImagen()"
+    [photoAlt]="contenido().hero.imagenAlt"
+    [kicker]="contenido().hero.kicker"
+    [titleLine]="contenido().tituloPrincipal"
+    [lead]="contenido().textoInstitucional"
+    [pillars]="heroPilares()"
+    [showVirtualBadge]="contenido().hero.mostrarBadgeVirtual"
+    [virtualBadgeLabel]="contenido().hero.virtualBadgeLabel"
+    titleId="cc-hero-title"
+    [pillarsLabel]="contenido().hero.pillarsLabel"
+  />
 
   <av-cursos-conduccion-publicidad-slider [publicidad]="contenido().publicidad" />
 

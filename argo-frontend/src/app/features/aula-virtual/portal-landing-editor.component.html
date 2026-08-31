@@ -64,6 +64,27 @@
 
   @if (bloque() === 'hero') {
     <div class="ple-block">
+      <h3>Textos del banner (inicio)</h3>
+      <div class="av-grid2">
+        <div class="av-field">
+          <label>Subtítulo estilo clásico (eyebrow)</label>
+          <input [(ngModel)]="landing.hero.eyebrow" placeholder="Vacío = nombre de la empresa" />
+        </div>
+        <div class="av-field">
+          <label>Subtítulo estilo Servial</label>
+          <input [(ngModel)]="landing.hero.eyebrowServial" placeholder="— Bienvenid@ a {nombreCea} —" />
+        </div>
+        <div class="av-field">
+          <label>Línea «Centro de Enseñanza…»</label>
+          <input [(ngModel)]="landing.hero.subEyebrow" />
+        </div>
+        <div class="av-field">
+          <label>Etiqueta botón llamar (opcional)</label>
+          <input [(ngModel)]="landing.hero.ctaLlamarEtiqueta" placeholder="Vacío = Llamar + teléfono" />
+        </div>
+      </div>
+      <p class="av-muted">En el subtítulo Servial puede usar <code>{{ '{' }}nombreCea{{ '}' }}</code>.</p>
+      <hr />
       <p class="av-muted">Ruta interna (ej. <code>/cursos</code>), <code>https://…</code> o WhatsApp (<code>https://wa.me/573…</code>). Los teléfonos del sitio abren WhatsApp.</p>
       <div class="av-grid2">
         <div class="av-field"><label>Botón principal — texto</label><input [(ngModel)]="landing.hero.ctaPrincipal" /></div>

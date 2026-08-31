@@ -1,11 +1,14 @@
 <div class="galeria-page">
-  <section class="galeria-hero">
-    <div class="container galeria-hero__inner">
-      <p class="galeria-kicker">{{ galeria().kicker }}</p>
-      <h1>{{ galeria().titulo }}</h1>
-      <p class="galeria-hero__lead">{{ galeria().lead }}</p>
-    </div>
-  </section>
+  <av-portal-promo-banner-hero
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="heroPhotoAlt()"
+    [kicker]="galeria().kicker"
+    [titleLine]="galeria().titulo"
+    [lead]="galeria().lead"
+    [showVirtualBadge]="galeria().mostrarBadgeVirtual"
+    [theme]="galeria().theme"
+    titleId="galeria-hero-title"
+  />
 
   <section class="galeria-list-section">
     <div class="container">

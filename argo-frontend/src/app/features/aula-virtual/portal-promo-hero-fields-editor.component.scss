@@ -1,0 +1,15 @@
+@use './portal-site-editor-shared';
+
+.pphe__subtitle {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.pphe__row {
+  display: grid;
+  grid-template-columns: 7rem 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}

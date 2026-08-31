@@ -1,4 +1,5 @@
 const { DEFAULT_CEA_NOMBRE } = require('./portalBrandDefaults');
+const { PROMO_HERO_PILARES_INSTITUCION } = require('./portalPromoHeroFields');
 
 /** Página institucional del CEA — editable desde ERP. */
 const FUNDACION_LANDING_DEFAULTS = {
@@ -13,6 +14,10 @@ const FUNDACION_LANDING_DEFAULTS = {
     btnSitioUrl: '/',
     btnSitioLabel: 'Ver inicio',
     btnCursosLabel: 'Ver cursos',
+    pillarsLabel: 'Nuestro enfoque',
+    pillars: PROMO_HERO_PILARES_INSTITUCION,
+    mostrarBadgeVirtual: true,
+    virtualBadgeLabel: 'VIRTUAL',
   },
   quienes: {
     kicker: 'Conócenos',

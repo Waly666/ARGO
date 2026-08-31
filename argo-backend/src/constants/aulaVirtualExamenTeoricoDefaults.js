@@ -75,6 +75,11 @@ const EXAMEN_TEORICO_DEFAULTS = {
   normograma: JSON.parse(JSON.stringify(NORMOGRAMA_DEFAULTS)),
   ctaFinalTexto: 'Ver cursos de conducción',
   ctaFinalUrl: '/cursos-conduccion',
+  backLabel: '← Volver al inicio',
+  oficialLead:
+    'Consulte el texto oficial de la circular y las resoluciones relacionadas con el examen teórico y la habilitación del CEA.',
+  theme: 'gold',
+  mostrarBadgeVirtual: false,
 };
 
 function examenTeoricoContenidoAntiguo(raw) {

@@ -1,75 +1,73 @@
 <div class="ta-page">
-  <header class="ta-hero" id="inicio">
-    <div class="container">
-      <a routerLink="/" class="ta-back">← Volver al inicio</a>
-      <div class="ta-hero__grid">
-        <div class="ta-hero__copy">
-          <p class="ta-kicker">{{ contenido().kicker }}</p>
-          <h1 class="ta-title">
-            <span>{{ contenido().titulo }}</span>
-            <span class="ta-title__accent">{{ contenido().tituloLinea2 }}</span>
-          </h1>
-          <p class="ta-subtitle">{{ contenido().subtitulo }}</p>
-          <div class="ta-hero__stats" aria-label="Resumen normativo">
-            <span class="ta-stat"><strong>Res. 4272</strong> de 2021</span>
-            <span class="ta-stat"><strong>2,0 m</strong> altura mínima</span>
-            <span class="ta-stat"><strong>{{ totalDocumentos() }}</strong> PDFs</span>
-          </div>
-          <p class="ta-lead">{{ contenido().heroLead }}</p>
-          @for (p of contenido().heroParrafos; track $index) {
-            <p class="ta-hero__text">{{ p }}</p>
-          }
-          <div class="ta-hero__ctas">
-            @if (tieneEnlaceCurso()) {
-              @if (enlaceCursoExterno()) {
-                <a
-                  class="btn btn-primary"
-                  [href]="enlaceCursoHref()!"
-                  target="_blank"
-                  rel="noopener noreferrer">
-                  {{ contenido().enlaceCursoEtiqueta }} ↗
-                </a>
-              } @else {
-                <a class="btn btn-primary" [routerLink]="enlaceCursoHref()!">
-                  {{ contenido().enlaceCursoEtiqueta }}
-                </a>
-              }
-            }
-            @if (tieneEnlaceCurso()) {
-              <button type="button" class="btn btn-outline" (click)="scrollTo('normativa')">
-                {{ contenido().ctaNormativaTexto }}
-              </button>
-            } @else {
-              <button type="button" class="btn btn-primary" (click)="scrollTo('normativa')">
-                {{ contenido().ctaNormativaTexto }}
-              </button>
-            }
-            <button type="button" class="btn btn-outline" (click)="scrollTo('documentos')">
-              {{ contenido().ctaDocumentosTexto }}
-            </button>
-          </div>
-          <p class="ta-actualizado">
-            <span class="ta-badge ta-badge--live">
-              <span class="ta-badge__dot" aria-hidden="true"></span>
-              Actualizado a <strong>{{ contenido().fechaActualizacion }}</strong>
-            </span>
-          </p>
-        </div>
-        <figure class="ta-hero__media">
-          <div class="ta-hero__media-frame">
-            @if (imagenUrl(imagenPorId(contenido(), 'hero'), staticHero); as src) {
-              <img [src]="src" [alt]="imagenPorId(contenido(), 'hero')?.alt || ''" />
-            } @else {
-              <div class="ta-placeholder" aria-hidden="true">
-                <av-portal-icon icon="shield-check" size="2.5rem" color="currentColor" />
-                <span>Trabajo seguro en alturas</span>
-              </div>
-            }
-          </div>
-        </figure>
+  <av-portal-promo-banner-hero
+    sectionId="inicio"
+    [theme]="contenido().theme"
+    [photoUrl]="imagenUrl(imagenPorId(contenido(), 'hero'), staticHero)"
+    [photoAlt]="imagenPorId(contenido(), 'hero')?.alt || ''"
+    [logoUrl]="logoUrl()"
+    [logoAlt]="nombreCea()"
+    [kicker]="contenido().kicker"
+    [titleLine]="contenido().titulo"
+    [titleAccent]="contenido().tituloLinea2"
+    [lead]="contenido().heroLead"
+    [pillars]="heroPilares()"
+    [showVirtualBadge]="contenido().mostrarBadgeVirtual"
+    [virtualBadgeLabel]="contenido().virtualBadgeLabel"
+    titleId="ta-hero-title"
+    [pillarsLabel]="contenido().heroPillarsLabel"
+  >
+    <a ppbh-top routerLink="/" class="ppbh-back">{{ contenido().backLabel }}</a>
+
+    <p ppbh-extra class="ta-subtitle">{{ contenido().subtitulo }}</p>
+
+    @if (contenido().heroStats.length) {
+      <div ppbh-extra class="ppbh-stats" aria-label="Resumen normativo">
+        @for (stat of contenido().heroStats; track stat) {
+          <span class="ppbh-stat">{{ stat }}</span>
+        }
+        <span class="ppbh-stat"><strong>{{ totalDocumentos() }}</strong> PDFs</span>
       </div>
+    }
+
+    @for (p of contenido().heroParrafos; track $index) {
+      <p ppbh-extra class="ppbh-text">{{ p }}</p>
+    }
+
+    <div ppbh-actions class="ppbh-ctas">
+      @if (tieneEnlaceCurso()) {
+        @if (enlaceCursoExterno()) {
+          <a
+            class="btn btn-primary"
+            [href]="enlaceCursoHref()!"
+            target="_blank"
+            rel="noopener noreferrer">
+            {{ contenido().enlaceCursoEtiqueta }} ↗
+          </a>
+        } @else {
+          <a class="btn btn-primary" [routerLink]="enlaceCursoHref()!">
+            {{ contenido().enlaceCursoEtiqueta }}
+          </a>
+        }
+      }
+      @if (tieneEnlaceCurso()) {
+        <button type="button" class="btn btn-outline" (click)="scrollTo('normativa')">
+          {{ contenido().ctaNormativaTexto }}
+        </button>
+      } @else {
+        <button type="button" class="btn btn-primary" (click)="scrollTo('normativa')">
+          {{ contenido().ctaNormativaTexto }}
+        </button>
+      }
+      <button type="button" class="btn btn-outline" (click)="scrollTo('documentos')">
+        {{ contenido().ctaDocumentosTexto }}
+      </button>
     </div>
-  </header>
+
+    <p ppbh-extra class="ppbh-live">
+      <span class="ppbh-live__dot" aria-hidden="true"></span>
+      Actualizado a <strong>{{ contenido().fechaActualizacion }}</strong>
+    </p>
+  </av-portal-promo-banner-hero>
 
   <nav class="ta-nav" aria-label="Secciones de trabajo en alturas">
     <div class="container ta-nav__inner">
@@ -277,7 +275,7 @@
     </section>
 
     @if (contenido().documentosGrupos.length) {
-      <section class="ta-section ta-section--library" id="documentos">
+      <section class="ta-section ta-section--library pp-section-ambient" id="documentos">
         <div class="container">
           <header class="ta-library-banner reveal" avRevealOnScroll>
             <div>

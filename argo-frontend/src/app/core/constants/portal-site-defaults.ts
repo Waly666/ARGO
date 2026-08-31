@@ -18,7 +18,7 @@ export interface PortalPaginaConfig {
   ruta: string;
 }
 
-export type PortalHeroEstilo = 'starfield' | 'servial-mesh';
+export type PortalHeroEstilo = 'starfield' | 'servial-mesh' | 'educarte-mesh';
 
 export interface PortalTemaConfig {
   colorPrimario: string;

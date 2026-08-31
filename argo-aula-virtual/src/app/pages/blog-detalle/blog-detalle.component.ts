@@ -7,11 +7,13 @@ import { BlogPost, PortalConfig } from '../../core/models';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import { PromoBannerRibbonItem } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 
 @Component({
   selector: 'av-blog-detalle',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PortalPromoBannerHeroComponent],
   templateUrl: './blog-detalle.component.html',
   styleUrl: './blog-detalle.component.scss',
 })
@@ -27,6 +29,34 @@ export class BlogDetalleComponent implements OnInit {
 
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   blogLabel = computed(() => this.landing().blog.titulo || 'Blog');
+
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'document', label: 'Lectura en línea' },
+    { icon: 'globe', label: 'Noticias institucionales' },
+    { icon: 'car', label: 'Seguridad vial' },
+    { icon: 'trending-up', label: 'Contenido actualizado' },
+  ];
+
+  heroPhoto = computed(() => {
+    const article = this.post();
+    if (!article) return null;
+    const cover = article.imagenes?.[0]?.url;
+    if (!cover) return null;
+    return this.imagenUrl(cover);
+  });
+
+  heroTitleLine = computed(() => {
+    if (this.loading()) return 'Cargando artículo…';
+    if (this.error()) return 'Artículo no encontrado';
+    return this.post()?.titulo || '';
+  });
+
+  heroLead = computed(() => {
+    const article = this.post();
+    if (article?.autorNombre) return `Por ${article.autorNombre}`;
+    if (this.error()) return this.error();
+    return '';
+  });
 
   ngOnInit() {
     this.api.config().subscribe({

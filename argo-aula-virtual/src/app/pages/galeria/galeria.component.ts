@@ -7,13 +7,15 @@ import { mergePortalLanding, PortalGaleriaFoto } from '../../core/portal-landing
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import { PromoBannerRibbonItem } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 
 const POR_PAGINA = 24;
 
 @Component({
   selector: 'av-galeria',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PortalPromoBannerHeroComponent],
   templateUrl: './galeria.component.html',
   styleUrl: './galeria.component.scss',
 })
@@ -28,6 +30,28 @@ export class GaleriaComponent implements OnInit {
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   galeria = computed(() => this.landing().galeria);
   todasFotos = computed(() => this.galeria().fotos || []);
+
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'star', label: 'Momentos institucionales' },
+    { icon: 'user-group', label: 'Formación en acción' },
+    { icon: 'car', label: 'Seguridad vial' },
+    { icon: 'heart', label: 'Comunidad educativa' },
+  ];
+
+  heroPhoto = computed(() => {
+    const g = this.galeria();
+    const heroUrl = g.heroImagenUrl?.trim();
+    if (heroUrl) {
+      const resolved = resolveUploadUrl(g.heroImagenUrlAbsoluta || heroUrl);
+      if (resolved) return resolved;
+      if (/^https?:\/\//i.test(heroUrl) || heroUrl.startsWith('/')) return heroUrl;
+    }
+    const fotos = this.todasFotos();
+    if (!fotos.length) return null;
+    return this.mediaUrl(fotos[0]);
+  });
+
+  heroPhotoAlt = computed(() => this.galeria().heroImagenAlt?.trim() || this.galeria().titulo);
   fotosVisibles = computed(() => this.todasFotos().slice(0, this.pagina() * POR_PAGINA));
   hayMas = computed(() => this.fotosVisibles().length < this.todasFotos().length);
   lightboxFoto = computed(() => {

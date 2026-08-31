@@ -8,13 +8,17 @@ import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { ContactoFormComponent } from '../../shared/contacto-form/contacto-form.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import {
+  PROMO_BANNER_RIBBON_DEFAULT,
+} from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 import { FUNDACION_CONTACTO } from './fundacion-content';
 import { whatsappHrefFromPhone } from '../../core/portal-whatsapp.util';
 
 @Component({
   selector: 'av-fundacion',
   standalone: true,
-  imports: [CommonModule, RouterLink, ContactoFormComponent, PortalIconComponent],
+  imports: [CommonModule, RouterLink, ContactoFormComponent, PortalIconComponent, PortalPromoBannerHeroComponent],
   templateUrl: './fundacion.component.html',
   styleUrl: './fundacion.component.scss',
 })
@@ -24,8 +28,12 @@ export class FundacionComponent implements OnInit {
 
   config = signal<PortalConfig | null>(null);
 
+  readonly heroRibbon = PROMO_BANNER_RIBBON_DEFAULT;
+
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   fund = computed(() => this.landing().fundacion);
+
+  heroPilares = computed(() => this.fund().hero.pillars);
 
   nombreCea = computed(() => this.config()?.nombreCea?.trim() || 'Mi institución');
 

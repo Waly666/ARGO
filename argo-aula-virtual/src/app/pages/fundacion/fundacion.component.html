@@ -1,27 +1,28 @@
 <div class="fund-page">
-  <section class="fund-hero">
-    <div class="container fund-hero__inner">
-      <div class="fund-hero__copy">
-        <p class="fund-kicker">{{ fund().hero.kicker }}</p>
-        <h1>{{ heroTitulo() }}</h1>
-        <p class="fund-hero__lead">{{ fund().hero.lead }}</p>
-        <div class="fund-hero__actions">
-          @if (fund().hero.btnSitioUrl.trim()) {
-            <a [href]="fund().hero.btnSitioUrl" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-              {{ fund().hero.btnSitioLabel }}
-            </a>
-          }
-          <a routerLink="/cursos" class="btn btn-outline fund-btn-outline">{{ fund().hero.btnCursosLabel }}</a>
-        </div>
-      </div>
-      <figure class="fund-hero__visual">
-        <img [src]="heroImagen()" [alt]="fund().hero.imagenAlt" loading="eager" />
-        @if (fund().hero.imagenCaption) {
-          <figcaption class="fund-hero__caption">{{ fund().hero.imagenCaption }}</figcaption>
-        }
-      </figure>
+  <av-portal-promo-banner-hero
+    size="page-tall"
+    [photoUrl]="heroImagen()"
+    [photoAlt]="fund().hero.imagenAlt"
+    [logoUrl]="logoUrl()"
+    [logoAlt]="nombreCea()"
+    [kicker]="fund().hero.kicker"
+    [titleLine]="heroTitulo()"
+    [lead]="fund().hero.lead"
+    [pillars]="heroPilares()"
+    [showVirtualBadge]="fund().hero.mostrarBadgeVirtual"
+    [virtualBadgeLabel]="fund().hero.virtualBadgeLabel"
+    titleId="fund-hero-title"
+    [pillarsLabel]="fund().hero.pillarsLabel"
+  >
+    <div ppbh-actions class="ppbh-ctas">
+      @if (fund().hero.btnSitioUrl.trim()) {
+        <a [href]="fund().hero.btnSitioUrl" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+          {{ fund().hero.btnSitioLabel }}
+        </a>
+      }
+      <a routerLink="/cursos" class="btn btn-outline">{{ fund().hero.btnCursosLabel }}</a>
     </div>
-  </section>
+  </av-portal-promo-banner-hero>
 
   <section class="fund-section fund-section--about" id="quienes-somos">
     <div class="container">

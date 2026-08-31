@@ -7,6 +7,8 @@ import { BlogPost, PortalConfig } from '../../core/models';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
 import { resolveUploadUrl } from '../../core/upload-url.util';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import { PromoBannerRibbonItem } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
 
 const BLOG_TEXTO_DEFAULT = {
   kicker: 'Blog',
@@ -19,7 +21,7 @@ const BLOG_TEXTO_DEFAULT = {
 @Component({
   selector: 'av-blog',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PortalPromoBannerHeroComponent],
   templateUrl: './blog.component.html',
   styleUrl: './blog.component.scss',
 })
@@ -34,6 +36,13 @@ export class BlogComponent implements OnInit {
 
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   blog = computed(() => ({ ...BLOG_TEXTO_DEFAULT, ...this.landing().blog }));
+
+  readonly heroRibbon: PromoBannerRibbonItem[] = [
+    { icon: 'document', label: 'Artículos actualizados' },
+    { icon: 'car', label: 'Seguridad vial' },
+    { icon: 'globe', label: 'Noticias institucionales' },
+    { icon: 'trending-up', label: 'Consejos prácticos' },
+  ];
 
   ngOnInit() {
     this.api.config().subscribe({

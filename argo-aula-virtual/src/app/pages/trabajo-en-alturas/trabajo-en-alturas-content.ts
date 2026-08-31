@@ -1,6 +1,14 @@
 /** Página /trabajo-en-alturas — contenido editable desde el ERP. */
 
 import {
+  mergePromoHeroPillars,
+  mergePromoHeroStats,
+  mergePromoHeroTheme,
+  PROMO_HERO_PILARES_TA,
+  PortalPromoHeroPillar,
+  PortalPromoHeroTheme,
+} from '../../core/constants/portal-promo-hero-fields.util';
+import {
   TRABAJO_EN_ALTURAS_DOCUMENTOS_GRUPOS,
   TaDocumento,
   TaDocumentoGrupo,
@@ -62,6 +70,13 @@ export interface PortalTrabajoEnAlturasLanding {
   subtitulo: string;
   heroLead: string;
   heroParrafos: string[];
+  heroPillarsLabel: string;
+  heroPillars: PortalPromoHeroPillar[];
+  heroStats: string[];
+  backLabel: string;
+  theme: PortalPromoHeroTheme;
+  mostrarBadgeVirtual: boolean;
+  virtualBadgeLabel: string;
   enlaceCursoUrl: string;
   enlaceCursoEtiqueta: string;
   ctaNormativaTexto: string;
@@ -146,6 +161,13 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
     'La Resolución 4272 de 2021 regula las actividades que se desarrollan a partir de 2,0 metros sobre el nivel de referencia. En logística y transporte, las operaciones en techos de tractocamiones, planchones, tolvas, cisternas y carrocerías exigen controles adicionales por superficies irregulares, móviles y expuestas al clima.',
     'Conocer la normativa, las responsabilidades del empleador y del trabajador, y los requisitos de los sistemas de protección contra caídas (SPCC) es la base para prevenir accidentes graves y fatales.',
   ],
+  heroPillarsLabel: 'Contenidos del curso',
+  heroPillars: PROMO_HERO_PILARES_TA,
+  heroStats: ['Res. 4272 de 2021', '2,0 m'],
+  backLabel: '← Volver al inicio',
+  theme: 'violet',
+  mostrarBadgeVirtual: true,
+  virtualBadgeLabel: 'VIRTUAL',
   enlaceCursoUrl: '',
   enlaceCursoEtiqueta: 'Ir al curso interactivo',
   ctaNormativaTexto: 'Marco normativo',
@@ -408,6 +430,13 @@ export function mergeTrabajoEnAlturasLanding(
     subtitulo: str(src.subtitulo, d.subtitulo),
     heroLead: str(src.heroLead, d.heroLead),
     heroParrafos: arr(src.heroParrafos, d.heroParrafos),
+    heroPillarsLabel: str(src.heroPillarsLabel, d.heroPillarsLabel),
+    heroPillars: mergePromoHeroPillars(src.heroPillars, d.heroPillars),
+    heroStats: mergePromoHeroStats(src.heroStats, d.heroStats),
+    backLabel: str(src.backLabel, d.backLabel),
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual !== false,
+    virtualBadgeLabel: str(src.virtualBadgeLabel, d.virtualBadgeLabel),
     enlaceCursoUrl: str(src.enlaceCursoUrl, d.enlaceCursoUrl),
     enlaceCursoEtiqueta: str(src.enlaceCursoEtiqueta, d.enlaceCursoEtiqueta),
     ctaNormativaTexto: str(src.ctaNormativaTexto, d.ctaNormativaTexto),

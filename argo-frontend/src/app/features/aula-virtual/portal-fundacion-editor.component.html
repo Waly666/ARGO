@@ -42,6 +42,13 @@
         <span>Texto introductorio</span>
         <textarea class="psb-input" rows="3" [(ngModel)]="fundacion.hero.lead"></textarea>
       </label>
+      <argo-portal-promo-hero-fields-editor
+        [hero]="fundacion.hero"
+        [showTitle]="false"
+        [showLead]="false"
+        [showPillars]="true"
+        [showVirtualBadge]="true"
+      />
       <div class="pfe-hero-image">
         <span class="pfe-field-label">Imagen del encabezado (Quiénes somos)</span>
         <p class="psb-hint">

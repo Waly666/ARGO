@@ -10,6 +10,7 @@ const {
   aulaVirtualHero,
   aulaVirtualFundacionHero,
   aulaVirtualAcercaHero,
+  aulaVirtualGaleriaHero,
   aulaVirtualCursosConduccionHero,
   aulaVirtualPopup,
   aulaVirtualConsultaAsistente,
@@ -227,6 +228,19 @@ router.delete(
   requireAuth,
   configPortal,
   admin.quitarImagenAcercaPortal,
+);
+router.post(
+  '/admin/portal/galeria-hero-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualGaleriaHero.single('imagen'),
+  admin.subirImagenGaleriaHeroPortal,
+);
+router.delete(
+  '/admin/portal/galeria-hero-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenGaleriaHeroPortal,
 );
 router.post(
   '/admin/portal/cursos-conduccion-hero-imagen',

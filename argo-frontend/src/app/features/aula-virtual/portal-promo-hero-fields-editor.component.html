@@ -1,0 +1,128 @@
+<div class="pphe">
+  @if (showTitle) {
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta superior (kicker)</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.kicker" />
+      </label>
+      @if (showTheme) {
+        <label class="psb-field psb-field--plain">
+          <span>Color del banner</span>
+          <select class="psb-input" [(ngModel)]="hero.theme">
+            @for (t of themes; track t) {
+              <option [ngValue]="t">{{ t }}</option>
+            }
+          </select>
+        </label>
+      }
+    </div>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Título (línea 1)</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.tituloLinea" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título (línea 2 / acento)</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.tituloAcento" />
+        @if (tituloAcentoHint) {
+          <span class="psb-hint">{{ tituloAcentoHint }}</span>
+        }
+      </label>
+    </div>
+  }
+
+  @if (showLead) {
+    <label class="psb-field psb-field--plain">
+      <span>Texto introductorio</span>
+      <textarea class="psb-input" rows="3" [(ngModel)]="hero.lead"></textarea>
+      <span class="psb-hint">Puede usar <code>{{ '{' }}nombreCea{{ '}' }}</code> para insertar el nombre de la empresa.</span>
+    </label>
+  }
+
+  @if (showVirtualBadge) {
+    <label class="psb-check">
+      <input type="checkbox" [(ngModel)]="hero.mostrarBadgeVirtual" />
+      Mostrar badge «Virtual»
+    </label>
+    @if (hero.mostrarBadgeVirtual !== false) {
+      <label class="psb-field psb-field--plain">
+        <span>Texto del badge virtual</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.virtualBadgeLabel" />
+      </label>
+    }
+  }
+
+  @if (showBackLabel) {
+    <label class="psb-field psb-field--plain">
+      <span>Enlace «volver»</span>
+      <input type="text" class="psb-input" [(ngModel)]="hero.backLabel" />
+    </label>
+  }
+
+  @if (showHighlight) {
+    <h4 class="pphe__subtitle">Destacado del banner</h4>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Icono</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.highlightIcon" placeholder="trophy" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título destacado</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.highlightTitle" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Subtítulo</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.highlightSubtitle" />
+      </label>
+    </div>
+  }
+
+  @if (showPillars && hero.pillars) {
+    <h4 class="pphe__subtitle">Pilares / chips del banner</h4>
+    <label class="psb-field psb-field--plain">
+      <span>Etiqueta de la lista (accesibilidad)</span>
+      <input type="text" class="psb-input" [(ngModel)]="hero.pillarsLabel" />
+    </label>
+    @for (p of hero.pillars; track $index; let i = $index) {
+      <div class="pphe__row">
+        <input type="text" class="psb-input" [(ngModel)]="hero.pillars[i].icon" placeholder="icono" />
+        <input type="text" class="psb-input" [(ngModel)]="hero.pillars[i].label" placeholder="Texto" />
+        <button type="button" class="psb-icon-btn" (click)="removePillar(i)">×</button>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addPillar()">+ Añadir pilar</button>
+  }
+
+  @if (showStats && hero.stats) {
+    <h4 class="pphe__subtitle">Chips de estadísticas</h4>
+    @for (s of hero.stats; track $index; let i = $index) {
+      <div class="pphe__row">
+        <input type="text" class="psb-input" [(ngModel)]="hero.stats[i]" />
+        <button type="button" class="psb-icon-btn" (click)="removeStat(i)">×</button>
+      </div>
+    }
+    <button type="button" class="psb-link" (click)="addStat()">+ Añadir chip</button>
+  }
+
+  @if (showCtas) {
+    <h4 class="pphe__subtitle">Botones del banner</h4>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Botón principal</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.ctaPrincipal" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL botón principal</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.ctaPrincipalUrl" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Botón secundario</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.ctaSecundario" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>URL botón secundario</span>
+        <input type="text" class="psb-input" [(ngModel)]="hero.ctaSecundarioUrl" />
+      </label>
+    </div>
+  }
+</div>

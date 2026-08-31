@@ -1,0 +1,105 @@
+<section class="ppbh" [attr.id]="sectionId()" [attr.aria-labelledby]="titleId()">
+  @if (photoUrl(); as bg) {
+    <div
+      class="ppbh__photo"
+      [style.background-image]="'url(' + bg + ')'"
+      role="img"
+      [attr.aria-label]="photoAlt()"
+    ></div>
+  } @else {
+    <div class="ppbh__photo ppbh__photo--placeholder" aria-hidden="true"></div>
+  }
+
+  <div class="ppbh__overlay" aria-hidden="true"></div>
+  <div class="ppbh__grid-lines" aria-hidden="true"></div>
+  <div class="ppbh__effects">
+    <ng-content select="[ppbh-effects]" />
+  </div>
+
+  @if (logoUrl(); as logo) {
+    <figure class="ppbh__brand">
+      <img [src]="logo" [alt]="logoAlt()" />
+    </figure>
+  }
+
+  <div class="container ppbh__content">
+    <div class="ppbh__panel">
+      <ng-content select="[ppbh-top]"></ng-content>
+
+      @if (kicker() || showVirtualBadge()) {
+        <div class="ppbh__badges">
+          @if (kicker()) {
+            <span class="ppbh-badge ppbh-badge--gold">{{ kicker() }}</span>
+          }
+          @if (showVirtualBadge()) {
+            <span class="ppbh-badge ppbh-badge--outline">
+              <av-portal-icon icon="signal" size="0.85rem" color="currentColor" />
+              {{ virtualBadgeLabel() }}
+            </span>
+          }
+        </div>
+      }
+
+      <ng-content select="[ppbh-title]">
+        @if (titleLine() || titleAccent()) {
+          <h1 [id]="titleId()" class="ppbh__title">
+            @if (titleLine()) {
+              <span class="ppbh__title-line">{{ titleLine() }}</span>
+            }
+            @if (titleAccent()) {
+              <span class="ppbh__title-accent">{{ titleAccent() }}</span>
+            }
+          </h1>
+        }
+      </ng-content>
+
+      @if (lead()) {
+        <p class="ppbh__lead">{{ lead() }}</p>
+      }
+
+      <ng-content select="[ppbh-extra]"></ng-content>
+
+      @if (pillars().length) {
+        <ul class="ppbh__pillars" [attr.aria-label]="pillarsLabel()">
+          @for (v of pillars(); track v.label) {
+            <li class="ppbh__pillar">
+              <span class="ppbh__pillar-icon" aria-hidden="true">
+                <av-portal-icon [icon]="v.icon" size="1.35rem" color="currentColor" />
+              </span>
+              <span class="ppbh__pillar-label">{{ v.label }}</span>
+            </li>
+          }
+        </ul>
+      }
+
+      <ng-content select="[ppbh-highlight]">
+        @if (highlight(); as h) {
+          <div class="ppbh__highlight">
+            <div class="ppbh__highlight-icon" aria-hidden="true">
+              <av-portal-icon [icon]="h.icon" size="2rem" color="currentColor" />
+            </div>
+            <div class="ppbh__highlight-copy">
+              <strong>{{ h.title }}</strong>
+              <span>{{ h.subtitle }}</span>
+            </div>
+          </div>
+        }
+      </ng-content>
+
+      <ng-content select="[ppbh-actions]"></ng-content>
+    </div>
+  </div>
+
+  @if (showRibbon() && ribbon().length) {
+    <div class="ppbh__ribbon" [attr.aria-label]="ribbonLabel()">
+      @for (item of ribbon(); track item.label) {
+        <div class="ppbh__ribbon-item">
+          <av-portal-icon [icon]="item.icon" size="1.1rem" color="currentColor" />
+          <span>{{ item.label }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  <ng-content select="[ppbh-below]"></ng-content>
+</section>

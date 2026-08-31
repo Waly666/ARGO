@@ -87,7 +87,7 @@ export class HeroParticleMeshComponent implements AfterViewInit, OnDestroy {
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.accentRgb = this.readAccentRgb();
     const host = this.hostRef.nativeElement;
-    this.heroEl = host.closest('.hero') as HTMLElement | null;
+    this.heroEl = host.closest('.hero, .mp-hero, .ta-hero, .ppbh') as HTMLElement | null;
     const interactEl = this.heroEl ?? host;
 
     this.syncSize(true);

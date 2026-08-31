@@ -1,16 +1,13 @@
 <section class="consulta">
-  <header class="consulta-hero">
-    <div class="container consulta-hero__inner">
-      <av-portal-icon icon="academic-cap" class="consulta-hero__icon" size="2.5rem" color="currentColor" />
-      <div>
-        <p class="consulta-kicker">Verificación pública</p>
-        <h1>Consulta de certificados</h1>
-        <p class="consulta-lead">
-          Ingrese su número de documento para verificar los certificados expedidos por la institución.
-        </p>
-      </div>
-    </div>
-  </header>
+  <av-portal-promo-banner-hero
+    [kicker]="consultaHero().kicker"
+    [titleLine]="consultaHero().tituloLinea"
+    [titleAccent]="consultaHero().tituloAcento"
+    [lead]="consultaHero().lead"
+    [showVirtualBadge]="false"
+    [theme]="consultaHero().theme"
+    titleId="consulta-hero-title"
+  />
 
   <div class="container consulta-body">
     <div class="consulta-card">

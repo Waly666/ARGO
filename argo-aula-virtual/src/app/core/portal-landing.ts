@@ -3,6 +3,28 @@ import { DEFAULT_CEA_NOMBRE } from './portal-brand-defaults';
 import { PortalPaginaKey } from './portal-site';
 import { mergePortalAsistente, type LegacyConsultaAsistente } from './portal-asistente.util';
 import {
+  ACERCA_LANDING_DEFAULTS,
+  mergeAcercaLanding,
+  type PortalAcercaLanding,
+} from './constants/acerca-landing-defaults';
+import {
+  EVALUACION_JORNADAS_LANDING_DEFAULTS,
+  mergeEvaluacionJornadasLanding,
+  type PortalEvaluacionJornadasLanding,
+} from './constants/evaluacion-jornadas-landing-defaults';
+import {
+  JORNADAS_CAPACITACION_LANDING_DEFAULTS,
+  mergeJornadasCapacitacionLanding,
+  type PortalJornadasCapacitacionLanding,
+} from './constants/jornadas-capacitacion-landing-defaults';
+import { mergePqrLanding, PQR_LANDING_DEFAULTS, type PortalPqrLanding } from './constants/pqr-landing-defaults';
+import { mergePromoHeroPillars, type PortalPromoHeroTheme } from './constants/portal-promo-hero-fields.util';
+
+export type { PortalAcercaLanding };
+export type { PortalPqrLanding };
+export type { PortalJornadasCapacitacionLanding };
+export type { PortalEvaluacionJornadasLanding };
+import {
   mergeCursosConduccionLanding,
   type PortalCursosConduccionLanding,
 } from '../pages/cursos-conduccion/cursos-conduccion-content';
@@ -60,6 +82,10 @@ export interface PortalFundacionLanding {
     btnSitioUrl: string;
     btnSitioLabel: string;
     btnCursosLabel: string;
+    pillarsLabel: string;
+    pillars: { icon: string; label: string }[];
+    mostrarBadgeVirtual: boolean;
+    virtualBadgeLabel: string;
   };
   quienes: {
     kicker: string;
@@ -89,17 +115,6 @@ export interface PortalFundacionLanding {
   contacto: { kicker: string; titulo: string; lead: string; sedeNota: string };
 }
 
-export interface PortalAcercaLanding {
-  hero: {
-    kicker: string;
-    lead: string;
-    imagenUrl: string;
-    imagenUrlAbsoluta?: string;
-    imagenAlt: string;
-    imagenCaption: string;
-  };
-}
-
 export interface LandingInfoCard {
   icon: string;
   title: string;
@@ -122,6 +137,11 @@ export interface PortalGaleriaLanding {
   lead: string;
   emptyTitulo: string;
   emptyTexto: string;
+  theme: PortalPromoHeroTheme;
+  mostrarBadgeVirtual: boolean;
+  heroImagenUrl?: string;
+  heroImagenUrlAbsoluta?: string;
+  heroImagenAlt?: string;
   fotos: PortalGaleriaFoto[];
 }
 
@@ -167,6 +187,10 @@ export interface PortalLandingConfig {
     ctaLlamarUrl: string;
     mostrarBotonLlamar: boolean;
     imagenAlt: string;
+    eyebrow: string;
+    eyebrowServial: string;
+    subEyebrow: string;
+    ctaLlamarEtiqueta: string;
   };
   infoCards: LandingInfoCard[];
   nav: {
@@ -262,6 +286,8 @@ export interface PortalLandingConfig {
     lead: string;
     emptyTitulo: string;
     emptyTexto: string;
+    theme: PortalPromoHeroTheme;
+    mostrarBadgeVirtual: boolean;
   };
   galeria: PortalGaleriaLanding;
   fotosInicio: PortalFotosInicioLanding;
@@ -284,6 +310,9 @@ export interface PortalLandingConfig {
   cursosConduccion: PortalCursosConduccionLanding;
   popup: PortalPopupConfig;
   consultaCertificados: PortalConsultaCertificadosConfig;
+  pqr: PortalPqrLanding;
+  jornadasCapacitacion: PortalJornadasCapacitacionLanding;
+  evaluacionJornadas: PortalEvaluacionJornadasLanding;
   asistente: PortalAsistenteConfig;
 }
 
@@ -312,6 +341,11 @@ export interface PortalConsultaCertificadosConfig {
   mostrarBotonDescargar: boolean;
   marcaAguaCopia: boolean;
   textoBotonDescargar: string;
+  kicker: string;
+  tituloLinea: string;
+  tituloAcento: string;
+  lead: string;
+  theme: PortalPromoHeroTheme;
 }
 
 export const PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT = `🚘 FORMACIÓN QUE ABRE CAMINOS Y GENERA CONFIANZA
@@ -362,6 +396,10 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     ctaLlamarUrl: '',
     mostrarBotonLlamar: true,
     imagenAlt: 'Estudiante en cursos y programas del aula virtual',
+    eyebrow: '',
+    eyebrowServial: '— Bienvenid@ a {nombreCea} —',
+    subEyebrow: 'Centro de Enseñanza Automovilística',
+    ctaLlamarEtiqueta: '',
   },
   infoCards: [
     { icon: '🎓', title: 'Capacitación', text: 'Certificamos con calidad', fuente: 'texto' },
@@ -453,6 +491,8 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     lead: 'Novedades, consejos y contenido de interés sobre capacitación y seguridad vial.',
     emptyTitulo: 'Próximamente publicaremos artículos',
     emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
+    theme: 'blue',
+    mostrarBadgeVirtual: false,
   },
   galeria: {
     kicker: 'Nuestra institución',
@@ -460,6 +500,10 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     lead: 'Momentos de formación, eventos e instalaciones de nuestro centro de enseñanza.',
     emptyTitulo: 'Galería en preparación',
     emptyTexto: 'Pronto publicaremos fotografías de nuestras actividades.',
+    theme: 'blue',
+    mostrarBadgeVirtual: false,
+    heroImagenUrl: '',
+    heroImagenAlt: '',
     fotos: [],
   },
   fotosInicio: {
@@ -494,16 +538,7 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     'Planes de movilidad sostenible y segura',
   ],
   fundacion: JSON.parse(JSON.stringify(FUNDACION_LANDING_DEFAULTS)) as PortalFundacionLanding,
-  acerca: {
-    hero: {
-      kicker: 'Instituto técnico y seguridad vial',
-      lead:
-        'Formación, consultoría y campañas de seguridad vial con más de 28 años de experiencia en Colombia.',
-      imagenUrl: '',
-      imagenAlt: '',
-      imagenCaption: '',
-    },
-  },
+  acerca: JSON.parse(JSON.stringify(ACERCA_LANDING_DEFAULTS)) as PortalAcercaLanding,
   cursosConduccion: mergeCursosConduccionLanding(),
   popup: {
     activo: false,
@@ -519,7 +554,19 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     mostrarBotonDescargar: false,
     marcaAguaCopia: true,
     textoBotonDescargar: 'Descargar PDF',
+    kicker: 'Verificación pública',
+    tituloLinea: 'Consulta de',
+    tituloAcento: 'certificados',
+    lead: 'Ingrese su número de documento para verificar los certificados expedidos por la institución.',
+    theme: 'blue',
   },
+  pqr: JSON.parse(JSON.stringify(PQR_LANDING_DEFAULTS)) as PortalPqrLanding,
+  jornadasCapacitacion: JSON.parse(
+    JSON.stringify(JORNADAS_CAPACITACION_LANDING_DEFAULTS),
+  ) as PortalJornadasCapacitacionLanding,
+  evaluacionJornadas: JSON.parse(
+    JSON.stringify(EVALUACION_JORNADAS_LANDING_DEFAULTS),
+  ) as PortalEvaluacionJornadasLanding,
   asistente: {
     videoUrl: 'videos/asistente-educarte.mp4',
     paginas: {
@@ -537,26 +584,18 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
   },
 };
 
-function mergeAcercaLanding(raw?: Partial<PortalAcercaLanding> | null): PortalAcercaLanding {
-  const d = PORTAL_LANDING_FALLBACK.acerca;
-  if (!raw) return JSON.parse(JSON.stringify(d)) as PortalAcercaLanding;
-  return {
-    hero: {
-      kicker: raw.hero?.kicker?.trim() || d.hero.kicker,
-      lead: raw.hero?.lead?.trim() || d.hero.lead,
-      imagenUrl: raw.hero?.imagenUrl?.trim() || d.hero.imagenUrl,
-      imagenUrlAbsoluta: raw.hero?.imagenUrlAbsoluta?.trim() || d.hero.imagenUrlAbsoluta,
-      imagenAlt: raw.hero?.imagenAlt?.trim() || d.hero.imagenAlt,
-      imagenCaption: raw.hero?.imagenCaption?.trim() || d.hero.imagenCaption,
-    },
-  };
-}
-
 function mergeFundacionLanding(raw?: Partial<PortalFundacionLanding> | null): PortalFundacionLanding {
   const d = PORTAL_LANDING_FALLBACK.fundacion;
   if (!raw) return JSON.parse(JSON.stringify(d)) as PortalFundacionLanding;
   return {
-    hero: { ...d.hero, ...raw.hero },
+    hero: {
+      ...d.hero,
+      ...raw.hero,
+      pillarsLabel: raw.hero?.pillarsLabel?.trim() || d.hero.pillarsLabel,
+      pillars: mergePromoHeroPillars(raw.hero?.pillars, d.hero.pillars),
+      mostrarBadgeVirtual: raw.hero?.mostrarBadgeVirtual !== false,
+      virtualBadgeLabel: raw.hero?.virtualBadgeLabel?.trim() || d.hero.virtualBadgeLabel,
+    },
     quienes: {
       ...d.quienes,
       ...raw.quienes,
@@ -674,10 +713,17 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
     metaDescription: raw.metaDescription?.trim() || d.metaDescription,
     metaKeywords: raw.metaKeywords?.trim() || d.metaKeywords,
     cursos: { ...d.cursos, ...raw.cursos },
-    blog: { ...d.blog, ...raw.blog },
+    blog: {
+      ...d.blog,
+      ...raw.blog,
+      theme: raw.blog?.theme || d.blog.theme,
+      mostrarBadgeVirtual: raw.blog?.mostrarBadgeVirtual === true,
+    },
     galeria: {
       ...d.galeria,
       ...raw.galeria,
+      theme: raw.galeria?.theme || d.galeria.theme,
+      mostrarBadgeVirtual: raw.galeria?.mostrarBadgeVirtual === true,
       fotos: raw.galeria?.fotos?.length ? raw.galeria.fotos : d.galeria.fotos,
     },
     fotosInicio: {
@@ -708,7 +754,17 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       textoBotonDescargar:
         raw.consultaCertificados?.textoBotonDescargar?.trim() ||
         d.consultaCertificados.textoBotonDescargar,
+      kicker: raw.consultaCertificados?.kicker?.trim() || d.consultaCertificados.kicker,
+      tituloLinea:
+        raw.consultaCertificados?.tituloLinea?.trim() || d.consultaCertificados.tituloLinea,
+      tituloAcento:
+        raw.consultaCertificados?.tituloAcento?.trim() || d.consultaCertificados.tituloAcento,
+      lead: raw.consultaCertificados?.lead?.trim() || d.consultaCertificados.lead,
+      theme: raw.consultaCertificados?.theme || d.consultaCertificados.theme,
     },
+    pqr: mergePqrLanding(raw.pqr),
+    jornadasCapacitacion: mergeJornadasCapacitacionLanding(raw.jornadasCapacitacion),
+    evaluacionJornadas: mergeEvaluacionJornadasLanding(raw.evaluacionJornadas),
     asistente: mergePortalAsistente(
       raw.asistente,
       raw.consultaCertificados as LegacyConsultaAsistente | undefined,

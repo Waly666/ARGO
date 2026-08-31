@@ -1,5 +1,6 @@
 /** Sección inicio + página /examen-teorico (sin menú). */
 
+import { mergePromoHeroTheme, PortalPromoHeroTheme } from '../../core/constants/portal-promo-hero-fields.util';
 import {
   ENLACE_OFICIAL_MINTRANSPORTE_CIRCULARES,
   mergeNormogramaLanding,
@@ -48,6 +49,10 @@ export interface PortalExamenTeoricoLanding {
   normograma: PortalExamenTeoricoNormograma;
   ctaFinalTexto: string;
   ctaFinalUrl: string;
+  backLabel: string;
+  oficialLead: string;
+  theme: PortalPromoHeroTheme;
+  mostrarBadgeVirtual: boolean;
 }
 
 export const EXAMEN_TEORICO_LANDING: PortalExamenTeoricoLanding = {
@@ -121,6 +126,11 @@ export const EXAMEN_TEORICO_LANDING: PortalExamenTeoricoLanding = {
   normograma: JSON.parse(JSON.stringify(NORMOGRAMA_LANDING)) as PortalExamenTeoricoNormograma,
   ctaFinalTexto: 'Ver cursos de conducción',
   ctaFinalUrl: '/cursos-conduccion',
+  backLabel: '← Volver al inicio',
+  oficialLead:
+    'Consulte el texto oficial de la circular y las resoluciones relacionadas con el examen teórico y la habilitación del CEA.',
+  theme: 'gold',
+  mostrarBadgeVirtual: false,
 };
 
 const ACENTOS: ExamenTeoricoAcento[] = ['blue', 'teal', 'orange', 'green', 'purple'];
@@ -206,5 +216,9 @@ export function mergeExamenTeoricoLanding(
     normograma: mergeNormogramaLanding(src.normograma),
     ctaFinalTexto: src.ctaFinalTexto?.trim() || d.ctaFinalTexto,
     ctaFinalUrl: src.ctaFinalUrl?.trim() || d.ctaFinalUrl,
+    backLabel: src.backLabel?.trim() || d.backLabel,
+    oficialLead: src.oficialLead?.trim() || d.oficialLead,
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
   };
 }

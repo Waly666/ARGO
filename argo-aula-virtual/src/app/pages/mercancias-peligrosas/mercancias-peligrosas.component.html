@@ -1,79 +1,76 @@
 <div class="mp-page">
-  <header class="mp-hero" id="inicio">
-    <div class="container">
-      <a routerLink="/" class="mp-back">← Volver al inicio</a>
-      <div class="mp-hero__grid">
-        <div class="mp-hero__copy">
-          <p class="mp-kicker">{{ contenido().kicker }}</p>
-          <h1 class="mp-title">
-            <span>{{ contenido().titulo }}</span>
-            <span class="mp-title__accent">{{ contenido().tituloLinea2 }}</span>
-          </h1>
-          <p class="mp-subtitle">{{ contenido().subtitulo }}</p>
-          <div class="mp-hero__stats" aria-label="Resumen de contenidos">
-            <span class="mp-stat"><strong>9</strong> clases ONU</span>
-            <span class="mp-stat"><strong>{{ totalDocumentos() }}</strong> PDFs</span>
-            <span class="mp-stat"><strong>NTC</strong> técnicas</span>
-          </div>
-          <p class="mp-lead">{{ contenido().heroLead }}</p>
-          @for (p of contenido().heroParrafos; track $index) {
-            <p class="mp-text">{{ p }}</p>
-          }
-          <div class="mp-hero__ctas">
-            @if (tieneEnlaceCurso()) {
-              @if (enlaceCursoExterno()) {
-                <a
-                  class="btn btn-primary"
-                  [href]="enlaceCursoHref()!"
-                  target="_blank"
-                  rel="noopener noreferrer">
-                  {{ contenido().enlaceCursoEtiqueta }} ↗
-                </a>
-              } @else {
-                <a class="btn btn-primary" [routerLink]="enlaceCursoHref()!">
-                  {{ contenido().enlaceCursoEtiqueta }}
-                </a>
-              }
-            }
-            @if (tieneEnlaceCurso()) {
-              <button type="button" class="btn btn-outline" (click)="scrollTo('normativa')">
-                {{ contenido().ctaNormativaTexto }}
-              </button>
-            } @else {
-              <button type="button" class="btn btn-primary" (click)="scrollTo('normativa')">
-                {{ contenido().ctaNormativaTexto }}
-              </button>
-            }
-            <button type="button" class="btn btn-outline" (click)="scrollTo('clasificacion')">
-              {{ contenido().ctaClasificacionTexto }}
-            </button>
-            <button type="button" class="btn btn-outline" (click)="scrollTo('faq')">
-              {{ contenido().ctaFaqTexto }}
-            </button>
-          </div>
-          <p class="mp-actualizado">
-            <span class="mp-badge mp-badge--live">
-              <span class="mp-badge__dot" aria-hidden="true"></span>
-              Actualizado a <strong>{{ contenido().fechaActualizacion }}</strong>
-            </span>
-          </p>
-        </div>
-        <figure class="mp-hero__media">
-          <div class="mp-hero__media-frame">
-          @if (imagenUrl(imagenPorId(contenido(), 'hero')); as src) {
-            <img [src]="src" [alt]="imagenPorId(contenido(), 'hero')?.alt || ''" />
-          } @else {
-            <div class="mp-placeholder" aria-hidden="true">
-              <av-portal-icon icon="shield-check" size="2.5rem" color="currentColor" />
-              <span>Transporte seguro</span>
-              <small>Imagen configurable desde el editor</small>
-            </div>
-          }
-          </div>
-        </figure>
+  <av-portal-promo-banner-hero
+    sectionId="inicio"
+    [theme]="contenido().theme"
+    [photoUrl]="imagenUrl(imagenPorId(contenido(), 'hero'))"
+    [photoAlt]="imagenPorId(contenido(), 'hero')?.alt || ''"
+    [logoUrl]="logoUrl()"
+    [logoAlt]="nombreCea()"
+    [kicker]="contenido().kicker"
+    [titleLine]="contenido().titulo"
+    [titleAccent]="contenido().tituloLinea2"
+    [lead]="contenido().heroLead"
+    [pillars]="heroPilares()"
+    [showVirtualBadge]="contenido().mostrarBadgeVirtual"
+    [virtualBadgeLabel]="contenido().virtualBadgeLabel"
+    titleId="mp-hero-title"
+    [pillarsLabel]="contenido().heroPillarsLabel"
+  >
+    <a ppbh-top routerLink="/" class="ppbh-back">{{ contenido().backLabel }}</a>
+
+    <p ppbh-extra class="mp-subtitle">{{ contenido().subtitulo }}</p>
+
+    @if (contenido().heroStats.length) {
+      <div ppbh-extra class="ppbh-stats" aria-label="Resumen de contenidos">
+        @for (stat of contenido().heroStats; track stat) {
+          <span class="ppbh-stat">{{ stat }}</span>
+        }
+        <span class="ppbh-stat"><strong>{{ totalDocumentos() }}</strong> PDFs</span>
       </div>
+    }
+
+    @for (p of contenido().heroParrafos; track $index) {
+      <p ppbh-extra class="ppbh-text">{{ p }}</p>
+    }
+
+    <div ppbh-actions class="ppbh-ctas">
+      @if (tieneEnlaceCurso()) {
+        @if (enlaceCursoExterno()) {
+          <a
+            class="btn btn-primary"
+            [href]="enlaceCursoHref()!"
+            target="_blank"
+            rel="noopener noreferrer">
+            {{ contenido().enlaceCursoEtiqueta }} ↗
+          </a>
+        } @else {
+          <a class="btn btn-primary" [routerLink]="enlaceCursoHref()!">
+            {{ contenido().enlaceCursoEtiqueta }}
+          </a>
+        }
+      }
+      @if (tieneEnlaceCurso()) {
+        <button type="button" class="btn btn-outline" (click)="scrollTo('normativa')">
+          {{ contenido().ctaNormativaTexto }}
+        </button>
+      } @else {
+        <button type="button" class="btn btn-primary" (click)="scrollTo('normativa')">
+          {{ contenido().ctaNormativaTexto }}
+        </button>
+      }
+      <button type="button" class="btn btn-outline" (click)="scrollTo('clasificacion')">
+        {{ contenido().ctaClasificacionTexto }}
+      </button>
+      <button type="button" class="btn btn-outline" (click)="scrollTo('faq')">
+        {{ contenido().ctaFaqTexto }}
+      </button>
     </div>
-  </header>
+
+    <p ppbh-extra class="ppbh-live">
+      <span class="ppbh-live__dot" aria-hidden="true"></span>
+      Actualizado a <strong>{{ contenido().fechaActualizacion }}</strong>
+    </p>
+  </av-portal-promo-banner-hero>
 
   <nav class="mp-nav" aria-label="Secciones de mercancías peligrosas">
     <div class="container mp-nav__inner">
@@ -426,7 +423,7 @@
     </section>
 
     @if (contenido().documentosGrupos.length) {
-      <section class="mp-section mp-section--library" id="documentos">
+      <section class="mp-section mp-section--library pp-section-ambient" id="documentos">
         <div class="container">
           <header class="mp-library-banner reveal" avRevealOnScroll>
             <div>

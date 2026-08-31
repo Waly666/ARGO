@@ -24,11 +24,12 @@ import {
 } from './portal-landing-editor-helpers';
 import { PortalEditorFaqListComponent } from './portal-editor-faq-list.component';
 import { PortalEditorStringListComponent } from './portal-editor-string-list.component';
+import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 
 @Component({
   selector: 'argo-portal-trabajo-en-alturas-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, PortalEditorStringListComponent, PortalEditorFaqListComponent],
+  imports: [CommonModule, FormsModule, PortalEditorStringListComponent, PortalEditorFaqListComponent, PortalPromoHeroFieldsEditorComponent],
   templateUrl: './portal-trabajo-en-alturas-editor.component.html',
   styleUrl: './portal-trabajo-en-alturas-editor.component.scss',
 })

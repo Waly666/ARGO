@@ -474,8 +474,11 @@
         <textarea rows="2" [(ngModel)]="portalForm.heroSubtitulo"></textarea>
       </div>
       <div class="av-field">
-        <label>Acerca de (texto)</label>
-        <textarea rows="6" [(ngModel)]="portalForm.acercaDeHtml"></textarea>
+        <label>Acerca de</label>
+        <p class="av-muted">
+          El contenido de la página <strong>/acerca</strong> se edita en
+          <a routerLink="/app/aula-virtual/sitio">Constructor del sitio → Acerca de</a>.
+        </p>
       </div>
 
       @if (portalForm.landing; as landing) {

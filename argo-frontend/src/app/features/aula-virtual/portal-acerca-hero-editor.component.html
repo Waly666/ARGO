@@ -1,66 +1,130 @@
 <div class="pae">
+
   <div class="pae-toolbar">
+
     <p class="psb-muted">
+
       Encabezado de la página «Acerca de» (/acerca). La foto aparece a la derecha del título; si no hay foto, se muestra el logo de la empresa.
+
     </p>
+
     <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
+
   </div>
 
-  <label class="psb-field psb-field--full">
-    <span>Etiqueta superior (kicker)</span>
-    <input type="text" class="psb-input" [(ngModel)]="acerca.hero.kicker" />
-  </label>
-  <label class="psb-field psb-field--full">
-    <span>Texto introductorio</span>
-    <textarea class="psb-input" rows="2" [(ngModel)]="acerca.hero.lead"></textarea>
-  </label>
+
+
+  <argo-portal-promo-hero-fields-editor
+
+    [hero]="acerca.hero"
+
+    [showPillars]="true"
+
+    [showHighlight]="true"
+
+    [showVirtualBadge]="true"
+
+    [tituloAcentoHint]="'Opcional. Si lo deja vacío, se usará el nombre de la empresa en el portal.'"
+
+  />
+
+
 
   <div class="pae-hero-image">
+
     <span class="pae-field-label">Imagen del encabezado (Acerca de)</span>
+
     <p class="psb-hint">
-      Se guarda al instante; no necesita publicar cambios. PNG, JPG o WEBP. Máx. 8 MB.
+
+      Banner estilo promocional: la imagen cubre el fondo (recomendado foto POV del volante / carretera). Se guarda al instante; no necesita publicar cambios. PNG, JPG o WEBP. Máx. 8 MB.
+
     </p>
+
     <div class="pae-hero-image__row">
+
       @if (acercaHeroPreviewUrl(); as heroUrl) {
+
         <figure class="pae-hero-image__preview">
+
           <img [src]="heroUrl" alt="Vista previa imagen Acerca de" />
+
         </figure>
+
       } @else {
+
         <div class="pae-hero-image__preview pae-hero-image__preview--empty">
+
           Sin imagen — se mostrará el logo de la empresa
+
         </div>
+
       }
+
       <div class="pae-hero-image__actions">
-        <label class="pae-btn pae-btn--file" [class.pae-btn--disabled]="heroUploading()">
+
+        <label class="psb-btn psb-btn--file" [class.psb-btn--disabled]="heroUploading()">
+
           {{ heroUploading() ? 'Subiendo…' : 'Elegir imagen' }}
+
           <input
+
             type="file"
+
             accept="image/png,image/jpeg,image/webp"
+
             hidden
+
             (change)="onAcercaHeroImagen($event)"
+
             [disabled]="heroUploading()"
+
           />
+
         </label>
+
         @if (tieneImagenAcerca()) {
-          <button type="button" class="pae-btn" [disabled]="heroUploading()" (click)="quitarImagenAcerca()">
+
+          <button type="button" class="psb-btn" [disabled]="heroUploading()" (click)="quitarImagenAcerca()">
+
             Quitar imagen
+
           </button>
+
         }
+
       </div>
+
     </div>
+
   </div>
 
+
+
   <label class="psb-field psb-field--full">
+
     <span>Texto alternativo de la imagen (accesibilidad)</span>
+
     <input
+
       type="text"
+
       class="psb-input"
+
       [(ngModel)]="acerca.hero.imagenAlt"
+
       [placeholder]="'Equipo o instalaciones de ' + (nombreEmpresa || 'su institución')"
+
     />
+
   </label>
+
   <label class="psb-field psb-field--full">
+
     <span>Pie de foto (opcional)</span>
+
     <input type="text" class="psb-input" [(ngModel)]="acerca.hero.imagenCaption" placeholder="Ej. Nuestro equipo" />
+
   </label>
+
 </div>
+

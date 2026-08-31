@@ -1,0 +1,224 @@
+/* Plantilla Educarte — estilo verde PICO legacy (fondo oscuro + acento lima). */
+
+.hero.hero--educarte-mesh {
+  min-height: clamp(520px, 82vh, 860px);
+  padding: clamp(5rem, 12vh, 7rem) 0 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    linear-gradient(105deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.42) 48%, rgba(0, 0, 0, 0.28) 100%),
+    var(--av-hero-photo, url('/images/hero-estudiante.png')) center center / cover no-repeat;
+
+  .starfield-bg {
+    display: none;
+  }
+
+  .hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 760px;
+  }
+
+  .hero-copy {
+    max-width: 720px;
+  }
+
+  .hero-container {
+    margin-top: clamp(2rem, 9vh, 6rem);
+  }
+
+  .hero-visual {
+    display: none;
+  }
+
+  @media (min-width: 961px) {
+    .hero-info-cards {
+      margin-top: auto;
+    }
+  }
+
+  .eyebrow {
+    color: #33dd6f;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+  }
+
+  .hero-cea {
+    margin: 0.15rem 0 0;
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: clamp(0.82rem, 1.6vw, 1rem);
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  }
+
+  .hero-title,
+  .hero-title--typing,
+  .hero-title--done {
+    color: #33dd6f;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.02;
+    font-size: clamp(1.5rem, 4.05vw, 2.74rem);
+    text-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    border-right-color: #33dd6f;
+  }
+
+  .hero-title--done {
+    background: linear-gradient(90deg, #2ce97a 0%, #33dd6f 55%, #ffffff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero-title--done::after {
+    background: linear-gradient(90deg, #15803d, #33dd6f, transparent);
+    box-shadow: 0 0 22px rgba(51, 221, 111, 0.45);
+  }
+
+  .lead {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: clamp(1rem, 2.1vw, 1.2rem);
+    max-width: 46ch;
+  }
+
+  .hero-actions {
+    .btn-primary {
+      background: linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%);
+      color: #0a0a0a;
+      border-color: transparent;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+
+      &:hover {
+        filter: brightness(1.06);
+        color: #0a0a0a;
+      }
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #33dd6f;
+      border-color: rgba(51, 221, 111, 0.85);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+
+      &:hover {
+        background: rgba(51, 221, 111, 0.12);
+        color: #2ce97a;
+        border-color: #33dd6f;
+      }
+    }
+
+    .btn-ghost {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+  }
+}
+
+:host.home--educarte {
+  --educarte-green: #33dd6f;
+  --educarte-green-bright: #2ce97a;
+  --educarte-green-dark: #15803d;
+  --educarte-bg-deep: #0a0a0a;
+  --educarte-bg-mid: #111218;
+
+  .inst-bar {
+    background: linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%) !important;
+    color: #0a0a0a;
+
+    .inst-name,
+    .inst-tag {
+      color: #0a0a0a;
+    }
+  }
+
+  .quote-band {
+    background: #111218;
+    color: #fff;
+
+    blockquote {
+      color: #fff;
+    }
+
+    .quote-label {
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .quote-phone {
+      color: var(--educarte-green);
+
+      &:hover {
+        color: var(--educarte-green-bright);
+      }
+    }
+  }
+
+  .section-head.center::after {
+    background: linear-gradient(90deg, var(--educarte-green-dark), var(--educarte-green));
+  }
+
+  .btn-primary,
+  .btn-accent {
+    background: linear-gradient(90deg, #2ce97a 0%, #33dd6f 100%);
+    color: #0a0a0a;
+    box-shadow: 0 8px 22px rgba(51, 221, 111, 0.22);
+
+    &:hover {
+      color: #0a0a0a;
+      box-shadow: 0 12px 30px rgba(51, 221, 111, 0.35);
+    }
+  }
+
+  .btn-outline:hover {
+    border-color: var(--educarte-green);
+    background: rgba(51, 221, 111, 0.1);
+  }
+
+  .kicker {
+    color: var(--educarte-green);
+  }
+
+  .info-icon,
+  .oferta-icon,
+  .servicio-chip .av-portal-icon,
+  .servicio-chip av-portal-icon,
+  .faq-icon,
+  .dark-card__icono,
+  .dark-card__icono svg {
+    color: var(--educarte-green);
+  }
+
+  #testimonios,
+  #preguntas-frecuentes.section-faq {
+    background:
+      radial-gradient(ellipse 85% 65% at 50% 20%, rgba(51, 221, 111, 0.14), transparent 70%),
+      linear-gradient(180deg, #111218 0%, #0a0a0a 62%, #0a0a0a 100%);
+  }
+
+  .hero .info-card {
+    border-color: rgba(51, 221, 111, 0.35);
+    box-shadow:
+      0 14px 32px rgba(2, 6, 23, 0.28),
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset,
+      0 0 26px rgba(51, 221, 111, 0.16);
+
+    &:hover {
+      border-color: rgba(51, 221, 111, 0.65);
+    }
+
+    h3 {
+      background: linear-gradient(90deg, #15803d 0%, #33dd6f 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+}

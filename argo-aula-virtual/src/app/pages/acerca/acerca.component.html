@@ -1,54 +1,57 @@
 <div class="acerca-page">
-  <section class="acerca-hero">
-    <div class="container acerca-hero__inner">
-      <div class="acerca-hero__copy">
-        <p class="acerca-kicker">{{ acerca().hero.kicker }}</p>
-        <h1>Acerca de {{ nombreCea() }}</h1>
-        <p class="acerca-hero__lead">{{ acerca().hero.lead }}</p>
-      </div>
-      @if (heroImagenUrl(); as photo) {
-        <figure class="acerca-hero__visual">
-          <img [src]="photo" [alt]="heroImagenAlt()" />
-          @if (heroImagenCaption()) {
-            <figcaption class="acerca-hero__caption">{{ heroImagenCaption() }}</figcaption>
-          }
-        </figure>
-      } @else {
-        @if (logoUrl(); as logo) {
-          <figure class="acerca-hero__logo">
-            <img [src]="logo" [alt]="nombreCea()" />
-          </figure>
-        }
-      }
-    </div>
-  </section>
+  <av-portal-promo-banner-hero
+    [photoUrl]="heroImagenUrl()"
+    [photoAlt]="heroImagenAlt()"
+    [logoUrl]="logoUrl()"
+    [logoAlt]="nombreCea()"
+    [kicker]="acerca().hero.kicker"
+    [titleLine]="acerca().hero.tituloLinea"
+    [titleAccent]="heroTitleAccent()"
+    [lead]="acerca().hero.lead"
+    [pillars]="heroPilares()"
+    [highlight]="heroHighlight()"
+    [showVirtualBadge]="acerca().hero.mostrarBadgeVirtual"
+    [virtualBadgeLabel]="acerca().hero.virtualBadgeLabel"
+    titleId="acerca-hero-title"
+    [pillarsLabel]="acerca().hero.pillarsLabel"
+  />
 
   <section class="container acerca-body">
     <div class="acerca-about">
       <article class="acerca-panel acerca-panel--main">
         <header class="acerca-panel__head">
-          <p class="acerca-kicker acerca-kicker--light">Quiénes somos</p>
-          <h2>Nuestra institución</h2>
+          <p class="acerca-kicker acerca-kicker--light">{{ acerca().quienes.kicker }}</p>
+          <h2>{{ acerca().quienes.titulo }}</h2>
         </header>
         <div class="acerca-texto">
           @for (p of acercaParrafos(); track $index) {
             <p>{{ p }}</p>
           }
         </div>
-        <a routerLink="/cursos" class="btn btn-primary acerca-cta">Ver cursos virtuales</a>
+        @if (acerca().cta.texto) {
+          @if (enlaceEsExterno(acerca().cta.url)) {
+            <a [href]="acerca().cta.url" class="btn btn-primary acerca-cta" target="_blank" rel="noopener noreferrer">
+              {{ acerca().cta.texto }}
+            </a>
+          } @else {
+            <a [routerLink]="enlaceRuta(acerca().cta.url)" class="btn btn-primary acerca-cta">
+              {{ acerca().cta.texto }}
+            </a>
+          }
+        }
       </article>
 
       <aside class="acerca-panel acerca-panel--side" id="contacto">
         <header class="acerca-panel__head">
-          <p class="acerca-kicker acerca-kicker--light">Contacto</p>
-          <h2>Datos de contacto</h2>
+          <p class="acerca-kicker acerca-kicker--light">{{ acerca().contacto.kicker }}</p>
+          <h2>{{ acerca().contacto.titulo }}</h2>
         </header>
         <ul class="acerca-contact-list">
           @if (config()?.direccion) {
             <li>
               <av-portal-icon icon="map-pin" class="acerca-contact-icon" size="1.35rem" />
               <div>
-                <strong>Dirección</strong>
+                <strong>{{ acerca().contacto.etiquetaDireccion }}</strong>
                 <span>{{ config()?.direccion }}@if (config()?.ciudad) {, {{ config()?.ciudad }}}</span>
               </div>
             </li>
@@ -57,7 +60,7 @@
             <li>
               <av-portal-icon icon="phone" class="acerca-contact-icon" size="1.35rem" />
               <div>
-                <strong>Teléfono</strong>
+                <strong>{{ acerca().contacto.etiquetaTelefono }}</strong>
                 <a [href]="whatsappHref()" target="_blank" rel="noopener noreferrer">{{ config()?.telefono }}</a>
               </div>
             </li>
@@ -66,26 +69,36 @@
             <li>
               <av-portal-icon icon="envelope" class="acerca-contact-icon" size="1.35rem" />
               <div>
-                <strong>Correo</strong>
+                <strong>{{ acerca().contacto.etiquetaCorreo }}</strong>
                 <a [href]="'mailto:' + config()?.email">{{ config()?.email }}</a>
               </div>
             </li>
           }
         </ul>
-        <a routerLink="/fundacion" class="acerca-link">Conocer el CEA →</a>
+        @if (acerca().contacto.enlaceFundacionTexto) {
+          @if (enlaceEsExterno(acerca().contacto.enlaceFundacionUrl)) {
+            <a [href]="acerca().contacto.enlaceFundacionUrl" class="acerca-link" target="_blank" rel="noopener noreferrer">
+              {{ acerca().contacto.enlaceFundacionTexto }}
+            </a>
+          } @else {
+            <a [routerLink]="enlaceRuta(acerca().contacto.enlaceFundacionUrl)" class="acerca-link">
+              {{ acerca().contacto.enlaceFundacionTexto }}
+            </a>
+          }
+        }
       </aside>
     </div>
 
     <section class="acerca-valores">
       <header class="acerca-valores__head">
-        <p class="acerca-kicker acerca-kicker--light">Lo que nos mueve</p>
-        <h2>Nuestro compromiso</h2>
-        <p class="acerca-valores__lead">Educamos para salvar vidas y construir una cultura vial responsable.</p>
+        <p class="acerca-kicker acerca-kicker--light">{{ acerca().valores.kicker }}</p>
+        <h2>{{ acerca().valores.titulo }}</h2>
+        <p class="acerca-valores__lead">{{ acerca().valores.lead }}</p>
       </header>
       <div class="acerca-valores__grid">
-        @for (v of valores; track v.title; let i = $index) {
+        @for (v of valoresItems(); track v.title; let i = $index) {
           <article class="acerca-valor" [class]="'acerca-valor--' + (i % 6)">
-            <av-portal-icon [icon]="iconoValor(i)" class="acerca-valor__icon" size="1.5rem" color="currentColor" />
+            <av-portal-icon [icon]="v.icon" class="acerca-valor__icon" size="1.5rem" color="currentColor" />
             <h3>{{ v.title }}</h3>
             <p>{{ v.text }}</p>
           </article>

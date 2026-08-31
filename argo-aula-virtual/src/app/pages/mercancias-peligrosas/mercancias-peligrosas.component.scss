@@ -1,8 +1,11 @@
 @use '../shared/portal-hero-buttons' as heroBtns;
+@use '../shared/portal-page-effects' as fx;
+@use '../shared/portal-hero-banner-extra';
 
 :host {
   display: block;
   font-family: var(--av-font-sans);
+  --pp-fx-accent-rgb: 74, 222, 128;
 }
 
 .mp-page {
@@ -38,6 +41,8 @@
     radial-gradient(ellipse at 10% 100%, var(--av-accent-a22), transparent 50%),
     var(--av-page-hero-bg);
   color: #fff;
+
+  @include fx.portal-hero-motion('74, 222, 128');
 
   &::before {
     content: '';
@@ -81,6 +86,15 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(4px);
+  @include fx.portal-stat-pulse();
+
+  &:nth-child(2) {
+    animation-delay: 0.6s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 1.2s;
+  }
 
   strong {
     color: #a7f3d0;
@@ -124,9 +138,13 @@
   border-radius: calc(var(--mp-radius) + 4px);
   background: linear-gradient(135deg, rgba(167, 243, 208, 0.55), rgba(59, 130, 246, 0.35));
   box-shadow: var(--mp-shadow-md);
+  overflow: hidden;
+  @include fx.portal-hero-media-float();
 
   img,
   .mp-placeholder {
+    position: relative;
+    z-index: 1;
     border-radius: var(--mp-radius);
   }
 }
@@ -180,12 +198,16 @@
 
   &__accent {
     color: #a7f3d0;
+    @include fx.portal-hero-title-accent();
   }
 }
 
 .mp-subtitle {
-  margin: 0.75rem 0 0;
+  margin: 0.55rem 0 0;
+  font-family: var(--av-font-sans);
+  font-size: 0.92rem;
   font-weight: 600;
+  line-height: 1.45;
   color: #e2e8f0;
 }
 
@@ -721,6 +743,7 @@
     color: #fff;
     background: var(--mp-teal);
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.15);
+    @include fx.portal-card-radar-badge();
   }
 
   &__num {

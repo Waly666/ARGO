@@ -32,6 +32,16 @@
       <span>Texto principal del inicio</span>
       <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.heroLead"></textarea>
     </label>
+    <argo-portal-promo-hero-fields-editor
+      [hero]="trabajoEnAlturas"
+      [showTitle]="false"
+      [showLead]="false"
+      [showPillars]="true"
+      [showStats]="true"
+      [showBackLabel]="true"
+      [showVirtualBadge]="true"
+      [showTheme]="true"
+    />
     <p class="psb-note">Párrafos adicionales del hero</p>
     @for (p of trabajoEnAlturas.heroParrafos; track $index; let i = $index) {
       <div class="ple-list__row">

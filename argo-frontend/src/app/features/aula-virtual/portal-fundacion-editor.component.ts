@@ -10,11 +10,12 @@ import {
 } from '../../core/constants/fundacion-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { environment } from '../../../environments/environment';
+import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 
 @Component({
   selector: 'argo-portal-fundacion-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalPromoHeroFieldsEditorComponent],
   templateUrl: './portal-fundacion-editor.component.html',
   styleUrl: './portal-fundacion-editor.component.scss',
 })

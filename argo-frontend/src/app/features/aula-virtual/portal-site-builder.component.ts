@@ -33,9 +33,11 @@ import { PortalExamenTeoricoEditorComponent } from './portal-examen-teorico-edit
 import { PortalMercanciasPeligrosasEditorComponent } from './portal-mercancias-peligrosas-editor.component';
 import { PortalTrabajoEnAlturasEditorComponent } from './portal-trabajo-en-alturas-editor.component';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
+import { PortalGaleriaHeroImagenEditorComponent } from './portal-galeria-hero-imagen-editor.component';
 import { PortalHomeFotosEditorComponent } from './portal-home-fotos-editor.component';
 import { PortalHomePublicidadEditorComponent } from './portal-home-publicidad-editor.component';
-import { PortalAcercaHeroEditorComponent } from './portal-acerca-hero-editor.component';
+import { PortalAcercaEditorComponent } from './portal-acerca-editor.component';
+import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
@@ -60,10 +62,14 @@ export type BuilderPanel =
   | 'appMobile'
   | 'asistente'
   | 'consultaCertificados'
+  | 'pqr'
+  | 'jornadasCapacitacion'
+  | 'evaluacionJornadas'
   | 'cursosConduccion'
   | 'examenTeorico'
   | 'mercanciasPeligrosas'
   | 'trabajoEnAlturas'
+  | 'acerca'
   | 'empresa'
   | 'marca';
 
@@ -105,9 +111,11 @@ interface GuiaPaso {
     PortalMercanciasPeligrosasEditorComponent,
     PortalTrabajoEnAlturasEditorComponent,
     PortalGaleriaFotosEditorComponent,
+    PortalGaleriaHeroImagenEditorComponent,
     PortalHomeFotosEditorComponent,
     PortalHomePublicidadEditorComponent,
-    PortalAcercaHeroEditorComponent,
+    PortalAcercaEditorComponent,
+    PortalPromoHeroFieldsEditorComponent,
     PortalPopupEditorComponent,
     PortalAppMobileEditorComponent,
     PortalSitePreviewComponent,
@@ -157,7 +165,8 @@ export class PortalSiteBuilderComponent {
     {
       title: 'Más páginas',
       items: [
-        { id: 'institucional', icon: '🏛️', label: 'Quiénes somos' },
+        { id: 'acerca', icon: 'ℹ️', label: 'Acerca de' },
+        { id: 'institucional', icon: '🏛️', label: 'Fundación CEA' },
         { id: 'cursosConduccion', icon: '🚗', label: 'Cursos conducción' },
         { id: 'examenTeorico', icon: '📋', label: 'Examen teórico' },
         { id: 'mercanciasPeligrosas', icon: '☣️', label: 'Mercancías peligrosas' },
@@ -166,6 +175,9 @@ export class PortalSiteBuilderComponent {
         { id: 'blog', icon: '📰', label: 'Blog' },
         { id: 'asistente', icon: '🤖', label: 'Asistente' },
         { id: 'consultaCertificados', icon: '📜', label: 'Consulta certificados' },
+        { id: 'pqr', icon: '📝', label: 'PQR' },
+        { id: 'jornadasCapacitacion', icon: '⛺', label: 'Jornadas' },
+        { id: 'evaluacionJornadas', icon: '⭐', label: 'Eval. jornadas' },
       ],
     },
     {
@@ -207,6 +219,15 @@ export class PortalSiteBuilderComponent {
     }
     if (!this.portalForm.landing.consultaCertificados) {
       this.portalForm.landing.consultaCertificados = { ...mergePortalLanding().consultaCertificados };
+    }
+    if (!this.portalForm.landing.pqr) {
+      this.portalForm.landing.pqr = mergePortalLanding().pqr;
+    }
+    if (!this.portalForm.landing.jornadasCapacitacion) {
+      this.portalForm.landing.jornadasCapacitacion = mergePortalLanding().jornadasCapacitacion;
+    }
+    if (!this.portalForm.landing.evaluacionJornadas) {
+      this.portalForm.landing.evaluacionJornadas = mergePortalLanding().evaluacionJornadas;
     }
     if (!this.portalForm.landing.asistente) {
       this.portalForm.landing.asistente = { ...mergePortalLanding().asistente };
@@ -290,6 +311,18 @@ export class PortalSiteBuilderComponent {
     return this.landing.consultaCertificados;
   }
 
+  get pqr() {
+    return this.landing.pqr;
+  }
+
+  get jornadasCapacitacion() {
+    return this.landing.jornadasCapacitacion;
+  }
+
+  get evaluacionJornadas() {
+    return this.landing.evaluacionJornadas;
+  }
+
   get asistente() {
     return this.landing.asistente;
   }
@@ -349,8 +382,13 @@ export class PortalSiteBuilderComponent {
         title: 'Carrusel de publicidad',
         help: 'Banner rotativo debajo del hero en la página principal. Actívelo o desactívelo en Bloques del inicio.',
       },
+      acerca: {
+        title: 'Página «Acerca de»',
+        help:
+          'Encabezado, texto institucional, datos de contacto, valores y botones de la página /acerca. Teléfono y dirección se editan en Nombre y contacto.',
+      },
       institucional: {
-        title: 'Página «Quiénes somos»',
+        title: 'Página «Fundación CEA»',
         help: 'Misión, visión, quiénes somos y servicios del CEA. Ideal si renombró «CEA» por «Institucional» o «Nosotros».',
       },
       cursosConduccion: {
@@ -390,7 +428,19 @@ export class PortalSiteBuilderComponent {
       },
       consultaCertificados: {
         title: 'Consulta de certificados',
-        help: 'Opciones de la página pública /consulta-certificados: descarga PDF y marca de agua.',
+        help: 'Encabezado y opciones de la página pública /consulta-certificados.',
+      },
+      pqr: {
+        title: 'PQR',
+        help: 'Textos del encabezado de la página /pqr (peticiones, quejas, reclamos, sugerencias y felicitaciones).',
+      },
+      jornadasCapacitacion: {
+        title: 'Jornadas de capacitación',
+        help: 'Encabezado y botones de la página pública /jornadas-capacitacion.',
+      },
+      evaluacionJornadas: {
+        title: 'Evaluación de jornadas',
+        help: 'Encabezado de la página /evaluacion-jornadas (encuesta de satisfacción).',
       },
       asistente: {
         title: 'Asistente virtual',

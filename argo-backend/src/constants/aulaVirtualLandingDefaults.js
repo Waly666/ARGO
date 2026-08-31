@@ -13,6 +13,16 @@ const { CURSOS_CONDUCCION_DEFAULTS } = require('./aulaVirtualCursosConduccionDef
 const { GALERIA_DEFAULTS } = require('./aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS } = require('./aulaVirtualHomeFotosDefaults');
 const { PUBLICIDAD_INICIO_DEFAULTS } = require('./aulaVirtualHomePublicidadDefaults');
+const { PQR_LANDING_DEFAULTS, mergePqrLanding } = require('./aulaVirtualPqrDefaults');
+const {
+  JORNADAS_CAPACITACION_LANDING_DEFAULTS,
+  mergeJornadasCapacitacionLanding,
+} = require('./aulaVirtualJornadasCapacitacionDefaults');
+const {
+  EVALUACION_JORNADAS_LANDING_DEFAULTS,
+  mergeEvaluacionJornadasLanding,
+} = require('./aulaVirtualEvaluacionJornadasDefaults');
+const { mergePromoHeroTheme } = require('./portalPromoHeroFields');
 const { DEFAULT_CEA_NOMBRE, DEFAULT_CEA_CORTO } = require('./portalBrandDefaults');
 
 /** Contenido editable del landing del portal aula virtual (valores por defecto). */
@@ -33,6 +43,10 @@ const LANDING_DEFAULTS = {
     ctaLlamarUrl: '',
     mostrarBotonLlamar: true,
     imagenAlt: 'Estudiante en cursos y programas del aula virtual',
+    eyebrow: '',
+    eyebrowServial: '— Bienvenid@ a {nombreCea} —',
+    subEyebrow: 'Centro de Enseñanza Automovilística',
+    ctaLlamarEtiqueta: '',
   },
   infoCards: [
     { icon: '🎓', title: 'Capacitación', text: 'Certificamos con calidad', fuente: 'texto' },
@@ -444,6 +458,8 @@ const LANDING_DEFAULTS = {
     lead: 'Novedades, consejos y contenido de interés sobre capacitación y seguridad vial.',
     emptyTitulo: 'Próximamente publicaremos artículos',
     emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
+    theme: 'blue',
+    mostrarBadgeVirtual: false,
   },
   galeria: JSON.parse(JSON.stringify(GALERIA_DEFAULTS)),
   fotosInicio: JSON.parse(JSON.stringify(FOTOS_INICIO_DEFAULTS)),
@@ -486,7 +502,15 @@ const LANDING_DEFAULTS = {
     mostrarBotonDescargar: false,
     marcaAguaCopia: true,
     textoBotonDescargar: 'Descargar PDF',
+    kicker: 'Verificación pública',
+    tituloLinea: 'Consulta de',
+    tituloAcento: 'certificados',
+    lead: 'Ingrese su número de documento para verificar los certificados expedidos por la institución.',
+    theme: 'blue',
   },
+  pqr: JSON.parse(JSON.stringify(PQR_LANDING_DEFAULTS)),
+  jornadasCapacitacion: JSON.parse(JSON.stringify(JORNADAS_CAPACITACION_LANDING_DEFAULTS)),
+  evaluacionJornadas: JSON.parse(JSON.stringify(EVALUACION_JORNADAS_LANDING_DEFAULTS)),
   asistente: {
     videoUrl: 'videos/asistente-educarte.mp4',
     paginas: {
@@ -526,4 +550,82 @@ Centro de Enseñanza Automovilística
   },
 };
 
-module.exports = { LANDING_DEFAULTS, FUNDACION_LANDING_DEFAULTS };
+function mergeConsultaCertificados(raw) {
+  const d = LANDING_DEFAULTS.consultaCertificados;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const str = (v, fb) => String(v ?? fb).trim() || fb;
+  return {
+    mostrarBotonDescargar: src.mostrarBotonDescargar === true,
+    marcaAguaCopia: src.marcaAguaCopia !== false,
+    textoBotonDescargar: str(src.textoBotonDescargar, d.textoBotonDescargar),
+    kicker: str(src.kicker, d.kicker),
+    tituloLinea: str(src.tituloLinea, d.tituloLinea),
+    tituloAcento: str(src.tituloAcento, d.tituloAcento),
+    lead: str(src.lead, d.lead),
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+  };
+}
+
+function mergeLandingHero(raw) {
+  const d = LANDING_DEFAULTS.hero;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const str = (v, fb) => String(v ?? fb).trim() || fb;
+  return {
+    ctaPrincipal: str(src.ctaPrincipal, d.ctaPrincipal),
+    ctaPrincipalUrl: str(src.ctaPrincipalUrl, d.ctaPrincipalUrl),
+    ctaSecundario: str(src.ctaSecundario, d.ctaSecundario),
+    ctaSecundarioUrl: str(src.ctaSecundarioUrl, d.ctaSecundarioUrl),
+    ctaLlamarUrl: str(src.ctaLlamarUrl, d.ctaLlamarUrl),
+    mostrarBotonLlamar: src.mostrarBotonLlamar !== false && src.mostrarBotonLlamar !== 'false',
+    imagenAlt: str(src.imagenAlt, d.imagenAlt),
+    eyebrow: str(src.eyebrow, d.eyebrow),
+    eyebrowServial: str(src.eyebrowServial, d.eyebrowServial),
+    subEyebrow: str(src.subEyebrow, d.subEyebrow),
+    ctaLlamarEtiqueta: str(src.ctaLlamarEtiqueta, d.ctaLlamarEtiqueta),
+  };
+}
+
+function mergeBlogSection(raw) {
+  const d = LANDING_DEFAULTS.blog;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const str = (v, fb) => String(v ?? fb).trim() || fb;
+  return {
+    kicker: str(src.kicker, d.kicker),
+    titulo: str(src.titulo, d.titulo),
+    lead: str(src.lead, d.lead),
+    emptyTitulo: str(src.emptyTitulo, d.emptyTitulo),
+    emptyTexto: str(src.emptyTexto, d.emptyTexto),
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
+  };
+}
+
+function mergeGaleriaSection(raw) {
+  const d = LANDING_DEFAULTS.galeria;
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const str = (v, fb) => String(v ?? fb).trim() || fb;
+  return {
+    kicker: str(src.kicker, d.kicker),
+    titulo: str(src.titulo, d.titulo),
+    lead: str(src.lead, d.lead),
+    emptyTitulo: str(src.emptyTitulo, d.emptyTitulo),
+    emptyTexto: str(src.emptyTexto, d.emptyTexto),
+    theme: mergePromoHeroTheme(src.theme, d.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
+    fotos: Array.isArray(src.fotos) ? src.fotos : d.fotos,
+  };
+}
+
+module.exports = {
+  LANDING_DEFAULTS,
+  FUNDACION_LANDING_DEFAULTS,
+  mergeConsultaCertificados,
+  mergeLandingHero,
+  mergeBlogSection,
+  mergeGaleriaSection,
+  mergePqrLanding,
+  mergeJornadasCapacitacionLanding,
+  mergeEvaluacionJornadasLanding,
+  mergeMercanciasPeligrosasLanding,
+  mergeTrabajoEnAlturasLanding,
+};

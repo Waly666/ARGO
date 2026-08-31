@@ -1,7 +1,9 @@
-const { LANDING_DEFAULTS } = require('../constants/aulaVirtualLandingDefaults');
+const { LANDING_DEFAULTS, mergeConsultaCertificados, mergeLandingHero, mergeBlogSection, mergePqrLanding, mergeJornadasCapacitacionLanding, mergeEvaluacionJornadasLanding } = require('../constants/aulaVirtualLandingDefaults');
 const { examenTeoricoContenidoAntiguo } = require('../constants/aulaVirtualExamenTeoricoDefaults');
 const { mergeMercanciasPeligrosasLanding } = require('../constants/aulaVirtualMercanciasPeligrosasDefaults');
 const { mergeTrabajoEnAlturasLanding } = require('../constants/aulaVirtualTrabajoEnAlturasDefaults');
+const { mergeAcercaLanding } = require('../constants/aulaVirtualAcercaDefaults');
+const { mergePromoHeroPillars, mergePromoHeroTheme } = require('../constants/portalPromoHeroFields');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('../constants/aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('../constants/aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS, MAX_FOTOS_INICIO } = require('../constants/aulaVirtualHomeFotosDefaults');
@@ -194,6 +196,10 @@ function normalizarExamenTeorico(raw, fallback) {
     },
     ctaFinalTexto: str(src.ctaFinalTexto, fallback.ctaFinalTexto),
     ctaFinalUrl: str(src.ctaFinalUrl, fallback.ctaFinalUrl || '/cursos-conduccion'),
+    backLabel: str(src.backLabel, fallback.backLabel),
+    oficialLead: str(src.oficialLead, fallback.oficialLead),
+    theme: mergePromoHeroTheme(src.theme, fallback.theme),
+    mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
   };
 }
 
@@ -248,13 +254,7 @@ function normalizarPopup(raw) {
 }
 
 function normalizarConsultaCertificados(raw) {
-  const d = LANDING_DEFAULTS.consultaCertificados;
-  const src = raw && typeof raw === 'object' ? raw : {};
-  return {
-    mostrarBotonDescargar: src.mostrarBotonDescargar === true,
-    marcaAguaCopia: src.marcaAguaCopia !== false,
-    textoBotonDescargar: str(src.textoBotonDescargar, d.textoBotonDescargar) || d.textoBotonDescargar,
-  };
+  return mergeConsultaCertificados(raw);
 }
 
 const ASISTENTE_PAGINA_KEYS = [
@@ -341,11 +341,19 @@ function normalizarLanding(input) {
   const fundSrc = src.fundacion && typeof src.fundacion === 'object' ? src.fundacion : {};
   const fundD = d.fundacion || {};
   const acercaSrc = src.acerca && typeof src.acerca === 'object' ? src.acerca : {};
-  const acercaD = d.acerca || {};
   const popupSrc = src.popup && typeof src.popup === 'object' ? src.popup : {};
   const consultaCertSrc =
     src.consultaCertificados && typeof src.consultaCertificados === 'object'
       ? src.consultaCertificados
+      : {};
+  const pqrSrc = src.pqr && typeof src.pqr === 'object' ? src.pqr : {};
+  const jornadasSrc =
+    src.jornadasCapacitacion && typeof src.jornadasCapacitacion === 'object'
+      ? src.jornadasCapacitacion
+      : {};
+  const evaluacionJornadasSrc =
+    src.evaluacionJornadas && typeof src.evaluacionJornadas === 'object'
+      ? src.evaluacionJornadas
       : {};
 
   const carrerasRaw = Array.isArray(carrerasSrc.items) ? carrerasSrc.items : [];
@@ -407,15 +415,7 @@ function normalizarLanding(input) {
     quoteLabel: str(src.quoteLabel, d.quoteLabel),
     metaDescription: str(src.metaDescription, d.metaDescription),
     metaKeywords: str(src.metaKeywords, d.metaKeywords),
-    hero: {
-      ctaPrincipal: str(heroSrc.ctaPrincipal, d.hero.ctaPrincipal),
-      ctaPrincipalUrl: str(heroSrc.ctaPrincipalUrl, d.hero.ctaPrincipalUrl),
-      ctaSecundario: str(heroSrc.ctaSecundario, d.hero.ctaSecundario),
-      ctaSecundarioUrl: str(heroSrc.ctaSecundarioUrl, d.hero.ctaSecundarioUrl),
-      ctaLlamarUrl: str(heroSrc.ctaLlamarUrl, d.hero.ctaLlamarUrl),
-      mostrarBotonLlamar: heroSrc.mostrarBotonLlamar !== false && heroSrc.mostrarBotonLlamar !== 'false',
-      imagenAlt: str(heroSrc.imagenAlt, d.hero.imagenAlt),
-    },
+    hero: mergeLandingHero(heroSrc),
     infoCards,
     nav: {
       home: str(navSrc.home, d.nav.home),
@@ -510,13 +510,7 @@ function normalizarLanding(input) {
       apkUrl: str(appMobileSrc.apkUrl, d.appMobile.apkUrl),
       apkNombre: str(appMobileSrc.apkNombre, d.appMobile.apkNombre),
     },
-    blog: {
-      kicker: str(blogSrc.kicker, d.blog.kicker),
-      titulo: str(blogSrc.titulo, d.blog.titulo),
-      lead: str(blogSrc.lead, d.blog.lead),
-      emptyTitulo: str(blogSrc.emptyTitulo, d.blog.emptyTitulo),
-      emptyTexto: str(blogSrc.emptyTexto, d.blog.emptyTexto),
-    },
+    blog: mergeBlogSection(blogSrc),
     galeria: normalizarGaleria(galeriaSrc),
     fotosInicio: normalizarFotosInicio(fotosInicioSrc),
     publicidadInicio: normalizarPublicidad(publicidadInicioSrc),
@@ -528,10 +522,13 @@ function normalizarLanding(input) {
     },
     footerServicios: footer.length ? footer : [...d.footerServicios],
     fundacion: normalizarFundacion(fundSrc, fundD),
-    acerca: normalizarAcerca(acercaSrc, acercaD),
+    acerca: normalizarAcerca(acercaSrc),
     cursosConduccion: normalizarCursosConduccion(src.cursosConduccion),
     popup: normalizarPopup(popupSrc),
     consultaCertificados: normalizarConsultaCertificados(consultaCertSrc),
+    pqr: mergePqrLanding(pqrSrc),
+    jornadasCapacitacion: mergeJornadasCapacitacionLanding(jornadasSrc),
+    evaluacionJornadas: mergeEvaluacionJornadasLanding(evaluacionJornadasSrc),
     asistente: normalizarAsistente(src.asistente, consultaCertSrc),
   };
 }
@@ -568,6 +565,11 @@ function normalizarGaleria(src) {
     lead: str(raw.lead, d.lead),
     emptyTitulo: str(raw.emptyTitulo, d.emptyTitulo),
     emptyTexto: str(raw.emptyTexto, d.emptyTexto),
+    theme: mergePromoHeroTheme(raw.theme, d.theme),
+    mostrarBadgeVirtual: raw.mostrarBadgeVirtual === true,
+    heroImagenUrl: str(raw.heroImagenUrl),
+    heroImagenUrlAbsoluta: publicUploadUrl(str(raw.heroImagenUrl)) || str(raw.heroImagenUrlAbsoluta),
+    heroImagenAlt: str(raw.heroImagenAlt, d.heroImagenAlt),
     fotos: fotosSanas,
   };
 }
@@ -711,6 +713,10 @@ function normalizarCursosConduccion(src) {
           return publicUploadUrl(imagenUrl) || imagenUrl;
         })(),
         imagenAlt: str(heroSrc.imagenAlt, d.hero.imagenAlt),
+        pillarsLabel: str(heroSrc.pillarsLabel, d.hero.pillarsLabel),
+        pillars: mergePromoHeroPillars(heroSrc.pillars, d.hero.pillars),
+        mostrarBadgeVirtual: heroSrc.mostrarBadgeVirtual !== false,
+        virtualBadgeLabel: str(heroSrc.virtualBadgeLabel, d.hero.virtualBadgeLabel),
       };
     })(),
     tituloPrincipal: str(raw.tituloPrincipal, d.tituloPrincipal),
@@ -722,20 +728,17 @@ function normalizarCursosConduccion(src) {
   };
 }
 
-function normalizarAcerca(src, d) {
-  const heroSrc = src.hero && typeof src.hero === 'object' ? src.hero : {};
-  const imagenUrl = str(heroSrc.imagenUrl, d.hero?.imagenUrl);
+function normalizarAcerca(src) {
+  const merged = mergeAcercaLanding(src);
+  const imagenUrl = str(merged.hero.imagenUrl);
   return {
     hero: {
-      kicker: str(heroSrc.kicker, d.hero?.kicker),
-      lead: str(heroSrc.lead, d.hero?.lead),
+      ...merged.hero,
       imagenUrl,
       imagenUrlAbsoluta: (() => {
         if (!imagenUrl || imagenUrl.startsWith('/images/')) return '';
         return publicUploadUrl(imagenUrl) || imagenUrl;
       })(),
-      imagenAlt: str(heroSrc.imagenAlt, d.hero?.imagenAlt),
-      imagenCaption: str(heroSrc.imagenCaption, d.hero?.imagenCaption),
     },
   };
 }
@@ -764,6 +767,10 @@ function normalizarFundacion(src, d) {
       btnSitioUrl: str(heroSrc.btnSitioUrl, d.hero?.btnSitioUrl),
       btnSitioLabel: str(heroSrc.btnSitioLabel, d.hero?.btnSitioLabel),
       btnCursosLabel: str(heroSrc.btnCursosLabel, d.hero?.btnCursosLabel),
+      pillarsLabel: str(heroSrc.pillarsLabel, d.hero?.pillarsLabel),
+      pillars: mergePromoHeroPillars(heroSrc.pillars, d.hero?.pillars || []),
+      mostrarBadgeVirtual: heroSrc.mostrarBadgeVirtual !== false,
+      virtualBadgeLabel: str(heroSrc.virtualBadgeLabel, d.hero?.virtualBadgeLabel),
     },
     quienes: {
       kicker: str(quienesSrc.kicker, d.quienes?.kicker),

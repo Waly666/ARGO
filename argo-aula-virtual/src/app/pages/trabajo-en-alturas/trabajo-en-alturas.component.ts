@@ -9,6 +9,11 @@ import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { RevealOnScrollDirective } from '../../core/reveal-on-scroll.directive';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
+import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
+import {
+  PROMO_BANNER_RIBBON_DEFAULT,
+} from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
+import { DEFAULT_CEA_NOMBRE } from '../../core/portal-brand-defaults';
 import {
   mergeTrabajoEnAlturasLanding,
   PortalTrabajoEnAlturasLanding,
@@ -18,7 +23,7 @@ import {
 @Component({
   selector: 'av-trabajo-en-alturas',
   standalone: true,
-  imports: [CommonModule, RouterLink, RevealOnScrollDirective, PortalIconComponent],
+  imports: [CommonModule, RouterLink, RevealOnScrollDirective, PortalIconComponent, PortalPromoBannerHeroComponent],
   templateUrl: './trabajo-en-alturas.component.html',
   styleUrl: './trabajo-en-alturas.component.scss',
 })
@@ -29,6 +34,10 @@ export class TrabajoEnAlturasComponent implements OnInit {
 
   config = signal<PortalConfig | null>(null);
   navAbierto = signal(false);
+
+  readonly heroRibbon = PROMO_BANNER_RIBBON_DEFAULT;
+
+  heroPilares = computed(() => this.contenido().heroPillars);
 
   readonly staticHero = '/images/trabajo-en-alturas/clase1-sector-transportador.jpg';
   readonly staticIntro = '/images/trabajo-en-alturas/clase2-objetivo-general.jpg';
@@ -44,6 +53,13 @@ export class TrabajoEnAlturasComponent implements OnInit {
   totalDocumentos = computed(() =>
     this.contenido().documentosGrupos.reduce((sum, g) => sum + (g.documentos?.length || 0), 0),
   );
+
+  nombreCea = computed(() => this.config()?.nombreCea?.trim() || DEFAULT_CEA_NOMBRE);
+
+  logoUrl = computed(() => {
+    const cfg = this.config();
+    return resolveUploadUrl(cfg?.urlLogoAbsoluta || cfg?.urlLogo);
+  });
 
   ngOnInit() {
     this.api.config().subscribe({
