@@ -378,6 +378,9 @@ export const TRABAJO_EN_ALTURAS_LANDING: PortalTrabajoEnAlturasLanding = {
   ],
 };
 
+/** Alias usado por el editor del ERP (misma convención que mercancías peligrosas). */
+export const TRABAJO_EN_ALTURAS_LANDING_DEFAULTS = TRABAJO_EN_ALTURAS_LANDING;
+
 function mergeImagenes(raw: TaImagen[] | undefined, fb: TaImagen[]): TaImagen[] {
   const src = Array.isArray(raw) ? raw : [];
   return fb.map((item, i) => {
