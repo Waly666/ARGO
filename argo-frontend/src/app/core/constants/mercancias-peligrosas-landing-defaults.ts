@@ -478,10 +478,8 @@ function mergeDocumentosGrupos(
   raw: MpDocumentoGrupo[] | undefined,
   fallback: MpDocumentoGrupo[],
 ): MpDocumentoGrupo[] {
-  const soloNormativa = fallback.filter((g) => g.id === 'normativa');
-  if (!Array.isArray(raw) || !raw.length) return soloNormativa;
-  const normativa = raw.find((g) => g?.id === 'normativa');
-  return normativa ? [normativa] : soloNormativa;
+  if (!Array.isArray(raw) || !raw.length) return fallback;
+  return raw;
 }
 
 export function mergeMercanciasPeligrosasLanding(

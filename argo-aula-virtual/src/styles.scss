@@ -132,6 +132,22 @@ html[data-hero-estilo='servial-mesh'] .site-footer__glow {
   background: var(--av-footer-border, var(--av-topbar-border));
 }
 
+/* Servial — texto oscuro en botones primary (evita blanco sobre verde claro) */
+html[data-hero-estilo='servial-mesh'] {
+  .btn-primary,
+  a.btn-primary,
+  button.btn-primary {
+    color: var(--av-btn-primary-text, #0a0a0a);
+    -webkit-text-fill-color: var(--av-btn-primary-text, #0a0a0a);
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      color: var(--av-btn-primary-text, #0a0a0a);
+      -webkit-text-fill-color: var(--av-btn-primary-text, #0a0a0a);
+    }
+  }
+}
+
 button,
 input,
 select,
@@ -296,18 +312,18 @@ a.catalog-card__btn,
   a.btn-outline,
   .btn-ghost,
   a.btn-ghost {
-    background: rgba(10, 10, 10, 0.28) !important;
-    border: 1px solid rgba(44, 233, 122, 0.72) !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    background: var(--av-btn-on-dark-outline-bg, rgba(10, 10, 10, 0.28)) !important;
+    border: 1px solid var(--av-btn-on-dark-outline-border, rgba(44, 233, 122, 0.72)) !important;
+    color: var(--av-btn-on-dark-outline-text, #ffffff) !important;
+    -webkit-text-fill-color: var(--av-btn-on-dark-outline-text, #ffffff) !important;
     font-weight: 600;
 
     &:hover:not(:disabled),
     &:focus-visible {
       background: rgba(44, 233, 122, 0.18) !important;
       border-color: #2ce97a !important;
-      color: #ffffff !important;
-      -webkit-text-fill-color: #ffffff !important;
+      color: var(--av-btn-on-dark-outline-text, #ffffff) !important;
+      -webkit-text-fill-color: var(--av-btn-on-dark-outline-text, #ffffff) !important;
     }
   }
 }

@@ -344,10 +344,8 @@ function mergeHomeItems(raw, fallback) {
 }
 
 function mergeDocumentosGrupos(raw, fallback) {
-  const soloNormativa = fallback.filter((g) => g.id === 'normativa');
-  if (!Array.isArray(raw) || !raw.length) return soloNormativa;
-  const normativa = raw.find((g) => g?.id === 'normativa');
-  return normativa ? [normativa] : soloNormativa;
+  if (!Array.isArray(raw) || !raw.length) return fallback;
+  return raw;
 }
 
 function mergeMercanciasPeligrosasLanding(

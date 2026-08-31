@@ -472,6 +472,9 @@ export function buildPortalThemeCssVars(tema: PortalTemaLike | null | undefined)
     vars['--av-card-wave-dark-b'] = withAlpha(brandGreen, 0.55);
     vars['--av-btn-primary-bg'] = `linear-gradient(90deg, ${brandGreen} 0%, ${mixHex(brandGreen, '#2ee778', 0.35)} 100%)`;
     vars['--av-btn-primary-text'] = '#0a0a0a';
+    vars['--av-btn-on-dark-outline-bg'] = 'rgba(10, 10, 10, 0.28)';
+    vars['--av-btn-on-dark-outline-border'] = 'rgba(44, 233, 122, 0.72)';
+    vars['--av-btn-on-dark-outline-text'] = '#ffffff';
     vars['--av-fundacion-cta-bg'] = `linear-gradient(120deg, ${primaryDark} 0%, ${primary} 50%, ${brandGreen} 100%)`;
     vars['--av-starfield-glow'] = withAlpha(brandGreen, 0.2);
     vars['--av-page-hero-kicker-text'] = brandGreen;

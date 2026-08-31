@@ -7,15 +7,28 @@ import {
   TRABAJO_EN_ALTURAS_LANDING_DEFAULTS,
   mergeTrabajoEnAlturasLanding,
   PortalTrabajoEnAlturasLanding,
+  TaArticuloNormativo,
+  TaFaq,
+  TaHomeItem,
   TaImagen,
+  TaModulo,
+  TaNavItem,
+  TaOperacionSector,
 } from '../../core/constants/trabajo-en-alturas-landing-defaults';
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
+import {
+  addNavItem,
+  PORTAL_EDITOR_ACENTOS,
+  removeAt,
+} from './portal-landing-editor-helpers';
+import { PortalEditorFaqListComponent } from './portal-editor-faq-list.component';
+import { PortalEditorStringListComponent } from './portal-editor-string-list.component';
 
 @Component({
   selector: 'argo-portal-trabajo-en-alturas-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalEditorStringListComponent, PortalEditorFaqListComponent],
   templateUrl: './portal-trabajo-en-alturas-editor.component.html',
   styleUrl: './portal-trabajo-en-alturas-editor.component.scss',
 })
@@ -27,6 +40,10 @@ export class PortalTrabajoEnAlturasEditorComponent {
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   uploadingId = signal<string | null>(null);
+  readonly acentos = PORTAL_EDITOR_ACENTOS;
+
+  readonly removeItem = removeAt;
+  readonly addNav = addNavItem;
 
   restaurarDefaults() {
     if (!confirm('¿Restaurar todos los textos por defecto de trabajo en alturas? Las imágenes subidas se conservan.')) {
@@ -86,6 +103,63 @@ export class PortalTrabajoEnAlturasEditorComponent {
             error: true,
           }),
       });
+  }
+
+  addHeroParrafo() {
+    this.trabajoEnAlturas.heroParrafos.push('');
+  }
+
+  addHomeItem() {
+    const n = this.trabajoEnAlturas.homeItems.length + 1;
+    this.trabajoEnAlturas.homeItems.push({
+      numero: n,
+      icon: 'document',
+      acento: 'purple',
+      titulo: '',
+      texto: '',
+    } satisfies TaHomeItem);
+  }
+
+  addDestacado() {
+    this.trabajoEnAlturas.normativaDestacados.push({ etiqueta: '', valor: '', detalle: '' });
+  }
+
+  addArticulo() {
+    this.trabajoEnAlturas.normativaArticulos.push({ articulo: '', titulo: '', texto: '' } satisfies TaArticuloNormativo);
+  }
+
+  addTituloTexto(list: { titulo: string; texto: string }[]) {
+    list.push({ titulo: '', texto: '' });
+  }
+
+  addSectorOp() {
+    this.trabajoEnAlturas.sectorOperaciones.push({ titulo: '', texto: '' } satisfies TaOperacionSector);
+  }
+
+  addModulo() {
+    const n = this.trabajoEnAlturas.modulos.length + 1;
+    this.trabajoEnAlturas.modulos.push({
+      numero: n,
+      titulo: '',
+      resumen: '',
+      thumbUrl: '',
+    } satisfies TaModulo);
+  }
+
+  addDocumento(grupoIndex: number) {
+    const grupo = this.trabajoEnAlturas.documentosGrupos[grupoIndex];
+    if (!grupo) return;
+    grupo.documentos.push({ titulo: '', descripcion: '', archivoUrl: '', meta: 'PDF' });
+  }
+
+  addDocumentoGrupo() {
+    this.trabajoEnAlturas.documentosGrupos.push({
+      id: `grupo-${Date.now()}`,
+      kicker: '',
+      titulo: '',
+      lead: '',
+      documentos: [],
+    });
   }
 
   private syncImagen(imagenId: string, url: string, urlAbsoluta?: string) {

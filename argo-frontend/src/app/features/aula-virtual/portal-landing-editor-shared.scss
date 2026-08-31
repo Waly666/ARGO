@@ -1,0 +1,47 @@
+@use './portal-site-editor-shared';
+
+.ple-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.ple-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  margin-bottom: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line, rgba(78, 163, 255, 0.2));
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.ple-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ple-list__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.ple-remove {
+  font-size: 0.78rem;
+}
+
+.ple-nested {
+  padding-left: 0.5rem;
+  border-left: 2px solid rgba(78, 163, 255, 0.2);
+  margin-top: 0.5rem;
+}

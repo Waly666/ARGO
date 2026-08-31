@@ -1070,9 +1070,13 @@
 .exteor-cta__btn--mp {
   background: linear-gradient(135deg, #10b981, #059669);
   border-color: #059669;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 
   &:hover {
     background: linear-gradient(135deg, #059669, #047857);
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
   }
 }
 
@@ -1108,9 +1112,13 @@
 .exteor-cta__btn--ta {
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
   border-color: #6d28d9;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 
   &:hover {
     background: linear-gradient(135deg, #6d28d9, #5b21b6);
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
   }
 }
 

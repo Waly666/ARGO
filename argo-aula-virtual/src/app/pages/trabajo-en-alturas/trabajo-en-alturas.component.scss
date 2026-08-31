@@ -1,3 +1,5 @@
+@use '../shared/portal-hero-buttons' as heroBtns;
+
 :host {
   display: block;
   font-family: var(--av-font-sans);
@@ -158,6 +160,8 @@
   flex-wrap: wrap;
   gap: 0.65rem;
   margin-top: 1.25rem;
+
+  @include heroBtns.portal-hero-cta-buttons();
 }
 
 .ta-badge {
