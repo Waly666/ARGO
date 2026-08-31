@@ -34,6 +34,8 @@ const DEFAULT_HOME_ORDER = [
   'beneficios',
   'licencias',
   'examenTeorico',
+  'mercanciasPeligrosas',
+  'trabajoEnAlturas',
   'quoteBand',
   'fotosInicio',
   'serviciosEmpresa',

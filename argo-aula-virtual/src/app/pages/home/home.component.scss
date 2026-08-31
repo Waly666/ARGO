@@ -1030,6 +1030,90 @@
   padding: clamp(2.5rem, 5vw, 3.5rem) 0;
 }
 
+.section-mercancias-peligrosas {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(16, 185, 129, 0.1), transparent 55%),
+    radial-gradient(ellipse at 88% 100%, rgba(13, 148, 136, 0.08), transparent 50%),
+    linear-gradient(180deg, #f0fdf4 0%, #fff 45%, #f8fafc 100%);
+  padding: clamp(2.5rem, 5vw, 3.5rem) 0;
+}
+
+.kicker--mp {
+  color: #047857;
+  background: linear-gradient(135deg, #d1fae5, #ecfdf5);
+  border-color: #6ee7b7;
+}
+
+.exteor-title__line--mp {
+  color: #10b981;
+}
+
+.exteor-fecha--mp {
+  border-color: #a7f3d0;
+  background: linear-gradient(135deg, #ecfdf5, #fff);
+
+  .exteor-fecha__icon {
+    color: #059669;
+  }
+}
+
+.exteor-oficial__link--mp {
+  color: #047857;
+
+  &:hover {
+    color: #065f46;
+  }
+}
+
+.exteor-cta__btn--mp {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #059669;
+
+  &:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+  }
+}
+
+.section-trabajo-en-alturas {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(124, 58, 237, 0.12), transparent 55%),
+    radial-gradient(ellipse at 88% 100%, rgba(79, 70, 229, 0.1), transparent 50%),
+    linear-gradient(180deg, #f5f3ff 0%, #fff 45%, #f8fafc 100%);
+  padding: clamp(2.5rem, 5vw, 3.5rem) 0;
+}
+
+.kicker--ta {
+  color: #6d28d9;
+  background: linear-gradient(135deg, #ede9fe, #f5f3ff);
+  border-color: #c4b5fd;
+}
+
+.exteor-title__line--ta {
+  color: #7c3aed;
+}
+
+.exteor-fecha--ta {
+  border-color: #c4b5fd;
+  background: linear-gradient(135deg, #f5f3ff, #fff);
+
+  .exteor-fecha__icon {
+    color: #7c3aed;
+  }
+}
+
+.exteor-cta__btn--ta {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  border-color: #6d28d9;
+
+  &:hover {
+    background: linear-gradient(135deg, #6d28d9, #5b21b6);
+  }
+}
+
 .kicker--normativa {
   color: #1d4ed8;
   background: linear-gradient(135deg, #dbeafe, #eff6ff);

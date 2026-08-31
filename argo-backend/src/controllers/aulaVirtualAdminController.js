@@ -1290,3 +1290,163 @@ exports.subirArchivoExamenTeoricoPortal = async (req, res, next) => {
     next(e);
   }
 };
+
+const { mergeMercanciasPeligrosasLanding } = require('../constants/aulaVirtualMercanciasPeligrosasDefaults');
+
+function urlMercanciasPeligrosas(filename) {
+  return publicUrl('aula-virtual-mercancias-peligrosas', filename);
+}
+
+function quitarImagenMercanciasPeligrosasAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-mercancias-peligrosas/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenMercanciasPeligrosasPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const imagenId = String(req.body?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a actualizar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const mp = mergeMercanciasPeligrosasLanding(landing.mercanciasPeligrosas);
+    const idx = mp.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(400).json({ message: 'Imagen no reconocida en la configuración' });
+    }
+
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1280 });
+    const nuevaUrl = urlMercanciasPeligrosas(req.file.filename);
+    quitarImagenMercanciasPeligrosasAnterior(mp.imagenes[idx].url);
+    mp.imagenes[idx] = { ...mp.imagenes[idx], url: nuevaUrl };
+    landing.mercanciasPeligrosas = mp;
+    await guardarConfigAula({ landing }, req.user);
+
+    const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      imagenId,
+      url: nuevaUrl,
+      urlAbsoluta: publicUploadUrl(nuevaUrl) || nuevaUrl,
+      message: 'Imagen actualizada en la página de mercancías peligrosas',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenMercanciasPeligrosasPortal = async (req, res, next) => {
+  try {
+    const imagenId = String(req.body?.imagenId || req.query?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a quitar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const mp = mergeMercanciasPeligrosasLanding(landing.mercanciasPeligrosas);
+    const idx = mp.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(404).json({ message: 'Imagen no encontrada' });
+    }
+
+    quitarImagenMercanciasPeligrosasAnterior(mp.imagenes[idx].url);
+    mp.imagenes[idx] = { ...mp.imagenes[idx], url: '' };
+    landing.mercanciasPeligrosas = mp;
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen eliminada de la página de mercancías peligrosas',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+const { mergeTrabajoEnAlturasLanding } = require('../constants/aulaVirtualTrabajoEnAlturasDefaults');
+
+function urlTrabajoEnAlturas(filename) {
+  return publicUrl('aula-virtual-trabajo-en-alturas', filename);
+}
+
+function quitarImagenTrabajoEnAlturasAnterior(imagenUrl) {
+  const rel = String(imagenUrl || '').replace(/^\/uploads\//, '').trim();
+  if (!rel.startsWith('aula-virtual-trabajo-en-alturas/')) return;
+  const p = resolvePath(rel);
+  if (p && fs.existsSync(p)) fs.unlinkSync(p);
+}
+
+exports.subirImagenTrabajoEnAlturasPortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione una imagen (PNG, JPG o WEBP)' });
+    }
+    const imagenId = String(req.body?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a actualizar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const ta = mergeTrabajoEnAlturasLanding(landing.trabajoEnAlturas);
+    const idx = ta.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(400).json({ message: 'Imagen no reconocida en la configuración' });
+    }
+
+    const filePath = path.join(req.file.destination, req.file.filename);
+    await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1280 });
+    const nuevaUrl = urlTrabajoEnAlturas(req.file.filename);
+    quitarImagenTrabajoEnAlturasAnterior(ta.imagenes[idx].url);
+    ta.imagenes[idx] = { ...ta.imagenes[idx], url: nuevaUrl };
+    landing.trabajoEnAlturas = ta;
+    await guardarConfigAula({ landing }, req.user);
+
+    const { publicUploadUrl } = require('../utils/uploadPublicUrl');
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      imagenId,
+      url: nuevaUrl,
+      urlAbsoluta: publicUploadUrl(nuevaUrl) || nuevaUrl,
+      message: 'Imagen actualizada en la página de trabajo en alturas',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+exports.quitarImagenTrabajoEnAlturasPortal = async (req, res, next) => {
+  try {
+    const imagenId = String(req.body?.imagenId || req.query?.imagenId || '').trim();
+    if (!imagenId) {
+      return res.status(400).json({ message: 'Indique la imagen a quitar (imagenId)' });
+    }
+
+    const aula = await obtenerConfigAula();
+    const landing = mergeLanding(aula.landing);
+    const ta = mergeTrabajoEnAlturasLanding(landing.trabajoEnAlturas);
+    const idx = ta.imagenes.findIndex((i) => i.id === imagenId);
+    if (idx < 0) {
+      return res.status(404).json({ message: 'Imagen no encontrada' });
+    }
+
+    quitarImagenTrabajoEnAlturasAnterior(ta.imagenes[idx].url);
+    ta.imagenes[idx] = { ...ta.imagenes[idx], url: '' };
+    landing.trabajoEnAlturas = ta;
+    await guardarConfigAula({ landing }, req.user);
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Imagen eliminada de la página de trabajo en alturas',
+    });
+  } catch (e) {
+    next(e);
+  }
+};

@@ -395,6 +395,30 @@
         />
       }
 
+      @case ('mercanciasPeligrosas') {
+        <p class="psb-note">
+          Página pública en <strong>/mercancias-peligrosas</strong> con información educativa sobre normativa,
+          clasificación y seguridad. Las imágenes se guardan al subirlas; pulse <strong>Publicar cambios</strong> para los textos editados.
+        </p>
+        <argo-portal-mercancias-peligrosas-editor
+          [mercanciasPeligrosas]="ensureMercanciasPeligrosasLanding()"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
+      @case ('trabajoEnAlturas') {
+        <p class="psb-note">
+          Página pública en <strong>/trabajo-en-alturas</strong> con el programa de capacitación en alturas
+          (20 módulos, normativa y descargas). Las imágenes se guardan al subirlas; pulse <strong>Publicar cambios</strong> para los textos.
+        </p>
+        <argo-portal-trabajo-en-alturas-editor
+          [trabajoEnAlturas]="ensureTrabajoEnAlturasLanding()"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
       @case ('blog') {
         <p class="psb-note">
           Estos textos aparecen siempre en la página <strong>/blog</strong> del sitio público.

@@ -277,6 +277,58 @@ export class PortalSeoService {
     });
   }
 
+  applyMercanciasPeligrosas(config: PortalConfig | null) {
+    const mp = config?.landing?.mercanciasPeligrosas;
+    const titulo =
+      [mp?.titulo, mp?.tituloLinea2].filter(Boolean).join(' ') || 'Mercancías peligrosas en Colombia';
+    const pageTitle = `${titulo} | ${SEO_BRAND}`;
+    const description = this.truncate(
+      mp?.heroLead?.trim() ||
+        mp?.subtitulo?.trim() ||
+        'Normativa, clasificación, documentación y responsabilidades del transporte de mercancías peligrosas en Colombia.',
+    );
+    const url = this.pageUrl('/mercancias-peligrosas');
+    this.applyPageMeta({
+      pageTitle,
+      description,
+      keywords: `${BLOG_SEO_KEYWORDS}, mercancías peligrosas, Decreto 1079, NTC 1692, transporte Colombia, MinTransporte`,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'Mercancías peligrosas', path: '/mercancias-peligrosas' },
+      ]),
+    });
+  }
+
+  applyTrabajoEnAlturas(config: PortalConfig | null) {
+    const ta = config?.landing?.trabajoEnAlturas;
+    const titulo =
+      [ta?.titulo, ta?.tituloLinea2].filter(Boolean).join(' ') || 'Trabajo seguro en alturas';
+    const pageTitle = `${titulo} | ${SEO_BRAND}`;
+    const description = this.truncate(
+      ta?.heroLead?.trim() ||
+        ta?.subtitulo?.trim() ||
+        'Capacitación en trabajo seguro en alturas para el sector transportador: Resolución 4272, EPI y 20 módulos.',
+    );
+    const url = this.pageUrl('/trabajo-en-alturas');
+    this.applyPageMeta({
+      pageTitle,
+      description,
+      keywords: `${BLOG_SEO_KEYWORDS}, trabajo en alturas, Resolución 4272, seguridad sector transporte, EPI, Colombia`,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'Trabajo en alturas', path: '/trabajo-en-alturas' },
+      ]),
+    });
+  }
+
   applyBlogPost(
     config: PortalConfig | null,
     post: { titulo: string; slug: string; contenido?: string; autorNombre?: string; publicadoAt?: string | null },

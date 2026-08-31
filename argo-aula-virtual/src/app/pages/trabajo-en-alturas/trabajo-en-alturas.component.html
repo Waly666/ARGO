@@ -1,0 +1,347 @@
+<div class="ta-page">
+  <header class="ta-hero" id="inicio">
+    <div class="container">
+      <a routerLink="/" class="ta-back">← Volver al inicio</a>
+      <div class="ta-hero__grid">
+        <div class="ta-hero__copy">
+          <p class="ta-kicker">{{ contenido().kicker }}</p>
+          <h1 class="ta-title">
+            <span>{{ contenido().titulo }}</span>
+            <span class="ta-title__accent">{{ contenido().tituloLinea2 }}</span>
+          </h1>
+          <p class="ta-subtitle">{{ contenido().subtitulo }}</p>
+          <div class="ta-hero__stats" aria-label="Resumen normativo">
+            <span class="ta-stat"><strong>Res. 4272</strong> de 2021</span>
+            <span class="ta-stat"><strong>2,0 m</strong> altura mínima</span>
+            <span class="ta-stat"><strong>{{ totalDocumentos() }}</strong> PDFs</span>
+          </div>
+          <p class="ta-lead">{{ contenido().heroLead }}</p>
+          @for (p of contenido().heroParrafos; track $index) {
+            <p class="ta-hero__text">{{ p }}</p>
+          }
+          <div class="ta-hero__ctas">
+            @if (tieneEnlaceCurso()) {
+              @if (enlaceCursoExterno()) {
+                <a
+                  class="btn btn-primary"
+                  [href]="enlaceCursoHref()!"
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  {{ contenido().enlaceCursoEtiqueta }} ↗
+                </a>
+              } @else {
+                <a class="btn btn-primary" [routerLink]="enlaceCursoHref()!">
+                  {{ contenido().enlaceCursoEtiqueta }}
+                </a>
+              }
+            }
+            <button type="button" class="btn btn-outline ta-btn-outline" (click)="scrollTo('normativa')">
+              {{ contenido().ctaNormativaTexto }}
+            </button>
+            <button type="button" class="btn btn-outline ta-btn-outline" (click)="scrollTo('documentos')">
+              {{ contenido().ctaDocumentosTexto }}
+            </button>
+          </div>
+          <p class="ta-actualizado">
+            <span class="ta-badge ta-badge--live">
+              <span class="ta-badge__dot" aria-hidden="true"></span>
+              Actualizado a <strong>{{ contenido().fechaActualizacion }}</strong>
+            </span>
+          </p>
+        </div>
+        <figure class="ta-hero__media">
+          <div class="ta-hero__media-frame">
+            @if (imagenUrl(imagenPorId(contenido(), 'hero'), staticHero); as src) {
+              <img [src]="src" [alt]="imagenPorId(contenido(), 'hero')?.alt || ''" />
+            } @else {
+              <div class="ta-placeholder" aria-hidden="true">
+                <av-portal-icon icon="shield-check" size="2.5rem" color="currentColor" />
+                <span>Trabajo seguro en alturas</span>
+              </div>
+            }
+          </div>
+        </figure>
+      </div>
+    </div>
+  </header>
+
+  <nav class="ta-nav" aria-label="Secciones de trabajo en alturas">
+    <div class="container ta-nav__inner">
+      <button type="button" class="ta-nav__toggle" (click)="toggleNav()" [attr.aria-expanded]="navAbierto()">
+        Menú {{ navAbierto() ? '▲' : '▼' }}
+      </button>
+      <ul class="ta-nav__list" [class.ta-nav__list--open]="navAbierto()">
+        @for (item of contenido().nav; track item.id) {
+          <li>
+            <button type="button" class="ta-nav__link" (click)="scrollTo(item.id)">{{ item.label }}</button>
+          </li>
+        }
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <section class="ta-section" id="introduccion">
+      <div class="container ta-split">
+        <div class="reveal" avRevealOnScroll>
+          <header class="ta-section-head">
+            <p class="ta-section-head__kicker">Fundamentos</p>
+            <h2 class="ta-section__title">{{ contenido().introTitulo }}</h2>
+          </header>
+          <p class="ta-text">{{ contenido().introTexto }}</p>
+          <h3 class="ta-section__subtitle">Principales riesgos</h3>
+          <ul class="ta-tags">
+            @for (r of contenido().introRiesgos; track r) {
+              <li>{{ r }}</li>
+            }
+          </ul>
+          <h3 class="ta-section__subtitle">¿A quién aplica?</h3>
+          <ul class="ta-check-list">
+            @for (a of contenido().introAudiencia; track a) {
+              <li>{{ a }}</li>
+            }
+          </ul>
+        </div>
+        <figure class="ta-side-media reveal" avRevealOnScroll [revealDelay]="80">
+          @if (imagenUrl(imagenPorId(contenido(), 'intro'), staticIntro); as src) {
+            <img [src]="src" [alt]="imagenPorId(contenido(), 'intro')?.alt || ''" />
+          } @else {
+            <div class="ta-placeholder ta-placeholder--side"><span>Imagen introducción</span></div>
+          }
+        </figure>
+      </div>
+    </section>
+
+    <section class="ta-section ta-section--alt" id="normativa">
+      <div class="container">
+        <header class="ta-section-head ta-section-head--center reveal" avRevealOnScroll>
+          <p class="ta-section-head__kicker">Marco legal</p>
+          <h2 class="ta-section__title">{{ contenido().normativaTitulo }}</h2>
+          <p class="ta-section-head__lead">{{ contenido().normativaLead }}</p>
+        </header>
+        <div class="ta-normativa-stats reveal" avRevealOnScroll [revealDelay]="40">
+          @for (d of contenido().normativaDestacados; track d.etiqueta) {
+            <article class="ta-stat-card">
+              <p class="ta-stat-card__label">{{ d.etiqueta }}</p>
+              <p class="ta-stat-card__value">{{ d.valor }}</p>
+              <p class="ta-stat-card__detail">{{ d.detalle }}</p>
+            </article>
+          }
+        </div>
+        <div class="ta-normativa-grid reveal" avRevealOnScroll [revealDelay]="60">
+          <article class="ta-card ta-card--featured">
+            <span class="ta-card__icon" aria-hidden="true">
+              <av-portal-icon icon="document" size="1.5rem" color="currentColor" />
+            </span>
+            <p class="ta-card__eyebrow">Norma principal</p>
+            <h3>{{ contenido().normativaResolucionTitulo }}</h3>
+            <p>{{ contenido().normativaResolucionTexto }}</p>
+          </article>
+          @for (art of contenido().normativaArticulos; track art.articulo) {
+            <article class="ta-card">
+              <p class="ta-card__eyebrow">{{ art.articulo }}</p>
+              <h3>{{ art.titulo }}</h3>
+              <p>{{ art.texto }}</p>
+            </article>
+          }
+        </div>
+        <div class="ta-split ta-split--normativa reveal" avRevealOnScroll [revealDelay]="100">
+          <ul class="ta-check-list ta-check-list--cards">
+            @for (a of contenido().normativaAspectos; track a) {
+              <li>{{ a }}</li>
+            }
+          </ul>
+          <figure class="ta-side-media">
+            @if (imagenUrl(imagenPorId(contenido(), 'normativa'), staticNormativa); as src) {
+              <img [src]="src" [alt]="imagenPorId(contenido(), 'normativa')?.alt || ''" />
+            }
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="ta-section" id="objetivos">
+      <div class="container">
+        <header class="ta-section-head ta-section-head--center reveal" avRevealOnScroll>
+          <p class="ta-section-head__kicker">SG-SST</p>
+          <h2 class="ta-section__title">{{ contenido().objetivosTitulo }}</h2>
+          <p class="ta-section-head__lead">{{ contenido().objetivoGeneral }}</p>
+        </header>
+        <div class="ta-responsabilidades reveal" avRevealOnScroll [revealDelay]="60">
+          <article class="ta-responsabilidades__col">
+            <h3>Empleador</h3>
+            <ul class="ta-check-list">
+              @for (item of contenido().responsabilidadesEmpleador; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          </article>
+          <article class="ta-responsabilidades__col">
+            <h3>Trabajador</h3>
+            <ul class="ta-check-list">
+              @for (item of contenido().responsabilidadesTrabajador; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="ta-section ta-section--alt" id="requisitos">
+      <div class="container">
+        <header class="ta-section-head reveal" avRevealOnScroll>
+          <p class="ta-section-head__kicker">Requisitos legales</p>
+          <h2 class="ta-section__title">{{ contenido().metodologiaTitulo }}</h2>
+          <p class="ta-section-head__lead">{{ contenido().metodologiaLead }}</p>
+        </header>
+        <div class="ta-requisitos-grid reveal" avRevealOnScroll [revealDelay]="60">
+          @for (m of contenido().metodologiaItems; track m.titulo) {
+            <article class="ta-requisito-card">
+              <span class="ta-requisito-card__icon" aria-hidden="true">
+                <av-portal-icon icon="shield-check" size="1.1rem" color="currentColor" />
+              </span>
+              <div>
+                <h3>{{ m.titulo }}</h3>
+                <p>{{ m.texto }}</p>
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="ta-section" id="epi">
+      <div class="container ta-split">
+        <div class="reveal" avRevealOnScroll>
+          <header class="ta-section-head">
+            <p class="ta-section-head__kicker">Protección personal</p>
+            <h2 class="ta-section__title">{{ contenido().evaluacionTitulo }}</h2>
+            <p class="ta-section-head__lead">{{ contenido().evaluacionLead }}</p>
+          </header>
+          <ul class="ta-check-list ta-check-list--cards">
+            @for (e of contenido().evaluacionDetalles; track e) {
+              <li>{{ e }}</li>
+            }
+          </ul>
+        </div>
+        <figure class="ta-side-media reveal" avRevealOnScroll [revealDelay]="80">
+          @if (imagenUrl(imagenPorId(contenido(), 'epi'), staticEpi); as src) {
+            <img [src]="src" [alt]="imagenPorId(contenido(), 'epi')?.alt || 'Equipo de protección individual'" />
+          }
+        </figure>
+      </div>
+    </section>
+
+    <section class="ta-section ta-section--alt" id="sector">
+      <div class="container">
+        <header class="ta-section-head ta-section-head--center reveal" avRevealOnScroll>
+          <p class="ta-section-head__kicker">Contexto operativo</p>
+          <h2 class="ta-section__title">{{ contenido().sectorTitulo }}</h2>
+          <p class="ta-section-head__lead">{{ contenido().sectorLead }}</p>
+        </header>
+        <div class="ta-sector-grid reveal" avRevealOnScroll [revealDelay]="60">
+          @for (op of contenido().sectorOperaciones; track op.titulo) {
+            <article class="ta-sector-card">
+              <h3>{{ op.titulo }}</h3>
+              <p>{{ op.texto }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="ta-section" id="tres-c">
+      <div class="container">
+        <header class="ta-section-head ta-section-head--center reveal" avRevealOnScroll>
+          <p class="ta-section-head__kicker">Buena práctica</p>
+          <h2 class="ta-section__title">{{ contenido().tresCTitulo }}</h2>
+          <p class="ta-section-head__lead">{{ contenido().tresCLead }}</p>
+        </header>
+        <div class="ta-tres-c reveal" avRevealOnScroll [revealDelay]="60">
+          @for (item of contenido().tresCItems; track item.titulo; let i = $index) {
+            <article class="ta-tres-c__card">
+              <span class="ta-tres-c__letter" aria-hidden="true">{{ ['C', 'C', 'C'][i] }}</span>
+              <h3>{{ item.titulo }}</h3>
+              <p>{{ item.texto }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    @if (contenido().documentosGrupos.length) {
+      <section class="ta-section ta-section--library" id="documentos">
+        <div class="container">
+          <header class="ta-library-banner reveal" avRevealOnScroll>
+            <div>
+              <p class="ta-library-banner__kicker">Biblioteca documental</p>
+              <h2 class="ta-section__title">{{ contenido().documentosTitulo }}</h2>
+              <p class="ta-text">{{ contenido().documentosLead }}</p>
+            </div>
+            <div class="ta-library-banner__count" aria-label="Total de documentos">
+              <strong>{{ totalDocumentos() }}</strong>
+              <span>documentos</span>
+            </div>
+          </header>
+          @for (grupo of contenido().documentosGrupos; track grupo.id) {
+            <div class="ta-docs-group">
+              <header class="ta-docs-group__head">
+                <p class="ta-docs-group__kicker">{{ grupo.kicker }}</p>
+                <h3>{{ grupo.titulo }}</h3>
+                <p class="ta-text">{{ grupo.lead }}</p>
+              </header>
+              <div class="ta-docs-grid">
+                @for (doc of grupo.documentos; track doc.titulo) {
+                  <article class="ta-doc-card">
+                    <span class="ta-doc-card__icon" aria-hidden="true">
+                      <av-portal-icon icon="document" size="1.35rem" color="currentColor" />
+                    </span>
+                    <h4>{{ doc.titulo }}</h4>
+                    <p>{{ doc.descripcion }}</p>
+                    @if (doc.meta) {
+                      <p class="ta-doc-card__meta">{{ doc.meta }}</p>
+                    }
+                    @if (documentoUrl(doc); as href) {
+                      <a class="ta-doc-card__link" [href]="href" download>
+                        <av-portal-icon icon="download-tray" size="1rem" color="currentColor" />
+                        Descargar PDF
+                      </a>
+                    }
+                  </article>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="ta-section" id="faq">
+      <div class="container">
+        <header class="ta-section-head ta-section-head--center reveal" avRevealOnScroll>
+          <p class="ta-section-head__kicker">Ayuda</p>
+          <h2 class="ta-section__title">Preguntas frecuentes</h2>
+        </header>
+        <div class="ta-faq reveal" avRevealOnScroll [revealDelay]="60">
+          @for (item of contenido().faq; track item.pregunta) {
+            <details class="ta-faq__item">
+              <summary>{{ item.pregunta }}</summary>
+              <p>{{ item.respuesta }}</p>
+            </details>
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="ta-footer">
+    <div class="container">
+      <p class="ta-footer__brand">Trabajo Seguro en Alturas · CEA SERVIAL COLOMBIA</p>
+      <p class="ta-footer__tag">Normativa · Prevención · SG-SST · Sector transporte</p>
+      <p class="ta-footer__quote">"{{ contenido().fraseFinal }}"</p>
+      <p class="ta-footer__disclaimer">{{ contenido().disclaimer }}</p>
+      <p class="ta-footer__date">Última revisión del contenido: {{ contenido().fechaActualizacion }}.</p>
+    </div>
+  </footer>
+</div>

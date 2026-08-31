@@ -1,6 +1,14 @@
 const { FUNDACION_LANDING_DEFAULTS } = require('./aulaVirtualFundacionDefaults');
 const { ACERCA_LANDING_DEFAULTS } = require('./aulaVirtualAcercaDefaults');
 const { EXAMEN_TEORICO_DEFAULTS } = require('./aulaVirtualExamenTeoricoDefaults');
+const {
+  MERCANCIAS_PELIGROSAS_DEFAULTS,
+  mergeMercanciasPeligrosasLanding,
+} = require('./aulaVirtualMercanciasPeligrosasDefaults');
+const {
+  TRABAJO_EN_ALTURAS_DEFAULTS,
+  mergeTrabajoEnAlturasLanding,
+} = require('./aulaVirtualTrabajoEnAlturasDefaults');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('./aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('./aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS } = require('./aulaVirtualHomeFotosDefaults');
@@ -183,6 +191,8 @@ const LANDING_DEFAULTS = {
     ],
   },
   examenTeorico: JSON.parse(JSON.stringify(EXAMEN_TEORICO_DEFAULTS)),
+  mercanciasPeligrosas: JSON.parse(JSON.stringify(MERCANCIAS_PELIGROSAS_DEFAULTS)),
+  trabajoEnAlturas: JSON.parse(JSON.stringify(TRABAJO_EN_ALTURAS_DEFAULTS)),
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [

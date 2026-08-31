@@ -1,5 +1,7 @@
 const { LANDING_DEFAULTS } = require('../constants/aulaVirtualLandingDefaults');
 const { examenTeoricoContenidoAntiguo } = require('../constants/aulaVirtualExamenTeoricoDefaults');
+const { mergeMercanciasPeligrosasLanding } = require('../constants/aulaVirtualMercanciasPeligrosasDefaults');
+const { mergeTrabajoEnAlturasLanding } = require('../constants/aulaVirtualTrabajoEnAlturasDefaults');
 const { CURSOS_CONDUCCION_DEFAULTS } = require('../constants/aulaVirtualCursosConduccionDefaults');
 const { GALERIA_DEFAULTS } = require('../constants/aulaVirtualGaleriaDefaults');
 const { FOTOS_INICIO_DEFAULTS, MAX_FOTOS_INICIO } = require('../constants/aulaVirtualHomeFotosDefaults');
@@ -193,6 +195,38 @@ function normalizarExamenTeorico(raw, fallback) {
     ctaFinalTexto: str(src.ctaFinalTexto, fallback.ctaFinalTexto),
     ctaFinalUrl: str(src.ctaFinalUrl, fallback.ctaFinalUrl || '/cursos-conduccion'),
   };
+}
+
+function normalizarMercanciasPeligrosas(raw, fallback) {
+  const merged = mergeMercanciasPeligrosasLanding(raw || {});
+  const fb = fallback && typeof fallback === 'object' ? fallback : {};
+  const imagenes = (merged.imagenes || []).map((img, i) => {
+    const url = str(img?.url, fb.imagenes?.[i]?.url);
+    return {
+      id: str(img?.id, fb.imagenes?.[i]?.id),
+      etiqueta: str(img?.etiqueta, fb.imagenes?.[i]?.etiqueta),
+      url,
+      urlAbsoluta: url ? publicUploadUrl(url) || url : '',
+      alt: str(img?.alt, fb.imagenes?.[i]?.alt),
+    };
+  });
+  return { ...merged, imagenes };
+}
+
+function normalizarTrabajoEnAlturas(raw, fallback) {
+  const merged = mergeTrabajoEnAlturasLanding(raw || {});
+  const fb = fallback && typeof fallback === 'object' ? fallback : {};
+  const imagenes = (merged.imagenes || []).map((img, i) => {
+    const url = str(img?.url, fb.imagenes?.[i]?.url);
+    return {
+      id: str(img?.id, fb.imagenes?.[i]?.id),
+      etiqueta: str(img?.etiqueta, fb.imagenes?.[i]?.etiqueta),
+      url,
+      urlAbsoluta: url ? publicUploadUrl(url) || url : '',
+      alt: str(img?.alt, fb.imagenes?.[i]?.alt),
+    };
+  });
+  return { ...merged, imagenes };
 }
 
 function normalizarPopup(raw) {
@@ -420,6 +454,8 @@ function normalizarLanding(input) {
     beneficios: normalizarSeccionKicker(src.beneficios, d.beneficios, ['icon', 'title', 'text']),
     licencias: normalizarLicencias(licenciasSrc, d.licencias),
     examenTeorico: normalizarExamenTeorico(src.examenTeorico, d.examenTeorico),
+    mercanciasPeligrosas: normalizarMercanciasPeligrosas(src.mercanciasPeligrosas, d.mercanciasPeligrosas),
+    trabajoEnAlturas: normalizarTrabajoEnAlturas(src.trabajoEnAlturas, d.trabajoEnAlturas),
     servicios: {
       titulo: str(serviciosSrc.titulo, d.servicios.titulo),
       items: normalizarItemsIcono(serviciosSrc.items, d.servicios.items, ['icon', 'title', 'url']),

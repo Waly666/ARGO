@@ -15,6 +15,8 @@ const {
   aulaVirtualConsultaAsistente,
   aulaVirtualCursosConduccion,
   aulaVirtualExamenTeorico,
+  aulaVirtualMercanciasPeligrosas,
+  aulaVirtualTrabajoEnAlturas,
   aulaVirtualBlog,
   aulaVirtualGaleria,
   aulaVirtualHomeFotos,
@@ -280,6 +282,32 @@ router.post(
   configPortal,
   aulaVirtualExamenTeorico.single('archivo'),
   admin.subirArchivoExamenTeoricoPortal,
+);
+router.post(
+  '/admin/portal/mercancias-peligrosas-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualMercanciasPeligrosas.single('imagen'),
+  admin.subirImagenMercanciasPeligrosasPortal,
+);
+router.delete(
+  '/admin/portal/mercancias-peligrosas-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenMercanciasPeligrosasPortal,
+);
+router.post(
+  '/admin/portal/trabajo-en-alturas-imagen',
+  requireAuth,
+  configPortal,
+  aulaVirtualTrabajoEnAlturas.single('imagen'),
+  admin.subirImagenTrabajoEnAlturasPortal,
+);
+router.delete(
+  '/admin/portal/trabajo-en-alturas-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarImagenTrabajoEnAlturasPortal,
 );
 
 router.get('/admin/blog', requireAuth, configPortal, admin.listarBlogAdmin);

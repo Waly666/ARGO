@@ -1,0 +1,394 @@
+{
+  "kicker": "CEA SERVIAL COLOMBIA · Sector transportador",
+  "titulo": "Trabajo Seguro",
+  "tituloLinea2": "en Alturas",
+  "subtitulo": "Capacitación · Prevención · Trabajador Autorizado · Sector transporte",
+  "heroLead": "Programa gamificado de 20 módulos basado en el manual 2026 de CEA SERVIAL COLOMBIA. Formación de Trabajador Autorizado para cargue, mantenimiento y operaciones en altura sobre flotas de transporte.",
+  "heroParrafos": [
+    "El trabajo en alturas en el sector transportador presenta desafíos únicos: superficies irregulares, móviles y expuestas a la intemperie — techos de tractocamiones, planchones, tolvas, cisternas y carrocerías.",
+    "La seguridad no es opcional: conocer la normativa, usar correctamente el EPI y aplicar la regla de las 3 C puede marcar la diferencia entre regresar a casa o sufrir un accidente grave."
+  ],
+  "enlaceCursoUrl": "",
+  "enlaceCursoEtiqueta": "Ir al curso interactivo",
+  "ctaNormativaTexto": "Marco normativo",
+  "ctaDocumentosTexto": "Descargar material",
+  "ctaFaqTexto": "Preguntas frecuentes",
+  "ctaInicioTexto": "Ver información completa",
+  "ctaUrl": "/trabajo-en-alturas",
+  "homeItems": [
+    {
+      "numero": 1,
+      "icon": "academic-cap",
+      "acento": "purple",
+      "titulo": "20 módulos gamificados",
+      "texto": "Curso completo alineado al manual 2026: quiz, escenarios y retos por clase."
+    },
+    {
+      "numero": 2,
+      "icon": "shield-check",
+      "acento": "blue",
+      "titulo": "Resolución 4272",
+      "texto": "Altura mínima 2,0 m, certificación cada 3 años y requisitos del Trabajador Autorizado."
+    },
+    {
+      "numero": 3,
+      "icon": "download",
+      "acento": "teal",
+      "titulo": "Material descargable",
+      "texto": "Manual 2026, Resolución 4272 y Ley 1562 en PDF para consulta offline."
+    }
+  ],
+  "fechaActualizacion": "31 de agosto de 2026",
+  "fraseFinal": "Protégete a ti mismo, protege a tus compañeros. Trabaja seguro, regresa a casa.",
+  "disclaimer": "Esta página tiene fines educativos e informativos. No sustituye la capacitación certificada presencial ni la consulta de la normativa vigente. Antes de realizar trabajo en alturas, verifique los procedimientos de su empresa y las disposiciones oficiales del Ministerio de Trabajo.",
+  "nav": [
+    {
+      "id": "inicio",
+      "label": "Inicio"
+    },
+    {
+      "id": "introduccion",
+      "label": "Introducción"
+    },
+    {
+      "id": "objetivos",
+      "label": "Objetivos"
+    },
+    {
+      "id": "normativa",
+      "label": "Normativa"
+    },
+    {
+      "id": "tres-c",
+      "label": "Regla 3 C"
+    },
+    {
+      "id": "metodologia",
+      "label": "Metodología"
+    },
+    {
+      "id": "documentos",
+      "label": "Descargas"
+    },
+    {
+      "id": "faq",
+      "label": "FAQ"
+    }
+  ],
+  "imagenes": [
+    {
+      "id": "hero",
+      "etiqueta": "Imagen principal",
+      "url": "",
+      "alt": "Trabajador en alturas sector transporte"
+    },
+    {
+      "id": "intro",
+      "etiqueta": "Sección introducción",
+      "url": "",
+      "alt": "Operaciones en altura sector transportador"
+    },
+    {
+      "id": "normativa",
+      "etiqueta": "Sección normativa",
+      "url": "",
+      "alt": "Marco jurídico trabajo en alturas"
+    },
+    {
+      "id": "epi",
+      "etiqueta": "Sección EPI",
+      "url": "",
+      "alt": "Equipo de protección individual"
+    }
+  ],
+  "introTitulo": "¿Por qué es diferente en el sector transportador?",
+  "introTexto": "No se trata solo de subir una escalera: en logística y transporte las superficies son irregulares, móviles y expuestas al clima. El propósito es identificar anclajes seguros, usar restricción y detención de caídas, e integrar la seguridad en la operación diaria.",
+  "introRiesgos": [
+    "Techos de tractocamiones y planchones",
+    "Tolvas y cisternas",
+    "Carrocerías y superficies móviles",
+    "Anclajes temporales en campo",
+    "Condiciones climáticas adversas"
+  ],
+  "introAudiencia": [
+    "Conductores y operarios de cargue",
+    "Mecánicos y personal de taller",
+    "Personal de patio y logística",
+    "Coordinadores de trabajo en alturas"
+  ],
+  "objetivosTitulo": "Objetivos del programa",
+  "objetivoGeneral": "Capacitar al personal operativo como Trabajador Autorizado en cargue, descargue, mantenimiento, carpado y amarre con sistemas de protección contra caídas (SPCC).",
+  "objetivosEspecificos": [
+    "Conocer responsabilidades legales y procedimientos de la empresa",
+    "Evaluar riesgos: superficies resbaladizas, clima y líneas eléctricas",
+    "Aplicar permiso de trabajo y listas de chequeo del vehículo",
+    "Usar eslingas de restricción y líneas de vida del sector",
+    "Aplicar la técnica de tres puntos de apoyo",
+    "Conocer el plan de rescate y prevenir el síndrome del arnés",
+    "Fortalecer la cultura de autocuidado y reporte de condiciones inseguras"
+  ],
+  "normativaTitulo": "Marco normativo",
+  "normativaLead": "En Colombia el trabajo seguro en alturas se rige principalmente por la Resolución 4272 de 2021, en el marco del SG-SST y la Ley 1562 de 2012.",
+  "normativaDestacados": [
+    {
+      "etiqueta": "Altura mínima",
+      "valor": "2,0 m",
+      "detalle": "A partir de esta altura aplica la regulación de trabajo en alturas."
+    },
+    {
+      "etiqueta": "Certificación",
+      "valor": "3 años",
+      "detalle": "Vigencia de la certificación del Trabajador Autorizado."
+    },
+    {
+      "etiqueta": "Aprobación módulo",
+      "valor": "≥ 70%",
+      "detalle": "Puntaje mínimo por clase en el curso gamificado."
+    },
+    {
+      "etiqueta": "Evaluación final",
+      "valor": "22 pts",
+      "detalle": "Puntaje mínimo en la ruleta de 15 retos (máx. 45 pts)."
+    }
+  ],
+  "normativaAspectos": [
+    "Resolución 4272 de 2021 (deroga 1409 de 2012)",
+    "Constitución Arts. 25 y 48; Código Sustantivo del Trabajo",
+    "Ley 1562 de 2012 — Sistema General de Riesgos Laborales",
+    "Decreto 1072 de 2015 — SG-SST",
+    "Normas EN 361, EN 362, EN 355 y ANSI Z359",
+    "Sanciones: multas de 1 a 500 SMMLV, clausura hasta 120 días"
+  ],
+  "modulosTitulo": "Mapa del curso — 20 módulos",
+  "modulosLead": "Cada módulo corresponde a un capítulo del manual 2026. Incluye contenido visual, evaluación y actividades interactivas.",
+  "modulos": [
+    {
+      "numero": 1,
+      "titulo": "Introducción sector transportador",
+      "resumen": "Riesgos únicos del sector transportador y enfoque operativo.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-01-thumb.jpg"
+    },
+    {
+      "numero": 2,
+      "titulo": "Objetivos del curso",
+      "resumen": "Objetivo general y específicos del Trabajador Autorizado.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-02-thumb.jpg"
+    },
+    {
+      "numero": 3,
+      "titulo": "Marco jurídico",
+      "resumen": "Resolución 4272 de 2021, SG-SST y sanciones.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-03-thumb.jpg"
+    },
+    {
+      "numero": 4,
+      "titulo": "Definiciones",
+      "resumen": "Terminología oficial Resolución 4272 Art. 3.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-04-thumb.jpg"
+    },
+    {
+      "numero": 5,
+      "titulo": "Generalidades",
+      "resumen": "Prevención colectiva vs protección individual.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-05-thumb.jpg"
+    },
+    {
+      "numero": 6,
+      "titulo": "Clasificación",
+      "resumen": "Cuatro grupos técnicos y distancia de caída.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-06-thumb.jpg"
+    },
+    {
+      "numero": 7,
+      "titulo": "Campos de acción",
+      "resumen": "Operaciones del sector transportador y riesgos.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-07-thumb.jpg"
+    },
+    {
+      "numero": 8,
+      "titulo": "Estadísticas",
+      "resumen": "Panorama OIT, Colombia y causas de caídas.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-08-thumb.jpg"
+    },
+    {
+      "numero": 9,
+      "titulo": "Conceptos técnicos",
+      "resumen": "Fundamentos técnicos para el operario.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-09-thumb.jpg"
+    },
+    {
+      "numero": 10,
+      "titulo": "Equipo de protección individual",
+      "resumen": "Casco, arnés, conectores, mosquetones y cuerdas.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-10-thumb.jpg"
+    },
+    {
+      "numero": 11,
+      "titulo": "Categorización EPI",
+      "resumen": "Categorías I, II y III según gravedad del riesgo.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-11-thumb.jpg"
+    },
+    {
+      "numero": 12,
+      "titulo": "Sistemas de ascensión",
+      "resumen": "Escaleras, andamios, PEMP y cuerdas.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-12-thumb.jpg"
+    },
+    {
+      "numero": 13,
+      "titulo": "Regla de las 3 C",
+      "resumen": "Compatibilidad, continuidad e inspección.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-13-thumb.jpg"
+    },
+    {
+      "numero": 14,
+      "titulo": "El descenso",
+      "resumen": "Tres grupos de sistemas de descenso y evacuación.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-14-thumb.jpg"
+    },
+    {
+      "numero": 15,
+      "titulo": "Descendedores industriales",
+      "resumen": "I'D S, RIG y SPARROW — fichas técnicas.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-15-thumb.jpg"
+    },
+    {
+      "numero": 16,
+      "titulo": "Bloqueadores anticaídas",
+      "resumen": "Arrestadores en líneas rígidas y flexibles.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-16-thumb.jpg"
+    },
+    {
+      "numero": 17,
+      "titulo": "Consecuencias fisiológicas",
+      "resumen": "Trauma, desaceleración y síndrome del arnés.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-17-thumb.jpg"
+    },
+    {
+      "numero": 18,
+      "titulo": "Los anclajes",
+      "resumen": "Resistencia, clasificación EN 795 y dirección de fuerzas.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-18-thumb.jpg"
+    },
+    {
+      "numero": 19,
+      "titulo": "SPCC",
+      "resumen": "Medidas pasivas/activas y líneas de vida.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-19-thumb.jpg"
+    },
+    {
+      "numero": 20,
+      "titulo": "Acceso a carrotanques",
+      "resumen": "Procedimiento y riesgos en cisternas.",
+      "thumbUrl": "/images/trabajo-en-alturas/clases/clase-20-thumb.jpg"
+    }
+  ],
+  "tresCTitulo": "Regla de las 3 C",
+  "tresCLead": "Resumen técnico esencial para el operario antes de conectar el arnés (Módulo 13).",
+  "tresCItems": [
+    {
+      "titulo": "Compatibilidad",
+      "texto": "El diámetro y la marca del bloqueador deben ser compatibles con la línea de vida o cuerda utilizada."
+    },
+    {
+      "titulo": "Continuidad",
+      "texto": "Mantener protección anticaídas el 100% del tiempo hasta que ambos pies estén en superficie segura."
+    },
+    {
+      "titulo": "Condición",
+      "texto": "Inspeccionar EPI libre de lodo, grasas, aceites, cortes o deformaciones antes de cada uso."
+    }
+  ],
+  "metodologiaTitulo": "Metodología gamificada",
+  "metodologiaLead": "Aprendizaje activo con seguimiento de progreso y asistente virtual Educarte.",
+  "metodologiaItems": [
+    {
+      "titulo": "Quiz por módulo",
+      "texto": "Preguntas de opción múltiple para reforzar conceptos clave."
+    },
+    {
+      "titulo": "Escenarios reales",
+      "texto": "Casos del sector transportador: cargue, taller, cisternas y patio."
+    },
+    {
+      "titulo": "Retos especiales",
+      "texto": "Emparejamiento, verdadero/falso e identificación de buenas prácticas."
+    },
+    {
+      "titulo": "Videoteca",
+      "texto": "17 videos en YouTube: normativa, técnicas, rescate y líneas de vida."
+    },
+    {
+      "titulo": "Evaluación final",
+      "texto": "Ruleta con 8 categorías temáticas y 15 retos para certificar conocimientos."
+    }
+  ],
+  "evaluacionTitulo": "Evaluación final",
+  "evaluacionLead": "Consolida lo aprendido en los 20 módulos mediante una ruleta gamificada.",
+  "evaluacionDetalles": [
+    "8 categorías: marco jurídico, definiciones, generalidades, sector transporte, EPI, ascenso/descenso, anclajes y emergencia",
+    "15 retos con 2 puntos por acierto (3 con racha ×3)",
+    "Aprobación con 22 puntos de un máximo de 45",
+    "Desbloqueo de constancia al alcanzar el puntaje mínimo"
+  ],
+  "documentosTitulo": "Material descargable",
+  "documentosLead": "Manual del curso y normativa de apoyo en PDF para consulta offline.",
+  "documentosGrupos": [
+    {
+      "id": "manual",
+      "kicker": "Manual del curso",
+      "titulo": "Manual Trabajo Seguro en Alturas 2026",
+      "lead": "Versión impresa del curso: 20 módulos del manual CEA SERVIAL COLOMBIA para consulta offline.",
+      "documentos": [
+        {
+          "titulo": "Manual Trabajo Seguro en Alturas 2026",
+          "descripcion": "Contenido completo del programa de formación para Trabajador Autorizado en el sector transportador.",
+          "archivoUrl": "/documents/trabajo-en-alturas/manual-trabajo-seguro-en-alturas-2026.pdf",
+          "meta": "PDF · manual 2026"
+        }
+      ]
+    },
+    {
+      "id": "normativa",
+      "kicker": "Marco legal",
+      "titulo": "Normativa de apoyo",
+      "lead": "Disposiciones legales que rigen el trabajo seguro en alturas en Colombia.",
+      "documentos": [
+        {
+          "titulo": "Resolución 4272 de 2021",
+          "descripcion": "Reglamenta el trabajo seguro en alturas: requisitos, certificación, altura mínima de 2,0 m y vigencia de 3 años.",
+          "archivoUrl": "/documents/trabajo-en-alturas/resolucion-4272-2021-trabajo-alturas.pdf",
+          "meta": "PDF · normativa principal"
+        },
+        {
+          "titulo": "Ley 1562 de 2012",
+          "descripcion": "Sistema General de Riesgos Laborales (SGRL) y obligaciones en seguridad y salud en el trabajo.",
+          "archivoUrl": "/documents/trabajo-en-alturas/ley-1562-2012.pdf",
+          "meta": "PDF · SGRL"
+        }
+      ]
+    }
+  ],
+  "faq": [
+    {
+      "pregunta": "¿A partir de qué altura aplica la normativa?",
+      "respuesta": "La Resolución 4272 de 2021 define trabajo en alturas a partir de 2,0 metros sobre el nivel de referencia."
+    },
+    {
+      "pregunta": "¿Cuánto dura la certificación?",
+      "respuesta": "La certificación del Trabajador Autorizado tiene vigencia de 3 años según la normativa vigente."
+    },
+    {
+      "pregunta": "¿Qué puntaje se necesita para aprobar cada módulo?",
+      "respuesta": "Se requiere al menos 70% en las actividades de cada clase del curso gamificado."
+    },
+    {
+      "pregunta": "¿Qué es un Trabajador Autorizado?",
+      "respuesta": "Persona capacitada y autorizada por el empleador para realizar trabajo en alturas, con conocimiento de riesgos, EPI y procedimientos de emergencia."
+    },
+    {
+      "pregunta": "¿Qué normas técnicas internacionales se referencian?",
+      "respuesta": "EN 361 (arnés), EN 362 (conectores), EN 355 (absorbedores), EN 795 (anclajes) y ANSI Z359, entre otras."
+    }
+  ]
+}

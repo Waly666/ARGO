@@ -347,6 +347,120 @@
   </div>
 </section>
     }
+    @case ('mercanciasPeligrosas') {
+<section class="section section-mercancias-peligrosas" id="mercancias-peligrosas-home">
+  <div class="container">
+    <header class="exteor-head center reveal" avRevealOnScroll>
+      <p class="kicker kicker--mp">{{ landing().mercanciasPeligrosas.kicker }}</p>
+      <h2 class="exteor-title" avAnimateTitle [titleDelay]="40">
+        <span class="exteor-title__line">{{ landing().mercanciasPeligrosas.titulo }}</span>
+        <span class="exteor-title__line exteor-title__line--accent exteor-title__line--mp">{{
+          landing().mercanciasPeligrosas.tituloLinea2
+        }}</span>
+      </h2>
+    </header>
+
+    <div class="exteor-fecha exteor-fecha--mp reveal" avRevealOnScroll [revealDelay]="90">
+      <av-portal-icon icon="shield" class="exteor-fecha__icon" size="1.35rem" color="currentColor" />
+      <p class="exteor-fecha__text">
+        {{ landing().mercanciasPeligrosas.subtitulo }}
+      </p>
+    </div>
+
+    @if (landing().mercanciasPeligrosas.enlaceOficialUrl.trim()) {
+      <p class="exteor-oficial reveal" avRevealOnScroll [revealDelay]="105">
+        <a
+          class="exteor-oficial__link exteor-oficial__link--mp"
+          [href]="landing().mercanciasPeligrosas.enlaceOficialUrl"
+          target="_blank"
+          rel="noopener noreferrer">
+          {{ landing().mercanciasPeligrosas.enlaceOficialEtiqueta || 'Consultar en MinTransporte' }} ↗
+        </a>
+      </p>
+    }
+
+    <ol class="exteor-list">
+      @for (item of landing().mercanciasPeligrosas.homeItems; track item.numero; let i = $index) {
+        <li
+          class="exteor-item reveal"
+          [ngClass]="'exteor-item--' + item.acento"
+          avRevealOnScroll
+          [revealDelay]="120 + i * 60">
+          <span class="exteor-item__tab" aria-hidden="true">
+            <span class="exteor-item__num">{{ item.numero }}</span>
+          </span>
+          <span class="exteor-item__icon-wrap" aria-hidden="true">
+            <av-portal-icon [icon]="item.icon" class="exteor-item__icon" size="1.45rem" color="currentColor" />
+          </span>
+          <div class="exteor-item__body">
+            <h3>{{ item.titulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </div>
+        </li>
+      }
+    </ol>
+
+    @if (mercanciasPeligrosasCtaTexto()) {
+      <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
+        <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--mp" [routerLink]="mercanciasPeligrosasCtaUrl()">
+          {{ mercanciasPeligrosasCtaTexto() }}
+        </a>
+      </div>
+    }
+  </div>
+</section>
+    }
+    @case ('trabajoEnAlturas') {
+<section class="section section-trabajo-en-alturas" id="trabajo-en-alturas-home">
+  <div class="container">
+    <header class="exteor-head center reveal" avRevealOnScroll>
+      <p class="kicker kicker--ta">{{ landing().trabajoEnAlturas.kicker }}</p>
+      <h2 class="exteor-title" avAnimateTitle [titleDelay]="40">
+        <span class="exteor-title__line">{{ landing().trabajoEnAlturas.titulo }}</span>
+        <span class="exteor-title__line exteor-title__line--accent exteor-title__line--ta">{{
+          landing().trabajoEnAlturas.tituloLinea2
+        }}</span>
+      </h2>
+    </header>
+
+    <div class="exteor-fecha exteor-fecha--ta reveal" avRevealOnScroll [revealDelay]="90">
+      <av-portal-icon icon="shield-check" class="exteor-fecha__icon" size="1.35rem" color="currentColor" />
+      <p class="exteor-fecha__text">
+        {{ landing().trabajoEnAlturas.subtitulo }}
+      </p>
+    </div>
+
+    <ol class="exteor-list">
+      @for (item of landing().trabajoEnAlturas.homeItems; track item.numero; let i = $index) {
+        <li
+          class="exteor-item reveal"
+          [ngClass]="'exteor-item--' + item.acento"
+          avRevealOnScroll
+          [revealDelay]="120 + i * 60">
+          <span class="exteor-item__tab" aria-hidden="true">
+            <span class="exteor-item__num">{{ item.numero }}</span>
+          </span>
+          <span class="exteor-item__icon-wrap" aria-hidden="true">
+            <av-portal-icon [icon]="item.icon" class="exteor-item__icon" size="1.45rem" color="currentColor" />
+          </span>
+          <div class="exteor-item__body">
+            <h3>{{ item.titulo }}</h3>
+            <p>{{ item.texto }}</p>
+          </div>
+        </li>
+      }
+    </ol>
+
+    @if (trabajoEnAlturasCtaTexto()) {
+      <div class="exteor-cta reveal" avRevealOnScroll [revealDelay]="180">
+        <a class="btn btn-primary exteor-cta__btn exteor-cta__btn--ta" [routerLink]="trabajoEnAlturasCtaUrl()">
+          {{ trabajoEnAlturasCtaTexto() }}
+        </a>
+      </div>
+    }
+  </div>
+</section>
+    }
     @case ('quoteBand') {
 <section class="quote-band">
 

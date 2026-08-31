@@ -16,12 +16,22 @@ import {
 import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { mergePortalLanding, PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT } from '../../core/constants/portal-landing-defaults';
 import { mergeExamenTeoricoLanding, PortalExamenTeoricoLanding } from '../../core/constants/examen-teorico-landing-defaults';
+import {
+  mergeMercanciasPeligrosasLanding,
+  PortalMercanciasPeligrosasLanding,
+} from '../../core/constants/mercancias-peligrosas-landing-defaults';
+import {
+  mergeTrabajoEnAlturasLanding,
+  PortalTrabajoEnAlturasLanding,
+} from '../../core/constants/trabajo-en-alturas-landing-defaults';
 import { PORTAL_ASISTENTE_PAGINAS } from '../../core/utils/portal-asistente.util';
 import { PortalPaginaKey } from '../../core/constants/portal-site-defaults';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 import { PortalFundacionEditorComponent } from './portal-fundacion-editor.component';
 import { PortalCursosConduccionEditorComponent } from './portal-cursos-conduccion-editor.component';
 import { PortalExamenTeoricoEditorComponent } from './portal-examen-teorico-editor.component';
+import { PortalMercanciasPeligrosasEditorComponent } from './portal-mercancias-peligrosas-editor.component';
+import { PortalTrabajoEnAlturasEditorComponent } from './portal-trabajo-en-alturas-editor.component';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
 import { PortalHomeFotosEditorComponent } from './portal-home-fotos-editor.component';
 import { PortalHomePublicidadEditorComponent } from './portal-home-publicidad-editor.component';
@@ -52,6 +62,8 @@ export type BuilderPanel =
   | 'consultaCertificados'
   | 'cursosConduccion'
   | 'examenTeorico'
+  | 'mercanciasPeligrosas'
+  | 'trabajoEnAlturas'
   | 'empresa'
   | 'marca';
 
@@ -90,6 +102,8 @@ interface GuiaPaso {
     PortalFundacionEditorComponent,
     PortalCursosConduccionEditorComponent,
     PortalExamenTeoricoEditorComponent,
+    PortalMercanciasPeligrosasEditorComponent,
+    PortalTrabajoEnAlturasEditorComponent,
     PortalGaleriaFotosEditorComponent,
     PortalHomeFotosEditorComponent,
     PortalHomePublicidadEditorComponent,
@@ -146,6 +160,8 @@ export class PortalSiteBuilderComponent {
         { id: 'institucional', icon: '🏛️', label: 'Quiénes somos' },
         { id: 'cursosConduccion', icon: '🚗', label: 'Cursos conducción' },
         { id: 'examenTeorico', icon: '📋', label: 'Examen teórico' },
+        { id: 'mercanciasPeligrosas', icon: '☣️', label: 'Mercancías peligrosas' },
+        { id: 'trabajoEnAlturas', icon: '🪜', label: 'Trabajo en alturas' },
         { id: 'galeria', icon: '📷', label: 'Galería' },
         { id: 'blog', icon: '📰', label: 'Blog' },
         { id: 'asistente', icon: '🤖', label: 'Asistente' },
@@ -242,6 +258,34 @@ export class PortalSiteBuilderComponent {
     return this.portalForm.landing.examenTeorico;
   }
 
+  ensureMercanciasPeligrosasLanding(): PortalMercanciasPeligrosasLanding {
+    if (!this.portalForm.landing) {
+      this.portalForm.landing = mergePortalLanding();
+    }
+    if (!this.portalForm.landing.mercanciasPeligrosas) {
+      this.portalForm.landing.mercanciasPeligrosas = mergePortalLanding().mercanciasPeligrosas;
+    } else {
+      this.portalForm.landing.mercanciasPeligrosas = mergeMercanciasPeligrosasLanding(
+        this.portalForm.landing.mercanciasPeligrosas,
+      );
+    }
+    return this.portalForm.landing.mercanciasPeligrosas;
+  }
+
+  ensureTrabajoEnAlturasLanding(): PortalTrabajoEnAlturasLanding {
+    if (!this.portalForm.landing) {
+      this.portalForm.landing = mergePortalLanding();
+    }
+    if (!this.portalForm.landing.trabajoEnAlturas) {
+      this.portalForm.landing.trabajoEnAlturas = mergePortalLanding().trabajoEnAlturas;
+    } else {
+      this.portalForm.landing.trabajoEnAlturas = mergeTrabajoEnAlturasLanding(
+        this.portalForm.landing.trabajoEnAlturas,
+      );
+    }
+    return this.portalForm.landing.trabajoEnAlturas;
+  }
+
   get consultaCertificados() {
     return this.landing.consultaCertificados;
   }
@@ -317,6 +361,16 @@ export class PortalSiteBuilderComponent {
         title: 'Examen teórico (normatividad)',
         help:
           'Página oculta del menú (/examen-teorico) con información del examen teórico, normograma con PDF por norma y resoluciones descargables. El botón del inicio lleva a esta página.',
+      },
+      mercanciasPeligrosas: {
+        title: 'Mercancías peligrosas',
+        help:
+          'Página educativa en /mercancias-peligrosas sobre normativa, clasificación, documentación y seguridad. Las imágenes se guardan al subirlas; publique el sitio para aplicar cambios de texto.',
+      },
+      trabajoEnAlturas: {
+        title: 'Trabajo en alturas',
+        help:
+          'Página educativa en /trabajo-en-alturas con el programa de 20 módulos, normativa Res. 4272 y material descargable. Las imágenes se guardan al subirlas; publique el sitio para los textos.',
       },
       blog: {
         title: 'Página Blog',

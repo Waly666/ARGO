@@ -13,6 +13,16 @@ import {
   type PortalExamenTeoricoLanding,
 } from '../pages/home/examen-teorico-content';
 import {
+  MERCANCIAS_PELIGROSAS_LANDING,
+  mergeMercanciasPeligrosasLanding,
+  type PortalMercanciasPeligrosasLanding,
+} from '../pages/mercancias-peligrosas/mercancias-peligrosas-content';
+import {
+  TRABAJO_EN_ALTURAS_LANDING,
+  mergeTrabajoEnAlturasLanding,
+  type PortalTrabajoEnAlturasLanding,
+} from '../pages/trabajo-en-alturas/trabajo-en-alturas-content';
+import {
   APP_MOBILE,
   BENEFICIOS_CURSOS,
   CARRERAS_TECNICAS,
@@ -212,6 +222,8 @@ export interface PortalLandingConfig {
     }[];
   };
   examenTeorico: PortalExamenTeoricoLanding;
+  mercanciasPeligrosas: PortalMercanciasPeligrosasLanding;
+  trabajoEnAlturas: PortalTrabajoEnAlturasLanding;
   servicios: { titulo: string; items: { icon: string; title: string; url?: string }[] };
   valores: { titulo: string; lead: string; items: { title: string; text: string }[] };
   testimonios: {
@@ -401,6 +413,12 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     items: LICENCIAS_HOME.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
   },
   examenTeorico: JSON.parse(JSON.stringify(EXAMEN_TEORICO_LANDING)) as PortalExamenTeoricoLanding,
+  mercanciasPeligrosas: JSON.parse(
+    JSON.stringify(MERCANCIAS_PELIGROSAS_LANDING),
+  ) as PortalMercanciasPeligrosasLanding,
+  trabajoEnAlturas: JSON.parse(
+    JSON.stringify(TRABAJO_EN_ALTURAS_LANDING),
+  ) as PortalTrabajoEnAlturasLanding,
   servicios: { titulo: 'Todo lo que necesita tu empresa en seguridad vial', items: [...SERVICIOS_EMPRESA] },
   valores: { titulo: '¡Somos tu mejor opción!', lead: '', items: [...VALORES] },
   testimonios: {
@@ -615,6 +633,8 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
         : d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
     },
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
+    mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
+    trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
     servicios: {
       ...d.servicios,
       ...raw.servicios,

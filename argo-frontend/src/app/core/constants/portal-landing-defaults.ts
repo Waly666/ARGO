@@ -21,10 +21,22 @@ import {
   mergeExamenTeoricoLanding,
   PortalExamenTeoricoLanding,
 } from './examen-teorico-landing-defaults';
+import {
+  MERCANCIAS_PELIGROSAS_LANDING_DEFAULTS,
+  mergeMercanciasPeligrosasLanding,
+  PortalMercanciasPeligrosasLanding,
+} from './mercancias-peligrosas-landing-defaults';
+import {
+  TRABAJO_EN_ALTURAS_LANDING,
+  mergeTrabajoEnAlturasLanding,
+  PortalTrabajoEnAlturasLanding,
+} from './trabajo-en-alturas-landing-defaults';
 
 export type { PortalCursosConduccionLanding };
 export type { PortalAcercaLanding };
 export type { PortalExamenTeoricoLanding };
+export type { PortalMercanciasPeligrosasLanding };
+export type { PortalTrabajoEnAlturasLanding };
 export type { PortalFundacionLanding };
 export interface LandingItemIcon {
   icon: string;
@@ -243,6 +255,8 @@ export interface PortalLandingConfig {
   beneficios: { kicker: string; titulo: string; lead: string; items: LandingItemIcon[] };
   licencias: { kicker: string; titulo: string; lead: string; items: LandingLicenciaItem[] };
   examenTeorico: PortalExamenTeoricoLanding;
+  mercanciasPeligrosas: PortalMercanciasPeligrosasLanding;
+  trabajoEnAlturas: PortalTrabajoEnAlturasLanding;
   servicios: { titulo: string; items: LandingServicioItem[] };
   valores: { titulo: string; lead: string; items: LandingItemBasico[] };
   testimonios: { kicker: string; titulo: string; lead: string; items: LandingTestimonio[] };
@@ -466,6 +480,12 @@ export const PORTAL_LANDING_DEFAULTS: PortalLandingConfig = {
     ],
   },
   examenTeorico: JSON.parse(JSON.stringify(EXAMEN_TEORICO_LANDING_DEFAULTS)) as PortalExamenTeoricoLanding,
+  mercanciasPeligrosas: JSON.parse(
+    JSON.stringify(MERCANCIAS_PELIGROSAS_LANDING_DEFAULTS),
+  ) as PortalMercanciasPeligrosasLanding,
+  trabajoEnAlturas: JSON.parse(
+    JSON.stringify(TRABAJO_EN_ALTURAS_LANDING),
+  ) as PortalTrabajoEnAlturasLanding,
   servicios: {
     titulo: 'Todo lo que necesita tu empresa en seguridad vial',
     items: [
@@ -850,6 +870,8 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
         : d.licencias.items.map((item) => ({ ...item, incluye: [...item.incluye] })),
     },
     examenTeorico: mergeExamenTeoricoLanding(raw.examenTeorico),
+    mercanciasPeligrosas: mergeMercanciasPeligrosasLanding(raw.mercanciasPeligrosas),
+    trabajoEnAlturas: mergeTrabajoEnAlturasLanding(raw.trabajoEnAlturas),
     servicios: {
       ...d.servicios,
       ...raw.servicios,

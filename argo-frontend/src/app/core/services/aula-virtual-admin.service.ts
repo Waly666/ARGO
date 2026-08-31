@@ -546,6 +546,68 @@ export class AulaVirtualAdminService {
     }>(`${this.base}/portal/examen-teorico-archivo`, fd);
   }
 
+  subirImagenMercanciasPeligrosasPortal(
+    file: File,
+    imagenId: string,
+  ): Observable<{
+    config: PortalAulaConfig;
+    imagenId: string;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('imagenId', imagenId);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      imagenId: string;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/mercancias-peligrosas-imagen`, fd);
+  }
+
+  quitarImagenMercanciasPeligrosasPortal(
+    imagenId: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/mercancias-peligrosas-imagen`,
+      { body: { imagenId } },
+    );
+  }
+
+  subirImagenTrabajoEnAlturasPortal(
+    file: File,
+    imagenId: string,
+  ): Observable<{
+    config: PortalAulaConfig;
+    imagenId: string;
+    url: string;
+    urlAbsoluta?: string;
+    message: string;
+  }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    fd.append('imagenId', imagenId);
+    return this.http.post<{
+      config: PortalAulaConfig;
+      imagenId: string;
+      url: string;
+      urlAbsoluta?: string;
+      message: string;
+    }>(`${this.base}/portal/trabajo-en-alturas-imagen`, fd);
+  }
+
+  quitarImagenTrabajoEnAlturasPortal(
+    imagenId: string,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/trabajo-en-alturas-imagen`,
+      { body: { imagenId } },
+    );
+  }
+
   matricularAlumno(
     idPrograma: string | number,
     body: {

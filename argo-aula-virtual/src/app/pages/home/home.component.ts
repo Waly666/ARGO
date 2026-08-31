@@ -125,6 +125,26 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return raw;
   });
 
+  mercanciasPeligrosasCtaTexto = computed(() => {
+    const raw = this.landing().mercanciasPeligrosas?.ctaInicioTexto?.trim() || '';
+    return raw || 'Ver información completa';
+  });
+
+  mercanciasPeligrosasCtaUrl = computed(() => {
+    const raw = this.landing().mercanciasPeligrosas?.ctaUrl?.trim() || '';
+    return raw || '/mercancias-peligrosas';
+  });
+
+  trabajoEnAlturasCtaTexto = computed(() => {
+    const raw = this.landing().trabajoEnAlturas?.ctaInicioTexto?.trim() || '';
+    return raw || 'Ver información completa';
+  });
+
+  trabajoEnAlturasCtaUrl = computed(() => {
+    const raw = this.landing().trabajoEnAlturas?.ctaUrl?.trim() || '';
+    return raw || '/trabajo-en-alturas';
+  });
+
   fotoInicioUrl(foto: { url?: string; urlAbsoluta?: string }) {
     return resolveUploadUrl(foto.urlAbsoluta || foto.url);
   }

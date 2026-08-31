@@ -66,6 +66,20 @@ export const routes: Routes = [
           import('./pages/examen-teorico/examen-teorico.component').then((m) => m.ExamenTeoricoComponent),
       },
       {
+        path: 'mercancias-peligrosas',
+        loadComponent: () =>
+          import('./pages/mercancias-peligrosas/mercancias-peligrosas.component').then(
+            (m) => m.MercanciasPeligrosasComponent,
+          ),
+      },
+      {
+        path: 'trabajo-en-alturas',
+        loadComponent: () =>
+          import('./pages/trabajo-en-alturas/trabajo-en-alturas.component').then(
+            (m) => m.TrabajoEnAlturasComponent,
+          ),
+      },
+      {
         path: 'blog',
         canActivate: [portalPageGuard],
         loadComponent: () => import('./pages/blog/blog.component').then((m) => m.BlogComponent),

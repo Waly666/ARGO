@@ -306,6 +306,8 @@ module.exports = {
   aulaVirtualConsultaAsistente: buildVideo('aula-virtual-consulta-asistente', 50),
   aulaVirtualCursosConduccion: buildPdf('aula-virtual-cursos-conduccion', 15),
   aulaVirtualExamenTeorico: buildPdf('aula-virtual-examen-teorico', 15),
+  aulaVirtualMercanciasPeligrosas: buildImagen('aula-virtual-mercancias-peligrosas', 8),
+  aulaVirtualTrabajoEnAlturas: buildImagen('aula-virtual-trabajo-en-alturas', 8),
   aulaVirtualBlog: buildImagen('aula-virtual-blog', 8),
   aulaVirtualGaleria: buildGaleriaMedia('aula-virtual-galeria', 25),
   aulaVirtualHomeFotos: buildImagen('aula-virtual-home-fotos', 8),

@@ -1,0 +1,111 @@
+<div class="psb-stack">
+  <div class="psb-actions">
+    <button type="button" class="psb-btn psb-btn--ghost" (click)="restaurarDefaults()">
+      Restaurar textos por defecto
+    </button>
+  </div>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Encabezado de la página</h3>
+    <div class="psb-grid3">
+      <label class="psb-field psb-field--plain">
+        <span>Etiqueta pequeña</span>
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.kicker" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título (línea 1)</span>
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.titulo" />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Título (línea 2)</span>
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.tituloLinea2" />
+      </label>
+    </div>
+    <label class="psb-field psb-field--plain">
+      <span>Subtítulo</span>
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.subtitulo" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Texto principal del inicio</span>
+      <textarea class="psb-input" rows="2" [(ngModel)]="trabajoEnAlturas.heroLead"></textarea>
+    </label>
+    <div class="psb-grid2">
+      <label class="psb-field psb-field--plain">
+        <span>Enlace al curso interactivo</span>
+        <input
+          type="text"
+          class="psb-input"
+          [(ngModel)]="trabajoEnAlturas.enlaceCursoUrl"
+          placeholder="/cursos/alturas o https://..."
+        />
+      </label>
+      <label class="psb-field psb-field--plain">
+        <span>Texto del botón del curso</span>
+        <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.enlaceCursoEtiqueta" />
+      </label>
+    </div>
+    <p class="psb-note">
+      El botón principal del encabezado solo aparece si hay enlace. Puede ser ruta interna
+      (<strong>/cursos/...</strong>) o URL externa (<strong>https://...</strong>).
+    </p>
+    <label class="psb-field psb-field--plain">
+      <span>Fecha de actualización del contenido</span>
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.fechaActualizacion" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Frase final de la página</span>
+      <input type="text" class="psb-input" [(ngModel)]="trabajoEnAlturas.fraseFinal" />
+    </label>
+    <label class="psb-field psb-field--plain">
+      <span>Aviso legal / disclaimer</span>
+      <textarea class="psb-input" rows="4" [(ngModel)]="trabajoEnAlturas.disclaimer"></textarea>
+    </label>
+  </section>
+
+  <section class="psb-card">
+    <h3 class="psb-card__title">Imágenes de la página</h3>
+    <p class="psb-note">
+      Cada imagen se guarda al subirla. Ruta pública:
+      <strong>/trabajo-en-alturas</strong>
+    </p>
+    @for (img of trabajoEnAlturas.imagenes; track img.id) {
+      <div class="psb-imagen-slot">
+        <div class="psb-imagen-slot__head">
+          <strong>{{ img.etiqueta }}</strong>
+          <span class="psb-muted">id: {{ img.id }}</span>
+        </div>
+        @if (previewUrl(img); as src) {
+          <img class="psb-imagen-slot__preview" [src]="src" [alt]="img.alt" />
+        } @else {
+          <div class="psb-imagen-slot__empty">Sin imagen (se usará el diseño sin foto)</div>
+        }
+        <label class="psb-field psb-field--plain">
+          <span>Texto alternativo (accesibilidad)</span>
+          <input type="text" class="psb-input" [(ngModel)]="img.alt" />
+        </label>
+        <div class="psb-imagen-slot__actions">
+          <label class="psb-btn psb-btn--secondary">
+            {{ uploadingId() === img.id ? 'Subiendo…' : 'Subir imagen' }}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              [disabled]="uploadingId() === img.id"
+              (change)="onImagenSelected($event, img.id)"
+            />
+          </label>
+          @if (img.url) {
+            <button
+              type="button"
+              class="psb-btn psb-btn--ghost"
+              [disabled]="uploadingId() === img.id"
+              (click)="quitarImagen(img.id)"
+            >
+              Quitar imagen
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </section>
+</div>

@@ -1,0 +1,505 @@
+<div class="mp-page">
+  <header class="mp-hero" id="inicio">
+    <div class="container">
+      <a routerLink="/" class="mp-back">← Volver al inicio</a>
+      <div class="mp-hero__grid">
+        <div class="mp-hero__copy">
+          <p class="mp-kicker">{{ contenido().kicker }}</p>
+          <h1 class="mp-title">
+            <span>{{ contenido().titulo }}</span>
+            <span class="mp-title__accent">{{ contenido().tituloLinea2 }}</span>
+          </h1>
+          <p class="mp-subtitle">{{ contenido().subtitulo }}</p>
+          <div class="mp-hero__stats" aria-label="Resumen de contenidos">
+            <span class="mp-stat"><strong>9</strong> clases ONU</span>
+            <span class="mp-stat"><strong>{{ totalDocumentos() }}</strong> PDFs</span>
+            <span class="mp-stat"><strong>NTC</strong> técnicas</span>
+          </div>
+          <p class="mp-lead">{{ contenido().heroLead }}</p>
+          @for (p of contenido().heroParrafos; track $index) {
+            <p class="mp-text">{{ p }}</p>
+          }
+          <div class="mp-hero__ctas">
+            @if (tieneEnlaceCurso()) {
+              @if (enlaceCursoExterno()) {
+                <a
+                  class="btn btn-primary"
+                  [href]="enlaceCursoHref()!"
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  {{ contenido().enlaceCursoEtiqueta }} ↗
+                </a>
+              } @else {
+                <a class="btn btn-primary" [routerLink]="enlaceCursoHref()!">
+                  {{ contenido().enlaceCursoEtiqueta }}
+                </a>
+              }
+            }
+            <button type="button" class="btn btn-primary" (click)="scrollTo('normativa')">
+              {{ contenido().ctaNormativaTexto }}
+            </button>
+            <button type="button" class="btn btn-outline mp-btn-outline" (click)="scrollTo('clasificacion')">
+              {{ contenido().ctaClasificacionTexto }}
+            </button>
+            <button type="button" class="btn btn-outline mp-btn-outline" (click)="scrollTo('faq')">
+              {{ contenido().ctaFaqTexto }}
+            </button>
+          </div>
+          <p class="mp-actualizado">
+            <span class="mp-badge mp-badge--live">
+              <span class="mp-badge__dot" aria-hidden="true"></span>
+              Actualizado a <strong>{{ contenido().fechaActualizacion }}</strong>
+            </span>
+          </p>
+        </div>
+        <figure class="mp-hero__media">
+          <div class="mp-hero__media-frame">
+          @if (imagenUrl(imagenPorId(contenido(), 'hero')); as src) {
+            <img [src]="src" [alt]="imagenPorId(contenido(), 'hero')?.alt || ''" />
+          } @else {
+            <div class="mp-placeholder" aria-hidden="true">
+              <av-portal-icon icon="shield-check" size="2.5rem" color="currentColor" />
+              <span>Transporte seguro</span>
+              <small>Imagen configurable desde el editor</small>
+            </div>
+          }
+          </div>
+        </figure>
+      </div>
+    </div>
+  </header>
+
+  <nav class="mp-nav" aria-label="Secciones de mercancías peligrosas">
+    <div class="container mp-nav__inner">
+      <button type="button" class="mp-nav__toggle" (click)="toggleNav()" [attr.aria-expanded]="navAbierto()">
+        Menú {{ navAbierto() ? '▲' : '▼' }}
+      </button>
+      <ul class="mp-nav__list" [class.mp-nav__list--open]="navAbierto()">
+        @for (item of contenido().nav; track item.id) {
+          <li>
+            <button type="button" class="mp-nav__link" (click)="scrollTo(item.id)">{{ item.label }}</button>
+          </li>
+        }
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <section class="mp-section" id="que-son">
+      <div class="container mp-split">
+        <div class="reveal" avRevealOnScroll>
+          <header class="mp-section-head">
+            <p class="mp-section-head__kicker">Fundamentos</p>
+            <h2 class="mp-section__title">{{ contenido().queSonTitulo }}</h2>
+          </header>
+          <p class="mp-text">{{ contenido().queSonDefinicion }}</p>
+          <h3 class="mp-section__subtitle">Características de riesgo</h3>
+          <ul class="mp-tags">
+            @for (r of contenido().queSonRiesgos; track r) {
+              <li>{{ r }}</li>
+            }
+          </ul>
+          <p class="mp-text">{{ contenido().queSonPorQue }}</p>
+          <ul class="mp-inline-list">
+            @for (p of contenido().queSonProtege; track p) {
+              <li>{{ p }}</li>
+            }
+          </ul>
+        </div>
+        <figure class="mp-side-media reveal" avRevealOnScroll [revealDelay]="80">
+          @if (imagenUrl(imagenPorId(contenido(), 'que-son')); as src) {
+            <img [src]="src" [alt]="imagenPorId(contenido(), 'que-son')?.alt || ''" />
+          } @else {
+            <div class="mp-placeholder mp-placeholder--side"><span>Imagen sección</span></div>
+          }
+        </figure>
+      </div>
+    </section>
+
+    <section class="mp-section mp-section--alt" id="normativa">
+      <div class="container">
+        <header class="mp-section-head mp-section-head--center reveal" avRevealOnScroll>
+          <p class="mp-section-head__kicker">Marco legal</p>
+          <h2 class="mp-section__title">{{ contenido().normativaTitulo }}</h2>
+          <p class="mp-section-head__lead">{{ contenido().normativaLead }}</p>
+        </header>
+        <div class="mp-normativa-grid reveal" avRevealOnScroll [revealDelay]="60">
+          <article class="mp-card mp-card--featured">
+            <span class="mp-card__icon" aria-hidden="true">
+              <av-portal-icon icon="document" size="1.5rem" color="currentColor" />
+            </span>
+            <p class="mp-card__eyebrow">Principal norma</p>
+            <h3>{{ contenido().normativaDecretoTitulo }}</h3>
+            <p>{{ contenido().normativaDecretoTexto }}</p>
+          </article>
+          @for (ntc of contenido().normativaNtcs; track ntc.codigo) {
+            <article class="mp-card">
+              <p class="mp-card__eyebrow">{{ ntc.codigo }}</p>
+              <h3>{{ ntc.titulo }}</h3>
+            </article>
+          }
+        </div>
+        <article class="mp-alert" id="actualizacion-normativa">
+          <p class="mp-alert__label">{{ contenido().actualizacionTitulo }}</p>
+          <p><strong>{{ contenido().actualizacionAviso }}</strong></p>
+          <p>{{ contenido().actualizacionTexto }}</p>
+          @if (contenido().enlaceOficialUrl.trim()) {
+            <a
+              class="mp-link"
+              [href]="contenido().enlaceOficialUrl"
+              target="_blank"
+              rel="noopener noreferrer">
+              {{ contenido().enlaceOficialEtiqueta }} ↗
+            </a>
+          }
+        </article>
+        <figure class="mp-banner-media">
+          @if (imagenUrl(imagenPorId(contenido(), 'normativa')); as src) {
+            <img [src]="src" [alt]="imagenPorId(contenido(), 'normativa')?.alt || ''" />
+          }
+        </figure>
+      </div>
+    </section>
+
+    <section class="mp-section" id="clasificacion">
+      <div class="container">
+        <header class="mp-section-head mp-section-head--center reveal" avRevealOnScroll>
+          <p class="mp-section-head__kicker">Clasificación ONU</p>
+          <h2 class="mp-section__title">{{ contenido().clasificacionTitulo }}</h2>
+          <p class="mp-section-head__lead">{{ contenido().clasificacionLead }}</p>
+        </header>
+        <div class="mp-clases">
+          @for (clase of contenido().clases; track clase.numero) {
+            <article class="mp-clase reveal" [ngClass]="'mp-clase--' + claseAcento(clase.numero)" avRevealOnScroll [revealDelay]="40 + clase.numero * 25">
+              <span class="mp-clase__badge" aria-hidden="true">{{ clase.numero }}</span>
+              <span class="mp-clase__num">Clase {{ clase.numero }}</span>
+              <h3>{{ clase.titulo }}</h3>
+              <p>{{ clase.texto }}</p>
+            </article>
+          }
+        </div>
+        <div class="mp-subblock">
+          <h3 class="mp-section__subtitle">{{ contenido().identificacionTitulo }}</h3>
+          <p class="mp-text">{{ contenido().identificacionLead }}</p>
+          <ul class="mp-check-list">
+            @for (b of contenido().identificacionBeneficios; track b) {
+              <li>{{ b }}</li>
+            }
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="mp-section mp-section--alt" id="responsabilidades">
+      <div class="container">
+        <header class="mp-section-head reveal" avRevealOnScroll>
+          <p class="mp-section-head__kicker">Cadena logística</p>
+          <h2 class="mp-section__title">{{ contenido().responsabilidadesTitulo }}</h2>
+          <p class="mp-section-head__lead">{{ contenido().responsabilidadesLead }}</p>
+        </header>
+        <div class="mp-actores">
+          @for (a of contenido().actores; track a.rol; let i = $index) {
+            <article class="mp-card mp-card--actor reveal" avRevealOnScroll [revealDelay]="50 + i * 40">
+              <span class="mp-card__icon mp-card__icon--actor" aria-hidden="true">
+                <av-portal-icon [icon]="i === 0 ? 'building' : i === 1 ? 'truck' : i === 2 ? 'user-circle' : 'users'" size="1.35rem" color="currentColor" />
+              </span>
+              <h3>{{ a.rol }}</h3>
+              <p>{{ a.texto }}</p>
+            </article>
+          }
+        </div>
+        <article class="mp-highlight">
+          <h3>{{ contenido().capacitacionTitulo }}</h3>
+          <p>{{ contenido().capacitacionTexto }}</p>
+          <p><strong>{{ contenido().capacitacionMensaje }}</strong></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="mp-section" id="documentacion">
+      <div class="container">
+        <header class="mp-section-head reveal" avRevealOnScroll>
+          <p class="mp-section-head__kicker">Documentos y registros</p>
+          <h2 class="mp-section__title">{{ contenido().documentacionTitulo }}</h2>
+          <p class="mp-section-head__lead">{{ contenido().documentacionLead }}</p>
+        </header>
+
+        <div class="mp-doc-layout reveal" avRevealOnScroll [revealDelay]="60">
+          <div class="mp-doc-layout__main">
+            <h3 class="mp-doc-layout__subtitle">Tipos de documentación requerida</h3>
+            <ul class="mp-doc-items">
+              @for (d of contenido().documentacionItems; track d; let i = $index) {
+                <li class="mp-doc-item">
+                  <span class="mp-doc-item__icon" aria-hidden="true">
+                    <av-portal-icon
+                      [icon]="i === 0 ? 'document' : i === 1 ? 'identification' : i === 2 ? 'shield-check' : i === 3 ? 'exclamation' : i === 4 ? 'clipboard' : 'building'"
+                      size="1.1rem"
+                      color="currentColor" />
+                  </span>
+                  <span>{{ d }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+          <figure class="mp-doc-layout__media">
+            @if (imagenUrl(imagenPorId(contenido(), 'clasificacion')); as src) {
+              <img [src]="src" [alt]="imagenPorId(contenido(), 'clasificacion')?.alt || ''" />
+            } @else {
+              <div class="mp-placeholder mp-placeholder--side"><span>Imagen documentación</span></div>
+            }
+          </figure>
+        </div>
+
+        <div class="mp-doc-features reveal" avRevealOnScroll [revealDelay]="100">
+          <article class="mp-doc-feature mp-doc-feature--sds">
+            <header class="mp-doc-feature__head">
+              <span class="mp-doc-feature__badge">NTC 4435</span>
+              <span class="mp-doc-feature__icon" aria-hidden="true">
+                <av-portal-icon icon="document" size="1.35rem" color="currentColor" />
+              </span>
+            </header>
+            <h3>{{ contenido().hojaSeguridadTitulo }}</h3>
+            <p>{{ contenido().hojaSeguridadTexto }}</p>
+            <p class="mp-doc-feature__note">{{ contenido().hojaSeguridadAviso }}</p>
+          </article>
+          <article class="mp-doc-feature mp-doc-feature--emergency">
+            <header class="mp-doc-feature__head">
+              <span class="mp-doc-feature__badge mp-doc-feature__badge--alert">NTC 4532</span>
+              <span class="mp-doc-feature__icon mp-doc-feature__icon--alert" aria-hidden="true">
+                <av-portal-icon icon="exclamation" size="1.35rem" color="currentColor" />
+              </span>
+            </header>
+            <h3>{{ contenido().tarjetaEmergenciaTitulo }}</h3>
+            <p>{{ contenido().tarjetaEmergenciaTexto }}</p>
+            <p class="mp-doc-feature__highlight">{{ contenido().tarjetaEmergenciaFuncion }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="mp-section mp-section--alt" id="seguridad">
+      <div class="container">
+        <header class="mp-section-head reveal" avRevealOnScroll>
+          <p class="mp-section-head__kicker">Prevención</p>
+          <h2 class="mp-section__title">Seguridad y gestión del riesgo</h2>
+        </header>
+        <div class="mp-seguridad-grid reveal" avRevealOnScroll [revealDelay]="60">
+          <article class="mp-seguridad-panel">
+            <header class="mp-seguridad-panel__head">
+              <span class="mp-seguridad-panel__icon" aria-hidden="true">
+                <av-portal-icon icon="truck" size="1.35rem" color="currentColor" />
+              </span>
+              <h3>{{ contenido().vehiculosTitulo }}</h3>
+            </header>
+            <p class="mp-seguridad-panel__lead">{{ contenido().vehiculosLead }}</p>
+            <ul class="mp-aspectos-grid">
+              @for (v of contenido().vehiculosAspectos; track v) {
+                <li>{{ v }}</li>
+              }
+            </ul>
+          </article>
+          <article class="mp-seguridad-panel">
+            <header class="mp-seguridad-panel__head">
+              <span class="mp-seguridad-panel__icon mp-seguridad-panel__icon--risk" aria-hidden="true">
+                <av-portal-icon icon="shield-check" size="1.35rem" color="currentColor" />
+              </span>
+              <h3>{{ contenido().gestionTitulo }}</h3>
+            </header>
+            <p class="mp-seguridad-panel__lead">{{ contenido().gestionLead }}</p>
+            <ol class="mp-timeline mp-timeline--grid">
+              @for (paso of contenido().gestionPasos; track paso.titulo; let i = $index) {
+                <li class="mp-timeline__item">
+                  <span class="mp-timeline__dot" aria-hidden="true">{{ i + 1 }}</span>
+                  <div>
+                    <strong>{{ paso.titulo }}</strong>
+                    <p>{{ paso.texto }}</p>
+                  </div>
+                </li>
+              }
+            </ol>
+            <p class="mp-seguridad-panel__foot">{{ contenido().gestionCierre }}</p>
+          </article>
+        </div>
+        <article class="mp-subblock">
+          <h3>{{ contenido().internacionalTitulo }}</h3>
+          <p>{{ contenido().internacionalTexto }}</p>
+        </article>
+        <div class="mp-modos">
+          <h3>{{ contenido().modosTitulo }}</h3>
+          <p class="mp-text">{{ contenido().modosLead }}</p>
+          <div class="mp-modos__grid">
+            @for (m of contenido().modos; track m.titulo) {
+              <article class="mp-modo">
+                <span class="mp-modo__icon" aria-hidden="true">{{ m.icono === 'truck' ? '🚛' : m.icono === 'train' ? '🚆' : m.icono === 'ship' ? '🚢' : m.icono === 'water' ? '🛶' : '✈️' }}</span>
+                <h4>{{ m.titulo }}</h4>
+                <p>{{ m.texto }}</p>
+              </article>
+            }
+          </div>
+        </div>
+        <article class="mp-alert mp-alert--danger">
+          <h3>{{ contenido().emergenciaTitulo }}</h3>
+          <p><strong>{{ contenido().emergenciaRegla }}</strong></p>
+          <p>{{ contenido().emergenciaTexto }}</p>
+          <ul class="mp-inline-list">
+            @for (e of contenido().emergenciaPasos; track e) {
+              <li>{{ e }}</li>
+            }
+          </ul>
+        </article>
+        <div class="mp-mitos-block reveal" avRevealOnScroll [revealDelay]="80">
+          <header class="mp-mitos-block__head">
+            <p class="mp-mitos-block__kicker">Claridad normativa</p>
+            <h3 class="mp-section__subtitle">Mitos y realidades</h3>
+            <p class="mp-mitos-block__lead">Ideas frecuentes que conviene contrastar con lo que establece la regulación.</p>
+          </header>
+          <div class="mp-mitos">
+            @for (m of contenido().mitos; track m.mito) {
+              <article class="mp-mito">
+                <div class="mp-mito__col mp-mito__col--myth">
+                  <p class="mp-mito__label">Mito</p>
+                  <p>{{ m.mito }}</p>
+                </div>
+                <div class="mp-mito__col mp-mito__col--fact">
+                  <p class="mp-mito__label mp-mito__label--ok">Realidad</p>
+                  <p>{{ m.realidad }}</p>
+                </div>
+              </article>
+            }
+          </div>
+        </div>
+        <figure class="mp-banner-media">
+          @if (imagenUrl(imagenPorId(contenido(), 'seguridad')); as src) {
+            <img [src]="src" [alt]="imagenPorId(contenido(), 'seguridad')?.alt || ''" />
+          }
+        </figure>
+      </div>
+    </section>
+
+    <section class="mp-section" id="faq">
+      <div class="container">
+        <h2 class="mp-section__title">Preguntas frecuentes</h2>
+        <div class="mp-faq">
+          @for (item of contenido().faq; track item.pregunta) {
+            <details class="mp-faq__item">
+              <summary>{{ item.pregunta }}</summary>
+              <p>{{ item.respuesta }}</p>
+            </details>
+          }
+        </div>
+        <h3 class="mp-section__subtitle">Glosario</h3>
+        <dl class="mp-glosario">
+          @for (g of contenido().glosario; track g.titulo) {
+            <div>
+              <dt>{{ g.titulo }}</dt>
+              <dd>{{ g.texto }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+    </section>
+
+    <section class="mp-section mp-section--alt" id="fuentes">
+      <div class="container">
+        <h2 class="mp-section__title">{{ contenido().fuentesTitulo }}</h2>
+        <p class="mp-text">{{ contenido().fuentesLead }}</p>
+        <ul class="mp-fuentes">
+          @for (f of contenido().fuentes; track f.titulo) {
+            <li class="mp-fuente-card">
+              <span class="mp-fuente-card__icon" aria-hidden="true">
+                <av-portal-icon icon="document" size="1.25rem" color="currentColor" />
+              </span>
+              <div>
+                <strong>{{ f.titulo }}</strong>
+                <a [href]="f.url" target="_blank" rel="noopener noreferrer">{{ f.etiqueta }} ↗</a>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    @if (contenido().documentosGrupos.length) {
+      <section class="mp-section mp-section--library" id="documentos">
+        <div class="container">
+          <header class="mp-library-banner reveal" avRevealOnScroll>
+            <div>
+              <p class="mp-library-banner__kicker">Biblioteca documental</p>
+              <h2 class="mp-section__title">{{ contenido().documentosTitulo }}</h2>
+              <p class="mp-text">{{ contenido().documentosLead }}</p>
+            </div>
+            <div class="mp-library-banner__count" aria-label="Total de documentos">
+              <strong>{{ totalDocumentos() }}</strong>
+              <span>documentos</span>
+            </div>
+          </header>
+          @for (grupo of contenido().documentosGrupos; track grupo.id) {
+            <div class="mp-docs-group">
+              <header class="mp-docs-group__head">
+                <p class="mp-docs-group__kicker">{{ grupo.kicker }}</p>
+                <h3>{{ grupo.titulo }}</h3>
+                <p class="mp-text">{{ grupo.lead }}</p>
+              </header>
+              <div class="mp-docs-grid">
+                @for (doc of grupo.documentos; track doc.titulo) {
+                  <article
+                    class="mp-doc-card"
+                    [class.mp-doc-card--play-store]="doc.tipoApp === 'google-play'">
+                    @if (doc.tipoApp === 'google-play') {
+                      <div class="mp-doc-card__store-visual" aria-hidden="true">
+                        <span class="mp-doc-card__android-icon">
+                          <svg viewBox="0 0 64 64" role="img" aria-label="Android">
+                            <path
+                              fill="#3DDC84"
+                              d="M12.8 22.4c-2.1 0-3.8 1.7-3.8 3.8v18.6c0 2.1 1.7 3.8 3.8 3.8h2.5v7.6c0 2.1 1.7 3.8 3.8 3.8s3.8-1.7 3.8-3.8v-7.6h18.6v7.6c0 2.1 1.7 3.8 3.8 3.8s3.8-1.7 3.8-3.8v-7.6h2.5c2.1 0 3.8-1.7 3.8-3.8V26.2c0-2.1-1.7-3.8-3.8-3.8H12.8z" />
+                            <path
+                              fill="#1B5E20"
+                              d="M22.8 14.8 20.2 9.8a1.4 1.4 0 1 1 2.4-1.4l2.8 5.2a18.8 18.8 0 0 1 15.2 0l2.8-5.2a1.4 1.4 0 1 1 2.4 1.4l-2.6 5a19.1 19.1 0 0 1 7.4 8.8H15.4a19.1 19.1 0 0 1 7.4-8.8z" />
+                            <circle cx="24.8" cy="24.8" r="2.2" fill="#1B5E20" />
+                            <circle cx="39.2" cy="24.8" r="2.2" fill="#1B5E20" />
+                          </svg>
+                        </span>
+                        <span class="mp-doc-card__play-badge">Google Play</span>
+                      </div>
+                    }
+                    <h4>{{ doc.titulo }}</h4>
+                    <p>{{ doc.descripcion }}</p>
+                    @if (doc.meta) {
+                      <p class="mp-doc-card__meta">{{ doc.meta }}</p>
+                    }
+                    @if (documentoUrl(doc); as href) {
+                      <a
+                        class="mp-doc-card__link"
+                        [class.mp-doc-card__link--play]="doc.tipoApp === 'google-play'"
+                        [href]="href"
+                        [attr.target]="doc.externo ? '_blank' : null"
+                        [attr.rel]="doc.externo ? 'noopener noreferrer' : null"
+                        [attr.download]="doc.externo ? null : ''">
+                        @if (doc.tipoApp === 'google-play') {
+                          Disponible en Google Play ↗
+                        } @else {
+                          <av-portal-icon icon="document" size="1rem" color="currentColor" />
+                          Descargar PDF ↗
+                        }
+                      </a>
+                    }
+                  </article>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </main>
+
+  <footer class="mp-footer">
+    <div class="container">
+      <p class="mp-footer__brand">Mercancías peligrosas Colombia</p>
+      <p class="mp-footer__tag">Información • Normativa • Seguridad • Prevención</p>
+      <p class="mp-footer__quote">"{{ contenido().fraseFinal }}"</p>
+      <p class="mp-footer__disclaimer">{{ contenido().disclaimer }}</p>
+      <p class="mp-footer__date">Última revisión del contenido: {{ contenido().fechaActualizacion }}.</p>
+    </div>
+  </footer>
+</div>
