@@ -35,10 +35,16 @@
                 </a>
               }
             }
-            <button type="button" class="btn btn-outline ta-btn-outline" (click)="scrollTo('normativa')">
-              {{ contenido().ctaNormativaTexto }}
-            </button>
-            <button type="button" class="btn btn-outline ta-btn-outline" (click)="scrollTo('documentos')">
+            @if (tieneEnlaceCurso()) {
+              <button type="button" class="btn btn-outline" (click)="scrollTo('normativa')">
+                {{ contenido().ctaNormativaTexto }}
+              </button>
+            } @else {
+              <button type="button" class="btn btn-primary" (click)="scrollTo('normativa')">
+                {{ contenido().ctaNormativaTexto }}
+              </button>
+            }
+            <button type="button" class="btn btn-outline" (click)="scrollTo('documentos')">
               {{ contenido().ctaDocumentosTexto }}
             </button>
           </div>
