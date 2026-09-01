@@ -2,6 +2,7 @@ const {
   DESARROLLADOR_SISTEMA_DEFAULT,
   SITE_DEFAULTS,
   HOME_SECCIONES_ORDEN,
+  HOME_SECCIONES_LABELS,
   paginasDefault,
 } = require('../constants/portalSiteDefaults');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
@@ -194,4 +195,5 @@ module.exports = {
   sincronizarNavLanding,
   copyrightPublico,
   HOME_SECCIONES_ORDEN,
+  HOME_SECCIONES_LABELS,
 };

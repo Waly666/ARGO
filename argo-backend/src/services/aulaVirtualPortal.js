@@ -7,6 +7,7 @@ const {
   sincronizarNavLanding,
   copyrightPublico,
   HOME_SECCIONES_ORDEN,
+  HOME_SECCIONES_LABELS,
 } = require('./portalSiteConfig');
 const { urlPublicaVerificacion } = require('./portalGoogleSearchConsole');
 
