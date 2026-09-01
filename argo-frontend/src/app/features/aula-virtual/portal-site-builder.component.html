@@ -406,6 +406,7 @@
         </p>
         <argo-portal-examen-teorico-editor
           [examenTeorico]="ensureExamenTeoricoLanding()"
+          (portalConfigUpdated)="applyPortalConfig($event)"
           (avNotice)="avNotice.emit($event)"
         />
       }
@@ -441,6 +442,14 @@
           <a routerLink="/app/aula-virtual/blog">Aula virtual → Blog del portal</a>.
         </p>
         <div class="psb-stack">
+          <argo-portal-promo-hero-imagen-editor
+            pageKey="blog"
+            [hero]="landing.blog"
+            label="Imagen del encabezado (Blog)"
+            routePath="/blog"
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)"
+          />
           <div class="psb-grid3">
             <label class="psb-field psb-field--plain">
               <span>Etiqueta pequeña</span>
@@ -615,6 +624,15 @@
           </p>
 
           <h3 class="psb-subtitle psb-subtitle--section">Encabezado (hero)</h3>
+          <argo-portal-promo-hero-imagen-editor
+            pageKey="consultaCertificados"
+            [hero]="consultaCertificados"
+            label="Imagen del encabezado (Certificados)"
+            routePath="/consulta-certificados"
+            emptyHint="Sin imagen — en Plantilla azul profundo el hero suele ir solo con texto."
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)"
+          />
           <argo-portal-promo-hero-fields-editor
             [hero]="consultaCertificados"
             [showTheme]="true"
@@ -651,6 +669,14 @@
       @case ('pqr') {
         <div class="psb-stack">
           <p class="psb-hint">Encabezado de la página /pqr.</p>
+          <argo-portal-promo-hero-imagen-editor
+            pageKey="pqr"
+            [hero]="pqr.hero"
+            label="Imagen del encabezado (PQR)"
+            routePath="/pqr"
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)"
+          />
           <argo-portal-promo-hero-fields-editor [hero]="pqr.hero" [showTheme]="true" />
         </div>
       }
@@ -658,6 +684,14 @@
       @case ('jornadasCapacitacion') {
         <div class="psb-stack">
           <p class="psb-hint">Encabezado de /jornadas-capacitacion.</p>
+          <argo-portal-promo-hero-imagen-editor
+            pageKey="jornadasCapacitacion"
+            [hero]="jornadasCapacitacion.hero"
+            label="Imagen del encabezado (Jornadas)"
+            routePath="/jornadas-capacitacion"
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)"
+          />
           <argo-portal-promo-hero-fields-editor
             [hero]="jornadasCapacitacion.hero"
             [showPillars]="true"
@@ -670,6 +704,14 @@
       @case ('evaluacionJornadas') {
         <div class="psb-stack">
           <p class="psb-hint">Encabezado de /evaluacion-jornadas.</p>
+          <argo-portal-promo-hero-imagen-editor
+            pageKey="evaluacionJornadas"
+            [hero]="evaluacionJornadas.hero"
+            label="Imagen del encabezado (Evaluación)"
+            routePath="/evaluacion-jornadas"
+            (portalConfigUpdated)="applyPortalConfig($event)"
+            (avNotice)="avNotice.emit($event)"
+          />
           <argo-portal-promo-hero-fields-editor
             [hero]="evaluacionJornadas.hero"
             [showTheme]="true"

@@ -22,6 +22,8 @@ const HERO_EXTRAS = {
   ctaPrincipalUrl: '#inscripcion',
   ctaSecundario: 'Prefiero el aula virtual',
   ctaSecundarioUrl: '/registro',
+  imagenUrl: '',
+  imagenAlt: '',
 };
 
 const JORNADAS_CAPACITACION_LANDING_DEFAULTS = {
@@ -54,6 +56,8 @@ function mergeJornadasCapacitacionLanding(raw) {
       ctaPrincipalUrl: extras.ctaPrincipalUrl,
       ctaSecundario: extras.ctaSecundario,
       ctaSecundarioUrl: extras.ctaSecundarioUrl,
+      imagenUrl: String(src.imagenUrl ?? '').trim(),
+      imagenAlt: String(src.imagenAlt ?? '').trim(),
     },
   };
 }

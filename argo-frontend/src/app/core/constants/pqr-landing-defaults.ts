@@ -11,7 +11,11 @@ export interface PortalPqrLanding {
     Pick<
       PortalPromoHeroExtras,
       'mostrarBadgeVirtual' | 'virtualBadgeLabel' | 'theme'
-    >;
+    > & {
+      imagenUrl: string;
+      imagenUrlAbsoluta?: string;
+      imagenAlt: string;
+    };
 }
 
 const HERO_TEXTS: PortalPromoHeroTexts = {
@@ -22,10 +26,15 @@ const HERO_TEXTS: PortalPromoHeroTexts = {
     'En {nombreCea} nos comprometemos a atender y dar respuesta oportuna a todas sus solicitudes.',
 };
 
-const HERO_EXTRAS: Pick<PortalPromoHeroExtras, 'mostrarBadgeVirtual' | 'virtualBadgeLabel' | 'theme'> = {
+const HERO_EXTRAS: Pick<PortalPromoHeroExtras, 'mostrarBadgeVirtual' | 'virtualBadgeLabel' | 'theme'> & {
+  imagenUrl: string;
+  imagenAlt: string;
+} = {
   mostrarBadgeVirtual: false,
   virtualBadgeLabel: 'VIRTUAL',
   theme: 'gold',
+  imagenUrl: '',
+  imagenAlt: '',
 };
 
 export const PQR_LANDING_DEFAULTS: PortalPqrLanding = {
@@ -33,7 +42,9 @@ export const PQR_LANDING_DEFAULTS: PortalPqrLanding = {
 };
 
 export function mergePqrLanding(raw?: Partial<PortalPqrLanding> | null): PortalPqrLanding {
-  const src = raw?.hero && typeof raw.hero === 'object' ? raw.hero : {};
+  const src = (raw?.hero && typeof raw.hero === 'object' ? raw.hero : {}) as Partial<
+    PortalPqrLanding['hero']
+  >;
   const texts = mergePromoHeroTexts(src, HERO_TEXTS);
   const extras = mergePromoHeroExtras(
     { ...HERO_EXTRAS, ...src },
@@ -58,6 +69,9 @@ export function mergePqrLanding(raw?: Partial<PortalPqrLanding> | null): PortalP
       mostrarBadgeVirtual: extras.mostrarBadgeVirtual,
       virtualBadgeLabel: extras.virtualBadgeLabel,
       theme: extras.theme,
+      imagenUrl: String(src.imagenUrl ?? '').trim(),
+      imagenUrlAbsoluta: String(src.imagenUrlAbsoluta ?? '').trim() || undefined,
+      imagenAlt: String(src.imagenAlt ?? '').trim(),
     },
   };
 }

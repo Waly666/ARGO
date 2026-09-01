@@ -2,6 +2,7 @@
   <av-portal-promo-banner-hero
     sectionId="inicio"
     [theme]="contenido().theme"
+    [showPhoto]="!!imagenUrl(imagenPorId(contenido(), 'hero'), staticHero)"
     [photoUrl]="imagenUrl(imagenPorId(contenido(), 'hero'), staticHero)"
     [photoAlt]="imagenPorId(contenido(), 'hero')?.alt || ''"
     [logoUrl]="logoUrl()"

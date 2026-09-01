@@ -46,9 +46,7 @@
   animation: ppbh-photo-drift 18s ease-in-out infinite;
 
   &--placeholder {
-    background:
-      linear-gradient(115deg, rgba(6, 20, 40, 0.35) 0%, rgba(6, 20, 40, 0.1) 42%, transparent 58%),
-      radial-gradient(ellipse at 75% 50%, #1c4569 0%, #0f234f 45%, #0b1b47 100%);
+    display: none !important;
   }
 }
 

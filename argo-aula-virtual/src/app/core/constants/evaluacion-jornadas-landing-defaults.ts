@@ -7,7 +7,11 @@ import {
 
 export interface PortalEvaluacionJornadasLanding {
   hero: PortalPromoHeroTexts &
-    Pick<PortalPromoHeroExtras, 'mostrarBadgeVirtual' | 'virtualBadgeLabel' | 'theme'>;
+    Pick<PortalPromoHeroExtras, 'mostrarBadgeVirtual' | 'virtualBadgeLabel' | 'theme'> & {
+      imagenUrl: string;
+      imagenUrlAbsoluta?: string;
+      imagenAlt: string;
+    };
 }
 
 const HERO_TEXTS: PortalPromoHeroTexts = {
@@ -18,10 +22,15 @@ const HERO_TEXTS: PortalPromoHeroTexts = {
     'Califique con estrellas su experiencia en cada programa al que asistió. Una sola respuesta por encuesta.',
 };
 
-const HERO_EXTRAS: Pick<PortalPromoHeroExtras, 'mostrarBadgeVirtual' | 'virtualBadgeLabel' | 'theme'> = {
+const HERO_EXTRAS: Pick<PortalPromoHeroExtras, 'mostrarBadgeVirtual' | 'virtualBadgeLabel' | 'theme'> & {
+  imagenUrl: string;
+  imagenAlt: string;
+} = {
   mostrarBadgeVirtual: false,
   virtualBadgeLabel: 'VIRTUAL',
   theme: 'gold',
+  imagenUrl: '',
+  imagenAlt: '',
 };
 
 export const EVALUACION_JORNADAS_LANDING_DEFAULTS: PortalEvaluacionJornadasLanding = {
@@ -31,7 +40,9 @@ export const EVALUACION_JORNADAS_LANDING_DEFAULTS: PortalEvaluacionJornadasLandi
 export function mergeEvaluacionJornadasLanding(
   raw?: Partial<PortalEvaluacionJornadasLanding> | null,
 ): PortalEvaluacionJornadasLanding {
-  const src = raw?.hero && typeof raw.hero === 'object' ? raw.hero : {};
+  const src = (raw?.hero && typeof raw.hero === 'object' ? raw.hero : {}) as Partial<
+    PortalEvaluacionJornadasLanding['hero']
+  >;
   const texts = mergePromoHeroTexts(src, HERO_TEXTS);
   const extras = mergePromoHeroExtras(
     { ...HERO_EXTRAS, ...src },
@@ -56,6 +67,9 @@ export function mergeEvaluacionJornadasLanding(
       mostrarBadgeVirtual: extras.mostrarBadgeVirtual,
       virtualBadgeLabel: extras.virtualBadgeLabel,
       theme: extras.theme,
+      imagenUrl: String(src.imagenUrl ?? '').trim(),
+      imagenUrlAbsoluta: String(src.imagenUrlAbsoluta ?? '').trim() || undefined,
+      imagenAlt: String(src.imagenAlt ?? '').trim(),
     },
   };
 }

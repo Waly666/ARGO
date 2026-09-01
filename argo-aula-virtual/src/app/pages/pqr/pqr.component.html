@@ -1,5 +1,8 @@
 <section class="pqr-page">
   <av-portal-promo-banner-hero
+    [showPhoto]="!!heroPhoto()"
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="heroPhotoAlt()"
     [kicker]="pqr().hero.kicker"
     [titleLine]="pqr().hero.tituloLinea"
     [titleAccent]="pqr().hero.tituloAcento"

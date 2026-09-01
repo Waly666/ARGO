@@ -1504,6 +1504,30 @@ exports.quitarImagenTrabajoEnAlturasPortal = async (req, res, next) => {
 };
 
 const { validarArchivoGoogleSearchConsole } = require('../services/portalGoogleSearchConsole');
+const {
+  subirLandingHeroImagen,
+  quitarLandingHeroImagen,
+} = require('../services/portalLandingHeroImage');
+
+exports.subirLandingHeroImagenPortal = async (req, res, next) => {
+  try {
+    const result = await subirLandingHeroImagen(req.params.landingHeroKey, req.file, req.user);
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.quitarLandingHeroImagenPortal = async (req, res, next) => {
+  try {
+    const result = await quitarLandingHeroImagen(req.params.landingHeroKey, req.user);
+    res.json({ config: await obtenerConfigPortalAdmin(req), ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
 
 exports.subirGoogleSearchConsolePortal = async (req, res, next) => {
   try {

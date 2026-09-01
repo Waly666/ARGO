@@ -34,6 +34,7 @@ import { PortalMercanciasPeligrosasEditorComponent } from './portal-mercancias-p
 import { PortalTrabajoEnAlturasEditorComponent } from './portal-trabajo-en-alturas-editor.component';
 import { PortalGaleriaFotosEditorComponent } from './portal-galeria-fotos-editor.component';
 import { PortalGaleriaHeroImagenEditorComponent } from './portal-galeria-hero-imagen-editor.component';
+import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 import { PortalHomeFotosEditorComponent } from './portal-home-fotos-editor.component';
 import { PortalHomePublicidadEditorComponent } from './portal-home-publicidad-editor.component';
 import { PortalAcercaEditorComponent } from './portal-acerca-editor.component';
@@ -116,6 +117,7 @@ interface GuiaPaso {
     PortalTrabajoEnAlturasEditorComponent,
     PortalGaleriaFotosEditorComponent,
     PortalGaleriaHeroImagenEditorComponent,
+    PortalPromoHeroImagenEditorComponent,
     PortalHomeFotosEditorComponent,
     PortalHomePublicidadEditorComponent,
     PortalAcercaEditorComponent,

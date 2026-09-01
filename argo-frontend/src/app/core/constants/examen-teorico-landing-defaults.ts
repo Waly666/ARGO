@@ -52,6 +52,9 @@ export interface PortalExamenTeoricoLanding {
   oficialLead: string;
   theme: PortalPromoHeroTheme;
   mostrarBadgeVirtual: boolean;
+  heroImagenUrl: string;
+  heroImagenUrlAbsoluta?: string;
+  heroImagenAlt: string;
 }
 
 export const EXAMEN_TEORICO_LANDING_DEFAULTS: PortalExamenTeoricoLanding = {
@@ -130,6 +133,8 @@ export const EXAMEN_TEORICO_LANDING_DEFAULTS: PortalExamenTeoricoLanding = {
     'Consulte el texto oficial de la circular y las resoluciones relacionadas con el examen teórico y la habilitación del CEA.',
   theme: 'gold',
   mostrarBadgeVirtual: false,
+  heroImagenUrl: '',
+  heroImagenAlt: '',
 };
 
 const ACENTOS: ExamenTeoricoAcento[] = ['blue', 'teal', 'orange', 'green', 'purple'];
@@ -219,5 +224,8 @@ export function mergeExamenTeoricoLanding(
     oficialLead: src.oficialLead?.trim() || d.oficialLead,
     theme: mergePromoHeroTheme(src.theme, d.theme),
     mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
+    heroImagenUrl: String(src.heroImagenUrl ?? '').trim(),
+    heroImagenUrlAbsoluta: String(src.heroImagenUrlAbsoluta ?? '').trim() || undefined,
+    heroImagenAlt: String(src.heroImagenAlt ?? '').trim(),
   };
 }

@@ -19,6 +19,12 @@ const {
   aulaVirtualMercanciasPeligrosas,
   aulaVirtualTrabajoEnAlturas,
   aulaVirtualBlog,
+  aulaVirtualBlogHero,
+  aulaVirtualPqrHero,
+  aulaVirtualExamenTeoricoHero,
+  aulaVirtualJornadasHero,
+  aulaVirtualEvaluacionJornadasHero,
+  aulaVirtualConsultaCertificadosHero,
   aulaVirtualGaleria,
   aulaVirtualHomeFotos,
   aulaVirtualHomePublicidad,
@@ -31,6 +37,14 @@ const {
 const { portalAuthLimiter, buscarAlumnoLimiter } = require('../middleware/security');
 const { requireTurnstile } = require('../middleware/turnstile');
 const { requireConsultaDescargaToken } = require('../middleware/certificadoConsultaDescarga');
+const { LANDING_HERO_IMAGE_PAGES } = require('../services/portalLandingHeroImage');
+
+function landingHeroUploadMw(req, res, next) {
+  const cfg = LANDING_HERO_IMAGE_PAGES[req.params.landingHeroKey];
+  if (!cfg) return res.status(404).json({ message: 'Página de hero no válida' });
+  const upload = require('../middleware/upload');
+  return upload[cfg.multerExport].single('imagen')(req, res, next);
+}
 
 /** Turnstile activo en web; apps móviles envían X-ARGO-Cliente: mobile */
 const turnstilePortal = requireTurnstile({ allowNativeClients: true });
@@ -256,6 +270,19 @@ router.delete(
   requireAuth,
   configPortal,
   admin.quitarImagenCursosConduccionPortal,
+);
+router.post(
+  '/admin/portal/:landingHeroKey/hero-imagen',
+  requireAuth,
+  configPortal,
+  landingHeroUploadMw,
+  admin.subirLandingHeroImagenPortal,
+);
+router.delete(
+  '/admin/portal/:landingHeroKey/hero-imagen',
+  requireAuth,
+  configPortal,
+  admin.quitarLandingHeroImagenPortal,
 );
 router.post(
   '/admin/portal/popup-imagen',

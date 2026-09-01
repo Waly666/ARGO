@@ -288,6 +288,9 @@ export interface PortalLandingConfig {
     emptyTexto: string;
     theme: PortalPromoHeroTheme;
     mostrarBadgeVirtual: boolean;
+    heroImagenUrl: string;
+    heroImagenUrlAbsoluta?: string;
+    heroImagenAlt: string;
   };
   galeria: PortalGaleriaLanding;
   fotosInicio: PortalFotosInicioLanding;
@@ -346,6 +349,9 @@ export interface PortalConsultaCertificadosConfig {
   tituloAcento: string;
   lead: string;
   theme: PortalPromoHeroTheme;
+  heroImagenUrl: string;
+  heroImagenUrlAbsoluta?: string;
+  heroImagenAlt: string;
 }
 
 export const PORTAL_CONSULTA_ASISTENTE_TEXTO_DEFAULT = `🚘 FORMACIÓN QUE ABRE CAMINOS Y GENERA CONFIANZA
@@ -493,6 +499,8 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
     theme: 'blue',
     mostrarBadgeVirtual: false,
+    heroImagenUrl: '',
+    heroImagenAlt: '',
   },
   galeria: {
     kicker: 'Nuestra institución',
@@ -559,6 +567,8 @@ export const PORTAL_LANDING_FALLBACK: PortalLandingConfig = {
     tituloAcento: 'certificados',
     lead: 'Ingrese su número de documento para verificar los certificados expedidos por la institución.',
     theme: 'blue',
+    heroImagenUrl: '',
+    heroImagenAlt: '',
   },
   pqr: JSON.parse(JSON.stringify(PQR_LANDING_DEFAULTS)) as PortalPqrLanding,
   jornadasCapacitacion: JSON.parse(
@@ -718,6 +728,9 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
       ...raw.blog,
       theme: raw.blog?.theme || d.blog.theme,
       mostrarBadgeVirtual: raw.blog?.mostrarBadgeVirtual === true,
+      heroImagenUrl: raw.blog?.heroImagenUrl?.trim() || d.blog.heroImagenUrl,
+      heroImagenUrlAbsoluta: raw.blog?.heroImagenUrlAbsoluta?.trim() || d.blog.heroImagenUrlAbsoluta,
+      heroImagenAlt: raw.blog?.heroImagenAlt?.trim() || d.blog.heroImagenAlt,
     },
     galeria: {
       ...d.galeria,
@@ -761,6 +774,13 @@ export function mergePortalLanding(raw?: Partial<PortalLandingConfig> | null): P
         raw.consultaCertificados?.tituloAcento?.trim() || d.consultaCertificados.tituloAcento,
       lead: raw.consultaCertificados?.lead?.trim() || d.consultaCertificados.lead,
       theme: raw.consultaCertificados?.theme || d.consultaCertificados.theme,
+      heroImagenUrl:
+        raw.consultaCertificados?.heroImagenUrl?.trim() || d.consultaCertificados.heroImagenUrl,
+      heroImagenUrlAbsoluta:
+        raw.consultaCertificados?.heroImagenUrlAbsoluta?.trim() ||
+        d.consultaCertificados.heroImagenUrlAbsoluta,
+      heroImagenAlt:
+        raw.consultaCertificados?.heroImagenAlt?.trim() || d.consultaCertificados.heroImagenAlt,
     },
     pqr: mergePqrLanding(raw.pqr),
     jornadasCapacitacion: mergeJornadasCapacitacionLanding(raw.jornadasCapacitacion),

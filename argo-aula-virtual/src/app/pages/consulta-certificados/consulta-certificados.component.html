@@ -1,7 +1,9 @@
 <section class="consulta">
   <av-portal-promo-banner-hero
     class="consulta-hero-banner"
-    [showPhoto]="consultaHeroShowPhoto()"
+    [showPhoto]="consultaHeroShowPhoto() && !!heroPhoto()"
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="heroPhotoAlt()"
     [kicker]="consultaHero().kicker"
     [titleLine]="consultaHero().tituloLinea"
     [titleAccent]="consultaHero().tituloAcento"

@@ -1,5 +1,6 @@
 <div class="blog-post-page">
   <av-portal-promo-banner-hero
+    [showPhoto]="!!heroPhoto()"
     [photoUrl]="heroPhoto()"
     [photoAlt]="post()?.titulo || 'Artículo del blog'"
     [titleLine]="heroTitleLine()"

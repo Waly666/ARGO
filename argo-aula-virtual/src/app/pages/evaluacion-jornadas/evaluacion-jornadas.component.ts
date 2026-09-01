@@ -29,6 +29,7 @@ import {
 } from '../../core/models';
 
 import { PortalSeoService } from '../../core/portal-seo.service';
+import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
 
 
 
@@ -65,6 +66,10 @@ export class EvaluacionJornadasComponent implements OnInit {
   config = signal<PortalConfig | null>(null);
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   evaluacion = computed(() => this.landing().evaluacionJornadas);
+  heroPhoto = computed(() => portalHeroImagenPublicUrl(this.evaluacion().hero));
+  heroPhotoAlt = computed(() =>
+    portalHeroImagenStoredAlt(this.evaluacion().hero, this.evaluacion().hero.tituloLinea),
+  );
 
   readonly heroRibbon: PromoBannerRibbonItem[] = [
     { icon: 'star', label: 'Calificación por estrellas' },

@@ -1,5 +1,8 @@
 <div class="blog-page">
   <av-portal-promo-banner-hero
+    [showPhoto]="!!heroPhoto()"
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="heroPhotoAlt()"
     [kicker]="blog().kicker"
     [titleLine]="blog().titulo"
     [lead]="blog().lead"

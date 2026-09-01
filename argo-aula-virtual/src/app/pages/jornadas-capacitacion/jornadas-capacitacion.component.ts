@@ -17,6 +17,7 @@ import { mergePortalLanding } from '../../core/portal-landing';
 import { catEtiqueta, catValor, etiquetaGenero, GENEROS_FALLBACK, TIPOS_DOC_FALLBACK } from '../../core/catalogo.helpers';
 import { PortalCatalogService } from '../../core/portal-catalog.service';
 import { PortalSeoService } from '../../core/portal-seo.service';
+import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
 
 @Component({
   selector: 'av-jornadas-capacitacion',
@@ -40,6 +41,10 @@ export class JornadasCapacitacionComponent implements OnInit {
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   jornadas = computed(() => this.landing().jornadasCapacitacion);
   heroPilares = computed(() => this.jornadas().hero.pillars);
+  heroPhoto = computed(() => portalHeroImagenPublicUrl(this.jornadas().hero));
+  heroPhotoAlt = computed(() =>
+    portalHeroImagenStoredAlt(this.jornadas().hero, this.jornadas().hero.tituloLinea),
+  );
 
   readonly heroRibbon: PromoBannerRibbonItem[] = [
     { icon: 'qr-code', label: 'Código QR de asistencia' },

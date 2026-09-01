@@ -1,5 +1,8 @@
 <section class="consulta eval-page">
   <av-portal-promo-banner-hero
+    [showPhoto]="!!heroPhoto()"
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="heroPhotoAlt()"
     [kicker]="evaluacion().hero.kicker"
     [titleLine]="evaluacion().hero.tituloLinea"
     [titleAccent]="evaluacion().hero.tituloAcento"

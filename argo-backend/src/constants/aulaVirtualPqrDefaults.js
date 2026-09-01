@@ -12,6 +12,8 @@ const HERO_EXTRAS = {
   mostrarBadgeVirtual: false,
   virtualBadgeLabel: 'VIRTUAL',
   theme: 'gold',
+  imagenUrl: '',
+  imagenAlt: '',
 };
 
 const PQR_LANDING_DEFAULTS = {
@@ -44,6 +46,8 @@ function mergePqrLanding(raw) {
       mostrarBadgeVirtual: extras.mostrarBadgeVirtual,
       virtualBadgeLabel: extras.virtualBadgeLabel,
       theme: extras.theme,
+      imagenUrl: String(src.imagenUrl ?? '').trim(),
+      imagenAlt: String(src.imagenAlt ?? '').trim(),
     },
   };
 }

@@ -7,6 +7,15 @@
     <button type="button" class="psb-link" (click)="restaurarDefaults()">Volver a textos originales</button>
   </div>
 
+  <argo-portal-promo-hero-imagen-editor
+    pageKey="examenTeorico"
+    [hero]="examenTeorico"
+    label="Imagen del encabezado (Examen teórico)"
+    routePath="/examen-teorico"
+    (portalConfigUpdated)="portalConfigUpdated.emit($event)"
+    (avNotice)="avNotice.emit($event)"
+  />
+
   <h3 class="psb-subtitle">Sección del inicio</h3>
   <div class="pete-card">
     <label class="psb-field psb-field--plain">

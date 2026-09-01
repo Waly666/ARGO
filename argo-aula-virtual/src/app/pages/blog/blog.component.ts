@@ -6,6 +6,7 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { BlogPost, PortalConfig } from '../../core/models';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
+import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
 import { PromoBannerRibbonItem } from '../../shared/portal-promo-banner-hero/portal-promo-banner-defaults';
@@ -36,6 +37,8 @@ export class BlogComponent implements OnInit {
 
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   blog = computed(() => ({ ...BLOG_TEXTO_DEFAULT, ...this.landing().blog }));
+  heroPhoto = computed(() => portalHeroImagenPublicUrl(this.landing().blog));
+  heroPhotoAlt = computed(() => portalHeroImagenStoredAlt(this.landing().blog, this.blog().titulo));
 
   readonly heroRibbon: PromoBannerRibbonItem[] = [
     { icon: 'document', label: 'Artículos actualizados' },

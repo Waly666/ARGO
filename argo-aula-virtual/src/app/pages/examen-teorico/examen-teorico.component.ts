@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AulaApiService } from '../../core/aula-api.service';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
+import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
 import { PortalConfig } from '../../core/models';
 import { resolveUploadUrl } from '../../core/upload-url.util';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
@@ -35,6 +36,8 @@ export class ExamenTeoricoComponent implements OnInit {
   contenido = computed(() =>
     mergeExamenTeoricoLanding(mergePortalLanding(this.config()?.landing).examenTeorico),
   );
+  heroPhoto = computed(() => portalHeroImagenPublicUrl(this.contenido()));
+  heroPhotoAlt = computed(() => portalHeroImagenStoredAlt(this.contenido(), this.contenido().titulo));
 
   readonly heroRibbon: PromoBannerRibbonItem[] = [
     { icon: 'document', label: 'Normativa vigente' },

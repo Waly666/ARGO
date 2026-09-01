@@ -460,6 +460,8 @@ const LANDING_DEFAULTS = {
     emptyTexto: 'Vuelva pronto para leer las últimas noticias de la institución.',
     theme: 'blue',
     mostrarBadgeVirtual: false,
+    heroImagenUrl: '',
+    heroImagenAlt: '',
   },
   galeria: JSON.parse(JSON.stringify(GALERIA_DEFAULTS)),
   fotosInicio: JSON.parse(JSON.stringify(FOTOS_INICIO_DEFAULTS)),
@@ -507,6 +509,8 @@ const LANDING_DEFAULTS = {
     tituloAcento: 'certificados',
     lead: 'Ingrese su número de documento para verificar los certificados expedidos por la institución.',
     theme: 'blue',
+    heroImagenUrl: '',
+    heroImagenAlt: '',
   },
   pqr: JSON.parse(JSON.stringify(PQR_LANDING_DEFAULTS)),
   jornadasCapacitacion: JSON.parse(JSON.stringify(JORNADAS_CAPACITACION_LANDING_DEFAULTS)),
@@ -563,6 +567,8 @@ function mergeConsultaCertificados(raw) {
     tituloAcento: str(src.tituloAcento, d.tituloAcento),
     lead: str(src.lead, d.lead),
     theme: mergePromoHeroTheme(src.theme, d.theme),
+    heroImagenUrl: str(src.heroImagenUrl, d.heroImagenUrl),
+    heroImagenAlt: str(src.heroImagenAlt, d.heroImagenAlt),
   };
 }
 
@@ -597,6 +603,8 @@ function mergeBlogSection(raw) {
     emptyTexto: str(src.emptyTexto, d.emptyTexto),
     theme: mergePromoHeroTheme(src.theme, d.theme),
     mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
+    heroImagenUrl: str(src.heroImagenUrl, d.heroImagenUrl),
+    heroImagenAlt: str(src.heroImagenAlt, d.heroImagenAlt),
   };
 }
 

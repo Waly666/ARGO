@@ -1,5 +1,8 @@
 <div class="jor-page">
   <av-portal-promo-banner-hero
+    [showPhoto]="!!heroPhoto()"
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="heroPhotoAlt()"
     [kicker]="jornadas().hero.kicker"
     [titleLine]="jornadas().hero.tituloLinea"
     [titleAccent]="jornadas().hero.tituloAcento"

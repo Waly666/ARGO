@@ -77,8 +77,12 @@ html[data-finstruvial-portal='1'] {
       }
 
       &--placeholder {
-        background: #1e293b;
+        display: none !important;
       }
+    }
+
+    &.ppbh--no-photo .ppbh__photo {
+      display: none !important;
     }
 
     .ppbh__title-line,

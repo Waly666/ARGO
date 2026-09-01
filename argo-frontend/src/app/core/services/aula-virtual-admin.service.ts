@@ -392,6 +392,24 @@ export class AulaVirtualAdminService {
     return this.http.delete<{ config: PortalAulaConfig; message: string }>(`${this.base}/portal/hero-imagen`);
   }
 
+  subirLandingHeroImagenPortal(
+    pageKey: string,
+    file: File,
+  ): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('imagen', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/${pageKey}/hero-imagen`,
+      fd,
+    );
+  }
+
+  quitarLandingHeroImagenPortal(pageKey: string): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/${pageKey}/hero-imagen`,
+    );
+  }
+
   subirImagenFundacionPortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
     const fd = new FormData();
     fd.append('imagen', file);

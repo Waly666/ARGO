@@ -1,6 +1,7 @@
 <div class="fund-page">
   <av-portal-promo-banner-hero
     size="page-tall"
+    [showPhoto]="!!heroImagen()"
     [photoUrl]="heroImagen()"
     [photoAlt]="fund().hero.imagenAlt"
     [logoUrl]="logoUrl()"

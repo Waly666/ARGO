@@ -200,6 +200,11 @@ function normalizarExamenTeorico(raw, fallback) {
     oficialLead: str(src.oficialLead, fallback.oficialLead),
     theme: mergePromoHeroTheme(src.theme, fallback.theme),
     mostrarBadgeVirtual: src.mostrarBadgeVirtual === true,
+    heroImagenUrl: str(src.heroImagenUrl, fallback.heroImagenUrl),
+    heroImagenUrlAbsoluta:
+      publicUploadUrl(str(src.heroImagenUrl, fallback.heroImagenUrl)) ||
+      str(src.heroImagenUrlAbsoluta, fallback.heroImagenUrlAbsoluta),
+    heroImagenAlt: str(src.heroImagenAlt, fallback.heroImagenAlt),
   };
 }
 

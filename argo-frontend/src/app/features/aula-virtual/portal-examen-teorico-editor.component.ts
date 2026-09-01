@@ -8,13 +8,14 @@ import {
   mergeExamenTeoricoLanding,
   PortalExamenTeoricoLanding,
 } from '../../core/constants/examen-teorico-landing-defaults';
-import { AulaVirtualAdminService } from '../../core/services/aula-virtual-admin.service';
+import { AulaVirtualAdminService, PortalAulaConfig } from '../../core/services/aula-virtual-admin.service';
 import { resolveUploadAssetUrl } from '../../core/utils/upload-asset-url.util';
+import { PortalPromoHeroImagenEditorComponent } from './portal-promo-hero-imagen-editor.component';
 
 @Component({
   selector: 'argo-portal-examen-teorico-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PortalPromoHeroImagenEditorComponent],
   templateUrl: './portal-examen-teorico-editor.component.html',
   styleUrl: './portal-examen-teorico-editor.component.scss',
 })
@@ -22,6 +23,7 @@ export class PortalExamenTeoricoEditorComponent {
   private svc = inject(AulaVirtualAdminService);
 
   @Input({ required: true }) examenTeorico!: PortalExamenTeoricoLanding;
+  @Output() portalConfigUpdated = new EventEmitter<PortalAulaConfig>();
   @Output() avNotice = new EventEmitter<{ message: string; error?: boolean }>();
 
   uploadIndex = signal<number | null>(null);

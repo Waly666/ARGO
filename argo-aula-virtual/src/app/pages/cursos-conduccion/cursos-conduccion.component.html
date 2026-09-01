@@ -1,6 +1,7 @@
 <div class="cc-page">
   <av-portal-promo-banner-hero
     size="page-tall"
+    [showPhoto]="!!heroImagen()"
     [photoUrl]="heroImagen()"
     [photoAlt]="contenido().hero.imagenAlt"
     [kicker]="contenido().hero.kicker"

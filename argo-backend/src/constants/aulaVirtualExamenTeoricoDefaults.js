@@ -80,6 +80,8 @@ const EXAMEN_TEORICO_DEFAULTS = {
     'Consulte el texto oficial de la circular y las resoluciones relacionadas con el examen teórico y la habilitación del CEA.',
   theme: 'gold',
   mostrarBadgeVirtual: false,
+  heroImagenUrl: '',
+  heroImagenAlt: '',
 };
 
 function examenTeoricoContenidoAntiguo(raw) {

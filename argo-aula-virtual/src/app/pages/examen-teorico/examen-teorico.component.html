@@ -1,5 +1,8 @@
 <div class="et-page">
   <av-portal-promo-banner-hero
+    [showPhoto]="!!heroPhoto()"
+    [photoUrl]="heroPhoto()"
+    [photoAlt]="heroPhotoAlt()"
     [kicker]="contenido().kicker"
     [titleLine]="contenido().titulo"
     [titleAccent]="contenido().tituloLinea2"

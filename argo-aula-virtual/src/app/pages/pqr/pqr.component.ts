@@ -7,6 +7,7 @@ import { pqrHeroLead } from '../../core/constants/pqr-landing-defaults';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalConfig } from '../../core/models';
 import { PortalSeoService } from '../../core/portal-seo.service';
+import { portalHeroImagenPublicUrl, portalHeroImagenStoredAlt } from '../../core/portal-hero-imagen.util';
 import { PqrFormComponent } from '../../shared/pqr-form/pqr-form.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
@@ -29,6 +30,8 @@ export class PqrComponent implements OnInit {
   pqr = computed(() => this.landing().pqr);
   nombreCea = computed(() => this.config()?.nombreCea?.trim() || 'Aula Virtual');
   heroLead = computed(() => pqrHeroLead(this.pqr().hero.lead, this.nombreCea()));
+  heroPhoto = computed(() => portalHeroImagenPublicUrl(this.pqr().hero));
+  heroPhotoAlt = computed(() => portalHeroImagenStoredAlt(this.pqr().hero, 'PQR'));
 
   readonly heroRibbon: PromoBannerRibbonItem[] = [
     { icon: 'check-badge', label: 'Respuesta oportuna' },

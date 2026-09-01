@@ -19,7 +19,11 @@ export interface PortalJornadasCapacitacionLanding {
       | 'ctaPrincipalUrl'
       | 'ctaSecundario'
       | 'ctaSecundarioUrl'
-    >;
+    > & {
+      imagenUrl: string;
+      imagenUrlAbsoluta?: string;
+      imagenAlt: string;
+    };
 }
 
 const HERO_TEXTS: PortalPromoHeroTexts = {
@@ -41,7 +45,10 @@ const HERO_EXTRAS: Pick<
   | 'ctaPrincipalUrl'
   | 'ctaSecundario'
   | 'ctaSecundarioUrl'
-> = {
+> & {
+  imagenUrl: string;
+  imagenAlt: string;
+} = {
   pillarsLabel: 'Características de las jornadas',
   pillars: PROMO_HERO_PILARES_JORNADAS,
   mostrarBadgeVirtual: false,
@@ -51,6 +58,8 @@ const HERO_EXTRAS: Pick<
   ctaPrincipalUrl: '#inscripcion',
   ctaSecundario: 'Prefiero el aula virtual',
   ctaSecundarioUrl: '/registro',
+  imagenUrl: '',
+  imagenAlt: '',
 };
 
 export const JORNADAS_CAPACITACION_LANDING_DEFAULTS: PortalJornadasCapacitacionLanding = {
@@ -60,7 +69,9 @@ export const JORNADAS_CAPACITACION_LANDING_DEFAULTS: PortalJornadasCapacitacionL
 export function mergeJornadasCapacitacionLanding(
   raw?: Partial<PortalJornadasCapacitacionLanding> | null,
 ): PortalJornadasCapacitacionLanding {
-  const src = raw?.hero && typeof raw.hero === 'object' ? raw.hero : {};
+  const src = (raw?.hero && typeof raw.hero === 'object' ? raw.hero : {}) as Partial<
+    PortalJornadasCapacitacionLanding['hero']
+  >;
   const texts = mergePromoHeroTexts(src, HERO_TEXTS);
   const extras = mergePromoHeroExtras(
     { ...HERO_EXTRAS, ...src },
@@ -85,6 +96,9 @@ export function mergeJornadasCapacitacionLanding(
       ctaPrincipalUrl: extras.ctaPrincipalUrl,
       ctaSecundario: extras.ctaSecundario,
       ctaSecundarioUrl: extras.ctaSecundarioUrl,
+      imagenUrl: String(src.imagenUrl ?? '').trim(),
+      imagenUrlAbsoluta: String(src.imagenUrlAbsoluta ?? '').trim() || undefined,
+      imagenAlt: String(src.imagenAlt ?? '').trim(),
     },
   };
 }
