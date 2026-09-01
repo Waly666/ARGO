@@ -1,15 +1,11 @@
 <section class="ppbh" [attr.id]="sectionId()" [attr.aria-labelledby]="titleId()">
-  @if (showPhoto()) {
-    @if (photoUrl(); as bg) {
-      <div
-        class="ppbh__photo"
-        [style.background-image]="'url(' + bg + ')'"
-        role="img"
-        [attr.aria-label]="photoAlt()"
-      ></div>
-    } @else {
-      <div class="ppbh__photo ppbh__photo--placeholder" aria-hidden="true"></div>
-    }
+  @if (photoVisible()) {
+    <div
+      class="ppbh__photo"
+      [style.background-image]="'url(' + photoUrl() + ')'"
+      role="img"
+      [attr.aria-label]="photoAlt()"
+    ></div>
   }
 
   <div class="ppbh__overlay" aria-hidden="true"></div>

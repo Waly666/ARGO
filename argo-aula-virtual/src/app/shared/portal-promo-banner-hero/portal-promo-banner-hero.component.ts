@@ -26,7 +26,7 @@ import {
     '[class.ppbh--page]': 'size() === "page" || size() === "page-tall"',
     '[class.ppbh--page-tall]': 'size() === "page-tall"',
     '[class.ppbh--home]': 'size() === "home"',
-    '[class.ppbh--no-photo]': '!showPhoto()',
+    '[class.ppbh--no-photo]': '!photoVisible()',
     '[class.ppbh--fx-on]': 'heroEffectsEnabled()',
   },
 })
@@ -43,6 +43,8 @@ export class PortalPromoBannerHeroComponent {
     const explicit = this.showHeroEffects();
     return explicit !== null ? explicit : this.portalTheme.finstruvialPortal();
   });
+  /** Sin URL no se muestra hueco ni placeholder (evita caja vacía en heroes split). */
+  photoVisible = computed(() => this.showPhoto() && !!this.photoUrl()?.trim());
   /** Si es false, no se muestra imagen ni placeholder (solo texto). */
   showPhoto = input(true);
   photoUrl = input<string | null>(null);
