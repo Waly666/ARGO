@@ -5,8 +5,13 @@
       <h3 class="pseo-hero__title">SEO de su sitio web</h3>
       <p class="pseo-hero__lead">
         Personalice título y descripción de cada página. Los campos vacíos usan textos automáticos del portal.
-        Recuerde publicar los cambios al terminar.
+        Puede importar el pack generado en ARGO SEO Studio. Recuerde publicar los cambios al terminar.
       </p>
+      <div class="pseo-hero__actions">
+        <button type="button" class="psb-btn" (click)="openImportModal()">
+          ⬆ Importar pack JSON (SEO Studio)
+        </button>
+      </div>
     </div>
     <div class="pseo-hero__stats">
       <div class="pseo-stat">
@@ -188,3 +193,66 @@
     }
   </div>
 </div>
+
+<argo-form-modal
+  [open]="importOpen()"
+  title="Importar pack SEO"
+  subtitle="Pegue el JSON copiado desde ARGO SEO Studio (botón «Copiar JSON ERP»)."
+  [wide]="true"
+  (closed)="closeImportModal()"
+>
+  <div class="pseo-import">
+    @if (importSuccess()) {
+      <p class="pseo-import__success" role="status">{{ importSuccess() }}</p>
+    }
+
+    <label class="pseo-import__label" for="pseo-import-json">JSON del pack</label>
+    <textarea
+      id="pseo-import-json"
+      class="psb-input pseo-import__textarea"
+      rows="14"
+      placeholder='{ "site": { "seo": { "home": { ... } } }, "landing": { ... } }'
+      [ngModel]="importText()"
+      (ngModelChange)="onImportTextChange($event)"
+    ></textarea>
+
+    @if (importError()) {
+      <p class="pseo-import__error" role="alert">{{ importError() }}</p>
+    }
+
+    @if (importPreview(); as preview) {
+      <div class="pseo-import__preview">
+        <strong>Vista previa</strong>
+        <p>
+          Se aplicarán <strong>{{ preview.pageKeys.length }}</strong> página(s):
+          {{ importPageLabels(preview.pageKeys) }}.
+          @if (preview.hasLanding) {
+            <span>Incluye meta de la landing (inicio).</span>
+          }
+        </p>
+        @if (preview.skippedKeys.length > 0) {
+          <p class="pseo-import__warn">
+            Claves no reconocidas (se ignoran): {{ preview.skippedKeys.join(', ') }}
+          </p>
+        }
+      </div>
+    }
+
+    <p class="pseo-import__hint">
+      Solo se sobrescriben las páginas incluidas en el JSON. Después de aplicar, use el botón
+      <strong>Publicar</strong> del editor del sitio para guardar en el servidor.
+    </p>
+  </div>
+
+  <div modal-actions class="pseo-import__actions">
+    <button type="button" class="psb-btn psb-btn--ghost" (click)="closeImportModal()">Cancelar</button>
+    <button
+      type="button"
+      class="psb-btn"
+      [disabled]="!importPreview()"
+      (click)="applyImportPack()"
+    >
+      Aplicar pack
+    </button>
+  </div>
+</argo-form-modal>

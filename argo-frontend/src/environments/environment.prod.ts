@@ -27,8 +27,8 @@ const base = serverBase();
 
 export const environment = {
   production: true,
-  /** Panel SEO: desactivado en producción (Finstruvial VPS). Código versionado en GitHub para dev local. */
-  portalSeoEditor: false,
+  /** Panel SEO en VPS: importar pack JSON de ARGO SEO Studio y publicar por cliente. */
+  portalSeoEditor: true,
   apiUrl: `${base}/api`,
   uploadsUrl: `${base}/uploads`,
 };

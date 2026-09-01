@@ -11,6 +11,13 @@ import {
 } from '../../core/constants/portal-seo-pages';
 import { PortalSiteConfig } from '../../core/constants/portal-site-defaults';
 import { PortalLandingConfig } from '../../core/constants/portal-landing-defaults';
+import {
+  applyPortalSeoImportPack,
+  parsePortalSeoImportJson,
+  previewPortalSeoImport,
+  PortalSeoImportPreview,
+} from '../../core/utils/portal-seo-import.util';
+import { FormModalComponent } from '../../shared/form-modal/form-modal.component';
 
 const PAGE_ICONS: Record<PortalSeoPageKey, string> = {
   home: '🏠',
@@ -42,7 +49,7 @@ type CharState = 'empty' | 'ok' | 'warn' | 'over';
 @Component({
   selector: 'argo-portal-seo-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FormModalComponent],
   templateUrl: './portal-seo-editor.component.html',
   styleUrl: './portal-seo-editor.component.scss',
 })
@@ -54,6 +61,11 @@ export class PortalSeoEditorComponent implements OnChanges {
   readonly catalog = PORTAL_SEO_PAGE_CATALOG;
   selectedKey = signal<PortalSeoPageKey>('home');
   searchQuery = signal('');
+  importOpen = signal(false);
+  importText = signal('');
+  importError = signal('');
+  importPreview = signal<PortalSeoImportPreview | null>(null);
+  importSuccess = signal('');
 
   ngOnChanges(): void {
     if (!this.site.seo) {
@@ -195,5 +207,71 @@ export class PortalSeoEditorComponent implements OnChanges {
     const home = this.pageData('home');
     this.landing.metaDescription = home.descripcion;
     this.landing.metaKeywords = home.keywords;
+  }
+
+  openImportModal() {
+    this.importOpen.set(true);
+    this.importError.set('');
+    this.importPreview.set(null);
+    this.importSuccess.set('');
+  }
+
+  closeImportModal() {
+    this.importOpen.set(false);
+  }
+
+  onImportTextChange(value: string) {
+    this.importText.set(value);
+    this.importError.set('');
+    this.importSuccess.set('');
+    this.importPreview.set(null);
+
+    const text = value.trim();
+    if (!text) return;
+
+    const parsed = parsePortalSeoImportJson(text);
+    if (!parsed.ok) {
+      this.importError.set(parsed.error);
+      return;
+    }
+
+    const preview = previewPortalSeoImport(parsed.pack);
+    if (!preview.ok) {
+      this.importError.set(preview.error);
+      return;
+    }
+
+    this.importPreview.set(preview);
+  }
+
+  applyImportPack() {
+    const parsed = parsePortalSeoImportJson(this.importText());
+    if (!parsed.ok) {
+      this.importError.set(parsed.error);
+      return;
+    }
+
+    const result = applyPortalSeoImportPack(parsed.pack, this.site, this.landing);
+    if (!result.ok) {
+      this.importError.set(result.error);
+      return;
+    }
+
+    this.site.seo = { ...mergePortalSeoPages(this.site.seo) };
+    const labels = result.pageKeys.map((key) => this.pageMeta(key).label);
+    const skipped =
+      result.skippedKeys.length > 0 ? ` (${result.skippedKeys.length} claves ignoradas)` : '';
+    this.importSuccess.set(
+      `Pack aplicado: ${result.pageKeys.length} página(s) — ${labels.join(', ')}${skipped}. Recuerde publicar el sitio.`,
+    );
+    this.importPreview.set(null);
+    this.importText.set('');
+    if (result.pageKeys.length > 0) {
+      this.selectedKey.set(result.pageKeys[0]);
+    }
+  }
+
+  importPageLabels(keys: PortalSeoPageKey[]): string {
+    return keys.map((key) => this.pageMeta(key).label).join(', ');
   }
 }

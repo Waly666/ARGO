@@ -42,6 +42,10 @@
   color: #94a3b8;
 }
 
+.pseo-hero__actions {
+  margin-top: 0.85rem;
+}
+
 .pseo-hero__stats {
   display: flex;
   flex-wrap: wrap;
@@ -553,4 +557,86 @@
     flex: 1;
     min-width: 0;
   }
+}
+
+.pseo-import {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pseo-import__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim, #9fb3e0);
+}
+
+.pseo-import__textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  min-height: 16rem;
+}
+
+.pseo-import__error {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(127, 29, 29, 0.25);
+  color: #fecaca;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.pseo-import__success {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  background: rgba(6, 78, 59, 0.3);
+  color: #bbf7d0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.pseo-import__preview {
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  background: rgba(37, 99, 235, 0.1);
+  color: #cbd5e1;
+  font-size: 0.84rem;
+  line-height: 1.5;
+
+  strong {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #e2e8f0;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.pseo-import__warn {
+  margin-top: 0.45rem !important;
+  color: #fde68a;
+}
+
+.pseo-import__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.pseo-import__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
 }
