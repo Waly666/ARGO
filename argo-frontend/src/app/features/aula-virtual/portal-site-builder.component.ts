@@ -40,6 +40,7 @@ import { PortalAcercaEditorComponent } from './portal-acerca-editor.component';
 import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields-editor.component';
 import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
+import { PortalGoogleSearchConsoleEditorComponent } from './portal-google-search-console-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
@@ -71,7 +72,8 @@ export type BuilderPanel =
   | 'trabajoEnAlturas'
   | 'acerca'
   | 'empresa'
-  | 'marca';
+  | 'marca'
+  | 'googleSearchConsole';
 
 interface MenuItem {
   id: BuilderPanel;
@@ -118,6 +120,7 @@ interface GuiaPaso {
     PortalPromoHeroFieldsEditorComponent,
     PortalPopupEditorComponent,
     PortalAppMobileEditorComponent,
+    PortalGoogleSearchConsoleEditorComponent,
     PortalSitePreviewComponent,
   ],
   templateUrl: './portal-site-builder.component.html',
@@ -185,6 +188,7 @@ export class PortalSiteBuilderComponent {
       items: [
         { id: 'apariencia', icon: '🎨', label: 'Colores y estilo' },
         { id: 'popup', icon: '💬', label: 'Popup de bienvenida' },
+        { id: 'googleSearchConsole', icon: '🔍', label: 'Google Search Console' },
         { id: 'marca', icon: '©', label: 'Pie de página' },
       ],
     },
@@ -450,6 +454,11 @@ export class PortalSiteBuilderComponent {
       marca: {
         title: 'Pie de página',
         help: 'Texto de derechos de autor al final del sitio. Puede ocultar referencias de quien desarrolló el sistema.',
+      },
+      googleSearchConsole: {
+        title: 'Google Search Console',
+        help:
+          'Suba el archivo HTML de verificación de Google. Queda en la raíz de este portal (cada cliente el suyo) sin tocar el código.',
       },
     };
     return map[this.panel()];

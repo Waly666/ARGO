@@ -8,7 +8,7 @@ const {
   copyrightPublico,
   HOME_SECCIONES_ORDEN,
 } = require('./portalSiteConfig');
-const { HOME_SECCIONES_LABELS } = require('../constants/portalSiteDefaults');
+const { urlPublicaVerificacion } = require('./portalGoogleSearchConsole');
 
 const CLAVE_AULA = 'aula_virtual';
 
@@ -35,6 +35,9 @@ const DEFAULTS_AULA = {
   emailConfirmacion: '',
   /** Correo destino para el formulario PQR del aula */
   emailPqr: '',
+  /** Google Search Console — archivo HTML en la raíz del portal (por cliente). */
+  googleSearchConsoleFilename: '',
+  googleSearchConsoleContent: '',
 };
 
 function logoAbsoluto(urlLogo) {
@@ -148,6 +151,8 @@ async function obtenerConfigPortalAdmin() {
     urlLogo: aula.urlLogo || '',
     urlLogoAbsoluta: logo.urlLogoAbsoluta,
     logoDesdeRecibos: logo.logoDesdeRecibos,
+    googleSearchConsoleFilename: String(aula.googleSearchConsoleFilename || '').trim(),
+    googleSearchConsoleUrl: urlPublicaVerificacion(aula.googleSearchConsoleFilename),
     vistaPreviaEmpresa: empresa,
   };
 }

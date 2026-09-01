@@ -755,6 +755,16 @@
         </div>
       }
 
+      @case ('googleSearchConsole') {
+        <argo-portal-google-search-console-editor
+          [portalUrl]="portalUrl"
+          [filename]="portalForm.googleSearchConsoleFilename || ''"
+          [publicUrl]="portalForm.googleSearchConsoleUrl || ''"
+          (portalConfigUpdated)="applyPortalConfig($event)"
+          (avNotice)="avNotice.emit($event)"
+        />
+      }
+
       @case ('marca') {
         <div class="psb-stack">
           <label class="psb-field psb-field--plain">

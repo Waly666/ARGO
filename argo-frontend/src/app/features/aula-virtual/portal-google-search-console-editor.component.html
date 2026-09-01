@@ -1,0 +1,49 @@
+<div class="pgsc-stack">
+  <p class="pgsc-note">
+    Suba el archivo <strong>HTML</strong> que descarga Google Search Console para verificar que es propietario de
+    <strong>este sitio</strong> (cada cliente tiene el suyo). El archivo queda en la raíz del portal, por ejemplo
+    <code>https://su-dominio.edu.co/googleXXXXXXXX.html</code>, sin necesidad de desplegar código.
+  </p>
+
+  <section class="pgsc-card card">
+    <h3 class="pgsc-title">🔍 Verificación Google Search Console</h3>
+
+    @if (filename) {
+      <div class="pgsc-active">
+        <p><strong>Archivo activo:</strong> <code>{{ filename }}</code></p>
+        @if (verificationHref(); as href) {
+          <p class="pgsc-hint">
+            Enlace público (pruébelo en incógnito antes de verificar en Google):
+            <a [href]="href" target="_blank" rel="noopener">{{ href }}</a>
+          </p>
+        }
+        <button
+          type="button"
+          class="pgsc-btn pgsc-btn--danger"
+          [disabled]="removing()"
+          (click)="quitar()"
+        >
+          {{ removing() ? 'Eliminando…' : 'Quitar verificación' }}
+        </button>
+      </div>
+    } @else {
+      <p class="pgsc-hint">Aún no hay archivo de verificación configurado para este portal.</p>
+    }
+
+    <div class="pgsc-upload">
+      <label class="pgsc-btn pgsc-btn--file" [class.pgsc-btn--disabled]="uploading()">
+        {{ uploading() ? 'Subiendo…' : filename ? 'Reemplazar archivo HTML' : 'Subir archivo HTML de Google' }}
+        <input
+          type="file"
+          accept=".html,.htm,text/html"
+          (change)="onFileSelected($event)"
+          [disabled]="uploading()"
+        />
+      </label>
+      <p class="pgsc-hint">
+        Use el archivo tal como lo entrega Google (nombre <code>google….html</code>). No hace falta pulsar
+        «Publicar cambios»; la verificación queda activa al subir.
+      </p>
+    </div>
+  </section>
+</div>

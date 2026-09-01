@@ -791,3 +791,21 @@ exports.sitemapXml = async (req, res, next) => {
     next(e);
   }
 };
+
+exports.googleSearchConsoleHtml = async (req, res, next) => {
+  try {
+    const { obtenerConfigAula } = require('../services/aulaVirtualPortal');
+    const aula = await obtenerConfigAula();
+    const filename = String(aula.googleSearchConsoleFilename || '').trim();
+    const content = String(aula.googleSearchConsoleContent || '').trim();
+    const requested = String(req.params.filename || '').trim();
+    if (!filename || !content || requested !== filename) {
+      return res.status(404).type('text/plain').send('Not found');
+    }
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=300');
+    res.send(content);
+  } catch (e) {
+    next(e);
+  }
+};

@@ -175,6 +175,28 @@ function buildEvidenciaJornadaMemoria() {
   });
 }
 
+function buildGoogleVerificationHtml() {
+  return multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const mime = String(file.mimetype || '').toLowerCase();
+      const ok =
+        ext === '.html' ||
+        ext === '.htm' ||
+        mime === 'text/html' ||
+        mime === 'application/octet-stream';
+      if (!ok) {
+        const err = new Error('Seleccione el archivo HTML que entregó Google Search Console');
+        err.status = 400;
+        return cb(err);
+      }
+      cb(null, true);
+    },
+  });
+}
+
 function buildPdf(subdir, maxMb = 15) {
   const dest = path.join(BASE, subdir);
   ensureDir(dest);
@@ -315,6 +337,7 @@ module.exports = {
   aulaVirtualHomePublicidad: buildImagen('aula-virtual-home-publicidad', 8),
   aulaVirtualCursosConduccionPublicidad: buildImagen('aula-virtual-cursos-conduccion-publicidad', 8),
   aulaVirtualApk: buildApkAulaVirtual(),
+  aulaVirtualGoogleVerification: buildGoogleVerificationHtml(),
   apkBaseDir,
   sanitizeApkFilename,
   pagoConsignacionQr: buildImagen('pago-consignacion-qr', 5),

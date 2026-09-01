@@ -90,6 +90,8 @@ export interface PortalAulaConfig {
   urlLogo?: string;
   urlLogoAbsoluta?: string | null;
   logoDesdeRecibos?: boolean;
+  googleSearchConsoleFilename?: string;
+  googleSearchConsoleUrl?: string;
   vistaPreviaEmpresa?: {
     nombreCea: string;
     nit?: string;
@@ -495,6 +497,21 @@ export class AulaVirtualAdminService {
       apkNombre: string;
       message: string;
     }>(`${this.base}/portal/app-mobile-apk`, fd);
+  }
+
+  subirGoogleSearchConsolePortal(file: File): Observable<{ config: PortalAulaConfig; message: string }> {
+    const fd = new FormData();
+    fd.append('archivo', file);
+    return this.http.post<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/google-search-console`,
+      fd,
+    );
+  }
+
+  quitarGoogleSearchConsolePortal(): Observable<{ config: PortalAulaConfig; message: string }> {
+    return this.http.delete<{ config: PortalAulaConfig; message: string }>(
+      `${this.base}/portal/google-search-console`,
+    );
   }
 
   quitarImagenPopupPortal(): Observable<{ config: PortalAulaConfig; message: string }> {

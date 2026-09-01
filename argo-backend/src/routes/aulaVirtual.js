@@ -24,6 +24,7 @@ const {
   aulaVirtualHomePublicidad,
   aulaVirtualCursosConduccionPublicidad,
   aulaVirtualApk,
+  aulaVirtualGoogleVerification,
   programasVirtual,
   pagoConsignacionComprobante,
 } = require('../middleware/upload');
@@ -38,6 +39,7 @@ const router = Router();
 
 /** Público — portal estudiante */
 router.get('/sitemap.xml', ctrl.sitemapXml);
+router.get('/google-search-console/:filename', ctrl.googleSearchConsoleHtml);
 router.get('/config', ctrl.configPublica);
 router.get('/legal/autorizacion-datos', ctrl.autorizacionDatosLegal);
 router.get('/catalogos/tipos-doc', ctrl.catalogosTiposDoc);
@@ -269,6 +271,19 @@ router.post(
   configPortal,
   aulaVirtualApk.single('apk'),
   admin.subirApkPortal,
+);
+router.post(
+  '/admin/portal/google-search-console',
+  requireAuth,
+  configPortal,
+  aulaVirtualGoogleVerification.single('archivo'),
+  admin.subirGoogleSearchConsolePortal,
+);
+router.delete(
+  '/admin/portal/google-search-console',
+  requireAuth,
+  configPortal,
+  admin.quitarGoogleSearchConsolePortal,
 );
 router.post(
   '/admin/portal/consulta-certificados-asistente-video',

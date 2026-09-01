@@ -1502,3 +1502,41 @@ exports.quitarImagenTrabajoEnAlturasPortal = async (req, res, next) => {
     next(e);
   }
 };
+
+const { validarArchivoGoogleSearchConsole } = require('../services/portalGoogleSearchConsole');
+
+exports.subirGoogleSearchConsolePortal = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Seleccione el archivo HTML que entregó Google Search Console' });
+    }
+    const parsed = validarArchivoGoogleSearchConsole(
+      req.file.originalname,
+      req.file.buffer.toString('utf8'),
+    );
+    await guardarConfigAula(parsed, req.user);
+    const config = await obtenerConfigPortalAdmin();
+    res.json({
+      config,
+      message: `Verificación publicada. Pruebe en incógnito: ${config.googleSearchConsoleUrl || ''}`,
+    });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.quitarGoogleSearchConsolePortal = async (req, res, next) => {
+  try {
+    await guardarConfigAula(
+      { googleSearchConsoleFilename: '', googleSearchConsoleContent: '' },
+      req.user,
+    );
+    res.json({
+      config: await obtenerConfigPortalAdmin(),
+      message: 'Archivo de verificación de Google eliminado del portal',
+    });
+  } catch (e) {
+    next(e);
+  }
+};
