@@ -146,7 +146,9 @@ export class PortalSiteBuilderComponent {
   readonly paginaMeta = PORTAL_PAGINA_META;
   readonly fuentes = PORTAL_FUENTES;
 
-  readonly menuGroups: MenuGroup[] = [
+  readonly portalSeoEditor = environment.portalSeoEditor;
+
+  private readonly menuGroupsAll: MenuGroup[] = [
     {
       title: 'Empieza aquí',
       items: [
@@ -197,6 +199,14 @@ export class PortalSiteBuilderComponent {
       ],
     },
   ];
+
+  get menuGroups(): MenuGroup[] {
+    if (this.portalSeoEditor) return this.menuGroupsAll;
+    return this.menuGroupsAll.map((g) => ({
+      ...g,
+      items: g.items.filter((i) => i.id !== 'seo'),
+    }));
+  }
 
   panel = signal<BuilderPanel>('panel');
   previewVisible = signal(true);

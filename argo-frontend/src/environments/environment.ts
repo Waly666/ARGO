@@ -26,6 +26,8 @@ const base = serverBase();
 
 export const environment = {
   production: false,
+  /** Panel SEO del editor del sitio: solo desarrollo local; no en VPS/producción. */
+  portalSeoEditor: true,
   apiUrl: `${base}/api`,
   uploadsUrl: `${base}/uploads`,
 };

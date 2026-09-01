@@ -27,6 +27,8 @@ const base = serverBase();
 
 export const environment = {
   production: true,
+  /** Panel SEO: desactivado en producción (Finstruvial VPS). Código versionado en GitHub para dev local. */
+  portalSeoEditor: false,
   apiUrl: `${base}/api`,
   uploadsUrl: `${base}/uploads`,
 };
