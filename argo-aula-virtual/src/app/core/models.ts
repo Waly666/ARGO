@@ -151,6 +151,14 @@ export interface PortalSiteConfig {
     secciones: Record<string, boolean>;
   };
   homeSeccionesLabels?: Record<string, string>;
+  seo?: Record<
+    string,
+    {
+      titulo?: string;
+      descripcion?: string;
+      keywords?: string;
+    }
+  >;
 }
 
 export interface PortalConfig {

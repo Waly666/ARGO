@@ -133,11 +133,11 @@ export class EvaluacionJornadasComponent implements OnInit {
         this.config.set(c);
         this.turnstileSiteKey.set(c.turnstileSiteKey || '');
 
-        this.seo.applyConsultaCertificados(c);
+        this.seo.applyEvaluacionJornadas(c);
 
       },
 
-      error: () => this.seo.applyConsultaCertificados(null),
+      error: () => this.seo.applyEvaluacionJornadas(null),
 
     });
 

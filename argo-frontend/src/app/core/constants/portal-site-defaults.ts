@@ -1,5 +1,11 @@
 /** Constructor del sitio — espejo de portalSiteDefaults.js (backend). */
 
+import {
+  mergePortalSeoPages,
+  PortalSeoPageConfig,
+  PortalSeoPageKey,
+} from './portal-seo-pages';
+
 export type PortalPaginaKey =
   | 'home'
   | 'tienda'
@@ -60,6 +66,8 @@ export interface PortalSiteConfig {
   home: PortalHomeConfig;
   homeSeccionesLabels?: Record<string, string>;
   homeSeccionesOrden?: string[];
+  /** SEO por página (editor del sitio). Vacío = textos automáticos del portal. */
+  seo?: Partial<Record<PortalSeoPageKey, PortalSeoPageConfig>>;
 }
 
 export { PORTAL_FUENTES } from '../utils/portal-fonts.util';
@@ -200,5 +208,6 @@ export function mergePortalSiteDefaults(raw?: Partial<PortalSiteConfig> | null):
     },
     homeSeccionesLabels: raw?.homeSeccionesLabels,
     homeSeccionesOrden: raw?.homeSeccionesOrden,
+    seo: mergePortalSeoPages(raw?.seo),
   };
 }

@@ -41,6 +41,7 @@ import { PortalPromoHeroFieldsEditorComponent } from './portal-promo-hero-fields
 import { PortalPopupEditorComponent } from './portal-popup-editor.component';
 import { PortalAppMobileEditorComponent } from './portal-app-mobile-editor.component';
 import { PortalGoogleSearchConsoleEditorComponent } from './portal-google-search-console-editor.component';
+import { PortalSeoEditorComponent } from './portal-seo-editor.component';
 import { PortalSitePreviewComponent } from './portal-site-preview.component';
 import { buildPortalThemeCssVars } from '../../core/utils/portal-theme-css.util';
 import { loadPortalGoogleFonts } from '../../core/utils/portal-fonts.util';
@@ -73,7 +74,8 @@ export type BuilderPanel =
   | 'acerca'
   | 'empresa'
   | 'marca'
-  | 'googleSearchConsole';
+  | 'googleSearchConsole'
+  | 'seo';
 
 interface MenuItem {
   id: BuilderPanel;
@@ -121,6 +123,7 @@ interface GuiaPaso {
     PortalPopupEditorComponent,
     PortalAppMobileEditorComponent,
     PortalGoogleSearchConsoleEditorComponent,
+    PortalSeoEditorComponent,
     PortalSitePreviewComponent,
   ],
   templateUrl: './portal-site-builder.component.html',
@@ -189,6 +192,7 @@ export class PortalSiteBuilderComponent {
         { id: 'apariencia', icon: '🎨', label: 'Colores y estilo' },
         { id: 'popup', icon: '💬', label: 'Popup de bienvenida' },
         { id: 'googleSearchConsole', icon: '🔍', label: 'Google Search Console' },
+        { id: 'seo', icon: '📈', label: 'SEO (Google)' },
         { id: 'marca', icon: '©', label: 'Pie de página' },
       ],
     },
@@ -459,6 +463,11 @@ export class PortalSiteBuilderComponent {
         title: 'Google Search Console',
         help:
           'Suba el archivo HTML de verificación de Google. Queda en la raíz de este portal (cada cliente el suyo) sin tocar el código.',
+      },
+      seo: {
+        title: 'SEO para Google',
+        help:
+          'Título y descripción de cada página pública. Si deja un campo vacío, el portal usa textos automáticos según su contenido.',
       },
     };
     return map[this.panel()];

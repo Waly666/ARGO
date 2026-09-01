@@ -31,6 +31,7 @@ import {
   TIENDA_SEO_TITLE,
 } from './portal-seo-defaults';
 import { CursoVirtual, PortalConfig } from './models';
+import { resolvePortalSeoPage, PortalSeoPageKey } from './portal-seo-resolver.util';
 
 type PageMetaOpts = {
   pageTitle: string;
@@ -52,34 +53,45 @@ export class PortalSeoService {
 
   applyHome(config: PortalConfig | null, cursos: CursoVirtual[] = []) {
     const nombre = this.orgName(config);
-    const pageTitle = `Cursos virtuales en seguridad vial | ${SEO_BRAND} — ${SEO_LOCALITY}, ${SEO_REGION}`;
     const landing = config?.landing;
-    const description = this.truncate(
+    const fallbackTitle = `Cursos virtuales en seguridad vial | ${SEO_BRAND} — ${SEO_LOCALITY}, ${SEO_REGION}`;
+    const fallbackDescription = this.truncate(
       landing?.metaDescription?.trim() || this.buildDescription(config, cursos),
     );
-    const keywords = landing?.metaKeywords?.trim() || this.buildKeywords(cursos);
+    const fallbackKeywords = landing?.metaKeywords?.trim() || this.buildKeywords(cursos);
+    const seo = this.resolvedSeo(config, 'home', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
+      keywords: fallbackKeywords,
+    });
     const url = this.pageUrl('/');
     const image = this.defaultImage(config);
 
     this.applyPageMeta({
-      pageTitle,
-      description,
-      keywords,
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image,
       siteName: SEO_BRAND,
       themeColor: this.themeColor(config),
-      jsonLd: this.buildHomeJsonLd(config, cursos, url, nombre),
+      jsonLd: this.buildHomeJsonLd(config, cursos, url, nombre, seo.description),
     });
   }
 
   applyCursos(config: PortalConfig | null, modo: 'cursos' | 'tienda' = 'cursos') {
     const isTienda = modo === 'tienda';
+    const key: PortalSeoPageKey = isTienda ? 'tienda' : 'cursos';
     const url = this.pageUrl(isTienda ? '/tienda' : '/cursos');
-    this.applyPageMeta({
+    const seo = this.resolvedSeo(config, key, {
       pageTitle: isTienda ? TIENDA_SEO_TITLE : CURSOS_SEO_TITLE,
       description: this.truncate(isTienda ? TIENDA_SEO_DESCRIPTION : CURSOS_SEO_DESCRIPTION),
       keywords: PORTAL_SEO_KEYWORDS,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -142,10 +154,15 @@ export class PortalSeoService {
 
   applyAcerca(config: PortalConfig | null) {
     const url = this.pageUrl('/acerca');
-    this.applyPageMeta({
+    const seo = this.resolvedSeo(config, 'acerca', {
       pageTitle: ACERCA_SEO_TITLE,
       description: this.truncate(ACERCA_SEO_DESCRIPTION),
       keywords: PORTAL_SEO_KEYWORDS,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -159,10 +176,15 @@ export class PortalSeoService {
 
   applyConsultaCertificados(config: PortalConfig | null) {
     const url = this.pageUrl('/consulta-certificados');
-    this.applyPageMeta({
+    const seo = this.resolvedSeo(config, 'consultaCertificados', {
       pageTitle: CONSULTA_CERT_SEO_TITLE,
       description: this.truncate(CONSULTA_CERT_SEO_DESCRIPTION),
       keywords: CONSULTA_CERT_SEO_KEYWORDS,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -174,8 +196,8 @@ export class PortalSeoService {
         ]),
         {
           '@type': 'WebPage',
-          name: CONSULTA_CERT_SEO_TITLE,
-          description: CONSULTA_CERT_SEO_DESCRIPTION,
+          name: seo.pageTitle,
+          description: this.truncate(seo.description),
           url,
           isPartOf: { '@type': 'WebSite', name: `${SEO_BRAND} — Aula virtual`, url: this.pageUrl('/') },
         },
@@ -185,15 +207,20 @@ export class PortalSeoService {
 
   applyBlog(config: PortalConfig | null) {
     const landing = config?.landing;
-    const pageTitle = landing?.blog?.titulo
+    const fallbackTitle = landing?.blog?.titulo
       ? `${landing.blog.titulo} | ${SEO_BRAND}`
       : BLOG_SEO_TITLE;
-    const description = this.truncate(landing?.blog?.lead?.trim() || BLOG_SEO_DESCRIPTION);
+    const fallbackDescription = this.truncate(landing?.blog?.lead?.trim() || BLOG_SEO_DESCRIPTION);
     const url = this.pageUrl('/blog');
-    this.applyPageMeta({
-      pageTitle,
-      description,
+    const seo = this.resolvedSeo(config, 'blog', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
       keywords: BLOG_SEO_KEYWORDS,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -208,15 +235,20 @@ export class PortalSeoService {
   applyGaleria(config: PortalConfig | null) {
     const landing = config?.landing;
     const titulo = landing?.galeria?.titulo?.trim() || 'Galería de fotos';
-    const pageTitle = `${titulo} | ${SEO_BRAND}`;
-    const description = this.truncate(
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
       landing?.galeria?.lead?.trim() || 'Fotos y videos de nuestras actividades de formación y eventos.',
     );
     const url = this.pageUrl('/galeria');
-    this.applyPageMeta({
-      pageTitle,
-      description,
+    const seo = this.resolvedSeo(config, 'galeria', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
       keywords: PORTAL_SEO_KEYWORDS,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -231,16 +263,21 @@ export class PortalSeoService {
   applyCursosConduccion(config: PortalConfig | null) {
     const cc = config?.landing?.cursosConduccion;
     const titulo = cc?.tituloPrincipal?.trim() || 'Cursos de conducción';
-    const pageTitle = `${titulo} | ${SEO_BRAND}`;
-    const description = this.truncate(
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
       cc?.textoInstitucional?.trim() ||
         'Categorías de licencia de conducción y resoluciones del Centro de Enseñanza Automovilística.',
     );
     const url = this.pageUrl('/cursos-conduccion');
-    this.applyPageMeta({
-      pageTitle,
-      description,
+    const seo = this.resolvedSeo(config, 'cursosConduccion', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
       keywords: `${BLOG_SEO_KEYWORDS}, cursos conducción, licencia conducción, categorías licencia`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -255,17 +292,22 @@ export class PortalSeoService {
   applyExamenTeorico(config: PortalConfig | null) {
     const et = config?.landing?.examenTeorico;
     const titulo = [et?.titulo, et?.tituloLinea2].filter(Boolean).join(' — ') || 'Examen teórico';
-    const pageTitle = `${titulo} | ${SEO_BRAND}`;
-    const description = this.truncate(
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
       et?.paginaIntro?.trim() ||
         et?.fechaDestacada?.trim() ||
         'Información sobre el examen teórico obligatorio para obtener o recategorizar la licencia de conducción.',
     );
     const url = this.pageUrl('/examen-teorico');
-    this.applyPageMeta({
-      pageTitle,
-      description,
+    const seo = this.resolvedSeo(config, 'examenTeorico', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
       keywords: `${BLOG_SEO_KEYWORDS}, examen teórico, licencia conducción, normatividad tránsito, RUNT, CALE`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -281,17 +323,22 @@ export class PortalSeoService {
     const mp = config?.landing?.mercanciasPeligrosas;
     const titulo =
       [mp?.titulo, mp?.tituloLinea2].filter(Boolean).join(' ') || 'Mercancías peligrosas en Colombia';
-    const pageTitle = `${titulo} | ${SEO_BRAND}`;
-    const description = this.truncate(
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
       mp?.heroLead?.trim() ||
         mp?.subtitulo?.trim() ||
         'Normativa, clasificación, documentación y responsabilidades del transporte de mercancías peligrosas en Colombia.',
     );
     const url = this.pageUrl('/mercancias-peligrosas');
-    this.applyPageMeta({
-      pageTitle,
-      description,
+    const seo = this.resolvedSeo(config, 'mercanciasPeligrosas', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
       keywords: `${BLOG_SEO_KEYWORDS}, mercancías peligrosas, Decreto 1079, NTC 1692, transporte Colombia, MinTransporte`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -307,17 +354,22 @@ export class PortalSeoService {
     const ta = config?.landing?.trabajoEnAlturas;
     const titulo =
       [ta?.titulo, ta?.tituloLinea2].filter(Boolean).join(' ') || 'Trabajo seguro en alturas';
-    const pageTitle = `${titulo} | ${SEO_BRAND}`;
-    const description = this.truncate(
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
       ta?.heroLead?.trim() ||
         ta?.subtitulo?.trim() ||
         'Capacitación en trabajo seguro en alturas para el sector transportador: Resolución 4272, EPI y 20 módulos.',
     );
     const url = this.pageUrl('/trabajo-en-alturas');
-    this.applyPageMeta({
-      pageTitle,
-      description,
+    const seo = this.resolvedSeo(config, 'trabajoEnAlturas', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
       keywords: `${BLOG_SEO_KEYWORDS}, trabajo en alturas, Resolución 4272, seguridad sector transporte, EPI, Colombia`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config),
       siteName: SEO_BRAND,
@@ -325,6 +377,97 @@ export class PortalSeoService {
       jsonLd: this.breadcrumbJsonLd(url, [
         { name: 'Inicio', path: '/' },
         { name: 'Trabajo en alturas', path: '/trabajo-en-alturas' },
+      ]),
+    });
+  }
+
+  applyPqr(config: PortalConfig | null) {
+    const pqr = config?.landing?.pqr;
+    const titulo =
+      [pqr?.hero?.tituloLinea, pqr?.hero?.tituloAcento].filter(Boolean).join(' ') || 'PQR';
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
+      pqr?.hero?.lead?.trim() ||
+        `Canal oficial de peticiones, quejas, reclamos y sugerencias de ${this.orgName(config)}.`,
+    );
+    const url = this.pageUrl('/pqr');
+    const seo = this.resolvedSeo(config, 'pqr', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
+      keywords: `${SEO_BRAND}, PQR, peticiones quejas reclamos`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'PQR', path: '/pqr' },
+      ]),
+    });
+  }
+
+  applyJornadasCapacitacion(config: PortalConfig | null) {
+    const jor = config?.landing?.jornadasCapacitacion;
+    const titulo =
+      [jor?.hero?.tituloLinea, jor?.hero?.tituloAcento].filter(Boolean).join(' ') ||
+      'Jornadas de capacitación';
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
+      jor?.hero?.lead?.trim() ||
+        'Inscríbase a jornadas de capacitación presencial en seguridad vial con actividades experienciales.',
+    );
+    const url = this.pageUrl('/jornadas-capacitacion');
+    const seo = this.resolvedSeo(config, 'jornadasCapacitacion', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
+      keywords: `${PORTAL_SEO_KEYWORDS}, jornadas capacitación, seguridad vial`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'Jornadas', path: '/jornadas-capacitacion' },
+      ]),
+    });
+  }
+
+  applyEvaluacionJornadas(config: PortalConfig | null) {
+    const ev = config?.landing?.evaluacionJornadas;
+    const titulo =
+      [ev?.hero?.tituloLinea, ev?.hero?.tituloAcento].filter(Boolean).join(' ') ||
+      'Evaluación de jornadas';
+    const fallbackTitle = `${titulo} | ${SEO_BRAND}`;
+    const fallbackDescription = this.truncate(
+      ev?.hero?.lead?.trim() || 'Encuesta de satisfacción y evaluación de jornadas de capacitación.',
+    );
+    const url = this.pageUrl('/evaluacion-jornadas');
+    const seo = this.resolvedSeo(config, 'evaluacionJornadas', {
+      pageTitle: fallbackTitle,
+      description: fallbackDescription,
+      keywords: `${PORTAL_SEO_KEYWORDS}, evaluación jornadas`,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
+      url,
+      image: this.defaultImage(config),
+      siteName: SEO_BRAND,
+      themeColor: this.themeColor(config),
+      jsonLd: this.breadcrumbJsonLd(url, [
+        { name: 'Inicio', path: '/' },
+        { name: 'Evaluación jornadas', path: '/evaluacion-jornadas' },
       ]),
     });
   }
@@ -371,10 +514,15 @@ export class PortalSeoService {
 
   applyFundacion(config: PortalConfig | null) {
     const url = this.pageUrl('/fundacion');
-    this.applyPageMeta({
+    const seo = this.resolvedSeo(config, 'fundacion', {
       pageTitle: FUNDACION_SEO_TITLE,
       description: this.truncate(FUNDACION_SEO_DESCRIPTION),
       keywords: FUNDACION_SEO_KEYWORDS,
+    });
+    this.applyPageMeta({
+      pageTitle: seo.pageTitle,
+      description: this.truncate(seo.description),
+      keywords: seo.keywords,
       url,
       image: this.defaultImage(config, '/images/fundacion-equipo.png'),
       siteName: SEO_BRAND,
@@ -388,7 +536,7 @@ export class PortalSeoService {
           '@type': 'NGO',
           name: this.orgName(config),
           url,
-          description: FUNDACION_SEO_DESCRIPTION,
+          description: this.truncate(seo.description, 220),
           address: this.postalAddress(config),
           areaServed: [
             { '@type': 'City', name: SEO_LOCALITY },
@@ -475,6 +623,23 @@ export class PortalSeoService {
 
     if (opts.url) this.setCanonical(opts.url);
     this.setJsonLd(opts.jsonLd);
+  }
+
+  private resolvedSeo(
+    config: PortalConfig | null,
+    key: PortalSeoPageKey,
+    fallback: { pageTitle: string; description: string; keywords: string },
+  ) {
+    const resolved = resolvePortalSeoPage(config?.site ?? null, key, {
+      pageTitle: this.truncateTitle(fallback.pageTitle),
+      description: fallback.description,
+      keywords: fallback.keywords,
+    }, config?.landing ?? null);
+    return {
+      pageTitle: this.truncateTitle(resolved.pageTitle),
+      description: resolved.description,
+      keywords: resolved.keywords,
+    };
   }
 
   private orgName(config: PortalConfig | null): string {
@@ -575,6 +740,7 @@ export class PortalSeoService {
     cursos: CursoVirtual[],
     url: string,
     nombre: string,
+    siteDescription: string,
   ): Record<string, unknown>[] {
     const graph: Record<string, unknown>[] = [
       {
@@ -598,11 +764,7 @@ export class PortalSeoService {
         name: `${SEO_BRAND} — Aula virtual`,
         alternateName: nombre,
         url: url || undefined,
-        description: this.truncate(
-          config?.landing?.metaDescription?.trim() ||
-            'Catálogo de cursos y programas virtuales en seguridad vial en Villavicencio, Meta y Colombia.',
-          200,
-        ),
+        description: this.truncate(siteDescription || FUNDACION_SEO_DESCRIPTION, 200),
         inLanguage: 'es-CO',
         potentialAction: {
           '@type': 'SearchAction',

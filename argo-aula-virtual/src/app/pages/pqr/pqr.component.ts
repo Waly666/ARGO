@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 
 import { AulaApiService } from '../../core/aula-api.service';
 import { pqrHeroLead } from '../../core/constants/pqr-landing-defaults';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalConfig } from '../../core/models';
+import { PortalSeoService } from '../../core/portal-seo.service';
 import { PqrFormComponent } from '../../shared/pqr-form/pqr-form.component';
 import { PortalIconComponent } from '../../shared/portal-icon/portal-icon.component';
 import { PortalPromoBannerHeroComponent } from '../../shared/portal-promo-banner-hero/portal-promo-banner-hero.component';
@@ -21,7 +21,7 @@ import { PromoBannerRibbonItem } from '../../shared/portal-promo-banner-hero/por
 })
 export class PqrComponent implements OnInit {
   private api = inject(AulaApiService);
-  private titleSvc = inject(Title);
+  private seo = inject(PortalSeoService);
 
   config = signal<PortalConfig | null>(null);
 
@@ -41,9 +41,9 @@ export class PqrComponent implements OnInit {
     this.api.config().subscribe({
       next: (c) => {
         this.config.set(c);
-        const cea = c.nombreCea || 'Aula Virtual';
-        this.titleSvc.setTitle(`PQR — ${cea}`);
+        this.seo.applyPqr(c);
       },
+      error: () => this.seo.applyPqr(null),
     });
   }
 }

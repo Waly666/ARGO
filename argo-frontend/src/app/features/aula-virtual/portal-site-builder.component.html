@@ -765,6 +765,10 @@
         />
       }
 
+      @case ('seo') {
+        <argo-portal-seo-editor [site]="site" [landing]="landing" [portalUrl]="portalUrl" />
+      }
+
       @case ('marca') {
         <div class="psb-stack">
           <label class="psb-field psb-field--plain">

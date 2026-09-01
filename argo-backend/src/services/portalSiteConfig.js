@@ -5,6 +5,7 @@ const {
   HOME_SECCIONES_LABELS,
   paginasDefault,
 } = require('../constants/portalSiteDefaults');
+const { normalizarSeo } = require('../constants/portalSeoPages');
 const { publicUploadUrl } = require('../utils/uploadPublicUrl');
 
 function str(v, fallback = '') {
@@ -135,6 +136,7 @@ function normalizarPortalSite(raw, { nav, footer } = {}) {
     tema: normalizarTema(src.tema),
     marca: normalizarMarca(src.marca, footer),
     home: normalizarHome(src.home),
+    seo: normalizarSeo(src.seo),
   };
 }
 

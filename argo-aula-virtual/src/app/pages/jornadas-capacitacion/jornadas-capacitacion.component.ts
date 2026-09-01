@@ -128,7 +128,7 @@ export class JornadasCapacitacionComponent implements OnInit {
         this.emailVerificacion.set(!!c.emailVerificacionRegistro);
         this.nombreEmpresa.set(c.nombreCea || '');
         this.correoEmpresa.set(c.email || '');
-        this.seo.applyRegistro(c);
+        this.seo.applyJornadasCapacitacion(c);
       },
       error: () => undefined,
     });

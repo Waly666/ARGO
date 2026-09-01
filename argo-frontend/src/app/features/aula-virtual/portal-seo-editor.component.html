@@ -1,0 +1,190 @@
+<div class="pseo">
+  <header class="pseo-hero">
+    <div class="pseo-hero__copy">
+      <p class="pseo-hero__eyebrow">Visibilidad en buscadores</p>
+      <h3 class="pseo-hero__title">SEO de su sitio web</h3>
+      <p class="pseo-hero__lead">
+        Personalice título y descripción de cada página. Los campos vacíos usan textos automáticos del portal.
+        Recuerde publicar los cambios al terminar.
+      </p>
+    </div>
+    <div class="pseo-hero__stats">
+      <div class="pseo-stat">
+        <strong>{{ configuredCount() }}</strong>
+        <span>personalizadas</span>
+      </div>
+      <div class="pseo-stat">
+        <strong>{{ catalog.length }}</strong>
+        <span>páginas</span>
+      </div>
+      <div class="pseo-stat pseo-stat--accent">
+        <strong>Google</strong>
+        <span>vista previa</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="pseo-layout">
+    <aside class="pseo-nav" aria-label="Páginas SEO">
+      <label class="pseo-search">
+        <span class="pseo-search__icon" aria-hidden="true">🔎</span>
+        <input
+          type="search"
+          class="pseo-search__input"
+          placeholder="Buscar página…"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+      </label>
+
+      @if (filteredCatalog().length === 0) {
+        <p class="pseo-nav__empty">No hay páginas que coincidan con su búsqueda.</p>
+      }
+
+      @for (grupo of grupos(); track grupo) {
+        <p class="pseo-nav__group">
+          <span aria-hidden="true">{{ grupoIcon(grupo) }}</span>
+          {{ grupo }}
+        </p>
+        @for (page of paginasGrupo(grupo); track page.key) {
+          <button
+            type="button"
+            class="pseo-nav__btn"
+            [class.active]="selectedKey() === page.key"
+            (click)="selectPage(page.key)"
+          >
+            <span class="pseo-nav__icon" aria-hidden="true">{{ pageIcon(page.key) }}</span>
+            <span class="pseo-nav__label">
+              <span class="pseo-nav__name">{{ page.label }}</span>
+              <span class="pseo-nav__path">{{ page.ruta }}</span>
+            </span>
+            @if (!usesAutoText(page.key)) {
+              <span class="pseo-nav__badge" title="Textos personalizados">✓</span>
+            }
+          </button>
+        }
+      }
+    </aside>
+
+    @if (pageMeta(selectedKey()); as meta) {
+      <main class="pseo-panel">
+        <header class="pseo-panel__head">
+          <div class="pseo-panel__title-row">
+            <span class="pseo-panel__icon" aria-hidden="true">{{ pageIcon(meta.key) }}</span>
+            <div>
+              <h3>{{ meta.label }}</h3>
+              <p>{{ meta.hint }}</p>
+            </div>
+          </div>
+          <div class="pseo-panel__meta">
+            <code class="pseo-panel__ruta">{{ meta.ruta }}</code>
+            <span class="pseo-panel__status" [class.pseo-panel__status--custom]="!usesAutoText(meta.key)">
+              {{ usesAutoText(meta.key) ? 'Texto automático' : 'Personalizado' }}
+            </span>
+          </div>
+        </header>
+
+        <div class="pseo-panel__grid">
+          <section class="pseo-fields">
+            <div class="pseo-field">
+              <div class="pseo-field__head">
+                <span>Título SEO</span>
+                <small [class]="'pseo-meter__count pseo-meter__count--' + charState(pageData(meta.key).titulo, 60, 62)">
+                  {{ charCount(pageData(meta.key).titulo, 62) }}
+                </small>
+              </div>
+              <div
+                class="pseo-meter"
+                [class]="'pseo-meter--' + charState(pageData(meta.key).titulo, 60, 62)"
+              >
+                <span [style.width.%]="progressWidth(pageData(meta.key).titulo, 62)"></span>
+              </div>
+              <input
+                type="text"
+                class="psb-input"
+                [(ngModel)]="pageData(meta.key).titulo"
+                [placeholder]="meta.defaultTitulo"
+              />
+              <p class="pseo-field__hint">Ideal: 50–60 caracteres con su servicio principal y ciudad.</p>
+            </div>
+
+            <div class="pseo-field">
+              <div class="pseo-field__head">
+                <span>Meta descripción</span>
+                <small
+                  [class]="'pseo-meter__count pseo-meter__count--' + charState(pageData(meta.key).descripcion, 155, 160)"
+                >
+                  {{ charCount(pageData(meta.key).descripcion, 160) }}
+                </small>
+              </div>
+              <div
+                class="pseo-meter"
+                [class]="'pseo-meter--' + charState(pageData(meta.key).descripcion, 155, 160)"
+              >
+                <span [style.width.%]="progressWidth(pageData(meta.key).descripcion, 160)"></span>
+              </div>
+              <textarea
+                class="psb-input"
+                rows="4"
+                [(ngModel)]="pageData(meta.key).descripcion"
+                [placeholder]="meta.defaultDescripcion"
+                (ngModelChange)="meta.key === 'home' ? onHomeFieldChange() : null"
+              ></textarea>
+              <p class="pseo-field__hint">Resuma el beneficio y llame a la acción (matricularse, consultar, etc.).</p>
+            </div>
+
+            <div class="pseo-field">
+              <div class="pseo-field__head">
+                <span>Palabras clave</span>
+                <small class="pseo-meter__count pseo-meter__count--empty">referencia</small>
+              </div>
+              <textarea
+                class="psb-input"
+                rows="3"
+                [(ngModel)]="pageData(meta.key).keywords"
+                [placeholder]="meta.defaultKeywords"
+                (ngModelChange)="meta.key === 'home' ? onHomeFieldChange() : null"
+              ></textarea>
+              <p class="pseo-field__hint">Separe con comas. Le ayudan a redactar; Google casi no las usa.</p>
+            </div>
+
+            <div class="pseo-actions">
+              <button type="button" class="psb-btn psb-btn--ghost" (click)="clearPage(meta.key)">
+                ↺ Restaurar texto automático
+              </button>
+            </div>
+          </section>
+
+          <aside class="pseo-aside">
+            <div class="pseo-preview-wrap">
+              <div class="pseo-preview-wrap__label">
+                <span class="pseo-preview-wrap__g">G</span>
+                Vista previa en Google
+              </div>
+              <article class="pseo-preview" aria-label="Vista previa en Google">
+                <div class="pseo-preview__site">
+                  <span class="pseo-preview__favicon" aria-hidden="true">{{ pageIcon(meta.key) }}</span>
+                  <div>
+                    <p class="pseo-preview__domain">{{ previewDomain(meta.key) }}</p>
+                    <p class="pseo-preview__url">{{ previewUrl(meta.key) }}</p>
+                  </div>
+                </div>
+                <p class="pseo-preview__title">{{ previewTitle(meta.key) }}</p>
+                <p class="pseo-preview__desc">{{ previewDescription(meta.key) }}</p>
+                @if (usesAutoText(meta.key)) {
+                  <p class="pseo-preview__note">Mostrando texto automático del portal</p>
+                }
+              </article>
+            </div>
+
+            <ul class="pseo-tips">
+              <li>Use el nombre de su institución y la ciudad en la página de inicio.</li>
+              <li>Cada servicio importante merece palabras clave en título o descripción.</li>
+              <li>Publique artículos en el blog para captar búsquedas específicas.</li>
+            </ul>
+          </aside>
+        </div>
+      </main>
+    }
+  </div>
+</div>
