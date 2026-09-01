@@ -1,7 +1,7 @@
 .sup-auth-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1100;
+  z-index: 1400;
   background: rgba(2, 6, 23, 0.62);
   backdrop-filter: blur(2px);
 }
@@ -11,7 +11,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1101;
+  z-index: 1401;
   width: min(420px, calc(100vw - 32px));
   background: var(--surface, #0f172a);
   border: 1px solid var(--line, rgba(148, 163, 184, 0.25));

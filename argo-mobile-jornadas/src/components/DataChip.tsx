@@ -70,8 +70,8 @@ export function estadoChipTone(estado?: string): { tone: ChipTone; icon: IonName
   if (e === 'EN PROCESO') {
     return { tone: 'soft', icon: 'play-circle', label: 'En curso' };
   }
-  if (e === 'INACTIVO') {
-    return { tone: 'neutral', icon: 'pause-circle-outline', label: 'Inactiva' };
+  if (e === 'PROGRAMADA' || e === 'INACTIVO') {
+    return { tone: 'neutral', icon: 'calendar-outline', label: 'Programada' };
   }
   return { tone: 'neutral', icon: 'calendar-outline', label: 'Programada' };
 }

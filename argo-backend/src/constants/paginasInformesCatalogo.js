@@ -51,6 +51,14 @@ const GRUPOS = [
         defaultMargins: { top: 12, right: 12, bottom: 12, left: 12 },
       },
       {
+        key: 'listado_jornadas_contrato',
+        label: 'Listado de jornadas del contrato',
+        size: 'letter',
+        orientation: 'landscape',
+        defaultMargins: { top: 10, right: 10, bottom: 10, left: 10 },
+        hint: 'Hoja carta horizontal con el listado de jornadas de la contratación.',
+      },
+      {
         key: 'informe_jornadas_listado',
         label: 'Informes de jornadas (listados)',
         size: 'A4',

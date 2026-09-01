@@ -35,7 +35,7 @@ export function capEstadoJornadaColor(estado?: string | null): string {
   const e = String(estado ?? '').toUpperCase();
   if (e === 'EN PROCESO') return 'cap-emerald';
   if (e === 'FINALIZADO') return 'cap-slate';
-  if (e === 'INACTIVO') return 'cap-amber';
+  if (e === 'PROGRAMADA' || e === 'INACTIVO') return 'cap-amber';
   return 'cap-slate';
 }
 
@@ -111,7 +111,48 @@ export function capCliente(_v?: string | null): string {
 }
 
 export function capMunicipioJor(v?: string | null): string {
-  return v?.trim() ? 'cap cap-teal cap-sm cap-text' : 'cap cap-slate cap-sm';
+  const m = String(v ?? '').trim();
+  if (!m) return 'cap cap-slate cap-sm';
+  const tone = CAP_INSTRUCTOR_PALETTE[hashCapsuleKey(m.toUpperCase()) % CAP_INSTRUCTOR_PALETTE.length];
+  return `cap ${tone} cap-sm cap-text`;
+}
+
+/** Cápsula de municipio en listado de jornadas (más grande, color estable por nombre). */
+export function capMunicipioJorLista(v?: string | null): string {
+  const m = String(v ?? '').trim();
+  if (!m) return 'cap cap-slate cap-text';
+  const tone = CAP_INSTRUCTOR_PALETTE[hashCapsuleKey(m.toUpperCase()) % CAP_INSTRUCTOR_PALETTE.length];
+  return `cap ${tone} cap-text`;
+}
+
+export function fmtClasesDictadasJor(dictadas?: number | null, total?: number | null): string {
+  const d = Math.max(0, parseInt(String(dictadas ?? 0), 10) || 0);
+  const t = Math.max(0, parseInt(String(total ?? 0), 10) || 0);
+  if (t > 0) return `${d}/${t}`;
+  return String(d);
+}
+
+export function labelClasesDictadasJor(dictadas?: number | null, total?: number | null): string {
+  const d = Math.max(0, parseInt(String(dictadas ?? 0), 10) || 0);
+  const t = Math.max(0, parseInt(String(total ?? 0), 10) || 0);
+  if (t > 0) return `${d} clase(s) dictada(s) de ${t} programada(s)`;
+  return `${d} clase(s) dictada(s)`;
+}
+
+export function capClasesDictadasJor(dictadas?: number | null, total?: number | null): string {
+  const d = Math.max(0, parseInt(String(dictadas ?? 0), 10) || 0);
+  const t = Math.max(0, parseInt(String(total ?? 0), 10) || 0);
+  if (t > 0 && d >= t) return 'cap cap-emerald cap-sm cap-mono';
+  if (d > 0) return 'cap cap-cyan cap-sm cap-mono';
+  return 'cap cap-slate cap-sm cap-mono';
+}
+
+export function capCertificadosJor(certificados?: number | null, meta?: number | null): string {
+  const c = Math.max(0, parseInt(String(certificados ?? 0), 10) || 0);
+  const m = Math.max(0, parseInt(String(meta ?? 0), 10) || 0);
+  if (m > 0 && c >= m) return 'cap cap-emerald cap-sm cap-mono';
+  if (c > 0) return 'cap cap-violet cap-sm cap-mono';
+  return 'cap cap-slate cap-sm cap-mono';
 }
 
 /** Municipio y dirección de jornada en una sola línea. */
@@ -288,8 +329,8 @@ export function labelEstadoClaseAmigable(estado?: string | null): string {
 export function labelEstadoJornadaAmigable(estado?: string | null): string {
   const e = String(estado ?? '').trim().toUpperCase();
   if (e === 'EN PROCESO') return 'Hoy en curso';
-  if (e === 'PROGRAMADA') return 'Programada';
-  if (e === 'FINALIZADA') return 'Finalizada';
+  if (e === 'PROGRAMADA' || e === 'INACTIVO') return 'Programada';
+  if (e === 'FINALIZADO') return 'Finalizada';
   return String(estado ?? '').trim() || '—';
 }
 

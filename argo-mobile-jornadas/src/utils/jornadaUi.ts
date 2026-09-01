@@ -71,6 +71,6 @@ export function labelEstadoJornada(estado?: string): string {
   const e = String(estado || '').toUpperCase();
   if (e === 'EN PROCESO') return 'EN PROCESO';
   if (e === 'FINALIZADO') return 'FINALIZADO';
-  if (e === 'INACTIVO') return 'INACTIVO';
+  if (e === 'PROGRAMADA' || e === 'INACTIVO') return 'PROGRAMADA';
   return estado || '—';
 }

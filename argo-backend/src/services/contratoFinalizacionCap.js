@@ -2,7 +2,7 @@ const Contratacion = require('../models/Contratacion');
 const JornadaCap = require('../models/JornadaCap');
 const {
   ESTADO_JORNADA_EN_PROCESO,
-  ESTADO_JORNADA_INACTIVO,
+  ESTADO_JORNADA_PROGRAMADA,
   ESTADO_JORNADA_FINALIZADO,
 } = require('../constants/jornadaCapacitacion');
 const { parseFechaCalendario, fechaCalendarioParaGuardar } = require('../utils/fechaCalendario');
@@ -33,7 +33,7 @@ async function cerrarJornadasActivasContrato(idContrato) {
   const r = await JornadaCap.updateMany(
     {
       idContrato,
-      estado: { $in: [ESTADO_JORNADA_EN_PROCESO, ESTADO_JORNADA_INACTIVO] },
+      estado: { $in: [ESTADO_JORNADA_EN_PROCESO, ESTADO_JORNADA_PROGRAMADA, 'INACTIVO'] },
     },
     { $set: { estado: ESTADO_JORNADA_FINALIZADO } },
   );
@@ -49,7 +49,7 @@ function resolverFechaFinalizacion(valor) {
 }
 
 /**
- * Marca contrato como Ejecutado, registra fecha y cierra jornadas INACTIVO/EN PROCESO.
+ * Marca contrato como Ejecutado, registra fecha y cierra jornadas PROGRAMADA/EN PROCESO.
  */
 async function finalizarContratoCap(contratoDoc, { fechaFinalizacion, userChangeRecord } = {}) {
   if (!contratoDoc) {

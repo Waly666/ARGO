@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { ESTADOS_JORNADA, ESTADO_JORNADA_INACTIVO, DETE_GEOREFE_VALORES } = require('../constants/jornadaCapacitacion');
+const { ESTADOS_JORNADA, ESTADO_JORNADA_PROGRAMADA, DETE_GEOREFE_VALORES } = require('../constants/jornadaCapacitacion');
 
 const JornadaCapSchema = new mongoose.Schema(
   {
@@ -24,7 +24,7 @@ const JornadaCapSchema = new mongoose.Schema(
     horaInicio: { type: Date, default: null },
     numeObjeJornada: { type: Number, default: 0 },
     supervisor: { type: String, trim: true, default: '' },
-    estado: { type: String, enum: ESTADOS_JORNADA, default: ESTADO_JORNADA_INACTIVO },
+    estado: { type: String, enum: ESTADOS_JORNADA, default: ESTADO_JORNADA_PROGRAMADA },
     /** Si true, no recalcula estado por fecha (cierre manual en modo operación especial). */
     estadoOperacionManual: { type: Boolean, default: false },
     /** PDF único con evidencias consolidadas (imágenes + PDFs). */

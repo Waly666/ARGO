@@ -46,8 +46,8 @@ function estadoJornadaChip(estado?: string): {
   if (e === 'FINALIZADO') {
     return { label: 'Terminada', icon: 'checkmark-circle', tone: 'slate', accent: colors.pastelSlateFg };
   }
-  if (e === 'INACTIVO') {
-    return { label: 'Inactiva', icon: 'pause-circle-outline', tone: 'amber', accent: colors.pastelAmberFg };
+  if (e === 'PROGRAMADA' || e === 'INACTIVO') {
+    return { label: 'Programada', icon: 'calendar-outline', tone: 'amber', accent: colors.pastelAmberFg };
   }
   return { label: 'Programada', icon: 'calendar-outline', tone: 'lavender', accent: colors.pastelLavenderFg };
 }

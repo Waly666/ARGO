@@ -17,6 +17,12 @@ const { filtroBusquedaAlumno, coincideBusquedaAlumno, coincideBusquedaTexto, coi
 const { parseFechaCalendario, fechaCalendarioParaGuardar, fechaCalendarioIso } = require('../utils/fechaCalendario');
 const { calcNumeObjeJornada, generarJornadasContrato } = require('../services/programacionJornadas');
 const {
+  opcionesReprogramacion,
+  vistaPreviaReprogramacion,
+  ejecutarReprogramacion,
+} = require('../services/reprogramacionJornadasCap');
+const { verificarReautenticacionAdmin } = require('../services/reautenticacion');
+const {
   generarClasesFaltantesContrato,
   generarClasesFaltantesJornada,
 } = require('../services/programacionClasesJornada');
@@ -704,6 +710,54 @@ exports.generarJornadas = async (req, res, next) => {
   }
 };
 
+exports.opcionesReprogramacionJornadas = async (req, res, next) => {
+  try {
+    const data = await opcionesReprogramacion(req.params.id);
+    res.json(data);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ message: e.message });
+    next(e);
+  }
+};
+
+exports.vistaPreviaReprogramacionJornadas = async (req, res, next) => {
+  try {
+    const data = await vistaPreviaReprogramacion(req.params.id, req.body || {});
+    res.json(data);
+  } catch (e) {
+    res.status(400).json({ message: e.message || 'No se pudo calcular la vista previa' });
+  }
+};
+
+exports.ejecutarReprogramacionJornadas = async (req, res, next) => {
+  try {
+    const { password, codigoMfa, ...params } = req.body || {};
+    let adminUser;
+    try {
+      adminUser = await verificarReautenticacionAdmin(req, { password, codigoMfa });
+    } catch (e) {
+      if (e.status) {
+        return res.status(e.status).json({
+          message: e.message,
+          code: e.code || (e.status === 403 ? 'REAUTH_FAILED' : 'AUTH_INVALID'),
+        });
+      }
+      throw e;
+    }
+    const userLogin = auditoriaUsuario(req);
+    const data = await ejecutarReprogramacion(req.params.id, params, userLogin);
+    const contratoSync = await syncContadoresContrato(req.params.id);
+    res.json({
+      ok: true,
+      ...data,
+      autorizadoPor: adminUser?.username || req.user?.username,
+      contrato: resumenContratoSync(contratoSync),
+    });
+  } catch (e) {
+    res.status(400).json({ message: e.message || 'No se pudo reprogramar las jornadas' });
+  }
+};
+
 /** Jornada adicional manual (extra al plan del contrato). Actualiza numerojornadas en el contrato. */
 exports.crearJornadaContrato = async (req, res, next) => {
   try {
@@ -733,7 +787,7 @@ exports.crearJornadaContrato = async (req, res, next) => {
       });
     }
 
-    const direccion = String(body.direccion ?? contrato.direccion ?? '').trim();
+    const direccion = String(body.direccion ?? '').trim();
     if (!direccion) {
       return res.status(400).json({ message: 'La dirección es obligatoria.' });
     }
@@ -802,6 +856,7 @@ exports.crearJornadaContrato = async (req, res, next) => {
 /** Jornadas de un día (p. ej. operación en carpa). */
 const {
   statsOperacionJornadas,
+  statsListadoJornadas,
   evaluarMetaAlumnosJornada,
 } = require('../services/metaAlumnosJornada');
 
@@ -928,7 +983,22 @@ exports.listarJornadas = async (req, res, next) => {
       if (!Number.isNaN(d.getTime())) q.createdAt = { $gte: d };
     }
     const rows = await JornadaCap.find(q).sort({ fechaProgramacion: 1, indiceEnDia: 1 }).lean();
-    res.json(await sincronizarEstadosJornadas(rows));
+    const synced = await sincronizarEstadosJornadas(rows);
+    const stats = await statsListadoJornadas(synced.map((j) => j._id));
+    const out = synced.map((j) => {
+      const s = stats.get(String(j._id)) || {};
+      return {
+        ...j,
+        totalClases: s.totalClases ?? 0,
+        clasesDictadas: s.clasesDictadas ?? 0,
+        alumnosCapacitados: s.alumnosCapacitados ?? 0,
+        certificadosJornada: s.certificadosJornada ?? 0,
+        cumplidoJornada:
+          Math.max(0, parseInt(j.numeObjeJornada, 10) || 0) > 0 &&
+          (s.certificadosJornada ?? 0) >= Math.max(0, parseInt(j.numeObjeJornada, 10) || 0),
+      };
+    });
+    res.json(out);
   } catch (e) {
     next(e);
   }

@@ -45,6 +45,19 @@ router.post('/contratos', gest, ctrl.crearContrato);
 router.put('/contratos/:id', gest, contratoMutable.contratoPorParametro, ctrl.actualizarContrato);
 router.delete('/contratos/:id', requireAdminTotal, contratoMutable.contratoPorParametro, ctrl.eliminarContrato);
 router.post('/contratos/:id/generar-jornadas', gest, contratoMutable.contratoPorParametro, ctrl.generarJornadas);
+router.get('/contratos/:id/reprogramacion-jornadas/opciones', gest, ctrl.opcionesReprogramacionJornadas);
+router.post(
+  '/contratos/:id/reprogramacion-jornadas/vista-previa',
+  gest,
+  contratoMutable.contratoPorParametro,
+  ctrl.vistaPreviaReprogramacionJornadas,
+);
+router.post(
+  '/contratos/:id/reprogramacion-jornadas/ejecutar',
+  gest,
+  contratoMutable.contratoPorParametro,
+  ctrl.ejecutarReprogramacionJornadas,
+);
 router.post('/contratos/:id/jornadas', gest, contratoMutable.contratoPorParametro, ctrl.crearJornadaContrato);
 router.post('/contratos/:id/finalizar', gest, ctrl.finalizarContrato);
 router.post('/contratos/:id/reactivar', gest, ctrl.reactivarContrato);

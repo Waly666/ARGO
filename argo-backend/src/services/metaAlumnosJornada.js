@@ -3,6 +3,7 @@ const JornadaCap = require('../models/JornadaCap');
 const ClaseJornadaCap = require('../models/ClaseJornadaCap');
 const AsisClasJorCap = require('../models/AsisClasJorCap');
 const InscripcionClase = require('../models/InscripcionClase');
+const Certificado = require('../models/Certificado');
 
 function oid(v) {
   if (!v) return null;
@@ -82,6 +83,71 @@ async function statsOperacionJornadas(jornadaIds) {
 }
 
 /**
+ * Métricas por jornada para listados del ERP (clases dictadas, alumnos, certificados).
+ * @returns {Map<string, { totalClases: number, clasesDictadas: number, alumnosCapacitados: number, certificadosJornada: number }>}
+ */
+async function statsListadoJornadas(jornadaIds) {
+  const out = new Map();
+  const ids = (jornadaIds || []).map(oid).filter(Boolean);
+  if (!ids.length) return out;
+
+  for (const id of ids) {
+    out.set(String(id), {
+      totalClases: 0,
+      clasesDictadas: 0,
+      alumnosCapacitados: 0,
+      certificadosJornada: 0,
+    });
+  }
+
+  const clases = await ClaseJornadaCap.find({ idJornada: { $in: ids } })
+    .select('_id idJornada estado')
+    .lean();
+  const claseToJornada = new Map();
+  for (const cl of clases) {
+    const jid = String(cl.idJornada);
+    claseToJornada.set(String(cl._id), jid);
+    const row = out.get(jid);
+    if (!row) continue;
+    row.totalClases += 1;
+    if (String(cl.estado || '').trim().toUpperCase() === 'FINALIZADO') {
+      row.clasesDictadas += 1;
+    }
+  }
+
+  const claseIds = clases.map((c) => c._id);
+  if (claseIds.length) {
+    const asis = await AsisClasJorCap.find({ idclaseJornada: { $in: claseIds } })
+      .select('idclaseJornada numDocAlumno')
+      .lean();
+    const alumnosPorJornada = new Map();
+    for (const a of asis) {
+      const jid = claseToJornada.get(String(a.idclaseJornada));
+      const doc = a.numDocAlumno;
+      if (!jid || doc == null || Number.isNaN(Number(doc))) continue;
+      if (!alumnosPorJornada.has(jid)) alumnosPorJornada.set(jid, new Set());
+      alumnosPorJornada.get(jid).add(Number(doc));
+    }
+    for (const [jid, set] of alumnosPorJornada) {
+      const row = out.get(jid);
+      if (row) row.alumnosCapacitados = set.size;
+    }
+  }
+
+  const certRows = await Certificado.aggregate([
+    { $match: { idJornada: { $in: ids }, estado: { $ne: 'anulado' } } },
+    { $group: { _id: { idJornada: '$idJornada', numDoc: '$numDoc' } } },
+    { $group: { _id: '$_id.idJornada', count: { $sum: 1 } } },
+  ]);
+  for (const r of certRows) {
+    const row = out.get(String(r._id));
+    if (row) row.certificadosJornada = r.count || 0;
+  }
+
+  return out;
+}
+
+/**
  * Evalúa si la jornada llegó o superó el tope de alumnos proyectados (numeObjeJornada).
  */
 async function evaluarMetaAlumnosJornada(jornadaOrId) {
@@ -127,5 +193,6 @@ async function evaluarMetaAlumnosJornada(jornadaOrId) {
 module.exports = {
   contarAlumnosJornada,
   statsOperacionJornadas,
+  statsListadoJornadas,
   evaluarMetaAlumnosJornada,
 };

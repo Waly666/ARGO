@@ -9,6 +9,8 @@ import { catchError, finalize, map } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
 
 import { CatalogoService, MunicipioDivipola } from '../../core/services/catalogo.service';
+import { ConfigService } from '../../core/services/config.service';
+import { ConfigPaginasInformesService } from '../../core/services/config-paginas-informes.service';
 import { CertificadoJornadaAlertService } from '../../core/services/certificado-jornada-alert.service';
 import { MetaAlumnosJornadaAlertService } from '../../core/services/meta-alumnos-jornada-alert.service';
 import { CertificadoJornadaBloqueoService } from '../../core/services/certificado-jornada-bloqueo.service';
@@ -26,6 +28,7 @@ import {
   EstadoCobroContratoDto,
   InstructorJornadaDto,
   JornadaCapService,
+  ReprogramacionJornadasPlanDto,
 } from '../../core/services/jornada-cap.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PermisoService } from '../../core/services/permiso.service';
@@ -109,6 +112,11 @@ import {
   capInstructor,
   capMetaNum,
   capMunicipioJor,
+  capMunicipioJorLista,
+  capClasesDictadasJor,
+  capCertificadosJor,
+  fmtClasesDictadasJor,
+  labelClasesDictadasJor,
   capPrograma,
   capSesCert,
   capUbicacionClase,
@@ -142,6 +150,11 @@ import {
   CertZipProgreso,
   CertificadosZipProgresoModalComponent,
 } from './certificados-zip-progreso-modal.component';
+import { JornadaReprogramarModalComponent } from './jornada-reprogramar-modal.component';
+import {
+  abrirListadoJornadasContratoPdf,
+  buildListadoJornadasContratoHtml,
+} from './jornada-listado-contrato-document';
 import { ejecutarExportZipCertificados } from './certificados-zip-export.helper';
 import { ejecutarPaqueteEntrega } from './paquete-entrega-export.helper';
 import type { ProgresoEntregaEmit } from './paquete-entrega-progreso.emit';
@@ -183,6 +196,7 @@ type AlumnoNombrable = {
     JornadasEvaluacionesComponent,
     CertificadosZipProgresoModalComponent,
     JornadaQrScanModalComponent,
+    JornadaReprogramarModalComponent,
   ],
   templateUrl: './jornadas-hub.component.html',
   styleUrls: ['./jornadas-hub.component.scss'],
@@ -208,6 +222,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   private comprobanteImpresion = inject(ComprobanteHoyImpresionService);
   private cajaSvc = inject(CajaSesionService);
   private ingresoSvc = inject(IngresoService);
+  private configSvc = inject(ConfigService);
+  private paginasInformesSvc = inject(ConfigPaginasInformesService);
   operacionCfg = inject(JornadasOperacionConfigService);
   operacionEspecialActiva = this.operacionCfg.puedeOperarFueraDeDia;
   mostrarSwitchHorarioManual = this.operacionCfg.mostrarSwitchHorarioManual;
@@ -394,6 +410,11 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   capCodContrato = capCodContrato;
   capCliente = capCliente;
   capMunicipioJor = capMunicipioJor;
+  capMunicipioJorLista = capMunicipioJorLista;
+  capClasesDictadasJor = capClasesDictadasJor;
+  capCertificadosJor = capCertificadosJor;
+  fmtClasesDictadasJor = fmtClasesDictadasJor;
+  labelClasesDictadasJor = labelClasesDictadasJor;
   capFechaJor = capFechaJor;
   capHoraJor = capHoraJor;
   capMetaNum = capMetaNum;
@@ -456,6 +477,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     if (!c?._id) return false;
     return (c.estado || 'En Ejecución') !== 'Ejecutado';
   });
+  puedeReprogramarJornadas = computed(() => this.puedeAgregarJornadaExtra());
+  reprogramarJornadasOpen = signal(false);
   puedeAsignarInstructor = computed(() => this.permisoSvc.tiene('jornadas.gestionar'));
   puedeEditarHorarioClase = computed(() =>
     this.permisoSvc.tiene(['jornadas.gestionar', 'jornadas.operar']),
@@ -573,16 +596,16 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
   });
   jornadasMesResumen = computed(() => {
     const items = this.jornadasMesActual();
-    let inactivo = 0;
+    let programada = 0;
     let proceso = 0;
     let finalizado = 0;
     for (const j of items) {
       const e = String(j.estado || '').toUpperCase();
       if (e === 'EN PROCESO') proceso++;
       else if (e === 'FINALIZADO') finalizado++;
-      else inactivo++;
+      else if (e === 'PROGRAMADA' || e === 'INACTIVO') programada++;
     }
-    return { total: items.length, inactivo, proceso, finalizado };
+    return { total: items.length, programada, proceso, finalizado };
   });
 
   /** Coincide municipio / fecha / estado de la ficha Jornadas. */
@@ -592,7 +615,12 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     const fecha = this.filtroJornadaFecha().trim();
     if (fecha && ymdCalendario(j.fechaProgramacion) !== fecha) return false;
     const est = this.filtroJornadaEstado().trim().toUpperCase();
-    if (est && String(j.estado || '').trim().toUpperCase() !== est) return false;
+    if (est) {
+      const je = String(j.estado || '').trim().toUpperCase();
+      if (est === 'PROGRAMADA') {
+        if (je !== 'PROGRAMADA' && je !== 'INACTIVO') return false;
+      } else if (je !== est) return false;
+    }
     return true;
   }
 
@@ -3306,6 +3334,77 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     );
   }
 
+  imprimirListadoJornadasContrato(): void {
+    const id = this.contratoSel();
+    if (!id) {
+      this.mostrarMsg('Seleccione un contrato.', 'warn', 'Listado de jornadas');
+      return;
+    }
+    const jornadas = [...this.jornadasListaFiltradas()].sort((a, b) =>
+      String(a.fechaProgramacion || '').localeCompare(String(b.fechaProgramacion || '')),
+    );
+    if (!jornadas.length) {
+      this.mostrarMsg('No hay jornadas para exportar con los filtros actuales.', 'warn', 'Listado de jornadas');
+      return;
+    }
+    const c = this.formContrato();
+    const codContrato = String(c.codContrato || jornadas[0]?.codContrato || '').trim() || '—';
+    const contratoLabel = [
+      codContrato !== '—' ? codContrato : '',
+      c.nombreComercial || c.razoSocial || jornadas[0]?.clienteNombre || '',
+    ]
+      .filter(Boolean)
+      .join(' — ');
+    const municipio = this.filtroJornadaMunicipio().trim();
+    const fecha = this.filtroJornadaFecha().trim();
+    const estado = this.filtroJornadaEstado().trim();
+
+    this.configSvc.obtenerReciboEncabezado().subscribe({
+      next: (empresa) => {
+        this.paginasInformesSvc.ensureAndAtPageCss('listado_jornadas_contrato').subscribe({
+          next: (atPageCss) => {
+            const html = buildListadoJornadasContratoHtml({
+              codContrato,
+              contratoLabel: contratoLabel || codContrato,
+              filtros: {
+                municipio: municipio || undefined,
+                fecha: fecha || undefined,
+                estado: estado || undefined,
+              },
+              jornadas,
+              empresa,
+              atPageCss,
+            });
+            if (!abrirListadoJornadasContratoPdf(html)) {
+              this.mostrarMsg('Permita ventanas emergentes para ver e imprimir el PDF.', 'warn', 'Listado de jornadas');
+            }
+          },
+        });
+      },
+      error: () => {
+        this.paginasInformesSvc.ensureAndAtPageCss('listado_jornadas_contrato').subscribe({
+          next: (atPageCss) => {
+            const html = buildListadoJornadasContratoHtml({
+              codContrato,
+              contratoLabel: contratoLabel || codContrato,
+              filtros: {
+                municipio: municipio || undefined,
+                fecha: fecha || undefined,
+                estado: estado || undefined,
+              },
+              jornadas,
+              empresa: null,
+              atPageCss,
+            });
+            if (!abrirListadoJornadasContratoPdf(html)) {
+              this.mostrarMsg('Permita ventanas emergentes para ver e imprimir el PDF.', 'warn', 'Listado de jornadas');
+            }
+          },
+        });
+      },
+    });
+  }
+
   async quitarAlumnoMatricula(a: AlumnoListItem) {
     const ok = await this.confirmSvc.open({
       title: 'Confirmar borrado',
@@ -4604,6 +4703,39 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.recargarJornadas();
   }
 
+  abrirReprogramarJornadas(ev?: Event): void {
+    ev?.stopPropagation();
+    ev?.preventDefault();
+    if (!this.puedeReprogramarJornadas()) return;
+    const id = this.contratoSel();
+    if (!id) {
+      this.mostrarMsg('Seleccione un contrato en el filtro superior.', 'warn', 'Sin contrato');
+      return;
+    }
+    this.reprogramarJornadasOpen.set(true);
+  }
+
+  cerrarReprogramarJornadas(): void {
+    this.reprogramarJornadasOpen.set(false);
+  }
+
+  onReprogramacionJornadasAplicada(plan: ReprogramacionJornadasPlanDto): void {
+    if (plan.extiendeFechaFin && plan.fechaFinNueva) {
+      const c = this.formContrato();
+      if (this.mismoContratoId(c._id, this.contratoSel())) {
+        this.formContrato.set({ ...c, fechaFinJornadas: plan.fechaFinNueva });
+      }
+    }
+    this.recargarVistaJornadas();
+    this.recargarContratos();
+    this.mostrarMsg(
+      `Se reprogramaron ${plan.totalCambios} jornada(s).` +
+        (plan.extiendeFechaFin ? ` Fecha fin del contrato: ${this.fmtFecha(plan.fechaFinNueva)}.` : ''),
+      'ok',
+      'Reprogramación aplicada',
+    );
+  }
+
   recargarJornadas() {
     const id = this.contratoSel();
     if (!id) {
@@ -5284,8 +5416,8 @@ export class JornadasHubComponent implements OnInit, OnDestroy {
     this.jornadaEvidenciaClases.set([]);
     this.jornadaEvidenciaSeccionAbierta.set(null);
     this.direccionAlertaActiva.set(false);
-    this.jornadaEdit.set({ _id: '', idContrato: id, estado: 'INACTIVO' } as JornadaCapDto);
-    this.jornadaEditDireccion.set(c.direccion || '');
+    this.jornadaEdit.set({ _id: '', idContrato: id, estado: 'PROGRAMADA' } as JornadaCapDto);
+    this.jornadaEditDireccion.set('');
     this.jornadaEditLat.set('');
     this.jornadaEditLng.set('');
     this.jornadaEditDeteGeorefe.set('');

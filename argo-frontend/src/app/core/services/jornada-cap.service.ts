@@ -429,8 +429,77 @@ export interface JornadaCapDto {
   /** Certificados vigentes atribuidos a esta jornada. */
   certificadosJornada?: number;
   cumplidoJornada?: boolean;
+  /** Clases en estado FINALIZADO en la jornada. */
+  clasesDictadas?: number;
+  totalClases?: number;
+  /** Alumnos distintos con asistencia registrada en clases de la jornada. */
+  alumnosCapacitados?: number;
   /** PDF único con evidencias consolidadas (PNG/PDF). */
   urlEvidenciaConsolidada?: string;
+}
+
+export type ReprogramacionJornadasModo = 'corrimiento' | 'fechaAncla';
+
+export interface ReprogramacionJornadasParamsDto {
+  fechaDesde: string;
+  modo: ReprogramacionJornadasModo;
+  /** Días programables a correr (modo corrimiento). */
+  diasCorrimiento?: number;
+  /** Nueva fecha de la primera jornada movible (modo fechaAncla). */
+  fechaAncla?: string;
+}
+
+export interface AutorizacionReprogramacionDto {
+  /** Contraseña de la cuenta con la que inició sesión (administrador). */
+  password: string;
+  /** Código TOTP de 6 dígitos (obligatorio si tiene 2FA activo). */
+  codigoMfa?: string;
+}
+
+export interface ReprogramacionJornadasOpcionesDto {
+  fechaMinimaDesde: string;
+  fechaFinJornadas?: string;
+  incluiSab?: boolean;
+  incluiDom?: boolean;
+  incluiFest?: boolean;
+  totalJornadas?: number;
+  totalMovibles?: number;
+  totalMoviblesFinalizadas?: number;
+  totalBloqueadas?: number;
+  bloqueadas?: Array<{ idJornada: string; codigoJornada?: string; fecha?: string }>;
+}
+
+export interface ReprogramacionJornadaAsignacionDto {
+  idJornada: string;
+  codigoJornada?: string;
+  municipio?: string;
+  fechaAnterior: string;
+  indiceAnterior: number;
+  fechaNueva: string;
+  indiceNuevo: number;
+  cambiaFecha: boolean;
+}
+
+export interface ReprogramacionJornadasPlanDto {
+  modo: ReprogramacionJornadasModo;
+  fechaDesde: string;
+  fechaMinimaDesde: string;
+  fechaAncla?: string;
+  totalMovibles: number;
+  totalCambios: number;
+  assignments: ReprogramacionJornadaAsignacionDto[];
+  omitidas?: Array<{ idJornada: string; codigoJornada?: string; fecha?: string; motivo?: string }>;
+  bloqueadas?: Array<{ idJornada: string; codigoJornada?: string; fecha?: string; motivo?: string }>;
+  fechaFinActual?: string;
+  fechaFinNueva?: string;
+  extiendeFechaFin?: boolean;
+}
+
+export interface ReprogramacionJornadasResultadoDto extends ReprogramacionJornadasPlanDto {
+  ok?: boolean;
+  autorizadoPor?: string;
+  contrato?: ContratoSyncDto;
+  resultado?: { aplicadas?: number; fechaFinNueva?: string; extiendeFechaFin?: boolean };
 }
 
 export interface ClaseJornadaDto {
@@ -683,6 +752,32 @@ export class JornadaCapService {
       jornadasProcesadasClases?: number;
       contrato?: ContratoSyncDto;
     }>(`${this.base}/contratos/${idContrato}/generar-jornadas`, {});
+  }
+
+  opcionesReprogramacionJornadas(idContrato: string): Observable<ReprogramacionJornadasOpcionesDto> {
+    return this.http.get<ReprogramacionJornadasOpcionesDto>(
+      `${this.base}/contratos/${idContrato}/reprogramacion-jornadas/opciones`,
+    );
+  }
+
+  vistaPreviaReprogramacionJornadas(
+    idContrato: string,
+    body: ReprogramacionJornadasParamsDto,
+  ): Observable<ReprogramacionJornadasPlanDto> {
+    return this.http.post<ReprogramacionJornadasPlanDto>(
+      `${this.base}/contratos/${idContrato}/reprogramacion-jornadas/vista-previa`,
+      body,
+    );
+  }
+
+  ejecutarReprogramacionJornadas(
+    idContrato: string,
+    body: ReprogramacionJornadasParamsDto & AutorizacionReprogramacionDto,
+  ): Observable<ReprogramacionJornadasResultadoDto> {
+    return this.http.post<ReprogramacionJornadasResultadoDto>(
+      `${this.base}/contratos/${idContrato}/reprogramacion-jornadas/ejecutar`,
+      body,
+    );
   }
 
   crearJornadaContrato(

@@ -1140,6 +1140,19 @@
               + Agregar jornada extra
             </button>
           }
+          @if (puedeReprogramarJornadas()) {
+            <button type="button" class="ficha-btn ficha-btn--ghost" (click)="abrirReprogramarJornadas($event)">
+              Reprogramar jornadas
+            </button>
+          }
+          <button
+            type="button"
+            class="ficha-btn ficha-btn--ghost"
+            (click)="imprimirListadoJornadasContrato()"
+            [disabled]="!contratoSel() || totalJornadasFiltradas() === 0"
+            title="PDF carta horizontal con el listado de jornadas (respeta filtros activos)">
+            Listado PDF
+          </button>
           <div class="vista-toggle">
             <button type="button" [class.active]="vistaJornadas() === 'lista'" (click)="setVistaJornadas('lista')">
               Lista
@@ -1178,7 +1191,7 @@
             (ngModelChange)="filtroJornadaEstado.set($event)"
           >
             <option value="">Todos</option>
-            <option value="INACTIVO">INACTIVO</option>
+            <option value="PROGRAMADA">PROGRAMADA</option>
             <option value="EN PROCESO">EN PROCESO</option>
             <option value="FINALIZADO">FINALIZADO</option>
           </select>
@@ -1646,8 +1659,8 @@
             @if (jornadasMesResumen().proceso > 0) {
               <span class="cal-resumen-chip cap-emerald">{{ jornadasMesResumen().proceso }} EN PROCESO</span>
             }
-            @if (jornadasMesResumen().inactivo > 0) {
-              <span class="cal-resumen-chip cap-amber">{{ jornadasMesResumen().inactivo }} INACTIVO</span>
+            @if (jornadasMesResumen().programada > 0) {
+              <span class="cal-resumen-chip cap-amber">{{ jornadasMesResumen().programada }} PROGRAMADA</span>
             }
             @if (jornadasMesResumen().finalizado > 0) {
               <span class="cal-resumen-chip cap-slate">{{ jornadasMesResumen().finalizado }} FINALIZADO</span>
@@ -1655,7 +1668,7 @@
           </div>
 
           <div class="cal-legend">
-            <span class="cal-legend-item"><i class="cal-legend-dot cap-amber"></i> INACTIVO</span>
+            <span class="cal-legend-item"><i class="cal-legend-dot cap-amber"></i> PROGRAMADA</span>
             <span class="cal-legend-item"><i class="cal-legend-dot cap-emerald"></i> EN PROCESO</span>
             <span class="cal-legend-item"><i class="cal-legend-dot cap-slate"></i> FINALIZADO</span>
           </div>
@@ -1730,8 +1743,11 @@
             <th>Código jornada</th>
             <th>Fecha</th>
             <th>Municipio</th>
+            <th class="num" title="Clases en estado FINALIZADO">Clases dict.</th>
+            <th class="num" title="Alumnos distintos con asistencia en la jornada">Alumnos cap.</th>
+            <th class="num" title="Certificados vigentes emitidos en la jornada">Certificados</th>
             <th>Dirección</th>
-            <th>Meta alumnos</th>
+            <th class="num">Meta alumnos</th>
             <th>Supervisor</th>
             <th>Coordenadas</th>
             <th>Origen GPS</th>
@@ -1742,14 +1758,34 @@
         <tbody>
           <tr *ngFor="let j of jornadasListaFiltradas()" [class.sel]="jornadaEnEdicion(j._id)" [ngClass]="rowJornadaClass(j.estado)">
             <td>
-              <span class="cap cap-amber cap-sm cap-mono" [title]="j._id">{{ j.codigoJornada || '—' }}</span>
+              <span class="cap cap-amber cap-mono jor-list-cap" [title]="j._id">{{ j.codigoJornada || '—' }}</span>
             </td>
-            <td><span [ngClass]="capFechaJor(j.fechaProgramacion)">{{ fmtFecha(j.fechaProgramacion) }}</span></td>
-            <td><span [ngClass]="capMunicipioJor(j.municipio)">{{ j.municipio || '—' }}</span></td>
+            <td>
+              <span class="cap cap-cyan cap-mono jor-list-cap">{{ fmtFecha(j.fechaProgramacion) }}</span>
+            </td>
+            <td>
+              <span [ngClass]="capMunicipioJorLista(j.municipio)" class="jor-list-cap">{{ j.municipio || '—' }}</span>
+            </td>
+            <td class="num">
+              <span
+                class="cap cap-sm cap-mono"
+                [ngClass]="capClasesDictadasJor(j.clasesDictadas, j.totalClases)"
+                [title]="labelClasesDictadasJor(j.clasesDictadas, j.totalClases)">
+                {{ fmtClasesDictadasJor(j.clasesDictadas, j.totalClases) }}
+              </span>
+            </td>
+            <td class="num">
+              <span [ngClass]="capMetaNum(j.alumnosCapacitados)">{{ j.alumnosCapacitados ?? 0 }}</span>
+            </td>
+            <td class="num">
+              <span [ngClass]="capCertificadosJor(j.certificadosJornada, j.numeObjeJornada)">
+                {{ j.certificadosJornada ?? 0 }}
+              </span>
+            </td>
             <td class="direccion-cell" [title]="j.direccion || ''">
               <span [ngClass]="capCliente(j.direccion)">{{ j.direccion || '—' }}</span>
             </td>
-            <td><span [ngClass]="capMetaNum(j.numeObjeJornada)">{{ j.numeObjeJornada ?? '—' }}</span></td>
+            <td class="num"><span [ngClass]="capMetaNum(j.numeObjeJornada)">{{ j.numeObjeJornada ?? '—' }}</span></td>
             <td><span [ngClass]="capCliente(j.supervisor)">{{ j.supervisor || '—' }}</span></td>
             <td>
               <span *ngIf="j.lat != null && j.lng != null" [ngClass]="capFechaJor('x')" class="cap-mono">{{ j.lat }}, {{ j.lng }}</span>
@@ -3585,6 +3621,14 @@
     </div>
   </div>
 }
+
+<argo-jornada-reprogramar-modal
+  [open]="reprogramarJornadasOpen()"
+  [idContrato]="contratoSel()"
+  [codContrato]="contratoActivo()?.codContrato || ''"
+  (closed)="cerrarReprogramarJornadas()"
+  (aplicado)="onReprogramacionJornadasAplicada($event)"
+/>
 
 <argo-certificados-zip-progreso-modal
   [open]="zipProgresoOpen()"

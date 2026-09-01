@@ -1,0 +1,240 @@
+@if (open) {
+  <div class="jrp-backdrop" (click)="cerrar()" role="presentation">
+    <div
+      class="jrp-modal card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="jrp-title"
+      (click)="$event.stopPropagation()">
+      <header class="jrp-head">
+        <div>
+          <p class="jrp-kicker">Programación masiva</p>
+          <h2 id="jrp-title">Reprogramar jornadas</h2>
+          @if (codContrato) {
+            <p class="jrp-sub">Contrato {{ codContrato }}</p>
+          }
+        </div>
+        <button type="button" class="jrp-close" (click)="cerrar()" [disabled]="bloqueado()" aria-label="Cerrar">
+          ×
+        </button>
+      </header>
+
+      @if (loading()) {
+        <p class="jrp-hint">Cargando opciones…</p>
+      } @else {
+        <div class="jrp-body" [class.jrp-body--dim]="paso() !== 'form'">
+          @if (opciones(); as o) {
+            <div class="jrp-resumen" role="status">
+              <span><strong>{{ o.totalMovibles ?? 0 }}</strong> movibles</span>
+              @if ((o.totalMoviblesFinalizadas ?? 0) > 0) {
+                <span><strong>{{ o.totalMoviblesFinalizadas }}</strong> finalizadas sin dictar</span>
+              }
+              <span><strong>{{ o.totalBloqueadas ?? 0 }}</strong> bloqueadas (clases dictadas)</span>
+              <span class="jrp-reglas">{{ reglasCalendario() }}</span>
+            </div>
+
+            @if ((o.bloqueadas?.length ?? 0) > 0) {
+              <p class="jrp-aviso">
+                No se moverán jornadas con clases dictadas. Puede reprogramar jornadas
+                <strong>finalizadas</strong> que no tengan clases dictadas (desde
+                <strong>{{ fmtFecha(o.fechaMinimaDesde) }}</strong>).
+              </p>
+            } @else if ((o.totalMoviblesFinalizadas ?? 0) > 0) {
+              <p class="jrp-aviso jrp-aviso--info">
+                Incluye jornadas <strong>finalizadas</strong> sin clases dictadas. Puede elegir una fecha «desde»
+                anterior a hoy (mínimo <strong>{{ fmtFecha(o.fechaMinimaDesde) }}</strong>).
+              </p>
+            }
+          }
+
+          <div class="jrp-grid">
+            <div class="field">
+              <argo-date-input
+                label="Reprogramar desde"
+                [ngModel]="fechaDesde"
+                (ngModelChange)="fechaDesde = $event; preview.set(null)"
+                [min]="minFechaDesde()"
+                [disabled]="paso() !== 'form'"
+              />
+              <p class="field-hint">
+                Jornadas en o después de esta fecha: futuras, en proceso o finalizadas sin clases dictadas.
+              </p>
+            </div>
+
+            <div class="field">
+              <label>Modo</label>
+              <select [(ngModel)]="modo" (ngModelChange)="preview.set(null)" [disabled]="paso() !== 'form'">
+                <option value="corrimiento">Correr N días programables</option>
+                <option value="fechaAncla">Nueva fecha de la primera jornada</option>
+              </select>
+            </div>
+
+            @if (modo === 'corrimiento') {
+              <div class="field">
+                <label>Días a correr</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  [(ngModel)]="diasCorrimiento"
+                  (ngModelChange)="preview.set(null)"
+                  [disabled]="paso() !== 'form'"
+                />
+                <p class="field-hint">Cuenta solo días hábiles según el contrato (sáb/dom/festivos).</p>
+              </div>
+            } @else {
+              <div class="field">
+                <argo-date-input
+                  label="Nueva fecha de inicio"
+                  [ngModel]="fechaAncla"
+                  (ngModelChange)="fechaAncla = $event; preview.set(null)"
+                  [min]="fechaDesde || minFechaDesde()"
+                  [disabled]="paso() !== 'form'"
+                />
+              </div>
+            }
+          </div>
+
+          @if (paso() === 'form') {
+            <div class="jrp-actions">
+              <button
+                type="button"
+                class="jrp-btn jrp-btn--ghost"
+                (click)="calcularVistaPrevia()"
+                [disabled]="previewLoading() || !fechaDesde">
+                {{ previewLoading() ? 'Calculando…' : 'Vista previa' }}
+              </button>
+            </div>
+          }
+
+          @if (error() && paso() !== 'progreso') {
+            <p class="jrp-error" role="alert">{{ error() }}</p>
+          }
+
+          @if (preview(); as p) {
+            <section class="jrp-preview">
+              <header class="jrp-preview-head">
+                <h3>Vista previa</h3>
+                <p>
+                  <strong>{{ p.totalCambios }}</strong> cambio(s) en
+                  <strong>{{ p.totalMovibles }}</strong> jornada(s).
+                  @if (p.extiendeFechaFin) {
+                    Fecha fin del contrato: {{ fmtFecha(p.fechaFinActual) }} →
+                    <strong>{{ fmtFecha(p.fechaFinNueva) }}</strong>.
+                  }
+                </p>
+              </header>
+
+              @if (!p.totalCambios) {
+                <p class="jrp-hint">No hay cambios de fecha con los parámetros indicados.</p>
+              } @else {
+                <div class="table-wrap">
+                  <table class="argo jrp-table">
+                    <thead>
+                      <tr>
+                        <th>Jornada</th>
+                        <th>Municipio</th>
+                        <th>Fecha actual</th>
+                        <th></th>
+                        <th>Fecha nueva</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of p.assignments; track row.idJornada) {
+                        @if (row.cambiaFecha) {
+                          <tr>
+                            <td class="mono">{{ row.codigoJornada || row.idJornada }}</td>
+                            <td>{{ row.municipio || '—' }}</td>
+                            <td>{{ fmtFecha(row.fechaAnterior) }}</td>
+                            <td class="jrp-arrow">→</td>
+                            <td><strong>{{ fmtFecha(row.fechaNueva) }}</strong></td>
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </section>
+          }
+        </div>
+      }
+
+      @if (paso() === 'auth') {
+        <div class="jrp-overlay jrp-overlay--auth" role="dialog" aria-labelledby="jrp-auth-title">
+          <div class="jrp-overlay-panel">
+            <h3 id="jrp-auth-title">Confirmar con contraseña y 2FA</h3>
+            <p class="jrp-overlay-msg">
+              Se moverán <strong>{{ preview()?.totalCambios ?? 0 }}</strong> jornada(s) del contrato
+              <strong>{{ codContrato || '' }}</strong>.
+              Ingrese la contraseña de su cuenta
+              <strong>{{ auth.user()?.username || 'administrador' }}</strong>
+              y el código de su aplicación de autenticación si tiene 2FA activo.
+            </p>
+
+            <label class="jrp-auth-field">
+              <span>Contraseña</span>
+              <input
+                type="password"
+                [(ngModel)]="password"
+                autocomplete="current-password"
+                (keyup.enter)="confirmarReprogramacion()"
+              />
+            </label>
+
+            <label class="jrp-auth-field">
+              <span>Código 2FA (6 dígitos)</span>
+              <input
+                type="text"
+                [(ngModel)]="codigoMfa"
+                maxlength="6"
+                inputmode="numeric"
+                placeholder="000000"
+                (keyup.enter)="confirmarReprogramacion()"
+              />
+            </label>
+
+            @if (error(); as err) {
+              <p class="jrp-error" role="alert">{{ err }}</p>
+            }
+
+            <div class="jrp-overlay-actions">
+              <button type="button" class="jrp-btn jrp-btn--ghost" (click)="cancelarAutenticacion()">
+                Volver
+              </button>
+              <button type="button" class="jrp-btn jrp-btn--primary" (click)="confirmarReprogramacion()">
+                Confirmar reprogramación
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (paso() === 'progreso') {
+        <div class="jrp-overlay jrp-overlay--progreso" role="status" aria-live="polite">
+          <div class="jrp-overlay-panel jrp-overlay-panel--progreso">
+            <h3>Reprogramando jornadas</h3>
+            <p class="jrp-progreso-fase">{{ progreso().fase || 'Procesando…' }}</p>
+            <div class="jrp-progreso-track">
+              <div class="jrp-progreso-fill" [style.width.%]="progreso().porcentaje"></div>
+            </div>
+            <p class="jrp-progreso-pct">{{ progreso().porcentaje }}%</p>
+          </div>
+        </div>
+      }
+
+      @if (paso() === 'form') {
+        <footer class="jrp-foot">
+          <button type="button" class="jrp-btn jrp-btn--ghost" (click)="cerrar()">Cancelar</button>
+          <button
+            type="button"
+            class="jrp-btn jrp-btn--primary"
+            (click)="solicitarAutenticacion()"
+            [disabled]="!preview()?.totalCambios">
+            Aplicar reprogramación
+          </button>
+        </footer>
+      }
+    </div>
+  </div>
+}

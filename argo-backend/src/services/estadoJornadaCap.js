@@ -1,7 +1,7 @@
 const Contratacion = require('../models/Contratacion');
 const JornadaCap = require('../models/JornadaCap');
 const {
-  ESTADO_JORNADA_INACTIVO,
+  ESTADO_JORNADA_PROGRAMADA,
   ESTADO_JORNADA_EN_PROCESO,
   ESTADO_JORNADA_FINALIZADO,
 } = require('../constants/jornadaCapacitacion');
@@ -12,11 +12,11 @@ function inicioDia(fecha) {
   return parseFechaCalendario(fecha);
 }
 
-/** INACTIVO (futura) → EN PROCESO (día programado) → FINALIZADO (días pasados). */
+/** PROGRAMADA (futura) → EN PROCESO (día programado) → FINALIZADO (días pasados). */
 function estadoJornadaPorFecha(fechaProgramacion, hoy = new Date()) {
   const prog = inicioDia(fechaProgramacion);
   const ref = inicioDia(hoy);
-  if (prog.getTime() > ref.getTime()) return ESTADO_JORNADA_INACTIVO;
+  if (prog.getTime() > ref.getTime()) return ESTADO_JORNADA_PROGRAMADA;
   if (prog.getTime() === ref.getTime()) return ESTADO_JORNADA_EN_PROCESO;
   return ESTADO_JORNADA_FINALIZADO;
 }
@@ -66,7 +66,7 @@ function jornadaOperableHoy(jornada, hoy = new Date()) {
 function mensajeSiJornadaNoOperable(jornada) {
   if (!jornada?.fechaProgramacion) return 'Jornada no encontrada';
   const estado = estadoJornadaPorFecha(jornada.fechaProgramacion);
-  if (estado === ESTADO_JORNADA_INACTIVO) {
+  if (estado === ESTADO_JORNADA_PROGRAMADA) {
     return 'Solo puede operar en la jornada el día programado (aún no es ese día).';
   }
   if (estado === ESTADO_JORNADA_FINALIZADO) {
@@ -125,6 +125,11 @@ function mensajeSiJornadaNoDisponibleParaClase(jornada) {
 }
 
 async function migrarEstadosJornadaCap() {
+  const legado = await JornadaCap.updateMany({ estado: 'INACTIVO' }, { $set: { estado: ESTADO_JORNADA_PROGRAMADA } });
+  if (legado.modifiedCount > 0) {
+    console.log(`[ARGO] Jornadas Cap.: ${legado.modifiedCount} estado(s) INACTIVO → PROGRAMADA`);
+  }
+
   const rows = await JornadaCap.find().select('_id idContrato fechaProgramacion estado').lean();
   const contratos = await Contratacion.find({
     _id: { $in: rows.map((j) => j.idContrato).filter(Boolean) },

@@ -85,7 +85,6 @@ async function generarJornadasContrato(contrato, userLogin = '') {
   const porDiaLegado = Math.max(1, Math.min(20, parseInt(contrato.jornadasPorDia, 10) || 1));
   const numeObje = calcNumeObjeJornada(contrato.numeroAlumnos, n);
   const supervisor = String(contrato.supervisor || '').trim();
-  const direccion = String(contrato.direccion || '').trim();
 
   const ocupados = new Set(existentes.map((j) => slotKey(j.fechaProgramacion, j.indiceEnDia)));
 
@@ -128,7 +127,7 @@ async function generarJornadasContrato(contrato, userLogin = '') {
           municipio: cupo.municipio || '',
           depto: cupo.depto || '',
           codMunicipio: cupo.codMunicipio || '',
-          direccion,
+          direccion: '',
           lat: null,
           lng: null,
           numeObjeJornada: numeObje,
