@@ -92,6 +92,8 @@ export interface PortalAulaConfig {
   logoDesdeRecibos?: boolean;
   googleSearchConsoleFilename?: string;
   googleSearchConsoleUrl?: string;
+  /** URL pública del portal aula (no el ERP). */
+  portalPublicUrl?: string;
   vistaPreviaEmpresa?: {
     nombreCea: string;
     nit?: string;

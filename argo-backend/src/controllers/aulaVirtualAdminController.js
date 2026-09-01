@@ -198,7 +198,7 @@ exports.eliminarMaterial = async (req, res, next) => {
 
 exports.obtenerConfigPortal = async (_req, res, next) => {
   try {
-    res.json(await obtenerConfigPortalAdmin());
+    res.json(await obtenerConfigPortalAdmin(req));
   } catch (e) {
     next(e);
   }
@@ -207,7 +207,7 @@ exports.obtenerConfigPortal = async (_req, res, next) => {
 exports.guardarConfigPortal = async (req, res, next) => {
   try {
     await guardarConfigAula(req.body || {}, req.user);
-    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Configuración del portal guardada' });
+    res.json({ config: await obtenerConfigPortalAdmin(req), message: 'Configuración del portal guardada' });
   } catch (e) {
     next(e);
   }
@@ -224,7 +224,7 @@ exports.subirLogoPortal = async (req, res, next) => {
     await guardarConfigAula({ urlLogo }, req.user);
     const { sincronizarLogoRecibo } = require('../services/configRecibo');
     await sincronizarLogoRecibo(urlLogo);
-    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Logo del portal actualizado' });
+    res.json({ config: await obtenerConfigPortalAdmin(req), message: 'Logo del portal actualizado' });
   } catch (e) {
     next(e);
   }
@@ -235,7 +235,7 @@ exports.quitarLogoPortal = async (_req, res, next) => {
     await guardarConfigAula({ urlLogo: '' }, _req.user);
     const { sincronizarLogoRecibo } = require('../services/configRecibo');
     await sincronizarLogoRecibo('');
-    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Logo del portal eliminado' });
+    res.json({ config: await obtenerConfigPortalAdmin(req), message: 'Logo del portal eliminado' });
   } catch (e) {
     next(e);
   }
@@ -260,7 +260,7 @@ exports.subirImagenHeroPortal = async (req, res, next) => {
     await optimizarImagenArchivo(filePath, { maxWidth: 1920, maxHeight: 1200 });
     const urlHero = publicUrl('aula-virtual-hero', req.file.filename);
     await guardarUrlHeroPortal(urlHero, req.user);
-    res.json({ config: await obtenerConfigPortalAdmin(), message: 'Imagen del banner actualizada en el sitio' });
+    res.json({ config: await obtenerConfigPortalAdmin(req), message: 'Imagen del banner actualizada en el sitio' });
   } catch (e) {
     next(e);
   }
@@ -270,7 +270,7 @@ exports.quitarImagenHeroPortal = async (req, res, next) => {
   try {
     await guardarUrlHeroPortal('', req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen del banner eliminada; se usará la imagen por defecto',
     });
   } catch (e) {
@@ -310,7 +310,7 @@ exports.subirImagenFundacionPortal = async (req, res, next) => {
     const imagenUrl = publicUrl('aula-virtual-fundacion-hero', req.file.filename);
     await guardarImagenFundacionPortal(imagenUrl, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de la página institucional actualizada en el sitio',
     });
   } catch (e) {
@@ -325,7 +325,7 @@ exports.quitarImagenFundacionPortal = async (req, res, next) => {
     quitarImagenFundacionAnterior(landing.fundacion?.hero?.imagenUrl);
     await guardarImagenFundacionPortal('', req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen institucional eliminada; se usará la del inicio o la predeterminada',
     });
   } catch (e) {
@@ -365,7 +365,7 @@ exports.subirImagenAcercaPortal = async (req, res, next) => {
     const imagenUrl = publicUrl('aula-virtual-acerca-hero', req.file.filename);
     await guardarImagenAcercaPortal(imagenUrl, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de «Acerca de» actualizada en el sitio',
     });
   } catch (e) {
@@ -380,7 +380,7 @@ exports.quitarImagenAcercaPortal = async (req, res, next) => {
     quitarImagenAcercaAnterior(landing.acerca?.hero?.imagenUrl);
     await guardarImagenAcercaPortal('', req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de «Acerca de» eliminada; se mostrará el logo de la empresa',
     });
   } catch (e) {
@@ -417,7 +417,7 @@ exports.subirImagenGaleriaHeroPortal = async (req, res, next) => {
     const imagenUrl = publicUrl('aula-virtual-galeria-hero', req.file.filename);
     await guardarImagenGaleriaHeroPortal(imagenUrl, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen del héroe de galería actualizada',
     });
   } catch (e) {
@@ -432,7 +432,7 @@ exports.quitarImagenGaleriaHeroPortal = async (req, res, next) => {
     quitarImagenGaleriaHeroAnterior(landing.galeria?.heroImagenUrl);
     await guardarImagenGaleriaHeroPortal('', req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen del héroe de galería eliminada; se usará la primera foto de la galería',
     });
   } catch (e) {
@@ -472,7 +472,7 @@ exports.subirImagenCursosConduccionPortal = async (req, res, next) => {
     const imagenUrl = publicUrl('aula-virtual-cursos-conduccion-hero', req.file.filename);
     await guardarImagenCursosConduccionPortal(imagenUrl, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de Cursos conducción actualizada en el sitio',
     });
   } catch (e) {
@@ -487,7 +487,7 @@ exports.quitarImagenCursosConduccionPortal = async (req, res, next) => {
     quitarImagenCursosConduccionAnterior(landing.cursosConduccion?.hero?.imagenUrl);
     await guardarImagenCursosConduccionPortal('', req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen eliminada; se usará la predeterminada del portal',
     });
   } catch (e) {
@@ -529,7 +529,7 @@ exports.subirImagenPopupPortal = async (req, res, next) => {
     const imagenUrl = publicUrl('aula-virtual-popup', req.file.filename);
     await guardarImagenPopupPortal(imagenUrl, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen del popup actualizada en el sitio',
     });
   } catch (e) {
@@ -544,7 +544,7 @@ exports.quitarImagenPopupPortal = async (req, res, next) => {
     quitarImagenPopupAnterior(landing.popup?.imagenUrl);
     await guardarImagenPopupPortal('', req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen del popup eliminada',
     });
   } catch (e) {
@@ -573,7 +573,7 @@ exports.subirApkPortal = async (req, res, next) => {
     const apkUrl = `/apk/${apkNombre}`;
     await guardarAppMobileApkConfig(apkUrl, apkNombre, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       apkUrl,
       apkNombre,
       message: `APK publicada en el servidor (${apkNombre}). Los visitantes pueden descargarla desde el inicio del portal.`,
@@ -614,7 +614,7 @@ exports.subirVideoAsistenteCertificadosPortal = async (req, res, next) => {
     const videoUrl = publicUrl('aula-virtual-consulta-asistente', req.file.filename);
     await guardarVideoAsistenteCertificados(videoUrl, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Video del asistente de certificados actualizado',
     });
   } catch (e) {
@@ -629,7 +629,7 @@ exports.quitarVideoAsistenteCertificadosPortal = async (req, res, next) => {
     quitarVideoAsistenteAnterior(landing.asistente?.videoUrl);
     await guardarVideoAsistenteCertificados(LANDING_DEFAULTS.asistente.videoUrl, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Video personalizado eliminado; se usará el predeterminado del portal',
     });
   } catch (e) {
@@ -1003,7 +1003,7 @@ exports.subirImagenesGaleriaPortal = async (req, res, next) => {
       req.user,
     );
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: `${files.length} archivo(s) agregado(s) a la galería`,
     });
   } catch (e) {
@@ -1028,7 +1028,7 @@ exports.eliminarFotoGaleriaPortal = async (req, res, next) => {
     landing.galeria = { ...landing.galeria, fotos };
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Archivo eliminado de la galería',
     });
   } catch (e) {
@@ -1072,7 +1072,7 @@ exports.subirImagenHomeFotoPortal = async (req, res, next) => {
     landing.fotosInicio = { ...landing.fotosInicio, fotos };
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Foto del inicio agregada',
     });
   } catch (e) {
@@ -1097,7 +1097,7 @@ exports.eliminarImagenHomeFotoPortal = async (req, res, next) => {
     landing.fotosInicio = { ...landing.fotosInicio, fotos };
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Foto eliminada del inicio',
     });
   } catch (e) {
@@ -1153,7 +1153,7 @@ exports.subirImagenHomePublicidadPortal = async (req, res, next) => {
     landing.publicidadInicio = { ...publicidad, slides };
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de publicidad agregada al inicio',
     });
   } catch (e) {
@@ -1179,7 +1179,7 @@ exports.eliminarImagenHomePublicidadPortal = async (req, res, next) => {
     landing.publicidadInicio = { ...publicidad, slides };
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de publicidad eliminada del inicio',
     });
   } catch (e) {
@@ -1236,7 +1236,7 @@ exports.subirImagenCursosConduccionPublicidadPortal = async (req, res, next) => 
     landing.cursosConduccion.publicidad = { ...publicidad, slides };
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de publicidad agregada',
     });
   } catch (e) {
@@ -1262,7 +1262,7 @@ exports.eliminarImagenCursosConduccionPublicidadPortal = async (req, res, next) 
     landing.cursosConduccion.publicidad = { ...publicidad, slides };
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen de publicidad eliminada',
     });
   } catch (e) {
@@ -1384,7 +1384,7 @@ exports.subirImagenMercanciasPeligrosasPortal = async (req, res, next) => {
 
     const { publicUploadUrl } = require('../utils/uploadPublicUrl');
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       imagenId,
       url: nuevaUrl,
       urlAbsoluta: publicUploadUrl(nuevaUrl) || nuevaUrl,
@@ -1415,7 +1415,7 @@ exports.quitarImagenMercanciasPeligrosasPortal = async (req, res, next) => {
     landing.mercanciasPeligrosas = mp;
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen eliminada de la página de mercancías peligrosas',
     });
   } catch (e) {
@@ -1464,7 +1464,7 @@ exports.subirImagenTrabajoEnAlturasPortal = async (req, res, next) => {
 
     const { publicUploadUrl } = require('../utils/uploadPublicUrl');
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       imagenId,
       url: nuevaUrl,
       urlAbsoluta: publicUploadUrl(nuevaUrl) || nuevaUrl,
@@ -1495,7 +1495,7 @@ exports.quitarImagenTrabajoEnAlturasPortal = async (req, res, next) => {
     landing.trabajoEnAlturas = ta;
     await guardarConfigAula({ landing }, req.user);
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Imagen eliminada de la página de trabajo en alturas',
     });
   } catch (e) {
@@ -1515,7 +1515,7 @@ exports.subirGoogleSearchConsolePortal = async (req, res, next) => {
       req.file.buffer.toString('utf8'),
     );
     await guardarConfigAula(parsed, req.user);
-    const config = await obtenerConfigPortalAdmin();
+    const config = await obtenerConfigPortalAdmin(req);
     res.json({
       config,
       message: `Verificación publicada. Pruebe en incógnito: ${config.googleSearchConsoleUrl || ''}`,
@@ -1533,7 +1533,7 @@ exports.quitarGoogleSearchConsolePortal = async (req, res, next) => {
       req.user,
     );
     res.json({
-      config: await obtenerConfigPortalAdmin(),
+      config: await obtenerConfigPortalAdmin(req),
       message: 'Archivo de verificación de Google eliminado del portal',
     });
   } catch (e) {

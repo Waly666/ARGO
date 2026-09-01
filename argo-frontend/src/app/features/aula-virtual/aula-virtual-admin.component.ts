@@ -13,6 +13,7 @@ import {
 import { mergePortalLanding, PORTAL_LANDING_DEFAULTS } from '../../core/constants/portal-landing-defaults';
 import { readVistaLista, saveVistaLista, VistaLista } from '../../core/utils/vista-lista.helpers';
 import { environment } from '../../../environments/environment';
+import { resolvePortalPublicUrl } from '../../core/utils/portal-public-url.util';
 import { PortalLandingEditorComponent } from './portal-landing-editor.component';
 
 type TabAula = 'cursos' | 'usuarios' | 'empresa' | 'portal';
@@ -30,11 +31,13 @@ export class AulaVirtualAdminComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
+  portalPublicUrlConfigured = '';
+
   get portalUrl(): string {
-    if (typeof window !== 'undefined' && window.location?.origin) {
-      return `${window.location.origin}/`;
-    }
-    return 'http://localhost:4202/';
+    return resolvePortalPublicUrl({
+      configured: this.portalPublicUrlConfigured,
+      erpOrigin: typeof window !== 'undefined' ? window.location.origin : undefined,
+    });
   }
   readonly esAdmin = this.auth.isAdmin;
 
@@ -121,6 +124,7 @@ export class AulaVirtualAdminComponent implements OnInit {
       next: (p) => {
         Object.assign(this.portalForm, p);
         this.portalForm.landing = mergePortalLanding(p.landing);
+        this.syncPortalPublicUrl(p);
       },
     });
   }
@@ -267,6 +271,7 @@ export class AulaVirtualAdminComponent implements OnInit {
       next: (res) => {
         Object.assign(this.portalForm, res.config);
         this.portalForm.landing = mergePortalLanding(res.config.landing);
+        this.syncPortalPublicUrl(res.config);
         this.saving.set(false);
         input.value = '';
         this.toast(res.message || 'Logo actualizado');
@@ -285,6 +290,7 @@ export class AulaVirtualAdminComponent implements OnInit {
       next: (res) => {
         Object.assign(this.portalForm, res.config);
         this.portalForm.landing = mergePortalLanding(res.config.landing);
+        this.syncPortalPublicUrl(res.config);
         this.saving.set(false);
         this.toast(res.message || 'Logo eliminado');
       },
@@ -295,12 +301,19 @@ export class AulaVirtualAdminComponent implements OnInit {
     });
   }
 
+  private syncPortalPublicUrl(config?: PortalAulaConfig | null) {
+    this.portalPublicUrlConfigured = config?.portalPublicUrl || '';
+  }
+
   guardarPortal() {
     this.saving.set(true);
     this.svc.guardarPortal(this.portalForm).subscribe({
       next: (res) => {
         this.svc.obtenerPortal().subscribe({
-          next: (p) => Object.assign(this.portalForm, p),
+          next: (p) => {
+            Object.assign(this.portalForm, p);
+            this.syncPortalPublicUrl(p);
+          },
         });
         this.saving.set(false);
         this.toast(res.message || 'Configuración guardada');
@@ -314,6 +327,7 @@ export class AulaVirtualAdminComponent implements OnInit {
 
   onPortalConfigFromEditor(config: PortalAulaConfig) {
     Object.assign(this.portalForm, config);
+    this.syncPortalPublicUrl(config);
     if (config.landing) {
       this.portalForm.landing = mergePortalLanding(config.landing);
     }

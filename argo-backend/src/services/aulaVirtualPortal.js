@@ -10,6 +10,7 @@ const {
   HOME_SECCIONES_LABELS,
 } = require('./portalSiteConfig');
 const { urlPublicaVerificacion } = require('./portalGoogleSearchConsole');
+const { resolverBasePortal } = require('../utils/portalPublicUrl');
 
 const CLAVE_AULA = 'aula_virtual';
 
@@ -134,11 +135,14 @@ function armarSitePublico(aula, landing) {
   };
 }
 
-async function obtenerConfigPortalAdmin() {
+async function obtenerConfigPortalAdmin(req) {
   const [aula, recibo] = await Promise.all([obtenerConfigAula(), obtenerConfigRecibo()]);
   const empresa = pickEmpresa(aula, recibo);
   const logo = pickLogo(aula, recibo);
   const landing = mergeLanding(aula.landing);
+  const portalPublicUrl = resolverBasePortal({
+    origin: req?.headers?.origin || req?.get?.('origin'),
+  });
   return {
     ...aula,
     landing,
@@ -154,6 +158,7 @@ async function obtenerConfigPortalAdmin() {
     logoDesdeRecibos: logo.logoDesdeRecibos,
     googleSearchConsoleFilename: String(aula.googleSearchConsoleFilename || '').trim(),
     googleSearchConsoleUrl: urlPublicaVerificacion(aula.googleSearchConsoleFilename),
+    portalPublicUrl: portalPublicUrl ? `${portalPublicUrl}/` : '',
     vistaPreviaEmpresa: empresa,
   };
 }

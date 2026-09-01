@@ -22,7 +22,7 @@ import {
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { PortalPlantillaGaleriaComponent } from './portal-plantilla-galeria.component';
 import { PortalSiteBuilderComponent } from './portal-site-builder.component';
-import { environment } from '../../../environments/environment';
+import { resolvePortalPublicUrl } from '../../core/utils/portal-public-url.util';
 
 @Component({
   selector: 'argo-aula-virtual-sitio',
@@ -48,12 +48,13 @@ export class AulaVirtualSitioComponent implements OnInit {
 
   readonly plantillas = PORTAL_PLANTILLAS;
   galeriaAbierta = signal(false);
+  portalPublicUrlConfigured = signal('');
 
   get portalUrl(): string {
-    if (typeof window !== 'undefined' && window.location?.origin) {
-      return `${window.location.origin}/`;
-    }
-    return 'http://localhost:4202/';
+    return resolvePortalPublicUrl({
+      configured: this.portalPublicUrlConfigured(),
+      erpOrigin: typeof window !== 'undefined' ? window.location.origin : undefined,
+    });
   }
 
   portalForm: PortalAulaConfig = {
@@ -81,6 +82,7 @@ export class AulaVirtualSitioComponent implements OnInit {
         Object.assign(this.portalForm, p);
         this.portalForm.landing = mergePortalLanding(p.landing);
         this.portalForm.site = mergePortalSiteDefaults(p.site);
+        this.portalPublicUrlConfigured.set(p.portalPublicUrl || '');
       },
       error: () => this.toast('No se pudo cargar la configuración del sitio', true),
     });
@@ -106,6 +108,7 @@ export class AulaVirtualSitioComponent implements OnInit {
         Object.assign(this.portalForm, res.config);
         this.portalForm.landing = mergePortalLanding(res.config.landing);
         this.portalForm.site = mergePortalSiteDefaults(res.config.site);
+        this.portalPublicUrlConfigured.set(res.config.portalPublicUrl || '');
         this.saving.set(false);
         this.toast(res.message || 'Sitio publicado');
       },
