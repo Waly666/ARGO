@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 
+import { PortalThemeService } from '../../core/portal-theme.service';
+import { PortalPromoHeroFxComponent } from '../portal-promo-hero-fx/portal-promo-hero-fx.component';
 import { PortalIconComponent } from '../portal-icon/portal-icon.component';
 import {
   PromoBannerHighlight,
@@ -12,7 +14,7 @@ import {
 @Component({
   selector: 'av-portal-promo-banner-hero',
   standalone: true,
-  imports: [CommonModule, PortalIconComponent],
+  imports: [CommonModule, PortalIconComponent, PortalPromoHeroFxComponent],
   templateUrl: './portal-promo-banner-hero.component.html',
   styleUrl: './portal-promo-banner-hero.component.scss',
   host: {
@@ -24,9 +26,25 @@ import {
     '[class.ppbh--page]': 'size() === "page" || size() === "page-tall"',
     '[class.ppbh--page-tall]': 'size() === "page-tall"',
     '[class.ppbh--home]': 'size() === "home"',
+    '[class.ppbh--no-photo]': '!showPhoto()',
+    '[class.ppbh--fx-on]': 'heroEffectsEnabled()',
   },
 })
 export class PortalPromoBannerHeroComponent {
+  private portalTheme = inject(PortalThemeService);
+
+  /**
+   * Radar y brillos del hero. Por defecto (null) solo en Plantilla azul profundo (Finstruvial).
+   * Otros clientes no se ven afectados al desplegar.
+   */
+  showHeroEffects = input<boolean | null>(null);
+
+  heroEffectsEnabled = computed(() => {
+    const explicit = this.showHeroEffects();
+    return explicit !== null ? explicit : this.portalTheme.finstruvialPortal();
+  });
+  /** Si es false, no se muestra imagen ni placeholder (solo texto). */
+  showPhoto = input(true);
   photoUrl = input<string | null>(null);
   photoAlt = input('');
   logoUrl = input<string | null>(null);

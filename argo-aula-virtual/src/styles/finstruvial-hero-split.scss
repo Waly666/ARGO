@@ -1,0 +1,210 @@
+/**
+ * Finstruvial: heroes de páginas internas con imagen al lado (no fondo full-bleed).
+ * Solo aplica cuando portal-theme.service marca html[data-finstruvial-portal='1'].
+ */
+html[data-finstruvial-portal='1'] {
+  av-portal-promo-banner-hero:not(.home-promo-hero) {
+    .ppbh {
+      --fv-hero-max: min(var(--av-max, 1180px), calc(100% - 2rem));
+      display: grid;
+      grid-template-columns:
+        minmax(1rem, 1fr)
+        minmax(0, calc(var(--fv-hero-max) * 0.56))
+        minmax(0, calc(var(--fv-hero-max) * 0.44))
+        minmax(1rem, 1fr);
+      column-gap: clamp(1.25rem, 2.5vw, 2rem);
+      row-gap: 1.25rem;
+      align-items: center;
+      min-height: unset !important;
+      padding: clamp(2.25rem, 5vw, 3.5rem) 0;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 80% 0%, var(--av-primary-a35, rgba(37, 99, 235, 0.35)), transparent 55%),
+        radial-gradient(ellipse at 10% 100%, var(--av-accent-a22, rgba(59, 130, 246, 0.22)), transparent 50%),
+        var(--av-page-hero-bg, linear-gradient(135deg, #030712 0%, #0b1224 45%, #0f172a 100%));
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: auto -5% -45% auto;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--av-page-hero-glow, rgba(59, 130, 246, 0.18)), transparent 70%);
+        pointer-events: none;
+      }
+    }
+
+    .ppbh__overlay,
+    .ppbh__grid-lines,
+    .ppbh__brand {
+      display: none !important;
+    }
+
+    .ppbh__content {
+      grid-column: 2;
+      grid-row: 1;
+      width: 100% !important;
+      max-width: none !important;
+      margin-inline: 0 !important;
+      min-height: unset !important;
+      padding: 0;
+      align-items: flex-start;
+      z-index: 1;
+    }
+
+    .ppbh__panel {
+      width: 100%;
+      max-width: none;
+    }
+
+    .ppbh__photo {
+      position: relative;
+      grid-column: 3;
+      grid-row: 1;
+      width: 100%;
+      max-width: 420px;
+      justify-self: end;
+      min-height: clamp(220px, 26vw, 320px);
+      aspect-ratio: 4 / 3;
+      inset: unset;
+      margin: 0;
+      transform: none;
+      animation: none;
+      filter: none;
+      border-radius: 16px;
+      background-position: center;
+      background-size: cover;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+      z-index: 1;
+
+      &::after {
+        display: none;
+      }
+
+      &--placeholder {
+        background: #1e293b;
+      }
+    }
+
+    .ppbh__title-line,
+    .ppbh__title-accent {
+      text-shadow: none;
+      animation: none;
+    }
+
+    .ppbh__title {
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
+
+    .ppbh__title-line {
+      font-size: clamp(1.45rem, 3vw, 2.1rem);
+      font-weight: 800;
+      line-height: 1.12;
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
+
+    .ppbh__title-accent {
+      font-size: clamp(1.45rem, 3vw, 2.1rem);
+      line-height: 1.12;
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
+
+    .ppbh__pillars {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem 0.85rem;
+      max-width: 28rem;
+    }
+
+    .ppbh__pillar {
+      flex-direction: row;
+      align-items: center;
+      text-align: left;
+      gap: 0.55rem;
+    }
+
+    .ppbh__pillar-icon {
+      width: 2.35rem;
+      height: 2.35rem;
+      flex-shrink: 0;
+    }
+
+    .ppbh__pillar-label {
+      font-size: 0.62rem;
+      text-align: left;
+    }
+
+    .ppbh__ribbon {
+      position: relative;
+      grid-column: 2 / 4;
+      grid-row: 2;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      width: 100%;
+      max-width: var(--fv-hero-max);
+      justify-self: center;
+      margin-top: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    &.ppbh--no-photo .ppbh {
+      grid-template-columns: minmax(1rem, 1fr) minmax(0, var(--fv-hero-max)) minmax(1rem, 1fr);
+    }
+
+    &.ppbh--no-photo .ppbh__content {
+      grid-column: 2;
+    }
+
+    &.ppbh--no-photo .ppbh__ribbon {
+      grid-column: 2;
+    }
+
+    &.consulta-hero-banner .ppbh__title-accent {
+      text-transform: uppercase;
+    }
+  }
+}
+
+@media (max-width: 960px) {
+  html[data-finstruvial-portal='1'] {
+    av-portal-promo-banner-hero:not(.home-promo-hero) {
+      .ppbh {
+        grid-template-columns: minmax(1rem, 1fr) minmax(0, var(--fv-hero-max)) minmax(1rem, 1fr);
+      }
+
+      .ppbh__content {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .ppbh__photo {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: center;
+        max-width: min(100%, 520px);
+        width: 100%;
+      }
+
+      .ppbh__ribbon {
+        grid-column: 2;
+        grid-row: 3;
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  html[data-finstruvial-portal='1'] {
+    av-portal-promo-banner-hero:not(.home-promo-hero) {
+      .ppbh__pillars {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}

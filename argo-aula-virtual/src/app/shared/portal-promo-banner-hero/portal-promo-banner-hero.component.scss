@@ -1,4 +1,5 @@
 @use '../../pages/shared/portal-hero-buttons' as heroBtns;
+@use '../../pages/shared/portal-page-effects' as fx;
 
 :host {
   display: block;
@@ -520,5 +521,54 @@
   .ppbh__content {
     min-height: clamp(460px, 66vh, 640px);
     padding: clamp(1.85rem, 4.8vw, 3.1rem) 0 clamp(1.85rem, 3.8vw, 2.65rem);
+  }
+}
+
+:host.ppbh--no-photo {
+  .ppbh {
+    min-height: clamp(260px, 38vh, 380px);
+  }
+
+  .ppbh__content {
+    min-height: unset;
+    align-items: center;
+  }
+
+  .ppbh__panel {
+    width: min(100%, 720px);
+  }
+}
+
+:host.ppbh--fx-on {
+  &.ppbh--gold {
+    --pp-fx-accent-rgb: 245, 196, 0;
+  }
+
+  &.ppbh--green {
+    --pp-fx-accent-rgb: 74, 222, 128;
+  }
+
+  &.ppbh--violet {
+    --pp-fx-accent-rgb: 167, 139, 250;
+  }
+
+  &.ppbh--blue {
+    --pp-fx-accent-rgb: 96, 165, 250;
+  }
+
+  .ppbh__title-accent {
+    @include fx.portal-hero-title-accent();
+  }
+
+  .ppbh-stat {
+    @include fx.portal-stat-pulse();
+
+    &:nth-child(2) {
+      animation-delay: 0.6s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 1.2s;
+    }
   }
 }

@@ -1,6 +1,7 @@
 @use 'styles/tokens';
 @use 'styles/card-wave';
 @use 'styles/starfield';
+@use 'styles/finstruvial-hero-split';
 
 html[data-finstruvial-portal='1'] {
   --av-inst-bar-bg: linear-gradient(90deg, #b45309 0%, #c2410c 38%, #ea580c 72%, #f97316 100%);

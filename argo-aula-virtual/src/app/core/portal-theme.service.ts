@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 
 import { PortalConfig } from './models';
 import { loadPortalGoogleFonts } from './portal-fonts.util';
@@ -10,16 +10,25 @@ import { resolveUploadUrl } from './upload-url.util';
 export class PortalThemeService {
   private doc = inject(DOCUMENT);
 
+  /** Plantilla azul profundo (Finstruvial) — exclusivo para estilos/efectos de esa plantilla. */
+  readonly finstruvialPortal = signal(this.readFinstruvialDataset());
+
   apply(config: PortalConfig | null) {
     const tema = config?.site?.tema;
     const root = this.doc.documentElement;
-    if (!tema) return;
+    if (!tema) {
+      this.finstruvialPortal.set(false);
+      delete root.dataset['finstruvialPortal'];
+      return;
+    }
 
     const vars = buildPortalThemeCssVars(tema);
     for (const [key, val] of Object.entries(vars)) {
       if (val) root.style.setProperty(key, val);
     }
-    if (isFinstruvialPortalTema(tema)) {
+    const isFinstruvial = isFinstruvialPortalTema(tema);
+    this.finstruvialPortal.set(isFinstruvial);
+    if (isFinstruvial) {
       root.dataset['finstruvialPortal'] = '1';
     } else {
       delete root.dataset['finstruvialPortal'];
@@ -31,6 +40,10 @@ export class PortalThemeService {
     if (themeColor) {
       this.doc.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor);
     }
+  }
+
+  private readFinstruvialDataset(): boolean {
+    return this.doc.documentElement.dataset['finstruvialPortal'] === '1';
   }
 
   heroImageUrl(config: PortalConfig | null): string | null {

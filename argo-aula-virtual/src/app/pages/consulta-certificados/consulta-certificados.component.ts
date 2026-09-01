@@ -10,6 +10,7 @@ import { AulaApiService } from '../../core/aula-api.service';
 import { CertificadoConsultaItem, CertificadoConsultaRes, PortalConfig } from '../../core/models';
 import { mergePortalLanding } from '../../core/portal-landing';
 import { PortalSeoService } from '../../core/portal-seo.service';
+import { PortalThemeService } from '../../core/portal-theme.service';
 
 @Component({
   selector: 'av-consulta-certificados',
@@ -21,12 +22,15 @@ import { PortalSeoService } from '../../core/portal-seo.service';
 export class ConsultaCertificadosComponent implements OnInit {
   private api = inject(AulaApiService);
   private seo = inject(PortalSeoService);
+  private portalTheme = inject(PortalThemeService);
 
   turnstile = viewChild(TurnstileComponent);
 
   config = signal<PortalConfig | null>(null);
   landing = computed(() => mergePortalLanding(this.config()?.landing));
   consultaHero = computed(() => this.landing().consultaCertificados);
+  /** Sin foto en hero solo en Plantilla azul profundo (Finstruvial). */
+  consultaHeroShowPhoto = computed(() => !this.portalTheme.finstruvialPortal());
 
   readonly heroRibbon: PromoBannerRibbonItem[] = [
     { icon: 'academic-cap', label: 'Certificados oficiales' },
